@@ -28,6 +28,9 @@ export interface ProfileContribution {
   claims?(context: ProfileContext): string[];
   // Servers that must be off, whoever else names them.
   suppress?(context: ProfileContext): string[];
+  // Hermes toolsets the agent must not have, on top of what the owner turned off (the
+  // browser gateway turns off Hermes' own `browser`).
+  denyToolsets?(context: ProfileContext): string[];
   // Keys merged into Hermes' managed configuration (run/itsaplan-managed/config.yaml).
   hermesConfig?(context: ProfileContext): Record<string, unknown>;
 }
@@ -168,6 +171,8 @@ export interface CollectedProfile {
   runtimeServers: string[];
   // Servers that must be off.
   suppressed: string[];
+  // Toolsets that must be off.
+  deniedToolsets: string[];
   hermesConfig: Record<string, unknown>;
 }
 
@@ -194,6 +199,7 @@ export function collectProfile(context: ProfileContext): CollectedProfile {
   const mcpServers: McpServerSpec[] = [];
   const runtimeServers: string[] = [];
   const suppressed = new Set<string>();
+  const deniedToolsets = new Set<string>();
   let hermesConfig: Record<string, unknown> = {};
   const toolsets = new Set(context.hermes?.toolsets ?? []);
   const shared = new Set([...(context.hermes?.mcpServers ?? []), ...RUNTIME_MCP_SERVERS]);
@@ -213,8 +219,15 @@ export function collectProfile(context: ProfileContext): CollectedProfile {
       mcpServers.push(spec);
     }
     for (const name of contribution.suppress?.(context) ?? []) suppressed.add(name);
+    for (const name of contribution.denyToolsets?.(context) ?? []) deniedToolsets.add(name);
     const config = contribution.hermesConfig?.(context);
     if (config) hermesConfig = deepMerge(hermesConfig, config);
   }
-  return { mcpServers, runtimeServers, suppressed: [...suppressed], hermesConfig };
+  return {
+    mcpServers,
+    runtimeServers,
+    suppressed: [...suppressed],
+    deniedToolsets: [...deniedToolsets],
+    hermesConfig,
+  };
 }

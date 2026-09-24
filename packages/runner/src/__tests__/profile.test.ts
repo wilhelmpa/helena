@@ -196,10 +196,12 @@ describe('Helena owns every MCP server of a Hermes profile', () => {
           ? [{ name: 'extra-tool', transport: 'http', url: 'http://127.0.0.1:9/mcp' }]
           : [],
       suppress: () => ['browser-harness'],
+      denyToolsets: () => ['browser'],
       hermesConfig: () => ({ fallback_providers: [{ provider: 'anthropic' }] }),
     });
     try {
-      await materializer.apply(snapshot('sha256:one'));
+      const result = await materializer.apply(snapshot('sha256:one'));
+      expect(result.deniedToolsets).toEqual(['browser']);
       const config = await managed(hermesHome);
       expect(config.mcp_servers['extra-tool']).toEqual({
         url: 'http://127.0.0.1:9/mcp',

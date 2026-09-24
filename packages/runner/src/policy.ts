@@ -465,6 +465,7 @@ export class HermesPolicyMaterializer implements PolicyMaterializer {
       managedConfig: managed.config,
       mcpToolsets: managed.mcpToolsets,
       runtimeServers: managed.runtimeServers,
+      deniedToolsets: managed.deniedToolsets,
       managedChanged,
     };
   }
@@ -569,6 +570,7 @@ export function managedConfigOf(
   mcpSecrets: number[] | null;
   mcpToolsets: string[];
   runtimeServers: string[];
+  deniedToolsets: string[];
 } {
   const collected = collectProfile(context);
   const shared = [
@@ -585,6 +587,7 @@ export function managedConfigOf(
     mcpSecrets: mcp && secrets.length > 0 ? secrets : null,
     mcpToolsets: enabledMcpServers(mcp),
     runtimeServers: collected.runtimeServers,
+    deniedToolsets: collected.deniedToolsets,
   };
 }
 
@@ -644,6 +647,8 @@ export interface MaterializeResult {
   mcpToolsets: string[];
   // The servers the runner itself gives the agent (not the team library's).
   runtimeServers: string[];
+  // Toolsets a contribution turns off for the agent.
+  deniedToolsets: string[];
   // Whether the managed configuration had to be written.
   managedChanged: boolean;
 }
@@ -786,6 +791,7 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
   // revision wrote them. mcpSecrets is null while the managed configuration names no secret.
   private mcpToolsets: string[] = [];
   private runtimeServers: string[] = [];
+  private contributedDeny: string[] = [];
   private mcpSecrets: number[] | null = null;
   private managedConfig: Record<string, unknown> | null = null;
   private vaultAccess: VaultAccess | null = null;
@@ -836,11 +842,10 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
     return this.options.profile && { ...this.options.profile, mcpServers: [] };
   }
 
-  // An agent that does not learn has no memory tool.
+  // An agent that does not learn has no memory tool; a contribution may turn off more.
   private denied(): string[] {
-    return this.learning?.enabled === false
-      ? [...this.deniedToolsets, 'memory']
-      : this.deniedToolsets;
+    const denied = [...this.deniedToolsets, ...this.contributedDeny];
+    return this.learning?.enabled === false ? [...denied, 'memory'] : denied;
   }
 
   defaults(): RuntimeDefaults | null {
@@ -934,6 +939,7 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
   private take(result: MaterializeResult): void {
     this.mcpToolsets = result.mcpToolsets;
     this.runtimeServers = result.runtimeServers;
+    this.contributedDeny = result.deniedToolsets ?? [];
     this.mcpSecrets = result.mcpSecrets;
     this.managedConfig = result.managedConfig;
     if (result.managedChanged || result.restored.length > 0) this.probeDue = true;

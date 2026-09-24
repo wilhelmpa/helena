@@ -137,6 +137,7 @@ describe('Hermes runtime policy materializer', () => {
       managedConfig: alwaysOff,
       mcpToolsets: [],
       runtimeServers: [],
+      deniedToolsets: [],
       managedChanged: true,
     });
     expect(await readFile(join(hermesHome, 'SOUL.md'), 'utf8')).toBe('# Soul');
