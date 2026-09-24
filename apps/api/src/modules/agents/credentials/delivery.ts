@@ -5,22 +5,22 @@ import {
   integrationCredential,
   integrationCredentialGrant,
   integrationCredentialUse,
-  projectMember,
   user,
 } from '@repo/db';
-import { and, eq, gt, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
+import { and, eq, gt, inArray, isNotNull, sql } from 'drizzle-orm';
 import { decryptSecret } from '@repo/crypto';
 import { HttpError } from '#shared/lib';
 import type { RunnerAgent } from '../runner/service';
 import { mcpSecretServers } from '../mcp-servers/service';
 import { loginOrigins } from './kinds';
+import { credentialInScope, grantReaches, type GrantSubject } from './grants';
 
 // What an agent's runner receives for the run or chat answer it holds, and the audit log
 // entries that receiving and using a credential writes.
 
 export type WorkRef = { runId: number } | { messageId: number };
 
-interface ClaimedWork {
+export interface ClaimedWork {
   runId: number | null;
   chatMessageId: number | null;
   // The project of a run. A chat answer has none.
@@ -71,11 +71,22 @@ export async function claimedWork(agentId: number, ref: WorkRef): Promise<Claime
   return { runId: null, chatMessageId: message.id, projectId: null };
 }
 
-async function record(
-  agent: RunnerAgent,
-  work: ClaimedWork,
-  action: 'delivered' | 'used',
-  entries: { credentialId: number; label: string; purpose: string }[],
+export type UseAction = 'delivered' | 'used' | 'called' | 'denied' | 'approval' | 'changed';
+
+export interface UseEntry {
+  credentialId: number;
+  label: string;
+  purpose: string;
+  category?: string | null;
+}
+
+// Writes audit log entries for an agent. The agent's name is copied, so an entry outlives
+// the agent.
+export async function recordAgentUses(
+  agent: Pick<RunnerAgent, 'id' | 'teamId' | 'userId' | 'username'>,
+  work: Pick<ClaimedWork, 'runId' | 'chatMessageId'>,
+  action: UseAction,
+  entries: UseEntry[],
 ): Promise<void> {
   if (entries.length === 0) return;
   const [row] = await db.select({ name: user.name }).from(user).where(eq(user.id, agent.userId));
@@ -89,21 +100,19 @@ async function record(
       runId: work.runId,
       chatMessageId: work.chatMessageId,
       action,
-      purpose: entry.purpose,
+      category: entry.category ?? null,
+      purpose: entry.purpose.slice(0, 500),
     })),
   );
 }
 
-// A credential limited to a project reaches a run in that project, and a chat answer of
-// an agent that works there.
-function inScope(agent: RunnerAgent, work: ClaimedWork) {
-  const projectId = integrationCredential.projectId;
-  return or(
-    isNull(projectId),
-    work.projectId !== null
-      ? eq(projectId, work.projectId)
-      : sql`exists (select 1 from ${projectMember} where ${projectMember.projectId} = ${projectId} and ${projectMember.userId} = ${agent.userId})`,
-  );
+const record = recordAgentUses;
+
+export function subjectOf(
+  agent: Pick<RunnerAgent, 'id' | 'userId'>,
+  work: ClaimedWork,
+): GrantSubject {
+  return { agentId: agent.id, userId: agent.userId, projectId: work.projectId };
 }
 
 export interface DeliveredLogin {
@@ -131,18 +140,12 @@ export async function deliverWebLogins(
       authTag: integrationCredential.authTag,
     })
     .from(integrationCredential)
-    .innerJoin(
-      integrationCredentialGrant,
-      and(
-        eq(integrationCredentialGrant.credentialId, integrationCredential.id),
-        eq(integrationCredentialGrant.agentId, agent.id),
-      ),
-    )
     .where(
       and(
         eq(integrationCredential.teamId, agent.teamId),
         eq(integrationCredential.integrationKey, 'web_login'),
-        inScope(agent, work),
+        credentialInScope(subjectOf(agent, work)),
+        sql`exists (select 1 from ${integrationCredentialGrant} where ${integrationCredentialGrant.credentialId} = ${integrationCredential.id} and ${grantReaches(subjectOf(agent, work))})`,
       ),
     )
     .orderBy(integrationCredential.id);
@@ -188,17 +191,11 @@ export async function recordWebLoginUses(
   const granted = await db
     .select({ id: integrationCredential.id, label: integrationCredential.label })
     .from(integrationCredential)
-    .innerJoin(
-      integrationCredentialGrant,
-      and(
-        eq(integrationCredentialGrant.credentialId, integrationCredential.id),
-        eq(integrationCredentialGrant.agentId, agent.id),
-      ),
-    )
     .where(
       and(
         inArray(integrationCredential.id, ids),
         eq(integrationCredential.integrationKey, 'web_login'),
+        sql`exists (select 1 from ${integrationCredentialGrant} where ${integrationCredentialGrant.credentialId} = ${integrationCredential.id} and ${grantReaches(subjectOf(agent, work))})`,
       ),
     );
   const labels = new Map(granted.map((row) => [row.id, row.label ?? '']));

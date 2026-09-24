@@ -10,6 +10,7 @@ import { runnerAuth } from '../runner-auth';
 import {
   CredentialEntryPageResponse,
   CredentialEntryResponse,
+  CredentialGrantsResponse,
   CredentialUsePageResponse,
   WebLoginsResponse,
   chatWorkParams,
@@ -33,6 +34,7 @@ import {
   updateCredentialEntry,
 } from './service';
 import { claimedWork, deliverWebLogins, recordWebLoginUses, workRefOf } from './delivery';
+import { recordOwnerChange } from './audit';
 
 function found<T>(entry: T | null): T {
   if (!entry) throw new HttpError(404, 'Credential not found');
@@ -135,18 +137,28 @@ export const credentialRoutes = new Elysia({
 
   .put(
     '/teams/:teamId/credentials/:credentialId/grants',
-    async ({ params, membership, body }) =>
-      found(await setCredentialGrants(params.credentialId, membership.teamId, body.agentIds)),
+    async ({ params, membership, body, user }) => {
+      if ((body.agentIds === undefined) === (body.grants === undefined)) {
+        throw new HttpError(400, 'Send either agentIds or grants.');
+      }
+      const grants = body.grants ?? (body.agentIds ?? []).map((agentId) => ({ agentId }));
+      const result = found(
+        await setCredentialGrants(params.credentialId, membership.teamId, grants),
+      );
+      await recordOwnerChange(membership.teamId, params.credentialId, user, 'grants changed');
+      return { grants: result };
+    },
     {
       params: credentialEntryParams,
       body: setCredentialGrantsBody,
       teamManager: true,
-      response: { 200: CredentialEntryResponse, ...commonErrors },
+      response: { 200: CredentialGrantsResponse, ...commonErrors },
       detail: {
-        summary: 'Grant a credential to agents',
+        summary: 'Grant a credential',
         description:
-          'Replace the agents that may use a credential. Every agent has to run in Hermes ' +
-          'and, for a credential limited to a project, work in that project.',
+          'Replace who may use a credential or connector account: agents, or every agent ' +
+          'of a project, optionally for one service and read-only. Every agent has to run ' +
+          'in a runner and, for a credential limited to a project, work in that project.',
       },
     },
   )
@@ -170,7 +182,9 @@ export const credentialRoutes = new Elysia({
     '/teams/:teamId/credentials/:credentialId/uses',
     async ({ params, membership, query }) => {
       found(await getCredentialEntry(params.credentialId, membership.teamId));
-      return paginate(query, (window) => listCredentialUses(params.credentialId, window));
+      return paginate(query, (window) =>
+        listCredentialUses(membership.teamId, params.credentialId, window),
+      );
     },
     {
       params: credentialEntryParams,

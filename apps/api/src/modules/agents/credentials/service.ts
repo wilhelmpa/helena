@@ -1,18 +1,16 @@
-import {
-  db,
-  agentRun,
-  aiAgent,
-  integrationCredential,
-  integrationCredentialGrant,
-  integrationCredentialUse,
-  issue,
-  project,
-  user,
-} from '@repo/db';
-import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
+import { db, integrationCredential, project } from '@repo/db';
+import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import { decryptSecret, encryptSecret } from '@repo/crypto';
 import { HttpError, iso } from '#shared/lib';
-import { agentWorksInProject } from '../core/service';
+import { connectors } from '@helena/connectors';
+import { listAudit, type AuditEntry } from './audit';
+import {
+  grantsOf,
+  pruneGrantsOutside,
+  replaceGrants,
+  type GrantEntry,
+  type GrantInput,
+} from './grants';
 import {
   CREDENTIAL_KINDS,
   SECRET_FIELDS,
@@ -43,7 +41,9 @@ export interface CredentialEntry {
   notes: string;
   publicKey: string | null;
   secrets: string[];
+  // The agents granted by name; `grants` holds every grant, to agents and projects.
   agentIds: number[];
+  grants: GrantEntry[];
   createdAt: string;
   updatedAt: string;
 }
@@ -93,7 +93,7 @@ function readableOf(value: unknown): Readable {
   return value && typeof value === 'object' ? (value as Readable) : {};
 }
 
-function toEntry(row: EntryRow, agentIds: number[]): CredentialEntry {
+function toEntry(row: EntryRow, grants: GrantEntry[]): CredentialEntry {
   const kind = row.kind as CredentialKind;
   const readable = readableOf(row.redacted);
   return {
@@ -109,30 +109,11 @@ function toEntry(row: EntryRow, agentIds: number[]): CredentialEntry {
     notes: readable.notes ?? '',
     publicKey: readable.publicKey ?? null,
     secrets: SECRET_FIELDS[kind].filter((field) => Boolean(readable[field])),
-    agentIds,
+    agentIds: grants.flatMap((grant) => (grant.agentId === null ? [] : [grant.agentId])),
+    grants,
     createdAt: iso(row.createdAt),
     updatedAt: iso(row.updatedAt),
   };
-}
-
-async function grantsOf(credentialIds: number[]): Promise<Map<number, number[]>> {
-  const byCredential = new Map<number, number[]>();
-  if (credentialIds.length === 0) return byCredential;
-  const rows = await db
-    .select({
-      credentialId: integrationCredentialGrant.credentialId,
-      agentId: integrationCredentialGrant.agentId,
-    })
-    .from(integrationCredentialGrant)
-    .where(inArray(integrationCredentialGrant.credentialId, credentialIds))
-    .orderBy(integrationCredentialGrant.agentId);
-  for (const row of rows) {
-    byCredential.set(row.credentialId, [
-      ...(byCredential.get(row.credentialId) ?? []),
-      row.agentId,
-    ]);
-  }
-  return byCredential;
 }
 
 async function toEntries(rows: EntryRow[]): Promise<CredentialEntry[]> {
@@ -317,12 +298,6 @@ export async function updateCredentialEntry(
     .where(eq(integrationCredential.id, id));
   const current = { readable: readableOf(row.redacted), secrets: await readSecrets(id) };
   const { readable, secrets } = compose(existing.kind, fields, current);
-  const outside: number[] = [];
-  if (projectId != null) {
-    for (const agentId of existing.agentIds) {
-      if (!(await agentWorksInProject(agentId, projectId))) outside.push(agentId);
-    }
-  }
   await db.transaction(async (tx) => {
     await tx
       .update(integrationCredential)
@@ -333,16 +308,7 @@ export async function updateCredentialEntry(
         updatedAt: new Date(),
       })
       .where(eq(integrationCredential.id, id));
-    if (outside.length > 0) {
-      await tx
-        .delete(integrationCredentialGrant)
-        .where(
-          and(
-            eq(integrationCredentialGrant.credentialId, id),
-            inArray(integrationCredentialGrant.agentId, outside),
-          ),
-        );
-    }
+    if (projectId != null) await pruneGrantsOutside(id, projectId, tx);
   });
   return getCredentialEntry(id, teamId);
 }
@@ -379,119 +345,44 @@ export async function deleteCredentialEntry(id: number, teamId: number): Promise
   return deleted.length > 0;
 }
 
-// Replaces the agents a credential is granted to. Every agent has to be one of the team
-// that runs in Hermes, and work in the credential's project when it has one.
+// The kinds a grant can be given for: the credentials of the page, and connector accounts.
+export const GRANTABLE_KINDS = [...CREDENTIAL_KINDS, 'google', 'mcp_oauth'];
+
+// Replaces the grants of a credential or a connector account. Every agent has to run in a
+// runner and, for a credential limited to a project, work in that project; a project grant
+// can only name that project.
 export async function setCredentialGrants(
   id: number,
   teamId: number,
-  agentIds: number[],
-): Promise<CredentialEntry | null> {
-  const existing = await getCredentialEntry(id, teamId);
-  if (!existing) return null;
-  const unique = [...new Set(agentIds)];
-  const agents =
-    unique.length === 0
-      ? []
-      : await db
-          .select({
-            id: aiAgent.id,
-            name: user.name,
-            kind: aiAgent.kind,
-            template: aiAgent.template,
-          })
-          .from(aiAgent)
-          .innerJoin(user, eq(user.id, aiAgent.userId))
-          .where(and(eq(aiAgent.teamId, teamId), inArray(aiAgent.id, unique)));
-  if (agents.length !== unique.length) throw new HttpError(400, 'An agent is not of this team.');
-  for (const agent of agents) {
-    if (agent.kind !== 'external' || agent.template) {
-      throw new HttpError(400, `${agent.name} does not run in Hermes.`);
-    }
-    if (existing.projectId !== null && !(await agentWorksInProject(agent.id, existing.projectId))) {
-      throw new HttpError(400, `${agent.name} does not work in ${existing.projectKey}.`);
-    }
-  }
-  await db.transaction(async (tx) => {
-    await tx
-      .delete(integrationCredentialGrant)
-      .where(eq(integrationCredentialGrant.credentialId, id));
-    if (unique.length > 0) {
-      await tx
-        .insert(integrationCredentialGrant)
-        .values(unique.map((agentId) => ({ credentialId: id, agentId })));
-    }
-  });
-  return getCredentialEntry(id, teamId);
-}
-
-export async function hasWebLoginGrant(agentId: number): Promise<boolean> {
+  grants: GrantInput[],
+): Promise<GrantEntry[] | null> {
   const [row] = await db
-    .select({ id: integrationCredential.id })
-    .from(integrationCredentialGrant)
-    .innerJoin(
-      integrationCredential,
+    .select({
+      id: integrationCredential.id,
+      kind: integrationCredential.integrationKey,
+      projectId: integrationCredential.projectId,
+      projectKey: project.key,
+    })
+    .from(integrationCredential)
+    .leftJoin(project, eq(project.id, integrationCredential.projectId))
+    .where(
       and(
-        eq(integrationCredential.id, integrationCredentialGrant.credentialId),
-        eq(integrationCredential.integrationKey, 'web_login'),
+        eq(integrationCredential.id, id),
+        eq(integrationCredential.teamId, teamId),
+        inArray(integrationCredential.integrationKey, GRANTABLE_KINDS),
       ),
-    )
-    .where(eq(integrationCredentialGrant.agentId, agentId))
-    .limit(1);
-  return Boolean(row);
-}
-
-export interface CredentialUseEntry {
-  id: number;
-  action: 'delivered' | 'used';
-  purpose: string;
-  agentId: number | null;
-  agentName: string;
-  runId: number | null;
-  issueIdentifier: string | null;
-  chatMessageId: number | null;
-  createdAt: string;
+    );
+  if (!row) return null;
+  const services = connectors.get(row.kind)?.services.map((service) => service.id) ?? [];
+  await replaceGrants({ ...row, teamId, services }, grants);
+  return (await grantsOf([id])).get(id) ?? [];
 }
 
 // The audit log of one credential, newest first.
-export async function listCredentialUses(
+export function listCredentialUses(
+  teamId: number,
   id: number,
   window: { limit: number; offset: number },
-): Promise<{ items: CredentialUseEntry[]; total: number }> {
-  const where = eq(integrationCredentialUse.credentialId, id);
-  const [rows, counted] = await Promise.all([
-    db
-      .select({
-        id: integrationCredentialUse.id,
-        action: integrationCredentialUse.action,
-        purpose: integrationCredentialUse.purpose,
-        agentId: integrationCredentialUse.agentId,
-        agentName: integrationCredentialUse.agentName,
-        runId: integrationCredentialUse.runId,
-        issueIdentifier: sql<
-          string | null
-        >`case when ${issue.id} is null then null else ${project.key} || '-' || ${issue.sequenceNumber} end`,
-        chatMessageId: integrationCredentialUse.chatMessageId,
-        createdAt: integrationCredentialUse.createdAt,
-      })
-      .from(integrationCredentialUse)
-      .leftJoin(agentRun, eq(agentRun.id, integrationCredentialUse.runId))
-      .leftJoin(issue, eq(issue.id, agentRun.issueId))
-      .leftJoin(project, eq(project.id, issue.projectId))
-      .where(where)
-      .orderBy(desc(integrationCredentialUse.createdAt), desc(integrationCredentialUse.id))
-      .limit(window.limit)
-      .offset(window.offset),
-    db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(integrationCredentialUse)
-      .where(where),
-  ]);
-  return {
-    items: rows.map((row) => ({
-      ...row,
-      action: row.action as CredentialUseEntry['action'],
-      createdAt: iso(row.createdAt),
-    })),
-    total: counted[0]?.count ?? 0,
-  };
+): Promise<{ items: AuditEntry[]; total: number }> {
+  return listAudit(teamId, { credentialId: id }, window);
 }

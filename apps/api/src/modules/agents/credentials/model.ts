@@ -53,9 +53,42 @@ export const createCredentialEntryBody = t.Object({ kind: CredentialKind, ...cre
 
 export const updateCredentialEntryBody = t.Partial(t.Object(credentialFields));
 
-export const setCredentialGrantsBody = t.Object({
-  agentIds: t.Array(t.Integer(), { maxItems: 200, description: 'The full set of agents.' }),
+export const GrantAccess = t.Union([t.Literal('read'), t.Literal('write')]);
+
+const grantInput = t.Object({
+  agentId: t.Optional(t.Nullable(t.Integer({ description: 'The agent it is granted to.' }))),
+  projectId: t.Optional(
+    t.Nullable(t.Integer({ description: 'The project whose agents it is granted to.' })),
+  ),
+  service: t.Optional(
+    t.Nullable(
+      t.String({
+        maxLength: 64,
+        description: "A service of a connector account ('mail', 'calendar' …); null for all.",
+      }),
+    ),
+  ),
+  access: t.Optional(GrantAccess),
 });
+
+// The full set of grants. `agentIds` is the short form: those agents, every service,
+// write access.
+export const setCredentialGrantsBody = t.Object({
+  agentIds: t.Optional(t.Array(t.Integer(), { maxItems: 200 })),
+  grants: t.Optional(t.Array(grantInput, { maxItems: 400 })),
+});
+
+export const GrantResponse = t.Object({
+  id: t.Number(),
+  agentId: t.Nullable(t.Number()),
+  agentName: t.Nullable(t.String()),
+  projectId: t.Nullable(t.Number()),
+  projectKey: t.Nullable(t.String()),
+  service: t.Nullable(t.String()),
+  access: GrantAccess,
+});
+
+export const CredentialGrantsResponse = t.Object({ grants: t.Array(GrantResponse) });
 
 export const CredentialEntryResponse = t.Object({
   id: t.Number(),
@@ -70,7 +103,8 @@ export const CredentialEntryResponse = t.Object({
   notes: t.String(),
   publicKey: t.Nullable(t.String()),
   secrets: t.Array(t.String(), { description: 'The secret fields that hold a value.' }),
-  agentIds: t.Array(t.Number(), { description: 'The agents that may use it.' }),
+  agentIds: t.Array(t.Number(), { description: 'The agents granted by name.' }),
+  grants: t.Array(GrantResponse),
   createdAt: t.String(),
   updatedAt: t.String(),
 });
@@ -79,10 +113,20 @@ export const CredentialEntryPageResponse = pageResponse(CredentialEntryResponse)
 
 export const credentialUseListQuery = t.Object(pageQueryFields);
 
+export const UseAction = t.Union([
+  t.Literal('delivered'),
+  t.Literal('used'),
+  t.Literal('called'),
+  t.Literal('denied'),
+  t.Literal('approval'),
+  t.Literal('changed'),
+]);
+
 export const CredentialUsePageResponse = pageResponse(
   t.Object({
     id: t.Number(),
-    action: t.Union([t.Literal('delivered'), t.Literal('used')]),
+    action: UseAction,
+    category: t.Nullable(t.String()),
     purpose: t.String(),
     agentId: t.Nullable(t.Number()),
     agentName: t.String(),

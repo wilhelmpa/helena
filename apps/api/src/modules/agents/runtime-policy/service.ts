@@ -20,7 +20,7 @@ import type { RunnerAgent } from '../runner/service';
 import { listAgentRuntimeSkills } from '../skills/service';
 import { listAgentToolLinks } from '../tools/service';
 import { agentRuntimeMcpServers } from '../mcp-servers/service';
-import { hasWebLoginGrant } from '../credentials/service';
+import { hasWebLoginGrant } from '../credentials/grants';
 import {
   completeRuntimeActions,
   pendingRuntimeActions,

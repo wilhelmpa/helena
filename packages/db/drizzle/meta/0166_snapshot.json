@@ -1,5 +1,5 @@
 {
-  "id": "755a2a11-5d75-417d-a70e-4bd869a75531",
+  "id": "a0e5a2aa-a125-427a-a283-00cf5ce4ab8e",
   "prevId": "24877ec3-5744-4c5a-baa8-0f9c610eef1e",
   "version": "7",
   "dialect": "postgresql",
@@ -4315,6 +4315,368 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.connector_action": {
+      "name": "connector_action",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "team_id": {
+          "name": "team_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "credential_id": {
+          "name": "credential_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "agent_id": {
+          "name": "agent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "run_id": {
+          "name": "run_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "connector": {
+          "name": "connector",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tool": {
+          "name": "tool",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "service": {
+          "name": "service",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "input": {
+          "name": "input",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "approval_request_id": {
+          "name": "approval_request_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "result": {
+          "name": "result",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "error": {
+          "name": "error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "finished_at": {
+          "name": "finished_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "connector_action_pending_idx": {
+          "name": "connector_action_pending_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "connector_action_team_idx": {
+          "name": "connector_action_team_idx",
+          "columns": [
+            {
+              "expression": "team_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "connector_action_team_id_team_id_fk": {
+          "name": "connector_action_team_id_team_id_fk",
+          "tableFrom": "connector_action",
+          "tableTo": "team",
+          "columnsFrom": [
+            "team_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "connector_action_credential_id_integration_credential_id_fk": {
+          "name": "connector_action_credential_id_integration_credential_id_fk",
+          "tableFrom": "connector_action",
+          "tableTo": "integration_credential",
+          "columnsFrom": [
+            "credential_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "connector_action_agent_id_ai_agent_id_fk": {
+          "name": "connector_action_agent_id_ai_agent_id_fk",
+          "tableFrom": "connector_action",
+          "tableTo": "ai_agent",
+          "columnsFrom": [
+            "agent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "connector_action_project_id_project_id_fk": {
+          "name": "connector_action_project_id_project_id_fk",
+          "tableFrom": "connector_action",
+          "tableTo": "project",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "connector_action_run_id_agent_run_id_fk": {
+          "name": "connector_action_run_id_agent_run_id_fk",
+          "tableFrom": "connector_action",
+          "tableTo": "agent_run",
+          "columnsFrom": [
+            "run_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "connector_action_approval_request_id_approval_request_id_fk": {
+          "name": "connector_action_approval_request_id_approval_request_id_fk",
+          "tableFrom": "connector_action",
+          "tableTo": "approval_request",
+          "columnsFrom": [
+            "approval_request_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "connector_action_status_check": {
+          "name": "connector_action_status_check",
+          "value": "\"connector_action\".\"status\" IN ('pending', 'running', 'done', 'failed', 'rejected')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.connector_auth_session": {
+      "name": "connector_auth_session",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "team_id": {
+          "name": "team_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "connector": {
+          "name": "connector",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ciphertext": {
+          "name": "ciphertext",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "iv": {
+          "name": "iv",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "auth_tag": {
+          "name": "auth_tag",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "connector_auth_session_expires_idx": {
+          "name": "connector_auth_session_expires_idx",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "connector_auth_session_team_id_team_id_fk": {
+          "name": "connector_auth_session_team_id_team_id_fk",
+          "tableFrom": "connector_auth_session",
+          "tableTo": "team",
+          "columnsFrom": [
+            "team_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "connector_auth_session_user_id_user_id_fk": {
+          "name": "connector_auth_session_user_id_user_id_fk",
+          "tableFrom": "connector_auth_session",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.custom_field": {
       "name": "custom_field",
       "schema": "",
@@ -6010,6 +6372,24 @@
           "notNull": true,
           "default": "'{}'::jsonb"
         },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status_detail": {
+          "name": "status_detail",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "checked_at": {
+          "name": "checked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -6088,13 +6468,24 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "integration_credential_status_check": {
+          "name": "integration_credential_status_check",
+          "value": "\"integration_credential\".\"status\" IS NULL OR \"integration_credential\".\"status\" IN ('ok', 'needs_auth', 'error')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.integration_credential_grant": {
       "name": "integration_credential_grant",
       "schema": "",
       "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
         "credential_id": {
           "name": "credential_id",
           "type": "integer",
@@ -6105,15 +6496,89 @@
           "name": "agent_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "service": {
+          "name": "service",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "access": {
+          "name": "access",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'write'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {
+        "integration_credential_grant_uq": {
+          "name": "integration_credential_grant_uq",
+          "columns": [
+            {
+              "expression": "credential_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "coalesce(\"agent_id\", 0)",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "coalesce(\"project_id\", 0)",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "coalesce(\"service\", '')",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "integration_credential_grant_agent_idx": {
           "name": "integration_credential_grant_agent_idx",
           "columns": [
             {
               "expression": "agent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "integration_credential_grant_project_idx": {
+          "name": "integration_credential_grant_project_idx",
+          "columns": [
+            {
+              "expression": "project_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -6151,20 +6616,34 @@
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
+        },
+        "integration_credential_grant_project_id_project_id_fk": {
+          "name": "integration_credential_grant_project_id_project_id_fk",
+          "tableFrom": "integration_credential_grant",
+          "tableTo": "project",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "integration_credential_grant_credential_id_agent_id_pk": {
-          "name": "integration_credential_grant_credential_id_agent_id_pk",
-          "columns": [
-            "credential_id",
-            "agent_id"
-          ]
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "integration_credential_grant_subject_check": {
+          "name": "integration_credential_grant_subject_check",
+          "value": "(\"integration_credential_grant\".\"agent_id\" IS NULL) <> (\"integration_credential_grant\".\"project_id\" IS NULL)"
+        },
+        "integration_credential_grant_access_check": {
+          "name": "integration_credential_grant_access_check",
+          "value": "\"integration_credential_grant\".\"access\" IN ('read', 'write')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.integration_credential_use": {
@@ -6224,6 +6703,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "purpose": {
           "name": "purpose",
@@ -6356,7 +6841,7 @@
       "checkConstraints": {
         "integration_credential_use_action_check": {
           "name": "integration_credential_use_action_check",
-          "value": "\"integration_credential_use\".\"action\" IN ('delivered', 'used')"
+          "value": "\"integration_credential_use\".\"action\" IN ('delivered', 'used', 'called', 'denied', 'approval', 'changed')"
         }
       },
       "isRLSEnabled": false
@@ -12217,7 +12702,7 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "'classic'"
+          "default": "'single'"
         },
         "start_page": {
           "name": "start_page",
@@ -15116,6 +15601,26 @@
           "primaryKey": false,
           "notNull": false
         },
+        "auth": {
+          "name": "auth",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'password'"
+        },
+        "fetch_days": {
+          "name": "fetch_days",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 30
+        },
+        "pruned_at": {
+          "name": "pruned_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "enabled": {
           "name": "enabled",
           "type": "boolean",
@@ -15252,6 +15757,14 @@
         "mail_account_sync_status_check": {
           "name": "mail_account_sync_status_check",
           "value": "\"mail_account\".\"sync_status\" IN ('idle', 'importing', 'synced', 'error')"
+        },
+        "mail_account_auth_check": {
+          "name": "mail_account_auth_check",
+          "value": "\"mail_account\".\"auth\" IN ('password', 'xoauth2')"
+        },
+        "mail_account_fetch_days_check": {
+          "name": "mail_account_fetch_days_check",
+          "value": "\"mail_account\".\"fetch_days\" IS NULL OR \"mail_account\".\"fetch_days\" BETWEEN 1 AND 36500"
         }
       },
       "isRLSEnabled": false

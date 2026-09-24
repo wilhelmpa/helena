@@ -1,0 +1,33 @@
+{
+  "name": "@helena/connectors",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./google": "./src/google/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@googleapis/calendar": "^20.0.1",
+    "@googleapis/docs": "^14.0.1",
+    "@googleapis/drive": "^26.0.1",
+    "@googleapis/gmail": "^22.0.1",
+    "@googleapis/people": "^12.0.1",
+    "@googleapis/sheets": "^18.0.1",
+    "@googleapis/tasks": "^17.0.1",
+    "@repo/mail": "workspace:*",
+    "@sinclair/typebox": "^0.34.52",
+    "google-auth-library": "^11.1.0"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@types/bun": "latest",
+    "eslint": "^9.39.0",
+    "typescript": "^6.0.3"
+  }
+}
