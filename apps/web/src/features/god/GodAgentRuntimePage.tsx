@@ -27,6 +27,7 @@ import { EmergencyStopControl } from '@/features/agent-runtime/components/Emerge
 import FallbackModelsEditor from '@/features/agent-runtime/components/FallbackModelsEditor';
 import { cleanFallbackModels } from '@/features/agent-runtime/utils/fallback';
 import UsageReport from '@/features/agent-runtime/components/UsageReport';
+import ProviderLimitsSection from '@/features/provider-limits/components/ProviderLimitsSection';
 import {
   useCheckHermesUpdate,
   useHermesUpdate,
@@ -38,8 +39,9 @@ import GodSectionPage from './components/GodSectionPage';
 
 // Administrator → Agenten-Laufzeit: what used to need the Hermes dashboard, for the whole
 // instance. The emergency stop, the Hermes installation (version, what an update brings,
-// requesting one), the defaults every agent's runtime gets (fallback models, how long
-// sessions are kept) and what the agents of a team spent.
+// requesting one), the plan limits of the subscriptions the agents work on, the defaults
+// every agent's runtime gets (fallback models, how long sessions are kept) and what the
+// agents of a team spent.
 export default function GodAgentRuntimePage() {
   const t = useTranslations('agentRuntime.admin');
   const defaults = useRuntimeDefaults(true);
@@ -51,6 +53,8 @@ export default function GodAgentRuntimePage() {
           <EmergencyStopControl />
         </SettingsCard>
       </SettingsSection>
+
+      <ProviderLimitsSection />
 
       <HermesSection />
 

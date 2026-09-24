@@ -1,0 +1,75 @@
+{
+  "title": "Ліміти",
+  "refresh": "Оновити",
+  "accountsTitle": "Облікові записи",
+  "empty": "Даних ще немає. Вони з’являться, щойно їх прочитає ранер агента або звіт власника.",
+  "providers": {
+    "openai-codex": "ChatGPT",
+    "anthropic": "Claude",
+    "openrouter": "OpenRouter"
+  },
+  "logins": {
+    "hermes": "Hermes",
+    "codex": "Codex",
+    "claude-code": "Claude Code",
+    "owner": "Власник"
+  },
+  "sources": {
+    "spool": "Звіт власника"
+  },
+  "state": {
+    "ok": "OK",
+    "near": "Майже вичерпано",
+    "limited": "Ліміт вичерпано",
+    "unknown": "Немає даних"
+  },
+  "window": {
+    "session": "{hours} год",
+    "weekly": "Тиждень",
+    "monthly": "Місяць",
+    "model": "{label}",
+    "modelSession": "{label} · {hours} год",
+    "labelled": "{label}",
+    "other": "Вікно"
+  },
+  "resetsIn": "через {time}",
+  "resetDone": "скинуто",
+  "readAgo": "Прочитано {time} тому",
+  "staleSince": "Застаріло, прочитано {time} тому",
+  "freeIn": "Знову доступно через {time}",
+  "nearUntil": "Поповниться через {time}",
+  "resetCredits": "{count, plural, one {# скидання в запасі} few {# скидання в запасі} many {# скидань у запасі} other {# скидання в запасі}}",
+  "noWindows": "Вікна не повідомлено.",
+  "unavailable": {
+    "no_login": "Вхід не виконано.",
+    "api_key": "Ключ API: без лімітів тарифу.",
+    "no_profile_scope": "Цей вхід не може читати ліміти (токен налаштування).",
+    "failed": "Не вдалося прочитати.",
+    "unsupported": "Цей провайдер не повідомляє лімітів."
+  },
+  "readVia": "Прочитано через {login}, {time}",
+  "readPassive": "З відповіді для {login}, {time}",
+  "forget": "Забути обліковий запис",
+  "resetsAt": "Скидання {time}",
+  "agentTokens": "Агенти: {tokens} токенів у цьому вікні",
+  "agents": "Агенти на цьому обліковому записі: {names}",
+  "noAgents": "Жоден агент не повідомляє цей обліковий запис (вхід власника).",
+  "credits": "Кредити: {balance}",
+  "extraUsage": "Дод. використання: {used} з {limit}",
+  "settings": {
+    "auto": "Читати автоматично",
+    "autoHint": "Helena опитує ранери з цим інтервалом; кожен вхід один раз, скільки б агентів його не використовувало.",
+    "autoHintAt": "Останнє опитування {time} тому. Кожен вхід один раз, скільки б агентів його не використовувало.",
+    "interval": "Інтервал",
+    "intervalHint": "Як часто Helena читає ліміти.",
+    "minutes": "{count} хв",
+    "near": "Майже вичерпано з",
+    "nearHint": "З цієї частки вікно стає жовтим.",
+    "percent": "{value} %"
+  },
+  "health": {
+    "limited": "{provider}: ліміт вичерпано",
+    "limitedUntil": "{provider}: ліміт вичерпано, знову доступно через {time}",
+    "stale": "{provider}: ліміти застаріли (прочитано {time} тому)"
+  }
+}

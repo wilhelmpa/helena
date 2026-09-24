@@ -406,7 +406,8 @@
       "integrations": "Integrações",
       "mcp": "Ferramentas MCP do Helena",
       "webhooks": "Webhooks",
-      "bundles": "Pacotes de modelos"
+      "bundles": "Pacotes de modelos",
+      "limits": "Limites"
     },
     "problems": {
       "external-off": "Carrega quando os plugins externos forem ativados.",

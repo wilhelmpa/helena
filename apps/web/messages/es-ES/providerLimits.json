@@ -1,0 +1,75 @@
+{
+  "title": "Límites",
+  "refresh": "Actualizar",
+  "accountsTitle": "Cuentas",
+  "empty": "Aún no hay datos. Llegan cuando un runner de agente o el informe del propietario los lee.",
+  "providers": {
+    "openai-codex": "ChatGPT",
+    "anthropic": "Claude",
+    "openrouter": "OpenRouter"
+  },
+  "logins": {
+    "hermes": "Hermes",
+    "codex": "Codex",
+    "claude-code": "Claude Code",
+    "owner": "Propietario"
+  },
+  "sources": {
+    "spool": "Informe del propietario"
+  },
+  "state": {
+    "ok": "OK",
+    "near": "Justo",
+    "limited": "Límite alcanzado",
+    "unknown": "Sin datos"
+  },
+  "window": {
+    "session": "{hours} h",
+    "weekly": "Semana",
+    "monthly": "Mes",
+    "model": "{label}",
+    "modelSession": "{label} · {hours} h",
+    "labelled": "{label}",
+    "other": "Ventana"
+  },
+  "resetsIn": "en {time}",
+  "resetDone": "reiniciado",
+  "readAgo": "Leído hace {time}",
+  "staleSince": "Desactualizado, leído hace {time}",
+  "freeIn": "Libre de nuevo en {time}",
+  "nearUntil": "Se recarga en {time}",
+  "resetCredits": "{count, plural, one {# reinicio guardado} other {# reinicios guardados}}",
+  "noWindows": "No se informó ninguna ventana.",
+  "unavailable": {
+    "no_login": "Sin sesión iniciada.",
+    "api_key": "Clave de API: sin límites de plan.",
+    "no_profile_scope": "Este inicio de sesión no puede leer los límites (token de configuración).",
+    "failed": "La lectura falló.",
+    "unsupported": "Este proveedor no indica límites."
+  },
+  "readVia": "Leído a través de {login}, {time}",
+  "readPassive": "De una respuesta a {login}, {time}",
+  "forget": "Olvidar cuenta",
+  "resetsAt": "Se reinicia {time}",
+  "agentTokens": "Agentes: {tokens} tokens en esta ventana",
+  "agents": "Agentes en esta cuenta: {names}",
+  "noAgents": "Ningún agente informa esta cuenta (inicio de sesión del propietario).",
+  "credits": "Créditos: {balance}",
+  "extraUsage": "Uso adicional: {used} de {limit}",
+  "settings": {
+    "auto": "Leer automáticamente",
+    "autoHint": "Helena consulta a los runners con este intervalo; cada inicio de sesión una vez, aunque lo usen varios agentes.",
+    "autoHintAt": "Última consulta hace {time}. Cada inicio de sesión una vez, aunque lo usen varios agentes.",
+    "interval": "Intervalo",
+    "intervalHint": "Con qué frecuencia Helena lee los límites.",
+    "minutes": "{count} min",
+    "near": "Justo a partir de",
+    "nearHint": "A partir de esta proporción una ventana se vuelve ámbar.",
+    "percent": "{value} %"
+  },
+  "health": {
+    "limited": "{provider}: límite alcanzado",
+    "limitedUntil": "{provider}: límite alcanzado, libre de nuevo en {time}",
+    "stale": "{provider}: límites desactualizados (leídos hace {time})"
+  }
+}

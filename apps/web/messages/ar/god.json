@@ -406,7 +406,8 @@
       "integrations": "التكاملات",
       "mcp": "أدوات MCP في Helena",
       "webhooks": "خطافات الويب",
-      "bundles": "حزم القوالب"
+      "bundles": "حزم القوالب",
+      "limits": "الحدود"
     },
     "problems": {
       "external-off": "تُحمَّل بعد تفعيل الإضافات الخارجية.",

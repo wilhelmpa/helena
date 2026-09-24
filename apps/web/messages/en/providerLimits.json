@@ -1,0 +1,75 @@
+{
+  "title": "Limits",
+  "refresh": "Refresh",
+  "accountsTitle": "Accounts",
+  "empty": "No numbers yet. They arrive once an agent runner or the owner report reads them.",
+  "providers": {
+    "openai-codex": "ChatGPT",
+    "anthropic": "Claude",
+    "openrouter": "OpenRouter"
+  },
+  "logins": {
+    "hermes": "Hermes",
+    "codex": "Codex",
+    "claude-code": "Claude Code",
+    "owner": "Owner"
+  },
+  "sources": {
+    "spool": "Owner report"
+  },
+  "state": {
+    "ok": "OK",
+    "near": "Close",
+    "limited": "Limit reached",
+    "unknown": "No numbers"
+  },
+  "window": {
+    "session": "{hours} h",
+    "weekly": "Week",
+    "monthly": "Month",
+    "model": "{label}",
+    "modelSession": "{label} · {hours} h",
+    "labelled": "{label}",
+    "other": "Window"
+  },
+  "resetsIn": "in {time}",
+  "resetDone": "reset",
+  "readAgo": "Read {time} ago",
+  "staleSince": "Out of date, read {time} ago",
+  "freeIn": "Free again in {time}",
+  "nearUntil": "Refills in {time}",
+  "resetCredits": "{count, plural, one {# reset banked} other {# resets banked}}",
+  "noWindows": "No windows reported.",
+  "unavailable": {
+    "no_login": "Not signed in.",
+    "api_key": "API key: no plan limits.",
+    "no_profile_scope": "This sign-in may not read the limits (setup token).",
+    "failed": "Reading failed.",
+    "unsupported": "This provider names no limits."
+  },
+  "readVia": "Read through {login}, {time}",
+  "readPassive": "From an answer to {login}, {time}",
+  "forget": "Forget account",
+  "resetsAt": "Resets {time}",
+  "agentTokens": "Agents: {tokens} tokens in this window",
+  "agents": "Agents on this account: {names}",
+  "noAgents": "No agent reports this account (owner sign-in).",
+  "credits": "Credits: {balance}",
+  "extraUsage": "Extra usage: {used} of {limit}",
+  "settings": {
+    "auto": "Read automatically",
+    "autoHint": "Helena asks the runners at this interval; each sign-in is asked once, however many agents use it.",
+    "autoHintAt": "Last asked {time} ago. Each sign-in is asked once, however many agents use it.",
+    "interval": "Interval",
+    "intervalHint": "How often Helena reads the limits.",
+    "minutes": "{count} min",
+    "near": "Close from",
+    "nearHint": "From this share a window turns amber.",
+    "percent": "{value} %"
+  },
+  "health": {
+    "limited": "{provider}: limit reached",
+    "limitedUntil": "{provider}: limit reached, free again in {time}",
+    "stale": "{provider}: limits out of date (read {time} ago)"
+  }
+}
