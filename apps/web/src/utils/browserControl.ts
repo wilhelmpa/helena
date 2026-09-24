@@ -33,9 +33,44 @@ export function browserControlBase(streamUrl: string): string | null {
   return match ? `${match[1]}/api` : null;
 }
 
+// What went wrong in the project browser, as a code the app words in the reader's language;
+// the router answers in English (deployment/volition-stack/browser/project-router.mjs).
+export type BrowserErrorCode =
+  'unreachable' | 'gatewayOff' | 'unknownTab' | 'noPage' | 'badAddress' | 'tooLarge' | 'failed';
+
+const ROUTER_MESSAGES: Record<string, BrowserErrorCode> = {
+  'The browser did not answer': 'unreachable',
+  'The browser gateway is not running': 'gatewayOff',
+  'Unknown tab': 'unknownTab',
+  'No page to show': 'noPage',
+  'Enter an address': 'badAddress',
+  'Only http and https addresses can be opened': 'badAddress',
+  'Request too large': 'tooLarge',
+};
+
+export class BrowserControlError extends Error {
+  constructor(
+    message: string,
+    readonly code: BrowserErrorCode,
+  ) {
+    super(message);
+    this.name = 'BrowserControlError';
+  }
+}
+
+export function browserErrorCode(status: number, message: string | undefined): BrowserErrorCode {
+  if (message && ROUTER_MESSAGES[message]) return ROUTER_MESSAGES[message];
+  if (status === 502 || status === 504) return 'unreachable';
+  if (status === 503) return 'gatewayOff';
+  return 'failed';
+}
+
 async function answer<T>(response: Response): Promise<T> {
   const body = (await response.json().catch(() => null)) as (T & { error?: string }) | null;
-  if (!response.ok) throw new Error(body?.error ?? `The browser answered ${response.status}`);
+  if (!response.ok) {
+    const message = body?.error ?? `The browser answered ${response.status}`;
+    throw new BrowserControlError(message, browserErrorCode(response.status, body?.error));
+  }
   return body as T;
 }
 

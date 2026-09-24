@@ -11,5 +11,14 @@
   "agentActive": "有代理正在工作",
   "free": "空闲",
   "unreachable": "无法连接",
-  "handover": "请您接管"
+  "handover": "请您接管",
+  "errors": {
+    "unreachable": "浏览器暂时没有响应，请稍后再试。",
+    "gatewayOff": "浏览器网关未运行。",
+    "unknownTab": "此标签页已不存在。",
+    "noPage": "没有打开的页面。",
+    "badAddress": "请输入 http 或 https 地址。",
+    "tooLarge": "请求过大。",
+    "failed": "浏览器无法执行该操作。"
+  }
 }

@@ -11,5 +11,14 @@
   "agentActive": "Seorang agen sedang bekerja",
   "free": "Bebas",
   "unreachable": "Tidak dapat dijangkau",
-  "handover": "Meminta Anda mengambil alih"
+  "handover": "Meminta Anda mengambil alih",
+  "errors": {
+    "unreachable": "Peramban sedang tidak merespons. Coba lagi sebentar lagi.",
+    "gatewayOff": "Gateway peramban tidak berjalan.",
+    "unknownTab": "Tab ini sudah tidak ada.",
+    "noPage": "Tidak ada halaman yang terbuka.",
+    "badAddress": "Masukkan alamat http atau https.",
+    "tooLarge": "Permintaan terlalu besar.",
+    "failed": "Peramban tidak dapat melakukannya."
+  }
 }

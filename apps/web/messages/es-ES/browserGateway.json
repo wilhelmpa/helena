@@ -11,5 +11,14 @@
   "agentActive": "Un agente está trabajando",
   "free": "Libre",
   "unreachable": "No disponible",
-  "handover": "Pide que tome el control"
+  "handover": "Pide que tome el control",
+  "errors": {
+    "unreachable": "El navegador no responde ahora mismo. Inténtalo de nuevo en un momento.",
+    "gatewayOff": "La pasarela del navegador no está en marcha.",
+    "unknownTab": "Esta pestaña ya no existe.",
+    "noPage": "No hay ninguna página abierta.",
+    "badAddress": "Introduce una dirección http o https.",
+    "tooLarge": "La solicitud es demasiado grande.",
+    "failed": "El navegador no pudo hacerlo."
+  }
 }

@@ -11,5 +11,14 @@
   "agentActive": "An agent is working",
   "free": "Free",
   "unreachable": "Not reachable",
-  "handover": "Asks you to take over"
+  "handover": "Asks you to take over",
+  "errors": {
+    "unreachable": "The browser is not answering right now. Try again in a moment.",
+    "gatewayOff": "The browser gateway is not running.",
+    "unknownTab": "This tab no longer exists.",
+    "noPage": "No page is open.",
+    "badAddress": "Enter an http or https address.",
+    "tooLarge": "The request is too large.",
+    "failed": "The browser could not do that."
+  }
 }

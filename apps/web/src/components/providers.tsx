@@ -1,11 +1,12 @@
 'use client';
 
 import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Direction } from 'radix-ui';
 import { toast } from 'sonner';
 import { ApiError } from '@/lib/api/core/client';
+import { BrowserControlError } from '@/utils/browserControl';
 import { localeDirection, type Locale } from '@/i18n/locales';
 import { HotkeysProvider } from '@/context/useHotkeys';
 import { SyncProvider } from '@/context/syncContext';
@@ -17,7 +18,12 @@ import { SessionProvider } from '@/lib/auth-client';
 
 // The message shown for a failed mutation: the API's `{ error }` text (carried by
 // ApiError) when present, otherwise a generic fallback.
-function errorMessage(error: unknown, fallback: string): string {
+function errorMessage(
+  error: unknown,
+  fallback: string,
+  browser: (code: BrowserControlError['code']) => string,
+): string {
+  if (error instanceof BrowserControlError) return browser(error.code);
   if (error instanceof ApiError) return error.message;
   if (error instanceof Error && error.message) return error.message;
   return fallback;
@@ -33,6 +39,12 @@ export function Providers({ children }: { children: ReactNode }) {
   // render refreshes; switching locale then reaches errors too.
   const fallback = useRef(t('genericError'));
   fallback.current = t('genericError');
+  // Browser errors come as codes (utils/browserControl.ts), worded in the reader's language.
+  const tBrowser = useTranslations('browserGateway.errors');
+  const browserError = useRef((code: BrowserControlError['code']) => tBrowser(code));
+  useEffect(() => {
+    browserError.current = (code) => tBrowser(code);
+  }, [tBrowser]);
 
   const [queryClient] = useState(
     () =>
@@ -44,7 +56,7 @@ export function Providers({ children }: { children: ReactNode }) {
         mutationCache: new MutationCache({
           onError: (error, _vars, _ctx, mutation) => {
             if (mutation.meta?.suppressErrorToast) return;
-            toast.error(errorMessage(error, fallback.current));
+            toast.error(errorMessage(error, fallback.current, browserError.current));
           },
         }),
         defaultOptions: {

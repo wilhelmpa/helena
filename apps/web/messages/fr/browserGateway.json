@@ -11,5 +11,14 @@
   "agentActive": "Un agent travaille",
   "free": "Libre",
   "unreachable": "Injoignable",
-  "handover": "Demande de prendre le relais"
+  "handover": "Demande de prendre le relais",
+  "errors": {
+    "unreachable": "Le navigateur ne répond pas pour le moment. Réessayez dans un instant.",
+    "gatewayOff": "La passerelle du navigateur ne fonctionne pas.",
+    "unknownTab": "Cet onglet n'existe plus.",
+    "noPage": "Aucune page n'est ouverte.",
+    "badAddress": "Saisissez une adresse http ou https.",
+    "tooLarge": "La requête est trop volumineuse.",
+    "failed": "Le navigateur n'a pas pu le faire."
+  }
 }
