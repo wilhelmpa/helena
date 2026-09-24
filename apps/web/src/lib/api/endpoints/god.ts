@@ -267,8 +267,45 @@ export interface AgentSyncSummary {
   }[];
 }
 
+// The model logins agents share, as the token keeper renews them
+// (docs/helena-decisions/token-keeper.md). Names, states and times only.
+export type RuntimeLoginState = 'ok' | 'expiring' | 'expired' | 'error' | 'invalid' | 'unknown';
+
+export interface RuntimeLogin {
+  // Where it lives: 'hermes' (Hermes' root store), 'codex-cli'.
+  store: string;
+  provider: string;
+  id: string;
+  label: string | null;
+  // Whether something renews it; else it is only reported.
+  managed: boolean;
+  state: RuntimeLoginState;
+  expiresAt: string | null;
+  refreshedAt: string | null;
+  error: string | null;
+  // What the owner runs in the owner terminal to sign it in again.
+  command: string | null;
+  note: string | null;
+}
+
+export interface RuntimeLoginsHealth {
+  reports: {
+    source: string;
+    reporter: string;
+    checkedAt: string;
+    intervalSeconds: number | null;
+    // The reporter has not written for three of its intervals.
+    stale: boolean;
+    logins: RuntimeLogin[];
+    errors: string[];
+  }[];
+  // Logins the owner has to act on, in reports that are not stale.
+  problems: number;
+}
+
 export interface SystemHealth {
   agents: AgentSyncSummary;
+  logins?: RuntimeLoginsHealth;
   services: SystemServiceHealth[];
   runs: {
     waiting: number;

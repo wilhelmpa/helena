@@ -21,6 +21,7 @@ import type { BundleOffer } from '../templates';
 import { validateBundle } from '../templates';
 import { declaredCategory, type AnyAgentTool } from '../tools';
 import { uiSlotKey, type UiSlot } from '../ui';
+import type { RuntimeLoginSource } from '../runtime-logins';
 import type { UsageLimitSource } from '../usage-limits';
 import type { TriggerType, WorkflowStepType } from '../workflows';
 
@@ -83,6 +84,7 @@ export class PluginHost {
   readonly mcpServers: Registry<McpServerContribution>;
   readonly profileContributions: Registry<ProfileContribution>;
   readonly usageLimitSources: Registry<UsageLimitSource>;
+  readonly runtimeLoginSources: Registry<RuntimeLoginSource>;
 
   private readonly plugins = new Map<string, { loaded: LoadedPlugin; plugin?: HelenaPlugin }>();
   private readonly contexts = new Map<string, PluginContext>();
@@ -107,6 +109,7 @@ export class PluginHost {
     this.mcpServers = registries.mcpServers;
     this.profileContributions = registries.profileContributions;
     this.usageLimitSources = registries.usageLimitSources;
+    this.runtimeLoginSources = registries.runtimeLoginSources;
     this.logger = options.logger ?? ((id) => consoleLogger(`plugin ${id}`));
     this.settingsOf = options.settings ?? (() => ({}));
   }
@@ -223,6 +226,7 @@ export class PluginHost {
       this.mcpServers,
       this.profileContributions,
       this.usageLimitSources,
+      this.runtimeLoginSources,
     ] as unknown as Registry<never>[];
   }
 
@@ -358,6 +362,11 @@ export class PluginHost {
         this.usageLimitSources,
         provides.usageLimitSources,
         'usageLimitSources',
+      ),
+      runtimeLoginSources: registrar(
+        this.runtimeLoginSources,
+        provides.runtimeLoginSources,
+        'runtimeLoginSources',
       ),
       events: {
         publish: async (init: EventInit) => {
