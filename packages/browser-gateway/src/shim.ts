@@ -2,7 +2,7 @@
 // The stdio MCP server every runtime (Hermes, Claude Code, Codex) reaches the browser gateway
 // through (design volition-design-browser-gateway.md §3: "Der Shim reicht nur weiter und hat
 // selbst keine Rechte"). Built into one file and installed, owned by root, at
-// /usr/local/libexec/volition-browser-gateway-mcp (deployment/volition-stack/native/
+// /usr/local/libexec/helena-browser-mcp (deployment/volition-stack/native/
 // install-browser-gateway.sh): outside /srv/volition, so an isolated agent's unit, which
 // hides that tree, can still run it, and outside anything an agent could write.
 //

@@ -14,7 +14,7 @@ const [cdpPort, sitePort] = process.argv.slice(2, 4).map(Number) as [number, num
 const work = process.argv[4]!;
 const shim = process.argv[5]!;
 const SITE = `http://127.0.0.1:${sitePort}`;
-const PLAN_PORT = 18568;
+const HELENA_PORT = 18568;
 const TOKEN = 'mcp-e2e-gateway-token-0123456789abcdef0123456789';
 
 let failures = 0;
@@ -71,11 +71,11 @@ const plan = http.createServer((request, response) => {
     return answer(404, { error: 'unexpected' });
   });
 });
-await new Promise<void>((resolve) => plan.listen(PLAN_PORT, '127.0.0.1', () => resolve()));
+await new Promise<void>((resolve) => plan.listen(HELENA_PORT, '127.0.0.1', () => resolve()));
 
 process.env.BROWSER_GATEWAY_TOKEN_FILE = tokenFile;
 process.env.BROWSER_GATEWAY_SOCKET_ROOT = path.join(work, 'sockets');
-process.env.BROWSER_GATEWAY_PLAN_URL = `http://127.0.0.1:${PLAN_PORT}`;
+process.env.BROWSER_GATEWAY_API_URL = `http://127.0.0.1:${HELENA_PORT}`;
 const root = path.resolve(import.meta.dir, '../../..');
 const { startBrowserGateway } = await import(
   path.join(root, 'deployment/volition-stack/browser/browser-gateway-server.mjs')

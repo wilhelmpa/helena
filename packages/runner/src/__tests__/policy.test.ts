@@ -1088,7 +1088,7 @@ describe('Browser gateway: Claude Code and Codex get it on the command line', ()
   it('Codex: the table as -c overrides, its variables passed by name', () => {
     expect(browserGatewayArgs('codex')).toEqual([
       '-c',
-      'mcp_servers.projekt-browser.command="/usr/local/libexec/volition-browser-gateway-mcp"',
+      'mcp_servers.projekt-browser.command="/usr/local/libexec/helena-browser-mcp"',
       '-c',
       'mcp_servers.projekt-browser.args=[]',
       '-c',

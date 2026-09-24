@@ -163,7 +163,7 @@ const PLUGIN_NAME = /^[a-z0-9][a-z0-9-]{0,63}$/;
 // gateway through, at the shim's fixed install path.
 export const BROWSER_GATEWAY_MCP_SERVER_NAME = 'projekt-browser';
 export const BROWSER_GATEWAY_LEGACY_MCP_SERVER_NAME = 'hermes-browser-legacy';
-export const BROWSER_GATEWAY_SHIM_PATH = '/usr/local/libexec/volition-browser-gateway-mcp';
+export const BROWSER_GATEWAY_SHIM_PATH = '/usr/local/libexec/helena-browser-mcp';
 // What the shim needs from the agent's environment: its key, the run or chat answer it
 // works on (the gateway files a login's use and a handover card under it), and — without
 // isolation only — the socket of its project's browser. Hermes and Codex hand a stdio MCP

@@ -3,8 +3,8 @@ import { GatewayDispatcher, SlugQueue, type HandoverNotice } from './server';
 import { ProjectBrowserLocks } from './lock';
 import { SecretGuard } from './redact';
 import type { GatewaySession, SessionProvider } from './session-types';
-import type { PlanClient, ResolveResult } from './plan-client';
-import { PlanApiError } from './plan-client';
+import type { HelenaClient, ResolveResult } from './helena-client';
+import { HelenaApiError } from './helena-client';
 
 const DEFAULT_SETTINGS = {
   domainBlocklist: [] as string[],
@@ -26,7 +26,9 @@ function resolved(overrides: Partial<ResolveResult> = {}): ResolveResult {
   };
 }
 
-function fakePlanClient(overrides: Partial<Record<keyof PlanClient, unknown>> = {}): PlanClient {
+function fakeHelenaClient(
+  overrides: Partial<Record<keyof HelenaClient, unknown>> = {},
+): HelenaClient {
   return {
     resolve: mock(async () => resolved()),
     login: mock(async () => ({ status: 'none' as const })),
@@ -37,7 +39,7 @@ function fakePlanClient(overrides: Partial<Record<keyof PlanClient, unknown>> = 
     download: mock(async () => ({ path: 'Projects/MKT/Inbox/x' })),
     policy: mock(async () => ({})),
     ...overrides,
-  } as unknown as PlanClient;
+  } as unknown as HelenaClient;
 }
 
 function fakeSession(
@@ -90,7 +92,7 @@ function fakeSessions(session: GatewaySession = fakeSession()): SessionProvider 
 function dispatcher(
   options: {
     ownSlug?: string;
-    planClient?: PlanClient;
+    helena?: HelenaClient;
     sessions?: SessionProvider;
     locks?: ProjectBrowserLocks;
     onHandover?: (slug: string, notice: HandoverNotice | null) => void;
@@ -99,7 +101,7 @@ function dispatcher(
 ) {
   return new GatewayDispatcher({
     ownSlug: options.ownSlug ?? 'mkt',
-    planClient: options.planClient ?? fakePlanClient(),
+    helena: options.helena ?? fakeHelenaClient(),
     locks: options.locks ?? new ProjectBrowserLocks(120_000),
     sessions: options.sessions ?? fakeSessions(),
     onHandover: options.onHandover,
@@ -111,41 +113,41 @@ const calls = (fn: unknown) => (fn as ReturnType<typeof mock>).mock.calls;
 
 describe('GatewayDispatcher: tool validation', () => {
   it('refuses an unknown tool before touching Helena or the session', async () => {
-    const planClient = fakePlanClient();
-    const gateway = dispatcher({ planClient });
+    const helena = fakeHelenaClient();
+    const gateway = dispatcher({ helena });
     const result = await gateway.handle({ tool: 'browser_evaluate', agentKey: 'k' });
     expect(result).toEqual({ ok: false, error: 'Unknown tool: browser_evaluate' });
-    expect(planClient.resolve).not.toHaveBeenCalled();
+    expect(helena.resolve).not.toHaveBeenCalled();
   });
 });
 
 describe('GatewayDispatcher: project scoping', () => {
   it('acts on its own slug and tells Helena the socket it came through', async () => {
-    const planClient = fakePlanClient();
-    const gateway = dispatcher({ ownSlug: 'mkt', planClient });
+    const helena = fakeHelenaClient();
+    const gateway = dispatcher({ ownSlug: 'mkt', helena });
     await gateway.handle({ tool: 'browser_status', agentKey: 'k' });
-    expect(calls(planClient.resolve)[0]).toEqual(['k', 'mkt', 'mkt']);
+    expect(calls(helena.resolve)[0]).toEqual(['k', 'mkt', 'mkt']);
   });
 
   it('refuses a project override from a project socket', async () => {
-    const planClient = fakePlanClient();
-    const gateway = dispatcher({ ownSlug: 'mkt', planClient });
+    const helena = fakeHelenaClient();
+    const gateway = dispatcher({ ownSlug: 'mkt', helena });
     const result = await gateway.handle({
       tool: 'browser_status',
       agentKey: 'k',
       args: { project: 'OPS' },
     });
     expect(result.ok).toBe(false);
-    expect(planClient.resolve).not.toHaveBeenCalled();
+    expect(helena.resolve).not.toHaveBeenCalled();
   });
 
   it('lets the Home socket act on a named project (slugified) and on Home itself', async () => {
-    const planClient = fakePlanClient();
-    const gateway = dispatcher({ ownSlug: 'home', planClient });
+    const helena = fakeHelenaClient();
+    const gateway = dispatcher({ ownSlug: 'home', helena });
     await gateway.handle({ tool: 'browser_status', agentKey: 'k', args: { project: 'VERV' } });
     await gateway.handle({ tool: 'browser_status', agentKey: 'k', args: { project: 'home' } });
     await gateway.handle({ tool: 'browser_status', agentKey: 'k' });
-    expect(calls(planClient.resolve)).toEqual([
+    expect(calls(helena.resolve)).toEqual([
       ['k', 'verve', 'home'],
       ['k', 'home', 'home'],
       ['k', 'home', 'home'],
@@ -153,22 +155,22 @@ describe('GatewayDispatcher: project scoping', () => {
   });
 
   it('refuses a project name that could be anything but a key', async () => {
-    const planClient = fakePlanClient();
-    const gateway = dispatcher({ ownSlug: 'home', planClient });
+    const helena = fakeHelenaClient();
+    const gateway = dispatcher({ ownSlug: 'home', helena });
     const result = await gateway.handle({
       tool: 'browser_status',
       agentKey: 'k',
       args: { project: '../mkt' },
     });
     expect(result.ok).toBe(false);
-    expect(planClient.resolve).not.toHaveBeenCalled();
+    expect(helena.resolve).not.toHaveBeenCalled();
   });
 
   it('refuses when the agent does not have Projekt-Browser enabled', async () => {
-    const planClient = fakePlanClient({
+    const helena = fakeHelenaClient({
       resolve: mock(async () => resolved({ browserGatewayEnabled: false })),
     });
-    const gateway = dispatcher({ planClient });
+    const gateway = dispatcher({ helena });
     const result = await gateway.handle({
       tool: 'browser_navigate',
       agentKey: 'k',
@@ -178,12 +180,12 @@ describe('GatewayDispatcher: project scoping', () => {
   });
 
   it("surfaces Helena's refusal instead of throwing", async () => {
-    const planClient = fakePlanClient({
+    const helena = fakeHelenaClient({
       resolve: mock(async () => {
-        throw new PlanApiError(403, 'Agent does not work in this project');
+        throw new HelenaApiError(403, 'Agent does not work in this project');
       }),
     });
-    const gateway = dispatcher({ planClient });
+    const gateway = dispatcher({ helena });
     const result = await gateway.handle({ tool: 'browser_status', agentKey: 'k' });
     expect(result).toEqual({ ok: false, error: 'Agent does not work in this project' });
   });
@@ -246,7 +248,7 @@ describe('GatewayDispatcher: control lock', () => {
   it('a second agent is refused at once with timeoutSec 0, naming the holder', async () => {
     const locks = new ProjectBrowserLocks(120_000);
     let resolveCall = 0;
-    const planClient = fakePlanClient({
+    const helena = fakeHelenaClient({
       resolve: mock(async () => {
         resolveCall++;
         return resolved({
@@ -255,7 +257,7 @@ describe('GatewayDispatcher: control lock', () => {
         });
       }),
     });
-    const gateway = dispatcher({ locks, planClient });
+    const gateway = dispatcher({ locks, helena });
     await gateway.handle({ tool: 'browser_acquire', agentKey: 'writer-key' });
     const second = await gateway.handle({
       tool: 'browser_acquire',
@@ -280,10 +282,10 @@ describe('GatewayDispatcher: control lock', () => {
 
   it("applies the project's human-input setting to the session before each tool", async () => {
     const session = fakeSession();
-    const planClient = fakePlanClient({
+    const helena = fakeHelenaClient({
       resolve: mock(async () => resolved({ settings: { ...DEFAULT_SETTINGS, humanInput: false } })),
     });
-    const gateway = dispatcher({ planClient, sessions: fakeSessions(session) });
+    const gateway = dispatcher({ helena, sessions: fakeSessions(session) });
     await gateway.handle({ tool: 'browser_acquire', agentKey: 'k' });
     await gateway.handle({ tool: 'browser_click', agentKey: 'k', args: { ref: 'e1' } });
     expect(calls(session.setHumanInput)).toEqual([[false]]);
@@ -326,8 +328,8 @@ describe('GatewayDispatcher: login / 2FA', () => {
 
   it("chooses the login for the password field's frame and never returns the password", async () => {
     const session = fakeSession();
-    const planClient = fakePlanClient({ login: mock(async () => filled) });
-    const gateway = dispatcher({ planClient, sessions: fakeSessions(session) });
+    const helena = fakeHelenaClient({ login: mock(async () => filled) });
+    const gateway = dispatcher({ helena, sessions: fakeSessions(session) });
     await gateway.handle({ tool: 'browser_acquire', agentKey: 'k' });
     const result = await gateway.handle({
       tool: 'browser_login',
@@ -338,7 +340,7 @@ describe('GatewayDispatcher: login / 2FA', () => {
     expect(result.ok).toBe(true);
     expect(JSON.stringify(result)).not.toContain('fake-password-4711');
     expect(calls(session.frameOrigin)).toEqual([['f1e2']]);
-    expect(calls(planClient.login)[0]).toEqual([
+    expect(calls(helena.login)[0]).toEqual([
       'k',
       'mkt',
       'mkt',
@@ -360,8 +362,8 @@ describe('GatewayDispatcher: login / 2FA', () => {
     const session = fakeSession({
       snapshot: mock(async () => '- textbox "Password": fake-password-4711'),
     });
-    const planClient = fakePlanClient({ login: mock(async () => filled) });
-    const gateway = dispatcher({ planClient, sessions: fakeSessions(session) });
+    const helena = fakeHelenaClient({ login: mock(async () => filled) });
+    const gateway = dispatcher({ helena, sessions: fakeSessions(session) });
     await gateway.handle({ tool: 'browser_acquire', agentKey: 'k' });
     await gateway.handle({
       tool: 'browser_login',
@@ -373,7 +375,7 @@ describe('GatewayDispatcher: login / 2FA', () => {
   });
 
   it('offers a choice without any password when several logins match', async () => {
-    const planClient = fakePlanClient({
+    const helena = fakeHelenaClient({
       login: mock(async () => ({
         status: 'choose' as const,
         candidates: [
@@ -382,7 +384,7 @@ describe('GatewayDispatcher: login / 2FA', () => {
         ],
       })),
     });
-    const gateway = dispatcher({ planClient });
+    const gateway = dispatcher({ helena });
     await gateway.handle({ tool: 'browser_acquire', agentKey: 'k' });
     const result = await gateway.handle({
       tool: 'browser_login',
@@ -394,10 +396,10 @@ describe('GatewayDispatcher: login / 2FA', () => {
 
   it("fills the 2FA code for the code field's frame and redacts it later", async () => {
     const session = fakeSession({ snapshot: mock(async () => 'value="123456"') });
-    const planClient = fakePlanClient({
+    const helena = fakeHelenaClient({
       loginCode: mock(async () => ({ code: '123456', secondsRemaining: 20 })),
     });
-    const gateway = dispatcher({ planClient, sessions: fakeSessions(session) });
+    const gateway = dispatcher({ helena, sessions: fakeSessions(session) });
     await gateway.handle({ tool: 'browser_acquire', agentKey: 'k' });
     const done = await gateway.handle({
       tool: 'browser_login_code',
@@ -406,25 +408,21 @@ describe('GatewayDispatcher: login / 2FA', () => {
     });
     expect(done.ok).toBe(true);
     expect(JSON.stringify(done)).not.toContain('123456');
-    expect(calls(planClient.loginCode)[0]!.slice(0, 3)).toEqual([
-      'k',
-      5,
-      'https://login.example.com',
-    ]);
+    expect(calls(helena.loginCode)[0]!.slice(0, 3)).toEqual(['k', 5, 'https://login.example.com']);
     const later = await gateway.handle({ tool: 'browser_snapshot', agentKey: 'k' });
     expect(later).toEqual({ ok: true, content: 'value="[REDACTED]"' });
   });
 
   it('leaves the audit of logins to Helena (it records the delivery itself)', async () => {
-    const planClient = fakePlanClient({ login: mock(async () => filled) });
-    const gateway = dispatcher({ planClient });
+    const helena = fakeHelenaClient({ login: mock(async () => filled) });
+    const gateway = dispatcher({ helena });
     await gateway.handle({ tool: 'browser_acquire', agentKey: 'k' });
     await gateway.handle({
       tool: 'browser_login',
       agentKey: 'k',
       args: { usernameRef: 'e1', passwordRef: 'e2' },
     });
-    expect(planClient.audit).not.toHaveBeenCalled();
+    expect(helena.audit).not.toHaveBeenCalled();
   });
 });
 
@@ -472,11 +470,11 @@ describe('GatewayDispatcher: files and pictures', () => {
 describe('GatewayDispatcher: handover', () => {
   it('shows the card, waits for the owner to take over and give back, then closes it', async () => {
     const locks = new ProjectBrowserLocks(120_000);
-    const planClient = fakePlanClient();
+    const helena = fakeHelenaClient();
     const notices: (HandoverNotice | null)[] = [];
     const gateway = dispatcher({
       locks,
-      planClient,
+      helena,
       onHandover: (_slug, notice) => notices.push(notice),
     });
     await gateway.handle({ tool: 'browser_acquire', agentKey: 'k' });
@@ -493,19 +491,19 @@ describe('GatewayDispatcher: handover', () => {
     const result = await waiting;
     expect(result.ok && result.content).toContain('The owner took over and gave control back');
     expect(notices.at(-1)).toBeNull();
-    expect(calls(planClient.handover)[0]![0]).toMatchObject({
+    expect(calls(helena.handover)[0]![0]).toMatchObject({
       projectSlug: 'mkt',
       via: 'mkt',
       reason: 'Please solve the CAPTCHA',
       runId: 3,
     });
-    expect(calls(planClient.handoverDone)[0]).toEqual([{ approvalId: 77, finished: true }]);
+    expect(calls(helena.handoverDone)[0]).toEqual([{ approvalId: 77, finished: true }]);
   });
 
   it('gives up after its time, leaving the card open in Helena', async () => {
-    const planClient = fakePlanClient();
+    const helena = fakeHelenaClient();
     const notices: (HandoverNotice | null)[] = [];
-    const gateway = dispatcher({ planClient, onHandover: (_slug, notice) => notices.push(notice) });
+    const gateway = dispatcher({ helena, onHandover: (_slug, notice) => notices.push(notice) });
     const original = globalThis.setTimeout;
     // Time runs out at once for this test.
     globalThis.setTimeout = ((fn: () => void) => original(fn, 0)) as typeof setTimeout;
@@ -521,7 +519,7 @@ describe('GatewayDispatcher: handover', () => {
     }
     expect(result.ok && result.content).toContain('did not take over within 30 s');
     expect(notices.at(-1)).toBeNull();
-    expect(calls(planClient.handoverDone)[0]).toEqual([{ approvalId: 77, finished: false }]);
+    expect(calls(helena.handoverDone)[0]).toEqual([{ approvalId: 77, finished: false }]);
   });
 
   it('needs a reason', async () => {
@@ -552,8 +550,8 @@ describe('GatewayDispatcher: redaction on error paths', () => {
 
 describe('GatewayDispatcher: audit', () => {
   it('records the tool and an address without its query, never output', async () => {
-    const planClient = fakePlanClient();
-    const gateway = dispatcher({ planClient, ownSlug: 'mkt' });
+    const helena = fakeHelenaClient();
+    const gateway = dispatcher({ helena, ownSlug: 'mkt' });
     await gateway.handle({ tool: 'browser_acquire', agentKey: 'k' });
     await gateway.handle({
       tool: 'browser_navigate',
@@ -561,7 +559,7 @@ describe('GatewayDispatcher: audit', () => {
       args: { url: 'https://example.com/page?token=secret' },
     });
     await new Promise((r) => setTimeout(r, 0));
-    expect(planClient.audit).toHaveBeenCalledWith({
+    expect(helena.audit).toHaveBeenCalledWith({
       agentKey: 'k',
       projectSlug: 'mkt',
       via: 'mkt',
@@ -574,7 +572,7 @@ describe('GatewayDispatcher: audit', () => {
 
 describe('GatewayDispatcher: domain policy (design §8)', () => {
   const blocking = () =>
-    fakePlanClient({
+    fakeHelenaClient({
       resolve: mock(async () =>
         resolved({ settings: { ...DEFAULT_SETTINGS, domainBlocklist: ['bank.example'] } }),
       ),
@@ -582,7 +580,7 @@ describe('GatewayDispatcher: domain policy (design §8)', () => {
 
   it('refuses browser_navigate and a new tab to a blocked domain before the session', async () => {
     const session = fakeSession();
-    const gateway = dispatcher({ planClient: blocking(), sessions: fakeSessions(session) });
+    const gateway = dispatcher({ helena: blocking(), sessions: fakeSessions(session) });
     await gateway.handle({ tool: 'browser_acquire', agentKey: 'k' });
     const navigate = await gateway.handle({
       tool: 'browser_navigate',
@@ -615,7 +613,7 @@ describe('GatewayDispatcher: domain policy (design §8)', () => {
 
   it('allows a domain the list does not name, and applies the policy before every tool', async () => {
     const session = fakeSession();
-    const gateway = dispatcher({ planClient: blocking(), sessions: fakeSessions(session) });
+    const gateway = dispatcher({ helena: blocking(), sessions: fakeSessions(session) });
     await gateway.handle({ tool: 'browser_acquire', agentKey: 'k' });
     const result = await gateway.handle({
       tool: 'browser_navigate',

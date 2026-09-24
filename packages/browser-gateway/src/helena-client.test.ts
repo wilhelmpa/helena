@@ -1,5 +1,5 @@
 import { describe, expect, it, mock } from 'bun:test';
-import { PlanApiError, PlanClient } from './plan-client';
+import { HelenaApiError, HelenaClient } from './helena-client';
 
 function fakeFetch(handler: (url: string, init: RequestInit) => Response) {
   return mock((input: string | URL, init?: RequestInit) =>
@@ -7,12 +7,12 @@ function fakeFetch(handler: (url: string, init: RequestInit) => Response) {
   );
 }
 
-describe('PlanClient', () => {
+describe('HelenaClient', () => {
   it('sends the service token as a bearer header on every call', async () => {
     const fetchImpl = fakeFetch(
       () => new Response(JSON.stringify({ code: '123456', secondsRemaining: 20 })),
     );
-    const client = new PlanClient({
+    const client = new HelenaClient({
       baseUrl: 'http://127.0.0.1:3000',
       serviceToken: 'tok',
       fetchImpl: fetchImpl as unknown as typeof fetch,
@@ -32,7 +32,7 @@ describe('PlanClient', () => {
           }),
         ),
     );
-    const client = new PlanClient({
+    const client = new HelenaClient({
       baseUrl: 'http://127.0.0.1:3000',
       serviceToken: 'tok',
       fetchImpl: fetchImpl as unknown as typeof fetch,
@@ -43,29 +43,29 @@ describe('PlanClient', () => {
     expect(result.status).toBe('filled');
   });
 
-  it('throws PlanApiError with the status and message on a non-2xx response', async () => {
+  it('throws HelenaApiError with the status and message on a non-2xx response', async () => {
     const fetchImpl = fakeFetch(
       () => new Response(JSON.stringify({ error: 'nope' }), { status: 403 }),
     );
-    const client = new PlanClient({
+    const client = new HelenaClient({
       baseUrl: 'http://127.0.0.1:3000',
       serviceToken: 'tok',
       fetchImpl: fetchImpl as unknown as typeof fetch,
     });
-    await expect(client.resolve('agent-key', 'mkt', 'mkt')).rejects.toThrow(PlanApiError);
+    await expect(client.resolve('agent-key', 'mkt', 'mkt')).rejects.toThrow(HelenaApiError);
     try {
       await client.resolve('agent-key', 'mkt', 'mkt');
       throw new Error('unreachable');
     } catch (error) {
-      expect(error).toBeInstanceOf(PlanApiError);
-      expect((error as PlanApiError).status).toBe(403);
-      expect((error as PlanApiError).message).toBe('nope');
+      expect(error).toBeInstanceOf(HelenaApiError);
+      expect((error as HelenaApiError).status).toBe(403);
+      expect((error as HelenaApiError).message).toBe('nope');
     }
   });
 
   it('trims a trailing slash from the base URL', async () => {
     const fetchImpl = fakeFetch(() => new Response('{"projects":{}}'));
-    const client = new PlanClient({
+    const client = new HelenaClient({
       baseUrl: 'http://127.0.0.1:3000/',
       serviceToken: 'tok',
       fetchImpl: fetchImpl as unknown as typeof fetch,

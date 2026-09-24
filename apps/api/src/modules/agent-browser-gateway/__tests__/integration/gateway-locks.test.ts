@@ -77,7 +77,7 @@ afterEach(() => {
 // One gateway, as the router runs it: shared locks and queue, a dispatcher per socket.
 async function startGateway(slugs: string[]) {
   socketRoot = mkdtempSync(join(tmpdir(), 'gw-sockets-'));
-  const planClient = new gateway.PlanClient({
+  const helena = new gateway.HelenaClient({
     baseUrl: 'http://localhost',
     serviceToken: GATEWAY_TOKEN,
     fetchImpl: (url: string, init: RequestInit) => app.handle(new Request(url, init)),
@@ -95,7 +95,7 @@ async function startGateway(slugs: string[]) {
   for (const slug of slugs) {
     const dispatcher = new gateway.GatewayDispatcher({
       ownSlug: slug,
-      planClient,
+      helena,
       locks,
       sessions,
       queue,
@@ -248,7 +248,7 @@ describe('browser gateway: control lock across agents, projects and the Home-Mas
       ['writer browser_navigate', 'coder browser_click'],
     );
     expect(opsEvents.data!.items.map((item) => `${item.agentName} ${item.tool}`)).toEqual([
-      'master browser_navigate',
+      'Home browser_navigate',
     ]);
   });
 });

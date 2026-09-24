@@ -286,7 +286,7 @@ export async function deleteMcpServer(id: number, teamId: number): Promise<boole
 // with a placeholder, self-explaining command so a team owner inspecting the library is not
 // confused by an empty one, off by default per the design (§3: "Rückfallweg... standardmäßig
 // aus" — no agent gets it enabled by this function).
-export const BROWSER_GATEWAY_SHIM_PATH = '/usr/local/libexec/volition-browser-gateway-mcp';
+export const BROWSER_GATEWAY_SHIM_PATH = '/usr/local/libexec/helena-browser-mcp';
 
 export async function ensureBuiltinMcpServers(teamId: number): Promise<void> {
   const seeds: Array<{

@@ -10,7 +10,7 @@ import {
   ProjectBrowserLocks,
   decodePng,
   type GatewayResponse,
-  type PlanClient,
+  type HelenaClient,
 } from '../src/index.ts';
 
 const [cdpPort, sitePort, framePort] = process.argv.slice(2, 5).map(Number) as [
@@ -40,7 +40,7 @@ let settings = {
   lockTimeoutSec: 120,
 };
 
-const planClient = {
+const helena = {
   resolve: async () => ({
     agentId: 7,
     agentName: 'e2e-agent',
@@ -89,7 +89,7 @@ const planClient = {
   handoverDone: async () => {},
   download: async () => ({ path: 'unused' }),
   policy: async () => ({}),
-} as unknown as PlanClient;
+} as unknown as HelenaClient;
 
 const session = await PatchrightGatewaySession.connect(`http://127.0.0.1:${cdpPort}`, {
   humanInput: true,
@@ -100,7 +100,7 @@ const session = await PatchrightGatewaySession.connect(`http://127.0.0.1:${cdpPo
 });
 const gateway = new GatewayDispatcher({
   ownSlug: 'e2e',
-  planClient,
+  helena,
   locks: new ProjectBrowserLocks(120_000),
   sessions: { get: async () => session },
 });

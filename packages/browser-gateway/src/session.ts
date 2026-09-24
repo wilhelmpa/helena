@@ -78,8 +78,9 @@ export function redactUrl(value: string): string {
 // nothing hidden, bounded in length.
 export function safeDownloadName(name: string): string {
   const base = name.split(/[\\/]/).pop() ?? '';
-  const cleaned = base
-    .replace(/[\u0000-\u001f\u007f]/g, '')
+  const cleaned = [...base]
+    .filter((char) => char.charCodeAt(0) >= 0x20 && char.charCodeAt(0) !== 0x7f)
+    .join('')
     .replace(/^\.+/, '')
     .trim()
     .slice(0, 180);

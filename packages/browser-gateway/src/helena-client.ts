@@ -42,7 +42,7 @@ export interface LoginCodeResult {
   secondsRemaining: number;
 }
 
-export class PlanApiError extends Error {
+export class HelenaApiError extends Error {
   // Not a TypeScript parameter property (public status: number in the constructor
   // signature): the deployment glue that uses this package runs under plain Node's
   // TypeScript type-stripping (erasable syntax only — no parameter properties, which need
@@ -55,18 +55,18 @@ export class PlanApiError extends Error {
   }
 }
 
-export interface PlanClientOptions {
+export interface HelenaClientOptions {
   baseUrl: string; // e.g. http://127.0.0.1:3000
   serviceToken: string;
   fetchImpl?: typeof fetch;
 }
 
-export class PlanClient {
+export class HelenaClient {
   #baseUrl: string;
   #token: string;
   #fetch: typeof fetch;
 
-  constructor(options: PlanClientOptions) {
+  constructor(options: HelenaClientOptions) {
     this.#baseUrl = options.baseUrl.replace(/\/+$/, '');
     this.#token = options.serviceToken;
     this.#fetch = options.fetchImpl ?? fetch;
@@ -86,7 +86,7 @@ export class PlanClient {
       } catch {
         // not JSON, use as-is
       }
-      throw new PlanApiError(res.status, message);
+      throw new HelenaApiError(res.status, message);
     }
     return text ? (JSON.parse(text) as T) : (undefined as T);
   }
@@ -173,7 +173,7 @@ export class PlanClient {
     const res = await this.#fetch(`${this.#baseUrl}/internal/browser-gateway/policy`, {
       headers: { authorization: `Bearer ${this.#token}` },
     });
-    if (!res.ok) throw new PlanApiError(res.status, await res.text());
+    if (!res.ok) throw new HelenaApiError(res.status, await res.text());
     const body = (await res.json()) as {
       projects: Record<string, BrowserGatewaySettingsWire & { projectId: number }>;
     };

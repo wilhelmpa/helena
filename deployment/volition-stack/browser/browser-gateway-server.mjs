@@ -31,7 +31,7 @@ import {
   GatewayDispatcher,
   HOME_SLUG,
   PatchrightGatewaySession,
-  PlanClient,
+  HelenaClient,
   ProjectBrowserLocks,
   SlugQueue,
 } from "../../../packages/browser-gateway/src/index.ts";
@@ -64,7 +64,7 @@ export function viewportAuthority(
 
 const SOCKET_ROOT = process.env.BROWSER_GATEWAY_SOCKET_ROOT || "/run/volition-browser/gateway";
 const SOCKET_GROUP = process.env.BROWSER_GATEWAY_SOCKET_GROUP || "volition-agents";
-const PLAN_URL = process.env.BROWSER_GATEWAY_PLAN_URL || "http://127.0.0.1:3000";
+const HELENA_URL = process.env.BROWSER_GATEWAY_API_URL || "http://127.0.0.1:3000";
 const REFRESH_MS = 5_000;
 // A browser_upload carries the file (at most 50 MB) base64-encoded in its one line.
 const MAX_REQUEST_BYTES = 72 * 1024 * 1024;
@@ -203,7 +203,7 @@ async function bindSocket(slug, dispatcher, gid) {
 // Übernehmen/Zurückgeben act on it) and stop().
 export async function startBrowserGateway({ listBrowsers, log = () => {} }) {
   const token = await readToken();
-  const planClient = new PlanClient({ baseUrl: PLAN_URL, serviceToken: token });
+  const helena = new HelenaClient({ baseUrl: HELENA_URL, serviceToken: token });
   const locks = new ProjectBrowserLocks(120_000);
   const queue = new SlugQueue();
   const cdpPorts = new Map(); // slug -> cdpPort, refreshed on the same interval as sockets
@@ -217,7 +217,7 @@ export async function startBrowserGateway({ listBrowsers, log = () => {} }) {
       PatchrightGatewaySession.connect(`http://127.0.0.1:${cdpPort}`, {
         humanInput: true,
         onDownload: async (fileName, bytes) => {
-          const { path: saved } = await planClient.download({
+          const { path: saved } = await helena.download({
             projectSlug: slug,
             agentKey: actors.get(slug) ?? null,
             fileName,
@@ -262,7 +262,7 @@ export async function startBrowserGateway({ listBrowsers, log = () => {} }) {
       if (servers.has(slug)) continue;
       const dispatcher = new GatewayDispatcher({
         ownSlug: slug,
-        planClient,
+        helena,
         locks,
         sessions,
         queue,

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # The browser gateway on Kingston (docs/volition-design-browser-gateway.md): the MCP shim every
-# agent runtime starts (/usr/local/libexec/volition-browser-gateway-mcp, one file built from
+# agent runtime starts (/usr/local/libexec/helena-browser-mcp, one file built from
 # packages/browser-gateway/src/shim.ts, owned by root), the gateway's service token, and the
 # drop-ins that hand that token to the Plan API and the browser router, which then starts the
 # gateway. Idempotent; --dry-run shows each change and makes none. Restarting the two units is
@@ -23,7 +23,7 @@ dry_run=0
 
 here=$(cd "$(dirname "$0")" && pwd)
 checkout=$(cd "$here/../../.." && pwd)
-shim=${GATEWAY_SHIM:-/usr/local/libexec/volition-browser-gateway-mcp}
+shim=${GATEWAY_SHIM:-/usr/local/libexec/helena-browser-mcp}
 token=${GATEWAY_TOKEN:-/etc/volition/browser-gateway.token}
 units=${GATEWAY_UNITS:-/etc/systemd/system}
 node_bin=${GATEWAY_NODE:-/usr/local/bin/node}

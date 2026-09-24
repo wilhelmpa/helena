@@ -3,13 +3,13 @@ import { ProjectBrowserLocks } from './lock.ts';
 import { CREDENTIAL_TOOLS, requiresLock, toolByName } from './tools.ts';
 import { HOME_SLUG, projectSlug } from './project-slug.ts';
 import { hostAllowed } from './domain.ts';
-import type { PlanClient, ResolveResult } from './plan-client.ts';
-import { PlanApiError } from './plan-client.ts';
+import type { HelenaClient, ResolveResult } from './helena-client.ts';
+import { HelenaApiError } from './helena-client.ts';
 import type { GatewaySession, SessionProvider, ToolOutput } from './session-types.ts';
 
 // The gateway's tool dispatcher (design §3/§4): one instance per project-browser socket
 // (see browser-gateway-server.mjs), wired to that socket's own slug. Everything here is
-// plain logic over injected dependencies (PlanClient, a SessionProvider, the shared lock
+// plain logic over injected dependencies (HelenaClient, a SessionProvider, the shared lock
 // registry) so it is fully unit-testable without patchright or a live Plan API — session.ts
 // (the real, patchright-backed SessionProvider) and the deployment glue are the only pieces
 // that need a real browser or a real Plan.
@@ -56,7 +56,7 @@ export class SlugQueue {
 
 export interface DispatcherOptions {
   ownSlug: string; // which project-browser socket this dispatcher instance serves
-  planClient: PlanClient;
+  helena: HelenaClient;
   locks: ProjectBrowserLocks;
   sessions: SessionProvider;
   queue?: SlugQueue;
@@ -99,7 +99,7 @@ function hostOf(url: string): string | null {
 
 export class GatewayDispatcher {
   #ownSlug: string;
-  #planClient: PlanClient;
+  #helena: HelenaClient;
   #locks: ProjectBrowserLocks;
   #sessions: SessionProvider;
   #queue: SlugQueue;
@@ -108,7 +108,7 @@ export class GatewayDispatcher {
 
   constructor(options: DispatcherOptions) {
     this.#ownSlug = options.ownSlug;
-    this.#planClient = options.planClient;
+    this.#helena = options.helena;
     this.#locks = options.locks;
     this.#sessions = options.sessions;
     this.#queue = options.queue ?? new SlugQueue();
@@ -120,7 +120,7 @@ export class GatewayDispatcher {
   // Home socket may name another project at all (design §5: "Der Home-Master bekommt das
   // Gateway mit Recht auf alle Projekte") — every other connection's own socket already IS
   // its one project, by construction (the isolation launcher binds only that one), and a
-  // `project` in its args is refused rather than silently ignored. Plan checks the same
+  // `project` in its args is refused rather than silently ignored. Helena checks the same
   // again (the socket the call came through is sent along as `via`).
   #targetSlug(args: Record<string, unknown> | undefined): { slug: string } | { error: string } {
     const projectKey = str(args, 'project');
@@ -144,9 +144,9 @@ export class GatewayDispatcher {
 
     let resolved: ResolveResult;
     try {
-      resolved = await this.#planClient.resolve(request.agentKey, slug, this.#ownSlug);
+      resolved = await this.#helena.resolve(request.agentKey, slug, this.#ownSlug);
     } catch (error) {
-      if (error instanceof PlanApiError) return { ok: false, error: error.message };
+      if (error instanceof HelenaApiError) return { ok: false, error: error.message };
       return { ok: false, error: 'Could not reach Helena.' };
     }
     if (!resolved.browserGatewayEnabled) {
@@ -233,7 +233,7 @@ export class GatewayDispatcher {
       try {
         const output = await this.#runTool(request, session, slug, resolved);
         if (!CREDENTIAL_TOOLS.has(request.tool)) {
-          void this.#planClient
+          void this.#helena
             .audit({
               agentKey: request.agentKey,
               projectSlug: slug,
@@ -332,7 +332,7 @@ export class GatewayDispatcher {
     const reason = (str(request.args, 'reason') ?? '').trim().slice(0, 500);
     if (!reason) return { ok: false, error: 'reason is required: say what the owner should do.' };
     const timeoutSec = clamp(num(request.args, 'timeoutSec') ?? 300, 30, 1800);
-    const card = await this.#planClient
+    const card = await this.#helena
       .handover({
         agentKey: request.agentKey,
         projectSlug: slug,
@@ -343,7 +343,7 @@ export class GatewayDispatcher {
       })
       .catch(() => null);
     this.#onHandover(slug, { reason, agentName: resolved.agentName, since: Date.now() });
-    void this.#planClient
+    void this.#helena
       .audit({
         agentKey: request.agentKey,
         projectSlug: slug,
@@ -360,7 +360,7 @@ export class GatewayDispatcher {
       this.#onHandover(slug, null);
     }
     if (card?.approvalId) {
-      await this.#planClient
+      await this.#helena
         .handoverDone({ approvalId: card.approvalId, finished: outcome === 'done' })
         .catch(() => {});
     }
@@ -510,7 +510,7 @@ export class GatewayDispatcher {
     // Design §6: the login is chosen for the origin of the frame the password field is in
     // (a login form in an iframe of another site gets that site's login, not the tab's).
     const frameOrigin = await session.frameOrigin(passwordRef);
-    const result = await this.#planClient.login(
+    const result = await this.#helena.login(
       request.agentKey,
       slug,
       this.#ownSlug,
@@ -541,7 +541,7 @@ export class GatewayDispatcher {
     const ref = this.#requireRef(args);
     const credentialId = num(args, 'credentialId');
     if (credentialId === undefined) throw new Error('credentialId is required.');
-    const result = await this.#planClient.loginCode(
+    const result = await this.#helena.loginCode(
       request.agentKey,
       credentialId,
       await session.frameOrigin(ref),

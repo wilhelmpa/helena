@@ -1,6 +1,8 @@
 import { timingSafeEqual } from 'node:crypto';
 import { lstat, readFile } from 'node:fs/promises';
 import { Elysia } from 'elysia';
+import { db, user } from '@repo/db';
+import { eq } from 'drizzle-orm';
 import { getSessionFromHeaders } from '@repo/auth';
 import { HttpError } from '#shared/lib';
 import { HOME_SLUG } from '#shared/agent-socket';
@@ -90,6 +92,13 @@ async function agentByKey(agentKey: string): Promise<RunnerAgent | null> {
   const agent = await getRunnerAgent(session.user.id);
   if (!agent || agent.kind !== 'external') return null;
   return agent;
+}
+
+// The name people know an agent by ("Coder VOL"), for the live view's "Steuert: …" and the
+// audit; its handle when it has none.
+async function displayName(agent: RunnerAgent): Promise<string> {
+  const [row] = await db.select({ name: user.name }).from(user).where(eq(user.id, agent.userId));
+  return row?.name?.trim() || agent.username;
 }
 
 interface Target {
@@ -190,7 +199,7 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
       ]);
       return {
         agentId: agent.id,
-        agentName: agent.username,
+        agentName: await displayName(agent),
         teamId: agent.teamId,
         projectId: project?.id ?? null,
         projectKey: project?.key ?? null,
@@ -244,7 +253,7 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
       await recordBrowserGatewayEvent({
         projectId: project?.id ?? null,
         agentId: agent.id,
-        agentName: agent.username,
+        agentName: await displayName(agent),
         actor: 'agent',
         tool: body.tool,
         target: typeof body.target === 'string' ? body.target.slice(0, 300) : null,
@@ -299,7 +308,7 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
       await recordBrowserGatewayEvent({
         projectId: project?.id ?? null,
         agentId: agent?.id ?? null,
-        agentName: agent?.username ?? '',
+        agentName: agent ? await displayName(agent) : '',
         actor: agent ? 'agent' : 'owner',
         tool: 'browser_download',
         target: path.slice(0, 300),
