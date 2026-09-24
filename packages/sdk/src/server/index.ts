@@ -30,6 +30,7 @@ export {
 } from './manifest';
 export {
   createOutboxDispatcher,
+  createOutboxTransport,
   defaultBackoffMs,
   type DispatchReport,
   type OutboxDelivery,

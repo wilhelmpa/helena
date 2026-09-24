@@ -7,6 +7,7 @@ import {
   PluginHost,
   bundleJsonSchema,
   createOutboxDispatcher,
+  createOutboxTransport,
   loadExternalPlugins,
   manifestJsonSchema,
   parseManifest,
@@ -225,6 +226,7 @@ describe('external plugin loader', () => {
 });
 
 describe('outbox dispatcher', () => {
+  const quiet = { info() {}, warn() {}, error() {} };
   function memoryStore() {
     const events: Array<{ event: HelenaEvent; fanned: boolean }> = [];
     const deliveries: Array<
@@ -232,6 +234,9 @@ describe('outbox dispatcher', () => {
     > = [];
     let next = 1;
     const store: OutboxStore = {
+      async append(list) {
+        events.push(...list.map((event) => ({ event, fanned: false })));
+      },
       async fanOut(route, limit) {
         const batch = events.filter((row) => !row.fanned).slice(0, limit);
         for (const row of batch) {
@@ -279,9 +284,9 @@ describe('outbox dispatcher', () => {
   }
 
   test('fans out to matching durable consumers and retries a failing one alone', async () => {
-    const { store, events, deliveries } = memoryStore();
+    const { store, deliveries } = memoryStore();
     const bus = createEventBus({
-      sink: async (list) => void events.push(...list.map((event) => ({ event, fanned: false }))),
+      transport: createOutboxTransport({ store, log: quiet, maxAttempts: 2, backoffMs: () => 0 }),
     });
     const got: string[] = [];
     let failures = 0;
@@ -303,7 +308,7 @@ describe('outbox dispatcher', () => {
     const dispatcher = createOutboxDispatcher({
       store,
       subscriptions: () => bus.subscriptions(),
-      log: { info() {}, warn() {}, error() {} },
+      log: quiet,
       maxAttempts: 2,
       backoffMs: () => 0,
     });

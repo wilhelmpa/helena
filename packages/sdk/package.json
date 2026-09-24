@@ -8,6 +8,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./server": "./src/server/index.ts",
+    "./bundles": "./src/server/bundle-files.ts",
     "./web": "./src/web.ts",
     "./plugin.schema.json": "./schema/helena.plugin.schema.json",
     "./bundle.schema.json": "./schema/helena.bundle.schema.json"

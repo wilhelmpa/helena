@@ -192,12 +192,14 @@ export function matchesEventPattern(pattern: string, type: string): boolean {
 
 export type EventHandler<E extends HelenaEvent = HelenaEvent> = (event: E) => unknown;
 
-// A consumer that must not miss an event (a webhook, a workflow trigger) subscribes
-// durably: it runs in the worker off the outbox, with retries, after the change that
-// raised the event committed. An in-process subscriber runs right away in the process
-// that published, best effort, for things like refreshing a cache.
+// A consumer that must not miss an event (a webhook, a workflow trigger, the knowledge
+// indexer) subscribes durably. Where the process has an event transport (the workflow
+// engine's queue, orchestrator decision D-C2), a durable subscriber is served by the
+// transport: the event is stored with the change and delivered at least once, with
+// retries, in the worker. Without a transport every subscriber runs in process right
+// after publish, best effort, which is how Helena's side effects ran before the bus.
 export interface EventSubscription {
-  // Stable across restarts: the outbox tracks delivery per consumer id.
+  // Stable across restarts: a transport tracks delivery per subscriber id.
   id: string;
   patterns: string[];
   handler: EventHandler;
@@ -205,33 +207,47 @@ export interface EventSubscription {
   pluginId: string;
 }
 
+// The durable side of the bus, provided by the workflow engine (hub/native-engine), not
+// by the SDK: the SDK owns no queue and no table.
+export interface EventTransport {
+  // Stores events durably; inside the change's transaction when one is passed, so an
+  // event exists exactly when its change does.
+  append(events: HelenaEvent[], tx?: unknown): Promise<void>;
+  // Delivers stored events to the durable subscribers (read on every delivery, so a
+  // plugin loaded later is included), each at least once and with retries of its own.
+  start(subscriptions: () => EventSubscription[]): Promise<{ stop(): Promise<void> }>;
+}
+
 export interface EventBus {
-  publish(event: HelenaEvent): Promise<void>;
+  publish(event: HelenaEvent, options?: { tx?: unknown }): Promise<void>;
   subscribe(
     patterns: string | string[],
     handler: EventHandler,
     options?: { id?: string; durable?: boolean; pluginId?: string },
   ): () => void;
   subscriptions(): EventSubscription[];
+  // Hands durable delivery to a transport (null hands it back to in-process delivery).
+  useTransport(transport: EventTransport | null): void;
+  transport(): EventTransport | null;
 }
 
 export interface EventBusOptions {
-  // Where published events are stored for durable consumers: the outbox. Without one,
-  // durable subscribers are called in process like the others.
-  sink?: (events: HelenaEvent[]) => Promise<void>;
+  transport?: EventTransport | null;
   onError?: (error: unknown, subscription: EventSubscription, event: HelenaEvent) => void;
 }
 
-// The process-local bus. publish() hands the event to the sink (the outbox) first, then
-// to the in-process subscribers. It never throws for a failing subscriber.
+// The process-local bus. publish() hands the event to the transport first, then to the
+// in-process subscribers (all of them when there is no transport). It never throws for
+// a failing subscriber.
 export function createEventBus(options: EventBusOptions = {}): EventBus {
   const subs = new Map<string, EventSubscription>();
+  let transport = options.transport ?? null;
   let counter = 0;
   return {
-    async publish(event) {
-      if (options.sink) await options.sink([event]);
+    async publish(event, publishOptions = {}) {
+      if (transport) await transport.append([event], publishOptions.tx);
       for (const sub of subs.values()) {
-        if (options.sink && sub.durable) continue;
+        if (transport && sub.durable) continue;
         if (!sub.patterns.some((pattern) => matchesEventPattern(pattern, event.type))) continue;
         try {
           await sub.handler(event);
@@ -258,6 +274,12 @@ export function createEventBus(options: EventBusOptions = {}): EventBus {
     },
     subscriptions() {
       return [...subs.values()];
+    },
+    useTransport(next) {
+      transport = next;
+    },
+    transport() {
+      return transport;
     },
   };
 }

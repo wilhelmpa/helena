@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach } from 'bun:test';
 import { authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
-import { deliverDomainEvents } from '#tests/helpers/events';
 import type { WebhookEventType } from '../../service';
 
 async function setupOwnerProject() {
@@ -237,7 +236,6 @@ describe('webhooks', () => {
       for (const title of ['a', 'b', 'c']) {
         await asOwner.projects({ projectKey: 'MKT' }).issues.post({ columnId, title });
       }
-      await deliverDomainEvents();
 
       const first = await asOwner
         .webhooks({ webhookId: id })
@@ -258,19 +256,16 @@ describe('webhooks', () => {
     });
   });
 
-  // A domain mutation publishes its event to the outbox; the webhook consumer (run by the
-  // worker's event dispatcher, here by deliverDomainEvents) queues one webhook_delivery
-  // per active, subscribed webhook. The queued rows are observable through the
+  // emit.ts queues one webhook_delivery per active, subscribed webhook when a
+  // domain mutation fires an event. The queued rows are observable through the
   // deliveries endpoint (the delivery worker does not run in tests, so they stay
-  // pending). These assert the fan-out selection, not the delivery.
+  // pending). These assert the fan-out selection, not the worker.
   describe('fan-out', () => {
     it('queues a pending delivery for a subscribed active webhook on issue.created', async () => {
       const { asOwner, columnId } = await setupOwnerProject();
       const id = await createWebhook(asOwner, ['issue.created']);
 
       await asOwner.projects({ projectKey: 'MKT' }).issues.post({ columnId, title: 'Task' });
-
-      await deliverDomainEvents();
 
       const res = await asOwner.webhooks({ webhookId: id }).deliveries.get();
       expect(res.data?.items).toHaveLength(1);
@@ -295,8 +290,6 @@ describe('webhooks', () => {
 
       await asOwner.projects({ projectKey: 'MKT' }).issues.post({ columnId, title: 'Task' });
 
-      await deliverDomainEvents();
-
       const res = await asOwner.webhooks({ webhookId: id }).deliveries.get();
       expect(res.data?.items).toHaveLength(0);
     });
@@ -306,8 +299,6 @@ describe('webhooks', () => {
       const id = await createWebhook(asOwner, ['comment.created']);
 
       await asOwner.projects({ projectKey: 'MKT' }).issues.post({ columnId, title: 'Task' });
-
-      await deliverDomainEvents();
 
       const res = await asOwner.webhooks({ webhookId: id }).deliveries.get();
       expect(res.data?.items).toHaveLength(0);
@@ -319,8 +310,6 @@ describe('webhooks', () => {
       const b = await createWebhook(asOwner, ['issue.created']);
 
       await asOwner.projects({ projectKey: 'MKT' }).issues.post({ columnId, title: 'Task' });
-
-      await deliverDomainEvents();
 
       const da = await asOwner.webhooks({ webhookId: a }).deliveries.get();
       const db = await asOwner.webhooks({ webhookId: b }).deliveries.get();
@@ -341,8 +330,6 @@ describe('webhooks', () => {
         .issues.post({ columnId, title: 'Task' });
       await asOwner.issues({ issueId: issue.data!.id }).patch({ columnId: otherColumn });
 
-      await deliverDomainEvents();
-
       const res = await asOwner.webhooks({ webhookId: id }).deliveries.get();
       const types = res.data!.items.map((d) => d.eventType).sort();
       expect(types).toEqual(['issue.state_changed', 'issue.updated']);
@@ -356,8 +343,6 @@ describe('webhooks', () => {
         .projects({ projectKey: 'MKT' })
         .issues.post({ columnId, title: 'Task' });
       await asOwner.issues({ issueId: issue.data!.id }).comments.post({ body: 'looks good' });
-
-      await deliverDomainEvents();
 
       const res = await asOwner.webhooks({ webhookId: id }).deliveries.get();
       expect(res.data?.items).toHaveLength(1);
@@ -376,8 +361,6 @@ describe('webhooks', () => {
       ).data!;
       await asOwner.comments({ commentId: comment.id }).patch({ body: 'final' });
       await asOwner.comments({ commentId: comment.id }).delete();
-
-      await deliverDomainEvents();
 
       const res = await asOwner.webhooks({ webhookId: id }).deliveries.get();
       const byEvent = Object.fromEntries(res.data!.items.map((d) => [d.eventType, d]));

@@ -1,7 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 import { z } from 'zod';
 import {
+  ACTION_CATEGORIES,
   ACTION_META_KEY,
+  actionRank,
+  annotationsForCategory,
   Registry,
   RegistryError,
   categoryFromAcpToolKind,
@@ -62,12 +65,35 @@ describe('Registry', () => {
 });
 
 describe('action categories', () => {
-  test('come from MCP annotations', () => {
+  test('come from MCP annotations, an unannotated tool counting as send (D-C1)', () => {
     expect(categoryFromAnnotations({ readOnlyHint: true })).toBe('read');
     expect(categoryFromAnnotations({ destructiveHint: true })).toBe('delete');
+    expect(categoryFromAnnotations({ openWorldHint: false })).toBe('write');
     expect(categoryFromAnnotations({ openWorldHint: true })).toBe('send');
-    expect(categoryFromAnnotations({})).toBe('write');
-    expect(categoryFromAnnotations(undefined)).toBe('write');
+    expect(categoryFromAnnotations({})).toBe('send');
+    expect(categoryFromAnnotations(undefined)).toBe('send');
+  });
+
+  test('are ranked in the one risk order', () => {
+    expect([...ACTION_CATEGORIES]).toEqual([
+      'read',
+      'report',
+      'write',
+      'send',
+      'publish',
+      'execute',
+      'delete',
+      'pay',
+      'credentials',
+    ]);
+    expect(actionRank('report')).toBeLessThan(actionRank('write'));
+    expect(actionRank('pay')).toBeLessThan(actionRank('credentials'));
+  });
+
+  test('round-trip through the annotations for the categories they can express', () => {
+    for (const category of ['read', 'write', 'send', 'delete'] as const) {
+      expect(categoryFromAnnotations(annotationsForCategory(category))).toBe(category);
+    }
   });
 
   test('come from ACP tool kinds', () => {
@@ -197,20 +223,35 @@ describe('events', () => {
     expect(matchesEventPattern('*', 'anything')).toBe(true);
   });
 
-  test('the bus hands events to the sink and to in-process subscribers', async () => {
-    const stored: string[] = [];
+  test('without a transport every subscriber runs in process', async () => {
     const seen: string[] = [];
-    const bus = createEventBus({
-      sink: async (events) => void stored.push(...events.map((e) => e.type)),
-    });
+    const bus = createEventBus();
     bus.subscribe('helena.run.*', (event) => void seen.push(`live:${event.type}`));
     bus.subscribe('helena.run.*', (event) => void seen.push(`durable:${event.type}`), {
       id: 'd',
       durable: true,
     });
     await bus.publish(createEvent({ type: 'helena.run.started', data: {} }));
-    expect(stored).toEqual(['helena.run.started']);
-    // Durable subscribers are served from the outbox, not in process.
+    expect(seen).toEqual(['live:helena.run.started', 'durable:helena.run.started']);
+  });
+
+  test('with a transport, durable subscribers are left to it', async () => {
+    const stored: Array<{ type: string; tx: unknown }> = [];
+    const seen: string[] = [];
+    const bus = createEventBus({
+      transport: {
+        append: async (events, tx) =>
+          void stored.push(...events.map((e) => ({ type: e.type, tx }))),
+        start: async () => ({ stop: async () => {} }),
+      },
+    });
+    bus.subscribe('helena.run.*', (event) => void seen.push(`live:${event.type}`));
+    bus.subscribe('helena.run.*', (event) => void seen.push(`durable:${event.type}`), {
+      id: 'd',
+      durable: true,
+    });
+    await bus.publish(createEvent({ type: 'helena.run.started', data: {} }), { tx: 'tx-1' });
+    expect(stored).toEqual([{ type: 'helena.run.started', tx: 'tx-1' }]);
     expect(seen).toEqual(['live:helena.run.started']);
   });
 });

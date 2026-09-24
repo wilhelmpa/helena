@@ -26,7 +26,6 @@ export {
   readNotificationConfig,
   type NotificationConfig,
 } from './domains/notification-settings';
-export { appendDomainEvents, domainEventStore } from './domain-events';
 export {
   WEBHOOK_CONSUMER_ID,
   WEBHOOK_EVENT_PATTERNS,

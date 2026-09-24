@@ -1,40 +1,21 @@
-import { consoleLogger, createEventBus, type HelenaPlugin, type PluginManifest } from '@helena/sdk';
-import { PluginHost, createOutboxDispatcher, loadExternalPlugins } from '@helena/sdk/server';
-import {
-  WEBHOOK_EVENT_PATTERNS,
-  domainEventStore,
-  fanOutWebhooks,
-  getPluginSettings,
-  pluginsDir,
-} from '@repo/db';
-import { startPollLoop, type WorkerHandle } from './poll-loop';
+import { createEventBus, type EventTransport } from '@helena/sdk';
+import { PluginHost, loadExternalPlugins } from '@helena/sdk/server';
+import { getPluginSettings, pluginsDir } from '@repo/db';
+import { webhooksManifest, webhooksPlugin } from '@repo/db/plugins';
 
-// The worker's side of the framework (docs/helena-framework.md): the domain event
-// dispatcher and the plugins whose durable subscribers it runs. Built-in consumers are
-// internal plugins, external ones are loaded from HELENA_PLUGINS_DIR when the
-// Administrator switched them on and approved them.
+// The worker's side of the framework (docs/helena-framework.md): the plugins whose durable
+// event subscribers the worker serves once the workflow engine provides the event
+// transport (hub/native-engine, decision D-C2). Until then the API runs every subscriber
+// in process, and the worker only loads the plugins.
 
-const EVENT_POLL_MS = 1000;
+export interface EventDelivery {
+  host: PluginHost;
+  // Called by the workflow engine at start with its transport.
+  useTransport(transport: EventTransport): Promise<void>;
+  stop(): void;
+}
 
-// Outgoing webhooks: every issue and comment event becomes a delivery per subscribed
-// webhook (@repo/db fanOutWebhooks); the webhook loop in worker.ts posts them.
-const webhooksManifest: PluginManifest = {
-  id: 'helena.webhooks',
-  name: 'Webhooks',
-  version: '1.0.0',
-  sdk: '^0.1.0',
-  provides: {},
-  permissions: { events: WEBHOOK_EVENT_PATTERNS },
-};
-
-const webhooksPlugin: HelenaPlugin = {
-  register(ctx) {
-    // The subscription id `helena.webhooks:fanout` is WEBHOOK_CONSUMER_ID.
-    ctx.events.subscribe(WEBHOOK_EVENT_PATTERNS, fanOutWebhooks, { id: 'fanout' });
-  },
-};
-
-export async function startEventDispatcher(): Promise<WorkerHandle & { host: PluginHost }> {
+export async function startEventDelivery(): Promise<EventDelivery> {
   const bus = createEventBus();
   const host = new PluginHost({ process: 'worker', events: bus });
   await host.load(webhooksPlugin, webhooksManifest);
@@ -49,29 +30,22 @@ export async function startEventDispatcher(): Promise<WorkerHandle & { host: Plu
     });
     for (const plugin of plugins) {
       console.log(
-        `[events] plugin ${plugin.manifest.id} ${plugin.manifest.version}: ${plugin.status}` +
+        `[plugins] ${plugin.manifest.id} ${plugin.manifest.version}: ${plugin.status}` +
           (plugin.error ? ` (${plugin.error})` : ''),
       );
     }
   }
   await host.start();
 
-  const dispatcher = createOutboxDispatcher({
-    store: domainEventStore(),
-    subscriptions: () => bus.subscriptions(),
-    log: consoleLogger('events'),
-  });
-  const loop = startPollLoop(
-    'events',
-    async () => {
-      await dispatcher.tick();
-    },
-    () => EVENT_POLL_MS,
-  );
+  let delivery: { stop(): Promise<void> } | null = null;
   return {
     host,
+    async useTransport(transport) {
+      bus.useTransport(transport);
+      delivery = await transport.start(() => bus.subscriptions());
+    },
     stop() {
-      loop.stop();
+      void delivery?.stop();
       void host.stop();
     },
   };

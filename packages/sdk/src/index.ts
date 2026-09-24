@@ -44,6 +44,7 @@ export {
   toolError,
   type AgentTool,
   type AnyAgentTool,
+  type CallerAuth,
   type ToolCallContext,
   type ToolDescriptor,
 } from './tools';
@@ -98,11 +99,13 @@ export {
   type EventHandler,
   type EventInit,
   type EventSubscription,
+  type EventTransport,
   type HelenaEvent,
   type IssueRef,
   type RunEventData,
 } from './events';
 export type {
+  CaptureContext,
   CaptureInput,
   CaptureKind,
   CaptureResult,
@@ -152,6 +155,7 @@ export {
 } from './runtime-readers';
 export {
   sortSlots,
+  uiSlotDescriptor,
   uiSlotKey,
   type AdminSectionSlot,
   type AgentSectionProps,

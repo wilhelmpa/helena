@@ -7,7 +7,8 @@ import type { LocalizedText } from './text';
 // stdio, opens or loads a session (with Helena's MCP servers), sends the prompt,
 // streams `session/update`, and answers `session/request_permission` through Helena's
 // policy. Hermes ships an ACP adapter (`hermes-acp`); Claude Code and Codex have
-// Apache-2.0 adapters (`@agentclientprotocol/claude-agent-acp`, `codex-acp`).
+// ACP adapters (`@agentclientprotocol/codex-acp`; `@agentclientprotocol/claude-agent-acp`,
+// installed outside Helena's tree because its Claude SDK is not OSI-licensed).
 //
 // Runtimes that only have a one-shot CLI with a JSON stream (today's presets) are `cli`
 // adapters: argv building plus a stream parser. They stay until each runtime is proven

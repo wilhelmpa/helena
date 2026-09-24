@@ -13,9 +13,15 @@ export interface KnowledgeScope {
   teamId: number;
   // Null for team-wide items (Home docs, team mail).
   projectId: number | null;
-  // `private` items are visible to `ownerId` only (a personal note, a private chat).
+  // `project`: the project's members whose role reads `permission` there (any member
+  // when it is unset). `team`: items of no project, for the team's owners and admins
+  // and, when `permission` is unset, every member. `private`: `ownerId` only (a
+  // personal note, a private chat).
   visibility: 'project' | 'team' | 'private';
   ownerId?: string | null;
+  // The role-matrix resource a reader needs, `work_items`, `documents`, `mail`, … (a
+  // plugin names one of its own or none).
+  permission?: string | null;
 }
 
 // Where an item came from, for the "why do I see this" line and for trust: an agent's
@@ -53,6 +59,9 @@ export interface KnowledgeItem {
   language?: string;
   scope: KnowledgeScope;
   provenance: KnowledgeProvenance;
+  // Items of one group (the messages of a mail thread, the comments of a task) show as
+  // one search result: the best-ranked of them.
+  group?: string | null;
   metadata?: Record<string, KnowledgeMetadataValue>;
   links?: KnowledgeLink[];
 }
@@ -75,6 +84,9 @@ export interface KnowledgeSource {
   list(ctx: KnowledgeListContext): Promise<{ items: KnowledgeItem[]; cursor: string | null }>;
   // One item as it is now, or null when it is gone.
   get(id: string): Promise<KnowledgeItem | null>;
+  // Which of these ids still exist (and would still be listed), for the indexer's sweep
+  // of deleted items. Without it the indexer asks get() for each id.
+  present?(ids: string[]): Promise<string[]>;
   // Incremental indexing: the event types that change this source's items, and which
   // items one of them touched. Deleted items come back null from get().
   events?: {
@@ -114,10 +126,19 @@ export interface CaptureResult {
   href: string;
 }
 
+// Who captures, and where: the actor (`user:<id>`, `agent:<id>`), the run an agent
+// captured from, and the person's time zone and locale for dates and titles.
+export interface CaptureContext {
+  actor: string;
+  runId?: number | null;
+  timeZone?: string | null;
+  locale?: string | null;
+}
+
 export interface CaptureTarget {
   id: string;
   label: LocalizedText;
   icon?: string;
   accepts: CaptureKind[];
-  capture(input: CaptureInput, ctx: { actor: string }): Promise<CaptureResult>;
+  capture(input: CaptureInput, ctx: CaptureContext): Promise<CaptureResult>;
 }

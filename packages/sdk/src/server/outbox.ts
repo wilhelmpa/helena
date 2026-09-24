@@ -1,13 +1,20 @@
 import type { Logger } from '../common';
-import { matchesEventPattern, type EventSubscription, type HelenaEvent } from '../events';
+import {
+  matchesEventPattern,
+  type EventSubscription,
+  type EventTransport,
+  type HelenaEvent,
+} from '../events';
 
-// The transactional outbox behind durable event subscribers. A change and its event are
-// written in one transaction (the event row is the outbox); the worker's dispatcher then
-// fans each new event out to the durable subscribers whose patterns match, one delivery
-// per subscriber, and runs them with retries. A failing subscriber delays only itself.
+// A transactional outbox as an event transport, for an engine that stores events in a
+// table of its own and lets a dispatcher claim them: the change and its event are written
+// in one transaction; the dispatcher fans each new event out to the durable subscribers
+// whose patterns match, one delivery per subscriber, and runs them with retries, so a
+// failing subscriber delays only itself.
 //
-// The store is an interface so the dispatcher does not care how it is kept: Helena's is
-// two Postgres tables (packages/db), claimed with FOR UPDATE SKIP LOCKED.
+// Helena itself owns no queue and no table (orchestrator decision D-C2): the workflow
+// engine (hub/native-engine) provides the EventTransport, either with this helper over a
+// store on its own tables or natively on its queue.
 
 export interface OutboxDelivery {
   deliveryId: number;
@@ -18,6 +25,8 @@ export interface OutboxDelivery {
 }
 
 export interface OutboxStore {
+  // Stores events, inside the change's transaction when one is passed.
+  append(events: HelenaEvent[], tx?: unknown): Promise<void>;
   // Takes up to `limit` events not yet fanned out, creates a delivery for every consumer
   // `route` names, and marks the events fanned out, in one transaction. Returns how many
   // events it took.
@@ -115,6 +124,37 @@ export function createOutboxDispatcher(options: OutboxDispatcherOptions) {
         await options.store.prune(new Date(Date.now() - retentionMs));
       }
       return report;
+    },
+  };
+}
+
+// The store and dispatcher as an EventTransport: append() writes to the store, start()
+// polls it every `pollMs` until stopped.
+export function createOutboxTransport(
+  options: Omit<OutboxDispatcherOptions, 'subscriptions'> & { pollMs?: number },
+): EventTransport {
+  return {
+    append: (events, tx) => options.store.append(events, tx),
+    async start(subscriptions) {
+      const dispatcher = createOutboxDispatcher({ ...options, subscriptions });
+      let stopped = false;
+      let timer: ReturnType<typeof setTimeout> | null = null;
+      const loop = async (): Promise<void> => {
+        if (stopped) return;
+        try {
+          await dispatcher.tick();
+        } catch (error) {
+          options.log.error(`event dispatch failed: ${String(error)}`);
+        }
+        if (!stopped) timer = setTimeout(loop, options.pollMs ?? 1000);
+      };
+      void loop();
+      return {
+        async stop() {
+          stopped = true;
+          if (timer) clearTimeout(timer);
+        },
+      };
     },
   };
 }

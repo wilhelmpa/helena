@@ -1,25 +1,26 @@
-import { beforeEach, describe, expect, it } from 'bun:test';
-import { db, helenaDomainEvent } from '@repo/db';
-import { asc } from 'drizzle-orm';
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
+import type { HelenaEvent } from '@helena/sdk';
 import { authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
-import { deliverDomainEvents } from '#tests/helpers/events';
+import { events } from '#shared/helena';
 
-// Changes publish CloudEvents to the outbox (helena_domain_event); the worker's
-// dispatcher hands them to durable consumers. These check what lands in the outbox.
+// Changes publish CloudEvents on the API's event bus (@helena/sdk). These check what the
+// bus carries; a subscriber in the test sees exactly what webhooks, triggers and plugins
+// see.
 
-async function outbox() {
-  const rows = await db.select().from(helenaDomainEvent).orderBy(asc(helenaDomainEvent.id));
-  return rows.map((row) => row.event as Record<string, unknown>);
-}
+let seen: HelenaEvent[] = [];
+let unsubscribe: () => void = () => {};
 
 describe('domain events', () => {
   beforeEach(async () => {
     await resetDb();
+    seen = [];
+    unsubscribe = events.subscribe('*', (event) => void seen.push(event), { id: 'test-capture' });
   });
+  afterEach(() => unsubscribe());
 
-  it('records issue.created, issue.updated and issue.assigned as CloudEvents', async () => {
+  it('publishes issue.created, updated, state_changed and assigned as CloudEvents', async () => {
     const owner = await signUpTestUser();
     const api = authedApi(owner.cookie);
     await api.projects.post({ key: 'EVT', name: 'Events' });
@@ -31,14 +32,13 @@ describe('domain events', () => {
     const issueId = created.data!.id;
     await api.issues({ issueId }).patch({ columnId: second!.id, assigneeUserId: owner.userId });
 
-    const events = await outbox();
-    const types = events.map((event) => event.type);
+    const types = seen.map((event) => event.type);
     expect(types).toContain('helena.issue.created');
     expect(types).toContain('helena.issue.updated');
     expect(types).toContain('helena.issue.state_changed');
     expect(types).toContain('helena.issue.assigned');
 
-    const createdEvent = events.find((event) => event.type === 'helena.issue.created')!;
+    const createdEvent = seen.find((event) => event.type === 'helena.issue.created')!;
     expect(createdEvent.specversion).toBe('1.0');
     expect(createdEvent.datacontenttype).toBe('application/json');
     expect(createdEvent.subject).toBe(`issues/${issueId}`);
@@ -51,7 +51,8 @@ describe('domain events', () => {
     });
     // The resource as the API returns it, for consumers that forward it (webhooks).
     expect((createdEvent.data as { snapshot: { id: number } }).snapshot.id).toBe(issueId);
-    const assigned = events.find((event) => event.type === 'helena.issue.assigned')!;
+
+    const assigned = seen.find((event) => event.type === 'helena.issue.assigned')!;
     expect(assigned.data).toMatchObject({
       field: 'assignee',
       assigneeId: owner.userId,
@@ -59,17 +60,17 @@ describe('domain events', () => {
     });
   });
 
-  it('marks events fanned out once the dispatcher ran', async () => {
+  it('publishes comment.created with the comment', async () => {
     const owner = await signUpTestUser();
     const api = authedApi(owner.cookie);
     await api.projects.post({ key: 'EVT', name: 'Events' });
     const view = await api.projects({ projectKey: 'EVT' }).get();
-    await api
+    const issue = await api
       .projects({ projectKey: 'EVT' })
       .issues.post({ columnId: view.data!.columns[0]!.id, title: 'One' });
-    await deliverDomainEvents();
-    const rows = await db.select().from(helenaDomainEvent);
-    expect(rows.length).toBeGreaterThan(0);
-    expect(rows.every((row) => row.fannedOutAt !== null)).toBe(true);
+    await api.issues({ issueId: issue.data!.id }).comments.post({ body: 'looks good' });
+    const comment = seen.find((event) => event.type === 'helena.comment.created')!;
+    expect(comment.data).toMatchObject({ issueId: issue.data!.id });
+    expect(comment.subject).toMatch(/^comments\/\d+$/);
   });
 });
