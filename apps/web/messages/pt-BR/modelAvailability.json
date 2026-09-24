@@ -17,8 +17,7 @@
   },
   "activity": "não pôde trabalhar: o modelo {model} não está disponível para sua conta",
   "health": {
-    "refused": "{model} não está disponível para a conta – {count, plural, one {# agente o usa} other {# agentes o usam}}: {agents}",
-    "refusedUnused": "{model} não está disponível para a conta – nenhum agente o usa mais"
+    "refused": "{model} não está disponível para a conta – {count, plural, one {# agente o usa} other {# agentes o usam}}: {agents}"
   },
   "admin": {
     "title": "Modelos",

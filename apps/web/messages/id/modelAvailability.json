@@ -17,8 +17,7 @@
   },
   "activity": "tidak dapat bekerja: model {model} tidak tersedia untuk akunmu",
   "health": {
-    "refused": "{model} tidak tersedia untuk akun ini – {count, plural, other {# agen memakainya}}: {agents}",
-    "refusedUnused": "{model} tidak tersedia untuk akun ini – tidak ada agen yang memakainya lagi"
+    "refused": "{model} tidak tersedia untuk akun ini – {count, plural, other {# agen memakainya}}: {agents}"
   },
   "admin": {
     "title": "Model",

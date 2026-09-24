@@ -17,8 +17,7 @@
   },
   "activity": "could not work: the model {model} is not available for your account",
   "health": {
-    "refused": "{model} is not available for the account – {count, plural, one {# agent uses it} other {# agents use it}}: {agents}",
-    "refusedUnused": "{model} is not available for the account – no agent uses it any more"
+    "refused": "{model} is not available for the account – {count, plural, one {# agent uses it} other {# agents use it}}: {agents}"
   },
   "admin": {
     "title": "Models",

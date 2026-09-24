@@ -17,8 +17,7 @@
   },
   "activity": "无法工作：模型 {model} 对你的账户不可用",
   "health": {
-    "refused": "{model} 对该账户不可用——{count, plural, other {有 # 个智能体在使用}}：{agents}",
-    "refusedUnused": "{model} 对该账户不可用——已没有智能体使用它"
+    "refused": "{model} 对该账户不可用——{count, plural, other {有 # 个智能体在使用}}：{agents}"
   },
   "admin": {
     "title": "模型",
