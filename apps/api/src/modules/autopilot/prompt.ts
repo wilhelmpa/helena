@@ -13,7 +13,7 @@ const WHAT: Record<ActionCategory, string> = {
   pay: 'pay',
   publish: 'publish, push or deploy',
   execute: 'run risky commands or code',
-  credentials: 'create or change credentials, keys or grants',
+  credentials: 'change logins, keys or grants',
 };
 
 function phrase(rule: LevelRule): string {

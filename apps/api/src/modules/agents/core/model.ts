@@ -360,6 +360,13 @@ export const AgentRunResponse = t.Object({
         'then ended as a success. Null for a run that was not blocked.',
     }),
   ),
+  autopilotLevel: t.Nullable(
+    t.Number({
+      description:
+        'The Autopilot level the run worked at (0 propose … 3 autonomous); null for a run ' +
+        'from before the Autopilot.',
+    }),
+  ),
   reflection: t.Nullable(
     t.Object(
       {

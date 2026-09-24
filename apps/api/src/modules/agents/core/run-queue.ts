@@ -304,6 +304,8 @@ export interface AgentRunRow {
   contextTokens?: number;
   blockedQuestion: string | null;
   reflection: ReflectionView | null;
+  // The Autopilot level the run worked at; null for a run from before the Autopilot.
+  autopilotLevel: number | null;
   nextAttemptAt: string;
   createdAt: string;
 }
@@ -351,6 +353,7 @@ export async function listAgentRuns(
       outputTokens: agentRun.outputTokens,
       blockedQuestion: agentRun.blockedQuestion,
       reflection: agentRun.reflection,
+      autopilotLevel: agentRun.autopilotLevel,
       finishedAt: agentRun.finishedAt,
       nextAttemptAt: agentRun.nextAttemptAt,
       createdAt: agentRun.createdAt,
@@ -387,6 +390,7 @@ export async function listAgentRuns(
       ...contextTokensOf(r),
       blockedQuestion: r.blockedQuestion,
       reflection: reflectionView(r.reflection, r.finishedAt),
+      autopilotLevel: r.autopilotLevel,
       nextAttemptAt: iso(r.nextAttemptAt),
       createdAt: iso(r.createdAt),
     })),
