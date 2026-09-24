@@ -95,7 +95,7 @@ hardening rules as `helena-hermes-update`:
   origin, security), `install-cli-runtimes.sh status --json`, and the versions of Bun, Node,
   code-server, Wetty, uv, chromium and KasmVNC read from their files (dpkg, `package.json`,
   the runtime folders' names). Offline, read-only.
-- `apply cli-runtime {runtime, version}`: `helena-install-cli-runtimes upgrade <runtime>
+- `apply cli-runtime {runtime, version}`: `/usr/local/share/helena/runtimes/install-cli-runtimes.sh upgrade <runtime>
   <version>` (a root-owned copy of `install-cli-runtimes.sh` with its pins, lockfiles and the
   Claude release key under `/usr/local/share/helena/runtimes`): Claude Code's signed manifest
   of the new version is verified with the **pinned release key** before its checksum becomes

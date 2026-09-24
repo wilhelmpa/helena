@@ -24,7 +24,7 @@ import { getUpdateSettings } from '../settings';
 // Claude Code, Codex and the two ACP adapters, installed pinned by install-cli-runtimes.sh
 // (/opt/helena/runtimes/<runtime>/<version>, `current` the one in use). The newest version
 // is the vendor's: Claude Code's release bucket, npm for the others. An update is done by
-// the root helper (`helena-update` → `helena-install-cli-runtimes upgrade`), which verifies
+// the root helper (`helena-update` → its root-owned copy of `install-cli-runtimes.sh upgrade`), which verifies
 // Claude Code's signed manifest with the pinned release key and installs npm packages from a
 // fresh lockfile without install scripts; the version before stays for rollback.
 
