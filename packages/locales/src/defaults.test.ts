@@ -28,7 +28,9 @@ function keyPaths(tree: Tree, prefix = ''): string[] {
 }
 
 function values(tree: Tree): string[] {
-  return Object.values(tree).flatMap((value) => (typeof value === 'string' ? [value] : values(value)));
+  return Object.values(tree).flatMap((value) =>
+    typeof value === 'string' ? [value] : values(value),
+  );
 }
 
 const messages = join(import.meta.dir, '..', 'messages');

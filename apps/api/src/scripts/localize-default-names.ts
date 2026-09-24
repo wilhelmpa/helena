@@ -74,7 +74,14 @@ function rename(
 ): Rename | null {
   if (row.name === to) return null;
   const clash = taken.some((name) => lower(name) === lower(to) && name !== row.name);
-  return { kind, id: row.id, scope, from: row.name, to, ...(clash ? { skipped: 'name taken' } : {}) };
+  return {
+    kind,
+    id: row.id,
+    scope,
+    from: row.name,
+    to,
+    ...(clash ? { skipped: 'name taken' } : {}),
+  };
 }
 
 async function teamOwnerLocale(teamId: number): Promise<Locale> {
@@ -104,7 +111,11 @@ export async function planDefaultNameLocalization(
     const names = defaultNames(locale);
 
     const states = await db
-      .select({ id: projectColumn.id, name: projectColumn.name, stateType: projectColumn.stateType })
+      .select({
+        id: projectColumn.id,
+        name: projectColumn.name,
+        stateType: projectColumn.stateType,
+      })
       .from(projectColumn)
       .where(eq(projectColumn.projectId, target.id))
       .orderBy(asc(projectColumn.position), asc(projectColumn.id));
@@ -172,7 +183,13 @@ export async function planDefaultNameLocalization(
         ),
       );
     if (coordinator && coordinator.name === coordinatorName(target.key, 'en')) {
-      const next = rename('coordinator', coordinator, coordinatorName(target.key, locale), target.key, []);
+      const next = rename(
+        'coordinator',
+        coordinator,
+        coordinatorName(target.key, locale),
+        target.key,
+        [],
+      );
       if (next) plan.push(next);
     }
 
@@ -198,7 +215,9 @@ export async function planDefaultNameLocalization(
   const teams = await db
     .select({ id: team.id, name: team.name })
     .from(team)
-    .where(options.projectKeys?.length ? inArray(team.id, teamIds.length ? teamIds : [-1]) : undefined)
+    .where(
+      options.projectKeys?.length ? inArray(team.id, teamIds.length ? teamIds : [-1]) : undefined,
+    )
     .orderBy(team.id);
   for (const target of teams) {
     const locale = options.locale ?? (await teamOwnerLocale(target.id));
@@ -231,22 +250,40 @@ async function applyPlan(plan: Rename[]): Promise<void> {
       const id = item.id;
       switch (item.kind) {
         case 'state':
-          await tx.update(projectColumn).set({ name: item.to }).where(eq(projectColumn.id, Number(id)));
+          await tx
+            .update(projectColumn)
+            .set({ name: item.to })
+            .where(eq(projectColumn.id, Number(id)));
           break;
         case 'issueType':
-          await tx.update(issueType).set({ name: item.to }).where(eq(issueType.id, Number(id)));
+          await tx
+            .update(issueType)
+            .set({ name: item.to })
+            .where(eq(issueType.id, Number(id)));
           break;
         case 'view':
-          await tx.update(projectView).set({ name: item.to }).where(eq(projectView.id, Number(id)));
+          await tx
+            .update(projectView)
+            .set({ name: item.to })
+            .where(eq(projectView.id, Number(id)));
           break;
         case 'coordinator':
-          await tx.update(user).set({ name: item.to }).where(eq(user.id, String(id)));
+          await tx
+            .update(user)
+            .set({ name: item.to })
+            .where(eq(user.id, String(id)));
           break;
         case 'label':
-          await tx.update(label).set({ name: item.to }).where(eq(label.id, Number(id)));
+          await tx
+            .update(label)
+            .set({ name: item.to })
+            .where(eq(label.id, Number(id)));
           break;
         case 'role':
-          await tx.update(teamRole).set({ name: item.to }).where(eq(teamRole.id, Number(id)));
+          await tx
+            .update(teamRole)
+            .set({ name: item.to })
+            .where(eq(teamRole.id, Number(id)));
           break;
       }
     }
@@ -257,7 +294,11 @@ export async function localizeDefaultNames(options: LocalizeOptions = {}): Promi
   const log = options.log ?? console.log;
   const plan = await planDefaultNameLocalization(options);
   for (const item of plan) {
-    const verb = item.skipped ? `skip (${item.skipped})` : options.apply ? 'rename' : 'would rename';
+    const verb = item.skipped
+      ? `skip (${item.skipped})`
+      : options.apply
+        ? 'rename'
+        : 'would rename';
     log(`${verb} ${item.scope} ${item.kind} "${item.from}" → "${item.to}"`);
   }
   const todo = plan.filter((item) => !item.skipped);
@@ -280,7 +321,8 @@ function args(argv: string[]): LocalizeOptions {
       const value = argv[++i];
       if (!isLocale(value)) throw new Error(`Unknown --locale ${value ?? ''}`);
       options.locale = value;
-    } else if (arg === '--project') options.projectKeys!.push(String(argv[++i] ?? '').toUpperCase());
+    } else if (arg === '--project')
+      options.projectKeys!.push(String(argv[++i] ?? '').toUpperCase());
     else throw new Error(`Unknown argument ${arg}`);
   }
   // --dry-run wins over --apply when both are given.

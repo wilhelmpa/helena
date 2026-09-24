@@ -75,7 +75,8 @@ async function evaluate(runId: string, step: ConditionStep, at: StepExecution): 
     // a project's "In Prüfung".
     const overlaps =
       test.field === 'status'
-        ? !!task && test.values.some((value) => findState(projectData.statuses, value)?.id === task.columnId)
+        ? !!task &&
+          test.values.some((value) => findState(projectData.statuses, value)?.id === task.columnId)
         : test.values.some((value) => current.some((item) => same(item, value)));
     matched = test.op === 'is' ? overlaps : !overlaps;
   } else {

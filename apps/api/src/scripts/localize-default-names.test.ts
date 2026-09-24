@@ -33,8 +33,13 @@ async function englishProject() {
   await api.projects.post({ key: 'MKT', name: 'Marketing', preset: 'software' });
   const project = (await api.projects({ projectKey: 'MKT' }).get()).data!;
   const done = project.columns.find((column) => column.name === 'Done')!;
-  await api.projects({ projectKey: 'MKT' }).columns({ columnId: done.id }).patch({ name: 'Fertig' });
-  await api.projects({ projectKey: 'MKT' })['issue-types'].post({ name: 'Aufgabe', color: '#000000' });
+  await api
+    .projects({ projectKey: 'MKT' })
+    .columns({ columnId: done.id })
+    .patch({ name: 'Fertig' });
+  await api
+    .projects({ projectKey: 'MKT' })
+    ['issue-types'].post({ name: 'Aufgabe', color: '#000000' });
   await api.projects({ projectKey: 'MKT' }).labels.post({ name: 'Blocked' });
   await api.account.preferences.patch({ locale: 'de' });
   return { owner, api };
@@ -51,20 +56,21 @@ describe('localize default names', () => {
     const plan = await localizeDefaultNames({ log: (line) => lines.push(line) });
 
     expect(await names(api, 'MKT')).toEqual(before);
-    expect(plan.filter((item) => !item.skipped).map((item) => [item.kind, item.from, item.to]))
-      .toEqual([
-        ['state', 'Todo', 'Zu erledigen'],
-        ['state', 'In Progress', 'In Arbeit'],
-        ['state', 'Review', 'In Prüfung'],
-        ['state', 'Canceled', 'Abgebrochen'],
-        ['issueType', 'Tech debt', 'Technische Schulden'],
-        ['issueType', 'Research', 'Recherche'],
-        ['view', 'Kanban', 'Board'],
-        ['view', 'List', 'Liste'],
-        ['coordinator', 'Hermes MKT Coordinator', 'Hermes-Koordinator MKT'],
-        ['label', 'Blocked', 'Blockiert'],
-        ['role', 'Member', 'Mitglied'],
-      ]);
+    expect(
+      plan.filter((item) => !item.skipped).map((item) => [item.kind, item.from, item.to]),
+    ).toEqual([
+      ['state', 'Todo', 'Zu erledigen'],
+      ['state', 'In Progress', 'In Arbeit'],
+      ['state', 'Review', 'In Prüfung'],
+      ['state', 'Canceled', 'Abgebrochen'],
+      ['issueType', 'Tech debt', 'Technische Schulden'],
+      ['issueType', 'Research', 'Recherche'],
+      ['view', 'Kanban', 'Board'],
+      ['view', 'List', 'Liste'],
+      ['coordinator', 'Hermes MKT Coordinator', 'Hermes-Koordinator MKT'],
+      ['label', 'Blocked', 'Blockiert'],
+      ['role', 'Member', 'Mitglied'],
+    ]);
     expect(plan.filter((item) => item.skipped)).toMatchObject([
       { kind: 'issueType', from: 'Task', to: 'Aufgabe', skipped: 'name taken' },
     ]);

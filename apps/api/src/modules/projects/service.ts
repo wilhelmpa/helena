@@ -43,11 +43,7 @@ import { getDefaultRoleId } from '#modules/roles/service';
 import { ensureDefaultProjectViews } from '#modules/views/service';
 import { DEFAULT_LOCALE, type Locale } from '#modules/user-preferences/locale';
 import { preferredLocale } from '#modules/user-preferences/service';
-import {
-  coordinatorName,
-  defaultStates,
-  presetIssueTypes,
-} from '@helena/locales/defaults';
+import { coordinatorName, defaultStates, presetIssueTypes } from '@helena/locales/defaults';
 import {
   hermesProjectCoordinatorUsername,
   isHermesProjectCoordinatorUsername,

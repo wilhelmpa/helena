@@ -65,9 +65,7 @@ export default function NewProjectPreset({
             </span>
           ))}
         </div>
-        <p className="text-xs text-muted-foreground">
-          {t('defaultType', { type: types[0].name })}
-        </p>
+        <p className="text-xs text-muted-foreground">{t('defaultType', { type: types[0].name })}</p>
       </div>
     </div>
   );
