@@ -10,7 +10,13 @@ describe('license policy', () => {
   });
 
   test('source-available and non-commercial licenses are forbidden', () => {
-    for (const id of ['Elastic-2.0', 'SSPL-1.0', 'BUSL-1.1', 'CC-BY-NC-4.0', 'MIT AND Commons-Clause']) {
+    for (const id of [
+      'Elastic-2.0',
+      'SSPL-1.0',
+      'BUSL-1.1',
+      'CC-BY-NC-4.0',
+      'MIT AND Commons-Clause',
+    ]) {
       expect(evaluate(id).policy).toBe('forbidden');
     }
   });

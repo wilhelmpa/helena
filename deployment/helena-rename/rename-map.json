@@ -225,12 +225,7 @@
     ],
     "maxDepth": 3
   },
-  "skipNames": [
-    ".bak",
-    ".orig",
-    ".dpkg-old",
-    ".before-"
-  ],
+  "skipNames": [".bak", ".orig", ".dpkg-old", ".before-"],
   "rewriteFiles": {
     "$comment": "Text files inside the moved roots, rewritten after the move. Secret files are edited in place and never printed. Each group names the rule set it gets.",
     "env": [
@@ -377,10 +372,7 @@
       "folder id=\"volition\""
     ]
   },
-  "health": [
-    "http://127.0.0.1:3000/",
-    "http://127.0.0.1:3001/login"
-  ],
+  "health": ["http://127.0.0.1:3000/", "http://127.0.0.1:3001/login"],
   "preserve": {
     "$comment": "Names deliberately kept, and why.",
     "syncthingFolderId": "volition: paired devices know the vault by this folder ID; changing it makes every device offer the folder anew. Only its path changes here, its label in the Helena UI.",

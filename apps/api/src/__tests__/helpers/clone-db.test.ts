@@ -4,7 +4,9 @@ import { cloneName, databaseName, isStaleClone } from './clone-db';
 
 describe('per-run test database', () => {
   test('the copy is named after the template, the time and a random suffix', () => {
-    expect(cloneName('itsaplan_test', 1_700_000_000_000, 0.5)).toBe('itsaplan_test_run_1700000000000_i00000');
+    expect(cloneName('itsaplan_test', 1_700_000_000_000, 0.5)).toBe(
+      'itsaplan_test_run_1700000000000_i00000',
+    );
   });
 
   test('a long template name is shortened so the copy stays within 63 bytes', () => {
@@ -19,11 +21,15 @@ describe('per-run test database', () => {
     const fresh = cloneName('itsaplan_test', now - 60_000);
     expect(isStaleClone(old, 'itsaplan_test', now)).toBe(true);
     expect(isStaleClone(fresh, 'itsaplan_test', now)).toBe(false);
-    expect(isStaleClone(cloneName('other_test', now - 7 * 3600_000), 'itsaplan_test', now)).toBe(false);
+    expect(isStaleClone(cloneName('other_test', now - 7 * 3600_000), 'itsaplan_test', now)).toBe(
+      false,
+    );
     expect(isStaleClone('itsaplan_test', 'itsaplan_test', now)).toBe(false);
   });
 
   test('reads the database name of a URL', () => {
-    expect(databaseName('postgres://u:p@127.0.0.1:55495/itsaplan_test?sslmode=disable')).toBe('itsaplan_test');
+    expect(databaseName('postgres://u:p@127.0.0.1:55495/itsaplan_test?sslmode=disable')).toBe(
+      'itsaplan_test',
+    );
   });
 });

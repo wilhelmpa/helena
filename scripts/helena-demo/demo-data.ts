@@ -68,7 +68,7 @@ export const DEMO_PROJECTS: DemoProject[] = [
           'Turn the three Q4 goals in Docs into tasks with acceptance criteria and an order.',
       },
       {
-        title: 'Collect this week\'s open questions',
+        title: "Collect this week's open questions",
         description: 'List the open questions from the tasks of the last week, grouped by project.',
       },
     ],
@@ -96,7 +96,11 @@ export const DEMO_WORKFLOW = {
     schemaVersion: 1,
     trigger: { type: 'manual' },
     roles: [
-      { key: 'researcher', name: 'Researcher', match: { type: 'capability', capability: 'research' } },
+      {
+        key: 'researcher',
+        name: 'Researcher',
+        match: { type: 'capability', capability: 'research' },
+      },
       { key: 'writer', name: 'Writer', match: { type: 'capability', capability: 'docs' } },
     ],
     steps: [

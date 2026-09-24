@@ -109,11 +109,15 @@ export function evaluate(expression: string): Verdict {
   const text = expression.trim().replace(/^\((.*)\)$/, '$1');
   const orParts = splitTop(text, 'OR');
   if (orParts.length > 1) {
-    return orParts.map(evaluate).reduce((best, next) => (RANK[next.policy] < RANK[best.policy] ? next : best));
+    return orParts
+      .map(evaluate)
+      .reduce((best, next) => (RANK[next.policy] < RANK[best.policy] ? next : best));
   }
   const andParts = splitTop(text, 'AND');
   if (andParts.length > 1) {
-    return andParts.map(evaluate).reduce((worst, next) => (RANK[next.policy] > RANK[worst.policy] ? next : worst));
+    return andParts
+      .map(evaluate)
+      .reduce((worst, next) => (RANK[next.policy] > RANK[worst.policy] ? next : worst));
   }
   const withException = text.split(/\s+WITH\s+/)[0] ?? text;
   return single(withException);
@@ -214,7 +218,9 @@ export function render(rows: Row[], generatedFrom: string[]): string {
     const seen = unique.get(key);
     if (!seen || (seen.scope === 'development' && row.scope === 'runtime')) unique.set(key, row);
   }
-  const all = [...unique.values()].sort((a, b) => a.name.localeCompare(b.name) || a.version.localeCompare(b.version));
+  const all = [...unique.values()].sort(
+    (a, b) => a.name.localeCompare(b.name) || a.version.localeCompare(b.version),
+  );
   const byLicense = new Map<string, { runtime: number; development: number }>();
   for (const row of all) {
     const count = byLicense.get(row.license) ?? { runtime: 0, development: 0 };
@@ -240,7 +246,9 @@ export function render(rows: Row[], generatedFrom: string[]): string {
   lines.push('');
   lines.push('| License | Policy | Runtime | Development only |');
   lines.push('|---|---|---:|---:|');
-  const summary = [...byLicense.entries()].sort((a, b) => b[1].runtime - a[1].runtime || a[0].localeCompare(b[0]));
+  const summary = [...byLicense.entries()].sort(
+    (a, b) => b[1].runtime - a[1].runtime || a[0].localeCompare(b[0]),
+  );
   for (const [license, count] of summary) {
     const verdict = evaluate(license);
     lines.push(`| ${license} | ${verdict.policy} | ${count.runtime} | ${count.development} |`);
@@ -285,7 +293,9 @@ async function main(argv: string[]): Promise<number> {
   const outIndex = argv.indexOf('--out');
   const out = outIndex >= 0 ? argv[outIndex + 1]! : join(root, 'docs/oss/THIRD-PARTY-LICENSES.md');
   const lockfiles = argv.flatMap((arg, index) => (argv[index - 1] === '--lockfile' ? [arg] : []));
-  const extra = (lockfiles.length > 0 ? lockfiles : DEFAULT_LOCKFILES).map((path) => join(root, path));
+  const extra = (lockfiles.length > 0 ? lockfiles : DEFAULT_LOCKFILES).map((path) =>
+    join(root, path),
+  );
 
   const runtime = await fromBun(root, true);
   const everything = await fromBun(root, false);
@@ -307,14 +317,22 @@ async function main(argv: string[]): Promise<number> {
   });
   if (check) {
     for (const row of blocking) {
-      console.log(`${evaluate(row.license).policy}: ${row.name}@${row.version} (${row.license}) from ${row.source}`);
+      console.log(
+        `${evaluate(row.license).policy}: ${row.name}@${row.version} (${row.license}) from ${row.source}`,
+      );
     }
     console.log(`${rows.length} packages, ${blocking.length} blocking`);
-    return blocking.some((row) => evaluate(row.license).policy === 'forbidden') ? 1 : blocking.length > 0 ? 2 : 0;
+    return blocking.some((row) => evaluate(row.license).policy === 'forbidden')
+      ? 1
+      : blocking.length > 0
+        ? 2
+        : 0;
   }
   mkdirSync(dirname(out), { recursive: true });
   writeFileSync(out, render(rows, sources));
-  console.log(`wrote ${relative(root, out)}: ${rows.length} packages, ${blocking.length} to review`);
+  console.log(
+    `wrote ${relative(root, out)}: ${rows.length} packages, ${blocking.length} to review`,
+  );
   return 0;
 }
 

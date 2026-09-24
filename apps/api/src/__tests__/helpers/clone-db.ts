@@ -55,7 +55,9 @@ export async function cloneTestDatabase(url: string): Promise<ClonedDatabase | n
     const existing = (await admin`SELECT datname FROM pg_database`) as Array<{ datname: string }>;
     for (const { datname } of existing) {
       if (isStaleClone(datname, template)) {
-        await admin.unsafe(`DROP DATABASE IF EXISTS ${quoteIdent(datname)} WITH (FORCE)`).catch(() => {});
+        await admin
+          .unsafe(`DROP DATABASE IF EXISTS ${quoteIdent(datname)} WITH (FORCE)`)
+          .catch(() => {});
       }
     }
     const name = cloneName(template);

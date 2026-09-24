@@ -177,7 +177,11 @@ export class DemoSeed {
     );
   }
 
-  private async ensureCoordinator(teamId: number, project: Project, home: Agent | undefined): Promise<OrgAgent | null> {
+  private async ensureCoordinator(
+    teamId: number,
+    project: Project,
+    home: Agent | undefined,
+  ): Promise<OrgAgent | null> {
     const org = await this.api<{ agents: OrgAgent[] }>('GET', `/teams/${teamId}/organization`);
     const username = `hermes-${project.key.toLowerCase()}-coordinator`;
     const coordinator = org.agents.find((a) => a.username.toLowerCase() === username);
@@ -245,7 +249,11 @@ export class DemoSeed {
     );
   }
 
-  private async ensureTasks(project: Project, demo: DemoProject, specialists: Map<string, Agent>): Promise<void> {
+  private async ensureTasks(
+    project: Project,
+    demo: DemoProject,
+    specialists: Map<string, Agent>,
+  ): Promise<void> {
     // The full project view carries the columns (there is no list route of its own).
     const view = await this.api<{ columns?: { id: number; stateType?: string }[] }>(
       'GET',
@@ -267,13 +275,15 @@ export class DemoSeed {
         continue;
       }
       const assign = this.opts.startWork && index === 0 && first?.userId;
-      await this.write(`create ${project.key} task "${task.title}"${assign ? ` for @${first!.username}` : ''}`, () =>
-        this.api('POST', `/projects/${project.key}/issues`, {
-          columnId: column.id,
-          title: task.title,
-          description: task.description,
-          ...(assign ? { assigneeUserId: first!.userId } : {}),
-        }),
+      await this.write(
+        `create ${project.key} task "${task.title}"${assign ? ` for @${first!.username}` : ''}`,
+        () =>
+          this.api('POST', `/projects/${project.key}/issues`, {
+            columnId: column.id,
+            title: task.title,
+            description: task.description,
+            ...(assign ? { assigneeUserId: first!.userId } : {}),
+          }),
       );
     }
   }
@@ -281,7 +291,9 @@ export class DemoSeed {
   private async ensureRoutine(teamId: number): Promise<void> {
     const key = DEMO_ROUTINE.projectKey;
     const org = await this.api<{ agents: OrgAgent[] }>('GET', `/teams/${teamId}/organization`);
-    const coordinator = org.agents.find((a) => a.username.toLowerCase() === `hermes-${key.toLowerCase()}-coordinator`);
+    const coordinator = org.agents.find(
+      (a) => a.username.toLowerCase() === `hermes-${key.toLowerCase()}-coordinator`,
+    );
     if (!coordinator) {
       this.warn(`no coordinator in ${key}; the routine is left out`);
       return;
@@ -331,7 +343,10 @@ export class DemoSeed {
       if (!entry.enabled) {
         // The roles are left to their own rule: each capability names one specialist.
         await this.write(`enable ${key} workflow "${DEMO_WORKFLOW.name}"`, () =>
-          this.api('PUT', `/projects/${key}/pipelines/${entry!.pipeline.id}`, { enabled: true, roles: {} }),
+          this.api('PUT', `/projects/${key}/pipelines/${entry!.pipeline.id}`, {
+            enabled: true,
+            roles: {},
+          }),
         );
       }
     } catch (error) {
@@ -375,10 +390,13 @@ export async function runDemoSeed(
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
-  const value = (name: string) => args.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3);
+  const value = (name: string) =>
+    args.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3);
   const apiKey = process.env.HELENA_API_KEY;
   if (!apiKey) {
-    console.error('HELENA_API_KEY is not set. Create a personal API key in Helena (Account → API keys).');
+    console.error(
+      'HELENA_API_KEY is not set. Create a personal API key in Helena (Account → API keys).',
+    );
     process.exit(1);
   }
   const teamId = value('team-id');
