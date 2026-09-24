@@ -602,7 +602,11 @@ class ScreencastStream {
   connectionOf(viewer) {
     const entry = viewer.tierIndex === null ? null : this.tiers.get(TIERS[viewer.tierIndex].name);
     const now = Date.now();
-    const settled = entry && now - entry.startedAt >= ENCODE_WINDOW_MS && now - viewer.videoStartedAt >= DOWNLINK_WINDOW_MS;
+    const settled =
+      entry &&
+      viewer.videoStartedAt > 0 &&
+      now - entry.startedAt >= ENCODE_WINDOW_MS &&
+      now - viewer.videoStartedAt >= DOWNLINK_WINDOW_MS;
     return {
       downlinkKbps: viewer.downlinkKbps,
       rttMs: viewer.rttMs,
@@ -809,6 +813,7 @@ class ScreencastStream {
   // schedule and whenever a fresh one arrives, and starts or stops encoders to match.
   reassignTiers() {
     if (!this.videoArea) return;
+    const moved = [];
     for (const viewer of this.viewers) {
       if (!viewer.viewport?.video || viewer.hidden) continue;
       const before = viewer.tierIndex;
@@ -819,8 +824,17 @@ class ScreencastStream {
       if (viewer.tierIndex === TIERS.length - 1 && before !== TIERS.length - 1) {
         viewer.lastDroppedAt = Date.now();
       }
+      if (viewer.tierIndex !== before) moved.push(viewer);
     }
     this.syncTierEncoders();
+    // A viewer that moved to a tier whose encoder already runs for another viewer gets that
+    // tier's video from its last keyframe now; a tier's new encoder sends it once it starts.
+    // Without this, a second viewer that moved onto the first one's tier got frames of a video
+    // it had no initialization segment for, and its view stood still.
+    for (const viewer of moved) {
+      viewer.waitingForKeyframe = true;
+      this.resumeVideo(viewer);
+    }
   }
 
   // Starts the encoder of every tier a shown video viewer is now on, and stops one that has
