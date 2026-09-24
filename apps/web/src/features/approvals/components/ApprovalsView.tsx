@@ -12,7 +12,12 @@ import {
 } from '@/components/layout/PageToolbar';
 import { useApprovalProjects, usePendingApprovalCount } from '@/services/approvals.service';
 import ApprovalRequestList from './ApprovalRequestList';
+import RuntimeProposalList from './RuntimeProposalList';
 import WorkflowApprovalList from './WorkflowApprovalList';
+import {
+  useProposalCount,
+  useProposals,
+} from '@/features/agent-runtime/services/agentRuntime.service';
 
 // What a project filter holds for "every project".
 const ALL = 'all';
@@ -33,7 +38,12 @@ export default function ApprovalsView({ fixedProjectKey }: { fixedProjectKey?: s
   const projectKey =
     fixedProjectKey ??
     (projects.some((project) => project.key === filterKey) ? filterKey : undefined);
-  const pending = usePendingApprovalCount(projectKey).data?.count;
+  // Runtime proposals (memory writes, Hermes updates) belong to no project: they count and
+  // show only while no project is chosen.
+  const proposalCount = useProposalCount().data?.count ?? 0;
+  const decidedProposals = useProposals('decided', status === 'decided' && !projectKey).data;
+  const pending =
+    (usePendingApprovalCount(projectKey).data?.count ?? 0) + (projectKey ? 0 : proposalCount);
 
   const setParam = (key: string, value: string | undefined) => {
     const next = new URLSearchParams(params.toString());
@@ -76,15 +86,21 @@ export default function ApprovalsView({ fixedProjectKey }: { fixedProjectKey?: s
             key={`pending:${projectKey ?? ''}`}
             status="pending"
             projectKey={projectKey}
+            quietWhenEmpty={!projectKey && proposalCount > 0}
           />
           <WorkflowApprovalList projectKey={projectKey} />
+          {!projectKey && <RuntimeProposalList status="pending" />}
         </div>
       ) : (
-        <ApprovalRequestList
-          key={`decided:${projectKey ?? ''}`}
-          status="decided"
-          projectKey={projectKey}
-        />
+        <div className="flex flex-1 flex-col gap-6">
+          <ApprovalRequestList
+            key={`decided:${projectKey ?? ''}`}
+            status="decided"
+            projectKey={projectKey}
+            quietWhenEmpty={!projectKey && (decidedProposals?.length ?? 0) > 0}
+          />
+          {!projectKey && <RuntimeProposalList status="decided" />}
+        </div>
       )}
     </>
   );

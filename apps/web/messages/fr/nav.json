@@ -88,7 +88,7 @@
       "followAgentOn": "Suit l’onglet de l’agent",
       "followAgentOff": "Suivre l’onglet de l’agent",
       "liveKeyboard": "Navigateur en direct. Les touches vont à la page tant que la vue a le focus.",
-      "controlAgent": "L’agent agit actuellement",
+      "controlAgent": "L'agent agit en ce moment",
       "videoPreferenceAuto": "Automatique",
       "videoPreferenceVideo": "Vidéo",
       "videoPreferenceJpeg": "Images fixes",
@@ -106,7 +106,25 @@
       "reconnecting": "La connexion au navigateur a été perdue. Reconnexion…",
       "dialogTitle": "La page demande",
       "dialogOk": "OK",
-      "dialogCancel": "Annuler"
+      "dialogCancel": "Annuler",
+      "controlPrefix": "Contrôle :",
+      "controlledByAgentGeneric": "un agent",
+      "takeOver": "Prendre le contrôle",
+      "handBack": "Rendre le contrôle",
+      "takeOverError": "Impossible de prendre le contrôle du navigateur.",
+      "handBackError": "Impossible de rendre le contrôle du navigateur.",
+      "handoverTitle": "{agentName} vous demande de prendre le relais",
+      "youControl": "Vous avez le contrôle",
+      "handoverDone": "Terminé – rendre",
+      "takeOverTitle": "{agentName} a le contrôle. Le prendre ?",
+      "takeOverHint": "Tant que vous avez le contrôle, l'agent attend. Il reprend dès que vous le rendez.",
+      "idleTitle": "Avez-vous terminé ?",
+      "idleHint": "Aucune saisie depuis 10 minutes. Sans réponse, le contrôle revient aux agents dans une minute.",
+      "idleKeep": "Garder le contrôle",
+      "bookmarks": "Favoris",
+      "bookmarkPage": "Ajouter cette page aux favoris",
+      "removeBookmark": "Retirer le favori",
+      "noBookmarks": "Aucun favori pour l’instant"
     }
   },
   "groups": {
@@ -149,5 +167,6 @@
     "projectOptions": "Options du projet",
     "groupOptions": "Options du groupe",
     "dropUngrouped": "Déposez ici pour retirer le projet de son groupe"
-  }
+  },
+  "browser": "Navigateur"
 }

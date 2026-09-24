@@ -23,6 +23,7 @@ import { normalizeOpenApiResponse } from './openapi';
 import { homeAgentBootstrapRoutes } from './home-agent-bootstrap';
 import { hermesTeamControlRoutes } from './hermes-team-control';
 import { agentEgressInternalRoutes } from './modules/agent-egress/internal';
+import { agentBrowserGatewayInternalRoutes } from './modules/agent-browser-gateway/internal';
 import {
   agentSocketProject,
   agentSocketRequestAllowed,
@@ -86,7 +87,8 @@ export const app = new Elysia()
       origin: trustedOrigins,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
+      // Last-Event-ID: a chat stream's reader resumes with it (the SSE standard's way).
+      allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'Last-Event-ID'],
     }),
   )
   .onAfterHandle({ as: 'global' }, ({ request, response }) =>
@@ -95,6 +97,7 @@ export const app = new Elysia()
   .use(homeAgentBootstrapRoutes)
   .use(hermesTeamControlRoutes)
   .use(agentEgressInternalRoutes)
+  .use(agentBrowserGatewayInternalRoutes)
   // OpenAPI docs. Mounted on the main app (outside the planner's session guard)
   // so the UI at /docs and the spec at /docs/json are reachable without a
   // session. The spec is generated from the `t` schemas on every route.
@@ -161,6 +164,27 @@ export const app = new Elysia()
               'What an external agent learned in its runtime, and the actions its runner ' +
               'carries out on it',
           },
+          {
+            name: 'Agent Runs',
+            description: "A run's timeline, live and as a replay, and continuing its session",
+          },
+          {
+            name: 'Agent Runtime',
+            description:
+              "What an agent's runtime keeps: sessions and transcripts, logs, health, " +
+              'version, curator, read through its runner',
+          },
+          {
+            name: 'Agent Usage',
+            description: 'Tokens and cost of the agents per agent, model, project and day',
+          },
+          {
+            name: 'Agent Proposals',
+            description:
+              "Changes an agent's runtime raised for the owner's decision: memory writes, " +
+              'runtime updates',
+          },
+          { name: 'Emergency Stop', description: "The instance's emergency stop for all agents" },
           { name: 'Custom Fields', description: 'Global and type-scoped custom fields' },
           { name: 'Issue Templates', description: 'Presets a new issue can be created from' },
           { name: 'Issues', description: 'Issues, their fields, feed, and comments' },

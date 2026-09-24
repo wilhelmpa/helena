@@ -43,11 +43,11 @@ export default function ChatAgentMenu({
           title={`${agent.name} · ${text.detail(agent, state)}`}
         >
           <AgentAvatar name={agent.name} presence={state?.presence} className="size-5 text-xl" />
-          <span className="hidden max-w-32 truncate text-foreground @sm/chat:inline">
+          <span className="hidden max-w-32 truncate text-foreground @md/composer:inline">
             {agent.name}
           </span>
           {state && (
-            <span className="hidden truncate @xl/chat:inline">{text.status(state.label)}</span>
+            <span className="hidden truncate @xl/composer:inline">{text.status(state.label)}</span>
           )}
           <ChevronDown className="size-3.5 shrink-0" />
         </button>

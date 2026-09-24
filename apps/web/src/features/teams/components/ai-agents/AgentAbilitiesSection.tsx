@@ -12,15 +12,15 @@ import { templateToolsets } from '../../utils/agentAbilities';
 import { canActOnLearning } from '../../utils/agentLearning';
 import { AgentFormSection } from './AgentFormSection';
 import AgentLearningSettings from './AgentLearningSettings';
-import AgentMemoryFiles from './AgentMemoryFiles';
+import AgentProfileSync from './AgentProfileSync';
 import AgentRuntimeNotices from './AgentRuntimeNotices';
 import AgentSkillInventory from './AgentSkillInventory';
 import AgentToolsetList from './AgentToolsetList';
 
 // What the agent can do in Hermes, as its runner last reported it. Hermes owns the
-// toolsets, the MCP servers of its configuration, the skills and the memory; the owner
-// turns toolsets and those servers off, adds servers of the team's library, decides
-// whether the agent learns, and acts on what it learned.
+// toolsets, the MCP servers of its configuration and the skills; the owner turns
+// toolsets, those servers and skills off, adds servers of the team's library, decides
+// whether the agent learns, and acts on what it learned. The memory has its own tab.
 export default function AgentAbilitiesSection({
   open,
   onOpenChange,
@@ -66,6 +66,9 @@ export default function AgentAbilitiesSection({
         canEdit={canEdit}
         onChange={(runtimePolicy) => onChange({ runtimePolicy })}
       />
+      {agent && agent.kind === 'external' && !isTemplate && (
+        <AgentProfileSync teamId={teamId} agentId={agent.id} canEdit={canEdit} />
+      )}
       {agent && !isTemplate && <AgentRuntimeNotices state={agent.runtimeState} />}
       {isTemplate ? (
         <>
@@ -108,15 +111,17 @@ export default function AgentAbilitiesSection({
           {mcpServersContent}
           <AgentSkillInventory
             skills={inventory.skills}
+            disabled={policy.skillsDisabled ?? []}
+            onDisabledChange={
+              canEdit
+                ? (skillsDisabled) => onChange({ runtimePolicy: { ...policy, skillsDisabled } })
+                : null
+            }
             learned={
               actingAgent === null
                 ? null
                 : { agentId: actingAgent, actions, onPromoted: onSkillPromoted }
             }
-          />
-          <AgentMemoryFiles
-            memory={inventory.memory}
-            controls={actingAgent === null || !canEdit ? null : { agentId: actingAgent, actions }}
           />
         </>
       )}

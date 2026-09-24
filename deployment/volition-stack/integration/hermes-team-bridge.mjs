@@ -3,11 +3,19 @@ import { lstat, readFile, unlink } from 'node:fs/promises';
 import http from 'node:http';
 import { createHermesTeamService, HermesTeamError } from './hermes-team-bridge-core.mjs';
 
+// A secret must be readable by its owner only. systemd's own credential directory is the
+// exception: on a native boot it presents LoadCredential files as 0440 (0400 inside a
+// container) and guards the directory itself, so group read is fine there.
+function secretModeMask(file) {
+  const dir = process.env.CREDENTIALS_DIRECTORY;
+  return dir && file.startsWith(`${dir}/`) ? 0o037 : 0o077;
+}
+
 const MAX_BODY = 512 * 1024;
 
 async function secret(path) {
   const stat = await lstat(path);
-  if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & 0o077) !== 0) throw new Error('invalid secret file');
+  if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & secretModeMask(path)) !== 0) throw new Error('invalid secret file');
   const value = (await readFile(path, 'utf8')).trim();
   if (Buffer.byteLength(value) < 32 || value.length > 2_048) throw new Error('invalid secret');
   return value;

@@ -21,12 +21,20 @@ import { loadRepositoryBundles } from '#modules/template-bundles/service';
 // the same manifest checks as an external plugin (docs/helena-framework.md, §3a
 // "dogfooding"). Loaded once, when the app is assembled (app.ts).
 
+// A built-in's name is a key of Helena's own translations (god.plugins.names.<name>).
 function builtinManifest(
   id: string,
   name: string,
   manifest: Partial<PluginManifest>,
 ): PluginManifest {
-  return { id, name, version: '1.0.0', sdk: '^0.1.0', provides: {}, ...manifest };
+  return {
+    id,
+    name: { i18n: `god.plugins.names.${name}` },
+    version: '1.0.0',
+    sdk: '^0.1.0',
+    provides: {},
+    ...manifest,
+  };
 }
 
 // The tool integrations (@repo/agent-tools) as connectors whose tools run with the
@@ -82,14 +90,14 @@ export async function loadBuiltinPlugins(app: McpApp): Promise<void> {
   const all = [...ACTION_CATEGORIES];
   await host.load(
     integrations,
-    builtinManifest(INTEGRATIONS_PLUGIN_ID, 'Integrations', {
+    builtinManifest(INTEGRATIONS_PLUGIN_ID, 'integrations', {
       provides: { connectors: ['*'], tools: ['*'] },
       permissions: { actions: all, credentials: true },
     }),
   );
   await host.load(
     routeToolsPlugin(app),
-    builtinManifest(MCP_ROUTES_PLUGIN_ID, 'Helena MCP tools', {
+    builtinManifest(MCP_ROUTES_PLUGIN_ID, 'mcp', {
       provides: { tools: ['*'] },
       permissions: { actions: all },
     }),

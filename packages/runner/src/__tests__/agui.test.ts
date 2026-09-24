@@ -30,6 +30,13 @@ describe('answer stream', () => {
     stream.write('are left.');
     await stream.finish('');
 
+    // The run names the AG-UI version it speaks.
+    expect(sink.events[0]).toEqual({
+      type: 'RUN_STARTED',
+      threadId: 'chat:1:u:x',
+      runId: '7',
+      protocolVersion: '1.0',
+    });
     expect(types(sink.events)).toEqual([
       'RUN_STARTED',
       'TEXT_MESSAGE_START',
@@ -161,6 +168,21 @@ describe('answer stream', () => {
     expect(text(sink.events)).toBe('Checked.');
   });
 
+  it("leaves Hermes' own notices beside its stream out of the answer", async () => {
+    const sink = collect();
+    const stream = new AnswerStream('hermes-stream-json', 'chat:1:u:x', '7', sink.send);
+    stream.write(
+      [
+        JSON.stringify({ type: 'system', subtype: 'init', session_id: 's1' }),
+        '  ⚠ tirith security scanner enabled but not available',
+        JSON.stringify({ type: 'text', text: 'Fertig.' }),
+        '',
+      ].join('\n'),
+    );
+    await stream.finish('Fertig.');
+    expect(text(sink.events)).toBe('Fertig.');
+  });
+
   it('reads the Hermes stream with session, text, tools, and final usage', async () => {
     const sink = collect();
     const stream = new AnswerStream('hermes-stream-json', 'chat:1:u:x', '7', sink.send);
@@ -243,11 +265,13 @@ describe('answer stream', () => {
 
     expect(stream.model()).toBe('anthropic/claude-5');
     const results = sink.events.filter((event) => event.type === 'TOOL_CALL_RESULT');
+    // AG-UI has no error flag on a result; the failure travels in its metadata.
     expect(results).toMatchObject([
-      { toolCallId: 't1', content: 'permission denied', isError: true },
+      { toolCallId: 't1', content: 'permission denied', metadata: { isError: true } },
       { toolCallId: 't2', content: 'ok' },
     ]);
-    expect(results[1]).not.toHaveProperty('isError');
+    expect(results[0]).not.toHaveProperty('isError');
+    expect(results[1]).not.toHaveProperty('metadata');
   });
 
   it("keeps Hermes' reasoning apart from the answer and in the order it came", async () => {
@@ -269,7 +293,7 @@ describe('answer stream', () => {
     expect(text(sink.events)).toBe('It is /work. Maria owns it.');
     expect(
       sink.events.flatMap((event) =>
-        event.type === 'THINKING_TEXT_MESSAGE_CONTENT' || event.type === 'TEXT_MESSAGE_CONTENT'
+        event.type === 'REASONING_MESSAGE_CONTENT' || event.type === 'TEXT_MESSAGE_CONTENT'
           ? [`${event.type === 'TEXT_MESSAGE_CONTENT' ? 'text' : 'thinking'}: ${event.delta}`]
           : [],
       ),
@@ -279,6 +303,24 @@ describe('answer stream', () => {
       'thinking: Mention the owner.',
       'text: Maria owns it.',
     ]);
+    // Each stretch of reasoning is an AG-UI 1.0 reasoning message with its own id, opened
+    // before its content and closed before the text that follows it.
+    expect(types(sink.events).filter((type) => type.startsWith('REASONING'))).toEqual([
+      'REASONING_START',
+      'REASONING_MESSAGE_START',
+      'REASONING_MESSAGE_CONTENT',
+      'REASONING_MESSAGE_END',
+      'REASONING_END',
+      'REASONING_START',
+      'REASONING_MESSAGE_START',
+      'REASONING_MESSAGE_CONTENT',
+      'REASONING_MESSAGE_END',
+      'REASONING_END',
+    ]);
+    const ids = sink.events.flatMap((event) =>
+      event.type === 'REASONING_MESSAGE_START' ? [event.messageId] : [],
+    );
+    expect(new Set(ids).size).toBe(2);
   });
 
   it("reads opencode's json, adding only what a re-sent part grew by", async () => {

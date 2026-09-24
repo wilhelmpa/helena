@@ -369,13 +369,18 @@
       "run-janitor": "منظف التشغيلات",
       "stage-janitor": "منظف المراحل",
       "workflow-schedules": "مزامنة الجداول الزمنية",
-      "resume-janitor": "منظف الاستئناف"
+      "resume-janitor": "منظف الاستئناف",
+      "runtime-janitor": "تنظيف بيئة التشغيل"
     },
     "janitorRan": "عمل قبل {time}",
     "janitorCleaned": "{count, plural, zero {لم يتم تنظيف شيء} one {تم تنظيف عنصر واحد} two {تم تنظيف عنصرين} few {تم تنظيف # عناصر} many {تم تنظيف # عنصرًا} other {تم تنظيف # عنصر}}",
     "janitorNeverRan": "لم يعمل بعد",
     "resuming": "{count, plural, zero {لا تشغيلات} one {تشغيل واحد يُستأنف} two {تشغيلان يُستأنفان} few {# تشغيلات تُستأنف} many {# تشغيلًا يُستأنف} other {# تشغيل يُستأنف}} بعد تعطل",
-    "needsResumeReview": "{count, plural, zero {لا تشغيلات} one {تشغيل واحد بلغ} two {تشغيلان بلغا} few {# تشغيلات بلغت} many {# تشغيلًا بلغ} other {# تشغيل بلغ}} حد الاستئناف ويحتاج إلى مراجعة"
+    "needsResumeReview": "{count, plural, zero {لا تشغيلات} one {تشغيل واحد بلغ} two {تشغيلان بلغا} few {# تشغيلات بلغت} many {# تشغيلًا بلغ} other {# تشغيل بلغ}} حد الاستئناف ويحتاج إلى مراجعة",
+    "agentSync": {
+      "title": "ملفات الوكلاء",
+      "synced": "{synced} من {total} متزامنة"
+    }
   },
   "plugins": {
     "externalTitle": "الإضافات الخارجية",
@@ -396,6 +401,18 @@
     "actions": "الإجراءات",
     "events": "الأحداث",
     "network": "الشبكة",
-    "credentials": "تستخدم أدواتها بيانات اعتماد موصّلاتها."
+    "credentials": "تستخدم أدواتها بيانات اعتماد موصّلاتها.",
+    "names": {
+      "integrations": "التكاملات",
+      "mcp": "أدوات MCP في Helena",
+      "webhooks": "خطافات الويب",
+      "bundles": "حزم القوالب"
+    },
+    "problems": {
+      "external-off": "تُحمَّل بعد تفعيل الإضافات الخارجية.",
+      "not-approved": "لم يُعتمد بعد.",
+      "version-changed": "اعتُمد إصدار آخر: اعتمد هذا الإصدار.",
+      "files-changed": "تغيّرت ملفاتها منذ الاعتماد: افحصها واعتمدها من جديد."
+    }
   }
 }

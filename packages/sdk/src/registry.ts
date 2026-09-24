@@ -59,6 +59,23 @@ export class Registry<T> {
     };
   }
 
+  // Registers or replaces the extension with the same id, keeping its place in the list,
+  // for a registry whose owner lets a later registration win (profile contributions).
+  replace(value: T, pluginId: string = CORE_PLUGIN_ID): void {
+    const id = this.idOf(value);
+    if (typeof id !== 'string' || !ID.test(id)) {
+      throw new RegistryError(`Invalid ${this.kind} id "${String(id)}" from ${pluginId}`);
+    }
+    this.entries.set(id, { id, value, pluginId });
+    this.changed();
+  }
+
+  remove(id: string): boolean {
+    const removed = this.entries.delete(id);
+    if (removed) this.changed();
+    return removed;
+  }
+
   get(id: string): T | undefined {
     return this.entries.get(id)?.value;
   }

@@ -369,13 +369,18 @@
       "run-janitor": "Limpieza de ejecuciones",
       "stage-janitor": "Limpieza de etapas",
       "workflow-schedules": "Sincronización de horarios",
-      "resume-janitor": "Limpieza de reanudaciones"
+      "resume-janitor": "Limpieza de reanudaciones",
+      "runtime-janitor": "Limpieza del runtime"
     },
     "janitorRan": "se ejecutó hace {time}",
     "janitorCleaned": "{count, plural, one {limpió # elemento} other {limpió # elementos}}",
     "janitorNeverRan": "aún no se ha ejecutado",
     "resuming": "{count, plural, one {# ejecución se está reanudando} other {# ejecuciones se están reanudando}} tras una caída",
-    "needsResumeReview": "{count, plural, one {# ejecución alcanzó} other {# ejecuciones alcanzaron}} el límite de reanudaciones y necesitan revisión"
+    "needsResumeReview": "{count, plural, one {# ejecución alcanzó} other {# ejecuciones alcanzaron}} el límite de reanudaciones y necesitan revisión",
+    "agentSync": {
+      "title": "Perfiles de agentes",
+      "synced": "{synced} de {total} sincronizados"
+    }
   },
   "plugins": {
     "externalTitle": "Plugins externos",
@@ -396,6 +401,18 @@
     "actions": "Acciones",
     "events": "Eventos",
     "network": "Red",
-    "credentials": "Sus herramientas usan las credenciales de sus conectores."
+    "credentials": "Sus herramientas usan las credenciales de sus conectores.",
+    "names": {
+      "integrations": "Integraciones",
+      "mcp": "Herramientas MCP de Helena",
+      "webhooks": "Webhooks",
+      "bundles": "Paquetes de plantillas"
+    },
+    "problems": {
+      "external-off": "Se carga cuando se activen los plugins externos.",
+      "not-approved": "Aún no aprobado.",
+      "version-changed": "Aprobado para otra versión: aprueba esta.",
+      "files-changed": "Sus archivos cambiaron desde la aprobación: revísalo y apruébalo de nuevo."
+    }
   }
 }

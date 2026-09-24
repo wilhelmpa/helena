@@ -12,10 +12,12 @@ export {
 export {
   MANIFEST_FILE,
   approvalProblem,
+  approvalProblemCode,
   discoverPlugins,
   loadExternalPlugins,
   loadPluginDir,
   pluginDigest,
+  type ApprovalProblem,
   type DiscoveredPlugin,
   type ExternalPluginPolicy,
   type PluginApproval,
@@ -38,3 +40,4 @@ export {
   type OutboxStore,
 } from './outbox';
 export { bundleJsonSchema, checkBundle, templateBundleSchema } from './bundle-schema';
+export { maskValue, profileDigest } from './digest';

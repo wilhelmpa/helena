@@ -2,17 +2,20 @@ import { t } from 'elysia';
 
 const Text = t.Union([t.String(), t.Record(t.String(), t.String())]);
 
+const LocalizedText = t.Union([t.String(), t.Record(t.String(), t.String())]);
+
 export const PluginViewSchema = t.Object({
   id: t.String(),
-  name: t.String(),
+  name: LocalizedText,
   version: t.String(),
-  description: t.Nullable(t.String()),
+  description: t.Nullable(LocalizedText),
   author: t.Nullable(t.String()),
   license: t.Nullable(t.String()),
   homepage: t.Nullable(t.String()),
   source: t.Union([t.Literal('builtin'), t.Literal('external')]),
   status: t.String(),
   error: t.Nullable(t.String()),
+  problem: t.Nullable(t.String()),
   digest: t.Nullable(t.String()),
   approved: t.Boolean(),
   restartRequired: t.Boolean(),

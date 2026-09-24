@@ -1,12 +1,7 @@
 import { resolve, sep } from 'node:path';
+import { uiSlotDescriptor, type LocalizedText, type UiSlotDescriptor } from '@helena/sdk';
 import {
-  resolveText,
-  uiSlotDescriptor,
-  type LocalizedText,
-  type UiSlotDescriptor,
-} from '@helena/sdk';
-import {
-  approvalProblem,
+  approvalProblemCode,
   discoverPlugins,
   loadExternalPlugins,
   type LoadedPlugin,
@@ -39,22 +34,23 @@ export async function loadExternalServerPlugins(): Promise<LoadedPlugin[]> {
   return loaded;
 }
 
-function text(value: LocalizedText | undefined): string | null {
-  return value === undefined ? null : resolveText(value, 'en');
-}
-
 export interface PluginView {
   id: string;
-  name: string;
+  // As the plugin gives them: a string, texts per locale, or an i18n key of Helena's.
+  name: LocalizedText;
   version: string;
-  description: string | null;
+  description: LocalizedText | null;
   author: string | null;
   license: string | null;
   homepage: string | null;
   source: 'builtin' | 'external';
   // loaded | failed | disabled (found, not loaded) | not-loaded (found after start)
   status: string;
+  // Why it failed to load.
   error: string | null;
+  // Why it will not load at the next start (external-off, not-approved, version-changed,
+  // files-changed), or null.
+  problem: string | null;
   digest: string | null;
   approved: boolean;
   // The decision differs from what runs: a restart applies it.
@@ -85,15 +81,16 @@ function view(
   const shouldRun = plugin.source === 'builtin' || current.problem === null;
   return {
     id: manifest.id,
-    name: resolveText(manifest.name, 'en'),
+    name: manifest.name,
     version: manifest.version,
-    description: text(manifest.description),
+    description: manifest.description ?? null,
     author: manifest.author ?? null,
     license: manifest.license ?? null,
     homepage: manifest.homepage ?? null,
     source: plugin.source,
     status: current.running?.status ?? 'not-loaded',
-    error: current.running?.error ?? current.problem,
+    error: current.running?.status === 'failed' ? (current.running.error ?? null) : null,
+    problem: plugin.source === 'builtin' ? null : current.problem,
     digest: current.digest ?? plugin.digest ?? null,
     approved: current.approved,
     restartRequired:
@@ -142,15 +139,16 @@ export async function pluginsOverview(): Promise<PluginsOverview> {
             source: 'external',
             status: 'failed',
           },
-          { approved: false, problem: found.error ?? 'Unreadable manifest' },
+          { approved: false, problem: null },
         ),
+        error: found.error ?? 'Unreadable manifest',
         status: 'failed',
         restartRequired: false,
       });
       continue;
     }
     const approval = settings.approved.find((entry) => entry.id === found.manifest!.id);
-    const problem = approvalProblem({ manifest: found.manifest, digest: found.digest }, policy);
+    const problem = approvalProblemCode({ manifest: found.manifest, digest: found.digest }, policy);
     plugins.push(
       view(
         { manifest: found.manifest, source: 'external', status: 'disabled', dir: found.dir },

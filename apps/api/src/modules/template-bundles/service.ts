@@ -161,7 +161,7 @@ export async function loadRepositoryBundles(): Promise<void> {
   if (host.get('helena.bundles')) return;
   await host.load(repositoryBundles, {
     id: 'helena.bundles',
-    name: 'Template bundles',
+    name: { i18n: 'god.plugins.names.bundles' },
     version: '1.0.0',
     sdk: '^0.1.0',
     provides: { bundles: ['*'] },

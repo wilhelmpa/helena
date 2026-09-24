@@ -12,6 +12,16 @@ export interface BrowserTab {
 export type BrowserAction =
   'navigate' | 'back' | 'forward' | 'reload' | 'activate' | 'close' | 'new';
 
+// A bookmark of the project's browser (the browser bar's star menu), kept by the router.
+export interface BrowserBookmark {
+  url: string;
+  title: string;
+}
+
+export function browserBookmarksQueryKey(base: string) {
+  return ['browser-bookmarks', base] as const;
+}
+
 export function browserTabsQueryKey(base: string) {
   return ['browser-tabs', base] as const;
 }
@@ -49,4 +59,51 @@ export async function browserAction(
       body: JSON.stringify(body),
     }),
   );
+}
+
+// The control lock's Übernehmen/Zurückgeben actions (design §5): same base as the other
+// toolbar routes, same fetch convention as browserAction, no body. The router side of
+// these two routes is being built in parallel (see useBrowserLock.ts), so a call here can
+// answer 404 until it lands — browserLock* surfaces that as a normal thrown Error, same as
+// any other browserAction failure, for the caller to show as a toast.
+export async function browserLockTakeover(base: string): Promise<void> {
+  await answer(
+    await fetch(`${base}/lock-takeover`, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'content-type': 'application/json' },
+    }),
+  );
+}
+
+export async function browserLockRelease(base: string): Promise<void> {
+  await answer(
+    await fetch(`${base}/lock-release`, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'content-type': 'application/json' },
+    }),
+  );
+}
+
+export async function browserBookmarks(base: string): Promise<BrowserBookmark[]> {
+  const body = await answer<{ bookmarks: BrowserBookmark[] }>(
+    await fetch(`${base}/bookmarks`, { credentials: 'same-origin', cache: 'no-store' }),
+  );
+  return body.bookmarks;
+}
+
+export async function saveBrowserBookmarks(
+  base: string,
+  bookmarks: BrowserBookmark[],
+): Promise<BrowserBookmark[]> {
+  const body = await answer<{ bookmarks: BrowserBookmark[] }>(
+    await fetch(`${base}/bookmarks`, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ bookmarks }),
+    }),
+  );
+  return body.bookmarks;
 }

@@ -47,6 +47,8 @@ export function TemplateBundleImportDialog({
   const [dryRun, setDryRun] = useState(true);
   const [update, setUpdate] = useState(false);
   const [report, setReport] = useState<BundleReport | null>(null);
+  // Whether the report shown is of a dry run.
+  const [dryRunShown, setDryRunShown] = useState(true);
   const input = useRef<HTMLInputElement>(null);
   const run = useMutation({
     mutationFn: () =>
@@ -57,6 +59,7 @@ export function TemplateBundleImportDialog({
       }),
     onSuccess: (result) => {
       setReport(result);
+      setDryRunShown(dryRun);
       if (!dryRun) void qc.invalidateQueries();
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : t('failed')),
@@ -138,7 +141,14 @@ export function TemplateBundleImportDialog({
           </div>
           {report ? (
             <div className="space-y-1">
-              <p className="font-medium">{report.summary}</p>
+              <p className="font-medium">
+                {t(dryRunShown ? 'summaryDryRun' : 'summary', {
+                  written: report.written,
+                  unchanged: report.unchanged,
+                  drift: report.drift,
+                  warnings: report.warnings,
+                })}
+              </p>
               <pre className="max-h-64 overflow-auto rounded-md border bg-card p-2 text-xs whitespace-pre-wrap">
                 {report.lines.join('\n').trim()}
               </pre>

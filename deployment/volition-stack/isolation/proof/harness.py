@@ -35,6 +35,8 @@ ROOT = '/srv/vpt-test'
 ISO = f'{ROOT}/isolation'
 PROOF = f'{ROOT}/proof'
 RUN_AGENTS = '/run/vpt-agents'
+# The browser gateway's per-project socket directories (browser-gateway-server.mjs).
+RUN_GATEWAY = '/run/vpt-browser/gateway'
 RUN_LAUNCHER = '/run/vpt-launcher'
 LAUNCH_SOCKET = f'{RUN_LAUNCHER}/launch.sock'
 OPEN_SOCKET = f'{RUN_LAUNCHER}/open.sock'
@@ -107,6 +109,8 @@ def test_config(source: str) -> dict:
             'hermes', 'workspaces', 'vault', 'provisioning', 'secrets', 'project-browser',
             'launcher-state', 'proof', 'hermes-global')],
     })
+    # The production target, which the MCP shim looks in; the test's own sources.
+    config['browserGateway'] = {'root': RUN_GATEWAY, 'target': '/run/volition-agents/browser'}
     config['browser'] = {
         'user': 'vpt-browser', 'root': f'{ROOT}/project-browser/projects', 'trash': f'{ROOT}/project-browser/trash',
         'script': f'{ISO}/browser/project-browser-state.mjs', 'node': '/usr/local/bin/node',
@@ -527,7 +531,7 @@ def prove(args: argparse.Namespace) -> None:
         ('1', prove_1_egress_basic), ('2', prove_2_egress_blocks), ('3', prove_3_no_local_services),
         ('4', prove_4_no_foreign_files), ('5', prove_5_function), ('6', prove_6_launcher_refuses),
         ('7', prove_7_browser), ('M', prove_modes), ('P', prove_plan_socket), ('T', prove_terminal),
-        ('G', prove_migration), ('U', prove_users),
+        ('G', prove_migration), ('U', prove_users), ('B', prove_browser_gateway),
     ]
     for number, function in tests:
         if only and number not in only:
@@ -555,6 +559,62 @@ def expect(report: Report, test: str, results: dict, spec: str, want_ok: bool, c
     value = results.get(spec, {'ok': None, 'detail': 'missing'})
     ok = value['ok'] == want_ok and (contains is None or contains in value['detail'])
     report.add(test, spec, ok, value['detail'])
+
+
+GATEWAY_LISTENER = (
+    'import os, socket, sys\n'
+    'path, answer, gid = sys.argv[1], sys.argv[2], int(sys.argv[3])\n'
+    'if os.path.exists(path): os.unlink(path)\n'
+    's = socket.socket(socket.AF_UNIX); s.bind(path); os.chown(path, -1, gid); os.chmod(path, 0o660); s.listen()\n'
+    'while True:\n'
+    '    c, _ = s.accept(); c.sendall(answer.encode() + b"\\n"); c.close()\n'
+)
+
+
+def gateway_listener(slug: str, answer: str) -> subprocess.Popen:
+    directory = f'{RUN_GATEWAY}/{slug}'
+    os.makedirs(directory, mode=0o750, exist_ok=True)
+    os.chown(directory, uid('vpt-browser'), gid('vpt-agents'))
+    os.chmod(directory, 0o750)
+    return subprocess.Popen(['/usr/bin/python3', '-I', '-c', GATEWAY_LISTENER, f'{directory}/gateway.sock',
+                             answer, str(gid('vpt-agents'))])
+
+
+def prove_browser_gateway(report: Report) -> None:
+    """The browser gateway: each unit reaches its own project's socket and no other, across a restart of the router."""
+    os.makedirs(os.path.dirname(RUN_GATEWAY), mode=0o711, exist_ok=True)
+    os.makedirs(RUN_GATEWAY, mode=0o711, exist_ok=True)
+    listeners = {'alpha': gateway_listener('alpha', 'alpha'), 'beta': gateway_listener('beta', 'beta')}
+    time.sleep(0.5)
+    try:
+        own = '/run/volition-agents/browser/gateway.sock'
+        alpha = probe('alpha', 'alpha', [f'unixread:{own}', f'unix:{RUN_GATEWAY}/beta/gateway.sock',
+                                         f'read:{RUN_GATEWAY}', f'read:{RUN_GATEWAY}/beta'])
+        expect(report, 'B', alpha, f'unixread:{own}', True, 'alpha')
+        expect(report, 'B', alpha, f'unix:{RUN_GATEWAY}/beta/gateway.sock', False)
+        expect(report, 'B', alpha, f'read:{RUN_GATEWAY}', False)
+        expect(report, 'B', alpha, f'read:{RUN_GATEWAY}/beta', False)
+        beta = probe('beta', 'beta', [f'unixread:{own}'])
+        expect(report, 'B', beta, f'unixread:{own}', True, 'beta')
+        # A project without a browser (Home here): the unit starts all the same, and has none.
+        home = probe('home', None, ['whoami', f'unix:{own}'])
+        expect(report, 'B', home, 'whoami', True)
+        expect(report, 'B', home, f'unix:{own}', False)
+        # The router restarts while an agent runs: its unit reaches the new socket.
+        import threading  # noqa: PLC0415
+        outcome: dict = {}
+        worker = threading.Thread(target=lambda: outcome.update(probe('alpha', 'alpha', [f'unixtwice:{own},4'])))
+        worker.start()
+        time.sleep(2)
+        listeners['alpha'].kill()
+        listeners['alpha'].wait()
+        listeners['alpha'] = gateway_listener('alpha', 'alpha-restarted')
+        worker.join()
+        expect(report, 'B', outcome, f'unixtwice:{own},4', True, 'alpha|alpha-restarted')
+    finally:
+        for listener in listeners.values():
+            listener.kill()
+        shutil.rmtree(os.path.dirname(RUN_GATEWAY), ignore_errors=True)
 
 
 def prove_1_egress_basic(report: Report) -> None:

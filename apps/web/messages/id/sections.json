@@ -63,6 +63,10 @@
       "label": "SCIM",
       "description": "Izinkan penyedia identitas membuat, memperbarui, dan menonaktifkan akun di instance ini, serta memberikan akses proyek melalui grupnya."
     },
+    "agent-runtime": {
+      "label": "Runtime agen",
+      "description": "Stop darurat, instalasi Hermes beserta pembaruannya, model cadangan dan penyimpanan sesi untuk semua agen, serta pemakaian para agen."
+    },
     "plugins": {
       "label": "Plugin",
       "description": "Plugin bawaan Helena dan plugin eksternal di folder plugin: apa yang disediakan, hak yang diminta, dan mana yang boleh berjalan."
@@ -120,6 +124,10 @@
     "ai-agents": {
       "label": "Agen AI",
       "description": "Agen AI yang bekerja dalam proyek ini."
+    },
+    "browser": {
+      "label": "Browser",
+      "description": "Domain yang boleh dibuka browser proyek, waktu input mirip manusia, dan batas waktu kunci."
     }
   }
 }

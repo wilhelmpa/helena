@@ -2,6 +2,9 @@ import type { AgUiEvent, ContextUsage } from './agui';
 import type { RunnerConfig } from './config';
 import type { LoginUse, WebLogin, WorkRef } from './logins';
 import type { RuntimePolicySnapshot, RuntimeStatus } from './policy';
+import type { RuntimeRequest } from './readers';
+import type { Spend } from './spend';
+import type { RunModelReport } from './runtime';
 
 // The agent's API key is the whole authorization: it identifies the agent, and the server
 // only ever hands back that agent's work.
@@ -64,10 +67,20 @@ export interface ReflectionSaved {
 export interface ReflectionReport {
   status: 'success' | 'failed';
   usage?: ContextUsage | null;
+  spend?: Spend | null;
   saved: ReflectionSaved[];
   summary?: string | null;
   error?: string | null;
 }
+
+// A question Helena asks the agent's runtime: a session, a transcript, the logs, its health.
+// The runner answers it with the adapter of the agent's runtime (readers/).
+export interface RuntimeRequestClaim {
+  id: number;
+  request: RuntimeRequest;
+}
+
+export type RuntimeRequestAnswer = { ok: true; result: unknown } | { ok: false; error: string };
 
 // None of these calls does real work on the server, so a request that hangs is a dead
 // connection. Without a deadline it would never settle and the runner would stop polling.
@@ -77,6 +90,9 @@ const REQUEST_TIMEOUT_MS = 30_000;
 // message turns up, so the answer starts the moment it is sent. The deadline has to
 // outlast that wait, or the runner would abort every idle claim.
 const CHAT_CLAIM_TIMEOUT_MS = 35_000;
+
+// An answer to a runtime request can be a few megabytes of transcript.
+const ANSWER_TIMEOUT_MS = 60_000;
 
 // The status is carried so the caller can tell a rejected key from a server that is down.
 export class RequestError extends Error {
@@ -160,6 +176,12 @@ export class Client {
     await this.post('/agent-runtime/status', status);
   }
 
+  // That the runner started (null) or why its service could not start it, for Helena's
+  // health overview. A server that predates the route answers 404.
+  async reportRunnerHealth(error: string | null): Promise<void> {
+    await this.post('/agent-runtime/runner-health', { error });
+  }
+
   async claim(): Promise<Run | null> {
     const res = await this.post('/agent-runs/claim');
     const body = (await res.json()) as { run: Run | null };
@@ -169,7 +191,20 @@ export class Client {
   // True when the run was canceled, for instance with the workflow run of its stage, or
   // is no longer this runner's: claimed again, finished, or deleted.
   async heartbeat(runId: number, claim?: number): Promise<boolean> {
-    return gone(() => this.post(`/agent-runs/${runId}/heartbeat${claimQuery(claim)}`));
+    return (await this.beat(runId, claim)).canceled;
+  }
+
+  // `hold` is set while the instance's emergency stop is on: the runner stops the command
+  // and hands the run back, which resumes its session once the stop is lifted.
+  async beat(runId: number, claim?: number): Promise<{ canceled: boolean; hold: boolean }> {
+    try {
+      const res = await this.post(`/agent-runs/${runId}/heartbeat${claimQuery(claim)}`);
+      const body = (await res.json().catch(() => ({}))) as { canceled?: boolean; hold?: boolean };
+      return { canceled: body.canceled === true, hold: body.hold === true };
+    } catch (err) {
+      if (err instanceof RequestError && err.status === 404) return { canceled: true, hold: false };
+      throw err;
+    }
   }
 
   // Hands a run back to the queue without spending its attempt, for a runner that stops.
@@ -200,6 +235,10 @@ export class Client {
       usage?: ContextUsage | null;
       sessionId?: string;
       toolCalls?: number;
+      // Every model call of the run summed, with the model that ran, for the token ledger.
+      spend?: Spend | null;
+      // The model and reasoning requested, the runtime's defaults and what really ran.
+      runtime?: RunModelReport;
     },
   ): Promise<ReflectionRequest | null> {
     const res = await this.post(`/agent-runs/${runId}/result${claimQuery(claim)}`, result);
@@ -209,6 +248,23 @@ export class Client {
 
   async reportReflection(runId: number, reflection: ReflectionReport): Promise<void> {
     await this.post(`/agent-runs/${runId}/reflection`, reflection);
+  }
+
+  // The run's command output as AG-UI events, for the run's timeline in Helena while it runs.
+  // True when the run was canceled or is no longer this runner's, as with the heartbeat.
+  async runEvents(runId: number, claim: number | undefined, events: AgUiEvent[]): Promise<boolean> {
+    return gone(() => this.post(`/agent-runs/${runId}/events${claimQuery(claim)}`, { events }));
+  }
+
+  // Waits on the server like the chat claim does, so an answer starts as soon as it is asked.
+  async claimRuntimeRequest(): Promise<RuntimeRequestClaim | null> {
+    const res = await this.post('/agent-runtime/requests/claim', undefined, CHAT_CLAIM_TIMEOUT_MS);
+    const body = (await res.json()) as { request: RuntimeRequestClaim | null };
+    return body.request;
+  }
+
+  async answerRuntimeRequest(id: number, answer: RuntimeRequestAnswer): Promise<void> {
+    await this.post(`/agent-runtime/requests/${id}/answer`, answer, ANSWER_TIMEOUT_MS);
   }
 
   async claimChat(): Promise<ChatMessage | null> {
@@ -248,6 +304,8 @@ export class Client {
       usage?: ContextUsage | null;
       sessionLost?: boolean;
       model?: string;
+      spend?: Spend | null;
+      runtime?: RunModelReport;
     },
   ): Promise<void> {
     await this.post(`/agent-chats/${messageId}/result`, result);

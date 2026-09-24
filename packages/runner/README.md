@@ -222,10 +222,17 @@ by whatever sets the runner up. `plugins` names the Hermes plugins every home ha
 ```json
 "hermes": {
   "toolsets": ["browser", "file", "terminal", "web"],
-  "mcpServers": ["itsaplan"],
-  "plugins": { "plan-approval-guard": "/srv/plan/hermes-plugins/plan-approval-guard" }
+  "mcpServers": ["itsaplan", "browser-harness"],
+  "plugins": { "plan-approval-guard": "/srv/plan/hermes-plugins/plan-approval-guard" },
+  "sharedConfig": "/var/lib/hermes/config.yaml",
+  "browserHarness": "/var/lib/hermes/.local/bin/browser-harness-mcp"
 }
 ```
+
+`mcpServers` names the servers of the shared configuration, which the runner turns off unless
+Helena gives them to the agent; `sharedConfig` is the file every agent home links to (left out
+for the home that holds it); `browserHarness` is the harness the runner points at the project's
+browser.
 
 Before every run and chat answer, and with each check, the runner makes sure
 `HERMES_HOME/plugins/<name>` is a link to that directory. A link the agent removed is put back;
@@ -254,26 +261,55 @@ A toolset or an MCP server of the profile turned off for the agent in Plan is le
 servers. While nothing is turned off, Hermes uses the profile's own selection. Without the
 `hermes` field no toolsets are reported and none can be turned off.
 
-### MCP servers
+### MCP servers: Helena owns every one
 
-The MCP servers enabled on the agent from the team's library, and the servers of `config.yaml`
-turned off for it, are written to `HERMES_HOME/run/itsaplan-managed/config.yaml` with the
-learning settings. Every run and chat answer starts Hermes with `HERMES_MANAGED_DIR` pointing at
-that directory, and Hermes merges it over `config.yaml`; a server turned off gets
-`enabled: false`. The
-agent's homes share one `config.yaml`, which the runner never writes, and a value Hermes read
-from the managed directory cannot be changed from inside Hermes.
+The runner writes every MCP server of the agent into `HERMES_HOME/run/itsaplan-managed/config.yaml`
+with the learning settings, and starts Hermes with `HERMES_MANAGED_DIR` pointing there; Hermes
+merges it over `config.yaml`, key by key, and a value it read from there cannot be changed from
+inside Hermes. The servers come from profile contributions (`src/contributions.ts`):
+
+- `itsaplan`, Helena's own server: `<url>/mcp` with `Authorization: Bearer ${ITSAPLAN_API_KEY}`
+  and `x-helena-run: ${ITSAPLAN_RUN_ID}` (the run a request belongs to, empty in a chat).
+- `browser-harness`, while an agent has no browser gateway: the command the runner config names
+  as `hermes.browserHarness`, pointed at the agent's own project browser (`BU_CDP_URL` from
+  `BROWSER_CDP_URL` in its env). Without either, the agent has no such server.
+- The servers of the team's library enabled on the agent.
+
+Every other server Hermes would find (in the shared `config.yaml`, or from a plugin) gets
+`enabled: false`, so nothing of the shared file reaches an agent by accident; a server the
+owner turned off for the agent is off too. A library server may not take the name of a toolset
+or of a server of the shared configuration. Another package adds servers or settings by
+registering a contribution (`registerProfileContribution`), which every runtime adapter picks up.
 
 A value that names one of the team's secrets is written as `${ITSAPLAN_MCP_SECRET_<id>}`. Before
 each run and chat answer the runner reads the values from `GET /agent-runtime/mcp-secrets` and
-passes them to Hermes in those variables, so they are never written to disk. They are part of
-the environment of the Hermes process for that run, which its tools inherit. A server named like
-a toolset or a server of the profile fails the sync.
-Every run and chat answer gets `--toolsets` with these toolsets and every MCP server. A toolset
-turned off for the agent in Plan is left out, and so is `cronjob`, Hermes' own scheduler: Plan
-schedules work through its routines, and a Hermes job would run it a second time. Without the
-`hermes` field no toolsets are reported, none can be turned off, and Hermes uses the profile's
-own selection.
+passes them to Hermes in those variables, so they are never written to disk.
+Every run and chat answer gets `--toolsets` with the profile's toolsets and Helena's servers that
+are on. A toolset turned off for the agent in Plan is left out, and so is `cronjob`.
+
+### The shared configuration and drift
+
+Every agent home links the one shared `config.yaml` (`hermes.sharedConfig` in the runner config).
+A file or another link that took its place is moved to `HERMES_HOME/run/config.yaml.outside-<time>`
+and the link is put back, like a plugin link; the status lists it as restored.
+
+After every revision, run and chat answer, after anything was put back, and every five minutes,
+the runner reads back what Hermes will load, in Hermes' own Python (`HERMES_PYTHON`, else
+`python3`; `PYTHONPATH` must reach Hermes): the link, whether Hermes applies the managed
+configuration (it ignores one it cannot parse), every MCP server after the merge (values under
+`env`, `headers` and secret-sounding keys only as short one-way digests), the managed settings,
+the approval mode and plugins, Tirith, and the model, provider and reasoning Hermes falls back to.
+What differs from what the runner wrote is reported as drift with the status (`profile`: a
+digest, the drift by key and code, the defaults and the servers); a server the shared file
+gained is turned off at once. Helena shows "Profil synchron" or the drift on the agent, and
+"Neu schreiben" (`rewrite-profile` action) writes every managed file again and reads it back.
+
+### The model a run really ran on
+
+With each run result and chat answer the runner reports the model and reasoning Plan asked for,
+the runtime's defaults, and what the session ran on: for Hermes from its session store
+(`state.db`, read-only), for Claude Code from the model on its stream. Plan compares them and
+shows a run whose model or reasoning differs.
 
 ### Website logins
 
@@ -291,6 +327,25 @@ Hermes' vault tools, even where the toolset is otherwise turned off for it.
 
 `browser_vault_fill` and `browser_vault_enter_code` calls on those items that succeed are read
 from Hermes' output and reported to `POST /agent-runtime/credential-uses` for the audit log.
+
+## Claude Code and Codex from Helena
+
+With the `claude` and `codex` presets the runner reads the agent's policy too, and hands the
+runtime everything Hermes gets, per run, without writing into the working directory or the
+runtime's own home:
+
+- The agent's instructions (the SOUL.md Helena writes for Hermes) in front of the run's own
+  context: Claude Code's `--append-system-prompt`, the start of Codex' prompt.
+- The agent's skills below `HELENA_RUNTIME_DIR` (default `~/.local/state/helena-runner`): a
+  plugin for Claude Code (`--plugin-dir`), an index with their paths for Codex.
+- Helena's MCP server and the library's: `--mcp-config` with `--strict-mcp-config` and
+  `--allowedTools mcp__<server>` for Claude Code; `-c mcp_servers.<name>.*` for Codex, whose own
+  `config.toml` servers are turned off. Secrets reach them as variables of the run's environment.
+- The model and reasoning: `--model` / `--effort`, `-m` / `-c model_reasoning_effort`.
+
+It reports the answer (not the raw event stream), the session for resuming, and a status with
+the applied revision and a profile digest. Set the agent's runtime to Claude Code or Codex in
+Helena, so the server does not also give it a Hermes runtime.
 
 ## What the coding agent receives
 

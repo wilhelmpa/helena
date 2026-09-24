@@ -369,13 +369,18 @@
       "run-janitor": "Run janitor",
       "stage-janitor": "Stage janitor",
       "workflow-schedules": "Schedule sync",
-      "resume-janitor": "Resume janitor"
+      "resume-janitor": "Resume janitor",
+      "runtime-janitor": "Runtime janitor"
     },
     "janitorRan": "ran {time} ago",
     "janitorCleaned": "{count, plural, one {cleaned up # thing} other {cleaned up # things}}",
     "janitorNeverRan": "has not run yet",
     "resuming": "{count, plural, one {# run is} other {# runs are}} resuming after a crash",
-    "needsResumeReview": "{count, plural, one {# run} other {# runs}} reached the resume limit and need a look"
+    "needsResumeReview": "{count, plural, one {# run} other {# runs}} reached the resume limit and need a look",
+    "agentSync": {
+      "title": "Agent profiles",
+      "synced": "{synced} of {total} in sync"
+    }
   },
   "plugins": {
     "externalTitle": "External plugins",
@@ -396,6 +401,18 @@
     "actions": "Actions",
     "events": "Events",
     "network": "Network",
-    "credentials": "Its tools use the credentials of its connectors."
+    "credentials": "Its tools use the credentials of its connectors.",
+    "names": {
+      "integrations": "Integrations",
+      "mcp": "Helena MCP tools",
+      "webhooks": "Webhooks",
+      "bundles": "Template bundles"
+    },
+    "problems": {
+      "external-off": "Loads once external plugins are switched on.",
+      "not-approved": "Not approved yet.",
+      "version-changed": "Approved at another version: approve this one.",
+      "files-changed": "Its files changed since it was approved: check and approve again."
+    }
   }
 }

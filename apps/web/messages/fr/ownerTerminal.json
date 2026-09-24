@@ -6,7 +6,9 @@
     "confirm": "Confirmer",
     "verifying": "Vérification…",
     "wrongCode": "Le code n'a pas été accepté.",
-    "rateLimited": "Trop de tentatives. Attendez 15 minutes et réessayez."
+    "rateLimited": "Trop de tentatives. Attendez 15 minutes et réessayez.",
+    "locked": "Le terminal reste verrouillé tant que vous n’avez pas confirmé votre identité.",
+    "enterCode": "Saisir le code"
   },
   "grant": {
     "active": "Terminal autorisé jusqu'à {time}",

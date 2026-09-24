@@ -87,6 +87,9 @@ run systemctl enable --now volition-owner-terminal.service
 log "installing the nginx snippet"
 run install -m 0644 -o root -g root "$here/nginx-owner-terminal.conf" \
   /etc/nginx/snippets/volition-owner-terminal.conf
+# The map the snippet reads its client address from (the kiosk port counts as the LAN).
+run install -m 0644 -o root -g root "$here/nginx-client-addr.conf" \
+  /etc/nginx/conf.d/helena-client-addr.conf
 for site in /etc/nginx/sites-available/volition.conf /etc/nginx/sites-enabled/volition-dev.conf; do
   if [[ -f $site ]] && ! grep -q 'volition-owner-terminal.conf' "$site"; then
     log "ACTION NEEDED: $site does not include the owner-terminal snippet yet."

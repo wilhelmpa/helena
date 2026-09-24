@@ -369,13 +369,18 @@
       "run-janitor": "Pembersih proses",
       "stage-janitor": "Pembersih tahap",
       "workflow-schedules": "Sinkronisasi jadwal",
-      "resume-janitor": "Pembersih pelanjutan"
+      "resume-janitor": "Pembersih pelanjutan",
+      "runtime-janitor": "Pembersihan runtime"
     },
     "janitorRan": "berjalan {time} lalu",
     "janitorCleaned": "{count, plural, other {membersihkan # item}}",
     "janitorNeverRan": "belum pernah berjalan",
     "resuming": "{count, plural, other {# run sedang dilanjutkan}} setelah crash",
-    "needsResumeReview": "{count, plural, other {# run mencapai}} batas pelanjutan dan perlu diperiksa"
+    "needsResumeReview": "{count, plural, other {# run mencapai}} batas pelanjutan dan perlu diperiksa",
+    "agentSync": {
+      "title": "Profil agen",
+      "synced": "{synced} dari {total} tersinkron"
+    }
   },
   "plugins": {
     "externalTitle": "Plugin eksternal",
@@ -396,6 +401,18 @@
     "actions": "Tindakan",
     "events": "Peristiwa",
     "network": "Jaringan",
-    "credentials": "Alatnya memakai kredensial konektornya."
+    "credentials": "Alatnya memakai kredensial konektornya.",
+    "names": {
+      "integrations": "Integrasi",
+      "mcp": "Alat MCP Helena",
+      "webhooks": "Webhook",
+      "bundles": "Paket templat"
+    },
+    "problems": {
+      "external-off": "Dimuat setelah plugin eksternal diaktifkan.",
+      "not-approved": "Belum disetujui.",
+      "version-changed": "Disetujui untuk versi lain: setujui versi ini.",
+      "files-changed": "Berkasnya berubah sejak disetujui: periksa dan setujui lagi."
+    }
   }
 }

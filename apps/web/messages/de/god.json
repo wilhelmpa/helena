@@ -369,13 +369,18 @@
       "run-janitor": "Lauf-Aufräumdienst",
       "stage-janitor": "Stufen-Aufräumdienst",
       "workflow-schedules": "Zeitplan-Abgleich",
-      "resume-janitor": "Fortsetzungs-Aufräumdienst"
+      "resume-janitor": "Fortsetzungs-Aufräumdienst",
+      "runtime-janitor": "Laufzeit-Aufräumdienst"
     },
     "janitorRan": "lief vor {time}",
     "janitorCleaned": "{count, plural, one {# Eintrag aufgeräumt} other {# Einträge aufgeräumt}}",
     "janitorNeverRan": "noch nicht gelaufen",
     "resuming": "{count, plural, one {# Run wird} other {# Runs werden}} nach einem Absturz fortgesetzt",
-    "needsResumeReview": "{count, plural, one {# Run hat} other {# Runs haben}} das Fortsetzungslimit erreicht und brauchen einen Blick"
+    "needsResumeReview": "{count, plural, one {# Run hat} other {# Runs haben}} das Fortsetzungslimit erreicht und brauchen einen Blick",
+    "agentSync": {
+      "title": "Agenten-Profile",
+      "synced": "{synced} von {total} synchron"
+    }
   },
   "plugins": {
     "externalTitle": "Externe Plugins",
@@ -396,6 +401,18 @@
     "actions": "Aktionen",
     "events": "Ereignisse",
     "network": "Netzwerk",
-    "credentials": "Seine Werkzeuge nutzen die Zugangsdaten seiner Connectoren."
+    "credentials": "Seine Werkzeuge nutzen die Zugangsdaten seiner Connectoren.",
+    "names": {
+      "integrations": "Integrationen",
+      "mcp": "Helena-MCP-Werkzeuge",
+      "webhooks": "Webhooks",
+      "bundles": "Vorlagen-Pakete"
+    },
+    "problems": {
+      "external-off": "Lädt, sobald externe Plugins eingeschaltet sind.",
+      "not-approved": "Noch nicht freigegeben.",
+      "version-changed": "Für eine andere Version freigegeben: diese freigeben.",
+      "files-changed": "Seine Dateien haben sich seit der Freigabe geändert: prüfen und neu freigeben."
+    }
   }
 }

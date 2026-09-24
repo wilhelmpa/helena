@@ -15,7 +15,8 @@ import type { HelenaPlugin, HostProcess, PluginContext, Registrar } from '../plu
 import { decide, type PolicyDecision, type PolicyEvaluator, type PolicyRequest } from '../policy';
 import { Registry } from '../registry';
 import { createRegistries, type HelenaRegistries } from '../registries';
-import type { RuntimeAdapter } from '../runtime';
+import type { RuntimeType } from '../runtime';
+import type { ProfileContribution } from '../runtime-policy';
 import type { BundleOffer } from '../templates';
 import { validateBundle } from '../templates';
 import { declaredCategory, type AnyAgentTool } from '../tools';
@@ -68,7 +69,7 @@ function declared(list: string[] | undefined, id: string): boolean {
 export class PluginHost {
   readonly process: HostProcess;
   readonly events: EventBus;
-  readonly runtimes: Registry<RuntimeAdapter>;
+  readonly runtimes: Registry<RuntimeType>;
   readonly connectors: Registry<Connector>;
   readonly tools: Registry<AnyAgentTool>;
   readonly stepTypes: Registry<WorkflowStepType<unknown>>;
@@ -79,6 +80,7 @@ export class PluginHost {
   readonly captureTargets: Registry<CaptureTarget>;
   readonly bundles: Registry<BundleOffer>;
   readonly mcpServers: Registry<McpServerContribution>;
+  readonly profileContributions: Registry<ProfileContribution>;
 
   private readonly plugins = new Map<string, { loaded: LoadedPlugin; plugin?: HelenaPlugin }>();
   private readonly contexts = new Map<string, PluginContext>();
@@ -101,6 +103,7 @@ export class PluginHost {
     this.captureTargets = registries.captureTargets;
     this.bundles = registries.bundles;
     this.mcpServers = registries.mcpServers;
+    this.profileContributions = registries.profileContributions;
     this.logger = options.logger ?? ((id) => consoleLogger(`plugin ${id}`));
     this.settingsOf = options.settings ?? (() => ({}));
   }
@@ -215,6 +218,7 @@ export class PluginHost {
       this.captureTargets,
       this.bundles,
       this.mcpServers,
+      this.profileContributions,
     ] as unknown as Registry<never>[];
   }
 
@@ -340,6 +344,11 @@ export class PluginHost {
           }
         },
         (server) => server.name,
+      ),
+      profileContributions: registrar(
+        this.profileContributions,
+        provides.profileContributions,
+        'profileContributions',
       ),
       events: {
         publish: async (init: EventInit) => {

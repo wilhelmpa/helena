@@ -56,6 +56,10 @@ export const qk = {
   agentNetworkSettings: (projectKey: string) => ['agentNetworkSettings', projectKey] as const,
   agentNetworkEvents: (projectKey: string, decision: 'all' | 'blocked') =>
     ['agentNetworkEvents', projectKey, decision] as const,
+  // The project's browser gateway settings (the Browser settings section).
+  browserGatewaySettings: (projectKey: string) => ['browserGatewaySettings', projectKey] as const,
+  // Home's "Browser" overview: every project that could have a project browser.
+  browserGatewayOverview: () => ['browserGatewayOverview'] as const,
   // The project's repository integration settings (the Repositories settings section).
   gitSettings: (projectKey: string) => ['gitSettings', projectKey] as const,
   gitConnections: (projectKey: string) => ['gitConnections', projectKey] as const,
@@ -261,6 +265,22 @@ export const qk = {
     ['aiAgents', teamId, agentId, 'runtime-actions'] as const,
   learnedSkill: (teamId: number, agentId: number, path: string) =>
     ['aiAgents', teamId, agentId, 'learned-skill', path] as const,
+  // What an agent's runtime keeps, read through its runner, and a run's timeline.
+  agentRuntime: (teamId: number, agentId: number, what: string, params?: unknown) =>
+    ['aiAgents', teamId, agentId, 'runtime', what, params ?? null] as const,
+  agentRun: (teamId: number, agentId: number, runId: number) =>
+    ['aiAgents', teamId, agentId, 'run', runId] as const,
+  memoryRevisions: (teamId: number, agentId: number) =>
+    ['aiAgents', teamId, agentId, 'memory-revisions'] as const,
+  agentSpend: (teamId: number, params: unknown) => ['agentSpend', teamId, params] as const,
+  proposals: (status: string) => ['agentProposals', status] as const,
+  proposalCount: ['agentProposals', 'count'] as const,
+  emergencyStop: ['emergencyStop'] as const,
+  runtimeDefaults: ['runtimeDefaults'] as const,
+  hermesUpdate: ['hermesUpdate'] as const,
+  // Whether the agent's runtime profile matches its settings.
+  agentRuntimeSync: (teamId: number, agentId: number) =>
+    ['aiAgents', teamId, agentId, 'runtime-sync'] as const,
   issue: (id: number) => ['issue', id] as const,
   issueDevelopmentRepositories: (id: number) =>
     ['issue', id, 'development', 'repositories'] as const,

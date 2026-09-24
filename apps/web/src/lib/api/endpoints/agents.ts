@@ -1,5 +1,6 @@
 import { request } from '@/lib/api/core/client';
 import type { PermissionAction, PermissionResource } from '@/lib/api/endpoints/roles';
+import type { ModelCheck, RuntimeProfile } from '@/lib/api/endpoints/agentRuntimeSync';
 
 // One member custom field an agent reacts to, with the seconds its run waits.
 export interface AgentFieldTrigger {
@@ -47,9 +48,25 @@ export interface AgentRuntimePolicy {
   // session: 'failure' after a failed run and after rework on an issue, 'complex' also
   // after a run of many tool calls. Unset, 'complex'.
   reflection?: ReflectionMode;
+  // Which runtime runs the agent. Unset is Hermes, provisioned by the server; a Claude
+  // Code or Codex agent runs on a runner started with that preset.
+  runtime?: AgentRuntimeKind;
+  // Unset, the agent's own memory writes wait for the owner's approval.
+  memoryApproval?: boolean;
+  // Skills of the runtime turned off by name.
+  skillsDisabled?: string[];
+  // The models the runtime falls back to, in order. Unset or null: the instance's list.
+  fallbackModels?: FallbackModel[] | null;
+}
+
+export interface FallbackModel {
+  provider: string;
+  model: string;
 }
 
 export type ReflectionMode = 'off' | 'failure' | 'complex';
+export type AgentRuntimeKind = 'hermes' | 'claude' | 'codex';
+export const AGENT_RUNTIME_KINDS: AgentRuntimeKind[] = ['hermes', 'claude', 'codex'];
 
 // One thing the agent's reflection kept: a memory write, or a skill it created or
 // patched.
@@ -124,6 +141,8 @@ export interface AgentRuntimeState {
   restored: string[];
   // Null until a runner that reads it reports one.
   inventory: AgentRuntimeInventory | null;
+  // What the runner read back from the runtime's profile, and what differs from Helena.
+  profile: RuntimeProfile | null;
   reportedAt: string | null;
 }
 
@@ -228,6 +247,8 @@ export interface AgentRun {
   // The question the agent asked when it marked its issue blocked during the run.
   blockedQuestion: string | null;
   reflection: ReflectionView | null;
+  // Null for a run whose runner reports no model.
+  modelCheck: ModelCheck | null;
   nextAttemptAt: string;
   createdAt: string;
 }

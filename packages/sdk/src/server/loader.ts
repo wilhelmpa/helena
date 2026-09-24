@@ -114,19 +114,36 @@ export async function loadPluginDir(
   return host.load(plugin, manifest, { source: 'external', dir, digest });
 }
 
-// Why a discovered plugin is not loaded, or null when it may be.
+// Why a discovered plugin is not loaded, as a code the Administrator translates, or null
+// when it may be.
+export type ApprovalProblem = 'external-off' | 'not-approved' | 'version-changed' | 'files-changed';
+
+export function approvalProblemCode(
+  plugin: { manifest: PluginManifest; digest: string },
+  policy: ExternalPluginPolicy,
+): ApprovalProblem | null {
+  if (!policy.enabled) return 'external-off';
+  const approval = policy.approved.find((entry) => entry.id === plugin.manifest.id);
+  if (!approval) return 'not-approved';
+  if (approval.version !== plugin.manifest.version) return 'version-changed';
+  if (approval.digest !== plugin.digest) return 'files-changed';
+  return null;
+}
+
+const PROBLEM_TEXT: Record<ApprovalProblem, string> = {
+  'external-off': 'External plugins are switched off',
+  'not-approved': 'Not approved',
+  'version-changed': 'Approved at another version',
+  'files-changed': 'Changed since it was approved',
+};
+
+// The same, as a sentence for logs.
 export function approvalProblem(
   plugin: { manifest: PluginManifest; digest: string },
   policy: ExternalPluginPolicy,
 ): string | null {
-  if (!policy.enabled) return 'External plugins are switched off';
-  const approval = policy.approved.find((entry) => entry.id === plugin.manifest.id);
-  if (!approval) return 'Not approved';
-  if (approval.version !== plugin.manifest.version) {
-    return `Approved at version ${approval.version}, found ${plugin.manifest.version}`;
-  }
-  if (approval.digest !== plugin.digest) return 'Changed since it was approved';
-  return null;
+  const code = approvalProblemCode(plugin, policy);
+  return code ? PROBLEM_TEXT[code] : null;
 }
 
 // Loads every approved plugin from `root` into the host, and records the others with the

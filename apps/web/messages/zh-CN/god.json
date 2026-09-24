@@ -369,13 +369,18 @@
       "run-janitor": "运行清理器",
       "stage-janitor": "阶段清理器",
       "workflow-schedules": "日程同步",
-      "resume-janitor": "恢复清理器"
+      "resume-janitor": "恢复清理器",
+      "runtime-janitor": "运行时清理"
     },
     "janitorRan": "{time}前运行过",
     "janitorCleaned": "{count, plural, other {清理了 # 项}}",
     "janitorNeverRan": "尚未运行",
     "resuming": "{count, plural, other {# 个运行}}正在崩溃后恢复",
-    "needsResumeReview": "{count, plural, other {# 个运行}}已达到恢复次数上限，需要查看"
+    "needsResumeReview": "{count, plural, other {# 个运行}}已达到恢复次数上限，需要查看",
+    "agentSync": {
+      "title": "代理配置",
+      "synced": "{total} 个中 {synced} 个已同步"
+    }
   },
   "plugins": {
     "externalTitle": "外部插件",
@@ -396,6 +401,18 @@
     "actions": "操作",
     "events": "事件",
     "network": "网络",
-    "credentials": "其工具使用其连接器的凭据。"
+    "credentials": "其工具使用其连接器的凭据。",
+    "names": {
+      "integrations": "集成",
+      "mcp": "Helena MCP 工具",
+      "webhooks": "Webhook",
+      "bundles": "模板包"
+    },
+    "problems": {
+      "external-off": "开启外部插件后加载。",
+      "not-approved": "尚未批准。",
+      "version-changed": "批准的是其他版本：请批准此版本。",
+      "files-changed": "批准后其文件已更改：请检查并重新批准。"
+    }
   }
 }

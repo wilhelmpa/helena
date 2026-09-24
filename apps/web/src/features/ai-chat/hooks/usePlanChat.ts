@@ -83,6 +83,8 @@ export function usePlanChat({
   const chat = useChat<PlanUIMessage>({
     id: chatId,
     transport,
+    // A runner batch carries several deltas; they land as one render, not one each.
+    throttle: 50,
     onData: (part) => {
       if (part.type !== 'data-turn') return;
       const turn = part.data as { threadId: string; questionId: string; clientId: string };

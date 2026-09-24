@@ -3,13 +3,16 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { Loader2, Lock } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useBrowserControlGate } from '@/hooks/useBrowserControlGate';
 import { useBrowserLiveInput, type LiveGeometry } from '@/hooks/useBrowserLiveInput';
+import { useBrowserLock } from '@/hooks/useBrowserLock';
 import { useBrowserPreferences } from '@/hooks/useBrowserPreferences';
 import { useBrowserScreencast, type ShownFrame } from '@/hooks/useBrowserScreencast';
 import { useDevicePixelRatio } from '@/hooks/useDevicePixelRatio';
 import { cn } from '@/lib/utils';
 import { frameRect, type Size } from '@/utils/browserLive';
-import WorkspaceBrowserDialog from './WorkspaceBrowserDialog';
+import WorkspaceBrowserControl from './WorkspaceBrowserControl';
+import WorkspaceBrowserDialog, { type LiveCard } from './WorkspaceBrowserDialog';
 
 const BADGE_CLASS =
   'pointer-events-none absolute flex items-center gap-1 rounded-full bg-background/85 px-2 py-0.5 text-xs text-muted-foreground shadow-sm';
@@ -89,7 +92,8 @@ export default function WorkspaceBrowserLive({
     videoElementShown,
     page,
     dialog,
-    controlBy,
+    handover,
+    control,
     send,
     setViewport,
   } = useBrowserScreencast(
@@ -109,8 +113,24 @@ export default function WorkspaceBrowserLive({
   // at all, which never claims to prefer it.
   const autoFallback =
     videoPreference === 'auto' && mode === 'jpeg' && playback !== null && hasFrame;
-  const { pointer, keys } = useBrowserLiveInput(view, keyboard, geometry, send);
+  // The browser gateway's control lock: "Übernehmen"/"Zurückgeben", a question before the
+  // owner's first input goes into a page an agent steers, and one after 10 idle minutes.
+  const { takeOver, takingOver, release, releasing } = useBrowserLock(base);
+  const gate = useBrowserControlGate(control, send, release);
+  const { pointer, keys } = useBrowserLiveInput(view, keyboard, geometry, gate.guardedSend);
   const dpr = useDevicePixelRatio();
+  const busy = takingOver || releasing;
+  const ownerControls = control.locked && control.by === 'owner';
+  // A dialog of the page first, then an agent's request, then the owner's own questions.
+  const card: LiveCard | null = dialog
+    ? { type: 'dialog', ...dialog }
+    : handover
+      ? { type: 'handover', ...handover, ownerControls }
+      : gate.prompt === 'takeOver'
+        ? { type: 'takeOver', agentName: control.agentName }
+        : gate.prompt === 'idle'
+          ? { type: 'idle' }
+          : null;
 
   // Every size the view takes goes to the viewport controller, which sends it once it
   // settles. A hidden panel has no size and reports none.
@@ -166,18 +186,37 @@ export default function WorkspaceBrowserLive({
         className="absolute start-0 top-0 size-px resize-none opacity-0"
         {...keys}
       />
-      {dialog && (
+      {card && (
         <WorkspaceBrowserDialog
-          key={dialog.message}
-          dialog={dialog}
+          key={
+            card.type === 'dialog'
+              ? `dialog:${card.message}`
+              : card.type === 'handover'
+                ? `handover:${card.since}:${card.ownerControls}`
+                : card.type
+          }
+          card={card}
+          busy={busy}
           onAnswer={(accept, text) => send({ type: 'dialog', accept, text })}
+          onTakeOver={() => {
+            gate.dismiss();
+            takeOver();
+          }}
+          onHandBack={() => {
+            gate.dismiss();
+            release();
+          }}
+          onDismiss={gate.dismiss}
         />
       )}
-      {/* Informational only: who last acted on the page. The lock this hands off to later is
-          the browser gateway's, not this view's. */}
-      {controlBy === 'agent' && (
-        <div className={cn(BADGE_CLASS, 'start-2 top-2')}>{t('controlAgent')}</div>
-      )}
+      {/* Who steers: the gateway's lock with "Übernehmen"/"Zurückgeben", or, before the
+          gateway runs, who last acted on the page. */}
+      <WorkspaceBrowserControl
+        control={control}
+        busy={busy}
+        onTakeOver={() => takeOver()}
+        onHandBack={() => release()}
+      />
       <div className="pointer-events-none absolute end-2 top-2 flex flex-col items-end gap-1">
         {page?.fixed && (
           <div

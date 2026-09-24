@@ -361,7 +361,18 @@
     "secretHint": "El valor de un secreto solo llega al runner de un agente que tiene el servidor activado, nunca a esta página.",
     "missingSecret": "secreto eliminado",
     "addValue": "Añadir",
-    "removeValue": "Quitar"
+    "removeValue": "Quitar",
+    "builtinBadge": "Integrado",
+    "builtin": {
+      "projekt-browser": {
+        "title": "Navegador del proyecto",
+        "description": "Hermes, Claude Code y Codex controlan el navegador del proyecto a través de una puerta de enlace compartida: los inicios de sesión provienen de Credenciales, y nunca aparece una contraseña en el historial."
+      },
+      "hermes-browser-legacy": {
+        "title": "Navegador propio de Hermes (antiguo)",
+        "description": "Recurre a la propia herramienta de navegador CDP de Hermes en lugar de la puerta de enlace compartida."
+      }
+    }
   },
   "agents": {
     "newAgent": "Nuevo agente de IA",
@@ -432,7 +443,15 @@
       "filePathPlaceholder": "SOUL.md o instructions/tema.md",
       "filePathLabel": "Ruta del archivo gestionado {index}",
       "fileContentLabel": "Contenido del archivo gestionado {index}",
-      "removeFile": "Quitar el archivo gestionado {index}"
+      "removeFile": "Quitar el archivo gestionado {index}",
+      "runtime": "Runtime",
+      "runtimeKind": {
+        "hermes": "Hermes",
+        "claude": "Claude Code",
+        "codex": "Codex"
+      },
+      "runtimeHermesHint": "El servidor aprovisiona Hermes y mantiene su perfil sincronizado.",
+      "runtimeCliHint": "Se ejecuta en un runner con este preset (helena-runner --agent {kind}); instrucciones, skills, servidores MCP, modelo y razonamiento vienen de Helena."
     },
     "runtimeConflicts": {
       "title": "Modificado fuera de Helena",
@@ -594,8 +613,8 @@
       "toolsetsReadOnly": "Solo los miembros que pueden editar agentes pueden desactivar conjuntos de herramientas.",
       "noToolsets": "El ejecutor no ha informado de ningún conjunto de herramientas.",
       "mcpServers": "Servidores MCP",
-      "mcpServersHint": "De la configuración de Hermes. Desactiva uno y guarda para que el agente no lo use.",
-      "mcpServersReadOnly": "De la configuración de Hermes. Solo los miembros que pueden editar agentes pueden desactivar uno.",
+      "mcpServersHint": "Helena los da a cada agente: su propio servidor y el navegador del proyecto. Desactiva uno y guarda para que el agente no lo use.",
+      "mcpServersReadOnly": "Helena los da a cada agente. Solo quienes pueden editar agentes pueden desactivar uno.",
       "noMcpServers": "Ninguno",
       "libraryMcpServers": "Servidores MCP del equipo",
       "libraryMcpServersHint": "Un servidor activado se inicia con los chats y ejecuciones del agente cuando guardas.",
@@ -610,7 +629,7 @@
       "origin": {
         "agent": "Aprendida",
         "hub": "Del Skills Hub",
-        "plan": "De Plan"
+        "plan": "De Helena"
       },
       "memory": "Memoria",
       "memoryHint": "Hermes escribe esta memoria por sí mismo; se muestra tal como la informó el ejecutor por última vez. Un cambio llega al agente con la siguiente sincronización del ejecutor.",
@@ -648,7 +667,7 @@
         "enabled": "Autoaprendizaje",
         "enabledHint": "El agente guarda memoria y crea habilidades durante sus chats y ejecuciones; los tokens que gasta en ello cuentan en su consumo. Desactivado, no guarda nada nuevo y su memoria no se carga.",
         "curator": "Curador",
-        "curatorHint": "El curador de Hermes archiva las habilidades aprendidas que no se usaron en 30 días. Se ejecuta en el mantenimiento propio de Hermes, como el panel de Hermes, no en los chats y ejecuciones de Plan.",
+        "curatorHint": "El curador de Hermes archiva las habilidades aprendidas que no se usaron en 30 días. Helena le pide una revisión cada semana; en la pestaña Runtime del agente puedes lanzar una ahora y fijar las habilidades que no debe tocar.",
         "reflectionTitle": "Reflexión",
         "reflectionHint": "Un breve turno de seguimiento en la misma sesión de la ejecución, justo después de que termine, en el que el agente solo guarda lo que esa ejecución le enseñó. Sus tokens cuentan en el consumo de la ejecución.",
         "reflectionOff": "Desactivada",
@@ -677,8 +696,12 @@
         "memoryEditTitle": "Editar {file}",
         "memoryEditHint": "Hermes guarda una entrada por párrafo, con § en una línea propia entre entradas. El ejecutor escribe tu versión salvo que el agente haya cambiado el archivo entretanto.",
         "memoryClearTitle": "¿Vaciar {file}?",
-        "memoryClearBody": "El agente pierde estas notas con la siguiente sincronización del ejecutor."
-      }
+        "memoryClearBody": "El agente pierde estas notas con la siguiente sincronización del ejecutor.",
+        "memoryApproval": "Aprobar cambios de memoria",
+        "memoryApprovalHint": "Lo que el agente escribe en su memoria espera como diff en la página de aprobaciones; hasta que se aprueba, conserva la versión aprobada."
+      },
+      "skillEnabled": "{name} activada",
+      "skillsDisabled": "desactivadas: {count}"
     },
     "paused": "En pausa",
     "pausedNoReason": "En pausa. No se indicó ningún motivo.",
@@ -715,7 +738,53 @@
         "model": "Modelo/razonamiento",
         "budgets": "Presupuestos"
       }
-    }
+    },
+    "profileSync": {
+      "state": {
+        "synced": "Perfil sincronizado",
+        "drift": "El perfil difiere",
+        "pending": "Aplicando la configuración …",
+        "degraded": "No se pudo aplicar la configuración",
+        "offline": "Runner desconectado",
+        "unknown": "El runner no informa de su perfil"
+      },
+      "checked": "comprobado hace {time}",
+      "rewrite": "Reescribir",
+      "rewriting": "Reescribiendo …",
+      "rewriteQueued": "El runner reescribe el perfil en su próxima sincronización.",
+      "drift": {
+        "not-linked": "config.yaml no es el enlace a la configuración compartida de Hermes.",
+        "managed-config": "Hermes no aplica la configuración que escribió Helena.",
+        "mcp-unmanaged": "El servidor MCP {server} está activo aunque Helena no lo prevé.",
+        "mcp-missing": "Falta el servidor MCP {server} o está desactivado.",
+        "mcp-differs": "El servidor MCP {server} funciona con otra configuración que en Helena.",
+        "mcp-unsupported": "Este runtime no puede iniciar el servidor MCP {server}.",
+        "setting-differs": "El ajuste {key} difiere.",
+        "approval-guard": "Los comandos peligrosos se ejecutan sin el guardián de aprobaciones de Helena.",
+        "probe-failed": "No se pudo leer el perfil."
+      },
+      "defaults": "Predeterminado del runtime: {model} ({provider}), razonamiento {reasoning}",
+      "servers": "Servidores MCP: {servers}",
+      "serversOff": "desactivados: {servers}"
+    },
+    "runModel": {
+      "title": "Modelo",
+      "configured": "Configurado: {value}",
+      "used": "Ejecutado con: {value}",
+      "notReported": "Ejecutado con: sin informar",
+      "mismatch": "Difiere: {what}",
+      "badge": "El modelo difiere",
+      "source": {
+        "run": "del paso del flujo",
+        "agent": "del agente",
+        "default": "predeterminado del agente"
+      },
+      "part": {
+        "model": "modelo",
+        "reasoning": "razonamiento"
+      }
+    },
+    "chatTemplate": "Una plantilla no se ejecuta. Añádela a un proyecto como agente para probarla aquí."
   },
   "members": {
     "roleSaved": "{name} es ahora {role}",
@@ -754,6 +823,8 @@
     "import": "Importar",
     "close": "Cerrar",
     "failed": "No ha funcionado.",
-    "notJson": "El archivo no es un paquete JSON."
+    "notJson": "El archivo no es un paquete JSON.",
+    "summary": "{written} escritos · {unchanged} sin cambios · {drift} distintos · {warnings} avisos",
+    "summaryDryRun": "Solo comprobación, nada cambió · {unchanged} sin cambios · {drift} distintos · {warnings} avisos"
   }
 }

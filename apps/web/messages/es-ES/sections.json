@@ -63,6 +63,10 @@
       "label": "SCIM",
       "description": "Permite que un proveedor de identidades cree, actualize y desactive cuentas en esta instancia, y conceda acceso a proyectos a través de sus grupos."
     },
+    "agent-runtime": {
+      "label": "Runtime de agentes",
+      "description": "La parada de emergencia, la instalación de Hermes y sus actualizaciones, los modelos de respaldo y la conservación de sesiones para todos los agentes, y lo que consumieron los agentes."
+    },
     "plugins": {
       "label": "Plugins",
       "description": "Los plugins propios de Helena y los externos de la carpeta de plugins: qué aportan, qué permisos piden y cuáles pueden ejecutarse."
@@ -120,6 +124,10 @@
     "ai-agents": {
       "label": "Agentes de IA",
       "description": "Agentes de IA que trabajan en este proyecto."
+    },
+    "browser": {
+      "label": "Navegador",
+      "description": "Los dominios que puede abrir el navegador del proyecto, el ritmo de entrada similar al humano y el tiempo de espera del bloqueo."
     }
   }
 }

@@ -690,6 +690,10 @@ export const agentRun = pgTable(
     // The question the agent asked when it reported itself blocked during the run. A
     // blocked run ends as a success: the agent did what it could and waits for input.
     blockedQuestion: text('blocked_question'),
+    // The model and reasoning the run was configured to use next to what its session
+    // really ran on, as the runner read them back, with any mismatch named. Null for a run
+    // whose runner reports neither.
+    modelCheck: jsonb('model_check'),
     // The follow-up turn in which the agent kept what the run taught it, when Plan asked
     // its runner for one: why, how it went, what it saved and what it cost. Its tokens are
     // also added to the run's own.
@@ -710,6 +714,14 @@ export const agentRun = pgTable(
     // Distinct from `attempts`, which a release or a replayed stage lowers; this only
     // grows, and is what the instance's resume limit checks.
     resumes: integer('resumes').notNull().default(0),
+    // The run whose session this one continues with a new instruction ("continue from
+    // here"). Its first claim sends that instruction instead of the resume prompt.
+    continuedFromRunId: integer('continued_from_run_id').references(
+      (): AnyPgColumn => agentRun.id,
+      {
+        onDelete: 'set null',
+      },
+    ),
     finishedAt: timestamp('finished_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -762,6 +774,35 @@ export const agentEgressEvent = pgTable(
     index('agent_egress_event_project_idx').on(t.projectId, t.id),
     index('agent_egress_event_last_idx').on(t.lastAt),
     index('agent_egress_event_run_idx').on(t.runId),
+  ],
+);
+
+// The browser gateway's own audit trail (design: docs/volition-design-browser-gateway.md §5,
+// §9): every tool call the gateway ran for a project browser, without any value it saw —
+// login fill/2FA are logged through integration_credential_use instead (label and origin,
+// never the secret), because they already had that audit and it is agent-scoped there too.
+// `target` is a short, non-secret label the tool itself chose: a tab title, an origin, a
+// file name, never a URL's query string or a page's content.
+export const browserGatewayEvent = pgTable(
+  'browser_gateway_event',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    projectId: integer('project_id').references(() => project.id, { onDelete: 'cascade' }),
+    agentId: integer('agent_id').references(() => aiAgent.id, { onDelete: 'set null' }),
+    agentName: text('agent_name').notNull(),
+    // 'agent' while the calling agent held the control lock, 'owner' for an action the
+    // live view's Übernehmen banner attributes to the person instead.
+    actor: text('actor').notNull(),
+    tool: text('tool').notNull(),
+    // The call's action category (read, write, send, publish, delete, pay, execute), which
+    // Helena's policy decided on; null for an event from before categories.
+    category: text('category'),
+    target: text('target'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('browser_gateway_event_actor_check', sql`${t.actor} IN ('agent', 'owner')`),
+    index('browser_gateway_event_project_idx').on(t.projectId, t.id),
   ],
 );
 
@@ -930,6 +971,9 @@ export const agentChatMessage = pgTable(
     // The model the runner reported for the answer, and the tokens its last call read
     // and wrote.
     model: text('model'),
+    // The configured model and reasoning next to what the answer's session ran on (as on
+    // agent_run). Null for an answer whose runner reports neither.
+    modelCheck: jsonb('model_check'),
     inputTokens: integer('input_tokens'),
     outputTokens: integer('output_tokens'),
     status: text('status').notNull().default('pending'),
@@ -1368,9 +1412,171 @@ export const agentRuntimeAction = pgTable(
   (t) => [
     check(
       'agent_runtime_action_kind_check',
-      sql`${t.kind} IN ('discard-skill', 'pin-skill', 'write-memory')`,
+      sql`${t.kind} IN ('discard-skill', 'pin-skill', 'write-memory', 'rewrite-profile')`,
     ),
     index('agent_runtime_action_agent_idx').on(t.agentId, t.id),
+  ],
+);
+
+// The token ledger: one row per run, chat answer or reflection a runner reported, with the
+// model that actually ran. Usage per agent, model, project and day and the budgets are read
+// from here; cost is computed when read, from the price of the model at that time. The token
+// columns follow the OpenTelemetry GenAI conventions (gen_ai.usage.*): input_tokens includes
+// the cached reads and writes, output_tokens includes the reasoning tokens.
+export const agentUsage = pgTable(
+  'agent_usage',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    agentId: integer('agent_id')
+      .notNull()
+      .references(() => aiAgent.id, { onDelete: 'cascade' }),
+    // Null for work outside a project, such as a Home chat.
+    projectId: integer('project_id').references(() => project.id, { onDelete: 'cascade' }),
+    runId: integer('run_id').references(() => agentRun.id, { onDelete: 'set null' }),
+    chatMessageId: integer('chat_message_id').references(() => agentChatMessage.id, {
+      onDelete: 'set null',
+    }),
+    kind: text('kind').notNull(),
+    // The runner preset that ran it ('hermes', 'claude', 'codex', ...), null for a custom one.
+    runtime: text('runtime'),
+    // gen_ai.response.model and gen_ai.provider.name, as the runtime reported them.
+    model: text('model'),
+    provider: text('provider'),
+    // gen_ai.conversation.id: the runtime session the tokens were spent in.
+    sessionId: text('session_id'),
+    inputTokens: bigint('input_tokens', { mode: 'number' }).notNull().default(0),
+    outputTokens: bigint('output_tokens', { mode: 'number' }).notNull().default(0),
+    cacheReadTokens: bigint('cache_read_tokens', { mode: 'number' }).notNull().default(0),
+    cacheWriteTokens: bigint('cache_write_tokens', { mode: 'number' }).notNull().default(0),
+    reasoningTokens: bigint('reasoning_tokens', { mode: 'number' }).notNull().default(0),
+    // Wall-clock time of the run, chat answer or reflection, when the runner measured it.
+    durationMs: integer('duration_ms'),
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('agent_usage_kind_check', sql`${t.kind} IN ('run', 'chat', 'reflection')`),
+    index('agent_usage_agent_time_idx').on(t.agentId, t.occurredAt),
+    index('agent_usage_project_time_idx').on(t.projectId, t.occurredAt),
+    index('agent_usage_time_idx').on(t.occurredAt),
+    index('agent_usage_run_idx').on(t.runId),
+  ],
+);
+
+// A question Helena asks an agent's runtime through its runner: a session list, a
+// transcript, the logs, a health check, a curator run. The runner claims it, answers it
+// with the adapter of the agent's runtime, and the waiting request reads the answer. Rows
+// are kept only for a few minutes; the janitor deletes answered and stale ones.
+export const agentRuntimeRequest = pgTable(
+  'agent_runtime_request',
+  {
+    id: serial('id').primaryKey(),
+    agentId: integer('agent_id')
+      .notNull()
+      .references(() => aiAgent.id, { onDelete: 'cascade' }),
+    // The request as the runner receives it: `{ op, ...params }` (packages/runner readers).
+    request: jsonb('request').notNull(),
+    // pending -> claimed -> answered | failed
+    status: text('status').notNull().default('pending'),
+    result: jsonb('result'),
+    error: text('error'),
+    requestedByUserId: text('requested_by_user_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    claimedAt: timestamp('claimed_at', { withTimezone: true }),
+    answeredAt: timestamp('answered_at', { withTimezone: true }),
+  },
+  (t) => [
+    check(
+      'agent_runtime_request_status_check',
+      sql`${t.status} IN ('pending', 'claimed', 'answered', 'failed')`,
+    ),
+    index('agent_runtime_request_agent_idx').on(t.agentId, t.status, t.id),
+    index('agent_runtime_request_created_idx').on(t.createdAt),
+  ],
+);
+
+// What a run's command wrote, as the AG-UI events the runner read from it, redacted: the
+// run's timeline in Helena, live while it runs and as a replay afterwards. Bounded per run
+// by the API; the janitor removes the events of old runs.
+export const agentRunEvent = pgTable(
+  'agent_run_event',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    runId: integer('run_id')
+      .notNull()
+      .references(() => agentRun.id, { onDelete: 'cascade' }),
+    // The claim the events came from: a run claimed again starts a new attempt.
+    claim: integer('claim').notNull().default(0),
+    payload: jsonb('payload').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('agent_run_event_run_idx').on(t.runId, t.id)],
+);
+
+// A change the owner decides on before it takes effect, raised by an agent's runtime rather
+// than by the agent asking: a memory write Hermes staged (memory.write_approval), an update
+// of Hermes itself. Listed with the approvals; approving one has the runner carry it out.
+export const agentProposal = pgTable(
+  'agent_proposal',
+  {
+    id: serial('id').primaryKey(),
+    // Null for a proposal of the instance, such as a Hermes update.
+    agentId: integer('agent_id').references(() => aiAgent.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(),
+    // The runtime's own id of the proposal (Hermes' pending id), so a report repeats it
+    // instead of adding it twice.
+    externalId: text('external_id').notNull(),
+    title: text('title').notNull(),
+    payload: jsonb('payload').notNull().default({}),
+    // pending -> approved | rejected; approved -> applied | failed once the runner did it.
+    status: text('status').notNull().default('pending'),
+    decidedByUserId: text('decided_by_user_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    decidedAt: timestamp('decided_at', { withTimezone: true }),
+    note: text('note'),
+    error: text('error'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('agent_proposal_kind_check', sql`${t.kind} IN ('memory-write', 'hermes-update')`),
+    check(
+      'agent_proposal_status_check',
+      sql`${t.status} IN ('pending', 'approved', 'rejected', 'applied', 'failed')`,
+    ),
+    uniqueIndex('agent_proposal_external_uq').on(
+      sql`coalesce(${t.agentId}, 0)`,
+      t.kind,
+      t.externalId,
+    ),
+    index('agent_proposal_status_idx').on(t.status, t.id),
+  ],
+);
+
+// Every version of an agent's memory files Helena has seen: what the agent wrote and the
+// owner approved, what the owner wrote, and changes found in the runtime otherwise.
+export const agentMemoryRevision = pgTable(
+  'agent_memory_revision',
+  {
+    id: serial('id').primaryKey(),
+    agentId: integer('agent_id')
+      .notNull()
+      .references(() => aiAgent.id, { onDelete: 'cascade' }),
+    file: text('file').notNull(),
+    content: text('content').notNull(),
+    sha256: text('sha256').notNull(),
+    source: text('source').notNull(),
+    proposalId: integer('proposal_id').references(() => agentProposal.id, {
+      onDelete: 'set null',
+    }),
+    userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('agent_memory_revision_file_check', sql`${t.file} IN ('MEMORY.md', 'USER.md')`),
+    check('agent_memory_revision_source_check', sql`${t.source} IN ('agent', 'owner', 'observed')`),
+    index('agent_memory_revision_agent_idx').on(t.agentId, t.file, t.id),
   ],
 );
 
@@ -1458,6 +1664,10 @@ export const agentMcpServer = pgTable(
     url: text('url'),
     env: jsonb('env').notNull().default([]),
     headers: jsonb('headers').notNull().default([]),
+    // A server the instance itself seeded (today: "Projekt-Browser", the browser gateway,
+    // and "Hermes-eigener Browser (alt)", the pre-gateway fallback). A team cannot edit or
+    // delete these rows; only whether they are on for an agent (agent_mcp_server_link).
+    builtin: boolean('builtin').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

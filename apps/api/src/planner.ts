@@ -24,6 +24,13 @@ import { agentToolRoutes } from './modules/agents/tools';
 import { agentMcpServerRoutes } from './modules/agents/mcp-servers';
 import { credentialRoutes } from './modules/agents/credentials';
 import { agentLearningRoutes } from './modules/agents/learning';
+import { agentRuntimeRequestRoutes } from './modules/agents/runtime-requests';
+import { runTimelineRoutes } from './modules/agents/run-timeline';
+import { runtimeViewRoutes } from './modules/agents/runtime-views';
+import { agentUsageRoutes } from './modules/agents/usage';
+import { agentProposalRoutes } from './modules/agents/proposals';
+import { emergencyStopRoutes } from './modules/emergency-stop';
+import { runtimeAdminRoutes } from './modules/runtime-admin';
 import { customFieldRoutes } from './modules/custom-fields';
 import { issueTemplateRoutes } from './modules/issue-templates';
 import { issueRoutes } from './modules/issues';
@@ -51,6 +58,7 @@ import { agentRunnerRoutes } from './modules/agents/runner';
 import { agentChatRoutes } from './modules/agents/chat';
 import { chatPromptRoutes } from './modules/chat-prompts';
 import { agentRuntimePolicyRoutes } from './modules/agents/runtime-policy';
+import { agentRuntimeSyncRoutes, runnerHealthRoutes } from './modules/agents/runtime-sync';
 import { agentRuntimeFileRoutes } from './modules/agents/runtime-files';
 import { notificationRoutes } from './modules/notifications';
 import { notificationSettingsRoutes } from './modules/notification-settings';
@@ -62,6 +70,7 @@ import { linkPreviewRoutes } from './modules/link-previews';
 import { hubInboxRoutes } from './modules/hub-inbox';
 import { agentActivityRoutes } from './modules/agent-activity';
 import { agentNetworkRoutes } from './modules/agent-egress';
+import { agentBrowserGatewayRoutes } from './modules/agent-browser-gateway';
 import { approvalRoutes } from './modules/approvals';
 import { pipelineRoutes } from './modules/pipelines';
 import { mailAccountRoutes } from './modules/mail/accounts';
@@ -122,6 +131,13 @@ export const planner = new Elysia({ name: 'planner' })
   .use(agentMcpServerRoutes)
   .use(credentialRoutes)
   .use(agentLearningRoutes)
+  .use(agentRuntimeRequestRoutes)
+  .use(runTimelineRoutes)
+  .use(runtimeViewRoutes)
+  .use(agentUsageRoutes)
+  .use(agentProposalRoutes)
+  .use(emergencyStopRoutes)
+  .use(runtimeAdminRoutes)
   .use(customFieldRoutes)
   .use(issueTemplateRoutes)
   .use(issueRoutes)
@@ -143,6 +159,8 @@ export const planner = new Elysia({ name: 'planner' })
   .use(agentChatRoutes)
   .use(chatPromptRoutes)
   .use(agentRuntimePolicyRoutes)
+  .use(agentRuntimeSyncRoutes)
+  .use(runnerHealthRoutes)
   .use(agentRuntimeFileRoutes)
   .use(dashboardRoutes)
   .use(noteBoardRoutes)
@@ -160,6 +178,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(hubInboxRoutes)
   .use(agentActivityRoutes)
   .use(agentNetworkRoutes)
+  .use(agentBrowserGatewayRoutes)
   .use(approvalRoutes)
   .use(pipelineRoutes)
   .use(mailAccountRoutes)

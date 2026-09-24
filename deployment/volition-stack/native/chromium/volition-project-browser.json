@@ -2,5 +2,10 @@
   "PasswordManagerEnabled": false,
   "PasswordLeakDetectionEnabled": false,
   "AutofillAddressEnabled": false,
-  "AutofillCreditCardEnabled": false
+  "AutofillCreditCardEnabled": false,
+  "NewTabPageLocation": "https://www.google.com/",
+  "HomepageLocation": "https://www.google.com/",
+  "HomepageIsNewTabPage": false,
+  "ShowHomeButton": true,
+  "RestoreOnStartup": 1
 }

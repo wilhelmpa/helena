@@ -3,7 +3,8 @@ import type { CaptureTarget, KnowledgeSource } from './knowledge';
 import type { McpServerContribution } from './manifest-types';
 import type { PolicyEvaluator } from './policy';
 import { Registry, createRegistry } from './registry';
-import type { RuntimeAdapter } from './runtime';
+import type { RuntimeType } from './runtime';
+import type { ProfileContribution } from './runtime-policy';
 import type { BundleOffer } from './templates';
 import type { AnyAgentTool } from './tools';
 import { uiSlotKey, type UiSlot } from './ui';
@@ -13,7 +14,7 @@ import type { TriggerType, WorkflowStepType } from './workflows';
 // uses) and hands it to its plugin host, so built-ins registered at import time and
 // plugins loaded at start end up in the same place.
 export interface HelenaRegistries {
-  runtimes: Registry<RuntimeAdapter>;
+  runtimes: Registry<RuntimeType>;
   connectors: Registry<Connector>;
   tools: Registry<AnyAgentTool>;
   stepTypes: Registry<WorkflowStepType<unknown>>;
@@ -24,11 +25,12 @@ export interface HelenaRegistries {
   captureTargets: Registry<CaptureTarget>;
   bundles: Registry<BundleOffer>;
   mcpServers: Registry<McpServerContribution>;
+  profileContributions: Registry<ProfileContribution>;
 }
 
 export function createRegistries(given: Partial<HelenaRegistries> = {}): HelenaRegistries {
   return {
-    runtimes: given.runtimes ?? createRegistry<RuntimeAdapter>('runtime'),
+    runtimes: given.runtimes ?? createRegistry<RuntimeType>('runtime'),
     connectors: given.connectors ?? createRegistry<Connector>('connector'),
     tools: given.tools ?? new Registry<AnyAgentTool>('tool', (tool) => tool.name),
     stepTypes: given.stepTypes ?? createRegistry<WorkflowStepType<unknown>>('workflow step type'),
@@ -41,5 +43,7 @@ export function createRegistries(given: Partial<HelenaRegistries> = {}): HelenaR
     mcpServers:
       given.mcpServers ??
       new Registry<McpServerContribution>('MCP server', (server) => server.name),
+    profileContributions:
+      given.profileContributions ?? createRegistry<ProfileContribution>('profile contribution'),
   };
 }

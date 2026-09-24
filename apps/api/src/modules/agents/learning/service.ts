@@ -18,7 +18,7 @@ export type RuntimeActionInput = typeof createRuntimeActionBody.static;
 export type LearnedSkill = typeof learnedSkill.static;
 export type RuntimeActionResult = typeof runtimeActionResult.static;
 type RuntimeActionSnapshot = typeof runtimeActionSnapshot.static;
-type ActionKind = RuntimeActionInput['kind'];
+type ActionKind = RuntimeActionInput['kind'] | 'rewrite-profile';
 
 export interface RuntimeActionRow {
   id: number;
@@ -44,6 +44,7 @@ function toRow(row: StoredAction): RuntimeActionRow {
 }
 
 function toSnapshot(row: StoredAction): RuntimeActionSnapshot {
+  if (row.kind === 'rewrite-profile') return { id: row.id, kind: 'rewrite-profile' };
   const payload = row.payload as { pinned?: boolean; content?: string; baseSha256?: string };
   if (row.kind === 'pin-skill') {
     return { id: row.id, kind: 'pin-skill', path: row.target, pinned: payload.pinned === true };
@@ -147,11 +148,27 @@ export async function queueRuntimeAction(
   return db.transaction((tx) => insertAction(tx, agentId, input.kind, target, payload));
 }
 
-// A done action is deleted; a failed one keeps its error, which the owner sees.
+// A done action is deleted; a failed one keeps its error, which the owner sees. Returns the
+// actions the results name, as they were stored.
 export async function completeRuntimeActions(
   agentId: number,
   results: RuntimeActionResult[],
-): Promise<void> {
+): Promise<StoredAction[]> {
+  const named =
+    results.length === 0
+      ? []
+      : await db
+          .select()
+          .from(agentRuntimeAction)
+          .where(
+            and(
+              eq(agentRuntimeAction.agentId, agentId),
+              inArray(
+                agentRuntimeAction.id,
+                results.map((result) => result.id),
+              ),
+            ),
+          );
   const done = results.filter((result) => result.error === null).map((result) => result.id);
   if (done.length > 0) {
     await db
@@ -165,6 +182,7 @@ export async function completeRuntimeActions(
       .set({ error })
       .where(and(eq(agentRuntimeAction.agentId, agentId), eq(agentRuntimeAction.id, id)));
   }
+  return named;
 }
 
 function learnedSkillAt(learned: LearnedSkill[], path: string): LearnedSkill {

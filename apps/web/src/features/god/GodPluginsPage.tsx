@@ -1,6 +1,8 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { resolveText } from '@helena/sdk/web';
+import { byKey } from '@/utils/messageKey';
 import SettingsCard from '@/components/common/page/SettingsCard';
 import SettingsSection from '@/components/common/page/SettingsSection';
 import EnabledSwitch from '@/components/common/inputs/EnabledSwitch';
@@ -87,8 +89,17 @@ export default function GodPluginsPage() {
   );
 }
 
+const PROBLEMS = ['external-off', 'not-approved', 'version-changed', 'files-changed'];
+
 function PluginCard({ plugin, actions }: { plugin: PluginView; actions?: React.ReactNode }) {
   const t = useTranslations('god.plugins');
+  const tAny = byKey(useTranslations());
+  const locale = useLocale();
+  const text = (value: PluginView['name']) => resolveText(value, locale, (key) => tAny(key));
+  const problem =
+    plugin.problem && PROBLEMS.includes(plugin.problem)
+      ? tAny(`god.plugins.problems.${plugin.problem}`)
+      : plugin.problem;
   const provides = Object.entries(plugin.provides).filter(([, ids]) => ids.length > 0);
   const status =
     plugin.status === 'loaded'
@@ -99,16 +110,17 @@ function PluginCard({ plugin, actions }: { plugin: PluginView; actions?: React.R
   return (
     <SettingsCard className="space-y-2 p-4">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="font-medium">{plugin.name}</span>
+        <span className="font-medium">{text(plugin.name)}</span>
         <span className="text-muted-foreground">{plugin.version}</span>
         <Badge variant={plugin.status === 'loaded' ? 'secondary' : 'outline'}>{status}</Badge>
         {plugin.restartRequired ? <Badge variant="outline">{t('restartRequired')}</Badge> : null}
         <span className="ms-auto">{actions}</span>
       </div>
-      {plugin.description ? <p className="text-muted-foreground">{plugin.description}</p> : null}
-      {plugin.error && plugin.status !== 'loaded' ? (
-        <p className="text-xs text-muted-foreground">{plugin.error}</p>
+      {plugin.description ? (
+        <p className="text-muted-foreground">{text(plugin.description)}</p>
       ) : null}
+      {plugin.error ? <p className="text-xs text-destructive">{plugin.error}</p> : null}
+      {problem ? <p className="text-xs text-muted-foreground">{problem}</p> : null}
       {provides.length > 0 ? (
         <p className="text-xs text-muted-foreground">
           {t('provides')}:{' '}

@@ -24,7 +24,8 @@ Survey of `volition/hub` at a5e1ee2e (2026-09-24). "Hard-wired" means a list in 
   - Stream parsing is a `switch` over seven output formats in `agui.ts` (`AnswerStream`, `UsageReader`), plus a Hermes result reader in `execute.ts`.
   - The launcher only knows `hermes`, `claude` and `codex` (`ISOLATED_RUNTIMES`).
   - Profile materialization (`policy.ts`, `inventory.ts`, `learning.ts`, `reflect.ts`) is Hermes-only code. MCP injection is wired differently for each runtime.
-- **Target.** `RuntimeAdapter` registry: `cli` adapters for today's presets, `acp` adapters for the Agent Client Protocol, optional `profile` and `readers`.
+- **Target.** A `RuntimeType` registry: `cli` types for today's presets and `acp` types for the Agent Client Protocol. Each type has a per-agent profile adapter (`RuntimeAdapter` from hub/hermes-sync: `ensure`, `runSettings`, `sessionFacts`, `defaults`) and `readers` (hub/hermes-in-helena).
+- **Profile contributions** (hub/hermes-sync) are a registry too: MCP servers and Hermes settings every agent profile gets. The runtime policy wire types (`RuntimePolicySnapshot` …) live in `@helena/sdk`.
 - **Done (this branch):** the presets are adapters in `packages/runner/src/runtimes.ts`. `config`, `execute` and `agui` look runtimes up in the registry. A plugin runtime brings its own stream parser. The runner loads plugin folders from its config.
 - **Open:** the ACP client in the runner, and moving the Hermes profile/readers behind `profile`/`readers` (hub/hermes-sync, hub/hermes-in-helena).
 
@@ -274,8 +275,9 @@ ctx.runtimes.register({
 });
 ```
 
-- **The target contract is ACP:** `protocol: 'acp'` with `launch(settings)`. The runner's ACP client is RUN-01 (hub/hermes-sync).
-- `profile` writes the agent's profile.
+- **The target contract is ACP:** `protocol: 'acp'` with `launch(settings)`. The runner's ACP client is RUN-01 (hub/hermes-sync). Hermes stays on its CLI for now: its ACP adapter does not reach `--toolsets`, `--max-turns`, the run budget or the reasoning (docs/helena-decisions/runtime-protocol.md).
+- `adapter(context)` builds the agent's profile adapter (`RuntimeAdapter`: `ensure`, `runSettings`, `sessionFacts`, `defaults`, with a `ProfileReport` of drift). The built-ins build theirs in `packages/runner/src/adapters.ts`.
+- `ctx.profileContributions.register({ id, mcpServers?, suppress?, denyToolsets?, hermesConfig? })` adds MCP servers or Hermes settings to every agent's profile, in every runtime.
 - `readers` answers the runtime requests of hub/hermes-in-helena: sessions, transcripts in the OTel GenAI shape, logs, health, version, curator and emergency stop.
 
 ### 3.8 Knowledge sources and capture targets
@@ -355,7 +357,10 @@ The format is `@helena/sdk` `TemplateBundle` (JSON Schema `@helena/sdk/bundle.sc
   - CloudEvents (`specversion: 1.0`).
   - A core event's `data` only gains fields. A new shape gets a new type name.
 - **Reserved names.** `helena.*` plugin ids and event types are Helena's. `_meta["helena/action"]` is the category key on MCP tools.
-- **Licence.** The SDK is Apache-2.0 (proposed, owner to confirm), so plugins may use any licence. Helena itself stays AGPL-3.0.
+- **Licence boundary** (owner decision, 2026-09-24):
+  - `@helena/sdk` is Apache-2.0 inside the AGPL-3.0 monorepo. That covers the contracts (the types a plugin imports with `import type`) and the plugin API it is called through (`register(ctx)` and the context). A plugin may therefore carry any licence, including a proprietary one.
+  - The host stays AGPL-3.0: API, worker, runner, web, and everything that loads and runs plugins. A change to the host is AGPL.
+  - Contributions to Helena, including the SDK, go through a CLA (not DCO), because a commercial licence may come later.
 
 ## 7. Security model
 
@@ -377,8 +382,8 @@ The format is `@helena/sdk` `TemplateBundle` (JSON Schema `@helena/sdk/bundle.sc
 | hub/native-engine | `WorkflowStepType`, `TriggerType`, `EventTransport` (D-C2) | Register the five step kinds and the six triggers as the internal plugin `helena.workflows`; execute through the registry (`execute`/`resume`), and let the builder read `configSchema`/`ui`. Implement `EventTransport` on the chosen engine and call `useEventTransport` (API) and `eventDelivery.useTransport` (worker). Consume `helena.issue.*` for task triggers instead of `queuePipelineTriggers`. Emit `helena.routine.fired` from the new scheduler. |
 | hub/autopilot | `PolicyEvaluator` | One evaluator (`helena.autopilot`) over autopilot levels and budgets. Import `ACTION_CATEGORIES`/`actionRank` from `@helena/sdk`. The MCP endpoint already asks `decide()`; the runtime permission path (ACP) and step execution follow. |
 | hub/access-center | `Connector` | Register credential kinds and the Google/mail connectors as connectors (services with categories, `auth`, `health`); move the `@repo/agent-tools` HTTP clients to MCP servers (F23); categories from the SDK. |
-| hub/hermes-in-helena | `RuntimeAdapter.readers` | The contract is yours, moved into `@helena/sdk` (`runtime-readers.ts`); import the types from there and hang the Hermes/Claude/Codex readers on the adapters in `packages/runner/src/runtimes.ts`. |
-| hub/hermes-sync | `RuntimeAdapter` (`acp`, `profile`) | RUN-01: ACP client in the runner behind `protocol: 'acp'`; `profile.materialize` wraps the policy synchronizer. |
+| hub/hermes-in-helena | `RuntimeType.readers` | The contract is yours, moved into `@helena/sdk` (`runtime-readers.ts`); import the types from there and hang the Hermes/Claude/Codex readers on the built-in types in `packages/runner/src/runtimes.ts`. |
+| hub/hermes-sync (merged) | `RuntimeType` (`acp`), `RuntimeAdapter`, `ProfileContribution` | Your runtime.ts and the contribution types are in `@helena/sdk` unchanged (runtime-profile.ts, runtime-policy.ts; `RuntimeId` widened for plugin runtimes); the runner files re-export them and the contributions list is an SDK registry (`ctx.profileContributions` for runner plugins). Next: RUN-01, the ACP client behind `protocol: 'acp'` for Claude and Codex (Hermes stays on its CLI). |
 | hub/agent-browser-mcp | `AgentTool` | Register the 24 `browser_*` tools with `category` + `classify(input)` (click may send/pay/publish); import categories from the SDK; a real `handover` approval kind instead of the text prefix. |
 | hub/second-brain | `KnowledgeSource`, `CaptureTarget`, `capture-action` slot | The API and worker hosts exist: `host` in `apps/api/src/shared/helena.ts`, `startEventDelivery().host` in `apps/worker/src/events.ts`. Load `knowledgePlugin` there with `host.load(knowledgePlugin, manifest)`; the host's `knowledgeSources`/`captureTargets` are the registries. |
 | hub/oss-packaging | plugins dir, logger | `HELENA_PLUGINS_DIR` in the units/compose; OPS-01 pino logger behind `ctx.log`. |

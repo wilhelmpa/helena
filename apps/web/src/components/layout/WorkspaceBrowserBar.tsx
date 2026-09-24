@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ArrowRight, BookmarkPlus, Bot, RotateCw } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bot, BrainCircuit, RotateCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { useBrowserControl } from '@/hooks/useBrowserControl';
 import { useCaptureWebPageMutation } from '@/services/everything.service';
 import type { BrowserView } from '@/hooks/useBrowserPreferences';
 import { Button } from '@/components/ui/button';
+import WorkspaceBrowserBookmarks from './WorkspaceBrowserBookmarks';
 import WorkspaceBrowserStreamMenu from './WorkspaceBrowserStreamMenu';
 import WorkspaceBrowserTabs from './WorkspaceBrowserTabs';
 import WorkspaceBrowserViewSwitch from './WorkspaceBrowserViewSwitch';
@@ -121,6 +122,11 @@ export default function WorkspaceBrowserBar({
           }}
         />
       </form>
+      <WorkspaceBrowserBookmarks
+        base={base}
+        current={active}
+        onOpen={(url) => act({ action: 'new', url })}
+      />
       <Button
         variant="ghost"
         size="icon"
@@ -130,7 +136,7 @@ export default function WorkspaceBrowserBar({
         title={tKnowledge('savePage')}
         aria-label={tKnowledge('savePage')}
       >
-        <BookmarkPlus />
+        <BrainCircuit />
       </Button>
       <WorkspaceBrowserTabs
         tabs={tabs}

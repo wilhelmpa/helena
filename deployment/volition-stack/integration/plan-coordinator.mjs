@@ -2,6 +2,14 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 
+// A secret must be readable by its owner only. systemd's own credential directory is the
+// exception: on a native boot it presents LoadCredential files as 0440 (0400 inside a
+// container) and guards the directory itself, so group read is fine there.
+function secretModeMask(file) {
+  const dir = process.env.CREDENTIALS_DIRECTORY;
+  return dir && file.startsWith(`${dir}/`) ? 0o037 : 0o077;
+}
+
 const PROJECT_KEY = /^[A-Z0-9][A-Z0-9_-]{0,31}$/;
 const PLAN_USERNAME = /^[A-Za-z0-9._-]{1,64}$/;
 
@@ -158,7 +166,7 @@ function apiKeyValue(value) {
 
 async function privateDescriptor(filePath) {
   const stat = await fs.lstat(filePath);
-  if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & 0o077) !== 0 || stat.size > 16 * 1024) {
+  if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & secretModeMask(filePath)) !== 0 || stat.size > 16 * 1024) {
     throw new PlanCoordinatorError("The Hermes runner descriptor is not a private regular file");
   }
 }

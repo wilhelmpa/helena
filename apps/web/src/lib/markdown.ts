@@ -61,7 +61,7 @@ export function fileMarkerUrl(id: string): string {
   return mediaUrl(`/chat-attachments/${id}/raw?download=1`);
 }
 
-function linkFileMarkers(text: string): string {
+export function linkFileMarkers(text: string): string {
   return text.replace(FILE_MARKER, (_, name: string, id: string) => {
     const label = name.replace(/[[\]\\]/g, '\\$&');
     return `[${label}](${fileMarkerUrl(id)})`;
@@ -93,7 +93,7 @@ const IMPORT_TAG = 'issue-import';
 // The one field an issue-import fence carries: which draft the card shows. The
 // draft itself is read from the API by the card, so a model writing extra JSON
 // around it cannot forge rows.
-function parseImportRef(text: string): string | null {
+export function parseImportRef(text: string): string | null {
   const start = text.indexOf('{');
   const end = text.lastIndexOf('}');
   if (start === -1 || end < start) return null;

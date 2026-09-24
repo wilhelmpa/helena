@@ -369,13 +369,18 @@
       "run-janitor": "Nettoyage des exécutions",
       "stage-janitor": "Nettoyage des étapes",
       "workflow-schedules": "Synchronisation des plannings",
-      "resume-janitor": "Nettoyage des reprises"
+      "resume-janitor": "Nettoyage des reprises",
+      "runtime-janitor": "Nettoyage du runtime"
     },
     "janitorRan": "exécuté il y a {time}",
     "janitorCleaned": "{count, plural, one {a nettoyé # élément} other {a nettoyé # éléments}}",
     "janitorNeverRan": "n'a pas encore tourné",
     "resuming": "{count, plural, one {# exécution reprend} other {# exécutions reprennent}} après un crash",
-    "needsResumeReview": "{count, plural, one {# exécution a atteint} other {# exécutions ont atteint}} la limite de reprises et nécessitent un examen"
+    "needsResumeReview": "{count, plural, one {# exécution a atteint} other {# exécutions ont atteint}} la limite de reprises et nécessitent un examen",
+    "agentSync": {
+      "title": "Profils des agents",
+      "synced": "{synced} sur {total} synchronisés"
+    }
   },
   "plugins": {
     "externalTitle": "Plugins externes",
@@ -396,6 +401,18 @@
     "actions": "Actions",
     "events": "Événements",
     "network": "Réseau",
-    "credentials": "Ses outils utilisent les identifiants de ses connecteurs."
+    "credentials": "Ses outils utilisent les identifiants de ses connecteurs.",
+    "names": {
+      "integrations": "Intégrations",
+      "mcp": "Outils MCP de Helena",
+      "webhooks": "Webhooks",
+      "bundles": "Paquets de modèles"
+    },
+    "problems": {
+      "external-off": "Se charge une fois les plugins externes activés.",
+      "not-approved": "Pas encore approuvé.",
+      "version-changed": "Approuvé pour une autre version : approuvez celle-ci.",
+      "files-changed": "Ses fichiers ont changé depuis l'approbation : vérifiez et approuvez à nouveau."
+    }
   }
 }

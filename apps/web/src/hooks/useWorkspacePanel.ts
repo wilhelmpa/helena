@@ -52,6 +52,26 @@ export function useWorkspacePanel({
     // never overwrite a tool the user has already opened.
     if (restored.current) return;
     restored.current = true;
+    // A link can open a tool: ?tool=browser (Home's browser overview, a handover card in
+    // Freigaben). The parameter is taken off the address again, so a reload does not reopen it.
+    const linked = new URLSearchParams(window.location.search).get('tool');
+    if (isToolId(linked)) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('tool');
+      window.history.replaceState(window.history.state, '', url);
+      setActiveTool(linked);
+      setOpenState(true);
+      write(TOOL_KEY, linked);
+      write(OPEN_KEY, 'open');
+      if (projectScoped(linked)) write(PROJECT_KEY, projectKey ?? '');
+      try {
+        setMode(localStorage.getItem(MODE_KEY) === 'push' ? 'push' : 'overlay');
+        setFullscreen(localStorage.getItem(FULLSCREEN_KEY) === 'true');
+      } catch {
+        // Storage off: the defaults stay.
+      }
+      return;
+    }
     try {
       const savedOpen = localStorage.getItem(OPEN_KEY);
       const storedTool = localStorage.getItem(TOOL_KEY);

@@ -2,18 +2,26 @@ import type { RuntimeStreamEvent, RuntimeStreamParser } from '@helena/sdk';
 import type { OutputFormat } from './config';
 import { streamParserFor } from './runtimes';
 
-// Turns what the command prints into AG-UI events (https://docs.ag-ui.com), which is what
-// the server stores and the chat reads. A CLI that reports its own stream also carries the
-// tool calls it makes, and those become tool events rather than text.
+// Turns what the command prints into AG-UI 1.0 events (https://docs.ag-ui.com), which is
+// what the server stores and the chat reads. A CLI that reports its own stream also carries
+// the tool calls it makes, and those become tool events rather than text.
+
+// The AG-UI version these events follow (@ag-ui/core's PROTOCOL_VERSION), announced on
+// RUN_STARTED.
+export const AG_UI_PROTOCOL_VERSION = '1.0';
 
 export type AgUiEvent =
-  | { type: 'RUN_STARTED'; threadId: string; runId: string }
+  | { type: 'RUN_STARTED'; threadId: string; runId: string; protocolVersion: string }
   | { type: 'RUN_FINISHED'; threadId: string; runId: string }
   | { type: 'RUN_ERROR'; message: string }
   | { type: 'TEXT_MESSAGE_START'; messageId: string; role: 'assistant' }
   | { type: 'TEXT_MESSAGE_CONTENT'; messageId: string; delta: string }
   | { type: 'TEXT_MESSAGE_END'; messageId: string }
-  | { type: 'THINKING_TEXT_MESSAGE_CONTENT'; delta: string }
+  | { type: 'REASONING_START'; messageId: string }
+  | { type: 'REASONING_MESSAGE_START'; messageId: string; role: 'reasoning' }
+  | { type: 'REASONING_MESSAGE_CONTENT'; messageId: string; delta: string }
+  | { type: 'REASONING_MESSAGE_END'; messageId: string }
+  | { type: 'REASONING_END'; messageId: string }
   | { type: 'TOOL_CALL_START'; toolCallId: string; toolCallName: string; parentMessageId: string }
   | { type: 'TOOL_CALL_ARGS'; toolCallId: string; delta: string }
   | { type: 'TOOL_CALL_END'; toolCallId: string }
@@ -22,8 +30,9 @@ export type AgUiEvent =
       messageId: string;
       toolCallId: string;
       content: string;
-      // Not part of AG-UI: the tool failed and `content` is its error.
-      isError?: boolean;
+      // AG-UI has no error flag on a result: a failed tool says so here, with MCP's name
+      // for it, and `content` is its error.
+      metadata?: { isError: true };
     };
 
 // What one model call of the answer read and wrote, normalised across the commands: the
@@ -52,8 +61,11 @@ export class AnswerStream {
   private readonly messageId: string;
   private queued: AgUiEvent[] = [];
   private text = '';
-  // The model's reasoning, reported apart from the answer where the command streams it.
+  // The model's reasoning, reported apart from the answer where the command streams it,
+  // as an AG-UI reasoning message of its own; the id of the one open now, if any.
   private thinking = '';
+  private reasoningId: string | null = null;
+  private reasoningCount = 0;
   private started = false;
   private line = '';
   // Most formats name their session on the line that opens the stream; Copilot names it
@@ -89,7 +101,12 @@ export class AnswerStream {
     this.usage = new UsageReader(format);
     this.parser = streamParserFor(format);
     this.messageId = `msg-${runId}`;
-    this.queued.push({ type: 'RUN_STARTED', threadId, runId });
+    this.queued.push({
+      type: 'RUN_STARTED',
+      threadId,
+      runId,
+      protocolVersion: AG_UI_PROTOCOL_VERSION,
+    });
   }
 
   write(chunk: string): void {
@@ -161,6 +178,7 @@ export class AnswerStream {
     }
     if (!this.sawAnyText && fallback) this.appendText(fallback);
     this.drainText();
+    this.closeReasoning();
     if (this.started) this.queued.push({ type: 'TEXT_MESSAGE_END', messageId: this.messageId });
     this.started = false;
   }
@@ -168,6 +186,7 @@ export class AnswerStream {
   private appendText(text: string): void {
     if (!text) return;
     this.drainThinking();
+    this.closeReasoning();
     this.sawAnyText = true;
     this.text += text;
     if (this.text.length >= FLUSH_CHARS) this.drainText();
@@ -181,11 +200,30 @@ export class AnswerStream {
   }
 
   private drainThinking(): void {
+    if (this.thinking.length > 0 && !this.reasoningId) {
+      const messageId = `reasoning-${this.runId}-${++this.reasoningCount}`;
+      this.reasoningId = messageId;
+      this.queued.push(
+        { type: 'REASONING_START', messageId },
+        { type: 'REASONING_MESSAGE_START', messageId, role: 'reasoning' },
+      );
+    }
     while (this.thinking.length > 0) {
       const delta = this.thinking.slice(0, DELTA_LIMIT);
       this.thinking = this.thinking.slice(DELTA_LIMIT);
-      this.queued.push({ type: 'THINKING_TEXT_MESSAGE_CONTENT', delta });
+      this.queued.push({ type: 'REASONING_MESSAGE_CONTENT', messageId: this.reasoningId!, delta });
     }
+  }
+
+  // Ends the reasoning message once the answer moves on to text, a tool or its end.
+  private closeReasoning(): void {
+    if (!this.reasoningId) return;
+    const messageId = this.reasoningId;
+    this.reasoningId = null;
+    this.queued.push(
+      { type: 'REASONING_MESSAGE_END', messageId },
+      { type: 'REASONING_END', messageId },
+    );
   }
 
   // Reasoning and answer text alternate, and each drains the other's buffer before it
@@ -222,7 +260,9 @@ export class AnswerStream {
       parsed = JSON.parse(trimmed);
     } catch {
       // Output that is not the format it was configured with still has something to say.
-      // A CLI writing its own diagnostics to stdout alongside the stream lands here too.
+      // Hermes' stream is JSON throughout; what it prints beside it are its own notices
+      // (a missing security scanner, a plugin warning), which are not the agent's answer.
+      if (this.format === 'hermes-stream-json') return;
       this.appendText(`${trimmed}\n`);
       return;
     }
@@ -441,6 +481,7 @@ export class AnswerStream {
 
   private readClaudeLine(message: StreamJsonLine): void {
     if (message.session_id) this.sessionId ??= message.session_id;
+    if (message.type === 'system' && message.model) this.reportedModel ??= message.model;
     switch (message.type) {
       case 'stream_event':
         this.readPartial(message.event);
@@ -490,6 +531,7 @@ export class AnswerStream {
   // it and the words said after it.
   private pushToolCall(toolCallId: string, toolCallName: string, args: string): void {
     this.drainText();
+    this.closeReasoning();
     this.queued.push(
       { type: 'TOOL_CALL_START', toolCallId, toolCallName, parentMessageId: this.messageId },
       { type: 'TOOL_CALL_ARGS', toolCallId, delta: tail(args, TOOL_TEXT_LIMIT) },
@@ -499,12 +541,13 @@ export class AnswerStream {
 
   private pushToolResult(toolCallId: string, content: string, isError = false): void {
     this.drainText();
+    this.closeReasoning();
     this.queued.push({
       type: 'TOOL_CALL_RESULT',
       messageId: this.messageId,
       toolCallId,
       content: tail(content, TOOL_TEXT_LIMIT),
-      ...(isError && { isError }),
+      ...(isError && { metadata: { isError: true as const } }),
     });
   }
 }
@@ -517,9 +560,72 @@ export class AnswerStream {
 // where they become one pair: the tokens read, cache included, and the tokens written,
 // reasoning and thinking among them. Each call replaces the one before it — the size of
 // the context is what the last call read, not what the answer cost in total.
+// The final answer and the session of a run whose command prints an event stream (Claude
+// Code, Codex), so the run's result is the answer and not the tail of the raw stream, and a
+// run cut off mid way can resume its session. Hermes' own result line is read in execute.ts.
+export class FinalAnswerReader {
+  private buffered = '';
+  private answer: string | null = null;
+  private session: string | null = null;
+
+  constructor(
+    private readonly format: OutputFormat,
+    // Told once, as soon as the stream names its session.
+    private readonly onSession?: (sessionId: string) => void,
+  ) {}
+
+  write(chunk: string): void {
+    if (this.format !== 'claude-stream-json' && this.format !== 'codex-jsonl') return;
+    this.buffered += chunk;
+    const lines = this.buffered.split('\n');
+    this.buffered = lines.pop() ?? '';
+    for (const line of lines) this.read(line);
+  }
+
+  end(): void {
+    if (this.buffered) this.read(this.buffered);
+    this.buffered = '';
+  }
+
+  text(): string | null {
+    return this.answer;
+  }
+
+  sessionId(): string | null {
+    return this.session;
+  }
+
+  private named(sessionId: unknown): void {
+    if (typeof sessionId !== 'string' || !sessionId || this.session) return;
+    this.session = sessionId;
+    this.onSession?.(sessionId);
+  }
+
+  private read(line: string): void {
+    let value: Record<string, unknown>;
+    try {
+      value = JSON.parse(line.trim()) as Record<string, unknown>;
+    } catch {
+      return;
+    }
+    if (!value || typeof value !== 'object') return;
+    if (this.format === 'claude-stream-json') {
+      this.named(value.session_id);
+      if (value.type === 'result' && typeof value.result === 'string') this.answer = value.result;
+      return;
+    }
+    if (value.type === 'thread.started') this.named(value.thread_id);
+    const item = value.item as { type?: unknown; text?: unknown } | undefined;
+    if (value.type === 'item.completed' && item?.type === 'agent_message') {
+      if (typeof item.text === 'string') this.answer = item.text;
+    }
+  }
+}
+
 export class UsageReader {
   private last: ContextUsage | null = null;
   private buffered = '';
+  private reportedModel: string | null = null;
 
   private readonly parser: RuntimeStreamParser | undefined;
 
@@ -563,7 +669,16 @@ export class UsageReader {
     }
   }
 
+  // The model the command named on its opening line (Claude Code, Hermes), or null.
+  model(): string | null {
+    return this.reportedModel;
+  }
+
   readLine(parsed: object): void {
+    const opening = parsed as { type?: unknown; model?: unknown };
+    if (opening.type === 'system' && typeof opening.model === 'string' && opening.model) {
+      this.reportedModel ??= opening.model;
+    }
     switch (this.format) {
       case 'claude-stream-json':
         this.readClaude(parsed as StreamJsonLine);
@@ -674,6 +789,8 @@ function textOfResult(content: unknown): string {
 interface StreamJsonLine {
   type?: string;
   session_id?: string;
+  // On the opening `system` line: the model the session runs on.
+  model?: string;
   event?: StreamEvent;
   message?: { content?: ContentBlock[] };
   result?: unknown;

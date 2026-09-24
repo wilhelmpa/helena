@@ -1,4 +1,4 @@
-export { db } from './client';
+export { db, listen } from './client';
 export * from './schema';
 export * from './permissions';
 export { getSetting, getOrCreateSetting, setSetting } from './settings';

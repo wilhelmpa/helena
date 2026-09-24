@@ -9,7 +9,6 @@ import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
 import { useAgentSection } from '../../context/agentSection';
 import TeamAiAgentTable from './TeamAiAgentTable';
 import { TeamAiAgentSheet } from './TeamAiAgentSheet';
-import { TeamAiAgentRunsSheet } from './TeamAiAgentRunsSheet';
 import { integrationLabel } from '@/utils/integrationLabels';
 import { useTranslations } from 'next-intl';
 import { Info } from 'lucide-react';
@@ -38,8 +37,9 @@ export default function TeamAiAgents() {
   // below; cleared once the sheet closes so reopening a different agent by hand starts
   // from the usual defaults again.
   const [openSection, setOpenSection] = useState<string | undefined>();
-  // The agent whose run history sidebar is open.
-  const [runsAgent, setRunsAgent] = useState<AiAgent | null>(null);
+  // The tab and the run a deep link opens (`&tab=runs&run=<id>`).
+  const [openTab, setOpenTab] = useState<string | undefined>();
+  const [openRun, setOpenRun] = useState<number | null>(null);
   const [deleting, setDeleting] = useState<AiAgent | null>(null);
 
   // A `/skills` or `/memory` chat command sends the member straight to one agent's
@@ -55,10 +55,15 @@ export default function TeamAiAgents() {
     if (agents.some((a) => a.id === id)) {
       setEditingId(id);
       setOpenSection(searchParams.get('section') ?? undefined);
+      setOpenTab(searchParams.get('tab') ?? undefined);
+      const run = Number(searchParams.get('run'));
+      setOpenRun(Number.isInteger(run) && run > 0 ? run : null);
     }
     const params = new URLSearchParams(searchParams);
     params.delete('agent');
     params.delete('section');
+    params.delete('tab');
+    params.delete('run');
     router.replace(params.size > 0 ? `?${params.toString()}` : window.location.pathname);
     // Only the deep link itself should ever trigger this; agents/router are stable
     // enough here not to re-run it on every list refresh.
@@ -70,7 +75,11 @@ export default function TeamAiAgents() {
   const tableProps = {
     providerLabel: (key: string) => integrationLabel(catalog, key),
     onEdit: (agent: AiAgent) => setEditingId(agent.id),
-    onRuns: setRunsAgent,
+    // The runs are a tab of the agent's own page.
+    onRuns: (agent: AiAgent) => {
+      setEditingId(agent.id);
+      setOpenTab('runs');
+    },
     onDelete: setDeleting,
   };
 
@@ -118,11 +127,13 @@ export default function TeamAiAgents() {
         onClose={() => {
           setEditingId(null);
           setOpenSection(undefined);
+          setOpenTab(undefined);
+          setOpenRun(null);
         }}
         initialOpenSection={openSection}
+        initialTab={openTab}
+        initialRunId={openRun}
       />
-
-      <TeamAiAgentRunsSheet agent={runsAgent} onClose={() => setRunsAgent(null)} />
 
       {deleting && (
         <ConfirmDialog

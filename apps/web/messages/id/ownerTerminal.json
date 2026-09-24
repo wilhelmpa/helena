@@ -6,7 +6,9 @@
     "confirm": "Konfirmasi",
     "verifying": "Memeriksa…",
     "wrongCode": "Kode tidak diterima.",
-    "rateLimited": "Terlalu banyak percobaan. Tunggu 15 menit lalu coba lagi."
+    "rateLimited": "Terlalu banyak percobaan. Tunggu 15 menit lalu coba lagi.",
+    "locked": "Terminal tetap terkunci sampai Anda mengonfirmasi bahwa itu Anda.",
+    "enterCode": "Masukkan kode"
   },
   "grant": {
     "active": "Terminal diizinkan hingga {time}",

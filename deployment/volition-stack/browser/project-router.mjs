@@ -16,6 +16,7 @@ import {
   viewportAuthority,
   watchDesktop,
 } from "./project-browser-screencast.mjs";
+import { browserOverview, browserThumbnail } from "./project-browser-overview.mjs";
 import { acceptWebSocket } from "./websocket.mjs";
 
 const SLUG = /^[a-z0-9][a-z0-9-]{0,31}$/;
@@ -76,6 +77,7 @@ export async function resolveProjectBrowser(root, requestUrl) {
     port: state.noVncPort,
     cdpPort: state.cdpPort,
     display: await displayOf(state),
+    projectRoot: state.projectRoot,
     url: `${pathname}${parsed.search}`,
     api: pathname.startsWith("/api/") ? pathname.slice("/api/".length) : null,
   };
@@ -102,6 +104,15 @@ function sendJson(response, status, body) {
   response.end(JSON.stringify(body));
 }
 
+// Set once the browser gateway (browser-gateway-server.mjs) has started, from the same
+// process's import.meta.main block — the live view's "Übernehmen"/"Zurückgeben" buttons
+// reach the gateway's control lock through this, always as the owner (an agent uses
+// browser_acquire/browser_release over its own socket instead, never this HTTP path).
+let gatewayLocks = null;
+export function setGatewayLocks(locks) {
+  gatewayLocks = locks;
+}
+
 // Who decides a project browser's page size, for any controller that holds a working size
 // (the browser gateway while an agent steers): { mode: "follow" } or { mode: "fixed", width,
 // height, holder } (see setViewportAuthority in project-browser-screencast.mjs). size and
@@ -112,14 +123,70 @@ export async function setProjectViewportAuthority(root, slug, mode, size, holder
   return viewportAuthority(target.cdpPort);
 }
 
-// The toolbar's routes: GET api/tabs lists the tabs, POST api/<action> acts on one; GET and
-// POST api/viewport read and set who decides the page's size ({"mode":"fixed","width":1440,
-// "height":900,"holder":"Coder VOL"} or {"mode":"follow"}). Only a JSON body is accepted, which a form on another
-// site cannot send.
+// The toolbar's routes: GET api/tabs lists the tabs, GET api/thumbnail is a small picture of
+// the tab in front (Home's overview), POST api/<action> acts on one; GET and POST
+// api/viewport read and set who decides the page's size ({"mode":"fixed","width":1440,
+// "height":900,"holder":"Coder VOL"} or {"mode":"follow"}). Only a JSON body is accepted,
+// which a form on another site cannot send. lock-takeover/lock-release are the two the
+// browser gateway adds (design §5); every other action is controlBrowser's own CDP toolbar
+// action.
+// The project's bookmarks for the browser bar (owner, 2026-09-24): at most 100, http(s)
+// only, kept next to the browser's state as bookmarks.json (0600).
+const MAX_BOOKMARKS = 100;
+function cleanBookmarks(value) {
+  if (!Array.isArray(value)) throw new BrowserControlError(400, "bookmarks must be a list");
+  const seen = new Set();
+  const out = [];
+  for (const item of value.slice(0, MAX_BOOKMARKS)) {
+    const raw = typeof item?.url === "string" ? item.url.trim() : "";
+    let url;
+    try {
+      url = new URL(raw);
+    } catch {
+      continue;
+    }
+    if ((url.protocol !== "http:" && url.protocol !== "https:") || url.href.length > 2048) continue;
+    if (seen.has(url.href)) continue;
+    seen.add(url.href);
+    const title = typeof item.title === "string" ? item.title.trim().slice(0, 200) : "";
+    out.push({ url: url.href, title: title || url.hostname });
+  }
+  return out;
+}
+async function readBookmarks(file) {
+  try {
+    return cleanBookmarks(JSON.parse(await fs.readFile(file, "utf8")).bookmarks ?? []);
+  } catch {
+    return [];
+  }
+}
+
 async function handleControl(request, response, target) {
   try {
+    if (target.api === "bookmarks") {
+      const file = path.join(target.projectRoot, "bookmarks.json");
+      if (request.method === "POST") {
+        const bookmarks = cleanBookmarks((await readJsonBody(request)).bookmarks);
+        const temporary = `${file}.tmp`;
+        await fs.writeFile(temporary, JSON.stringify({ bookmarks }), { mode: 0o600 });
+        await fs.rename(temporary, file);
+        return sendJson(response, 200, { bookmarks });
+      }
+      if (request.method !== "GET") throw new BrowserControlError(405, "Method not allowed");
+      return sendJson(response, 200, { bookmarks: await readBookmarks(file) });
+    }
     if (target.api === "tabs" && request.method === "GET") {
       return sendJson(response, 200, { tabs: await listTabs(target.cdpPort) });
+    }
+    if (target.api === "thumbnail" && request.method === "GET") {
+      const jpeg = await browserThumbnail(target.cdpPort);
+      if (!jpeg) throw new BrowserControlError(404, "No page to show");
+      response.writeHead(200, {
+        "content-type": "image/jpeg",
+        "cache-control": "no-store",
+        "x-content-type-options": "nosniff",
+      });
+      return response.end(jpeg);
     }
     if (target.api === "viewport") {
       if (request.method === "POST") {
@@ -135,6 +202,15 @@ async function handleControl(request, response, target) {
     }
     if (request.method !== "POST") throw new BrowserControlError(405, "Method not allowed");
     const body = await readJsonBody(request);
+    if (target.api === "lock-takeover" || target.api === "lock-release") {
+      if (!gatewayLocks) throw new BrowserControlError(503, "The browser gateway is not running");
+      const lock = gatewayLocks.of(target.slug);
+      if (target.api === "lock-takeover") lock.takeover();
+      else lock.release({ kind: "owner" });
+      noteViewerAction(target.cdpPort);
+      const state = lock.state();
+      return sendJson(response, 200, { holder: state.holder, since: state.since });
+    }
     noteViewerAction(target.cdpPort);
     return sendJson(response, 200, await controlBrowser(target.cdpPort, target.api, body));
   } catch (error) {
@@ -222,6 +298,10 @@ export function createProjectBrowserRouter(options = {}) {
   const root = options.root ?? "/var/lib/volition/project-browser/projects";
   const server = http.createServer(async (request, response) => {
     try {
+      if (new URL(request.url || "/", "http://127.0.0.1").pathname === "/api/overview") {
+        if (request.method !== "GET") throw new Error("Method denied");
+        return sendJson(response, 200, { browsers: await browserOverview(await listProjectBrowsers(root)) });
+      }
       const target = await resolveProjectBrowser(root, request.url || "/");
       if (target.api !== null) return await handleControl(request, response, target);
       if (request.method !== "GET" && request.method !== "HEAD") throw new Error("Method denied");
@@ -266,9 +346,32 @@ if (import.meta.main) {
     listBrowsers: () => listProjectBrowsers(root),
     log: (message) => console.log(message),
   });
+  // The gateway (design §3) runs in this same process, so it shares the router's view of
+  // which project browsers exist and the live view's state. It is loaded only when its
+  // token is configured, and a gateway that fails to load or start leaves the router and its
+  // live views working: the MCP tools then answer that the gateway cannot be reached.
+  let gateway = null;
+  if (process.env.BROWSER_GATEWAY_TOKEN_FILE) {
+    import("./browser-gateway-server.mjs")
+      .then(({ startBrowserGateway }) =>
+        startBrowserGateway({
+          listBrowsers: () => listProjectBrowsers(root),
+          log: (message) => console.log(message),
+        }),
+      )
+      .then((started) => {
+        gateway = started;
+        setGatewayLocks(started.locks);
+        console.log("browser gateway: started");
+      })
+      .catch((error) => console.error("browser gateway did not start:", error));
+  } else {
+    console.log("browser gateway: BROWSER_GATEWAY_TOKEN_FILE not set, not starting");
+  }
   server.listen(port, "127.0.0.1", () => console.log("Project browser router ready on loopback"));
   process.on("SIGTERM", () => {
     stopKeeper();
+    gateway?.stop();
     server.close(() => process.exit(0));
   });
 }

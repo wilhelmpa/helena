@@ -5,7 +5,8 @@ import type { EventHandler, EventInit, HelenaEvent } from './events';
 import type { CaptureTarget, KnowledgeSource } from './knowledge';
 import type { PluginManifest, McpServerContribution } from './manifest-types';
 import type { PolicyEvaluator } from './policy';
-import type { RuntimeAdapter } from './runtime';
+import type { RuntimeType } from './runtime';
+import type { ProfileContribution } from './runtime-policy';
 import type { BundleOffer } from './templates';
 import type { AnyAgentTool } from './tools';
 import type { UiSlot } from './ui';
@@ -41,7 +42,7 @@ export interface PluginContext {
   log: Logger;
   // The plugin's settings, as the Administrator saved them.
   settings: Record<string, unknown>;
-  runtimes: Registrar<RuntimeAdapter>;
+  runtimes: Registrar<RuntimeType>;
   connectors: Registrar<Connector>;
   tools: Registrar<AnyAgentTool>;
   stepTypes: Registrar<WorkflowStepType<unknown>>;
@@ -53,6 +54,8 @@ export interface PluginContext {
   // Template bundles (agent templates, skills, MCP servers) offered for import.
   bundles: Registrar<BundleOffer>;
   mcpServers: Registrar<McpServerContribution>;
+  // What a runner writes into every agent's runtime profile (MCP servers, Hermes settings).
+  profileContributions: Registrar<ProfileContribution>;
   events: {
     // Only event types under the plugin's own id: `<pluginId>.<name>`.
     publish(init: EventInit): Promise<HelenaEvent>;

@@ -13,8 +13,12 @@ import ApprovalRequestCard from './ApprovalRequestCard';
 export default function ApprovalRequestList({
   status,
   projectKey,
+  quietWhenEmpty = false,
 }: {
   status: ApprovalListStatus;
+  // Other lists on the page have something: then an empty list says nothing at all rather
+  // than "nothing to decide".
+  quietWhenEmpty?: boolean;
   // Narrows the list to one project (the project's own Approvals page); left out on
   // the global page, which lists every project the reader may decide in.
   projectKey?: string;
@@ -34,6 +38,7 @@ export default function ApprovalRequestList({
       </EmptyState>
     );
   if (query.isPending) return <ListSkeleton rows={3} rowClassName="h-24" />;
+  if (total === 0 && quietWhenEmpty) return null;
   if (total === 0)
     return <EmptyState title={t(`empty.${status}`)} description={t(`emptyHint.${status}`)} />;
   return (

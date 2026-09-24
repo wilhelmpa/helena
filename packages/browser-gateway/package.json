@@ -1,0 +1,26 @@
+{
+  "name": "@repo/browser-gateway",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@repo/net": "workspace:*",
+    "patchright-core": "1.63.0",
+    "pngjs": "^7.0.0"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@types/bun": "latest",
+    "@types/pngjs": "^6.0.5",
+    "eslint": "^9.39.0",
+    "typescript": "^6.0.3"
+  }
+}

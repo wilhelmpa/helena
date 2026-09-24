@@ -106,7 +106,25 @@
       "reconnecting": "Se perdió la conexión con el navegador. Reconectando…",
       "dialogTitle": "La página pregunta",
       "dialogOk": "Aceptar",
-      "dialogCancel": "Cancelar"
+      "dialogCancel": "Cancelar",
+      "controlPrefix": "Tiene el control:",
+      "controlledByAgentGeneric": "un agente",
+      "takeOver": "Tomar el control",
+      "handBack": "Devolver el control",
+      "takeOverError": "No se pudo tomar el control del navegador.",
+      "handBackError": "No se pudo devolver el control del navegador.",
+      "handoverTitle": "{agentName} le pide que tome el control",
+      "youControl": "Usted tiene el control",
+      "handoverDone": "Listo – devolver",
+      "takeOverTitle": "{agentName} tiene el control. ¿Tomar el control?",
+      "takeOverHint": "Mientras usted tenga el control, el agente espera. Continúa cuando lo devuelva.",
+      "idleTitle": "¿Ha terminado?",
+      "idleHint": "Sin actividad desde hace 10 minutos. Sin respuesta, el control vuelve a los agentes en un minuto.",
+      "idleKeep": "Seguir con el control",
+      "bookmarks": "Marcadores",
+      "bookmarkPage": "Guardar esta página",
+      "removeBookmark": "Quitar marcador",
+      "noBookmarks": "Aún no hay marcadores"
     }
   },
   "groups": {
@@ -149,5 +167,6 @@
     "projectOptions": "Opciones del proyecto",
     "groupOptions": "Opciones del grupo",
     "dropUngrouped": "Suelta aquí para sacar el proyecto de su grupo"
-  }
+  },
+  "browser": "Navegador"
 }

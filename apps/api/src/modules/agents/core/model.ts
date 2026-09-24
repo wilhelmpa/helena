@@ -2,6 +2,7 @@ import { t } from 'elysia';
 
 import { agentRunTrigger, maxTurnsLimit, runBudgetSecondsLimit, runContextTokens } from '../model';
 import { instructionsRuntimeFile } from '../runtime-files/model';
+import { modelCheck, profileReport } from '../runtime-sync/model';
 
 export { agentParams, projectAgentParams } from '../model';
 
@@ -74,6 +75,15 @@ export const runtimePolicy = t.Object({
         'uses. Unset, it may not.',
     }),
   ),
+  runtime: t.Optional(
+    t.Union([t.Literal('hermes'), t.Literal('claude'), t.Literal('codex')], {
+      description:
+        'Which runtime runs the agent. Unset is Hermes, whose runtime the server provisions ' +
+        'for an agent of one project; a Claude Code or Codex agent runs on a runner started ' +
+        "with that preset (helena-runner --agent claude|codex), which gets the agent's " +
+        'instructions, skills, MCP servers, model and reasoning from Helena.',
+    }),
+  ),
   reflection: t.Optional(
     t.Union([t.Literal('off'), t.Literal('failure'), t.Literal('complex')], {
       description:
@@ -81,6 +91,35 @@ export const runtimePolicy = t.Object({
         "session: 'failure' after a failed run and after rework on an issue, 'complex' also " +
         "after a run of many tool calls. Unset, 'complex'.",
     }),
+  ),
+  memoryApproval: t.Optional(
+    t.Boolean({
+      description:
+        "Whether the agent's own memory writes wait for the owner's approval as a proposal " +
+        'with a diff. Unset, they do.',
+    }),
+  ),
+  skillsDisabled: t.Optional(
+    t.Array(t.String({ minLength: 1, maxLength: 128 }), {
+      maxItems: 300,
+      description: "Skills of the agent's runtime turned off by name (Hermes skills.disabled).",
+    }),
+  ),
+  fallbackModels: t.Optional(
+    t.Nullable(
+      t.Array(
+        t.Object({
+          provider: t.String({ minLength: 1, maxLength: 100 }),
+          model: t.String({ minLength: 1, maxLength: 200 }),
+        }),
+        {
+          maxItems: 8,
+          description:
+            "Models the runtime falls back to, in order, when the agent's model fails. " +
+            "Unset, the instance's default list.",
+        },
+      ),
+    ),
   ),
 });
 
@@ -156,6 +195,7 @@ export const runtimeState = t.Object({
       'files and plugin links, by their path in the runtime.',
   }),
   inventory: t.Nullable(runtimeInventory),
+  profile: t.Nullable(profileReport),
   reportedAt: t.Nullable(t.String()),
 });
 
@@ -385,6 +425,7 @@ export const AgentRunResponse = t.Object({
       },
     ),
   ),
+  modelCheck: t.Nullable(modelCheck),
   nextAttemptAt: t.String(),
   createdAt: t.String(),
 });

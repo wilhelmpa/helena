@@ -35,6 +35,9 @@ const SPLIT_MAX_WIDTH = 2400;
 
 function browserStreamUrl(url: string, lossless: boolean) {
   const parsed = new URL(url);
+  // The desktop is a 4K screen with Chromium at scale 2; the client scales it into the
+  // panel, so it is as large and as sharp as the live view (owner, 2026-09-24).
+  parsed.searchParams.set('resize', 'scale');
   if (lossless) parsed.searchParams.set('stream', 'lossless');
   else parsed.searchParams.delete('stream');
   return parsed.toString();
@@ -364,7 +367,9 @@ export default function WorkspacePanel({
             <div
               key={`${id}:${contextProjectKey ?? 'global'}`}
               className={cn(
-                'min-h-0 flex-1 overflow-hidden',
+                // A flex column, so a tool's own frame (a terminal, code) can grow to the
+                // panel's height instead of an iframe's default 150px.
+                'flex min-h-0 flex-1 flex-col overflow-hidden',
                 placement(side),
                 (!open || side === undefined) && 'hidden',
               )}

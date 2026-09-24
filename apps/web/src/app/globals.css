@@ -6,6 +6,10 @@
    wider-spaced optical master. The sidebar's typeface — and so the whole app's
    (owner, 2026-09-24: "Schriftart so wie in der Sidebar"). */
 @import 'inter-ui/inter-variable.css';
+/* Streamdown renders an agent's Markdown (components/agent-message): its word fade-in,
+   and the Tailwind classes its components carry, which live in its package. */
+@import 'streamdown/styles.css';
+@source '../../node_modules/streamdown/dist/*.js';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -1079,4 +1083,78 @@ html [data-sonner-toast][data-styled='true']:not(:focus-visible) {
   to {
     background-position: -200% 0;
   }
+}
+
+/* An agent's Markdown (Streamdown, components/agent-message/AgentMarkdown): Helena's type
+   scale and link colour instead of Streamdown's prose defaults — body 13px as everywhere,
+   headings a step or two above it (the old chat's .md-content sizes), never the 30px
+   h1 a document page would use. */
+.agent-markdown {
+  font-size: var(--text-sm);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.agent-markdown :is([data-streamdown='heading-1'], [data-streamdown='heading-2']) {
+  margin-top: 1.25em;
+  margin-bottom: 0.4em;
+  line-height: 1.3;
+}
+.agent-markdown [data-streamdown='heading-1'] {
+  font-size: 1.25em;
+}
+.agent-markdown [data-streamdown='heading-2'] {
+  font-size: 1.125em;
+}
+.agent-markdown
+  :is(
+    [data-streamdown='heading-3'],
+    [data-streamdown='heading-4'],
+    [data-streamdown='heading-5'],
+    [data-streamdown='heading-6']
+  ) {
+  margin-top: 1em;
+  margin-bottom: 0.3em;
+  font-size: 1em;
+  line-height: 1.4;
+}
+.agent-markdown :is([data-streamdown='table-header-cell'], [data-streamdown='table-cell']) {
+  padding: 0.375rem 0.75rem;
+  font-size: var(--text-sm);
+}
+.agent-markdown [data-streamdown='inline-code'] {
+  font-size: 0.9em;
+}
+.agent-markdown [data-streamdown='code-block-body'] {
+  font-size: var(--text-xs);
+}
+/* A tool's arguments and result (components/ai-elements/tool): the same code block,
+   tighter, since several of them stack up inside one folded group. */
+.agent-tool-code [data-streamdown='code-block'] {
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0.25rem;
+  border-radius: var(--radius-md);
+}
+.agent-tool-code [data-streamdown='code-block-header'] {
+  height: 1.5rem;
+}
+.agent-tool-code [data-streamdown='code-block-header'] + div {
+  top: 0.25rem;
+  margin-top: -1.75rem;
+  height: 1.5rem;
+}
+.agent-tool-code [data-streamdown='code-block-body'] {
+  padding: 0.5rem 0.75rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-sd-animate] {
+    animation: none;
+  }
+}
+
+/* The kiosk's two screens are one window with the tool panel on the right screen: a dialog
+   centres on the left screen instead of straddling the seam (owner, 2026-09-24). */
+html[data-kiosk-display='dual'] [data-slot='dialog-content'],
+html[data-kiosk-display='dual'] [data-slot='alert-dialog-content'] {
+  left: 25vw;
 }

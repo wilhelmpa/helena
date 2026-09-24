@@ -6,7 +6,9 @@
     "confirm": "Confirm",
     "verifying": "Checking…",
     "wrongCode": "The code was not accepted.",
-    "rateLimited": "Too many attempts. Wait 15 minutes and try again."
+    "rateLimited": "Too many attempts. Wait 15 minutes and try again.",
+    "locked": "The terminal stays locked until you confirm it is you.",
+    "enterCode": "Enter code"
   },
   "grant": {
     "active": "Terminal granted until {time}",

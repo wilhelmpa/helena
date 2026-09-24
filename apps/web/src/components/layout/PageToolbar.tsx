@@ -31,7 +31,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 // view tabs, search, filters and actions into ONE <PageToolbar>, which renders inside
 // the app header's single row, after the breadcrumb:
 //
-//   [☰ | Projekt › Seite] | [Tabs …]            [Suche] [Filter] [◻ ◻ ◻] [+ Neu] | [Tools]
+//   [☰ | Projekt › Seite] [Tabs …] | [Suche] [Filter] [◻ ◻ ◻] [+ Neu]            [Tools]
+//
+// The page's controls are one group that starts right after the page's name, so they
+// read as part of the page (owner, 2026-09-24: "eine Sinneinheit mit dem Inhalt der
+// Seite", not pushed against the global tools on the far right).
 //
 // Every control is a 32px sidebar-style control (13px text, 16px icon, the sidebar's
 // hover and selected fill). The toolbar measures the room it actually has (the tool
@@ -48,10 +52,12 @@ export const PAGE_CONTROL_CLASS =
   'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0';
 export const PAGE_CONTROL_ACTIVE_CLASS =
   'bg-sidebar-accent font-medium text-foreground hover:bg-sidebar-accent';
-// The one filled button of a page (its primary action), for a page-specific primary
-// that is not a plain PageActions primary (e.g. one that opens a menu).
+// The look of every "New …" of a page (its primary action), the same on every page:
+// a quiet outlined button on the sidebar's surface, so it reads as a button without the
+// weight of a dark fill. Also for page-specific primaries (one that opens a menu) and the
+// "New …" at the end of a tab strip (new view, new dashboard).
 export const PAGE_PRIMARY_CLASS =
-  'ms-1 bg-primary px-2.5 font-medium text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground';
+  'ms-1 border border-sidebar-border bg-card px-2.5 font-medium text-foreground hover:bg-sidebar-accent hover:text-foreground';
 
 // How far the toolbar has given way to fit its room: 0 shows everything in full, then
 // one piece at a time folds — the search into an icon, the secondary actions into the
@@ -116,9 +122,13 @@ export function PageToolbar({ children }: { children: ReactNode }) {
   );
 }
 
-// Pushes what follows to the end of the row.
+// Separates the page's tabs from its search, filters and actions. It no longer pushes
+// them to the end of the row: the page's controls stay one group after its name. A
+// divider with nothing on one side of it is not drawn.
 export function PageToolbarSpacer() {
-  return <div className="min-w-0 flex-1" />;
+  return (
+    <div aria-hidden="true" className="mx-1 h-4 w-px shrink-0 bg-border first:hidden last:hidden" />
+  );
 }
 
 export type PageTab<T extends string> = {

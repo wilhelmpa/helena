@@ -17,6 +17,7 @@ import {
   controlPlaneRequest,
 } from '#modules/control-plane-workflows/service';
 import { RESUME_LIMIT_ERROR } from '#modules/agents/runner/service';
+import { runtimeSyncSummary } from '#modules/agents/runtime-sync/service';
 
 // The state of the services Plan works with, for the owner's overview on Home. The
 // worker and the bridge report themselves, the worker checks the provisioning service,
@@ -32,6 +33,7 @@ export const JANITOR_JOBS = [
   'stage-janitor',
   'workflow-schedules',
   'resume-janitor',
+  'runtime-janitor',
 ] as const;
 
 // How long a service may go unseen before it counts as down. The worker and the bridge
@@ -62,6 +64,7 @@ const JANITOR_INTERVAL_MS: Record<(typeof JANITOR_JOBS)[number], number> = {
   'stage-janitor': 300_000,
   'workflow-schedules': 600_000,
   'resume-janitor': 60_000,
+  'runtime-janitor': 300_000,
 };
 const JANITOR_STALE_FACTOR = 3;
 
@@ -199,9 +202,20 @@ async function stalledWorkflowRuns(): Promise<number | null> {
   ).length;
 }
 
+// The runner is seen when it polls. Its service wrapper reports when it cannot start it at
+// all; that report counts until an agent is seen again after it.
+function runnerHealth(
+  reported: { lastSeenAt: Date | null; checkedAt: Date; error: string | null } | undefined,
+  lastSeenAt: Date | null,
+): { lastSeenAt: Date | null; error: string | null } {
+  const failed =
+    reported?.error && (!lastSeenAt || reported.checkedAt.getTime() >= lastSeenAt.getTime());
+  return { lastSeenAt, error: failed ? reported.error : null };
+}
+
 export async function systemHealth() {
   await checkMastra();
-  const [reported, [runner], runs, stalled, janitors] = await Promise.all([
+  const [reported, [runner], runs, stalled, janitors, agents] = await Promise.all([
     db.select().from(serviceHeartbeat),
     db
       .select({ lastSeenAt: sql`max(${aiAgent.lastSeenAt})`.mapWith(aiAgent.lastSeenAt) })
@@ -210,15 +224,17 @@ export async function systemHealth() {
     runCounts(),
     stalledWorkflowRuns(),
     listJanitorRuns(),
+    runtimeSyncSummary(),
   ]);
   const byService = new Map(reported.map((row) => [row.service, row]));
   const byJanitor = new Map(janitors.map((row) => [row.job, row]));
   return {
+    agents,
     services: SERVICES.map((service) =>
       health(
         service,
         service === 'runner'
-          ? { lastSeenAt: runner?.lastSeenAt ?? null, error: null }
+          ? runnerHealth(byService.get('runner'), runner?.lastSeenAt ?? null)
           : byService.get(service),
       ),
     ),

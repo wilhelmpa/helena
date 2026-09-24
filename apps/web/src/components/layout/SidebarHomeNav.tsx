@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Activity,
+  AppWindow,
   AtSign,
   BookOpenText,
   BookText,
@@ -31,6 +32,7 @@ import {
 import SidebarNavItem from '@/components/layout/SidebarNavItem';
 import { useSession } from '@/lib/auth-client';
 import { usePendingApprovalCount, useWorkflowGates } from '@/services/approvals.service';
+import { useProposalCount } from '@/features/agent-runtime/services/agentRuntime.service';
 import { usePipelineApprovals } from '@/services/pipelines.service';
 import { homeNavigation, type HomeNavigationGroup } from './homeNavigation';
 import SidebarApprovalsRefresh from './SidebarApprovalsRefresh';
@@ -45,6 +47,7 @@ const icons = {
   agentPool: Bot,
   organization: Building2,
   agentActivity: Activity,
+  browser: AppWindow,
   schedules: Clock3,
   workflows: Workflow,
   skills: BookText,
@@ -80,7 +83,8 @@ export default function SidebarHomeNav({
   const pendingApprovals =
     (usePendingApprovalCount().data?.count ?? 0) +
     (useWorkflowGates().data?.items.length ?? 0) +
-    (usePipelineApprovals().data?.length ?? 0);
+    (usePipelineApprovals().data?.length ?? 0) +
+    (useProposalCount().data?.count ?? 0);
 
   const groups = GROUPS.map((group) => {
     const groupItems = items.filter((item) => item.group === group);
