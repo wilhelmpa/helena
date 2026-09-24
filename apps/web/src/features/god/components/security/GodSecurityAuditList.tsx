@@ -48,13 +48,19 @@ export default function GodSecurityAuditList({
     <SettingsCard className="divide-y p-0">
       {entries.map((entry) => (
         <div key={entry.id} className="flex h-8 items-center gap-3 px-3 text-xs">
-          <span className="w-40 shrink-0 font-mono text-muted-foreground">
+          <span className="w-36 shrink-0 font-mono text-muted-foreground tabular-nums">
             {new Date(entry.createdAt).toLocaleString()}
           </span>
-          <span className="w-32 shrink-0">{eventLabel(entry.event)}</span>
-          <span className="w-32 shrink-0 text-muted-foreground">{entry.kind ?? ''}</span>
-          <span className="flex-1 truncate text-muted-foreground">{entry.device ?? ''}</span>
-          <span className="w-28 shrink-0 text-end font-mono text-muted-foreground">
+          <span className="min-w-0 flex-1 truncate sm:w-32 sm:flex-none">
+            {eventLabel(entry.event)}
+          </span>
+          <span className="w-20 shrink-0 truncate text-muted-foreground max-md:hidden">
+            {entry.kind ?? ''}
+          </span>
+          <span className="min-w-0 flex-1 truncate text-muted-foreground max-lg:hidden">
+            {entry.device ?? ''}
+          </span>
+          <span className="w-28 shrink-0 text-end font-mono text-muted-foreground max-sm:hidden">
             {entry.ipAddress ?? ''}
           </span>
         </div>

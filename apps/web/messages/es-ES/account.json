@@ -68,7 +68,9 @@
     "totpDisabled": "Aplicación de autenticación desactivada",
     "totpEnrollFailed": "No se pudo iniciar la configuración.",
     "totpConfirmFailed": "El código no fue aceptado.",
-    "totpDisableFailed": "No se pudo desactivar la aplicación de autenticación."
+    "totpDisableFailed": "No se pudo desactivar la aplicación de autenticación.",
+    "minLength": "Al menos {count} caracteres.",
+    "added": "Añadida el {date}"
   },
   "accounts": {
     "label": "Cuentas",
@@ -172,5 +174,8 @@
     "autoWatchDescription": "Las que creas, te asignen, comentes o en las que te mencionen.",
     "showChatByDefault": "Mostrar el chat por defecto",
     "showChatByDefaultDescription": "El panel de chat se abre con una página de proyecto. Ciérralo cuando quiera desde su cabecera o el icono de chat."
+  },
+  "shell": {
+    "title": "Cuenta"
   }
 }

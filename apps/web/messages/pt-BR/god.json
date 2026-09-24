@@ -224,7 +224,8 @@
       "session_start": "Sessão iniciada",
       "session_end": "Sessão encerrada",
       "token_rejected": "Token rejeitado"
-    }
+    },
+    "grantActiveOpen": "Acesso concedido."
   },
   "storage": {
     "saved": "Configurações de armazenamento salvas",

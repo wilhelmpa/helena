@@ -1,7 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import FullPageView from '@/components/common/page/FullPageView';
+import SectionPageView from '@/components/common/page/SectionPageView';
+import SettingsCard from '@/components/common/page/SettingsCard';
 import AccountGoogleConnection from './components/accounts/AccountGoogleConnection';
 import AccountTelegramConnection from './components/accounts/AccountTelegramConnection';
 import { useGoogleAvailable } from './services/accounts.service';
@@ -13,11 +14,11 @@ export default function AccountAccountsPage() {
   const googleAvailable = useGoogleAvailable();
 
   return (
-    <FullPageView label={t('label')} title={t('title')} description={t('description')}>
-      <div className="divide-y">
+    <SectionPageView title={t('title')} description={t('description')}>
+      <SettingsCard className="divide-y">
         {googleAvailable && <AccountGoogleConnection />}
         <AccountTelegramConnection />
-      </div>
-    </FullPageView>
+      </SettingsCard>
+    </SectionPageView>
   );
 }

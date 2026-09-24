@@ -68,7 +68,9 @@
     "totpDisabled": "Aplikasi autentikator dimatikan",
     "totpEnrollFailed": "Tidak dapat memulai penyiapan.",
     "totpConfirmFailed": "Kode tidak diterima.",
-    "totpDisableFailed": "Tidak dapat mematikan aplikasi autentikator."
+    "totpDisableFailed": "Tidak dapat mematikan aplikasi autentikator.",
+    "minLength": "Minimal {count} karakter.",
+    "added": "Ditambahkan {date}"
   },
   "accounts": {
     "label": "Akun",
@@ -172,5 +174,8 @@
     "autoWatchDescription": "Issue yang Anda buat, ditugaskan kepada Anda, Anda komentari, atau yang menyebut Anda.",
     "showChatByDefault": "Tampilkan obrolan secara bawaan",
     "showChatByDefaultDescription": "Panel obrolan terbuka bersama halaman proyek. Tutup kapan saja dari bilah judul atau ikon obrolan."
+  },
+  "shell": {
+    "title": "Akun"
   }
 }

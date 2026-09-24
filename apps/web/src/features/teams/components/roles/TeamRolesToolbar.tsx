@@ -4,8 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ClipboardPaste, Copy, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { PageActions } from '@/components/layout/PageToolbar';
 import type { PermissionCatalog, Role } from '@/lib/api/endpoints/roles';
 import { useIsMac } from '@/context/useHotkeys';
 import RolesImportDialog from './RolesImportDialog';
@@ -18,9 +17,9 @@ import {
 } from '../../utils/rolesTransfer';
 import { copyText, readClipboardText } from '@/utils/clipboard';
 
-// The header actions of the team panel's roles section: create a role, and copy or
+// The roles page's actions in the header's toolbar row: create a role, and copy or
 // paste the team's roles through the clipboard (with Cmd/Ctrl+C/V shortcuts). Only
-// rendered for the team owner, who is the one who manages roles.
+// rendered for the team's owner and managers, who manage roles.
 export default function TeamRolesToolbar({
   teamId,
   roles,
@@ -106,52 +105,39 @@ export default function TeamRolesToolbar({
   }, [copyRoles, pasteRoles]);
 
   return (
-    <div className="flex items-center gap-1.5">
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7 text-muted-foreground hover:text-foreground"
-            aria-label={t('copyRoles')}
-            disabled={customRoleCount === 0}
-            onClick={() => void copyRoles()}
-          >
-            <Copy className="size-4" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          {t('copyRoles')} <span className="text-muted-foreground">{mod}C</span>
-        </TooltipContent>
-      </Tooltip>
-
-      {catalog && clipboardHasRoles && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7 text-muted-foreground hover:text-foreground"
-              aria-label={t('pasteRoles')}
-              onClick={() => void pasteRoles()}
-            >
-              <ClipboardPaste className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            {t('pasteRoles')} <span className="text-muted-foreground">{mod}V</span>
-          </TooltipContent>
-        </Tooltip>
-      )}
-
-      <Button size="sm" className="h-8 gap-1.5" disabled={!catalog} onClick={onCreate}>
-        <Plus className="size-3.5" />
-        {t('newRole')}
-      </Button>
+    <>
+      <PageActions
+        actions={[
+          {
+            id: 'copy',
+            label: `${t('copyRoles')} (${mod}C)`,
+            icon: Copy,
+            disabled: customRoleCount === 0,
+            onClick: () => void copyRoles(),
+          },
+          ...(catalog && clipboardHasRoles
+            ? [
+                {
+                  id: 'paste',
+                  label: `${t('pasteRoles')} (${mod}V)`,
+                  icon: ClipboardPaste,
+                  onClick: () => void pasteRoles(),
+                },
+              ]
+            : []),
+        ]}
+        primary={{
+          id: 'new',
+          label: t('newRole'),
+          icon: Plus,
+          disabled: !catalog,
+          onClick: onCreate,
+        }}
+      />
 
       {importing && (
         <RolesImportDialog teamId={teamId} planned={importing} onClose={() => setImporting(null)} />
       )}
-    </div>
+    </>
   );
 }

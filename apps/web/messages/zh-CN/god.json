@@ -224,7 +224,8 @@
       "session_start": "会话已开始",
       "session_end": "会话已结束",
       "token_rejected": "令牌被拒绝"
-    }
+    },
+    "grantActiveOpen": "已授权。"
   },
   "storage": {
     "saved": "存储设置已保存",

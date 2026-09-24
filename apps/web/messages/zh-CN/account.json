@@ -68,7 +68,9 @@
     "totpDisabled": "身份验证器应用已关闭",
     "totpEnrollFailed": "无法开始设置。",
     "totpConfirmFailed": "验证码未被接受。",
-    "totpDisableFailed": "无法关闭身份验证器应用。"
+    "totpDisableFailed": "无法关闭身份验证器应用。",
+    "minLength": "至少 {count} 个字符。",
+    "added": "添加于 {date}"
   },
   "accounts": {
     "label": "关联账户",
@@ -172,5 +174,8 @@
     "autoWatchDescription": "自动关注你创建、获指派、评论或被提及的工作项。",
     "showChatByDefault": "默认显示聊天",
     "showChatByDefaultDescription": "打开项目页面时同时打开聊天面板。可随时通过面板标题栏或聊天图标关闭。"
+  },
+  "shell": {
+    "title": "账户"
   }
 }

@@ -11,9 +11,9 @@ export function ToolSectionHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex items-end justify-between gap-4 border-b pb-2">
+    <div className="flex items-end justify-between gap-4">
       <div className="min-w-0 space-y-0.5">
-        <h2 className="text-sm font-medium">{title}</h2>
+        <h2 className="text-md font-semibold">{title}</h2>
         <p className="text-xs text-muted-foreground">{hint}</p>
       </div>
       {action}

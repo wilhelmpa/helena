@@ -6,7 +6,7 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { usePaging } from '@/hooks/usePaging';
 import ListPager from '@/components/common/ListPager';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
-import SearchInput from '@/components/common/SearchInput';
+import { PageSearch, PageToolbar, PageToolbarSpacer } from '@/components/layout/PageToolbar';
 import GodSectionPage from './components/GodSectionPage';
 import GodProjectDetailPanel from './components/projects/GodProjectDetailPanel';
 import GodProjectsTable from './components/projects/GodProjectsTable';
@@ -32,15 +32,17 @@ export default function GodProjectsPage() {
   return (
     <GodSectionPage slug="projects" widthClassName="max-w-none">
       <div className="space-y-4">
-        <SearchInput
-          value={search}
-          onChange={(value) => {
-            setSearch(value);
-            paging.reset();
-          }}
-          placeholder={t('searchPlaceholder')}
-          className="max-w-md min-w-[240px]"
-        />
+        <PageToolbar>
+          <PageToolbarSpacer />
+          <PageSearch
+            value={search}
+            onChange={(value) => {
+              setSearch(value);
+              paging.reset();
+            }}
+            placeholder={t('searchPlaceholder')}
+          />
+        </PageToolbar>
 
         {projectsQuery.isPending ? (
           <ListSkeleton rows={6} rowClassName="h-12" />

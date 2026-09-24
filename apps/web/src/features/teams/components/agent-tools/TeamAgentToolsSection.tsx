@@ -48,7 +48,7 @@ export default function TeamAgentToolsSection({ teamId }: { teamId: number }) {
               hint={t('tools.hint')}
               action={
                 permissions.create ? (
-                  <Button size="sm" className="h-8 gap-1.5" onClick={() => setCreating(true)}>
+                  <Button variant="outline" size="sm" onClick={() => setCreating(true)}>
                     <Plus className="size-3.5" />
                     {t('tools.add')}
                   </Button>

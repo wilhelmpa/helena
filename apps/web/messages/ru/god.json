@@ -224,7 +224,8 @@
       "session_start": "Сессия начата",
       "session_end": "Сессия завершена",
       "token_rejected": "Токен отклонён"
-    }
+    },
+    "grantActiveOpen": "Доступ открыт."
   },
   "storage": {
     "saved": "Настройки хранилища сохранены",

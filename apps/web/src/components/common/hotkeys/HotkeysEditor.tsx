@@ -1,4 +1,6 @@
 import { useTranslations } from 'next-intl';
+import { SectionLabel } from '@/components/common/page/RowList';
+import SettingsCard from '@/components/common/page/SettingsCard';
 import type { HotkeyOverrides } from '@/lib/api/endpoints/settings';
 import {
   HOTKEYS,
@@ -48,8 +50,8 @@ export default function HotkeysEditor({
     <div className="space-y-4">
       {HOTKEY_GROUPS.map((group) => (
         <div key={group}>
-          <p className="mb-1 text-xs font-medium text-muted-foreground">{t(`groups.${group}`)}</p>
-          <div className="divide-y divide-border/60">
+          <SectionLabel as="h3">{t(`groups.${group}`)}</SectionLabel>
+          <SettingsCard className="divide-y">
             {HOTKEYS.filter((h) => h.group === group).map((def) => (
               <HotkeysEditorRow
                 key={def.id}
@@ -61,7 +63,7 @@ export default function HotkeysEditor({
                 onReset={() => reset(def.id)}
               />
             ))}
-          </div>
+          </SettingsCard>
         </div>
       ))}
     </div>

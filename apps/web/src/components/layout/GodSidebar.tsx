@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { ArrowLeft, Plug, Shield } from 'lucide-react';
+import { ArrowLeft, Plug } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { godPath } from '@/utils/paths';
 import { GOD_GROUPS, godIntegrationsIn, godSectionsIn } from '@/utils/godSections';
@@ -17,19 +17,18 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   SidebarRail,
   SidebarSeparator,
 } from '@/components/ui/sidebar';
 import SidebarNavItem from '@/components/layout/SidebarNavItem';
 import SidebarNavSubmenu from '@/components/layout/SidebarNavSubmenu';
 import SidebarAccountRow from '@/components/brand/SidebarAccountRow';
+import SidebarBrand from '@/components/brand/SidebarBrand';
 
-// The sidebar in god mode. It mirrors the project settings sidebar — a list of
-// sections plus a way back, with the integration sections folded into one item —
-// but the header shows a static "God mode" badge instead of the project switcher:
-// nothing here is scoped to a project.
+// The sidebar of the Administrator. It is the main sidebar's twin — the Helena brand
+// row, then a way back and the instance sections in groups, the integration sections
+// folded into one item, the account row at the foot — so leaving the app for the
+// Administrator changes the list, not the look.
 export default function GodSidebar() {
   const t = useTranslations('nav');
   const god = useGodSectionText();
@@ -39,24 +38,10 @@ export default function GodSidebar() {
 
   return (
     <Sidebar collapsible="icon" side={side}>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" className="cursor-default hover:bg-transparent" asChild>
-              <div>
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <Shield className="size-4" />
-                </div>
-                <div className="grid flex-1 text-left leading-tight">
-                  <span className="truncate text-sm font-semibold">{t('godMode')}</span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    {t('instanceSettings')}
-                  </span>
-                </div>
-              </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      {/* The same 48px brand row as the main sidebar (AppSidebar): the header's
+          breadcrumb already says "Administrator", so no second badge here. */}
+      <SidebarHeader className="h-12 shrink-0 justify-center px-2 py-0">
+        <SidebarBrand />
       </SidebarHeader>
 
       <SidebarContent>

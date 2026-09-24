@@ -224,7 +224,8 @@
       "session_start": "Sesi dimulai",
       "session_end": "Sesi berakhir",
       "token_rejected": "Token ditolak"
-    }
+    },
+    "grantActiveOpen": "Akses diberikan."
   },
   "storage": {
     "saved": "Pengaturan penyimpanan disimpan",

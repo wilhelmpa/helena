@@ -30,7 +30,7 @@ export default function EntityCard({
     <Link
       href={href}
       className={cn(
-        'group flex flex-col gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:border-foreground/25 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none',
+        'group flex flex-col gap-3 rounded-lg border border-sidebar-border bg-card p-4 transition-colors hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none',
         className,
       )}
     >
@@ -48,7 +48,7 @@ export default function EntityCard({
         </div>
       )}
       {footer && (
-        <div className="mt-auto border-t border-border pt-3 text-xs text-muted-foreground">
+        <div className="mt-auto border-t border-sidebar-border pt-3 text-xs text-muted-foreground">
           {footer}
         </div>
       )}

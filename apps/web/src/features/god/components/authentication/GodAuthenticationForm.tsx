@@ -6,11 +6,11 @@ import type { InstanceAuthSettings } from '@/lib/api/endpoints/god';
 import SettingsCard from '@/components/common/page/SettingsCard';
 import SettingsSection from '@/components/common/page/SettingsSection';
 import SettingsRow from '@/components/common/page/SettingsRow';
-import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import GodSectionPage from '../GodSectionPage';
 import RegistrationModePicker from './RegistrationModePicker';
 import { useGodPolicyForm } from '../../hooks/useGodPolicyForm';
+import PageSaveAction from '@/components/common/page/PageSaveAction';
 
 // The registration policy and the sign-in options. The provider credentials live
 // under Integrations (Email provider, Auth provider).
@@ -20,7 +20,6 @@ export default function GodAuthenticationForm({
   authSettings: InstanceAuthSettings;
 }) {
   const t = useTranslations('god.authentication');
-  const tCommon = useTranslations('common');
   const policy = useGodPolicyForm(authSettings);
 
   // The options that send mail need a configured provider; the API rejects them
@@ -40,14 +39,8 @@ export default function GodAuthenticationForm({
   }
 
   return (
-    <GodSectionPage
-      slug="authentication"
-      actions={
-        <Button size="sm" onClick={() => void save()} disabled={!policy.dirty || policy.saving}>
-          {policy.saving ? tCommon('saving') : tCommon('save')}
-        </Button>
-      }
-    >
+    <GodSectionPage slug="authentication">
+      <PageSaveAction onSave={() => void save()} disabled={!policy.dirty} saving={policy.saving} />
       <div className="space-y-6">
         <SettingsSection title={t('registration')} description={t('registrationHint')}>
           <SettingsCard className="divide-y divide-border/60">

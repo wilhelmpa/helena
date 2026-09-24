@@ -146,7 +146,7 @@ function AboutSection() {
 
   return (
     <SettingsSection title={t('about')}>
-      <SettingsCard className="space-y-1.5">
+      <SettingsCard className="space-y-1 p-4">
         <div className="text-sm font-medium">
           {APP_NAME}
           {appVersion?.version ? (

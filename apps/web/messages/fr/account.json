@@ -68,7 +68,9 @@
     "totpDisabled": "Application d'authentification désactivée",
     "totpEnrollFailed": "Impossible de démarrer la configuration.",
     "totpConfirmFailed": "Le code n'a pas été accepté.",
-    "totpDisableFailed": "Impossible de désactiver l'application d'authentification."
+    "totpDisableFailed": "Impossible de désactiver l'application d'authentification.",
+    "minLength": "Au moins {count} caractères.",
+    "added": "Ajoutée le {date}"
   },
   "accounts": {
     "label": "Comptes",
@@ -172,5 +174,8 @@
     "autoWatchDescription": "Ceux que vous créez, qui vous sont assignés, que vous commentez ou dans lesquels vous êtes mentionné.",
     "showChatByDefault": "Afficher le chat par défaut",
     "showChatByDefaultDescription": "Le panneau de chat s'ouvre avec une page de projet. Fermez-le à tout moment depuis son en-tête ou l'icône de chat."
+  },
+  "shell": {
+    "title": "Compte"
   }
 }

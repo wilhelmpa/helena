@@ -224,7 +224,8 @@
       "session_start": "بدأت الجلسة",
       "session_end": "انتهت الجلسة",
       "token_rejected": "تم رفض الرمز"
-    }
+    },
+    "grantActiveOpen": "تم منح الوصول."
   },
   "storage": {
     "saved": "تم حفظ إعدادات التخزين",

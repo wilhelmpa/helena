@@ -32,9 +32,9 @@ export default function GodSecurityPage() {
           {grant.data?.active ? (
             <div className="flex items-center justify-between">
               <span>
-                {t('grantActive', {
-                  time: grant.data.expiresAt ? new Date(grant.data.expiresAt).toLocaleString() : '',
-                })}
+                {grant.data.expiresAt
+                  ? t('grantActive', { time: new Date(grant.data.expiresAt).toLocaleString() })
+                  : t('grantActiveOpen')}
               </span>
               <Button
                 variant="outline"

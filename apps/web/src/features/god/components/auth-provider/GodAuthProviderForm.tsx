@@ -3,12 +3,12 @@
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import type { InstanceGoogleSettings, InstanceOidcSettings } from '@/lib/api/endpoints/god';
-import { Button } from '@/components/ui/button';
 import GodSectionPage from '../GodSectionPage';
 import GodGoogleSettings from './GodGoogleSettings';
 import GodOidcSettings from './GodOidcSettings';
 import { useGodGoogleForm } from '../../hooks/useGodGoogleForm';
 import { useGodOidcForm } from '../../hooks/useGodOidcForm';
+import PageSaveAction from '@/components/common/page/PageSaveAction';
 
 // One section per provider, committed through the page's single Save. A third
 // provider is another section with its own form hook.
@@ -20,7 +20,6 @@ export default function GodAuthProviderForm({
   oidcSettings: InstanceOidcSettings;
 }) {
   const t = useTranslations('god.authProvider');
-  const tCommon = useTranslations('common');
   const google = useGodGoogleForm(googleSettings);
   const oidc = useGodOidcForm(oidcSettings);
 
@@ -40,14 +39,8 @@ export default function GodAuthProviderForm({
   }
 
   return (
-    <GodSectionPage
-      slug="auth-provider"
-      actions={
-        <Button size="sm" onClick={() => void save()} disabled={!dirty || saving}>
-          {saving ? tCommon('saving') : tCommon('save')}
-        </Button>
-      }
-    >
+    <GodSectionPage slug="auth-provider">
+      <PageSaveAction onSave={() => void save()} disabled={!dirty} saving={saving} />
       <div className="space-y-6">
         <GodOidcSettings form={oidc} />
         <GodGoogleSettings form={google} />

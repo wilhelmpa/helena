@@ -68,7 +68,9 @@
     "totpDisabled": "تم إيقاف تطبيق المصادقة",
     "totpEnrollFailed": "تعذّر بدء الإعداد.",
     "totpConfirmFailed": "لم يُقبل الرمز.",
-    "totpDisableFailed": "تعذّر إيقاف تطبيق المصادقة."
+    "totpDisableFailed": "تعذّر إيقاف تطبيق المصادقة.",
+    "minLength": "{count} أحرف على الأقل.",
+    "added": "أُضيف في {date}"
   },
   "accounts": {
     "label": "الحسابات",
@@ -172,5 +174,8 @@
     "autoWatchDescription": "المهام اللي تنشئها أو تتسند ليك أو تعلّق عليها أو يتذكر اسمك فيها.",
     "showChatByDefault": "إظهار المحادثة افتراضيًا",
     "showChatByDefaultDescription": "تفتح لوحة المحادثة مع صفحة المشروع. أغلقها في أي وقت من رأسها أو من أيقونة المحادثة."
+  },
+  "shell": {
+    "title": "الحساب"
   }
 }

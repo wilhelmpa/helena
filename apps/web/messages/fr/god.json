@@ -224,7 +224,8 @@
       "session_start": "Session démarrée",
       "session_end": "Session terminée",
       "token_rejected": "Jeton refusé"
-    }
+    },
+    "grantActiveOpen": "Accès accordé."
   },
   "storage": {
     "saved": "Paramètres de stockage enregistrés",

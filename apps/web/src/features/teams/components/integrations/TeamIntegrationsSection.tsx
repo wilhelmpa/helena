@@ -7,9 +7,9 @@ import { useTeamQuery } from '@/services/teams.service';
 import { useIntegrationCatalogQuery } from '@/services/integrations.service';
 import SectionPageView from '@/components/common/page/SectionPageView';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
-import { Button } from '@/components/ui/button';
 import { CredentialDialog } from './CredentialDialog';
 import TeamIntegrations from './TeamIntegrations';
+import { PageActions, PageToolbar, PageToolbarSpacer } from '@/components/layout/PageToolbar';
 
 // The integrations of a team: the API keys of AI providers and the credentials of
 // tool integrations, shared by every project the team owns. Secrets are write-only,
@@ -29,15 +29,22 @@ export default function TeamIntegrationsSection({ teamId }: { teamId: number }) 
       title={t('sections.integrations.title')}
       description={t('sections.integrations.description')}
       wide
-      actions={
-        permissions?.create ? (
-          <Button size="sm" className="h-8 gap-1.5" onClick={() => setCreating(true)}>
-            <Plus className="size-3.5" />
-            {t('integrations.add')}
-          </Button>
-        ) : undefined
-      }
     >
+      <PageToolbar>
+        <PageToolbarSpacer />
+        <PageActions
+          primary={
+            permissions?.create
+              ? {
+                  id: 'new',
+                  label: t('integrations.add'),
+                  icon: Plus,
+                  onClick: () => setCreating(true),
+                }
+              : undefined
+          }
+        />
+      </PageToolbar>
       {!permissions ? (
         <ListSkeleton rows={3} rowClassName="h-12" />
       ) : !permissions.read ? (

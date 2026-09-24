@@ -51,7 +51,7 @@ export default function HotkeysEditorRow({
   }, [recording, onRecord]);
 
   return (
-    <div className="flex items-center gap-4 py-2">
+    <div className="flex min-h-11 items-center gap-3 px-4 py-1.5">
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm">{t(`commands.${def.id}`)}</p>
         {conflictWith && (
@@ -61,14 +61,14 @@ export default function HotkeysEditorRow({
         )}
       </div>
       <kbd
-        className={`w-24 shrink-0 rounded px-1.5 py-1 text-center font-mono text-xs ${
-          recording ? 'bg-accent text-accent-foreground' : 'bg-muted text-foreground'
+        className={`w-24 shrink-0 rounded-md border border-sidebar-border px-1.5 py-1 text-center font-mono text-xs ${
+          recording ? 'bg-accent text-accent-foreground' : 'bg-background text-foreground'
         }`}
       >
         {recording ? t('pressKeys') : formatCombo(combo, isMac)}
       </kbd>
       {def.fixed ? (
-        <span className="w-28 shrink-0 text-right text-xs text-muted-foreground">{t('fixed')}</span>
+        <span className="w-28 shrink-0 text-end text-xs text-muted-foreground">{t('fixed')}</span>
       ) : (
         <div className="flex w-28 shrink-0 justify-end gap-1">
           <Button variant="ghost" size="sm" onClick={() => setRecording((r) => !r)}>

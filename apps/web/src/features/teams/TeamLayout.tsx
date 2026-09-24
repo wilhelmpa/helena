@@ -4,12 +4,10 @@ import { useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { manageTeamsPath } from '@/utils/paths';
 import { useTeamsQuery } from '@/services/teams.service';
-import TeamsPageRail from './components/TeamsPageRail';
-import TeamSectionNav from './components/TeamSectionNav';
 
-// One team, as the second rail of the page and the section open beside it. Each
-// section is a route of its own and loads only what it shows. A team the account is
-// no longer in falls back to the first one left.
+// One team. Its sections are listed in the account sidebar and each is a route of its
+// own that loads only what it shows. A team the account is no longer in falls back to
+// the first one left.
 export default function TeamLayout({ teamId, children }: { teamId: number; children: ReactNode }) {
   const router = useRouter();
   const { data } = useTeamsQuery();
@@ -19,10 +17,5 @@ export default function TeamLayout({ teamId, children }: { teamId: number; child
     if (data && !team) router.replace(manageTeamsPath());
   }, [data, team, router]);
 
-  return (
-    <>
-      <TeamsPageRail className="lg:w-60">{team && <TeamSectionNav team={team} />}</TeamsPageRail>
-      <div className="flex min-w-0 flex-1 flex-col">{children}</div>
-    </>
-  );
+  return <div className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>;
 }

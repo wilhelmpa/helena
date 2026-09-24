@@ -68,7 +68,9 @@
     "totpDisabled": "Authenticator-App ausgeschaltet",
     "totpEnrollFailed": "Einrichtung konnte nicht gestartet werden.",
     "totpConfirmFailed": "Der Code wurde nicht akzeptiert.",
-    "totpDisableFailed": "Authenticator-App konnte nicht ausgeschaltet werden."
+    "totpDisableFailed": "Authenticator-App konnte nicht ausgeschaltet werden.",
+    "minLength": "Mindestens {count} Zeichen.",
+    "added": "Hinzugefügt am {date}"
   },
   "accounts": {
     "label": "Konten",
@@ -172,5 +174,8 @@
     "autoWatchDescription": "Aufgaben, die du erstellst, die dir zugewiesen werden, die du kommentierst oder in denen du erwähnt wirst.",
     "showChatByDefault": "Chat standardmäßig anzeigen",
     "showChatByDefaultDescription": "Das Chat-Panel öffnet sich zusammen mit einer Projektseite. Du kannst es jederzeit über seine Kopfzeile oder das Chat-Symbol schließen."
+  },
+  "shell": {
+    "title": "Konto"
   }
 }

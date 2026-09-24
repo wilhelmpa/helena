@@ -224,7 +224,8 @@
       "session_start": "Сеанс розпочато",
       "session_end": "Сеанс завершено",
       "token_rejected": "Токен відхилено"
-    }
+    },
+    "grantActiveOpen": "Доступ надано."
   },
   "storage": {
     "saved": "Налаштування сховища збережено",

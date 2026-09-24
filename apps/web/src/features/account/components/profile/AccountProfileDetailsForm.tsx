@@ -58,31 +58,29 @@ export default function AccountProfileDetailsForm() {
         saveMutation.mutate();
       }}
     >
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5">
         <Label htmlFor="profile-name">{t('name')}</Label>
         <Input
           id="profile-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="max-w-sm"
           autoComplete="name"
         />
       </div>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5">
         <Label htmlFor="profile-username">{t('username')}</Label>
         <Input
           id="profile-username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          className="max-w-sm"
           autoComplete="username"
           minLength={3}
           maxLength={30}
         />
-        <p className="text-sm text-muted-foreground">{t('usernameHint')}</p>
+        <p className="text-xs text-muted-foreground">{t('usernameHint')}</p>
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
-      <div>
+      <div className="flex justify-end">
         <Button type="submit" size="sm" disabled={!dirty || saveMutation.isPending}>
           {saveMutation.isPending ? tCommon('saving') : tCommon('save')}
         </Button>

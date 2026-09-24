@@ -18,7 +18,7 @@ export default function AccountSecurityPasskeyList({
   const t = useTranslations('account.security');
   if (isPending) {
     return (
-      <div className="space-y-2 py-3">
+      <div className="space-y-2 p-4">
         <Skeleton className="h-10 w-full" />
         <Skeleton className="h-10 w-full" />
       </div>
@@ -26,11 +26,11 @@ export default function AccountSecurityPasskeyList({
   }
 
   if (passkeys.length === 0) {
-    return <p className="py-4 text-sm text-muted-foreground">{t('empty')}</p>;
+    return <p className="px-4 py-3 text-sm text-muted-foreground">{t('empty')}</p>;
   }
 
   return (
-    <ItemGroup>
+    <ItemGroup className="divide-y">
       {passkeys.map((pk) => (
         <AccountSecurityPasskeyItem key={pk.id} passkey={pk} onDelete={() => onDelete(pk)} />
       ))}

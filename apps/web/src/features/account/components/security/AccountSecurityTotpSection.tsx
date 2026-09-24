@@ -36,7 +36,7 @@ export default function AccountSecurityTotpSection() {
   return (
     <div className="space-y-3">
       <p className="text-sm">{enabled ? t('totpStatusEnabled') : t('totpStatusDisabled')}</p>
-      <div className="max-w-xs space-y-1.5">
+      <div className="space-y-1.5">
         <Label htmlFor="account-totp-password">{t('totpPasswordLabel')}</Label>
         <Input
           id="account-totp-password"
@@ -52,7 +52,7 @@ export default function AccountSecurityTotpSection() {
           {t('totpDisable')}
         </Button>
       ) : (
-        <Button size="sm" onClick={() => setEnrolling(true)}>
+        <Button variant="outline" size="sm" onClick={() => setEnrolling(true)}>
           {t('totpEnable')}
         </Button>
       )}

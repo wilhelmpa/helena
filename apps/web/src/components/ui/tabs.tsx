@@ -10,6 +10,13 @@ type TabsVariant = 'default' | 'line' | 'toolbar';
 
 const TabsListContext = React.createContext<TabsVariant>('default');
 
+// Every tab is a sidebar row laid on its side (docs/volition/ui-standard.md): 13px,
+// 28px high, rounded-md, the sidebar's hover fill, and the selected one filled with the
+// sidebar accent — the same look as PageTabs in the header row, with no pill track and
+// no shadow. `line` and `default` differ only in how the list lays them out.
+const TAB_ROW_CLASS =
+  "inline-flex h-7 items-center justify-center gap-1.5 rounded-md px-2 text-sm whitespace-nowrap text-muted-foreground transition-colors outline-none hover:bg-accent/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-accent data-[state=active]:font-medium data-[state=active]:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4";
+
 function Tabs({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Root>) {
   return (
     <TabsPrimitive.Root
@@ -34,10 +41,10 @@ function TabsList({
         data-variant={variant}
         className={cn(
           variant === 'line'
-            ? 'inline-flex h-8 w-full items-center justify-start gap-4 border-b text-muted-foreground'
+            ? 'inline-flex h-8 w-full items-center justify-start gap-0.5 text-muted-foreground'
             : variant === 'toolbar'
               ? 'inline-flex w-fit items-center justify-start gap-1'
-              : 'inline-flex h-8 w-fit items-center justify-center rounded-lg bg-muted p-0.5 text-muted-foreground',
+              : 'inline-flex h-8 w-fit items-center justify-center gap-0.5 text-muted-foreground',
           className,
         )}
         {...props}
@@ -52,11 +59,12 @@ function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPr
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       className={cn(
-        variant === 'line'
-          ? "relative -mb-px inline-flex h-full items-center justify-center gap-1.5 border-b-2 border-transparent px-1 py-1 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors focus-visible:outline-1 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-foreground data-[state=active]:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
-          : variant === 'toolbar'
-            ? `${WORKSPACE_TOOLBAR_TRIGGER_CLASS} disabled:pointer-events-none disabled:opacity-50`
-            : "inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap text-foreground transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:text-muted-foreground dark:data-[state=active]:bg-input/30 dark:data-[state=active]:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        variant === 'toolbar'
+          ? `${WORKSPACE_TOOLBAR_TRIGGER_CLASS} disabled:pointer-events-none disabled:opacity-50`
+          : TAB_ROW_CLASS,
+        // The default list spreads its tabs evenly (a list given w-full or a grid);
+        // the line list sets them side by side at their own width.
+        variant === 'default' && 'flex-1',
         className,
       )}
       {...props}

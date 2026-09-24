@@ -177,8 +177,9 @@ export default function ProjectAiAgents() {
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
+                            variant="ghost"
                             size="icon"
-                            className="size-8"
+                            className="size-8 text-muted-foreground hover:text-foreground"
                             aria-label={tChat('newChat')}
                             onClick={() => onChatWithAgent(agent.id)}
                           >

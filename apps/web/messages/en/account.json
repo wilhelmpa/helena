@@ -68,7 +68,9 @@
     "totpDisabled": "Authenticator app turned off",
     "totpEnrollFailed": "Could not start setup.",
     "totpConfirmFailed": "The code was not accepted.",
-    "totpDisableFailed": "Could not turn off the authenticator app."
+    "totpDisableFailed": "Could not turn off the authenticator app.",
+    "minLength": "At least {count} characters.",
+    "added": "Added {date}"
   },
   "accounts": {
     "label": "Accounts",
@@ -172,5 +174,8 @@
     "autoWatchDescription": "The ones you create, get assigned, comment on, or are mentioned in.",
     "showChatByDefault": "Show the chat by default",
     "showChatByDefaultDescription": "The chat panel opens with a project page. Close it any time from its header or the chat icon."
+  },
+  "shell": {
+    "title": "Account"
   }
 }

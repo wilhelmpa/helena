@@ -7,6 +7,7 @@ import { TeamBillingSection } from '@/cloud';
 import type { Team } from '@/lib/api/endpoints/teams';
 import { formatDate } from '@/utils/dates';
 import { useRenameTeam, useTeam } from '@/services/teams.service';
+import PageSaveAction from '@/components/common/page/PageSaveAction';
 import SectionPageView from '@/components/common/page/SectionPageView';
 import SettingsCard from '@/components/common/page/SettingsCard';
 import SettingsSection from '@/components/common/page/SettingsSection';
@@ -52,17 +53,14 @@ export default function TeamInfoSection({ teamId }: { teamId: number }) {
   }
 
   return (
-    <SectionPageView
-      title={tSection('title')}
-      description={tSection('description')}
-      actions={
-        isOwner ? (
-          <Button size="sm" className="h-8" disabled={!canSave} onClick={() => void save()}>
-            {tCommon('save')}
-          </Button>
-        ) : undefined
-      }
-    >
+    <SectionPageView title={tSection('title')} description={tSection('description')}>
+      {isOwner && (
+        <PageSaveAction
+          onSave={() => void save()}
+          disabled={!canSave}
+          saving={renameTeam.isPending}
+        />
+      )}
       <div className="space-y-6">
         <SettingsSection title={t('team')} description={t('teamHint')}>
           <SettingsCard className="space-y-4 p-4">

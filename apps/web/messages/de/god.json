@@ -224,7 +224,8 @@
       "session_start": "Sitzung gestartet",
       "session_end": "Sitzung beendet",
       "token_rejected": "Token abgelehnt"
-    }
+    },
+    "grantActiveOpen": "Freigegeben."
   },
   "storage": {
     "saved": "Speichereinstellungen gespeichert",
