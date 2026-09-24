@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { LocaleToggle } from '@/components/locale-toggle';
 import UserMenu from '@/components/layout/UserMenu';
+import { EmergencyStopBanner } from '@/features/agent-runtime/components/EmergencyStop';
 
 // The frame of an area that lives outside the project shell — the Administrator
 // (/god) and the account (/account) — built exactly like the main Shell, so the three
@@ -78,6 +79,7 @@ export default function StandaloneShell({
               className="relative flex h-11 shrink-0 items-center gap-1 border-b border-sidebar-border px-2 empty:hidden"
             />
           )}
+          <EmergencyStopBanner />
           <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
         </SidebarInset>
       </SidebarProvider>

@@ -50,6 +50,25 @@ export const runContextTokens = t.Optional(
 // command reports them (Hermes), otherwise its last model call. Left out by a command
 // that reported nothing about it, which leaves the counts already stored; null where the
 // command reports none. Shared by the chat result and the run result.
+// What a run, chat answer or reflection spent in total, for the token ledger: every model
+// call summed, with the model that ran. OpenTelemetry GenAI counts: input includes the cached
+// reads and writes, output includes reasoning.
+export const spendBody = t.Optional(
+  t.Nullable(
+    t.Object({
+      runtime: t.Optional(t.Nullable(t.String({ maxLength: 40 }))),
+      model: t.Optional(t.Nullable(t.String({ maxLength: 200 }))),
+      provider: t.Optional(t.Nullable(t.String({ maxLength: 100 }))),
+      inputTokens: t.Integer({ minimum: 0 }),
+      outputTokens: t.Integer({ minimum: 0 }),
+      cacheReadTokens: t.Optional(t.Integer({ minimum: 0 })),
+      cacheWriteTokens: t.Optional(t.Integer({ minimum: 0 })),
+      reasoningTokens: t.Optional(t.Integer({ minimum: 0 })),
+      durationMs: t.Optional(t.Nullable(t.Integer({ minimum: 0 }))),
+    }),
+  ),
+);
+
 export const contextUsageBody = t.Optional(
   t.Nullable(
     t.Object({

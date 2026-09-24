@@ -667,7 +667,7 @@
         "enabled": "Auto-apprentissage",
         "enabledHint": "L'agent enregistre de la mémoire et crée des compétences pendant ses chats et ses exécutions ; les tokens qu'il y consacre comptent dans sa consommation. Désactivé, il n'enregistre rien de nouveau et sa mémoire n'est pas chargée.",
         "curator": "Curateur",
-        "curatorHint": "Le curateur de Hermes archive les compétences apprises qui n'ont pas servi depuis 30 jours. Il tourne dans la maintenance propre à Hermes, comme le tableau de bord Hermes, pas dans les chats et exécutions lancés par Plan.",
+        "curatorHint": "Le curateur de Hermes archive les compétences apprises qui n'ont pas servi depuis 30 jours. Helena lui demande une revue chaque semaine ; dans l'onglet Runtime de l'agent, vous en lancez une tout de suite et épinglez les compétences qu'il ne doit pas toucher.",
         "reflectionTitle": "Réflexion",
         "reflectionHint": "Un court tour de suivi dans la même session que l'exécution, juste après sa fin, où l'agent ne retient que ce que cette exécution lui a appris. Ses tokens comptent dans la consommation de l'exécution.",
         "reflectionOff": "Désactivée",
@@ -696,8 +696,12 @@
         "memoryEditTitle": "Modifier {file}",
         "memoryEditHint": "Hermes garde une entrée par paragraphe, avec § sur une ligne à part entre les entrées. Le runner écrit votre version, sauf si l'agent a modifié le fichier entre-temps.",
         "memoryClearTitle": "Vider {file} ?",
-        "memoryClearBody": "L'agent perd ces notes à la prochaine synchronisation du runner."
-      }
+        "memoryClearBody": "L'agent perd ces notes à la prochaine synchronisation du runner.",
+        "memoryApproval": "Approuver les modifications de la mémoire",
+        "memoryApprovalHint": "Ce que l'agent écrit dans sa mémoire attend sous forme de diff sur la page Approbations ; en attendant, il garde la version approuvée."
+      },
+      "skillEnabled": "{name} activée",
+      "skillsDisabled": "désactivées : {count}"
     },
     "paused": "En pause",
     "pausedNoReason": "En pause. Aucune raison indiquée.",

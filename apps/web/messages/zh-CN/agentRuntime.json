@@ -1,0 +1,242 @@
+{
+  "tabs": {
+    "label": "代理视图",
+    "settings": "设置",
+    "runs": "运行",
+    "sessions": "会话",
+    "memory": "记忆",
+    "usage": "用量",
+    "runtime": "运行时"
+  },
+  "runs": {
+    "empty": "暂无运行。",
+    "loadMore": "加载更多",
+    "running": "运行中",
+    "blocked": "已阻塞",
+    "modelMismatch": "其他模型",
+    "back": "返回运行列表",
+    "views": "运行视图",
+    "timeline": "时间线",
+    "transcript": "对话记录",
+    "logs": "日志",
+    "noTimeline": "此运行未记录时间线。其会话的对话记录显示了发生的情况。",
+    "noSession": "此运行没有可显示的运行时会话。",
+    "noLogs": "此会话没有日志行。",
+    "truncated": "较长的部分已缩短。",
+    "copySession": "复制会话 ID",
+    "resumed": "{count, plural, other {已恢复 # 次}}",
+    "continuesRun": "继续运行 #{id}",
+    "continue": "从这里继续",
+    "continueTitle": "从这里继续",
+    "continueHint": "代理的一次新运行会恢复此运行的会话，保留它已知的一切，并执行你在这里写下的内容。",
+    "continuePlaceholder": "代理接下来应该做什么？",
+    "continueStart": "开始运行",
+    "continued": "运行已加入队列。",
+    "status": {
+      "pending": "等待中",
+      "success": "已完成",
+      "failed": "失败",
+      "canceled": "已取消"
+    },
+    "trigger": {
+      "mention": "提及",
+      "delegation": "委派的任务",
+      "field": "字段变更",
+      "schedule": "计划任务",
+      "manual": "手动任务",
+      "approval": "审批决定"
+    }
+  },
+  "sessions": {
+    "search": "搜索所有会话",
+    "clear": "清除",
+    "noHits": "没有会话提到“{query}”。",
+    "empty": "运行时还没有会话。",
+    "range": "第 {from}–{to} 条，共 {total} 条",
+    "newer": "较新",
+    "older": "较早",
+    "messages": "{count, plural, other {# 条消息}}",
+    "tools": "{count, plural, other {# 次工具调用}}",
+    "back": "返回会话列表",
+    "copyId": "复制会话 ID",
+    "openRun": "打开运行",
+    "truncated": "较长的部分已缩短。",
+    "source": {
+      "run": "运行",
+      "chat": "聊天",
+      "tool": "运行或聊天",
+      "cli": "终端",
+      "claude": "Claude Code",
+      "codex": "Codex",
+      "other": "其他"
+    }
+  },
+  "memory": {
+    "approvalOn": "代理对其记忆所做的更改需等待你的审批；在此之前，它继续使用已批准的版本。",
+    "approvalOff": "代理自行更改其记忆。每个版本都保留在下方。",
+    "pending": "{count, plural, other {# 项更改等待审批}}",
+    "notReported": "运行时尚未报告其记忆。",
+    "history": "历史",
+    "noHistory": "暂无版本。",
+    "source": {
+      "agent": "代理（已批准）",
+      "owner": "在此编辑",
+      "observed": "在运行时中发现"
+    }
+  },
+  "proposals": {
+    "section": "代理和运行时",
+    "raisedBy": "{agent} (@{username})",
+    "memoryTitle": "对 {file} 的更改",
+    "updateHint": "Hermes 将为所有代理更新。辅助程序会先做备份，如果更新或之后的检查失败，会自行回滚。",
+    "changes": "{count, plural, other {# 项更改}}",
+    "localPatches": "{count, plural, other {将保留 # 项本地更改：{list}}}",
+    "kind": {
+      "memory-write": "记忆",
+      "hermes-update": "Hermes 更新"
+    },
+    "status": {
+      "pending": "等待中",
+      "approved": "已批准，正在执行",
+      "rejected": "已拒绝",
+      "applied": "已执行",
+      "failed": "失败"
+    }
+  },
+  "usage": {
+    "period": "时间段",
+    "days": "{count} 天",
+    "groupBy": "分组依据",
+    "grouping": {
+      "agent": "代理",
+      "model": "模型",
+      "project": "项目",
+      "day": "天"
+    },
+    "dimension": {
+      "agent": "代理",
+      "model": "模型",
+      "project": "项目",
+      "day": "日期",
+      "kind": "类型"
+    },
+    "kind": {
+      "run": "运行",
+      "chat": "聊天",
+      "reflection": "反思"
+    },
+    "empty": "此时间段内没有用量。",
+    "input": "输入",
+    "cached": "缓存",
+    "output": "输出",
+    "time": "时间",
+    "cost": "费用",
+    "entries": "条目",
+    "unpriced": "部分模型在价格表中没有价格；其费用未计入合计。",
+    "unknownModel": "未知模型",
+    "noProject": "无项目"
+  },
+  "spend": {
+    "none": "没有记录用量",
+    "tokens": "输入 {input} · 输出 {output}",
+    "tokensDetail": "输入 {input}（其中缓存 {cached}）· 输出 {output}（其中推理 {reasoning}）",
+    "noPrice": "无价格",
+    "costHint": "按模型价格表计算的费用",
+    "costPartial": "并非所有模型都有价格；费用不完整"
+  },
+  "runtime": {
+    "version": "版本",
+    "health": "健康状况",
+    "check": "检查",
+    "healthHint": "运行运行时自带的检查（Hermes doctor），最多需要一分钟。",
+    "healthy": "未发现问题",
+    "problems": "发现问题",
+    "curator": "整理器",
+    "curatorRun": "立即运行",
+    "curatorDone": "整理器已完成审查。",
+    "curatorFailed": "整理器运行失败。",
+    "curatorPaused": "整理器已暂停：它在代理的自主学习设置中处于关闭状态。",
+    "pinSkill": "技能名称",
+    "pin": "固定",
+    "unpin": "取消固定",
+    "pinHint": "整理器绝不会归档或更改已固定的技能。",
+    "log": "日志",
+    "reload": "重新加载",
+    "logEmpty": "没有日志行。",
+    "noLogs": "此运行时没有 Helena 可读取的日志。",
+    "level": {
+      "all": "全部",
+      "WARNING": "警告",
+      "ERROR": "错误"
+    }
+  },
+  "errors": {
+    "offline": "代理的运行器已离线，暂时无法读取其运行时。",
+    "timeout": "运行时未及时响应。请重试。",
+    "noRuntime": "此代理的运行时无法显示此内容。",
+    "notFound": "在运行时中未找到。",
+    "failed": "读取运行时失败。"
+  },
+  "emergencyStop": {
+    "stop": "紧急停止",
+    "resume": "恢复代理",
+    "bannerTitle": "紧急停止：所有代理均已暂停",
+    "bannerSince": "自 {since} 起",
+    "activeSince": "自 {since} 起开启。任何代理都不会开始或继续工作；你恢复后，被停止的运行会继续其会话。",
+    "inactive": "关闭。代理正常工作。",
+    "confirmTitle": "暂停所有代理？",
+    "confirmText": "代理将不再启动运行或回复聊天，正在进行的工作会在下一次心跳时停止，Hermes 也会暂停。恢复后，被停止的运行会在各自的会话中继续。",
+    "reason": "原因",
+    "reasonPlaceholder": "原因（可选，所有人可见）",
+    "engaged": "所有代理均已暂停。",
+    "lifted": "代理已恢复工作。"
+  },
+  "fallback": {
+    "own": "自有备用模型",
+    "ownHint": "当代理的模型出错或触发速率限制时，Hermes 会按顺序切换到这些模型。",
+    "defaultHint": "关闭：使用实例的备用模型（管理员 → 代理运行时）。",
+    "none": "没有备用模型：模型出错时运行即结束。",
+    "provider": "提供商",
+    "model": "模型",
+    "up": "上移",
+    "down": "下移",
+    "remove": "移除",
+    "add": "添加模型"
+  },
+  "admin": {
+    "stopTitle": "紧急停止",
+    "stopDescription": "一次性暂停实例中的所有代理。账户菜单中也有此项。",
+    "hermesTitle": "Hermes",
+    "hermesDescription": "所有代理运行所依赖的 Hermes 安装。更新需要你的批准；辅助程序会先做备份，失败时自动回滚。",
+    "installed": "已安装：{version}",
+    "notChecked": "尚未检查。",
+    "upToDate": "已是最新",
+    "behind": "{count, plural, other {到 {version} 共 # 项更改}}",
+    "checkedAt": "检查于 {at}",
+    "check": "检查更新",
+    "checking": "正在检查…",
+    "request": "申请更新",
+    "requested": "更新正在审批页面等待批准。",
+    "changelog": "{count, plural, other {更改内容（# 个提交）}}",
+    "localPatches": "{count, plural, other {将保留 # 项本地更改：{list}}}",
+    "toApprovals": "打开审批",
+    "log": "更新日志",
+    "proposalStatus": {
+      "pending": "等待审批",
+      "approved": "正在安装",
+      "rejected": "已拒绝",
+      "applied": "已安装",
+      "failed": "失败，已回滚"
+    },
+    "fallbackTitle": "备用模型",
+    "fallbackDescription": "没有自有列表的代理在其模型出错时，按顺序切换到的模型。",
+    "sessionsTitle": "会话",
+    "retention": "会话保留",
+    "retentionHint": "Hermes 保留已结束运行和聊天的对话记录的天数。留空：使用 Hermes 默认的 90 天。",
+    "saved": "已保存。运行器会在下次同步时应用。",
+    "usageTitle": "用量",
+    "usageDescription": "团队中各代理的用量，来自 Helena 的令牌账本，费用按模型价格表计算。",
+    "team": "团队",
+    "noTeam": "暂无团队。"
+  }
+}

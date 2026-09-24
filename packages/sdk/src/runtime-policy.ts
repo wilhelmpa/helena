@@ -78,6 +78,22 @@ export type RuntimeAction =
       baseSha256: string;
     };
 
+// Whether the agent's own memory writes wait for the owner, and the approved content of each
+// memory file, which the runner keeps the files at meanwhile.
+export interface RuntimeMemoryPolicy {
+  approval: boolean;
+  baseline: { file: MemoryFile; sha256: string; content: string }[];
+}
+
+// Settings Helena keeps for the agent that Hermes reads from its configuration, written by
+// the hermes-settings profile contribution: the skills turned off for it, the models Hermes
+// falls back to when the primary one fails, and how long Hermes keeps ended sessions.
+export interface RuntimeHermesSettings {
+  skillsDisabled?: string[];
+  fallbackModels?: { provider: string; model: string }[];
+  sessionRetentionDays?: number | null;
+}
+
 export interface RuntimePolicySnapshot {
   revision: string;
   runtimePolicy: {
@@ -93,6 +109,11 @@ export interface RuntimePolicySnapshot {
   vaultAccess?: VaultAccess;
   // Whether the agent learns. An older server sends none, and Hermes' own settings apply.
   learning?: RuntimeLearning;
+  // Whether the agent's own memory writes wait for the owner. An older server sends none,
+  // and memory writes take effect at once.
+  memoryWrites?: RuntimeMemoryPolicy;
+  // Helena's settings for Hermes' own configuration. An older server sends none.
+  hermes?: RuntimeHermesSettings;
   // The owner's decisions on what the agent learned, not carried out yet.
   actions?: RuntimeAction[];
 }

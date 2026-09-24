@@ -369,7 +369,8 @@
       "run-janitor": "Limpieza de ejecuciones",
       "stage-janitor": "Limpieza de etapas",
       "workflow-schedules": "Sincronización de horarios",
-      "resume-janitor": "Limpieza de reanudaciones"
+      "resume-janitor": "Limpieza de reanudaciones",
+      "runtime-janitor": "Limpieza del runtime"
     },
     "janitorRan": "se ejecutó hace {time}",
     "janitorCleaned": "{count, plural, one {limpió # elemento} other {limpió # elementos}}",

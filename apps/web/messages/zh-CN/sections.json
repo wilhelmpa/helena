@@ -59,6 +59,10 @@
       "label": "SCIM",
       "description": "让身份提供方在此实例上创建、更新和停用账号，并通过其群组授予项目访问权限。"
     },
+    "agent-runtime": {
+      "label": "代理运行时",
+      "description": "紧急停止、Hermes 安装及其更新、所有代理使用的备用模型和会话保留期限，以及代理的用量。"
+    },
     "plugins": {
       "label": "插件",
       "description": "Helena 自带的插件和插件文件夹中的外部插件：它们提供什么、需要哪些权限，以及哪些可以运行。"
