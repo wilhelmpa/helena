@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { LoaderCircle, RefreshCw } from 'lucide-react';
+import { PackageCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
@@ -30,9 +30,7 @@ import UsageReport from '@/features/agent-runtime/components/UsageReport';
 import ProviderLimitsSection from '@/features/provider-limits/components/ProviderLimitsSection';
 import ModelAvailabilitySection from '@/features/model-availability/components/ModelAvailabilitySection';
 import {
-  useCheckHermesUpdate,
   useHermesUpdate,
-  useRequestHermesUpdate,
   useRuntimeDefaults,
   useSetRuntimeDefaults,
 } from '@/features/agent-runtime/services/agentRuntime.service';
@@ -76,14 +74,11 @@ export default function GodAgentRuntimePage() {
 function HermesSection() {
   const t = useTranslations('agentRuntime.admin');
   const state = useHermesUpdate();
-  const check = useCheckHermesUpdate();
-  const request = useRequestHermesUpdate();
   const data: HermesUpdateState | undefined = state.data;
   const current = data?.check?.current;
   const latest = data?.check?.latest;
   const behind = data?.check ? data.check.commits.length : 0;
   const proposal = data?.proposal;
-  const busy = proposal?.status === 'pending' || proposal?.status === 'approved';
   const label = (ref: { version: string | null; describe: string | null; commit: string }) =>
     ref.version ?? ref.describe ?? ref.commit.slice(0, 8);
 
@@ -103,28 +98,14 @@ function HermesSection() {
               </p>
             )}
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={check.isPending}
-            onClick={() => check.mutate()}
-          >
-            {check.isPending ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}
-            {check.isPending ? t('checking') : t('check')}
+          {/* Checking and updating Hermes happen in the update center, with everything else
+              Helena runs on (Administrator → Updates). */}
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/god/updates">
+              <PackageCheck />
+              {t('openUpdates')}
+            </Link>
           </Button>
-          {behind > 0 && (
-            <Button
-              size="sm"
-              disabled={request.isPending || busy}
-              onClick={() =>
-                request.mutate(undefined, {
-                  onSuccess: () => toast.success(t('requested')),
-                })
-              }
-            >
-              {t('request')}
-            </Button>
-          )}
         </div>
 
         {data?.check && data.check.commits.length > 0 && (

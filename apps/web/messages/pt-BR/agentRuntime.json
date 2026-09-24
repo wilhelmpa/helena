@@ -44,7 +44,9 @@
       "field": "Alteração de campo",
       "schedule": "Tarefa agendada",
       "manual": "Tarefa manual",
-      "approval": "Decisão de aprovação"
+      "approval": "Decisão de aprovação",
+      "workspace": "Tarefa do espaço de trabalho",
+      "digest": "Resumo"
     }
   },
   "sessions": {
@@ -237,6 +239,7 @@
     "usageTitle": "Consumo",
     "usageDescription": "O que os agentes de um time consumiram, segundo o registro de tokens da Helena, com o custo pela tabela de preços dos modelos.",
     "team": "Time",
-    "noTeam": "Nenhum time ainda."
+    "noTeam": "Nenhum time ainda.",
+    "openUpdates": "Abrir em Atualizações"
   }
 }

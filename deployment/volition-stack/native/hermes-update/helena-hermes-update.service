@@ -7,7 +7,9 @@ Wants=network-online.target
 Type=oneshot
 # Root only to act as the owner of each part: git as the owner of the Hermes checkout, the
 # install as the owner of the virtual environment (the helper drops to them per step).
-User=root
+# Runs as root by default; no explicit User=root: with it systemd sets up the login
+# environment and the helper's setuid() to the checkout's owner fails with EPERM
+# ("Exception occurred in preexec_fn"), so neither a check nor an update could run.
 ExecStart=/usr/local/libexec/helena-hermes-update --config /etc/helena/hermes-update.json serve-request
 TimeoutStartSec=45min
 NoNewPrivileges=yes

@@ -1,12 +1,107 @@
 {
-  "updateAvailable": "يتوفّر تحديث",
-  "releaseHistory": "سجلّ الإصدارات",
-  "running": "تشغّل {current}.",
-  "badgeRunning": "قيد التشغيل",
-  "badgeNew": "جديد",
-  "check": "التحقّق من التحديثات",
-  "checking": "جارٍ التحقّق",
-  "lastChecked": "آخر تحقّق",
-  "allReleases": "كل الإصدارات",
-  "noNotes": "لا توجد ملاحظات لهذا الإصدار."
+  "title": "التحديثات",
+  "check": "تحقق الآن",
+  "checking": "جارٍ التحقق …",
+  "checkedAt": "تم التحقق قبل {time}",
+  "neverChecked": "لم يتم التحقق بعد",
+  "nextRun": "التحقق التالي {time}",
+  "jobFailed": "فشل التحقق الأخير: {error}",
+  "allCurrent": "كل شيء محدَّث",
+  "count": "{count, plural, zero {لا تحديثات} one {تحديث واحد} two {تحديثان} few {# تحديثات} many {# تحديثًا} other {# تحديث}}",
+  "securityCount": "{count, plural, zero {لا تحديثات أمنية} one {تحديث أمني واحد} two {تحديثان أمنيان} few {# تحديثات أمنية} many {# تحديثًا أمنيًا} other {# تحديث أمني}}",
+  "open": "متاحة",
+  "current": "محدَّثة",
+  "history": "السجل",
+  "noHistory": "لم يبدأ أي تحديث بعد.",
+  "helperMissing": "مساعد التحديثات غير مثبَّت: حزم Debian وإصدارات الأدوات غير متوفرة، ولا يمكن تحديث سوى Hermes.",
+  "helperError": "لم يُجب مساعد التحديثات: {error}",
+  "sourceFailed": "{source}: {error}",
+  "badges": {
+    "security": "أمان",
+    "breaking": "تغييرات غير متوافقة"
+  },
+  "risk": {
+    "low": "خطورة منخفضة",
+    "medium": "خطورة متوسطة",
+    "high": "خطورة عالية"
+  },
+  "summary": {
+    "pending": "جارٍ التلخيص …",
+    "none": "لا يوجد ملخص بعد.",
+    "failed": "فشل التلخيص: {error}",
+    "by": "لُخّص باستخدام {model}",
+    "run": "عرض التشغيل"
+  },
+  "notes": "ملاحظات الإصدار",
+  "source": "المصدر",
+  "apply": "تحديث",
+  "applyGroup": "تثبيت الكل ({count})",
+  "applySecurity": "تثبيت التحديثات الأمنية ({count})",
+  "updating": "جارٍ التحديث …",
+  "dialog": {
+    "title": "تحديث {name}؟",
+    "titleGroup": "{count, plural, zero {تحديث الحزم؟} one {تحديث حزمة واحدة؟} two {تحديث حزمتين؟} few {تحديث # حزم؟} many {تحديث # حزمة؟} other {تحديث # حزمة؟}}",
+    "download": "تنزّل Helena الإصدار الجديد من المورّد وتثبّته ({source}).",
+    "downloadApt": "ينزّل apt الحزم من مصادر Debian ويثبّتها. قبل ذلك تأخذ Helena نسخة احتياطية من قاعدة البيانات.",
+    "downloadHermes": "يجلب مساعد Hermes الحالة الجديدة من مستودع Hermes ويعيد تثبيتها.",
+    "wayBack": "طريق العودة: يُحتفظ بالإصدار الحالي ويمكن استعادته.",
+    "wayBackApt": "طريق العودة: لا يملك apt طريقة تلقائية. بعد التحديث يذكر السجل الأمر للإصدارات القديمة.",
+    "wayBackHermes": "طريق العودة: إذا فشل شيء، يستعيد المساعد الحالة السابقة بنفسه.",
+    "approval": "بالنقر على «تحديث الآن» توافق على هذا التنزيل والتثبيت.",
+    "confirm": "تحديث الآن"
+  },
+  "action": {
+    "running": "قيد التنفيذ",
+    "done": "تم",
+    "failed": "فشل",
+    "log": "السجل",
+    "backup": "نسخة احتياطية من قاعدة البيانات: {path}",
+    "rollback": "طريق العودة: {command}",
+    "services": "الخدمات بعد التحديث",
+    "failedUnits": "خدمات فاشلة: {units}",
+    "reboot": "يُنصح بإعادة التشغيل.",
+    "started": "بدأ التحديث"
+  },
+  "sources": {
+    "hermes": "Hermes",
+    "cliRuntimes": "بيئات تشغيل الوكلاء",
+    "apt": "حزم Debian",
+    "hostTools": "الأدوات",
+    "helena": "Helena"
+  },
+  "hints": {
+    "manual": "لا يوجد مثبّت في Helena: يُحدَّث يدويًا.",
+    "notInstalled": "غير مثبّت.",
+    "deploy": "يُحدَّث مع النشر.",
+    "hermesOffline": "لا يمكن الوصول إلى مشغّل Hermes: الحالة وفق آخر تحقق."
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "schedule": "التحقق تلقائيًا",
+    "scheduleDescription": "تبحث Helena عن إصدارات جديدة وفق هذا الجدول.",
+    "cron": "الجدول",
+    "timezone": "المنطقة الزمنية",
+    "summarize": "التلخيص بالذكاء الاصطناعي",
+    "summarizeDescription": "يلخّص نموذج صغير ملاحظات الإصدار الجديدة ويقيّم الخطورة.",
+    "agent": "الوكيل",
+    "model": "النموذج",
+    "reasoning": "الاستدلال",
+    "automatic": "تلقائي",
+    "automaticAgent": "تلقائي ({name})",
+    "automaticModel": "تلقائي ({model})",
+    "agentModel": "نموذج الوكيل",
+    "noAgent": "لا يوجد وكيل Hermes",
+    "claudeChannel": "قناة Claude Code",
+    "channels": {
+      "latest": "الأحدث",
+      "stable": "المستقرة"
+    },
+    "save": "حفظ",
+    "saved": "تم الحفظ"
+  },
+  "home": {
+    "more": "كل التحديثات",
+    "empty": "كل شيء محدَّث"
+  },
+  "checkedJustNow": "تم التحقق للتو"
 }

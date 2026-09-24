@@ -58,15 +58,23 @@ function stamp(date: Date): string {
 
 // Runs pg_dump into BACKUP_DIR. Throws with pg_dump's own stderr when it fails, and
 // when it writes an empty file — a truncated dump restores nothing.
-export async function writeBackup(migrations: string[]): Promise<BackupResult> {
+// `dir` writes somewhere else than BACKUP_DIR (the update center's dump before an update),
+// `label` is added to the file name (`…-pre-update.dump`), which the pruning still matches.
+export async function writeBackup(
+  migrations: string[],
+  options: { dir?: string; label?: string } = {},
+): Promise<BackupResult> {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error('DATABASE_URL is not set — cannot take a backup.');
-  // A dump holds every row, sessions and key hashes included: the folder and the file are
-  // the api user's alone, whatever the process umask or an older folder's mode says.
-  await mkdir(BACKUP_DIR, { recursive: true, mode: 0o700 });
-  await chmod(BACKUP_DIR, 0o700);
+  // A dump holds every row, sessions and key hashes included: the file is the api user's
+  // alone, whatever the process umask says, and so is the folder this module owns (an older
+  // one that is wider is narrowed). A folder a caller names keeps the mode its owner gave it.
+  const dir = options.dir ?? BACKUP_DIR;
+  await mkdir(dir, { recursive: true, mode: 0o700 });
+  if (dir === BACKUP_DIR) await chmod(dir, 0o700);
   const createdAt = new Date();
-  const path = join(BACKUP_DIR, `itsaplan-${stamp(createdAt)}.dump`);
+  const label = options.label && /^[a-z0-9-]{1,40}$/.test(options.label) ? `-${options.label}` : '';
+  const path = join(dir, `itsaplan-${stamp(createdAt)}${label}.dump`);
 
   // The password goes through PGPASSWORD rather than argv, where the process list would
   // show it for as long as the dump runs; a URI without one sets no variable, so an
