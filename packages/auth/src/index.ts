@@ -9,6 +9,8 @@ import { apiKey } from '@better-auth/api-key';
 import { mcp, openAPI, magicLink, username, genericOAuth, twoFactor } from 'better-auth/plugins';
 import type { GenericOAuthConfig } from 'better-auth/plugins/generic-oauth';
 import * as schema from '@repo/db/schema';
+import { localeFromAcceptLanguage } from '@helena/locales/accept-language';
+import { defaultRoleName } from '@helena/locales/defaults';
 import {
   getAuthSettings,
   hasPendingInvite,
@@ -537,8 +539,11 @@ export const auth = betterAuth({
         // created, named after the username the hook above settled on. The team is
         // also where the roles its projects assign live, so it starts with the
         // default one.
-        after: async (created) => {
+        // The default role is named in the language of the browser signing up; the
+        // account has no language of its own yet.
+        after: async (created, context) => {
           const handle = typeof created.username === 'string' ? created.username : created.name;
+          const locale = localeFromAcceptLanguage(context?.headers?.get('accept-language') ?? null);
           await db.transaction(async (tx) => {
             const [row] = await tx
               .insert(schema.team)
@@ -549,7 +554,7 @@ export const auth = betterAuth({
               .values({ teamId: row.id, userId: created.id, role: 'owner' });
             await tx.insert(schema.teamRole).values({
               teamId: row.id,
-              name: 'Member',
+              name: defaultRoleName(locale),
               isDefault: true,
               permissions: defaultMemberPermissions(),
             });

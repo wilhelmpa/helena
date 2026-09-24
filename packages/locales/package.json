@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./accept-language": "./src/accept-language.ts"
+    "./accept-language": "./src/accept-language.ts",
+    "./defaults": "./src/defaults.ts"
   },
   "scripts": {
     "lint": "eslint .",

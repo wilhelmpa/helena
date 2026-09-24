@@ -51,6 +51,7 @@ import {
   getProjectSetup,
   retryProvisioningJob,
 } from './service';
+import { browserLocale } from '#modules/user-preferences/locale';
 import { copyProject } from './copy';
 
 export const projectRoutes = new Elysia({ name: 'projects', detail: { tags: ['Projects'] } })
@@ -85,7 +86,7 @@ export const projectRoutes = new Elysia({ name: 'projects', detail: { tags: ['Pr
         const delegated = await createProjectAsExternalMcpAgent(body, actor.id);
         if (delegated) return delegated;
       }
-      return createProject(body, actor.id);
+      return createProject(body, actor.id, undefined, browserLocale(request));
     },
     {
       body: createProjectBody,
@@ -103,10 +104,17 @@ export const projectRoutes = new Elysia({ name: 'projects', detail: { tags: ['Pr
 
   .post(
     '/projects/:projectKey/copy',
-    async ({ project, body, user, set }) => {
+    async ({ project, body, user, request, set }) => {
       const { include, ...meta } = body;
       set.status = 201;
-      return await copyProject(project.id, meta, requireUser(user).id, include);
+      return await copyProject(
+        project.id,
+        meta,
+        requireUser(user).id,
+        include,
+        undefined,
+        browserLocale(request),
+      );
     },
     {
       body: copyProjectBody,

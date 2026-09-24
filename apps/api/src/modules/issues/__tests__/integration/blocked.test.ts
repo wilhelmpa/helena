@@ -132,6 +132,36 @@ describe('mark an issue blocked', () => {
     );
   });
 
+  it("labels and asks in the project owner's language", async () => {
+    const { owner, asOwner, asRunner, issue } = await setup();
+    await asOwner.account.preferences.patch({ locale: 'de' });
+
+    const res = await asRunner
+      .issues({ issueId: issue.id })
+      .blocked.post({ question: 'Welcher Ton?' });
+    expect(res.data!.comment.body).toBe(
+      `@${owner.username} **Blockiert, braucht eine Antwort:** Welcher Ton?`,
+    );
+    const labels = (await asOwner.projects({ projectKey: 'MKT' }).get()).data!.labels;
+    const blocked = labels.find((entry) => entry.name === 'Blockiert')!;
+    expect((await asOwner.issues({ issueId: issue.id }).get()).data!.labelIds).toContain(
+      blocked.id,
+    );
+  });
+
+  it('reuses the label under its name in another language', async () => {
+    const { asOwner, asRunner, issue } = await setup();
+    const own = await asOwner.projects({ projectKey: 'MKT' }).labels.post({ name: 'Blocked' });
+    await asOwner.account.preferences.patch({ locale: 'de' });
+
+    await asRunner.issues({ issueId: issue.id }).blocked.post({ question: 'Welcher Ton?' });
+    const labels = (await asOwner.projects({ projectKey: 'MKT' }).get()).data!.labels;
+    expect(labels.map((entry) => entry.name)).not.toContain('Blockiert');
+    expect((await asOwner.issues({ issueId: issue.id }).get()).data!.labelIds).toContain(
+      own.data!.id,
+    );
+  });
+
   it('refuses a person and an empty question', async () => {
     const { asOwner, asRunner, issue } = await setup();
     expect(

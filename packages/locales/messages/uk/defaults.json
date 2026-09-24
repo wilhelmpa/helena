@@ -1,0 +1,55 @@
+{
+  "states": {
+    "backlog": "Беклог",
+    "todo": "До виконання",
+    "inProgress": "У роботі",
+    "review": "На перевірці",
+    "done": "Готово",
+    "canceled": "Скасовано"
+  },
+  "issueTypes": {
+    "task": "Завдання",
+    "feature": "Функція",
+    "bug": "Помилка",
+    "techDebt": "Технічний борг",
+    "research": "Дослідження",
+    "epic": "Епік",
+    "feedback": "Відгук",
+    "article": "Стаття",
+    "video": "Відео",
+    "socialPost": "Допис у соцмережах",
+    "idea": "Ідея",
+    "review": "Перевірка",
+    "campaign": "Кампанія",
+    "landing": "Лендінг",
+    "asset": "Матеріал",
+    "email": "Лист",
+    "screen": "Екран",
+    "component": "Компонент",
+    "lead": "Лід",
+    "deal": "Угода",
+    "followUp": "Повторний контакт",
+    "account": "Клієнт",
+    "request": "Запит",
+    "process": "Процес",
+    "purchase": "Закупівля",
+    "maintenance": "Обслуговування",
+    "incident": "Інцидент",
+    "question": "Питання",
+    "change": "Зміна",
+    "candidate": "Кандидат",
+    "onboarding": "Адаптація",
+    "policy": "Політика"
+  },
+  "views": {
+    "kanban": "Канбан",
+    "list": "Список",
+    "allTasks": "Усі завдання"
+  },
+  "coordinator": "Координатор Hermes {key}",
+  "teamRole": "Учасник",
+  "blocked": {
+    "label": "Заблоковано",
+    "comment": "Заблоковано, потрібна відповідь:"
+  }
+}

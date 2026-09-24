@@ -17,6 +17,8 @@ import {
 } from '#modules/actions/workflow';
 import { areaFolderSlug, uniqueAreaFolder } from '#modules/views/area-folder';
 import { enqueueBoardProvisioning, ensureDefaultProjectViews } from '#modules/views/service';
+import type { Locale } from '#modules/user-preferences/locale';
+import { defaultViewKey, findState } from '@helena/locales/defaults';
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type TemplateKind = 'project' | 'board';
@@ -158,10 +160,13 @@ export async function applyProjectTemplate(
   return db.transaction((tx) => applyProjectTemplateInTransaction(tx, projectId, templateId));
 }
 
+// `locale` names a default view the project still lacks; without it, the project's
+// language does.
 export async function applyProjectTemplateInTransaction(
   tx: Transaction,
   projectId: number,
   templateId: number,
+  locale?: Locale,
 ) {
   const [target, template] = await Promise.all([
     tx
@@ -176,7 +181,7 @@ export async function applyProjectTemplateInTransaction(
   const stateIds = await applyStates(tx, projectId, definition.states);
   const folders = await applyFolders(tx, projectId, definition.folders);
   const boardResources = await applyViews(tx, projectId, definition.views, folders, stateIds);
-  boardResources.push(...(await ensureDefaultProjectViews(tx, projectId)).ids);
+  boardResources.push(...(await ensureDefaultProjectViews(tx, projectId, locale)).ids);
   await applyWorkflows(tx, projectId, definition.workflows, stateIds);
   const stableBoardResources = [...new Set(boardResources)];
   if (stableBoardResources.length)
@@ -262,7 +267,8 @@ async function applyStates(tx: Transaction, projectId: number, states: TemplateS
   const ids = new Map<string, number>();
   let next = current.reduce((max, state) => Math.max(max, state.position), -1) + 1;
   for (const state of states) {
-    const existing = current.find((row) => row.name.toLowerCase() === state.name.toLowerCase());
+    // A default state is the same state whatever language either project named it in.
+    const existing = findState(current, state.name);
     if (existing) {
       ids.set(state.name, existing.id);
       continue;
@@ -323,8 +329,13 @@ async function applyViews(
       filters: restoreStateIds(view.filters, states),
       display: view.display,
     };
+    // A default view (board, list) is the same view whatever language it was named in.
+    const key = defaultViewKey(view.name);
     const existing = current.find(
-      (row) => row.name.toLowerCase() === view.name.toLowerCase() && row.folderId === folderId,
+      (row) =>
+        row.folderId === folderId &&
+        (row.name.toLowerCase() === view.name.toLowerCase() ||
+          (key !== null && defaultViewKey(row.name) === key)),
     );
     if (existing) {
       await tx.update(projectView).set(values).where(eq(projectView.id, existing.id));

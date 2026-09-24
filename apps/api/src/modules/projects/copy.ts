@@ -25,15 +25,17 @@ import {
 } from '@repo/vault';
 import { HttpError } from '#shared/lib';
 import {
-  DEFAULT_COLUMNS,
   DEFAULT_PROVISIONING_RESOURCES,
   getProjectById,
+  insertDefaultStates,
   mapProject,
+  seedLocale,
   targetTeam,
   createHermesProjectCoordinator,
   newProjectAgentUserIds,
   type ProjectRow,
 } from './service';
+import type { Locale } from '#modules/user-preferences/locale';
 import { GIT_SETTING_KEY } from '#modules/git/service';
 import { getProjectDefaults } from '#modules/settings/service';
 import { generateSecret } from '#modules/webhooks/service';
@@ -217,12 +219,16 @@ function remapActionEffect(effect: unknown, maps: CopyIdMaps): unknown {
 // id so the ids that views and actions reference are remapped to the copied entities.
 // The Docs folder is copied in the vault, and the team's agents are attached to the new
 // project, after it commits.
+// What the copy makes afresh rather than copies (its coordinator, and the default states
+// and views when those are not copied) is named in `input.locale`, else the owner's
+// language, as for a created project.
 export async function copyProject(
   sourceProjectId: number,
-  input: { key: string; name: string; description?: string },
+  input: { key: string; name: string; description?: string; locale?: Locale },
   ownerId: string,
   rawInclude?: Partial<CopyProjectInclude>,
   teamId?: number,
+  browserLocale?: Locale,
 ): Promise<ProjectRow> {
   const inc = normalizeInclude(rawInclude);
 
@@ -240,10 +246,11 @@ export async function copyProject(
   const ownerTeam = await targetTeam(ownerId, teamId);
   // What a new project starts with, set instance-wide in god mode. Read before the
   // transaction opens so the settings lookup is not part of it.
-  const [defaults, agentUserIds, defaultRoleId] = await Promise.all([
+  const [defaults, agentUserIds, defaultRoleId, locale] = await Promise.all([
     getProjectDefaults(),
     newProjectAgentUserIds(ownerTeam.id),
     getDefaultRoleId(ownerTeam.id),
+    seedLocale(ownerId, input.locale, browserLocale),
   ]);
   const copyTransaction = db.transaction(async (tx) => {
     // The optional sections the source project shows and the estimate kinds it
@@ -301,6 +308,7 @@ export async function copyProject(
       projectName: proj.name,
       ownerUserId: ownerId,
       roleId: defaultRoleId,
+      locale,
     });
 
     // States (columns). When copied, every source column is carried over so views,
@@ -331,15 +339,7 @@ export async function copyProject(
         maps.column.set(col.id, created.id);
       }
     } else {
-      for (const [position, column] of DEFAULT_COLUMNS.entries()) {
-        await tx.insert(projectColumn).values({
-          projectId: proj.id,
-          name: column.name,
-          stateType: column.stateType,
-          color: column.color,
-          position,
-        });
-      }
+      await insertDefaultStates(tx, proj.id, locale);
     }
 
     if (inc.issueTypes) {
@@ -454,7 +454,7 @@ export async function copyProject(
         copiedViewIds.push(created.id);
       }
     }
-    copiedViewIds.push(...(await ensureDefaultProjectViews(tx, proj.id)).ids);
+    copiedViewIds.push(...(await ensureDefaultProjectViews(tx, proj.id, locale)).ids);
     const provisionedViewIds = [...new Set(copiedViewIds)];
     await tx.insert(projectProvisioningJob).values({
       projectId: proj.id,

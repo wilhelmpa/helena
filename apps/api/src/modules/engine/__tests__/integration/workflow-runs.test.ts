@@ -8,7 +8,7 @@ import {
   it,
   setDefaultTimeout,
 } from 'bun:test';
-import { agentRun, db, issueActivity, notification } from '@repo/db';
+import { agentRun, db, issue as issueTable, issueActivity, notification } from '@repo/db';
 import { and, eq } from 'drizzle-orm';
 import { resetDb } from '#tests/helpers/db';
 import {
@@ -357,5 +357,43 @@ describe('workflow runs on the engine', () => {
       status: 'succeeded',
       summary: `MKT-${task.sequenceNumber} is ready.`,
     });
+  });
+
+  it('finds default states under their English names in a German project', async () => {
+    const ctx = await setupProject({ locale: 'de' });
+    // Enabling checks the state names against the project: "Todo" and "Review" are its
+    // "Zu erledigen" and "In Prüfung".
+    const pipelineId = await workflow(ctx, [
+      {
+        id: 'open',
+        name: 'Still to do?',
+        type: 'condition',
+        condition: { kind: 'task', field: 'status', op: 'is', values: ['Todo'] },
+        then: [
+          {
+            id: 'review',
+            name: 'Move to review',
+            type: 'action',
+            action: { kind: 'set_status', status: 'Review' },
+          },
+        ],
+        else: [],
+        thenEnd: false,
+        elseEnd: true,
+      },
+    ]);
+    const task = await issue(ctx);
+    expect(task.columnId).toBe(ctx.columnId('Zu erledigen'));
+    const run = await startRun(ctx, task.id, pipelineId);
+    await waitForStatus(run.id, 'succeeded');
+    expect(stepsOf(await runSteps(run.id))).toEqual([
+      { stepId: 'open', status: 'succeeded', outcome: 'true' },
+      { stepId: 'review', status: 'succeeded', outcome: 'success' },
+    ]);
+    const [row] = await db
+      .select({ columnId: issueTable.columnId })
+      .from(issueTable)
+      .where(eq(issueTable.id, task.id));
+    expect(row!.columnId).toBe(ctx.columnId('In Prüfung'));
   });
 });

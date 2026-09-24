@@ -1,0 +1,55 @@
+{
+  "states": {
+    "backlog": "Backlog",
+    "todo": "A fazer",
+    "inProgress": "Em andamento",
+    "review": "Em revisão",
+    "done": "Concluído",
+    "canceled": "Cancelado"
+  },
+  "issueTypes": {
+    "task": "Tarefa",
+    "feature": "Funcionalidade",
+    "bug": "Bug",
+    "techDebt": "Dívida técnica",
+    "research": "Pesquisa",
+    "epic": "Épico",
+    "feedback": "Feedback",
+    "article": "Artigo",
+    "video": "Vídeo",
+    "socialPost": "Post para redes sociais",
+    "idea": "Ideia",
+    "review": "Revisão",
+    "campaign": "Campanha",
+    "landing": "Landing page",
+    "asset": "Material",
+    "email": "E-mail",
+    "screen": "Tela",
+    "component": "Componente",
+    "lead": "Lead",
+    "deal": "Negócio",
+    "followUp": "Follow-up",
+    "account": "Conta",
+    "request": "Solicitação",
+    "process": "Processo",
+    "purchase": "Compra",
+    "maintenance": "Manutenção",
+    "incident": "Incidente",
+    "question": "Pergunta",
+    "change": "Mudança",
+    "candidate": "Candidato",
+    "onboarding": "Onboarding",
+    "policy": "Política"
+  },
+  "views": {
+    "kanban": "Kanban",
+    "list": "Lista",
+    "allTasks": "Todas as tarefas"
+  },
+  "coordinator": "Coordenador Hermes {key}",
+  "teamRole": "Membro",
+  "blocked": {
+    "label": "Bloqueado",
+    "comment": "Bloqueado, precisa de uma resposta:"
+  }
+}

@@ -1,6 +1,6 @@
-import { db, userPreference } from '@repo/db';
-import { eq, sql } from 'drizzle-orm';
-import { DEFAULT_LOCALE, type Locale } from './locale';
+import { db, projectMember, userPreference } from '@repo/db';
+import { and, asc, eq, sql } from 'drizzle-orm';
+import { DEFAULT_LOCALE, isLocale, type Locale } from './locale';
 
 // A user's own interface preferences, held per account so the same choices apply on
 // every device. One row per user; absent means nothing was changed yet and the
@@ -160,4 +160,35 @@ export async function updatePreferences(
       set: { ...next, updatedAt: sql`now()` },
     });
   return next;
+}
+
+type Executor = Pick<typeof db, 'select'>;
+
+// The language the data Helena creates for a user is named in (a new project's states and
+// issue types, a new team's default role): the interface language they chose, else
+// `fallback`, which a route sets to the request's browser language, as the account
+// preferences do before anything is saved.
+export async function preferredLocale(
+  userId: string,
+  fallback: Locale = DEFAULT_LOCALE,
+  executor: Executor = db,
+): Promise<Locale> {
+  const [row] = await executor
+    .select({ locale: userPreference.locale })
+    .from(userPreference)
+    .where(eq(userPreference.userId, userId));
+  return row && isLocale(row.locale) ? row.locale : fallback;
+}
+
+// The language of a project: its (first) owner's. What Helena adds to an existing project
+// on its own, such as a missing default view or the Blocked label, is named in it.
+export async function projectLocale(projectId: number, executor: Executor = db): Promise<Locale> {
+  const [row] = await executor
+    .select({ locale: userPreference.locale })
+    .from(projectMember)
+    .leftJoin(userPreference, eq(userPreference.userId, projectMember.userId))
+    .where(and(eq(projectMember.projectId, projectId), eq(projectMember.role, 'owner')))
+    .orderBy(asc(projectMember.createdAt))
+    .limit(1);
+  return row && isLocale(row.locale) ? row.locale : DEFAULT_LOCALE;
 }

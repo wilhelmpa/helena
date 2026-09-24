@@ -1,4 +1,5 @@
 import { expect } from 'bun:test';
+import { findState } from '@helena/locales/defaults';
 import { authedApi } from './app';
 import { signUpTestUser } from './auth';
 import { createAgent } from './agents';
@@ -41,10 +42,16 @@ export function definition(steps: Json[], extra: Json = {}) {
 
 export const simple = () => definition([agentStep('implement', 'Implement {{task.title}}.')]);
 
-export async function setupProject() {
+// `locale` names the project's default states in that language; `columnId` finds them by
+// their English names too, the way a workflow does (findState).
+export async function setupProject(options: { locale?: 'de' } = {}) {
   const owner = await signUpTestUser({ name: 'Owner' });
   const asOwner = authedApi(owner.cookie);
-  const created = await asOwner.projects.post({ key: 'MKT', name: 'Marketing' });
+  const created = await asOwner.projects.post({
+    key: 'MKT',
+    name: 'Marketing',
+    ...(options.locale ? { locale: options.locale } : {}),
+  });
   const teamId = created.data!.teamId;
   const projectId = created.data!.id;
   const view = await asOwner.projects({ projectKey: 'MKT' }).get();
@@ -75,7 +82,7 @@ export async function setupProject() {
     coordinator,
     coder: coder.data!.agent,
     coderKey: coder.data!.apiKey!,
-    columnId: (name: string) => columns.find((column) => column.name === name)!.id,
+    columnId: (name: string) => findState(columns, name)!.id,
   };
 }
 

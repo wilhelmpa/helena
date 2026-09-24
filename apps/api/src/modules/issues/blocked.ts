@@ -1,7 +1,14 @@
 import { alias } from 'drizzle-orm/pg-core';
 import { db, agentRun, aiAgent, label, organizationAgentAssignment } from '@repo/db';
 import { and, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
+import {
+  blockedCommentPrefix,
+  blockedLabelName,
+  blockedLabelNames,
+} from '@helena/locales/defaults';
 import { HttpError } from '#shared/lib';
+import type { Locale } from '#modules/user-preferences/locale';
+import { projectLocale } from '#modules/user-preferences/service';
 import { noticeRecipients } from '#modules/agents/governance';
 import { createComment, type FeedItemRow } from './activity';
 import { bulkAddLabels } from './service';
@@ -12,12 +19,12 @@ import { bulkAddLabels } from './service';
 // in the organization, otherwise the project's owners. The agent's run on the issue
 // ends as a success carrying the question, so the run history tells it apart.
 
-const BLOCKED_LABEL = 'Blocked';
 const BLOCKED_COLOR = '#dc2626';
 
-// The project's Blocked label, created the first time an issue of the project is
-// blocked. A label the project already has under that name in another case is reused.
-async function blockedLabelId(projectId: number): Promise<number> {
+// The project's Blocked label, created in the project's language the first time an issue
+// of the project is blocked. A label the project already has under that name in any
+// language, in any case, is reused.
+async function blockedLabelId(projectId: number, locale: Locale): Promise<number> {
   const find = () =>
     db
       .select({ id: label.id })
@@ -25,15 +32,19 @@ async function blockedLabelId(projectId: number): Promise<number> {
       .where(
         and(
           eq(label.projectId, projectId),
-          eq(sql`lower(${label.name})`, BLOCKED_LABEL.toLowerCase()),
+          inArray(
+            sql`lower(${label.name})`,
+            blockedLabelNames().map((name) => name.toLowerCase()),
+          ),
         ),
       )
+      .orderBy(label.id)
       .limit(1);
   const [existing] = await find();
   if (existing) return existing.id;
   await db
     .insert(label)
-    .values({ projectId, name: BLOCKED_LABEL, color: BLOCKED_COLOR })
+    .values({ projectId, name: blockedLabelName(locale), color: BLOCKED_COLOR })
     .onConflictDoNothing();
   const [created] = await find();
   return created!.id;
@@ -61,17 +72,18 @@ export async function markIssueBlocked(input: {
     .where(eq(aiAgent.userId, input.actorUserId));
   if (!agent) throw new HttpError(403, 'Only an agent can mark an issue blocked');
 
+  const locale = await projectLocale(input.projectId);
   await bulkAddLabels(
     input.projectId,
     [input.issueId],
-    [await blockedLabelId(input.projectId)],
+    [await blockedLabelId(input.projectId, locale)],
     input.actorUserId,
   );
   const handles = await noticeRecipients(input.projectId, agent.managerOwnerUserId);
   const comment = await createComment({
     issueId: input.issueId,
     actorUserId: input.actorUserId,
-    body: [...handles, `**Blocked, needs input:** ${input.question.trim()}`].join(' '),
+    body: [...handles, `**${blockedCommentPrefix(locale)}** ${input.question.trim()}`].join(' '),
   });
   const [run] = await db
     .update(agentRun)
