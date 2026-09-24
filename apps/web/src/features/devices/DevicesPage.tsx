@@ -22,7 +22,7 @@ export default function DevicesPage() {
 
   return (
     <Shell globalHome globalTitle={t('title')} autoOpenGlobalChat={false}>
-      <SectionPageView title={t('title')} description={t('description')}>
+      <SectionPageView title={t('title')}>
         <div className="flex flex-col gap-4">
           {status.isError ? (
             <DevicesNotice>{t(forbidden ? 'ownerOnly' : 'loadError')}</DevicesNotice>

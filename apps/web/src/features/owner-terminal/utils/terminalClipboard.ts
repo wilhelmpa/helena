@@ -139,6 +139,16 @@ export function attachTerminalClipboard(
     } catch {
       return; // another origin
     }
+    // wetty asks "Leave site?" before its page unloads, so reloading or leaving Helena asked
+    // too. The session lives on in tmux, so nothing is lost: a capture listener at the
+    // window runs before wetty's own and ends the event there. It goes in as soon as the
+    // frame's page is there (its load, or the next tick), not only once wetty's terminal
+    // is up: a page reloaded before that asked anyway (QA sweep 2026-09-24).
+    if (!quieted.has(win)) {
+      quieted.add(win);
+      win.addEventListener('beforeunload', (event) => event.stopImmediatePropagation(), true);
+    }
+
     const term = win.wetty_term;
     if (!term || attached.has(term)) return;
     attached.add(term);
@@ -149,18 +159,6 @@ export function attachTerminalClipboard(
       term.options.macOptionClickForcesSelection = true;
     } catch {
       // an older terminal without the option
-    }
-
-    // wetty asks "Leave site?" before its page unloads, so reloading or leaving Helena asked
-    // too. The session lives on in tmux, so nothing is lost: a capture listener at the
-    // window runs before wetty's own and ends the event there.
-    if (!quieted.has(frameWindow)) {
-      quieted.add(frameWindow);
-      frameWindow.addEventListener(
-        'beforeunload',
-        (event) => event.stopImmediatePropagation(),
-        true,
-      );
     }
 
     // wetty copies a marking on mouse-up through navigator.clipboard, which plain http

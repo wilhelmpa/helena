@@ -45,6 +45,8 @@ export interface PluginProvides {
   // Kinds of local model servers, and kinds of work local AI may take.
   modelServers?: string[];
   localAiTaskClasses?: string[];
+  // Update sources (whether a newer version of something Helena runs on exists).
+  updateSources?: string[];
   // Event types the plugin publishes; always under its own id.
   events?: string[];
   mcpServers?: McpServerContribution[];

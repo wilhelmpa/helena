@@ -204,7 +204,22 @@
     "previewCustomField": "Custom field",
     "previewAllWorkItems": "All tasks",
     "previewUpdated": "Updated {date}",
-    "previewOtherValues": "({count} more)"
+    "previewOtherValues": "({count} more)",
+    "format": {
+      "heading1": "Heading 1",
+      "heading2": "Heading 2",
+      "bold": "Bold",
+      "italic": "Italic",
+      "strike": "Strikethrough",
+      "code": "Code",
+      "codeBlock": "Code block",
+      "link": "Link",
+      "blockquote": "Quote",
+      "bulletList": "Bulleted list",
+      "orderedList": "Numbered list"
+    },
+    "linkApply": "Set link",
+    "linkRemove": "Remove link"
   },
   "chart": {
     "download": "Save chart",
@@ -217,5 +232,50 @@
     "page": "Page {number}",
     "perPage": "per page",
     "range": "{first}-{last} of {total}"
+  },
+  "dnd": {
+    "pickedUp": "Picked up item {id}.",
+    "movedOver": "Item {id} was moved over {over}.",
+    "notOver": "Item {id} is no longer over a drop area.",
+    "droppedOver": "Item {id} was dropped on {over}.",
+    "dropped": "Item {id} was dropped.",
+    "cancelled": "Dragging was cancelled. Item {id} was put back.",
+    "instructions": "To pick up an item, press Space or Enter. While dragging, move it with the arrow keys. Press Space or Enter again to drop it in its new place, or Escape to cancel."
+  },
+  "uploadLimits": {
+    "maxSize": "Up to {mb} MB per file.",
+    "accepted": "Accepted: {types}.",
+    "tooLarge": "“{name}” is larger than the {mb} MB limit",
+    "notAccepted": "“{name}” is not an accepted file type",
+    "types": {
+      "images": "images",
+      "video": "video",
+      "audio": "audio",
+      "pdf": "PDF",
+      "text": "text",
+      "csv": "CSV",
+      "markdown": "Markdown",
+      "documents": "documents",
+      "spreadsheets": "spreadsheets",
+      "presentations": "presentations"
+    }
+  },
+  "apiErrors": {
+    "url_invalid": "Enter a valid web address (https://…).",
+    "url_https_required": "The address must start with https://.",
+    "url_credentials": "The address must not contain a user name or password.",
+    "url_private": "The address points to a private or local network, which is not allowed here.",
+    "url_unresolvable": "The server name in this address could not be found.",
+    "number_invalid": "Enter a number."
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "This address does not lead anywhere, perhaps an old or mistyped link.",
+    "home": "Go to Start"
+  },
+  "systemActors": {
+    "workflow": "Workflow",
+    "agentTeam": "Agent team",
+    "autoArchive": "Auto-archive"
   }
 }

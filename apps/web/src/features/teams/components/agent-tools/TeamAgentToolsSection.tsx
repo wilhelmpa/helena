@@ -27,11 +27,7 @@ export default function TeamAgentToolsSection({ teamId }: { teamId: number }) {
   const [creating, setCreating] = useState(false);
 
   return (
-    <SectionPageView
-      title={t('sections.agentTools.title')}
-      description={t('sections.agentTools.description')}
-      wide
-    >
+    <SectionPageView title={t('sections.agentTools.title')} wide>
       {!permissions ? (
         <ListSkeleton rows={3} rowClassName="h-12" />
       ) : !permissions.read ? (

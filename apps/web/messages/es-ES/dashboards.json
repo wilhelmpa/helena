@@ -85,6 +85,11 @@
       "type": "Por tipo",
       "assignee": "Por asignado",
       "delegate": "Por delegado"
+    },
+    "none": {
+      "type": "Sin tipo",
+      "assignee": "Sin asignar",
+      "delegate": "Sin delegar"
     }
   },
   "recentIssues": {
@@ -123,7 +128,8 @@
       "label_remove": "ha quitado una etiqueta de",
       "field": "ha actualizado un campo de",
       "other": "ha actualizado"
-    }
+    },
+    "automation": "Helena"
   },
   "pulse": {
     "caption": {
@@ -168,7 +174,9 @@
       "field": "se ha ejecutado por un campo de",
       "manual": "se ha ejecutado manualmente",
       "schedule": "se ha ejecutado por programado",
-      "approval": "se ha ejecutado tras una decisión de aprobación"
+      "approval": "se ha ejecutado tras una decisión de aprobación",
+      "workspace": "ejecutó una tarea del espacio de trabajo",
+      "digest": "escribió un resumen"
     }
   },
   "agentHealth": {
@@ -197,5 +205,7 @@
     "inProgress": "En curso",
     "backlog": "Pila de trabajo",
     "unassigned": "Sin asignar"
-  }
+  },
+  "deleteDashboard": "Eliminar panel",
+  "deleteDashboardConfirm": "¿Eliminar «{name}» con sus widgets? Las tareas no se tocan."
 }

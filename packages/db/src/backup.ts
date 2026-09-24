@@ -58,12 +58,19 @@ function stamp(date: Date): string {
 
 // Runs pg_dump into BACKUP_DIR. Throws with pg_dump's own stderr when it fails, and
 // when it writes an empty file — a truncated dump restores nothing.
-export async function writeBackup(migrations: string[]): Promise<BackupResult> {
+// `dir` writes somewhere else than BACKUP_DIR (the update center's dump before an update),
+// `label` is added to the file name (`…-pre-update.dump`), which the pruning still matches.
+export async function writeBackup(
+  migrations: string[],
+  options: { dir?: string; label?: string } = {},
+): Promise<BackupResult> {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error('DATABASE_URL is not set — cannot take a backup.');
-  await mkdir(BACKUP_DIR, { recursive: true });
+  const dir = options.dir ?? BACKUP_DIR;
+  await mkdir(dir, { recursive: true });
   const createdAt = new Date();
-  const path = join(BACKUP_DIR, `itsaplan-${stamp(createdAt)}.dump`);
+  const label = options.label && /^[a-z0-9-]{1,40}$/.test(options.label) ? `-${options.label}` : '';
+  const path = join(dir, `itsaplan-${stamp(createdAt)}${label}.dump`);
 
   // The password goes through PGPASSWORD rather than argv, where the process list would
   // show it for as long as the dump runs; a URI without one sets no variable, so an

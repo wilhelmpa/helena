@@ -27,7 +27,7 @@ export default function MembersPage() {
   const canReadInvites = can('members_invite', 'read') || isAdmin;
 
   return (
-    <SectionPageView title={t('title')} description={t('description')} wide>
+    <SectionPageView title={t('title')} wide>
       <InvitesManager projectKey={project.project.key} />
       <MembersList
         projectKey={project.project.key}

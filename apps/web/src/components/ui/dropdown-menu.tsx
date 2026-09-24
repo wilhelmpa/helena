@@ -35,11 +35,22 @@ const MENU_SURFACE =
 const MENU_ITEM =
   "focus:bg-accent focus:text-accent-foreground data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex min-h-8 cursor-default items-center gap-2 rounded-md px-2 py-1.5 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4";
 
+const OPEN_DIALOGS = '[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]';
+
 function DropdownMenuContent({
   className,
   sideOffset = 4,
+  onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
+  // The dialogs open when the menu opened. An entry that opens a dialog (Umbenennen,
+  // Löschen …) leaves one more when the menu closes; the menu then does not hand the
+  // focus back to its trigger behind the dialog: the dialog would take it back and
+  // select all of its field, or lose the field it had focused.
+  const dialogsAtOpen = React.useRef(0);
+  React.useEffect(() => {
+    dialogsAtOpen.current = document.querySelectorAll(OPEN_DIALOGS).length;
+  }, []);
   return (
     <DropdownMenuPrimitive.Portal>
       <DropdownMenuPrimitive.Content
@@ -50,6 +61,13 @@ function DropdownMenuContent({
           'max-h-(--radix-dropdown-menu-content-available-height) overflow-x-hidden overflow-y-auto',
           className,
         )}
+        onCloseAutoFocus={(event) => {
+          onCloseAutoFocus?.(event);
+          if (event.defaultPrevented) return;
+          if (document.querySelectorAll(OPEN_DIALOGS).length > dialogsAtOpen.current) {
+            event.preventDefault();
+          }
+        }}
         {...props}
       />
     </DropdownMenuPrimitive.Portal>

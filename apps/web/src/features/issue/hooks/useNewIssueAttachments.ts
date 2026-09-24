@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStorageSettingsQuery } from '@/services/storage.service';
-import { attachmentError } from '@/utils/uploadLimits';
+import { useUploadLimitText } from '@/hooks/useUploadLimitText';
 import { useUploadAttachment } from '../services/attachments.service';
 import { type Embeddable } from '@/components/common/editor/attachmentEmbed';
 
@@ -13,6 +13,7 @@ export type PendingAttachment = Embeddable & { id: number; file: File };
 // returns the stored URL to rewrite each embed to.
 export function useNewIssueAttachments() {
   const limits = useStorageSettingsQuery().data;
+  const uploadLimitText = useUploadLimitText();
   const uploadAttachment = useUploadAttachment();
   const [pending, setPending] = useState<PendingAttachment[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +32,7 @@ export function useNewIssueAttachments() {
   function add(file: File): PendingAttachment | null {
     // The api enforces the same limits; checking here avoids holding a file
     // that is going to be refused on submit.
-    const reason = attachmentError(file, limits);
+    const reason = uploadLimitText.error(file, limits);
     if (reason) {
       setError(reason);
       return null;
@@ -64,7 +65,7 @@ export function useNewIssueAttachments() {
   function replace(id: number, file: File): { from: string; to: string } | null {
     const previous = pending.find((p) => p.id === id);
     if (!previous) return null;
-    const reason = attachmentError(file, limits);
+    const reason = uploadLimitText.error(file, limits);
     if (reason) {
       setError(reason);
       return null;

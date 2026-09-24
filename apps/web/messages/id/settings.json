@@ -479,7 +479,8 @@
       "success": "Berhasil",
       "failed": "Gagal",
       "pending": "Tertunda"
-    }
+    },
+    "invalidUrl": "Masukkan alamat web lengkap, mis. https://example.com/webhook."
   },
   "git": {
     "enable": "Aktifkan integrasi repositori",

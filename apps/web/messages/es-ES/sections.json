@@ -75,6 +75,10 @@
       "label": "Precios de modelos",
       "description": "Euros por millón de tokens por modelo, la base de cada estimación de coste."
     },
+    "updates": {
+      "label": "Actualizaciones",
+      "description": "Lo que usa Helena, qué versiones nuevas hay, qué cambian y la actualización."
+    },
     "local-ai": {
       "label": "IA local",
       "description": "Los servidores de modelos de esta máquina (GPU, NPU), qué trabajo se ejecuta ahí primero y las evaluaciones detrás."

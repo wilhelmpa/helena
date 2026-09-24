@@ -158,5 +158,6 @@
     },
     "loadFailed": "Não foi possível carregar as tarefas.",
     "loadFailedHint": "O servidor não respondeu. Tente de novo em instantes."
-  }
+  },
+  "viewNotFound": "Esta visualização não existe mais. Mostrando todas as tarefas."
 }

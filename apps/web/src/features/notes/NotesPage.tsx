@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useQueryClient } from '@tanstack/react-query';
@@ -23,6 +23,7 @@ import type { NewBoardVisibility } from './utils/visibility';
 import NoteBoardBar from './components/NoteBoardBar';
 import NoteCanvas from './components/NoteCanvas';
 import NotesEmptyState from './components/NotesEmptyState';
+import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
 
 // The maximum number of tabs shown (matches the MRU cap).
 const MAX_TABS = 5;
@@ -39,6 +40,11 @@ export default function NotesPage() {
   const qc = useQueryClient();
   const projectKey = params.projectKey;
   const t = useTranslations('notes');
+  const tCommon = useTranslations('common');
+  // The board whose deletion waits for a yes, and the boards deleted here: they leave
+  // the tabs at once, before the lists they may still sit in are fetched again.
+  const [deleting, setDeleting] = useState<MruEntry | null>(null);
+  const [deletedIds, setDeletedIds] = useState<number[]>([]);
   const { can } = usePermissions();
 
   const { entries: mru, record, remove: removeMru } = useNoteBoardMru(projectKey);
@@ -50,8 +56,8 @@ export default function NotesPage() {
   const deleteBoard = useDeleteNoteBoard(projectKey);
 
   const tabs = useMemo<MruEntry[]>(() => {
-    const result = [...mru];
-    const seen = new Set(mru.map((e) => e.id));
+    const result = mru.filter((e) => !deletedIds.includes(e.id));
+    const seen = new Set([...mru.map((e) => e.id), ...deletedIds]);
     for (const b of seedQuery.data ?? []) {
       if (result.length >= MAX_TABS) break;
       if (seen.has(b.id)) continue;
@@ -59,7 +65,7 @@ export default function NotesPage() {
       seen.add(b.id);
     }
     return result;
-  }, [mru, seedQuery.data]);
+  }, [mru, seedQuery.data, deletedIds]);
 
   const routeId = params.boardId ? Number(params.boardId) : null;
   const activeBoardId = routeId ?? tabs[0]?.id ?? null;
@@ -116,13 +122,13 @@ export default function NotesPage() {
     router.push(notePath(projectKey, board.id));
   }
 
-  function remove(boardId: number) {
-    deleteBoard.mutate(boardId, {
-      onSuccess: () => {
-        removeMru(boardId);
-        if (boardId === activeBoardId) router.push(notesPath(projectKey));
-      },
-    });
+  // Deleting a board takes its notes with it, so it asks first (like every delete).
+  async function remove(boardId: number) {
+    const leaving = boardId === activeBoardId;
+    await deleteBoard.mutateAsync(boardId);
+    setDeletedIds((ids) => [...ids, boardId]);
+    removeMru(boardId);
+    if (leaving) router.push(notesPath(projectKey));
   }
 
   function renderContent() {
@@ -149,10 +155,24 @@ export default function NotesPage() {
         onSelect={(id) => router.push(notePath(projectKey, id))}
         onCreate={create}
         onRename={(id, name) => renameBoard.mutate({ boardId: id, name })}
-        onDelete={remove}
+        onDelete={(id) => setDeleting(tabs.find((tab) => tab.id === id) ?? null)}
       />
 
       {renderContent()}
+
+      {deleting && (
+        <ConfirmDialog
+          title={t('deleteBoard')}
+          confirmLabel={tCommon('delete')}
+          onConfirm={async () => {
+            await remove(deleting.id);
+            setDeleting(null);
+          }}
+          onClose={() => setDeleting(null)}
+        >
+          {t('deleteBoardConfirm', { name: deleting.name })}
+        </ConfirmDialog>
+      )}
     </div>
   );
 }

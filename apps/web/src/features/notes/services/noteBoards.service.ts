@@ -12,6 +12,7 @@ import {
   deleteNoteBoard,
 } from '@/lib/api/endpoints/noteBoards';
 import { qk } from '@/services/queryKeys';
+import { forgetWhenUnused } from '@/services/forgetQueries';
 
 // Invalidate every switcher/search list (but not open boards' canvases): renaming,
 // creating, deleting, or changing a board's visibility all reorder or refilter the
@@ -109,7 +110,7 @@ export function useDeleteNoteBoard(projectKey: string | null) {
     mutationFn: (boardId: number) => deleteNoteBoard(projectKey!, boardId),
     onSuccess: (_res, boardId) => {
       if (!projectKey) return;
-      qc.removeQueries({ queryKey: qk.noteBoard(projectKey, boardId) });
+      forgetWhenUnused(qc, qk.noteBoard(projectKey, boardId));
       invalidateSearch(qc, projectKey);
     },
   });

@@ -34,7 +34,8 @@
     "groupCustom": "Custom fields",
     "empty": "Empty",
     "openInNewTab": "Open in new tab",
-    "area": "Area"
+    "area": "Area",
+    "invalidUrl": "Not a valid web address (https://…)."
   },
   "menu": {
     "preview": "Preview",
@@ -120,7 +121,9 @@
     "submit": "Create issue",
     "template": "Template",
     "applyTemplate": "Apply template…",
-    "noTemplates": "No templates."
+    "noTemplates": "No templates.",
+    "created": "{identifier} created",
+    "open": "Open"
   },
   "attachments": {
     "title": "Attachments",
@@ -245,7 +248,8 @@
     "no": "No",
     "time": "Time",
     "startTime": "Start time",
-    "endTime": "End time"
+    "endTime": "End time",
+    "none": "No selection"
   },
   "editor": {
     "descriptionPlaceholder": "Add description…"

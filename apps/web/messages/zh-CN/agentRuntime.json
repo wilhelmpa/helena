@@ -44,7 +44,9 @@
       "field": "字段变更",
       "schedule": "计划任务",
       "manual": "手动任务",
-      "approval": "审批决定"
+      "approval": "审批决定",
+      "workspace": "工作区任务",
+      "digest": "摘要"
     }
   },
   "sessions": {
@@ -237,6 +239,7 @@
     "usageTitle": "用量",
     "usageDescription": "团队中各代理的用量，来自 Helena 的令牌账本，费用按模型价格表计算。",
     "team": "团队",
-    "noTeam": "暂无团队。"
+    "noTeam": "暂无团队。",
+    "openUpdates": "在“更新”中打开"
   }
 }

@@ -72,7 +72,7 @@ export function GoogleSection({ teamId, leading }: { teamId: number; leading: Re
   }));
 
   return (
-    <SectionPageView title={t('connect')} description="" wide>
+    <SectionPageView title={t('connect')} wide>
       <PageToolbar>
         {leading}
         <PageToolbarSpacer />

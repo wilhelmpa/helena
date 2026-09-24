@@ -15,7 +15,16 @@ import type { RunModelReport } from './runtime';
 export interface Run {
   id: number;
   // 'workspace': a job for the runner itself (the prompt is its JSON), not for the model.
-  trigger: 'mention' | 'delegation' | 'field' | 'schedule' | 'manual' | 'approval' | 'workspace';
+  // 'digest': a text-only run (digest.ts), the update center's summary of release notes.
+  trigger:
+    | 'mention'
+    | 'delegation'
+    | 'field'
+    | 'schedule'
+    | 'manual'
+    | 'approval'
+    | 'workspace'
+    | 'digest';
   prompt: string;
   systemPrompt: string;
   attempts: number;

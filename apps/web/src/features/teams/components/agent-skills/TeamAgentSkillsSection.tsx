@@ -19,11 +19,7 @@ export default function TeamAgentSkillsSection({ teamId }: { teamId: number }) {
   const [creating, setCreating] = useState(false);
 
   return (
-    <SectionPageView
-      title={t('sections.agentSkills.title')}
-      description={t('sections.agentSkills.description')}
-      wide
-    >
+    <SectionPageView title={t('sections.agentSkills.title')} wide>
       <PageToolbar>
         <PageToolbarSpacer />
         <PageActions

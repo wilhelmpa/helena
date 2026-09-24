@@ -27,7 +27,7 @@ export default function NotificationPreferencesPage() {
 function Chrome({ actions, children }: { actions?: ReactNode; children: ReactNode }) {
   const t = useTranslations('settings.notifications');
   return (
-    <SectionPageView title={t('title')} description={t('description')}>
+    <SectionPageView title={t('title')}>
       {actions}
       {children}
     </SectionPageView>

@@ -140,7 +140,10 @@
     "typeSet": "установил(а) тип {type}",
     "typeRemoved": "убрал(а) тип",
     "linked": "привязал(а) к {name}",
-    "unlinked": "отвязал(а) от инициативы"
+    "unlinked": "отвязал(а) от инициативы",
+    "linkedIssue": "привязал(а) <issue>задачу</issue> к {name}",
+    "unlinkedIssue": "отвязал(а) <issue>задачу</issue> от инициативы",
+    "createdIssueNamed": "создал(а) <issue>задачу</issue>"
   },
   "attachments": {
     "title": "Вложения",
@@ -154,5 +157,7 @@
     "download": "Скачать",
     "downloadFile": "Скачать {name}",
     "deleteFile": "Удалить {name}"
-  }
+  },
+  "deleteTitle": "Удалить инициативу",
+  "deleteConfirm": "Удалить «{name}»? Задачи останутся в проекте, но без этой инициативы."
 }

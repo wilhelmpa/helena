@@ -11,3 +11,4 @@ export * from './autopilot';
 export * from './knowledge';
 export * from './model-availability';
 export * from './local-ai';
+export * from './updates';

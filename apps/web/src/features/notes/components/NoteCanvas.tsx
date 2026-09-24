@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   ReactFlow,
   Background,
@@ -15,7 +16,7 @@ import { useTheme } from 'next-themes';
 import type { NoteBoard } from '@/lib/api/endpoints/noteBoards';
 import { cn } from '@/lib/utils';
 import { useSetNoteBoardVisibility } from '../services/noteBoards.service';
-import StickerNode, { type StickerNodeType } from './StickerNode';
+import StickerNode, { NewStickerContext, type StickerNodeType } from './StickerNode';
 import NoteCanvasTitle from './NoteCanvasTitle';
 import NoteCanvasControls from './NoteCanvasControls';
 import { toFlowNodes, toFlowEdges, newSticker } from '../utils/noteCanvas';
@@ -38,6 +39,27 @@ export default function NoteCanvas({
   );
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(toFlowEdges(board.canvas));
   const [fullscreen, setFullscreen] = useState(false);
+  // The note just added: its title field takes the focus, so typing starts there.
+  const [addedId, setAddedId] = useState<string | null>(null);
+  const tA11y = useTranslations('notes.canvasA11y');
+  // React Flow's own screen reader labels, in the reader's language.
+  const ariaLabelConfig = useMemo(
+    () => ({
+      'node.a11yDescription.default': tA11y('node'),
+      'node.a11yDescription.keyboardDisabled': tA11y('nodeKeyboardDisabled'),
+      'node.a11yDescription.ariaLiveMessage': ({ x, y }: { x: number; y: number }) =>
+        tA11y('nodeMoved', { x: Math.round(x), y: Math.round(y) }),
+      'edge.a11yDescription.default': tA11y('edge'),
+      'controls.ariaLabel': tA11y('controls'),
+      'controls.zoomIn.ariaLabel': tA11y('zoomIn'),
+      'controls.zoomOut.ariaLabel': tA11y('zoomOut'),
+      'controls.fitView.ariaLabel': tA11y('fitView'),
+      'controls.interactive.ariaLabel': tA11y('interactive'),
+      'minimap.ariaLabel': tA11y('minimap'),
+      'handle.ariaLabel': tA11y('handle'),
+    }),
+    [tA11y],
+  );
 
   useEffect(() => {
     if (!fullscreen) return;
@@ -69,7 +91,9 @@ export default function NoteCanvas({
 
   const addAt = useCallback(
     (x: number, y: number) => {
-      setNodes((nds) => [...nds, newSticker(screenToFlowPosition({ x, y }))]);
+      const sticker = newSticker(screenToFlowPosition({ x, y }));
+      setAddedId(sticker.id);
+      setNodes((nds) => [...nds, sticker]);
     },
     [screenToFlowPosition, setNodes],
   );
@@ -109,28 +133,31 @@ export default function NoteCanvas({
         onToggleFullscreen={() => setFullscreen((v) => !v)}
       />
 
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        nodesDraggable={canEdit}
-        nodesConnectable={canEdit}
-        // 'Backspace' is React Flow's default; null disables deleting by key.
-        deleteKeyCode={canEdit ? 'Backspace' : null}
-        fitView
-        // Cap the fit zoom at 1:1 so a board with a single small note is not
-        // blown up to fill the viewport.
-        fitViewOptions={{ maxZoom: 1, padding: 0.3 }}
-        colorMode={resolvedTheme === 'light' ? 'light' : 'dark'}
-        proOptions={{ hideAttribution: true }}
-        className="bg-background"
-      >
-        <Background />
-        <Controls />
-      </ReactFlow>
+      <NewStickerContext.Provider value={addedId}>
+        <ReactFlow
+          ariaLabelConfig={ariaLabelConfig}
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          nodesDraggable={canEdit}
+          nodesConnectable={canEdit}
+          // 'Backspace' is React Flow's default; null disables deleting by key.
+          deleteKeyCode={canEdit ? 'Backspace' : null}
+          fitView
+          // Cap the fit zoom at 1:1 so a board with a single small note is not
+          // blown up to fill the viewport.
+          fitViewOptions={{ maxZoom: 1, padding: 0.3 }}
+          colorMode={resolvedTheme === 'light' ? 'light' : 'dark'}
+          proOptions={{ hideAttribution: true }}
+          className="bg-background"
+        >
+          <Background />
+          <Controls />
+        </ReactFlow>
+      </NewStickerContext.Provider>
     </div>
   );
 }

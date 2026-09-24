@@ -85,13 +85,13 @@ export default function IssueCustomFieldPill({
               <CommandGroup>
                 {def.fieldType === 'select' && (
                   <CommandItem
-                    value="(none)"
+                    value={t('none')}
                     onSelect={() => {
                       onChange({ optionIds: [] });
                       setOpen(false);
                     }}
                   >
-                    <span className="flex-1">(none)</span>
+                    <span className="flex-1">{t('none')}</span>
                     {selected.length === 0 && <Check className="ml-auto" />}
                   </CommandItem>
                 )}

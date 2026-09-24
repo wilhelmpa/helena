@@ -16,7 +16,8 @@ export const SECTION_COLUMN_CLASS = 'w-full max-w-[67.5rem]';
 export const PAGE_GUTTER_CLASS = 'px-4 py-4';
 
 // The chrome for a section page rendered inside the app shell: the scroll
-// container, the content column, and a header (title and description).
+// container, the content column, and a header (the title; no intro line under it,
+// docs/volition/ui-standard.md).
 // `wide` gives a page whose content is a list, table or grid the whole shell (16px
 // gutter, no centred column), like the dashboard; the default column is for forms and
 // stays left-aligned, so the left edge is the same everywhere;
@@ -25,24 +26,21 @@ export const PAGE_GUTTER_CLASS = 'px-4 py-4';
 // marked `flex-1` (an empty state) fills the space left under the header.
 export default function SectionPageView({
   title,
-  description,
   actions,
   wide = false,
   widthClassName,
   children,
 }: {
   title: string;
-  description: ReactNode;
   actions?: ReactNode;
   wide?: boolean;
   widthClassName?: string;
   children: ReactNode;
 }) {
   const width = widthClassName ?? (wide ? 'w-full' : SECTION_COLUMN_CLASS);
-  // In the single-row header the description is not shown (see WorkspacePageHeader).
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <WorkspacePageHeader title={title} description={description} actions={actions} />
+      <WorkspacePageHeader title={title} actions={actions} />
       <div className="@container/page min-h-0 flex-1 overflow-y-auto">
         <div className={cn('flex min-h-full w-full flex-col', PAGE_GUTTER_CLASS, width)}>
           {children}

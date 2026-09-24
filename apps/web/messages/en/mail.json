@@ -180,7 +180,8 @@
     "port": "Port",
     "tls": "TLS from the start (off: STARTTLS)",
     "username": "User name",
-    "team": "Team"
+    "team": "Team",
+    "googleConnect": "Connect a Google account"
   },
   "rules": {
     "title": "Filing rules",

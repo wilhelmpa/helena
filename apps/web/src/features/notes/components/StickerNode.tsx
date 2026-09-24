@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { createContext, useContext, useState } from 'react';
 import { type Editor } from '@tiptap/react';
 import { GripHorizontal } from 'lucide-react';
 import {
@@ -22,6 +22,9 @@ import StickerToolbar from './StickerToolbar';
 
 export type StickerNodeType = Node<NoteSticker, 'sticker'>;
 
+// The id of the note the canvas just added; that note focuses its title field.
+export const NewStickerContext = createContext<string | null>(null);
+
 // One sticky note on the canvas. Edits are written straight back into the React
 // Flow node; the canvas persists the whole board. Without note_boards edit the
 // card is read-only.
@@ -33,6 +36,7 @@ export default function StickerNode({ id, data, selected }: NodeProps<StickerNod
   const canEdit = can('note_boards', 'edit');
   const [editor, setEditor] = useState<Editor | null>(null);
   const t = useTranslations('notes');
+  const justAdded = useContext(NewStickerContext) === id;
 
   const update = (patch: Partial<NoteSticker>) => {
     setNodes((nodes) =>
@@ -64,6 +68,9 @@ export default function StickerNode({ id, data, selected }: NodeProps<StickerNod
           // to left-to-right, taking the placeholder with it.
           dir={data.title ? 'auto' : undefined}
           value={data.title}
+          // Only on the note that was just added, which mounts right then.
+          // eslint-disable-next-line jsx-a11y/no-autofocus
+          autoFocus={justAdded && canEdit}
           onChange={(e) => update({ title: e.target.value })}
           readOnly={!canEdit}
           placeholder={t('noteTitlePlaceholder')}

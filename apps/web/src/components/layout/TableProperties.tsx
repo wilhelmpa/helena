@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { closestCenter, DndContext, type DragEndEvent } from '@dnd-kit/core';
+import { closestCenter, type DragEndEvent } from '@dnd-kit/core';
+import DndContext from '@/components/common/dnd/DndContext';
 import { arrayMove, rectSortingStrategy, SortableContext } from '@dnd-kit/sortable';
 import { useTranslations } from 'next-intl';
 import { byKey } from '@/utils/messageKey';

@@ -34,7 +34,8 @@
     "groupCustom": "Campos personalizados",
     "empty": "Vazio",
     "openInNewTab": "Abrir em nova aba",
-    "area": "Área"
+    "area": "Área",
+    "invalidUrl": "Endereço web inválido (https://…)."
   },
   "menu": {
     "preview": "Visualizar",
@@ -120,7 +121,9 @@
     "submit": "Criar issue",
     "template": "Modelo",
     "applyTemplate": "Aplicar modelo…",
-    "noTemplates": "Sem modelos."
+    "noTemplates": "Sem modelos.",
+    "created": "{identifier} criada",
+    "open": "Abrir"
   },
   "attachments": {
     "title": "Anexos",
@@ -245,7 +248,8 @@
     "no": "Não",
     "time": "Hora",
     "startTime": "Hora de início",
-    "endTime": "Hora de término"
+    "endTime": "Hora de término",
+    "none": "Nenhuma seleção"
   },
   "editor": {
     "descriptionPlaceholder": "Adicionar descrição…"

@@ -48,7 +48,7 @@ export default function HomeBrowserPage() {
 
   return (
     <Shell globalHome globalTitle={tNav('browser')} autoOpenGlobalChat={false}>
-      <SectionPageView title={t('homeTitle')} description={t('homeDescription')} wide>
+      <SectionPageView title={t('homeTitle')} wide>
         {projects.isPending || router.isPending ? (
           <ListSkeleton rows={2} rowClassName="h-48" />
         ) : tiles.length === 0 ? (

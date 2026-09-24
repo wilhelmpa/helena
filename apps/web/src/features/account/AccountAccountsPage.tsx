@@ -18,7 +18,7 @@ export default function AccountAccountsPage() {
   const telegramAvailable = !telegram.data || !!telegram.data.botUsername;
 
   return (
-    <SectionPageView title={t('title')} description={t('description')}>
+    <SectionPageView title={t('title')}>
       <SettingsCard className="divide-y">
         {googleAvailable && <AccountGoogleConnection />}
         <AccountTelegramConnection />

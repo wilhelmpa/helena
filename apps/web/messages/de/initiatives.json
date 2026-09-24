@@ -140,7 +140,10 @@
     "typeSet": "hat den Typ auf {type} gesetzt",
     "typeRemoved": "hat den Typ entfernt",
     "linked": "hat mit {name} verknüpft",
-    "unlinked": "hat die Verknüpfung zur Initiative entfernt"
+    "unlinked": "hat die Verknüpfung zur Initiative entfernt",
+    "linkedIssue": "hat <issue>die Aufgabe</issue> mit {name} verknüpft",
+    "unlinkedIssue": "hat <issue>die Aufgabe</issue> von der Initiative gelöst",
+    "createdIssueNamed": "hat <issue>die Aufgabe</issue> erstellt"
   },
   "attachments": {
     "title": "Anhänge",
@@ -154,5 +157,7 @@
     "download": "Herunterladen",
     "downloadFile": "{name} herunterladen",
     "deleteFile": "{name} löschen"
-  }
+  },
+  "deleteTitle": "Initiative löschen",
+  "deleteConfirm": "„{name}“ löschen? Die Aufgaben bleiben im Projekt, nur ohne diese Initiative."
 }

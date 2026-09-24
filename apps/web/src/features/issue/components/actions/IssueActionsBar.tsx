@@ -56,6 +56,7 @@ export default function IssueActionsBar({
   onDeleted?: () => void;
 }) {
   const t = useTranslations('issue.actionsBar');
+  const tCommands = useTranslations('issue.commands');
   const { can } = usePermissions();
   const { data: session } = useSession();
   const qc = useQueryClient();
@@ -90,6 +91,8 @@ export default function IssueActionsBar({
 
   async function copyPrompt() {
     await copyText(buildIssuePrompt(issue, project, session?.user));
+    // Confirmed like the short link and the branch name.
+    toast.success(tCommands('promptCopied'));
     setCopied(true);
     if (copiedTimer.current) clearTimeout(copiedTimer.current);
     copiedTimer.current = setTimeout(() => setCopied(false), 1500);

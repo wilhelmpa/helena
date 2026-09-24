@@ -204,7 +204,22 @@
     "previewCustomField": "Benutzerdefiniertes Feld",
     "previewAllWorkItems": "Alle Aufgaben",
     "previewUpdated": "Aktualisiert am {date}",
-    "previewOtherValues": "({count} weitere)"
+    "previewOtherValues": "({count} weitere)",
+    "format": {
+      "heading1": "Überschrift 1",
+      "heading2": "Überschrift 2",
+      "bold": "Fett",
+      "italic": "Kursiv",
+      "strike": "Durchgestrichen",
+      "code": "Code",
+      "codeBlock": "Codeblock",
+      "link": "Link",
+      "blockquote": "Zitat",
+      "bulletList": "Aufzählung",
+      "orderedList": "Nummerierte Liste"
+    },
+    "linkApply": "Link setzen",
+    "linkRemove": "Link entfernen"
   },
   "chart": {
     "download": "Diagramm speichern",
@@ -217,5 +232,50 @@
     "page": "Seite {number}",
     "perPage": "pro Seite",
     "range": "{first}-{last} von {total}"
+  },
+  "dnd": {
+    "pickedUp": "Element {id} aufgenommen.",
+    "movedOver": "Element {id} wurde über {over} bewegt.",
+    "notOver": "Element {id} ist über keinem Ablagebereich mehr.",
+    "droppedOver": "Element {id} wurde auf {over} abgelegt.",
+    "dropped": "Element {id} wurde abgelegt.",
+    "cancelled": "Ziehen abgebrochen. Element {id} ist wieder an seinem Platz.",
+    "instructions": "Leertaste oder Enter nimmt ein Element auf. Beim Ziehen bewegen es die Pfeiltasten. Leertaste oder Enter legt es am neuen Platz ab, Escape bricht ab."
+  },
+  "uploadLimits": {
+    "maxSize": "Bis zu {mb} MB pro Datei.",
+    "accepted": "Erlaubt: {types}.",
+    "tooLarge": "„{name}“ ist größer als die erlaubten {mb} MB",
+    "notAccepted": "„{name}“ hat keinen erlaubten Dateityp",
+    "types": {
+      "images": "Bilder",
+      "video": "Videos",
+      "audio": "Audio",
+      "pdf": "PDF",
+      "text": "Text",
+      "csv": "CSV",
+      "markdown": "Markdown",
+      "documents": "Dokumente",
+      "spreadsheets": "Tabellen",
+      "presentations": "Präsentationen"
+    }
+  },
+  "apiErrors": {
+    "url_invalid": "Gib eine gültige Webadresse ein (https://…).",
+    "url_https_required": "Die Adresse muss mit https:// beginnen.",
+    "url_credentials": "Die Adresse darf keinen Benutzernamen und kein Passwort enthalten.",
+    "url_private": "Die Adresse zeigt in ein privates oder lokales Netz – das ist hier nicht erlaubt.",
+    "url_unresolvable": "Der Servername in dieser Adresse wurde nicht gefunden.",
+    "number_invalid": "Gib eine Zahl ein."
+  },
+  "notFound": {
+    "title": "Seite nicht gefunden",
+    "description": "Diese Adresse führt nirgendwohin – vielleicht ein alter oder vertippter Link.",
+    "home": "Zur Startseite"
+  },
+  "systemActors": {
+    "workflow": "Workflow",
+    "agentTeam": "Agententeam",
+    "autoArchive": "Automatische Archivierung"
   }
 }

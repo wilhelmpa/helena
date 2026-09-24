@@ -85,6 +85,11 @@
       "type": "Nach Typ",
       "assignee": "Nach zuständiger Person",
       "delegate": "Nach Delegierung"
+    },
+    "none": {
+      "type": "Kein Typ",
+      "assignee": "Nicht zugewiesen",
+      "delegate": "Nicht delegiert"
     }
   },
   "recentIssues": {
@@ -123,7 +128,8 @@
       "label_remove": "entfernte ein Label von",
       "field": "aktualisierte ein Feld von",
       "other": "aktualisierte"
-    }
+    },
+    "automation": "Helena"
   },
   "pulse": {
     "caption": {
@@ -168,7 +174,9 @@
       "field": "lief nach Feldänderung in",
       "manual": "lief manuell",
       "schedule": "lief nach Zeitplan",
-      "approval": "lief nach einer Freigabe-Entscheidung"
+      "approval": "lief nach einer Freigabe-Entscheidung",
+      "workspace": "lief als Arbeitsbereich-Auftrag",
+      "digest": "schrieb eine Zusammenfassung"
     }
   },
   "agentHealth": {
@@ -197,5 +205,7 @@
     "inProgress": "In Bearbeitung",
     "backlog": "Backlog",
     "unassigned": "Nicht zugewiesen"
-  }
+  },
+  "deleteDashboard": "Dashboard löschen",
+  "deleteDashboardConfirm": "„{name}“ mit seinen Widgets löschen? Die Aufgaben bleiben unberührt."
 }

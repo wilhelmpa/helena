@@ -17,7 +17,7 @@ export default function SettingsGitPage() {
   const { project } = useShell();
   if (!project) return null;
   return (
-    <SectionPageView title={sectionText.label} description={sectionText.description}>
+    <SectionPageView title={sectionText.label}>
       <SettingsToolbar />
       <SettingsResourceProvider resource={section.resource}>
         <RequirePermission resource={section.resource} action="read">

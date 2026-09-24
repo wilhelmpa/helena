@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { isHttpUrl } from '@/utils/url';
 
 export interface WebhookFormValue {
   url: string;
@@ -39,6 +40,9 @@ export function SettingsWebhookDialog({
   const [events, setEvents] = useState<Set<WebhookEventType>>(new Set(initial?.events ?? []));
   const [isActive, setIsActive] = useState(initial?.isActive ?? true);
 
+  // Shown once a submit found the URL malformed, and cleared by the next edit.
+  const [urlInvalid, setUrlInvalid] = useState(false);
+
   const valid = url.trim().length > 0 && events.size > 0;
 
   function toggleEvent(event: WebhookEventType, on: boolean) {
@@ -52,7 +56,13 @@ export function SettingsWebhookDialog({
 
   async function submit() {
     if (!valid) return;
-    await onSave({ url: url.trim(), events: [...events], isActive });
+    if (!isHttpUrl(url.trim())) {
+      setUrlInvalid(true);
+      return;
+    }
+    // A refused save (the server's URL check) is already shown as a toast by the
+    // mutation; the dialog stays open with the entries for a correction.
+    await onSave({ url: url.trim(), events: [...events], isActive }).catch(() => undefined);
   }
 
   const actionLabel = initial ? t('save') : t('create');
@@ -80,9 +90,19 @@ export function SettingsWebhookDialog({
             autoFocus
             required
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            aria-invalid={urlInvalid || undefined}
+            aria-describedby={urlInvalid ? 'webhook-url-error' : undefined}
+            onChange={(e) => {
+              setUrl(e.target.value);
+              setUrlInvalid(false);
+            }}
             placeholder="https://example.com/webhook"
           />
+          {urlInvalid && (
+            <p id="webhook-url-error" className="text-xs text-destructive">
+              {t('invalidUrl')}
+            </p>
+          )}
         </div>
 
         <div className="space-y-1.5">

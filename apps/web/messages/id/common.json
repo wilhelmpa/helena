@@ -204,7 +204,22 @@
     "previewCustomField": "Bidang kustom",
     "previewAllWorkItems": "Semua item pekerjaan",
     "previewUpdated": "Diperbarui {date}",
-    "previewOtherValues": "({count} lainnya)"
+    "previewOtherValues": "({count} lainnya)",
+    "format": {
+      "heading1": "Judul 1",
+      "heading2": "Judul 2",
+      "bold": "Tebal",
+      "italic": "Miring",
+      "strike": "Coret",
+      "code": "Kode",
+      "codeBlock": "Blok kode",
+      "link": "Tautan",
+      "blockquote": "Kutipan",
+      "bulletList": "Daftar berpoin",
+      "orderedList": "Daftar bernomor"
+    },
+    "linkApply": "Pasang tautan",
+    "linkRemove": "Hapus tautan"
   },
   "chart": {
     "download": "Simpan grafik",
@@ -217,5 +232,50 @@
     "page": "Halaman {number}",
     "perPage": "per halaman",
     "range": "{first}-{last} dari {total}"
+  },
+  "dnd": {
+    "pickedUp": "Item {id} diambil.",
+    "movedOver": "Item {id} dipindahkan ke atas {over}.",
+    "notOver": "Item {id} tidak lagi berada di atas area lepas.",
+    "droppedOver": "Item {id} dilepas di {over}.",
+    "dropped": "Item {id} dilepas.",
+    "cancelled": "Seret dibatalkan. Item {id} dikembalikan.",
+    "instructions": "Untuk mengambil item, tekan Spasi atau Enter. Saat menyeret, pindahkan dengan tombol panah. Tekan Spasi atau Enter lagi untuk melepasnya, atau Escape untuk membatalkan."
+  },
+  "uploadLimits": {
+    "maxSize": "Hingga {mb} MB per file.",
+    "accepted": "Diterima: {types}.",
+    "tooLarge": "“{name}” melebihi batas {mb} MB",
+    "notAccepted": "“{name}” bukan jenis file yang diterima",
+    "types": {
+      "images": "gambar",
+      "video": "video",
+      "audio": "audio",
+      "pdf": "PDF",
+      "text": "teks",
+      "csv": "CSV",
+      "markdown": "Markdown",
+      "documents": "dokumen",
+      "spreadsheets": "spreadsheet",
+      "presentations": "presentasi"
+    }
+  },
+  "apiErrors": {
+    "url_invalid": "Masukkan alamat web yang valid (https://…).",
+    "url_https_required": "Alamat harus diawali https://.",
+    "url_credentials": "Alamat tidak boleh berisi nama pengguna atau kata sandi.",
+    "url_private": "Alamat mengarah ke jaringan privat atau lokal, yang tidak diizinkan di sini.",
+    "url_unresolvable": "Nama server pada alamat ini tidak ditemukan.",
+    "number_invalid": "Masukkan angka."
+  },
+  "notFound": {
+    "title": "Halaman tidak ditemukan",
+    "description": "Alamat ini tidak mengarah ke mana pun, mungkin tautan lama atau salah ketik.",
+    "home": "Ke Beranda"
+  },
+  "systemActors": {
+    "workflow": "Alur kerja",
+    "agentTeam": "Tim agen",
+    "autoArchive": "Arsip otomatis"
   }
 }

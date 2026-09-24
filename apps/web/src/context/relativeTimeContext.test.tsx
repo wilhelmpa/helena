@@ -4,7 +4,7 @@ import { act } from 'react';
 import type { Root } from 'react-dom/client';
 import { NextIntlClientProvider } from 'next-intl';
 import { JSDOM } from 'jsdom';
-import { RelativeTimeProvider, useRelativeTime } from './relativeTimeContext';
+import { clampClockSkew, RelativeTimeProvider, useRelativeTime } from './relativeTimeContext';
 
 const replacedGlobals = [
   'window',
@@ -85,5 +85,20 @@ describe('RelativeTimeProvider', () => {
       [...document.querySelectorAll('span')].map((element) => element.textContent),
       ['now', 'now'],
     );
+  });
+});
+
+describe('clampClockSkew', () => {
+  const now = new Date('2026-09-24T12:00:00.000Z');
+
+  it('reads a moment a few seconds ahead (the server clock) as now', () => {
+    assert.equal(clampClockSkew(new Date('2026-09-24T12:00:02.000Z'), now), now);
+  });
+
+  it('keeps the past and the real future as they are', () => {
+    const past = new Date('2026-09-24T11:59:58.000Z');
+    const later = new Date('2026-09-24T12:05:00.000Z');
+    assert.equal(clampClockSkew(past, now), past);
+    assert.equal(clampClockSkew(later, now), later);
   });
 });

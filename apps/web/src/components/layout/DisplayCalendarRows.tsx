@@ -13,7 +13,7 @@ import DisplaySettingsRow from '@/components/layout/DisplaySettingsRow';
 import DisplaySettingsSelect from '@/components/layout/DisplaySettingsSelect';
 
 const DATE_FIELDS: BuiltinDateField[] = ['dueDate', 'startDate'];
-const WEEK_STARTS = ['0', '1'] as const;
+const WEEK_STARTS = ['locale', '0', '1'] as const;
 
 // The Display settings rows that only apply to the Calendar layout.
 export default function DisplayCalendarRows({
@@ -45,8 +45,10 @@ export default function DisplayCalendarRows({
       </DisplaySettingsRow>
       <DisplaySettingsRow label={t('startWeekOn')}>
         <DisplaySettingsSelect
-          value={String(settings.weekStart)}
-          onChange={(v) => onChange({ weekStart: Number(v) as WeekStart })}
+          value={String(settings.firstDayOfWeek)}
+          onChange={(v) =>
+            onChange({ firstDayOfWeek: (v === 'locale' ? v : Number(v)) as WeekStart })
+          }
           options={WEEK_STARTS.map((value) => ({ value, label: weekStart(value) }))}
         />
       </DisplaySettingsRow>

@@ -1,4 +1,24 @@
 import {
+  Activity,
+  AppWindow,
+  BookOpenText,
+  BookText,
+  Bot,
+  Building2,
+  Clock3,
+  Folder,
+  Inbox,
+  KeyRound,
+  LayoutGrid,
+  ListTodo,
+  MonitorSmartphone,
+  Radio,
+  ShieldCheck,
+  UsersRound,
+  Workflow,
+  Wrench,
+} from 'lucide-react';
+import {
   accessRootPath,
   agentsPath,
   approvalsPath,
@@ -41,6 +61,28 @@ export type HomeNavigationId =
 // The sidebar group an entry is listed under while no project is selected: the work
 // across every project, the team's agents, and the settings every project shares.
 export type HomeNavigationGroup = 'work' | 'agents' | 'globalSettings';
+
+// The icon of each entry, shared by the sidebar and the command palette.
+export const HOME_NAVIGATION_ICONS = {
+  overview: LayoutGrid,
+  allWorkItems: ListTodo,
+  inbox: Inbox,
+  files: Folder,
+  approvals: ShieldCheck,
+  docs: BookOpenText,
+  agentPool: Bot,
+  organization: Building2,
+  agentActivity: Activity,
+  browser: AppWindow,
+  schedules: Clock3,
+  workflows: Workflow,
+  skills: BookText,
+  tools: Wrench,
+  mcps: Radio,
+  access: KeyRound,
+  devices: MonitorSmartphone,
+  teamSettings: UsersRound,
+} as const;
 
 export interface HomeNavigationItem {
   id: HomeNavigationId;

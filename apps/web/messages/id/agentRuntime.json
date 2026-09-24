@@ -44,7 +44,9 @@
       "field": "Perubahan bidang",
       "schedule": "Tugas terjadwal",
       "manual": "Tugas manual",
-      "approval": "Keputusan persetujuan"
+      "approval": "Keputusan persetujuan",
+      "workspace": "Tugas ruang kerja",
+      "digest": "Ringkasan"
     }
   },
   "sessions": {
@@ -237,6 +239,7 @@
     "usageTitle": "Pemakaian",
     "usageDescription": "Pemakaian agen dalam sebuah tim, dari buku token Helena, dengan biaya menurut tabel harga model.",
     "team": "Tim",
-    "noTeam": "Belum ada tim."
+    "noTeam": "Belum ada tim.",
+    "openUpdates": "Buka di Pembaruan"
   }
 }

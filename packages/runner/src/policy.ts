@@ -177,6 +177,9 @@ const CAPABILITIES = [
   'profile-drift',
   'rewrite-profile',
   'session-facts',
+  // Runs a digest run text only (digest.ts); Helena queues the update center's summaries
+  // only on a runner that says so, never on one that would run them with the agent's tools.
+  'digest-runs',
 ];
 // A revision that failed to apply is tried again after this long, not on every claim.
 const RETRY_FAILED_MS = 60_000;

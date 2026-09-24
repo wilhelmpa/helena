@@ -10,6 +10,7 @@ import type { ProfileContribution } from './runtime-policy';
 import type { BundleOffer } from './templates';
 import type { AnyAgentTool } from './tools';
 import { uiSlotKey, type UiSlot } from './ui';
+import type { UpdateSource } from './updates';
 import type { UsageLimitSource } from './usage-limits';
 import type { TriggerType, WorkflowStepType } from './workflows';
 
@@ -33,6 +34,7 @@ export interface HelenaRegistries {
   runtimeLoginSources: Registry<RuntimeLoginSource>;
   modelServers: Registry<ModelServerType>;
   localAiTaskClasses: Registry<LocalAiTaskClass>;
+  updateSources: Registry<UpdateSource>;
 }
 
 export function createRegistries(given: Partial<HelenaRegistries> = {}): HelenaRegistries {
@@ -59,5 +61,6 @@ export function createRegistries(given: Partial<HelenaRegistries> = {}): HelenaR
     modelServers: given.modelServers ?? createRegistry<ModelServerType>('model server type'),
     localAiTaskClasses:
       given.localAiTaskClasses ?? createRegistry<LocalAiTaskClass>('local AI task class'),
+    updateSources: given.updateSources ?? createRegistry<UpdateSource>('update source'),
   };
 }

@@ -23,6 +23,7 @@ import { validateBundle } from '../templates';
 import { declaredCategory, type AnyAgentTool } from '../tools';
 import { uiSlotKey, type UiSlot } from '../ui';
 import type { RuntimeLoginSource } from '../runtime-logins';
+import type { UpdateSource } from '../updates';
 import type { UsageLimitSource } from '../usage-limits';
 import type { TriggerType, WorkflowStepType } from '../workflows';
 
@@ -88,6 +89,7 @@ export class PluginHost {
   readonly runtimeLoginSources: Registry<RuntimeLoginSource>;
   readonly modelServers: Registry<ModelServerType>;
   readonly localAiTaskClasses: Registry<LocalAiTaskClass>;
+  readonly updateSources: Registry<UpdateSource>;
 
   private readonly plugins = new Map<string, { loaded: LoadedPlugin; plugin?: HelenaPlugin }>();
   private readonly contexts = new Map<string, PluginContext>();
@@ -115,6 +117,7 @@ export class PluginHost {
     this.runtimeLoginSources = registries.runtimeLoginSources;
     this.modelServers = registries.modelServers;
     this.localAiTaskClasses = registries.localAiTaskClasses;
+    this.updateSources = registries.updateSources;
     this.logger = options.logger ?? ((id) => consoleLogger(`plugin ${id}`));
     this.settingsOf = options.settings ?? (() => ({}));
   }
@@ -234,6 +237,7 @@ export class PluginHost {
       this.runtimeLoginSources,
       this.modelServers,
       this.localAiTaskClasses,
+      this.updateSources,
     ] as unknown as Registry<never>[];
   }
 
@@ -381,6 +385,7 @@ export class PluginHost {
         provides.localAiTaskClasses,
         'localAiTaskClasses',
       ),
+      updateSources: registrar(this.updateSources, provides.updateSources, 'updateSources'),
       events: {
         publish: async (init: EventInit) => {
           if (!init.type.startsWith(`${pluginId}.`)) {

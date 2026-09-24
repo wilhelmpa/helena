@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
@@ -9,7 +9,7 @@ import type { KnowledgeHit } from '@/lib/api/endpoints/everything';
 import { useIssueSearchQuery } from '@/services/issues.service';
 import { useCaptureMutation, useKnowledgeFindQuery } from '@/services/everything.service';
 import type { Command, CommandPage, CommandSection } from '@/utils/commands';
-import { substringFilter } from '@/utils/commandFilter';
+import { CAPTURE_PREFIX, substringFilter } from '@/utils/commandFilter';
 import CommandPaletteEverything, {
   SOURCE_ORDER,
 } from '@/components/layout/CommandPaletteEverything';
@@ -56,6 +56,13 @@ export default function CommandPalette({
   const [page, setPage] = useState<CommandPage | null>(null);
   const [kind, setKind] = useState<string | null>(null);
   const capture = useCaptureMutation();
+  // The highlighted item. While typing, cmdk highlights the first item it has, and the
+  // search results arrive later than the "save this" actions: Enter then saved the
+  // typed text instead of opening the hit the reader was looking at. So the palette
+  // moves the highlight to the best result once results are in, unless the reader
+  // chose an item with the keys or the pointer.
+  const [selected, setSelected] = useState('');
+  const chosen = useRef(false);
 
   // Reset the query, the filter and the open submenu whenever the palette closes, so
   // it reopens at the top level and empty.
@@ -64,6 +71,7 @@ export default function CommandPalette({
       setQuery('');
       setPage(null);
       setKind(null);
+      chosen.current = false;
     }
   }, [open]);
 
@@ -96,6 +104,24 @@ export default function CommandPalette({
   const counts = everything.data?.counts ?? {};
   const searching = query.trim().length > 0;
   const owner = session?.user.role === 'god';
+  // Results for the typed text are still on their way.
+  const pending =
+    searching && (query.trim() !== debounced.trim() || search.isFetching || everything.isFetching);
+
+  // After each render of new results: a "save this" action (or nothing) highlighted by
+  // cmdk itself gives way to the first real item, which cmdk's ranking puts on top.
+  useEffect(() => {
+    if (!open || page || chosen.current) return;
+    if (selected && !selected.startsWith(CAPTURE_PREFIX)) return;
+    const id = requestAnimationFrame(() => {
+      const first = document.querySelector<HTMLElement>(
+        '[role="dialog"] [data-slot="command-list"] [cmdk-item]:not([data-disabled="true"])',
+      );
+      const value = first?.getAttribute('data-value');
+      if (value && !value.startsWith(CAPTURE_PREFIX) && value !== selected) setSelected(value);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [open, page, selected, search.data, everything.data, pending, query, kind]);
 
   function run(command: Command) {
     if (command.submenu) {
@@ -135,17 +161,41 @@ export default function CommandPalette({
   }
 
   return (
-    <CommandDialog open={open} onOpenChange={onOpenChange} filter={substringFilter}>
+    <CommandDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      filter={substringFilter}
+      value={selected}
+      onValueChange={setSelected}
+    >
       <CommandInput
         placeholder={page ? page.placeholder : t('placeholder')}
         value={query}
-        onValueChange={setQuery}
+        onValueChange={(value) => {
+          chosen.current = false;
+          setQuery(value);
+        }}
         // Backspace on an empty input leaves the submenu, the way a nested menu
         // closes with the left arrow.
         onKeyDown={(e) => {
           if (page && e.key === 'Backspace' && query === '') {
             e.preventDefault();
             setPage(null);
+            return;
+          }
+          if (['ArrowDown', 'ArrowUp', 'Home', 'End', 'PageDown', 'PageUp'].includes(e.key)) {
+            chosen.current = true;
+            return;
+          }
+          // Enter while the results are still loading must not save the typed text
+          // just because the save action was the only item so far.
+          if (
+            e.key === 'Enter' &&
+            pending &&
+            !chosen.current &&
+            selected.startsWith(CAPTURE_PREFIX)
+          ) {
+            e.preventDefault();
           }
         }}
       />
@@ -162,7 +212,10 @@ export default function CommandPalette({
                 key={source ?? 'all'}
                 type="button"
                 aria-pressed={kind === source}
-                onClick={() => setKind(source)}
+                onClick={() => {
+                  chosen.current = false;
+                  setKind(source);
+                }}
                 className={cn(
                   'h-7 shrink-0 rounded-md px-2 text-xs text-muted-foreground hover:bg-accent hover:text-foreground',
                   kind === source && 'bg-accent text-foreground',
@@ -175,7 +228,7 @@ export default function CommandPalette({
           })}
         </div>
       )}
-      <CommandList>
+      <CommandList onPointerMove={() => (chosen.current = true)}>
         <CommandEmpty>{t('noResults')}</CommandEmpty>
         {page ? (
           <CommandGroup heading={page.heading}>

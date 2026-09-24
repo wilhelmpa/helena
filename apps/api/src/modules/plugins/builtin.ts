@@ -22,6 +22,11 @@ import { SPOOL_SOURCE_ID, spoolLimitSource } from '#modules/provider-limits/spoo
 import { LOGIN_STATUS_SOURCE_ID, loginStatusSource } from '#modules/runtime-logins/spool';
 import { AUTOPILOT_EVALUATOR_ID, autopilotPolicyEvaluator } from '#modules/autopilot/evaluator';
 import { LOCAL_AI_PLUGIN_ID, LOCAL_AI_PROVIDES, localAiPlugin } from '#modules/local-ai/plugin';
+import {
+  BUILTIN_UPDATE_SOURCES,
+  UPDATES_PLUGIN_ID,
+  updatesPlugin,
+} from '#modules/updates/sources/index';
 
 // Helena's own features as internal plugins: they register through the same host and
 // the same manifest checks as an external plugin (docs/helena-framework.md, §3a
@@ -167,6 +172,17 @@ export async function loadBuiltinPlugins(app: McpApp): Promise<void> {
   );
   // Embeddings from local AI while it is on for them.
   useEmbeddingRoute(localAiEmbeddingRoute);
+  // The update center (docs/helena-decisions/update-center.md): what Helena runs on and
+  // whether a newer version exists.
+  await host.load(
+    updatesPlugin,
+    builtinManifest(UPDATES_PLUGIN_ID, 'updates', {
+      provides: { updateSources: BUILTIN_UPDATE_SOURCES.map((source) => source.id) },
+      permissions: {
+        network: [...new Set(BUILTIN_UPDATE_SOURCES.flatMap((source) => source.hosts ?? []))],
+      },
+    }),
+  );
   // The second brain: Helena's knowledge sources and capture targets live in the host's
   // registries, beside those of plugins (@helena/knowledge).
   useKnowledgeRegistries({

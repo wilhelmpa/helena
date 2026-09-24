@@ -31,8 +31,8 @@ function applyOrder<T extends { id: number }>(rows: T[], orderedIds: number[]): 
 // The write-then-refresh mutations: the server owns the result, so the cache is
 // only invalidated. The feed is refreshed too, since these are the changes that
 // are logged to it.
-function useChecklistMutation<TVars extends { issueId: number }>(
-  run: (vars: TVars) => Promise<unknown>,
+function useChecklistMutation<TVars extends { issueId: number }, TData = unknown>(
+  run: (vars: TVars) => Promise<TData>,
 ) {
   const qc = useQueryClient();
   return useMutation({

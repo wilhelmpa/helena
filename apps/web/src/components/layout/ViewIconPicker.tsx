@@ -21,6 +21,7 @@ export default function ViewIconPicker({
         <button
           type="button"
           title={t('viewIcon')}
+          aria-label={t('viewIcon')}
           className="flex size-7 items-center justify-center rounded-md bg-secondary text-foreground hover:bg-secondary/80"
         >
           <ViewIcon name={icon} className="size-4" />
@@ -34,6 +35,9 @@ export default function ViewIconPicker({
               <button
                 key={n}
                 type="button"
+                // The icon's own name: there is no word on the button.
+                aria-label={n}
+                aria-pressed={icon === n}
                 onClick={() => {
                   onChange(icon === n ? null : n);
                   setOpen(false);

@@ -106,7 +106,7 @@ export default function ConnectionsContent({
   }
 
   return (
-    <SectionPageView title={t('title')} description={t('description')} wide>
+    <SectionPageView title={t('title')} wide>
       {canCheck || leading ? (
         <PageToolbar>
           {leading}

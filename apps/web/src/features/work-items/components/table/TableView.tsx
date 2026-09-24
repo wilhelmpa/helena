@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { DndContext } from '@dnd-kit/core';
+import DndContext from '@/components/common/dnd/DndContext';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   buildGroups,

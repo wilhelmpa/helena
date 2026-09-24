@@ -5,6 +5,16 @@ import { useFormatter, useNow } from 'next-intl';
 
 const UPDATE_INTERVAL_MS = 60_000;
 
+// The server's clock may run a little ahead of this device's, so something created
+// just now can carry a time a few seconds in the future ("in 1 Sekunde"). Anything
+// less than a minute ahead reads as now.
+const CLOCK_SKEW_MS = 60_000;
+
+export function clampClockSkew(value: Date, now: Date): Date {
+  const ahead = value.getTime() - now.getTime();
+  return ahead > 0 && ahead < CLOCK_SKEW_MS ? now : value;
+}
+
 interface RelativeTimeClock {
   scheduledNow: Date;
   live: boolean;
@@ -39,6 +49,7 @@ export function useRelativeTime(): (value: Date | string) => string {
     // A feed update can render between minute ticks. Read the wall clock during
     // that render so a newly-created event is never compared with the older tick.
     const referenceNow = clock.live ? new Date() : clock.scheduledNow;
-    return format.relativeTime(typeof value === 'string' ? new Date(value) : value, referenceNow);
+    const date = typeof value === 'string' ? new Date(value) : value;
+    return format.relativeTime(clampClockSkew(date, referenceNow), referenceNow);
   };
 }

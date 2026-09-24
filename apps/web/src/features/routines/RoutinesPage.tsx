@@ -28,7 +28,7 @@ export default function RoutinesPage() {
   if (!project) return null;
   const canCreate = agents.length > 0 && can(section.resource, 'create');
   return (
-    <SectionPageView title={sectionText.label} description={sectionText.description} wide>
+    <SectionPageView title={sectionText.label} wide>
       {canCreate ? (
         <PageToolbar>
           <PageToolbarSpacer />

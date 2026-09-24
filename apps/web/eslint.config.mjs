@@ -40,6 +40,26 @@ export default [
       ],
     },
   },
+  // dnd-kit's own DndContext announces drags to screen readers in English. The wrapper
+  // speaks the interface's language.
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/components/common/dnd/DndContext.tsx'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@dnd-kit/core',
+              importNames: ['DndContext'],
+              message: 'Use DndContext from @/components/common/dnd/DndContext.',
+            },
+          ],
+        },
+      ],
+    },
+  },
   // Every rule below is an error. What the code base already had when a rule arrived is
   // listed in eslint-suppressions.json (ESLint's bulk suppressions): those places pass,
   // anything new fails. Fixing one fails too until the list is pruned

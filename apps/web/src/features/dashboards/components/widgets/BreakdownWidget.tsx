@@ -4,6 +4,7 @@ import type { BreakdownBy, WidgetConfig } from '@/utils/dashboardWidgets';
 import { CHART_PALETTE } from '@/utils/chartSpec';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { usePriorityLabel } from '@/hooks/usePriorityLabel';
 import { useBreakdownQuery } from '../../services/analytics.service';
 
 // The dimensions the counts can be grouped by, in picker order. Their labels are
@@ -26,8 +27,18 @@ export default function BreakdownWidget({
   // An empty status bucket is still a board column, so keep it; other dimensions drop zeros.
   const items = (data ?? []).filter((i) => by === 'status' || i.count > 0);
   const total = items.reduce((sum, i) => sum + i.count, 0);
+  const priorityLabel = usePriorityLabel();
+  // The API names the buckets in English; the ones this app can name itself (the
+  // priorities, the "none" buckets) are worded in the reader's language. Status, type
+  // and people keep the names they were given.
+  const label = (item: { key: string; label: string }) => {
+    if (by === 'priority') return priorityLabel(item.key === 'none' ? null : item.key);
+    if (item.key === 'none' && (by === 'type' || by === 'assignee' || by === 'delegate'))
+      return t(`none.${by}`);
+    return item.label;
+  };
   const chartData = items.map((i, idx) => ({
-    name: i.label,
+    name: label(i),
     value: i.count,
     // Status and type carry their entity color; the other dimensions fall back to
     // the shared chart palette.

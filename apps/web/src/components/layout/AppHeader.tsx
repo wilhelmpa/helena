@@ -1,7 +1,8 @@
-import type { ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { Plus, Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useHotkeyLabel } from '@/context/useHotkeys';
 import type { WorkspaceToolId } from '@/utils/workspaceTools';
 import type { HeaderExtraStore } from '@/utils/headerExtraStore';
@@ -29,8 +30,11 @@ export default function AppHeader({
   headerExtra,
   pageSlotRef,
   pageHidden = false,
+  titleLead,
 }: {
   title: ReactNode;
+  // The page's own name for the browser tab, before the breadcrumb (a task's title).
+  titleLead?: string | null;
   hasProject: boolean;
   onOpenCommand: () => void;
   onNewIssue: () => void;
@@ -57,6 +61,8 @@ export default function AppHeader({
   const newIssueKey = useHotkeyLabel('issue.new');
   const canCreateIssue = hasProject && can('work_items', 'create');
   const single = headerLayout === 'single';
+  const titleRef = useRef<HTMLDivElement>(null);
+  useDocumentTitle(titleRef, titleLead);
 
   return (
     // One row, three groups (docs/volition-design-helena-ui.md "einreihig"): where you
@@ -68,6 +74,7 @@ export default function AppHeader({
       <SidebarTrigger />
       <Separator orientation="vertical" className="h-4" />
       <div
+        ref={titleRef}
         className={cn(
           'min-w-0 truncate text-sm font-medium',
           single ? 'max-w-[min(26rem,45vw)] shrink' : 'hidden max-w-40 shrink-0 2xl:block',

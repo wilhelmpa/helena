@@ -180,7 +180,8 @@
     "port": "Port",
     "tls": "TLS dès le départ (désactivé : STARTTLS)",
     "username": "Nom d'utilisateur",
-    "team": "Équipe"
+    "team": "Équipe",
+    "googleConnect": "Connecter un compte Google"
   },
   "rules": {
     "title": "Règles de classement",

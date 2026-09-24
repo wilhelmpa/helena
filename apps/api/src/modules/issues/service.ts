@@ -1832,11 +1832,12 @@ export async function setIssueFieldValue(
 
   // A url field stores its value as text but must hold a valid http(s) URL.
   if (field.fieldType === 'url' && typeof input.value === 'string' && input.value !== '') {
-    if (!isHttpUrl(input.value)) throw new HttpError(400, 'Invalid URL');
+    if (!isHttpUrl(input.value)) throw new HttpError(400, 'Invalid URL', 'url_invalid');
   }
   // A number field must be a finite number; the value column is numeric.
   if (field.fieldType === 'number' && input.value != null && input.value !== '') {
-    if (!Number.isFinite(Number(input.value))) throw new HttpError(400, 'Invalid number');
+    if (!Number.isFinite(Number(input.value)))
+      throw new HttpError(400, 'Invalid number', 'number_invalid');
   }
   const memberUserId =
     field.fieldType === 'member' && typeof input.value === 'string' && input.value !== ''

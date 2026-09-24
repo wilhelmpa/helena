@@ -1,7 +1,8 @@
 'use client';
 
 import { Fragment } from 'react';
-import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core';
+import { closestCenter, type DragEndEvent } from '@dnd-kit/core';
+import DndContext from '@/components/common/dnd/DndContext';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import type { PipelineStep } from '@/lib/api/endpoints/pipelines';
 import { useDndSensors } from '@/lib/dnd';

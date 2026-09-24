@@ -34,7 +34,8 @@
     "commented": "{who} 发表了评论",
     "stateChanged": "{who} 将状态从 {from} 更改为 {to}",
     "stateChangedPlain": "{who} 更改了状态",
-    "approval_requested": "{who} 请求你的审批"
+    "approval_requested": "{who} 请求你的审批",
+    "automation": "Helena"
   },
   "hub": {
     "messages": "Messages",

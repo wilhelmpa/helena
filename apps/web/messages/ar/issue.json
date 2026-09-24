@@ -34,7 +34,8 @@
     "groupCustom": "حقول مخصصة",
     "empty": "فارغ",
     "openInNewTab": "فتح في تبويب جديد",
-    "area": "المجال"
+    "area": "المجال",
+    "invalidUrl": "ليس عنوان ويب صالحًا (https://…)."
   },
   "menu": {
     "preview": "معاينة",
@@ -120,7 +121,9 @@
     "submit": "إنشاء مهمة",
     "template": "قالب",
     "applyTemplate": "تطبيق قالب…",
-    "noTemplates": "لا توجد قوالب."
+    "noTemplates": "لا توجد قوالب.",
+    "created": "تم إنشاء {identifier}",
+    "open": "فتح"
   },
   "attachments": {
     "title": "المرفقات",
@@ -245,7 +248,8 @@
     "no": "لا",
     "time": "الوقت",
     "startTime": "وقت البدء",
-    "endTime": "وقت الانتهاء"
+    "endTime": "وقت الانتهاء",
+    "none": "بلا اختيار"
   },
   "editor": {
     "descriptionPlaceholder": "إضافة وصف…"

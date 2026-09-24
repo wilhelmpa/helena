@@ -34,7 +34,8 @@
     "commented": "{who} berkomentar",
     "stateChanged": "{who} mengubah status dari {from} ke {to}",
     "stateChangedPlain": "{who} mengubah status",
-    "approval_requested": "{who} meminta persetujuan Anda"
+    "approval_requested": "{who} meminta persetujuan Anda",
+    "automation": "Helena"
   },
   "hub": {
     "messages": "Messages",

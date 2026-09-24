@@ -20,6 +20,7 @@ import {
   listInitiativeFeed,
 } from '@/lib/api/endpoints/initiatives';
 import { qk } from '@/services/queryKeys';
+import { forgetWhenUnused } from '@/services/forgetQueries';
 
 // A page of the project's initiatives. params filter (status/search), sort and
 // page it server-side; keepPreviousData holds the current page on screen while the
@@ -103,7 +104,9 @@ export function useDeleteInitiative(projectKey: string) {
       // Deleting an initiative unlinks its issues (initiativeId -> null), so the
       // board issues change too.
       qc.invalidateQueries({ queryKey: qk.boardIssues(projectKey) });
-      qc.invalidateQueries({ queryKey: qk.initiative(id) });
+      forgetWhenUnused(qc, qk.initiative(id));
+      forgetWhenUnused(qc, qk.initiativeFeed(id));
+      forgetWhenUnused(qc, qk.initiativeAttachments(id));
     },
   });
 }

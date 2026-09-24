@@ -9,6 +9,7 @@ import {
   Keyboard,
   KeyRound,
   Mail,
+  PackageCheck,
   Puzzle,
   Send,
   Shield,
@@ -61,6 +62,11 @@ export const GOD_SECTIONS: GodSection[] = [
     slug: 'agent-runtime',
     group: 'instance',
     icon: Bot,
+  },
+  {
+    slug: 'updates',
+    group: 'instance',
+    icon: PackageCheck,
   },
   {
     slug: 'authentication',

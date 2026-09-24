@@ -5,6 +5,7 @@ import { Slot } from 'radix-ui';
 import { cva, type VariantProps } from 'class-variance-authority';
 
 import { cn } from '@/lib/utils';
+import { nodeText } from '@/lib/accessibleName';
 
 const buttonVariants = cva(
   "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/60 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
@@ -51,12 +52,18 @@ function Button({
     asChild?: boolean;
   }) {
   const Comp = asChild ? Slot.Root : 'button';
+  // An icon-only button with a title is named by it, so assistive tech and automation
+  // that read aria-label see the same words as the hover hint.
+  const named =
+    props['aria-label'] != null || props['aria-labelledby'] != null || asChild || !props.title;
+  const ariaLabel = named || nodeText(props.children) !== '' ? undefined : props.title;
 
   return (
     <Comp
       data-slot="button"
       data-size={size ?? 'default'}
       className={cn(buttonVariants({ variant, size, className }))}
+      {...(ariaLabel ? { 'aria-label': ariaLabel } : {})}
       {...props}
     />
   );

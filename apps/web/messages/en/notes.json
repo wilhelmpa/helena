@@ -53,5 +53,20 @@
   "addNote": "Add note",
   "accessHint": "Only these people can open it",
   "createdBy": "Created by {name}",
-  "backgroundColors": "Background colors"
+  "backgroundColors": "Background colors",
+  "canvasA11y": {
+    "node": "Press Enter or Space to select a note. Move it with the arrow keys, Escape cancels.",
+    "nodeKeyboardDisabled": "Keyboard moving is off for this board.",
+    "nodeMoved": "Note moved to {x}, {y}.",
+    "edge": "Press Enter or Space to select a connection. Delete removes it, Escape cancels.",
+    "controls": "Canvas controls",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "fitView": "Show all notes",
+    "interactive": "Lock or unlock moving",
+    "minimap": "Overview map",
+    "handle": "Connection point"
+  },
+  "deleteBoard": "Delete board",
+  "deleteBoardConfirm": "Delete “{name}” and all notes on it? This cannot be undone."
 }
