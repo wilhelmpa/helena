@@ -666,7 +666,7 @@
         "enabled": "Autoaprendizaje",
         "enabledHint": "El agente guarda memoria y crea habilidades durante sus chats y ejecuciones; los tokens que gasta en ello cuentan en su consumo. Desactivado, no guarda nada nuevo y su memoria no se carga.",
         "curator": "Curador",
-        "curatorHint": "El curador de Hermes archiva las habilidades aprendidas que no se usaron en 30 días. Se ejecuta en el mantenimiento propio de Hermes, como el panel de Hermes, no en los chats y ejecuciones de Plan.",
+        "curatorHint": "El curador de Hermes archiva las habilidades aprendidas que no se usaron en 30 días. Helena le pide una revisión cada semana; en la pestaña Runtime del agente puedes lanzar una ahora y fijar las habilidades que no debe tocar.",
         "reflectionTitle": "Reflexión",
         "reflectionHint": "Un breve turno de seguimiento en la misma sesión de la ejecución, justo después de que termine, en el que el agente solo guarda lo que esa ejecución le enseñó. Sus tokens cuentan en el consumo de la ejecución.",
         "reflectionOff": "Desactivada",
@@ -695,8 +695,12 @@
         "memoryEditTitle": "Editar {file}",
         "memoryEditHint": "Hermes guarda una entrada por párrafo, con § en una línea propia entre entradas. El ejecutor escribe tu versión salvo que el agente haya cambiado el archivo entretanto.",
         "memoryClearTitle": "¿Vaciar {file}?",
-        "memoryClearBody": "El agente pierde estas notas con la siguiente sincronización del ejecutor."
-      }
+        "memoryClearBody": "El agente pierde estas notas con la siguiente sincronización del ejecutor.",
+        "memoryApproval": "Aprobar cambios de memoria",
+        "memoryApprovalHint": "Lo que el agente escribe en su memoria espera como diff en la página de aprobaciones; hasta que se aprueba, conserva la versión aprobada."
+      },
+      "skillEnabled": "{name} activada",
+      "skillsDisabled": "desactivadas: {count}"
     },
     "paused": "En pausa",
     "pausedNoReason": "En pausa. No se indicó ningún motivo.",

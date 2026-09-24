@@ -369,7 +369,8 @@
       "run-janitor": "运行清理器",
       "stage-janitor": "阶段清理器",
       "workflow-schedules": "日程同步",
-      "resume-janitor": "恢复清理器"
+      "resume-janitor": "恢复清理器",
+      "runtime-janitor": "运行时清理"
     },
     "janitorRan": "{time}前运行过",
     "janitorCleaned": "{count, plural, other {清理了 # 项}}",

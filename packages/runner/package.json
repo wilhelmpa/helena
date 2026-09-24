@@ -55,5 +55,9 @@
     "@types/node": "^26.2.0",
     "eslint": "^9.39.0",
     "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "@secretlint/core": "13.0.5",
+    "@secretlint/secretlint-rule-preset-recommend": "13.0.5"
   }
 }

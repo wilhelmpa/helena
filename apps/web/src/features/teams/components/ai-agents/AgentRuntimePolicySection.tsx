@@ -23,6 +23,7 @@ import type { AgentFormValue } from '../../utils/agentForm';
 import { AgentFormSection } from './AgentFormSection';
 import AgentRuntimeConflicts from './AgentRuntimeConflicts';
 import { runtimeSelectionForModel } from './AgentRuntimePolicySection.logic';
+import FallbackModelsEditor from '@/features/agent-runtime/components/FallbackModelsEditor';
 
 const AGENT_DEFAULT = '__agent_default__';
 
@@ -50,6 +51,7 @@ export default function AgentRuntimePolicySection({
   conflicts: AgentRuntimeConflict[];
 }) {
   const t = useTranslations('teams.agents.runtimePolicy');
+  const tFallback = useTranslations('agentRuntime.fallback');
   const policy = value.runtimePolicy;
   const selectedModel = models.find((entry) => entry.id === value.model);
   const unavailableModel = value.model.length > 0 && !selectedModel;
@@ -192,6 +194,35 @@ export default function AgentRuntimePolicySection({
           </Select>
         </div>
       </div>
+
+      {(policy.runtime ?? 'hermes') === 'hermes' && (
+        <div className="space-y-2">
+          <label className="flex items-start gap-2">
+            <Checkbox
+              className="mt-0.5"
+              checked={policy.fallbackModels != null}
+              onCheckedChange={(checked) =>
+                patchPolicy({ fallbackModels: checked === true ? [] : null })
+              }
+            />
+            <span className="min-w-0">
+              <span className="text-sm font-medium">{tFallback('own')}</span>
+              <span className="block text-xs text-muted-foreground">
+                {policy.fallbackModels != null ? tFallback('ownHint') : tFallback('defaultHint')}
+              </span>
+            </span>
+          </label>
+          {policy.fallbackModels != null && (
+            <FallbackModelsEditor
+              value={policy.fallbackModels}
+              onChange={(fallbackModels) => patchPolicy({ fallbackModels })}
+              suggestions={models.flatMap((model) =>
+                model.provider ? [{ provider: model.provider, model: model.id }] : [],
+              )}
+            />
+          )}
+        </div>
+      )}
 
       <label className="flex items-start gap-2">
         <Checkbox

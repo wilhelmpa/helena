@@ -369,7 +369,8 @@
       "run-janitor": "منظف التشغيلات",
       "stage-janitor": "منظف المراحل",
       "workflow-schedules": "مزامنة الجداول الزمنية",
-      "resume-janitor": "منظف الاستئناف"
+      "resume-janitor": "منظف الاستئناف",
+      "runtime-janitor": "تنظيف بيئة التشغيل"
     },
     "janitorRan": "عمل قبل {time}",
     "janitorCleaned": "{count, plural, zero {لم يتم تنظيف شيء} one {تم تنظيف عنصر واحد} two {تم تنظيف عنصرين} few {تم تنظيف # عناصر} many {تم تنظيف # عنصرًا} other {تم تنظيف # عنصر}}",

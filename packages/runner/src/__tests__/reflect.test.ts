@@ -145,6 +145,7 @@ describe('reflection', () => {
     expect(report).toEqual({
       status: 'success',
       usage: { inputTokens: 30_900, outputTokens: 120 },
+      spend: expect.objectContaining({ runtime: 'hermes', inputTokens: 30_900, outputTokens: 120 }),
       saved: [
         { tool: 'memory', action: 'add', target: 'user' },
         { tool: 'skill', action: 'create', target: 'web-scrape' },

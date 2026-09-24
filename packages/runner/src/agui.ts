@@ -260,7 +260,9 @@ export class AnswerStream {
       parsed = JSON.parse(trimmed);
     } catch {
       // Output that is not the format it was configured with still has something to say.
-      // A CLI writing its own diagnostics to stdout alongside the stream lands here too.
+      // Hermes' stream is JSON throughout; what it prints beside it are its own notices
+      // (a missing security scanner, a plugin warning), which are not the agent's answer.
+      if (this.format === 'hermes-stream-json') return;
       this.appendText(`${trimmed}\n`);
       return;
     }

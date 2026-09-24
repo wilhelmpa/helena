@@ -164,6 +164,27 @@ export const app = new Elysia()
               'What an external agent learned in its runtime, and the actions its runner ' +
               'carries out on it',
           },
+          {
+            name: 'Agent Runs',
+            description: "A run's timeline, live and as a replay, and continuing its session",
+          },
+          {
+            name: 'Agent Runtime',
+            description:
+              "What an agent's runtime keeps: sessions and transcripts, logs, health, " +
+              'version, curator, read through its runner',
+          },
+          {
+            name: 'Agent Usage',
+            description: 'Tokens and cost of the agents per agent, model, project and day',
+          },
+          {
+            name: 'Agent Proposals',
+            description:
+              "Changes an agent's runtime raised for the owner's decision: memory writes, " +
+              'runtime updates',
+          },
+          { name: 'Emergency Stop', description: "The instance's emergency stop for all agents" },
           { name: 'Custom Fields', description: 'Global and type-scoped custom fields' },
           { name: 'Issue Templates', description: 'Presets a new issue can be created from' },
           { name: 'Issues', description: 'Issues, their fields, feed, and comments' },

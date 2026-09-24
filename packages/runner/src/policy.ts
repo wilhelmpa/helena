@@ -20,6 +20,7 @@ import {
   type HermesInventory,
   type HermesProfile,
   type InventorySkill,
+  type MemoryFile,
 } from './inventory';
 import {
   readLearnedSkills,
@@ -32,6 +33,8 @@ import {
 } from './learning';
 import type { CliLogin, CliLoginState } from './cli-login';
 import { isolationEnabled, profileHelper, type AgentIsolation } from './isolation';
+import { readerCapabilities } from './readers';
+import './hermes-settings';
 import { pythonVaultStore, WebLoginVault, type WebLogin, type WorkRef } from './logins';
 import {
   profileDigest,
@@ -55,15 +58,22 @@ export {
 
 // The runtime policy wire types live in @helena/sdk (runtime-policy.ts).
 export type {
+  RuntimeHermesSettings,
   RuntimeMcpServer,
   RuntimeMcpValue,
+  RuntimeMemoryPolicy,
   RuntimePolicyFile,
   RuntimePolicySnapshot,
   RuntimeSkill,
   RuntimeSkillFile,
   VaultAccess,
 } from '@helena/sdk';
-import type { RuntimeMcpServer, RuntimePolicySnapshot, VaultAccess } from '@helena/sdk';
+import type {
+  RuntimeMcpServer,
+  RuntimeMemoryPolicy,
+  RuntimePolicySnapshot,
+  VaultAccess,
+} from '@helena/sdk';
 
 // A managed file that was changed outside Plan. Plan's version replaced it; the changed
 // content is kept next to it and reported, so it can be taken over in Plan.
@@ -83,6 +93,8 @@ export interface RuntimeStatus {
   // and plugin links, by their path in the Hermes home.
   restored?: string[];
   inventory?: HermesInventory;
+  // Memory writes of the agent held back for the owner's approval (see holdMemoryWrites).
+  memoryProposals?: MemoryProposal[];
   learnedSkills?: LearnedSkill[];
   // The results of the actions of the applied revision.
   actions?: RuntimeActionResult[];
@@ -92,6 +104,15 @@ export interface RuntimeStatus {
   version?: string | null;
   // What keeps the runtime from its work, or from part of it.
   issues?: RuntimeIssue[];
+}
+
+// A memory file the agent changed while its writes wait for the owner: what it wrote, and
+// the approved version it was put back to.
+export interface MemoryProposal {
+  file: MemoryFile;
+  content: string;
+  sha256: string;
+  baseSha256: string;
 }
 
 export interface RuntimePolicyClient {
@@ -751,6 +772,13 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
   private unreported = false;
   private deniedToolsets: string[] = [];
   private learning: RuntimeLearning | undefined;
+  private memoryPolicy: RuntimeMemoryPolicy | null = null;
+  // Held-back memory writes not reported yet.
+  private memoryProposals: MemoryProposal[] = [];
+  // Memory versions the owner approved or wrote, carried out by this runner, until Helena's
+  // baseline names them: the baseline of a snapshot fetched before the write still holds the
+  // version before it, which must not be put back over the approved one.
+  private writtenMemory = new Map<MemoryFile, { sha256: string; content: string }>();
   private webLogins = false;
   // Helena's MCP servers that are on and the secrets they name, as the last applied
   // revision wrote them. mcpSecrets is null while the managed configuration names no secret.
@@ -905,6 +933,7 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
     // The restrictions write no file, so they hold even while a revision fails to apply.
     this.deniedToolsets = snapshot.runtimePolicy?.toolDeny ?? [];
     this.learning = snapshot.learning;
+    this.memoryPolicy = snapshot.memoryWrites ?? null;
     this.webLogins = snapshot.webLogins === true;
     this.vaultAccess = snapshot.vaultAccess ?? null;
     const applied = await this.apply(snapshot);
@@ -951,12 +980,18 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
         snapshot,
         this.applyOptions(rewrites.length > 0),
       );
-      const results = [
-        ...rewrites.map((action) => ({ id: action.id, error: null })),
-        ...(await this.materializer.runActions(
-          actions.filter((action) => action.kind !== 'rewrite-profile'),
-        )),
-      ];
+      const others = actions.filter((action) => action.kind !== 'rewrite-profile');
+      const ran = await this.materializer.runActions(others);
+      for (const action of others) {
+        if (action.kind !== 'write-memory') continue;
+        if (ran.find((entry) => entry.id === action.id)?.error == null) {
+          this.writtenMemory.set(action.file, {
+            sha256: digest(action.content),
+            content: action.content,
+          });
+        }
+      }
+      const results = [...rewrites.map((action) => ({ id: action.id, error: null })), ...ran];
       // The links (shared configuration, plugins) belong to the profile as much as its files.
       const links = await this.materializer.ensurePlugins();
       this.appliedRevision = result.revision;
@@ -1095,17 +1130,52 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
     this.unreported = true;
   }
 
+  // While the agent's memory writes wait for the owner, a memory file that differs from its
+  // approved version is reported as a proposal and put back, through the same write the
+  // owner's edits use. True when a file was put back. A file too large to report whole is
+  // left as it is: a proposal without its content could not be approved.
+  private async holdMemoryWrites(inventory: HermesInventory): Promise<boolean> {
+    if (!this.memoryPolicy?.approval) return false;
+    const restore: RuntimeAction[] = [];
+    for (const snapshotBase of this.memoryPolicy.baseline) {
+      const written = this.writtenMemory.get(snapshotBase.file);
+      if (written?.sha256 === snapshotBase.sha256) this.writtenMemory.delete(snapshotBase.file);
+      const base = written ? { file: snapshotBase.file, ...written } : snapshotBase;
+      const now = inventory.memory.find((entry) => entry.file === base.file);
+      if (!now || now.sha256 === base.sha256 || now.truncated) continue;
+      this.memoryProposals = [
+        ...this.memoryProposals.filter((proposal) => proposal.file !== base.file),
+        { file: base.file, content: now.content, sha256: now.sha256, baseSha256: base.sha256 },
+      ];
+      restore.push({
+        id: 0,
+        kind: 'write-memory',
+        file: base.file,
+        content: base.content,
+        baseSha256: now.sha256,
+      });
+    }
+    if (restore.length === 0) return false;
+    await this.materializer.runActions(restore);
+    return true;
+  }
+
   // True when the inventory was read and differs from the one reported last.
   private async readInventory(): Promise<boolean> {
     if (!this.options.inventory) return false;
     try {
       this.inventory = await this.options.inventory();
+      if (await this.holdMemoryWrites(this.inventory)) {
+        this.inventory = await this.options.inventory();
+      }
       this.learnedSkills = await this.options.learned?.(this.inventory.skills);
     } catch {
       // Plan keeps showing the inventory it received last.
       return false;
     }
-    const inventoryDigest = digest(JSON.stringify([this.inventory, this.learnedSkills ?? null]));
+    const inventoryDigest = digest(
+      JSON.stringify([this.inventory, this.learnedSkills ?? null, this.memoryProposals]),
+    );
     if (inventoryDigest === this.inventoryDigest) return false;
     this.inventoryDigest = inventoryDigest;
     return true;
@@ -1125,12 +1195,14 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
         adapter: 'hermes',
         ...state,
         appliedRevision: this.appliedRevision,
-        capabilities: CAPABILITIES,
+        capabilities: [...CAPABILITIES, ...readerCapabilities('hermes')],
         ...(inventory && { inventory }),
         ...(this.learnedSkills && { learnedSkills: this.learnedSkills }),
         ...(this.profile && { profile: this.profile }),
+        ...(this.memoryProposals.length > 0 && { memoryProposals: this.memoryProposals }),
       });
       this.unreported = false;
+      this.memoryProposals = [];
     } catch (error) {
       // Plan refuses the same report again, so only one that did not arrive is sent again.
       this.unreported = !(error instanceof RequestError && error.status < 500);

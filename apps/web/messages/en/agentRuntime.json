@@ -1,0 +1,242 @@
+{
+  "tabs": {
+    "label": "Agent views",
+    "settings": "Settings",
+    "runs": "Runs",
+    "sessions": "Sessions",
+    "memory": "Memory",
+    "usage": "Usage",
+    "runtime": "Runtime"
+  },
+  "runs": {
+    "empty": "No runs yet.",
+    "loadMore": "Load more",
+    "running": "Running",
+    "blocked": "Blocked",
+    "modelMismatch": "Other model",
+    "back": "Back to the runs",
+    "views": "Views of the run",
+    "timeline": "Timeline",
+    "transcript": "Transcript",
+    "logs": "Log",
+    "noTimeline": "No timeline was recorded for this run. The transcript of its session shows what happened.",
+    "noSession": "This run has no session of its runtime to show.",
+    "noLogs": "No log lines for this session.",
+    "truncated": "Long parts are shortened.",
+    "copySession": "Copy the session ID",
+    "resumed": "{count, plural, one {resumed once} other {resumed # times}}",
+    "continuesRun": "Continues run #{id}",
+    "continue": "Continue from here",
+    "continueTitle": "Continue from here",
+    "continueHint": "A new run of the agent resumes this run's session, with everything it already knows, and does what you write here.",
+    "continuePlaceholder": "What should the agent do next?",
+    "continueStart": "Start run",
+    "continued": "The run is queued.",
+    "status": {
+      "pending": "Waiting",
+      "success": "Done",
+      "failed": "Failed",
+      "canceled": "Canceled"
+    },
+    "trigger": {
+      "mention": "Mention",
+      "delegation": "Delegated task",
+      "field": "Field change",
+      "schedule": "Scheduled task",
+      "manual": "Manual task",
+      "approval": "Approval decision"
+    }
+  },
+  "sessions": {
+    "search": "Search every session",
+    "clear": "Clear",
+    "noHits": "No session mentions “{query}”.",
+    "empty": "The runtime has no sessions yet.",
+    "range": "{from}–{to} of {total}",
+    "newer": "Newer",
+    "older": "Older",
+    "messages": "{count, plural, one {# message} other {# messages}}",
+    "tools": "{count, plural, one {# tool call} other {# tool calls}}",
+    "back": "Back to the sessions",
+    "copyId": "Copy the session ID",
+    "openRun": "Open run",
+    "truncated": "Long parts are shortened.",
+    "source": {
+      "run": "Run",
+      "chat": "Chat",
+      "tool": "Run or chat",
+      "cli": "Terminal",
+      "claude": "Claude Code",
+      "codex": "Codex",
+      "other": "Other"
+    }
+  },
+  "memory": {
+    "approvalOn": "Changes the agent makes to its memory wait for your approval; until then it keeps working with the approved version.",
+    "approvalOff": "The agent changes its memory itself. Every version is kept below.",
+    "pending": "{count, plural, one {# change waits for approval} other {# changes wait for approval}}",
+    "notReported": "The runtime has not reported its memory yet.",
+    "history": "History",
+    "noHistory": "No versions yet.",
+    "source": {
+      "agent": "Agent (approved)",
+      "owner": "Edited here",
+      "observed": "Found in the runtime"
+    }
+  },
+  "proposals": {
+    "section": "Agents and runtime",
+    "raisedBy": "{agent} (@{username})",
+    "memoryTitle": "Change to {file}",
+    "updateHint": "Hermes is updated for every agent. The helper keeps a backup and rolls back on its own if the update or the check after it fails.",
+    "changes": "{count, plural, one {# change} other {# changes}}",
+    "localPatches": "{count, plural, one {# local change is carried over: {list}} other {# local changes are carried over: {list}}}",
+    "kind": {
+      "memory-write": "Memory",
+      "hermes-update": "Hermes update"
+    },
+    "status": {
+      "pending": "Waiting",
+      "approved": "Approved, being carried out",
+      "rejected": "Rejected",
+      "applied": "Carried out",
+      "failed": "Failed"
+    }
+  },
+  "usage": {
+    "period": "Period",
+    "days": "{count} days",
+    "groupBy": "Group by",
+    "grouping": {
+      "agent": "Agents",
+      "model": "Models",
+      "project": "Projects",
+      "day": "Days"
+    },
+    "dimension": {
+      "agent": "Agent",
+      "model": "Model",
+      "project": "Project",
+      "day": "Day",
+      "kind": "Kind"
+    },
+    "kind": {
+      "run": "Run",
+      "chat": "Chat",
+      "reflection": "Reflection"
+    },
+    "empty": "Nothing spent in this period.",
+    "input": "Input",
+    "cached": "Cached",
+    "output": "Output",
+    "time": "Time",
+    "cost": "Cost",
+    "entries": "Entries",
+    "unpriced": "Some models have no price in the price table; their cost is missing from the sums.",
+    "unknownModel": "Unknown model",
+    "noProject": "No project"
+  },
+  "spend": {
+    "none": "No usage recorded",
+    "tokens": "{input} in · {output} out",
+    "tokensDetail": "Input {input} (of which cached {cached}) · output {output} (of which reasoning {reasoning})",
+    "noPrice": "no price",
+    "costHint": "Cost by the model price table",
+    "costPartial": "Not every model has a price; the cost is incomplete"
+  },
+  "runtime": {
+    "version": "Version",
+    "health": "Health",
+    "check": "Check",
+    "healthHint": "Runs the runtime's own check (Hermes doctor). It takes up to a minute.",
+    "healthy": "No problems found",
+    "problems": "Problems found",
+    "curator": "Curator",
+    "curatorRun": "Run now",
+    "curatorDone": "The curator finished its review.",
+    "curatorFailed": "The curator run failed.",
+    "curatorPaused": "The curator is paused: it is off in the agent's learning settings.",
+    "pinSkill": "Skill name",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "pinHint": "The curator never archives or changes a pinned skill.",
+    "log": "Log",
+    "reload": "Reload",
+    "logEmpty": "No log lines.",
+    "noLogs": "This runtime keeps no log Helena can read.",
+    "level": {
+      "all": "All",
+      "WARNING": "Warnings",
+      "ERROR": "Errors"
+    }
+  },
+  "errors": {
+    "offline": "The agent's runner is offline, so its runtime cannot be read right now.",
+    "timeout": "The runtime did not answer in time. Try again.",
+    "noRuntime": "This agent's runtime cannot show this.",
+    "notFound": "Not found in the runtime.",
+    "failed": "Reading the runtime failed."
+  },
+  "emergencyStop": {
+    "stop": "Emergency stop",
+    "resume": "Resume agents",
+    "bannerTitle": "Emergency stop: all agents are halted",
+    "bannerSince": "since {since}",
+    "activeSince": "On since {since}. No agent starts or continues work; runs that were stopped continue their session once you resume.",
+    "inactive": "Off. Agents work normally.",
+    "confirmTitle": "Halt all agents?",
+    "confirmText": "No agent starts a run or answers a chat any more, running work stops at its next heartbeat and Hermes pauses. Resuming continues the stopped runs in their sessions.",
+    "reason": "Reason",
+    "reasonPlaceholder": "Reason (optional, shown to everyone)",
+    "engaged": "All agents are halted.",
+    "lifted": "Agents are working again."
+  },
+  "fallback": {
+    "own": "Own fallback models",
+    "ownHint": "When the agent's model fails or is rate-limited, Hermes switches to these, in order.",
+    "defaultHint": "Off: the instance's fallback models apply (Administrator → Agent runtime).",
+    "none": "No fallback models: a failing model ends the run.",
+    "provider": "Provider",
+    "model": "Model",
+    "up": "Move up",
+    "down": "Move down",
+    "remove": "Remove",
+    "add": "Add model"
+  },
+  "admin": {
+    "stopTitle": "Emergency stop",
+    "stopDescription": "Halts every agent of the instance at once. Also in the account menu.",
+    "hermesTitle": "Hermes",
+    "hermesDescription": "The Hermes installation all agents run on. An update needs your approval; the helper keeps a backup and rolls back when it fails.",
+    "installed": "Installed: {version}",
+    "notChecked": "Not checked yet.",
+    "upToDate": "Up to date",
+    "behind": "{count, plural, one {# change up to {version}} other {# changes up to {version}}}",
+    "checkedAt": "checked {at}",
+    "check": "Check for updates",
+    "checking": "Checking…",
+    "request": "Request update",
+    "requested": "The update waits for approval on the approvals page.",
+    "changelog": "{count, plural, one {What changes (# commit)} other {What changes (# commits)}}",
+    "localPatches": "{count, plural, one {# local change is carried over: {list}} other {# local changes are carried over: {list}}}",
+    "toApprovals": "Open approvals",
+    "log": "Update log",
+    "proposalStatus": {
+      "pending": "waits for approval",
+      "approved": "being installed",
+      "rejected": "rejected",
+      "applied": "installed",
+      "failed": "failed, rolled back"
+    },
+    "fallbackTitle": "Fallback models",
+    "fallbackDescription": "What every agent without its own list switches to when its model fails, in order.",
+    "sessionsTitle": "Sessions",
+    "retention": "Keep sessions",
+    "retentionHint": "Days Hermes keeps the transcripts of ended runs and chats. Empty: Hermes' default of 90 days.",
+    "saved": "Saved. The runners apply it on their next sync.",
+    "usageTitle": "Usage",
+    "usageDescription": "What the agents of a team spent, from Helena's token ledger, with cost by the model price table.",
+    "team": "Team",
+    "noTeam": "No team yet."
+  }
+}

@@ -10,6 +10,8 @@ import {
 } from '@repo/db';
 import { and, asc, desc, eq, gt, inArray, isNotNull, isNull, notExists, sql } from 'drizzle-orm';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { emergencyStopActive } from '#modules/emergency-stop/service';
+import { recordUsage, type Spend } from '../usage/service';
 import { HttpError, intEnv, iso } from '#shared/lib';
 import { deleteContextUsage, recordContextUsage, type ContextUsage } from '../chat-usage';
 import { deleteFavorite, FAVORITES_LIMIT } from '../chat-favorites';
@@ -758,7 +760,8 @@ export async function claimNextMessage(agent: RunnerAgent): Promise<ClaimedChat 
   await expireExhausted(agent.id);
   const deadline = Date.now() + agentChatConfig.claimWaitMs();
   for (;;) {
-    const message = await claimMessage(agent);
+    // The instance's emergency stop holds every answer in the queue.
+    const message = (await emergencyStopActive()) ? null : await claimMessage(agent);
     if (message) return message;
     if (Date.now() >= deadline) return null;
     await sleep(agentChatConfig.claimPollMs());
@@ -1084,6 +1087,7 @@ export async function finishMessage(
     usage?: ContextUsage | null;
     sessionLost?: boolean;
     model?: string;
+    spend?: Spend | null;
     runtime?: RunModelReport;
   },
 ): Promise<boolean> {
@@ -1111,8 +1115,20 @@ export async function finishMessage(
     .returning({
       id: agentChatMessage.id,
       threadId: agentChatMessage.threadId,
+      sessionId: agentChatMessage.sessionId,
+      projectId: sql<
+        number | null
+      >`(SELECT t.project_id FROM agent_chat_thread t WHERE t.id = ${agentChatMessage.threadId})`,
     });
   if (rows.length > 0) {
+    await recordUsage({
+      agentId,
+      projectId: rows[0].projectId,
+      chatMessageId: rows[0].id,
+      kind: 'chat',
+      sessionId: rows[0].sessionId,
+      spend: result.spend,
+    });
     await notifyChatAnswer(messageId);
     const [thread] = await db
       .select({ userId: agentChatThread.userId, projectId: agentChatThread.projectId })
