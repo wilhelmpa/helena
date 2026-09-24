@@ -70,6 +70,12 @@ class Rules:
         exact = {}
         for section in ("paths", "names"):
             exact.update(_clean(tokens.get(section, {})))
+        # Unit names from the units map, as stems too (volition-project-browser-chromium ->
+        # helena-browser-chromium), so a reference like …-chromium@%i.service follows the
+        # file's own new name instead of the generic prefix rule.
+        for old_unit, new_unit in _clean(rename_map.get("units", {})).items():
+            if new_unit:
+                exact.setdefault(_unit_stem(old_unit), _unit_stem(new_unit))
         env_keys = _clean(rename_map.get("envKeys", {}))
         exact.update({k: v for k, v in env_keys.items() if v})
         if kind == "hermes":
@@ -179,6 +185,11 @@ class Rules:
         new, _ = Rules._sub(prefix, self._prefix_repl, new)
         new, _ = Rules._sub(word, lambda m: words[m.group(0)], new)
         return new
+
+
+def _unit_stem(unit):
+    """volition-project-browser-chromium@.service -> volition-project-browser-chromium"""
+    return unit.rsplit(".", 1)[0].rstrip("@")
 
 
 def _clean(mapping):
