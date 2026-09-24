@@ -1,0 +1,448 @@
+#!/usr/bin/env python3
+"""The host side of Helena's update center (docs/helena-decisions/update-center.md).
+
+Started as root by helena-update.path when Helena's API puts a request into the spool, or by
+hand:
+
+    helena-update [--config FILE] serve                   every request in the spool
+    helena-update [--config FILE] inventory               what is installed, as JSON
+    helena-update [--config FILE] apt <package>...        upgrade these Debian packages
+    helena-update [--config FILE] cli-runtime <runtime> <version>
+
+`inventory` reads, and changes nothing: the packages apt would upgrade (grouped by source
+package, security updates marked by their origin), the CLI runtimes Helena installed, and the
+versions of the tools Helena's services run on, read from their files. `apt` upgrades exactly
+the packages named that are still upgradable after an `apt-get update`, keeping changed
+configuration files; `cli-runtime` hands the version to the root-owned copy of
+install-cli-runtimes.sh (`upgrade`), which verifies what it downloads and keeps the version
+before for rollback. Every answer is JSON: on stdout, and for a spool request in
+`status/<id>.json`.
+
+The spool belongs to the API's user, who could put a link where root reads: a request is
+opened without following links, must be a regular file of at most 64 KiB named after its id,
+and is removed once read. Answers go into a folder only root writes.
+"""
+
+from __future__ import annotations
+
+import argparse
+import datetime
+import fcntl
+import json
+import os
+import re
+import stat
+import subprocess
+import sys
+import tempfile
+import time
+from pathlib import Path
+
+DEFAULT_CONFIG = Path("/etc/helena/update.json")
+REQUEST_NAME = re.compile(r"^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.json$")
+PACKAGE = re.compile(r"^[a-z0-9][a-z0-9+.-]{0,127}$")
+VERSION = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$")
+REQUEST_MAX_BYTES = 64 * 1024
+LOG_LIMIT = 20_000
+# `Inst libssl3t64 [3.5.1-1] (3.5.1-1+deb13u1 Debian-Security:13/stable-security [amd64])`
+INST = re.compile(r"^Inst (\S+) \[([^\]]+)\] \((\S+) ([^\[)]*?)(?: \[[^\]]*\])?\)")
+NEW = re.compile(r"^Inst (\S+) \((\S+) ")
+REMOVE = re.compile(r"^Remv (\S+)")
+TOOL_VERSION = re.compile(r"(?:^|[/_-])v?(\d+\.\d+\.\d+)(?:[-/_.]|$)")
+
+
+class UpdateError(Exception):
+    pass
+
+
+def load_config(path: Path) -> dict:
+    with open(path, encoding="utf-8") as handle:
+        config = json.load(handle)
+    if not isinstance(config.get("spool"), str) or not os.path.isabs(config["spool"]):
+        raise UpdateError("config: spool must be an absolute path")
+    config.setdefault("runtimesInstaller", "/usr/local/libexec/helena-install-cli-runtimes")
+    config.setdefault("runtimes", ["claude", "codex", "claude-agent-acp", "codex-acp"])
+    config.setdefault("tools", {
+        "bun": "/usr/local/bin/bun",
+        "node": "/usr/local/bin/node",
+        "code-server": "/usr/local/bin/code-server",
+        "wetty": "/usr/local/bin/wetty",
+        "uv": "/usr/local/bin/uv",
+    })
+    config.setdefault("dpkgTools", {"chromium": "chromium", "kasmvnc": "kasmvncserver"})
+    config.setdefault("statusKeepDays", 7)
+    config.setdefault("aptTimeoutSeconds", 3600)
+    return config
+
+
+class Log:
+    def __init__(self) -> None:
+        self.lines: list[str] = []
+
+    def note(self, line: str) -> None:
+        self.lines.append(line)
+
+    def text(self) -> str:
+        return "\n".join(self.lines)[-LOG_LIMIT:]
+
+
+def run(log: Log | None, args: list[str], *, env: dict | None = None, timeout: int = 600,
+        check: bool = True) -> subprocess.CompletedProcess:
+    if log:
+        log.note("$ " + " ".join(args))
+    result = subprocess.run(args, env={**os.environ, "LC_ALL": "C", **(env or {})},
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                            timeout=timeout)
+    if log and result.stdout.strip():
+        log.note(result.stdout.strip()[-6000:])
+    if check and result.returncode != 0:
+        raise UpdateError(f"{os.path.basename(args[0])} exited with {result.returncode}")
+    return result
+
+
+# ── Inventory ────────────────────────────────────────────────────────────────────────────
+
+def apt_simulation() -> tuple[list[dict], list[str], list[str]]:
+    """The upgrades `apt-get dist-upgrade` would make, the packages it would newly install and
+    the ones it would remove. Nothing is changed and no lock is taken."""
+    result = run(None, ["apt-get", "-s", "-o", "Debug::NoLocking=1", "dist-upgrade"],
+                 timeout=300, check=False)
+    if result.returncode != 0:
+        raise UpdateError("apt-get -s failed: " + result.stdout.strip()[-300:])
+    upgrades, new, removed = [], [], []
+    for line in result.stdout.splitlines():
+        match = INST.match(line)
+        if match:
+            name, installed, candidate, origin = match.groups()
+            upgrades.append({
+                "name": name, "installed": installed, "candidate": candidate,
+                "origin": origin.strip(),
+                "security": "-security" in origin or "Debian-Security" in origin,
+            })
+            continue
+        match = NEW.match(line)
+        if match:
+            new.append(match.group(1))
+            continue
+        match = REMOVE.match(line)
+        if match:
+            removed.append(match.group(1))
+    return upgrades, new, removed
+
+
+def source_packages(names: list[str]) -> dict[str, str]:
+    if not names:
+        return {}
+    result = run(None, ["dpkg-query", "-W", "-f", "${Package}\t${source:Package}\n", *names],
+                 check=False)
+    sources = {}
+    for line in result.stdout.splitlines():
+        parts = line.split("\t")
+        if len(parts) == 2 and parts[1]:
+            sources[parts[0].split(":")[0]] = parts[1]
+    return sources
+
+
+def lists_updated_at() -> str | None:
+    lists = Path("/var/lib/apt/lists")
+    try:
+        times = [entry.stat().st_mtime for entry in lists.glob("*InRelease")]
+    except OSError:
+        return None
+    if not times:
+        return None
+    return datetime.datetime.fromtimestamp(max(times), datetime.timezone.utc).isoformat()
+
+
+def os_name() -> str | None:
+    try:
+        for line in Path("/etc/os-release").read_text().splitlines():
+            if line.startswith("PRETTY_NAME="):
+                return line.split("=", 1)[1].strip().strip('"')
+    except OSError:
+        pass
+    return None
+
+
+def apt_inventory() -> dict:
+    upgrades, new, removed = apt_simulation()
+    sources = source_packages([entry["name"] for entry in upgrades])
+    groups: dict[str, dict] = {}
+    for entry in upgrades:
+        source = sources.get(entry["name"].split(":")[0], entry["name"])
+        group = groups.setdefault(source, {
+            "source": source, "installed": entry["installed"], "candidate": entry["candidate"],
+            "origin": entry["origin"], "security": False, "packages": [],
+        })
+        group["packages"].append(entry["name"])
+        group["security"] = group["security"] or entry["security"]
+    return {
+        "os": os_name(),
+        "listsUpdatedAt": lists_updated_at(),
+        "packages": sorted(groups.values(), key=lambda group: group["source"]),
+        "newPackages": new,
+        "removals": removed,
+    }
+
+
+def dpkg_version(package: str) -> str | None:
+    result = run(None, ["dpkg-query", "-W", "-f", "${Version}", package], check=False)
+    version = result.stdout.strip()
+    return version if result.returncode == 0 and version else None
+
+
+def tool_version(path: str) -> str | None:
+    """A tool's version from the folder it is installed in (`/opt/…/bun-v1.4.2/bun`,
+    `code-server-4.138.0-linux-amd64`, `wetty-3.2.2`), or a package.json next to it."""
+    try:
+        real = os.path.realpath(path)
+    except OSError:
+        return None
+    if not os.path.exists(real):
+        return None
+    folder = os.path.dirname(real)
+    for _ in range(4):
+        candidate = os.path.join(folder, "package.json")
+        if os.path.isfile(candidate):
+            try:
+                with open(candidate, encoding="utf-8") as handle:
+                    version = json.load(handle).get("version")
+                if isinstance(version, str) and VERSION.match(version):
+                    return version
+            except (OSError, ValueError):
+                pass
+        folder = os.path.dirname(folder)
+    for part in real.split("/"):
+        match = TOOL_VERSION.search(part)
+        if match:
+            return match.group(1)
+    return None
+
+
+def runtimes_status(config: dict) -> dict:
+    installer = config["runtimesInstaller"]
+    if not os.path.isfile(installer):
+        return {}
+    result = run(None, [installer, "status", "--json"], check=False, timeout=120)
+    try:
+        return json.loads(result.stdout)
+    except ValueError:
+        return {}
+
+
+def failed_units() -> list[str]:
+    result = run(None, ["systemctl", "--failed", "--no-legend", "--plain"], check=False)
+    return [line.split()[0] for line in result.stdout.splitlines() if line.strip()][:50]
+
+
+def inventory(config: dict) -> dict:
+    tools = {name: tool_version(path) for name, path in config["tools"].items()}
+    for name, package in config["dpkgTools"].items():
+        tools[name] = dpkg_version(package)
+    return {
+        "apt": apt_inventory(),
+        "runtimes": runtimes_status(config),
+        "tools": tools,
+        "system": {
+            "rebootRequired": Path("/run/reboot-required").exists(),
+            "failedUnits": failed_units(),
+        },
+    }
+
+
+# ── Updates ──────────────────────────────────────────────────────────────────────────────
+
+def installed_versions(packages: list[str]) -> dict[str, str | None]:
+    return {package: dpkg_version(package) for package in packages}
+
+
+def apply_apt(config: dict, packages: list[str], log: Log) -> dict:
+    wanted = sorted({package for package in packages if PACKAGE.match(package)})
+    if not wanted or len(wanted) != len(set(packages)):
+        raise UpdateError("the request names no package, or a name that is not one")
+    env = {"DEBIAN_FRONTEND": "noninteractive", "NEEDRESTART_MODE": "l"}
+    update = run(log, ["apt-get", "update", "-q"], env=env, timeout=900, check=False)
+    if update.returncode != 0:
+        log.note("apt-get update failed; the upgrade uses the lists it had")
+    upgrades, _new, _removed = apt_simulation()
+    upgradable = {entry["name"].split(":")[0]: entry for entry in upgrades}
+    chosen = [package for package in wanted if package in upgradable]
+    skipped = [package for package in wanted if package not in upgradable]
+    if not chosen:
+        return {"upgraded": [], "skipped": skipped, "note": "nothing of it is upgradable any more"}
+    before = installed_versions(chosen)
+    run(log, ["apt-get", "install", "--only-upgrade", "-y", "-q",
+              "-o", "DPkg::Lock::Timeout=600",
+              "-o", "Dpkg::Options::=--force-confdef",
+              "-o", "Dpkg::Options::=--force-confold", *chosen],
+        env=env, timeout=int(config["aptTimeoutSeconds"]))
+    after = installed_versions(chosen)
+    upgraded = [{"package": package, "from": before[package], "to": after[package]}
+                for package in chosen]
+    return {
+        "upgraded": upgraded,
+        "skipped": skipped,
+        # apt keeps no way back of its own: these put the versions before back, from the
+        # package cache or snapshot.debian.org.
+        "rollback": "apt-get install " + " ".join(
+            f"{entry['package']}={entry['from']}" for entry in upgraded if entry["from"]),
+        "failedUnits": failed_units(),
+        "rebootRequired": Path("/run/reboot-required").exists(),
+    }
+
+
+def apply_cli_runtime(config: dict, runtime: str, version: str, log: Log) -> dict:
+    if runtime not in config["runtimes"]:
+        raise UpdateError(f"unknown runtime {runtime}")
+    if not VERSION.match(version):
+        raise UpdateError(f"{version} is not a version")
+    installer = config["runtimesInstaller"]
+    if not os.path.isfile(installer):
+        raise UpdateError("the runtime installer is not installed")
+    run(log, [installer, "upgrade", runtime, version], timeout=1800)
+    status = runtimes_status(config).get(runtime, {})
+    if status.get("current") != version:
+        raise UpdateError(f"{runtime} is on {status.get('current')} after the upgrade")
+    return {"runtime": runtime, "from": status.get("previous"), "to": status.get("current"),
+            "rollback": f"{os.path.basename(installer)} rollback {runtime}",
+            "failedUnits": failed_units()}
+
+
+def perform(config: dict, request: dict) -> dict:
+    log = Log()
+    action = request.get("action")
+    try:
+        if action == "inventory":
+            result = inventory(config)
+        elif action == "apt":
+            packages = request.get("packages")
+            if not isinstance(packages, list) or not all(isinstance(p, str) for p in packages):
+                raise UpdateError("packages must be a list of names")
+            result = apply_apt(config, packages, log)
+        elif action == "cli-runtime":
+            result = apply_cli_runtime(config, str(request.get("runtime", "")),
+                                       str(request.get("version", "")), log)
+        else:
+            raise UpdateError("unknown action")
+        return {"ok": True, "result": result, "log": log.text()}
+    except (UpdateError, subprocess.TimeoutExpired, OSError) as error:
+        return {"ok": False, "error": str(error)[:500], "log": log.text()}
+
+
+# ── Spool ────────────────────────────────────────────────────────────────────────────────
+
+def now() -> str:
+    return datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+
+def write_status(status_dir: Path, request_id: str, status: dict) -> None:
+    fd, temp = tempfile.mkstemp(dir=status_dir, prefix=".status-")
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        handle.write(json.dumps({"id": request_id, **status}, ensure_ascii=False) + "\n")
+    os.chmod(temp, 0o644)
+    os.replace(temp, status_dir / f"{request_id}.json")
+
+
+def read_request(path: Path) -> dict | None:
+    """The request in `path`, or None when it is not a plain small JSON file. Never follows a
+    link; the file is removed either way."""
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    except OSError:
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
+        return None
+    try:
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode) or info.st_size > REQUEST_MAX_BYTES:
+            return None
+        with os.fdopen(fd, encoding="utf-8") as handle:
+            fd = -1
+            value = json.loads(handle.read(REQUEST_MAX_BYTES))
+        return value if isinstance(value, dict) else None
+    except (OSError, ValueError):
+        return None
+    finally:
+        if fd >= 0:
+            os.close(fd)
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
+
+
+def prune_status(status_dir: Path, keep_days: float) -> None:
+    cutoff = time.time() - keep_days * 86_400
+    for entry in status_dir.glob("*.json"):
+        try:
+            if entry.lstat().st_mtime < cutoff:
+                entry.unlink()
+        except OSError:
+            pass
+
+
+def serve(config: dict) -> list[dict]:
+    spool = Path(config["spool"])
+    requests_dir, status_dir = spool / "requests", spool / "status"
+    status_dir.mkdir(mode=0o755, exist_ok=True)
+    answered = []
+    lock_fd = os.open(status_dir / ".lock", os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(lock_fd) as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        prune_status(status_dir, float(config["statusKeepDays"]))
+        # Oldest first; new requests that arrive meanwhile are served in the same run.
+        while True:
+            entries = sorted(requests_dir.iterdir(), key=lambda entry: entry.lstat().st_mtime) \
+                if requests_dir.is_dir() else []
+            if not entries:
+                break
+            for entry in entries:
+                match = REQUEST_NAME.match(entry.name)
+                request = read_request(entry)
+                if not match or request is None:
+                    continue
+                request_id = match.group(1)
+                if request.get("id") != request_id:
+                    write_status(status_dir, request_id, {
+                        "action": None, "state": "failed", "ok": False,
+                        "error": "the request names another id", "finishedAt": now()})
+                    continue
+                action = str(request.get("action"))[:32]
+                started = now()
+                write_status(status_dir, request_id,
+                             {"action": action, "state": "running", "startedAt": started})
+                answer = perform(config, request)
+                write_status(status_dir, request_id, {
+                    "action": action, "state": "done" if answer["ok"] else "failed",
+                    "startedAt": started, "finishedAt": now(), **answer})
+                answered.append({"id": request_id, "action": action, "ok": answer["ok"]})
+    return answered
+
+
+def main(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(prog="helena-update")
+    parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
+    parser.add_argument("action", choices=["serve", "inventory", "apt", "cli-runtime"])
+    parser.add_argument("args", nargs="*")
+    args = parser.parse_args(argv)
+    config = load_config(args.config)
+    if args.action == "serve":
+        print(json.dumps(serve(config)))
+        return 0
+    if args.action == "inventory":
+        answer = perform(config, {"action": "inventory"})
+    elif args.action == "apt":
+        answer = perform(config, {"action": "apt", "packages": args.args})
+    else:
+        if len(args.args) != 2:
+            parser.error("cli-runtime needs <runtime> <version>")
+        answer = perform(config, {"action": "cli-runtime", "runtime": args.args[0],
+                                  "version": args.args[1]})
+    print(json.dumps(answer, ensure_ascii=False, indent=1))
+    return 0 if answer.get("ok") else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

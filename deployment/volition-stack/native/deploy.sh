@@ -167,6 +167,13 @@ if changed deployment/volition-stack/native/runtimes; then
   echo "  sudo $live/deployment/volition-stack/native/runtimes/install-cli-runtimes.sh install"
 fi
 
+# The update center's root helper runs its own copies of itself and of the runtime installer;
+# they follow the repository once installed (updates/install.sh).
+if [[ -x /usr/local/libexec/helena-update ]] &&
+  changed deployment/volition-stack/native/updates deployment/volition-stack/native/runtimes; then
+  "$live/deployment/volition-stack/native/updates/install.sh" --refresh
+fi
+
 # A restart ends every open terminal session. The shell script and tmux.conf are read
 # for each new session, so only the router and the unit need one.
 if changed deployment/volition-stack/native/terminal/project-terminal-router.mjs \

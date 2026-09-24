@@ -1,0 +1,11 @@
+[Unit]
+Description=Helena: update center requests from the API
+
+[Path]
+# Helena's API puts a request (an inventory, or an update the owner started) into this
+# folder; the helper removes each one when it takes it.
+DirectoryNotEmpty=/var/lib/helena-updates/spool/requests
+Unit=helena-update.service
+
+[Install]
+WantedBy=multi-user.target

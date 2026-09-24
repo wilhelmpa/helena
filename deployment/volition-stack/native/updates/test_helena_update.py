@@ -1,0 +1,270 @@
+"""Tests of the update center's host helper against fakes: canned apt output, a fake runtime
+installer and a spool in a temporary folder. Nothing on the machine is read or changed and no
+root is needed. Run with `python3 -m unittest test_helena_update` in this folder."""
+
+from __future__ import annotations
+
+import importlib.machinery
+import importlib.util
+import json
+import os
+import subprocess
+import tempfile
+import unittest
+from pathlib import Path
+from unittest import mock
+
+HERE = Path(__file__).resolve().parent
+loader = importlib.machinery.SourceFileLoader("helper", str(HERE / "helena-update"))
+spec = importlib.util.spec_from_loader("helper", loader)
+helper = importlib.util.module_from_spec(spec)
+loader.exec_module(helper)
+
+SIMULATION = """NOTE: This is only a simulation!
+Inst libssl3t64 [3.5.1-1] (3.5.1-1+deb13u1 Debian-Security:13/stable-security [amd64])
+Inst openssl [3.5.1-1] (3.5.1-1+deb13u1 Debian-Security:13/stable-security [amd64])
+Inst tzdata [2025b-4] (2025c-0+deb13u1 Debian:13.2/stable [all])
+Inst chromium [153.0.8010.52-1~deb13u1] (153.0.8010.70-1~deb13u1 Debian:13.2/stable, Debian-Security:13/stable-security [amd64])
+Inst libnew1 (1.0-1 Debian:13.2/stable [amd64])
+Conf libssl3t64 (3.5.1-1+deb13u1 Debian-Security:13/stable-security [amd64])
+Remv oldthing [0.9-1]
+"""
+SOURCES = "libssl3t64\topenssl\nopenssl\topenssl\ntzdata\ttzdata\nchromium\tchromium\n"
+
+
+def completed(args, stdout="", returncode=0):
+    return subprocess.CompletedProcess(args, returncode, stdout, "")
+
+
+class FakeSystem:
+    """Answers the commands the helper runs, and remembers them."""
+
+    def __init__(self) -> None:
+        self.commands: list[list[str]] = []
+        self.versions = {"libssl3t64": "3.5.1-1", "openssl": "3.5.1-1", "tzdata": "2025b-4",
+                         "chromium": "153.0.8010.52-1~deb13u1", "kasmvncserver": "1.5.0-1"}
+        self.simulation = SIMULATION
+
+    def __call__(self, args, **kwargs):
+        self.commands.append(list(args))
+        if args[:2] == ["apt-get", "-s"]:
+            return completed(args, self.simulation)
+        if args[:2] == ["apt-get", "update"]:
+            return completed(args, "Hit:1 http://deb.debian.org/debian trixie InRelease")
+        if args[:3] == ["apt-get", "install", "--only-upgrade"]:
+            for name in [arg for arg in args[3:] if not arg.startswith("-") and "=" not in arg
+                         and arg not in ("DPkg::Lock::Timeout=600",)]:
+                if name in self.versions:
+                    self.versions[name] = {"tzdata": "2025c-0+deb13u1",
+                                           "openssl": "3.5.1-1+deb13u1",
+                                           "libssl3t64": "3.5.1-1+deb13u1"}.get(name, "new")
+            return completed(args, "Setting up openssl ...")
+        if args[0] == "dpkg-query" and any("${source:Package}" in arg for arg in args):
+            return completed(args, SOURCES)
+        if args[0] == "dpkg-query":
+            version = self.versions.get(args[-1])
+            return completed(args, version or "", 0 if version else 1)
+        if args[0] == "systemctl":
+            return completed(args, "")
+        return completed(args, "", 0)
+
+
+class HelperTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.spool = self.root / "spool"
+        (self.spool / "requests").mkdir(parents=True)
+        (self.spool / "status").mkdir()
+        self.config = helper.load_config(self.write_config())
+        self.fake = FakeSystem()
+        patcher = mock.patch.object(helper.subprocess, "run", side_effect=self.fake)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def tearDown(self) -> None:
+        self.tmp.cleanup()
+
+    def write_config(self, **changes) -> Path:
+        path = self.root / "config.json"
+        path.write_text(json.dumps({
+            "spool": str(self.spool),
+            "runtimesInstaller": str(self.root / "no-installer"),
+            "tools": {},
+            **changes,
+        }))
+        return path
+
+    def request(self, request_id: str, body: dict) -> Path:
+        path = self.spool / "requests" / f"{request_id}.json"
+        path.write_text(json.dumps({"id": request_id, **body}))
+        return path
+
+    def status(self, request_id: str) -> dict:
+        return json.loads((self.spool / "status" / f"{request_id}.json").read_text())
+
+
+class InventoryTest(HelperTest):
+    def test_groups_upgrades_by_source_and_marks_security_by_origin(self):
+        apt = helper.apt_inventory()
+        by_source = {group["source"]: group for group in apt["packages"]}
+        self.assertEqual(sorted(by_source), ["chromium", "openssl", "tzdata"])
+        self.assertEqual(sorted(by_source["openssl"]["packages"]), ["libssl3t64", "openssl"])
+        self.assertTrue(by_source["openssl"]["security"])
+        self.assertTrue(by_source["chromium"]["security"])
+        self.assertFalse(by_source["tzdata"]["security"])
+        self.assertEqual(by_source["tzdata"]["candidate"], "2025c-0+deb13u1")
+        self.assertEqual(by_source["chromium"]["installed"], "153.0.8010.52-1~deb13u1")
+        self.assertEqual(apt["newPackages"], ["libnew1"])
+        self.assertEqual(apt["removals"], ["oldthing"])
+        # A simulation changes nothing and takes no lock.
+        simulate = next(c for c in self.fake.commands if c[:2] == ["apt-get", "-s"])
+        self.assertIn("Debug::NoLocking=1", simulate)
+
+    def test_reads_tool_versions_from_their_folders(self):
+        runtime = self.root / "runtime"
+        bun = runtime / "bun-v1.4.2" / "bun-linux-x64" / "bun"
+        node = runtime / "node-v24.21.0-linux-x64" / "bin" / "node"
+        server = runtime / "code-server-4.138.0-linux-amd64" / "bin" / "code-server"
+        wetty = runtime / "wetty-3.2.2" / "node_modules" / "wetty" / "build" / "main.js"
+        for path in (bun, node, server, wetty):
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("")
+        (runtime / "code-server-4.138.0-linux-amd64" / "package.json").write_text('{"version":"4.138.0"}')
+        (runtime / "wetty-3.2.2" / "node_modules" / "wetty" / "package.json").write_text('{"version":"3.2.2"}')
+        link = self.root / "bin-bun"
+        link.symlink_to(bun)
+        self.assertEqual(helper.tool_version(str(link)), "1.4.2")
+        self.assertEqual(helper.tool_version(str(node)), "24.21.0")
+        self.assertEqual(helper.tool_version(str(server)), "4.138.0")
+        self.assertEqual(helper.tool_version(str(wetty)), "3.2.2")
+        self.assertIsNone(helper.tool_version(str(self.root / "missing")))
+
+    def test_the_whole_inventory(self):
+        with mock.patch.object(helper, "runtimes_status", return_value={"claude": {"current": "2.1.281"}}):
+            answer = helper.perform(self.config, {"action": "inventory"})
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual(answer["result"]["runtimes"]["claude"]["current"], "2.1.281")
+        self.assertEqual(answer["result"]["tools"]["chromium"], "153.0.8010.52-1~deb13u1")
+        self.assertEqual(answer["result"]["tools"]["kasmvnc"], "1.5.0-1")
+        self.assertFalse(any(c[:2] == ["apt-get", "update"] for c in self.fake.commands))
+
+
+class AptTest(HelperTest):
+    def test_upgrades_only_the_chosen_packages_that_are_upgradable(self):
+        answer = helper.perform(self.config, {"action": "apt",
+                                              "packages": ["openssl", "libssl3t64", "vim"]})
+        self.assertTrue(answer["ok"], answer)
+        install = next(c for c in self.fake.commands if c[:3] == ["apt-get", "install", "--only-upgrade"])
+        self.assertEqual(install[-2:], ["libssl3t64", "openssl"])
+        self.assertIn("Dpkg::Options::=--force-confold", install)
+        result = answer["result"]
+        self.assertEqual(result["skipped"], ["vim"])
+        self.assertEqual({e["package"]: e["to"] for e in result["upgraded"]},
+                         {"libssl3t64": "3.5.1-1+deb13u1", "openssl": "3.5.1-1+deb13u1"})
+        self.assertIn("openssl=3.5.1-1", result["rollback"])
+        # The lists are refreshed first.
+        self.assertTrue(any(c[:2] == ["apt-get", "update"] for c in self.fake.commands))
+
+    def test_refuses_names_that_are_not_packages(self):
+        answer = helper.perform(self.config, {"action": "apt", "packages": ["openssl; rm -rf /"]})
+        self.assertFalse(answer["ok"])
+        self.assertFalse(any(c[:2] == ["apt-get", "install"] for c in self.fake.commands))
+        answer = helper.perform(self.config, {"action": "apt", "packages": "openssl"})
+        self.assertFalse(answer["ok"])
+
+    def test_nothing_upgradable_installs_nothing(self):
+        self.fake.simulation = "NOTE: This is only a simulation!\n"
+        answer = helper.perform(self.config, {"action": "apt", "packages": ["openssl"]})
+        self.assertTrue(answer["ok"])
+        self.assertEqual(answer["result"]["upgraded"], [])
+        self.assertFalse(any(c[:2] == ["apt-get", "install"] for c in self.fake.commands))
+
+
+class RuntimeTest(unittest.TestCase):
+    """Against a real (fake) installer script, without the patched subprocess."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        root = Path(self.tmp.name)
+        self.state = root / "state.json"
+        self.installer = root / "installer"
+        self.installer.write_text(
+            "#!/bin/sh\n"
+            f'STATE="{self.state}"\n'
+            'if [ "$1" = status ]; then cat "$STATE" 2>/dev/null || echo "{}"; exit 0; fi\n'
+            'if [ "$1" = upgrade ]; then\n'
+            '  [ "$3" = 9.9.9 ] && { echo "the manifest is not signed"; exit 1; }\n'
+            '  printf \'{"%s":{"pinned":"%s","current":"%s","previous":"1.0.0","intact":true}}\' "$2" "$3" "$3" > "$STATE"\n'
+            '  echo "$2 upgraded"; exit 0\n'
+            "fi\n"
+            "exit 64\n")
+        self.installer.chmod(0o755)
+        path = root / "config.json"
+        path.write_text(json.dumps({"spool": str(root / "spool"),
+                                    "runtimesInstaller": str(self.installer), "tools": {}}))
+        self.config = helper.load_config(path)
+
+    def tearDown(self) -> None:
+        self.tmp.cleanup()
+
+    def test_upgrades_a_runtime_through_the_installer(self):
+        with mock.patch.object(helper, "failed_units", return_value=[]):
+            answer = helper.perform(self.config, {"action": "cli-runtime", "runtime": "codex",
+                                                  "version": "0.158.0"})
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual(answer["result"]["to"], "0.158.0")
+        self.assertIn("rollback codex", answer["result"]["rollback"])
+        self.assertIn("codex upgraded", answer["log"])
+
+    def test_a_failed_upgrade_is_the_answer(self):
+        answer = helper.perform(self.config, {"action": "cli-runtime", "runtime": "codex",
+                                              "version": "9.9.9"})
+        self.assertFalse(answer["ok"])
+        self.assertIn("not signed", answer["log"])
+
+    def test_refuses_unknown_runtimes_and_versions(self):
+        for runtime, version in (("evil", "1.0.0"), ("codex", "1.0; rm -rf /"), ("codex", "latest")):
+            answer = helper.perform(self.config, {"action": "cli-runtime", "runtime": runtime,
+                                                  "version": version})
+            self.assertFalse(answer["ok"], (runtime, version))
+        self.assertFalse(self.state.exists())
+
+
+class SpoolTest(HelperTest):
+    def test_serves_every_request_and_writes_its_status(self):
+        self.request("11111111-1111-4111-8111-111111111111", {"action": "apt", "packages": ["tzdata"]})
+        self.request("22222222-2222-4222-8222-222222222222", {"action": "nope"})
+        answered = helper.serve(self.config)
+        self.assertEqual(len(answered), 2)
+        done = self.status("11111111-1111-4111-8111-111111111111")
+        self.assertEqual((done["state"], done["ok"]), ("done", True))
+        self.assertEqual(done["result"]["upgraded"][0]["package"], "tzdata")
+        failed = self.status("22222222-2222-4222-8222-222222222222")
+        self.assertEqual((failed["state"], failed["error"]), ("failed", "unknown action"))
+        self.assertEqual(list((self.spool / "requests").iterdir()), [])
+        self.assertEqual(oct(os.stat(self.spool / "status" / "11111111-1111-4111-8111-111111111111.json").st_mode & 0o777), "0o644")
+
+    def test_never_follows_a_link_and_drops_what_is_not_a_request(self):
+        secret = self.root / "secret.json"
+        secret.write_text(json.dumps({"id": "33333333-3333-4333-8333-333333333333", "action": "apt",
+                                      "packages": ["openssl"]}))
+        (self.spool / "requests" / "33333333-3333-4333-8333-333333333333.json").symlink_to(secret)
+        (self.spool / "requests" / "notes.txt").write_text("hello")
+        (self.spool / "requests" / "44444444-4444-4444-8444-444444444444.json").write_text("x" * 70_000)
+        answered = helper.serve(self.config)
+        self.assertEqual(answered, [])
+        self.assertEqual(list((self.spool / "requests").iterdir()), [])
+        self.assertTrue(secret.exists())
+        self.assertFalse(any(c[:2] == ["apt-get", "install"] for c in self.fake.commands))
+
+    def test_a_request_must_name_its_own_id(self):
+        path = self.spool / "requests" / "55555555-5555-4555-8555-555555555555.json"
+        path.write_text(json.dumps({"id": "66666666-6666-4666-8666-666666666666", "action": "inventory"}))
+        helper.serve(self.config)
+        status = self.status("55555555-5555-4555-8555-555555555555")
+        self.assertEqual(status["error"], "the request names another id")
+
+
+if __name__ == "__main__":
+    unittest.main()
