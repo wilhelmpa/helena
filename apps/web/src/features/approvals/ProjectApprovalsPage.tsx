@@ -11,7 +11,6 @@ import ApprovalsView from './components/ApprovalsView';
 // view as the global Approvals page, narrowed to one project.
 export default function ProjectApprovalsPage() {
   const tNav = useTranslations('nav');
-  const t = useTranslations('approvals');
   const { project } = useShell();
   if (!project) return null;
 

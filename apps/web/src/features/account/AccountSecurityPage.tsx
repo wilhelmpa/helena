@@ -4,7 +4,6 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/lib/auth-client';
-import { useHydrated } from '@/components/common/page/useHydrated';
 import { qk } from '@/services/queryKeys';
 import SectionPageView from '@/components/common/page/SectionPageView';
 import { usePasskeysQuery, type PasskeyRow } from './services/passkeys.service';
@@ -21,8 +20,6 @@ import AccountSecurityTotpSection from './components/security/AccountSecurityTot
 export default function AccountSecurityPage() {
   const t = useTranslations('account.security');
   const { data: session } = useSession();
-  // The session is in the store on hydration but not on the server: read it after.
-  const email = (useHydrated() && session?.user.email) || '…';
   const queryClient = useQueryClient();
   const [deleting, setDeleting] = useState<PasskeyRow | null>(null);
 

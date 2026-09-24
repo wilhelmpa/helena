@@ -11,7 +11,6 @@ import AgentActivityTimeline from './components/AgentActivityTimeline';
 // agents of the one team those projects belong to, and is left out across several.
 export default function HomeAgentActivityPage() {
   const tNav = useTranslations('nav');
-  const t = useTranslations('agentActivity');
   const projects = useProjectsQuery().data ?? [];
   const teamIds = new Set(projects.map((project) => project.teamId));
   const agents = useAiAgentsQuery(teamIds.size === 1 ? [...teamIds][0]! : null);
