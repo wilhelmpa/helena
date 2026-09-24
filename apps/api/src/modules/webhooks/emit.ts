@@ -1,94 +1,85 @@
-import { randomUUID } from 'node:crypto';
-import { db, webhook, webhookDelivery } from '@repo/db';
-import { and, eq, sql } from 'drizzle-orm';
+import type { CoreEventData, CoreEventType } from '@helena/sdk';
+import { publishDomainEvent } from '#shared/helena';
 import type { WebhookEventType } from './service';
 
-// Maps our granular event type to the Linear-style envelope's action + resource
-// type. action is create | update | remove. type is the PascalCase resource.
-// Linear's action/type pair cannot distinguish our assigned, state_changed, and
-// label_changed variants, because all of them are an issue update. The payload keeps
-// the granular event in its own `event` field.
-const EVENT_SHAPE: Record<WebhookEventType, { action: string; type: string }> = {
-  'issue.created': { action: 'create', type: 'Issue' },
-  'issue.updated': { action: 'update', type: 'Issue' },
-  'issue.deleted': { action: 'remove', type: 'Issue' },
-  'issue.assigned': { action: 'update', type: 'Issue' },
-  'issue.state_changed': { action: 'update', type: 'Issue' },
-  'issue.label_changed': { action: 'update', type: 'Issue' },
-  'issue.link_changed': { action: 'update', type: 'Issue' },
-  'comment.created': { action: 'create', type: 'Comment' },
-  'comment.updated': { action: 'update', type: 'Comment' },
-  'comment.deleted': { action: 'remove', type: 'Comment' },
-};
-
-// Fan-out for outgoing webhooks. Queues one delivery per active webhook of the
-// project that subscribes to eventType. The deliveries share one eventId, which stays
-// the same across retries so a receiver can deduplicate. Call it right after a domain
-// mutation, next to the activity log, the same way the issue service handles its other
-// post-write side effects. It does nothing when no webhook matches, so a project with
-// no webhooks pays one indexed SELECT.
+// Issue and comment changes are domain events (`helena.issue.*`, `helena.comment.*`,
+// CloudEvents in the outbox). Outgoing webhooks are one consumer of them: the worker's
+// dispatcher runs the fan-out (@repo/db fanOutWebhooks), which queues one delivery per
+// subscribed webhook with the same Linear-style body as before. Workflow triggers, the
+// knowledge index and plugins consume the same events.
 //
-// The body follows Linear's webhook envelope: top-level action, type, data, plus
-// createdAt and webhookTimestamp (epoch ms). `event` is our extension, and it carries
-// the granular event type. We omit organizationId and url, because there is no
-// organization concept and issues have no public URL. The shared dedup id goes in the
-// X-Itsaplan-Event-Id header, not in the body.
-export async function emitWebhookEvent(
+// Call it right after a domain mutation, next to the activity log, the way the issue
+// service handles its other post-write side effects. The event carries the resource as
+// the API returns it (`snapshot`), which is what a webhook receives as `data`.
+
+type ResourceEvent = `helena.${WebhookEventType}` & CoreEventType;
+
+interface Resource {
+  id?: number;
+  identifier?: string;
+  issueId?: number | null;
+  title?: string;
+  parentId?: number | null;
+}
+
+function eventData(
   projectId: number,
   eventType: WebhookEventType,
   data: unknown,
-): Promise<void> {
-  await emitWebhookEvents(projectId, eventType, () => Promise.resolve([data]));
+  extra: Record<string, unknown>,
+): Record<string, unknown> {
+  const resource = (data ?? {}) as Resource;
+  if (eventType.startsWith('comment.')) {
+    return {
+      commentId: resource.id ?? 0,
+      issueId: resource.issueId ?? 0,
+      projectId,
+      snapshot: data,
+      ...extra,
+    };
+  }
+  return {
+    issueId: resource.id ?? 0,
+    identifier: resource.identifier ?? '',
+    projectId,
+    ...(eventType === 'issue.created'
+      ? { title: resource.title ?? '', parentId: resource.parentId ?? null }
+      : {}),
+    snapshot: data,
+    ...extra,
+  };
 }
 
-// Several events of one type at once. It builds the payloads only after it finds a
-// subscribed webhook. Use it for a write whose payload costs its own queries to
-// build: linking two issues has to load both of them. A project with no webhook then
-// pays one indexed SELECT and nothing else. Each event gets its own eventId. The
-// deliveries go in as one insert.
-export async function emitWebhookEvents(
+// Publishes one issue or comment event. `extra` adds the fields an event type has beyond
+// the resource (issue.assigned: field, assigneeId, previousAssigneeId).
+export async function publishResourceEvent(
+  projectId: number,
+  eventType: WebhookEventType,
+  data: unknown,
+  extra: Record<string, unknown> = {},
+): Promise<void> {
+  const type = `helena.${eventType}` as ResourceEvent;
+  const subject = eventType.startsWith('comment.')
+    ? `comments/${(data as Resource | null)?.id ?? ''}`
+    : `issues/${(data as Resource | null)?.id ?? ''}`;
+  await publishDomainEvent({
+    type,
+    projectId,
+    subject,
+    data: eventData(projectId, eventType, data, extra) as unknown as CoreEventData[typeof type],
+  });
+}
+
+// Several events of one type at once, for a write whose payloads cost their own queries
+// (linking two issues loads both).
+export async function publishResourceEvents(
   projectId: number,
   eventType: WebhookEventType,
   load: () => Promise<unknown[]>,
 ): Promise<void> {
-  const matching = await db
-    .select({ id: webhook.id })
-    .from(webhook)
-    .where(
-      and(
-        eq(webhook.projectId, projectId),
-        eq(webhook.isActive, true),
-        // events is a jsonb array of event-type strings. @> tests membership.
-        sql`${webhook.events} @> ${JSON.stringify([eventType])}::jsonb`,
-      ),
-    );
-  if (matching.length === 0) return;
-
-  const payloads = await load();
-  if (payloads.length === 0) return;
-
-  const { action, type } = EVENT_SHAPE[eventType];
-  const now = new Date();
-  const createdAt = now.toISOString();
-  const webhookTimestamp = now.getTime();
-
-  await db.insert(webhookDelivery).values(
-    payloads.flatMap((data) => {
-      const eventId = randomUUID();
-      return matching.map((h) => ({
-        webhookId: h.id,
-        eventId,
-        eventType,
-        payload: {
-          action,
-          type,
-          event: eventType,
-          createdAt,
-          data,
-          webhookTimestamp,
-          webhookId: h.id,
-        },
-      }));
-    }),
-  );
+  for (const data of await load()) await publishResourceEvent(projectId, eventType, data);
 }
+
+// The names the issue and comment services have always called.
+export const emitWebhookEvent = publishResourceEvent;
+export const emitWebhookEvents = publishResourceEvents;

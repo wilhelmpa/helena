@@ -1,3 +1,4 @@
+import type { RuntimeReaders } from './runtime-readers';
 import type { LocalizedText } from './text';
 
 // A runtime is an agent harness the runner drives: Hermes, Claude Code, Codex, or one a
@@ -101,45 +102,14 @@ export interface RuntimeProfile {
   materialize(ctx: RuntimeProfileContext): Promise<RuntimeProfileResult>;
 }
 
-// Optional readers of what the runtime keeps on its own, for Helena to show (sessions,
-// memory, usage, logs). Each is small on purpose; the runtime's owner extends them.
-export interface RuntimeSessionSummary {
-  id: string;
-  title?: string | null;
-  startedAt: string;
-  updatedAt: string;
-  model?: string | null;
-  messageCount?: number;
-}
-
-export interface RuntimeReaders {
-  sessions?: {
-    list(
-      home: string,
-      options: { limit: number; before?: string | null },
-    ): Promise<RuntimeSessionSummary[]>;
-    transcript(home: string, sessionId: string): Promise<RuntimeStreamEvent[]>;
-  };
-  memory?: {
-    read(home: string): Promise<Array<{ name: string; content: string; updatedAt: string | null }>>;
-  };
-  usage?: {
-    read(
-      home: string,
-      range: { from: string; to: string },
-    ): Promise<Array<{ day: string; model: string; inputTokens: number; outputTokens: number }>>;
-  };
-  logs?: {
-    tail(home: string, options: { lines: number; sessionId?: string }): Promise<string[]>;
-  };
-}
-
 interface RuntimeAdapterBase {
   id: string;
   label: LocalizedText;
   description?: LocalizedText;
   capabilities: RuntimeCapabilities;
   profile?: RuntimeProfile;
+  // What Helena can read back (sessions, transcripts, logs, health, version) and the
+  // controls besides running work (curator, emergency stop).
   readers?: RuntimeReaders;
 }
 
