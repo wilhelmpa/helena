@@ -547,10 +547,16 @@ describe('the Autopilot as an @helena/sdk policy evaluator', () => {
     });
     expect(await ask('send', null)).toBeNull();
     expect(await ask('launch')).toBeNull();
-    const [logged] = await db
+    const logged = await db
       .select()
       .from(helenaPolicyDecision)
-      .where(eq(helenaPolicyDecision.adapter, 'connector'));
-    expect(logged).toMatchObject({ tool: 'pages', summary: 'Roadmap page', scope: 'external' });
+      .where(eq(helenaPolicyDecision.adapter, 'connector'))
+      .orderBy(helenaPolicyDecision.id);
+    // A connector's delete reaches outside the agent's workspace.
+    expect(logged.map((row) => `${row.category}:${row.scope}:${row.outcome}`)).toEqual([
+      'send:workspace:allow',
+      'delete:external:needs-approval',
+    ]);
+    expect(logged[0]).toMatchObject({ tool: 'pages', summary: 'Roadmap page' });
   });
 });
