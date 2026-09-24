@@ -111,15 +111,16 @@ export const engineRoutes = new Elysia({
     '/projects/:projectKey/pipelines/:pipelineId/hook',
     async ({ project, params }) => {
       await usablePipeline(project, params.pipelineId);
-      return getHook(project.id, params.pipelineId);
+      return { hook: await getHook(project.id, params.pipelineId) };
     },
     {
       permission: ['actions', 'read'],
       params: hookParams,
-      response: { 200: t.Nullable(HookResponse), ...accessErrors },
+      response: { 200: t.Object({ hook: t.Nullable(HookResponse) }), ...accessErrors },
       detail: {
         summary: 'Get the webhook of a workflow',
-        description: 'The hook a sender posts to, without its secret; null when there is none.',
+        description:
+          'The hook a sender posts to, without its secret; `hook` is null when there is none.',
       },
     },
   )

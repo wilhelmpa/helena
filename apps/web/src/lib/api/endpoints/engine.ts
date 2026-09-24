@@ -18,8 +18,12 @@ export interface PipelineHook {
 
 export const getEngineSettings = () => request<EngineSettings>('/workflow-engine/settings');
 
-export const getPipelineHook = (projectKey: string, pipelineId: number) =>
-  request<PipelineHook | null>(`/projects/${projectKey}/pipelines/${pipelineId}/hook`);
+export const getPipelineHook = async (projectKey: string, pipelineId: number) =>
+  (
+    await request<{ hook: PipelineHook | null }>(
+      `/projects/${projectKey}/pipelines/${pipelineId}/hook`,
+    )
+  ).hook;
 
 // Creates the hook or gives it a new secret; the secret is answered only now.
 export const createPipelineHook = (projectKey: string, pipelineId: number) =>

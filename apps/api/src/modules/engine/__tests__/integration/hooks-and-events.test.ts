@@ -92,7 +92,7 @@ describe('workflow webhooks', () => {
       type: 'webhook',
       title: 'From outside',
     });
-    expect((await project(ctx).pipelines({ pipelineId }).hook.get()).data).toBeNull();
+    expect((await project(ctx).pipelines({ pipelineId }).hook.get()).data).toEqual({ hook: null });
     const created = (await project(ctx).pipelines({ pipelineId }).hook.post()).data!;
     expect(created.url).toBe(`/hooks/workflows/${created.id}`);
     expect(created.secret).toStartWith('whsec_');
@@ -134,7 +134,7 @@ describe('workflow webhooks', () => {
     expect(secondTask?.title).toBe('From outside');
     expect(await waitForRuns(pipelineId, 2)).toHaveLength(2);
     expect(
-      (await project(ctx).pipelines({ pipelineId }).hook.get()).data?.lastUsedAt,
+      (await project(ctx).pipelines({ pipelineId }).hook.get()).data?.hook?.lastUsedAt,
     ).not.toBeNull();
   });
 
