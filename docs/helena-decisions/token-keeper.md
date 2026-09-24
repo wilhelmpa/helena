@@ -116,7 +116,35 @@ shown under the login in Home → Dienste → Anmeldungen.
 3. A read-only borrower mode: a profile that cannot write its root never refreshes a borrowed
    single-use grant and says so, instead of spending it.
 
-## 7. Open
+## 7. Live proof (orchestrator, after the merge)
+
+1. `sudo deployment/volition-stack/native/deploy.sh` (no migration; no runner rebuild). It
+   installs the keeper (isolation is installed), runs it once, installs the new launcher code
+   and configuration, then revokes the agents' direct read access; API, worker, web and runner
+   restart as usual (check that no run is in flight first).
+2. `sudo deployment/volition-stack/native/token-keeper/install.sh status`: timer active; the
+   status names `anthropic` `invalid` with the command, `openai-codex` `ok` with its expiry,
+   and the Codex CLI login `linked` or `separate`.
+3. No refresh token in the views, counted without printing anything:
+   `sudo grep -c refresh_token /var/lib/helena-token-keeper/view/hermes/auth.json /var/lib/helena-token-keeper/view/codex/auth.json`
+   → `0` and `0`; `sudo stat -c '%U:%G %a %n' /var/lib/helena-token-keeper/view/hermes/auth.json`
+   → `volition-hermes:volition-agents 640`.
+4. A chat with a Codex model answers (the view works in a real unit); while it runs,
+   `systemctl show -p BindReadOnlyPaths 'volition-agent-*'` lists
+   `/var/lib/helena-token-keeper/view/hermes/auth.json:/var/lib/volition/hermes/auth.json`.
+5. Home → Dienste → Anmeldungen: Claude `ungültig` with the command, ChatGPT `gültig, noch …`.
+   Agent → Laufzeit → Prüfen: "OpenAI Codex auth (logged in)", no `~/.local/bin/hermes` warning.
+6. Optional, at a quiet moment: prove the ChatGPT chain is alive now, a week before it matters:
+   `sudo -u volition-hermes env HOME=/var/lib/volition/hermes HERMES_HOME=/var/lib/volition/hermes PYTHONPATH=/srv/volition/source/hermes /var/lib/volition/hermes/venv/bin/python /usr/local/lib/helena-token-keeper/helena_token_keeper.py tick --renew openai-codex`
+   → the status shows `refreshedAt` now and an expiry about ten days out; a Codex chat still
+   answers.
+7. The owner signs Claude in again (§5); after the next runner restart the Claude models are
+   back in the catalog and a Claude chat answers.
+
+Rollback: `git revert -m 1 <merge>` and deploy (the old binding comes back, and with it the
+problem), then `sudo deployment/volition-stack/native/token-keeper/install.sh remove`.
+
+## 8. Open
 
 - Per-agent issue: Hermes agents whose model runs on a dead login could show "Laufzeit nicht
   angemeldet" on the agent page (the runner can read the keeper's status). The Home line and
@@ -124,3 +152,10 @@ shown under the login in Home → Dienste → Anmeldungen.
 - Claude Code and Codex agents with their own logins in their homes (`hub/cli-runtimes`) keep
   their own refresh; they are not shared and not bound read-only, so not affected.
 - The Docker packaging (package G) runs the same program in a loop in the runner container.
+- The keeper uses a few private Hermes functions (`_refresh_entry`, `_auth_store_lock`,
+  `_load_auth_store`, `_save_codex_tokens`). `test_token_keeper_hermes.py` runs the keeper
+  against the installed Hermes; it belongs in the Hermes update's checks (hermes-update).
+- The account's model list (hub/model-availability's `codex_listed_models`, the catalog's
+  `provider_model_ids`) reads the Codex CLI's access token next to Hermes; the keeper keeps that
+  one fresh only while it is the same chain as Hermes' own. Hermes' own ChatGPT login, read
+  read-only (`resolve_codex_runtime_credentials(read_only=True)`), is always kept fresh.
