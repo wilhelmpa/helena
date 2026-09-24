@@ -1,5 +1,7 @@
+import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
 import { domainToASCII } from 'node:url';
+import { isPrivateIp } from '@repo/net';
 
 // Same normalization the settings API uses (apps/api/src/modules/agent-browser-gateway/
 // service.ts) — duplicated on purpose, not imported: this package runs inside the browser
@@ -19,6 +21,47 @@ export function normalizeHost(value: string): string | null {
 export interface DomainPolicy {
   domainBlocklist: string[];
   domainAllowlist: string[];
+  // Local and private addresses (the project setting "Lokale Adressen erlauben"): closed
+  // unless the owner opened them.
+  allowLocalAddresses?: boolean;
+}
+
+// A host that is local by its name or its literal address: localhost, the names a LAN
+// resolves itself (*.local, *.lan, *.internal, *.home.arpa) and private, loopback,
+// link-local and CGNAT addresses (@repo/net's ranges). The browser runs on the server, so
+// such an address reaches Helena, the other projects' browsers and their DevTools ports.
+export function isLocalHost(host: string): boolean {
+  const normalized = normalizeHost(host);
+  if (!normalized) return false;
+  if (isIP(normalized)) return isPrivateIp(normalized);
+  return (
+    normalized === 'localhost' ||
+    ['.localhost', '.local', '.lan', '.internal', '.home.arpa'].some((suffix) =>
+      normalized.endsWith(suffix),
+    )
+  );
+}
+
+export type HostLookup = (host: string) => Promise<{ address: string }[]>;
+
+const systemLookup: HostLookup = (host) => lookup(host, { all: true });
+
+// Whether a host an agent names is local, its name resolved as well: a public-looking name
+// pointing at a private address counts too. A name that does not resolve is left to the
+// browser, which cannot open it either.
+export async function resolvesLocally(
+  host: string,
+  resolve: HostLookup = systemLookup,
+): Promise<boolean> {
+  if (isLocalHost(host)) return true;
+  const normalized = normalizeHost(host);
+  if (!normalized || isIP(normalized)) return false;
+  try {
+    const addresses = await resolve(normalized);
+    return addresses.some((entry) => isPrivateIp(entry.address));
+  } catch {
+    return false;
+  }
 }
 
 // Whether navigation to `host` is allowed under the project's settings (design §8): the
@@ -34,6 +77,7 @@ export function hostAllowed(policy: DomainPolicy, host: string): boolean {
     list.some((entry) => normalized === entry || normalized.endsWith(`.${entry}`));
   if (covers(policy.domainBlocklist)) return false;
   if (policy.domainAllowlist.length > 0 && !covers(policy.domainAllowlist)) return false;
+  if (!policy.allowLocalAddresses && isLocalHost(normalized)) return false;
   return true;
 }
 

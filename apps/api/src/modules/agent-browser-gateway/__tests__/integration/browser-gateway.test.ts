@@ -351,12 +351,15 @@ describe('browser gateway', () => {
       humanInput: true,
       lockTimeoutSec: 120,
       agentViewport: { width: 1440, height: 900 },
+      // Local and private addresses stay closed to agents until the owner opens them.
+      allowLocalAddresses: false,
     });
     const updated = await asOwner.projects({ projectKey: 'MKT' }).settings['browser-gateway'].put({
       domainBlocklist: ['bank.example'],
       humanInput: false,
       lockTimeoutSec: 60,
       agentViewport: { width: 1280, height: 800 },
+      allowLocalAddresses: true,
     });
     expect(updated.status).toBe(200);
     expect(updated.data).toMatchObject({
@@ -365,6 +368,7 @@ describe('browser gateway', () => {
       humanInput: false,
       lockTimeoutSec: 60,
       agentViewport: { width: 1280, height: 800 },
+      allowLocalAddresses: true,
     });
     const tooSmall = await asOwner.projects({ projectKey: 'MKT' }).settings['browser-gateway'].put({
       agentViewport: { width: 320, height: 200 },

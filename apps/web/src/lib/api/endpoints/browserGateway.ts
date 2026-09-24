@@ -30,6 +30,7 @@ export interface BrowserGatewaySettings {
   lockTimeoutSec: number;
   // The page size while an agent controls the browser; the live view scales it.
   agentViewport: AgentViewport;
+  allowLocalAddresses: boolean;
 }
 
 export interface BrowserGatewaySettingsPatch {
@@ -38,6 +39,7 @@ export interface BrowserGatewaySettingsPatch {
   humanInput?: boolean;
   lockTimeoutSec?: number;
   agentViewport?: AgentViewport;
+  allowLocalAddresses?: boolean;
 }
 
 export const getBrowserGatewaySettings = (projectKey: string) =>

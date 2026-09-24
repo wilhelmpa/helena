@@ -649,6 +649,8 @@
     "behaviorTitle": "Verhalten",
     "humanInputLabel": "Menschliche Eingabe",
     "humanInputHint": "Tippt und klickt mit menschenähnlichen Pausen statt in Bestzeit. Nur für unkritische Testprojekte abschalten.",
+    "allowLocalLabel": "Lokale Adressen erlauben",
+    "allowLocalHint": "Agenten dürfen localhost, das Heimnetz und .local-Adressen öffnen. Aus lassen, außer für eine lokale Testseite: der Browser läuft auf dem Server und erreicht dort Helena und die anderen Browser.",
     "lockTimeoutLabel": "Sperr-Timeout",
     "lockTimeoutHint": "Nach so vielen Sekunden ohne Aktion gibt ein Agent die Steuerung des Browsers automatisch wieder frei.",
     "seconds": "Sekunden",

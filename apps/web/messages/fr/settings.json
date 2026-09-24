@@ -649,6 +649,8 @@
     "behaviorTitle": "Comportement",
     "humanInputLabel": "Saisie de type humain",
     "humanInputHint": "Tape et clique avec des pauses de type humain plutôt qu'à vitesse maximale. À désactiver uniquement pour un projet de test à faible risque.",
+    "allowLocalLabel": "Autoriser les adresses locales",
+    "allowLocalHint": "Les agents peuvent ouvrir localhost, le réseau local et les adresses .local. À laisser désactivé sauf pour tester un site local : le navigateur tourne sur le serveur, où ces adresses atteignent Helena et les autres navigateurs.",
     "lockTimeoutLabel": "Délai du verrou",
     "lockTimeoutHint": "Passé ce nombre de secondes sans action, le contrôle du navigateur par un agent est libéré automatiquement.",
     "seconds": "secondes",

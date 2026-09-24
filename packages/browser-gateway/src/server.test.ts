@@ -103,6 +103,7 @@ function dispatcher(
     locks?: ProjectBrowserLocks;
     onHandover?: (slug: string, notice: HandoverNotice | null) => void;
     queue?: SlugQueue;
+    lookupHost?: (host: string) => Promise<{ address: string }[]>;
   } = {},
 ) {
   return new GatewayDispatcher({
@@ -112,6 +113,8 @@ function dispatcher(
     sessions: options.sessions ?? fakeSessions(),
     onHandover: options.onHandover,
     queue: options.queue,
+    // Every name resolves publicly unless a test says otherwise: no DNS in unit tests.
+    lookupHost: options.lookupHost ?? (async () => [{ address: '93.184.215.14' }]),
   });
 }
 
@@ -618,6 +621,45 @@ describe('GatewayDispatcher: domain policy (design §8)', () => {
     expect(tab.ok).toBe(false);
     expect(session.navigate).not.toHaveBeenCalled();
     expect(session.tabs).not.toHaveBeenCalled();
+  });
+
+  it('keeps local and private addresses closed unless the project opened them', async () => {
+    const session = fakeSession();
+    const lookupHost = mock(async (host: string) => [
+      { address: host === 'intranet.example' ? '192.168.1.5' : '93.184.215.14' },
+    ]);
+    const gateway = dispatcher({ sessions: fakeSessions(session), lookupHost });
+    for (const url of [
+      'http://127.0.0.1:3000/',
+      'http://localhost:9222/json/list',
+      'http://kingston-server.local/',
+      'http://[::1]/',
+      'http://169.254.169.254/latest/meta-data/',
+      'https://intranet.example/',
+    ]) {
+      const result = await gateway.handle({
+        tool: 'browser_navigate',
+        agentKey: 'k',
+        args: { url },
+      });
+      expect(result.ok).toBe(false);
+      expect(!result.ok && result.error).toContain('local or private address');
+    }
+    expect(session.navigate).not.toHaveBeenCalled();
+    const open = dispatcher({
+      helena: fakeHelenaClient({
+        resolve: mock(async () =>
+          resolved({ settings: { ...DEFAULT_SETTINGS, allowLocalAddresses: true } }),
+        ),
+      }),
+      sessions: fakeSessions(session),
+    });
+    const local = await open.handle({
+      tool: 'browser_navigate',
+      agentKey: 'k',
+      args: { url: 'http://127.0.0.1:18590/a/x' },
+    });
+    expect(local.ok).toBe(true);
   });
 
   it('refuses an address that is not http(s)', async () => {

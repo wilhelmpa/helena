@@ -649,6 +649,8 @@
     "behaviorTitle": "Comportamento",
     "humanInputLabel": "Entrada humanizada",
     "humanInputHint": "Digita e clica com pausas humanizadas em vez de no máximo de velocidade. Desative apenas em um projeto de teste de baixo risco.",
+    "allowLocalLabel": "Permitir endereços locais",
+    "allowLocalHint": "Os agentes podem abrir localhost, a rede local e endereços .local. Deixe desligado, a não ser para testar um site local: o navegador roda no servidor, onde esses endereços alcançam o Helena e os outros navegadores.",
     "lockTimeoutLabel": "Tempo limite do bloqueio",
     "lockTimeoutHint": "Após esse número de segundos sem ação, o controle do navegador por um agente é liberado automaticamente.",
     "seconds": "segundos",

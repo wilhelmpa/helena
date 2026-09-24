@@ -118,6 +118,19 @@ export default function SettingsBrowserGateway({ project }: { project: ProjectDe
             }
           />
           <SettingsRow
+            title={t('allowLocalLabel')}
+            description={t('allowLocalHint')}
+            control={
+              <Switch
+                checked={settings.allowLocalAddresses}
+                disabled={!editable}
+                onCheckedChange={(allowLocalAddresses) =>
+                  updateSettings.mutate({ allowLocalAddresses })
+                }
+              />
+            }
+          />
+          <SettingsRow
             title={t('lockTimeoutLabel')}
             description={t('lockTimeoutHint')}
             control={

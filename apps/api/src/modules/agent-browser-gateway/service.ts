@@ -66,6 +66,7 @@ function sanitize(value: unknown): BrowserGatewaySettings {
         ? stored.lockTimeoutSec
         : DEFAULT_BROWSER_GATEWAY_SETTINGS.lockTimeoutSec,
     agentViewport: viewportOf(stored.agentViewport),
+    allowLocalAddresses: stored.allowLocalAddresses === true,
   };
 }
 
@@ -92,6 +93,7 @@ export interface BrowserGatewaySettingsPatch {
   humanInput?: boolean;
   lockTimeoutSec?: number;
   agentViewport?: { width: number; height: number };
+  allowLocalAddresses?: boolean;
 }
 
 export async function setBrowserGatewaySettings(
@@ -109,6 +111,7 @@ export async function setBrowserGatewaySettings(
     humanInput: patch.humanInput ?? current.humanInput,
     lockTimeoutSec: patch.lockTimeoutSec ?? current.lockTimeoutSec,
     agentViewport: patch.agentViewport ? viewportOf(patch.agentViewport) : current.agentViewport,
+    allowLocalAddresses: patch.allowLocalAddresses ?? current.allowLocalAddresses,
   };
   await setProjectSetting(projectId, SETTING_KEY, next);
   return next;

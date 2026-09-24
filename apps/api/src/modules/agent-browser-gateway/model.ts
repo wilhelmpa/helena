@@ -37,6 +37,10 @@ export interface BrowserGatewaySettings {
   lockTimeoutSec: number;
   // The page size in CSS pixels while an agent controls the browser.
   agentViewport: { width: number; height: number };
+  // Whether agents may open local and private addresses (localhost, the LAN, *.local) in
+  // the project's browser. Off by default: the browser runs on the server, where such an
+  // address reaches Helena itself, the other projects' browsers and their DevTools ports.
+  allowLocalAddresses: boolean;
 }
 
 export const DEFAULT_BROWSER_GATEWAY_SETTINGS: BrowserGatewaySettings = {
@@ -45,6 +49,7 @@ export const DEFAULT_BROWSER_GATEWAY_SETTINGS: BrowserGatewaySettings = {
   humanInput: true,
   lockTimeoutSec: DEFAULT_LOCK_TIMEOUT_SEC,
   agentViewport: DEFAULT_AGENT_VIEWPORT,
+  allowLocalAddresses: false,
 };
 
 const DomainList = t.Array(t.String({ minLength: 1, maxLength: MAX_DOMAIN_LENGTH + 2 }), {
@@ -59,6 +64,7 @@ export const BrowserGatewaySettingsResponse = t.Object({
   humanInput: t.Boolean(),
   lockTimeoutSec: t.Number(),
   agentViewport: AgentViewport,
+  allowLocalAddresses: t.Boolean(),
 });
 
 // Home's "Browser" overview (design §5, §8: "Home → Browser: Übersicht"): the projects the
@@ -79,6 +85,7 @@ export const updateBrowserGatewaySettingsBody = t.Object({
   domainBlocklist: t.Optional(DomainList),
   domainAllowlist: t.Optional(DomainList),
   humanInput: t.Optional(t.Boolean()),
+  allowLocalAddresses: t.Optional(t.Boolean()),
   lockTimeoutSec: t.Optional(
     t.Number({ minimum: MIN_LOCK_TIMEOUT_SEC, maximum: MAX_LOCK_TIMEOUT_SEC }),
   ),

@@ -138,6 +138,25 @@ const column = [...detail.columns]
 if (!column) throw new Error(`Project ${project.key} has no open column`);
 const teamAgents = await api<Agent[]>(`/teams/${project.teamId}/ai-agents`);
 
+// The test site runs on 127.0.0.1, a local address a project keeps closed to agents: it is
+// opened for the run and closed again at the end, whatever happens.
+const settingsRoute = `/projects/${project.key}/settings/browser-gateway`;
+const localBefore = (await api<{ allowLocalAddresses?: boolean }>(settingsRoute))
+  .allowLocalAddresses;
+if (!localBefore) {
+  await api(settingsRoute, { method: 'PUT', body: JSON.stringify({ allowLocalAddresses: true }) });
+}
+const restoreLocal = async () => {
+  if (localBefore) return;
+  await api(settingsRoute, {
+    method: 'PUT',
+    body: JSON.stringify({ allowLocalAddresses: false }),
+  }).catch((error) => console.error(`could not close local addresses again: ${error}`));
+};
+process.on('SIGINT', () => {
+  void restoreLocal().then(() => process.exit(130));
+});
+
 let failed = 0;
 const report: string[] = [];
 const check = (agent: string, name: string, ok: boolean, detail = '') => {
@@ -324,5 +343,6 @@ for (const username of agents) {
 }
 
 site.kill();
+await restoreLocal();
 console.log(failed === 0 ? '\nACCEPTANCE PASSED' : `\nACCEPTANCE: ${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);

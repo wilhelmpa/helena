@@ -10,7 +10,7 @@ import {
 } from './tools.ts';
 import type { ActionCategory } from './agent-tool.ts';
 import { HOME_SLUG, projectSlug } from './project-slug.ts';
-import { hostAllowed } from './domain.ts';
+import { hostAllowed, resolvesLocally, type HostLookup } from './domain.ts';
 import type { HelenaClient, ResolveResult } from './helena-client.ts';
 import { HelenaApiError } from './helena-client.ts';
 import type {
@@ -80,6 +80,8 @@ export interface DispatcherOptions {
   // Remembers which agent acts on a browser (for the downloads that browser makes) and the
   // project's settings (the page size an agent works at).
   onActor?: (slug: string, agentKey: string, settings: ResolveResult['settings']) => void;
+  // How a host an agent navigates to is resolved (tests pass their own).
+  lookupHost?: HostLookup;
 }
 
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
@@ -164,6 +166,7 @@ export class GatewayDispatcher {
   #queue: SlugQueue;
   #onHandover: NonNullable<DispatcherOptions['onHandover']>;
   #onActor: NonNullable<DispatcherOptions['onActor']>;
+  #lookupHost: HostLookup | undefined;
 
   constructor(options: DispatcherOptions) {
     this.#ownSlug = options.ownSlug;
@@ -173,6 +176,7 @@ export class GatewayDispatcher {
     this.#queue = options.queue ?? new SlugQueue();
     this.#onHandover = options.onHandover ?? (() => {});
     this.#onActor = options.onActor ?? (() => {});
+    this.#lookupHost = options.lookupHost;
   }
 
   // Resolves which project browser a request targets. Only the connection accepted on the
@@ -275,6 +279,16 @@ export class GatewayDispatcher {
     ) {
       const url = str(request.args, 'url');
       const host = url ? hostOf(url) : null;
+      if (
+        host &&
+        !resolved.settings.allowLocalAddresses &&
+        (await resolvesLocally(host, this.#lookupHost))
+      ) {
+        return {
+          ok: false,
+          error: `${host} is a local or private address, which this project's browser settings keep closed to agents.`,
+        };
+      }
       if (!host || !hostAllowed(resolved.settings, host)) {
         return {
           ok: false,

@@ -649,6 +649,8 @@
     "behaviorTitle": "Perilaku",
     "humanInputLabel": "Input mirip manusia",
     "humanInputHint": "Mengetik dan mengklik dengan jeda mirip manusia, bukan secepat mungkin. Matikan hanya untuk proyek uji coba berisiko rendah.",
+    "allowLocalLabel": "Izinkan alamat lokal",
+    "allowLocalHint": "Agen boleh membuka localhost, jaringan lokal, dan alamat .local. Biarkan nonaktif kecuali untuk menguji situs lokal: peramban berjalan di server, tempat alamat ini menjangkau Helena dan peramban lain.",
     "lockTimeoutLabel": "Batas waktu kunci",
     "lockTimeoutHint": "Setelah sekian detik tanpa aktivitas, kendali agen atas browser dilepaskan secara otomatis.",
     "seconds": "detik",

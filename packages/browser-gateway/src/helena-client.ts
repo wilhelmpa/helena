@@ -11,6 +11,8 @@ export interface BrowserGatewaySettingsWire {
   lockTimeoutSec: number;
   // The page size while an agent controls the browser (older Helena: absent).
   agentViewport?: { width: number; height: number };
+  // Absent from an older Helena: local addresses stay closed.
+  allowLocalAddresses?: boolean;
 }
 
 export interface ResolveResult {

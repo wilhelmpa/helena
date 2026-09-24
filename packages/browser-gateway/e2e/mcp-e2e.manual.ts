@@ -63,6 +63,7 @@ const plan = http.createServer((request, response) => {
           domainAllowlist: [],
           humanInput: false,
           lockTimeoutSec: 120,
+          allowLocalAddresses: true,
         },
       });
     }

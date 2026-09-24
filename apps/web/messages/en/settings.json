@@ -649,6 +649,8 @@
     "behaviorTitle": "Behavior",
     "humanInputLabel": "Human-like input",
     "humanInputHint": "Types and clicks with human-like pauses instead of at top speed. Turn off only for a low-risk test project.",
+    "allowLocalLabel": "Allow local addresses",
+    "allowLocalHint": "Agents may open localhost, the local network and .local addresses. Keep it off unless you test a local site: the browser runs on the server, where these reach Helena and the other browsers.",
     "lockTimeoutLabel": "Lock timeout",
     "lockTimeoutHint": "After this many seconds with no action, an agent's control of the browser is released automatically.",
     "seconds": "seconds",

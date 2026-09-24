@@ -101,6 +101,7 @@ async function startGateway(slugs: string[]) {
       locks,
       sessions,
       queue,
+      lookupHost: async () => [{ address: '93.184.215.14' }],
     });
     const path = join(socketRoot, `${slug}.sock`);
     const server = net.createServer((socket) => glue.handleConnection(socket, dispatcher));

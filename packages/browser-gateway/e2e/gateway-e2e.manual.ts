@@ -38,6 +38,8 @@ let settings = {
   domainAllowlist: [] as string[],
   humanInput: true,
   lockTimeoutSec: 120,
+  // The test site runs on 127.0.0.1, a local address a project has to open first.
+  allowLocalAddresses: false,
 };
 
 const helena = {
@@ -135,6 +137,14 @@ async function snapshot(): Promise<string> {
 }
 
 try {
+  const refusedLocal = await call('browser_navigate', { url: `${SITE}/login` });
+  check(
+    'a local address stays closed until the project opens it',
+    !refusedLocal.ok && refusedLocal.text.includes('local or private address'),
+    refusedLocal.text,
+  );
+  settings = { ...settings, allowLocalAddresses: true };
+
   // The first action takes control by itself, and answers the way Playwright MCP does.
   const first = await call('browser_navigate', { url: `${SITE}/login` });
   check(
