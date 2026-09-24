@@ -137,7 +137,9 @@ describe('runtime requests', () => {
     }));
     const res = await listing;
     expect(res.data!.page!.total).toBe(2);
-    expect(res.data!.page!.sessions.map((session) => [session.id, session.link?.runId])).toEqual([
+    expect(
+      res.data!.page!.sessions.map((session) => [session.id, session.link?.runId ?? null]),
+    ).toEqual([
       ['sess-run', run.id],
       ['sess-cli', null],
     ]);
