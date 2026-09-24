@@ -1,0 +1,33 @@
+# Draft (package G): moves to .github/workflows/release.yml at the public cut.
+# release-please keeps a release PR open on main that collects the next version and the
+# CHANGELOG from conventional commits. Merging it tags vX.Y.Z and publishes a GitHub release;
+# the image workflow reacts to the tag.
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    name: Release PR and tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      released: ${{ steps.release.outputs.release_created }}
+      tag: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

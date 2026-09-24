@@ -3,7 +3,7 @@ import http from "node:http";
 import net from "node:net";
 import { afterEach, describe, it } from "node:test";
 import { InputSender, viewerMessage } from "./project-browser-input.mjs";
-import { frameMessage, pageSize, targetSize } from "./project-browser-screencast.mjs";
+import { captureArea, frameMessage, pageSize, targetSize, videoAllowance } from "./project-browser-screencast.mjs";
 import { acceptWebSocket } from "./websocket.mjs";
 
 const input = (message) => viewerMessage(JSON.stringify(message));
@@ -11,13 +11,13 @@ const input = (message) => viewerMessage(JSON.stringify(message));
 describe("live view messages", () => {
   it("reads the view's CSS size and pixel ratio", () => {
     assert.deepEqual(input({ type: "viewport", width: 812.4, height: 600.6, dpr: 2 }), {
-      viewport: { width: 812, height: 601, dpr: 2, video: false },
+      viewport: { width: 812, height: 601, dpr: 2, video: false, hold: false },
     });
-    assert.deepEqual(input({ type: "viewport", width: 1280, height: 700, dpr: 1.3333333, video: true }), {
-      viewport: { width: 1280, height: 700, dpr: 1.333, video: true },
+    assert.deepEqual(input({ type: "viewport", width: 1280, height: 700, dpr: 1.3333333, video: true, hold: true }), {
+      viewport: { width: 1280, height: 700, dpr: 1.333, video: true, hold: true },
     });
     assert.deepEqual(input({ type: "viewport", width: 50, height: 9000 }), {
-      viewport: { width: 100, height: 8192, dpr: 1, video: false },
+      viewport: { width: 100, height: 8192, dpr: 1, video: false, hold: false },
     });
     assert.deepEqual(input({ type: "ack" }), { ack: true });
     assert.deepEqual(input({ type: "dialog", accept: false }), { dialog: { accept: false } });
@@ -25,33 +25,103 @@ describe("live view messages", () => {
       dialog: { accept: true, promptText: "answer" },
     });
     assert.deepEqual(input({ type: "hidden", hidden: true }), { hidden: true });
-    assert.deepEqual(input({ type: "stats", rttMs: 42, downlinkKbps: 3500 }), {
-      stats: { rttMs: 42, downlinkKbps: 3500 },
+    assert.deepEqual(input({ type: "stats", rttMs: 42, downlinkKbps: 3500, receivedBytes: 4_000_000 }), {
+      stats: { rttMs: 42, downlinkKbps: 3500, receivedBytes: 4_000_000 },
     });
-    assert.deepEqual(input({ type: "stats" }), { stats: { rttMs: 0, downlinkKbps: 0 } });
+    assert.deepEqual(input({ type: "stats" }), { stats: { rttMs: 0, downlinkKbps: 0, receivedBytes: 0 } });
+    assert.deepEqual(input({ type: "requestKeyframe" }), { requestKeyframe: true });
+    assert.deepEqual(input({ type: "focus" }), { focus: true });
     assert.deepEqual(input({ type: "ping", t: 123.5 }), { ping: 123.5 });
   });
 
-  it("draws a page at pixel ratio 2 on a high-density screen when the agent's screenshots allow it", () => {
-    assert.deepEqual(pageSize({ width: 800, height: 900, dpr: 2 }), { width: 800, height: 900, ratio: 2 });
-    assert.deepEqual(pageSize({ width: 1200, height: 700, dpr: 1.5 }), { width: 1200, height: 700, ratio: 2 });
-    assert.deepEqual(pageSize({ width: 1200, height: 700, dpr: 3 }), { width: 1200, height: 700, ratio: 2 });
-    assert.deepEqual(pageSize({ width: 1200, height: 700, dpr: 1.25 }), { width: 1200, height: 700, ratio: 1 });
-    // A 2x screenshot of a page with a long edge under 785 CSS pixels would reach the agent
-    // at twice the size its clicks use.
-    assert.deepEqual(pageSize({ width: 620, height: 780, dpr: 2 }), { width: 620, height: 780, ratio: 1 });
-    // Chromium keeps a window 500 pixels wide, so a narrower page is drawn wider.
-    assert.deepEqual(pageSize({ width: 360, height: 640, dpr: 1 }), { width: 500, height: 640, ratio: 1 });
-    assert.deepEqual(pageSize({ width: 360, height: 800, dpr: 2 }), { width: 360, height: 800, ratio: 2 });
+  it("sends frames at ratio 2 to a high-density screen, small pages too unless an agent is in the browser", () => {
+    const size = (width, height, ratio, pin1 = false) => ({ width, height, ratio, pin1 });
+    assert.deepEqual(pageSize({ width: 800, height: 900, dpr: 2 }), size(800, 900, 2));
+    assert.deepEqual(pageSize({ width: 1200, height: 700, dpr: 1.5 }), size(1200, 700, 2));
+    assert.deepEqual(pageSize({ width: 1200, height: 700, dpr: 3 }), size(1200, 700, 2));
+    assert.deepEqual(pageSize({ width: 1200, height: 700, dpr: 1.25 }), size(1200, 700, 1));
+    // A narrow tool panel on a retina screen is as sharp as a wide one while no agent works in
+    // the browser (the owner's report: 619x612 fell to ratio 1 and looked blurred).
+    assert.deepEqual(pageSize({ width: 619, height: 612, dpr: 2 }), size(619, 612, 2));
+    // With an agent in the browser, a 2x screenshot of a page with a long edge under 785 CSS
+    // pixels would reach it at twice the size its clicks use: the page is drawn at ratio 1.
+    assert.deepEqual(pageSize({ width: 620, height: 780, dpr: 2 }, true), size(620, 780, 1, true));
+    assert.deepEqual(pageSize({ width: 620, height: 780, dpr: 1 }, true), size(620, 780, 1, true));
+    assert.deepEqual(pageSize({ width: 800, height: 900, dpr: 2 }, true), size(800, 900, 2));
+    // A browser that draws at factor 1 has nothing sharper to send, nor to pin.
+    assert.deepEqual(pageSize({ width: 800, height: 900, dpr: 2 }, false, 1), size(800, 900, 1));
+    assert.deepEqual(pageSize({ width: 620, height: 780, dpr: 2 }, true, 1), size(620, 780, 1));
+    // A phone's narrow view keeps its width: the window keeper pins the page at it inside the
+    // narrowest window Chromium allows.
+    assert.deepEqual(pageSize({ width: 390, height: 700, dpr: 3 }), size(390, 700, 2));
+    assert.deepEqual(pageSize({ width: 360, height: 640, dpr: 1 }, false, 1), size(360, 640, 1));
+    // At ratio 1 an odd size is made even, one pixel larger, so the video's frame is the page
+    // to the pixel; the view cuts that pixel off.
+    assert.deepEqual(pageSize({ width: 933, height: 601, dpr: 1 }), size(934, 602, 1));
+    assert.deepEqual(pageSize({ width: 933, height: 601, dpr: 2 }), size(933, 601, 2));
   });
 
-  it("keeps the page's CSS size at ratio 1 while the agent acts", () => {
+  it("keeps the page's CSS size while the agent acts, at a ratio its screenshots allow", () => {
     const view = { width: 900, height: 900, dpr: 2 };
-    const current = { width: 800, height: 900, ratio: 2 };
-    assert.deepEqual(targetSize(view, current, false), { width: 900, height: 900, ratio: 2 });
-    assert.deepEqual(targetSize(view, current, true), { width: 800, height: 900, ratio: 1 });
+    const current = { width: 800, height: 900, ratio: 2, pin1: false };
+    assert.deepEqual(targetSize(view, current, false), { width: 900, height: 900, ratio: 2, pin1: false });
+    // A JPEG stream drops to ratio 1, video keeps ratio 2 where the agent can click from it.
+    assert.deepEqual(targetSize(view, current, true), { ...current, ratio: 1 });
+    assert.deepEqual(targetSize(view, current, true, true), current);
+    // A small page drawn at ratio 2 before the agent came is drawn at ratio 1, keeping its layout.
+    const small = { width: 619, height: 612, ratio: 2, pin1: false };
+    assert.deepEqual(targetSize(view, small, true, true), { ...small, ratio: 1, pin1: true });
+    // An agent in the browser that is not acting yet: the view's size, safe for it.
+    assert.deepEqual(targetSize({ width: 619, height: 612, dpr: 2 }, small, false, true, true), {
+      width: 620,
+      height: 612,
+      ratio: 1,
+      pin1: true,
+    });
     // Before a live view sized the page, the agent keeps the size it has.
     assert.equal(targetSize(view, null, true), null);
+  });
+
+  it("grabs the page in display pixels and encodes it at the frames' ratio", () => {
+    const chrome = { width: 0, height: 87, scale: 2 };
+    assert.deepEqual(captureArea({ width: 619, height: 612, ratio: 2 }, chrome), {
+      x: 0,
+      y: 174,
+      width: 1238,
+      height: 1224,
+      outWidth: 1238,
+      outHeight: 1224,
+    });
+    assert.deepEqual(captureArea({ width: 620, height: 612, ratio: 1 }, chrome), {
+      x: 0,
+      y: 174,
+      width: 1240,
+      height: 1224,
+      outWidth: 620,
+      outHeight: 612,
+    });
+    // A browser at factor 1 has no more pixels than the page's CSS size.
+    assert.deepEqual(captureArea({ width: 800, height: 600, ratio: 2 }, { ...chrome, scale: 1 }), {
+      x: 0,
+      y: 87,
+      width: 800,
+      height: 600,
+      outWidth: 800,
+      outHeight: 600,
+    });
+  });
+
+  it("lets a video viewer fall behind by two keyframes and a stats report's worth of frames", () => {
+    // Never less than half a megabyte, as before.
+    assert.equal(videoAllowance({}), 512 * 1024);
+    assert.equal(videoAllowance({ keyframeBytes: 100_000, encodedKbps: 1_000, rttMs: 20 }), 512 * 1024);
+    // A 1.5 MB keyframe at pixel ratio 2, 20 Mbit/s, 20 ms round trip: 3 MB + 800 KB.
+    assert.equal(videoAllowance({ keyframeBytes: 1_500_000, encodedKbps: 20_000, rttMs: 20 }), 3_800_000);
+    // A round trip counts for at most a second.
+    assert.equal(
+      videoAllowance({ keyframeBytes: 1_500_000, encodedKbps: 8_000, rttMs: 60_000 }),
+      videoAllowance({ keyframeBytes: 1_500_000, encodedKbps: 8_000, rttMs: 1_000 }),
+    );
   });
 
   it("sends mouse input at page coordinates with buttons and modifiers", () => {
@@ -185,8 +255,13 @@ describe("live view messages", () => {
     assert.equal(frame.readUInt16BE(1), 812);
     assert.equal(frame.readUInt16BE(3), 0xffff);
     assert.equal(frame.subarray(5).toString(), "jpeg");
-    // A window 2560 pixels wide at pixel ratio 2 and 125 % page zoom shows 1024 CSS pixels.
-    const scaled = frameMessage(Buffer.from("jpeg"), { deviceWidth: 2560, deviceHeight: 1600 }, 2 * 1.25);
+    // A page pinned narrower than its window fills the frame's left part: kind 3 names both.
+    const narrow = frameMessage(Buffer.from("jpeg"), { deviceWidth: 500, deviceHeight: 700 }, 1, { width: 390, height: 700 });
+    assert.deepEqual([narrow[0], ...[1, 3, 5, 7].map((at) => narrow.readUInt16BE(at))], [3, 500, 700, 390, 700]);
+    assert.equal(narrow.subarray(9).toString(), "jpeg");
+    assert.equal(frameMessage(Buffer.from("jpeg"), { deviceWidth: 390, deviceHeight: 700 }, 1, { width: 390, height: 700 })[0], 0);
+    // The metadata is in DIP: a page 1280 DIP wide at 125 % page zoom shows 1024 CSS pixels.
+    const scaled = frameMessage(Buffer.from("jpeg"), { deviceWidth: 1280, deviceHeight: 800 }, 1.25);
     assert.deepEqual([scaled.readUInt16BE(1), scaled.readUInt16BE(3)], [1024, 640]);
   });
 });

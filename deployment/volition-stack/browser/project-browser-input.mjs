@@ -99,14 +99,20 @@ function keyMessage(message, modifiers) {
 // in, its acknowledgement of a frame, or its answer to a dialog. A message that is none of
 // these throws.
 //
-//   {"type":"viewport","width":800,"height":600,"dpr":2,"video":true}
+//   {"type":"viewport","width":800,"height":600,"dpr":2,"video":true,"hold":false}
 //                                                         CSS pixels and pixel ratio of the view,
-//                                                         and whether it plays H.264 video
+//                                                         whether it plays H.264 video, and
+//                                                         whether it keeps the page's size
+//                                                         ("Größe festhalten": it only scales)
 //   {"type":"ack"}                                        a JPEG frame was drawn
 //   {"type":"dialog","accept":true,"text":"answer"}       closes a JavaScript dialog
 //   {"type":"follow","agent":true}                        shows the agent's tab
 //   {"type":"hidden","hidden":true}                       the view is covered, or shown again
-//   {"type":"stats","rttMs":40,"downlinkKbps":3200}       the video connection just measured
+//   {"type":"stats","rttMs":40,"downlinkKbps":3200,
+//    "receivedBytes":1048576}                              the video connection just measured
+//   {"type":"requestKeyframe"}                             this viewer's decode fell behind
+//   {"type":"focus"}                                       someone works in this view: it takes
+//                                                          the page's size
 //   {"type":"ping","t":123.4}                              answered with {"type":"pong","t":..}
 //   {"type":"mouse","event":"move|down|up|click","x":..,"y":..,"button":"left",
 //    "buttons":1,"clickCount":1,"modifiers":0}            x and y in page CSS pixels
@@ -135,6 +141,7 @@ export function viewerMessage(data) {
           height: Math.round(number(message.height, MIN_VIEWPORT, MAX_VIEWPORT)),
           dpr: Math.round(number(message.dpr ?? 1, MIN_RATIO, MAX_RATIO) * 1000) / 1000,
           video: message.video === true,
+          hold: message.hold === true,
         },
       };
     case "follow":
@@ -148,8 +155,17 @@ export function viewerMessage(data) {
         stats: {
           rttMs: number(message.rttMs ?? 0, 0, 60_000),
           downlinkKbps: number(message.downlinkKbps ?? 0, 0, 10_000_000),
+          // How many video bytes this viewer has itself received, in total, since it last
+          // started a video (see project-browser-screencast.mjs's ack accounting). Not a
+          // window: a running count, so what the server has sent it but it has not answered
+          // for yet is exact, not a rate estimate.
+          receivedBytes: number(message.receivedBytes ?? 0, 0, Number.MAX_SAFE_INTEGER),
         },
       };
+    case "requestKeyframe":
+      return { requestKeyframe: true };
+    case "focus":
+      return { focus: true };
     case "ping":
       return { ping: number(message.t, -1e15, 1e15) };
     case "dialog":

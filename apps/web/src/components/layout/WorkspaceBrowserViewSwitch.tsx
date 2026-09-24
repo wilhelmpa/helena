@@ -25,7 +25,7 @@ export default function WorkspaceBrowserViewSwitch({
           key={option.id}
           variant={view === option.id ? 'secondary' : 'ghost'}
           size="sm"
-          className="h-7 px-1.5 text-xs"
+          className="h-7 px-2 text-sm"
           aria-pressed={view === option.id}
           title={option.title}
           onClick={() => onChange(option.id)}
