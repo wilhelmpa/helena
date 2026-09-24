@@ -30,6 +30,7 @@ server {
 
     location = /_helena_edge {
         internal;
+        auth_request off;
         include /etc/nginx/snippets/helena-tunnel-headers.conf;
         proxy_pass http://127.0.0.1:3000/auth/verify/edge;
         proxy_pass_request_body off;
@@ -39,6 +40,7 @@ server {
     # subrequest too (X-Helena-Entry), before /auth/verify looks at the session.
     location = /_plan_auth {
         internal;
+        auth_request off;
         include /etc/nginx/snippets/helena-tunnel-headers.conf;
         proxy_pass http://127.0.0.1:3000/auth/verify;
         proxy_pass_request_body off;
@@ -47,6 +49,7 @@ server {
     }
     location = /_owner_terminal_auth {
         internal;
+        auth_request off;
         include /etc/nginx/snippets/helena-tunnel-headers.conf;
         proxy_pass http://127.0.0.1:3000/auth/verify/owner-terminal/$owner_terminal_kind;
         proxy_pass_request_body off;

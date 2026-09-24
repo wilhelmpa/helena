@@ -7,7 +7,7 @@ import secrets
 import subprocess
 import sys
 
-USAGE = 'Usage: sudo python3 configure.py [--rotate] [--https-host HOST] [owner@example.com]'
+USAGE = 'Usage: sudo python3 configure.py [--rotate] [--https-host HOST | --lan-http] [owner@example.com]'
 args = sys.argv[1:]
 # --rotate replaces the capability with a new one (e.g. after it was shown somewhere).
 rotate = '--rotate' in args
@@ -15,6 +15,9 @@ args = [arg for arg in args if arg != '--rotate']
 # --https-host: the public name the LAN also reaches over HTTPS (cloudflare/lan_https.py);
 # the sign-in then happens there, on port 443, and the origin becomes https://HOST.
 https_host = ''
+# --lan-http: back to http://kingston-server.local (the rollback of --https-host).
+lan_http = '--lan-http' in args
+args = [arg for arg in args if arg != '--lan-http']
 if '--https-host' in args:
     at = args.index('--https-host')
     if at + 1 >= len(args):
@@ -39,6 +42,7 @@ if len(token) != 64 or any(c not in '0123456789abcdef' for c in token):
     raise SystemExit('Invalid existing capability')
 # Without --https-host a re-run keeps the origin it had (a rotation must not undo HTTPS).
 origin = (f'https://{https_host}' if https_host
+          else 'http://kingston-server.local' if lan_http
           else values.get('LOCAL_SINGLE_USER_ORIGIN', 'http://kingston-server.local'))
 host_name = origin.split('://', 1)[1]
 config.write_text(
