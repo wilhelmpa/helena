@@ -69,7 +69,8 @@
     "retry": "Coba lagi",
     "today": "Hari ini",
     "yesterday": "Kemarin",
-    "sourcesCount": "{count, plural, other {# sumber}}"
+    "sourcesCount": "{count, plural, other {# sumber}}",
+    "stopped": "Dihentikan"
   },
   "composer": {
     "placeholder": "Pesan untuk {agent}…",

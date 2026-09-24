@@ -39,6 +39,7 @@ export const MessageResponse = memo(
   (prev, next) =>
     prev.children === next.children &&
     prev.isAnimating === next.isAnimating &&
+    prev.parseIncompleteMarkdown === next.parseIncompleteMarkdown &&
     prev.plugins === next.plugins &&
     prev.components === next.components &&
     prev.animated === next.animated &&

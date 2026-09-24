@@ -69,7 +69,8 @@
     "retry": "Reintentar",
     "today": "Hoy",
     "yesterday": "Ayer",
-    "sourcesCount": "{count, plural, one {# fuente} other {# fuentes}}"
+    "sourcesCount": "{count, plural, one {# fuente} other {# fuentes}}",
+    "stopped": "Detenida"
   },
   "composer": {
     "placeholder": "Mensaje para {agent}…",

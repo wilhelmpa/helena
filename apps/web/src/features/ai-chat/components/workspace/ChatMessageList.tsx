@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useCallback, useEffect, useRef } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { dayKey } from '@/utils/dates';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
@@ -40,7 +40,20 @@ export interface ChatMessageListProps {
 // question near the top so its answer has room, and keeps the reader's place when older
 // messages load in above. Centered at a comfortable reading width, the way claude.ai
 // reads. Only messages: what the answer is doing is said at the composer.
-export default function ChatMessageList({
+export default function ChatMessageList(props: ChatMessageListProps) {
+  if (props.plan.restoring) {
+    return (
+      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 overflow-hidden px-4 py-6">
+        <Skeleton className="ms-auto h-9 w-1/2 rounded-2xl" />
+        <Skeleton className="h-20 w-3/4" />
+        <Skeleton className="ms-auto h-9 w-2/5 rounded-2xl" />
+      </div>
+    );
+  }
+  return <ChatTranscript {...props} />;
+}
+
+function ChatTranscript({
   plan,
   agent,
   projectKey,
@@ -51,6 +64,12 @@ export default function ChatMessageList({
 }: ChatMessageListProps) {
   const t = useTranslations('chatWorkspace');
   const { messages, status } = plan;
+  // The messages the chat opened with (and older pages loaded later, which land in front
+  // of them) are history: only a question sent from here on is a scroll anchor. The
+  // scroller brings a new anchor to the top so its answer has room, and would otherwise
+  // take every restored question for one still to show and jump back up to it.
+  const [history] = useState(() => new Set(messages.map((message) => message.id)));
+  const lastHistoryIndex = messages.findLastIndex((message) => history.has(message.id));
   // The callbacks each message gets stay the same while the answer streams, so a
   // finished message does not re-render with every token of the next one.
   const latest = useRef(plan);
@@ -67,7 +86,7 @@ export default function ChatMessageList({
   // Older messages load by themselves when the top of the transcript comes into view
   // (old-chat parity); the button stays for keyboards and as the loading indicator.
   const topRef = useRef<HTMLDivElement>(null);
-  const canLoadOlder = plan.hasOlder && !plan.loadingOlder && !plan.restoring;
+  const canLoadOlder = plan.hasOlder && !plan.loadingOlder;
   useEffect(() => {
     const node = topRef.current;
     if (!node || !canLoadOlder) return;
@@ -80,16 +99,6 @@ export default function ChatMessageList({
     observer.observe(node);
     return () => observer.disconnect();
   }, [canLoadOlder]);
-
-  if (plan.restoring) {
-    return (
-      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 overflow-hidden px-4 py-6">
-        <Skeleton className="ms-auto h-9 w-1/2 rounded-2xl" />
-        <Skeleton className="h-20 w-3/4" />
-        <Skeleton className="ms-auto h-9 w-2/5 rounded-2xl" />
-      </div>
-    );
-  }
 
   return (
     <MessageScrollerProvider autoScroll defaultScrollPosition="end">
@@ -122,7 +131,7 @@ export default function ChatMessageList({
                   {newDay ? <ChatDaySeparator at={at} /> : null}
                   <MessageScrollerItem
                     messageId={message.id}
-                    scrollAnchor={message.role === 'user'}
+                    scrollAnchor={message.role === 'user' && index > lastHistoryIndex}
                   >
                     <ChatMessageItem
                       message={message}

@@ -69,7 +69,8 @@
     "retry": "Erneut versuchen",
     "today": "Heute",
     "yesterday": "Gestern",
-    "sourcesCount": "{count, plural, one {# Quelle} other {# Quellen}}"
+    "sourcesCount": "{count, plural, one {# Quelle} other {# Quellen}}",
+    "stopped": "Gestoppt"
   },
   "composer": {
     "placeholder": "Nachricht an {agent} …",

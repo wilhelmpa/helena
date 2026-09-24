@@ -69,7 +69,8 @@
     "retry": "Try again",
     "today": "Today",
     "yesterday": "Yesterday",
-    "sourcesCount": "{count, plural, one {# source} other {# sources}}"
+    "sourcesCount": "{count, plural, one {# source} other {# sources}}",
+    "stopped": "Stopped"
   },
   "composer": {
     "placeholder": "Message {agent}…",

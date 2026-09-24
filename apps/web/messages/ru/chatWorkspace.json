@@ -69,7 +69,8 @@
     "retry": "Повторить",
     "today": "Сегодня",
     "yesterday": "Вчера",
-    "sourcesCount": "{count, plural, one {# источник} few {# источника} many {# источников} other {# источника}}"
+    "sourcesCount": "{count, plural, one {# источник} few {# источника} many {# источников} other {# источника}}",
+    "stopped": "Остановлен"
   },
   "composer": {
     "placeholder": "Сообщение для {agent}…",

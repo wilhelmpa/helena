@@ -69,7 +69,8 @@
     "retry": "重试",
     "today": "今天",
     "yesterday": "昨天",
-    "sourcesCount": "{count, plural, other {# 个来源}}"
+    "sourcesCount": "{count, plural, other {# 个来源}}",
+    "stopped": "已停止"
   },
   "composer": {
     "placeholder": "给 {agent} 发消息…",

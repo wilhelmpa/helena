@@ -69,7 +69,8 @@
     "retry": "Спробувати ще раз",
     "today": "Сьогодні",
     "yesterday": "Учора",
-    "sourcesCount": "{count, plural, one {# джерело} few {# джерела} many {# джерел} other {# джерела}}"
+    "sourcesCount": "{count, plural, one {# джерело} few {# джерела} many {# джерел} other {# джерела}}",
+    "stopped": "Зупинено"
   },
   "composer": {
     "placeholder": "Повідомлення для {agent}…",

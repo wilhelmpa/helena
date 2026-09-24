@@ -69,7 +69,8 @@
     "retry": "Tentar novamente",
     "today": "Hoje",
     "yesterday": "Ontem",
-    "sourcesCount": "{count, plural, one {# fonte} other {# fontes}}"
+    "sourcesCount": "{count, plural, one {# fonte} other {# fontes}}",
+    "stopped": "Interrompida"
   },
   "composer": {
     "placeholder": "Mensagem para {agent}…",

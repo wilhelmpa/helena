@@ -1127,6 +1127,25 @@ html [data-sonner-toast][data-styled='true']:not(:focus-visible) {
 .agent-markdown [data-streamdown='code-block-body'] {
   font-size: var(--text-xs);
 }
+/* A tool's arguments and result (components/ai-elements/tool): the same code block,
+   tighter, since several of them stack up inside one folded group. */
+.agent-tool-code [data-streamdown='code-block'] {
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0.25rem;
+  border-radius: var(--radius-md);
+}
+.agent-tool-code [data-streamdown='code-block-header'] {
+  height: 1.5rem;
+}
+.agent-tool-code [data-streamdown='code-block-header'] + div {
+  top: 0.25rem;
+  margin-top: -1.75rem;
+  height: 1.5rem;
+}
+.agent-tool-code [data-streamdown='code-block-body'] {
+  padding: 0.5rem 0.75rem;
+}
 @media (prefers-reduced-motion: reduce) {
   [data-sd-animate] {
     animation: none;

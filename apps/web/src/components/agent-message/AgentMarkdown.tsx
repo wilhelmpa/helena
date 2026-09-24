@@ -263,6 +263,9 @@ export function AgentMarkdownProvider({ source, renderers, children }: AgentMark
       mermaid: mermaidOptions,
       // Agents are the reader's own; their links need no "leave Helena?" dialog.
       linkSafety: { enabled: false },
+      // No math renderer is loaded, so `$$` (a shell's `$$`, jQuery's `$$eval`) is never
+      // "completed" into a formula while an answer streams.
+      remend: { katex: false },
       codeBlockMaxHeight: 480,
       tableMaxHeight: 480,
     }),
@@ -287,6 +290,9 @@ export function AgentText({ children, streaming = false, className }: AgentTextP
     <MessageResponse
       isAnimating={streaming}
       animated={streaming ? STREAMING_ANIMATION : undefined}
+      // Unfinished Markdown is closed only while it is still being written; a finished
+      // answer is shown exactly as the agent wrote it.
+      parseIncompleteMarkdown={streaming}
       className={className}
     >
       {text}

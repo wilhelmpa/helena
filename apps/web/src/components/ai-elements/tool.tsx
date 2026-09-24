@@ -119,7 +119,7 @@ function ToolCode({ value, label }: { value: unknown; label: ReactNode }) {
       <span className="text-xs text-muted-foreground">{label}</span>
       <MessageResponse
         mode="static"
-        className="mt-1 [&_[data-streamdown=code-block]]:my-0"
+        className="agent-tool-code mt-1"
         codeBlockMaxHeight={240}
         lineNumbers={false}
         controls={{ code: { copy: true, download: false } }}

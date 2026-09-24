@@ -69,7 +69,8 @@
     "retry": "حاول مرة أخرى",
     "today": "اليوم",
     "yesterday": "أمس",
-    "sourcesCount": "{count, plural, zero {لا مصادر} one {مصدر واحد} two {مصدران} few {# مصادر} many {# مصدرًا} other {# مصدر}}"
+    "sourcesCount": "{count, plural, zero {لا مصادر} one {مصدر واحد} two {مصدران} few {# مصادر} many {# مصدرًا} other {# مصدر}}",
+    "stopped": "أُوقف"
   },
   "composer": {
     "placeholder": "رسالة إلى {agent}…",
