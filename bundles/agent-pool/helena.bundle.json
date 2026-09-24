@@ -1,0 +1,458 @@
+{
+  "format": "helena.template-bundle",
+  "formatVersion": 1,
+  "name": "helena-agent-pool",
+  "displayName": "Agentenpool",
+  "version": "1.0.0",
+  "description": "Agenten-Vorlagen für Entwicklung, Prüfung, Betrieb, Wissen, Assistenz, Finanzen und Recht, mit geprüften Skill-Sets.",
+  "license": "AGPL-3.0-only",
+  "author": {
+    "name": "Helena"
+  },
+  "skills": [
+    {
+      "name": "brainstorming",
+      "github": "https://github.com/obra/superpowers/tree/5bf4e78011075bcfc0dc295f0724994cd123ee71/skills/brainstorming",
+      "license": "MIT",
+      "attribution": "© Jesse Vincent (obra/superpowers), MIT"
+    },
+    {
+      "name": "diagnosing-superpowers",
+      "github": "https://github.com/obra/superpowers/tree/5bf4e78011075bcfc0dc295f0724994cd123ee71/skills/diagnosing-superpowers",
+      "license": "MIT",
+      "attribution": "© Jesse Vincent (obra/superpowers), MIT"
+    },
+    {
+      "name": "dispatching-parallel-agents",
+      "github": "https://github.com/obra/superpowers/tree/5bf4e78011075bcfc0dc295f0724994cd123ee71/skills/dispatching-parallel-agents",
+      "license": "MIT",
+      "attribution": "© Jesse Vincent (obra/superpowers), MIT"
+    },
+    {
+      "name": "finishing-a-development-branch",
+      "github": "https://github.com/obra/superpowers/tree/5bf4e78011075bcfc0dc295f0724994cd123ee71/skills/finishing-a-development-branch",
+      "license": "MIT",
+      "attribution": "© Jesse Vincent (obra/superpowers), MIT"
+    },
+    {
+      "name": "receiving-code-review",
+      "github": "https://github.com/obra/superpowers/tree/5bf4e78011075bcfc0dc295f0724994cd123ee71/skills/receiving-code-review",
+      "license": "MIT",
+      "attribution": "© Jesse Vincent (obra/superpowers), MIT"
+    },
+    {
+      "name": "requesting-code-review",
+      "github": "https://github.com/obra/superpowers/tree/5bf4e78011075bcfc0dc295f0724994cd123ee71/skills/requesting-code-review",
+      "license": "MIT",
+      "attribution": "© Jesse Vincent (obra/superpowers), MIT"
+    },
+    {
+      "name": "systematic-debugging",
+      "github": "https://github.com/obra/superpowers/tree/5bf4e78011075bcfc0dc295f0724994cd123ee71/skills/systematic-debugging",
+      "license": "MIT",
+      "attribution": "© Jesse Vincent (obra/superpowers), MIT"
+    },
+    {
+      "name": "using-superpowers",
+      "github": "https://github.com/obra/superpowers/tree/5bf4e78011075bcfc0dc295f0724994cd123ee71/skills/using-superpowers",
+      "license": "MIT",
+      "attribution": "© Jesse Vincent (obra/superpowers), MIT"
+    },
+    {
+      "name": "writing-skills",
+      "github": "https://github.com/obra/superpowers/tree/5bf4e78011075bcfc0dc295f0724994cd123ee71/skills/writing-skills",
+      "license": "MIT",
+      "attribution": "© Jesse Vincent (obra/superpowers), MIT"
+    },
+    {
+      "name": "executing-plans",
+      "github": "https://github.com/obra/superpowers/tree/5bf4e78011075bcfc0dc295f0724994cd123ee71/skills/executing-plans",
+      "license": "MIT",
+      "attribution": "© Jesse Vincent (obra/superpowers), MIT"
+    },
+    {
+      "name": "test-driven-development",
+      "github": "https://github.com/obra/superpowers/tree/5bf4e78011075bcfc0dc295f0724994cd123ee71/skills/test-driven-development",
+      "license": "MIT",
+      "attribution": "© Jesse Vincent (obra/superpowers), MIT"
+    },
+    {
+      "name": "using-git-worktrees",
+      "github": "https://github.com/obra/superpowers/tree/5bf4e78011075bcfc0dc295f0724994cd123ee71/skills/using-git-worktrees",
+      "license": "MIT",
+      "attribution": "© Jesse Vincent (obra/superpowers), MIT"
+    },
+    {
+      "name": "verification-before-completion",
+      "github": "https://github.com/obra/superpowers/tree/5bf4e78011075bcfc0dc295f0724994cd123ee71/skills/verification-before-completion",
+      "license": "MIT",
+      "attribution": "© Jesse Vincent (obra/superpowers), MIT"
+    },
+    {
+      "name": "writing-plans",
+      "github": "https://github.com/obra/superpowers/tree/5bf4e78011075bcfc0dc295f0724994cd123ee71/skills/writing-plans",
+      "license": "MIT",
+      "attribution": "© Jesse Vincent (obra/superpowers), MIT"
+    },
+    {
+      "name": "subagent-driven-development",
+      "github": "https://github.com/obra/superpowers/tree/5bf4e78011075bcfc0dc295f0724994cd123ee71/skills/subagent-driven-development",
+      "license": "MIT",
+      "attribution": "© Jesse Vincent (obra/superpowers), MIT"
+    },
+    {
+      "name": "frontend-design",
+      "github": "https://github.com/anthropics/skills/tree/34040c9c568585f6929bedeaad110ad08f079624/skills/frontend-design",
+      "license": "Apache-2.0",
+      "attribution": "© Anthropic, PBC (anthropics/skills), Apache-2.0"
+    },
+    {
+      "name": "knowledge-synthesis",
+      "github": "https://github.com/anthropics/knowledge-work-plugins/tree/1c7187c4fc17feefa6cde39517f12dae1249e6c4/enterprise-search/skills/knowledge-synthesis",
+      "license": "Apache-2.0",
+      "attribution": "© Anthropic, PBC (anthropics/knowledge-work-plugins), Apache-2.0"
+    },
+    {
+      "name": "search-strategy",
+      "github": "https://github.com/anthropics/knowledge-work-plugins/tree/1c7187c4fc17feefa6cde39517f12dae1249e6c4/enterprise-search/skills/search-strategy",
+      "license": "Apache-2.0",
+      "attribution": "© Anthropic, PBC (anthropics/knowledge-work-plugins), Apache-2.0"
+    },
+    {
+      "name": "write-spec",
+      "github": "https://github.com/anthropics/knowledge-work-plugins/tree/1c7187c4fc17feefa6cde39517f12dae1249e6c4/product-management/skills/write-spec",
+      "license": "Apache-2.0",
+      "attribution": "© Anthropic, PBC (anthropics/knowledge-work-plugins), Apache-2.0"
+    },
+    {
+      "name": "roadmap-update",
+      "github": "https://github.com/anthropics/knowledge-work-plugins/tree/1c7187c4fc17feefa6cde39517f12dae1249e6c4/product-management/skills/roadmap-update",
+      "license": "Apache-2.0",
+      "attribution": "© Anthropic, PBC (anthropics/knowledge-work-plugins), Apache-2.0"
+    },
+    {
+      "name": "design-critique",
+      "github": "https://github.com/anthropics/knowledge-work-plugins/tree/1c7187c4fc17feefa6cde39517f12dae1249e6c4/design/skills/design-critique",
+      "license": "Apache-2.0",
+      "attribution": "© Anthropic, PBC (anthropics/knowledge-work-plugins), Apache-2.0"
+    },
+    {
+      "name": "runbook",
+      "github": "https://github.com/anthropics/knowledge-work-plugins/tree/1c7187c4fc17feefa6cde39517f12dae1249e6c4/operations/skills/runbook",
+      "license": "Apache-2.0",
+      "attribution": "© Anthropic, PBC (anthropics/knowledge-work-plugins), Apache-2.0"
+    },
+    {
+      "name": "explore-data",
+      "github": "https://github.com/anthropics/knowledge-work-plugins/tree/1c7187c4fc17feefa6cde39517f12dae1249e6c4/data/skills/explore-data",
+      "license": "Apache-2.0",
+      "attribution": "© Anthropic, PBC (anthropics/knowledge-work-plugins), Apache-2.0"
+    },
+    {
+      "name": "validate-data",
+      "github": "https://github.com/anthropics/knowledge-work-plugins/tree/1c7187c4fc17feefa6cde39517f12dae1249e6c4/data/skills/validate-data",
+      "license": "Apache-2.0",
+      "attribution": "© Anthropic, PBC (anthropics/knowledge-work-plugins), Apache-2.0"
+    },
+    {
+      "name": "sql-queries",
+      "github": "https://github.com/anthropics/knowledge-work-plugins/tree/1c7187c4fc17feefa6cde39517f12dae1249e6c4/data/skills/sql-queries",
+      "license": "Apache-2.0",
+      "attribution": "© Anthropic, PBC (anthropics/knowledge-work-plugins), Apache-2.0"
+    },
+    {
+      "name": "statistical-analysis",
+      "github": "https://github.com/anthropics/knowledge-work-plugins/tree/1c7187c4fc17feefa6cde39517f12dae1249e6c4/data/skills/statistical-analysis",
+      "license": "Apache-2.0",
+      "attribution": "© Anthropic, PBC (anthropics/knowledge-work-plugins), Apache-2.0"
+    },
+    {
+      "name": "data-visualization",
+      "github": "https://github.com/anthropics/knowledge-work-plugins/tree/1c7187c4fc17feefa6cde39517f12dae1249e6c4/data/skills/data-visualization",
+      "license": "Apache-2.0",
+      "attribution": "© Anthropic, PBC (anthropics/knowledge-work-plugins), Apache-2.0"
+    },
+    {
+      "name": "reconciliation",
+      "github": "https://github.com/anthropics/knowledge-work-plugins/tree/1c7187c4fc17feefa6cde39517f12dae1249e6c4/finance/skills/reconciliation",
+      "license": "Apache-2.0",
+      "attribution": "© Anthropic, PBC (anthropics/knowledge-work-plugins), Apache-2.0"
+    },
+    {
+      "name": "variance-analysis",
+      "github": "https://github.com/anthropics/knowledge-work-plugins/tree/1c7187c4fc17feefa6cde39517f12dae1249e6c4/finance/skills/variance-analysis",
+      "license": "Apache-2.0",
+      "attribution": "© Anthropic, PBC (anthropics/knowledge-work-plugins), Apache-2.0"
+    },
+    {
+      "name": "review-contract",
+      "github": "https://github.com/anthropics/knowledge-work-plugins/tree/1c7187c4fc17feefa6cde39517f12dae1249e6c4/legal/skills/review-contract",
+      "license": "Apache-2.0",
+      "attribution": "© Anthropic, PBC (anthropics/knowledge-work-plugins), Apache-2.0"
+    },
+    {
+      "name": "triage-nda",
+      "github": "https://github.com/anthropics/knowledge-work-plugins/tree/1c7187c4fc17feefa6cde39517f12dae1249e6c4/legal/skills/triage-nda",
+      "license": "Apache-2.0",
+      "attribution": "© Anthropic, PBC (anthropics/knowledge-work-plugins), Apache-2.0"
+    },
+    {
+      "name": "compliance-check",
+      "github": "https://github.com/anthropics/knowledge-work-plugins/tree/1c7187c4fc17feefa6cde39517f12dae1249e6c4/legal/skills/compliance-check",
+      "license": "Apache-2.0",
+      "attribution": "© Anthropic, PBC (anthropics/knowledge-work-plugins), Apache-2.0"
+    },
+    {
+      "name": "legal-risk-assessment",
+      "github": "https://github.com/anthropics/knowledge-work-plugins/tree/1c7187c4fc17feefa6cde39517f12dae1249e6c4/legal/skills/legal-risk-assessment",
+      "license": "Apache-2.0",
+      "attribution": "© Anthropic, PBC (anthropics/knowledge-work-plugins), Apache-2.0"
+    },
+    {
+      "name": "code-review",
+      "github": "https://github.com/getsentry/skills/tree/c2f99a5b04b4cd992ec3022d7c2c3e23e938d241/skills/code-review",
+      "license": "Apache-2.0",
+      "attribution": "© Functional Software, Inc. / Sentry (getsentry/skills), Apache-2.0"
+    },
+    {
+      "name": "find-bugs",
+      "github": "https://github.com/getsentry/skills/tree/c2f99a5b04b4cd992ec3022d7c2c3e23e938d241/skills/find-bugs",
+      "license": "Apache-2.0",
+      "attribution": "© Functional Software, Inc. / Sentry (getsentry/skills), Apache-2.0"
+    },
+    {
+      "name": "gha-security-review",
+      "github": "https://github.com/getsentry/skills/tree/c2f99a5b04b4cd992ec3022d7c2c3e23e938d241/skills/gha-security-review",
+      "license": "Apache-2.0",
+      "attribution": "© Functional Software, Inc. / Sentry (getsentry/skills), Apache-2.0"
+    },
+    {
+      "name": "code-review-and-quality",
+      "github": "https://github.com/addyosmani/agent-skills/tree/bcab6a1b8503100e8618c3b4e32cc78de43de769/skills/code-review-and-quality",
+      "license": "MIT",
+      "attribution": "© Addy Osmani (addyosmani/agent-skills), MIT"
+    },
+    {
+      "name": "security-and-hardening",
+      "github": "https://github.com/addyosmani/agent-skills/tree/bcab6a1b8503100e8618c3b4e32cc78de43de769/skills/security-and-hardening",
+      "license": "MIT",
+      "attribution": "© Addy Osmani (addyosmani/agent-skills), MIT"
+    },
+    {
+      "name": "owasp-security",
+      "github": "https://github.com/agamm/claude-code-owasp/tree/bfaf257b2859986a6a84d2b7491e1fab2218cd53/.claude/skills/owasp-security",
+      "license": "MIT",
+      "attribution": "© agamm (agamm/claude-code-owasp), MIT"
+    },
+    {
+      "name": "playwright-automation",
+      "github": "https://github.com/petrkindlmann/qa-skills/tree/b3bb61bd268b147476252c6ed5a0440c87b97441/skills/playwright-automation",
+      "license": "MIT",
+      "attribution": "© Petr Kindlmann (petrkindlmann/qa-skills), MIT"
+    },
+    {
+      "name": "test-strategy",
+      "github": "https://github.com/petrkindlmann/qa-skills/tree/b3bb61bd268b147476252c6ed5a0440c87b97441/skills/test-strategy",
+      "license": "MIT",
+      "attribution": "© Petr Kindlmann (petrkindlmann/qa-skills), MIT"
+    },
+    {
+      "name": "bug-reproduction",
+      "github": "https://github.com/petrkindlmann/qa-skills/tree/b3bb61bd268b147476252c6ed5a0440c87b97441/skills/bug-reproduction",
+      "license": "MIT",
+      "attribution": "© Petr Kindlmann (petrkindlmann/qa-skills), MIT"
+    },
+    {
+      "name": "accessibility-testing",
+      "github": "https://github.com/petrkindlmann/qa-skills/tree/b3bb61bd268b147476252c6ed5a0440c87b97441/skills/accessibility-testing",
+      "license": "MIT",
+      "attribution": "© Petr Kindlmann (petrkindlmann/qa-skills), MIT"
+    },
+    {
+      "name": "agentic-browser-testing",
+      "github": "https://github.com/petrkindlmann/qa-skills/tree/b3bb61bd268b147476252c6ed5a0440c87b97441/skills/agentic-browser-testing",
+      "license": "MIT",
+      "attribution": "© Petr Kindlmann (petrkindlmann/qa-skills), MIT"
+    },
+    {
+      "name": "exploratory-testing",
+      "github": "https://github.com/petrkindlmann/qa-skills/tree/b3bb61bd268b147476252c6ed5a0440c87b97441/skills/exploratory-testing",
+      "license": "MIT",
+      "attribution": "© Petr Kindlmann (petrkindlmann/qa-skills), MIT"
+    },
+    {
+      "name": "contrast-master",
+      "github": "https://github.com/Community-Access/accessibility-agents/tree/decf6bac7f086c19afb242797b4974671ceff597/skills/contrast-master",
+      "license": "MIT",
+      "attribution": "© Taylor Arndt (Community-Access/accessibility-agents), MIT"
+    },
+    {
+      "name": "changelog-automation",
+      "github": "https://github.com/wshobson/agents/tree/4236bb91f8395b0435f1d8b8baf9e8e4c69a8620/plugins/documentation-generation/skills/changelog-automation",
+      "license": "MIT",
+      "attribution": "© Seth Hobson (wshobson/agents), MIT"
+    },
+    {
+      "name": "architecture-decision-records",
+      "github": "https://github.com/wshobson/agents/tree/4236bb91f8395b0435f1d8b8baf9e8e4c69a8620/plugins/documentation-generation/skills/architecture-decision-records",
+      "license": "MIT",
+      "attribution": "© Seth Hobson (wshobson/agents), MIT"
+    },
+    {
+      "name": "postmortem-writing",
+      "github": "https://github.com/wshobson/agents/tree/4236bb91f8395b0435f1d8b8baf9e8e4c69a8620/plugins/incident-response/skills/postmortem-writing",
+      "license": "MIT",
+      "attribution": "© Seth Hobson (wshobson/agents), MIT"
+    },
+    {
+      "name": "prioritization-frameworks",
+      "github": "https://github.com/phuryn/pm-skills/tree/8607e3b077817f89bf4a9b623246219734ac3be0/pm-execution/skills/prioritization-frameworks",
+      "license": "MIT",
+      "attribution": "© Paweł Huryn (phuryn/pm-skills), MIT"
+    },
+    {
+      "name": "pre-mortem",
+      "github": "https://github.com/phuryn/pm-skills/tree/8607e3b077817f89bf4a9b623246219734ac3be0/pm-execution/skills/pre-mortem",
+      "license": "MIT",
+      "attribution": "© Paweł Huryn (phuryn/pm-skills), MIT"
+    },
+    {
+      "name": "fact-check-workflow",
+      "github": "https://github.com/jamditis/claude-skills-journalism/tree/16bd5fc4267ce154fb48af6fb09f8a2ddb601446/journalism-core/skills/fact-check-workflow",
+      "license": "MIT",
+      "attribution": "© Joe Amditis (jamditis/claude-skills-journalism), MIT"
+    },
+    {
+      "name": "good-readme",
+      "github": "https://github.com/adewale/good-readme/tree/8631fbc0f457776cb976915930cb1fd621dca476/skills/good-readme",
+      "license": "MIT",
+      "attribution": "© Ade Oshineye (adewale/good-readme), MIT"
+    },
+    {
+      "name": "ab-test-analysis",
+      "github": "https://github.com/nimrodfisher/data-analytics-skills/tree/43f963406726b2e7c7492e334d1ec6469ffad5e1/03-data-analysis-investigation/ab-test-analysis",
+      "license": "MIT",
+      "attribution": "© Nimrod Fisher (nimrodfisher/data-analytics-skills), MIT"
+    },
+    {
+      "name": "insight-synthesis",
+      "github": "https://github.com/nimrodfisher/data-analytics-skills/tree/43f963406726b2e7c7492e334d1ec6469ffad5e1/04-data-storytelling-visualization/insight-synthesis",
+      "license": "MIT",
+      "attribution": "© Nimrod Fisher (nimrodfisher/data-analytics-skills), MIT"
+    },
+    {
+      "name": "gobd-konformitaet",
+      "github": "https://github.com/tgw013/HGB-accounting-plugin/tree/859f1444cffd1116c7d5d6be893e86474b895ad7/skills/gobd-konformitaet",
+      "license": "Apache-2.0",
+      "attribution": "© tgw013 (tgw013/HGB-accounting-plugin), Apache-2.0"
+    },
+    {
+      "name": "buchungssatz",
+      "github": "https://github.com/tgw013/HGB-accounting-plugin/tree/859f1444cffd1116c7d5d6be893e86474b895ad7/skills/buchungssatz",
+      "license": "Apache-2.0",
+      "attribution": "© tgw013 (tgw013/HGB-accounting-plugin), Apache-2.0"
+    },
+    {
+      "name": "ust-voranmeldung",
+      "github": "https://github.com/tgw013/HGB-accounting-plugin/tree/859f1444cffd1116c7d5d6be893e86474b895ad7/skills/ust-voranmeldung",
+      "license": "Apache-2.0",
+      "attribution": "© tgw013 (tgw013/HGB-accounting-plugin), Apache-2.0"
+    },
+    {
+      "name": "monatsabschluss",
+      "github": "https://github.com/tgw013/HGB-accounting-plugin/tree/859f1444cffd1116c7d5d6be893e86474b895ad7/skills/monatsabschluss",
+      "license": "Apache-2.0",
+      "attribution": "© tgw013 (tgw013/HGB-accounting-plugin), Apache-2.0"
+    },
+    {
+      "name": "seo-technical",
+      "github": "https://github.com/AgriciDaniel/claude-seo/tree/e77e783e38eeb738424eb72117abbd2dacdd88af/skills/seo-technical",
+      "license": "MIT",
+      "attribution": "© AgriciDaniel (AgriciDaniel/claude-seo), MIT"
+    },
+    {
+      "name": "seo-content",
+      "github": "https://github.com/AgriciDaniel/claude-seo/tree/e77e783e38eeb738424eb72117abbd2dacdd88af/skills/seo-content",
+      "license": "MIT",
+      "attribution": "© AgriciDaniel (AgriciDaniel/claude-seo), MIT"
+    },
+    {
+      "name": "copywriting",
+      "github": "https://github.com/coreyhaines31/marketingskills/tree/5b2c0007766c6a1cf1d53fd8fc73e979e0821022/skills/copywriting",
+      "license": "MIT",
+      "attribution": "© Corey Haines (coreyhaines31/marketingskills), MIT"
+    },
+    {
+      "name": "schema",
+      "github": "https://github.com/coreyhaines31/marketingskills/tree/5b2c0007766c6a1cf1d53fd8fc73e979e0821022/skills/schema",
+      "license": "MIT",
+      "attribution": "© Corey Haines (coreyhaines31/marketingskills), MIT"
+    },
+    {
+      "name": "content-strategy",
+      "github": "https://github.com/coreyhaines31/marketingskills/tree/5b2c0007766c6a1cf1d53fd8fc73e979e0821022/skills/content-strategy",
+      "license": "MIT",
+      "attribution": "© Corey Haines (coreyhaines31/marketingskills), MIT"
+    },
+    {
+      "name": "astro-seo",
+      "github": "https://github.com/JordiParraCrespo/astro-skills/tree/0d5ea706d4defa90abdd4caece4cde3c8a218bfb/skills/astro-seo",
+      "license": "MIT",
+      "attribution": "© Jordi Parra Crespo (JordiParraCrespo/astro-skills), MIT"
+    },
+    {
+      "name": "astro-content",
+      "github": "https://github.com/JordiParraCrespo/astro-skills/tree/0d5ea706d4defa90abdd4caece4cde3c8a218bfb/skills/astro-content",
+      "license": "MIT",
+      "attribution": "© Jordi Parra Crespo (JordiParraCrespo/astro-skills), MIT"
+    },
+    {
+      "name": "astro-best-practices",
+      "github": "https://github.com/incluud/astro-agent-skills/tree/4b4355ecea8ef4f68c9025f3de5a73c27df59310/skills/astro-best-practices",
+      "license": "MIT",
+      "attribution": "© Incluud (incluud/astro-agent-skills), MIT"
+    },
+    {
+      "name": "shopify-expert",
+      "github": "https://github.com/Jeffallan/claude-skills/tree/882ef55e377dbf9a4dbe496bb41ac6ccd0e555cf/skills/shopify-expert",
+      "license": "MIT",
+      "attribution": "© Jeffallan (Jeffallan/claude-skills), MIT"
+    },
+    {
+      "name": "portfolio-analytics",
+      "github": "https://github.com/agiprolabs/claude-trading-skills/tree/981e1d736cdc02bdc1c55c74ec9224e956414706/skills/portfolio-analytics",
+      "license": "MIT",
+      "attribution": "© agiprolabs (agiprolabs/claude-trading-skills), MIT"
+    },
+    {
+      "name": "risk-management",
+      "github": "https://github.com/agiprolabs/claude-trading-skills/tree/981e1d736cdc02bdc1c55c74ec9224e956414706/skills/risk-management",
+      "license": "MIT",
+      "attribution": "© agiprolabs (agiprolabs/claude-trading-skills), MIT"
+    },
+    {
+      "name": "correlation-analysis",
+      "github": "https://github.com/agiprolabs/claude-trading-skills/tree/981e1d736cdc02bdc1c55c74ec9224e956414706/skills/correlation-analysis",
+      "license": "MIT",
+      "attribution": "© agiprolabs (agiprolabs/claude-trading-skills), MIT"
+    },
+    {
+      "name": "regime-detection",
+      "github": "https://github.com/agiprolabs/claude-trading-skills/tree/981e1d736cdc02bdc1c55c74ec9224e956414706/skills/regime-detection",
+      "license": "MIT",
+      "attribution": "© agiprolabs (agiprolabs/claude-trading-skills), MIT"
+    },
+    {
+      "name": "volatility-modeling",
+      "github": "https://github.com/agiprolabs/claude-trading-skills/tree/981e1d736cdc02bdc1c55c74ec9224e956414706/skills/volatility-modeling",
+      "license": "MIT",
+      "attribution": "© agiprolabs (agiprolabs/claude-trading-skills), MIT"
+    },
+    {
+      "name": "trade-journal",
+      "github": "https://github.com/agiprolabs/claude-trading-skills/tree/981e1d736cdc02bdc1c55c74ec9224e956414706/skills/trade-journal",
+      "license": "MIT",
+      "attribution": "© agiprolabs (agiprolabs/claude-trading-skills), MIT"
+    }
+  ]
+}

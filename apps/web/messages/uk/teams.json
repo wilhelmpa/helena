@@ -432,7 +432,15 @@
       "filePathPlaceholder": "SOUL.md або instructions/тема.md",
       "filePathLabel": "Шлях керованого файлу {index}",
       "fileContentLabel": "Вміст керованого файлу {index}",
-      "removeFile": "Видалити керований файл {index}"
+      "removeFile": "Видалити керований файл {index}",
+      "runtime": "Середовище виконання",
+      "runtimeKind": {
+        "hermes": "Hermes",
+        "claude": "Claude Code",
+        "codex": "Codex"
+      },
+      "runtimeHermesHint": "Hermes сервер надає сам і тримає його профіль синхронним.",
+      "runtimeCliHint": "Працює на runner із цим пресетом (helena-runner --agent {kind}); інструкції, навички, MCP-сервери, модель і міркування надходять із Helena."
     },
     "runtimeConflicts": {
       "title": "Змінено поза Helena",
@@ -594,8 +602,8 @@
       "toolsetsReadOnly": "Вимикати набори інструментів можуть лише учасники, яким дозволено редагувати агентів.",
       "noToolsets": "Раннер не повідомив жодного набору інструментів.",
       "mcpServers": "Сервери MCP",
-      "mcpServersHint": "З конфігурації Hermes. Вимкніть сервер і збережіть, щоб агент його не використовував.",
-      "mcpServersReadOnly": "З конфігурації Hermes. Вимкнути сервер можуть лише учасники, яким дозволено редагувати агентів.",
+      "mcpServersHint": "Helena дає їх кожному агенту: власний сервер і браузер проєкту. Вимкніть один і збережіть, щоб агент його не використовував.",
+      "mcpServersReadOnly": "Helena дає їх кожному агенту. Вимкнути може лише той, хто може редагувати агентів.",
       "noMcpServers": "Немає",
       "libraryMcpServers": "MCP-сервери команди",
       "libraryMcpServersHint": "Увімкнений сервер запускається з чатами та запусками агента після збереження.",
@@ -610,7 +618,7 @@
       "origin": {
         "agent": "Вивчений",
         "hub": "Зі Skills Hub",
-        "plan": "З Plan"
+        "plan": "З Helena"
       },
       "memory": "Пам'ять",
       "memoryHint": "Hermes веде цю пам'ять сам; її показано так, як раннер повідомив її востаннє. Зміна дійде до агента з наступною синхронізацією раннера.",
@@ -714,6 +722,51 @@
         "instructions": "Інструкції",
         "model": "Модель/reasoning",
         "budgets": "Бюджети"
+      }
+    },
+    "profileSync": {
+      "state": {
+        "synced": "Профіль синхронізовано",
+        "drift": "Профіль відрізняється",
+        "pending": "Застосування налаштувань …",
+        "degraded": "Не вдалося застосувати налаштування",
+        "offline": "Runner не в мережі",
+        "unknown": "Runner не повідомляє свій профіль"
+      },
+      "checked": "перевірено {time} тому",
+      "rewrite": "Перезаписати",
+      "rewriting": "Перезапис …",
+      "rewriteQueued": "Runner перезапише профіль під час наступної синхронізації.",
+      "drift": {
+        "not-linked": "config.yaml — не посилання на спільну конфігурацію Hermes.",
+        "managed-config": "Hermes не застосовує конфігурацію, записану Helena.",
+        "mcp-unmanaged": "MCP-сервер {server} увімкнено, хоча Helena його не передбачає.",
+        "mcp-missing": "MCP-сервер {server} відсутній або вимкнений.",
+        "mcp-differs": "MCP-сервер {server} працює з іншими налаштуваннями, ніж у Helena.",
+        "mcp-unsupported": "Це середовище не може запустити MCP-сервер {server}.",
+        "setting-differs": "Налаштування {key} відрізняється.",
+        "approval-guard": "Небезпечні команди виконуються без охорони схвалень Helena.",
+        "probe-failed": "Не вдалося прочитати профіль."
+      },
+      "defaults": "За замовчуванням у середовищі: {model} ({provider}), міркування {reasoning}",
+      "servers": "MCP-сервери: {servers}",
+      "serversOff": "вимкнені: {servers}"
+    },
+    "runModel": {
+      "title": "Модель",
+      "configured": "Налаштовано: {value}",
+      "used": "Виконано на: {value}",
+      "notReported": "Виконано на: не повідомлено",
+      "mismatch": "Відрізняється: {what}",
+      "badge": "Модель відрізняється",
+      "source": {
+        "run": "з кроку процесу",
+        "agent": "з агента",
+        "default": "за замовчуванням агента"
+      },
+      "part": {
+        "model": "модель",
+        "reasoning": "міркування"
       }
     },
     "chatTemplate": "Шаблон сам не запускається. Додайте його до проєкту як агента, щоб спробувати тут."

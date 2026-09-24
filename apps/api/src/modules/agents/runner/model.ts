@@ -1,5 +1,6 @@
 import { t } from 'elysia';
 import { agentRunTrigger, contextUsageBody } from '../model';
+import { runModelReport } from '../runtime-sync/model';
 
 export const MAX_RUN_OUTPUT_BYTES = 128 * 1024;
 
@@ -90,6 +91,7 @@ export const resultBody = t.Object({
   toolCalls: t.Optional(
     t.Integer({ minimum: 0, description: 'How many tool calls the agent made in the run.' }),
   ),
+  runtime: t.Optional(runModelReport),
 });
 
 // The answer to a run result: a reflection the runner starts in the run's session, or

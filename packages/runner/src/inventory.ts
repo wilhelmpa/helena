@@ -14,6 +14,11 @@ export interface HermesProfile {
   toolsets: string[];
   mcpServers: string[];
   plugins?: Record<string, string>;
+  // The shared config.yaml every agent home links to (not set for the home that holds it).
+  sharedConfig?: string;
+  // The browser-harness MCP server's command, which the runner points at the project's
+  // browser (contributions.ts). Absent where the harness is not installed.
+  browserHarness?: string;
 }
 
 // 'plan' is a skill the policy materializer wrote, 'hub' one installed from the Skills Hub,

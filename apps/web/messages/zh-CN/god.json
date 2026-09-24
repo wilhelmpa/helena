@@ -375,6 +375,10 @@
     "janitorCleaned": "{count, plural, other {清理了 # 项}}",
     "janitorNeverRan": "尚未运行",
     "resuming": "{count, plural, other {# 个运行}}正在崩溃后恢复",
-    "needsResumeReview": "{count, plural, other {# 个运行}}已达到恢复次数上限，需要查看"
+    "needsResumeReview": "{count, plural, other {# 个运行}}已达到恢复次数上限，需要查看",
+    "agentSync": {
+      "title": "代理配置",
+      "synced": "{total} 个中 {synced} 个已同步"
+    }
   }
 }

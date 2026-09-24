@@ -432,7 +432,15 @@
       "filePathPlaceholder": "SOUL.md or instructions/topic.md",
       "filePathLabel": "Managed file {index} path",
       "fileContentLabel": "Managed file {index} content",
-      "removeFile": "Remove managed file {index}"
+      "removeFile": "Remove managed file {index}",
+      "runtime": "Runtime",
+      "runtimeKind": {
+        "hermes": "Hermes",
+        "claude": "Claude Code",
+        "codex": "Codex"
+      },
+      "runtimeHermesHint": "The server provisions Hermes itself and keeps its profile in sync.",
+      "runtimeCliHint": "Runs on a runner with this preset (helena-runner --agent {kind}); instructions, skills, MCP servers, model and reasoning come from Helena."
     },
     "runtimeConflicts": {
       "title": "Changed outside Helena",
@@ -594,8 +602,8 @@
       "toolsetsReadOnly": "Only members who can edit agents can turn toolsets off.",
       "noToolsets": "The runner reported no toolsets.",
       "mcpServers": "MCP servers",
-      "mcpServersHint": "From the Hermes configuration. Turn one off and save to keep the agent from using it.",
-      "mcpServersReadOnly": "From the Hermes configuration. Only members who can edit agents can turn one off.",
+      "mcpServersHint": "Helena gives every agent these: its own server and the project's browser. Turn one off and save so the agent does not use it.",
+      "mcpServersReadOnly": "Helena gives every agent these. Only members who can edit agents can turn one off.",
       "noMcpServers": "None",
       "libraryMcpServers": "MCP servers of the team",
       "libraryMcpServersHint": "An enabled server starts with the agent's chats and runs once you save.",
@@ -610,7 +618,7 @@
       "origin": {
         "agent": "Learned",
         "hub": "From the Skills Hub",
-        "plan": "From Plan"
+        "plan": "From Helena"
       },
       "memory": "Memory",
       "memoryHint": "Hermes writes this memory itself; it is shown as the runner last reported it. An edit reaches the agent with the runner's next sync.",
@@ -714,6 +722,51 @@
         "instructions": "Instructions",
         "model": "Model/reasoning",
         "budgets": "Budgets"
+      }
+    },
+    "profileSync": {
+      "state": {
+        "synced": "Profile in sync",
+        "drift": "Profile differs",
+        "pending": "Applying settings …",
+        "degraded": "Settings could not be applied",
+        "offline": "Runner offline",
+        "unknown": "Runner does not report its profile"
+      },
+      "checked": "checked {time} ago",
+      "rewrite": "Rewrite",
+      "rewriting": "Rewriting …",
+      "rewriteQueued": "The runner rewrites the profile with its next sync.",
+      "drift": {
+        "not-linked": "config.yaml is not the link to the shared Hermes configuration.",
+        "managed-config": "Hermes does not apply the configuration Helena wrote.",
+        "mcp-unmanaged": "MCP server {server} is on although Helena does not give it.",
+        "mcp-missing": "MCP server {server} is missing or off.",
+        "mcp-differs": "MCP server {server} runs with other settings than in Helena.",
+        "mcp-unsupported": "This runtime cannot start MCP server {server}.",
+        "setting-differs": "Setting {key} differs.",
+        "approval-guard": "Dangerous commands run without Helena's approval guard.",
+        "probe-failed": "The profile could not be read."
+      },
+      "defaults": "Runtime default: {model} ({provider}), reasoning {reasoning}",
+      "servers": "MCP servers: {servers}",
+      "serversOff": "turned off: {servers}"
+    },
+    "runModel": {
+      "title": "Model",
+      "configured": "Configured: {value}",
+      "used": "Ran on: {value}",
+      "notReported": "Ran on: not reported",
+      "mismatch": "Differs: {what}",
+      "badge": "Model differs",
+      "source": {
+        "run": "from the workflow step",
+        "agent": "from the agent",
+        "default": "agent default"
+      },
+      "part": {
+        "model": "model",
+        "reasoning": "reasoning"
       }
     },
     "chatTemplate": "A template does not run. Add it to a project as an agent to try it here."

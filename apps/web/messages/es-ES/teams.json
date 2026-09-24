@@ -432,7 +432,15 @@
       "filePathPlaceholder": "SOUL.md o instructions/tema.md",
       "filePathLabel": "Ruta del archivo gestionado {index}",
       "fileContentLabel": "Contenido del archivo gestionado {index}",
-      "removeFile": "Quitar el archivo gestionado {index}"
+      "removeFile": "Quitar el archivo gestionado {index}",
+      "runtime": "Runtime",
+      "runtimeKind": {
+        "hermes": "Hermes",
+        "claude": "Claude Code",
+        "codex": "Codex"
+      },
+      "runtimeHermesHint": "El servidor aprovisiona Hermes y mantiene su perfil sincronizado.",
+      "runtimeCliHint": "Se ejecuta en un runner con este preset (helena-runner --agent {kind}); instrucciones, skills, servidores MCP, modelo y razonamiento vienen de Helena."
     },
     "runtimeConflicts": {
       "title": "Modificado fuera de Helena",
@@ -594,8 +602,8 @@
       "toolsetsReadOnly": "Solo los miembros que pueden editar agentes pueden desactivar conjuntos de herramientas.",
       "noToolsets": "El ejecutor no ha informado de ningún conjunto de herramientas.",
       "mcpServers": "Servidores MCP",
-      "mcpServersHint": "De la configuración de Hermes. Desactiva uno y guarda para que el agente no lo use.",
-      "mcpServersReadOnly": "De la configuración de Hermes. Solo los miembros que pueden editar agentes pueden desactivar uno.",
+      "mcpServersHint": "Helena los da a cada agente: su propio servidor y el navegador del proyecto. Desactiva uno y guarda para que el agente no lo use.",
+      "mcpServersReadOnly": "Helena los da a cada agente. Solo quienes pueden editar agentes pueden desactivar uno.",
       "noMcpServers": "Ninguno",
       "libraryMcpServers": "Servidores MCP del equipo",
       "libraryMcpServersHint": "Un servidor activado se inicia con los chats y ejecuciones del agente cuando guardas.",
@@ -610,7 +618,7 @@
       "origin": {
         "agent": "Aprendida",
         "hub": "Del Skills Hub",
-        "plan": "De Plan"
+        "plan": "De Helena"
       },
       "memory": "Memoria",
       "memoryHint": "Hermes escribe esta memoria por sí mismo; se muestra tal como la informó el ejecutor por última vez. Un cambio llega al agente con la siguiente sincronización del ejecutor.",
@@ -714,6 +722,51 @@
         "instructions": "Instrucciones",
         "model": "Modelo/razonamiento",
         "budgets": "Presupuestos"
+      }
+    },
+    "profileSync": {
+      "state": {
+        "synced": "Perfil sincronizado",
+        "drift": "El perfil difiere",
+        "pending": "Aplicando la configuración …",
+        "degraded": "No se pudo aplicar la configuración",
+        "offline": "Runner desconectado",
+        "unknown": "El runner no informa de su perfil"
+      },
+      "checked": "comprobado hace {time}",
+      "rewrite": "Reescribir",
+      "rewriting": "Reescribiendo …",
+      "rewriteQueued": "El runner reescribe el perfil en su próxima sincronización.",
+      "drift": {
+        "not-linked": "config.yaml no es el enlace a la configuración compartida de Hermes.",
+        "managed-config": "Hermes no aplica la configuración que escribió Helena.",
+        "mcp-unmanaged": "El servidor MCP {server} está activo aunque Helena no lo prevé.",
+        "mcp-missing": "Falta el servidor MCP {server} o está desactivado.",
+        "mcp-differs": "El servidor MCP {server} funciona con otra configuración que en Helena.",
+        "mcp-unsupported": "Este runtime no puede iniciar el servidor MCP {server}.",
+        "setting-differs": "El ajuste {key} difiere.",
+        "approval-guard": "Los comandos peligrosos se ejecutan sin el guardián de aprobaciones de Helena.",
+        "probe-failed": "No se pudo leer el perfil."
+      },
+      "defaults": "Predeterminado del runtime: {model} ({provider}), razonamiento {reasoning}",
+      "servers": "Servidores MCP: {servers}",
+      "serversOff": "desactivados: {servers}"
+    },
+    "runModel": {
+      "title": "Modelo",
+      "configured": "Configurado: {value}",
+      "used": "Ejecutado con: {value}",
+      "notReported": "Ejecutado con: sin informar",
+      "mismatch": "Difiere: {what}",
+      "badge": "El modelo difiere",
+      "source": {
+        "run": "del paso del flujo",
+        "agent": "del agente",
+        "default": "predeterminado del agente"
+      },
+      "part": {
+        "model": "modelo",
+        "reasoning": "razonamiento"
       }
     },
     "chatTemplate": "Una plantilla no se ejecuta. Añádela a un proyecto como agente para probarla aquí."
