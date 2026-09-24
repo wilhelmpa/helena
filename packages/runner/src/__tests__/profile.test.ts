@@ -127,7 +127,10 @@ describe('Helena owns every MCP server of a Hermes profile', () => {
     expect(config.mcp_servers).toEqual({
       itsaplan: {
         url: 'http://127.0.0.1:3000/mcp',
-        headers: { Authorization: 'Bearer ${ITSAPLAN_API_KEY}' },
+        headers: {
+          Authorization: 'Bearer ${ITSAPLAN_API_KEY}',
+          'x-helena-run': '${ITSAPLAN_RUN_ID}',
+        },
         strict_redirect_headers: true,
         lazy: true,
         connect_timeout: 15,

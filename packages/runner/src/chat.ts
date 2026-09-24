@@ -63,6 +63,8 @@ export async function answer(
       image: message.images?.[0] ?? null,
       env: {
         ITSAPLAN_TRIGGER: 'chat',
+        // No run: the header Helena's MCP server gets it in stays empty.
+        ITSAPLAN_RUN_ID: '',
         ITSAPLAN_SYSTEM_PROMPT: message.systemPrompt,
         ITSAPLAN_THREAD_ID: message.threadId,
         ITSAPLAN_MESSAGE_ID: String(message.id),

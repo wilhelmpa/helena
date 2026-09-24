@@ -3,7 +3,9 @@ import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promis
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { claudeMcpArgs, CliRuntimeAdapter, codexMcpArgs, codexOwnMcpServers } from '../cli-runtime';
+import { FinalAnswerReader } from '../agui';
 import type { RunnerConfig } from '../config';
+import { collectProfile } from '../contributions';
 import { runtimeAdapter } from '../adapters';
 import type { RuntimePolicyClient, RuntimePolicySnapshot, RuntimeStatus } from '../policy';
 import { PRESETS, presetArgv } from '../presets';
@@ -306,5 +308,50 @@ describe('the Claude Code and Codex adapter', () => {
     expect(runtimeAdapter({ ...base, agent: 'codex' }, client)?.runtime).toBe('codex');
     expect(runtimeAdapter({ ...base, agent: 'opencode' }, client)).toBeNull();
     expect(runtimeAdapter({ ...base, command: 'my-agent' }, client)).toBeNull();
+  });
+});
+
+describe('what a Claude Code or Codex run reports', () => {
+  it("reads the answer and the session off Claude Code's stream", () => {
+    const sessions: string[] = [];
+    const reader = new FinalAnswerReader('claude-stream-json', (id) => sessions.push(id));
+    reader.write(
+      '{"type":"system","subtype":"init","session_id":"s-1","model":"claude-haiku-4-5"}\n',
+    );
+    reader.write('{"type":"assistant","session_id":"s-1","message":{"content":[]}}\n');
+    reader.write('{"type":"result","session_id":"s-1","result":"Posted the proof to VOL-1."}');
+    reader.end();
+    expect(reader.text()).toBe('Posted the proof to VOL-1.');
+    expect(reader.sessionId()).toBe('s-1');
+    expect(sessions).toEqual(['s-1']);
+  });
+
+  it("reads Codex' last message and its thread", () => {
+    const reader = new FinalAnswerReader('codex-jsonl');
+    reader.write('{"type":"thread.started","thread_id":"t-9"}\n');
+    reader.write('{"type":"item.completed","item":{"type":"agent_message","text":"first"}}\n');
+    reader.write('{"type":"item.completed","item":{"type":"agent_message","text":"final"}}\n');
+    reader.end();
+    expect(reader.text()).toBe('final');
+    expect(reader.sessionId()).toBe('t-9');
+    expect(new FinalAnswerReader('hermes-stream-json').text()).toBeNull();
+  });
+
+  it("names the run on every request to Helena's MCP server, for each runtime", () => {
+    const snapshot: RuntimePolicySnapshot = {
+      revision: 'r',
+      runtimePolicy: { files: [] },
+      skills: [],
+    };
+    const specs = (runtime: 'claude' | 'codex') =>
+      collectProfile({ runtime, snapshot, url: 'http://127.0.0.1:3000', env: {} }).mcpServers;
+    const claude = JSON.parse(claudeMcpArgs(specs('claude'))[1]!);
+    expect(claude.mcpServers.itsaplan.headers).toEqual({
+      Authorization: 'Bearer ${ITSAPLAN_API_KEY}',
+      'x-helena-run': '${ITSAPLAN_RUN_ID}',
+    });
+    expect(codexMcpArgs(specs('codex'), [], {}).args).toContain(
+      'mcp_servers.itsaplan.env_http_headers={x-helena-run="ITSAPLAN_RUN_ID"}',
+    );
   });
 });

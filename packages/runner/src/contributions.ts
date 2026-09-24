@@ -35,6 +35,8 @@ export interface ProfileContribution {
 // Helena's own MCP server: the tools of the app itself (tasks, comments, approvals). Every
 // agent has it; the name is the one Hermes' tool names and the skills already use.
 export const HELENA_MCP_SERVER = 'itsaplan';
+// The header that names the run on each of the agent's requests to Helena's MCP server.
+export const RUN_HEADER = 'x-helena-run';
 // Chrome DevTools into the project's browser, until the browser gateway replaces it.
 export const LEGACY_BROWSER_MCP_SERVER = 'browser-harness';
 
@@ -83,7 +85,12 @@ const helenaMcp: ProfileContribution = {
             name: HELENA_MCP_SERVER,
             transport: 'http',
             url: `${url}/mcp`,
-            headers: [{ name: 'Authorization', value: { template: 'Bearer ${ITSAPLAN_API_KEY}' } }],
+            headers: [
+              { name: 'Authorization', value: { template: 'Bearer ${ITSAPLAN_API_KEY}' } },
+              // The run the request belongs to (agent_run.id; empty in a chat), which the API
+              // records as the provenance of what the agent writes (vault entries, commits).
+              { name: RUN_HEADER, value: { env: 'ITSAPLAN_RUN_ID' } },
+            ],
             // An Authorization header must not follow a redirect to another origin.
             hermes: {
               strict_redirect_headers: true,

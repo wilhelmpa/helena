@@ -1,5 +1,5 @@
 import { setTimeout as sleep } from 'node:timers/promises';
-import { UsageReader } from './agui';
+import { FinalAnswerReader, UsageReader } from './agui';
 import { isTransient, RequestError, type Client, type ReflectionRequest, type Run } from './client';
 import type { RunnerConfig } from './config';
 import { execute, type Outcome } from './execute';
@@ -85,6 +85,17 @@ export async function perform(
   const usage = new UsageReader(config.outputFormat);
   const logins = new LoginUseReader(hermes?.logins ?? new Map());
   const task = taskOf(run);
+  const saveSession = (sessionId: string) => {
+    // Best effort, and never allowed to disrupt reading the run's own output: a
+    // client that cannot take this report, or a server that predates the route,
+    // is not fatal to the run.
+    try {
+      void client.reportSession(run.id, run.claim, sessionId).catch(() => {});
+    } catch {
+      // Ignored for the same reason.
+    }
+  };
+  const answer = new FinalAnswerReader(config.outputFormat, saveSession);
   // Reported as soon as it is known, not only with the result: a crash before the run
   // reports keeps this session for the next claim to resume. Best effort -- a stale
   // claim or a server that predates this route is not fatal to the run itself.
@@ -104,33 +115,34 @@ export async function perform(
       onData: (chunk) => {
         usage.write(chunk);
         logins.write(chunk);
+        answer.write(chunk);
       },
-      onSessionId: (sessionId) => {
-        // Best effort, and never allowed to disrupt reading the run's own output: a
-        // client that cannot take this report, or a server that predates the route,
-        // is not fatal to the run.
-        try {
-          void client.reportSession(run.id, run.claim, sessionId).catch(() => {});
-        } catch {
-          // Ignored for the same reason.
-        }
-      },
+      onSessionId: saveSession,
       signal: stop.signal,
       work: { kind: 'run', id: run.id },
     },
   );
   if (stop.signal.aborted) return null;
   usage.end();
+  answer.end();
   const uses = logins.uses();
   // The audit log misses these uses when the report fails; the run itself does not.
   if (uses.length > 0) await client.reportLoginUses({ runId: run.id }, uses).catch(() => {});
+  const sessionId = outcome.sessionId ?? answer.sessionId() ?? undefined;
   const runtime = await runModelReport(
     options.runtime ?? null,
     { model: run.model, reasoning: run.thinkingLevel },
-    outcome.sessionId,
+    sessionId,
     usage.model(),
   );
-  const result = { ...outcome, usage: outcome.usage ?? usage.value(), ...(runtime && { runtime }) };
+  const result = {
+    ...outcome,
+    // The answer itself, where the command prints an event stream (Claude Code, Codex).
+    output: answer.text() ?? outcome.output,
+    usage: outcome.usage ?? usage.value(),
+    ...(sessionId && { sessionId }),
+    ...(runtime && { runtime }),
+  };
   // A result sent under a claim this runner has since replaced is refused; it is sent
   // again under the new one.
   let reflection: ReflectionRequest | null = null;
