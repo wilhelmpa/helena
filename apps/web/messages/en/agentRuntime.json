@@ -62,6 +62,8 @@
     "openRun": "Open run",
     "truncated": "Long parts are shortened.",
     "source": {
+      "run": "Run",
+      "chat": "Chat",
       "tool": "Run or chat",
       "cli": "Terminal",
       "claude": "Claude Code",

@@ -62,6 +62,8 @@
     "openRun": "Abrir ejecución",
     "truncated": "Las partes largas están acortadas.",
     "source": {
+      "run": "Ejecución",
+      "chat": "Chat",
       "tool": "Ejecución o chat",
       "cli": "Terminal",
       "claude": "Claude Code",

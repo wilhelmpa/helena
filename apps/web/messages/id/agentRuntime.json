@@ -62,6 +62,8 @@
     "openRun": "Buka run",
     "truncated": "Bagian yang panjang dipersingkat.",
     "source": {
+      "run": "Run",
+      "chat": "Chat",
       "tool": "Run atau chat",
       "cli": "Terminal",
       "claude": "Claude Code",

@@ -62,6 +62,8 @@
     "openRun": "Ouvrir l'exécution",
     "truncated": "Les passages longs sont raccourcis.",
     "source": {
+      "run": "Exécution",
+      "chat": "Chat",
       "tool": "Exécution ou chat",
       "cli": "Terminal",
       "claude": "Claude Code",

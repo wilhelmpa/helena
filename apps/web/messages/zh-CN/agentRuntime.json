@@ -62,6 +62,8 @@
     "openRun": "打开运行",
     "truncated": "较长的部分已缩短。",
     "source": {
+      "run": "运行",
+      "chat": "聊天",
       "tool": "运行或聊天",
       "cli": "终端",
       "claude": "Claude Code",

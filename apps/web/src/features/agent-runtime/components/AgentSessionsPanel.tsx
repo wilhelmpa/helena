@@ -190,7 +190,13 @@ function SessionRow({ session, onOpen }: { session: RuntimeSession; onOpen: () =
         </span>
       </span>
       <span className="flex flex-wrap gap-x-3 text-xs text-muted-foreground">
-        {session.source && <span>{t(`source.${sourceKey(session.source)}`)}</span>}
+        {session.link?.runId != null ? (
+          <span>{t('source.run')}</span>
+        ) : session.link?.chatThreadId ? (
+          <span>{t('source.chat')}</span>
+        ) : (
+          session.source && <span>{t(`source.${sourceKey(session.source)}`)}</span>
+        )}
         {session.model && <span dir="ltr">{session.model}</span>}
         <span>{t('messages', { count: session.messageCount })}</span>
         {session.toolCallCount > 0 && <span>{t('tools', { count: session.toolCallCount })}</span>}
