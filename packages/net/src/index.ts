@@ -17,12 +17,14 @@ import ipaddr from 'ipaddr.js';
 export type UrlRefusal =
   'url_invalid' | 'url_https_required' | 'url_credentials' | 'url_private' | 'url_unresolvable';
 
+// No parameter property here: the browser router runs this file under Node's type
+// stripping (node project-router.mjs → @repo/browser-gateway → @repo/net), which cannot.
 export class UrlNotAllowedError extends Error {
-  constructor(
-    message: string,
-    readonly code: UrlRefusal,
-  ) {
+  readonly code: UrlRefusal;
+
+  constructor(message: string, code: UrlRefusal) {
     super(message);
+    this.code = code;
   }
 }
 
