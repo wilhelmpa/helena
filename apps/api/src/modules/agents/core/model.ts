@@ -2,6 +2,7 @@ import { t } from 'elysia';
 
 import { agentRunTrigger, maxTurnsLimit, runBudgetSecondsLimit, runContextTokens } from '../model';
 import { instructionsRuntimeFile } from '../runtime-files/model';
+import { modelCheck, profileReport } from '../runtime-sync/model';
 
 export { agentParams, projectAgentParams } from '../model';
 
@@ -156,6 +157,7 @@ export const runtimeState = t.Object({
       'files and plugin links, by their path in the runtime.',
   }),
   inventory: t.Nullable(runtimeInventory),
+  profile: t.Nullable(profileReport),
   reportedAt: t.Nullable(t.String()),
 });
 
@@ -385,6 +387,7 @@ export const AgentRunResponse = t.Object({
       },
     ),
   ),
+  modelCheck: t.Nullable(modelCheck),
   nextAttemptAt: t.String(),
   createdAt: t.String(),
 });

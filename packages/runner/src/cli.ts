@@ -415,6 +415,9 @@ async function main(): Promise<void> {
     });
   }
 
+  // A start the service wrapper reported as failed is over now.
+  if (configs[0]) void new Client(configs[0]).reportRunnerHealth(null).catch(() => {});
+
   // One agent's key being refused says nothing about the others, so it does not take them
   // down with it; the runner still exits non-zero once they are all finished.
   const served = await Promise.all(

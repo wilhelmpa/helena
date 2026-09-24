@@ -38,6 +38,7 @@ import {
   runtimePolicyGroupsChanged,
   type TemplateFieldGroup,
 } from './template-sync';
+import type { profileReport } from '../runtime-sync/model';
 
 // Data access for AI agents. Each agent is backed by a hidden bot user
 // (ai_agent.user_id -> user.id): that user is what a work item is assigned to,
@@ -119,8 +120,13 @@ export interface AgentRuntimeState {
   restored: string[];
   // Null until a runner that reads it reports one.
   inventory: AgentRuntimeInventory | null;
+  // What the runner read back from the runtime's profile: its digest, the drift it found
+  // and could not put right, and the runtime's own defaults. Null until one reports it.
+  profile: AgentRuntimeProfile | null;
   reportedAt: string | null;
 }
+
+export type AgentRuntimeProfile = typeof profileReport.static;
 
 const EMPTY_RUNTIME_POLICY: AgentRuntimePolicy = {
   reasoningEffort: null,
@@ -152,6 +158,7 @@ const EMPTY_RUNTIME_STATE: AgentRuntimeState = {
   conflicts: [],
   restored: [],
   inventory: null,
+  profile: null,
   reportedAt: null,
 };
 
@@ -185,6 +192,10 @@ function normalizeRuntimeState(value: unknown): AgentRuntimeState {
       : [],
     // Validated when the runner reported it, so only its presence is checked.
     inventory: state.inventory && typeof state.inventory === 'object' ? state.inventory : null,
+    profile:
+      state.profile && typeof state.profile === 'object' && Array.isArray(state.profile.drift)
+        ? state.profile
+        : null,
     reportedAt: typeof state.reportedAt === 'string' ? state.reportedAt : null,
   };
 }

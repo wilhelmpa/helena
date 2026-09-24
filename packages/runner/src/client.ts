@@ -161,6 +161,12 @@ export class Client {
     await this.post('/agent-runtime/status', status);
   }
 
+  // That the runner started (null) or why its service could not start it, for Helena's
+  // health overview. A server that predates the route answers 404.
+  async reportRunnerHealth(error: string | null): Promise<void> {
+    await this.post('/agent-runtime/runner-health', { error });
+  }
+
   async claim(): Promise<Run | null> {
     const res = await this.post('/agent-runs/claim');
     const body = (await res.json()) as { run: Run | null };
