@@ -33,7 +33,8 @@ alternatives are in [`docs/helena-decisions/oss-tooling.md`](helena-decisions/os
 - **Lizenz:** AGPL-3.0 mit neuer NOTICE; der Runner bleibt Apache-2.0, Hermes ist MIT.
   - Die Liste der Drittlizenzen entsteht aus den Lockfiles: 1328 Pakete, davon 1 blockierend
     (`buffers`, ohne Lizenz). Behebung per Override `unzipper@0.12`.
-  - Offen: wer als Copyright-Inhaber genannt wird, und DCO statt CLA.
+  - Offen, Owner-Entscheidung: der Copyright-Inhaber; CLA oder DCO; die Lizenz von
+    `@helena/sdk` (Apache-2.0 empfohlen, Optionen in §5).
 - **Versionen:** release-please bleibt. Während des Battle-Tests gibt es `1.0.0-rc.N`,
   öffentlich startet Helena mit `1.0.0`. **CI:** Die Workflows sind als Entwurf geschrieben
   und nicht gepusht.
@@ -42,6 +43,12 @@ alternatives are in [`docs/helena-decisions/oss-tooling.md`](helena-decisions/os
   Runner). Die Punkte, die vorher in den Code müssen, sind aufgelistet.
 - **Demo:** `scripts/helena-demo/seed.ts` legt idempotent eine Demo-Organisation an: Crew,
   Aufgaben, Routine und Workflow. Den Modus „Demo ohne API-Key“ gibt es als Design.
+- **Schon umgesetzt aus dem Standards-Audit:**
+  - F24: Jeder API-Testlauf bekommt eine eigene Kopie der Test-DB. Zwei parallele Läufe
+    stören sich nicht mehr.
+  - F26: Die Upstream-Telemetrie ist entfernt.
+  - Geplant: OPS-02 (~13k Zeilen Compose-Ära und Upstream-Deployments löschen, §2.7), OPS-01, OPS-04, F19, WEB-14,
+    OPS-06 (§12).
 
 ## 1. Order and dependencies
 
@@ -86,7 +93,7 @@ Legend:
 | `ICLA.md` | retire | Upstream CLA. DCO instead (owner decision, §5) |
 | `LICENSE` | core | AGPL-3.0 text unchanged |
 | `NOTICE` | replace | §5 |
-| `TELEMETRY.md` + `apps/worker/src/telemetry.ts` | retire | Reports to the upstream endpoint `telemetry.itsaplan.dev`, on by default (audit F26). Remove it; `SECURITY.md` states "Helena sends no telemetry" |
+| `TELEMETRY.md` + `apps/worker/src/telemetry*.ts` | **removed** (777b04f1) | Reported daily to the upstream endpoint `telemetry.itsaplan.dev`, on by default (audit F26 / OPS-03). `SECURITY.md` states "Helena sends no telemetry" |
 | `DESIGN.md` | core | |
 | `assets/` | replace | Helena brand from `apps/web/public/brand`; new screenshots; Coolify/Railway buttons out |
 | `charts/itsaplan`, `docker-compose.coolify*.yml`, `docs/coolify.md`, `docs/railway.md`, `docs/helm.md` | retire | Upstream deployment targets without runner or Hermes. They do not work for Helena |
@@ -190,6 +197,29 @@ helena-ops/                  private repository (owner's GitHub or Kingston only
 The public repository never references it. The overlay pins a Helena release (a tag, later an
 image digest) and applies its files on top.
 
+### 2.7 Removing the compose era (audit OPS-02)
+
+Nothing below is referenced by `native/deploy.sh`, by `full-test.sh` or by any installed
+unit; it all belongs to the earlier container deployment. It is removed in **one commit on
+this branch** ("chore: remove the compose-era deployment"), ready to go when the
+orchestrator says so. Its history stays in the private repository.
+
+| Path | Lines | Note |
+|---|---:|---|
+| `deployment/volition-stack/fresh-reset/`, `factory-reset/`, `scripts/fresh-reset.mjs`, `scripts/test/` | 5,811 | Guarded resets of the compose install. Remove the `fresh-reset/README.md` entry from the naming-test allowlist |
+| `workspace/`, `workspace-bridge/` | 1,912 | code-server/ttyd container. code-server now runs as a native unit and becomes an optional compose profile later |
+| `backup/`, `systemd/user/` | 1,286 | Garage, Nextcloud, offsite, `/home/pw`. Replaced by `helena-backup` (restic + `pg_dump`, OPS-06, §8.6) |
+| `compose.{apps,gateway,hub,vault}.yml`, `install.sh`, `.env.example`, `README.apps.md`, `config/`, `gateway/` | 1,331 | Nextcloud, Vaultwarden, the Cloudflare Access gateway |
+| `files/`, `security-images/` (incl. `gosu-1.19-source.tar.gz`), `security-patches/` | 282 | Nextcloud SSO, patched gotenberg/tika images |
+| `test/install.test.mjs`, `scripts/probe-secret-boundaries.sh`, `scripts/verify-checkpoint.py`, `docs/fresh-reset.md` | ~300 | `docs/secret-boundaries.md` is read into `SECURITY.md` first, then removed |
+| Root: `docker-compose.coolify*.yml`, `charts/itsaplan`, `docs/{coolify,railway,helm}.md` | 2,238 | Upstream deployment targets |
+| **Total, this branch** | **~13,000** | |
+| `google-bridge/` | 603 | Removed by **hub/access-center** with its Google connector |
+| `optional/mastra-studio/`, `integration/mastra-*`, `hermes-team-bridge*`, `triage.mjs` | 5,540+ | Removed by **hub/native-engine** with Mastra |
+
+Kept for the Docker phase as reference, in `helena-ops/archive/`: the compose files, which
+show the network split and the hardening of the old setup.
+
 ## 3. The one-step rename
 
 ### 3.1 Principles
@@ -247,7 +277,8 @@ image digest) and applies its files on top.
 6. **NODE_ENV=production everywhere** (audit F01). The API unit sets `development` only for
    non-secure cookies over plain-http LAN. With the SSRF switch (`SSRF_ALLOW_PRIVATE`, 023f2f8d)
    and access-center's explicit cookie and rate-limit settings, the rename commit's
-   `helena-api.service` runs with `production`.
+   `helena-api.service` runs with `production`, as soon as hub/access-center has made Secure
+   cookies follow the URL scheme; until then plain-http LAN logins would break.
 
 ### 3.4 The live side: `migrate_live.py`
 
@@ -472,8 +503,27 @@ together with the seed data rows that migrations insert today (e.g. `0046_seed_s
   Fix: `"overrides": { "exceljs>unzipper": "0.12.3" }` (0.12 drops `binary`/`buffers`), then
   test the xlsx import and the vault extraction. The image build later adds the Debian, Node
   and Chromium notices through an SBOM (§8).
-- **Contributions:** DCO instead of the upstream ICLA (decision doc §4). CLA only if the owner
-  wants the option to relicense.
+- **`@helena/sdk` license (owner decision; orchestrator decision doc "Open for the owner").**
+  - **Option A (recommended): Apache-2.0 for `@helena/sdk`** (and `packages/runner`, which is
+    Apache-2.0 already) inside the AGPL monorepo. A plugin that only uses the SDK may carry
+    any license, including proprietary, the way VS Code's extension API works. The API and
+    all of Helena's own code stay AGPL. Our SDK contributions are dual-usable because we hold
+    the copyright to them. The upstream code in the SDK (if any is moved there) must be ours
+    or permissively licensed first.
+  - **Option B: AGPL-3.0 for the SDK too.** Every plugin linked into Helena then counts as a
+    derivative work and must be AGPL-compatible. This is simpler and gives more copyleft, but
+    fewer third-party plugins, and it is legally unclear for plugins loaded at runtime.
+  - Either way, NOTICE and the SDK's `package.json`/`LICENSE` state it explicitly.
+- **Contributions: CLA or DCO (owner decision).**
+  - **Option A: a CLA to the owner's legal entity** (replacing the upstream ICLA, which grants
+    rights to the upstream author and must go in any case). It keeps the option of a
+    commercial dual license or a later relicensing. Costs: a CLA bot, a signature per
+    contributor, and fewer drive-by contributions.
+  - **Option B: DCO** (`Signed-off-by`, checked by `docs/oss/ci/dco.yml`). It is the
+    lightweight standard (Linux, CNCF). Relicensing later would need every contributor's
+    consent.
+  - The decision doc leans to DCO for simplicity. If a dual license is a realistic plan, choose
+    the CLA **before** the first outside contribution.
 - **Trademark:** "Helena" is a common name, so a name search in the relevant classes (software)
   is advisable before publication. **Owner decision** (possibly with a lawyer).
 
@@ -493,6 +543,8 @@ Drafts in `docs/oss/ci/`, never pushed. They move to `.github/workflows/` at the
 `ci.yml` (format, lint, typecheck, tests with a Postgres service, the rename kit, license check,
 gitleaks), `release.yml` (release-please), `images.yml` (placeholder for the Docker phase),
 `codeql.yml`, `scorecard.yml` and `dco.yml`. Actions are pinned by SHA at publication.
+The Playwright smoke job (audit WEB-14) joins `ci.yml` once the replay runtime (§9) lets a
+run finish without a model key.
 
 ## 8. Docker (outline only; "Docker machen wir als Letztes")
 
@@ -590,7 +642,9 @@ no container can reach.
 - **Upgrade:** `docker compose pull && docker compose up -d`. The migrate job takes the
   pre-migration dump (`backup.ts`, retention 30 days) and applies the migrations under the lock.
   A downgrade means pinning the old tag and restoring that dump.
-- **`helena backup`:**
+- **`helena backup`** (audit OPS-06: restic, BSD-2-Clause, for encrypted and deduplicated
+  snapshots to local disk, SFTP or S3, plus `pg_dump -Fc`; restic needs the owner's OK as a
+  binary):
   - `pg_dump -Fc`, the vault as a git bundle plus its untracked files, and the workspaces;
   - Hermes profiles, sessions and memory, without caches;
   - `storage`, and the browser profiles only with `--with-browser-sessions`;
@@ -631,7 +685,7 @@ prebuilt multi-arch images on GHCR.
 ## 10. Owner decisions
 
 1. **Copyright holder** in NOTICE and the headers: person, company, or "Helena contributors".
-2. **DCO or CLA** for contributions.
+2. **DCO or CLA** for contributions, and **Apache-2.0 or AGPL for `@helena/sdk`** (§5).
 3. **gitleaks** installation, plus TruffleHog once (versions and sizes in the decision doc).
 4. **Maintenance window** for the rename (about 10 minutes). Pause the agents beforehand.
 5. **GitHub organisation and repository name** at publication; a trademark check for "Helena".
@@ -639,7 +693,44 @@ prebuilt multi-arch images on GHCR.
 7. Whether the native Debian install is a supported public path next to Docker (recommended:
    yes, as "advanced").
 
-## 11. Open
+## 11. Findings on the way
+
+- **API key rate limiter.** Personal and agent keys allow 100 requests per window of one
+  second, and better-auth's window only restarts after a whole second without any request.
+  A client that sends steadily faster than one request a second is locked out after 100
+  requests until it pauses. The refusal surfaces as **HTTP 500**
+  ("unhandled error: APIError: Rate limit exceeded"), not 429. Found while testing the demo
+  seed against localhost; agents with bursts of tool calls can hit it too.
+  → hub/access-center (F01 already owns the better-auth rate-limit settings): map the error
+  to 429 with `Retry-After`, and use a fixed window.
+- **Hard-coded time zone.** Routines default to `Europe/Berlin`, and the workflow wait
+  `until` uses Europe/Berlin. For other installs this becomes an instance setting (default
+  UTC) → hub/native-engine.
+- **Naming test fails on volition/hub** because three agent-pool skill files mention the
+  upstream name (`doku-schreiben/SKILL.md`, `helena-ui-standard/SKILL.md`,
+  `helena-ui-standard/refs/review-checkliste.md`). They are rules ("never write …"), so an
+  allowlist entry or a rewording fixes it → pool agent.
+- **Private data in a migration:** `0139_project_mail_accounts.sql` (§2.4, §4.3).
+- **Installer gap:** hand-installed units and libexec scripts (§3.3 item 4).
+
+## 12. Standards-audit backlog of this package (audit §5.8)
+
+| ID | Item | State / plan |
+|---|---|---|
+| OPS-03 / F26 | Telemetry off or removed | **Done**: removed (777b04f1). Worker: tsc clean, 45 pass / 0 fail |
+| F24 | Test database per run from a migrated template | **Done** (9ff8a9bb): `apps/api/src/__tests__/helpers/clone-db.ts` + preload. Each run copies the test database with `CREATE DATABASE … TEMPLATE`, drops it after the run, and drops copies of crashed runs after 6 hours. `HELENA_TEST_DB_CLONE=0` opts out; a server that refuses the copy falls back with a warning. Verified: two runs in parallel on 92 tests gave identical results (the one failure is the known `columns > reorder` baseline, also on the shared database), and no copy was left behind. For `full-test.sh` on the live cluster the role needs `CREATEDB` (`ALTER ROLE itsaplan CREATEDB`, orchestrator); without it the run falls back to today's behaviour |
+| OPS-02 | Remove the compose era, upstream compose files, Helm chart | Planned, §2.7; one commit when the orchestrator says go |
+| OPS-04 / F13 | Env schema per app, generated `.env.example` | Plan: a zod 4 schema per app in `packages/config` (zod is already in the tree). It covers defaults, descriptions and secrets, keeps the `*_FILE` convention, and fails fast on bad values (today `intEnv` falls back silently, twice). `.env.example` and the docs table are generated from it, and the rename's compatibility reader (`HELENA_X`, falling back to the old name) lives there. With the rename commit |
+| OPS-01 / F14 | Logging and health | Plan: pino (MIT; already in the tree through ImapFlow) behind a logger interface the SDK hands to plugins (with hub/framework), `X-Request-Id` through API → worker → runner, `/livez` and `/readyz` (database reachable, migrations current), a worker health port, Docker `HEALTHCHECK`, systemd `WatchdogSec` with `sd_notify`. OpenTelemetry later (OPS-07 names already decided) |
+| F19 | One document extraction module | Plan: `packages/extract` used by the API and the vault. In-process libraries first (`@firecrawl/pdf-inspector`, `mammoth`, already used by the API); `tesseract` stays for OCR as a separate program. Shared with package K (second brain) |
+| WEB-14 | Web test stack | Plan: happy-dom + Testing Library for component tests, and a Playwright smoke suite (sign in, board, task, chat, one agent run against the replay runtime of §9) as a CI job |
+| F01 (units) | `NODE_ENV=production` everywhere | Depends on hub/access-center: Secure cookies from the URL scheme and the database-backed rate limit. After that, the rename commit's `helena-api.service` and the compose file set `production` |
+| OPS-06 | Backups | Plan: `helena-backup` built on restic (BSD-2-Clause; encrypted, deduplicated, many targets) plus `pg_dump -Fc`, the same script for Docker and native (§8.6). The old Garage/Nextcloud script goes with OPS-02. restic is a binary: **the owner's OK is needed** |
+| OPS-05 | Provisioning service into worker jobs | hub/native-engine owns it. §8.3 needs it for Docker (no systemd in the containers) |
+| TOOL-1 | CLA or DCO | §5, owner decision |
+| — | Old names in public contracts (`itsaplan` MCP name and UA, `X-Itsaplan-*`, TOTP issuer, `volition.local` git authors, OpenAPI "Plan"/"Mastra" tags) | In the rename (§3.2, §2.5) |
+
+## 13. Open
 
 - The repository codemod script: its data is in the map. Write it right before the rename
   window so it runs on the then-current tree.
