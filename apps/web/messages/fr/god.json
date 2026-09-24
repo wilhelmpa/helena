@@ -381,5 +381,38 @@
       "title": "Profils des agents",
       "synced": "{synced} sur {total} synchronisés"
     }
+  },
+  "plugins": {
+    "externalTitle": "Plugins externes",
+    "externalDescription": "Un plugin externe s'exécute dans Helena avec les droits de Helena. N'activez ceci que pour des plugins de confiance.",
+    "folder": "Dossier des plugins : {path}",
+    "noFolder": "Aucun dossier de plugins n'est défini (HELENA_PLUGINS_DIR) : seuls les plugins intégrés de Helena s'exécutent.",
+    "restartHint": "Les changements prennent effet au redémarrage de l'API et du worker.",
+    "foundTitle": "Dans le dossier des plugins",
+    "none": "Aucun plugin trouvé.",
+    "approve": "Approuver",
+    "revoke": "Retirer l'approbation",
+    "builtinTitle": "Intégrés",
+    "statusLoaded": "Chargé",
+    "statusFailed": "Erreur",
+    "statusNotLoaded": "Non chargé",
+    "restartRequired": "Redémarrage requis",
+    "provides": "Fournit",
+    "actions": "Actions",
+    "events": "Événements",
+    "network": "Réseau",
+    "credentials": "Ses outils utilisent les identifiants de ses connecteurs.",
+    "names": {
+      "integrations": "Intégrations",
+      "mcp": "Outils MCP de Helena",
+      "webhooks": "Webhooks",
+      "bundles": "Paquets de modèles"
+    },
+    "problems": {
+      "external-off": "Se charge une fois les plugins externes activés.",
+      "not-approved": "Pas encore approuvé.",
+      "version-changed": "Approuvé pour une autre version : approuvez celle-ci.",
+      "files-changed": "Ses fichiers ont changé depuis l'approbation : vérifiez et approuvez à nouveau."
+    }
   }
 }

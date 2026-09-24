@@ -62,6 +62,10 @@
     "agent-runtime": {
       "label": "Agenten-Laufzeit",
       "description": "Der Not-Aus, die Hermes-Installation und ihre Updates, die Fallback-Modelle und Aufbewahrung der Sitzungen für alle Agenten und was die Agenten verbraucht haben."
+    },
+    "plugins": {
+      "label": "Plugins",
+      "description": "Helenas eigene Plugins und die externen aus dem Plugin-Ordner: was sie bereitstellen, welche Rechte sie verlangen und welche laufen dürfen."
     }
   },
   "settings": {

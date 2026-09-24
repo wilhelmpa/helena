@@ -9,12 +9,15 @@ export default function WorkspaceFrame({
   active,
   reloadToken = 0,
   className,
+  sandbox,
 }: {
   url: string;
   title: string;
   active: boolean;
   reloadToken?: number;
   className?: string;
+  // A plugin's page runs sandboxed: scripts and forms, never Helena's origin or session.
+  sandbox?: string;
 }) {
   const frame = useRef<HTMLIFrameElement>(null);
   const previousReloadToken = useRef(reloadToken);
@@ -35,6 +38,7 @@ export default function WorkspaceFrame({
       allow="clipboard-read; clipboard-write"
       allowFullScreen
       referrerPolicy="strict-origin-when-cross-origin"
+      sandbox={sandbox}
     />
   );
 }

@@ -15,6 +15,7 @@ import { useShellProject } from '@/hooks/useShellProject';
 import { useShellRoute } from '@/hooks/useShellRoute';
 import { useProjectRouteSync } from '@/hooks/useProjectRouteSync';
 import { useWorkspacePanel } from '@/hooks/useWorkspacePanel';
+import { usePluginPanelTools } from '@/extensions/pluginPanelTools';
 import { projectPath, issuePath } from '@/utils/paths';
 import { useKioskDisplay } from '@/utils/kioskDisplay';
 import { createHeaderExtraStore } from '@/utils/headerExtraStore';
@@ -91,6 +92,8 @@ export default function Shell({
   const overlays = useOverlays();
   // On the kiosk's two screens the tool panel fills the second one.
   const kioskDual = useKioskDisplay() === 'dual';
+  // Plugins' panel tools join the built-ins once the API lists them.
+  usePluginPanelTools();
   const workspacePanel = useWorkspacePanel({
     defaultOpen: globalHome && autoOpenGlobalChat,
     projectKey,

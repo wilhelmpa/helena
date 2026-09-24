@@ -62,6 +62,10 @@
     "agent-runtime": {
       "label": "Runtime des agents",
       "description": "L'arrêt d'urgence, l'installation Hermes et ses mises à jour, les modèles de secours et la conservation des sessions pour tous les agents, et ce que les agents ont consommé."
+    },
+    "plugins": {
+      "label": "Plugins",
+      "description": "Les plugins intégrés de Helena et les plugins externes du dossier des plugins : ce qu'ils fournissent, les droits qu'ils demandent et ceux qui peuvent s'exécuter."
     }
   },
   "settings": {

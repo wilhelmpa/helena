@@ -16,8 +16,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { AgentChatPanel } from '@/components/common/agent-chat/AgentChatPanel';
-import { useAgentChat } from '@/hooks/useAgentChat';
+import AgentTestChat from '@/features/ai-chat/components/panel/AgentTestChat';
 import { useAgentCan, useAgentSection } from '../../context/agentSection';
 import { AgentSheetForm } from './AgentSheetForm';
 
@@ -26,8 +25,8 @@ import { useTranslations } from 'next-intl';
 
 // Full-width sheet for one agent. Opened for create (agent null) or to edit an
 // existing one. Create and edit share the same form (AgentSheetForm): on create the
-// sheet stays open and switches to editing the new agent. An internal agent also gets
-// the test chat, shown alongside the form.
+// sheet stays open and switches to editing the new agent. Beside the form sits the chat
+// (the same one as everywhere else) to try the agent out.
 export function TeamAiAgentSheet({
   open,
   agent,
@@ -109,14 +108,12 @@ function SheetBody({
   // A chat is held inside a project, so it runs in the first project the agent works
   // in. An agent attached to none has nothing to chat in.
   const chatProject = agent?.projects[0] ?? null;
-  // Held here so the transcript and thread survive re-renders. No agent yet during
-  // create → id 0; the chat is only reachable once the agent exists.
-  const chat = useAgentChat(chatProject?.key ?? '', agent?.id ?? 0, agent?.kind === 'external');
 
   // The form and the test chat always sit side by side, so the sheet keeps its shape
   // from create through edit. There is nothing to chat in until the agent exists and
   // works in a project, and until then the chat side says what is missing.
-  const chatReady = !!agent && chatProject != null;
+  // A pool template runs nowhere, so it has no chat.
+  const chatReady = !!agent && chatProject != null && !agent.template;
   const KindIcon = agent ? AGENT_KIND_ICON[agent.kind] : Bot;
   // The settings stay mounted behind another tab, so what is typed there is kept.
   const tabs = agentTabsFor(agent);
@@ -209,24 +206,17 @@ function SheetBody({
 
         <div className="flex min-h-0 flex-1 basis-0 flex-col">
           {chatReady ? (
-            <AgentChatPanel
-              agent={agent}
-              projectKey={chatProject.key}
-              messages={chat.messages}
-              status={chat.status}
-              activeTool={chat.activeTool}
-              pending={chat.pending}
-              onSend={chat.send}
-              onStop={chat.stop}
-              onRemovePending={chat.removePending}
-              onReset={chat.newChat}
-            />
+            <AgentTestChat agent={agent} projectKey={chatProject.key} />
           ) : (
             <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 px-4 text-center">
               <MessageSquare className="size-5 text-muted-foreground" />
               <p className="text-sm font-medium">{t('testChat')}</p>
               <p className="max-w-xs text-xs text-muted-foreground">
-                {agent ? t('chatNeedsProject') : t('chatNeedsAgent')}
+                {!agent
+                  ? t('chatNeedsAgent')
+                  : agent.template
+                    ? t('chatTemplate')
+                    : t('chatNeedsProject')}
               </p>
             </div>
           )}

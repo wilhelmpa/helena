@@ -29,6 +29,7 @@ import { newChatThreadId } from '../core/runtime/thread-ids';
 import { touchRunner, type RunnerAgent } from '../runner/service';
 import { modelCheckOf, type RunModelReport } from '../runtime-sync/model-check';
 import type { AgUiEventBody, ChatMessageStatus } from './model';
+import { notifyChatAnswer } from './wake';
 import { questionText, imagePaths, type ChatAttachment } from './attachments';
 import {
   buildTree,
@@ -38,6 +39,7 @@ import {
   siblingsOf,
   type MessageTree,
 } from './branches';
+import { publishDomainEvent } from '#shared/helena';
 
 export type ChatCatalogModel = {
   id: string;
@@ -74,7 +76,8 @@ export const agentChatConfig = {
   // while it waits. The wait is what makes an answer start the moment it is sent.
   claimWaitMs: () => intEnv('AGENT_CHAT_CLAIM_WAIT_MS', 25_000),
   claimPollMs: () => intEnv('AGENT_CHAT_CLAIM_POLL_MS', 500),
-  streamPollMs: () => intEnv('AGENT_CHAT_STREAM_POLL_MS', 100),
+  // The fallback: a stream is woken by NOTIFY when its answer changes (see wake.ts).
+  streamPollMs: () => intEnv('AGENT_CHAT_STREAM_POLL_MS', 1000),
   historyMessages: () => intEnv('AGENT_CHAT_HISTORY_MESSAGES', 20),
 };
 
@@ -330,11 +333,13 @@ export async function getThreadMessages(
   };
 }
 
-// The event types a transcript is made of: the answer's text, the model's reasoning, and
-// the tool calls with what each was given and answered. The lifecycle events say nothing
-// the reader sees.
+// The event types a transcript is made of: the answer's text, the model's reasoning
+// (AG-UI 1.0's REASONING_MESSAGE_CONTENT, or THINKING_TEXT_MESSAGE_CONTENT from a runner
+// before it), and the tool calls with what each was given and answered. The lifecycle
+// events say nothing the reader sees.
 const TRANSCRIPT_EVENTS = [
   'TEXT_MESSAGE_CONTENT',
+  'REASONING_MESSAGE_CONTENT',
   'THINKING_TEXT_MESSAGE_CONTENT',
   'TOOL_CALL_START',
   'TOOL_CALL_ARGS',
@@ -355,7 +360,11 @@ async function readAnswerParts(messageIds: number[]): Promise<Map<number, ChatPa
       content: sql<string | null>`${agentChatEvent.payload}->>'content'`,
       toolCallId: sql<string | null>`${agentChatEvent.payload}->>'toolCallId'`,
       toolCallName: sql<string | null>`${agentChatEvent.payload}->>'toolCallName'`,
-      isError: sql<boolean | null>`(${agentChatEvent.payload}->>'isError')::boolean`,
+      // AG-UI 1.0 carries a failed tool's flag in the event's metadata; runners before it
+      // sent it on the event itself.
+      isError: sql<
+        boolean | null
+      >`coalesce((${agentChatEvent.payload}->'metadata'->>'isError')::boolean, (${agentChatEvent.payload}->>'isError')::boolean)`,
     })
     .from(agentChatEvent)
     .where(
@@ -375,6 +384,7 @@ async function readAnswerParts(messageIds: number[]): Promise<Map<number, ChatPa
       case 'TEXT_MESSAGE_CONTENT':
         appendTextPart(message, row.delta ?? '');
         break;
+      case 'REASONING_MESSAGE_CONTENT':
       case 'THINKING_TEXT_MESSAGE_CONTENT':
         appendReasoningPart(message, row.delta ?? '');
         break;
@@ -606,6 +616,24 @@ export async function sendMessage(input: {
       .update(agentChatThread)
       .set({ activeMessageId: answer.id, archivedAt: null, updatedAt: new Date(), ...settings })
       .where(eq(agentChatThread.id, threadId));
+    await publishDomainEvent(
+      {
+        type: 'helena.chat.message',
+        projectId: input.projectId,
+        subject: `chats/${threadId}/messages/${question.id}`,
+        actor: `user:${userId}`,
+        data: {
+          threadId,
+          messageId: question.id,
+          role: 'user',
+          status: 'success',
+          agentId,
+          userId,
+          projectId: input.projectId,
+        },
+      },
+      tx,
+    );
     return { threadId, messageId: answer.id, userMessageId: question.id };
   });
 }
@@ -978,6 +1006,7 @@ export async function appendEvents(
     if (!claimed[0]) return false;
 
     await tx.insert(agentChatEvent).values(events.map((event) => ({ messageId, payload: event })));
+    await notifyChatAnswer(messageId, tx);
     if (sessionId) {
       // The session id and the first events must become durable together. Otherwise a
       // process crash between two writes can leave a completed transcript that starts a
@@ -1043,6 +1072,7 @@ export async function cancelMessage(
     .update(agentChatMessage)
     .set({ status: 'canceled', finishedAt: new Date() })
     .where(liveAnswer(agentId, messageId));
+  await notifyChatAnswer(messageId);
   return true;
 }
 
@@ -1098,6 +1128,26 @@ export async function finishMessage(
       kind: 'chat',
       sessionId: rows[0].sessionId,
       spend: result.spend,
+    });
+    await notifyChatAnswer(messageId);
+    const [thread] = await db
+      .select({ userId: agentChatThread.userId, projectId: agentChatThread.projectId })
+      .from(agentChatThread)
+      .where(eq(agentChatThread.id, rows[0].threadId));
+    await publishDomainEvent({
+      type: 'helena.chat.message',
+      projectId: thread?.projectId ?? null,
+      subject: `chats/${rows[0].threadId}/messages/${messageId}`,
+      actor: `agent:${agentId}`,
+      data: {
+        threadId: rows[0].threadId,
+        messageId,
+        role: 'assistant',
+        status: result.status,
+        agentId,
+        userId: thread?.userId ?? null,
+        projectId: thread?.projectId ?? null,
+      },
     });
     // Undefined is a runner that said nothing about the context — an older one, or a
     // command that reports no counts at all — and the thread keeps the number it has.

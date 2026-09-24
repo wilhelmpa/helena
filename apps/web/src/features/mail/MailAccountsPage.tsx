@@ -20,7 +20,7 @@ export default function MailAccountsPage() {
   const current = teamId ?? teams.data?.[0]?.id ?? null;
   return (
     <Shell globalHome globalTitle={t('mailAccounts')} autoOpenGlobalChat={false}>
-      <SectionPageView title={t('mailAccounts')} description={tMail('intro')}>
+      <SectionPageView title={t('mailAccounts')} description={tMail('intro')} wide>
         {teams.isPending ? (
           <ListSkeleton rows={3} rowClassName="h-12" />
         ) : current != null ? (

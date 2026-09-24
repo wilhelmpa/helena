@@ -62,6 +62,10 @@
     "agent-runtime": {
       "label": "Runtime de agentes",
       "description": "La parada de emergencia, la instalación de Hermes y sus actualizaciones, los modelos de respaldo y la conservación de sesiones para todos los agentes, y lo que consumieron los agentes."
+    },
+    "plugins": {
+      "label": "Plugins",
+      "description": "Los plugins propios de Helena y los externos de la carpeta de plugins: qué aportan, qué permisos piden y cuáles pueden ejecutarse."
     }
   },
   "settings": {

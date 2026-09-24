@@ -18,7 +18,7 @@ export default function SettingsCustomFieldsPage() {
   const { project } = useShell();
   if (!project) return null;
   return (
-    <SectionPageView title={sectionText.label} description={sectionText.description}>
+    <SectionPageView title={sectionText.label} description={sectionText.description} wide>
       <SettingsToolbar>
         <CustomFieldsToolbar
           projectKey={project.project.key}

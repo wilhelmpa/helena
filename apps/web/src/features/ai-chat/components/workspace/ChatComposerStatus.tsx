@@ -3,12 +3,15 @@
 import { Play, RefreshCw, RotateCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
+import { Marker, MarkerContent } from '@/components/ui/marker';
 import { cn } from '@/lib/utils';
 import type { ComposerActivity } from '../../utils/composerActivity';
 
-// The first line of the composer: what the answer is doing right now ("Home is thinking
-// …"), or how it ended when that was not the normal way, with the one or two ways to go
-// on from there. Nothing at all while there is nothing to say.
+// The composer's status line, a shadcn Marker (the component shadcn made for exactly this
+// in a conversation): what the answer is doing right now ("Home denkt nach …", "Home nutzt
+// web_search …"), or how it ended when that was not the normal way, with the one or two
+// ways to go on from there. Nothing at all while there is nothing to say. A `status`
+// region, so a screen reader announces the change.
 export default function ChatComposerStatus({
   activity,
   tool,
@@ -50,7 +53,7 @@ export default function ChatComposerStatus({
       type="button"
       size="sm"
       variant="ghost"
-      className="h-6 gap-1 px-1.5 text-xs font-normal text-foreground"
+      className="h-6 shrink-0 gap-1 px-1.5 text-xs font-normal text-foreground"
       onClick={onClick}
     >
       <Icon className="size-3.5" /> {label}
@@ -58,8 +61,8 @@ export default function ChatComposerStatus({
   );
 
   return (
-    <div role="status" className="flex min-h-8 flex-wrap items-center gap-x-2 px-3 pt-1.5 text-xs">
-      <span className={cn('min-w-0 flex-1 text-muted-foreground', live && 'shimmer')}>{text}</span>
+    <Marker role="status" className="min-h-6 flex-wrap gap-x-2 px-1 text-xs">
+      <MarkerContent className={cn('min-w-0 flex-1', live && 'shimmer')}>{text}</MarkerContent>
       {activity === 'lost' && action(t('interrupted.reconnect'), RotateCw, onReconnect)}
       {(activity === 'stopped' || activity === 'failed') && (
         <>
@@ -68,6 +71,6 @@ export default function ChatComposerStatus({
         </>
       )}
       {activity === 'sendFailed' && action(t('interrupted.resend'), RotateCw, onResend)}
-    </div>
+    </Marker>
   );
 }

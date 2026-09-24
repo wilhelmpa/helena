@@ -26,7 +26,7 @@ export type BreakdownBy = 'status' | 'priority' | 'type' | 'assignee' | 'delegat
 // widgets are dragged by the header handle and resized from the corner.
 export const GRID_COLS = 12;
 export const ROW_UNIT = 40; // px per grid row
-export const COL_GAP = 24; // px between columns
+export const COL_GAP = 16; // px between columns: the same as the page padding and ROW_GAP (owner, 2026-09-24)
 export const ROW_GAP = 16; // px between rows
 export const MIN_W = 2;
 export const MIN_H = 2;

@@ -783,7 +783,8 @@
         "model": "模型",
         "reasoning": "推理"
       }
-    }
+    },
+    "chatTemplate": "模板本身不会运行。将它作为智能体添加到项目后即可在这里试用。"
   },
   "members": {
     "roleSaved": "{name} 现在是{role}",
@@ -808,5 +809,22 @@
   "settingState": {
     "on": "已开启",
     "off": "已关闭"
+  },
+  "templateBundles": {
+    "importAction": "导入模板",
+    "exportAction": "导出模板",
+    "importTitle": "导入模板",
+    "counts": "{agents} 个智能体模板 · {skills} 个技能 · {servers} 个 MCP 服务器",
+    "chooseFile": "选择包文件",
+    "fileChosen": "文件：{name}",
+    "dryRun": "仅检查（不做更改）",
+    "update": "覆盖差异",
+    "check": "检查",
+    "import": "导入",
+    "close": "关闭",
+    "failed": "操作失败。",
+    "notJson": "该文件不是 JSON 包。",
+    "summary": "已写入 {written} · 未变 {unchanged} · 不同 {drift} · 警告 {warnings}",
+    "summaryDryRun": "仅检查，未做更改 · 未变 {unchanged} · 不同 {drift} · 警告 {warnings}"
   }
 }
