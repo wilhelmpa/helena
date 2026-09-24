@@ -4,10 +4,18 @@ import { parentDomain, sessionCookieDomain } from './cookie-domain';
 describe('session cookie domain', () => {
   it('stays host-only when the app and the api share a host', () => {
     expect(
-      sessionCookieDomain('https://helena.volition.one', 'https://helena.volition.one/backend', undefined),
+      sessionCookieDomain(
+        'https://helena.volition.one',
+        'https://helena.volition.one/backend',
+        undefined,
+      ),
     ).toBeUndefined();
     expect(
-      sessionCookieDomain('http://kingston-server.local', 'http://kingston-server.local/backend', ''),
+      sessionCookieDomain(
+        'http://kingston-server.local',
+        'http://kingston-server.local/backend',
+        '',
+      ),
     ).toBeUndefined();
   });
 
@@ -22,7 +30,11 @@ describe('session cookie domain', () => {
       sessionCookieDomain('https://app.example.com', 'https://api.example.com', 'host-only'),
     ).toBeUndefined();
     expect(
-      sessionCookieDomain('https://a.b.example.co.uk', 'https://a.b.example.co.uk', '.example.co.uk'),
+      sessionCookieDomain(
+        'https://a.b.example.co.uk',
+        'https://a.b.example.co.uk',
+        '.example.co.uk',
+      ),
     ).toBe('.example.co.uk');
   });
 
