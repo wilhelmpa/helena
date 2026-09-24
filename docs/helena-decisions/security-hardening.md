@@ -61,7 +61,7 @@ Count: **4 critical, 10 high, 11 medium, 9 low, plus 6 notes.**
 | H-07 | **The browser terminal is root without a password** (`wilhelmpa ALL=(ALL:ALL) NOPASSWD: ALL`), and Claude Code/Codex in the owner terminal run as that user. After go-live this is reachable from the internet behind Access + TOTP. | sudoers. | Owner decision §8.3: a separate automation account for SSH (`helena-ops`, NOPASSWD, key-only, LAN-only) and `wilhelmpa` with a password for sudo. The narrow policy drafted in `owner-terminal/90-wilhelmpa` is not a real boundary (`journalctl *`, `apt-get install *`, `git -c … *` and `cat /var/lib/volition/*` all lead to root); do not install it as is. |
 | H-08 | **SSH listens on the global IPv6 address** without `AllowUsers`, with agent and TCP forwarding, 6 tries. Key-only and no root login already hold. An authorized key named `codex-home-server` belongs to the wiped Ubuntu host. | `sshd -T`, key comments. | `apply.sh sshd` (+ firewall = home network only); owner reviews the `codex-home-server` key and removes it if unused. |
 | H-09 | **Tunnel traffic could be taken for the LAN** (design, go-live): the owner-terminal "no code on the LAN" rule reads `X-Real-IP`. | Code review. | Code: a request marked by the tunnel entry is never LAN (`lanBypass`), whatever address it names; the tunnel entry sets `X-Real-IP` from `CF-Connecting-IP`. Test in `edge-access.test.ts`. |
-| H-10 | **The session cookie would be shared with all of volition.one** on the public name: `packages/auth` derives `COOKIE_DOMAIN` from the first origin, `helena.volition.one` → `.volition.one`, so every other site of the company domain would receive the owner's session. | `packages/auth/src/index.ts parentDomain`. | `cloudflare/switch_origin.py` sets `COOKIE_DOMAIN=host-only` (and one origin: `APP_URL=https://helena.volition.one`, `API_URL=…/backend`). |
+| H-10 | **The session cookie would be shared with all of volition.one** on the public name: `packages/auth` derives `COOKIE_DOMAIN` from the first origin, `helena.volition.one` → `.volition.one`, so every other site of the company domain would receive the owner's session. | `packages/auth/src/index.ts parentDomain`. | Code: `packages/auth/src/cookie-domain.ts` derives a parent domain only when the app and the api are on different hosts (tests). `cloudflare/switch_origin.py` also sets `COOKIE_DOMAIN=host-only` explicitly (and one origin: `APP_URL=https://helena.volition.one`, `API_URL=…/backend`). |
 
 ### Medium
 
@@ -448,6 +448,8 @@ automatic rollbacks cover firewall and SSH; backups of every replaced file are u
   keys. The owner terminal never counts a tunnel request as LAN. SSE responses carry `no-transform`.
   TOTP issuer "Helena". `jose` is a direct dependency of `apps/api`.
 - **DB**: `packages/db/src/backup.ts` writes dumps 0600 in a 0700 folder.
+- **Auth**: `packages/auth/src/cookie-domain.ts`: the session cookie is host-only unless app and api
+  hosts differ (H-10).
 - **Web**: Administrator → Sicherheit shows three new sections above the terminal settings:
   Server-Härtung (the audit, findings first), Anmeldung des Owners (TOTP, passkey, step-up,
   sessions), Zugang von außen (team domain, AUD, allowed identities). `SecurityStatusSections` and
