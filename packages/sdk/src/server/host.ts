@@ -23,6 +23,7 @@ import { declaredCategory, type AnyAgentTool } from '../tools';
 import { uiSlotKey, type UiSlot } from '../ui';
 import type { RuntimeLoginSource } from '../runtime-logins';
 import type { UpdateSource } from '../updates';
+import type { DecisionBackendType } from '../decision-backends';
 import type { UsageLimitSource } from '../usage-limits';
 import type { TriggerType, WorkflowStepType } from '../workflows';
 
@@ -87,6 +88,7 @@ export class PluginHost {
   readonly usageLimitSources: Registry<UsageLimitSource>;
   readonly runtimeLoginSources: Registry<RuntimeLoginSource>;
   readonly updateSources: Registry<UpdateSource>;
+  readonly decisionBackends: Registry<DecisionBackendType>;
 
   private readonly plugins = new Map<string, { loaded: LoadedPlugin; plugin?: HelenaPlugin }>();
   private readonly contexts = new Map<string, PluginContext>();
@@ -113,6 +115,7 @@ export class PluginHost {
     this.usageLimitSources = registries.usageLimitSources;
     this.runtimeLoginSources = registries.runtimeLoginSources;
     this.updateSources = registries.updateSources;
+    this.decisionBackends = registries.decisionBackends;
     this.logger = options.logger ?? ((id) => consoleLogger(`plugin ${id}`));
     this.settingsOf = options.settings ?? (() => ({}));
   }
@@ -231,6 +234,7 @@ export class PluginHost {
       this.usageLimitSources,
       this.runtimeLoginSources,
       this.updateSources,
+      this.decisionBackends,
     ] as unknown as Registry<never>[];
   }
 
@@ -373,6 +377,11 @@ export class PluginHost {
         'runtimeLoginSources',
       ),
       updateSources: registrar(this.updateSources, provides.updateSources, 'updateSources'),
+      decisionBackends: registrar(
+        this.decisionBackends,
+        provides.decisionBackends,
+        'decisionBackends',
+      ),
       events: {
         publish: async (init: EventInit) => {
           if (!init.type.startsWith(`${pluginId}.`)) {

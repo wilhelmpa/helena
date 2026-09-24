@@ -166,6 +166,19 @@ def resolve_target(runner: Runner, config: dict, target: str) -> str:
     return commit
 
 
+# git refuses to check out a branch another worktree holds (the dev worktree next to the live
+# checkout keeps the local branch), so the live checkout then stays detached on the result.
+def checked_out_elsewhere(runner: Runner, config: dict, branch: str) -> bool:
+    here = os.path.realpath(config["source"])
+    path = None
+    for line in git(runner, config, "worktree", "list", "--porcelain").splitlines():
+        if line.startswith("worktree "):
+            path = os.path.realpath(line[len("worktree "):])
+        elif line == f"branch refs/heads/{branch}" and path != here:
+            return True
+    return False
+
+
 def fill(args: list[str], config: dict) -> list[str]:
     return [arg.format(venv=config["venv"], source=config["source"]) for arg in args]
 
@@ -204,9 +217,14 @@ def apply(config: dict, runner: Runner, target: str) -> dict:
             os.chmod(home, 0o777)
             smoke = runner.run(fill(config["smoke"], config), owner_of=str(venv),
                                env={"HERMES_HOME": home})
-        if local_branch:
+        if local_branch and not checked_out_elsewhere(runner, config, local_branch):
             git(runner, config, "checkout", "-q", "-B", local_branch, work)
-            git(runner, config, "branch", "-q", "-D", work, check=False)
+        else:
+            if local_branch:
+                runner.note(f"{local_branch} is checked out in another worktree; "
+                            "the checkout stays detached")
+            git(runner, config, "checkout", "-q", "--detach", work)
+        git(runner, config, "branch", "-q", "-D", work, check=False)
         after = describe(runner, config, "HEAD")
         return {"from": before, "to": after, "smoke": smoke[-500:], "carried": len(patches)}
     except Exception as error:

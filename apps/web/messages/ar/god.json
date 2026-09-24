@@ -441,7 +441,8 @@
       "limits": "الحدود",
       "autopilot": "Autopilot",
       "logins": "تسجيلات الدخول",
-      "updates": "التحديثات"
+      "updates": "التحديثات",
+      "browserTask": "مهام المتصفح"
     },
     "problems": {
       "external-off": "تُحمَّل بعد تفعيل الإضافات الخارجية.",

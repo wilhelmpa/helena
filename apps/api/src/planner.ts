@@ -77,6 +77,7 @@ import { hubInboxRoutes } from './modules/hub-inbox';
 import { agentActivityRoutes } from './modules/agent-activity';
 import { agentNetworkRoutes } from './modules/agent-egress';
 import { agentBrowserGatewayRoutes } from './modules/agent-browser-gateway';
+import { browserTaskRoutes } from './modules/browser-task';
 import { approvalRoutes } from './modules/approvals';
 import { modelPriceRoutes } from './modules/model-prices';
 import { autopilotRoutes } from './modules/autopilot';
@@ -84,6 +85,32 @@ import { pipelineRoutes } from './modules/pipelines';
 import { mailAccountRoutes } from './modules/mail/accounts';
 import { mailDraftRoutes } from './modules/mail/drafts';
 import { mailThreadRoutes } from './modules/mail/threads';
+
+// The last route groups sit in an Elysia of their own: one chain of every group runs into
+// TypeScript's instantiation limit (TS2589). The planner's error handler is global, so it
+// covers these routes as well.
+const plannerOperations = new Elysia({ name: 'planner-operations' })
+  .use(agentActivityRoutes)
+  .use(agentNetworkRoutes)
+  .use(agentBrowserGatewayRoutes)
+  .use(browserTaskRoutes)
+  .use(approvalRoutes)
+  .use(modelPriceRoutes)
+  .use(autopilotRoutes)
+  .use(pipelineRoutes)
+  .use(mailAccountRoutes)
+  .use(mailThreadRoutes)
+  .use(mailDraftRoutes)
+  .use(organizationRoutes)
+  .use(connectionsRoutes)
+  .use(deviceSyncRoutes)
+  .use(ownerTerminalRoutes)
+  .use(settingsRoutes)
+  .use(godRoutes)
+  .use(pluginAdminRoutes)
+  .use(pluginSlotRoutes)
+  .use(templateBundleRoutes)
+  .use(modelAvailabilityRoutes);
 
 // The planner API: projects and their columns, issue types, labels, AI agents,
 // custom fields, issues, attachments, saved views, and actions. Mounted on the
@@ -195,23 +222,4 @@ export const planner = new Elysia({ name: 'planner' })
   .use(syncRoutes)
   .use(linkPreviewRoutes)
   .use(hubInboxRoutes)
-  .use(agentActivityRoutes)
-  .use(agentNetworkRoutes)
-  .use(agentBrowserGatewayRoutes)
-  .use(approvalRoutes)
-  .use(modelPriceRoutes)
-  .use(autopilotRoutes)
-  .use(pipelineRoutes)
-  .use(mailAccountRoutes)
-  .use(mailThreadRoutes)
-  .use(mailDraftRoutes)
-  .use(organizationRoutes)
-  .use(connectionsRoutes)
-  .use(deviceSyncRoutes)
-  .use(ownerTerminalRoutes)
-  .use(settingsRoutes)
-  .use(godRoutes)
-  .use(pluginAdminRoutes)
-  .use(pluginSlotRoutes)
-  .use(templateBundleRoutes)
-  .use(modelAvailabilityRoutes);
+  .use(plannerOperations);

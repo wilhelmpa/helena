@@ -11,3 +11,4 @@ export * from './autopilot';
 export * from './knowledge';
 export * from './model-availability';
 export * from './updates';
+export * from './browser-task';

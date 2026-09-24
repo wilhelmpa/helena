@@ -99,6 +99,19 @@ class HelperTest(unittest.TestCase):
                          "volition/main")
         self.assertIn("0.22.0", answer["result"]["smoke"])
 
+    def test_a_local_branch_held_by_another_worktree_leaves_the_checkout_detached(self):
+        sh("git", "checkout", "-q", "--detach", cwd=self.source)
+        dev = Path(self.tmp.name) / "dev"
+        sh("git", "worktree", "add", "-q", str(dev), "volition/main", cwd=self.source)
+        answer = helper.run(self.config_with(), "apply", "latest")
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual(answer["result"]["to"]["version"], "0.22.0")
+        self.assertIn("checked out in another worktree", answer["log"])
+        self.assertEqual(sh("git", "rev-parse", "--abbrev-ref", "HEAD", cwd=self.source).strip(),
+                         "HEAD")
+        self.assertTrue((self.source / "local.py").exists())
+        self.assertEqual(sh("git", "branch", "--list", "helena/*", cwd=self.source).strip(), "")
+
     def test_a_failed_smoke_test_puts_everything_back(self):
         before = self.head()
         answer = helper.run(self.config_with(smoke=["sh", "-c", "exit 3"]), "apply", "v2026.9.28")

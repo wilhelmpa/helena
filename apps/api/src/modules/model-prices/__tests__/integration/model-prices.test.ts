@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'bun:test';
 import { authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
+import { EXTRA_PRICES } from '@helena/policy';
 import {
   clearModelPriceCache,
   costOf,
@@ -79,7 +80,10 @@ describe('model prices', () => {
       anthropic: { models: { 'claude-new': { cost: { input: 2, output: 8 } } } },
     };
     const ok = (async () => new Response(JSON.stringify(api))) as unknown as typeof fetch;
-    expect((await importModelPrices('models.dev', ok)).imported).toBe(1);
+    // The one listed model, plus the ones models.dev does not list yet (Jev).
+    expect((await importModelPrices('models.dev', ok)).imported).toBe(
+      1 + Object.keys(EXTRA_PRICES).length,
+    );
     expect((await price('claude-new'))!.outputPerMTok).toBeCloseTo(8 * 0.86, 6);
     const down = (async () => new Response('no', { status: 503 })) as unknown as typeof fetch;
     await expect(importModelPrices('models.dev', down)).rejects.toThrow('models.dev');

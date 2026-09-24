@@ -18,6 +18,7 @@ import {
   useBrowserGatewaySettingsQuery,
   useUpdateBrowserGatewaySettings,
 } from '../../services/settings.service';
+import { BrowserControlSection } from '@/features/browser-lab/components/BrowserControlSection';
 import DomainListField from './DomainListField';
 
 // The browser gateway settings tab (design volition-design-browser-gateway.md §8, "Projekt
@@ -81,6 +82,7 @@ export default function SettingsBrowserGateway({ project }: { project: ProjectDe
 
   return (
     <div className="space-y-6">
+      <BrowserControlSection projectKey={projectKey} editable={editable} />
       <SettingsSection title={t('accessTitle')} description={t('accessHint')}>
         <SettingsCard className="space-y-5 p-4">
           <DomainListField

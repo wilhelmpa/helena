@@ -1,7 +1,7 @@
 import { timingSafeEqual } from 'node:crypto';
 import { lstat, readFile } from 'node:fs/promises';
 import { Elysia } from 'elysia';
-import { db, user } from '@repo/db';
+import { aiAgent, db, user } from '@repo/db';
 import { eq } from 'drizzle-orm';
 import { getSessionFromHeaders } from '@repo/auth';
 import { HttpError } from '#shared/lib';
@@ -20,6 +20,15 @@ import { recordBrowserGatewayEvent } from './events';
 import { fileHandoverCard, resolveHandoverCard } from './handover';
 import { MAX_DOWNLOAD_BYTES, saveDownload } from './downloads';
 import { decideBrowserAction, fileBrowserApproval, isActionCategory } from './policy';
+import { effectiveBrowserControl } from '#modules/browser-task/settings';
+import {
+  finishTask,
+  openAgentTask,
+  openLabTask,
+  taskByToken,
+  taskProgress,
+  taskSystemOne,
+} from '#modules/browser-task/runs';
 
 // A secret must be readable by its owner only. systemd's own credential directory is the
 // exception: on a native boot it presents LoadCredential files as 0440 (0400 inside a
@@ -99,6 +108,18 @@ function privateJson(value: unknown, status = 200): Response {
 // same agent lookup the runner itself uses (getRunnerAgent).
 async function agentByKey(agentKey: string): Promise<RunnerAgent | null> {
   if (!agentKey) return null;
+  // A Browser 2.0 run (docs/helena-decisions/browser-task.md §3.5): the owner started it as one
+  // of the project's agents; the gateway carries the run's one-time token instead of that
+  // agent's key, and everything below (grants, project, policy, approvals) is that agent's.
+  if (agentKey.startsWith('lab:')) {
+    const run = await taskByToken(agentKey.slice(4));
+    if (!run || run.source !== 'lab' || !run.agentId) return null;
+    const [row] = await db
+      .select({ userId: aiAgent.userId })
+      .from(aiAgent)
+      .where(eq(aiAgent.id, run.agentId));
+    return row ? getRunnerAgent(row.userId) : null;
+  }
   const headers = new Headers({ 'x-api-key': agentKey });
   const session = await getSessionFromHeaders(headers);
   if (!session || session.user.active === false) return null;
@@ -205,10 +226,15 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
     route(async (body) => {
       const agent = await requireAgent(body);
       const { project } = await authorizeTarget(agent, body.projectSlug, body.via);
-      const [enabled, settings] = await Promise.all([
+      const [enabled, settings, control] = await Promise.all([
         browserGatewayEnabledForAgent(agent.id, agent.teamId),
         project ? getBrowserGatewaySettings(project.id) : { ...DEFAULT_BROWSER_GATEWAY_SETTINGS },
+        effectiveBrowserControl({ teamId: agent.teamId, projectId: project?.id ?? null }),
       ]);
+      const lab =
+        typeof body.agentKey === 'string' && body.agentKey.startsWith('lab:')
+          ? await taskByToken(body.agentKey.slice(4))
+          : null;
       return {
         agentId: agent.id,
         agentName: await displayName(agent),
@@ -217,6 +243,22 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
         projectKey: project?.key ?? null,
         browserGatewayEnabled: enabled,
         settings,
+        // A Browser 2.0 run tests the connection the owner picked, whatever the project's
+        // own setting says.
+        browserTask: lab
+          ? {
+              enabled: lab.backend === 'decision',
+              policy:
+                lab.policy === 'laya' ? 'laya' : lab.policy === 'jev' ? 'jev' : control.policy,
+              minConfidence: control.minConfidence,
+              label: lab.backendLabel,
+            }
+          : {
+              enabled: control.enabled,
+              policy: control.policy,
+              minConfidence: control.minConfidence,
+              label: control.label,
+            },
       };
     }),
     { detail: { hide: true } },
@@ -324,6 +366,70 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
           decided.reason,
         ),
       };
+    }),
+    { detail: { hide: true } },
+  )
+  // browser_task (docs/helena-decisions/browser-task.md §3.4): a task opens a row and gets the
+  // token its decisions travel under; Helena makes each System One call with the project's
+  // connection and key; steps and the result are stored and counted.
+  .post(
+    '/internal/browser-gateway/task/start',
+    route(async (body) => {
+      const agent = await requireAgent(body);
+      const { project } = await authorizeTarget(agent, body.projectSlug, body.via);
+      const control = await effectiveBrowserControl({
+        teamId: agent.teamId,
+        projectId: project?.id ?? null,
+      });
+      if (typeof body.agentKey === 'string' && body.agentKey.startsWith('lab:')) {
+        return openLabTask(body.agentKey.slice(4), control);
+      }
+      const kind = body.kind === 'check' || body.kind === 'choose' ? body.kind : 'task';
+      const goal = typeof body.goal === 'string' ? body.goal.trim() : '';
+      if (!goal) throw new HttpError(400, 'Invalid request');
+      const maxSteps =
+        typeof body.maxSteps === 'number' && Number.isFinite(body.maxSteps)
+          ? Math.max(1, Math.min(60, Math.floor(body.maxSteps)))
+          : 20;
+      return openAgentTask({
+        agentId: agent.id,
+        teamId: agent.teamId,
+        projectId: project?.id ?? null,
+        kind,
+        goal,
+        mode: body.mode === 'read' ? 'read' : 'act',
+        maxSteps,
+        startUrl: typeof body.startUrl === 'string' ? body.startUrl : null,
+        runId: optionalId(body.runId) ?? null,
+        chatMessageId: optionalId(body.messageId) ?? null,
+        control,
+      });
+    }),
+    { detail: { hide: true } },
+  )
+  .post(
+    '/internal/browser-gateway/systemone',
+    route(async (body) => {
+      if (!body.questions || typeof body.questions !== 'object' || Array.isArray(body.questions)) {
+        throw new HttpError(400, 'Invalid request');
+      }
+      return taskSystemOne(body.taskToken, {
+        state: body.state,
+        questions: body.questions as Record<string, unknown>,
+      });
+    }),
+    { detail: { hide: true } },
+  )
+  .post(
+    '/internal/browser-gateway/task/progress',
+    route(async (body) => taskProgress(body.taskToken, body.step)),
+    { detail: { hide: true } },
+  )
+  .post(
+    '/internal/browser-gateway/task/finish',
+    route(async (body) => {
+      await finishTask(body.taskToken, body.result);
+      return { stored: true };
     }),
     { detail: { hide: true } },
   )

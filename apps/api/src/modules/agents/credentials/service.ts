@@ -33,6 +33,8 @@ import {
   type LoginRuntime,
 } from './kinds';
 import { generateSshKey, sshKeyComment } from './ssh-key';
+import { composeDecisionModel } from './decision-model';
+import type { DecisionKeySource } from './kinds';
 
 // The credentials of the Credentials page: web logins, API keys, SSH keys and secrets
 // of a team, each for the whole team or one project, and the agents they are granted
@@ -57,6 +59,13 @@ export interface CredentialEntry {
   publicKey: string | null;
   runtime: LoginRuntime | null;
   method: LoginMethod | null;
+  // decision_model: the System One service, its address and model, the owner's allowance of a
+  // local or private address, and where the key comes from.
+  provider: string | null;
+  baseUrl: string | null;
+  model: string | null;
+  allowPrivateAddress: boolean;
+  keySource: DecisionKeySource | null;
   secrets: string[];
   // The agents granted by name; `grants` holds every grant, to agents and projects.
   agentIds: number[];
@@ -75,6 +84,11 @@ interface Readable {
   publicKey?: string;
   runtime?: LoginRuntime;
   method?: LoginMethod;
+  provider?: string;
+  baseUrl?: string;
+  model?: string;
+  allowPrivateAddress?: boolean;
+  keySource?: DecisionKeySource;
   [secretField: string]: unknown;
 }
 
@@ -136,6 +150,11 @@ function toEntry(row: EntryRow, grants: GrantEntry[]): CredentialEntry {
     publicKey: readable.publicKey ?? null,
     runtime: kind === 'runtime_login' ? (readable.runtime ?? null) : null,
     method: kind === 'runtime_login' ? (readable.method ?? null) : null,
+    provider: kind === 'decision_model' ? (readable.provider ?? null) : null,
+    baseUrl: kind === 'decision_model' ? (readable.baseUrl ?? null) : null,
+    model: kind === 'decision_model' ? (readable.model ?? null) : null,
+    allowPrivateAddress: kind === 'decision_model' && readable.allowPrivateAddress === true,
+    keySource: kind === 'decision_model' ? (readable.keySource ?? 'stored') : null,
     secrets: SECRET_FIELDS[kind].filter((field) => Boolean(readable[field])),
     agentIds: grants.flatMap((grant) => (grant.agentId === null ? [] : [grant.agentId])),
     grants,
@@ -267,6 +286,10 @@ function compose(
       readable: { runtime: runtime as LoginRuntime, method: method as LoginMethod, notes },
       secrets: { value: requiredSecret(value, 'A token or key') },
     };
+  }
+  if (kind === 'decision_model') {
+    const composed = composeDecisionModel(fields, current);
+    return { readable: { ...composed.readable, notes }, secrets: composed.secrets };
   }
   const value = fields.value === undefined ? current.secrets.value : fields.value;
   return { readable: { notes }, secrets: { value: requiredSecret(value, 'A value') } };

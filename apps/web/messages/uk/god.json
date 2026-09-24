@@ -441,7 +441,8 @@
       "limits": "Ліміти",
       "autopilot": "Autopilot",
       "logins": "Входи",
-      "updates": "Оновлення"
+      "updates": "Оновлення",
+      "browserTask": "Завдання браузера"
     },
     "problems": {
       "external-off": "Завантажиться, щойно зовнішні плагіни буде ввімкнено.",

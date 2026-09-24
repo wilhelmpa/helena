@@ -15,6 +15,7 @@ const CredentialKind = t.Union([
   t.Literal('ssh_key'),
   t.Literal('secret'),
   t.Literal('runtime_login'),
+  t.Literal('decision_model'),
 ]);
 
 const ListedKind = t.Union([
@@ -23,8 +24,10 @@ const ListedKind = t.Union([
   t.Literal('ssh_key'),
   t.Literal('secret'),
   t.Literal('runtime_login'),
+  t.Literal('decision_model'),
   t.Literal('mcp_oauth'),
 ]);
+const DecisionKeySource = t.Union([t.Literal('stored'), t.Literal('local-laya')]);
 const LoginRuntime = t.Union([t.Literal('claude'), t.Literal('codex')]);
 const LoginMethod = t.Union([t.Literal('oauth_token'), t.Literal('api_key')]);
 
@@ -65,6 +68,18 @@ const credentialFields = {
   // from `claude setup-token`) or an API key.
   runtime: t.Optional(LoginRuntime),
   method: t.Optional(LoginMethod),
+  // decision_model (docs/helena-decisions/browser-task.md §3.3): the kind of System One service,
+  // its address and model, whether a local or private address is allowed for this one
+  // connection, and where the key comes from.
+  provider: t.Optional(
+    t.String({ maxLength: 64, description: 'decision_model: typesafe, vercel or compatible.' }),
+  ),
+  baseUrl: t.Optional(
+    t.String({ maxLength: 500, description: 'decision_model: the service address.' }),
+  ),
+  model: t.Optional(t.String({ maxLength: 200 })),
+  allowPrivateAddress: t.Optional(t.Boolean()),
+  keySource: t.Optional(DecisionKeySource),
 };
 
 export const createCredentialEntryBody = t.Object({ kind: CredentialKind, ...credentialFields });
@@ -125,6 +140,11 @@ export const CredentialEntryResponse = t.Object({
   publicKey: t.Nullable(t.String()),
   runtime: t.Nullable(LoginRuntime),
   method: t.Nullable(LoginMethod),
+  provider: t.Nullable(t.String()),
+  baseUrl: t.Nullable(t.String()),
+  model: t.Nullable(t.String()),
+  allowPrivateAddress: t.Boolean(),
+  keySource: t.Nullable(DecisionKeySource),
   secrets: t.Array(t.String(), { description: 'The secret fields that hold a value.' }),
   agentIds: t.Array(t.Number(), { description: 'The agents granted by name.' }),
   grants: t.Array(GrantResponse),
