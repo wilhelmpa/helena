@@ -1,5 +1,6 @@
 import { db, agentRun, approvalRequest, helenaPolicyDecision } from '@repo/db';
-import { and, eq, isNotNull } from 'drizzle-orm';
+import { and, eq, isNotNull, lt } from 'drizzle-orm';
+import { intEnv } from '#shared/lib';
 import {
   ACTION_CATEGORIES,
   AUTOPILOT_LEVEL_KEYS,
@@ -236,4 +237,16 @@ export function allLevelRules(): { level: AutopilotLevel; key: string; rules: Le
 // The Autopilot level of a run, noted when it is claimed, for its badge.
 export async function noteRunLevel(runId: number, level: AutopilotLevel): Promise<void> {
   await db.update(agentRun).set({ autopilotLevel: level }).where(eq(agentRun.id, runId));
+}
+
+// The decision log keeps this many days (HELENA_POLICY_LOG_DAYS, 90 by default); the
+// background loop drops what is older once a day.
+export async function prunePolicyDecisions(
+  days = intEnv('HELENA_POLICY_LOG_DAYS', 90),
+): Promise<number> {
+  const rows = await db
+    .delete(helenaPolicyDecision)
+    .where(lt(helenaPolicyDecision.createdAt, new Date(Date.now() - days * 86_400_000)))
+    .returning({ id: helenaPolicyDecision.id });
+  return rows.length;
 }

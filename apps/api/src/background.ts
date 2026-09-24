@@ -11,6 +11,7 @@ import { processAgentTeamStarts } from '#modules/control-plane-workflows/agent-t
 import { reconcileWorkflowSchedules } from '#modules/control-plane-workflows/service';
 import { cancelOrphanedStageRuns } from './hermes-team-control';
 import { drainPendingStarts } from '#modules/pipelines/runs';
+import { prunePolicyDecisions } from '#modules/autopilot/engine';
 
 const [RUN_JANITOR, STAGE_JANITOR, WORKFLOW_SCHEDULES, RESUME_JANITOR] = JANITOR_JOBS;
 
@@ -41,6 +42,12 @@ export function startBackgroundJobs(): void {
     intEnv('WORKFLOW_SCHEDULE_SYNC_INTERVAL_MS', 600_000),
   );
   startLoop(RESUME_JANITOR, resumeJanitor, () => intEnv('RESUME_JANITOR_INTERVAL_MS', 60_000));
+  // The Autopilot's decision log keeps HELENA_POLICY_LOG_DAYS (90) days.
+  startLoop(
+    'policy-log',
+    async () => void (await prunePolicyDecisions()),
+    () => intEnv('HELENA_POLICY_LOG_PRUNE_INTERVAL_MS', 86_400_000),
+  );
 }
 
 // Runs one janitor job and records what the health overview shows of it: how much it
