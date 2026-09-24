@@ -588,6 +588,9 @@ export async function finishRun(
       lastError: sql`CASE WHEN ${blocked} THEN NULL ELSE ${error}::text END`,
       inputTokens: result.usage?.inputTokens ?? null,
       outputTokens: result.usage?.outputTokens ?? null,
+      // The session the run ended in (a compression moves it to a new id), which "continue
+      // from here" resumes.
+      ...(result.sessionId && { sessionId: result.sessionId }),
       finishedAt: new Date(),
     })
     .where(heldBy(agent.id, runId, claim))
