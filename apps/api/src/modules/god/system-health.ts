@@ -1,46 +1,39 @@
 import {
   agentRun,
-  agentTeamStart,
   aiAgent,
   db,
+  helenaSchedule,
   listJanitorRuns,
+  pipeline,
+  pipelineRun,
+  pipelineRunStep,
+  project,
   projectDeprovisioningJob,
   projectProvisioningJob,
-  projectSetting,
-  recordServiceCheck,
   serviceHeartbeat,
 } from '@repo/db';
-import { and, eq, gt, like, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, lt, sql } from 'drizzle-orm';
 import { iso } from '#shared/lib';
-import {
-  controlPlaneHealthUrl,
-  controlPlaneRequest,
-} from '#modules/control-plane-workflows/service';
 import { RESUME_LIMIT_ERROR } from '#modules/agents/runner/service';
+import { engineExecutorId, engineRunning } from '#modules/engine/dbos';
 
-// The state of the services Plan works with, for the owner's overview on Home. The
-// worker and the bridge report themselves, the worker checks the provisioning service,
-// a runner is seen when it polls, and Mastra is checked when the overview is read.
+// The state of the services Helena works with, for the owner's overview on Home. The
+// worker and the engine report themselves, the worker checks the provisioning service,
+// and a runner is seen when it polls.
 
-export const SERVICES = ['runner', 'mastra', 'bridge', 'provisioning', 'worker'] as const;
+export const SERVICES = ['runner', 'engine', 'provisioning', 'worker'] as const;
 type Service = (typeof SERVICES)[number];
 
 // The api's janitor loops, named the same way in background.ts, which starts them,
 // and in the janitor_run table, which this file reads their last run from.
-export const JANITOR_JOBS = [
-  'run-janitor',
-  'stage-janitor',
-  'workflow-schedules',
-  'resume-janitor',
-] as const;
+export const JANITOR_JOBS = ['run-janitor', 'resume-janitor', 'engine-maintenance'] as const;
 
-// How long a service may go unseen before it counts as down. The worker and the bridge
-// report every 30 seconds, the provisioning service is checked with the worker's report,
-// a runner polls every few seconds, and Mastra was checked just now.
+// How long a service may go unseen before it counts as down. The worker reports every
+// 30 seconds, the engine every few seconds, the provisioning service is checked with the
+// worker's report, and a runner polls every few seconds.
 const SILENCE_MS: Record<Service, number> = {
   runner: 120_000,
-  mastra: 60_000,
-  bridge: 120_000,
+  engine: 60_000,
   provisioning: 180_000,
   worker: 120_000,
 };
@@ -50,18 +43,17 @@ const SILENCE_MS: Record<Service, number> = {
 const OVERDUE_GRACE_SECONDS = 600;
 const RUNNER_STOP_SECONDS = 1_800;
 
-// An agent-team run Mastra has not moved on for this long, with no stage run of it
-// waiting in Plan, makes no progress.
-const STALL_MS = 15 * 60_000;
+// An active run the engine has not moved on for this long, while no agent run it waits
+// for is pending, makes no progress.
+const STALL_MS = 30 * 60_000;
 
 // How long a janitor may go without running before it counts as stopped, rather than
 // merely between runs: three times its own interval, so one slow tick is not a false
 // alarm. Kept in step with the intervals background.ts starts each loop with.
 const JANITOR_INTERVAL_MS: Record<(typeof JANITOR_JOBS)[number], number> = {
   'run-janitor': 60_000,
-  'stage-janitor': 300_000,
-  'workflow-schedules': 600_000,
   'resume-janitor': 60_000,
+  'engine-maintenance': 300_000,
 };
 const JANITOR_STALE_FACTOR = 3;
 
@@ -112,17 +104,6 @@ function janitorHealth(
   };
 }
 
-async function checkMastra(): Promise<void> {
-  let error: string | null;
-  try {
-    const response = await fetch(controlPlaneHealthUrl(), { signal: AbortSignal.timeout(3_000) });
-    error = response.ok ? null : `HTTP ${response.status}`;
-  } catch (caught) {
-    error = caught instanceof Error ? caught.message : String(caught);
-  }
-  await recordServiceCheck('mastra', error);
-}
-
 async function runCounts() {
   const [runs] = await db
     .select({
@@ -152,10 +133,6 @@ async function runCounts() {
     .select({ count: sql<number>`count(*)::int` })
     .from(agentRun)
     .where(and(eq(agentRun.status, 'failed'), eq(agentRun.lastError, RESUME_LIMIT_ERROR)));
-  const [starts] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(agentTeamStart)
-    .where(eq(agentTeamStart.status, 'pending'));
   const [provisioning] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(projectProvisioningJob)
@@ -171,44 +148,88 @@ async function runCounts() {
     resuming: runs?.resuming ?? 0,
     failedLastDay: failed?.count ?? 0,
     needsResumeReview: needsReview?.count ?? 0,
-    agentTeamStartsWaiting: starts?.count ?? 0,
     provisioningFailed: (provisioning?.count ?? 0) + (deprovisioning?.count ?? 0),
   };
 }
 
-// The active agent-team runs Mastra has not moved on for a while and that wait on no
-// stage run in Plan. Null while Mastra cannot be asked.
-async function stalledWorkflowRuns(): Promise<number | null> {
-  const active = await controlPlaneRequest<{ runs?: { runId?: unknown; updatedAt?: unknown }[] }>(
-    { operation: 'active-runs', workflowId: 'agent-team' },
-    5_000,
-  ).catch(() => null);
-  if (!active) return null;
-  const waitingOnPlan = await db
-    .select({ workflowRunId: sql<string | null>`${projectSetting.value}->>'workflowRunId'` })
-    .from(projectSetting)
-    .innerJoin(agentRun, sql`${agentRun.id} = (${projectSetting.value}->>'runId')::int`)
-    .where(and(like(projectSetting.key, 'mastra-agent-run:%'), eq(agentRun.status, 'pending')));
-  const waiting = new Set(waitingOnPlan.map((row) => row.workflowRunId));
-  const before = Date.now() - STALL_MS;
-  return (active.runs ?? []).filter(
-    (run) =>
-      typeof run.runId === 'string' &&
-      !waiting.has(run.runId) &&
-      Date.parse(String(run.updatedAt)) < before,
-  ).length;
+// What the engine is doing: its runs by state, the ones that stall, and the newest
+// failures.
+async function engineHealth() {
+  const [counts] = await db
+    .select({
+      queued: sql<number>`count(*) filter (where ${pipelineRun.status} = 'pending')::int`,
+      active: sql<number>`count(*) filter (where ${pipelineRun.status} = 'running')::int`,
+      waiting: sql<number>`count(*) filter (where ${pipelineRun.status} = 'waiting')::int`,
+      failedLastDay: sql<number>`count(*) filter (where ${pipelineRun.status} = 'failed' and ${pipelineRun.finishedAt} > now() - interval '1 day')::int`,
+    })
+    .from(pipelineRun);
+  // A running run nobody moved for a while, with no agent run of it still pending.
+  const stalled = await db
+    .select({ id: pipelineRun.id })
+    .from(pipelineRun)
+    .where(
+      and(
+        eq(pipelineRun.status, 'running'),
+        lt(pipelineRun.updatedAt, new Date(Date.now() - STALL_MS)),
+        sql`not exists (
+          select 1 from ${pipelineRunStep}
+          join ${agentRun} on ${agentRun.id} = ${pipelineRunStep.agentRunId}
+          where ${pipelineRunStep.runId} = ${pipelineRun.id} and ${agentRun.status} = 'pending'
+        )`,
+        sql`not exists (
+          select 1 from ${pipelineRunStep}
+          where ${pipelineRunStep.runId} = ${pipelineRun.id}
+            and coalesce(${pipelineRunStep.finishedAt}, ${pipelineRunStep.startedAt})
+              > now() - make_interval(secs => ${STALL_MS / 1000})
+        )`,
+      ),
+    );
+  const [schedules] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(helenaSchedule)
+    .where(eq(helenaSchedule.enabled, true));
+  const failures = await db
+    .select({
+      runId: pipelineRun.id,
+      projectKey: project.key,
+      name: sql<string>`coalesce(${pipeline.name}, ${pipelineRun.title}, '')`,
+      error: pipelineRun.error,
+      at: pipelineRun.finishedAt,
+    })
+    .from(pipelineRun)
+    .innerJoin(project, eq(project.id, pipelineRun.projectId))
+    .leftJoin(pipeline, eq(pipeline.id, pipelineRun.pipelineId))
+    .where(inArray(pipelineRun.status, ['failed']))
+    .orderBy(desc(pipelineRun.finishedAt))
+    .limit(5);
+  return {
+    running: engineRunning(),
+    executorId: engineRunning() ? engineExecutorId() : null,
+    queued: counts?.queued ?? 0,
+    active: counts?.active ?? 0,
+    waiting: counts?.waiting ?? 0,
+    failedLastDay: counts?.failedLastDay ?? 0,
+    stalled: stalled.length,
+    schedules: schedules?.count ?? 0,
+    lastErrors: failures.map((row) => ({
+      runId: row.runId,
+      projectKey: row.projectKey,
+      name: row.name,
+      error: row.error ?? '',
+      at: row.at ? iso(row.at) : '',
+    })),
+  };
 }
 
 export async function systemHealth() {
-  await checkMastra();
-  const [reported, [runner], runs, stalled, janitors] = await Promise.all([
+  const [reported, [runner], runs, engine, janitors] = await Promise.all([
     db.select().from(serviceHeartbeat),
     db
       .select({ lastSeenAt: sql`max(${aiAgent.lastSeenAt})`.mapWith(aiAgent.lastSeenAt) })
       .from(aiAgent)
       .where(eq(aiAgent.kind, 'external')),
     runCounts(),
-    stalledWorkflowRuns(),
+    engineHealth(),
     listJanitorRuns(),
   ]);
   const byService = new Map(reported.map((row) => [row.service, row]));
@@ -222,7 +243,8 @@ export async function systemHealth() {
           : byService.get(service),
       ),
     ),
-    runs: { ...runs, stalledWorkflowRuns: stalled },
+    runs,
+    engine,
     janitors: JANITOR_JOBS.map((job) => janitorHealth(job, byJanitor.get(job))),
   };
 }

@@ -20,7 +20,6 @@ import {
   ApprovalResponse,
   ApprovedCommandsResponse,
   PendingCountResponse,
-  WorkflowGateListResponse,
   approvalParams,
   approvedCommandsParams,
   createApprovalBody,
@@ -40,10 +39,10 @@ import {
   listApprovals,
   listApprovedCommands,
 } from './service';
-import { listWorkflowGates } from './workflow-gates';
 
-// Agents ask here before they act outside Plan; the people who may decide answer from
-// one inbox that also holds the Mastra workflow runs waiting at an approval gate.
+// Agents ask here before they act outside Helena; the people who may decide answer from
+// one inbox. The approval steps of workflow runs are listed by the workflow builder
+// (/pipeline-approvals) and shown in the same inbox.
 export const approvalRoutes = new Elysia({
   name: 'approvals',
   detail: { tags: ['Approvals'] },
@@ -201,15 +200,5 @@ export const approvalRoutes = new Elysia({
       summary: 'List the projects the caller may decide approvals in',
       description:
         'The projects behind the approvals list and pending count, for its project filter.',
-    },
-  })
-  .get('/approvals/workflow-gates', ({ user }) => listWorkflowGates(requireUser(user).id), {
-    response: { 200: WorkflowGateListResponse, ...errors(401) },
-    detail: {
-      summary: 'List workflow approval gates',
-      description:
-        'The Mastra workflow runs suspended at their approval gate, in every project in ' +
-        'which the caller may decide them. `complete` is false when the workflows of a ' +
-        'project could not be read.',
     },
   });

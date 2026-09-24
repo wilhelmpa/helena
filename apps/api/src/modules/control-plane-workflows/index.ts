@@ -1,41 +1,43 @@
-import { Elysia, t } from 'elysia';
+import { Elysia } from 'elysia';
 import { authContext } from '#shared/auth-context';
 import { guards } from '#shared/guards';
 import { requireUser } from '#shared/access';
 import { accessErrors, commonErrors } from '#shared/responses';
 import {
   ControlPlaneResponse,
-  approvalBody,
   assignmentBody,
   runQuery,
-  scheduleBody,
-  scheduleUpdateBody,
-  startWorkflowBody,
   workflowParams,
   workflowRunParams,
-  workflowScheduleParams,
 } from './model';
 import {
-  cancelWorkflowRun,
-  createWorkflowSchedule,
-  decideWorkflowApproval,
   getWorkflowRun,
   listProjectWorkflows,
   listWorkflowRuns,
-  listWorkflowSchedules,
-  listWorkflowScheduleTriggers,
-  retryWorkflowRun,
-  scheduleAction,
   setProjectWorkflowAssignment,
-  startWorkflow,
-  updateWorkflowSchedule,
 } from './service';
+import { cancelEngineRun, retryEngineRun } from '#modules/engine/runs';
+
+// The built-in workflows of a project (the agent team) as the Helena engine runs them:
+// the project's settings and the runs, which a member cancels or retries.
+async function controlRun(
+  project: { id: number; key: string; teamId: number },
+  workflowId: string,
+  runId: string,
+  action: 'cancel' | 'retry',
+) {
+  await getWorkflowRun(project, workflowId, runId);
+  if (action === 'cancel') await cancelEngineRun(runId);
+  else await retryEngineRun(runId);
+  return getWorkflowRun(project, workflowId, runId);
+}
 
 export const controlPlaneWorkflowRoutes = new Elysia({
   name: 'control-plane-workflows',
   detail: {
     tags: ['Workflows'],
-    description: 'Manage one project workflow, its runs, approvals, and schedules.',
+    description:
+      'Switch on and configure the built-in workflows of a project and control their runs.',
   },
 })
   .use(authContext)
@@ -85,110 +87,19 @@ export const controlPlaneWorkflowRoutes = new Elysia({
     },
   )
   .post(
-    '/projects/:projectKey/control-plane/workflows/:workflowId/runs',
-    ({ project, params, body, user }) =>
-      startWorkflow(project, params.workflowId, requireUser(user).id, body),
-    {
-      params: workflowParams,
-      body: startWorkflowBody,
-      permission: ['actions', 'edit'],
-      response: { 200: ControlPlaneResponse, ...commonErrors },
-    },
-  )
-  .post(
     '/projects/:projectKey/control-plane/workflows/:workflowId/runs/:runId/retry',
-    ({ project, params }) => retryWorkflowRun(project, params.workflowId, params.runId),
+    ({ project, params }) => controlRun(project, params.workflowId, params.runId, 'retry'),
     {
       params: workflowRunParams,
       permission: ['actions', 'edit'],
       response: { 200: ControlPlaneResponse, ...commonErrors },
-    },
-  )
-  .post(
-    '/projects/:projectKey/control-plane/workflows/:workflowId/runs/:runId/approval',
-    ({ project, params, body, user }) =>
-      decideWorkflowApproval(project, params.workflowId, params.runId, requireUser(user).id, body),
-    {
-      params: workflowRunParams,
-      body: approvalBody,
-      permission: ['actions', 'edit'],
-      response: { 200: ControlPlaneResponse, ...commonErrors },
-    },
-  )
-  .patch(
-    '/projects/:projectKey/control-plane/workflows/:workflowId/schedules/:scheduleId',
-    ({ project, params, body }) =>
-      updateWorkflowSchedule(project, params.workflowId, params.scheduleId, body),
-    {
-      params: workflowScheduleParams,
-      body: scheduleUpdateBody,
-      permission: ['actions', 'edit'],
-      response: { 200: ControlPlaneResponse, ...commonErrors },
-    },
-  )
-  .get(
-    '/projects/:projectKey/control-plane/workflows/:workflowId/schedules/:scheduleId/triggers',
-    ({ project, params }) =>
-      listWorkflowScheduleTriggers(project, params.workflowId, params.scheduleId),
-    {
-      params: workflowScheduleParams,
-      permission: ['actions', 'read'],
-      response: { 200: ControlPlaneResponse, ...accessErrors },
     },
   )
   .post(
     '/projects/:projectKey/control-plane/workflows/:workflowId/runs/:runId/cancel',
-    ({ project, params }) => cancelWorkflowRun(project, params.workflowId, params.runId),
+    ({ project, params }) => controlRun(project, params.workflowId, params.runId, 'cancel'),
     {
       params: workflowRunParams,
-      permission: ['actions', 'edit'],
-      response: { 200: ControlPlaneResponse, ...commonErrors },
-    },
-  )
-  .get(
-    '/projects/:projectKey/control-plane/workflows/:workflowId/schedules',
-    ({ project, params }) => listWorkflowSchedules(project, params.workflowId),
-    {
-      params: workflowParams,
-      permission: ['actions', 'read'],
-      response: { 200: ControlPlaneResponse, ...accessErrors },
-    },
-  )
-  .post(
-    '/projects/:projectKey/control-plane/workflows/:workflowId/schedules',
-    ({ project, params, body, user }) =>
-      createWorkflowSchedule(project, params.workflowId, requireUser(user).id, body),
-    {
-      params: workflowParams,
-      body: scheduleBody,
-      permission: ['actions', 'edit'],
-      response: { 200: ControlPlaneResponse, ...commonErrors },
-    },
-  )
-  .post(
-    '/projects/:projectKey/control-plane/workflows/:workflowId/schedules/:scheduleId/:action',
-    ({ project, params }) =>
-      scheduleAction(
-        project,
-        params.workflowId,
-        params.scheduleId,
-        `${params.action}-schedule` as 'pause-schedule' | 'resume-schedule' | 'run-schedule',
-      ),
-    {
-      params: t.Object({
-        ...workflowScheduleParams.properties,
-        action: t.Union([t.Literal('pause'), t.Literal('resume'), t.Literal('run')]),
-      }),
-      permission: ['actions', 'edit'],
-      response: { 200: ControlPlaneResponse, ...commonErrors },
-    },
-  )
-  .delete(
-    '/projects/:projectKey/control-plane/workflows/:workflowId/schedules/:scheduleId',
-    ({ project, params }) =>
-      scheduleAction(project, params.workflowId, params.scheduleId, 'delete-schedule'),
-    {
-      params: workflowScheduleParams,
       permission: ['actions', 'edit'],
       response: { 200: ControlPlaneResponse, ...commonErrors },
     },

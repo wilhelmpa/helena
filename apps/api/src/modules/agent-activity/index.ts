@@ -8,9 +8,8 @@ import { ActivityPageResponse, AgentUsageResponse, activityQuery } from './model
 import { getAgentUsage, listActivity, listProjectActivity } from './service';
 
 const TIMELINE_DESCRIPTION =
-  'Newest first, paged by cursor: chat answers of the caller, agent runs, and the ' +
-  "agent-team and workflow runs Mastra holds. Mastra's runs are read in a bounded " +
-  'number of requests; when it does not answer, they are left out and `notice` says so.';
+  'Newest first, paged by cursor: chat answers of the caller, agent runs, and the runs of ' +
+  'agent teams, workflows and routines.';
 
 export const agentActivityRoutes = new Elysia({
   name: 'agent-activity',

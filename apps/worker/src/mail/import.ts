@@ -1,5 +1,6 @@
 import {
   db,
+  helenaEvent,
   hubInboxEvent,
   hubInboxSource,
   mailAttachment,
@@ -125,6 +126,9 @@ async function storeMessage(
     await saveContacts(tx, account, parsed);
     if (target.newInboxMail && account.triageEnabled) {
       await recordTriageEvent(tx, account, thread.id, row.id, parsed);
+    }
+    if (target.newInboxMail && thread.projectId !== null) {
+      await recordMailEvent(tx, account, thread.projectId, thread.id, row.id, parsed);
     }
     return row.id;
   });
@@ -278,9 +282,42 @@ async function saveContacts(
     });
 }
 
+// Tells the Helena engine that new mail arrived in a project, for the workflows that start
+// on a mail (trigger `mail_received`): a CloudEvents-shaped row of the helena_event
+// outbox, which the api's engine consumes. Once per message.
+async function recordMailEvent(
+  tx: Transaction,
+  account: Pick<SyncAccount, 'address'>,
+  projectId: number,
+  threadId: number,
+  messageRowId: number,
+  parsed: ParsedMessage,
+): Promise<void> {
+  await tx
+    .insert(helenaEvent)
+    .values({
+      id: `mail-${messageRowId}`,
+      type: 'helena.mail.received',
+      source: '/helena/worker/mail',
+      subject: `mail:${messageRowId}`,
+      projectId,
+      data: {
+        account: account.address,
+        from: parsed.from?.address ?? '',
+        fromName: parsed.from?.name ?? '',
+        subject: parsed.subject,
+        snippet: parsed.snippet,
+        threadId,
+        messageId: messageRowId,
+      },
+      time: parsed.date,
+    })
+    .onConflictDoNothing();
+}
+
 // Hands new inbox mail to the inbox triage the way the hub inbox always received it:
 // a hub_inbox_event of the account's mail source, which the hub inbox worker turns into
-// a thread and sends to the Mastra inbox-triage workflow.
+// a thread and sends to the triage of the integration service.
 async function recordTriageEvent(
   tx: Transaction,
   account: Pick<SyncAccount, 'teamId' | 'address'>,

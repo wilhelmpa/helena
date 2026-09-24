@@ -1,0 +1,157 @@
+import { DBOS, Error as DBOSErrors } from '@dbos-inc/dbos-sdk';
+import { registerBuiltins } from './builtin/index';
+import { beginRun, enterStep, failRun, finishRun, leaveStep, runCanceled } from './lifecycle';
+import { branchStart, handlesOutcome, locate, stepAfter } from './navigation';
+import { stepType } from './registry';
+import { planFire } from './schedules';
+import type {
+  RunInfo,
+  StepContext,
+  StepDefinition,
+  StepExecution,
+  StepResult,
+  WorkflowDefinition,
+} from './sdk';
+
+// The two DBOS workflows of the engine. `helena.run` interprets one run: it walks the
+// run's pinned definition and executes each step through its registered type; every
+// step execution is a sequence of recorded operations named `helena:<step>#<iteration>:
+// <operation>`, so a restart continues inside the step and a retry forks the workflow at
+// the first operation of the failed step. `helena.fire` is what a schedule starts at each
+// scheduled time: it applies the catch-up policy, records the run and starts it.
+
+// A bound on step executions per run, above the rework loops a definition allows.
+export const MAX_EXECUTIONS = 200;
+
+registerBuiltins();
+
+// The operations of one step execution, as the step type sees them.
+class EngineStepContext<S extends StepDefinition> implements StepContext<S> {
+  private readonly prefix: string;
+
+  constructor(
+    readonly run: RunInfo,
+    readonly step: S,
+    readonly execution: StepExecution,
+    readonly attempt: number,
+    readonly definition: WorkflowDefinition,
+  ) {
+    this.prefix = `helena:${step.id}#${execution.iteration}:`;
+  }
+
+  op<T>(name: string, fn: () => Promise<T>): Promise<T> {
+    return DBOS.runStep(fn, { name: this.prefix + name });
+  }
+
+  async sleepUntil(at: Date): Promise<void> {
+    const ms = await this.op('sleep', async () => Math.max(0, at.getTime() - Date.now()));
+    if (ms > 0) await DBOS.sleep(ms);
+  }
+
+  waitForSignal<T>(topic: string, timeoutSeconds: number): Promise<T | null> {
+    return DBOS.recv<T>(topic, timeoutSeconds);
+  }
+}
+
+function isCancellation(error: unknown): boolean {
+  return (
+    error instanceof DBOSErrors.DBOSWorkflowCancelledError ||
+    error instanceof DBOSErrors.DBOSAwaitedWorkflowCancelledError
+  );
+}
+
+function messageOf(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+async function interpret(runId: string): Promise<string> {
+  const begun = await DBOS.runStep(() => beginRun(runId, DBOS.workflowID ?? runId), {
+    name: 'helena:begin',
+  });
+  if (begun.status !== 'running') return begun.status;
+  const { run } = begun;
+  const definition = begun.definition as unknown as WorkflowDefinition;
+  const steps = definition.steps;
+  const fail = async (message: string, at: StepExecution | null, step: StepDefinition | null) => {
+    await DBOS.runStep(() => failRun(runId, at, step, message), { name: 'helena:fail' });
+    throw new Error(message);
+  };
+
+  let cursor: string | null = steps[0]?.id ?? null;
+  let seq = 0;
+  const visits: Record<string, number> = {};
+  let end: { status: 'succeeded' | 'rejected' | 'skipped'; result?: unknown } = {
+    status: 'succeeded',
+  };
+  while (cursor !== null) {
+    if (seq >= MAX_EXECUTIONS)
+      await fail(`The run executed ${MAX_EXECUTIONS} steps and was stopped`, null, null);
+    const step = locate(steps, cursor)?.step;
+    if (!step) return fail(`The workflow has no step ${cursor}`, null, null);
+    const type = stepType(step.type);
+    const iteration = (visits[step.id] ?? 0) + 1;
+    visits[step.id] = iteration;
+    seq += 1;
+    const execution: StepExecution = { stepId: step.id, iteration, seq };
+    if (!type) return fail(`The step type ${step.type} is not installed`, execution, step);
+    let result: StepResult;
+    try {
+      const attempt = await DBOS.runStep(() => enterStep(runId, step, execution), {
+        name: `helena:${step.id}#${iteration}:enter`,
+      });
+      result = await type.execute(new EngineStepContext(run, step, execution, attempt, definition));
+    } catch (error) {
+      if (isCancellation(error)) throw error;
+      // A person who canceled the run already ended it; nothing more is recorded.
+      if (await DBOS.runStep(() => runCanceled(runId), { name: 'helena:canceled' })) throw error;
+      return fail(messageOf(error), execution, step);
+    }
+    switch (result.kind) {
+      case 'branch':
+        cursor = branchStart(steps, step.id, result.matched);
+        break;
+      case 'goto':
+        cursor = result.stepId;
+        break;
+      case 'end':
+        cursor = null;
+        end = { status: result.status, result: result.result };
+        break;
+      case 'continue': {
+        const following = stepAfter(steps, step.id);
+        if (
+          (result.outcome === 'failed' || result.outcome === 'blocked') &&
+          !handlesOutcome(steps, following)
+        )
+          return fail(
+            result.outcome === 'blocked'
+              ? `Step "${step.name}" is blocked: ${result.summary ?? ''}`.trim()
+              : `Step "${step.name}" failed${result.summary ? `: ${result.summary}` : ''}`,
+            execution,
+            step,
+          );
+        cursor = following;
+        break;
+      }
+    }
+    await DBOS.runStep(
+      () => leaveStep(runId, execution, result.kind === 'continue' ? result.outcome : undefined),
+      { name: `helena:${step.id}#${iteration}:leave` },
+    );
+  }
+  await DBOS.runStep(() => finishRun(runId, end.status, end.result), { name: 'helena:finish' });
+  return end.status;
+}
+
+export const runWorkflow = DBOS.registerWorkflow(interpret, { name: 'helena.run' });
+
+async function fire(scheduledAt: Date, context: unknown): Promise<void> {
+  const scheduleId = (context as { scheduleId?: unknown } | null)?.scheduleId;
+  if (typeof scheduleId !== 'string') return;
+  const planned = await DBOS.runStep(() => planFire(scheduleId, scheduledAt.toISOString()), {
+    name: 'helena:fire',
+  });
+  if (planned) await DBOS.startWorkflow(runWorkflow, { workflowID: planned })(planned);
+}
+
+export const fireWorkflow = DBOS.registerWorkflow(fire, { name: 'helena.fire' });

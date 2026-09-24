@@ -12,7 +12,7 @@ import {
   type ClaimedInboxThread,
 } from './hub-inbox-store';
 
-// Sends new inbox mail to the Mastra inbox-triage workflow through the integration
+// Sends new inbox mail to the inbox triage of the integration
 // service. The mail importer records it as hub_inbox_event rows for the accounts whose
 // triage is switched on; without INBOX_INTEGRATION_URL this worker does nothing.
 export function startHubInboxWorker(): WorkerHandle {

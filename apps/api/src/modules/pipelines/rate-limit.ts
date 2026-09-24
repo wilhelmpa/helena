@@ -4,7 +4,7 @@ import { and, count, eq, gte, isNull, like, notLike, or } from 'drizzle-orm';
 import { recordActivity, rowSide } from '#modules/issues/activity';
 import { bumpControlPlaneRevision } from '#modules/sync/service';
 import { getProjectSetting, setProjectSetting } from '#shared/project-settings';
-import { WORKFLOW_ACTOR } from './control';
+import { WORKFLOW_ACTOR } from '#modules/engine/run-context';
 
 // Guards against workflows re-triggering each other without end. queuePipelineTriggers
 // (triggers.ts) starts a workflow on any task change except one a workflow makes

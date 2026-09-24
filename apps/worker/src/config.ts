@@ -44,9 +44,6 @@ export interface WorkerConfig {
   projectProvisioningTimeoutMs: number;
   // How often the provisioned state is compared with the projects in the database.
   projectReconcileIntervalMs: number;
-  // Plan's Mastra control endpoint, where a deleted project's schedules are deleted.
-  mastraControlUrl: string | null;
-  mastraControlToken: string | null;
 }
 
 let cached: WorkerConfig | null = null;
@@ -68,8 +65,6 @@ export function workerConfig(): WorkerConfig {
       (process.env.PROJECT_PROVISIONING_TOKEN?.trim() || null),
     projectProvisioningTimeoutMs: intEnv('PROJECT_PROVISIONING_TIMEOUT_MS', 120_000),
     projectReconcileIntervalMs: intEnv('PROJECT_RECONCILE_INTERVAL_MS', 600_000),
-    mastraControlUrl: process.env.MASTRA_CONTROL_URL?.trim() || null,
-    mastraControlToken: tokenFile('MASTRA_CONTROL_TOKEN_FILE'),
   };
   return cached;
 }

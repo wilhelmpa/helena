@@ -10,31 +10,26 @@ import {
   pipelineVersion,
   project as projectTable,
   projectPipeline,
-  projectSetting,
   user,
 } from '@repo/db';
 import { alias } from 'drizzle-orm/pg-core';
-import { and, asc, count, desc, eq, inArray, lte, sql, type SQL } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, sql, type SQL } from 'drizzle-orm';
 import { HttpError, iso } from '#shared/lib';
-import { runStatus } from '#modules/control-plane-workflows/agent-team';
-import {
-  controlPlaneRequest,
-  PIPELINE_WORKFLOW,
-  projectWorkflowScope,
-} from '#modules/control-plane-workflows/service';
 import { projectsWithPermission } from '#modules/approvals/service';
 import { bumpControlPlaneRevision } from '#modules/sync/service';
+import { recordApprovalDecision } from '#modules/engine/builtin/steps/approval';
+import { cancelEngineRun, retryEngineRun, signalRun, startRunSoon } from '#modules/engine/runs';
 import { usablePipeline, type ProjectRef } from './service';
 
-// Runs of the workflow builder. Plan writes a run as 'pending' and asks Mastra to start
-// plan-pipeline with the run id as its event id; Mastra reports every step back through
-// the control API (control.ts). A start Mastra did not accept is retried by the api's
-// background loop.
+// The runs of the Helena engine as Helena shows and controls them: the runs of a
+// workflow of the builder, of the agent team of a task and of a routine, each with the
+// steps it executed and the agent runs behind them. The engine (modules/engine) executes
+// them; this module writes the run a person starts, and cancels, retries and decides.
 
 type RunRow = typeof pipelineRun.$inferSelect;
 
 export type RunStatus =
-  'pending' | 'running' | 'waiting' | 'succeeded' | 'failed' | 'canceled' | 'rejected';
+  'pending' | 'running' | 'waiting' | 'succeeded' | 'failed' | 'canceled' | 'rejected' | 'skipped';
 
 export const ACTIVE_STATUSES = ['pending', 'running', 'waiting'] as const;
 
@@ -51,15 +46,18 @@ async function issueProject(issueId: number): Promise<ProjectRef & { issueId: nu
   return { ...row, issueId };
 }
 
-// Plans a run: the newest version of the workflow on the task. Null when the workflow
-// already works on the task, which a trigger answers by starting nothing.
+// Plans a run of a builder workflow: its newest version, on the task or on a task it
+// creates first (`input.task`). Null when the workflow already works on the task, which
+// a trigger answers by starting nothing, or when a run of the same id exists.
 export async function createRun(input: {
+  id?: string;
   pipelineId: number;
   projectId: number;
-  issueId: number;
-  trigger: RunRow['trigger'];
+  issueId: number | null;
+  trigger: string;
   dryRun: boolean;
   actorUserId: string | null;
+  input?: Record<string, unknown>;
 }): Promise<RunRow | null> {
   const [version] = await db
     .select({ id: pipelineVersion.id })
@@ -75,7 +73,8 @@ export async function createRun(input: {
   const [row] = await db
     .insert(pipelineRun)
     .values({
-      id: randomUUID(),
+      id: input.id ?? randomUUID(),
+      kind: 'workflow',
       pipelineId: input.pipelineId,
       versionId: version.id,
       projectId: input.projectId,
@@ -83,92 +82,12 @@ export async function createRun(input: {
       trigger: input.trigger,
       dryRun: input.dryRun,
       actorUserId: input.actorUserId,
+      input: input.input ?? null,
     })
     .onConflictDoNothing()
     .returning();
+  if (row) await bumpControlPlaneRevision(input.projectId);
   return row ?? null;
-}
-
-// Asks Mastra to start the run. The run id is the event id, so a start that is asked
-// again finds the run Mastra already made.
-export async function startInMastra(run: RunRow): Promise<void> {
-  const [project] = await db
-    .select({ id: projectTable.id, key: projectTable.key, teamId: projectTable.teamId })
-    .from(projectTable)
-    .where(eq(projectTable.id, run.projectId));
-  if (!project) return;
-  await controlPlaneRequest(
-    {
-      operation: 'start',
-      workflowId: PIPELINE_WORKFLOW,
-      ...projectWorkflowScope(project),
-      eventId: run.id,
-      correlationId: run.id,
-      occurredAt: iso(run.createdAt),
-      actorId: run.actorUserId ?? 'itsaplan',
-      dryRun: run.dryRun,
-      payload: { schemaVersion: 1, pipelineId: run.pipelineId },
-      capabilityRefs: [],
-      connectionRefs: [],
-    },
-    30_000,
-  );
-  await db
-    .update(pipelineRun)
-    .set({ status: 'running', updatedAt: new Date() })
-    .where(and(eq(pipelineRun.id, run.id), eq(pipelineRun.status, 'pending')));
-  await bumpControlPlaneRevision(run.projectId);
-}
-
-const START_ATTEMPTS = 10;
-
-// Starts the runs a trigger planned. Several api replicas drain without overlapping; a
-// start Mastra refuses is tried again later, and given up after START_ATTEMPTS.
-export async function drainPendingStarts(): Promise<void> {
-  const due = await db.transaction(async (tx) => {
-    const rows = await tx
-      .select()
-      .from(pipelineRun)
-      .where(and(eq(pipelineRun.status, 'pending'), lte(pipelineRun.nextStartAt, new Date())))
-      .orderBy(asc(pipelineRun.nextStartAt))
-      .limit(10)
-      .for('update', { skipLocked: true });
-    if (rows.length === 0) return [];
-    await tx
-      .update(pipelineRun)
-      .set({
-        startAttempts: sql`${pipelineRun.startAttempts} + 1`,
-        nextStartAt: sql`now() + make_interval(secs => least(600, 10 * power(2, ${pipelineRun.startAttempts})))`,
-      })
-      .where(
-        inArray(
-          pipelineRun.id,
-          rows.map((row) => row.id),
-        ),
-      );
-    return rows;
-  });
-  for (const run of due) {
-    try {
-      await startInMastra(run);
-    } catch (error) {
-      if (run.startAttempts + 1 < START_ATTEMPTS) continue;
-      await finishRun(run.id, 'failed', error instanceof Error ? error.message : String(error));
-    }
-  }
-}
-
-export async function finishRun(
-  runId: string,
-  status: 'succeeded' | 'failed' | 'canceled' | 'rejected',
-  error: string | null = null,
-): Promise<void> {
-  const [row] = await db
-    .update(pipelineRun)
-    .set({ status, error, finishedAt: new Date(), updatedAt: new Date() })
-    .where(eq(pipelineRun.id, runId))
-    .returning({ projectId: pipelineRun.projectId });
-  if (row) await bumpControlPlaneRevision(row.projectId);
 }
 
 // Starts a workflow on the task by hand, or a test run of it. A test run needs no
@@ -199,18 +118,13 @@ export async function startRun(
     actorUserId: userId,
   });
   if (!run) throw new HttpError(409, 'The workflow already works on this task');
-  try {
-    await startInMastra(run);
-  } catch (error) {
-    await finishRun(run.id, 'failed', error instanceof Error ? error.message : String(error));
-    throw error;
-  }
+  await startRunSoon(run.id);
   return (await runDtos(eq(pipelineRun.id, run.id)))[0]!;
 }
 
-// The run history as Plan shows it: each run with the steps it executed, the agent run
+// The run history as Helena shows it: each run with the steps it executed, the agent run
 // behind an agent step and the tokens they used.
-async function runDtos(where: SQL | undefined, window?: { limit: number; offset: number }) {
+export async function runDtos(where: SQL | undefined, window?: { limit: number; offset: number }) {
   const query = db
     .select({
       run: pipelineRun,
@@ -222,8 +136,8 @@ async function runDtos(where: SQL | undefined, window?: { limit: number; offset:
       actorName: actor.name,
     })
     .from(pipelineRun)
-    .innerJoin(pipeline, eq(pipeline.id, pipelineRun.pipelineId))
-    .innerJoin(pipelineVersion, eq(pipelineVersion.id, pipelineRun.versionId))
+    .leftJoin(pipeline, eq(pipeline.id, pipelineRun.pipelineId))
+    .leftJoin(pipelineVersion, eq(pipelineVersion.id, pipelineRun.versionId))
     .innerJoin(projectTable, eq(projectTable.id, pipelineRun.projectId))
     .leftJoin(issue, eq(issue.id, pipelineRun.issueId))
     .leftJoin(actor, eq(actor.id, pipelineRun.actorUserId))
@@ -240,8 +154,10 @@ async function runDtos(where: SQL | undefined, window?: { limit: number; offset:
     );
     return {
       id: run.id,
+      kind: run.kind as 'workflow' | 'agent_team' | 'routine',
       pipelineId: run.pipelineId,
-      pipelineName: joined.pipelineName,
+      pipelineName:
+        joined.pipelineName ?? run.title ?? (run.kind === 'agent_team' ? 'Agent team' : ''),
       version: joined.version,
       projectId: run.projectId,
       projectKey: joined.projectKey,
@@ -249,10 +165,13 @@ async function runDtos(where: SQL | undefined, window?: { limit: number; offset:
       issueIdentifier:
         joined.sequenceNumber == null ? null : `${joined.projectKey}-${joined.sequenceNumber}`,
       issueTitle: joined.issueTitle,
+      scheduleId: run.scheduleId,
+      scheduledFor: run.scheduledFor ? iso(run.scheduledFor) : null,
       trigger: run.trigger,
       dryRun: run.dryRun,
       status: run.status as RunStatus,
       error: run.error,
+      result: run.result ?? null,
       actorName: joined.actorName,
       inputTokens: counted.length
         ? counted.reduce((sum, step) => sum + (step.agentRun!.inputTokens ?? 0), 0)
@@ -268,6 +187,25 @@ async function runDtos(where: SQL | undefined, window?: { limit: number; offset:
   });
 }
 
+export type RunDto = Awaited<ReturnType<typeof runDtos>>[number];
+
+// A run a runner holds stays 'pending' in the queue until the runner reports it. It is
+// running while the lease of a claim is open; a run waiting for a retry carries the
+// error of the attempt before.
+export function agentRunStatus(run: {
+  status: string;
+  attempts: number;
+  nextAttemptAt: Date;
+  lastError: string | null;
+}): string {
+  return run.status === 'pending' &&
+    run.attempts > 0 &&
+    !run.lastError &&
+    run.nextAttemptAt.getTime() > Date.now()
+    ? 'running'
+    : run.status;
+}
+
 async function stepDtos(runs: RunRow[]) {
   const rows = await db
     .select({
@@ -275,43 +213,62 @@ async function stepDtos(runs: RunRow[]) {
       agentUsername: aiAgent.username,
       agentName: user.name,
       decidedByName: decider.name,
+      agentRun: {
+        id: agentRun.id,
+        status: agentRun.status,
+        attempts: agentRun.attempts,
+        nextAttemptAt: agentRun.nextAttemptAt,
+        lastError: agentRun.lastError,
+        inputTokens: agentRun.inputTokens,
+        outputTokens: agentRun.outputTokens,
+        startedAt: agentRun.startedAt,
+        finishedAt: agentRun.finishedAt,
+      },
     })
     .from(pipelineRunStep)
     .leftJoin(aiAgent, eq(aiAgent.id, pipelineRunStep.agentId))
     .leftJoin(user, eq(user.id, aiAgent.userId))
     .leftJoin(decider, eq(decider.id, pipelineRunStep.decidedBy))
+    .leftJoin(agentRun, eq(agentRun.id, pipelineRunStep.agentRunId))
     .where(
       inArray(
         pipelineRunStep.runId,
         runs.map((run) => run.id),
       ),
     )
-    .orderBy(asc(pipelineRunStep.seq));
-  const agentRuns = await agentRunsByKey(
-    runs,
-    rows.map(({ step }) => step.idempotencyKey),
-  );
+    .orderBy(asc(pipelineRunStep.seq), asc(pipelineRunStep.startedAt));
   const byRun = new Map<string, ReturnType<typeof stepDto>[]>();
   for (const row of rows) {
     const list = byRun.get(row.step.runId) ?? [];
-    list.push(stepDto(row, agentRuns));
+    list.push(stepDto(row));
     byRun.set(row.step.runId, list);
   }
   return byRun;
 }
 
-function stepDto(
-  row: {
-    step: typeof pipelineRunStep.$inferSelect;
-    agentUsername: string | null;
-    agentName: string | null;
-    decidedByName: string | null;
-  },
-  agentRuns: Map<string, AgentRunSummary>,
-) {
+function stepDto(row: {
+  step: typeof pipelineRunStep.$inferSelect;
+  agentUsername: string | null;
+  agentName: string | null;
+  decidedByName: string | null;
+  agentRun: {
+    id: number;
+    status: string;
+    attempts: number;
+    nextAttemptAt: Date;
+    lastError: string | null;
+    inputTokens: number | null;
+    outputTokens: number | null;
+    startedAt: Date | null;
+    finishedAt: Date | null;
+  } | null;
+}) {
   const { step } = row;
+  const dot = step.stepId.indexOf('.');
   return {
     stepId: step.stepId,
+    // The step a part belongs to (an agent team's stage), or null for a step itself.
+    parentStepId: dot > 0 ? step.stepId.slice(0, dot) : null,
     iteration: step.iteration,
     seq: step.seq,
     kind: step.kind,
@@ -328,7 +285,14 @@ function stepDto(
             name: row.agentName ?? row.agentUsername,
           }
         : null,
-    agentRun: (step.idempotencyKey && agentRuns.get(step.idempotencyKey)) || null,
+    agentRun: row.agentRun?.id
+      ? {
+          id: row.agentRun.id,
+          status: agentRunStatus(row.agentRun),
+          inputTokens: row.agentRun.inputTokens,
+          outputTokens: row.agentRun.outputTokens,
+        }
+      : null,
     decidedByName: row.decidedByName,
     note: step.note,
     wakeAt: step.wakeAt ? iso(step.wakeAt) : null,
@@ -338,69 +302,13 @@ function stepDto(
   };
 }
 
-interface AgentRunSummary {
-  id: number;
-  status: string;
-  inputTokens: number | null;
-  outputTokens: number | null;
-}
-
-// The Plan agent run of each agent step, found through the idempotency key under which
-// /internal/orchestration/agent-run stored it.
-async function agentRunsByKey(runs: RunRow[], keys: (string | null)[]) {
-  const wanted = keys.filter((key): key is string => key !== null);
-  const found = new Map<string, AgentRunSummary>();
-  if (wanted.length === 0) return found;
-  const stored = await db
-    .select({ key: projectSetting.key, value: projectSetting.value })
-    .from(projectSetting)
-    .where(
-      and(
-        inArray(projectSetting.projectId, [...new Set(runs.map((run) => run.projectId))]),
-        inArray(
-          projectSetting.key,
-          wanted.map((key) => `mastra-agent-run:${key}`),
-        ),
-      ),
-    );
-  const idByKey = new Map(
-    stored.map((row) => [
-      row.key.slice('mastra-agent-run:'.length),
-      Number((row.value as { runId?: unknown }).runId),
-    ]),
-  );
-  const ids = [...idByKey.values()].filter((id) => Number.isSafeInteger(id));
-  if (ids.length === 0) return found;
-  const rows = await db
-    .select({
-      id: agentRun.id,
-      status: agentRun.status,
-      attempts: agentRun.attempts,
-      nextAttemptAt: agentRun.nextAttemptAt,
-      lastError: agentRun.lastError,
-      inputTokens: agentRun.inputTokens,
-      outputTokens: agentRun.outputTokens,
-    })
-    .from(agentRun)
-    .where(inArray(agentRun.id, ids));
-  const byId = new Map(rows.map((row) => [row.id, row]));
-  for (const [key, id] of idByKey) {
-    const row = byId.get(id);
-    if (row)
-      found.set(key, {
-        id: row.id,
-        status: runStatus(row),
-        inputTokens: row.inputTokens,
-        outputTokens: row.outputTokens,
-      });
-  }
-  return found;
-}
-
 const RECENT_ISSUE_RUNS = 20;
 
 export function listIssueRuns(issueId: number) {
-  return runDtos(eq(pipelineRun.issueId, issueId), { limit: RECENT_ISSUE_RUNS, offset: 0 });
+  return runDtos(and(eq(pipelineRun.issueId, issueId), eq(pipelineRun.kind, 'workflow')), {
+    limit: RECENT_ISSUE_RUNS,
+    offset: 0,
+  });
 }
 
 export async function getRun(runId: string) {
@@ -409,12 +317,19 @@ export async function getRun(runId: string) {
   return run;
 }
 
-export async function runProjectId(runId: string): Promise<number | null> {
+// The project and kind of a run, which decide who may read and control it.
+export async function runAccess(
+  runId: string,
+): Promise<{ projectId: number; kind: string } | null> {
   const [row] = await db
-    .select({ projectId: pipelineRun.projectId })
+    .select({ projectId: pipelineRun.projectId, kind: pipelineRun.kind })
     .from(pipelineRun)
     .where(eq(pipelineRun.id, runId));
-  return row?.projectId ?? null;
+  return row ?? null;
+}
+
+export async function runProjectId(runId: string): Promise<number | null> {
+  return (await runAccess(runId))?.projectId ?? null;
 }
 
 // The runs of one workflow in the given projects, newest first.
@@ -456,72 +371,28 @@ export async function readableProjectIds(
     );
 }
 
-async function runForControl(runId: string) {
-  const [row] = await db
-    .select({ run: pipelineRun, key: projectTable.key, teamId: projectTable.teamId })
-    .from(pipelineRun)
-    .innerJoin(projectTable, eq(projectTable.id, pipelineRun.projectId))
-    .where(eq(pipelineRun.id, runId));
-  if (!row) throw new HttpError(404, 'Workflow run not found');
-  return { run: row.run, project: { id: row.run.projectId, key: row.key, teamId: row.teamId } };
-}
-
-function mastraRun(project: ProjectRef, runId: string, operation: string, extra = {}) {
-  return controlPlaneRequest({
-    operation,
-    workflowId: PIPELINE_WORKFLOW,
-    runId,
-    projectRef: projectWorkflowScope(project).projectRef,
-    ...extra,
-  });
-}
-
-// Stops a run. Mastra cancels the agent run the run waits for; a run Mastra never
-// started, or no longer holds, is only marked canceled.
+// Stops a run: the engine stops its workflow and the agent run it waits for.
 export async function cancelRun(runId: string) {
-  const { run, project } = await runForControl(runId);
-  if (!(ACTIVE_STATUSES as readonly string[]).includes(run.status))
-    throw new HttpError(409, 'The workflow run has finished');
-  if (run.status !== 'pending')
-    await mastraRun(project, runId, 'cancel').catch((error) => {
-      if (!(error instanceof HttpError && [404, 409].includes(error.status))) throw error;
-    });
-  await db
-    .update(pipelineRunStep)
-    .set({ status: 'canceled', finishedAt: new Date() })
-    .where(
-      and(
-        eq(pipelineRunStep.runId, runId),
-        inArray(pipelineRunStep.status, ['running', 'waiting']),
-      ),
-    );
-  await finishRun(runId, 'canceled');
+  await cancelEngineRun(runId);
   return getRun(runId);
 }
 
-// Runs a failed run again from the step it failed in. Mastra keeps the results of the
-// steps before it.
+// Runs a failed run again from the step it failed in; the steps before it keep their
+// results.
 export async function retryRun(runId: string) {
-  const { run, project } = await runForControl(runId);
-  if (run.status !== 'failed')
-    throw new HttpError(409, 'Only a failed workflow run can be retried');
-  await mastraRun(project, runId, 'retry');
-  await db
-    .update(pipelineRun)
-    .set({ status: 'running', error: null, finishedAt: null, updatedAt: new Date() })
-    .where(eq(pipelineRun.id, runId));
-  await bumpControlPlaneRevision(project.id);
+  await retryEngineRun(runId);
   return getRun(runId);
 }
 
-// The approval step a run waits at, decided by a person. Mastra resumes the run with
-// the decision and the note, which the later steps read.
+// The approval step a run waits at, decided by a person. The run reads the decision and
+// the note, which the later steps read, when it wakes.
 export async function decideApproval(
   runId: string,
   userId: string,
   decision: { approved: boolean; note?: string },
 ) {
-  const { run, project } = await runForControl(runId);
+  const [run] = await db.select().from(pipelineRun).where(eq(pipelineRun.id, runId));
+  if (!run) throw new HttpError(404, 'Workflow run not found');
   const [waiting] = await db
     .select()
     .from(pipelineRunStep)
@@ -534,33 +405,18 @@ export async function decideApproval(
     );
   if (run.status !== 'waiting' || !waiting)
     throw new HttpError(409, 'The workflow run does not wait for an approval');
-  const note = decision.note?.trim() || undefined;
-  await mastraRun(project, runId, 'resume', {
+  const decided = await recordApprovalDecision(runId, run.projectId, waiting, {
     approved: decision.approved,
+    note: decision.note ?? null,
     decidedBy: userId,
-    ...(note ? { note } : {}),
   });
-  await db
-    .update(pipelineRunStep)
-    .set({
-      status: 'succeeded',
-      outcome: decision.approved ? 'approved' : 'rejected',
-      decidedBy: userId,
-      note: note ?? null,
-      finishedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(pipelineRunStep.runId, runId),
-        eq(pipelineRunStep.stepId, waiting.stepId),
-        eq(pipelineRunStep.iteration, waiting.iteration),
-      ),
-    );
+  if (!decided) throw new HttpError(409, 'The approval was decided in the meantime');
   await db
     .update(pipelineRun)
     .set({ status: 'running', updatedAt: new Date() })
     .where(and(eq(pipelineRun.id, runId), eq(pipelineRun.status, 'waiting')));
-  await bumpControlPlaneRevision(project.id);
+  await bumpControlPlaneRevision(run.projectId);
+  await signalRun(runId, 'decision');
   return getRun(runId);
 }
 
@@ -572,8 +428,8 @@ export async function listWaitingApprovals(userId: string) {
   const rows = await db
     .select({
       step: pipelineRunStep,
-      pipelineId: pipeline.id,
-      pipelineName: pipeline.name,
+      pipelineId: pipelineRun.pipelineId,
+      pipelineName: sql<string>`coalesce(${pipeline.name}, ${pipelineRun.title}, '')`,
       projectKey: projectTable.key,
       projectName: projectTable.name,
       issueId: issue.id,
@@ -582,7 +438,7 @@ export async function listWaitingApprovals(userId: string) {
     })
     .from(pipelineRunStep)
     .innerJoin(pipelineRun, eq(pipelineRun.id, pipelineRunStep.runId))
-    .innerJoin(pipeline, eq(pipeline.id, pipelineRun.pipelineId))
+    .leftJoin(pipeline, eq(pipeline.id, pipelineRun.pipelineId))
     .innerJoin(projectTable, eq(projectTable.id, pipelineRun.projectId))
     .leftJoin(issue, eq(issue.id, pipelineRun.issueId))
     .where(
@@ -603,7 +459,7 @@ export async function listWaitingApprovals(userId: string) {
     iteration: row.step.iteration,
     stepName: row.step.name,
     message: row.step.summary,
-    pipelineId: row.pipelineId,
+    pipelineId: row.pipelineId ?? 0,
     pipelineName: row.pipelineName,
     projectKey: row.projectKey,
     projectName: row.projectName,

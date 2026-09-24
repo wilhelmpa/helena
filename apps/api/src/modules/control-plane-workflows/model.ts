@@ -11,11 +11,6 @@ export const workflowRunParams = t.Object({
   runId: t.String({ minLength: 1, maxLength: 200 }),
 });
 
-export const workflowScheduleParams = t.Object({
-  ...workflowParams.properties,
-  scheduleId: t.String({ minLength: 1, maxLength: 200 }),
-});
-
 export const assignmentBody = t.Object(
   {
     enabled: t.Boolean(),
@@ -36,49 +31,6 @@ export const assignmentBody = t.Object(
         },
         { additionalProperties: false },
       ),
-    ),
-  },
-  { additionalProperties: false },
-);
-
-export const startWorkflowBody = t.Object(
-  {
-    idempotencyKey: t.String({ format: 'uuid' }),
-    correlationId: t.Optional(t.String({ maxLength: 200 })),
-    dryRun: t.Boolean({ default: true }),
-    payload: t.Record(t.String(), t.Unknown()),
-  },
-  { additionalProperties: false },
-);
-
-export const approvalBody = t.Object(
-  {
-    approved: t.Boolean(),
-    note: t.Optional(t.String({ maxLength: 2000 })),
-  },
-  { additionalProperties: false },
-);
-
-export const scheduleBody = t.Object(
-  {
-    cron: t.String({ minLength: 5, maxLength: 120 }),
-    timezone: t.Optional(
-      t.String({
-        minLength: 1,
-        maxLength: 80,
-        description: 'IANA time zone. Default Europe/Berlin.',
-      }),
-    ),
-    payload: t.Record(t.String(), t.Unknown()),
-  },
-  { additionalProperties: false },
-);
-
-export const scheduleUpdateBody = t.Object(
-  {
-    cron: t.String({ minLength: 5, maxLength: 120 }),
-    timezone: t.Optional(
-      t.String({ minLength: 1, maxLength: 80, description: 'IANA time zone. Kept when left out.' }),
     ),
   },
   { additionalProperties: false },
@@ -109,7 +61,7 @@ export const AgentTeamStartResponse = t.Object({
   taskRef: t.String(),
 });
 
-// The Hermes run Plan queued for one stage of an agent-team run (AgentTeamStage).
+// The agent run Helena queued for one stage of an agent-team run (AgentTeamStage).
 export const AgentTeamStageResponse = t.Object({
   phase: t.Union([t.Literal('coordinate'), t.Literal('specialize'), t.Literal('review')]),
   assignmentId: t.Nullable(t.String()),
@@ -123,10 +75,9 @@ export const AgentTeamStageResponse = t.Object({
   outputTokens: t.Nullable(t.Number()),
 });
 
-// One agent-team run of an issue as Mastra stores it: the status of each step in
-// execution order, the Hermes run of each stage, and once it finished the workflow
-// output (summary, evidence, stage history, the Plan state it set) or the error it
-// failed with.
+// One agent-team run of an issue: where each of its steps is, the agent run of each
+// stage, and once it finished the result (summary, evidence, stage history, the state it
+// set on the task) or the error it failed with.
 export const AgentTeamRunResponse = t.Object({
   runId: t.String(),
   status: t.String(),

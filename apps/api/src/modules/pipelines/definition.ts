@@ -1,24 +1,35 @@
 import { maxTurnsLimit, runBudgetSecondsLimit } from '#modules/agents/model';
-import { minCronIntervalSeconds } from '#modules/routines/cron';
+import { registerBuiltins } from '#modules/engine/builtin/index';
+import { stepType, triggerType } from '#modules/engine/registry';
+import type {
+  DefinitionIssue,
+  FieldReader,
+  ReadScope,
+  StepDefinition,
+  TriggerDefinition,
+} from '#modules/engine/sdk';
+
+export type { DefinitionIssue } from '#modules/engine/sdk';
 
 // A workflow definition: a trigger, the roles its agent steps name, and an ordered list
 // of steps. A condition step holds two lanes of steps, one for each answer; after its
 // lane the run continues with the step after the condition, or ends when the lane says
-// so. Mastra's plan-pipeline workflow interprets the definition a run pinned
-// (pipeline-contracts.ts there holds the same shape).
+// so. The Helena engine interprets the definition a run pinned. Step and trigger types
+// come from the engine's registries (modules/engine/registry.ts): the types below are
+// the built-in ones, and a plugin adds its own without changing this file.
 
-export const STEP_KINDS = ['agent', 'approval', 'condition', 'action', 'wait'] as const;
-export type StepKind = (typeof STEP_KINDS)[number];
-
-export const TRIGGER_TYPES = [
-  'manual',
-  'task_created',
-  'task_assigned',
-  'status_changed',
-  'label_added',
-  'schedule',
+export const BUILTIN_STEP_KINDS = [
+  'agent',
+  'approval',
+  'condition',
+  'action',
+  'wait',
+  'notify',
+  'webhook',
+  'delegate',
+  'agent_team',
 ] as const;
-export type TriggerType = (typeof TRIGGER_TYPES)[number];
+export type StepKind = (typeof BUILTIN_STEP_KINDS)[number];
 
 export type PipelineTrigger =
   | { type: 'manual' | 'task_created' | 'task_assigned' }
@@ -26,7 +37,15 @@ export type PipelineTrigger =
   | { type: 'status_changed'; to: string | null }
   | { type: 'label_added'; label: string }
   // Every fire creates a task with `title` and runs the workflow on it.
-  | { type: 'schedule'; cron: string; timezone: string; title: string };
+  | { type: 'schedule'; cron: string; timezone: string; title: string }
+  // Every request to the workflow's hook creates a task with `title` (the request's own
+  // `title` field when it has one) and runs the workflow on it.
+  | { type: 'webhook'; title: string }
+  // Every new mail that matches creates a task with the mail's subject and runs the
+  // workflow on it. Empty filters match every mail of the project's accounts.
+  | { type: 'mail_received'; from: string; subject: string }
+  // Built-in workflows only: a task delegated to a coordinator (agent team), a routine.
+  | { type: 'delegation' | 'routine' };
 
 // How a role finds its agent in a project that sets none for it.
 export type RoleMatch =
@@ -70,6 +89,8 @@ export type WaitSpec =
 interface StepBase {
   id: string;
   name: string;
+  // A step type may carry fields of its own (engine/sdk.ts StepDefinition).
+  [field: string]: unknown;
 }
 
 export interface AgentStep extends StepBase {
@@ -107,22 +128,58 @@ export interface WaitStep extends StepBase {
   wait: WaitSpec;
 }
 
-export type PipelineStep = AgentStep | ApprovalStep | ConditionStep | ActionStep | WaitStep;
+// Tells people about the run: a comment on the task that mentions them, which reaches
+// their inbox and their email or Telegram like any mention.
+export interface NotifyStep extends StepBase {
+  type: 'notify';
+  to: { kind: 'assignee' } | { kind: 'watchers' } | { kind: 'members'; userIds: string[] };
+  message: string;
+}
+
+// Sends the task and the results so far to a URL, signed per Standard Webhooks with the
+// project's signing secret. The answer's status decides the outcome.
+export interface WebhookStep extends StepBase {
+  type: 'webhook';
+  url: string;
+  // Extra text sent along as `message`, with variables.
+  message: string;
+}
+
+// A routine's work: creates a task for the agent, or reopens the named one, unless the
+// routine's task is still open. Only routines use it.
+export interface DelegateStep extends StepBase {
+  type: 'delegate';
+  agentId: number;
+  title: string;
+  instructions: string;
+  mode: 'new' | 'reopen';
+  taskId: number | null;
+}
+
+// The agent team of a task: the coordinator plans, specialists work in dependency order,
+// the coordinator reviews, and the result goes to the task. Only the engine creates it,
+// for a task delegated to a coordinator.
+export interface AgentTeamStep extends StepBase {
+  type: 'agent_team';
+  team: Record<string, unknown>;
+}
+
+export type PipelineStep =
+  | AgentStep
+  | ApprovalStep
+  | ConditionStep
+  | ActionStep
+  | WaitStep
+  | NotifyStep
+  | WebhookStep
+  | DelegateStep
+  | AgentTeamStep;
 
 export interface PipelineDefinition {
   schemaVersion: 1;
   trigger: PipelineTrigger;
   roles: PipelineRole[];
   steps: PipelineStep[];
-}
-
-export interface DefinitionIssue {
-  code: string;
-  // The step the issue belongs to; null for the trigger, the roles or the whole list.
-  stepId: string | null;
-  // The field of the step, trigger or role, e.g. 'instruction' or 'roles.coder.name'.
-  field: string | null;
-  params?: Record<string, string | number>;
 }
 
 export const LIMITS = {
@@ -138,12 +195,12 @@ export const LIMITS = {
   delayMinutes: { minimum: 1, maximum: 43_200 },
 } as const;
 
-const STEP_ID = /^[a-z0-9][a-z0-9-]{0,39}$/;
+export const STEP_ID = /^[a-z0-9][a-z0-9-]{0,39}$/;
 const ROLE_KEY = /^[a-z][a-z0-9-]{0,31}$/;
-const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
-const OUTCOMES = ['success', 'failed', 'blocked'] as const;
-const TASK_FIELDS = ['status', 'statusType', 'labels', 'area', 'priority'] as const;
-const DATE_FIELDS = ['dueDate', 'startDate'] as const;
+export const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
+export const OUTCOMES = ['success', 'failed', 'blocked'] as const;
+export const TASK_FIELDS = ['status', 'statusType', 'labels', 'area', 'priority'] as const;
+export const DATE_FIELDS = ['dueDate', 'startDate'] as const;
 const VARIABLE = /\{\{\s*([^{}]*?)\s*\}\}/g;
 const TASK_VARIABLES = new Set(['title', 'description', 'identifier', 'status']);
 const RESULT_VARIABLES = new Set(['summary', 'outcome', 'note']);
@@ -154,7 +211,8 @@ function record(value: unknown): Json | null {
   return value && typeof value === 'object' && !Array.isArray(value) ? (value as Json) : null;
 }
 
-class Reader {
+// Reads the fields of one step, trigger or role and records what is wrong with them.
+export class Reader implements FieldReader {
   issues: DefinitionIssue[] = [];
 
   constructor(
@@ -217,39 +275,23 @@ class Reader {
   }
 }
 
-function readTrigger(raw: unknown, reader: Reader): PipelineTrigger {
-  const value = record(raw);
-  const type = reader.choice(value?.type, 'trigger.type', TRIGGER_TYPES);
-  if (type === 'status_changed') {
-    const to = value?.to;
-    return {
-      type,
-      to: to === null || to === undefined ? null : reader.text(to, 'trigger.to', LIMITS.name),
-    };
+// The trigger types a client may choose in the builder; `delegation` and `routine` start
+// the built-in workflows of an agent team and a routine only.
+const ENGINE_ONLY_TRIGGERS = new Set(['delegation', 'routine']);
+
+function readTrigger(raw: unknown, reader: Reader, scope: DefinitionScope): PipelineTrigger {
+  registerBuiltins();
+  const value = record(raw) ?? {};
+  const name = typeof value.type === 'string' ? value.type : '';
+  const type = triggerType(name);
+  if (!type || (ENGINE_ONLY_TRIGGERS.has(name) && !scope.engine)) {
+    reader.issue('invalid', 'trigger.type');
+    return { type: 'manual' };
   }
-  if (type === 'label_added')
-    return { type, label: reader.text(value?.label, 'trigger.label', LIMITS.name) };
-  if (type === 'schedule') {
-    const cron = reader.text(value?.cron, 'trigger.cron', 120);
-    const timezone = reader.text(value?.timezone, 'trigger.timezone', 80);
-    const title = reader.text(value?.title, 'trigger.title', 300);
-    if (cron && timezone) {
-      try {
-        minCronIntervalSeconds(cron, timezone);
-      } catch (error) {
-        reader.issue(
-          error instanceof Error && /zone/i.test(error.message)
-            ? 'invalid_timezone'
-            : 'invalid_cron',
-          error instanceof Error && /zone/i.test(error.message)
-            ? 'trigger.timezone'
-            : 'trigger.cron',
-        );
-      }
-    }
-    return { type, cron, timezone, title };
-  }
-  return { type };
+  const prefixed = new Reader(null, 'trigger.');
+  const fields = type.read(value, prefixed);
+  reader.issues.push(...prefixed.issues);
+  return { ...fields, type: name } as PipelineTrigger;
 }
 
 function readRole(raw: unknown, index: number, issues: DefinitionIssue[]): PipelineRole {
@@ -281,90 +323,10 @@ function readRole(raw: unknown, index: number, issues: DefinitionIssue[]): Pipel
   return { key, name, match: parsed };
 }
 
-function readAssignee(raw: unknown, reader: Reader): Assignee {
-  const value = record(raw);
-  if (typeof value?.role === 'string') return { role: value.role };
-  if (typeof value?.agentId === 'number' && Number.isInteger(value.agentId) && value.agentId > 0)
-    return { agentId: value.agentId };
-  reader.issue('required', 'assignee');
-  return { role: '' };
-}
-
-function readCondition(raw: unknown, reader: Reader): ConditionTest {
-  const value = record(raw);
-  const kind = reader.choice(value?.kind, 'condition.kind', [
-    'outcome',
-    'keyword',
-    'task',
-  ] as const);
-  if (kind === 'outcome') {
-    const outcomes = Array.isArray(value?.outcomes) ? value.outcomes : [];
-    const valid = [...new Set(outcomes)].filter((item): item is Outcome =>
-      (OUTCOMES as readonly unknown[]).includes(item),
-    );
-    if (valid.length === 0 || valid.length !== outcomes.length)
-      reader.issue('required', 'condition.outcomes');
-    return { kind, outcomes: valid };
-  }
-  if (kind === 'keyword')
-    return { kind, keyword: reader.text(value?.keyword, 'condition.keyword', 200) };
-  return {
-    kind,
-    field: reader.choice(value?.field, 'condition.field', TASK_FIELDS),
-    op: reader.choice(value?.op, 'condition.op', ['is', 'is_not'] as const),
-    values: reader.names(value?.values, 'condition.values'),
-  };
-}
-
-function readAction(raw: unknown, reader: Reader): TaskAction {
-  const value = record(raw);
-  const kind = reader.choice(value?.kind, 'action.kind', [
-    'set_status',
-    'add_labels',
-    'remove_labels',
-    'set_assignee',
-    'comment',
-    'create_subtask',
-  ] as const);
-  switch (kind) {
-    case 'set_status':
-      return { kind, status: reader.text(value?.status, 'action.status', LIMITS.name) };
-    case 'add_labels':
-    case 'remove_labels':
-      return { kind, labels: reader.names(value?.labels, 'action.labels') };
-    case 'set_assignee': {
-      const assignee = record(value?.assignee);
-      if (value?.assignee === null) return { kind, assignee: null };
-      if (typeof assignee?.role === 'string') return { kind, assignee: { role: assignee.role } };
-      if (typeof assignee?.userId === 'string' && assignee.userId.length <= 100)
-        return { kind, assignee: { userId: assignee.userId } };
-      reader.issue('required', 'action.assignee');
-      return { kind, assignee: null };
-    }
-    case 'comment':
-      return { kind, body: reader.text(value?.body, 'action.body', LIMITS.text) };
-    case 'create_subtask':
-      return {
-        kind,
-        title: reader.text(value?.title, 'action.title', 300),
-        description: reader.text(
-          value?.description ?? '',
-          'action.description',
-          LIMITS.text,
-          false,
-        ),
-      };
-  }
-}
-
-function readWait(raw: unknown, reader: Reader): WaitSpec {
-  const value = record(raw);
-  const kind = reader.choice(value?.kind, 'wait.kind', ['delay', 'until'] as const);
-  if (kind === 'delay')
-    return { kind, minutes: reader.integer(value?.minutes, 'wait.minutes', LIMITS.delayMinutes) };
-  const time = typeof value?.time === 'string' ? value.time : '';
-  if (!TIME.test(time)) reader.issue('invalid', 'wait.time');
-  return { kind, field: reader.choice(value?.field, 'wait.field', DATE_FIELDS), time };
+interface DefinitionScope extends ReadScope {
+  // A definition the engine builds itself (an agent team, a routine) may use the types
+  // a client may not.
+  engine?: boolean;
 }
 
 function readSteps(
@@ -372,98 +334,58 @@ function readSteps(
   depth: number,
   issues: DefinitionIssue[],
   counter: { count: number },
+  scope: DefinitionScope,
 ): PipelineStep[] {
   if (!Array.isArray(raw)) {
     issues.push({ code: 'invalid', stepId: null, field: 'steps' });
     return [];
   }
-  return raw.map((item) => readStep(item, depth, issues, counter));
+  return raw.map((item) => readStep(item, depth, issues, counter, scope));
 }
 
+// Reads one step: the engine reads its id, name, type and, for a type with lanes, the
+// lanes; the step type reads the rest.
 function readStep(
   raw: unknown,
   depth: number,
   issues: DefinitionIssue[],
   counter: { count: number },
+  scope: DefinitionScope,
 ): PipelineStep {
   counter.count += 1;
-  const value = record(raw);
-  const id = typeof value?.id === 'string' ? value.id : '';
+  const value = record(raw) ?? {};
+  const id = typeof value.id === 'string' ? value.id : '';
   const reader = new Reader(id || null);
   if (!STEP_ID.test(id)) reader.issue('invalid', 'id');
-  const name = reader.text(value?.name, 'name', LIMITS.name);
-  const type = reader.choice(value?.type, 'type', STEP_KINDS);
-  let step: PipelineStep;
-  switch (type) {
-    case 'agent':
-      step = {
-        id,
-        name,
-        type,
-        assignee: readAssignee(value?.assignee, reader),
-        instruction: reader.text(value?.instruction, 'instruction', LIMITS.text),
-        maxTurns: reader.optionalInteger(value?.maxTurns, 'maxTurns', maxTurnsLimit),
-        runBudgetSeconds: reader.optionalInteger(
-          value?.runBudgetSeconds,
-          'runBudgetSeconds',
-          runBudgetSecondsLimit,
-        ),
-        model:
-          value?.model === undefined || value?.model === null || value?.model === ''
-            ? null
-            : reader.text(value.model, 'model', 200),
-        timeoutMinutes: reader.integer(
-          value?.timeoutMinutes,
-          'timeoutMinutes',
-          LIMITS.timeoutMinutes,
-        ),
-      };
-      break;
-    case 'approval': {
-      const onReject = record(value?.onReject);
-      const action = reader.choice(onReject?.action, 'onReject.action', ['end', 'goto'] as const);
-      step = {
-        id,
-        name,
-        type,
-        message: reader.text(value?.message ?? '', 'message', LIMITS.message, false),
-        onReject:
-          action === 'end'
-            ? { action }
-            : {
-                action,
-                stepId: typeof onReject?.stepId === 'string' ? onReject.stepId : '',
-                maxLoops: reader.integer(onReject?.maxLoops, 'onReject.maxLoops', {
-                  minimum: 1,
-                  maximum: LIMITS.maxLoops,
-                }),
-              },
-      };
-      break;
-    }
-    case 'condition': {
-      if (depth > LIMITS.depth) reader.issue('too_deep', null, { max: LIMITS.depth });
-      step = {
-        id,
-        name,
-        type,
-        condition: readCondition(value?.condition, reader),
-        then: readSteps(value?.then ?? [], depth + 1, issues, counter),
-        else: readSteps(value?.else ?? [], depth + 1, issues, counter),
-        thenEnd: value?.thenEnd === true,
-        elseEnd: value?.elseEnd === true,
-      };
-      break;
-    }
-    case 'action':
-      step = { id, name, type, action: readAction(value?.action, reader) };
-      break;
-    case 'wait':
-      step = { id, name, type, wait: readWait(value?.wait, reader) };
-      break;
+  const name = reader.text(value.name, 'name', LIMITS.name);
+  const typeName = typeof value.type === 'string' ? value.type : '';
+  const type = stepType(typeName);
+  if (!type || (!type.ui.builder && !scope.engine)) {
+    reader.issue('invalid', 'type');
+    issues.push(...reader.issues);
+    return { id, name, type: 'wait', wait: { kind: 'delay', minutes: 1 } };
+  }
+  const fields = type.read(value, reader, scope) as Record<string, unknown>;
+  let step = { ...fields, id, name, type: typeName } as unknown as PipelineStep;
+  if (type.branching) {
+    if (depth > LIMITS.depth) reader.issue('too_deep', null, { max: LIMITS.depth });
+    step = {
+      ...step,
+      then: readSteps(value.then ?? [], depth + 1, issues, counter, scope),
+      else: readSteps(value.else ?? [], depth + 1, issues, counter, scope),
+      thenEnd: value.thenEnd === true,
+      elseEnd: value.elseEnd === true,
+    } as PipelineStep;
   }
   issues.push(...reader.issues);
   return step;
+}
+
+// The lanes of a step that has them (a condition).
+export function lanesOf(step: StepDefinition): StepDefinition[][] {
+  return Array.isArray(step.then) || Array.isArray(step.else)
+    ? [step.then ?? [], step.else ?? []]
+    : [];
 }
 
 // Every step in document order: the order a reader sees them, a condition before the
@@ -474,40 +396,42 @@ export interface FlatStep {
   step: PipelineStep;
   index: number;
   path: PipelineStep[];
-  ancestors: ConditionStep[];
+  ancestors: PipelineStep[];
 }
 
-export function flattenSteps(steps: PipelineStep[]): FlatStep[] {
+export function flattenSteps(steps: StepDefinition[]): FlatStep[] {
   const flat: FlatStep[] = [];
-  const walk = (lane: PipelineStep[], before: PipelineStep[], ancestors: ConditionStep[]) => {
+  const walk = (lane: StepDefinition[], before: StepDefinition[], ancestors: StepDefinition[]) => {
     lane.forEach((step, position) => {
       const path = [...before, ...lane.slice(0, position)];
-      flat.push({ step, index: flat.length, path, ancestors });
-      if (step.type === 'condition') {
-        walk(step.then, [...path, step], [...ancestors, step]);
-        walk(step.else, [...path, step], [...ancestors, step]);
-      }
+      flat.push({
+        step: step as PipelineStep,
+        index: flat.length,
+        path: path as PipelineStep[],
+        ancestors: ancestors as PipelineStep[],
+      });
+      for (const inner of lanesOf(step)) walk(inner, [...path, step], [...ancestors, step]);
     });
   };
   walk(steps, [], []);
   return flat;
 }
 
-export function findStep(steps: PipelineStep[], id: string): PipelineStep | undefined {
+export function findStep(steps: StepDefinition[], id: string): PipelineStep | undefined {
   return flattenSteps(steps).find((entry) => entry.step.id === id)?.step;
 }
 
-function descendants(step: PipelineStep): PipelineStep[] {
-  return step.type === 'condition'
-    ? [...step.then, ...step.else].flatMap((child) => [child, ...descendants(child)])
-    : [];
+function descendants(step: StepDefinition): StepDefinition[] {
+  return lanesOf(step)
+    .flat()
+    .flatMap((child) => [child, ...descendants(child)]);
 }
 
 // The steps a run may have executed before it reaches the step: its path, and the
 // lanes of the earlier conditions on it.
-export function stepsBefore(entry: FlatStep): PipelineStep[] {
+export function stepsBefore(entry: FlatStep): StepDefinition[] {
   return entry.path.flatMap((step) =>
-    step.type === 'condition' && !entry.ancestors.includes(step)
+    lanesOf(step).length > 0 && !entry.ancestors.includes(step)
       ? [step, ...descendants(step)]
       : [step],
   );
@@ -519,23 +443,16 @@ export function variablesIn(text: string): string[] {
 }
 
 // The fields of a step whose text may hold variables.
-export function templateFields(step: PipelineStep): { field: string; text: string }[] {
-  if (step.type === 'agent') return [{ field: 'instruction', text: step.instruction }];
-  if (step.type === 'approval') return [{ field: 'message', text: step.message }];
-  if (step.type === 'action' && step.action.kind === 'comment')
-    return [{ field: 'action.body', text: step.action.body }];
-  if (step.type === 'action' && step.action.kind === 'create_subtask')
-    return [
-      { field: 'action.title', text: step.action.title },
-      { field: 'action.description', text: step.action.description },
-    ];
-  return [];
+export function templateFields(step: StepDefinition): { field: string; text: string }[] {
+  registerBuiltins();
+  return stepType(step.type)?.templateFields?.(step) ?? [];
 }
 
 // A step that leaves a result the next steps read as `previous`. A condition and a wait
 // only decide where and when the run goes on.
-export function producesResult(step: PipelineStep): boolean {
-  return step.type === 'agent' || step.type === 'approval' || step.type === 'action';
+export function producesResult(step: StepDefinition): boolean {
+  registerBuiltins();
+  return stepType(step.type)?.producesResult === true;
 }
 
 function checkVariables(entry: FlatStep, ids: Set<string>, issues: DefinitionIssue[]) {
@@ -565,28 +482,21 @@ function checkVariables(entry: FlatStep, ids: Set<string>, issues: DefinitionIss
 
 // The steps no run reaches: those after a condition in its lane when both of its lanes
 // end the run.
-function unreachable(steps: PipelineStep[]): PipelineStep[] {
-  const found: PipelineStep[] = [];
-  const walk = (lane: PipelineStep[]) => {
+function unreachable(steps: StepDefinition[]): StepDefinition[] {
+  const found: StepDefinition[] = [];
+  const walk = (lane: StepDefinition[]) => {
     let ended = false;
     for (const step of lane) {
       if (ended) found.push(step);
-      if (step.type === 'condition') {
-        walk(step.then);
-        walk(step.else);
-        if (step.thenEnd && step.elseEnd) ended = true;
-      }
+      for (const inner of lanesOf(step)) walk(inner);
+      if (lanesOf(step).length > 0 && step.thenEnd && step.elseEnd) ended = true;
     }
   };
   walk(steps);
   return found;
 }
 
-export interface ValidationScope {
-  // A template of the Home library names roles only; a project workflow may name one of
-  // the project's agents or members directly.
-  template: boolean;
-}
+export type ValidationScope = DefinitionScope;
 
 // Reads and checks a definition as a client sent it. `definition` is null when the
 // input is not usable at all; the issues say what to fix.
@@ -602,14 +512,14 @@ export function validateDefinition(
     };
   const issues: DefinitionIssue[] = [];
   const triggerReader = new Reader(null);
-  const trigger = readTrigger(value.trigger, triggerReader);
+  const trigger = readTrigger(value.trigger, triggerReader, scope);
   issues.push(...triggerReader.issues);
   const rawRoles = Array.isArray(value.roles) ? value.roles : [];
   if (rawRoles.length > LIMITS.roles)
     issues.push({ code: 'too_many', stepId: null, field: 'roles', params: { max: LIMITS.roles } });
   const roles = rawRoles.map((role, index) => readRole(role, index, issues));
   const counter = { count: 0 };
-  const steps = readSteps(value.steps, 1, issues, counter);
+  const steps = readSteps(value.steps, 1, issues, counter, scope);
   const definition: PipelineDefinition = { schemaVersion: 1, trigger, roles, steps };
 
   if (steps.length === 0) issues.push({ code: 'no_steps', stepId: null, field: 'steps' });
@@ -630,33 +540,31 @@ export function validateDefinition(
     ids.add(step.id);
   }
 
-  const checkRole = (stepId: string, field: string, assignee: { role: string } | object) => {
-    if ('role' in assignee && !roleKeys.has(assignee.role))
-      issues.push({ code: 'unknown_role', stepId, field, params: { role: assignee.role } });
-  };
   for (const entry of flat) {
     const { step } = entry;
-    if (step.type === 'agent') {
-      checkRole(step.id, 'assignee', step.assignee);
-      if ('agentId' in step.assignee && scope.template)
-        issues.push({ code: 'agent_in_template', stepId: step.id, field: 'assignee' });
-    }
-    if (step.type === 'action' && step.action.kind === 'set_assignee' && step.action.assignee) {
-      checkRole(step.id, 'action.assignee', step.action.assignee);
-      if ('userId' in step.action.assignee && scope.template)
-        issues.push({ code: 'member_in_template', stepId: step.id, field: 'action.assignee' });
-    }
-    if (step.type === 'approval' && step.onReject.action === 'goto') {
-      const target = step.onReject.stepId;
-      if (!entry.path.some((before) => before.id === target))
-        issues.push({ code: 'invalid_rework_target', stepId: step.id, field: 'onReject.stepId' });
-    }
+    const type = stepType(step.type);
+    for (const reference of type?.roleReferences?.(step) ?? [])
+      if (!roleKeys.has(reference.role))
+        issues.push({
+          code: 'unknown_role',
+          stepId: step.id,
+          field: reference.field,
+          params: { role: reference.role },
+        });
+    issues.push(...(type?.checkDefinition?.(step, entry.path) ?? []));
     checkVariables(entry, ids, issues);
   }
   for (const step of unreachable(steps))
     issues.push({ code: 'unreachable_step', stepId: step.id, field: null });
   return { definition, issues };
 }
+
+// The definition of a trigger as a type sees it.
+export function triggerOf(definition: PipelineDefinition): TriggerDefinition {
+  return definition.trigger as TriggerDefinition;
+}
+
+export { maxTurnsLimit, runBudgetSecondsLimit };
 
 const MESSAGES: Record<string, string> = {
   invalid: 'The value is invalid',

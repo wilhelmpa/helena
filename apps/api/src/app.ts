@@ -21,7 +21,6 @@ import { scimRoutes } from './modules/scim';
 import { syncOidcGroupsAfterCallback } from './modules/scim/oidc-sync';
 import { normalizeOpenApiResponse } from './openapi';
 import { homeAgentBootstrapRoutes } from './home-agent-bootstrap';
-import { hermesTeamControlRoutes } from './hermes-team-control';
 import { agentEgressInternalRoutes } from './modules/agent-egress/internal';
 import {
   agentSocketProject,
@@ -30,6 +29,7 @@ import {
   hasApiKey,
 } from './shared/agent-socket';
 import { HttpError } from './shared/lib';
+import { engineHookRoutes } from './modules/engine';
 import { issueProxyToken } from './modules/owner-terminal/service';
 import { OwnerTerminalKindParam, type OwnerTerminalKind } from './modules/owner-terminal/model';
 import pkg from '../../../package.json';
@@ -91,7 +91,7 @@ export const app = new Elysia()
     normalizeOpenApiResponse(request, response),
   )
   .use(homeAgentBootstrapRoutes)
-  .use(hermesTeamControlRoutes)
+  .use(engineHookRoutes)
   .use(agentEgressInternalRoutes)
   // OpenAPI docs. Mounted on the main app (outside the planner's session guard)
   // so the UI at /docs and the spec at /docs/json are reachable without a
@@ -177,10 +177,13 @@ export const app = new Elysia()
           { name: 'Views', description: 'Saved work items views' },
           { name: 'Share', description: 'Public read-only sharing of issues and views' },
           { name: 'Actions', description: 'Project automation actions' },
-          { name: 'Workflows', description: 'Project-bound Mastra workflows and runs' },
+          {
+            name: 'Workflows',
+            description: 'Built-in workflows of a project (the agent team) and their runs',
+          },
           {
             name: 'Workflow builder',
-            description: 'Workflows members put together in Plan, which Mastra runs',
+            description: 'Workflows members put together in Helena, which the Helena engine runs',
           },
           { name: 'Webhooks', description: 'Outgoing webhook subscriptions' },
           {
@@ -190,7 +193,8 @@ export const app = new Elysia()
           },
           {
             name: 'Routines',
-            description: 'Tasks created or reopened for an agent on a schedule, run by Mastra',
+            description:
+              'Tasks created or reopened for an agent on a schedule, run by the Helena engine',
           },
           { name: 'Dashboards', description: 'Saved analytics dashboards' },
           { name: 'Knowledge', description: 'The knowledge vault: Docs notes, files and search' },
@@ -364,26 +368,6 @@ export const app = new Elysia()
     if (!session || session.user.active === false) return status(401);
     return status(204);
   })
-  // The same check for Mastra Studio, which shows the runs of every project and is open
-  // to the instance owner only.
-  .get(
-    '/auth/verify/owner',
-    async ({ request, status }) => {
-      const session = await getSessionFromHeaders(request.headers);
-      if (!session || session.user.active === false) return status(401);
-      return status(session.user.role === 'god' ? 204 : 403);
-    },
-    {
-      detail: {
-        tags: ['System'],
-        summary: 'Check that the session is the instance owner',
-        description:
-          'Answer 204 for an active session of the instance owner, 403 for another ' +
-          'session and 401 without one. Nginx asks it before it forwards a request to ' +
-          'Mastra Studio.',
-      },
-    },
-  )
   // The owner-terminal proxy's auth_request target (see
   // deployment/volition-stack/native/owner-terminal/nginx-owner-terminal.conf).
   // Session, owner role and a live 12h grant are all checked here, on every request

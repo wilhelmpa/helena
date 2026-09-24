@@ -52,8 +52,8 @@ export const ActivityPageResponse = t.Object({
   notice: t.Nullable(
     t.Union([t.Literal('workflow-runs-unavailable'), t.Literal('workflow-runs-limited')], {
       description:
-        'Why workflow runs may be missing from the page: Mastra did not answer, or the ' +
-        'timeline reads a limited number of workflows and of runs per workflow.',
+        'Why workflow runs may be missing from the page. The engine keeps them in Helena, ' +
+        'so this is null; kept for clients that read it.',
     }),
   ),
 });
