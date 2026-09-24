@@ -74,8 +74,8 @@ Check that no agent run or chat answer is in flight before every reboot or servi
    decision doc §5; losers are removed (`rm -rf /var/lib/helena-ai/models/hub/models--<repo>`).
    In Helena, run the evals of each class on the chosen model (Lokale KI → "Auswerten"), then
    the owner switches local AI on.
-9. **Laya on the GPU** (hub/browser-task's `native/laya/install.sh`, after its merge):
-   `sudo native/laya/install.sh install --rocm` (diff in the decision doc §4.6): Laya's venv uses
+9. **Laya on the GPU** (optional; `native/laya/install.sh`, merged from hub/browser-task):
+   `sudo native/laya/install.sh install --rocm` (decision doc §4.6): Laya's venv uses
    the ROCm tree of step 6 through a `.pth` line, no second PyTorch.
 
 ## Rollback

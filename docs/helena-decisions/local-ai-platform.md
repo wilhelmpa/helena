@@ -274,58 +274,28 @@ itself; `AMD_VULKAN_ICD` stays unset).
   the owner as a host service; "Powered by FastFlowLM" in the docs.
 - NPU models live in system RAM (not VRAM): budget ~6 GB (§5.3).
 
-### 4.6 PyTorch-ROCm for Laya (hub/browser-task's installer)
+### 4.6 PyTorch-ROCm for Laya (`native/laya/install.sh install --rocm`)
 
-`native/laya/install.sh` lives on hub/browser-task (read at `0046e9f0`, not merged): a venv
-`/opt/helena/laya/venv` with PyTorch 2.14.0 **CPU** and `laya==0.3.20` (Apache-2.0, needs
-`torch>=2.0`). The `--rocm` option to add there uses **the same ROCm tree** as llama.cpp instead of
-a second one: a `.pth` line puts `/opt/helena-ai/rocm-10.0.0`'s site-packages behind Laya's own,
-and a uv override drops `torch` from Laya's resolution, so no second PyTorch/ROCm is downloaded.
-Verified on Kingston in `~/agent-work` (2026-09-25): Laya's venv 159 MB with no torch of its own,
-`import torch` → `2.13.0+rocm10.0.0` from the shared tree, `torch.cuda.is_available()` true,
-`laya 0.3.20` imports.
+hub/browser-task's Laya installer (merged into the hub) sets up `/opt/helena/laya/venv` with
+PyTorch 2.14.0 **CPU** and `laya==0.3.20` (Apache-2.0, needs `torch>=2.0`). Its `--rocm` option
+(built here, on the merged file) uses **the same ROCm tree** as llama.cpp instead of a second one:
 
-```diff
-+ROCM=0; [ "${2:-}" = --rocm ] && ROCM=1
-+# native/local-ai/install.sh's tree: ROCm 10.0.0 and torch 2.13.0+rocm10.0.0, hash-pinned.
-+ROCM_VENV=/opt/helena-ai/rocm-10.0.0
- …
-   [ -x "$PREFIX/venv/bin/python" ] || uv venv -q -p python3.13 "$PREFIX/venv"
--  uv pip install -q --python "$PREFIX/venv/bin/python" --index-url "$TORCH_INDEX" "torch==$TORCH_VERSION"
--  uv pip install -q --python "$PREFIX/venv/bin/python" "laya==$LAYA_VERSION" "huggingface_hub>=0.20"
-+  if [ "$ROCM" = 1 ]; then
-+    [ -x "$ROCM_VENV/bin/python" ] || die "no ROCm tree: run native/local-ai/install.sh install first"
-+    [ -c /dev/kfd ] || die "no /dev/kfd: boot kernel 7.1.8 first (native/local-ai/kernel.sh)"
-+    # PyTorch and ROCm from the shared tree (behind Laya's own packages), never a second copy.
-+    sp=$("$PREFIX/venv/bin/python" -c 'import sysconfig; print(sysconfig.get_path("purelib"))')
-+    echo "$ROCM_VENV/lib/python3.13/site-packages" > "$sp/helena-rocm.pth"
-+    printf 'torch; sys_platform == "never"\n' > /var/cache/helena-laya/no-torch.txt
-+    uv pip install -q --python "$PREFIX/venv/bin/python" --override /var/cache/helena-laya/no-torch.txt \
-+      "laya==$LAYA_VERSION" "huggingface_hub>=0.20"
-+  else
-+    uv pip install -q --python "$PREFIX/venv/bin/python" --index-url "$TORCH_INDEX" "torch==$TORCH_VERSION"
-+    uv pip install -q --python "$PREFIX/venv/bin/python" "laya==$LAYA_VERSION" "huggingface_hub>=0.20"
-+  fi
-+  if [ "$ROCM" = 1 ]; then
-+    install -d /etc/systemd/system/helena-laya.service.d
-+    cat > /etc/systemd/system/helena-laya.service.d/rocm.conf <<EOF
-+[Service]
-+Environment=HELENA_LAYA_DEVICE=cuda
-+PrivateDevices=no
-+DevicePolicy=closed
-+DeviceAllow=/dev/kfd rw
-+DeviceAllow=/dev/dri/renderD128 rw
-+SupplementaryGroups=render video
-+EOF
-+  fi
-```
+- a `.pth` line puts `/opt/helena-ai/rocm-10.0.0`'s site-packages behind Laya's own, and a uv
+  override (`torch; sys_platform == "never"`) keeps `torch` out of Laya's resolution, so nothing
+  downloads a second PyTorch/ROCm; a CPU torch of an earlier install is removed first;
+- a drop-in `helena-laya.service.d/rocm.conf`: `HELENA_LAYA_DEVICE=cuda` (ROCm's PyTorch calls
+  the GPU `cuda`), `PrivateDevices=no` with `DevicePolicy=closed` and only `/dev/kfd` +
+  `/dev/dri/renderD128`, groups render/video, memory 6G/8G (ROCm's mapped libraries count);
+- `helena_laya_serve.py` reads `HELENA_LAYA_DEVICE` and falls back to the CPU when PyTorch sees no
+  GPU; `status` prints `torch.version.hip`; `install` without `--rocm` returns to the CPU.
 
-and in `helena_laya_serve.py`: `device = os.environ.get("HELENA_LAYA_DEVICE", "cpu")`, falling back to
-`"cpu"` when `torch.cuda.is_available()` is false (ROCm's PyTorch calls the GPU `cuda`). `status`
-then prints `torch.version.hip`. `uninstall` of local AI keeps the ROCm tree for exactly this reason
-(only `--purge` removes it). Laya on the GPU is untested upstream; the CPU path stays the default
-until a bench shows the GPU is faster per decision (a 7B-class decision model is bandwidth-bound,
-and the CPU and the GPU share the same memory bus).
+Verified on Kingston in `~/agent-work` (2026-09-25, 6.12, no install): Laya's venv 159 MB with no
+torch of its own, `torch 2.13.0+rocm10.0.0` from the shared tree, `cuda` available; the server from
+this branch loaded the pinned `laya-browser` v10s checkpoint on the GPU in 3.7 s (CPU 8.9 s) and
+answered the installer's probe identically (`CLICK` 0.9712 on both). Latency per decision was ~6 s
+on both devices while other agents' tests held the load at 20–34 — inconclusive, and a sign the
+time goes outside the forward pass (reported to hub/browser-task). The CPU stays the default until
+a quiet measurement shows the GPU faster; the GPU is one flag away.
 
 ## 5. Models
 
@@ -423,7 +393,7 @@ Two new registries in `@helena/sdk` (`local-ai.ts`), registered by the internal 
   the ability its model needs, its priority, whether it is experimental or wired, and its eval.
 
 Data: `helena_model_server` (servers, last models and status), `helena_local_ai_eval` (every eval
-run) — migration `0176_helena_local_ai` (renumber on merge); the policy is one `app_setting`
+run) — migration `0178_helena_local_ai` (renumber if the hub takes 0178 first); the policy is one `app_setting`
 (`localAi.policy`). The key is never stored in a table: a key file below `/etc/helena` (the
 installer's; any other path is refused, so no setting can make Helena send another file's
 content) or the Administrator's key encrypted in `app_secret`.
@@ -633,8 +603,8 @@ the settings. **"Jev / Laya (experimentell)"** is a separate switch, off by defa
 the master switch: it sets the instance default of hub/browser-task's "Browser-Steuerung"
 (`PUT /god/browser-control`, decision model with the configured or the first connection of the
 owner's team; off = "Standard"); projects on "Wie in den Voreinstellungen" follow it. Without a
-decision-model connection it is off and links to Zugänge. Until hub/browser-task is merged the
-route answers 404 and the switch hides itself. The card goes onto Start through hub/dashboard's
+decision-model connection it is off and links to Zugänge. It uses browser-task's own queries, so
+the card and Administrator → Browser-Steuerung show the same state. The card goes onto Start through hub/dashboard's
 widget registry once its contract is published; until then it is on Administrator → Lokale KI.
 
 ## 8. Security
@@ -654,7 +624,7 @@ only; nothing runs with `trust_remote_code`.
 | hub/update-center (merged) | `UpdateSource` `local-ai`, check only: Lemonade and FastFlowLM versions (GitHub Atom feeds), each model's installed revision vs its repository's newest, a newer model of the same family (Qwen3.6 → Qwen3.7), and the watch list (`MODEL_WATCH`: Qwen Flash-Next, Qwen4 MoE) as "neues Modell verfügbar"; switching stays an owner click after a new eval | registered by `helena.local-ai` (`provides.updateSources`) | – |
 | hub/server-admin | `HostCapability` `local-ai` (area `local-ai`, health lines per server) and the `admin-section` slot with `LocalAiSettingsView` | `localAiHostCapability` (mirrored), the view is mountable | register both; messages `server.health.local-ai.server-{up,down}`; `dkms install -k` for every kernel |
 | hub/dashboard | the card as a `DashboardWidget` | `LocalAiCard` self-contained | register it once the contract is published |
-| hub/browser-task | the Jev toggle uses its instance setting; Laya `--rocm` (§4.6) | toggle against its routes | hand the diff over |
+| hub/browser-task (merged) | the Jev toggle uses its instance setting; Laya `--rocm` (§4.6) | the toggle uses its queries (`useInstanceBrowserControlQuery`, same cache as its page); `--rocm` built into its merged installer and server | its owner reviews the Laya change |
 | hub/decisions | `decide()` with a local "logit readout" backend on this endpoint | the interface of §6.6 (class registration, `resolveLocalRoute`, the endpoint, logprobs verified) | it registers its own classes (router, mail, receipts); no decision classes here |
 | hub/second-brain (merged) | the local embedding route | `useEmbeddingRoute(localAiEmbeddingRoute)` in API and worker | the owner's pgvector/embedding decision (§5.4) |
 
