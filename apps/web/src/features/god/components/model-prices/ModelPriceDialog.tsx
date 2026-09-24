@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import type { ModelPrice } from '@/lib/api/endpoints/autopilot';
@@ -56,9 +56,11 @@ export default function ModelPriceDialog({
   const tCommon = useTranslations('common');
   const save = useSetModelPrice();
   const [fields, setFields] = useState<Fields>(EMPTY);
-
-  useEffect(() => {
-    if (!open) return;
+  // The price the fields were filled from, while open; filled again when the dialog opens
+  // or is pointed at another row (adjusted during render, not in an effect).
+  const [filledFor, setFilledFor] = useState<{ price: ModelPrice | null } | null>(null);
+  if (open && filledFor?.price !== price) {
+    setFilledFor({ price });
     setFields(
       price
         ? {
@@ -71,7 +73,8 @@ export default function ModelPriceDialog({
           }
         : EMPTY,
     );
-  }, [open, price]);
+  }
+  if (!open && filledFor !== null) setFilledFor(null);
 
   const input = number(fields.input);
   const output = number(fields.output);

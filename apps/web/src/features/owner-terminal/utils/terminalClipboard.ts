@@ -1,5 +1,6 @@
-// Copy and paste for the browser terminals: wetty (xterm.js) in a same-origin frame,
-// usually with tmux inside (owner, 2026-09-24: "ich muss copy paste können im Terminal").
+// Copy and paste for the browser terminals, and no "Leave site?" from them: wetty
+// (xterm.js) in a same-origin frame, usually with tmux inside (owner, 2026-09-24: "ich muss
+// copy paste können im Terminal").
 //
 // - Copying: text marked with the mouse is copied when the button comes up. tmux marks
 //   it (mouse on) and hands it over as an OSC 52 sequence; with Shift held the terminal
@@ -92,6 +93,7 @@ export function attachTerminalClipboard(
   onCopied: () => void,
 ): () => void {
   const attached = new WeakSet<TerminalLike>();
+  const quieted = new WeakSet<Window>();
   const disposables: Disposable[] = [];
 
   function copy(win: TerminalWindow, term: TerminalLike, text: string) {
@@ -118,6 +120,18 @@ export function attachTerminalClipboard(
     if (!term || attached.has(term)) return;
     attached.add(term);
     const frameWindow = win;
+
+    // wetty asks "Leave site?" before its page unloads, so reloading or leaving Helena asked
+    // too. The session lives on in tmux, so nothing is lost: a capture listener at the
+    // window runs before wetty's own and ends the event there.
+    if (!quieted.has(frameWindow)) {
+      quieted.add(frameWindow);
+      frameWindow.addEventListener(
+        'beforeunload',
+        (event) => event.stopImmediatePropagation(),
+        true,
+      );
+    }
 
     // wetty copies a marking on mouse-up through navigator.clipboard, which plain http
     // does not have: the call threw and nothing was copied.

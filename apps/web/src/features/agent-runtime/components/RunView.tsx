@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Copy, History, LoaderCircle, Play, ScrollText, Waypoints } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
@@ -308,11 +308,20 @@ function ContinueDialog({
   const tCommon = useTranslations('common');
   const [instruction, setInstruction] = useState('');
   const start = useContinueRun(teamId, agentId);
+  const field = useRef<HTMLTextAreaElement>(null);
   return (
-    <Modal title={t('continueTitle')} description={t('continueHint')} onClose={onClose}>
+    <Modal
+      title={t('continueTitle')}
+      description={t('continueHint')}
+      onClose={onClose}
+      onOpenAutoFocus={(event) => {
+        event.preventDefault();
+        field.current?.focus();
+      }}
+    >
       <div className="space-y-4">
         <Textarea
-          autoFocus
+          ref={field}
           rows={5}
           value={instruction}
           onChange={(event) => setInstruction(event.target.value)}

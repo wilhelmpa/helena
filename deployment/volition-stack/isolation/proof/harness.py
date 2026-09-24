@@ -597,7 +597,7 @@ def prove_browser_gateway(report: Report) -> None:
         beta = probe('beta', 'beta', [f'unixread:{own}'])
         expect(report, 'B', beta, f'unixread:{own}', True, 'beta')
         # A project without a browser (Home here): the unit starts all the same, and has none.
-        home = probe('home', None, ['whoami', f'unix:{own}'])
+        home = probe('home', 'home', ['whoami', f'unix:{own}'])
         expect(report, 'B', home, 'whoami', True)
         expect(report, 'B', home, f'unix:{own}', False)
         # The router restarts while an agent runs: its unit reaches the new socket.
