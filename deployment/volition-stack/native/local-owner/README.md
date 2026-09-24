@@ -10,6 +10,15 @@ This mode is disabled by default. The Kingston installer is explicitly enabled w
 sudo python3 deployment/volition-stack/native/local-owner/configure.py owner@example.com
 ```
 
+To replace the capability (for example after it showed up in a log or a transcript), run
+`sudo python3 deployment/volition-stack/native/local-owner/configure.py --rotate`; without an
+address it keeps the configured owner.
+
+On a native boot the machine's own LAN address is inside the home network too, so nginx never
+treats a connection from the machine itself as the owner. The kiosk on its own screens reaches
+nginx on `127.0.0.1:8088` instead, which nftables opens to the kiosk user alone
+(`kiosk/helena-kiosk.nft`, installed by `kiosk/install.sh`).
+
 The desktop Caddy route must continue limiting this hostname to the home LAN.
 Debian Nginx injects a random capability only for the exact hostname and the trusted
 desktop gateway (192.168.122.1) or the home LAN; never from loopback, where the Cloudflare tunnel arrives. Incoming capability headers are overwritten;
