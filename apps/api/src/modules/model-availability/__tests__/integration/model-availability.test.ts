@@ -458,7 +458,11 @@ describe('model availability', () => {
           state: 'invalid',
           command: 'hermes auth add anthropic --type oauth',
           agents: [
-            expect.objectContaining({ id: writer.id, username: 'writer', model: 'claude-sonnet-5' }),
+            expect.objectContaining({
+              id: writer.id,
+              username: 'writer',
+              model: 'claude-sonnet-5',
+            }),
           ],
         },
       ]);

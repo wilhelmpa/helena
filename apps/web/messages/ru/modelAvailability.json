@@ -17,7 +17,8 @@
   },
   "activity": "не смог работать: модель {model} недоступна для вашего аккаунта",
   "health": {
-    "refused": "{model} недоступна для аккаунта – {count, plural, one {# агент использует её} few {# агента используют её} many {# агентов используют её} other {# агента используют её}}: {agents}"
+    "refused": "{model} недоступна для аккаунта – {count, plural, one {# агент использует её} few {# агента используют её} many {# агентов используют её} other {# агента используют её}}: {agents}",
+    "deadLogin": "{account, select, chatgpt {Вход ChatGPT} claude {Вход Claude} other {Вход}} Hermes {state, select, invalid {недействителен} other {истёк}} – {count, plural, one {# агент работает через него} few {# агента работают через него} many {# агентов работают через него} other {# агента работают через него}}: {agents}"
   },
   "admin": {
     "title": "Модели",
@@ -32,5 +33,7 @@
     "replaced": "{count, plural, =0 {Ни один агент её не использовал.} one {Переведён # агент.} few {Переведено # агента.} many {Переведено # агентов.} other {Переведено # агента.}}",
     "agentDefault": "По умолчанию агента",
     "seen": "последний раз {time}"
-  }
+  },
+  "deadLogin": "{model} работает через {account, select, chatgpt {вход ChatGPT} claude {вход Claude} other {вход}} Hermes, который {state, select, invalid {недействителен} other {истёк}} – снова войдите в Hermes или выберите модель другого провайдера.",
+  "deadLoginDefault": "Модель агента по умолчанию работает через {account, select, chatgpt {вход ChatGPT} claude {вход Claude} other {вход}} Hermes, который {state, select, invalid {недействителен} other {истёк}} – снова войдите в Hermes."
 }

@@ -3,6 +3,7 @@
 import { AlertTriangle, RotateCcw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
+import CopyableCommand from '@/components/common/page/CopyableCommand';
 import { Button } from '@/components/ui/button';
 import type { UnavailableChatModel } from '@/lib/api/endpoints/agentChat';
 import { formatDateTime } from '@/utils/dates';
@@ -18,6 +19,8 @@ export default function AgentModelIssue({
   refusal,
   runtime,
   templateModel,
+  deadLogin,
+  model,
   canEdit,
   onUseDefault,
 }: {
@@ -25,11 +28,45 @@ export default function AgentModelIssue({
   refusal: UnavailableChatModel | undefined;
   runtime: string;
   templateModel: string | null;
+  // The Hermes login the agent's model runs through, when the provider rejected it.
+  deadLogin?: { provider: string; state: string; command: string | null };
+  model: string | null;
   canEdit: boolean;
   onUseDefault: () => void;
 }) {
   const t = useTranslations('modelAvailability');
+  const tSync = useTranslations('teams.agents.profileSync');
   const clear = useClearModelAvailability();
+  if (!refusal && deadLogin)
+    return (
+      <div
+        role="alert"
+        className="space-y-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm"
+      >
+        <p className="flex items-start gap-2 text-destructive" dir="auto">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+          <span>
+            {model
+              ? t('deadLogin', {
+                  model,
+                  account: accountOf(deadLogin.provider),
+                  state: deadLogin.state,
+                })
+              : t('deadLoginDefault', {
+                  account: accountOf(deadLogin.provider),
+                  state: deadLogin.state,
+                })}
+          </span>
+        </p>
+        {canEdit && deadLogin.command && (
+          <CopyableCommand
+            command={deadLogin.command}
+            copyLabel={tSync('copyCommand')}
+            copiedLabel={tSync('copied')}
+          />
+        )}
+      </div>
+    );
   if (!refusal && !templateModel) return null;
   if (!refusal)
     return (

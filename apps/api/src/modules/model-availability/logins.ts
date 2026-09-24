@@ -70,10 +70,7 @@ export interface AgentOnDeadLogin {
 
 // The Hermes agents (and templates) whose model, or whose runtime's default model, runs
 // through a lost login.
-async function agentsOnDeadLogins(
-  dead: DeadLogin[],
-  teamId?: number,
-): Promise<AgentOnDeadLogin[]> {
+async function agentsOnDeadLogins(dead: DeadLogin[], teamId?: number): Promise<AgentOnDeadLogin[]> {
   if (dead.length === 0) return [];
   const providers = new Set(dead.map((login) => login.provider));
   const [agents, catalogs, learned] = await Promise.all([
@@ -91,7 +88,9 @@ async function agentsOnDeadLogins(
       .from(aiAgent)
       .innerJoin(user, eq(user.id, aiAgent.userId))
       .where(teamId === undefined ? undefined : eq(aiAgent.teamId, teamId)),
-    db.select({ agentId: agentChatCatalog.agentId, models: agentChatCatalog.models }).from(agentChatCatalog),
+    db
+      .select({ agentId: agentChatCatalog.agentId, models: agentChatCatalog.models })
+      .from(agentChatCatalog),
     db
       .select({ model: helenaModelAvailability.model, provider: helenaModelAvailability.provider })
       .from(helenaModelAvailability),

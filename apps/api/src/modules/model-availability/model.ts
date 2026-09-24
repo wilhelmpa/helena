@@ -69,10 +69,9 @@ export const DeadLoginEntry = t.Object({
   command: t.Nullable(
     t.String({ description: 'What the owner runs in the owner terminal to sign Hermes in again.' }),
   ),
-  agents: t.Array(
-    t.Composite([ModelAgentRef, t.Object({ model: t.Nullable(t.String()) })]),
-    { description: 'The agents whose model (or runtime default) runs through the login.' },
-  ),
+  agents: t.Array(t.Composite([ModelAgentRef, t.Object({ model: t.Nullable(t.String()) })]), {
+    description: 'The agents whose model (or runtime default) runs through the login.',
+  }),
 });
 
 export const ModelAvailabilityResponse = t.Object({

@@ -17,7 +17,8 @@
   },
   "activity": "n'a pas pu travailler : le modèle {model} n'est pas disponible pour ton compte",
   "health": {
-    "refused": "{model} n'est pas disponible pour le compte – {count, plural, one {# agent l'utilise} other {# agents l'utilisent}} : {agents}"
+    "refused": "{model} n'est pas disponible pour le compte – {count, plural, one {# agent l'utilise} other {# agents l'utilisent}} : {agents}",
+    "deadLogin": "{account, select, chatgpt {Connexion ChatGPT} claude {Connexion Claude} other {Connexion}} de Hermes {state, select, invalid {non valide} other {expirée}} – {count, plural, one {# agent l'utilise} other {# agents l'utilisent}} : {agents}"
   },
   "admin": {
     "title": "Modèles",
@@ -32,5 +33,7 @@
     "replaced": "{count, plural, =0 {Aucun agent ne l'utilisait.} one {# agent basculé.} other {# agents basculés.}}",
     "agentDefault": "Modèle par défaut de l'agent",
     "seen": "dernière fois {time}"
-  }
+  },
+  "deadLogin": "{model} passe par {account, select, chatgpt {la connexion ChatGPT} claude {la connexion Claude} other {la connexion}} de Hermes, qui {state, select, invalid {n'est plus valide} other {a expiré}} – reconnecte Hermes ou choisis un modèle d'un autre fournisseur.",
+  "deadLoginDefault": "Le modèle par défaut de l'agent passe par {account, select, chatgpt {la connexion ChatGPT} claude {la connexion Claude} other {la connexion}} de Hermes, qui {state, select, invalid {n'est plus valide} other {a expiré}} – reconnecte Hermes."
 }

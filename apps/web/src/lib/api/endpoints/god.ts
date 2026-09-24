@@ -325,7 +325,22 @@ export interface SystemHealth {
   janitors: JanitorHealth[];
   // Models the providers refused, with the agents still set to them. Absent from an older
   // server.
-  models?: { unavailable: RefusedModelHealth[] };
+  models?: { unavailable: RefusedModelHealth[]; deadLogins?: DeadLoginHealth[] };
+}
+
+// A Hermes login the provider rejected (or that ran out unrenewed), with the agents whose
+// model runs through it.
+export interface DeadLoginHealth {
+  provider: string;
+  state: string;
+  command: string | null;
+  agents: {
+    id: number;
+    teamId: number;
+    username: string;
+    template: boolean;
+    model: string | null;
+  }[];
 }
 
 export interface RefusedModelHealth {

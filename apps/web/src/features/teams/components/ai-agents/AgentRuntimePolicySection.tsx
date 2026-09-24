@@ -79,11 +79,14 @@ export default function AgentRuntimePolicySection({
   // What the agent's catalog refuses, and what the team knows besides (a copy whose runner
   // has not published a catalog yet).
   const runtime = value.runtimePolicy.runtime ?? 'hermes';
-  const refused = refusedModels(
-    unavailable,
-    useTeamModelAvailability(teamId).data?.entries,
-    runtime,
-  );
+  const findings = useTeamModelAvailability(teamId).data;
+  const refused = refusedModels(unavailable, findings?.entries, runtime);
+  // The Hermes login the saved model runs through, when the provider rejected it (the token
+  // keeper's status); a model changed in the form is not the one it was worked out for.
+  const deadLogin =
+    agent && value.model === (agent.model ?? '')
+      ? findings?.deadLogins?.find((login) => login.agents.some((entry) => entry.id === agent.id))
+      : undefined;
   const tFallback = useTranslations('agentRuntime.fallback');
   const fallbackId = useId();
   const policy = value.runtimePolicy;
@@ -251,6 +254,8 @@ export default function AgentRuntimePolicySection({
               )
             : null
         }
+        deadLogin={deadLogin}
+        model={value.model || null}
         canEdit={canEdit}
         onUseDefault={() => selectModel(AGENT_DEFAULT)}
       />

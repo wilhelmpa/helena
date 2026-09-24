@@ -17,7 +17,8 @@
   },
   "activity": "не зміг працювати: модель {model} недоступна для вашого облікового запису",
   "health": {
-    "refused": "{model} недоступна для облікового запису – {count, plural, one {# агент використовує її} few {# агенти використовують її} many {# агентів використовують її} other {# агента використовують її}}: {agents}"
+    "refused": "{model} недоступна для облікового запису – {count, plural, one {# агент використовує її} few {# агенти використовують її} many {# агентів використовують її} other {# агента використовують її}}: {agents}",
+    "deadLogin": "{account, select, chatgpt {Вхід ChatGPT} claude {Вхід Claude} other {Вхід}} Hermes {state, select, invalid {недійсний} other {закінчився}} – {count, plural, one {# агент працює через нього} few {# агенти працюють через нього} many {# агентів працюють через нього} other {# агента працюють через нього}}: {agents}"
   },
   "admin": {
     "title": "Моделі",
@@ -32,5 +33,7 @@
     "replaced": "{count, plural, =0 {Жоден агент її не використовував.} one {Переведено # агента.} few {Переведено # агентів.} many {Переведено # агентів.} other {Переведено # агента.}}",
     "agentDefault": "За замовчуванням агента",
     "seen": "востаннє {time}"
-  }
+  },
+  "deadLogin": "{model} працює через {account, select, chatgpt {вхід ChatGPT} claude {вхід Claude} other {вхід}} Hermes, який {state, select, invalid {недійсний} other {закінчився}} – знову увійдіть у Hermes або виберіть модель іншого провайдера.",
+  "deadLoginDefault": "Модель агента за замовчуванням працює через {account, select, chatgpt {вхід ChatGPT} claude {вхід Claude} other {вхід}} Hermes, який {state, select, invalid {недійсний} other {закінчився}} – знову увійдіть у Hermes."
 }

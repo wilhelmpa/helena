@@ -41,17 +41,32 @@ export interface ModelAvailabilityEntry {
   agents: ModelAvailabilityAgent[];
 }
 
+// A Hermes login agents cannot use now (the token keeper), with the agents running through it.
+export interface DeadLogin {
+  provider: string;
+  // 'invalid' (the provider rejected it) or 'expired' (it ran out unrenewed).
+  state: string;
+  command: string | null;
+  agents: (ModelAvailabilityAgent & { model: string | null })[];
+}
+
 export interface ReplaceModelResult {
   changed: { id: number; username: string; template: boolean; reasoning: string | null }[];
   followTemplate: { id: number; username: string }[];
   dryRun: boolean;
 }
 
+export interface ModelAvailabilityList {
+  entries: ModelAvailabilityEntry[];
+  // Absent from an older server.
+  deadLogins?: DeadLogin[];
+}
+
 export const listTeamModelAvailability = (teamId: number) =>
-  request<{ entries: ModelAvailabilityEntry[] }>(`/teams/${teamId}/model-availability`);
+  request<ModelAvailabilityList>(`/teams/${teamId}/model-availability`);
 
 export const listModelAvailability = () =>
-  request<{ entries: ModelAvailabilityEntry[] }>('/god/model-availability');
+  request<ModelAvailabilityList>('/god/model-availability');
 
 // "Erneut prüfen": the next use of the model tries it again.
 export const clearModelAvailability = (teamId: number, entryId: number) =>

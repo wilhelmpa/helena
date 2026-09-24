@@ -17,7 +17,8 @@
   },
   "activity": "no pudo trabajar: el modelo {model} no está disponible para tu cuenta",
   "health": {
-    "refused": "{model} no está disponible para la cuenta: {count, plural, one {# agente lo usa} other {# agentes lo usan}}: {agents}"
+    "refused": "{model} no está disponible para la cuenta: {count, plural, one {# agente lo usa} other {# agentes lo usan}}: {agents}",
+    "deadLogin": "{account, select, chatgpt {Inicio de sesión de ChatGPT} claude {Inicio de sesión de Claude} other {Inicio de sesión}} de Hermes {state, select, invalid {no válido} other {caducado}}: {count, plural, one {# agente lo usa} other {# agentes lo usan}}: {agents}"
   },
   "admin": {
     "title": "Modelos",
@@ -32,5 +33,7 @@
     "replaced": "{count, plural, =0 {Ningún agente lo tenía.} one {# agente cambiado.} other {# agentes cambiados.}}",
     "agentDefault": "Predeterminado del agente",
     "seen": "última vez {time}"
-  }
+  },
+  "deadLogin": "{model} funciona con {account, select, chatgpt {el inicio de sesión de ChatGPT} claude {el inicio de sesión de Claude} other {el inicio de sesión}} de Hermes, que {state, select, invalid {no es válido} other {ha caducado}}: vuelve a iniciar sesión en Hermes o elige un modelo de otro proveedor.",
+  "deadLoginDefault": "El modelo predeterminado del agente funciona con {account, select, chatgpt {el inicio de sesión de ChatGPT} claude {el inicio de sesión de Claude} other {el inicio de sesión}} de Hermes, que {state, select, invalid {no es válido} other {ha caducado}}: vuelve a iniciar sesión en Hermes."
 }

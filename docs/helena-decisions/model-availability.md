@@ -150,5 +150,21 @@ provider's words, at most 500 characters.
 
 - A refused login is hub/token-keeper's: it can add `login-rejected` through the same
   `classifyFailure` hook (retryable after a new sign-in) without touching this module.
+
+## 7. Agents on a Hermes login the provider rejected (with hub/token-keeper)
+
+The token keeper reports each Hermes login's state (`runtimeLogins()`), and its catalog change
+leaves a provider whose logins are all dead out of the catalog, so its models drop out of the
+pickers. What was left: the agents still set to such a model. `logins.ts` names them: a
+provider every one of whose Hermes logins is `invalid` or `expired` (from reports that are not
+stale; `error` still works until it expires) is dead, and an agent on the Hermes runtime runs
+through it when its model's provider is that one — the provider its runner's catalog names,
+else the one a finding recorded, else the model's family (`claude-*`, `opus` … → anthropic,
+`gpt-*` → openai-codex); an agent on its runtime's default uses the provider its runner
+reported as the default (`runtime_state.profile.defaults.provider`). The health overview
+lists each dead login with those agents, the team's list (`deadLogins`) carries them to the
+agent editor, which shows the notice with the owner's sign-in command (a model changed in
+the form is not checked until it is saved). Claude Code and Codex agents keep their own
+runtime-login issue (`not-signed-in`, reported by their runner).
 - The Claude Code and Codex runtimes publish their catalogs without a provider; their
   findings are keyed `(claude|codex, '', model)`.

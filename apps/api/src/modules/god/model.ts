@@ -407,7 +407,7 @@ export const SystemHealthResponse = t.Object({
         }),
         {
           description:
-            "Hermes logins the provider rejected (or that ran out unrenewed), each with the " +
+            'Hermes logins the provider rejected (or that ran out unrenewed), each with the ' +
             'agents whose model runs through it.',
         },
       ),
