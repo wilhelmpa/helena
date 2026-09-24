@@ -421,6 +421,8 @@
       "memory": "Gesprächsgedächtnis",
       "memoryWindowLabel": "Nachrichtenfenster des Gedächtnisses",
       "memoryWindowPlaceholder": "Fenster der letzten Nachrichten",
+      "maxConcurrentChats": "Parallele Chats",
+      "maxConcurrentChatsHint": "Wie viele Chats dieses Agenten ein Mitglied gleichzeitig antworten lassen kann. Weitere Nachrichten werden abgelehnt, bis einer fertig ist.",
       "toolAllow": "Erlaubte Tools",
       "mcpGrants": "MCP-Freigaben",
       "keysPlaceholder": "Ein Schlüssel pro Zeile",

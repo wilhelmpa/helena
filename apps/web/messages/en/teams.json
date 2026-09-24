@@ -421,6 +421,8 @@
       "memory": "Conversation memory",
       "memoryWindowLabel": "Memory message window",
       "memoryWindowPlaceholder": "Recent message window",
+      "maxConcurrentChats": "Parallel chats",
+      "maxConcurrentChatsHint": "How many of the agent's chats a member may leave answering at once. A send past the limit is refused until one finishes.",
       "toolAllow": "Allowed tools",
       "mcpGrants": "MCP grants",
       "keysPlaceholder": "One key per line",

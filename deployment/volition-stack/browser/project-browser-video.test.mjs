@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { fragment, initSegment, readFlvTags } from "./project-browser-mp4.mjs";
 import {
   chooseTier,
   codecOf,
   encoderArguments,
   isKeyframe,
-  readBoxes,
   sameArea,
   scaledSize,
   screenSizes,
@@ -92,6 +92,15 @@ describe("quality tiers", () => {
     );
   });
 
+  it("judges a backlog against what the viewer's own tier allows, which a big keyframe needs", () => {
+    // A page at pixel ratio 2 sends keyframes of well over a megabyte: a viewer that has not
+    // yet acknowledged one is not congested.
+    const highIndex = TIERS.findIndex((tier) => tier.name === "high");
+    const measurement = { downlinkKbps: 20_000, encodedKbps: 20_000, rttMs: 10, bufferedBytes: 1_400_000 };
+    assert.equal(TIERS[chooseTier({ ...measurement, congestedBytes: 3_500_000 }, highIndex)].name, "high");
+    assert.equal(TIERS[chooseTier({ ...measurement, congestedBytes: 1_000_000 }, highIndex)].name, "low");
+  });
+
   it("rises one tier at a time but drops as far as the numbers call for", () => {
     const lowIndex = TIERS.findIndex((tier) => tier.name === "low");
     const mediumIndex = TIERS.findIndex((tier) => tier.name === "medium");
@@ -112,7 +121,32 @@ describe("quality tiers", () => {
 
   it("keeps the same tier when the numbers still afford it", () => {
     const mediumIndex = TIERS.findIndex((tier) => tier.name === "medium");
-    assert.equal(chooseTier({ downlinkKbps: 1500, rttMs: 100, bufferedBytes: 0 }, mediumIndex), mediumIndex);
+    const medium = TIERS[mediumIndex];
+    assert.equal(
+      chooseTier({ downlinkKbps: medium.maxKbps + 500, rttMs: 100, bufferedBytes: 0 }, mediumIndex),
+      mediumIndex,
+    );
+  });
+
+  it("does not retry a tier just dropped from until the cooldown clears", () => {
+    const lowIndex = TIERS.findIndex((tier) => tier.name === "low");
+    const mediumIndex = TIERS.findIndex((tier) => tier.name === "medium");
+    // Numbers that would otherwise afford "medium" right away still keep a viewer on "low"
+    // while the drop that put it there is recent: retrying at once, on every reassessment,
+    // would either repeat the very shortfall it was just dropped for, or thrash a connection
+    // sitting right at a tier's cap back and forth every couple of reports.
+    assert.equal(
+      chooseTier({ downlinkKbps: 6000, rttMs: 20, bufferedBytes: 0, droppedAgoMs: 1_000 }, lowIndex),
+      lowIndex,
+    );
+    // The same numbers reach "medium" once the cooldown has cleared.
+    assert.equal(
+      chooseTier({ downlinkKbps: 6000, rttMs: 20, bufferedBytes: 0, droppedAgoMs: 9_000 }, lowIndex),
+      mediumIndex,
+    );
+    // A viewer that has never been dropped (the default, an unmeasured droppedAgoMs) is
+    // governed by the round trip alone, exactly as before this existed.
+    assert.equal(chooseTier({ downlinkKbps: 6000, rttMs: 20, bufferedBytes: 0 }, lowIndex), mediumIndex);
   });
 });
 
@@ -131,9 +165,11 @@ describe("scaledSize", () => {
 
 describe("sameArea", () => {
   it("compares by position and size, not identity", () => {
-    const area = { x: 0, y: 40, width: 800, height: 600 };
-    assert.ok(sameArea(area, { x: 0, y: 40, width: 800, height: 600 }));
-    assert.ok(!sameArea(area, { x: 0, y: 40, width: 801, height: 600 }));
+    const area = { x: 0, y: 40, width: 800, height: 600, outWidth: 800, outHeight: 600 };
+    assert.ok(sameArea(area, { ...area }));
+    assert.ok(!sameArea(area, { ...area, width: 801 }));
+    // The same grab encoded at another size is another encoder.
+    assert.ok(!sameArea(area, { ...area, outWidth: 400, outHeight: 300 }));
     assert.ok(!sameArea(area, null));
     assert.ok(!sameArea(null, null));
   });
@@ -149,8 +185,16 @@ describe("encoderArguments", () => {
     assert.equal(args[args.indexOf("-framerate") + 1], String(high.frameRate));
     assert.equal(args[args.indexOf("-g") + 1], String(high.frameRate * high.keyframeSeconds));
     assert.equal(args[args.indexOf("-threads") + 1], String(high.threads));
-    // The capture size already fits "high" (no cap), so no scale filter is added.
-    assert.ok(!args.includes("-vf"));
+    // The capture size already fits "high" (no cap): the filter only turns the grab into YUV,
+    // in the tier's threads, which a large area needs (see encoderArguments).
+    assert.equal(args[args.indexOf("-vf") + 1], `scale=threads=${high.threads},format=yuv420p`);
+    assert.equal(args[args.indexOf("-bf") + 1], "0");
+    // More than one thread must not cost latency: sliced, not frame, parallelism.
+    assert.equal(args[args.indexOf("-x264-params") + 1], "sliced-threads=1:rc-lookahead=0:sync-lookahead=0");
+    // No probe backlog behind a live grab, and every frame out the moment it is encoded.
+    assert.equal(args[args.indexOf("-fflags") + 1], "nobuffer");
+    assert.ok(args.indexOf("-fflags") < args.indexOf("-i"));
+    assert.equal(args[args.indexOf("-f", args.indexOf("-i")) + 1], "flv");
   });
 
   it("scales a lower tier's output down and still grabs the full area", () => {
@@ -158,21 +202,28 @@ describe("encoderArguments", () => {
     const args = encoderArguments({ display: 87, x: 0, y: 0, width: 1920, height: 1080 }, low);
     assert.equal(args[args.indexOf("-video_size") + 1], "1920x1080");
     const scale = args[args.indexOf("-vf") + 1];
-    assert.match(scale, /^scale=\d+:\d+$/);
-    const [, width, height] = /^scale=(\d+):(\d+)$/.exec(scale);
+    assert.match(scale, /^scale=\d+:\d+:threads=1,format=yuv420p$/);
+    const [, width, height] = /^scale=(\d+):(\d+)/.exec(scale);
     assert.ok(Math.max(Number(width), Number(height)) <= low.scaleMax);
+  });
+
+  it("caps a constrained tier's peak bitrate with a VBV window, on top of its CRF", () => {
+    const medium = TIERS.find((tier) => tier.name === "medium");
+    const args = encoderArguments({ display: 87, x: 0, y: 0, width: 1280, height: 800 }, medium);
+    assert.equal(args[args.indexOf("-crf") + 1], String(medium.crf));
+    assert.equal(args[args.indexOf("-maxrate") + 1], `${medium.maxKbps}k`);
+    assert.equal(args[args.indexOf("-bufsize") + 1], `${medium.bufKbps}k`);
+  });
+
+  it("leaves high uncapped: a LAN or the local kiosk should spend the bandwidth it has", () => {
+    const high = TIERS.find((tier) => tier.name === "high");
+    const args = encoderArguments({ display: 87, x: 0, y: 32, width: 1280, height: 800 }, high);
+    assert.ok(!args.includes("-maxrate"));
+    assert.ok(!args.includes("-bufsize"));
   });
 });
 
 describe("MP4 box reading", () => {
-  it("reads complete top-level boxes and keeps the trailing bytes", () => {
-    const ftyp = box("ftyp", "isom");
-    const moov = box("moov", "x");
-    const { boxes, rest } = readBoxes(Buffer.concat([ftyp, moov, Buffer.from([1, 2, 3])]));
-    assert.deepEqual(boxes.map((b) => b.type), ["ftyp", "moov"]);
-    assert.deepEqual([...rest], [1, 2, 3]);
-  });
-
   it("reads the codec string from an avcC box's profile, compatibility and level", () => {
     const avcC = box("avcC", Buffer.from([0x01, 0x64, 0x00, 0x1f, 0xff]));
     const init = Buffer.concat([box("ftyp", "isom"), box("moov", avcC)]);
@@ -180,10 +231,66 @@ describe("MP4 box reading", () => {
   });
 
   it("finds a keyframe by its NAL unit type, not by position", () => {
-    const idr = Buffer.concat([nal(1), nal(5), nal(1)]);
-    const notIdr = Buffer.concat([nal(1), nal(7), nal(1)]);
-    assert.ok(isKeyframe(box("mdat", idr)));
-    assert.ok(!isKeyframe(box("mdat", notIdr)));
+    assert.ok(isKeyframe(Buffer.concat([nal(1), nal(5), nal(1)])));
+    assert.ok(!isKeyframe(Buffer.concat([nal(1), nal(7), nal(1)])));
+  });
+});
+
+// One FLV tag: type, 24-bit size, 24+8-bit time, stream id, payload, previous tag size.
+function flvTag(type, time, payload) {
+  const head = Buffer.alloc(11);
+  head[0] = type;
+  head.writeUIntBE(payload.length, 1, 3);
+  head.writeUIntBE(time & 0xffffff, 4, 3);
+  head[7] = time >>> 24;
+  const tail = Buffer.alloc(4);
+  tail.writeUInt32BE(11 + payload.length, 0);
+  return Buffer.concat([head, payload, tail]);
+}
+const FLV_HEADER = Buffer.from([0x46, 0x4c, 0x56, 1, 1, 0, 0, 0, 9, 0, 0, 0, 0]);
+
+describe("FLV in, fragmented MP4 out", () => {
+  const config = Buffer.from([0x01, 0x42, 0xc0, 0x1f, 0xff, 0xe1]);
+  const frame = Buffer.concat([nal(5), nal(1)]);
+
+  it("reads the AVC sequence header and each frame as soon as its tag is complete", () => {
+    const stream = Buffer.concat([
+      FLV_HEADER,
+      flvTag(18, 0, Buffer.from("script")),
+      flvTag(9, 0, Buffer.concat([Buffer.from([0x17, 0, 0, 0, 0]), config])),
+      flvTag(9, 17, Buffer.concat([Buffer.from([0x17, 1, 0, 0, 0]), frame])),
+    ]);
+    const partial = readFlvTags(stream.subarray(0, stream.length - 3), true);
+    assert.equal(partial.tags.length, 1);
+    assert.deepEqual([...partial.tags[0].config], [...config]);
+    const { tags, rest } = readFlvTags(stream, true);
+    assert.equal(tags.length, 2);
+    assert.equal(tags[1].keyframe, true);
+    assert.equal(tags[1].time, 17);
+    assert.deepEqual([...tags[1].sample], [...frame]);
+    assert.equal(rest.length, 0);
+  });
+
+  it("writes an initialization segment whose codec string and size the viewers read", () => {
+    const init = initSegment({ width: 2560, height: 1600, avcC: config });
+    assert.equal(init.toString("latin1", 4, 8), "ftyp");
+    assert.equal(codecOf(init), "avc1.42c01f");
+    const at = init.indexOf("avc1", init.indexOf("stsd", 0, "latin1"), "latin1");
+    assert.equal(init.readUInt16BE(at + 4 + 24), 2560);
+    assert.equal(init.readUInt16BE(at + 4 + 26), 1600);
+  });
+
+  it("writes one frame as moof+mdat with the data offset pointing at the frame", () => {
+    const out = fragment({ sequence: 3, decodeTime: 4500, duration: 1500, keyframe: true, sample: frame });
+    const moofSize = out.readUInt32BE(0);
+    assert.equal(out.toString("latin1", 4, 8), "moof");
+    assert.equal(out.toString("latin1", moofSize + 4, moofSize + 8), "mdat");
+    const trun = out.indexOf("trun", 0, "latin1");
+    const dataOffset = out.readUInt32BE(trun + 12);
+    assert.equal(dataOffset, moofSize + 8);
+    assert.deepEqual([...out.subarray(dataOffset)], [...frame]);
+    assert.equal(out.readUInt32BE(trun + 16), 1500);
+    assert.equal(out.readUInt32BE(trun + 24), 0x02000000);
   });
 });
 

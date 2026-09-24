@@ -421,6 +421,8 @@
       "memory": "Memória de conversa",
       "memoryWindowLabel": "Janela de mensagens da memória",
       "memoryWindowPlaceholder": "Janela de mensagens recentes",
+      "maxConcurrentChats": "Chats em paralelo",
+      "maxConcurrentChatsHint": "Quantos chats deste agente um membro pode deixar respondendo ao mesmo tempo. Envios acima do limite são recusados até que um termine.",
       "toolAllow": "Ferramentas permitidas",
       "mcpGrants": "Concessões MCP",
       "keysPlaceholder": "Uma chave por linha",

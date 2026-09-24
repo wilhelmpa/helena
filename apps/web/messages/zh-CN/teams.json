@@ -421,6 +421,8 @@
       "memory": "对话记忆",
       "memoryWindowLabel": "记忆消息窗口",
       "memoryWindowPlaceholder": "最近消息窗口",
+      "maxConcurrentChats": "并行对话",
+      "maxConcurrentChatsHint": "成员可同时让该代理的多少个对话保持回复中。超出上限的发送会被拒绝，直到其中一个完成。",
       "toolAllow": "允许的工具",
       "mcpGrants": "MCP 授权",
       "keysPlaceholder": "每行一个键",

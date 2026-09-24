@@ -421,6 +421,8 @@
       "memory": "Mémoire de conversation",
       "memoryWindowLabel": "Fenêtre de messages en mémoire",
       "memoryWindowPlaceholder": "Fenêtre des messages récents",
+      "maxConcurrentChats": "Chats en parallèle",
+      "maxConcurrentChatsHint": "Nombre de chats de cet agent qu'un membre peut laisser répondre en même temps. Au-delà de la limite, un envoi est refusé jusqu'à ce que l'un d'eux se termine.",
       "toolAllow": "Outils autorisés",
       "mcpGrants": "Autorisations MCP",
       "keysPlaceholder": "Une clé par ligne",
