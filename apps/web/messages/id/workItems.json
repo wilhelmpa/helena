@@ -158,5 +158,6 @@
     },
     "loadFailed": "Tugas tidak dapat dimuat.",
     "loadFailedHint": "Server tidak merespons. Coba lagi sebentar lagi."
-  }
+  },
+  "viewNotFound": "Tampilan ini sudah tidak ada. Menampilkan semua tugas."
 }

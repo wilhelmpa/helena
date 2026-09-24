@@ -79,11 +79,7 @@ export default function PipelineEditor({
     );
 
   return (
-    <SectionPageView
-      title={draft.name || pipeline.name}
-      description={pipeline.projectId === null ? t('template') : t('projectWorkflow')}
-      wide
-    >
+    <SectionPageView title={draft.name || pipeline.name} wide>
       <PipelineEditorActions
         pipeline={pipeline}
         editable={editable}

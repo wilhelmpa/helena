@@ -121,5 +121,15 @@ export const updateNoteBoard = (projectKey: string, boardId: number, patch: Note
     body: JSON.stringify(patch),
   });
 
+// The canvas sent while the page goes away (reload, tab closed): a keepalive request
+// outlives the page, which a normal one does not. Browsers cap such a body at 64 KB.
+export const KEEPALIVE_MAX_BYTES = 60_000;
+export const saveNoteCanvasOnExit = (projectKey: string, boardId: number, body: string) =>
+  request<NoteBoard>(`/projects/${projectKey}/note-boards/${boardId}`, {
+    method: 'PATCH',
+    body,
+    keepalive: true,
+  });
+
 export const deleteNoteBoard = (projectKey: string, boardId: number) =>
   request<void>(`/projects/${projectKey}/note-boards/${boardId}`, { method: 'DELETE' });

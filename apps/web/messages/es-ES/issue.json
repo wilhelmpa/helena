@@ -34,7 +34,8 @@
     "groupCustom": "Campos personalizados",
     "empty": "Vacío",
     "openInNewTab": "Abrir en una pestaña nueva",
-    "area": "Área"
+    "area": "Área",
+    "invalidUrl": "No es una dirección web válida (https://…)."
   },
   "menu": {
     "preview": "Previsualizar",
@@ -120,7 +121,9 @@
     "submit": "Crear ticket",
     "template": "Plantilla",
     "applyTemplate": "Aplicar la plantilla…",
-    "noTemplates": "Sin plantillas."
+    "noTemplates": "Sin plantillas.",
+    "created": "{identifier} creada",
+    "open": "Abrir"
   },
   "attachments": {
     "title": "Adjuntos",
@@ -245,7 +248,8 @@
     "no": "No",
     "time": "Tiempo",
     "startTime": "Hora de inicio",
-    "endTime": "Hora de fin"
+    "endTime": "Hora de fin",
+    "none": "Sin selección"
   },
   "editor": {
     "descriptionPlaceholder": "Añadir descripción…"

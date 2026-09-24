@@ -32,5 +32,7 @@
   "areaFolderHint": "Letras minúsculas, dígitos y guiones. Los agentes trabajan en las tareas de esta área en esta carpeta del espacio de trabajo del proyecto, y Files tiene una carpeta con el mismo nombre.",
   "areaFolderReserved": "El proyecto usa {folder} para sus propios archivos. Elige otra carpeta.",
   "areaFolderTaken": "Otra área de este proyecto usa esta carpeta.",
-  "openFolder": "Abrir carpeta"
+  "openFolder": "Abrir carpeta",
+  "deleteView": "Eliminar vista",
+  "deleteViewConfirm": "¿Eliminar «{name}»? Las tareas se quedan; solo desaparece esta vista guardada."
 }

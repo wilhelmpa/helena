@@ -32,5 +32,7 @@
   "areaFolderHint": "Kleinbuchstaben, Ziffern und Bindestriche. Agenten bearbeiten die Aufgaben dieses Bereichs in diesem Ordner des Projekt-Workspace, und unter Dateien gibt es einen Ordner mit demselben Namen.",
   "areaFolderReserved": "Das Projekt verwendet {folder} für seine eigenen Dateien. Wähle einen anderen Ordner.",
   "areaFolderTaken": "Ein anderer Bereich dieses Projekts verwendet diesen Ordner.",
-  "openFolder": "Ordner öffnen"
+  "openFolder": "Ordner öffnen",
+  "deleteView": "Ansicht löschen",
+  "deleteViewConfirm": "„{name}“ löschen? Die Aufgaben bleiben, nur diese gespeicherte Ansicht verschwindet."
 }

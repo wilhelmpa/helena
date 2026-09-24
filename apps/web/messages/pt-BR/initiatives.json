@@ -140,7 +140,10 @@
     "typeSet": "definiu o tipo para {type}",
     "typeRemoved": "removeu o tipo",
     "linked": "vinculou a {name}",
-    "unlinked": "desvinculou da iniciativa"
+    "unlinked": "desvinculou da iniciativa",
+    "linkedIssue": "vinculou <issue>a tarefa</issue> a {name}",
+    "unlinkedIssue": "desvinculou <issue>a tarefa</issue> da iniciativa",
+    "createdIssueNamed": "criou <issue>a tarefa</issue>"
   },
   "attachments": {
     "title": "Anexos",
@@ -154,5 +157,7 @@
     "download": "Baixar",
     "downloadFile": "Baixar {name}",
     "deleteFile": "Excluir {name}"
-  }
+  },
+  "deleteTitle": "Excluir iniciativa",
+  "deleteConfirm": "Excluir “{name}”? As tarefas ficam no projeto, sem esta iniciativa."
 }

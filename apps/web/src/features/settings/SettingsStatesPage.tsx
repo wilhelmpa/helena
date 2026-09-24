@@ -18,7 +18,7 @@ export default function SettingsStatesPage() {
   const { project } = useShell();
   if (!project) return null;
   return (
-    <SectionPageView title={sectionText.label} description={sectionText.description} wide>
+    <SectionPageView title={sectionText.label} wide>
       <SettingsToolbar>
         <StatesToolbar projectKey={project.project.key} columns={project.columns} />
       </SettingsToolbar>

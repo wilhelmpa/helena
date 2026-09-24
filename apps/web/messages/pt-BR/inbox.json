@@ -34,7 +34,8 @@
     "commented": "{who} comentou",
     "stateChanged": "{who} alterou o status de {from} para {to}",
     "stateChangedPlain": "{who} alterou o status",
-    "approval_requested": "{who} pediu sua aprovação"
+    "approval_requested": "{who} pediu sua aprovação",
+    "automation": "Helena"
   },
   "hub": {
     "messages": "Messages",

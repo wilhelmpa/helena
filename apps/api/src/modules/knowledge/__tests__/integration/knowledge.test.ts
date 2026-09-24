@@ -204,6 +204,27 @@ describe('knowledge', () => {
       expect((await read(asOwner, to)).data?.content).toBe('Handbook');
     });
 
+    it('shows a renamed note under its new name in the tree', async () => {
+      const { asOwner } = await setup();
+      await write(asOwner, 'Projects/MKT/Docs/Unbenannt.md', 'text');
+      await write(asOwner, 'Projects/MKT/Docs/Titled.md', '---\ntitle: Own title\n---\nx');
+      await asOwner.knowledge.move.post({
+        from: 'Projects/MKT/Docs/Unbenannt.md',
+        to: 'Projects/MKT/Docs/QA Seite.md',
+      });
+      await asOwner.knowledge.move.post({
+        from: 'Projects/MKT/Docs/Titled.md',
+        to: 'Projects/MKT/Docs/Renamed.md',
+      });
+
+      const tree = await asOwner.knowledge.tree.get({ query: { root: 'Projects/MKT/Docs' } });
+      expect(tree.data?.items.map((item) => [item.path, item.title])).toEqual([
+        ['Projects/MKT/Docs/QA Seite.md', 'QA Seite'],
+        // A title the note sets itself stays.
+        ['Projects/MKT/Docs/Renamed.md', 'Own title'],
+      ]);
+    });
+
     it('stores a pasted image in the Assets folder beside the note and serves it', async () => {
       const { asOwner } = await setup();
       const notePath = 'Projects/MKT/Docs/Note.md';

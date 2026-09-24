@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { DndContext } from '@dnd-kit/core';
+import DndContext from '@/components/common/dnd/DndContext';
 import { toast } from 'sonner';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ChevronDown, ChevronRight } from 'lucide-react';

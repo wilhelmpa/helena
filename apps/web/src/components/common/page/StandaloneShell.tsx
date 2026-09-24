@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { useAccountPreferences } from '@/services/preferences.service';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { cn } from '@/lib/utils';
 import { ShellHeaderSlotCtx } from '@/context/shellHeaderSlot';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
@@ -40,6 +41,8 @@ export default function StandaloneShell({
   const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
   const [pageBarSlot, setPageBarSlot] = useState<HTMLElement | null>(null);
   const pageSlot = single ? (narrow ? pageBarSlot : headerSlot) : null;
+  const titleRef = useRef<HTMLDivElement>(null);
+  useDocumentTitle(titleRef);
 
   return (
     <ShellHeaderSlotCtx.Provider value={pageSlot}>
@@ -50,6 +53,7 @@ export default function StandaloneShell({
             <SidebarTrigger />
             <Separator orientation="vertical" className="h-4" />
             <div
+              ref={titleRef}
               className={cn(
                 'min-w-0 truncate text-sm font-medium',
                 single && !narrow ? 'max-w-[min(26rem,45vw)] shrink' : 'flex-1',

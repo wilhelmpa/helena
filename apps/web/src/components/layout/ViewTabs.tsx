@@ -1,11 +1,6 @@
 import { useState } from 'react';
-import {
-  closestCenter,
-  DndContext,
-  DragOverlay,
-  type DragEndEvent,
-  type DragStartEvent,
-} from '@dnd-kit/core';
+import { closestCenter, DragOverlay, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
+import DndContext from '@/components/common/dnd/DndContext';
 import { horizontalListSortingStrategy, SortableContext } from '@dnd-kit/sortable';
 import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -17,6 +12,7 @@ import MobileViewSwitcher from '@/components/layout/MobileViewSwitcher';
 import SavedViewTab from '@/components/layout/SavedViewTab';
 import ViewTabChrome from '@/components/layout/ViewTabChrome';
 import ViewTabLabel from '@/components/layout/ViewTabLabel';
+import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
 import {
   PAGE_CONTROL_CLASS,
   PAGE_PRIMARY_CLASS,
@@ -48,10 +44,13 @@ export default function ViewTabs({
   onSelect: (id: number | null) => void;
   onNewView: () => void;
   onEdit: (view: View) => void;
-  onDelete: (view: View) => void;
+  onDelete: (view: View) => Promise<void>;
   onReorder: (draggedId: number, targetId: number | null) => void;
 }) {
   const t = useTranslations('views');
+  const tCommon = useTranslations('common');
+  // The view whose deletion waits for a yes, like every other delete.
+  const [deleting, setDeleting] = useState<View | null>(null);
   const { can } = usePermissions();
   const room = usePageToolbarRoom();
   const canCreateView = can('views', 'create');
@@ -117,7 +116,7 @@ export default function ViewTabs({
               canDelete={canDeleteView}
               onSelect={() => onSelect(view.id)}
               onEdit={() => onEdit(view)}
-              onDelete={() => onDelete(view)}
+              onDelete={() => setDeleting(view)}
               folders={folders}
               onMove={(folderId) => updateView.mutate({ id: view.id, input: { folderId } })}
             />
@@ -134,6 +133,20 @@ export default function ViewTabs({
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      {deleting && (
+        <ConfirmDialog
+          title={t('deleteView')}
+          confirmLabel={tCommon('delete')}
+          onConfirm={async () => {
+            await onDelete(deleting);
+            setDeleting(null);
+          }}
+          onClose={() => setDeleting(null)}
+        >
+          {t('deleteViewConfirm', { name: deleting.name })}
+        </ConfirmDialog>
+      )}
 
       {canCreateView && (
         <button

@@ -32,5 +32,7 @@
   "areaFolderHint": "Lowercase letters, digits and hyphens. Agents work on the tasks of this area in this folder of the project workspace, and Files has a folder of the same name.",
   "areaFolderReserved": "The project uses {folder} for its own files. Choose another folder.",
   "areaFolderTaken": "Another area of this project uses this folder.",
-  "openFolder": "Open folder"
+  "openFolder": "Open folder",
+  "deleteView": "Delete view",
+  "deleteViewConfirm": "Delete “{name}”? The tasks stay; only this saved view goes."
 }

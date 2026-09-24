@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { clipboardKeyAction, textFromOsc52 } from './terminalClipboard';
+import { attachTerminalClipboard, clipboardKeyAction, textFromOsc52 } from './terminalClipboard';
 
 const key = (
   key: string,
@@ -48,5 +48,27 @@ describe('clipboardKeyAction', () => {
     assert.equal(clipboardKeyAction(key('a', { ctrl: true }), true, false), null);
     assert.equal(clipboardKeyAction(key('v', { ctrl: true, alt: true }), false, false), null);
     assert.equal(clipboardKeyAction(key('v'), false, false), null);
+  });
+});
+
+describe('attachTerminalClipboard', () => {
+  it('silences the frame page\'s "Leave site?" before its terminal is up', () => {
+    // The frame's page, loaded, while wetty has not made its terminal yet.
+    const page = new EventTarget() as EventTarget & { document: object };
+    page.document = {};
+    const frame = Object.assign(new EventTarget(), { contentWindow: page });
+    const saved = globalThis.window;
+    Object.assign(globalThis, { window: { setInterval: () => 0, clearInterval: () => {} } });
+    try {
+      const detach = attachTerminalClipboard(frame as unknown as HTMLIFrameElement, () => {});
+      let asked = false;
+      // wetty's own handler, added once its socket connects.
+      page.addEventListener('beforeunload', () => (asked = true));
+      page.dispatchEvent(new Event('beforeunload'));
+      assert.equal(asked, false);
+      detach();
+    } finally {
+      Object.assign(globalThis, { window: saved });
+    }
   });
 });

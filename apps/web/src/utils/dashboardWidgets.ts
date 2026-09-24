@@ -203,8 +203,13 @@ const IN_PROGRESS_FILTER: FilterSet = {
 const BACKLOG_FILTER: FilterSet = {
   conditions: [{ id: 'c1', field: 'statusType', op: 'is', values: ['backlog'] }],
 };
+// Open tasks nobody is assigned to, like the other tiles count open work only (a done
+// task without an assignee is not waiting for anyone).
 const UNASSIGNED_FILTER: FilterSet = {
-  conditions: [{ id: 'c1', field: 'assignee', op: 'is', values: [null] }],
+  conditions: [
+    { id: 'c1', field: 'assignee', op: 'is', values: [null] },
+    { id: 'c2', field: 'statusType', op: 'is_not', values: ['completed', 'canceled', 'closed'] },
+  ],
 };
 
 // The built-in layout shown when a project has no saved dashboards. Saving it

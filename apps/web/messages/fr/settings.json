@@ -479,7 +479,8 @@
       "success": "Réussi",
       "failed": "En échec",
       "pending": "En attente"
-    }
+    },
+    "invalidUrl": "Saisissez une adresse web complète, p. ex. https://example.com/webhook."
   },
   "git": {
     "enable": "Activer l'intégration des dépôts",

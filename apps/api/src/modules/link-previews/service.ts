@@ -59,7 +59,7 @@ export async function getLinkPreview(raw: string): Promise<LinkPreview> {
   try {
     url = await assertPublicHttpUrl(raw, { publicOnly: true, signal });
   } catch (error) {
-    if (error instanceof UrlNotAllowedError) throw new HttpError(400, error.message);
+    if (error instanceof UrlNotAllowedError) throw new HttpError(400, error.message, error.code);
     throw new HttpError(400, 'The link could not be resolved');
   }
   url.hash = '';

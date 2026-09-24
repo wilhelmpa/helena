@@ -69,7 +69,12 @@ export default function CommandLayer({
     onSelectProject,
     onToggleChat,
   });
-  const navigation = useNavigationCommands(currentProjectKey);
+  // Home's entries point at the one team the reader's projects share, like the sidebar.
+  const teamIds = new Set(projects.map((project) => project.teamId));
+  const navigation = useNavigationCommands(
+    currentProjectKey,
+    teamIds.size === 1 ? [...teamIds][0]! : null,
+  );
 
   // Empty sections are dropped here so each hook can return one unconditionally.
   const sections = [issue.section, app.board, app.general, app.projects, navigation].filter(

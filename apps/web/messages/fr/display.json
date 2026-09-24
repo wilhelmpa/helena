@@ -62,7 +62,8 @@
   },
   "weekStart": {
     "0": "Dimanche",
-    "1": "Lundi"
+    "1": "Lundi",
+    "locale": "Selon la langue"
   },
   "dateFields": {
     "dueDate": "Échéance",

@@ -204,7 +204,22 @@
     "previewCustomField": "Custom field",
     "previewAllWorkItems": "All work items",
     "previewUpdated": "Updated {date}",
-    "previewOtherValues": "({count} more)"
+    "previewOtherValues": "({count} more)",
+    "format": {
+      "heading1": "Заголовок 1",
+      "heading2": "Заголовок 2",
+      "bold": "Жирний",
+      "italic": "Курсив",
+      "strike": "Закреслений",
+      "code": "Код",
+      "codeBlock": "Блок коду",
+      "link": "Посилання",
+      "blockquote": "Цитата",
+      "bulletList": "Маркований список",
+      "orderedList": "Нумерований список"
+    },
+    "linkApply": "Додати посилання",
+    "linkRemove": "Прибрати посилання"
   },
   "chart": {
     "download": "Зберегти графік",
@@ -217,5 +232,50 @@
     "page": "Сторінка {number}",
     "perPage": "на сторінці",
     "range": "{first}-{last} з {total}"
+  },
+  "dnd": {
+    "pickedUp": "Елемент {id} піднято.",
+    "movedOver": "Елемент {id} переміщено над {over}.",
+    "notOver": "Елемент {id} більше не над областю скидання.",
+    "droppedOver": "Елемент {id} скинуто на {over}.",
+    "dropped": "Елемент {id} скинуто.",
+    "cancelled": "Перетягування скасовано. Елемент {id} повернуто на місце.",
+    "instructions": "Щоб підняти елемент, натисніть Пробіл або Enter. Під час перетягування переміщуйте його стрілками. Натисніть Пробіл або Enter ще раз, щоб скинути його, або Escape, щоб скасувати."
+  },
+  "uploadLimits": {
+    "maxSize": "До {mb} МБ на файл.",
+    "accepted": "Дозволено: {types}.",
+    "tooLarge": "«{name}» більший за ліміт {mb} МБ",
+    "notAccepted": "«{name}» має недозволений тип файлу",
+    "types": {
+      "images": "зображення",
+      "video": "відео",
+      "audio": "аудіо",
+      "pdf": "PDF",
+      "text": "текст",
+      "csv": "CSV",
+      "markdown": "Markdown",
+      "documents": "документи",
+      "spreadsheets": "таблиці",
+      "presentations": "презентації"
+    }
+  },
+  "apiErrors": {
+    "url_invalid": "Введіть дійсну вебадресу (https://…).",
+    "url_https_required": "Адреса має починатися з https://.",
+    "url_credentials": "Адреса не може містити ім’я користувача чи пароль.",
+    "url_private": "Адреса вказує на приватну або локальну мережу, що тут заборонено.",
+    "url_unresolvable": "Не вдалося знайти ім’я сервера з цієї адреси.",
+    "number_invalid": "Введіть число."
+  },
+  "notFound": {
+    "title": "Сторінку не знайдено",
+    "description": "Ця адреса нікуди не веде — можливо, посилання застаріле або з помилкою.",
+    "home": "На початкову сторінку"
+  },
+  "systemActors": {
+    "workflow": "Робочий процес",
+    "agentTeam": "Команда агентів",
+    "autoArchive": "Автоархівування"
   }
 }

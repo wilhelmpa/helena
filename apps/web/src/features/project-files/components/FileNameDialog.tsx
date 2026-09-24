@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import Modal from '@/components/common/overlay/Modal';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,7 @@ export default function FileNameDialog({
 }) {
   const t = useTranslations('files.dialog');
   const [name, setName] = useState(initialName);
+  const input = useRef<HTMLInputElement>(null);
   const trimmed = name.trim();
 
   const submit = (event: FormEvent) => {
@@ -32,19 +33,28 @@ export default function FileNameDialog({
   };
 
   return (
-    <Modal title={title} description={hint} onClose={onClose}>
+    <Modal
+      title={title}
+      description={hint}
+      onClose={onClose}
+      // The name without its extension is what is usually changed, so only that is
+      // selected. The dialog's own opening focus would select the whole field.
+      onOpenAutoFocus={(event) => {
+        event.preventDefault();
+        const field = input.current;
+        if (!field) return;
+        field.focus();
+        const dot = field.value.lastIndexOf('.');
+        field.setSelectionRange(0, dot > 0 ? dot : field.value.length);
+      }}
+    >
       <form onSubmit={submit} className="space-y-4">
         <Input
-          autoFocus
+          ref={input}
           value={name}
           onChange={(event) => setName(event.target.value)}
           aria-label={t('name')}
           dir="auto"
-          onFocus={(event) => {
-            // The name without its extension is what is usually changed.
-            const dot = event.target.value.lastIndexOf('.');
-            event.target.setSelectionRange(0, dot > 0 ? dot : event.target.value.length);
-          }}
         />
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={onClose}>

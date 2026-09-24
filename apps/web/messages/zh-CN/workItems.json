@@ -158,5 +158,6 @@
     },
     "loadFailed": "无法加载任务。",
     "loadFailedHint": "服务器没有响应，请稍后重试。"
-  }
+  },
+  "viewNotFound": "此视图已不存在。正在显示全部任务。"
 }

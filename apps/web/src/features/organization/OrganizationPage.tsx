@@ -42,7 +42,7 @@ export default function OrganizationPage() {
 
   return (
     <Shell globalHome globalTitle={t('title')} autoOpenGlobalChat={false}>
-      <SectionPageView title={t('title')} description={t('description')} wide>
+      <SectionPageView title={t('title')} wide>
         {teams.isPending || (teamId != null && organization.isPending) ? (
           <ListSkeleton rows={6} rowClassName="h-8" />
         ) : manageableTeams.length === 0 ? (

@@ -1,6 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import { issuePath, projectPath } from '@/utils/paths';
 import type { useOverlays } from '@/hooks/useOverlays';
@@ -22,6 +24,7 @@ export default function ShellOverlays({
   overlays: ReturnType<typeof useOverlays>;
 }) {
   const router = useRouter();
+  const t = useTranslations('issue.create');
 
   return (
     <>
@@ -49,7 +52,14 @@ export default function ShellOverlays({
           project={project}
           defaults={overlays.newIssueDefaults}
           onClose={() => overlays.setNewIssueDefaults(null)}
-          onCreated={() => overlays.setNewIssueDefaults(null)}
+          onCreated={(created) => {
+            overlays.setNewIssueDefaults(null);
+            // Wherever the task was started (a note, the board, the palette), it says
+            // it exists and leads to it.
+            toast.success(t('created', { identifier: created.identifier }), {
+              action: { label: t('open'), onClick: () => overlays.setOpenIssueId(created.id) },
+            });
+          }}
         />
       )}
 

@@ -1,24 +1,4 @@
 import { useEffect, useState } from 'react';
-import {
-  Activity,
-  AppWindow,
-  BookOpenText,
-  BookText,
-  Bot,
-  Building2,
-  Clock3,
-  Folder,
-  Inbox,
-  KeyRound,
-  LayoutGrid,
-  ListTodo,
-  MonitorSmartphone,
-  Radio,
-  ShieldCheck,
-  UsersRound,
-  Workflow,
-  Wrench,
-} from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
@@ -32,29 +12,8 @@ import { useSession } from '@/lib/auth-client';
 import { usePendingApprovalCount } from '@/services/approvals.service';
 import { useProposalCount } from '@/features/agent-runtime/services/agentRuntime.service';
 import { usePipelineApprovals } from '@/services/pipelines.service';
-import { homeNavigation, type HomeNavigationGroup } from './homeNavigation';
+import { HOME_NAVIGATION_ICONS, homeNavigation, type HomeNavigationGroup } from './homeNavigation';
 import SidebarApprovalsRefresh from './SidebarApprovalsRefresh';
-
-const icons = {
-  overview: LayoutGrid,
-  allWorkItems: ListTodo,
-  inbox: Inbox,
-  files: Folder,
-  approvals: ShieldCheck,
-  docs: BookOpenText,
-  agentPool: Bot,
-  organization: Building2,
-  agentActivity: Activity,
-  browser: AppWindow,
-  schedules: Clock3,
-  workflows: Workflow,
-  skills: BookText,
-  tools: Wrench,
-  mcps: Radio,
-  access: KeyRound,
-  devices: MonitorSmartphone,
-  teamSettings: UsersRound,
-} as const;
 
 const GROUPS: HomeNavigationGroup[] = ['work', 'agents', 'globalSettings'];
 
@@ -93,7 +52,7 @@ export default function SidebarHomeNav({
               <SidebarNavItem
                 key={item.id}
                 href={item.href}
-                icon={icons[item.id]}
+                icon={HOME_NAVIGATION_ICONS[item.id]}
                 label={t(item.id)}
                 active={pathname === item.href || pathname.startsWith(item.href + '/')}
                 disabled={false}

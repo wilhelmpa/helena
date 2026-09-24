@@ -4,6 +4,21 @@ import * as React from 'react';
 import { Tooltip as TooltipPrimitive } from 'radix-ui';
 
 import { cn } from '@/lib/utils';
+import { elementHasName, nodeText } from '@/lib/accessibleName';
+
+// The words of a Tooltip's content, read from its children when the tooltip is built.
+// An icon-only trigger takes them as its accessible name: Radix only links the content
+// (aria-describedby) while it is open, so a closed tooltip left the button nameless.
+const TooltipLabelContext = React.createContext<string | undefined>(undefined);
+
+function contentLabel(children: React.ReactNode): string | undefined {
+  let label: string | undefined;
+  React.Children.forEach(children, (child) => {
+    if (label || !React.isValidElement<{ children?: React.ReactNode }>(child)) return;
+    if (child.type === TooltipContent) label = nodeText(child.props.children) || undefined;
+  });
+  return label;
+}
 
 function TooltipProvider({
   delayDuration = 0,
@@ -18,16 +33,39 @@ function TooltipProvider({
   );
 }
 
-function Tooltip({ ...props }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
+function Tooltip({ children, ...props }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
   return (
     <TooltipProvider>
-      <TooltipPrimitive.Root data-slot="tooltip" {...props} />
+      <TooltipPrimitive.Root data-slot="tooltip" {...props}>
+        <TooltipLabelContext.Provider value={contentLabel(children)}>
+          {children}
+        </TooltipLabelContext.Provider>
+      </TooltipPrimitive.Root>
     </TooltipProvider>
   );
 }
 
-function TooltipTrigger({ ...props }: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {
-  return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />;
+// A wrapper span or div (around a disabled button) is not a control: no name for it.
+function namesControl(child: React.ReactNode, asChild: boolean | undefined): boolean {
+  if (!asChild) return true;
+  return React.isValidElement(child) && child.type !== 'span' && child.type !== 'div';
+}
+
+function TooltipTrigger({
+  children,
+  ...props
+}: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {
+  const label = React.useContext(TooltipLabelContext);
+  const named =
+    props['aria-label'] != null ||
+    props['aria-labelledby'] != null ||
+    (props.asChild ? elementHasName(children) : nodeText(children) !== '');
+  const fallback = label && !named && namesControl(children, props.asChild) ? label : undefined;
+  return (
+    <TooltipPrimitive.Trigger data-slot="tooltip-trigger" aria-label={fallback} {...props}>
+      {children}
+    </TooltipPrimitive.Trigger>
+  );
 }
 
 function TooltipContent({

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { DndContext, DragOverlay, type DragEndEvent } from '@dnd-kit/core';
+import { DragOverlay, type DragEndEvent } from '@dnd-kit/core';
+import DndContext from '@/components/common/dnd/DndContext';
 import type { Label as LabelRow, LabelGroup } from '@/lib/api/endpoints/labels';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import { useDndSensors } from '@/lib/dnd';

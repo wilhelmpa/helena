@@ -53,5 +53,20 @@
   "addNote": "Ajouter une note",
   "accessHint": "Seules ces personnes peuvent l'ouvrir",
   "createdBy": "Créé par {name}",
-  "backgroundColors": "Couleurs de fond"
+  "backgroundColors": "Couleurs de fond",
+  "canvasA11y": {
+    "node": "Entrée ou Espace sélectionne une note. Les flèches la déplacent, Échap annule.",
+    "nodeKeyboardDisabled": "Le déplacement au clavier est désactivé sur ce tableau.",
+    "nodeMoved": "Note déplacée en {x}, {y}.",
+    "edge": "Entrée ou Espace sélectionne une liaison. Suppr la retire, Échap annule.",
+    "controls": "Commandes du canevas",
+    "zoomIn": "Zoom avant",
+    "zoomOut": "Zoom arrière",
+    "fitView": "Afficher toutes les notes",
+    "interactive": "Verrouiller ou déverrouiller le déplacement",
+    "minimap": "Mini-carte",
+    "handle": "Point de liaison"
+  },
+  "deleteBoard": "Supprimer le tableau",
+  "deleteBoardConfirm": "Supprimer « {name} » et toutes ses notes ? C’est définitif."
 }

@@ -83,7 +83,18 @@ export default function FieldOptionsEditor({
         id="custom-field-options"
         value={pending}
         onChange={(e) => onPendingChange(e.target.value)}
-        onBlur={commitPending}
+        onBlur={(e) => {
+          // Leaving the field for the form's submit button: the submit takes the typed
+          // text itself. Turning it into rows here would grow the form under the
+          // pointer, so the click would miss the button and need a second one.
+          const next = e.relatedTarget as HTMLElement | null;
+          if (
+            next?.getAttribute('type') === 'submit' &&
+            next.closest('form') === e.currentTarget.form
+          )
+            return;
+          commitPending();
+        }}
         onKeyDown={(e) => {
           if (e.key !== 'Enter') return;
           // Enter belongs to the option being typed, not to the form.

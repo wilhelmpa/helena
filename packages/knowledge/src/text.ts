@@ -65,3 +65,34 @@ export function plainText(markdown: string): string {
     .replace(/[ \t]+/g, ' ')
     .trim();
 }
+
+const ISO_TIME = /^\d{4}-\d{2}-\d{2}(?:[T ][\d:.]+(?:Z|[+-]\d{2}:?\d{2})?)?$/;
+
+// A structured answer (an agent's run report is JSON: summary, evidence, review) as
+// the sentences in it, the summary first, so an excerpt reads "Datei … verifiziert."
+// rather than `"}],"startedAt":"2026-…`. Anything that is not JSON stays as it is.
+export function readableText(value: string): string {
+  const trimmed = value.trim();
+  if (!/^[[{]/.test(trimmed)) return value;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(trimmed);
+  } catch {
+    return value;
+  }
+  const lines: string[] = [];
+  const walk = (node: unknown) => {
+    if (typeof node === 'string') {
+      const text = node.trim();
+      if (text && !ISO_TIME.test(text)) lines.push(text);
+    } else if (Array.isArray(node)) {
+      node.forEach(walk);
+    } else if (node && typeof node === 'object') {
+      const record = node as Record<string, unknown>;
+      if (typeof record.summary === 'string') walk(record.summary);
+      for (const [key, inner] of Object.entries(record)) if (key !== 'summary') walk(inner);
+    }
+  };
+  walk(parsed);
+  return lines.length > 0 ? lines.join('\n') : value;
+}

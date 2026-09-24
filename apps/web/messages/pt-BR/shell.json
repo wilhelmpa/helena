@@ -4,5 +4,6 @@
   "noProjects": "Nenhum projeto ainda. Crie um para começar.",
   "noProjectsTitle": "Nenhum projeto ainda",
   "noProjectsHint": "Crie seu primeiro projeto para começar a planejar issues em um quadro.",
-  "createProject": "Criar projeto"
+  "createProject": "Criar projeto",
+  "serverUnreachable": "O servidor não está acessível agora, talvez esteja reiniciando. Recarregue daqui a pouco."
 }

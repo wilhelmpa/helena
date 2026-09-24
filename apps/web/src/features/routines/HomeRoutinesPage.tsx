@@ -21,7 +21,7 @@ export default function HomeRoutinesPage() {
   const total = query.data?.total ?? 0;
   return (
     <Shell globalHome globalTitle={tNav('schedules')} autoOpenGlobalChat={false}>
-      <SectionPageView title={tNav('schedules')} description={t('homeHint')} wide>
+      <SectionPageView title={tNav('schedules')} wide>
         <div className="flex flex-1 flex-col gap-4">
           {query.isError ? (
             <EmptyState title={t('loadFailed')} description={t('loadFailedHint')}>

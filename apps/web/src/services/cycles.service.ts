@@ -16,15 +16,24 @@ import {
 } from '@/lib/api/endpoints/cycles';
 import { nextPageParam } from '@/lib/api/core/paging';
 import { qk } from '@/services/queryKeys';
+import { forgetWhenUnused } from '@/services/forgetQueries';
 
 // How many finished cycles the archive loads at a time.
 const COMPLETED_CYCLES_PAGE = 25;
 
 // Every cycle write changes the list and can change the cycle a detail page is
 // showing.
-function invalidateCycles(qc: ReturnType<typeof useQueryClient>, projectKey: string) {
+// `deletedId`: a cycle that is gone is not fetched again (see forgetWhenUnused).
+function invalidateCycles(
+  qc: ReturnType<typeof useQueryClient>,
+  projectKey: string,
+  deletedId?: number,
+) {
   void qc.invalidateQueries({ queryKey: qk.cycles(projectKey) });
-  void qc.invalidateQueries({ queryKey: qk.anyCycle });
+  void qc.invalidateQueries({
+    queryKey: qk.anyCycle,
+    predicate: (query) => deletedId == null || query.queryKey[1] !== deletedId,
+  });
 }
 
 // Deleting a cycle and transferring its issues both unlink issues from it. Which
@@ -104,9 +113,10 @@ export function useDeleteCycle(projectKey: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => deleteCycle(id),
-    onSuccess: () => {
-      invalidateCycles(qc, projectKey);
+    onSuccess: (_data, id) => {
+      invalidateCycles(qc, projectKey, id);
       invalidateCycleIssues(qc, projectKey);
+      forgetWhenUnused(qc, qk.cycle(id));
     },
   });
 }

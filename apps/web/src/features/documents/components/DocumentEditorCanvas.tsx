@@ -8,6 +8,7 @@ import { useUploadNoteAsset } from '../services/knowledge.service';
 import type { NoteDraft } from '../utils/noteDraft';
 import { fromEditorImages, toEditorImages } from '../utils/vaultImages';
 import { noteName } from '../utils/vaultPaths';
+import { requestBodyFocus, takeBodyFocus } from '../utils/bodyFocus';
 import DocumentMarkdownEditor, { insertDocumentImage } from './DocumentMarkdownEditor';
 import DocumentPageTitle from './DocumentPageTitle';
 import DocumentToolbar from './DocumentToolbar';
@@ -57,8 +58,11 @@ export default function DocumentEditorCanvas({
     (instance: Editor | null) => {
       onEditorReady(instance);
       if (instance) onLoaded(noteBody(instance.storage.markdown.getMarkdown()));
+      // The title was just confirmed with Enter (and the note renamed, which opened
+      // this editor at the new address).
+      if (instance && editable && takeBodyFocus()) instance.commands.focus('start');
     },
-    [noteBody, onEditorReady, onLoaded],
+    [noteBody, onEditorReady, onLoaded, editable],
   );
 
   return (
@@ -95,6 +99,10 @@ export default function DocumentEditorCanvas({
             editable={editable}
             autoFocus={focusTitle}
             onRename={onRename}
+            onDone={(renaming) => {
+              if (renaming) requestBodyFocus();
+              else editor?.commands.focus('start');
+            }}
           />
           <p className="mt-3 text-xs text-muted-foreground/80">
             {truncated ? t('truncated') : t('updated', { time: relativeTime(updatedAt) })}

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Edge } from '@xyflow/react';
+import { KEEPALIVE_MAX_BYTES, saveNoteCanvasOnExit } from '@/lib/api/endpoints/noteBoards';
 import { useSaveNoteCanvas } from '../services/noteBoards.service';
 import type { StickerNodeType } from '../components/StickerNode';
 import { toCanvas } from '../utils/noteCanvas';
@@ -57,6 +58,45 @@ export function useCanvasAutosave(
     }, AUTOSAVE_DELAY);
     return () => clearTimeout(timer);
   }, [serialized, boardId, enabled]);
+
+  // Reloading or closing the tab inside the debounce window dropped the edit: no
+  // unmount runs then. When the page is hidden (which precedes both) the pending canvas
+  // goes out as a keepalive request; one too large for keepalive asks before leaving.
+  useEffect(() => {
+    const pendingBody = () => {
+      const { serialized, enabled } = latest.current;
+      if (!enabled || serialized === savedSnapshot.current) return null;
+      return JSON.stringify({ canvas: JSON.parse(serialized) });
+    };
+    const flush = () => {
+      const body = pendingBody();
+      if (!body || body.length > KEEPALIVE_MAX_BYTES) return;
+      const sent = latest.current.serialized;
+      void saveNoteCanvasOnExit(projectKey, latest.current.boardId, body)
+        .then(() => {
+          if (latest.current.serialized === sent) {
+            savedSnapshot.current = sent;
+            setStatus('saved');
+          }
+        })
+        .catch(() => undefined);
+    };
+    const onHidden = () => {
+      if (document.visibilityState === 'hidden') flush();
+    };
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      const body = pendingBody();
+      if (body && body.length > KEEPALIVE_MAX_BYTES) event.preventDefault();
+    };
+    document.addEventListener('visibilitychange', onHidden);
+    window.addEventListener('pagehide', flush);
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => {
+      document.removeEventListener('visibilitychange', onHidden);
+      window.removeEventListener('pagehide', flush);
+      window.removeEventListener('beforeunload', onBeforeUnload);
+    };
+  }, [projectKey]);
 
   // Flush a still-pending edit on unmount (switching board, or leaving the page)
   // so a change made inside the debounce window is not dropped. The debounce

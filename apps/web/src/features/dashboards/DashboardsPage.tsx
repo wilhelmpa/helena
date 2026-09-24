@@ -24,6 +24,7 @@ import { PAGE_GUTTER_CLASS } from '@/components/common/page/SectionPageView';
 import WidgetGrid from './components/WidgetGrid';
 import AddWidgetDialog from './components/AddWidgetDialog';
 import DashboardNameDialog from './components/DashboardNameDialog';
+import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
 
 // The dashboards section: a tab strip of named dashboards over a grid of analytics
 // widgets. The active dashboard comes from the route; with none selected the first
@@ -45,6 +46,8 @@ export default function DashboardsPage() {
   const [adding, setAdding] = useState(false);
   // Name dialog state: 'new' to create, a dashboard to rename, or null (closed).
   const [nameDialog, setNameDialog] = useState<'new' | Dashboard | null>(null);
+  // The dashboard whose deletion waits for a yes, like every other delete.
+  const [deleting, setDeleting] = useState<Dashboard | null>(null);
   const renaming = nameDialog && nameDialog !== 'new' ? nameDialog : null;
 
   const list = dashboards ?? [];
@@ -133,7 +136,7 @@ export default function DashboardsPage() {
           onSelect={(id) => router.push(dashboardPath(projectKey, id))}
           onNew={() => setNameDialog('new')}
           onRename={(d) => setNameDialog(d)}
-          onDelete={(d) => void editor.deleteDashboard(d)}
+          onDelete={setDeleting}
           onReorder={(dragged, target) => editor.reorderDashboards(dragged, target)}
         />
         <PageToolbarSpacer />
@@ -143,7 +146,7 @@ export default function DashboardsPage() {
           active={active}
           onNew={() => setNameDialog('new')}
           onRename={(d) => setNameDialog(d)}
-          onDelete={(d) => void editor.deleteDashboard(d)}
+          onDelete={setDeleting}
         />
       </PageToolbar>
 
@@ -152,6 +155,20 @@ export default function DashboardsPage() {
           <WidgetGrid projectKey={projectKey} project={project} editor={editor} editing={editing} />
         </div>
       </div>
+
+      {deleting && (
+        <ConfirmDialog
+          title={t('deleteDashboard')}
+          confirmLabel={tCommon('delete')}
+          onConfirm={async () => {
+            await editor.deleteDashboard(deleting);
+            setDeleting(null);
+          }}
+          onClose={() => setDeleting(null)}
+        >
+          {t('deleteDashboardConfirm', { name: deleting.name })}
+        </ConfirmDialog>
+      )}
 
       <AddWidgetDialog
         open={adding}

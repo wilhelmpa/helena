@@ -27,7 +27,7 @@ export function AccessLogSection({ teamId, leading }: { teamId: number; leading:
   }).data;
 
   return (
-    <SectionPageView title={tAccess('tabs.log')} description="" wide>
+    <SectionPageView title={tAccess('tabs.log')} wide>
       <PageToolbar>
         {leading}
         <PageToolbarSpacer />

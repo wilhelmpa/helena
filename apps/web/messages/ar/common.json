@@ -204,7 +204,22 @@
     "previewCustomField": "Custom field",
     "previewAllWorkItems": "All work items",
     "previewUpdated": "Updated {date}",
-    "previewOtherValues": "({count} more)"
+    "previewOtherValues": "({count} more)",
+    "format": {
+      "heading1": "عنوان 1",
+      "heading2": "عنوان 2",
+      "bold": "غامق",
+      "italic": "مائل",
+      "strike": "يتوسطه خط",
+      "code": "كود",
+      "codeBlock": "كتلة كود",
+      "link": "رابط",
+      "blockquote": "اقتباس",
+      "bulletList": "قائمة نقطية",
+      "orderedList": "قائمة مرقّمة"
+    },
+    "linkApply": "تعيين الرابط",
+    "linkRemove": "إزالة الرابط"
   },
   "chart": {
     "download": "احفظ الرسم البياني",
@@ -217,5 +232,50 @@
     "page": "الصفحة {number}",
     "perPage": "لكل صفحة",
     "range": "{first}-{last} من {total}"
+  },
+  "dnd": {
+    "pickedUp": "تم التقاط العنصر {id}.",
+    "movedOver": "تم نقل العنصر {id} فوق {over}.",
+    "notOver": "لم يعد العنصر {id} فوق منطقة إفلات.",
+    "droppedOver": "تم إفلات العنصر {id} على {over}.",
+    "dropped": "تم إفلات العنصر {id}.",
+    "cancelled": "تم إلغاء السحب. أُعيد العنصر {id} إلى مكانه.",
+    "instructions": "لالتقاط عنصر اضغط المسافة أو Enter. أثناء السحب حرّكه بمفاتيح الأسهم. اضغط المسافة أو Enter مرة أخرى لإفلاته في مكانه الجديد، أو Escape للإلغاء."
+  },
+  "uploadLimits": {
+    "maxSize": "حتى {mb} ميغابايت لكل ملف.",
+    "accepted": "المسموح: {types}.",
+    "tooLarge": "«{name}» أكبر من الحد {mb} ميغابايت",
+    "notAccepted": "«{name}» ليس من أنواع الملفات المسموح بها",
+    "types": {
+      "images": "صور",
+      "video": "فيديو",
+      "audio": "صوت",
+      "pdf": "PDF",
+      "text": "نص",
+      "csv": "CSV",
+      "markdown": "Markdown",
+      "documents": "مستندات",
+      "spreadsheets": "جداول بيانات",
+      "presentations": "عروض تقديمية"
+    }
+  },
+  "apiErrors": {
+    "url_invalid": "أدخل عنوان ويب صالحًا (https://…).",
+    "url_https_required": "يجب أن يبدأ العنوان بـ https://.",
+    "url_credentials": "يجب ألا يحتوي العنوان على اسم مستخدم أو كلمة مرور.",
+    "url_private": "يشير العنوان إلى شبكة خاصة أو محلية، وهذا غير مسموح هنا.",
+    "url_unresolvable": "تعذّر العثور على اسم الخادم في هذا العنوان.",
+    "number_invalid": "أدخل رقمًا."
+  },
+  "notFound": {
+    "title": "الصفحة غير موجودة",
+    "description": "هذا العنوان لا يؤدي إلى أي مكان، ربما الرابط قديم أو به خطأ.",
+    "home": "إلى البداية"
+  },
+  "systemActors": {
+    "workflow": "سير العمل",
+    "agentTeam": "فريق الوكلاء",
+    "autoArchive": "الأرشفة التلقائية"
   }
 }

@@ -4,5 +4,6 @@
   "noProjects": "Todavía no hay proyectos, crea uno para empezar.",
   "noProjectsTitle": "Todavía no hay proyectos",
   "noProjectsHint": "Crea tu primer proyecto para empezar a planificar tickets en un tablero.",
-  "createProject": "Crear proyecto"
+  "createProject": "Crear proyecto",
+  "serverUnreachable": "El servidor no está disponible ahora mismo; quizá se esté reiniciando. Recarga en un momento."
 }

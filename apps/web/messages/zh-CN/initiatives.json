@@ -140,7 +140,10 @@
     "typeSet": "将类型设为 {type}",
     "typeRemoved": "移除了类型",
     "linked": "关联至 {name}",
-    "unlinked": "取消了与此计划的关联"
+    "unlinked": "取消了与此计划的关联",
+    "linkedIssue": "将 <issue>任务</issue> 关联至 {name}",
+    "unlinkedIssue": "取消了 <issue>任务</issue> 与此计划的关联",
+    "createdIssueNamed": "创建了 <issue>任务</issue>"
   },
   "attachments": {
     "title": "附件",
@@ -154,5 +157,7 @@
     "download": "下载",
     "downloadFile": "下载 {name}",
     "deleteFile": "删除 {name}"
-  }
+  },
+  "deleteTitle": "删除计划",
+  "deleteConfirm": "删除“{name}”？任务会留在项目中，只是不再属于此计划。"
 }

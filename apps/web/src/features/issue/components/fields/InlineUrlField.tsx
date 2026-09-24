@@ -4,23 +4,7 @@ import { Pill } from '@/components/common/fields/Pill';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTranslations } from 'next-intl';
-
-// A bare domain typed without a scheme is treated as https; the API accepts only
-// absolute http(s) URLs.
-function normalizeUrl(value: string): string {
-  const trimmed = value.trim();
-  if (trimmed === '') return '';
-  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-}
-
-function isHttpUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return url.protocol === 'http:' || url.protocol === 'https:';
-  } catch {
-    return false;
-  }
-}
+import { isHttpUrl, normalizeUrl } from '@/utils/url';
 
 // Url custom field: a ghost pill showing the link with an open-in-new-tab icon;
 // editing switches to a url input that validates on save (invalid keeps editing
@@ -89,13 +73,14 @@ export default function InlineUrlField({
   }
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex flex-wrap items-center gap-1.5">
       <Input
         type="url"
         autoFocus
         value={draft}
         key={saveKey}
         aria-invalid={invalid || undefined}
+        aria-describedby={invalid ? `${saveKey}-url-error` : undefined}
         placeholder="https://…"
         className="h-8 max-w-[240px]"
         onChange={(e) => {
@@ -118,6 +103,11 @@ export default function InlineUrlField({
       >
         <Check className="size-4" />
       </Button>
+      {invalid && (
+        <p id={`${saveKey}-url-error`} className="w-full text-xs text-destructive">
+          {t('invalidUrl')}
+        </p>
+      )}
     </div>
   );
 }

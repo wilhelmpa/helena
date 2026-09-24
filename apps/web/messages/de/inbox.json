@@ -34,7 +34,8 @@
     "commented": "{who} hat kommentiert",
     "stateChanged": "{who} hat den Status von {from} auf {to} geändert",
     "stateChangedPlain": "{who} hat den Status geändert",
-    "approval_requested": "{who} bittet um deine Freigabe"
+    "approval_requested": "{who} bittet um deine Freigabe",
+    "automation": "Helena"
   },
   "hub": {
     "messages": "Nachrichten",

@@ -12,16 +12,17 @@ export function attachmentAccept(limits: StorageSettings | undefined): string | 
   return types.length > 0 ? types.join(',') : undefined;
 }
 
-// Plain names for the MIME types an instance can accept. Several types share one
-// name (a .doc, a .docx and an .odt are all documents), so the hint stays short.
-const TYPE_NAMES: Record<string, string> = {
+// Plain names for the MIME types an instance can accept, as message keys under
+// common.uploadLimits.types. Several types share one name (a .doc, a .docx and an
+// .odt are all documents), so the hint stays short.
+const TYPE_NAMES: Record<string, UploadTypeName> = {
   'image/*': 'images',
   'video/*': 'video',
   'audio/*': 'audio',
-  'application/pdf': 'PDF',
+  'application/pdf': 'pdf',
   'text/plain': 'text',
-  'text/csv': 'CSV',
-  'text/markdown': 'Markdown',
+  'text/csv': 'csv',
+  'text/markdown': 'markdown',
   'application/msword': 'documents',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'documents',
   'application/vnd.oasis.opendocument.text': 'documents',
@@ -33,30 +34,59 @@ const TYPE_NAMES: Record<string, string> = {
   'application/vnd.oasis.opendocument.presentation': 'presentations',
 };
 
+export type UploadTypeName =
+  | 'images'
+  | 'video'
+  | 'audio'
+  | 'pdf'
+  | 'text'
+  | 'csv'
+  | 'markdown'
+  | 'documents'
+  | 'spreadsheets'
+  | 'presentations';
+
+// The words the hint and the errors are made of, in the reader's language
+// (useUploadLimitText below supplies them from common.uploadLimits).
+export interface UploadLimitWords {
+  maxSize: (mb: number) => string;
+  accepted: (types: string) => string;
+  typeName: (name: UploadTypeName) => string;
+  tooLarge: (name: string, mb: number) => string;
+  notAccepted: (name: string) => string;
+}
+
 // A type with no entry above falls back to its last segment ("application/zip" reads
 // as "ZIP"), which is closer to what people call the file than the full MIME type.
-function typeName(mimeType: string): string {
+function typeName(mimeType: string, words: UploadLimitWords): string {
   const type = mimeType.trim().toLowerCase();
   const known = TYPE_NAMES[type];
-  if (known) return known;
+  if (known) return words.typeName(known);
   const subtype = type.split('/')[1] ?? type;
   return subtype.split('.').pop()!.toUpperCase();
 }
 
 // The sentence shown next to the picker: the size limit, plus the accepted types
 // when the instance restricts them.
-export function attachmentLimitHint(limits: StorageSettings | undefined): string {
+export function attachmentLimitHint(
+  limits: StorageSettings | undefined,
+  words: UploadLimitWords,
+): string {
   if (!limits) return '';
-  const size = `Up to ${limits.maxAttachmentMb} MB per file.`;
-  const names = [...new Set(limits.attachmentMimeTypes.map(typeName))];
-  return names.length > 0 ? `${size} Accepted: ${names.join(', ')}.` : size;
+  const size = words.maxSize(limits.maxAttachmentMb);
+  const names = [...new Set(limits.attachmentMimeTypes.map((type) => typeName(type, words)))];
+  return names.length > 0 ? `${size} ${words.accepted(names.join(', '))}` : size;
 }
 
 // The reason a file cannot be uploaded, or null when it passes.
-export function attachmentError(file: File, limits: StorageSettings | undefined): string | null {
+export function attachmentError(
+  file: File,
+  limits: StorageSettings | undefined,
+  words: UploadLimitWords,
+): string | null {
   if (!limits) return null;
   if (file.size > limits.maxAttachmentMb * MB) {
-    return `"${file.name}" exceeds the ${limits.maxAttachmentMb} MB limit`;
+    return words.tooLarge(file.name, limits.maxAttachmentMb);
   }
   const types = limits.attachmentMimeTypes;
   if (types.length > 0) {
@@ -65,7 +95,7 @@ export function attachmentError(file: File, limits: StorageSettings | undefined)
       const pattern = entry.trim().toLowerCase();
       return pattern.endsWith('/*') ? ct.startsWith(pattern.slice(0, -1)) : ct === pattern;
     });
-    if (!ok) return `"${file.name}" is not an accepted file type`;
+    if (!ok) return words.notAccepted(file.name);
   }
   return null;
 }

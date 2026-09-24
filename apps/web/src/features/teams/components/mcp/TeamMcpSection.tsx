@@ -25,7 +25,7 @@ export default function TeamMcpSection({ teamId }: { teamId: number }) {
   const busy = update.isPending;
 
   return (
-    <SectionPageView title={t('title')} description={t('description')} wide>
+    <SectionPageView title={t('title')} wide>
       <div className="space-y-6">
         <SettingsSection title={t('access')}>
           <SettingsCard>

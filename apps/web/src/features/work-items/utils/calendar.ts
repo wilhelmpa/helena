@@ -2,7 +2,7 @@ import { addDays, startOfMonth, startOfWeek } from 'date-fns';
 import type { CustomField } from '@/lib/api/endpoints/customFields';
 import type { Issue } from '@/lib/api/endpoints/issues';
 import { issueDay } from '@/utils/calendarFields';
-import type { BuiltinDateField, ViewSettings } from '@/utils/viewSettings';
+import type { BuiltinDateField } from '@/utils/viewSettings';
 
 // The calendar layout for the visible month: issues bucketed by their chosen date
 // (a built-in column or a date custom field), the rest collected as unscheduled,
@@ -20,7 +20,8 @@ export function buildCalendarModel(
   builtin: BuiltinDateField,
   // The custom field the issues are placed by, or null for the built-in column.
   custom: CustomField | null,
-  weekStart: ViewSettings['weekStart'],
+  // The first day of the week, already resolved from 'locale'.
+  weekStart: 0 | 1,
   cursor: Date,
   // The seven weekday names, Sunday first, in the reader's language.
   weekdayNames: string[],

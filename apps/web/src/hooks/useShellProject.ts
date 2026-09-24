@@ -7,7 +7,7 @@ import {
 } from '@/services/projects.service';
 import { useViewFoldersQuery, useViewsQuery } from '@/services/views.service';
 import { useCycleOptionsQuery } from '@/services/cycles.service';
-import { ApiError } from '@/lib/api/core/client';
+import { ApiError, isServerUnreachable } from '@/lib/api/core/client';
 import { applyFilters } from '@/utils/filters';
 import { withoutShownSubtasks } from '@/utils/subtasks';
 import { viewPath } from '@/utils/paths';
@@ -113,5 +113,7 @@ export function useShellProject(projectKey: string | null, activeViewId: number 
     // of this project. Shown as an access message instead of the generic error banner
     // (and never as a login bounce — the proxy owns the no-session case).
     forbidden: projectQuery.error instanceof ApiError && projectQuery.error.status === 403,
+    // The server is down or restarting: said as such, not as a project out of reach.
+    unreachable: isServerUnreachable(error),
   };
 }

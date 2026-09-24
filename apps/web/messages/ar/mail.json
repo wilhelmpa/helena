@@ -180,7 +180,8 @@
     "port": "البورت",
     "tls": "TLS من الأول (لو مقفول: STARTTLS)",
     "username": "اسم المستخدم",
-    "team": "الفريق"
+    "team": "الفريق",
+    "googleConnect": "ربط حساب Google"
   },
   "rules": {
     "title": "قواعد الحفظ",

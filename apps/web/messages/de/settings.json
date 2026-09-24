@@ -70,9 +70,9 @@
     "featureOff": "{feature} deaktiviert",
     "setup": {
       "title": "Einrichtung",
-      "description": "Workspace, Dateien, Coordinator, Terminal und Browser, die dieses Projekt braucht. Eine fehlgeschlagene Einrichtung können Inhaber des Projekts sowie Inhaber oder Manager des Teams erneut starten; eine fehlgeschlagene Bereinigung nur Inhaber oder Manager des Teams.",
+      "description": "Workspace, Dateien, Koordinator, Terminal und Browser, die dieses Projekt braucht. Eine fehlgeschlagene Einrichtung können Inhaber des Projekts sowie Inhaber oder Manager des Teams erneut starten; eine fehlgeschlagene Bereinigung nur Inhaber oder Manager des Teams.",
       "provisioning": "Projekteinrichtung",
-      "provisioningHint": "Erstellt den Workspace, die Vault-Ordner, den Coordinator, das Terminal und den Browser.",
+      "provisioningHint": "Erstellt den Workspace, die Vault-Ordner, den Koordinator, das Terminal und den Browser.",
       "cleanup": "Bereinigung eines gelöschten Projekts",
       "cleanupHint": "Ein gelöschtes Projekt dieses Teams hatte dasselbe Kürzel. Seine Ressourcen werden entfernt, bevor dieses Projekt eingerichtet werden kann.",
       "status": {
@@ -406,7 +406,7 @@
         "result": "Ergebnis",
         "autonomyReview": "Aufgabe geht in Review",
         "autonomyDone": "Angenommene Arbeit wird als erledigt markiert",
-        "review": "Review durch Coordinator",
+        "review": "Review durch Koordinator",
         "reviewed": "geprüft",
         "notReviewed": "nicht geprüft",
         "maxTurns": "Runden pro Phase",
@@ -479,7 +479,8 @@
       "success": "Erfolgreich",
       "failed": "Fehlgeschlagen",
       "pending": "Ausstehend"
-    }
+    },
+    "invalidUrl": "Gib eine vollständige Webadresse ein, z. B. https://example.com/webhook."
   },
   "git": {
     "enable": "Repository-Integration aktivieren",

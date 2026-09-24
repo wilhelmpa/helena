@@ -180,7 +180,8 @@
     "port": "Puerto",
     "tls": "TLS desde el inicio (desactivado: STARTTLS)",
     "username": "Nombre de usuario",
-    "team": "Equipo"
+    "team": "Equipo",
+    "googleConnect": "Conectar una cuenta de Google"
   },
   "rules": {
     "title": "Reglas de archivado",

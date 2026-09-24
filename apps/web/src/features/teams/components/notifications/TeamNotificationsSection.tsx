@@ -16,10 +16,7 @@ export default function TeamNotificationsSection({ teamId }: { teamId: number })
   const { data } = useNotificationSettingsQuery(canManage ? teamId : null);
 
   return (
-    <SectionPageView
-      title={t('sections.notifications.title')}
-      description={t('sections.notifications.description')}
-    >
+    <SectionPageView title={t('sections.notifications.title')}>
       {team && !canManage ? (
         <p className="text-sm text-muted-foreground">{t('notifications.ownerOnly')}</p>
       ) : !data ? (
