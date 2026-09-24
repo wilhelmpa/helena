@@ -58,6 +58,7 @@
         "eslint": "^9.39.0",
         "typescript": "^6.0.3",
         "write-excel-file": "^4.1.1",
+        "zod": "^4.4.3",
       },
     },
     "apps/bot": {
