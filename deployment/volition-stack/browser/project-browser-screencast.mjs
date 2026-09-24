@@ -660,7 +660,7 @@ class ScreencastStream {
     const stream = quietIn > 0 ? AGENT_STREAM : VIEWER_STREAM;
     if (stream !== this.stream) {
       this.stream = stream;
-      if (this.screencasting) this.startScreencast(this.session).catch(() => {});
+      if (this.screencasting) this.restartScreencast();
     }
     const viewport = this.sizingViewport();
     this.scale = windowChrome(this.port)?.scale ?? this.scale;
@@ -689,7 +689,7 @@ class ScreencastStream {
           this.resizing--;
           this.announcePage();
           // The JPEG frames' size follows the page's size and ratio.
-          if (this.screencasting && this.session) this.startScreencast(this.session).catch(() => {});
+          if (this.screencasting) this.restartScreencast();
           void this.updateMode();
         });
     }
@@ -874,6 +874,20 @@ class ScreencastStream {
     this.frame = null;
     this.screencastFrame = null;
     if (this.session) await this.connection.send("Page.stopScreencast", {}, this.session).catch(() => {});
+  }
+
+  // Chromium keeps a running screencast's settings when it is started again: new ones take a
+  // stop first (measured on the bench: frames kept the old size after a resize). The frame
+  // being acknowledged belongs to the stopped one.
+  restartScreencast() {
+    const session = this.session;
+    if (!session) return;
+    this.pendingAck = null;
+    this.connection
+      .send("Page.stopScreencast", {}, session)
+      .catch(() => {})
+      .then(() => (this.session === session && this.screencasting ? this.startScreencast(session) : undefined))
+      .catch(() => {});
   }
 
   startScreencast(session) {
