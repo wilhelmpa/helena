@@ -3,7 +3,7 @@ import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { UsageLimitSnapshot, UsageLimitSource } from '@helena/sdk';
-import { readerCapabilities } from '../readers';
+import { answerRuntimeRequest, readerCapabilities } from '../readers';
 import {
   LimitProber,
   LimitsStream,
@@ -529,12 +529,36 @@ describe('LimitsStream', () => {
   });
 });
 
+const FAKE_CODEX_FOR_HELPER = `#!/usr/bin/env node
+const readline = require('node:readline');
+readline.createInterface({ input: process.stdin }).on('line', (line) => {
+  const message = JSON.parse(line);
+  if (message.method === 'initialize') console.log(JSON.stringify({ id: message.id, result: {} }));
+  if (message.method === 'account/rateLimits/read') {
+    console.log(JSON.stringify({ id: message.id, result: ${JSON.stringify(CODEX_PRO)} }));
+  }
+});
+`;
+
 describe('runner integration', () => {
   it('reports the limits capability for the runtimes with a source', () => {
     for (const runtime of ['hermes', 'claude', 'codex']) {
       expect(readerCapabilities(runtime)).toContain('limits');
     }
     expect(readerCapabilities('opencode')).not.toContain('limits');
+  });
+
+  it("answers limits.read where only the runtime's home is known (the profile helper)", async () => {
+    const home = await tempDir();
+    await mkdir(join(home, '.codex'));
+    await writeFile(join(home, '.codex', 'auth.json'), '{}');
+    const bin = await script(home, 'codex', FAKE_CODEX_FOR_HELPER);
+    const answer = (await answerRuntimeRequest(
+      { op: 'limits.read', force: true, providers: ['openai-codex'] },
+      { runtime: 'codex', home, cwd: null, env: { HELENA_CODEX_BIN: bin } },
+    )) as { snapshots: UsageLimitSnapshot[] };
+    expect(answer.snapshots).toHaveLength(1);
+    expect(answer.snapshots[0]).toMatchObject({ provider: 'openai-codex', plan: 'pro' });
   });
 
   it('writes the spool file whole, readable by the API', async () => {
