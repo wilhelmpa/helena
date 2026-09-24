@@ -67,15 +67,9 @@ export function claudeMcpArgs(specs: McpServerSpec[]): string[] {
     specs.map((spec) => [
       spec.name,
       spec.transport === 'stdio'
-        ? {
-            type: 'stdio',
-            command: spec.command,
-            args: spec.args ?? [],
-            env: {
-              ...values(spec.env),
-              ...Object.fromEntries((spec.passEnv ?? []).map((name) => [name, `\${${name}}`])),
-            },
-          }
+        ? // Claude Code hands a stdio server its whole environment, so passEnv needs
+          // nothing here; a ${VAR} of an unset variable would fail the whole config.
+          { type: 'stdio', command: spec.command, args: spec.args ?? [], env: values(spec.env) }
         : { type: spec.transport, url: spec.url, headers: values(spec.headers) },
     ]),
   );
@@ -155,6 +149,9 @@ export function codexMcpArgs(
     }
     if (spec.startupTimeoutSec !== undefined) {
       set(spec.name, 'startup_timeout_sec', String(spec.startupTimeoutSec));
+    }
+    for (const [key, value] of Object.entries(spec.codex ?? {})) {
+      if (BARE_KEY.test(key)) set(spec.name, key, value);
     }
     set(spec.name, 'enabled', 'true');
   }

@@ -131,8 +131,10 @@ export interface McpServerSpec {
   // Seconds a tool call may take, and the server to start.
   toolTimeoutSec?: number;
   startupTimeoutSec?: number;
-  // Keys only one runtime knows, merged into its entry as they are.
+  // Keys only one runtime knows, merged into its entry as they are: Hermes' YAML values,
+  // Codex' TOML values (`-c mcp_servers.<name>.<key>=<value>`).
   hermes?: Record<string, unknown>;
+  codex?: Record<string, string>;
 }
 
 const TEMPLATE_VAR = /\$\{([A-Z0-9_]+)\}/g;
