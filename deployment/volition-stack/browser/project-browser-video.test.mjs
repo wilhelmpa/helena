@@ -165,9 +165,11 @@ describe("scaledSize", () => {
 
 describe("sameArea", () => {
   it("compares by position and size, not identity", () => {
-    const area = { x: 0, y: 40, width: 800, height: 600 };
-    assert.ok(sameArea(area, { x: 0, y: 40, width: 800, height: 600 }));
-    assert.ok(!sameArea(area, { x: 0, y: 40, width: 801, height: 600 }));
+    const area = { x: 0, y: 40, width: 800, height: 600, outWidth: 800, outHeight: 600 };
+    assert.ok(sameArea(area, { ...area }));
+    assert.ok(!sameArea(area, { ...area, width: 801 }));
+    // The same grab encoded at another size is another encoder.
+    assert.ok(!sameArea(area, { ...area, outWidth: 400, outHeight: 300 }));
     assert.ok(!sameArea(area, null));
     assert.ok(!sameArea(null, null));
   });

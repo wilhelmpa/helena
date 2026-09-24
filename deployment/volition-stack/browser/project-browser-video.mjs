@@ -129,13 +129,17 @@ export function scaledSize(width, height, maxEdge) {
   return { width: even(width), height: even(height) };
 }
 
-// Whether two capture areas are the same, so an encoder already running for them is reused.
+// Whether two capture areas are the same, output size included, so an encoder already running
+// for them is reused.
 export function sameArea(a, b) {
-  return Boolean(a && b && a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height);
+  const keys = ["x", "y", "width", "height", "outWidth", "outHeight"];
+  return Boolean(a && b && keys.every((key) => a[key] === b[key]));
 }
 
-// The ffmpeg arguments for grabbing an area of a display and encoding it at a tier's frame
-// rate, quality and thread limit, with the least delay: no B-frames and no lookahead, and each
+// The ffmpeg arguments for grabbing an area of a display and encoding it at its output size
+// (the page at the frames' ratio, smaller than the grab where the browser draws at factor 2
+// for a viewer at ratio 1) and a tier's frame rate, quality and thread limit, with the least
+// delay: no B-frames and no lookahead, and each
 // frame written out the moment it is encoded. The tier's keyframe interval bounds how long a
 // viewer who joins mid-stream, or misses frames to a stall, waits for the next one.
 //
@@ -152,8 +156,8 @@ export function sameArea(a, b) {
 // 32 bytes and no analysis time keeps the probing itself to the first frame. The FLV output
 // frames each packet with its size, so a frame leaves at once, where ffmpeg's fragmented MP4
 // waited for the next frame (see project-browser-mp4.mjs).
-export function encoderArguments({ x, y, width, height, display }, tier) {
-  const size = scaledSize(width, height, tier.scaleMax);
+export function encoderArguments({ x, y, width, height, outWidth = width, outHeight = height, display }, tier) {
+  const size = scaledSize(outWidth, outHeight, tier.scaleMax);
   const resize = size.width === width && size.height === height ? "" : `${size.width}:${size.height}:`;
   const scale = ["-vf", `scale=${resize}threads=${tier.threads},format=yuv420p`];
   // A VBV cap (maxrate+bufsize) on top of CRF: quality stays constant-target where content is
@@ -270,12 +274,12 @@ export async function fitScreen(environment, width, height) {
 // and its codec string, "fragment" with each frame's fragment and whether it is a keyframe,
 // and "exit" when ffmpeg ends.
 export class AreaEncoder extends EventEmitter {
-  constructor({ display, xauthority, x, y, width, height, tier = TIERS[0] }) {
+  constructor({ display, xauthority, x, y, width, height, outWidth = width, outHeight = height, tier = TIERS[0] }) {
     super();
     this.environment = { PATH: process.env.PATH, DISPLAY: `:${display}`, XAUTHORITY: xauthority };
-    this.area = { display, x, y, width, height };
+    this.area = { display, x, y, width, height, outWidth, outHeight };
     this.tier = tier;
-    this.size = scaledSize(width, height, tier.scaleMax);
+    this.size = scaledSize(outWidth, outHeight, tier.scaleMax);
     this.process = null;
     this.buffer = Buffer.alloc(0);
     this.header = true;

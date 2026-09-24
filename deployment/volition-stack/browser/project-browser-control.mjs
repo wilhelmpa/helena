@@ -1,9 +1,19 @@
 // Controls the project browsers over the Chrome DevTools Protocol. The project display
 // has no window manager, so nothing sizes Chromium's windows: the window keeper fits them
 // to the page size the live view asks for, and to the screen otherwise, which changes size
-// with the desktop view's panel. It also draws every tab of a live view's window at the
-// view's pixel ratio. The control routes serve the tab list and the navigation the Plan
-// toolbar uses.
+// with the desktop view's panel. The control routes serve the tab list and the navigation the
+// Plan toolbar uses.
+//
+// Chromium runs at device scale factor 2 on the display (--force-device-scale-factor=2 in its
+// unit): a page is drawn with two display pixels per CSS pixel, so a live view on a
+// high-density screen gets frames one to one, and window sizes, the screen and CDP input are
+// in CSS pixels (DIP) all the same. The keeper reads the factor from the window it measures
+// (readWindowSizes), so a Chromium started without the flag is kept at factor 1, as before.
+// The pages are not emulated, except while a page too small for the agent's screenshots at
+// factor 2 is pinned to factor 1 (see BrowserLink.pin). The earlier emulation of ratio 2 with
+// Emulation.setDeviceMetricsOverride's scale halved the position of every CDP mouse event
+// (measured on the bench: a click at 400,300 reached the page at 200,150), the viewer's and
+// the agent's alike.
 
 const TARGET_ID = /^[A-Fa-f0-9]{16,64}$/;
 const MAX_BODY = 8 * 1024;
@@ -60,15 +70,11 @@ export function fittedBounds(bounds, size) {
   return fits ? null : fitted;
 }
 
-// The window size that shows a live view's page: the page in window pixels, which is its CSS
-// size times the device pixel ratio the live view emulates, plus the browser's own tab strip
-// and toolbar. Without a live view a window fills the screen.
+// The window size that shows a live view's page: its CSS size plus the browser's own tab strip
+// and toolbar, all in DIP. Without a live view a window fills the screen.
 export function windowSize(screen, chrome, live) {
   if (!live) return screen;
-  return {
-    width: Math.round(live.width * live.ratio) + chrome.width,
-    height: Math.round(live.height * live.ratio) + chrome.height,
-  };
+  return { width: live.width + chrome.width, height: live.height + chrome.height };
 }
 
 // One DevTools websocket, with the commands in flight matched to their answers and the
@@ -171,32 +177,29 @@ export async function openBrowser(port) {
 // One DevTools connection per project browser, kept open and shared by the window keeper
 // and the tab list, with a session attached to each page it has asked something.
 //
-// A pixel ratio emulation belongs to the session that set it: a clear from any session ends
-// it, and so does the setting session's end. So only this connection emulates, and it is the
-// last one to close.
-//
-// While a live view is watched every page is emulated, ratio 1 included, and the emulation is
-// changed, never cleared: Chromium 153 keeps the size a page's window had when an emulation
-// began, and an explicit clear after the window changed size meanwhile gives the page that old
-// size back, wider or taller than its window (measured on the bench: a 3839 pixel wide page in
-// a 1280 pixel window), until the window changes size again. The live view then showed that
-// page, and after a router restart the window keeper could no longer read the toolbar from it,
-// so the live view stayed on JPEG. A session that ends does not do this; only the clear does.
+// An emulation belongs to the session that set it: a clear from any session ends it, and so
+// does the setting session's end. So only this connection emulates, and it is the last one to
+// close. Chromium 153 keeps the size a page's window had when an emulation began, and a clear
+// after the window changed size meanwhile gives the page that old size back, wider or taller
+// than its window (a 3839 pixel wide page in a 1280 pixel window on the bench), until the
+// window changes size again; a session that ends does not do this. So every clear is followed
+// by a nudge of the window (fitWindows).
 export class BrowserLink {
   constructor(port) {
     this.port = port;
     this.connection = null;
     this.opening = null;
     this.sessions = new Map();
-    // The pixel ratio this link has itself set each page to, null once it ended the
-    // emulation, and 0 while the page is pinned. A page this link has never touched may
-    // still be emulated by another DevTools client, so only an explicit entry here, not its
-    // absence, says the page is already known to be at that ratio.
-    this.ratios = new Map();
-    // The tab strip and toolbar of the window last fitted, in window pixels.
+    // The emulation this link set on each page: null for none, or the CSS size it is pinned
+    // to. A page this link has never touched may still be emulated by another DevTools client,
+    // so only an explicit entry here, not its absence, says what the page is at.
+    this.pins = new Map();
+    // The tab strip and toolbar of the window last fitted, in DIP, and the display pixels
+    // per DIP the browser draws at.
     this.chrome = null;
+    this.scale = 1;
     // fitWindows runs one at a time per browser: the keeper's pass and a live view's resize
-    // would otherwise pin and emulate the same pages in between each other.
+    // would otherwise pin and resize the same pages in between each other.
     this.queue = Promise.resolve();
   }
 
@@ -207,7 +210,7 @@ export class BrowserLink {
       .then((connection) => {
         this.connection = connection;
         this.sessions.clear();
-        this.ratios.clear();
+        this.pins.clear();
         return connection;
       })
       .finally(() => {
@@ -238,44 +241,37 @@ export class BrowserLink {
     return result?.value;
   }
 
-  // Draws a page at a pixel ratio, with the CSS size of its window divided by the ratio, or
-  // with ratio null ends this link's emulation of it. Runs the CDP call the first time this
-  // link touches a page, in case another client left it emulated — an absent entry is not
-  // read as "already there". Returns whether it ended an emulation, after which the page's
-  // window has to change size once for the page to take the window's size (see the class).
-  async emulate(targetId, ratio) {
-    if (this.ratios.get(targetId) === ratio) return false;
-    if (ratio === null) await this.send(targetId, "Emulation.clearDeviceMetricsOverride", {});
+  // Draws a page at pixel ratio 1 at a fixed CSS size, which its window then shows scaled to
+  // the browser's factor 2: a page smaller than SHARP_MIN_EDGE (project-browser-screencast.mjs)
+  // while an agent is in the browser, whose screenshots in window pixels would otherwise put
+  // its clicks off by 2. With size null it ends this link's emulation. Runs the CDP call the
+  // first time this link touches a page, in case another client left it emulated. Returns
+  // whether it ended an emulation, after which the window has to change size once for the
+  // page to take the window's size again (see the class).
+  async pin(targetId, size) {
+    const key = size ? `${size.width}x${size.height}` : null;
+    if (this.pins.get(targetId) === key) return false;
+    if (!size) await this.send(targetId, "Emulation.clearDeviceMetricsOverride", {});
     else {
       await this.send(targetId, "Emulation.setDeviceMetricsOverride", {
-        width: 0,
-        height: 0,
-        deviceScaleFactor: ratio,
-        scale: ratio,
+        width: size.width,
+        height: size.height,
+        deviceScaleFactor: 1,
         mobile: false,
       });
     }
-    this.ratios.set(targetId, ratio);
-    return ratio === null;
+    this.pins.set(targetId, key);
+    return !size;
   }
 
-  // Holds a page at a CSS size while its window changes, so its layout changes once. A page
-  // pinned at ratio 2 is drawn at half size in its window's corner until emulate() lets it
-  // follow the window again, so fitWindows unpins it as soon as the window has its size.
-  async pin(targetId, { width, height, ratio }) {
-    await this.send(targetId, "Emulation.setDeviceMetricsOverride", {
-      width,
-      height,
-      deviceScaleFactor: ratio,
-      mobile: false,
-    });
-    this.ratios.set(targetId, 0);
+  pinned(targetId) {
+    return typeof this.pins.get(targetId) === "string";
   }
 
   // Forgets the sessions of pages that are gone.
   keep(targetIds) {
     for (const id of this.sessions.keys()) if (!targetIds.has(id)) this.sessions.delete(id);
-    for (const id of this.ratios.keys()) if (!targetIds.has(id)) this.ratios.delete(id);
+    for (const id of this.pins.keys()) if (!targetIds.has(id)) this.pins.delete(id);
   }
 
   close() {
@@ -401,19 +397,22 @@ export async function readJsonBody(request) {
   }
 }
 
-// Sets the page size of a browser's live view ({width, height, ratio}), or clears it with
-// null so the windows fill the screen again, and fits the windows at once. Resolves once the
-// page has its new size and has drawn it, so a live view's video can start on the new page.
+// Sets the page size of a browser's live view ({width, height, pin1}: its CSS size, and
+// whether the page is drawn at pixel ratio 1, see BrowserLink.pin), or clears it with null so
+// the windows fill the screen again, and fits the windows at once. Resolves once the page has
+// its new size and has drawn it, so a live view's video can start on the new page.
 export async function setLiveViewport(port, viewport) {
   if (viewport) liveViewports.set(port, viewport);
   else liveViewports.delete(port);
   await fitWindows(linkFor(port));
 }
 
-// The tab strip and toolbar above the page, in window pixels, as the window keeper last
-// measured them: the page starts this far below the window's top left corner.
+// The tab strip and toolbar above the page, in DIP, as the window keeper last measured them
+// (the page starts this far below the window's top left corner), and the display pixels per
+// DIP: { width, height, scale }.
 export function windowChrome(port) {
-  return links.get(port)?.chrome ?? null;
+  const link = links.get(port);
+  return link?.chrome ? { ...link.chrome, scale: link.scale } : null;
 }
 
 // The sizes a visible tab reports: its screen, its window, its page and the page's pixel
@@ -431,25 +430,33 @@ const DRAWN = `new Promise((resolve) => {
 const RESIZE_WAIT_MS = 1_000;
 const RESIZE_POLL_MS = 15;
 
-// What a tab's sizes say: whether it is the one shown, its screen, its window's tab strip and
-// toolbar in window pixels, its pixel ratio (page zoom included), and whether the page's own
-// size agrees with its window. It does not while a page is pinned to a CSS size, or once an emulation cleared after
-// its window changed size left the page at the old size (see BrowserLink): its toolbar then
-// comes out negative or larger than any toolbar.
+// What a tab's sizes say: whether it is the one shown, its screen and window in DIP, its
+// window's tab strip and toolbar in DIP, the display pixels per DIP the browser draws at, and
+// whether the page's own size agrees with its window. The window is the page's width (the
+// display has no window manager and no borders) and its height plus the toolbar, so of the
+// factors 1 and 2 only the right one gives a toolbar as narrow as MAX_CHROME_WIDTH:
+// devicePixelRatio is that factor times the page zoom, and innerWidth is the window's width
+// divided by the zoom. A page pinned to a CSS size, or left at an old size by a cleared
+// emulation (see BrowserLink), fits neither: its toolbar comes out negative or too large.
+const MAX_CHROME_WIDTH = 24;
+const SCALES = [1, 2];
 export function readWindowSizes(value) {
   if (!Array.isArray(value) || value.length < 8 || !value.slice(1).every(Number.isFinite)) return null;
   const [visibility, screenWidth, screenHeight, outerWidth, outerHeight, innerWidth, innerHeight, ratio] = value;
-  const chrome = {
-    width: Math.round(outerWidth - innerWidth * ratio),
-    height: Math.round(outerHeight - innerHeight * ratio),
-  };
+  const toolbar = (scale) => ({
+    width: Math.round(outerWidth - (innerWidth * ratio) / scale),
+    height: Math.round(outerHeight - (innerHeight * ratio) / scale),
+  });
+  const plausible = ({ width, height }) => width >= 0 && width <= MAX_CHROME_WIDTH && height >= 0 && height < MAX_CHROME;
+  const scale = SCALES.find((candidate) => plausible(toolbar(candidate)));
   return {
     visible: visibility === "visible",
     screen: { width: screenWidth, height: screenHeight },
     outer: { width: outerWidth, height: outerHeight },
-    chrome,
+    chrome: toolbar(scale ?? 1),
+    scale: scale ?? 1,
     ratio,
-    consistent: chrome.width >= 0 && chrome.height >= 0 && chrome.width < MAX_CHROME && chrome.height < MAX_CHROME,
+    consistent: scale !== undefined,
   };
 }
 
@@ -483,11 +490,10 @@ function hasSize(sizes, bounds) {
 // behind another one keeps the sizes it had when it was last shown. A window without a
 // visible tab, such as a minimized one, is restored and fitted on the next pass.
 //
-// A new window size with an unchanged ratio just resizes the window: the emulated page follows
-// it and lays out once. With a new ratio the page is pinned at its new CSS size first, so it
-// does not lay out at the new ratio for the old window and then again, and is let go the
-// moment the window has its size. A page that disagrees with its window is given the window's
-// size again (see readWindowSizes).
+// A new window size just resizes the window: the page follows it and lays out once. A page
+// drawn at ratio 1 (live.pin1) is pinned at its new CSS size before its window changes, for the
+// same reason. A page that disagrees with its window is given the window's size again (see
+// readWindowSizes), and so is every page whose emulation ends.
 export function fitWindows(link) {
   return link.serial(() => fitWindowsNow(link));
 }
@@ -498,7 +504,7 @@ async function fitWindowsNow(link) {
   const pages = targetInfos.filter((target) => target.type === "page");
   link.keep(new Set(pages.map((target) => target.targetId)));
   const live = liveViewports.get(link.port);
-  const ratio = live ? live.ratio : null;
+  const pin = live?.pin1 ? { width: live.width, height: live.height } : null;
   const windows = new Map();
   for (const target of pages) {
     const { windowId, bounds } = await connection.send("Browser.getWindowForTarget", {
@@ -522,25 +528,36 @@ async function fitWindowsNow(link) {
         bounds: { windowState: "normal" },
       });
     }
-    if (sizes && link.ratios.get(shown) !== 0) {
+    if (sizes && !link.pinned(shown)) {
       if (!sizes.consistent) {
         await nudge(connection, windowId, bounds);
         sizes = await sizesOnceSettled(link, shown, (next) => next.consistent);
       }
-      if (sizes?.consistent) link.chrome = sizes.chrome;
+      if (sizes?.consistent) {
+        link.chrome = sizes.chrome;
+        link.scale = sizes.scale;
+      }
     }
     const chrome = link.chrome;
     const fitted = sizes && chrome ? fittedBounds(bounds, windowSize(sizes.screen, chrome, live)) : null;
-    const newRatio = tabs.some((tab) => link.ratios.get(tab) !== ratio);
+    let changed = false;
+    let cleared = false;
+    const applyPins = async () => {
+      for (const tab of tabs) {
+        const before = link.pins.get(tab);
+        if (await link.pin(tab, pin)) cleared = true;
+        if (link.pins.get(tab) !== before) changed = true;
+      }
+    };
+    // A page pinned for ratio 1 takes its new CSS size before its window changes.
+    if (fitted && pin) await applyPins();
     if (fitted) {
-      if (live && newRatio) for (const tab of tabs) await link.pin(tab, live);
       await connection.send("Browser.setWindowBounds", { windowId, bounds: fitted });
       if (live && shown) await sizesOnceSettled(link, shown, (next) => hasSize(next, fitted));
     }
-    let cleared = false;
-    for (const tab of tabs) if (await link.emulate(tab, ratio)) cleared = true;
+    await applyPins();
     if (cleared) await nudge(connection, windowId, fitted ?? bounds);
-    if (live && shown && (fitted || newRatio)) await link.evaluate(shown, DRAWN, true).catch(() => {});
+    if (live && shown && (fitted || changed)) await link.evaluate(shown, DRAWN, true).catch(() => {});
   }
 }
 

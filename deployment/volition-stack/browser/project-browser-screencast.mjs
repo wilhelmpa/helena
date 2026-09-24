@@ -3,14 +3,15 @@
 // keyboard input sent to that tab.
 //
 // The stream is H.264 video grabbed from the project's X display (project-browser-video.mjs)
-// when every viewer can play it, and the DevTools screencast as JPEG frames otherwise or when
-// every encoder fails. The page is shown at the CSS size of the most recent viewer's view, and
-// on a high-density screen at pixel ratio 2: the window keeper sizes the real window to the
-// view in window pixels and draws its tabs at that ratio. The agent works on that same page.
-// While the agent acts, the page keeps its CSS size, so the layout does not move between the
-// agent's look at the page and its next action; a JPEG stream then also drops to ratio 1 and
-// 20 frames a second, because a sharp JPEG stream at full rate fills the browser's DevTools
-// connection, which the agent's commands then wait for.
+// for viewers that play it, and the DevTools screencast as JPEG frames for the others or when
+// every encoder fails. The page is shown at the CSS size of the most recent viewer's view: the
+// window keeper sizes the real window to it. Chromium draws at device scale factor 2 (see
+// project-browser-control.mjs), and a viewer on a high-density screen gets frames at ratio 2,
+// one to one, the others at ratio 1. The agent works on that same page. While the agent acts,
+// the page keeps its CSS size, so the layout does not move between the agent's look at the
+// page and its next action; a JPEG stream then also drops to ratio 1 and 20 frames a second,
+// because a sharp JPEG stream at full rate fills the browser's DevTools connection, which the
+// agent's commands then wait for.
 //
 // Video is adaptive: each viewer is put on the quality tier (project-browser-video.mjs) its
 // last reported round trip and downlink, and its socket's backlog, afford, and viewers on the
@@ -23,10 +24,12 @@
 // Server to viewer, binary: a kind byte, then for kind 0 a JPEG frame after the page's
 // viewport in CSS pixels as two big-endian 16-bit integers; for kind 1 the video's MP4
 // initialization segment; for kind 2 a keyframe flag byte and one frame's MP4 fragment. Text:
-// {"type":"video","codec":..,"width":..,"height":..} before an initialization segment, with
-// the viewport in CSS pixels; {"type":"page","width":..,"height":..} with the page's size in
-// CSS pixels at 100 % zoom, which is the size a view shows a frame at to show it one to one,
-// whenever it changes; {"type":"tab"} when the streamed tab, its address or its title
+// {"type":"video","codec":..,"width":..,"height":..,"pageWidth":..,"pageHeight":..} before an
+// initialization segment, with the viewport in CSS pixels at the page's zoom (which input is
+// given in) and at 100 % (the size a view draws the frames at to show them one to one);
+// {"type":"page","width":..,"height":..,"zoom":..} with the page's size in CSS pixels at 100 %
+// and its zoom, whenever either changes, by which a view draws a JPEG frame one to one;
+// {"type":"tab"} when the streamed tab, its address or its title
 // changes; {"type":"dialog", ...} while a JavaScript dialog is open;
 // {"type":"dialog","open":false} when it closes; {"type":"pong","t":..} answering a viewer's
 // {"type":"ping","t":..}; {"type":"control","by":"agent"|"owner"} when who last acted on the
@@ -129,16 +132,57 @@ function agentSafeAt2({ width, height }) {
   return Math.max(width, height) >= SHARP_MIN_EDGE;
 }
 
-// The page size for a view: its CSS size, and the window pixels per CSS pixel, which is 2 on
-// a high-density screen and 1 otherwise — and 1 for a page smaller than SHARP_MIN_EDGE while an
-// agent is in the browser (agentPresent), whose screenshots would be off by 2. A page too
-// narrow for a window is drawn wider and shown scaled down. At ratio 1 an odd size is made
-// even, one pixel larger, which the video needs: the frame then is the page to the pixel, and
-// a view shows it one to one with that pixel cut off rather than stretched over the view.
-export function pageSize({ width, height, dpr }, agentPresent = false) {
-  const ratio = dpr >= 1.5 && (!agentPresent || agentSafeAt2({ width, height })) ? 2 : 1;
+// The page size for a view: its CSS size, the pixels per CSS pixel of the frames (ratio 2 for
+// a high-density screen when the browser draws at factor 2, 1 otherwise), and whether the page
+// itself is drawn at ratio 1 (pin1): while an agent is in the browser (agentPresent), a page
+// smaller than SHARP_MIN_EDGE, whose screenshots at ratio 2 would put the agent's clicks off
+// by 2. A page too narrow for a window is drawn wider and shown scaled down. At ratio 1 an
+// odd size is made even, one pixel larger, which the video needs: the frame then is the page
+// to the pixel, and a view shows it one to one with that pixel cut off rather than stretched.
+export function pageSize({ width, height, dpr }, agentPresent = false, scale = 2) {
+  const pin1 = scale >= 2 && agentPresent && !agentSafeAt2({ width, height });
+  const ratio = dpr >= 1.5 && scale >= 2 && !pin1 ? 2 : 1;
   const even = (value) => (ratio === 1 ? Math.ceil(value / 2) * 2 : value);
-  return { width: even(Math.max(width, Math.ceil(MIN_WINDOW_WIDTH / ratio))), height: even(height), ratio };
+  return { width: even(Math.max(width, MIN_WINDOW_WIDTH / scale)), height: even(height), ratio, pin1 };
+}
+
+// The page size for the most recent view: while the agent acts, the current CSS size — with
+// JPEG frames at ratio 1, and a page too small for the agent's screenshots drawn at ratio 1
+// — or nothing to change before one was set; otherwise the view's pageSize, with
+// agentPresent saying whether an agent is in the browser without acting right now.
+export function targetSize(viewport, current, agentActive, video, agentPresent = false, scale = 2) {
+  if (!agentActive) return pageSize(viewport, agentPresent, scale);
+  if (!current) return null;
+  const pin1 = scale >= 2 && !agentSafeAt2(current);
+  return { ...current, ratio: video && !pin1 ? current.ratio : 1, pin1 };
+}
+
+// The area of the display the video grabs, in display pixels: the page below the window's tab
+// strip and toolbar, with an even width and height as the encoder needs; and the size it is
+// encoded at, the page at the frames' ratio.
+export function captureArea(size, chrome) {
+  const even = (value) => Math.max(2, Math.floor(value / 2) * 2);
+  const scale = chrome.scale ?? 1;
+  const ratio = Math.min(size.ratio, scale);
+  return {
+    x: 0,
+    y: chrome.height * scale,
+    width: even(size.width * scale),
+    height: even(size.height * scale),
+    outWidth: even(size.width * ratio),
+    outHeight: even(size.height * ratio),
+  };
+}
+
+// The binary message of one JPEG frame. The frame's metadata gives the viewport in DIP, which
+// the page zoom makes larger than CSS pixels.
+export function frameMessage(jpeg, metadata, zoom) {
+  const cssPixels = (value) => Math.min(0xffff, Math.max(0, Math.round((value || 0) / zoom)));
+  const header = Buffer.alloc(5);
+  header[0] = JPEG_FRAME;
+  header.writeUInt16BE(cssPixels(metadata.deviceWidth), 1);
+  header.writeUInt16BE(cssPixels(metadata.deviceHeight), 3);
+  return Buffer.concat([header, jpeg]);
 }
 
 // How many bytes a video viewer may be behind before it waits for the next keyframe: see
@@ -147,39 +191,6 @@ export function pageSize({ width, height, dpr }, agentPresent = false) {
 export function videoAllowance({ keyframeBytes = 0, encodedKbps = 0, rttMs = 0 }) {
   const windowSeconds = (STATS_REPORT_MS + Math.min(rttMs, 1_000)) / 1000;
   return Math.max(MIN_VIDEO_BACKLOG, Math.round(2 * keyframeBytes + encodedKbps * 125 * windowSeconds));
-}
-
-// The page size for the most recent view: while the agent acts, the current CSS size — at
-// ratio 1 for a JPEG stream, or for a page too small for the agent's screenshots at ratio 2 —
-// or nothing to change before one was set; otherwise the view's pageSize, with agentPresent
-// saying whether an agent is in the browser without acting right now.
-export function targetSize(viewport, current, agentActive, video, agentPresent = false) {
-  if (!agentActive) return pageSize(viewport, agentPresent);
-  if (!current) return null;
-  return video && agentSafeAt2(current) ? current : { ...current, ratio: 1 };
-}
-
-// The area of the display the video grabs: the page below the window's tab strip and toolbar,
-// in window pixels, with an even width and height as the encoder needs.
-export function captureArea(size, chrome) {
-  const even = (value) => Math.max(2, Math.floor(value / 2) * 2);
-  return {
-    x: 0,
-    y: chrome.height,
-    width: even(size.width * size.ratio),
-    height: even(size.height * size.ratio),
-  };
-}
-
-// The binary message of one JPEG frame. The frame's metadata gives the viewport in window
-// pixels, which the pixel ratio and the page zoom make larger than CSS pixels.
-export function frameMessage(jpeg, metadata, scale) {
-  const cssPixels = (value) => Math.min(0xffff, Math.max(0, Math.round((value || 0) / scale)));
-  const header = Buffer.alloc(5);
-  header[0] = JPEG_FRAME;
-  header.writeUInt16BE(cssPixels(metadata.deviceWidth), 1);
-  header.writeUInt16BE(cssPixels(metadata.deviceHeight), 3);
-  return Buffer.concat([header, jpeg]);
 }
 
 class Viewer {
@@ -337,6 +348,9 @@ class ScreencastStream {
     // Whether an agent's browser-harness session holds a tab: it marks the tab's title while
     // attached (see listTabs), before it takes a screenshot to click from.
     this.agentInBrowser = false;
+    // The display pixels per CSS pixel the browser draws at, as the window keeper measured it;
+    // 2 until it has (see project-browser-control.mjs).
+    this.scale = 2;
     this.resizeTimer = null;
     this.timer = null;
     this.tierTimer = null;
@@ -614,9 +628,11 @@ class ScreencastStream {
       if (this.screencasting) this.startScreencast(this.session).catch(() => {});
     }
     const viewport = this.drivingViewport();
-    const size = viewport && targetSize(viewport, this.size, quietIn > 0, this.allVideo(), this.agentInBrowser);
+    this.scale = windowChrome(this.port)?.scale ?? this.scale;
+    const size = viewport && targetSize(viewport, this.size, quietIn > 0, this.allVideo(), this.agentInBrowser, this.scale);
     const current = this.size;
-    if (size && !(current?.width === size.width && current.height === size.height && current.ratio === size.ratio)) {
+    const same = current && ["width", "height", "ratio", "pin1"].every((key) => current[key] === size?.[key]);
+    if (size && !same) {
       this.size = size;
       this.videoFailures = 0;
       // The window changes size now. An encoder grabbing it meanwhile would send the page
@@ -630,6 +646,8 @@ class ScreencastStream {
         .finally(() => {
           this.resizing--;
           this.announcePage();
+          // The JPEG frames' size follows the page's size and ratio.
+          if (this.screencasting && this.session) this.startScreencast(this.session).catch(() => {});
           void this.updateMode();
         });
     }
@@ -640,7 +658,7 @@ class ScreencastStream {
   // Tells the viewers the page's size once it has it, for them to show frames one to one.
   announcePage() {
     if (!this.size || this.resizing) return;
-    const message = JSON.stringify({ type: "page", width: this.size.width, height: this.size.height });
+    const message = JSON.stringify({ type: "page", width: this.size.width, height: this.size.height, zoom: this.zoom });
     if (message === this.pageMessage) return;
     this.pageMessage = message;
     for (const viewer of this.viewers) viewer.socket.send(message);
@@ -764,6 +782,8 @@ class ScreencastStream {
           tier: tier.name,
           width: Math.round(size.width / this.zoom),
           height: Math.round(size.height / this.zoom),
+          pageWidth: size.width,
+          pageHeight: size.height,
         },
         init: Buffer.concat([Buffer.from([VIDEO_INIT]), init]),
         sinceKeyframe: [],
@@ -817,7 +837,14 @@ class ScreencastStream {
     this.screencasting = true;
     return this.connection.send(
       "Page.startScreencast",
-      { format: "jpeg", quality: this.stream.quality, maxWidth: MAX_FRAME_SIDE, maxHeight: MAX_FRAME_SIDE },
+      {
+        format: "jpeg",
+        quality: this.stream.quality,
+        // Frames at the page's ratio for the viewers: a browser drawing at factor 2 sends
+        // ratio 1 frames scaled down.
+        maxWidth: Math.min(MAX_FRAME_SIDE, Math.round((this.size?.width ?? MAX_FRAME_SIDE) * (this.size?.ratio ?? 1))),
+        maxHeight: Math.min(MAX_FRAME_SIDE, Math.round((this.size?.height ?? MAX_FRAME_SIDE) * (this.size?.ratio ?? 1))),
+      },
       session,
     );
   }
@@ -843,9 +870,11 @@ class ScreencastStream {
       else if (this.session) {
         await this.readZoom(this.session);
         await this.readActivity(this.session);
-        // Picks up what changed without a resize: a video retry that is due, or the window
-        // keeper's first measurement of the toolbar after a restart.
-        void this.updateMode();
+        // Picks up what changed without a resize: a video retry that is due, the window
+        // keeper's first measurement of the toolbar after a restart, or of the factor the
+        // browser draws at.
+        if ((windowChrome(this.port)?.scale ?? this.scale) !== this.scale) this.resize();
+        else void this.updateMode();
       }
     } catch {
       // The next pass tries again.
@@ -887,6 +916,7 @@ class ScreencastStream {
     const zoom = metrics.cssVisualViewport?.zoom || 1;
     if (zoom === this.zoom) return;
     this.zoom = zoom;
+    this.announcePage();
     if (this.screencastFrame && session === this.session) this.showFrame(this.screencastFrame);
     if (this.tiers.size === 0) return;
     const size = this.size;
@@ -1015,7 +1045,7 @@ class ScreencastStream {
 
   showFrame(screencastFrame) {
     this.screencastFrame = screencastFrame;
-    this.frame = frameMessage(screencastFrame.jpeg, screencastFrame.metadata, (this.size?.ratio ?? 1) * this.zoom);
+    this.frame = frameMessage(screencastFrame.jpeg, screencastFrame.metadata, this.zoom);
     for (const viewer of this.viewers) if (this.getsJpeg(viewer)) viewer.offer(this.frame);
   }
 
@@ -1058,7 +1088,10 @@ class ScreencastStream {
     for (const viewer of this.viewers) viewer.socket.close(1011, "Browser unavailable");
     this.connection?.close();
     if (!this.size) return;
-    const size = desktopViewers.get(this.port) ? null : { ...this.size, ratio: 1 };
+    // Nobody watches to see an agent come: a page too small for its screenshots at ratio 2 is
+    // drawn at ratio 1 from now on.
+    const pin1 = this.scale >= 2 && Math.max(this.size.width, this.size.height) < SHARP_MIN_EDGE;
+    const size = desktopViewers.get(this.port) ? null : { ...this.size, ratio: 1, pin1 };
     setLiveViewport(this.port, size).catch(() => {});
   }
 }
