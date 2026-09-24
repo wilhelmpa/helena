@@ -50,10 +50,13 @@ CREATE TABLE "helena_workflow_hook" (
 --> statement-breakpoint
 ALTER TABLE "agent_team_start" DISABLE ROW LEVEL SECURITY;--> statement-breakpoint
 DROP TABLE "agent_team_start" CASCADE;--> statement-breakpoint
+ALTER TABLE "ai_agent" DROP CONSTRAINT "ai_agent_kind_check";--> statement-breakpoint
 ALTER TABLE "pipeline_run" DROP CONSTRAINT "pipeline_run_trigger_check";--> statement-breakpoint
 ALTER TABLE "pipeline_run" DROP CONSTRAINT "pipeline_run_status_check";--> statement-breakpoint
 ALTER TABLE "pipeline_run_step" DROP CONSTRAINT "pipeline_run_step_kind_check";--> statement-breakpoint
 ALTER TABLE "pipeline_run_step" DROP CONSTRAINT "pipeline_run_step_status_check";--> statement-breakpoint
+ALTER TABLE "ai_agent" DROP CONSTRAINT "ai_agent_model_credential_id_integration_credential_id_fk";
+--> statement-breakpoint
 DROP INDEX "pipeline_run_start_idx";--> statement-breakpoint
 ALTER TABLE "pipeline_run" ALTER COLUMN "pipeline_id" DROP NOT NULL;--> statement-breakpoint
 ALTER TABLE "pipeline_run" ALTER COLUMN "version_id" DROP NOT NULL;--> statement-breakpoint
@@ -89,9 +92,19 @@ CREATE UNIQUE INDEX "pipeline_run_fire_uq" ON "pipeline_run" USING btree ("sched
 CREATE INDEX "pipeline_run_schedule_idx" ON "pipeline_run" USING btree ("schedule_id","scheduled_for" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "pipeline_run_status_idx" ON "pipeline_run" USING btree ("status","updated_at");--> statement-breakpoint
 CREATE INDEX "pipeline_run_step_agent_run_idx" ON "pipeline_run_step" USING btree ("agent_run_id");--> statement-breakpoint
+ALTER TABLE "ai_agent" DROP COLUMN "model_credential_id";--> statement-breakpoint
+ALTER TABLE "ai_agent" DROP COLUMN "tools";--> statement-breakpoint
+ALTER TABLE "ai_agent" DROP COLUMN "temperature";--> statement-breakpoint
+ALTER TABLE "ai_agent" DROP COLUMN "max_steps";--> statement-breakpoint
+ALTER TABLE "ai_agent" DROP COLUMN "api_key_ciphertext";--> statement-breakpoint
+ALTER TABLE "ai_agent" DROP COLUMN "api_key_iv";--> statement-breakpoint
+ALTER TABLE "ai_agent" DROP COLUMN "api_key_auth_tag";--> statement-breakpoint
+ALTER TABLE "ai_agent" DROP COLUMN "memory_enabled";--> statement-breakpoint
+ALTER TABLE "ai_agent" DROP COLUMN "memory_last_messages";--> statement-breakpoint
 ALTER TABLE "pipeline_run" DROP COLUMN "start_attempts";--> statement-breakpoint
 ALTER TABLE "pipeline_run" DROP COLUMN "next_start_at";--> statement-breakpoint
 ALTER TABLE "project_pipeline" DROP COLUMN "schedule_id";--> statement-breakpoint
+ALTER TABLE "ai_agent" ADD CONSTRAINT "ai_agent_kind_check" CHECK ("ai_agent"."kind" = 'external');--> statement-breakpoint
 ALTER TABLE "pipeline_run" ADD CONSTRAINT "pipeline_run_kind_check" CHECK ("pipeline_run"."kind" IN ('workflow', 'agent_team', 'routine'));--> statement-breakpoint
 ALTER TABLE "pipeline_run" ADD CONSTRAINT "pipeline_run_source_check" CHECK (("pipeline_run"."kind" = 'workflow') = ("pipeline_run"."pipeline_id" IS NOT NULL AND "pipeline_run"."version_id" IS NOT NULL)
         AND ("pipeline_run"."kind" = 'workflow' OR "pipeline_run"."definition" IS NOT NULL));--> statement-breakpoint

@@ -1,5 +1,5 @@
 {
-  "id": "c92daa6d-f5d5-4ff1-8e45-bc4c1de0fb65",
+  "id": "21bf5aaf-0008-4545-88da-a5610c0c127f",
   "prevId": "755a2a11-5d75-417d-a70e-4bd869a75531",
   "version": "7",
   "dialect": "postgresql",
@@ -3375,12 +3375,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "model_credential_id": {
-          "name": "model_credential_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
         "model": {
           "name": "model",
           "type": "text",
@@ -3390,25 +3384,6 @@
         "instructions": {
           "name": "instructions",
           "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "tools": {
-          "name": "tools",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'[]'::jsonb"
-        },
-        "temperature": {
-          "name": "temperature",
-          "type": "double precision",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "max_steps": {
-          "name": "max_steps",
-          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
@@ -3439,37 +3414,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": 3
-        },
-        "api_key_ciphertext": {
-          "name": "api_key_ciphertext",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "api_key_iv": {
-          "name": "api_key_iv",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "api_key_auth_tag": {
-          "name": "api_key_auth_tag",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "memory_enabled": {
-          "name": "memory_enabled",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "memory_last_messages": {
-          "name": "memory_last_messages",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
         },
         "runtime_policy": {
           "name": "runtime_policy",
@@ -3649,19 +3593,6 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "ai_agent_model_credential_id_integration_credential_id_fk": {
-          "name": "ai_agent_model_credential_id_integration_credential_id_fk",
-          "tableFrom": "ai_agent",
-          "tableTo": "integration_credential",
-          "columnsFrom": [
-            "model_credential_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
         "ai_agent_owner_user_id_user_id_fk": {
           "name": "ai_agent_owner_user_id_user_id_fk",
           "tableFrom": "ai_agent",
@@ -3703,7 +3634,7 @@
       "checkConstraints": {
         "ai_agent_kind_check": {
           "name": "ai_agent_kind_check",
-          "value": "\"ai_agent\".\"kind\" IN ('external', 'internal')"
+          "value": "\"ai_agent\".\"kind\" = 'external'"
         },
         "ai_agent_runner_scope_check": {
           "name": "ai_agent_runner_scope_check",
