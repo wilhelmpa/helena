@@ -16,6 +16,7 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 | WEB-18 | done | see git log | no library |
 | WEB-19 | done | see git log | no library (Puppeteer's US layout as reference) |
 | WEB-08 / JOB-04 | done | see git log | `croner` 10.0.1 (already the API's) |
+| WEB-03 | done | see git log | `radix-ui` meta package only |
 | F16 | done | see git log | `mime-types` 3.0.2 + `file-type` 22.1.1 (MIT) in `@repo/storage/mime` |
 
 ## F21: IP classification with `ipaddr.js`
@@ -110,3 +111,10 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 - `parseScheduleInput()` validates the resulting cron with croner, the library and options the API uses (`new Cron(expr, {paused: true})`), so the form accepts exactly what the server does. A cron the field parser can read is still normalized (names to numbers); one only croner reads (`L`, `5#2`) is kept as typed and shown raw.
 - Kept: the text→cron parser (English and German, no maintained library does this) and the translated describer. `cronstrue` was optional in the audit and is not added: the describer already speaks all ten languages through the message files.
 - For hub/native-engine (JOB-04 "agree the cron syntax"): the UI now validates with croner 10 and the same options as `apps/api/src/modules/routines/cron.ts`; keep croner on the engine side.
+
+## WEB-03: fewer web dependencies
+
+- Removed from `apps/web`: `jszip` and `highlight.js` (not imported; lowlight brings its own highlight.js), `@uiw/react-color`, and the 11 `@radix-ui/react-*` packages. Every Radix import now comes from the `radix-ui` meta package (`import { Dialog as DialogPrimitive } from 'radix-ui'`, `Slot.Root`), which was already installed and used for Direction, Switch and Collapsible; one copy of each primitive also means one Direction context.
+- Kept: `streamdown`, which hub/chat-standards now uses (the audit's own note).
+- One swatch picker: `components/ui/color-swatches.tsx` (from the settings color field) serves the settings colors and the sticky-note colors; the chosen swatch has `aria-pressed`.
+- Checked in the browser (dev instance of this branch): the labels "Hinzufügen" dropdown, the new-label color popover with selection, the new-board dialog, and a sticky note's color picker changing the note to blue; no console errors. Web tests: 549 pass.
