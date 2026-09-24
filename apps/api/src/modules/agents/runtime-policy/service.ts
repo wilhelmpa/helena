@@ -171,6 +171,7 @@ function soul(
     chatPreamble().trim(),
     blockedPreamble(),
     autopilotSoulSection(autopilot),
+    ...((config.runtimePolicy.runtime ?? 'hermes') === 'hermes' ? [hermesPreamble()] : []),
     // Only Hermes fills website logins from its vault; the other runtimes get none.
     ...(webLogins && (config.runtimePolicy.runtime ?? 'hermes') === 'hermes'
       ? [webLoginPreamble()]
@@ -205,6 +206,25 @@ function blockedPreamble(): string {
   ].join('\n');
 }
 
+// How Hermes runs under Helena, so an agent that checks or explains its own setup does not
+// go by a stand-alone Hermes install (owner, 2026-09-24: "Hermes muss auf Hermes zugreifen
+// können"): no gateway of its own, configuration from Helena, keys through the runner.
+function hermesPreamble(): string {
+  return [
+    '## Your Hermes',
+    'You run in Hermes; your Hermes home is $HERMES_HOME and the `hermes` command is on your',
+    'PATH (`hermes doctor`, `hermes status`, `hermes config`, `hermes tools`, `hermes --version`).',
+    "Helena is your gateway: its runner starts your runs and chats, so Hermes' own gateway",
+    'service stays off and `systemctl --user` is not used. Your model, SOUL.md, skills, tools,',
+    'MCP servers and config.yaml come from your settings in Helena; a change made directly in',
+    'your Hermes home is put back, so propose changes to the owner instead. Keys reach you',
+    'through the runner, which is why .env is empty. Hermes updates go through Helena (Home ->',
+    'Hermes), never pip. Doctor warnings about providers and platforms that are not set up',
+    '(Telegram, Discord, Nous, MiniMax, xAI, OpenRouter, image or video generation, Docker)',
+    'are expected and not faults.',
+  ].join('\n');
+}
+
 // Hermes fills a login from its vault without the model seeing the password. What the
 // vault cannot fill, the owner does in the project's live browser, whose profile keeps
 // the session for the next run.
@@ -218,7 +238,7 @@ function webLoginPreamble(): string {
     'a code sent by SMS or mail, a confirmation in an app), call request_approval with kind',
     'other, the action "Log in to <site> in the project browser" and what the site asks',
     'for, then end the run. The owner logs in in the live browser of the project, which',
-    'keeps the session, and Plan starts a new run of yours once the owner approves. In a',
+    'keeps the session, and Helena starts a new run of yours once the owner approves. In a',
     'chat, tell the person instead.',
   ].join('\n');
 }

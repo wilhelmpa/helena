@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
-import { lstat, readlink, rename, symlink } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { lstat, open, readlink, rename, symlink } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 import type { CollectedProfile } from './contributions';
 import { ensureRoot, ensureSafeParent } from './files';
@@ -416,4 +417,25 @@ export async function ensureConfigLink(home: string, shared: string): Promise<bo
   }
   await symlink(shared, target);
   return true;
+}
+
+// Hermes keeps a profile's keys in its .env and `hermes doctor` fails a profile without
+// one. Helena hands keys to Hermes itself (the runner's environment), so the file only has
+// to exist: an empty one (0600) is created when missing; one that exists is never opened
+// or changed. True when it had to be created.
+export async function ensureEnvFile(home: string): Promise<boolean> {
+  await ensureRoot(home);
+  const target = join(home, '.env');
+  try {
+    const file = await open(
+      target,
+      constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW,
+      0o600,
+    );
+    await file.close();
+    return true;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'EEXIST') return false;
+    throw error;
+  }
 }
