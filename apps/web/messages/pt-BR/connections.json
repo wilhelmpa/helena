@@ -12,6 +12,7 @@
   "unconfigured": {
     "title": "Nenhum serviço de conexões configurado",
     "hint": "Este servidor não executa um serviço que verifica conexões. Contas de e-mail, credenciais e dispositivos têm páginas próprias.",
+    "hintAccess": "Este servidor não executa um serviço que verifica conexões. Google, e-mail e credenciais estão nas abas ao lado; dispositivos têm página própria.",
     "mail": "Contas de e-mail",
     "credentials": "Credenciais",
     "devices": "Dispositivos e Obsidian"

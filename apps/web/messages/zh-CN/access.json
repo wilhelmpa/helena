@@ -12,6 +12,7 @@
     "importClient": "导入 OAuth 客户端",
     "empty": "还没有 Google 账号",
     "emptyHint": "在 Google Cloud 中创建类型为“桌面应用”的 OAuth 客户端，在此导入其 JSON 文件，然后连接每个账号。之后邮件、日历、云端硬盘等都无需应用专用密码。",
+    "emptyHintReady": "OAuth 客户端已就绪。现在连接每个 Google 账户；之后邮件、日历、Drive 等无需应用专用密码即可使用。",
     "clients": "OAuth 客户端",
     "clientType": {
       "installed": "桌面",
@@ -117,6 +118,7 @@
   },
   "grants": {
     "title": "{name} 的授权",
+    "action": "授权",
     "hint": "授权给单个智能体或项目中的所有智能体，可针对全部服务或单个服务，只读或也可写。发送、共享和删除仍需你批准。",
     "empty": "还没有人可以使用它。",
     "add": "添加",

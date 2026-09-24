@@ -12,6 +12,7 @@
     "importClient": "Importar cliente OAuth",
     "empty": "Todavía no hay cuentas de Google",
     "emptyHint": "Crea en Google Cloud un cliente OAuth de tipo «Aplicación de escritorio», importa aquí su archivo JSON y conecta cada cuenta. Correo, Calendar, Drive y el resto funcionan después sin contraseñas de aplicación.",
+    "emptyHintReady": "El cliente OAuth ya está. Ahora conecta cada cuenta de Google; el correo, el calendario, Drive y lo demás funcionan después sin contraseña de aplicación.",
     "clients": "Clientes OAuth",
     "clientType": {
       "installed": "Escritorio",
@@ -117,6 +118,7 @@
   },
   "grants": {
     "title": "Permisos de {name}",
+    "action": "Permisos",
     "hint": "Da acceso a agentes concretos o a todos los agentes de un proyecto, para todos los servicios o uno, solo lectura o también escritura. Enviar, compartir y borrar siguen esperando tu aprobación.",
     "empty": "Nadie puede usarlo todavía.",
     "add": "Añadir",

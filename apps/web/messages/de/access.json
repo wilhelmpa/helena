@@ -12,6 +12,7 @@
     "importClient": "OAuth-Client-JSON importieren",
     "empty": "Noch kein Google-Konto",
     "emptyHint": "Lege in Google Cloud einen OAuth-Client vom Typ „Desktop-App“ an, importiere hier seine JSON-Datei und verbinde dann jedes Konto. Mail, Kalender, Drive und der Rest laufen danach ohne App-Passwort.",
+    "emptyHintReady": "Der OAuth-Client ist da. Verbinde jetzt jedes Google-Konto; Mail, Kalender, Drive und der Rest laufen danach ohne App-Passwort.",
     "clients": "OAuth-Clients",
     "clientType": {
       "installed": "Desktop",
@@ -117,6 +118,7 @@
   },
   "grants": {
     "title": "Freigaben für {name}",
+    "action": "Freigaben",
     "hint": "Gib den Zugang einzelnen Agenten oder allen Agenten eines Projekts frei, für alle Dienste oder einen, nur zum Lesen oder auch zum Schreiben. Senden, Teilen und Löschen warten weiter auf deine Freigabe.",
     "empty": "Noch darf ihn niemand nutzen.",
     "add": "Hinzufügen",

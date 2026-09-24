@@ -18,8 +18,8 @@ import MailRuleSettings from './MailRuleSettings';
 // import state of each. Home also lists the rules that file new mail under a project.
 // Self-contained, so any settings page can show it. `page`: it is the page itself (Home's
 // E-Mail-Konten), so the header row names it and holds "Konto hinzufügen" as the page's
-// primary action; inside another settings page it keeps its own title and an outline
-// add button.
+// primary action and needs no intro line; inside another settings page it keeps its own
+// title, the intro and an outline add button.
 export default function MailAccountSettings({
   teamId,
   projectId = null,
@@ -78,7 +78,11 @@ export default function MailAccountSettings({
           )}
         </div>
       )}
-      <p className="text-xs text-muted-foreground">{projectKey ? t('projectIntro') : t('intro')}</p>
+      {!page && (
+        <p className="text-xs text-muted-foreground">
+          {projectKey ? t('projectIntro') : t('intro')}
+        </p>
+      )}
       {accounts.isError ? (
         <p className="rounded-lg border bg-card px-3 py-2 text-sm text-destructive">
           {t('loadError')}

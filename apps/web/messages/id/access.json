@@ -12,6 +12,7 @@
     "importClient": "Impor klien OAuth",
     "empty": "Belum ada akun Google",
     "emptyHint": "Buat klien OAuth berjenis “Aplikasi desktop” di Google Cloud, impor file JSON-nya di sini, lalu hubungkan setiap akun. Mail, Kalender, Drive, dan lainnya lalu berjalan tanpa sandi aplikasi.",
+    "emptyHintReady": "Klien OAuth sudah ada. Sekarang hubungkan setiap akun Google; email, kalender, Drive, dan lainnya lalu berjalan tanpa sandi aplikasi.",
     "clients": "Klien OAuth",
     "clientType": {
       "installed": "Desktop",
@@ -117,6 +118,7 @@
   },
   "grants": {
     "title": "Izin untuk {name}",
+    "action": "Izin",
     "hint": "Berikan ke agen tertentu atau semua agen dalam proyek, untuk semua layanan atau satu, hanya baca atau juga tulis. Mengirim, berbagi, dan menghapus tetap menunggu persetujuanmu.",
     "empty": "Belum ada yang boleh memakainya.",
     "add": "Tambah",

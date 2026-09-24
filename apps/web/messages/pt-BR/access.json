@@ -12,6 +12,7 @@
     "importClient": "Importar cliente OAuth",
     "empty": "Nenhuma conta Google ainda",
     "emptyHint": "Crie no Google Cloud um cliente OAuth do tipo “App para computador”, importe aqui o arquivo JSON e conecte cada conta. E-mail, Agenda, Drive e o resto funcionam depois sem senhas de app.",
+    "emptyHintReady": "O cliente OAuth está pronto. Agora conecte cada conta Google; e-mail, agenda, Drive e o resto funcionam depois sem senha de app.",
     "clients": "Clientes OAuth",
     "clientType": {
       "installed": "Computador",
@@ -117,6 +118,7 @@
   },
   "grants": {
     "title": "Permissões de {name}",
+    "action": "Permissões",
     "hint": "Dê acesso a agentes específicos ou a todos os agentes de um projeto, para todos os serviços ou um, só leitura ou também escrita. Enviar, compartilhar e excluir continuam esperando sua aprovação.",
     "empty": "Ninguém pode usá-lo ainda.",
     "add": "Adicionar",

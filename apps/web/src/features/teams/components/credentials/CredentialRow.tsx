@@ -90,7 +90,7 @@ export function CredentialRow({
           </CredentialRowAction>
         )}
         {canManage && (
-          <CredentialRowAction label={t('grants')} onClick={() => onOpen('grants')}>
+          <CredentialRowAction label={tAccess('grants.action')} onClick={() => onOpen('grants')}>
             <UsersRound className="size-4" />
           </CredentialRowAction>
         )}
@@ -136,7 +136,7 @@ export function CredentialRow({
           {canManage && (
             <DropdownMenuItem onSelect={() => onOpen('grants')}>
               <UsersRound />
-              {t('grants')}
+              {tAccess('grants.action')}
             </DropdownMenuItem>
           )}
           {canClone && (

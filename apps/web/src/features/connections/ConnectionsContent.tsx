@@ -16,7 +16,8 @@ import { useConnectionAction, useConnectionsQuery } from './services/connections
 // The host's connections (MCP servers, channels, services) and their live health. On a
 // server without the connections service the page says so and points to the pages
 // that hold the accounts instead; it never shows an empty page.
-// In the access center the area's tabs lead the header row (`leading`).
+// In the access center the area's tabs lead the header row (`leading`), and the accounts
+// sit in those tabs, so only the devices page gets a link.
 export default function ConnectionsContent({
   embedded = false,
   leading,
@@ -40,20 +41,27 @@ export default function ConnectionsContent({
       </Button>
     </EmptyState>
   ) : !connections.data?.configured ? (
-    <EmptyState title={t('unconfigured.title')} description={t('unconfigured.hint')}>
+    <EmptyState
+      title={t('unconfigured.title')}
+      description={t(leading ? 'unconfigured.hintAccess' : 'unconfigured.hint')}
+    >
       <div className="flex flex-wrap justify-center gap-2">
-        <Button size="sm" variant="outline" asChild>
-          <Link href={mailAccountsPath()}>
-            <Mail />
-            {t('unconfigured.mail')}
-          </Link>
-        </Button>
-        <Button size="sm" variant="outline" asChild>
-          <Link href={credentialsPath()}>
-            <KeyRound />
-            {t('unconfigured.credentials')}
-          </Link>
-        </Button>
+        {!leading && (
+          <>
+            <Button size="sm" variant="outline" asChild>
+              <Link href={mailAccountsPath()}>
+                <Mail />
+                {t('unconfigured.mail')}
+              </Link>
+            </Button>
+            <Button size="sm" variant="outline" asChild>
+              <Link href={credentialsPath()}>
+                <KeyRound />
+                {t('unconfigured.credentials')}
+              </Link>
+            </Button>
+          </>
+        )}
         <Button size="sm" variant="outline" asChild>
           <Link href={devicesPath()}>
             <Laptop />

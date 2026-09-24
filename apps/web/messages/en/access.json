@@ -12,6 +12,7 @@
     "importClient": "Import OAuth client",
     "empty": "No Google account yet",
     "emptyHint": "Create an OAuth client of type “Desktop app” in Google Cloud, import its JSON file here, then connect each account. Mail, Calendar, Drive and the rest then work without app passwords.",
+    "emptyHintReady": "The OAuth client is in place. Now connect each Google account; mail, calendar, Drive and the rest then work without an app password.",
     "clients": "OAuth clients",
     "clientType": {
       "installed": "Desktop",
@@ -117,6 +118,7 @@
   },
   "grants": {
     "title": "Access to {name}",
+    "action": "Access",
     "hint": "Grant it to single agents or to every agent of a project, for all services or one, to read only or to write as well. Sending, sharing and deleting still wait for your approval.",
     "empty": "Nobody may use it yet.",
     "add": "Add",

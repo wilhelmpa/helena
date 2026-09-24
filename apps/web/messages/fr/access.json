@@ -12,6 +12,7 @@
     "importClient": "Importer le client OAuth",
     "empty": "Aucun compte Google",
     "emptyHint": "Créez dans Google Cloud un client OAuth de type « Application de bureau », importez ici son fichier JSON, puis connectez chaque compte. Mail, Agenda, Drive et le reste fonctionnent ensuite sans mot de passe d’application.",
+    "emptyHintReady": "Le client OAuth est en place. Connecte maintenant chaque compte Google ; e-mail, agenda, Drive et le reste fonctionnent ensuite sans mot de passe d’application.",
     "clients": "Clients OAuth",
     "clientType": {
       "installed": "Bureau",
@@ -117,6 +118,7 @@
   },
   "grants": {
     "title": "Autorisations pour {name}",
+    "action": "Autorisations",
     "hint": "Accordez l’accès à des agents ou à tous les agents d’un projet, pour tous les services ou un seul, en lecture seule ou aussi en écriture. Envoyer, partager et supprimer attendent toujours votre approbation.",
     "empty": "Personne ne peut encore l’utiliser.",
     "add": "Ajouter",

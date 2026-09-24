@@ -100,13 +100,26 @@ export function GoogleSection({ teamId, leading }: { teamId: number; leading: Re
       ) : (
         <div className="flex flex-col gap-6">
           {data.accounts.length === 0 ? (
-            <EmptyState title={t('empty')} description={t('emptyHint')}>
-              {canManage && data.clients.length === 0 && (
-                <Button size="sm" variant="outline" onClick={() => setOpen({ dialog: 'import' })}>
-                  <FileUp />
-                  {t('importClient')}
-                </Button>
-              )}
+            <EmptyState
+              title={t('empty')}
+              description={t(data.clients.length === 0 ? 'emptyHint' : 'emptyHintReady')}
+            >
+              {canManage &&
+                (data.clients.length === 0 ? (
+                  <Button size="sm" variant="outline" onClick={() => setOpen({ dialog: 'import' })}>
+                    <FileUp />
+                    {t('importClient')}
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setOpen({ dialog: 'signIn', mode: { kind: 'new' } })}
+                  >
+                    <Plus />
+                    {t('connect')}
+                  </Button>
+                ))}
             </EmptyState>
           ) : (
             <ul className="divide-y overflow-hidden rounded-lg border border-sidebar-border bg-card">
