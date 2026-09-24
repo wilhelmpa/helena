@@ -51,12 +51,15 @@ function eventData(
 }
 
 // Publishes one issue or comment event. `extra` adds the fields an event type has beyond
-// the resource (issue.assigned: field, assigneeId, previousAssigneeId).
+// the resource (issue.assigned: field, assigneeId, previousAssigneeId). `actor` is who
+// caused it (a user id, or `system:workflow` for a workflow's own change, which starts no
+// workflow in turn).
 export async function publishResourceEvent(
   projectId: number,
   eventType: WebhookEventType,
   data: unknown,
   extra: Record<string, unknown> = {},
+  actor: string | null = null,
 ): Promise<void> {
   const type = `helena.${eventType}` as ResourceEvent;
   const subject = eventType.startsWith('comment.')
@@ -66,6 +69,7 @@ export async function publishResourceEvent(
     type,
     projectId,
     subject,
+    ...(actor ? { actor } : {}),
     data: eventData(projectId, eventType, data, extra) as unknown as CoreEventData[typeof type],
   });
 }

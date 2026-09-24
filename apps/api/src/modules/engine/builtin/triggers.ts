@@ -3,25 +3,27 @@ import { eq, inArray } from 'drizzle-orm';
 import { minCronIntervalSeconds } from '#modules/routines/cron';
 import type { DomainEvent, TriggerDefinition, WorkflowTriggerType } from '../sdk';
 
-// The built-in trigger types. Task events and mail arrive as domain events; a schedule
-// fires through the engine's tick (schedules.ts); a webhook through its hook route; `manual`
-// starts a run only by hand. `delegation` (an agent team) and `routine` are the
-// triggers of the built-in workflows the engine builds itself.
+// The built-in trigger types. Task events are the framework's core issue events
+// (`helena.issue.*`, @helena/sdk CoreEventData) and mail arrives as `helena.mail.received`;
+// a schedule fires through the engine's tick (schedules.ts); a webhook through its hook
+// route; `manual` starts a run only by hand. `delegation` (an agent team) and `routine` are
+// the triggers of the built-in workflows the engine builds itself.
 
 const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
 type Trigger<T> = TriggerDefinition & T;
 
 function taskId(event: DomainEvent): number | null {
-  const id = event.data.taskId;
-  return typeof id === 'number' ? id : null;
+  const id = event.data.issueId;
+  return typeof id === 'number' && id > 0 ? id : null;
 }
 
+// The core issue events the task triggers listen to.
 export const TASK_EVENTS = {
-  created: 'helena.task.created',
-  assigned: 'helena.task.assigned',
-  statusChanged: 'helena.task.status_changed',
-  labelsAdded: 'helena.task.labels_added',
+  created: 'helena.issue.created',
+  assigned: 'helena.issue.assigned',
+  statusChanged: 'helena.issue.state_changed',
+  labelsChanged: 'helena.issue.label_changed',
 } as const;
 
 export const MAIL_RECEIVED = 'helena.mail.received';
@@ -42,9 +44,11 @@ const taskAssigned: WorkflowTriggerType = {
   type: 'task_assigned',
   read: () => ({}),
   events: [TASK_EVENTS.assigned],
+  // A person (or agent) became the assignee; a delegation or an unassignment is not it.
   async match(_trigger, event) {
     const id = taskId(event);
-    return id === null ? null : { taskId: id };
+    if (id === null || event.data.field !== 'assignee' || !event.data.assigneeId) return null;
+    return { taskId: id };
   },
 };
 
@@ -58,7 +62,8 @@ const statusChanged: WorkflowTriggerType<Trigger<{ to: string | null }>> = {
   events: [TASK_EVENTS.statusChanged],
   async match(trigger, event) {
     const id = taskId(event);
-    const columnId = event.data.columnId;
+    const snapshot = event.data.snapshot as { columnId?: unknown } | null | undefined;
+    const columnId = event.data.columnId ?? snapshot?.columnId;
     if (id === null || typeof columnId !== 'number') return null;
     if (!trigger.to) return { taskId: id };
     const [column] = await db
@@ -72,11 +77,12 @@ const statusChanged: WorkflowTriggerType<Trigger<{ to: string | null }>> = {
 const labelAdded: WorkflowTriggerType<Trigger<{ label: string }>> = {
   type: 'label_added',
   read: (value, reader) => ({ label: reader.text(value.label, 'label', 120) }),
-  events: [TASK_EVENTS.labelsAdded],
+  events: [TASK_EVENTS.labelsChanged],
+  // Fires on the labels a change added, not on the ones it removed.
   async match(trigger, event) {
     const id = taskId(event);
-    const ids = Array.isArray(event.data.labelIds)
-      ? event.data.labelIds.filter((item): item is number => typeof item === 'number')
+    const ids = Array.isArray(event.data.added)
+      ? event.data.added.filter((item): item is number => typeof item === 'number')
       : [];
     if (id === null || ids.length === 0) return null;
     const names = await db.select({ name: label.name }).from(label).where(inArray(label.id, ids));

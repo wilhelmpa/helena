@@ -6,17 +6,17 @@ import { bumpControlPlaneRevision } from '#modules/sync/service';
 import { getProjectSetting, setProjectSetting } from '#shared/project-settings';
 import { WORKFLOW_ACTOR } from '#modules/engine/run-context';
 
-// Guards against workflows re-triggering each other without end. queuePipelineTriggers
-// (triggers.ts) starts a workflow on any task change except one a workflow makes
-// itself — an agent step's change is not excluded, so workflow A's agent step can
-// change the task in a way that starts workflow B, whose agent step changes it back,
-// restarting A, forever. Plan cannot tell that chain apart from two workflows that
-// legitimately hand a task back and forth a few times, so it bounds it instead: at
-// most `maxRuns` runs of any workflow may start on one task within
-// RUN_LIMIT_WINDOW_MINUTES. Past that, checkPipelineRunLimit refuses the run and
-// leaves one trace of the refusal in the task's activity and in the workflow's own
-// run history, so the person who put the workflows together can see why nothing
-// started and change the limit if it was too tight for a real pipeline of theirs.
+// Guards against workflows re-triggering each other without end. The engine's task
+// triggers (the core issue events, engine/events.ts) start a workflow on any task change
+// except one a workflow makes itself — an agent step's change is not excluded, so
+// workflow A's agent step can change the task in a way that starts workflow B, whose
+// agent step changes it back, restarting A, forever. Helena cannot tell that chain apart
+// from two workflows that legitimately hand a task back and forth a few times, so it
+// bounds it instead: at most `maxRuns` runs of any workflow may start on one task
+// within RUN_LIMIT_WINDOW_MINUTES. Past that, checkPipelineRunLimit refuses the run and
+// leaves one trace of the refusal in the task's activity and in the workflow's own run
+// history, so the person who put the workflows together can see why nothing started and
+// change the limit if it was too tight for a real pipeline of theirs.
 //
 // The window is a fixed hour; `maxRuns` is the project's own setting (RUN_LIMIT_KEY
 // in project_setting), defaulting to DEFAULT_MAX_RUNS.

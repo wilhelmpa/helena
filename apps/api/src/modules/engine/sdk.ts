@@ -7,7 +7,7 @@
 // ---- domain events -----------------------------------------------------------------
 
 // A domain event in the CloudEvents 1.0 shape. `type` is reverse-DNS-like
-// (`helena.task.created`), `subject` names the thing it is about (`task:KEY-12`), and
+// (`helena.issue.created`), `subject` names the thing it is about (`issues/42`), and
 // `helenaproject` is a CloudEvents extension attribute carrying the project id.
 export interface DomainEvent<D extends Record<string, unknown> = Record<string, unknown>> {
   specversion: '1.0';

@@ -78,7 +78,7 @@ import {
   delegationPrompt,
   startDelegatedAgentTeam,
 } from '#modules/control-plane-workflows/agent-team-starts';
-import { queuePipelineTriggers } from '#modules/pipelines/triggers';
+import { WORKFLOW_EVENT_ACTOR } from '#modules/engine/events';
 import { applySubtaskAutomation } from './automation';
 import { assertWipLimit, columnAutoAssignee, wipLimitBreach } from '#modules/columns/service';
 import { enqueueStateChangedActions, type ActionChain } from '#modules/actions/queue';
@@ -157,6 +157,14 @@ export interface IssueRow {
   // UI can filter by custom fields without a per-issue fetch. Only listIssues
   // populates this; mapIssue alone leaves it empty.
   fieldValues: IssueFieldValueEntry[];
+}
+
+// Who caused an issue event on the bus: the user, or the workflow actor for a workflow's
+// own change, which starts no workflow in turn (engine/events.ts).
+function eventActor(actor: ActivityActor): string | null {
+  if (typeof actor === 'object' && actor !== null && actor.system === 'Workflow')
+    return WORKFLOW_EVENT_ACTOR;
+  return actorId(actor);
 }
 
 function mapIssue(row: typeof issue.$inferSelect, projectKey: string): IssueRow {
@@ -1101,9 +1109,13 @@ export async function createIssue(
   // The author follows what they filed; the assignee is subscribed by the
   // assignment notification below, the same as a later assignment does.
   await autoWatchIssue(project.id, issueId, [actorUserId]);
-  await emitWebhookEvent(project.id, 'issue.created', created);
-  if (!opts?.fromWorkflow)
-    await queuePipelineTriggers(created, [{ type: 'task_created' }], actorUserId);
+  await emitWebhookEvent(
+    project.id,
+    'issue.created',
+    created,
+    {},
+    opts?.fromWorkflow ? WORKFLOW_EVENT_ACTOR : (actorUserId ?? null),
+  );
   // An issue created already delegated to an agent enqueues a run, the same as
   // delegating one later does.
   await enqueueDelegateRun(created, actorUserId);
@@ -1300,39 +1312,46 @@ export async function updateIssue(
     if (before.parentId !== after.parentId)
       await recordParentChange(id, before.parentId, after.parentId, actor);
     if (changed) {
-      await emitWebhookEvent(after.projectId, 'issue.updated', after);
+      const by = eventActor(actor);
+      await emitWebhookEvent(after.projectId, 'issue.updated', after, {}, by);
       // Granular events fire in addition to issue.updated when their field changed.
       if (before.assigneeUserId !== after.assigneeUserId)
-        await emitWebhookEvent(after.projectId, 'issue.assigned', after, {
-          field: 'assignee',
-          assigneeId: after.assigneeUserId,
-          previousAssigneeId: before.assigneeUserId,
-        });
+        await emitWebhookEvent(
+          after.projectId,
+          'issue.assigned',
+          after,
+          {
+            field: 'assignee',
+            assigneeId: after.assigneeUserId,
+            previousAssigneeId: before.assigneeUserId,
+          },
+          by,
+        );
       if (before.delegateUserId !== after.delegateUserId) {
         // Not a webhook event; workflow triggers and plugins see the hand-over.
-        await emitWebhookEvent(after.projectId, 'issue.assigned', after, {
-          field: 'delegate',
-          assigneeId: after.delegateUserId,
-          previousAssigneeId: before.delegateUserId,
-        });
+        await emitWebhookEvent(
+          after.projectId,
+          'issue.assigned',
+          after,
+          {
+            field: 'delegate',
+            assigneeId: after.delegateUserId,
+            previousAssigneeId: before.delegateUserId,
+          },
+          by,
+        );
         await enqueueDelegateRun(after, actor);
       }
       if (before.columnId !== after.columnId) {
-        await emitWebhookEvent(after.projectId, 'issue.state_changed', after);
+        await emitWebhookEvent(
+          after.projectId,
+          'issue.state_changed',
+          after,
+          { columnId: after.columnId, previousColumnId: before.columnId },
+          by,
+        );
         await applySubtaskAutomation(after, actor);
       }
-      await queuePipelineTriggers(
-        after,
-        [
-          ...(after.assigneeUserId && before.assigneeUserId !== after.assigneeUserId
-            ? [{ type: 'task_assigned' as const }]
-            : []),
-          ...(before.columnId !== after.columnId
-            ? [{ type: 'status_changed' as const, columnId: after.columnId }]
-            : []),
-        ],
-        actor,
-      );
     }
   }
   return after;
@@ -1440,9 +1459,13 @@ export async function setIssueLabels(
   if (emitEvent && (added.length > 0 || removed.length > 0)) {
     const issueRow = await getIssue(issueId);
     if (issueRow) {
-      await emitWebhookEvent(issueRow.projectId, 'issue.label_changed', issueRow);
-      if (added.length > 0)
-        await queuePipelineTriggers(issueRow, [{ type: 'label_added', labelIds: added }], actor);
+      await emitWebhookEvent(
+        issueRow.projectId,
+        'issue.label_changed',
+        issueRow,
+        { added, removed },
+        eventActor(actor),
+      );
     }
   }
 }
