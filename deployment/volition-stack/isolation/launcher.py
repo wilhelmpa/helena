@@ -1154,6 +1154,7 @@ async def serve(config: Config) -> None:
     listen_fds = int(os.environ.get('LISTEN_FDS', '0') or 0)
     if listen_fds >= 1 and os.environ.get('LISTEN_PID') == str(os.getpid()):
         sock = socket.socket(fileno=3)
+        activated = True
     else:
         path = os.environ.get('VOLITION_LAUNCHER_SOCKET', '/run/volition-agent-launcher/launch.sock')
         group = os.environ.get('VOLITION_LAUNCHER_GROUP', 'volition-launcher')
@@ -1166,7 +1167,7 @@ async def serve(config: Config) -> None:
         os.chown(path, 0, grp.getgrnam(group).gr_gid)
         os.chmod(path, 0o660)
         sock.listen(64)
-    server = await asyncio.start_unix_server(launcher.handle, sock=sock, limit=MAX_REQUEST)
+    server = await asyncio.start_unix_server(launcher.handle, sock=sock, limit=MAX_REQUEST, **unix_server_options(activated))
     stop = asyncio.Event()
     loop = asyncio.get_running_loop()
     for signum in (signal.SIGTERM, signal.SIGINT):

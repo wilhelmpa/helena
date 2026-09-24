@@ -10,6 +10,7 @@ import errno
 import json
 import os
 import re
+import sys
 import stat
 import struct
 import socket
@@ -656,3 +657,11 @@ def split_host_port(value: str, default_port: int | None) -> tuple[str, int]:
     if normalized is None:
         raise HttpError(400, 'invalid host')
     return normalized, port
+
+
+def unix_server_options(activated: bool) -> dict:
+    """Keyword arguments for asyncio.start_unix_server. Python 3.13 removes a Unix socket's
+    file when the server closes; a socket systemd handed over belongs to its .socket unit,
+    which keeps listening after the service stops, so its file must stay (2026-09-24: a
+    launcher restart left launch.sock gone and every isolated agent unable to start)."""
+    return {'cleanup_socket': False} if activated and sys.version_info >= (3, 13) else {}

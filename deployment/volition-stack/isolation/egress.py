@@ -484,6 +484,7 @@ async def serve() -> None:
                     model_hosts=settings['modelHosts'])
     if int(os.environ.get('LISTEN_FDS', '0') or 0) >= 1 and os.environ.get('LISTEN_PID') == str(os.getpid()):
         sock = socket.socket(fileno=3)
+        activated = True
     else:
         path = os.environ['VOLITION_EGRESS_SOCKET']
         try:
@@ -499,7 +500,7 @@ async def serve() -> None:
         await asyncio.wait_for(plan.refresh(), 8)
     except asyncio.TimeoutError:
         log('Plan did not answer at start; using the cached project settings')
-    server = await asyncio.start_unix_server(egress.handle, sock=sock, limit=64 * 1024)
+    server = await asyncio.start_unix_server(egress.handle, sock=sock, limit=64 * 1024, **unix_server_options(activated))
     background = asyncio.ensure_future(plan.loop(
         float(os.environ.get('VOLITION_EGRESS_REFRESH_SEC', '30')),
         float(os.environ.get('VOLITION_EGRESS_FLUSH_SEC', '10')),

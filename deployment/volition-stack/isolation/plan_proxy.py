@@ -230,6 +230,7 @@ async def serve() -> None:
                       os.environ.get('VOLITION_AGENTS_GROUP', 'volition-agents'))
     if int(os.environ.get('LISTEN_FDS', '0') or 0) >= 1 and os.environ.get('LISTEN_PID') == str(os.getpid()):
         sock = socket.socket(fileno=3)
+        activated = True
     else:
         path = os.environ['VOLITION_PLAN_SOCKET']
         try:
@@ -239,7 +240,7 @@ async def serve() -> None:
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         sock.bind(path)
         sock.listen(256)
-    server = await asyncio.start_unix_server(proxy.handle, sock=sock, limit=64 * 1024)
+    server = await asyncio.start_unix_server(proxy.handle, sock=sock, limit=64 * 1024, **unix_server_options(activated))
     async with server:
         await server.serve_forever()
 
