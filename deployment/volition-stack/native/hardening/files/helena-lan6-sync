@@ -1,0 +1,15 @@
+#!/bin/sh
+# Keeps the firewall's set of home IPv6 networks (inet helena_hardening lan6) equal to the
+# /64s this machine has global addresses in, plus link-local and unique-local. The
+# provider changes the prefix; without this the home network's IPv6 clients would be
+# dropped (IPv4 keeps working). Run by NetworkManager's dispatcher and a 5-minute timer.
+set -eu
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+nft list table inet helena_hardening >/dev/null 2>&1 || exit 0
+prefixes=$(ip -6 -o addr show scope global 2>/dev/null | awk '{print $4}' | grep '/64$' \
+  | python3 -c 'import ipaddress,sys; print(",".join(sorted({str(ipaddress.ip_interface(l.strip()).network) for l in sys.stdin if l.strip()})))')
+elements="fe80::/10, fc00::/7${prefixes:+, $prefixes}"
+nft -f - <<NFT
+flush set inet helena_hardening lan6
+add element inet helena_hardening lan6 { $elements }
+NFT

@@ -1,0 +1,15 @@
+[Unit]
+Description=Helena: host security audit (report for Administrator -> Sicherheit)
+After=network-online.target postgresql.service
+
+[Service]
+Type=oneshot
+# Exit 1 means "a check failed", which is a finding, not a failed unit.
+SuccessExitStatus=1
+ExecStart=/usr/local/libexec/helena-security-audit --json-file /var/lib/helena/security/audit.json
+Nice=10
+IOSchedulingClass=idle
+PrivateTmp=yes
+NoNewPrivileges=yes
+ProtectHome=read-only
+ReadWritePaths=/var/lib/helena/security
