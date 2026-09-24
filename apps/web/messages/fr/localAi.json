@@ -143,7 +143,7 @@
   },
   "pickerMark": "local",
   "tile": {
-    "offSub": "Les modèles configurés répondent"
+    "offSub": "Comme configuré"
   },
   "problems": {
     "serverDown": "IA locale : {name} ne répond pas",

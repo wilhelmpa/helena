@@ -143,7 +143,7 @@
   },
   "pickerMark": "lokal",
   "tile": {
-    "offSub": "Eingestellte Modelle antworten"
+    "offSub": "Alles wie eingestellt"
   },
   "problems": {
     "serverDown": "Lokale KI: {name} antwortet nicht",

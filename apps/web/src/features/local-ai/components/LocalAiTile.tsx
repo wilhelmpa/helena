@@ -52,7 +52,8 @@ export default function LocalAiTile() {
         >
           {/* The card names itself; the dialog's title is for screen readers. */}
           <DialogTitle className="sr-only">{t('title')}</DialogTitle>
-          <LocalAiCard className="border-0 bg-transparent p-0" />
+          {/* Room on the right of the card's header for the dialog's close button. */}
+          <LocalAiCard className="border-0 bg-transparent p-0 [&>header]:pe-8" />
         </DialogContent>
       </Dialog>
     </>
