@@ -274,17 +274,20 @@ function FansCard({ data }: { data: PowerStatus }) {
         <Choice selected={choice === 'auto'} disabled={set.isPending} onClick={() => apply('auto')}>
           {t('fans.auto')}
         </Choice>
-        {[1, 2, 3, 4, 5].map((level) => (
-          <Choice
-            key={level}
-            selected={choice === level}
-            disabled={set.isPending}
-            label={t('fans.level', { level })}
-            onClick={() => apply(level)}
-          >
-            {level}
-          </Choice>
-        ))}
+        {/* The five levels stay one row, also where they wrap under "Automatisch". */}
+        <div className="flex gap-1.5">
+          {[1, 2, 3, 4, 5].map((level) => (
+            <Choice
+              key={level}
+              selected={choice === level}
+              disabled={set.isPending}
+              label={t('fans.level', { level })}
+              onClick={() => apply(level)}
+            >
+              {level}
+            </Choice>
+          ))}
+        </div>
       </div>
       <p className="text-xs text-muted-foreground">
         {choice === 'auto'
