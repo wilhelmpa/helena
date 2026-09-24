@@ -36,7 +36,7 @@ export interface SystemOneReply {
   providerCostUsd: number | null;
 }
 
-// The key file of the local Laya service (install.sh writes it, root:volition-plan 0640).
+// The key file of the local Laya service (install.sh writes it, root:volition-plan-secrets 0640).
 export function localLayaKeyFile(): string {
   return process.env.HELENA_LAYA_KEY_FILE?.trim() || '/etc/helena/laya.key';
 }

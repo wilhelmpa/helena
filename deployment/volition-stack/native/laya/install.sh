@@ -10,7 +10,7 @@
 # What it does (install): a system user helena-laya; a venv in /opt/helena/laya with pinned
 # PyTorch (CPU) and Laya; the checkpoint at a pinned revision in /var/lib/helena-laya/models
 # (safetensors only, checked against its SHA-256); a generated key in /etc/helena/laya.key
-# (root:volition-plan 0640: the API reads it, the service gets it through systemd's credentials);
+# (root:volition-plan-secrets 0640: the API reads it, the service gets it through systemd's credentials);
 # helena-laya.service on 127.0.0.1:8791 with CPU and memory limits; a health check and one probe.
 # In Helena: Zugänge → Hinzufügen → Entscheidungsmodell (Jev) → "Laya (lokal auf diesem Server)".
 set -euo pipefail
@@ -29,7 +29,18 @@ PREFIX=/opt/helena/laya
 STATE=/var/lib/helena-laya
 KEY_DIR=/etc/helena
 KEY_FILE=$KEY_DIR/laya.key
-API_GROUP=${HELENA_API_GROUP:-volition-plan}
+# The group the API reads the key through: on Kingston the API user's secrets group
+# `volition-plan-secrets` (there is no group `volition-plan`; found 2026-09-25). HELENA_API_GROUP
+# overrides it; otherwise the first of these that exists (after the rename: helena-secrets).
+api_group() {
+  if [ -n "${HELENA_API_GROUP:-}" ]; then echo "$HELENA_API_GROUP"; return; fi
+  local group
+  for group in helena-secrets volition-plan-secrets volition-plan; do
+    if getent group "$group" >/dev/null; then echo "$group"; return; fi
+  done
+  echo volition-plan-secrets
+}
+API_GROUP=$(api_group)
 UNIT=/etc/systemd/system/helena-laya.service
 PORT=8791
 here=$(cd "$(dirname "$0")" && pwd)
@@ -52,7 +63,8 @@ probe() {
 install_all() {
   id "$SERVICE_USER" >/dev/null 2>&1 ||
     useradd --system --home-dir "$STATE" --no-create-home --shell /usr/sbin/nologin "$SERVICE_USER"
-  getent group "$API_GROUP" >/dev/null || die "group $API_GROUP (the API's) does not exist"
+  getent group "$API_GROUP" >/dev/null ||
+    die "group $API_GROUP (the API's secrets group) does not exist; set HELENA_API_GROUP"
   install -d -o root -g root -m 0755 /opt/helena "$PREFIX"
   install -d -o "$SERVICE_USER" -g "$SERVICE_USER" -m 0750 "$STATE" "$STATE/models" "$STATE/hf"
   install -d -o root -g root -m 0755 /var/cache/helena-laya

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { contactSite } from './fake-site';
-import { runTask, repeatsBlock, type TaskDeps } from './loop';
+import { readOnlyPage, runTask, repeatsBlock, TaskActError, type TaskDeps } from './loop';
+import type { DecisionPolicy } from './policy';
 import { mockAnswers } from './mock-backend';
 import { jevPolicy, jevRound } from './policy-jev';
 import { layaPolicy, layaRound } from './policy-laya';
@@ -229,8 +230,81 @@ describe('runTask with the Jev policy', () => {
     });
     expect(round.ops).not.toContain('TYPE_TEXT');
     expect(round.ops).not.toContain('SELECT');
-    expect(round.targets.CLICK.some((element) => element.submits)).toBe(false);
+    expect(round.ops).not.toContain('CLICK');
+    expect(round.ops).not.toContain('PRESS_ENTER');
+    expect(round.targets.CLICK).toHaveLength(0);
     expect(round.request.questions.irreversible).toBeUndefined();
+    const laya = layaRound({
+      observation: await site.observe(),
+      goal: 'nichts anklicken, nur lesen',
+      values: {},
+      mode: 'read',
+      round: 0,
+      history: [],
+      excluded: new Set(),
+    });
+    expect(laya.targets.CLICK).toHaveLength(0);
+    expect(laya.targets.TYPE_TEXT).toHaveLength(0);
+  });
+
+  // Found live 2026-09-25: Browser 2.0, mode read, goal "nichts anklicken", Laya clicked twice.
+  it('in read mode never carries out a write, whatever the policy answers', async () => {
+    const site = contactSite();
+    const observation = await site.observe();
+    const link = observation.elements.find((element) => element.href) ?? observation.elements[0]!;
+    // A policy that ignores what it was offered and always clicks.
+    const clicky: DecisionPolicy = {
+      ...layaPolicy,
+      async round() {
+        return {
+          operation: 'CLICK',
+          element: link,
+          operationProbability: 0.99,
+          operationConfidence: 0.99,
+          targetProbability: 0.99,
+          done: null,
+          error: null,
+          login: null,
+          blocked: null,
+          irreversible: null,
+          candidates: [],
+        };
+      },
+    };
+    const d = deps(site, { policy: clicky });
+    const result = await runTask(
+      {
+        goal: 'Lies die Seite, nichts anklicken',
+        values: {},
+        mode: 'read',
+        maxSteps: 5,
+        allowIrreversible: false,
+      },
+      d,
+    );
+    expect(result.status).toBe('denied');
+    expect(result.pending?.category).toBe('write');
+    expect(site.actions).toHaveLength(0);
+    expect(d.decisions).toHaveLength(0);
+    expect(result.steps).toHaveLength(0);
+  });
+
+  it("the gateway's read-only page refuses everything but scrolling and waiting", async () => {
+    const site = contactSite();
+    const page = readOnlyPage(site);
+    const observation = await page.observe();
+    const element = observation.elements[0]!;
+    for (const operation of ['CLICK', 'TYPE_TEXT', 'SELECT', 'PRESS_ENTER'] as const) {
+      const refused = await page.act({ operation, element, text: 'x', option: 'y' }).then(
+        () => null,
+        (error: unknown) => error,
+      );
+      expect(refused).toBeInstanceOf(TaskActError);
+      expect((refused as TaskActError).code).toBe('refused');
+    }
+    expect(site.actions).toHaveLength(0);
+    await page.act({ operation: 'SCROLL_DOWN', element: null });
+    expect(site.actions.map((action) => action.operation)).toEqual(['SCROLL_DOWN']);
   });
 
   it('does not click a checkbox that is already checked', async () => {

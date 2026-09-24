@@ -71,6 +71,25 @@ export function roundStep(line: string, n: number) {
   };
 }
 
+// Chromium keeps its crash database (crashpad) and caches below $HOME / $XDG_CONFIG_HOME, not
+// below --user-data-dir. The browser router's unit has ProtectSystem=strict, so its user's home
+// is read-only: crashpad starts without a database ("chrome_crashpad_handler: --database is
+// required") and Chromium stops itself with SIGTRAP (kernel log "chromium trap int3", found
+// 2026-09-25). Everything Chromium writes therefore goes below the throwaway profile, which the
+// unit may write (TMPDIR); no sandbox setting of the unit or of Chromium is loosened for it.
+export function chromiumEnv(profile: string): Record<string, string> {
+  const home = path.join(profile, 'home');
+  return {
+    PATH: process.env.PATH ?? '/usr/bin:/bin',
+    LANG: process.env.LANG ?? 'de_DE.UTF-8',
+    TMPDIR: process.env.TMPDIR ?? os.tmpdir(),
+    HOME: home,
+    XDG_CONFIG_HOME: path.join(home, '.config'),
+    XDG_CACHE_HOME: path.join(home, '.cache'),
+    XDG_DATA_HOME: path.join(home, '.local', 'share'),
+  };
+}
+
 async function main(): Promise<void> {
   const input = await readInput();
   process.env.JEV_API_URL = `${input.apiUrl.replace(/\/+$/, '')}/v1/systemone`;
@@ -89,6 +108,7 @@ async function main(): Promise<void> {
     viewport: { width: 1280, height: 800 },
     locale: 'de-DE',
     args: ['--no-first-run', '--no-default-browser-check'],
+    env: chromiumEnv(profile),
   });
   let steps = 0;
   try {

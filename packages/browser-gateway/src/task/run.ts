@@ -14,7 +14,7 @@ import type { GatewaySession, ToolOutput } from '../session-types.ts';
 import { brief, describe } from './policy-common.ts';
 import { jevPolicy } from './policy-jev.ts';
 import { layaPolicy } from './policy-laya.ts';
-import { runTask, type Authorization } from './loop.ts';
+import { readOnlyPage, runTask, type Authorization } from './loop.ts';
 import {
   answerOf,
   DecisionError,
@@ -264,7 +264,7 @@ export async function runTaskTool(ctx: TaskContext): Promise<ToolOutput> {
     result = await runTask(
       { goal, values, mode, maxSteps, allowIrreversible },
       {
-        page: ctx.session.taskPage(),
+        page: mode === 'read' ? readOnlyPage(ctx.session.taskPage()) : ctx.session.taskPage(),
         client: new HelenaDecisionClient(ctx.helena, opened.taskToken),
         policy: policyOf(opened.policy, opened.minConfidence),
         authorize: authorizer(ctx),
