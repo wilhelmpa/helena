@@ -9,6 +9,7 @@ import {
   LoginStartGate,
   localLoginFrom,
   parseVersion,
+  signInCommand,
   type ShortCommand,
 } from '../cli-runtime';
 import { CLAUDE_TOOLS, CODEX_TOOLS, claudeToolArgs, codexToolArgs } from '../cli-tools';
@@ -207,7 +208,9 @@ describe('a Claude Code agent Helena provisioned', () => {
     );
     failed.hooks!.finished!({ status: 'failed', error: 'x' });
     await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(statuses.at(-1)?.issues).toEqual([{ code: 'not-signed-in', detail: 'rejected' }]);
+    expect(statuses.at(-1)?.issues).toEqual([
+      { code: 'not-signed-in', detail: 'rejected', command: 'claude setup-token' },
+    ]);
 
     const ok = await adapter.runSettings({ runId: 6 });
     ok.hooks!.output!('{"type":"assistant","message":{"content":[{"type":"text","text":"Hi"}]}}\n');
@@ -420,6 +423,29 @@ describe('logins', () => {
     expect(localLoginFrom('codex', { code: null, stdout: '', missing: true })).toBeNull();
     expect(parseVersion('2.1.281 (Claude Code)')).toBe('2.1.281');
     expect(parseVersion('codex-cli 0.156.1')).toBe('0.156.1');
+  });
+});
+
+describe("the owner's sign-in command", () => {
+  it('names the command that signs the runtime in, as the user the agent runs as', () => {
+    const home = '/var/lib/volition/hermes/profiles/vol_12';
+    const cwd = '/srv/volition/workspaces/projects/vol';
+    const agent = { env: { HELENA_AGENT_HOME: home, CODEX_HOME: `${home}/.codex` }, cwd };
+    expect(signInCommand('claude', agent)).toBe('claude setup-token');
+    delete process.env.AGENT_ISOLATION;
+    expect(signInCommand('codex', agent)).toBe(
+      `sudo -u volition-hermes env HOME=${home} CODEX_HOME=${home}/.codex /usr/local/bin/codex login --device-auth`,
+    );
+    process.env.AGENT_ISOLATION = 'on';
+    expect(
+      signInCommand('codex', { ...agent, isolation: { slug: 'vol', profile: 'vol_12', agentId: 12 } }),
+    ).toBe(
+      'sudo -u volition-hermes /usr/bin/python3 -I /usr/local/lib/volition-isolation/launch_client.py ' +
+        `run --slug vol --profile vol_12 --runtime codex --kind helper --cwd ${cwd} ` +
+        `--env CODEX_HOME=${home}/.codex -- login --device-auth`,
+    );
+    // An operator's own runner signs in the operator's own Codex.
+    expect(signInCommand('codex', { env: {} })).toBe('codex login --device-auth');
   });
 });
 

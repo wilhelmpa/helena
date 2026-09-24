@@ -42,6 +42,15 @@ export interface RuntimeProfile {
 
 export type RuntimeSyncState = 'synced' | 'drift' | 'pending' | 'degraded' | 'offline' | 'unknown';
 
+// Why an agent's runtime cannot do its work, or only part of it: its program is missing,
+// no login reaches it ('missing') or its login was refused ('rejected'), or Codex runs
+// read-only without agent isolation. `command` is what the owner runs in the terminal.
+export interface RuntimeIssue {
+  code: 'runtime-missing' | 'not-signed-in' | 'sandbox-unavailable';
+  detail?: string;
+  command?: string;
+}
+
 export interface RuntimeSync {
   state: RuntimeSyncState;
   revision: string;
@@ -49,6 +58,9 @@ export interface RuntimeSync {
   adapter: string | null;
   detail: string | null;
   profile: RuntimeProfile | null;
+  // The version of the runtime's program, and what keeps it from its work.
+  version: string | null;
+  issues: RuntimeIssue[];
   rewritePending: boolean;
   reportedAt: string | null;
 }

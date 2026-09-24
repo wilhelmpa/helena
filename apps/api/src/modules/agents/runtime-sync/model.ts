@@ -52,6 +52,8 @@ export const runtimeIssue = t.Object({
     t.Literal('sandbox-unavailable'),
   ]),
   detail: t.Optional(t.String({ maxLength: 100 })),
+  // The command the owner runs in the owner terminal to put it right (sign the runtime in).
+  command: t.Optional(t.String({ maxLength: 600 })),
 });
 
 // What a run or chat answer reports about its model (the runner's RunModelReport).

@@ -13,7 +13,7 @@ import { CredentialKindIcon } from './CredentialKindIcon';
 import { CredentialRowAction } from './CredentialRowAction';
 
 // What identifies a credential without its secret: the account and site of a login, the
-// public key of an SSH key.
+// public key of an SSH key. A runtime login names its runtime and how it signs in.
 function detailOf(entry: CredentialEntry): string | null {
   if (entry.kind === 'web_login' && entry.loginUrl) {
     return `${entry.username} · ${new URL(entry.loginUrl).host}`;
@@ -33,7 +33,10 @@ export function CredentialRow({
 }) {
   const t = useTranslations('credentials');
   const tCommon = useTranslations('common');
-  const detail = detailOf(entry);
+  const detail =
+    entry.kind === 'runtime_login' && entry.runtime && entry.method
+      ? `${t(`runtimeLogin.runtimes.${entry.runtime}`)} · ${t(`runtimeLogin.methods.${entry.method}`)}`
+      : detailOf(entry);
 
   return (
     <li className="flex items-start gap-3 px-4 py-3">

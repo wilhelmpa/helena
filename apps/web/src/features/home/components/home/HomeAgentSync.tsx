@@ -27,7 +27,13 @@ export default function HomeAgentSync({ summary }: { summary: AgentSyncSummary }
           <StatusBadge status={syncStatus(agent.state)} dotOnly />
           <span className="min-w-0 truncate">@{agent.username}</span>
           <span className="ms-auto shrink-0 text-xs text-muted-foreground">
-            {ts(`state.${agent.state}`)}
+            {agent.issues?.some((issue) => issue.code === 'not-signed-in')
+              ? ts('issues.notSignedInShort')
+              : agent.issues?.some((issue) => issue.code === 'runtime-missing')
+                ? ts('issues.runtimeMissingShort')
+                : agent.issues?.some((issue) => issue.code === 'sandbox-unavailable')
+                  ? ts('issues.sandboxUnavailableShort')
+                  : ts(`state.${agent.state}`)}
           </span>
         </li>
       ))}

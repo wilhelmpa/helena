@@ -221,25 +221,20 @@ export default function AgentRuntimePolicySection({
         <p className="text-xs text-muted-foreground">{t('maxConcurrentChatsHint')}</p>
       </div>
 
-      {(
-        [
-          ['toolAllow', t('toolAllow')],
-          ['mcpGrants', t('mcpGrants')],
-        ] as const
-      ).map(([key, label]) => (
-        <div key={key} className="space-y-1.5">
-          <label htmlFor={`runtime-${key}`} className="text-sm font-medium">
-            {label}
-          </label>
-          <Textarea
-            id={`runtime-${key}`}
-            rows={2}
-            placeholder={t('keysPlaceholder')}
-            value={policy[key].join('\n')}
-            onChange={(event) => patchPolicy({ [key]: lines(event.target.value) })}
-          />
-        </div>
-      ))}
+      {/* Which tools the agent has is switched per tool in Abilities (toolDeny), for every
+          runtime. An allow list next to it had no effect and is gone (hub/cli-runtimes). */}
+      <div className="space-y-1.5">
+        <label htmlFor="runtime-mcpGrants" className="text-sm font-medium">
+          {t('mcpGrants')}
+        </label>
+        <Textarea
+          id="runtime-mcpGrants"
+          rows={2}
+          placeholder={t('keysPlaceholder')}
+          value={policy.mcpGrants.join('\n')}
+          onChange={(event) => patchPolicy({ mcpGrants: lines(event.target.value) })}
+        />
+      </div>
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">

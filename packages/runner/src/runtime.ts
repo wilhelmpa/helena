@@ -72,6 +72,8 @@ export interface RuntimeIssue {
   code: RuntimeIssueCode;
   // A short word or a name, never a value that could be a secret.
   detail?: string;
+  // The command the owner runs in the owner terminal to put it right (sign the runtime in).
+  command?: string;
 }
 
 // The model and reasoning a session actually ran with, as the runtime recorded them.

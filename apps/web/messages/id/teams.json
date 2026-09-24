@@ -423,7 +423,6 @@
       "memoryWindowPlaceholder": "Jendela pesan terbaru",
       "maxConcurrentChats": "Obrolan paralel",
       "maxConcurrentChatsHint": "Berapa banyak obrolan agen ini yang dapat dibiarkan menjawab bersamaan oleh seorang anggota. Pengiriman di atas batas ditolak hingga salah satunya selesai.",
-      "toolAllow": "Alat yang diizinkan",
       "mcpGrants": "Pemberian akses MCP",
       "keysPlaceholder": "Satu kunci per baris",
       "managedFiles": "File Markdown yang dikelola",
@@ -440,7 +439,7 @@
         "codex": "Codex"
       },
       "runtimeHermesHint": "Server menyediakan Hermes sendiri dan menjaga profilnya tetap sinkron.",
-      "runtimeCliHint": "Berjalan di runner dengan preset ini (helena-runner --agent {kind}); instruksi, skill, server MCP, model, dan penalaran berasal dari Helena."
+      "runtimeCliHint": "Berjalan sebagai layanan seperti agen Hermes, di direktori sendiri. Instruksi, skill, server MCP, alat, model, dan penalaran berasal dari Helena; login dari Akses."
     },
     "runtimeConflicts": {
       "title": "Diubah di luar Helena",
@@ -750,7 +749,28 @@
       },
       "defaults": "Bawaan runtime: {model} ({provider}), penalaran {reasoning}",
       "servers": "Server MCP: {servers}",
-      "serversOff": "dinonaktifkan: {servers}"
+      "serversOff": "dinonaktifkan: {servers}",
+      "version": "Versi {version}",
+      "runtimes": {
+        "claude": "Claude Code",
+        "codex": "Codex"
+      },
+      "issues": {
+        "notSignedIn": "Runtime belum masuk.",
+        "rejected": "Login runtime ditolak: kedaluwarsa atau tidak valid.",
+        "runtimeMissing": "{runtime} belum terpasang di server.",
+        "sandboxUnavailable": "Sandbox tidak tersedia: tanpa isolasi agen, Codex berjalan hanya-baca dan hanya menjangkau alat Helena, tanpa shell.",
+        "notSignedInShort": "Runtime belum masuk",
+        "runtimeMissingShort": "Runtime tidak ada",
+        "sandboxUnavailableShort": "Sandbox tidak tersedia"
+      },
+      "signIn": {
+        "claude": "Jalankan perintah di terminal (Beranda → Terminal), konfirmasi di peramban, lalu tambahkan token di Akses sebagai login runtime (Claude Code). Kemudian beri izin ke agen ini.",
+        "codex": "Tambahkan kunci API di Akses sebagai login runtime (Codex) dan beri izin ke agen ini. Atau masuk dengan ChatGPT: jalankan perintah di terminal (Beranda → Terminal) dan ikuti tautan beserta kodenya."
+      },
+      "copyCommand": "Salin perintah",
+      "copied": "Tersalin",
+      "openAccess": "Buka Akses"
     },
     "runModel": {
       "title": "Model",

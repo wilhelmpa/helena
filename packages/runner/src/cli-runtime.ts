@@ -431,6 +431,72 @@ export class LoginStartGate implements StartGate {
   }
 }
 
+// Where the launcher's command-line client lives, for a command the owner runs as the
+// runner's user (deployment/volition-stack/native/isolation.sh installs it).
+const LAUNCH_CLIENT = '/usr/local/lib/volition-isolation/launch_client.py';
+const RUNNER_USER = 'volition-hermes';
+
+function shellQuote(value: string): string {
+  return /^[A-Za-z0-9_./:=@%+-]+$/.test(value) ? value : `'${value.replace(/'/g, `'\\''`)}'`;
+}
+
+// The command the owner runs in the owner terminal to sign the agent's runtime in. Claude
+// Code: `claude setup-token` makes a token of a year for the owner's plan, which goes into
+// Zugänge as a runtime login. Codex: its device login in the agent's own home, run as the
+// user the agent runs as (through the launcher when the agent is isolated); Codex keeps and
+// refreshes that login there.
+export function signInCommand(
+  runtime: CliRuntime,
+  config: Pick<RunnerConfig, 'env' | 'isolation' | 'cwd'>,
+): string | undefined {
+  if (runtime === 'claude') return 'claude setup-token';
+  const home = cliAgentHome(config);
+  if (!home) return 'codex login --device-auth';
+  const codexHome = config.env.CODEX_HOME ?? join(home, '.codex');
+  const isolation = config.isolation;
+  if (isolated(config) && isolation && config.cwd) {
+    return [
+      'sudo',
+      '-u',
+      RUNNER_USER,
+      '/usr/bin/python3',
+      '-I',
+      LAUNCH_CLIENT,
+      'run',
+      '--slug',
+      isolation.slug,
+      '--profile',
+      isolation.profile,
+      '--runtime',
+      'codex',
+      '--kind',
+      'helper',
+      '--cwd',
+      config.cwd,
+      '--env',
+      `CODEX_HOME=${codexHome}`,
+      '--',
+      'login',
+      '--device-auth',
+    ]
+      .map(shellQuote)
+      .join(' ');
+  }
+  return [
+    'sudo',
+    '-u',
+    RUNNER_USER,
+    'env',
+    `HOME=${home}`,
+    `CODEX_HOME=${codexHome}`,
+    '/usr/local/bin/codex',
+    'login',
+    '--device-auth',
+  ]
+    .map(shellQuote)
+    .join(' ');
+}
+
 // ── The adapter ─────────────────────────────────────────────────────────────────────────
 
 interface Applied {
@@ -704,9 +770,13 @@ export class CliRuntimeAdapter implements RuntimeAdapter {
   issues(): RuntimeIssue[] {
     const issues: RuntimeIssue[] = [];
     if (this.probe?.missing) issues.push({ code: 'runtime-missing', detail: this.runtime });
-    else if (this.refused) issues.push({ code: 'not-signed-in', detail: 'rejected' });
-    else if (!this.granted && this.probe?.localLogin === false) {
-      issues.push({ code: 'not-signed-in', detail: 'missing' });
+    else if (this.refused || (!this.granted && this.probe?.localLogin === false)) {
+      const command = signInCommand(this.runtime, this.config);
+      issues.push({
+        code: 'not-signed-in',
+        detail: this.refused ? 'rejected' : 'missing',
+        ...(command && { command }),
+      });
     }
     if (
       this.runtime === 'codex' &&
