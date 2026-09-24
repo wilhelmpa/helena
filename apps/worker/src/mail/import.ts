@@ -137,7 +137,6 @@ async function storeMessage(
     await publishEngineEvent({
       id: `mail-${messageRowId}`,
       type: 'helena.mail.received',
-      source: '/helena/worker/mail',
       subject: `mail:${messageRowId}`,
       projectId: thread.projectId,
       time: parsed.date,

@@ -1,5 +1,6 @@
 import { hostname } from 'node:os';
 import { DBOS, DBOSClient } from '@dbos-inc/dbos-sdk';
+import { ENGINE_TRIGGERS_TARGET } from '@repo/db';
 import { intEnv } from '#shared/lib';
 
 // The durable execution the Helena engine runs on: DBOS Transact, in process, with its
@@ -33,6 +34,9 @@ function configure(): void {
     // replica that is gone.
     executorID: process.env.HELENA_ENGINE_EXECUTOR_ID?.trim() || hostname(),
     logLevel: process.env.HELENA_ENGINE_LOG_LEVEL?.trim() || 'warn',
+    // The worker serves the queue of the plugins' event subscribers; an api replica the
+    // runs and the engine's own events.
+    listenQueues: [RUNS_QUEUE, ENGINE_TRIGGERS_TARGET.queue],
   });
 }
 
@@ -49,17 +53,22 @@ export function launchEngine(): Promise<void> {
     subscribeEngineTriggers();
     configure();
     await DBOS.launch();
-    // The queues of the runs and of the outbox. A run waiting for an agent or a person
+    // The queues of the runs and of the events. A run waiting for an agent or a person
     // holds its place in a queue, so the runs queue has no concurrency limit; events are
     // short and run ten at a time per replica.
-    const { EVENTS_QUEUE } = await import('./events');
     const minPollingIntervalMs = intEnv('HELENA_ENGINE_POLL_MS', 1000);
     await DBOS.registerQueue(RUNS_QUEUE, { minPollingIntervalMs, onConflict: 'always_update' });
-    await DBOS.registerQueue(EVENTS_QUEUE, {
+    await DBOS.registerQueue(ENGINE_TRIGGERS_TARGET.queue, {
       minPollingIntervalMs,
       workerConcurrency: 10,
       onConflict: 'always_update',
     });
+    // From now on the bus stores every event with its change (D-C2).
+    const [{ useEventTransport }, { engineEventTransport }] = await Promise.all([
+      import('#shared/helena'),
+      import('./events'),
+    ]);
+    useEventTransport(engineEventTransport);
     running = true;
   })().catch((error: unknown) => {
     launching = null;
@@ -82,6 +91,8 @@ export async function stopEngine(): Promise<void> {
   await launching.catch(() => {});
   running = false;
   launching = null;
+  // Back to delivering in process while no engine runs here.
+  (await import('#shared/helena')).useEventTransport(null);
   await DBOS.shutdown();
 }
 

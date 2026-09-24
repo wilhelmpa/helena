@@ -1,26 +1,33 @@
-import { createHash, randomUUID } from 'node:crypto';
-import { DBOS } from '@dbos-inc/dbos-sdk';
-import { db, pipeline, pipelineVersion, projectPipeline } from '@repo/db';
+import { createHash } from 'node:crypto';
+import { createEvent, type EventTransport, type HelenaEvent as BusEvent } from '@helena/sdk';
+import {
+  db,
+  ENGINE_TRIGGERS_TARGET,
+  enqueueEngineEvents,
+  pipeline,
+  pipelineVersion,
+  projectPipeline,
+} from '@repo/db';
 import { and, asc, eq } from 'drizzle-orm';
+import { events as bus } from '#shared/helena';
 import type { PipelineDefinition } from '#modules/pipelines/definition';
 import { checkPipelineRunLimit } from '#modules/pipelines/rate-limit';
 import { createRun } from '#modules/pipelines/runs';
 import { registerBuiltins } from './builtin/index';
-import { engineRunning, enqueueWorkflow, insideOperation } from './dbos';
 import { subscribeDomainEvents, triggersFor } from './registry';
 import { startRunSoon } from './runs';
 import type { DomainEvent, OutboxStore } from './sdk';
 
-// Domain events in the CloudEvents 1.0 shape, and the outbox that hands them to their
-// subscribers. The outbox runs on the engine itself (docs/helena-decisions/
-// workflow-engine.md, D-C2): publishing an event enqueues the DBOS workflow `helena.event`
-// under the event's id on the queue `helena-events`, which records the event durably and
-// runs every subscriber once, in the background. A process that does not run the engine
-// (the worker) enqueues through a DBOS client. There is no table and no claim loop of our
-// own. The engine's triggers are the first subscriber; hub/framework's event bus and
-// plugins subscribe the same way.
+// Domain events and how they reach the engine. Helena has one event bus (@helena/sdk,
+// shared/helena.ts); the engine is its durable transport (decision D-C2,
+// docs/helena-decisions/workflow-engine.md): while the engine runs in this process, every
+// event the bus publishes is stored as a DBOS workflow, once for the api's engine
+// (`helena.event` on the queue `helena-events`, which hands it to the workflow triggers)
+// and once for the worker (`helena.worker-event`, which hands it to the durable subscribers
+// of the plugins). The event is stored in the change's transaction when there is one.
+// There is no table and no claim loop of our own.
 
-export const EVENTS_QUEUE = 'helena-events';
+export const EVENTS_QUEUE = ENGINE_TRIGGERS_TARGET.queue;
 
 // The actor attribute of an event a workflow caused: its changes start no workflow, so
 // two workflows cannot start each other in turn.
@@ -29,45 +36,47 @@ export const WORKFLOW_EVENT_ACTOR = 'system:workflow';
 export interface HelenaEvent<
   D extends Record<string, unknown> = Record<string, unknown>,
 > extends DomainEvent<D> {
+  datacontenttype?: 'application/json';
   // CloudEvents extension attribute: who caused the event ('system:workflow' for a
-  // workflow's own change, a user id, or absent).
+  // workflow's own change, `user:<id>`, a user id, or absent).
   helenaactor?: string;
 }
 
+// An event of the engine's own kinds (a task changed, a mail arrived) in the bus's shape.
 export function domainEvent<D extends Record<string, unknown>>(
   type: string,
   projectId: number,
   data: D,
-  options: { subject?: string; actor?: string | null; source?: string; id?: string } = {},
+  options: { subject?: string; actor?: string | null; id?: string } = {},
 ): HelenaEvent<D> {
-  return {
-    specversion: '1.0',
-    id: options.id ?? randomUUID(),
-    source: options.source ?? `/helena/projects/${projectId}`,
+  return createEvent({
     type,
-    ...(options.subject ? { subject: options.subject } : {}),
-    time: new Date().toISOString(),
-    helenaproject: projectId,
-    ...(options.actor ? { helenaactor: options.actor } : {}),
     data,
-  };
+    projectId,
+    ...(options.subject ? { subject: options.subject } : {}),
+    ...(options.actor ? { actor: options.actor } : {}),
+    ...(options.id ? { id: options.id } : {}),
+  }) as unknown as HelenaEvent<D>;
 }
 
-export function eventWorkflowId(eventId: string): string {
-  return `event:${eventId}`;
-}
+// The transport this api process hands the bus while its engine runs (dbos.ts). The api
+// serves only the engine's own subscribers, through `helena.event`; a plugin's durable
+// subscriber is served in the worker (apps/worker/src/engine-delivery.ts).
+export const engineEventTransport: EventTransport = {
+  append: (events, tx) => enqueueEngineEvents(events, tx),
+  start: () => Promise.resolve({ stop: () => Promise.resolve() }),
+};
 
-// The engine's outbox.
+// The engine's outbox: an event goes through the bus while the engine runs here, which
+// stores it for every process that serves it; without the engine here it is stored for
+// the triggers alone, which an engine replica runs.
 export const outbox: OutboxStore = {
   async publish(event) {
-    const workflowID = eventWorkflowId(event.id);
-    if (engineRunning() && !insideOperation()) {
-      const { eventWorkflow } = await import('./workflows');
-      await DBOS.startWorkflow(eventWorkflow, { workflowID, queueName: EVENTS_QUEUE })(event);
-      return;
-    }
-    // Inside a recorded operation (a step that changed a task), or without the engine.
-    await enqueueWorkflow('helena.event', EVENTS_QUEUE, workflowID, event);
+    if (bus.transport()) await bus.publish(event as unknown as BusEvent);
+    else
+      await enqueueEngineEvents([event as unknown as BusEvent], undefined, [
+        ENGINE_TRIGGERS_TARGET,
+      ]);
   },
 };
 

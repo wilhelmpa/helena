@@ -11,6 +11,7 @@ import {
 } from '#modules/issues/service';
 import { getMembership } from '#modules/members/service';
 import { bumpControlPlaneRevision } from '#modules/sync/service';
+import { publishDomainEvent as publishBusEvent } from '#shared/helena';
 import type { DelegateStep } from '#modules/pipelines/definition';
 import { loadRun, stepRow, writeStep } from '../../run-context';
 import {
@@ -67,6 +68,37 @@ async function previousTask(runId: string, scheduleId: string | null): Promise<n
 
 class Replayed extends Error {}
 
+// Tells the bus that the routine created or reopened its task (`helena.routine.fired`),
+// once per fire: the event's id is the run's, so a replay stores nothing new.
+async function announce(
+  runId: string,
+  projectId: number,
+  step: DelegateStep,
+  result: DelegateResult,
+) {
+  if (result.outcome === 'skipped') return;
+  const [row] = await db
+    .select({ scheduleId: pipelineRun.scheduleId, actor: pipelineRun.actorUserId })
+    .from(pipelineRun)
+    .where(eq(pipelineRun.id, runId));
+  const task = await getIssue(result.taskId);
+  await publishBusEvent({
+    id: `routine-fired:${runId}`,
+    type: 'helena.routine.fired',
+    projectId,
+    subject: `routines/${row?.scheduleId ?? runId}`,
+    actor: row?.actor ? `user:${row.actor}` : 'system',
+    data: {
+      routineId: row?.scheduleId ?? null,
+      fireId: runId,
+      agentId: step.agentId || null,
+      projectId,
+      taskRef: task ? `task:${task.identifier}` : `task:${result.taskId}`,
+      mode: result.outcome === 'reopened' ? 'reopen' : 'new',
+    },
+  });
+}
+
 async function finish(
   runId: string,
   step: DelegateStep,
@@ -84,6 +116,7 @@ async function finish(
     state: { taskId: result.taskId, result },
     finishedAt: new Date(),
   });
+  await announce(runId, projectId, step, result);
   await bumpControlPlaneRevision(projectId);
   return result;
 }

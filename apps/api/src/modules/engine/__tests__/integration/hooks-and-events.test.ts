@@ -10,7 +10,8 @@ import {
 } from 'bun:test';
 import { Webhook } from 'standardwebhooks';
 import { db, issue as issueTable, pipelineRun } from '@repo/db';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
+import { publishDomainEvent as publishBusEvent } from '#shared/helena';
 import { domainEvent, publishDomainEvent } from '#modules/engine/events';
 import { app } from '#tests/helpers/app';
 import { resetDb } from '#tests/helpers/db';
@@ -288,6 +289,44 @@ describe('webhook step', () => {
     const run = await startRun(ctx, task.id, pipelineId);
     const failed = await waitForStatus(run.id, 'failed');
     expect(failed.error).toContain('The URL is not allowed');
+  });
+});
+
+describe('event transport', () => {
+  it('stores a bus event with its change, for the engine and for the worker, and not without it', async () => {
+    const ctx = await setupProject();
+    const stored = async (id: string) =>
+      (
+        (await db.execute(
+          sql`select workflow_uuid as id from helena_engine.workflow_status where workflow_uuid in (${`event:${id}`}, ${`worker-event:${id}`}) order by 1`,
+        )) as unknown as { id: string }[]
+      ).map((row) => row.id);
+    const event = (id: string) => ({
+      id,
+      type: 'helena.approval.requested' as const,
+      projectId: ctx.projectId,
+      data: {
+        approvalId: 1,
+        kind: 'send',
+        projectId: ctx.projectId,
+        agentId: null,
+        issueId: null,
+        runId: null,
+      },
+    });
+    const kept = crypto.randomUUID();
+    await db.transaction(async (tx) => {
+      await publishBusEvent(event(kept), tx);
+    });
+    expect(await stored(kept)).toEqual([`event:${kept}`, `worker-event:${kept}`]);
+    const lost = crypto.randomUUID();
+    await db
+      .transaction(async (tx) => {
+        await publishBusEvent(event(lost), tx);
+        tx.rollback();
+      })
+      .catch(() => {});
+    expect(await stored(lost)).toEqual([]);
   });
 });
 
