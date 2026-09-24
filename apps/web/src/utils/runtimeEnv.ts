@@ -16,6 +16,10 @@ export interface WorkspaceRuntimeEnv {
   terminalUrl: string;
   codeUrl: string;
   projectWorkspacePaths: Record<string, string>;
+  // The folder code-server opens on Home (Start), where no project names one: the
+  // workspaces of Home and every project. Without it code-server reopened the folder that
+  // was open last, another project's (2026-09-24: Start showed PRIV).
+  homeWorkspacePath?: string;
   browserUrl: string;
   inboxUrl: string;
   connectionsUrl: string;
@@ -76,6 +80,10 @@ export function serverRuntimeEnv(): RuntimeEnv {
       terminalUrl: readOrigin('TERMINAL_URL'),
       codeUrl: readOrigin('CODE_URL'),
       projectWorkspacePaths: readJsonRecord('PROJECT_WORKSPACE_PATHS'),
+      // The native install's layout unless the deployment names another.
+      homeWorkspacePath:
+        readOrigin('HOME_WORKSPACE_PATH') ||
+        (readOrigin('CODE_URL') ? '/srv/volition/workspaces' : ''),
       browserUrl: readOrigin('BROWSER_URL'),
       inboxUrl: readOrigin('INBOX_URL'),
       connectionsUrl: readOrigin('CONNECTIONS_URL'),

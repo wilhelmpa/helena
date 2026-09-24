@@ -90,7 +90,10 @@ function codeUrl(
 ): string {
   const provisioned = provisionedResource(resources, 'workspace');
   const provisionedUrl = trustedResourceUrl(provisioned?.url, [config.codeUrl]);
-  const workspacePath = projectValue(config.projectWorkspacePaths, projectKey) || provisioned?.id;
+  const workspacePath =
+    projectValue(config.projectWorkspacePaths, projectKey) ||
+    provisioned?.id ||
+    (projectKey ? '' : config.homeWorkspacePath);
   if (
     provisionedUrl &&
     new URL(provisionedUrl).pathname.replace(/\/+$/, '') ===
