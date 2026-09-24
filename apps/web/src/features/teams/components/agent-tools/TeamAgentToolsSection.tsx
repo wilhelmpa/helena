@@ -29,7 +29,6 @@ export default function TeamAgentToolsSection({ teamId }: { teamId: number }) {
   return (
     <SectionPageView
       title={t('sections.agentTools.title')}
-      description={t('sections.agentTools.description')}
       wide
     >
       {!permissions ? (

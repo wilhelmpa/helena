@@ -52,7 +52,7 @@ function ConfigurationPage({ project }: { project: ProjectDetail }) {
   }
 
   return (
-    <SectionPageView title={sectionText.label} description={sectionText.description}>
+    <SectionPageView title={sectionText.label}>
       <SettingsToolbar
         primary={
           can(section.resource, 'edit')

@@ -35,7 +35,7 @@ function GeneralPage({ project }: { project: ProjectDetail }) {
   const form = useGeneralForm(project);
   const features = useFeatureToggles(project);
   return (
-    <SectionPageView title={sectionText.label} description={sectionText.description}>
+    <SectionPageView title={sectionText.label}>
       <SettingsToolbar />
       <SettingsResourceProvider resource={section.resource}>
         <RequirePermission resource={section.resource} action="read">

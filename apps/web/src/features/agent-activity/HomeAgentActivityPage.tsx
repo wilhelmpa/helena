@@ -18,7 +18,7 @@ export default function HomeAgentActivityPage() {
 
   return (
     <Shell globalHome globalTitle={tNav('agentActivity')} autoOpenGlobalChat={false}>
-      <SectionPageView title={tNav('agentActivity')} description={t('homeDescription')} wide>
+      <SectionPageView title={tNav('agentActivity')} wide>
         <AgentActivityTimeline
           projectKey={null}
           projectIds={projects.map((project) => project.id)}

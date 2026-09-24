@@ -27,7 +27,6 @@ export default function TeamIntegrationsSection({ teamId }: { teamId: number }) 
   return (
     <SectionPageView
       title={t('sections.integrations.title')}
-      description={t('sections.integrations.description')}
       wide
     >
       <PageToolbar>

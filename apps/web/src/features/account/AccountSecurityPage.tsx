@@ -30,7 +30,7 @@ export default function AccountSecurityPage() {
   const invalidate = () => queryClient.invalidateQueries({ queryKey: qk.passkeys });
 
   return (
-    <SectionPageView title={t('title')} description={t('description', { email })}>
+    <SectionPageView title={t('title')}>
       <div className="space-y-6">
         <AccountSection title={t('passwordTitle')} description={t('passwordDescription')}>
           <AccountSecurityPasswordForm />

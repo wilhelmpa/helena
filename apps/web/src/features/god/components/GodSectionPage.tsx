@@ -21,7 +21,6 @@ export default function GodSectionPage({
   return (
     <SectionPageView
       title={section.label}
-      description={section.description}
       widthClassName={widthClassName}
       actions={actions}
     >

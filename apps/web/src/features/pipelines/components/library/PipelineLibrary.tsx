@@ -28,7 +28,7 @@ export default function PipelineLibrary({ teamId }: { teamId: number }) {
   const [creating, setCreating] = useState(false);
 
   return (
-    <SectionPageView title={tNav('workflows')} description={t('hint')} wide>
+    <SectionPageView title={tNav('workflows')} wide>
       {permissions?.create ? (
         <PageToolbar>
           <PageToolbarSpacer />

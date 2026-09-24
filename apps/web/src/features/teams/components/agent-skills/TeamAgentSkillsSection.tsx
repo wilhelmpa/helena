@@ -21,7 +21,6 @@ export default function TeamAgentSkillsSection({ teamId }: { teamId: number }) {
   return (
     <SectionPageView
       title={t('sections.agentSkills.title')}
-      description={t('sections.agentSkills.description')}
       wide
     >
       <PageToolbar>

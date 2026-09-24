@@ -270,6 +270,11 @@ export default function Shell({
                   />
                 )
               }
+              titleLead={
+                !globalHome && route.routeIssueSeq != null && issueQuery.data
+                  ? `${issueQuery.data.identifier} ${issueQuery.data.title}`
+                  : null
+              }
               hasProject={!!project}
               onOpenCommand={() => overlays.setShowCommand(true)}
               onNewIssue={openNewIssue}

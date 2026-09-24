@@ -18,7 +18,6 @@ export default function TeamNotificationsSection({ teamId }: { teamId: number })
   return (
     <SectionPageView
       title={t('sections.notifications.title')}
-      description={t('sections.notifications.description')}
     >
       {team && !canManage ? (
         <p className="text-sm text-muted-foreground">{t('notifications.ownerOnly')}</p>

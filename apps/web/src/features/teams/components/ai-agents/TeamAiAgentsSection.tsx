@@ -25,7 +25,6 @@ export default function TeamAiAgentsSection({ teamId }: { teamId: number }) {
   return (
     <SectionPageView
       title={t('sections.agents.title')}
-      description={t('sections.agents.description')}
       wide
     >
       <PageToolbar>

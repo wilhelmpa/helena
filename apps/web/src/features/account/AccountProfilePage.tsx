@@ -15,7 +15,7 @@ export default function AccountProfilePage() {
   const email = (useHydrated() && session?.user.email) || '…';
 
   return (
-    <SectionPageView title={t('title')} description={t('description', { email })}>
+    <SectionPageView title={t('title')}>
       <div className="space-y-6">
         <AccountSection title={t('avatarTitle')} description={t('avatarDescription')}>
           <AccountProfileAvatar />

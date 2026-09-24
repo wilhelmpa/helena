@@ -91,7 +91,6 @@ export default function TeamMembersSection({ teamId }: { teamId: number }) {
   return (
     <SectionPageView
       title={t('sections.members.title')}
-      description={t('sections.members.description')}
       wide
     >
       <PageToolbar>

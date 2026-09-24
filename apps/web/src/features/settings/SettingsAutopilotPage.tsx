@@ -91,7 +91,7 @@ function AutopilotPage({ projectKey }: { projectKey: string }) {
   const rules = data?.levels.find((entry) => entry.level === data.level)?.rules ?? [];
 
   return (
-    <SectionPageView title={sectionText.label} description={sectionText.description} wide>
+    <SectionPageView title={sectionText.label} wide>
       <SettingsToolbar
         primary={
           editable

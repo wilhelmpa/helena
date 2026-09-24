@@ -81,7 +81,6 @@ export default function PipelineEditor({
   return (
     <SectionPageView
       title={draft.name || pipeline.name}
-      description={pipeline.projectId === null ? t('template') : t('projectWorkflow')}
       wide
     >
       <PipelineEditorActions

@@ -16,7 +16,7 @@ export default function WorkflowsPage({ builder }: { builder?: ReactNode }) {
   const { project } = useShell();
   if (!project) return null;
   return (
-    <SectionPageView title={t('workflowTitle')} description={t('workflowDescription')} wide>
+    <SectionPageView title={t('workflowTitle')} wide>
       <SettingsResourceProvider resource="actions">
         <RequirePermission resource="actions" action="read">
           {builder}

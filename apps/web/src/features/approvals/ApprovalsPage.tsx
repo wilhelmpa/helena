@@ -15,7 +15,7 @@ export default function ApprovalsPage() {
   const t = useTranslations('approvals');
   return (
     <Shell globalHome globalTitle={tNav('approvals')} autoOpenGlobalChat={false}>
-      <SectionPageView title={tNav('approvals')} description={t('hint')} wide>
+      <SectionPageView title={tNav('approvals')} wide>
         <ApprovalsView />
       </SectionPageView>
     </Shell>

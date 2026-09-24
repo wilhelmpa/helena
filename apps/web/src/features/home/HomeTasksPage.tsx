@@ -87,7 +87,7 @@ export default function HomeTasksPage() {
 
   return (
     <Shell globalHome globalTitle={tNav('allWorkItems')} autoOpenGlobalChat={false}>
-      <SectionPageView title={tNav('allWorkItems')} description={t('hint')} wide>
+      <SectionPageView title={tNav('allWorkItems')} wide>
         <HomeTasksToolbar
           projects={projects}
           filters={filters}

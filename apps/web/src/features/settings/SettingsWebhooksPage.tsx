@@ -23,7 +23,7 @@ export default function SettingsWebhooksPage() {
   const addAction = useSettingsAddAction(section.resource, t('new'), () => setAddNew(true));
   if (!project) return null;
   return (
-    <SectionPageView title={sectionText.label} description={sectionText.description} wide>
+    <SectionPageView title={sectionText.label} wide>
       <SettingsToolbar primary={addAction} />
       <SettingsResourceProvider resource={section.resource}>
         <RequirePermission resource={section.resource} action="read">

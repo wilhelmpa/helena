@@ -33,7 +33,7 @@ function NetworkPage({ projectKey }: { projectKey: string }) {
   const form = useAgentNetworkForm(projectKey);
 
   return (
-    <SectionPageView title={sectionText.label} description={sectionText.description} wide>
+    <SectionPageView title={sectionText.label} wide>
       <SettingsToolbar
         primary={
           can(section.resource, 'edit')

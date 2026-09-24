@@ -56,7 +56,6 @@ export default function TeamCredentialsSection({
   return (
     <SectionPageView
       title={t('title')}
-      description={canManage ? t('description') : `${t('description')} ${t('managerOnly')}`}
       wide
     >
       <PageToolbar>

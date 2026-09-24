@@ -16,7 +16,7 @@ export default function ProjectApprovalsPage() {
   if (!project) return null;
 
   return (
-    <SectionPageView title={tNav('approvals')} description={t('projectHint')} wide>
+    <SectionPageView title={tNav('approvals')} wide>
       <RequirePermission resource="ai_agents" action="edit">
         <ApprovalsView fixedProjectKey={project.project.key} />
       </RequirePermission>
