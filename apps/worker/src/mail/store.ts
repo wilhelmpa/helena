@@ -20,7 +20,7 @@ import {
 } from '@repo/mail';
 import { deleteObject, deleteObjectFolder } from '@repo/storage';
 import { rmdir, unlink } from 'node:fs/promises';
-import { and, asc, eq, inArray, lt, notExists, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNotNull, isNull, lt, notExists, or, sql } from 'drizzle-orm';
 import { mailAccessToken } from './oauth';
 
 export interface SyncAccount {
@@ -428,9 +428,12 @@ export async function accountsDueForPrune(): Promise<{ id: number; fetchDays: nu
     .from(mailAccount)
     .where(
       and(
-        sql`${mailAccount.fetchDays} is not null`,
-        sql`${mailAccount.resetRequestedAt} is null`,
-        sql`(${mailAccount.prunedAt} is null or ${mailAccount.prunedAt} < ${new Date(Date.now() - PRUNE_EVERY_MS)})`,
+        isNotNull(mailAccount.fetchDays),
+        isNull(mailAccount.resetRequestedAt),
+        or(
+          isNull(mailAccount.prunedAt),
+          lt(mailAccount.prunedAt, new Date(Date.now() - PRUNE_EVERY_MS)),
+        ),
       ),
     );
   return rows.map((row) => ({ id: row.id, fetchDays: row.fetchDays! }));
@@ -440,7 +443,7 @@ export async function accountsToReset(): Promise<number[]> {
   const rows = await db
     .select({ id: mailAccount.id })
     .from(mailAccount)
-    .where(sql`${mailAccount.resetRequestedAt} is not null`);
+    .where(isNotNull(mailAccount.resetRequestedAt));
   return rows.map((row) => row.id);
 }
 

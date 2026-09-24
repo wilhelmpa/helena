@@ -2712,7 +2712,7 @@
         },
         "agent_run_trigger_check": {
           "name": "agent_run_trigger_check",
-          "value": "\"agent_run\".\"trigger\" IN ('mention', 'delegation', 'field', 'schedule', 'manual', 'approval')"
+          "value": "\"agent_run\".\"trigger\" IN ('mention', 'delegation', 'field', 'schedule', 'manual', 'approval', 'workspace')"
         }
       },
       "isRLSEnabled": false

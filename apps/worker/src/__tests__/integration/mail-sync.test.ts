@@ -99,6 +99,9 @@ async function createAccount(
     smtpHost: 'smtp.gmail.com',
     username: 'me@home.example',
     credentialId: credential!.id,
+    // These tests import every message whatever its date; the fetch window has tests of
+    // its own (mail-access.test.ts).
+    fetchDays: null,
     ...overrides,
   });
   const [account] = await loadSyncAccounts();

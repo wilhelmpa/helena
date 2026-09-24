@@ -55,7 +55,12 @@ export class FakeImapServer {
     return box;
   }
 
-  add(path: string, raw: Buffer | string, flags: string[] = []): number {
+  add(
+    path: string,
+    raw: Buffer | string,
+    flags: string[] = [],
+    internalDate = new Date('2026-03-01T12:00:00Z'),
+  ): number {
     const box = this.mailboxes.get(path)!;
     const uid = box.uidNext++;
     box.modseq += 1n;
@@ -63,7 +68,7 @@ export class FakeImapServer {
       uid,
       flags: new Set(flags),
       raw: Buffer.isBuffer(raw) ? raw : Buffer.from(raw),
-      internalDate: new Date('2026-03-01T12:00:00Z'),
+      internalDate,
       modseq: box.modseq,
     });
     for (const client of this.clients) {
@@ -177,9 +182,20 @@ export class FakeImapClient extends EventEmitter {
     return this.box(this.selected);
   }
 
-  async search(query: { all?: boolean; uid?: string }) {
+  searches: Record<string, unknown>[] = [];
+
+  // SINCE compares the internal date by day, as IMAP does.
+  async search(query: { all?: boolean; uid?: string; since?: Date }) {
+    this.searches.push(query);
     const box = this.current();
     if (query.uid) return parseRange(query.uid, box);
+    if (query.since) {
+      const day = new Date(query.since);
+      day.setUTCHours(0, 0, 0, 0);
+      return box.messages
+        .filter((message) => message.internalDate >= day)
+        .map((message) => message.uid);
+    }
     return box.messages.map((message) => message.uid);
   }
 
