@@ -20,7 +20,7 @@
  *   bun scripts/helena-licenses.ts --out <file> [--lockfile <package-lock.json> ...]
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 
 export type Policy = 'allowed' | 'notice' | 'review' | 'forbidden';
@@ -312,6 +312,7 @@ async function main(argv: string[]): Promise<number> {
     console.log(`${rows.length} packages, ${blocking.length} blocking`);
     return blocking.some((row) => evaluate(row.license).policy === 'forbidden') ? 1 : blocking.length > 0 ? 2 : 0;
   }
+  mkdirSync(dirname(out), { recursive: true });
   writeFileSync(out, render(rows, sources));
   console.log(`wrote ${relative(root, out)}: ${rows.length} packages, ${blocking.length} to review`);
   return 0;
