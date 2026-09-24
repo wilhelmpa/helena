@@ -53,7 +53,7 @@ export default function MemberRow({
   const displayName = member.name || member.email;
 
   return (
-    <TableRow className="group/item">
+    <TableRow className="group/item hover:bg-accent/60">
       <TableCell className="px-3 py-3 align-top whitespace-normal">
         <div className="flex min-w-0 flex-col gap-0.5">
           <div className="flex min-w-0 items-center gap-2.5">
@@ -96,11 +96,11 @@ export default function MemberRow({
           isLastOwner={isLastOwner}
         />
       </TableCell>
-      <TableCell className="px-3 py-3 align-top text-sm whitespace-normal text-muted-foreground">
+      <TableCell className="hidden px-3 py-3 align-top text-sm whitespace-normal text-muted-foreground md:table-cell">
         {/* An agent reads no timestamps, so its bot user's zone means nothing. */}
         {member.isAgent ? null : member.timezone}
       </TableCell>
-      <TableCell className="px-3 py-3 align-top text-sm whitespace-normal text-muted-foreground">
+      <TableCell className="hidden px-3 py-3 align-top text-sm whitespace-normal text-muted-foreground md:table-cell">
         {formatDateTime(member.createdAt)}
       </TableCell>
       <TableCell className="px-3 pt-3 pb-2 align-top">

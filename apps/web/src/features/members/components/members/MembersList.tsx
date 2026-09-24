@@ -7,9 +7,15 @@ import type { MemberKind, MemberRow as Member } from '@/lib/api/endpoints/member
 import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import MembersEmptyState from '@/components/common/page/MembersEmptyState';
-import SearchInput from '@/components/common/SearchInput';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  PageActions,
+  PageSearch,
+  PageTabs,
+  PageToolbar,
+  PageToolbarSpacer,
+  type PageAction,
+} from '@/components/layout/PageToolbar';
 import { useMembersQuery, useRemoveMember } from '@/services/members.service';
 import { useTeamRoleOptionsQuery } from '@/services/roles.service';
 import { useSearchTerm } from '@/hooks/useSearchTerm';
@@ -23,13 +29,16 @@ import MemberRow from './MemberRow';
 // agents share one list and are told apart by the tabs, so neither is pushed off the
 // first page by the other; the search runs on the server, within the open tab. The
 // last owner is protected — the API rejects removing them and the row's action is
-// disabled too.
+// disabled too. The tabs, the search and the page's primary action (`primary`, add a
+// member) are the page's one header row.
 export default function MembersList({
   projectKey,
   teamId,
+  primary,
 }: {
   projectKey: string;
   teamId: number;
+  primary?: Omit<PageAction, 'menuOnly'>;
 }) {
   const t = useTranslations('members');
   const [kind, setKind] = useState<MemberKind>('all');
@@ -70,8 +79,6 @@ export default function MembersList({
     agent: t('search.agents'),
   }[kind];
 
-  if (membersQuery.isPending) return <ListSkeleton className="mb-6" rowClassName="h-14" />;
-
   const targetIsSelf = target?.userId === currentUserId;
   const targetName = target ? target.name || target.email : '';
 
@@ -87,67 +94,80 @@ export default function MembersList({
     }
   }
 
+  const toolbar = (
+    <PageToolbar>
+      <PageTabs
+        label={t('title')}
+        value={kind}
+        onChange={onKindChange}
+        items={[
+          { value: 'all', label: t('tabs.all') },
+          { value: 'human', label: t('tabs.people') },
+          { value: 'agent', label: t('tabs.agents') },
+        ]}
+      />
+      <PageToolbarSpacer />
+      <PageSearch value={search} onChange={onSearchChange} placeholder={searchPlaceholder} />
+      <PageActions primary={primary} />
+    </PageToolbar>
+  );
+
+  if (membersQuery.isPending)
+    return (
+      <>
+        {toolbar}
+        <ListSkeleton className="mb-6" rowClassName="h-14" />
+      </>
+    );
+
   return (
     <div className="mb-6 flex min-h-0 flex-1 flex-col gap-4">
-      <Tabs value={kind} onValueChange={onKindChange}>
-        <div className="flex items-center justify-between gap-3">
-          <TabsList variant="line" className="w-auto border-b-0">
-            <TabsTrigger value="all">{t('tabs.all')}</TabsTrigger>
-            <TabsTrigger value="human">{t('tabs.people')}</TabsTrigger>
-            <TabsTrigger value="agent">{t('tabs.agents')}</TabsTrigger>
-          </TabsList>
-          <SearchInput
-            value={search}
-            onChange={onSearchChange}
-            placeholder={searchPlaceholder}
-            className="w-60 shrink-0"
-          />
-        </div>
-      </Tabs>
-
+      {toolbar}
       {members.length === 0 ? (
         <MembersEmptyState kind={kind} searching={term !== undefined} />
       ) : (
-        <Table className="min-w-[720px] table-fixed">
-          <colgroup>
-            <col className="w-[36%]" />
-            <col className="w-[17%]" />
-            <col className="w-[17%]" />
-            <col className="w-[13%]" />
-            <col className="w-[17%]" />
-          </colgroup>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="text-xs font-medium text-muted-foreground">
-                {t('columns.member')}
-              </TableHead>
-              <TableHead className="text-xs font-medium text-muted-foreground">
-                {t('columns.role')}
-              </TableHead>
-              <TableHead className="text-xs font-medium text-muted-foreground">
-                {t('columns.timezone')}
-              </TableHead>
-              <TableHead className="text-xs font-medium text-muted-foreground">
-                {t('columns.joined')}
-              </TableHead>
-              <TableHead className="text-right text-xs font-medium text-muted-foreground">
-                {t('columns.actions')}
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {members.map((m) => (
-              <MemberRow
-                key={m.userId}
-                projectKey={projectKey}
-                member={m}
-                roles={roles}
-                isLastOwner={m.role === 'owner' && ownerCount === 1}
-                onRemove={setTarget}
-              />
-            ))}
-          </TableBody>
-        </Table>
+        <div className="overflow-hidden rounded-lg border bg-card">
+          <Table className="table-fixed md:min-w-[720px]">
+            <colgroup>
+              <col className="md:w-[36%]" />
+              <col className="w-32 md:w-[17%]" />
+              <col className="hidden md:table-column md:w-[17%]" />
+              <col className="hidden md:table-column md:w-[13%]" />
+              <col className="w-14 md:w-[17%]" />
+            </colgroup>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="px-3 text-xs font-normal text-muted-foreground">
+                  {t('columns.member')}
+                </TableHead>
+                <TableHead className="px-3 text-xs font-normal text-muted-foreground">
+                  {t('columns.role')}
+                </TableHead>
+                <TableHead className="hidden px-3 text-xs font-normal text-muted-foreground md:table-cell">
+                  {t('columns.timezone')}
+                </TableHead>
+                <TableHead className="hidden px-3 text-xs font-normal text-muted-foreground md:table-cell">
+                  {t('columns.joined')}
+                </TableHead>
+                <TableHead className="px-3 text-end text-xs font-normal text-muted-foreground">
+                  <span className="sr-only md:not-sr-only">{t('columns.actions')}</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {members.map((m) => (
+                <MemberRow
+                  key={m.userId}
+                  projectKey={projectKey}
+                  member={m}
+                  roles={roles}
+                  isLastOwner={m.role === 'owner' && ownerCount === 1}
+                  onRemove={setTarget}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       )}
 
       {total > 0 && <ListPager paging={paging} total={total} />}
