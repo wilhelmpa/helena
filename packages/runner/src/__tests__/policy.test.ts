@@ -17,16 +17,16 @@ import { readHermesInventory, type HermesInventory, type HermesProfile } from '.
 import { RequestError } from '../client';
 import { readLearnedSkills } from '../learning';
 import type { WebLogin } from '../logins';
+import { claudeMcpArgs, codexMcpArgs } from '../cli-runtime';
+import { collectProfile } from '../contributions';
 import {
   allowedToolsets,
   BROWSER_GATEWAY_LEGACY_MCP_SERVER_NAME,
   BROWSER_GATEWAY_MCP_SERVER_NAME,
   BROWSER_GATEWAY_SHIM_PATH,
-  BrowserGatewayArgs,
-  browserGatewayArgs,
-  hermesMcpServers,
   HermesPolicyMaterializer,
   HermesPolicySynchronizer,
+  type MaterializerContext,
   toolsetsWithBrowser,
   usesBrowserGateway,
   type LoginVault,
@@ -35,21 +35,33 @@ import {
   type RuntimePolicySnapshot,
   type RuntimeStatus,
 } from '../policy';
+import { fakeHermes, type FakeHermes } from './hermes-fake';
 
 const roots: string[] = [];
+// Where Helena answers, for a materializer that writes Helena's own MCP server.
+const HELENA = { url: 'http://127.0.0.1:3000' };
 
 afterEach(async () => {
   for (const root of roots.splice(0)) await rm(root, { recursive: true, force: true });
 });
 
-async function fixture(profile?: HermesProfile) {
+async function fixture(
+  profile?: HermesProfile,
+  context: MaterializerContext = {},
+  hermes: FakeHermes = fakeHermes(),
+) {
   const root = await mkdtemp(join(tmpdir(), 'itsaplan-policy-'));
   roots.push(root);
   const hermesHome = join(root, 'hermes');
   return {
     root,
     hermesHome,
-    materializer: new HermesPolicyMaterializer({ hermesHome, profile }),
+    hermes,
+    materializer: new HermesPolicyMaterializer({
+      hermesHome,
+      profile,
+      context: { reader: hermes, ...context },
+    }),
   };
 }
 
@@ -131,6 +143,11 @@ describe('Hermes runtime policy materializer', () => {
       conflicts: [],
       restored: [],
       mcpSecrets: null,
+      managedConfig: alwaysOff,
+      mcpToolsets: [],
+      runtimeServers: [],
+      deniedToolsets: [],
+      managedChanged: true,
     });
     expect(await readFile(join(hermesHome, 'SOUL.md'), 'utf8')).toBe('# Soul');
     expect(await readFile(join(hermesHome, 'skills/plan-managed/plan-7/SKILL.md'), 'utf8')).toBe(
@@ -290,12 +307,16 @@ describe('Hermes managed MCP servers', () => {
           command: 'npx',
           args: ['-y', '@jkudish/jev-browser'],
           env: { TYPESAFE_API_KEY: '${ITSAPLAN_MCP_SECRET_7}', JEV_BROWSER_MODEL: 'jev-latest' },
+          enabled: true,
         },
         docs: {
           url: 'https://mcp.example.com/sse',
           transport: 'sse',
           headers: { Authorization: '${ITSAPLAN_MCP_SECRET_8}' },
+          enabled: true,
         },
+        // Servers of the shared configuration Helena does not give the agent are off.
+        itsaplan: { enabled: false },
         'browser-harness': { enabled: false },
       },
     });
@@ -304,7 +325,7 @@ describe('Hermes managed MCP servers', () => {
   });
 
   it('drops the servers from the managed configuration once the agent has none', async () => {
-    const { hermesHome, materializer } = await fixture({ toolsets: [], mcpServers: ['itsaplan'] });
+    const { hermesHome, materializer } = await fixture({ toolsets: [], mcpServers: [] });
     await materializer.apply(withServers('sha256:one', [jevBrowser]));
     const result = await materializer.apply(withServers('sha256:two', [], ['web']));
 
@@ -395,6 +416,9 @@ describe('Hermes runtime policy synchronizer', () => {
       'managed-skills',
       'managed-mcp-servers',
       'learning',
+      'profile-drift',
+      'rewrite-profile',
+      'session-facts',
     ]);
     expect(JSON.stringify(statuses)).not.toContain('provider-secret-value');
     expect(statuses.at(-1)?.detail).toBe(
@@ -444,7 +468,7 @@ describe('Hermes runtime policy synchronizer', () => {
   });
 
   it('reports the inventory with the status, and again only once it changed', async () => {
-    const { hermesHome, materializer } = await fixture();
+    const { hermesHome, materializer } = await fixture(undefined, HELENA);
     await mkdir(hermesHome, { recursive: true });
     await writeFile(join(hermesHome, 'SOUL.md'), '# Hermes default');
     const statuses: RuntimeStatus[] = [];
@@ -493,7 +517,7 @@ describe('Hermes runtime policy synchronizer', () => {
   });
 
   it('restricts the toolsets as the latest policy says, even one that failed to apply', async () => {
-    const { materializer } = await fixture();
+    const { materializer } = await fixture(undefined, HELENA);
     const profile = { toolsets: ['file', 'terminal', 'web'], mcpServers: ['itsaplan'] };
     const withDeny = (revision: string, toolDeny: string[], path = 'SOUL.md') => ({
       revision,
@@ -506,7 +530,8 @@ describe('Hermes runtime policy synchronizer', () => {
       { profile },
     );
 
-    expect(sync.toolsets()).toEqual(['file', 'terminal', 'web', 'itsaplan']);
+    // Before the first revision no MCP server is Helena's yet.
+    expect(sync.toolsets()).toEqual(['file', 'terminal', 'web']);
     await sync.ensure();
     expect(sync.toolsets()).toEqual(['file', 'terminal', 'web', 'itsaplan']);
     await sync.ensure();
@@ -515,7 +540,7 @@ describe('Hermes runtime policy synchronizer', () => {
 
   it('hands each run the managed configuration and the current values of its secrets', async () => {
     const profile = { toolsets: ['file', 'web'], mcpServers: ['itsaplan'] };
-    const { materializer } = await fixture(profile);
+    const { materializer } = await fixture(profile, HELENA);
     const sync = new HermesPolicySynchronizer(
       client(
         [withServers('sha256:one', [jevBrowser], ['web']), withServers('sha256:two', [])],
@@ -527,10 +552,7 @@ describe('Hermes runtime policy synchronizer', () => {
     );
 
     const managed = { HERMES_MANAGED_DIR: materializer.managedDir };
-    expect(await sync.runSettings()).toEqual({
-      toolsets: ['file', 'web', 'itsaplan'],
-      env: managed,
-    });
+    expect(await sync.runSettings()).toEqual({ toolsets: ['file', 'web'], env: managed });
     await sync.ensure();
     const settings = {
       toolsets: ['file', 'itsaplan', 'jev-browser'],
@@ -936,28 +958,41 @@ const legacyServer: RuntimeMcpServer = {
   headers: [],
 };
 
+// The gateway is a profile contribution (browser-gateway.ts): the same mechanism that owns
+// every MCP server of the agent, so these run through the materializer and the synchronizer.
+const GATEWAY_PROFILE = {
+  toolsets: ['browser', 'file', 'terminal'],
+  mcpServers: ['browser-harness', 'itsaplan'],
+  browserHarness: '/opt/hermes/bin/browser-harness-mcp',
+};
+const GATEWAY_CONTEXT = {
+  url: 'http://127.0.0.1:3000',
+  env: { BROWSER_CDP_URL: 'http://127.0.0.1:19203' },
+};
+
 describe('Browser gateway: Hermes side (design §3, §6)', () => {
-  it("never writes the legacy marker into Hermes' own mcp_servers, but does write the gateway", () => {
-    expect(
-      hermesMcpServers(
-        [{ ...gatewayServer, command: '/somewhere/else', args: ['--x'] }, legacyServer],
-        undefined,
-        [],
-      ),
-    ).toEqual({
-      [BROWSER_GATEWAY_MCP_SERVER_NAME]: {
-        command: BROWSER_GATEWAY_SHIM_PATH,
-        args: [],
-        env: {
-          ITSAPLAN_API_KEY: '${ITSAPLAN_API_KEY}',
-          ITSAPLAN_RUN_ID: '${ITSAPLAN_RUN_ID}',
-          ITSAPLAN_MESSAGE_ID: '${ITSAPLAN_MESSAGE_ID}',
-          BROWSER_GATEWAY_SOCKET: '${BROWSER_GATEWAY_SOCKET}',
-        },
-        timeout: 1900,
+  it("writes the gateway's shim whatever the library row says, and never the legacy marker", async () => {
+    const { hermesHome, materializer } = await fixture(GATEWAY_PROFILE, GATEWAY_CONTEXT);
+    await materializer.apply(
+      withServers('sha256:one', [
+        { ...gatewayServer, command: '/somewhere/else', args: ['--x'] },
+        legacyServer,
+      ]),
+    );
+    const servers = (await managedConfig(hermesHome)).mcp_servers as Record<string, unknown>;
+    expect(servers[BROWSER_GATEWAY_MCP_SERVER_NAME]).toEqual({
+      command: BROWSER_GATEWAY_SHIM_PATH,
+      args: [],
+      env: {
+        ITSAPLAN_API_KEY: '${ITSAPLAN_API_KEY}',
+        ITSAPLAN_RUN_ID: '${ITSAPLAN_RUN_ID}',
+        ITSAPLAN_MESSAGE_ID: '${ITSAPLAN_MESSAGE_ID}',
+        BROWSER_GATEWAY_SOCKET: '${BROWSER_GATEWAY_SOCKET}',
       },
+      timeout: 1900,
+      enabled: true,
     });
-    expect(hermesMcpServers([legacyServer], undefined, [])).toBeNull();
+    expect(servers).not.toHaveProperty(BROWSER_GATEWAY_LEGACY_MCP_SERVER_NAME);
   });
 
   it('usesBrowserGateway is true only for the gateway without the explicit legacy fallback', () => {
@@ -975,20 +1010,20 @@ describe('Browser gateway: Hermes side (design §3, §6)', () => {
     expect(toolsetsWithBrowser(profile, ['browser'], [])).toEqual(['file', 'itsaplan', 'browser']);
   });
 
-  it("turns the profile's browser-harness off for an agent on the gateway, and only then", () => {
-    const profile = { toolsets: ['browser', 'file'], mcpServers: ['browser-harness', 'itsaplan'] };
-    expect(hermesMcpServers([gatewayServer], profile, [])).toMatchObject({
-      'browser-harness': { enabled: false },
-    });
-    expect(hermesMcpServers([gatewayServer], profile, [])).not.toHaveProperty('itsaplan');
-    expect(hermesMcpServers([gatewayServer, legacyServer], profile, [])).not.toHaveProperty(
-      'browser-harness',
-    );
-    expect(hermesMcpServers([], profile, [])).toBeNull();
+  it('turns browser-harness off for an agent on the gateway, and only then', async () => {
+    const { hermesHome, materializer } = await fixture(GATEWAY_PROFILE, GATEWAY_CONTEXT);
+    const harness = async (servers: RuntimeMcpServer[]) => {
+      await materializer.apply(withServers(`sha256:${servers.length}`, servers));
+      return (
+        (await managedConfig(hermesHome)).mcp_servers as Record<string, { enabled?: boolean }>
+      )['browser-harness'];
+    };
+    expect(await harness([gatewayServer])).toEqual({ enabled: false });
+    expect((await harness([gatewayServer, legacyServer]))?.enabled).toBe(true);
+    expect((await harness([]))?.enabled).toBe(true);
   });
 
   describe('the four combinations, through the synchronizer', () => {
-    const profile = { toolsets: ['browser', 'file', 'terminal'], mcpServers: ['browser-harness'] };
     const login: WebLogin = {
       id: 1,
       label: 'Example',
@@ -1000,7 +1035,7 @@ describe('Browser gateway: Hermes side (design §3, §6)', () => {
     };
 
     async function run(ownServers: RuntimeMcpServer[]) {
-      const { materializer } = await fixture(profile);
+      const { materializer } = await fixture(GATEWAY_PROFILE, GATEWAY_CONTEXT);
       const vaultCalls: WebLogin[][] = [];
       const vault: LoginVault = {
         sync: async (logins) => {
@@ -1017,7 +1052,10 @@ describe('Browser gateway: Hermes side (design §3, §6)', () => {
         mcpSecrets: async () => ({}),
         webLogins: async () => [login],
       };
-      const sync = new HermesPolicySynchronizer(clientStub, materializer, { profile, vault });
+      const sync = new HermesPolicySynchronizer(clientStub, materializer, {
+        profile: GATEWAY_PROFILE,
+        vault,
+      });
       await sync.ensure();
       const settings = await sync.runSettings({ runId: 1 });
       return { toolsets: sync.toolsets(), settings, vaultCalls };
@@ -1025,43 +1063,38 @@ describe('Browser gateway: Hermes side (design §3, §6)', () => {
 
     it('neither gateway nor legacy: unchanged (browser forced on, Hermes vault synced)', async () => {
       const { toolsets, settings, vaultCalls } = await run([]);
-      expect(toolsets).toEqual(['browser', 'file', 'terminal', 'browser-harness']);
-      expect(settings.toolsets).toEqual(['browser', 'file', 'terminal', 'browser-harness']);
+      expect(toolsets).toEqual(['browser', 'file', 'terminal', 'itsaplan', 'browser-harness']);
+      expect(settings.toolsets).toEqual(toolsets);
       expect(vaultCalls).toEqual([[login]]);
       expect(settings.logins?.size).toBe(1);
     });
 
     it('gateway only: the native browser toolset is excluded and the Hermes vault is emptied, once', async () => {
       const { toolsets, settings, vaultCalls } = await run([gatewayServer]);
-      expect(toolsets).toEqual(['file', 'terminal', BROWSER_GATEWAY_MCP_SERVER_NAME]);
-      expect(settings.toolsets).toEqual(['file', 'terminal', BROWSER_GATEWAY_MCP_SERVER_NAME]);
+      expect(toolsets).toEqual(['file', 'terminal', 'itsaplan', BROWSER_GATEWAY_MCP_SERVER_NAME]);
+      expect(settings.toolsets).toEqual(toolsets);
       // Emptied at the policy sync; the run itself finds it done and syncs nothing more.
       expect(vaultCalls).toEqual([[]]);
       expect(settings.logins).toBeUndefined();
     });
 
-    it('legacy only: unchanged (the explicit fallback keeps the native browser and the vault sync)', async () => {
+    it('legacy only: the explicit fallback keeps the native browser and the vault sync', async () => {
       const { toolsets, settings, vaultCalls } = await run([legacyServer]);
-      expect(toolsets).toEqual([
-        'browser',
-        'file',
-        'terminal',
-        'browser-harness',
-        BROWSER_GATEWAY_LEGACY_MCP_SERVER_NAME,
-      ]);
+      // The marker is no server, so no toolset names it.
+      expect(toolsets).toEqual(['browser', 'file', 'terminal', 'itsaplan', 'browser-harness']);
       expect(settings.toolsets).toEqual(toolsets);
       expect(vaultCalls).toEqual([[login]]);
     });
 
-    it('gateway and legacy together: unchanged (the fallback flag wins)', async () => {
+    it('gateway and legacy together: the fallback wins, and the gateway is there too', async () => {
       const { toolsets, settings, vaultCalls } = await run([gatewayServer, legacyServer]);
       expect(toolsets).toEqual([
         'browser',
         'file',
         'terminal',
+        'itsaplan',
         'browser-harness',
         BROWSER_GATEWAY_MCP_SERVER_NAME,
-        BROWSER_GATEWAY_LEGACY_MCP_SERVER_NAME,
       ]);
       expect(settings.toolsets).toEqual(toolsets);
       expect(vaultCalls).toEqual([[login]]);
@@ -1070,8 +1103,12 @@ describe('Browser gateway: Hermes side (design §3, §6)', () => {
 });
 
 describe('Browser gateway: Claude Code and Codex get it on the command line', () => {
+  const snapshot = (servers: RuntimeMcpServer[]) => withServers('sha256:one', servers);
+  const specs = (runtime: 'claude' | 'codex', servers: RuntimeMcpServer[]) =>
+    collectProfile({ runtime, snapshot: snapshot(servers), env: {} }).mcpServers;
+
   it('Claude Code: a dynamic stdio server and its tools allowed', () => {
-    const args = browserGatewayArgs('claude');
+    const args = claudeMcpArgs(specs('claude', [gatewayServer]));
     expect(args[0]).toBe('--mcp-config');
     expect(JSON.parse(args[1]!)).toEqual({
       mcpServers: {
@@ -1079,14 +1116,19 @@ describe('Browser gateway: Claude Code and Codex get it on the command line', ()
           type: 'stdio',
           command: BROWSER_GATEWAY_SHIM_PATH,
           args: [],
+          env: {},
         },
       },
     });
-    expect(args.slice(2)).toEqual(['--allowedTools', `mcp__${BROWSER_GATEWAY_MCP_SERVER_NAME}`]);
+    expect(args.slice(2)).toEqual([
+      '--strict-mcp-config',
+      '--allowedTools',
+      `mcp__${BROWSER_GATEWAY_MCP_SERVER_NAME}`,
+    ]);
   });
 
   it('Codex: the table as -c overrides, its variables passed by name', () => {
-    expect(browserGatewayArgs('codex')).toEqual([
+    expect(codexMcpArgs(specs('codex', [gatewayServer]), [], {}).args).toEqual([
       '-c',
       'mcp_servers.projekt-browser.command="/usr/local/libexec/helena-browser-mcp"',
       '-c',
@@ -1097,26 +1139,13 @@ describe('Browser gateway: Claude Code and Codex get it on the command line', ()
       'mcp_servers.projekt-browser.tool_timeout_sec=1900',
       '-c',
       'mcp_servers.projekt-browser.default_tools_approval_mode="approve"',
+      '-c',
+      'mcp_servers.projekt-browser.enabled=true',
     ]);
   });
 
-  it('only for an agent with Projekt-Browser on, keeping the last answer when Helena is away', async () => {
-    let servers: RuntimeMcpServer[] = [gatewayServer];
-    let reachable = true;
-    const client = {
-      runtimePolicy: async () => {
-        if (!reachable) throw new Error('offline');
-        return { ...withServers('sha256:one', servers) };
-      },
-    };
-    const gateway = new BrowserGatewayArgs(client, 'codex');
-    expect(await gateway.current()).toEqual(browserGatewayArgs('codex'));
-    reachable = false;
-    expect(await gateway.current()).toEqual(browserGatewayArgs('codex'));
-    reachable = true;
-    servers = [gatewayServer, legacyServer];
-    expect(await gateway.current()).toEqual([]);
-    servers = [];
-    expect(await gateway.current()).toEqual([]);
+  it('only for an agent with Projekt-Browser on', () => {
+    expect(specs('codex', [])).toEqual([]);
+    expect(specs('codex', [legacyServer])).toEqual([]);
   });
 });

@@ -121,10 +121,15 @@ for unit in volition-hermes-runner.service volition-hermes-team-bridge.service \
 done
 
 # The runner's start script runs an installed copy of the catalog script, which writes the
-# runner config from the Hermes profile.
+# runner config from the Hermes profile. The start script itself is installed the same way.
 if changed deployment/volition-stack/integration/scripts/volition-hermes-catalog.py; then
   install -m 0755 "$live/deployment/volition-stack/integration/scripts/volition-hermes-catalog.py" \
     /usr/local/libexec/volition-hermes-catalog.py
+  restart+=(volition-hermes-runner.service)
+fi
+if changed deployment/volition-stack/integration/scripts/volition-hermes-runner; then
+  install -m 0755 "$live/deployment/volition-stack/integration/scripts/volition-hermes-runner" \
+    /usr/local/libexec/volition-hermes-runner
   restart+=(volition-hermes-runner.service)
 fi
 

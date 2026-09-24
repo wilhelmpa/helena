@@ -443,7 +443,15 @@
       "filePathPlaceholder": "SOUL.md ou instructions/tema.md",
       "filePathLabel": "Caminho do arquivo gerenciado {index}",
       "fileContentLabel": "Conteúdo do arquivo gerenciado {index}",
-      "removeFile": "Remover arquivo gerenciado {index}"
+      "removeFile": "Remover arquivo gerenciado {index}",
+      "runtime": "Runtime",
+      "runtimeKind": {
+        "hermes": "Hermes",
+        "claude": "Claude Code",
+        "codex": "Codex"
+      },
+      "runtimeHermesHint": "O servidor provisiona o Hermes e mantém o perfil sincronizado.",
+      "runtimeCliHint": "Roda em um runner com este preset (helena-runner --agent {kind}); instruções, skills, servidores MCP, modelo e raciocínio vêm da Helena."
     },
     "runtimeConflicts": {
       "title": "Alterado fora do Helena",
@@ -605,8 +613,8 @@
       "toolsetsReadOnly": "Só membros que podem editar agentes podem desligar conjuntos de ferramentas.",
       "noToolsets": "O runner não informou nenhum conjunto de ferramentas.",
       "mcpServers": "Servidores MCP",
-      "mcpServersHint": "Da configuração do Hermes. Desligue um e salve para que o agente não o use.",
-      "mcpServersReadOnly": "Da configuração do Hermes. Só membros que podem editar agentes podem desligar um.",
+      "mcpServersHint": "A Helena dá estes a cada agente: o próprio servidor e o navegador do projeto. Desative um e salve para que o agente não o use.",
+      "mcpServersReadOnly": "A Helena dá estes a cada agente. Só membros que podem editar agentes podem desativar um.",
       "noMcpServers": "Nenhum",
       "libraryMcpServers": "Servidores MCP da equipe",
       "libraryMcpServersHint": "Um servidor ativado inicia com os chats e execuções do agente depois que você salva.",
@@ -621,7 +629,7 @@
       "origin": {
         "agent": "Aprendida",
         "hub": "Do Skills Hub",
-        "plan": "Do Plan"
+        "plan": "Da Helena"
       },
       "memory": "Memória",
       "memoryHint": "O Hermes escreve essa memória sozinho; ela aparece como o runner a informou por último. Uma alteração chega ao agente na próxima sincronização do runner.",
@@ -725,6 +733,51 @@
         "instructions": "Instruções",
         "model": "Modelo/raciocínio",
         "budgets": "Orçamentos"
+      }
+    },
+    "profileSync": {
+      "state": {
+        "synced": "Perfil sincronizado",
+        "drift": "O perfil difere",
+        "pending": "Aplicando as configurações …",
+        "degraded": "Não foi possível aplicar as configurações",
+        "offline": "Runner offline",
+        "unknown": "O runner não informa seu perfil"
+      },
+      "checked": "verificado há {time}",
+      "rewrite": "Reescrever",
+      "rewriting": "Reescrevendo …",
+      "rewriteQueued": "O runner reescreve o perfil na próxima sincronização.",
+      "drift": {
+        "not-linked": "config.yaml não é o link para a configuração compartilhada do Hermes.",
+        "managed-config": "O Hermes não aplica a configuração escrita pela Helena.",
+        "mcp-unmanaged": "O servidor MCP {server} está ativo, embora a Helena não o preveja.",
+        "mcp-missing": "O servidor MCP {server} está ausente ou desativado.",
+        "mcp-differs": "O servidor MCP {server} roda com configurações diferentes das da Helena.",
+        "mcp-unsupported": "Este runtime não consegue iniciar o servidor MCP {server}.",
+        "setting-differs": "A configuração {key} difere.",
+        "approval-guard": "Comandos perigosos rodam sem o guardião de aprovação da Helena.",
+        "probe-failed": "Não foi possível ler o perfil."
+      },
+      "defaults": "Padrão do runtime: {model} ({provider}), raciocínio {reasoning}",
+      "servers": "Servidores MCP: {servers}",
+      "serversOff": "desativados: {servers}"
+    },
+    "runModel": {
+      "title": "Modelo",
+      "configured": "Configurado: {value}",
+      "used": "Executado com: {value}",
+      "notReported": "Executado com: não informado",
+      "mismatch": "Difere: {what}",
+      "badge": "Modelo difere",
+      "source": {
+        "run": "da etapa do workflow",
+        "agent": "do agente",
+        "default": "padrão do agente"
+      },
+      "part": {
+        "model": "modelo",
+        "reasoning": "raciocínio"
       }
     }
   },

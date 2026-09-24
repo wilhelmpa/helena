@@ -690,6 +690,10 @@ export const agentRun = pgTable(
     // The question the agent asked when it reported itself blocked during the run. A
     // blocked run ends as a success: the agent did what it could and waits for input.
     blockedQuestion: text('blocked_question'),
+    // The model and reasoning the run was configured to use next to what its session
+    // really ran on, as the runner read them back, with any mismatch named. Null for a run
+    // whose runner reports neither.
+    modelCheck: jsonb('model_check'),
     // The follow-up turn in which the agent kept what the run taught it, when Plan asked
     // its runner for one: why, how it went, what it saved and what it cost. Its tokens are
     // also added to the run's own.
@@ -959,6 +963,9 @@ export const agentChatMessage = pgTable(
     // The model the runner reported for the answer, and the tokens its last call read
     // and wrote.
     model: text('model'),
+    // The configured model and reasoning next to what the answer's session ran on (as on
+    // agent_run). Null for an answer whose runner reports neither.
+    modelCheck: jsonb('model_check'),
     inputTokens: integer('input_tokens'),
     outputTokens: integer('output_tokens'),
     status: text('status').notNull().default('pending'),
@@ -1397,7 +1404,7 @@ export const agentRuntimeAction = pgTable(
   (t) => [
     check(
       'agent_runtime_action_kind_check',
-      sql`${t.kind} IN ('discard-skill', 'pin-skill', 'write-memory')`,
+      sql`${t.kind} IN ('discard-skill', 'pin-skill', 'write-memory', 'rewrite-profile')`,
     ),
     index('agent_runtime_action_agent_idx').on(t.agentId, t.id),
   ],
