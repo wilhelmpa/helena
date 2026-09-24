@@ -121,7 +121,11 @@
       "takeOverHint": "Solange Sie steuern, wartet der Agent. Mit „Zurückgeben“ macht er weiter.",
       "idleTitle": "Sind Sie fertig?",
       "idleHint": "Seit 10 Minuten keine Eingabe. Ohne Antwort geht die Steuerung in einer Minute an die Agenten zurück.",
-      "idleKeep": "Weiter steuern"
+      "idleKeep": "Weiter steuern",
+      "bookmarks": "Lesezeichen",
+      "bookmarkPage": "Diese Seite merken",
+      "removeBookmark": "Lesezeichen entfernen",
+      "noBookmarks": "Noch keine Lesezeichen"
     }
   },
   "groups": {

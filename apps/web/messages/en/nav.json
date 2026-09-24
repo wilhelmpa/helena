@@ -123,7 +123,11 @@
       "takeOverHint": "While you are in control, the agent waits. It carries on once you hand back.",
       "idleTitle": "Are you done?",
       "idleHint": "No input for 10 minutes. Without an answer, control goes back to the agents in a minute.",
-      "idleKeep": "Keep control"
+      "idleKeep": "Keep control",
+      "bookmarks": "Bookmarks",
+      "bookmarkPage": "Bookmark this page",
+      "removeBookmark": "Remove bookmark",
+      "noBookmarks": "No bookmarks yet"
     }
   },
   "groups": {
