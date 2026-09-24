@@ -1,0 +1,45 @@
+#!/usr/bin/env python3
+"""usermod -l NEW [-d HOME] OLD against the sandbox's etc/passwd."""
+import os
+import sys
+
+root = os.environ["HELENA_RENAME_TEST_ROOT"]
+fail_once = os.environ.get("HELENA_RENAME_TEST_FAIL_USERMOD")
+if fail_once and os.path.exists(fail_once):
+    os.unlink(fail_once)
+    print("usermod: simulated failure", file=sys.stderr)
+    sys.exit(8)
+args = sys.argv[1:]
+new = home = None
+old = args[-1]
+i = 0
+while i < len(args) - 1:
+    if args[i] == "-l":
+        new = args[i + 1]
+        i += 2
+    elif args[i] == "-d":
+        home = args[i + 1]
+        i += 2
+    else:
+        i += 1
+path = os.path.join(root, "etc/passwd")
+lines = open(path, encoding="utf-8").read().splitlines()
+out = []
+found = False
+for line in lines:
+    parts = line.split(":")
+    if parts[0] == old:
+        found = True
+        parts[0] = new or old
+        if home:
+            parts[5] = home
+    elif parts[0] == new:
+        print("usermod: user '%s' already exists" % new, file=sys.stderr)
+        sys.exit(9)
+    out.append(":".join(parts))
+if not found:
+    print("usermod: user '%s' does not exist" % old, file=sys.stderr)
+    sys.exit(6)
+open(path, "w", encoding="utf-8").write("\n".join(out) + "\n")
+with open(os.path.join(root, "calls.log"), "a", encoding="utf-8") as log:
+    log.write("usermod " + " ".join(args) + "\n")
