@@ -5,8 +5,8 @@ import { cn } from '@/lib/utils';
 // HELENA in ANSI Shadow, the block capitals of Hermes Agent's banner, drawn as paths
 // in the theme's gold/amber/bronze bands (--helena-gold/-amber/-bronze in globals.css)
 // or in the text colour; in the funke variant it is "Helena" set in DM Sans.
-//   compact  the app's chrome (sidebar, share header): 21px tall, 75px wide, where the
-//            art's units fall on whole device pixels of a 2× screen
+//   compact  the app's chrome (sidebar, share header): half a pixel per art unit (75px
+//            wide), so every edge falls on a whole device pixel of a 2× screen
 //   full     sign-in panel and other large places; the caller sets the width
 // `label` names it for assistive technology where it is the only text; next to a
 // visible name it stays decorative.
@@ -42,7 +42,8 @@ export default function HelenaWordmark({
     <svg
       viewBox={`0 0 ${width} ${height}`}
       {...a11y}
-      className={cn(size === 'compact' ? 'h-[21px] w-auto' : 'h-auto w-[300px]', className)}
+      style={size === 'compact' ? { width: width / 2, height: height / 2 } : undefined}
+      className={cn(size === 'full' && 'h-auto w-[300px]', className)}
     >
       {rows.map((row, i) => (
         <path
