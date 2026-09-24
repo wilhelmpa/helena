@@ -34,6 +34,9 @@ export interface SystemJob {
   id: string;
   schedule(): Promise<SystemJobSchedule>;
   run(context: SystemJobContext): Promise<void>;
+  // Runs once as soon as the engine first sees the job (a fresh installation shows its
+  // state without waiting for the first scheduled time).
+  runWhenNew?: boolean;
 }
 
 const jobs = new Map<string, SystemJob>();
@@ -53,7 +56,7 @@ function scheduleKey(schedule: SystemJobSchedule): string {
 async function jobRow(job: SystemJob, schedule: SystemJobSchedule, now: Date) {
   const key = scheduleKey(schedule);
   const [row] = await db.select().from(helenaSystemJob).where(eq(helenaSystemJob.id, job.id));
-  if (row && row.scheduleKey === key) return row;
+  if (row && row.scheduleKey === key) return { row, created: false };
   // New, or given another time: it starts afresh now, like a schedule that was edited.
   const [saved] = await db
     .insert(helenaSystemJob)
@@ -63,7 +66,7 @@ async function jobRow(job: SystemJob, schedule: SystemJobSchedule, now: Date) {
       set: { scheduleKey: key, firedThrough: now },
     })
     .returning();
-  return saved!;
+  return { row: saved!, created: !row };
 }
 
 // Fires the jobs whose time has come (the engine's quick tick). A time missed while the
@@ -74,7 +77,17 @@ export async function fireDueSystemJobs(now = new Date()): Promise<number> {
   for (const job of jobs.values()) {
     const schedule = await job.schedule();
     if (!schedule.enabled) continue;
-    const row = await jobRow(job, schedule, now);
+    const { row, created } = await jobRow(job, schedule, now);
+    if (created && job.runWhenNew) {
+      // One id for every replica that sees the job first at the same moment.
+      await DBOS.startWorkflow(jobWorkflow, { workflowID: `job:${job.id}:first` })(
+        job.id,
+        'schedule',
+        null,
+      );
+      fired += 1;
+      continue;
+    }
     const due = latestFireTime(schedule.cron, schedule.timezone, row.firedThrough, now);
     if (!due) continue;
     const iso = due.toISOString();

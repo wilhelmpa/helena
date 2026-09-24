@@ -239,6 +239,7 @@
     "usageTitle": "用量",
     "usageDescription": "团队中各代理的用量，来自 Helena 的令牌账本，费用按模型价格表计算。",
     "team": "团队",
-    "noTeam": "暂无团队。"
+    "noTeam": "暂无团队。",
+    "openUpdates": "在“更新”中打开"
   }
 }

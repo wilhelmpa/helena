@@ -239,6 +239,7 @@
     "usageTitle": "Verbrauch",
     "usageDescription": "Was die Agenten eines Teams verbraucht haben, aus Helenas Token-Buch, mit Kosten nach der Modell-Preistabelle.",
     "team": "Team",
-    "noTeam": "Noch kein Team."
+    "noTeam": "Noch kein Team.",
+    "openUpdates": "In Updates öffnen"
   }
 }

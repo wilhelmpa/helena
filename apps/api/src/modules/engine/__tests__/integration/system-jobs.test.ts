@@ -38,6 +38,20 @@ registerSystemJob({
   },
 });
 
+const EAGER = 'helena.test-eager';
+let eagerRuns = 0;
+registerSystemJob({
+  id: EAGER,
+  runWhenNew: true,
+  // Once a year: only the first sight runs it within the test.
+  schedule: async () => ({ enabled: true, cron: '0 0 1 1 *', timezone: 'Europe/Berlin' }),
+  async run(context) {
+    await context.step('count', async () => {
+      eagerRuns += 1;
+    });
+  },
+});
+
 async function row() {
   const [found] = await db.select().from(helenaSystemJob).where(eq(helenaSystemJob.id, JOB));
   return found ?? null;
@@ -105,6 +119,16 @@ describe('system jobs', () => {
     expect((await row())!.firedThrough.getTime()).toBe(later.getTime());
     expect(ran).toHaveLength(0);
     expect((await systemJobState(JOB)).nextRunAt).toBeNull();
+  });
+
+  it('runs a job that asks for it once when it is first seen', async () => {
+    eagerRuns = 0;
+    await fireDueSystemJobs();
+    await fireDueSystemJobs();
+    const deadline = Date.now() + 10_000;
+    while (eagerRuns === 0 && Date.now() < deadline) await Bun.sleep(50);
+    await Bun.sleep(200);
+    expect(eagerRuns).toBe(1);
   });
 
   it('runs by hand, records a failure with its reason', async () => {

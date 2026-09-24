@@ -334,6 +334,29 @@ ctx.usageLimitSources.register({
 - Helena asks the runners with the runtime request `limits.read` once per interval and on "Aktualisieren"; runners also post to `POST /agent-runtime/limits`. Everything a source hands over is checked with `normalizeUsageLimitSnapshot`; `windowState`/`snapshotState` give ok, near, limited or unknown.
 - The numbers are read with `GET /provider-limits` and the read-only MCP tool `get_provider_limits`.
 
+### 3.11 Update sources
+
+An `UpdateSource` says what Helena runs on and whether a newer version exists: installed and newest version, whether the update fixes a vulnerability, where it comes from and where its release notes are. Version facts are deterministic (the vendor's published data, compared with `compareVersions`); **no model decides a version**. A small model only summarizes the release notes afterwards (a text-only digest run). Decision: [helena-decisions/update-center.md](helena-decisions/update-center.md).
+
+```ts
+ctx.updateSources.register({
+  id: 'acme.cli',
+  label: { en: 'Acme CLI', de: 'Acme-CLI' },
+  kind: 'tool', // runtime | system | tool | app
+  hosts: ['registry.npmjs.org', 'github.com'], // the only hosts ctx.fetchText reaches
+  check: async (ctx) => [{ component: 'acme', name: 'Acme CLI', installed: '1.2.0', available:
+    (await ctx.fetchJson<{ version: string }>('https://registry.npmjs.org/acme/latest')).version,
+    updateAvailable: true, security: false, applicable: false }],
+  releaseNotes: (candidate, ctx) => ctx.fetchText('https://github.com/acme/cli/releases.atom'),
+});
+```
+
+- `check` runs on every check (the engine system job `helena.updates`, daily at 06:00 by default, and "Jetzt prüfen"); `releaseNotes` only for a version without a summary; `apply`/`progress` only where a helper can do the work. Everything a source answers passes `normalizeUpdateCandidate`.
+- `ctx.fetchText`/`fetchJson` reach only the hosts the source declares (redirects included), time out after 15 s and read at most 512 KiB; `ctx.inventory()` is what the root helper `helena-update` reported about the host.
+- Built-ins (internal plugin `helena.updates`, `apps/api/src/modules/updates/sources`): `hermes`, `cli-runtimes`, `apt`, `host-tools`, `helena`.
+- The state is read with `GET /god/update-center`; an update starts only with the owner's `POST /god/update-center/items/:id/apply`.
+- Instance-level scheduled work goes through the engine's system jobs (`registerSystemJob`, `apps/api/src/modules/engine/system-jobs.ts`): croner times, exactly once per time (`job:<id>:<time>`), durable steps.
+
 ## 4. Plugin schreiben
 
 1. **Ordner anlegen.** Ein Plugin ist ein Ordner mit `helena.plugin.json`. Vorbild: `examples/plugins/hello-helena`.
@@ -423,5 +446,6 @@ ctx.usageLimitSources.register({
 | hub/agent-browser-mcp | `AgentTool` | Register the 24 `browser_*` tools with `category` + `classify(input)` (click may send/pay/publish); import categories from the SDK; a real `handover` approval kind instead of the text prefix. |
 | hub/second-brain | `KnowledgeSource`, `CaptureTarget`, `capture-action` slot | The API and worker hosts exist: `host` in `apps/api/src/shared/helena.ts`, `startEventDelivery().host` in `apps/worker/src/events.ts`. Load `knowledgePlugin` there with `host.load(knowledgePlugin, manifest)`; the host's `knowledgeSources`/`captureTargets` are the registries. |
 | hub/provider-limits | `UsageLimitSource` | The registry and its built-ins (`hermes`, `codex`, `claude-code` in the runner, `spool` in the API). hub/autopilot: an evaluator may read `agentLimitState(agentId)` (`#modules/provider-limits/service`) to hold non-urgent runs back while the agent's account is at its limit (optional, proposed in provider-limits.md). |
+| hub/update-center | `UpdateSource`, engine system jobs | The registry and its built-ins; the digest run (`agent_run.trigger = 'digest'`, `agent_run.reasoning`). Package G: the Docker image carries its own inventory (the helper's `inventory` answer shape) and the CLI runtimes' installer. |
 | hub/oss-packaging | plugins dir, logger | `HELENA_PLUGINS_DIR` in the units/compose; OPS-01 pino logger behind `ctx.log`. |
 | web owners | UI slots | Settings sections, agent sections, dashboard widgets, header actions, home nav and admin sections move onto the slot registry one at a time, the way the panel did. |

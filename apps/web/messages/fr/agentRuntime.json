@@ -239,6 +239,7 @@
     "usageTitle": "Consommation",
     "usageDescription": "Ce que les agents d'une équipe ont consommé, d'après le registre de tokens de Helena, avec le coût selon la grille tarifaire des modèles.",
     "team": "Équipe",
-    "noTeam": "Aucune équipe pour l'instant."
+    "noTeam": "Aucune équipe pour l'instant.",
+    "openUpdates": "Ouvrir dans Mises à jour"
   }
 }

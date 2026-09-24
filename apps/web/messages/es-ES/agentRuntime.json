@@ -239,6 +239,7 @@
     "usageTitle": "Consumo",
     "usageDescription": "Lo que consumieron los agentes de un equipo, según el registro de tokens de Helena, con el coste según la tabla de precios de los modelos.",
     "team": "Equipo",
-    "noTeam": "Todavía no hay equipo."
+    "noTeam": "Todavía no hay equipo.",
+    "openUpdates": "Abrir en Actualizaciones"
   }
 }

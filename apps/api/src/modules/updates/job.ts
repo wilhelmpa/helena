@@ -26,6 +26,8 @@ export async function runUpdatesJob(context: SystemJobContext): Promise<void> {
 
 registerSystemJob({
   id: UPDATES_JOB_ID,
+  // A fresh installation checks at once instead of waiting for 06:00.
+  runWhenNew: true,
   async schedule() {
     const settings = await getUpdateSettings();
     return { enabled: settings.enabled, cron: settings.cron, timezone: settings.timezone };

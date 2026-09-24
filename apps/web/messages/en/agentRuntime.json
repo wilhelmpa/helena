@@ -239,6 +239,7 @@
     "usageTitle": "Usage",
     "usageDescription": "What the agents of a team spent, from Helena's token ledger, with cost by the model price table.",
     "team": "Team",
-    "noTeam": "No team yet."
+    "noTeam": "No team yet.",
+    "openUpdates": "Open in Updates"
   }
 }

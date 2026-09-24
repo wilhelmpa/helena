@@ -188,21 +188,24 @@ export async function runUpdateCheck(
   };
   const failed: string[] = [];
   const picked = sources().filter(({ source }) => !options.only || source.id === options.only);
-  for (const { source } of picked) {
-    try {
-      const answered = await source.check(checkContext(source, inventory, manual));
-      const candidates = answered
-        .map((candidate) => normalizeUpdateCandidate(candidate))
-        .filter((candidate): candidate is UpdateCandidate => candidate !== null);
-      await storeCandidates(source, candidates, now);
-      state.sources[source.id] = { checkedAt: now.toISOString(), error: null };
-    } catch (error) {
-      const message = (error instanceof Error ? error.message : String(error)).slice(0, 500);
-      log.warn(`${source.id} check failed: ${message}`);
-      failed.push(source.id);
-      state.sources[source.id] = { checkedAt: now.toISOString(), error: message };
-    }
-  }
+  // Side by side: the Hermes check waits for its runner's helper, the others for the web.
+  await Promise.all(
+    picked.map(async ({ source }) => {
+      try {
+        const answered = await source.check(checkContext(source, inventory, manual));
+        const candidates = answered
+          .map((candidate) => normalizeUpdateCandidate(candidate))
+          .filter((candidate): candidate is UpdateCandidate => candidate !== null);
+        await storeCandidates(source, candidates, now);
+        state.sources[source.id] = { checkedAt: now.toISOString(), error: null };
+      } catch (error) {
+        const message = (error instanceof Error ? error.message : String(error)).slice(0, 500);
+        log.warn(`${source.id} check failed: ${message}`);
+        failed.push(source.id);
+        state.sources[source.id] = { checkedAt: now.toISOString(), error: message };
+      }
+    }),
+  );
   await setSetting(CHECK_KEY, {
     checkedAt: options.only ? state.checkedAt : now.toISOString(),
     helper,
@@ -560,8 +563,8 @@ async function finishAction(
     })
     .where(and(eq(helenaUpdateAction.id, actionId), eq(helenaUpdateAction.state, 'running')))
     .returning({ source: helenaUpdateAction.source });
-  // What is installed now: the source is asked again.
-  if (action) await runUpdateCheck({ only: action.source }).catch(() => {});
+  // What is installed now: the source is asked again, past any cache (Hermes' last check).
+  if (action) await runUpdateCheck({ only: action.source, manual: true }).catch(() => {});
 }
 
 // Follows every update that is running to its end. Called when the list is read and by the
