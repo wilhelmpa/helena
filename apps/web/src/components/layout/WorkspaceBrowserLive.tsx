@@ -112,7 +112,8 @@ export default function WorkspaceBrowserLive({
   // "auto" chose single frames itself (the connection is slow enough that video's own extra
   // latency would make it the worse choice) — distinct from a browser that cannot play video
   // at all, which never claims to prefer it.
-  const autoFallback = videoPreference === 'auto' && mode === 'jpeg' && playback !== null && hasFrame;
+  const autoFallback =
+    videoPreference === 'auto' && mode === 'jpeg' && playback !== null && hasFrame;
   const { pointer, keys } = useBrowserLiveInput(view, keyboard, geometry, send);
   const dpr = useDevicePixelRatio();
 

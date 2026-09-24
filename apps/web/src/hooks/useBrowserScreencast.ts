@@ -267,7 +267,10 @@ export function useBrowserScreencast(
           target.getContext('2d')?.drawImage(bitmap, 0, 0);
           const zoom = pageRef.current?.zoom ?? 1;
           showFrame({
-            natural: { width: Math.round(size.width * zoom), height: Math.round(size.height * zoom) },
+            natural: {
+              width: Math.round(size.width * zoom),
+              height: Math.round(size.height * zoom),
+            },
             page: size,
           });
         }

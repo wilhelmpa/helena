@@ -55,7 +55,9 @@ export default function WorkspaceBrowserStreamMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuLabel className="text-xs text-muted-foreground">{t('stream')}</DropdownMenuLabel>
+        <DropdownMenuLabel className="text-xs text-muted-foreground">
+          {t('stream')}
+        </DropdownMenuLabel>
         {PREFERENCES.map((preference) => (
           <DropdownMenuItem
             key={preference}
