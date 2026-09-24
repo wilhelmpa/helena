@@ -93,8 +93,8 @@ describe('attachments in the vault', () => {
       vaultPath: `${taskFolder}/shot.png`,
       sizeBytes: PNG_SIZE + 5,
     });
-    expect(readFileSync(onDisk(`${taskFolder}/shot.png`))).toEqual(png('after'));
-    expect(readFileSync(onDisk(`.trash/${taskFolder}/shot.png`))).toEqual(png('before'));
+    expect(readFileSync(onDisk(`${taskFolder}/shot.png`)).equals(png('after'))).toBe(true);
+    expect(readFileSync(onDisk(`.trash/${taskFolder}/shot.png`)).equals(png('before'))).toBe(true);
   });
 
   it('links a project file without copying it and leaves it when unlinked', async () => {
