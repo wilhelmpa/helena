@@ -131,6 +131,11 @@ interface UrlPolicy {
   // Public content never uses development or configured private-host exceptions.
   publicOnly?: boolean;
   signal?: AbortSignal;
+  // Hosts (exact names or IP literals) this one call may reach although they are local or
+  // private, and over http: an address the owner entered for one connection and explicitly
+  // allowed (a decision model server in the LAN, docs/helena-decisions/browser-task.md §3.3).
+  // Never taken from content. The resolved address is still pinned.
+  allowPrivateHosts?: string[];
 }
 
 // Validates the URL and resolves its hostname once. `pin` is the address the caller
@@ -149,9 +154,13 @@ async function vet(raw: string, policy: UrlPolicy = {}): Promise<{ url: URL; pin
   // server that ran with NODE_ENV=development for its LAN cookies lost the guard, so any
   // agent could make the API fetch 127.0.0.1. SSRF_ALLOWED_HOSTS admits single hosts.
   const devRelaxed = !policy.publicOnly && process.env.SSRF_ALLOW_PRIVATE === '1';
+  const ownerHost = url.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  const ownerAllowed =
+    !policy.publicOnly &&
+    (policy.allowPrivateHosts ?? []).some((host) => host.trim().toLowerCase() === ownerHost);
   if (
     url.protocol !== 'https:' &&
-    !((devRelaxed || policy.publicOnly) && url.protocol === 'http:')
+    !((devRelaxed || policy.publicOnly || ownerAllowed) && url.protocol === 'http:')
   ) {
     throw new UrlNotAllowedError('url must use https');
   }
@@ -163,7 +172,7 @@ async function vet(raw: string, policy: UrlPolicy = {}): Promise<{ url: URL; pin
   const allowed = !policy.publicOnly && isAllowedHost(host);
   const blockedIp = policy.publicOnly ? isNonPublicIp : isPrivateIp;
   if (isLocalHostname(host) || (isIP(host) && blockedIp(host))) {
-    if (!devRelaxed && !allowed) {
+    if (!devRelaxed && !allowed && !ownerAllowed) {
       throw new UrlNotAllowedError('url must not point to a private or local address');
     }
     return { url };
@@ -192,7 +201,12 @@ async function vet(raw: string, policy: UrlPolicy = {}): Promise<{ url: URL; pin
   } finally {
     if (abort) policy.signal?.removeEventListener('abort', abort);
   }
-  if ((!addrs.length || addrs.some((a) => blockedIp(a.address))) && !devRelaxed && !allowed) {
+  if (
+    (!addrs.length || addrs.some((a) => blockedIp(a.address))) &&
+    !devRelaxed &&
+    !allowed &&
+    !ownerAllowed
+  ) {
     throw new UrlNotAllowedError('url must not point to a private or local address');
   }
   return { url, pin: addrs[0] };

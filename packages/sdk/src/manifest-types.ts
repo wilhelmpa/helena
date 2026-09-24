@@ -42,6 +42,8 @@ export interface PluginProvides {
   usageLimitSources?: string[];
   // Runtime login sources (whether the model logins agents share are usable).
   runtimeLoginSources?: string[];
+  // Decision backends (System One services the browser's fast path asks).
+  decisionBackends?: string[];
   // Event types the plugin publishes; always under its own id.
   events?: string[];
   mcpServers?: McpServerContribution[];

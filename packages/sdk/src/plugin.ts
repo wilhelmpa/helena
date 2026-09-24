@@ -11,6 +11,7 @@ import type { BundleOffer } from './templates';
 import type { AnyAgentTool } from './tools';
 import type { UiSlot } from './ui';
 import type { RuntimeLoginSource } from './runtime-logins';
+import type { DecisionBackendType } from './decision-backends';
 import type { UsageLimitSource } from './usage-limits';
 import type { TriggerType, WorkflowStepType } from './workflows';
 
@@ -63,6 +64,8 @@ export interface PluginContext {
   usageLimitSources: Registrar<UsageLimitSource>;
   // Where Helena reads whether the model logins agents share are usable (API: polls).
   runtimeLoginSources: Registrar<RuntimeLoginSource>;
+  // System One services the browser's fast path (browser_task) can ask (API).
+  decisionBackends: Registrar<DecisionBackendType>;
   events: {
     // Only event types under the plugin's own id: `<pluginId>.<name>`.
     publish(init: EventInit): Promise<HelenaEvent>;

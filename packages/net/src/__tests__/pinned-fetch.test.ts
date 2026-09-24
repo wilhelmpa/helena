@@ -118,3 +118,36 @@ describe('pinnedFetch User-Agent', () => {
     expect(headers['user-agent']).toBe('itsaplan-webhooks/1');
   });
 });
+
+// The owner's allowance for one connection (a decision model server in the LAN): one call may
+// reach exactly the named host, over http too; every other private address stays refused.
+describe('allowPrivateHosts', () => {
+  it('reaches the named loopback host over http, and nothing else', async () => {
+    const server = createServer((_req, res) => res.end('ok'));
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const port = (server.address() as { port: number }).port;
+    try {
+      const res = await pinnedFetch(`http://127.0.0.1:${port}/`, {
+        allowPrivateHosts: ['127.0.0.1'],
+      });
+      expect(await res.text()).toBe('ok');
+      await expect(
+        pinnedFetch(`http://127.0.0.1:${port}/`, { allowPrivateHosts: ['10.0.0.1'] }),
+      ).rejects.toBeInstanceOf(UrlNotAllowedError);
+      await expect(pinnedFetch(`http://127.0.0.1:${port}/`)).rejects.toBeInstanceOf(
+        UrlNotAllowedError,
+      );
+    } finally {
+      server.close();
+    }
+  });
+
+  it('never applies to public-only content', async () => {
+    await expect(
+      assertPublicHttpUrl('http://127.0.0.1/', {
+        publicOnly: true,
+        allowPrivateHosts: ['127.0.0.1'],
+      }),
+    ).rejects.toBeInstanceOf(UrlNotAllowedError);
+  });
+});

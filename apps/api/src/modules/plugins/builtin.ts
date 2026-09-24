@@ -19,6 +19,11 @@ import { loadRepositoryBundles } from '#modules/template-bundles/service';
 import { SPOOL_SOURCE_ID, spoolLimitSource } from '#modules/provider-limits/spool';
 import { LOGIN_STATUS_SOURCE_ID, loginStatusSource } from '#modules/runtime-logins/spool';
 import { AUTOPILOT_EVALUATOR_ID, autopilotPolicyEvaluator } from '#modules/autopilot/evaluator';
+import {
+  BROWSER_TASK_PLUGIN_ID,
+  BUILTIN_DECISION_BACKENDS,
+  browserTaskPlugin,
+} from '#modules/browser-task/backends';
 
 // Helena's own features as internal plugins: they register through the same host and
 // the same manifest checks as an external plugin (docs/helena-framework.md, §3a
@@ -154,6 +159,13 @@ export async function loadBuiltinPlugins(app: McpApp): Promise<void> {
     logins,
     builtinManifest(LOGINS_PLUGIN_ID, 'logins', {
       provides: { runtimeLoginSources: [LOGIN_STATUS_SOURCE_ID] },
+    }),
+  );
+  // The decision backends of the browser's fast path (docs/helena-decisions/browser-task.md).
+  await host.load(
+    browserTaskPlugin,
+    builtinManifest(BROWSER_TASK_PLUGIN_ID, 'browserTask', {
+      provides: { decisionBackends: BUILTIN_DECISION_BACKENDS.map((backend) => backend.id) },
     }),
   );
   // The second brain: Helena's knowledge sources and capture targets live in the host's

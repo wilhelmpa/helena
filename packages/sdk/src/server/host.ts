@@ -22,6 +22,7 @@ import { validateBundle } from '../templates';
 import { declaredCategory, type AnyAgentTool } from '../tools';
 import { uiSlotKey, type UiSlot } from '../ui';
 import type { RuntimeLoginSource } from '../runtime-logins';
+import type { DecisionBackendType } from '../decision-backends';
 import type { UsageLimitSource } from '../usage-limits';
 import type { TriggerType, WorkflowStepType } from '../workflows';
 
@@ -85,6 +86,7 @@ export class PluginHost {
   readonly profileContributions: Registry<ProfileContribution>;
   readonly usageLimitSources: Registry<UsageLimitSource>;
   readonly runtimeLoginSources: Registry<RuntimeLoginSource>;
+  readonly decisionBackends: Registry<DecisionBackendType>;
 
   private readonly plugins = new Map<string, { loaded: LoadedPlugin; plugin?: HelenaPlugin }>();
   private readonly contexts = new Map<string, PluginContext>();
@@ -110,6 +112,7 @@ export class PluginHost {
     this.profileContributions = registries.profileContributions;
     this.usageLimitSources = registries.usageLimitSources;
     this.runtimeLoginSources = registries.runtimeLoginSources;
+    this.decisionBackends = registries.decisionBackends;
     this.logger = options.logger ?? ((id) => consoleLogger(`plugin ${id}`));
     this.settingsOf = options.settings ?? (() => ({}));
   }
@@ -227,6 +230,7 @@ export class PluginHost {
       this.profileContributions,
       this.usageLimitSources,
       this.runtimeLoginSources,
+      this.decisionBackends,
     ] as unknown as Registry<never>[];
   }
 
@@ -367,6 +371,11 @@ export class PluginHost {
         this.runtimeLoginSources,
         provides.runtimeLoginSources,
         'runtimeLoginSources',
+      ),
+      decisionBackends: registrar(
+        this.decisionBackends,
+        provides.decisionBackends,
+        'decisionBackends',
       ),
       events: {
         publish: async (init: EventInit) => {
