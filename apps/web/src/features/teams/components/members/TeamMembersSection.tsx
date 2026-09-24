@@ -35,6 +35,7 @@ import {
   PageToolbar,
   PageToolbarSpacer,
 } from '@/components/layout/PageToolbar';
+import TableCard from '@/components/common/page/TableCard';
 
 // The team's members, a page at a time, with the invites that have not been answered
 // yet above them. People and agents work on one board, so both are listed and the tabs
@@ -125,8 +126,8 @@ export default function TeamMembersSection({ teamId }: { teamId: number }) {
         ) : members.length === 0 && pending.length === 0 ? (
           <MembersEmptyState kind={kind} searching={term !== undefined} />
         ) : (
-          <div className="overflow-x-auto">
-            <Table className="table-fixed md:min-w-[720px]">
+          <TableCard>
+            <Table className="table-fixed xl:min-w-[720px]">
               <colgroup>
                 <col className="w-[46%]" />
                 <col className="w-[16%]" />
@@ -170,7 +171,7 @@ export default function TeamMembersSection({ teamId }: { teamId: number }) {
                 ))}
               </TableBody>
             </Table>
-          </div>
+          </TableCard>
         )}
 
         {total > 0 && <ListPager paging={paging} total={total} />}

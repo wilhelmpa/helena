@@ -14,6 +14,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { compactCount } from '../../utils/numbers';
+import TableCard from '@/components/common/page/TableCard';
 
 // The team list. A row (or the pencil in its Actions cell) opens the team in the side
 // panel, where the full counts, the projects and the member list are.
@@ -28,105 +29,110 @@ export default function GodTeamsTable({
   const tCommon = useTranslations('common');
 
   return (
-    <Table className="table-fixed md:min-w-[900px]">
-      <colgroup>
-        <col className="w-[34%]" />
-        <col className="w-[11%]" />
-        <col className="w-[11%] max-md:hidden" />
-        <col className="w-[11%] max-md:hidden" />
-        <col className="w-[11%] max-md:hidden" />
-        <col className="w-[14%] max-md:hidden" />
-        <col className="w-[8%]" />
-      </colgroup>
-      <TableHeader>
-        <TableRow className="hover:bg-transparent">
-          <TableHead className="text-xs font-medium text-muted-foreground">
-            {t('columns.team')}
-          </TableHead>
-          <TableHead className="text-xs font-medium text-muted-foreground">
-            {t('columns.projects')}
-          </TableHead>
-          <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
-            {t('columns.members')}
-          </TableHead>
-          <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
-            {t('columns.issues')}
-          </TableHead>
-          <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
-            {t('columns.agents')}
-          </TableHead>
-          <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
-            {t('columns.mcp')}
-          </TableHead>
-          <TableHead className="text-right text-xs font-medium text-muted-foreground">
-            {tCommon('actions')}
-          </TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {teams.map((team) => (
-          <TableRow
-            key={team.id}
-            className="cursor-pointer"
-            onClick={() => onSelect(team.id)}
-            title={t('showDetails')}
-          >
-            <TableCell className="px-3 py-3">
-              <span className="truncate text-sm font-medium">{team.name}</span>
-            </TableCell>
-
-            <TableCell className="px-3 py-3 text-sm tabular-nums" title={String(team.projectCount)}>
-              {compactCount(team.projectCount)}
-            </TableCell>
-
-            <TableCell
-              className="px-3 py-3 text-sm tabular-nums max-md:hidden"
-              title={String(team.memberCount)}
-            >
-              {compactCount(team.memberCount)}
-            </TableCell>
-
-            <TableCell
-              className="px-3 py-3 text-sm tabular-nums max-md:hidden"
-              title={String(team.issueCount)}
-            >
-              {compactCount(team.issueCount)}
-            </TableCell>
-
-            <TableCell
-              className="px-3 py-3 text-sm tabular-nums max-md:hidden"
-              title={String(team.agentCount)}
-            >
-              {compactCount(team.agentCount)}
-            </TableCell>
-
-            <TableCell className="px-3 py-3 max-md:hidden">
-              <Badge
-                variant={team.mcpEnabled ? 'secondary' : 'outline'}
-                className="px-1.5 py-0 text-xs font-medium"
-              >
-                {t(team.mcpEnabled ? 'mcpEnabled' : 'mcpOff')}
-              </Badge>
-            </TableCell>
-
-            <TableCell className="px-3 py-3 text-right">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-8 text-muted-foreground"
-                aria-label={t('open')}
-                title={t('open')}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelect(team.id);
-                }}
-              >
-                <Pencil />
-              </Button>
-            </TableCell>
+    <TableCard>
+      <Table className="table-fixed xl:min-w-[860px]">
+        <colgroup>
+          <col className="w-[34%]" />
+          <col className="w-[11%]" />
+          <col className="w-[11%] max-md:hidden" />
+          <col className="w-[11%] max-md:hidden" />
+          <col className="w-[11%] max-md:hidden" />
+          <col className="w-[14%] max-xl:hidden" />
+          <col className="w-[8%]" />
+        </colgroup>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="text-xs font-medium text-muted-foreground">
+              {t('columns.team')}
+            </TableHead>
+            <TableHead className="text-xs font-medium text-muted-foreground">
+              {t('columns.projects')}
+            </TableHead>
+            <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
+              {t('columns.members')}
+            </TableHead>
+            <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
+              {t('columns.issues')}
+            </TableHead>
+            <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
+              {t('columns.agents')}
+            </TableHead>
+            <TableHead className="text-xs font-medium text-muted-foreground max-xl:hidden">
+              {t('columns.mcp')}
+            </TableHead>
+            <TableHead className="text-right text-xs font-medium text-muted-foreground">
+              {tCommon('actions')}
+            </TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {teams.map((team) => (
+            <TableRow
+              key={team.id}
+              className="cursor-pointer"
+              onClick={() => onSelect(team.id)}
+              title={t('showDetails')}
+            >
+              <TableCell className="px-3 py-3">
+                <span className="truncate text-sm font-medium">{team.name}</span>
+              </TableCell>
+
+              <TableCell
+                className="px-3 py-3 text-sm tabular-nums"
+                title={String(team.projectCount)}
+              >
+                {compactCount(team.projectCount)}
+              </TableCell>
+
+              <TableCell
+                className="px-3 py-3 text-sm tabular-nums max-md:hidden"
+                title={String(team.memberCount)}
+              >
+                {compactCount(team.memberCount)}
+              </TableCell>
+
+              <TableCell
+                className="px-3 py-3 text-sm tabular-nums max-md:hidden"
+                title={String(team.issueCount)}
+              >
+                {compactCount(team.issueCount)}
+              </TableCell>
+
+              <TableCell
+                className="px-3 py-3 text-sm tabular-nums max-md:hidden"
+                title={String(team.agentCount)}
+              >
+                {compactCount(team.agentCount)}
+              </TableCell>
+
+              <TableCell className="px-3 py-3 max-xl:hidden">
+                <Badge
+                  variant={team.mcpEnabled ? 'secondary' : 'outline'}
+                  className="px-1.5 py-0 text-xs font-medium"
+                >
+                  {t(team.mcpEnabled ? 'mcpEnabled' : 'mcpOff')}
+                </Badge>
+              </TableCell>
+
+              <TableCell className="px-3 py-3 text-right">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-8 text-muted-foreground"
+                  aria-label={t('open')}
+                  title={t('open')}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelect(team.id);
+                  }}
+                >
+                  <Pencil />
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableCard>
   );
 }

@@ -11,6 +11,7 @@ import ListPager from '@/components/common/ListPager';
 import { usePaging } from '@/hooks/usePaging';
 import { CredentialDialog } from './CredentialDialog';
 import { CredentialRow } from './CredentialRow';
+import TableCard from '@/components/common/page/TableCard';
 
 // The team's stored credentials as a table. Editing happens in a dialog; deleting
 // confirms first. Adding is done from the tab header.
@@ -41,39 +42,41 @@ export default function TeamIntegrations({
       ) : (
         <div className="space-y-4">
           <div className="overflow-x-auto">
-            <Table className="table-fixed md:min-w-[560px]">
-              <colgroup>
-                <col className="w-[34%]" />
-                <col className="w-[50%]" />
-                <col className="w-[16%]" />
-              </colgroup>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="text-xs font-medium text-muted-foreground">
-                    {t('columns.integration')}
-                  </TableHead>
-                  <TableHead className="text-xs font-medium text-muted-foreground">
-                    {t('columns.credentials')}
-                  </TableHead>
-                  <TableHead className="text-end text-xs font-medium text-muted-foreground">
-                    {tCommon('actions')}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {credentials.map((c) => (
-                  <CredentialRow
-                    key={c.id}
-                    credential={c}
-                    integrationLabel={integrationLabel(catalog, c.integrationKey)}
-                    canEdit={permissions.edit}
-                    canDelete={permissions.delete}
-                    onEdit={() => setEditing(c)}
-                    onDelete={() => setDeleting(c)}
-                  />
-                ))}
-              </TableBody>
-            </Table>
+            <TableCard>
+              <Table className="table-fixed xl:min-w-[560px]">
+                <colgroup>
+                  <col className="w-[34%]" />
+                  <col className="w-[50%]" />
+                  <col className="w-[16%]" />
+                </colgroup>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="text-xs font-medium text-muted-foreground">
+                      {t('columns.integration')}
+                    </TableHead>
+                    <TableHead className="text-xs font-medium text-muted-foreground">
+                      {t('columns.credentials')}
+                    </TableHead>
+                    <TableHead className="text-end text-xs font-medium text-muted-foreground">
+                      {tCommon('actions')}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {credentials.map((c) => (
+                    <CredentialRow
+                      key={c.id}
+                      credential={c}
+                      integrationLabel={integrationLabel(catalog, c.integrationKey)}
+                      canEdit={permissions.edit}
+                      canDelete={permissions.delete}
+                      onEdit={() => setEditing(c)}
+                      onDelete={() => setDeleting(c)}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            </TableCard>
           </div>
           <ListPager paging={paging} total={total} />
         </div>
