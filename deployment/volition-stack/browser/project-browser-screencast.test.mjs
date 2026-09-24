@@ -51,10 +51,10 @@ describe("live view messages", () => {
     // A browser that draws at factor 1 has nothing sharper to send, nor to pin.
     assert.deepEqual(pageSize({ width: 800, height: 900, dpr: 2 }, false, 1), size(800, 900, 1));
     assert.deepEqual(pageSize({ width: 620, height: 780, dpr: 2 }, true, 1), size(620, 780, 1));
-    // Chromium keeps a window 500 display pixels wide: 250 CSS pixels at factor 2.
-    assert.deepEqual(pageSize({ width: 200, height: 640, dpr: 1 }), size(250, 640, 1));
-    assert.deepEqual(pageSize({ width: 360, height: 640, dpr: 1 }, false, 1), size(500, 640, 1));
-    assert.deepEqual(pageSize({ width: 360, height: 800, dpr: 2 }), size(360, 800, 2));
+    // A phone's narrow view keeps its width: the window keeper pins the page at it inside the
+    // narrowest window Chromium allows.
+    assert.deepEqual(pageSize({ width: 390, height: 700, dpr: 3 }), size(390, 700, 2));
+    assert.deepEqual(pageSize({ width: 360, height: 640, dpr: 1 }, false, 1), size(360, 640, 1));
     // At ratio 1 an odd size is made even, one pixel larger, so the video's frame is the page
     // to the pixel; the view cuts that pixel off.
     assert.deepEqual(pageSize({ width: 933, height: 601, dpr: 1 }), size(934, 602, 1));

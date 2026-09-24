@@ -593,14 +593,14 @@ describe("project browser router", () => {
     assert.equal(browser.sent("Emulation.clearDeviceMetricsOverride").length, 1);
     assert.equal(await link.pin(PAGE, null), false);
     assert.equal(browser.sent("Emulation.clearDeviceMetricsOverride").length, 1);
-    assert.equal(await link.pin(PAGE, { width: 600, height: 500 }), false);
+    assert.equal(await link.pin(PAGE, { width: 600, height: 500, ratio: 1 }), false);
     assert.deepEqual(browser.sent("Emulation.setDeviceMetricsOverride").at(-1).params, {
       width: 600,
       height: 500,
       deviceScaleFactor: 1,
       mobile: false,
     });
-    await link.pin(PAGE, { width: 600, height: 500 });
+    await link.pin(PAGE, { width: 600, height: 500, ratio: 1 });
     assert.equal(browser.sent("Emulation.setDeviceMetricsOverride").length, 1);
     assert.equal(await link.pin(PAGE, null), true);
     assert.equal(browser.sent("Emulation.clearDeviceMetricsOverride").length, 2);
@@ -659,6 +659,29 @@ describe("project browser router", () => {
       787,
     ]);
     assert.deepEqual(browser.page(), { width: 900, height: 700, ratio: 2 });
+    await setLiveViewport(port, null);
+  });
+
+  it("pins a page narrower than a window can be at its width, at the browser's own factor", async () => {
+    // A phone's 390 CSS pixel view: Chromium keeps a window 500 DIP wide.
+    const browser = fakeBrowser();
+    upstream = browser.server;
+    const port = await listen(upstream);
+    await setLiveViewport(port, { width: 1000, height: 700, ratio: 2 });
+    await setLiveViewport(port, { width: 390, height: 700, ratio: 2 });
+    assert.deepEqual(browser.sent("Browser.setWindowBounds").at(-1).params.bounds, {
+      left: 0,
+      top: 0,
+      width: 500,
+      height: 787,
+    });
+    assert.deepEqual(browser.sent("Emulation.setDeviceMetricsOverride").at(-1).params, {
+      width: 390,
+      height: 700,
+      deviceScaleFactor: 2,
+      mobile: false,
+    });
+    assert.deepEqual(browser.page(), { width: 390, height: 700, ratio: 2 });
     await setLiveViewport(port, null);
   });
 

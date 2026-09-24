@@ -102,8 +102,6 @@ const VIDEO_HEALTHY_MS = 30_000;
 // with the fresh keyframe the tier's encoder already just started with when one is recent
 // enough, rather than restarting again.
 const KEYFRAME_REQUEST_MIN_MS = 2_000;
-// Chromium keeps a window at least 500 pixels wide.
-const MIN_WINDOW_WIDTH = 500;
 // browser-harness takes its screenshots in window pixels and clicks at CSS pixels
 // (capture_screenshot and click_at_xy in its helpers.py), and Hermes halves a screenshot until
 // its long edge is at most 1568 pixels: a 2x screenshot matches CSS pixels only from this long
@@ -143,14 +141,15 @@ function agentSafeAt2({ width, height }) {
 // a high-density screen when the browser draws at factor 2, 1 otherwise), and whether the page
 // itself is drawn at ratio 1 (pin1): while an agent is in the browser (agentPresent), a page
 // smaller than SHARP_MIN_EDGE, whose screenshots at ratio 2 would put the agent's clicks off
-// by 2. A page too narrow for a window is drawn wider and shown scaled down. At ratio 1 an
-// odd size is made even, one pixel larger, which the video needs: the frame then is the page
-// to the pixel, and a view shows it one to one with that pixel cut off rather than stretched.
+// by 2. A page narrower than a window can be is pinned at its width inside the window (see
+// the window keeper). At ratio 1 an odd size is made even, one pixel larger, which the video
+// needs: the frame then is the page to the pixel, and a view shows it one to one with that
+// pixel cut off rather than stretched.
 export function pageSize({ width, height, dpr }, agentPresent = false, scale = 2) {
   const pin1 = scale >= 2 && agentPresent && !agentSafeAt2({ width, height });
   const ratio = dpr >= 1.5 && scale >= 2 && !pin1 ? 2 : 1;
   const even = (value) => (ratio === 1 ? Math.ceil(value / 2) * 2 : value);
-  return { width: even(Math.max(width, MIN_WINDOW_WIDTH / scale)), height: even(height), ratio, pin1 };
+  return { width: even(width), height: even(height), ratio, pin1 };
 }
 
 // The page size for the most recent view: while the agent acts, the current CSS size — with

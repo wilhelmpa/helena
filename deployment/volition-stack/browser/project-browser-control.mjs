@@ -70,11 +70,15 @@ export function fittedBounds(bounds, size) {
   return fits ? null : fitted;
 }
 
+// Chromium keeps a window at least this many DIP wide; a narrower page (a phone's view) is
+// pinned at its width inside it, from the window's left edge (see fitWindows).
+export const MIN_WINDOW_WIDTH = 500;
+
 // The window size that shows a live view's page: its CSS size plus the browser's own tab strip
 // and toolbar, all in DIP. Without a live view a window fills the screen.
 export function windowSize(screen, chrome, live) {
   if (!live) return screen;
-  return { width: live.width + chrome.width, height: live.height + chrome.height };
+  return { width: Math.max(live.width, MIN_WINDOW_WIDTH) + chrome.width, height: live.height + chrome.height };
 }
 
 // One DevTools websocket, with the commands in flight matched to their answers and the
@@ -241,22 +245,25 @@ export class BrowserLink {
     return result?.value;
   }
 
-  // Draws a page at pixel ratio 1 at a fixed CSS size, which its window then shows scaled to
-  // the browser's factor 2: a page smaller than SHARP_MIN_EDGE (project-browser-screencast.mjs)
-  // while an agent is in the browser, whose screenshots in window pixels would otherwise put
-  // its clicks off by 2. With size null it ends this link's emulation. Runs the CDP call the
-  // first time this link touches a page, in case another client left it emulated. Returns
-  // whether it ended an emulation, after which the window has to change size once for the
-  // page to take the window's size again (see the class).
+  // Holds a page at a CSS size and pixel ratio ({ width, height, ratio }), drawn from its
+  // window's top left corner: at ratio 1 a page smaller than SHARP_MIN_EDGE
+  // (project-browser-screencast.mjs) while an agent is in the browser, whose screenshots in
+  // window pixels would otherwise put its clicks off by 2 (its window shows it scaled to the
+  // browser's factor); at the browser's own factor a page narrower than a window can be.
+  // Without scale, so CDP input stays in the page's CSS pixels. With size null it ends this
+  // link's emulation. Runs the CDP call the first time this link touches a page, in case
+  // another client left it emulated. Returns whether it ended an emulation, after which the
+  // window has to change size once for the page to take the window's size again (see the
+  // class).
   async pin(targetId, size) {
-    const key = size ? `${size.width}x${size.height}` : null;
+    const key = size ? `${size.width}x${size.height}@${size.ratio}` : null;
     if (this.pins.get(targetId) === key) return false;
     if (!size) await this.send(targetId, "Emulation.clearDeviceMetricsOverride", {});
     else {
       await this.send(targetId, "Emulation.setDeviceMetricsOverride", {
         width: size.width,
         height: size.height,
-        deviceScaleFactor: 1,
+        deviceScaleFactor: size.ratio,
         mobile: false,
       });
     }
@@ -406,7 +413,7 @@ export async function readJsonBody(request) {
 }
 
 // Sets the page size of a browser's live view ({width, height, pin1}: its CSS size, and
-// whether the page is drawn at pixel ratio 1, see BrowserLink.pin), or clears it with null so
+// whether the page is drawn at pixel ratio 1; see BrowserLink.pin), or clears it with null so
 // the windows fill the screen again, and fits the windows at once. Resolves once the page has
 // its new size and has drawn it, so a live view's video can start on the new page.
 export async function setLiveViewport(port, viewport) {
@@ -517,7 +524,9 @@ async function fitWindowsNow(link) {
   const pages = targetInfos.filter((target) => target.type === "page");
   link.keep(new Set(pages.map((target) => target.targetId)));
   const live = liveViewports.get(link.port);
-  const pin = live?.pin1 ? { width: live.width, height: live.height } : null;
+  // A page drawn at ratio 1 for the agent, or narrower than a window can be, is pinned.
+  const pinned = live && (live.pin1 || live.width < MIN_WINDOW_WIDTH);
+  const pin = pinned ? { width: live.width, height: live.height, ratio: live.pin1 ? 1 : link.scale } : null;
   const waiting = !live && !screenRequested.has(link.port) && Date.now() - startedAt < STARTUP_GRACE_MS;
   const windows = new Map();
   for (const target of pages) {
