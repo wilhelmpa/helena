@@ -433,7 +433,6 @@ async function profileHelper(): Promise<void> {
       known?: unknown;
       keys?: unknown;
       sessionId?: unknown;
-      runtime?: unknown;
       files?: unknown;
     };
     const profile = request.profile ?? undefined;

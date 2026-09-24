@@ -49,8 +49,9 @@ import {
 //   model         --model/--effort and -m/-c model_reasoning_effort (presets.ts)
 //   login         a login Helena grants the agent, in the one command's environment
 //                 (cli-login.ts), else the runtime's own login in the agent's home
-//   sandbox       Codex runs the model's commands without its sandbox only inside agent
-//                 isolation, read-only otherwise (execute.ts enforces it)
+//   sandbox       Codex runs the model's commands without its own sandbox only inside agent
+//                 isolation; outside it in its own sandbox where that starts, read-only
+//                 otherwise (codexSandbox; execute.ts refuses the rest)
 //
 // Two ways to run. An agent Helena provisioned has a home of its own (HELENA_AGENT_HOME, its
 // profile directory): Claude Code keeps its sessions and settings in <home>/.claude
@@ -93,14 +94,47 @@ function isolated(config: Pick<RunnerConfig, 'isolation'>): boolean {
   return isolationEnabled() && config.isolation !== undefined;
 }
 
-// Codex' sandbox for the agent. Its own sandbox (bubblewrap) cannot start inside the
-// container Helena runs in, so an agent Helena provisioned runs without it only inside
-// agent isolation, where its unit is the sandbox, and read-only otherwise: then it reaches
-// Helena's tools, but no shell command runs. An operator's own runner keeps Codex'
-// workspace-write.
-export function codexSandbox(config: Pick<RunnerConfig, 'env' | 'isolation'>): CommandSandbox {
+// Codex' sandbox for the agent (orchestrator decision 2026-09-24, owner rule "full access
+// only inside isolation"):
+//   - inside agent isolation none of its own: the unit is the sandbox, and it forbids the
+//     user namespaces Codex' sandbox needs;
+//   - outside it, Codex' own sandbox with writes in the working folder (workspace-write),
+//     when that sandbox starts on this machine (`ownSandbox`, probed once per runner start);
+//     read-only when it does not (a container without user namespaces): then Codex reaches
+//     Helena's tools, but no shell command runs;
+//   - never no sandbox outside isolation (execute.ts refuses such a command).
+// An operator's own runner keeps Codex' workspace-write.
+export function codexSandbox(
+  config: Pick<RunnerConfig, 'env' | 'isolation'>,
+  ownSandbox: boolean | null = null,
+): CommandSandbox {
   if (isolated(config)) return 'danger-full-access';
-  return cliAgentHome(config) ? 'read-only' : 'workspace-write';
+  if (!cliAgentHome(config)) return 'workspace-write';
+  return ownSandbox ? 'workspace-write' : 'read-only';
+}
+
+// Whether Codex' own sandbox starts here, as the runner's user: one command in it
+// (`codex sandbox`), asked once per runner process and shared by its Codex agents.
+let ownSandboxProbe: Promise<boolean> | null = null;
+
+export function probeCodexSandbox(
+  command: ShortCommand,
+  env: Record<string, string>,
+): Promise<boolean> {
+  ownSandboxProbe ??= command(
+    'codex',
+    ['sandbox', '-c', 'sandbox_mode="workspace-write"', '--', 'true'],
+    env,
+  ).then(
+    (result) => !result.missing && result.code === 0,
+    () => false,
+  );
+  return ownSandboxProbe;
+}
+
+// For tests: the next agent probes again.
+export function resetCodexSandboxProbe(): void {
+  ownSandboxProbe = null;
 }
 
 // ── MCP servers on the command line ─────────────────────────────────────────────────────
@@ -552,6 +586,8 @@ export class CliRuntimeAdapter implements RuntimeAdapter {
   // The skills last written into an isolated agent's home, by digest: each write there starts
   // a unit, so it happens only when they changed (and once after the runner starts).
   private writtenFiles: string | null = null;
+  // Whether Codex' own sandbox starts here; null until probed (Codex outside isolation).
+  private ownSandbox: boolean | null = null;
   private readonly gate = new LoginStartGate();
   private readonly home: string | null;
   private readonly root: string;
@@ -641,7 +677,15 @@ export class CliRuntimeAdapter implements RuntimeAdapter {
     }
     await this.refreshLogin();
     await this.refreshProbe();
+    if (this.runtime === 'codex' && this.home && !isolated(this.config) && !this.probe?.missing) {
+      this.ownSandbox = await probeCodexSandbox(this.command, this.runtimeEnv());
+    }
     await this.report(snapshot);
+  }
+
+  // The sandbox this agent's Codex commands run in.
+  sandbox(): CommandSandbox {
+    return codexSandbox(this.config, this.ownSandbox);
   }
 
   // Whether Helena grants the agent a login, without reading it.
@@ -809,12 +853,8 @@ export class CliRuntimeAdapter implements RuntimeAdapter {
         ...(command && { command }),
       });
     }
-    if (
-      this.runtime === 'codex' &&
-      codexSandbox(this.config) !== 'danger-full-access' &&
-      this.home
-    ) {
-      issues.push({ code: 'sandbox-unavailable', detail: codexSandbox(this.config) });
+    if (this.runtime === 'codex' && this.home && this.sandbox() === 'read-only') {
+      issues.push({ code: 'sandbox-unavailable', detail: 'read-only' });
     }
     return issues;
   }
@@ -847,7 +887,7 @@ export class CliRuntimeAdapter implements RuntimeAdapter {
               ? blocking.code === 'runtime-missing'
                 ? `${this.runtime} is not installed`
                 : `${this.runtime} is not signed in`
-              : 'Codex runs read-only: its sandbox needs agent isolation',
+              : 'Codex runs read-only: its own sandbox does not start here',
           }
         : this.status),
       appliedRevision: applied?.revision ?? null,
@@ -863,6 +903,8 @@ export class CliRuntimeAdapter implements RuntimeAdapter {
       ...(this.profile && { profile: this.profile }),
       version: this.probe?.version ?? null,
       issues,
+      // Where Codex runs the model's commands: Helena shows it on the agent.
+      ...(this.runtime === 'codex' && { sandbox: this.sandbox() }),
       // An owner's actions on what an agent learned are Hermes'; here each is done at once.
       actions: (snapshot.actions ?? []).map((action) => ({
         id: action.id,
@@ -901,7 +943,7 @@ export class CliRuntimeAdapter implements RuntimeAdapter {
         ? this.gate
         : undefined;
     return {
-      ...(this.runtime === 'codex' && { sandbox: codexSandbox(this.config) }),
+      ...(this.runtime === 'codex' && { sandbox: this.sandbox() }),
       ...(gate && { startGate: gate }),
       output: (chunk) => reader.write(chunk),
       finished: () => {
@@ -961,7 +1003,7 @@ export class CliRuntimeAdapter implements RuntimeAdapter {
       // text goes into the prompt instead of their paths.
       instructions: [
         applied.instructions,
-        codexSandbox(this.config) === 'read-only' ? applied.skills.inline : applied.skills.index,
+        this.sandbox() === 'read-only' ? applied.skills.inline : applied.skills.index,
       ]
         .filter(Boolean)
         .join('\n\n'),

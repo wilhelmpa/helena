@@ -61,6 +61,9 @@ export interface RuntimeSync {
   // The version of the runtime's program, and what keeps it from its work.
   version: string | null;
   issues: RuntimeIssue[];
+  // Where Codex runs the model's commands: its own sandbox with writes in the working folder,
+  // read-only, or none inside agent isolation (the unit is the sandbox). Null for others.
+  sandbox?: 'workspace-write' | 'read-only' | 'danger-full-access' | null;
   rewritePending: boolean;
   reportedAt: string | null;
 }

@@ -63,6 +63,7 @@ export async function runtimeSyncOf(agentId: number, teamId: number): Promise<Ru
     profile: state.profile,
     version: state.version,
     issues: state.issues,
+    sandbox: state.sandbox,
     rewritePending: await rewritePending(agentId),
     reportedAt: state.reportedAt,
   };

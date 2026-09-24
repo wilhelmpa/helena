@@ -17,7 +17,7 @@ only), `runtime-protocol.md` (the `RuntimeAdapter` extension point of hub/hermes
 | Claude Code login | a token of a year from `claude setup-token`, which the owner makes in his own terminal, or an Anthropic API key; stored in Zugänge as a **Laufzeit-Anmeldung** and handed to one command at a time as `CLAUDE_CODE_OAUTH_TOKEN` / `ANTHROPIC_API_KEY` | Helena running a claude.ai sign-in itself (Anthropic does not allow third-party products to offer claude.ai login); a shared `.credentials.json` bound into every unit (one refresh token for all, readable by every agent) |
 | Codex login | an OpenAI API key in Zugänge (`CODEX_API_KEY`, stateless), or the ChatGPT plan through Codex' own device login **in the agent's own home** (`CODEX_HOME=<home>/.codex`), which Codex refreshes in place; starts of one agent's commands are serialized while they share that file | copying one `auth.json` around (OpenAI: one file per serialized stream; a refresh by one copy invalidates the others); refreshing ChatGPT tokens in Helena (a hand-written client of OpenAI's private OAuth client) |
 | Where agents run | provisioned like Hermes agents: their profile directory is their home; the server's runner serves them with the `claude`/`codex` preset | a runner the operator starts by hand per agent (the state before this branch) |
-| Codex sandbox | inside agent isolation `danger-full-access` (the unit is the sandbox); without isolation `read-only` and the health issue "Sandbox nicht verfügbar"; `execute()` refuses any Codex command without a sandbox outside isolation | allowing user namespaces in the nspawn container (a host change that widens every process's attack surface) |
+| Codex sandbox | inside agent isolation `danger-full-access` (the unit is the sandbox); outside it Codex' own sandbox with writes in the working folder (`workspace-write`) where that sandbox starts (probed once per runner start), else `read-only` and "Sandbox nicht verfügbar"; `execute()` refuses any Codex command without a sandbox outside isolation | allowing user namespaces in the old nspawn container (a host change that widened every process's attack surface); `danger-full-access` outside isolation |
 | Transport | the CLI (`claude -p`, `codex exec`) for runs and chats; ACP evaluated, prepared (adapters installed), not switched on (§7) | ACP now |
 | Tools | the Abilities toggles (`toolDeny`) switch Claude Code's and Codex' built-in tools; their schedulers, agent messaging, ChatGPT apps/plugins and own browser/computer use are withheld; the "Erlaubte Tools" field (`toolAllow`), which had no effect, is gone from the UI | making `toolAllow` an allow list per runtime (a second control for the same thing, with names that differ per runtime) |
 
@@ -201,16 +201,28 @@ The runner side (`/agent-runtime/runtime-login`, the answer's shape) stays as it
 
 ## 6. Codex' sandbox
 
-Codex' own sandbox (bubblewrap) needs user namespaces, which the nspawn container refuses
-(`setting up uid map: Permission denied`).
+Codex' own sandbox needs unprivileged user namespaces. The nspawn container Kingston ran in
+refused them (`setting up uid map: Permission denied`); since Kingston boots natively
+(2026-09-24) they work: `unshare --user --map-root-user true` exits 0, and `codex sandbox -c
+sandbox_mode="workspace-write" -- …` writes in its working folder while `read-only` refuses a
+write ("Read-only file system"). Decided by the orchestrator in the spirit of the owner's rule
+"full access only inside isolation":
 
 - **Isolated agent** (`AGENT_ISOLATION=on` and an isolation entry): `sandbox_mode="danger-full-access"`.
   The unit is the sandbox: its own user, network namespace, egress proxy, read-only system,
-  and only its workspace, home and vault folder.
-- **Anything else**: `read-only`. Codex then reaches Helena's MCP tools but runs no shell
-  command, so it cannot read a SKILL.md either: its prompt carries the skills' text instead
-  of their paths. Helena shows "Sandbox nicht verfügbar", and the proof reports it.
+  and only its workspace, home and vault folder. The unit sets `RestrictNamespaces=yes`, so
+  Codex' own sandbox could not start there anyway.
+- **Outside isolation**: the runner probes once per start, as its own user, whether Codex'
+  sandbox starts (`codex sandbox -c sandbox_mode="workspace-write" -- true`).
+  - It does: `workspace-write`. The model's commands write only in the run's working folder
+    (and Codex' temporary folders) and have no network; Helena's MCP tools run outside the
+    sandbox. The agent page shows "Sandbox: Arbeitsordner".
+  - It does not: `read-only`. Codex then reaches Helena's MCP tools but runs no shell
+    command, so it cannot read a SKILL.md either: its prompt carries the skills' text instead
+    of their paths. Helena shows "Sandbox nicht verfügbar" and "Sandbox: nur lesen", and the
+    proof reports it.
 - **An operator's own runner** keeps `workspace-write`.
+- The agent page names the mode: "Sandbox: Arbeitsordner" / "nur lesen" / "Isolation".
 - **Enforced in `execute()`** for every Codex command (run, chat, reflection):
   - The refused forms are `-c sandbox_mode="danger-full-access"`, `--sandbox`/`-s
     danger-full-access`, `--dangerously-bypass-approvals-and-sandbox` and `--yolo`.

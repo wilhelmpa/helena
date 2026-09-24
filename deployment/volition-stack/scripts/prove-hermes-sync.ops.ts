@@ -74,6 +74,7 @@ interface RuntimeSync {
   // Absent on a server before hub/cli-runtimes.
   version?: string | null;
   issues?: { code: string; detail?: string; command?: string }[];
+  sandbox?: 'workspace-write' | 'read-only' | 'danger-full-access' | null;
 }
 
 interface CredentialEntry {
@@ -601,14 +602,20 @@ export async function runProof(
             (problems[0]?.command ? `; command: ${problems[0].command}` : ''),
     );
     if (runtime === 'codex') {
-      const sandbox = (online.issues ?? []).find((issue) => issue.code === 'sandbox-unavailable');
+      // Never without a sandbox outside isolation: its own sandbox (working folder) where it
+      // starts, read-only where it does not; none only inside isolation.
+      const mode = online.sandbox ?? null;
       check(
         runtime,
         'sandbox policy',
-        true,
-        sandbox
-          ? `${sandbox.detail ?? 'read-only'}: agent isolation is off, so Codex reaches only Helena's tools`
-          : 'no sandbox of its own inside agent isolation',
+        mode === 'workspace-write' || mode === 'read-only' || mode === 'danger-full-access',
+        mode === 'workspace-write'
+          ? "Codex' own sandbox, writes in the working folder"
+          : mode === 'read-only'
+            ? "read-only: Codex' own sandbox does not start here, so it reaches only Helena's tools"
+            : mode === 'danger-full-access'
+              ? 'no sandbox of its own inside agent isolation'
+              : 'no sandbox reported',
       );
     }
     if (problems.length > 0) return;

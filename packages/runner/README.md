@@ -349,9 +349,11 @@ runtime everything Hermes gets, per run, without writing into the working direct
   `GET /agent-runtime/runtime-login` for the run or chat answer and handed to that one command
   as `CLAUDE_CODE_OAUTH_TOKEN`, `ANTHROPIC_API_KEY` or `CODEX_API_KEY`. Without one, the
   runtime's own login in the agent's home is used.
-- Codex' sandbox: `danger-full-access` only inside agent isolation, `read-only` for an agent
-  Helena provisioned outside it, `workspace-write` for your own runner. The runner refuses any
-  Codex command without a sandbox outside isolation, whoever configured it.
+- Codex' sandbox: `danger-full-access` only inside agent isolation. Outside it an agent Helena
+  provisioned runs in Codex' own sandbox (`workspace-write`) where that sandbox starts (the
+  runner tries it once per start), `read-only` where it does not; your own runner keeps
+  `workspace-write`. The runner refuses any Codex command without a sandbox outside
+  isolation, whoever configured it.
 
 An agent Helena provisioned has a home of its own (`HELENA_AGENT_HOME`, its profile
 directory): the skills go to `<home>/.helena`, Claude Code keeps its state in `<home>/.claude`

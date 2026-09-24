@@ -10,6 +10,7 @@ import {
   LoginStartGate,
   localLoginFrom,
   parseVersion,
+  resetCodexSandboxProbe,
   signInCommand,
   type ShortCommand,
 } from '../cli-runtime';
@@ -25,6 +26,7 @@ const savedIsolation = process.env.AGENT_ISOLATION;
 const savedSocket = process.env.VOLITION_LAUNCHER_SOCKET;
 
 afterEach(async () => {
+  resetCodexSandboxProbe();
   for (const server of servers.splice(0)) server.close();
   for (const root of roots.splice(0)) await rm(root, { recursive: true, force: true });
   if (savedIsolation === undefined) delete process.env.AGENT_ISOLATION;
@@ -111,6 +113,8 @@ async function managed(
     grant?: CliLogin | null;
     localLogin?: boolean;
     missing?: boolean;
+    // Whether Codex' own sandbox starts (`codex sandbox -- true`).
+    ownSandbox?: boolean;
     toolDeny?: string[];
   } = {},
 ) {
@@ -138,6 +142,9 @@ async function managed(
   const program: ShortCommand = async (bin, args) => {
     probes.push([bin, ...args]);
     if (options.missing) return { code: null, stdout: '', missing: true };
+    if (args[0] === 'sandbox') {
+      return { code: options.ownSandbox ? 0 : 1, stdout: '', missing: false };
+    }
     if (args[0] === '--version') {
       return {
         code: 0,
@@ -174,7 +181,7 @@ async function managed(
     models: [],
   };
   const adapter = new CliRuntimeAdapter(runtime, config, client, Date.now, program);
-  return { home, statuses, asked, probes, config, adapter };
+  return { home, statuses, asked, probes, config, adapter, program };
 }
 
 describe('a Claude Code agent Helena provisioned', () => {
@@ -355,9 +362,52 @@ describe('an isolated Claude Code agent', () => {
 });
 
 describe('a Codex agent Helena provisioned', () => {
-  it('runs read-only without agent isolation and says why', async () => {
+  it("runs in its own sandbox's working folder outside isolation, where that sandbox starts", async () => {
     delete process.env.AGENT_ISOLATION;
-    const { adapter, statuses, home } = await managed('codex', { localLogin: true });
+    const { adapter, statuses, probes } = await managed('codex', {
+      localLogin: true,
+      ownSandbox: true,
+    });
+    const settings = await adapter.runSettings({ runId: 3 });
+    expect(settings.hooks?.sandbox).toBe('workspace-write');
+    expect(statuses.at(-1)).toMatchObject({
+      status: 'online',
+      issues: [],
+      sandbox: 'workspace-write',
+    });
+    // Its commands can read the skills' files, so it gets their paths.
+    expect(settings.instructions).toContain('SKILL.md)');
+    // Probed as the runner's user, with a command in the sandbox.
+    expect(probes).toContainEqual([
+      'codex',
+      'sandbox',
+      '-c',
+      'sandbox_mode="workspace-write"',
+      '--',
+      'true',
+    ]);
+  });
+
+  it("probes Codex' sandbox once per runner, for all its Codex agents", async () => {
+    delete process.env.AGENT_ISOLATION;
+    const first = await managed('codex', { localLogin: true, ownSandbox: true });
+    const second = await managed('codex', { localLogin: true, ownSandbox: false });
+    await first.adapter.ensure();
+    await second.adapter.ensure();
+    first.adapter.inventoryChanged();
+    await first.adapter.ensure();
+    const sandboxProbes = [...first.probes, ...second.probes].filter((p) => p[1] === 'sandbox');
+    expect(sandboxProbes).toHaveLength(1);
+    // The one answer holds for both.
+    expect(second.adapter.sandbox()).toBe('workspace-write');
+  });
+
+  it('runs read-only where its own sandbox does not start, and says why', async () => {
+    delete process.env.AGENT_ISOLATION;
+    const { adapter, statuses, home } = await managed('codex', {
+      localLogin: true,
+      ownSandbox: false,
+    });
     const settings = await adapter.runSettings({ messageId: 3 });
     expect(settings.hooks?.sandbox).toBe('read-only');
     expect(settings.args).toContain('--ignore-user-config');
@@ -369,6 +419,7 @@ describe('a Codex agent Helena provisioned', () => {
       status: 'degraded',
       version: '0.156.1',
       issues: [{ code: 'sandbox-unavailable', detail: 'read-only' }],
+      sandbox: 'read-only',
     });
     // It cannot read a SKILL.md without a shell, so it gets the skills' text.
     expect(settings.instructions).toContain('### Release notes');
@@ -380,12 +431,17 @@ describe('a Codex agent Helena provisioned', () => {
     const agent = { env: { HELENA_AGENT_HOME: '/var/lib/volition/hermes/profiles/vol_12' } };
     const isolation = { slug: 'vol', profile: 'vol_12', agentId: 12 };
     delete process.env.AGENT_ISOLATION;
+    // Outside isolation: its own sandbox where it starts, read-only where it does not or
+    // before it was probed; never none.
+    expect(codexSandbox(agent, true)).toBe('workspace-write');
+    expect(codexSandbox(agent, false)).toBe('read-only');
     expect(codexSandbox(agent)).toBe('read-only');
-    expect(codexSandbox({ ...agent, isolation })).toBe('read-only');
+    expect(codexSandbox({ ...agent, isolation }, true)).toBe('workspace-write');
     // An operator's own runner, on a machine where Codex' sandbox works.
     expect(codexSandbox({ env: {} })).toBe('workspace-write');
     process.env.AGENT_ISOLATION = 'on';
     expect(codexSandbox({ ...agent, isolation })).toBe('danger-full-access');
+    expect(codexSandbox({ ...agent, isolation }, false)).toBe('danger-full-access');
   });
 
   it('takes an API key as CODEX_API_KEY and needs no start gate for it', async () => {

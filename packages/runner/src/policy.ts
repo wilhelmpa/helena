@@ -42,6 +42,7 @@ import {
   type RunSettings,
   type RuntimeAdapter,
   type RuntimeDefaults,
+  type CommandSandbox,
   type RuntimeIssue,
   type SessionFacts,
 } from './runtime';
@@ -104,6 +105,8 @@ export interface RuntimeStatus {
   version?: string | null;
   // What keeps the runtime from its work, or from part of it.
   issues?: RuntimeIssue[];
+  // The sandbox the runtime runs the model's commands in, where it has one of its own (Codex).
+  sandbox?: CommandSandbox | null;
 }
 
 // A memory file the agent changed while its writes wait for the owner: what it wrote, and

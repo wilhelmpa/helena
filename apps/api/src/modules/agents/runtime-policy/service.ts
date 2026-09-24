@@ -227,7 +227,14 @@ export async function reportRuntimeState(
   agentId: number,
   report: Omit<
     AgentRuntimeState,
-    'reportedAt' | 'conflicts' | 'restored' | 'inventory' | 'profile' | 'version' | 'issues'
+    | 'reportedAt'
+    | 'conflicts'
+    | 'restored'
+    | 'inventory'
+    | 'profile'
+    | 'version'
+    | 'issues'
+    | 'sandbox'
   > & {
     conflicts?: AgentRuntimeConflict[];
     restored?: string[];
@@ -235,6 +242,7 @@ export async function reportRuntimeState(
     profile?: AgentRuntimeProfile;
     version?: string | null;
     issues?: AgentRuntimeState['issues'];
+    sandbox?: AgentRuntimeState['sandbox'];
     learnedSkills?: LearnedSkill[];
     actions?: RuntimeActionResult[];
     memoryProposals?: MemoryProposalReport[];
@@ -261,6 +269,7 @@ export async function reportRuntimeState(
     profile: state.profile ?? null,
     version: state.version ?? null,
     issues: state.issues ?? [],
+    sandbox: state.sandbox ?? null,
     reportedAt: new Date().toISOString(),
   };
   await db

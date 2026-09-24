@@ -774,7 +774,7 @@
         "notSignedIn": "运行时未登录。",
         "rejected": "运行时登录被拒绝：已过期或无效。",
         "runtimeMissing": "服务器上未安装 {runtime}。",
-        "sandboxUnavailable": "沙箱不可用：没有智能体隔离时，Codex 以只读方式运行，只能使用 Helena 的工具，无法使用 shell。",
+        "sandboxUnavailable": "沙箱不可用：Codex 自带的沙箱无法在此服务器上启动，因此 Codex 以只读方式运行，只能使用 Helena 的工具，无法使用 shell。启用智能体隔离后，它会在自己的单元中运行。",
         "notSignedInShort": "运行时未登录",
         "runtimeMissingShort": "缺少运行时",
         "sandboxUnavailableShort": "沙箱不可用"
@@ -785,7 +785,13 @@
       },
       "copyCommand": "复制命令",
       "copied": "已复制",
-      "openAccess": "打开“访问”"
+      "openAccess": "打开“访问”",
+      "sandbox": "沙箱：{mode}",
+      "sandboxModes": {
+        "workspace-write": "工作文件夹",
+        "read-only": "只读",
+        "danger-full-access": "隔离"
+      }
     },
     "runModel": {
       "title": "模型",

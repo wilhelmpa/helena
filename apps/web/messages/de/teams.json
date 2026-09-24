@@ -774,7 +774,7 @@
         "notSignedIn": "Laufzeit nicht angemeldet.",
         "rejected": "Laufzeit-Anmeldung abgelehnt: abgelaufen oder ungültig.",
         "runtimeMissing": "{runtime} ist auf dem Server nicht installiert.",
-        "sandboxUnavailable": "Sandbox nicht verfügbar: Ohne Agenten-Isolation läuft Codex schreibgeschützt und erreicht nur Helenas Werkzeuge, keine Shell.",
+        "sandboxUnavailable": "Sandbox nicht verfügbar: Codex’ eigene Sandbox startet auf diesem Server nicht, deshalb läuft Codex schreibgeschützt und erreicht nur Helenas Werkzeuge, keine Shell. Mit Agenten-Isolation läuft er in seiner eigenen Einheit.",
         "notSignedInShort": "Laufzeit nicht angemeldet",
         "runtimeMissingShort": "Laufzeit fehlt",
         "sandboxUnavailableShort": "Sandbox nicht verfügbar"
@@ -785,7 +785,13 @@
       },
       "copyCommand": "Befehl kopieren",
       "copied": "Kopiert",
-      "openAccess": "Zugänge öffnen"
+      "openAccess": "Zugänge öffnen",
+      "sandbox": "Sandbox: {mode}",
+      "sandboxModes": {
+        "workspace-write": "Arbeitsordner",
+        "read-only": "nur lesen",
+        "danger-full-access": "Isolation"
+      }
     },
     "runModel": {
       "title": "Modell",

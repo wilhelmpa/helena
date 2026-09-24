@@ -774,7 +774,7 @@
         "notSignedIn": "Runtime sin sesión iniciada.",
         "rejected": "Inicio de sesión del runtime rechazado: caducado o no válido.",
         "runtimeMissing": "{runtime} no está instalado en el servidor.",
-        "sandboxUnavailable": "Sandbox no disponible: sin aislamiento de agentes, Codex funciona en solo lectura y solo accede a las herramientas de Helena, sin shell.",
+        "sandboxUnavailable": "Sandbox no disponible: el sandbox propio de Codex no arranca en este servidor, así que Codex funciona en solo lectura y solo accede a las herramientas de Helena, sin shell. Con el aislamiento de agentes se ejecuta en su propia unidad.",
         "notSignedInShort": "Runtime sin sesión",
         "runtimeMissingShort": "Falta el runtime",
         "sandboxUnavailableShort": "Sandbox no disponible"
@@ -785,7 +785,13 @@
       },
       "copyCommand": "Copiar comando",
       "copied": "Copiado",
-      "openAccess": "Abrir Accesos"
+      "openAccess": "Abrir Accesos",
+      "sandbox": "Sandbox: {mode}",
+      "sandboxModes": {
+        "workspace-write": "carpeta de trabajo",
+        "read-only": "solo lectura",
+        "danger-full-access": "aislamiento"
+      }
     },
     "runModel": {
       "title": "Modelo",

@@ -2,7 +2,7 @@ import { t } from 'elysia';
 
 import { runtimeConflict, runtimeInventory, runtimePolicy, runtimeState } from '../core/model';
 import { learnedSkill, runtimeActionResult, runtimeActionSnapshot } from '../learning/model';
-import { profileReport, runtimeIssue } from '../runtime-sync/model';
+import { profileReport, runtimeIssue, runtimeSandbox } from '../runtime-sync/model';
 
 // A literal, or the id of a secret whose value GET /agent-runtime/mcp-secrets returns.
 const runtimeMcpValue = t.Union([
@@ -129,6 +129,7 @@ export const RuntimeStateBody = t.Object({
   profile: t.Optional(profileReport),
   version: t.Optional(t.Nullable(t.String({ maxLength: 64 }))),
   issues: t.Optional(t.Array(runtimeIssue, { maxItems: 8 })),
+  sandbox: t.Optional(t.Nullable(runtimeSandbox)),
 });
 
 export const RuntimeStateResponse = runtimeState;

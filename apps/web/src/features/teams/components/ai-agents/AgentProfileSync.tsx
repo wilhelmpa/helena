@@ -47,6 +47,11 @@ export default function AgentProfileSync({
             {t('version', { version: sync.version })}
           </span>
         )}
+        {sync.sandbox && sync.state !== 'offline' && (
+          <span className="text-xs text-muted-foreground">
+            {t('sandbox', { mode: t(`sandboxModes.${sync.sandbox}`) })}
+          </span>
+        )}
         {checkedAt && sync.state !== 'offline' && (
           <span className="text-xs text-muted-foreground">
             {t('checked', { time: formatDurationShort(checkedAt) })}

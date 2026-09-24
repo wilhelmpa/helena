@@ -774,7 +774,7 @@
         "notSignedIn": "بيئة التشغيل غير مسجّلة الدخول.",
         "rejected": "رُفض تسجيل دخول بيئة التشغيل: منتهي الصلاحية أو غير صالح.",
         "runtimeMissing": "{runtime} غير مثبّت على الخادم.",
-        "sandboxUnavailable": "صندوق العزل غير متاح: من دون عزل الوكلاء يعمل Codex للقراءة فقط ولا يصل إلا إلى أدوات Helena، من دون صدفة أوامر.",
+        "sandboxUnavailable": "صندوق العزل غير متاح: لا يعمل صندوق العزل الخاص بـ Codex على هذا الخادم، لذا يعمل Codex للقراءة فقط ولا يصل إلا إلى أدوات Helena، من دون صدفة أوامر. مع عزل الوكلاء يعمل في وحدة خاصة به.",
         "notSignedInShort": "غير مسجّلة الدخول",
         "runtimeMissingShort": "بيئة التشغيل مفقودة",
         "sandboxUnavailableShort": "صندوق العزل غير متاح"
@@ -785,7 +785,13 @@
       },
       "copyCommand": "نسخ الأمر",
       "copied": "تم النسخ",
-      "openAccess": "فتح «الوصول»"
+      "openAccess": "فتح «الوصول»",
+      "sandbox": "صندوق العزل: {mode}",
+      "sandboxModes": {
+        "workspace-write": "مجلد العمل",
+        "read-only": "للقراءة فقط",
+        "danger-full-access": "العزل"
+      }
     },
     "runModel": {
       "title": "النموذج",

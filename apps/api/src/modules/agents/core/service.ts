@@ -38,7 +38,7 @@ import {
   runtimePolicyGroupsChanged,
   type TemplateFieldGroup,
 } from './template-sync';
-import type { profileReport, runtimeIssue } from '../runtime-sync/model';
+import type { profileReport, runtimeIssue, runtimeSandbox } from '../runtime-sync/model';
 
 // Data access for AI agents. Each agent is backed by a hidden bot user
 // (ai_agent.user_id -> user.id): that user is what a work item is assigned to,
@@ -137,11 +137,14 @@ export interface AgentRuntimeState {
   version: string | null;
   // What keeps the runtime from its work, or part of it ("Laufzeit nicht angemeldet").
   issues: AgentRuntimeIssue[];
+  // Where the runtime runs the model's commands, for one with a sandbox of its own (Codex).
+  sandbox: AgentRuntimeSandbox | null;
   reportedAt: string | null;
 }
 
 export type AgentRuntimeProfile = typeof profileReport.static;
 export type AgentRuntimeIssue = typeof runtimeIssue.static;
+export type AgentRuntimeSandbox = typeof runtimeSandbox.static;
 
 const EMPTY_RUNTIME_POLICY: AgentRuntimePolicy = {
   reasoningEffort: null,
@@ -176,6 +179,7 @@ const EMPTY_RUNTIME_STATE: AgentRuntimeState = {
   profile: null,
   version: null,
   issues: [],
+  sandbox: null,
   reportedAt: null,
 };
 
@@ -216,6 +220,12 @@ function normalizeRuntimeState(value: unknown): AgentRuntimeState {
     version: typeof state.version === 'string' && state.version ? state.version.slice(0, 64) : null,
     // Validated when the runner reported them.
     issues: Array.isArray(state.issues) ? state.issues : [],
+    sandbox:
+      state.sandbox === 'workspace-write' ||
+      state.sandbox === 'read-only' ||
+      state.sandbox === 'danger-full-access'
+        ? state.sandbox
+        : null,
     reportedAt: typeof state.reportedAt === 'string' ? state.reportedAt : null,
   };
 }

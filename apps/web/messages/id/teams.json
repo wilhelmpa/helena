@@ -774,7 +774,7 @@
         "notSignedIn": "Runtime belum masuk.",
         "rejected": "Login runtime ditolak: kedaluwarsa atau tidak valid.",
         "runtimeMissing": "{runtime} belum terpasang di server.",
-        "sandboxUnavailable": "Sandbox tidak tersedia: tanpa isolasi agen, Codex berjalan hanya-baca dan hanya menjangkau alat Helena, tanpa shell.",
+        "sandboxUnavailable": "Sandbox tidak tersedia: sandbox bawaan Codex tidak bisa berjalan di server ini, jadi Codex berjalan hanya-baca dan hanya menjangkau alat Helena, tanpa shell. Dengan isolasi agen, ia berjalan di unitnya sendiri.",
         "notSignedInShort": "Runtime belum masuk",
         "runtimeMissingShort": "Runtime tidak ada",
         "sandboxUnavailableShort": "Sandbox tidak tersedia"
@@ -785,7 +785,13 @@
       },
       "copyCommand": "Salin perintah",
       "copied": "Tersalin",
-      "openAccess": "Buka Akses"
+      "openAccess": "Buka Akses",
+      "sandbox": "Sandbox: {mode}",
+      "sandboxModes": {
+        "workspace-write": "folder kerja",
+        "read-only": "hanya-baca",
+        "danger-full-access": "isolasi"
+      }
     },
     "runModel": {
       "title": "Model",

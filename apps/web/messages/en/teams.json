@@ -774,7 +774,7 @@
         "notSignedIn": "Runtime not signed in.",
         "rejected": "Runtime login refused: expired or invalid.",
         "runtimeMissing": "{runtime} is not installed on the server.",
-        "sandboxUnavailable": "Sandbox unavailable: without agent isolation Codex runs read-only and reaches only Helena's tools, no shell.",
+        "sandboxUnavailable": "Sandbox unavailable: Codex’s own sandbox does not start on this server, so Codex runs read-only and reaches only Helena’s tools, no shell. With agent isolation it runs in a unit of its own.",
         "notSignedInShort": "Runtime not signed in",
         "runtimeMissingShort": "Runtime missing",
         "sandboxUnavailableShort": "Sandbox unavailable"
@@ -785,7 +785,13 @@
       },
       "copyCommand": "Copy command",
       "copied": "Copied",
-      "openAccess": "Open Access"
+      "openAccess": "Open Access",
+      "sandbox": "Sandbox: {mode}",
+      "sandboxModes": {
+        "workspace-write": "working folder",
+        "read-only": "read-only",
+        "danger-full-access": "isolation"
+      }
     },
     "runModel": {
       "title": "Model",
