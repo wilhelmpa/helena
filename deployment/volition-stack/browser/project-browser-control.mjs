@@ -298,8 +298,13 @@ function linkFor(port) {
   return link;
 }
 
-// The title browser-harness puts in front of the tab the agent works in.
+// The title browser-harness puts in front of the tab the agent works in, while its session is
+// attached to it (TAB_MARKER_JS in its daemon.py, removed when it lets go).
 const AGENT_TAB_MARKER = "\u{1F434}";
+
+export function isAgentTitle(title) {
+  return typeof title === "string" && title.startsWith(AGENT_TAB_MARKER);
+}
 
 // The browser's tabs. The one in front is the one whose page is visible: DevTools lists
 // the tabs in no order that says which one the person is looking at.
@@ -316,7 +321,7 @@ export async function listTabs(port) {
     title: page.title || page.url,
     url: page.url,
     active: index === front,
-    agent: page.title.startsWith(AGENT_TAB_MARKER),
+    agent: isAgentTitle(page.title),
   }));
 }
 

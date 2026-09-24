@@ -474,6 +474,23 @@ describe("project browser router", () => {
     assert.deepEqual(browser.page(), { width: 1920, height: 993, ratio: 1 });
   });
 
+  it("draws a small page sharp until an agent takes hold of a tab, then at a ratio it can click from", async () => {
+    const browser = fakeBrowser();
+    upstream = browser.server;
+    await state("demo", 16000, await listen(upstream));
+    router = createProjectBrowserRouter({ root });
+    const viewer = new WebSocket(`ws://127.0.0.1:${await listen(router)}/projects/demo/api/screencast`);
+    viewer.addEventListener("open", () => {
+      viewer.send(JSON.stringify({ type: "viewport", width: 619, height: 612, dpr: 2 }));
+    });
+    await until(() => browser.page().ratio === 2 && browser.page().width === 619);
+    // browser-harness marks the title of the tab it attaches to.
+    browser.emit("Target.targetInfoChanged", { targetInfo: { targetId: PAGE, type: "page", title: "\u{1F434} Page" } });
+    await until(() => browser.page().ratio === 1);
+    assert.deepEqual(browser.page(), { width: 620, height: 612, ratio: 1 });
+    viewer.close();
+  });
+
   it("sizes a window from its visible tab", async () => {
     const browser = fakeBrowser([
       { id: BEHIND, visible: false },

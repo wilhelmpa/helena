@@ -32,7 +32,7 @@
 // {"type":"ping","t":..}; {"type":"control","by":"agent"|"owner"} when who last acted on the
 // page changes (informational only, see ScreencastStream's controlBy). Viewer to server: JSON
 // text, see viewerMessage.
-import { activateTab, listTabs, openBrowser, setLiveViewport, windowChrome } from "./project-browser-control.mjs";
+import { activateTab, isAgentTitle, listTabs, openBrowser, setLiveViewport, windowChrome } from "./project-browser-control.mjs";
 import { InputSender, viewerMessage } from "./project-browser-input.mjs";
 import { AreaEncoder, chooseTier, sameArea, TIERS } from "./project-browser-video.mjs";
 
@@ -100,8 +100,10 @@ const VIDEO_HEALTHY_MS = 30_000;
 const KEYFRAME_REQUEST_MIN_MS = 2_000;
 // Chromium keeps a window at least 500 pixels wide.
 const MIN_WINDOW_WIDTH = 500;
-// The agent halves a screenshot until its long edge is at most 1568 pixels and clicks at CSS
-// pixels read from it; a 2x screenshot matches CSS pixels only from this long edge on.
+// browser-harness takes its screenshots in window pixels and clicks at CSS pixels
+// (capture_screenshot and click_at_xy in its helpers.py), and Hermes halves a screenshot until
+// its long edge is at most 1568 pixels: a 2x screenshot matches CSS pixels only from this long
+// edge on. So while an agent is in the browser a smaller page is drawn at ratio 1.
 const SHARP_MIN_EDGE = 785;
 // Input on the page within this long after a viewer's own is the viewer's; a navigation
 // within the longer time after a viewer's action is the viewer's.
@@ -122,14 +124,20 @@ for (const type of ["pointerdown", "keydown", "input", "wheel"]) {
   addEventListener(type, (event) => { if (event.isTrusted) lastInput = Date.now(); }, { capture: true, passive: true });
 }`;
 
+// Whether a page at ratio 2 gives an agent screenshots it can click from (see SHARP_MIN_EDGE).
+function agentSafeAt2({ width, height }) {
+  return Math.max(width, height) >= SHARP_MIN_EDGE;
+}
+
 // The page size for a view: its CSS size, and the window pixels per CSS pixel, which is 2 on
-// a high-density screen where the agent's screenshots allow it and 1 otherwise. A page too
+// a high-density screen and 1 otherwise — and 1 for a page smaller than SHARP_MIN_EDGE while an
+// agent is in the browser (agentPresent), whose screenshots would be off by 2. A page too
 // narrow for a window is drawn wider and shown scaled down. At ratio 1 an odd size is made
-// even, which the video needs: the frame then is the page to the pixel and a view shows it
-// one to one, where a frame one pixel short would be stretched over the whole view.
-export function pageSize({ width, height, dpr }) {
-  const ratio = dpr >= 1.5 && Math.max(width, height) >= SHARP_MIN_EDGE ? 2 : 1;
-  const even = (value) => (ratio === 1 ? Math.floor(value / 2) * 2 : value);
+// even, one pixel larger, which the video needs: the frame then is the page to the pixel, and
+// a view shows it one to one with that pixel cut off rather than stretched over the view.
+export function pageSize({ width, height, dpr }, agentPresent = false) {
+  const ratio = dpr >= 1.5 && (!agentPresent || agentSafeAt2({ width, height })) ? 2 : 1;
+  const even = (value) => (ratio === 1 ? Math.ceil(value / 2) * 2 : value);
   return { width: even(Math.max(width, Math.ceil(MIN_WINDOW_WIDTH / ratio))), height: even(height), ratio };
 }
 
@@ -141,13 +149,14 @@ export function videoAllowance({ keyframeBytes = 0, encodedKbps = 0, rttMs = 0 }
   return Math.max(MIN_VIDEO_BACKLOG, Math.round(2 * keyframeBytes + encodedKbps * 125 * windowSeconds));
 }
 
-// The page size for the most recent view: while the agent acts, the current CSS size, at
-// ratio 1 for a JPEG stream, or nothing to change before one was set; otherwise the view's
-// pageSize. Ratio 1 and 2 give the agent screenshots of the same size.
-export function targetSize(viewport, current, agentActive, video) {
-  if (!agentActive) return pageSize(viewport);
+// The page size for the most recent view: while the agent acts, the current CSS size — at
+// ratio 1 for a JPEG stream, or for a page too small for the agent's screenshots at ratio 2 —
+// or nothing to change before one was set; otherwise the view's pageSize, with agentPresent
+// saying whether an agent is in the browser without acting right now.
+export function targetSize(viewport, current, agentActive, video, agentPresent = false) {
+  if (!agentActive) return pageSize(viewport, agentPresent);
   if (!current) return null;
-  return video ? current : { ...current, ratio: 1 };
+  return video && agentSafeAt2(current) ? current : { ...current, ratio: 1 };
 }
 
 // The area of the display the video grabs: the page below the window's tab strip and toolbar,
@@ -325,6 +334,9 @@ class ScreencastStream {
     // already use: no lock. The real control lock and its "Übernehmen" arrive with the
     // browser gateway (see docs/volition-design-browser-gateway.md).
     this.controlBy = "owner";
+    // Whether an agent's browser-harness session holds a tab: it marks the tab's title while
+    // attached (see listTabs), before it takes a screenshot to click from.
+    this.agentInBrowser = false;
     this.resizeTimer = null;
     this.timer = null;
     this.tierTimer = null;
@@ -548,6 +560,14 @@ class ScreencastStream {
     if (wasQuiet) this.resize();
   }
 
+  // An agent that takes hold of a tab is noticed at once from the title it gives the tab (see
+  // handleTargetEvent), and one that lets go on the next pass over the tabs.
+  noteAgentInBrowser(present) {
+    if (present === this.agentInBrowser) return;
+    this.agentInBrowser = present;
+    this.resize();
+  }
+
   // Tells a fresh or changed control state to every viewer; a viewer that joins gets it in
   // add(). Informational only, see the field's own comment.
   broadcastControl() {
@@ -594,7 +614,7 @@ class ScreencastStream {
       if (this.screencasting) this.startScreencast(this.session).catch(() => {});
     }
     const viewport = this.drivingViewport();
-    const size = viewport && targetSize(viewport, this.size, quietIn > 0, this.allVideo());
+    const size = viewport && targetSize(viewport, this.size, quietIn > 0, this.allVideo(), this.agentInBrowser);
     const current = this.size;
     if (size && !(current?.width === size.width && current.height === size.height && current.ratio === size.ratio)) {
       this.size = size;
@@ -815,6 +835,7 @@ class ScreencastStream {
     this.following = true;
     try {
       const tabs = await listTabs(this.port);
+      this.noteAgentInBrowser(tabs.some((tab) => tab.agent));
       const agentTab = this.followAgent ? tabs.find((tab) => tab.agent) : null;
       const shown = agentTab ?? tabs.find((tab) => tab.active);
       if (agentTab && !agentTab.active) await activateTab(this.port, agentTab.id);
@@ -983,6 +1004,9 @@ class ScreencastStream {
       this.targetId = null;
       this.setDialog(null);
       void this.follow();
+    }
+    if (method === "Target.targetInfoChanged" && params.targetInfo?.type === "page" && isAgentTitle(params.targetInfo.title)) {
+      this.noteAgentInBrowser(true);
     }
     if (method === "Target.targetInfoChanged" && params.targetInfo?.targetId === this.targetId) {
       this.broadcast({ type: "tab" });

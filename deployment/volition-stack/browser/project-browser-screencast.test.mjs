@@ -33,20 +33,45 @@ describe("live view messages", () => {
     assert.deepEqual(input({ type: "ping", t: 123.5 }), { ping: 123.5 });
   });
 
-  it("draws a page at pixel ratio 2 on a high-density screen when the agent's screenshots allow it", () => {
+  it("draws a page at pixel ratio 2 on a high-density screen, small ones too unless an agent is in the browser", () => {
     assert.deepEqual(pageSize({ width: 800, height: 900, dpr: 2 }), { width: 800, height: 900, ratio: 2 });
     assert.deepEqual(pageSize({ width: 1200, height: 700, dpr: 1.5 }), { width: 1200, height: 700, ratio: 2 });
     assert.deepEqual(pageSize({ width: 1200, height: 700, dpr: 3 }), { width: 1200, height: 700, ratio: 2 });
     assert.deepEqual(pageSize({ width: 1200, height: 700, dpr: 1.25 }), { width: 1200, height: 700, ratio: 1 });
-    // A 2x screenshot of a page with a long edge under 785 CSS pixels would reach the agent
-    // at twice the size its clicks use.
-    assert.deepEqual(pageSize({ width: 620, height: 780, dpr: 2 }), { width: 620, height: 780, ratio: 1 });
+    // A narrow tool panel on a retina screen is as sharp as a wide one while no agent works in
+    // the browser (the owner's report: 619x612 fell to ratio 1 and looked blurred).
+    assert.deepEqual(pageSize({ width: 619, height: 612, dpr: 2 }), { width: 619, height: 612, ratio: 2 });
+    // With an agent in the browser, a 2x screenshot of a page with a long edge under 785 CSS
+    // pixels would reach it at twice the size its clicks use.
+    assert.deepEqual(pageSize({ width: 620, height: 780, dpr: 2 }, true), { width: 620, height: 780, ratio: 1 });
+    assert.deepEqual(pageSize({ width: 800, height: 900, dpr: 2 }, true), { width: 800, height: 900, ratio: 2 });
     // Chromium keeps a window 500 pixels wide, so a narrower page is drawn wider.
     assert.deepEqual(pageSize({ width: 360, height: 640, dpr: 1 }), { width: 500, height: 640, ratio: 1 });
     assert.deepEqual(pageSize({ width: 360, height: 800, dpr: 2 }), { width: 360, height: 800, ratio: 2 });
-    // At ratio 1 an odd size is made even, so the video's frame is the page to the pixel.
-    assert.deepEqual(pageSize({ width: 933, height: 601, dpr: 1 }), { width: 932, height: 600, ratio: 1 });
+    // At ratio 1 an odd size is made even, one pixel larger, so the video's frame is the page
+    // to the pixel; the view cuts that pixel off.
+    assert.deepEqual(pageSize({ width: 933, height: 601, dpr: 1 }), { width: 934, height: 602, ratio: 1 });
     assert.deepEqual(pageSize({ width: 933, height: 601, dpr: 2 }), { width: 933, height: 601, ratio: 2 });
+  });
+
+  it("keeps the page's CSS size while the agent acts, at a ratio its screenshots allow", () => {
+    const view = { width: 900, height: 900, dpr: 2 };
+    const current = { width: 800, height: 900, ratio: 2 };
+    assert.deepEqual(targetSize(view, current, false), { width: 900, height: 900, ratio: 2 });
+    // A JPEG stream drops to ratio 1, video keeps ratio 2 where the agent can click from it.
+    assert.deepEqual(targetSize(view, current, true), { width: 800, height: 900, ratio: 1 });
+    assert.deepEqual(targetSize(view, current, true, true), current);
+    // A small page drawn at ratio 2 before the agent came goes to ratio 1, keeping its layout.
+    const small = { width: 619, height: 612, ratio: 2 };
+    assert.deepEqual(targetSize(view, small, true, true), { width: 619, height: 612, ratio: 1 });
+    // An agent in the browser that is not acting yet: the view's size, safe for it.
+    assert.deepEqual(targetSize({ width: 619, height: 612, dpr: 2 }, small, false, true, true), {
+      width: 620,
+      height: 612,
+      ratio: 1,
+    });
+    // Before a live view sized the page, the agent keeps the size it has.
+    assert.equal(targetSize(view, null, true), null);
   });
 
   it("lets a video viewer fall behind by two keyframes and a stats report's worth of frames", () => {
@@ -60,15 +85,6 @@ describe("live view messages", () => {
       videoAllowance({ keyframeBytes: 1_500_000, encodedKbps: 8_000, rttMs: 60_000 }),
       videoAllowance({ keyframeBytes: 1_500_000, encodedKbps: 8_000, rttMs: 1_000 }),
     );
-  });
-
-  it("keeps the page's CSS size at ratio 1 while the agent acts", () => {
-    const view = { width: 900, height: 900, dpr: 2 };
-    const current = { width: 800, height: 900, ratio: 2 };
-    assert.deepEqual(targetSize(view, current, false), { width: 900, height: 900, ratio: 2 });
-    assert.deepEqual(targetSize(view, current, true), { width: 800, height: 900, ratio: 1 });
-    // Before a live view sized the page, the agent keeps the size it has.
-    assert.equal(targetSize(view, null, true), null);
   });
 
   it("sends mouse input at page coordinates with buttons and modifiers", () => {
