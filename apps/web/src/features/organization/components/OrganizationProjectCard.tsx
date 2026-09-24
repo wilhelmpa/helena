@@ -27,7 +27,7 @@ export default function OrganizationProjectCard({
 
   return (
     <form
-      className="space-y-3 rounded-lg border p-4"
+      className="space-y-3 rounded-lg border bg-card p-4"
       onSubmit={(event) => {
         event.preventDefault();
         save.mutate({
@@ -40,15 +40,15 @@ export default function OrganizationProjectCard({
       }}
     >
       <div>
-        <h3 className="font-medium" dir="auto">
+        <h3 className="text-md font-medium" dir="auto">
           {project.name}
         </h3>
         <p className="text-xs text-muted-foreground">{project.key}</p>
       </div>
       <label className="space-y-1 text-sm">
-        <span className="text-muted-foreground">{t('fields.department')}</span>
+        <span className="block text-xs text-muted-foreground">{t('fields.department')}</span>
         <select
-          className="h-9 w-full rounded-md border bg-background px-3"
+          className="h-8 w-full rounded-md border bg-background px-2 text-sm"
           value={departmentId}
           onChange={(event) => setDepartmentId(event.target.value)}
         >
@@ -61,7 +61,9 @@ export default function OrganizationProjectCard({
         </select>
       </label>
       <label className="space-y-1 text-sm">
-        <span className="text-muted-foreground">{t('fields.projectInstructions')}</span>
+        <span className="block text-xs text-muted-foreground">
+          {t('fields.projectInstructions')}
+        </span>
         <Textarea
           value={instructions}
           maxLength={4000}
@@ -72,14 +74,14 @@ export default function OrganizationProjectCard({
       <div className="flex justify-end gap-2">
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="sm"
           disabled={clear.isPending}
           onClick={() => clear.mutate(project.id)}
         >
           {t('actions.clearAssignment')}
         </Button>
-        <Button type="submit" size="sm" disabled={save.isPending}>
+        <Button type="submit" variant="outline" size="sm" disabled={save.isPending}>
           {t('actions.save')}
         </Button>
       </div>

@@ -1,7 +1,15 @@
 'use client';
 
+import type { ReactNode } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Bot, Building2, FolderKanban, Network, Target, Workflow } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  PageTabs,
+  PageToolbar,
+  PageToolbarSpacer,
+  type PageTab,
+} from '@/components/layout/PageToolbar';
 import type { Organization } from '@/lib/api/endpoints/organization';
 import OrganizationAgents from './OrganizationAgents';
 import OrganizationDepartments from './OrganizationDepartments';
@@ -11,70 +19,93 @@ import OrganizationProjects from './OrganizationProjects';
 import OrganizationTree from './OrganizationTree';
 import OrganizationProjectResources from './OrganizationProjectResources';
 
+type OrganizationTab =
+  'orchestration' | 'structure' | 'departments' | 'goals' | 'agents' | 'projects';
+
+// The organization's views as the header row's tabs (Organigramm, Abteilungen, Ziele,
+// Agenten, Projekte; a project's page starts with its Orchestrierung). The open tab is
+// in the address (?tab=goals), so a link and the back button reach it. `toolbarEnd` is
+// the page's own control after the tabs (the team on the global page).
 export default function OrganizationWorkspace({
   organization,
   projectKey,
+  toolbarEnd,
 }: {
   organization: Organization;
   projectKey?: string;
+  toolbarEnd?: ReactNode;
 }) {
   const t = useTranslations('organization');
+  const params = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const tabs: PageTab<OrganizationTab>[] = [
+    ...(projectKey
+      ? [{ value: 'orchestration' as const, label: t('tabs.orchestration'), icon: Workflow }]
+      : []),
+    { value: 'structure', label: t('tabs.map'), icon: Network },
+    { value: 'departments', label: t('tabs.departments'), icon: Building2 },
+    { value: 'goals', label: t('tabs.goals'), icon: Target },
+    { value: 'agents', label: t('tabs.agents'), icon: Bot },
+    { value: 'projects', label: t('tabs.projects'), icon: FolderKanban },
+  ];
+  const fallback: OrganizationTab = projectKey ? 'orchestration' : 'structure';
+  const requested = params.get('tab');
+  const tab = tabs.find((item) => item.value === requested)?.value ?? fallback;
+
+  const select = (next: OrganizationTab) => {
+    const query = new URLSearchParams(params.toString());
+    if (next === fallback) query.delete('tab');
+    else query.set('tab', next);
+    const search = query.toString();
+    router.replace(search ? `${pathname}?${search}` : pathname, { scroll: false });
+  };
 
   return (
-    <Tabs
-      defaultValue={projectKey ? 'orchestration' : 'structure'}
-      className="min-h-0 min-w-0 flex-1 gap-0"
-    >
-      <TabsList variant="line" className="h-11 shrink-0 overflow-x-auto px-4">
-        {projectKey && <TabsTrigger value="orchestration">{t('tabs.orchestration')}</TabsTrigger>}
-        <TabsTrigger value="structure">{t('tabs.map')}</TabsTrigger>
-        <TabsTrigger value="departments">{t('tabs.departments')}</TabsTrigger>
-        <TabsTrigger value="goals">{t('tabs.goals')}</TabsTrigger>
-        <TabsTrigger value="agents">{t('tabs.agents')}</TabsTrigger>
-        <TabsTrigger value="projects">{t('tabs.projects')}</TabsTrigger>
-      </TabsList>
-      {projectKey && (
-        <TabsContent value="orchestration" className="min-w-0 overflow-y-auto p-4">
-          <OrganizationOrchestration
-            teamId={organization.teamId}
-            project={organization.projects.find((project) => project.key === projectKey)}
-            agents={organization.agents}
-            projectKey={projectKey}
-          />
-        </TabsContent>
-      )}
-      <TabsContent value="structure" className="min-w-0 overflow-auto p-4">
-        {projectKey ? <OrganizationProjectResources projectKey={projectKey} /> : null}
-        <OrganizationTree organization={organization} />
-      </TabsContent>
-      <TabsContent value="departments" className="min-w-0 overflow-y-auto p-4">
+    <>
+      <PageToolbar>
+        <PageTabs label={t('title')} items={tabs} value={tab} onChange={select} />
+        <PageToolbarSpacer />
+        {toolbarEnd}
+      </PageToolbar>
+      {tab === 'orchestration' && projectKey ? (
+        <OrganizationOrchestration
+          teamId={organization.teamId}
+          project={organization.projects.find((project) => project.key === projectKey)}
+          agents={organization.agents}
+          projectKey={projectKey}
+        />
+      ) : tab === 'departments' ? (
         <OrganizationDepartments
           teamId={organization.teamId}
           departments={organization.departments}
         />
-      </TabsContent>
-      <TabsContent value="goals" className="min-w-0 overflow-y-auto p-4">
+      ) : tab === 'goals' ? (
         <OrganizationGoals
           teamId={organization.teamId}
           goals={organization.goals}
           departments={organization.departments}
           projects={organization.projects}
         />
-      </TabsContent>
-      <TabsContent value="agents" className="min-w-0 overflow-y-auto p-4">
+      ) : tab === 'agents' ? (
         <OrganizationAgents
           teamId={organization.teamId}
           agents={organization.agents}
           departments={organization.departments}
         />
-      </TabsContent>
-      <TabsContent value="projects" className="min-w-0 overflow-y-auto p-4">
+      ) : tab === 'projects' ? (
         <OrganizationProjects
           teamId={organization.teamId}
           projects={organization.projects}
           departments={organization.departments}
         />
-      </TabsContent>
-    </Tabs>
+      ) : (
+        <div className="min-w-0">
+          {projectKey ? <OrganizationProjectResources projectKey={projectKey} /> : null}
+          <OrganizationTree organization={organization} />
+        </div>
+      )}
+    </>
   );
 }

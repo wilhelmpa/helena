@@ -40,8 +40,10 @@ export default function OrganizationAgentNode({ node }: { node: AgentNode }) {
         className="group flex min-h-8 min-w-0 items-center gap-2 rounded-md px-2 py-1 text-sm transition-colors hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
       >
         <Bot className="size-4 shrink-0 text-muted-foreground group-hover:text-foreground" />
-        <span className="shrink-0 truncate font-medium">{agent.name}</span>
-        <span className="shrink-0 text-xs text-muted-foreground">{t(`roles.${role}`)}</span>
+        <span className="min-w-0 shrink truncate font-medium">{agent.name}</span>
+        <span className="shrink-0 text-xs text-muted-foreground max-sm:hidden">
+          {t(`roles.${role}`)}
+        </span>
         <AgentPausedBadge agent={agent} />
         <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground max-sm:hidden">
           {detail}
@@ -59,7 +61,7 @@ export default function OrganizationAgentNode({ node }: { node: AgentNode }) {
         ) : (
           <span className="ms-auto flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
             <StatusBadge status={RUNTIME_STATUS[agent.runtimeState.status]} dotOnly />
-            {agent.runtimeState.adapter ?? agent.kind}
+            <span className="max-sm:hidden">{agent.runtimeState.adapter ?? agent.kind}</span>
           </span>
         )}
       </Link>

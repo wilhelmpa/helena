@@ -38,7 +38,7 @@ export default function OrganizationAgentProjectInstruction({
         onChange={(event) => setInstructions(event.target.value)}
       />
       <div className="flex justify-end">
-        <Button type="submit" size="sm" disabled={save.isPending}>
+        <Button type="submit" variant="outline" size="sm" disabled={save.isPending}>
           {t('actions.saveInstructions')}
         </Button>
       </div>

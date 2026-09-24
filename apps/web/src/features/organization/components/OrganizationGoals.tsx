@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { RowEmpty, RowList } from '@/components/common/page/RowList';
 import type {
   OrganizationDepartment,
   OrganizationGoal,
@@ -30,7 +31,7 @@ export default function OrganizationGoals({
   return (
     <div className="space-y-4">
       <form
-        className="flex gap-2"
+        className="flex max-w-xl gap-2"
         onSubmit={(event) => {
           event.preventDefault();
           create.mutate(
@@ -47,12 +48,14 @@ export default function OrganizationGoals({
           placeholder={t('goals.newPlaceholder')}
           onChange={(event) => setTitle(event.target.value)}
         />
-        <Button type="submit" disabled={create.isPending || !title.trim()}>
+        <Button type="submit" variant="outline" disabled={create.isPending || !title.trim()}>
           {t('actions.add')}
         </Button>
       </form>
       {goals.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t('goals.empty')}</p>
+        <RowList className="bg-card">
+          <RowEmpty>{t('goals.empty')}</RowEmpty>
+        </RowList>
       ) : (
         <div className="grid gap-3 xl:grid-cols-2">
           {goals.map((goal) => (

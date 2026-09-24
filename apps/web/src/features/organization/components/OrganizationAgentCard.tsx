@@ -40,10 +40,10 @@ export default function OrganizationAgentCard({
   const [capabilities, setCapabilities] = useState(agent.capabilities.join(', '));
 
   return (
-    <div className="space-y-4 rounded-lg border p-4">
+    <div className="space-y-4 rounded-lg border bg-card p-4">
       <div>
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="font-medium" dir="auto">
+          <h3 className="text-md font-medium" dir="auto">
             {agent.name}
           </h3>
           <AgentPausedBadge agent={agent} />
@@ -54,7 +54,7 @@ export default function OrganizationAgentCard({
       </div>
       <div className="grid gap-3 md:grid-cols-2">
         <label className="space-y-1 text-sm">
-          <span className="text-muted-foreground">{t('fields.roleTitle')}</span>
+          <span className="block text-xs text-muted-foreground">{t('fields.roleTitle')}</span>
           <Input
             value={roleTitle}
             maxLength={100}
@@ -62,7 +62,7 @@ export default function OrganizationAgentCard({
           />
         </label>
         <label className="space-y-1 text-sm">
-          <span className="text-muted-foreground">{t('fields.hermesAgentId')}</span>
+          <span className="block text-xs text-muted-foreground">{t('fields.hermesAgentId')}</span>
           <Input
             value={runtimeAgentId}
             maxLength={128}
@@ -71,9 +71,9 @@ export default function OrganizationAgentCard({
           />
         </label>
         <label className="space-y-1 text-sm">
-          <span className="text-muted-foreground">{t('fields.teamRole')}</span>
+          <span className="block text-xs text-muted-foreground">{t('fields.teamRole')}</span>
           <select
-            className="h-9 w-full rounded-md border bg-background px-3"
+            className="h-8 w-full rounded-md border bg-background px-2 text-sm"
             value={role}
             onChange={(event) => setRole(event.target.value as AgentTeamRole | '')}
           >
@@ -84,7 +84,7 @@ export default function OrganizationAgentCard({
           </select>
         </label>
         <label className="space-y-1 text-sm">
-          <span className="text-muted-foreground">{t('fields.capabilities')}</span>
+          <span className="block text-xs text-muted-foreground">{t('fields.capabilities')}</span>
           <Input
             value={capabilities}
             placeholder={t('agents.capabilitiesPlaceholder')}
@@ -95,9 +95,9 @@ export default function OrganizationAgentCard({
           {t('agents.capabilitiesHint')}
         </p>
         <label className="space-y-1 text-sm">
-          <span className="text-muted-foreground">{t('fields.department')}</span>
+          <span className="block text-xs text-muted-foreground">{t('fields.department')}</span>
           <select
-            className="h-9 w-full rounded-md border bg-background px-3"
+            className="h-8 w-full rounded-md border bg-background px-2 text-sm"
             value={departmentId}
             onChange={(event) => setDepartmentId(event.target.value)}
           >
@@ -110,9 +110,9 @@ export default function OrganizationAgentCard({
           </select>
         </label>
         <label className="space-y-1 text-sm">
-          <span className="text-muted-foreground">{t('fields.reportsTo')}</span>
+          <span className="block text-xs text-muted-foreground">{t('fields.reportsTo')}</span>
           <select
-            className="h-9 w-full rounded-md border bg-background px-3"
+            className="h-8 w-full rounded-md border bg-background px-2 text-sm"
             value={reportsToAgentId}
             onChange={(event) => setReportsToAgentId(event.target.value)}
           >
@@ -149,7 +149,7 @@ export default function OrganizationAgentCard({
       <div className="flex justify-end gap-2">
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="sm"
           disabled={clear.isPending}
           onClick={() => clear.mutate(agent.id)}
@@ -158,6 +158,7 @@ export default function OrganizationAgentCard({
         </Button>
         <Button
           type="button"
+          variant="outline"
           size="sm"
           disabled={save.isPending}
           onClick={() =>

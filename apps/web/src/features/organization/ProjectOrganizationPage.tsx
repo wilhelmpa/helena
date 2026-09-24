@@ -3,11 +3,15 @@
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useShell } from '@/context/shellContext';
-import { WorkspacePageHeader } from '@/components/layout/WorkspaceHeader';
+import SectionPageView from '@/components/common/page/SectionPageView';
+import { EmptyState } from '@/components/common/page/EmptyState';
+import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import OrganizationWorkspace from './components/OrganizationWorkspace';
 import { organizationForProject } from './projectOrganization';
 import { useOrganizationQuery } from './services/organization.service';
 
+// A project's Team & Orchestrierung: its orchestration, and the team's organization
+// narrowed to the project.
 export default function ProjectOrganizationPage() {
   const t = useTranslations('organization');
   const { project } = useShell();
@@ -25,12 +29,11 @@ export default function ProjectOrganizationPage() {
   if (!project) return null;
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <WorkspacePageHeader title={t('title')} description={t('description')} />
+    <SectionPageView title={t('title')} description={t('description')} wide>
       {organization.isPending ? (
-        <p className="p-4 text-sm text-muted-foreground">{t('loading')}</p>
+        <ListSkeleton rows={6} rowClassName="h-8" />
       ) : organization.isError ? (
-        <p className="p-4 text-sm text-muted-foreground">{t('managerRequired')}</p>
+        <EmptyState title={t('managerRequiredTitle')} description={t('managerRequired')} />
       ) : scopedOrganization ? (
         <OrganizationWorkspace
           key={`${scopedOrganization.teamId}:${project.project.key}`}
@@ -38,6 +41,6 @@ export default function ProjectOrganizationPage() {
           projectKey={project.project.key}
         />
       ) : null}
-    </div>
+    </SectionPageView>
   );
 }

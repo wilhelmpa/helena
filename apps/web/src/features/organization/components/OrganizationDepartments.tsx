@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { RowEmpty, RowList } from '@/components/common/page/RowList';
 import type { OrganizationDepartment } from '@/lib/api/endpoints/organization';
 import { useCreateDepartment } from '../services/organization.service';
 import OrganizationDepartmentCard from './OrganizationDepartmentCard';
@@ -22,7 +23,7 @@ export default function OrganizationDepartments({
   return (
     <div className="space-y-4">
       <form
-        className="flex gap-2"
+        className="flex max-w-xl gap-2"
         onSubmit={(event) => {
           event.preventDefault();
           create.mutate(
@@ -39,12 +40,14 @@ export default function OrganizationDepartments({
           placeholder={t('departments.newPlaceholder')}
           onChange={(event) => setName(event.target.value)}
         />
-        <Button type="submit" disabled={create.isPending || !name.trim()}>
+        <Button type="submit" variant="outline" disabled={create.isPending || !name.trim()}>
           {t('actions.add')}
         </Button>
       </form>
       {departments.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t('departments.empty')}</p>
+        <RowList className="bg-card">
+          <RowEmpty>{t('departments.empty')}</RowEmpty>
+        </RowList>
       ) : (
         <div className="grid gap-3 xl:grid-cols-2">
           {departments.map((department) => (

@@ -20,9 +20,9 @@ export default function OrganizationOrchestrationTeam({ agents }: { agents: Orga
   const t = useTranslations('organization');
 
   return (
-    <section className="space-y-4 rounded-lg border p-4">
+    <section className="space-y-4 rounded-lg border bg-card p-4">
       <div>
-        <h2 className="text-sm font-medium">{t('orchestration.teamTitle')}</h2>
+        <h2 className="text-md font-medium">{t('orchestration.teamTitle')}</h2>
         <p className="text-xs text-muted-foreground">{t('orchestration.teamDescription')}</p>
       </div>
       {ROLES.map((role) => {

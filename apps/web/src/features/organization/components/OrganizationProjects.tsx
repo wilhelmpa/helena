@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { RowEmpty, RowList } from '@/components/common/page/RowList';
 import type { OrganizationDepartment, OrganizationProject } from '@/lib/api/endpoints/organization';
 import OrganizationProjectCard from './OrganizationProjectCard';
 
@@ -16,7 +17,11 @@ export default function OrganizationProjects({
   const t = useTranslations('organization');
 
   if (projects.length === 0) {
-    return <p className="text-sm text-muted-foreground">{t('projects.empty')}</p>;
+    return (
+      <RowList className="bg-card">
+        <RowEmpty>{t('projects.empty')}</RowEmpty>
+      </RowList>
+    );
   }
 
   return (
