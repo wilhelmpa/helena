@@ -469,6 +469,28 @@ automatic rollbacks cover firewall and SSH; backups of every replaced file are u
 - **Local owner**: `configure.py` writes the guard, drops `fe80::/10` and `192.168.122.1`, and knows
   `--https-host` / `--lan-http`.
 
+### Verification (2026-09-24/25, no live change)
+
+- `tests/nft-selftest.sh` (private network namespace, no root): the ruleset loads; the self guard
+  refuses LAN-address → 127.0.0.1:80 and → own address, loopback stays open; a home-network peer
+  reaches :22, an outside peer does not, :8384 is dropped from the LAN; the network sync follows a
+  new IPv4 network and the machine's /64. All pass.
+- `tests/nginx-owner-guard-selftest.sh` (throw-away nginx, fake capability): the old map gives the
+  capability to both local shapes (C-01 proven), the guard gives it to neither, and the Mac on the
+  LAN still gets it. All pass.
+- `tests/nginx-config-selftest.sh`: `nginx -t` of the live LAN site after `lan_https.py` + the guard,
+  together with the tunnel entry. Passes.
+- Tunnel entry end to end (throw-away API of this branch + nginx from the template): page, API,
+  forged assertion, a client-sent LAN capability, code, browser, both terminals and the sign-in
+  endpoint all answer 403 without Access; the API says `edge_not_configured`.
+- API: `edge-access` unit and integration tests, `auth-verify`, agent socket, owner terminal, the
+  dump modes, cookie domain; the full API suite against the known baseline.
+- Web: tsc, eslint, prettier; `checks.test.ts` (keys, order, all 10 locales); click check on a
+  throw-away dev instance with the live audit report: Administrator → Sicherheit on desktop and at
+  390 px (no horizontal scroll), invalid team domain refused with the API's message, valid one saved
+  ("Eingerichtet"), no console errors besides the deliberate 400.
+- Every `apply.sh` step as a dry run on Kingston (writes nothing; renders go to a scratch folder).
+
 ## 12. Open points
 
 - hub/server-admin: register `securityHealth()` (status.ts, shaped like `HostHealthItem`) as a host
