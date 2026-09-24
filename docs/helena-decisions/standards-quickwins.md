@@ -22,6 +22,7 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 | WEB-07 | done | see git log | next-intl `timeZone`, `@date-fns/tz` 1.5.0 (MIT), date-fns, `Intl.DurationFormat` |
 | WEB-05 | done (panels later, as the audit says) | see git log | Radix AlertDialog, RadioGroup, ToggleGroup, Dialog (`radix-ui`) |
 | WEB-06 | done (header/MIME rename skipped) | see git log | ESLint bulk suppressions, react-hooks 7.1.1, jsx-a11y 6.10.2, better-tailwindcss 4.7.0, `react/jsx-no-literals` |
+| WEB-02 | **open** (measured, not migrated) | – | `@tiptap/markdown` 3.30.5 stays the target (D-C6) |
 | F16 | done | see git log | `mime-types` 3.0.2 + `file-type` 22.1.1 (MIT) in `@repo/storage/mime` |
 
 ## F21: IP classification with `ipaddr.js`
@@ -165,3 +166,26 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 - Updated docs that named the ratchet: `docs/volition/design-handover.md` and the agent-pool skill reference `bundles/agent-pool/skills/review-ablauf/refs/helena-repo-regeln.md`.
 - **Skipped on purpose:** renaming the `x-volition-local-access` header and the `application/x-volition-file-entry` drag type. Both are existing volition names, which the binding agent rules leave to the one planned rename step (hub/oss-packaging's rename kit), and the header also needs the live nginx config in the same step.
 - CI wiring stays with hub/oss-packaging, as the audit says.
+
+## WEB-02: `@tiptap/markdown` — open, with the measurements
+
+D-C6 keeps `@tiptap/markdown` as the editor's markdown layer. I did not switch in this branch: a parse→serialize comparison of `tiptap-markdown` (today) and `@tiptap/markdown` 3.30.5 (the version that matches the pinned Tiptap 3.30.5; 3.31.3 behaves the same in the parts below) on a corpus of note-like markdown showed changes that would rewrite stored text on the first edit, one of them a correctness bug for agent prompts:
+
+| Input | Today | `@tiptap/markdown` |
+|---|---|---|
+| `Think in <thinking> tags & reply` (agent prompt; `AgentInstructionsEditor` keeps it verbatim today) | verbatim | `Think in &lt;thinking&gt; tags &amp; reply` — every `<`, `>`, `&` is entity-encoded; the text encoder is private to `MarkdownManager` and not configurable per extension or option (checked up to 3.31.3) |
+| `snake_case` | kept | `snake\_case` (every `_`, `[`, `]`, `~` escaped) |
+| `- a` + blank line + `- b` (loose list) | kept | tight list, blank line lost |
+| `- item` + newline + `  continued` | kept | `- item  ` + newline + `continued` (hard break, no indent) |
+| `<https://example.com>` | kept | `[https://example.com](https://example.com)` |
+| `\| A \| B \|` table | compact | padded columns plus blank lines around |
+| `[[Release notes]]`, `[[MKT-12]]`, `![[Diagram.png]]` | kept (own markdown-it rule) | escaped (`\[\[…\]\]`) until a marked tokenizer exists |
+
+What the move needs, in one branch together with hub/second-brain (wikilinks and frontmatter are theirs; frontmatter never enters the editor, `noteDraft` splits it off, so it is byte-stable already):
+
+1. A text-encoding hook: an upstream option in `@tiptap/markdown`, or a small `MarkdownManager` subclass behind `Markdown.extend({ onBeforeCreate })` that leaves `<`, `>`, `&` and intraword `_` alone the way today's serializer does (the prompt editor must stay byte-exact).
+2. Renderers/tokenizers for the custom nodes: wikilink (marked inline tokenizer, byte-stable), mention (`@handle` tokenizer), `SoftLineBreak` (`\n`, `<br>` in tables, list-item indentation), `MarkdownTable` (compact pipes, escaped `|`), `ResizableImage` (`<img width>`), `Video` (`<video>`), Link autolinks (`<url>` when text equals href), and a list attribute that keeps loose lists loose.
+3. The call sites: `editor.storage.markdown.getMarkdown()` → `editor.getMarkdown()` (trimmed), `contentType: 'markdown'` on `useEditor` and on the markdown `setContent`/`insertContentAt` calls (paste).
+4. A round-trip test on a corpus of real-shaped notes (frontmatter-free bodies with wikilinks, task lists, tables, code, soft breaks, loose and tight lists) plus the existing editor tests, which today pin the current output.
+
+Estimate: the audit's 3–5 days stands; the text-encoding hook is the part to settle first (upstream issue or subclass).
