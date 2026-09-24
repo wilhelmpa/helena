@@ -1,5 +1,5 @@
 import { hostname } from 'node:os';
-import { DBOS } from '@dbos-inc/dbos-sdk';
+import { DBOS, DBOSClient } from '@dbos-inc/dbos-sdk';
 import { intEnv } from '#shared/lib';
 
 // The durable execution the Helena engine runs on: DBOS Transact, in process, with its
@@ -45,10 +45,10 @@ export function launchEngine(): Promise<void> {
     await import('./workflows');
     configure();
     await DBOS.launch();
-    // The queue of the outbox: every domain event runs its subscribers once.
+    // The queues of the runs and of the outbox.
     const { EVENTS_QUEUE } = await import('./events');
-    if (!(await DBOS.retrieveQueue(EVENTS_QUEUE)))
-      await DBOS.registerQueue(EVENTS_QUEUE, { workerConcurrency: 10 });
+    for (const queue of [RUNS_QUEUE, EVENTS_QUEUE])
+      if (!(await DBOS.retrieveQueue(queue))) await DBOS.registerQueue(queue);
     running = true;
   })().catch((error: unknown) => {
     launching = null;
@@ -77,4 +77,44 @@ export function engineExecutorId(): string {
 // that finished wakes it at once). HELENA_ENGINE_WAIT_SECONDS lowers it, e.g. in tests.
 export function engineWaitSeconds(fallback: number): number {
   return Math.min(fallback, intEnv('HELENA_ENGINE_WAIT_SECONDS', fallback));
+}
+
+// The queues of the engine: the runs, and the outbox's events. Neither limits how many
+// workflows run at once: a run spends most of its time waiting.
+export const RUNS_QUEUE = 'helena-runs';
+
+let client: Promise<DBOSClient> | null = null;
+
+// A DBOS client on the engine's schema, for enqueueing where the engine itself may not
+// start a workflow: inside a recorded operation of another workflow (a step that creates
+// a task starts that task's workflows), or in a process that does not run the engine.
+export function engineClient(): Promise<DBOSClient> {
+  client ??= DBOSClient.create({
+    systemDatabaseUrl:
+      process.env.HELENA_ENGINE_DATABASE_URL?.trim() || process.env.DATABASE_URL!.trim(),
+    systemDatabaseSchemaName: engineSchema(),
+    applicationName: ENGINE_APP,
+  }).catch((error: unknown) => {
+    client = null;
+    throw error;
+  });
+  return client;
+}
+
+// Enqueues a workflow of the engine under an id, once: a workflow of that id that exists
+// is left as it is (DBOS keeps the first). Any executor's queue takes it.
+export async function enqueueWorkflow(
+  workflowName: string,
+  queueName: string,
+  workflowID: string,
+  ...args: unknown[]
+): Promise<void> {
+  await (
+    await engineClient()
+  ).enqueue({ workflowName, queueName, workflowID }, ...(args as never[]));
+}
+
+// Whether the caller runs inside a recorded operation, where DBOS starts no workflow.
+export function insideOperation(): boolean {
+  return DBOS.isInStep() || DBOS.isInTransaction();
 }

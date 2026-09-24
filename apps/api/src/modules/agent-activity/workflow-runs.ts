@@ -9,7 +9,7 @@ import {
   user,
 } from '@repo/db';
 import { alias } from 'drizzle-orm/pg-core';
-import { and, desc, eq, exists, inArray, or, sql, type SQL } from 'drizzle-orm';
+import { and, eq, exists, inArray, or, sql, type SQL } from 'drizzle-orm';
 import { agentTeamStages } from '#modules/control-plane-workflows/agent-team';
 import { emptyEntry, type ActivityEntry, type ActivityFilters } from './entry';
 
@@ -55,7 +55,7 @@ export async function workflowRunEntries(
     );
   if (filters.cursor)
     conditions.push(
-      sql`(${pipelineRun.createdAt}, ${id} COLLATE "C") < (${new Date(filters.cursor.at)}, ${filters.cursor.id} COLLATE "C")`,
+      sql`(date_trunc('milliseconds', ${pipelineRun.createdAt}), ${id} COLLATE "C") < (${filters.cursor.at}::timestamptz, ${filters.cursor.id} COLLATE "C")`,
     );
   const rows = await db
     .select({
@@ -77,7 +77,10 @@ export async function workflowRunEntries(
     .leftJoin(aiAgent, eq(aiAgent.id, pipelineRun.agentId))
     .leftJoin(lead, eq(lead.id, aiAgent.userId))
     .where(and(...conditions))
-    .orderBy(desc(pipelineRun.createdAt), sql`${id} COLLATE "C" DESC`)
+    .orderBy(
+      sql`date_trunc('milliseconds', ${pipelineRun.createdAt}) DESC`,
+      sql`${id} COLLATE "C" DESC`,
+    )
     .limit(limit + 1);
   const stages = await agentTeamStages(
     rows.filter(({ run }) => run.kind === 'agent_team').map(({ run }) => run.id),

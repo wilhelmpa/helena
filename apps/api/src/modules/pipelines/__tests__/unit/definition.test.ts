@@ -143,10 +143,10 @@ describe('workflow definition', () => {
         ),
       ),
     ).toEqual([
+      'agent_in_template:b:assignee',
       'duplicate_role_key:roles.coder.key',
       'duplicate_step_id:a:id',
       'unknown_role:a:assignee',
-      'agent_in_template:b:assignee',
     ]);
     expect(codes(definition([{ ...agent('b'), assignee: { agentId: 3 } }]), false)).toEqual([]);
   });

@@ -3,7 +3,7 @@ import { db, pipelineRun, pipelineRunStep } from '@repo/db';
 import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
 import { bumpControlPlaneRevision } from '#modules/sync/service';
-import { engineRunning } from './dbos';
+import { engineRunning, enqueueWorkflow, insideOperation, RUNS_QUEUE } from './dbos';
 import { ACTIVE_STATUSES } from './lifecycle';
 import { stepType } from './registry';
 import { runWorkflow } from './workflows';
@@ -14,8 +14,13 @@ import { runWorkflow } from './workflows';
 // janitor for a run whose start was lost) finds the workflow that runs it.
 
 export async function startRun(runId: string): Promise<void> {
-  if (!engineRunning()) return;
-  await DBOS.startWorkflow(runWorkflow, { workflowID: runId })(runId);
+  if (!engineRunning() || insideOperation()) {
+    // A step of another run (it created the task this run works on) or a process without
+    // the engine enqueues it; any executor's queue takes it.
+    await enqueueWorkflow('helena.run', RUNS_QUEUE, runId, runId);
+    return;
+  }
+  await DBOS.startWorkflow(runWorkflow, { workflowID: runId, queueName: RUNS_QUEUE })(runId);
 }
 
 // Starts the run, and leaves a start that fails to the janitor, which retries runs still

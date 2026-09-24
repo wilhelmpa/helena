@@ -270,7 +270,8 @@ describe('workflows of a project', () => {
     const at = new Date('2026-09-21T07:00:00.000Z');
     const runId = await planFire(schedule!.id, at.toISOString(), at.getTime());
     expect(runId).not.toBeNull();
-    expect(await planFire(schedule!.id, at.toISOString(), at.getTime())).toBeNull();
+    // The same time fired again finds the same run.
+    expect(await planFire(schedule!.id, at.toISOString(), at.getTime())).toBe(runId);
     const { startRun: startEngineRun } = await import('#modules/engine/runs');
     await startEngineRun(runId!);
     const done = await waitForStatus(runId!, 'succeeded');

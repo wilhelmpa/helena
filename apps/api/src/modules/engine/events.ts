@@ -1,12 +1,12 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { DBOS, DBOSClient } from '@dbos-inc/dbos-sdk';
+import { DBOS } from '@dbos-inc/dbos-sdk';
 import { db, pipeline, pipelineVersion, projectPipeline } from '@repo/db';
 import { and, asc, eq } from 'drizzle-orm';
 import type { PipelineDefinition } from '#modules/pipelines/definition';
 import { checkPipelineRunLimit } from '#modules/pipelines/rate-limit';
 import { createRun } from '#modules/pipelines/runs';
 import { registerBuiltins } from './builtin/index';
-import { ENGINE_APP, engineRunning, engineSchema } from './dbos';
+import { engineRunning, enqueueWorkflow, insideOperation } from './dbos';
 import { subscribeDomainEvents, triggersFor } from './registry';
 import { startRunSoon } from './runs';
 import type { DomainEvent, OutboxStore } from './sdk';
@@ -57,30 +57,17 @@ export function eventWorkflowId(eventId: string): string {
   return `event:${eventId}`;
 }
 
-let client: Promise<DBOSClient> | null = null;
-
-function engineClient(): Promise<DBOSClient> {
-  client ??= DBOSClient.create({
-    systemDatabaseUrl:
-      process.env.HELENA_ENGINE_DATABASE_URL?.trim() || process.env.DATABASE_URL!.trim(),
-    systemDatabaseSchemaName: engineSchema(),
-    applicationName: ENGINE_APP,
-  });
-  return client;
-}
-
 // The engine's outbox.
 export const outbox: OutboxStore = {
   async publish(event) {
     const workflowID = eventWorkflowId(event.id);
-    if (engineRunning()) {
+    if (engineRunning() && !insideOperation()) {
       const { eventWorkflow } = await import('./workflows');
       await DBOS.startWorkflow(eventWorkflow, { workflowID, queueName: EVENTS_QUEUE })(event);
       return;
     }
-    await (
-      await engineClient()
-    ).enqueue({ workflowName: 'helena.event', queueName: EVENTS_QUEUE, workflowID }, event);
+    // Inside a recorded operation (a step that changed a task), or without the engine.
+    await enqueueWorkflow('helena.event', EVENTS_QUEUE, workflowID, event);
   },
 };
 
