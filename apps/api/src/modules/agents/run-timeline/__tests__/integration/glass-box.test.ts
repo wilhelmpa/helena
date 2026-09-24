@@ -211,8 +211,11 @@ describe('run timeline and usage', () => {
       inputTokens: 2400,
       outputTokens: 80,
       entries: 1,
-      day: new Date().toISOString().slice(0, 10),
     });
+    // Eden reads the YYYY-MM-DD day back as a date.
+    expect(new Date(usage.data!.rows[0]!.day!).toISOString().slice(0, 10)).toBe(
+      new Date().toISOString().slice(0, 10),
+    );
     expect(usage.data!.total.inputTokens).toBe(2400);
     const rows = await db.select().from(agentUsage);
     expect(rows[0]).toMatchObject({ runId: run.id, sessionId: 'sess-1', durationMs: 9870 });
