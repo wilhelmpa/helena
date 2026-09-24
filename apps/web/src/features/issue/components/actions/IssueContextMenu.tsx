@@ -89,7 +89,9 @@ export default function IssueContextMenu({
   const updateIssue = useUpdateIssue(project.project.key);
   const { archive, dialog: archiveDialog } = useArchiveAction(project, onDeleted);
   const restoreIssue = useRestoreIssue(project.project.key);
-  const actionsQuery = useActionsQuery(project.project.key);
+  // Not on the public board (no Shell): its visitor has no session, and the members'
+  // action list would answer 401, which the client takes for a lost session.
+  const actionsQuery = useActionsQuery(shell ? project.project.key : null);
   const priorityLabel = usePriorityLabel();
   const presetLabel = useDueDatePresetLabel();
   const [open, setOpen] = useState(false);
