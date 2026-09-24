@@ -1,15 +1,15 @@
 'use client';
 
-import type { PipelineRun } from '@/lib/api/endpoints/pipelines';
+import type { PipelineRun, PipelineRunStep } from '@/lib/api/endpoints/pipelines';
 import ApprovalDecisionForm from '@/components/common/ApprovalDecisionForm';
 import { useDecidePipelineApproval } from '@/services/pipelines.service';
 import PipelineRunControls from './PipelineRunControls';
 import PipelineRunHeader from './PipelineRunHeader';
 import PipelineRunStepItem from './PipelineRunStepItem';
 
-// One run of a workflow: its header, every step it executed in order, and the controls
-// of a member who may run workflows. A run waiting at an approval takes the decision
-// here too.
+// One run of the engine (a workflow, an agent team or a routine): its header, every
+// step it executed in order with the parts of each, and the controls of a member who may
+// run it. A run waiting at an approval takes the decision here too.
 export default function PipelineRunTimeline({
   run,
   canEdit,
@@ -20,6 +20,12 @@ export default function PipelineRunTimeline({
   showIssue?: boolean;
 }) {
   const decide = useDecidePipelineApproval();
+  // The parts of a step (an agent team's stages) are shown under it.
+  const steps = run.steps.filter((step) => step.parentStepId === null);
+  const parts = (parent: PipelineRunStep) =>
+    run.steps.filter(
+      (step) => step.parentStepId === parent.stepId && step.iteration === parent.iteration,
+    );
   const waitingApproval =
     run.status === 'waiting' &&
     run.steps.some((step) => step.kind === 'approval' && step.status === 'waiting');
@@ -32,10 +38,14 @@ export default function PipelineRunTimeline({
           {run.error}
         </p>
       )}
-      {run.steps.length > 0 && (
+      {steps.length > 0 && (
         <ol className="space-y-2 border-s ps-3">
-          {run.steps.map((step) => (
-            <PipelineRunStepItem key={`${step.stepId}:${step.iteration}`} step={step} />
+          {steps.map((step) => (
+            <PipelineRunStepItem
+              key={`${step.stepId}:${step.iteration}`}
+              step={step}
+              parts={parts(step)}
+            />
           ))}
         </ol>
       )}

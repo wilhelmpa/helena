@@ -52,7 +52,8 @@
     "success": "Berhasil",
     "failed": "Gagal",
     "canceled": "Dibatalkan",
-    "running": "Berjalan"
+    "running": "Berjalan",
+    "skipped": "Dilewati"
   },
   "outcome": {
     "created": "Membuat <task>{identifier}</task>",
@@ -95,5 +96,12 @@
     "through": "{start} sampai {end}",
     "dayOrdinal": "{n}"
   },
-  "invalidSchedule": "Jadwal tidak valid. Contoh: 0 9 * * 1-5 (Senin sampai Jumat pukul 09.00)."
+  "invalidSchedule": "Jadwal tidak valid. Contoh: 0 9 * * 1-5 (Senin sampai Jumat pukul 09.00).",
+  "history": "Riwayat",
+  "historyTitle": "Proses {name}",
+  "historyFailed": "Proses tidak dapat dimuat.",
+  "catchUp": "Setelah server mati",
+  "catchUpSkip": "Lewati waktu yang terlewat",
+  "catchUpOnce": "Jalankan waktu terlewat terakhir sekali",
+  "catchUpHint": "Saat server mati pada waktu terjadwal. Waktu terlewat yang lebih lama tidak pernah dijalankan."
 }

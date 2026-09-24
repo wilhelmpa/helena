@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/sidebar';
 import SidebarNavItem from '@/components/layout/SidebarNavItem';
 import { useSession } from '@/lib/auth-client';
-import { usePendingApprovalCount, useWorkflowGates } from '@/services/approvals.service';
+import { usePendingApprovalCount } from '@/services/approvals.service';
 import { usePipelineApprovals } from '@/services/pipelines.service';
 import { homeNavigation, type HomeNavigationGroup } from './homeNavigation';
 import SidebarApprovalsRefresh from './SidebarApprovalsRefresh';
@@ -78,9 +78,7 @@ export default function SidebarHomeNav({
   useEffect(() => setMounted(true), []);
   const items = homeNavigation(teamId, mounted && session?.user.role === 'god');
   const pendingApprovals =
-    (usePendingApprovalCount().data?.count ?? 0) +
-    (useWorkflowGates().data?.items.length ?? 0) +
-    (usePipelineApprovals().data?.length ?? 0);
+    (usePendingApprovalCount().data?.count ?? 0) + (usePipelineApprovals().data?.length ?? 0);
 
   const groups = GROUPS.map((group) => {
     const groupItems = items.filter((item) => item.group === group);

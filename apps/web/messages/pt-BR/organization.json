@@ -128,12 +128,12 @@
     "teamDescription": "Papéis e capacidades valem para todos os projetos da equipe. Só agentes que rodam no Hermes participam de uma execução da equipe.",
     "editRoles": "Defina papéis e capacidades na aba Agentes.",
     "policyTitle": "Fluxo agent-team",
-    "policyDescription": "Roda no Mastra quando uma tarefa é delegada a um coordenador.",
+    "policyDescription": "É executado quando uma tarefa é delegada a um coordenador.",
     "on": "Ativo",
     "off": "Inativo",
     "configure": "Configurar",
     "loading": "Carregando fluxo…",
-    "unavailable": "A lista de fluxos não está disponível. Verifique se o Mastra está rodando.",
+    "unavailable": "A lista de fluxos de trabalho não está disponível agora.",
     "offHint": "Inativo neste projeto: uma tarefa delegada a um coordenador entra na fila só desse agente.",
     "result": "Resultado",
     "autonomyReview": "A tarefa vai para Revisão",
@@ -155,14 +155,14 @@
       "directTitle": "Diretamente",
       "direct": "Um chat, uma @menção ou uma tarefa atribuída a um agente vai direto para esse agente no Hermes.",
       "teamTitle": "Pela equipe de agentes",
-      "team": "Uma tarefa delegada a um coordenador, ou iniciada na seção Equipe de agentes da tarefa, roda no Mastra:",
+      "team": "Uma tarefa delegada a um coordenador, ou iniciada na seção Equipe de agentes da tarefa, segue assim:",
       "stages": {
         "coordinate": "O coordenador divide a tarefa em atribuições.",
         "specialize": "Especialistas trabalham nelas no Hermes, as independentes em paralelo.",
         "review": "O coordenador revisa os resultados.",
         "synchronize": "O resumo e as evidências são gravados na tarefa, que vai para Revisão ou Concluído."
       },
-      "route": "Quando os rótulos da tarefa correspondem às capacidades de um único especialista, ou o projeto tem só um, o Mastra pula o plano e atribui a tarefa diretamente."
+      "route": "Quando as etiquetas da tarefa correspondem às capacidades de exatamente um especialista, ou o projeto tem só um, a Helena pula o plano e atribui a tarefa diretamente."
     },
     "usage": {
       "title": "Consumo de tokens",

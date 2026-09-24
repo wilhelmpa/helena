@@ -17,6 +17,10 @@ export function usePipelineLabels() {
       return t('triggerSummary.label', { label: value.label });
     if (value.type === 'schedule' && value.cron)
       return t('triggerSummary.schedule', { cron: value.cron });
+    if (value.type === 'mail_received' && (value.from || value.subject))
+      return t('triggerSummary.mail', {
+        filter: [value.from, value.subject].filter(Boolean).join(' · '),
+      });
     return t(`triggers.${value.type}`);
   };
 

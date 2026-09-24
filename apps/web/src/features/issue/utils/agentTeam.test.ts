@@ -18,7 +18,7 @@ const stage = (inputTokens: number | null, outputTokens: number | null): AgentTe
 
 const run = (stages: AgentTeamStage[]): AgentTeamRun => ({
   runId: 'run-1',
-  status: 'success',
+  status: 'succeeded',
   createdAt: null,
   updatedAt: null,
   steps: [],
@@ -40,9 +40,11 @@ describe('agent-team runs', () => {
     assert.equal(agentTeamTokens(run([stage(null, null)])), null);
   });
 
-  test('labels the statuses of Mastra and of the run queue', () => {
+  test('labels the statuses of the engine and of the agent runs', () => {
     assert.ok(isKnownStatus('running'));
+    assert.ok(isKnownStatus('succeeded'));
+    assert.ok(isKnownStatus('success'));
     assert.ok(isKnownStatus('canceled'));
-    assert.ok(!isKnownStatus('bailed'));
+    assert.ok(!isKnownStatus('suspended'));
   });
 });

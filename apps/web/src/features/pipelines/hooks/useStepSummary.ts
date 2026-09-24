@@ -81,6 +81,25 @@ export function useStepSummary() {
               field: t(`inspector.wait.fields.${step.wait.field}`),
               time: step.wait.time,
             });
+      case 'notify': {
+        const to = step.to;
+        const who =
+          to.kind === 'members'
+            ? to.userIds
+                .map((id) => context?.members.find((member) => member.id === id)?.name ?? id)
+                .join(', ')
+            : t(`inspector.notify.recipients.${to.kind}`);
+        return t('summary.notify', { who, text: firstLine(step.message) });
+      }
+      case 'webhook': {
+        let host = step.url;
+        try {
+          host = new URL(step.url).host;
+        } catch {
+          // Not a URL yet: the field names the problem.
+        }
+        return host ? t('summary.webhook', { host }) : t('summary.noUrl');
+      }
     }
   };
 }

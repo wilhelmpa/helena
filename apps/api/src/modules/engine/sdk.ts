@@ -239,12 +239,19 @@ export type PolicyDecision =
   | { decision: 'ask'; reason?: string }
   | { decision: 'deny'; reason: string };
 
-// "May this agent do this here?" — answered centrally by the autopilot (hub/autopilot).
+// What the engine asks the policy engine about: an action category, or one of the
+// engine's own two questions. 'run': may this agent start a run now (its pause and its
+// budgets decide). 'approve': an approval step the workflow's owner put in, which waits
+// for a person.
+export type EngineActionCategory = ActionCategory | 'run' | 'approve';
+
+// "May this agent do this here?" — answered centrally by the autopilot (hub/autopilot,
+// autopilotPolicyDecider), registered with setPolicyDecider.
 export interface PolicyDecider {
   decide(input: {
     agentId: number | null;
     projectId: number;
-    actionCategory: ActionCategory;
+    actionCategory: EngineActionCategory;
     // The task the action is about, when there is one.
     taskId?: number | null;
     // What is asked about, for the audit and a person deciding.

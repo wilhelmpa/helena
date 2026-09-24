@@ -460,10 +460,11 @@
       "pending": "In der Warteschlange",
       "running": "Läuft",
       "waiting": "Wartet",
-      "suspended": "Wartet auf Freigabe",
       "success": "Abgeschlossen",
       "failed": "Fehlgeschlagen",
-      "canceled": "Abgebrochen"
+      "canceled": "Abgebrochen",
+      "succeeded": "Abgeschlossen",
+      "skipped": "Übersprungen"
     },
     "outcome": {
       "review": "Aufgabe nach Review verschoben",

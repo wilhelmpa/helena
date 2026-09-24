@@ -40,14 +40,11 @@ export function ControlPlaneWorkflowPanel({
 
   return (
     <section className="space-y-3">
-      <div>
-        <h2 className="text-md font-medium">{t('title')}</h2>
-        <p className="text-xs text-muted-foreground">{t('description')}</p>
-      </div>
+      <h2 className="text-md font-medium">{t('title')}</h2>
       {workflows.isPending ? (
         <p className="text-sm text-muted-foreground">{t('loading')}</p>
       ) : workflows.isError ? (
-        <p className="rounded-lg border border-destructive/40 bg-card p-3 text-sm text-destructive">
+        <p className="rounded-md border border-destructive/40 bg-card p-3 text-sm text-destructive">
           {t('unavailable')}
           {workflows.error instanceof Error && workflows.error.message ? (
             <span className="mt-1 block text-xs text-muted-foreground">
@@ -56,13 +53,13 @@ export function ControlPlaneWorkflowPanel({
           ) : null}
         </p>
       ) : !workflows.data?.length ? (
-        <p className="rounded-lg border border-dashed bg-card p-4 text-sm text-muted-foreground">
+        <p className="rounded-md border border-dashed bg-card p-4 text-sm text-muted-foreground">
           {t('empty')}
         </p>
       ) : (
         <div className="space-y-3">
           {workflows.data?.map((workflow) => (
-            <article key={workflow.id} className="rounded-lg border bg-card p-4">
+            <article key={workflow.id} className="rounded-md border bg-card p-4">
               <div className="flex flex-wrap items-start gap-3">
                 <button
                   type="button"
@@ -76,7 +73,7 @@ export function ControlPlaneWorkflowPanel({
                     )}
                     {workflow.triggers.map((trigger) => (
                       <Badge key={trigger} variant="outline">
-                        {trigger}
+                        {trigger === 'delegation' ? t('triggerDelegation') : trigger}
                       </Badge>
                     ))}
                   </div>

@@ -6,12 +6,7 @@ import { LIMITS, type ApprovalStep } from '#modules/pipelines/definition';
 import { renderTemplate } from '#modules/pipelines/render';
 import { policyDecider } from '../../registry';
 import { clip, loadRun, renderContext, setRunStatus, stepRow, writeStep } from '../../run-context';
-import {
-  ACTION_CATEGORIES,
-  type StepContext,
-  type StepExecution,
-  type WorkflowStepType,
-} from '../../sdk';
+import { type StepContext, type StepExecution, type WorkflowStepType } from '../../sdk';
 import { engineWaitSeconds } from '../../dbos';
 
 // An approval gate: the run waits until a person with the actions edit permission
@@ -52,7 +47,7 @@ async function open(runId: string, step: ApprovalStep, at: StepExecution) {
   const policy = await policyDecider().decide({
     agentId: null,
     projectId: context.project.id,
-    actionCategory: step.category ?? 'publish',
+    actionCategory: 'approve',
     taskId: context.task?.id ?? null,
     subject: message,
   });
@@ -135,9 +130,6 @@ export const approvalStep: WorkflowStepType<Step> = {
         : null;
     const action = reader.choice(onReject?.action, 'onReject.action', ['end', 'goto'] as const);
     return {
-      ...(value.category === undefined
-        ? {}
-        : { category: reader.choice(value.category, 'category', ACTION_CATEGORIES) }),
       message: reader.text(value.message ?? '', 'message', LIMITS.message, false),
       onReject:
         action === 'end'

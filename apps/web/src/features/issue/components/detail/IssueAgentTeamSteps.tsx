@@ -5,12 +5,12 @@ import { cn } from '@/lib/utils';
 import { AGENT_TEAM_STEPS, agentTeamStepStatus } from '../../utils/agentTeam';
 
 const icon = {
-  success: Check,
+  succeeded: Check,
   running: LoaderCircle,
   failed: X,
 } as const;
 
-// The four stages of an agent-team run in order, each with its Mastra step status.
+// The four stages of an agent-team run in order, each with where it is.
 export default function IssueAgentTeamSteps({ run }: { run: AgentTeamRun }) {
   const t = useTranslations('issue.agentTeam.steps');
   return (
@@ -24,15 +24,14 @@ export default function IssueAgentTeamSteps({ run }: { run: AgentTeamRun }) {
             <span
               className={cn(
                 'flex items-center gap-1 rounded-full border px-2 py-0.5',
-                status === 'success' &&
-                  'border-emerald-500/40 text-emerald-700 dark:text-emerald-400',
-                status === 'running' && 'border-sky-500/40 text-sky-700 dark:text-sky-400',
+                status === 'succeeded' && 'border-status-success/40 text-status-success',
+                status === 'running' && 'border-status-running/40 text-status-running',
                 status === 'failed' && 'border-destructive/40 text-destructive',
                 !(status in icon) && 'text-muted-foreground',
               )}
             >
               <Icon className={cn('size-3', status === 'running' && 'animate-spin')} />
-              {t(step === 'synchronize-plan' ? 'synchronize' : step)}
+              {t(step)}
             </span>
           </li>
         );

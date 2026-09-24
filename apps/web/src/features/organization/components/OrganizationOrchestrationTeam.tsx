@@ -14,7 +14,7 @@ const statusClass = {
   offline: 'fill-muted-foreground/40 text-muted-foreground/40',
 };
 
-// The project's agents grouped by their agent-team role, with the capabilities Mastra
+// The project's agents grouped by their agent-team role, with the capabilities the Helena engine
 // routes on.
 export default function OrganizationOrchestrationTeam({ agents }: { agents: OrganizationAgent[] }) {
   const t = useTranslations('organization');

@@ -164,7 +164,12 @@
     "runResume": "运行恢复",
     "maxResumes": "恢复次数上限",
     "maxResumesHint": "在持有该运行的运行器在运行过程中崩溃后，该运行最多可以恢复其编码代理会话多少次，超过后它会自行停止并请求您查看。设为 0 则关闭恢复功能：中断的运行将改为从头重试。",
-    "savedRunResume": "恢复次数上限已保存"
+    "savedRunResume": "恢复次数上限已保存",
+    "engine": "工作流引擎",
+    "timezone": "时区",
+    "timezoneHint": "例行任务、工作流计划和等待步骤未指定时区时使用。服务器时区为 {server}。",
+    "timezoneServer": "使用服务器时区",
+    "savedTimezone": "时区已保存。"
   },
   "authentication": {
     "saved": "身份验证设置已保存",
@@ -350,31 +355,34 @@
     "title": "服务",
     "service": {
       "runner": "Hermes 运行器",
-      "mastra": "Mastra",
-      "bridge": "Hermes 团队桥接",
       "provisioning": "资源配置",
-      "worker": "Worker"
+      "worker": "Worker",
+      "engine": "Helena 引擎"
     },
     "seen": "{time}前在线",
     "lastSeen": "最后一次在线于{time}前",
     "neverSeen": "尚未见到",
     "waiting": "{count, plural, other {# 个运行}}等待领取，最早的已等待 {time}",
     "overdue": "{count, plural, other {# 个运行}}已超出时间限制仍在运行",
-    "agentTeamStartsWaiting": "{count, plural, other {# 个 agent-team 启动}}正在等待 Mastra",
-    "stalledWorkflowRuns": "{count, plural, other {# 个 agent-team 运行}}已 15 分钟没有进展",
+    "stalledWorkflowRuns": "{count} 个工作流运行已 30 分钟没有进展",
     "failedLastDay": "过去 24 小时内有{count, plural, other {# 个运行}}失败",
     "provisioningFailed": "{count, plural, other {# 个资源配置任务}}失败",
     "janitorsTitle": "清理任务",
     "janitor": {
       "run-janitor": "运行清理器",
-      "stage-janitor": "阶段清理器",
-      "workflow-schedules": "日程同步",
-      "resume-janitor": "恢复清理器"
+      "resume-janitor": "恢复清理器",
+      "engine-maintenance": "引擎维护"
     },
     "janitorRan": "{time}前运行过",
     "janitorCleaned": "{count, plural, other {清理了 # 项}}",
     "janitorNeverRan": "尚未运行",
     "resuming": "{count, plural, other {# 个运行}}正在崩溃后恢复",
-    "needsResumeReview": "{count, plural, other {# 个运行}}已达到恢复次数上限，需要查看"
+    "needsResumeReview": "{count, plural, other {# 个运行}}已达到恢复次数上限，需要查看",
+    "overdueSchedules": "{count} 个计划未按时触发",
+    "failedWorkflowRuns": "过去 24 小时内有 {count} 个工作流运行失败",
+    "engine": {
+      "summary": "引擎：{active} 运行中 · {waiting} 等待中 · {queued} 排队中 · {schedules} 个计划",
+      "failure": "{name} 于 {time} 前失败："
+    }
   }
 }

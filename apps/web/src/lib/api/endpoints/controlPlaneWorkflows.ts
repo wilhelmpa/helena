@@ -1,10 +1,15 @@
 import { request } from '@/lib/api/core/client';
+import { pageQuery, type Page, type PageParams } from '@/lib/api/core/paging';
+import type { PipelineRun } from '@/lib/api/endpoints/pipelines';
+
+// The built-in workflows of a project (the agent team), which the Helena engine runs.
+// Their runs are engine runs like a builder workflow's: canceled and retried through
+// /pipeline-runs (lib/api/endpoints/pipelines.ts).
 
 export interface WorkflowStep {
-  id?: string;
+  id: string;
   title: string;
   description: string;
-  sourceRefs?: string[];
 }
 
 export interface ProjectWorkflow {
@@ -15,7 +20,6 @@ export interface ProjectWorkflow {
   triggers: string[];
   capabilityRefs: string[];
   externalEffects: boolean;
-  currentLimits?: string[];
   assignment: {
     enabled: boolean;
     capabilityRefs: string[];
@@ -31,28 +35,6 @@ export interface ProjectWorkflow {
     createdAt?: string;
     updatedAt?: string;
   };
-}
-
-export interface WorkflowRun {
-  runId?: string;
-  id?: string;
-  status: string;
-  createdAt?: string;
-  updatedAt?: string;
-  suspendedPaths?: Record<string, unknown>;
-  steps?: Record<string, unknown>;
-  result?: unknown;
-  error?: unknown;
-}
-
-export interface WorkflowSchedule {
-  id: string;
-  workflowId: string;
-  cron?: string;
-  timezone?: string;
-  status?: string;
-  enabled?: boolean;
-  nextRunAt?: string;
 }
 
 export const listProjectWorkflows = (projectKey: string) =>
@@ -72,64 +54,7 @@ export const updateProjectWorkflow = (
     }),
   });
 
-export const listWorkflowRuns = (projectKey: string, workflowId: string) =>
-  request<{ runs?: WorkflowRun[] } | WorkflowRun[]>(
-    `/projects/${projectKey}/control-plane/workflows/${workflowId}/runs`,
-  );
-
-export const getWorkflowRun = (projectKey: string, workflowId: string, runId: string) =>
-  request<WorkflowRun>(
-    `/projects/${projectKey}/control-plane/workflows/${workflowId}/runs/${runId}`,
-  );
-
-export const decideWorkflow = (
-  projectKey: string,
-  workflowId: string,
-  runId: string,
-  approved: boolean,
-  note?: string,
-) =>
-  request<WorkflowRun>(
-    `/projects/${projectKey}/control-plane/workflows/${workflowId}/runs/${runId}/approval`,
-    { method: 'POST', body: JSON.stringify({ approved, note }) },
-  );
-
-export const cancelWorkflow = (projectKey: string, workflowId: string, runId: string) =>
-  request<WorkflowRun>(
-    `/projects/${projectKey}/control-plane/workflows/${workflowId}/runs/${runId}/cancel`,
-    { method: 'POST' },
-  );
-
-export const retryWorkflow = (projectKey: string, workflowId: string, runId: string) =>
-  request<WorkflowRun>(
-    `/projects/${projectKey}/control-plane/workflows/${workflowId}/runs/${runId}/retry`,
-    { method: 'POST' },
-  );
-
-export const listWorkflowSchedules = (projectKey: string, workflowId: string) =>
-  request<{ schedules: WorkflowSchedule[] }>(
-    `/projects/${projectKey}/control-plane/workflows/${workflowId}/schedules`,
-  );
-
-export const createWorkflowSchedule = (
-  projectKey: string,
-  workflowId: string,
-  input: { cron: string; timezone: string },
-) =>
-  request<WorkflowSchedule>(
-    `/projects/${projectKey}/control-plane/workflows/${workflowId}/schedules`,
-    { method: 'POST', body: JSON.stringify({ ...input, payload: {} }) },
-  );
-
-export const changeWorkflowSchedule = (
-  projectKey: string,
-  workflowId: string,
-  scheduleId: string,
-  action: 'pause' | 'resume' | 'run' | 'delete',
-) =>
-  request(
-    `/projects/${projectKey}/control-plane/workflows/${workflowId}/schedules/${scheduleId}${
-      action === 'delete' ? '' : `/${action}`
-    }`,
-    { method: action === 'delete' ? 'DELETE' : 'POST' },
+export const listWorkflowRuns = (projectKey: string, workflowId: string, params: PageParams) =>
+  request<Page<PipelineRun>>(
+    `/projects/${projectKey}/control-plane/workflows/${workflowId}/runs${pageQuery(params)}`,
   );

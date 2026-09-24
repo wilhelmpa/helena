@@ -52,7 +52,8 @@
     "success": "Erfolgreich",
     "failed": "Fehlgeschlagen",
     "canceled": "Abgebrochen",
-    "running": "Läuft"
+    "running": "Läuft",
+    "skipped": "Übersprungen"
   },
   "outcome": {
     "created": "<task>{identifier}</task> erstellt",
@@ -95,5 +96,12 @@
     "through": "{start} bis {end}",
     "dayOrdinal": "{n}."
   },
-  "invalidSchedule": "Kein gültiger Zeitplan. Beispiel: 0 9 * * 1-5 (Montag bis Freitag um 9:00)."
+  "invalidSchedule": "Kein gültiger Zeitplan. Beispiel: 0 9 * * 1-5 (Montag bis Freitag um 9:00).",
+  "history": "Verlauf",
+  "historyTitle": "Läufe von {name}",
+  "historyFailed": "Die Läufe konnten nicht geladen werden.",
+  "catchUp": "Nach einem Ausfall",
+  "catchUpSkip": "Verpasste Zeiten überspringen",
+  "catchUpOnce": "Die letzte verpasste Zeit einmal nachholen",
+  "catchUpHint": "Wenn der Server zu einer geplanten Zeit nicht lief. Ältere verpasste Zeiten werden nie nachgeholt."
 }

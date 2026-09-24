@@ -7,12 +7,8 @@ import {
   listApprovals,
   type ApprovalDecision,
   type ApprovalListStatus,
-  type WorkflowGate,
-  type WorkflowGateList,
 } from '@/lib/api/endpoints/approvals';
-import { decideWorkflow } from '@/lib/api/endpoints/controlPlaneWorkflows';
 import { qk } from '@/services/queryKeys';
-import { withoutGate } from '../utils/workflowGates';
 
 export const useApprovals = (status: ApprovalListStatus, params: PageParams, projectKey?: string) =>
   useQuery({
@@ -34,28 +30,6 @@ export function useDecideApproval() {
         client.invalidateQueries({ queryKey: qk.approvalLists }),
         client.invalidateQueries({ queryKey: qk.approvalsPendingCountAll }),
       ]);
-    },
-  });
-}
-
-export function useDecideWorkflowGate() {
-  const client = useQueryClient();
-  const t = useTranslations('approvals');
-  return useMutation({
-    mutationFn: ({ gate, decision }: { gate: WorkflowGate; decision: ApprovalDecision }) =>
-      decideWorkflow(
-        gate.projectKey,
-        gate.workflowId,
-        gate.runId,
-        decision.approved,
-        decision.note,
-      ),
-    onSuccess: (_, { gate, decision }) => {
-      toast.success(t(decision.approved ? 'gateApprovedToast' : 'gateRejectedToast'));
-      client.setQueryData<WorkflowGateList>(qk.workflowGates, (list) => withoutGate(list, gate));
-      return client.invalidateQueries({
-        queryKey: qk.controlPlaneWorkflowRuns(gate.projectKey, gate.workflowId),
-      });
     },
   });
 }

@@ -48,6 +48,8 @@ export const STEP_FIELDS: Record<StepKind, readonly string[]> = {
     'action.description',
   ],
   wait: ['wait.kind', 'wait.minutes', 'wait.time', 'wait.field'],
+  notify: ['to.kind', 'to.userIds', 'message'],
+  webhook: ['url', 'message'],
 };
 
 export const stepIssues = (issues: DefinitionIssue[], stepId: string) =>

@@ -1,7 +1,7 @@
 {
   "title": "Atividade",
-  "projectDescription": "O que os agentes deste projeto fizeram, do mais recente ao mais antigo: suas respostas de chat, as execuções deles e as execuções da equipe de agentes e dos fluxos no Mastra.",
-  "homeDescription": "O que os agentes dos seus projetos fizeram, do mais recente ao mais antigo: suas respostas de chat, as execuções deles e as execuções da equipe de agentes e dos fluxos no Mastra.",
+  "projectDescription": "O que os agentes deste projeto fizeram, do mais recente: suas respostas no chat, as execuções deles e as de equipes de agentes, fluxos e rotinas.",
+  "homeDescription": "O que os agentes dos seus projetos fizeram, do mais recente: suas respostas no chat, as execuções deles e as de equipes de agentes, fluxos e rotinas.",
   "allKinds": "Todos os tipos",
   "allAgents": "Todos os agentes",
   "kinds": {
@@ -37,10 +37,6 @@
   "empty": "Nenhuma atividade ainda",
   "emptyHint": "Respostas de chat e execuções de agentes e fluxos aparecem aqui assim que os agentes trabalham.",
   "unavailable": "Não foi possível carregar a atividade.",
-  "notice": {
-    "workflow-runs-unavailable": "O Mastra não respondeu, então as execuções de fluxos ficaram de fora.",
-    "workflow-runs-limited": "Nem todas as execuções de fluxos aparecem: a linha do tempo lê do Mastra um número limitado de fluxos e execuções."
-  },
   "filterKind": "Tipo",
   "filterAgent": "Agente",
   "unavailableHint": "O servidor não respondeu. Tente de novo em instantes."

@@ -128,12 +128,12 @@
     "teamDescription": "Los roles y las capacidades se aplican a todos los proyectos del equipo. Solo los agentes que se ejecutan en Hermes participan en una ejecución del equipo.",
     "editRoles": "Define roles y capacidades en la pestaña Agentes.",
     "policyTitle": "Flujo agent-team",
-    "policyDescription": "Se ejecuta en Mastra cuando una tarea se delega a un coordinador.",
+    "policyDescription": "Se ejecuta cuando una tarea se delega a un coordinador.",
     "on": "Activo",
     "off": "Inactivo",
     "configure": "Configurar",
     "loading": "Cargando flujo…",
-    "unavailable": "La lista de flujos no está disponible. Comprueba que Mastra esté en marcha.",
+    "unavailable": "La lista de flujos de trabajo no está disponible ahora.",
     "offHint": "Inactivo en este proyecto: una tarea delegada a un coordinador se pone en cola solo para ese agente.",
     "result": "Resultado",
     "autonomyReview": "La tarea pasa a Revisión",
@@ -155,14 +155,14 @@
       "directTitle": "Directamente",
       "direct": "Un chat, una @mención o una tarea asignada a un agente va directamente a ese agente en Hermes.",
       "teamTitle": "A través del equipo de agentes",
-      "team": "Una tarea delegada a un coordinador, o iniciada desde la sección Equipo de agentes de la tarea, se ejecuta en Mastra:",
+      "team": "Una tarea delegada a un coordinador, o iniciada desde la sección Equipo de agentes de la tarea, se ejecuta así:",
       "stages": {
         "coordinate": "El coordinador divide la tarea en encargos.",
         "specialize": "Los especialistas trabajan en ellos en Hermes, los independientes en paralelo.",
         "review": "El coordinador revisa los resultados.",
         "synchronize": "El resumen y las evidencias se escriben en la tarea, que pasa a Revisión o Hecho."
       },
-      "route": "Cuando las etiquetas de la tarea coinciden con las capacidades de un solo especialista, o el proyecto solo tiene uno, Mastra omite el plan y asigna la tarea directamente."
+      "route": "Si las etiquetas de la tarea coinciden con las capacidades de un solo especialista, o el proyecto solo tiene uno, Helena omite el plan y asigna la tarea directamente."
     },
     "usage": {
       "title": "Consumo de tokens",

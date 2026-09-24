@@ -15,8 +15,10 @@ import PipelineAgentStepForm from './PipelineAgentStepForm';
 import PipelineApprovalStepForm from './PipelineApprovalStepForm';
 import PipelineConditionStepForm from './PipelineConditionStepForm';
 import PipelineField from './PipelineField';
+import PipelineNotifyStepForm from './PipelineNotifyStepForm';
 import PipelineStepDetails from './PipelineStepDetails';
 import PipelineWaitStepForm from './PipelineWaitStepForm';
+import PipelineWebhookStepForm from './PipelineWebhookStepForm';
 
 // The selected step: a form for its kind, or its values for a reader. Problems of the
 // step no field shows are listed at the top.
@@ -71,6 +73,8 @@ export default function PipelineStepInspector() {
           {step.type === 'condition' && <PipelineConditionStepForm step={step} onChange={update} />}
           {step.type === 'action' && <PipelineActionStepForm step={step} onChange={update} />}
           {step.type === 'wait' && <PipelineWaitStepForm step={step} onChange={update} />}
+          {step.type === 'notify' && <PipelineNotifyStepForm step={step} onChange={update} />}
+          {step.type === 'webhook' && <PipelineWebhookStepForm step={step} onChange={update} />}
         </>
       ) : (
         <PipelineStepDetails step={step} />

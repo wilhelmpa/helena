@@ -30,11 +30,8 @@
   "rejectedBy": "رفضه {name}",
   "someone": "شخص ما",
   "workflows": "موافقات سير العمل",
-  "workflowsIncomplete": "تعذرت قراءة سير العمل في بعض المشاريع، لذا قد تنقص موافقاته هنا.",
   "gateOf": "{workflow} في {project}",
   "effects": "يُنفَّذ بعد الموافقة:",
-  "gateApprovedToast": "تمت الموافقة. يستمر سير العمل.",
-  "gateRejectedToast": "تم الرفض. ينتهي سير العمل دون هذه التأثيرات.",
   "loadFailed": "تعذّر تحميل الموافقات.",
   "loadFailedHint": "لم يستجب الخادم. حاول مرة أخرى بعد قليل."
 }

@@ -460,10 +460,11 @@
       "pending": "En cola",
       "running": "En curso",
       "waiting": "En espera",
-      "suspended": "Esperando aprobación",
       "success": "Terminado",
       "failed": "Fallido",
-      "canceled": "Cancelado"
+      "canceled": "Cancelado",
+      "succeeded": "Terminado",
+      "skipped": "Omitido"
     },
     "outcome": {
       "review": "Tarea movida a Revisión",

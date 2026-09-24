@@ -164,7 +164,12 @@
     "runResume": "استئناف التشغيلات",
     "maxResumes": "حد الاستئناف",
     "maxResumesHint": "كم مرة يمكن لتشغيل استئناف جلسة وكيل البرمجة الخاصة به بعد وفاة المشغل الذي كان يحمله في منتصف التشغيل، قبل أن يتوقف من تلقاء نفسه ويطلب منك مراجعته. القيمة 0 تُوقف الاستئناف: يُعاد المحاولة على تشغيل متوقف من جديد بدلاً من ذلك.",
-    "savedRunResume": "تم حفظ حد الاستئناف"
+    "savedRunResume": "تم حفظ حد الاستئناف",
+    "engine": "محرك سير العمل",
+    "timezone": "المنطقة الزمنية",
+    "timezoneHint": "تستخدمها المهام الدورية وجداول سير العمل وخطوات الانتظار عندما لا تحدد منطقة. منطقة الخادم هي {server}.",
+    "timezoneServer": "استخدام منطقة الخادم",
+    "savedTimezone": "تم حفظ المنطقة الزمنية."
   },
   "authentication": {
     "saved": "تم حفظ إعدادات المصادقة",
@@ -350,31 +355,34 @@
     "title": "الخدمات",
     "service": {
       "runner": "مشغّل Hermes",
-      "mastra": "Mastra",
-      "bridge": "جسر فريق Hermes",
       "provisioning": "التجهيز",
-      "worker": "العامل"
+      "worker": "العامل",
+      "engine": "محرك Helena"
     },
     "seen": "شوهد قبل {time}",
     "lastSeen": "آخر ظهور قبل {time}",
     "neverSeen": "لم يُشاهد بعد",
     "waiting": "{count, plural, zero {لا تشغيلات تنتظر} one {تشغيل واحد ينتظر} two {تشغيلان ينتظران} few {# تشغيلات تنتظر} many {# تشغيلًا ينتظر} other {# تشغيل ينتظر}} الاستلام، أقدمها منذ {time}",
     "overdue": "{count, plural, zero {لا تشغيلات} one {تشغيل واحد لا يزال يعمل} two {تشغيلان لا يزالان يعملان} few {# تشغيلات لا تزال تعمل} many {# تشغيلًا لا يزال يعمل} other {# تشغيل لا يزال يعمل}} بعد تجاوز الحد الزمني",
-    "agentTeamStartsWaiting": "{count, plural, zero {لا بدايات لـ agent-team} one {بداية واحدة لـ agent-team تنتظر} two {بدايتان لـ agent-team تنتظران} few {# بدايات لـ agent-team تنتظر} many {# بداية لـ agent-team تنتظر} other {# بداية لـ agent-team تنتظر}} Mastra",
-    "stalledWorkflowRuns": "{count, plural, zero {لا تشغيلات لـ agent-team} one {تشغيل واحد لـ agent-team لم يتقدم} two {تشغيلان لـ agent-team لم يتقدما} few {# تشغيلات لـ agent-team لم تتقدم} many {# تشغيلًا لـ agent-team لم يتقدم} other {# تشغيل لـ agent-team لم يتقدم}} منذ 15 دقيقة",
+    "stalledWorkflowRuns": "{count, plural, zero {لم يتقدم أي تشغيل} one {لم يتقدم تشغيل واحد} two {لم يتقدم تشغيلان} few {لم تتقدم # عمليات تشغيل} many {لم تتقدم # عملية تشغيل} other {لم تتقدم # عملية تشغيل}} منذ 30 دقيقة",
     "failedLastDay": "{count, plural, zero {لم يفشل أي تشغيل} one {فشل تشغيل واحد} two {فشل تشغيلان} few {فشلت # تشغيلات} many {فشل # تشغيلًا} other {فشل # تشغيل}} خلال آخر 24 ساعة",
     "provisioningFailed": "{count, plural, zero {لم تفشل أي مهمة تجهيز} one {فشلت مهمة تجهيز واحدة} two {فشلت مهمتا تجهيز} few {فشلت # مهام تجهيز} many {فشلت # مهمة تجهيز} other {فشلت # مهمة تجهيز}}",
     "janitorsTitle": "عمليات التنظيف",
     "janitor": {
       "run-janitor": "منظف التشغيلات",
-      "stage-janitor": "منظف المراحل",
-      "workflow-schedules": "مزامنة الجداول الزمنية",
-      "resume-janitor": "منظف الاستئناف"
+      "resume-janitor": "منظف الاستئناف",
+      "engine-maintenance": "صيانة المحرك"
     },
     "janitorRan": "عمل قبل {time}",
     "janitorCleaned": "{count, plural, zero {لم يتم تنظيف شيء} one {تم تنظيف عنصر واحد} two {تم تنظيف عنصرين} few {تم تنظيف # عناصر} many {تم تنظيف # عنصرًا} other {تم تنظيف # عنصر}}",
     "janitorNeverRan": "لم يعمل بعد",
     "resuming": "{count, plural, zero {لا تشغيلات} one {تشغيل واحد يُستأنف} two {تشغيلان يُستأنفان} few {# تشغيلات تُستأنف} many {# تشغيلًا يُستأنف} other {# تشغيل يُستأنف}} بعد تعطل",
-    "needsResumeReview": "{count, plural, zero {لا تشغيلات} one {تشغيل واحد بلغ} two {تشغيلان بلغا} few {# تشغيلات بلغت} many {# تشغيلًا بلغ} other {# تشغيل بلغ}} حد الاستئناف ويحتاج إلى مراجعة"
+    "needsResumeReview": "{count, plural, zero {لا تشغيلات} one {تشغيل واحد بلغ} two {تشغيلان بلغا} few {# تشغيلات بلغت} many {# تشغيلًا بلغ} other {# تشغيل بلغ}} حد الاستئناف ويحتاج إلى مراجعة",
+    "overdueSchedules": "{count, plural, zero {لم ينطلق أي جدول} one {لم ينطلق جدول واحد} two {لم ينطلق جدولان} few {لم تنطلق # جداول} many {لم ينطلق # جدولًا} other {لم ينطلق # جدول}} في موعده",
+    "failedWorkflowRuns": "{count, plural, zero {لم يفشل أي تشغيل} one {فشل تشغيل واحد} two {فشل تشغيلان} few {فشلت # عمليات تشغيل} many {فشلت # عملية تشغيل} other {فشلت # عملية تشغيل}} خلال آخر 24 ساعة",
+    "engine": {
+      "summary": "المحرك: {active} يعمل · {waiting} ينتظر · {queued} في الطابور · {schedules} جداول",
+      "failure": "فشل {name} قبل {time}:"
+    }
   }
 }

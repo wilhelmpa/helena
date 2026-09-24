@@ -7,34 +7,38 @@ export type HealthProblem =
         | 'overdue'
         | 'resuming'
         | 'needsResumeReview'
-        | 'agentTeamStartsWaiting'
         | 'stalledWorkflowRuns'
+        | 'overdueSchedules'
         | 'failedLastDay'
+        | 'failedWorkflowRuns'
         | 'provisioningFailed';
       count: number;
     };
 
-// What of the agent runs needs the owner's attention, most urgent first. A count of
-// zero, and one Mastra could not be asked for, is left out. `resuming` is not itself a
-// problem -- a run picking its session back up is the point of resuming -- but it is
-// worth naming so the owner sees resilience working rather than wondering why a run
-// they know crashed is still going.
-export function healthProblems(runs: SystemHealth['runs']): HealthProblem[] {
+// What of the agent runs and the engine's runs needs the owner's attention, most
+// urgent first. A count of zero is left out. `resuming` is not itself a problem -- a run
+// picking its session back up is the point of resuming -- but it is worth naming so the
+// owner sees resilience working rather than wondering why a run they know crashed is
+// still going.
+export function healthProblems(
+  runs: SystemHealth['runs'],
+  engine?: Pick<SystemHealth['engine'], 'stalled' | 'overdueSchedules' | 'failedLastDay'>,
+): HealthProblem[] {
   const problems: HealthProblem[] = [];
   if (runs.waiting > 0)
     problems.push({ key: 'waiting', count: runs.waiting, since: runs.oldestWaitingSince });
-  for (const key of [
-    'overdue',
-    'resuming',
-    'needsResumeReview',
-    'agentTeamStartsWaiting',
-    'stalledWorkflowRuns',
-    'failedLastDay',
-    'provisioningFailed',
-  ] as const) {
-    const count = runs[key] ?? 0;
+  const counts = {
+    overdue: runs.overdue,
+    resuming: runs.resuming,
+    needsResumeReview: runs.needsResumeReview,
+    stalledWorkflowRuns: engine?.stalled ?? 0,
+    overdueSchedules: engine?.overdueSchedules ?? 0,
+    failedLastDay: runs.failedLastDay,
+    failedWorkflowRuns: engine?.failedLastDay ?? 0,
+    provisioningFailed: runs.provisioningFailed,
+  };
+  for (const [key, count] of Object.entries(counts) as [keyof typeof counts, number][])
     if (count > 0) problems.push({ key, count });
-  }
   return problems;
 }
 

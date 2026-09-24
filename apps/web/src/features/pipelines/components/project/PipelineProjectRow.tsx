@@ -10,6 +10,7 @@ import { useSetProjectPipeline } from '@/services/pipelines.service';
 import { pipelinePath, projectPipelinePath } from '@/utils/paths';
 import { usePipelineLabels } from '../../hooks/usePipelineLabels';
 import PipelineIssueList from '../PipelineIssueList';
+import PipelineHookPanel from './PipelineHookPanel';
 import PipelineRoleMapping from './PipelineRoleMapping';
 
 // One workflow the project can use. Turning it on is refused with the reason when it
@@ -82,6 +83,9 @@ export default function PipelineProjectRow({
             set.mutate({ pipelineId: pipeline.id, enabled: entry.enabled, roles })
           }
         />
+      )}
+      {pipeline.definition.trigger.type === 'webhook' && entry.enabled && (
+        <PipelineHookPanel projectKey={projectKey} pipelineId={pipeline.id} editable={editable} />
       )}
       {entry.issues.length > 0 && (
         <div className="space-y-1">

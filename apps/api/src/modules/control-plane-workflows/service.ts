@@ -22,14 +22,24 @@ interface ProjectContext {
   teamId: number;
 }
 
+interface CatalogEntry {
+  id: string;
+  name: string;
+  description: string;
+  capabilityRefs: string[];
+  externalEffects: boolean;
+  triggers: string[];
+  steps: { id: string; title: string; description: string }[];
+}
+
 // What the settings page shows of a built-in workflow.
-export const CATALOG = [
+export const CATALOG: CatalogEntry[] = [
   {
     id: AGENT_TEAM,
     name: 'Project agent team',
     description:
       'The coordinator plans a delegated task, specialists do the work in dependency order, the coordinator reviews it, and the result goes to the task.',
-    capabilityRefs: [] as string[],
+    capabilityRefs: [],
     externalEffects: false,
     triggers: ['delegation'],
     steps: [
@@ -59,7 +69,7 @@ export const CATALOG = [
       },
     ],
   },
-] as const;
+];
 
 // The agent-team settings with their defaults: the coordinator reviews the work, the
 // task stays in Review for a person, and Hermes keeps its own turn and time limits.
@@ -176,16 +186,15 @@ export async function isWorkflowEnabled(projectId: number, workflowId: string) {
 export async function listWorkflowRuns(
   project: ProjectContext,
   workflowId: string,
-  page = 0,
-  pageSize = 20,
+  window: { limit: number; offset: number },
 ) {
   catalogEntry(workflowId);
   const where = and(eq(pipelineRun.projectId, project.id), eq(pipelineRun.kind, 'agent_team'));
-  const [runs, [total]] = await Promise.all([
-    runDtos(where, { limit: pageSize, offset: page * pageSize }),
+  const [items, [total]] = await Promise.all([
+    runDtos(where, window),
     db.select({ value: count() }).from(pipelineRun).where(where),
   ]);
-  return { runs, total: total?.value ?? 0 };
+  return { items, total: total?.value ?? 0 };
 }
 
 export async function getWorkflowRun(project: ProjectContext, workflowId: string, runId: string) {

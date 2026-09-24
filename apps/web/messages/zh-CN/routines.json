@@ -52,7 +52,8 @@
     "success": "成功",
     "failed": "失败",
     "canceled": "已取消",
-    "running": "运行中"
+    "running": "运行中",
+    "skipped": "已跳过"
   },
   "outcome": {
     "created": "已创建 <task>{identifier}</task>",
@@ -95,5 +96,12 @@
     "through": "{start}至{end}",
     "dayOrdinal": "{n}"
   },
-  "invalidSchedule": "不是有效的计划。示例：0 9 * * 1-5（周一至周五 9:00）。"
+  "invalidSchedule": "不是有效的计划。示例：0 9 * * 1-5（周一至周五 9:00）。",
+  "history": "历史",
+  "historyTitle": "{name} 的运行记录",
+  "historyFailed": "无法加载运行记录。",
+  "catchUp": "停机之后",
+  "catchUpSkip": "跳过错过的时间",
+  "catchUpOnce": "补运行一次最近错过的时间",
+  "catchUpHint": "当服务器在计划时间未运行时适用。更早错过的时间永远不会补运行。"
 }

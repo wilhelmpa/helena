@@ -177,18 +177,27 @@ export function newStep(
       return { id, name, type: 'action', action: { kind: 'comment', body: '' } };
     case 'wait':
       return { id, name, type: 'wait', wait: { kind: 'delay', minutes: 60 } };
+    case 'notify':
+      return { id, name, type: 'notify', to: { kind: 'assignee' }, message: '' };
+    case 'webhook':
+      return { id, name, type: 'webhook', url: '', message: '' };
   }
 }
 
-// The trigger of the type with the fields it needs, empty or at a common default.
-export function triggerOf(type: TriggerType): PipelineTrigger {
+// The trigger of the type with the fields it needs, empty or at a common default. A
+// schedule starts in the instance's time zone.
+export function triggerOf(type: TriggerType, timezone = 'Europe/Berlin'): PipelineTrigger {
   switch (type) {
     case 'status_changed':
       return { type, to: null };
     case 'label_added':
       return { type, label: '' };
     case 'schedule':
-      return { type, cron: '0 9 * * 1-5', timezone: 'Europe/Berlin', title: '' };
+      return { type, cron: '0 9 * * 1-5', timezone, title: '' };
+    case 'webhook':
+      return { type, title: '' };
+    case 'mail_received':
+      return { type, from: '', subject: '' };
     default:
       return { type };
   }

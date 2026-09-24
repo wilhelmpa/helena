@@ -52,7 +52,8 @@
     "success": "Concluída",
     "failed": "Falhou",
     "canceled": "Cancelada",
-    "running": "Em execução"
+    "running": "Em execução",
+    "skipped": "Ignorado"
   },
   "outcome": {
     "created": "Criou <task>{identifier}</task>",
@@ -95,5 +96,12 @@
     "through": "{start} a {end}",
     "dayOrdinal": "{n}"
   },
-  "invalidSchedule": "Agendamento inválido. Exemplo: 0 9 * * 1-5 (de segunda a sexta às 9h)."
+  "invalidSchedule": "Agendamento inválido. Exemplo: 0 9 * * 1-5 (de segunda a sexta às 9h).",
+  "history": "Histórico",
+  "historyTitle": "Execuções de {name}",
+  "historyFailed": "Não foi possível carregar as execuções.",
+  "catchUp": "Após uma queda",
+  "catchUpSkip": "Ignorar horários perdidos",
+  "catchUpOnce": "Executar uma vez o último horário perdido",
+  "catchUpHint": "Quando o servidor estava parado num horário agendado. Horários perdidos mais antigos nunca são executados."
 }

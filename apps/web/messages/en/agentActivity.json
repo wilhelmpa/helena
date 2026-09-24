@@ -1,7 +1,7 @@
 {
   "title": "Activity",
-  "projectDescription": "What the agents of this project did, newest first: your chat answers, their runs, and the agent-team and workflow runs in Mastra.",
-  "homeDescription": "What the agents of your projects did, newest first: your chat answers, their runs, and the agent-team and workflow runs in Mastra.",
+  "projectDescription": "What the agents of this project did, newest first: your chat answers, their runs, and the agent-team, workflow and routine runs.",
+  "homeDescription": "What the agents of your projects did, newest first: your chat answers, their runs, and the agent-team, workflow and routine runs.",
   "allKinds": "All kinds",
   "allAgents": "All agents",
   "kinds": {
@@ -37,10 +37,6 @@
   "empty": "No activity yet",
   "emptyHint": "Chat answers, agent runs and workflow runs show up here once the agents work.",
   "unavailable": "The activity could not be loaded.",
-  "notice": {
-    "workflow-runs-unavailable": "Mastra did not answer, so workflow runs are left out.",
-    "workflow-runs-limited": "Not every workflow run is shown: the timeline reads a limited number of workflows and runs from Mastra."
-  },
   "filterKind": "Kind",
   "filterAgent": "Agent",
   "unavailableHint": "The server did not answer. Try again in a moment."

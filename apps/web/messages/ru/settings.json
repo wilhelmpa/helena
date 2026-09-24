@@ -386,11 +386,10 @@
     "deleteTemplateMessage": "The template will be removed. Projects that already used it are unchanged.",
     "noTemplates": "No reusable templates yet.",
     "controlPlane": {
-      "title": "Mastra control plane",
-      "description": "Project bindings, workflow graphs, runs, approval gates, and Mastra-owned schedules.",
+      "title": "Встроенные процессы",
       "loading": "Loading workflows…",
-      "unavailable": "The workflow control plane is unavailable.",
-      "empty": "No Mastra workflows are available for this project.",
+      "unavailable": "Сейчас не удаётся загрузить процессы.",
+      "empty": "Для этого проекта нет встроенных процессов.",
       "approvalRequired": "Approval required",
       "enabled": "Enabled",
       "disabled": "Disabled",
@@ -400,21 +399,9 @@
       "retryLimit": "Retry limit",
       "saveConfiguration": "Save configuration",
       "notConfigured": "Not configured",
-      "graph": "Workflow graph",
-      "recentRuns": "Recent runs",
-      "noRuns": "No runs for this project.",
-      "reject": "Reject",
-      "approve": "Approve",
-      "retry": "Retry",
-      "stopRun": "Stop run",
-      "schedules": "Mastra schedules",
-      "cron": "Cron",
-      "timezone": "Timezone",
-      "addSchedule": "Add schedule",
-      "runNow": "Run now",
-      "pauseSchedule": "Pause schedule",
-      "resumeSchedule": "Resume schedule",
-      "delete": "Delete",
+      "graph": "Шаги",
+      "recentRuns": "Запуски",
+      "noRuns": "В этом проекте ещё нет запусков.",
       "agentTeam": {
         "result": "Результат",
         "autonomyReview": "Задача переходит в «Ревью»",
@@ -427,7 +414,9 @@
         "noLimit": "Без ограничения",
         "hint": "Ограничения действуют на каждый этап в Hermes. Этап, достигший их, останавливается и сообщает, что успел."
       },
-      "configurationSaved": "{name}: настройки сохранены"
+      "configurationSaved": "{name}: настройки сохранены",
+      "runsUnavailable": "Не удалось загрузить запуски.",
+      "triggerDelegation": "Делегирование координатору"
     }
   },
   "webhooks": {

@@ -128,12 +128,12 @@
     "teamDescription": "Rollen und Fähigkeiten gelten für alle Projekte des Teams. Nur Agenten, die in Hermes laufen, nehmen an einem Teamlauf teil.",
     "editRoles": "Rollen und Fähigkeiten legst du im Tab „Agenten“ fest.",
     "policyTitle": "Agententeam-Workflow",
-    "policyDescription": "Läuft in Mastra, wenn eine Aufgabe an einen Coordinator delegiert wird.",
+    "policyDescription": "Läuft, wenn eine Aufgabe an einen Koordinator delegiert wird.",
     "on": "An",
     "off": "Aus",
     "configure": "Konfigurieren",
     "loading": "Workflow wird geladen…",
-    "unavailable": "Die Workflow-Liste ist nicht verfügbar. Prüfe, ob Mastra läuft.",
+    "unavailable": "Die Workflow-Liste ist gerade nicht verfügbar.",
     "offHint": "Für dieses Projekt aus: Eine an einen Coordinator delegierte Aufgabe wird nur für diesen Agenten in die Warteschlange gestellt.",
     "result": "Ergebnis",
     "autonomyReview": "Aufgabe geht in „Review“",
@@ -155,14 +155,14 @@
       "directTitle": "Direkt",
       "direct": "Ein Chat, eine @Erwähnung oder eine Aufgabe, die einem einzelnen Agenten zugewiesen ist, geht direkt an diesen Agenten in Hermes.",
       "teamTitle": "Über das Agententeam",
-      "team": "Eine Aufgabe, die an einen Coordinator delegiert oder im Abschnitt „Agententeam“ der Aufgabe gestartet wird, läuft in Mastra:",
+      "team": "Eine an einen Koordinator delegierte oder im Abschnitt Agent-Team der Aufgabe gestartete Aufgabe läuft so ab:",
       "stages": {
         "coordinate": "Der Coordinator teilt die Aufgabe in Arbeitspakete auf.",
         "specialize": "Specialists bearbeiten sie in Hermes, voneinander unabhängige parallel.",
         "review": "Der Coordinator prüft die Ergebnisse.",
         "synchronize": "Zusammenfassung und Nachweise werden in die Aufgabe geschrieben, die dann nach „Review“ oder „Erledigt“ wechselt."
       },
-      "route": "Passen die Labels der Aufgabe zu den Fähigkeiten genau eines Specialists oder hat das Projekt nur einen, überspringt Mastra den Plan und weist die Aufgabe direkt zu."
+      "route": "Passen die Labels der Aufgabe zu den Fähigkeiten genau eines Spezialisten oder hat das Projekt nur einen, überspringt Helena die Planung und weist die Aufgabe direkt zu."
     },
     "usage": {
       "title": "Token-Verbrauch",

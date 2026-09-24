@@ -81,7 +81,6 @@ async function finish(
   await writeStep(runId, step, at, {
     status: 'succeeded',
     outcome: result.outcome,
-    summary: result.outcome,
     state: { taskId: result.taskId, result },
     finishedAt: new Date(),
   });

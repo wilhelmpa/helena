@@ -3,11 +3,24 @@ import { pageQuery, type Page, type PageParams } from '@/lib/api/core/paging';
 import type { ApprovalDecision } from '@/lib/api/endpoints/approvals';
 
 // The workflow builder: templates in the team's library in Home, a project's own
-// workflows, their use in a project and their runs. The definition types mirror
-// apps/api/src/modules/pipelines/definition.ts.
+// workflows, their use in a project and their runs, which the Helena engine executes.
+// The definition types mirror apps/api/src/modules/pipelines/definition.ts.
 
-export const STEP_KINDS = ['agent', 'approval', 'condition', 'action', 'wait'] as const;
+// The steps a person puts together in the builder.
+export const STEP_KINDS = [
+  'agent',
+  'approval',
+  'condition',
+  'action',
+  'wait',
+  'notify',
+  'webhook',
+] as const;
 export type StepKind = (typeof STEP_KINDS)[number];
+
+// What a run can show besides: the work of a routine and of an agent team, which the
+// engine builds itself.
+export type RunStepKind = StepKind | 'delegate' | 'agent_team';
 
 export const TRIGGER_TYPES = [
   'manual',
@@ -16,15 +29,24 @@ export const TRIGGER_TYPES = [
   'status_changed',
   'label_added',
   'schedule',
+  'webhook',
+  'mail_received',
 ] as const;
 export type TriggerType = (typeof TRIGGER_TYPES)[number];
+
+// What started a run: a builder trigger, or a routine or an agent team (delegation).
+export type RunTrigger = TriggerType | 'routine' | 'delegation';
 
 export type PipelineTrigger =
   | { type: 'manual' | 'task_created' | 'task_assigned' }
   // `to` is a status name; null fires on every change.
   | { type: 'status_changed'; to: string | null }
   | { type: 'label_added'; label: string }
-  | { type: 'schedule'; cron: string; timezone: string; title: string };
+  | { type: 'schedule'; cron: string; timezone: string; title: string }
+  // Every request to the workflow's hook creates a task with `title` and runs on it.
+  | { type: 'webhook'; title: string }
+  // Every new mail that matches creates a task with its subject; empty filters match all.
+  | { type: 'mail_received'; from: string; subject: string };
 
 export type RoleMatch =
   | { type: 'coordinator' }
@@ -69,8 +91,12 @@ export type TaskAction =
 
 export type WaitSpec =
   | { kind: 'delay'; minutes: number }
-  // The day of the task's date field at `time` (HH:MM, Europe/Berlin).
+  // The day of the task's date field at `time` (HH:MM, the instance's time zone).
   | { kind: 'until'; field: 'dueDate' | 'startDate'; time: string };
+
+export const NOTIFY_RECIPIENTS = ['assignee', 'watchers', 'members'] as const;
+export type NotifyRecipients =
+  { kind: 'assignee' } | { kind: 'watchers' } | { kind: 'members'; userIds: string[] };
 
 interface StepBase {
   id: string;
@@ -112,7 +138,23 @@ export interface WaitStep extends StepBase {
   wait: WaitSpec;
 }
 
-export type PipelineStep = AgentStep | ApprovalStep | ConditionStep | ActionStep | WaitStep;
+// Tells people about the run: a comment on the task and a notification.
+export interface NotifyStep extends StepBase {
+  type: 'notify';
+  to: NotifyRecipients;
+  message: string;
+}
+
+// Sends the task and the results so far to a URL, signed per Standard Webhooks with the
+// project's signing secret. The answer's status decides the outcome.
+export interface WebhookStep extends StepBase {
+  type: 'webhook';
+  url: string;
+  message: string;
+}
+
+export type PipelineStep =
+  AgentStep | ApprovalStep | ConditionStep | ActionStep | WaitStep | NotifyStep | WebhookStep;
 
 export interface PipelineDefinition {
   schemaVersion: 1;
@@ -208,15 +250,17 @@ export interface ProjectPipeline {
 }
 
 export type PipelineRunStatus =
-  'pending' | 'running' | 'waiting' | 'succeeded' | 'failed' | 'canceled' | 'rejected';
+  'pending' | 'running' | 'waiting' | 'succeeded' | 'failed' | 'canceled' | 'rejected' | 'skipped';
 
 export interface PipelineRunStep {
   stepId: string;
+  // The step a part belongs to, e.g. a stage of an agent team; null for a step.
+  parentStepId: string | null;
   iteration: number;
   seq: number;
-  kind: StepKind;
+  kind: RunStepKind;
   name: string;
-  status: 'running' | 'waiting' | 'succeeded' | 'failed' | 'canceled' | 'simulated';
+  status: 'running' | 'waiting' | 'succeeded' | 'failed' | 'canceled' | 'simulated' | 'skipped';
   // agent: success | failed | blocked; approval: approved | rejected; condition:
   // true | false; action and wait: success.
   outcome: string | null;
@@ -239,18 +283,26 @@ export interface PipelineRunStep {
 
 export interface PipelineRun {
   id: string;
-  pipelineId: number;
+  // A run of a builder workflow, of the agent team of a task, or one of a routine.
+  kind: 'workflow' | 'agent_team' | 'routine';
+  pipelineId: number | null;
+  // The workflow's name, the routine's title, or "Agent team".
   pipelineName: string;
-  version: number;
+  version: number | null;
   projectId: number;
   projectKey: string;
   issueId: number | null;
   issueIdentifier: string | null;
   issueTitle: string | null;
-  trigger: TriggerType;
+  // The schedule that fired the run and the time it was due.
+  scheduleId: string | null;
+  scheduledFor: string | null;
+  trigger: RunTrigger;
   dryRun: boolean;
   status: PipelineRunStatus;
   error: string | null;
+  // What the run produced, e.g. a routine's { outcome: 'created' | 'reopened' | 'skipped' }.
+  result: unknown;
   actorName: string | null;
   inputTokens: number | null;
   outputTokens: number | null;

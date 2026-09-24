@@ -4,14 +4,18 @@
     "approval": "موافقة",
     "condition": "شرط",
     "action": "إجراء على المهمة",
-    "wait": "انتظار"
+    "wait": "انتظار",
+    "notify": "إشعار",
+    "webhook": "Webhook"
   },
   "kindHints": {
     "agent": "وكيل يعمل على المهمة",
     "approval": "شخص يوافق عليها أو يعيدها",
     "condition": "يقسم التشغيل إلى نعم ولا",
     "action": "يغيّر المهمة",
-    "wait": "يوقف التشغيل مؤقتًا"
+    "wait": "يوقف التشغيل مؤقتًا",
+    "notify": "يُبلغ الأشخاص بالتشغيل",
+    "webhook": "يرسل المهمة إلى عنوان URL"
   },
   "triggers": {
     "manual": "بدء يدوي",
@@ -19,12 +23,15 @@
     "task_assigned": "إسناد مهمة",
     "status_changed": "تغيّر الحالة",
     "label_added": "إضافة وسم",
-    "schedule": "جدولة"
+    "schedule": "جدولة",
+    "webhook": "طلب Webhook",
+    "mail_received": "تم استلام بريد"
   },
   "triggerSummary": {
     "statusTo": "تتغيّر الحالة إلى {status}",
     "label": "يُضاف الوسم {label}",
-    "schedule": "جدولة {cron}"
+    "schedule": "جدولة {cron}",
+    "mail": "بريد: {filter}"
   },
   "library": {
     "hint": "قوالب سير العمل الخاصة بفريقك. يفعّل المشروع القالب ويسمّي وكلاء أدواره.",
@@ -127,7 +134,12 @@
     "cronHint": "الدقيقة، الساعة، يوم الشهر، الشهر، ويوم الأسبوع. 0 9 * * 1-5 يعمل أيام الأسبوع الساعة 9:00.",
     "timezone": "المنطقة الزمنية",
     "taskTitle": "عنوان المهمة",
-    "taskTitleHint": "كل تشغيل ينشئ مهمة بهذا العنوان ويشغّل سير العمل عليها."
+    "taskTitleHint": "كل تشغيل ينشئ مهمة بهذا العنوان ويشغّل سير العمل عليها.",
+    "webhookHint": "كل طلب ينشئ مهمة بهذا العنوان (أو بالعنوان الذي يرسله الطلب) ويشغّل سير العمل عليها. العنوان ومفتاحه السري موجودان في صفحة سير العمل في المشروع بمجرد تشغيل سير العمل هناك.",
+    "mailFrom": "المرسل يحتوي",
+    "mailSubject": "الموضوع يحتوي",
+    "mailHint": "كل بريد جديد مطابق في حسابات المشروع ينشئ مهمة بموضوعه.",
+    "mailAny": "أي"
   },
   "roles": {
     "title": "الأدوار",
@@ -179,7 +191,10 @@
     "comment": "تعليق: {text}",
     "subtask": "مهمة فرعية: {title}",
     "waitDelay": "انتظار {duration}",
-    "waitUntil": "حتى {field} الساعة {time}"
+    "waitUntil": "حتى {field} الساعة {time}",
+    "notify": "إلى {who}: {text}",
+    "webhook": "إرسال إلى {host}",
+    "noUrl": "لا يوجد عنوان URL بعد"
   },
   "duration": {
     "minutes": "{count, plural, zero {لا دقائق} one {دقيقة واحدة} two {دقيقتان} few {# دقائق} many {# دقيقةً} other {# دقيقة}}",
@@ -302,6 +317,23 @@
       },
       "time": "الوقت",
       "timeHint": "الوقت بتوقيت Europe/Berlin."
+    },
+    "notify": {
+      "to": "إلى من",
+      "members": "الأعضاء",
+      "message": "الرسالة",
+      "messagePlaceholder": "ما يجب أن يعرفه الأشخاص",
+      "recipients": {
+        "assignee": "المسؤول",
+        "watchers": "متابعو المهمة",
+        "members": "أعضاء محددون"
+      }
+    },
+    "webhook": {
+      "url": "عنوان URL",
+      "urlHint": "يتلقى المهمة والنتائج حتى الآن بتنسيق JSON، موقّعة بمفتاح توقيع المشروع. الرد 2xx يُعد نجاحًا.",
+      "message": "الرسالة",
+      "messagePlaceholder": "يُرسل كـ message (اختياري)"
     }
   },
   "issues": {
@@ -332,7 +364,8 @@
     "unknown_label": "لا يوجد في المشروع وسم باسم {name}.",
     "unknown_area": "لا يوجد في المشروع مجال باسم {name}.",
     "model_not_allowed": "لا يوجد وكيل في الفريق يشغّل النموذج {model}.",
-    "schedule_too_frequent": "الجدولة تعمل بتكرار أكبر مما يسمح به الفريق."
+    "schedule_too_frequent": "الجدولة تعمل بتكرار أكبر مما يسمح به الفريق.",
+    "invalid_url": "أدخل عنوان URL يبدأ بـ https:// أو http://."
   },
   "runs": {
     "status": {
@@ -342,7 +375,8 @@
       "succeeded": "نجح",
       "failed": "فشل",
       "canceled": "أُلغي",
-      "rejected": "رُفض"
+      "rejected": "رُفض",
+      "skipped": "تم تخطيه"
     },
     "stepStatus": {
       "running": "قيد التشغيل",
@@ -350,7 +384,8 @@
       "succeeded": "مكتملة",
       "failed": "فشلت",
       "canceled": "أُلغيت",
-      "simulated": "محاكاة"
+      "simulated": "محاكاة",
+      "skipped": "تم تخطيه"
     },
     "outcomes": {
       "success": "نجاح",
@@ -359,7 +394,12 @@
       "approved": "مقبول",
       "rejected": "مرفوض",
       "true": "نعم",
-      "false": "لا"
+      "false": "لا",
+      "created": "تم إنشاء المهمة",
+      "reopened": "أُعيد فتح المهمة",
+      "skipped": "تم تخطيه",
+      "review": "نُقلت إلى المراجعة",
+      "done": "نُقلت إلى منجز"
     },
     "agentRunStatus": {
       "pending": "في الانتظار",
@@ -395,7 +435,27 @@
     "filterReset": "إعادة ضبط عوامل التصفية",
     "filterProject": "المشروع",
     "filterStatus": "الحالة",
-    "filterKind": "النوع"
+    "filterKind": "النوع",
+    "kinds": {
+      "agent_team": "فريق الوكلاء"
+    },
+    "triggers": {
+      "manual": "يدويًا",
+      "task_created": "إنشاء مهمة",
+      "task_assigned": "إسناد مهمة",
+      "status_changed": "تغيير الحالة",
+      "label_added": "إضافة تسمية",
+      "schedule": "جدول زمني",
+      "webhook": "webhook",
+      "mail_received": "استلام بريد",
+      "routine": "جدول زمني",
+      "delegation": "تفويض إلى المنسق"
+    },
+    "scheduledFor": "مستحق {time}",
+    "skipReasons": {
+      "missed": "فائت: كان الخادم متوقفًا في ذلك الوقت",
+      "taskOpen": "تم التخطي: المهمة السابقة ما زالت مفتوحة"
+    }
   },
   "versions": {
     "empty": "لا توجد إصدارات.",
@@ -445,6 +505,30 @@
       "perHour": "في الساعة",
       "save": "حفظ",
       "saved": "تم الحفظ."
+    },
+    "hook": {
+      "title": "Webhook",
+      "url": "العنوان",
+      "secret": "المفتاح السري",
+      "secretOnce": "يظهر الآن فقط. يوقّع المرسلون به (Standard Webhooks) أو يرسلونه كرمز Bearer.",
+      "create": "إنشاء عنوان",
+      "renew": "مفتاح جديد",
+      "renewMessage": "سيتم رفض المرسلين الذين يستخدمون المفتاح القديم من الآن.",
+      "delete": "حذف العنوان",
+      "deleteMessage": "سيحصل المرسلون على 404 من الآن؛ والعنوان الجديد له URL مختلف.",
+      "lastUsed": "آخر استخدام {time}",
+      "none": "لا يوجد عنوان بعد.",
+      "copy": "نسخ"
+    },
+    "signing": {
+      "title": "مفتاح توقيع Webhook",
+      "hint": "توقّع خطوات Webhook طلباتها به (Standard Webhooks) ليتمكن المستلم من التحقق من أنها من Helena.",
+      "show": "عرض",
+      "hide": "إخفاء",
+      "renew": "تجديد",
+      "renewMessage": "ستوقّع خطوات Webhook بالمفتاح الجديد من الآن؛ ويحتاجه المستلمون أيضًا.",
+      "secret": "المفتاح",
+      "copy": "نسخ"
     }
   },
   "issuePanel": {

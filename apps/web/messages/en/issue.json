@@ -460,10 +460,11 @@
       "pending": "Queued",
       "running": "Running",
       "waiting": "Waiting",
-      "suspended": "Waiting for approval",
       "success": "Finished",
       "failed": "Failed",
-      "canceled": "Canceled"
+      "canceled": "Canceled",
+      "succeeded": "Finished",
+      "skipped": "Skipped"
     },
     "outcome": {
       "review": "Task moved to Review",

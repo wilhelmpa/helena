@@ -3,14 +3,22 @@ import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
 import { useRelativeTime } from '@/context/relativeTimeContext';
 import { AgentTokenCounts } from '@/components/common/agent-chat/AgentTokenCounts';
+import PipelineRunControls from '@/components/common/pipeline-runs/PipelineRunControls';
 import type { AgentTeamRun } from '@/lib/api/endpoints/issues';
 import { agentTeamTokens, isKnownStatus } from '../../utils/agentTeam';
 import IssueAgentTeamStages from './IssueAgentTeamStages';
 import IssueAgentTeamSteps from './IssueAgentTeamSteps';
 
 // One agent-team run: its state, the stages with the Hermes run behind each, and once it
-// finished the summary written to the task with what each stage reported.
-export default function IssueAgentTeamRun({ run }: { run: AgentTeamRun }) {
+// finished the summary written to the task with what each stage reported. A member who
+// may edit the task cancels a run or retries a failed one from the stage that failed.
+export default function IssueAgentTeamRun({
+  run,
+  canEdit,
+}: {
+  run: AgentTeamRun;
+  canEdit: boolean;
+}) {
   const t = useTranslations('issue.agentTeam');
   const relativeTime = useRelativeTime();
   const [open, setOpen] = useState(false);
@@ -50,6 +58,7 @@ export default function IssueAgentTeamRun({ run }: { run: AgentTeamRun }) {
           {open ? t('hideStages') : t('showStages', { count: history.length })}
         </button>
       )}
+      {canEdit && <PipelineRunControls run={{ id: run.runId, status: run.status }} />}
       {open && (
         <ol className="space-y-2 border-s ps-3">
           {history.map((entry) => (

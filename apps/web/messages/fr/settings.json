@@ -386,11 +386,10 @@
     "deleteTemplateMessage": "The template will be removed. Projects that already used it are unchanged.",
     "noTemplates": "No reusable templates yet.",
     "controlPlane": {
-      "title": "Mastra control plane",
-      "description": "Project bindings, workflow graphs, runs, approval gates, and Mastra-owned schedules.",
+      "title": "Workflows intégrés",
       "loading": "Loading workflows…",
-      "unavailable": "The workflow control plane is unavailable.",
-      "empty": "No Mastra workflows are available for this project.",
+      "unavailable": "Impossible de charger les workflows pour le moment.",
+      "empty": "Aucun workflow intégré n’est disponible pour ce projet.",
       "approvalRequired": "Approval required",
       "enabled": "Enabled",
       "disabled": "Disabled",
@@ -400,21 +399,9 @@
       "retryLimit": "Retry limit",
       "saveConfiguration": "Save configuration",
       "notConfigured": "Not configured",
-      "graph": "Workflow graph",
-      "recentRuns": "Recent runs",
-      "noRuns": "No runs for this project.",
-      "reject": "Reject",
-      "approve": "Approve",
-      "retry": "Retry",
-      "stopRun": "Stop run",
-      "schedules": "Mastra schedules",
-      "cron": "Cron",
-      "timezone": "Timezone",
-      "addSchedule": "Add schedule",
-      "runNow": "Run now",
-      "pauseSchedule": "Pause schedule",
-      "resumeSchedule": "Resume schedule",
-      "delete": "Delete",
+      "graph": "Étapes",
+      "recentRuns": "Exécutions",
+      "noRuns": "Pas encore d’exécution dans ce projet.",
       "agentTeam": {
         "result": "Résultat",
         "autonomyReview": "La tâche passe en Revue",
@@ -427,7 +414,9 @@
         "noLimit": "Sans limite",
         "hint": "Les limites s’appliquent à chaque étape Hermes. Une étape qui les atteint s’arrête et rend compte de ce qu’elle a."
       },
-      "configurationSaved": "{name} : configuration enregistrée"
+      "configurationSaved": "{name} : configuration enregistrée",
+      "runsUnavailable": "Impossible de charger les exécutions.",
+      "triggerDelegation": "Délégation au coordinateur"
     }
   },
   "webhooks": {

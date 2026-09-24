@@ -221,7 +221,7 @@ export interface InstanceProjectOption {
   name: string;
 }
 
-export type SystemService = 'runner' | 'mastra' | 'bridge' | 'provisioning' | 'worker';
+export type SystemService = 'runner' | 'engine' | 'provisioning' | 'worker';
 
 export interface SystemServiceHealth {
   service: SystemService;
@@ -231,7 +231,7 @@ export interface SystemServiceHealth {
   error: string | null;
 }
 
-export type JanitorJob = 'run-janitor' | 'stage-janitor' | 'workflow-schedules' | 'resume-janitor';
+export type JanitorJob = 'run-janitor' | 'resume-janitor' | 'engine-maintenance';
 
 export interface JanitorHealth {
   job: JanitorJob;
@@ -256,17 +256,52 @@ export interface SystemHealth {
     failedLastDay: number;
     // Reached the resume limit and need the owner to look at them.
     needsResumeReview: number;
-    agentTeamStartsWaiting: number;
     provisioningFailed: number;
-    // Null while Mastra cannot be asked.
-    stalledWorkflowRuns: number | null;
   };
+  // The Helena engine, which runs workflows, agent teams and routines.
+  engine: EngineHealth;
   janitors: JanitorHealth[];
+}
+
+export interface EngineHealth {
+  // Whether the engine runs in the api process that answered.
+  running: boolean;
+  executorId: string | null;
+  // Runs written but not started yet.
+  queued: number;
+  // Runs working now: running, or waiting for an agent.
+  active: number;
+  // Runs waiting for an approval or a wait step.
+  waiting: number;
+  failedLastDay: number;
+  // Active runs nothing moved for 30 minutes although nothing they wait for is pending.
+  stalled: number;
+  schedules: number;
+  // Enabled schedules whose time passed over five minutes ago without a fire.
+  overdueSchedules: number;
+  lastErrors: { runId: string; projectKey: string; name: string; error: string; at: string }[];
+}
+
+// The engine's instance settings: the time zone schedules and wait steps use when they
+// name none, the server's own, and whether the default is set here.
+export interface EngineSettingsAdmin {
+  defaultTimezone: string;
+  serverTimezone: string;
+  timezoneSet: boolean;
 }
 
 // Instance administration (god mode). Every route below is owner-only; a plain
 // user gets a 403, which is why the entries are hidden from the sidebar.
 export const getSystemHealth = () => request<SystemHealth>('/god/system-health');
+
+export const getEngineSettingsAdmin = () => request<EngineSettingsAdmin>('/god/engine');
+
+// null goes back to the server's time zone.
+export const updateEngineSettingsAdmin = (defaultTimezone: string | null) =>
+  request<EngineSettingsAdmin>('/god/engine', {
+    method: 'PUT',
+    body: JSON.stringify({ defaultTimezone }),
+  });
 
 export const getInstanceAuthSettings = () => request<InstanceAuthSettings>('/god/auth-settings');
 

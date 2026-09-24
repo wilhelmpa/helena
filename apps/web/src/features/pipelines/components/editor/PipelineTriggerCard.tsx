@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { TRIGGER_TYPES, type TriggerType } from '@/lib/api/endpoints/pipelines';
+import { useEngineSettings } from '@/services/engine.service';
 import { usePipelineEditor } from '../../context/pipelineEditor';
 import { usePipelineLabels } from '../../hooks/usePipelineLabels';
 import { triggerOf } from '../../utils/editorState';
@@ -21,6 +22,7 @@ export default function PipelineTriggerCard() {
   const t = useTranslations('pipelines');
   const { definition, editable, issues, change } = usePipelineEditor();
   const labels = usePipelineLabels();
+  const timezone = useEngineSettings().data?.defaultTimezone;
   const { trigger } = definition;
 
   return (
@@ -31,7 +33,10 @@ export default function PipelineTriggerCard() {
             <Select
               value={trigger.type}
               onValueChange={(type) =>
-                change((current) => ({ ...current, trigger: triggerOf(type as TriggerType) }))
+                change((current) => ({
+                  ...current,
+                  trigger: triggerOf(type as TriggerType, timezone),
+                }))
               }
             >
               <SelectTrigger id="pipeline-trigger" className="w-full">

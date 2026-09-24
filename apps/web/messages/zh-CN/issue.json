@@ -460,10 +460,11 @@
       "pending": "排队中",
       "running": "运行中",
       "waiting": "等待中",
-      "suspended": "等待批准",
       "success": "已完成",
       "failed": "失败",
-      "canceled": "已取消"
+      "canceled": "已取消",
+      "succeeded": "已完成",
+      "skipped": "已跳过"
     },
     "outcome": {
       "review": "任务已移至评审",

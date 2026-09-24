@@ -8,13 +8,14 @@ import { formatDurationShort } from '@/utils/dates';
 import { SectionLabel } from '@/components/common/page/RowList';
 import { useSystemHealthQuery } from '../../services/systemHealth.service';
 import { healthProblems } from '../../utils/systemHealth';
+import HomeEngineState from './HomeEngineState';
 import HomeJanitorState from './HomeJanitorState';
 import HomeServiceState from './HomeServiceState';
 
-// The instance owner's view of the services around Helena — the Hermes runner, Mastra,
-// the bridge between them, the provisioning service and the worker — the agent runs
-// that wait or overran, and the janitor loops that clean up hung runs, orphaned stage
-// runs and stale workflow schedules. A status report of 32px lines in the sidebar's
+// The instance owner's view of the services around Helena — the Hermes runner, the
+// Helena engine (workflows, agent teams, routines), the provisioning service and the
+// worker — the runs that wait, stall or overran, what the engine is doing, and the
+// janitor loops that clean up hung runs. A status report of 32px lines in the sidebar's
 // surface, without hover: nothing here is a control, so nothing here looks like one. No
 // secret or path ever appears, only counts, times and short reasons.
 export default function HomeSystemHealth() {
@@ -27,7 +28,7 @@ export default function HomeSystemHealth() {
   const { data } = useSystemHealthQuery(isGod);
   if (!isGod || !data) return null;
 
-  const problems = healthProblems(data.runs).map((problem) =>
+  const problems = healthProblems(data.runs, data.engine).map((problem) =>
     problem.key === 'waiting'
       ? t('waiting', {
           count: problem.count,
@@ -45,6 +46,7 @@ export default function HomeSystemHealth() {
             <HomeServiceState key={health.service} health={health} />
           ))}
         </ul>
+        <HomeEngineState engine={data.engine} />
         {problems.length > 0 && (
           <ul className="mt-1 space-y-0.5 px-2 text-xs text-status-waiting">
             {problems.map((problem) => (

@@ -2,13 +2,13 @@
 
 import { RotateCcw, Square } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import type { PipelineRun } from '@/lib/api/endpoints/pipelines';
 import { Button } from '@/components/ui/button';
 import { useCancelPipelineRun, useRetryPipelineRun } from '@/services/pipelines.service';
 
 const ACTIVE = ['pending', 'running', 'waiting'];
 
-export default function PipelineRunControls({ run }: { run: PipelineRun }) {
+// Cancels a run that is still going, or retries a failed one from the step that failed.
+export default function PipelineRunControls({ run }: { run: { id: string; status: string } }) {
   const t = useTranslations('pipelines.runs');
   const cancel = useCancelPipelineRun();
   const retry = useRetryPipelineRun();

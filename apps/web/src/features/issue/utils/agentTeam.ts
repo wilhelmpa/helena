@@ -1,11 +1,11 @@
 import type { AgentTeamRun } from '@/lib/api/endpoints/issues';
 
-// The Mastra steps a person follows, in order; 'prepare-team' only checks the input.
-export const AGENT_TEAM_STEPS = ['coordinate', 'specialize', 'review', 'synchronize-plan'] as const;
+// The stages of an agent-team run a person follows, in order.
+export const AGENT_TEAM_STEPS = ['coordinate', 'specialize', 'review', 'synchronize'] as const;
 
 export type AgentTeamStep = (typeof AGENT_TEAM_STEPS)[number];
 
-const ACTIVE = new Set(['pending', 'running', 'waiting', 'suspended']);
+const ACTIVE = new Set(['pending', 'running', 'waiting']);
 
 export function isAgentTeamRunActive(run: AgentTeamRun) {
   return ACTIVE.has(run.status);
@@ -19,13 +19,14 @@ const KNOWN_STATUS = [
   'pending',
   'running',
   'waiting',
-  'suspended',
+  'succeeded',
   'success',
   'failed',
   'canceled',
+  'skipped',
 ] as const;
 
-// A status the panel has a label for: Mastra's run statuses and the queue's.
+// A status the panel has a label for: the engine's run statuses and the agent runs'.
 export function isKnownStatus(status: string): status is (typeof KNOWN_STATUS)[number] {
   return (KNOWN_STATUS as readonly string[]).includes(status);
 }

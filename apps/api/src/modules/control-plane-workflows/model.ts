@@ -1,4 +1,5 @@
 import { t } from 'elysia';
+import { pageQueryFields } from '#shared/pagination';
 import { maxTurnsLimit, runBudgetSecondsLimit } from '#modules/agents/model';
 
 export const workflowParams = t.Object({
@@ -36,12 +37,40 @@ export const assignmentBody = t.Object(
   { additionalProperties: false },
 );
 
-export const runQuery = t.Object({
-  page: t.Optional(t.Numeric({ minimum: 0, maximum: 10000 })),
-  pageSize: t.Optional(t.Numeric({ minimum: 1, maximum: 100 })),
+export const runQuery = t.Object({ ...pageQueryFields });
+
+const WorkflowConfigurationResponse = t.Object({
+  instructions: t.Optional(t.String()),
+  retryLimit: t.Optional(t.Number()),
+  autonomy: t.Union([t.Literal('review'), t.Literal('done')]),
+  reviewRequired: t.Boolean(),
+  maxTurns: t.Nullable(t.Number()),
+  runBudgetSeconds: t.Nullable(t.Number()),
 });
 
-export const ControlPlaneResponse = t.Unknown();
+// A built-in workflow as Settings → Workflows shows it, with its use in the project.
+export const ProjectWorkflowResponse = t.Object({
+  id: t.String(),
+  name: t.String(),
+  description: t.String(),
+  capabilityRefs: t.Array(t.String()),
+  externalEffects: t.Boolean(),
+  triggers: t.Array(t.String()),
+  steps: t.Array(t.Object({ id: t.String(), title: t.String(), description: t.String() })),
+  assignment: t.Object({
+    enabled: t.Boolean(),
+    capabilityRefs: t.Array(t.String()),
+    configuration: WorkflowConfigurationResponse,
+    createdAt: t.Optional(t.String()),
+    updatedAt: t.Optional(t.String()),
+  }),
+});
+
+export const AssignmentResponse = t.Object({
+  projectId: t.Number(),
+  workflowId: t.String(),
+  enabled: t.Boolean(),
+});
 
 export const startAgentTeamBody = t.Object(
   {

@@ -32,26 +32,6 @@ export interface ApprovalRequest {
   createdAt: string;
 }
 
-// A Mastra workflow run suspended at its approval gate.
-export interface WorkflowGate {
-  projectId: number;
-  projectKey: string;
-  projectName: string;
-  workflowId: string;
-  workflowName: string;
-  runId: string;
-  reason: string | null;
-  summary: string | null;
-  effects: string[];
-  createdAt: string | null;
-}
-
-export interface WorkflowGateList {
-  items: WorkflowGate[];
-  // False when the workflows of at least one project could not be read.
-  complete: boolean;
-}
-
 export interface ApprovalDecision {
   approved: boolean;
   note?: string;
@@ -81,8 +61,6 @@ export const listApprovalProjects = () => request<ApprovalProject[]>('/approvals
 // One approval request by id — what the chat's approval card reads to show its
 // current status and, once it is decided, who decided it.
 export const getApproval = (id: number) => request<ApprovalRequest>(`/approvals/${id}`);
-
-export const listWorkflowGates = () => request<WorkflowGateList>('/approvals/workflow-gates');
 
 export const decideApproval = (id: number, decision: ApprovalDecision) =>
   request<ApprovalRequest>(`/approvals/${id}/decision`, {

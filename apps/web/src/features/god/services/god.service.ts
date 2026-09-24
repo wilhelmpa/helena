@@ -36,6 +36,8 @@ import {
   updateInstanceStorageSettings,
   getInstanceRunResumeSettings,
   updateInstanceRunResumeSettings,
+  getEngineSettingsAdmin,
+  updateEngineSettingsAdmin,
   listInstanceUsers,
   getInstanceUser,
   deleteInstanceUser,
@@ -226,6 +228,22 @@ export function useUpdateInstanceProjectDefaults() {
 
 // How many times a run may resume its coding agent session after the runner holding
 // it died mid run, before it stops on its own and asks the owner to look at it.
+export function useEngineSettingsAdminQuery() {
+  return useQuery({ queryKey: qk.instanceEngineSettings, queryFn: getEngineSettingsAdmin });
+}
+
+// A new default reaches every form that offers a time zone.
+export function useUpdateEngineSettingsAdmin() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (defaultTimezone: string | null) => updateEngineSettingsAdmin(defaultTimezone),
+    onSuccess: (data) => {
+      client.setQueryData(qk.instanceEngineSettings, data);
+      return client.invalidateQueries({ queryKey: qk.engineSettings });
+    },
+  });
+}
+
 export function useInstanceRunResumeSettingsQuery() {
   return useQuery({
     queryKey: qk.instanceRunResumeSettings,

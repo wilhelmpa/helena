@@ -30,11 +30,8 @@
   "rejectedBy": "Refusée par {name}",
   "someone": "quelqu'un",
   "workflows": "Approbations des flux de travail",
-  "workflowsIncomplete": "Les flux de travail de certains projets n'ont pas pu être lus : leurs approbations peuvent manquer ici.",
   "gateOf": "{workflow} dans {project}",
   "effects": "Exécuté après approbation :",
-  "gateApprovedToast": "Approuvée. Le flux de travail continue.",
-  "gateRejectedToast": "Refusée. Le flux de travail se termine sans ces effets.",
   "loadFailed": "Impossible de charger les approbations.",
   "loadFailedHint": "Le serveur n’a pas répondu. Réessaie dans un instant."
 }

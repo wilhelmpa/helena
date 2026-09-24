@@ -4,14 +4,18 @@
     "approval": "Approbation",
     "condition": "Condition",
     "action": "Action sur la tâche",
-    "wait": "Attente"
+    "wait": "Attente",
+    "notify": "Notifier",
+    "webhook": "Webhook"
   },
   "kindHints": {
     "agent": "Un agent travaille sur la tâche",
     "approval": "Une personne approuve la tâche ou la renvoie",
     "condition": "Divise l’exécution en Oui et Non",
     "action": "Modifie la tâche",
-    "wait": "Met l’exécution en pause"
+    "wait": "Met l’exécution en pause",
+    "notify": "Informe des personnes de l’exécution",
+    "webhook": "Envoie la tâche à une URL"
   },
   "triggers": {
     "manual": "Démarré manuellement",
@@ -19,12 +23,15 @@
     "task_assigned": "Tâche assignée",
     "status_changed": "État modifié",
     "label_added": "Étiquette ajoutée",
-    "schedule": "Planification"
+    "schedule": "Planification",
+    "webhook": "Appel de webhook",
+    "mail_received": "E-mail reçu"
   },
   "triggerSummary": {
     "statusTo": "L’état passe à {status}",
     "label": "L’étiquette {label} est ajoutée",
-    "schedule": "Planification {cron}"
+    "schedule": "Planification {cron}",
+    "mail": "E-mail : {filter}"
   },
   "library": {
     "hint": "Les modèles de flux de travail de votre équipe. Un projet active un modèle et nomme les agents de ses rôles.",
@@ -127,7 +134,12 @@
     "cronHint": "Minute, heure, jour du mois, mois et jour de la semaine. 0 9 * * 1-5 s’exécute les jours ouvrés à 9 h 00.",
     "timezone": "Fuseau horaire",
     "taskTitle": "Titre de la tâche",
-    "taskTitleHint": "Chaque exécution crée une tâche avec ce titre et exécute le flux de travail dessus."
+    "taskTitleHint": "Chaque exécution crée une tâche avec ce titre et exécute le flux de travail dessus.",
+    "webhookHint": "Chaque appel crée une tâche avec ce titre (ou celui envoyé par l’appel) et y exécute le workflow. L’adresse et son secret se trouvent sur la page Workflows du projet dès que le workflow y est activé.",
+    "mailFrom": "L’expéditeur contient",
+    "mailSubject": "L’objet contient",
+    "mailHint": "Chaque nouvel e-mail des comptes du projet qui correspond crée une tâche avec son objet.",
+    "mailAny": "Tous"
   },
   "roles": {
     "title": "Rôles",
@@ -179,7 +191,10 @@
     "comment": "Commentaire : {text}",
     "subtask": "Sous-tâche : {title}",
     "waitDelay": "Attendre {duration}",
-    "waitUntil": "Jusqu’au {field} à {time}"
+    "waitUntil": "Jusqu’au {field} à {time}",
+    "notify": "Prévenir {who} : {text}",
+    "webhook": "Envoyer à {host}",
+    "noUrl": "Pas encore d’URL"
   },
   "duration": {
     "minutes": "{count, plural, one {# minute} other {# minutes}}",
@@ -302,6 +317,23 @@
       },
       "time": "Heure",
       "timeHint": "Heure en Europe/Berlin."
+    },
+    "notify": {
+      "to": "À qui",
+      "members": "Membres",
+      "message": "Message",
+      "messagePlaceholder": "Ce qu’il faut savoir",
+      "recipients": {
+        "assignee": "La personne assignée",
+        "watchers": "Les observateurs de la tâche",
+        "members": "Membres choisis"
+      }
+    },
+    "webhook": {
+      "url": "URL",
+      "urlHint": "Reçoit la tâche et les résultats obtenus en JSON, signés avec la clé de signature du projet. Une réponse 2xx vaut succès.",
+      "message": "Message",
+      "messagePlaceholder": "Envoyé comme message (facultatif)"
     }
   },
   "issues": {
@@ -332,7 +364,8 @@
     "unknown_label": "Le projet n’a pas d’étiquette {name}.",
     "unknown_area": "Le projet n’a pas de domaine {name}.",
     "model_not_allowed": "Aucun agent de l’équipe n’exécute le modèle {model}.",
-    "schedule_too_frequent": "La planification s’exécute plus souvent que ce que l’équipe autorise."
+    "schedule_too_frequent": "La planification s’exécute plus souvent que ce que l’équipe autorise.",
+    "invalid_url": "Saisissez une URL commençant par https:// ou http://."
   },
   "runs": {
     "status": {
@@ -342,7 +375,8 @@
       "succeeded": "Réussi",
       "failed": "Échec",
       "canceled": "Annulé",
-      "rejected": "Refusé"
+      "rejected": "Refusé",
+      "skipped": "Ignoré"
     },
     "stepStatus": {
       "running": "En cours",
@@ -350,7 +384,8 @@
       "succeeded": "Terminé",
       "failed": "Échec",
       "canceled": "Annulé",
-      "simulated": "Simulé"
+      "simulated": "Simulé",
+      "skipped": "Ignoré"
     },
     "outcomes": {
       "success": "Réussi",
@@ -359,7 +394,12 @@
       "approved": "Approuvé",
       "rejected": "Refusé",
       "true": "Oui",
-      "false": "Non"
+      "false": "Non",
+      "created": "Tâche créée",
+      "reopened": "Tâche rouverte",
+      "skipped": "Ignoré",
+      "review": "Passée en Revue",
+      "done": "Passée en Terminé"
     },
     "agentRunStatus": {
       "pending": "En file",
@@ -395,7 +435,27 @@
     "filterReset": "Réinitialiser les filtres",
     "filterProject": "Projet",
     "filterStatus": "Statut",
-    "filterKind": "Type"
+    "filterKind": "Type",
+    "kinds": {
+      "agent_team": "Équipe d’agents"
+    },
+    "triggers": {
+      "manual": "à la main",
+      "task_created": "tâche créée",
+      "task_assigned": "tâche assignée",
+      "status_changed": "statut modifié",
+      "label_added": "étiquette ajoutée",
+      "schedule": "planification",
+      "webhook": "webhook",
+      "mail_received": "e-mail reçu",
+      "routine": "planification",
+      "delegation": "déléguée au coordinateur"
+    },
+    "scheduledFor": "Prévue {time}",
+    "skipReasons": {
+      "missed": "Manquée : le serveur était arrêté à ce moment",
+      "taskOpen": "Ignorée : la tâche précédente est encore ouverte"
+    }
   },
   "versions": {
     "empty": "Aucune version.",
@@ -445,6 +505,30 @@
       "perHour": "par heure",
       "save": "Enregistrer",
       "saved": "Enregistré."
+    },
+    "hook": {
+      "title": "Webhook",
+      "url": "Adresse",
+      "secret": "Secret",
+      "secretOnce": "Affiché seulement maintenant. Les expéditeurs signent avec (Standard Webhooks) ou l’envoient comme jeton bearer.",
+      "create": "Créer l’adresse",
+      "renew": "Nouveau secret",
+      "renewMessage": "Les expéditeurs utilisant l’ancien secret seront désormais refusés.",
+      "delete": "Supprimer l’adresse",
+      "deleteMessage": "Les expéditeurs recevront désormais 404 ; une nouvelle adresse a une autre URL.",
+      "lastUsed": "dernier usage {time}",
+      "none": "Pas encore d’adresse.",
+      "copy": "Copier"
+    },
+    "signing": {
+      "title": "Clé de signature des webhooks",
+      "hint": "Les étapes webhook signent leurs appels avec (Standard Webhooks), pour que le destinataire vérifie qu’ils viennent de Helena.",
+      "show": "Afficher",
+      "hide": "Masquer",
+      "renew": "Renouveler",
+      "renewMessage": "Les étapes webhook signent désormais avec la nouvelle clé ; les destinataires en ont aussi besoin.",
+      "secret": "Clé",
+      "copy": "Copier"
     }
   },
   "issuePanel": {

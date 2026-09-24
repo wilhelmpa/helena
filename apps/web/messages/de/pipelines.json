@@ -4,14 +4,18 @@
     "approval": "Freigabe",
     "condition": "Bedingung",
     "action": "Aufgabenaktion",
-    "wait": "Warten"
+    "wait": "Warten",
+    "notify": "Benachrichtigen",
+    "webhook": "Webhook"
   },
   "kindHints": {
     "agent": "Ein Agent arbeitet an der Aufgabe",
     "approval": "Eine Person gibt frei oder schickt zurück",
     "condition": "Verzweigt den Lauf in Ja und Nein",
     "action": "Ändert die Aufgabe",
-    "wait": "Pausiert den Lauf"
+    "wait": "Pausiert den Lauf",
+    "notify": "Sagt Menschen Bescheid",
+    "webhook": "Schickt die Aufgabe an eine URL"
   },
   "triggers": {
     "manual": "Von Hand gestartet",
@@ -19,12 +23,15 @@
     "task_assigned": "Aufgabe zugewiesen",
     "status_changed": "Status geändert",
     "label_added": "Label hinzugefügt",
-    "schedule": "Zeitplan"
+    "schedule": "Zeitplan",
+    "webhook": "Webhook-Aufruf",
+    "mail_received": "E-Mail empfangen"
   },
   "triggerSummary": {
     "statusTo": "Status wechselt zu {status}",
     "label": "Label {label} wird hinzugefügt",
-    "schedule": "Zeitplan {cron}"
+    "schedule": "Zeitplan {cron}",
+    "mail": "E-Mail: {filter}"
   },
   "library": {
     "hint": "Die Workflow-Vorlagen deines Teams. Ein Projekt schaltet eine Vorlage ein und legt die Agenten ihrer Rollen fest.",
@@ -127,7 +134,12 @@
     "cronHint": "Minute, Stunde, Tag im Monat, Monat und Wochentag. 0 9 * * 1-5 läuft werktags um 9:00.",
     "timezone": "Zeitzone",
     "taskTitle": "Aufgabentitel",
-    "taskTitleHint": "Jeder Lauf erstellt eine Aufgabe mit diesem Titel und führt den Workflow darauf aus."
+    "taskTitleHint": "Jeder Lauf erstellt eine Aufgabe mit diesem Titel und führt den Workflow darauf aus.",
+    "webhookHint": "Jeder Aufruf legt eine Aufgabe mit diesem Titel an (oder dem Titel, den der Aufruf mitschickt) und startet den Workflow darauf. Adresse und Schlüssel findest du im Projekt unter Workflows, sobald der Workflow dort eingeschaltet ist.",
+    "mailFrom": "Absender enthält",
+    "mailSubject": "Betreff enthält",
+    "mailHint": "Jede neue E-Mail der Postfächer des Projekts, die passt, legt eine Aufgabe mit ihrem Betreff an.",
+    "mailAny": "Beliebig"
   },
   "roles": {
     "title": "Rollen",
@@ -179,7 +191,10 @@
     "comment": "Kommentar: {text}",
     "subtask": "Unteraufgabe: {title}",
     "waitDelay": "{duration} warten",
-    "waitUntil": "Bis zum {field} um {time}"
+    "waitUntil": "Bis zum {field} um {time}",
+    "notify": "An {who}: {text}",
+    "webhook": "An {host} senden",
+    "noUrl": "Noch keine URL"
   },
   "duration": {
     "minutes": "{count, plural, one {# Minute} other {# Minuten}}",
@@ -302,6 +317,23 @@
       },
       "time": "Uhrzeit",
       "timeHint": "Uhrzeit in Europe/Berlin."
+    },
+    "notify": {
+      "to": "An wen",
+      "members": "Mitglieder",
+      "message": "Nachricht",
+      "messagePlaceholder": "Was die Leute wissen sollen",
+      "recipients": {
+        "assignee": "Zuständige Person",
+        "watchers": "Beobachter der Aufgabe",
+        "members": "Ausgewählte Mitglieder"
+      }
+    },
+    "webhook": {
+      "url": "URL",
+      "urlHint": "Bekommt die Aufgabe und die bisherigen Ergebnisse als JSON, signiert mit dem Signatur-Schlüssel des Projekts. Eine 2xx-Antwort gilt als Erfolg.",
+      "message": "Nachricht",
+      "messagePlaceholder": "Wird als message mitgeschickt (optional)"
     }
   },
   "issues": {
@@ -332,7 +364,8 @@
     "unknown_label": "Das Projekt hat kein Label {name}.",
     "unknown_area": "Das Projekt hat keinen Bereich {name}.",
     "model_not_allowed": "Kein Agent des Teams nutzt das Modell {model}.",
-    "schedule_too_frequent": "Der Zeitplan läuft öfter, als das Team erlaubt."
+    "schedule_too_frequent": "Der Zeitplan läuft öfter, als das Team erlaubt.",
+    "invalid_url": "Gib eine URL ein, die mit https:// oder http:// beginnt."
   },
   "runs": {
     "status": {
@@ -342,7 +375,8 @@
       "succeeded": "Abgeschlossen",
       "failed": "Fehlgeschlagen",
       "canceled": "Abgebrochen",
-      "rejected": "Abgelehnt"
+      "rejected": "Abgelehnt",
+      "skipped": "Übersprungen"
     },
     "stepStatus": {
       "running": "Läuft",
@@ -350,7 +384,8 @@
       "succeeded": "Erledigt",
       "failed": "Fehlgeschlagen",
       "canceled": "Abgebrochen",
-      "simulated": "Simuliert"
+      "simulated": "Simuliert",
+      "skipped": "Übersprungen"
     },
     "outcomes": {
       "success": "Erfolg",
@@ -359,7 +394,12 @@
       "approved": "Freigegeben",
       "rejected": "Abgelehnt",
       "true": "Ja",
-      "false": "Nein"
+      "false": "Nein",
+      "created": "Aufgabe erstellt",
+      "reopened": "Aufgabe erneut geöffnet",
+      "skipped": "Übersprungen",
+      "review": "In Review verschoben",
+      "done": "In Erledigt verschoben"
     },
     "agentRunStatus": {
       "pending": "In der Warteschlange",
@@ -395,7 +435,27 @@
     "filterReset": "Filter zurücksetzen",
     "filterProject": "Projekt",
     "filterStatus": "Status",
-    "filterKind": "Art"
+    "filterKind": "Art",
+    "kinds": {
+      "agent_team": "Agent-Team"
+    },
+    "triggers": {
+      "manual": "von Hand",
+      "task_created": "Aufgabe erstellt",
+      "task_assigned": "Aufgabe zugewiesen",
+      "status_changed": "Status geändert",
+      "label_added": "Label hinzugefügt",
+      "schedule": "Zeitplan",
+      "webhook": "Webhook",
+      "mail_received": "E-Mail empfangen",
+      "routine": "Zeitplan",
+      "delegation": "an den Koordinator delegiert"
+    },
+    "scheduledFor": "Fällig {time}",
+    "skipReasons": {
+      "missed": "Verpasst: der Server lief zu der Zeit nicht",
+      "taskOpen": "Übersprungen: die vorige Aufgabe ist noch offen"
+    }
   },
   "versions": {
     "empty": "Keine Versionen.",
@@ -445,6 +505,30 @@
       "perHour": "pro Stunde",
       "save": "Speichern",
       "saved": "Gespeichert."
+    },
+    "hook": {
+      "title": "Webhook",
+      "url": "Adresse",
+      "secret": "Schlüssel",
+      "secretOnce": "Nur jetzt sichtbar. Absender signieren damit (Standard Webhooks) oder schicken ihn als Bearer-Token.",
+      "create": "Adresse erzeugen",
+      "renew": "Neuer Schlüssel",
+      "renewMessage": "Absender mit dem alten Schlüssel werden ab jetzt abgewiesen.",
+      "delete": "Adresse löschen",
+      "deleteMessage": "Absender bekommen ab jetzt 404; eine neue Adresse hat eine andere URL.",
+      "lastUsed": "zuletzt benutzt {time}",
+      "none": "Noch keine Adresse.",
+      "copy": "Kopieren"
+    },
+    "signing": {
+      "title": "Signatur-Schlüssel für Webhooks",
+      "hint": "Webhook-Schritte signieren ihre Aufrufe damit (Standard Webhooks), damit der Empfänger prüfen kann, dass sie von Helena kommen.",
+      "show": "Anzeigen",
+      "hide": "Ausblenden",
+      "renew": "Erneuern",
+      "renewMessage": "Webhook-Schritte signieren ab jetzt mit dem neuen Schlüssel; die Empfänger brauchen ihn auch.",
+      "secret": "Schlüssel",
+      "copy": "Kopieren"
     }
   },
   "issuePanel": {

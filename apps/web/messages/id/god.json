@@ -164,7 +164,12 @@
     "runResume": "Pelanjutan run",
     "maxResumes": "Batas pelanjutan",
     "maxResumesHint": "Berapa kali sebuah run boleh melanjutkan sesi agen coding-nya setelah runner yang memegangnya mati di tengah jalan, sebelum berhenti sendiri dan meminta Anda memeriksanya. 0 mematikan pelanjutan: run yang terputus dicoba ulang dari awal.",
-    "savedRunResume": "Batas pelanjutan disimpan"
+    "savedRunResume": "Batas pelanjutan disimpan",
+    "engine": "Mesin alur kerja",
+    "timezone": "Zona waktu",
+    "timezoneHint": "Dipakai rutinitas, jadwal alur kerja, dan langkah tunggu yang tidak menyebutkan zona. Zona server adalah {server}.",
+    "timezoneServer": "Pakai zona server",
+    "savedTimezone": "Zona waktu disimpan."
   },
   "authentication": {
     "saved": "Pengaturan autentikasi disimpan",
@@ -350,31 +355,34 @@
     "title": "Layanan",
     "service": {
       "runner": "Runner Hermes",
-      "mastra": "Mastra",
-      "bridge": "Jembatan tim Hermes",
       "provisioning": "Penyediaan",
-      "worker": "Worker"
+      "worker": "Worker",
+      "engine": "Mesin Helena"
     },
     "seen": "terlihat {time} lalu",
     "lastSeen": "terakhir terlihat {time} lalu",
     "neverSeen": "belum terlihat",
     "waiting": "{count, plural, other {# run menunggu}} untuk diambil, yang tertua sejak {time}",
     "overdue": "{count, plural, other {# run}} masih berjalan melewati batas waktu",
-    "agentTeamStartsWaiting": "{count, plural, other {# start agent-team menunggu}} Mastra",
-    "stalledWorkflowRuns": "{count, plural, other {# run agent-team}} tidak maju selama 15 menit",
+    "stalledWorkflowRuns": "{count} proses alur kerja tidak maju selama 30 menit",
     "failedLastDay": "{count, plural, other {# run}} gagal dalam 24 jam terakhir",
     "provisioningFailed": "{count, plural, other {# tugas penyediaan}} gagal",
     "janitorsTitle": "Tugas pembersihan",
     "janitor": {
       "run-janitor": "Pembersih proses",
-      "stage-janitor": "Pembersih tahap",
-      "workflow-schedules": "Sinkronisasi jadwal",
-      "resume-janitor": "Pembersih pelanjutan"
+      "resume-janitor": "Pembersih pelanjutan",
+      "engine-maintenance": "Pemeliharaan mesin"
     },
     "janitorRan": "berjalan {time} lalu",
     "janitorCleaned": "{count, plural, other {membersihkan # item}}",
     "janitorNeverRan": "belum pernah berjalan",
     "resuming": "{count, plural, other {# run sedang dilanjutkan}} setelah crash",
-    "needsResumeReview": "{count, plural, other {# run mencapai}} batas pelanjutan dan perlu diperiksa"
+    "needsResumeReview": "{count, plural, other {# run mencapai}} batas pelanjutan dan perlu diperiksa",
+    "overdueSchedules": "{count} jadwal tidak berjalan tepat waktu",
+    "failedWorkflowRuns": "{count} proses alur kerja gagal dalam 24 jam terakhir",
+    "engine": {
+      "summary": "Mesin: {active} aktif · {waiting} menunggu · {queued} antre · {schedules} jadwal",
+      "failure": "{name} gagal {time} lalu:"
+    }
   }
 }

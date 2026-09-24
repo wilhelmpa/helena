@@ -1,11 +1,24 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
-import type { Routine, RoutineInput, RoutineMode } from '@/lib/api/endpoints/routines';
+import type {
+  Routine,
+  RoutineCatchUp,
+  RoutineInput,
+  RoutineMode,
+} from '@/lib/api/endpoints/routines';
 import Modal from '@/components/common/overlay/Modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useEngineSettings } from '@/services/engine.service';
 import { parseScheduleInput } from '../utils/cronSchedule';
 import { DEFAULT_TIMEZONE, isTimeZone } from '../utils/schedulePreview';
 import { RoutineAgentField } from './RoutineAgentField';
@@ -49,7 +62,11 @@ export function RoutineDialog({
       : null,
   );
   const [scheduleInput, setScheduleInput] = useState(initial?.cron ?? '0 9 * * 1-5');
-  const [timezone, setTimezone] = useState(initial?.timezone ?? DEFAULT_TIMEZONE);
+  // A new routine runs in the instance's time zone unless it names another.
+  const defaultZone = useEngineSettings().data?.defaultTimezone ?? DEFAULT_TIMEZONE;
+  const [chosenZone, setTimezone] = useState<string | null>(initial?.timezone ?? null);
+  const timezone = chosenZone ?? defaultZone;
+  const [catchUp, setCatchUp] = useState<RoutineCatchUp>(initial?.catchUp ?? 'skip');
   const agent = agents.find((a) => String(a.id) === agentId) ?? null;
   const schedule = parseScheduleInput(scheduleInput);
   const isValid =
@@ -72,6 +89,7 @@ export function RoutineDialog({
       taskId: mode === 'reopen' ? (task?.id ?? null) : null,
       cron: schedule.cron,
       timezone,
+      catchUp,
     });
   }
 
@@ -141,6 +159,18 @@ export function RoutineDialog({
           </RoutineField>
         </div>
         {schedule.ok && <RoutineNextRuns cron={schedule.cron} timezone={timezone} />}
+        <RoutineField htmlFor="routine-catch-up" label={t('catchUp')}>
+          <Select value={catchUp} onValueChange={(value) => setCatchUp(value as RoutineCatchUp)}>
+            <SelectTrigger id="routine-catch-up" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="skip">{t('catchUpSkip')}</SelectItem>
+              <SelectItem value="once">{t('catchUpOnce')}</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">{t('catchUpHint')}</p>
+        </RoutineField>
 
         <div className="flex justify-end gap-2 border-t border-border/50 pt-4">
           <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>

@@ -30,11 +30,8 @@
   "rejectedBy": "Rejected by {name}",
   "someone": "someone",
   "workflows": "Workflow approvals",
-  "workflowsIncomplete": "The workflows of some projects could not be read, so their approvals may be missing here.",
   "gateOf": "{workflow} in {project}",
   "effects": "Runs once approved:",
-  "gateApprovedToast": "Approved. The workflow continues.",
-  "gateRejectedToast": "Rejected. The workflow ends without these effects.",
   "loadFailed": "The approvals could not be loaded.",
   "loadFailedHint": "The server did not answer. Try again in a moment."
 }

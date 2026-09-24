@@ -8,7 +8,8 @@ import PipelineField from './PipelineField';
 import PipelineNameInput from './PipelineNameInput';
 
 // The fields the trigger type needs. Statuses and labels are named, so a template
-// reads them as text and a project workflow offers the project's own.
+// reads them as text and a project workflow offers the project's own. A webhook's
+// address and secret belong to the project that uses the workflow (its Workflows page).
 export default function PipelineTriggerFields({
   trigger,
   onChange,
@@ -41,6 +42,48 @@ export default function PipelineTriggerFields({
           onChange={(label) => onChange({ ...trigger, label })}
         />
       </PipelineField>
+    );
+  if (trigger.type === 'webhook')
+    return (
+      <PipelineField
+        label={t('taskTitle')}
+        htmlFor="pipeline-task-title"
+        hint={t('webhookHint')}
+        className="sm:col-span-2"
+      >
+        <Input
+          id="pipeline-task-title"
+          value={trigger.title}
+          maxLength={300}
+          dir="auto"
+          onChange={(event) => onChange({ ...trigger, title: event.target.value })}
+        />
+      </PipelineField>
+    );
+  if (trigger.type === 'mail_received')
+    return (
+      <>
+        <PipelineField label={t('mailFrom')} htmlFor="pipeline-mail-from" hint={t('mailHint')}>
+          <Input
+            id="pipeline-mail-from"
+            value={trigger.from}
+            maxLength={320}
+            dir="ltr"
+            placeholder={t('mailAny')}
+            onChange={(event) => onChange({ ...trigger, from: event.target.value })}
+          />
+        </PipelineField>
+        <PipelineField label={t('mailSubject')} htmlFor="pipeline-mail-subject">
+          <Input
+            id="pipeline-mail-subject"
+            value={trigger.subject}
+            maxLength={200}
+            dir="auto"
+            placeholder={t('mailAny')}
+            onChange={(event) => onChange({ ...trigger, subject: event.target.value })}
+          />
+        </PipelineField>
+      </>
     );
   if (trigger.type !== 'schedule') return null;
   return (

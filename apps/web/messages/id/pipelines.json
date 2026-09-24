@@ -4,14 +4,18 @@
     "approval": "Persetujuan",
     "condition": "Kondisi",
     "action": "Aksi pada tugas",
-    "wait": "Tunggu"
+    "wait": "Tunggu",
+    "notify": "Beri tahu",
+    "webhook": "Webhook"
   },
   "kindHints": {
     "agent": "Agen mengerjakan tugas",
     "approval": "Seseorang menyetujui atau mengembalikan tugas",
     "condition": "Membagi eksekusi menjadi Ya dan Tidak",
     "action": "Mengubah tugas",
-    "wait": "Menjeda eksekusi"
+    "wait": "Menjeda eksekusi",
+    "notify": "Memberi tahu orang tentang proses",
+    "webhook": "Mengirim tugas ke URL"
   },
   "triggers": {
     "manual": "Dimulai secara manual",
@@ -19,12 +23,15 @@
     "task_assigned": "Tugas ditugaskan",
     "status_changed": "Status berubah",
     "label_added": "Label ditambahkan",
-    "schedule": "Jadwal"
+    "schedule": "Jadwal",
+    "webhook": "Permintaan webhook",
+    "mail_received": "Email diterima"
   },
   "triggerSummary": {
     "statusTo": "Status berubah menjadi {status}",
     "label": "Label {label} ditambahkan",
-    "schedule": "Jadwal {cron}"
+    "schedule": "Jadwal {cron}",
+    "mail": "Email: {filter}"
   },
   "library": {
     "hint": "Templat alur kerja tim Anda. Sebuah proyek mengaktifkan templat dan menetapkan agen untuk setiap perannya.",
@@ -127,7 +134,12 @@
     "cronHint": "Menit, jam, tanggal, bulan, dan hari dalam seminggu. 0 9 * * 1-5 berjalan pada hari kerja pukul 9:00.",
     "timezone": "Zona waktu",
     "taskTitle": "Judul tugas",
-    "taskTitleHint": "Setiap eksekusi membuat tugas dengan judul ini dan menjalankan alur kerja padanya."
+    "taskTitleHint": "Setiap eksekusi membuat tugas dengan judul ini dan menjalankan alur kerja padanya.",
+    "webhookHint": "Setiap permintaan membuat tugas dengan judul ini (atau judul yang dikirim permintaan) dan menjalankan alur kerja padanya. Alamat dan rahasianya ada di halaman Alur kerja proyek setelah alur kerja diaktifkan di sana.",
+    "mailFrom": "Pengirim berisi",
+    "mailSubject": "Subjek berisi",
+    "mailHint": "Setiap email baru di akun proyek yang cocok membuat tugas dengan subjeknya.",
+    "mailAny": "Apa saja"
   },
   "roles": {
     "title": "Peran",
@@ -179,7 +191,10 @@
     "comment": "Komentar: {text}",
     "subtask": "Subtugas: {title}",
     "waitDelay": "Tunggu {duration}",
-    "waitUntil": "Sampai {field} pada {time}"
+    "waitUntil": "Sampai {field} pada {time}",
+    "notify": "Beri tahu {who}: {text}",
+    "webhook": "Kirim ke {host}",
+    "noUrl": "Belum ada URL"
   },
   "duration": {
     "minutes": "{count, plural, other {# menit}}",
@@ -302,6 +317,23 @@
       },
       "time": "Waktu",
       "timeHint": "Waktu di Europe/Berlin."
+    },
+    "notify": {
+      "to": "Kepada siapa",
+      "members": "Anggota",
+      "message": "Pesan",
+      "messagePlaceholder": "Apa yang perlu diketahui orang",
+      "recipients": {
+        "assignee": "Penanggung jawab",
+        "watchers": "Pengamat tugas",
+        "members": "Anggota terpilih"
+      }
+    },
+    "webhook": {
+      "url": "URL",
+      "urlHint": "Menerima tugas dan hasil sejauh ini sebagai JSON, ditandatangani dengan kunci tanda tangan proyek. Jawaban 2xx dianggap berhasil.",
+      "message": "Pesan",
+      "messagePlaceholder": "Dikirim sebagai message (opsional)"
     }
   },
   "issues": {
@@ -332,7 +364,8 @@
     "unknown_label": "Proyek tidak memiliki label {name}.",
     "unknown_area": "Proyek tidak memiliki area {name}.",
     "model_not_allowed": "Tidak ada agen tim yang menjalankan model {model}.",
-    "schedule_too_frequent": "Jadwal ini berjalan lebih sering daripada yang diizinkan tim."
+    "schedule_too_frequent": "Jadwal ini berjalan lebih sering daripada yang diizinkan tim.",
+    "invalid_url": "Masukkan URL yang diawali https:// atau http://."
   },
   "runs": {
     "status": {
@@ -342,7 +375,8 @@
       "succeeded": "Berhasil",
       "failed": "Gagal",
       "canceled": "Dibatalkan",
-      "rejected": "Ditolak"
+      "rejected": "Ditolak",
+      "skipped": "Dilewati"
     },
     "stepStatus": {
       "running": "Berjalan",
@@ -350,7 +384,8 @@
       "succeeded": "Selesai",
       "failed": "Gagal",
       "canceled": "Dibatalkan",
-      "simulated": "Disimulasikan"
+      "simulated": "Disimulasikan",
+      "skipped": "Dilewati"
     },
     "outcomes": {
       "success": "Berhasil",
@@ -359,7 +394,12 @@
       "approved": "Disetujui",
       "rejected": "Ditolak",
       "true": "Ya",
-      "false": "Tidak"
+      "false": "Tidak",
+      "created": "Tugas dibuat",
+      "reopened": "Tugas dibuka kembali",
+      "skipped": "Dilewati",
+      "review": "Dipindahkan ke Tinjauan",
+      "done": "Dipindahkan ke Selesai"
     },
     "agentRunStatus": {
       "pending": "Dalam antrean",
@@ -395,7 +435,27 @@
     "filterReset": "Atur ulang filter",
     "filterProject": "Proyek",
     "filterStatus": "Status",
-    "filterKind": "Jenis"
+    "filterKind": "Jenis",
+    "kinds": {
+      "agent_team": "Tim agen"
+    },
+    "triggers": {
+      "manual": "manual",
+      "task_created": "tugas dibuat",
+      "task_assigned": "tugas ditugaskan",
+      "status_changed": "status berubah",
+      "label_added": "label ditambahkan",
+      "schedule": "jadwal",
+      "webhook": "webhook",
+      "mail_received": "email diterima",
+      "routine": "jadwal",
+      "delegation": "didelegasikan ke koordinator"
+    },
+    "scheduledFor": "Jatuh tempo {time}",
+    "skipReasons": {
+      "missed": "Terlewat: server mati saat itu",
+      "taskOpen": "Dilewati: tugas sebelumnya masih terbuka"
+    }
   },
   "versions": {
     "empty": "Tidak ada versi.",
@@ -445,6 +505,30 @@
       "perHour": "per jam",
       "save": "Simpan",
       "saved": "Tersimpan."
+    },
+    "hook": {
+      "title": "Webhook",
+      "url": "Alamat",
+      "secret": "Rahasia",
+      "secretOnce": "Hanya ditampilkan sekarang. Pengirim menandatangani dengannya (Standard Webhooks) atau mengirimnya sebagai token bearer.",
+      "create": "Buat alamat",
+      "renew": "Rahasia baru",
+      "renewMessage": "Pengirim dengan rahasia lama akan ditolak mulai sekarang.",
+      "delete": "Hapus alamat",
+      "deleteMessage": "Pengirim akan mendapat 404 mulai sekarang; alamat baru memiliki URL lain.",
+      "lastUsed": "terakhir dipakai {time}",
+      "none": "Belum ada alamat.",
+      "copy": "Salin"
+    },
+    "signing": {
+      "title": "Kunci tanda tangan webhook",
+      "hint": "Langkah webhook menandatangani permintaannya dengan kunci ini (Standard Webhooks) agar penerima dapat memeriksa bahwa asalnya dari Helena.",
+      "show": "Tampilkan",
+      "hide": "Sembunyikan",
+      "renew": "Perbarui",
+      "renewMessage": "Langkah webhook menandatangani dengan kunci baru mulai sekarang; penerima juga membutuhkannya.",
+      "secret": "Kunci",
+      "copy": "Salin"
     }
   },
   "issuePanel": {

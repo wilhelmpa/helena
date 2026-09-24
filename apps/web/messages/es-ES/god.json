@@ -164,7 +164,12 @@
     "runResume": "Reanudación de ejecuciones",
     "maxResumes": "Límite de reanudaciones",
     "maxResumesHint": "Cuántas veces puede una ejecución reanudar su sesión del agente de código después de que el runner que la sostenía muriera a mitad de camino, antes de detenerse por sí sola y pedirte que la revises. 0 desactiva la reanudación: una ejecución interrumpida se reintenta desde cero en su lugar.",
-    "savedRunResume": "Límite de reanudaciones guardado"
+    "savedRunResume": "Límite de reanudaciones guardado",
+    "engine": "Motor de flujos de trabajo",
+    "timezone": "Zona horaria",
+    "timezoneHint": "La usan las rutinas, las programaciones de flujos y los pasos de espera que no indican ninguna. La del servidor es {server}.",
+    "timezoneServer": "Usar la del servidor",
+    "savedTimezone": "Zona horaria guardada."
   },
   "authentication": {
     "saved": "Los ajustes de autenticación se han guardado",
@@ -350,31 +355,34 @@
     "title": "Servicios",
     "service": {
       "runner": "Ejecutor de Hermes",
-      "mastra": "Mastra",
-      "bridge": "Puente del equipo de Hermes",
       "provisioning": "Aprovisionamiento",
-      "worker": "Worker"
+      "worker": "Worker",
+      "engine": "Motor de Helena"
     },
     "seen": "visto hace {time}",
     "lastSeen": "visto por última vez hace {time}",
     "neverSeen": "aún no visto",
     "waiting": "{count, plural, one {# ejecución espera} other {# ejecuciones esperan}} a ser tomadas, la más antigua desde hace {time}",
     "overdue": "{count, plural, one {# ejecución sigue} other {# ejecuciones siguen}} en marcha tras el límite de tiempo",
-    "agentTeamStartsWaiting": "{count, plural, one {# inicio de agent-team espera} other {# inicios de agent-team esperan}} a Mastra",
-    "stalledWorkflowRuns": "{count, plural, one {# ejecución de agent-team no ha avanzado} other {# ejecuciones de agent-team no han avanzado}} en 15 minutos",
+    "stalledWorkflowRuns": "{count, plural, one {# ejecución no avanza} other {# ejecuciones no avanzan}} desde hace 30 minutos",
     "failedLastDay": "{count, plural, one {# ejecución falló} other {# ejecuciones fallaron}} en las últimas 24 horas",
     "provisioningFailed": "{count, plural, one {# tarea de aprovisionamiento falló} other {# tareas de aprovisionamiento fallaron}}",
     "janitorsTitle": "Tareas de limpieza",
     "janitor": {
       "run-janitor": "Limpieza de ejecuciones",
-      "stage-janitor": "Limpieza de etapas",
-      "workflow-schedules": "Sincronización de horarios",
-      "resume-janitor": "Limpieza de reanudaciones"
+      "resume-janitor": "Limpieza de reanudaciones",
+      "engine-maintenance": "Mantenimiento del motor"
     },
     "janitorRan": "se ejecutó hace {time}",
     "janitorCleaned": "{count, plural, one {limpió # elemento} other {limpió # elementos}}",
     "janitorNeverRan": "aún no se ha ejecutado",
     "resuming": "{count, plural, one {# ejecución se está reanudando} other {# ejecuciones se están reanudando}} tras una caída",
-    "needsResumeReview": "{count, plural, one {# ejecución alcanzó} other {# ejecuciones alcanzaron}} el límite de reanudaciones y necesitan revisión"
+    "needsResumeReview": "{count, plural, one {# ejecución alcanzó} other {# ejecuciones alcanzaron}} el límite de reanudaciones y necesitan revisión",
+    "overdueSchedules": "{count, plural, one {# programación no se ha disparado} other {# programaciones no se han disparado}} a tiempo",
+    "failedWorkflowRuns": "{count, plural, one {# ejecución falló} other {# ejecuciones fallaron}} en las últimas 24 horas",
+    "engine": {
+      "summary": "Motor: {active} activas · {waiting} en espera · {queued} en cola · {schedules} programaciones",
+      "failure": "{name} falló hace {time}:"
+    }
   }
 }

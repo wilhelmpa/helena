@@ -1,5 +1,6 @@
 'use client';
 
+import { Workflow } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { PipelineRunStep } from '@/lib/api/endpoints/pipelines';
 import { AgentTokenCounts } from '@/components/common/agent-chat/AgentTokenCounts';
@@ -11,10 +12,17 @@ import PipelineRunStepSummary from './PipelineRunStepSummary';
 
 // One execution of a step: how it ended, who worked on it or decided it, and what it
 // left for the steps after it.
-export default function PipelineRunStepItem({ step }: { step: PipelineRunStep }) {
+export default function PipelineRunStepItem({
+  step,
+  parts = [],
+}: {
+  step: PipelineRunStep;
+  parts?: PipelineRunStep[];
+}) {
   const t = useTranslations('pipelines.runs');
   const label = byKey(t);
-  const Icon = PIPELINE_STEP_ICONS[step.kind];
+  // A step type a plugin added has no icon of its own.
+  const Icon = PIPELINE_STEP_ICONS[step.kind] ?? Workflow;
   const known = (group: string, value: string) =>
     t.has(`${group}.${value}` as Parameters<typeof t.has>[0]) ? label(`${group}.${value}`) : value;
 
@@ -78,6 +86,13 @@ export default function PipelineRunStepItem({ step }: { step: PipelineRunStep })
           </p>
         )}
         {step.summary && <PipelineRunStepSummary summary={step.summary} />}
+        {parts.length > 0 && (
+          <ol className="mt-2 space-y-2 border-s ps-3">
+            {parts.map((part) => (
+              <PipelineRunStepItem key={`${part.stepId}:${part.iteration}`} step={part} />
+            ))}
+          </ol>
+        )}
       </div>
     </li>
   );

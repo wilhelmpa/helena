@@ -1,7 +1,7 @@
 {
   "title": "动态",
-  "projectDescription": "本项目的智能体做了什么，最新的在前：你的聊天回答、它们的运行，以及 Mastra 中的智能体团队运行和工作流运行。",
-  "homeDescription": "你的项目中的智能体做了什么，最新的在前：你的聊天回答、它们的运行，以及 Mastra 中的智能体团队运行和工作流运行。",
+  "projectDescription": "此项目的智能体做了什么，最新的在前：你的聊天回复、它们的运行，以及智能体团队、工作流和例行任务的运行。",
+  "homeDescription": "你的项目中的智能体做了什么，最新的在前：你的聊天回复、它们的运行，以及智能体团队、工作流和例行任务的运行。",
   "allKinds": "所有类型",
   "allAgents": "所有智能体",
   "kinds": {
@@ -37,10 +37,6 @@
   "empty": "暂无动态",
   "emptyHint": "智能体开始工作后，聊天回答、智能体运行和工作流运行会显示在这里。",
   "unavailable": "无法加载动态。",
-  "notice": {
-    "workflow-runs-unavailable": "Mastra 未响应，因此未显示工作流运行。",
-    "workflow-runs-limited": "并非所有工作流运行都会显示：时间线只从 Mastra 读取有限数量的工作流和运行。"
-  },
   "filterKind": "类型",
   "filterAgent": "代理",
   "unavailableHint": "服务器没有响应，请稍后重试。"

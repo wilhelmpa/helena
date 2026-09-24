@@ -19,6 +19,7 @@ import { projectPipelinePath } from '@/utils/paths';
 import { revScope } from '@/utils/revScopes';
 import PipelineProjectRow from './components/project/PipelineProjectRow';
 import WorkflowRunLimitSettings from './components/project/WorkflowRunLimitSettings';
+import WorkflowSigningSecretSettings from './components/project/WorkflowSigningSecretSettings';
 import { useNewPipeline } from './hooks/useNewPipeline';
 
 // The workflow builder on a project's Workflows page: the templates of the team's
@@ -63,6 +64,7 @@ export default function ProjectPipelinesPanel() {
         {!editable && <p className="mt-1 text-xs text-muted-foreground">{t('readOnly')}</p>}
       </div>
       <WorkflowRunLimitSettings projectKey={projectKey} editable={editable} />
+      <WorkflowSigningSecretSettings projectKey={projectKey} editable={editable} />
       {pipelines.isPending ? null : pipelines.isError ? (
         <p className="rounded-lg border bg-card px-3 py-2 text-sm text-destructive">
           {t('loadFailed')}
