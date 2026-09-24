@@ -67,9 +67,8 @@ def edit(text: str, host: str) -> str:
          f'    ssl_certificate_key {cert}.key;\n'
          f'    include {TLS_SNIPPET};\n',
          'listen 443 ssl default_server;')
-    once('    server_name kingston-server.local kingston-server;\n',
-         f'    server_name kingston-server.local kingston-server {host};\n',
-         f'server_name kingston-server.local kingston-server {host};')
+    # The public name is not added to server_name: this block is the default server on 443,
+    # and on port 80 the name belongs to the redirect block (redirect() below).
     csp_old = "connect-src 'self' ws://kingston-server.local ws://kingston-server\""
     csp_new = f"connect-src 'self' ws://kingston-server.local ws://kingston-server wss://{host}\""
     if csp_new not in text:
