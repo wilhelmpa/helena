@@ -24,7 +24,14 @@ export default function HelenaWordmark({
     <svg
       viewBox={`0 0 ${width} ${height}`}
       {...(label ? { role: 'img', 'aria-label': label } : { 'aria-hidden': true })}
-      style={size === 'compact' ? { width: width / 2, height: height / 2 } : undefined}
+      // The letters fill the upper five of the six rows; the sixth holds only the thin
+      // shadow line. Centred as a box next to the square mark they sat 2px high (owner,
+      // 2026-09-24: "nicht vertikal bündig mit dem Logo"), so the compact size moves down.
+      style={
+        size === 'compact'
+          ? { width: width / 2, height: height / 2, transform: 'translateY(2px)' }
+          : undefined
+      }
       className={cn(size === 'full' && 'h-auto w-[300px]', className)}
     >
       {rows.map((row, i) => (

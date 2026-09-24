@@ -26,7 +26,7 @@ export default function SettingsSection({
         </div>
         {action && <div className="shrink-0">{action}</div>}
       </header>
-      {children && <div className="min-w-0">{children}</div>}
+      {children && <div className="min-w-0 space-y-4">{children}</div>}
     </section>
   );
 }
