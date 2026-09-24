@@ -75,6 +75,9 @@ async function nodeSecurity(context: UpdateCheckContext, installed: string, newe
   });
 }
 
+// Tools installed as Debian packages; their version carries a Debian revision.
+const DPKG_TOOLS = new Set(['kasmvnc']);
+
 const TOOLS: ToolInfo[] = [
   {
     component: 'bun',
@@ -115,7 +118,12 @@ async function installedVersion(
   component: string,
 ): Promise<string | null> {
   const inventory = await hostInventory(context);
-  const reported = plainVersion(inventory?.tools?.[component] ?? null);
+  const value = inventory?.tools?.[component] ?? null;
+  // A Debian package's version (KasmVNC) without its epoch and Debian revision.
+  const raw = DPKG_TOOLS.has(component)
+    ? (value?.replace(/^\d+:/, '').replace(/-[^-]*$/, '') ?? null)
+    : value;
+  const reported = plainVersion(raw);
   if (reported) return reported;
   // The API runs on the host's Bun; without the helper that is the one Bun known.
   return component === 'bun' ? plainVersion(Bun.version) : null;

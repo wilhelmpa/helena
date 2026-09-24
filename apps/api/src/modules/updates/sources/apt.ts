@@ -19,6 +19,10 @@ type AptPackage = NonNullable<NonNullable<HostInventory['apt']>['packages']>[num
 
 const NAME = /^[a-z0-9][a-z0-9+.-]{0,127}$/;
 
+// Debian packages Helena's services run on (the project browsers' Chromium): shown with their
+// version even when there is nothing to upgrade. Source package and name.
+const WATCHED: [string, string][] = [['chromium', 'Chromium']];
+
 // Debian's changelog path: `lib` packages are filed under their first four letters.
 function changelogUrl(source: string, component: string): string {
   const prefix = source.startsWith('lib') ? source.slice(0, 4) : source.slice(0, 1);
@@ -67,9 +71,25 @@ export const aptSource: UpdateSource = {
     const candidates = (inventory.apt.packages ?? [])
       .map((entry) => toCandidate(entry))
       .filter((entry): entry is UpdateCandidate => entry !== null);
-    if (candidates.length > 0) return candidates;
+    // The packages Helena's own services run on are listed even when they are current.
+    for (const [component, name] of WATCHED) {
+      const installed = inventory.tools?.[component];
+      if (candidates.some((entry) => entry.component === component) || !installed) continue;
+      candidates.push({
+        component,
+        name,
+        installed,
+        available: installed,
+        updateAvailable: false,
+        security: false,
+        sourceUrl: `https://tracker.debian.org/pkg/${component}`,
+        applicable: false,
+      });
+    }
+    if (candidates.some((entry) => entry.updateAvailable)) return candidates;
     // Nothing to upgrade: one line that says so, with when the lists were read.
     return [
+      ...candidates,
       {
         component: 'debian',
         name: inventory.apt.os?.trim() || 'Debian',
