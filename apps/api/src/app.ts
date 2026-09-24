@@ -364,11 +364,22 @@ export const app = new Elysia()
   // Reverse-proxy authentication endpoint. It returns no user data: Nginx only
   // needs the status code before it exposes local tools such as Hermes, VS Code,
   // the terminal, and the persistent browser under the Plan origin.
-  .get('/auth/verify', async ({ request, status }) => {
-    const session = await getSessionFromHeaders(request.headers);
-    if (!session || session.user.active === false) return status(401);
-    return status(204);
-  })
+  .get(
+    '/auth/verify',
+    async ({ request, status }) => {
+      const session = await getSessionFromHeaders(request.headers);
+      if (!session || session.user.active === false) return status(401);
+      return status(204);
+    },
+    {
+      detail: {
+        summary: 'Check a session for the reverse proxy',
+        description:
+          'Answers 204 for a signed-in, active user and 401 otherwise, with no user data: ' +
+          "nginx's auth_request asks it before it exposes the local tools under the Helena origin.",
+      },
+    },
+  )
   // The owner-terminal proxy's auth_request target (see
   // deployment/volition-stack/native/owner-terminal/nginx-owner-terminal.conf).
   // Session, owner role and a live 12h grant are all checked here, on every request
