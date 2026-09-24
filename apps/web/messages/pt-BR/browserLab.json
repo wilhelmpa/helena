@@ -3,7 +3,7 @@
   "homeBrowser": "Navegador da Home",
   "which": "Navegador",
   "noBrowser": "Nenhum navegador para testar",
-  "noBrowserHint": "O navegador da Home precisa que seus projetos pertençam a uma equipe; o navegador de um projeto é testado dentro do projeto.",
+  "noBrowserHint": "Aqui não há nem o navegador da Home nem o de um projeto.",
   "noAgents": "Nenhum agente deste navegador tem o navegador do projeto. Ative-o nas ferramentas do agente.",
   "tabs": {
     "label": "Navegador",

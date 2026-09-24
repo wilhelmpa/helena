@@ -31,7 +31,7 @@ Decided here:
    Jev-compatible server such as Laya) are configured;
 4. which tools agents get, and how "Standard (wie bisher)" keeps today's behaviour;
 5. how the test area (Browser 2.0) and jev-browser fit in;
-6. how Laya runs on this server now and on the Strix Halo later.
+6. how Laya runs on this server now (CPU) and on its GPU later.
 
 ## 2. Candidates
 
@@ -187,7 +187,7 @@ A backend is a **connection in Zugänge**, credential kind `decision_model` ("En
 | Field | TypeSafe (Jev Cloud) | Vercel AI Gateway (Jev) | Jev-kompatibler Server |
 |---|---|---|---|
 | `provider` | `typesafe` | `vercel` | `compatible` |
-| `baseUrl` | `https://api.typesafe.ai` | `https://ai-gateway.vercel.sh/typesafe` | e.g. `http://127.0.0.1:8791` (Laya on this server) or `http://strix.local:8791` |
+| `baseUrl` | `https://api.typesafe.ai` | `https://ai-gateway.vercel.sh/typesafe` | e.g. `http://127.0.0.1:8791` (Laya on this server) or `http://<host>:8791` (another machine) |
 | `model` | `jev-latest` | `typesafe-ai/jev` | `laya-browser-v10s` (informational for Laya) |
 | key (secret) | from console.typesafe.ai/keys | an AI Gateway API key | optional; preset "Laya (lokal)" reads the installer's key file instead |
 | `allowPrivateAddress` | – | – | the owner's explicit allowance for this one host (LAN/loopback) |
@@ -262,26 +262,37 @@ mit anderem Backend" runs the same task as Standard through the agent's chat and
 and cost next to the other runs). The local set is Helena's own fixture and the Laya rules were
 tuned on it; the public set is the independent measure.
 
-### 3.8 Laya on this server, later on the Strix Halo
+### 3.8 Laya on this server: the CPU now, this machine's GPU later
 
-Kingston itself is the Strix Halo box (AMD Ryzen AI MAX+ 395, 32 threads; 30 GB visible to Debian,
-the rest is the GPU's). The installer
-`deployment/volition-stack/native/laya/install.sh` (run by the orchestrator, owner OK 2026-09-24):
+Kingston **is** the Strix Halo box: a Bosgame M5 with an AMD Ryzen AI Max+ 395 (32 threads), a
+Radeon 8060S (gfx1151) and 128 GB, of which the BIOS reserves 96 GiB as VRAM on purpose, so Debian
+sees about 31 GB. "Later on the Strix Halo" therefore means later on **this machine's GPU (ROCm)**,
+not another host. The installer `deployment/volition-stack/native/laya/install.sh` (run by the
+orchestrator, owner OK for the CPU install and its downloads 2026-09-24):
 
-- system user `helena-laya`, venv `/opt/helena/laya` (uv, Python 3.13), PyTorch **CPU** wheel,
-  `laya==0.3.20`, `laya-browser-agent==0.2.3` — all pinned;
-- checkpoint `cklxx/laya-browser` subfolder `v10s` at a pinned revision, downloaded once with
-  `huggingface_hub.snapshot_download` into `/var/lib/helena-laya/models`, then `HF_HUB_OFFLINE=1`;
-  safetensors only, no `trust_remote_code`;
-- key `/etc/helena/laya.key` (root:volition-plan 0640), read by the API only (`HELENA_LAYA_KEY_FILE`
-  in the API unit's drop-in);
-- `helena-laya.service`: `127.0.0.1:8791`, `LAYA_THREADS`, `MemoryMax=4G`, `CPUQuota=800%`,
-  `Nice=10`, `ProtectSystem=strict`, `PrivateTmp`, no network after the download
-  (`IPAddressDeny=any` + `IPAddressAllow=localhost`);
-- `install.sh status|uninstall`; the Zugänge preset "Laya (lokal auf diesem Server)".
+- system user `helena-laya`, venv `/opt/helena/laya` (uv), PyTorch **2.14.0 CPU** wheel and
+  `laya==0.3.20`, both pinned; the server is Helena's own thin wrapper `helena_laya_serve.py`
+  (`/health`, `/v1/models`, `/v1/systemone`, constant-time Bearer check, request caps, no CORS),
+  not laya-browser-agent's;
+- checkpoint `cklxx/laya-browser` subfolder `v10s` at a pinned revision, checked against its
+  SHA-256, in `/var/lib/helena-laya/models`, then `HF_HUB_OFFLINE=1`; safetensors only, no
+  `trust_remote_code`;
+- key `/etc/helena/laya.key` (root:volition-plan 0640): the API reads it (default path of
+  `HELENA_LAYA_KEY_FILE`), the service gets it through systemd's `LoadCredential`;
+- `helena-laya.service`: `127.0.0.1:8791`, 8 threads, `CPUQuota=800%`, `MemoryHigh=3G`,
+  `MemoryMax=4G` (the OS has only ~31 GB), `Nice=10`, `ProtectSystem=strict`, `PrivateTmp`, no
+  network (`IPAddressDeny=any` + `IPAddressAllow=localhost`);
+- `install.sh status|rotate-key|uninstall [--purge]`; the Zugänge preset "Laya (lokal auf diesem
+  Server)".
 
-Moving to the Strix Halo (or any other machine) is a new `compatible` connection with that machine's
-address, "Lokale Adresse erlauben" on, and the key of that installation.
+**The GPU later** (not done: ROCm and a PyTorch-ROCm wheel are a large download that needs the
+owner's OK): the same service with a ROCm build of PyTorch and `device=cuda` (ROCm's HIP device).
+What it would change is **latency** (the 0.2–2 s per decision above, most of it on large public
+pages, would shrink), not the success rate: the 3/10 on public sites is the checkpoint's judgement,
+not its speed. The connection in Zugänge stays the same.
+
+Laya on another machine is a new `compatible` connection with that machine's address (e.g.
+`http://<host>:8791`), "Lokale Adresse erlauben" on, and the key of that installation.
 
 ## 4. Rejected
 

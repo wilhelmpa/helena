@@ -5,7 +5,7 @@ import { useDecisionBackendLookup } from '#modules/agents/credentials/decision-m
 // The decision backends Helena ships (docs/helena-decisions/browser-task.md §3.3), registered as
 // the internal plugin "helena.browser-task" at the framework's extension point
 // (@helena/sdk decisionBackends): TypeSafe's Jev directly, Jev through the Vercel AI Gateway, and
-// any server speaking the same protocol (Laya on this machine or on the Strix Halo box).
+// any server speaking the same protocol (Laya on this machine, or on another host).
 
 export const BROWSER_TASK_PLUGIN_ID = 'helena.browser-task';
 

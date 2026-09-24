@@ -3,7 +3,7 @@
   "homeBrowser": "Home-Browser",
   "which": "Browser",
   "noBrowser": "Kein Browser zum Testen",
-  "noBrowserHint": "Der Home-Browser braucht Projekte in einem Team; den Browser eines Projekts testest du im Projekt.",
+  "noBrowserHint": "Hier läuft weder der Home-Browser noch ein Projekt-Browser.",
   "noAgents": "Kein Agent dieses Browsers hat den Projekt-Browser. Schalte ihn in den Werkzeugen des Agenten ein.",
   "tabs": {
     "label": "Browser",

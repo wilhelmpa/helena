@@ -3,7 +3,7 @@
   "homeBrowser": "Navigateur de Home",
   "which": "Navigateur",
   "noBrowser": "Aucun navigateur à tester",
-  "noBrowserHint": "Le navigateur de Home nécessite que vos projets appartiennent à une équipe ; le navigateur d'un projet se teste dans le projet.",
+  "noBrowserHint": "Ni le navigateur de Home ni celui d'un projet n'est disponible ici.",
   "noAgents": "Aucun agent de ce navigateur n'a le navigateur du projet. Activez-le dans les outils de l'agent.",
   "tabs": {
     "label": "Navigateur",

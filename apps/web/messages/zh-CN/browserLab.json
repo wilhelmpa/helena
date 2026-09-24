@@ -3,7 +3,7 @@
   "homeBrowser": "Home 浏览器",
   "which": "浏览器",
   "noBrowser": "没有可测试的浏览器",
-  "noBrowserHint": "Home 浏览器要求你的项目属于同一个团队；项目的浏览器请在项目内测试。",
+  "noBrowserHint": "这里既没有 Home 浏览器，也没有项目浏览器。",
   "noAgents": "此浏览器的智能体都没有项目浏览器。请在智能体的工具中开启。",
   "tabs": {
     "label": "浏览器",

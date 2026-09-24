@@ -192,5 +192,6 @@
     "backHint": "返回上一个布局",
     "full": "工具全屏",
     "resizeArea": "调整宽度"
-  }
+  },
+  "browserLab": "Browser 2.0"
 }

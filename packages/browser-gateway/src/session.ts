@@ -1352,14 +1352,36 @@ export class PatchrightGatewaySession implements GatewaySession {
 
   async #taskClick(handle: ElementHandle): Promise<void> {
     const page = this.#page;
-    const done = await this.#orDialog(
-      this.#waitForCompletion(async () => {
-        await handle.click({ timeout: ACTION_TIMEOUT_MS });
-        return 'clicked';
-      }),
-    );
+    // A link that opens a new tab (target=_blank): the task goes on there, and the live view
+    // shows it, as a person would see it come to the front.
+    const opened: Page[] = [];
+    const onPage = (candidate: Page) => void opened.push(candidate);
+    this.#context.on('page', onPage);
+    let done: string;
+    try {
+      done = await this.#orDialog(
+        this.#waitForCompletion(async () => {
+          await handle.click({ timeout: ACTION_TIMEOUT_MS });
+          return 'clicked';
+        }),
+      );
+    } finally {
+      this.#context.off('page', onPage);
+    }
     if (done !== 'clicked' && this.#dialogs.has(page)) {
       throw new TaskActError('dialog', done);
+    }
+    let tab: Page | null = null;
+    for (const candidate of opened) {
+      if (!candidate.isClosed() && (await candidate.opener().catch(() => null)) === page) {
+        tab = candidate;
+      }
+    }
+    if (tab) {
+      this.#page = tab;
+      await tab.waitForLoadState('domcontentloaded', { timeout: LOAD_TIMEOUT_MS }).catch(() => {});
+      await tab.bringToFront().catch(() => {});
+      await this.#settle();
     }
   }
 
@@ -1441,6 +1463,8 @@ export class PatchrightGatewaySession implements GatewaySession {
   }
 
   taskPage(): TaskPage {
+    // The owner watches the task in the live view, which shows the tab in front.
+    void this.#page.bringToFront().catch(() => {});
     return {
       observe: () => this.#observeTask(),
       fresh: (observation, element) => this.#taskFresh(observation, element),

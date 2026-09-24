@@ -3,7 +3,7 @@
   "homeBrowser": "Browser Home",
   "which": "Browser",
   "noBrowser": "Tidak ada browser untuk diuji",
-  "noBrowserHint": "Browser Home memerlukan proyek Anda berada dalam satu tim; browser proyek diuji di dalam proyek.",
+  "noBrowserHint": "Browser Home maupun browser proyek tidak tersedia di sini.",
   "noAgents": "Tidak ada agen di browser ini yang memiliki browser proyek. Aktifkan di alat agen.",
   "tabs": {
     "label": "Browser",

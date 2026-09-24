@@ -8,9 +8,13 @@ import SectionPageView from '@/components/common/page/SectionPageView';
 import { EmptyState } from '@/components/common/page/EmptyState';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { PageSelect, PageToolbar, PageToolbarSpacer } from '@/components/layout/PageToolbar';
-import { useBrowserGatewayOverviewQuery } from '@/features/browser-gateway/services/browserGateway.service';
+import {
+  useBrowserGatewayOverviewQuery,
+  useBrowserRouterOverviewQuery,
+} from '@/features/browser-gateway/services/browserGateway.service';
 import type { LabScope } from '@/lib/api/endpoints/browserTask';
 import { useTeamsQuery } from '@/services/teams.service';
+import { HOME_BROWSER_SLUG } from '@/utils/browserOverview';
 import { soleTeamId } from '@/utils/homeTeamScope';
 import BrowserLab from './components/BrowserLab';
 import { BrowserPageTabs } from './components/BrowserPageTabs';
@@ -24,7 +28,10 @@ export default function HomeBrowserLabPage() {
   const t = useTranslations('browserLab');
   const teams = useTeamsQuery();
   const projects = useBrowserGatewayOverviewQuery();
-  const teamId = soleTeamId(teams.data);
+  const router = useBrowserRouterOverviewQuery();
+  // Home's own browser, when this instance runs one (as the Browser overview shows it).
+  const homeRuns = (router.data ?? []).some((state) => state.slug === HOME_BROWSER_SLUG);
+  const teamId = homeRuns ? soleTeamId(teams.data) : null;
   const projectList = projects.data?.projects ?? [];
   const [picked, setPicked] = useState<string | null>(null);
   const value = picked ?? (teamId !== null ? HOME : (projectList[0]?.projectKey ?? HOME));
@@ -57,7 +64,7 @@ export default function HomeBrowserLabPage() {
         )}
       </PageToolbar>
       <SectionPageView title={t('title')} description={null} wide>
-        {teams.isPending || projects.isPending ? (
+        {teams.isPending || projects.isPending || router.isPending ? (
           <ListSkeleton rows={3} rowClassName="h-24" />
         ) : scope === null ? (
           <EmptyState title={t('noBrowser')} description={t('noBrowserHint')} />

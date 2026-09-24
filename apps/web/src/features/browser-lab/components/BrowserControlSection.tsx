@@ -78,7 +78,7 @@ export function BrowserControlSection({
                 });
               }}
             >
-              <SelectTrigger className="w-60" aria-label={t('mode')}>
+              <SelectTrigger className="w-64" aria-label={t('mode')}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
