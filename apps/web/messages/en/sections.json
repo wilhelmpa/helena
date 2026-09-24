@@ -43,6 +43,10 @@
       "label": "Storage",
       "description": "How much people may upload: the size of a single file, the attachment types accepted, and the storage each project gets."
     },
+    "knowledge": {
+      "label": "Knowledge & search",
+      "description": "The sources of the one search, how far the index is, and semantic search."
+    },
     "telegram": {
       "label": "Telegram",
       "description": "The bot people connect their Telegram account to, and the one that delivers Telegram notifications for projects that set no bot of their own."

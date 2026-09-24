@@ -1,9 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowLeft, ArrowRight, Bot, RotateCw } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, ArrowRight, BookmarkPlus, Bot, RotateCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 import { useBrowserControl } from '@/hooks/useBrowserControl';
+import { useCaptureWebPageMutation } from '@/services/everything.service';
 import type { BrowserView } from '@/hooks/useBrowserPreferences';
 import { Button } from '@/components/ui/button';
 import WorkspaceBrowserStreamMenu from './WorkspaceBrowserStreamMenu';
@@ -15,22 +18,45 @@ import WorkspaceBrowserViewSwitch from './WorkspaceBrowserViewSwitch';
 // the address follows the agent's navigation as well as the person's.
 export default function WorkspaceBrowserBar({
   base,
+  projectKey,
   view,
   onViewChange,
   followAgent,
   onToggleFollowAgent,
 }: {
   base: string;
+  // The project whose Inbox a saved page goes to; Home's without one.
+  projectKey: string | null;
   view: BrowserView;
   onViewChange: (view: BrowserView) => void;
   followAgent: boolean;
   onToggleFollowAgent: () => void;
 }) {
   const t = useTranslations('nav.workspace.browserBar');
+  const tKnowledge = useTranslations('knowledge.capture');
+  const router = useRouter();
   const { tabs, active, act } = useBrowserControl(base);
   // What the person is typing; null while the field shows the tab's own address.
   const [draft, setDraft] = useState<string | null>(null);
   const id = active?.id;
+  const savePage = useCaptureWebPageMutation();
+  const pageUrl = active?.url && /^https?:\/\//i.test(active.url) ? active.url : null;
+
+  // "Seite im Wissen speichern": the readable part of the page as a Markdown note with
+  // its source, in the project's Inbox.
+  const save = () => {
+    if (!pageUrl) return;
+    savePage.mutate(
+      { url: pageUrl, projectKey: projectKey ?? undefined },
+      {
+        onSuccess: (saved) =>
+          toast.success(tKnowledge('pageSaved'), {
+            action: { label: tKnowledge('open'), onClick: () => router.push(saved.href) },
+          }),
+        onError: () => toast.error(tKnowledge('pageFailed')),
+      },
+    );
+  };
 
   return (
     <div className="flex min-w-0 flex-1 items-center gap-0.5">
@@ -95,6 +121,17 @@ export default function WorkspaceBrowserBar({
           }}
         />
       </form>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
+        disabled={!pageUrl || savePage.isPending}
+        onClick={save}
+        title={tKnowledge('savePage')}
+        aria-label={tKnowledge('savePage')}
+      >
+        <BookmarkPlus />
+      </Button>
       <WorkspaceBrowserTabs
         tabs={tabs}
         onActivate={(tabId) => act({ action: 'activate', id: tabId })}

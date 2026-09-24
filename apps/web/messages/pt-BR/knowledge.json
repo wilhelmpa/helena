@@ -1,0 +1,63 @@
+{
+  "source": {
+    "issue": "Tasks",
+    "comment": "Comments",
+    "vault": "Notes & files",
+    "mail": "Mail",
+    "chat": "Chats",
+    "run": "Agent runs"
+  },
+  "capture": {
+    "inbox": "Inbox",
+    "journal": "Daily note",
+    "saveMessage": "Save as a note",
+    "chatTitle": "From the chat",
+    "saved": "Saved to the Inbox",
+    "open": "Open",
+    "failed": "Could not save it",
+    "savePage": "Save the page to the knowledge",
+    "pageSaved": "Page saved to the Inbox",
+    "pageFailed": "Could not save the page"
+  },
+  "plugin": {
+    "name": "Knowledge",
+    "description": "Helena's own knowledge sources and the Inbox and daily note capture."
+  },
+  "journal": {
+    "today": "Today's note"
+  },
+  "templates": {
+    "action": "New from a template",
+    "title": "New note from a template",
+    "choose": "Template",
+    "none": "There are no templates yet. Notes in the Templates folder show up here.",
+    "name": "Name",
+    "namePlaceholder": "Name of the note",
+    "cancel": "Cancel",
+    "create": "Create"
+  },
+  "mentions": {
+    "title": "Mentioned in"
+  },
+  "admin": {
+    "sources": "Sources",
+    "sourcesHint": "What the one search (⌘K and the agents' search) covers, and how far the index is with each.",
+    "error": "Error: {message}",
+    "indexedAt": "Indexed {time}",
+    "notYet": "Not indexed yet",
+    "items": "{count, plural, one {# item} other {# items}}",
+    "reindex": "Index again",
+    "semantic": "Semantic search",
+    "semanticHint": "Also finds what is worded differently, by meaning. Runs on this server; nothing leaves it.",
+    "semanticSwitch": "Search by meaning",
+    "pgvector": "pgvector",
+    "installed": "installed",
+    "notInstalled": "not installed (the search works without it, more slowly)",
+    "model": "Model",
+    "none": "none",
+    "passages": "Passages",
+    "embedded": "{embedded} of {passages} embedded",
+    "runtimeMissing": "The embedding runtime is not installed yet. It needs the owner's approval (docs/helena-decisions/second-brain.md).",
+    "modelMissing": "The embedding model could not be loaded. It needs the owner's approval to download it."
+  }
+}

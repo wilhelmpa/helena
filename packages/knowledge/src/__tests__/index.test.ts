@@ -391,7 +391,7 @@ describe('capture, templates and daily notes', () => {
     expect(written).toContain('.obsidian/daily-notes.json');
     const daily = JSON.parse(await readFile(path.join(root, '.obsidian/daily-notes.json'), 'utf8'));
     expect(daily).toEqual({
-      folder: 'Home/Journal',
+      folder: 'Home/Docs/Journal',
       format: 'YYYY-MM-DD',
       template: 'Templates/Tagesnotiz',
     });
@@ -464,7 +464,7 @@ describe('capture, templates and daily notes', () => {
       actor,
     );
     const note = await readFile(path.join(root, first.item.slice('vault:'.length)), 'utf8');
-    expect(first.item).toMatch(/^vault:Home\/Journal\/\d{4}-\d\d-\d\d\.md$/);
+    expect(first.item).toMatch(/^vault:Home\/Docs\/Journal\/\d{4}-\d\d-\d\d\.md$/);
     const inbox = note.slice(note.indexOf('## Eingang'), note.indexOf('## Rückblick'));
     expect(inbox).toMatch(/- \d\d:\d\d Idee: Regale mieten\n- \d\d:\d\d Zweiter Gedanke/);
   });

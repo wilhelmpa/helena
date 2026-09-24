@@ -6,8 +6,12 @@
 // colon does that instead, since a command id never contains one.
 export const ISSUE_PREFIX = 'issue-hit:';
 
-// The same for the notes and files of the knowledge search, listed after the issues.
+// The same for the hits of the one search over every knowledge source (notes, files,
+// mail, chats, runs, tasks of other projects), listed after the issues.
 export const KNOWLEDGE_PREFIX = 'knowledge-hit:';
+
+// "Save what I typed into the knowledge", always last while typing.
+export const CAPTURE_PREFIX = 'capture:';
 
 // Match/rank the static action items. cmdk's default scorer is a fuzzy
 // subsequence match; this requires the typed text to appear as a substring. The
@@ -22,6 +26,10 @@ export function substringFilter(value: string, search: string): number {
   if (value.startsWith(KNOWLEDGE_PREFIX)) {
     const index = Number(value.slice(KNOWLEDGE_PREFIX.length));
     return 0.5 - index / 1e6;
+  }
+  if (value.startsWith(CAPTURE_PREFIX)) {
+    const index = Number(value.slice(CAPTURE_PREFIX.length));
+    return 0.1 - index / 1e6;
   }
   // cmdk calls this at item registration with the current (on open: empty)
   // search. An empty needle has length 0, which would make the count loop below

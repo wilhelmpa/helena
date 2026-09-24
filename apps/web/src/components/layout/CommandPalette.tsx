@@ -1,14 +1,19 @@
 import { Fragment, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { useSession } from '@/lib/auth-client';
+import { cn } from '@/lib/utils';
+import type { KnowledgeHit } from '@/lib/api/endpoints/everything';
 import { useIssueSearchQuery } from '@/services/issues.service';
-import { useKnowledgeSearchQuery } from '@/services/knowledge.service';
+import { useCaptureMutation, useKnowledgeFindQuery } from '@/services/everything.service';
 import type { Command, CommandPage, CommandSection } from '@/utils/commands';
 import { substringFilter } from '@/utils/commandFilter';
-import { knowledgeHref } from '@/utils/knowledgeHref';
+import CommandPaletteEverything, {
+  SOURCE_ORDER,
+} from '@/components/layout/CommandPaletteEverything';
 import CommandPaletteIssues from '@/components/layout/CommandPaletteIssues';
-import CommandPaletteKnowledge from '@/components/layout/CommandPaletteKnowledge';
 import CommandPaletteRow from '@/components/layout/CommandPaletteRow';
 import {
   CommandDialog,
@@ -23,10 +28,11 @@ import {
 // for the issue in front of the user, then the board, the general commands, the
 // project list and every section they may open. A command with a submenu opens a
 // second level (status, priority, assignee, labels); Backspace on an empty input
-// goes back. While the user is typing, an "Issues" group lists issues the server
-// matches by identifier, title, description, number or custom fields (archived
-// issues included), and a last "Knowledge" group the notes and files of the vault
-// whose text matches.
+// goes back. While the user is typing, an "Issues" group lists issues of the current
+// project the server matches by identifier, title, description, number or custom
+// fields (archived issues included), then the one search over everything else the
+// reader may open (notes and files, mail, chats, agent runs, comments, tasks of other
+// projects), filterable by kind, and last "save this into the knowledge".
 export default function CommandPalette({
   open,
   onOpenChange,
@@ -43,16 +49,21 @@ export default function CommandPalette({
   onOpenIssue: (sequenceNumber: number) => void;
 }) {
   const t = useTranslations('palette');
+  const tSource = useTranslations('knowledge.source');
   const router = useRouter();
+  const { data: session } = useSession();
   const [query, setQuery] = useState('');
   const [page, setPage] = useState<CommandPage | null>(null);
+  const [kind, setKind] = useState<string | null>(null);
+  const capture = useCaptureMutation();
 
-  // Reset the query and the open submenu whenever the palette closes, so it
-  // reopens at the top level and empty.
+  // Reset the query, the filter and the open submenu whenever the palette closes, so
+  // it reopens at the top level and empty.
   useEffect(() => {
     if (!open) {
       setQuery('');
       setPage(null);
+      setKind(null);
     }
   }, [open]);
 
@@ -64,16 +75,27 @@ export default function CommandPalette({
       if (list) list.scrollTop = 0;
     });
     return () => cancelAnimationFrame(id);
-  }, [query, page]);
+  }, [query, page, kind]);
 
-  // Debounce the input before it drives the search request, so a burst of
+  // Debounce the input before it drives the search requests, so a burst of
   // keystrokes issues one query, not one per character.
   const debounced = useDebouncedValue(query, 250);
-  const search = useIssueSearchQuery(currentProjectKey, debounced, { enabled: open && !page });
+  const showIssues = hasProject && (kind === null || kind === 'issue');
+  const search = useIssueSearchQuery(currentProjectKey, debounced, {
+    enabled: open && !page && showIssues,
+  });
   const hits = search.data ?? [];
-  const knowledge = useKnowledgeSearchQuery(debounced, { enabled: open && !page });
-  const knowledgeHits = knowledge.data?.items ?? [];
+  const everything = useKnowledgeFindQuery(debounced, {
+    sources: kind ? [kind] : undefined,
+    enabled: open && !page,
+  });
+  // The current project's tasks come from the issue search above.
+  const knowledgeHits = (everything.data?.items ?? []).filter(
+    (hit) => !(showIssues && hit.source === 'issue' && hit.projectKey === currentProjectKey),
+  );
+  const counts = everything.data?.counts ?? {};
   const searching = query.trim().length > 0;
+  const owner = session?.user.role === 'god';
 
   function run(command: Command) {
     if (command.submenu) {
@@ -83,6 +105,33 @@ export default function CommandPalette({
     }
     if (!command.keepOpen) onOpenChange(false);
     command.run?.();
+  }
+
+  function openHit(hit: KnowledgeHit) {
+    onOpenChange(false);
+    if (/^https?:\/\//i.test(hit.href)) window.open(hit.href, '_blank', 'noopener');
+    else router.push(hit.href);
+  }
+
+  function captureText(target: 'inbox' | 'journal') {
+    const text = query.trim();
+    if (!text) return;
+    onOpenChange(false);
+    capture.mutate(
+      {
+        target,
+        title: text.split('\n')[0]!.slice(0, 120),
+        text,
+        projectKey: target === 'inbox' ? (currentProjectKey ?? undefined) : undefined,
+      },
+      {
+        onSuccess: (saved) =>
+          toast.success(target === 'journal' ? t('capturedJournal') : t('capturedInbox'), {
+            action: { label: t('openCaptured'), onClick: () => router.push(saved.href) },
+          }),
+        onError: () => toast.error(t('captureFailed')),
+      },
+    );
   }
 
   return (
@@ -100,6 +149,32 @@ export default function CommandPalette({
           }
         }}
       />
+      {!page && searching && (
+        <div
+          role="toolbar"
+          aria-label={t('filterKinds')}
+          className="flex gap-1 overflow-x-auto border-b px-2 py-1.5"
+        >
+          {[null, ...SOURCE_ORDER].map((source) => {
+            const count = source ? counts[source] : undefined;
+            return (
+              <button
+                key={source ?? 'all'}
+                type="button"
+                aria-pressed={kind === source}
+                onClick={() => setKind(source)}
+                className={cn(
+                  'h-7 shrink-0 rounded-md px-2 text-xs text-muted-foreground hover:bg-accent hover:text-foreground',
+                  kind === source && 'bg-accent text-foreground',
+                )}
+              >
+                {source ? tSource(source) : t('filterAll')}
+                {count ? <span className="ms-1 tabular-nums opacity-70">{count}</span> : null}
+              </button>
+            );
+          })}
+        </div>
+      )}
       <CommandList>
         <CommandEmpty>{t('noResults')}</CommandEmpty>
         {page ? (
@@ -122,7 +197,7 @@ export default function CommandPalette({
         )}
         {/* Issue results only appear while the user is typing, otherwise the
             palette would list the entire project on open. */}
-        {!page && hasProject && searching && (hits.length > 0 || search.isFetching) && (
+        {!page && showIssues && searching && (hits.length > 0 || search.isFetching) && (
           <CommandPaletteIssues
             hits={hits}
             fetching={search.isFetching}
@@ -132,14 +207,15 @@ export default function CommandPalette({
             }}
           />
         )}
-        {!page && searching && (knowledgeHits.length > 0 || knowledge.isFetching) && (
-          <CommandPaletteKnowledge
+        {!page && searching && (
+          <CommandPaletteEverything
             hits={knowledgeHits}
-            fetching={knowledge.isFetching}
-            onOpen={(hit) => {
-              onOpenChange(false);
-              router.push(knowledgeHref(hit.path, hit.kind));
-            }}
+            fetching={everything.isFetching}
+            query={query}
+            canCapture
+            canJournal={owner}
+            onOpen={openHit}
+            onCapture={captureText}
           />
         )}
       </CommandList>

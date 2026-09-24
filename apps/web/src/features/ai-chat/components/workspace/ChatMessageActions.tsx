@@ -1,11 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Check, Copy, ListPlus, Pencil } from 'lucide-react';
+import { BookmarkPlus, Check, Copy, ListPlus, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { useCaptureMutation } from '@/services/everything.service';
 import { copyText } from '@/utils/clipboard';
+import { chatPath, homeChatPath } from '@/utils/paths';
 import { messageText, type PlanUIMessage } from '../../utils/chatMessages';
 import ChatToIssueDialog from './ChatToIssueDialog';
 import ChatSpeakButton from './ChatSpeakButton';
@@ -35,12 +38,42 @@ export default function ChatMessageActions({
   const [copied, setCopied] = useState(false);
   const [issueOpen, setIssueOpen] = useState(false);
   const text = messageText(message);
+  const router = useRouter();
+  const tKnowledge = useTranslations('knowledge.capture');
+  const capture = useCaptureMutation();
 
   async function copy() {
     await copyText(text);
     setCopied(true);
     toast.success(tCommon('copied'));
     setTimeout(() => setCopied(false), 1500);
+  }
+
+  // Keeps the message as a note in the Inbox of the chat's project (Home's without one),
+  // with the chat it came from.
+  function saveAsNote() {
+    const location = { agent: agentId, thread: threadId };
+    const origin = `${window.location.origin}${
+      projectKey ? chatPath(projectKey, location) : homeChatPath(location)
+    }`;
+    const firstLine = text.split('\n').find((line) => line.trim()) ?? text;
+    capture.mutate(
+      {
+        kind: 'chat-message',
+        title: firstLine.replace(/^[#>*\-\s]+/, '').slice(0, 120) || tKnowledge('chatTitle'),
+        text,
+        origin,
+        projectKey: projectKey ?? undefined,
+        tags: ['chat'],
+      },
+      {
+        onSuccess: (saved) =>
+          toast.success(tKnowledge('saved'), {
+            action: { label: tKnowledge('open'), onClick: () => router.push(saved.href) },
+          }),
+        onError: () => toast.error(tKnowledge('failed')),
+      },
+    );
   }
 
   return (
@@ -66,6 +99,19 @@ export default function ChatMessageActions({
           aria-label={t('messages.edit')}
         >
           <Pencil className="size-3.5" />
+        </Button>
+      )}
+      {text && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-6"
+          disabled={capture.isPending}
+          onClick={saveAsNote}
+          aria-label={tKnowledge('saveMessage')}
+          title={tKnowledge('saveMessage')}
+        >
+          <BookmarkPlus className="size-3.5" />
         </Button>
       )}
       {projectKey && threadId && text && (

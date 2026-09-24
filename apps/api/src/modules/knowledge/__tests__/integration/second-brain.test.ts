@@ -229,7 +229,7 @@ describe('second brain', () => {
 
     const today = await asOwner.knowledge.journal.post({});
     expect(today.data).toMatchObject({ created: true });
-    expect(today.data!.path).toMatch(/^Home\/Journal\/\d{4}-\d\d-\d\d\.md$/);
+    expect(today.data!.path).toMatch(/^Home\/Docs\/Journal\/\d{4}-\d\d-\d\d\.md$/);
     const line = await asOwner.knowledge.capture.post({
       target: 'journal',
       title: 'Idee: Regale mieten',

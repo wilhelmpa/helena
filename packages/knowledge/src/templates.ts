@@ -32,7 +32,7 @@ export interface DailyNotesConfig {
 }
 
 export const DEFAULT_DAILY_NOTES: DailyNotesConfig = {
-  folder: 'Home/Journal',
+  folder: 'Home/Docs/Journal',
   format: 'YYYY-MM-DD',
   template: `${TEMPLATES_DIR}/Tagesnotiz`,
 };

@@ -1,4 +1,5 @@
 import {
+  Brain,
   Building2,
   FolderKanban,
   HardDrive,
@@ -71,6 +72,11 @@ export const GOD_SECTIONS: GodSection[] = [
     slug: 'storage',
     group: 'instance',
     icon: HardDrive,
+  },
+  {
+    slug: 'knowledge',
+    group: 'instance',
+    icon: Brain,
   },
   {
     slug: 'telegram',

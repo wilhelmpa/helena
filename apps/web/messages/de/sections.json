@@ -43,6 +43,10 @@
       "label": "Speicher",
       "description": "Wie viel hochgeladen werden darf: die Größe einer einzelnen Datei, die erlaubten Anhangstypen und der Speicherplatz pro Projekt."
     },
+    "knowledge": {
+      "label": "Wissen & Suche",
+      "description": "Die Quellen der einen Suche, wie weit der Index ist, und die semantische Suche."
+    },
     "telegram": {
       "label": "Telegram",
       "description": "Der Bot, mit dem alle ihr Telegram-Konto verbinden, und der Bot, der Telegram-Benachrichtigungen für Projekte ohne eigenen Bot zustellt."
