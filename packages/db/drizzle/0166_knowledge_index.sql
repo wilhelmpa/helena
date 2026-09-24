@@ -53,6 +53,8 @@ CREATE TABLE "knowledge_source_state" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+ALTER TABLE "note_board" ADD COLUMN "vault_path" text;--> statement-breakpoint
+ALTER TABLE "note_board" ADD COLUMN "vault_sha256" text;--> statement-breakpoint
 ALTER TABLE "vault_entry" ADD COLUMN "last_author" text;--> statement-breakpoint
 ALTER TABLE "vault_entry" ADD COLUMN "last_run_id" integer;--> statement-breakpoint
 ALTER TABLE "knowledge_chunk" ADD CONSTRAINT "knowledge_chunk_item_id_knowledge_item_id_fk" FOREIGN KEY ("item_id") REFERENCES "public"."knowledge_item"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -66,4 +68,5 @@ CREATE INDEX "knowledge_item_scope_idx" ON "knowledge_item" USING btree ("team_i
 CREATE INDEX "knowledge_item_owner_idx" ON "knowledge_item" USING btree ("owner_id");--> statement-breakpoint
 CREATE INDEX "knowledge_item_updated_idx" ON "knowledge_item" USING btree ("updated_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "knowledge_link_item_idx" ON "knowledge_link" USING btree ("item_id");--> statement-breakpoint
-CREATE INDEX "knowledge_link_target_idx" ON "knowledge_link" USING btree ("target");
+CREATE INDEX "knowledge_link_target_idx" ON "knowledge_link" USING btree ("target");--> statement-breakpoint
+CREATE UNIQUE INDEX "note_board_vault_path_key" ON "note_board" USING btree ("vault_path") WHERE "note_board"."vault_path" IS NOT NULL;

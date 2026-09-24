@@ -2361,11 +2361,17 @@ export const projectDashboard = pgTable(
   (t) => [index('project_dashboard_project_idx').on(t.projectId, t.position)],
 );
 
-// Note boards: a freeform canvas of sticky notes. canvas is a jsonb blob owned by
-// the UI (React Flow nodes + edges + viewport), stored and returned verbatim.
-// owner_user_id NULL means a public board visible to every project member; a set
-// owner_user_id means a private board, seen by its owner and by the members listed
-// in note_board_member. Only the creator (created_by_user_id) may change any of it.
+// Note boards: a freeform canvas of sticky notes. owner_user_id NULL means a public
+// board visible to every project member; a set owner_user_id means a private board,
+// seen by its owner and by the members listed in note_board_member. Only the creator
+// (created_by_user_id) may change any of it.
+//
+// A public board's canvas is a JSON Canvas file in the project's vault folder
+// (vault_path, normally Projects/<KEY>/Boards/<Name>.canvas): versioned, found by the
+// search, read by agents and opened by Obsidian. vault_sha256 finds it again after it
+// was moved outside Helena. A private or restricted board keeps its canvas here in
+// `canvas` (the UI's React Flow graph), because the vault's access is per folder and
+// cannot keep a board to a few members.
 export const noteBoard = pgTable(
   'note_board',
   {
@@ -2377,11 +2383,18 @@ export const noteBoard = pgTable(
     createdByUserId: text('created_by_user_id').references(() => user.id, { onDelete: 'set null' }),
     name: text('name').notNull(),
     canvas: jsonb('canvas').notNull().default({}),
+    vaultPath: text('vault_path'),
+    vaultSha256: text('vault_sha256'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   // Listed by updatedAt within a project; the index covers the project filter.
-  (t) => [index('note_board_project_idx').on(t.projectId, t.updatedAt)],
+  (t) => [
+    index('note_board_project_idx').on(t.projectId, t.updatedAt),
+    uniqueIndex('note_board_vault_path_key')
+      .on(t.vaultPath)
+      .where(sql`${t.vaultPath} IS NOT NULL`),
+  ],
 );
 
 // The members granted access to a private board besides its owner. A private board

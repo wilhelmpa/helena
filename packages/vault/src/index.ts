@@ -46,3 +46,14 @@ export {
   type TrashedItem,
 } from './files';
 export { startVaultWatcher, DEFAULT_WATCHER_OPTIONS, type VaultWatcher } from './watcher';
+export {
+  canvasText,
+  CanvasFormatError,
+  EMPTY_CANVAS,
+  parseCanvas,
+  serializeCanvas,
+  type CanvasEdge,
+  type CanvasNode,
+  type CanvasTextNode,
+  type JsonCanvas,
+} from './canvas';

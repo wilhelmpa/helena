@@ -1,5 +1,5 @@
 {
-  "id": "3cce9663-eed0-4950-b526-a5eedeba5e25",
+  "id": "a99ece9f-455c-4afe-9072-8dfca43daccc",
   "prevId": "24877ec3-5744-4c5a-baa8-0f9c610eef1e",
   "version": "7",
   "dialect": "postgresql",
@@ -9120,6 +9120,18 @@
           "notNull": true,
           "default": "'{}'::jsonb"
         },
+        "vault_path": {
+          "name": "vault_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vault_sha256": {
+          "name": "vault_sha256",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -9153,6 +9165,22 @@
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "note_board_vault_path_key": {
+          "name": "note_board_vault_path_key",
+          "columns": [
+            {
+              "expression": "vault_path",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"note_board\".\"vault_path\" IS NOT NULL",
           "concurrently": false,
           "method": "btree",
           "with": {}

@@ -1,10 +1,18 @@
 import { createHash } from 'node:crypto';
 import { createReadStream, type Stats } from 'node:fs';
 import { lstat, readdir, readFile } from 'node:fs/promises';
+import { canvasText } from './canvas';
 import { isMissing, isUnreadable } from './errors';
 import { extractLinks, noteTitle, splitNote } from './markdown';
 import { isTextFile, vaultMime } from './mime';
-import { absoluteVaultPath, baseName, isIgnoredPath, isNotePath, joinVaultPath } from './paths';
+import {
+  absoluteVaultPath,
+  baseName,
+  isCanvasPath,
+  isIgnoredPath,
+  isNotePath,
+  joinVaultPath,
+} from './paths';
 import { isExtractable } from './extract';
 import {
   allIndexedFiles,
@@ -141,18 +149,22 @@ async function saveFile(
       );
       return;
     }
+    // A board (JSON Canvas) is indexed by its cards' words and the notes it links, not
+    // by its JSON.
+    const board = isCanvasPath(relative);
+    const text = board ? canvasText(content) : content;
     await saveEntry(
       {
         ...base,
         kind: 'file',
         sha256,
-        title: baseName(relative),
+        title: board ? baseName(relative).replace(/\.canvas$/i, '') : baseName(relative),
         frontmatter: {},
-        text: content,
+        text,
         extractionStatus: 'done',
         extractionError: null,
       },
-      null,
+      board ? extractLinks(text, relative) : null,
     );
     return;
   }

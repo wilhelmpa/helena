@@ -68,14 +68,17 @@ export async function gitAuthorFor(actor: string): Promise<GitAuthor> {
 }
 
 // Records a write the actor made: the index with its author, and one commit carrying
-// the actor and the run as trailers.
+// the actor and the run as trailers. `continueSession` folds repeated saves of the same
+// files by the same author into one commit (see @repo/vault commitVaultPaths).
 export async function recordActorWrite(
   paths: string[],
   message: string,
   actor: CaptureActor,
+  options: { continueSession?: boolean } = {},
 ): Promise<void> {
   await indexVaultPaths(paths, { author: actor.ref, runId: actor.runId ?? null });
   await commitVaultPaths(paths, message, await gitAuthorFor(actor.ref), {
+    continueSession: options.continueSession,
     trailers: {
       'Helena-Actor': actor.ref,
       ...(actor.runId ? { 'Helena-Run': String(actor.runId) } : {}),

@@ -23,6 +23,9 @@ export interface NoteBoardRow {
   memberIds: string[];
   name: string;
   canvas: unknown;
+  // The JSON Canvas file of a public board in the vault; null for a private one.
+  vaultPath: string | null;
+  vaultSha256: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -30,7 +33,7 @@ export interface NoteBoardRow {
 // The board without its canvas or member list — what the board switcher and MRU
 // tabs need. The canvas can be large, so the list omits it; the full board is
 // fetched one at a time via getNoteBoard when a board is opened.
-export type NoteBoardSummary = Omit<NoteBoardRow, 'canvas' | 'memberIds'>;
+export type NoteBoardSummary = Omit<NoteBoardRow, 'canvas' | 'memberIds' | 'vaultSha256'>;
 
 function visibilityOf(ownerUserId: string | null, hasMembers: boolean): NoteBoardVisibility {
   if (ownerUserId === null) return 'public';
@@ -47,6 +50,8 @@ function mapNoteBoard(row: typeof noteBoard.$inferSelect, memberIds: string[]): 
     memberIds,
     name: row.name,
     canvas: row.canvas,
+    vaultPath: row.vaultPath,
+    vaultSha256: row.vaultSha256,
     createdAt: iso(row.createdAt),
     updatedAt: iso(row.updatedAt),
   };
@@ -91,6 +96,7 @@ export async function listNoteBoards(
       ownerUserId: noteBoard.ownerUserId,
       createdByUserId: noteBoard.createdByUserId,
       name: noteBoard.name,
+      vaultPath: noteBoard.vaultPath,
       createdAt: noteBoard.createdAt,
       updatedAt: noteBoard.updatedAt,
     })
@@ -132,6 +138,8 @@ export async function createNoteBoard(input: {
   createdByUserId: string;
   name: string;
   canvas?: unknown;
+  vaultPath?: string | null;
+  vaultSha256?: string | null;
 }): Promise<NoteBoardRow> {
   const [row] = await db
     .insert(noteBoard)
@@ -141,6 +149,8 @@ export async function createNoteBoard(input: {
       createdByUserId: input.createdByUserId,
       name: input.name,
       canvas: input.canvas ?? {},
+      vaultPath: input.vaultPath ?? null,
+      vaultSha256: input.vaultSha256 ?? null,
     })
     .returning();
   return mapNoteBoard(row, []);
@@ -156,6 +166,8 @@ export async function updateNoteBoard(
     canvas?: unknown;
     ownerUserId?: string | null;
     memberIds?: string[];
+    vaultPath?: string | null;
+    vaultSha256?: string | null;
   },
 ): Promise<NoteBoardRow | null> {
   const { memberIds, ...columns } = patch;
