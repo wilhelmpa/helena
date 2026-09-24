@@ -782,6 +782,9 @@ export const browserGatewayEvent = pgTable(
     // live view's Übernehmen banner attributes to the person instead.
     actor: text('actor').notNull(),
     tool: text('tool').notNull(),
+    // The call's action category (read, write, send, publish, delete, pay, execute), which
+    // Helena's policy decided on; null for an event from before categories.
+    category: text('category'),
     target: text('target'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },

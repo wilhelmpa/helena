@@ -85,6 +85,7 @@ export const agentBrowserGatewayRoutes = new Elysia({
               agentName: t.String(),
               actor: t.Union([t.Literal('agent'), t.Literal('owner')]),
               tool: t.String(),
+              category: t.Nullable(t.String()),
               target: t.Nullable(t.String()),
               createdAt: t.String(),
             }),

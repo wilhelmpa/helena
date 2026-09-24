@@ -10,12 +10,9 @@
 // only — checked by the gateway (only the Home socket accepts it) and again by Helena
 // against the caller, never trusted from the input alone.
 
-export interface ToolDef {
-  name: string;
-  title: string;
-  description: string;
-  inputSchema: Record<string, unknown>;
-}
+import type { ActionCategory, AgentToolDefinition } from './agent-tool.ts';
+
+export type ToolDef = AgentToolDefinition;
 
 const project = {
   project: {
@@ -44,6 +41,7 @@ const ref = {
 export const BROWSER_TOOLS: ToolDef[] = [
   {
     name: 'browser_status',
+    category: 'read',
     title: 'Browser status',
     description:
       'Who controls the project browser (you, another agent, the owner, or nobody), the ' +
@@ -52,6 +50,7 @@ export const BROWSER_TOOLS: ToolDef[] = [
   },
   {
     name: 'browser_acquire',
+    category: 'read',
     title: 'Take control',
     description:
       'Take control of the project browser before acting on it, waiting up to timeoutSec ' +
@@ -68,6 +67,7 @@ export const BROWSER_TOOLS: ToolDef[] = [
   },
   {
     name: 'browser_release',
+    category: 'read',
     title: 'Give control back',
     description:
       'Give control of the project browser back when you are done. Tabs you opened ' +
@@ -76,6 +76,7 @@ export const BROWSER_TOOLS: ToolDef[] = [
   },
   {
     name: 'browser_navigate',
+    category: 'write',
     title: 'Navigate',
     description:
       'Go to a URL, waiting for the page to load and the network to settle. Refused for a ' +
@@ -89,18 +90,21 @@ export const BROWSER_TOOLS: ToolDef[] = [
   },
   {
     name: 'browser_back',
+    category: 'write',
     title: 'Go back',
     description: 'Go back one page, waiting for it to load.',
     inputSchema: { type: 'object', properties: { ...project }, additionalProperties: false },
   },
   {
     name: 'browser_reload',
+    category: 'write',
     title: 'Reload',
     description: 'Reload the current page, waiting for it to load.',
     inputSchema: { type: 'object', properties: { ...project }, additionalProperties: false },
   },
   {
     name: 'browser_snapshot',
+    category: 'read',
     title: 'Accessibility snapshot',
     description:
       'The active tab as an accessibility tree: its text, and a [ref=…] on every element ' +
@@ -110,6 +114,7 @@ export const BROWSER_TOOLS: ToolDef[] = [
   },
   {
     name: 'browser_click',
+    category: 'write',
     title: 'Click',
     description: 'Click an element by ref, with human-like pointer movement and timing.',
     inputSchema: {
@@ -125,6 +130,7 @@ export const BROWSER_TOOLS: ToolDef[] = [
   },
   {
     name: 'browser_type',
+    category: 'write',
     title: 'Type',
     description:
       'Type text into an element by ref, with human-like key timing. Refused on a password ' +
@@ -139,6 +145,7 @@ export const BROWSER_TOOLS: ToolDef[] = [
   },
   {
     name: 'browser_select',
+    category: 'write',
     title: 'Select',
     description: 'Choose one or more options of a <select> by ref.',
     inputSchema: {
@@ -150,6 +157,7 @@ export const BROWSER_TOOLS: ToolDef[] = [
   },
   {
     name: 'browser_hover',
+    category: 'read',
     title: 'Hover',
     description: 'Move the pointer over an element by ref, human-like.',
     inputSchema: {
@@ -161,6 +169,7 @@ export const BROWSER_TOOLS: ToolDef[] = [
   },
   {
     name: 'browser_drag',
+    category: 'write',
     title: 'Drag',
     description: 'Drag from one element (by ref) to another.',
     inputSchema: {
@@ -176,6 +185,7 @@ export const BROWSER_TOOLS: ToolDef[] = [
   },
   {
     name: 'browser_press',
+    category: 'write',
     title: 'Press a key',
     description: 'Press a key or key combination (e.g. "Enter", "Control+A").',
     inputSchema: {
@@ -187,6 +197,7 @@ export const BROWSER_TOOLS: ToolDef[] = [
   },
   {
     name: 'browser_scroll',
+    category: 'read',
     title: 'Scroll',
     description: 'Scroll the page or an element by ref, in steps rather than a single jump.',
     inputSchema: {
@@ -203,6 +214,7 @@ export const BROWSER_TOOLS: ToolDef[] = [
   },
   {
     name: 'browser_screenshot',
+    category: 'read',
     title: 'Screenshot',
     description:
       'A picture of the viewport or of one element by ref, for what a snapshot cannot ' +
@@ -218,6 +230,7 @@ export const BROWSER_TOOLS: ToolDef[] = [
   },
   {
     name: 'browser_tabs',
+    category: 'write',
     title: 'Tabs',
     description:
       'List, open, focus or close tabs. A tab an agent opens belongs to it and closes when ' +
@@ -236,6 +249,7 @@ export const BROWSER_TOOLS: ToolDef[] = [
   },
   {
     name: 'browser_dialog',
+    category: 'write',
     title: 'Handle a dialog',
     description: "Accept or dismiss the page's current JavaScript dialog (alert/confirm/prompt).",
     inputSchema: {
@@ -251,6 +265,7 @@ export const BROWSER_TOOLS: ToolDef[] = [
   },
   {
     name: 'browser_upload',
+    category: 'send',
     title: 'Upload a file',
     description:
       'Upload a file to a file input by ref. `path` is a file you can read yourself (your ' +
@@ -268,6 +283,7 @@ export const BROWSER_TOOLS: ToolDef[] = [
   },
   {
     name: 'browser_downloads',
+    category: 'read',
     title: 'Downloads',
     description:
       "The files this browser downloaded, and where each was kept (the project's Inbox " +
@@ -276,6 +292,7 @@ export const BROWSER_TOOLS: ToolDef[] = [
   },
   {
     name: 'browser_console',
+    category: 'read',
     title: 'Console',
     description:
       'Recent browser log entries of the tabs, newest last: failed requests, blocked ' +
@@ -289,6 +306,7 @@ export const BROWSER_TOOLS: ToolDef[] = [
   },
   {
     name: 'browser_network',
+    category: 'read',
     title: 'Network',
     description:
       'Recent network responses of the tabs: method, status, URL (values of token-like ' +
@@ -301,6 +319,7 @@ export const BROWSER_TOOLS: ToolDef[] = [
   },
   {
     name: 'browser_login',
+    category: 'write',
     title: 'Fill a login',
     description:
       'Fill a login granted to you in Zugänge into a login form: the username field and ' +
@@ -321,6 +340,7 @@ export const BROWSER_TOOLS: ToolDef[] = [
   },
   {
     name: 'browser_login_code',
+    category: 'write',
     title: 'Fill the current 2FA code',
     description:
       'Type the current 2FA code of a login (credentialId, as browser_login named it) into ' +
@@ -334,6 +354,7 @@ export const BROWSER_TOOLS: ToolDef[] = [
   },
   {
     name: 'browser_handover',
+    category: 'read',
     title: 'Ask the owner to take over',
     description:
       'Ask the owner to take over (a CAPTCHA, a question only they can answer). Shows a ' +
@@ -374,4 +395,17 @@ export const CREDENTIAL_TOOLS = new Set(['browser_login', 'browser_login_code'])
 
 export function toolByName(name: string): ToolDef | undefined {
   return BROWSER_TOOLS.find((tool) => tool.name === name);
+}
+
+// The category a call is decided on: the tool's own, unless what it actually does is more:
+// a click on a form's submit control, typing with submit, or Enter in a form field sends the
+// form ('send'). `submitsForm` is the session's answer for the element the call acts on.
+export function categoryOf(tool: ToolDef, submitsForm: boolean): ActionCategory {
+  if (
+    submitsForm &&
+    (tool.name === 'browser_click' || tool.name === 'browser_type' || tool.name === 'browser_press')
+  ) {
+    return 'send';
+  }
+  return tool.category;
 }

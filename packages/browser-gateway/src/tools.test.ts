@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test';
-import { BROWSER_TOOLS, CREDENTIAL_TOOLS, requiresLock, toolByName } from './tools';
+import { BROWSER_TOOLS, CREDENTIAL_TOOLS, categoryOf, requiresLock, toolByName } from './tools';
+import { ACTION_CATEGORIES, mcpToolOf } from './agent-tool';
 
 describe('BROWSER_TOOLS', () => {
   it('has a unique name for every tool', () => {
@@ -61,5 +62,37 @@ describe('requiresLock', () => {
 describe('CREDENTIAL_TOOLS', () => {
   it('contains exactly the login and 2FA tools', () => {
     expect([...CREDENTIAL_TOOLS].sort()).toEqual(['browser_login', 'browser_login_code']);
+  });
+});
+
+describe('action categories (Helena agent tools)', () => {
+  it('every tool has one, and reading tools are read', () => {
+    for (const tool of BROWSER_TOOLS) expect(ACTION_CATEGORIES).toContain(tool.category);
+    for (const name of [
+      'browser_status',
+      'browser_snapshot',
+      'browser_screenshot',
+      'browser_console',
+    ]) {
+      expect(toolByName(name)?.category).toBe('read');
+    }
+    for (const name of ['browser_navigate', 'browser_click', 'browser_type']) {
+      expect(toolByName(name)?.category).toBe('write');
+    }
+    expect(toolByName('browser_upload')?.category).toBe('send');
+  });
+
+  it('a click, typed Enter or pressed Enter that submits a form is a send', () => {
+    expect(categoryOf(toolByName('browser_click')!, true)).toBe('send');
+    expect(categoryOf(toolByName('browser_click')!, false)).toBe('write');
+    expect(categoryOf(toolByName('browser_press')!, true)).toBe('send');
+    expect(categoryOf(toolByName('browser_navigate')!, true)).toBe('write');
+  });
+
+  it('are shown to MCP clients as annotations and _meta', () => {
+    const listed = mcpToolOf(toolByName('browser_snapshot')!);
+    expect(listed.annotations.readOnlyHint).toBe(true);
+    expect(listed._meta).toEqual({ 'helena/actionCategory': 'read' });
+    expect(mcpToolOf(toolByName('browser_click')!).annotations.readOnlyHint).toBe(false);
   });
 });

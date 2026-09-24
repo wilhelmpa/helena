@@ -16,6 +16,8 @@ export interface BrowserGatewayEventInput {
   agentName: string;
   actor: 'agent' | 'owner';
   tool: string;
+  // The call's action category (policy.ts), when the gateway named one.
+  category?: string | null;
   target: string | null;
 }
 
@@ -29,6 +31,7 @@ export interface BrowserGatewayEventRow {
   agentName: string;
   actor: 'agent' | 'owner';
   tool: string;
+  category: string | null;
   target: string | null;
   createdAt: string;
 }
@@ -57,6 +60,7 @@ export async function listBrowserGatewayEvents(
       agentName: row.agentName,
       actor: row.actor as 'agent' | 'owner',
       tool: row.tool,
+      category: row.category,
       target: row.target,
       createdAt: iso(row.createdAt),
     })),

@@ -62,6 +62,8 @@ function fakeSession(page: Page) {
     snapshot: () => done('snapshot'),
     click: (ref: string) => done(`click ${ref}`),
     closeTabsOf: async () => {},
+    submitsForm: async () => ({ submits: false, formAction: null }),
+    pageOrigin: () => 'https://example.com',
   };
 }
 

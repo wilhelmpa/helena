@@ -2,6 +2,7 @@ export * from './redact.ts';
 export * from './lock.ts';
 export * from './domain.ts';
 export * from './tools.ts';
+export * from './agent-tool.ts';
 export * from './snapshot.ts';
 export * from './human.ts';
 export * from './png.ts';

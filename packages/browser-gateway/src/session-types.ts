@@ -77,6 +77,17 @@ export interface GatewaySession {
   downloads(): Promise<string>;
   console(limit: number): Promise<string>;
   network(limit: number): Promise<string>;
+  // Whether the call would submit a form: a click on a form's submit control, Enter typed
+  // into a form field (browser_type with submit, browser_press Enter). Such a call is decided
+  // as 'send' rather than 'write' (agent-tool.ts); `formAction` names where the form goes.
+  submitsForm(call: {
+    tool: string;
+    ref?: string;
+    key?: string;
+    submit?: boolean;
+  }): Promise<{ submits: boolean; formAction: string | null }>;
+  // The origin of the tab in front, for the policy's context.
+  pageOrigin(): string | null;
   // The origin of the frame the element is in (design §6: a login is offered for the
   // frame's origin, not the tab's).
   frameOrigin(ref: string): Promise<string>;

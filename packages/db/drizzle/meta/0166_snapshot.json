@@ -1,5 +1,5 @@
 {
-  "id": "4064ddf0-bdb4-43b4-bbc5-4ef12084c681",
+  "id": "991e9629-6e9c-4631-8cd2-ce37f36fd414",
   "prevId": "24877ec3-5744-4c5a-baa8-0f9c610eef1e",
   "version": "7",
   "dialect": "postgresql",
@@ -4123,6 +4123,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "target": {
           "name": "target",

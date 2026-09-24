@@ -1,6 +1,7 @@
 import type { Holder } from './lock.ts';
 import { ProjectBrowserLocks } from './lock.ts';
-import { CREDENTIAL_TOOLS, requiresLock, toolByName } from './tools.ts';
+import { CREDENTIAL_TOOLS, categoryOf, requiresLock, toolByName, type ToolDef } from './tools.ts';
+import type { ActionCategory } from './agent-tool.ts';
 import { HOME_SLUG, projectSlug } from './project-slug.ts';
 import { hostAllowed } from './domain.ts';
 import type { HelenaClient, ResolveResult } from './helena-client.ts';
@@ -87,6 +88,19 @@ function bool(args: Record<string, unknown> | undefined, key: string): boolean |
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
+
+// An address as the audit and the policy see it: origin and path, never the query.
+function safeLabel(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.origin}${parsed.pathname}`.slice(0, 300);
+  } catch {
+    return null;
+  }
+}
+
+// The tools whose call may submit a form, and so be a 'send' rather than a 'write'.
+const FORM_TOOLS = new Set(['browser_click', 'browser_type', 'browser_press']);
 
 function hostOf(url: string): string | null {
   try {
@@ -230,6 +244,8 @@ export class GatewayDispatcher {
           error: "The project's domain rules could not be applied, so nothing was done.",
         };
       }
+      const decided = await this.#decide(request, tool, session, slug);
+      if ('refusal' in decided) return decided.refusal;
       try {
         const output = await this.#runTool(request, session, slug, resolved);
         if (!CREDENTIAL_TOOLS.has(request.tool)) {
@@ -240,6 +256,7 @@ export class GatewayDispatcher {
               via: this.#ownSlug,
               actor: 'agent',
               tool: request.tool,
+              category: decided.category,
               target: this.#targetLabel(request),
             })
             .catch(() => {});
@@ -258,17 +275,73 @@ export class GatewayDispatcher {
     });
   }
 
+  // Helena's policy for this one call (docs/volition-helena-oss.md §3a "Richtlinien"): the
+  // call's action category — a click that submits a form is 'send', not 'write' — and what
+  // it acts on. Reading needs no answer; anything else is asked, and without an answer
+  // nothing is done.
+  async #decide(
+    request: GatewayRequest,
+    tool: ToolDef,
+    session: GatewaySession,
+    slug: string,
+  ): Promise<{ category: ActionCategory } | { refusal: GatewayResponse }> {
+    let category = tool.category;
+    let formAction: string | null = null;
+    if (FORM_TOOLS.has(tool.name)) {
+      const form = await session.submitsForm({
+        tool: tool.name,
+        ref: str(request.args, 'ref'),
+        key: str(request.args, 'key'),
+        submit: bool(request.args, 'submit'),
+      });
+      category = categoryOf(tool, form.submits);
+      formAction = form.formAction;
+    }
+    if (category === 'read') return { category };
+    let answer;
+    try {
+      answer = await this.#helena.decide({
+        agentKey: request.agentKey,
+        projectSlug: slug,
+        via: this.#ownSlug,
+        tool: tool.name,
+        category,
+        context: {
+          origin: session.pageOrigin(),
+          target: this.#targetLabel(request) ?? null,
+          formAction: formAction ? safeLabel(formAction) : null,
+        },
+        runId: request.runId,
+        messageId: request.messageId,
+      });
+    } catch (error) {
+      const message = error instanceof HelenaApiError ? error.message : 'Helena did not answer';
+      return { refusal: { ok: false, error: `Not done: ${message}.` } };
+    }
+    if (answer.decision === 'allow') return { category };
+    if (answer.decision === 'approve') {
+      return {
+        refusal: {
+          ok: false,
+          error:
+            `This ${category} action needs the owner's approval first` +
+            `${answer.approvalId ? ` (Freigaben #${answer.approvalId})` : ''}. ` +
+            'Stop here; once it is decided, a new run tells you.',
+        },
+      };
+    }
+    return {
+      refusal: {
+        ok: false,
+        error: `Not allowed for you here: ${answer.reason ?? `${category} actions`}.`,
+      },
+    };
+  }
+
   // A short, non-secret label for the audit: an address without its query, a ref, a tab.
   #targetLabel(request: GatewayRequest): string | undefined {
     const url = str(request.args, 'url');
-    if (url) {
-      try {
-        const parsed = new URL(url);
-        return `${parsed.origin}${parsed.pathname}`.slice(0, 300);
-      } catch {
-        return undefined;
-      }
-    }
+    if (url) return safeLabel(url) ?? undefined;
     const ref = str(request.args, 'ref');
     if (ref) return `ref ${ref}`;
     const tab = str(request.args, 'tabId');

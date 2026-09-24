@@ -288,6 +288,7 @@ describe('browser gateway', () => {
       via: 'mkt',
       actor: 'agent',
       tool: 'browser_navigate',
+      category: 'write',
       target: 'https://example.com/secret-path',
     });
     expect(audit.status).toBe(200);
@@ -297,7 +298,31 @@ describe('browser gateway', () => {
       agentId: agent.id,
       actor: 'agent',
       tool: 'browser_navigate',
+      category: 'write',
     });
+  });
+
+  it("decides a browser action by its category, for the agent's own project only", async () => {
+    const { asOwner, mkt } = await setup();
+    await asOwner.projects.post({ key: 'OPS', name: 'Operations' });
+    const { apiKey } = await agentWithGateway(asOwner, mkt.teamId, 'MKT', 'writer');
+    const call = (body: Record<string, unknown>) =>
+      internal('/internal/browser-gateway/decide', {
+        agentKey: apiKey,
+        projectSlug: 'mkt',
+        via: 'mkt',
+        tool: 'browser_click',
+        category: 'send',
+        context: { origin: 'https://shop.example', target: 'f1e5', formAction: null },
+        ...body,
+      });
+    const allowed = await call({});
+    expect(allowed.status).toBe(200);
+    // No policy is configured yet (hub/autopilot brings it): every category is allowed.
+    expect(await allowed.json()).toEqual({ decision: 'allow' });
+    expect((await call({ category: 'launch-missiles' })).status).toBe(400);
+    expect((await call({ projectSlug: 'ops', via: 'ops' })).status).toBe(403);
+    expect((await call({ agentKey: 'not-a-key' })).status).toBe(403);
   });
 
   it('lists the projects a user works in for the Home "Browser" overview', async () => {
@@ -551,9 +576,9 @@ describe('browser gateway', () => {
         'Projects/MKT/Inbox/invoice.pdf',
       );
       const events = await asOwner.projects({ projectKey: 'MKT' })['browser-gateway'].events.get();
-      expect(events.data!.items.map((item) => [item.tool, item.actor])).toEqual([
-        ['browser_download', 'owner'],
-        ['browser_download', 'agent'],
+      expect(events.data!.items.map((item) => [item.tool, item.actor, item.category])).toEqual([
+        ['browser_download', 'owner', 'execute'],
+        ['browser_download', 'agent', 'execute'],
       ]);
     } finally {
       process.env.PROJECT_VAULT_ROOT = previous;

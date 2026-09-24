@@ -5,6 +5,7 @@ CREATE TABLE "browser_gateway_event" (
 	"agent_name" text NOT NULL,
 	"actor" text NOT NULL,
 	"tool" text NOT NULL,
+	"category" text,
 	"target" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "browser_gateway_event_actor_check" CHECK ("browser_gateway_event"."actor" IN ('agent', 'owner'))

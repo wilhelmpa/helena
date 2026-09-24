@@ -750,6 +750,52 @@ export class PatchrightGatewaySession implements GatewaySession {
         .catch(() => {});
   }
 
+  async submitsForm(call: {
+    tool: string;
+    ref?: string;
+    key?: string;
+    submit?: boolean;
+  }): Promise<{ submits: boolean; formAction: string | null }> {
+    const none = { submits: false, formAction: null };
+    try {
+      if (call.tool === 'browser_press') {
+        if (call.key !== 'Enter') return none;
+        return await this.#page.evaluate(() => {
+          const element = document.activeElement as HTMLInputElement | null;
+          const form = element?.form ?? null;
+          const field = element?.tagName === 'INPUT';
+          return { submits: !!form && field, formAction: form ? form.action : null };
+        });
+      }
+      if (!call.ref || !isValidRef(call.ref)) return none;
+      if (call.tool === 'browser_type' && !call.submit) return none;
+      const locator = this.#page.locator(refSelector(call.ref)).first();
+      if ((await locator.count()) === 0) return none;
+      return await locator.evaluate((element, typing) => {
+        const control = element as HTMLButtonElement | HTMLInputElement;
+        const form = control.form ?? element.closest('form');
+        if (!form) return { submits: false, formAction: null };
+        if (typing) return { submits: element.tagName === 'INPUT', formAction: form.action };
+        const type = (control.getAttribute('type') ?? '').toLowerCase();
+        const submits =
+          (element.tagName === 'BUTTON' && (type === '' || type === 'submit')) ||
+          (element.tagName === 'INPUT' && (type === 'submit' || type === 'image'));
+        return { submits, formAction: submits ? form.action : null };
+      }, call.tool === 'browser_type');
+    } catch {
+      return none;
+    }
+  }
+
+  pageOrigin(): string | null {
+    try {
+      const origin = new URL(this.#page.url()).origin;
+      return origin === 'null' ? null : origin;
+    } catch {
+      return null;
+    }
+  }
+
   async #originOf(locator: Locator): Promise<string> {
     return locator.evaluate(() => location.origin);
   }

@@ -135,6 +135,7 @@ export class HelenaClient {
     via: string;
     actor: 'agent' | 'owner';
     tool: string;
+    category?: string;
     target?: string;
   }): Promise<void> {
     return this.#post('/internal/browser-gateway/audit', input);
@@ -156,6 +157,25 @@ export class HelenaClient {
   // Closes the card once the owner gave control back (finished), or leaves it open.
   handoverDone(input: { approvalId: number; finished: boolean }): Promise<void> {
     return this.#post('/internal/browser-gateway/handover-done', input);
+  }
+
+  // The policy's answer for one call (docs/volition-helena-oss.md §3a "Richtlinien"): its
+  // action category and what it acts on. 'approve' filed a card in Freigaben (approvalId).
+  decide(input: {
+    agentKey: string;
+    projectSlug: string;
+    via: string;
+    tool: string;
+    category: string;
+    context: { origin: string | null; target: string | null; formAction: string | null };
+    runId?: number;
+    messageId?: number;
+  }): Promise<{
+    decision: 'allow' | 'deny' | 'approve';
+    reason?: string;
+    approvalId?: number | null;
+  }> {
+    return this.#post('/internal/browser-gateway/decide', input);
   }
 
   // A file the browser downloaded, into the project's Inbox folder (Home: Home/Inbox).

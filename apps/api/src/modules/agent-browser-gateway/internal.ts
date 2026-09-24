@@ -19,6 +19,7 @@ import { DEFAULT_BROWSER_GATEWAY_SETTINGS } from './model';
 import { recordBrowserGatewayEvent } from './events';
 import { fileHandoverCard, resolveHandoverCard } from './handover';
 import { MAX_DOWNLOAD_BYTES, saveDownload } from './downloads';
+import { decideBrowserAction, fileBrowserApproval, isActionCategory } from './policy';
 
 // The gateway's own routes (design §3: "prüft bei Plan: Agent, Projekt, Browser-Recht,
 // Login-Freigaben (internes API, Service-Token)"). Two factors, like the agent-egress proxy
@@ -256,9 +257,44 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
         agentName: await displayName(agent),
         actor: 'agent',
         tool: body.tool,
+        category: isActionCategory(body.category) ? body.category : null,
         target: typeof body.target === 'string' ? body.target.slice(0, 300) : null,
       });
       return { stored: true };
+    }),
+    { detail: { hide: true } },
+  )
+  .post(
+    '/internal/browser-gateway/decide',
+    route(async (body) => {
+      const agent = await requireAgent(body);
+      if (!isActionCategory(body.category) || typeof body.tool !== 'string') {
+        throw new HttpError(400, 'Invalid request');
+      }
+      const { project } = await authorizeTarget(agent, body.projectSlug, body.via);
+      const raw = (body.context ?? {}) as Record<string, unknown>;
+      const text = (value: unknown) => (typeof value === 'string' ? value.slice(0, 300) : null);
+      const context = {
+        tool: body.tool.slice(0, 64),
+        origin: text(raw.origin),
+        target: text(raw.target),
+        formAction: text(raw.formAction),
+      };
+      const decided = await decideBrowserAction(agent, project, body.category, context);
+      if (decided.decision !== 'approve') return decided;
+      if (!project) {
+        return { decision: 'deny', reason: "an approval, which Home's own browser cannot ask for" };
+      }
+      return {
+        decision: 'approve',
+        approvalId: await fileBrowserApproval(
+          agent,
+          project,
+          body.category,
+          context,
+          decided.reason,
+        ),
+      };
     }),
     { detail: { hide: true } },
   )
@@ -311,6 +347,8 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
         agentName: agent ? await displayName(agent) : '',
         actor: agent ? 'agent' : 'owner',
         tool: 'browser_download',
+        // A file taken off the web into the project: the framework's 'execute' category.
+        category: 'execute',
         target: path.slice(0, 300),
       });
       return { path };

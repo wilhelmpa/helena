@@ -13,6 +13,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { BROWSER_INSTRUCTIONS, BROWSER_TOOLS } from './tools.ts';
+import { mcpToolOf } from './agent-tool.ts';
 import { callGateway } from './shim-protocol.ts';
 
 const server = new Server(
@@ -20,13 +21,10 @@ const server = new Server(
   { capabilities: { tools: {} }, instructions: BROWSER_INSTRUCTIONS },
 );
 
+// Each tool with its action category (as MCP annotations and in _meta), the shape Helena's
+// framework registers agent tools in.
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: BROWSER_TOOLS.map((tool) => ({
-    name: tool.name,
-    title: tool.title,
-    description: tool.description,
-    inputSchema: tool.inputSchema,
-  })),
+  tools: BROWSER_TOOLS.map(mcpToolOf),
 }));
 
 server.setRequestHandler(CallToolRequestSchema, async (request) =>

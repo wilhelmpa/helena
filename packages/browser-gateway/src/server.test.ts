@@ -37,6 +37,7 @@ function fakeHelenaClient(
     handover: mock(async () => ({ approvalId: 77 })),
     handoverDone: mock(async () => {}),
     download: mock(async () => ({ path: 'Projects/MKT/Inbox/x' })),
+    decide: mock(async () => ({ decision: 'allow' as const })),
     policy: mock(async () => ({})),
     ...overrides,
   } as unknown as HelenaClient;
@@ -79,6 +80,8 @@ function fakeSession(
     console: mock(async () => '(no console messages)'),
     network: mock(async () => '(no network requests)'),
     frameOrigin: mock(async () => 'https://login.example.com'),
+    submitsForm: mock(async () => ({ submits: false, formAction: null })),
+    pageOrigin: () => 'https://example.com',
     fillLogin: mock(async () => 'Login filled.'),
     fillCode: mock(async () => 'Code filled.'),
     ...overrides,
@@ -565,6 +568,7 @@ describe('GatewayDispatcher: audit', () => {
       via: 'mkt',
       actor: 'agent',
       tool: 'browser_navigate',
+      category: 'write',
       target: 'https://example.com/page',
     });
   });
@@ -640,5 +644,81 @@ describe('GatewayDispatcher: domain policy (design §8)', () => {
     });
     expect(result.ok).toBe(false);
     expect(session.click).not.toHaveBeenCalled();
+  });
+});
+
+describe('GatewayDispatcher: policy per call (action categories)', () => {
+  it('asks Helena for a write, with the page and target, and not for a read', async () => {
+    const helena = fakeHelenaClient();
+    const gateway = dispatcher({ helena });
+    await gateway.handle({ tool: 'browser_acquire', agentKey: 'k' });
+    await gateway.handle({ tool: 'browser_snapshot', agentKey: 'k' });
+    expect(helena.decide).not.toHaveBeenCalled();
+    await gateway.handle({ tool: 'browser_click', agentKey: 'k', args: { ref: 'e1' } });
+    expect(calls(helena.decide)[0]![0]).toMatchObject({
+      projectSlug: 'mkt',
+      via: 'mkt',
+      tool: 'browser_click',
+      category: 'write',
+      context: { origin: 'https://example.com', target: 'ref e1', formAction: null },
+    });
+  });
+
+  it('a click that submits a form is decided as a send, and audited so', async () => {
+    const helena = fakeHelenaClient();
+    const session = fakeSession({
+      submitsForm: mock(async () => ({
+        submits: true,
+        formAction: 'https://shop.example/order?x=1',
+      })),
+    });
+    const gateway = dispatcher({ helena, sessions: fakeSessions(session) });
+    await gateway.handle({ tool: 'browser_acquire', agentKey: 'k' });
+    await gateway.handle({ tool: 'browser_click', agentKey: 'k', args: { ref: 'e9' } });
+    expect(calls(helena.decide)[0]![0]).toMatchObject({
+      category: 'send',
+      context: { formAction: 'https://shop.example/order' },
+    });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(calls(helena.audit)[0]![0]).toMatchObject({ tool: 'browser_click', category: 'send' });
+  });
+
+  it('does nothing when the policy denies or wants an approval, or cannot be asked', async () => {
+    for (const answer of [
+      async () => ({ decision: 'deny' as const, reason: 'no sending from this project' }),
+      async () => ({ decision: 'approve' as const, approvalId: 12 }),
+      async () => {
+        throw new Error('down');
+      },
+    ]) {
+      const session = fakeSession();
+      const gateway = dispatcher({
+        helena: fakeHelenaClient({ decide: mock(answer) }),
+        sessions: fakeSessions(session),
+      });
+      await gateway.handle({ tool: 'browser_acquire', agentKey: 'k' });
+      const result = await gateway.handle({
+        tool: 'browser_click',
+        agentKey: 'k',
+        args: { ref: 'e1' },
+      });
+      expect(result.ok).toBe(false);
+      expect(session.click).not.toHaveBeenCalled();
+    }
+  });
+
+  it('names the approval card when one was filed', async () => {
+    const gateway = dispatcher({
+      helena: fakeHelenaClient({
+        decide: mock(async () => ({ decision: 'approve' as const, approvalId: 12 })),
+      }),
+    });
+    await gateway.handle({ tool: 'browser_acquire', agentKey: 'k' });
+    const result = await gateway.handle({
+      tool: 'browser_navigate',
+      agentKey: 'k',
+      args: { url: 'https://example.com/' },
+    });
+    expect(!result.ok && result.error).toContain('Freigaben #12');
   });
 });
