@@ -4,7 +4,6 @@
   "overlayMode": "Détacher le panneau",
   "resizePanel": "Redimensionner le panneau de chat",
   "emptyTitle": "Aucun agent avec qui discuter",
-  "emptyDescription": "Discutez avec un agent de ce projet : un agent interne, ou un agent externe via son runner.",
   "createAgent": "Créer un agent",
   "agents": "Agents",
   "newChat": "Nouveau chat",

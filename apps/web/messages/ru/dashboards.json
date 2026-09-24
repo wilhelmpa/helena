@@ -190,11 +190,7 @@
     "agent": "Агент",
     "delegated": "Делегировано",
     "runs": "Запуски",
-    "failed": "{count} со сбоем",
-    "kind": {
-      "external": "Внешний",
-      "internal": "Внутренний"
-    }
+    "failed": "{count} со сбоем"
   },
   "defaultWidgets": {
     "open": "Открытые",

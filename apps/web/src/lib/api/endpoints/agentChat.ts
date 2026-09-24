@@ -100,38 +100,11 @@ function toRunEvent(event: AgUiEvent): AgentRunEvent | null {
   }
 }
 
-// The run is bound to this connection, so aborting `signal` is the whole stop: the API
-// drops the run with it.
-// Streams an internal agent's response over SSE, yielding each AgentRunEvent as it
-// arrives. Sends the session cookie like every other call. Throws ApiError when the
-// request itself fails before the stream starts (e.g. 403/404); a failure during
-// the run arrives as an `error` event, not a throw.
-export async function* streamAiAgentRun(
-  projectKey: string,
-  agentId: number,
-  input: { prompt: string; threadId?: string | null },
-  signal?: AbortSignal,
-): AsyncGenerator<AgentRunEvent> {
-  const body = input.threadId
-    ? { prompt: input.prompt, threadId: input.threadId }
-    : { prompt: input.prompt };
-  const res = await fetch(`${API_URL}/projects/${projectKey}/ai-agents/${agentId}/run/stream`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-    signal,
-  });
-  for await (const frame of readSseFrames(res)) {
-    yield JSON.parse(frame.data) as AgentRunEvent;
-  }
-}
-
 // Dropping the stream stops nothing here — the runner is on the operator's machine and
 // only ever calls the API itself — so aborting `signal` also asks the API to cancel the
 // answer, which is what the runner reads on its next report.
-// Sends a message to an external agent and streams the answer its runner produces,
-// yielding the same events as an internal agent's run so the chat consumes one shape.
+// Sends a message to an agent and streams the answer its runner produces as
+// AgentRunEvents.
 // The answer starts only once a runner takes the message: until then the stream is open
 // with nothing on it.
 export async function* streamAiAgentChat(
@@ -295,8 +268,8 @@ export async function uploadChatAttachment(
 
 // One of the caller's saved chat conversations with an agent. `title` is the first
 // prompt (truncated); null when it was never set. `cliSessionId` is the coding agent
-// session an external agent's runner keeps for the thread on its own machine — null
-// before the runner has reported one, and always null for an internal agent.
+// session the agent's runner keeps for the thread on its own machine — null before the
+// runner has reported one.
 // `contextTokens` is the size of the conversation's context after its last completed
 // answer: absent while no answer has completed, null where the agent reports no counts
 // that can be read as one.

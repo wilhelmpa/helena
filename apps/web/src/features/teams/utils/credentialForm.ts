@@ -140,7 +140,7 @@ const ROLE_ORDER: AgentRole[] = ['home', 'coordinator', 'specialist'];
 // then every project with its coordinator ahead of its specialists.
 export function grantableAgentGroups(agents: AiAgent[], projectId: number | null): AgentGroup[] {
   const grantable = agents
-    .filter((agent) => agent.kind === 'external' && !agent.template)
+    .filter((agent) => !agent.template)
     .filter(
       (agent) =>
         projectId === null ||

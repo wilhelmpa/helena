@@ -88,10 +88,7 @@ export function ToolPicker({
           return (
             <div key={integrationKey} className={cn('space-y-1.5', disabled && 'opacity-50')}>
               <div className="flex items-center gap-2 px-1">
-                <IntegrationIcon
-                  integration={{ label: integrationLabel, kind: 'tool' }}
-                  className="size-5"
-                />
+                <IntegrationIcon integration={{ label: integrationLabel }} className="size-5" />
                 <h3 className="text-xs font-semibold text-foreground">{integrationLabel}</h3>
                 <button
                   type="button"

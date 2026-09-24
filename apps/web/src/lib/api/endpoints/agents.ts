@@ -1,5 +1,4 @@
 import { request } from '@/lib/api/core/client';
-import type { PermissionAction, PermissionResource } from '@/lib/api/endpoints/roles';
 
 // One member custom field an agent reacts to, with the seconds its run waits.
 export interface AgentFieldTrigger {
@@ -127,12 +126,10 @@ export interface AgentRuntimeState {
   reportedAt: string | null;
 }
 
-// An AI agent of a team: a bot user plus its configuration. `kind` is
-// 'external' (driven by an outside caller through the API) or 'internal' (run by
-// the built-in runtime, so it carries provider/model/instructions/tools). Only an
-// external agent has an API key: `apiKeyStart` is the non-secret prefix for display
-// (null for internal), and the plaintext key is only returned once, on create and
-// on regenerate.
+// An AI agent of a team: a bot user plus its configuration, driven by a runner with
+// its API key. `kind` is always 'external', the one kind there is. `apiKeyStart` is the
+// non-secret prefix of the key for display, and the plaintext key is only returned
+// once, on create and on regenerate.
 // The field groups a template copy follows: Skills, Tools, MCP servers, approval rules
 // (toolAllow/toolDeny/mcpGrants), instructions (+ runtimePolicy.files), model +
 // reasoning standard, and budgets (token ceilings, maxTurns, runBudgetSeconds).
@@ -147,16 +144,10 @@ export interface AiAgent {
   userId: string;
   name: string;
   username: string;
-  kind: 'external' | 'internal';
-  // The integration_credential (kind 'llm') the model runs on, or null.
-  modelCredentialId: number | null;
+  kind: 'external';
+  // The model ref the agent's runtime runs on; null runs the runtime's own default.
   model: string | null;
   instructions: string | null;
-  tools: string[];
-  temperature: number | null;
-  maxSteps: number | null;
-  memoryEnabled: boolean;
-  memoryLastMessages: number | null;
   runtimePolicy: AgentRuntimePolicy;
   runtimeState: AgentRuntimeState;
   // Run triggers.
@@ -194,18 +185,13 @@ export interface AiAgent {
   pauseReason: string | null;
   createdAt: string;
   apiKeyStart: string | null;
-  // The integration key of the model credential (the provider, e.g. "openai"), or
-  // null when no credential is set.
-  modelProvider: string | null;
-  // How many actions the agent can take (always-on read-only plus granted mutating),
-  // and how many skills and configured tools are enabled.
-  actionCount: number;
+  // How many skills and configured tools are enabled.
   skillCount: number;
   toolCount: number;
 }
 
-// A run waits as 'pending' until a worker or a runner takes it; 'canceled' is a
-// pending run ended by hand.
+// A run waits as 'pending' until the agent's runner takes it; 'canceled' is a pending
+// run ended by hand.
 export type AgentRunStatus = 'pending' | 'success' | 'failed' | 'canceled';
 
 // One row of an agent's autonomous run history. Issue-triggered runs reference an
@@ -237,32 +223,11 @@ export interface AgentRunPage {
   nextCursor: number | null;
 }
 
-// One work-item tool from the server-side catalog. `key` is stored on the agent
-// (grantable actions only); label/description are for the picker. `always` marks the
-// read-only tools that are always granted and shown non-editable. `permission` is the
-// cell of the role matrix the action's route asserts; absent when the route asks only
-// for project membership.
-export interface AgentTool {
-  key: string;
-  group: 'issues' | 'initiatives' | 'cycles' | 'notes' | 'project';
-  label: string;
-  description: string;
-  always: boolean;
-  permission?: [PermissionResource, PermissionAction];
-}
-
 export interface NewAiAgentInput {
   name: string;
   username: string;
-  kind: 'external' | 'internal';
-  modelCredentialId?: number | null;
   model?: string | null;
   instructions?: string | null;
-  tools?: string[];
-  temperature?: number | null;
-  maxSteps?: number | null;
-  memoryEnabled?: boolean;
-  memoryLastMessages?: number | null;
   runtimePolicy?: AgentRuntimePolicy;
   triggerOnMention?: boolean;
   triggerOnAssign?: boolean;
@@ -280,14 +245,8 @@ export interface NewAiAgentInput {
 export interface AiAgentPatch {
   name?: string;
   username?: string;
-  modelCredentialId?: number | null;
   model?: string | null;
   instructions?: string | null;
-  tools?: string[];
-  temperature?: number | null;
-  maxSteps?: number | null;
-  memoryEnabled?: boolean;
-  memoryLastMessages?: number | null;
   runtimePolicy?: AgentRuntimePolicy;
   triggerOnMention?: boolean;
   triggerOnAssign?: boolean;
@@ -307,8 +266,7 @@ export type AgentRunEvent =
   | { type: 'text'; value: string }
   | { type: 'reasoning'; value: string }
   | { type: 'tool-start'; toolCallId: string; toolName: string; args?: string }
-  // An external agent's runner sends a call's arguments after the call itself, in
-  // pieces; an internal agent has them all at its start.
+  // The agent's runner sends a call's arguments after the call itself, in pieces.
   | { type: 'tool-args'; toolCallId: string; delta: string }
   | { type: 'tool-end'; toolCallId: string; result?: string }
   | { type: 'done'; threadId: string | null }
@@ -328,19 +286,16 @@ export const listAiAgents = (teamId: number, projectId?: number) =>
 export const getAiAgent = (teamId: number, agentId: number) =>
   request<AiAgent>(`/teams/${teamId}/ai-agents/${agentId}`);
 
-export const listAgentTools = (teamId: number) =>
-  request<AgentTool[]>(`/teams/${teamId}/ai-agents/tools`);
-
 export const createAiAgent = (teamId: number, input: NewAiAgentInput) =>
-  request<{ agent: AiAgent; apiKey: string | null }>(`/teams/${teamId}/ai-agents`, {
+  request<{ agent: AiAgent; apiKey: string }>(`/teams/${teamId}/ai-agents`, {
     method: 'POST',
     body: JSON.stringify(input),
   });
 
-// Adds a copy of a template to a project as a specialist of its own. An external
-// copy's key is returned once, like on create.
+// Adds a copy of a template to a project as a specialist of its own. The copy's key is
+// returned once, like on create.
 export const copyAiAgentTemplate = (teamId: number, agentId: number, projectId: number) =>
-  request<{ agent: AiAgent; apiKey: string | null }>(`/teams/${teamId}/ai-agents/${agentId}/copy`, {
+  request<{ agent: AiAgent; apiKey: string }>(`/teams/${teamId}/ai-agents/${agentId}/copy`, {
     method: 'POST',
     body: JSON.stringify({ projectId }),
   });

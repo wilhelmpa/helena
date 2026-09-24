@@ -69,7 +69,6 @@ export interface WebhookStats {
 export interface AgentWorkloadItem {
   agentId: number;
   agentName: string;
-  kind: string;
   delegatedOpen: number;
   runsTotal: number;
   runsSuccess: number;

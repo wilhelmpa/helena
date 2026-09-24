@@ -25,7 +25,6 @@
     "workflow": "工作流",
     "automation": "自动化",
     "views": "视图",
-    "aiTeam": "AI 团队",
     "knowledge": "知识"
   },
   "copyItems": {
@@ -38,8 +37,7 @@
     "documents": "Docs",
     "actions": "操作",
     "configuration": "配置",
-    "webhooks": "Webhook",
-    "agents": "代理"
+    "webhooks": "Webhook"
   },
   "title": "新建项目",
   "copyTitle": "复制项目“{name}”",

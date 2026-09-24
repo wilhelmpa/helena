@@ -28,7 +28,7 @@
     },
     "integrations": {
       "title": "Integrations",
-      "description": "The AI provider keys and tool credentials the team's projects run on."
+      "description": "The tool credentials the team's projects work with."
     },
     "mcp": {
       "title": "MCP",
@@ -36,7 +36,7 @@
     },
     "agentSkills": {
       "title": "Skills",
-      "description": "Reusable instructions internal agents load on demand."
+      "description": "Reusable instructions agents load on demand."
     },
     "agentTools": {
       "title": "Tools",
@@ -232,13 +232,9 @@
     "search": "Search integrations",
     "noMatches": "No integration matches “{query}”.",
     "empty": "No credentials yet",
-    "emptyHint": "Agents can't use an AI provider or a tool without one.",
+    "emptyHint": "Agents can't use a tool without one.",
     "deleteMessage": "Delete the {integration} credential? Agents and tools using it will stop working until you add a new one.",
     "groups": {
-      "llm": {
-        "title": "AI providers",
-        "hint": "The model an internal agent runs on"
-      },
       "tool": {
         "title": "Tools",
         "hint": "Integrations an agent can call as tools"
@@ -295,7 +291,7 @@
   },
   "tools": {
     "title": "Integration tools",
-    "hint": "Tools the internal agents call with one of the team's integration credentials.",
+    "hint": "Tools the agents call with one of the team's integration credentials.",
     "add": "Add tool",
     "delete": "Delete tool",
     "back": "Back to tools",
@@ -370,17 +366,11 @@
     "delete": "Delete AI agent",
     "edit": "Edit AI agent",
     "empty": "No AI agents yet",
-    "emptyHint": "An agent runs on the built-in runtime or through the API.",
+    "emptyHint": "An agent is driven through the API by its runner.",
     "agent": "AI agent",
     "sheetSubtitle": "A bot user you can delegate issues to",
-    "kind": "Kind",
     "kindLabel": {
-      "external": "External",
-      "internal": "Internal"
-    },
-    "kindHint": {
-      "external": "Driven through the API",
-      "internal": "Run by the built-in runtime"
+      "external": "External"
     },
     "namePlaceholder": "e.g. Triage bot",
     "username": "Username",
@@ -393,20 +383,6 @@
     "templatesHint": "Projects add copies of these as their own specialists. Knowledge the copies share belongs in the skills library; each copy keeps its own memory.",
     "access": "Availability",
     "accessHint": "Who can give this agent tasks",
-    "model": "Model",
-    "modelHint": "Provider and model",
-    "credential": "Credential",
-    "chooseCredential": "Choose a credential",
-    "searchCredential": "Search credentials",
-    "noCredentialsFound": "No credentials found.",
-    "noCredential": "No AI provider connected",
-    "noCredentialHint": "Connect a provider key in the team's integrations to pick a model for this agent.",
-    "addKey": "Go to team settings",
-    "chooseModel": "Choose a model",
-    "searchModel": "Search or type a model id",
-    "loadingModels": "Loading models…",
-    "noModels": "No models found.",
-    "noModel": "No model set",
     "runtimePolicy": {
       "title": "Runtime policy",
       "hint": "Runtime-neutral policy applied by the connected adapter",
@@ -418,9 +394,6 @@
       "modelsEmpty": "The connected runner has not published any models yet.",
       "modelsHint": "Models published by the connected runner provider.",
       "reasoning": "Reasoning",
-      "memory": "Conversation memory",
-      "memoryWindowLabel": "Memory message window",
-      "memoryWindowPlaceholder": "Recent message window",
       "toolAllow": "Allowed tools",
       "mcpGrants": "MCP grants",
       "keysPlaceholder": "One key per line",
@@ -484,21 +457,6 @@
     "runnerStateOffline": "Offline",
     "runnerStateNone": "Not connected",
     "runnerSeen": "Last seen {time} ago",
-    "actions": "Actions",
-    "actionsHint": "What the agent can do in the project",
-    "searchActions": "Search actions",
-    "actionGroup": {
-      "issues": "Issues",
-      "initiatives": "Initiatives",
-      "cycles": "Cycles",
-      "documents": "Docs",
-      "notes": "Note boards",
-      "project": "Project"
-    },
-    "loadingActions": "Loading actions…",
-    "noActions": "No actions available.",
-    "clearAll": "Clear all",
-    "selectAll": "Select all",
     "skills": "Skills",
     "skillsHint": "Reusable instructions the agent can load",
     "noSkills": "No skills yet",
@@ -512,15 +470,6 @@
     "noToolsHint": "Configure a tool, then enable it here.",
     "goToTools": "Go to Tools",
     "searchTools": "Search tools",
-    "advanced": "Advanced",
-    "advancedHint": "Sampling, step limit, and memory",
-    "temperature": "Temperature",
-    "optional": "Optional",
-    "maxSteps": "Max steps",
-    "memory": "Conversation memory",
-    "memoryHint": "Recall recent messages within a conversation thread.",
-    "memoryCount": "Remember last N messages",
-    "memoryCountPlaceholder": "e.g. 20",
     "keyWarning": "Copy it now. The key is shown only once.",
     "apiKeyHint": "The key the agent authenticates with",
     "keyOnCreate": "Issued when you create the agent, shown once.",
@@ -551,14 +500,9 @@
     "runsSubtitle": "@{username} · triggered runs",
     "regenerateMessage": "The current key for <v>{name}</v> stops working right away. Update everything that uses it with the new key.",
     "deleteMessage": "<v>{name}</v> and its API key will be removed, and it will be cleared from any issues it was assigned or delegated to. This cannot be undone.",
-    "actionCount": "{count, plural, one {# action} other {# actions}}",
-    "toolCount": "{count, plural, one {# tool} other {# tools}}",
-    "skillCount": "{count, plural, one {# skill} other {# skills}}",
     "triggerMention": "Mention",
     "triggerDelegation": "Delegation",
     "noMatch": "No match for “{query}”.",
-    "useCustomModel": "Use \"{query}\"",
-    "readOnlyAlwaysOn": "Read-only access is always on and can't be turned off.",
     "instructionsLabel": "Instructions",
     "copyInstructions": "Copy markdown",
     "showSource": "Edit markdown source",

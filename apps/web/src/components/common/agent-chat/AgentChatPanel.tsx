@@ -78,10 +78,10 @@ export function AgentChatPanel({
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  // An external agent answers on its runner, so with none polling the message would sit
-  // in the queue with nothing to take it. The composer says so instead of accepting it.
+  // An agent answers on its runner, so with none polling the message would sit in the
+  // queue with nothing to take it. The composer says so instead of accepting it.
   // A message typed while the agent is answering is not refused — it waits its turn.
-  const runnerOffline = agent.kind === 'external' && !isRunnerOnline(agent);
+  const runnerOffline = !isRunnerOnline(agent);
   const canSend = input.trim().length > 0 && !runnerOffline;
 
   function submit() {

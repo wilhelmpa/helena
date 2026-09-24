@@ -84,7 +84,6 @@ export const WebhookStatsDto = t.Object({
 const AgentWorkloadItem = t.Object({
   agentId: t.Number(),
   agentName: t.String(),
-  kind: t.String(),
   delegatedOpen: t.Number(),
   runsTotal: t.Number(),
   runsSuccess: t.Number(),

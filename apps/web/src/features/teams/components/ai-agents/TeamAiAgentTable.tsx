@@ -10,13 +10,11 @@ import TableCard from '@/components/common/page/TableCard';
 // screens read it too — so the page is cut here rather than asked for.
 export default function TeamAiAgentTable({
   agents,
-  providerLabel,
   onEdit,
   onRuns,
   onDelete,
 }: {
   agents: AiAgent[];
-  providerLabel: (key: string) => string;
   onEdit: (agent: AiAgent) => void;
   onRuns: (agent: AiAgent) => void;
   onDelete: (agent: AiAgent) => void;
@@ -63,7 +61,6 @@ export default function TeamAiAgentTable({
               <TeamAiAgentRow
                 key={agent.id}
                 agent={agent}
-                providerLabel={providerLabel}
                 copyCount={agent.template ? (copyCounts.get(agent.id) ?? 0) : undefined}
                 onChat={() => onEdit(agent)}
                 onRuns={() => onRuns(agent)}

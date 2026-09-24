@@ -488,7 +488,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
       detail: {
         summary: 'Send a chat message',
         description:
-          "Queue a message for an external agent's runner and return the answer it will " +
+          "Queue a message for the agent's runner and return the answer it will " +
           'produce. Follow the answer with the stream endpoint. A paused agent takes no ' +
           'message (409).',
       },
@@ -540,8 +540,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
       response: { 200: ChatCatalogResponse, ...commonErrors },
       detail: {
         summary: 'List chat models',
-        description:
-          "Return the models and thinking levels last published by this external agent's runner.",
+        description: "Return the models and thinking levels last published by this agent's runner.",
       },
     },
   )
@@ -657,7 +656,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
       detail: {
         summary: 'Publish the runner model catalog',
         description:
-          "Replace the calling external agent's model catalog used for member chat configuration.",
+          "Replace the calling agent's model catalog used for member chat configuration.",
       },
     },
   )

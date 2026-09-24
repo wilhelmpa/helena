@@ -126,7 +126,6 @@
   "orchestration": {
     "teamTitle": "智能体团队",
     "teamDescription": "角色和能力适用于团队的所有项目。只有在 Hermes 中运行的智能体参与团队运行。",
-    "internal": "不在 Hermes 中",
     "editRoles": "在“智能体”标签页设置角色和能力。",
     "policyTitle": "agent-team 工作流",
     "policyDescription": "任务委派给协调者时在 Mastra 中运行。",

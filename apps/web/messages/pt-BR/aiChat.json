@@ -4,7 +4,6 @@
   "overlayMode": "Flutuar o painel",
   "resizePanel": "Redimensionar o painel de chat",
   "emptyTitle": "Nenhum agente para conversar",
-  "emptyDescription": "Converse com um agente deste projeto: um interno, ou um externo pelo seu runner.",
   "createAgent": "Criar um agente",
   "agents": "Agentes",
   "newChat": "Nova conversa",

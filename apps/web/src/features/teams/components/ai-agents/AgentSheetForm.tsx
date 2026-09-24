@@ -1,18 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Sparkles, Wrench } from 'lucide-react';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { teamSectionPath } from '@/utils/paths';
 import {
   useCreateAiAgent,
   useUpdateAiAgent,
-  useAgentToolsQuery,
   useAgentChatCatalogQuery,
 } from '@/services/aiAgents.service';
-import {
-  useIntegrationCatalogQuery,
-  useIntegrationModelsQuery,
-  useIntegrationOptionsQuery,
-} from '@/services/integrations.service';
+import { useIntegrationCatalogQuery } from '@/services/integrations.service';
 import { useTeamProjectOptionsQuery, useTeamQuery } from '@/services/teams.service';
 import {
   useSkillOptionsQuery,
@@ -48,10 +43,9 @@ import { useTranslations } from 'next-intl';
 
 // The Edit tab of the agent sheet, used for both create and edit. With no agent it
 // creates one; once created (onCreated lifts it to the sheet) the same form switches
-// to editing that agent without remounting, so the entered values stay. The kind can
-// be chosen on create but not changed after. A new external agent's key is revealed
-// once in the API key section. An internal agent's enabled skills are managed once
-// the agent exists (they are linked through a separate endpoint).
+// to editing that agent without remounting, so the entered values stay. A new agent's
+// key is revealed once in the API key section. Its skills, tools and MCP servers are
+// linked through endpoints of their own once the agent exists.
 export function AgentSheetForm({
   agent,
   projectId,
@@ -81,8 +75,7 @@ export function AgentSheetForm({
 
   // Skills are a separate permission; when the user can't manage them, the Skills
   // section is hidden and its queries and save are skipped (the backend enforces it
-  // too). Providers are their own resource — the model select just stays empty when
-  // the user can't read them.
+  // too).
   const { teamId } = useAgentSection();
   const team = useTeamQuery(teamId).data;
   const canManageSkills = team?.permissions.agent_skills.edit ?? false;
@@ -90,20 +83,8 @@ export function AgentSheetForm({
   const canReadTools = team?.permissions.agent_tools.read ?? false;
 
   const projects = useTeamProjectOptionsQuery(teamId).data ?? [];
-  const toolsQuery = useAgentToolsQuery(teamId);
-  const catalogQuery = useIntegrationCatalogQuery(teamId);
-  const catalog = catalogQuery.data ?? [];
-  const llmCredentials = useIntegrationOptionsQuery(teamId, 'llm').data ?? [];
-  const selectedProvider =
-    llmCredentials.find((c) => c.id === value.modelCredentialId)?.integrationKey ?? null;
-  const providerModelsQuery = useIntegrationModelsQuery(
-    teamId,
-    value.kind === 'internal' ? selectedProvider : null,
-  );
-  const chatCatalogQuery = useAgentChatCatalogQuery(
-    teamId,
-    agent?.kind === 'external' ? agent.id : null,
-  );
+  const catalog = useIntegrationCatalogQuery(teamId).data ?? [];
+  const chatCatalogQuery = useAgentChatCatalogQuery(teamId, agent?.id ?? null);
   const skillsLibraryQuery = useSkillOptionsQuery(canManageSkills ? teamId : null);
   const agentSkillsQuery = useAgentSkillsQuery(teamId, agent && canManageSkills ? agent.id : null);
   const toolsLibraryQuery = useConfiguredToolOptionsQuery(canManageTools ? teamId : null);
@@ -125,17 +106,6 @@ export function AgentSheetForm({
     setAgentSkills.isPending ||
     setAgentTools.isPending ||
     setAgentMcpServers.isPending;
-
-  // A new agent starts with every action granted. Seed the tool set once the action
-  // catalog loads, only while creating and only if the user has not changed it yet.
-  const toolsSeeded = useRef(false);
-  useEffect(() => {
-    const actions = toolsQuery.data;
-    if (isCreate && !toolsSeeded.current && actions && actions.length > 0) {
-      toolsSeeded.current = true;
-      setValue((v) => ({ ...v, tools: actions.map((t) => t.key) }));
-    }
-  }, [isCreate, toolsQuery.data]);
 
   // The agent's enabled skills, seeded from the server once loaded (edit mode only).
   const [skillIds, setSkillIds] = useState<number[] | null>(null);
@@ -322,14 +292,7 @@ export function AgentSheetForm({
       value={value}
       onChange={merge}
       projects={projects}
-      tools={toolsQuery.data ?? []}
-      toolsLoading={toolsQuery.isLoading}
-      kindLocked={!isCreate}
       expanded={expanded}
-      credentials={llmCredentials}
-      catalog={catalog}
-      models={providerModelsQuery.data ?? []}
-      modelsLoading={providerModelsQuery.isLoading}
       chatModels={chatCatalogQuery.data?.models ?? []}
       chatModelsLoading={chatCatalogQuery.isLoading}
       chatModelsError={chatCatalogQuery.isError}

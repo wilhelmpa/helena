@@ -47,7 +47,6 @@ export default function OrganizationOrchestrationTeam({ agents }: { agents: Orga
                       </p>
                       <p className="truncate text-xs text-muted-foreground" dir="auto">
                         {agent.roleTitle || `@${agent.username}`}
-                        {agent.kind === 'internal' && ` · ${t('orchestration.internal')}`}
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-1">

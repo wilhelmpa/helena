@@ -582,7 +582,6 @@ export async function getWebhookStats(projectId: number, days: number): Promise<
 export interface AgentWorkloadItem {
   agentId: number;
   agentName: string;
-  kind: string;
   delegatedOpen: number;
   runsTotal: number;
   runsSuccess: number;
@@ -594,7 +593,7 @@ export interface AgentWorkloadItem {
 // memory (one per source), keyed by the agent's bot user id and agent id.
 export async function getAgentWorkload(projectId: number): Promise<AgentWorkloadItem[]> {
   const agents = await db
-    .select({ id: aiAgent.id, userId: aiAgent.userId, name: aiAgent.username, kind: aiAgent.kind })
+    .select({ id: aiAgent.id, userId: aiAgent.userId, name: aiAgent.username })
     .from(aiAgent)
     .innerJoin(
       projectMember,
@@ -629,7 +628,6 @@ export async function getAgentWorkload(projectId: number): Promise<AgentWorkload
       return {
         agentId: a.id,
         agentName: a.name,
-        kind: a.kind,
         delegatedOpen: delegatedByUser.get(a.userId) ?? 0,
         runsTotal: runs?.total ?? 0,
         runsSuccess: runs?.success ?? 0,
