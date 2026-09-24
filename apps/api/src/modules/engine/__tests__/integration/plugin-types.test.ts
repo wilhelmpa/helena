@@ -8,11 +8,13 @@ import {
   it,
   setDefaultTimeout,
 } from 'bun:test';
+import { join } from 'node:path';
 import { z } from 'zod';
 import type { PolicyEvaluator, TriggerType, WorkflowStepType } from '@helena/sdk';
 import { db, pipelineRun } from '@repo/db';
 import { eq } from 'drizzle-orm';
-import { publishDomainEvent, registries } from '#shared/helena';
+import { discoverPlugins, loadExternalPlugins } from '@helena/sdk/server';
+import { host, publishDomainEvent, registries } from '#shared/helena';
 import { resetDb } from '#tests/helpers/db';
 import {
   runSteps,
@@ -183,15 +185,14 @@ describe('plugin step types', () => {
 
   it('checks the configuration against the schema and the output variables', async () => {
     const ctx = await setupProject();
-    const res = await ctx.asOwner.teams({ teamId: ctx.teamId }).pipelines.post({
-      name: 'Bad',
+    const res = await ctx.asOwner.teams({ teamId: ctx.teamId }).pipelines.validate.post({
       definition: definition([
         step('first', 'acme.echo', { text: '' }),
         step('second', 'acme.echo', { text: '{{step.first.words}} {{step.first.nope}}' }),
       ]),
+      template: true,
     } as never);
-    expect(res.status).toBe(400);
-    const issues = (res.error?.value as { issues?: Json[] }).issues ?? [];
+    const issues = (res.data?.issues ?? []) as Json[];
     expect(issues).toContainEqual(
       expect.objectContaining({ code: 'plugin_invalid', stepId: 'first', field: 'config.text' }),
     );
@@ -347,5 +348,38 @@ describe('plugin trigger types', () => {
     expect(runs[0]).toMatchObject({ trigger: 'acme.on_ping', issueId: task.id });
     expect(runs[0]!.input).toEqual({ trigger: { value: 9 } });
     await waitForStatus(runs[0]!.id, 'succeeded');
+  });
+});
+
+describe('the example plugin', () => {
+  it('runs its workflow step with no change to the engine', async () => {
+    const root = join(import.meta.dir, '../../../../../../../examples/plugins');
+    const [found] = await discoverPlugins(root);
+    expect(found?.manifest?.id).toBe('hello-helena');
+    const [loaded] = await loadExternalPlugins(host, {
+      root,
+      entry: 'server',
+      policy: {
+        enabled: true,
+        approved: [{ id: 'hello-helena', version: '0.1.0', digest: found!.digest! }],
+      },
+    });
+    expect(loaded?.status).toBe('loaded');
+    try {
+      const ctx = await setupProject();
+      const pipelineId = await workflow(ctx, [
+        step('greet', 'hello-helena.greet', { name: '{{task.title}}', greeting: 'Servus' }),
+      ]);
+      const task = await issue(ctx);
+      const run = await startRun(ctx, task.id, pipelineId);
+      await waitForStatus(run.id, 'succeeded');
+      expect((await runSteps(run.id))[0]).toMatchObject({
+        kind: 'hello-helena.greet',
+        status: 'succeeded',
+        summary: 'Servus, Launch page!',
+      });
+    } finally {
+      await host.unload('hello-helena');
+    }
   });
 });
