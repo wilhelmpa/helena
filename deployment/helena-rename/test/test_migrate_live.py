@@ -541,7 +541,7 @@ class EndToEndTest(unittest.TestCase):
             self.read("etc/sudoers.d/91-helena-gog"),
             "wilhelmpa ALL=(helena-google) NOPASSWD: /usr/local/libexec/helena-gog-bridge\n",
         )
-        polkit = self.read("etc/polkit-1/rules.d/60-helena-project-browser.rules")
+        polkit = self.read("etc/polkit-1/rules.d/60-helena-browser.rules")
         self.assertIn('"helena-hermes"', polkit)
         self.assertIn('"helena-browser"', polkit)
         runner_script = self.read("usr/local/libexec/helena-runner")
@@ -643,9 +643,10 @@ class EndToEndTest(unittest.TestCase):
         # Groups were renamed before the failure, the paths not yet.
         self.assertTrue(os.path.isdir(os.path.join(self.root, "srv/volition/source/plan")))
         resumed = self.migrate("apply", *self.forward_args(self.deploy_stub()))
-        self.assertIn("apply finished", resumed.stdout)
+        self.assertIn("apply finished", resumed.stdout, resumed.stdout)
         self.assertIn("helena:x:999", self.read("etc/passwd"))
-        self.migrate("verify")
+        verify = self.migrate("verify", check=False)
+        self.assertEqual(verify.returncode, 0, resumed.stdout + "\n---\n" + verify.stdout + "\n---\n" + json.dumps(self.units(), indent=1))
 
     def test_dry_run_changes_nothing(self):
         before = tree_digest(self.root)

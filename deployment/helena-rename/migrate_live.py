@@ -163,9 +163,21 @@ class Rules:
         return pattern.sub(repl, text), count[0]
 
     def rename_name(self, name):
-        """A file name through the same tokens (units first go through the units map)."""
-        new, _ = Rules._sub(self.exact, lambda m: self.table[m.group(0)], name)
-        new, _ = Rules._sub(self.prefix, self._prefix_repl, new)
+        """A file name through the same tokens, bounded more loosely: in `91-volition-gog` or
+        `volition.conf` the old brand is a part of the name, and a part is renamed too."""
+        if not hasattr(self, "_name_patterns"):
+            bound_before, bound_after = "(?<![A-Za-z0-9_])", "(?![A-Za-z0-9_])"
+            words = {"volition": "helena", "itsaplan": "helena"}
+            self._name_patterns = (
+                _alternation(self.table.items(), bound_before, "(?![A-Za-z0-9_-])"),
+                _alternation(self.prefixes.items(), bound_before, "(?=[A-Za-z0-9])"),
+                _alternation(words.items(), bound_before, bound_after),
+                words,
+            )
+        exact, prefix, word, words = self._name_patterns
+        new, _ = Rules._sub(exact, lambda m: self.table[m.group(0)], name)
+        new, _ = Rules._sub(prefix, self._prefix_repl, new)
+        new, _ = Rules._sub(word, lambda m: words[m.group(0)], new)
         return new
 
 
@@ -288,7 +300,7 @@ class Migration:
     def record(self, entry):
         """Appends to the journal; a dry run keeps it in memory only."""
         entry = dict(entry)
-        entry["at"] = datetime.datetime.utcnow().isoformat() + "Z"
+        entry["at"] = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         if not self.dry_run:
             os.makedirs(self.backup_dir, mode=0o700, exist_ok=True)
             with open(self.journal_path, "a", encoding="utf-8") as handle:
@@ -1011,7 +1023,7 @@ class Migration:
         if self.args.skip_deploy:
             self.warn("deploy skipped (--skip-deploy)")
             return
-        migrations = self.max_migration()
+        migrations = "0" if self.dry_run else self.max_migration()
         self.record({"id": "deploy-mark", "kind": "deploy-mark", "maxCreatedAt": migrations})
         command = self.args.deploy_cmd or self.default_deploy_cmd()
         self.log("deploy: %s" % command)
