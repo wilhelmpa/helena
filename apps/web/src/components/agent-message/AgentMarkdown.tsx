@@ -277,8 +277,7 @@ export function AgentMarkdownProvider({ source, renderers, children }: AgentMark
 
 export interface AgentTextProps {
   children: string;
-  // Still being written: incomplete Markdown is closed while it streams, and new words
-  // fade in.
+  // Still being written: new words fade in.
   streaming?: boolean;
   className?: string;
 }
@@ -288,11 +287,12 @@ export function AgentText({ children, streaming = false, className }: AgentTextP
   const text = useMemo(() => linkFileMarkers(children), [children]);
   return (
     <MessageResponse
+      // Streamdown's own pairing: `animated` stays on, and only the text still being
+      // written (isAnimating) fades in word by word. Flipping `animated` itself at the
+      // end of an answer would rebuild every block (a diagram would redraw and the
+      // transcript jump).
       isAnimating={streaming}
-      animated={streaming ? STREAMING_ANIMATION : undefined}
-      // Unfinished Markdown is closed only while it is still being written; a finished
-      // answer is shown exactly as the agent wrote it.
-      parseIncompleteMarkdown={streaming}
+      animated={STREAMING_ANIMATION}
       className={className}
     >
       {text}

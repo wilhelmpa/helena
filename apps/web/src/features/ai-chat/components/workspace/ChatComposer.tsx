@@ -301,7 +301,13 @@ export default function ChatComposer({
             }}
           />
         )}
-        <PromptInput onSubmit={() => void submit()} onFiles={(files) => void uploadFiles(files)}>
+        {/* The labels at the composer's bottom (agent, status, model) show by the
+            composer's own width, which the tool panel or an open artifact narrows. */}
+        <PromptInput
+          className="@container/composer"
+          onSubmit={() => void submit()}
+          onFiles={(files) => void uploadFiles(files)}
+        >
           <PromptInputHeader>
             <ChatComposerQueue
               queue={queue}
@@ -371,7 +377,7 @@ export default function ChatComposer({
             />
           </PromptInputBody>
           <PromptInputFooter>
-            <PromptInputTools>
+            <PromptInputTools className="overflow-hidden">
               <ChatAttachPicker
                 scopeKey={scopeKey}
                 onUpload={() => fileInputRef.current?.click()}

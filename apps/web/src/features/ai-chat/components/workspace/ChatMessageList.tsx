@@ -13,12 +13,80 @@ import {
   MessageScrollerContent,
   MessageScrollerItem,
   MessageScrollerViewport,
+  useMessageScroller,
+  useMessageScrollerScrollable,
 } from '@/components/ui/message-scroller';
 import type { PlanChat } from '../../hooks/usePlanChat';
 import type { Artifact } from '../../utils/artifacts';
 import type { PlanUIMessage } from '../../utils/chatMessages';
 import ChatMessageItem from './ChatMessageItem';
 import ChatDaySeparator from './ChatDaySeparator';
+
+// Keeps following an answer to its end unless the reader scrolled. The scroller lets go
+// of following when the view moves up without it — which is also what a block that
+// shrinks and grows again looks like (a diagram redrawing as its fence completes, the
+// answer's footer and the composer's status line changing at its end). Here only the
+// reader's own gestures on the transcript (wheel, touch, keys, the scrollbar) count as
+// scrolling away; anything else puts the view back at the end. Renders nothing.
+function KeepFollowing({
+  streaming,
+  viewportRef,
+}: {
+  streaming: boolean;
+  viewportRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  const { scrollToEnd } = useMessageScroller();
+  const { end } = useMessageScrollerScrollable();
+  const readerScrolled = useRef(false);
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    const scrolled = () => {
+      readerScrolled.current = true;
+    };
+    const keyScrolled = (event: KeyboardEvent) => {
+      if (['ArrowUp', 'PageUp', 'Home', ' '].includes(event.key)) scrolled();
+    };
+    // The scrollbar: a press on the viewport itself rather than on a message.
+    const barScrolled = (event: PointerEvent) => {
+      if (event.target === viewport) scrolled();
+    };
+    viewport.addEventListener('wheel', scrolled, { passive: true });
+    viewport.addEventListener('touchmove', scrolled, { passive: true });
+    viewport.addEventListener('keydown', keyScrolled);
+    viewport.addEventListener('pointerdown', barScrolled);
+    return () => {
+      viewport.removeEventListener('wheel', scrolled);
+      viewport.removeEventListener('touchmove', scrolled);
+      viewport.removeEventListener('keydown', keyScrolled);
+      viewport.removeEventListener('pointerdown', barScrolled);
+    };
+  }, [viewportRef]);
+
+  // Back at the end, by any means, the reader follows again.
+  useEffect(() => {
+    if (!end) readerScrolled.current = false;
+    else if (streaming && !readerScrolled.current) scrollToEnd({ behavior: 'auto' });
+  }, [end, streaming, scrollToEnd]);
+
+  // The end of an answer settles over a moment (its footer, the server's copy of it).
+  const wasStreaming = useRef(streaming);
+  useEffect(() => {
+    const ended = wasStreaming.current && !streaming;
+    wasStreaming.current = streaming;
+    if (!ended || readerScrolled.current) return;
+    const frame = requestAnimationFrame(() => scrollToEnd({ behavior: 'auto' }));
+    const later = setTimeout(() => {
+      if (!readerScrolled.current) scrollToEnd({ behavior: 'auto' });
+    }, 1200);
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(later);
+    };
+  }, [streaming, scrollToEnd]);
+  return null;
+}
 
 // An answer that has nothing to show yet (no text, reasoning or tool call, no error).
 const isEmptyAnswer = (message: PlanUIMessage) =>
@@ -86,6 +154,7 @@ function ChatTranscript({
   // Older messages load by themselves when the top of the transcript comes into view
   // (old-chat parity); the button stays for keyboards and as the loading indicator.
   const topRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
   const canLoadOlder = plan.hasOlder && !plan.loadingOlder;
   useEffect(() => {
     const node = topRef.current;
@@ -102,8 +171,16 @@ function ChatTranscript({
 
   return (
     <MessageScrollerProvider autoScroll defaultScrollPosition="end">
+      <KeepFollowing
+        streaming={status === 'streaming' || status === 'submitted'}
+        viewportRef={viewportRef}
+      />
       <MessageScroller className="flex-1">
-        <MessageScrollerViewport aria-label={t('messages.transcript')} preserveScrollOnPrepend>
+        <MessageScrollerViewport
+          ref={viewportRef}
+          aria-label={t('messages.transcript')}
+          preserveScrollOnPrepend
+        >
           <MessageScrollerContent className="mx-auto w-full max-w-3xl gap-2 px-4 pt-6 pb-6">
             <div ref={topRef} aria-hidden="true" />
             {plan.hasOlder && (
