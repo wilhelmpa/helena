@@ -1,7 +1,8 @@
 import { t } from 'elysia';
 import { HotkeyCombosSchema } from '#modules/settings/model';
 
-const Locale = t.Union([
+// The interface languages (@helena/locales LOCALES).
+export const LocaleSchema = t.Union([
   t.Literal('en'),
   t.Literal('uk'),
   t.Literal('ru'),
@@ -27,7 +28,7 @@ const IssueActivityView = t.Union([t.Literal('flat'), t.Literal('grouped')]);
 
 export const PreferenceResponse = t.Object({
   timezone: t.String(),
-  locale: Locale,
+  locale: LocaleSchema,
   theme: Theme,
   issueOpenMode: IssueOpenMode,
   headerLayout: HeaderLayout,
@@ -43,7 +44,7 @@ export const PreferenceResponse = t.Object({
 
 export const PreferencePatch = t.Object({
   timezone: t.Optional(t.String({ minLength: 1, maxLength: 64 })),
-  locale: t.Optional(Locale),
+  locale: t.Optional(LocaleSchema),
   theme: t.Optional(Theme),
   issueOpenMode: t.Optional(IssueOpenMode),
   headerLayout: t.Optional(HeaderLayout),

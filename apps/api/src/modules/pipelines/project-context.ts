@@ -16,6 +16,7 @@ import {
   type PipelineDefinition,
   type PipelineRole,
 } from './definition';
+import { findState } from '@helena/locales/defaults';
 
 // What a workflow needs to know about the project it runs in: the agents that can fill
 // its roles, and the names its steps use for statuses, labels, areas and members.
@@ -188,7 +189,7 @@ export function projectIssues(
     resolveRoles(definition.roles, mapping, context).map((role) => [role.key, role]),
   );
   const usedRoles = new Map<string, string>();
-  const status = (name: string) => context.statuses.some((column) => same(column.name, name));
+  const status = (name: string) => findState(context.statuses, name) !== undefined;
   const hasLabel = (name: string) => context.labels.some((item) => same(item.name, name));
   const { trigger } = definition;
   if (trigger.type === 'status_changed' && trigger.to && !status(trigger.to))

@@ -1,0 +1,55 @@
+{
+  "states": {
+    "backlog": "Бэклог",
+    "todo": "К выполнению",
+    "inProgress": "В работе",
+    "review": "На проверке",
+    "done": "Готово",
+    "canceled": "Отменено"
+  },
+  "issueTypes": {
+    "task": "Задача",
+    "feature": "Функция",
+    "bug": "Ошибка",
+    "techDebt": "Технический долг",
+    "research": "Исследование",
+    "epic": "Эпик",
+    "feedback": "Отзыв",
+    "article": "Статья",
+    "video": "Видео",
+    "socialPost": "Пост в соцсетях",
+    "idea": "Идея",
+    "review": "Проверка",
+    "campaign": "Кампания",
+    "landing": "Лендинг",
+    "asset": "Материал",
+    "email": "Письмо",
+    "screen": "Экран",
+    "component": "Компонент",
+    "lead": "Лид",
+    "deal": "Сделка",
+    "followUp": "Повторный контакт",
+    "account": "Клиент",
+    "request": "Запрос",
+    "process": "Процесс",
+    "purchase": "Закупка",
+    "maintenance": "Обслуживание",
+    "incident": "Инцидент",
+    "question": "Вопрос",
+    "change": "Изменение",
+    "candidate": "Кандидат",
+    "onboarding": "Адаптация",
+    "policy": "Политика"
+  },
+  "views": {
+    "kanban": "Канбан",
+    "list": "Список",
+    "allTasks": "Все задачи"
+  },
+  "coordinator": "Координатор Hermes {key}",
+  "teamRole": "Участник",
+  "blocked": {
+    "label": "Заблокировано",
+    "comment": "Заблокировано, нужен ответ:"
+  }
+}

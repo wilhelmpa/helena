@@ -86,6 +86,7 @@ export function useCreateProject() {
         key: string;
         name: string;
         description?: string;
+        locale?: string;
         include?: Partial<Record<CopyProjectIncludeKey, boolean>>;
         preset?: string;
       };

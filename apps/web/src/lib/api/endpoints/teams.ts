@@ -224,7 +224,7 @@ export const updateTeamMcp = (
 // (owner/manager create and copy, owner deletes) rather than by project membership.
 export const createTeamProject = (
   teamId: number,
-  input: { key: string; name: string; description?: string; preset?: string },
+  input: { key: string; name: string; description?: string; locale?: string; preset?: string },
 ) =>
   request<Project>(`/teams/${teamId}/projects`, {
     method: 'POST',
@@ -238,6 +238,7 @@ export const copyTeamProject = (
     key: string;
     name: string;
     description?: string;
+    locale?: string;
     include?: Partial<Record<CopyProjectIncludeKey, boolean>>;
   },
 ) =>

@@ -1,0 +1,55 @@
+{
+  "states": {
+    "backlog": "Backlog",
+    "todo": "Akan Dikerjakan",
+    "inProgress": "Sedang Dikerjakan",
+    "review": "Ditinjau",
+    "done": "Selesai",
+    "canceled": "Dibatalkan"
+  },
+  "issueTypes": {
+    "task": "Tugas",
+    "feature": "Fitur",
+    "bug": "Bug",
+    "techDebt": "Utang teknis",
+    "research": "Riset",
+    "epic": "Epik",
+    "feedback": "Masukan",
+    "article": "Artikel",
+    "video": "Video",
+    "socialPost": "Unggahan media sosial",
+    "idea": "Ide",
+    "review": "Tinjauan",
+    "campaign": "Kampanye",
+    "landing": "Halaman arahan",
+    "asset": "Aset",
+    "email": "Email",
+    "screen": "Layar",
+    "component": "Komponen",
+    "lead": "Prospek",
+    "deal": "Kesepakatan",
+    "followUp": "Tindak lanjut",
+    "account": "Akun",
+    "request": "Permintaan",
+    "process": "Proses",
+    "purchase": "Pembelian",
+    "maintenance": "Pemeliharaan",
+    "incident": "Insiden",
+    "question": "Pertanyaan",
+    "change": "Perubahan",
+    "candidate": "Kandidat",
+    "onboarding": "Orientasi",
+    "policy": "Kebijakan"
+  },
+  "views": {
+    "kanban": "Kanban",
+    "list": "Daftar",
+    "allTasks": "Semua tugas"
+  },
+  "coordinator": "Koordinator Hermes {key}",
+  "teamRole": "Anggota",
+  "blocked": {
+    "label": "Terhambat",
+    "comment": "Terhambat, butuh masukan:"
+  }
+}

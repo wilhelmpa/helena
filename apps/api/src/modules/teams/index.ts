@@ -59,6 +59,7 @@ import {
   setTeamMemberRole,
   teamOwnsProject,
 } from './service';
+import { browserLocale } from '#modules/user-preferences/locale';
 
 // The write routes act on a project the team owns; one of another team answers 404
 // rather than being changed through this team.
@@ -249,11 +250,11 @@ export const teamRoutes = new Elysia({ name: 'teams', detail: { tags: ['Teams'] 
 
   .post(
     '/teams',
-    async ({ body, user, set }) => {
+    async ({ body, user, request, set }) => {
       const name = body.name.trim();
       if (!name) throw new HttpError(400, 'Team name is required');
       set.status = 201;
-      return createTeam(name, requireUser(user).id);
+      return createTeam(name, requireUser(user).id, browserLocale(request));
     },
     {
       body: createTeamBody,
@@ -286,9 +287,9 @@ export const teamRoutes = new Elysia({ name: 'teams', detail: { tags: ['Teams'] 
 
   .post(
     '/teams/:teamId/projects',
-    async ({ body, membership, set }) => {
+    async ({ body, membership, request, set }) => {
       set.status = 201;
-      return createProject(body, membership.userId, membership.teamId);
+      return createProject(body, membership.userId, membership.teamId, browserLocale(request));
     },
     {
       teamManager: true,
@@ -306,11 +307,18 @@ export const teamRoutes = new Elysia({ name: 'teams', detail: { tags: ['Teams'] 
 
   .post(
     '/teams/:teamId/projects/:projectId/copy',
-    async ({ body, membership, params, set }) => {
+    async ({ body, membership, params, request, set }) => {
       await requireTeamProject(membership.teamId, params.projectId);
       const { include, ...meta } = body;
       set.status = 201;
-      return copyProject(params.projectId, meta, membership.userId, include, membership.teamId);
+      return copyProject(
+        params.projectId,
+        meta,
+        membership.userId,
+        include,
+        membership.teamId,
+        browserLocale(request),
+      );
     },
     {
       teamManager: true,

@@ -1,6 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { KEY_MAX_LENGTH } from '@/utils/projectKey';
-import type { PresetKey } from '@/utils/projectPresets';
+import type { Locale } from '@helena/locales';
+import type { ProjectPresetKey } from '@helena/locales/defaults';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,6 +13,7 @@ export default function NewProjectForm({
   name,
   projectKey,
   description,
+  locale,
   preset,
   onNameChange,
   onKeyChange,
@@ -21,11 +23,12 @@ export default function NewProjectForm({
   name: string;
   projectKey: string;
   description: string;
-  preset: PresetKey;
+  locale: Locale;
+  preset: ProjectPresetKey;
   onNameChange: (value: string) => void;
   onKeyChange: (value: string) => void;
   onDescriptionChange: (value: string) => void;
-  onPresetChange: (value: PresetKey) => void;
+  onPresetChange: (value: ProjectPresetKey) => void;
 }) {
   const t = useTranslations('newProject');
 
@@ -56,7 +59,7 @@ export default function NewProjectForm({
           />
         </div>
       </div>
-      <NewProjectPreset value={preset} onChange={onPresetChange} />
+      <NewProjectPreset value={preset} locale={locale} onChange={onPresetChange} />
     </div>
   );
 }

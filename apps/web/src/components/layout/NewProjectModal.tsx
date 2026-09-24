@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Users } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import type { ProjectPresetKey } from '@helena/locales/defaults';
 import { useCreateProject } from '@/services/projects.service';
 import { useTeamsQuery } from '@/services/teams.service';
 import { normalizeKey, suggestKey } from '@/utils/projectKey';
-import type { PresetKey } from '@/utils/projectPresets';
+import { newProjectInput } from '@/utils/newProjectInput';
+import { isLocale, DEFAULT_LOCALE } from '@/i18n/locales';
 import Modal from '@/components/common/overlay/Modal';
 import { Button } from '@/components/ui/button';
 import CopyProjectForm from '@/components/layout/CopyProjectForm';
@@ -39,7 +41,10 @@ export default function NewProjectModal({
   const [include, setInclude] = useState<CopyInclude>(allSelected);
   // Which issue types the new project starts with. A copy takes its types from the
   // source project, so the preset applies only when creating from scratch.
-  const [preset, setPreset] = useState<PresetKey>('general');
+  const [preset, setPreset] = useState<ProjectPresetKey>('general');
+  // The language the preview is shown in; the project's default names are created in it.
+  const rendered = useLocale();
+  const locale = isLocale(rendered) ? rendered : DEFAULT_LOCALE;
   const createProject = useCreateProject();
   // Names the team in the header, so the dialog says where the project lands.
   const team = useTeamsQuery().data?.find((one) => one.id === teamId);
@@ -56,12 +61,14 @@ export default function NewProjectModal({
   }
 
   function submit() {
-    const input = {
-      key: key.trim().toUpperCase(),
-      name: name.trim(),
-      description: description.trim(),
-      ...(copyFrom ? { include } : { preset }),
-    };
+    const input = newProjectInput({
+      key,
+      name,
+      description,
+      locale,
+      preset,
+      include: copyFrom ? include : null,
+    });
     createProject.mutate(
       { teamId, copyFromId: copyFrom?.id, input },
       { onSuccess: (project) => onCreated(project.key) },
@@ -103,6 +110,7 @@ export default function NewProjectModal({
               name={name}
               projectKey={key}
               description={description}
+              locale={locale}
               preset={preset}
               onNameChange={onNameChange}
               onKeyChange={onKeyChange}

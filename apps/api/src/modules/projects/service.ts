@@ -41,6 +41,9 @@ import { lockAttachmentStorage } from '#modules/attachments/storage';
 import { applyProjectTemplateInTransaction } from '#modules/project-templates/service';
 import { getDefaultRoleId } from '#modules/roles/service';
 import { ensureDefaultProjectViews } from '#modules/views/service';
+import { DEFAULT_LOCALE, type Locale } from '#modules/user-preferences/locale';
+import { preferredLocale } from '#modules/user-preferences/service';
+import { coordinatorName, defaultStates, presetIssueTypes } from '@helena/locales/defaults';
 import {
   hermesProjectCoordinatorUsername,
   isHermesProjectCoordinatorUsername,
@@ -278,89 +281,58 @@ async function ownedTeam(userId: string): Promise<TargetTeam> {
   return row;
 }
 
-// Every new project starts with a complete working flow, including the review
-// checkpoint used by agent-team runs before completed work reaches Done.
-export const DEFAULT_COLUMNS: {
-  name: string;
-  stateType: string;
-  color: string;
-}[] = [
-  { name: 'Backlog', stateType: 'backlog', color: '#71717a' },
-  { name: 'Todo', stateType: 'unstarted', color: '#6b7280' },
-  { name: 'In Progress', stateType: 'started', color: '#eab308' },
-  { name: 'Review', stateType: 'started', color: '#8b5cf6' },
-  { name: 'Done', stateType: 'completed', color: '#22c55e' },
-  { name: 'Canceled', stateType: 'canceled', color: '#ef4444' },
-];
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-// Issue types a new project starts with, picked by sphere of work in the create
-// dialog. The first entry of a set becomes the project's default type. "general"
-// is the fallback when no preset is chosen: a single Task, so the project is
-// usable without committing to a classification.
-export const ISSUE_TYPE_PRESETS: Record<string, { name: string; color: string }[]> = {
-  general: [{ name: 'Task', color: '#0ea5e9' }],
-  software: [
-    { name: 'Feature', color: '#8b5cf6' },
-    { name: 'Bug', color: '#e11d48' },
-    { name: 'Task', color: '#0ea5e9' },
-    { name: 'Tech debt', color: '#f97316' },
-    { name: 'Research', color: '#14b8a6' },
-  ],
-  product: [
-    { name: 'Epic', color: '#8b5cf6' },
-    { name: 'Feature', color: '#0ea5e9' },
-    { name: 'Feedback', color: '#eab308' },
-    { name: 'Research', color: '#14b8a6' },
-  ],
-  content: [
-    { name: 'Article', color: '#0ea5e9' },
-    { name: 'Video', color: '#e11d48' },
-    { name: 'Social post', color: '#8b5cf6' },
-    { name: 'Idea', color: '#eab308' },
-    { name: 'Review', color: '#22c55e' },
-  ],
-  marketing: [
-    { name: 'Campaign', color: '#8b5cf6' },
-    { name: 'Landing', color: '#0ea5e9' },
-    { name: 'Asset', color: '#14b8a6' },
-    { name: 'Email', color: '#f97316' },
-    { name: 'Research', color: '#22c55e' },
-  ],
-  design: [
-    { name: 'Screen', color: '#0ea5e9' },
-    { name: 'Component', color: '#8b5cf6' },
-    { name: 'Asset', color: '#14b8a6' },
-    { name: 'Research', color: '#22c55e' },
-  ],
-  sales: [
-    { name: 'Lead', color: '#0ea5e9' },
-    { name: 'Deal', color: '#22c55e' },
-    { name: 'Follow-up', color: '#eab308' },
-    { name: 'Account', color: '#8b5cf6' },
-  ],
-  operations: [
-    { name: 'Request', color: '#0ea5e9' },
-    { name: 'Process', color: '#8b5cf6' },
-    { name: 'Purchase', color: '#22c55e' },
-    { name: 'Maintenance', color: '#f97316' },
-  ],
-  support: [
-    { name: 'Incident', color: '#e11d48' },
-    { name: 'Request', color: '#0ea5e9' },
-    { name: 'Question', color: '#eab308' },
-    { name: 'Change', color: '#8b5cf6' },
-  ],
-  recruiting: [
-    { name: 'Candidate', color: '#0ea5e9' },
-    { name: 'Onboarding', color: '#22c55e' },
-    { name: 'Request', color: '#8b5cf6' },
-    { name: 'Policy', color: '#6b7280' },
-  ],
-};
+// A new project's states and issue types come from the shared catalog of default data
+// (@helena/locales/defaults), named in the language of the person it is made for; the
+// create dialog previews them from the same catalog.
+export { PROJECT_PRESET_KEYS } from '@helena/locales/defaults';
 
-export const ISSUE_TYPE_PRESET_KEYS = Object.keys(ISSUE_TYPE_PRESETS);
+// The language a new project's default data is named in: the one the request asks for
+// (the create dialog sends the language its preview was shown in), else the owner's
+// interface language, else the browser language of the request, else English.
+export async function seedLocale(
+  ownerId: string,
+  requested: Locale | undefined,
+  browserLocale: Locale | undefined,
+): Promise<Locale> {
+  return requested ?? (await preferredLocale(ownerId, browserLocale ?? DEFAULT_LOCALE));
+}
 
-export type IssueTypePreset = keyof typeof ISSUE_TYPE_PRESETS;
+// Writes the default states of a new project.
+export async function insertDefaultStates(
+  tx: Transaction,
+  projectId: number,
+  locale: Locale,
+): Promise<void> {
+  await tx.insert(projectColumn).values(
+    defaultStates(locale).map((state, position) => ({
+      projectId,
+      name: state.name,
+      stateType: state.stateType,
+      color: state.color,
+      position,
+    })),
+  );
+}
+
+// Writes the issue types of a preset; the first becomes the project's default type.
+async function insertPresetIssueTypes(
+  tx: Transaction,
+  projectId: number,
+  preset: string | undefined,
+  locale: Locale,
+): Promise<void> {
+  await tx.insert(issueType).values(
+    presetIssueTypes(preset, locale).map((type, position) => ({
+      projectId,
+      name: type.name,
+      color: type.color,
+      isDefault: position === 0,
+      position,
+    })),
+  );
+}
 
 export const DEFAULT_PROVISIONING_RESOURCES = [
   'workspace',
@@ -409,7 +381,7 @@ function hermesProjectCoordinatorInstructions(projectKey: string, projectName: s
 }
 
 export async function createHermesProjectCoordinator(
-  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  tx: Transaction,
   input: {
     projectId: number;
     teamId: number;
@@ -417,6 +389,8 @@ export async function createHermesProjectCoordinator(
     projectName: string;
     ownerUserId: string;
     roleId: number | null;
+    // The language its display name is in; its handle is the same in every language.
+    locale: Locale;
   },
 ): Promise<void> {
   const username = hermesProjectCoordinatorUsername(input.projectKey);
@@ -457,7 +431,7 @@ export async function createHermesProjectCoordinator(
   const userId = crypto.randomUUID();
   await tx.insert(user).values({
     id: userId,
-    name: `Hermes ${input.projectKey} Coordinator`.slice(0, 100),
+    name: coordinatorName(input.projectKey, input.locale).slice(0, 100),
     email: `${userId}@agents.local`,
     emailVerified: false,
     role: 'user',
@@ -667,17 +641,22 @@ export async function createProject(
     preset?: string;
     templateId?: number;
     provisionResources?: string[];
+    // The language the default states, issue types and views are named in.
+    locale?: Locale;
   },
   ownerId: string,
   teamId?: number,
+  // The request's browser language, for an owner who never chose one.
+  browserLocale?: Locale,
 ): Promise<ProjectRow> {
   const ownerTeam = await targetTeam(ownerId, teamId);
   // What a new project starts with, set instance-wide in god mode. Read before the
   // transaction opens so the settings lookup is not part of it.
-  const [defaults, agentUserIds, defaultRoleId] = await Promise.all([
+  const [defaults, agentUserIds, defaultRoleId, locale] = await Promise.all([
     getProjectDefaults(),
     newProjectAgentUserIds(ownerTeam.id),
     getDefaultRoleId(ownerTeam.id),
+    seedLocale(ownerId, input.locale, browserLocale),
   ]);
   return db.transaction(async (tx) => {
     const [row] = await tx
@@ -708,27 +687,11 @@ export async function createProject(
       projectName: row.name,
       ownerUserId: ownerId,
       roleId: defaultRoleId,
+      locale,
     });
-    for (const [position, column] of DEFAULT_COLUMNS.entries()) {
-      await tx.insert(projectColumn).values({
-        projectId: row.id,
-        name: column.name,
-        stateType: column.stateType,
-        color: column.color,
-        position,
-      });
-    }
-    const types = ISSUE_TYPE_PRESETS[input.preset ?? 'general'] ?? ISSUE_TYPE_PRESETS.general;
-    for (const [position, type] of types.entries()) {
-      await tx.insert(issueType).values({
-        projectId: row.id,
-        name: type.name,
-        color: type.color,
-        isDefault: position === 0,
-        position,
-      });
-    }
-    const { ids: defaultViewIds } = await ensureDefaultProjectViews(tx, row.id);
+    await insertDefaultStates(tx, row.id, locale);
+    await insertPresetIssueTypes(tx, row.id, input.preset, locale);
+    const { ids: defaultViewIds } = await ensureDefaultProjectViews(tx, row.id, locale);
     await tx.insert(projectSetting).values({
       projectId: row.id,
       key: AUTO_ARCHIVE_KEY,
@@ -748,7 +711,7 @@ export async function createProject(
       requestedResources,
     });
     if (input.templateId !== undefined) {
-      await applyProjectTemplateInTransaction(tx, row.id, input.templateId);
+      await applyProjectTemplateInTransaction(tx, row.id, input.templateId, locale);
     }
     return mapProject({
       ...row,
@@ -773,6 +736,7 @@ export async function createProjectAsExternalMcpAgent(
     preset?: string;
     templateId?: number;
     provisionResources?: string[];
+    locale?: Locale;
   },
   actorUserId: string,
 ): Promise<ProjectRow | null> {
