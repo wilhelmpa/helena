@@ -6,6 +6,7 @@ import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
 import { loadProjectContext } from '#modules/pipelines/project-context';
+import { learnFromHistory } from '../../history';
 
 // What Helena learns about the models the providers serve this account: a run the provider
 // refused takes its model out of the pickers, fails once and is named on the task; a success
@@ -355,6 +356,48 @@ describe('model availability', () => {
     const plain = await agents({ agentId: template.id }).copy.post({ projectId: ops });
     expect(plain.data!.agent.model).toBe('gpt-5.6-terra');
     expect(plain.data!).not.toHaveProperty('modelFallback');
+  });
+
+  it('learns once from the refusals the runs before it met', async () => {
+    const ctx = await setup();
+    // A run an older runner reported: the refusal is only in its words.
+    await mention(ctx.asOwner, ctx.columnId);
+    const run = (await ctx.asRunner['agent-runs'].claim.post()).data!.run!;
+    await ctx.asRunner['agent-runs']({ runId: run.id }).result.post({
+      status: 'failed',
+      output:
+        "ChatGPT or Codex Subscription rejected the request and retrying won't help.\n\n" +
+        `Provider said: HTTP 400: {"detail":"${REFUSAL.detail.replace(/"/g, '\\"')}"}`,
+      error: 'session_id: 20260924_190648_b02504',
+      runtime: report('gpt-6-terra'),
+    });
+    await db.delete(helenaModelAvailability);
+    const lines: string[] = [];
+    const dry = await learnFromHistory({ days: 1, apply: false, log: (line) => lines.push(line) });
+    expect(dry).toEqual({ read: 1, refused: 1 });
+    expect(lines[0]).toContain('would learn: run');
+    expect(await db.select().from(helenaModelAvailability)).toEqual([]);
+
+    expect(await learnFromHistory({ days: 1, apply: true, log: () => {} })).toEqual({
+      read: 1,
+      refused: 1,
+    });
+    const [stored] = await db.select().from(agentRun).where(eq(agentRun.id, run.id));
+    expect(stored!.failure).toMatchObject({ code: 'model-unavailable', model: 'gpt-6-terra' });
+    expect(await db.select().from(helenaModelAvailability)).toEqual([
+      expect.objectContaining({
+        runtime: 'hermes',
+        provider: 'openai-codex',
+        model: 'gpt-6-terra',
+        state: 'unavailable',
+        runId: run.id,
+      }),
+    ]);
+    // Nothing left to learn.
+    expect(await learnFromHistory({ days: 1, apply: true, log: () => {} })).toEqual({
+      read: 0,
+      refused: 0,
+    });
   });
 
   it('moves every agent off a model at once, templates carrying their copies', async () => {
