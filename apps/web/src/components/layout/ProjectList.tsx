@@ -47,7 +47,7 @@ export default function ProjectList({
 
   return (
     <SidebarGroup className="max-h-[45%] min-h-0 shrink-0 overflow-hidden pt-2">
-      <SidebarGroupContent className="min-h-0 overflow-y-auto overscroll-contain">
+      <SidebarGroupContent className="min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild isActive={pathname === '/'} tooltip={t('home')}>

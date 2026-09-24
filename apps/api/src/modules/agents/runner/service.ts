@@ -156,6 +156,7 @@ export interface RunnerRun {
 // The claim's raw row, before framing. The extra people columns exist only to build
 // the prompts and are not handed to the runner.
 type ClaimedRow = Omit<RunnerRun, 'systemPrompt'> & {
+  projectId: number;
   // Claimed before, by a claim that ended without a result: the runner stopped, handed
   // the run back, or lost its lease.
   interrupted: boolean;
@@ -200,10 +201,15 @@ export async function expireExhaustedRuns(agentId?: number): Promise<number> {
       ),
     )
     .returning({
+      id: agentRun.id,
+      agentId: agentRun.agentId,
+      projectId: agentRun.projectId,
+      trigger: agentRun.trigger,
+      lastError: agentRun.lastError,
       issueId: agentRun.issueId,
       agentUserId: sql<string>`(SELECT user_id FROM ai_agent a WHERE a.id = ${agentRun.agentId})`,
     });
-  for (const row of rows) await recordAgentRunFinished(row, 'failed');
+  for (const row of rows) await recordAgentRunFinished(row, 'failed', row.lastError);
   return rows.length;
 }
 
@@ -235,10 +241,15 @@ export async function expireResumeLimitedRuns(): Promise<number> {
       ),
     )
     .returning({
+      id: agentRun.id,
+      agentId: agentRun.agentId,
+      projectId: agentRun.projectId,
+      trigger: agentRun.trigger,
+      lastError: agentRun.lastError,
       issueId: agentRun.issueId,
       agentUserId: sql<string>`(SELECT user_id FROM ai_agent a WHERE a.id = ${agentRun.agentId})`,
     });
-  for (const row of rows) await recordAgentRunFinished(row, 'failed');
+  for (const row of rows) await recordAgentRunFinished(row, 'failed', row.lastError);
   return rows.length;
 }
 
@@ -289,6 +300,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
       r.trigger,
       r.prompt,
       r.attempts,
+      r.project_id AS "projectId",
       r.claims AS "claim",
       r.issue_id AS "issueId",
       r.started_at < now() AS "interrupted",
@@ -334,7 +346,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
     agentUsername: agent.username,
     threadContext,
   };
-  await recordAgentRunStarted(forPrompt);
+  await recordAgentRunStarted({ ...forPrompt, agentId: agent.id });
   return {
     id: row.id,
     trigger: row.trigger,
@@ -594,11 +606,24 @@ export async function finishRun(
       issueId: agentRun.issueId,
       projectId: agentRun.projectId,
       status: agentRun.status,
+      trigger: agentRun.trigger,
+      lastError: agentRun.lastError,
     });
   const row = rows[0];
   if (!row) return null;
   const status = row.status as 'success' | 'failed';
-  await recordAgentRunFinished({ issueId: row.issueId, agentUserId: agent.userId }, status);
+  await recordAgentRunFinished(
+    {
+      id: runId,
+      agentId: agent.id,
+      projectId: row.projectId,
+      trigger: row.trigger,
+      issueId: row.issueId,
+      agentUserId: agent.userId,
+    },
+    status,
+    row.lastError,
+  );
   const paused = await enforceAgentLimits(agent.id, row.projectId, row.issueId);
   return {
     reflection: await requestReflection(

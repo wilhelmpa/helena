@@ -10,13 +10,16 @@ import { WorkspacePageHeader } from '@/components/layout/WorkspaceHeader';
 // loading section is the width of the section that replaces it.
 export const SECTION_COLUMN_CLASS = 'w-full max-w-[67.5rem]';
 
-// The page gutter (docs/volition-design-helena-ui.md "Spacing"): 16px, 24px beside a
-// wide desktop column. Every page body inside the shell uses this one.
+// The page gutter: 16px on every side, at every width, the same as the dashboard grid
+// and its gaps (owner, 2026-09-24: "Padding im Hauptbereich überall homogen wie beim
+// Dashboard"). Every page body inside the shell uses this one.
 export const PAGE_GUTTER_CLASS = 'px-4 py-4';
 
 // The chrome for a section page rendered inside the app shell: the scroll
 // container, the content column, and a header (title and description).
-// `wide` gives a page whose content is a table the room to span the shell;
+// `wide` gives a page whose content is a list, table or grid the whole shell (16px
+// gutter, no centred column), like the dashboard; the default column is for forms and
+// stays left-aligned, so the left edge is the same everywhere;
 // `widthClassName` overrides the column outright.
 // The column is a flex column at least as tall as the viewport area, so a child
 // marked `flex-1` (an empty state) fills the space left under the header.
@@ -35,7 +38,7 @@ export default function SectionPageView({
   widthClassName?: string;
   children: ReactNode;
 }) {
-  const width = widthClassName ?? (wide ? 'mx-auto w-full max-w-[1600px]' : SECTION_COLUMN_CLASS);
+  const width = widthClassName ?? (wide ? 'w-full' : SECTION_COLUMN_CLASS);
   // In the single-row header the description is not shown (see WorkspacePageHeader).
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">

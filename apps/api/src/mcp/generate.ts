@@ -1,3 +1,4 @@
+import { categoryFromAnnotations, type ActionCategory } from '@helena/sdk';
 import type { Permission } from '#shared/guards';
 import type { McpApp } from './types';
 import { outputSchema, type McpOutputSchema } from './result';
@@ -42,6 +43,9 @@ export interface McpRouteTool {
   inputSchema: McpInputSchema;
   outputSchema: McpOutputSchema;
   annotations: McpToolAnnotations;
+  // What calling it does (@helena/sdk action category): declared on the route, or what
+  // its annotations imply (GET reads, DELETE deletes, the rest writes).
+  category: ActionCategory;
   // The cell of the role matrix the route's guard asserts, published by the guard as
   // `x-permission` on the route's detail. Absent on a route that asks only for
   // project membership.
@@ -62,11 +66,15 @@ export interface McpRouteTool {
 // `x-mcp` is an OpenAPI extension key, so it rides along in the route's detail,
 // is read back from app.routes by generateRouteTools, and does not show up as a
 // real field in the REST/OpenAPI docs.
+//
+// The third argument is the action category where the annotations understate it: a POST
+// that starts an agent run executes, one that mails an invite sends.
 export function mcpTool(
   tool: string,
   annotations?: McpToolAnnotations,
-): { 'x-mcp': { tool: string; annotations?: McpToolAnnotations } } {
-  return { 'x-mcp': { tool, annotations } };
+  category?: ActionCategory,
+): { 'x-mcp': { tool: string; annotations?: McpToolAnnotations; category?: ActionCategory } } {
+  return { 'x-mcp': { tool, annotations, ...(category ? { category } : {}) } };
 }
 
 // What the HTTP method alone says about a route. A GET only reads; a DELETE
@@ -142,7 +150,7 @@ function mergeInputSchema(hooks: Record<string, unknown>, pathParams: string[]):
 }
 
 // "create_issue" → "Create issue", for a tool whose route has no summary.
-function toolTitle(tool: string): string {
+export function toolTitle(tool: string): string {
   const words = tool.replace(/_/g, ' ');
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
@@ -170,13 +178,22 @@ function generateRouteTools(app: McpApp): McpRouteTool[] {
       | {
           summary?: string;
           description?: string;
-          'x-mcp'?: { tool?: string; annotations?: McpToolAnnotations };
+          'x-mcp'?: {
+            tool?: string;
+            annotations?: McpToolAnnotations;
+            category?: ActionCategory;
+          };
           'x-permission'?: Permission;
         }
       | undefined;
     const tool = detail?.['x-mcp']?.tool;
     if (!tool) continue;
     const pathParams = extractPathParams(route.path);
+    const annotations: McpToolAnnotations = {
+      ...methodAnnotations(route.method),
+      openWorldHint: false,
+      ...detail?.['x-mcp']?.annotations,
+    };
     tools.push({
       name: tool,
       title: detail?.summary ?? toolTitle(tool),
@@ -193,11 +210,8 @@ function generateRouteTools(app: McpApp): McpRouteTool[] {
       permission: detail?.['x-permission'],
       // Every tool acts on this tracker's own data and reaches nothing outside it,
       // so openWorldHint is false throughout; the route may still override it.
-      annotations: {
-        ...methodAnnotations(route.method),
-        openWorldHint: false,
-        ...detail?.['x-mcp']?.annotations,
-      },
+      annotations,
+      category: detail?.['x-mcp']?.category ?? categoryFromAnnotations(annotations),
     });
   }
   return tools;

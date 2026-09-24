@@ -1,5 +1,8 @@
 import { createTool } from '@mastra/core/tools';
-import { getTool, type ToolConfig } from '@repo/agent-tools';
+import { z } from 'zod';
+import { consoleLogger, toJsonSchema } from '@helena/sdk';
+import type { ToolConfig } from '@repo/agent-tools';
+import { registries } from '#shared/helena';
 import { errorMessage } from '../../helpers/errors';
 
 // Builds Mastra tools for the configured tools enabled on an agent. Each tool binds
@@ -15,17 +18,22 @@ export function buildCustomTools(
 
   const tools: Record<string, ReturnType<typeof createTool>> = {};
   for (const it of items) {
-    const found = getTool(it.toolKey);
-    if (!found) continue;
-    const { tool } = found;
-    const id = (counts.get(it.toolKey) ?? 0) > 1 ? `${tool.key}_${it.id}` : tool.key;
+    // A connector's tool (@helena/sdk registry): built-in integrations and plugins alike.
+    const tool = registries.tools.get(it.toolKey);
+    if (!tool?.connector) continue;
+    const id = (counts.get(it.toolKey) ?? 0) > 1 ? `${tool.name}_${it.id}` : tool.name;
     tools[id] = createTool({
       id,
       description: tool.description,
-      inputSchema: tool.inputSchema,
+      inputSchema: isZod(tool.inputSchema) ? tool.inputSchema : jsonSchemaInput(tool),
       execute: async (input) => {
         try {
-          return await tool.execute(it.credential, input as Record<string, unknown>);
+          return await tool.handler(input, {
+            agent: null,
+            project: null,
+            credential: it.credential,
+            log: consoleLogger(`tool ${tool.name}`),
+          });
         } catch (err) {
           // Surface the failure to the model as a result rather than aborting the run.
           return { error: errorMessage(err, 'Tool call failed') };
@@ -34,4 +42,19 @@ export function buildCustomTools(
     });
   }
   return tools;
+}
+
+// Mastra takes a zod schema or a JSON Schema wrapped by its own helper; the built-in
+// integrations use zod, a plugin may hand over plain JSON Schema.
+function isZod(schema: unknown): schema is z.ZodType {
+  return (
+    !!schema &&
+    typeof schema === 'object' &&
+    '~standard' in schema &&
+    (schema as { '~standard': { vendor?: string } })['~standard'].vendor === 'zod'
+  );
+}
+
+function jsonSchemaInput(tool: { inputSchema: unknown }): z.ZodType {
+  return z.fromJSONSchema(toJsonSchema(tool.inputSchema as Record<string, unknown>));
 }

@@ -780,7 +780,8 @@
         "model": "Modell",
         "reasoning": "Reasoning"
       }
-    }
+    },
+    "chatTemplate": "Eine Vorlage läuft nicht selbst. Füge sie einem Projekt als Agent hinzu, um ihn hier auszuprobieren."
   },
   "members": {
     "roleSaved": "{name} ist jetzt {role}",
@@ -805,5 +806,22 @@
   "settingState": {
     "on": "An",
     "off": "Aus"
+  },
+  "templateBundles": {
+    "importAction": "Vorlagen importieren",
+    "exportAction": "Vorlagen exportieren",
+    "importTitle": "Vorlagen importieren",
+    "counts": "{agents} Agenten-Vorlagen · {skills} Skills · {servers} MCP-Server",
+    "chooseFile": "Paket-Datei wählen",
+    "fileChosen": "Datei: {name}",
+    "dryRun": "Nur prüfen (nichts ändern)",
+    "update": "Abweichungen übernehmen",
+    "check": "Prüfen",
+    "import": "Importieren",
+    "close": "Schließen",
+    "failed": "Das hat nicht geklappt.",
+    "notJson": "Die Datei ist kein JSON-Paket.",
+    "summary": "{written} geschrieben · {unchanged} unverändert · {drift} abweichend · {warnings} Warnungen",
+    "summaryDryRun": "Nur geprüft, nichts geändert · {unchanged} unverändert · {drift} abweichend · {warnings} Warnungen"
   }
 }

@@ -4,18 +4,11 @@
       "count": 1
     }
   },
-  "src/components/common/agent-chat/AgentChatSpeakButton.tsx": {
-    "react-hooks/set-state-in-effect": {
+  "src/components/ai-elements/speech-input.tsx": {
+    "react-hooks/refs": {
       "count": 1
-    }
-  },
-  "src/components/common/agent-chat/AgentChatSpeechInput.tsx": {
+    },
     "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "src/components/common/agent-chat/AgentChatTranscript.tsx": {
-    "better-tailwindcss/enforce-logical-properties": {
       "count": 1
     }
   },
@@ -356,19 +349,11 @@
   },
   "src/features/ai-chat/components/workspace/ChatComposer.tsx": {
     "react-hooks/immutability": {
-      "count": 4
+      "count": 2
     }
   },
   "src/features/ai-chat/components/workspace/ChatDaySeparator.tsx": {
     "react-hooks/purity": {
-      "count": 1
-    }
-  },
-  "src/features/ai-chat/components/workspace/ChatDictationButton.tsx": {
-    "react-hooks/refs": {
-      "count": 1
-    },
-    "react-hooks/set-state-in-effect": {
       "count": 1
     }
   },
@@ -1554,11 +1539,6 @@
   },
   "src/hooks/use-mobile.ts": {
     "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "src/hooks/useAgentChat.ts": {
-    "react-hooks/refs": {
       "count": 1
     }
   },

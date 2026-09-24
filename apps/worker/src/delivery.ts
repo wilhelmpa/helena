@@ -1,5 +1,5 @@
 import { pinnedFetch, UrlNotAllowedError } from '@repo/net';
-import { signPayload } from './signature';
+import { signPayload, standardWebhookSignature } from './signature';
 
 export interface DeliverInput {
   url: string;
@@ -50,6 +50,10 @@ export async function deliver(input: DeliverInput): Promise<DeliveryResult> {
         'X-Itsaplan-Delivery': String(input.deliveryId),
         'X-Itsaplan-Event-Id': input.eventId,
         'X-Itsaplan-Signature': signature,
+        // Standard Webhooks: the event id stays the same across retries.
+        'webhook-id': input.eventId,
+        'webhook-timestamp': String(ts),
+        'webhook-signature': standardWebhookSignature(input.secret, input.eventId, ts, input.body),
       },
       body: input.body,
     });

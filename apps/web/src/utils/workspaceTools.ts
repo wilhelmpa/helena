@@ -2,6 +2,9 @@ import { hermesProjectCoordinatorUsername } from '@repo/agent-naming';
 import type { WorkspaceRuntimeEnv } from './runtimeEnv';
 import type { ProvisionedProjectResource } from '@/lib/api/endpoints/projects';
 
+// The built-in panel tools, whose frame addresses come from the deployment. Which tools
+// the panel has, their order, icons and labels is the panel tool registry
+// (extensions/panelTools.tsx), where plugins add theirs.
 export const WORKSPACE_TOOL_IDS = [
   'chat',
   'terminal',
@@ -12,13 +15,13 @@ export const WORKSPACE_TOOL_IDS = [
   'connections',
 ] as const;
 
-export type WorkspaceToolId = (typeof WORKSPACE_TOOL_IDS)[number];
+export type BuiltinWorkspaceToolId = (typeof WORKSPACE_TOOL_IDS)[number];
 
-// The tools the header offers, in its order.
-export const HEADER_WORKSPACE_TOOLS = ['chat', 'terminal', 'code', 'browser', 'mail'] as const;
+// A panel tool: a built-in's id, or a plugin's `plugin:<pluginId>:<id>`.
+export type WorkspaceToolId = string;
 
 export interface WorkspaceTool {
-  id: WorkspaceToolId;
+  id: BuiltinWorkspaceToolId;
   url: string;
   advancedUrl: string;
 }
@@ -156,7 +159,7 @@ export function workspaceTools(
   config: WorkspaceRuntimeEnv,
   projectKey: string | null,
   resources: ProvisionedProjectResource[] = [],
-): Record<WorkspaceToolId, WorkspaceTool> {
+): Record<BuiltinWorkspaceToolId, WorkspaceTool> {
   const browser = provisionedResource(resources, 'browser');
   const tools = {
     chat: { id: 'chat', url: '', advancedUrl: '' },
@@ -174,7 +177,7 @@ export function workspaceTools(
     mail: { id: 'mail', url: '', advancedUrl: '' },
     inbox: { id: 'inbox', url: frameUrl(config.inboxUrl), advancedUrl: '' },
     connections: { id: 'connections', url: frameUrl(config.connectionsUrl), advancedUrl: '' },
-  } satisfies Record<WorkspaceToolId, WorkspaceTool>;
+  } satisfies Record<BuiltinWorkspaceToolId, WorkspaceTool>;
   return tools;
 }
 

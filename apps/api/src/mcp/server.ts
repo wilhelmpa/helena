@@ -1,9 +1,25 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import {
+  ACTION_META_KEY,
+  SchemaError,
+  consoleLogger,
+  toCallToolResult,
+  toMcpTool,
+  toolCategory,
+  validate,
+  type AgentRef,
+  type AnyAgentTool,
+  type ProjectRef,
+} from '@helena/sdk';
+import { aiAgent, db } from '@repo/db';
+import { eq } from 'drizzle-orm';
 import { agentTeam } from '#modules/agents/core/service';
+import { getProjectByKey } from '#modules/projects/service';
 import { listTeams } from '#modules/teams/service';
+import { host, registries } from '#shared/helena';
 import type { McpApp } from './types';
-import { routeTools, withoutFields, type McpRouteTool } from './generate';
+import { routeTools, toolTitle, withoutFields, type McpRouteTool } from './generate';
 import { dispatchTool } from './dispatch';
 import { SERVER_INSTRUCTIONS } from './instructions';
 import type { McpCredential } from './credential';
@@ -27,11 +43,43 @@ async function callerTeam(userId: string): Promise<number | null> {
   return teams.length === 1 ? teams[0].id : null;
 }
 
-// A low-level MCP Server for one request. tools/list returns every route tagged
-// with x-mcp; tools/call dispatches to the real route via app.handle with the
-// caller's API key. The low-level Server (not McpServer) is used so the route's
-// TypeBox JSON Schema can be served as the tool inputSchema without converting to
-// Zod. Arguments are validated by the route itself, not here.
+// The tools the endpoint serves: every tool of the registry (@helena/sdk) that runs
+// without a connector credential — Helena's own routes (the internal plugin helena.mcp)
+// and the tools of plugins. A connector's tool needs the credential an agent's configured
+// tool is bound to, so it is only reached that way.
+function servedTools(): AnyAgentTool[] {
+  return registries.tools.list().filter((tool) => !tool.connector);
+}
+
+async function callerAgent(userId: string): Promise<AgentRef | null> {
+  const [row] = await db
+    .select({ id: aiAgent.id, name: aiAgent.username, templateId: aiAgent.sourceTemplateId })
+    .from(aiAgent)
+    .where(eq(aiAgent.userId, userId))
+    .limit(1);
+  return row ? { id: row.id, userId, name: row.name, templateId: row.templateId } : null;
+}
+
+async function callProject(args: Record<string, unknown>): Promise<ProjectRef | null> {
+  const key = typeof args.projectKey === 'string' ? args.projectKey : null;
+  if (!key) return null;
+  const project = await getProjectByKey(key);
+  return project ? { id: project.id, key: project.key, teamId: project.teamId } : null;
+}
+
+function refusal(status: number, text: string) {
+  return {
+    content: [{ type: 'text' as const, text }],
+    isError: true,
+    structuredContent: toolError(status, text),
+  };
+}
+
+// A low-level MCP Server for one request. tools/list returns the registry's tools;
+// tools/call asks the policy (@helena/sdk decide) and then runs the tool: a route tool
+// through app.handle with the caller's API key, a plugin's tool through its handler. The
+// low-level Server (not McpServer) is used so a route's TypeBox JSON Schema can be served
+// as the tool inputSchema without converting to Zod. A route validates its own arguments.
 export async function buildMcpServer(
   app: McpApp,
   credential: McpCredential,
@@ -47,54 +95,91 @@ export async function buildMcpServer(
     { capabilities: { tools: {} }, instructions: SERVER_INSTRUCTIONS },
   );
 
-  const table = routeTools(app);
-  const byName = new Map(table.map((t) => [t.name, t]));
+  const routes = new Map(routeTools(app).map((route) => [route.name, route]));
   const teamId = await callerTeam(userId);
-  const needsTeam = (tool: McpRouteTool) => tool.pathParams.includes(TEAM_PARAM);
+  const needsTeam = (route: McpRouteTool) => route.pathParams.includes(TEAM_PARAM);
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: table.map((t) => ({
-      name: t.name,
-      title: t.title,
-      description: t.description,
-      // A caller whose team is already known does not get to name one.
-      inputSchema:
-        teamId !== null && needsTeam(t)
-          ? withoutFields(t.inputSchema, [TEAM_PARAM])
-          : t.inputSchema,
-      annotations: t.annotations,
-      outputSchema: t.outputSchema,
-    })),
+    tools: servedTools().map((tool) => {
+      const route = routes.get(tool.name);
+      // A plugin's tool without a title of its own gets its name spelled out, like a route.
+      if (!route) return { title: toolTitle(tool.name), ...toMcpTool(tool) };
+      return {
+        name: route.name,
+        title: route.title,
+        description: route.description,
+        // A caller whose team is already known does not get to name one.
+        inputSchema:
+          teamId !== null && needsTeam(route)
+            ? withoutFields(route.inputSchema, [TEAM_PARAM])
+            : route.inputSchema,
+        annotations: route.annotations,
+        outputSchema: route.outputSchema,
+        _meta: { [ACTION_META_KEY]: route.category },
+      };
+    }),
   }));
 
   server.setRequestHandler(CallToolRequestSchema, async (req) => {
-    const tool = byName.get(req.params.name);
-    if (!tool) {
-      const text = `Unknown tool: ${req.params.name}`;
-      return {
-        content: [{ type: 'text', text }],
-        isError: true,
-        structuredContent: toolError(404, text),
-      };
-    }
+    const tool = registries.tools.get(req.params.name);
+    if (!tool || tool.connector) return refusal(404, `Unknown tool: ${req.params.name}`);
     const args = { ...(req.params.arguments ?? {}) };
-    if (needsTeam(tool)) {
-      if (teamId !== null) args[TEAM_PARAM] = teamId;
-      else if (args[TEAM_PARAM] == null) {
-        const text =
-          'teamId is required: no single team follows from your key. Call list_teams and ' +
-          'pass the id of the team to act in.';
-        return {
-          content: [{ type: 'text', text }],
-          isError: true,
-          structuredContent: toolError(400, text),
-        };
+
+    // Only asked when a policy is registered: without one every action is allowed, as
+    // before policies existed, and a call costs no extra lookups.
+    if (registries.policies.list().length > 0) {
+      const decision = await host.decide({
+        agent: await callerAgent(userId),
+        project: await callProject(args),
+        action: toolCategory(tool, args),
+        context: { tool: tool.name, input: args },
+      });
+      if (decision.effect === 'deny') return refusal(403, `Not allowed: ${decision.reason}`);
+      if (decision.effect === 'needs-approval') {
+        return refusal(
+          403,
+          `This needs approval: ${decision.reason}. Call request_approval with what you want to ` +
+            'do and wait for the decision before you try again.',
+        );
       }
     }
-    const { text, isError, structuredContent } = await dispatchTool(app, tool, args, credential, {
-      viaMcpEndpoint: true,
-    });
-    return { content: [{ type: 'text', text }], isError, structuredContent };
+
+    const route = routes.get(tool.name);
+    if (route) {
+      if (needsTeam(route)) {
+        if (teamId !== null) args[TEAM_PARAM] = teamId;
+        else if (args[TEAM_PARAM] == null) {
+          return refusal(
+            400,
+            'teamId is required: no single team follows from your key. Call list_teams and ' +
+              'pass the id of the team to act in.',
+          );
+        }
+      }
+      const { text, isError, structuredContent } = await dispatchTool(
+        app,
+        route,
+        args,
+        credential,
+        { viaMcpEndpoint: true },
+      );
+      return { content: [{ type: 'text', text }], isError, structuredContent };
+    }
+
+    // A plugin's tool: validated against its schema, then run with the caller.
+    try {
+      const input = await validate(tool.inputSchema, args);
+      const result = await tool.handler(input, {
+        agent: await callerAgent(userId),
+        project: await callProject(args),
+        caller: { userId, auth: credential },
+        log: consoleLogger(`tool ${tool.name}`),
+      });
+      return toCallToolResult(result);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return refusal(error instanceof SchemaError ? 400 : 500, message);
+    }
   });
 
   return server;

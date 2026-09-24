@@ -16,6 +16,7 @@ import { listMemberContexts, toMemberContext, type MemberRole } from '#modules/m
 import { notifyApprovalRequested } from '#modules/notifications/service';
 import { HttpError, iso, pgErrorCode } from '#shared/lib';
 import { hasPermission, type PermissionAction, type PermissionResource } from '#shared/permissions';
+import { publishDomainEvent } from '#shared/helena';
 
 export type ApprovalKind = 'send' | 'publish' | 'pay' | 'delete' | 'other';
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
@@ -251,6 +252,20 @@ export async function createApprovalRequest(input: {
     return { approval: (await getApproval(existing!.id))!, created: false };
   }
 
+  await publishDomainEvent({
+    type: 'helena.approval.requested',
+    projectId: input.projectId,
+    subject: `approvals/${id}`,
+    actor: `agent:${input.agent.id}`,
+    data: {
+      approvalId: id,
+      kind: input.kind,
+      projectId: input.projectId,
+      agentId: input.agent.id,
+      issueId,
+      runId: run?.id ?? null,
+    },
+  });
   if (issueId != null) {
     await notifyApprovalRequested({
       projectId: input.projectId,
@@ -321,6 +336,25 @@ export async function decideApprovalRequest(
       .update(approvalRequest)
       .set({ followUpRunId: runId })
       .where(eq(approvalRequest.id, id));
+    await publishDomainEvent(
+      {
+        type: 'helena.approval.decided',
+        projectId: decided.projectId,
+        subject: `approvals/${id}`,
+        actor: `user:${deciderUserId}`,
+        data: {
+          approvalId: id,
+          kind: decided.kind,
+          projectId: decided.projectId,
+          agentId: decided.agentId,
+          issueId: decided.issueId,
+          runId: decided.runId,
+          decision: input.approved ? 'approved' : 'rejected',
+          decidedBy: deciderUserId,
+        },
+      },
+      tx,
+    );
   });
   return (await getApproval(id))!;
 }

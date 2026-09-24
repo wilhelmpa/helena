@@ -1,15 +1,14 @@
 'use client';
 
 import { useMemo } from 'react';
-import Markdown from '@/components/common/Markdown';
-import { splitArtifacts } from '../../utils/artifacts';
+import { AgentMessageParts } from '@/components/agent-message/AgentMessageParts';
+import type { RenderTool } from '@/components/agent-message/AgentToolGroup';
 import { chatSources } from '../../utils/chatSources';
-import { messageBlocks, type PlanUIMessage } from '../../utils/chatMessages';
+import type { PlanUIMessage } from '../../utils/chatMessages';
 import type { Artifact } from '../../utils/artifacts';
-import ChatReasoningDisclosure from './ChatReasoningDisclosure';
-import ChatToolCallDisclosure from './ChatToolCallDisclosure';
-import ChatArtifactCard from './ChatArtifactCard';
-import ChatSourcesFooter from './ChatSourcesFooter';
+import { ARTIFACT_RENDERERS, ArtifactOpenContext } from './ChatArtifactCard';
+import ChatApprovalCard from './ChatApprovalCard';
+import ChatSources from './ChatSources';
 
 export interface ChatMessageBubbleAssistantProps {
   message: PlanUIMessage;
@@ -18,56 +17,43 @@ export interface ChatMessageBubbleAssistantProps {
   onShowArtifact: (artifact: Artifact) => void;
 }
 
-// An agent's answer: its reasoning and tool calls where the model made them, its
-// prose as Markdown, any artifact fences as cards instead of raw code, and, once it is
-// done, what it drew on. While it has nothing yet it shows nothing: the composer says
-// the agent is thinking (ChatComposerStatus).
+// `request_approval` is not shown as a tool call: it is the approval card the owner
+// decides on.
+const renderApproval: RenderTool = (tool) =>
+  tool.toolName === 'request_approval' ? <ChatApprovalCard tool={tool} /> : undefined;
+
+// An agent's answer: its reasoning, tool calls and text (AgentMessageParts), artifact
+// fences as cards that open the artifact panel, an error the answer ended with, and,
+// once it is done, what it drew on. While it has nothing yet it shows nothing: the
+// composer says the agent is thinking (ChatComposerStatus).
 export default function ChatMessageBubbleAssistant({
   message,
   streaming,
   projectKey,
   onShowArtifact,
 }: ChatMessageBubbleAssistantProps) {
-  const blocks = useMemo(() => messageBlocks(message), [message]);
   const sources = useMemo(
     () => (streaming ? [] : chatSources(message, projectKey ? [projectKey] : [])),
     [message, projectKey, streaming],
   );
   const error = message.metadata?.error;
 
-  if (blocks.length === 0 && !error) return null;
-
   return (
-    <div className="space-y-3 text-sm leading-relaxed">
-      {blocks.map((block, index) => {
-        if (block.kind === 'reasoning') {
-          return (
-            <ChatReasoningDisclosure
-              key={index}
-              text={block.text}
-              streaming={streaming && index === blocks.length - 1}
-            />
-          );
-        }
-        if (block.kind === 'tools') {
-          return <ChatToolCallDisclosure key={index} tools={block.tools} />;
-        }
-        const { text, artifacts } = splitArtifacts(block.text);
-        return (
-          <div key={index} className="space-y-3">
-            {text && <Markdown>{text}</Markdown>}
-            {artifacts.map((artifact, artifactIndex) => (
-              <ChatArtifactCard key={artifactIndex} artifact={artifact} onOpen={onShowArtifact} />
-            ))}
-          </div>
-        );
-      })}
-      {error && (
-        <p dir="auto" className="text-sm text-destructive">
-          {error}
-        </p>
-      )}
-      {sources.length > 0 && <ChatSourcesFooter sources={sources} projectKey={projectKey} />}
-    </div>
+    <ArtifactOpenContext.Provider value={onShowArtifact}>
+      <div className="space-y-3">
+        <AgentMessageParts
+          message={message}
+          streaming={streaming}
+          renderTool={renderApproval}
+          renderers={ARTIFACT_RENDERERS}
+        />
+        {error && (
+          <p dir="auto" className="text-sm text-destructive">
+            {error}
+          </p>
+        )}
+        {sources.length > 0 && <ChatSources sources={sources} projectKey={projectKey} />}
+      </div>
+    </ArtifactOpenContext.Provider>
   );
 }

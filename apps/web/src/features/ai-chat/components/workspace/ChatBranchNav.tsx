@@ -2,7 +2,7 @@
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Button } from '@/components/ui/button';
+import { MessageAction } from '@/components/ai-elements/message';
 import type { PlanUIMessage } from '../../utils/chatMessages';
 
 // The versions of an edited question or a regenerated answer: siblings of the same
@@ -23,29 +23,23 @@ export default function ChatBranchNav({
 
   return (
     <div className="flex items-center gap-0.5" dir="ltr">
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-6"
+      <MessageAction
+        label={t('messages.previousVersion')}
         disabled={index === 0}
         onClick={() => onSwitchVersion(siblings[index - 1])}
-        aria-label={t('messages.previousVersion')}
       >
-        <ChevronLeft className="size-3.5" />
-      </Button>
+        <ChevronLeft />
+      </MessageAction>
       <span className="min-w-8 text-center text-xs text-muted-foreground tabular-nums">
         {index + 1}/{siblings.length}
       </span>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-6"
+      <MessageAction
+        label={t('messages.nextVersion')}
         disabled={index === siblings.length - 1}
         onClick={() => onSwitchVersion(siblings[index + 1])}
-        aria-label={t('messages.nextVersion')}
       >
-        <ChevronRight className="size-3.5" />
-      </Button>
+        <ChevronRight />
+      </MessageAction>
     </div>
   );
 }

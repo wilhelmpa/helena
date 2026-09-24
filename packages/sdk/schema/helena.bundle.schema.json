@@ -1,0 +1,264 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:helena:schema:template-bundle:v1",
+  "title": "Helena template bundle",
+  "type": "object",
+  "properties": {
+    "format": {
+      "type": "string",
+      "const": "helena.template-bundle"
+    },
+    "formatVersion": {
+      "type": "number",
+      "const": 1
+    },
+    "name": {
+      "type": "string"
+    },
+    "displayName": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "license": {
+      "type": "string"
+    },
+    "author": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "required": ["name"],
+      "additionalProperties": false
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "source": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "github"
+                  },
+                  "url": {
+                    "type": "string",
+                    "format": "uri"
+                  }
+                },
+                "required": ["type", "url"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "files"
+                  },
+                  "files": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": ["type", "files"],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "license": {
+            "type": "string"
+          },
+          "attribution": {
+            "type": "string"
+          }
+        },
+        "required": ["name", "source", "license", "attribution"],
+        "additionalProperties": false
+      }
+    },
+    "mcpServers": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["stdio", "http", "sse"]
+          },
+          "command": {
+            "type": "string"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "url": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": ["type"],
+        "additionalProperties": false
+      }
+    },
+    "agents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "instructions": {
+            "type": "string"
+          },
+          "model": {
+            "type": ["string", "null"]
+          },
+          "effort": {
+            "type": ["string", "null"]
+          },
+          "maxTurns": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "disallowedTools": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "mcpServers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "helena": {
+            "type": "object",
+            "properties": {
+              "displayName": {
+                "type": "string"
+              },
+              "roleTitle": {
+                "type": "string"
+              },
+              "capabilities": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "runBudgetSeconds": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "triggers": {
+                "type": "object",
+                "properties": {
+                  "mention": {
+                    "type": "boolean"
+                  },
+                  "assign": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["mention", "assign"],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "displayName",
+              "roleTitle",
+              "capabilities",
+              "runBudgetSeconds",
+              "triggers"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "name",
+          "description",
+          "instructions",
+          "model",
+          "effort",
+          "maxTurns",
+          "disallowedTools",
+          "skills",
+          "mcpServers",
+          "helena"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "format",
+    "formatVersion",
+    "name",
+    "displayName",
+    "version",
+    "description",
+    "license",
+    "author",
+    "skills",
+    "mcpServers",
+    "agents"
+  ],
+  "additionalProperties": false
+}
