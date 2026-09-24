@@ -7,7 +7,7 @@ import { WEBHOOK_EVENT_PATTERNS, fanOutWebhooks } from './domains/webhook-fanout
 // right after the change; with one, the worker serves it off the transport.
 export const webhooksManifest: PluginManifest = {
   id: 'helena.webhooks',
-  name: 'Webhooks',
+  name: { i18n: 'god.plugins.names.webhooks' },
   version: '1.0.0',
   sdk: '^0.1.0',
   provides: {},

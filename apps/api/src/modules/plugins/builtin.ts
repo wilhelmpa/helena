@@ -16,12 +16,20 @@ import { loadRepositoryBundles } from '#modules/template-bundles/service';
 // the same manifest checks as an external plugin (docs/helena-framework.md, §3a
 // "dogfooding"). Loaded once, when the app is assembled (app.ts).
 
+// A built-in's name is a key of Helena's own translations (god.plugins.names.<name>).
 function builtinManifest(
   id: string,
   name: string,
   manifest: Partial<PluginManifest>,
 ): PluginManifest {
-  return { id, name, version: '1.0.0', sdk: '^0.1.0', provides: {}, ...manifest };
+  return {
+    id,
+    name: { i18n: `god.plugins.names.${name}` },
+    version: '1.0.0',
+    sdk: '^0.1.0',
+    provides: {},
+    ...manifest,
+  };
 }
 
 // The tool integrations (@repo/agent-tools) as connectors whose tools run with the
