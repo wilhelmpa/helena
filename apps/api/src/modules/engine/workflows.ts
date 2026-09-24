@@ -157,9 +157,8 @@ async function interpret(runId: string): Promise<string> {
         name: `helena:${step.id}#${iteration}:enter`,
       });
       const gate = await passPolicy(run, step, type, execution, definition);
-      result =
-        gate ??
-        (await type.execute(new EngineStepContext(run, step, execution, attempt, definition)));
+      const context: StepContext = new EngineStepContext(run, step, execution, attempt, definition);
+      result = gate ?? (await type.execute(context));
     } catch (error) {
       if (isCancellation(error)) throw error;
       // A person who canceled the run already ended it; nothing more is recorded.
