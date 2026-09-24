@@ -450,6 +450,20 @@ export const BROWSER_GATEWAY_TOOL_CATEGORY: Record<string, ActionCategory> = {
   browser_login: 'write',
   browser_login_code: 'write',
   browser_upload: 'send',
+  // The gateway's own names for these (packages/browser-gateway): without them the browser
+  // tools reached through Hermes' MCP were unknown and counted as send, so reading a page
+  // with browser_wait_for or browser_find needed an approval at level 1 (2026-09-24).
+  browser_take_screenshot: 'read',
+  browser_console_messages: 'read',
+  browser_network_requests: 'read',
+  browser_navigate_back: 'read',
+  browser_wait_for: 'read',
+  browser_find: 'read',
+  browser_press_key: 'write',
+  browser_select_option: 'write',
+  browser_fill_form: 'write',
+  browser_handle_dialog: 'write',
+  browser_file_upload: 'send',
   // The browser-harness MCP server (Chrome DevTools into the project browser) that agents use
   // until the gateway replaces it. Its tools carry no annotations.
   browser_goto: 'read',
