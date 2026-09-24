@@ -120,6 +120,10 @@
     "autopilot": {
       "label": "Autopilot",
       "description": "本项目智能体的自主程度及其预算。"
+    },
+    "browser": {
+      "label": "浏览器",
+      "description": "项目浏览器可以打开的域名、拟人输入节奏以及锁定超时。"
     }
   }
 }

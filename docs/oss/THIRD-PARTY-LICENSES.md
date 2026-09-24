@@ -8,8 +8,8 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 
 | License | Policy | Runtime | Development only |
 |---|---|---:|---:|
-| MIT | allowed | 1044 | 64 |
-| Apache-2.0 | allowed | 92 | 0 |
+| MIT | allowed | 1046 | 65 |
+| Apache-2.0 | allowed | 93 | 0 |
 | ISC | allowed | 49 | 0 |
 | BSD-2-Clause | allowed | 25 | 2 |
 | BSD-3-Clause | allowed | 17 | 1 |
@@ -451,6 +451,7 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | @types/node | 24.13.6 | MIT | runtime | bun.lock |
 | @types/node | 26.6.2 | MIT | runtime | bun.lock |
 | @types/nodemailer | 8.0.2 | MIT | development | bun.lock |
+| @types/pngjs | 6.0.5 | MIT | development | bun.lock |
 | @types/react | 19.3.0 | MIT | runtime | bun.lock |
 | @types/react-dom | 19.3.0 | MIT | runtime | bun.lock |
 | @types/react-grid-layout | 2.1.0 | MIT | development | bun.lock |
@@ -1063,6 +1064,7 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | option | 0.2.4 | BSD-2-Clause | runtime | bun.lock |
 | optionator | 0.9.4 | MIT | runtime | bun.lock |
 | orderedmap | 2.1.1 | MIT | runtime | bun.lock |
+| otpauth | 9.5.2 | MIT | runtime | bun.lock |
 | own-keys | 1.0.2 | MIT | runtime | bun.lock |
 | p-limit | 3.1.0 | MIT | runtime | bun.lock |
 | p-locate | 5.0.0 | MIT | runtime | bun.lock |
@@ -1078,6 +1080,7 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | parse5 | 8.0.1 | MIT | runtime | bun.lock |
 | parseley | 0.13.1 | MIT | runtime | bun.lock |
 | parseurl | 1.3.3 | MIT | runtime | bun.lock |
+| patchright-core | 1.63.0 | Apache-2.0 | runtime | bun.lock |
 | path-exists | 4.0.0 | MIT | runtime | bun.lock |
 | path-is-absolute | 1.0.1 | MIT | runtime | bun.lock |
 | path-key | 3.1.1 | MIT | runtime | bun.lock |
@@ -1103,6 +1106,7 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 | pino-std-serializers | 7.1.0 | MIT | runtime | bun.lock |
 | pkce-challenge | 5.0.1 | MIT | runtime | bun.lock |
 | plur | 2.1.2 | MIT | development | bun.lock |
+| pngjs | 7.0.0 | MIT | runtime | bun.lock |
 | po-parser | 2.2.0 | MIT | runtime | bun.lock |
 | possible-typed-array-names | 1.1.0 | MIT | runtime | bun.lock |
 | postcss | 8.5.23 | MIT | runtime | bun.lock |

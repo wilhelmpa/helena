@@ -1,11 +1,13 @@
 'use client';
 
 import Link from 'next/link';
+import { AppWindow } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { ApprovalRequest } from '@/lib/api/endpoints/approvals';
 import { formatDateTime } from '@/utils/dates';
 import { issuePath } from '@/utils/paths';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import CodeBlock from '@/components/common/CodeBlock';
 import { useDecideApproval } from '../services/approvals.service';
 import ApprovalDecisionForm from '@/components/common/ApprovalDecisionForm';
@@ -15,6 +17,10 @@ import ApprovalPolicyReason from '@/features/autopilot/components/ApprovalPolicy
 
 // One agent's request: what it wants to do, who asks and for which task, and either the
 // decision controls or the decision it got.
+// An agent's request to take over its project browser (browser_handover) names the live
+// view; the card opens it.
+const LIVE_VIEW_LINK = /\/project\/[A-Za-z0-9_-]{1,32}\?tool=browser/;
+
 export default function ApprovalRequestCard({ request }: { request: ApprovalRequest }) {
   // A used-up budget has its own answers (raise, continue once, keep stopped).
   if (request.kind === 'budget') return <BudgetApprovalCard request={request} />;
@@ -24,6 +30,7 @@ export default function ApprovalRequestCard({ request }: { request: ApprovalRequ
 function AgentRequestCard({ request }: { request: ApprovalRequest }) {
   const t = useTranslations('approvals');
   const decide = useDecideApproval();
+  const liveView = LIVE_VIEW_LINK.exec(request.details)?.[0] ?? null;
 
   return (
     <article className="space-y-3 rounded-lg border bg-card p-4">
@@ -54,6 +61,14 @@ function AgentRequestCard({ request }: { request: ApprovalRequest }) {
         <p className="text-sm whitespace-pre-wrap text-muted-foreground" dir="auto">
           {request.details}
         </p>
+      )}
+      {liveView && request.status === 'pending' && (
+        <Button size="sm" variant="outline" asChild>
+          <Link href={liveView}>
+            <AppWindow />
+            {t('openBrowser')}
+          </Link>
+        </Button>
       )}
       {request.command && <CodeBlock code={request.command} />}
       <ApprovalPolicyReason request={request} />

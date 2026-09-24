@@ -1,0 +1,9 @@
+# Runtime artifacts of running the scripts in this directory (README.md) — a Chromium
+# profile, pids, logs, the X authority cookie. Point --user-data-dir/XAUTHORITY outside the
+# repo (e.g. an agent's own ~/agent-work/<name>) to avoid ever needing this, but ignore them
+# here too as a safety net.
+profile/
+profile2/
+*.pid
+*.log
+Xauthority

@@ -120,6 +120,10 @@
     "autopilot": {
       "label": "Autopilot",
       "description": "Avec quelle autonomie agissent les agents de ce projet, et leurs budgets."
+    },
+    "browser": {
+      "label": "Navigateur",
+      "description": "Les domaines que le navigateur du projet peut ouvrir, le rythme de saisie de type humain et le délai du verrou."
     }
   }
 }

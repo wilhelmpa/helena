@@ -1,5 +1,5 @@
 {
-  "id": "13543fd2-33fa-4dd0-a1ac-4653a0af4cba",
+  "id": "4fb6fc11-72e0-478f-8ba9-0bffbb1672f5",
   "prevId": "50cce884-13ca-4067-b9f3-f049ab58c6cb",
   "version": "7",
   "dialect": "postgresql",
@@ -2291,6 +2291,13 @@
           "notNull": true,
           "default": "'[]'::jsonb"
         },
+        "builtin": {
+          "name": "builtin",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -2540,12 +2547,6 @@
         "blocked_question": {
           "name": "blocked_question",
           "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "autopilot_level": {
-          "name": "autopilot_level",
-          "type": "smallint",
           "primaryKey": false,
           "notNull": false
         },
@@ -3359,258 +3360,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.agent_usage": {
-      "name": "agent_usage",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "bigserial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "agent_id": {
-          "name": "agent_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "project_id": {
-          "name": "project_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "run_id": {
-          "name": "run_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "chat_message_id": {
-          "name": "chat_message_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "kind": {
-          "name": "kind",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "runtime": {
-          "name": "runtime",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "model": {
-          "name": "model",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "provider": {
-          "name": "provider",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "session_id": {
-          "name": "session_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "input_tokens": {
-          "name": "input_tokens",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "output_tokens": {
-          "name": "output_tokens",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "cache_read_tokens": {
-          "name": "cache_read_tokens",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "cache_write_tokens": {
-          "name": "cache_write_tokens",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "reasoning_tokens": {
-          "name": "reasoning_tokens",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "duration_ms": {
-          "name": "duration_ms",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "occurred_at": {
-          "name": "occurred_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "agent_usage_agent_time_idx": {
-          "name": "agent_usage_agent_time_idx",
-          "columns": [
-            {
-              "expression": "agent_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "occurred_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "agent_usage_project_time_idx": {
-          "name": "agent_usage_project_time_idx",
-          "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "occurred_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "agent_usage_time_idx": {
-          "name": "agent_usage_time_idx",
-          "columns": [
-            {
-              "expression": "occurred_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "agent_usage_run_idx": {
-          "name": "agent_usage_run_idx",
-          "columns": [
-            {
-              "expression": "run_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "agent_usage_agent_id_ai_agent_id_fk": {
-          "name": "agent_usage_agent_id_ai_agent_id_fk",
-          "tableFrom": "agent_usage",
-          "tableTo": "ai_agent",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "agent_usage_project_id_project_id_fk": {
-          "name": "agent_usage_project_id_project_id_fk",
-          "tableFrom": "agent_usage",
-          "tableTo": "project",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "agent_usage_run_id_agent_run_id_fk": {
-          "name": "agent_usage_run_id_agent_run_id_fk",
-          "tableFrom": "agent_usage",
-          "tableTo": "agent_run",
-          "columnsFrom": [
-            "run_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "agent_usage_chat_message_id_agent_chat_message_id_fk": {
-          "name": "agent_usage_chat_message_id_agent_chat_message_id_fk",
-          "tableFrom": "agent_usage",
-          "tableTo": "agent_chat_message",
-          "columnsFrom": [
-            "chat_message_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "agent_usage_kind_check": {
-          "name": "agent_usage_kind_check",
-          "value": "\"agent_usage\".\"kind\" IN ('run', 'chat', 'reflection')"
-        }
-      },
-      "isRLSEnabled": false
-    },
     "public.ai_agent": {
       "name": "ai_agent",
       "schema": "",
@@ -3831,19 +3580,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "autopilot_level": {
-          "name": "autopilot_level",
-          "type": "smallint",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "autopilot_raise": {
-          "name": "autopilot_raise",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -3987,10 +3723,6 @@
         "ai_agent_kind_check": {
           "name": "ai_agent_kind_check",
           "value": "\"ai_agent\".\"kind\" IN ('external', 'internal')"
-        },
-        "ai_agent_autopilot_level_check": {
-          "name": "ai_agent_autopilot_level_check",
-          "value": "\"ai_agent\".\"autopilot_level\" IS NULL OR \"ai_agent\".\"autopilot_level\" BETWEEN 0 AND 3"
         },
         "ai_agent_runner_scope_check": {
           "name": "ai_agent_runner_scope_check",
@@ -4149,30 +3881,6 @@
         "command": {
           "name": "command",
           "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "category": {
-          "name": "category",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "autopilot_level": {
-          "name": "autopilot_level",
-          "type": "smallint",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "policy_reason": {
-          "name": "policy_reason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "payload": {
-          "name": "payload",
-          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },
@@ -4379,11 +4087,133 @@
       "checkConstraints": {
         "approval_request_kind_check": {
           "name": "approval_request_kind_check",
-          "value": "\"approval_request\".\"kind\" IN ('send', 'publish', 'pay', 'delete', 'write', 'execute', 'credentials', 'budget', 'other')"
+          "value": "\"approval_request\".\"kind\" IN ('send', 'publish', 'pay', 'delete', 'other')"
         },
         "approval_request_status_check": {
           "name": "approval_request_status_check",
           "value": "\"approval_request\".\"status\" IN ('pending', 'approved', 'rejected')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.browser_gateway_event": {
+      "name": "browser_gateway_event",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "agent_id": {
+          "name": "agent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "agent_name": {
+          "name": "agent_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor": {
+          "name": "actor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tool": {
+          "name": "tool",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "target": {
+          "name": "target",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "browser_gateway_event_project_idx": {
+          "name": "browser_gateway_event_project_idx",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "browser_gateway_event_project_id_project_id_fk": {
+          "name": "browser_gateway_event_project_id_project_id_fk",
+          "tableFrom": "browser_gateway_event",
+          "tableTo": "project",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "browser_gateway_event_agent_id_ai_agent_id_fk": {
+          "name": "browser_gateway_event_agent_id_ai_agent_id_fk",
+          "tableFrom": "browser_gateway_event",
+          "tableTo": "ai_agent",
+          "columnsFrom": [
+            "agent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "browser_gateway_event_actor_check": {
+          "name": "browser_gateway_event_actor_check",
+          "value": "\"browser_gateway_event\".\"actor\" IN ('agent', 'owner')"
         }
       },
       "isRLSEnabled": false
@@ -10297,13 +10127,6 @@
           "type": "bigint",
           "primaryKey": false,
           "notNull": false
-        },
-        "autopilot_level": {
-          "name": "autopilot_level",
-          "type": "smallint",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 1
         },
         "created_at": {
           "name": "created_at",
@@ -17474,604 +17297,6 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.helena_budget": {
-      "name": "helena_budget",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "team_id": {
-          "name": "team_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "agent_id": {
-          "name": "agent_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "project_id": {
-          "name": "project_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "metric": {
-          "name": "metric",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "period": {
-          "name": "period",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "limit_value": {
-          "name": "limit_value",
-          "type": "numeric(18, 4)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "warned_for": {
-          "name": "warned_for",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "reached_for": {
-          "name": "reached_for",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "grace_for": {
-          "name": "grace_for",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "grace_runs": {
-          "name": "grace_runs",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "grace_run_ids": {
-          "name": "grace_run_ids",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'[]'::jsonb"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "helena_budget_agent_uq": {
-          "name": "helena_budget_agent_uq",
-          "columns": [
-            {
-              "expression": "agent_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "metric",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "period",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"helena_budget\".\"agent_id\" IS NOT NULL",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "helena_budget_project_uq": {
-          "name": "helena_budget_project_uq",
-          "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "metric",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "period",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"helena_budget\".\"project_id\" IS NOT NULL",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "helena_budget_team_id_team_id_fk": {
-          "name": "helena_budget_team_id_team_id_fk",
-          "tableFrom": "helena_budget",
-          "tableTo": "team",
-          "columnsFrom": [
-            "team_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "helena_budget_agent_id_ai_agent_id_fk": {
-          "name": "helena_budget_agent_id_ai_agent_id_fk",
-          "tableFrom": "helena_budget",
-          "tableTo": "ai_agent",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "helena_budget_project_id_project_id_fk": {
-          "name": "helena_budget_project_id_project_id_fk",
-          "tableFrom": "helena_budget",
-          "tableTo": "project",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "helena_budget_target_check": {
-          "name": "helena_budget_target_check",
-          "value": "(\"helena_budget\".\"agent_id\" IS NULL) <> (\"helena_budget\".\"project_id\" IS NULL)"
-        },
-        "helena_budget_metric_check": {
-          "name": "helena_budget_metric_check",
-          "value": "\"helena_budget\".\"metric\" IN ('tokens', 'cost', 'time')"
-        },
-        "helena_budget_period_check": {
-          "name": "helena_budget_period_check",
-          "value": "\"helena_budget\".\"period\" IN ('day', 'month')"
-        },
-        "helena_budget_limit_check": {
-          "name": "helena_budget_limit_check",
-          "value": "\"helena_budget\".\"limit_value\" > 0"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.helena_model_price": {
-      "name": "helena_model_price",
-      "schema": "",
-      "columns": {
-        "model": {
-          "name": "model",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "provider": {
-          "name": "provider",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "input_eur_per_m": {
-          "name": "input_eur_per_m",
-          "type": "numeric(14, 6)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "output_eur_per_m": {
-          "name": "output_eur_per_m",
-          "type": "numeric(14, 6)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "cache_read_eur_per_m": {
-          "name": "cache_read_eur_per_m",
-          "type": "numeric(14, 6)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "cache_write_eur_per_m": {
-          "name": "cache_write_eur_per_m",
-          "type": "numeric(14, 6)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "source": {
-          "name": "source",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "source_usd": {
-          "name": "source_usd",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "updated_by_user_id": {
-          "name": "updated_by_user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "helena_model_price_updated_by_user_id_user_id_fk": {
-          "name": "helena_model_price_updated_by_user_id_user_id_fk",
-          "tableFrom": "helena_model_price",
-          "tableTo": "user",
-          "columnsFrom": [
-            "updated_by_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "helena_model_price_source_check": {
-          "name": "helena_model_price_source_check",
-          "value": "\"helena_model_price\".\"source\" IN ('models.dev', 'manual')"
-        },
-        "helena_model_price_positive_check": {
-          "name": "helena_model_price_positive_check",
-          "value": "\"helena_model_price\".\"input_eur_per_m\" >= 0 AND \"helena_model_price\".\"output_eur_per_m\" >= 0\n        AND coalesce(\"helena_model_price\".\"cache_read_eur_per_m\", 0) >= 0 AND coalesce(\"helena_model_price\".\"cache_write_eur_per_m\", 0) >= 0"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.helena_policy_decision": {
-      "name": "helena_policy_decision",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "bigserial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "team_id": {
-          "name": "team_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "project_id": {
-          "name": "project_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "agent_id": {
-          "name": "agent_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "run_id": {
-          "name": "run_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "chat_message_id": {
-          "name": "chat_message_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "adapter": {
-          "name": "adapter",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "tool": {
-          "name": "tool",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "category": {
-          "name": "category",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "scope": {
-          "name": "scope",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "outcome": {
-          "name": "outcome",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "level": {
-          "name": "level",
-          "type": "smallint",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "level_source": {
-          "name": "level_source",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "reason": {
-          "name": "reason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "policy_ids": {
-          "name": "policy_ids",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'[]'::jsonb"
-        },
-        "summary": {
-          "name": "summary",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "approval_id": {
-          "name": "approval_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "reported_at": {
-          "name": "reported_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "helena_policy_decision_project_idx": {
-          "name": "helena_policy_decision_project_idx",
-          "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": false,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "helena_policy_decision_agent_idx": {
-          "name": "helena_policy_decision_agent_idx",
-          "columns": [
-            {
-              "expression": "agent_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": false,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "helena_policy_decision_run_idx": {
-          "name": "helena_policy_decision_run_idx",
-          "columns": [
-            {
-              "expression": "run_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "helena_policy_decision_created_idx": {
-          "name": "helena_policy_decision_created_idx",
-          "columns": [
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "helena_policy_decision_team_id_team_id_fk": {
-          "name": "helena_policy_decision_team_id_team_id_fk",
-          "tableFrom": "helena_policy_decision",
-          "tableTo": "team",
-          "columnsFrom": [
-            "team_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "helena_policy_decision_project_id_project_id_fk": {
-          "name": "helena_policy_decision_project_id_project_id_fk",
-          "tableFrom": "helena_policy_decision",
-          "tableTo": "project",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "helena_policy_decision_agent_id_ai_agent_id_fk": {
-          "name": "helena_policy_decision_agent_id_ai_agent_id_fk",
-          "tableFrom": "helena_policy_decision",
-          "tableTo": "ai_agent",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "helena_policy_decision_run_id_agent_run_id_fk": {
-          "name": "helena_policy_decision_run_id_agent_run_id_fk",
-          "tableFrom": "helena_policy_decision",
-          "tableTo": "agent_run",
-          "columnsFrom": [
-            "run_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "helena_policy_decision_chat_message_id_agent_chat_message_id_fk": {
-          "name": "helena_policy_decision_chat_message_id_agent_chat_message_id_fk",
-          "tableFrom": "helena_policy_decision",
-          "tableTo": "agent_chat_message",
-          "columnsFrom": [
-            "chat_message_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "helena_policy_decision_approval_id_approval_request_id_fk": {
-          "name": "helena_policy_decision_approval_id_approval_request_id_fk",
-          "tableFrom": "helena_policy_decision",
-          "tableTo": "approval_request",
-          "columnsFrom": [
-            "approval_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "helena_policy_decision_outcome_check": {
-          "name": "helena_policy_decision_outcome_check",
-          "value": "\"helena_policy_decision\".\"outcome\" IN ('allow', 'needs-approval', 'deny')"
-        }
-      },
       "isRLSEnabled": false
     }
   },

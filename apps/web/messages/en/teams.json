@@ -333,6 +333,17 @@
     "saved": "{name} saved",
     "custom": "Another server",
     "customHint": "A command Hermes starts, or the URL of a remote server",
+    "builtinBadge": "Built in",
+    "builtin": {
+      "projekt-browser": {
+        "title": "Project browser",
+        "description": "Hermes, Claude Code, and Codex control the project browser through a shared gateway: logins from Credentials, never a password in the history."
+      },
+      "hermes-browser-legacy": {
+        "title": "Hermes' own browser (legacy)",
+        "description": "Falls back to Hermes' own CDP browser tool instead of the shared gateway."
+      }
+    },
     "presets": {
       "shopify-dev": "Searches Shopify's documentation and API schemas and validates GraphQL, Liquid and extension code. Needs no credentials.",
       "jev-browser": "Navigates a headless browser with TypeSafe's Jev model. Needs a TypeSafe API key as the secret TYPESAFE_API_KEY."

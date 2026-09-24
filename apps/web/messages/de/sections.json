@@ -120,6 +120,10 @@
     "autopilot": {
       "label": "Autopilot",
       "description": "Wie selbstständig die Agenten dieses Projekts handeln, und ihre Budgets."
+    },
+    "browser": {
+      "label": "Browser",
+      "description": "Domains, die der Projekt-Browser öffnen darf, menschliche Eingabe-Zeitabstände und das Sperr-Timeout."
     }
   }
 }

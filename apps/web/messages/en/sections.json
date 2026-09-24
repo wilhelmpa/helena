@@ -120,6 +120,10 @@
     "autopilot": {
       "label": "Autopilot",
       "description": "How independently the agents of this project act, and their budgets."
+    },
+    "browser": {
+      "label": "Browser",
+      "description": "Domains the project browser may open, human-like input timing, and the control lock timeout."
     }
   }
 }

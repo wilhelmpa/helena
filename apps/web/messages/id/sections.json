@@ -120,6 +120,10 @@
     "autopilot": {
       "label": "Autopilot",
       "description": "Seberapa mandiri agen proyek ini bertindak, dan anggarannya."
+    },
+    "browser": {
+      "label": "Browser",
+      "description": "Domain yang boleh dibuka browser proyek, waktu input mirip manusia, dan batas waktu kunci."
     }
   }
 }

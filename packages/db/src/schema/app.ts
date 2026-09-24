@@ -788,6 +788,35 @@ export const agentEgressEvent = pgTable(
   ],
 );
 
+// The browser gateway's own audit trail (design: docs/volition-design-browser-gateway.md §5,
+// §9): every tool call the gateway ran for a project browser, without any value it saw —
+// login fill/2FA are logged through integration_credential_use instead (label and origin,
+// never the secret), because they already had that audit and it is agent-scoped there too.
+// `target` is a short, non-secret label the tool itself chose: a tab title, an origin, a
+// file name, never a URL's query string or a page's content.
+export const browserGatewayEvent = pgTable(
+  'browser_gateway_event',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    projectId: integer('project_id').references(() => project.id, { onDelete: 'cascade' }),
+    agentId: integer('agent_id').references(() => aiAgent.id, { onDelete: 'set null' }),
+    agentName: text('agent_name').notNull(),
+    // 'agent' while the calling agent held the control lock, 'owner' for an action the
+    // live view's Übernehmen banner attributes to the person instead.
+    actor: text('actor').notNull(),
+    tool: text('tool').notNull(),
+    // The call's action category (read, write, send, publish, delete, pay, execute), which
+    // Helena's policy decided on; null for an event from before categories.
+    category: text('category'),
+    target: text('target'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('browser_gateway_event_actor_check', sql`${t.actor} IN ('agent', 'owner')`),
+    index('browser_gateway_event_project_idx').on(t.projectId, t.id),
+  ],
+);
+
 // When a Volition service was last seen working, for the health overview. A service
 // that reports itself writes its row; one that is probed gets the result of the probe:
 // `error` is null when the last check succeeded, and `lastSeenAt` stays at the last
@@ -1535,6 +1564,10 @@ export const agentMcpServer = pgTable(
     url: text('url'),
     env: jsonb('env').notNull().default([]),
     headers: jsonb('headers').notNull().default([]),
+    // A server the instance itself seeded (today: "Projekt-Browser", the browser gateway,
+    // and "Hermes-eigener Browser (alt)", the pre-gateway fallback). A team cannot edit or
+    // delete these rows; only whether they are on for an agent (agent_mcp_server_link).
+    builtin: boolean('builtin').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

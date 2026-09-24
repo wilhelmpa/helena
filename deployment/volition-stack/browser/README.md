@@ -120,13 +120,53 @@ with its window is nudged as well. For 15 s after the router starts the keeper l
 size alone, so a live view that reconnects finds its page as it was.
 
 The live view can follow the tab the agent is working in instead of the tab in front (a toggle in
-the browser bar, on by default, sent as `{"type":"follow","agent":true|false}`); a small,
-read-only "agent is acting" indicator reuses the activity signal the stream's size and rate
-already track. Neither is a lock: the control lock, its "Übernehmen" banner and its "Steuert: …"
-label arrive with the browser gateway (see `docs/volition-design-browser-gateway.md` §5).
+the browser bar, on by default, sent as `{"type":"follow","agent":true|false}`).
 
-The agent works on the page the person sees. browser-harness takes screenshots in window pixels
-and clicks at CSS pixels read from them, and Hermes halves a screenshot until its long edge is at
+## Browser gateway (agents)
+
+Agents drive their project's browser only through the browser gateway, which runs inside this
+router (`browser-gateway-server.mjs`, code in `packages/browser-gateway`; design:
+`docs/volition-design-browser-gateway.md`, tool decision: `docs/helena-decisions/browser-tools.md`).
+It speaks Playwright MCP's tools (`browser_navigate`, `browser_snapshot`, `browser_click`, …) plus
+Helena's own (`browser_acquire`/`_release`, `browser_handover`, `browser_login`/`_login_code`,
+`browser_downloads`), through the MCP server `projekt-browser`, a stdio shim installed as
+`/usr/local/libexec/helena-browser-mcp`.
+
+- One Unix socket per project: `/run/volition-browser/gateway/<slug>/gateway.sock` (directory
+  0750, socket 0660, group `volition-agents`). The isolation launcher binds only the project's own
+  directory into an agent's unit, at `/run/volition-agents/browser`, where the shim looks by
+  default; without isolation the Hermes catalog passes `BROWSER_GATEWAY_SOCKET`. Only the
+  Home-Master reaches Home's socket, and only through it may a call name another project.
+- Every call is resolved by Helena (`/internal/browser-gateway/*`, service token from
+  `BROWSER_GATEWAY_TOKEN_FILE`, installed by `native/install-browser-gateway.sh`): the agent's
+  key, its project, whether it has the tool, the project's settings. Every call that is not a read
+  is decided by Helena's policy on its action category (a click that submits a form is `send`) and
+  audited in the project's activity.
+- The control lock: one holder per browser (an agent by name, or the owner). An agent's first
+  page action takes it when the browser is free; `browser_acquire` waits. The live view shows
+  "Steuert: …" with "Übernehmen", and "Zurückgeben" for the owner (`POST api/lock-takeover`,
+  `api/lock-release`), asks before the owner's first input goes into a page an agent steers, and
+  after 10 idle minutes. While an agent holds the lock the page has the project's working size
+  (`setViewportAuthority(port, "fixed", size, agentName)`, 1440x900 by default, Projekt →
+  Einstellungen → Browser); with the owner or nobody it follows the live view again.
+- `browser_handover` shows "Bitte übernehmen" in the live view and as a card in Freigaben with a
+  link to the live view (`?tool=browser`), and waits until the owner took over and gave control
+  back.
+- Downloads go through Chromium's download flow into `/var/lib/volition/project-browser/downloads`
+  (the router's `TMPDIR`, writable by the browser units) and from there through Helena into the
+  project's `Inbox` (Home: `Home/Inbox`). Uploads are read by the shim with the agent's own rights
+  and sent as bytes.
+- Home → Browser shows every project browser as a tile (`GET api/overview` of the router, a
+  thumbnail per browser from `api/thumbnail`).
+
+With the gateway on for an agent, the runner removes Hermes' own `browser` toolset and the
+`browser-harness` MCP server from its profile. The built-in "Hermes-eigener Browser (alt)" (off by
+default) keeps both for an agent that needs the old way; only then does Hermes drive the
+Chromium directly over the catalog's `BROWSER_CDP_URL` (with agent isolation on, a unit cannot
+reach a browser's DevTools port at all).
+
+With "Hermes-eigener Browser (alt)", the agent works on the page the person sees through
+browser-harness. It takes screenshots in window pixels and clicks at CSS pixels read from them, and Hermes halves a screenshot until its long edge is at
 most 1568 pixels: a page at ratio 2 whose long edge is under 785 CSS pixels would put its clicks
 off by 2. So while an agent is in the browser (its session marks the tab title with 🐴, noticed at
 once) or acts, such a page is pinned at ratio 1, and so is a page this small once nobody watches.
@@ -140,9 +180,6 @@ the press before the router has sent the release).
 The stream shows the page only. JavaScript dialogs are shown in the live view and answered from
 it; `<select>` popups, file choosers and Chromium's own menus are drawn by the browser outside
 the page and need the VNC view.
-
-The Hermes catalog passes the same project's `BROWSER_CDP_URL=http://127.0.0.1:<port>` to the
-project coordinator, so Hermes controls the Chromium profile shown in Helena.
 
 ```sh
 systemctl status volition-project-browser@<slug>.target

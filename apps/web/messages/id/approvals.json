@@ -40,5 +40,6 @@
   "gateApprovedToast": "Disetujui. Alur kerja berlanjut.",
   "gateRejectedToast": "Ditolak. Alur kerja berakhir tanpa efek ini.",
   "loadFailed": "Persetujuan tidak dapat dimuat.",
-  "loadFailedHint": "Server tidak merespons. Coba lagi sebentar lagi."
+  "loadFailedHint": "Server tidak merespons. Coba lagi sebentar lagi.",
+  "openBrowser": "Buka browser proyek"
 }
