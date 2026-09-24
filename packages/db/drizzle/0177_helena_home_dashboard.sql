@@ -1,1 +1,0 @@
-ALTER TABLE "user_preference" ADD COLUMN "home_dashboard" jsonb;

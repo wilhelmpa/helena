@@ -33,6 +33,11 @@ const login: CredentialEntry = {
   serverUrl: null,
   status: null,
   statusDetail: null,
+  provider: null,
+  baseUrl: null,
+  model: null,
+  allowPrivateAddress: false,
+  keySource: null,
   createdAt: '2026-09-23T10:00:00.000Z',
   updatedAt: '2026-09-23T10:00:00.000Z',
 };
@@ -95,6 +100,46 @@ describe('credential form', () => {
       notes: '',
     });
     assert.equal(isCredentialFormValid(emptyCredentialValue('api_key'), null), false);
+  });
+
+  it('sends a decision model with its service, and a key only when it is stored here', () => {
+    const jev = { ...emptyCredentialValue('decision_model'), label: 'Jev' };
+    // TypeSafe needs a key.
+    assert.equal(isCredentialFormValid(jev, null), false);
+    assert.deepEqual(toNewCredential({ ...jev, value: ' ts-key ' }), {
+      kind: 'decision_model',
+      label: 'Jev',
+      projectId: null,
+      provider: 'typesafe',
+      allowPrivateAddress: false,
+      keySource: 'stored',
+      notes: '',
+      value: 'ts-key',
+    });
+    // The local Laya preset reads its key on the server: nothing to enter, no value sent.
+    const laya = {
+      ...jev,
+      label: 'Laya',
+      provider: 'compatible',
+      baseUrl: 'http://127.0.0.1:8791',
+      model: 'laya-browser',
+      keySource: 'local-laya' as const,
+      value: 'ignored',
+    };
+    assert.equal(isCredentialFormValid(laya, null), true);
+    const sent = toNewCredential(laya);
+    assert.equal(sent.keySource, 'local-laya');
+    assert.equal('value' in sent, false);
+    // A compatible server needs its address; the local address allowance is its alone.
+    assert.equal(
+      isCredentialFormValid({ ...laya, keySource: 'stored', baseUrl: ' ' }, null),
+      false,
+    );
+    assert.equal(
+      toNewCredential({ ...laya, provider: 'vercel', allowPrivateAddress: true })
+        .allowPrivateAddress,
+      false,
+    );
   });
 
   it('sends a runtime login with its runtime and how it signs in', () => {

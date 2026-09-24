@@ -443,7 +443,8 @@
       "limits": "Batas",
       "autopilot": "Autopilot",
       "logins": "Login",
-      "updates": "Pembaruan"
+      "updates": "Pembaruan",
+      "browserTask": "Tugas browser"
     },
     "problems": {
       "external-off": "Dimuat setelah plugin eksternal diaktifkan.",

@@ -42,6 +42,8 @@ import { structureSection } from './structure';
 import type { AutopilotLevel } from '@helena/policy';
 import { resolveLevel } from '#modules/autopilot/levels';
 import { autopilotSoulSection } from '#modules/autopilot/prompt';
+import { effectiveBrowserControl } from '#modules/browser-task/settings';
+import { BROWSER_GATEWAY_MCP_SERVER_NAME } from '../mcp-servers/service';
 
 export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
   const agent = await getAgentById(agentRef.id, agentRef.teamId);
@@ -61,6 +63,19 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
       agentVaultAccess(agentRef.userId),
       pendingRuntimeActions(agent.id),
     ]);
+  // The projects whose browser has a decision model (browser_task), when the agent has the
+  // project browser at all (docs/helena-decisions/browser-task.md §3.2).
+  const browserTask = mcpServers.some((server) => server.name === BROWSER_GATEWAY_MCP_SERVER_NAME)
+    ? (
+        await Promise.all(
+          agent.projects.map(async (project) =>
+            (await effectiveBrowserControl({ teamId: agent.teamId, projectId: project.id })).enabled
+              ? project.key
+              : null,
+          ),
+        )
+      ).filter((key): key is string => key !== null)
+    : [];
   // The Autopilot level of each of the agent's projects, which its SOUL.md spells out.
   const autopilot = await Promise.all(
     agent.projects.map(async (project) => ({
@@ -84,6 +99,7 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
             knowledge: knowledgeSection(vaultAccess, agent.runtimePolicy.runtime ?? 'hermes'),
             webLogins,
             autopilot,
+            browserTask,
           }),
         },
       ],
@@ -146,9 +162,10 @@ function soul(
     knowledge: string;
     webLogins: boolean;
     autopilot: { key: string; level: AutopilotLevel }[];
+    browserTask?: string[];
   },
 ): string {
-  const { structure, areas, knowledge, webLogins, autopilot } = sections;
+  const { structure, areas, knowledge, webLogins, autopilot, browserTask = [] } = sections;
   const files = [...config.runtimePolicy.files].sort((a, b) => a.path.localeCompare(b.path));
   const own = files.find((file) => file.path === 'SOUL.md')?.content.trim();
   const instructions = agent.instructions?.trim();
@@ -175,6 +192,7 @@ function soul(
     ...(webLogins && (config.runtimePolicy.runtime ?? 'hermes') === 'hermes'
       ? [webLoginPreamble()]
       : []),
+    ...(browserTask.length ? [browserTaskPreamble(browserTask)] : []),
     chartPreamble().trim(),
     attachmentPreamble().trim(),
   ]
@@ -222,6 +240,22 @@ function hermesPreamble(): string {
     'Hermes), never pip. Doctor warnings about providers and platforms that are not set up',
     '(Telegram, Discord, Nous, MiniMax, xAI, OpenRouter, image or video generation, Docker)',
     'are expected and not faults.',
+  ].join('\n');
+}
+
+// The fast path of the project browser (docs/helena-decisions/browser-task.md §3.2), for the
+// projects whose "Browser-Steuerung" names a decision model.
+function browserTaskPreamble(projects: string[]): string {
+  return [
+    '## Browser: browser_task',
+    `In the project browser of ${projects.join(', ')} a fast decision model can drive the page for`,
+    'you: browser_task takes one observable outcome ("Open the invoices of September", "Fill the',
+    'contact form and send it") and every text it may type in `values`, and does the clicking',
+    'and typing itself in one call — far fewer tokens than browser_snapshot/browser_click rounds.',
+    'Use it for multi-step navigation and forms with known values; check the outcome with',
+    'browser_check. When it hands back (needs_agent, needs_login, stuck, …) continue with the step',
+    'tools on the snapshot it returns. Logins stay browser_login; never put a password or code',
+    'into values. Actions that send a form need the same approvals as browser_click.',
   ].join('\n');
 }
 

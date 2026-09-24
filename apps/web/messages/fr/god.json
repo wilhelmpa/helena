@@ -443,7 +443,8 @@
       "limits": "Limites",
       "autopilot": "Autopilot",
       "logins": "Connexions",
-      "updates": "Mises à jour"
+      "updates": "Mises à jour",
+      "browserTask": "Tâches du navigateur"
     },
     "problems": {
       "external-off": "Se charge une fois les plugins externes activés.",

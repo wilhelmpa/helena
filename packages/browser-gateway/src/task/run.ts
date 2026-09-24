@@ -1,0 +1,437 @@
+// The gateway side of browser_task, browser_check and browser_choose (docs/helena-decisions/
+// browser-task.md §3.2): opens the task in Helena (which holds the backend and its key), runs the
+// loop on the project browser, decides every action with Helena's policy exactly like the step
+// tool it stands for, reports each step, and hands the agent a result it can continue from.
+
+import type { ActionCategory } from '../agent-tool.ts';
+import {
+  HelenaApiError,
+  type HelenaClient,
+  type ResolveResult,
+  type TaskStartResult,
+} from '../helena-client.ts';
+import type { GatewaySession, ToolOutput } from '../session-types.ts';
+import { brief, describe } from './policy-common.ts';
+import { jevPolicy } from './policy-jev.ts';
+import { layaPolicy } from './policy-laya.ts';
+import { runTask, type Authorization } from './loop.ts';
+import {
+  answerOf,
+  DecisionError,
+  type DecisionClient,
+  type DecisionReply,
+  type DecisionRequest,
+} from './systemone.ts';
+import type { DecisionPolicy } from './policy.ts';
+import type { PageElement, PolicyKind, TaskMode, TaskResult } from './types.ts';
+
+// The snapshot an agent continues from after a hand-back (refs, capped).
+export const HANDBACK_SNAPSHOT_CHARS = 12_000;
+const MAX_VALUES = 30;
+
+export class HelenaDecisionClient implements DecisionClient {
+  #helena: HelenaClient;
+  #token: string;
+  constructor(helena: HelenaClient, token: string) {
+    this.#helena = helena;
+    this.#token = token;
+  }
+  async decide(request: DecisionRequest): Promise<DecisionReply> {
+    try {
+      return await this.#helena.systemOne({
+        taskToken: this.#token,
+        state: request.state,
+        questions: request.questions,
+      });
+    } catch (error) {
+      if (error instanceof HelenaApiError)
+        throw new DecisionError(`http_${error.status}`, error.message);
+      throw new DecisionError('unreachable', 'Helena did not answer.');
+    }
+  }
+}
+
+export function policyOf(kind: PolicyKind, minConfidence: number | null): DecisionPolicy {
+  const base = kind === 'laya' ? layaPolicy : jevPolicy;
+  return minConfidence !== null && minConfidence > 0 && minConfidence < 1
+    ? { ...base, minTarget: minConfidence }
+    : base;
+}
+
+export interface TaskRequest {
+  tool: string;
+  args: Record<string, unknown>;
+  agentKey: string;
+  runId?: number;
+  messageId?: number;
+}
+
+export interface TaskContext {
+  request: TaskRequest;
+  slug: string;
+  via: string;
+  session: GatewaySession;
+  helena: HelenaClient;
+  resolved: ResolveResult;
+  // The agent still holds the browser (touching its lock), false once the owner took over.
+  holdsControl(): boolean;
+  // Navigates to startUrl the way browser_navigate would (checks and policy done by the caller).
+  navigate?(url: string): Promise<void>;
+}
+
+function str(args: Record<string, unknown>, key: string): string | undefined {
+  const value = args[key];
+  return typeof value === 'string' ? value : undefined;
+}
+
+export function taskValues(value: unknown): Record<string, string> {
+  if (value === undefined || value === null) return {};
+  if (typeof value !== 'object' || Array.isArray(value))
+    throw new Error('values must be an object of strings.');
+  const entries = Object.entries(value as Record<string, unknown>);
+  if (entries.length > MAX_VALUES) throw new Error(`At most ${MAX_VALUES} values.`);
+  const out: Record<string, string> = {};
+  for (const [key, item] of entries) {
+    if (!key.trim() || key.length > 60)
+      throw new Error('Every value needs a short key (at most 60 characters).');
+    if (typeof item !== 'string' && typeof item !== 'number' && typeof item !== 'boolean') {
+      throw new Error(`values.${key.slice(0, 40)} must be a string.`);
+    }
+    const text = String(item);
+    if (text.length > 2000)
+      throw new Error(`values.${key.slice(0, 40)} is longer than 2000 characters.`);
+    out[key.trim()] = text;
+  }
+  return out;
+}
+
+async function start(
+  ctx: TaskContext,
+  kind: 'task' | 'check' | 'choose',
+  goal: string,
+  mode: TaskMode,
+  maxSteps: number,
+) {
+  try {
+    return await ctx.helena.taskStart({
+      agentKey: ctx.request.agentKey,
+      projectSlug: ctx.slug,
+      via: ctx.via,
+      kind,
+      goal,
+      mode,
+      maxSteps,
+      startUrl: str(ctx.request.args, 'startUrl') ?? null,
+      runId: ctx.request.runId,
+      messageId: ctx.request.messageId,
+    });
+  } catch (error) {
+    if (error instanceof HelenaApiError) throw new Error(error.message);
+    throw new Error('Could not reach Helena.');
+  }
+}
+
+function authorizer(ctx: TaskContext) {
+  return async (step: {
+    operation: string;
+    element: PageElement | null;
+    category: ActionCategory;
+    origin: string;
+  }): Promise<Authorization> => {
+    const target = `${step.operation}${step.element ? ` ${brief(step.element)}` : ''}`.slice(
+      0,
+      300,
+    );
+    try {
+      const answer = await ctx.helena.decide({
+        agentKey: ctx.request.agentKey,
+        projectSlug: ctx.slug,
+        via: ctx.via,
+        tool: 'browser_task',
+        category: step.category,
+        context: {
+          origin: step.origin,
+          target,
+          element: step.element ? brief(step.element) : null,
+          formAction: null,
+        },
+        runId: ctx.request.runId,
+        messageId: ctx.request.messageId,
+      });
+      if (answer.effect === 'allow') return { effect: 'allow' };
+      if (answer.effect === 'needs-approval') {
+        return {
+          effect: 'needs-approval',
+          reason: answer.reason ?? 'approval needed',
+          approvalId: answer.approvalId ?? null,
+        };
+      }
+      return { effect: 'deny', reason: answer.reason ?? `${step.category} actions` };
+    } catch (error) {
+      return {
+        effect: 'deny',
+        reason: error instanceof HelenaApiError ? error.message : 'Helena did not answer',
+      };
+    }
+  };
+}
+
+const STATUS_LINE: Record<TaskResult['status'], string> = {
+  done: 'done',
+  likely_done: 'likely done — verify',
+  needs_agent: 'handed back to you',
+  needs_login: 'needs a sign-in',
+  needs_confirmation: 'needs your confirmation',
+  needs_approval: "needs the owner's approval",
+  denied: 'not allowed',
+  blocked: 'blocked',
+  error: 'the page shows an error',
+  stuck: 'stuck — handed back to you',
+  max_steps: 'step budget used up',
+  owner_took_over: 'the owner took over',
+  backend_error: 'the decision backend failed',
+  cancelled: 'cancelled',
+};
+
+export function formatTaskResult(
+  result: TaskResult,
+  backend: { label: string; model: string },
+  snapshot: string,
+): string {
+  const seconds = (result.durationMs / 1000).toFixed(1);
+  const lines = [
+    '### Result',
+    `- Status: ${result.status} (${STATUS_LINE[result.status]})`,
+    `- ${result.summary}`,
+    `- Steps: ${result.steps.length} in ${seconds} s; ${result.usage.calls} decisions by ${backend.label} (${result.usage.model ?? backend.model}), ${result.usage.inputTokens} input tokens`,
+    `- Page: ${result.url}${result.title ? ` — "${result.title.slice(0, 120)}"` : ''}`,
+  ];
+  if (result.approvalId) lines.push(`- Freigaben #${result.approvalId}`);
+  if (result.pending)
+    lines.push(
+      `- Stopped before: ${result.pending.operation} ${result.pending.element ?? ''}`.trimEnd(),
+    );
+  if (result.steps.length) {
+    lines.push('### Steps');
+    for (const step of result.steps) {
+      const what = [
+        step.operation,
+        step.element,
+        step.valueKey ? `← values.${step.valueKey}` : '',
+        step.option ? `→ "${step.option}"` : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
+      lines.push(
+        `${step.n}. ${what} (p ${step.probability}, ${step.decisionMs} ms) ${step.outcome === 'done' ? '' : `— ${step.outcome}`}`.trimEnd(),
+      );
+    }
+  }
+  if (result.status !== 'done' && result.candidates?.length) {
+    lines.push(
+      '### Candidates',
+      ...result.candidates.map((c) => `- ${c.element} (p ${c.probability})`),
+    );
+  }
+  if (result.status !== 'done' && result.status !== 'likely_done' && snapshot) {
+    lines.push(
+      '### Snapshot',
+      'Continue with the step tools on these refs:',
+      '```yaml',
+      snapshot,
+      '```',
+    );
+  }
+  return lines.join('\n');
+}
+
+export async function runTaskTool(ctx: TaskContext): Promise<ToolOutput> {
+  const args = ctx.request.args;
+  const goal = (str(args, 'goal') ?? '').trim().slice(0, 1000);
+  if (!goal) throw new Error('goal is required: the outcome, in plain words.');
+  const values = taskValues(args.values);
+  const mode: TaskMode = str(args, 'mode') === 'read' ? 'read' : 'act';
+  const rawSteps =
+    typeof args.maxSteps === 'number' && Number.isFinite(args.maxSteps) ? args.maxSteps : 20;
+  const maxSteps = Math.max(1, Math.min(60, Math.floor(rawSteps)));
+  const allowIrreversible = args.allowIrreversible === true;
+  const opened: TaskStartResult = await start(ctx, 'task', goal, mode, maxSteps);
+  const controller = new AbortController();
+  let result: TaskResult;
+  try {
+    const startUrl = str(args, 'startUrl');
+    if (startUrl && ctx.navigate) await ctx.navigate(startUrl);
+    result = await runTask(
+      { goal, values, mode, maxSteps, allowIrreversible },
+      {
+        page: ctx.session.taskPage(),
+        client: new HelenaDecisionClient(ctx.helena, opened.taskToken),
+        policy: policyOf(opened.policy, opened.minConfidence),
+        authorize: authorizer(ctx),
+        holdsControl: ctx.holdsControl,
+        signal: controller.signal,
+        onProgress: (progress) => {
+          void ctx.helena
+            .taskProgress({
+              taskToken: opened.taskToken,
+              step: progress.step,
+              usage: progress.usage,
+            })
+            .then((answer) => {
+              if (answer?.cancelled) controller.abort();
+            })
+            .catch(() => {});
+        },
+      },
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    result = {
+      status: 'error',
+      summary: message.split('\n')[0]!.slice(0, 300),
+      url: '',
+      title: '',
+      steps: [],
+      usage: { calls: 0, inputTokens: 0, outputTokens: 0, decisionMs: 0, model: null },
+      durationMs: 0,
+      confidence: null,
+      doneScore: null,
+    };
+  }
+  const snapshot =
+    result.status === 'done' || result.status === 'likely_done'
+      ? ''
+      : await ctx.session.agentSnapshot(HANDBACK_SNAPSHOT_CHARS).catch(() => '');
+  await ctx.helena.taskFinish({ taskToken: opened.taskToken, result }).catch(() => {});
+  return { text: formatTaskResult(result, opened, snapshot) };
+}
+
+async function pageState(ctx: TaskContext) {
+  const observation = await ctx.session.taskPage().observe();
+  return {
+    page: {
+      url: observation.url,
+      title: observation.title,
+      text: observation.text,
+      ...(observation.dialogs.length ? { dialogs: observation.dialogs } : {}),
+      elements: observation.elements.slice(0, 200).map(describe),
+      ...(observation.repeated ? { repeated_elements: observation.repeated } : {}),
+    },
+  };
+}
+
+export async function runCheckTool(ctx: TaskContext): Promise<ToolOutput> {
+  const question = (str(ctx.request.args, 'question') ?? '').trim().slice(0, 1000);
+  if (!question) throw new Error('question is required.');
+  const opened = await start(ctx, 'check', question, 'read', 1);
+  const started = Date.now();
+  const client = new HelenaDecisionClient(ctx.helena, opened.taskToken);
+  const request = {
+    state: await pageState(ctx),
+    questions: { q: { type: 'noul' as const, instructions: `Answer about \`page\`: ${question}` } },
+  };
+  let reply: DecisionReply;
+  try {
+    reply = await client.decide(request);
+  } catch (error) {
+    await ctx.helena
+      .taskFinish({ taskToken: opened.taskToken, result: { status: 'backend_error' } })
+      .catch(() => {});
+    throw error;
+  }
+  const p = answerOf(reply, 'q', request.questions.q, 'noul').noul;
+  await ctx.helena
+    .taskFinish({
+      taskToken: opened.taskToken,
+      result: {
+        status: 'done',
+        summary: `P(yes) = ${p.toFixed(2)}`,
+        steps: [],
+        usage: {
+          calls: 1,
+          inputTokens: reply.inputTokens,
+          outputTokens: reply.outputTokens,
+          decisionMs: reply.latencyMs,
+          model: reply.model,
+        },
+        durationMs: Date.now() - started,
+      },
+    })
+    .catch(() => {});
+  return {
+    text: [
+      '### Result',
+      `- P(yes) = ${p.toFixed(2)} — ${p >= 0.8 ? 'yes' : p <= 0.2 ? 'no' : 'unsure'}`,
+      `- ${opened.label} (${reply.model ?? opened.model}), ${reply.latencyMs} ms`,
+    ].join('\n'),
+  };
+}
+
+export async function runChooseTool(ctx: TaskContext): Promise<ToolOutput> {
+  const question = (str(ctx.request.args, 'question') ?? '').trim().slice(0, 1000);
+  const raw = ctx.request.args.options;
+  if (!question) throw new Error('question is required.');
+  if (
+    !Array.isArray(raw) ||
+    raw.length < 2 ||
+    raw.length > 50 ||
+    raw.some((o) => typeof o !== 'string' || !o.trim())
+  ) {
+    throw new Error('options is required: 2 to 50 non-empty strings.');
+  }
+  const options = [...new Set((raw as string[]).map((o) => o.trim().slice(0, 200)))];
+  if (options.length < 2) throw new Error('options must hold at least two different strings.');
+  const opened = await start(ctx, 'choose', question, 'read', 1);
+  const started = Date.now();
+  const client = new HelenaDecisionClient(ctx.helena, opened.taskToken);
+  const request = {
+    state: await pageState(ctx),
+    questions: {
+      q: {
+        type: 'choice' as const,
+        instructions: `Answer about \`page\`: ${question}`,
+        criteria: Object.fromEntries(options.map((option, index) => [String(index), option])),
+      },
+    },
+  };
+  let reply: DecisionReply;
+  try {
+    reply = await client.decide(request);
+  } catch (error) {
+    await ctx.helena
+      .taskFinish({ taskToken: opened.taskToken, result: { status: 'backend_error' } })
+      .catch(() => {});
+    throw error;
+  }
+  const answer = answerOf(reply, 'q', request.questions.q, 'choice');
+  const chosen = options[Number(answer.choice)]!;
+  await ctx.helena
+    .taskFinish({
+      taskToken: opened.taskToken,
+      result: {
+        status: 'done',
+        summary: chosen,
+        steps: [],
+        usage: {
+          calls: 1,
+          inputTokens: reply.inputTokens,
+          outputTokens: reply.outputTokens,
+          decisionMs: reply.latencyMs,
+          model: reply.model,
+        },
+        durationMs: Date.now() - started,
+      },
+    })
+    .catch(() => {});
+  const ranked = Object.entries(answer.probabilities)
+    .sort((a, b) => b[1] - a[1])
+    .map(([key, p]) => `- ${options[Number(key)]}: ${p.toFixed(2)}`);
+  return {
+    text: [
+      '### Result',
+      `- Chosen: ${chosen} (confidence ${answer.confidence.toFixed(2)})`,
+      '### Probabilities',
+      ...ranked,
+    ].join('\n'),
+  };
+}

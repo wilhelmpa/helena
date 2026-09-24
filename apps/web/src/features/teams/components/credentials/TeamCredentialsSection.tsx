@@ -22,6 +22,7 @@ import { CloneDialog } from '@/features/access/CloneDialog';
 import { McpOAuthDialog } from '@/features/access/McpOAuthDialog';
 import { GrantsDialog } from '@/features/access/GrantsDialog';
 import { CREDENTIAL_KINDS } from '../../utils/credentialForm';
+import { useTestDecisionConnection } from '@/features/browser-lab/services/browserTask.service';
 
 type Open =
   | { dialog: 'edit'; entry: CredentialEntry }
@@ -50,6 +51,7 @@ export default function TeamCredentialsSection({
   const paging = usePaging();
   const page = useCredentialsPageQuery(teamId, paging.params, kind);
   const deleteCredential = useDeleteCredential(teamId);
+  const testConnection = useTestDecisionConnection(teamId);
   const [open, setOpen] = useState<Open | null>(null);
   const close = () => setOpen(null);
 
@@ -110,7 +112,11 @@ export default function TeamCredentialsSection({
                     key={entry.id}
                     entry={entry}
                     canManage={canManage}
-                    onOpen={(dialog) => setOpen({ dialog, entry })}
+                    onOpen={(dialog) =>
+                      dialog === 'test'
+                        ? testConnection.mutate(entry.id)
+                        : setOpen({ dialog, entry })
+                    }
                   />
                 ))}
               </ul>

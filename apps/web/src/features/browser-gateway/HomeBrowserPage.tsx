@@ -5,6 +5,8 @@ import Shell from '@/components/layout/Shell';
 import SectionPageView from '@/components/common/page/SectionPageView';
 import { EmptyState } from '@/components/common/page/EmptyState';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
+import { PageToolbar } from '@/components/layout/PageToolbar';
+import { BrowserPageTabs } from '@/features/browser-lab/components/BrowserPageTabs';
 import { projectPath } from '@/utils/paths';
 import { HOME_BROWSER_SLUG } from '@/utils/browserOverview';
 import ProjectBrowserTile from './components/ProjectBrowserTile';
@@ -48,6 +50,9 @@ export default function HomeBrowserPage() {
 
   return (
     <Shell globalHome globalTitle={tNav('browser')} autoOpenGlobalChat={false}>
+      <PageToolbar>
+        <BrowserPageTabs value="overview" />
+      </PageToolbar>
       <SectionPageView title={t('homeTitle')} wide>
         {projects.isPending || router.isPending ? (
           <ListSkeleton rows={2} rowClassName="h-48" />

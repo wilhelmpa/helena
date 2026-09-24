@@ -443,7 +443,8 @@
       "limits": "Лимиты",
       "autopilot": "Autopilot",
       "logins": "Входы",
-      "updates": "Обновления"
+      "updates": "Обновления",
+      "browserTask": "Задачи браузера"
     },
     "problems": {
       "external-off": "Загрузится, как только внешние плагины будут включены.",

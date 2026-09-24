@@ -30,9 +30,26 @@ export const PROVIDER_ALIASES: Record<string, string> = {
   gemini: 'google',
 };
 
+// Models models.dev does not list yet, from their providers' own price pages: TypeSafe's Jev
+// (docs.typesafe.ai/models: $0.042 per million input tokens, output free), answered directly
+// or through the Vercel AI Gateway, which reports it as typesafe-ai/jev. Both imports add them;
+// a manual row still wins.
+export const EXTRA_PRICES: Record<string, ModelsDevEntry> = {
+  'jev-1.13.0': { provider: 'typesafe', input: 0.042, output: 0 },
+  'jev-latest': { provider: 'typesafe', input: 0.042, output: 0 },
+  'jev-preview': { provider: 'typesafe', input: 0.042, output: 0 },
+  jev: { provider: 'typesafe', input: 0.042, output: 0 },
+};
+
+function withExtras(prices: Map<string, ModelsDevEntry>): Map<string, ModelsDevEntry> {
+  for (const [id, entry] of Object.entries(EXTRA_PRICES))
+    if (!prices.has(id)) prices.set(id, entry);
+  return prices;
+}
+
 // The shipped snapshot: model id (lower case) → price.
 export function snapshotPrices(): Map<string, ModelsDevEntry> {
-  return new Map(Object.entries(snapshot.models as Record<string, ModelsDevEntry>));
+  return withExtras(new Map(Object.entries(snapshot.models as Record<string, ModelsDevEntry>)));
 }
 
 interface ModelsDevApi {
@@ -85,7 +102,7 @@ export function pricesFromModelsDev(api: unknown): Map<string, ModelsDevEntry> {
       result.set(key, { provider, ...base, ...(long && { longContext: long }) });
     }
   }
-  return result;
+  return withExtras(result);
 }
 
 // The ids a reported model id may be listed under, most exact first: as it is, with dots as

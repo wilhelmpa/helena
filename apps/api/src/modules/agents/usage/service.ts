@@ -27,7 +27,7 @@ export async function recordUsage(entry: {
   projectId: number | null;
   runId?: number | null;
   chatMessageId?: number | null;
-  kind: 'run' | 'chat' | 'reflection';
+  kind: 'run' | 'chat' | 'reflection' | 'tool';
   sessionId?: string | null;
   spend: Spend | null | undefined;
 }): Promise<void> {

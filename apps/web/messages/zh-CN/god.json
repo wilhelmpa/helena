@@ -443,7 +443,8 @@
       "limits": "限额",
       "autopilot": "Autopilot",
       "logins": "登录",
-      "updates": "更新"
+      "updates": "更新",
+      "browserTask": "浏览器任务"
     },
     "problems": {
       "external-off": "开启外部插件后加载。",

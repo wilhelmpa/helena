@@ -464,6 +464,12 @@ export const BROWSER_GATEWAY_TOOL_CATEGORY: Record<string, ActionCategory> = {
   browser_fill_form: 'write',
   browser_handle_dialog: 'write',
   browser_file_upload: 'send',
+  // The fast path (docs/helena-decisions/browser-task.md §3.2): browser_task is a change in the
+  // project's browser before it runs; the gateway then decides each of its actions like the
+  // step tool it stands for (a submit is a send). browser_check and browser_choose only read.
+  browser_task: 'write',
+  browser_check: 'read',
+  browser_choose: 'read',
   // The browser-harness MCP server (Chrome DevTools into the project browser) that agents use
   // until the gateway replaces it. Its tools carry no annotations.
   browser_goto: 'read',

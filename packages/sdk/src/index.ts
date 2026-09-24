@@ -312,3 +312,11 @@ export type {
   PluginPermissions,
   PluginProvides,
 } from './manifest-types';
+export {
+  SYSTEM_ONE_MODELS_PATH,
+  SYSTEM_ONE_PATH,
+  systemOneUrl,
+  type DecisionBackendPreset,
+  type DecisionBackendType,
+  type DecisionPolicyKind,
+} from './decision-backends';
