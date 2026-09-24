@@ -144,6 +144,29 @@ describe('memory proposals', () => {
     expect(
       (await asRunner['agent-runtime'].policy.get()).data!.memoryWrites.baseline[0]!.content,
     ).toBe(written);
+
+    // The file went back to its earlier version; the agent writing the approved content
+    // again is a change again and waits for the owner again.
+    await report(asRunner, { inventory: inventory('Uses bun.') });
+    await report(asRunner, {
+      inventory: inventory('Uses bun.'),
+      memoryProposals: [
+        {
+          file: 'MEMORY.md',
+          content: written,
+          sha256: sha256(written),
+          baseSha256: sha256('Uses bun.'),
+        },
+      ],
+    });
+    const again = (await asOwner['agent-proposals'].get({ query: {} })).data!;
+    expect(again).toHaveLength(1);
+    expect(again[0]).toMatchObject({
+      id: pending[0]!.id,
+      status: 'pending',
+      decidedByName: null,
+      payload: { before: 'Uses bun.', after: written },
+    });
   });
 
   it('drops a rejected write and replaces an older proposal with a newer one', async () => {

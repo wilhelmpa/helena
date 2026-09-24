@@ -94,6 +94,13 @@ export async function recordMemoryProposals(
             sql`${agentProposal.externalId} <> ${`${report.file}:${report.sha256}`}`,
           ),
         );
+      const payload = {
+        file: report.file,
+        before: before?.content ?? '',
+        after: report.content,
+        baseSha256: report.baseSha256,
+        sha256: report.sha256,
+      };
       await tx
         .insert(agentProposal)
         .values({
@@ -101,15 +108,30 @@ export async function recordMemoryProposals(
           kind: 'memory-write',
           externalId: `${report.file}:${report.sha256}`,
           title: report.file,
-          payload: {
-            file: report.file,
-            before: before?.content ?? '',
-            after: report.content,
-            baseSha256: report.baseSha256,
-            sha256: report.sha256,
-          },
+          payload,
         })
         .onConflictDoNothing();
+      // The same content was approved (or failed) before and has since been replaced: it is
+      // a change again and waits for the owner again. Rejected content stays rejected.
+      await tx
+        .update(agentProposal)
+        .set({
+          status: 'pending',
+          payload,
+          decidedByUserId: null,
+          decidedAt: null,
+          note: null,
+          error: null,
+          createdAt: new Date(),
+        })
+        .where(
+          and(
+            eq(agentProposal.agentId, agentId),
+            eq(agentProposal.kind, 'memory-write'),
+            eq(agentProposal.externalId, `${report.file}:${report.sha256}`),
+            inArray(agentProposal.status, ['applied', 'failed']),
+          ),
+        );
     });
   }
 }
