@@ -74,6 +74,10 @@
     "model-prices": {
       "label": "Model prices",
       "description": "Euros per million tokens per model, the base of every cost estimate."
+    },
+    "local-ai": {
+      "label": "Local AI",
+      "description": "The model servers on this machine (GPU, NPU), which work runs there first, and the evaluations behind it."
     }
   },
   "settings": {

@@ -561,10 +561,9 @@ export function runtimeLocalAi(
     });
     if ('route' in result) {
       const provider = localProviderName(result.route.server.slug);
-      helpers.push(
-        { task: 'compression', provider, model: result.route.model },
-        { task: 'title_generation', provider, model: result.route.model },
-      );
+      // Session titles stay off (learning.ts: Helena never shows them); compression and, with
+      // a vision model, image descriptions go local first.
+      helpers.push({ task: 'compression', provider, model: result.route.model });
       const vision = pickModel(result.route.server.models, 'vision', null);
       if (vision) helpers.push({ task: 'vision', provider, model: vision.id });
     }

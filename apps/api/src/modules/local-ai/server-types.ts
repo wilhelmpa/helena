@@ -159,6 +159,7 @@ export function lemonadeModel(
     downloaded: typeof entry.downloaded === 'boolean' ? entry.downloaded : null,
     loaded: loaded.has(id),
     backend: recipe,
+    checkpoint: text(entry.checkpoint),
   });
 }
 

@@ -234,59 +234,78 @@ export async function evaluateSummaries(context: LocalAiEvalContext): Promise<Lo
   return result(cases, tokens, seconds);
 }
 
-// ── Hermes' helper calls: a session title, a compression that keeps the facts ──────────
+// ── Hermes' helper calls: a compression that keeps every fact ──────────────────────────
+//
+// Hermes compresses a long session into a summary the agent works on from then on
+// (auxiliary.compression). A lost date, address or task id there is a wrong action later,
+// so each case names the facts the summary must keep. (Session titles are off in Helena's
+// profiles, and vision is judged by its own model; neither is tested here.)
 
-const TITLE_CASES: { id: string; conversation: string; words: string[] }[] = [
+export const COMPRESSION_CASES: { id: string; conversation: string; facts: string[][] }[] = [
   {
-    id: 'h1',
-    conversation:
-      'Person: Kannst du die Lieferzeiten im Shop auf 3–5 Werktage ändern?\n' +
-      'Agent: Erledigt, die Versandseite und die Produktseiten zeigen jetzt 3–5 Werktage.',
-    words: ['lieferzeit', 'versand'],
+    id: 'c1',
+    conversation: [
+      'Person: Bitte richte für das Projekt VERVE eine wöchentliche Routine ein, montags 8:00.',
+      'Agent: Routine "Wochenbericht VERVE" angelegt, montags 08:00 Europe/Berlin, Agent @coder-verve.',
+      'Person: Der Bericht soll Umsatz, Retouren und offene Tickets enthalten.',
+      'Agent: Ergänzt. Quelle für Umsatz ist der Shopify-Export, für Tickets das Board VERVE.',
+      'Person: Und schick ihn an patrick@example.com, nicht an das Team.',
+      'Agent: Empfänger geändert auf patrick@example.com. Nächster Lauf: Montag, 28.09., 08:00.',
+    ].join('\n'),
+    facts: [
+      ['verve'],
+      ['montag', 'monday'],
+      ['8:00', '08:00'],
+      ['umsatz'],
+      ['retoure'],
+      ['ticket'],
+      ['patrick@example.com'],
+      ['28.09', '28. september'],
+    ],
   },
   {
-    id: 'h2',
-    conversation:
-      'Person: Prüf bitte, warum das Backup heute Nacht fehlgeschlagen ist.\n' +
-      'Agent: Die Platte war voll; ich habe alte Snapshots entfernt und das Backup neu gestartet.',
-    words: ['backup'],
+    id: 'c2',
+    conversation: [
+      'Person: Das Backup ist heute Nacht fehlgeschlagen, schau bitte nach.',
+      'Agent: Die Platte /srv/backup war zu 98 % voll. Ich habe 14 alte Snapshots entfernt.',
+      'Person: Gut. Behalte ab jetzt nur 30 Tage.',
+      'Agent: Aufbewahrung auf 30 Tage gesetzt, der Lauf um 02:00 ist neu gestartet und lief durch.',
+      'Person: Leg noch eine Aufgabe an, dass wir eine zweite Platte bestellen.',
+      'Agent: Aufgabe VOL-58 "Zweite Backup-Platte bestellen" angelegt, fällig am 2026-10-05.',
+    ].join('\n'),
+    facts: [
+      ['/srv/backup'],
+      ['98'],
+      ['14'],
+      ['30 tage', '30 days'],
+      ['02:00'],
+      ['vol-58'],
+      ['2026-10-05', '05.10'],
+    ],
   },
   {
-    id: 'h3',
-    conversation:
-      'Person: Write the release notes for version 3.1 of the cart app.\n' +
-      'Agent: Here are the release notes for 3.1: faster checkout, new coupon rules.',
-    words: ['release', '3.1', 'notes'],
+    id: 'c3',
+    conversation: [
+      'Person: Please move the cart app release to Thursday, October 1st.',
+      'Agent: Release 3.1 moved to Thursday 2026-10-01; the changelog is in docs/releases/3.1.md.',
+      'Person: Coupon rules must be in it, and the new checkout.',
+      'Agent: Added "coupon rules" and "faster checkout" to the notes; VERVE-44 tracks the QA pass.',
+    ].join('\n'),
+    facts: [
+      ['3.1'],
+      ['2026-10-01', 'october 1'],
+      ['docs/releases/3.1.md'],
+      ['coupon'],
+      ['checkout'],
+      ['verve-44'],
+    ],
   },
-];
-
-const TITLE_SYSTEM =
-  'Gib dem Gespräch einen kurzen Titel (höchstens sechs Wörter) in seiner Sprache. ' +
-  'Antworte nur mit dem Titel.';
-
-const COMPRESSION_TEXT = [
-  'Person: Bitte richte für das Projekt VERVE eine wöchentliche Routine ein, montags 8:00.',
-  'Agent: Routine "Wochenbericht VERVE" angelegt, montags 08:00 Europe/Berlin, Agent @coder-verve.',
-  'Person: Der Bericht soll Umsatz, Retouren und offene Tickets enthalten.',
-  'Agent: Ergänzt. Quelle für Umsatz ist der Shopify-Export, für Tickets das Board VERVE.',
-  'Person: Und schick ihn an patrick@example.com, nicht an das Team.',
-  'Agent: Empfänger geändert auf patrick@example.com. Nächster Lauf: Montag, 28.09., 08:00.',
-].join('\n');
-
-const COMPRESSION_FACTS = [
-  ['verve'],
-  ['montag', 'monday'],
-  ['8:00', '08:00'],
-  ['umsatz'],
-  ['retoure'],
-  ['ticket'],
-  ['patrick@example.com'],
-  ['28.09', '28. september'],
 ];
 
 const COMPRESSION_SYSTEM =
   'Fasse das bisherige Gespräch so zusammen, dass ein Agent ohne den Verlauf weiterarbeiten ' +
-  'kann. Behalte jede Entscheidung, Zeit, Adresse und Kennung genau bei. Höchstens 120 Wörter.';
+  'kann. Behalte jede Entscheidung, Zeit, Adresse, Datei und Kennung genau bei. Höchstens ' +
+  '120 Wörter.';
 
 export async function evaluateHermesHelpers(
   context: LocalAiEvalContext,
@@ -294,42 +313,23 @@ export async function evaluateHermesHelpers(
   const cases: LocalAiEvalCaseResult[] = [];
   let tokens = 0;
   let seconds = 0;
-  for (const item of TITLE_CASES) {
+  for (const item of COMPRESSION_CASES) {
     const answer = await context.chat({
-      system: TITLE_SYSTEM,
+      system: COMPRESSION_SYSTEM,
       prompt: item.conversation,
-      maxTokens: 300,
+      maxTokens: 900,
     });
     tokens += answer.outputTokens ?? 0;
     seconds += answer.latencyMs / 1000;
-    const title = withoutThinking(answer.text)
-      .split('\n')[0]!
-      .replace(/^["'„]|["'“]$/g, '');
-    const words = title.split(/\s+/).filter(Boolean).length;
-    const topical = item.words.some((word) => title.toLowerCase().includes(word));
-    const passed = words > 0 && words <= 8 && topical;
+    const summary = withoutThinking(answer.text).toLowerCase();
+    const missing = item.facts.filter((any) => !any.some((fact) => summary.includes(fact)));
     cases.push({
       id: item.id,
-      passed,
-      detail: passed ? null : `title "${clip(title, 80)}"`,
+      passed: missing.length === 0,
+      detail: missing.length ? `lost ${missing.map((any) => any[0]).join(', ')}` : null,
       latencyMs: answer.latencyMs,
     });
   }
-  const answer = await context.chat({
-    system: COMPRESSION_SYSTEM,
-    prompt: COMPRESSION_TEXT,
-    maxTokens: 900,
-  });
-  tokens += answer.outputTokens ?? 0;
-  seconds += answer.latencyMs / 1000;
-  const summary = withoutThinking(answer.text).toLowerCase();
-  const missing = COMPRESSION_FACTS.filter((any) => !any.some((fact) => summary.includes(fact)));
-  cases.push({
-    id: 'compression',
-    passed: missing.length === 0,
-    detail: missing.length ? `lost ${missing.map((any) => any[0]).join(', ')}` : null,
-    latencyMs: answer.latencyMs,
-  });
   return result(cases, tokens, seconds);
 }
 

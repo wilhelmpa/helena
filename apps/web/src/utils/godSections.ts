@@ -3,6 +3,7 @@ import {
   Brain,
   Building2,
   Coins,
+  Cpu,
   FolderKanban,
   HardDrive,
   Keyboard,
@@ -95,6 +96,11 @@ export const GOD_SECTIONS: GodSection[] = [
     slug: 'model-prices',
     group: 'instance',
     icon: Coins,
+  },
+  {
+    slug: 'local-ai',
+    group: 'instance',
+    icon: Cpu,
   },
   {
     slug: 'telegram',

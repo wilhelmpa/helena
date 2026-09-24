@@ -440,7 +440,8 @@
       "bundles": "Пакеты шаблонов",
       "limits": "Лимиты",
       "autopilot": "Autopilot",
-      "logins": "Входы"
+      "logins": "Входы",
+      "localAi": "Локальный ИИ"
     },
     "problems": {
       "external-off": "Загрузится, как только внешние плагины будут включены.",

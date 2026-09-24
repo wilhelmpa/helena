@@ -112,11 +112,7 @@ export const RuntimePolicySnapshotResponse = t.Object({
         ),
         helpers: t.Array(
           t.Object({
-            task: t.Union([
-              t.Literal('compression'),
-              t.Literal('title_generation'),
-              t.Literal('vision'),
-            ]),
+            task: t.Union([t.Literal('compression'), t.Literal('vision')]),
             provider: t.String(),
             model: t.String(),
           }),

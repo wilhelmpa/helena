@@ -440,7 +440,8 @@
       "bundles": "Vorlagen-Pakete",
       "limits": "Limits",
       "autopilot": "Autopilot",
-      "logins": "Anmeldungen"
+      "logins": "Anmeldungen",
+      "localAi": "Lokale KI"
     },
     "problems": {
       "external-off": "Lädt, sobald externe Plugins eingeschaltet sind.",

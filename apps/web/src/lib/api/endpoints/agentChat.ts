@@ -305,6 +305,8 @@ export interface AiChatModel {
   variantOf?: string;
   // Confirmed (listed or seen working), only expected to work (false), or unknown (unset).
   verified?: boolean;
+  // A model of Helena's local AI (`helena-<slug>/<id>`): on the owner's machine, free.
+  local?: boolean;
 }
 
 // A model the provider refused this account, which the pickers leave out.

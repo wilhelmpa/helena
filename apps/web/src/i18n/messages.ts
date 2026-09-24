@@ -41,6 +41,7 @@ import pipelines from '../../messages/en/pipelines.json';
 import projects from '../../messages/en/projects.json';
 import providerLimits from '../../messages/en/providerLimits.json';
 import modelAvailability from '../../messages/en/modelAvailability.json';
+import localAi from '../../messages/en/localAi.json';
 import routines from '../../messages/en/routines.json';
 import sections from '../../messages/en/sections.json';
 import settings from '../../messages/en/settings.json';
@@ -104,6 +105,7 @@ const defaultMessages = {
   devices,
   providerLimits,
   modelAvailability,
+  localAi,
   knowledge,
 };
 

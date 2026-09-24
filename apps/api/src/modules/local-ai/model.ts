@@ -20,6 +20,7 @@ export const LocalModel = t.Object({
   downloaded: t.Nullable(t.Boolean()),
   loaded: t.Boolean(),
   backend: t.Nullable(t.String()),
+  checkpoint: t.Optional(t.Nullable(t.String({ description: '`<org>/<repo>:<file>`' }))),
 });
 
 const load = t.Nullable(

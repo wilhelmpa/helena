@@ -74,6 +74,10 @@
     "model-prices": {
       "label": "模型价格",
       "description": "每个模型每百万令牌的欧元价格，是所有费用估算的基础。"
+    },
+    "local-ai": {
+      "label": "本地 AI",
+      "description": "本机上的模型服务器（GPU、NPU）、哪些工作优先在那里运行，以及背后的评估。"
     }
   },
   "settings": {

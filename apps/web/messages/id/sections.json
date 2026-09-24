@@ -74,6 +74,10 @@
     "model-prices": {
       "label": "Harga model",
       "description": "Euro per juta token per model, dasar setiap perkiraan biaya."
+    },
+    "local-ai": {
+      "label": "AI lokal",
+      "description": "Server model di mesin ini (GPU, NPU), pekerjaan yang berjalan di sana lebih dulu, dan evaluasi di baliknya."
     }
   },
   "settings": {

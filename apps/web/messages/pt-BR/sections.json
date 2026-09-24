@@ -74,6 +74,10 @@
     "model-prices": {
       "label": "Preços de modelos",
       "description": "Euros por milhão de tokens por modelo, a base de toda estimativa de custo."
+    },
+    "local-ai": {
+      "label": "IA local",
+      "description": "Os servidores de modelos desta máquina (GPU, NPU), qual trabalho roda lá primeiro e as avaliações por trás."
     }
   },
   "settings": {

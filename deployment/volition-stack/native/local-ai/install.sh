@@ -90,7 +90,8 @@ put() {
   chown "$owner" "$tmp"
   mv "$tmp" "$1"
 }
-[ "$(id -u)" = 0 ] || [ "$DRY_RUN" = 1 ] || [ "$command" = status ] || die "run as root"
+case "$command $args" in "status "*|"models  list"|"models "|"models  verify") readonly_command=1 ;; *) readonly_command=0 ;; esac
+[ "$(id -u)" = 0 ] || [ "$DRY_RUN" = 1 ] || [ "$readonly_command" = 1 ] || die "run as root"
 
 # fetch <url> <file> <sha256>: into the download cache, checked; an existing good file is kept.
 fetch() {

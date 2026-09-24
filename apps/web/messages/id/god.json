@@ -440,7 +440,8 @@
       "bundles": "Paket templat",
       "limits": "Batas",
       "autopilot": "Autopilot",
-      "logins": "Login"
+      "logins": "Login",
+      "localAi": "AI lokal"
     },
     "problems": {
       "external-off": "Dimuat setelah plugin eksternal diaktifkan.",

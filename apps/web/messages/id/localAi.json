@@ -1,0 +1,144 @@
+{
+  "title": "AI lokal",
+  "units": {
+    "gpu": "GPU",
+    "npu": "NPU",
+    "cpu": "CPU"
+  },
+  "unitStates": {
+    "off": "mati",
+    "missing": "tidak tersedia",
+    "idle": "bebas",
+    "busy": "bekerja"
+  },
+  "card": {
+    "loading": "Memuat …",
+    "noServer": "Tidak ada server",
+    "off": "Mati",
+    "serverDown": "Server tidak terjangkau",
+    "on": "Nyala",
+    "master": "Gunakan AI lokal",
+    "classes": "Pekerjaan yang dijalankan lokal lebih dulu",
+    "share": "{percent} % token agen tetap lokal ({days} hari)",
+    "latency": "Server menjawab dalam {ms} ms",
+    "settings": "Pengaturan",
+    "unitSwitch": "Gunakan {unit}",
+    "vram": "{used} dari {total}",
+    "noModel": "Tidak ada model dimuat"
+  },
+  "blockers": {
+    "not-wired": "Belum terhubung",
+    "no-model": "Tidak ada model yang cocok",
+    "eval-missing": "Perlu evaluasi",
+    "eval-failed": "Evaluasi gagal"
+  },
+  "jev": {
+    "label": "Jev / Laya (langkah browser)",
+    "experimental": "Eksperimental",
+    "connect": "Tambahkan koneksi"
+  },
+  "classesTitle": "Jenis pekerjaan",
+  "classesDescription": "AI lokal tidak pernah menggantikan model yang dikonfigurasi: di mana ia menyala, ia dicoba lebih dulu, dan model yang dikonfigurasi menjawab setiap kali AI lokal mati, tidak terjangkau, terlalu lambat, atau salah. Suatu jenis pekerjaan baru bisa dinyalakan setelah evaluasinya lulus.",
+  "planned": "Direncanakan",
+  "model": "Model",
+  "mode": "Mode",
+  "autoModel": "Otomatis ({model})",
+  "modes": {
+    "off": "Mati",
+    "prefer": "Lokal dulu",
+    "only": "Hanya lokal"
+  },
+  "eval": {
+    "result": "{score} % (perlu {threshold} %)",
+    "latency": "median {ms} ms",
+    "speed": "{tps} token/dtk",
+    "none": "Belum dievaluasi",
+    "run": "Evaluasi",
+    "done": "Evaluasi selesai: {score} %"
+  },
+  "servers": {
+    "title": "Server model",
+    "description": "Lemonade di mesin ini (GPU dan NPU) atau server lain yang kompatibel dengan OpenAI. Modelnya muncul di setiap pemilih model selama AI lokal menyala.",
+    "add": "Tambah server",
+    "none": "Belum ada server. Pasang AI lokal dengan native/local-ai/install.sh, lalu tambahkan di sini.",
+    "reachable": "Terjangkau · {version}",
+    "unreachable": "Tidak terjangkau",
+    "keys": {
+      "file": "Kunci dari berkas",
+      "stored": "Kunci disimpan di Helena",
+      "none": "Tanpa kunci",
+      "invalid": "Berkas kunci tidak diizinkan"
+    },
+    "context": "Konteks {tokens} token",
+    "enabled": "Server aktif",
+    "check": "Periksa",
+    "remove": "Hapus server",
+    "removeConfirm": "Hapus {name}? Agen kembali ke model yang dikonfigurasi.",
+    "loaded": "Dimuat",
+    "notDownloaded": "Belum diunduh",
+    "kind": "Jenis",
+    "slug": "Nama pendek (tidak berubah)",
+    "name": "Nama",
+    "baseUrl": "Alamat API yang kompatibel dengan OpenAI",
+    "keySource": "Kunci",
+    "keyFile": "Berkas kunci (di bawah /etc/helena-ai)",
+    "key": "Kunci",
+    "cancel": "Batal",
+    "save": "Tambah"
+  },
+  "presets": {
+    "title": "Prasetel",
+    "description": "Menyalakan jenis pekerjaan sekaligus, sejauh evaluasinya lulus.",
+    "sparsam": "Hemat",
+    "ausgewogen": "Seimbang",
+    "qualitaet": "Kualitas",
+    "eigene": "Kustom",
+    "sparsamHint": "Semua yang lulus evaluasi berjalan lokal lebih dulu; paling menghemat batas langganan.",
+    "ausgewogenHint": "Embedding, panggilan bantu Hermes, ringkasan, triase, dan transkripsi secara lokal; pekerjaan utama agen tetap pada model yang dikonfigurasi.",
+    "qualitaetHint": "Hanya embedding dan transkripsi secara lokal; sisanya pada model yang dikonfigurasi.",
+    "eigeneHint": "Jenis pekerjaan seperti diatur di bawah."
+  },
+  "serverTypes": {
+    "lemonade": "Lemonade Server (GPU + NPU)",
+    "openaiCompatible": "Server kompatibel OpenAI"
+  },
+  "classes": {
+    "embeddings": {
+      "label": "Embedding (pencarian)",
+      "description": "Vektor untuk pencarian semantik di pengetahuan; saat server tidak terjangkau, pencarian menjawab dari teks lengkap."
+    },
+    "hermes-helpers": {
+      "label": "Panggilan bantu Hermes",
+      "description": "Kompresi konteks dan deskripsi gambar; jika model lokal gagal, model utama agen yang menjawab."
+    },
+    "summaries": {
+      "label": "Ringkasan dan digest",
+      "description": "Digest pembaruan, ringkasan run, aktivitas dan email, briefing."
+    },
+    "triage": {
+      "label": "Triase dan penugasan",
+      "description": "Memilah pekerjaan masuk: kategori, prioritas, agen mana."
+    },
+    "transcription": {
+      "label": "Transkripsi (dikte)",
+      "description": "Ucapan ke teks untuk dikte dan mode suara (Whisper di NPU)."
+    },
+    "routines": {
+      "label": "Agen rutin",
+      "description": "Rutin terjadwal mencoba model lokal utama lebih dulu, dengan model agen yang dikonfigurasi sebagai cadangan."
+    },
+    "reflection": {
+      "label": "Refleksi malam",
+      "description": "Apa yang dipelajari dari sebuah run, perawatan skill: kerja batch di malam hari pada model lokal besar."
+    },
+    "coordinator-triage": {
+      "label": "Pandangan pertama koordinator",
+      "description": "Tinjauan pertama tugas baru; semua pekerjaan nyata diteruskan ke model koordinator yang dikonfigurasi."
+    }
+  },
+  "updates": {
+    "label": "AI lokal",
+    "hint": "Perbarui lewat native/local-ai/install.sh, lalu evaluasi ulang."
+  },
+  "pickerMark": "lokal"
+}

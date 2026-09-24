@@ -58,6 +58,9 @@ export interface LocalModel {
   loaded: boolean;
   // The engine that serves it (`llamacpp`, `flm`, …), where the server names one.
   backend: string | null;
+  // Where its weights come from (`<org>/<repo>:<file>` on Hugging Face), where the server says;
+  // the update check looks for newer revisions there.
+  checkpoint?: string | null;
 }
 
 export interface ModelServerStatus {
@@ -284,6 +287,10 @@ export function normalizeLocalModel(value: unknown): LocalModel | null {
       typeof raw.backend === 'string' && raw.backend.trim()
         ? raw.backend.trim().slice(0, 40)
         : null,
+    checkpoint:
+      typeof raw.checkpoint === 'string' && /^[\w.-]+\/[\w.-]+(:[\w.,+-]+)?$/.test(raw.checkpoint)
+        ? raw.checkpoint
+        : null,
   };
 }
 
@@ -311,7 +318,7 @@ export interface RuntimeModelServer {
   models: { id: string; contextLength: number | null; vision: boolean }[];
 }
 
-export type HermesHelperTask = 'compression' | 'title_generation' | 'vision';
+export type HermesHelperTask = 'compression' | 'vision';
 
 // Local AI as the runner writes it into an agent's profile. Absent while local AI is off:
 // then nothing local is in any profile.
