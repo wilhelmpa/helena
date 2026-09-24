@@ -1,4 +1,4 @@
-import { DndContext } from '@dnd-kit/core';
+import DndContext from '@/components/common/dnd/DndContext';
 import { toast } from 'sonner';
 import { ChevronDown, Eye } from 'lucide-react';
 import { useTranslations } from 'next-intl';

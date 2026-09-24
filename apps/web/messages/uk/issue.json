@@ -34,7 +34,8 @@
     "groupCustom": "Власні поля",
     "empty": "Порожньо",
     "openInNewTab": "Відкрити в новій вкладці",
-    "area": "Область"
+    "area": "Область",
+    "invalidUrl": "Недійсна вебадреса (https://…)."
   },
   "menu": {
     "preview": "Попередній перегляд",
@@ -245,7 +246,8 @@
     "no": "Ні",
     "time": "Час",
     "startTime": "Початок",
-    "endTime": "Завершення"
+    "endTime": "Завершення",
+    "none": "Не вибрано"
   },
   "editor": {
     "descriptionPlaceholder": "Додайте опис…"

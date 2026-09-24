@@ -217,5 +217,40 @@
     "page": "Página {number}",
     "perPage": "por página",
     "range": "{first}-{last} de {total}"
+  },
+  "dnd": {
+    "pickedUp": "Item {id} pego.",
+    "movedOver": "O item {id} foi movido sobre {over}.",
+    "notOver": "O item {id} não está mais sobre uma área de soltura.",
+    "droppedOver": "O item {id} foi solto em {over}.",
+    "dropped": "O item {id} foi solto.",
+    "cancelled": "Arraste cancelado. O item {id} voltou ao lugar.",
+    "instructions": "Para pegar um item, pressione Espaço ou Enter. Ao arrastar, mova-o com as setas. Pressione Espaço ou Enter de novo para soltá-lo no novo lugar, ou Esc para cancelar."
+  },
+  "uploadLimits": {
+    "maxSize": "Até {mb} MB por arquivo.",
+    "accepted": "Aceitos: {types}.",
+    "tooLarge": "“{name}” excede o limite de {mb} MB",
+    "notAccepted": "“{name}” não é um tipo de arquivo aceito",
+    "types": {
+      "images": "imagens",
+      "video": "vídeos",
+      "audio": "áudio",
+      "pdf": "PDF",
+      "text": "texto",
+      "csv": "CSV",
+      "markdown": "Markdown",
+      "documents": "documentos",
+      "spreadsheets": "planilhas",
+      "presentations": "apresentações"
+    }
+  },
+  "apiErrors": {
+    "url_invalid": "Informe um endereço web válido (https://…).",
+    "url_https_required": "O endereço deve começar com https://.",
+    "url_credentials": "O endereço não pode conter usuário ou senha.",
+    "url_private": "O endereço aponta para uma rede privada ou local, o que não é permitido aqui.",
+    "url_unresolvable": "Não foi possível encontrar o nome do servidor deste endereço.",
+    "number_invalid": "Informe um número."
   }
 }

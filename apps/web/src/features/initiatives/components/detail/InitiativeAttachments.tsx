@@ -12,7 +12,8 @@ import { useFileDragZone } from '@/hooks/useFileDragZone';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useStorageSettingsQuery } from '@/services/storage.service';
 import { formatSize } from '@/utils/fileSize';
-import { attachmentAccept, attachmentError, attachmentLimitHint } from '@/utils/uploadLimits';
+import { attachmentAccept } from '@/utils/uploadLimits';
+import { useUploadLimitText } from '@/hooks/useUploadLimitText';
 import {
   useDeleteInitiativeAttachment,
   useInitiativeAttachmentsQuery,
@@ -31,6 +32,7 @@ export default function InitiativeAttachments({ initiativeId }: { initiativeId: 
   const upload = useUploadInitiativeAttachment(initiativeId);
   const remove = useDeleteInitiativeAttachment(initiativeId);
   const limits = useStorageSettingsQuery().data;
+  const uploadLimitText = useUploadLimitText();
   const [error, setError] = useState<string | null>(null);
   const [viewing, setViewing] = useState<Attachment | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -42,7 +44,7 @@ export default function InitiativeAttachments({ initiativeId }: { initiativeId: 
       for (const file of Array.from(files)) {
         // The api enforces the same limits; checking here avoids sending a file
         // that is going to be refused.
-        const reason = attachmentError(file, limits);
+        const reason = uploadLimitText.error(file, limits);
         if (reason) {
           setError(reason);
           continue;
@@ -68,7 +70,7 @@ export default function InitiativeAttachments({ initiativeId }: { initiativeId: 
             size="sm"
             className="h-7 gap-1.5"
             disabled={upload.isPending}
-            title={attachmentLimitHint(limits)}
+            title={uploadLimitText.hint(limits)}
             onClick={() => fileInput.current?.click()}
           >
             <Plus className="size-4" />

@@ -34,7 +34,8 @@
     "groupCustom": "Campos personalizados",
     "empty": "Vazio",
     "openInNewTab": "Abrir em nova aba",
-    "area": "Área"
+    "area": "Área",
+    "invalidUrl": "Endereço web inválido (https://…)."
   },
   "menu": {
     "preview": "Visualizar",
@@ -245,7 +246,8 @@
     "no": "Não",
     "time": "Hora",
     "startTime": "Hora de início",
-    "endTime": "Hora de término"
+    "endTime": "Hora de término",
+    "none": "Nenhuma seleção"
   },
   "editor": {
     "descriptionPlaceholder": "Adicionar descrição…"

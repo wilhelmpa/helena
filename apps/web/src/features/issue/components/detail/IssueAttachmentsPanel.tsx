@@ -20,7 +20,8 @@ import IssueAttachmentRelinkDialog from './IssueAttachmentRelinkDialog';
 import IssueAttachmentViewerActions from './IssueAttachmentViewerActions';
 import IssueSectionHeading from './IssueSectionHeading';
 import { useStorageSettingsQuery } from '@/services/storage.service';
-import { attachmentAccept, attachmentError, attachmentLimitHint } from '@/utils/uploadLimits';
+import { attachmentAccept } from '@/utils/uploadLimits';
+import { useUploadLimitText } from '@/hooks/useUploadLimitText';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from 'next-intl';
 
@@ -46,6 +47,7 @@ export default function IssueAttachmentsPanel({
   const replaceAttachment = useReplaceAttachment(issueId);
   const deleteAttachment = useDeleteAttachment(issueId);
   const limits = useStorageSettingsQuery().data;
+  const uploadLimitText = useUploadLimitText();
   const [error, setError] = useState<string | null>(null);
   const [annotating, setAnnotating] = useState<Attachment | null>(null);
   const [viewing, setViewing] = useState<Attachment | null>(null);
@@ -71,7 +73,7 @@ export default function IssueAttachmentsPanel({
       for (const file of Array.from(files)) {
         // The api enforces the same limits; checking here avoids sending a file
         // that is going to be refused.
-        const reason = attachmentError(file, limits);
+        const reason = uploadLimitText.error(file, limits);
         if (reason) {
           setError(reason);
           continue;
@@ -104,7 +106,7 @@ export default function IssueAttachmentsPanel({
             size="sm"
             className="h-7 gap-1.5"
             disabled={uploading}
-            title={attachmentLimitHint(limits)}
+            title={uploadLimitText.hint(limits)}
             onClick={() => fileInput.current?.click()}
           >
             <Plus className="size-4" />

@@ -34,7 +34,8 @@
     "groupCustom": "Champs personnalisés",
     "empty": "Vide",
     "openInNewTab": "Ouvrir dans un nouvel onglet",
-    "area": "Domaine"
+    "area": "Domaine",
+    "invalidUrl": "Adresse web non valide (https://…)."
   },
   "menu": {
     "preview": "Aperçu",
@@ -245,7 +246,8 @@
     "no": "Non",
     "time": "Heure",
     "startTime": "Heure de début",
-    "endTime": "Heure de fin"
+    "endTime": "Heure de fin",
+    "none": "Aucune sélection"
   },
   "editor": {
     "descriptionPlaceholder": "Ajouter une description…"

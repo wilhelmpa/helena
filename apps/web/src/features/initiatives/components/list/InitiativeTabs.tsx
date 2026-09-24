@@ -1,4 +1,5 @@
-import { closestCenter, DndContext, type DragEndEvent } from '@dnd-kit/core';
+import { closestCenter, type DragEndEvent } from '@dnd-kit/core';
+import DndContext from '@/components/common/dnd/DndContext';
 import { horizontalListSortingStrategy, SortableContext, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useStripSortSensors } from '@/lib/dnd';

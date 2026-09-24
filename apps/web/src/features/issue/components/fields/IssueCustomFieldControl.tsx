@@ -19,7 +19,7 @@ import InlineUrlField from './InlineUrlField';
 import InlineTextField from './InlineTextField';
 import { useTranslations } from 'next-intl';
 
-// Radix Select forbids an empty-string item value, so "(none)" options use this
+// Radix Select forbids an empty-string item value, so the "no choice" option uses this
 // sentinel and map back to '' / null on change.
 const NONE = '__none__';
 
@@ -95,7 +95,7 @@ export default function IssueCustomFieldControl({
         assignees={assignees}
         scope={def.memberScope ?? 'all'}
         value={(current?.value as string | null) ?? null}
-        placeholder={def.name}
+        placeholder={tFields('empty')}
         onChange={(userId) => onChange({ value: userId })}
       />
     );
@@ -164,7 +164,7 @@ export default function IssueCustomFieldControl({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={NONE}>(none)</SelectItem>
+          <SelectItem value={NONE}>{t('none')}</SelectItem>
           {def.options.map((o) => (
             <SelectItem key={o.id} value={String(o.id)}>
               {o.value}

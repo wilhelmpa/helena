@@ -34,7 +34,8 @@
     "groupCustom": "Custom fields",
     "empty": "Empty",
     "openInNewTab": "Open in new tab",
-    "area": "Area"
+    "area": "Area",
+    "invalidUrl": "Not a valid web address (https://…)."
   },
   "menu": {
     "preview": "Preview",
@@ -245,7 +246,8 @@
     "no": "No",
     "time": "Time",
     "startTime": "Start time",
-    "endTime": "End time"
+    "endTime": "End time",
+    "none": "No selection"
   },
   "editor": {
     "descriptionPlaceholder": "Add description…"

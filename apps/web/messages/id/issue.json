@@ -34,7 +34,8 @@
     "groupCustom": "Bidang kustom",
     "empty": "Kosong",
     "openInNewTab": "Buka di tab baru",
-    "area": "Area"
+    "area": "Area",
+    "invalidUrl": "Bukan alamat web yang valid (https://…)."
   },
   "menu": {
     "preview": "Pratinjau",
@@ -245,7 +246,8 @@
     "no": "Tidak",
     "time": "Waktu",
     "startTime": "Waktu mulai",
-    "endTime": "Waktu selesai"
+    "endTime": "Waktu selesai",
+    "none": "Tidak ada pilihan"
   },
   "editor": {
     "descriptionPlaceholder": "Tambah deskripsi…"

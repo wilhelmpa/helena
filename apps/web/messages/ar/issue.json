@@ -34,7 +34,8 @@
     "groupCustom": "حقول مخصصة",
     "empty": "فارغ",
     "openInNewTab": "فتح في تبويب جديد",
-    "area": "المجال"
+    "area": "المجال",
+    "invalidUrl": "ليس عنوان ويب صالحًا (https://…)."
   },
   "menu": {
     "preview": "معاينة",
@@ -245,7 +246,8 @@
     "no": "لا",
     "time": "الوقت",
     "startTime": "وقت البدء",
-    "endTime": "وقت الانتهاء"
+    "endTime": "وقت الانتهاء",
+    "none": "بلا اختيار"
   },
   "editor": {
     "descriptionPlaceholder": "إضافة وصف…"

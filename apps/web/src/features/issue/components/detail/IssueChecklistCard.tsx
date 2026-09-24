@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core';
+import { closestCenter, type DragEndEvent } from '@dnd-kit/core';
+import DndContext from '@/components/common/dnd/DndContext';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Plus } from 'lucide-react';
@@ -28,13 +29,16 @@ export default function IssueChecklistCard({
   issueId,
   checklist,
   canEdit,
+  startAdding = false,
 }: {
   issueId: number;
   checklist: Checklist;
   canEdit: boolean;
+  // A checklist that was just created opens with its entry field focused.
+  startAdding?: boolean;
 }) {
   const t = useTranslations('issue.checklists');
-  const [adding, setAdding] = useState(false);
+  const [adding, setAdding] = useState(startAdding);
   const sensors = useDndSensors();
   const renameChecklist = useRenameChecklist();
   const deleteChecklist = useDeleteChecklist();

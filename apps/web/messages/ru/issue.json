@@ -34,7 +34,8 @@
     "groupCustom": "Свои поля",
     "empty": "Пусто",
     "openInNewTab": "Открыть в новой вкладке",
-    "area": "Область"
+    "area": "Область",
+    "invalidUrl": "Некорректный веб-адрес (https://…)."
   },
   "menu": {
     "preview": "Предпросмотр",
@@ -245,7 +246,8 @@
     "no": "Нет",
     "time": "Время",
     "startTime": "Начало",
-    "endTime": "Окончание"
+    "endTime": "Окончание",
+    "none": "Не выбрано"
   },
   "editor": {
     "descriptionPlaceholder": "Добавьте описание…"

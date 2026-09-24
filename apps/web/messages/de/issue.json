@@ -34,7 +34,8 @@
     "groupCustom": "Benutzerdefinierte Felder",
     "empty": "Leer",
     "openInNewTab": "In neuem Tab öffnen",
-    "area": "Bereich"
+    "area": "Bereich",
+    "invalidUrl": "Keine gültige Webadresse (https://…)."
   },
   "menu": {
     "preview": "Vorschau",
@@ -245,7 +246,8 @@
     "no": "Nein",
     "time": "Uhrzeit",
     "startTime": "Startzeit",
-    "endTime": "Endzeit"
+    "endTime": "Endzeit",
+    "none": "Keine Auswahl"
   },
   "editor": {
     "descriptionPlaceholder": "Beschreibung hinzufügen…"
