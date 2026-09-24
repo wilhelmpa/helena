@@ -133,6 +133,14 @@ if changed deployment/volition-stack/integration/scripts/volition-hermes-runner;
   restart+=(volition-hermes-runner.service)
 fi
 
+# Claude Code, Codex and the ACP adapters are installed by install-cli-runtimes.sh, pinned.
+# A changed pin is a download, which needs the owner's OK: the deploy only says so.
+if changed deployment/volition-stack/native/runtimes; then
+  echo "NOTE: the pinned CLI runtimes changed. After the owner's OK run:"
+  echo "  sudo $live/deployment/volition-stack/native/runtimes/install-cli-runtimes.sh plan"
+  echo "  sudo $live/deployment/volition-stack/native/runtimes/install-cli-runtimes.sh install"
+fi
+
 if changed deployment/volition-stack/optional/mastra-studio; then
   echo "building Mastra"
   as_owner bash -c "cd '$live/deployment/volition-stack/optional/mastra-studio' && bun install --frozen-lockfile >/dev/null && bun run build >/dev/null"
