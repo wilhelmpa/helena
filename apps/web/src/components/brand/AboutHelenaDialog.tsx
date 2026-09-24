@@ -2,23 +2,20 @@
 
 import { useTranslations } from 'next-intl';
 import { ExternalLink } from 'lucide-react';
-import HelenaMark from '@/components/brand/HelenaMark';
-import HelenaWordmark from '@/components/brand/HelenaWordmark';
+import BrandHero from '@/components/brand/BrandHero';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
-import { APP_NAME, UPSTREAM_URL } from '@/utils/app';
+import { UPSTREAM_URL } from '@/utils/app';
 
 // "Über Helena", opened from the account menu: the brand on Hermes' ink as on the
-// sign-in panel, what Helena is, what it runs on, and the fork attribution the AGPL asks
-// for (NOTICE, README and this dialog carry it). No version: the owner wants none shown.
+// sign-in panel (BrandHero), what Helena is, what it runs on, and the fork attribution
+// the AGPL asks for (NOTICE, README and this dialog carry it). No version: the owner
+// wants none shown.
 export default function AboutHelenaDialog({ onClose }: { onClose: () => void }) {
   const t = useTranslations('nav');
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-md [&>[data-slot=dialog-close]]:text-helena-ink-muted [&>[data-slot=dialog-close]]:hover:bg-white/10 [&>[data-slot=dialog-close]]:hover:text-helena-ink-foreground">
-        <div className="helena-on-ink flex flex-col items-center gap-5 bg-helena-ink px-6 pt-10 pb-8">
-          <HelenaMark className="size-12" />
-          <HelenaWordmark size="full" label={APP_NAME} className="max-w-full" />
-        </div>
+        <BrandHero className="px-6 pt-10 pb-8" />
         <div className="flex flex-col gap-2 p-4">
           <DialogTitle>{t('about')}</DialogTitle>
           <DialogDescription className="text-sm text-foreground">
