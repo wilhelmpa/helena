@@ -278,8 +278,11 @@ async function handleRuntimeRequest(
       // The Hermes installation is the runner's own, isolated agents or not.
       result = await runtimeUpdate(request);
     } else if (request.op === 'limits.read' && limits && !isolated) {
-      // The runner's prober: the agents it serves share one probe per login.
-      result = { snapshots: await limitProber.read(limits, { force: request.force === true }) };
+      // The runner's prober: the agents it serves share one probe per login. Numbers only;
+      // the runner's redaction still runs over them, as over every answer.
+      result = await runnerRedactor(config).value({
+        snapshots: await limitProber.read(limits, { force: request.force === true }),
+      });
     } else if (request.op === 'limits.read' && limits && isolated) {
       // The helper does not know the agent's providers, and its commands start through the
       // agent's gate like every other command of it.
