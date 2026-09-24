@@ -44,7 +44,9 @@
       "field": "Cambio de campo",
       "schedule": "Tarea programada",
       "manual": "Tarea manual",
-      "approval": "Decisión de aprobación"
+      "approval": "Decisión de aprobación",
+      "workspace": "Tarea del espacio de trabajo",
+      "digest": "Resumen"
     }
   },
   "sessions": {
@@ -237,6 +239,7 @@
     "usageTitle": "Consumo",
     "usageDescription": "Lo que consumieron los agentes de un equipo, según el registro de tokens de Helena, con el coste según la tabla de precios de los modelos.",
     "team": "Equipo",
-    "noTeam": "Todavía no hay equipo."
+    "noTeam": "Todavía no hay equipo.",
+    "openUpdates": "Abrir en Actualizaciones"
   }
 }

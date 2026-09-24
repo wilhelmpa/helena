@@ -1,12 +1,107 @@
 {
-  "updateAvailable": "Update available",
-  "releaseHistory": "Release history",
-  "running": "You’re running {current}.",
-  "badgeRunning": "Running",
-  "badgeNew": "New",
-  "check": "Check for updates",
-  "checking": "Checking",
-  "lastChecked": "Last checked",
-  "allReleases": "All releases",
-  "noNotes": "This release has no notes."
+  "title": "Updates",
+  "check": "Check now",
+  "checking": "Checking …",
+  "checkedAt": "Checked {time} ago",
+  "neverChecked": "Not checked yet",
+  "nextRun": "Next check {time}",
+  "jobFailed": "The last check failed: {error}",
+  "allCurrent": "Everything is up to date",
+  "count": "{count, plural, one {# update} other {# updates}}",
+  "securityCount": "{count, plural, one {# security update} other {# security updates}}",
+  "open": "Available",
+  "current": "Up to date",
+  "history": "History",
+  "noHistory": "No update started yet.",
+  "helperMissing": "The update helper is not installed: Debian packages and tool versions are missing, and only Hermes can be updated.",
+  "helperError": "The update helper did not answer: {error}",
+  "sourceFailed": "{source}: {error}",
+  "badges": {
+    "security": "Security",
+    "breaking": "Breaking changes"
+  },
+  "risk": {
+    "low": "Low risk",
+    "medium": "Medium risk",
+    "high": "High risk"
+  },
+  "summary": {
+    "pending": "Summarizing …",
+    "none": "No summary yet.",
+    "failed": "Summary failed: {error}",
+    "by": "Summarized with {model}",
+    "run": "View run"
+  },
+  "notes": "Release notes",
+  "source": "Source",
+  "apply": "Update",
+  "applyGroup": "Install all ({count})",
+  "applySecurity": "Install security updates ({count})",
+  "updating": "Updating …",
+  "dialog": {
+    "title": "Update {name}?",
+    "titleGroup": "{count, plural, one {Update # package?} other {Update # packages?}}",
+    "download": "Helena downloads the new version from the vendor and installs it ({source}).",
+    "downloadApt": "apt downloads the packages from the Debian sources and installs them. Helena backs up the database first.",
+    "downloadHermes": "The Hermes helper fetches the new state from the Hermes repository and reinstalls it.",
+    "wayBack": "Way back: the current version is kept and can be restored.",
+    "wayBackApt": "Way back: apt has no automatic one. The log names the command for the old versions afterwards.",
+    "wayBackHermes": "Way back: if anything fails, the helper restores the previous state itself.",
+    "approval": "“Update now” approves this download and the installation.",
+    "confirm": "Update now"
+  },
+  "action": {
+    "running": "Running",
+    "done": "Done",
+    "failed": "Failed",
+    "log": "Log",
+    "backup": "Database backed up: {path}",
+    "rollback": "Way back: {command}",
+    "services": "Services afterwards",
+    "failedUnits": "Failed services: {units}",
+    "reboot": "A restart is recommended.",
+    "started": "Update started"
+  },
+  "sources": {
+    "hermes": "Hermes",
+    "cliRuntimes": "Agent runtimes",
+    "apt": "Debian packages",
+    "hostTools": "Tools",
+    "helena": "Helena"
+  },
+  "hints": {
+    "manual": "No installer in Helena: updated by hand.",
+    "notInstalled": "Not installed.",
+    "deploy": "Updated with the deploy.",
+    "hermesOffline": "No Hermes runner reachable: as of the last check."
+  },
+  "settings": {
+    "title": "Settings",
+    "schedule": "Check automatically",
+    "scheduleDescription": "Helena looks for new versions on this schedule.",
+    "cron": "Schedule",
+    "timezone": "Time zone",
+    "summarize": "Summarize with AI",
+    "summarizeDescription": "A small model summarizes new release notes and rates the risk.",
+    "agent": "Agent",
+    "model": "Model",
+    "reasoning": "Reasoning",
+    "automatic": "Automatic",
+    "automaticAgent": "Automatic ({name})",
+    "automaticModel": "Automatic ({model})",
+    "agentModel": "The agent’s model",
+    "noAgent": "No Hermes agent",
+    "claudeChannel": "Claude Code channel",
+    "channels": {
+      "latest": "Latest",
+      "stable": "Stable"
+    },
+    "save": "Save",
+    "saved": "Saved"
+  },
+  "home": {
+    "more": "All updates",
+    "empty": "Everything is up to date"
+  },
+  "checkedJustNow": "Checked just now"
 }

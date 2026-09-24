@@ -419,6 +419,7 @@ describe('Hermes runtime policy synchronizer', () => {
       'profile-drift',
       'rewrite-profile',
       'session-facts',
+      'digest-runs',
       // What Helena can ask the runtime through the runner (readers/).
       'sessions',
       'session-search',

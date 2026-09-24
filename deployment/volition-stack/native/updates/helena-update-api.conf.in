@@ -1,0 +1,7 @@
+# Installed by deployment/volition-stack/native/updates/install.sh: the API hands the update
+# center's requests to the root helper through its spool, and takes the database dump before
+# a Debian upgrade into the backups folder.
+[Service]
+Environment=HELENA_UPDATE_SPOOL=@SPOOL@
+Environment=HELENA_UPDATE_BACKUP_DIR=@BACKUPS@
+ReadWritePaths=@SPOOL@/tmp @SPOOL@/requests
