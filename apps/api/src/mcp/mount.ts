@@ -1,6 +1,7 @@
 import { t } from 'elysia';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
-import { auth, getSessionFromHeaders, withMcpAuth } from '@repo/auth';
+import { auth, getSessionFromHeaders, RateLimitedError, withMcpAuth } from '@repo/auth';
+import { tooManyRequests } from '../shared/rate-limit';
 import { buildMcpServer } from './server';
 import type { McpApp } from './types';
 import type { McpCredential } from './credential';
@@ -71,7 +72,13 @@ export function mountMcp(app: any): void {
       if (apiKey) {
         const headers = new Headers(request.headers);
         headers.set('x-api-key', apiKey);
-        const session = await getSessionFromHeaders(headers);
+        let session;
+        try {
+          session = await getSessionFromHeaders(headers);
+        } catch (error) {
+          if (error instanceof RateLimitedError) return tooManyRequests(error);
+          throw error;
+        }
         // A deactivated account is refused here too, the way shared/auth-context.ts
         // refuses it for every planner route. Deactivation arrives over SCIM, after
         // the key was issued.

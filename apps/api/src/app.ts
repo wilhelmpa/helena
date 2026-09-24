@@ -1,6 +1,7 @@
 import {
   auth,
   getSessionFromHeaders,
+  RateLimitedError,
   oAuthDiscoveryMetadata,
   oAuthProtectedResourceMetadata,
   trustedOrigins,
@@ -14,6 +15,7 @@ import { cors } from '@elysiajs/cors';
 import { swagger } from '@elysiajs/swagger';
 import { Elysia } from 'elysia';
 import { planner } from './planner';
+import { tooManyRequests } from './shared/rate-limit';
 import { mountMcp } from './mcp/mount';
 import { setMcpApp } from './mcp/app-ref';
 import { gitWebhookRoutes } from './modules/git/webhook';
@@ -75,6 +77,7 @@ export const app = new Elysia()
         if (session) await checkAgentSocket(request.headers, session.user.id);
       }
     } catch (error) {
+      if (error instanceof RateLimitedError) return tooManyRequests(error);
       const status = error instanceof HttpError ? error.status : 403;
       return Response.json({ error: 'Not available to this agent' }, { status });
     }

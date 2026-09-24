@@ -1,3 +1,4 @@
+import { RateLimitedError } from '@repo/auth';
 import { projectTemplateRoutes } from './modules/project-templates';
 import { controlPlaneWorkflowRoutes } from './modules/control-plane-workflows';
 import { routineRoutes } from './modules/routines';
@@ -81,6 +82,12 @@ import { mailThreadRoutes } from './modules/mail/threads';
 export const planner = new Elysia({ name: 'planner' })
   .use(authContext)
   .onError({ as: 'global' }, ({ code, error, set }) => {
+    // An API key over its request limit: 429 with the seconds to wait.
+    if (error instanceof RateLimitedError) {
+      set.status = 429;
+      set.headers['retry-after'] = String(error.retryAfterSeconds);
+      return { error: 'Too many requests', code: 'RATE_LIMITED' };
+    }
     if (error instanceof HttpError) {
       set.status = error.status;
       return error.code ? { error: error.message, code: error.code } : { error: error.message };

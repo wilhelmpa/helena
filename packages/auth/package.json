@@ -9,7 +9,8 @@
   "scripts": {
     "auth:generate": "dotenv -e ../../.env -- bunx @better-auth/cli@1.6.27 generate --config ./src/index.ts --output ../db/src/schema/auth.ts --yes",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
   },
   "dependencies": {
     "@better-auth/api-key": "1.6.27",
@@ -18,7 +19,8 @@
     "@repo/db": "workspace:*",
     "@repo/mailer": "workspace:*",
     "better-auth": "1.6.27",
-    "drizzle-orm": "^0.45.2"
+    "drizzle-orm": "^0.45.2",
+    "rate-limiter-flexible": "^11.2.1"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
