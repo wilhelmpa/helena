@@ -1,0 +1,55 @@
+{
+  "states": {
+    "backlog": "Backlog",
+    "todo": "Zu erledigen",
+    "inProgress": "In Arbeit",
+    "review": "In Prüfung",
+    "done": "Erledigt",
+    "canceled": "Abgebrochen"
+  },
+  "issueTypes": {
+    "task": "Aufgabe",
+    "feature": "Feature",
+    "bug": "Bug",
+    "techDebt": "Technische Schulden",
+    "research": "Recherche",
+    "epic": "Epic",
+    "feedback": "Feedback",
+    "article": "Artikel",
+    "video": "Video",
+    "socialPost": "Social-Media-Beitrag",
+    "idea": "Idee",
+    "review": "Review",
+    "campaign": "Kampagne",
+    "landing": "Landingpage",
+    "asset": "Asset",
+    "email": "E-Mail",
+    "screen": "Screen",
+    "component": "Komponente",
+    "lead": "Lead",
+    "deal": "Deal",
+    "followUp": "Nachfassen",
+    "account": "Kunde",
+    "request": "Anfrage",
+    "process": "Prozess",
+    "purchase": "Einkauf",
+    "maintenance": "Wartung",
+    "incident": "Störung",
+    "question": "Frage",
+    "change": "Änderung",
+    "candidate": "Bewerbung",
+    "onboarding": "Onboarding",
+    "policy": "Richtlinie"
+  },
+  "views": {
+    "kanban": "Board",
+    "list": "Liste",
+    "allTasks": "Alle Aufgaben"
+  },
+  "coordinator": "Hermes-Koordinator {key}",
+  "teamRole": "Mitglied",
+  "blocked": {
+    "label": "Blockiert",
+    "comment": "Blockiert, braucht eine Antwort:"
+  }
+}

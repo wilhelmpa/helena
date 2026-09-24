@@ -13,6 +13,7 @@ import {
   type WorkflowStepType,
 } from '../../sdk';
 import { engineWaitSeconds } from '../../dbos';
+import { findState } from '@helena/locales/defaults';
 
 // The agent team of a task. The coordinator plans the work as assignments for the
 // project's specialists (or the task goes straight to the one specialist that fits),
@@ -643,7 +644,9 @@ async function synchronize(
   const target =
     state === 'done'
       ? columns.find((column) => column.stateType === 'completed')
-      : columns.find((column) => column.name.trim().toLowerCase() === 'review');
+      : // The review state, under any language's default name when the project has no
+        // state called Review.
+        findState(columns, 'Review');
   if (!target)
     throw new StepFailure(`Project has no ${state === 'done' ? 'completed' : 'Review'} state`);
   const name = state === 'done' ? 'Result to the task (Done)' : 'Result to the task (Review)';

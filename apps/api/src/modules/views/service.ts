@@ -8,7 +8,15 @@ import {
   projectViewFolder,
 } from '@repo/db';
 import { and, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
+import {
+  DEFAULT_VIEWS,
+  allTasksSuffixes,
+  defaultNames,
+  defaultViewNames,
+} from '@helena/locales/defaults';
 import { HttpError, iso, num, rethrowDuplicate } from '#shared/lib';
+import type { Locale } from '#modules/user-preferences/locale';
+import { projectLocale } from '#modules/user-preferences/service';
 import { areaFolderSlug, assertAreaFolder, uniqueAreaFolder } from './area-folder';
 
 export interface ViewRow {
@@ -58,11 +66,6 @@ export interface ViewFolderRow {
   position: number;
   createdAt: string;
 }
-
-export const DEFAULT_PROJECT_VIEWS = [
-  { name: 'Kanban', layout: 'kanban' },
-  { name: 'List', layout: 'table' },
-] as const;
 
 function mapFolder(row: typeof projectViewFolder.$inferSelect): ViewFolderRow {
   return {
@@ -418,9 +421,30 @@ function withLayout(display: unknown, layout: string): Record<string, unknown> {
   };
 }
 
+const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// Recognizes a project's default view under its name in any language, including the
+// bracketed form it gets beside a filtered view of the plain name ("List (All tasks)",
+// "Liste (Alle Aufgaben 2)").
+function defaultViewMatcher(key: (typeof DEFAULT_VIEWS)[number]['key']) {
+  const names = defaultViewNames(key);
+  const plain = new Set(names.map((name) => name.toLowerCase()));
+  const generated = new RegExp(
+    `^(?:${names.map(escapeRegExp).join('|')}) \\((?:${allTasksSuffixes()
+      .map(escapeRegExp)
+      .join('|')})(?: [2-9][0-9]*)?\\)$`,
+    'i',
+  );
+  return (name: string) => plain.has(name.toLowerCase()) || generated.test(name);
+}
+
+// Makes sure the project has its default views (the board and the list of all tasks). A
+// view that already is one, in whatever language it was named, is kept; a missing one is
+// created in `locale`, or in the project's language when the caller has none.
 export async function ensureDefaultProjectViews(
   tx: Transaction,
   projectId: number,
+  locale?: Locale,
 ): Promise<{ ids: number[]; changed: boolean }> {
   const [lockedProject] = await tx
     .select({ id: project.id })
@@ -436,19 +460,13 @@ export async function ensureDefaultProjectViews(
   const ids: number[] = [];
   let changed = false;
   let nextPosition = current.reduce((max, view) => Math.max(max, Number(view.position)), -1) + 1;
+  // The project's language is looked up only when a view is named.
+  let language = locale;
+  const names = async () => defaultNames((language ??= await projectLocale(projectId, tx))).views;
 
-  for (const expected of DEFAULT_PROJECT_VIEWS) {
-    const fallbackName = `${expected.name} (All tasks)`;
-    const generatedName = new RegExp(
-      `^${expected.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} \\(All tasks(?: [2-9][0-9]*)?\\)$`,
-      'i',
-    );
-    const named = current.find(
-      (view) =>
-        (view.name.toLowerCase() === expected.name.toLowerCase() ||
-          generatedName.test(view.name)) &&
-        isUnfiltered(view.filters),
-    );
+  for (const expected of DEFAULT_VIEWS) {
+    const isDefault = defaultViewMatcher(expected.key);
+    const named = current.find((view) => isDefault(view.name) && isUnfiltered(view.filters));
     const projectBoard =
       expected.layout === 'kanban'
         ? current.find(
@@ -458,7 +476,7 @@ export async function ensureDefaultProjectViews(
     const existing = named ?? projectBoard;
     if (existing) {
       const set: Partial<typeof projectView.$inferInsert> = {};
-      if (projectBoard?.id === existing.id && !named) set.name = expected.name;
+      if (projectBoard?.id === existing.id && !named) set.name = (await names())[expected.key];
       if (explicitLayout(existing.display) !== expected.layout) {
         set.display = withLayout(existing.display, expected.layout);
       }
@@ -471,11 +489,12 @@ export async function ensureDefaultProjectViews(
       ids.push(existing.id);
       continue;
     }
-    const names = new Set(current.map((view) => view.name.toLowerCase()));
-    let name: string = expected.name;
-    if (names.has(name.toLowerCase())) name = fallbackName;
+    const { [expected.key]: base, allTasks } = await names();
+    const taken = new Set(current.map((view) => view.name.toLowerCase()));
+    let name = base;
+    if (taken.has(name.toLowerCase())) name = `${base} (${allTasks})`;
     let suffix = 2;
-    while (names.has(name.toLowerCase())) name = `${expected.name} (All tasks ${suffix++})`;
+    while (taken.has(name.toLowerCase())) name = `${base} (${allTasks} ${suffix++})`;
     const [created] = await tx
       .insert(projectView)
       .values({

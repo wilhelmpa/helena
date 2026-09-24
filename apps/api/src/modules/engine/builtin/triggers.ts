@@ -1,5 +1,6 @@
 import { db, label, projectColumn } from '@repo/db';
 import { eq, inArray } from 'drizzle-orm';
+import { findState } from '@helena/locales/defaults';
 import { minCronIntervalSeconds } from '#modules/routines/cron';
 import type { DomainEvent, TriggerDefinition, WorkflowTriggerType } from '../sdk';
 
@@ -67,10 +68,18 @@ const statusChanged: WorkflowTriggerType<Trigger<{ to: string | null }>> = {
     if (id === null || typeof columnId !== 'number') return null;
     if (!trigger.to) return { taskId: id };
     const [column] = await db
-      .select({ name: projectColumn.name })
+      .select({ name: projectColumn.name, projectId: projectColumn.projectId })
       .from(projectColumn)
       .where(eq(projectColumn.id, columnId));
-    return column && same(column.name, trigger.to) ? { taskId: id } : null;
+    if (!column) return null;
+    if (same(column.name, trigger.to)) return { taskId: id };
+    // "Review" also means a project's "In Prüfung" (findState), unless the project has a
+    // state called Review of its own.
+    const states = await db
+      .select({ id: projectColumn.id, name: projectColumn.name })
+      .from(projectColumn)
+      .where(eq(projectColumn.projectId, column.projectId));
+    return findState(states, trigger.to)?.id === columnId ? { taskId: id } : null;
   },
 };
 

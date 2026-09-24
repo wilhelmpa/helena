@@ -147,6 +147,8 @@ export const createProject = (input: {
   key: string;
   name: string;
   description?: string;
+  // The language the default states, issue types and views are named in.
+  locale?: string;
   preset?: string;
   templateId?: number;
 }) => request<Project>('/projects', { method: 'POST', body: JSON.stringify(input) });

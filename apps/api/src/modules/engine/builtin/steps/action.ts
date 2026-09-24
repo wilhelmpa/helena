@@ -25,6 +25,7 @@ import {
   type StepExecution,
   type WorkflowStepType,
 } from '../../sdk';
+import { findState } from '@helena/locales/defaults';
 
 // A task action: sets the status, labels or assignee of the run's task, adds a comment
 // or creates a subtask, as the system actor `Workflow`. A change a workflow makes starts
@@ -148,7 +149,7 @@ async function applyAction(
     }).then(() => summary);
   switch (action.kind) {
     case 'set_status': {
-      const column = projectData.statuses.find((status) => same(status.name, action.status));
+      const column = findState(projectData.statuses, action.status);
       if (!column) throw new StepFailure(`The project has no status ${action.status}`);
       if (task.columnId !== column.id)
         await updateIssue(task.id, { columnId: column.id }, WORKFLOW_ACTOR);
