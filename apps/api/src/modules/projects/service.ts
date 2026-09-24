@@ -33,6 +33,7 @@ import { getProjectSetting, setProjectSetting } from '#shared/project-settings';
 import { PROJECT_FEATURES, featureLabel, type ProjectFeature } from '#shared/features';
 import { getLimits } from '#shared/limits';
 import { HOME_AGENT_USERNAME, isHomeAgent } from '#modules/agents/core/home-agent';
+import { enableProjectBrowser } from '#modules/agents/mcp-servers/service';
 import { getProjectDefaults } from '#modules/settings/service';
 import { dropUnusedTeamMembership } from '#modules/scim/reconcile';
 import { deleteObjects } from '#shared/s3';
@@ -490,6 +491,8 @@ export async function createHermesProjectCoordinator(
     role: 'coordinator',
     reportsToAgentId: home?.id ?? null,
   });
+  // Coordinators browse in their project's browser from the start, as the existing ones do.
+  await enableProjectBrowser(input.teamId, agent.id, tx);
   await tx.insert(teamMember).values({ teamId: input.teamId, userId, role: 'agent' });
   await tx.insert(projectMember).values({
     projectId: input.projectId,

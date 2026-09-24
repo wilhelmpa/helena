@@ -296,7 +296,13 @@ export async function deleteMcpServer(id: number, teamId: number): Promise<boole
 // aus" — no agent gets it enabled by this function).
 export const BROWSER_GATEWAY_SHIM_PATH = '/usr/local/libexec/helena-browser-mcp';
 
-export async function ensureBuiltinMcpServers(teamId: number): Promise<void> {
+// db or a transaction: what the built-in servers are written through.
+type McpExecutor = Pick<typeof db, 'insert' | 'select'>;
+
+export async function ensureBuiltinMcpServers(
+  teamId: number,
+  executor: McpExecutor = db,
+): Promise<void> {
   const seeds: Array<{
     name: string;
     description: string;
@@ -326,13 +332,39 @@ export async function ensureBuiltinMcpServers(teamId: number): Promise<void> {
     },
   ];
   for (const seed of seeds) {
-    await db
+    await executor
       .insert(agentMcpServer)
       .values({ teamId, ...seed, builtin: true })
       .onConflictDoUpdate({
         target: [agentMcpServer.teamId, agentMcpServer.name],
         set: { description: seed.description, command: seed.command, builtin: true },
       });
+  }
+}
+
+// The project browser, switched on for an agent the design turns it on for by default: the
+// Home agent and every project coordinator (volition-design-browser-gateway.md §3). It can be
+// switched off per agent under Agent → Tools like any other server.
+export async function enableProjectBrowser(
+  teamId: number,
+  agentId: number,
+  executor: McpExecutor = db,
+): Promise<void> {
+  await ensureBuiltinMcpServers(teamId, executor);
+  const [gateway] = await executor
+    .select({ id: agentMcpServer.id })
+    .from(agentMcpServer)
+    .where(
+      and(
+        eq(agentMcpServer.teamId, teamId),
+        eq(agentMcpServer.name, BROWSER_GATEWAY_MCP_SERVER_NAME),
+      ),
+    );
+  if (gateway) {
+    await executor
+      .insert(agentMcpServerLink)
+      .values({ agentId, mcpServerId: gateway.id })
+      .onConflictDoNothing();
   }
 }
 

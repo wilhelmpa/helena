@@ -23,6 +23,7 @@ import {
   isHermesProjectCoordinatorUsername,
 } from '#modules/projects/service';
 import { getDefaultRoleId } from '#modules/roles/service';
+import { enableProjectBrowser } from '#modules/agents/mcp-servers/service';
 
 export type HomeAgentBootstrapResult =
   { status: 'pending' } | { status: 'ready'; agentId: number; apiKey: string };
@@ -235,6 +236,7 @@ export async function bootstrapHomeAgent(): Promise<HomeAgentBootstrapResult> {
   });
 
   if (!created.apiKey) throw new Error('Home agent creation did not return an external key');
+  await enableProjectBrowser(owner.teamId, created.agent.id);
   // Coordinators of projects created before the Home agent report to nobody yet.
   await db
     .update(organizationAgentAssignment)
