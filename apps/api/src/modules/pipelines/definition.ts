@@ -2,6 +2,7 @@ import { maxTurnsLimit, runBudgetSecondsLimit } from '#modules/agents/model';
 import { registerBuiltins } from '#modules/engine/builtin/index';
 import { stepType, triggerType } from '#modules/engine/registry';
 import type {
+  ActionCategory,
   DefinitionIssue,
   FieldReader,
   ReadScope,
@@ -105,6 +106,9 @@ export interface AgentStep extends StepBase {
 
 export interface ApprovalStep extends StepBase {
   type: 'approval';
+  // What the step lets through, for the policy engine (autopilot) to decide whether a
+  // person has to approve it. 'publish' when left out.
+  category?: ActionCategory;
   message: string;
   onReject: { action: 'end' } | { action: 'goto'; stepId: string; maxLoops: number };
 }

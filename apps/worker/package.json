@@ -11,6 +11,7 @@
     "test": "bun test --env-file=../../.env.test"
   },
   "dependencies": {
+    "@dbos-inc/dbos-sdk": "5.0.2",
     "@helena/loop": "workspace:*",
     "@repo/crypto": "workspace:*",
     "@repo/db": "workspace:*",

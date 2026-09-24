@@ -13,13 +13,18 @@ let running = false;
 // The name every Helena workflow, queue and schedule is registered under.
 export const ENGINE_APP = 'helena';
 
+// The schema of the engine's state in Helena's database.
+export function engineSchema(): string {
+  return process.env.HELENA_ENGINE_SCHEMA?.trim() || 'helena_engine';
+}
+
 function configure(): void {
   const url = process.env.HELENA_ENGINE_DATABASE_URL?.trim() || process.env.DATABASE_URL?.trim();
   if (!url) throw new Error('DATABASE_URL is required for the Helena engine');
   DBOS.setConfig({
     name: ENGINE_APP,
     systemDatabaseUrl: url,
-    systemDatabaseSchemaName: process.env.HELENA_ENGINE_SCHEMA?.trim() || 'helena_engine',
+    systemDatabaseSchemaName: engineSchema(),
     systemDatabasePoolSize: intEnv('HELENA_ENGINE_POOL_SIZE', 10),
     // Fixed, so a deploy recovers the runs the previous code left pending. The
     // interpreter stays replay-compatible across versions (DBOS.patch for changes).
@@ -40,6 +45,10 @@ export function launchEngine(): Promise<void> {
     await import('./workflows');
     configure();
     await DBOS.launch();
+    // The queue of the outbox: every domain event runs its subscribers once.
+    const { EVENTS_QUEUE } = await import('./events');
+    if (!(await DBOS.retrieveQueue(EVENTS_QUEUE)))
+      await DBOS.registerQueue(EVENTS_QUEUE, { workerConcurrency: 10 });
     running = true;
   })().catch((error: unknown) => {
     launching = null;

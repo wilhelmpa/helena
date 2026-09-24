@@ -211,11 +211,27 @@ export interface WorkflowTriggerType<T extends TriggerDefinition = TriggerDefini
 
 // ---- policy --------------------------------------------------------------------------
 
-// The categories an action falls into, after the MCP tool annotations (read, write,
-// send, delete, pay, publish) plus 'run' for starting an agent and 'approve' for a
-// workflow's approval gate.
-export type ActionCategory =
-  'read' | 'write' | 'send' | 'delete' | 'pay' | 'publish' | 'run' | 'approve';
+// The categories an action falls into, in risk order (orchestrator decision D-C1).
+// `report` (status or results into Helena itself) is always allowed; `credentials` (any
+// change to logins, keys or grants) always needs approval.
+// mirror of @helena/sdk ACTION_CATEGORIES
+export const ACTION_CATEGORIES = [
+  'read',
+  'report',
+  'write',
+  'send',
+  'publish',
+  'execute',
+  'delete',
+  'pay',
+  'credentials',
+] as const;
+
+export type ActionCategory = (typeof ACTION_CATEGORIES)[number];
+
+export function actionRank(category: ActionCategory): number {
+  return ACTION_CATEGORIES.indexOf(category);
+}
 
 // The policy engine's answer: go ahead, ask a person first, or refuse (with why).
 export type PolicyDecision =
@@ -234,4 +250,19 @@ export interface PolicyDecider {
     // What is asked about, for the audit and a person deciding.
     subject?: string;
   }): Promise<PolicyDecision>;
+}
+
+// ---- the outbox --------------------------------------------------------------------
+
+// Handles one domain event: the triggers of the engine, and whatever a plugin subscribes.
+// A handler runs once per event, as a recorded operation of the engine, so it may be run
+// again only when it failed.
+export type DomainEventHandler = (event: DomainEvent) => Promise<void>;
+
+// Where a domain event goes to reach its subscribers: durably recorded, and handed over
+// in the background, once. hub/framework defines this interface in `@helena/sdk`; the
+// engine implements it on its own durable queue (engine/events.ts), with no table and no
+// claim loop of its own.
+export interface OutboxStore {
+  publish(event: DomainEvent): Promise<void>;
 }

@@ -2,9 +2,11 @@ import { DBOS, Error as DBOSErrors } from '@dbos-inc/dbos-sdk';
 import { registerBuiltins } from './builtin/index';
 import { beginRun, enterStep, failRun, finishRun, leaveStep, runCanceled } from './lifecycle';
 import { branchStart, handlesOutcome, locate, stepAfter } from './navigation';
-import { stepType } from './registry';
+import { domainEventSubscribers, stepType } from './registry';
+import { subscribeEngineTriggers } from './events';
 import { planFire } from './schedules';
 import type {
+  DomainEvent,
   RunInfo,
   StepContext,
   StepDefinition,
@@ -24,6 +26,7 @@ import type {
 export const MAX_EXECUTIONS = 200;
 
 registerBuiltins();
+subscribeEngineTriggers();
 
 // The operations of one step execution, as the step type sees them.
 class EngineStepContext<S extends StepDefinition> implements StepContext<S> {
@@ -155,3 +158,11 @@ async function fire(scheduledAt: Date, context: unknown): Promise<void> {
 }
 
 export const fireWorkflow = DBOS.registerWorkflow(fire, { name: 'helena.fire' });
+
+// The outbox's workflow: hands one domain event to every subscriber, each once.
+async function deliver(event: DomainEvent): Promise<void> {
+  for (const [name, handler] of domainEventSubscribers())
+    await DBOS.runStep(() => handler(event), { name: `helena:event:${name}` });
+}
+
+export const eventWorkflow = DBOS.registerWorkflow(deliver, { name: 'helena.event' });

@@ -65,7 +65,7 @@ export async function queueStepRun(request: StepRunRequest): Promise<number> {
   const decision = await policyDecider().decide({
     agentId: agent.id,
     projectId: request.projectId,
-    actionCategory: 'run',
+    actionCategory: 'execute',
     taskId: request.issueId,
   });
   if (decision.decision === 'deny')

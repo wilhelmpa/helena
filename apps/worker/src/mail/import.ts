@@ -1,6 +1,6 @@
+import { publishEngineEvent } from '../engine-events';
 import {
   db,
-  helenaEvent,
   hubInboxEvent,
   hubInboxSource,
   mailAttachment,
@@ -68,7 +68,8 @@ async function storeMessage(
   await putObject(rawKey, raw, 'message/rfc822');
   const thread = await resolveThread(account, parsed);
   const files = await writeAttachments(await projectKeyOf(thread.projectId), parsed);
-  return db.transaction(async (tx) => {
+  let known: number | null = null;
+  const messageRowId = await db.transaction(async (tx) => {
     const [row] = await tx
       .insert(mailMessage)
       .values({
@@ -106,6 +107,7 @@ async function storeMessage(
         .where(
           and(eq(mailMessage.accountId, account.id), eq(mailMessage.messageId, parsed.messageId)),
         );
+      known = existing!.id;
       return existing!.id;
     }
     if (files.paths.length > 0) {
@@ -127,11 +129,29 @@ async function storeMessage(
     if (target.newInboxMail && account.triageEnabled) {
       await recordTriageEvent(tx, account, thread.id, row.id, parsed);
     }
-    if (target.newInboxMail && thread.projectId !== null) {
-      await recordMailEvent(tx, account, thread.projectId, thread.id, row.id, parsed);
-    }
     return row.id;
   });
+  // Tells the Helena engine that new mail arrived in a project, for the workflows that
+  // start on a mail (trigger `mail_received`). Once per message.
+  if (target.newInboxMail && thread.projectId !== null && messageRowId !== known)
+    await publishEngineEvent({
+      id: `mail-${messageRowId}`,
+      type: 'helena.mail.received',
+      source: '/helena/worker/mail',
+      subject: `mail:${messageRowId}`,
+      projectId: thread.projectId,
+      time: parsed.date,
+      data: {
+        account: account.address,
+        from: parsed.from?.address ?? '',
+        fromName: parsed.from?.name ?? '',
+        subject: parsed.subject,
+        snippet: parsed.snippet,
+        threadId: thread.id,
+        messageId: messageRowId,
+      },
+    });
+  return messageRowId;
 }
 
 // The thread of the parent when the parent is stored, else the thread named by the
@@ -280,39 +300,6 @@ async function saveContacts(
         lastSeenAt: sql`GREATEST(excluded.last_seen_at, ${mailContact.lastSeenAt})`,
       },
     });
-}
-
-// Tells the Helena engine that new mail arrived in a project, for the workflows that start
-// on a mail (trigger `mail_received`): a CloudEvents-shaped row of the helena_event
-// outbox, which the api's engine consumes. Once per message.
-async function recordMailEvent(
-  tx: Transaction,
-  account: Pick<SyncAccount, 'address'>,
-  projectId: number,
-  threadId: number,
-  messageRowId: number,
-  parsed: ParsedMessage,
-): Promise<void> {
-  await tx
-    .insert(helenaEvent)
-    .values({
-      id: `mail-${messageRowId}`,
-      type: 'helena.mail.received',
-      source: '/helena/worker/mail',
-      subject: `mail:${messageRowId}`,
-      projectId,
-      data: {
-        account: account.address,
-        from: parsed.from?.address ?? '',
-        fromName: parsed.from?.name ?? '',
-        subject: parsed.subject,
-        snippet: parsed.snippet,
-        threadId,
-        messageId: messageRowId,
-      },
-      time: parsed.date,
-    })
-    .onConflictDoNothing();
 }
 
 // Hands new inbox mail to the inbox triage the way the hub inbox always received it:

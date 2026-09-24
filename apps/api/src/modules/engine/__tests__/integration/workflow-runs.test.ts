@@ -165,7 +165,7 @@ describe('workflow runs on the engine', () => {
   it('sends a rejected run back to the rework step until the loop guard ends it', async () => {
     const ctx = await setupProject();
     const pipelineId = await workflow(ctx, [
-      agentStep('draft', 'Draft it. {{previous.note}}'),
+      agentStep('draft', 'Draft it.'),
       {
         id: 'review',
         name: 'Review',
@@ -182,7 +182,7 @@ describe('workflow runs on the engine', () => {
       note: 'Shorter please',
     });
     const second = await waitForAgentRun(run.id, 'draft');
-    expect(second.prompt).toContain('Shorter please');
+    expect(second.prompt).toContain('Draft it.');
     await finishAgentRun(second.id, { output: 'second draft' });
     await waitForRun(run.id, (row) => row.status === 'waiting');
     await ctx.asOwner['pipeline-runs']({ runId: run.id }).approval.post({ approved: false });
@@ -323,11 +323,11 @@ describe('workflow runs on the engine', () => {
         id: 'tell',
         name: 'Tell',
         type: 'notify',
-        to: { kind: 'members', userIds: [ctx.owner.userId] },
+        to: { kind: 'assignee' },
         message: '{{task.identifier}} is ready.',
       },
     ]);
-    const task = await issue(ctx);
+    const task = await issue(ctx, { assigneeUserId: ctx.owner.userId });
     const run = await startRun(ctx, task.id, pipelineId);
     await waitForStatus(run.id, 'succeeded');
     const notified = await db

@@ -1,4 +1,5 @@
 import type {
+  DomainEventHandler,
   PolicyDecider,
   StepDefinition,
   TriggerDefinition,
@@ -66,4 +67,17 @@ export function policyDecider(): PolicyDecider {
   const decider = policy ?? fallback;
   if (!decider) throw new Error('No policy decider is registered');
   return decider;
+}
+
+// The subscribers of domain events, by name. The engine hands every published event to
+// each of them once (engine/events.ts); the triggers are the first subscriber.
+const subscribers = new Map<string, DomainEventHandler>();
+
+export function subscribeDomainEvents(name: string, handler: DomainEventHandler): void {
+  if (!TYPE_NAME.test(name)) throw new Error(`Invalid subscriber name ${name}`);
+  subscribers.set(name, handler);
+}
+
+export function domainEventSubscribers(): [string, DomainEventHandler][] {
+  return [...subscribers.entries()];
 }

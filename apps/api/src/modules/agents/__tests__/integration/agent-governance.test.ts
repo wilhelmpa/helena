@@ -4,7 +4,8 @@ import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
 import { addProjectMember } from '#tests/helpers/members';
-import { controlApi } from '#tests/helpers/control';
+import { queueStepRun } from '#modules/engine/agent-runs';
+import { registerBuiltins } from '#modules/engine/builtin/index';
 
 // Pausing an agent and its token ceilings. A paused agent takes no new work: its queued
 // runs wait, a mention or a delegation queues nothing, a chat message and an agent-team
@@ -67,6 +68,8 @@ async function comments(asOwner: Api, issueId: number) {
   const feed = await asOwner.issues({ issueId }).feed.get({ query: {} });
   return feed.data!.items.filter((item) => item.kind === 'comment').map((item) => item.body);
 }
+
+registerBuiltins();
 
 describe('agent pause', () => {
   beforeEach(resetDb);
@@ -145,18 +148,17 @@ describe('agent pause', () => {
       reason: 'Budget review',
     });
 
-    const res = await controlApi().internal.orchestration['agent-run'].post({
-      projectRef: 'project:MKT',
-      task: { taskRef: `task:MKT-${issue.sequenceNumber}` },
-      agent: { agentRef: 'agent:ext' },
-      idempotencyKey: 'b'.repeat(64),
+    const res = await queueStepRun({
+      agentId: agent.id,
+      projectId: issue.projectId,
+      issueId: issue.id,
       prompt: 'Complete the assignment.',
-      policy: { leaseSeconds: 300, heartbeatSeconds: 60, maxAttempts: 3 },
-    });
+    }).then(
+      () => ({ status: 200, error: null }),
+      (error: Error) => ({ status: 409, error: { value: { error: error.message } } }),
+    );
     expect(res.status).toBe(409);
-    expect(res.error?.value).toEqual({
-      error: 'Hermes agent ext is paused: Budget review',
-    });
+    expect(res.error?.value).toEqual({ error: '@ext is paused: Budget review' });
     expect(await runsOf(asOwner, teamId, agent.id)).toHaveLength(0);
   });
 
@@ -299,14 +301,15 @@ describe('token ceilings', () => {
       ['token-ceilings'].put({ daily: 50, monthly: null });
     const issue = await newIssue(asOwner, columnId, 'Team task');
 
-    const res = await controlApi().internal.orchestration['agent-run'].post({
-      projectRef: 'project:MKT',
-      task: { taskRef: `task:MKT-${issue.sequenceNumber}` },
-      agent: { agentRef: 'agent:ext' },
-      idempotencyKey: 'c'.repeat(64),
+    const res = await queueStepRun({
+      agentId: agent.id,
+      projectId: issue.projectId,
+      issueId: issue.id,
       prompt: 'Complete the assignment.',
-      policy: { leaseSeconds: 300, heartbeatSeconds: 60, maxAttempts: 3 },
-    });
+    }).then(
+      () => ({ status: 200, error: null }),
+      (error: Error) => ({ status: 409, error: { value: { error: error.message } } }),
+    );
     expect(res.status).toBe(409);
     expect((await orgAgent(asOwner, teamId, agent.id)).pausedAt).not.toBeNull();
   });

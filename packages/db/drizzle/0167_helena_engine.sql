@@ -1,16 +1,4 @@
-CREATE TABLE "helena_event" (
-	"id" text PRIMARY KEY NOT NULL,
-	"type" text NOT NULL,
-	"source" text NOT NULL,
-	"subject" text,
-	"project_id" integer,
-	"data" jsonb DEFAULT '{}'::jsonb NOT NULL,
-	"time" timestamp with time zone DEFAULT now() NOT NULL,
-	"consumed_at" timestamp with time zone,
-	"attempts" integer DEFAULT 0 NOT NULL,
-	"last_error" text
-);
---> statement-breakpoint
+
 CREATE TABLE "helena_schedule" (
 	"id" text PRIMARY KEY NOT NULL,
 	"project_id" integer NOT NULL,
@@ -71,7 +59,6 @@ ALTER TABLE "pipeline_run" ADD COLUMN "workflow_id" text;--> statement-breakpoin
 ALTER TABLE "pipeline_run" ADD COLUMN "result" jsonb;--> statement-breakpoint
 ALTER TABLE "pipeline_run_step" ADD COLUMN "agent_run_id" integer;--> statement-breakpoint
 ALTER TABLE "pipeline_run_step" ADD COLUMN "state" jsonb;--> statement-breakpoint
-ALTER TABLE "helena_event" ADD CONSTRAINT "helena_event_project_id_project_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."project"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "helena_schedule" ADD CONSTRAINT "helena_schedule_project_id_project_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."project"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "helena_schedule" ADD CONSTRAINT "helena_schedule_pipeline_id_pipeline_id_fk" FOREIGN KEY ("pipeline_id") REFERENCES "public"."pipeline"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "helena_schedule" ADD CONSTRAINT "helena_schedule_agent_id_ai_agent_id_fk" FOREIGN KEY ("agent_id") REFERENCES "public"."ai_agent"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
@@ -81,7 +68,6 @@ ALTER TABLE "helena_schedule" ADD CONSTRAINT "helena_schedule_created_by_user_id
 ALTER TABLE "helena_workflow_hook" ADD CONSTRAINT "helena_workflow_hook_project_id_project_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."project"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "helena_workflow_hook" ADD CONSTRAINT "helena_workflow_hook_pipeline_id_pipeline_id_fk" FOREIGN KEY ("pipeline_id") REFERENCES "public"."pipeline"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "helena_workflow_hook" ADD CONSTRAINT "helena_workflow_hook_created_by_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX "helena_event_pending_idx" ON "helena_event" USING btree ("time") WHERE "helena_event"."consumed_at" IS NULL;--> statement-breakpoint
 CREATE UNIQUE INDEX "helena_schedule_pipeline_uq" ON "helena_schedule" USING btree ("project_id","pipeline_id") WHERE "helena_schedule"."pipeline_id" IS NOT NULL;--> statement-breakpoint
 CREATE INDEX "helena_schedule_project_idx" ON "helena_schedule" USING btree ("project_id","created_at");--> statement-breakpoint
 ALTER TABLE "pipeline_run" ADD CONSTRAINT "pipeline_run_agent_id_ai_agent_id_fk" FOREIGN KEY ("agent_id") REFERENCES "public"."ai_agent"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint

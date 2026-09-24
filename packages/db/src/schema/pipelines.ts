@@ -281,27 +281,3 @@ export const helenaWorkflowHook = pgTable(
   },
   (t) => [unique('helena_workflow_hook_uq').on(t.projectId, t.pipelineId)],
 );
-
-// Domain events (CloudEvents 1.0 attributes) that another process hands to the engine's
-// triggers, e.g. the worker's mail import. The api publishes its own events in process;
-// this outbox carries the ones it cannot see. Consumed once, in order of `time`.
-export const helenaEvent = pgTable(
-  'helena_event',
-  {
-    id: text('id').primaryKey(),
-    type: text('type').notNull(),
-    source: text('source').notNull(),
-    subject: text('subject'),
-    projectId: integer('project_id').references(() => project.id, { onDelete: 'cascade' }),
-    data: jsonb('data').notNull().default({}),
-    time: timestamp('time', { withTimezone: true }).notNull().defaultNow(),
-    consumedAt: timestamp('consumed_at', { withTimezone: true }),
-    attempts: integer('attempts').notNull().default(0),
-    lastError: text('last_error'),
-  },
-  (t) => [
-    index('helena_event_pending_idx')
-      .on(t.time)
-      .where(sql`${t.consumedAt} IS NULL`),
-  ],
-);

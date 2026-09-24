@@ -50,8 +50,33 @@ Supporting standards:
 - **Step types and trigger types are registries** (`apps/api/src/modules/engine/registry.ts`, shaped for `@helena/sdk`): agent task, approval, wait, condition, task action, notify, webhook, delegate (routines) and agent team are built-in step types registered through the same API a plugin uses; manual, task events, schedule, webhook, mail arrival and delegation to a coordinator are built-in trigger types. A plugin adds a type without touching the engine.
 - **Helena's tables stay the source of truth for people**: `pipeline_run` and `pipeline_run_step` hold the history the UI shows, `helena_schedule` holds routines and workflow schedules. DBOS's tables (`helena_engine` schema) hold only execution state.
 - **Waiting is signalled, not polled**: an agent run that finishes, an approval that is decided and a cancel reach the waiting workflow through `DBOS.send`; a long `recv` timeout is only the safety net.
-- **Approvals ask the policy engine** (`decide(agent, project, actionCategory)` from hub/autopilot) through one seam, `engine/policy.ts`; until that lands, a step approval always waits for a person, as before.
+- **Approvals ask the policy engine** (`decide(agent, project, actionCategory)` from hub/autopilot) through one seam, `engine/policy.ts`, with the canonical action categories of D-C1 (`read` < `report` < `write` < `send` < `publish` < `execute` < `delete` < `pay` < `credentials`, mirrored until `@helena/sdk` lands). An approval step names the category it lets through (`publish` by default); starting an agent run is `execute`. Until the autopilot registers its decider, a step approval always waits for a person, as before.
 - **Catch-up policy** on top of DBOS's backfill: every missed time is fired once by DBOS; Helena runs only the newest one ("run once") or records it as missed ("skip missed", the default, with a ten-minute grace like before).
+
+## The outbox (orchestrator decision D-C2)
+
+hub/framework's event dispatcher runs on this engine, with no table and no claim loop of its own. The engine implements `OutboxStore` (`engine/sdk.ts`, to move into `@helena/sdk`): `publish(event)` enqueues the DBOS workflow `helena.event` under `event:<id>` on the queue `helena-events` (worker concurrency 10). DBOS records the event with the workflow, and the workflow hands it to every registered subscriber (`subscribeDomainEvents(name, handler)`), each as one recorded step, so a subscriber runs once per event and again only after it failed. The api publishes in process; the worker, which does not run the engine, enqueues through a `DBOSClient` (the new-mail event of the mail import). The engine's triggers are the first subscriber; framework's bus and plugins subscribe the same way. Events use the CloudEvents 1.0 attributes (`helenaproject` and `helenaactor` are extension attributes).
+
+## The other claim loops (to move onto the engine later, one at a time)
+
+Helena has these queues and loops of its own besides the engine. Each keeps working as it is; each can later become a DBOS queue or workflow. Suggested order: the ones that do external I/O with retries first.
+
+| Loop | Where | What it claims | Move to |
+|---|---|---|---|
+| Webhook deliveries | worker `store.ts` | `webhook_delivery` rows, retries with jitter | a DBOS queue per delivery (retries as step retries) |
+| Notification deliveries | worker `notification-delivery.ts` | `notification_delivery` (email, Telegram) | DBOS queue |
+| Mail send | worker `mail/send.ts` | outgoing mail | DBOS workflow per message |
+| Project provisioning / deprovisioning | worker `project-provisioning.ts` (two claims) | provisioning jobs | a DBOS workflow per job (steps: schedules off, provision call, record) |
+| Hub inbox triage | worker `hub-inbox-store.ts` (two claims) | inbox events and threads | DBOS workflow per thread (needs a Hermes-based classifier first) |
+| Mail sync | worker `mail/worker.ts` | accounts to sync | a DBOS scheduled workflow per account |
+| Vault watcher / extraction | `packages/vault/src/watcher.ts` (`setInterval`) | files to index and extract | stays in process (file watching), extraction as a DBOS queue |
+| Action runs | api `modules/actions/queue.ts` | project automation runs | a DBOS workflow per run (the automations could become builder workflows) |
+| Hub inbox tasks | api `hub-inbox/tasks.ts` | tasks from inbox items | DBOS queue |
+| Runner claims | api `agents/runner/service.ts` | `agent_run` rows, claimed by runners over HTTP | stays: the runner pulls; the engine already waits on these runs by signal |
+| Chat claims | api `agents/chat/service.ts` | chat turns claimed by runners | stays (same pull model as the runner) |
+| Run janitor, resume janitor, auto-archive | api `background.ts` | expired runs, resume limits, stale issues | DBOS scheduled workflows |
+
+The loops share one helper now, `@helena/loop` (`startLoop`, `intEnv`), used by the api and the worker. Removed with Mastra: the pipeline-start retry loop, the agent-team start queue (`agent_team_start`), the stage janitor and the schedule sync loop.
 
 ## Operational notes and risks
 
