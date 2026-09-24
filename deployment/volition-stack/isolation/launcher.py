@@ -91,6 +91,7 @@ REQUEST_KEYS = {
     'terminal-stop': {'v', 'op', 'slug'},
     'ensure-project-user': {'v', 'op', 'slug', 'profiles'},
     'remove-project-user': {'v', 'op', 'slug'},
+    'release-project-paths': {'v', 'op', 'slug', 'profiles', 'workspace'},
     'browser-state': {'v', 'op', 'action', 'slug', 'projectId', 'eventId'},
 }
 REQUIRED_KEYS = {
@@ -100,6 +101,7 @@ REQUIRED_KEYS = {
     'terminal-stop': {'v', 'op', 'slug'},
     'ensure-project-user': {'v', 'op', 'slug'},
     'remove-project-user': {'v', 'op', 'slug'},
+    'release-project-paths': {'v', 'op', 'slug'},
     'browser-state': {'v', 'op', 'action', 'slug', 'projectId'},
 }
 EVENT_ID = __import__('re').compile(r'^[A-Za-z0-9-]{1,64}$')
@@ -254,6 +256,8 @@ class Launcher:
                 await self.ensure_project_user(request, writer, caller)
             elif op == 'remove-project-user':
                 await self.remove_project_user(request, writer, caller)
+            elif op == 'release-project-paths':
+                await self.release_project_paths(request, writer, caller)
             elif op == 'browser-state':
                 await self.browser_state(request, writer, caller)
         except IsolationError as error:
@@ -1067,6 +1071,83 @@ class Launcher:
                                                   named={(ACL_USER, account.pw_uid): rx})
         return {'user': name, 'uid': account.pw_uid, 'created': created, 'granted': done}
 
+    async def stop_project_units(self, slug: str) -> None:
+        """Stops a project's terminal and every agent unit it has running."""
+        config = self.config
+        await self.systemctl('stop', f'{config.terminal_prefix}{slug}.service', timeout=60)
+        units = await asyncio.create_subprocess_exec(
+            config.systemctl, 'list-units', '--plain', '--no-legend', '--all',
+            f'{config.unit_prefix}{slug}--*', stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL)
+        listing, _ = await units.communicate()
+        for line in listing.decode(errors='replace').splitlines():
+            unit = line.split()[0] if line.split() else ''
+            if unit.startswith(f'{config.unit_prefix}{slug}--'):
+                await self.stop_unit(unit)
+
+    async def release_project_paths(self, request: dict, writer, caller: str) -> None:
+        async with self.user_lock:
+            result = await self._release_project_paths(request, caller)
+        writer.write(json_frame(T_RESULT, result))
+
+    async def _release_project_paths(self, request: dict, caller: str) -> dict:
+        """Before provisioning moves a removed agent's profile, or a deleted project's
+        folders, into the trash: gives what the project's user owns there back to the runner,
+        which could not read it to move it otherwise. With `workspace` the whole project
+        goes, so its terminal and agents are stopped first and its workspace and vault folder
+        are released too. Nothing is deleted here; the trash keeps it all."""
+        config = self.config
+        slug = request['slug']
+        if not valid_slug(slug) or slug == config.home_slug:
+            raise IsolationError('slug', 'invalid project slug')
+        key = self.registry_key(slug)
+        profiles = request.get('profiles') or []
+        whole = request.get('workspace', False)
+        if not isinstance(whole, bool) or not isinstance(profiles, list) or len(profiles) > 256:
+            raise IsolationError('request', 'invalid release request')
+        for profile in profiles:
+            if not isinstance(profile, str) or not PROFILE_RE.match(profile) or profile_slug(profile) != slug:
+                raise IsolationError('profile', 'the profile does not belong to the project')
+        try:
+            account = self.project_account(slug)
+        except IsolationError:
+            return {'released': 0}
+        runner = pwd.getpwnam(config.runner_user)
+        if whole:
+            await self.stop_project_units(slug)
+        released = 0
+        profile_root = open_path_nofollow(config.profiles_root)
+        try:
+            for profile in profiles:
+                try:
+                    fd = os.open(profile, O_DIR, dir_fd=profile_root)
+                except OSError as error:
+                    if error.errno == errno.ENOENT:
+                        continue
+                    if error.errno in (errno.ELOOP, errno.ENOTDIR):
+                        raise IsolationError('path', f'profile {profile} is not a plain directory') from None
+                    raise
+                try:
+                    released += adopt_tree(fd, runner.pw_uid, runner.pw_gid, only_uid=account.pw_uid)
+                finally:
+                    os.close(fd)
+        finally:
+            os.close(profile_root)
+        if whole:
+            workspace = self.workspace(slug)
+            # The vault keeps its groups, which every service reads it through.
+            for path, gid in [(workspace, runner.pw_gid), *[(p, None) for p in self.vault_binds(slug, key)[0]]]:
+                try:
+                    fd = open_path_nofollow(path)
+                except FileNotFoundError:
+                    continue
+                try:
+                    released += adopt_tree(fd, runner.pw_uid, gid, only_uid=account.pw_uid)
+                finally:
+                    os.close(fd)
+        log(f'{caller}: released {released} entries of {slug} to the runner')
+        return {'released': released}
+
     async def remove_project_user(self, request: dict, writer, caller: str) -> None:
         async with self.user_lock:
             await self._remove_project_user(request, writer, caller)
@@ -1082,16 +1163,7 @@ class Launcher:
         except IsolationError:
             writer.write(json_frame(T_RESULT, {'user': name, 'removed': False}))
             return
-        await self.systemctl('stop', f'{config.terminal_prefix}{slug}.service', timeout=60)
-        units = await asyncio.create_subprocess_exec(
-            config.systemctl, 'list-units', '--plain', '--no-legend', '--all',
-            f'{config.unit_prefix}{slug}--*', stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.DEVNULL)
-        listing, _ = await units.communicate()
-        for line in listing.decode(errors='replace').splitlines():
-            unit = line.split()[0] if line.split() else ''
-            if unit.startswith(f'{config.unit_prefix}{slug}--'):
-                await self.stop_unit(unit)
+        await self.stop_project_units(slug)
         await self.command(config.userdel, name)
         try:
             grp.getgrnam(name)

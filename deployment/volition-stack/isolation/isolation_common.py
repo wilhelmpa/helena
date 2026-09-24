@@ -394,9 +394,9 @@ def open_path_nofollow(path: str) -> int:
         raise
 
 
-def adopt_tree(fd: int, uid: int, gid: int, *, only_uid: int, limit: int = 100_000) -> int:
+def adopt_tree(fd: int, uid: int, gid: int | None, *, only_uid: int, limit: int = 100_000) -> int:
     """Gives the directory at fd and everything below it that belongs to `only_uid` to
-    uid:gid, walking by file descriptor. Links are never followed or changed, and a regular
+    uid:gid (gid None keeps each entry's group), walking by file descriptor. Links are never followed or changed, and a regular
     file with more than one name is left alone, so nothing outside the tree can be reached
     through it. Returns how many entries changed owner; stops after `limit` entries."""
     seen = 0
@@ -404,8 +404,9 @@ def adopt_tree(fd: int, uid: int, gid: int, *, only_uid: int, limit: int = 100_0
 
     def own(entry_fd: int, info: os.stat_result) -> None:
         nonlocal changed
-        if info.st_uid == only_uid and (info.st_uid, info.st_gid) != (uid, gid):
-            os.fchown(entry_fd, uid, gid)
+        wanted = info.st_gid if gid is None else gid
+        if info.st_uid == only_uid and (info.st_uid, info.st_gid) != (uid, wanted):
+            os.fchown(entry_fd, uid, wanted)
             changed += 1
 
     def visit(dir_fd: int, depth: int) -> None:

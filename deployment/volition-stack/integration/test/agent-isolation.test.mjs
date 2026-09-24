@@ -64,6 +64,10 @@ function fakeLauncher(calls) {
       calls.push({ op: "remove", slug });
       return { removed: true };
     },
+    async releaseProjectPaths(slug, { profiles = [], workspace = false } = {}) {
+      calls.push({ op: "release", slug, profiles, workspace });
+      return { released: 0 };
+    },
     async browserState() {
       throw new Error("not requested");
     },
@@ -124,7 +128,12 @@ describe("provisioning with agent isolation", () => {
       ...envelope("project.deprovision"),
       eventId: "223e4567-e89b-42d3-a456-426614174000",
     });
-    assert.deepEqual(calls, [{ op: "remove", slug: "demo" }]);
+    // Everything the project's user owns is released before it moves to the trash.
+    assert.deepEqual(calls, [
+      { op: "release", slug: "demo", profiles: ["demo"], workspace: true },
+      { op: "release", slug: "demo", profiles: ["demo_12"], workspace: false },
+      { op: "remove", slug: "demo" },
+    ]);
   });
 });
 

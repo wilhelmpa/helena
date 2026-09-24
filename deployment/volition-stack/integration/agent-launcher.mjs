@@ -65,6 +65,10 @@ export function createAgentLauncher(config) {
     ensureProjectUser: (slug, profiles = []) =>
       launcherRequest(socketPath, { op: "ensure-project-user", slug, profiles }),
     removeProjectUser: (slug) => launcherRequest(socketPath, { op: "remove-project-user", slug }),
+    // What the project's user owns of a removed agent's profile, or of a deleted project,
+    // back to the runner, so provisioning can move it into the trash.
+    releaseProjectPaths: (slug, { profiles = [], workspace = false } = {}) =>
+      launcherRequest(socketPath, { op: "release-project-paths", slug, profiles, workspace }),
     browserState: (action, slug, projectId, eventId) =>
       launcherRequest(socketPath, {
         op: "browser-state",

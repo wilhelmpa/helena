@@ -140,6 +140,16 @@ class AdoptTreeTest(unittest.TestCase):
             for path in (git, git / 'HEAD', git / 'objects' / 'aa' / 'object'):
                 self.assertEqual(path.stat().st_gid, group)
             self.assertEqual(outside.stat().st_gid, os.getgid())
+            # Without a group each entry keeps its own.
+            (git / 'HEAD').chmod(0o640)
+            os.chown(git / 'HEAD', -1, os.getgid())
+            fd = os.open(git, common.O_DIR)
+            try:
+                common.adopt_tree(fd, os.getuid(), None, only_uid=os.getuid())
+            finally:
+                os.close(fd)
+            self.assertEqual((git / 'HEAD').stat().st_gid, os.getgid())
+            self.assertEqual(git.stat().st_gid, group)
 
 
 class HttpHeadTest(unittest.TestCase):

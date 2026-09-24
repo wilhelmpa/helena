@@ -388,6 +388,10 @@ export function createProvisioner(config, options = {}) {
           if (error?.code !== "ENOENT") throw error;
         },
       );
+      // With agent isolation the profile belongs to the project's user; the launcher
+      // gives it back first so it can be moved. A registry that is gone means an earlier
+      // attempt released and moved everything already.
+      if (launcher.enabled && registry) await launcher.releaseProjectPaths(slug, { profiles: [name] });
       const profile = await quarantinePath({
         source: path.join(profilesRoot, name),
         allowedRoot: profilesRoot,
@@ -619,6 +623,11 @@ export function createProvisioner(config, options = {}) {
           throw error;
         },
       );
+    // With agent isolation the project's user owns its profile, workspace and vault files;
+    // the launcher stops its agents and gives them back so they can be moved to the trash.
+    if (launcher.enabled && registry) {
+      await launcher.releaseProjectPaths(slug, { profiles: [slug], workspace: true });
+    }
     const hermesAgent = await quarantinePath({
       source: path.join(config.hermesAgentsRoot, slug),
       allowedRoot: config.hermesAgentsRoot,
