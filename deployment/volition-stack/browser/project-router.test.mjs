@@ -509,15 +509,20 @@ describe("project browser router", () => {
     const mac = await open();
     view(mac, { width: 900, height: 800 });
     await until(() => browser.page().width === 900);
-    // A second view joins: it takes the size, and the first shows the page scaled.
+    // A second view joins beside it: it shows the page scaled and does not take its size.
     const kiosk = await open();
     view(kiosk, { width: 1900, height: 1000 });
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    assert.equal(browser.page().width, 900);
+    // Someone works in it: now it owns the size.
+    kiosk.send(JSON.stringify({ type: "focus" }));
     await until(() => browser.page().width === 1900);
     // The first one resizes its panel: the page follows it again.
     view(mac, { width: 1000, height: 800 });
     await until(() => browser.page().width === 1000);
     // A view that holds the size ("Größe festhalten") only scales; a hidden one does not count.
     view(kiosk, { width: 1800, height: 1000, hold: true });
+    kiosk.send(JSON.stringify({ type: "focus" }));
     await new Promise((resolve) => setTimeout(resolve, 150));
     assert.equal(browser.page().width, 1000);
     mac.send(JSON.stringify({ type: "hidden", hidden: true }));

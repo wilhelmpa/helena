@@ -34,6 +34,9 @@ export type LiveMessage =
   // This view's decoder fell far enough behind to give up on the gap; answered with a fresh
   // keyframe once the router's rate limit on restarting the tier's encoder allows one.
   | { type: 'requestKeyframe' }
+  // Someone works in this view: it takes the page's size from another viewer once their
+  // input pauses (whoever steers owns the size; the others scale).
+  | { type: 'focus' }
   // Answered with {"type":"pong","t":..} at once, to measure the round trip.
   | { type: 'ping'; t: number }
   | {

@@ -112,6 +112,9 @@ const SHARP_MIN_EDGE = 785;
 // within the longer time after a viewer's action is the viewer's.
 const OWN_INPUT_MS = 1_000;
 const OWN_INPUTS_KEPT = 32;
+// How long a view someone started working in waits for their input to pause before it takes
+// the page's size.
+const FOCUS_QUIET_MS = 800;
 // The page can record a viewer's input a moment before the router notes it as sent.
 const OWN_INPUT_SLACK_MS = 50;
 const OWN_NAVIGATION_MS = 10_000;
@@ -200,8 +203,10 @@ class Viewer {
   constructor(socket, send) {
     this.socket = socket;
     this.input = new InputSender(send);
-    // When the view last joined or changed size, which makes it the one the page follows.
+    // When someone last worked in the view (see drivingViewport), and the pending handover
+    // of the page's size to it (takeSizeWhenQuiet).
     this.drivenAt = 0;
+    this.focusTimer = null;
     this.inFlight = 0;
     this.missed = false;
     this.viewport = null;
@@ -399,6 +404,7 @@ class ScreencastStream {
   }
 
   remove(viewer) {
+    clearTimeout(viewer.focusTimer);
     this.viewers.delete(viewer);
     if (this.viewers.size === 0) return this.end();
     this.resize();
@@ -419,11 +425,12 @@ class ScreencastStream {
     if (message.viewport) {
       const previous = viewer.viewport;
       viewer.viewport = message.viewport;
-      // A view that joins or changes size takes the page's size (see drivingViewport); one
-      // that only switches between video and JPEG, or repeats its size after a reconnect of
-      // the router's side, does not take it from another viewer.
-      const resized = !previous || ["width", "height", "dpr", "hold"].some((key) => previous[key] !== message.viewport[key]);
-      if (resized) viewer.drivenAt = Date.now();
+      // A view that changes size takes the page's size (see drivingViewport), and so does one
+      // that joins while no other shown view drives it; one that joins beside one that does
+      // (the kiosk reconnecting while the owner works on the Mac), or only switches between
+      // video and JPEG, does not take it from the other.
+      const resized = previous && ["width", "height", "dpr", "hold"].some((key) => previous[key] !== message.viewport[key]);
+      if (resized || (!previous && !this.drivingViewport())) viewer.drivenAt = Date.now();
       if (previous && previous.video !== message.viewport.video) {
         viewer.tierIndex = null;
         viewer.waitingForKeyframe = true;
@@ -450,11 +457,28 @@ class ScreencastStream {
       return this.reassignTiers();
     }
     if (message.requestKeyframe) return this.requestKeyframe(viewer);
+    // The view someone works in takes the page's size, whoever steers owns it — once their
+    // input has paused, so no press or drag of theirs lands on a page laid out anew under it.
+    if (message.focus) {
+      if (this.drivingViewport() === viewer.viewport) return;
+      return this.takeSizeWhenQuiet(viewer);
+    }
     if (message.ping !== undefined) {
       viewer.socket.send(JSON.stringify({ type: "pong", t: message.ping }));
       return;
     }
     for (const command of message.commands) viewer.input.dispatch(command);
+    if (viewer.focusTimer) this.takeSizeWhenQuiet(viewer);
+  }
+
+  takeSizeWhenQuiet(viewer) {
+    clearTimeout(viewer.focusTimer);
+    viewer.focusTimer = setTimeout(() => {
+      viewer.focusTimer = null;
+      if (!this.viewers.has(viewer)) return;
+      viewer.drivenAt = Date.now();
+      this.resize();
+    }, FOCUS_QUIET_MS);
   }
 
   // A viewer whose own decoder fell far enough behind to give up on what it has queued asks
@@ -518,8 +542,9 @@ class ScreencastStream {
   }
 
   // The view whose size the page takes: of the shown views that do not hold the page's size,
-  // the one that most recently joined or changed size; else the page keeps its size. Every
-  // other view shows the page scaled.
+  // the one someone most recently worked in (see receive: changed its size, was pressed or
+  // typed in, or joined alone); else the page keeps its size. Every other view shows the page
+  // scaled.
   drivingViewport() {
     let driver = null;
     for (const viewer of this.viewers) {

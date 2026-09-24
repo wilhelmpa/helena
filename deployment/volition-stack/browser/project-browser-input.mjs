@@ -111,6 +111,8 @@ function keyMessage(message, modifiers) {
 //   {"type":"stats","rttMs":40,"downlinkKbps":3200,
 //    "receivedBytes":1048576}                              the video connection just measured
 //   {"type":"requestKeyframe"}                             this viewer's decode fell behind
+//   {"type":"focus"}                                       someone works in this view: it takes
+//                                                          the page's size
 //   {"type":"ping","t":123.4}                              answered with {"type":"pong","t":..}
 //   {"type":"mouse","event":"move|down|up|click","x":..,"y":..,"button":"left",
 //    "buttons":1,"clickCount":1,"modifiers":0}            x and y in page CSS pixels
@@ -162,6 +164,8 @@ export function viewerMessage(data) {
       };
     case "requestKeyframe":
       return { requestKeyframe: true };
+    case "focus":
+      return { focus: true };
     case "ping":
       return { ping: number(message.t, -1e15, 1e15) };
     case "dialog":

@@ -36,6 +36,8 @@ export interface LiveGeometry {
 
 // A touch that moves less than this is a tap.
 const TAP_DISTANCE = 8;
+// Work in the view is told to the router at most this often (see the focus message).
+const FOCUS_INTERVAL_MS = 1_000;
 
 // Events on a page's dialog shown over the view are for the dialog, not for the page.
 function inDialog(target: EventTarget | null) {
@@ -66,6 +68,17 @@ export function useBrowserLiveInput(
   const mac = useIsMac();
   const lastPress = useRef<Press | null>(null);
   const touch = useRef<Touch | null>(null);
+  const focusSentAt = useRef(0);
+
+  // Someone works in this view, which then owns the page's size.
+  const noteWork = useCallback(
+    (timeStamp: number) => {
+      if (timeStamp - focusSentAt.current < FOCUS_INTERVAL_MS) return;
+      focusSentAt.current = timeStamp;
+      send({ type: 'focus' });
+    },
+    [send],
+  );
 
   const pointAt = useCallback(
     (event: { clientX: number; clientY: number }): Point | null => {
@@ -114,6 +127,7 @@ export function useBrowserLiveInput(
       }
       keyboard.current?.focus({ preventScroll: true });
       if (!at) return;
+      noteWork(event.timeStamp);
       event.currentTarget.setPointerCapture(event.pointerId);
       const press = { ...at, time: event.timeStamp, button: event.button };
       const count = clickCount(lastPress.current, press);
@@ -160,6 +174,7 @@ export function useBrowserLiveInput(
           // Focusing on a tap rather than on every touch keeps a phone's keyboard closed
           // while the page is scrolled.
           keyboard.current?.focus({ preventScroll: true });
+          noteWork(event.timeStamp);
           send({ type: 'mouse', event: 'click', ...current.at, button: 'left', modifiers: 0 });
         }
         return;
@@ -203,9 +218,10 @@ export function useBrowserLiveInput(
       mac,
     );
     if (!message) return;
-    // Plan's own shortcuts listen on the window; a key meant for the page must not reach them.
+    // Helena's own shortcuts listen on the window; a key meant for the page must not reach them.
     event.preventDefault();
     event.stopPropagation();
+    if (type === 'down') noteWork(event.timeStamp);
     send(message);
   };
 
