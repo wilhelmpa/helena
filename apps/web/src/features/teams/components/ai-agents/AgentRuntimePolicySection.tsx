@@ -14,12 +14,21 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import type { AiChatModel } from '@/lib/api/endpoints/agentChat';
+import type { AiChatModel, UnavailableChatModel } from '@/lib/api/endpoints/agentChat';
 import {
   AGENT_RUNTIME_KINDS,
   type AgentRuntimeConflict,
   type AgentRuntimeKind,
+  type AiAgent,
 } from '@/lib/api/endpoints/agents';
+import AgentModelIssue from '@/features/model-availability/components/AgentModelIssue';
+import {
+  isUnverified,
+  refusalOf,
+  templateFallbackModel,
+} from '@/features/model-availability/utils/modelFailure';
+import { useAiAgentsQuery } from '@/services/aiAgents.service';
+import { useAgentCan, useAgentSection } from '../../context/agentSection';
 import type { AgentFormValue } from '../../utils/agentForm';
 import { AgentFormSection } from './AgentFormSection';
 import AgentRuntimeConflicts from './AgentRuntimeConflicts';
@@ -41,6 +50,8 @@ export default function AgentRuntimePolicySection({
   modelsLoading,
   modelsError,
   conflicts,
+  unavailable = [],
+  agent = null,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -50,8 +61,19 @@ export default function AgentRuntimePolicySection({
   modelsLoading: boolean;
   modelsError: boolean;
   conflicts: AgentRuntimeConflict[];
+  // Models the provider refused this account, which the list leaves out, and the agent
+  // (for a template copy that fell back to the default).
+  unavailable?: UnavailableChatModel[];
+  agent?: AiAgent | null;
 }) {
   const t = useTranslations('teams.agents.runtimePolicy');
+  const tModel = useTranslations('modelAvailability');
+  const { teamId } = useAgentSection();
+  const canEdit = useAgentCan()('edit');
+  // The template library is already cached for the editor (AgentTemplateDriftSection).
+  const template = useAiAgentsQuery(agent?.sourceTemplateId != null ? teamId : null).data?.find(
+    (entry) => entry.id === agent?.sourceTemplateId,
+  );
   const tFallback = useTranslations('agentRuntime.fallback');
   const fallbackId = useId();
   const policy = value.runtimePolicy;
@@ -149,10 +171,34 @@ export default function AgentRuntimePolicySection({
               {models.map((model) => (
                 <SelectItem key={model.id} value={model.id}>
                   {model.name} · {model.id}
+                  {isUnverified(model) && (
+                    <span
+                      className="ms-1.5 text-xs text-muted-foreground"
+                      title={tModel('unverifiedHint')}
+                    >
+                      {tModel('unverified')}
+                    </span>
+                  )}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          <AgentModelIssue
+            teamId={teamId}
+            refusal={refusalOf(value.model, unavailable)}
+            runtime={policy.runtime ?? 'hermes'}
+            templateModel={
+              agent
+                ? templateFallbackModel(
+                    { model: value.model || null, sourceTemplateId: agent.sourceTemplateId },
+                    template,
+                    unavailable,
+                  )
+                : null
+            }
+            canEdit={canEdit}
+            onUseDefault={() => selectModel(AGENT_DEFAULT)}
+          />
           <p className="text-xs text-muted-foreground">
             {modelsLoading
               ? t('modelsLoading')

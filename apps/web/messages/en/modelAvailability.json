@@ -1,0 +1,37 @@
+{
+  "unverified": "unverified",
+  "unverifiedHint": "Your account does not list this model. Hermes expects it to work; it counts as confirmed once a run on it succeeds.",
+  "refused": "{model} is not available for {account, select, chatgpt {your ChatGPT account} claude {your Claude account} other {your account}} – choose another model.",
+  "refusedShort": "Not available for your account",
+  "providerSaid": "The provider says: {detail}",
+  "since": "since {time}",
+  "retry": "Check again",
+  "retryHint": "Forgets the finding. The next run tries the model again.",
+  "retried": "{model} will be tried again on the next run.",
+  "useDefault": "Use the agent default",
+  "templateFallback": "The template uses {model}, which is not available for your account. This copy therefore runs on the agent default.",
+  "copyFallback": "{name} runs on the agent default: {model} is not available for your account.",
+  "failure": {
+    "modelUnavailable": "The model {model} is not available for {account, select, chatgpt {your ChatGPT account} claude {your Claude account} other {your account}} – choose another model for the agent. Trying again will not help.",
+    "providerRejected": "The provider refused the request for good – trying again will not help."
+  },
+  "activity": "could not work: the model {model} is not available for your account",
+  "health": {
+    "refused": "{model} is not available for the account – {count, plural, one {# agent uses it} other {# agents use it}}: {agents}",
+    "refusedUnused": "{model} is not available for the account – no agent uses it any more"
+  },
+  "admin": {
+    "title": "Models",
+    "description": "Which models your accounts really offer. A refused model is left out of every picker until a run on it succeeds or you let it be checked again.",
+    "empty": "No findings yet.",
+    "unavailable": "not available",
+    "works": "works",
+    "usedBy": "Used by {agents}",
+    "unused": "No agent uses it.",
+    "replaceWith": "Move all to",
+    "replace": "Move",
+    "replaced": "{count, plural, =0 {No agent was set to it.} one {# agent moved.} other {# agents moved.}}",
+    "agentDefault": "Agent default",
+    "seen": "last {time}"
+  }
+}

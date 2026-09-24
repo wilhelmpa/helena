@@ -1,3 +1,4 @@
+import type { RunFailureRef } from '@/lib/api/endpoints/modelAvailability';
 import type { CycleStatus } from '@/lib/api/endpoints/cycles';
 import type { InitiativeStatus } from '@/lib/api/endpoints/initiatives';
 import { request } from '@/lib/api/core/client';
@@ -362,6 +363,8 @@ export interface AgentTeamRun {
   stages: AgentTeamStage[];
   result: AgentTeamResult | null;
   error: string | null;
+  // Why it failed, where the runtime's words said. Absent from an older server.
+  failure?: RunFailureRef | null;
 }
 
 export const listIssueAgentTeamRuns = (id: number) =>

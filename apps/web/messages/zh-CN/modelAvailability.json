@@ -1,0 +1,37 @@
+{
+  "unverified": "未验证",
+  "unverifiedHint": "你的账户未列出此模型。Hermes 预计它可以使用；一旦用它的运行成功，它就算得到确认。",
+  "refused": "{model} 对{account, select, chatgpt {你的 ChatGPT 账户} claude {你的 Claude 账户} other {你的账户}}不可用——请选择其他模型。",
+  "refusedShort": "对你的账户不可用",
+  "providerSaid": "提供方说明：{detail}",
+  "since": "自 {time} 起",
+  "retry": "重新检查",
+  "retryHint": "清除该结论。下一次运行会再次尝试此模型。",
+  "retried": "下一次运行将再次尝试 {model}。",
+  "useDefault": "使用智能体默认模型",
+  "templateFallback": "该模板使用 {model}，但它对你的账户不可用。因此此副本使用智能体默认模型运行。",
+  "copyFallback": "{name} 使用智能体默认模型运行：{model} 对你的账户不可用。",
+  "failure": {
+    "modelUnavailable": "模型 {model} 对{account, select, chatgpt {你的 ChatGPT 账户} claude {你的 Claude 账户} other {你的账户}}不可用——请为该智能体选择其他模型。重试无济于事。",
+    "providerRejected": "提供方已最终拒绝该请求——重试无济于事。"
+  },
+  "activity": "无法工作：模型 {model} 对你的账户不可用",
+  "health": {
+    "refused": "{model} 对该账户不可用——{count, plural, other {有 # 个智能体在使用}}：{agents}",
+    "refusedUnused": "{model} 对该账户不可用——已没有智能体使用它"
+  },
+  "admin": {
+    "title": "模型",
+    "description": "你的账户实际提供哪些模型。被拒绝的模型会从所有选择器中移除，直到用它的运行成功或你让它重新检查。",
+    "empty": "暂无结论。",
+    "unavailable": "不可用",
+    "works": "可用",
+    "usedBy": "使用者：{agents}",
+    "unused": "没有智能体使用它。",
+    "replaceWith": "全部切换为",
+    "replace": "切换",
+    "replaced": "{count, plural, =0 {没有智能体在使用它。} other {已切换 # 个智能体。}}",
+    "agentDefault": "智能体默认模型",
+    "seen": "最近 {time}"
+  }
+}

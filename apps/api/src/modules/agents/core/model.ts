@@ -342,7 +342,7 @@ export const CreateAgentResponse = t.Object({
       },
       {
         description:
-          "A copy of a template whose model the provider refused this account runs on its " +
+          'A copy of a template whose model the provider refused this account runs on its ' +
           "runtime's default model instead: the template's model and the provider's words.",
       },
     ),

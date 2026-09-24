@@ -142,13 +142,23 @@ describe('model availability', () => {
 
     // Gone from the pickers, with its variant, and named apart for the editor.
     const after = (await catalogOf(ctx.asOwner, ctx.agent.id)).data!;
-    expect(after.models.map((m) => m.id)).toEqual(['gpt-5.6-terra', 'gpt-6-sol', 'claude-sonnet-5']);
+    expect(after.models.map((m) => m.id)).toEqual([
+      'gpt-5.6-terra',
+      'gpt-6-sol',
+      'claude-sonnet-5',
+    ]);
     expect(after.unavailable.map((m) => m.id)).toEqual(['gpt-6-terra', 'gpt-6-terra-900k']);
-    expect(after.unavailable[0]).toMatchObject({ provider: 'openai-codex', detail: REFUSAL.detail });
+    expect(after.unavailable[0]).toMatchObject({
+      provider: 'openai-codex',
+      detail: REFUSAL.detail,
+    });
 
     // The run's history and the task say why.
     const runs = (
-      await ctx.asOwner.teams({ teamId: ctx.teamId })['ai-agents']({ agentId: ctx.agent.id }).runs.get()
+      await ctx.asOwner
+        .teams({ teamId: ctx.teamId })
+        ['ai-agents']({ agentId: ctx.agent.id })
+        .runs.get()
     ).data!.items;
     expect(runs[0]).toMatchObject({ id: run.id, failure: REFUSAL });
     const entries = await db
@@ -182,10 +192,7 @@ describe('model availability', () => {
     await refuseByRun(ctx);
 
     // The model came back (the owner's plan changed): a chat answer on it works.
-    await db
-      .update(aiAgent)
-      .set({ model: 'gpt-6-sol' })
-      .where(eq(aiAgent.id, ctx.agent.id));
+    await db.update(aiAgent).set({ model: 'gpt-6-sol' }).where(eq(aiAgent.id, ctx.agent.id));
     const sent = await ctx.asOwner
       .projects({ projectKey: 'MKT' })
       ['ai-agents']({ agentId: ctx.agent.id })
@@ -272,9 +279,8 @@ describe('model availability', () => {
   it('lists the findings with the agents on a refused model, and forgets one on request', async () => {
     const ctx = await setup();
     await refuseByRun(ctx);
-    const listed = (
-      await ctx.asOwner.teams({ teamId: ctx.teamId })['model-availability'].get()
-    ).data!;
+    const listed = (await ctx.asOwner.teams({ teamId: ctx.teamId })['model-availability'].get())
+      .data!;
     expect(listed.entries).toHaveLength(1);
     expect(listed.entries[0]).toMatchObject({
       model: 'gpt-6-terra',
@@ -380,8 +386,9 @@ describe('model availability', () => {
     expect(dry.changed.map((agent) => agent.username).sort()).toEqual(['data-analyst', 'qa']);
     expect(dry.followTemplate).toEqual([{ id: copy.id, username: copy.username }]);
     expect(
-      (await db.select({ model: aiAgent.model }).from(aiAgent).where(eq(aiAgent.id, template.id)))[0]!
-        .model,
+      (
+        await db.select({ model: aiAgent.model }).from(aiAgent).where(eq(aiAgent.id, template.id))
+      )[0]!.model,
     ).toBe('gpt-6-terra');
 
     const done = (await replace.post({ from: 'gpt-6-terra', to: 'gpt-5.6-terra' })).data!;

@@ -5,15 +5,7 @@
 // the owner lets it be tried again; a success confirms a model the account's own list does
 // not name. The provider's words are kept short; no credential or answer ever lands here.
 import { sql } from 'drizzle-orm';
-import {
-  check,
-  integer,
-  pgTable,
-  serial,
-  text,
-  timestamp,
-  uniqueIndex,
-} from 'drizzle-orm/pg-core';
+import { check, integer, pgTable, serial, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 import { agentChatMessage, agentRun, aiAgent } from './app';
 
 export const helenaModelAvailability = pgTable(

@@ -5,12 +5,7 @@ import { updateIssue } from '#modules/issues/service';
 import { bumpControlPlaneRevision } from '#modules/sync/service';
 import type { AgentTeamStep } from '#modules/pipelines/definition';
 import type { RuntimeFailure } from '@helena/sdk';
-import {
-  cancelStepRun,
-  ModelRefusedFailure,
-  queueStepRun,
-  stepRunStatus,
-} from '../../agent-runs';
+import { cancelStepRun, ModelRefusedFailure, queueStepRun, stepRunStatus } from '../../agent-runs';
 import { clip, loadRun, stepRow, writeStep } from '../../run-context';
 import {
   StepFailure,

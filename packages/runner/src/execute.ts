@@ -555,17 +555,39 @@ function settle(
     return {
       status: 'failed',
       output,
-      error: result.error ?? `Hermes reported exit code ${result.exitCode}`,
+      error: hermesError(result, stderr, false) ?? `Hermes reported exit code ${result.exitCode}`,
     };
   if (code === 0) return { status: 'success', output };
   // The timeout says more about the failure than whatever the command printed.
   if (timedOut) return { status: 'failed', output, error: `Timed out after ${config.timeoutMs}ms` };
-  const printed =
-    stderr.trim() || (signal ? `Command killed by ${signal}` : `Command exited with ${code}`);
-  // Hermes prints little more than its session to stderr; its result line says what failed.
   return {
     status: 'failed',
     output,
-    error: result?.error ? `${result.error}\n${printed}` : printed,
+    error:
+      (hermesResult ? hermesError(result, stderr, true) : stderr.trim()) ||
+      (signal ? `Command killed by ${signal}` : `Command exited with ${code}`),
   };
+}
+
+// Hermes ends its stderr with the session it ran in ("session_id: …"), which says nothing
+// about a failure. What failed is on its result line: the provider's summary in `error`, and,
+// for a process that failed, Hermes' own account of the failed turn in the text ("…
+// rejected the request and retrying won't help … Provider said: HTTP 400: …"). Anything
+// else on stderr (a sandbox note, a traceback) is kept after it.
+const HERMES_SESSION_LINE = /^\s*session_id:\s*\S*\s*$/gm;
+const HERMES_ERROR_LIMIT = 500;
+
+export function hermesError(
+  result: HermesResultReader['result'],
+  stderr: string,
+  fromText: boolean,
+): string | undefined {
+  const printed = stderr.replace(HERMES_SESSION_LINE, '').trim();
+  const text = fromText ? (result?.text.trim() ?? '') : '';
+  const told =
+    result?.error ||
+    (!printed && text ? (/Provider said:\s*([^\n]+)/.exec(text)?.[1] ?? text.split('\n')[0]!) : '');
+  const error = [told, printed].filter(Boolean).join('\n');
+  if (!error) return undefined;
+  return error.length > HERMES_ERROR_LIMIT ? `${error.slice(0, HERMES_ERROR_LIMIT - 1)}…` : error;
 }

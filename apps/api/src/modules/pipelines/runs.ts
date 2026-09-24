@@ -319,8 +319,8 @@ export function stepFailure(
 ): { code: string; model: string | null } | null {
   const found =
     (runFailure as { code?: unknown; model?: unknown } | null) ??
-    ((state as { runtimeFailure?: { code?: unknown; model?: unknown } } | null)?.runtimeFailure ??
-      null);
+    (state as { runtimeFailure?: { code?: unknown; model?: unknown } } | null)?.runtimeFailure ??
+    null;
   if (!found || typeof found.code !== 'string') return null;
   return { code: found.code, model: typeof found.model === 'string' ? found.model : null };
 }

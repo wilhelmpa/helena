@@ -21,11 +21,7 @@ import { recordAgentRunFinished, recordAgentRunStarted } from '../core/run-activ
 import { isHomeAgent } from '../core/home-agent';
 import { normalizeRuntimePolicy } from '../core/service';
 import type { RuntimeFailure } from '@helena/sdk';
-import {
-  learnFromOutcome,
-  routeOf,
-  runtimeOfPolicy,
-} from '#modules/model-availability/service';
+import { learnFromOutcome, routeOf, runtimeOfPolicy } from '#modules/model-availability/service';
 import { getRunResumeSettings } from '#modules/settings/service';
 import type { AgentRunTrigger } from '../model';
 import { modelCheckOf, type RunModelReport } from '../runtime-sync/model-check';

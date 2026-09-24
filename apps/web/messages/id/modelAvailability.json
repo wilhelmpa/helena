@@ -1,0 +1,37 @@
+{
+  "unverified": "belum diverifikasi",
+  "unverifiedHint": "Akunmu tidak mencantumkan model ini. Hermes mengira model ini berfungsi; model dianggap terkonfirmasi begitu ada run yang berhasil dengannya.",
+  "refused": "{model} tidak tersedia untuk {account, select, chatgpt {akun ChatGPT-mu} claude {akun Claude-mu} other {akunmu}} – pilih model lain.",
+  "refusedShort": "Tidak tersedia untuk akunmu",
+  "providerSaid": "Penyedia menyatakan: {detail}",
+  "since": "sejak {time}",
+  "retry": "Periksa lagi",
+  "retryHint": "Melupakan temuan ini. Run berikutnya mencoba model itu lagi.",
+  "retried": "{model} akan dicoba lagi pada run berikutnya.",
+  "useDefault": "Gunakan default agen",
+  "templateFallback": "Template memakai {model}, yang tidak tersedia untuk akunmu. Karena itu salinan ini berjalan dengan default agen.",
+  "copyFallback": "{name} berjalan dengan default agen: {model} tidak tersedia untuk akunmu.",
+  "failure": {
+    "modelUnavailable": "Model {model} tidak tersedia untuk {account, select, chatgpt {akun ChatGPT-mu} claude {akun Claude-mu} other {akunmu}} – pilih model lain untuk agen ini. Mencoba lagi tidak akan membantu.",
+    "providerRejected": "Penyedia menolak permintaan secara permanen – mencoba lagi tidak akan membantu."
+  },
+  "activity": "tidak dapat bekerja: model {model} tidak tersedia untuk akunmu",
+  "health": {
+    "refused": "{model} tidak tersedia untuk akun ini – {count, plural, other {# agen memakainya}}: {agents}",
+    "refusedUnused": "{model} tidak tersedia untuk akun ini – tidak ada agen yang memakainya lagi"
+  },
+  "admin": {
+    "title": "Model",
+    "description": "Model mana yang benar-benar ditawarkan akunmu. Model yang ditolak hilang dari setiap pilihan sampai ada run yang berhasil dengannya atau kamu memeriksanya lagi.",
+    "empty": "Belum ada temuan.",
+    "unavailable": "tidak tersedia",
+    "works": "berfungsi",
+    "usedBy": "Dipakai oleh {agents}",
+    "unused": "Tidak ada agen yang memakainya.",
+    "replaceWith": "Pindahkan semua ke",
+    "replace": "Pindahkan",
+    "replaced": "{count, plural, =0 {Tidak ada agen yang memakainya.} other {# agen dipindahkan.}}",
+    "agentDefault": "Default agen",
+    "seen": "terakhir {time}"
+  }
+}

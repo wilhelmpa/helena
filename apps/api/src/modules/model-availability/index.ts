@@ -82,10 +82,29 @@ export const modelAvailabilityRoutes = new Elysia({
       detail: {
         summary: 'Move every agent off a model',
         description:
-          "Sets every agent and template of the team that runs `from` to `to` (null: the " +
+          'Sets every agent and template of the team that runs `from` to `to` (null: the ' +
           "runtime's default), keeping an agent's reasoning effort where the new model " +
           'offers it. A template carries the change to the copies that follow it. Running it ' +
           'again changes nothing.',
+      },
+    },
+  )
+
+  .delete(
+    '/god/model-availability/:entryId',
+    async ({ user, params }) => {
+      requireGod(user);
+      if (!(await clearModelAvailability(params.entryId))) {
+        throw new HttpError(404, 'Nothing is recorded under this id');
+      }
+      return noContent();
+    },
+    {
+      params: t.Object({ entryId: t.Numeric() }),
+      response: { 204: t.Void(), ...errors(401, 403, 404) },
+      detail: {
+        summary: 'Try a model again, for the whole instance',
+        description: 'Forgets what was recorded about the model (see the team route).',
       },
     },
   )

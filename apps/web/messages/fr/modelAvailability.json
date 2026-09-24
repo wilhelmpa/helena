@@ -1,0 +1,37 @@
+{
+  "unverified": "non vérifié",
+  "unverifiedHint": "Ton compte ne liste pas ce modèle. Hermes s'attend à ce qu'il fonctionne ; il est confirmé dès qu'une exécution réussit avec lui.",
+  "refused": "{model} n'est pas disponible pour {account, select, chatgpt {ton compte ChatGPT} claude {ton compte Claude} other {ton compte}} – choisis un autre modèle.",
+  "refusedShort": "Non disponible pour ton compte",
+  "providerSaid": "Le fournisseur indique : {detail}",
+  "since": "depuis {time}",
+  "retry": "Vérifier à nouveau",
+  "retryHint": "Oublie le constat. La prochaine exécution réessaie le modèle.",
+  "retried": "{model} sera réessayé lors de la prochaine exécution.",
+  "useDefault": "Utiliser le modèle par défaut de l'agent",
+  "templateFallback": "Le modèle d'agent utilise {model}, qui n'est pas disponible pour ton compte. Cette copie fonctionne donc avec le modèle par défaut de l'agent.",
+  "copyFallback": "{name} fonctionne avec le modèle par défaut : {model} n'est pas disponible pour ton compte.",
+  "failure": {
+    "modelUnavailable": "Le modèle {model} n'est pas disponible pour {account, select, chatgpt {ton compte ChatGPT} claude {ton compte Claude} other {ton compte}} – choisis un autre modèle pour l'agent. Réessayer n'y changera rien.",
+    "providerRejected": "Le fournisseur a refusé la requête définitivement – réessayer n'y changera rien."
+  },
+  "activity": "n'a pas pu travailler : le modèle {model} n'est pas disponible pour ton compte",
+  "health": {
+    "refused": "{model} n'est pas disponible pour le compte – {count, plural, one {# agent l'utilise} other {# agents l'utilisent}} : {agents}",
+    "refusedUnused": "{model} n'est pas disponible pour le compte – plus aucun agent ne l'utilise"
+  },
+  "admin": {
+    "title": "Modèles",
+    "description": "Les modèles que tes comptes proposent vraiment. Un modèle refusé disparaît de toutes les listes jusqu'à ce qu'une exécution réussisse avec lui ou que tu le fasses vérifier à nouveau.",
+    "empty": "Aucun constat pour l'instant.",
+    "unavailable": "non disponible",
+    "works": "fonctionne",
+    "usedBy": "Utilisé par {agents}",
+    "unused": "Aucun agent ne l'utilise.",
+    "replaceWith": "Tout basculer vers",
+    "replace": "Basculer",
+    "replaced": "{count, plural, =0 {Aucun agent ne l'utilisait.} one {# agent basculé.} other {# agents basculés.}}",
+    "agentDefault": "Modèle par défaut de l'agent",
+    "seen": "dernière fois {time}"
+  }
+}

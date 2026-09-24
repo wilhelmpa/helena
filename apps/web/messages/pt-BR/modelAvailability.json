@@ -1,0 +1,37 @@
+{
+  "unverified": "não verificado",
+  "unverifiedHint": "Sua conta não lista este modelo. O Hermes espera que ele funcione; ele fica confirmado assim que uma execução com ele dá certo.",
+  "refused": "{model} não está disponível para {account, select, chatgpt {sua conta do ChatGPT} claude {sua conta do Claude} other {sua conta}} – escolha outro modelo.",
+  "refusedShort": "Indisponível para sua conta",
+  "providerSaid": "O provedor diz: {detail}",
+  "since": "desde {time}",
+  "retry": "Verificar de novo",
+  "retryHint": "Esquece a constatação. A próxima execução tenta o modelo de novo.",
+  "retried": "{model} será tentado de novo na próxima execução.",
+  "useDefault": "Usar o padrão do agente",
+  "templateFallback": "O modelo de agente usa {model}, que não está disponível para sua conta. Por isso esta cópia usa o padrão do agente.",
+  "copyFallback": "{name} usa o padrão do agente: {model} não está disponível para sua conta.",
+  "failure": {
+    "modelUnavailable": "O modelo {model} não está disponível para {account, select, chatgpt {sua conta do ChatGPT} claude {sua conta do Claude} other {sua conta}} – escolha outro modelo para o agente. Tentar de novo não vai ajudar.",
+    "providerRejected": "O provedor recusou a solicitação de forma definitiva – tentar de novo não vai ajudar."
+  },
+  "activity": "não pôde trabalhar: o modelo {model} não está disponível para sua conta",
+  "health": {
+    "refused": "{model} não está disponível para a conta – {count, plural, one {# agente o usa} other {# agentes o usam}}: {agents}",
+    "refusedUnused": "{model} não está disponível para a conta – nenhum agente o usa mais"
+  },
+  "admin": {
+    "title": "Modelos",
+    "description": "Quais modelos suas contas oferecem de verdade. Um modelo recusado some de todas as seleções até uma execução com ele dar certo ou você mandar verificá-lo de novo.",
+    "empty": "Nenhuma constatação ainda.",
+    "unavailable": "indisponível",
+    "works": "funciona",
+    "usedBy": "Usado por {agents}",
+    "unused": "Nenhum agente o usa.",
+    "replaceWith": "Mudar todos para",
+    "replace": "Mudar",
+    "replaced": "{count, plural, =0 {Nenhum agente o usava.} one {# agente mudado.} other {# agentes mudados.}}",
+    "agentDefault": "Padrão do agente",
+    "seen": "última vez {time}"
+  }
+}

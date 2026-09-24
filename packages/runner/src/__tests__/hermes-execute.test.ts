@@ -171,10 +171,11 @@ describe('Hermes subprocess adapter', () => {
       'HTTP 400: {"detail":"The \'gpt-6-terra\' model is not supported when using Codex with a ChatGPT account."}',
   };
 
-  it('reads a model the provider refuses this account as final, in the provider\'s words', async () => {
+  it("reads a model the provider refuses this account as final, in the provider's words", async () => {
     const outcome = await refusedRun(REFUSAL, 'hermes');
     expect(outcome.status).toBe('failed');
-    expect(outcome.error).toBe(`${REFUSAL.error}\nsession_id: 20260924_191027_ae3ffa`);
+    // The provider's words, not the session line Hermes ends its stderr with.
+    expect(outcome.error).toBe(REFUSAL.error);
     expect(outcome.failure).toEqual({
       code: 'model-unavailable',
       retryable: false,
@@ -207,6 +208,21 @@ describe('Hermes subprocess adapter', () => {
       'hermes',
     );
     expect(login.failure).toBeUndefined();
+  });
+
+  it('words a failure from the result text when Hermes gives no summary', async () => {
+    const { error, ...withoutSummary } = REFUSAL;
+    expect(error).toBeTruthy();
+    const outcome = await refusedRun(withoutSummary, 'hermes');
+    expect(outcome.error).toBe(
+      'HTTP 400: {"detail":"The \'gpt-6-terra\' model is not supported when using Codex with a ChatGPT account."}',
+    );
+    expect(outcome.error).not.toContain('session_id');
+    const plain = await refusedRun(
+      { type: 'result', exit_code: 1, text: 'The tool loop gave up.\nDetails follow.' },
+      'hermes',
+    );
+    expect(plain.error).toBe('The tool loop gave up.');
   });
 
   it("leaves an operator's own command unread", async () => {

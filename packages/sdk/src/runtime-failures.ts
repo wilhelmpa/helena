@@ -48,10 +48,16 @@ const MODEL = String.raw`(?:['"\`‘’“”]([\w.:/@-]{2,120})['"\`‘’“�
 // Anthropic API, and the plain forms other gateways use.
 const MODEL_REFUSALS: RegExp[] = [
   new RegExp(String.raw`\bthe\s+${MODEL}\s+model\s+is\s+not\s+supported\b`, 'i'),
-  new RegExp(String.raw`\bmodel\s+${MODEL}\s+(?:is\s+not|isn't|isn’t)\s+(?:available|supported)\b`, 'i'),
+  new RegExp(
+    String.raw`\bmodel\s+${MODEL}\s+(?:is\s+not|isn't|isn’t)\s+(?:available|supported)\b`,
+    'i',
+  ),
   new RegExp(String.raw`\bthe\s+model\s+${MODEL}\s+does\s+not\s+exist\b`, 'i'),
   new RegExp(String.raw`not_found_error[^}]{0,80}?\bmodel:\s*${MODEL}`, 'i'),
-  new RegExp(String.raw`\b(?:unsupported|unknown|invalid)\s+model(?:\s+(?:id|name))?\s*[:=]\s*${MODEL}`, 'i'),
+  new RegExp(
+    String.raw`\b(?:unsupported|unknown|invalid)\s+model(?:\s+(?:id|name))?\s*[:=]\s*${MODEL}`,
+    'i',
+  ),
   new RegExp(String.raw`\bmodel\s+${MODEL}\s+(?:not\s+found|does\s+not\s+exist)\b`, 'i'),
 ];
 

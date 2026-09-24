@@ -226,6 +226,8 @@ export interface UnavailableCatalogModel {
   provider?: string;
   detail: string | null;
   since: string;
+  // The finding behind it, which "Erneut prüfen" forgets.
+  findingId: number;
 }
 
 // The catalog as an agent's pickers see it: a model its provider refused is left out (and
@@ -247,6 +249,7 @@ export function annotateCatalog<T extends CatalogModelLike>(
         ...(model.provider ? { provider: model.provider } : {}),
         detail: row.detail,
         since: iso(row.since),
+        findingId: row.id,
       });
       continue;
     }

@@ -16,8 +16,7 @@ async function teamThinkingLevels(teamId: number): Promise<Map<string, string[]>
     .where(eq(aiAgent.teamId, teamId));
   const levels = new Map<string, string[]>();
   for (const row of rows) {
-    for (const model of (row.models as { id: string; thinkingLevels?: string[] }[] | null) ??
-      []) {
+    for (const model of (row.models as { id: string; thinkingLevels?: string[] }[] | null) ?? []) {
       if (!levels.has(model.id)) levels.set(model.id, model.thinkingLevels ?? []);
     }
   }

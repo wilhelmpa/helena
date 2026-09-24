@@ -63,12 +63,15 @@ describe('classifyProviderFailure', () => {
   });
 
   test('a refusal that names no model still ends the run', () => {
-    expect(
-      classifyProviderFailure({ output: 'error code: model_not_found' }),
-    ).toMatchObject({ code: 'model-unavailable', retryable: false, model: null });
-    expect(classifyProviderFailure({ output: 'failed', reason: 'model_not_found' })).toMatchObject(
-      { code: 'model-unavailable', model: null },
-    );
+    expect(classifyProviderFailure({ output: 'error code: model_not_found' })).toMatchObject({
+      code: 'model-unavailable',
+      retryable: false,
+      model: null,
+    });
+    expect(classifyProviderFailure({ output: 'failed', reason: 'model_not_found' })).toMatchObject({
+      code: 'model-unavailable',
+      model: null,
+    });
   });
 
   test('a refusal no retry passes, for another reason, is final but names no model', () => {
@@ -91,10 +94,12 @@ describe('classifyProviderFailure', () => {
     expect(
       classifyProviderFailure({ output: 'x', reason: 'auth_permanent', retryable: false }),
     ).toBeNull();
-    expect(classifyProviderFailure({ output: 'x', reason: 'billing', retryable: false })).toBeNull();
+    expect(
+      classifyProviderFailure({ output: 'x', reason: 'billing', retryable: false }),
+    ).toBeNull();
     expect(
       classifyProviderFailure({
-        output: 'Anthropic rejected your sign-in, so the model can\'t be reached. Sign in again.',
+        output: "Anthropic rejected your sign-in, so the model can't be reached. Sign in again.",
       }),
     ).toBeNull();
     expect(classifyProviderFailure({ output: '', error: 'Timed out after 1800000ms' })).toBeNull();

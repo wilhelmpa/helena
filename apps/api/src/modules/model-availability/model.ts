@@ -43,7 +43,9 @@ export const ModelAgentRef = t.Object({
 
 export const ModelAvailabilityEntry = t.Object({
   id: t.Number(),
-  runtime: t.String({ description: "The runtime that reached the model ('hermes', 'claude', 'codex')." }),
+  runtime: t.String({
+    description: "The runtime that reached the model ('hermes', 'claude', 'codex').",
+  }),
   provider: t.String({
     description: "The provider it reached it through ('openai-codex', 'anthropic'; '' when none).",
   }),
@@ -104,4 +106,5 @@ export const unavailableCatalogModel = t.Object({
   provider: t.Optional(t.String()),
   detail: t.Nullable(t.String()),
   since: t.String(),
+  findingId: t.Number({ description: 'The finding behind it, which "try again" forgets.' }),
 });

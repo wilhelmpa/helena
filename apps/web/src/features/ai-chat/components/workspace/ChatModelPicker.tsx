@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { Check, ChevronDown, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +18,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { AiChatModel } from '@/lib/api/endpoints/agentChat';
 import { useChatCatalog } from '../../hooks/useChatCatalog';
+import {
+  accountOf,
+  isUnverified,
+  refusalOf,
+} from '@/features/model-availability/utils/modelFailure';
 
 // Who makes the models a runner offers, by the provider key its catalog names — product
 // names, the same in every language.
@@ -64,11 +70,24 @@ export default function ChatModelPicker({
   onOpenChange,
 }: ChatModelPickerProps) {
   const t = useTranslations('chatWorkspace');
+  const tModel = useTranslations('modelAvailability');
   const catalog = useChatCatalog(scopeKey, agentId);
   const models = catalog.data?.models ?? [];
   const selected = models.find((entry) => entry.id === model);
   const name = model == null ? t('composer.modelDefault') : (selected?.name ?? model);
   const label = thinkingLevel ? `${name} · ${thinkingLevel}` : name;
+  // The thread's model was refused since it was chosen: the next answer would fail.
+  const refused = refusalOf(model, catalog.data?.unavailable);
+  // An entry only the runtime expects to work carries a quiet mark.
+  const entryName = (entry: AiChatModel) =>
+    isUnverified(entry) ? (
+      <span title={tModel('unverifiedHint')}>
+        {entry.name}
+        <span className="ms-1.5 text-xs text-muted-foreground">{tModel('unverified')}</span>
+      </span>
+    ) : (
+      entry.name
+    );
 
   return (
     <DropdownMenu open={open} onOpenChange={onOpenChange}>
@@ -76,8 +95,18 @@ export default function ChatModelPicker({
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 min-w-0 gap-1 px-2 text-xs font-normal text-muted-foreground hover:text-foreground data-[state=open]:bg-accent"
-          title={t('composer.model')}
+          className={cn(
+            'h-8 min-w-0 gap-1 px-2 text-xs font-normal text-muted-foreground hover:text-foreground data-[state=open]:bg-accent',
+            refused && 'text-destructive',
+          )}
+          title={
+            refused
+              ? tModel('refused', {
+                  model: refused.id,
+                  account: accountOf(refused.provider, null, refused.id),
+                })
+              : t('composer.model')
+          }
         >
           <Sparkles className="size-3.5 shrink-0" />
           <span className="hidden max-w-40 truncate @md/composer:inline">{label}</span>
@@ -103,7 +132,7 @@ export default function ChatModelPicker({
                 <DropdownMenuSub key={entry.id}>
                   <DropdownMenuSubTrigger>
                     {entry.id === model && <Check className="size-4" />}
-                    <span className={entry.id === model ? '' : 'ps-6'}>{entry.name}</span>
+                    <span className={entry.id === model ? '' : 'ps-6'}>{entryName(entry)}</span>
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
                     <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
@@ -131,7 +160,7 @@ export default function ChatModelPicker({
               ) : (
                 <DropdownMenuItem key={entry.id} onSelect={() => onChange(entry.id, null)}>
                   {entry.id === model && <Check className="size-4" />}
-                  <span className={entry.id === model ? '' : 'ps-6'}>{entry.name}</span>
+                  <span className={entry.id === model ? '' : 'ps-6'}>{entryName(entry)}</span>
                 </DropdownMenuItem>
               ),
             )}

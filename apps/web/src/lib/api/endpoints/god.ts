@@ -1,4 +1,5 @@
 import { request } from '@/lib/api/core/client';
+import type { RunFailureRef } from '@/lib/api/endpoints/modelAvailability';
 import type { MemberRole } from '@/lib/api/endpoints/members';
 import type { TeamRole } from '@/lib/api/endpoints/teams';
 import type { NotificationEncryption } from '@/lib/api/endpoints/notificationSettings';
@@ -285,6 +286,18 @@ export interface SystemHealth {
   // The Helena engine, which runs workflows, agent teams and routines.
   engine: EngineHealth;
   janitors: JanitorHealth[];
+  // Models the providers refused, with the agents still set to them. Absent from an older
+  // server.
+  models?: { unavailable: RefusedModelHealth[] };
+}
+
+export interface RefusedModelHealth {
+  runtime: string;
+  provider: string;
+  model: string;
+  detail: string | null;
+  since: string;
+  agents: { id: number; teamId: number; username: string; template: boolean }[];
 }
 
 export interface EngineHealth {
@@ -303,7 +316,15 @@ export interface EngineHealth {
   schedules: number;
   // Enabled schedules whose time passed over five minutes ago without a fire.
   overdueSchedules: number;
-  lastErrors: { runId: string; projectKey: string; name: string; error: string; at: string }[];
+  lastErrors: {
+    runId: string;
+    projectKey: string;
+    name: string;
+    error: string;
+    // Why it failed, where the runtime's words said. Absent from an older server.
+    failure?: RunFailureRef | null;
+    at: string;
+  }[];
 }
 
 // The engine's instance settings: the time zone schedules and wait steps use when they
