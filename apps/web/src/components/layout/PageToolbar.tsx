@@ -11,7 +11,7 @@ import {
 } from 'react';
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
-import { Check, ChevronDown, MoreHorizontal, Search, X } from 'lucide-react';
+import { Check, ChevronDown, MoreHorizontal, Search, TextSearch, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { ShellHeaderRow } from '@/components/layout/WorkspaceHeader';
@@ -284,7 +284,7 @@ export function PageSearch({
           value && PAGE_CONTROL_ACTIVE_CLASS,
         )}
       >
-        <Search aria-hidden="true" />
+        <TextSearch aria-hidden="true" />
       </button>
       {open ? (
         <div className="absolute inset-0 z-20 flex items-center gap-1 bg-background px-2">
