@@ -51,10 +51,7 @@ export default function TeamRolesSection({ teamId }: { teamId: number }) {
   }
 
   return (
-    <SectionPageView
-      title={t('sections.roles.title')}
-      wide
-    >
+    <SectionPageView title={t('sections.roles.title')} wide>
       {canManage && (
         <PageToolbar>
           <PageToolbarSpacer />

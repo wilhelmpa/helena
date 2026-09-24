@@ -1,9 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import {
-  WORKSPACE_HEADER_CLASS,
-  WORKSPACE_PANEL_HEADER_CLASS,
-} from './WorkspaceHeader';
+import { WORKSPACE_HEADER_CLASS, WORKSPACE_PANEL_HEADER_CLASS } from './WorkspaceHeader';
 import {
   WORKSPACE_TOOLBAR_BUTTON_ACTIVE_CLASS,
   WORKSPACE_TOOLBAR_BUTTON_CLASS,

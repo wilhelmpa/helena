@@ -44,10 +44,7 @@ export default function TeamProjectsSection({ teamId }: { teamId: number }) {
   }
 
   return (
-    <SectionPageView
-      title={t('sections.projects.title')}
-      wide
-    >
+    <SectionPageView title={t('sections.projects.title')} wide>
       <PageToolbar>
         <PageToolbarSpacer />
         <PageSearch

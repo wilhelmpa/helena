@@ -19,11 +19,7 @@ export default function GodSectionPage({
 }) {
   const section = useGodSectionText().section(slug);
   return (
-    <SectionPageView
-      title={section.label}
-      widthClassName={widthClassName}
-      actions={actions}
-    >
+    <SectionPageView title={section.label} widthClassName={widthClassName} actions={actions}>
       <div className="flex flex-1 flex-col gap-6">{children}</div>
     </SectionPageView>
   );

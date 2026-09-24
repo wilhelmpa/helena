@@ -25,10 +25,7 @@ export default function TeamIntegrationsSection({ teamId }: { teamId: number }) 
   const [creating, setCreating] = useState(false);
 
   return (
-    <SectionPageView
-      title={t('sections.integrations.title')}
-      wide
-    >
+    <SectionPageView title={t('sections.integrations.title')} wide>
       <PageToolbar>
         <PageToolbarSpacer />
         <PageActions

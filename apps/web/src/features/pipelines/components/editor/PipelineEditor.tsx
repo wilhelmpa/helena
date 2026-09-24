@@ -79,10 +79,7 @@ export default function PipelineEditor({
     );
 
   return (
-    <SectionPageView
-      title={draft.name || pipeline.name}
-      wide
-    >
+    <SectionPageView title={draft.name || pipeline.name} wide>
       <PipelineEditorActions
         pipeline={pipeline}
         editable={editable}

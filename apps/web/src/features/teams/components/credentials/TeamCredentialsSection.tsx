@@ -54,10 +54,7 @@ export default function TeamCredentialsSection({
   const close = () => setOpen(null);
 
   return (
-    <SectionPageView
-      title={t('title')}
-      wide
-    >
+    <SectionPageView title={t('title')} wide>
       <PageToolbar>
         {leading}
         {canRead && !leading && (
