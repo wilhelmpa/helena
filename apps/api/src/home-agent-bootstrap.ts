@@ -8,6 +8,14 @@ import {
   bootstrapProjectCoordinator,
 } from './scripts/bootstrap-home-agent';
 
+// A secret must be readable by its owner only. systemd's own credential directory is the
+// exception: on a native boot it presents LoadCredential files as 0440 (0400 inside a
+// container) and guards the directory itself, so group read is fine there.
+function secretModeMask(file: string): number {
+  const dir = process.env.CREDENTIALS_DIRECTORY;
+  return dir && file.startsWith(`${dir}/`) ? 0o037 : 0o077;
+}
+
 let tokenPromise: Promise<string> | null = null;
 
 // The path is read on first use rather than at import, so a test can point it at a
@@ -17,7 +25,11 @@ async function bootstrapToken(): Promise<string> {
     process.env.PLAN_CONTROL_TOKEN_FILE?.trim() || '/run/secrets/plan_control_token';
   tokenPromise ??= lstat(tokenFile)
     .then(async (stat) => {
-      if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & 0o077) !== 0) {
+      if (
+        !stat.isFile() ||
+        stat.isSymbolicLink() ||
+        (stat.mode & secretModeMask(tokenFile)) !== 0
+      ) {
         throw new Error('invalid secret file');
       }
       const token = (await readFile(tokenFile, 'utf8')).trim();

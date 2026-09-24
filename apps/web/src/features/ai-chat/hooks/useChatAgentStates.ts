@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { listAgentActivity } from '@/lib/api/endpoints/agentActivity';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { qk } from '@/services/queryKeys';
+import { useEmergencyStop } from '@/features/agent-runtime/services/agentRuntime.service';
 import { chatAgentState, openWorkByAgent, type ChatAgentState } from '../utils/agentPresence';
 
 // How often the states are looked at again: the agents list refetches on its own (the
@@ -21,6 +22,8 @@ export function useChatAgentStates(agents: AiAgent[]): Map<number, ChatAgentStat
     queryFn: () => listAgentActivity(null, {}, null),
     refetchInterval: REFRESH_MS,
   });
+  // While the emergency stop is on, every agent is halted: a question waits until it is lifted.
+  const stoppedSince = useEmergencyStop().data?.active ? 'stopped' : null;
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), REFRESH_MS);
@@ -30,7 +33,14 @@ export function useChatAgentStates(agents: AiAgent[]): Map<number, ChatAgentStat
   return useMemo(() => {
     const work = openWorkByAgent(activity.data?.items ?? []);
     return new Map(
-      agents.map((agent) => [agent.id, chatAgentState(agent, work.get(agent.id), now)]),
+      agents.map((agent) => [
+        agent.id,
+        chatAgentState(
+          stoppedSince ? { ...agent, pausedAt: agent.pausedAt ?? stoppedSince } : agent,
+          work.get(agent.id),
+          now,
+        ),
+      ]),
     );
-  }, [agents, activity.data, now]);
+  }, [agents, activity.data, now, stoppedSince]);
 }

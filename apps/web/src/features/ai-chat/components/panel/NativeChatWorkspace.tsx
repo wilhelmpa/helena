@@ -3,7 +3,7 @@
 import { useContext, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { ShellCtx } from '@/context/shellContext';
-import type { WorkspaceContentProps } from '@/context/workspaceContents';
+import type { WorkspaceContentProps } from '@/extensions/panelTools';
 import { runtimeEnv } from '@/utils/runtimeEnv';
 import { nativeChatProjectKey } from '@/utils/workspaceTools';
 import { Skeleton } from '@/components/ui/skeleton';

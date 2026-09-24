@@ -14,3 +14,11 @@ if (!connectionString) {
 const queryClient = postgres(connectionString, { prepare: false });
 
 export const db = drizzle(queryClient, { schema });
+
+// Postgres LISTEN on one channel, over a connection of its own that postgres-js
+// re-establishes (and listens on again) after it drops. `onNotify` receives each
+// NOTIFY's payload. Resolves once the LISTEN is in place.
+export async function listen(channel: string, onNotify: (payload: string) => void) {
+  const request = await queryClient.listen(channel, onNotify);
+  return { unlisten: () => request.unlisten() };
+}

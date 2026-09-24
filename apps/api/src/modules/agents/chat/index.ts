@@ -1,5 +1,4 @@
 import { Elysia, t } from 'elysia';
-import { setTimeout as sleep } from 'node:timers/promises';
 import { authContext } from '#shared/auth-context';
 import { entityGuard, guards } from '#shared/guards';
 import { paginate } from '#shared/pagination';
@@ -11,6 +10,7 @@ import { HttpError } from '#shared/lib';
 import { commonErrors, errors } from '#shared/responses';
 import { agentScopeOf, getAgentById, getAgentInProject, isTriggerableBy } from '../core/service';
 import { runnerAuth } from '../runner-auth';
+import { watchChatAnswer } from './wake';
 import {
   ChatAckResponse,
   ChatEventsResponse,
@@ -420,10 +420,10 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
 
   .get(
     '/teams/:teamId/ai-agents/:agentId/chat/:messageId/stream',
-    async ({ params, membership, query, user }) => {
+    async ({ params, membership, query, headers, user }) => {
       const caller = requireUser(user);
       await requireTeamAgent(params.agentId, membership);
-      const after = query.after ?? 0;
+      const after = resumeCursor(headers, query.after);
       if (!(await readEvents(params.messageId, params.agentId, caller.id, after))) {
         throw new HttpError(404, 'Message not found');
       }
@@ -579,12 +579,12 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
   // the chat show that it is waiting.
   .get(
     '/projects/:projectKey/ai-agents/:agentId/chat/:messageId/stream',
-    async ({ params, project, query, user }) => {
+    async ({ params, project, query, headers, user }) => {
       const caller = requireUser(user);
       await requireProjectAgent(params.agentId, project.id);
       // Checked before the stream starts, so an unknown answer is a 404 rather than a
       // stream that ends immediately.
-      const after = query.after ?? 0;
+      const after = resumeCursor(headers, query.after);
       if (!(await readEvents(params.messageId, params.agentId, caller.id, after))) {
         throw new HttpError(404, 'Message not found');
       }
@@ -732,6 +732,15 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
     },
   );
 
+// Where a stream picks up: after the event the reader saw last. The SSE standard sends
+// that event's id back as the Last-Event-ID header when a client reconnects; `?after=` is
+// how clients before it asked, accepted for one release.
+function resumeCursor(headers: Record<string, string | undefined>, after: number | undefined) {
+  const header = headers['last-event-id']?.trim();
+  if (header && /^\d+$/.test(header)) return Number(header);
+  return after ?? 0;
+}
+
 // The frames one stream sends: every event stored for the answer, in order, and then
 // whatever arrives while it is still being produced. Each frame carries the event's id,
 // which a client that reconnects passes back as `after` to resume where it stopped.
@@ -751,29 +760,35 @@ async function* streamChatEvents(
   let ended = false;
   let quietSince = Date.now();
   for (;;) {
-    const page = await readEvents(messageId, agentId, userId, cursor);
-    if (!page) return;
-    for (const item of page.items) {
-      if (item.event.type === 'RUN_ERROR' || item.event.type === 'RUN_FINISHED') ended = true;
-      yield sseFrame(item.event, item.id);
+    // Watched before reading, so a change that lands during the read wakes the next turn.
+    const change = watchChatAnswer(messageId, agentChatConfig.streamPollMs());
+    try {
+      const page = await readEvents(messageId, agentId, userId, cursor);
+      if (!page) return;
+      for (const item of page.items) {
+        if (item.event.type === 'RUN_ERROR' || item.event.type === 'RUN_FINISHED') ended = true;
+        yield sseFrame(item.event, item.id);
+      }
+      if (page.nextCursor != null) {
+        cursor = page.nextCursor;
+        quietSince = Date.now();
+      }
+      // More is already stored than one read hands out: take it before deciding the
+      // answer is over or waiting for the next change.
+      if (page.hasMore) continue;
+      if (page.status !== 'pending' && page.status !== 'streaming') {
+        if (!ended) yield sseFrame(terminalEvent(page.status, page.error), cursor);
+        return;
+      }
+      if (Date.now() >= until) return;
+      if (Date.now() - quietSince >= KEEPALIVE_MS) {
+        yield ': ping\n\n';
+        quietSince = Date.now();
+      }
+      await change.next;
+    } finally {
+      change.stop();
     }
-    if (page.nextCursor != null) {
-      cursor = page.nextCursor;
-      quietSince = Date.now();
-    }
-    // More is already stored than one read hands out: take it before deciding the
-    // answer is over or waiting for the next tick.
-    if (page.hasMore) continue;
-    if (page.status !== 'pending' && page.status !== 'streaming') {
-      if (!ended) yield sseFrame(terminalEvent(page.status, page.error), cursor);
-      return;
-    }
-    if (Date.now() >= until) return;
-    if (Date.now() - quietSince >= KEEPALIVE_MS) {
-      yield ': ping\n\n';
-      quietSince = Date.now();
-    }
-    await sleep(agentChatConfig.streamPollMs());
   }
 }
 

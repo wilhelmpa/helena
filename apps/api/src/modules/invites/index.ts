@@ -160,7 +160,7 @@ export const inviteRoutes = new Elysia({ name: 'invites', detail: { tags: ['Invi
         description:
           'Queue an email for a pending project invite. Returns false when the instance email ' +
           'provider is not configured.',
-        ...mcpTool('send_invite_email'),
+        ...mcpTool('send_invite_email', undefined, 'send'),
       },
     },
   )

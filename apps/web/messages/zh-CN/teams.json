@@ -611,7 +611,7 @@
         "enabled": "自主学习",
         "enabledHint": "代理会在聊天和运行中保存记忆并创建技能，由此消耗的令牌计入其用量。关闭后，它不再保存新内容，也不会加载已有记忆。",
         "curator": "整理器",
-        "curatorHint": "Hermes 的整理器会归档 30 天未使用的已学技能。它在 Hermes 自身的维护中运行（例如 Hermes 仪表盘），不在 Plan 发起的聊天和运行中运行。",
+        "curatorHint": "Hermes 的整理器会归档 30 天未使用的已学技能。Helena 每周请它审查一次；在代理的“运行时”标签页中，你可以立即运行一次审查，并固定它不应改动的技能。",
         "reflectionTitle": "反思",
         "reflectionHint": "运行结束后，在同一会话中进行的一轮简短后续对话，代理只保留这次运行教给它的内容，所耗令牌计入该次运行的用量。",
         "reflectionOff": "关闭",
@@ -640,8 +640,12 @@
         "memoryEditTitle": "编辑 {file}",
         "memoryEditHint": "Hermes 每段保存一条记录，记录之间用单独一行的 § 分隔。除非代理在此期间修改了该文件，否则运行器会写入你的版本。",
         "memoryClearTitle": "清空 {file}？",
-        "memoryClearBody": "运行器下次同步时，代理将失去这些笔记。"
-      }
+        "memoryClearBody": "运行器下次同步时，代理将失去这些笔记。",
+        "memoryApproval": "审批记忆更改",
+        "memoryApprovalHint": "代理写入记忆的内容会以 diff 形式在审批页面等待；批准之前，它保留已批准的版本。"
+      },
+      "skillEnabled": "启用 {name}",
+      "skillsDisabled": "已停用 {count} 个"
     },
     "paused": "已暂停",
     "pausedNoReason": "已暂停。未提供原因。",
@@ -723,7 +727,8 @@
         "model": "模型",
         "reasoning": "推理"
       }
-    }
+    },
+    "chatTemplate": "模板本身不会运行。将它作为智能体添加到项目后即可在这里试用。"
   },
   "members": {
     "roleSaved": "{name} 现在是{role}",
@@ -748,5 +753,22 @@
   "settingState": {
     "on": "已开启",
     "off": "已关闭"
+  },
+  "templateBundles": {
+    "importAction": "导入模板",
+    "exportAction": "导出模板",
+    "importTitle": "导入模板",
+    "counts": "{agents} 个智能体模板 · {skills} 个技能 · {servers} 个 MCP 服务器",
+    "chooseFile": "选择包文件",
+    "fileChosen": "文件：{name}",
+    "dryRun": "仅检查（不做更改）",
+    "update": "覆盖差异",
+    "check": "检查",
+    "import": "导入",
+    "close": "关闭",
+    "failed": "操作失败。",
+    "notJson": "该文件不是 JSON 包。",
+    "summary": "已写入 {written} · 未变 {unchanged} · 不同 {drift} · 警告 {warnings}",
+    "summaryDryRun": "仅检查，未做更改 · 未变 {unchanged} · 不同 {drift} · 警告 {warnings}"
   }
 }

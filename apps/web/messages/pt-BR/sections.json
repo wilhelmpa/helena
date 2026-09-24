@@ -58,6 +58,14 @@
     "scim": {
       "label": "SCIM",
       "description": "Permita que um provedor de identidade crie, atualize e desative contas nesta instância e conceda acesso a projetos por seus grupos."
+    },
+    "agent-runtime": {
+      "label": "Runtime dos agentes",
+      "description": "A parada de emergência, a instalação do Hermes e suas atualizações, os modelos de reserva e a retenção de sessões para todos os agentes, e o que os agentes consumiram."
+    },
+    "plugins": {
+      "label": "Plugins",
+      "description": "Os plugins próprios do Helena e os externos da pasta de plugins: o que fornecem, as permissões que pedem e quais podem rodar."
     }
   },
   "settings": {

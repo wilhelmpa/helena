@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useBrowserControl } from '@/hooks/useBrowserControl';
 import type { BrowserView } from '@/hooks/useBrowserPreferences';
 import { Button } from '@/components/ui/button';
+import WorkspaceBrowserBookmarks from './WorkspaceBrowserBookmarks';
 import WorkspaceBrowserStreamMenu from './WorkspaceBrowserStreamMenu';
 import WorkspaceBrowserTabs from './WorkspaceBrowserTabs';
 import WorkspaceBrowserViewSwitch from './WorkspaceBrowserViewSwitch';
@@ -95,6 +96,11 @@ export default function WorkspaceBrowserBar({
           }}
         />
       </form>
+      <WorkspaceBrowserBookmarks
+        base={base}
+        current={active}
+        onOpen={(url) => act({ action: 'new', url })}
+      />
       <WorkspaceBrowserTabs
         tabs={tabs}
         onActivate={(tabId) => act({ action: 'activate', id: tabId })}

@@ -371,7 +371,8 @@
     "janitor": {
       "run-janitor": "Limpieza de ejecuciones",
       "resume-janitor": "Limpieza de reanudaciones",
-      "engine-maintenance": "Mantenimiento del motor"
+      "engine-maintenance": "Mantenimiento del motor",
+      "runtime-janitor": "Limpieza del runtime"
     },
     "janitorRan": "se ejecutó hace {time}",
     "janitorCleaned": "{count, plural, one {limpió # elemento} other {limpió # elementos}}",
@@ -387,6 +388,39 @@
     "agentSync": {
       "title": "Perfiles de agentes",
       "synced": "{synced} de {total} sincronizados"
+    }
+  },
+  "plugins": {
+    "externalTitle": "Plugins externos",
+    "externalDescription": "Un plugin externo se ejecuta dentro de Helena con los permisos de Helena. Actívalo solo para plugins de confianza.",
+    "folder": "Carpeta de plugins: {path}",
+    "noFolder": "No hay carpeta de plugins (HELENA_PLUGINS_DIR), así que solo se ejecutan los plugins propios de Helena.",
+    "restartHint": "Los cambios se aplican cuando se reinician la API y el worker.",
+    "foundTitle": "En la carpeta de plugins",
+    "none": "No se encontraron plugins.",
+    "approve": "Aprobar",
+    "revoke": "Retirar aprobación",
+    "builtinTitle": "Integrados",
+    "statusLoaded": "Cargado",
+    "statusFailed": "Error",
+    "statusNotLoaded": "No cargado",
+    "restartRequired": "Hace falta reiniciar",
+    "provides": "Aporta",
+    "actions": "Acciones",
+    "events": "Eventos",
+    "network": "Red",
+    "credentials": "Sus herramientas usan las credenciales de sus conectores.",
+    "names": {
+      "integrations": "Integraciones",
+      "mcp": "Herramientas MCP de Helena",
+      "webhooks": "Webhooks",
+      "bundles": "Paquetes de plantillas"
+    },
+    "problems": {
+      "external-off": "Se carga cuando se activen los plugins externos.",
+      "not-approved": "Aún no aprobado.",
+      "version-changed": "Aprobado para otra versión: aprueba esta.",
+      "files-changed": "Sus archivos cambiaron desde la aprobación: revísalo y apruébalo de nuevo."
     }
   }
 }

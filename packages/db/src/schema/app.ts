@@ -694,6 +694,14 @@ export const agentRun = pgTable(
     // Distinct from `attempts`, which a release or a replayed stage lowers; this only
     // grows, and is what the instance's resume limit checks.
     resumes: integer('resumes').notNull().default(0),
+    // The run whose session this one continues with a new instruction ("continue from
+    // here"). Its first claim sends that instruction instead of the resume prompt.
+    continuedFromRunId: integer('continued_from_run_id').references(
+      (): AnyPgColumn => agentRun.id,
+      {
+        onDelete: 'set null',
+      },
+    ),
     finishedAt: timestamp('finished_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -1381,6 +1389,168 @@ export const agentRuntimeAction = pgTable(
       sql`${t.kind} IN ('discard-skill', 'pin-skill', 'write-memory', 'rewrite-profile')`,
     ),
     index('agent_runtime_action_agent_idx').on(t.agentId, t.id),
+  ],
+);
+
+// The token ledger: one row per run, chat answer or reflection a runner reported, with the
+// model that actually ran. Usage per agent, model, project and day and the budgets are read
+// from here; cost is computed when read, from the price of the model at that time. The token
+// columns follow the OpenTelemetry GenAI conventions (gen_ai.usage.*): input_tokens includes
+// the cached reads and writes, output_tokens includes the reasoning tokens.
+export const agentUsage = pgTable(
+  'agent_usage',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    agentId: integer('agent_id')
+      .notNull()
+      .references(() => aiAgent.id, { onDelete: 'cascade' }),
+    // Null for work outside a project, such as a Home chat.
+    projectId: integer('project_id').references(() => project.id, { onDelete: 'cascade' }),
+    runId: integer('run_id').references(() => agentRun.id, { onDelete: 'set null' }),
+    chatMessageId: integer('chat_message_id').references(() => agentChatMessage.id, {
+      onDelete: 'set null',
+    }),
+    kind: text('kind').notNull(),
+    // The runner preset that ran it ('hermes', 'claude', 'codex', ...), null for a custom one.
+    runtime: text('runtime'),
+    // gen_ai.response.model and gen_ai.provider.name, as the runtime reported them.
+    model: text('model'),
+    provider: text('provider'),
+    // gen_ai.conversation.id: the runtime session the tokens were spent in.
+    sessionId: text('session_id'),
+    inputTokens: bigint('input_tokens', { mode: 'number' }).notNull().default(0),
+    outputTokens: bigint('output_tokens', { mode: 'number' }).notNull().default(0),
+    cacheReadTokens: bigint('cache_read_tokens', { mode: 'number' }).notNull().default(0),
+    cacheWriteTokens: bigint('cache_write_tokens', { mode: 'number' }).notNull().default(0),
+    reasoningTokens: bigint('reasoning_tokens', { mode: 'number' }).notNull().default(0),
+    // Wall-clock time of the run, chat answer or reflection, when the runner measured it.
+    durationMs: integer('duration_ms'),
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('agent_usage_kind_check', sql`${t.kind} IN ('run', 'chat', 'reflection')`),
+    index('agent_usage_agent_time_idx').on(t.agentId, t.occurredAt),
+    index('agent_usage_project_time_idx').on(t.projectId, t.occurredAt),
+    index('agent_usage_time_idx').on(t.occurredAt),
+    index('agent_usage_run_idx').on(t.runId),
+  ],
+);
+
+// A question Helena asks an agent's runtime through its runner: a session list, a
+// transcript, the logs, a health check, a curator run. The runner claims it, answers it
+// with the adapter of the agent's runtime, and the waiting request reads the answer. Rows
+// are kept only for a few minutes; the janitor deletes answered and stale ones.
+export const agentRuntimeRequest = pgTable(
+  'agent_runtime_request',
+  {
+    id: serial('id').primaryKey(),
+    agentId: integer('agent_id')
+      .notNull()
+      .references(() => aiAgent.id, { onDelete: 'cascade' }),
+    // The request as the runner receives it: `{ op, ...params }` (packages/runner readers).
+    request: jsonb('request').notNull(),
+    // pending -> claimed -> answered | failed
+    status: text('status').notNull().default('pending'),
+    result: jsonb('result'),
+    error: text('error'),
+    requestedByUserId: text('requested_by_user_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    claimedAt: timestamp('claimed_at', { withTimezone: true }),
+    answeredAt: timestamp('answered_at', { withTimezone: true }),
+  },
+  (t) => [
+    check(
+      'agent_runtime_request_status_check',
+      sql`${t.status} IN ('pending', 'claimed', 'answered', 'failed')`,
+    ),
+    index('agent_runtime_request_agent_idx').on(t.agentId, t.status, t.id),
+    index('agent_runtime_request_created_idx').on(t.createdAt),
+  ],
+);
+
+// What a run's command wrote, as the AG-UI events the runner read from it, redacted: the
+// run's timeline in Helena, live while it runs and as a replay afterwards. Bounded per run
+// by the API; the janitor removes the events of old runs.
+export const agentRunEvent = pgTable(
+  'agent_run_event',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    runId: integer('run_id')
+      .notNull()
+      .references(() => agentRun.id, { onDelete: 'cascade' }),
+    // The claim the events came from: a run claimed again starts a new attempt.
+    claim: integer('claim').notNull().default(0),
+    payload: jsonb('payload').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('agent_run_event_run_idx').on(t.runId, t.id)],
+);
+
+// A change the owner decides on before it takes effect, raised by an agent's runtime rather
+// than by the agent asking: a memory write Hermes staged (memory.write_approval), an update
+// of Hermes itself. Listed with the approvals; approving one has the runner carry it out.
+export const agentProposal = pgTable(
+  'agent_proposal',
+  {
+    id: serial('id').primaryKey(),
+    // Null for a proposal of the instance, such as a Hermes update.
+    agentId: integer('agent_id').references(() => aiAgent.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(),
+    // The runtime's own id of the proposal (Hermes' pending id), so a report repeats it
+    // instead of adding it twice.
+    externalId: text('external_id').notNull(),
+    title: text('title').notNull(),
+    payload: jsonb('payload').notNull().default({}),
+    // pending -> approved | rejected; approved -> applied | failed once the runner did it.
+    status: text('status').notNull().default('pending'),
+    decidedByUserId: text('decided_by_user_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    decidedAt: timestamp('decided_at', { withTimezone: true }),
+    note: text('note'),
+    error: text('error'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('agent_proposal_kind_check', sql`${t.kind} IN ('memory-write', 'hermes-update')`),
+    check(
+      'agent_proposal_status_check',
+      sql`${t.status} IN ('pending', 'approved', 'rejected', 'applied', 'failed')`,
+    ),
+    uniqueIndex('agent_proposal_external_uq').on(
+      sql`coalesce(${t.agentId}, 0)`,
+      t.kind,
+      t.externalId,
+    ),
+    index('agent_proposal_status_idx').on(t.status, t.id),
+  ],
+);
+
+// Every version of an agent's memory files Helena has seen: what the agent wrote and the
+// owner approved, what the owner wrote, and changes found in the runtime otherwise.
+export const agentMemoryRevision = pgTable(
+  'agent_memory_revision',
+  {
+    id: serial('id').primaryKey(),
+    agentId: integer('agent_id')
+      .notNull()
+      .references(() => aiAgent.id, { onDelete: 'cascade' }),
+    file: text('file').notNull(),
+    content: text('content').notNull(),
+    sha256: text('sha256').notNull(),
+    source: text('source').notNull(),
+    proposalId: integer('proposal_id').references(() => agentProposal.id, {
+      onDelete: 'set null',
+    }),
+    userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('agent_memory_revision_file_check', sql`${t.file} IN ('MEMORY.md', 'USER.md')`),
+    check('agent_memory_revision_source_check', sql`${t.source} IN ('agent', 'owner', 'observed')`),
+    index('agent_memory_revision_agent_idx').on(t.agentId, t.file, t.id),
   ],
 );
 

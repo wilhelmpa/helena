@@ -8,8 +8,11 @@ import { processActionRuns } from '#modules/actions/runner';
 import { processInboxTasks } from '#modules/hub-inbox/tasks';
 import { engineRunning, launchEngine } from '#modules/engine/dbos';
 import { engineMaintenance, engineTick } from '#modules/engine/janitor';
+import { pruneRuntimeRequests } from '#modules/agents/runtime-requests/service';
+import { scheduleCuratorRuns } from '#modules/agents/runtime-requests/curator-schedule';
+import { pruneRunEvents } from '#modules/agents/run-timeline/service';
 
-const [RUN_JANITOR, RESUME_JANITOR, ENGINE_MAINTENANCE] = JANITOR_JOBS;
+const [RUN_JANITOR, RESUME_JANITOR, ENGINE_MAINTENANCE, RUNTIME_JANITOR] = JANITOR_JOBS;
 
 // The api's background jobs, started by index.ts rather than assembled into the app,
 // so importing the app in a test starts nothing. Several api replicas run them without
@@ -27,6 +30,7 @@ export function startBackgroundJobs(): void {
   startLoop('auto-archive', autoArchive, () => intEnv('AUTO_ARCHIVE_INTERVAL_MS', 3_600_000));
   startLoop(RUN_JANITOR, runJanitor, () => intEnv('RUN_JANITOR_INTERVAL_MS', 60_000));
   startLoop(RESUME_JANITOR, resumeJanitor, () => intEnv('RESUME_JANITOR_INTERVAL_MS', 60_000));
+  startLoop(RUNTIME_JANITOR, runtimeJanitor, () => intEnv('RUNTIME_JANITOR_INTERVAL_MS', 300_000));
   if (process.env.HELENA_ENGINE?.trim().toLowerCase() === 'off') return;
   // Launches the engine and tries again while the database does not answer.
   const launcher = startLoop(
@@ -79,12 +83,22 @@ export async function resumeJanitor(): Promise<void> {
   if (failed > 0) console.log(`[background] failed ${failed} runs that reached the resume limit`);
 }
 
-// The engine's maintenance: its schedules in step with Helena's, the runs of a replica
-// that is gone resumed elsewhere, old events and skipped fires pruned.
+// The engine's maintenance: the runs of a replica that is gone resumed elsewhere, its
+// old records and skipped fires pruned.
 export async function maintainEngine(): Promise<void> {
   if (!engineRunning()) return;
   const changed = await janitorJob(ENGINE_MAINTENANCE, engineMaintenance);
-  if (changed > 0) console.log(`[engine] maintenance changed ${changed} schedules, runs or events`);
+  if (changed > 0) console.log(`[engine] maintenance changed ${changed} runs or records`);
+}
+
+// Removes the answered and stale questions to agents' runtimes and the timelines of runs
+// that finished long ago, and asks the curators that are due for their review.
+export async function runtimeJanitor(): Promise<void> {
+  await janitorJob(
+    RUNTIME_JANITOR,
+    async () =>
+      (await pruneRuntimeRequests()) + (await pruneRunEvents()) + (await scheduleCuratorRuns()),
+  );
 }
 
 async function autoArchive(): Promise<void> {

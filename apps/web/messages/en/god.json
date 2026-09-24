@@ -371,7 +371,8 @@
     "janitor": {
       "run-janitor": "Run janitor",
       "resume-janitor": "Resume janitor",
-      "engine-maintenance": "Engine maintenance"
+      "engine-maintenance": "Engine maintenance",
+      "runtime-janitor": "Runtime janitor"
     },
     "janitorRan": "ran {time} ago",
     "janitorCleaned": "{count, plural, one {cleaned up # thing} other {cleaned up # things}}",
@@ -387,6 +388,39 @@
     "agentSync": {
       "title": "Agent profiles",
       "synced": "{synced} of {total} in sync"
+    }
+  },
+  "plugins": {
+    "externalTitle": "External plugins",
+    "externalDescription": "An external plugin runs inside Helena with Helena's rights. Switch this on only for plugins you trust.",
+    "folder": "Plugin folder: {path}",
+    "noFolder": "No plugin folder is set (HELENA_PLUGINS_DIR), so only Helena's own plugins run.",
+    "restartHint": "Changes take effect when the API and the worker restart.",
+    "foundTitle": "In the plugin folder",
+    "none": "No plugins found.",
+    "approve": "Approve",
+    "revoke": "Withdraw approval",
+    "builtinTitle": "Built in",
+    "statusLoaded": "Loaded",
+    "statusFailed": "Error",
+    "statusNotLoaded": "Not loaded",
+    "restartRequired": "Restart needed",
+    "provides": "Provides",
+    "actions": "Actions",
+    "events": "Events",
+    "network": "Network",
+    "credentials": "Its tools use the credentials of its connectors.",
+    "names": {
+      "integrations": "Integrations",
+      "mcp": "Helena MCP tools",
+      "webhooks": "Webhooks",
+      "bundles": "Template bundles"
+    },
+    "problems": {
+      "external-off": "Loads once external plugins are switched on.",
+      "not-approved": "Not approved yet.",
+      "version-changed": "Approved at another version: approve this one.",
+      "files-changed": "Its files changed since it was approved: check and approve again."
     }
   }
 }

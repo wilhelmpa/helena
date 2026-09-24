@@ -1,0 +1,242 @@
+{
+  "tabs": {
+    "label": "Ansichten des Agenten",
+    "settings": "Einstellungen",
+    "runs": "Läufe",
+    "sessions": "Sitzungen",
+    "memory": "Gedächtnis",
+    "usage": "Verbrauch",
+    "runtime": "Laufzeit"
+  },
+  "runs": {
+    "empty": "Noch keine Läufe.",
+    "loadMore": "Mehr laden",
+    "running": "Läuft",
+    "blocked": "Blockiert",
+    "modelMismatch": "Anderes Modell",
+    "back": "Zurück zu den Läufen",
+    "views": "Ansichten des Laufs",
+    "timeline": "Verlauf",
+    "transcript": "Transkript",
+    "logs": "Log",
+    "noTimeline": "Für diesen Lauf wurde kein Verlauf aufgezeichnet. Das Transkript seiner Sitzung zeigt, was passiert ist.",
+    "noSession": "Zu diesem Lauf gibt es keine Sitzung der Laufzeit.",
+    "noLogs": "Keine Log-Zeilen zu dieser Sitzung.",
+    "truncated": "Lange Teile sind gekürzt.",
+    "copySession": "Sitzungs-ID kopieren",
+    "resumed": "{count, plural, one {einmal fortgesetzt} other {#-mal fortgesetzt}}",
+    "continuesRun": "Setzt Lauf #{id} fort",
+    "continue": "Ab hier fortsetzen",
+    "continueTitle": "Ab hier fortsetzen",
+    "continueHint": "Ein neuer Lauf des Agenten setzt die Sitzung dieses Laufs fort, mit allem, was er schon weiß, und tut, was du hier schreibst.",
+    "continuePlaceholder": "Was soll der Agent als Nächstes tun?",
+    "continueStart": "Lauf starten",
+    "continued": "Der Lauf ist eingereiht.",
+    "status": {
+      "pending": "Wartet",
+      "success": "Fertig",
+      "failed": "Fehlgeschlagen",
+      "canceled": "Abgebrochen"
+    },
+    "trigger": {
+      "mention": "Erwähnung",
+      "delegation": "Delegierte Aufgabe",
+      "field": "Feldänderung",
+      "schedule": "Geplante Aufgabe",
+      "manual": "Manuelle Aufgabe",
+      "approval": "Freigabe-Entscheidung"
+    }
+  },
+  "sessions": {
+    "search": "Alle Sitzungen durchsuchen",
+    "clear": "Leeren",
+    "noHits": "Keine Sitzung enthält „{query}“.",
+    "empty": "Die Laufzeit hat noch keine Sitzungen.",
+    "range": "{from}–{to} von {total}",
+    "newer": "Neuere",
+    "older": "Ältere",
+    "messages": "{count, plural, one {# Nachricht} other {# Nachrichten}}",
+    "tools": "{count, plural, one {# Werkzeugaufruf} other {# Werkzeugaufrufe}}",
+    "back": "Zurück zu den Sitzungen",
+    "copyId": "Sitzungs-ID kopieren",
+    "openRun": "Lauf öffnen",
+    "truncated": "Lange Teile sind gekürzt.",
+    "source": {
+      "run": "Lauf",
+      "chat": "Chat",
+      "tool": "Lauf oder Chat",
+      "cli": "Terminal",
+      "claude": "Claude Code",
+      "codex": "Codex",
+      "other": "Sonstige"
+    }
+  },
+  "memory": {
+    "approvalOn": "Änderungen, die der Agent an seinem Gedächtnis vornimmt, warten auf deine Freigabe; bis dahin arbeitet er mit der freigegebenen Fassung weiter.",
+    "approvalOff": "Der Agent ändert sein Gedächtnis selbst. Jede Fassung bleibt unten erhalten.",
+    "pending": "{count, plural, one {# Änderung wartet auf Freigabe} other {# Änderungen warten auf Freigabe}}",
+    "notReported": "Die Laufzeit hat ihr Gedächtnis noch nicht gemeldet.",
+    "history": "Verlauf",
+    "noHistory": "Noch keine Fassungen.",
+    "source": {
+      "agent": "Agent (freigegeben)",
+      "owner": "Hier bearbeitet",
+      "observed": "In der Laufzeit vorgefunden"
+    }
+  },
+  "proposals": {
+    "section": "Agenten und Laufzeit",
+    "raisedBy": "{agent} (@{username})",
+    "memoryTitle": "Änderung an {file}",
+    "updateHint": "Hermes wird für alle Agenten aktualisiert. Der Helfer legt eine Sicherung an und rollt selbst zurück, wenn das Update oder die Prüfung danach scheitert.",
+    "changes": "{count, plural, one {# Änderung} other {# Änderungen}}",
+    "localPatches": "{count, plural, one {# lokale Änderung wird übernommen: {list}} other {# lokale Änderungen werden übernommen: {list}}}",
+    "kind": {
+      "memory-write": "Gedächtnis",
+      "hermes-update": "Hermes-Update"
+    },
+    "status": {
+      "pending": "Wartet",
+      "approved": "Freigegeben, wird ausgeführt",
+      "rejected": "Abgelehnt",
+      "applied": "Ausgeführt",
+      "failed": "Fehlgeschlagen"
+    }
+  },
+  "usage": {
+    "period": "Zeitraum",
+    "days": "{count} Tage",
+    "groupBy": "Gruppieren nach",
+    "grouping": {
+      "agent": "Agenten",
+      "model": "Modelle",
+      "project": "Projekte",
+      "day": "Tage"
+    },
+    "dimension": {
+      "agent": "Agent",
+      "model": "Modell",
+      "project": "Projekt",
+      "day": "Tag",
+      "kind": "Art"
+    },
+    "kind": {
+      "run": "Lauf",
+      "chat": "Chat",
+      "reflection": "Reflexion"
+    },
+    "empty": "In diesem Zeitraum nichts verbraucht.",
+    "input": "Eingabe",
+    "cached": "Zwischengespeichert",
+    "output": "Ausgabe",
+    "time": "Zeit",
+    "cost": "Kosten",
+    "entries": "Einträge",
+    "unpriced": "Für manche Modelle steht kein Preis in der Preistabelle; ihre Kosten fehlen in den Summen.",
+    "unknownModel": "Unbekanntes Modell",
+    "noProject": "Kein Projekt"
+  },
+  "spend": {
+    "none": "Kein Verbrauch erfasst",
+    "tokens": "{input} rein · {output} raus",
+    "tokensDetail": "Eingabe {input} (davon zwischengespeichert {cached}) · Ausgabe {output} (davon Reasoning {reasoning})",
+    "noPrice": "kein Preis",
+    "costHint": "Kosten nach der Modell-Preistabelle",
+    "costPartial": "Nicht jedes Modell hat einen Preis; die Kosten sind unvollständig"
+  },
+  "runtime": {
+    "version": "Version",
+    "health": "Zustand",
+    "check": "Prüfen",
+    "healthHint": "Startet die eigene Prüfung der Laufzeit (Hermes doctor). Das dauert bis zu einer Minute.",
+    "healthy": "Keine Probleme gefunden",
+    "problems": "Probleme gefunden",
+    "curator": "Kurator",
+    "curatorRun": "Jetzt ausführen",
+    "curatorDone": "Der Kurator hat seine Prüfung beendet.",
+    "curatorFailed": "Der Kurator-Lauf ist fehlgeschlagen.",
+    "curatorPaused": "Der Kurator ist pausiert: Er ist in den Lern-Einstellungen des Agenten aus.",
+    "pinSkill": "Name des Skills",
+    "pin": "Anheften",
+    "unpin": "Lösen",
+    "pinHint": "Einen angehefteten Skill archiviert oder ändert der Kurator nie.",
+    "log": "Log",
+    "reload": "Neu laden",
+    "logEmpty": "Keine Log-Zeilen.",
+    "noLogs": "Diese Laufzeit führt kein Log, das Helena lesen kann.",
+    "level": {
+      "all": "Alle",
+      "WARNING": "Warnungen",
+      "ERROR": "Fehler"
+    }
+  },
+  "errors": {
+    "offline": "Der Runner des Agenten ist offline, seine Laufzeit lässt sich gerade nicht lesen.",
+    "timeout": "Die Laufzeit hat nicht rechtzeitig geantwortet. Versuche es noch einmal.",
+    "noRuntime": "Die Laufzeit dieses Agenten kann das nicht anzeigen.",
+    "notFound": "In der Laufzeit nicht gefunden.",
+    "failed": "Die Laufzeit ließ sich nicht lesen."
+  },
+  "emergencyStop": {
+    "stop": "Not-Aus",
+    "resume": "Agenten fortsetzen",
+    "bannerTitle": "Not-Aus: Alle Agenten sind angehalten",
+    "bannerSince": "seit {since}",
+    "activeSince": "An seit {since}. Kein Agent beginnt oder setzt Arbeit fort; angehaltene Läufe setzen ihre Sitzung fort, sobald du fortsetzt.",
+    "inactive": "Aus. Die Agenten arbeiten normal.",
+    "confirmTitle": "Alle Agenten anhalten?",
+    "confirmText": "Kein Agent startet mehr einen Lauf oder beantwortet einen Chat, laufende Arbeit stoppt beim nächsten Heartbeat und Hermes pausiert. Beim Fortsetzen laufen die angehaltenen Läufe in ihren Sitzungen weiter.",
+    "reason": "Grund",
+    "reasonPlaceholder": "Grund (optional, für alle sichtbar)",
+    "engaged": "Alle Agenten sind angehalten.",
+    "lifted": "Die Agenten arbeiten wieder."
+  },
+  "fallback": {
+    "own": "Eigene Fallback-Modelle",
+    "ownHint": "Fällt das Modell des Agenten aus oder ist es ausgelastet, wechselt Hermes der Reihe nach zu diesen.",
+    "defaultHint": "Aus: Es gelten die Fallback-Modelle der Instanz (Administrator → Agenten-Laufzeit).",
+    "none": "Keine Fallback-Modelle: Fällt das Modell aus, endet der Lauf.",
+    "provider": "Anbieter",
+    "model": "Modell",
+    "up": "Nach oben",
+    "down": "Nach unten",
+    "remove": "Entfernen",
+    "add": "Modell hinzufügen"
+  },
+  "admin": {
+    "stopTitle": "Not-Aus",
+    "stopDescription": "Hält alle Agenten der Instanz auf einmal an. Auch im Kontomenü.",
+    "hermesTitle": "Hermes",
+    "hermesDescription": "Die Hermes-Installation, auf der alle Agenten laufen. Ein Update braucht deine Freigabe; der Helfer legt eine Sicherung an und rollt bei einem Fehler zurück.",
+    "installed": "Installiert: {version}",
+    "notChecked": "Noch nicht geprüft.",
+    "upToDate": "Aktuell",
+    "behind": "{count, plural, one {# Änderung bis {version}} other {# Änderungen bis {version}}}",
+    "checkedAt": "geprüft {at}",
+    "check": "Nach Updates suchen",
+    "checking": "Prüfe …",
+    "request": "Update anfordern",
+    "requested": "Das Update wartet unter Freigaben auf deine Zustimmung.",
+    "changelog": "{count, plural, one {Was sich ändert (# Commit)} other {Was sich ändert (# Commits)}}",
+    "localPatches": "{count, plural, one {# lokale Änderung wird übernommen: {list}} other {# lokale Änderungen werden übernommen: {list}}}",
+    "toApprovals": "Freigaben öffnen",
+    "log": "Update-Protokoll",
+    "proposalStatus": {
+      "pending": "wartet auf Freigabe",
+      "approved": "wird installiert",
+      "rejected": "abgelehnt",
+      "applied": "installiert",
+      "failed": "fehlgeschlagen, zurückgerollt"
+    },
+    "fallbackTitle": "Fallback-Modelle",
+    "fallbackDescription": "Wohin jeder Agent ohne eigene Liste der Reihe nach wechselt, wenn sein Modell ausfällt.",
+    "sessionsTitle": "Sitzungen",
+    "retention": "Sitzungen aufbewahren",
+    "retentionHint": "Tage, die Hermes die Transkripte beendeter Läufe und Chats behält. Leer: Hermes' Vorgabe von 90 Tagen.",
+    "saved": "Gespeichert. Die Runner übernehmen es beim nächsten Abgleich.",
+    "usageTitle": "Verbrauch",
+    "usageDescription": "Was die Agenten eines Teams verbraucht haben, aus Helenas Token-Buch, mit Kosten nach der Modell-Preistabelle.",
+    "team": "Team",
+    "noTeam": "Noch kein Team."
+  }
+}

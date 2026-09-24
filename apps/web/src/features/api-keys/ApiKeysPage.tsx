@@ -29,7 +29,7 @@ export default function ApiKeysPage() {
   const invalidate = () => queryClient.invalidateQueries({ queryKey: qk.apiKeys });
 
   return (
-    <SectionPageView title={t('title')} description={t('description', { email })}>
+    <SectionPageView title={t('title')} description={t('description', { email })} wide>
       <ApiKeysCreateSection onCreated={invalidate} />
       <SettingsSection title={t('sectionTitle')}>
         <SettingsCard className="divide-y">

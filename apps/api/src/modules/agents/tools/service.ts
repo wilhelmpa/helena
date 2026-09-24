@@ -1,6 +1,7 @@
 import { db, agentTool, agentToolLink, integrationCredential } from '@repo/db';
 import { and, eq, inArray, sql } from 'drizzle-orm';
-import { getTool } from '@repo/agent-tools';
+import { resolveText } from '@helena/sdk';
+import { registries } from '#shared/helena';
 import { iso, HttpError, rethrowDuplicate } from '#shared/lib';
 import { getCredentialById } from '../integrations/service';
 import { onTemplateRelevantChange } from '../core/template-sync';
@@ -80,14 +81,16 @@ export async function createAgentTool(
   teamId: number,
   input: NewAgentToolInput,
 ): Promise<AgentToolRow> {
-  const tool = getTool(input.toolKey);
-  if (!tool) throw new HttpError(400, `Unknown tool: ${input.toolKey}`);
+  // A tool bound to a credential belongs to a connector (@helena/sdk registry).
+  const tool = registries.tools.get(input.toolKey);
+  const connector = tool?.connector ? registries.connectors.get(tool.connector) : undefined;
+  if (!tool || !connector) throw new HttpError(400, `Unknown tool: ${input.toolKey}`);
   const credential = await getCredentialById(input.credentialId, teamId);
   if (!credential) throw new HttpError(400, 'Credential not found');
-  if (credential.integrationKey !== tool.integration.key) {
+  if (credential.integrationKey !== connector.id) {
     throw new HttpError(
       400,
-      `This tool needs a ${tool.integration.label} credential, not ${credential.integrationKey}.`,
+      `This tool needs a ${resolveText(connector.label, 'en')} credential, not ${credential.integrationKey}.`,
     );
   }
   try {

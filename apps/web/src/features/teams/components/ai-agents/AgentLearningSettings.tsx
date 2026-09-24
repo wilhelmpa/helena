@@ -14,7 +14,7 @@ import { TeamSettingState } from '../TeamSettingState';
 const REFLECTION_MODES = ['off', 'failure', 'complex'] as const;
 
 // Whether the agent learns in its chats and runs, whether Hermes' curator may archive
-// what it learned, and when it reflects on a run: a short follow-up turn of the run's
+// what it learned, whether its memory writes wait for the owner, and when it reflects on a run: a short follow-up turn of the run's
 // own session, right after it ends. Saved with the agent; the runner applies all three
 // on its next sync.
 export default function AgentLearningSettings({
@@ -31,6 +31,13 @@ export default function AgentLearningSettings({
   const rows = [
     { key: 'learning', on: current.learning, label: t('enabled'), hint: t('enabledHint') },
     { key: 'curator', on: current.curator, label: t('curator'), hint: t('curatorHint') },
+    // The agent's own memory writes wait on the approvals page (a diff per file) unless off.
+    {
+      key: 'memoryApproval',
+      on: policy.memoryApproval ?? true,
+      label: t('memoryApproval'),
+      hint: t('memoryApprovalHint'),
+    },
   ] as const;
 
   return (

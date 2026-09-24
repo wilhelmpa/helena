@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Lock } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,9 @@ export default function StepUpDialog({ onSuccess }: { onSuccess: () => void }) {
   const t = useTranslations('ownerTerminal.stepUp');
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // The X (or Escape) closes the question instead of trapping the owner in it (owner,
+  // 2026-09-24); the terminal then shows that it is locked, with a way back to the code.
+  const [open, setOpen] = useState(true);
   const stepUp = useStepUpWithTotp();
 
   async function submit() {
@@ -32,8 +36,20 @@ export default function StepUpDialog({ onSuccess }: { onSuccess: () => void }) {
     }
   }
 
+  if (!open) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
+        <Lock className="size-6 text-muted-foreground" aria-hidden="true" />
+        <p className="max-w-xs text-sm text-muted-foreground">{t('locked')}</p>
+        <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+          {t('enterCode')}
+        </Button>
+      </div>
+    );
+  }
+
   return (
-    <Dialog open onOpenChange={() => {}}>
+    <Dialog open onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-sm" onInteractOutside={(event) => event.preventDefault()}>
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>

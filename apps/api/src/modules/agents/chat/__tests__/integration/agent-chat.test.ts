@@ -59,10 +59,11 @@ async function readStream(
   cookie: string,
   agentId: number,
   messageId: number,
+  headers: Record<string, string> = {},
 ): Promise<{ status: number; frames: string[] }> {
   const res = await app.handle(
     new Request(`http://localhost/projects/MKT/ai-agents/${agentId}/chat/${messageId}/stream`, {
-      headers: { cookie },
+      headers: { cookie, ...headers },
     }),
   );
   if (!res.body) return { status: res.status, frames: [] };
@@ -689,6 +690,93 @@ describe('external agent chat', () => {
         { type: 'text', text: 'It is /work.' },
       ],
     });
+  });
+
+  it("reads the AG-UI 1.0 reasoning events and the error flag in a result's metadata", async () => {
+    const { asOwner, asRunner, agent } = await setup();
+    const sent = await send(asOwner, agent.id, 'Build it');
+    const answer = (await asRunner['agent-chats'].claim.post()).data!.message!;
+    const reported = await asRunner['agent-chats']({ messageId: answer.id }).events.post({
+      events: [
+        { type: 'RUN_STARTED', threadId: 't', runId: 'r', protocolVersion: '1.0' },
+        { type: 'REASONING_START', messageId: 'r1' },
+        { type: 'REASONING_MESSAGE_START', messageId: 'r1', role: 'reasoning' },
+        { type: 'REASONING_MESSAGE_CONTENT', messageId: 'r1', delta: 'Run the build.' },
+        { type: 'REASONING_MESSAGE_END', messageId: 'r1' },
+        { type: 'REASONING_END', messageId: 'r1' },
+        { type: 'TOOL_CALL_START', toolCallId: 't1', toolCallName: 'terminal' },
+        { type: 'TOOL_CALL_END', toolCallId: 't1' },
+        {
+          type: 'TOOL_CALL_RESULT',
+          messageId: 'm1',
+          toolCallId: 't1',
+          content: 'exit 2',
+          metadata: { isError: true },
+        },
+        { type: 'TEXT_MESSAGE_CONTENT', messageId: 'm1', delta: 'It fails.' },
+      ],
+    });
+    expect(reported.status).toBe(200);
+    await asRunner['agent-chats']({ messageId: answer.id }).result.post({ status: 'success' });
+
+    const transcript = await chatOf(asOwner, agent.id)
+      .threads({ threadId: sent.data!.threadId })
+      .messages.get();
+    expect(transcript.data!.items[1]).toMatchObject({
+      role: 'assistant',
+      parts: [
+        { type: 'reasoning', text: 'Run the build.' },
+        { type: 'tool', toolCallId: 't1', result: 'exit 2', isError: true },
+        { type: 'text', text: 'It fails.' },
+      ],
+    });
+  });
+
+  it('resumes a stream after the Last-Event-ID the reader sends back', async () => {
+    const { owner, asOwner, asRunner, agent } = await setup();
+    await send(asOwner, agent.id, 'Ping');
+    const answer = (await asRunner['agent-chats'].claim.post()).data!.message!;
+    await asRunner['agent-chats']({ messageId: answer.id }).events.post({
+      events: [
+        { type: 'TEXT_MESSAGE_CONTENT', messageId: 'm1', delta: 'One ' },
+        { type: 'TEXT_MESSAGE_CONTENT', messageId: 'm1', delta: 'two' },
+      ],
+    });
+    await asRunner['agent-chats']({ messageId: answer.id }).result.post({ status: 'success' });
+
+    const all = await readStream(owner.cookie, agent.id, answer.id);
+    const firstId = /^id: (\d+)/.exec(all.frames[0])![1];
+    const resumed = await readStream(owner.cookie, agent.id, answer.id, {
+      'last-event-id': firstId,
+    });
+    expect(resumed.frames[0]).toContain('two');
+    expect(resumed.frames.some((frame) => frame.includes('One '))).toBe(false);
+    expect(resumed.frames.at(-1)).toContain('RUN_FINISHED');
+  });
+
+  it('wakes a waiting stream as soon as the runner reports, not at the next poll', async () => {
+    const saved = process.env.AGENT_CHAT_STREAM_POLL_MS;
+    process.env.AGENT_CHAT_STREAM_POLL_MS = '20000';
+    try {
+      const { owner, asOwner, asRunner, agent } = await setup();
+      await send(asOwner, agent.id, 'Ping');
+      const answer = (await asRunner['agent-chats'].claim.post()).data!.message!;
+      const started = Date.now();
+      const reading = readStream(owner.cookie, agent.id, answer.id);
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      await asRunner['agent-chats']({ messageId: answer.id }).events.post({
+        events: [{ type: 'TEXT_MESSAGE_CONTENT', messageId: 'm1', delta: 'Pong' }],
+      });
+      await asRunner['agent-chats']({ messageId: answer.id }).result.post({ status: 'success' });
+      const stream = await reading;
+      expect(stream.frames[0]).toContain('Pong');
+      expect(stream.frames.at(-1)).toContain('RUN_FINISHED');
+      // Two NOTIFYs, not a 20 s poll, ended the stream.
+      expect(Date.now() - started).toBeLessThan(5000);
+    } finally {
+      if (saved === undefined) delete process.env.AGENT_CHAT_STREAM_POLL_MS;
+      else process.env.AGENT_CHAT_STREAM_POLL_MS = saved;
+    }
   });
 
   it('streams the answer and always ends on a terminal event', async () => {

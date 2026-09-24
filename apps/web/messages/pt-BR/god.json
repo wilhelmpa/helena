@@ -371,7 +371,8 @@
     "janitor": {
       "run-janitor": "Limpeza de execuções",
       "resume-janitor": "Limpeza de retomadas",
-      "engine-maintenance": "Manutenção do motor"
+      "engine-maintenance": "Manutenção do motor",
+      "runtime-janitor": "Limpeza do runtime"
     },
     "janitorRan": "executado há {time}",
     "janitorCleaned": "{count, plural, one {limpou # item} other {limpou # itens}}",
@@ -387,6 +388,39 @@
     "agentSync": {
       "title": "Perfis dos agentes",
       "synced": "{synced} de {total} sincronizados"
+    }
+  },
+  "plugins": {
+    "externalTitle": "Plugins externos",
+    "externalDescription": "Um plugin externo roda dentro do Helena com as permissões do Helena. Ative só para plugins em que você confia.",
+    "folder": "Pasta de plugins: {path}",
+    "noFolder": "Nenhuma pasta de plugins definida (HELENA_PLUGINS_DIR), então só os plugins próprios do Helena rodam.",
+    "restartHint": "As mudanças valem depois que a API e o worker reiniciam.",
+    "foundTitle": "Na pasta de plugins",
+    "none": "Nenhum plugin encontrado.",
+    "approve": "Aprovar",
+    "revoke": "Retirar aprovação",
+    "builtinTitle": "Integrados",
+    "statusLoaded": "Carregado",
+    "statusFailed": "Erro",
+    "statusNotLoaded": "Não carregado",
+    "restartRequired": "Reinício necessário",
+    "provides": "Fornece",
+    "actions": "Ações",
+    "events": "Eventos",
+    "network": "Rede",
+    "credentials": "Suas ferramentas usam as credenciais dos seus conectores.",
+    "names": {
+      "integrations": "Integrações",
+      "mcp": "Ferramentas MCP do Helena",
+      "webhooks": "Webhooks",
+      "bundles": "Pacotes de modelos"
+    },
+    "problems": {
+      "external-off": "Carrega quando os plugins externos forem ativados.",
+      "not-approved": "Ainda não aprovado.",
+      "version-changed": "Aprovado em outra versão: aprove esta.",
+      "files-changed": "Os arquivos mudaram desde a aprovação: confira e aprove de novo."
     }
   }
 }

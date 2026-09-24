@@ -108,30 +108,3 @@ export function mergeOlderPage(current: PlanUIMessage[], older: PlanUIMessage[])
   const ids = new Set(current.map((message) => message.id));
   return [...older.filter((message) => !ids.has(message.id)), ...current];
 }
-
-// A message read as the stretches the bubble draws in order: text, the model's
-// reasoning, and the tool calls made between one stretch of text and the next — calls
-// that follow one another become one block, shown together (see ChatToolCallDisclosure).
-export type MessageBlock =
-  | { kind: 'text'; text: string }
-  | { kind: 'reasoning'; text: string }
-  | { kind: 'tools'; tools: DynamicToolUIPart[] };
-
-export function messageBlocks(message: Pick<PlanUIMessage, 'parts'>): MessageBlock[] {
-  const blocks: MessageBlock[] = [];
-  for (const part of message.parts) {
-    if (part.type === 'text') {
-      blocks.push({ kind: 'text', text: part.text });
-      continue;
-    }
-    if (part.type === 'reasoning') {
-      blocks.push({ kind: 'reasoning', text: part.text });
-      continue;
-    }
-    if (part.type !== 'dynamic-tool') continue;
-    const last = blocks.at(-1);
-    if (last?.kind === 'tools') last.tools.push(part);
-    else blocks.push({ kind: 'tools', tools: [part] });
-  }
-  return blocks;
-}

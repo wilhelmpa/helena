@@ -17,7 +17,12 @@ import MobileViewSwitcher from '@/components/layout/MobileViewSwitcher';
 import SavedViewTab from '@/components/layout/SavedViewTab';
 import ViewTabChrome from '@/components/layout/ViewTabChrome';
 import ViewTabLabel from '@/components/layout/ViewTabLabel';
-import { PAGE_CONTROL_CLASS, usePageToolbarRoom } from '@/components/layout/PageToolbar';
+import {
+  PAGE_CONTROL_CLASS,
+  PAGE_PRIMARY_CLASS,
+  usePageToolbarRoom,
+} from '@/components/layout/PageToolbar';
+import { cn } from '@/lib/utils';
 import { useUpdateView, useViewFoldersQuery } from '@/services/views.service';
 
 // The board's saved-view tabs, the first thing in its header row (PageToolbar): the
@@ -135,7 +140,7 @@ export default function ViewTabs({
           type="button"
           onClick={onNewView}
           title={t('newViewHint')}
-          className={`${PAGE_CONTROL_CLASS} h-7`}
+          className={cn(PAGE_CONTROL_CLASS, PAGE_PRIMARY_CLASS)}
         >
           <Plus aria-hidden="true" />
           {t('newView')}

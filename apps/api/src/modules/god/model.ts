@@ -390,6 +390,7 @@ export const SystemHealthResponse = t.Object({
         t.Literal('run-janitor'),
         t.Literal('resume-janitor'),
         t.Literal('engine-maintenance'),
+        t.Literal('runtime-janitor'),
       ]),
       state: t.Union([t.Literal('ok'), t.Literal('down'), t.Literal('unknown')], {
         description: 'unknown: the job has never run.',

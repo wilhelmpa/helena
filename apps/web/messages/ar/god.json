@@ -371,7 +371,8 @@
     "janitor": {
       "run-janitor": "منظف التشغيلات",
       "resume-janitor": "منظف الاستئناف",
-      "engine-maintenance": "صيانة المحرك"
+      "engine-maintenance": "صيانة المحرك",
+      "runtime-janitor": "تنظيف بيئة التشغيل"
     },
     "janitorRan": "عمل قبل {time}",
     "janitorCleaned": "{count, plural, zero {لم يتم تنظيف شيء} one {تم تنظيف عنصر واحد} two {تم تنظيف عنصرين} few {تم تنظيف # عناصر} many {تم تنظيف # عنصرًا} other {تم تنظيف # عنصر}}",
@@ -387,6 +388,39 @@
     "agentSync": {
       "title": "ملفات الوكلاء",
       "synced": "{synced} من {total} متزامنة"
+    }
+  },
+  "plugins": {
+    "externalTitle": "الإضافات الخارجية",
+    "externalDescription": "تعمل الإضافة الخارجية داخل Helena وبصلاحياتها. فعّل هذا فقط للإضافات التي تثق بها.",
+    "folder": "مجلد الإضافات: {path}",
+    "noFolder": "لم يُحدَّد مجلد للإضافات (HELENA_PLUGINS_DIR)، لذا تعمل إضافات Helena الخاصة فقط.",
+    "restartHint": "تسري التغييرات بعد إعادة تشغيل الواجهة البرمجية والعامل.",
+    "foundTitle": "في مجلد الإضافات",
+    "none": "لم يُعثر على إضافات.",
+    "approve": "اعتماد",
+    "revoke": "سحب الاعتماد",
+    "builtinTitle": "مدمجة",
+    "statusLoaded": "محمّلة",
+    "statusFailed": "خطأ",
+    "statusNotLoaded": "غير محمّلة",
+    "restartRequired": "يلزم إعادة التشغيل",
+    "provides": "يوفّر",
+    "actions": "الإجراءات",
+    "events": "الأحداث",
+    "network": "الشبكة",
+    "credentials": "تستخدم أدواتها بيانات اعتماد موصّلاتها.",
+    "names": {
+      "integrations": "التكاملات",
+      "mcp": "أدوات MCP في Helena",
+      "webhooks": "خطافات الويب",
+      "bundles": "حزم القوالب"
+    },
+    "problems": {
+      "external-off": "تُحمَّل بعد تفعيل الإضافات الخارجية.",
+      "not-approved": "لم يُعتمد بعد.",
+      "version-changed": "اعتُمد إصدار آخر: اعتمد هذا الإصدار.",
+      "files-changed": "تغيّرت ملفاتها منذ الاعتماد: افحصها واعتمدها من جديد."
     }
   }
 }

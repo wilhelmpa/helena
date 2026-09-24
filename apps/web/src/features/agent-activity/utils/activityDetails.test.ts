@@ -38,7 +38,15 @@ describe('agent activity links', () => {
     assert.equal(activityDetails({ ...chat, threadId: null }), null);
   });
 
-  test('opens a workflow run on the Workflows page and leaves a run to its task', () => {
+  test("opens an agent's run in the glass-box view on the agent's page", () => {
+    assert.deepEqual(activityDetails(base), {
+      kind: 'page',
+      href: '/agents?agent=7&tab=runs&run=1',
+    });
+    assert.equal(activityDetails({ ...base, agent: null }), null);
+  });
+
+  test('opens a workflow run on the Workflows page', () => {
     const run = {
       ...base,
       kind: 'agent-team-run' as const,
@@ -49,7 +57,6 @@ describe('agent activity links', () => {
       kind: 'page',
       href: '/project/MKT/workflows?workflow=agent-team&run=a+b',
     });
-    assert.equal(activityDetails(base), null);
   });
 
   test("opens a routine's run on the Schedules page and a workflow's on the Workflows page", () => {

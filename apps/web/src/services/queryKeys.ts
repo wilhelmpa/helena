@@ -261,6 +261,19 @@ export const qk = {
     ['aiAgents', teamId, agentId, 'runtime-actions'] as const,
   learnedSkill: (teamId: number, agentId: number, path: string) =>
     ['aiAgents', teamId, agentId, 'learned-skill', path] as const,
+  // What an agent's runtime keeps, read through its runner, and a run's timeline.
+  agentRuntime: (teamId: number, agentId: number, what: string, params?: unknown) =>
+    ['aiAgents', teamId, agentId, 'runtime', what, params ?? null] as const,
+  agentRun: (teamId: number, agentId: number, runId: number) =>
+    ['aiAgents', teamId, agentId, 'run', runId] as const,
+  memoryRevisions: (teamId: number, agentId: number) =>
+    ['aiAgents', teamId, agentId, 'memory-revisions'] as const,
+  agentSpend: (teamId: number, params: unknown) => ['agentSpend', teamId, params] as const,
+  proposals: (status: string) => ['agentProposals', status] as const,
+  proposalCount: ['agentProposals', 'count'] as const,
+  emergencyStop: ['emergencyStop'] as const,
+  runtimeDefaults: ['runtimeDefaults'] as const,
+  hermesUpdate: ['hermesUpdate'] as const,
   // Whether the agent's runtime profile matches its settings.
   agentRuntimeSync: (teamId: number, agentId: number) =>
     ['aiAgents', teamId, agentId, 'runtime-sync'] as const,
@@ -381,6 +394,9 @@ export const qk = {
   instanceStorageSettings: ['instanceStorageSettings'] as const,
   instanceRunResumeSettings: ['instanceRunResumeSettings'] as const,
   instanceEngineSettings: ['instanceEngineSettings'] as const,
+  // Plugins: the Administrator's list and decisions, and the UI slots of loaded plugins.
+  plugins: ['plugins'] as const,
+  pluginUiSlots: ['pluginUiSlots'] as const,
   // The services around Plan and the agent runs that wait or overran (Home, god only).
   systemHealth: ['systemHealth'] as const,
   // The upload limits as read by the upload UI (open to any signed-in user).

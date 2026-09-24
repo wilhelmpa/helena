@@ -6,11 +6,19 @@
 import { intEnv } from './env';
 import { readFileSync, lstatSync } from 'node:fs';
 
+// A secret must be readable by its owner only. systemd's own credential directory is the
+// exception: on a native boot it presents LoadCredential files as 0440 (0400 inside a
+// container) and guards the directory itself, so group read is fine there.
+function secretModeMask(file: string): number {
+  const dir = process.env.CREDENTIALS_DIRECTORY;
+  return dir && file.startsWith(`${dir}/`) ? 0o037 : 0o077;
+}
+
 function tokenFile(variable: string): string | null {
   const file = process.env[variable]?.trim();
   if (!file) return null;
   const stat = lstatSync(file);
-  if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & 0o077) !== 0) {
+  if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & secretModeMask(file)) !== 0) {
     throw new Error(`${variable} must be a private regular file`);
   }
   const token = readFileSync(file, 'utf8').trim();

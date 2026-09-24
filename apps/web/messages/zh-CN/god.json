@@ -371,7 +371,8 @@
     "janitor": {
       "run-janitor": "运行清理器",
       "resume-janitor": "恢复清理器",
-      "engine-maintenance": "引擎维护"
+      "engine-maintenance": "引擎维护",
+      "runtime-janitor": "运行时清理"
     },
     "janitorRan": "{time}前运行过",
     "janitorCleaned": "{count, plural, other {清理了 # 项}}",
@@ -387,6 +388,39 @@
     "agentSync": {
       "title": "代理配置",
       "synced": "{total} 个中 {synced} 个已同步"
+    }
+  },
+  "plugins": {
+    "externalTitle": "外部插件",
+    "externalDescription": "外部插件在 Helena 内部以 Helena 的权限运行。只为你信任的插件开启。",
+    "folder": "插件文件夹：{path}",
+    "noFolder": "未设置插件文件夹（HELENA_PLUGINS_DIR），因此只运行 Helena 自带的插件。",
+    "restartHint": "更改在 API 和 worker 重启后生效。",
+    "foundTitle": "插件文件夹中",
+    "none": "未找到插件。",
+    "approve": "批准",
+    "revoke": "撤销批准",
+    "builtinTitle": "内置",
+    "statusLoaded": "已加载",
+    "statusFailed": "错误",
+    "statusNotLoaded": "未加载",
+    "restartRequired": "需要重启",
+    "provides": "提供",
+    "actions": "操作",
+    "events": "事件",
+    "network": "网络",
+    "credentials": "其工具使用其连接器的凭据。",
+    "names": {
+      "integrations": "集成",
+      "mcp": "Helena MCP 工具",
+      "webhooks": "Webhook",
+      "bundles": "模板包"
+    },
+    "problems": {
+      "external-off": "开启外部插件后加载。",
+      "not-approved": "尚未批准。",
+      "version-changed": "批准的是其他版本：请批准此版本。",
+      "files-changed": "批准后其文件已更改：请检查并重新批准。"
     }
   }
 }

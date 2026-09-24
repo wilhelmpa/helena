@@ -148,11 +148,27 @@ export async function queueRuntimeAction(
   return db.transaction((tx) => insertAction(tx, agentId, input.kind, target, payload));
 }
 
-// A done action is deleted; a failed one keeps its error, which the owner sees.
+// A done action is deleted; a failed one keeps its error, which the owner sees. Returns the
+// actions the results name, as they were stored.
 export async function completeRuntimeActions(
   agentId: number,
   results: RuntimeActionResult[],
-): Promise<void> {
+): Promise<StoredAction[]> {
+  const named =
+    results.length === 0
+      ? []
+      : await db
+          .select()
+          .from(agentRuntimeAction)
+          .where(
+            and(
+              eq(agentRuntimeAction.agentId, agentId),
+              inArray(
+                agentRuntimeAction.id,
+                results.map((result) => result.id),
+              ),
+            ),
+          );
   const done = results.filter((result) => result.error === null).map((result) => result.id);
   if (done.length > 0) {
     await db
@@ -166,6 +182,7 @@ export async function completeRuntimeActions(
       .set({ error })
       .where(and(eq(agentRuntimeAction.agentId, agentId), eq(agentRuntimeAction.id, id)));
   }
+  return named;
 }
 
 function learnedSkillAt(learned: LearnedSkill[], path: string): LearnedSkill {

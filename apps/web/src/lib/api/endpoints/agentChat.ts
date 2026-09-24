@@ -1,31 +1,25 @@
 import { API_URL, ApiError, apiFailure, request } from '@/lib/api/core/client';
 import { pageQuery, type Page, type PageParams } from '@/lib/api/core/paging';
-import type { AgentRunEvent } from '@/lib/api/endpoints/agents';
+import { EventSourceParserStream, type EventSourceMessage } from 'eventsource-parser/stream';
 
-// The frames of one SSE connection: separated by a blank line, each carrying a single
-// JSON-encoded event on its `data:` line and, on a resumable stream, the `id:` a
-// reconnect resumes from. Throws ApiError when the request failed before the stream.
-async function* readSseFrames(res: Response): AsyncGenerator<{ id: number | null; data: string }> {
+// The events of one SSE response (WHATWG HTML, "Server-sent events"), parsed by
+// eventsource-parser: multi-line `data:`, CRLF, comments and `retry:` as the standard
+// has them. `onId` sees every `id:` the stream sets — the last one is what a reconnect
+// sends back as Last-Event-ID. Throws ApiError when the request failed before the stream.
+async function* readSseEvents(
+  res: Response,
+  handlers: { onId?: (id: string) => void; onRetry?: (ms: number) => void } = {},
+): AsyncGenerator<EventSourceMessage> {
   if (!res.ok || !res.body) throw await apiFailure(res);
-  const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
-  let buffer = '';
+  const reader = res.body
+    .pipeThrough(new TextDecoderStream())
+    .pipeThrough(new EventSourceParserStream(handlers))
+    .getReader();
   try {
     for (;;) {
       const { done, value } = await reader.read();
       if (done) return;
-      buffer += value;
-      let sep: number;
-      while ((sep = buffer.indexOf('\n\n')) !== -1) {
-        const lines = buffer.slice(0, sep).split('\n');
-        buffer = buffer.slice(sep + 2);
-        const dataLine = lines.find((l) => l.startsWith('data:'));
-        if (!dataLine) continue;
-        const idLine = lines.find((l) => l.startsWith('id:'));
-        yield {
-          id: idLine ? Number(idLine.slice(3).trim()) : null,
-          data: dataLine.slice(5).trim(),
-        };
-      }
+      yield value;
     }
   } finally {
     // A reader that stops early (the answer ended, or the caller left) lets go of the
@@ -35,8 +29,8 @@ async function* readSseFrames(res: Response): AsyncGenerator<{ id: number | null
 }
 
 // What an external agent's runner reports while it answers, as AG-UI events
-// (https://docs.ag-ui.com). Only the ones the chat renders are named; the rest of the
-// protocol passes through and is ignored here.
+// (https://docs.ag-ui.com, typed in @ag-ui/core). Only the fields the chat reads are
+// named; the rest of the protocol passes through and is ignored here.
 export interface AgUiEvent {
   type: string;
   delta?: string;
@@ -44,6 +38,9 @@ export interface AgUiEvent {
   message?: string;
   toolCallId?: string;
   toolCallName?: string;
+  metadata?: Record<string, unknown>;
+  // Older runners flagged a failed tool here; AG-UI 1.0 has no such field, and the flag
+  // now travels in `metadata`.
   isError?: boolean;
 }
 
@@ -77,87 +74,6 @@ export function agentChatBase(scopeKey: string, agentId: number): string {
     : '/projects/' + encodeURIComponent(scopeKey) + '/ai-agents/' + agentId;
 }
 
-function toRunEvent(event: AgUiEvent): AgentRunEvent | null {
-  switch (event.type) {
-    case 'TEXT_MESSAGE_CONTENT':
-      return { type: 'text', value: event.delta ?? '' };
-    case 'THINKING_TEXT_MESSAGE_CONTENT':
-      return { type: 'reasoning', value: event.delta ?? '' };
-    case 'TOOL_CALL_START':
-      return {
-        type: 'tool-start',
-        toolCallId: event.toolCallId ?? '',
-        toolName: event.toolCallName ?? '',
-      };
-    case 'TOOL_CALL_ARGS':
-      return { type: 'tool-args', toolCallId: event.toolCallId ?? '', delta: event.delta ?? '' };
-    // TOOL_CALL_END closes the call's arguments, which the runner reports in the same
-    // batch as the call itself. The tool is done when its result arrives.
-    case 'TOOL_CALL_RESULT':
-      return { type: 'tool-end', toolCallId: event.toolCallId ?? '', result: event.content };
-    default:
-      return null;
-  }
-}
-
-// Dropping the stream stops nothing here — the runner is on the operator's machine and
-// only ever calls the API itself — so aborting `signal` also asks the API to cancel the
-// answer, which is what the runner reads on its next report.
-// Sends a message to an agent and streams the answer its runner produces as
-// AgentRunEvents.
-// The answer starts only once a runner takes the message: until then the stream is open
-// with nothing on it.
-export async function* streamAiAgentChat(
-  scopeKey: string,
-  agentId: number,
-  input: {
-    prompt: string;
-    threadId?: string | null;
-    model?: string | null;
-    thinkingLevel?: string | null;
-  },
-  signal?: AbortSignal,
-): AsyncGenerator<AgentRunEvent> {
-  const body = { ...input, threadId: input.threadId || undefined };
-  const sent = await request<{ threadId: string; messageId: number }>(
-    agentChatBase(scopeKey, agentId) + '/chat',
-    { method: 'POST', body: JSON.stringify(body) },
-  );
-  // Persist the new tab as soon as the API has created its thread. If the page reloads
-  // while Hermes is still answering, the history remains reachable instead of looking
-  // like a chat that never existed.
-  yield { type: 'done', threadId: sent.threadId };
-  yield* streamExistingAiAgentChat(scopeKey, agentId, sent.messageId, signal);
-}
-
-// Reattaches a reloaded browser to the answer already being produced for a persisted
-// thread. It never creates a message, so reconnecting cannot make Hermes answer the
-// member's prompt twice.
-export function resumeAiAgentChat(
-  scopeKey: string,
-  agentId: number,
-  messageId: number,
-  signal?: AbortSignal,
-): AsyncGenerator<AgentRunEvent> {
-  return streamExistingAiAgentChat(scopeKey, agentId, messageId, signal);
-}
-
-async function* streamExistingAiAgentChat(
-  scopeKey: string,
-  agentId: number,
-  messageId: number,
-  signal?: AbortSignal,
-): AsyncGenerator<AgentRunEvent> {
-  for await (const event of streamAnswerEvents(scopeKey, agentId, messageId, signal)) {
-    if (event.type === 'RUN_ERROR') {
-      yield { type: 'error', message: event.message ?? 'The agent stopped answering' };
-      continue;
-    }
-    const mapped = toRunEvent(event);
-    if (mapped) yield mapped;
-  }
-}
-
 // Asks the API to stop an answer. The runner reads the stop on its next report and ends
 // the command; what the agent wrote until then stays in the transcript.
 export const cancelAiAgentChatAnswer = (scopeKey: string, agentId: number, messageId: number) =>
@@ -175,9 +91,9 @@ export class AnswerStreamLostError extends Error {
   }
 }
 
-// The AG-UI events of one answer, from the event after `after` (0: the first), until the
-// answer ends on RUN_FINISHED or RUN_ERROR, which are yielded too. A dropped connection
-// is picked up again from the last event read — the server also closes a stream on its
+// The AG-UI events of one answer, from its first, until the answer ends on RUN_FINISHED
+// or RUN_ERROR, which are yielded too. A dropped connection is picked up again from the
+// last event read (Last-Event-ID) — the server also closes a stream on its
 // own after a long while, which is a reconnect, not an end. Throws AnswerStreamLostError
 // when it could not keep following the answer (see chatStreamConfig).
 //
@@ -207,8 +123,12 @@ export async function* streamAnswerEvents(
     else signal?.addEventListener('abort', cancel, { once: true });
   }
   try {
-    const base = `${API_URL}${chat}/stream`;
-    let after = 0;
+    const url = `${API_URL}${chat}/stream`;
+    // The id of the last event read, sent back on a reconnect as Last-Event-ID (the SSE
+    // standard's resume), so the server continues after it.
+    let lastEventId: string | null = null;
+    // The server may ask for a reconnect delay with `retry:`; the backoff starts there.
+    let retryMs = chatStreamConfig.backoffMs;
     let failures = 0;
     // The answer always ends on a terminal event, so a stream that closed without one was
     // cut: pick it up again from the last event already shown.
@@ -216,11 +136,23 @@ export async function* streamAnswerEvents(
       let progressed = false;
       let lastError: unknown = null;
       try {
-        const res = await fetch(`${base}?after=${after}`, { credentials: 'include', signal });
-        for await (const frame of readSseFrames(res)) {
+        const res = await fetch(url, {
+          credentials: 'include',
+          signal,
+          headers: lastEventId != null ? { 'Last-Event-ID': lastEventId } : undefined,
+        });
+        const events = readSseEvents(res, {
+          onId: (id) => {
+            lastEventId = id;
+          },
+          onRetry: (ms) => {
+            retryMs = ms;
+          },
+        });
+        for await (const message of events) {
           progressed = true;
-          after = frame.id ?? after;
-          const event = JSON.parse(frame.data) as AgUiEvent;
+          if (message.event && message.event !== 'message') continue;
+          const event = JSON.parse(message.data) as AgUiEvent;
           yield event;
           if (event.type === 'RUN_FINISHED' || event.type === 'RUN_ERROR') return;
         }
@@ -236,7 +168,7 @@ export async function* streamAnswerEvents(
       if (signal?.aborted) return;
       failures = progressed ? 0 : failures + 1;
       if (failures > chatStreamConfig.retries) throw new AnswerStreamLostError(lastError);
-      await pause(chatStreamConfig.backoffMs * 2 ** Math.max(0, failures - 1), signal);
+      await pause(retryMs * 2 ** Math.max(0, failures - 1), signal);
       if (signal?.aborted) return;
     }
   } finally {

@@ -1,7 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import type { HermesProfile } from './inventory';
 import type { AgentIsolation } from './isolation';
-import { PRESETS, PRESET_NAMES, isPresetName, type Preset, type PresetName } from './presets';
+import type { CliCommand } from '@helena/sdk';
+import { cliCommandOf, pluginOutputFormats, runtimeOf, runtimes } from './runtimes';
 
 // Two ways to say what to run. `agent` names a CLI the runner knows (see presets.ts) and
 // the runner builds the invocation, which is what lets it resume that CLI's sessions.
@@ -17,7 +18,8 @@ export interface RunnerConfig {
   name: string;
   url: string;
   apiKey: string;
-  agent?: PresetName;
+  // A registered runtime (runtimes.ts): a built-in preset or a plugin's.
+  agent?: string;
   provider?: string;
   // Receives the prompt on stdin.
   command?: string;
@@ -66,12 +68,14 @@ const OUTPUT_FORMATS = [
   'hermes-stream-json',
 ] as const;
 
-export type OutputFormat = (typeof OUTPUT_FORMATS)[number];
+// The formats agui.ts reads itself, plus the name of any plugin runtime's own format,
+// which that runtime's parser reads.
+export type OutputFormat = (typeof OUTPUT_FORMATS)[number] | (string & {});
 
 // The preset a config resolves to, or undefined when it runs the operator's own command.
-export function presetOf(config: Pick<RunnerConfig, 'agent' | 'command'>): Preset | undefined {
+export function presetOf(config: Pick<RunnerConfig, 'agent' | 'command'>): CliCommand | undefined {
   if (config.command || !config.agent) return undefined;
-  return PRESETS[config.agent];
+  return cliCommandOf(config.agent);
 }
 
 const DEFAULTS = {
@@ -96,21 +100,28 @@ function intFrom(value: unknown, fallback: number): number {
 }
 
 // The preset's own format unless the operator names one.
-function outputFormatFrom(value: unknown, preset: Preset | undefined): OutputFormat {
+function outputFormatFrom(value: unknown, preset: CliCommand | undefined): OutputFormat {
   const name = textOf(value);
   if (!name) return preset?.outputFormat ?? 'text';
-  const format = OUTPUT_FORMATS.find((candidate) => candidate === name);
+  const formats = [...OUTPUT_FORMATS, ...pluginOutputFormats()];
+  const format = formats.find((candidate) => candidate === name);
   if (!format) {
-    throw new Error(`outputFormat must be one of ${OUTPUT_FORMATS.join(', ')}`);
+    throw new Error(`outputFormat must be one of ${formats.join(', ')}`);
   }
   return format;
 }
 
-function agentFrom(value: unknown): PresetName | undefined {
+function agentFrom(value: unknown): string | undefined {
   const name = textOf(value);
   if (!name) return undefined;
-  if (!isPresetName(name)) {
-    throw new Error(`agent must be one of ${PRESET_NAMES.join(', ')}`);
+  const adapter = runtimeOf(name);
+  if (!adapter) {
+    throw new Error(`agent must be one of ${runtimes.ids().join(', ')}`);
+  }
+  // The contract is there (@helena/sdk AcpRuntimeAdapter); this runner still starts
+  // every runtime as a one-shot CLI.
+  if (adapter.protocol !== 'cli') {
+    throw new Error(`${name} speaks the Agent Client Protocol, which this runner cannot start yet`);
   }
   return name;
 }
@@ -307,7 +318,7 @@ function configFrom(fields: Fields, name: string, extraArgs: string[]): RunnerCo
   const command = textOf(fields.command);
   if (!agent && !command) {
     throw new Error(
-      `set either agent (one of ${PRESET_NAMES.join(', ')}) or command in the config file or the environment`,
+      `set either agent (one of ${runtimes.ids().join(', ')}) or command in the config file or the environment`,
     );
   }
   const args = [...argsFrom(fields.args), ...extraArgs];

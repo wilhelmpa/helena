@@ -28,7 +28,12 @@ type Service = (typeof SERVICES)[number];
 
 // The api's janitor loops, named the same way in background.ts, which starts them,
 // and in the janitor_run table, which this file reads their last run from.
-export const JANITOR_JOBS = ['run-janitor', 'resume-janitor', 'engine-maintenance'] as const;
+export const JANITOR_JOBS = [
+  'run-janitor',
+  'resume-janitor',
+  'engine-maintenance',
+  'runtime-janitor',
+] as const;
 
 // How long a service may go unseen before it counts as down. The worker reports every
 // 30 seconds, the engine every few seconds, the provisioning service is checked with the
@@ -59,6 +64,7 @@ const JANITOR_INTERVAL_MS: Record<(typeof JANITOR_JOBS)[number], number> = {
   'run-janitor': 60_000,
   'resume-janitor': 60_000,
   'engine-maintenance': 300_000,
+  'runtime-janitor': 300_000,
 };
 const JANITOR_STALE_FACTOR = 3;
 

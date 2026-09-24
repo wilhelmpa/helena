@@ -1,10 +1,12 @@
 import {
+  Bot,
   Building2,
   FolderKanban,
   HardDrive,
   Keyboard,
   KeyRound,
   Mail,
+  Puzzle,
   Send,
   Shield,
   SlidersHorizontal,
@@ -53,6 +55,11 @@ export const GOD_SECTIONS: GodSection[] = [
     icon: SlidersHorizontal,
   },
   {
+    slug: 'agent-runtime',
+    group: 'instance',
+    icon: Bot,
+  },
+  {
     slug: 'authentication',
     group: 'instance',
     icon: KeyRound,
@@ -71,6 +78,11 @@ export const GOD_SECTIONS: GodSection[] = [
     slug: 'storage',
     group: 'instance',
     icon: HardDrive,
+  },
+  {
+    slug: 'plugins',
+    group: 'instance',
+    icon: Puzzle,
   },
   {
     slug: 'telegram',

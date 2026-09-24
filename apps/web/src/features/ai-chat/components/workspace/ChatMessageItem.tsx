@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { memo } from 'react';
 import type { ChatStatus } from 'ai';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { cn } from '@/lib/utils';
@@ -21,33 +21,40 @@ export interface ChatMessageItemProps {
   agent: AiAgent;
   projectKey: string | null;
   threadId: string | null;
-  onEdit: (text: string) => void;
+  // This message is being edited (only the member's own; ↑ in an empty composer opens
+  // the last one).
+  editing: boolean;
+  onEditingChange: (messageId: string | null) => void;
+  onEdit: (messageId: string, text: string) => void;
   onShowArtifact: (artifact: Artifact) => void;
   onSwitchVersion: (messageId: string) => void;
 }
 
 // One turn of the transcript, claude.ai-style: the member's words in a quiet bubble on
 // the reading side's end, the agent's answer as plain prose across the column. Its
-// actions (copy, edit, versions ‹ 2/3 ›) and, for an answer, the model and time it took
-// sit underneath and show on hover. Answering again is the composer's (ChatComposer).
-export default function ChatMessageItem({
+// actions (copy, read aloud, edit, versions ‹ 2/3 ›) and, for an answer, the model and
+// time it took sit underneath and show on hover. Answering again is the composer's.
+function ChatMessageItem({
   message,
   isLast,
   status,
   agent,
   projectKey,
   threadId,
+  editing,
+  onEditingChange,
   onEdit,
   onShowArtifact,
   onSwitchVersion,
 }: ChatMessageItemProps) {
   const isUser = message.role === 'user';
   const streaming = isLast && !isUser && (status === 'streaming' || status === 'submitted');
-  const [editing, setEditing] = useState(false);
 
   return (
     <Message
       align={isUser ? 'end' : 'start'}
+      // A screen reader reads an answer once it is complete, not word by word.
+      aria-busy={streaming || undefined}
       className="motion-safe:animate-in motion-safe:duration-200 motion-safe:fade-in"
     >
       <MessageContent className="gap-1.5">
@@ -59,8 +66,8 @@ export default function ChatMessageItem({
             <ChatMessageBubbleUser
               message={message}
               editing={editing}
-              onStopEditing={() => setEditing(false)}
-              onEdit={onEdit}
+              onStopEditing={() => onEditingChange(null)}
+              onEdit={(text) => onEdit(message.id, text)}
             />
           ) : (
             <BubbleContent className="w-full">
@@ -83,7 +90,7 @@ export default function ChatMessageItem({
               projectKey={projectKey}
               threadId={threadId}
               agentId={agent.id}
-              onEditRequest={() => setEditing(true)}
+              onEditRequest={() => onEditingChange(message.id)}
             />
             {!isUser && <ChatMessageMeta message={message} />}
             {isUser ? <ChatMessageTime message={message} /> : null}
@@ -93,3 +100,7 @@ export default function ChatMessageItem({
     </Message>
   );
 }
+
+// Every message re-renders only when it changes itself, not each time the answer below it
+// grows (the list passes stable callbacks).
+export default memo(ChatMessageItem);

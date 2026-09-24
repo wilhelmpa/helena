@@ -58,6 +58,14 @@
     "scim": {
       "label": "SCIM",
       "description": "Let an identity provider create, update and deactivate accounts on this instance, and grant project access through its groups."
+    },
+    "agent-runtime": {
+      "label": "Agent runtime",
+      "description": "The emergency stop, the Hermes installation and its updates, the fallback models and session retention every agent gets, and what the agents spent."
+    },
+    "plugins": {
+      "label": "Plugins",
+      "description": "Helena's own plugins and the external ones in the plugin folder: what they provide, the rights they ask for, and which may run."
     }
   },
   "settings": {

@@ -1308,8 +1308,20 @@ export async function updateIssue(
       await emitWebhookEvent(after.projectId, 'issue.updated', after);
       // Granular events fire in addition to issue.updated when their field changed.
       if (before.assigneeUserId !== after.assigneeUserId)
-        await emitWebhookEvent(after.projectId, 'issue.assigned', after);
-      if (before.delegateUserId !== after.delegateUserId) await enqueueDelegateRun(after, actor);
+        await emitWebhookEvent(after.projectId, 'issue.assigned', after, {
+          field: 'assignee',
+          assigneeId: after.assigneeUserId,
+          previousAssigneeId: before.assigneeUserId,
+        });
+      if (before.delegateUserId !== after.delegateUserId) {
+        // Not a webhook event; workflow triggers and plugins see the hand-over.
+        await emitWebhookEvent(after.projectId, 'issue.assigned', after, {
+          field: 'delegate',
+          assigneeId: after.delegateUserId,
+          previousAssigneeId: before.delegateUserId,
+        });
+        await enqueueDelegateRun(after, actor);
+      }
       if (before.columnId !== after.columnId) {
         await emitWebhookEvent(after.projectId, 'issue.state_changed', after);
         await applySubtaskAutomation(after, actor);

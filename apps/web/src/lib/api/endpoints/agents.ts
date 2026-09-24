@@ -50,6 +50,17 @@ export interface AgentRuntimePolicy {
   // Which runtime runs the agent. Unset is Hermes, provisioned by the server; a Claude
   // Code or Codex agent runs on a runner started with that preset.
   runtime?: AgentRuntimeKind;
+  // Unset, the agent's own memory writes wait for the owner's approval.
+  memoryApproval?: boolean;
+  // Skills of the runtime turned off by name.
+  skillsDisabled?: string[];
+  // The models the runtime falls back to, in order. Unset or null: the instance's list.
+  fallbackModels?: FallbackModel[] | null;
+}
+
+export interface FallbackModel {
+  provider: string;
+  model: string;
 }
 
 export type ReflectionMode = 'off' | 'failure' | 'complex';
