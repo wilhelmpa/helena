@@ -119,6 +119,10 @@ describe('note boards', () => {
 
       const found = await boards(owner.api).get({ query: { q: 'Roadmap' } });
       expect(found.data?.map((b) => b.name)).toEqual(['Roadmap']);
+
+      // A wildcard a person types is a character, not "anything".
+      const literal = await boards(owner.api).get({ query: { q: 'Board_1' } });
+      expect(literal.data).toEqual([]);
     });
   });
 

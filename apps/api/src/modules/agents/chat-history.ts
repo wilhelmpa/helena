@@ -1,4 +1,5 @@
 import { sql, type SQL } from 'drizzle-orm';
+import { containsPattern } from '@repo/db';
 import { toIso } from './core/helpers/dates';
 import { contextField, readContextSizes } from './chat-usage';
 import type { ChatThreadSummary } from './model';
@@ -48,7 +49,7 @@ export function searchTerm(q: string | undefined): string | null {
 // The ILIKE pattern for the term. The wildcards a member types are escaped, so a query
 // with a % in it looks for that character.
 export function likePattern(term: string): string {
-  return `%${term.replace(/([\\%_])/g, '\\$1')}%`;
+  return containsPattern(term);
 }
 
 // The stretch of text around the first match, cut in the database: an answer can be

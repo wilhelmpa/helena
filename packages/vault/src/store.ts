@@ -7,6 +7,7 @@ import {
   vaultMove,
   type VaultEntryKind,
   type VaultExtractionStatus,
+  escapeLike,
 } from '@repo/db';
 import type { Frontmatter, NoteLink } from './markdown';
 import { locateVaultPath } from './paths';
@@ -45,7 +46,7 @@ export function entryValues(row: VaultEntryRow): EntryValues {
 
 // A LIKE pattern for everything below a folder, with the folder's own wildcards escaped.
 export function belowPattern(folder: string): string {
-  return `${folder.replace(/[\\%_]/g, (character) => `\\${character}`)}/%`;
+  return `${escapeLike(folder)}/%`;
 }
 
 // The path itself and everything below it.

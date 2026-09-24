@@ -9,6 +9,7 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 | F15 | done | see git log | Bun `S3Client` (built in); `@aws-sdk/client-s3` removed |
 | F17 | done | see git log | `papaparse` 5.7.0 (MIT) |
 | F18 | done | see git log | `read-excel-file` 9.3.10 (MIT); `write-excel-file` 4.1.1 (MIT) for test fixtures |
+| DB-2 | done | see git log | no library: `escapeLike`/`containsPattern` in `@repo/db` |
 | F16 | done | see git log | `mime-types` 3.0.2 + `file-type` 22.1.1 (MIT) in `@repo/storage/mime` |
 
 ## F21: IP classification with `ipaddr.js`
@@ -61,3 +62,9 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 - read-excel-file returns the grid from A1 with blank rows kept, so the import's `rowNumbers` are now the real sheet rows (what the comment on `ParsedSheet` always promised; with ExcelJS they counted only non-empty rows). A legacy `.xls` or a non-workbook answers the same 400 as before.
 - The vault extraction writes each row without trailing empty cells and skips blank rows, as it did with ExcelJS.
 - Tests build workbooks with `write-excel-file` (same author, MIT, a devDependency) instead of ExcelJS.
+
+## DB-2: LIKE wildcards escaped everywhere
+
+- One helper pair in `@repo/db` (`packages/db/src/like.ts`): `escapeLike()` and `containsPattern()`. Postgres' default LIKE escape character is the backslash, so no `ESCAPE` clause is needed.
+- Now escaped: roles, initiatives (list and options), teams (projects), note boards, members, and the five Administrator searches (users, projects, teams, team projects, team members). The four places that escaped by hand (issues, mail contacts, chat history, the vault's folder prefix) use the helper; `likePattern()` in chat history stays as a name for its callers (one of them, the Mastra memory, is being removed on hub/native-engine-runtime).
+- Full-text search across sources stays with hub/second-brain (package K).
