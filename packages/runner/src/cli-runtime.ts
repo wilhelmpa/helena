@@ -629,7 +629,10 @@ export class CliRuntimeAdapter implements RuntimeAdapter {
     if (!this.client.runtimeLogin) return;
     try {
       const state = await this.client.runtimeLogin();
-      this.granted = state && state.runtime === this.runtime ? state : null;
+      const granted = state && state.runtime === this.runtime ? state : null;
+      // Another login than the refused one: the next command tries it.
+      if (granted?.credentialId !== this.granted?.credentialId) this.refused = false;
+      this.granted = granted;
     } catch {
       // Kept as it was; the next check asks again.
     }
