@@ -625,8 +625,10 @@ html [data-sonner-toast][data-styled='true']:not(:focus-visible) {
   * {
     @apply border-border outline-ring/50;
   }
+  /* 13px is the standard size (the sidebar's rows): text without a size class of its
+     own is never the browser's 16px. */
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-sm text-foreground;
   }
   button:not(:disabled),
   [role='button']:not(:disabled) {
