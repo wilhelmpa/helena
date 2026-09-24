@@ -1,7 +1,10 @@
 import { randomBytes } from 'node:crypto';
 import { db, projectColumn, projectSetting } from '@repo/db';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
-import { decryptSecret, encryptSecret, type EncryptedSecret } from '@repo/crypto';
+import { decryptSecret, encryptSecret, secretContext, type EncryptedSecret } from '@repo/crypto';
+
+// The webhook secret is bound to its project's git settings.
+const secretOf = (projectId: number) => secretContext('project_setting', projectId, 'git.secret');
 import { HttpError } from '#shared/lib';
 import { getProjectSetting } from '#shared/project-settings';
 
@@ -53,12 +56,12 @@ export interface GitSettings {
   repositories: GitRepository[];
 }
 
-function toDto(stored: StoredGitSettings): GitSettings {
+function toDto(projectId: number, stored: StoredGitSettings): GitSettings {
   const { recentDeliveries: _internal, ...rest } = stored;
   return {
     ...rest,
     linkbackComments: stored.linkbackComments ?? true,
-    secret: decryptSecret(stored.secret),
+    secret: decryptSecret(stored.secret, secretOf(projectId)),
     repositories: stored.repositories ?? [],
   };
 }
@@ -68,11 +71,11 @@ function toDto(stored: StoredGitSettings): GitSettings {
 // before the user has saved anything.
 export async function getOrCreateGitSettings(projectId: number): Promise<GitSettings> {
   const stored = await getProjectSetting<StoredGitSettings>(projectId, GIT_SETTING_KEY);
-  if (stored) return toDto(stored);
+  if (stored) return toDto(projectId, stored);
   const fresh: StoredGitSettings = {
     enabled: false,
     webhookId: randomBytes(16).toString('hex'),
-    secret: encryptSecret(newSecret()),
+    secret: encryptSecret(newSecret(), secretOf(projectId)),
     onMergeColumnId: null,
     onOpenColumnId: null,
     linkbackComments: true,
@@ -85,7 +88,7 @@ export async function getOrCreateGitSettings(projectId: number): Promise<GitSett
     .values({ projectId, key: GIT_SETTING_KEY, value: fresh })
     .onConflictDoNothing();
   const winner = await getProjectSetting<StoredGitSettings>(projectId, GIT_SETTING_KEY);
-  return toDto(winner ?? fresh);
+  return toDto(projectId, winner ?? fresh);
 }
 
 // Merges the given fields into the stored jsonb in one UPDATE, so concurrent
@@ -127,7 +130,7 @@ export async function updateGitSettings(
 
 export async function regenerateGitSecret(projectId: number): Promise<GitSettings> {
   await getOrCreateGitSettings(projectId);
-  await mergeGitSettings(projectId, { secret: encryptSecret(newSecret()) });
+  await mergeGitSettings(projectId, { secret: encryptSecret(newSecret(), secretOf(projectId)) });
   return getOrCreateGitSettings(projectId);
 }
 
@@ -146,7 +149,10 @@ export async function findProjectByGitWebhookId(
       ),
     );
   if (!rows[0]) return null;
-  return { projectId: rows[0].projectId, settings: toDto(rows[0].value as StoredGitSettings) };
+  return {
+    projectId: rows[0].projectId,
+    settings: toDto(rows[0].projectId, rows[0].value as StoredGitSettings),
+  };
 }
 
 // How many processed delivery ids the ring buffer keeps. Provider retries and

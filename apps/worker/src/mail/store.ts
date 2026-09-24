@@ -1,4 +1,3 @@
-import { decryptSecret } from '@repo/crypto';
 import {
   db,
   integrationCredential,
@@ -10,6 +9,7 @@ import {
   mailMessageFolder,
   mailThread,
   mailThreadIssue,
+  openCredential,
   project,
 } from '@repo/db';
 import {
@@ -47,7 +47,7 @@ export type FolderRow = typeof mailFolder.$inferSelect;
 type AccountRow = typeof mailAccount.$inferSelect;
 type CredentialRow = Pick<
   typeof integrationCredential.$inferSelect,
-  'ciphertext' | 'iv' | 'authTag' | 'updatedAt'
+  'id' | 'ciphertext' | 'iv' | 'authTag' | 'updatedAt'
 >;
 
 // The server settings of an account. A password account reads its password from its
@@ -64,7 +64,7 @@ export function accountSettings(row: AccountRow, credential: CredentialRow): Mai
     username: row.username,
   };
   if (row.auth === 'xoauth2') return base;
-  const secret = JSON.parse(decryptSecret(credential)) as { value?: string };
+  const secret = JSON.parse(openCredential(credential)) as { value?: string };
   if (!secret.value) throw new Error('The credential holds no value');
   return {
     imapHost: row.imapHost,
@@ -79,6 +79,7 @@ export function accountSettings(row: AccountRow, credential: CredentialRow): Mai
 }
 
 const credentialColumns = {
+  id: integrationCredential.id,
   ciphertext: integrationCredential.ciphertext,
   iv: integrationCredential.iv,
   authTag: integrationCredential.authTag,

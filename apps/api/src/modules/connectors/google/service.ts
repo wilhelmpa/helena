@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { db, connectorAuthSession, mailAccount, project } from '@repo/db';
-import { decryptSecret, encryptSecret } from '@repo/crypto';
+import { decryptSecret, encryptSecret, secretContext } from '@repo/crypto';
 import {
   ClientJsonError,
   codeFromRedirect,
@@ -433,6 +433,9 @@ export interface AuthStartResult {
   mode: 'paste' | 'callback';
 }
 
+// The payload of a sign-in is bound to its row.
+const sessionContext = (id: string) => secretContext('connector_auth_session', id, 'payload');
+
 // Helena's own callback, for a Web client once Helena runs on https.
 export function callbackUrl(): string | null {
   const base = process.env.API_URL?.trim().replace(/\/+$/, '');
@@ -448,7 +451,7 @@ async function saveSession(teamId: number, userId: string, payload: AuthPayload)
     teamId,
     userId,
     connector: 'google',
-    ...encryptSecret(JSON.stringify(payload)),
+    ...encryptSecret(JSON.stringify(payload), sessionContext(id)),
     expiresAt: new Date(Date.now() + AUTH_SESSION_MS),
   });
   return id;
@@ -474,7 +477,7 @@ async function takeSession(
   return {
     teamId: row.teamId,
     userId: row.userId,
-    payload: JSON.parse(decryptSecret(row)) as AuthPayload,
+    payload: JSON.parse(decryptSecret(row, sessionContext(row.id))) as AuthPayload,
   };
 }
 
@@ -564,6 +567,7 @@ export async function startGoogleSignIn(
         codeVerifier: start.codeVerifier,
         redirectUri: start.redirectUri,
       }),
+      sessionContext(sessionId),
     ),
     expiresAt: new Date(Date.now() + AUTH_SESSION_MS),
   });

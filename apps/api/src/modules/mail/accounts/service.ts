@@ -1,4 +1,3 @@
-import { decryptSecret } from '@repo/crypto';
 import {
   db,
   integrationCredential,
@@ -7,6 +6,7 @@ import {
   mailRule,
   mailMessage,
   mailThread,
+  openCredential,
   project,
 } from '@repo/db';
 import { testImapConnection, testSmtpConnection, type MailServerSettings } from '@repo/mail';
@@ -321,6 +321,7 @@ export async function resetAccount(teamId: number, accountId: number) {
 async function secretValue(credentialId: number): Promise<string | null> {
   const [credential] = await db
     .select({
+      id: integrationCredential.id,
       ciphertext: integrationCredential.ciphertext,
       iv: integrationCredential.iv,
       authTag: integrationCredential.authTag,
@@ -328,7 +329,7 @@ async function secretValue(credentialId: number): Promise<string | null> {
     .from(integrationCredential)
     .where(eq(integrationCredential.id, credentialId));
   if (!credential) return null;
-  return (JSON.parse(decryptSecret(credential)) as { value?: string }).value ?? null;
+  return (JSON.parse(openCredential(credential)) as { value?: string }).value ?? null;
 }
 
 export async function testConnection(

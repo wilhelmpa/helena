@@ -5,10 +5,10 @@ import {
   integrationCredential,
   integrationCredentialGrant,
   integrationCredentialUse,
+  openCredential,
   user,
 } from '@repo/db';
 import { and, eq, gt, inArray, isNotNull, sql } from 'drizzle-orm';
-import { decryptSecret } from '@repo/crypto';
 import { HttpError } from '#shared/lib';
 import type { RunnerAgent } from '../runner/service';
 import { mcpSecretServers } from '../mcp-servers/service';
@@ -155,7 +155,7 @@ export async function deliverWebLogins(
       allowedDomains?: string[];
       username: string;
     };
-    const secrets = JSON.parse(decryptSecret(row)) as { password: string; totpSecret?: string };
+    const secrets = JSON.parse(openCredential(row)) as { password: string; totpSecret?: string };
     return {
       id: row.id,
       label: row.label ?? '',
@@ -293,7 +293,7 @@ export async function deliverSshKeys(
     )
     .orderBy(integrationCredential.id);
   const keys = rows.flatMap((row): DeliveredSshKey[] => {
-    const secrets = JSON.parse(decryptSecret(row)) as { privateKey?: string };
+    const secrets = JSON.parse(openCredential(row)) as { privateKey?: string };
     if (!secrets.privateKey) return [];
     return [
       {

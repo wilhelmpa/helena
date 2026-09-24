@@ -1,6 +1,11 @@
-import { db, agentMcpServer, agentMcpServerLink, integrationCredential } from '@repo/db';
+import {
+  db,
+  agentMcpServer,
+  agentMcpServerLink,
+  integrationCredential,
+  openCredential,
+} from '@repo/db';
 import { and, eq, inArray, isNull } from 'drizzle-orm';
-import { decryptSecret } from '@repo/crypto';
 import { iso, HttpError, rethrowDuplicate } from '#shared/lib';
 import { onTemplateRelevantChange } from '../core/template-sync';
 
@@ -372,7 +377,7 @@ export async function agentMcpSecrets(
   return Object.fromEntries(
     rows.map((row) => [
       String(row.id),
-      String((JSON.parse(decryptSecret(row)) as { value: unknown }).value),
+      String((JSON.parse(openCredential(row)) as { value: unknown }).value),
     ]),
   );
 }

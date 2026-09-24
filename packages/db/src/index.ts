@@ -23,6 +23,14 @@ export {
   defaultNotificationConfig,
   emailSource,
   getDeliveryConfig,
+  notificationContext,
   readNotificationConfig,
   type NotificationConfig,
 } from './domains/notification-settings';
+export {
+  credentialContext,
+  nextCredentialId,
+  openCredential,
+  sealCredential,
+} from './credential-crypto';
+export { reencryptAll } from './reencrypt';

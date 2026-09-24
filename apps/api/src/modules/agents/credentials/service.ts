@@ -1,6 +1,12 @@
-import { db, integrationCredential, project } from '@repo/db';
+import {
+  db,
+  integrationCredential,
+  nextCredentialId,
+  openCredential,
+  project,
+  sealCredential,
+} from '@repo/db';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
-import { decryptSecret, encryptSecret } from '@repo/crypto';
 import { HttpError, iso } from '#shared/lib';
 import { connectors } from '@helena/connectors';
 import { listAudit, type AuditEntry } from './audit';
@@ -167,13 +173,14 @@ export async function getCredentialEntry(
 async function readSecrets(id: number): Promise<Secrets> {
   const [row] = await db
     .select({
+      id: integrationCredential.id,
       ciphertext: integrationCredential.ciphertext,
       iv: integrationCredential.iv,
       authTag: integrationCredential.authTag,
     })
     .from(integrationCredential)
     .where(eq(integrationCredential.id, id));
-  return row ? (JSON.parse(decryptSecret(row)) as Secrets) : {};
+  return row ? (JSON.parse(openCredential(row)) as Secrets) : {};
 }
 
 function required(value: string | undefined, what: string): string {
@@ -233,8 +240,8 @@ function compose(
   return { readable: { notes }, secrets: { value: requiredSecret(value, 'A value') } };
 }
 
-function stored(readable: Readable, secrets: Secrets) {
-  const encrypted = encryptSecret(JSON.stringify(secrets));
+function stored(id: number, readable: Readable, secrets: Secrets) {
+  const encrypted = sealCredential(id, JSON.stringify(secrets));
   const marks = Object.fromEntries(Object.keys(secrets).map((field) => [field, true]));
   return { ...encrypted, redacted: { ...readable, ...marks } };
 }
@@ -268,9 +275,17 @@ export async function createCredentialEntry(
     current.secrets = { privateKey: key.privateKey };
   }
   const { readable, secrets } = compose(kind, fields, current);
+  const id = await nextCredentialId();
   const [row] = await db
     .insert(integrationCredential)
-    .values({ teamId, integrationKey: kind, label, projectId, ...stored(readable, secrets) })
+    .values({
+      id,
+      teamId,
+      integrationKey: kind,
+      label,
+      projectId,
+      ...stored(id, readable, secrets),
+    })
     .returning({ id: integrationCredential.id });
   return (await getCredentialEntry(row.id, teamId))!;
 }
@@ -302,7 +317,7 @@ export async function updateCredentialEntry(
     await tx
       .update(integrationCredential)
       .set({
-        ...stored(readable, secrets),
+        ...stored(id, readable, secrets),
         ...(name !== undefined && { label: name }),
         ...(projectId !== undefined && { projectId }),
         updatedAt: new Date(),
@@ -326,6 +341,7 @@ export async function regenerateSshKey(
     .update(integrationCredential)
     .set({
       ...stored(
+        id,
         { publicKey: key.publicKey, notes: existing.notes },
         { privateKey: key.privateKey },
       ),

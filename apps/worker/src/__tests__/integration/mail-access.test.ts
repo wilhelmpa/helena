@@ -2,7 +2,6 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test'
 import { mkdtemp, readdir, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { encryptSecret } from '@repo/crypto';
 import {
   db,
   integrationCredential,
@@ -16,6 +15,8 @@ import {
   project,
   team,
   projectColumn,
+  nextCredentialId,
+  sealCredential,
 } from '@repo/db';
 import { clearGoogleTokenCache, setGoogleEndpointsForTests } from '@helena/connectors/google';
 import { eq } from 'drizzle-orm';
@@ -102,13 +103,15 @@ async function googleMailbox(overrides: Partial<typeof mailAccount.$inferInsert>
     .insert(project)
     .values({ teamId: owner!.id, key: 'PRIV', name: 'Privat' })
     .returning();
+  const clientId = await nextCredentialId();
   const [client] = await db
     .insert(integrationCredential)
     .values({
+      id: clientId,
       teamId: owner!.id,
       integrationKey: 'google_oauth_client',
       label: 'helena',
-      ...encryptSecret(JSON.stringify({ clientSecret: 'GOCSPX-x' })),
+      ...sealCredential(clientId, JSON.stringify({ clientSecret: 'GOCSPX-x' })),
       redacted: {
         clientId: '1-a.apps.googleusercontent.com',
         type: 'installed',
@@ -116,13 +119,15 @@ async function googleMailbox(overrides: Partial<typeof mailAccount.$inferInsert>
       },
     })
     .returning();
+  const accountCredentialId = await nextCredentialId();
   const [account] = await db
     .insert(integrationCredential)
     .values({
+      id: accountCredentialId,
       teamId: owner!.id,
       integrationKey: 'google',
       label: 'owner@example.com',
-      ...encryptSecret(JSON.stringify({ refreshToken: '1//refresh' })),
+      ...sealCredential(accountCredentialId, JSON.stringify({ refreshToken: '1//refresh' })),
       redacted: {
         email: 'owner@example.com',
         engine: 'helena',

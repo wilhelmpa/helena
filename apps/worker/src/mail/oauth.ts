@@ -1,5 +1,4 @@
-import { decryptSecret } from '@repo/crypto';
-import { db, integrationCredential } from '@repo/db';
+import { db, integrationCredential, openCredential } from '@repo/db';
 import { googleAccessToken, GoogleAuthError } from '@helena/connectors/google';
 import { eq } from 'drizzle-orm';
 
@@ -11,6 +10,7 @@ import { eq } from 'drizzle-orm';
 async function credential(id: number) {
   const [row] = await db
     .select({
+      id: integrationCredential.id,
       kind: integrationCredential.integrationKey,
       redacted: integrationCredential.redacted,
       ciphertext: integrationCredential.ciphertext,
@@ -23,7 +23,7 @@ async function credential(id: number) {
   return {
     kind: row.kind,
     readable: (row.redacted ?? {}) as Record<string, unknown>,
-    secrets: JSON.parse(decryptSecret(row)) as Record<string, string>,
+    secrets: JSON.parse(openCredential(row)) as Record<string, string>,
   };
 }
 

@@ -1,5 +1,11 @@
-import { db, integrationCredential, project } from '@repo/db';
-import { decryptSecret, encryptSecret } from '@repo/crypto';
+import {
+  db,
+  integrationCredential,
+  nextCredentialId,
+  openCredential,
+  project,
+  sealCredential,
+} from '@repo/db';
 import { and, asc, eq, inArray } from 'drizzle-orm';
 import { iso } from '#shared/lib';
 import { grantsOf, type GrantEntry } from '#modules/agents/credentials/grants';
@@ -111,19 +117,20 @@ export async function getAccount(
 export async function readAccountSecrets(id: number): Promise<Secrets> {
   const [row] = await db
     .select({
+      id: integrationCredential.id,
       ciphertext: integrationCredential.ciphertext,
       iv: integrationCredential.iv,
       authTag: integrationCredential.authTag,
     })
     .from(integrationCredential)
     .where(eq(integrationCredential.id, id));
-  return row ? (JSON.parse(decryptSecret(row)) as Secrets) : {};
+  return row ? (JSON.parse(openCredential(row)) as Secrets) : {};
 }
 
 // The stored form: secrets encrypted as one JSON object, the readable fields plus `true`
 // for every secret that is set.
-export function sealed(readable: Readable, secrets: Secrets) {
-  const encrypted = encryptSecret(JSON.stringify(secrets));
+export function sealed(id: number, readable: Readable, secrets: Secrets) {
+  const encrypted = sealCredential(id, JSON.stringify(secrets));
   const marks = Object.fromEntries(Object.keys(secrets).map((field) => [field, true]));
   return { ...encrypted, redacted: { ...readable, ...marks } };
 }
@@ -143,14 +150,16 @@ export async function insertAccount(input: {
   readable: Readable;
   secrets: Secrets;
 }): Promise<number> {
+  const id = await nextCredentialId();
   const [row] = await db
     .insert(integrationCredential)
     .values({
+      id,
       teamId: input.teamId,
       integrationKey: input.kind,
       label: input.label,
       projectId: input.projectId,
-      ...sealed(input.readable, input.secrets),
+      ...sealed(id, input.readable, input.secrets),
     })
     .returning({ id: integrationCredential.id });
   return row!.id;
@@ -178,7 +187,7 @@ export async function updateAccount(
       (row?.redacted as Readable | undefined) ?? {},
       Object.keys(currentSecrets),
     );
-    stored = sealed(patch.readable ?? currentReadable, patch.secrets ?? currentSecrets);
+    stored = sealed(id, patch.readable ?? currentReadable, patch.secrets ?? currentSecrets);
   }
   await db
     .update(integrationCredential)
