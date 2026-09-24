@@ -185,6 +185,12 @@ export const app = new Elysia()
               'runtime updates',
           },
           { name: 'Emergency Stop', description: "The instance's emergency stop for all agents" },
+          {
+            name: 'Provider Limits',
+            description:
+              'How much of the plan limits of the ChatGPT/Codex and Claude subscriptions is ' +
+              "used: session, weekly and model windows, read through the runtimes' own logins",
+          },
           { name: 'Custom Fields', description: 'Global and type-scoped custom fields' },
           { name: 'Issue Templates', description: 'Presets a new issue can be created from' },
           { name: 'Issues', description: 'Issues, their fields, feed, and comments' },

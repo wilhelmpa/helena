@@ -90,7 +90,12 @@ export const providerLimitRoutes = new Elysia({
     },
     {
       response: { 200: ProviderLimitSettings, ...errors(401, 403) },
-      detail: { summary: 'Read how often the plan limits are read' },
+      detail: {
+        summary: 'Read how often the plan limits are read',
+        description:
+          'Whether Helena asks the runners on its own, the interval in minutes, and the share ' +
+          'from which a window counts as close to its limit.',
+      },
     },
   )
 
