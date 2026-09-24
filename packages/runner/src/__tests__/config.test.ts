@@ -77,6 +77,27 @@ describe('one agent', () => {
     expect(config.models).toHaveLength(1);
     expect(config.models[0]?.thinkingDefault).toBe('medium');
     expect(config.models[0]?.provider).toBe('anthropic');
+    expect(config.models[0]).not.toHaveProperty('listed');
+
+    // Whether the account lists a model, and which model a variant belongs to, pass through.
+    const [codex] = await load({
+      ...base,
+      apiKey: 'key-a',
+      models: [
+        { id: 'gpt-6-sol', reasoning: false, thinkingLevels: [], listed: false },
+        {
+          id: 'gpt-5.6-sol-900k',
+          reasoning: false,
+          thinkingLevels: [],
+          listed: true,
+          variantOf: 'gpt-5.6-sol',
+        },
+      ],
+    });
+    expect(codex.models.map(({ listed, variantOf }) => ({ listed, variantOf }))).toEqual([
+      { listed: false, variantOf: undefined },
+      { listed: true, variantOf: 'gpt-5.6-sol' },
+    ]);
 
     await expect(
       load({

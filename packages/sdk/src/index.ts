@@ -135,6 +135,14 @@ export {
   type RuntimeType,
 } from './runtime';
 export {
+  classifyProviderFailure,
+  FAILURE_DETAIL_LIMIT,
+  isFinalFailure,
+  type RuntimeFailure,
+  type RuntimeFailureCode,
+  type RuntimeFailureInput,
+} from './runtime-failures';
+export {
   canonicalJson,
   resolveMcpValue,
   runModelReport,
