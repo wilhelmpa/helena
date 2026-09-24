@@ -6,7 +6,7 @@ import {
   simpleCommands,
 } from './classify';
 import { costOf, priceCandidates, pricesFromModelsDev, snapshotPrices, toEur } from './prices';
-import { ACTION_CATEGORIES, actionRank, annotationsOf } from './categories';
+import { ACTION_CATEGORIES, actionRank, annotationsForCategory } from './categories';
 
 const WS = '/srv/work/vol';
 
@@ -217,11 +217,11 @@ describe('the canonical category list (D-C1, mirror of @helena/sdk)', () => {
   });
 
   test('maps every category onto annotations that map back to it', () => {
-    expect(annotationsOf('read')).toEqual({ readOnlyHint: true });
-    expect(categoryFromAnnotations(annotationsOf('write'))).toBe('write');
-    expect(categoryFromAnnotations(annotationsOf('delete'))).toBe('delete');
-    expect(categoryFromAnnotations(annotationsOf('send'))).toBe('send');
-    expect(annotationsOf('publish')).toEqual(annotationsOf('send'));
+    expect(annotationsForCategory('read')).toEqual({ readOnlyHint: true, destructiveHint: false });
+    expect(categoryFromAnnotations(annotationsForCategory('write'))).toBe('write');
+    expect(categoryFromAnnotations(annotationsForCategory('delete'))).toBe('delete');
+    expect(categoryFromAnnotations(annotationsForCategory('send'))).toBe('send');
+    expect(annotationsForCategory('publish')).toEqual(annotationsForCategory('send'));
   });
 
   test('a category declared in _meta wins over the annotations', () => {

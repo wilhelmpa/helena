@@ -40,17 +40,28 @@ export function actionRank(category: ActionCategory): number {
 }
 
 // The MCP tool annotations a tool of this category carries (D-C1).
-// mirror of @helena/sdk
-export function annotationsOf(category: ActionCategory): {
+// mirror of @helena/sdk annotationsForCategory()
+export function annotationsForCategory(category: ActionCategory): {
   readOnlyHint?: boolean;
   destructiveHint?: boolean;
   openWorldHint?: boolean;
 } {
-  if (category === 'read') return { readOnlyHint: true };
-  if (category === 'write' || category === 'report')
-    return { readOnlyHint: false, openWorldHint: false, destructiveHint: false };
-  if (category === 'delete') return { readOnlyHint: false, destructiveHint: true };
-  return { readOnlyHint: false, openWorldHint: true };
+  switch (category) {
+    case 'read':
+      return { readOnlyHint: true, destructiveHint: false };
+    case 'report':
+    case 'write':
+      return { readOnlyHint: false, destructiveHint: false, openWorldHint: false };
+    case 'send':
+    case 'publish':
+      return { readOnlyHint: false, destructiveHint: false, openWorldHint: true };
+    case 'delete':
+      return { readOnlyHint: false, destructiveHint: true };
+    case 'execute':
+    case 'pay':
+    case 'credentials':
+      return { readOnlyHint: false, destructiveHint: true, openWorldHint: true };
+  }
 }
 
 // The `_meta` key a tool declares its category under.

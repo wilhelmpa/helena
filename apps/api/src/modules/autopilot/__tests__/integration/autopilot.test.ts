@@ -6,6 +6,7 @@ import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
 import { autopilotPolicyDecider, decideBrowserTool } from '#modules/autopilot/adapters';
+import { autopilotPolicyEvaluator } from '#modules/autopilot/evaluator';
 
 // Helena's Autopilot: one level per project (with an optional per-agent level), one policy
 // engine every runtime asks, budgets that stop the work cleanly, and a log entry for each
@@ -519,5 +520,37 @@ describe('adapters for the workflow engine and the browser gateway', () => {
       category: 'pay',
       reason: 'hard-block',
     });
+  });
+});
+
+describe('the Autopilot as an @helena/sdk policy evaluator', () => {
+  beforeEach(resetDb);
+
+  it('answers for agents in the SDK shape and abstains for people and other questions', async () => {
+    const s = await setup();
+    await setLevel(s.asOwner, 3);
+    const ask = (action: string, agent: { id: number } | null = { id: s.agent.id }) =>
+      autopilotPolicyEvaluator.evaluate({
+        agent,
+        project: { id: s.projectId, key: 'MKT', teamId: s.teamId },
+        action,
+        context: { connector: 'notion', service: 'pages', target: 'Roadmap page' },
+      });
+    expect(await ask('send')).toEqual({
+      effect: 'allow',
+      reason: 'Autopilot level 3 (Autonomous within budget) allows send',
+      evaluator: 'helena-autopilot',
+    });
+    expect(await ask('delete')).toMatchObject({
+      effect: 'needs-approval',
+      reason: 'A person always approves delete, even at level 3',
+    });
+    expect(await ask('send', null)).toBeNull();
+    expect(await ask('launch')).toBeNull();
+    const [logged] = await db
+      .select()
+      .from(helenaPolicyDecision)
+      .where(eq(helenaPolicyDecision.adapter, 'connector'));
+    expect(logged).toMatchObject({ tool: 'pages', summary: 'Roadmap page', scope: 'external' });
   });
 });
