@@ -54,7 +54,7 @@ function ConsentForm() {
   return (
     <div className="flex flex-col gap-6 p-6 md:p-8">
       <div className="flex flex-col items-center gap-1 text-center">
-        <HelenaMark className="mb-3 size-11 md:hidden" />
+        <HelenaMark className="mb-3 size-12 md:hidden" />
         <h1 className="text-2xl font-semibold">{t('oauth.consent.title')}</h1>
         <p className="text-xs text-balance text-muted-foreground">
           {t('oauth.consent.description')}

@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { mailHeaderHtml } from '@helena/brand';
 
 // Outbound email transport, shared by the two senders in the app: project
 // notifications (credentials per project) and authentication mail (credentials per
@@ -166,10 +167,12 @@ function escape(s: string): string {
 }
 
 // Wraps a plain-text body (and an optional link) into the text/html pair the
-// transport needs. Shared so every message in the app looks the same.
+// transport needs. Shared so every message in the app looks the same: the HTML part
+// opens with Helena's wordmark (packages/brand), set as text so it shows without
+// loading images.
 export function emailBody(text: string, url?: string | null): { text: string; html: string } {
   const plain = url ? `${text}\n\n${url}` : text;
   const body = escape(text).replace(/\n/g, '<br>');
   const link = url ? `<p><a href="${escape(url)}">${escape(url)}</a></p>` : '';
-  return { text: plain, html: `<p>${body}</p>${link}` };
+  return { text: plain, html: `${mailHeaderHtml()}<p>${body}</p>${link}` };
 }

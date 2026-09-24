@@ -52,7 +52,7 @@ export default function InviteAcceptPage({ token }: { token: string }) {
     <AuthFrame brandSubtitle={t('brandSubtitle')}>
       <div className="p-6 md:p-8">
         <div className="mb-6 flex flex-col items-center gap-1 text-center">
-          <HelenaMark className="mb-3 size-11 md:hidden" />
+          <HelenaMark className="mb-3 size-12 md:hidden" />
           <h1 className="text-2xl font-semibold">{title}</h1>
           <p className="text-xs text-balance text-muted-foreground">{subtitle}</p>
         </div>
