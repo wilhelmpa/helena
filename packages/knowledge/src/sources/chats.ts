@@ -92,7 +92,10 @@ export const chatSource: KnowledgeSource = {
       and(
         gt(agentChatMessage.id, cursorId(ctx)),
         ctx.since
-          ? or(sql`${finished} >= ${ctx.since}`, gte(agentChatThread.updatedAt, ctx.since))
+          ? or(
+              sql`${finished} >= ${ctx.since.toISOString()}::timestamptz`,
+              gte(agentChatThread.updatedAt, ctx.since),
+            )
           : undefined,
       ),
       limit,

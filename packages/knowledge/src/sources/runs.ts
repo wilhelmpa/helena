@@ -92,7 +92,10 @@ export const runSource: KnowledgeSource = {
   async list(ctx) {
     const limit = pageLimit(ctx);
     const rows = await runRows(
-      and(gt(agentRun.id, cursorId(ctx)), ctx.since ? sql`${changed} >= ${ctx.since}` : undefined),
+      and(
+        gt(agentRun.id, cursorId(ctx)),
+        ctx.since ? sql`${changed} >= ${ctx.since.toISOString()}::timestamptz` : undefined,
+      ),
       limit,
     );
     return { items: rows.map(runItem), cursor: nextCursor(rows, limit, (row) => row.id) };

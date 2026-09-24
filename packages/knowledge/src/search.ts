@@ -134,7 +134,12 @@ export async function searchKnowledgeIndex(
     .select({ rowId: knowledgeItem.id, group: groupKey, rank })
     .from(knowledgeItem)
     .where(and(readable, filters, sql`${knowledgeItem.search} @@ ${query}`))
-    .orderBy(desc(rank), desc(knowledgeItem.updatedAt))
+    // On a tie the item a group is named after (the task, not its comment) comes first.
+    .orderBy(
+      desc(rank),
+      sql`${groupKey} = ${knowledgeItem.source} || ':' || ${knowledgeItem.itemId} desc`,
+      desc(knowledgeItem.updatedAt),
+    )
     .limit(CANDIDATES);
 
   const candidates = new Map<number, Candidate>();
