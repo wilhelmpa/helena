@@ -187,6 +187,16 @@ export default function MarkdownEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor]);
 
+  // A read-only editor shows its current value, not the one it was mounted with: an edited
+  // comment or a changed initiative description replaces what it shows (QA sweep: an edited
+  // comment kept its old text until the task was reopened). An editable one keeps what the
+  // person is typing.
+  useEffect(() => {
+    if (!editor || editable) return;
+    if (editor.storage.markdown.getMarkdown() === defaultValue) return;
+    editor.commands.setContent(defaultValue, { emitUpdate: false });
+  }, [editor, editable, defaultValue]);
+
   if (!editor) return null;
 
   return (
