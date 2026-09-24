@@ -807,6 +807,8 @@
     "import": "Імпортувати",
     "close": "Закрити",
     "failed": "Не вдалося.",
-    "notJson": "Файл не є пакетом JSON."
+    "notJson": "Файл не є пакетом JSON.",
+    "summary": "{written} записано · {unchanged} без змін · {drift} відрізняється · {warnings} попереджень",
+    "summaryDryRun": "Лише перевірка, нічого не змінено · {unchanged} без змін · {drift} відрізняється · {warnings} попереджень"
   }
 }

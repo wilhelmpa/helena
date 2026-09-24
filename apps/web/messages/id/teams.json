@@ -807,6 +807,8 @@
     "import": "Impor",
     "close": "Tutup",
     "failed": "Tidak berhasil.",
-    "notJson": "Berkas bukan paket JSON."
+    "notJson": "Berkas bukan paket JSON.",
+    "summary": "{written} ditulis · {unchanged} tak berubah · {drift} berbeda · {warnings} peringatan",
+    "summaryDryRun": "Hanya diperiksa, tak ada yang diubah · {unchanged} tak berubah · {drift} berbeda · {warnings} peringatan"
   }
 }

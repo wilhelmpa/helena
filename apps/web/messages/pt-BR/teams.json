@@ -807,6 +807,8 @@
     "import": "Importar",
     "close": "Fechar",
     "failed": "Não deu certo.",
-    "notJson": "O arquivo não é um pacote JSON."
+    "notJson": "O arquivo não é um pacote JSON.",
+    "summary": "{written} gravados · {unchanged} sem mudança · {drift} diferentes · {warnings} avisos",
+    "summaryDryRun": "Só verificação, nada mudou · {unchanged} sem mudança · {drift} diferentes · {warnings} avisos"
   }
 }

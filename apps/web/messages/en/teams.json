@@ -807,6 +807,8 @@
     "import": "Import",
     "close": "Close",
     "failed": "That did not work.",
-    "notJson": "The file is not a JSON bundle."
+    "notJson": "The file is not a JSON bundle.",
+    "summary": "{written} written · {unchanged} unchanged · {drift} different · {warnings} warnings",
+    "summaryDryRun": "Check only, nothing changed · {unchanged} unchanged · {drift} different · {warnings} warnings"
   }
 }

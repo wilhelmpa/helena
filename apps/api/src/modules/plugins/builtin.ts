@@ -77,14 +77,14 @@ export async function loadBuiltinPlugins(app: McpApp): Promise<void> {
   const all = [...ACTION_CATEGORIES];
   await host.load(
     integrations,
-    builtinManifest(INTEGRATIONS_PLUGIN_ID, 'Integrations', {
+    builtinManifest(INTEGRATIONS_PLUGIN_ID, 'integrations', {
       provides: { connectors: ['*'], tools: ['*'] },
       permissions: { actions: all, credentials: true },
     }),
   );
   await host.load(
     routeToolsPlugin(app),
-    builtinManifest(MCP_ROUTES_PLUGIN_ID, 'Helena MCP tools', {
+    builtinManifest(MCP_ROUTES_PLUGIN_ID, 'mcp', {
       provides: { tools: ['*'] },
       permissions: { actions: all },
     }),

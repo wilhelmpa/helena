@@ -400,6 +400,18 @@
     "actions": "Actions",
     "events": "Events",
     "network": "Network",
-    "credentials": "Its tools use the credentials of its connectors."
+    "credentials": "Its tools use the credentials of its connectors.",
+    "names": {
+      "integrations": "Integrations",
+      "mcp": "Helena MCP tools",
+      "webhooks": "Webhooks",
+      "bundles": "Template bundles"
+    },
+    "problems": {
+      "external-off": "Loads once external plugins are switched on.",
+      "not-approved": "Not approved yet.",
+      "version-changed": "Approved at another version: approve this one.",
+      "files-changed": "Its files changed since it was approved: check and approve again."
+    }
   }
 }

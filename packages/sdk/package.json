@@ -31,5 +31,11 @@
     "@types/semver": "^7.8.0",
     "eslint": "^9.39.0",
     "typescript": "^6.0.3"
-  }
+  },
+  "files": [
+    "src",
+    "schema",
+    "README.md",
+    "LICENSE"
+  ]
 }

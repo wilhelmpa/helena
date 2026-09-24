@@ -400,6 +400,18 @@
     "actions": "Actions",
     "events": "Événements",
     "network": "Réseau",
-    "credentials": "Ses outils utilisent les identifiants de ses connecteurs."
+    "credentials": "Ses outils utilisent les identifiants de ses connecteurs.",
+    "names": {
+      "integrations": "Intégrations",
+      "mcp": "Outils MCP de Helena",
+      "webhooks": "Webhooks",
+      "bundles": "Paquets de modèles"
+    },
+    "problems": {
+      "external-off": "Se charge une fois les plugins externes activés.",
+      "not-approved": "Pas encore approuvé.",
+      "version-changed": "Approuvé pour une autre version : approuvez celle-ci.",
+      "files-changed": "Ses fichiers ont changé depuis l'approbation : vérifiez et approuvez à nouveau."
+    }
   }
 }

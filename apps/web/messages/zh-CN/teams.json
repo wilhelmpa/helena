@@ -807,6 +807,8 @@
     "import": "导入",
     "close": "关闭",
     "failed": "操作失败。",
-    "notJson": "该文件不是 JSON 包。"
+    "notJson": "该文件不是 JSON 包。",
+    "summary": "已写入 {written} · 未变 {unchanged} · 不同 {drift} · 警告 {warnings}",
+    "summaryDryRun": "仅检查，未做更改 · 未变 {unchanged} · 不同 {drift} · 警告 {warnings}"
   }
 }

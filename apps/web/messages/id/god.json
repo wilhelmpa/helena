@@ -400,6 +400,18 @@
     "actions": "Tindakan",
     "events": "Peristiwa",
     "network": "Jaringan",
-    "credentials": "Alatnya memakai kredensial konektornya."
+    "credentials": "Alatnya memakai kredensial konektornya.",
+    "names": {
+      "integrations": "Integrasi",
+      "mcp": "Alat MCP Helena",
+      "webhooks": "Webhook",
+      "bundles": "Paket templat"
+    },
+    "problems": {
+      "external-off": "Dimuat setelah plugin eksternal diaktifkan.",
+      "not-approved": "Belum disetujui.",
+      "version-changed": "Disetujui untuk versi lain: setujui versi ini.",
+      "files-changed": "Berkasnya berubah sejak disetujui: periksa dan setujui lagi."
+    }
   }
 }

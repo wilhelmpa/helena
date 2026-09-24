@@ -1,4 +1,4 @@
-import type { UiSlotDescriptor } from '@helena/sdk/web';
+import type { LocalizedText, UiSlotDescriptor } from '@helena/sdk/web';
 import { request } from '@/lib/api/core/client';
 
 // Plugins (@helena/sdk): the Administrator's list and decisions, and the UI slots
@@ -6,15 +6,17 @@ import { request } from '@/lib/api/core/client';
 
 export interface PluginView {
   id: string;
-  name: string;
+  name: LocalizedText;
   version: string;
-  description: string | null;
+  description: LocalizedText | null;
   author: string | null;
   license: string | null;
   homepage: string | null;
   source: 'builtin' | 'external';
   status: string;
   error: string | null;
+  // external-off | not-approved | version-changed | files-changed
+  problem: string | null;
   digest: string | null;
   approved: boolean;
   restartRequired: boolean;

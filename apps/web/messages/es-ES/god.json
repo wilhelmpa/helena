@@ -400,6 +400,18 @@
     "actions": "Acciones",
     "events": "Eventos",
     "network": "Red",
-    "credentials": "Sus herramientas usan las credenciales de sus conectores."
+    "credentials": "Sus herramientas usan las credenciales de sus conectores.",
+    "names": {
+      "integrations": "Integraciones",
+      "mcp": "Herramientas MCP de Helena",
+      "webhooks": "Webhooks",
+      "bundles": "Paquetes de plantillas"
+    },
+    "problems": {
+      "external-off": "Se carga cuando se activen los plugins externos.",
+      "not-approved": "Aún no aprobado.",
+      "version-changed": "Aprobado para otra versión: aprueba esta.",
+      "files-changed": "Sus archivos cambiaron desde la aprobación: revísalo y apruébalo de nuevo."
+    }
   }
 }

@@ -400,6 +400,18 @@
     "actions": "Aktionen",
     "events": "Ereignisse",
     "network": "Netzwerk",
-    "credentials": "Seine Werkzeuge nutzen die Zugangsdaten seiner Connectoren."
+    "credentials": "Seine Werkzeuge nutzen die Zugangsdaten seiner Connectoren.",
+    "names": {
+      "integrations": "Integrationen",
+      "mcp": "Helena-MCP-Werkzeuge",
+      "webhooks": "Webhooks",
+      "bundles": "Vorlagen-Pakete"
+    },
+    "problems": {
+      "external-off": "Lädt, sobald externe Plugins eingeschaltet sind.",
+      "not-approved": "Noch nicht freigegeben.",
+      "version-changed": "Für eine andere Version freigegeben: diese freigeben.",
+      "files-changed": "Seine Dateien haben sich seit der Freigabe geändert: prüfen und neu freigeben."
+    }
   }
 }

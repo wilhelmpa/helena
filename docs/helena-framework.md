@@ -357,7 +357,10 @@ The format is `@helena/sdk` `TemplateBundle` (JSON Schema `@helena/sdk/bundle.sc
   - CloudEvents (`specversion: 1.0`).
   - A core event's `data` only gains fields. A new shape gets a new type name.
 - **Reserved names.** `helena.*` plugin ids and event types are Helena's. `_meta["helena/action"]` is the category key on MCP tools.
-- **Licence.** The SDK is Apache-2.0 (proposed, owner to confirm), so plugins may use any licence. Helena itself stays AGPL-3.0.
+- **Licence boundary** (owner decision, 2026-09-24):
+  - `@helena/sdk` is Apache-2.0 inside the AGPL-3.0 monorepo. That covers the contracts (the types a plugin imports with `import type`) and the plugin API it is called through (`register(ctx)` and the context). A plugin may therefore carry any licence, including a proprietary one.
+  - The host stays AGPL-3.0: API, worker, runner, web, and everything that loads and runs plugins. A change to the host is AGPL.
+  - Contributions to Helena, including the SDK, go through a CLA (not DCO), because a commercial licence may come later.
 
 ## 7. Security model
 

@@ -400,6 +400,18 @@
     "actions": "操作",
     "events": "事件",
     "network": "网络",
-    "credentials": "其工具使用其连接器的凭据。"
+    "credentials": "其工具使用其连接器的凭据。",
+    "names": {
+      "integrations": "集成",
+      "mcp": "Helena MCP 工具",
+      "webhooks": "Webhook",
+      "bundles": "模板包"
+    },
+    "problems": {
+      "external-off": "开启外部插件后加载。",
+      "not-approved": "尚未批准。",
+      "version-changed": "批准的是其他版本：请批准此版本。",
+      "files-changed": "批准后其文件已更改：请检查并重新批准。"
+    }
   }
 }

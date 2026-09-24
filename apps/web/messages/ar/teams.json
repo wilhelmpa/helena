@@ -807,6 +807,8 @@
     "import": "استيراد",
     "close": "إغلاق",
     "failed": "لم ينجح ذلك.",
-    "notJson": "الملف ليس حزمة JSON."
+    "notJson": "الملف ليس حزمة JSON.",
+    "summary": "{written} مكتوبة · {unchanged} دون تغيير · {drift} مختلفة · {warnings} تحذيرات",
+    "summaryDryRun": "فحص فقط دون تغيير · {unchanged} دون تغيير · {drift} مختلفة · {warnings} تحذيرات"
   }
 }

@@ -12,10 +12,12 @@ export {
 export {
   MANIFEST_FILE,
   approvalProblem,
+  approvalProblemCode,
   discoverPlugins,
   loadExternalPlugins,
   loadPluginDir,
   pluginDigest,
+  type ApprovalProblem,
   type DiscoveredPlugin,
   type ExternalPluginPolicy,
   type PluginApproval,
