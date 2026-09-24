@@ -159,6 +159,19 @@ Helena's own (`browser_acquire`/`_release`, `browser_handover`, `browser_login`/
 - Home → Browser shows every project browser as a tile (`GET api/overview` of the router, a
   thumbnail per browser from `api/thumbnail`).
 
+- Local and private addresses (localhost, the LAN, `*.local`, names resolving inside) are closed
+  to agents unless the project opens them ("Lokale Adressen erlauben"). Links and redirects inside
+  a page are caught only while the project has a domain list; for the rest the container pins
+  `kingston-server.local` to 127.0.0.1 in `/etc/hosts`, so a project browser that opens Helena is
+  never signed in as the owner (the LAN auto sign-in never applies to loopback).
+- Without agent isolation the runner hands each agent its project's socket as
+  `BROWSER_GATEWAY_SOCKET`, from the installed catalog script
+  (`/usr/local/libexec/volition-hermes-catalog.py`) when the runner starts. Enabling the gateway
+  for an agent later needs no restart; a new catalog script does (deploy.sh installs it and
+  restarts the runner; in dev mode that is a manual step).
+- `native/install-browser-gateway.sh` creates what is missing and never changes a directory that
+  exists (`/etc/volition` keeps its 0751; `install-browser-gateway.test.mjs` here).
+
 With the gateway on for an agent, the runner removes Hermes' own `browser` toolset and the
 `browser-harness` MCP server from its profile. The built-in "Hermes-eigener Browser (alt)" (off by
 default) keeps both for an agent that needs the old way; only then does Hermes drive the
