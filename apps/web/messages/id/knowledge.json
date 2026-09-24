@@ -1,63 +1,63 @@
 {
   "source": {
-    "issue": "Tasks",
-    "comment": "Comments",
-    "vault": "Notes & files",
-    "mail": "Mail",
-    "chat": "Chats",
-    "run": "Agent runs"
+    "issue": "Tugas",
+    "comment": "Komentar",
+    "vault": "Catatan & berkas",
+    "mail": "Email",
+    "chat": "Obrolan",
+    "run": "Eksekusi agen"
   },
   "capture": {
-    "inbox": "Inbox",
-    "journal": "Daily note",
-    "saveMessage": "Save as a note",
-    "chatTitle": "From the chat",
-    "saved": "Saved to the Inbox",
-    "open": "Open",
-    "failed": "Could not save it",
-    "savePage": "Save the page to the knowledge",
-    "pageSaved": "Page saved to the Inbox",
-    "pageFailed": "Could not save the page"
+    "inbox": "Kotak masuk",
+    "journal": "Catatan harian",
+    "saveMessage": "Simpan sebagai catatan",
+    "chatTitle": "Dari obrolan",
+    "saved": "Disimpan ke Kotak masuk",
+    "open": "Buka",
+    "failed": "Gagal menyimpan",
+    "savePage": "Simpan halaman ke Pengetahuan",
+    "pageSaved": "Halaman disimpan ke Kotak masuk",
+    "pageFailed": "Gagal menyimpan halaman"
   },
   "plugin": {
-    "name": "Knowledge",
-    "description": "Helena's own knowledge sources and the Inbox and daily note capture."
+    "name": "Pengetahuan",
+    "description": "Sumber pengetahuan milik Helena sendiri, serta pencatatan cepat ke Kotak masuk dan catatan harian."
   },
   "journal": {
-    "today": "Today's note"
+    "today": "Catatan hari ini"
   },
   "templates": {
-    "action": "New from a template",
-    "title": "New note from a template",
-    "choose": "Template",
-    "none": "There are no templates yet. Notes in the Templates folder show up here.",
-    "name": "Name",
-    "namePlaceholder": "Name of the note",
-    "cancel": "Cancel",
-    "create": "Create"
+    "action": "Baru dari templat",
+    "title": "Catatan baru dari templat",
+    "choose": "Templat",
+    "none": "Belum ada templat. Catatan di folder “Templates” akan muncul di sini.",
+    "name": "Nama",
+    "namePlaceholder": "Nama catatan",
+    "cancel": "Batal",
+    "create": "Buat"
   },
   "mentions": {
-    "title": "Mentioned in"
+    "title": "Disebut di"
   },
   "admin": {
-    "sources": "Sources",
-    "sourcesHint": "What the one search (⌘K and the agents' search) covers, and how far the index is with each.",
-    "error": "Error: {message}",
-    "indexedAt": "Indexed {time}",
-    "notYet": "Not indexed yet",
-    "items": "{count, plural, one {# item} other {# items}}",
-    "reindex": "Index again",
-    "semantic": "Semantic search",
-    "semanticHint": "Also finds what is worded differently, by meaning. Runs on this server; nothing leaves it.",
-    "semanticSwitch": "Search by meaning",
+    "sources": "Sumber",
+    "sourcesHint": "Apa saja yang dicakup pencarian terpadu (⌘K dan pencarian para agen), dan sejauh mana indeks setiap sumber.",
+    "error": "Kesalahan: {message}",
+    "indexedAt": "Diindeks {time}",
+    "notYet": "Belum diindeks",
+    "items": "{count, plural, other {# item}}",
+    "reindex": "Indeks ulang",
+    "semantic": "Pencarian semantik",
+    "semanticHint": "Juga menemukan hal yang dirumuskan secara berbeda, berdasarkan maknanya. Berjalan di server ini; tidak ada data yang keluar darinya.",
+    "semanticSwitch": "Cari berdasarkan makna",
     "pgvector": "pgvector",
-    "installed": "installed",
-    "notInstalled": "not installed (the search works without it, more slowly)",
+    "installed": "terpasang",
+    "notInstalled": "tidak terpasang (pencarian tetap berjalan tanpanya, hanya lebih lambat)",
     "model": "Model",
-    "none": "none",
-    "passages": "Passages",
-    "embedded": "{embedded} of {passages} embedded",
-    "runtimeMissing": "The embedding runtime is not installed yet. It needs the owner's approval (docs/helena-decisions/second-brain.md).",
-    "modelMissing": "The embedding model could not be loaded. It needs the owner's approval to download it."
+    "none": "tidak ada",
+    "passages": "Potongan teks",
+    "embedded": "{embedded} dari {passages} sudah di-embed",
+    "runtimeMissing": "Runtime embedding belum terpasang. Pemasangannya memerlukan persetujuan pemilik (docs/helena-decisions/second-brain.md).",
+    "modelMissing": "Model embedding tidak dapat dimuat. Pengunduhannya memerlukan persetujuan pemilik."
   }
 }

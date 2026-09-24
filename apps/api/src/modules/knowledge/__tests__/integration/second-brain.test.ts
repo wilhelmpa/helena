@@ -128,6 +128,30 @@ describe('second brain', () => {
     expect(sources.data!.semantic).toMatchObject({ enabled: false });
   });
 
+  it("keeps Home's own notes to the instance owner, not every project member", async () => {
+    const { asOwner } = await setup();
+    await note(asOwner, 'Home/Docs/Nur-Owner.md', 'Kühlregale für Home');
+    await note(asOwner, 'Projects/MKT/Docs/Projekt.md', 'Kühlregale im Projekt');
+    const member = await signUpTestUser({ name: 'Member' });
+    const invite = await asOwner
+      .projects({ projectKey: 'MKT' })
+      .invites.post({ email: member.email, role: 'member' });
+    const asMember = authedApi(member.cookie);
+    await asMember.invites({ token: invite.data!.token }).accept.post();
+    await runSources(knowledgeSources());
+
+    const theirs = await asMember.knowledge.find.get({ query: { q: 'Kühlregale' } });
+    expect(theirs.data!.items.map((item) => item.ref)).toEqual([
+      'vault:Projects/MKT/Docs/Projekt.md',
+    ]);
+    expect(
+      (await asMember.knowledge.items.get({ query: { ref: 'vault:Home/Docs/Nur-Owner.md' } }))
+        .status,
+    ).toBe(404);
+    const own = await asOwner.knowledge.find.get({ query: { q: 'Kühlregale' } });
+    expect(own.data!.items.map((item) => item.ref)).toContain('vault:Home/Docs/Nur-Owner.md');
+  });
+
   it('gives agents search, reading, capture and records what they wrote', async () => {
     const { asOwner } = await setup();
     const project = (await asOwner.projects({ projectKey: 'MKT' }).get()).data!.project;

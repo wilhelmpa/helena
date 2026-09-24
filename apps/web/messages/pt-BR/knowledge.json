@@ -1,63 +1,63 @@
 {
   "source": {
-    "issue": "Tasks",
-    "comment": "Comments",
-    "vault": "Notes & files",
-    "mail": "Mail",
+    "issue": "Tarefas",
+    "comment": "Comentários",
+    "vault": "Notas e arquivos",
+    "mail": "E-mails",
     "chat": "Chats",
-    "run": "Agent runs"
+    "run": "Execuções de agentes"
   },
   "capture": {
-    "inbox": "Inbox",
-    "journal": "Daily note",
-    "saveMessage": "Save as a note",
-    "chatTitle": "From the chat",
-    "saved": "Saved to the Inbox",
-    "open": "Open",
-    "failed": "Could not save it",
-    "savePage": "Save the page to the knowledge",
-    "pageSaved": "Page saved to the Inbox",
-    "pageFailed": "Could not save the page"
+    "inbox": "Caixa de entrada",
+    "journal": "Nota diária",
+    "saveMessage": "Salvar como nota",
+    "chatTitle": "Do chat",
+    "saved": "Salvo na Caixa de entrada",
+    "open": "Abrir",
+    "failed": "Não foi possível salvar",
+    "savePage": "Salvar a página em Conhecimento",
+    "pageSaved": "Página salva na Caixa de entrada",
+    "pageFailed": "Não foi possível salvar a página"
   },
   "plugin": {
-    "name": "Knowledge",
-    "description": "Helena's own knowledge sources and the Inbox and daily note capture."
+    "name": "Conhecimento",
+    "description": "As fontes de conhecimento próprias da Helena e a captura rápida na Caixa de entrada e na nota diária."
   },
   "journal": {
-    "today": "Today's note"
+    "today": "Nota de hoje"
   },
   "templates": {
-    "action": "New from a template",
-    "title": "New note from a template",
-    "choose": "Template",
-    "none": "There are no templates yet. Notes in the Templates folder show up here.",
-    "name": "Name",
-    "namePlaceholder": "Name of the note",
-    "cancel": "Cancel",
-    "create": "Create"
+    "action": "Nova a partir de modelo",
+    "title": "Nova nota a partir de um modelo",
+    "choose": "Modelo",
+    "none": "Ainda não há modelos. As notas da pasta “Templates” aparecem aqui.",
+    "name": "Nome",
+    "namePlaceholder": "Nome da nota",
+    "cancel": "Cancelar",
+    "create": "Criar"
   },
   "mentions": {
-    "title": "Mentioned in"
+    "title": "Mencionada em"
   },
   "admin": {
-    "sources": "Sources",
-    "sourcesHint": "What the one search (⌘K and the agents' search) covers, and how far the index is with each.",
-    "error": "Error: {message}",
-    "indexedAt": "Indexed {time}",
-    "notYet": "Not indexed yet",
-    "items": "{count, plural, one {# item} other {# items}}",
-    "reindex": "Index again",
-    "semantic": "Semantic search",
-    "semanticHint": "Also finds what is worded differently, by meaning. Runs on this server; nothing leaves it.",
-    "semanticSwitch": "Search by meaning",
+    "sources": "Fontes",
+    "sourcesHint": "O que a busca unificada (⌘K e a busca dos agentes) abrange e até onde o índice chegou em cada fonte.",
+    "error": "Erro: {message}",
+    "indexedAt": "Indexado {time}",
+    "notYet": "Ainda não indexado",
+    "items": "{count, plural, one {# item} other {# itens}}",
+    "reindex": "Indexar novamente",
+    "semantic": "Busca semântica",
+    "semanticHint": "Também encontra o que foi escrito de outra forma, pelo significado. Roda neste servidor; nada sai dele.",
+    "semanticSwitch": "Buscar pelo significado",
     "pgvector": "pgvector",
-    "installed": "installed",
-    "notInstalled": "not installed (the search works without it, more slowly)",
-    "model": "Model",
-    "none": "none",
-    "passages": "Passages",
-    "embedded": "{embedded} of {passages} embedded",
-    "runtimeMissing": "The embedding runtime is not installed yet. It needs the owner's approval (docs/helena-decisions/second-brain.md).",
-    "modelMissing": "The embedding model could not be loaded. It needs the owner's approval to download it."
+    "installed": "instalado",
+    "notInstalled": "não instalado (a busca funciona sem ele, só que mais devagar)",
+    "model": "Modelo",
+    "none": "nenhum",
+    "passages": "Trechos",
+    "embedded": "{embedded} de {passages} vetorizados",
+    "runtimeMissing": "O runtime de embeddings ainda não está instalado. Ele precisa da aprovação do proprietário (docs/helena-decisions/second-brain.md).",
+    "modelMissing": "Não foi possível carregar o modelo de embeddings. Baixá-lo precisa da aprovação do proprietário."
   }
 }

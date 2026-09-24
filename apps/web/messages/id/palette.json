@@ -11,5 +11,15 @@
   "toggleChat": "Tampilkan atau sembunyikan obrolan koordinator",
   "board": "Papan",
   "commands": "Perintah",
-  "switchProject": "Ganti proyek"
+  "switchProject": "Ganti proyek",
+  "filterAll": "Semua",
+  "filterKinds": "Filter menurut jenis",
+  "capture": "Simpan",
+  "captureInbox": "Simpan ke Kotak masuk: “{text}”",
+  "captureJournal": "Tambahkan ke catatan hari ini: “{text}”",
+  "capturedInbox": "Disimpan ke Kotak masuk",
+  "capturedJournal": "Ditambahkan ke catatan hari ini",
+  "openCaptured": "Buka",
+  "captureFailed": "Gagal menyimpan",
+  "untitled": "Tanpa judul"
 }

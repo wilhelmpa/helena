@@ -1,63 +1,63 @@
 {
   "source": {
-    "issue": "Tasks",
-    "comment": "Comments",
-    "vault": "Notes & files",
-    "mail": "Mail",
+    "issue": "Tareas",
+    "comment": "Comentarios",
+    "vault": "Notas y archivos",
+    "mail": "Correo",
     "chat": "Chats",
-    "run": "Agent runs"
+    "run": "Ejecuciones de agentes"
   },
   "capture": {
-    "inbox": "Inbox",
-    "journal": "Daily note",
-    "saveMessage": "Save as a note",
-    "chatTitle": "From the chat",
-    "saved": "Saved to the Inbox",
-    "open": "Open",
-    "failed": "Could not save it",
-    "savePage": "Save the page to the knowledge",
-    "pageSaved": "Page saved to the Inbox",
-    "pageFailed": "Could not save the page"
+    "inbox": "Bandeja de entrada",
+    "journal": "Nota diaria",
+    "saveMessage": "Guardar como nota",
+    "chatTitle": "Desde el chat",
+    "saved": "Guardado en la Bandeja de entrada",
+    "open": "Abrir",
+    "failed": "No se ha podido guardar",
+    "savePage": "Guardar la página en Conocimiento",
+    "pageSaved": "Página guardada en la Bandeja de entrada",
+    "pageFailed": "No se ha podido guardar la página"
   },
   "plugin": {
-    "name": "Knowledge",
-    "description": "Helena's own knowledge sources and the Inbox and daily note capture."
+    "name": "Conocimiento",
+    "description": "Las fuentes de conocimiento propias de Helena y la captura rápida en la Bandeja de entrada y en la nota diaria."
   },
   "journal": {
-    "today": "Today's note"
+    "today": "Nota de hoy"
   },
   "templates": {
-    "action": "New from a template",
-    "title": "New note from a template",
-    "choose": "Template",
-    "none": "There are no templates yet. Notes in the Templates folder show up here.",
-    "name": "Name",
-    "namePlaceholder": "Name of the note",
-    "cancel": "Cancel",
-    "create": "Create"
+    "action": "Nueva desde plantilla",
+    "title": "Nueva nota desde una plantilla",
+    "choose": "Plantilla",
+    "none": "Todavía no hay plantillas. Las notas de la carpeta «Templates» aparecen aquí.",
+    "name": "Nombre",
+    "namePlaceholder": "Nombre de la nota",
+    "cancel": "Cancelar",
+    "create": "Crear"
   },
   "mentions": {
-    "title": "Mentioned in"
+    "title": "Mencionada en"
   },
   "admin": {
-    "sources": "Sources",
-    "sourcesHint": "What the one search (⌘K and the agents' search) covers, and how far the index is with each.",
+    "sources": "Fuentes",
+    "sourcesHint": "Qué abarca la búsqueda unificada (⌘K y la búsqueda de los agentes) y hasta dónde ha llegado el índice en cada fuente.",
     "error": "Error: {message}",
-    "indexedAt": "Indexed {time}",
-    "notYet": "Not indexed yet",
-    "items": "{count, plural, one {# item} other {# items}}",
-    "reindex": "Index again",
-    "semantic": "Semantic search",
-    "semanticHint": "Also finds what is worded differently, by meaning. Runs on this server; nothing leaves it.",
-    "semanticSwitch": "Search by meaning",
+    "indexedAt": "Indexado {time}",
+    "notYet": "Aún sin indexar",
+    "items": "{count, plural, one {# elemento} other {# elementos}}",
+    "reindex": "Volver a indexar",
+    "semantic": "Búsqueda semántica",
+    "semanticHint": "También encuentra lo que está formulado de otra manera, por su significado. Se ejecuta en este servidor; nada sale de él.",
+    "semanticSwitch": "Buscar por significado",
     "pgvector": "pgvector",
-    "installed": "installed",
-    "notInstalled": "not installed (the search works without it, more slowly)",
-    "model": "Model",
-    "none": "none",
-    "passages": "Passages",
-    "embedded": "{embedded} of {passages} embedded",
-    "runtimeMissing": "The embedding runtime is not installed yet. It needs the owner's approval (docs/helena-decisions/second-brain.md).",
-    "modelMissing": "The embedding model could not be loaded. It needs the owner's approval to download it."
+    "installed": "instalado",
+    "notInstalled": "no instalado (la búsqueda funciona sin él, pero más despacio)",
+    "model": "Modelo",
+    "none": "ninguno",
+    "passages": "Fragmentos",
+    "embedded": "{embedded} de {passages} vectorizados",
+    "runtimeMissing": "El entorno de ejecución de embeddings aún no está instalado. Requiere la aprobación del propietario (docs/helena-decisions/second-brain.md).",
+    "modelMissing": "No se ha podido cargar el modelo de embeddings. Descargarlo requiere la aprobación del propietario."
   }
 }

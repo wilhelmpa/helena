@@ -8,9 +8,10 @@ import {
   team,
   teamMember,
   teamRole,
+  user as userTable,
   userPreference,
 } from '@repo/db';
-import { ANY_RESOURCE, type KnowledgeReach } from '@helena/knowledge';
+import { HOME_VAULT_RESOURCE, type KnowledgeReach } from '@helena/knowledge';
 import type { AuthUser } from '#shared/access';
 import { hasPermission, PERMISSION_RESOURCES } from '#shared/permissions';
 import { toMemberContext, type MemberRole } from '#modules/members/service';
@@ -61,16 +62,24 @@ export async function knowledgeReach(caller: AuthUser, viaMcp: boolean): Promise
     .select({ teamId: teamMember.teamId, role: teamMember.role })
     .from(teamMember)
     .where(eq(teamMember.userId, caller.id));
-  for (const standing of standings) {
-    teams.set(
-      standing.teamId,
-      new Set(runsTeam(standing.role as TeamStanding) ? [ANY_RESOURCE] : []),
-    );
-  }
   const [agent] = await db
     .select({ username: aiAgent.username, teamId: aiAgent.teamId })
     .from(aiAgent)
     .where(eq(aiAgent.userId, caller.id));
+  const [person] = await db
+    .select({ role: userTable.role })
+    .from(userTable)
+    .where(eq(userTable.id, caller.id));
+  // Home's own folder of the vault is the instance owner's (and the Home agent's), not
+  // every team owner's: the vault's rule (scope.ts).
+  const instanceOwner = !agent && person?.role === 'god';
+  for (const standing of standings) {
+    const resources = new Set<string>(
+      runsTeam(standing.role as TeamStanding) ? PERMISSION_RESOURCES : [],
+    );
+    if (instanceOwner) resources.add(HOME_VAULT_RESOURCE);
+    teams.set(standing.teamId, resources);
+  }
   if (agent && isHomeAgent(agent.username)) {
     const teamProjects = await db
       .select({
@@ -90,6 +99,7 @@ export async function knowledgeReach(caller: AuthUser, viaMcp: boolean): Promise
     }
     const own = teams.get(agent.teamId) ?? new Set<string>();
     own.add('documents');
+    own.add(HOME_VAULT_RESOURCE);
     teams.set(agent.teamId, own);
   }
   return { userId: caller.id, projects, teams };
