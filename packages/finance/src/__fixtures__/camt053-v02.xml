@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic camt.053.001.02 statement (fictional parties) -->
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.02" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <BkToCstmrStmt>
+    <GrpHdr>
+      <MsgId>STMT-2026-08-0001</MsgId>
+      <CreDtTm>2026-09-01T06:00:00</CreDtTm>
+    </GrpHdr>
+    <Stmt>
+      <Id>2026-08</Id>
+      <ElctrncSeqNb>8</ElctrncSeqNb>
+      <CreDtTm>2026-09-01T06:00:00</CreDtTm>
+      <FrToDt>
+        <FrDtTm>2026-08-01T00:00:00</FrDtTm>
+        <ToDtTm>2026-08-31T23:59:59</ToDtTm>
+      </FrToDt>
+      <Acct>
+        <Id><IBAN>DE89370400440532013000</IBAN></Id>
+        <Ccy>EUR</Ccy>
+      </Acct>
+      <Bal>
+        <Tp><CdOrPrtry><Cd>PRCD</Cd></CdOrPrtry></Tp>
+        <Amt Ccy="EUR">1000.00</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <Dt><Dt>2026-07-31</Dt></Dt>
+      </Bal>
+      <Bal>
+        <Tp><CdOrPrtry><Cd>CLBD</Cd></CdOrPrtry></Tp>
+        <Amt Ccy="EUR">1840.05</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <Dt><Dt>2026-08-31</Dt></Dt>
+      </Bal>
+      <!-- 1: incoming transfer from a customer -->
+      <Ntry>
+        <Amt Ccy="EUR">1190.00</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <Sts>BOOK</Sts>
+        <BookgDt><Dt>2026-08-10</Dt></BookgDt>
+        <ValDt><Dt>2026-08-10</Dt></ValDt>
+        <AcctSvcrRef>REF-0001</AcctSvcrRef>
+        <BkTxCd>
+          <Domn><Cd>PMNT</Cd><Fmly><Cd>RCDT</Cd><SubFmlyCd>ESCT</SubFmlyCd></Fmly></Domn>
+          <Prtry><Cd>NTRF+166+00931</Cd><Issr>ZKA</Issr></Prtry>
+        </BkTxCd>
+        <NtryDtls>
+          <TxDtls>
+            <Refs><EndToEndId>RE-2026-0815</EndToEndId></Refs>
+            <RltdPties>
+              <Dbtr><Nm>Beispiel Handel GmbH &amp; Co. KG</Nm></Dbtr>
+              <DbtrAcct><Id><IBAN>DE17100500000123456789</IBAN></Id></DbtrAcct>
+              <Cdtr><Nm>Erika Musterfrau</Nm></Cdtr>
+              <CdtrAcct><Id><IBAN>DE89370400440532013000</IBAN></Id></CdtrAcct>
+            </RltdPties>
+            <RmtInf><Ustrd>Rechnung RE-2026-0815 vom 01.08.2026</Ustrd></RmtInf>
+          </TxDtls>
+        </NtryDtls>
+        <AddtlNtryInf>SEPA-Gutschrift</AddtlNtryInf>
+      </Ntry>
+      <!-- 2: SEPA direct debit with creditor id and mandate -->
+      <Ntry>
+        <Amt Ccy="EUR">89.90</Amt>
+        <CdtDbtInd>DBIT</CdtDbtInd>
+        <Sts>BOOK</Sts>
+        <BookgDt><Dt>2026-08-15</Dt></BookgDt>
+        <ValDt><Dt>2026-08-15</Dt></ValDt>
+        <AcctSvcrRef>REF-0002</AcctSvcrRef>
+        <BkTxCd><Prtry><Cd>NDDT+105+00931</Cd><Issr>ZKA</Issr></Prtry></BkTxCd>
+        <NtryDtls>
+          <TxDtls>
+            <Refs><EndToEndId>NOTPROVIDED</EndToEndId><MndtId>M-4711</MndtId></Refs>
+            <RltdPties>
+              <Dbtr><Nm>Erika Musterfrau</Nm></Dbtr>
+              <Cdtr>
+                <Nm>Stadtwerke Musterstadt GmbH</Nm>
+                <Id><PrvtId><Othr><Id>DE98ZZZ09999999999</Id><SchmeNm><Prtry>SEPA</Prtry></SchmeNm></Othr></PrvtId></Id>
+              </Cdtr>
+              <CdtrAcct><Id><IBAN>DE45120300001234567890</IBAN></Id></CdtrAcct>
+            </RltdPties>
+            <RmtInf>
+              <Ustrd>Abschlag 08/2026</Ustrd>
+              <Ustrd>Vertragskonto 123456</Ustrd>
+            </RmtInf>
+          </TxDtls>
+        </NtryDtls>
+        <AddtlNtryInf>SEPA-Basislastschrift</AddtlNtryInf>
+      </Ntry>
+      <!-- 3: batch booking with two single transfers -->
+      <Ntry>
+        <Amt Ccy="EUR">300.00</Amt>
+        <CdtDbtInd>DBIT</CdtDbtInd>
+        <Sts>BOOK</Sts>
+        <BookgDt><Dt>2026-08-20</Dt></BookgDt>
+        <ValDt><Dt>2026-08-20</Dt></ValDt>
+        <AcctSvcrRef>REF-0003</AcctSvcrRef>
+        <BkTxCd><Prtry><Cd>NMSC+191+00931</Cd><Issr>ZKA</Issr></Prtry></BkTxCd>
+        <NtryDtls>
+          <Btch><NbOfTxs>2</NbOfTxs></Btch>
+          <TxDtls>
+            <Refs><EndToEndId>LS-0001</EndToEndId></Refs>
+            <AmtDtls><TxAmt><Amt Ccy="EUR">100.00</Amt></TxAmt></AmtDtls>
+            <RltdPties>
+              <Cdtr><Nm>Lieferant Eins KG</Nm></Cdtr>
+              <CdtrAcct><Id><IBAN>DE98700202700000012345</IBAN></Id></CdtrAcct>
+            </RltdPties>
+            <RmtInf><Ustrd>Rechnung L1-771</Ustrd></RmtInf>
+          </TxDtls>
+          <TxDtls>
+            <Refs><EndToEndId>LS-0002</EndToEndId></Refs>
+            <AmtDtls><TxAmt><Amt Ccy="EUR">200.00</Amt></TxAmt></AmtDtls>
+            <RltdPties>
+              <Cdtr><Nm>Lieferant Zwei UG</Nm></Cdtr>
+              <CdtrAcct><Id><IBAN>DE65200411330987654321</IBAN></Id></CdtrAcct>
+            </RltdPties>
+            <RmtInf><Strd><CdtrRefInf><Ref>RF18539007547034</Ref></CdtrRefInf></Strd></RmtInf>
+          </TxDtls>
+        </NtryDtls>
+        <AddtlNtryInf>SAMMEL-UEBERWEISUNG</AddtlNtryInf>
+      </Ntry>
+      <!-- 4: returned direct debit (reversal of entry 2) -->
+      <Ntry>
+        <Amt Ccy="EUR">89.90</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <RvslInd>true</RvslInd>
+        <Sts>BOOK</Sts>
+        <BookgDt><Dt>2026-08-18</Dt></BookgDt>
+        <ValDt><Dt>2026-08-15</Dt></ValDt>
+        <AcctSvcrRef>REF-0004</AcctSvcrRef>
+        <NtryDtls>
+          <TxDtls>
+            <Refs><MndtId>M-4711</MndtId></Refs>
+            <RltdPties>
+              <Dbtr><Nm>Erika Musterfrau</Nm></Dbtr>
+              <Cdtr><Nm>Stadtwerke Musterstadt GmbH</Nm></Cdtr>
+              <CdtrAcct><Id><IBAN>DE45120300001234567890</IBAN></Id></CdtrAcct>
+            </RltdPties>
+            <RmtInf><Ustrd>RUECKLASTSCHRIFT Abschlag 08/2026</Ustrd></RmtInf>
+          </TxDtls>
+        </NtryDtls>
+        <AddtlNtryInf>Retoure SEPA-Lastschrift</AddtlNtryInf>
+      </Ntry>
+      <!-- 5: PayPal pays a merchant: the ultimate creditor names the shop -->
+      <Ntry>
+        <Amt Ccy="EUR">49.95</Amt>
+        <CdtDbtInd>DBIT</CdtDbtInd>
+        <Sts>BOOK</Sts>
+        <BookgDt><Dt>2026-08-22</Dt></BookgDt>
+        <ValDt><Dt>2026-08-22</Dt></ValDt>
+        <AcctSvcrRef>REF-0005</AcctSvcrRef>
+        <NtryDtls>
+          <TxDtls>
+            <Refs><EndToEndId>1040000123456</EndToEndId><MndtId>4XXJ224</MndtId></Refs>
+            <RltdPties>
+              <Cdtr>
+                <Nm>PayPal Europe S.a.r.l. et Cie S.C.A</Nm>
+                <Id><PrvtId><Othr><Id>LU96ZZZ0000000000000000058</Id></Othr></PrvtId></Id>
+              </Cdtr>
+              <CdtrAcct><Id><IBAN>LU120010001234567891</IBAN></Id></CdtrAcct>
+              <UltmtCdtr><Nm>Muster Shop GmbH</Nm></UltmtCdtr>
+            </RltdPties>
+            <RmtInf><Ustrd>1040000123456 PP.1234.PP . Muster Shop GmbH, Ihr Einkauf bei Muster Shop GmbH</Ustrd></RmtInf>
+          </TxDtls>
+        </NtryDtls>
+      </Ntry>
+      <!-- 6: informational entry, not a booking -->
+      <Ntry>
+        <Amt Ccy="EUR">5.00</Amt>
+        <CdtDbtInd>DBIT</CdtDbtInd>
+        <Sts>INFO</Sts>
+        <BookgDt><Dt>2026-08-25</Dt></BookgDt>
+      </Ntry>
+      <!-- 7: pending card payment, not part of the balance -->
+      <Ntry>
+        <Amt Ccy="EUR">12.00</Amt>
+        <CdtDbtInd>DBIT</CdtDbtInd>
+        <Sts>PDNG</Sts>
+        <ValDt><Dt>2026-08-31</Dt></ValDt>
+        <NtryDtls>
+          <TxDtls>
+            <RltdPties><Cdtr><Nm>Kiosk am Markt</Nm></Cdtr></RltdPties>
+            <RmtInf><Ustrd>Kartenzahlung</Ustrd></RmtInf>
+          </TxDtls>
+        </NtryDtls>
+      </Ntry>
+    </Stmt>
+  </BkToCstmrStmt>
+</Document>

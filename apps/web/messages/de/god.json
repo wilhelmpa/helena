@@ -442,7 +442,8 @@
       "autopilot": "Autopilot",
       "logins": "Anmeldungen",
       "updates": "Updates",
-      "browserTask": "Browser-Aufgaben"
+      "browserTask": "Browser-Aufgaben",
+      "decisions": "Entscheidungen"
     },
     "problems": {
       "external-off": "Lädt, sobald externe Plugins eingeschaltet sind.",

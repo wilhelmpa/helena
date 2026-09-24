@@ -442,7 +442,8 @@
       "autopilot": "Autopilot",
       "logins": "تسجيلات الدخول",
       "updates": "التحديثات",
-      "browserTask": "مهام المتصفح"
+      "browserTask": "مهام المتصفح",
+      "decisions": "Decisions"
     },
     "problems": {
       "external-off": "تُحمَّل بعد تفعيل الإضافات الخارجية.",

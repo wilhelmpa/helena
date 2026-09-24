@@ -442,7 +442,8 @@
       "autopilot": "Autopilot",
       "logins": "Login",
       "updates": "Pembaruan",
-      "browserTask": "Tugas browser"
+      "browserTask": "Tugas browser",
+      "decisions": "Decisions"
     },
     "problems": {
       "external-off": "Dimuat setelah plugin eksternal diaktifkan.",

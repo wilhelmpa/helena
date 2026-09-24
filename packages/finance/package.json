@@ -1,0 +1,25 @@
+{
+  "name": "@helena/finance",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Helena's finance parsers and matching: bank statements (camt, CSV, ZIP), e-invoices (CII, UBL), receipt text facts, receipt-to-payment candidates and the monthly export",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^5.11.0",
+    "fflate": "^0.8.3"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@types/bun": "latest",
+    "eslint": "^9.39.0",
+    "typescript": "^6.0.3"
+  }
+}

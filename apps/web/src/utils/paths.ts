@@ -72,6 +72,9 @@ export const credentialsPath = () => accessPath('credentials');
 
 export const devicesPath = () => '/devices';
 
+// Einstellungen → Entscheidungen (docs/helena-decisions/decisions.md).
+export const decisionsPath = () => '/decisions';
+
 // The Home pages that read across every project: the task list, the inbox and the
 // agent activity, the approvals and the schedules.
 export const tasksPath = () => '/tasks';

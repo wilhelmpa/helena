@@ -1,0 +1,159 @@
+{
+  "title": "Decisions",
+  "team": "Team",
+  "local": "local",
+  "cloud": "cloud",
+  "noTeam": "Choose a team first.",
+  "noConnections": "No decision model connection yet. Add one in Access (Laya on this server, the local AI, or Jev).",
+  "toAccess": "Open Access",
+  "tabs": {
+    "label": "Decisions",
+    "classes": "Kinds",
+    "router": "Model choice",
+    "log": "Log"
+  },
+  "classes": {
+    "router": {
+      "label": "Model choice",
+      "description": "Before a run or a chat answer: can a cheaper model of the same runtime handle it? Also answers your own Claude Code's router."
+    },
+    "mail": {
+      "label": "Sort mail",
+      "description": "New mail: project, kind, priority, whether it needs a reply or a task."
+    },
+    "receipts": {
+      "label": "Match receipts",
+      "description": "Which bank transaction pays a receipt."
+    },
+    "general": {
+      "label": "General decisions",
+      "description": "The decide tool of agents and the workflow step “Decision”."
+    }
+  },
+  "class": {
+    "on": "On",
+    "off": "Off",
+    "connection": "Answered by",
+    "connectionHint": "The decision model connection from Access. A cloud service receives the text of each question.",
+    "connectionLocalOnly": "Only a connection on this machine or in the LAN: this input must not leave it.",
+    "noConnection": "None",
+    "fallback": "Fallback",
+    "fallbackHint": "Asked when the first one fails or is too slow, within the same time limit.",
+    "noFallback": "None",
+    "threshold": "Threshold",
+    "thresholdHint": "Below this confidence nothing is decided and the previous behaviour applies. Default {value}.",
+    "timeout": "Time limit",
+    "timeoutHint": "An answer later than this counts as none. Default {value}.",
+    "storeInput": "Keep the input in the log",
+    "storeInputHint": "Otherwise the log keeps only a fingerprint of it.",
+    "storeInputNever": "This kind never keeps its input.",
+    "contextThreshold": "Stay when context is needed",
+    "contextThresholdHint": "From this probability that the request builds on the earlier conversation, the configured model stays. Default 50 %.",
+    "evalTitle": "Evaluation",
+    "evalHint": "{cases} labelled cases, asked as the feature asks them. Passes at {precision} precision and {coverage} coverage.",
+    "noEval": "This kind has no evaluation.",
+    "runEval": "Evaluate",
+    "enabled": "Switched on",
+    "enabledHint": "Only after a passed evaluation on the chosen connection.",
+    "stats": "Last 7 days: {total} questions, {decided} decided, {unsure} unsure, {failed} without answer, {wrong} of {corrected} corrected wrong · median {latency} · {cost}"
+  },
+  "reasons": {
+    "no_connection": "Choose a connection first.",
+    "no_eval": "Evaluate it on this connection first.",
+    "eval_failed": "The last evaluation on this connection did not pass.",
+    "eval_threshold": "The last evaluation used a higher threshold; evaluate again."
+  },
+  "eval": {
+    "running": "Evaluating …",
+    "cancel": "Cancel",
+    "passed": "Passed",
+    "notPassed": "Not passed",
+    "failedRun": "Stopped: {error}",
+    "precision": "Precision",
+    "coverage": "Coverage",
+    "accuracy": "Accuracy",
+    "latency": "Median / 95 %",
+    "questions": "Decided",
+    "threshold": "Threshold",
+    "tokens": "Tokens",
+    "cost": "Cost",
+    "needed": "needs {value}",
+    "details": "Details",
+    "byQuestion": "Per question",
+    "question": "Question",
+    "answeredShort": "Decided",
+    "sweep": "Other thresholds"
+  },
+  "mail": {
+    "modes": {
+      "off": "Off",
+      "suggest": "Suggest",
+      "auto": "Automatically"
+    },
+    "project": "Project",
+    "projectHint": "Suggest the project, or move mail filed under Home there at once.",
+    "task": "Task",
+    "taskHint": "When a mail asks for something to be done: suggest a task in its project, or create it.",
+    "agent": "Hand to an agent",
+    "agentPick": "Agent",
+    "agentHint": "That task assigned to an agent, who then works on it.",
+    "noAgent": "No agent",
+    "receipts": "Invoices as receipts",
+    "receiptsHint": "The PDF and XML attachments of an invoice go to the project's receipts."
+  },
+  "router": {
+    "agents": "Agents",
+    "agentsHint": "Off by default. On: runs and chat answers without a model of their own may use a cheaper model of the agent's runtime.",
+    "noAgents": "No agents yet.",
+    "defaultModel": "Runtime default (not routed)",
+    "enabled": "Model choice",
+    "allowUpgrade": "Also stronger",
+    "projects": "Projects",
+    "projectsHint": "On unless switched off here.",
+    "recent": "Latest",
+    "recentHint": "What the model choice did, and why.",
+    "noRoutes": "No decisions yet.",
+    "run": "Run #{id}",
+    "chat": "Chat",
+    "noRoutesHint": "Once a model choice happens, it shows here."
+  },
+  "routeLine": {
+    "routed": "Model choice: {from} → {to}",
+    "stayed": "Model choice: {model} stays"
+  },
+  "routeReasons": {
+    "cheaper_tier": "a cheaper model suffices",
+    "upgrade": "needs a stronger model",
+    "same_tier": "needs this model",
+    "needs_context": "builds on the conversation",
+    "unsure": "not sure enough",
+    "no_candidates": "no other model",
+    "off": "switched off",
+    "timeout": "no answer in time",
+    "error": "error",
+    "no_backend": "no connection"
+  },
+  "log": {
+    "class": "Kind",
+    "allClasses": "All kinds",
+    "statusFilter": "Status",
+    "allStatuses": "All",
+    "status": {
+      "decided": "decided",
+      "unsure": "unsure",
+      "off": "off",
+      "no_backend": "no connection",
+      "timeout": "timeout",
+      "error": "error"
+    },
+    "confidence": "confidence {value}",
+    "noAnswer": "no answer",
+    "correct": "Correct …",
+    "corrected": "Correction saved",
+    "wasWrong": "Corrected: {outcome}",
+    "input": "Input",
+    "empty": "No decisions yet",
+    "emptyHint": "They appear here once a kind is switched on."
+  },
+  "noTeamHint": "Decisions are made per team."
+}

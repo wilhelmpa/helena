@@ -442,7 +442,8 @@
       "autopilot": "Autopilot",
       "logins": "登录",
       "updates": "更新",
-      "browserTask": "浏览器任务"
+      "browserTask": "浏览器任务",
+      "decisions": "Decisions"
     },
     "problems": {
       "external-off": "开启外部插件后加载。",

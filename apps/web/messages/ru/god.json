@@ -442,7 +442,8 @@
       "autopilot": "Autopilot",
       "logins": "Входы",
       "updates": "Обновления",
-      "browserTask": "Задачи браузера"
+      "browserTask": "Задачи браузера",
+      "decisions": "Decisions"
     },
     "problems": {
       "external-off": "Загрузится, как только внешние плагины будут включены.",

@@ -13,6 +13,7 @@ import {
   ListTodo,
   MonitorSmartphone,
   Radio,
+  Split,
   ShieldCheck,
   UsersRound,
   Workflow,
@@ -23,6 +24,7 @@ import {
   agentsPath,
   approvalsPath,
   browserOverviewPath,
+  decisionsPath,
   devicesPath,
   globalAgentActivityPath,
   globalInboxPath,
@@ -55,6 +57,7 @@ export type HomeNavigationId =
   | 'tools'
   | 'mcps'
   | 'access'
+  | 'decisions'
   | 'devices'
   | 'teamSettings';
 
@@ -80,6 +83,7 @@ export const HOME_NAVIGATION_ICONS = {
   tools: Wrench,
   mcps: Radio,
   access: KeyRound,
+  decisions: Split,
   devices: MonitorSmartphone,
   teamSettings: UsersRound,
 } as const;
@@ -120,6 +124,10 @@ export function homeNavigation(teamId: number | null, isOwner = false): HomeNavi
     // "Zugänge & Verbindungen": Google accounts, mailboxes, credentials, the host's
     // connections and the audit log, one area with tabs.
     { id: 'access', group: 'globalSettings', href: accessRootPath() },
+    // Typed decisions: which model answers each kind, the model router, the log.
+    ...teamOnly([
+      { id: 'decisions' as const, group: 'globalSettings' as const, href: decisionsPath() },
+    ]),
     { id: 'devices', group: 'globalSettings', href: devicesPath() },
     { id: 'teamSettings', group: 'globalSettings', href: manageTeamsPath() },
   ];

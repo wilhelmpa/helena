@@ -442,7 +442,8 @@
       "autopilot": "Autopilot",
       "logins": "Logins",
       "updates": "Atualizações",
-      "browserTask": "Tarefas do navegador"
+      "browserTask": "Tarefas do navegador",
+      "decisions": "Decisions"
     },
     "problems": {
       "external-off": "Carrega quando os plugins externos forem ativados.",
