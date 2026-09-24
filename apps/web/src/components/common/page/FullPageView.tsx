@@ -6,9 +6,11 @@ import { cn } from '@/lib/utils';
 import PageHeader from './PageHeader';
 import { useTranslations } from 'next-intl';
 
-// The chrome for a standalone full-height page rendered outside the app shell:
-// its own top bar with a back link and a label, and a centered column with a
-// header (title and description). Used by pages like account settings.
+// The chrome for a standalone full-height page rendered outside any shell: a top bar
+// built like the app header (48px, sidebar hairline, a back link and the page's name),
+// and a centered column with a header (title and description). The account pages no
+// longer use it — they have their own shell (AccountShell) — it stays for a page that
+// has no sidebar to live in.
 export default function FullPageView({
   label,
   title,
@@ -30,7 +32,7 @@ export default function FullPageView({
   const t = useTranslations('common');
   return (
     <div className="min-h-svh bg-background">
-      <header className="sticky top-0 z-20 flex h-12 items-center gap-2 border-b bg-background px-4">
+      <header className="sticky top-0 z-20 flex h-12 items-center gap-2 border-b border-sidebar-border bg-background px-2 sm:px-3">
         <Button asChild variant="ghost" size="icon" className="size-8" title={t('back')}>
           <Link href="/">
             <ArrowLeft />
@@ -39,7 +41,10 @@ export default function FullPageView({
         <span className="text-sm font-medium">{label}</span>
       </header>
       <div
-        className={cn('mx-auto flex w-full gap-6 px-6 py-6', nav ? 'max-w-[1000px]' : 'max-w-3xl')}
+        className={cn(
+          'mx-auto flex w-full gap-6 px-4 py-6 sm:px-6',
+          nav ? 'max-w-[1000px]' : 'max-w-3xl',
+        )}
       >
         {nav}
         <div className="w-full max-w-3xl min-w-0">

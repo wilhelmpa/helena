@@ -24,7 +24,7 @@ export function McpServerRow({
 
   return (
     <li className="flex items-start gap-3 py-3">
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+      <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-sidebar-border bg-background text-muted-foreground">
         <Server className="size-4" />
       </div>
       <div className="min-w-0 flex-1 space-y-1">

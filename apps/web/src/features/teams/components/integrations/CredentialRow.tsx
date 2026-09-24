@@ -28,7 +28,7 @@ export function CredentialRow({
     <TableRow className="group/item">
       <TableCell className="px-3 py-3 whitespace-normal">
         <div className="flex min-w-0 items-center gap-2.5">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-sidebar-border bg-background text-muted-foreground">
             <KeyRound className="size-4" />
           </div>
           <div className="flex min-w-0 flex-col gap-0.5">

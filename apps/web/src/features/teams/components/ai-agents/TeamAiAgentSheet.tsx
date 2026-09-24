@@ -102,7 +102,7 @@ function SheetBody({
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center gap-3 border-b border-border/60 px-4 pt-4 pb-3.5">
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground ring-1 ring-border/60">
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-sidebar-border bg-background text-muted-foreground ring-1 ring-border/60">
           <KindIcon className="size-4.5" />
         </div>
         <div className="flex min-w-0 flex-1 items-center gap-2">

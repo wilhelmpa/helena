@@ -51,11 +51,15 @@ export default function TeamProjectPanel({
 
   return (
     <div
+      data-slot="sheet-overlay"
       className="fixed inset-0 z-40 flex bg-black/20"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="ml-auto flex h-full w-full flex-col border-l bg-card sm:w-[680px] sm:max-w-[92vw]">
-        <div className="flex shrink-0 items-center justify-between gap-3 bg-muted/30 px-4 py-4">
+      <div
+        data-slot="sheet-content"
+        className="ml-auto flex h-full w-full flex-col border-s border-sidebar-border bg-background sm:w-[680px] sm:max-w-[92vw]"
+      >
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-sidebar-border px-4 py-4">
           <div className="flex min-w-0 items-center gap-2">
             <span className="shrink-0 rounded bg-secondary px-1.5 py-0.5 text-xs font-medium text-secondary-foreground">
               {project.key}

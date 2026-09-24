@@ -44,7 +44,7 @@ export default function GodScimMappingRow({
         value={mapping.role}
         onValueChange={(value) => onChange({ role: value as ScimMappingDraft['role'] })}
       >
-        <SelectTrigger className="h-9 w-[130px]" aria-label={t('role')}>
+        <SelectTrigger className="w-[130px]" aria-label={t('role')}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -60,7 +60,7 @@ export default function GodScimMappingRow({
             onChange({ roleId: value === DEFAULT_ROLE ? null : Number(value) })
           }
         >
-          <SelectTrigger className="h-9 w-[150px]" aria-label={t('projectRole')}>
+          <SelectTrigger className="w-[150px]" aria-label={t('projectRole')}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

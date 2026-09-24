@@ -27,7 +27,7 @@ export function SkillRow({
     <TableRow className="group/item">
       <TableCell className="px-3 py-3 align-top whitespace-normal">
         <div className="flex min-w-0 items-start gap-2.5">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-sidebar-border bg-background text-muted-foreground">
             {skill.source === 'github' ? (
               <GithubIcon className="size-4" />
             ) : (

@@ -71,11 +71,15 @@ export default function GodUserDetailPanel({
 
   return (
     <div
+      data-slot="sheet-overlay"
       className="fixed inset-0 z-40 flex bg-black/20"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="ml-auto flex h-full w-full flex-col border-l bg-card sm:w-[680px] sm:max-w-[92vw]">
-        <div className="flex shrink-0 items-start justify-between gap-3 bg-muted/30 px-4 pt-4 pb-4">
+      <div
+        data-slot="sheet-content"
+        className="ml-auto flex h-full w-full flex-col border-s border-sidebar-border bg-background sm:w-[680px] sm:max-w-[92vw]"
+      >
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-sidebar-border px-4 pt-4 pb-4">
           <div className="flex min-w-0 items-start gap-3.5">
             <Avatar
               name={user?.name || user?.email || '?'}
@@ -131,7 +135,7 @@ export default function GodUserDetailPanel({
           ) : (
             <>
               {!user.emailVerified && (
-                <div className="flex items-start gap-3 rounded-lg bg-muted/60 p-4">
+                <div className="flex items-start gap-3 rounded-lg border border-sidebar-border bg-card p-4">
                   <MailWarning className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                   <div className="min-w-0 flex-1 space-y-0.5">
                     <p className="text-sm font-medium">{t('unconfirmedTitle')}</p>
@@ -174,7 +178,7 @@ export default function GodUserDetailPanel({
                   )}
                 </div>
                 {user.projects.length === 0 ? (
-                  <div className="flex flex-col items-center gap-2 rounded-lg bg-muted/30 px-4 py-6 text-center">
+                  <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-sidebar-border px-4 py-6 text-center">
                     <FolderOpen className="size-5 text-muted-foreground" />
                     <p className="text-sm font-medium">{t('noAccessTitle')}</p>
                     <p className="max-w-[36ch] text-xs text-muted-foreground">
@@ -198,7 +202,7 @@ export default function GodUserDetailPanel({
         </div>
 
         {removable && (
-          <div className="flex shrink-0 items-center justify-between gap-4 bg-muted/30 px-4 py-3">
+          <div className="flex shrink-0 items-center justify-between gap-4 border-t border-sidebar-border px-4 py-3">
             <p className="text-xs text-muted-foreground">{t('deleteHint')}</p>
             <Button
               variant="ghost"
@@ -237,7 +241,7 @@ export default function GodUserDetailPanel({
             </p>
 
             {soleOwned.length > 0 && (
-              <div className="space-y-4 rounded-lg bg-muted/60 p-4">
+              <div className="space-y-4 rounded-lg border border-sidebar-border bg-card p-4">
                 <div className="flex items-start gap-2.5">
                   <TriangleAlert className="mt-0.5 size-4 shrink-0 text-destructive" />
                   <div className="min-w-0 space-y-2">
