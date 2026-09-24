@@ -1,6 +1,6 @@
 'use client';
 
-import type { WorkspaceContentProps } from '@/context/workspaceContents';
+import type { WorkspaceContentProps } from '@/extensions/panelTools';
 import { useComposeDraft } from '@/hooks/useMailCompose';
 import ComposeDraftList from './components/ComposeDraftList';
 import ComposeForm from './components/ComposeForm';

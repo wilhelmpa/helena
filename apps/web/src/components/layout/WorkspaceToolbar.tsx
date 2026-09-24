@@ -1,18 +1,10 @@
 'use client';
 
-import type { LucideIcon } from 'lucide-react';
-import {
-  Code2,
-  Globe2,
-  Inbox,
-  Mail,
-  MessageSquare,
-  MoreHorizontal,
-  PlugZap,
-  Terminal,
-} from 'lucide-react';
+import { MoreHorizontal } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { HEADER_WORKSPACE_TOOLS, type WorkspaceToolId } from '@/utils/workspaceTools';
+import type { WorkspaceToolId } from '@/utils/workspaceTools';
+import { usePanelTools } from '@/extensions/panelTools';
+import { usePanelToolLabel } from '@/extensions/pluginPanelTools';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -22,23 +14,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
-const ICONS: Record<WorkspaceToolId, LucideIcon> = {
-  chat: MessageSquare,
-  terminal: Terminal,
-  code: Code2,
-  browser: Globe2,
-  inbox: Inbox,
-  mail: Mail,
-  connections: PlugZap,
-};
-
-// The tool that stays in the header on a phone; the others move into the overflow menu.
-const PHONE_TOOL: WorkspaceToolId = 'chat';
-
-// The header's tool buttons (chat, terminal, code, browser, mail): 32px icon buttons
-// with the sidebar's hover and active fill, each with a tooltip. On a phone only the
-// chat stays in the row and the rest open from one overflow menu, so the single-row
-// header never wraps or scrolls sideways.
+// The header's tool buttons: the panel tools the registry puts in the header
+// (extensions/panelTools.tsx; chat, terminal, code, browser, mail and plugins' tools),
+// 32px icon buttons with the sidebar's hover and active fill, each with a tooltip. On a
+// phone only the pinned tool (chat) stays in the row and the rest open from one overflow
+// menu, so the single-row header never wraps or scrolls sideways.
 export default function WorkspaceToolbar({
   open,
   activeTool,
@@ -50,33 +30,35 @@ export default function WorkspaceToolbar({
 }) {
   const t = useTranslations('nav.workspace');
   const tCommon = useTranslations('common');
-  const overflow: WorkspaceToolId[] = HEADER_WORKSPACE_TOOLS.filter((tool) => tool !== PHONE_TOOL);
-  const overflowActive = open && overflow.includes(activeTool);
+  const label = usePanelToolLabel();
+  const tools = usePanelTools().filter((tool) => tool.inHeader);
+  const overflow = tools.filter((tool) => !tool.phonePinned);
+  const overflowActive = open && overflow.some((tool) => tool.id === activeTool);
 
   return (
     <nav className="flex h-full shrink-0 items-center gap-0.5" aria-label={t('tools')}>
-      {HEADER_WORKSPACE_TOOLS.map((tool) => {
-        const Icon = ICONS[tool];
-        const active = open && activeTool === tool;
-        const label = t(tool);
+      {tools.map((tool) => {
+        const Icon = tool.Icon;
+        const active = open && activeTool === tool.id;
+        const name = label(tool);
         return (
-          <Tooltip key={tool}>
+          <Tooltip key={tool.id}>
             <TooltipTrigger asChild>
               <button
                 type="button"
-                aria-label={label}
+                aria-label={name}
                 aria-pressed={active}
-                onClick={() => onSelectTool(tool)}
+                onClick={() => onSelectTool(tool.id)}
                 className={cn(
                   'size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none',
-                  tool === PHONE_TOOL ? 'flex' : 'hidden sm:flex',
+                  tool.phonePinned ? 'flex' : 'hidden sm:flex',
                   active && 'bg-sidebar-accent text-foreground hover:bg-sidebar-accent',
                 )}
               >
                 <Icon className="size-4" aria-hidden="true" />
               </button>
             </TooltipTrigger>
-            <TooltipContent>{label}</TooltipContent>
+            <TooltipContent>{name}</TooltipContent>
           </Tooltip>
         );
       })}
@@ -95,16 +77,16 @@ export default function WorkspaceToolbar({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-44">
           {overflow.map((tool) => {
-            const Icon = ICONS[tool];
-            const active = open && activeTool === tool;
+            const Icon = tool.Icon;
+            const active = open && activeTool === tool.id;
             return (
               <DropdownMenuItem
-                key={tool}
-                onSelect={() => onSelectTool(tool)}
+                key={tool.id}
+                onSelect={() => onSelectTool(tool.id)}
                 className={cn(active && 'bg-sidebar-accent font-medium')}
               >
                 <Icon />
-                {t(tool)}
+                {label(tool)}
               </DropdownMenuItem>
             );
           })}
