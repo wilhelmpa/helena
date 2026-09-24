@@ -330,12 +330,34 @@ export class DemoSeed {
   }
 }
 
+// Helena limits a key to 100 requests a second; a seed against localhost is faster than
+// that. The wrapper spaces requests out and retries one the limit refused (the API currently
+// reports that as a 500 with "Rate limit exceeded" in the body, not as a 429).
+export function throttled(send: Transport, perSecond = 40): Transport {
+  const gap = 1000 / perSecond;
+  let next = 0;
+  return async (method, path, body) => {
+    for (let attempt = 0; ; attempt += 1) {
+      const now = Date.now();
+      const wait = Math.max(0, next - now);
+      next = Math.max(now, next) + gap;
+      if (wait > 0) await Bun.sleep(wait);
+      const res = await send(method, path, body);
+      if (res.ok || attempt >= 4) return res;
+      const text = await res.text();
+      const limited = res.status === 429 || text.includes('Rate limit exceeded');
+      if (!limited) return { status: res.status, ok: false, text: async () => text };
+      await Bun.sleep(1100 * (attempt + 1));
+    }
+  };
+}
+
 export async function runDemoSeed(
   options: DemoOptions,
   send: Transport,
   echo: (line: string) => void = () => {},
 ): Promise<{ lines: string[]; written: number; warnings: number }> {
-  const seed = new DemoSeed(send, options, echo);
+  const seed = new DemoSeed(throttled(send), options, echo);
   seed.log(`Helena demo seed — ${options.dryRun ? 'DRY RUN (no writes)' : 'LIVE (writes)'}`);
   await seed.run();
   return { lines: seed.lines, written: seed.written, warnings: seed.warnings };
