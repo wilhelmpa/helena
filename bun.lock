@@ -182,6 +182,15 @@
         "typescript": "^6.0.3",
       },
     },
+    "examples/plugins/hello-helena": {
+      "name": "hello-helena",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@helena/sdk": "workspace:*",
+        "@types/bun": "latest",
+        "typescript": "^6.0.3",
+      },
+    },
     "packages/agent-naming": {
       "name": "@repo/agent-naming",
       "version": "0.0.0",
@@ -2033,6 +2042,8 @@
     "hastscript": ["hastscript@9.0.1", "", { "dependencies": { "@types/hast": "^3.0.0", "comma-separated-tokens": "^2.0.0", "hast-util-parse-selector": "^4.0.0", "property-information": "^7.0.0", "space-separated-tokens": "^2.0.0" } }, "sha512-g7df9rMFX/SPi34tyGCyUBREQoKkapwdY/T04Qn9TDWfHhAYt4/I0gMVirzK5wEzeUqIjEB+LXC/ypb7Aqno5w=="],
 
     "he": ["he@1.2.0", "", { "bin": { "he": "bin/he" } }, "sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw=="],
+
+    "hello-helena": ["hello-helena@workspace:examples/plugins/hello-helena"],
 
     "highlight.js": ["highlight.js@11.11.2", "", {}, "sha512-oaXMACAU0kzOMXBjWpNcX+vlwSBCIAiZ9BHa7gA15NOTtT2L/l8OSZDuqS2XppOhZBPJ7hm4o8ep2kyuip2uEQ=="],
 

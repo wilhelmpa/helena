@@ -35,7 +35,8 @@
   },
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "examples/plugins/*"
   ],
   "overrides": {
     "@scalar/types": "0.16.2",

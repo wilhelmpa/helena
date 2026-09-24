@@ -165,6 +165,23 @@ export class PluginHost {
     }
   }
 
+  // Stops a plugin and removes everything it registered, for a test or a switch that
+  // takes effect without a restart.
+  async unload(pluginId: string): Promise<void> {
+    const entry = this.plugins.get(pluginId);
+    if (!entry) return;
+    if (entry.plugin?.stop && entry.loaded.status === 'loaded') {
+      try {
+        await entry.plugin.stop();
+      } catch (error) {
+        this.logger(pluginId).warn(`failed to stop: ${String(error)}`);
+      }
+    }
+    this.unregisterPlugin(pluginId);
+    this.plugins.delete(pluginId);
+    this.contexts.delete(pluginId);
+  }
+
   list(): LoadedPlugin[] {
     return [...this.plugins.values()].map((entry) => entry.loaded);
   }
