@@ -71,7 +71,23 @@ probe() { # probe NAME EXPECTED CURL-ARGS...
 probe "local process, LAN source → 127.0.0.1 (the hole)" "old=FAKE new=" --interface "$lan" "http://127.0.0.1:$port/"
 probe "local process, LAN source → LAN address (self)" "old= new=" --interface "$lan" "http://$lan:$port/"
 if [[ -n $ll && -n $gl ]]; then
-  probe "local process, link-local source → own global IPv6" "old=FAKE new=" --interface "$ll%$dev" -g "http://[$gl]:$port/"
+  # curl cannot bind a scoped link-local source; a raw request does the same thing.
+  got=$(python3 - "$ll" "$dev" "$gl" "$port" <<'PY'
+import socket, sys
+ll, dev, gl, port = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4])
+s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM); s.settimeout(3)
+try:
+    s.bind((ll, 0, 0, socket.if_nametoindex(dev))); s.connect((gl, port, 0, 0))
+    s.sendall(b"GET / HTTP/1.0\r\nHost: kingston-server.local\r\n\r\n")
+    data = b""
+    while chunk := s.recv(4096): data += chunk
+    print(data.split(b"\r\n\r\n", 1)[1].decode().strip())
+except OSError as e:
+    print("no answer", e)
+PY
+)
+  if [[ $got == "old=FAKE new=" ]]; then echo "PASS local process, link-local source → own global IPv6: $got"
+  else echo "FAIL local process, link-local source → own global IPv6: $got (expected old=FAKE new=)"; fail=1; fi
 fi
 probe "local process from loopback" "old= new=" "http://127.0.0.1:$port/"
 echo "From another LAN machine, expect 'old=FAKE new=FAKE':"
