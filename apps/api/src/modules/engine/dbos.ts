@@ -50,10 +50,17 @@ export function launchEngine(): Promise<void> {
     subscribeEngineTriggers();
     configure();
     await DBOS.launch();
-    // The queues of the runs and of the outbox.
+    // The queues of the runs and of the outbox. A run waiting for an agent or a person
+    // holds its place in a queue, so the runs queue has no concurrency limit; events are
+    // short and run ten at a time per replica.
     const { EVENTS_QUEUE } = await import('./events');
-    for (const queue of [RUNS_QUEUE, EVENTS_QUEUE])
-      if (!(await DBOS.retrieveQueue(queue))) await DBOS.registerQueue(queue);
+    const minPollingIntervalMs = intEnv('HELENA_ENGINE_POLL_MS', 1000);
+    await DBOS.registerQueue(RUNS_QUEUE, { minPollingIntervalMs, onConflict: 'always_update' });
+    await DBOS.registerQueue(EVENTS_QUEUE, {
+      minPollingIntervalMs,
+      workerConcurrency: 10,
+      onConflict: 'always_update',
+    });
     running = true;
   })().catch((error: unknown) => {
     launching = null;

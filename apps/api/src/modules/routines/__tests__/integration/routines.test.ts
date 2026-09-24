@@ -302,7 +302,7 @@ describe('routines', () => {
   });
 
   it('reopens a finished task: back to unstarted, a comment and a new run of the agent', async () => {
-    const { asOwner, agent, columnId, column } = await setup();
+    const { asOwner, agent, column } = await setup();
     const task = (
       await asOwner
         .projects({ projectKey: 'MKT' })
@@ -315,7 +315,7 @@ describe('routines', () => {
     const reopened = await waitForStatus(run.runId, 'succeeded');
     expect(reopened.result).toMatchObject({ outcome: 'reopened', taskId: task.id });
     const [after] = await db.select().from(issueTable).where(eq(issueTable.id, task.id));
-    expect(after).toMatchObject({ columnId, delegateUserId: agent.userId });
+    expect(after).toMatchObject({ columnId: column('Todo'), delegateUserId: agent.userId });
     const comments = await db
       .select({ body: issueActivity.body })
       .from(issueActivity)

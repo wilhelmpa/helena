@@ -1,3 +1,4 @@
+import { setDefaultTimeout } from 'bun:test';
 import { DBOS } from '@dbos-inc/dbos-sdk';
 import { agentRun, db, pipelineRun, pipelineRunStep } from '@repo/db';
 import { and, asc, eq } from 'drizzle-orm';
@@ -8,9 +9,13 @@ import { signalFinishedAgentRuns } from '#modules/engine/runs';
 // database (its own schema `helena_engine`), and the test plays the Hermes runner by
 // finishing the agent runs the engine queues.
 
-// Waiting steps look again every second instead of every minute.
+// Waiting steps look again every second instead of every minute, and the queues are
+// polled every 100 ms, so a run's hops take milliseconds. A run still takes a few hops
+// (queue, agent run, signal), so the tests that wait for one get 30 seconds.
 process.env.HELENA_ENGINE_WAIT_SECONDS ??= '1';
+process.env.HELENA_ENGINE_POLL_MS ??= '100';
 process.env.HELENA_ENGINE_EXECUTOR_ID ??= 'api-tests';
+setDefaultTimeout(30_000);
 
 export async function startEngine(): Promise<void> {
   await launchEngine();
