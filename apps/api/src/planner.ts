@@ -6,7 +6,6 @@ import { engineRoutes } from './modules/engine';
 import { connectionsRoutes } from './modules/connections';
 import { deviceSyncRoutes } from './modules/device-sync';
 import { ownerTerminalRoutes } from './modules/owner-terminal';
-import { securityRoutes } from './modules/edge-access';
 import { projectFileRoutes } from './modules/project-files';
 import { organizationRoutes } from './modules/organization';
 import { Elysia } from 'elysia';
@@ -210,7 +209,6 @@ export const planner = new Elysia({ name: 'planner' })
   .use(connectionsRoutes)
   .use(deviceSyncRoutes)
   .use(ownerTerminalRoutes)
-  .use(securityRoutes)
   .use(settingsRoutes)
   .use(godRoutes)
   .use(pluginAdminRoutes)
