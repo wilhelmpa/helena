@@ -540,9 +540,13 @@ class Keeper:
                 # first carries the new pair; spending it twice would revoke the family.
                 continue
             spent.add(token_print)
-            self.refresh_one(provider, pool, entry)
+            after = self.refresh_one(provider, pool, entry)
+            if after is not None:
+                # An alias row Hermes has just synced to the new pair is not refreshed again.
+                spent.add(fingerprint(getattr(after, 'refresh_token', None)))
 
-    def refresh_one(self, provider: str, pool: Any, entry: Any) -> None:
+    def refresh_one(self, provider: str, pool: Any, entry: Any) -> Any:
+        """Refreshes one row; answers the row as it is now when the refresh worked."""
         key = self.key(provider, entry)
         record = self.state.entry(key)
         before_status = getattr(entry, 'last_status', None)
@@ -561,7 +565,7 @@ class Keeper:
             self.refreshed.add(key)
             log.info('%s %s refreshed; the access token now expires %s', provider, entry.label or entry.id,
                      now_iso(self.hermes.expiry(provider, after)) if self.hermes.expiry(provider, after) else 'at an unknown time')
-            return
+            return after
         record['failures'] = int(record.get('failures') or 0) + 1
         dead = after is None or getattr(after, 'last_status', None) == self.hermes.STATUS_DEAD
         if dead:
@@ -570,7 +574,7 @@ class Keeper:
             record['dead'] = True
             log.warning('%s %s: the login is no longer valid (%s); it has to be signed in again',
                         provider, entry.label or entry.id, record['error'])
-            return
+            return None
         record['error'] = reason or 'the refresh failed'
         log.warning('%s %s: refresh failed (%s); retrying later', provider, entry.label or entry.id, record['error'])
         # Hermes benches a row whose refresh failed. The keeper refreshes hours early: while the
@@ -586,6 +590,7 @@ class Keeper:
                 pool_after.reset_status(entry.id)
             except Exception as exc:  # noqa: BLE001
                 log.debug('could not lift the bench on %s: %s', key, exc)
+        return None
 
     # ── the Codex CLI's own login next to Hermes ──
 

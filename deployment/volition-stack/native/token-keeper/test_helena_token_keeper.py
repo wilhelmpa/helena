@@ -197,6 +197,12 @@ class KeeperLogic(unittest.TestCase):
         self.keeper('--renew', 'anthropic').tick(refresh=True)
         self.assertEqual(self.hermes.refreshed, ['a'])
 
+    def test_renew_refreshes_rows_sharing_one_chain_once(self):
+        self.hermes.add('openai-codex', Row('singleton', 'at', 'rt', ms(9 * 86400)))
+        self.hermes.add('openai-codex', Row('alias', 'at', 'rt', ms(9 * 86400)))
+        self.keeper('--renew', 'openai-codex').tick(refresh=True)
+        self.assertEqual(self.hermes.refreshed, ['singleton'])
+
     def test_rows_sharing_one_refresh_token_are_refreshed_once(self):
         self.hermes.add('openai-codex', Row('singleton', jwt(exp=int(time.time()) + 3600), 'rt', None))
         self.hermes.add('openai-codex', Row('alias', jwt(exp=int(time.time()) + 3600), 'rt', None))
