@@ -280,6 +280,10 @@ LAN access over `http://kingston-server.local` works throughout.
   three times); turn it off once passkeys work on the owner's devices (§8.1). With HTTPS it moves to
   port 443 under the public name (`configure.py --https-host`); the guard map covers 443.
 - **Dictation/voice** needs a secure context: given by either option.
+- **After the switch `http://kingston-server.local` no longer signs anyone in** (cookies are Secure,
+  the origin is the public name). Point it at the public name in the LAN block (a map on
+  `$host:$server_port` for `kingston-server.local:80` → `return 301 https://helena.volition.one$request_uri`;
+  the kiosk's 127.0.0.1:8088 stays untouched). Not scripted yet; a two-line edit in the window.
 
 ## 6. Runbook (the last phase; orchestrator)
 
