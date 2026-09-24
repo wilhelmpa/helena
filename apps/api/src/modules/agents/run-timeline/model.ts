@@ -1,5 +1,6 @@
 import { t } from 'elysia';
 import { modelCheck } from '../runtime-sync/model';
+import { runFailure } from '#modules/model-availability/model';
 
 export const runEventsBody = t.Object({
   events: t.Array(t.Unknown(), { maxItems: 500 }),
@@ -80,6 +81,7 @@ export const RunDetailResponse = t.Object({
     description: 'The follow-up turn in which the agent kept what the run taught it, or null.',
   }),
   modelCheck: t.Nullable(modelCheck),
+  failure: t.Nullable(runFailure),
   startedAt: t.Nullable(t.String()),
   finishedAt: t.Nullable(t.String()),
   createdAt: t.String(),

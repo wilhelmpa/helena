@@ -4,6 +4,7 @@ import { pageQueryFields, pageResponse } from '#shared/pagination';
 import { PermissionMatrixSchema } from '#shared/permissions';
 import { USER_KINDS } from './service';
 import { agentSyncSummary } from '#modules/agents/runtime-sync/model';
+import { runtimeLoginsHealth } from '#modules/runtime-logins/model';
 
 const encryption = t.UnionEnum(['none', 'ssl', 'tls']);
 
@@ -325,6 +326,7 @@ export const EngineSettingsResponse = t.Object({
 
 export const SystemHealthResponse = t.Object({
   agents: agentSyncSummary,
+  logins: runtimeLoginsHealth,
   services: t.Array(
     t.Object({
       service: t.Union([
@@ -379,11 +381,60 @@ export const SystemHealthResponse = t.Object({
         projectKey: t.String(),
         name: t.String(),
         error: t.String(),
+        // Why it failed, where the runtime's words said (a model the provider refused).
+        failure: t.Nullable(t.Object({ code: t.String(), model: t.Nullable(t.String()) })),
         at: t.String(),
       }),
       { description: 'The newest failures, newest first.' },
     ),
   }),
+  models: t.Object(
+    {
+      deadLogins: t.Array(
+        t.Object({
+          provider: t.String(),
+          state: t.String(),
+          command: t.Nullable(t.String()),
+          agents: t.Array(
+            t.Object({
+              id: t.Number(),
+              teamId: t.Number(),
+              username: t.String(),
+              template: t.Boolean(),
+              model: t.Nullable(t.String()),
+            }),
+          ),
+        }),
+        {
+          description:
+            'Hermes logins the provider rejected (or that ran out unrenewed), each with the ' +
+            'agents whose model runs through it.',
+        },
+      ),
+      unavailable: t.Array(
+        t.Object({
+          runtime: t.String(),
+          provider: t.String(),
+          model: t.String(),
+          detail: t.Nullable(t.String()),
+          since: t.String(),
+          agents: t.Array(
+            t.Object({
+              id: t.Number(),
+              teamId: t.Number(),
+              username: t.String(),
+              template: t.Boolean(),
+            }),
+          ),
+        }),
+      ),
+    },
+    {
+      description:
+        'Models the providers refused for this installation, each with the agents still set ' +
+        'to it: they fail until they get another model.',
+    },
+  ),
   janitors: t.Array(
     t.Object({
       job: t.Union([

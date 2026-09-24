@@ -1,0 +1,39 @@
+{
+  "unverified": "ungeprüft",
+  "unverifiedHint": "Dein Konto listet dieses Modell nicht. Hermes erwartet, dass es funktioniert; bestätigt ist es, sobald ein Lauf damit gelingt.",
+  "refused": "{model} ist für {account, select, chatgpt {dein ChatGPT-Konto} claude {dein Claude-Konto} other {dein Konto}} nicht verfügbar – wähle ein anderes Modell.",
+  "refusedShort": "Für dein Konto nicht verfügbar",
+  "providerSaid": "Der Anbieter sagt: {detail}",
+  "since": "seit {time}",
+  "retry": "Erneut prüfen",
+  "retryHint": "Vergisst den Befund. Der nächste Lauf versucht das Modell wieder.",
+  "retried": "{model} wird beim nächsten Lauf wieder versucht.",
+  "useDefault": "Agenten-Standard verwenden",
+  "templateFallback": "Die Vorlage nutzt {model}, das für dein Konto nicht verfügbar ist. Diese Kopie läuft deshalb auf dem Agenten-Standard.",
+  "copyFallback": "{name} läuft auf dem Agenten-Standard: {model} ist für dein Konto nicht verfügbar.",
+  "failure": {
+    "modelUnavailable": "Modell {model} ist für {account, select, chatgpt {dein ChatGPT-Konto} claude {dein Claude-Konto} other {dein Konto}} nicht verfügbar – wähle für den Agenten ein anderes Modell. Ein erneuter Versuch hilft nicht.",
+    "providerRejected": "Der Anbieter hat die Anfrage endgültig abgelehnt – ein erneuter Versuch hilft nicht."
+  },
+  "activity": "konnte nicht arbeiten: Modell {model} ist für dein Konto nicht verfügbar",
+  "health": {
+    "refused": "{model} ist für das Konto nicht verfügbar – {count, plural, one {# Agent nutzt es} other {# Agenten nutzen es}}: {agents}",
+    "deadLogin": "{account, select, chatgpt {ChatGPT-Anmeldung} claude {Claude-Anmeldung} other {Anmeldung}} von Hermes {state, select, invalid {ungültig} other {abgelaufen}} – {count, plural, one {# Agent läuft darauf} other {# Agenten laufen darauf}}: {agents}"
+  },
+  "admin": {
+    "title": "Modelle",
+    "description": "Welche Modelle deine Konten wirklich anbieten. Ein abgelehntes Modell fehlt in jeder Auswahl, bis ein Lauf damit gelingt oder du es erneut prüfen lässt.",
+    "empty": "Noch keine Befunde.",
+    "unavailable": "nicht verfügbar",
+    "works": "funktioniert",
+    "usedBy": "Genutzt von {agents}",
+    "unused": "Kein Agent nutzt es.",
+    "replaceWith": "Alle umstellen auf",
+    "replace": "Umstellen",
+    "replaced": "{count, plural, =0 {Kein Agent war darauf eingestellt.} one {# Agent umgestellt.} other {# Agenten umgestellt.}}",
+    "agentDefault": "Agenten-Standard",
+    "seen": "zuletzt {time}"
+  },
+  "deadLogin": "{model} läuft über die {account, select, chatgpt {ChatGPT-Anmeldung} claude {Claude-Anmeldung} other {Anmeldung}} von Hermes, die {state, select, invalid {ungültig} other {abgelaufen}} ist – melde Hermes neu an oder wähle ein Modell eines anderen Anbieters.",
+  "deadLoginDefault": "Der Agenten-Standard läuft über die {account, select, chatgpt {ChatGPT-Anmeldung} claude {Claude-Anmeldung} other {Anmeldung}} von Hermes, die {state, select, invalid {ungültig} other {abgelaufen}} ist – melde Hermes neu an."
+}

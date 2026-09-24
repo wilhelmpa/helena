@@ -2,7 +2,7 @@ import { type ReactNode, useState } from 'react';
 import { Sparkles, Wrench } from 'lucide-react';
 import type { TeamProjectOption } from '@/lib/api/endpoints/teams';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
-import type { AiChatModel } from '@/lib/api/endpoints/agentChat';
+import type { AiChatModel, UnavailableChatModel } from '@/lib/api/endpoints/agentChat';
 import { Input } from '@/components/ui/input';
 import { type AgentFormValue } from '../../utils/agentForm';
 import { AgentFormSection } from './AgentFormSection';
@@ -40,6 +40,7 @@ export default function TeamAiAgentFields({
   chatModels,
   chatModelsLoading,
   chatModelsError,
+  chatModelsUnavailable = [],
   agent,
   skillsContent,
   skillsBadge,
@@ -60,6 +61,8 @@ export default function TeamAiAgentFields({
   chatModels: AiChatModel[];
   chatModelsLoading: boolean;
   chatModelsError: boolean;
+  // Models the provider refused this account, left out of chatModels.
+  chatModelsUnavailable?: UnavailableChatModel[];
   // The saved agent, for the state only the server knows (its runner's presence).
   // Null while creating.
   agent: AiAgent | null;
@@ -190,6 +193,8 @@ export default function TeamAiAgentFields({
       modelsLoading={chatModelsLoading}
       modelsError={chatModelsError}
       conflicts={agent?.runtimeState.conflicts ?? []}
+      unavailable={chatModelsUnavailable}
+      agent={agent}
     />
   );
 

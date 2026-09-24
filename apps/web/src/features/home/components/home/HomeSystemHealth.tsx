@@ -11,13 +11,15 @@ import { healthProblems } from '../../utils/systemHealth';
 import HomeAgentSync from './HomeAgentSync';
 import HomeEngineState from './HomeEngineState';
 import HomeJanitorState from './HomeJanitorState';
+import HomeLogins from './HomeLogins';
 import HomeServiceState from './HomeServiceState';
 import LimitsHealthLines from '@/features/provider-limits/components/LimitsHealthLines';
+import ModelAvailabilityHealthLines from '@/features/model-availability/components/ModelAvailabilityHealthLines';
 
 // The instance owner's view of the services around Helena — the Hermes runner, the
 // Helena engine (workflows, agent teams, routines), the provisioning service and the
-// worker — the runs that wait, stall or overran, what the engine is doing, and the
-// janitor loops that clean up hung runs. A status report of 32px lines in the sidebar's
+// worker — the runs that wait, stall or overran, what the engine is doing, the model logins
+// agents share, and the janitor loops that clean up hung runs. A status report of 32px lines in the sidebar's
 // surface, without hover: nothing here is a control, so nothing here looks like one. No
 // secret or path ever appears, only counts, times and short reasons.
 export default function HomeSystemHealth() {
@@ -57,6 +59,8 @@ export default function HomeSystemHealth() {
           </ul>
         )}
         <LimitsHealthLines />
+        <ModelAvailabilityHealthLines models={data.models} />
+        <HomeLogins health={data.logins} />
         {data.agents && (
           <div className="mt-2">
             <HomeAgentSync summary={data.agents} />

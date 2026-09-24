@@ -148,6 +148,12 @@ function frameMention(run: RunForPrompt, titled: string): string {
   const lead = mentionsAgent
     ? `You were mentioned in a comment on issue ${titled} of your project.`
     : `Someone answered your comment on issue ${titled} of your project.`;
+  // A comment that tags several agents starts a run for each; each must do only its own
+  // part. In the E2E test a coordinator was asked to hand work to a specialist tagged in
+  // the same comment, and the specialist did the handing over itself as well.
+  const others = parseMentionHandles(run.prompt).filter(
+    (handle) => handle !== run.agentUsername?.toLowerCase(),
+  );
   const lines = [
     lead,
     ...areaLine(run),
@@ -156,6 +162,15 @@ function frameMention(run: RunForPrompt, titled: string): string {
     'result or answer. Keep it short.',
     'Do not mention yourself.',
   ];
+  if (others.length > 0) {
+    lines.push(
+      '',
+      `The comment also tags ${others.map((handle) => '@' + handle).join(', ')}. Do only what it asks`,
+      'of you. Where it asks another agent to act, or to hand work to you, leave that to them:',
+      'work handed to you reaches you as a task of its own. If nothing is asked of you, reply',
+      'with one short line saying so.',
+    );
+  }
   if (run.threadContext) {
     lines.push(
       '',

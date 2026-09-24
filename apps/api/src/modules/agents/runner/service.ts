@@ -20,6 +20,8 @@ import { agentRunConfig, loadThreadContext } from '../core/run-queue';
 import { recordAgentRunFinished, recordAgentRunStarted } from '../core/run-activity';
 import { isHomeAgent } from '../core/home-agent';
 import { normalizeRuntimePolicy } from '../core/service';
+import type { RuntimeFailure } from '@helena/sdk';
+import { learnFromOutcome, routeOf, runtimeOfPolicy } from '#modules/model-availability/service';
 import { getRunResumeSettings } from '#modules/settings/service';
 import type { AgentRunTrigger } from '../model';
 import { modelCheckOf, type RunModelReport } from '../runtime-sync/model-check';
@@ -74,6 +76,9 @@ export interface RunnerAgent {
   // The run limits of the agent's runtime policy, for a run that sets none itself.
   maxTurns: number | null;
   runBudgetSeconds: number | null;
+  // The runtime it runs on ('hermes', 'claude', 'codex'), which a finding about its model
+  // is recorded under.
+  runtime: string;
 }
 
 // The agent whose bot user is the caller, or null when the caller is not an agent.
@@ -121,6 +126,7 @@ export async function getRunnerAgent(userId: string): Promise<RunnerAgent | null
     thinkingLevel: policy.reasoningEffort,
     maxTurns: policy.maxTurns ?? null,
     runBudgetSeconds: policy.runBudgetSeconds ?? null,
+    runtime: runtimeOfPolicy(policy),
   };
 }
 
@@ -620,6 +626,7 @@ export async function finishRun(
     toolCalls?: number;
     spend?: Spend | null;
     runtime?: RunModelReport;
+    failure?: RuntimeFailure;
   },
   claim?: number,
 ): Promise<{ reflection: ReflectionRequest | null } | null> {
@@ -646,6 +653,7 @@ export async function finishRun(
       // from here" resumes.
       ...(result.sessionId && { sessionId: result.sessionId }),
       ...(check && { modelCheck: check }),
+      failure: result.status === 'failed' ? (result.failure ?? null) : null,
       finishedAt: new Date(),
     })
     .where(heldBy(agent.id, runId, claim))
@@ -659,6 +667,15 @@ export async function finishRun(
   const row = rows[0];
   if (!row) return null;
   const status = row.status as 'success' | 'failed';
+  // What the run taught about its model: a refusal takes it out of the pickers, a success
+  // confirms it.
+  await learnFromOutcome({
+    runtime: agent.runtime,
+    report: result.runtime,
+    status: result.status,
+    failure: result.failure,
+    source: { agentId: agent.id, runId },
+  });
   await recordUsage({
     agentId: agent.id,
     projectId: row.projectId,
@@ -678,6 +695,15 @@ export async function finishRun(
     },
     status,
     row.lastError,
+    status === 'failed' && result.failure
+      ? {
+          code: result.failure.code,
+          model:
+            routeOf(agent.runtime, result.runtime, result.failure)?.model ??
+            result.failure.model ??
+            null,
+        }
+      : null,
   );
   // "Handeln & berichten": what the run did without approval, on its task.
   await postAutopilotReport(runId);

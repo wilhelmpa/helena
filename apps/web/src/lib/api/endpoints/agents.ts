@@ -1,3 +1,4 @@
+import type { RunFailure } from '@/lib/api/endpoints/modelAvailability';
 import { request } from '@/lib/api/core/client';
 import type { ModelCheck, RuntimeProfile } from '@/lib/api/endpoints/agentRuntimeSync';
 
@@ -241,6 +242,8 @@ export interface AgentRun {
   autopilotLevel?: number | null;
   // Null for a run whose runner reports no model.
   modelCheck: ModelCheck | null;
+  // Why it failed, where the runtime's words said. Absent from an older server.
+  failure?: RunFailure | null;
   nextAttemptAt: string;
   createdAt: string;
 }
@@ -321,8 +324,14 @@ export const createAiAgent = (teamId: number, input: NewAiAgentInput) =>
 
 // Adds a copy of a template to a project as a specialist of its own. The copy's key is
 // returned once, like on create.
+// `modelFallback` names a template model the provider refused this account: the copy runs on
+// its runtime's default instead.
 export const copyAiAgentTemplate = (teamId: number, agentId: number, projectId: number) =>
-  request<{ agent: AiAgent; apiKey: string }>(`/teams/${teamId}/ai-agents/${agentId}/copy`, {
+  request<{
+    agent: AiAgent;
+    apiKey: string;
+    modelFallback?: { model: string; detail: string | null };
+  }>(`/teams/${teamId}/ai-agents/${agentId}/copy`, {
     method: 'POST',
     body: JSON.stringify({ projectId }),
   });

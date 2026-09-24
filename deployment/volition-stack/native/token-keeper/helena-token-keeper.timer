@@ -1,0 +1,12 @@
+# Installed by deployment/volition-stack/native/token-keeper/install.sh.
+[Unit]
+Description=Run the Helena token keeper every ten minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=10min
+RandomizedDelaySec=30s
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target

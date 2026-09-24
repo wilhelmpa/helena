@@ -11,6 +11,7 @@ import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { compactTokens } from '@/utils/agentUsage';
 import AutopilotLevelBadge from '@/features/autopilot/components/AutopilotLevelBadge';
 import RunView from './RunView';
+import { isModelRefusal } from '@/features/model-availability/utils/modelFailure';
 
 // The agent's runs, newest first; one opens as its timeline ("Gläserner Lauf").
 export default function AgentRunsPanel({
@@ -79,6 +80,7 @@ function RunList({
 
 function RunRow({ run, onOpen }: { run: AgentRun; onOpen: () => void }) {
   const t = useTranslations('agentRuntime.runs');
+  const tModel = useTranslations('modelAvailability');
   const relativeTime = useRelativeTime();
   const subject = run.issueIdentifier
     ? `${run.issueIdentifier}${run.issueTitle ? ` · ${run.issueTitle}` : ''}`
@@ -113,6 +115,15 @@ function RunRow({ run, onOpen }: { run: AgentRun; onOpen: () => void }) {
       {run.blockedQuestion && (
         <Badge variant="outline" className="shrink-0 border-status-waiting/50 text-status-waiting">
           {t('blocked')}
+        </Badge>
+      )}
+      {isModelRefusal(run.failure) && (
+        <Badge
+          variant="outline"
+          className="shrink-0 border-destructive/50 text-destructive"
+          title={run.lastError ?? undefined}
+        >
+          {tModel('refusedShort')}
         </Badge>
       )}
       {run.modelCheck && run.modelCheck.mismatch.length > 0 && (

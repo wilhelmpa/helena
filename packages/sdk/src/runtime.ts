@@ -1,5 +1,6 @@
 import type { RuntimePolicySnapshot } from './runtime-policy';
 import type { CommandSandbox, RuntimeAdapter, RuntimeId } from './runtime-profile';
+import type { RuntimeFailure, RuntimeFailureInput } from './runtime-failures';
 import type { RuntimeReaders } from './runtime-readers';
 import type { LocalizedText } from './text';
 
@@ -119,6 +120,10 @@ interface RuntimeTypeBase {
   // What Helena can read back (sessions, transcripts, logs, health, version) and the
   // controls besides running work (curator, emergency stop).
   readers?: RuntimeReaders;
+  // Why a command of this runtime failed, read from its own words (runtime-failures.ts):
+  // a model the provider does not serve this account, a refusal no retry passes. Null
+  // when its words say nothing Helena acts on.
+  classifyFailure?(input: RuntimeFailureInput): RuntimeFailure | null;
 }
 
 export interface CliRuntimeType extends RuntimeTypeBase {

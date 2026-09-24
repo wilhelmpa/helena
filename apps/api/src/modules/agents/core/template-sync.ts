@@ -8,6 +8,7 @@ import {
 } from '@repo/db';
 import { eq } from 'drizzle-orm';
 import { copyAgentBudgets, copyAgentLevel } from '#modules/autopilot/copy';
+import { agentModelRefusal } from '#modules/model-availability/service';
 
 // Helena is the source of truth for a template and every copy of it
 // (copyTemplateIntoProject). A copy's own edits stick (they land in
@@ -215,18 +216,26 @@ async function applyGroupsToCopy(
   groups: TemplateFieldGroup[],
 ): Promise<void> {
   const set: Partial<typeof aiAgent.$inferInsert> = {};
+  // A template model the provider refused this account reaches no copy: the copy runs on
+  // its runtime's default until the template gets a model that works (as when it was
+  // copied, copyTemplateIntoProject).
+  const refused =
+    groups.includes('model') &&
+    (await agentModelRefusal({ model: template.model, runtimePolicy: copy.runtimePolicy })) !==
+      undefined;
   if (groups.includes('instructions')) set.instructions = template.instructions;
-  if (groups.includes('model')) set.model = template.model;
+  if (groups.includes('model')) set.model = refused ? null : template.model;
   const policyGroups = groups.filter(
     (g): g is 'instructions' | 'model' | 'approvals' | 'budgets' =>
       g === 'instructions' || g === 'model' || g === 'approvals' || g === 'budgets',
   );
   if (policyGroups.length > 0) {
-    set.runtimePolicy = mergedRuntimePolicy(
+    const merged = mergedRuntimePolicy(
       asPolicy(copy.runtimePolicy),
       asPolicy(template.runtimePolicy),
       policyGroups,
     );
+    set.runtimePolicy = refused ? { ...merged, reasoningEffort: null } : merged;
   }
   if (Object.keys(set).length > 0) {
     await db.update(aiAgent).set(set).where(eq(aiAgent.id, copy.id));

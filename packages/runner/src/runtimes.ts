@@ -1,4 +1,5 @@
 import {
+  classifyProviderFailure,
   createRegistry,
   type CliCommand,
   type CliRuntimeType,
@@ -79,6 +80,9 @@ const CAPABILITIES: Record<PresetName, RuntimeCapabilities> = {
   },
 };
 
+// Every built-in runtime passes a provider's refusal on in the provider's words (Hermes in
+// its result line, Claude Code and Codex in their error events), so one reading of them
+// serves all (@helena/sdk runtime-failures.ts).
 export function builtinRuntimes(): CliRuntimeType[] {
   return PRESET_NAMES.map((name) => ({
     id: name,
@@ -86,6 +90,7 @@ export function builtinRuntimes(): CliRuntimeType[] {
     protocol: 'cli',
     capabilities: CAPABILITIES[name],
     command: PRESETS[name],
+    classifyFailure: classifyProviderFailure,
   }));
 }
 

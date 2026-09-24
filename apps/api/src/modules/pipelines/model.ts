@@ -177,6 +177,13 @@ export const ProjectPipelineResponse = t.Object({
   issues: t.Array(DefinitionIssueResponse),
 });
 
+// Why a step failed, where the runtime's words said: 'model-unavailable' (the provider does not
+// serve the model to this account) or 'provider-rejected'.
+const stepFailureResponse = t.Object(
+  { code: t.String(), model: t.Nullable(t.String()) },
+  { description: "Why it failed, where the runtime's words said; null otherwise." },
+);
+
 export const PipelineRunStepResponse = t.Object({
   stepId: t.String(),
   parentStepId: t.Nullable(
@@ -203,6 +210,7 @@ export const PipelineRunStepResponse = t.Object({
   note: t.Nullable(t.String()),
   wakeAt: t.Nullable(t.String()),
   error: t.Nullable(t.String()),
+  failure: t.Nullable(stepFailureResponse),
   startedAt: t.String(),
   finishedAt: t.Nullable(t.String()),
 });
@@ -226,6 +234,7 @@ export const PipelineRunResponse = t.Object({
   dryRun: t.Boolean(),
   status: RunStatus,
   error: t.Nullable(t.String()),
+  failure: t.Nullable(stepFailureResponse),
   result: t.Unknown({ description: 'What the run produced, e.g. the outcome of a routine.' }),
   actorName: t.Nullable(t.String()),
   inputTokens: t.Nullable(t.Number()),

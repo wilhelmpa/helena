@@ -28,6 +28,8 @@ import ReflectionBlock from './ReflectionBlock';
 import SpendChips from './SpendChips';
 import TranscriptMessages from './TranscriptMessages';
 import RuntimeError from './RuntimeError';
+import ModelFailureNote from '@/features/model-availability/components/ModelFailureNote';
+import { knownFailure } from '@/features/model-availability/utils/modelFailure';
 
 type View = 'timeline' | 'transcript' | 'logs';
 
@@ -200,8 +202,15 @@ export default function RunView({
             {!live && run.output && !timeline && (
               <div className="rounded-md bg-card p-3 text-sm whitespace-pre-wrap">{run.output}</div>
             )}
-            {run.status === 'failed' && run.lastError && (
-              <p className="text-sm text-destructive">{run.lastError}</p>
+            {run.status === 'failed' && knownFailure(run.failure) ? (
+              <ModelFailureNote
+                failure={run.failure}
+                error={run.lastError}
+                className="text-sm text-destructive"
+              />
+            ) : (
+              run.status === 'failed' &&
+              run.lastError && <p className="text-sm text-destructive">{run.lastError}</p>
             )}
             {run.blockedQuestion && (
               <div className="rounded-md border border-border/60 bg-card p-3 text-sm">

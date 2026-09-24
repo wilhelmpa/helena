@@ -1,3 +1,4 @@
+import type { RunFailure } from '@/lib/api/endpoints/modelAvailability';
 import { request } from '@/lib/api/core/client';
 import type { AgUiEvent } from '@/lib/api/endpoints/agentChat';
 import type { ModelCheck } from '@/lib/api/endpoints/agentRuntimeSync';
@@ -212,6 +213,8 @@ export interface RunDetail {
   blockedQuestion: string | null;
   reflection: ReflectionView | null;
   modelCheck: ModelCheck | null;
+  // Why it failed, where the runtime's words said. Absent from an older server.
+  failure?: RunFailure | null;
 }
 
 export interface RunEventPage {

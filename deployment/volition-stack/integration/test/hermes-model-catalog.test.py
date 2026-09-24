@@ -70,6 +70,64 @@ class HermesModelCatalogTest(unittest.TestCase):
 
 
 
+class DiscoveredCatalogTest(unittest.TestCase):
+    """What the account's own model list says, next to what Hermes adds to it."""
+
+    def setUp(self):
+        self.original = (
+            CATALOG.provider_model_ids,
+            CATALOG.reasoning_levels,
+            CATALOG.configured_reasoning_default,
+        )
+        CATALOG.reasoning_levels = lambda provider, model_id: ['low', 'medium']
+        CATALOG.configured_reasoning_default = lambda: 'low'
+
+    def tearDown(self):
+        (
+            CATALOG.provider_model_ids,
+            CATALOG.reasoning_levels,
+            CATALOG.configured_reasoning_default,
+        ) = self.original
+
+    def test_marks_what_the_account_lists_and_what_hermes_only_expects(self):
+        # The account lists gpt-5.6-sol; Hermes adds gpt-6-sol (forward compat) and the
+        # large-context variants of both.
+        CATALOG.provider_model_ids = lambda provider: (
+            ['gpt-5.6-sol', 'gpt-5.6-sol-900k', 'gpt-6-sol', 'gpt-6-sol-900k'],
+            {'gpt-5.6-sol'},
+        )
+        entries = CATALOG.discover_catalog('openai-codex')
+        self.assertEqual(
+            [(entry['id'], entry.get('listed'), entry.get('variantOf')) for entry in entries],
+            [
+                ('gpt-5.6-sol', True, None),
+                ('gpt-5.6-sol-900k', True, 'gpt-5.6-sol'),
+                ('gpt-6-sol', False, None),
+                ('gpt-6-sol-900k', False, 'gpt-6-sol'),
+            ],
+        )
+
+    def test_marks_nothing_when_the_account_could_not_be_asked(self):
+        CATALOG.provider_model_ids = lambda provider: (['claude-opus-5', 'claude-sonnet-5'], None)
+        entries = CATALOG.discover_catalog('anthropic')
+        self.assertTrue(all('listed' not in entry and 'variantOf' not in entry for entry in entries))
+
+    def test_a_suffix_without_its_base_is_a_model_of_its_own(self):
+        CATALOG.provider_model_ids = lambda provider: (['odd-900k'], {'odd-900k'})
+        [entry] = CATALOG.discover_catalog('openai-codex')
+        self.assertNotIn('variantOf', entry)
+        self.assertTrue(entry['listed'])
+
+    def test_codex_agents_get_the_marks_too(self):
+        hermes = [
+            {**model('gpt-6-sol'), 'provider': 'openai-codex', 'listed': False},
+            {**model('claude-opus-5'), 'provider': 'anthropic'},
+        ]
+        self.assertEqual(
+            CATALOG.cli_models('codex', hermes),
+            [{**model('gpt-6-sol'), 'listed': False}],
+        )
+
 
 class RuntimeFixture:
     """A Hermes home with one project agent's descriptor and a runner template."""

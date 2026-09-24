@@ -1,0 +1,39 @@
+{
+  "unverified": "sin verificar",
+  "unverifiedHint": "Tu cuenta no incluye este modelo. Hermes espera que funcione; queda confirmado en cuanto una ejecución con él tiene éxito.",
+  "refused": "{model} no está disponible para {account, select, chatgpt {tu cuenta de ChatGPT} claude {tu cuenta de Claude} other {tu cuenta}}: elige otro modelo.",
+  "refusedShort": "No disponible para tu cuenta",
+  "providerSaid": "El proveedor dice: {detail}",
+  "since": "desde {time}",
+  "retry": "Comprobar de nuevo",
+  "retryHint": "Olvida el hallazgo. La próxima ejecución vuelve a probar el modelo.",
+  "retried": "{model} se volverá a probar en la próxima ejecución.",
+  "useDefault": "Usar el modelo predeterminado del agente",
+  "templateFallback": "La plantilla usa {model}, que no está disponible para tu cuenta. Por eso esta copia usa el modelo predeterminado del agente.",
+  "copyFallback": "{name} usa el modelo predeterminado del agente: {model} no está disponible para tu cuenta.",
+  "failure": {
+    "modelUnavailable": "El modelo {model} no está disponible para {account, select, chatgpt {tu cuenta de ChatGPT} claude {tu cuenta de Claude} other {tu cuenta}}: elige otro modelo para el agente. Volver a intentarlo no servirá.",
+    "providerRejected": "El proveedor rechazó la solicitud de forma definitiva: volver a intentarlo no servirá."
+  },
+  "activity": "no pudo trabajar: el modelo {model} no está disponible para tu cuenta",
+  "health": {
+    "refused": "{model} no está disponible para la cuenta: {count, plural, one {# agente lo usa} other {# agentes lo usan}}: {agents}",
+    "deadLogin": "{account, select, chatgpt {Inicio de sesión de ChatGPT} claude {Inicio de sesión de Claude} other {Inicio de sesión}} de Hermes {state, select, invalid {no válido} other {caducado}}: {count, plural, one {# agente lo usa} other {# agentes lo usan}}: {agents}"
+  },
+  "admin": {
+    "title": "Modelos",
+    "description": "Qué modelos ofrecen realmente tus cuentas. Un modelo rechazado desaparece de todos los selectores hasta que una ejecución con él tenga éxito o lo mandes comprobar de nuevo.",
+    "empty": "Aún no hay hallazgos.",
+    "unavailable": "no disponible",
+    "works": "funciona",
+    "usedBy": "Lo usan {agents}",
+    "unused": "Ningún agente lo usa.",
+    "replaceWith": "Cambiar todos a",
+    "replace": "Cambiar",
+    "replaced": "{count, plural, =0 {Ningún agente lo tenía.} one {# agente cambiado.} other {# agentes cambiados.}}",
+    "agentDefault": "Predeterminado del agente",
+    "seen": "última vez {time}"
+  },
+  "deadLogin": "{model} funciona con {account, select, chatgpt {el inicio de sesión de ChatGPT} claude {el inicio de sesión de Claude} other {el inicio de sesión}} de Hermes, que {state, select, invalid {no es válido} other {ha caducado}}: vuelve a iniciar sesión en Hermes o elige un modelo de otro proveedor.",
+  "deadLoginDefault": "El modelo predeterminado del agente funciona con {account, select, chatgpt {el inicio de sesión de ChatGPT} claude {el inicio de sesión de Claude} other {el inicio de sesión}} de Hermes, que {state, select, invalid {no es válido} other {ha caducado}}: vuelve a iniciar sesión en Hermes."
+}

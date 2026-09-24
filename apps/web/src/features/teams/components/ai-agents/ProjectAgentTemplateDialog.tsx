@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { TriangleAlert } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 import { useAiAgentsQuery, useCopyAiAgentTemplate } from '@/services/aiAgents.service';
 import { Button } from '@/components/ui/button';
 import {
@@ -39,6 +40,7 @@ export default function ProjectAgentTemplateDialog({
   const t = useTranslations('settings.agents');
   const tAgents = useTranslations('teams.agents');
   const tCommon = useTranslations('common');
+  const tModel = useTranslations('modelAvailability');
   const [templateId, setTemplateId] = useState<number | null>(null);
   const [apiKey, setApiKey] = useState<string | null>(null);
   const templates = (useAiAgentsQuery(teamId).data ?? []).filter((agent) => agent.template);
@@ -47,6 +49,12 @@ export default function ProjectAgentTemplateDialog({
   async function add() {
     if (templateId == null) return;
     const res = await copy.mutateAsync({ templateId, projectId });
+    // The template's model was refused for this account: the copy runs on the default.
+    if (res.modelFallback)
+      toast.warning(
+        tModel('copyFallback', { name: res.agent.name, model: res.modelFallback.model }),
+        { description: res.modelFallback.detail ?? undefined },
+      );
     if (res.apiKey) setApiKey(res.apiKey);
     else onClose();
   }

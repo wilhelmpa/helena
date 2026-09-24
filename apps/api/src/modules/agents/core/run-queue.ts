@@ -1,3 +1,4 @@
+import type { RuntimeFailure } from '@helena/sdk';
 import { db, agentRun, issue, project } from '@repo/db';
 import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm';
 import { intEnv, iso } from '#shared/lib';
@@ -133,6 +134,8 @@ export interface AgentRunRow {
   autopilotLevel: number | null;
   // The configured model and reasoning next to what the run's session really ran on.
   modelCheck: ModelCheck | null;
+  // Why the run failed, where the runtime's words said (a model the provider refused).
+  failure: RuntimeFailure | null;
   nextAttemptAt: string;
   createdAt: string;
 }
@@ -182,6 +185,7 @@ export async function listAgentRuns(
       reflection: agentRun.reflection,
       autopilotLevel: agentRun.autopilotLevel,
       modelCheck: agentRun.modelCheck,
+      failure: agentRun.failure,
       finishedAt: agentRun.finishedAt,
       nextAttemptAt: agentRun.nextAttemptAt,
       createdAt: agentRun.createdAt,
@@ -220,6 +224,7 @@ export async function listAgentRuns(
       reflection: reflectionView(r.reflection, r.finishedAt),
       autopilotLevel: r.autopilotLevel,
       modelCheck: (r.modelCheck as ModelCheck | null) ?? null,
+      failure: (r.failure as RuntimeFailure | null) ?? null,
       nextAttemptAt: iso(r.nextAttemptAt),
       createdAt: iso(r.createdAt),
     })),
