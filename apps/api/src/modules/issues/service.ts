@@ -1335,7 +1335,7 @@ export async function updateIssue(
 // can act on the issue. Skipped when the agent delegated to itself (an agent setting
 // itself off). The run is executed later, by the agent's runner, so the write is never
 // blocked on it. A coordinator of a project that runs the
-// agent-team workflow gets the issue through Mastra instead, as the lead of its team.
+// agent-team workflow gets the issue through the engine instead, as the lead of its team.
 // A routine that reopens a task already delegated to its agent calls it directly.
 export async function enqueueDelegateRun(after: IssueRow, actor?: ActivityActor): Promise<void> {
   const delegate = after.delegateUserId;

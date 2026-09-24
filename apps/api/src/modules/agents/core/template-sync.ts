@@ -11,7 +11,7 @@ import { eq } from 'drizzle-orm';
 // Helena is the source of truth for a template and every copy of it
 // (copyTemplateIntoProject). A copy's own edits stick (they land in
 // template_overrides), everything else follows the template the next time it changes,
-// through this module — never a second time inside the runner or Mastra, which both
+// through this module — never a second time inside the runner or the engine, which both
 // read the resulting ai_agent row live (see runtime-policy/service.ts and
 // pipelines/project-context.ts).
 //

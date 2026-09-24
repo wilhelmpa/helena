@@ -23,7 +23,7 @@ async function runnerSnapshot(userId: string) {
 // End to end: Helena is the source of truth for a template and its copies (the owner's
 // requirement), so a change to a template must reach, in order: the copy's own row,
 // the runtime policy the runner projects into Hermes for that copy, and the agent
-// Mastra's deterministic role resolution (a 'template' role) hands a workflow step. A
+// the engine's deterministic role resolution (a 'template' role) hands a workflow step. A
 // copy's own edit must survive the same template change (it is recorded as an
 // override) until the owner resets it.
 
@@ -44,7 +44,7 @@ const skillMd = (name: string) => `---\nname: ${name}\ndescription: ${name} skil
 describe('template sync end to end', () => {
   beforeEach(resetDb);
 
-  it('a template change reaches its copy, the runtime policy, and Mastra role resolution', async () => {
+  it('a template change reaches its copy, the runtime policy, and the engine role resolution', async () => {
     const { asOwner, teamId, project } = await setup();
 
     const skillA = (
@@ -107,7 +107,7 @@ describe('template sync end to end', () => {
     const after = await runnerSnapshot(copyAfter!.userId);
     expect(after.skills.map((s) => s.name).sort()).toEqual(['Added', 'Base']);
 
-    // Mastra's deterministic role resolution (a workflow step with a 'template' role,
+    // the engine's deterministic role resolution (a workflow step with a 'template' role,
     // as project-context.ts resolves it for the agent-team / workflow-builder paths)
     // finds this exact copy, and the agent it names carries the synced setting.
     const context = await loadProjectContext({ id: project.id, key: project.key, teamId });

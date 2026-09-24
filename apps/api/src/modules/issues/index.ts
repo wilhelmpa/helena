@@ -1314,7 +1314,7 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
       detail: {
         summary: "Start the project's agent team on an issue",
         description:
-          'Start the Mastra agent-team workflow with the issue as its task: the delegate leads ' +
+          'Start the agent-team workflow with the issue as its task: the delegate leads ' +
           "when it is a coordinator, otherwise the project's only coordinator; the project's " +
           'specialists do the work. The project must have agent-team enabled.',
       },

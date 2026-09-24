@@ -422,6 +422,21 @@ async function syncPipelineSchedules(row: PipelineRow, definition: PipelineDefin
     await syncSchedule(await projectOf(usage.projectId), row, usage, definition);
 }
 
+// Brings the schedules of every workflow in line with its use in the projects: a
+// schedule for each enabled use of a workflow with a schedule trigger, none otherwise.
+// For the move from Mastra (scripts/import-mastra-schedules.ts) and after a restore.
+// Answers how many workflows it looked at.
+export async function syncAllPipelineSchedules(): Promise<number> {
+  const used = await db
+    .selectDistinct({ pipelineId: projectPipeline.pipelineId })
+    .from(projectPipeline);
+  for (const { pipelineId } of used) {
+    const row = await getPipelineRow(pipelineId);
+    if (row) await syncPipelineSchedules(row, await latestDefinition(row));
+  }
+  return used.length;
+}
+
 // Checks a definition as the editor holds it: always on its own, and against a project
 // when it is that project's workflow or the editor names one.
 export async function validateForEditor(

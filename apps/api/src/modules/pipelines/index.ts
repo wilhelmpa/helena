@@ -221,7 +221,7 @@ export const pipelineRoutes = new Elysia({
         description:
           'Enables or disables a template or the project workflow, and names the agents of ' +
           'its roles. A workflow that cannot run in the project is refused with 409. A ' +
-          'schedule trigger gets a Mastra schedule while the workflow is enabled.',
+          'schedule trigger gets a schedule of the engine while the workflow is enabled.',
       },
     },
   )
