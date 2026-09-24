@@ -246,13 +246,13 @@ export class DemoSeed {
   }
 
   private async ensureTasks(project: Project, demo: DemoProject, specialists: Map<string, Agent>): Promise<void> {
-    const columns = await this.api<{ id: number; name: string; stateType?: string; position?: number }[]>(
+    // The full project view carries the columns (there is no list route of its own).
+    const view = await this.api<{ columns?: { id: number; stateType?: string }[] }>(
       'GET',
-      `/projects/${project.key}/columns`,
+      `/projects/${project.key}`,
     );
-    const column =
-      list<{ id: number; stateType?: string }>(columns).find((c) => c.stateType === 'unstarted') ??
-      list<{ id: number }>(columns)[0];
+    const columns = view.columns ?? [];
+    const column = columns.find((c) => c.stateType === 'unstarted') ?? columns[0];
     if (!column) {
       this.warn(`project ${project.key} has no columns`);
       return;
