@@ -245,6 +245,20 @@ export {
   type TemplateBundle,
 } from './templates';
 export {
+  HOST_AREAS,
+  HOST_HEALTH_STATES,
+  isHostHealthState,
+  normalizeHostHealthItem,
+  worstHostHealth,
+  type BuiltinHostArea,
+  type HostAvailability,
+  type HostCapability,
+  type HostCapabilityContext,
+  type HostHealthItem,
+  type HostHealthState,
+  type HostUnavailableReason,
+} from './host';
+export {
   definePlugin,
   type HelenaPlugin,
   type HostProcess,

@@ -35,6 +35,7 @@ import { agentProposalRoutes } from './modules/agents/proposals';
 import { emergencyStopRoutes } from './modules/emergency-stop';
 import { runtimeAdminRoutes } from './modules/runtime-admin';
 import { providerLimitRoutes } from './modules/provider-limits';
+import { serverRoutes } from './modules/server';
 import { customFieldRoutes } from './modules/custom-fields';
 import { issueTemplateRoutes } from './modules/issue-templates';
 import { issueRoutes } from './modules/issues';
@@ -154,6 +155,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(emergencyStopRoutes)
   .use(runtimeAdminRoutes)
   .use(providerLimitRoutes)
+  .use(serverRoutes)
   .use(customFieldRoutes)
   .use(issueTemplateRoutes)
   .use(issueRoutes)

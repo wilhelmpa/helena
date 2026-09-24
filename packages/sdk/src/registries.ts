@@ -6,6 +6,7 @@ import { Registry, createRegistry } from './registry';
 import type { RuntimeType } from './runtime';
 import type { RuntimeLoginSource } from './runtime-logins';
 import type { ProfileContribution } from './runtime-policy';
+import type { HostCapability } from './host';
 import type { BundleOffer } from './templates';
 import type { AnyAgentTool } from './tools';
 import { uiSlotKey, type UiSlot } from './ui';
@@ -26,6 +27,7 @@ export interface HelenaRegistries {
   knowledgeSources: Registry<KnowledgeSource>;
   captureTargets: Registry<CaptureTarget>;
   bundles: Registry<BundleOffer>;
+  hostCapabilities: Registry<HostCapability>;
   mcpServers: Registry<McpServerContribution>;
   profileContributions: Registry<ProfileContribution>;
   usageLimitSources: Registry<UsageLimitSource>;
@@ -44,6 +46,7 @@ export function createRegistries(given: Partial<HelenaRegistries> = {}): HelenaR
     knowledgeSources: given.knowledgeSources ?? createRegistry<KnowledgeSource>('knowledge source'),
     captureTargets: given.captureTargets ?? createRegistry<CaptureTarget>('capture target'),
     bundles: given.bundles ?? createRegistry<BundleOffer>('template bundle'),
+    hostCapabilities: given.hostCapabilities ?? createRegistry<HostCapability>('host capability'),
     mcpServers:
       given.mcpServers ??
       new Registry<McpServerContribution>('MCP server', (server) => server.name),
