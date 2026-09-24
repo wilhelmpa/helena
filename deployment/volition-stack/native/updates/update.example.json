@@ -1,0 +1,15 @@
+{
+  "spool": "/var/lib/helena-updates/spool",
+  "runtimesInstaller": "/usr/local/share/helena/runtimes/install-cli-runtimes.sh",
+  "runtimes": ["claude", "codex", "claude-agent-acp", "codex-acp"],
+  "tools": {
+    "bun": "/usr/local/bin/bun",
+    "node": "/usr/local/bin/node",
+    "code-server": "/usr/local/bin/code-server",
+    "wetty": "/usr/local/bin/wetty",
+    "uv": "/usr/local/bin/uv"
+  },
+  "dpkgTools": { "chromium": "chromium", "kasmvnc": "kasmvncserver" },
+  "statusKeepDays": 7,
+  "aptTimeoutSeconds": 3600
+}

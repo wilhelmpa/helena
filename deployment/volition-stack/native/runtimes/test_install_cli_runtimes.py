@@ -23,8 +23,23 @@ NODE = shutil.which('node') or '/usr/local/bin/node'
 
 FAKE_NPM = """#!/usr/bin/env python3
 import json, os, sys
-# `npm ci`: lays out what the lockfile names, as npm would; `npm ls`: nothing is missing.
+# `npm ci`: lays out what the lockfile names, as npm would; `npm ls`: nothing is missing;
+# `npm install --package-lock-only`: a lockfile for exactly what package.json names.
 if sys.argv[1] == 'ls':
+    sys.exit(0)
+BINS = {'@openai/codex': {'codex': 'bin/codex.js'},
+        '@agentclientprotocol/codex-acp': {'codex-acp': 'dist/index.js'}}
+if sys.argv[1] == 'install':
+    assert '--package-lock-only' in sys.argv and '--ignore-scripts' in sys.argv, sys.argv
+    deps = json.load(open('package.json'))['dependencies']
+    packages = {'': {'dependencies': deps}}
+    for name, version in deps.items():
+        packages['node_modules/' + name] = {
+            'version': version, 'integrity': 'sha512-new',
+            'resolved': 'https://registry.npmjs.org/%s/-/x-%s.tgz' % (name, version),
+            'bin': BINS.get(name, {}),
+        }
+    json.dump({'lockfileVersion': 3, 'packages': packages}, open('package-lock.json', 'w'))
     sys.exit(0)
 assert sys.argv[1] == 'ci' and '--ignore-scripts' in sys.argv, sys.argv
 lock = json.load(open('package-lock.json'))
@@ -169,6 +184,7 @@ class InstallTest(unittest.TestCase):
             'HELENA_RUNTIME_PINS': str(self.pins / 'runtimes.json'),
             'HELENA_RUNTIME_PREFIX': str(self.prefix),
             'HELENA_RUNTIME_BIN': str(self.bin),
+            'HELENA_RUNTIME_STATE': str(self.root / 'state'),
             'NPM': str(self.fake_npm),
             'NODE': NODE,
         }
@@ -261,6 +277,60 @@ class InstallTest(unittest.TestCase):
         # A changed binary is found.
         (self.prefix / 'claude/2.1.281/claude').write_text('#!/bin/sh\necho changed\n')
         self.assertNotEqual(self.run_script('verify', check=False).returncode, 0)
+
+    def test_upgrade_takes_the_pin_from_the_signed_manifest(self):
+        self.run_script('install', '--only', 'claude')
+        self.publish_claude('2.1.290')
+        out = self.run_script('upgrade', 'claude', '2.1.290').stdout
+        self.assertIn('claude upgraded from 2.1.281 to 2.1.290', out)
+        status = json.loads(self.run_script('status', '--json').stdout)
+        self.assertEqual(status['claude'], {'pinned': '2.1.290', 'current': '2.1.290',
+                                            'previous': '2.1.281', 'intact': True})
+        kept = json.loads((self.root / 'state' / 'pins.json').read_text())
+        self.assertEqual(kept['runtimes']['claude']['version'], '2.1.290')
+        self.assertEqual(subprocess.run([str(self.bin / 'claude')], capture_output=True,
+                                        text=True).stdout.strip(), '2.1.290 (Claude Code)')
+        # Another install keeps the upgraded version; a newer pin in the repository wins.
+        self.assertIn('claude 2.1.290 is installed', self.run_script('install', '--only', 'claude').stdout)
+        self.publish_claude('2.1.300')
+        self.write_pins('2.1.300')
+        self.assertIn('claude 2.1.300 installed', self.run_script('install', '--only', 'claude').stdout)
+
+    def test_upgrade_refuses_an_unsigned_manifest_and_keeps_everything(self):
+        self.run_script('install', '--only', 'claude')
+        self.publish_claude('2.1.291', sign=False)
+        result = self.run_script('upgrade', 'claude', '2.1.291', check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('not signed with the pinned release key', result.stderr)
+        self.assertEqual(os.readlink(self.prefix / 'claude/current'), '2.1.281')
+        self.assertFalse((self.root / 'state' / 'pins.json').exists())
+
+    def test_upgrade_of_an_npm_runtime_resolves_a_new_lockfile(self):
+        self.run_script('install', '--only', 'codex')
+        out = self.run_script('upgrade', 'codex', '0.158.0').stdout
+        self.assertIn('codex upgraded from 0.156.1 to 0.158.0', out)
+        codex = subprocess.run([str(self.bin / 'codex')], capture_output=True, text=True,
+                               env={'PATH': f'{os.path.dirname(NODE)}:/usr/bin:/bin'})
+        self.assertEqual(codex.stdout.strip(), 'codex-cli 0.158.0')
+        lock = self.root / 'state' / 'npm' / 'codex' / '0.158.0' / 'package-lock.json'
+        self.assertTrue(lock.exists())
+        self.assertIn('--ignore-scripts', (self.prefix / 'codex/0.158.0/npm-args').read_text())
+        status = json.loads(self.run_script('status', '--json').stdout)
+        self.assertEqual(status['codex']['previous'], '0.156.1')
+        self.assertTrue(status['codex']['intact'])
+        self.run_script('rollback', 'codex')
+        self.assertEqual(os.readlink(self.prefix / 'codex/current'), '0.156.1')
+
+    def test_upgrade_refuses_what_is_not_newer_or_not_a_version(self):
+        self.run_script('install', '--only', 'codex')
+        older = self.run_script('upgrade', 'codex', '0.100.0', check=False)
+        self.assertNotEqual(older.returncode, 0)
+        self.assertIn('not newer', older.stderr)
+        bad = self.run_script('upgrade', 'codex', '1.0; rm -rf /', check=False)
+        self.assertNotEqual(bad.returncode, 0)
+        self.assertIn('is not a version', bad.stderr)
+        unknown = self.run_script('upgrade', 'evil', '1.0.0', check=False)
+        self.assertIn('unknown runtime', unknown.stderr)
 
     def test_plan_names_every_download(self):
         out = self.run_script('plan').stdout

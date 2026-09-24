@@ -174,7 +174,9 @@
       "field": "ran on a field of",
       "manual": "ran manually",
       "schedule": "ran on schedule",
-      "approval": "ran after an approval decision"
+      "approval": "ran after an approval decision",
+      "workspace": "ran a workspace job",
+      "digest": "wrote a summary"
     }
   },
   "agentHealth": {

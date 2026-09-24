@@ -1,0 +1,23 @@
+[Unit]
+Description=Helena: inventory and updates of what Helena runs on (update center)
+Documentation=file:///srv/volition/source/plan/docs/helena-decisions/update-center.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Root, like apt-daily-upgrade.service: an upgrade writes /usr, /etc and /var/lib/dpkg, and a
+# CLI runtime goes to /opt/helena/runtimes. The helper checks every request against what it
+# inventoried itself (docs/helena-decisions/update-center.md §4.2).
+User=root
+ExecStart=/usr/local/libexec/helena-update --config /etc/helena/update.json serve
+# An upgrade in progress is never killed halfway: dpkg left mid-way breaks the system.
+KillMode=process
+TimeoutStartSec=2h
+TimeoutStopSec=15min
+Nice=5
+IOSchedulingClass=best-effort
+IOSchedulingPriority=6
+# No further sandbox: a kernel or procps upgrade writes /lib/modules and /proc/sys, which
+# ProtectKernel*= would forbid (apt-daily-upgrade.service has none either).
+PrivateTmp=yes

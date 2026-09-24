@@ -174,7 +174,9 @@
       "field": "berjalan pada bidang",
       "manual": "dijalankan secara manual",
       "schedule": "berjalan sesuai jadwal",
-      "approval": "dijalankan setelah keputusan persetujuan"
+      "approval": "dijalankan setelah keputusan persetujuan",
+      "workspace": "menjalankan tugas ruang kerja",
+      "digest": "menulis ringkasan"
     }
   },
   "agentHealth": {
