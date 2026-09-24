@@ -10,6 +10,7 @@ import type { ProfileContribution } from './runtime-policy';
 import type { BundleOffer } from './templates';
 import type { AnyAgentTool } from './tools';
 import type { UiSlot } from './ui';
+import type { UsageLimitSource } from './usage-limits';
 import type { TriggerType, WorkflowStepType } from './workflows';
 
 // A plugin is a module whose default export has a `register` function. Helena calls it
@@ -56,6 +57,9 @@ export interface PluginContext {
   mcpServers: Registrar<McpServerContribution>;
   // What a runner writes into every agent's runtime profile (MCP servers, Hermes settings).
   profileContributions: Registrar<ProfileContribution>;
+  // Where Helena reads how much of a subscription's limits is used (runner: probes and
+  // observers over a runtime's login; API: polls).
+  usageLimitSources: Registrar<UsageLimitSource>;
   events: {
     // Only event types under the plugin's own id: `<pluginId>.<name>`.
     publish(init: EventInit): Promise<HelenaEvent>;

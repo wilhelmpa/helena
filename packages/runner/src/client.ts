@@ -1,3 +1,4 @@
+import type { UsageLimitSnapshot } from '@helena/sdk';
 import type { AgUiEvent, ContextUsage } from './agui';
 import type { CliLogin, CliLoginState } from './cli-login';
 import type { RunnerConfig } from './config';
@@ -188,6 +189,13 @@ export class Client {
 
   async reportLoginUses(work: WorkRef, uses: LoginUse[]): Promise<void> {
     await this.post('/agent-runtime/credential-uses', { ...work, uses });
+  }
+
+  // Plan limits a run's output showed (limits/), numbers only. A server that predates the
+  // route answers 404, which the caller ignores.
+  async postLimits(snapshots: UsageLimitSnapshot[]): Promise<void> {
+    if (snapshots.length === 0) return;
+    await this.post('/agent-runtime/limits', { snapshots });
   }
 
   async reportRuntimeStatus(status: RuntimeStatus): Promise<void> {

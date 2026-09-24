@@ -38,6 +38,8 @@ export interface PluginProvides {
   bundles?: string[];
   // Contributions to every agent's runtime profile (runner).
   profileContributions?: string[];
+  // Usage-limit sources (how much of a subscription's limits is used).
+  usageLimitSources?: string[];
   // Event types the plugin publishes; always under its own id.
   events?: string[];
   mcpServers?: McpServerContribution[];

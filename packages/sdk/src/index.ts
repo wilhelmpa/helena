@@ -240,6 +240,26 @@ export {
   type PluginContext,
   type Registrar,
 } from './plugin';
+export {
+  USAGE_LIMIT_NEAR_PERCENT,
+  effectiveUsedPercent,
+  normalizeUsageLimitSnapshot,
+  snapshotState,
+  windowKindOf,
+  windowState,
+  worstState,
+  type UsageLimitAgentContext,
+  type UsageLimitExtra,
+  type UsageLimitObserver,
+  type UsageLimitPollContext,
+  type UsageLimitProbe,
+  type UsageLimitSnapshot,
+  type UsageLimitSource,
+  type UsageLimitState,
+  type UsageLimitUnavailable,
+  type UsageLimitWindow,
+  type UsageLimitWindowKind,
+} from './usage-limits';
 export type {
   McpServerContribution,
   PluginEntries,

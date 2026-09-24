@@ -25,6 +25,9 @@ import { Redactor } from './redact';
 import { reflect } from './reflect';
 import { runtimeUpdate } from './update';
 import { perform } from './run';
+import { limitProber } from './limits';
+import { limitsContext } from './limits/context';
+import { limitsProbe, limitsReport } from './limits/report';
 import type { RuntimeAdapter } from './runtime';
 
 // The runner holds no state — the queue is the server's. A runner stopped by its service
@@ -188,26 +191,42 @@ async function handleRuntimeRequest(
   client: Client,
   log: Log,
   claim: RuntimeRequestClaim,
+  runtime: RuntimeAdapter | null = null,
 ): Promise<void> {
   try {
     if (!isRuntimeRequest(claim.request)) throw new Error('This runner does not know the request');
-    // The Hermes installation is the runner's own, isolated agents or not.
-    const result =
-      claim.request.op === 'runtime.update'
-        ? await runtimeUpdate(claim.request)
-        : isolationEnabled() && config.isolation && config.cwd
-          ? await runProfileHelper(config.isolation, config.cwd, {
-              op: 'runtime-request',
-              request: claim.request,
-              runtime: config.agent ?? null,
-              cwd: config.cwd,
-              known: runnerRedactor(config).secrets(),
-            })
-          : await answerRuntimeRequest(
-              claim.request,
-              readerContext(config),
-              runnerRedactor(config),
-            );
+    const request = claim.request;
+    const isolated = isolationEnabled() && !!config.isolation && !!config.cwd;
+    const limits = request.op === 'limits.read' ? limitsContext(config, runtime) : null;
+    const viaHelper = (sent: RuntimeRequest) =>
+      runProfileHelper(config.isolation!, config.cwd!, {
+        op: 'runtime-request',
+        request: sent,
+        runtime: config.agent ?? null,
+        cwd: config.cwd,
+        known: runnerRedactor(config).secrets(),
+      });
+    let result: unknown;
+    if (request.op === 'runtime.update') {
+      // The Hermes installation is the runner's own, isolated agents or not.
+      result = await runtimeUpdate(request);
+    } else if (request.op === 'limits.read' && limits && !isolated) {
+      // The runner's prober: the agents it serves share one probe per login.
+      result = { snapshots: await limitProber.read(limits, { force: request.force === true }) };
+    } else if (request.op === 'limits.read' && limits && isolated) {
+      // The helper does not know the agent's providers, and its commands start through the
+      // agent's gate like every other command of it.
+      const release = limits.gate ? await limits.gate.acquire() : () => {};
+      try {
+        result = await viaHelper({ ...request, providers: limits.providers });
+      } finally {
+        release();
+      }
+    } else if (isolated) {
+      result = await viaHelper(request);
+    } else {
+      result = await answerRuntimeRequest(request, readerContext(config), runnerRedactor(config));
+    }
     await client.answerRuntimeRequest(claim.id, { ok: true, result });
   } catch (err) {
     const message = (err instanceof Error ? err.message : String(err)).slice(0, 500);
@@ -393,7 +412,7 @@ async function serve(state: State, config: RunnerConfig): Promise<void> {
           throw err;
         }
       },
-      (claim) => handleRuntimeRequest(config, client, log, claim),
+      (claim) => handleRuntimeRequest(config, client, log, claim, policy),
       () => Promise.resolve(requestsSupported),
     ),
   ]);
@@ -510,6 +529,8 @@ async function startProblems(path: string): Promise<string[]> {
 
 async function main(): Promise<void> {
   if (process.argv[2] === 'profile-helper') return profileHelper();
+  if (process.argv[2] === 'limits-report') return limitsReport(process.argv.slice(3));
+  if (process.argv[2] === 'limits-probe') return limitsProbe(process.argv.slice(3));
   const cli = parseArgv(process.argv.slice(2));
   const configPath =
     cli.configPath ?? process.env.ITSAPLAN_RUNNER_CONFIG ?? './itsaplan-runner.json';

@@ -9,6 +9,7 @@ import { runnerRedactor } from './readers/context';
 import { Redactor } from './redact';
 import { runModelReport, type RuntimeAdapter } from './runtime';
 import { SpendReader } from './spend';
+import { observeLimits } from './limits/context';
 import { runCwd } from './workdir';
 
 // `stop` is aborted when the heartbeat says the run was canceled or is no longer this
@@ -125,6 +126,8 @@ export async function perform(
     config.command ? null : (config.agent ?? null),
   );
   const logins = new LoginUseReader(hermes?.logins ?? new Map());
+  // Plan limits the runtime's output shows (Claude Code's rate_limit_event), sent as they move.
+  const limits = observeLimits(config, options.runtime ?? null, client);
   const task = taskOf(run);
   const saveSession = (sessionId: string) => {
     // Best effort, and never allowed to disrupt reading the run's own output: a
@@ -161,6 +164,7 @@ export async function perform(
         logins.write(chunk);
         answer.write(chunk);
         timeline.stream.write(chunk);
+        limits?.write(chunk);
       },
       onSessionId: saveSession,
       signal: stop.signal,
@@ -168,6 +172,7 @@ export async function perform(
     },
   );
   timeline.stop();
+  await limits?.end();
   if (stop.signal.aborted) {
     await timeline.stream.fail('The run was stopped').catch(() => {});
     return null;

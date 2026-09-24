@@ -1,4 +1,5 @@
 import { Redactor } from '../redact';
+import { answerLimitsRead, limitsCapable } from '../limits';
 import { hermesReaders } from './hermes';
 import { claudeReaders, codexReaders } from './jsonl';
 import {
@@ -25,7 +26,10 @@ export function readersFor(runtime: string | undefined): RuntimeReaders | null {
 // What the runtime status reports, so Helena offers only what the runtime answers.
 export function readerCapabilities(runtime: string | undefined): string[] {
   const readers = readersFor(runtime);
-  return readers ? [...new Set(readers.ops.map((op) => REQUEST_CAPABILITY[op]))] : [];
+  const ops = readers ? readers.ops.map((op) => REQUEST_CAPABILITY[op]) : [];
+  // Plan limits are read by the usage-limit sources (limits/), not by the readers.
+  if (limitsCapable(runtime)) ops.push(REQUEST_CAPABILITY['limits.read']);
+  return [...new Set(ops)];
 }
 
 // Helena refuses a larger answer; a transcript that big is asked for in pages.
@@ -50,6 +54,10 @@ export async function answerRuntimeRequest(
   context: ReaderContext,
   redactor: Redactor = new Redactor(),
 ): Promise<unknown> {
+  if (request.op === 'limits.read') {
+    // Numbers only; the redaction still runs over them.
+    return redactor.value(await answerLimitsRead(request, context));
+  }
   const readers = readersFor(context.runtime);
   if (!readers || !readers.ops.includes(request.op)) {
     throw new Error(`The ${context.runtime} runtime cannot answer ${request.op}`);

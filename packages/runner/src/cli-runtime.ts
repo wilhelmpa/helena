@@ -15,6 +15,7 @@ import { collectProfile, mcpSecretVariable, type CollectedProfile } from './cont
 import { atomicWrite, digest, ensureRoot } from './files';
 import type { HermesInventory } from './inventory';
 import { isolationEnabled, launch, profileHelper } from './isolation';
+import { limitsCapable } from './limits';
 import type { WorkRef } from './logins';
 import type { RuntimePolicyClient, RuntimePolicySnapshot, RuntimeStatus } from './policy';
 import {
@@ -683,6 +684,23 @@ export class CliRuntimeAdapter implements RuntimeAdapter {
     await this.report(snapshot);
   }
 
+  // What a usage-limit probe of this agent's own login needs (limits/context.ts): the
+  // runtime's directory and environment, the gate its commands start through, and the
+  // Helena login its commands get, without the login itself.
+  limitsLogin(): { dir: string; env: Record<string, string>; gate: StartGate; ref: string | null } {
+    const dir =
+      this.runtimeDir() ??
+      (this.runtime === 'claude'
+        ? (this.config.env.CLAUDE_CONFIG_DIR ?? join(homedir(), '.claude'))
+        : this.codexHome());
+    return {
+      dir,
+      env: this.runtimeEnv(),
+      gate: this.gate,
+      ref: this.granted ? `runtime_login:${this.granted.credentialId}` : null,
+    };
+  }
+
   // The sandbox this agent's Codex commands run in.
   sandbox(): CommandSandbox {
     return codexSandbox(this.config, this.ownSandbox);
@@ -898,6 +916,8 @@ export class CliRuntimeAdapter implements RuntimeAdapter {
         'managed-mcp-servers',
         'managed-tools',
         'profile-drift',
+        // Helena asks the runner for the plan limits of this runtime's logins.
+        ...(limitsCapable(this.runtime) ? ['limits'] : []),
       ],
       ...(inventory && { inventory }),
       ...(this.profile && { profile: this.profile }),
