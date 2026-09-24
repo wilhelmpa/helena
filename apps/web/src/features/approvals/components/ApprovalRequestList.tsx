@@ -6,6 +6,7 @@ import { usePaging } from '@/hooks/usePaging';
 import ListPager from '@/components/common/ListPager';
 import { EmptyState } from '@/components/common/page/EmptyState';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
+import { Button } from '@/components/ui/button';
 import { useApprovals } from '../services/approvals.service';
 import ApprovalRequestCard from './ApprovalRequestCard';
 
@@ -19,10 +20,19 @@ export default function ApprovalRequestList({
   projectKey?: string;
 }) {
   const t = useTranslations('approvals');
+  const tCommon = useTranslations('common');
   const paging = usePaging();
   const query = useApprovals(status, paging.params, projectKey);
   const total = query.data?.total ?? 0;
 
+  if (query.isError)
+    return (
+      <EmptyState title={t('loadFailed')} description={t('loadFailedHint')}>
+        <Button size="sm" variant="outline" onClick={() => void query.refetch()}>
+          {tCommon('reload')}
+        </Button>
+      </EmptyState>
+    );
   if (query.isPending) return <ListSkeleton rows={3} rowClassName="h-24" />;
   if (total === 0)
     return <EmptyState title={t(`empty.${status}`)} description={t(`emptyHint.${status}`)} />;

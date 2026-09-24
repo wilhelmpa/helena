@@ -40,5 +40,8 @@
   "notice": {
     "workflow-runs-unavailable": "Mastra no respondió, así que faltan las ejecuciones de flujos.",
     "workflow-runs-limited": "No se muestran todas las ejecuciones de flujos: la cronología lee de Mastra un número limitado de flujos y ejecuciones."
-  }
+  },
+  "filterKind": "Tipo",
+  "filterAgent": "Agente",
+  "unavailableHint": "El servidor no respondió. Vuelve a intentarlo en un momento."
 }

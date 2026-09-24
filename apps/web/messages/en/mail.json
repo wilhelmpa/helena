@@ -127,7 +127,7 @@
   "accounts": {
     "title": "Mail accounts",
     "add": "Add account",
-    "intro": "Plan imports every folder of these accounts over IMAP, with attachments, and sends over SMTP. A project account files its mail under that project.",
+    "intro": "Helena imports every folder of these accounts over IMAP, with attachments, and sends over SMTP. A project account files its mail under that project.",
     "projectIntro": "The accounts whose mail is filed under this project.",
     "loadError": "The accounts could not be loaded.",
     "empty": "No mail account yet.",
@@ -147,7 +147,7 @@
     "progress": "{synced} of {total} messages",
     "lastSync": "Last checked {at}",
     "removeTitle": "Remove {address}?",
-    "removeBody": "The imported mail of this account is removed from Plan. Attachments saved in the vault stay there.",
+    "removeBody": "The imported mail of this account is removed from Helena. Attachments saved in the vault stay there.",
     "testFailed": "Connection failed: {error}",
     "testOk": "IMAP and SMTP accepted the login.",
     "saved": "{address} saved",

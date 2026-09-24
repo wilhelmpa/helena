@@ -1,6 +1,6 @@
 {
-  "hint": "Os agentes pedem aprovação aqui antes de enviar, publicar, pagar ou excluir algo fora do Plan, e os fluxos de trabalho aguardam aqui na etapa de aprovação. Sua decisão e sua nota iniciam a próxima etapa.",
-  "projectHint": "Os agentes pedem aprovação aqui antes de enviar, publicar, pagar ou excluir algo fora do Plan para este projeto, e os fluxos de trabalho dele aguardam aqui na etapa de aprovação.",
+  "hint": "Os agentes pedem aprovação aqui antes de enviar, publicar, pagar ou excluir algo fora da Helena, e os fluxos de trabalho aguardam aqui na etapa de aprovação. Sua decisão e sua nota iniciam a próxima etapa.",
+  "projectHint": "Os agentes pedem aprovação aqui antes de enviar, publicar, pagar ou excluir algo fora da Helena para este projeto, e os fluxos de trabalho dele aguardam aqui na etapa de aprovação.",
   "pending": "Pendentes",
   "decided": "Decididas",
   "filterProject": "Filtrar por projeto",
@@ -10,7 +10,7 @@
     "decided": "Nenhuma decisão ainda"
   },
   "emptyHint": {
-    "pending": "Quando um agente pedir aprovação antes de agir fora do Plan, a solicitação aparecerá aqui.",
+    "pending": "Quando um agente pedir aprovação antes de agir fora da Helena, a solicitação aparecerá aqui.",
     "decided": "Solicitações aprovadas e rejeitadas aparecem aqui."
   },
   "kind": {
@@ -34,5 +34,7 @@
   "gateOf": "{workflow} em {project}",
   "effects": "Executado após a aprovação:",
   "gateApprovedToast": "Aprovada. O fluxo de trabalho continua.",
-  "gateRejectedToast": "Rejeitada. O fluxo de trabalho termina sem esses efeitos."
+  "gateRejectedToast": "Rejeitada. O fluxo de trabalho termina sem esses efeitos.",
+  "loadFailed": "Não foi possível carregar as aprovações.",
+  "loadFailedHint": "O servidor não respondeu. Tente de novo em instantes."
 }

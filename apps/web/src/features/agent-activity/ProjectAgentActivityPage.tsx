@@ -14,7 +14,7 @@ export default function ProjectAgentActivityPage() {
   if (!project) return null;
 
   return (
-    <SectionPageView title={t('title')} description={t('projectDescription')}>
+    <SectionPageView title={t('title')} description={t('projectDescription')} wide>
       <RequirePermission resource="ai_agents" action="read">
         <AgentActivityTimeline
           projectKey={project.project.key}

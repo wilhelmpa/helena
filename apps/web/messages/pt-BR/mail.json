@@ -127,7 +127,7 @@
   "accounts": {
     "title": "Contas de e-mail",
     "add": "Adicionar conta",
-    "intro": "O Plan importa todas as pastas dessas contas por IMAP, com anexos, e envia por SMTP. O e-mail de uma conta de projeto é arquivado nesse projeto.",
+    "intro": "A Helena importa todas as pastas dessas contas por IMAP, com anexos, e envia por SMTP. O e-mail de uma conta de projeto é arquivado nesse projeto.",
     "projectIntro": "As contas cujo e-mail é arquivado neste projeto.",
     "loadError": "Não foi possível carregar as contas.",
     "empty": "Ainda não há nenhuma conta de e-mail.",
@@ -147,7 +147,7 @@
     "progress": "{synced} de {total} mensagens",
     "lastSync": "Última verificação {at}",
     "removeTitle": "Remover {address}?",
-    "removeBody": "O e-mail importado desta conta é removido do Plan. Os anexos salvos no Vault permanecem lá.",
+    "removeBody": "O e-mail importado desta conta é removido da Helena. Os anexos salvos no Vault permanecem lá.",
     "testFailed": "Falha na conexão: {error}",
     "testOk": "IMAP e SMTP aceitaram o login.",
     "saved": "{address} salva",

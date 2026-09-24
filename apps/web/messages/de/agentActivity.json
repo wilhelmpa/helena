@@ -40,5 +40,8 @@
   "notice": {
     "workflow-runs-unavailable": "Mastra hat nicht geantwortet, deshalb fehlen die Workflow-Läufe.",
     "workflow-runs-limited": "Nicht alle Workflow-Läufe sind zu sehen: Die Zeitleiste liest nur eine begrenzte Zahl von Workflows und Läufen aus Mastra."
-  }
+  },
+  "filterKind": "Art",
+  "filterAgent": "Agent",
+  "unavailableHint": "Der Server hat nicht geantwortet. Versuche es gleich noch einmal."
 }

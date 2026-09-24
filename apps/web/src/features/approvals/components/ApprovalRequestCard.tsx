@@ -39,7 +39,7 @@ export default function ApprovalRequestCard({ request }: { request: ApprovalRequ
         )}
         <span className="ms-auto">{formatDateTime(request.createdAt)}</span>
       </div>
-      <p className="font-medium" dir="auto">
+      <p className="text-md font-medium" dir="auto">
         {request.action}
       </p>
       {request.details && (

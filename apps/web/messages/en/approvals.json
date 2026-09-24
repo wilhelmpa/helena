@@ -1,6 +1,6 @@
 {
-  "hint": "Agents ask here before they send, publish, pay or delete something outside Plan, and workflows wait here at their approval gate. Your decision and your note start the next step.",
-  "projectHint": "Agents ask here before they send, publish, pay or delete something outside Plan for this project, and its workflows wait here at their approval gate.",
+  "hint": "Agents ask here before they send, publish, pay or delete something outside Helena, and workflows wait here at their approval gate. Your decision and your note start the next step.",
+  "projectHint": "Agents ask here before they send, publish, pay or delete something outside Helena for this project, and its workflows wait here at their approval gate.",
   "pending": "Pending",
   "decided": "Decided",
   "filterProject": "Filter by project",
@@ -10,7 +10,7 @@
     "decided": "No decisions yet"
   },
   "emptyHint": {
-    "pending": "When an agent asks before acting outside Plan, the request appears here.",
+    "pending": "When an agent asks before acting outside Helena, the request appears here.",
     "decided": "Approved and rejected requests appear here."
   },
   "kind": {
@@ -34,5 +34,7 @@
   "gateOf": "{workflow} in {project}",
   "effects": "Runs once approved:",
   "gateApprovedToast": "Approved. The workflow continues.",
-  "gateRejectedToast": "Rejected. The workflow ends without these effects."
+  "gateRejectedToast": "Rejected. The workflow ends without these effects.",
+  "loadFailed": "The approvals could not be loaded.",
+  "loadFailedHint": "The server did not answer. Try again in a moment."
 }

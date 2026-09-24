@@ -127,7 +127,7 @@
   "accounts": {
     "title": "Comptes e-mail",
     "add": "Ajouter un compte",
-    "intro": "Plan importe tous les dossiers de ces comptes par IMAP, avec les pièces jointes, et envoie par SMTP. Les e-mails d'un compte de projet sont classés dans ce projet.",
+    "intro": "Helena importe tous les dossiers de ces comptes par IMAP, avec les pièces jointes, et envoie par SMTP. Les e-mails d'un compte de projet sont classés dans ce projet.",
     "projectIntro": "Les comptes dont les e-mails sont classés dans ce projet.",
     "loadError": "Les comptes n'ont pas pu être chargés.",
     "empty": "Aucun compte e-mail pour le moment.",
@@ -147,7 +147,7 @@
     "progress": "{synced} sur {total} messages",
     "lastSync": "Dernière vérification {at}",
     "removeTitle": "Retirer {address} ?",
-    "removeBody": "Les e-mails importés de ce compte sont retirés de Plan. Les pièces jointes enregistrées dans le Vault y restent.",
+    "removeBody": "Les e-mails importés de ce compte sont retirés de Helena. Les pièces jointes enregistrées dans le Vault y restent.",
     "testFailed": "Connexion échouée : {error}",
     "testOk": "IMAP et SMTP ont accepté la connexion.",
     "saved": "{address} enregistré",

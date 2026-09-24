@@ -18,18 +18,12 @@ export default function HomeAgentActivityPage() {
 
   return (
     <Shell globalHome globalTitle={tNav('agentActivity')} autoOpenGlobalChat={false}>
-      <SectionPageView
-        title={tNav('agentActivity')}
-        description={t('homeDescription')}
-        widthClassName="mx-auto w-full max-w-5xl"
-      >
-        <div className="flex flex-col gap-4">
-          <AgentActivityTimeline
-            projectKey={null}
-            projectIds={projects.map((project) => project.id)}
-            agents={agents.data ?? []}
-          />
-        </div>
+      <SectionPageView title={tNav('agentActivity')} description={t('homeDescription')} wide>
+        <AgentActivityTimeline
+          projectKey={null}
+          projectIds={projects.map((project) => project.id)}
+          agents={agents.data ?? []}
+        />
       </SectionPageView>
     </Shell>
   );

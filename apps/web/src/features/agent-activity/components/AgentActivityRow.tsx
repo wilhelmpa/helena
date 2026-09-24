@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Bot, MessageSquare, Network, Workflow } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Badge } from '@/components/ui/badge';
+import StatusBadge, { type Status } from '@/components/common/page/StatusBadge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { AgentTokenCounts } from '@/components/common/agent-chat/AgentTokenCounts';
 import { useRelativeTime } from '@/context/relativeTimeContext';
@@ -37,6 +37,15 @@ function isOneOf<T extends string>(values: readonly T[], value: string | null): 
   return value != null && (values as readonly string[]).includes(value);
 }
 
+// The app's one status vocabulary (StatusBadge) for a run's state.
+function toneOf(status: string): Status {
+  if (status === 'failed') return 'danger';
+  if (status === 'success') return 'success';
+  if (status === 'waiting' || status === 'suspended') return 'waiting';
+  if (status === 'pending' || status === 'running' || status === 'streaming') return 'running';
+  return 'idle';
+}
+
 export default function AgentActivityRow({
   entry,
   showProject,
@@ -50,23 +59,27 @@ export default function AgentActivityRow({
   const task = activityTask(entry);
 
   return (
-    <li className="flex flex-col gap-2 px-3 py-2.5 sm:flex-row sm:items-start sm:gap-3">
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <div className="flex flex-wrap items-center gap-2 text-sm">
-          <Icon className="size-4 shrink-0 text-muted-foreground" />
-          <span className="font-medium">{entry.agent?.name ?? entry.workflowId}</span>
-          <span className="text-xs text-muted-foreground">{t(`kinds.${entry.kind}`)}</span>
-          <Badge variant={entry.status === 'failed' ? 'destructive' : 'outline'}>
-            {isOneOf(STATUSES, entry.status) ? t(`status.${entry.status}`) : entry.status}
-          </Badge>
-          {showProject && entry.project && <Badge variant="secondary">{entry.project.key}</Badge>}
-        </div>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-          {task && (
-            <Link href={task.href} className="truncate text-foreground hover:underline" dir="auto">
-              {task.label}
-            </Link>
-          )}
+    <li className="flex items-start gap-2 px-3 py-2 text-sm sm:items-center">
+      <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground sm:mt-0" />
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-0.5">
+        <span className="font-medium">{entry.agent?.name ?? entry.workflowId}</span>
+        <span className="text-xs text-muted-foreground">{t(`kinds.${entry.kind}`)}</span>
+        <StatusBadge status={toneOf(entry.status)}>
+          {isOneOf(STATUSES, entry.status) ? t(`status.${entry.status}`) : entry.status}
+        </StatusBadge>
+        {showProject && entry.project && (
+          <span className="font-mono text-xs text-muted-foreground">{entry.project.key}</span>
+        )}
+        {task && (
+          <Link
+            href={task.href}
+            className="max-w-full truncate text-xs text-foreground hover:underline"
+            dir="auto"
+          >
+            {task.label}
+          </Link>
+        )}
+        <span className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
           {entry.trigger && (
             <span>
               {isOneOf(TRIGGERS, entry.trigger) ? t(`triggers.${entry.trigger}`) : entry.trigger}
@@ -78,9 +91,9 @@ export default function AgentActivityRow({
           {entry.runBudgetSeconds != null && (
             <span>{t('runBudget', { minutes: Math.round(entry.runBudgetSeconds / 60) })}</span>
           )}
-        </div>
+        </span>
       </div>
-      <div className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+      <div className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
         <Tooltip>
           <TooltipTrigger asChild>
             <time dateTime={entry.at}>{relativeTime(entry.at)}</time>

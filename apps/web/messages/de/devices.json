@@ -5,7 +5,7 @@
   "ownerOnly": "Nur der Eigentümer der Instanz verwaltet die Geräte.",
   "unavailable": {
     "unconfiguredTitle": "Syncthing ist nicht eingerichtet",
-    "unconfigured": "Plan hat keinen gültigen Schlüssel für Syncthing auf diesem Server. Das Debian-Paket syncthing installieren und <code>deployment/volition-stack/native/syncthing/setup.sh</code> als root ausführen.",
+    "unconfigured": "Helena hat keinen gültigen Schlüssel für Syncthing auf diesem Server. Das Debian-Paket syncthing installieren und <code>deployment/volition-stack/native/syncthing/setup.sh</code> als root ausführen.",
     "unreachableTitle": "Syncthing ist nicht erreichbar",
     "unreachable": "Syncthing ist auf diesem Server nicht installiert, oder der Dienst <code>volition-syncthing</code> läuft nicht."
   },
@@ -71,7 +71,7 @@
     "step2Lan": "Für direkte Synchronisation zu Hause als Adressen des Geräts <code>{address}, dynamic</code> eintragen.",
     "step3": "Das Gerät erscheint dann oben unter „Geräte mit Verbindungsanfrage“. „Annehmen“ wählen.",
     "step4": "Auf dem Gerät den Ordner Volition in einen Ordner namens Volition annehmen: auf dem Mac <code>~/Volition</code>, auf Android <code>Volition</code> im internen Speicher, auf dem iPhone der Obsidian-Tresor Volition.",
-    "step5": "Warten, bis der Ordner auf dem Gerät „Aktuell“ zeigt, dann in Obsidian den Ordner Volition als Tresor öffnen. Links aus Plan öffnen den Tresor Volition.",
+    "step5": "Warten, bis der Ordner auf dem Gerät „Aktuell“ zeigt, dann in Obsidian den Ordner Volition als Tresor öffnen. Links aus Helena öffnen den Tresor Volition.",
     "iphoneTitle": "iPhone",
     "iphone": "Obsidian auf dem iPhone öffnet nur eigene Ordner. Zuerst in Obsidian den Tresor Volition anlegen (auf dem iPhone, nicht in iCloud) und Obsidian schließen. Dann in Möbius Sync den Ordner Volition nach Auf meinem iPhone › Obsidian › Volition legen. Obsidian schreibt beim Anlegen eines Tresors eigene Einstellungen, deshalb können nach der ersten Synchronisation Konflikte in <code>.obsidian</code> erscheinen; ihre Konfliktkopien enthalten die Vorgaben dieses Servers. Möbius Sync synchronisiert, solange die App offen ist oder iOS sie im Hintergrund laufen lässt.",
     "spaceTitle": "Platz sparen auf dem Telefon (optional)",

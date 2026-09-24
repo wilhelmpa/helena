@@ -31,10 +31,10 @@
     "folder": "Folder ini kosong.",
     "folderHint": "Letakkan berkas di sini atau gunakan Unggah.",
     "filter": "Tidak ada entri yang cocok dengan “{filter}”.",
-    "readOnly": "Plan menampilkan folder ini hanya-baca."
+    "readOnly": "Helena menampilkan folder ini hanya-baca."
   },
   "unreadable": {
-    "title": "Plan tidak dapat membaca folder ini",
+    "title": "Helena tidak dapat membaca folder ini",
     "body": "Ruang kerja ini milik pengguna agen di server. Buka di VS Code sebagai gantinya.",
     "missing": "Folder ini tidak ada di server."
   },

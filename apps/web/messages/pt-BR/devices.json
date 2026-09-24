@@ -5,7 +5,7 @@
   "ownerOnly": "Somente o proprietário da instância gerencia os dispositivos.",
   "unavailable": {
     "unconfiguredTitle": "O Syncthing não está configurado",
-    "unconfigured": "O Plan não tem uma chave válida para o Syncthing neste servidor. Instale o pacote Debian syncthing e execute <code>deployment/volition-stack/native/syncthing/setup.sh</code> como root.",
+    "unconfigured": "A Helena não tem uma chave válida para o Syncthing neste servidor. Instale o pacote Debian syncthing e execute <code>deployment/volition-stack/native/syncthing/setup.sh</code> como root.",
     "unreachableTitle": "O Syncthing não está acessível",
     "unreachable": "O Syncthing não está instalado neste servidor, ou o serviço <code>volition-syncthing</code> não está em execução."
   },
@@ -71,7 +71,7 @@
     "step2Lan": "Para sincronizar diretamente em casa, informe <code>{address}, dynamic</code> como endereços do dispositivo.",
     "step3": "O dispositivo aparece então acima em “Dispositivos pedindo conexão”. Escolha Aceitar.",
     "step4": "No dispositivo, aceite a pasta Volition em uma pasta chamada Volition: <code>~/Volition</code> no Mac, <code>Volition</code> no armazenamento interno no Android, o cofre do Obsidian Volition no iPhone.",
-    "step5": "Espere até a pasta mostrar “Atualizado” no dispositivo e então abra a pasta Volition como cofre no Obsidian. Links do Plan abrem o cofre Volition.",
+    "step5": "Espere até a pasta mostrar “Atualizado” no dispositivo e então abra a pasta Volition como cofre no Obsidian. Links da Helena abrem o cofre Volition.",
     "iphoneTitle": "iPhone",
     "iphone": "No iPhone, o Obsidian só abre as próprias pastas. Primeiro crie o cofre Volition no Obsidian (no iPhone, não no iCloud) e feche o Obsidian. Depois, no Möbius Sync, coloque a pasta Volition em No Meu iPhone › Obsidian › Volition. O Obsidian grava suas próprias configurações ao criar um cofre, por isso podem aparecer conflitos em <code>.obsidian</code> após a primeira sincronização; as cópias de conflito contêm os padrões deste servidor. O Möbius Sync sincroniza enquanto o app está aberto ou o iOS o deixa rodar em segundo plano.",
     "spaceTitle": "Economizar espaço no celular (opcional)",

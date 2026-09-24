@@ -127,7 +127,7 @@
   "accounts": {
     "title": "邮件账户",
     "add": "添加账户",
-    "intro": "Plan 通过 IMAP 导入这些账户的所有文件夹及其附件，并通过 SMTP 发送邮件。项目账户的邮件会归入该项目。",
+    "intro": "Helena 通过 IMAP 导入这些账户的所有文件夹及其附件，并通过 SMTP 发送邮件。项目账户的邮件会归入该项目。",
     "projectIntro": "邮件归入此项目的账户。",
     "loadError": "无法加载账户。",
     "empty": "还没有邮件账户。",
@@ -147,7 +147,7 @@
     "progress": "{synced} / {total} 条邮件",
     "lastSync": "上次检查 {at}",
     "removeTitle": "移除 {address}？",
-    "removeBody": "此账户已导入的邮件会从 Plan 中移除。保存在 Vault 中的附件不受影响。",
+    "removeBody": "此账户已导入的邮件会从 Helena 中移除。保存在 Vault 中的附件不受影响。",
     "testFailed": "连接失败：{error}",
     "testOk": "IMAP 和 SMTP 都接受了此登录。",
     "saved": "{address} 已保存",

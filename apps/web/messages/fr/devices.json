@@ -5,7 +5,7 @@
   "ownerOnly": "Seul le propriétaire de l'instance gère les appareils.",
   "unavailable": {
     "unconfiguredTitle": "Syncthing n'est pas configuré",
-    "unconfigured": "Plan n'a pas de clé valide pour Syncthing sur ce serveur. Installez le paquet Debian syncthing et exécutez <code>deployment/volition-stack/native/syncthing/setup.sh</code> en tant que root.",
+    "unconfigured": "Helena n'a pas de clé valide pour Syncthing sur ce serveur. Installez le paquet Debian syncthing et exécutez <code>deployment/volition-stack/native/syncthing/setup.sh</code> en tant que root.",
     "unreachableTitle": "Syncthing est injoignable",
     "unreachable": "Syncthing n'est pas installé sur ce serveur, ou le service <code>volition-syncthing</code> ne tourne pas."
   },
@@ -71,7 +71,7 @@
     "step2Lan": "Pour synchroniser directement à la maison, saisissez <code>{address}, dynamic</code> comme adresses de l'appareil.",
     "step3": "L'appareil apparaît ensuite plus haut sous « Appareils demandant à se connecter ». Choisissez Accepter.",
     "step4": "Sur l'appareil, acceptez le dossier Volition dans un dossier nommé Volition : <code>~/Volition</code> sur le Mac, <code>Volition</code> dans le stockage interne sur Android, le coffre Obsidian Volition sur l'iPhone.",
-    "step5": "Attendez que le dossier affiche « À jour » sur l'appareil, puis ouvrez le dossier Volition comme coffre dans Obsidian. Les liens de Plan ouvrent le coffre Volition.",
+    "step5": "Attendez que le dossier affiche « À jour » sur l'appareil, puis ouvrez le dossier Volition comme coffre dans Obsidian. Les liens de Helena ouvrent le coffre Volition.",
     "iphoneTitle": "iPhone",
     "iphone": "Sur l'iPhone, Obsidian n'ouvre que ses propres dossiers. Créez d'abord le coffre Volition dans Obsidian (sur l'iPhone, pas dans iCloud) et fermez Obsidian. Puis, dans Möbius Sync, placez le dossier Volition dans Sur mon iPhone › Obsidian › Volition. Obsidian écrit ses propres réglages en créant un coffre : des conflits dans <code>.obsidian</code> peuvent donc apparaître après la première synchronisation ; leurs copies de conflit contiennent les réglages par défaut de ce serveur. Möbius Sync synchronise tant que l'application est ouverte ou qu'iOS la laisse tourner en arrière-plan.",
     "spaceTitle": "Économiser de l'espace sur le téléphone (facultatif)",
