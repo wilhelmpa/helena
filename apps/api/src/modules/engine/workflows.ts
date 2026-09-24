@@ -89,21 +89,22 @@ async function passPolicy(
   });
   if (verdict.effect === 'allow') return null;
   if (verdict.effect === 'deny') throw new StepFailure(`Not allowed: ${verdict.reason}`, 'blocked');
-  const gate = {
+  const gate: StepDefinition = {
     id: `${step.id}.approval`,
     name: step.name,
     type: 'approval',
     message: verdict.reason,
-    onReject: { action: 'end' as const },
+    onReject: { action: 'end' },
   };
+  const gateContext = new EngineStepContext<StepDefinition>(
+    run,
+    gate,
+    { stepId: gate.id, iteration: execution.iteration, seq: execution.seq },
+    1,
+    definition,
+  );
   const decided = await approvalStep.execute(
-    new EngineStepContext(
-      run,
-      gate as never,
-      { stepId: gate.id, iteration: execution.iteration, seq: execution.seq },
-      1,
-      definition,
-    ),
+    gateContext as unknown as Parameters<typeof approvalStep.execute>[0],
   );
   if (decided.kind !== 'end') return null;
   await DBOS.runStep(
