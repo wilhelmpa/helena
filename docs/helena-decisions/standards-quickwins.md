@@ -1,6 +1,6 @@
 # Standards quick wins (`hub/standards-quickwins`)
 
-Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/standards-audit.md` §5.1 (on `hub/standards-audit`). The research and the choice of library are the audit's; this file records only what was built per item, and every place where the implementation deviates from the audit's recommendation, with the reason.
+Status: 19 of 20 items done, WEB-02 open (see its section), 2026-09-24. Scope: the backlog in `docs/helena-decisions/standards-audit.md` §5.1 (on `hub/standards-audit`). The research and the choice of library are the audit's; this file records only what was built per item, and every place where the implementation deviates from the audit's recommendation, with the reason.
 
 | ID | State | Commit | Notes |
 |---|---|---|---|
