@@ -449,11 +449,14 @@ export function PageActions({
   );
 }
 
-// Also a TooltipTrigger's child: Radix passes its ref and handlers through `rest`.
+// Also a TooltipTrigger's child: Radix passes its ref and its own handlers through
+// `rest` — its onClick (closing the tooltip) is called next to the action's, never
+// instead of it.
 function ActionControl({
   action,
   className,
   children,
+  onClick: triggerClick,
   ...rest
 }: {
   action: Omit<PageAction, 'menuOnly'>;
@@ -461,6 +464,7 @@ function ActionControl({
   children: ReactNode;
 } & Omit<ComponentProps<'button'>, 'className' | 'children'>) {
   const classes = cn(PAGE_CONTROL_CLASS, className);
+  const linkClick = triggerClick as unknown as ComponentProps<'a'>['onClick'];
   if (action.href && action.external && !action.disabled) {
     return (
       <a
@@ -470,6 +474,7 @@ function ActionControl({
         aria-label={action.label}
         className={classes}
         {...(rest as ComponentProps<'a'>)}
+        onClick={linkClick}
       >
         {children}
       </a>
@@ -482,6 +487,7 @@ function ActionControl({
         aria-label={action.label}
         className={classes}
         {...(rest as Omit<ComponentProps<typeof Link>, 'href'>)}
+        onClick={linkClick}
       >
         {children}
       </Link>
@@ -492,9 +498,12 @@ function ActionControl({
       type="button"
       aria-label={action.label}
       disabled={action.disabled}
-      onClick={action.onClick}
       className={classes}
       {...rest}
+      onClick={(event) => {
+        triggerClick?.(event);
+        action.onClick?.();
+      }}
     >
       {children}
     </button>
