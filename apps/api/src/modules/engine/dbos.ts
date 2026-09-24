@@ -41,8 +41,13 @@ function configure(): void {
 // the first.
 export function launchEngine(): Promise<void> {
   launching ??= (async () => {
-    // The workflows have to be registered before the launch.
+    // The workflows have to be registered before the launch, and the built-in types and
+    // subscribers before the first run.
     await import('./workflows');
+    const { registerBuiltins } = await import('./builtin/index');
+    registerBuiltins();
+    const { subscribeEngineTriggers } = await import('./events');
+    subscribeEngineTriggers();
     configure();
     await DBOS.launch();
     // The queues of the runs and of the outbox.

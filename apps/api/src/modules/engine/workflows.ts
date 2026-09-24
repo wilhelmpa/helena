@@ -25,9 +25,6 @@ import type {
 // A bound on step executions per run, above the rework loops a definition allows.
 export const MAX_EXECUTIONS = 200;
 
-registerBuiltins();
-subscribeEngineTriggers();
-
 // The operations of one step execution, as the step type sees them.
 class EngineStepContext<S extends StepDefinition> implements StepContext<S> {
   private readonly prefix: string;
@@ -68,6 +65,7 @@ function messageOf(error: unknown): string {
 }
 
 async function interpret(runId: string): Promise<string> {
+  registerBuiltins();
   const begun = await DBOS.runStep(() => beginRun(runId, DBOS.workflowID ?? runId), {
     name: 'helena:begin',
   });
@@ -161,6 +159,8 @@ export const fireWorkflow = DBOS.registerWorkflow(fire, { name: 'helena.fire' })
 
 // The outbox's workflow: hands one domain event to every subscriber, each once.
 async function deliver(event: DomainEvent): Promise<void> {
+  registerBuiltins();
+  subscribeEngineTriggers();
   for (const [name, handler] of domainEventSubscribers())
     await DBOS.runStep(() => handler(event), { name: `helena:event:${name}` });
 }
