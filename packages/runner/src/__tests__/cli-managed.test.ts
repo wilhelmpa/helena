@@ -370,6 +370,10 @@ describe('a Codex agent Helena provisioned', () => {
       version: '0.156.1',
       issues: [{ code: 'sandbox-unavailable', detail: 'read-only' }],
     });
+    // It cannot read a SKILL.md without a shell, so it gets the skills' text.
+    expect(settings.instructions).toContain('### Release notes');
+    expect(settings.instructions).toContain('Body');
+    expect(settings.instructions).not.toContain('SKILL.md)');
   });
 
   it('runs without its sandbox only inside agent isolation', () => {

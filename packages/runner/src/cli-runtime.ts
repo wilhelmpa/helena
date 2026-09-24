@@ -256,7 +256,13 @@ export interface CliFile {
 interface SkillFiles {
   files: CliFile[];
   index: string;
+  // The skills' own text, for a Codex that cannot read files (its sandbox cannot start).
+  inline: string;
 }
+
+// How much skill text goes into the prompt of a Codex that cannot read its skills' files.
+const INLINE_SKILL_CHARS = 8_000;
+const INLINE_SKILLS_CHARS = 32_000;
 
 function skillsOf(snapshot: RuntimePolicySnapshot, root: string): SkillFiles {
   const files: CliFile[] = [
@@ -286,7 +292,21 @@ function skillsOf(snapshot: RuntimePolicySnapshot, root: string): SkillFiles {
           'Your skills from Helena. Before you use one, read its SKILL.md with your file tools.',
           ...lines,
         ].join('\n');
-  return { files, index };
+  let budget = INLINE_SKILLS_CHARS;
+  const bodies: string[] = [];
+  for (const skill of snapshot.skills ?? []) {
+    if (budget <= 0) break;
+    const text = skill.markdown.trim().slice(0, Math.min(INLINE_SKILL_CHARS, budget));
+    budget -= text.length;
+    bodies.push(`### ${skill.name}\n\n${text}`);
+  }
+  const inline =
+    bodies.length === 0
+      ? ''
+      : ['## Skills', 'Your skills from Helena, as their SKILL.md says them.', ...bodies].join(
+          '\n\n',
+        );
+  return { files, index, inline };
 }
 
 const CLI_FILE_PATH = /^(?:\.claude-plugin\/plugin\.json|skills\/[a-z0-9][a-z0-9-]{0,63}\/.+)$/;
@@ -937,7 +957,14 @@ export class CliRuntimeAdapter implements RuntimeAdapter {
         ...codex.args,
         ...this.toolArgs(applied),
       ],
-      instructions: [applied.instructions, applied.skills.index].filter(Boolean).join('\n\n'),
+      // Without its sandbox Codex runs no command, so it cannot read a SKILL.md: the skills'
+      // text goes into the prompt instead of their paths.
+      instructions: [
+        applied.instructions,
+        codexSandbox(this.config) === 'read-only' ? applied.skills.inline : applied.skills.index,
+      ]
+        .filter(Boolean)
+        .join('\n\n'),
       hooks,
     };
   }
