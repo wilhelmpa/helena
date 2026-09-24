@@ -208,7 +208,8 @@ Codex' own sandbox (bubblewrap) needs user namespaces, which the nspawn containe
   The unit is the sandbox: its own user, network namespace, egress proxy, read-only system,
   and only its workspace, home and vault folder.
 - **Anything else**: `read-only`. Codex then reaches Helena's MCP tools but runs no shell
-  command. Helena shows "Sandbox nicht verfügbar", and the proof reports it.
+  command, so it cannot read a SKILL.md either: its prompt carries the skills' text instead
+  of their paths. Helena shows "Sandbox nicht verfügbar", and the proof reports it.
 - **An operator's own runner** keeps `workspace-write`.
 - **Enforced in `execute()`** for every Codex command (run, chat, reflection):
   - The refused forms are `-c sandbox_mode="danger-full-access"`, `--sandbox`/`-s
