@@ -56,6 +56,10 @@ export const qk = {
   agentNetworkSettings: (projectKey: string) => ['agentNetworkSettings', projectKey] as const,
   agentNetworkEvents: (projectKey: string, decision: 'all' | 'blocked') =>
     ['agentNetworkEvents', projectKey, decision] as const,
+  // The project's browser gateway settings (the Browser settings section).
+  browserGatewaySettings: (projectKey: string) => ['browserGatewaySettings', projectKey] as const,
+  // Home's "Browser" overview: every project that could have a project browser.
+  browserGatewayOverview: () => ['browserGatewayOverview'] as const,
   // The project's repository integration settings (the Repositories settings section).
   gitSettings: (projectKey: string) => ['gitSettings', projectKey] as const,
   gitConnections: (projectKey: string) => ['gitConnections', projectKey] as const,

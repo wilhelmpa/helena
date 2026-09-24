@@ -43,6 +43,8 @@ ProtectKernelTunables=yes
 ProtectProc=invisible
 ProtectSystem=strict
 ReadWritePaths=/var/lib/volition/project-browser/projects/%i
+# Downloads, which the browser gateway in the router hands to Helena (the project's Inbox).
+ReadWritePaths=-/var/lib/volition/project-browser/downloads
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 RestrictRealtime=yes
 RestrictSUIDSGID=yes

@@ -1,3 +1,4 @@
+import { browserGateway } from './browser-gateway';
 import type { HermesProfile } from './inventory';
 import { learningConfig } from './learning';
 import type { RuntimeMcpServer, RuntimeMcpValue, RuntimePolicySnapshot } from './policy';
@@ -145,7 +146,13 @@ const learning: ProfileContribution = {
   hermesConfig: ({ snapshot }) => learningConfig(snapshot.learning),
 };
 
-const contributions: ProfileContribution[] = [helenaMcp, legacyBrowser, library, learning];
+const contributions: ProfileContribution[] = [
+  helenaMcp,
+  legacyBrowser,
+  browserGateway,
+  library,
+  learning,
+];
 
 // Adds a contribution, or replaces the one with the same id.
 export function registerProfileContribution(contribution: ProfileContribution): void {

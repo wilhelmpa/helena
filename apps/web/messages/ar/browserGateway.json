@@ -1,0 +1,15 @@
+{
+  "homeTitle": "المتصفح",
+  "homeDescription": "متصفحات المشاريع: ما هو مفتوح، ومن يتحكم، وهل ينتظرك وكيل.",
+  "homeBrowser": "الرئيسية",
+  "empty": "لا توجد متصفحات مشاريع بعد",
+  "emptyHint": "يحصل المشروع على متصفحه عند إنشائه، ويظهر هنا عندما يعمل.",
+  "noLiveImage": "لا توجد صورة",
+  "noPage": "لا توجد صفحة مفتوحة",
+  "controlledByAgent": "{agentName} يتحكم",
+  "controlledByOwner": "أنت تتحكم",
+  "agentActive": "وكيل يعمل",
+  "free": "متاح",
+  "unreachable": "غير متاح",
+  "handover": "يطلب منك تولّي التحكم"
+}

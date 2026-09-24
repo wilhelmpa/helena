@@ -88,7 +88,7 @@
       "followAgentOn": "يتابع علامة تبويب الوكيل",
       "followAgentOff": "متابعة علامة تبويب الوكيل",
       "liveKeyboard": "متصفح مباشر. تُرسل المفاتيح إلى الصفحة ما دام العرض في حالة التركيز.",
-      "controlAgent": "الوكيل يتصرف الآن",
+      "controlAgent": "الوكيل يعمل الآن",
       "videoPreferenceAuto": "تلقائي",
       "videoPreferenceVideo": "فيديو",
       "videoPreferenceJpeg": "إطارات منفردة",
@@ -106,7 +106,21 @@
       "reconnecting": "انقطع الاتصال بالمتصفح. جارٍ إعادة الاتصال…",
       "dialogTitle": "تسأل الصفحة",
       "dialogOk": "موافق",
-      "dialogCancel": "إلغاء"
+      "dialogCancel": "إلغاء",
+      "controlPrefix": "يتحكم:",
+      "controlledByAgentGeneric": "أحد الوكلاء",
+      "takeOver": "تولّي التحكم",
+      "handBack": "إعادة التحكم",
+      "takeOverError": "تعذّر تولّي التحكم بالمتصفح.",
+      "handBackError": "تعذّرت إعادة التحكم بالمتصفح.",
+      "handoverTitle": "{agentName} يطلب منك تولّي التحكم",
+      "youControl": "أنت تتحكم",
+      "handoverDone": "تم – إعادة التحكم",
+      "takeOverTitle": "{agentName} يتحكم الآن. هل تريد تولّي التحكم؟",
+      "takeOverHint": "طالما أنك تتحكم، ينتظر الوكيل. يتابع عمله بعد أن تعيد التحكم.",
+      "idleTitle": "هل انتهيت؟",
+      "idleHint": "لا يوجد إدخال منذ 10 دقائق. بدون رد يعود التحكم إلى الوكلاء خلال دقيقة.",
+      "idleKeep": "مواصلة التحكم"
     }
   },
   "groups": {
@@ -149,5 +163,6 @@
     "projectOptions": "خيارات المشروع",
     "groupOptions": "خيارات المجموعة",
     "dropUngrouped": "أفلت هنا لإخراج المشروع من مجموعته"
-  }
+  },
+  "browser": "المتصفح"
 }
