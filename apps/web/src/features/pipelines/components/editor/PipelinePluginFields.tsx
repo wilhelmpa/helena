@@ -182,7 +182,8 @@ export default function PipelinePluginFields({
         if (type === 'string') {
           const text = typeof current === 'string' ? current : '';
           const maxLength = property.maxLength ?? 4_000;
-          const singleLine = maxLength <= 300 && property.format !== 'textarea';
+          // One line unless the schema allows a long text or asks for a text area.
+          const singleLine = (property.maxLength ?? 0) <= 300 && property.format !== 'textarea';
           if (stepId)
             return (
               <PipelineTemplateText
