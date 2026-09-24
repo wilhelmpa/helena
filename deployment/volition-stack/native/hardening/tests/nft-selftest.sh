@@ -2,7 +2,8 @@
 # Proves the rendered firewall in a private network namespace (no root, no change to the
 # host's rules): it loads, the self guard refuses a connection to "nginx" (port 80) from a
 # non-loopback source address while loopback still works, and a peer outside the home
-# network is dropped on port 22 while a home-network peer gets through.
+# network is dropped on port 22 while a home-network peer gets through (and is dropped on a
+# port that is not on the list).
 #
 #   tests/nft-selftest.sh            # needs unprivileged user namespaces (Debian default)
 set -euo pipefail
@@ -57,6 +58,46 @@ for name, got in results.items():
     print(("PASS " if good else "FAIL ") + f"{name}: {got} (expected {expected[name]})")
 sys.exit(0 if ok else 1)
 PY
+# Inbound: a peer in its own namespace behind the veth, once from the home network and
+# once from an outside address.
+unshare -n sleep 60 &
+peer=$!
+sleep 0.5
+ip link set peer0 netns "$peer"
+ip route add 203.0.113.0/24 dev eno1
+nsenter -t "$peer" -n sh -c 'ip link set lo up; ip link set peer0 up;
+  ip addr add 192.168.2.40/24 dev peer0; ip addr add 203.0.113.9/24 dev peer0'
+python3 - <<'PY' &
+import socket
+for port in (22, 8384):
+    s = socket.socket(); s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    s.bind(("0.0.0.0", port)); s.listen(8)
+    import threading
+    threading.Thread(target=lambda s=s: [s.accept()[0].close() for _ in iter(int, 1)], daemon=True).start()
+import time; time.sleep(20)
+PY
+server=$!
+sleep 1
+nsenter -t "$peer" -n python3 - <<'PY'
+import socket, sys
+def attempt(src, port):
+    c = socket.socket(); c.settimeout(2)
+    try:
+        c.bind((src, 0)); c.connect(("192.168.2.58", port)); return "open"
+    except ConnectionRefusedError: return "refused"
+    except OSError as e: return type(e).__name__
+    finally: c.close()
+cases = [("home network -> :22", "192.168.2.40", 22, "open"),
+         ("outside -> :22", "203.0.113.9", 22, "TimeoutError"),
+         ("home network -> :8384 (not allowed)", "192.168.2.40", 8384, "TimeoutError")]
+ok = True
+for name, src, port, want in cases:
+    got = attempt(src, port)
+    ok &= got == want
+    print(("PASS " if got == want else "FAIL ") + f"{name}: {got} (expected {want})")
+sys.exit(0 if ok else 1)
+PY
+kill "$peer" "$server" 2>/dev/null || true
 nft list table inet helena_hardening | grep -c 'helena:' | sed 's/^/rules with helena markers: /'
 INNER
 unshare -rn bash "$work/inside.sh" "$work/rules.nft"
