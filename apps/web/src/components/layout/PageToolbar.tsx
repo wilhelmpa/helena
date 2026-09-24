@@ -48,6 +48,10 @@ export const PAGE_CONTROL_CLASS =
   'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0';
 export const PAGE_CONTROL_ACTIVE_CLASS =
   'bg-sidebar-accent font-medium text-foreground hover:bg-sidebar-accent';
+// The one filled button of a page (its primary action), for a page-specific primary
+// that is not a plain PageActions primary (e.g. one that opens a menu).
+export const PAGE_PRIMARY_CLASS =
+  'ms-1 bg-primary px-2.5 font-medium text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground';
 
 // How far the toolbar has given way to fit its room: 0 shows everything in full, then
 // one piece at a time folds — the search into an icon, the secondary actions into the
@@ -437,10 +441,7 @@ export function PageActions({
       {primary ? (
         <ActionControl
           action={primary}
-          className={cn(
-            'ms-1 bg-primary font-medium text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground',
-            room.primaryLabel ? 'px-2.5' : 'w-8 justify-center px-0',
-          )}
+          className={cn(PAGE_PRIMARY_CLASS, !room.primaryLabel && 'w-8 justify-center px-0')}
         >
           <primary.icon aria-hidden="true" />
           <span className={room.primaryLabel ? undefined : 'sr-only'}>{primary.label}</span>

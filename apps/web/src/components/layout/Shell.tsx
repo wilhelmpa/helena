@@ -258,7 +258,7 @@ export default function Shell({
               <div
                 ref={setPageBarSlot}
                 data-slot="app-page-bar"
-                className="relative flex h-11 shrink-0 items-center gap-1 border-b border-sidebar-border px-2 empty:hidden"
+                className="relative flex h-11 shrink-0 items-center gap-1 border-b border-sidebar-border px-2 empty:hidden [&:not(:has(>:not(:empty)))]:hidden"
               >
                 <ShellHeaderExtra store={headerExtra} bare />
               </div>
