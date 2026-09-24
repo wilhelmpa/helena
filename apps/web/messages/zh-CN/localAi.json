@@ -141,5 +141,13 @@
     "label": "本地 AI",
     "hint": "通过 native/local-ai/install.sh 更新，然后重新评估。"
   },
-  "pickerMark": "本地"
+  "pickerMark": "本地",
+  "tile": {
+    "offSub": "由已配置的模型回答"
+  },
+  "problems": {
+    "serverDown": "本地 AI：{name} 无响应",
+    "evalFailed": "本地 AI：“{class}”未通过评估",
+    "evalFailedDetail": "{model} – 在评估通过之前，由已配置的模型回答"
+  }
 }

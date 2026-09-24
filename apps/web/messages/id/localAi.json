@@ -141,5 +141,13 @@
     "label": "AI lokal",
     "hint": "Perbarui lewat native/local-ai/install.sh, lalu evaluasi ulang."
   },
-  "pickerMark": "lokal"
+  "pickerMark": "lokal",
+  "tile": {
+    "offSub": "Model yang diatur menjawab"
+  },
+  "problems": {
+    "serverDown": "AI lokal: {name} tidak menjawab",
+    "evalFailed": "AI lokal: “{class}” gagal dalam evaluasi",
+    "evalFailedDetail": "{model} – model yang diatur menjawab sampai evaluasi lulus"
+  }
 }

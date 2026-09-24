@@ -141,5 +141,13 @@
     "label": "Lokale KI",
     "hint": "Aktualisieren über native/local-ai/install.sh, danach neu auswerten."
   },
-  "pickerMark": "lokal"
+  "pickerMark": "lokal",
+  "tile": {
+    "offSub": "Eingestellte Modelle antworten"
+  },
+  "problems": {
+    "serverDown": "Lokale KI: {name} antwortet nicht",
+    "evalFailed": "Lokale KI: „{class}“ hat die Auswertung nicht bestanden",
+    "evalFailedDetail": "{model} – bis eine Auswertung besteht, antwortet das eingestellte Modell"
+  }
 }

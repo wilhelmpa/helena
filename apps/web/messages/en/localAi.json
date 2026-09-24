@@ -141,5 +141,13 @@
     "label": "Local AI",
     "hint": "Update through native/local-ai/install.sh, then evaluate again."
   },
-  "pickerMark": "local"
+  "pickerMark": "local",
+  "tile": {
+    "offSub": "Configured models answer"
+  },
+  "problems": {
+    "serverDown": "Local AI: {name} does not answer",
+    "evalFailed": "Local AI: “{class}” failed its eval",
+    "evalFailedDetail": "{model} – the configured model answers until an eval passes"
+  }
 }

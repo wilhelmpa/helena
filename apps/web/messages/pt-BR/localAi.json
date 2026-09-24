@@ -141,5 +141,13 @@
     "label": "IA local",
     "hint": "Atualize com native/local-ai/install.sh e avalie de novo."
   },
-  "pickerMark": "local"
+  "pickerMark": "local",
+  "tile": {
+    "offSub": "Os modelos configurados respondem"
+  },
+  "problems": {
+    "serverDown": "IA local: {name} não responde",
+    "evalFailed": "IA local: “{class}” não passou na avaliação",
+    "evalFailedDetail": "{model} – o modelo configurado responde até uma avaliação passar"
+  }
 }

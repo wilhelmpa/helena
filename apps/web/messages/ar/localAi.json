@@ -141,5 +141,13 @@
     "label": "الذكاء الاصطناعي المحلي",
     "hint": "حدّث عبر native/local-ai/install.sh ثم أعد التقييم."
   },
-  "pickerMark": "محلي"
+  "pickerMark": "محلي",
+  "tile": {
+    "offSub": "تجيب النماذج المُعدّة"
+  },
+  "problems": {
+    "serverDown": "الذكاء الاصطناعي المحلي: {name} لا يستجيب",
+    "evalFailed": "الذكاء الاصطناعي المحلي: „{class}“ لم يجتز التقييم",
+    "evalFailedDetail": "{model} – يجيب النموذج المُعدّ حتى ينجح تقييم"
+  }
 }
