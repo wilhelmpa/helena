@@ -102,3 +102,10 @@ export const edgeVerifyRoutes = new Elysia({ name: 'edge-verify' }).get(
     },
   },
 );
+
+// Mounts the Administrator routes on the assembled app after its chain, like mountMcp: a typed
+// .use() here would push the app's type past TypeScript's instantiation limit (TS2589), and
+// nothing calls these routes through Eden. They carry their own session guard.
+export function mountSecurityRoutes(app: { use: (plugin: unknown) => unknown }): void {
+  app.use(securityRoutes);
+}

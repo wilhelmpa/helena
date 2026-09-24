@@ -31,7 +31,7 @@ import {
   hasApiKey,
 } from './shared/agent-socket';
 import { HttpError } from './shared/lib';
-import { edgeGuard, edgeVerifyRoutes, securityRoutes } from './modules/edge-access';
+import { edgeGuard, edgeVerifyRoutes, mountSecurityRoutes } from './modules/edge-access';
 import { engineHookRoutes } from './modules/engine';
 import { issueProxyToken } from './modules/owner-terminal/service';
 import { OwnerTerminalKindParam, type OwnerTerminalKind } from './modules/owner-terminal/model';
@@ -546,10 +546,8 @@ export const app = new Elysia()
 // Its tools are generated from the planner routes tagged with mcpTool().
 mountMcp(app);
 
-// Administrator → Sicherheit (host audit, edge sign-in). Added after the chain for the same
-// reason: one more plugin in the planner's chain passes TypeScript's instantiation limit
-// (TS2589), and nothing calls these routes through Eden. They carry their own session guard.
-app.use(securityRoutes);
+// Administrator → Sicherheit (host audit, edge sign-in), after the chain for the same reason.
+mountSecurityRoutes(app as unknown as Parameters<typeof mountSecurityRoutes>[0]);
 
 // Hands the assembled app to the modules that dispatch requests against its routes in
 // process and cannot import it without a cycle (see mcp/app-ref.ts).
