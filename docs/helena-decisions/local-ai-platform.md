@@ -609,8 +609,18 @@ the master switch: it sets the instance default of hub/browser-task's "Browser-S
 (`PUT /god/browser-control`, decision model with the configured or the first connection of the
 owner's team; off = "Standard"); projects on "Wie in den Voreinstellungen" follow it. Without a
 decision-model connection it is off and links to Zugänge. It uses browser-task's own queries, so
-the card and Administrator → Browser-Steuerung show the same state. The card goes onto Start through hub/dashboard's
-widget registry once its contract is published; until then it is on Administrator → Lokale KI.
+the card and Administrator → Browser-Steuerung show the same state.
+
+**On Start** (hub/dashboard's contract, `docs/helena-decisions/dashboard.md`): a figure tile
+"Lokale KI" (owner, group `system`, order 55): An/Aus, the GPU's load as a bar, the model in
+memory or "Server nicht erreichbar" in red; a click opens this card in a dialog (master switch,
+units, kinds of work, Jev / Laya). Hidden until a model server is set up. Red problems go to
+"Braucht dich" through a `needsYouSources` entry (order 15), only while local AI is on: an
+enabled server that does not answer, and a switched-on class whose model failed its newest eval
+(§6.6). Both link to Administrator → Lokale KI. Built and click-checked against hub/dashboard
+on a local branch (`local-ai-dashboard`, patches also in `~/agent-work/local-ai/dashboard-tile/`);
+it lands on hub/local-ai once hub/dashboard is in the hub (one line in
+`extensions/homeWidgets.tsx`, `LocalAiTile.tsx`, `localAiProblems.ts`, 10 locales).
 
 ## 8. Security
 
@@ -628,7 +638,7 @@ only; nothing runs with `trust_remote_code`.
 |---|---|---|---|
 | hub/update-center (merged) | `UpdateSource` `local-ai`, check only: Lemonade and FastFlowLM versions (GitHub Atom feeds), each model's installed revision vs its repository's newest, a newer model of the same family (Qwen3.6 → Qwen3.7), and the watch list (`MODEL_WATCH`: Qwen Flash-Next, Qwen4 MoE) as "neues Modell verfügbar"; switching stays an owner click after a new eval | registered by `helena.local-ai` (`provides.updateSources`) | – |
 | hub/server-admin | `HostCapability` `local-ai` (area `local-ai`, health lines per server) and the `admin-section` slot with `LocalAiSettingsView` | `localAiHostCapability` (mirrored), the view is mountable | register both; messages `server.health.local-ai.server-{up,down}`; `dkms install -k` for every kernel |
-| hub/dashboard | the card as a `DashboardWidget` | `LocalAiCard` self-contained | register it once the contract is published |
+| hub/dashboard | the figure tile and the red problems (§7.5) | built against its branch, click-checked (tile off/on/down, dialog, both problems, phone) | after it lands: merge the hub, apply the tile commit; its migration is also 0178 — whichever lands second is renumbered (the local branch has this one as 0179) |
 | hub/browser-task (merged) | the Jev toggle uses its instance setting; Laya `--rocm` (§4.6) | the toggle uses its queries (`useInstanceBrowserControlQuery`, same cache as its page); `--rocm` built into its merged installer and server | its owner reviews the Laya change |
 | hub/decisions | `decide()` with a local "logit readout" backend on this endpoint | the interface of §6.6 (class registration, `resolveLocalRoute`, the endpoint, logprobs verified) | it registers its own classes (router, mail, receipts); no decision classes here |
 | hub/second-brain (merged) | the local embedding route | `useEmbeddingRoute(localAiEmbeddingRoute)` in API and worker | the owner's pgvector/embedding decision (§5.4) |
