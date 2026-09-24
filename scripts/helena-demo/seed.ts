@@ -311,21 +311,31 @@ export class DemoSeed {
 
   private async ensureWorkflow(): Promise<void> {
     const key = DEMO_WORKFLOW.projectKey;
+    type Listed = { pipeline: { id: number; name: string }; enabled: boolean };
     try {
-      const pipelines = list<{ id: number; name: string }>(await this.api('GET', `/projects/${key}/pipelines`));
-      if (pipelines.some((p) => p.name === DEMO_WORKFLOW.name)) {
+      const listed = list<Listed>(await this.api('GET', `/projects/${key}/pipelines`));
+      let entry = listed.find((p) => p.pipeline?.name === DEMO_WORKFLOW.name);
+      if (entry) {
         this.log(`[OK] ${key} workflow "${DEMO_WORKFLOW.name}"`);
-        return;
+      } else {
+        const created = await this.write(`create ${key} workflow "${DEMO_WORKFLOW.name}"`, () =>
+          this.api<{ id: number; name: string }>('POST', `/projects/${key}/pipelines`, {
+            name: DEMO_WORKFLOW.name,
+            description: DEMO_WORKFLOW.description,
+            definition: DEMO_WORKFLOW.definition,
+          }),
+        );
+        if (!created) return;
+        entry = { pipeline: created, enabled: false };
       }
-      await this.write(`create ${key} workflow "${DEMO_WORKFLOW.name}"`, () =>
-        this.api('POST', `/projects/${key}/pipelines`, {
-          name: DEMO_WORKFLOW.name,
-          description: DEMO_WORKFLOW.description,
-          definition: DEMO_WORKFLOW.definition,
-        }),
-      );
+      if (!entry.enabled) {
+        // The roles are left to their own rule: each capability names one specialist.
+        await this.write(`enable ${key} workflow "${DEMO_WORKFLOW.name}"`, () =>
+          this.api('PUT', `/projects/${key}/pipelines/${entry!.pipeline.id}`, { enabled: true, roles: {} }),
+        );
+      }
     } catch (error) {
-      this.warn(`workflow not created: ${error instanceof Error ? error.message : String(error)}`);
+      this.warn(`workflow not complete: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 }
