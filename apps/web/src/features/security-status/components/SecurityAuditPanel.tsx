@@ -80,10 +80,10 @@ export default function SecurityAuditPanel({
                 className="flex min-h-8 min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 px-3 py-1.5 text-sm"
               >
                 <StatusBadge status={STATE_STATUS[check.state]} dotOnly />
-                <span className="min-w-0 flex-1 truncate" title={check.id}>
+                <span className="min-w-0 flex-1 max-sm:basis-[calc(100%-1rem)] sm:truncate" title={check.id}>
                   {key ? t(`check.${key}`) : check.id}
                 </span>
-                <span className="shrink-0 text-xs text-muted-foreground">
+                <span className="shrink-0 text-xs text-muted-foreground max-sm:ms-3.5">
                   {group ? t(`group.${group}`) : check.group}
                   {' · '}
                   {t(`severity.${check.severity}`)}
