@@ -388,6 +388,29 @@
     "agentSync": {
       "title": "代理配置",
       "synced": "{total} 个中 {synced} 个已同步"
+    },
+    "logins": {
+      "title": "登录",
+      "summaryOk": "全部有效",
+      "summaryProblems": "{count, plural, other {# 个需要你处理}}",
+      "state": {
+        "ok": "有效",
+        "okFor": "还可用 {time}",
+        "expiring": "即将续期",
+        "expired": "已过期",
+        "error": "续期暂时失败",
+        "invalid": "无效",
+        "unknown": "未知"
+      },
+      "separate": "独立登录，仅作显示",
+      "codexCli": "Codex CLI",
+      "relogin": "在 Hermes 中重新登录 {provider}——在所有者终端中运行：",
+      "stale": "令牌守护程序已有 {time} 未报告；登录不会续期。",
+      "copyCommand": "复制命令",
+      "copied": "已复制",
+      "sources": {
+        "keeper": "令牌守护程序"
+      }
     }
   },
   "plugins": {
@@ -416,7 +439,8 @@
       "webhooks": "Webhook",
       "bundles": "模板包",
       "limits": "限额",
-      "autopilot": "Autopilot"
+      "autopilot": "Autopilot",
+      "logins": "登录"
     },
     "problems": {
       "external-off": "开启外部插件后加载。",

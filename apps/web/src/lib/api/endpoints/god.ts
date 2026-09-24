@@ -1,4 +1,5 @@
 import { request } from '@/lib/api/core/client';
+import type { RunFailureRef } from '@/lib/api/endpoints/modelAvailability';
 import type { MemberRole } from '@/lib/api/endpoints/members';
 import type { TeamRole } from '@/lib/api/endpoints/teams';
 import type { NotificationEncryption } from '@/lib/api/endpoints/notificationSettings';
@@ -267,8 +268,45 @@ export interface AgentSyncSummary {
   }[];
 }
 
+// The model logins agents share, as the token keeper renews them
+// (docs/helena-decisions/token-keeper.md). Names, states and times only.
+export type RuntimeLoginState = 'ok' | 'expiring' | 'expired' | 'error' | 'invalid' | 'unknown';
+
+export interface RuntimeLogin {
+  // Where it lives: 'hermes' (Hermes' root store), 'codex-cli'.
+  store: string;
+  provider: string;
+  id: string;
+  label: string | null;
+  // Whether something renews it; else it is only reported.
+  managed: boolean;
+  state: RuntimeLoginState;
+  expiresAt: string | null;
+  refreshedAt: string | null;
+  error: string | null;
+  // What the owner runs in the owner terminal to sign it in again.
+  command: string | null;
+  note: string | null;
+}
+
+export interface RuntimeLoginsHealth {
+  reports: {
+    source: string;
+    reporter: string;
+    checkedAt: string;
+    intervalSeconds: number | null;
+    // The reporter has not written for three of its intervals.
+    stale: boolean;
+    logins: RuntimeLogin[];
+    errors: string[];
+  }[];
+  // Logins the owner has to act on, in reports that are not stale.
+  problems: number;
+}
+
 export interface SystemHealth {
   agents: AgentSyncSummary;
+  logins?: RuntimeLoginsHealth;
   services: SystemServiceHealth[];
   runs: {
     waiting: number;
@@ -285,6 +323,33 @@ export interface SystemHealth {
   // The Helena engine, which runs workflows, agent teams and routines.
   engine: EngineHealth;
   janitors: JanitorHealth[];
+  // Models the providers refused, with the agents still set to them. Absent from an older
+  // server.
+  models?: { unavailable: RefusedModelHealth[]; deadLogins?: DeadLoginHealth[] };
+}
+
+// A Hermes login the provider rejected (or that ran out unrenewed), with the agents whose
+// model runs through it.
+export interface DeadLoginHealth {
+  provider: string;
+  state: string;
+  command: string | null;
+  agents: {
+    id: number;
+    teamId: number;
+    username: string;
+    template: boolean;
+    model: string | null;
+  }[];
+}
+
+export interface RefusedModelHealth {
+  runtime: string;
+  provider: string;
+  model: string;
+  detail: string | null;
+  since: string;
+  agents: { id: number; teamId: number; username: string; template: boolean }[];
 }
 
 export interface EngineHealth {
@@ -303,7 +368,15 @@ export interface EngineHealth {
   schedules: number;
   // Enabled schedules whose time passed over five minutes ago without a fire.
   overdueSchedules: number;
-  lastErrors: { runId: string; projectKey: string; name: string; error: string; at: string }[];
+  lastErrors: {
+    runId: string;
+    projectKey: string;
+    name: string;
+    error: string;
+    // Why it failed, where the runtime's words said. Absent from an older server.
+    failure?: RunFailureRef | null;
+    at: string;
+  }[];
 }
 
 // The engine's instance settings: the time zone schedules and wait steps use when they

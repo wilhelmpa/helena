@@ -70,6 +70,8 @@ export const runModelReport = t.Object({
   requested: t.Object({
     model: t.Nullable(t.String({ maxLength: 200 })),
     reasoning: t.Nullable(t.String({ maxLength: 40 })),
+    // The provider the runner routed the model to; absent from an older runner.
+    provider: t.Optional(t.Nullable(t.String({ maxLength: 100 }))),
   }),
   defaults: t.Nullable(runtimeDefaults),
   used: t.Nullable(

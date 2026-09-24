@@ -36,6 +36,8 @@ export interface AgUiEvent {
   delta?: string;
   content?: string;
   message?: string;
+  // A RUN_ERROR's code: a failure the runtime explained ('model-unavailable').
+  code?: string;
   toolCallId?: string;
   toolCallName?: string;
   metadata?: Record<string, unknown>;
@@ -261,6 +263,9 @@ export interface AiChatMessage {
   outputTokens?: number | null;
   durationMs?: number | null;
   error?: string;
+  // Why it failed, where the runtime's words said ('model-unavailable'), and the model.
+  errorCode?: string;
+  errorModel?: string | null;
 }
 
 export interface AiChatThreadPage {
@@ -295,10 +300,27 @@ export interface AiChatModel {
   thinkingLevels: string[];
   thinkingDefault: string | null;
   provider?: string;
+  // Whether the account's own model list names it, and the model it is a variant of.
+  listed?: boolean;
+  variantOf?: string;
+  // Confirmed (listed or seen working), only expected to work (false), or unknown (unset).
+  verified?: boolean;
+}
+
+// A model the provider refused this account, which the pickers leave out.
+export interface UnavailableChatModel {
+  id: string;
+  provider?: string;
+  detail: string | null;
+  since: string;
+  // The finding behind it, which "Erneut prüfen" forgets.
+  findingId: number;
 }
 
 export interface AiChatCatalog {
   models: AiChatModel[];
+  // Absent from an older server.
+  unavailable?: UnavailableChatModel[];
   updatedAt: string | null;
 }
 

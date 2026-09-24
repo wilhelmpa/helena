@@ -28,6 +28,7 @@ import { runtimeFileKind } from '../runtime-files/paths';
 import { maxTurnsLimit, runBudgetSecondsLimit } from '../model';
 import { isHomeAgent, notHomeAgent } from './home-agent';
 import { copyAgentBudgets, copyAgentLevel } from '#modules/autopilot/copy';
+import { agentModelRefusal } from '#modules/model-availability/service';
 import {
   onTemplateRelevantChange,
   runtimePolicyGroupsChanged,
@@ -1232,11 +1233,18 @@ export async function updateAgent(
 // A copy of a template for one project: a specialist of that project with the
 // template's configuration, skills, MCP servers and capabilities. Knowledge the copies share goes
 // through the skills; each copy keeps a memory of its own.
+// A template whose model the provider refused this account gives its copy the runtime's
+// default model instead ("Agenten-Standard"), and says so in `modelFallback`: a copy that
+// cannot run is no copy.
 export async function copyTemplateIntoProject(
   template: AiAgentRow,
   projectId: number,
   ownerUserId: string,
-): Promise<{ agent: AiAgentRow; apiKey: string }> {
+): Promise<{
+  agent: AiAgentRow;
+  apiKey: string;
+  modelFallback?: { model: string; detail: string | null };
+}> {
   if (!template.template) throw new HttpError(400, 'Only a template can be copied into a project');
   const [target] = await db
     .select({ key: project.key })
@@ -1266,12 +1274,16 @@ export async function copyTemplateIntoProject(
       .from(agentToolLink)
       .where(eq(agentToolLink.agentId, template.id)),
   ]);
+  const refusal = await agentModelRefusal(template);
   const created = await createAgent(template.teamId, {
     name: `${template.name} ${target.key}`,
     username: template.username.slice(0, 64 - suffix.length) + suffix,
-    model: template.model,
+    model: refusal ? null : template.model,
     instructions: template.instructions,
-    runtimePolicy: template.runtimePolicy,
+    // The template's reasoning level belongs to its model (the editor's rule).
+    runtimePolicy: refusal
+      ? { ...template.runtimePolicy, reasoningEffort: null }
+      : template.runtimePolicy,
     triggerOnMention: template.triggerOnMention,
     triggerOnAssign: template.triggerOnAssign,
     delegationDelaySec: template.delegationDelaySec,
@@ -1290,7 +1302,12 @@ export async function copyTemplateIntoProject(
   // template like the rest of its configuration.
   await copyAgentLevel(template.id, created.agent.id);
   await copyAgentBudgets(template.id, created.agent.id);
-  return { ...created, agent: (await getAgentById(created.agent.id, template.teamId))! };
+  return {
+    ...created,
+    agent: (await getAgentById(created.agent.id, template.teamId))!,
+    ...(refusal &&
+      template.model && { modelFallback: { model: template.model, detail: refusal.detail } }),
+  };
 }
 
 // Replaces the agent's API key: deletes the current key row(s) for the bot user

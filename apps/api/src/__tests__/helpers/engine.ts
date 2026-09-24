@@ -111,6 +111,8 @@ export async function finishAgentRun(
     output?: string;
     error?: string;
     blockedQuestion?: string;
+    // Why the runner found it failed (@helena/sdk RuntimeFailure).
+    failure?: { code: string; retryable: boolean; model?: string | null; detail?: string };
   },
 ): Promise<void> {
   const now = new Date();
@@ -121,6 +123,7 @@ export async function finishAgentRun(
       output: outcome.output ?? null,
       lastError: outcome.error ?? null,
       blockedQuestion: outcome.blockedQuestion ?? null,
+      failure: outcome.failure ?? null,
       claimedAt: now,
       startedAt: now,
       finishedAt: now,

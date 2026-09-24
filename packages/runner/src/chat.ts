@@ -104,7 +104,11 @@ export async function answer(
   }
   const runtime = await runModelReport(
     runtimeAdapter,
-    { model: message.model, reasoning: message.thinkingLevel },
+    {
+      model: message.model,
+      reasoning: message.thinkingLevel,
+      provider: modelProvider(config, message.model) ?? null,
+    },
     outcome.sessionId ?? stream.startedSession() ?? message.sessionId ?? undefined,
     stream.model(),
   );
@@ -134,7 +138,8 @@ export async function answer(
     });
     return;
   }
-  await stream.fail(error, outcome.output);
+  // The code lets the chat word a known failure in the reader's language.
+  await stream.fail(error, outcome.output, outcome.failure?.code);
   await client.chatResult(message.id, {
     status: 'failed',
     error,
@@ -142,5 +147,6 @@ export async function answer(
     spend: spent,
     ...(stream.model() && { model: stream.model()! }),
     ...(runtime && { runtime }),
+    ...(outcome.failure && { failure: outcome.failure }),
   });
 }

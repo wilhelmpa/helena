@@ -8,6 +8,8 @@ import type { AgentTeamRun } from '@/lib/api/endpoints/issues';
 import { agentTeamTokens, isKnownStatus } from '../../utils/agentTeam';
 import IssueAgentTeamStages from './IssueAgentTeamStages';
 import IssueAgentTeamSteps from './IssueAgentTeamSteps';
+import ModelFailureNote from '@/features/model-availability/components/ModelFailureNote';
+import { knownFailure } from '@/features/model-availability/utils/modelFailure';
 
 // One agent-team run: its state, the stages with the Hermes run behind each, and once it
 // finished the summary written to the task with what each stage reported. A member who
@@ -43,7 +45,15 @@ export default function IssueAgentTeamRun({
       </div>
       <IssueAgentTeamSteps run={run} />
       <IssueAgentTeamStages stages={run.stages} />
-      {run.error && <p className="text-xs text-destructive">{run.error}</p>}
+      {knownFailure(run.failure) ? (
+        <ModelFailureNote
+          failure={run.failure}
+          error={run.error}
+          className="text-xs text-destructive"
+        />
+      ) : (
+        run.error && <p className="text-xs text-destructive">{run.error}</p>
+      )}
       {run.result && (
         <p className="text-sm whitespace-pre-wrap" dir="auto">
           {run.result.summary}

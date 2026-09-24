@@ -1,3 +1,4 @@
+import type { RunFailureRef } from '@/lib/api/endpoints/modelAvailability';
 import { request } from '@/lib/api/core/client';
 import { pageQuery, type Page, type PageParams } from '@/lib/api/core/paging';
 import type { ApprovalDecision } from '@/lib/api/endpoints/approvals';
@@ -300,6 +301,8 @@ export interface PipelineRunStep {
   note: string | null;
   wakeAt: string | null;
   error: string | null;
+  // Why it failed, where the runtime's words said. Absent from an older server.
+  failure?: RunFailureRef | null;
   startedAt: string;
   finishedAt: string | null;
 }
@@ -324,6 +327,7 @@ export interface PipelineRun {
   dryRun: boolean;
   status: PipelineRunStatus;
   error: string | null;
+  failure?: RunFailureRef | null;
   // What the run produced, e.g. a routine's { outcome: 'created' | 'reopened' | 'skipped' }.
   result: unknown;
   actorName: string | null;

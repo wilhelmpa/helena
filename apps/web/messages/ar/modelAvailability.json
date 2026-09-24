@@ -1,0 +1,39 @@
+{
+  "unverified": "غير مُتحقَّق منه",
+  "unverifiedHint": "لا يُدرج حسابك هذا النموذج. يتوقع Hermes أن يعمل؛ ويُعدّ مؤكَّدًا بمجرد نجاح تشغيل به.",
+  "refused": "{model} غير متاح {account, select, chatgpt {لحسابك في ChatGPT} claude {لحسابك في Claude} other {لحسابك}} – اختر نموذجًا آخر.",
+  "refusedShort": "غير متاح لحسابك",
+  "providerSaid": "يقول المزوّد: {detail}",
+  "since": "منذ {time}",
+  "retry": "تحقّق مجددًا",
+  "retryHint": "ينسى هذه النتيجة. سيجرّب التشغيل التالي النموذج مرة أخرى.",
+  "retried": "ستتم تجربة {model} مجددًا في التشغيل التالي.",
+  "useDefault": "استخدام النموذج الافتراضي للوكيل",
+  "templateFallback": "يستخدم القالب {model}، وهو غير متاح لحسابك. لذلك تعمل هذه النسخة على النموذج الافتراضي للوكيل.",
+  "copyFallback": "يعمل {name} على النموذج الافتراضي للوكيل: {model} غير متاح لحسابك.",
+  "failure": {
+    "modelUnavailable": "النموذج {model} غير متاح {account, select, chatgpt {لحسابك في ChatGPT} claude {لحسابك في Claude} other {لحسابك}} – اختر نموذجًا آخر للوكيل. لن تفيد إعادة المحاولة.",
+    "providerRejected": "رفض المزوّد الطلب نهائيًا – لن تفيد إعادة المحاولة."
+  },
+  "activity": "لم يتمكن من العمل: النموذج {model} غير متاح لحسابك",
+  "health": {
+    "refused": "{model} غير متاح للحساب – {count, plural, zero {لا يستخدمه أي وكيل} one {يستخدمه وكيل واحد} two {يستخدمه وكيلان} few {يستخدمه # وكلاء} many {يستخدمه # وكيلًا} other {يستخدمه # وكيل}}: {agents}",
+    "deadLogin": "{account, select, chatgpt {تسجيل دخول ChatGPT} claude {تسجيل دخول Claude} other {تسجيل الدخول}} في Hermes {state, select, invalid {غير صالح} other {منتهي الصلاحية}} – {count, plural, zero {لا يعتمد عليه أي وكيل} one {يعتمد عليه وكيل واحد} two {يعتمد عليه وكيلان} few {يعتمد عليه # وكلاء} many {يعتمد عليه # وكيلًا} other {يعتمد عليه # وكيل}}: {agents}"
+  },
+  "admin": {
+    "title": "النماذج",
+    "description": "النماذج التي تقدمها حساباتك فعلًا. يختفي النموذج المرفوض من كل القوائم حتى ينجح تشغيل به أو تطلب التحقق منه مجددًا.",
+    "empty": "لا توجد نتائج بعد.",
+    "unavailable": "غير متاح",
+    "works": "يعمل",
+    "usedBy": "يستخدمه {agents}",
+    "unused": "لا يستخدمه أي وكيل.",
+    "replaceWith": "تحويل الجميع إلى",
+    "replace": "تحويل",
+    "replaced": "{count, plural, =0 {لم يكن أي وكيل يستخدمه.} one {تم تحويل وكيل واحد.} two {تم تحويل وكيلين.} few {تم تحويل # وكلاء.} many {تم تحويل # وكيلًا.} other {تم تحويل # وكيل.}}",
+    "agentDefault": "النموذج الافتراضي للوكيل",
+    "seen": "آخر مرة {time}"
+  },
+  "deadLogin": "يعمل {model} عبر {account, select, chatgpt {تسجيل دخول ChatGPT} claude {تسجيل دخول Claude} other {تسجيل الدخول}} في Hermes، وهو {state, select, invalid {غير صالح} other {منتهي الصلاحية}} – سجّل دخول Hermes مجددًا أو اختر نموذجًا من مزوّد آخر.",
+  "deadLoginDefault": "يعمل النموذج الافتراضي للوكيل عبر {account, select, chatgpt {تسجيل دخول ChatGPT} claude {تسجيل دخول Claude} other {تسجيل الدخول}} في Hermes، وهو {state, select, invalid {غير صالح} other {منتهي الصلاحية}} – سجّل دخول Hermes مجددًا."
+}

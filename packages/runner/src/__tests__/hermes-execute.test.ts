@@ -129,6 +129,108 @@ describe('Hermes subprocess adapter', () => {
     });
   });
 
+  // Codex with a ChatGPT account refused the model (live, 2026-09-24): Hermes ends the turn
+  // with its own copy, the provider's words in `error`, and only its session on stderr.
+  async function refusedRun(result: Record<string, unknown>, agent: 'hermes' | undefined) {
+    const dir = await mkdtemp(join(tmpdir(), 'itsaplan-hermes-refusal-'));
+    dirs.push(dir);
+    const binary = join(dir, 'hermes');
+    await writeFile(
+      binary,
+      `#!/bin/sh\ncat > /dev/null\nprintf '%s\\n' '${JSON.stringify(result).replace(/'/g, `'\\''`)}'\nprintf 'session_id: 20260924_191027_ae3ffa\\n' >&2\nexit 1\n`,
+    );
+    await chmod(binary, 0o755);
+    return execute(
+      {
+        name: '',
+        url: 'http://plan.test',
+        apiKey: 'secret',
+        ...(agent ? { agent } : { command: `"${binary}"` }),
+        args: [],
+        cwd: dir,
+        env: { PATH: `${dir}:${process.env.PATH ?? ''}` },
+        concurrency: 1,
+        pollIntervalMs: 1000,
+        timeoutMs: 5000,
+        outputFormat: 'hermes-stream-json',
+        models: [],
+      },
+      { prompt: 'Work', systemPrompt: '', env: {}, model: 'gpt-6-terra' },
+    );
+  }
+
+  const REFUSAL = {
+    type: 'result',
+    session_id: '20260924_191027_ae3ffa',
+    exit_code: 1,
+    text:
+      "ChatGPT or Codex Subscription rejected the request and retrying won't help. Pick another " +
+      'model with /model.\n\nProvider said: HTTP 400: {"detail":"The \'gpt-6-terra\' model is not ' +
+      'supported when using Codex with a ChatGPT account."}',
+    error:
+      'HTTP 400: {"detail":"The \'gpt-6-terra\' model is not supported when using Codex with a ChatGPT account."}',
+  };
+
+  it("reads a model the provider refuses this account as final, in the provider's words", async () => {
+    const outcome = await refusedRun(REFUSAL, 'hermes');
+    expect(outcome.status).toBe('failed');
+    // The provider's words, not the session line Hermes ends its stderr with.
+    expect(outcome.error).toBe(REFUSAL.error);
+    expect(outcome.failure).toEqual({
+      code: 'model-unavailable',
+      retryable: false,
+      model: 'gpt-6-terra',
+      detail: "The 'gpt-6-terra' model is not supported when using Codex with a ChatGPT account.",
+    });
+  });
+
+  it("takes Hermes' own verdict where its result line carries one", async () => {
+    const outcome = await refusedRun(
+      {
+        type: 'result',
+        exit_code: 1,
+        text: 'The request was malformed.',
+        error: 'HTTP 400: bad request',
+        failure_reason: 'format_error',
+        failure_retryable: false,
+      },
+      'hermes',
+    );
+    expect(outcome.failure).toMatchObject({ code: 'provider-rejected', retryable: false });
+    const login = await refusedRun(
+      {
+        type: 'result',
+        exit_code: 1,
+        text: 'Signed out.',
+        failure_reason: 'auth_permanent',
+        failure_retryable: false,
+      },
+      'hermes',
+    );
+    expect(login.failure).toBeUndefined();
+  });
+
+  it('words a failure from the result text when Hermes gives no summary', async () => {
+    const { error, ...withoutSummary } = REFUSAL;
+    expect(error).toBeTruthy();
+    const outcome = await refusedRun(withoutSummary, 'hermes');
+    expect(outcome.error).toBe(
+      'HTTP 400: {"detail":"The \'gpt-6-terra\' model is not supported when using Codex with a ChatGPT account."}',
+    );
+    expect(outcome.error).not.toContain('session_id');
+    const plain = await refusedRun(
+      { type: 'result', exit_code: 1, text: 'The tool loop gave up.\nDetails follow.' },
+      'hermes',
+    );
+    expect(plain.error).toBe('The tool loop gave up.');
+  });
+
+  it("leaves an operator's own command unread", async () => {
+    const outcome = await refusedRun(REFUSAL, undefined);
+    expect(outcome.status).toBe('failed');
+    expect(outcome.failure).toBeUndefined();
+  });
+
   it('passes the prompt on stdin and the session, model, reasoning, limits, toolsets and profile as argv', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'itsaplan-hermes-'));
     dirs.push(dir);

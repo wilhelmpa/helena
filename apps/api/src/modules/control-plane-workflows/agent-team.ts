@@ -19,7 +19,7 @@ import { notHomeAgent } from '#modules/agents/core/home-agent';
 import { bumpControlPlaneRevision } from '#modules/sync/service';
 import { startRunSoon } from '#modules/engine/runs';
 import type { PipelineDefinition } from '#modules/pipelines/definition';
-import { agentRunStatus } from '#modules/pipelines/runs';
+import { agentRunStatus, runFailures } from '#modules/pipelines/runs';
 import { AGENT_TEAM, agentTeamPolicy, assignment } from './service';
 
 // The agent team of an issue: the issue is the task, its delegate (or the project's only
@@ -342,7 +342,11 @@ export async function listIssueAgentTeamRuns(issueId: number) {
     .orderBy(desc(pipelineRun.createdAt))
     .limit(100);
   const ids = runs.map((run) => run.id);
-  const [stages, steps] = await Promise.all([agentTeamStages(ids), teamSteps(ids)]);
+  const [stages, steps, failures] = await Promise.all([
+    agentTeamStages(ids),
+    teamSteps(ids),
+    runFailures(runs.filter((run) => run.status === 'failed').map((run) => run.id)),
+  ]);
   return runs.map((run) => ({
     runId: run.id,
     status: run.status,
@@ -352,5 +356,6 @@ export async function listIssueAgentTeamRuns(issueId: number) {
     stages: stages.get(run.id) ?? [],
     result: run.result ?? null,
     error: run.error,
+    failure: failures.get(run.id) ?? null,
   }));
 }

@@ -135,6 +135,14 @@ export {
   type RuntimeType,
 } from './runtime';
 export {
+  classifyProviderFailure,
+  FAILURE_DETAIL_LIMIT,
+  isFinalFailure,
+  type RuntimeFailure,
+  type RuntimeFailureCode,
+  type RuntimeFailureInput,
+} from './runtime-failures';
+export {
   canonicalJson,
   resolveMcpValue,
   runModelReport,
@@ -263,6 +271,15 @@ export {
   type UsageLimitWindow,
   type UsageLimitWindowKind,
 } from './usage-limits';
+export {
+  normalizeRuntimeLoginReport,
+  runtimeLoginNeedsOwner,
+  type RuntimeLogin,
+  type RuntimeLoginPollContext,
+  type RuntimeLoginReport,
+  type RuntimeLoginSource,
+  type RuntimeLoginState,
+} from './runtime-logins';
 export type {
   McpServerContribution,
   PluginEntries,
