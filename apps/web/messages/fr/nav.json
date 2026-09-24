@@ -135,5 +135,6 @@
     "projectOptions": "Options du projet",
     "groupOptions": "Options du groupe",
     "dropUngrouped": "Déposez ici pour retirer le projet de son groupe"
-  }
+  },
+  "access": "Accès et connexions"
 }

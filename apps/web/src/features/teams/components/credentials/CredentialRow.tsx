@@ -1,4 +1,4 @@
-import { History, MoreHorizontal, Pencil, Trash2, UsersRound } from 'lucide-react';
+import { FolderGit2, History, MoreHorizontal, Pencil, Trash2, UsersRound } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { CredentialEntry } from '@/lib/api/endpoints/credentials';
 import { Badge } from '@/components/ui/badge';
@@ -29,11 +29,13 @@ export function CredentialRow({
 }: {
   entry: CredentialEntry;
   canManage: boolean;
-  onOpen: (dialog: 'edit' | 'grants' | 'audit' | 'delete') => void;
+  onOpen: (dialog: 'edit' | 'grants' | 'audit' | 'delete' | 'clone') => void;
 }) {
   const t = useTranslations('credentials');
   const tCommon = useTranslations('common');
+  const tAccess = useTranslations('access');
   const detail = detailOf(entry);
+  const canClone = canManage && entry.kind === 'ssh_key';
 
   return (
     <li className="flex items-start gap-3 px-4 py-3">
@@ -56,7 +58,7 @@ export function CredentialRow({
           </p>
         )}
         <p className="text-xs text-muted-foreground">
-          {t('agentCount', { count: entry.agentIds.length })}
+          {tAccess('grants.count', { count: entry.grants.length })}
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-1 max-sm:hidden">
@@ -68,6 +70,11 @@ export function CredentialRow({
         {canManage && (
           <CredentialRowAction label={t('grants')} onClick={() => onOpen('grants')}>
             <UsersRound className="size-4" />
+          </CredentialRowAction>
+        )}
+        {canClone && (
+          <CredentialRowAction label={tAccess('clone.action')} onClick={() => onOpen('clone')}>
+            <FolderGit2 className="size-4" />
           </CredentialRowAction>
         )}
         <CredentialRowAction label={t('audit')} onClick={() => onOpen('audit')}>
@@ -102,6 +109,12 @@ export function CredentialRow({
             <DropdownMenuItem onSelect={() => onOpen('grants')}>
               <UsersRound />
               {t('grants')}
+            </DropdownMenuItem>
+          )}
+          {canClone && (
+            <DropdownMenuItem onSelect={() => onOpen('clone')}>
+              <FolderGit2 />
+              {tAccess('clone.action')}
             </DropdownMenuItem>
           )}
           <DropdownMenuItem onSelect={() => onOpen('audit')}>

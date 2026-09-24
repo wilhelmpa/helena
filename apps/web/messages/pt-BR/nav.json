@@ -135,5 +135,6 @@
     "projectOptions": "Opções do projeto",
     "groupOptions": "Opções do grupo",
     "dropUngrouped": "Solte aqui para tirar o projeto do grupo"
-  }
+  },
+  "access": "Acessos e conexões"
 }

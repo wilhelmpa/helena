@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
   Activity,
-  AtSign,
   BookOpenText,
   BookText,
   Bot,
@@ -13,7 +12,6 @@ import {
   LayoutGrid,
   ListTodo,
   MonitorSmartphone,
-  Plug,
   Radio,
   ShieldCheck,
   UsersRound,
@@ -50,9 +48,7 @@ const icons = {
   skills: BookText,
   tools: Wrench,
   mcps: Radio,
-  connections: Plug,
-  mailAccounts: AtSign,
-  credentials: KeyRound,
+  access: KeyRound,
   devices: MonitorSmartphone,
   teamSettings: UsersRound,
 } as const;

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
+import { ListFilter } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { CredentialEntry, CredentialKind } from '@/lib/api/endpoints/credentials';
 import { useTeamQuery } from '@/services/teams.service';
@@ -12,22 +13,32 @@ import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
 import ListPager from '@/components/common/ListPager';
 import { usePaging } from '@/hooks/usePaging';
 import { AddCredentialMenu } from './AddCredentialMenu';
-import { CredentialAuditDialog } from './CredentialAuditDialog';
 import { CredentialDialog } from './CredentialDialog';
-import { CredentialGrantsDialog } from './CredentialGrantsDialog';
 import { CredentialKindFilter } from './CredentialKindFilter';
 import { CredentialRow } from './CredentialRow';
-import { PageToolbar, PageToolbarSpacer } from '@/components/layout/PageToolbar';
+import { PageSelect, PageToolbar, PageToolbarSpacer } from '@/components/layout/PageToolbar';
+import { AccessAuditDialog } from '@/features/access/AccessAuditDialog';
+import { CloneDialog } from '@/features/access/CloneDialog';
+import { GrantsDialog } from '@/features/access/GrantsDialog';
+import { CREDENTIAL_KINDS } from '../../utils/credentialForm';
 
 type Open =
   | { dialog: 'edit'; entry: CredentialEntry }
   | { dialog: 'new'; kind: CredentialKind }
-  | { dialog: 'grants' | 'audit' | 'delete'; entry: CredentialEntry };
+  | { dialog: 'grants' | 'audit' | 'delete' | 'clone'; entry: CredentialEntry };
 
 // The Credentials page: the team's website logins, API keys, SSH keys and secrets. Its
 // owners and managers add, change and grant them; a member whose role reads the team's
 // integrations sees them.
-export default function TeamCredentialsSection({ teamId }: { teamId: number }) {
+// In the access center the area's tabs lead the header row (`leading`) and the kinds
+// become a select.
+export default function TeamCredentialsSection({
+  teamId,
+  leading,
+}: {
+  teamId: number;
+  leading?: ReactNode;
+}) {
   const t = useTranslations('credentials');
   const { data: team } = useTeamQuery(teamId);
   const canRead = team?.permissions.integrations.read ?? false;
@@ -45,13 +56,30 @@ export default function TeamCredentialsSection({ teamId }: { teamId: number }) {
       description={canManage ? t('description') : `${t('description')} ${t('managerOnly')}`}
     >
       <PageToolbar>
-        {canRead && (
+        {leading}
+        {canRead && !leading && (
           <CredentialKindFilter
             value={kind}
             onChange={(next) => {
               setKind(next);
               paging.reset();
             }}
+          />
+        )}
+        {canRead && leading && (
+          <PageSelect
+            label={t('all')}
+            icon={ListFilter}
+            value={kind ?? 'all'}
+            defaultValue="all"
+            onChange={(next) => {
+              setKind(next === 'all' ? undefined : (next as CredentialKind));
+              paging.reset();
+            }}
+            options={[
+              { value: 'all', label: t('all') },
+              ...CREDENTIAL_KINDS.map((value) => ({ value, label: t(`kindsPlural.${value}`) })),
+            ]}
           />
         )}
         <PageToolbarSpacer />
@@ -99,10 +127,28 @@ export default function TeamCredentialsSection({ teamId }: { teamId: number }) {
         />
       )}
       {open?.dialog === 'grants' && (
-        <CredentialGrantsDialog teamId={teamId} entry={open.entry} onClose={close} />
+        <GrantsDialog
+          teamId={teamId}
+          target={{
+            id: open.entry.id,
+            label: open.entry.label,
+            projectId: open.entry.projectId,
+            grants: open.entry.grants,
+          }}
+          services={[]}
+          onClose={close}
+        />
       )}
       {open?.dialog === 'audit' && (
-        <CredentialAuditDialog teamId={teamId} entry={open.entry} onClose={close} />
+        <AccessAuditDialog
+          teamId={teamId}
+          credentialId={open.entry.id}
+          name={open.entry.label}
+          onClose={close}
+        />
+      )}
+      {open?.dialog === 'clone' && (
+        <CloneDialog teamId={teamId} entry={open.entry} onClose={close} />
       )}
       {open?.dialog === 'delete' && (
         <ConfirmDialog

@@ -1,13 +1,12 @@
 import {
+  accessRootPath,
   agentsPath,
   approvalsPath,
-  connectionsPath,
   devicesPath,
   globalAgentActivityPath,
   globalInboxPath,
   homeDocsPath,
   homeFilesPath,
-  mailAccountsPath,
   manageTeamsPath,
   teamOrganizationPath,
   mcpsPath,
@@ -16,7 +15,6 @@ import {
   skillsPath,
   tasksPath,
   toolsPath,
-  credentialsPath,
 } from '@/utils/paths';
 
 export type HomeNavigationId =
@@ -34,9 +32,7 @@ export type HomeNavigationId =
   | 'skills'
   | 'tools'
   | 'mcps'
-  | 'connections'
-  | 'mailAccounts'
-  | 'credentials'
+  | 'access'
   | 'devices'
   | 'teamSettings';
 
@@ -76,9 +72,9 @@ export function homeNavigation(teamId: number | null, isOwner = false): HomeNavi
       { id: 'tools', group: 'globalSettings', href: toolsPath() },
       { id: 'mcps', group: 'globalSettings', href: mcpsPath() },
     ]),
-    { id: 'connections', group: 'globalSettings', href: connectionsPath() },
-    { id: 'mailAccounts', group: 'globalSettings', href: mailAccountsPath() },
-    ...teamOnly([{ id: 'credentials', group: 'globalSettings', href: credentialsPath() }]),
+    // "Zugänge & Verbindungen": Google accounts, mailboxes, credentials, the host's
+    // connections and the audit log, one area with tabs.
+    { id: 'access', group: 'globalSettings', href: accessRootPath() },
     { id: 'devices', group: 'globalSettings', href: devicesPath() },
     { id: 'teamSettings', group: 'globalSettings', href: manageTeamsPath() },
   ];
