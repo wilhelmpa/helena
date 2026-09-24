@@ -38,10 +38,9 @@ export const createProjectBody = t.Composite([
   t.Object({
     templateId: t.Optional(t.Integer({ minimum: 1 })),
     preset: t.Optional(
-      t.Union(
-        PROJECT_PRESET_KEYS.map((k) => t.Literal(k)),
-        { description: `Issue-type preset: ${PROJECT_PRESET_KEYS.join(', ')}.` },
-      ),
+      t.UnionEnum(PROJECT_PRESET_KEYS, {
+        description: `Issue-type preset: ${PROJECT_PRESET_KEYS.join(', ')}.`,
+      }),
     ),
     provisionResources: t.Optional(
       t.Array(
