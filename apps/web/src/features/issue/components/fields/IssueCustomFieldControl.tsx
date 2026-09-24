@@ -147,6 +147,7 @@ export default function IssueCustomFieldControl({
   if (def.fieldType === 'boolean') {
     return (
       <Checkbox
+        aria-label={def.name}
         defaultChecked={Boolean(current?.value)}
         key={saveKey}
         onCheckedChange={(v) => onChange({ value: v === true })}
