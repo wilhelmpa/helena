@@ -241,7 +241,9 @@ export const captureRoutes = new Elysia({
         summary: 'Save a web page into the knowledge',
         description:
           "Save the readable part of a web page as a Markdown note in the Inbox of a project (`projectKey`) or of Home, with its title, author and source URL. Pass the page's `html` when you have it (a page behind a login); without it the page is fetched from `url`.",
-        ...mcpTool('capture_web_page', { idempotentHint: false, openWorldHint: true }),
+        // It reads a public page (open world) but only writes into Helena: a write, not a
+        // send (D-C1 would count an open-world tool as `send`).
+        ...mcpTool('capture_web_page', { idempotentHint: false, openWorldHint: true }, 'write'),
       },
     },
   )
