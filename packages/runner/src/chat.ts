@@ -19,8 +19,10 @@ import type { HermesRunSettings } from './policy';
 // reported for it.
 
 // Often enough to read as typing, rarely enough that a chatty command does not become a
-// request per line.
-const FLUSH_MS = 500;
+// request per line. 150 ms (was 500, owner 2026-09-24: "richtig starker Chat mit
+// Stream"): with the API following at 100 ms an answer arrives in steps of about a
+// quarter second instead of up to 0.8 s.
+const FLUSH_MS = 150;
 
 export async function answer(
   config: RunnerConfig,
