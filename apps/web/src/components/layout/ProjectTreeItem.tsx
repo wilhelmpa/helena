@@ -45,7 +45,9 @@ export default function ProjectTreeItem({
         <span
           className={cn(
             'shrink-0 font-mono text-xs text-muted-foreground',
-            manage && 'group-hover/menu-item:invisible',
+            // Where the row's menu is always shown (a phone, a touch screen) it takes this
+            // place; elsewhere it only replaces it while the row is hovered.
+            manage && 'group-hover/menu-item:invisible max-md:hidden [@media(hover:none)]:hidden',
           )}
         >
           {project.key}
