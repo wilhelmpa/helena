@@ -70,8 +70,6 @@
     "unavailable": "{tool} no está configurado",
     "unavailableDescription": "Un administrador puede conectar este espacio de trabajo a la instancia.",
     "mail": "Redactar",
-    "openBeside": "Abrir al lado",
-    "closeSplit": "Cerrar vista dividida",
     "browserBar": {
       "address": "Dirección",
       "back": "Atrás",
@@ -168,5 +166,27 @@
     "groupOptions": "Opciones del grupo",
     "dropUngrouped": "Suelta aquí para sacar el proyecto de su grupo"
   },
-  "browser": "Navegador"
+  "browser": "Navegador",
+  "layout": {
+    "menu": "Diseño",
+    "menuCurrent": "Diseño: {layout}",
+    "menuHint": "{layout} · {key} cambia",
+    "command": "Cambiar diseño",
+    "commandPlaceholder": "Elige un diseño…",
+    "layouts": {
+      "standard": "Estándar",
+      "chat-left": "Chat a la izquierda",
+      "chat-tool": "Chat + herramienta",
+      "two-tools": "Dos herramientas",
+      "tool-full": "Herramienta a pantalla completa"
+    },
+    "tools": "Herramientas",
+    "pickTool": "{tool} · cambiar herramienta",
+    "swap": "intercambiar",
+    "closeArea": "Cerrar área",
+    "back": "Volver",
+    "backHint": "Volver al diseño anterior",
+    "full": "Herramienta a pantalla completa",
+    "resizeArea": "Cambiar ancho"
+  }
 }

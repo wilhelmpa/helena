@@ -70,8 +70,6 @@
     "unavailable": "尚未配置{tool}",
     "unavailableDescription": "管理员可以为此实例连接该工作区。",
     "mail": "撰写",
-    "openBeside": "在旁边打开",
-    "closeSplit": "关闭分屏",
     "browserBar": {
       "address": "地址",
       "back": "后退",
@@ -168,5 +166,27 @@
     "groupOptions": "分组选项",
     "dropUngrouped": "拖放到此处可将项目移出分组"
   },
-  "browser": "浏览器"
+  "browser": "浏览器",
+  "layout": {
+    "menu": "布局",
+    "menuCurrent": "布局：{layout}",
+    "menuHint": "{layout} · {key} 切换",
+    "command": "切换布局",
+    "commandPlaceholder": "选择布局…",
+    "layouts": {
+      "standard": "标准",
+      "chat-left": "聊天在左",
+      "chat-tool": "聊天 + 工具",
+      "two-tools": "两个工具",
+      "tool-full": "工具全屏"
+    },
+    "tools": "工具",
+    "pickTool": "{tool} · 更换工具",
+    "swap": "交换",
+    "closeArea": "关闭区域",
+    "back": "返回",
+    "backHint": "返回上一个布局",
+    "full": "工具全屏",
+    "resizeArea": "调整宽度"
+  }
 }

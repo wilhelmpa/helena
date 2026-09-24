@@ -71,8 +71,6 @@
     "unavailable": "{tool} ist nicht konfiguriert",
     "unavailableDescription": "Ein Admin kann diesen Workspace für die Instanz verbinden.",
     "mail": "Verfassen",
-    "openBeside": "Daneben öffnen",
-    "closeSplit": "Geteilte Ansicht schließen",
     "browserBar": {
       "address": "Adresse",
       "back": "Zurück",
@@ -168,5 +166,27 @@
   },
   "agentActivity": "Aktivität",
   "approvals": "Freigaben",
-  "browser": "Browser"
+  "browser": "Browser",
+  "layout": {
+    "menu": "Layout",
+    "menuCurrent": "Layout: {layout}",
+    "menuHint": "{layout} · {key} wechselt",
+    "command": "Layout wechseln",
+    "commandPlaceholder": "Layout wählen…",
+    "layouts": {
+      "standard": "Standard",
+      "chat-left": "Chat links",
+      "chat-tool": "Chat + Werkzeug",
+      "two-tools": "Zwei Werkzeuge",
+      "tool-full": "Werkzeug groß"
+    },
+    "tools": "Werkzeuge",
+    "pickTool": "{tool} · Werkzeug wechseln",
+    "swap": "tauschen",
+    "closeArea": "Bereich schließen",
+    "back": "Zurück",
+    "backHint": "Zurück zum vorigen Layout",
+    "full": "Werkzeug groß",
+    "resizeArea": "Breite ändern"
+  }
 }

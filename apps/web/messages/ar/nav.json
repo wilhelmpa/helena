@@ -70,8 +70,6 @@
     "unavailable": "لم تتم تهيئة {tool}",
     "unavailableDescription": "يمكن للمسؤول ربط مساحة العمل هذه بالنسخة.",
     "mail": "إنشاء رسالة",
-    "openBeside": "فتح بجانبه",
-    "closeSplit": "إغلاق العرض المقسوم",
     "browserBar": {
       "address": "العنوان",
       "back": "رجوع",
@@ -168,5 +166,27 @@
     "groupOptions": "خيارات المجموعة",
     "dropUngrouped": "أفلت هنا لإخراج المشروع من مجموعته"
   },
-  "browser": "المتصفح"
+  "browser": "المتصفح",
+  "layout": {
+    "menu": "التخطيط",
+    "menuCurrent": "التخطيط: {layout}",
+    "menuHint": "{layout} · {key} للتبديل",
+    "command": "تغيير التخطيط",
+    "commandPlaceholder": "اختر تخطيطًا…",
+    "layouts": {
+      "standard": "قياسي",
+      "chat-left": "الدردشة على الجانب",
+      "chat-tool": "دردشة + أداة",
+      "two-tools": "أداتان",
+      "tool-full": "الأداة بالحجم الكامل"
+    },
+    "tools": "الأدوات",
+    "pickTool": "{tool} · تغيير الأداة",
+    "swap": "تبديل",
+    "closeArea": "إغلاق المنطقة",
+    "back": "رجوع",
+    "backHint": "العودة إلى التخطيط السابق",
+    "full": "الأداة بالحجم الكامل",
+    "resizeArea": "تغيير العرض"
+  }
 }

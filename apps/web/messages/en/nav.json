@@ -73,8 +73,6 @@
     "unavailable": "{tool} is not configured",
     "unavailableDescription": "An administrator can connect this workspace for the instance.",
     "mail": "Compose",
-    "openBeside": "Open beside",
-    "closeSplit": "Close split view",
     "browserBar": {
       "address": "Address",
       "back": "Back",
@@ -168,5 +166,27 @@
     "groupOptions": "Group options",
     "dropUngrouped": "Drop here to take the project out of its group"
   },
-  "browser": "Browser"
+  "browser": "Browser",
+  "layout": {
+    "menu": "Layout",
+    "menuCurrent": "Layout: {layout}",
+    "menuHint": "{layout} · {key} switches",
+    "command": "Change layout",
+    "commandPlaceholder": "Choose a layout…",
+    "layouts": {
+      "standard": "Standard",
+      "chat-left": "Chat on the left",
+      "chat-tool": "Chat + tool",
+      "two-tools": "Two tools",
+      "tool-full": "Tool full size"
+    },
+    "tools": "Tools",
+    "pickTool": "{tool} · change tool",
+    "swap": "swap",
+    "closeArea": "Close area",
+    "back": "Back",
+    "backHint": "Back to the previous layout",
+    "full": "Tool full size",
+    "resizeArea": "Resize"
+  }
 }

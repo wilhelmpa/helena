@@ -15,6 +15,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { LocaleToggle } from '@/components/locale-toggle';
 import UserMenu from '@/components/layout/UserMenu';
 import WorkspaceToolbar from '@/components/layout/WorkspaceToolbar';
+import WorkspaceLayoutMenu from '@/components/layout/WorkspaceLayoutMenu';
 import ShellHeaderExtra from '@/components/layout/ShellHeaderExtra';
 
 export default function AppHeader({
@@ -22,8 +23,7 @@ export default function AppHeader({
   hasProject,
   onOpenCommand,
   onNewIssue,
-  workspaceOpen,
-  activeWorkspaceTool,
+  shownWorkspaceTools,
   onSelectWorkspaceTool,
   headerLayout,
   headerExtra,
@@ -33,8 +33,8 @@ export default function AppHeader({
   hasProject: boolean;
   onOpenCommand: () => void;
   onNewIssue: () => void;
-  workspaceOpen: boolean;
-  activeWorkspaceTool: WorkspaceToolId;
+  // The tools the workspace layout shows right now.
+  shownWorkspaceTools: readonly WorkspaceToolId[];
   onSelectWorkspaceTool: (tool: WorkspaceToolId) => void;
   // 'single' (the default, docs/volition-design-helena-ui.md) merges the page's own
   // view tabs/filters into this one row (`headerExtra`) and leaves language, theme
@@ -121,11 +121,8 @@ export default function AppHeader({
           </Tooltip>
         )}
 
-        <WorkspaceToolbar
-          open={workspaceOpen}
-          activeTool={activeWorkspaceTool}
-          onSelectTool={onSelectWorkspaceTool}
-        />
+        <WorkspaceToolbar shown={shownWorkspaceTools} onSelectTool={onSelectWorkspaceTool} />
+        <WorkspaceLayoutMenu />
         {!single && (
           <>
             <LocaleToggle />

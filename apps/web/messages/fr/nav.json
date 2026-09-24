@@ -70,8 +70,6 @@
     "unavailable": "{tool} n’est pas configuré",
     "unavailableDescription": "Un administrateur peut connecter cet espace de travail à l’instance.",
     "mail": "Rédiger",
-    "openBeside": "Ouvrir à côté",
-    "closeSplit": "Fermer la vue partagée",
     "browserBar": {
       "address": "Adresse",
       "back": "Précédent",
@@ -168,5 +166,27 @@
     "groupOptions": "Options du groupe",
     "dropUngrouped": "Déposez ici pour retirer le projet de son groupe"
   },
-  "browser": "Navigateur"
+  "browser": "Navigateur",
+  "layout": {
+    "menu": "Disposition",
+    "menuCurrent": "Disposition : {layout}",
+    "menuHint": "{layout} · {key} change",
+    "command": "Changer de disposition",
+    "commandPlaceholder": "Choisir une disposition…",
+    "layouts": {
+      "standard": "Standard",
+      "chat-left": "Chat à gauche",
+      "chat-tool": "Chat + outil",
+      "two-tools": "Deux outils",
+      "tool-full": "Outil en grand"
+    },
+    "tools": "Outils",
+    "pickTool": "{tool} · changer d’outil",
+    "swap": "échanger",
+    "closeArea": "Fermer la zone",
+    "back": "Retour",
+    "backHint": "Revenir à la disposition précédente",
+    "full": "Outil en grand",
+    "resizeArea": "Redimensionner"
+  }
 }

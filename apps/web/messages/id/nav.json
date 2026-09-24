@@ -70,8 +70,6 @@
     "unavailable": "{tool} belum dikonfigurasi",
     "unavailableDescription": "Administrator dapat menghubungkan ruang kerja ini untuk instans.",
     "mail": "Tulis",
-    "openBeside": "Buka di samping",
-    "closeSplit": "Tutup tampilan terbagi",
     "browserBar": {
       "address": "Alamat",
       "back": "Kembali",
@@ -168,5 +166,27 @@
     "groupOptions": "Opsi grup",
     "dropUngrouped": "Lepaskan di sini untuk mengeluarkan proyek dari grupnya"
   },
-  "browser": "Browser"
+  "browser": "Browser",
+  "layout": {
+    "menu": "Tata letak",
+    "menuCurrent": "Tata letak: {layout}",
+    "menuHint": "{layout} · {key} berganti",
+    "command": "Ganti tata letak",
+    "commandPlaceholder": "Pilih tata letak…",
+    "layouts": {
+      "standard": "Standar",
+      "chat-left": "Chat di kiri",
+      "chat-tool": "Chat + alat",
+      "two-tools": "Dua alat",
+      "tool-full": "Alat layar penuh"
+    },
+    "tools": "Alat",
+    "pickTool": "{tool} · ganti alat",
+    "swap": "tukar",
+    "closeArea": "Tutup area",
+    "back": "Kembali",
+    "backHint": "Kembali ke tata letak sebelumnya",
+    "full": "Alat layar penuh",
+    "resizeArea": "Ubah lebar"
+  }
 }

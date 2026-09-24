@@ -77,6 +77,9 @@
       },
       "board": {
         "select-all": "Selecionar todas as issues no quadro"
+      },
+      "layout": {
+        "cycle": "Próximo layout"
       }
     },
     "conflict": "Já usado por {command}"

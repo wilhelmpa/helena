@@ -217,6 +217,8 @@ export {
   type UiSlot,
   type UiSlotDescriptor,
   type UiSlotName,
+  type WorkspaceLayoutArea,
+  type WorkspaceLayoutSlot,
 } from './ui';
 export {
   ACCEPTED_LICENSES,

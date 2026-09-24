@@ -77,6 +77,9 @@
       },
       "board": {
         "select-all": "Sélectionner tous les tickets du tableau"
+      },
+      "layout": {
+        "cycle": "Disposition suivante"
       }
     },
     "conflict": "Déjà utilisé par {command}"

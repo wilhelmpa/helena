@@ -29,6 +29,8 @@ export function useKeyboardShortcuts(opts: {
   onNewProject: () => void;
   onSettings: () => void;
   onToggleChat: () => void;
+  // Absent where there is no layout to change (a phone).
+  onCycleLayout?: () => void;
 }) {
   const {
     hasProject,
@@ -41,6 +43,7 @@ export function useKeyboardShortcuts(opts: {
     onNewProject,
     onSettings,
     onToggleChat,
+    onCycleLayout,
   } = opts;
   const matches = useHotkeyMatch();
 
@@ -85,6 +88,11 @@ export function useKeyboardShortcuts(opts: {
       if (hasChat && matches(e, 'chat.toggle')) {
         e.preventDefault();
         onToggleChat();
+        return;
+      }
+      if (onCycleLayout && matches(e, 'layout.cycle')) {
+        e.preventDefault();
+        onCycleLayout();
       }
     }
     window.addEventListener('keydown', onKeyDown);
@@ -101,5 +109,6 @@ export function useKeyboardShortcuts(opts: {
     onNewProject,
     onSettings,
     onToggleChat,
+    onCycleLayout,
   ]);
 }

@@ -14,7 +14,7 @@ import { useSettingsNavGroups } from '@/hooks/useSettingsNavGroups';
 import { useShellProject } from '@/hooks/useShellProject';
 import { useShellRoute } from '@/hooks/useShellRoute';
 import { useProjectRouteSync } from '@/hooks/useProjectRouteSync';
-import { useWorkspacePanel } from '@/hooks/useWorkspacePanel';
+import { useWorkspaceLayout } from '@/hooks/useWorkspaceLayout';
 import { usePluginPanelTools } from '@/extensions/pluginPanelTools';
 import { projectPath, issuePath } from '@/utils/paths';
 import { useKioskDisplay } from '@/utils/kioskDisplay';
@@ -22,6 +22,7 @@ import { createHeaderExtraStore } from '@/utils/headerExtraStore';
 import { defaultsFromFilters, type NewIssueDefaults } from '@/utils/project';
 import { ShellCtx, type ChatThreadRequest, type ShellContext } from '@/context/shellContext';
 import { ShellHeaderSlotCtx } from '@/context/shellHeaderSlot';
+import { WorkspaceLayoutCtx, type WorkspaceLayoutChoice } from '@/context/workspaceLayout';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import ShellHeaderExtra from '@/components/layout/ShellHeaderExtra';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
@@ -33,7 +34,7 @@ import ShellBody from '@/components/layout/ShellBody';
 import ShellHeaderTitle from '@/components/layout/ShellHeaderTitle';
 import HeaderCrumbs from '@/components/layout/HeaderCrumbs';
 import ShellOverlays from '@/components/layout/ShellOverlays';
-import WorkspacePanel from '@/components/layout/WorkspacePanel';
+import WorkspaceLayoutHost from '@/components/layout/WorkspaceLayoutHost';
 import { useTranslations } from 'next-intl';
 
 // The layout for /project/:projectKey and its children (the work items view and the
@@ -91,7 +92,8 @@ export default function Shell({
   const pageSlot = headerLayout === 'single' ? (narrow ? pageBarSlot : headerSlot) : null;
   const overlays = useOverlays();
   // On the kiosk's two screens the tool panel fills the second one.
-  const kioskDual = useKioskDisplay() === 'dual';
+  const kiosk = useKioskDisplay();
+  const kioskDual = kiosk === 'dual';
   // Marks the document for the dual kiosk's CSS: dialogs centre on the left screen.
   useEffect(() => {
     const root = document.documentElement;
@@ -100,11 +102,30 @@ export default function Shell({
   }, [kioskDual]);
   // Plugins' panel tools join the built-ins once the API lists them.
   usePluginPanelTools();
-  const workspacePanel = useWorkspacePanel({
-    defaultOpen: globalHome && autoOpenGlobalChat,
+  // A page that already is a tool (code, inbox, chat) is not shown a second time beside
+  // itself — two chats side by side, one of them not the page's.
+  const pathname = usePathname();
+  const routedTool =
+    route.sub === 'code' || route.sub === 'inbox' || route.sub === 'chat'
+      ? route.sub
+      : pathname === '/chat'
+        ? 'chat'
+        : null;
+  // How the page and the panel's tools share the room (the header's layout menu).
+  const workspaceLayout = useWorkspaceLayout({
+    kiosk,
     projectKey,
-    pinned: kioskDual,
+    defaultOpen: globalHome && autoOpenGlobalChat,
+    routedTool,
   });
+  const workspacePanel = workspaceLayout.panel;
+  const layoutChoice: WorkspaceLayoutChoice = {
+    layouts: workspaceLayout.layouts,
+    current: workspaceLayout.chosenId,
+    available: !workspaceLayout.phone,
+    setLayout: workspaceLayout.setLayout,
+    cycle: workspaceLayout.cycle,
+  };
   const navigation = useWorkspaceNavigation(projectKey, defaultSidebarOpen);
   // The Shell renders the context provider, so its own permission check reads the
   // project it loaded rather than the context.
@@ -114,27 +135,20 @@ export default function Shell({
 
   useProjectRouteSync({ projects, projectsLoaded, projectKey, allowEmpty: globalHome });
 
-  const selectWorkspaceTool = workspacePanel.toggleTool;
+  const selectWorkspaceTool = workspaceLayout.selectTool;
   const {
     activeTool: activeWorkspaceTool,
     open: workspaceOpen,
     setOpen: setWorkspaceOpen,
   } = workspacePanel;
 
-  // A page that already is a tool (code, inbox, chat) does not also show that tool in
-  // the panel beside it — two chats side by side, one of them not the page's.
-  const pathname = usePathname();
+  // The panel that would show the page's own tool closes (the pinned panel of another
+  // layout shows a different tool instead, see resolveWorkspaceLayout).
   useEffect(() => {
-    const routedTool =
-      route.sub === 'code' || route.sub === 'inbox' || route.sub === 'chat'
-        ? route.sub
-        : pathname === '/chat'
-          ? 'chat'
-          : null;
     if (routedTool && workspaceOpen && activeWorkspaceTool === routedTool) {
       setWorkspaceOpen(false);
     }
-  }, [activeWorkspaceTool, route.sub, pathname, setWorkspaceOpen, workspaceOpen]);
+  }, [activeWorkspaceTool, routedTool, setWorkspaceOpen, workspaceOpen]);
 
   // The settings sections the member may open; the hotkey lands on the first of
   // them, the same entry the sidebar links to.
@@ -153,7 +167,7 @@ export default function Shell({
 
   const openNewIssue = () => addIssue({});
 
-  const toggleCoordinatorChat = () => workspacePanel.toggleTool('chat');
+  const toggleCoordinatorChat = () => workspaceLayout.selectTool('chat');
   const [chatThreadRequest, setChatThreadRequest] = useState<ChatThreadRequest | null>(null);
 
   // The issue the palette builds its issue commands for: the open detail panel
@@ -177,6 +191,7 @@ export default function Shell({
     onNewProject: () => overlays.setShowNewProject(true),
     onSettings: () => firstSettingsHref && router.push(firstSettingsHref),
     onToggleChat: toggleCoordinatorChat,
+    onCycleLayout: workspaceLayout.phone ? undefined : workspaceLayout.cycle,
   });
 
   // Every view opens an issue through this one callback, so the user's choice
@@ -200,8 +215,8 @@ export default function Shell({
   };
 
   const context: ShellContext = {
-    workspaceTool: workspacePanel.open ? workspacePanel.activeTool : null,
-    onOpenWorkspaceTool: workspacePanel.openTool,
+    workspaceTool: workspaceLayout.resolved.mainTool,
+    onOpenWorkspaceTool: workspaceLayout.showTool,
     project,
     filteredProject,
     views,
@@ -209,10 +224,10 @@ export default function Shell({
     customFields,
     onOpenIssue: openIssue,
     onAddIssue: addIssue,
-    onChatWithAgent: () => workspacePanel.openTool('chat'),
+    onChatWithAgent: () => workspaceLayout.showTool('chat'),
     onOpenChatThread: (agentId, threadId) => {
       setChatThreadRequest({ agentId, threadId });
-      workspacePanel.openTool('chat');
+      workspaceLayout.showTool('chat');
     },
     chatThreadRequest,
     onChatThreadHandled: () => setChatThreadRequest(null),
@@ -222,68 +237,67 @@ export default function Shell({
 
   return (
     <ShellCtx.Provider value={context}>
-      <ShellHeaderSlotCtx.Provider value={pageSlot}>
-        <SidebarProvider
-          open={navigation.sidebarOpen}
-          onOpenChange={navigation.setSidebarOpen}
-          className="h-svh overflow-hidden"
-        >
-          <AppSidebar
-            projects={projects}
-            currentProjectKey={projectKey}
-            onSelectProject={(key) => router.push(navigation.projectDestination(key))}
-            onNewProject={() => overlays.setShowNewProject(true)}
-          />
-          <SidebarInset className="min-w-0">
-            <AppHeader
-              title={
-                globalHome ? (
-                  globalTitle ? (
-                    <HeaderCrumbs
-                      items={[{ label: t('home'), href: '/' }, { label: globalTitle }]}
-                    />
-                  ) : (
-                    t('home')
-                  )
-                ) : (
-                  <ShellHeaderTitle
-                    route={route}
-                    projectName={project?.project.name ?? t('project')}
-                    issueIdentifier={issueQuery.data?.identifier ?? null}
-                    issueParent={issueQuery.data?.parent ?? null}
-                  />
-                )
-              }
-              hasProject={!!project}
-              onOpenCommand={() => overlays.setShowCommand(true)}
-              onNewIssue={openNewIssue}
-              workspaceOpen={workspacePanel.open}
-              activeWorkspaceTool={workspacePanel.activeTool}
-              onSelectWorkspaceTool={selectWorkspaceTool}
-              headerLayout={headerLayout}
-              headerExtra={narrow ? null : headerExtra}
-              pageSlotRef={setHeaderSlot}
+      <WorkspaceLayoutCtx.Provider value={layoutChoice}>
+        <ShellHeaderSlotCtx.Provider value={pageSlot}>
+          <SidebarProvider
+            open={navigation.sidebarOpen}
+            onOpenChange={navigation.setSidebarOpen}
+            className="h-svh overflow-hidden"
+          >
+            <AppSidebar
+              projects={projects}
+              currentProjectKey={projectKey}
+              onSelectProject={(key) => router.push(navigation.projectDestination(key))}
+              onNewProject={() => overlays.setShowNewProject(true)}
             />
-            {headerLayout === 'single' && narrow && (
-              <div
-                ref={setPageBarSlot}
-                data-slot="app-page-bar"
-                className="relative flex h-11 shrink-0 items-center gap-1 border-b border-sidebar-border px-2 empty:hidden [&:not(:has(>:not(:empty)))]:hidden"
-              >
-                <ShellHeaderExtra store={headerExtra} bare />
-              </div>
-            )}
+            <SidebarInset className="min-w-0">
+              <AppHeader
+                title={
+                  globalHome ? (
+                    globalTitle ? (
+                      <HeaderCrumbs
+                        items={[{ label: t('home'), href: '/' }, { label: globalTitle }]}
+                      />
+                    ) : (
+                      t('home')
+                    )
+                  ) : (
+                    <ShellHeaderTitle
+                      route={route}
+                      projectName={project?.project.name ?? t('project')}
+                      issueIdentifier={issueQuery.data?.identifier ?? null}
+                      issueParent={issueQuery.data?.parent ?? null}
+                    />
+                  )
+                }
+                hasProject={!!project}
+                onOpenCommand={() => overlays.setShowCommand(true)}
+                onNewIssue={openNewIssue}
+                shownWorkspaceTools={workspaceLayout.resolved.shownTools}
+                onSelectWorkspaceTool={selectWorkspaceTool}
+                headerLayout={headerLayout}
+                headerExtra={narrow ? null : headerExtra}
+                pageSlotRef={setHeaderSlot}
+              />
+              {headerLayout === 'single' && narrow && (
+                <div
+                  ref={setPageBarSlot}
+                  data-slot="app-page-bar"
+                  className="relative flex h-11 shrink-0 items-center gap-1 border-b border-sidebar-border px-2 empty:hidden [&:not(:has(>:not(:empty)))]:hidden"
+                >
+                  <ShellHeaderExtra store={headerExtra} bare />
+                </div>
+              )}
 
-            <EmergencyStopBanner />
+              <EmergencyStopBanner />
 
-            {errorMsg && !forbidden && (
-              <div className="border-b border-destructive/50 bg-destructive/10 px-4 py-2 text-sm text-destructive">
-                {errorMsg}
-              </div>
-            )}
+              {errorMsg && !forbidden && (
+                <div className="border-b border-destructive/50 bg-destructive/10 px-4 py-2 text-sm text-destructive">
+                  {errorMsg}
+                </div>
+              )}
 
-            <div className="relative flex min-h-0 flex-1 overflow-hidden">
-              <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+              <WorkspaceLayoutHost layout={workspaceLayout} projectKey={projectKey}>
                 <ShellBody
                   forbidden={forbidden}
                   hasProject={!!project}
@@ -294,49 +308,34 @@ export default function Shell({
                 >
                   {children}
                 </ShellBody>
-              </div>
+              </WorkspaceLayoutHost>
+            </SidebarInset>
 
-              <WorkspacePanel
-                open={workspacePanel.open}
-                activeTool={workspacePanel.activeTool}
-                contextProjectKey={projectKey}
-                toolSession={workspacePanel.toolSession}
-                splitTool={workspacePanel.splitTool}
-                onSplitToolChange={workspacePanel.setSplitTool}
-                mode={workspacePanel.mode}
-                fullscreen={workspacePanel.fullscreen}
-                onToggleMode={workspacePanel.toggleMode}
-                onToggleFullscreen={workspacePanel.toggleFullscreen}
-                pinned={workspacePanel.pinned}
-                onClose={() => workspacePanel.setOpen(false)}
-              />
-            </div>
-          </SidebarInset>
+            <CommandLayer
+              open={overlays.showCommand}
+              onOpenChange={overlays.setShowCommand}
+              projects={projects}
+              currentProjectKey={projectKey}
+              onBoard={route.onBoard}
+              view={editor.view}
+              currentIssueId={currentIssueId}
+              onViewChange={editor.changeView}
+              onNewIssue={openNewIssue}
+              // Handled by the kanban board's selection provider (mounted only on the
+              // board); the constant matches BOARD_SELECT_ALL_EVENT in useSelection.
+              onSelectAll={() => window.dispatchEvent(new Event('board:select-all'))}
+              onNewInitiative={() => overlays.setShowNewInitiative(true)}
+              onNewProject={() => overlays.setShowNewProject(true)}
+              onSelectProject={(key) => router.push(navigation.projectDestination(key))}
+              onOpenIssue={(seq) => projectKey && router.push(issuePath(projectKey, seq))}
+              onIssueDeleted={onIssueDeleted}
+              onToggleChat={toggleCoordinatorChat}
+            />
 
-          <CommandLayer
-            open={overlays.showCommand}
-            onOpenChange={overlays.setShowCommand}
-            projects={projects}
-            currentProjectKey={projectKey}
-            onBoard={route.onBoard}
-            view={editor.view}
-            currentIssueId={currentIssueId}
-            onViewChange={editor.changeView}
-            onNewIssue={openNewIssue}
-            // Handled by the kanban board's selection provider (mounted only on the
-            // board); the constant matches BOARD_SELECT_ALL_EVENT in useSelection.
-            onSelectAll={() => window.dispatchEvent(new Event('board:select-all'))}
-            onNewInitiative={() => overlays.setShowNewInitiative(true)}
-            onNewProject={() => overlays.setShowNewProject(true)}
-            onSelectProject={(key) => router.push(navigation.projectDestination(key))}
-            onOpenIssue={(seq) => projectKey && router.push(issuePath(projectKey, seq))}
-            onIssueDeleted={onIssueDeleted}
-            onToggleChat={toggleCoordinatorChat}
-          />
-
-          <ShellOverlays project={project} projectKey={projectKey} overlays={overlays} />
-        </SidebarProvider>
-      </ShellHeaderSlotCtx.Provider>
+            <ShellOverlays project={project} projectKey={projectKey} overlays={overlays} />
+          </SidebarProvider>
+        </ShellHeaderSlotCtx.Provider>
+      </WorkspaceLayoutCtx.Provider>
     </ShellCtx.Provider>
   );
 }

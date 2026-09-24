@@ -26,16 +26,16 @@ export default function WorkspacePanelHeader({
   browserLossless,
   externalUrl,
   isMobile,
-  fullscreen,
+  full,
   mode,
-  pinned = false,
-  splitControl,
+  closable,
+  picker,
   toolbar,
   slotRef,
   onToggleAdvanced,
   onToggleBrowserLossless,
   onToggleMode,
-  onToggleFullscreen,
+  onToggleFull,
   onReload,
   onClose,
 }: {
@@ -46,11 +46,14 @@ export default function WorkspacePanelHeader({
   browserLossless: boolean;
   externalUrl: string | null | undefined;
   isMobile: boolean;
-  fullscreen: boolean;
+  // The tool takes the whole window; the header then offers the way back.
+  full: boolean;
   mode: WorkspacePanelMode;
-  // A pinned panel offers no pin, fullscreen or close buttons.
-  pinned?: boolean;
-  splitControl: ReactNode;
+  // The panel may close and float over the page (the standard layout, not on the dual
+  // kiosk); otherwise it offers neither.
+  closable: boolean;
+  // Picks the tool this area shows (WorkspaceToolPicker).
+  picker: ReactNode;
   // Shown in place of the title, such as the browser's address bar.
   toolbar?: ReactNode;
   // Receives the slot the showing tool may fill with its own bar (PanelHeaderSlotCtx);
@@ -59,15 +62,17 @@ export default function WorkspacePanelHeader({
   onToggleAdvanced: () => void;
   onToggleBrowserLossless: () => void;
   onToggleMode: () => void;
-  onToggleFullscreen: () => void;
+  onToggleFull: () => void;
   onReload: () => void;
   onClose: () => void;
 }) {
   const t = useTranslations('nav.workspace');
   const tChat = useTranslations('aiChat');
   const tCommon = useTranslations('common');
+  const tLayout = useTranslations('nav.layout');
   return (
-    <div className={cn(WORKSPACE_PANEL_HEADER_CLASS, 'gap-1 px-3')}>
+    <div className={cn(WORKSPACE_PANEL_HEADER_CLASS, 'gap-1', picker ? 'ps-1.5 pe-3' : 'px-3')}>
+      {picker}
       {toolbar ?? (
         <>
           <div
@@ -130,8 +135,7 @@ export default function WorkspacePanelHeader({
           </Button>
         </>
       )}
-      {splitControl}
-      {!isMobile && !fullscreen && !pinned && (
+      {!isMobile && !full && closable && (
         <Button
           variant="ghost"
           size="icon"
@@ -143,28 +147,44 @@ export default function WorkspacePanelHeader({
           {mode === 'push' ? <PinOff /> : <Pin />}
         </Button>
       )}
-      {!pinned && (
-        <>
+      {full ? (
+        // The way back from "Werkzeug groß": named, since the header and the layout menu
+        // are covered.
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 gap-1.5"
+          onClick={onToggleFull}
+          title={tLayout('backHint')}
+        >
+          <Minimize2 />
+          {tLayout('back')}
+        </Button>
+      ) : (
+        !isMobile && (
           <Button
             variant="ghost"
             size="icon"
             className="size-7 text-muted-foreground hover:text-foreground"
-            onClick={onToggleFullscreen}
-            title={tCommon(fullscreen ? 'exitFullscreen' : 'fullscreen')}
-            aria-pressed={fullscreen}
+            onClick={onToggleFull}
+            title={tLayout('full')}
+            aria-label={tLayout('full')}
           >
-            {fullscreen ? <Minimize2 /> : <Maximize2 />}
+            <Maximize2 />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7 text-muted-foreground hover:text-foreground"
-            onClick={onClose}
-            title={tCommon('close')}
-          >
-            <X />
-          </Button>
-        </>
+        )
+      )}
+      {closable && !full && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7 text-muted-foreground hover:text-foreground"
+          onClick={onClose}
+          title={tCommon('close')}
+          aria-label={tCommon('close')}
+        >
+          <X />
+        </Button>
       )}
     </div>
   );
