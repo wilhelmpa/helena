@@ -2,11 +2,11 @@
 import argparse, hashlib, json, re, sys
 from fnmatch import fnmatch
 from pathlib import Path
-SOURCE_DIRS=('backup','docs','gateway','integration','optional/mastra-studio','hermes/coder-sandbox','scripts','security-images','security-patches','workspace','workspace-bridge')
+SOURCE_DIRS=('backup','docs','gateway','integration','hermes/coder-sandbox','scripts','security-images','security-patches','workspace','workspace-bridge')
 SOURCE_FILES=('compose.apps.yml','compose.gateway.yml','compose.hub.yml','compose.vault.yml','README.apps.md')
 FILE_ALLOWLIST=('Dockerfile','init-sso.sh','nextcloud-entrypoint.sh','nextcloud-webdav.sh','remote-user.conf','remote-user.ini','remote-user.php')
-EXCLUDED_PARTS={'node_modules','__pycache__','.state','.mastra'}
-DENIED_PARTS={'.secrets','backups','garage','node_modules','__pycache__','.state','.mastra'}
+EXCLUDED_PARTS={'node_modules','__pycache__','.state'}
+DENIED_PARTS={'.secrets','backups','garage','node_modules','__pycache__','.state'}
 DENIED_NAMES={'.env','runtime.env','gateway.json'}
 PRIVATE_KEY=re.compile(r'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----',re.I)
 PRODUCTION_EMAIL=re.compile(r'[A-Za-z0-9._%+-]+@(?:volition\.one|emrani-wilhelm\.de|gmail\.com)',re.I)

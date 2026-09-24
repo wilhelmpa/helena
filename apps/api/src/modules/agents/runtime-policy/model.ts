@@ -15,7 +15,6 @@ export const RuntimePolicySnapshotResponse = t.Object({
   agent: t.Object({ id: t.Number(), name: t.String(), username: t.String() }),
   instructions: t.Nullable(t.String()),
   model: t.Nullable(t.String()),
-  memory: t.Object({ enabled: t.Boolean(), lastMessages: t.Nullable(t.Number()) }),
   runtimePolicy,
   projects: t.Array(
     t.Object({ id: t.Number(), key: t.String(), name: t.String(), instructions: t.String() }),

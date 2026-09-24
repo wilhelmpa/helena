@@ -1,11 +1,9 @@
 import type { McpApp } from './types';
 
-// The assembled app, captured once at the composition root (app.ts). Two callers
-// dispatch tool calls as in-process requests against the real routes (see
-// dispatch.ts) and so need the app that owns them: the MCP endpoint, which gets it
-// as an argument, and the internal agent runtime, which cannot. app.ts mounts the
-// planner, the planner mounts the agent routes, and those reach the runtime — so a
-// direct import there would close a cycle. The reference is set at startup instead.
+// The assembled app, captured once at the composition root (app.ts), for the modules
+// that dispatch requests against the real routes in process (see dispatch.ts) but are
+// themselves mounted by the app, so a direct import would close a cycle: the template
+// bundles. The reference is set at startup instead.
 
 let current: McpApp | null = null;
 

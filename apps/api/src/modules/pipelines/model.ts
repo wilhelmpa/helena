@@ -85,6 +85,7 @@ export const RunStatus = t.Union([
   t.Literal('failed'),
   t.Literal('canceled'),
   t.Literal('rejected'),
+  t.Literal('skipped'),
 ]);
 
 export const runsQuery = t.Object({
@@ -178,6 +179,9 @@ export const ProjectPipelineResponse = t.Object({
 
 export const PipelineRunStepResponse = t.Object({
   stepId: t.String(),
+  parentStepId: t.Nullable(
+    t.String({ description: 'The step a part belongs to, e.g. a stage of an agent team.' }),
+  ),
   iteration: t.Number(),
   seq: t.Number(),
   kind: t.String(),
@@ -205,18 +209,24 @@ export const PipelineRunStepResponse = t.Object({
 
 export const PipelineRunResponse = t.Object({
   id: t.String(),
-  pipelineId: t.Number(),
+  kind: t.Union([t.Literal('workflow'), t.Literal('agent_team'), t.Literal('routine')], {
+    description: 'A run of a builder workflow, of the agent team of a task, or of a routine.',
+  }),
+  pipelineId: t.Nullable(t.Number()),
   pipelineName: t.String(),
-  version: t.Number(),
+  version: t.Nullable(t.Number()),
   projectId: t.Number(),
   projectKey: t.String(),
   issueId: t.Nullable(t.Number()),
   issueIdentifier: t.Nullable(t.String()),
   issueTitle: t.Nullable(t.String()),
+  scheduleId: t.Nullable(t.String()),
+  scheduledFor: t.Nullable(t.String()),
   trigger: t.String(),
   dryRun: t.Boolean(),
   status: RunStatus,
   error: t.Nullable(t.String()),
+  result: t.Unknown({ description: 'What the run produced, e.g. the outcome of a routine.' }),
   actorName: t.Nullable(t.String()),
   inputTokens: t.Nullable(t.Number()),
   outputTokens: t.Nullable(t.Number()),

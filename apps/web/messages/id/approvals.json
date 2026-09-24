@@ -34,11 +34,8 @@
   "rejectedBy": "Ditolak oleh {name}",
   "someone": "seseorang",
   "workflows": "Persetujuan alur kerja",
-  "workflowsIncomplete": "Alur kerja beberapa proyek tidak dapat dibaca, jadi persetujuannya mungkin tidak tampil di sini.",
   "gateOf": "{workflow} di {project}",
   "effects": "Dijalankan setelah disetujui:",
-  "gateApprovedToast": "Disetujui. Alur kerja berlanjut.",
-  "gateRejectedToast": "Ditolak. Alur kerja berakhir tanpa efek ini.",
   "loadFailed": "Persetujuan tidak dapat dimuat.",
   "loadFailedHint": "Server tidak merespons. Coba lagi sebentar lagi.",
   "openBrowser": "Buka browser proyek"

@@ -386,11 +386,10 @@
     "deleteTemplateMessage": "Die Vorlage wird entfernt. Projekte, die sie bereits verwendet haben, bleiben unverändert.",
     "noTemplates": "Noch keine wiederverwendbaren Vorlagen.",
     "controlPlane": {
-      "title": "Mastra-Steuerungsebene",
-      "description": "Projektbindungen, Workflow-Graphen, Läufe, Freigabeschritte und von Mastra verwaltete Zeitpläne.",
+      "title": "Eingebaute Workflows",
       "loading": "Workflows werden geladen…",
-      "unavailable": "Die Workflow-Steuerungsebene ist nicht verfügbar.",
-      "empty": "Für dieses Projekt sind keine Mastra-Workflows verfügbar.",
+      "unavailable": "Die Workflows lassen sich gerade nicht laden.",
+      "empty": "Für dieses Projekt gibt es keine eingebauten Workflows.",
       "approvalRequired": "Freigabe erforderlich",
       "enabled": "Aktiviert",
       "disabled": "Deaktiviert",
@@ -400,21 +399,9 @@
       "retryLimit": "Wiederholungslimit",
       "saveConfiguration": "Konfiguration speichern",
       "notConfigured": "Nicht konfiguriert",
-      "graph": "Workflow-Graph",
-      "recentRuns": "Letzte Läufe",
-      "noRuns": "Keine Läufe für dieses Projekt.",
-      "reject": "Ablehnen",
-      "approve": "Freigeben",
-      "retry": "Erneut versuchen",
-      "stopRun": "Lauf stoppen",
-      "schedules": "Mastra-Zeitpläne",
-      "cron": "Cron",
-      "timezone": "Zeitzone",
-      "addSchedule": "Zeitplan hinzufügen",
-      "runNow": "Jetzt ausführen",
-      "pauseSchedule": "Zeitplan pausieren",
-      "resumeSchedule": "Zeitplan fortsetzen",
-      "delete": "Löschen",
+      "graph": "Ablauf",
+      "recentRuns": "Läufe",
+      "noRuns": "Noch keine Läufe in diesem Projekt.",
       "agentTeam": {
         "result": "Ergebnis",
         "autonomyReview": "Aufgabe geht in Review",
@@ -427,7 +414,29 @@
         "noLimit": "Kein Limit",
         "hint": "Die Limits gelten für jede Hermes-Phase. Eine Phase, die sie erreicht, stoppt und meldet ihren bisherigen Stand."
       },
-      "configurationSaved": "{name}: Konfiguration gespeichert"
+      "configurationSaved": "{name}: Konfiguration gespeichert",
+      "runsUnavailable": "Die Läufe konnten nicht geladen werden.",
+      "triggerDelegation": "Delegation an den Koordinator",
+      "agentTeamName": "Agent-Team des Projekts",
+      "agentTeamDescription": "Der Koordinator plant eine delegierte Aufgabe, Spezialisten erledigen die Arbeit in der Reihenfolge ihrer Abhängigkeiten, der Koordinator prüft sie, und das Ergebnis geht an die Aufgabe.",
+      "agentTeamSteps": {
+        "coordinate": {
+          "title": "Arbeit planen",
+          "description": "Die Aufgabe dem einen Spezialisten geben, dessen Fähigkeiten passen, oder den Koordinator um Teilaufträge mit Abhängigkeiten bitten."
+        },
+        "specialize": {
+          "title": "Spezialisten arbeiten",
+          "description": "Die Teilaufträge in der Reihenfolge ihrer Abhängigkeiten ausführen, unabhängige gleichzeitig, jeden als Agentenlauf mit seinen Limits."
+        },
+        "review": {
+          "title": "Nachweise prüfen",
+          "description": "Der Koordinator prüft die Nachweise gegen jedes Abnahmekriterium, wenn das Projekt eine Prüfung verlangt."
+        },
+        "synchronize": {
+          "title": "Aufgabe aktualisieren",
+          "description": "Zusammenfassung und Nachweise an die Aufgabe schreiben und sie nach Review verschieben, oder nach Erledigt, wenn das Projekt es erlaubt."
+        }
+      }
     }
   },
   "webhooks": {

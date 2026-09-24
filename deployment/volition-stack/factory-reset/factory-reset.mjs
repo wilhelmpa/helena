@@ -27,7 +27,6 @@ const STACK_ENV = `${STACK_ROOT}/.env`;
 const PLAN_COMPOSE = `${PLAN_ROOT}/docker-compose.yml`;
 const HUB_COMPOSE = `${STACK_ROOT}/compose.hub.yml`;
 const APPS_COMPOSE = `${STACK_ROOT}/compose.apps.yml`;
-const MASTRA_COMPOSE = `${STACK_ROOT}/optional/mastra-studio/compose.yml`;
 const VAULT_COMPOSE = `${STACK_ROOT}/compose.vault.yml`;
 const GATEWAY_COMPOSE = `${STACK_ROOT}/compose.gateway.yml`;
 const FACTORY_GATEWAY_ROUTES = Object.freeze(['plan-api.volition.one', 'plan.volition.one', 'vault.volition.one']);
@@ -45,19 +44,7 @@ export const PLAN_PUBLIC_TABLES = Object.freeze([
   'issue_development_check', 'issue_development_link', 'issue_field_option',
   'issue_field_value', 'issue_import', 'issue_label', 'issue_link', 'issue_status',
   'issue_template', 'issue_template_label', 'issue_type', 'issue_watcher',
-  'issue_worklog', 'label', 'label_group', 'mastra_agent_versions', 'mastra_agents',
-  'mastra_ai_spans', 'mastra_background_tasks', 'mastra_channel_config',
-  'mastra_channel_installations', 'mastra_dataset_items', 'mastra_dataset_versions',
-  'mastra_datasets', 'mastra_experiment_results', 'mastra_experiments',
-  'mastra_favorites', 'mastra_mcp_client_versions', 'mastra_mcp_clients',
-  'mastra_mcp_server_versions', 'mastra_mcp_servers', 'mastra_messages',
-  'mastra_notifications', 'mastra_observational_memory', 'mastra_prompt_block_versions',
-  'mastra_prompt_blocks', 'mastra_resources', 'mastra_schedule_triggers',
-  'mastra_schedules', 'mastra_scorer_definition_versions', 'mastra_scorer_definitions',
-  'mastra_scorers', 'mastra_skill_blobs', 'mastra_skill_versions', 'mastra_skills',
-  'mastra_thread_state', 'mastra_threads', 'mastra_tool_provider_connections',
-  'mastra_workflow_definitions', 'mastra_workflow_snapshot', 'mastra_workspace_versions',
-  'mastra_workspaces', 'note_board', 'note_board_member', 'notification',
+  'issue_worklog', 'label', 'label_group', 'note_board', 'note_board_member', 'notification',
   'notification_delivery', 'oauth_access_token', 'oauth_application', 'oauth_consent',
   'organization_agent_assignment', 'organization_department', 'organization_goal',
   'organization_project_assignment', 'passkey', 'project', 'project_action',
@@ -98,29 +85,28 @@ export const DATA_VOLUMES = Object.freeze([
   'volition-apps_nextcloud_html',
   'volition-apps_nextcloud_redis',
   'volition-apps_workspace_home',
-  'volition-mastra-studio_studio-data',
   'volition-nextcloud-db-alpine-20260921-v2',
   'volition-nextcloud-redis-alpine-20260921-v2',
 ]);
 
 export const SECRET_FILES = Object.freeze([
   'backup_restic_password', 'inbox_push_token', 'itsaplan_home_master_agent_api_key',
-  'mastra_inbox_adapter_token', 'nextcloud_admin_password', 'nextcloud_db_password',
+  'nextcloud_admin_password', 'nextcloud_db_password',
   'nextcloud_patrick_app_password', 'hermes_checkpoint_age_identity',
-  'hermes_checkpoint_age_recipient', 'plan_mastra_control_token', 'redis_password', 'trading_bridge_token',
+  'hermes_checkpoint_age_recipient', 'plan_control_token', 'redis_password', 'trading_bridge_token',
   'verve_git_deploy_key', 'verve_git_deploy_key.pub',
 ].map((name) => `${STACK_ROOT}/.secrets/${name}`));
 export const EXPECTED_SECRET_BASENAMES = Object.freeze([
   'backup_restic_password', 'github_known_hosts', 'inbox_push_token',
-  'itsaplan_home_master_agent_api_key', 'mastra_inbox_adapter_token',
+  'itsaplan_home_master_agent_api_key',
   'nextcloud_admin_password', 'nextcloud_db_password', 'nextcloud_patrick_app_password',
   'hermes_checkpoint_age_identity', 'hermes_checkpoint_age_recipient',
-  'plan_mastra_control_token', 'redis_password', 'trading_bridge_token',
+  'plan_control_token', 'redis_password', 'trading_bridge_token',
   'verve_git_deploy_key', 'verve_git_deploy_key.pub',
 ].sort());
 export const POST_RESET_SECRET_BASENAMES = Object.freeze([
   'github_known_hosts',
-  'plan_mastra_control_token',
+  'plan_control_token',
 ]);
 
 export const CLEAR_DIRECTORIES = Object.freeze([
@@ -136,7 +122,7 @@ export const CLEAR_DIRECTORIES = Object.freeze([
 
 export const REMOVE_PATHS = Object.freeze([
   BACKUP_ROOT, '/home/pw/.config/gh', '/home/pw/.config/itsaplan',
-  '/home/pw/.mastra/analytics.json', `${PLAN_ROOT}/.env.pre-garage-20260921T121439`,
+  `${PLAN_ROOT}/.env.pre-garage-20260921T121439`,
   `${PLAN_ROOT}/apps/web/.env`,
 ]);
 
@@ -360,7 +346,6 @@ async function removeAppUnitFiles() {
 
 async function stopComposeStacks() {
   await run('/usr/bin/docker', ['compose', '-f', APPS_COMPOSE, 'down', '--remove-orphans'], { allowFailure: true });
-  await run('/usr/bin/docker', ['compose', '-f', MASTRA_COMPOSE, 'down', '--remove-orphans'], { allowFailure: true });
   await run('/usr/bin/docker', ['compose', '-f', `${PLAN_ROOT}/docker-compose.test.yml`, 'down', '-v', '--remove-orphans'], { allowFailure: true });
   for (const name of ['itsaplan-api-1', 'itsaplan-worker-1', 'itsaplan-web-1', 'itsaplan-garage-1']) {
     await run('/usr/bin/docker', ['stop', name], { allowFailure: true });
@@ -411,7 +396,9 @@ async function resetPlan(planSource) {
   const tables = await planTableNames();
   assertExactSet(tables, PLAN_PUBLIC_TABLES, 'Plan public-table allowlist');
   const qualified = tables.map((table) => `public.${sqlIdentifier(table)}`).join(', ');
-  const sql = `BEGIN;\nLOCK TABLE ${qualified} IN ACCESS EXCLUSIVE MODE;\nTRUNCATE TABLE ${qualified} RESTART IDENTITY CASCADE;\nALTER ROLE ${sqlIdentifier(databaseUser)} PASSWORD ${sqlLiteral(postgresPassword)};\nCOMMIT;\n`;
+  // The workflow engine's state (schema helena_engine) belongs to the runs removed here; the
+  // API creates the schema again when it starts.
+  const sql = `BEGIN;\nLOCK TABLE ${qualified} IN ACCESS EXCLUSIVE MODE;\nTRUNCATE TABLE ${qualified} RESTART IDENTITY CASCADE;\nDROP SCHEMA IF EXISTS helena_engine CASCADE;\nALTER ROLE ${sqlIdentifier(databaseUser)} PASSWORD ${sqlLiteral(postgresPassword)};\nCOMMIT;\n`;
   await run('/usr/bin/docker', ['exec', '-i', 'itsaplan-postgres-1', 'psql', '-U', databaseUser, '-d', databaseName, '-v', 'ON_ERROR_STOP=1'], { input: sql });
   await run('/usr/bin/docker', ['stop', 'itsaplan-postgres-1']);
   for (const path of [`${STACK_ROOT}/garage/meta`, `${STACK_ROOT}/garage/data`]) await clearDirectory(path);
@@ -450,7 +437,7 @@ async function enableVaultFirstRunSignup() {
 
 async function resetSecrets() {
   for (const path of SECRET_FILES) await rm(assertAllowedPath(path, SECRET_FILES), { force: true });
-  await atomicPrivateWrite(`${STACK_ROOT}/.secrets/plan_mastra_control_token`, randomHex());
+  await atomicPrivateWrite(`${STACK_ROOT}/.secrets/plan_control_token`, randomHex());
 }
 
 async function removePaths() {
@@ -572,7 +559,7 @@ async function inventory() {
     directoriesToClear: CLEAR_DIRECTORIES,
     pathsToRemove: REMOVE_PATHS,
     credentialsToRemove: SECRET_FILES.map((path) => path.replace(`${STACK_ROOT}/.secrets/`, '')),
-    credentialsRegeneratedForBlankBoot: ['plan_mastra_control_token'],
+    credentialsRegeneratedForBlankBoot: ['plan_control_token'],
     testComposeProjectRemoved: 'itsaplan-test',
     unitsToRemove: APP_UNITS,
     repositoriesPreserved: preflight.repositories,
@@ -590,14 +577,14 @@ async function postconditions(repositoryBefore) {
   if (!/^\d+$/.test(migrations.stdout.trim()) || Number(migrations.stdout.trim()) < 1) throw new FactoryResetError('Plan migration history is missing');
   if (JSON.stringify(await repositoryHeads()) !== JSON.stringify(repositoryBefore)) throw new FactoryResetError('A protected repository HEAD changed');
   if (await exists(BACKUP_ROOT)) throw new FactoryResetError('Backup root still exists');
-  for (const path of SECRET_FILES.filter((path) => !path.endsWith('/plan_mastra_control_token'))) {
+  for (const path of SECRET_FILES.filter((path) => !path.endsWith('/plan_control_token'))) {
     if (await exists(path)) throw new FactoryResetError(`Old credential remains: ${path}`);
   }
   const remainingSecrets = (await readdir(`${STACK_ROOT}/.secrets`, { withFileTypes: true }))
     .filter((entry) => entry.isFile() || entry.isSymbolicLink())
     .map((entry) => entry.name)
     .sort();
-  assertExactSet(remainingSecrets, ['github_known_hosts', 'plan_mastra_control_token'], 'Post-reset service-secret allowlist');
+  assertExactSet(remainingSecrets, ['github_known_hosts', 'plan_control_token'], 'Post-reset service-secret allowlist');
   for (const path of REMOVE_PATHS) if (await exists(path)) throw new FactoryResetError(`Removed path remains: ${path}`);
   for (const unit of APP_UNITS.filter((entry) => !HERMES_BASELINE_UNITS.includes(entry))) {
     const state = await run('/usr/bin/systemctl', ['--user', 'is-active', unit], { allowFailure: true });
@@ -622,7 +609,7 @@ async function postconditions(repositoryBefore) {
   const garageManifest = await run('/usr/bin/docker', ['exec', '-i', '-w', '/app/apps/api', 'itsaplan-api-1', 'bun', '-'], { input: await readFile(`${STACK_ROOT}/backup/tests/garage-manifest.mjs`, 'utf8') });
   const garage = JSON.parse(garageManifest.stdout);
   if (garage.count !== 0 || garage.totalBytes !== 0) throw new FactoryResetError('Garage contains objects');
-  for (const name of ['itsaplan-worker-1', 'volition-apps-nextcloud-1', 'volition-apps-nextcloud-cron-1', 'volition-apps-nextcloud-db-1', 'volition-apps-nextcloud-redis-1', 'volition-apps-workspace-1', 'volition-mastra-studio-studio-1']) {
+  for (const name of ['itsaplan-worker-1', 'volition-apps-nextcloud-1', 'volition-apps-nextcloud-cron-1', 'volition-apps-nextcloud-db-1', 'volition-apps-nextcloud-redis-1', 'volition-apps-workspace-1']) {
     const state = await run('/usr/bin/docker', ['inspect', '--format', '{{.State.Running}}', name], { allowFailure: true });
     if (state.code === 0 && state.stdout.trim() === 'true') throw new FactoryResetError(`Application writer container is still running: ${name}`);
   }

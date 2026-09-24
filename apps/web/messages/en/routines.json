@@ -52,7 +52,8 @@
     "success": "Succeeded",
     "failed": "Failed",
     "canceled": "Canceled",
-    "running": "Running"
+    "running": "Running",
+    "skipped": "Skipped"
   },
   "outcome": {
     "created": "Created <task>{identifier}</task>",
@@ -95,5 +96,12 @@
     "through": "{start} to {end}",
     "dayOrdinal": "{n, selectordinal, one {#st} two {#nd} few {#rd} other {#th}}"
   },
-  "invalidSchedule": "Not a valid schedule. Example: 0 9 * * 1-5 (Monday to Friday at 9:00)."
+  "invalidSchedule": "Not a valid schedule. Example: 0 9 * * 1-5 (Monday to Friday at 9:00).",
+  "history": "History",
+  "historyTitle": "Runs of {name}",
+  "historyFailed": "The runs could not be loaded.",
+  "catchUp": "After downtime",
+  "catchUpSkip": "Skip missed times",
+  "catchUpOnce": "Run the last missed time once",
+  "catchUpHint": "When the server was down at a scheduled time. Older missed times never run."
 }

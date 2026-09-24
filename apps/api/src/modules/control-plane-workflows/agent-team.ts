@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import {
   agentRun,
   aiAgent,
@@ -7,25 +7,31 @@ import {
   issueLabel,
   label,
   organizationAgentAssignment,
+  pipelineRun,
+  pipelineRunStep,
   project,
   projectMember,
-  projectSetting,
   user,
 } from '@repo/db';
-import { and, asc, eq, inArray, isNotNull } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNotNull, like } from 'drizzle-orm';
 import { HttpError, iso } from '#shared/lib';
 import { notHomeAgent } from '#modules/agents/core/home-agent';
-import { listTaskWorkflowRuns, record, startWorkflow } from './service';
+import { bumpControlPlaneRevision } from '#modules/sync/service';
+import { startRunSoon } from '#modules/engine/runs';
+import type { PipelineDefinition } from '#modules/pipelines/definition';
+import { agentRunStatus } from '#modules/pipelines/runs';
+import { AGENT_TEAM, agentTeamPolicy, assignment } from './service';
 
-// The Mastra agent-team workflow started for one issue: the issue is the task, its
-// delegate (or the project's only coordinator) leads, and the project's specialists
-// are the team.
+// The agent team of an issue: the issue is the task, its delegate (or the project's only
+// coordinator) leads, and the project's specialists are the team. The Helena engine runs
+// it as a run of kind 'agent_team' whose one step is the team (engine/builtin/steps/
+// agent-team.ts); this module builds the team and lists the runs.
 
 const CHECKLIST_ITEM = /^\s*[-*]\s+\[[ xX]\]\s+(\S.*?)\s*$/;
 const DEFAULT_CRITERION = 'The work item is done as its description asks.';
 
 // The Markdown checklist items of a description, or one default criterion when it has
-// none. The bounds are the ones Mastra accepts.
+// none.
 export function acceptanceCriteria(description: string): string[] {
   const items = description
     .split('\n')
@@ -51,16 +57,11 @@ async function issueTask(issueId: number) {
     .innerJoin(project, eq(project.id, issue.projectId))
     .where(eq(issue.id, issueId));
   if (!row) throw new HttpError(404, 'Issue not found');
-  return {
-    ...row,
-    project: { id: row.projectId, key: row.key, teamId: row.teamId },
-    taskRef: `task:${row.key}-${row.sequenceNumber}`,
-  };
+  return { ...row, taskRef: `task:${row.key}-${row.sequenceNumber}` };
 }
 
 // The external agents of the project that have an agent-team role in their team's
-// organization. Hermes runs only external agents. The Home agent hands work to the
-// team and is not part of it.
+// organization. The Home agent hands work to the team and is not part of it.
 async function teamMembers(projectId: number) {
   return db
     .select({
@@ -103,18 +104,32 @@ function member(agent: TeamMember) {
   };
 }
 
-// Starts agent-team for the issue. With no specialist in the project the coordinator
-// also does the work. A paused agent takes no part: a paused coordinator refuses the
-// start, and a paused specialist is left out of the team.
+// Writes the agent-team run of the issue and hands it to the engine. With no specialist
+// in the project the coordinator also does the work. A paused agent takes no part: a
+// paused coordinator refuses the start, and a paused specialist is left out of the team.
+// `coordinatorAgentId` names the coordinator of a delegation. A run of the same id is
+// answered as it is; a delegated run is refused while an earlier one of the same
+// coordinator still works on the issue.
 export async function startIssueAgentTeam(
   issueId: number,
-  actorUserId: string,
+  actorUserId: string | null,
   idempotencyKey: string = randomUUID(),
+  options: { trigger?: 'manual' | 'delegation'; coordinatorAgentId?: number } = {},
 ) {
   const task = await issueTask(issueId);
+  const [existing] = await db
+    .select({ id: pipelineRun.id, status: pipelineRun.status })
+    .from(pipelineRun)
+    .where(eq(pipelineRun.id, idempotencyKey));
+  if (existing) return { runId: existing.id, status: existing.status, taskRef: task.taskRef };
+  const settings = await assignment(task.projectId, AGENT_TEAM);
+  if (!settings?.enabled) throw new HttpError(409, 'Workflow is not enabled for this project');
   const members = await teamMembers(task.projectId);
   const coordinators = members.filter((agent) => agent.role === 'coordinator');
   const coordinator =
+    (options.coordinatorAgentId !== undefined
+      ? coordinators.find((agent) => agent.agentId === options.coordinatorAgentId)
+      : undefined) ??
     coordinators.find((agent) => agent.userId === task.delegateUserId) ??
     (coordinators.length === 1 ? coordinators[0] : undefined);
   if (!coordinator)
@@ -140,102 +155,71 @@ export async function startIssueAgentTeam(
     .where(eq(issueLabel.issueId, issueId))
     .orderBy(asc(label.name));
   const description = task.description.trim();
-  const run = await startWorkflow(task.project, 'agent-team', actorUserId, {
-    idempotencyKey,
-    correlationId: task.taskRef,
-    dryRun: false,
-    payload: {
-      schemaVersion: 1,
-      task: {
-        taskRef: task.taskRef,
-        title: task.title.slice(0, 300),
-        objective: (description || task.title).slice(0, 12_000),
-        acceptanceCriteria: acceptanceCriteria(description),
-        labels: labels.slice(0, 50).map((item) => item.name.slice(0, 100)),
+  const trigger = options.trigger ?? 'manual';
+  const definition: PipelineDefinition = {
+    schemaVersion: 1,
+    trigger: { type: 'delegation' },
+    roles: [],
+    steps: [
+      {
+        id: 'team',
+        name: 'Agent team',
+        type: 'agent_team',
+        team: {
+          schemaVersion: 1,
+          task: {
+            taskRef: task.taskRef,
+            title: task.title.slice(0, 300),
+            objective: (description || task.title).slice(0, 12_000),
+            acceptanceCriteria: acceptanceCriteria(description),
+            labels: labels.slice(0, 50).map((item) => item.name.slice(0, 100)),
+          },
+          coordinator: member(coordinator),
+          specialists: specialists.length > 0 ? specialists : [member(coordinator)],
+          policy: agentTeamPolicy(settings.configuration),
+          execution: {},
+        },
       },
-      coordinator: member(coordinator),
-      specialists: specialists.length > 0 ? specialists : [member(coordinator)],
-    },
-  });
-  const started = (run ?? {}) as { runId?: unknown; status?: unknown };
-  return {
-    runId: String(started.runId ?? idempotencyKey),
-    status: String(started.status ?? 'running'),
-    taskRef: task.taskRef,
+    ],
   };
-}
-
-export { record };
-
-export function text(value: unknown): string | null {
-  return typeof value === 'string' ? value : null;
+  const [run] = await db
+    .insert(pipelineRun)
+    .values({
+      id: idempotencyKey,
+      kind: 'agent_team',
+      definition,
+      title: 'Agent team',
+      projectId: task.projectId,
+      issueId,
+      agentId: coordinator.agentId,
+      trigger,
+      actorUserId,
+    })
+    .onConflictDoNothing()
+    .returning({ id: pipelineRun.id });
+  if (!run) {
+    // An earlier team of the coordinator still works on the issue: that run answers.
+    const [active] = await db
+      .select({ id: pipelineRun.id, status: pipelineRun.status })
+      .from(pipelineRun)
+      .where(
+        and(
+          eq(pipelineRun.issueId, issueId),
+          eq(pipelineRun.agentId, coordinator.agentId),
+          eq(pipelineRun.kind, 'agent_team'),
+          inArray(pipelineRun.status, ['pending', 'running', 'waiting']),
+        ),
+      )
+      .limit(1);
+    if (!active) throw new HttpError(409, 'The agent team could not be started');
+    return { runId: active.id, status: active.status, taskRef: task.taskRef };
+  }
+  await bumpControlPlaneRevision(task.projectId);
+  await startRunSoon(run.id);
+  return { runId: run.id, status: 'pending', taskRef: task.taskRef };
 }
 
 export type AgentTeamPhase = 'coordinate' | 'specialize' | 'review';
-
-// The idempotency key the agent-team workflow sends with the Hermes stage of one phase
-// (teamIdempotencyKey in the Mastra workflow). Plan stores the run it queued for the
-// stage under this key, which is what leads from a stage to its agent_run.
-export function stageIdempotencyKey(
-  envelope: { eventId: string; correlationId: string },
-  phase: AgentTeamPhase,
-  subject: string,
-): string {
-  return createHash('sha256')
-    .update(`agent-team\0${envelope.eventId}\0${envelope.correlationId}\0${phase}\0${subject}`)
-    .digest('hex');
-}
-
-interface StageRef {
-  phase: AgentTeamPhase;
-  assignmentId: string | null;
-  key: string;
-}
-
-// The Hermes stages a run can have asked for so far: the coordinator's plan, one stage
-// per assignment of that plan, and the coordinator's review. A stage Mastra did not
-// run (a task routed without a coordinator, a policy without review) has no stored run
-// under its key and is dropped when the runs are read.
-function stageRefs(run: Record<string, unknown>): StageRef[] {
-  const context = record(record(run.snapshot).context);
-  const envelope = record(context.input);
-  const eventId = text(envelope.eventId);
-  const correlationId = text(envelope.correlationId);
-  const taskRef = text(record(record(envelope.payload).task).taskRef);
-  if (!eventId || !correlationId || !taskRef) return [];
-  const key = (phase: AgentTeamPhase, subject: string) =>
-    stageIdempotencyKey({ eventId, correlationId }, phase, subject);
-  const delegations = record(record(context.coordinate).output).delegations;
-  const assignmentIds = (Array.isArray(delegations) ? delegations : [])
-    .map((item) => text(record(item).assignmentId))
-    .filter((id): id is string => id !== null);
-  return [
-    { phase: 'coordinate', assignmentId: null, key: key('coordinate', taskRef) },
-    ...assignmentIds.map((id) => ({
-      phase: 'specialize' as const,
-      assignmentId: id,
-      key: key('specialize', id),
-    })),
-    { phase: 'review', assignmentId: null, key: key('review', taskRef) },
-  ];
-}
-
-// A run a runner holds stays 'pending' in the queue until the runner reports it. It is
-// running while the lease of a claim is open; a run waiting for a retry carries the
-// error of the attempt before, and a queued stage asked for again starts at 0 claims.
-export function runStatus(run: {
-  status: string;
-  attempts: number;
-  nextAttemptAt: Date;
-  lastError: string | null;
-}): string {
-  return run.status === 'pending' &&
-    run.attempts > 0 &&
-    !run.lastError &&
-    run.nextAttemptAt.getTime() > Date.now()
-    ? 'running'
-    : run.status;
-}
 
 export interface AgentTeamStage {
   phase: AgentTeamPhase;
@@ -250,102 +234,123 @@ export interface AgentTeamStage {
   outputTokens: number | null;
 }
 
-// The Hermes run behind each stage of the given agent-team runs of one project, by
-// Mastra run id, in the order the stages ran.
-export async function agentTeamStages(
-  projectId: number,
-  runs: unknown[],
-): Promise<Map<string, AgentTeamStage[]>> {
-  const refs = runs.map((value) => {
-    const run = record(value);
-    return { runId: String(run.runId), stages: stageRefs(run) };
-  });
-  const keys = refs.flatMap((item) => item.stages.map((stage) => `mastra-agent-run:${stage.key}`));
-  const stored =
-    keys.length === 0
-      ? []
-      : await db
-          .select({ key: projectSetting.key, value: projectSetting.value })
-          .from(projectSetting)
-          .where(and(eq(projectSetting.projectId, projectId), inArray(projectSetting.key, keys)));
-  const runIdByKey = new Map(
-    stored.map((row) => [
-      row.key.slice('mastra-agent-run:'.length),
-      Number(record(row.value).runId),
-    ]),
-  );
-  const ids = [...runIdByKey.values()].filter((id) => Number.isSafeInteger(id));
-  const rows =
-    ids.length === 0
-      ? []
-      : await db
-          .select({
-            id: agentRun.id,
-            status: agentRun.status,
-            attempts: agentRun.attempts,
-            nextAttemptAt: agentRun.nextAttemptAt,
-            lastError: agentRun.lastError,
-            startedAt: agentRun.startedAt,
-            finishedAt: agentRun.finishedAt,
-            inputTokens: agentRun.inputTokens,
-            outputTokens: agentRun.outputTokens,
-            agentId: aiAgent.id,
-            username: aiAgent.username,
-            name: user.name,
-          })
-          .from(agentRun)
-          .innerJoin(aiAgent, eq(aiAgent.id, agentRun.agentId))
-          .innerJoin(user, eq(user.id, aiAgent.userId))
-          .where(and(eq(agentRun.projectId, projectId), inArray(agentRun.id, ids)));
-  const byId = new Map(rows.map((row) => [row.id, row]));
-  return new Map(
-    refs.map(({ runId, stages }) => [
+const PARTS: Record<string, AgentTeamPhase | 'synchronize'> = {
+  coordinate: 'coordinate',
+  review: 'review',
+  sync: 'synchronize',
+};
+
+function phaseOf(stepId: string): AgentTeamPhase | 'synchronize' | null {
+  const part = stepId.slice(stepId.indexOf('.') + 1);
+  if (PARTS[part]) return PARTS[part]!;
+  return /^s\d+$/.test(part) ? 'specialize' : null;
+}
+
+// The stages of the given agent-team runs: the agent run behind each, in the order they
+// ran, by run id.
+export async function agentTeamStages(runIds: string[]): Promise<Map<string, AgentTeamStage[]>> {
+  if (runIds.length === 0) return new Map();
+  const rows = await db
+    .select({
+      step: pipelineRunStep,
+      agentRun: {
+        id: agentRun.id,
+        status: agentRun.status,
+        attempts: agentRun.attempts,
+        nextAttemptAt: agentRun.nextAttemptAt,
+        lastError: agentRun.lastError,
+        startedAt: agentRun.startedAt,
+        finishedAt: agentRun.finishedAt,
+        inputTokens: agentRun.inputTokens,
+        outputTokens: agentRun.outputTokens,
+      },
+      agentId: aiAgent.id,
+      username: aiAgent.username,
+      name: user.name,
+    })
+    .from(pipelineRunStep)
+    .innerJoin(agentRun, eq(agentRun.id, pipelineRunStep.agentRunId))
+    .innerJoin(aiAgent, eq(aiAgent.id, agentRun.agentId))
+    .innerJoin(user, eq(user.id, aiAgent.userId))
+    .where(and(inArray(pipelineRunStep.runId, runIds), like(pipelineRunStep.stepId, 'team.%')))
+    .orderBy(asc(pipelineRunStep.startedAt));
+  const stages = new Map<string, AgentTeamStage[]>();
+  for (const row of rows) {
+    const phase = phaseOf(row.step.stepId);
+    if (!phase || phase === 'synchronize') continue;
+    const state = (row.step.state ?? {}) as { assignmentId?: string };
+    const list = stages.get(row.step.runId) ?? [];
+    list.push({
+      phase,
+      assignmentId: state.assignmentId ?? null,
+      agentRunId: row.agentRun.id,
+      agent: { id: row.agentId, username: row.username, name: row.name },
+      status: agentRunStatus(row.agentRun),
+      startedAt: row.agentRun.startedAt ? iso(row.agentRun.startedAt) : null,
+      finishedAt: row.agentRun.finishedAt ? iso(row.agentRun.finishedAt) : null,
+      durationMs:
+        row.agentRun.startedAt && row.agentRun.finishedAt
+          ? row.agentRun.finishedAt.getTime() - row.agentRun.startedAt.getTime()
+          : null,
+      inputTokens: row.agentRun.inputTokens,
+      outputTokens: row.agentRun.outputTokens,
+    });
+    stages.set(row.step.runId, list);
+  }
+  return stages;
+}
+
+// The steps of a team run a person follows, each with where it is.
+async function teamSteps(runIds: string[]) {
+  if (runIds.length === 0) return new Map<string, { id: string; status: string }[]>();
+  const rows = await db
+    .select({
+      runId: pipelineRunStep.runId,
+      stepId: pipelineRunStep.stepId,
+      status: pipelineRunStep.status,
+    })
+    .from(pipelineRunStep)
+    .where(and(inArray(pipelineRunStep.runId, runIds), like(pipelineRunStep.stepId, 'team.%')));
+  const steps = new Map<string, { id: string; status: string }[]>();
+  for (const runId of runIds) {
+    const own = rows.filter((row) => row.runId === runId);
+    const statusOf = (phase: string) => {
+      const matching = own.filter((row) => phaseOf(row.stepId) === phase);
+      if (matching.length === 0) return 'pending';
+      if (matching.some((row) => row.status === 'failed')) return 'failed';
+      if (matching.some((row) => row.status === 'running' || row.status === 'waiting'))
+        return 'running';
+      return 'succeeded';
+    };
+    steps.set(
       runId,
-      stages.flatMap((stage) => {
-        const row = byId.get(runIdByKey.get(stage.key) ?? 0);
-        if (!row) return [];
-        return [
-          {
-            phase: stage.phase,
-            assignmentId: stage.assignmentId,
-            agentRunId: row.id,
-            agent: { id: row.agentId, username: row.username, name: row.name },
-            status: runStatus(row),
-            startedAt: row.startedAt ? iso(row.startedAt) : null,
-            finishedAt: row.finishedAt ? iso(row.finishedAt) : null,
-            durationMs:
-              row.startedAt && row.finishedAt
-                ? row.finishedAt.getTime() - row.startedAt.getTime()
-                : null,
-            inputTokens: row.inputTokens,
-            outputTokens: row.outputTokens,
-          },
-        ];
-      }),
-    ]),
-  );
+      ['coordinate', 'specialize', 'review', 'synchronize'].map((phase) => ({
+        id: phase,
+        status: statusOf(phase),
+      })),
+    );
+  }
+  return steps;
 }
 
 export async function listIssueAgentTeamRuns(issueId: number) {
-  const task = await issueTask(issueId);
-  const result = await listTaskWorkflowRuns(task.project, 'agent-team', task.taskRef);
-  const runs = result.runs ?? [];
-  const stages = await agentTeamStages(task.projectId, runs);
-  return runs.map((value) => {
-    const run = record(value);
-    const snapshot = record(run.snapshot);
-    const error = snapshot.error;
-    return {
-      runId: String(run.runId),
-      status: String(run.status ?? snapshot.status ?? 'unknown'),
-      createdAt: text(run.createdAt),
-      updatedAt: text(run.updatedAt),
-      steps: Object.entries(record(snapshot.context))
-        .filter(([id]) => id !== 'input')
-        .map(([id, step]) => ({ id, status: String(record(step).status ?? 'unknown') })),
-      stages: stages.get(String(run.runId)) ?? [],
-      result: snapshot.result ?? null,
-      error: error == null ? null : (text(record(error).message) ?? text(error) ?? 'Run failed'),
-    };
-  });
+  await issueTask(issueId);
+  const runs = await db
+    .select()
+    .from(pipelineRun)
+    .where(and(eq(pipelineRun.issueId, issueId), eq(pipelineRun.kind, 'agent_team')))
+    .orderBy(desc(pipelineRun.createdAt))
+    .limit(100);
+  const ids = runs.map((run) => run.id);
+  const [stages, steps] = await Promise.all([agentTeamStages(ids), teamSteps(ids)]);
+  return runs.map((run) => ({
+    runId: run.id,
+    status: run.status,
+    createdAt: iso(run.createdAt),
+    updatedAt: iso(run.updatedAt),
+    steps: steps.get(run.id) ?? [],
+    stages: stages.get(run.id) ?? [],
+    result: run.result ?? null,
+    error: run.error,
+  }));
 }

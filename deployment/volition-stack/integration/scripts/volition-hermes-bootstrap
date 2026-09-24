@@ -5,7 +5,7 @@ umask 077
 plan_root=/home/pw/services/itsaplan
 stack_root=/home/pw/services/volition-stack
 secret_file="$stack_root/.secrets/itsaplan_home_master_agent_api_key"
-control_token_file="$stack_root/.secrets/plan_mastra_control_token"
+control_token_file="$stack_root/.secrets/plan_control_token"
 runner_artifact="$plan_root/packages/runner/dist/cli.js"
 hermes_home="$stack_root/data/hermes"
 workspace_root=/home/pw/services/volition-workspaces

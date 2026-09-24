@@ -3,13 +3,11 @@ import { describe, it } from 'node:test';
 
 import { initialAgentValue, toCreateInput, toUpdatePatch } from './agentForm';
 
-describe('external agent runtime policy form', () => {
-  it('keeps runtime policy when an external agent is opened', () => {
+describe('agent runtime policy form', () => {
+  it('keeps runtime policy when an agent is opened', () => {
     const value = initialAgentValue({
       kind: 'external',
       model: 'openai/gpt-5.6-sol',
-      memoryEnabled: true,
-      memoryLastMessages: 20,
       runtimePolicy: {
         reasoningEffort: 'high',
         toolAllow: ['browser'],
@@ -23,11 +21,7 @@ describe('external agent runtime policy form', () => {
       runnerScope: 'team',
       name: 'Runtime agent',
       username: 'runtime',
-      modelCredentialId: null,
       instructions: null,
-      tools: [],
-      temperature: null,
-      maxSteps: null,
       triggerOnMention: true,
       triggerOnAssign: false,
     } as never);
@@ -38,7 +32,6 @@ describe('external agent runtime policy form', () => {
 
   it('normalizes grants and drops an empty managed file before save', () => {
     const value = initialAgentValue();
-    value.kind = 'external';
     value.name = 'Runtime agent';
     value.username = 'runtime';
     value.model = 'openai/gpt-6-astra';

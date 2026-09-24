@@ -126,15 +126,14 @@
   "orchestration": {
     "teamTitle": "Tim agen",
     "teamDescription": "Peran dan kemampuan berlaku untuk semua proyek tim. Hanya agen yang berjalan di Hermes yang ikut dalam proses tim.",
-    "internal": "tidak di Hermes",
     "editRoles": "Atur peran dan kemampuan di tab Agen.",
     "policyTitle": "Alur kerja agent-team",
-    "policyDescription": "Berjalan di Mastra saat tugas didelegasikan ke koordinator.",
+    "policyDescription": "Berjalan saat tugas didelegasikan ke koordinator.",
     "on": "Aktif",
     "off": "Nonaktif",
     "configure": "Konfigurasi",
     "loading": "Memuat alur kerja…",
-    "unavailable": "Daftar alur kerja tidak tersedia. Periksa apakah Mastra berjalan.",
+    "unavailable": "Daftar alur kerja tidak tersedia saat ini.",
     "offHint": "Nonaktif untuk proyek ini: tugas yang didelegasikan ke koordinator diantrekan untuk agen itu saja.",
     "result": "Hasil",
     "autonomyReview": "Tugas pindah ke Tinjauan",
@@ -156,14 +155,14 @@
       "directTitle": "Langsung",
       "direct": "Chat, @mention, atau tugas yang ditugaskan ke satu agen langsung sampai ke agen itu di Hermes.",
       "teamTitle": "Melalui tim agen",
-      "team": "Tugas yang didelegasikan ke koordinator, atau dimulai dari bagian Tim agen pada tugas, berjalan di Mastra:",
+      "team": "Tugas yang didelegasikan ke koordinator, atau dimulai dari bagian Tim agen pada tugas, berjalan seperti ini:",
       "stages": {
         "coordinate": "Koordinator membagi tugas menjadi penugasan.",
         "specialize": "Spesialis mengerjakannya di Hermes, yang independen secara paralel.",
         "review": "Koordinator meninjau hasilnya.",
         "synchronize": "Ringkasan dan bukti ditulis ke tugas, yang pindah ke Tinjauan atau Selesai."
       },
-      "route": "Jika label tugas cocok dengan kemampuan tepat satu spesialis, atau proyek hanya punya satu, Mastra melewati rencana dan menugaskan tugas secara langsung."
+      "route": "Jika label tugas cocok dengan kemampuan tepat satu spesialis, atau proyek hanya punya satu, Helena melewati rencana dan menugaskan tugas secara langsung."
     },
     "usage": {
       "title": "Pemakaian token",

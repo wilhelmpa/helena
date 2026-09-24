@@ -4,7 +4,6 @@ import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent, setAgentProjectRole } from '#tests/helpers/agents';
 import { addProjectMember } from '#tests/helpers/members';
-import { controlPlane } from '#tests/helpers/control';
 import { createRole } from '#tests/helpers/roles';
 
 // An agent asks before it acts outside Plan: the request records the run and the issue
@@ -57,7 +56,6 @@ function requestApproval(asAgent: Api, body: Record<string, unknown> = {}) {
 describe('approval requests', () => {
   beforeEach(async () => {
     await resetDb();
-    controlPlane.reset();
   });
 
   it('records the run and the issue the request came from', async () => {
@@ -408,7 +406,6 @@ describe('approval requests', () => {
 describe('approved commands of a run', () => {
   beforeEach(async () => {
     await resetDb();
-    controlPlane.reset();
   });
 
   // Asks for three commands in one run and decides them, which queues one follow-up run
@@ -509,113 +506,5 @@ describe('approval tools over MCP', () => {
       status: 'rejected',
       note: 'Wait',
     });
-  });
-});
-
-describe('workflow approval gates', () => {
-  beforeEach(async () => {
-    await resetDb();
-    controlPlane.reset();
-  });
-
-  const suspendedRun = {
-    runId: 'run-1',
-    status: 'suspended',
-    createdAt: '2026-09-20T10:00:00.000Z',
-    snapshot: {
-      status: 'suspended',
-      context: {
-        'prepare-plan': {
-          status: 'success',
-          output: {
-            summary: 'Reply prepared',
-            effects: [
-              { description: 'Classify the support request', requiresApproval: false },
-              { description: 'Send the prepared reply', requiresApproval: true },
-            ],
-          },
-        },
-        'approval-gate': {
-          status: 'suspended',
-          suspendPayload: { reason: 'External writes and sends require explicit human approval.' },
-        },
-      },
-    },
-  };
-
-  function answer(runs: (request: Record<string, unknown>) => unknown) {
-    controlPlane.answer = (request) => {
-      if (request.operation === 'catalog')
-        return {
-          catalog: {
-            flows: [
-              { id: 'support', name: 'Support', externalEffects: true, capabilityRefs: [] },
-              { id: 'system-audit', name: 'System audit', externalEffects: false },
-            ],
-          },
-        };
-      if (request.operation === 'runs') return runs(request);
-      return {};
-    };
-  }
-
-  async function enable(asOwner: Api, workflowId: string) {
-    await asOwner
-      .projects({ projectKey: 'MKT' })
-      ['control-plane'].workflows({ workflowId })
-      .put({ enabled: true, capabilityRefs: [] });
-  }
-
-  it('lists the runs suspended at their gate in the projects the caller may decide', async () => {
-    const { asOwner } = await setup();
-    const asMember = await addProjectMember(asOwner, 'MKT');
-    answer(() => ({
-      runs: [suspendedRun, { ...suspendedRun, runId: 'run-2', status: 'success' }],
-    }));
-    await enable(asOwner, 'support');
-    await enable(asOwner, 'system-audit');
-
-    const gates = (await asOwner.approvals['workflow-gates'].get()).data!;
-    expect(gates.complete).toBe(true);
-    expect(gates.items).toHaveLength(1);
-    expect(gates.items[0]).toMatchObject({
-      projectKey: 'MKT',
-      projectName: 'Marketing',
-      workflowId: 'support',
-      workflowName: 'Support',
-      runId: 'run-1',
-      reason: 'External writes and sends require explicit human approval.',
-      summary: 'Reply prepared',
-      effects: ['Send the prepared reply'],
-    });
-    expect(new Date(gates.items[0].createdAt!)).toEqual(new Date('2026-09-20T10:00:00.000Z'));
-    // Only the workflow with external effects is asked for its runs.
-    const asked = controlPlane.requests.filter((request) => request.operation === 'runs');
-    expect(asked.map((request) => request.workflowId)).toEqual(['support']);
-
-    expect((await asMember.approvals['workflow-gates'].get()).data).toEqual({
-      complete: true,
-      items: [],
-    });
-  });
-
-  it('says when the workflows of a project could not be read', async () => {
-    const { asOwner } = await setup();
-    answer(() => new Response('down', { status: 500 }));
-    await enable(asOwner, 'support');
-
-    expect((await asOwner.approvals['workflow-gates'].get()).data).toEqual({
-      complete: false,
-      items: [],
-    });
-  });
-
-  it('asks the control plane nothing without an enabled workflow', async () => {
-    const { asOwner } = await setup();
-    expect((await asOwner.approvals['workflow-gates'].get()).data).toEqual({
-      complete: true,
-      items: [],
-    });
-    expect(controlPlane.requests).toHaveLength(0);
   });
 });

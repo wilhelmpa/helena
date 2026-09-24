@@ -350,14 +350,12 @@ ensure_foundations
 run docker compose --env-file "$PLAN_ROOT/.env" -f "$PLAN_ROOT/docker-compose.yml" -f "$PLAN_ROOT/deployment/volition-stack/compose.hub.yml" config --quiet
 run docker compose --env-file "$STACK_ROOT/.env" -f "$STACK_ROOT/compose.apps.yml" config --quiet
 run docker compose --env-file "$STACK_ROOT/.env" -f "$STACK_ROOT/compose.vault.yml" config --quiet
-run docker compose --env-file "$STACK_ROOT/.env" -f "$STACK_ROOT/optional/mastra-studio/compose.yml" config --quiet
 run docker compose --env-file "$STACK_ROOT/.env" -f "$STACK_ROOT/compose.gateway.yml" config --quiet
 
 run docker compose --env-file "$PLAN_ROOT/.env" -f "$PLAN_ROOT/docker-compose.yml" -f "$PLAN_ROOT/deployment/volition-stack/compose.hub.yml" up -d --wait
 build_runner
 run docker compose --env-file "$STACK_ROOT/.env" -f "$STACK_ROOT/compose.apps.yml" up -d --wait
 run docker compose --env-file "$STACK_ROOT/.env" -f "$STACK_ROOT/compose.vault.yml" up -d --wait
-run docker compose --env-file "$STACK_ROOT/.env" -f "$STACK_ROOT/optional/mastra-studio/compose.yml" up -d --wait
 run docker compose --env-file "$STACK_ROOT/.env" -f "$STACK_ROOT/compose.gateway.yml" up -d --wait
 run loginctl enable-linger "$USER"
 run systemctl --user daemon-reload

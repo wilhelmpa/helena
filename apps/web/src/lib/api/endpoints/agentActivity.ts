@@ -31,7 +31,6 @@ export interface AgentActivityCursor {
 export interface AgentActivityPage {
   items: AgentActivityEntry[];
   nextCursor: AgentActivityCursor | null;
-  notice: 'workflow-runs-unavailable' | 'workflow-runs-limited' | null;
 }
 
 export interface AgentActivityFilters {

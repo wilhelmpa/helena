@@ -2,6 +2,7 @@ import { RateLimitedError } from '@repo/auth';
 import { projectTemplateRoutes } from './modules/project-templates';
 import { controlPlaneWorkflowRoutes } from './modules/control-plane-workflows';
 import { routineRoutes } from './modules/routines';
+import { engineRoutes } from './modules/engine';
 import { connectionsRoutes } from './modules/connections';
 import { deviceSyncRoutes } from './modules/device-sync';
 import { ownerTerminalRoutes } from './modules/owner-terminal';
@@ -169,6 +170,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(webhookRoutes)
   .use(gitSettingsRoutes)
   .use(routineRoutes)
+  .use(engineRoutes)
   .use(agentRunnerRoutes)
   .use(agentChatRoutes)
   .use(chatPromptRoutes)

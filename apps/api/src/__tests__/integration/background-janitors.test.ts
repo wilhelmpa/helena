@@ -33,9 +33,9 @@ describe('janitorJob', () => {
 
   it('keeps one row per job when several replicas record a run at once', async () => {
     const results = await Promise.allSettled([
-      janitorJob('stage-janitor', async () => 1),
-      janitorJob('stage-janitor', async () => 2),
-      janitorJob('stage-janitor', async () => 3),
+      janitorJob('resume-janitor', async () => 1),
+      janitorJob('resume-janitor', async () => 2),
+      janitorJob('resume-janitor', async () => 3),
     ]);
     expect(results.every((result) => result.status === 'fulfilled')).toBe(true);
 
@@ -49,14 +49,14 @@ describe('janitorJob', () => {
   it('runs the three janitors independently of each other', async () => {
     await Promise.all([
       janitorJob('run-janitor', async () => 1),
-      janitorJob('stage-janitor', async () => 2),
-      janitorJob('workflow-schedules', async () => 3),
+      janitorJob('resume-janitor', async () => 2),
+      janitorJob('engine-maintenance', async () => 3),
     ]);
     const rows = await listJanitorRuns();
     expect(rows.map((row) => [row.job, row.cleaned]).sort()).toEqual([
+      ['engine-maintenance', 3],
+      ['resume-janitor', 2],
       ['run-janitor', 1],
-      ['stage-janitor', 2],
-      ['workflow-schedules', 3],
     ]);
   });
 });

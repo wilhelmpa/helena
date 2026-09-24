@@ -6,6 +6,15 @@ export interface StepResult {
   summary: string;
   outcome: string;
   note: string;
+  // The result fields of a plugin's step (its type's `outputs`).
+  output?: Record<string, unknown>;
+}
+
+const RESULT_FIELDS = new Set(['summary', 'outcome', 'note']);
+
+function text(value: unknown): string {
+  if (value === undefined || value === null) return '';
+  return typeof value === 'string' ? value : JSON.stringify(value);
 }
 
 export interface RenderContext {
@@ -19,8 +28,14 @@ const VARIABLE = /\{\{\s*([^{}]*?)\s*\}\}/g;
 function lookup(name: string, context: RenderContext): string {
   const [scope, key, field] = name.split('.');
   if (scope === 'task') return context.task[key as keyof RenderContext['task']] ?? '';
-  if (scope === 'previous') return context.previous?.[key as keyof StepResult] ?? '';
-  if (scope === 'step') return context.steps[key]?.[field as keyof StepResult] ?? '';
+  if (scope === 'previous') return context.previous?.[key as 'summary' | 'outcome' | 'note'] ?? '';
+  if (scope === 'step') {
+    const result = context.steps[key];
+    if (!result || !field) return '';
+    return RESULT_FIELDS.has(field)
+      ? (result[field as 'summary' | 'outcome' | 'note'] ?? '')
+      : text(result.output?.[field]);
+  }
   return '';
 }
 

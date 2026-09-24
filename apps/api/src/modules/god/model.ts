@@ -317,14 +317,19 @@ export const InstanceTeamMemberPageResponse = pageResponse(
   }),
 );
 
+export const EngineSettingsResponse = t.Object({
+  defaultTimezone: t.String({ description: 'The time zone used where none is named.' }),
+  serverTimezone: t.String(),
+  timezoneSet: t.Boolean({ description: 'Whether the default is set here, not the server’s.' }),
+});
+
 export const SystemHealthResponse = t.Object({
   agents: agentSyncSummary,
   services: t.Array(
     t.Object({
       service: t.Union([
         t.Literal('runner'),
-        t.Literal('mastra'),
-        t.Literal('bridge'),
+        t.Literal('engine'),
         t.Literal('provisioning'),
         t.Literal('worker'),
       ]),
@@ -348,23 +353,43 @@ export const SystemHealthResponse = t.Object({
     needsResumeReview: t.Number({
       description: 'Runs that reached the resume limit and need the owner to look at them.',
     }),
-    agentTeamStartsWaiting: t.Number({ description: 'Agent-team starts waiting for Mastra.' }),
     provisioningFailed: t.Number({ description: 'Provisioning jobs that gave up.' }),
-    stalledWorkflowRuns: t.Nullable(
-      t.Number({
-        description:
-          'Active agent-team runs Mastra has not moved on for 15 minutes that wait on no ' +
-          'stage run in Helena. Null while Mastra cannot be asked.',
+  }),
+  engine: t.Object({
+    running: t.Boolean({ description: 'Whether the engine runs in this api process.' }),
+    executorId: t.Nullable(t.String()),
+    queued: t.Number({
+      description: 'Runs written but not started yet (their start is retried).',
+    }),
+    active: t.Number({ description: 'Runs working now: running, or waiting for an agent.' }),
+    waiting: t.Number({ description: 'Runs waiting for an approval or a wait step.' }),
+    failedLastDay: t.Number({ description: 'Runs that failed in the last 24 hours.' }),
+    stalled: t.Number({
+      description:
+        'Active runs the engine has not moved on for 30 minutes although nothing they wait ' +
+        'for is pending.',
+    }),
+    schedules: t.Number({ description: 'Enabled routines and workflow schedules.' }),
+    overdueSchedules: t.Number({
+      description: 'Enabled schedules whose time passed over five minutes ago without a fire.',
+    }),
+    lastErrors: t.Array(
+      t.Object({
+        runId: t.String(),
+        projectKey: t.String(),
+        name: t.String(),
+        error: t.String(),
+        at: t.String(),
       }),
+      { description: 'The newest failures, newest first.' },
     ),
   }),
   janitors: t.Array(
     t.Object({
       job: t.Union([
         t.Literal('run-janitor'),
-        t.Literal('stage-janitor'),
-        t.Literal('workflow-schedules'),
         t.Literal('resume-janitor'),
+        t.Literal('engine-maintenance'),
         t.Literal('runtime-janitor'),
       ]),
       state: t.Union([t.Literal('ok'), t.Literal('down'), t.Literal('unknown')], {

@@ -1,13 +1,11 @@
 import type { WaitSpec } from './definition';
 
-const TIME_ZONE = 'Europe/Berlin';
-
-// The instant a wall-clock time of a day has in Berlin.
-export function berlinTime(day: string, time: string): Date {
+// The instant a wall-clock time of a day has in the time zone.
+export function zonedTime(day: string, time: string, timeZone: string): Date {
   const [hours, minutes] = time.split(':').map(Number);
   const guess = new Date(`${day}T${time}:00Z`);
   const parts = new Intl.DateTimeFormat('en-GB', {
-    timeZone: TIME_ZONE,
+    timeZone,
     hour: '2-digit',
     minute: '2-digit',
     hourCycle: 'h23',
@@ -21,13 +19,15 @@ export function berlinTime(day: string, time: string): Date {
   return new Date(guess.getTime() - offset * 60_000);
 }
 
-// When a wait step lets its run go on. Null when the task has no date to wait for.
+// When a wait step lets its run go on, a time of day in `timeZone` (the instance's
+// default time zone). Null when the task has no date to wait for.
 export function wakeTime(
   spec: WaitSpec,
   task: { dueDate: string | null; startDate: string | null } | null,
   now: number,
+  timeZone = 'Europe/Berlin',
 ): Date | null {
   if (spec.kind === 'delay') return new Date(now + spec.minutes * 60_000);
   const day = task?.[spec.field];
-  return day ? berlinTime(day, spec.time) : null;
+  return day ? zonedTime(day, spec.time, timeZone) : null;
 }

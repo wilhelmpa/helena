@@ -5,6 +5,13 @@ export { getSetting, getOrCreateSetting, setSetting } from './settings';
 export { readSecret, writeSecret } from './secrets';
 export { containsPattern, escapeLike } from './like';
 export { recordServiceCheck } from './service-heartbeat';
+export {
+  ENGINE_EVENT_TARGETS,
+  ENGINE_TRIGGERS_TARGET,
+  engineSchemaName,
+  enqueueEngineEvents,
+  type EngineEventTarget,
+} from './engine-events';
 export { recordJanitorRun, listJanitorRuns, type JanitorRunRow } from './janitor-run';
 export {
   TELEGRAM_BOT_SECRET_KEY,

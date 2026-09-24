@@ -20,7 +20,7 @@ are handled by Caddy's reverse proxy. No application backend port is published.
 - The running proxy's Caddyfile was updated and validated, then hot-reloaded.
   The existing Plane services were not restarted.
 
-The Plan, Hermes, Mastra, terminal, and browser services remain native on Debian.
+The Plan, Hermes, terminal, and browser services remain native on Debian.
 This reuses an already running desktop HTTP proxy; it does not install another container.
 When Debian boots directly, it can serve port 80 itself. The desktop forwarding and
 mDNS publisher are needed only while Debian uses the desktop's private virtual network.

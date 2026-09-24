@@ -97,18 +97,18 @@ release.
 <summary><b>AI agents</b> — the full list</summary>
 
 - Agents as project members, with their own permissions and assigned issues
-- Internal agents run on the instance. Configure the model, system prompt, tools, and
-  reusable skills, written inline or imported from a GitHub repository
-- External agents run on your own machine, under your own account. Install
+- Agents run on your own machine, under your own account, and Helena itself never calls a
+  model. Configure the model, system prompt, tools, and reusable skills, written inline or
+  imported from a GitHub repository. Install
   [`@itsaplan/runner`](packages/runner) and it gives every task to Claude Code, Codex,
   Antigravity CLI, GitHub Copilot CLI, opencode, or any command that reads stdin
 - Or control the run queue through the API and do the work in your own implementation
 - A run starts on an @mention in a comment, on an assignment, or on a schedule
 - Tools for the services outside the tracker: Notion, Telegram, Threads, Instagram, Jina,
   Firecrawl, and Gitea
-- Built-in chat with each agent, with its own conversation history
-- Chat with an external agent too. The runner answers from your machine, streams the reply
-  and its tool calls, and resumes the same coding agent session on each message
+- Built-in chat with each agent, with its own conversation history. The runner answers
+  from your machine, streams the reply and its tool calls, and resumes the same coding
+  agent session on each message
 
 </details>
 
@@ -173,7 +173,8 @@ needed. Run it again later to restart the instance; the data stays.
 | Auth      | [better-auth](https://better-auth.com/)                  |
 | Database  | [Drizzle](https://orm.drizzle.team/) + PostgreSQL        |
 | Storage   | Local disk or an S3-compatible object store (MinIO)      |
-| AI agents | [Mastra](https://github.com/mastra-ai/mastra)            |
+| Workflows | [DBOS Transact](https://github.com/dbos-inc/dbos-transact-ts), in the API |
+| AI agents | External runtimes ([Hermes Agent](https://github.com/NousResearch/hermes-agent), coding agent CLIs) through the runner |
 
 ## Contributing
 

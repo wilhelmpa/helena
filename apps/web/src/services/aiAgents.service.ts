@@ -28,7 +28,6 @@ import {
   listAiAgents,
   getAiAgent,
   listAgentRuns,
-  listAgentTools,
   createAiAgent,
   copyAiAgentTemplate,
   updateAiAgent,
@@ -70,8 +69,8 @@ export function useAiAgentsQuery(teamId: number | null, projectId?: number) {
 
 // One agent by id, for a caller that already knows which one it wants rather than
 // picking from the team's list — the chat workspace's fallback when a thread names an
-// agent its own kind/template-filtered picker did not carry (an internal agent, a
-// template, or simply one the picker has not loaded yet).
+// agent its own template-filtered picker did not carry (a template, or simply one the
+// picker has not loaded yet).
 export function useAiAgentQuery(teamId: number | null, agentId: number | null) {
   return useQuery({
     queryKey: qk.aiAgent(teamId ?? 0, agentId ?? 0),
@@ -247,17 +246,6 @@ export function useDeleteAgentThread(projectKey: string | null, agentId: number 
         void qc.invalidateQueries({ queryKey: qk.agentFavoriteThreads(projectKey, agentId) });
       }
     },
-  });
-}
-
-// The capability-tool catalog for the internal-agent form. Static per team, so
-// it stays fresh for the session.
-export function useAgentToolsQuery(teamId: number | null) {
-  return useQuery({
-    queryKey: qk.agentTools(teamId ?? 0),
-    queryFn: () => listAgentTools(teamId!),
-    enabled: teamId != null,
-    staleTime: Infinity,
   });
 }
 

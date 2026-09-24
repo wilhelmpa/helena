@@ -6,18 +6,16 @@ import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { addProjectMember } from '#tests/helpers/members';
 import { createComment } from '#modules/issues/activity';
-import { claimDueRuns } from '../../run-queue';
+import { loadThreadContext } from '../../run-queue';
 import { createAgent } from '#tests/helpers/agents';
 
 // Mentioning an agent in a comment queues an agent_run so the agent can reply. The
-// queue is drained by the in-process poller for an internal agent (not exercised
-// here — it makes a live LLM call) and over HTTP by a runner for an external one.
-// This test covers the deterministic half: a mention enqueues a run, a plain comment
-// does not, an owner-scoped external agent ignores other members, and a comment
-// authored by an agent's bot user never enqueues one (the loop guard). agent_run is
-// read through the db; the loop guard is exercised at the store (an agent posts via
-// the in-process add_comment tool, not the HTTP route, since it is not a project
-// member).
+// queue is drained over HTTP by the agent's runner (see the runner tests). This test
+// covers the queueing: a mention enqueues a run, a plain comment does not, an
+// owner-scoped agent ignores other members, and a comment authored by an agent's bot
+// user never enqueues one (the loop guard). agent_run is read through the db; the loop
+// guard is exercised at the store, where an agent's comment lands whatever route it
+// took.
 
 async function setup() {
   const owner = await signUpTestUser({ name: 'Owner' });
@@ -35,9 +33,16 @@ function createIssue(client: Api, columnId: number) {
   return client.projects({ projectKey: 'MKT' }).issues.post({ columnId, title: 'Task' });
 }
 
-async function createInternalAgent(asOwner: Api, name: string, username: string) {
-  const res = await createAgent(asOwner, 'MKT', { name, username, kind: 'internal' });
+// An agent that reacts to mentions. The trigger is off by default, so it is turned on.
+async function createMentionAgent(asOwner: Api, name: string, username: string) {
+  const res = await createAgent(asOwner, 'MKT', { name, username, triggerOnMention: true });
   return res.data!.agent;
+}
+
+// The thread a queued run hands its runner: the comments its source comment replies to.
+async function threadContextOf(issueId: number) {
+  const [run] = await runsForIssue(issueId);
+  return loadThreadContext(run.sourceActivityId);
 }
 
 // A mention as stored in a comment body: the handle of who it addresses.
@@ -52,9 +57,9 @@ describe('agent mention runs', () => {
     await resetDb();
   });
 
-  it('queues a run when a member mentions an internal agent', async () => {
+  it('queues a run when a member mentions an agent', async () => {
     const { asOwner, columnId } = await setup();
-    const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
+    const agent = await createMentionAgent(asOwner, 'Design Bot', 'design');
     const issue = (await createIssue(asOwner, columnId)).data!;
 
     const res = await asOwner
@@ -68,22 +73,25 @@ describe('agent mention runs', () => {
     expect(queued[0].prompt).toContain('please review');
   });
 
-  it("makes the queued run claimable with the agent's project and bot user", async () => {
+  it("queues the run in the issue's project, with the comment it came from", async () => {
     const { asOwner, columnId } = await setup();
-    const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
+    const agent = await createMentionAgent(asOwner, 'Design Bot', 'design');
     const issue = (await createIssue(asOwner, columnId)).data!;
-    await asOwner.issues({ issueId: issue.id }).comments.post({ body: mention(agent.username) });
+    const comment = (
+      await asOwner.issues({ issueId: issue.id }).comments.post({ body: mention(agent.username) })
+    ).data!;
 
-    const claimed = await claimDueRuns();
-    const run = claimed.find((r) => r.issueId === issue.id);
-    expect(run).toBeDefined();
-    expect(run).toMatchObject({ agentId: agent.id, agentUserId: agent.userId });
-    expect(typeof run!.projectId).toBe('number');
+    const [run] = await runsForIssue(issue.id);
+    expect(run).toMatchObject({
+      agentId: agent.id,
+      projectId: agent.projects[0].id,
+      sourceActivityId: comment.id,
+    });
   });
 
-  it('gives a claimed run the thread the mention replies to, oldest first', async () => {
+  it('gives a queued run the thread the mention replies to, oldest first', async () => {
     const { asOwner, columnId } = await setup();
-    const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
+    const agent = await createMentionAgent(asOwner, 'Design Bot', 'design');
     const issue = (await createIssue(asOwner, columnId)).data!;
     const client = asOwner.issues({ issueId: issue.id });
     const first = (await client.comments.post({ body: 'the button is misaligned' })).data!;
@@ -94,20 +102,19 @@ describe('agent mention runs', () => {
       replyToId: second.id,
     });
 
-    const claimed = await claimDueRuns();
-    const run = claimed.find((r) => r.issueId === issue.id)!;
-    expect(run.threadContext).toContain('Owner: the button is misaligned');
-    expect(run.threadContext).toContain('Owner: only on mobile');
-    expect(run.threadContext!.indexOf('misaligned')).toBeLessThan(
-      run.threadContext!.indexOf('only on mobile'),
+    const threadContext = await threadContextOf(issue.id);
+    expect(threadContext).toContain('Owner: the button is misaligned');
+    expect(threadContext).toContain('Owner: only on mobile');
+    expect(threadContext!.indexOf('misaligned')).toBeLessThan(
+      threadContext!.indexOf('only on mobile'),
     );
     // The comment that mentioned the agent is the prompt, not part of the context.
-    expect(run.threadContext).not.toContain('can you look?');
+    expect(threadContext).not.toContain('can you look?');
   });
 
   it('stops the thread context five comments above the mention', async () => {
     const { asOwner, columnId } = await setup();
-    const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
+    const agent = await createMentionAgent(asOwner, 'Design Bot', 'design');
     const issue = (await createIssue(asOwner, columnId)).data!;
     const client = asOwner.issues({ issueId: issue.id });
     let parentId = (await client.comments.post({ body: 'note 0' })).data!.id;
@@ -119,27 +126,25 @@ describe('agent mention runs', () => {
       replyToId: parentId,
     });
 
-    const claimed = await claimDueRuns();
-    const run = claimed.find((r) => r.issueId === issue.id)!;
-    expect(run.threadContext).toContain('note 6');
-    expect(run.threadContext).toContain('note 2');
-    expect(run.threadContext).not.toContain('note 1');
-    expect(run.threadContext).not.toContain('note 0');
+    const threadContext = await threadContextOf(issue.id);
+    expect(threadContext).toContain('note 6');
+    expect(threadContext).toContain('note 2');
+    expect(threadContext).not.toContain('note 1');
+    expect(threadContext).not.toContain('note 0');
   });
 
   it('leaves the thread context empty for a top-level mention', async () => {
     const { asOwner, columnId } = await setup();
-    const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
+    const agent = await createMentionAgent(asOwner, 'Design Bot', 'design');
     const issue = (await createIssue(asOwner, columnId)).data!;
     await asOwner.issues({ issueId: issue.id }).comments.post({ body: mention(agent.username) });
 
-    const claimed = await claimDueRuns();
-    expect(claimed.find((r) => r.issueId === issue.id)!.threadContext).toBeNull();
+    expect(await threadContextOf(issue.id)).toBeNull();
   });
 
   it("queues a run when someone answers the agent's own comment without tagging it", async () => {
     const { asOwner, columnId } = await setup();
-    const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
+    const agent = await createMentionAgent(asOwner, 'Design Bot', 'design');
     const issue = (await createIssue(asOwner, columnId)).data!;
     const written = await createComment({
       issueId: issue.id,
@@ -158,7 +163,7 @@ describe('agent mention runs', () => {
 
   it('does not queue a run for a reply to a comment nobody but people wrote', async () => {
     const { asOwner, columnId } = await setup();
-    await createInternalAgent(asOwner, 'Design Bot', 'design');
+    await createMentionAgent(asOwner, 'Design Bot', 'design');
     const issue = (await createIssue(asOwner, columnId)).data!;
     const client = asOwner.issues({ issueId: issue.id });
     const first = (await client.comments.post({ body: 'the button is misaligned' })).data!;
@@ -169,8 +174,8 @@ describe('agent mention runs', () => {
 
   it("does not queue a run when an agent answers another agent's comment (loop guard)", async () => {
     const { asOwner, columnId } = await setup();
-    const author = await createInternalAgent(asOwner, 'Author Bot', 'author');
-    const answering = await createInternalAgent(asOwner, 'Answer Bot', 'answer');
+    const author = await createMentionAgent(asOwner, 'Author Bot', 'author');
+    const answering = await createMentionAgent(asOwner, 'Answer Bot', 'answer');
     const issue = (await createIssue(asOwner, columnId)).data!;
     const written = await createComment({
       issueId: issue.id,
@@ -189,7 +194,7 @@ describe('agent mention runs', () => {
 
   it('does not queue a run for a comment with no mention', async () => {
     const { asOwner, columnId } = await setup();
-    await createInternalAgent(asOwner, 'Design Bot', 'design');
+    await createMentionAgent(asOwner, 'Design Bot', 'design');
     const issue = (await createIssue(asOwner, columnId)).data!;
 
     await asOwner.issues({ issueId: issue.id }).comments.post({ body: 'just a plain note' });
@@ -198,7 +203,7 @@ describe('agent mention runs', () => {
 
   it('continues the agent still delegated to the issue on a plain human comment', async () => {
     const { asOwner, columnId } = await setup();
-    const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
+    const agent = await createMentionAgent(asOwner, 'Design Bot', 'design');
     const issue = (await createIssue(asOwner, columnId)).data!;
     await asOwner.issues({ issueId: issue.id }).patch({ delegateUserId: agent.userId });
 
@@ -218,7 +223,7 @@ describe('agent mention runs', () => {
 
   it('does not loop when the delegated agent comments on its own issue', async () => {
     const { asOwner, columnId } = await setup();
-    const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
+    const agent = await createMentionAgent(asOwner, 'Design Bot', 'design');
     const issue = (await createIssue(asOwner, columnId)).data!;
     await asOwner.issues({ issueId: issue.id }).patch({ delegateUserId: agent.userId });
 
@@ -231,7 +236,7 @@ describe('agent mention runs', () => {
     expect((await runsForIssue(issue.id)).length).toBe(0);
   });
 
-  it('queues a run for an external agent mentioned by its owner', async () => {
+  it('queues a run for an agent mentioned by its owner', async () => {
     const { asOwner, columnId } = await setup();
     const ext = (
       await createAgent(asOwner, 'MKT', {
@@ -250,7 +255,7 @@ describe('agent mention runs', () => {
     expect(queued[0]).toMatchObject({ agentId: ext.id, status: 'pending' });
   });
 
-  it('leaves an external agent alone until its mention trigger is turned on', async () => {
+  it('leaves an agent alone until its mention trigger is turned on', async () => {
     const { asOwner, columnId } = await setup();
     const ext = (
       await createAgent(asOwner, 'MKT', { name: 'Ext Bot', username: 'ext', kind: 'external' })
@@ -261,7 +266,7 @@ describe('agent mention runs', () => {
     expect((await runsForIssue(issue.id)).length).toBe(0);
   });
 
-  it('does not queue an owner-scoped external agent for another member', async () => {
+  it('does not queue an owner-scoped agent for another member', async () => {
     const { asOwner, columnId, teamId } = await setup();
     const ext = (
       await createAgent(asOwner, 'MKT', {
@@ -285,7 +290,7 @@ describe('agent mention runs', () => {
 
   it('queues no run when an agent is mentioned in the description', async () => {
     const { asOwner, columnId } = await setup();
-    const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
+    const agent = await createMentionAgent(asOwner, 'Design Bot', 'design');
     const issue = (await createIssue(asOwner, columnId)).data!;
 
     // The description states the work; an agent is given an issue by delegating it.
@@ -300,7 +305,7 @@ describe('agent mention runs', () => {
   // which is what subscribes it to the issue.
   it('does not subscribe an agent mentioned in the description', async () => {
     const { asOwner, columnId } = await setup();
-    const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
+    const agent = await createMentionAgent(asOwner, 'Design Bot', 'design');
     const issue = (await createIssue(asOwner, columnId)).data!;
 
     await asOwner
@@ -313,7 +318,7 @@ describe('agent mention runs', () => {
 
   it('queues no run when an agent is mentioned in a markdown custom field', async () => {
     const { asOwner, columnId } = await setup();
-    const agent = await createInternalAgent(asOwner, 'Design Bot', 'design');
+    const agent = await createMentionAgent(asOwner, 'Design Bot', 'design');
     const field = (
       await asOwner
         .projects({ projectKey: 'MKT' })
@@ -331,12 +336,12 @@ describe('agent mention runs', () => {
 
   it("does not queue a run when an agent's bot user authors the mention (loop guard)", async () => {
     const { asOwner, columnId } = await setup();
-    const author = await createInternalAgent(asOwner, 'Author Bot', 'author');
-    const target = await createInternalAgent(asOwner, 'Target Bot', 'target');
+    const author = await createMentionAgent(asOwner, 'Author Bot', 'author');
+    const target = await createMentionAgent(asOwner, 'Target Bot', 'target');
     const issue = (await createIssue(asOwner, columnId)).data!;
 
     // An agent comments via the in-process add_comment tool, i.e. createComment with
-    // its own bot user as the author. Even though it mentions another internal agent,
+    // its own bot user as the author. Even though it mentions another agent,
     // no run is queued — this is what stops agent-to-agent mention loops.
     await createComment({
       issueId: issue.id,

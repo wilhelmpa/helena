@@ -8,13 +8,11 @@ import { mcpTool } from '#mcp/generate';
 import { paginate } from '#shared/pagination';
 import { teamParams } from '#modules/teams/model';
 import { agentInTeam, agentScopeOf } from '../core/service';
-import { actionCatalog } from '../core/runtime/tools/route-tools';
 import {
   AgentToolListResponse,
   AgentToolPageResponse,
   agentToolListQuery,
   AgentToolResponse,
-  ToolMetaListResponse,
   agentParams,
   createAgentToolBody,
   setAgentToolsBody,
@@ -29,12 +27,9 @@ import {
   setAgentTools,
 } from './service';
 
-// Two tool systems live under this tag. Built-in agent actions (create_issue,
-// search_issues, ...) are the catalog an internal agent is granted through its
-// `tools` field; the catalog route is read-only and ai_agents-gated. Configured tools
-// bind an external tool to an integration credential; the credential belongs to the
-// team, so they do too, and their routes sit under :teamId, gated by the agent_tools
-// resource on the team. Binding one to a credential is done in the UI, so only reading
+// Configured tools bind an external tool to an integration credential; the credential
+// belongs to the team, so they do too, and their routes sit under :teamId, gated by the
+// agent_tools resource on the team. Binding one to a credential is done in the UI, so only reading
 // them and enabling them on an agent are exposed over MCP.
 //
 // Which tools an agent has enabled sits under :teamId too — the agent belongs to the
@@ -45,20 +40,6 @@ export const agentToolRoutes = new Elysia({
 })
   .use(authContext)
   .use(guards)
-
-  .get('/teams/:teamId/ai-agents/tools', () => actionCatalog(), {
-    params: teamParams,
-    teamPermission: ['ai_agents', 'read'],
-    response: { 200: ToolMetaListResponse, ...accessErrors },
-    detail: {
-      summary: 'List built-in agent actions',
-      description:
-        'List the built-in actions an internal agent can be granted (the valid keys for the ' +
-        'tools field on create_ai_agent / update_ai_agent), each with the permission its ' +
-        "route asserts — an action the agent's role refuses returns 403 when it runs.",
-      ...mcpTool('list_ai_agent_tools'),
-    },
-  })
 
   .get(
     '/teams/:teamId/agent-tools',
@@ -73,9 +54,8 @@ export const agentToolRoutes = new Elysia({
         summary: 'List configured tools',
         description:
           "One page of a team's tools configured on integration credentials. An id here is " +
-          'what set_ai_agent_configured_tools takes to enable a tool on an agent. Separate ' +
-          'from the built-in actions in list_ai_agent_tools. The whole list, for a picker, ' +
-          'comes from list_configured_tool_options.',
+          'what set_ai_agent_configured_tools takes to enable a tool on an agent. The whole ' +
+          'list, for a picker, comes from list_configured_tool_options.',
         ...mcpTool('list_configured_tools'),
       },
     },

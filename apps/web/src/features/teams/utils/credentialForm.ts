@@ -176,7 +176,7 @@ export function grantableAgentGroups(
   runtime: LoginRuntime | null = null,
 ): AgentGroup[] {
   const grantable = agents
-    .filter((agent) => agent.kind === 'external' && !agent.template)
+    .filter((agent) => !agent.template)
     .filter((agent) => runtime === null || agent.runtimePolicy?.runtime === runtime)
     .filter(
       (agent) =>

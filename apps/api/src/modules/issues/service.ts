@@ -36,7 +36,6 @@ import {
   sql,
   type SQL,
 } from 'drizzle-orm';
-import type { IssueQuery } from '#modules/agents/core/issue-query';
 import { iso, num, numOrNull, HttpError } from '#shared/lib';
 import type { ProjectRow } from '#modules/projects/service';
 import { assertProjectFeature } from '#shared/access';
@@ -79,7 +78,7 @@ import {
   delegationPrompt,
   startDelegatedAgentTeam,
 } from '#modules/control-plane-workflows/agent-team-starts';
-import { queuePipelineTriggers } from '#modules/pipelines/triggers';
+import { WORKFLOW_EVENT_ACTOR } from '#modules/engine/events';
 import { applySubtaskAutomation } from './automation';
 import { assertWipLimit, columnAutoAssignee, wipLimitBreach } from '#modules/columns/service';
 import { enqueueStateChangedActions, type ActionChain } from '#modules/actions/queue';
@@ -158,6 +157,14 @@ export interface IssueRow {
   // UI can filter by custom fields without a per-issue fetch. Only listIssues
   // populates this; mapIssue alone leaves it empty.
   fieldValues: IssueFieldValueEntry[];
+}
+
+// Who caused an issue event on the bus: the user, or the workflow actor for a workflow's
+// own change, which starts no workflow in turn (engine/events.ts).
+function eventActor(actor: ActivityActor): string | null {
+  if (typeof actor === 'object' && actor !== null && actor.system === 'Workflow')
+    return WORKFLOW_EVENT_ACTOR;
+  return actorId(actor);
 }
 
 function mapIssue(row: typeof issue.$inferSelect, projectKey: string): IssueRow {
@@ -289,6 +296,27 @@ export interface IssueSearchHit {
   dueDate: string | null;
   labelIds: number[];
   archived: boolean;
+}
+
+// The filters of an issue search or of the filtered list (list_issues): a text search,
+// exact ids and values, a due window in YYYY-MM-DD, and a result limit (1 to 200). An
+// issue must carry every label in labelIds; a null filter matches the issues where the
+// field is empty.
+export interface IssueQuery {
+  query?: string;
+  columnId?: number;
+  typeId?: number | null;
+  initiativeId?: number | null;
+  cycleId?: number | null;
+  folderId?: number | null;
+  parentId?: number | null;
+  assigneeUserId?: string | null;
+  delegateUserId?: string | null;
+  priority?: string | null;
+  labelIds?: number[];
+  dueFrom?: string;
+  dueTo?: string;
+  limit?: number;
 }
 
 // Server-side issue read backing two routes: text search (search_issues) and the
@@ -1081,9 +1109,13 @@ export async function createIssue(
   // The author follows what they filed; the assignee is subscribed by the
   // assignment notification below, the same as a later assignment does.
   await autoWatchIssue(project.id, issueId, [actorUserId]);
-  await emitWebhookEvent(project.id, 'issue.created', created);
-  if (!opts?.fromWorkflow)
-    await queuePipelineTriggers(created, [{ type: 'task_created' }], actorUserId);
+  await emitWebhookEvent(
+    project.id,
+    'issue.created',
+    created,
+    {},
+    opts?.fromWorkflow ? WORKFLOW_EVENT_ACTOR : (actorUserId ?? null),
+  );
   // An issue created already delegated to an agent enqueues a run, the same as
   // delegating one later does.
   await enqueueDelegateRun(created, actorUserId);
@@ -1280,39 +1312,46 @@ export async function updateIssue(
     if (before.parentId !== after.parentId)
       await recordParentChange(id, before.parentId, after.parentId, actor);
     if (changed) {
-      await emitWebhookEvent(after.projectId, 'issue.updated', after);
+      const by = eventActor(actor);
+      await emitWebhookEvent(after.projectId, 'issue.updated', after, {}, by);
       // Granular events fire in addition to issue.updated when their field changed.
       if (before.assigneeUserId !== after.assigneeUserId)
-        await emitWebhookEvent(after.projectId, 'issue.assigned', after, {
-          field: 'assignee',
-          assigneeId: after.assigneeUserId,
-          previousAssigneeId: before.assigneeUserId,
-        });
+        await emitWebhookEvent(
+          after.projectId,
+          'issue.assigned',
+          after,
+          {
+            field: 'assignee',
+            assigneeId: after.assigneeUserId,
+            previousAssigneeId: before.assigneeUserId,
+          },
+          by,
+        );
       if (before.delegateUserId !== after.delegateUserId) {
         // Not a webhook event; workflow triggers and plugins see the hand-over.
-        await emitWebhookEvent(after.projectId, 'issue.assigned', after, {
-          field: 'delegate',
-          assigneeId: after.delegateUserId,
-          previousAssigneeId: before.delegateUserId,
-        });
+        await emitWebhookEvent(
+          after.projectId,
+          'issue.assigned',
+          after,
+          {
+            field: 'delegate',
+            assigneeId: after.delegateUserId,
+            previousAssigneeId: before.delegateUserId,
+          },
+          by,
+        );
         await enqueueDelegateRun(after, actor);
       }
       if (before.columnId !== after.columnId) {
-        await emitWebhookEvent(after.projectId, 'issue.state_changed', after);
+        await emitWebhookEvent(
+          after.projectId,
+          'issue.state_changed',
+          after,
+          { columnId: after.columnId, previousColumnId: before.columnId },
+          by,
+        );
         await applySubtaskAutomation(after, actor);
       }
-      await queuePipelineTriggers(
-        after,
-        [
-          ...(after.assigneeUserId && before.assigneeUserId !== after.assigneeUserId
-            ? [{ type: 'task_assigned' as const }]
-            : []),
-          ...(before.columnId !== after.columnId
-            ? [{ type: 'status_changed' as const, columnId: after.columnId }]
-            : []),
-        ],
-        actor,
-      );
     }
   }
   return after;
@@ -1320,9 +1359,9 @@ export async function updateIssue(
 
 // If an issue's new delegate is an agent that reacts to delegation, queue a run so it
 // can act on the issue. Skipped when the agent delegated to itself (an agent setting
-// itself off). The run is executed later — by the poller or by the agent's runner —
-// so the write is never blocked on it. A coordinator of a project that runs the
-// agent-team workflow gets the issue through Mastra instead, as the lead of its team.
+// itself off). The run is executed later, by the agent's runner, so the write is never
+// blocked on it. A coordinator of a project that runs the
+// agent-team workflow gets the issue through the engine instead, as the lead of its team.
 // A routine that reopens a task already delegated to its agent calls it directly.
 export async function enqueueDelegateRun(after: IssueRow, actor?: ActivityActor): Promise<void> {
   const delegate = after.delegateUserId;
@@ -1420,9 +1459,13 @@ export async function setIssueLabels(
   if (emitEvent && (added.length > 0 || removed.length > 0)) {
     const issueRow = await getIssue(issueId);
     if (issueRow) {
-      await emitWebhookEvent(issueRow.projectId, 'issue.label_changed', issueRow);
-      if (added.length > 0)
-        await queuePipelineTriggers(issueRow, [{ type: 'label_added', labelIds: added }], actor);
+      await emitWebhookEvent(
+        issueRow.projectId,
+        'issue.label_changed',
+        issueRow,
+        { added, removed },
+        eventActor(actor),
+      );
     }
   }
 }

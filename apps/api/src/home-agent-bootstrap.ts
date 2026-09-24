@@ -86,42 +86,75 @@ export async function authorizeControlRequest(request: Request): Promise<Respons
 // API and never appears in logs. Cloudflare can reach the path, but cannot call it
 // without that token; only the local factory host holds it.
 export const homeAgentBootstrapRoutes = new Elysia({ name: 'home-agent-bootstrap' })
-  .post('/internal/bootstrap/home-agent', async ({ request }) => {
-    const denied = await authorizeControlRequest(request);
-    if (denied) return denied;
+  .post(
+    '/internal/bootstrap/home-agent',
+    async ({ request }) => {
+      const denied = await authorizeControlRequest(request);
+      if (denied) return denied;
 
-    const result = await bootstrapHomeAgent();
-    if (result.status === 'pending') return new Response(null, { status: 425 });
-    return new Response(result.apiKey, {
-      status: 200,
-      headers: {
-        'content-type': 'text/plain; charset=utf-8',
-        'cache-control': 'no-store',
+      const result = await bootstrapHomeAgent();
+      if (result.status === 'pending') return new Response(null, { status: 425 });
+      return new Response(result.apiKey, {
+        status: 200,
+        headers: {
+          'content-type': 'text/plain; charset=utf-8',
+          'cache-control': 'no-store',
+        },
+      });
+    },
+    {
+      detail: {
+        summary: 'Create the Home agent (host only)',
+        description:
+          'First-run bridge of the factory host, with its control token: creates the Home ' +
+          'agent and answers its key, or 425 while the installation has no owner yet.',
       },
-    });
-  })
-  .post('/internal/bootstrap/project-coordinator', async ({ request, body }) => {
-    const denied = await authorizeControlRequest(request);
-    if (denied) return denied;
-    const input = body as { projectId?: unknown; apiKey?: unknown } | null;
-    const projectId = positiveId(input?.projectId);
-    if (!projectId) return new Response('Invalid project', { status: 400 });
-    const apiKey = input?.apiKey;
-    if (!validKey(apiKey)) return new Response('Invalid key', { status: 400 });
-    const result = await bootstrapProjectCoordinator(projectId, apiKey);
-    if (!result) return new Response('Project not found', { status: 404 });
-    return privateJson(result);
-  })
-  .post('/internal/bootstrap/project-agent', async ({ request, body }) => {
-    const denied = await authorizeControlRequest(request);
-    if (denied) return denied;
-    const input = body as { projectId?: unknown; agentId?: unknown; apiKey?: unknown } | null;
-    const projectId = positiveId(input?.projectId);
-    const agentId = positiveId(input?.agentId);
-    if (!projectId || !agentId) return new Response('Invalid project or agent', { status: 400 });
-    const apiKey = input?.apiKey;
-    if (!validKey(apiKey)) return new Response('Invalid key', { status: 400 });
-    const result = await bootstrapProjectAgent(projectId, agentId, apiKey);
-    if (!result) return new Response('Agent not found in this project', { status: 404 });
-    return privateJson(result);
-  });
+    },
+  )
+  .post(
+    '/internal/bootstrap/project-coordinator',
+    async ({ request, body }) => {
+      const denied = await authorizeControlRequest(request);
+      if (denied) return denied;
+      const input = body as { projectId?: unknown; apiKey?: unknown } | null;
+      const projectId = positiveId(input?.projectId);
+      if (!projectId) return new Response('Invalid project', { status: 400 });
+      const apiKey = input?.apiKey;
+      if (!validKey(apiKey)) return new Response('Invalid key', { status: 400 });
+      const result = await bootstrapProjectCoordinator(projectId, apiKey);
+      if (!result) return new Response('Project not found', { status: 404 });
+      return privateJson(result);
+    },
+    {
+      detail: {
+        summary: "Set up a project's coordinator (host only)",
+        description:
+          "Host-only, with the control token: gives the project's coordinator the key the " +
+          'host created for its runner.',
+      },
+    },
+  )
+  .post(
+    '/internal/bootstrap/project-agent',
+    async ({ request, body }) => {
+      const denied = await authorizeControlRequest(request);
+      if (denied) return denied;
+      const input = body as { projectId?: unknown; agentId?: unknown; apiKey?: unknown } | null;
+      const projectId = positiveId(input?.projectId);
+      const agentId = positiveId(input?.agentId);
+      if (!projectId || !agentId) return new Response('Invalid project or agent', { status: 400 });
+      const apiKey = input?.apiKey;
+      if (!validKey(apiKey)) return new Response('Invalid key', { status: 400 });
+      const result = await bootstrapProjectAgent(projectId, agentId, apiKey);
+      if (!result) return new Response('Agent not found in this project', { status: 404 });
+      return privateJson(result);
+    },
+    {
+      detail: {
+        summary: "Set up a project agent's runner (host only)",
+        description:
+          'Host-only, with the control token: gives an agent of the project the key the host ' +
+          'created for its runner.',
+      },
+    },
+  );

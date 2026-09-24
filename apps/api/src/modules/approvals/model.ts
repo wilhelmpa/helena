@@ -71,27 +71,6 @@ export const ApprovalPageResponse = pageResponse(ApprovalResponse);
 
 export const PendingCountResponse = t.Object({ count: t.Number() });
 
-// A Mastra workflow run suspended at its approval gate.
-export const WorkflowGateResponse = t.Object({
-  projectId: t.Number(),
-  projectKey: t.String(),
-  projectName: t.String(),
-  workflowId: t.String(),
-  workflowName: t.String(),
-  runId: t.String(),
-  reason: t.Nullable(t.String()),
-  summary: t.Nullable(t.String()),
-  // The descriptions of the effects the approval releases.
-  effects: t.Array(t.String()),
-  createdAt: t.Nullable(t.String()),
-});
-
-export const WorkflowGateListResponse = t.Object({
-  items: t.Array(WorkflowGateResponse),
-  // False when the workflows of at least one project could not be read.
-  complete: t.Boolean(),
-});
-
 export const approvalParams = t.Object({
   approvalId: t.Numeric({ description: 'Approval request id from request_approval.' }),
 });

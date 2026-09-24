@@ -51,6 +51,39 @@ fi
 # The vault's layout, groups, permissions and git history; idempotent.
 "$live/deployment/volition-stack/native/vault-setup.sh"
 
+# Mastra and the Hermes team bridge were replaced by the Helena engine, which runs inside the
+# API. An instance that still has them stops them before the migration drops Mastra's tables,
+# and loses their units and Studio's nginx route; this does nothing once they are gone. Their
+# tokens in /etc/volition, /var/lib/volition/mastra and the volition-mastra user stay until
+# they are removed by hand (docs/breaking-changes.md).
+retired=()
+for unit in volition-mastra volition-hermes-team-bridge volition-mastra-dev volition-hermes-team-bridge-dev; do
+  if [[ -e /etc/systemd/system/$unit.service ]]; then
+    systemctl disable --now "$unit.service" >/dev/null 2>&1 || true
+    rm -rf "/etc/systemd/system/$unit.service" "/etc/systemd/system/$unit.service.d" \
+      "/etc/systemd/system/$unit.service.wants"
+    retired+=("$unit")
+  fi
+done
+if ((${#retired[@]} > 0)); then
+  systemctl daemon-reload
+  echo "removed ${retired[*]}"
+fi
+site=/etc/nginx/sites-available/volition.conf
+studio='    include /etc/nginx/snippets/volition-mastra-studio.conf;'
+if [[ -f $site ]] && grep -qxF -- "$studio" "$site"; then
+  cp -p -- "$site" "$site.pre-engine"
+  grep -vxF -- "$studio" "$site.pre-engine" >"$site"
+  if nginx -t && systemctl reload nginx.service; then
+    rm -f -- "$site.pre-engine" /etc/nginx/snippets/volition-mastra-studio.conf \
+      /etc/nginx/conf.d/volition-mastra-gateway.conf
+  else
+    cp -p -- "$site.pre-engine" "$site"
+    rm -f -- "$site.pre-engine"
+    echo "deploy.sh: nginx refused the site without the Mastra route; it was restored" >&2
+  fi
+fi
+
 if changed packages/db/drizzle; then
   # The Docs pages still stored in the database become files in the vault before the
   # migration drops their tables; the script does nothing once they are gone.
@@ -58,12 +91,6 @@ if changed packages/db/drizzle; then
     bash -c "cd '$live' && /usr/local/bin/bun --env-file=/etc/volition/plan.env apps/api/src/scripts/convert-documents-to-vault.ts"
   echo "migrating the database"
   systemctl start volition-plan-migrate.service
-fi
-
-# Creates the Mastra tokens the units below load, before any of them starts.
-if changed deployment/volition-stack/native/nginx/install-mastra-studio.sh \
-  deployment/volition-stack/native/nginx/mastra-studio.conf; then
-  "$live/deployment/volition-stack/native/nginx/install-mastra-studio.sh"
 fi
 
 # Syncthing syncs the vault with the owner's devices. Its setup writes the API key the
@@ -108,11 +135,10 @@ if changed packages/runner; then
 fi
 
 if changed deployment/volition-stack/integration; then
-  restart+=(volition-provisioning.service volition-hermes-team-bridge.service)
+  restart+=(volition-provisioning.service)
 fi
 
-for unit in volition-hermes-runner.service volition-hermes-team-bridge.service \
-  volition-mastra.service volition-provisioning.service; do
+for unit in volition-hermes-runner.service volition-provisioning.service; do
   if changed "deployment/volition-stack/native/systemd/$unit"; then
     install -m 0644 "$live/deployment/volition-stack/native/systemd/$unit" /etc/systemd/system/
     systemctl daemon-reload
@@ -139,12 +165,6 @@ if changed deployment/volition-stack/native/runtimes; then
   echo "NOTE: the pinned CLI runtimes changed. After the owner's OK run:"
   echo "  sudo $live/deployment/volition-stack/native/runtimes/install-cli-runtimes.sh plan"
   echo "  sudo $live/deployment/volition-stack/native/runtimes/install-cli-runtimes.sh install"
-fi
-
-if changed deployment/volition-stack/optional/mastra-studio; then
-  echo "building Mastra"
-  as_owner bash -c "cd '$live/deployment/volition-stack/optional/mastra-studio' && bun install --frozen-lockfile >/dev/null && bun run build >/dev/null"
-  restart+=(volition-mastra.service)
 fi
 
 # A restart ends every open terminal session. The shell script and tmux.conf are read
@@ -218,7 +238,7 @@ fi
 # entry have to answer.
 failed=0
 for unit in volition-plan-api volition-plan-web volition-plan-worker \
-  volition-hermes-runner volition-mastra volition-provisioning volition-terminal \
+  volition-hermes-runner volition-provisioning volition-terminal \
   volition-project-browser-router volition-syncthing; do
   if ! systemctl is-active --quiet "$unit.service"; then
     echo "deploy.sh: $unit is not running" >&2

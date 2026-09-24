@@ -1,5 +1,6 @@
 'use client';
 
+import { Workflow } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { PipelineRunStep } from '@/lib/api/endpoints/pipelines';
 import { AgentTokenCounts } from '@/components/common/agent-chat/AgentTokenCounts';
@@ -9,14 +10,44 @@ import { formatDateTime } from '@/utils/dates';
 import { PIPELINE_STEP_ICONS } from '@/utils/pipelineStepIcons';
 import PipelineRunStepSummary from './PipelineRunStepSummary';
 
+// The name of a step the engine built itself (an agent team and its stages), to show in
+// the reader's language; null for a step a person named, which keeps its name.
+function builtName(step: PipelineRunStep): {
+  key: 'agentTeam' | 'coordinate' | 'specialize' | 'review' | 'sync';
+  assignment?: string;
+} | null {
+  if (step.kind === 'agent_team') return { key: 'agentTeam' };
+  if (!step.parentStepId) return null;
+  const part = step.stepId.slice(step.parentStepId.length + 1);
+  if (part === 'coordinate' || part === 'review' || part === 'sync') return { key: part };
+  if (/^s\d+$/.test(part))
+    return { key: 'specialize', assignment: step.name.split(': ').slice(1).join(': ') };
+  return null;
+}
+
 // One execution of a step: how it ended, who worked on it or decided it, and what it
 // left for the steps after it.
-export default function PipelineRunStepItem({ step }: { step: PipelineRunStep }) {
+export default function PipelineRunStepItem({
+  step,
+  parts = [],
+}: {
+  step: PipelineRunStep;
+  parts?: PipelineRunStep[];
+}) {
   const t = useTranslations('pipelines.runs');
   const label = byKey(t);
-  const Icon = PIPELINE_STEP_ICONS[step.kind];
+  // A step type a plugin added has no icon of its own.
+  const Icon = PIPELINE_STEP_ICONS[step.kind] ?? Workflow;
   const known = (group: string, value: string) =>
     t.has(`${group}.${value}` as Parameters<typeof t.has>[0]) ? label(`${group}.${value}`) : value;
+  const built = builtName(step);
+  const name = !built
+    ? step.name
+    : built.key === 'agentTeam'
+      ? t('kinds.agent_team')
+      : built.key === 'specialize'
+        ? t('teamStages.specialize', { assignment: built.assignment ?? '' })
+        : t(`teamStages.${built.key}`);
 
   return (
     <li className="flex gap-2 text-xs">
@@ -24,7 +55,7 @@ export default function PipelineRunStepItem({ step }: { step: PipelineRunStep })
       <div className="min-w-0 flex-1 space-y-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="font-medium" dir="auto">
-            {step.name}
+            {name}
           </span>
           {step.iteration > 1 && (
             <span className="text-muted-foreground">
@@ -78,6 +109,13 @@ export default function PipelineRunStepItem({ step }: { step: PipelineRunStep })
           </p>
         )}
         {step.summary && <PipelineRunStepSummary summary={step.summary} />}
+        {parts.length > 0 && (
+          <ol className="mt-2 space-y-2 border-s ps-3">
+            {parts.map((part) => (
+              <PipelineRunStepItem key={`${part.stepId}:${part.iteration}`} step={part} />
+            ))}
+          </ol>
+        )}
       </div>
     </li>
   );

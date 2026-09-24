@@ -52,8 +52,18 @@ export interface CoreEventData {
     previousAssigneeId: string | null;
     snapshot?: unknown;
   };
-  'helena.issue.state_changed': IssueRef & { snapshot?: unknown };
-  'helena.issue.label_changed': IssueRef & { snapshot?: unknown };
+  // The column (state) the issue moved to and the one it left.
+  'helena.issue.state_changed': IssueRef & {
+    columnId?: number;
+    previousColumnId?: number;
+    snapshot?: unknown;
+  };
+  // The label ids a change added and removed.
+  'helena.issue.label_changed': IssueRef & {
+    added?: number[];
+    removed?: number[];
+    snapshot?: unknown;
+  };
   'helena.issue.link_changed': IssueRef & { snapshot?: unknown };
   'helena.issue.deleted': IssueRef & { snapshot?: unknown };
   'helena.comment.created': CommentRef & { snapshot?: unknown };
@@ -90,6 +100,16 @@ export interface CoreEventData {
     taskRef: string;
     // A new task, or an existing one reopened.
     mode: 'new' | 'reopen';
+  };
+  // A new mail arrived in one of a project's mail accounts (once per message).
+  'helena.mail.received': {
+    account: string;
+    from: string;
+    fromName: string;
+    subject: string;
+    snippet: string;
+    threadId: number;
+    messageId: number;
   };
 }
 
@@ -136,6 +156,7 @@ export const CORE_EVENT_TYPES = [
   'helena.approval.decided',
   'helena.chat.message',
   'helena.routine.fired',
+  'helena.mail.received',
 ] as const satisfies readonly CoreEventType[];
 
 export type CoreEvent<T extends CoreEventType = CoreEventType> = HelenaEvent<T, CoreEventData[T]>;

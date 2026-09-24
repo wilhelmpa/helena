@@ -1,3 +1,4 @@
+import { publishEngineEvent } from '../engine-events';
 import {
   db,
   hubInboxEvent,
@@ -70,7 +71,8 @@ async function storeMessage(
   await putObject(rawKey, raw, 'message/rfc822');
   const thread = await resolveThread(account, parsed, target.serverThreadId ?? null);
   const files = await writeAttachments(await projectKeyOf(thread.projectId), parsed);
-  return db.transaction(async (tx) => {
+  let known: number | null = null;
+  const messageRowId = await db.transaction(async (tx) => {
     const [row] = await tx
       .insert(mailMessage)
       .values({
@@ -108,6 +110,7 @@ async function storeMessage(
         .where(
           and(eq(mailMessage.accountId, account.id), eq(mailMessage.messageId, parsed.messageId)),
         );
+      known = existing!.id;
       return existing!.id;
     }
     if (files.paths.length > 0) {
@@ -131,6 +134,26 @@ async function storeMessage(
     }
     return row.id;
   });
+  // Tells the Helena engine that new mail arrived in a project, for the workflows that
+  // start on a mail (trigger `mail_received`). Once per message.
+  if (target.newInboxMail && thread.projectId !== null && messageRowId !== known)
+    await publishEngineEvent({
+      id: `mail-${messageRowId}`,
+      type: 'helena.mail.received',
+      subject: `mail:${messageRowId}`,
+      projectId: thread.projectId,
+      time: parsed.date,
+      data: {
+        account: account.address,
+        from: parsed.from?.address ?? '',
+        fromName: parsed.from?.name ?? '',
+        subject: parsed.subject,
+        snippet: parsed.snippet,
+        threadId: thread.id,
+        messageId: messageRowId,
+      },
+    });
+  return messageRowId;
 }
 
 // The thread of a message. The server's own thread id wins where it reports one (Gmail's
@@ -299,7 +322,7 @@ async function saveContacts(
 
 // Hands new inbox mail to the inbox triage the way the hub inbox always received it:
 // a hub_inbox_event of the account's mail source, which the hub inbox worker turns into
-// a thread and sends to the Mastra inbox-triage workflow.
+// a thread and sends to the triage of the integration service.
 async function recordTriageEvent(
   tx: Transaction,
   account: Pick<SyncAccount, 'teamId' | 'address'>,

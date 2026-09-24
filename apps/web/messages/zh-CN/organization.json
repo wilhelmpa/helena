@@ -126,15 +126,14 @@
   "orchestration": {
     "teamTitle": "智能体团队",
     "teamDescription": "角色和能力适用于团队的所有项目。只有在 Hermes 中运行的智能体参与团队运行。",
-    "internal": "不在 Hermes 中",
     "editRoles": "在“智能体”标签页设置角色和能力。",
     "policyTitle": "agent-team 工作流",
-    "policyDescription": "任务委派给协调者时在 Mastra 中运行。",
+    "policyDescription": "当任务委派给协调者时运行。",
     "on": "开启",
     "off": "关闭",
     "configure": "配置",
     "loading": "正在加载工作流…",
-    "unavailable": "工作流列表不可用。请检查 Mastra 是否在运行。",
+    "unavailable": "工作流列表目前不可用。",
     "offHint": "此项目已关闭：委派给协调者的任务只为该智能体排队。",
     "result": "结果",
     "autonomyReview": "任务移至评审",
@@ -156,14 +155,14 @@
       "directTitle": "直接",
       "direct": "聊天、@提及或分配给某个智能体的任务会直接交给 Hermes 中的该智能体。",
       "teamTitle": "通过智能体团队",
-      "team": "委派给协调者的任务，或从任务的“智能体团队”部分启动的任务，在 Mastra 中运行：",
+      "team": "委派给协调者的任务，或从任务的“智能体团队”部分启动的任务，按以下方式运行：",
       "stages": {
         "coordinate": "协调者将任务拆分为分派。",
         "specialize": "专家在 Hermes 中完成分派，相互独立的并行进行。",
         "review": "协调者评审结果。",
         "synchronize": "摘要和证据写入任务，任务移至评审或完成。"
       },
-      "route": "当任务标签只与一位专家的能力匹配，或项目只有一位专家时，Mastra 跳过计划，直接分派任务。"
+      "route": "当任务标签恰好匹配一位专家的能力，或项目只有一位专家时，Helena 会跳过规划并直接分配任务。"
     },
     "usage": {
       "title": "令牌用量",

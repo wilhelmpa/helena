@@ -126,15 +126,14 @@
   "orchestration": {
     "teamTitle": "Équipe d’agents",
     "teamDescription": "Les rôles et compétences s’appliquent à tous les projets de l’équipe. Seuls les agents qui tournent dans Hermes participent à une exécution d’équipe.",
-    "internal": "hors Hermes",
     "editRoles": "Définissez rôles et compétences dans l’onglet Agents.",
     "policyTitle": "Workflow agent-team",
-    "policyDescription": "S’exécute dans Mastra quand une tâche est déléguée à un coordinateur.",
+    "policyDescription": "S’exécute quand une tâche est déléguée à un coordinateur.",
     "on": "Actif",
     "off": "Inactif",
     "configure": "Configurer",
     "loading": "Chargement du workflow…",
-    "unavailable": "La liste des workflows n’est pas disponible. Vérifiez que Mastra tourne.",
+    "unavailable": "La liste des workflows n’est pas disponible pour le moment.",
     "offHint": "Inactif pour ce projet : une tâche déléguée à un coordinateur est mise en file pour cet agent seul.",
     "result": "Résultat",
     "autonomyReview": "La tâche passe en Revue",
@@ -156,14 +155,14 @@
       "directTitle": "Directement",
       "direct": "Un chat, une @mention ou une tâche assignée à un agent va directement à cet agent dans Hermes.",
       "teamTitle": "Par l’équipe d’agents",
-      "team": "Une tâche déléguée à un coordinateur, ou lancée depuis la section Équipe d’agents de la tâche, s’exécute dans Mastra :",
+      "team": "Une tâche déléguée à un coordinateur, ou lancée depuis la section Équipe d’agents de la tâche, se déroule ainsi :",
       "stages": {
         "coordinate": "Le coordinateur découpe la tâche en missions.",
         "specialize": "Les spécialistes y travaillent dans Hermes, les missions indépendantes en parallèle.",
         "review": "Le coordinateur relit les résultats.",
         "synchronize": "Le résumé et les preuves sont écrits dans la tâche, qui passe en Revue ou Terminé."
       },
-      "route": "Quand les étiquettes de la tâche correspondent aux compétences d’un seul spécialiste, ou que le projet n’en a qu’un, Mastra saute le plan et assigne la tâche directement."
+      "route": "Si les étiquettes de la tâche correspondent aux capacités d’un seul spécialiste, ou si le projet n’en a qu’un, Helena saute la planification et assigne la tâche directement."
     },
     "usage": {
       "title": "Consommation de jetons",

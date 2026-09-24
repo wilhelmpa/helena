@@ -1,7 +1,7 @@
 {
   "title": "Aktivitas",
-  "projectDescription": "Apa yang dikerjakan agen proyek ini, terbaru lebih dulu: jawaban chat Anda, proses mereka, serta proses tim agen dan alur kerja di Mastra.",
-  "homeDescription": "Apa yang dikerjakan agen di proyek Anda, terbaru lebih dulu: jawaban chat Anda, proses mereka, serta proses tim agen dan alur kerja di Mastra.",
+  "projectDescription": "Yang dilakukan agen proyek ini, terbaru dulu: jawaban chat Anda, proses mereka, serta proses tim agen, alur kerja, dan rutinitas.",
+  "homeDescription": "Yang dilakukan agen proyek Anda, terbaru dulu: jawaban chat Anda, proses mereka, serta proses tim agen, alur kerja, dan rutinitas.",
   "allKinds": "Semua jenis",
   "allAgents": "Semua agen",
   "kinds": {
@@ -37,10 +37,6 @@
   "empty": "Belum ada aktivitas",
   "emptyHint": "Jawaban chat, proses agen, dan proses alur kerja muncul di sini setelah agen bekerja.",
   "unavailable": "Aktivitas tidak dapat dimuat.",
-  "notice": {
-    "workflow-runs-unavailable": "Mastra tidak menjawab, jadi proses alur kerja tidak ditampilkan.",
-    "workflow-runs-limited": "Tidak semua proses alur kerja ditampilkan: linimasa membaca sejumlah terbatas alur kerja dan proses dari Mastra."
-  },
   "filterKind": "Jenis",
   "filterAgent": "Agen",
   "unavailableHint": "Server tidak merespons. Coba lagi sebentar lagi."

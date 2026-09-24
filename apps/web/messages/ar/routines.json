@@ -52,7 +52,8 @@
     "success": "نجح",
     "failed": "فشل",
     "canceled": "اتلغى",
-    "running": "شغّال"
+    "running": "شغّال",
+    "skipped": "تم تخطيه"
   },
   "outcome": {
     "created": "أنشأ <task>{identifier}</task>",
@@ -95,5 +96,12 @@
     "through": "{start} إلى {end}",
     "dayOrdinal": "{n}"
   },
-  "invalidSchedule": "جدول غير صالح. مثال: 0 9 * * 1-5 (من الاثنين إلى الجمعة الساعة 9:00)."
+  "invalidSchedule": "جدول غير صالح. مثال: 0 9 * * 1-5 (من الاثنين إلى الجمعة الساعة 9:00).",
+  "history": "السجل",
+  "historyTitle": "عمليات تشغيل {name}",
+  "historyFailed": "تعذر تحميل عمليات التشغيل.",
+  "catchUp": "بعد التوقف",
+  "catchUpSkip": "تخطي الأوقات الفائتة",
+  "catchUpOnce": "تشغيل آخر وقت فائت مرة واحدة",
+  "catchUpHint": "عندما كان الخادم متوقفًا في وقت مجدول. لا تُشغَّل الأوقات الفائتة الأقدم أبدًا."
 }

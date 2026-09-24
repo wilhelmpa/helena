@@ -13,7 +13,7 @@ import { SkillEditDialog } from './SkillEditDialog';
 import { SkillRow } from './SkillRow';
 import TableCard from '@/components/common/page/TableCard';
 
-// The team's skill library as a table: reusable instructions the internal agents of
+// The team's skill library as a table: reusable instructions the agents of
 // its projects load on demand. A skill is a SKILL.md plus optional reference files;
 // it can be written inline, uploaded, or imported from GitHub. Editing opens a
 // separate dialog that also manages the reference files.

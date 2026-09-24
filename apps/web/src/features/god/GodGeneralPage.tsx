@@ -11,21 +11,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { APP_NAME, UPSTREAM_URL } from '@/utils/app';
+import GodEngineSettings from './components/GodEngineSettings';
 import GodSectionPage from './components/GodSectionPage';
 import {
+  useEngineSettingsAdminQuery,
   useInstanceProjectDefaultsQuery,
   useInstanceRunResumeSettingsQuery,
   useUpdateInstanceProjectDefaults,
   useUpdateInstanceRunResumeSettings,
 } from './services/god.service';
 import type { ProjectDefaults } from '@/lib/api/endpoints/projects';
-import type { RunResumeSettings } from '@/lib/api/endpoints/god';
+import type { EngineSettingsAdmin, RunResumeSettings } from '@/lib/api/endpoints/god';
 
 export default function GodGeneralPage() {
   const projectDefaults = useInstanceProjectDefaultsQuery();
   const runResume = useInstanceRunResumeSettingsQuery();
+  const engine = useEngineSettingsAdminQuery();
 
-  if (!projectDefaults.data || !runResume.data) {
+  if (!projectDefaults.data || !runResume.data || !engine.data) {
     return (
       <GodSectionPage slug="general">
         <ListSkeleton rows={5} rowClassName="h-12" />
@@ -37,6 +40,7 @@ export default function GodGeneralPage() {
       key={JSON.stringify(projectDefaults.data) + JSON.stringify(runResume.data)}
       defaults={projectDefaults.data}
       runResume={runResume.data}
+      engine={engine.data}
     />
   );
 }
@@ -44,9 +48,11 @@ export default function GodGeneralPage() {
 function GeneralForm({
   defaults,
   runResume,
+  engine,
 }: {
   defaults: ProjectDefaults;
   runResume: RunResumeSettings;
+  engine: EngineSettingsAdmin;
 }) {
   const t = useTranslations('god.general');
   const tCommon = useTranslations('common');
@@ -130,6 +136,7 @@ function GeneralForm({
           />
         </SettingsCard>
       </SettingsSection>
+      <GodEngineSettings settings={engine} />
       <AboutSection />
     </GodSectionPage>
   );

@@ -83,7 +83,7 @@ export function RoutineRow({
         </p>
       </TableCell>
       <TableCell className="px-3 py-2.5 align-top whitespace-normal">
-        <RoutineLastRun routine={routine} />
+        <RoutineLastRun routine={routine} canEdit={actions?.canEdit ?? false} />
       </TableCell>
       <TableCell className="px-3 py-2.5 align-top">
         {actions?.canEdit ? (

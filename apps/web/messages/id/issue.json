@@ -462,10 +462,11 @@
       "pending": "Dalam antrean",
       "running": "Berjalan",
       "waiting": "Menunggu",
-      "suspended": "Menunggu persetujuan",
       "success": "Selesai",
       "failed": "Gagal",
-      "canceled": "Dibatalkan"
+      "canceled": "Dibatalkan",
+      "succeeded": "Selesai",
+      "skipped": "Dilewati"
     },
     "outcome": {
       "review": "Tugas dipindahkan ke Tinjauan",

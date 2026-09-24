@@ -9,7 +9,7 @@ import { usePipelineRun } from '@/services/pipelines.service';
 import { qk } from '@/services/queryKeys';
 import { revScope } from '@/utils/revScopes';
 
-// The test run as it goes: every step Mastra reports moves the project's control-plane
+// The test run as it goes: every step the engine records moves the project's control-plane
 // revision, which reads the run again.
 export default function PipelineTestRunResult({
   runId,

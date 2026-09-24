@@ -386,11 +386,10 @@
     "deleteTemplateMessage": "The template will be removed. Projects that already used it are unchanged.",
     "noTemplates": "No reusable templates yet.",
     "controlPlane": {
-      "title": "Mastra control plane",
-      "description": "Project bindings, workflow graphs, runs, approval gates, and Mastra-owned schedules.",
+      "title": "Вбудовані процеси",
       "loading": "Loading workflows…",
-      "unavailable": "The workflow control plane is unavailable.",
-      "empty": "No Mastra workflows are available for this project.",
+      "unavailable": "Зараз не вдається завантажити процеси.",
+      "empty": "Для цього проєкту немає вбудованих процесів.",
       "approvalRequired": "Approval required",
       "enabled": "Enabled",
       "disabled": "Disabled",
@@ -400,21 +399,9 @@
       "retryLimit": "Retry limit",
       "saveConfiguration": "Save configuration",
       "notConfigured": "Not configured",
-      "graph": "Workflow graph",
-      "recentRuns": "Recent runs",
-      "noRuns": "No runs for this project.",
-      "reject": "Reject",
-      "approve": "Approve",
-      "retry": "Retry",
-      "stopRun": "Stop run",
-      "schedules": "Mastra schedules",
-      "cron": "Cron",
-      "timezone": "Timezone",
-      "addSchedule": "Add schedule",
-      "runNow": "Run now",
-      "pauseSchedule": "Pause schedule",
-      "resumeSchedule": "Resume schedule",
-      "delete": "Delete",
+      "graph": "Кроки",
+      "recentRuns": "Запуски",
+      "noRuns": "У цьому проєкті ще немає запусків.",
       "agentTeam": {
         "result": "Результат",
         "autonomyReview": "Завдання переходить у «Рев’ю»",
@@ -427,7 +414,29 @@
         "noLimit": "Без обмеження",
         "hint": "Обмеження діють на кожен етап у Hermes. Етап, що їх досяг, зупиняється і повідомляє, що встиг."
       },
-      "configurationSaved": "{name}: налаштування збережено"
+      "configurationSaved": "{name}: налаштування збережено",
+      "runsUnavailable": "Не вдалося завантажити запуски.",
+      "triggerDelegation": "Делегування координатору",
+      "agentTeamName": "Команда агентів проєкту",
+      "agentTeamDescription": "Координатор планує делеговану задачу, спеціалісти виконують роботу в порядку залежностей, координатор перевіряє її, а результат потрапляє в задачу.",
+      "agentTeamSteps": {
+        "coordinate": {
+          "title": "Спланувати роботу",
+          "description": "Передати задачу єдиному відповідному спеціалістові або попросити координатора скласти доручення із залежностями."
+        },
+        "specialize": {
+          "title": "Спеціалісти працюють",
+          "description": "Виконувати доручення в порядку залежностей, незалежні — паралельно, кожне як запуск агента з його лімітами."
+        },
+        "review": {
+          "title": "Перевірити докази",
+          "description": "Координатор звіряє докази з кожним критерієм приймання, якщо проєкт вимагає перевірки."
+        },
+        "synchronize": {
+          "title": "Оновити задачу",
+          "description": "Записати підсумок і докази в задачу та перенести її в «Перевірку» або в «Готово», якщо проєкт це дозволяє."
+        }
+      }
     }
   },
   "webhooks": {

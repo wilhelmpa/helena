@@ -2,8 +2,7 @@ import { db, agentChatUsage } from '@repo/db';
 import { eq, inArray } from 'drizzle-orm';
 
 // The context size of a chat thread (see the agent_chat_usage comment in the schema).
-// Both kinds of agent report it — an external one through its runner, an internal one
-// from the model call itself. It answers how close the conversation is to the agent's
+// The agent's runner reports it. It answers how close the conversation is to the agent's
 // context limit, so it is measured on the last model call of an answer, not summed over
 // the calls the answer took.
 

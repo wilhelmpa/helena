@@ -49,7 +49,7 @@ import {
   listWaitingApprovals,
   readableProjectIds,
   retryRun,
-  runProjectId,
+  runAccess,
   startablePipelines,
   startRun,
 } from './runs';
@@ -69,8 +69,10 @@ import {
 } from './service';
 
 // The workflow builder: templates in the team's library in Home, a project's own
-// workflows, their use in a project and their runs. Mastra's plan-pipeline workflow
-// runs them; control.ts holds the operations it calls.
+// workflows, their use in a project and their runs, which the Helena engine executes
+// (modules/engine). The run routes serve every kind of engine run: a routine's runs are
+// governed by the agents permission like the routine, every other run by the actions
+// permission.
 export const pipelineRoutes = new Elysia({
   name: 'pipelines',
   detail: { tags: ['Workflow builder'] },
@@ -94,7 +96,19 @@ export const pipelineRoutes = new Elysia({
         },
       };
     },
-    pipelineRun: entityGuard('actions', 'Workflow run not found', (p) => runProjectId(p.runId)),
+    pipelineRun(action: PermissionAction) {
+      return {
+        detail: requiresPermission(['actions', action]) as DocumentDecoration,
+        async resolve({ params, user, request }) {
+          const run = await runAccess((params as { runId: string }).runId);
+          if (!run) throw new HttpError(404, 'Workflow run not found');
+          const resource = run.kind === 'routine' ? 'ai_agents' : 'actions';
+          await assertPermission(run.projectId, user, resource, action);
+          await assertMcpAllowed(run.projectId, request.headers);
+          return { projectId: run.projectId };
+        },
+      };
+    },
     workItem: entityGuard('work_items', 'Issue not found', (p) =>
       getIssueProjectId(Number(p.issueId)),
     ),
@@ -207,7 +221,7 @@ export const pipelineRoutes = new Elysia({
         description:
           'Enables or disables a template or the project workflow, and names the agents of ' +
           'its roles. A workflow that cannot run in the project is refused with 409. A ' +
-          'schedule trigger gets a Mastra schedule while the workflow is enabled.',
+          'schedule trigger gets a schedule of the engine while the workflow is enabled.',
       },
     },
   )

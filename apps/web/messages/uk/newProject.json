@@ -25,7 +25,6 @@
     "workflow": "Робочий процес",
     "automation": "Автоматизація",
     "views": "Подання",
-    "aiTeam": "AI-команда",
     "knowledge": "Знання"
   },
   "copyItems": {
@@ -38,8 +37,7 @@
     "documents": "Docs",
     "actions": "Дії",
     "configuration": "Конфігурація",
-    "webhooks": "Вебхуки",
-    "agents": "Агенти"
+    "webhooks": "Вебхуки"
   },
   "title": "Новий проєкт",
   "copyTitle": "Копіювати проєкт «{name}»",

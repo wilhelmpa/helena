@@ -4,14 +4,18 @@
     "approval": "审批",
     "condition": "条件",
     "action": "任务操作",
-    "wait": "等待"
+    "wait": "等待",
+    "notify": "通知",
+    "webhook": "Webhook"
   },
   "kindHints": {
     "agent": "由代理处理任务",
     "approval": "由人工批准或退回",
     "condition": "将运行拆分为是与否两支",
     "action": "更改任务",
-    "wait": "暂停运行"
+    "wait": "暂停运行",
+    "notify": "告知相关人员此次运行",
+    "webhook": "将任务发送到某个 URL"
   },
   "triggers": {
     "manual": "手动启动",
@@ -19,12 +23,15 @@
     "task_assigned": "任务已指派",
     "status_changed": "状态已更改",
     "label_added": "已添加标签",
-    "schedule": "定时任务"
+    "schedule": "定时任务",
+    "webhook": "Webhook 请求",
+    "mail_received": "收到邮件"
   },
   "triggerSummary": {
     "statusTo": "状态变为 {status}",
     "label": "添加标签 {label}",
-    "schedule": "定时任务 {cron}"
+    "schedule": "定时任务 {cron}",
+    "mail": "邮件：{filter}"
   },
   "library": {
     "hint": "团队库中的工作流模板。项目启用一个模板，并为其角色指定代理。",
@@ -127,7 +134,12 @@
     "cronHint": "分钟、小时、日期、月份和星期几。0 9 * * 1-5 表示工作日 9:00 运行。",
     "timezone": "时区",
     "taskTitle": "任务标题",
-    "taskTitleHint": "每次运行都会以此标题创建一个任务，并在其上运行该工作流。"
+    "taskTitleHint": "每次运行都会以此标题创建一个任务，并在其上运行该工作流。",
+    "webhookHint": "每次请求都会用此标题（或请求中发送的标题）创建一个任务并在其上运行工作流。工作流在项目中启用后，地址和密钥位于该项目的工作流页面。",
+    "mailFrom": "发件人包含",
+    "mailSubject": "主题包含",
+    "mailHint": "项目邮箱中每封匹配的新邮件都会以其主题创建一个任务。",
+    "mailAny": "任意"
   },
   "roles": {
     "title": "角色",
@@ -158,7 +170,8 @@
     "no": "否",
     "endsRun": "运行在此步骤后结束",
     "limit": "一个工作流最多包含 {max} 个步骤。",
-    "problems": "{count, plural, other {# 个问题}}"
+    "problems": "{count, plural, other {# 个问题}}",
+    "plugins": "扩展"
   },
   "summary": {
     "agentRole": "角色 {role}",
@@ -179,7 +192,10 @@
     "comment": "评论：{text}",
     "subtask": "子任务：{title}",
     "waitDelay": "等待 {duration}",
-    "waitUntil": "直到 {field} 的 {time}"
+    "waitUntil": "直到 {field} 的 {time}",
+    "notify": "通知 {who}：{text}",
+    "webhook": "发送到 {host}",
+    "noUrl": "尚无 URL"
   },
   "duration": {
     "minutes": "{count, plural, other {# 分钟}}",
@@ -302,6 +318,28 @@
       },
       "time": "时间",
       "timeHint": "时间以 Europe/Berlin 为准。"
+    },
+    "notify": {
+      "to": "通知对象",
+      "members": "成员",
+      "message": "消息",
+      "messagePlaceholder": "需要告知的内容",
+      "recipients": {
+        "assignee": "负责人",
+        "watchers": "任务关注者",
+        "members": "指定成员"
+      }
+    },
+    "webhook": {
+      "url": "URL",
+      "urlHint": "以 JSON 形式接收任务及目前的结果，并使用项目的签名密钥签名。2xx 响应视为成功。",
+      "message": "消息",
+      "messagePlaceholder": "作为 message 一并发送（可选）"
+    },
+    "plugin": {
+      "noSettings": "没有设置。",
+      "choose": "选择",
+      "missing": "步骤类型 {type} 未安装：提供它的扩展已关闭。"
     }
   },
   "issues": {
@@ -332,7 +370,10 @@
     "unknown_label": "该项目没有名为 {name} 的标签。",
     "unknown_area": "该项目没有名为 {name} 的区域。",
     "model_not_allowed": "团队中没有代理运行模型 {model}。",
-    "schedule_too_frequent": "该定时任务的运行频率超过了团队允许的上限。"
+    "schedule_too_frequent": "该定时任务的运行频率超过了团队允许的上限。",
+    "invalid_url": "请输入以 https:// 或 http:// 开头的 URL。",
+    "plugin_invalid": "{message}",
+    "plugin_trigger_unsupported": "此触发器按自己的时间表触发，Helena 引擎尚不支持运行。"
   },
   "runs": {
     "status": {
@@ -342,7 +383,8 @@
       "succeeded": "成功",
       "failed": "失败",
       "canceled": "已取消",
-      "rejected": "已拒绝"
+      "rejected": "已拒绝",
+      "skipped": "已跳过"
     },
     "stepStatus": {
       "running": "运行中",
@@ -350,7 +392,8 @@
       "succeeded": "已完成",
       "failed": "失败",
       "canceled": "已取消",
-      "simulated": "已模拟"
+      "simulated": "已模拟",
+      "skipped": "已跳过"
     },
     "outcomes": {
       "success": "成功",
@@ -359,7 +402,12 @@
       "approved": "已批准",
       "rejected": "已拒绝",
       "true": "是",
-      "false": "否"
+      "false": "否",
+      "created": "已创建任务",
+      "reopened": "已重新打开任务",
+      "skipped": "已跳过",
+      "review": "已移至审查",
+      "done": "已移至完成"
     },
     "agentRunStatus": {
       "pending": "已排队",
@@ -395,7 +443,33 @@
     "filterReset": "重置筛选",
     "filterProject": "项目",
     "filterStatus": "状态",
-    "filterKind": "类型"
+    "filterKind": "类型",
+    "kinds": {
+      "agent_team": "智能体团队"
+    },
+    "triggers": {
+      "manual": "手动",
+      "task_created": "任务创建",
+      "task_assigned": "任务分配",
+      "status_changed": "状态变更",
+      "label_added": "添加标签",
+      "schedule": "计划",
+      "webhook": "webhook",
+      "mail_received": "收到邮件",
+      "routine": "计划",
+      "delegation": "委派给协调者"
+    },
+    "scheduledFor": "计划于 {time}",
+    "skipReasons": {
+      "missed": "已错过：当时服务器未运行",
+      "taskOpen": "已跳过：上一个任务仍未关闭"
+    },
+    "teamStages": {
+      "coordinate": "协调者规划",
+      "specialize": "专家执行：{assignment}",
+      "review": "协调者审查",
+      "sync": "结果写入任务"
+    }
   },
   "versions": {
     "empty": "没有版本。",
@@ -445,6 +519,30 @@
       "perHour": "每小时",
       "save": "保存",
       "saved": "已保存。"
+    },
+    "hook": {
+      "title": "Webhook",
+      "url": "地址",
+      "secret": "密钥",
+      "secretOnce": "仅此时显示。发送方用它签名（Standard Webhooks）或将其作为 bearer 令牌发送。",
+      "create": "创建地址",
+      "renew": "新密钥",
+      "renewMessage": "从现在起，使用旧密钥的发送方将被拒绝。",
+      "delete": "删除地址",
+      "deleteMessage": "从现在起发送方将收到 404；新地址的 URL 不同。",
+      "lastUsed": "上次使用 {time}",
+      "none": "尚无地址。",
+      "copy": "复制"
+    },
+    "signing": {
+      "title": "Webhook 签名密钥",
+      "hint": "Webhook 步骤用它为请求签名（Standard Webhooks），以便接收方核实请求来自 Helena。",
+      "show": "显示",
+      "hide": "隐藏",
+      "renew": "更新",
+      "renewMessage": "从现在起 Webhook 步骤使用新密钥签名；接收方也需要它。",
+      "secret": "密钥",
+      "copy": "复制"
     }
   },
   "issuePanel": {

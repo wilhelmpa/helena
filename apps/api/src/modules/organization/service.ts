@@ -332,7 +332,7 @@ export async function getOrganization(teamId: number, projectId?: number) {
     })),
     agents: agents.map((row) => ({
       ...row,
-      kind: row.kind as 'external' | 'internal',
+      kind: row.kind as 'external',
       // Root of the reporting chain. It carries no organization_agent_assignment row of
       // its own, so without this it would fall through to "unassigned" like a real orphan.
       isHome: isHomeAgent(row.username),

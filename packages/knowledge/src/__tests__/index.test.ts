@@ -99,7 +99,7 @@ beforeEach(async () => {
   const beta = await makeProject(teamId, `B${suffix.toUpperCase().replace(/[^A-Z0-9]/g, 'X')}`);
   const [agent] = await db
     .insert(aiAgent)
-    .values({ teamId, userId: agentUserId, username: `agent${suffix}`, kind: 'internal' })
+    .values({ teamId, userId: agentUserId, username: `agent${suffix}`, kind: 'external' })
     .returning({ id: aiAgent.id });
 
   await db.insert(issue).values([

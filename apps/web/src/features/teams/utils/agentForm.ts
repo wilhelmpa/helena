@@ -1,6 +1,5 @@
 import type {
   AgentRuntimePolicy,
-  AgentTool,
   AiAgent,
   NewAiAgentInput,
   AiAgentPatch,
@@ -8,20 +7,13 @@ import type {
 import { transliterate } from '@/utils/projectKey';
 import { cleanFallbackModels } from '@/features/agent-runtime/utils/fallback';
 
-// The editable shape of an agent form. temperature/maxSteps are kept as strings so
-// the inputs can be left blank; they are parsed to numbers (or null) on submit.
+// The editable shape of an agent form. The number inputs are kept as strings so they
+// can be cleared while typing; they are parsed on submit.
 export interface AgentFormValue {
   name: string;
   username: string;
-  kind: 'external' | 'internal';
-  modelCredentialId: number | null;
   model: string;
   instructions: string;
-  tools: string[];
-  temperature: string;
-  maxSteps: string;
-  memoryEnabled: boolean;
-  memoryLastMessages: string;
   runtimePolicy: AgentRuntimePolicy;
   triggerOnMention: boolean;
   triggerOnAssign: boolean;
@@ -75,15 +67,8 @@ export function initialAgentValue(agent?: AiAgent, projectId?: number): AgentFor
   return {
     name: agent?.name ?? '',
     username: agent?.username ?? '',
-    kind: agent?.kind ?? 'external',
-    modelCredentialId: agent?.modelCredentialId ?? null,
     model: agent?.model ?? '',
     instructions: agent?.instructions ?? '',
-    tools: agent?.tools ?? [],
-    temperature: agent?.temperature != null ? String(agent.temperature) : '',
-    maxSteps: agent?.maxSteps != null ? String(agent.maxSteps) : '',
-    memoryEnabled: agent?.memoryEnabled ?? false,
-    memoryLastMessages: agent?.memoryLastMessages != null ? String(agent.memoryLastMessages) : '',
     runtimePolicy: agent?.runtimePolicy ?? {
       reasoningEffort: null,
       toolAllow: [],
@@ -124,19 +109,9 @@ export function maxConcurrentChatsFromInput(value: string): number {
   return Math.min(n, 20);
 }
 
-// Parses an optional number input: blank becomes null (clears the field), a valid
-// number is passed through, anything unparseable is treated as blank.
-function parseNum(s: string): number | null {
-  const t = s.trim();
-  if (!t) return null;
-  const n = Number(t);
-  return Number.isFinite(n) ? n : null;
-}
-
-// The kind-specific config, shared by the create input and edit patch. Both kinds
-// carry their projects, their run triggers, and their instructions; an external agent
-// adds the scope of the runs its runner receives, an internal one the model/tools
-// config.
+// The config shared by the create input and the edit patch: the projects, the run
+// triggers, the instructions, the scope of the runs the runner receives, and the model
+// and runtime policy the runner projects into the agent's runtime.
 function configFields(v: AgentFormValue) {
   const cleanList = (items: string[]) => [
     ...new Set(items.map((item) => item.trim()).filter(Boolean)),
@@ -154,7 +129,7 @@ function configFields(v: AgentFormValue) {
       fallbackModels: cleanFallbackModels(v.runtimePolicy.fallbackModels),
     }),
   };
-  const common = {
+  return {
     projectIds: v.template ? [] : v.projectIds,
     template: v.template,
     instructions: v.instructions.trim() || null,
@@ -166,46 +141,23 @@ function configFields(v: AgentFormValue) {
     })),
     delegationDelaySec: delaySecFromMinutes(v.delegationDelayMin),
     maxConcurrentChats: maxConcurrentChatsFromInput(v.maxConcurrentChats),
-  };
-  if (v.kind === 'external') {
-    return {
-      ...common,
-      runnerScope: v.runnerScope,
-      model: v.model.trim() || null,
-      memoryEnabled: v.memoryEnabled,
-      memoryLastMessages: v.memoryEnabled ? parseNum(v.memoryLastMessages) : null,
-      runtimePolicy,
-    };
-  }
-  return {
-    ...common,
-    modelCredentialId: v.modelCredentialId,
+    runnerScope: v.runnerScope,
     model: v.model.trim() || null,
-    tools: v.tools,
-    temperature: parseNum(v.temperature),
-    maxSteps: parseNum(v.maxSteps),
-    memoryEnabled: v.memoryEnabled,
-    memoryLastMessages: v.memoryEnabled ? parseNum(v.memoryLastMessages) : null,
+    runtimePolicy,
   };
 }
 
-// Payload for creating a new agent, including its kind. An agent created in a project
-// names that project instead of a project set.
+// Payload for creating a new agent. An agent created in a project names that project
+// instead of a project set.
 export function toCreateInput(v: AgentFormValue): NewAiAgentInput {
   const { projectIds, ...config } = configFields(v);
-  const input = { name: v.name.trim(), username: v.username.trim(), kind: v.kind, ...config };
+  const input = { name: v.name.trim(), username: v.username.trim(), ...config };
   return v.projectId != null ? { ...input, projectId: v.projectId } : { ...input, projectIds };
 }
 
-// Patch for editing an existing agent. The kind cannot change, so it is omitted.
+// Patch for editing an existing agent.
 export function toUpdatePatch(v: AgentFormValue): AiAgentPatch {
   return { name: v.name.trim(), username: v.username.trim(), ...configFields(v) };
-}
-
-// How many tools the agent ends up with: the granted ones plus the read-only tools
-// that are always on.
-export function grantedToolCount(tools: AgentTool[], selected: string[]): number {
-  return selected.length + tools.filter((t) => t.always).length;
 }
 
 // Buckets a list by a key, keeping the order the keys first appear in, so a grouped

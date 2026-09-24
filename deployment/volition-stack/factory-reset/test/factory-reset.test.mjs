@@ -75,7 +75,6 @@ test('allowlists include the destructive scopes and application writers', () => 
     'itsaplan_db-backups',
     'itsaplan_web-cache',
     'volition-apps_workspace_home',
-    'volition-mastra-studio_studio-data',
     'volition-nextcloud-db-alpine-20260921-v2',
   ]) assert.ok(DATA_VOLUMES.includes(volume));
   for (const unit of [

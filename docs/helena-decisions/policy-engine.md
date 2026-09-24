@@ -144,7 +144,7 @@ approval of exactly a command lets that command run in the follow-up run.
 | Codex | no hook exists; level 0 runs in a read-only sandbox |
 | Helena's MCP tools, plugin tools, connectors | the framework's policy host (`host.decide`, @helena/sdk) asks every registered evaluator; the Autopilot is one, loaded as the built-in plugin `helena.autopilot` (`modules/plugins/builtin.ts`, evaluator `helena-autopilot` in `modules/autopilot/evaluator.ts`). Routes declare categories with `mcpTool(name, annotations, category, scope?)` and publish them in `_meta`; a route's delete or execute stays inside the workspace unless it names `'external'`, a plugin's or connector's lands outside |
 | Approval requests | the card stores the engine's category, level and reason |
-| Workflow engine (hub/native-engine) | `autopilotPolicyDecider` in `modules/autopilot/adapters.ts` fits its `PolicyDecider` seam: `setPolicyDecider(autopilotPolicyDecider)` |
+| Workflow engine (hub/native-engine) | before every step execution above `report` the interpreter asks the framework's policy host with the step type's category (`engine/policy.ts` `askStepPolicy`; the agent is the one that started the run, a person's run is left to permissions); "needs approval" opens an approval of the step (`<step>.approval` on the Approvals page), "deny" fails it. The engine's own questions `run` (pause, budgets) and `approve` answer like `autopilotPolicyDecider` in `modules/autopilot/adapters.ts` |
 | Browser gateway (hub/agent-browser-mcp) | `decideBrowserTool()` in the same file, or the HTTP route with the agent key and `runtime: "gateway"`; a click that submits or pays declares `intent` |
 
 **Budgets** read the one usage ledger `agent_usage` (hub/hermes-in-helena) and count a

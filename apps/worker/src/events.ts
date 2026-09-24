@@ -4,13 +4,13 @@ import { getPluginSettings, pluginsDir } from '@repo/db';
 import { webhooksManifest, webhooksPlugin } from '@repo/db/plugins';
 
 // The worker's side of the framework (docs/helena-framework.md): the plugins whose durable
-// event subscribers the worker serves once the workflow engine provides the event
-// transport (hub/native-engine, decision D-C2). Until then the API runs every subscriber
-// in process, and the worker only loads the plugins.
+// event subscribers the worker serves over the workflow engine's event transport
+// (engine-delivery.ts, decision D-C2). While an api runs without the engine, it runs every
+// subscriber in process instead.
 
 export interface EventDelivery {
   host: PluginHost;
-  // Called by the workflow engine at start with its transport.
+  // Called at start with the engine's transport (index.ts).
   useTransport(transport: EventTransport): Promise<void>;
   stop(): void;
 }

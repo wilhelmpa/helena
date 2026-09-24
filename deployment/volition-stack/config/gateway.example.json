@@ -22,11 +22,6 @@
           "target": "http://127.0.0.1:3000"
         },
         {
-          "prefix": "/mastra",
-          "target": "http://172.30.95.2:4111",
-          "stripPrefix": false
-        },
-        {
           "prefix": "/browser",
           "target": "http://127.0.0.1:6082"
         },

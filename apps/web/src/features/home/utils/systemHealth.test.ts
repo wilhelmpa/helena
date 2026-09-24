@@ -9,30 +9,34 @@ const quiet = {
   resuming: 0,
   failedLastDay: 0,
   needsResumeReview: 0,
-  agentTeamStartsWaiting: 0,
   provisioningFailed: 0,
-  stalledWorkflowRuns: 0,
 };
 
+const calm = { stalled: 0, overdueSchedules: 0, failedLastDay: 0 };
+
 describe('health problems', () => {
-  test('list nothing while every count is zero or unknown', () => {
+  test('list nothing while every count is zero', () => {
     assert.deepEqual(healthProblems(quiet), []);
-    assert.deepEqual(healthProblems({ ...quiet, stalledWorkflowRuns: null }), []);
+    assert.deepEqual(healthProblems(quiet, calm), []);
   });
 
   test('list the waiting runs first, with the oldest, then the rest in order', () => {
     assert.deepEqual(
-      healthProblems({
-        ...quiet,
-        failedLastDay: 2,
-        waiting: 3,
-        oldestWaitingSince: '2026-09-23T10:00:00.000Z',
-        stalledWorkflowRuns: 1,
-      }),
+      healthProblems(
+        {
+          ...quiet,
+          failedLastDay: 2,
+          waiting: 3,
+          oldestWaitingSince: '2026-09-23T10:00:00.000Z',
+        },
+        { ...calm, stalled: 1, overdueSchedules: 2, failedLastDay: 4 },
+      ),
       [
         { key: 'waiting', count: 3, since: '2026-09-23T10:00:00.000Z' },
         { key: 'stalledWorkflowRuns', count: 1 },
+        { key: 'overdueSchedules', count: 2 },
         { key: 'failedLastDay', count: 2 },
+        { key: 'failedWorkflowRuns', count: 4 },
       ],
     );
   });

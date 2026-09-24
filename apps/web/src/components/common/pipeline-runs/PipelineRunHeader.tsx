@@ -6,7 +6,16 @@ import type { PipelineRun } from '@/lib/api/endpoints/pipelines';
 import { AgentTokenCounts } from '@/components/common/agent-chat/AgentTokenCounts';
 import { Badge } from '@/components/ui/badge';
 import { useRelativeTime } from '@/context/relativeTimeContext';
+import { formatDateTime } from '@/utils/dates';
 import { issueIdentifierPath } from '@/utils/paths';
+
+// Why a routine's fire did nothing: its time had passed (the engine was down), or the
+// task of its previous fire was still open.
+function skipReasonOf(run: PipelineRun): 'missed' | 'taskOpen' | null {
+  if (run.status !== 'skipped') return null;
+  const reason = (run.result as { skipReason?: unknown } | null)?.skipReason;
+  return reason === 'missed' ? 'missed' : reason === 'task-open' ? 'taskOpen' : null;
+}
 
 export default function PipelineRunHeader({
   run,
@@ -17,14 +26,19 @@ export default function PipelineRunHeader({
 }) {
   const t = useTranslations('pipelines');
   const relativeTime = useRelativeTime();
+  const skipReason = skipReasonOf(run);
 
   return (
     <div className="space-y-1">
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <span className="text-sm font-medium" dir="auto">
-          {run.pipelineName}
+          {run.kind === 'agent_team' ? t('runs.kinds.agent_team') : run.pipelineName}
         </span>
-        <span className="text-muted-foreground">{t('runs.version', { version: run.version })}</span>
+        {run.version !== null && (
+          <span className="text-muted-foreground">
+            {t('runs.version', { version: run.version })}
+          </span>
+        )}
         {run.dryRun && <Badge variant="secondary">{t('runs.testRun')}</Badge>}
         <Badge variant={run.status === 'failed' ? 'destructive' : 'outline'}>
           {t(`runs.status.${run.status}`)}
@@ -35,7 +49,18 @@ export default function PipelineRunHeader({
         </span>
       </div>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-        <span>{t('runs.trigger', { trigger: t(`triggers.${run.trigger}`) })}</span>
+        <span>
+          {t('runs.trigger', {
+            // A plugin's trigger is named by its id.
+            trigger: t.has(`runs.triggers.${run.trigger}` as Parameters<typeof t.has>[0])
+              ? t(`runs.triggers.${run.trigger}` as Parameters<typeof t>[0])
+              : run.trigger,
+          })}
+        </span>
+        {run.scheduledFor && (
+          <span>{t('runs.scheduledFor', { time: formatDateTime(run.scheduledFor) })}</span>
+        )}
+        {skipReason && <span>{t(`runs.skipReasons.${skipReason}`)}</span>}
         {run.actorName && <span>{t('runs.startedBy', { name: run.actorName })}</span>}
         {showIssue && run.issueIdentifier && (
           <Link

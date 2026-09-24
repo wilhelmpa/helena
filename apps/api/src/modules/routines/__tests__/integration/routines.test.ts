@@ -1,100 +1,46 @@
-import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  setDefaultTimeout,
+} from 'bun:test';
+import { DBOS } from '@dbos-inc/dbos-sdk';
+import {
+  agentRun,
+  db,
+  helenaSchedule,
+  issue as issueTable,
+  issueActivity,
+  pipelineRun,
+} from '@repo/db';
+import { and, asc, eq } from 'drizzle-orm';
 import { api, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
-import { controlPlane, type ControlRequest } from '#tests/helpers/control';
+import { startEngine, stopEngineRuns, stopTestEngine, waitForStatus } from '#tests/helpers/engine';
 import { clearLimits, setLimits } from '#tests/helpers/limits';
 import { addProjectMember } from '#tests/helpers/members';
 import { createRole } from '#tests/helpers/roles';
+import {
+  fireDueSchedules,
+  latestFireTime,
+  MISSED_GRACE_MS,
+  planFire,
+} from '#modules/engine/schedules';
 
-// A routine is a schedule of Mastra's agent-routine workflow. The control endpoint is a
-// stand-in that keeps the schedules Plan creates, the way mastra-control answers them.
+// A run takes a few hops through the engine's queues (see helpers/engine.ts).
+setDefaultTimeout(30_000);
 
-type Schedule = Record<string, unknown> & {
-  id: string;
-  workflowId: string;
-  status: string;
-  requestContext: { projectRef: string };
-  metadata: { scheduleKey?: string };
-};
-
-const mastra = {
-  schedules: new Map<string, Schedule>(),
-  lastRuns: new Map<string, unknown>(),
-  created: 0,
-  reset() {
-    this.schedules.clear();
-    this.lastRuns.clear();
-    this.created = 0;
-  },
-  withLastRun(schedule: Schedule) {
-    return { ...schedule, lastRun: this.lastRuns.get(schedule.id) ?? null };
-  },
-  answer(request: ControlRequest): unknown {
-    const schedule = this.schedules.get(String(request.scheduleId));
-    const owned =
-      schedule &&
-      schedule.workflowId === request.workflowId &&
-      schedule.requestContext.projectRef === request.projectRef;
-    switch (request.operation) {
-      case 'create-schedule': {
-        const existing = [...this.schedules.values()].find(
-          (item) =>
-            item.requestContext.projectRef === request.projectRef &&
-            item.metadata.scheduleKey === request.scheduleKey,
-        );
-        if (existing) return { ...existing, replayed: true };
-        this.created += 1;
-        const created: Schedule = {
-          id: `schedule_${this.created}`,
-          workflowId: String(request.workflowId),
-          cron: request.cron,
-          timezone: request.timezone,
-          status: 'active',
-          nextFireAt: Date.parse('2026-10-05T07:00:00.000Z'),
-          inputData: request.payload,
-          requestContext: { projectRef: String(request.projectRef) },
-          metadata: { scheduleKey: request.scheduleKey as string | undefined },
-          createdAt: Date.parse('2026-09-23T10:00:00.000Z') + this.created,
-          updatedAt: Date.parse('2026-09-23T10:00:00.000Z') + this.created,
-        };
-        this.schedules.set(created.id, created);
-        return created;
-      }
-      case 'schedules': {
-        const projects = new Set(request.projectRefs as string[]);
-        return {
-          schedules: [...this.schedules.values()]
-            .filter((item) => projects.has(item.requestContext.projectRef))
-            .map((item) => this.withLastRun(item)),
-        };
-      }
-      case 'schedule':
-        return owned
-          ? this.withLastRun(schedule)
-          : Response.json({ message: 'Workflow schedule not found' }, { status: 404 });
-      case 'update-schedule':
-        Object.assign(schedule!, {
-          cron: request.cron,
-          timezone: request.timezone,
-          ...(request.payload ? { inputData: request.payload } : {}),
-        });
-        return schedule;
-      case 'pause-schedule':
-      case 'resume-schedule':
-        schedule!.status = request.operation === 'pause-schedule' ? 'paused' : 'active';
-        return schedule;
-      case 'run-schedule':
-        return { scheduleId: schedule!.id, claimId: `sched_${schedule!.id}_1790000000000` };
-      case 'delete-schedule':
-        this.schedules.delete(schedule!.id);
-        return { message: 'Schedule deleted' };
-      default:
-        return {};
-    }
-  },
-};
+// Routines on the Helena engine: Helena keeps them (helena_schedule) and the engine's
+// tick fires them. Every fire creates a task delegated to the agent
+// or reopens the routine's task, and is skipped while the routine's task is open. Ported
+// from the agent-routine workflow tests of the Mastra control plane and the routine
+// dispatch tests of its bridge.
 
 async function setup() {
   const owner = await signUpTestUser({ name: 'Owner' });
@@ -105,11 +51,18 @@ async function setup() {
     await createAgent(asOwner, 'MKT', {
       name: 'Writer',
       username: 'writer',
-      kind: 'external',
       triggerOnAssign: true,
-    })
+    } as never)
   ).data!.agent;
-  return { owner, asOwner, agent, teamId: created.data!.teamId, columnId: view.columns[0].id };
+  const columns = view.columns;
+  return {
+    owner,
+    asOwner,
+    agent,
+    teamId: created.data!.teamId,
+    columnId: columns[0]!.id,
+    column: (name: string) => columns.find((column) => column.name === name)!.id,
+  };
 }
 
 const routines = (client: Api, projectKey = 'MKT') => client.projects({ projectKey }).routines;
@@ -126,26 +79,65 @@ function routineBody(agentId: number, body: Record<string, unknown> = {}) {
   };
 }
 
-const requests = (operation: string) =>
-  controlPlane.requests.filter((request) => request.operation === operation);
+async function scheduleRow(id: string) {
+  const [row] = await db.select().from(helenaSchedule).where(eq(helenaSchedule.id, id));
+  return row!;
+}
+
+async function runsOf(scheduleId: string) {
+  return db
+    .select()
+    .from(pipelineRun)
+    .where(eq(pipelineRun.scheduleId, scheduleId))
+    .orderBy(asc(pipelineRun.scheduledFor));
+}
+
+// Waits until the routine has `count` runs.
+async function waitForRuns(scheduleId: string, count: number) {
+  const deadline = Date.now() + 20_000;
+  for (;;) {
+    const runs = await runsOf(scheduleId);
+    if (runs.length >= count) return runs;
+    if (Date.now() > deadline) throw new Error(`Routine ${scheduleId} has ${runs.length} runs`);
+    await Bun.sleep(100);
+  }
+}
+
+// Fires the routine at a time, the way the engine's tick does, and waits for the run.
+async function fire(scheduleId: string, at: Date, now = at.getTime()) {
+  const runId = await planFire(scheduleId, at.toISOString(), now);
+  if (runId) {
+    const { startRun } = await import('#modules/engine/runs');
+    await startRun(runId);
+    return waitForStatus(runId, 'succeeded', 'skipped', 'failed');
+  }
+  return null;
+}
+
+beforeAll(async () => {
+  await startEngine();
+});
+
+afterAll(async () => {
+  await stopTestEngine();
+});
+
+beforeEach(async () => {
+  await resetDb();
+});
+
+afterEach(async () => {
+  clearLimits();
+  await stopEngineRuns();
+});
 
 describe('routines', () => {
-  beforeEach(async () => {
-    await resetDb();
-    controlPlane.reset();
-    mastra.reset();
-    controlPlane.answer = (request) => mastra.answer(request);
-  });
-
-  afterEach(() => clearLimits());
-
-  it('creates a routine as a real, project-scoped Mastra schedule in Europe/Berlin', async () => {
-    const { owner, asOwner, agent, teamId } = await setup();
+  it('creates a routine in Europe/Berlin that fires from now on and replays its key', async () => {
+    const { owner, asOwner, agent } = await setup();
     const body = routineBody(agent.id);
     const res = await routines(asOwner).post(body);
     expect(res.status).toBe(201);
     expect(res.data).toMatchObject({
-      id: 'schedule_1',
       projectKey: 'MKT',
       projectName: 'Marketing',
       agent: { id: agent.id, name: 'Writer' },
@@ -155,42 +147,32 @@ describe('routines', () => {
       task: null,
       cron: '0 9 * * 1',
       timezone: 'Europe/Berlin',
+      catchUp: 'skip',
       enabled: true,
-      nextRunAt: new Date('2026-10-05T07:00:00.000Z'),
       lastRun: null,
     });
-
-    const [created] = requests('create-schedule');
-    expect(created).toMatchObject({
-      workflowId: 'agent-routine',
-      projectRef: 'project:MKT',
-      organizationRef: `organization:${teamId}`,
-      scheduleKey: body.idempotencyKey,
-      cron: '0 9 * * 1',
-      timezone: 'Europe/Berlin',
+    // The next Monday at 09:00 in Berlin.
+    const next = new Date(res.data!.nextRunAt!);
+    expect(next.getUTCDay()).toBe(1);
+    expect(
+      new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Europe/Berlin',
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(next),
+    ).toBe('09:00');
+    expect(await scheduleRow(res.data!.id)).toMatchObject({
+      kind: 'routine',
+      agentId: agent.id,
+      actorUserId: owner.userId,
+      enabled: true,
     });
-    expect(created.payload).toMatchObject({
-      source: 'itsaplan-schedule',
-      actor: { type: 'human', id: owner.userId },
-      context: {
-        projectRef: 'project:MKT',
-        organizationRef: `organization:${teamId}`,
-        capabilityRefs: [],
-        connectionRefs: [],
-      },
-      dryRun: false,
-      payload: {
-        projectRef: 'project:MKT',
-        agentRef: 'agent:writer',
-        title: 'Weekly report',
-        instructions: 'Summarize the week.',
-        mode: 'new',
-      },
-    });
-
+    expect((await scheduleRow(res.data!.id)).firedThrough.getTime()).toBeGreaterThan(
+      Date.now() - 60_000,
+    );
     const again = await routines(asOwner).post(body);
-    expect(again.data?.id).toBe('schedule_1');
-    expect(mastra.schedules.size).toBe(1);
+    expect(again.data?.id).toBe(res.data!.id);
+    expect(await db.select().from(helenaSchedule)).toHaveLength(1);
   });
 
   it('reopens a task of the project and names it', async () => {
@@ -199,28 +181,25 @@ describe('routines', () => {
       await asOwner.projects({ projectKey: 'MKT' }).issues.post({ columnId, title: 'Backups' })
     ).data!;
     const res = await routines(asOwner).post(
-      routineBody(agent.id, { mode: 'reopen', taskId: task.id, timezone: 'UTC' }),
+      routineBody(agent.id, { mode: 'reopen', taskId: task.id, timezone: 'UTC', catchUp: 'once' }),
     );
     expect(res.status).toBe(201);
     expect(res.data).toMatchObject({
       mode: 'reopen',
       task: { id: task.id, number: task.sequenceNumber, title: 'Backups' },
       timezone: 'UTC',
-    });
-    expect(requests('create-schedule')[0].payload).toMatchObject({
-      payload: { mode: 'reopen', taskRef: `task:MKT-${task.sequenceNumber}` },
+      catchUp: 'once',
     });
   });
 
   it('validates the agent, the task, the cron, the time zone and the cadence', async () => {
     const { asOwner, agent } = await setup();
-    const idle = (
-      await createAgent(asOwner, 'MKT', { name: 'Idle', username: 'idle', kind: 'external' })
-    ).data!.agent;
+    const idle = (await createAgent(asOwner, 'MKT', { name: 'Idle', username: 'idle' } as never))
+      .data!.agent;
     await asOwner.projects.post({ key: 'OPS', name: 'Operations' });
     const foreign = (
       await asOwner.projects({ projectKey: 'OPS' }).issues.post({
-        columnId: (await asOwner.projects({ projectKey: 'OPS' }).get()).data!.columns[0].id,
+        columnId: (await asOwner.projects({ projectKey: 'OPS' }).get()).data!.columns[0]!.id,
         title: 'Elsewhere',
       })
     ).data!;
@@ -230,9 +209,11 @@ describe('routines', () => {
       { mode: 'reopen' },
       { mode: 'reopen', taskId: foreign.id },
       { cron: 'every day' },
+      { cron: '0 9 L * *' },
       { timezone: 'Mars/Olympus' },
       { title: '   ' },
       { title: 'x'.repeat(301) },
+      { catchUp: 'always' },
     ]) {
       expect((await routines(asOwner).post(routineBody(agent.id, body))).status).toBe(400);
     }
@@ -243,12 +224,11 @@ describe('routines', () => {
     expect(
       (await routines(asOwner).post(routineBody(agent.id, { cron: '0 * * * *' }))).status,
     ).toBe(201);
-    expect(mastra.schedules.size).toBe(1);
+    expect(await db.select().from(helenaSchedule)).toHaveLength(1);
   });
 
   it('refuses a routine for an agent that takes tasks from its owner only', async () => {
-    const { asOwner, agent } = await setup();
-    const { teamId } = (await asOwner.projects.get()).data![0];
+    const { asOwner, agent, teamId } = await setup();
     await asOwner
       .teams({ teamId })
       ['ai-agents']({ agentId: agent.id })
@@ -261,11 +241,36 @@ describe('routines', () => {
     expect((await routines(asMember).post(routineBody(agent.id))).status).toBe(403);
     const mine = await routines(asOwner).post(routineBody(agent.id));
     expect(mine.status).toBe(201);
-    const run = await routines(asMember)({ routineId: mine.data!.id }).run.post();
-    expect(run.status).toBe(403);
+    expect((await routines(asMember)({ routineId: mine.data!.id }).run.post()).status).toBe(403);
   });
 
-  it('lists the routines of a project and of every project the member reads, with the last run', async () => {
+  it('changes a routine for the member who saves it and switches it off and on', async () => {
+    const { asOwner, agent } = await setup();
+    const created = (await routines(asOwner).post(routineBody(agent.id))).data!;
+    const routine = routines(asOwner)({ routineId: created.id });
+    const past = new Date('2026-01-01T00:00:00Z');
+    const rewind = () =>
+      db
+        .update(helenaSchedule)
+        .set({ firedThrough: past })
+        .where(eq(helenaSchedule.id, created.id));
+    // A new title leaves the schedule where it was; another time starts it afresh.
+    await rewind();
+    await routine.patch({ title: 'Monthly report' });
+    expect((await scheduleRow(created.id)).firedThrough).toEqual(past);
+    const changed = await routine.patch({ cron: '0 9 1 * *' });
+    expect(changed.data).toMatchObject({ title: 'Monthly report', cron: '0 9 1 * *' });
+    expect((await scheduleRow(created.id)).firedThrough.getTime()).toBeGreaterThan(past.getTime());
+    const off = await routine.patch({ enabled: false });
+    expect(off.data).toMatchObject({ enabled: false, nextRunAt: null });
+    // Switched on again, it starts afresh as well: the times it was off do not fire.
+    await rewind();
+    const on = await routine.patch({ enabled: true, catchUp: 'once' });
+    expect(on.data).toMatchObject({ enabled: true, catchUp: 'once' });
+    expect((await scheduleRow(created.id)).firedThrough.getTime()).toBeGreaterThan(past.getTime());
+  });
+
+  it('lists the routines of a project and of every project the member reads', async () => {
     const { asOwner, agent } = await setup();
     const first = (await routines(asOwner).post(routineBody(agent.id))).data!;
     await asOwner.projects.post({ key: 'OPS', name: 'Operations' });
@@ -273,88 +278,205 @@ describe('routines', () => {
       await createAgent(asOwner, 'OPS', {
         name: 'Operator',
         username: 'operator',
-        kind: 'external',
         triggerOnAssign: true,
-      })
+      } as never)
     ).data!.agent;
     const second = (await routines(asOwner, 'OPS').post(routineBody(ops.id))).data!;
-    mastra.lastRuns.set(first.id, {
-      runId: 'sched_schedule_1_1790000000000',
-      firedAt: Date.parse('2026-09-28T07:00:00.000Z'),
-      status: 'success',
-      result: { status: 'skipped', taskRef: 'task:MKT-3', skipReason: 'task-open' },
-      error: null,
+    expect((await routines(asOwner).get({ query: {} })).data).toMatchObject({
+      total: 1,
+      items: [{ id: first.id }],
     });
-
-    const listed = (await routines(asOwner).get({ query: {} })).data!;
-    expect(listed.total).toBe(1);
-    expect(listed.items[0]).toMatchObject({
-      id: first.id,
-      lastRun: {
-        status: 'success',
-        outcome: 'skipped',
-        skipReason: 'task-open',
-        taskNumber: 3,
-        error: null,
-        firedAt: new Date('2026-09-28T07:00:00.000Z'),
-      },
-    });
-
     const home = (await asOwner.routines.get({ query: {} })).data!;
     expect(home.items.map((item) => [item.projectKey, item.id])).toEqual([
       ['OPS', second.id],
       ['MKT', first.id],
     ]);
-    expect((await asOwner.routines.get({ query: { pageSize: 1, page: 2 } })).data).toMatchObject({
-      total: 2,
-      items: [{ id: first.id }],
-    });
-
     const stranger = authedApi((await signUpTestUser()).cookie);
-    expect((await stranger.routines.get({ query: {} })).data).toMatchObject({
-      total: 0,
-      items: [],
-    });
+    expect((await stranger.routines.get({ query: {} })).data).toMatchObject({ total: 0 });
     expect((await routines(stranger).get({ query: {} })).status).toBe(403);
     expect((await api.routines.get({ query: {} })).status).toBe(401);
   });
 
-  it('changes a routine for the member who saves it and switches it off and on', async () => {
-    const { asOwner, agent } = await setup();
+  it('runs now: creates a task delegated to the agent, skips while it is open, creates the next once it is done', async () => {
+    const { asOwner, agent, column } = await setup();
     const created = (await routines(asOwner).post(routineBody(agent.id))).data!;
     const routine = routines(asOwner)({ routineId: created.id });
-
-    const changed = await routine.patch({ title: 'Monthly report', cron: '0 9 1 * *' });
-    expect(changed.status).toBe(200);
-    expect(changed.data).toMatchObject({ title: 'Monthly report', cron: '0 9 1 * *' });
-    const [update] = requests('update-schedule');
-    expect(update).toMatchObject({ scheduleId: created.id, cron: '0 9 1 * *' });
-    expect(update.payload).toMatchObject({
-      dryRun: false,
-      payload: { title: 'Monthly report', instructions: 'Summarize the week.', mode: 'new' },
+    const first = await routine.run.post();
+    expect(first.status).toBe(202);
+    const ran = await waitForStatus(first.data!.runId, 'succeeded');
+    expect(ran.result).toMatchObject({ outcome: 'created', skipReason: null });
+    const [task] = await db.select().from(issueTable).where(eq(issueTable.id, ran.issueId!));
+    expect(task).toMatchObject({
+      title: 'Weekly report',
+      description: 'Summarize the week.',
+      delegateUserId: agent.userId,
+    });
+    expect(await db.select().from(agentRun).where(eq(agentRun.issueId, task!.id))).toHaveLength(1);
+    // The fire is on the event bus for the plugins: stored for the worker's delivery.
+    const [fired] = await DBOS.listWorkflows({
+      workflowIDs: [`worker-event:routine-fired:${ran.id}`],
+      loadInput: true,
+    });
+    expect(fired).toMatchObject({ workflowName: 'helena.worker-event' });
+    expect(fired!.input?.[0]).toMatchObject({
+      type: 'helena.routine.fired',
+      data: { routineId: created.id, fireId: ran.id, mode: 'new', agentId: agent.id },
     });
 
-    const off = await routine.patch({ enabled: false });
-    expect(off.data).toMatchObject({ enabled: false, nextRunAt: null });
-    expect(requests('update-schedule')).toHaveLength(1);
-    expect((await routine.patch({ enabled: true })).data).toMatchObject({ enabled: true });
-    expect(requests('pause-schedule')).toHaveLength(1);
-    expect(requests('resume-schedule')).toHaveLength(1);
+    const second = (await routine.run.post()).data!;
+    const skipped = await waitForStatus(second.runId, 'skipped');
+    expect(skipped).toMatchObject({
+      issueId: task!.id,
+      result: { outcome: 'skipped', skipReason: 'task-open' },
+    });
+    const listed = (await routines(asOwner).get({ query: {} })).data!.items[0]!;
+    expect(listed.lastRun).toMatchObject({
+      status: 'skipped',
+      outcome: 'skipped',
+      skipReason: 'task-open',
+      taskNumber: task!.sequenceNumber,
+    });
+
+    await asOwner.issues({ issueId: task!.id }).patch({ columnId: column('Done') });
+    const third = (await routine.run.post()).data!;
+    const next = await waitForStatus(third.runId, 'succeeded');
+    expect(next.issueId).not.toBe(task!.id);
+    const history = (await routine.runs.get({ query: {} })).data!;
+    expect(history.total).toBe(3);
+    expect(history.items.map((item) => item.status)).toEqual(['succeeded', 'skipped', 'succeeded']);
   });
 
-  it('runs a routine now and deletes it; an unknown routine is 404', async () => {
+  it('reopens a finished task: back to unstarted, a comment and a new run of the agent', async () => {
+    const { asOwner, agent, column } = await setup();
+    const task = (
+      await asOwner
+        .projects({ projectKey: 'MKT' })
+        .issues.post({ columnId: column('Done'), title: 'Backups' } as never)
+    ).data!;
+    const created = (
+      await routines(asOwner).post(routineBody(agent.id, { mode: 'reopen', taskId: task.id }))
+    ).data!;
+    const run = (await routines(asOwner)({ routineId: created.id }).run.post()).data!;
+    const reopened = await waitForStatus(run.runId, 'succeeded');
+    expect(reopened.result).toMatchObject({ outcome: 'reopened', taskId: task.id });
+    const [after] = await db.select().from(issueTable).where(eq(issueTable.id, task.id));
+    expect(after).toMatchObject({ columnId: column('Todo'), delegateUserId: agent.userId });
+    const comments = await db
+      .select({ body: issueActivity.body })
+      .from(issueActivity)
+      .where(and(eq(issueActivity.issueId, task.id), eq(issueActivity.kind, 'comment')));
+    expect(comments).toContainEqual({
+      body: 'Reopened by the schedule "Weekly report".\n\nSummarize the week.',
+    });
+    expect(await db.select().from(agentRun).where(eq(agentRun.issueId, task.id))).toHaveLength(1);
+    // The task is open now: the next fire leaves it alone.
+    const again = (await routines(asOwner)({ routineId: created.id }).run.post()).data!;
+    await waitForStatus(again.runId, 'skipped');
+  });
+
+  it('fires each time once, and records a fire that comes too late as missed', async () => {
+    const { asOwner, agent } = await setup();
+    const created = (await routines(asOwner).post(routineBody(agent.id, { cron: '0 9 * * *' })))
+      .data!;
+    const monday = new Date('2026-09-21T07:00:00.000Z');
+    const first = await fire(created.id, monday);
+    expect(first).toMatchObject({ status: 'succeeded', trigger: 'schedule' });
+    // The same time fired again (a replica, a backfill) runs nothing new.
+    expect(await planFire(created.id, monday.toISOString(), monday.getTime())).toBeNull();
+    // Ten minutes late is still on time; more is missed, and only the newest missed time
+    // is recorded.
+    const tuesday = new Date('2026-09-22T07:00:00.000Z');
+    const wednesday = new Date('2026-09-23T07:00:00.000Z');
+    const later = wednesday.getTime() + 60 * 60_000;
+    expect(await planFire(created.id, tuesday.toISOString(), later)).toBeNull();
+    expect(await planFire(created.id, wednesday.toISOString(), later)).toBeNull();
+    const runs = await runsOf(created.id);
+    expect(runs.map((run) => [run.scheduledFor!.toISOString(), run.status, run.result])).toEqual([
+      [monday.toISOString(), 'succeeded', expect.objectContaining({ outcome: 'created' })],
+      [wednesday.toISOString(), 'skipped', { outcome: 'skipped', skipReason: 'missed' }],
+    ]);
+  });
+
+  it('runs the newest missed time once under the catch-up policy "once"', async () => {
+    const { asOwner, agent } = await setup();
+    const created = (
+      await routines(asOwner).post(routineBody(agent.id, { cron: '0 9 * * *', catchUp: 'once' }))
+    ).data!;
+    const tuesday = new Date('2026-09-22T07:00:00.000Z');
+    const wednesday = new Date('2026-09-23T07:00:00.000Z');
+    const later = wednesday.getTime() + 5 * 60 * 60_000;
+    expect(await planFire(created.id, tuesday.toISOString(), later)).toBeNull();
+    const runId = await planFire(created.id, wednesday.toISOString(), later);
+    expect(runId).not.toBeNull();
+    const { startRun } = await import('#modules/engine/runs');
+    await startRun(runId!);
+    await waitForStatus(runId!, 'succeeded');
+    expect((await runsOf(created.id)).map((run) => run.scheduledFor!.toISOString())).toEqual([
+      wednesday.toISOString(),
+    ]);
+  });
+
+  it('fires the time that has come from the engine tick once, across replicas and a clock set back', async () => {
+    const { asOwner, agent } = await setup();
+    const created = (
+      await routines(asOwner).post(routineBody(agent.id, { cron: '0 9 * * *', catchUp: 'once' }))
+    ).data!;
+    // The routine was last fired two days ago.
+    const now = new Date();
+    const since = new Date(now.getTime() - 2 * 86_400_000);
+    await db
+      .update(helenaSchedule)
+      .set({ firedThrough: since })
+      .where(eq(helenaSchedule.id, created.id));
+    const due = latestFireTime('0 9 * * *', 'Europe/Berlin', since, now)!;
+    // Two replicas tick at the same moment, and one ticks again.
+    await Promise.all([fireDueSchedules(now), fireDueSchedules(now)]);
+    expect(await fireDueSchedules(now)).toBe(0);
+    expect((await scheduleRow(created.id)).firedThrough).toEqual(due);
+    const [run] = await waitForRuns(created.id, 1);
+    await waitForStatus(run!.id, 'succeeded');
+    // A clock set back an hour fires nothing again.
+    expect(await fireDueSchedules(new Date(now.getTime() - 3_600_000))).toBe(0);
+    const runs = await runsOf(created.id);
+    expect(runs.map((item) => [item.scheduledFor!.toISOString(), item.trigger])).toEqual([
+      [due.toISOString(), 'schedule'],
+    ]);
+  });
+
+  it('records only the newest time missed during downtime, as missed under "skip"', async () => {
+    const { asOwner, agent } = await setup();
+    const created = (await routines(asOwner).post(routineBody(agent.id, { cron: '0 * * * *' })))
+      .data!;
+    const now = new Date();
+    const since = new Date(now.getTime() - 3 * 86_400_000);
+    await db
+      .update(helenaSchedule)
+      .set({ firedThrough: since })
+      .where(eq(helenaSchedule.id, created.id));
+    expect(await fireDueSchedules(now)).toBe(1);
+    const [run] = await waitForRuns(created.id, 1);
+    const done = await waitForStatus(run!.id, 'succeeded', 'skipped');
+    const due = latestFireTime('0 * * * *', 'Europe/Berlin', since, now)!;
+    expect(done.scheduledFor).toEqual(due);
+    // Less than ten minutes after the hour the time is still on time and runs.
+    const late = now.getTime() - due.getTime() > MISSED_GRACE_MS;
+    expect(done.status).toBe(late ? 'skipped' : 'succeeded');
+    if (late) expect(done.result).toEqual({ outcome: 'skipped', skipReason: 'missed' });
+    expect(await runsOf(created.id)).toHaveLength(1);
+  });
+
+  it('fires no run for a routine that is off, deleted or gone with its project', async () => {
     const { asOwner, agent } = await setup();
     const created = (await routines(asOwner).post(routineBody(agent.id))).data!;
-    const run = await routines(asOwner)({ routineId: created.id }).run.post();
-    expect(run.status).toBe(202);
-    expect(run.data).toEqual({ runId: `sched_${created.id}_1790000000000` });
-
+    const at = new Date('2026-09-21T07:00:00.000Z');
+    await routines(asOwner)({ routineId: created.id }).patch({ enabled: false });
+    expect(await planFire(created.id, at.toISOString(), at.getTime())).toBeNull();
     expect((await routines(asOwner)({ routineId: created.id }).delete()).status).toBe(204);
-    expect(mastra.schedules.size).toBe(0);
+    expect(await planFire(created.id, at.toISOString(), at.getTime())).toBeNull();
     for (const res of [
       await routines(asOwner)({ routineId: created.id }).delete(),
       await routines(asOwner)({ routineId: created.id }).run.post(),
-      await routines(asOwner)({ routineId: 'schedule_9' }).patch({ enabled: false }),
+      await routines(asOwner)({ routineId: 'nope' }).patch({ enabled: false }),
     ])
       expect(res.status).toBe(404);
   });

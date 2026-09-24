@@ -7,15 +7,12 @@ import { addProjectMember } from '#tests/helpers/members';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent, projectIdOf } from '#tests/helpers/agents';
-import { createCredential } from '#tests/helpers/integrations';
 import { untaggedRoutes } from '#tests/helpers/mcp';
 
 // AI agents owned by a team. Each agent is backed by a hidden bot user, owns a
 // better-auth API key, and is a member of the projects it is attached to, acting under
-// a team role. An external agent needs only a name + username, and its operator gets
-// the key secret (returned once on create and again on regenerate); an internal agent
-// adds a model configuration and its key stays server-side for its own runtime. An
-// agent shows up as an assignee candidate in the projects it works in. Access is the
+// a team role. An agent needs only a name + username, and its operator gets
+// the key secret (returned once on create and again on regenerate). An agent shows up as an assignee candidate in the projects it works in. Access is the
 // ai_agents permission resource on the team.
 
 async function setup() {
@@ -27,13 +24,6 @@ async function setup() {
 
 // The agent routes of the team the project belongs to, which is where agents live.
 const agents = (api: Api, teamId: number) => api.teams({ teamId })['ai-agents'];
-
-function openAiCredential(api: Api, projectKey = 'MKT'): Promise<number> {
-  return createCredential(api, projectKey, {
-    integrationKey: 'openai',
-    credential: { apiKey: 'sk-secret-1234' },
-  });
-}
 
 describe('ai agents', () => {
   beforeEach(async () => {
@@ -61,44 +51,28 @@ describe('ai agents', () => {
     expect(res.data?.agent.apiKeyStart).toBeTruthy();
   });
 
-  it('lists the tool catalog: grantable actions plus always-on read tools', async () => {
-    const { asOwner, teamId } = await setup();
-    const res = await agents(asOwner, teamId).tools.get();
-    expect(res.status).toBe(200);
-    expect(res.data).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ key: 'create_issue', label: expect.any(String), always: false }),
-        expect.objectContaining({
-          key: 'create_initiative',
-          label: expect.any(String),
-          always: false,
-        }),
-        expect.objectContaining({
-          key: 'get_project',
-          label: expect.any(String),
-          always: true,
-        }),
-        expect.objectContaining({ key: 'search_issues', label: expect.any(String), always: true }),
-        expect.objectContaining({ key: 'list_issues', label: expect.any(String), always: true }),
-        expect.objectContaining({
-          key: 'list_initiatives',
-          label: expect.any(String),
-          always: true,
-        }),
-      ]),
-    );
+  it('creates an agent without naming a kind, and refuses the removed internal kind', async () => {
+    const { asOwner } = await setup();
+    const res = await createAgent(asOwner, 'MKT', { name: 'Plain', username: 'plain' });
+    expect(res.status).toBe(201);
+    expect(res.data?.agent.kind).toBe('external');
+    expect(typeof res.data?.apiKey).toBe('string');
+
+    const internal = await createAgent(asOwner, 'MKT', {
+      name: 'Old',
+      username: 'old',
+      kind: 'internal' as never,
+    });
+    expect(internal.status).toBe(400);
   });
 
-  it('stores runtime-neutral policy on an external agent without an LLM credential', async () => {
+  it('stores runtime-neutral policy on an agent', async () => {
     const { asOwner } = await setup();
     const res = await createAgent(asOwner, 'MKT', {
       name: 'Ext',
       username: 'ext',
       kind: 'external',
       model: 'gpt-5.4',
-      tools: ['create_issue'],
-      memoryEnabled: true,
-      memoryLastMessages: 12,
       runtimePolicy: {
         reasoningEffort: 'high',
         toolAllow: ['browser'],
@@ -110,11 +84,7 @@ describe('ai agents', () => {
     expect(res.status).toBe(201);
     expect(res.data?.agent).toMatchObject({
       kind: 'external',
-      modelCredentialId: null,
       model: 'gpt-5.4',
-      tools: [],
-      memoryEnabled: true,
-      memoryLastMessages: 12,
       runtimePolicy: {
         reasoningEffort: 'high',
         toolAllow: ['browser'],
@@ -123,157 +93,50 @@ describe('ai agents', () => {
         files: [{ kind: 'instructions', path: 'SOUL.md', content: '# Agent' }],
       },
     });
+    // The in-process runtime's settings are gone from the agent.
+    for (const field of [
+      'modelCredentialId',
+      'modelProvider',
+      'tools',
+      'temperature',
+      'maxSteps',
+      'memoryEnabled',
+      'memoryLastMessages',
+      'actionCount',
+    ]) {
+      expect(res.data?.agent).not.toHaveProperty(field);
+    }
   });
 
-  it('creates an internal agent and keeps only registered tools', async () => {
-    const { asOwner } = await setup();
-    const res = await createAgent(asOwner, 'MKT', {
-      name: 'Triage Bot',
-      username: 'triage',
-      kind: 'internal',
-      model: 'gpt-5.4',
-      instructions: 'Triage incoming issues.',
-      tools: ['create_issue', 'not_a_real_tool'],
-    });
-    expect(res.status).toBe(201);
-    expect(res.data?.agent).toMatchObject({ kind: 'internal', model: 'gpt-5.4' });
-    expect(res.data?.agent.tools).toEqual(['create_issue']);
-    // An internal agent owns a key too — its runtime replays it against the routes —
-    // but nobody outside has to hold it, so the secret is never returned.
-    expect(res.data?.apiKey).toBeNull();
-    expect(res.data?.agent.apiKeyStart).toBeTruthy();
-  });
-
-  it('binds a model credential of the project to an internal agent', async () => {
-    const { asOwner } = await setup();
-    const credentialId = await openAiCredential(asOwner);
-    const res = await createAgent(asOwner, 'MKT', {
-      name: 'Bot',
-      username: 'bot',
-      kind: 'internal',
-      modelCredentialId: credentialId,
-    });
-    expect(res.status).toBe(201);
-    expect(res.data?.agent).toMatchObject({
-      modelCredentialId: credentialId,
-      modelProvider: 'openai',
-    });
-  });
-
-  it('rejects an unknown model credential with 400 on create', async () => {
-    const { asOwner } = await setup();
-    const res = await createAgent(asOwner, 'MKT', {
-      name: 'Bot',
-      username: 'bot',
-      kind: 'internal',
-      modelCredentialId: 999999,
-    });
-    expect(res.status).toBe(400);
-  });
-
-  it("rejects another team's model credential with 400", async () => {
-    const { asOwner } = await setup();
-    const otherTeam = await asOwner.teams.post({ name: 'Engineering' });
-    await asOwner.teams({ teamId: otherTeam.data!.id }).projects.post({
-      key: 'ENG',
-      name: 'Engineering',
-    });
-    const foreignCredentialId = await openAiCredential(asOwner, 'ENG');
-    const res = await createAgent(asOwner, 'MKT', {
-      name: 'Bot',
-      username: 'bot',
-      kind: 'internal',
-      modelCredentialId: foreignCredentialId,
-    });
-    expect(res.status).toBe(400);
-  });
-
-  it('rejects a tool credential as the model credential with 400', async () => {
-    const { asOwner } = await setup();
-    const toolCredentialId = await createCredential(asOwner, 'MKT', {
-      integrationKey: 'jina',
-      credential: { apiKey: 'jina_secret' },
-    });
-    const res = await createAgent(asOwner, 'MKT', {
-      name: 'Bot',
-      username: 'bot',
-      kind: 'internal',
-      modelCredentialId: toolCredentialId,
-    });
-    expect(res.status).toBe(400);
-  });
-
-  it('rejects an unknown model credential with 400 on update and keeps the stored one', async () => {
-    const { asOwner, teamId } = await setup();
-    const credentialId = await openAiCredential(asOwner);
-    const created = await createAgent(asOwner, 'MKT', {
-      name: 'Bot',
-      username: 'bot',
-      kind: 'internal',
-      modelCredentialId: credentialId,
-    });
-    const agentId = created.data!.agent.id;
-    const res = await agents(
-      asOwner,
-      teamId,
-    )({ agentId }).patch({
-      name: 'Renamed',
-      modelCredentialId: 999999,
-    });
-    expect(res.status).toBe(400);
-    expect((await agents(asOwner, teamId)({ agentId }).get()).data).toMatchObject({
-      name: 'Bot',
-      modelCredentialId: credentialId,
-    });
-  });
-
-  it('clears the model credential with null', async () => {
+  it('drops the settings of the removed runtime an older client still sends', async () => {
     const { asOwner, teamId } = await setup();
     const created = await createAgent(asOwner, 'MKT', {
       name: 'Bot',
       username: 'bot',
-      kind: 'internal',
-      modelCredentialId: await openAiCredential(asOwner),
+      ...({ tools: ['create_issue'], temperature: 0.2, memoryEnabled: true } as object),
     });
-    const res = await agents(
-      asOwner,
-      teamId,
-    )({ agentId: created.data!.agent.id }).patch({
-      modelCredentialId: null,
-    });
-    expect(res.status).toBe(200);
-    expect(res.data).toMatchObject({ modelCredentialId: null, modelProvider: null });
-  });
-
-  it('stores conversation memory config on an internal agent', async () => {
-    const { asOwner, teamId } = await setup();
-    const res = await createAgent(asOwner, 'MKT', {
-      name: 'Memo Bot',
-      username: 'memo',
-      kind: 'internal',
-      memoryEnabled: true,
-      memoryLastMessages: 15,
-    });
-    expect(res.status).toBe(201);
-    expect(res.data?.agent).toMatchObject({ memoryEnabled: true, memoryLastMessages: 15 });
+    expect(created.status).toBe(201);
+    expect(created.data?.agent).not.toHaveProperty('tools');
     const upd = await agents(
       asOwner,
       teamId,
-    )({ agentId: res.data!.agent.id }).patch({
-      memoryEnabled: false,
+    )({ agentId: created.data!.agent.id }).patch({
+      name: 'Renamed',
+      ...({ modelCredentialId: 1, maxSteps: 4 } as object),
     });
-    expect(upd.data).toMatchObject({ memoryEnabled: false, memoryLastMessages: 15 });
+    expect(upd.status).toBe(200);
+    expect(upd.data).toMatchObject({ name: 'Renamed' });
   });
 
-  it("defaults an internal agent's triggers and stores overrides", async () => {
+  it("defaults an agent's triggers to off and stores overrides", async () => {
     const { asOwner, teamId } = await setup();
-    const def = await createAgent(asOwner, 'MKT', { name: 'T1', username: 't1', kind: 'internal' });
-    expect(def.data?.agent).toMatchObject({ triggerOnMention: true, triggerOnAssign: false });
+    // Nothing answers an agent's runs before its runner starts, so it collects none.
+    const def = await createAgent(asOwner, 'MKT', { name: 'T1', username: 't1' });
+    expect(def.data?.agent).toMatchObject({ triggerOnMention: false, triggerOnAssign: false });
 
     const custom = await createAgent(asOwner, 'MKT', {
       name: 'T2',
       username: 't2',
-      kind: 'internal',
       triggerOnMention: false,
       triggerOnAssign: true,
     });
@@ -466,27 +329,9 @@ describe('ai agents', () => {
     expect(await expiries()).toEqual([{ expiresAt: null }]);
   });
 
-  it('rejects regenerating the key on an internal agent with 400', async () => {
+  it('updates name and config', async () => {
     const { asOwner, teamId } = await setup();
-    const created = await createAgent(asOwner, 'MKT', {
-      name: 'Bot',
-      username: 'bot',
-      kind: 'internal',
-    });
-    const res = await agents(
-      asOwner,
-      teamId,
-    )({ agentId: created.data!.agent.id })['regenerate-key'].post();
-    expect(res.status).toBe(400);
-  });
-
-  it('updates name, config, and tools', async () => {
-    const { asOwner, teamId } = await setup();
-    const created = await createAgent(asOwner, 'MKT', {
-      name: 'Bot',
-      username: 'bot',
-      kind: 'internal',
-    });
+    const created = await createAgent(asOwner, 'MKT', { name: 'Bot', username: 'bot' });
     const agentId = created.data!.agent.id;
     const res = await agents(
       asOwner,
@@ -494,13 +339,13 @@ describe('ai agents', () => {
     )({ agentId }).patch({
       name: 'Renamed',
       model: 'gpt-5.4-mini',
-      tools: ['add_comment'],
+      instructions: 'Keep it short.',
     });
     expect(res.status).toBe(200);
     expect(res.data).toMatchObject({
       name: 'Renamed',
       model: 'gpt-5.4-mini',
-      tools: ['add_comment'],
+      instructions: 'Keep it short.',
     });
   });
 
@@ -513,11 +358,7 @@ describe('ai agents', () => {
     // A field the agents cannot be set into carries no trigger, so its id is dropped.
     const owner = (await fields.post({ name: 'Owner', fieldType: 'member', memberScope: 'humans' }))
       .data!;
-    const created = await createAgent(asOwner, 'MKT', {
-      name: 'Bot',
-      username: 'bot',
-      kind: 'internal',
-    });
+    const created = await createAgent(asOwner, 'MKT', { name: 'Bot', username: 'bot' });
     const agentId = created.data!.agent.id;
     expect(created.data!.agent.fieldTriggers).toEqual([]);
 
@@ -649,7 +490,7 @@ describe('ai agents', () => {
 
   it('rejects an unknown kind with 400', async () => {
     const { asOwner } = await setup();
-    // kind must be "external" | "internal".
+    // The one kind there is, is "external".
     const res = await createAgent(asOwner, 'MKT', {
       name: 'Bot',
       username: 'bot',
@@ -757,19 +598,14 @@ describe('ai agents', () => {
 
   it('denies a non-member (403) on read and write routes', async () => {
     const { asOwner, teamId } = await setup();
-    const created = await createAgent(asOwner, 'MKT', {
-      name: 'Bot',
-      username: 'bot',
-      kind: 'internal',
-    });
+    const created = await createAgent(asOwner, 'MKT', { name: 'Bot', username: 'bot' });
     const agentId = created.data!.agent.id;
     // A team the caller does not belong to reads as one that does not exist, so the
-    // team routes answer 404; the project run route stays a 403.
+    // team routes answer 404; the project chat route stays a 403.
     const outsider = authedApi((await signUpTestUser()).cookie);
     const asOutsider = agents(outsider, teamId);
 
     expect((await asOutsider.get()).status).toBe(404);
-    expect((await asOutsider.tools.get()).status).toBe(404);
     expect((await asOutsider.post({ name: 'X', username: 'x', kind: 'external' })).status).toBe(
       404,
     );
@@ -777,52 +613,9 @@ describe('ai agents', () => {
     expect((await asOutsider({ agentId })['regenerate-key'].post()).status).toBe(404);
     expect((await asOutsider({ agentId }).delete()).status).toBe(404);
     expect(
-      (
-        await outsider
-          .projects({ projectKey: 'MKT' })
-          ['ai-agents']({ agentId })
-          .run.post({ prompt: 'hi' })
-      ).status,
+      (await outsider.projects({ projectKey: 'MKT' })['ai-agents']({ agentId }).threads.get())
+        .status,
     ).toBe(403);
-  });
-
-  // The run happy path calls the model provider, so it is exercised out of band,
-  // not in this suite. Here we only assert the guards that run before any model call.
-  it('returns 404 when running a missing agent', async () => {
-    const { asOwner } = await setup();
-    const res = await asOwner
-      .projects({ projectKey: 'MKT' })
-      ['ai-agents']({ agentId: 999999 })
-      .run.post({ prompt: 'hi' });
-    expect(res.status).toBe(404);
-  });
-
-  it('rejects running an external agent with 400', async () => {
-    const { asOwner } = await setup();
-    const created = await createAgent(asOwner, 'MKT', {
-      name: 'Ext',
-      username: 'ext',
-      kind: 'external',
-    });
-    const res = await asOwner
-      .projects({ projectKey: 'MKT' })
-      ['ai-agents']({ agentId: created.data!.agent.id })
-      .run.post({ prompt: 'hi' });
-    expect(res.status).toBe(400);
-  });
-
-  it('rejects running with an empty prompt (400) before any model call', async () => {
-    const { asOwner } = await setup();
-    const created = await createAgent(asOwner, 'MKT', {
-      name: 'Bot',
-      username: 'bot',
-      kind: 'internal',
-    });
-    const res = await asOwner
-      .projects({ projectKey: 'MKT' })
-      ['ai-agents']({ agentId: created.data!.agent.id })
-      .run.post({ prompt: '' });
-    expect(res.status).toBe(400);
   });
 
   describe('visibility', () => {
@@ -932,11 +725,9 @@ describe('ai agents', () => {
       return ids;
     }
 
-    it('queues the projects of an external agent that is created, moved, rekeyed or deleted', async () => {
+    it('queues the projects of an agent that is created, moved, rekeyed or deleted', async () => {
       const { asOwner, teamId } = await setup();
-      const ops = await asOwner
-        .teams({ teamId })
-        .projects.post({ key: 'OPS', name: 'Operations', autoAssignTeamAgents: false });
+      const ops = await asOwner.teams({ teamId }).projects.post({ key: 'OPS', name: 'Operations' });
       const before = await jobIds(asOwner, ['MKT', 'OPS']);
 
       const created = await createAgent(asOwner, 'MKT', {
@@ -972,9 +763,7 @@ describe('ai agents', () => {
 
     it('queues the projects of an agent added or removed through the member list', async () => {
       const { asOwner, teamId } = await setup();
-      await asOwner
-        .teams({ teamId })
-        .projects.post({ key: 'OPS', name: 'Operations', autoAssignTeamAgents: false });
+      await asOwner.teams({ teamId }).projects.post({ key: 'OPS', name: 'Operations' });
       const created = await createAgent(asOwner, 'MKT', {
         name: 'Coder',
         username: 'coder',
@@ -997,32 +786,23 @@ describe('ai agents', () => {
       expect(afterRemove.OPS).not.toBe(afterAdd.OPS);
     });
 
-    it('leaves the provisioning of a project alone for an internal agent or a person', async () => {
+    it('leaves the provisioning of a project alone for a person', async () => {
       const { asOwner } = await setup();
-      const credentialId = await openAiCredential(asOwner);
       const before = await jobIds(asOwner, ['MKT']);
 
-      await createAgent(asOwner, 'MKT', {
-        name: 'Internal',
-        username: 'internal',
-        kind: 'internal',
-        modelCredentialId: credentialId,
-        model: 'gpt-4o-mini',
-      });
       await addProjectMember(asOwner, 'MKT');
       expect(await jobIds(asOwner, ['MKT'])).toEqual(before);
     });
   });
 
-  // An agent is set up and talked to entirely over MCP. What stays out serves the chat
-  // UI: the streamed run and the caller's own thread history, plus this agent's run
+  // An agent is set up entirely over MCP. What stays out serves the chat UI: the
+  // caller's own thread history and the chat itself, plus this agent's run
   // history — the analytics routes carry the project-wide run feed MCP reads instead —
   // and its MCP servers, which start commands on the agents' machine.
-  it('exposes agent management and the run to MCP', () => {
+  it('exposes agent management to MCP', () => {
     const untagged = untaggedRoutes((route) => route.includes('/ai-agents'));
     expect(untagged).toEqual([
       'GET /teams/:teamId/ai-agents/:agentId/runs',
-      'POST /projects/:projectKey/ai-agents/:agentId/run/stream',
       'GET /projects/:projectKey/ai-agents/:agentId/threads',
       'PUT /projects/:projectKey/ai-agents/:agentId/threads/:threadId/favorite',
       'DELETE /projects/:projectKey/ai-agents/:agentId/threads/:threadId/favorite',

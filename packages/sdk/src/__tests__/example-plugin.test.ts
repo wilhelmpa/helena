@@ -80,7 +80,7 @@ describe('the example plugin hello-helena', () => {
     ).toEqual([{ code: 'missing_name', field: 'name' }]);
     const outcome = await step.execute({
       config: { name: 'VOL-1', greeting: 'Hi' },
-      run: { id: 1, workflowId: 1, project: null },
+      run: { id: 'run-1', workflowId: 1, project: null },
       step: { id: 's1', name: 'Greet' },
       input: {},
       attempt: 1,

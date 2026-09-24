@@ -5,7 +5,6 @@ import { resetDb } from '#tests/helpers/db';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { createAgent, setAgentProjectRole, teamOf } from '#tests/helpers/agents';
 import { createRole } from '#tests/helpers/roles';
-import { getAgentById, getInternalAgentApiKey } from '#modules/agents/core/service';
 
 // Agent management is a team operation, but an MCP client knows only projects. The
 // team is resolved from the key instead of asked for; this covers who gets to name
@@ -38,7 +37,7 @@ async function call(apiKey: string, name: string, args: Record<string, unknown> 
   return { text: result.content[0].text as string, isError: result.isError === true };
 }
 
-// A user, their first team, and the key of an internal agent living in it. The agent
+// A user, their first team, and the key of an agent living in it. The agent
 // works in MKT on a role that may manage agents, which is what these tools need.
 async function setup() {
   const owner = await signUpTestUser({ name: 'Owner' });
@@ -50,14 +49,9 @@ async function setup() {
     permissions: { ai_agents: { create: true, read: true, edit: true, delete: true } },
   });
   const roleId = role.data!.id;
-  const created = await createAgent(asOwner, 'MKT', {
-    name: 'Triage Bot',
-    username: 'triage',
-    kind: 'internal',
-  });
+  const created = await createAgent(asOwner, 'MKT', { name: 'Triage Bot', username: 'triage' });
   await setAgentProjectRole(asOwner, 'MKT', created.data!.agent.userId, roleId);
-  const agent = await getAgentById(created.data!.agent.id, teamId);
-  return { owner, asOwner, teamId, roleId, agentKey: await getInternalAgentApiKey(agent!) };
+  return { owner, asOwner, teamId, roleId, agentKey: created.data!.apiKey };
 }
 
 describe('MCP team resolution', () => {

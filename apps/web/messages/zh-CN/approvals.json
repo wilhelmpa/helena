@@ -34,11 +34,8 @@
   "rejectedBy": "由 {name} 拒绝",
   "someone": "某人",
   "workflows": "工作流审批",
-  "workflowsIncomplete": "部分项目的工作流无法读取，因此其审批可能未在此显示。",
   "gateOf": "{project} 中的 {workflow}",
   "effects": "批准后执行：",
-  "gateApprovedToast": "已批准。工作流继续执行。",
-  "gateRejectedToast": "已拒绝。工作流结束，不执行这些操作。",
   "loadFailed": "无法加载审批。",
   "loadFailedHint": "服务器没有响应，请稍后重试。",
   "openBrowser": "打开项目浏览器"

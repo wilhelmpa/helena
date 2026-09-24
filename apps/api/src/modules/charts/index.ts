@@ -12,9 +12,9 @@ import { chartSpec } from './model';
 // that way could not sit between two sentences; the fence can.
 //
 // The round trip is what makes the format one thing rather than three: this schema is
-// the create_chart tool's arguments for an internal agent and an MCP client alike (see
-// mcp/generate.ts), and a spec the model got wrong comes back as a 400 it can correct
-// instead of a chart nobody can draw.
+// the create_chart tool's arguments for every MCP client (see mcp/generate.ts), and a
+// spec the model got wrong comes back as a 400 it can correct instead of a chart nobody
+// can draw.
 export const chartRoutes = new Elysia({ name: 'charts', detail: { tags: ['Charts'] } })
   .use(authContext)
   .use(guards)

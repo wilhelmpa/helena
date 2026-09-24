@@ -462,10 +462,11 @@
       "pending": "Na fila",
       "running": "Em execução",
       "waiting": "Aguardando",
-      "suspended": "Aguardando aprovação",
       "success": "Concluído",
       "failed": "Falhou",
-      "canceled": "Cancelado"
+      "canceled": "Cancelado",
+      "succeeded": "Concluído",
+      "skipped": "Ignorado"
     },
     "outcome": {
       "review": "Tarefa movida para Revisão",

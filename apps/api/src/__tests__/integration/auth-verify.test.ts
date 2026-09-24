@@ -7,18 +7,15 @@ import { resetDb } from '#tests/helpers/db';
 describe('reverse-proxy authentication', () => {
   beforeEach(resetDb);
 
-  it('admits any member to the tools and the instance owner alone to Mastra Studio', async () => {
+  it('admits any member to the tools', async () => {
     const owner = await signUpTestUser();
     const member = await signUpTestUser();
 
     expect((await authedApi(owner.cookie).auth.verify.get()).status).toBe(204);
     expect((await authedApi(member.cookie).auth.verify.get()).status).toBe(204);
-    expect((await authedApi(owner.cookie).auth.verify.owner.get()).status).toBe(204);
-    expect((await authedApi(member.cookie).auth.verify.owner.get()).status).toBe(403);
   });
 
   it('refuses a request without a session', async () => {
     expect((await api.auth.verify.get()).status).toBe(401);
-    expect((await api.auth.verify.owner.get()).status).toBe(401);
   });
 });

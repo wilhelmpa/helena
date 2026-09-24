@@ -1,7 +1,7 @@
 {
   "title": "Aktivität",
-  "projectDescription": "Was die Agenten dieses Projekts getan haben, neueste zuerst: deine Chat-Antworten, ihre Läufe und die Agententeam- und Workflow-Läufe in Mastra.",
-  "homeDescription": "Was die Agenten deiner Projekte getan haben, neueste zuerst: deine Chat-Antworten, ihre Läufe und die Agententeam- und Workflow-Läufe in Mastra.",
+  "projectDescription": "Was die Agenten dieses Projekts getan haben, das Neueste zuerst: deine Chat-Antworten, ihre Läufe und die Läufe von Agent-Teams, Workflows und Zeitplänen.",
+  "homeDescription": "Was die Agenten deiner Projekte getan haben, das Neueste zuerst: deine Chat-Antworten, ihre Läufe und die Läufe von Agent-Teams, Workflows und Zeitplänen.",
   "allKinds": "Alle Arten",
   "allAgents": "Alle Agenten",
   "kinds": {
@@ -37,10 +37,6 @@
   "empty": "Noch keine Aktivität",
   "emptyHint": "Chat-Antworten, Agentenläufe und Workflow-Läufe erscheinen hier, sobald die Agenten arbeiten.",
   "unavailable": "Die Aktivität konnte nicht geladen werden.",
-  "notice": {
-    "workflow-runs-unavailable": "Mastra hat nicht geantwortet, deshalb fehlen die Workflow-Läufe.",
-    "workflow-runs-limited": "Nicht alle Workflow-Läufe sind zu sehen: Die Zeitleiste liest nur eine begrenzte Zahl von Workflows und Läufen aus Mastra."
-  },
   "filterKind": "Art",
   "filterAgent": "Agent",
   "unavailableHint": "Der Server hat nicht geantwortet. Versuche es gleich noch einmal."

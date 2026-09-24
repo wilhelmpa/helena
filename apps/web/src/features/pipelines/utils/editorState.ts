@@ -4,6 +4,7 @@ import type {
   PipelineRole,
   PipelineStep,
   PipelineTrigger,
+  PluginTypeName,
   StepKind,
   TriggerType,
 } from '@/lib/api/endpoints/pipelines';
@@ -131,12 +132,30 @@ export function stepCount(steps: PipelineStep[]): number {
 }
 
 // An id for a new step from its kind: 'agent', then 'agent-2', 'agent-3', …
-export function uniqueStepId(kind: StepKind, steps: PipelineStep[]): string {
+// A step id from its kind, unique in the workflow. A plugin's type (`acme.send_mail`) gives
+// its own name (`send-mail`): a step id has no dot.
+export function uniqueStepId(kind: string, steps: PipelineStep[]): string {
+  const base =
+    (kind.split('.').pop() ?? kind)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 32) || 'step';
   const taken = new Set(flattenSteps(steps).map((entry) => entry.step.id));
-  if (!taken.has(kind)) return kind;
+  if (!taken.has(base)) return base;
   let n = 2;
-  while (taken.has(`${kind}-${n}`)) n += 1;
-  return `${kind}-${n}`;
+  while (taken.has(`${base}-${n}`)) n += 1;
+  return `${base}-${n}`;
+}
+
+// A new step of a plugin's type, with the settings its type offers.
+export function newPluginStep(
+  type: PluginTypeName,
+  id: string,
+  name: string,
+  defaults: Record<string, unknown>,
+): PipelineStep {
+  return { id, name, type, config: { ...defaults } };
 }
 
 // A new step with the defaults the editor offers. An agent step is given to the first
@@ -177,18 +196,35 @@ export function newStep(
       return { id, name, type: 'action', action: { kind: 'comment', body: '' } };
     case 'wait':
       return { id, name, type: 'wait', wait: { kind: 'delay', minutes: 60 } };
+    case 'notify':
+      return { id, name, type: 'notify', to: { kind: 'assignee' }, message: '' };
+    case 'webhook':
+      return { id, name, type: 'webhook', url: '', message: '' };
   }
 }
 
-// The trigger of the type with the fields it needs, empty or at a common default.
-export function triggerOf(type: TriggerType): PipelineTrigger {
+// A plugin's trigger, with the settings its type offers.
+export function pluginTriggerOf(
+  type: PluginTypeName,
+  defaults: Record<string, unknown>,
+): PipelineTrigger {
+  return { type, config: { ...defaults } };
+}
+
+// The trigger of the type with the fields it needs, empty or at a common default. A
+// schedule starts in the instance's time zone.
+export function triggerOf(type: TriggerType, timezone = 'Europe/Berlin'): PipelineTrigger {
   switch (type) {
     case 'status_changed':
       return { type, to: null };
     case 'label_added':
       return { type, label: '' };
     case 'schedule':
-      return { type, cron: '0 9 * * 1-5', timezone: 'Europe/Berlin', title: '' };
+      return { type, cron: '0 9 * * 1-5', timezone, title: '' };
+    case 'webhook':
+      return { type, title: '' };
+    case 'mail_received':
+      return { type, from: '', subject: '' };
     default:
       return { type };
   }

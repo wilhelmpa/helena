@@ -190,11 +190,7 @@
     "agent": "Agent",
     "delegated": "Délégués",
     "runs": "Exécutions",
-    "failed": "{count} en échec",
-    "kind": {
-      "external": "Externe",
-      "internal": "Interne"
-    }
+    "failed": "{count} en échec"
   },
   "defaultWidgets": {
     "open": "Ouverts",

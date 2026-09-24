@@ -640,12 +640,12 @@ def prove_2_egress_blocks(report: Report) -> None:
 
 
 def prove_3_no_local_services(report: Report) -> None:
-    """No CDP port, router, code-server, dashboard, Mastra, Postgres, Redis, team socket or Postgres socket."""
-    ports = [19201, 19202, 19203, 19204, 9222, 6082, 8443, 8444, 9119, 4111, 4112, 5432, 6379, 3001, 18800, 16080, 8384]
+    """No CDP port, router, code-server, dashboard, Postgres, Redis or Postgres socket."""
+    ports = [19201, 19202, 19203, 19204, 9222, 6082, 8443, 8444, 9119, 5432, 6379, 3001, 18800, 16080, 8384]
     checks = [f'tcp:127.0.0.1,{port}' for port in ports]
     checks += ['tcp:192.168.122.58,80', 'tcp:192.168.122.1,22', 'tcp:::1,5432']
     checks += [f'curl:http://127.0.0.1:{port}/' for port in (8443, 6082, 9222)]
-    checks += ['unix:/run/volition-ipc/hermes-team.sock', 'unix:/run/postgresql/.s.PGSQL.5432',
+    checks += ['unix:/run/postgresql/.s.PGSQL.5432',
                'unix:/var/run/postgresql/.s.PGSQL.5432', 'unix:/run/dbus/system_bus_socket',
                'unix:/run/systemd/private', 'unix:/run/volition-terminal/home.sock',
                'unix:/var/lib/volition/hermes/.local/share/code-server/code-server-ipc.sock',

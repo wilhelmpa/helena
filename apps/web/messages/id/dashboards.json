@@ -190,11 +190,7 @@
     "agent": "Agen",
     "delegated": "Didelegasikan",
     "runs": "Eksekusi",
-    "failed": "{count} gagal",
-    "kind": {
-      "external": "Eksternal",
-      "internal": "Internal"
-    }
+    "failed": "{count} gagal"
   },
   "defaultWidgets": {
     "open": "Terbuka",

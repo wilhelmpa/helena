@@ -40,7 +40,15 @@ const routineFields = {
     t.String({
       minLength: 1,
       maxLength: 80,
-      description: 'IANA time zone the cron runs in. Default Europe/Berlin.',
+      description:
+        "IANA time zone the cron runs in. Default: the instance's time zone (Administrator).",
+    }),
+  ),
+  catchUp: t.Optional(
+    t.Union([t.Literal('skip'), t.Literal('once')], {
+      description:
+        "What a run the engine missed while it was down does: 'skip' (default) records it as " +
+        "missed, 'once' runs the newest missed one once.",
     }),
   ),
 };
@@ -90,12 +98,15 @@ export const RoutineResponse = t.Object({
   ),
   cron: t.String(),
   timezone: t.String(),
+  catchUp: t.Union([t.Literal('skip'), t.Literal('once')]),
   enabled: t.Boolean(),
   nextRunAt: t.Nullable(t.String()),
   lastRun: t.Nullable(
     t.Object({
+      id: t.String({ description: 'The run, as get_workflow_run reads it.' }),
       status: t.String({
-        description: "The workflow run: 'pending', 'running', 'success', 'failed'.",
+        description:
+          "The run: 'pending', 'running', 'succeeded', 'skipped', 'failed' or 'canceled'.",
       }),
       outcome: t.Nullable(t.UnionEnum(['created', 'reopened', 'skipped'])),
       skipReason: t.Nullable(

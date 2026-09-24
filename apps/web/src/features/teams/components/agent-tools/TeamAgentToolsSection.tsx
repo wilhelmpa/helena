@@ -14,7 +14,7 @@ import TeamMcpServers from './TeamMcpServers';
 import { ToolSectionHeader } from './ToolSectionHeader';
 
 // The tools of a team: the MCP servers its Hermes agents start, and the external
-// integrations the internal agents of its projects call, each bound to one of the team's
+// integrations the agents of its projects call, each bound to one of the team's
 // credentials.
 export default function TeamAgentToolsSection({ teamId }: { teamId: number }) {
   const t = useTranslations('teams');

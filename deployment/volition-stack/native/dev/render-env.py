@@ -18,20 +18,27 @@ OVERRIDES = {
     'API_HOST': '127.0.0.1',
     'API_PORT': '3100',
     'NODE_ENV': 'development',
-    'MASTRA_CONTROL_URL': 'http://127.0.0.1:4211/internal/mastra/control',
-    'MASTRA_CONTROL_TOKEN_FILE': '/etc/volition/dev/mastra-control.token',
     'PLAN_CONTROL_TOKEN_FILE': '/etc/volition/dev/plan-control.token',
+    # The dev database is a copy of the live one, with the live engine's pending workflows,
+    # schedules and runs. An engine on it would run them a second time (webhooks included),
+    # so the dev API runs without the engine unless it is switched on by hand.
+    'HELENA_ENGINE': 'off',
     'BROWSER_URL': f'{DEV_ORIGIN}/browser/projects/home/vnc.html?autoconnect=1&resize=remote'
     '&path=browser%2Fprojects%2Fhome%2Fwebsockify',
 }
 # Most tool frames belong to the live instance only; the browser and the control plane
-# are set above.
+# are set above. The engine's own database and executor default to the dev database and
+# the host, never the live ones.
 DROP = {
     'TERMINAL_URL',
     'CODE_URL',
     'HERMES_URL',
     'HERMES_COORDINATOR_ID',
+    'HELENA_ENGINE_DATABASE_URL',
+    'HELENA_ENGINE_EXECUTOR_ID',
 }
+# Left over from Mastra, which the Helena engine replaced.
+DROP_PREFIXES = ('MASTRA_', 'PLAN_MASTRA_')
 
 
 def unquote(value: str) -> str:
@@ -59,8 +66,9 @@ def main() -> None:
     env = parse(live_env)
     database = urlsplit(env['DATABASE_URL'])
     env['DATABASE_URL'] = urlunsplit(database._replace(path=f'/{DEV_DATABASE}'))
-    for key in DROP:
-        env.pop(key, None)
+    for key in list(env):
+        if key in DROP or key.startswith(DROP_PREFIXES):
+            del env[key]
     env.update(OVERRIDES)
     owner = parse(owner_env)
     env['LOCAL_SINGLE_USER_EMAIL'] = owner['LOCAL_SINGLE_USER_EMAIL']

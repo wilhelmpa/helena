@@ -65,7 +65,7 @@ export interface Assignee {
   username: string | null;
   image: string | null;
   kind: 'member' | 'agent';
-  agentKind: 'external' | 'internal' | null;
+  agentKind: 'external' | null;
   // The user an 'owner'-scoped agent works for: delegating it to anyone else queues a
   // run its runner never receives. Null for members and team-scoped agents.
   restrictedToUserId: string | null;
@@ -149,7 +149,6 @@ export const createProject = (input: {
   description?: string;
   preset?: string;
   templateId?: number;
-  autoAssignTeamAgents?: boolean;
 }) => request<Project>('/projects', { method: 'POST', body: JSON.stringify(input) });
 
 // Update a project's name/description. The key is immutable, so it is not sent.

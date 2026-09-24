@@ -1,14 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { PageParams } from '@/lib/api/core/paging';
 import {
-  cancelWorkflow,
-  changeWorkflowSchedule,
-  createWorkflowSchedule,
-  decideWorkflow,
-  getWorkflowRun,
   listProjectWorkflows,
   listWorkflowRuns,
-  listWorkflowSchedules,
-  retryWorkflow,
   updateProjectWorkflow,
 } from '@/lib/api/endpoints/controlPlaneWorkflows';
 import { qk } from '@/services/queryKeys';
@@ -33,69 +27,10 @@ export function useUpdateProjectWorkflow(projectKey: string) {
   });
 }
 
-export const useWorkflowRuns = (projectKey: string, workflowId: string | null) =>
+// One page of the workflow's runs. Canceling or retrying one refreshes every list of
+// engine runs (useCancelPipelineRun, useRetryPipelineRun).
+export const useWorkflowRuns = (projectKey: string, workflowId: string, params: PageParams) =>
   useQuery({
-    queryKey: qk.controlPlaneWorkflowRuns(projectKey, workflowId ?? ''),
-    queryFn: () => listWorkflowRuns(projectKey, workflowId!),
-    enabled: workflowId != null,
+    queryKey: qk.controlPlaneWorkflowRuns(projectKey, workflowId, params),
+    queryFn: () => listWorkflowRuns(projectKey, workflowId, params),
   });
-
-export const useWorkflowRun = (projectKey: string, workflowId: string, runId: string | null) =>
-  useQuery({
-    queryKey: qk.controlPlaneWorkflowRun(projectKey, workflowId, runId ?? ''),
-    queryFn: () => getWorkflowRun(projectKey, workflowId, runId!),
-    enabled: runId != null,
-  });
-
-export function useWorkflowControl(projectKey: string, workflowId: string) {
-  const client = useQueryClient();
-  const refresh = () =>
-    client.invalidateQueries({ queryKey: qk.controlPlaneWorkflowRuns(projectKey, workflowId) });
-  return {
-    decide: useMutation({
-      mutationFn: ({ runId, approved }: { runId: string; approved: boolean }) =>
-        decideWorkflow(projectKey, workflowId, runId, approved),
-      onSuccess: refresh,
-    }),
-    cancel: useMutation({
-      mutationFn: (runId: string) => cancelWorkflow(projectKey, workflowId, runId),
-      onSuccess: refresh,
-    }),
-    retry: useMutation({
-      mutationFn: (runId: string) => retryWorkflow(projectKey, workflowId, runId),
-      onSuccess: refresh,
-    }),
-  };
-}
-
-export const useWorkflowSchedules = (projectKey: string, workflowId: string | null) =>
-  useQuery({
-    queryKey: qk.controlPlaneWorkflowSchedules(projectKey, workflowId ?? ''),
-    queryFn: () => listWorkflowSchedules(projectKey, workflowId!),
-    enabled: workflowId != null,
-  });
-
-export function useWorkflowScheduleControl(projectKey: string, workflowId: string) {
-  const client = useQueryClient();
-  const refresh = () =>
-    client.invalidateQueries({
-      queryKey: qk.controlPlaneWorkflowSchedules(projectKey, workflowId),
-    });
-  return {
-    create: useMutation({
-      mutationFn: (input: { cron: string; timezone: string }) =>
-        createWorkflowSchedule(projectKey, workflowId, input),
-      onSuccess: refresh,
-    }),
-    change: useMutation({
-      mutationFn: ({
-        scheduleId,
-        action,
-      }: {
-        scheduleId: string;
-        action: 'pause' | 'resume' | 'run' | 'delete';
-      }) => changeWorkflowSchedule(projectKey, workflowId, scheduleId, action),
-      onSuccess: refresh,
-    }),
-  };
-}

@@ -19,7 +19,7 @@ describe('agent-team acceptance criteria', () => {
     ).toEqual(['Open item', 'Done item', 'Nested item', 'Star item']);
   });
 
-  test('falls back to one criterion and keeps the Mastra bounds', () => {
+  test('falls back to one criterion and keeps the bounds of the stage contract', () => {
     expect(acceptanceCriteria('No checklist here')).toEqual([
       'The work item is done as its description asks.',
     ]);

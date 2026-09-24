@@ -462,10 +462,11 @@
       "pending": "في الانتظار",
       "running": "قيد التشغيل",
       "waiting": "بانتظار",
-      "suspended": "بانتظار الموافقة",
       "success": "اكتمل",
       "failed": "فشل",
-      "canceled": "أُلغي"
+      "canceled": "أُلغي",
+      "succeeded": "انتهى",
+      "skipped": "تم تخطيه"
     },
     "outcome": {
       "review": "نُقلت المهمة إلى المراجعة",

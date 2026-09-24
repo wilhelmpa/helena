@@ -164,7 +164,12 @@
     "runResume": "Retomada de execuções",
     "maxResumes": "Limite de retomadas",
     "maxResumesHint": "Quantas vezes uma execução pode retomar sua sessão do agente de código depois que o runner que a mantinha morreu no meio da execução, antes de parar sozinha e pedir para você olhar. 0 desliga a retomada: uma execução interrompida é tentada novamente do zero.",
-    "savedRunResume": "Limite de retomadas salvo"
+    "savedRunResume": "Limite de retomadas salvo",
+    "engine": "Motor de fluxos de trabalho",
+    "timezone": "Fuso horário",
+    "timezoneHint": "Usado por rotinas, agendamentos de fluxos e etapas de espera que não indicam nenhum. O do servidor é {server}.",
+    "timezoneServer": "Usar o do servidor",
+    "savedTimezone": "Fuso horário salvo."
   },
   "authentication": {
     "saved": "Configurações de autenticação salvas",
@@ -350,26 +355,23 @@
     "title": "Serviços",
     "service": {
       "runner": "Executor do Hermes",
-      "mastra": "Mastra",
-      "bridge": "Ponte da equipe Hermes",
       "provisioning": "Provisionamento",
-      "worker": "Worker"
+      "worker": "Worker",
+      "engine": "Motor da Helena"
     },
     "seen": "visto há {time}",
     "lastSeen": "visto pela última vez há {time}",
     "neverSeen": "ainda não visto",
     "waiting": "{count, plural, one {# execução aguarda} other {# execuções aguardam}} para ser assumida, a mais antiga há {time}",
     "overdue": "{count, plural, one {# execução continua} other {# execuções continuam}} rodando além do limite de tempo",
-    "agentTeamStartsWaiting": "{count, plural, one {# início de agent-team aguarda} other {# inícios de agent-team aguardam}} o Mastra",
-    "stalledWorkflowRuns": "{count, plural, one {# execução de agent-team não avançou} other {# execuções de agent-team não avançaram}} em 15 minutos",
+    "stalledWorkflowRuns": "{count, plural, one {# execução não avança} other {# execuções não avançam}} há 30 minutos",
     "failedLastDay": "{count, plural, one {# execução falhou} other {# execuções falharam}} nas últimas 24 horas",
     "provisioningFailed": "{count, plural, one {# tarefa de provisionamento falhou} other {# tarefas de provisionamento falharam}}",
     "janitorsTitle": "Tarefas de limpeza",
     "janitor": {
       "run-janitor": "Limpeza de execuções",
-      "stage-janitor": "Limpeza de estágios",
-      "workflow-schedules": "Sincronização de agendas",
       "resume-janitor": "Limpeza de retomadas",
+      "engine-maintenance": "Manutenção do motor",
       "runtime-janitor": "Limpeza do runtime"
     },
     "janitorRan": "executado há {time}",
@@ -377,6 +379,12 @@
     "janitorNeverRan": "ainda não foi executado",
     "resuming": "{count, plural, one {# execução está sendo retomada} other {# execuções estão sendo retomadas}} após uma queda",
     "needsResumeReview": "{count, plural, one {# execução atingiu} other {# execuções atingiram}} o limite de retomadas e precisam de atenção",
+    "overdueSchedules": "{count, plural, one {# agendamento não disparou} other {# agendamentos não dispararam}} a tempo",
+    "failedWorkflowRuns": "{count, plural, one {# execução falhou} other {# execuções falharam}} nas últimas 24 horas",
+    "engine": {
+      "summary": "Motor: {active} ativas · {waiting} aguardando · {queued} na fila · agendamentos: {schedules}",
+      "failure": "{name} falhou há {time}:"
+    },
     "agentSync": {
       "title": "Perfis dos agentes",
       "synced": "{synced} de {total} sincronizados"

@@ -16,7 +16,7 @@ import { RoutinesList } from './components/RoutinesList';
 const section = settingsSection('schedules');
 
 // The Schedules page of a project (/project/:projectKey/ai-team/schedules): the
-// routines that hand its agents work on a cron, run by Mastra. "Neuer Zeitplan" is the
+// routines that hand its agents work on a cron, run by the Helena engine. "Neuer Zeitplan" is the
 // page's one primary action, in the header row.
 export default function RoutinesPage() {
   const t = useTranslations('routines');

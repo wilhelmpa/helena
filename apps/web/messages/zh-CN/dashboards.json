@@ -190,11 +190,7 @@
     "agent": "代理",
     "delegated": "已委派",
     "runs": "运行次数",
-    "failed": "{count} 次失败",
-    "kind": {
-      "external": "外部",
-      "internal": "内置"
-    }
+    "failed": "{count} 次失败"
   },
   "defaultWidgets": {
     "open": "未关闭",

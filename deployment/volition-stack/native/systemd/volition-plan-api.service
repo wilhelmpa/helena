@@ -28,9 +28,7 @@ Environment=STORAGE_ROOT=/var/lib/volition/plan/storage
 # the volition group.
 UMask=0007
 LoadCredential=plan_control_token:/etc/volition/plan-control.token
-LoadCredential=mastra_control_token:/etc/volition/mastra-control.token
 Environment=PLAN_CONTROL_TOKEN_FILE=%d/plan_control_token
-Environment=MASTRA_CONTROL_TOKEN_FILE=%d/mastra_control_token
 LoadCredential=syncthing_api_key:/etc/volition/syncthing-api.key
 Environment=SYNCTHING_API_KEY_FILE=%d/syncthing_api_key
 ExecStart=/usr/local/bin/bun --env-file=/etc/volition/plan.env run apps/api/src/index.ts

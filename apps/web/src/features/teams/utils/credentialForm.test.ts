@@ -159,7 +159,6 @@ describe('grantable agents', () => {
     agent(3, 'hermes-mkt-coordinator', [mkt]),
     agent(4, 'hermes-ops-coordinator', [ops]),
     { ...agent(6, 'designer'), template: true } as AiAgent,
-    { ...agent(7, 'triage', [mkt]), kind: 'internal' } as AiAgent,
   ];
 
   it('names the Home agent, the coordinators and the project agents', () => {

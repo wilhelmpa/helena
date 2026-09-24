@@ -4,14 +4,18 @@
     "approval": "Aprobación",
     "condition": "Condición",
     "action": "Acción sobre la tarea",
-    "wait": "Espera"
+    "wait": "Espera",
+    "notify": "Notificar",
+    "webhook": "Webhook"
   },
   "kindHints": {
     "agent": "Un agente trabaja en la tarea",
     "approval": "Una persona aprueba o la devuelve",
     "condition": "Divide la ejecución en Sí y No",
     "action": "Cambia la tarea",
-    "wait": "Pausa la ejecución"
+    "wait": "Pausa la ejecución",
+    "notify": "Avisa a las personas del proceso",
+    "webhook": "Envía la tarea a una URL"
   },
   "triggers": {
     "manual": "Iniciado a mano",
@@ -19,12 +23,15 @@
     "task_assigned": "Tarea asignada",
     "status_changed": "Estado cambiado",
     "label_added": "Etiqueta añadida",
-    "schedule": "Programación"
+    "schedule": "Programación",
+    "webhook": "Llamada de webhook",
+    "mail_received": "Correo recibido"
   },
   "triggerSummary": {
     "statusTo": "El estado cambia a {status}",
     "label": "Se añade la etiqueta {label}",
-    "schedule": "Programación {cron}"
+    "schedule": "Programación {cron}",
+    "mail": "Correo: {filter}"
   },
   "library": {
     "hint": "Las plantillas de flujo de trabajo de tu equipo. Un proyecto activa una plantilla y nombra los agentes de sus roles.",
@@ -127,7 +134,12 @@
     "cronHint": "Minuto, hora, día del mes, mes y día de la semana. 0 9 * * 1-5 se ejecuta los días laborables a las 9:00.",
     "timezone": "Zona horaria",
     "taskTitle": "Título de la tarea",
-    "taskTitleHint": "Cada ejecución crea una tarea con este título y ejecuta en ella el flujo de trabajo."
+    "taskTitleHint": "Cada ejecución crea una tarea con este título y ejecuta en ella el flujo de trabajo.",
+    "webhookHint": "Cada llamada crea una tarea con este título (o el que envíe la llamada) y ejecuta el flujo sobre ella. La dirección y su secreto están en la página Flujos de trabajo del proyecto en cuanto el flujo esté activado allí.",
+    "mailFrom": "El remitente contiene",
+    "mailSubject": "El asunto contiene",
+    "mailHint": "Cada correo nuevo de las cuentas del proyecto que coincida crea una tarea con su asunto.",
+    "mailAny": "Cualquiera"
   },
   "roles": {
     "title": "Roles",
@@ -158,7 +170,8 @@
     "no": "No",
     "endsRun": "La ejecución termina después de esto",
     "limit": "Un flujo de trabajo tiene como máximo {max} pasos.",
-    "problems": "{count, plural, one {# problema} other {# problemas}}"
+    "problems": "{count, plural, one {# problema} other {# problemas}}",
+    "plugins": "Extensiones"
   },
   "summary": {
     "agentRole": "Rol {role}",
@@ -179,7 +192,10 @@
     "comment": "Comentario: {text}",
     "subtask": "Subtarea: {title}",
     "waitDelay": "Esperar {duration}",
-    "waitUntil": "Hasta la {field} a las {time}"
+    "waitUntil": "Hasta la {field} a las {time}",
+    "notify": "Avisar a {who}: {text}",
+    "webhook": "Enviar a {host}",
+    "noUrl": "Aún sin URL"
   },
   "duration": {
     "minutes": "{count, plural, one {# minuto} other {# minutos}}",
@@ -302,6 +318,28 @@
       },
       "time": "Hora",
       "timeHint": "Hora en Europe/Berlin."
+    },
+    "notify": {
+      "to": "A quién",
+      "members": "Miembros",
+      "message": "Mensaje",
+      "messagePlaceholder": "Lo que deben saber",
+      "recipients": {
+        "assignee": "La persona asignada",
+        "watchers": "Los observadores de la tarea",
+        "members": "Miembros elegidos"
+      }
+    },
+    "webhook": {
+      "url": "URL",
+      "urlHint": "Recibe la tarea y los resultados hasta ahora como JSON, firmados con la clave de firma del proyecto. Una respuesta 2xx cuenta como éxito.",
+      "message": "Mensaje",
+      "messagePlaceholder": "Se envía como message (opcional)"
+    },
+    "plugin": {
+      "noSettings": "Sin ajustes.",
+      "choose": "Elegir",
+      "missing": "El tipo de paso {type} no está instalado: la extensión que lo aporta está desactivada."
     }
   },
   "issues": {
@@ -332,7 +370,10 @@
     "unknown_label": "El proyecto no tiene la etiqueta {name}.",
     "unknown_area": "El proyecto no tiene el área {name}.",
     "model_not_allowed": "Ningún agente del equipo ejecuta el modelo {model}.",
-    "schedule_too_frequent": "La programación se ejecuta con más frecuencia de la que el equipo permite."
+    "schedule_too_frequent": "La programación se ejecuta con más frecuencia de la que el equipo permite.",
+    "invalid_url": "Introduce una URL que empiece por https:// o http://.",
+    "plugin_invalid": "{message}",
+    "plugin_trigger_unsupported": "Este disparador se activa con un horario propio, que el motor de Helena aún no ejecuta."
   },
   "runs": {
     "status": {
@@ -342,7 +383,8 @@
       "succeeded": "Terminado",
       "failed": "Fallido",
       "canceled": "Cancelado",
-      "rejected": "Rechazado"
+      "rejected": "Rechazado",
+      "skipped": "Omitido"
     },
     "stepStatus": {
       "running": "En curso",
@@ -350,7 +392,8 @@
       "succeeded": "Hecho",
       "failed": "Fallido",
       "canceled": "Cancelado",
-      "simulated": "Simulado"
+      "simulated": "Simulado",
+      "skipped": "Omitido"
     },
     "outcomes": {
       "success": "Éxito",
@@ -359,7 +402,12 @@
       "approved": "Aprobado",
       "rejected": "Rechazado",
       "true": "Sí",
-      "false": "No"
+      "false": "No",
+      "created": "Tarea creada",
+      "reopened": "Tarea reabierta",
+      "skipped": "Omitido",
+      "review": "Movida a Revisión",
+      "done": "Movida a Hecho"
     },
     "agentRunStatus": {
       "pending": "En cola",
@@ -395,7 +443,33 @@
     "filterReset": "Restablecer filtros",
     "filterProject": "Proyecto",
     "filterStatus": "Estado",
-    "filterKind": "Tipo"
+    "filterKind": "Tipo",
+    "kinds": {
+      "agent_team": "Equipo de agentes"
+    },
+    "triggers": {
+      "manual": "a mano",
+      "task_created": "tarea creada",
+      "task_assigned": "tarea asignada",
+      "status_changed": "estado cambiado",
+      "label_added": "etiqueta añadida",
+      "schedule": "programación",
+      "webhook": "webhook",
+      "mail_received": "correo recibido",
+      "routine": "programación",
+      "delegation": "delegada al coordinador"
+    },
+    "scheduledFor": "Prevista {time}",
+    "skipReasons": {
+      "missed": "Perdida: el servidor no estaba en marcha a esa hora",
+      "taskOpen": "Omitida: la tarea anterior sigue abierta"
+    },
+    "teamStages": {
+      "coordinate": "El coordinador planifica",
+      "specialize": "El especialista trabaja: {assignment}",
+      "review": "El coordinador revisa",
+      "sync": "Resultado a la tarea"
+    }
   },
   "versions": {
     "empty": "Sin versiones.",
@@ -445,6 +519,30 @@
       "perHour": "por hora",
       "save": "Guardar",
       "saved": "Guardado."
+    },
+    "hook": {
+      "title": "Webhook",
+      "url": "Dirección",
+      "secret": "Secreto",
+      "secretOnce": "Solo se muestra ahora. Los remitentes firman con él (Standard Webhooks) o lo envían como token bearer.",
+      "create": "Crear dirección",
+      "renew": "Nuevo secreto",
+      "renewMessage": "A partir de ahora se rechazan los remitentes con el secreto antiguo.",
+      "delete": "Eliminar dirección",
+      "deleteMessage": "A partir de ahora los remitentes reciben 404; una dirección nueva tiene otra URL.",
+      "lastUsed": "último uso {time}",
+      "none": "Aún no hay dirección.",
+      "copy": "Copiar"
+    },
+    "signing": {
+      "title": "Clave de firma de webhooks",
+      "hint": "Los pasos de webhook firman sus llamadas con ella (Standard Webhooks) para que el receptor compruebe que vienen de Helena.",
+      "show": "Mostrar",
+      "hide": "Ocultar",
+      "renew": "Renovar",
+      "renewMessage": "A partir de ahora los pasos de webhook firman con la clave nueva; los receptores también la necesitan.",
+      "secret": "Clave",
+      "copy": "Copiar"
     }
   },
   "issuePanel": {

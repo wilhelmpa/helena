@@ -1,15 +1,16 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
 import writeExcelFile from 'write-excel-file/node';
-import { authedApi } from '#tests/helpers/app';
+import { apiKeyApi, authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
+import { createAgent } from '#tests/helpers/agents';
+import { untaggedRoutes } from '#tests/helpers/mcp';
 import { getProjectByKey } from '#modules/projects/service';
 import { createMappedImport } from '../../service';
 
 // The import flow: the file is uploaded through the chat-attachments route, an
-// agent turns it into a draft by saving a column mapping (the
-// prepare_issue_import tool calls createMappedImport in process), and the confirm
-// route creates the issues.
+// agent turns it into a draft by saving a column mapping (the prepare_issue_import
+// route, which its runner reaches over MCP), and the confirm route creates the issues.
 
 async function setup() {
   const owner = await signUpTestUser();
@@ -161,6 +162,31 @@ describe('imports', () => {
     expect(confirm.status).toBe(409);
     const read = await asOwner.imports({ importId: draft.id }).get();
     expect(read.data!.status).toBe('canceled');
+  });
+
+  it('prepares a draft through the route an agent calls over MCP', async () => {
+    const { asOwner } = await setup();
+    const uploaded = await uploadWorkbook(asOwner, [['Task'], ['Only']]);
+    const agent = await createAgent(asOwner, 'MKT', { name: 'Importer', username: 'importer' });
+    const asAgent = apiKeyApi(agent.data!.apiKey);
+
+    const res = await asAgent
+      .projects({ projectKey: 'MKT' })
+      .imports.post({ attachmentId: uploaded.data!.id, mapping: { title: 'Task' } });
+    expect(res.status).toBe(201);
+    expect(res.data).toMatchObject({ status: 'mapped', mapping: { title: 'Task' } });
+    // Nothing is created until a member confirms the draft.
+    expect((await asOwner.projects({ projectKey: 'MKT' }).issues.get()).data).toEqual([]);
+    expect((await asOwner.imports({ importId: res.data!.id }).get()).data!.status).toBe('mapped');
+
+    const wrongColumn = await asAgent
+      .projects({ projectKey: 'MKT' })
+      .imports.post({ attachmentId: uploaded.data!.id, mapping: { title: 'Nope' } });
+    expect(wrongColumn.status).toBe(400);
+
+    expect(untaggedRoutes((route) => route.includes('/imports'))).not.toContain(
+      'POST /projects/:projectKey/imports',
+    );
   });
 
   it('hides drafts of other projects', async () => {

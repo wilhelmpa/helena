@@ -2,40 +2,45 @@ import { Elysia, t } from 'elysia';
 import { authContext } from '#shared/auth-context';
 import { guards } from '#shared/guards';
 import { requireUser } from '#shared/access';
-import { accessErrors, commonErrors } from '#shared/responses';
+import { paginate } from '#shared/pagination';
+import { accessErrors, commonErrors, errors } from '#shared/responses';
+import { PipelineRunPageResponse, PipelineRunResponse } from '#modules/pipelines/model';
 import {
-  ControlPlaneResponse,
-  approvalBody,
+  AssignmentResponse,
+  ProjectWorkflowResponse,
   assignmentBody,
   runQuery,
-  scheduleBody,
-  scheduleUpdateBody,
-  startWorkflowBody,
   workflowParams,
   workflowRunParams,
-  workflowScheduleParams,
 } from './model';
 import {
-  cancelWorkflowRun,
-  createWorkflowSchedule,
-  decideWorkflowApproval,
   getWorkflowRun,
   listProjectWorkflows,
   listWorkflowRuns,
-  listWorkflowSchedules,
-  listWorkflowScheduleTriggers,
-  retryWorkflowRun,
-  scheduleAction,
   setProjectWorkflowAssignment,
-  startWorkflow,
-  updateWorkflowSchedule,
 } from './service';
+import { cancelEngineRun, retryEngineRun } from '#modules/engine/runs';
+
+// The built-in workflows of a project (the agent team) as the Helena engine runs them:
+// the project's settings and the runs, which a member cancels or retries.
+async function controlRun(
+  project: { id: number; key: string; teamId: number },
+  workflowId: string,
+  runId: string,
+  action: 'cancel' | 'retry',
+) {
+  await getWorkflowRun(project, workflowId, runId);
+  if (action === 'cancel') await cancelEngineRun(runId);
+  else await retryEngineRun(runId);
+  return getWorkflowRun(project, workflowId, runId);
+}
 
 export const controlPlaneWorkflowRoutes = new Elysia({
   name: 'control-plane-workflows',
   detail: {
     tags: ['Workflows'],
-    description: 'Manage one project workflow, its runs, approvals, and schedules.',
+    description:
+      'Switch on and configure the built-in workflows of a project and control their runs.',
   },
 })
   .use(authContext)
@@ -45,34 +50,52 @@ export const controlPlaneWorkflowRoutes = new Elysia({
     ({ project }) => listProjectWorkflows(project.id),
     {
       permission: ['actions', 'read'],
-      response: { 200: ControlPlaneResponse, ...accessErrors },
+      response: { 200: t.Array(ProjectWorkflowResponse), ...accessErrors },
+      detail: {
+        summary: 'List the built-in workflows of a project',
+        description:
+          'The workflows Helena builds in (the agent team), each with its steps and whether ' +
+          'and how the project uses it.',
+      },
     },
   )
   .put(
     '/projects/:projectKey/control-plane/workflows/:workflowId',
-    ({ project, params, body, user }) =>
-      setProjectWorkflowAssignment({
+    async ({ project, params, body, user }) => {
+      const row = await setProjectWorkflowAssignment({
         projectId: project.id,
         workflowId: params.workflowId,
         createdBy: requireUser(user).id,
         ...body,
-      }),
+      });
+      return { projectId: row!.projectId, workflowId: row!.workflowId, enabled: row!.enabled };
+    },
     {
       params: workflowParams,
       body: assignmentBody,
       permission: ['actions', 'edit'],
-      response: { 200: ControlPlaneResponse, ...commonErrors },
+      response: { 200: AssignmentResponse, ...commonErrors },
+      detail: {
+        summary: 'Switch a built-in workflow on or off and configure it',
+        description:
+          'Turns the workflow on or off in the project and saves its settings (for the agent ' +
+          'team: autonomy, coordinator review, turn and time limits).',
+      },
     },
   )
   .get(
     '/projects/:projectKey/control-plane/workflows/:workflowId/runs',
     ({ project, params, query }) =>
-      listWorkflowRuns(project, params.workflowId, query.page, query.pageSize),
+      paginate(query, (window) => listWorkflowRuns(project, params.workflowId, window)),
     {
       params: workflowParams,
       query: runQuery,
       permission: ['actions', 'read'],
-      response: { 200: ControlPlaneResponse, ...accessErrors },
+      response: { 200: PipelineRunPageResponse, ...accessErrors },
+      detail: {
+        summary: 'List the runs of a built-in workflow',
+        description: 'One page of the runs of the workflow in the project, newest first.',
+      },
     },
   )
   .get(
@@ -81,115 +104,38 @@ export const controlPlaneWorkflowRoutes = new Elysia({
     {
       params: workflowRunParams,
       permission: ['actions', 'read'],
-      response: { 200: ControlPlaneResponse, ...accessErrors },
-    },
-  )
-  .post(
-    '/projects/:projectKey/control-plane/workflows/:workflowId/runs',
-    ({ project, params, body, user }) =>
-      startWorkflow(project, params.workflowId, requireUser(user).id, body),
-    {
-      params: workflowParams,
-      body: startWorkflowBody,
-      permission: ['actions', 'edit'],
-      response: { 200: ControlPlaneResponse, ...commonErrors },
+      response: { 200: PipelineRunResponse, ...accessErrors },
+      detail: {
+        summary: 'Get a run of a built-in workflow',
+        description: 'The run with every step and stage it executed.',
+      },
     },
   )
   .post(
     '/projects/:projectKey/control-plane/workflows/:workflowId/runs/:runId/retry',
-    ({ project, params }) => retryWorkflowRun(project, params.workflowId, params.runId),
+    ({ project, params }) => controlRun(project, params.workflowId, params.runId, 'retry'),
     {
       params: workflowRunParams,
       permission: ['actions', 'edit'],
-      response: { 200: ControlPlaneResponse, ...commonErrors },
-    },
-  )
-  .post(
-    '/projects/:projectKey/control-plane/workflows/:workflowId/runs/:runId/approval',
-    ({ project, params, body, user }) =>
-      decideWorkflowApproval(project, params.workflowId, params.runId, requireUser(user).id, body),
-    {
-      params: workflowRunParams,
-      body: approvalBody,
-      permission: ['actions', 'edit'],
-      response: { 200: ControlPlaneResponse, ...commonErrors },
-    },
-  )
-  .patch(
-    '/projects/:projectKey/control-plane/workflows/:workflowId/schedules/:scheduleId',
-    ({ project, params, body }) =>
-      updateWorkflowSchedule(project, params.workflowId, params.scheduleId, body),
-    {
-      params: workflowScheduleParams,
-      body: scheduleUpdateBody,
-      permission: ['actions', 'edit'],
-      response: { 200: ControlPlaneResponse, ...commonErrors },
-    },
-  )
-  .get(
-    '/projects/:projectKey/control-plane/workflows/:workflowId/schedules/:scheduleId/triggers',
-    ({ project, params }) =>
-      listWorkflowScheduleTriggers(project, params.workflowId, params.scheduleId),
-    {
-      params: workflowScheduleParams,
-      permission: ['actions', 'read'],
-      response: { 200: ControlPlaneResponse, ...accessErrors },
+      response: { 200: PipelineRunResponse, ...commonErrors, ...errors(409, 503) },
+      detail: {
+        summary: 'Retry a failed run of a built-in workflow',
+        description:
+          'Runs the failed stage again; the stages that finished keep their results. The same ' +
+          'as retrying it through /pipeline-runs.',
+      },
     },
   )
   .post(
     '/projects/:projectKey/control-plane/workflows/:workflowId/runs/:runId/cancel',
-    ({ project, params }) => cancelWorkflowRun(project, params.workflowId, params.runId),
+    ({ project, params }) => controlRun(project, params.workflowId, params.runId, 'cancel'),
     {
       params: workflowRunParams,
       permission: ['actions', 'edit'],
-      response: { 200: ControlPlaneResponse, ...commonErrors },
-    },
-  )
-  .get(
-    '/projects/:projectKey/control-plane/workflows/:workflowId/schedules',
-    ({ project, params }) => listWorkflowSchedules(project, params.workflowId),
-    {
-      params: workflowParams,
-      permission: ['actions', 'read'],
-      response: { 200: ControlPlaneResponse, ...accessErrors },
-    },
-  )
-  .post(
-    '/projects/:projectKey/control-plane/workflows/:workflowId/schedules',
-    ({ project, params, body, user }) =>
-      createWorkflowSchedule(project, params.workflowId, requireUser(user).id, body),
-    {
-      params: workflowParams,
-      body: scheduleBody,
-      permission: ['actions', 'edit'],
-      response: { 200: ControlPlaneResponse, ...commonErrors },
-    },
-  )
-  .post(
-    '/projects/:projectKey/control-plane/workflows/:workflowId/schedules/:scheduleId/:action',
-    ({ project, params }) =>
-      scheduleAction(
-        project,
-        params.workflowId,
-        params.scheduleId,
-        `${params.action}-schedule` as 'pause-schedule' | 'resume-schedule' | 'run-schedule',
-      ),
-    {
-      params: t.Object({
-        ...workflowScheduleParams.properties,
-        action: t.Union([t.Literal('pause'), t.Literal('resume'), t.Literal('run')]),
-      }),
-      permission: ['actions', 'edit'],
-      response: { 200: ControlPlaneResponse, ...commonErrors },
-    },
-  )
-  .delete(
-    '/projects/:projectKey/control-plane/workflows/:workflowId/schedules/:scheduleId',
-    ({ project, params }) =>
-      scheduleAction(project, params.workflowId, params.scheduleId, 'delete-schedule'),
-    {
-      params: workflowScheduleParams,
-      permission: ['actions', 'edit'],
-      response: { 200: ControlPlaneResponse, ...commonErrors },
+      response: { 200: PipelineRunResponse, ...commonErrors, ...errors(409, 503) },
+      detail: {
+        summary: 'Cancel a run of a built-in workflow',
+        description: 'Stops the run and cancels the agent runs of its stages.',
+      },
     },
   );

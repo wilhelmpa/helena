@@ -18,16 +18,6 @@ export const teamThreadParams = t.Object({
   threadId: t.String(),
 });
 
-// Body of the interactive run endpoints. threadId continues a conversation when the
-// agent has memory enabled; omit it to start a new thread (the id used is returned in
-// the response).
-export const runBody = t.Object({
-  prompt: t.String({ minLength: 1, description: 'Message to send the agent.' }),
-  threadId: t.Optional(
-    t.String({ description: 'Thread id from an earlier run, to continue that conversation.' }),
-  ),
-});
-
 // A username is a short handle used to address the agent; keep it URL/mention safe.
 const username = t.String({
   minLength: 1,
@@ -203,43 +193,20 @@ export const runtimeState = t.Object({
   reportedAt: t.Nullable(t.String()),
 });
 
-// Agent configuration, all optional so a config can be filled in over time. External
-// agents use model as an Hermes model ref and runtimePolicy for host-owned controls;
-// modelCredentialId/temperature/maxSteps remain internal-only.
+// Agent configuration, all optional so a config can be filled in over time. model is
+// the model ref the agent's runtime runs on and runtimePolicy the host-owned controls
+// its runner projects into that runtime.
 const configFields = {
-  modelCredentialId: t.Optional(
-    t.Nullable(
-      t.Number({
-        description:
-          'Credential id of the LLM provider, from list_integration_credentials. Required for an ' +
-          'internal agent to run.',
-      }),
-    ),
-  ),
   model: t.Optional(
     t.Nullable(
       t.String({
         description:
-          "Model id the provider offers, from list_provider_models, e.g. 'claude-sonnet-5'.",
+          "Model ref the agent's runtime runs on, from its runner's model catalog; null runs " +
+          "the runtime's own default.",
       }),
     ),
   ),
   instructions: t.Optional(t.Nullable(t.String({ description: 'System prompt for the agent.' }))),
-  tools: t.Optional(
-    t.Array(t.String(), {
-      description:
-        'Built-in action keys from list_ai_agent_tools the agent is granted. Tools on an ' +
-        'integration are granted separately, through set_ai_agent_configured_tools.',
-    }),
-  ),
-  temperature: t.Optional(t.Nullable(t.Number({ description: 'Sampling temperature.' }))),
-  maxSteps: t.Optional(t.Nullable(t.Integer({ description: 'Max tool-call steps per run.' }))),
-  memoryEnabled: t.Optional(
-    t.Boolean({ description: 'Keep conversation memory across a thread.' }),
-  ),
-  memoryLastMessages: t.Optional(
-    t.Nullable(t.Integer({ minimum: 1, description: 'How many recent messages to recall.' })),
-  ),
   runtimePolicy: t.Optional(runtimePolicy),
   triggerOnMention: t.Optional(
     t.Boolean({
@@ -288,7 +255,7 @@ const configFields = {
   runnerScope: t.Optional(
     t.Union([t.Literal('owner'), t.Literal('team')], {
       description:
-        "Which runs an external agent's runner receives: 'owner' only the creator's, " +
+        "Which runs the agent's runner receives: 'owner' only the creator's, " +
         "'team' any member's.",
     }),
   ),
@@ -319,15 +286,11 @@ export const AiAgentResponse = t.Object({
   userId: t.String(),
   name: t.String(),
   username: t.String(),
-  kind: t.Union([t.Literal('external'), t.Literal('internal')]),
-  modelCredentialId: t.Nullable(t.Number()),
+  kind: t.Literal('external', {
+    description: 'Always external: a runner drives every agent with its API key.',
+  }),
   model: t.Nullable(t.String()),
   instructions: t.Nullable(t.String()),
-  tools: t.Array(t.String()),
-  temperature: t.Nullable(t.Number()),
-  maxSteps: t.Nullable(t.Number()),
-  memoryEnabled: t.Boolean(),
-  memoryLastMessages: t.Nullable(t.Number()),
   runtimePolicy,
   runtimeState,
   triggerOnMention: t.Boolean(),
@@ -362,27 +325,18 @@ export const AiAgentResponse = t.Object({
   pauseReason: t.Nullable(t.String()),
   createdAt: t.String(),
   apiKeyStart: t.Nullable(t.String()),
-  modelProvider: t.Nullable(t.String()),
-  actionCount: t.Number(),
   skillCount: t.Number(),
   toolCount: t.Number(),
 });
 
-// createAgent's result: the agent plus its one-time API key secret (null for an
-// internal agent, which has no key).
+// createAgent's result: the agent plus its one-time API key secret.
 export const CreateAgentResponse = t.Object({
   agent: AiAgentResponse,
-  apiKey: t.Nullable(t.String()),
+  apiKey: t.String(),
 });
 
 // The new API key secret returned once by regenerate-key.
 export const RegenerateKeyResponse = t.Object({ apiKey: t.String() });
-
-// A run's generated text and the conversation thread id (null when memory is off).
-export const RunAgentResponse = t.Object({
-  text: t.String(),
-  threadId: t.Nullable(t.String()),
-});
 
 // One row of an agent's run history (AgentRunRow from run-queue).
 export const AgentRunResponse = t.Object({
@@ -458,8 +412,8 @@ export const ChatThreadResponse = t.Object({
   cliSessionId: t.Nullable(
     t.String({
       description:
-        "The coding agent session an external agent's runner keeps for this thread on its " +
-        'own machine. Always null for an internal agent, which runs in this process.',
+        "The coding agent session the agent's runner keeps for this thread on its own " +
+        'machine. Null until the runner has reported one.',
     }),
   ),
   model: t.Nullable(t.String()),
@@ -562,9 +516,11 @@ export const ChatThreadListResponse = t.Object({
 export const createAgentBody = t.Object({
   name: t.String({ minLength: 1, description: 'Display name.' }),
   username,
-  kind: t.Union([t.Literal('external'), t.Literal('internal')], {
-    description: "'external' (API key) or 'internal' (in-process, needs a model config).",
-  }),
+  kind: t.Optional(
+    t.Literal('external', {
+      description: 'Always external, the one kind there is; may be left out.',
+    }),
+  ),
   ...configFields,
   projectId: t.Optional(
     t.Integer({

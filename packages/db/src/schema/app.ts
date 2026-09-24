@@ -517,9 +517,8 @@ export const label = pgTable(
 // AI agents owned by a team. Each agent is backed by a hidden bot user
 // (user_id -> user.id): that user is what a work item is delegated to, what a
 // comment/activity is authored by, and what owns the agent's API key (better-auth
-// apikey.reference_id points at it). An external agent needs only a name (on the
-// bot user) + username and a key; an internal agent additionally carries a model
-// configuration (provider/model/instructions/tools) used to run it. Which projects
+// apikey.reference_id points at it). An agent is driven by a runner that holds that
+// key; Helena itself never runs a model. Which projects
 // of the team an agent works in is its project_member rows, written by the routes
 // that attach it; what it may do there is the intersection of the tools it is
 // granted and the role that membership carries, which is per project like a
@@ -535,21 +534,14 @@ export const aiAgent = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
     username: text('username').notNull(),
+    // Always 'external': the one kind left once the in-process runtime was removed.
+    // Kept so the rows and the clients that name it read the same shape.
     kind: text('kind').notNull(),
-    // Internal-agent model configuration. NULL/empty for an external agent.
-    // model_credential_id references the integration_credential (kind 'llm') the
-    // runtime decrypts to address the model; model names the model id on it.
-    modelCredentialId: integer('model_credential_id').references(() => integrationCredential.id, {
-      onDelete: 'set null',
-    }),
+    // The model ref the agent's runtime runs on (null: the runtime's own default) and
+    // the operator's instructions, both projected into the runtime by its runner.
     model: text('model'),
     instructions: text('instructions'),
-    // Enabled capability-tool keys (from the code tool registry). System tools
-    // that act on the API with the agent's own token are implicit and not listed.
-    tools: jsonb('tools').notNull().default([]),
-    temperature: doublePrecision('temperature'),
-    maxSteps: integer('max_steps'),
-    // Internal-agent run triggers. A mention in a comment enqueues a run when
+    // Run triggers. A mention in a comment enqueues a run when
     // trigger_on_mention is set; being set as an issue's delegate enqueues one when
     // trigger_on_assign is set.
     triggerOnMention: boolean('trigger_on_mention').notNull().default(true),
@@ -563,20 +555,8 @@ export const aiAgent = pgTable(
     // runner already carrying its share of a member's turns is not asked to
     // interleave more than the owner decided it should.
     maxConcurrentChats: integer('max_concurrent_chats').notNull().default(3),
-    // The agent's own API key, encrypted at rest (AES-256-GCM, see shared/crypto).
-    // An internal agent replays it on every tool call, so unlike better-auth's
-    // hashed apikey row it has to stay recoverable. Set for internal agents only:
-    // an external agent's key is held by whoever drives it and is never stored here.
-    apiKeyCiphertext: text('api_key_ciphertext'),
-    apiKeyIv: text('api_key_iv'),
-    apiKeyAuthTag: text('api_key_auth_tag'),
-    // Conversation memory: when enabled, the agent recalls the last
-    // memory_last_messages messages of a thread (persisted by Mastra's Postgres
-    // store). memory_last_messages is NULL when memory is off.
-    memoryEnabled: boolean('memory_enabled').notNull().default(false),
-    memoryLastMessages: integer('memory_last_messages'),
-    // Runtime-owned policy that has no internal-agent equivalent. The agent row stays
-    // the single control-plane record; an external runner projects this non-secret
+    // Runtime-owned policy. The agent row stays the single control-plane record; the
+    // agent's runner projects this non-secret
     // policy into its mapped runtime. File contents are limited and validated by the
     // API before they reach this JSON document.
     runtimePolicy: jsonb('runtime_policy').notNull().default({}),
@@ -632,7 +612,7 @@ export const aiAgent = pgTable(
   (t) => [
     uniqueIndex('ai_agent_team_username_uq').on(t.teamId, sql`lower(${t.username})`),
     unique().on(t.userId),
-    check('ai_agent_kind_check', sql`${t.kind} IN ('external', 'internal')`),
+    check('ai_agent_kind_check', sql`${t.kind} = 'external'`),
     check(
       'ai_agent_autopilot_level_check',
       sql`${t.autopilotLevel} IS NULL OR ${t.autopilotLevel} BETWEEN 0 AND 3`,
@@ -655,10 +635,10 @@ export const aiAgent = pgTable(
   ],
 );
 
-// Queued autonomous runs of an internal agent. Mentions and delegations carry an
-// issue; manual runs do not, and an approval decision carries the issue of its request
-// when it has one. The worker claims due rows with a lease, runs the agent, and records
-// the result for history and retries.
+// Queued autonomous runs of an agent. Mentions and delegations carry an issue; manual
+// runs do not, and an approval decision carries the issue of its request when it has
+// one. The agent's runner claims due rows with a lease, runs the agent, and records the
+// result for history and retries.
 export const agentRun = pgTable(
   'agent_run',
   {
@@ -903,11 +883,9 @@ export const approvalRequest = pgTable(
   ],
 );
 
-// A conversation between one member and one external agent. The internal agents'
-// threads are held by Mastra's own store; an external agent is driven by a runner on
+// A conversation between one member and one agent. The agent is driven by a runner on
 // its operator's machine, which has no memory of its own, so the conversation lives
-// here. The id carries the same shape as a Mastra chat thread id (see
-// runtime/thread-ids), which is what lets the chat UI address both kinds the same way.
+// here. The id reads `chat:<agent id>:<user id>:<uuid>` (see agents/chat/service).
 export const agentChatThread = pgTable(
   'agent_chat_thread',
   {
@@ -1048,11 +1026,8 @@ export const agentChatEvent = pgTable(
 // context size, which the panel shows as a dash. An autonomous run keeps its own counts
 // on agent_run instead, one row per run.
 //
-// A thread of an external agent is stored in agent_chat_thread and one of an internal
-// agent in Mastra's own tables, so the row carries no foreign key to a thread. Every id
-// is minted by runtime/thread-ids, which prefixes each kind of thread with what it is
-// scoped to, so no two kinds collide. The row is deleted where the thread is deleted,
-// and the cascade covers the deletion of the agent.
+// The row carries no foreign key to its agent_chat_thread. It is deleted where the
+// thread is deleted, and the cascade covers the deletion of the agent.
 export const agentChatUsage = pgTable(
   'agent_chat_usage',
   {
@@ -1068,9 +1043,9 @@ export const agentChatUsage = pgTable(
 );
 
 // The conversations a member has starred, so they stay within reach in the chat
-// history. Like agent_chat_usage the row carries no foreign key to the thread: an
-// internal agent's thread lives in Mastra's own tables. Deleting a thread deletes its
-// row; a row left behind is harmless, since the history is built from the threads.
+// history. Like agent_chat_usage the row carries no foreign key to the thread. Deleting
+// a thread deletes its row; a row left behind is harmless, since the history is built
+// from the threads.
 export const agentChatFavorite = pgTable(
   'agent_chat_favorite',
   {
@@ -1111,10 +1086,9 @@ export const chatPrompt = pgTable(
   ],
 );
 
-// Stored credentials for a team's integrations, shared by every project it owns. One
-// store for every secret: the API keys of LLM providers (kind 'llm', addressed by an
-// internal agent's model) and the credentials of tool integrations (kind 'tool',
-// bound to configured tools). integration_key names the integration in the catalog;
+// Stored credentials for a team's integrations, shared by every project it owns: the
+// credentials of tool integrations (kind 'tool', bound to configured tools).
+// integration_key names the integration in the catalog;
 // the credential's fields (and which are secret) come from that integration's
 // credentialSchema. The full credential object is stored encrypted (AES-256-GCM, see
 // apps/api/src/shared/crypto.ts): ciphertext + iv + auth_tag. `redacted` is the same
@@ -1486,7 +1460,7 @@ export const notificationDelivery = pgTable(
 );
 
 // Skill library of a team, shared by every project it owns. A skill is a unit of
-// knowledge given to an internal agent (Anthropic Agent Skill format): a SKILL.md
+// knowledge given to an agent (Anthropic Agent Skill format): a SKILL.md
 // with YAML frontmatter (name/description) plus optional reference files, no
 // executable scripts. The markdown and reference bytes live in the S3 object store
 // under s3_prefix; `files` lists the reference file paths and their object keys.
@@ -2102,8 +2076,8 @@ export const issue = pgTable(
     }),
     // The AI agent an issue is delegated to. Like assignee this points at a bot
     // user (ai_agent.user_id); assignee holds a project member, delegate holds an
-    // agent. Setting a delegate on an internal agent with trigger_on_assign enqueues
-    // an agent run.
+    // agent. Setting a delegate on an agent with trigger_on_assign enqueues an agent
+    // run.
     delegateUserId: text('delegate_user_id').references(() => user.id, {
       onDelete: 'set null',
     }),

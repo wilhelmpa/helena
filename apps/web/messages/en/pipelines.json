@@ -4,14 +4,18 @@
     "approval": "Approval",
     "condition": "Condition",
     "action": "Task action",
-    "wait": "Wait"
+    "wait": "Wait",
+    "notify": "Notify",
+    "webhook": "Webhook"
   },
   "kindHints": {
     "agent": "An agent works on the task",
     "approval": "A person approves or sends it back",
     "condition": "Splits the run into Yes and No",
     "action": "Changes the task",
-    "wait": "Pauses the run"
+    "wait": "Pauses the run",
+    "notify": "Tells people about the run",
+    "webhook": "Sends the task to a URL"
   },
   "triggers": {
     "manual": "Started by hand",
@@ -19,12 +23,15 @@
     "task_assigned": "Task assigned",
     "status_changed": "Status changed",
     "label_added": "Label added",
-    "schedule": "Schedule"
+    "schedule": "Schedule",
+    "webhook": "Webhook request",
+    "mail_received": "Mail received"
   },
   "triggerSummary": {
     "statusTo": "Status changes to {status}",
     "label": "Label {label} is added",
-    "schedule": "Schedule {cron}"
+    "schedule": "Schedule {cron}",
+    "mail": "Mail: {filter}"
   },
   "library": {
     "hint": "Your team's workflow templates. A project turns a template on and names the agents of its roles.",
@@ -127,7 +134,12 @@
     "cronHint": "Minute, hour, day of month, month and day of week. 0 9 * * 1-5 runs on weekdays at 9:00.",
     "timezone": "Time zone",
     "taskTitle": "Task title",
-    "taskTitleHint": "Every run creates a task with this title and runs the workflow on it."
+    "taskTitleHint": "Every run creates a task with this title and runs the workflow on it.",
+    "webhookHint": "Every request creates a task with this title (or the title the request sends) and runs the workflow on it. The address and its secret are on the project's Workflows page once the workflow is on there.",
+    "mailFrom": "From contains",
+    "mailSubject": "Subject contains",
+    "mailHint": "Every new mail of the project's accounts that matches creates a task with its subject.",
+    "mailAny": "Any"
   },
   "roles": {
     "title": "Roles",
@@ -158,7 +170,8 @@
     "no": "No",
     "endsRun": "Run ends after this",
     "limit": "A workflow holds at most {max} steps.",
-    "problems": "{count, plural, one {# problem} other {# problems}}"
+    "problems": "{count, plural, one {# problem} other {# problems}}",
+    "plugins": "Extensions"
   },
   "summary": {
     "agentRole": "Role {role}",
@@ -179,7 +192,10 @@
     "comment": "Comment: {text}",
     "subtask": "Subtask: {title}",
     "waitDelay": "Wait {duration}",
-    "waitUntil": "Until the {field} at {time}"
+    "waitUntil": "Until the {field} at {time}",
+    "notify": "Tell {who}: {text}",
+    "webhook": "Send to {host}",
+    "noUrl": "No URL yet"
   },
   "duration": {
     "minutes": "{count, plural, one {# minute} other {# minutes}}",
@@ -302,6 +318,28 @@
       },
       "time": "Time",
       "timeHint": "Time in Europe/Berlin."
+    },
+    "notify": {
+      "to": "Tell",
+      "members": "Members",
+      "message": "Message",
+      "messagePlaceholder": "What people should know",
+      "recipients": {
+        "assignee": "The assignee",
+        "watchers": "The task's watchers",
+        "members": "Chosen members"
+      }
+    },
+    "webhook": {
+      "url": "URL",
+      "urlHint": "Gets the task and the results so far as JSON, signed with the project's signing key. A 2xx answer counts as success.",
+      "message": "Message",
+      "messagePlaceholder": "Sent along as message (optional)"
+    },
+    "plugin": {
+      "noSettings": "No settings.",
+      "choose": "Choose",
+      "missing": "The step type {type} is not installed: the extension that brings it is off."
     }
   },
   "issues": {
@@ -332,7 +370,10 @@
     "unknown_label": "The project has no label {name}.",
     "unknown_area": "The project has no area {name}.",
     "model_not_allowed": "No agent of the team runs the model {model}.",
-    "schedule_too_frequent": "The schedule runs more often than the team allows."
+    "schedule_too_frequent": "The schedule runs more often than the team allows.",
+    "invalid_url": "Enter a URL that starts with https:// or http://.",
+    "plugin_invalid": "{message}",
+    "plugin_trigger_unsupported": "This trigger fires on a schedule of its own, which the Helena engine does not run yet."
   },
   "runs": {
     "status": {
@@ -342,7 +383,8 @@
       "succeeded": "Succeeded",
       "failed": "Failed",
       "canceled": "Canceled",
-      "rejected": "Rejected"
+      "rejected": "Rejected",
+      "skipped": "Skipped"
     },
     "stepStatus": {
       "running": "Running",
@@ -350,7 +392,8 @@
       "succeeded": "Done",
       "failed": "Failed",
       "canceled": "Canceled",
-      "simulated": "Simulated"
+      "simulated": "Simulated",
+      "skipped": "Skipped"
     },
     "outcomes": {
       "success": "Success",
@@ -359,7 +402,12 @@
       "approved": "Approved",
       "rejected": "Rejected",
       "true": "Yes",
-      "false": "No"
+      "false": "No",
+      "created": "Task created",
+      "reopened": "Task reopened",
+      "skipped": "Skipped",
+      "review": "Moved to Review",
+      "done": "Moved to Done"
     },
     "agentRunStatus": {
       "pending": "Queued",
@@ -395,7 +443,33 @@
     "filterReset": "Reset filters",
     "filterProject": "Project",
     "filterStatus": "Status",
-    "filterKind": "Kind"
+    "filterKind": "Kind",
+    "kinds": {
+      "agent_team": "Agent team"
+    },
+    "triggers": {
+      "manual": "by hand",
+      "task_created": "task created",
+      "task_assigned": "task assigned",
+      "status_changed": "status changed",
+      "label_added": "label added",
+      "schedule": "schedule",
+      "webhook": "webhook",
+      "mail_received": "mail received",
+      "routine": "schedule",
+      "delegation": "delegated to the coordinator"
+    },
+    "scheduledFor": "Due {time}",
+    "skipReasons": {
+      "missed": "Missed: the server was down at that time",
+      "taskOpen": "Skipped: the previous task is still open"
+    },
+    "teamStages": {
+      "coordinate": "Coordinator plans",
+      "specialize": "Specialist works: {assignment}",
+      "review": "Coordinator reviews",
+      "sync": "Result to the task"
+    }
   },
   "versions": {
     "empty": "No versions.",
@@ -445,6 +519,30 @@
       "perHour": "per hour",
       "save": "Save",
       "saved": "Saved."
+    },
+    "hook": {
+      "title": "Webhook",
+      "url": "Address",
+      "secret": "Secret",
+      "secretOnce": "Shown only now. Senders sign with it (Standard Webhooks) or send it as a bearer token.",
+      "create": "Create address",
+      "renew": "New secret",
+      "renewMessage": "Senders with the old secret are refused from now on.",
+      "delete": "Delete address",
+      "deleteMessage": "Senders get 404 from now on; a new address has a different URL.",
+      "lastUsed": "last used {time}",
+      "none": "No address yet.",
+      "copy": "Copy"
+    },
+    "signing": {
+      "title": "Webhook signing key",
+      "hint": "Webhook steps sign their requests with it (Standard Webhooks), so the receiver can check they come from Helena.",
+      "show": "Show",
+      "hide": "Hide",
+      "renew": "Renew",
+      "renewMessage": "Webhook steps sign with the new key from now on; receivers need it too.",
+      "secret": "Key",
+      "copy": "Copy"
     }
   },
   "issuePanel": {

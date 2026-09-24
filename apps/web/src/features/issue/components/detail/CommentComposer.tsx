@@ -68,9 +68,8 @@ export default function CommentComposer({
   const posting = (isEdit ? updateComment : createComment).isPending;
   const cmdKey = typeof navigator !== 'undefined' && /Mac/i.test(navigator.platform) ? '⌘' : 'Ctrl';
 
-  // Members and both agent kinds can be mentioned, and only those that have a handle
-  // to be addressed by. An internal agent runs in the built-in runtime; an external
-  // agent is reached over its operator's webhook, which receives the comment.
+  // Members and agents can be mentioned, and only those that have a handle to be
+  // addressed by. A mentioned agent's runner picks the comment up as a run.
   const matches = useMemo(() => {
     if (!menu) return [];
     const q = menu.query.toLowerCase();

@@ -72,7 +72,7 @@ export function RoutineItem({
           : t('paused')}{' '}
         · {routine.timezone}
       </p>
-      <RoutineLastRun routine={routine} />
+      <RoutineLastRun routine={routine} canEdit={actions?.canEdit ?? false} />
     </li>
   );
 }

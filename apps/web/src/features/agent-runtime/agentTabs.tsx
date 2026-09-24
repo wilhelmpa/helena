@@ -43,7 +43,7 @@ export const AGENT_TABS: AgentTab[] = [
     label: 'runs',
     icon: Waypoints,
     order: 10,
-    kinds: ['external', 'internal'],
+    kinds: ['external'],
     component: ({ teamId, agent, runId, onRunChange }) => (
       <AgentRunsPanel teamId={teamId} agentId={agent.id} runId={runId} onRunChange={onRunChange} />
     ),
@@ -74,7 +74,7 @@ export const AGENT_TABS: AgentTab[] = [
     label: 'usage',
     icon: Gauge,
     order: 40,
-    kinds: ['external', 'internal'],
+    kinds: ['external'],
     component: ({ teamId, agent }) => (
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         <UsageReport

@@ -4,7 +4,7 @@ import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
 import { createRole } from '#tests/helpers/roles';
-import { controlApi } from '#tests/helpers/control';
+import { stepRunStatus } from '#modules/engine/agent-runs';
 
 // An agent that cannot go on without a person's answer marks its issue blocked: the
 // issue gets the Blocked label and the question as a comment that notifies the person
@@ -99,11 +99,8 @@ describe('mark an issue blocked', () => {
       lastError: null,
       blockedQuestion: 'Which market comes first?',
     });
-    const stage = await controlApi().internal.orchestration['agent-run'].status.post({
-      runId: run.id,
-      projectRef: 'project:MKT',
-    });
-    expect(stage.data).toMatchObject({
+    // The engine reads a stage's run this way.
+    expect(await stepRunStatus(run.id)).toMatchObject({
       status: 'success',
       blockedQuestion: 'Which market comes first?',
     });

@@ -10,8 +10,8 @@ export const agentParams = t.Object({
   agentId: t.Numeric({ description: 'Agent id from list_ai_agents.' }),
 });
 
-// The same, for the routes that act on an agent inside one project of its team: a
-// chat, and a run of an internal agent.
+// The same, for the routes that act on an agent inside one project of its team, such as
+// a chat.
 export const projectAgentParams = t.Object({
   projectKey: t.String(),
   agentId: t.Numeric({ description: 'Agent id from list_ai_agents.' }),
@@ -80,12 +80,11 @@ export const contextUsageBody = t.Optional(
   ),
 );
 
-// The transcript of a chat, shared by both kinds of agent: an internal agent's
-// conversations are held by the runtime's memory, an external agent's by the feed its
-// runner drains, and the routes serving them return these shapes either way.
+// The transcript of a chat: the conversations are held by the feed the agent's runner
+// drains, and the routes serving them return these shapes.
 
-// One chat thread in the history list. `cliSessionId` belongs to an external agent's
-// threads, where a runner keeps the session; an internal agent runs here and has none.
+// One chat thread in the history list. `cliSessionId` is the session the agent's runner
+// keeps for the thread, null until it reports one.
 // `contextTokens` is the size of the conversation's context after its last completed
 // answer: absent while no answer has completed, null where the agent reports no counts
 // that can be read as one.

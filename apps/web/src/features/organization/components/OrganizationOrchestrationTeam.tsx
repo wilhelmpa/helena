@@ -14,7 +14,7 @@ const statusClass = {
   offline: 'fill-muted-foreground/40 text-muted-foreground/40',
 };
 
-// The project's agents grouped by their agent-team role, with the capabilities Mastra
+// The project's agents grouped by their agent-team role, with the capabilities the Helena engine
 // routes on.
 export default function OrganizationOrchestrationTeam({ agents }: { agents: OrganizationAgent[] }) {
   const t = useTranslations('organization');
@@ -47,7 +47,6 @@ export default function OrganizationOrchestrationTeam({ agents }: { agents: Orga
                       </p>
                       <p className="truncate text-xs text-muted-foreground" dir="auto">
                         {agent.roleTitle || `@${agent.username}`}
-                        {agent.kind === 'internal' && ` · ${t('orchestration.internal')}`}
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-1">

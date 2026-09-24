@@ -8,7 +8,6 @@ import {
   projectMember,
   organizationAgentAssignment,
   projectProvisioningJob,
-  organizationProjectAssignment,
   teamMember,
   teamRole,
   agentSkillLink,
@@ -16,17 +15,11 @@ import {
   agentMcpServerLink,
   agentFieldTrigger,
   customField,
-  integrationCredential,
   helenaBudget,
 } from '@repo/db';
 import { and, asc, eq, inArray, isNull, ne, notInArray, or, sql } from 'drizzle-orm';
 import { API_KEY_MAX_NAME_LENGTH, auth } from '@repo/auth';
 import { iso, HttpError, rethrowDuplicate } from '#shared/lib';
-import { getCredentialById } from '../integrations/service';
-import { integrationKind } from '../integrations/catalog';
-import { encryptSecret, decryptSecret, secretContext } from '@repo/crypto';
-import { normalizeToolKeys, ALWAYS_ON_ACTIONS } from './runtime/tools/catalog';
-import { deleteThreadsWhere } from './runtime/memory';
 import { listAgentMemberFieldIds } from '#modules/custom-fields/service';
 import { runsTeam, type TeamStanding } from '#modules/teams/service';
 import { getDefaultRoleId } from '#modules/roles/service';
@@ -49,17 +42,15 @@ import type { profileReport, runtimeIssue, runtimeSandbox } from '../runtime-syn
 //
 // An agent belongs to a team and works in the projects of that team it is attached
 // to; a project_member row is what says so, and one key therefore reaches every one
-// of them. Both kinds of agent act through the same API under the same authorization:
-// each owns an API key and project_member rows carrying its team role, so its requests
-// are checked by the normal permission matrix. The kinds differ in who drives them:
-// an external agent is driven over HTTP by its operator, who holds the key; an
-// internal agent is driven by the built-in runtime, carries a model configuration,
-// and replays its own key against the routes in process. That is why an internal
-// agent's key is also kept here, encrypted — better-auth only stores a hash, and the
-// runtime needs the secret on every tool call. An internal agent's effective rights
-// are the intersection of its granted actions (ai_agent.tools) and its role.
+// of them. An agent acts through the same API under the same authorization as a
+// person: it owns an API key and project_member rows carrying its team role, so its
+// requests are checked by the normal permission matrix. It is driven over HTTP by its
+// runner, which holds the key; Helena itself never runs a model. better-auth stores
+// only a hash of the key, so the secret is returned once, on create and on rotation.
 
-export type AgentKind = 'external' | 'internal';
+// The one kind of agent there is. The column and the field stay so the rows and the
+// clients that name it keep reading the same shape.
+export type AgentKind = 'external';
 
 // Which runs an external agent's runner is served. 'project', the default: any
 // member's runs, so an agent added to a project works for the whole team. 'owner':
@@ -330,15 +321,8 @@ export interface AiAgentRow {
   name: string;
   username: string;
   kind: AgentKind;
-  modelCredentialId: number | null;
   model: string | null;
   instructions: string | null;
-  tools: string[];
-  temperature: number | null;
-  maxSteps: number | null;
-  // Conversation memory: recall the last memoryLastMessages messages of a thread.
-  memoryEnabled: boolean;
-  memoryLastMessages: number | null;
   runtimePolicy: AgentRuntimePolicy;
   runtimeState: AgentRuntimeState;
   // Run triggers.
@@ -385,13 +369,7 @@ export interface AiAgentRow {
   // The agent's current API key, for display only — the secret is never returned
   // after creation. start is the key's leading characters kept for identification.
   apiKeyStart: string | null;
-  // The integration key of the model credential (the provider, e.g. "openai"), or
-  // null when no credential is set. For the list's meta display.
-  modelProvider: string | null;
-  // How many actions the agent can take, how many skills and configured tools are
-  // enabled. actionCount is the always-on read-only actions plus the granted mutating
-  // ones (`tools`), matching the Actions section of the editor. For the meta display.
-  actionCount: number;
+  // How many skills and configured tools are enabled, for the meta display.
   skillCount: number;
   toolCount: number;
 }
@@ -404,14 +382,8 @@ function mapAgent(row: {
   name: string;
   username: string;
   kind: string;
-  modelCredentialId: number | null;
   model: string | null;
   instructions: string | null;
-  tools: unknown;
-  temperature: number | null;
-  maxSteps: number | null;
-  memoryEnabled: boolean;
-  memoryLastMessages: number | null;
   runtimePolicy: unknown;
   runtimeState: unknown;
   triggerOnMention: boolean;
@@ -434,11 +406,9 @@ function mapAgent(row: {
   pauseReason: string | null;
   createdAt: Date;
   apiKeyStart: string | null;
-  modelProvider: string | null;
   skillCount: number;
   toolCount: number;
 }): AiAgentRow {
-  const tools = Array.isArray(row.tools) ? (row.tools as string[]) : [];
   return {
     id: row.id,
     teamId: row.teamId,
@@ -447,14 +417,8 @@ function mapAgent(row: {
     name: row.name,
     username: row.username,
     kind: row.kind as AgentKind,
-    modelCredentialId: row.modelCredentialId,
     model: row.model,
     instructions: row.instructions,
-    tools,
-    temperature: row.temperature,
-    maxSteps: row.maxSteps,
-    memoryEnabled: row.memoryEnabled,
-    memoryLastMessages: row.memoryLastMessages,
     runtimePolicy: normalizeRuntimePolicy(row.runtimePolicy),
     runtimeState: normalizeRuntimeState(row.runtimeState),
     triggerOnMention: row.triggerOnMention,
@@ -479,8 +443,6 @@ function mapAgent(row: {
     pauseReason: row.pauseReason,
     createdAt: iso(row.createdAt),
     apiKeyStart: row.apiKeyStart,
-    modelProvider: row.modelProvider,
-    actionCount: tools.length + ALWAYS_ON_ACTIONS.length,
     skillCount: row.skillCount,
     toolCount: row.toolCount,
   };
@@ -498,14 +460,8 @@ const agentColumns = {
   name: user.name,
   username: aiAgent.username,
   kind: aiAgent.kind,
-  modelCredentialId: aiAgent.modelCredentialId,
   model: aiAgent.model,
   instructions: aiAgent.instructions,
-  tools: aiAgent.tools,
-  temperature: aiAgent.temperature,
-  maxSteps: aiAgent.maxSteps,
-  memoryEnabled: aiAgent.memoryEnabled,
-  memoryLastMessages: aiAgent.memoryLastMessages,
   runtimePolicy: aiAgent.runtimePolicy,
   runtimeState: aiAgent.runtimeState,
   triggerOnMention: aiAgent.triggerOnMention,
@@ -534,7 +490,6 @@ const agentColumns = {
   pauseReason: aiAgent.pauseReason,
   createdAt: aiAgent.createdAt,
   apiKeyStart: apikey.start,
-  modelProvider: integrationCredential.integrationKey,
   skillCount:
     sql<number>`(select count(*) from ${agentSkillLink} where ${agentSkillLink.agentId} = ${aiAgent.id})`.mapWith(
       Number,
@@ -545,15 +500,14 @@ const agentColumns = {
     ),
 };
 
-// The bot user carries the name, the key row the prefix, and the credential the
-// provider, so every read of an agent joins the three.
+// The bot user carries the name and the key row the prefix, so every read of an agent
+// joins the two.
 function agentQuery() {
   return db
     .select(agentColumns)
     .from(aiAgent)
     .innerJoin(user, eq(user.id, aiAgent.userId))
-    .leftJoin(apikey, eq(apikey.referenceId, aiAgent.userId))
-    .leftJoin(integrationCredential, eq(integrationCredential.id, aiAgent.modelCredentialId));
+    .leftJoin(apikey, eq(apikey.referenceId, aiAgent.userId));
 }
 
 // Whether the agent is a member of the project, as a condition on a query over
@@ -637,40 +591,19 @@ export async function getAgentInProject(id: number, projectId: number): Promise<
   return rows[0] ? mapAgent(rows[0]) : null;
 }
 
-// Shared organization instructions belong to the project rather than one agent.
-// They are loaded only for execution so the regular agent DTO remains unchanged.
-export async function getProjectWideInstructions(
-  teamId: number,
-  projectId: number,
-): Promise<string> {
-  const rows = await db
-    .select({ instructions: organizationProjectAssignment.instructions })
-    .from(organizationProjectAssignment)
-    .where(
-      and(
-        eq(organizationProjectAssignment.teamId, teamId),
-        eq(organizationProjectAssignment.projectId, projectId),
-      ),
-    )
-    .limit(1);
-  return rows[0]?.instructions ?? '';
-}
-
-// An agent may run for whoever triggered it: always an internal agent, which runs on
-// our side, and an external one only when its runner is team-scoped or the trigger
-// came from the agent's owner, whose machine that runner is. An 'owner'-scoped agent
-// without an owner names nobody to restrict it to — the account was deleted — so it
-// takes any member's runs rather than silently stopping.
+// An agent may run for whoever triggered it when its runner is team-scoped, and
+// otherwise only when the trigger came from the agent's owner, whose machine that
+// runner is. An 'owner'-scoped agent without an owner names nobody to restrict it to —
+// the account was deleted — so it takes any member's runs rather than silently stopping.
 export function isTriggerableBy(
-  agent: { kind: string; runnerScope: string; ownerUserId: string | null },
+  agent: { runnerScope: string; ownerUserId: string | null },
   actorUserId: string | null,
 ): boolean {
-  if (agent.kind === 'internal' || agent.runnerScope !== 'owner' || !agent.ownerUserId) return true;
+  if (agent.runnerScope !== 'owner' || !agent.ownerUserId) return true;
   return agent.ownerUserId === actorUserId;
 }
 
 const triggerScopeColumns = {
-  kind: aiAgent.kind,
   runnerScope: aiAgent.runnerScope,
   ownerUserId: aiAgent.ownerUserId,
 };
@@ -824,24 +757,6 @@ export async function isAgentUser(userId: string): Promise<boolean> {
   return (await agentTeam(userId)) !== null;
 }
 
-// An unknown, foreign, or non-LLM credential id would otherwise be stored and only
-// surface later, as a run that fails to start. Credentials belong to the team, so an
-// id from another team is what counts as foreign.
-async function assertModelCredential(
-  teamId: number,
-  credentialId: number | null | undefined,
-): Promise<void> {
-  if (credentialId == null) return;
-  const credential = await getCredentialById(credentialId, teamId);
-  if (!credential) throw new HttpError(400, 'Credential not found');
-  if (integrationKind(credential.integrationKey) !== 'llm') {
-    throw new HttpError(
-      400,
-      `A model needs an LLM provider credential, not ${credential.integrationKey}.`,
-    );
-  }
-}
-
 // The projects of the team the agent is to work in. An id that is not a project of the
 // team is refused rather than dropped: attaching an agent to a project its team does
 // not own would put its key somewhere the team never opened.
@@ -859,19 +774,14 @@ async function resolveTeamProjectIds(teamId: number, projectIds: number[]): Prom
 export interface NewAgentInput {
   name: string;
   username: string;
-  kind: AgentKind;
-  modelCredentialId?: number | null;
+  // Accepted for the callers that still name it; there is only one kind.
+  kind?: AgentKind;
   model?: string | null;
   instructions?: string | null;
-  tools?: string[];
-  temperature?: number | null;
-  maxSteps?: number | null;
-  memoryEnabled?: boolean;
-  memoryLastMessages?: number | null;
   runtimePolicy?: AgentRuntimePolicy;
-  // Run triggers. Assign is off by default, and so is mention for an external agent:
-  // nothing answers its runs until its operator starts a runner, so an agent added
-  // for its API key alone must not collect runs no one drains.
+  // Run triggers. Both are off by default: nothing answers an agent's runs until its
+  // operator starts a runner, so an agent added for its API key alone must not collect
+  // runs no one drains.
   triggerOnMention?: boolean;
   triggerOnAssign?: boolean;
   // The member custom fields that start a run when the agent is set into one.
@@ -891,10 +801,10 @@ export interface NewAgentInput {
   capabilities?: string[];
   skillIds?: number[];
   mcpServerIds?: number[];
-  // The team's configured tools (agent_tool, not the tool registry keys in `tools`) to
-  // carry over. Only copyTemplateIntoProject sets this today.
+  // The team's configured tools (agent_tool) to carry over. Only copyTemplateIntoProject
+  // sets this today.
   agentToolIds?: number[];
-  // External-agent runner scope (default: any member's runs).
+  // Runner scope (default: any member's runs).
   runnerScope?: RunnerScope;
   // The member creating the agent, who owns its runner.
   ownerUserId?: string | null;
@@ -955,10 +865,9 @@ async function assertUsernameFree(
 // value (only available at creation). The server-side call sets the owner via
 // userId — better-auth allows this only for a direct (non-request) server call.
 //
-// The key carries no expiry, unlike a personal one: an internal agent replays its
-// stored secret with nothing that would renew it, and an external agent's key is
-// rotated by its operator through regenerate-key. The plugin puts its default on
-// every key it creates, so the expiry is cleared on the row afterwards.
+// The key carries no expiry, unlike a personal one: an agent's key is rotated by its
+// operator through regenerate-key. The plugin puts its default on every key it
+// creates, so the expiry is cleared on the row afterwards.
 async function issueKey(userId: string, name: string): Promise<{ key: string; id: string }> {
   const created = await auth.api.createApiKey({ body: { userId, name: agentKeyName(name) } });
   await db.update(apikey).set({ expiresAt: null }).where(eq(apikey.id, created.id));
@@ -981,24 +890,19 @@ function agentKeyName(name: string): string {
 }
 
 // Creates an agent: a bot user, the ai_agent config row, its team and project
-// memberships, and its first API key. Internal-agent config fields are stored only for
-// kind "internal"; an external agent keeps them null.
+// memberships, and its first API key.
 //
-// Returns the agent plus the one-time key secret. That secret is returned only for
-// an external agent, whose operator must copy it — an internal agent's key is kept
-// encrypted on the row for its own runtime and is never surfaced to a caller.
+// Returns the agent plus the one-time key secret, which its operator must copy.
 export async function createAgent(
   teamId: number,
   input: NewAgentInput,
-): Promise<{ agent: AiAgentRow; apiKey: string | null }> {
+): Promise<{ agent: AiAgentRow; apiKey: string }> {
   const userId = crypto.randomUUID();
   const email = `${userId}@agents.local`;
-  const isInternal = input.kind === 'internal';
   if (input.template && (input.projectId != null || (input.projectIds?.length ?? 0) > 0)) {
     throw new HttpError(400, 'A template joins no project');
   }
   await assertUsernameFree(teamId, input.username);
-  if (isInternal) await assertModelCredential(teamId, input.modelCredentialId);
   const projectIds = await resolveTeamProjectIds(
     teamId,
     input.projectId != null ? [input.projectId] : (input.projectIds ?? []),
@@ -1020,19 +924,11 @@ export async function createAgent(
           teamId,
           userId,
           username: input.username,
-          kind: input.kind,
-          modelCredentialId: isInternal ? (input.modelCredentialId ?? null) : null,
+          kind: 'external',
           model: input.model ?? null,
           instructions: input.instructions ?? null,
-          tools: isInternal ? normalizeToolKeys(input.tools) : [],
-          temperature: isInternal ? (input.temperature ?? null) : null,
-          maxSteps: isInternal ? (input.maxSteps ?? null) : null,
-          memoryEnabled: input.memoryEnabled ?? false,
-          memoryLastMessages: input.memoryEnabled ? (input.memoryLastMessages ?? null) : null,
-          runtimePolicy: isInternal
-            ? EMPTY_RUNTIME_POLICY
-            : normalizeRuntimePolicy(input.runtimePolicy),
-          triggerOnMention: input.triggerOnMention ?? isInternal,
+          runtimePolicy: normalizeRuntimePolicy(input.runtimePolicy),
+          triggerOnMention: input.triggerOnMention ?? false,
           triggerOnAssign: input.triggerOnAssign ?? false,
           delegationDelaySec: input.delegationDelaySec,
           maxConcurrentChats: input.maxConcurrentChats,
@@ -1099,10 +995,9 @@ export async function createAgent(
     await deleteAgent(agentId, teamId);
     throw err;
   }
-  if (isInternal) await storeAgentKey(agentId, apiKey);
-  else await queueAgentRuntime(userId);
+  await queueAgentRuntime(userId);
   const agent = (await getAgentById(agentId, teamId))!;
-  return { agent, apiKey: isInternal ? null : apiKey };
+  return { agent, apiKey };
 }
 
 // Queues the provisioning of these projects again, so the integration service creates
@@ -1126,18 +1021,18 @@ async function queueRuntimeProvisioning(projectIds: number[]): Promise<void> {
     .where(inArray(projectProvisioningJob.projectId, ids));
 }
 
-// An external agent has a Hermes runtime only while it works in exactly one project,
-// so a change to its projects queues all of them and the ones it left.
+// An agent has a Hermes runtime only while it works in exactly one project, so a change
+// to its projects queues all of them and the ones it left.
 export async function queueAgentRuntime(
   userId: string,
   leftProjectIds: number[] = [],
 ): Promise<void> {
   const rows = await db
-    .select({ kind: aiAgent.kind, projectId: projectMember.projectId })
+    .select({ projectId: projectMember.projectId })
     .from(aiAgent)
     .leftJoin(projectMember, eq(projectMember.userId, aiAgent.userId))
     .where(eq(aiAgent.userId, userId));
-  if (rows[0]?.kind !== 'external') return;
+  if (rows.length === 0) return;
   await queueRuntimeProvisioning([
     ...leftProjectIds,
     ...rows.flatMap((row) => (row.projectId == null ? [] : [row.projectId])),
@@ -1188,91 +1083,14 @@ async function setAgentProjects(agent: AiAgentRow, projectIds: number[]): Promis
   return wanted;
 }
 
-// Saves an internal agent's key secret, encrypted at rest, so its runtime can replay
-// it on every tool call.
-async function storeAgentKey(agentId: number, apiKey: string): Promise<void> {
-  const enc = encryptSecret(apiKey, secretContext('ai_agent', agentId, 'api_key'));
-  await db
-    .update(aiAgent)
-    .set({ apiKeyCiphertext: enc.ciphertext, apiKeyIv: enc.iv, apiKeyAuthTag: enc.authTag })
-    .where(eq(aiAgent.id, agentId));
-}
-
-// Namespace for the provisioning advisory lock, so its keys cannot collide with an
-// advisory lock taken anywhere else. The second key is the agent id.
-const KEY_PROVISION_LOCK_NS = 8241;
-
-// Reads and decrypts an agent's stored key, or null when it has none yet.
-async function readAgentKey(agentId: number): Promise<string | null> {
-  const rows = await db
-    .select({
-      ciphertext: aiAgent.apiKeyCiphertext,
-      iv: aiAgent.apiKeyIv,
-      authTag: aiAgent.apiKeyAuthTag,
-    })
-    .from(aiAgent)
-    .where(eq(aiAgent.id, agentId));
-  const row = rows[0];
-  if (!row?.ciphertext || !row.iv || !row.authTag) return null;
-  return decryptSecret(
-    { ciphertext: row.ciphertext, iv: row.iv, authTag: row.authTag },
-    secretContext('ai_agent', agentId, 'api_key'),
-  );
-}
-
-// The API key an internal agent authenticates its own tool calls with, provisioning
-// one if it has none. Agents created before the key was introduced have no stored
-// secret (and may predate the team membership too), so both are filled in on first use
-// rather than in a data migration — better-auth issues a key through its API, which
-// a SQL migration cannot call.
-//
-// Provisioning is serialized per agent with an advisory lock. Runs are claimed in
-// batches and across replicas (see run-queue), so two runs of the same unprovisioned
-// agent can start together; without the lock each would issue a key, and the second
-// would revoke the first out from under a run already using it. A second surviving
-// key would be just as wrong: the agent reads join apikey on the bot user, so two
-// rows would list the agent twice.
-export async function getInternalAgentApiKey(agent: AiAgentRow): Promise<string> {
-  const existing = await readAgentKey(agent.id);
-  if (existing) return existing;
-
-  return db.transaction(async (tx) => {
-    // Held until this transaction ends. A concurrent run blocks here and then finds
-    // the key the winner stored, instead of issuing a second one.
-    await tx.execute(sql`select pg_advisory_xact_lock(${KEY_PROVISION_LOCK_NS}, ${agent.id})`);
-    const won = await readAgentKey(agent.id);
-    if (won) return won;
-
-    await tx
-      .insert(teamMember)
-      .values({ teamId: agent.teamId, userId: agent.userId, role: 'agent' })
-      .onConflictDoNothing();
-    // Issue before clearing old rows: if issueKey fails, a key row left without a
-    // stored secret (the case this is meant to clean up) is still there for the next
-    // attempt to find and retry, instead of also deleting it first and leaving none.
-    const issued = await issueKey(agent.userId, agent.name);
-    await db
-      .delete(apikey)
-      .where(and(eq(apikey.referenceId, agent.userId), ne(apikey.id, issued.id)));
-    await storeAgentKey(agent.id, issued.key);
-    return issued.key;
-  });
-}
-
 export interface AgentPatch {
   name?: string;
   username?: string;
   // The projects the agent works in. Replaces the set, so a project left out is
   // detached.
   projectIds?: number[];
-  modelCredentialId?: number | null;
   model?: string | null;
   instructions?: string | null;
-  tools?: string[];
-  temperature?: number | null;
-  maxSteps?: number | null;
-  memoryEnabled?: boolean;
-  memoryLastMessages?: number | null;
   runtimePolicy?: AgentRuntimePolicy;
   triggerOnMention?: boolean;
   triggerOnAssign?: boolean;
@@ -1300,7 +1118,6 @@ export async function updateAgent(
   if (template && (patch.projectIds?.length ?? 0) > 0) {
     throw new HttpError(400, 'A template joins no project');
   }
-  await assertModelCredential(teamId, patch.modelCredentialId);
 
   // The display name lives on the bot user.
   if (patch.name !== undefined) {
@@ -1314,10 +1131,7 @@ export async function updateAgent(
   if (patch.instructions !== undefined && patch.instructions !== agent.instructions) {
     changedGroups.push('instructions');
   }
-  if (
-    (patch.model !== undefined && patch.model !== agent.model) ||
-    (patch.modelCredentialId !== undefined && patch.modelCredentialId !== agent.modelCredentialId)
-  ) {
+  if (patch.model !== undefined && patch.model !== agent.model) {
     changedGroups.push('model');
   }
   if (patch.runtimePolicy !== undefined) {
@@ -1334,14 +1148,8 @@ export async function updateAgent(
     await assertUsernameFree(teamId, patch.username, id);
     set.username = patch.username;
   }
-  if (patch.modelCredentialId !== undefined) set.modelCredentialId = patch.modelCredentialId;
   if (patch.model !== undefined) set.model = patch.model;
   if (patch.instructions !== undefined) set.instructions = patch.instructions;
-  if (patch.tools !== undefined) set.tools = normalizeToolKeys(patch.tools);
-  if (patch.temperature !== undefined) set.temperature = patch.temperature;
-  if (patch.maxSteps !== undefined) set.maxSteps = patch.maxSteps;
-  if (patch.memoryEnabled !== undefined) set.memoryEnabled = patch.memoryEnabled;
-  if (patch.memoryLastMessages !== undefined) set.memoryLastMessages = patch.memoryLastMessages;
   if (patch.runtimePolicy !== undefined)
     set.runtimePolicy = normalizeRuntimePolicy(patch.runtimePolicy);
   if (patch.triggerOnMention !== undefined) set.triggerOnMention = patch.triggerOnMention;
@@ -1405,7 +1213,7 @@ export async function copyTemplateIntoProject(
   template: AiAgentRow,
   projectId: number,
   ownerUserId: string,
-): Promise<{ agent: AiAgentRow; apiKey: string | null }> {
+): Promise<{ agent: AiAgentRow; apiKey: string }> {
   if (!template.template) throw new HttpError(400, 'Only a template can be copied into a project');
   const [target] = await db
     .select({ key: project.key })
@@ -1438,15 +1246,8 @@ export async function copyTemplateIntoProject(
   const created = await createAgent(template.teamId, {
     name: `${template.name} ${target.key}`,
     username: template.username.slice(0, 64 - suffix.length) + suffix,
-    kind: template.kind,
-    modelCredentialId: template.modelCredentialId,
     model: template.model,
     instructions: template.instructions,
-    tools: template.tools,
-    temperature: template.temperature,
-    maxSteps: template.maxSteps,
-    memoryEnabled: template.memoryEnabled,
-    memoryLastMessages: template.memoryLastMessages,
     runtimePolicy: template.runtimePolicy,
     triggerOnMention: template.triggerOnMention,
     triggerOnAssign: template.triggerOnAssign,
@@ -1472,7 +1273,6 @@ export async function copyTemplateIntoProject(
 // Replaces the agent's API key: deletes the current key row(s) for the bot user
 // and issues a new one. Returns the new plaintext secret, or null if the agent
 // does not exist. There is no atomic rotate in the plugin, so this is delete+create.
-// An internal agent's new secret is re-encrypted onto its row for its runtime.
 export async function regenerateKey(id: number, teamId: number): Promise<string | null> {
   const agent = await getAgentById(id, teamId);
   if (!agent) return null;
@@ -1483,21 +1283,19 @@ export async function regenerateKey(id: number, teamId: number): Promise<string 
   await db
     .delete(apikey)
     .where(and(eq(apikey.referenceId, agent.userId), ne(apikey.id, issued.id)));
-  if (agent.kind === 'internal') await storeAgentKey(agent.id, issued.key);
   return issued.key;
 }
 
-// Deletes an agent: its conversation threads, its API key row(s), then the bot user.
-// Deleting the user cascades to the ai_agent row (ON DELETE CASCADE on user_id), sets
+// Deletes an agent: its API key row(s), then the bot user. Deleting the user cascades
+// to the ai_agent row (ON DELETE CASCADE on user_id) and from there to its chats, sets
 // assignee_user_id to NULL on every issue the agent was on, and nulls the actor on its
 // activity.
 export async function deleteAgent(id: number, teamId: number): Promise<boolean> {
   const agent = await getAgentById(id, teamId);
   if (!agent) return false;
-  await deleteThreadsWhere({ agentId: id });
   await db.delete(apikey).where(eq(apikey.referenceId, agent.userId));
   await deleteAccount(agent.userId);
-  if (agent.kind === 'external') await queueRuntimeProvisioning(agent.projects.map((p) => p.id));
+  await queueRuntimeProvisioning(agent.projects.map((p) => p.id));
   return true;
 }
 

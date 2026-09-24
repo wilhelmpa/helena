@@ -17,13 +17,11 @@ import { Elysia } from 'elysia';
 import { planner } from './planner';
 import { tooManyRequests } from './shared/rate-limit';
 import { mountMcp } from './mcp/mount';
-import { setMcpApp } from './mcp/app-ref';
 import { gitWebhookRoutes } from './modules/git/webhook';
 import { scimRoutes } from './modules/scim';
 import { syncOidcGroupsAfterCallback } from './modules/scim/oidc-sync';
 import { normalizeOpenApiResponse } from './openapi';
 import { homeAgentBootstrapRoutes } from './home-agent-bootstrap';
-import { hermesTeamControlRoutes } from './hermes-team-control';
 import { agentEgressInternalRoutes } from './modules/agent-egress/internal';
 import { agentBrowserGatewayInternalRoutes } from './modules/agent-browser-gateway/internal';
 import {
@@ -33,10 +31,12 @@ import {
   hasApiKey,
 } from './shared/agent-socket';
 import { HttpError } from './shared/lib';
+import { engineHookRoutes } from './modules/engine';
 import { issueProxyToken } from './modules/owner-terminal/service';
 import { OwnerTerminalKindParam, type OwnerTerminalKind } from './modules/owner-terminal/model';
 import pkg from '../../../package.json';
 import { loadBuiltinPlugins } from '#modules/plugins/builtin';
+import { setMcpApp } from './mcp/app-ref';
 import { pluginUiRoutes } from './modules/plugins';
 
 const apiUrl = (process.env.API_URL ?? 'http://localhost:3000').replace(/\/+$/, '');
@@ -98,7 +98,7 @@ export const app = new Elysia()
     normalizeOpenApiResponse(request, response),
   )
   .use(homeAgentBootstrapRoutes)
-  .use(hermesTeamControlRoutes)
+  .use(engineHookRoutes)
   .use(agentEgressInternalRoutes)
   .use(agentBrowserGatewayInternalRoutes)
   // OpenAPI docs. Mounted on the main app (outside the planner's session guard)
@@ -212,10 +212,13 @@ export const app = new Elysia()
           { name: 'Views', description: 'Saved work items views' },
           { name: 'Share', description: 'Public read-only sharing of issues and views' },
           { name: 'Actions', description: 'Project automation actions' },
-          { name: 'Workflows', description: 'Project-bound Mastra workflows and runs' },
+          {
+            name: 'Workflows',
+            description: 'Built-in workflows of a project (the agent team) and their runs',
+          },
           {
             name: 'Workflow builder',
-            description: 'Workflows members put together in Helena, which Mastra runs',
+            description: 'Workflows members put together in Helena, which the Helena engine runs',
           },
           { name: 'Webhooks', description: 'Outgoing webhook subscriptions' },
           {
@@ -225,7 +228,8 @@ export const app = new Elysia()
           },
           {
             name: 'Routines',
-            description: 'Tasks created or reopened for an agent on a schedule, run by Mastra',
+            description:
+              'Tasks created or reopened for an agent on a schedule, run by the Helena engine',
           },
           { name: 'Dashboards', description: 'Saved analytics dashboards' },
           { name: 'Knowledge', description: 'The knowledge vault: Docs notes, files and search' },
@@ -404,28 +408,19 @@ export const app = new Elysia()
   // Reverse-proxy authentication endpoint. It returns no user data: Nginx only
   // needs the status code before it exposes local tools such as Hermes, VS Code,
   // the terminal, and the persistent browser under the Plan origin.
-  .get('/auth/verify', async ({ request, status }) => {
-    const session = await getSessionFromHeaders(request.headers);
-    if (!session || session.user.active === false) return status(401);
-    return status(204);
-  })
-  // The same check for Mastra Studio, which shows the runs of every project and is open
-  // to the instance owner only.
   .get(
-    '/auth/verify/owner',
+    '/auth/verify',
     async ({ request, status }) => {
       const session = await getSessionFromHeaders(request.headers);
       if (!session || session.user.active === false) return status(401);
-      return status(session.user.role === 'god' ? 204 : 403);
+      return status(204);
     },
     {
       detail: {
-        tags: ['System'],
-        summary: 'Check that the session is the instance owner',
+        summary: 'Check a session for the reverse proxy',
         description:
-          'Answer 204 for an active session of the instance owner, 403 for another ' +
-          'session and 401 without one. Nginx asks it before it forwards a request to ' +
-          'Mastra Studio.',
+          'Answers 204 for a signed-in, active user and 401 otherwise, with no user data: ' +
+          "nginx's auth_request asks it before it exposes the local tools under the Helena origin.",
       },
     },
   )
@@ -535,9 +530,8 @@ export const app = new Elysia()
 // Its tools are generated from the planner routes tagged with mcpTool().
 mountMcp(app);
 
-// Hands the assembled app to the internal agent runtime, which builds an agent's
-// tools from the same mcpTool() routes and dispatches them in process. It cannot
-// import this module without a cycle, so the reference is passed here.
+// Hands the assembled app to the modules that dispatch requests against its routes in
+// process and cannot import it without a cycle (see mcp/app-ref.ts).
 setMcpApp(app);
 
 // Helena's own features as internal plugins (@helena/sdk registries): the tool

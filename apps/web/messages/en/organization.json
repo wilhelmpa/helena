@@ -126,15 +126,14 @@
   "orchestration": {
     "teamTitle": "Agent team",
     "teamDescription": "Roles and capabilities apply to every project of the team. Only agents that run in Hermes take part in a team run.",
-    "internal": "not in Hermes",
     "editRoles": "Set roles and capabilities on the Agents tab.",
     "policyTitle": "Agent-team workflow",
-    "policyDescription": "Runs in Mastra when a task is delegated to a coordinator.",
+    "policyDescription": "Runs when a task is delegated to a coordinator.",
     "on": "On",
     "off": "Off",
     "configure": "Configure",
     "loading": "Loading workflow…",
-    "unavailable": "The workflow list is not available. Check that Mastra is running.",
+    "unavailable": "The workflow list is not available right now.",
     "offHint": "Off for this project: a task delegated to a coordinator is queued for that agent alone.",
     "result": "Result",
     "autonomyReview": "Task goes to Review",
@@ -156,14 +155,14 @@
       "directTitle": "Directly",
       "direct": "A chat, an @mention or a task assigned to one agent goes straight to that agent in Hermes.",
       "teamTitle": "Through the agent team",
-      "team": "A task delegated to a coordinator, or started from the task's Agent team section, runs in Mastra:",
+      "team": "A task delegated to a coordinator, or started from the task's Agent team section, runs like this:",
       "stages": {
         "coordinate": "The coordinator splits the task into assignments.",
         "specialize": "Specialists work on them in Hermes, independent ones in parallel.",
         "review": "The coordinator reviews the results.",
         "synchronize": "The summary and evidence are written to the task, which moves to Review or Done."
       },
-      "route": "When the task's labels match the capabilities of exactly one specialist, or the project has only one, Mastra skips the plan and assigns the task directly."
+      "route": "When the task's labels match the capabilities of exactly one specialist, or the project has only one, Helena skips the plan and assigns the task directly."
     },
     "usage": {
       "title": "Token usage",

@@ -1,10 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import {
   aiAgent,
   db,
+  helenaSchedule,
   project,
   projectDeprovisioningJob,
   projectProvisioningJob,
@@ -28,50 +26,22 @@ beforeEach(async () => {
 afterEach(() => {
   server?.stop(true);
   server = null;
-  delete process.env.MASTRA_CONTROL_URL;
-  delete process.env.MASTRA_CONTROL_TOKEN_FILE;
 });
 
-const MASTRA_CONTROL_TOKEN = 'integration-test-mastra-control-token-0123456789';
-
-// Points the worker at a stand-in for the provisioning service and Mastra's control
-// endpoint that answers Mastra with `mastraStatus` and records every request.
-function serveDeletion(mastraStatus: number) {
-  const requests: { path: string; authorization: string | null; body: unknown }[] = [];
+// Points the worker at a stand-in for the provisioning service that records every
+// request.
+function serveDeletion() {
+  const requests: { path: string }[] = [];
   server = Bun.serve({
     port: 0,
-    fetch: async (incoming) => {
-      const path = new URL(incoming.url).pathname;
-      requests.push({
-        path,
-        authorization: incoming.headers.get('authorization'),
-        body: await incoming.json(),
-      });
-      if (path === '/internal/mastra/control')
-        return Response.json({ deleted: 1 }, { status: mastraStatus });
+    fetch: (incoming) => {
+      requests.push({ path: new URL(incoming.url).pathname });
       return Response.json({ resources: [] });
     },
   });
-  const tokenFile = join(mkdtempSync(join(tmpdir(), 'worker-mastra-')), 'token');
-  writeFileSync(tokenFile, MASTRA_CONTROL_TOKEN, { mode: 0o600 });
   process.env.PROJECT_PROVISIONING_URL = `http://127.0.0.1:${server.port}/api/provision`;
   process.env.PROJECT_PROVISIONING_TOKEN = 'integration-test-token';
-  process.env.MASTRA_CONTROL_URL = `http://127.0.0.1:${server.port}/internal/mastra/control`;
-  process.env.MASTRA_CONTROL_TOKEN_FILE = tokenFile;
   return requests;
-}
-
-async function deletedProjectJob() {
-  const [owner] = await db.insert(team).values({ name: 'Schedule cleanup' }).returning();
-  const [job] = await db
-    .insert(projectDeprovisioningJob)
-    .values({
-      projectId: 7332,
-      project: { id: 7332, teamId: owner.id, key: 'GONE', name: 'Deleted', description: '' },
-      requestedResources: ['workspace'],
-    })
-    .returning();
-  return job;
 }
 
 describe('project provisioning', () => {
@@ -97,7 +67,6 @@ describe('project provisioning', () => {
     const coder = await insertAgent(owner.id, 'coder', [created.id]);
     const writer = await insertAgent(owner.id, 'writer', [created.id]);
     await insertAgent(owner.id, 'shared', [created.id, other.id]);
-    await insertAgent(owner.id, 'internal', [created.id], 'internal');
     await insertAgent(owner.id, 'master', [created.id]);
     await insertAgent(owner.id, `hermes-agt${owner.id}-coordinator`, [created.id]);
     await insertAgent(owner.id, 'elsewhere', [other.id]);
@@ -436,43 +405,42 @@ describe('project provisioning', () => {
     });
   });
 
-  it("deletes the project's Mastra schedules before provisioning removes the project", async () => {
-    const requests = serveDeletion(200);
-    const job = await deletedProjectJob();
+  it("stops the project's schedules before provisioning removes the project", async () => {
+    const requests = serveDeletion();
+    const [owner] = await db.insert(team).values({ name: 'Schedule cleanup' }).returning();
+    const [row] = await db
+      .insert(project)
+      .values({ teamId: owner.id, key: 'GONE', name: 'Deleted' })
+      .returning();
+    await db.insert(helenaSchedule).values({
+      id: 'schedule-of-gone',
+      projectId: row!.id,
+      kind: 'routine',
+      title: 'Daily check',
+      cron: '0 9 * * *',
+    });
+    const [job] = await db
+      .insert(projectDeprovisioningJob)
+      .values({
+        projectId: row!.id,
+        project: { id: row!.id, teamId: owner.id, key: 'GONE', name: 'Deleted', description: '' },
+        requestedResources: ['workspace'],
+      })
+      .returning();
 
     await processProjectProvisioning();
 
-    expect(requests.map((request) => request.path)).toEqual([
-      '/internal/mastra/control',
-      '/api/provision',
-    ]);
-    expect(requests[0]).toMatchObject({
-      authorization: `Bearer ${MASTRA_CONTROL_TOKEN}`,
-      body: { schemaVersion: 1, operation: 'delete-project-schedules', projectRef: 'project:GONE' },
-    });
+    expect(requests.map((request) => request.path)).toEqual(['/api/provision']);
+    const [schedule] = await db
+      .select({ enabled: helenaSchedule.enabled })
+      .from(helenaSchedule)
+      .where(eq(helenaSchedule.id, 'schedule-of-gone'));
+    expect(schedule).toEqual({ enabled: false });
     const [stored] = await db
       .select()
       .from(projectDeprovisioningJob)
-      .where(eq(projectDeprovisioningJob.id, job.id));
+      .where(eq(projectDeprovisioningJob.id, job!.id));
     expect(stored).toMatchObject({ status: 'succeeded', lastError: null });
-  });
-
-  it('keeps the job for a retry while Mastra cannot delete the schedules', async () => {
-    const requests = serveDeletion(502);
-    const job = await deletedProjectJob();
-
-    await processProjectProvisioning();
-
-    expect(requests.map((request) => request.path)).toEqual(['/internal/mastra/control']);
-    const [stored] = await db
-      .select()
-      .from(projectDeprovisioningJob)
-      .where(eq(projectDeprovisioningJob.id, job.id));
-    expect(stored).toMatchObject({
-      status: 'pending',
-      attempts: 1,
-      lastError: 'Mastra control HTTP 502',
-    });
   });
 
   it('does not let a stale leased response overwrite a retried job', async () => {

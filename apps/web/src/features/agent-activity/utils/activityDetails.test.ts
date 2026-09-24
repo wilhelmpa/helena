@@ -58,4 +58,16 @@ describe('agent activity links', () => {
       href: '/project/MKT/workflows?workflow=agent-team&run=a+b',
     });
   });
+
+  test("opens a routine's run on the Schedules page and a workflow's on the Workflows page", () => {
+    const run = { ...base, kind: 'workflow-run' as const, workflowRunId: 'r1' };
+    assert.deepEqual(activityDetails({ ...run, workflowId: 'routine' }), {
+      kind: 'page',
+      href: '/project/MKT/ai-team/schedules',
+    });
+    assert.deepEqual(activityDetails({ ...run, workflowId: 'workflow' }), {
+      kind: 'page',
+      href: '/project/MKT/workflows',
+    });
+  });
 });

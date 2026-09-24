@@ -19,16 +19,15 @@ const REQUIRES: Record<CopyProjectIncludeKey, CopyProjectIncludeKey[]> = {
   actions: ['states', 'issueTypes', 'labels'],
   configuration: [],
   webhooks: [],
-  agents: [],
 };
 
 // The name of a group, and of each entity, are messages under `newProject`.
 type Group = {
-  title: 'workflow' | 'automation' | 'aiTeam' | 'views' | 'knowledge';
+  title: 'workflow' | 'automation' | 'views' | 'knowledge';
   keys: CopyProjectIncludeKey[];
 };
 
-// Groups assigned to the four rendered columns by hand, keeping each column close
+// Groups assigned to the three rendered columns by hand, keeping each column close
 // to the same number of rows.
 const COLUMNS: Group[][] = [
   [
@@ -38,7 +37,6 @@ const COLUMNS: Group[][] = [
     },
   ],
   [{ title: 'automation', keys: ['actions', 'webhooks'] }],
-  [{ title: 'aiTeam', keys: ['agents'] }],
   [
     { title: 'views', keys: ['views', 'dashboards'] },
     { title: 'knowledge', keys: ['documents'] },
@@ -109,7 +107,7 @@ export default function CopyProjectOptions({
           {t(allOn ? 'clearAll' : 'selectAll')}
         </button>
       </div>
-      <div className="grid grid-cols-2 gap-x-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-x-4 sm:grid-cols-3">
         {COLUMNS.map((column, i) => (
           <div key={i} className="space-y-3">
             {column.map((group) => (

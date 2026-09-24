@@ -52,7 +52,8 @@
     "success": "Réussie",
     "failed": "Échouée",
     "canceled": "Annulée",
-    "running": "En cours"
+    "running": "En cours",
+    "skipped": "Ignoré"
   },
   "outcome": {
     "created": "A créé <task>{identifier}</task>",
@@ -95,5 +96,12 @@
     "through": "{start} au {end}",
     "dayOrdinal": "{n, selectordinal, one {#er} other {#}}"
   },
-  "invalidSchedule": "Planification non valide. Exemple : 0 9 * * 1-5 (du lundi au vendredi à 9 h)."
+  "invalidSchedule": "Planification non valide. Exemple : 0 9 * * 1-5 (du lundi au vendredi à 9 h).",
+  "history": "Historique",
+  "historyTitle": "Exécutions de {name}",
+  "historyFailed": "Impossible de charger les exécutions.",
+  "catchUp": "Après une panne",
+  "catchUpSkip": "Ignorer les horaires manqués",
+  "catchUpOnce": "Exécuter une fois le dernier horaire manqué",
+  "catchUpHint": "Quand le serveur était arrêté à un horaire prévu. Les horaires manqués plus anciens ne s’exécutent jamais."
 }

@@ -28,7 +28,7 @@
     },
     "integrations": {
       "title": "集成",
-      "description": "团队项目使用的 AI 提供商密钥和工具凭据。"
+      "description": "团队项目使用的工具凭据。"
     },
     "mcp": {
       "title": "MCP",
@@ -36,7 +36,7 @@
     },
     "agentSkills": {
       "title": "技能",
-      "description": "内置代理可按需加载的可复用指令。"
+      "description": "代理可按需加载的可复用指令。"
     },
     "agentTools": {
       "title": "工具",
@@ -233,13 +233,9 @@
     "search": "搜索集成",
     "noMatches": "没有与“{query}”匹配的集成。",
     "empty": "暂无凭据",
-    "emptyHint": "代理需要凭据才能使用 AI 提供商或工具。",
+    "emptyHint": "代理需要凭据才能使用工具。",
     "deleteMessage": "删除 {integration} 凭据？使用它的代理和工具将停止工作，直到添加新凭据。",
     "groups": {
-      "llm": {
-        "title": "AI 提供商",
-        "hint": "内置代理使用的模型"
-      },
       "tool": {
         "title": "工具",
         "hint": "代理可以作为工具调用的集成"
@@ -296,7 +292,7 @@
   },
   "tools": {
     "title": "集成工具",
-    "hint": "内部代理使用团队集成凭据调用的工具。",
+    "hint": "代理使用团队集成凭据调用的工具。",
     "add": "添加工具",
     "delete": "删除工具",
     "back": "返回工具",
@@ -382,17 +378,11 @@
     "delete": "删除 AI 代理",
     "edit": "编辑 AI 代理",
     "empty": "暂无 AI 代理",
-    "emptyHint": "代理由内置运行时运行或通过 API 驱动。",
+    "emptyHint": "代理由其运行器通过 API 驱动。",
     "agent": "AI 代理",
     "sheetSubtitle": "可以接受工作项委派的 AI 代理",
-    "kind": "类型",
     "kindLabel": {
-      "external": "外部",
-      "internal": "内置"
-    },
-    "kindHint": {
-      "external": "通过 API 驱动",
-      "internal": "由内置运行时运行"
+      "external": "外部"
     },
     "namePlaceholder": "例如：分诊机器人",
     "username": "用户名",
@@ -405,20 +395,6 @@
     "templatesHint": "项目会添加这些模板的副本作为自己的专家。副本共享的知识放在技能库中；每个副本保留各自的记忆。",
     "access": "可用范围",
     "accessHint": "谁可以给该代理分配任务",
-    "model": "模型",
-    "modelHint": "提供商和模型",
-    "credential": "凭据",
-    "chooseCredential": "选择凭据",
-    "searchCredential": "搜索凭据",
-    "noCredentialsFound": "未找到凭据。",
-    "noCredential": "尚未连接 AI 提供商",
-    "noCredentialHint": "在团队集成中添加提供商密钥后即可为该代理选择模型。",
-    "addKey": "前往团队设置",
-    "chooseModel": "选择模型",
-    "searchModel": "搜索或输入模型 ID",
-    "loadingModels": "正在加载模型…",
-    "noModels": "未找到模型。",
-    "noModel": "未设置模型",
     "runtimePolicy": {
       "title": "运行时策略",
       "hint": "由所连接的适配器应用的、与运行时无关的策略",
@@ -430,9 +406,6 @@
       "modelsEmpty": "已连接的运行器尚未发布任何模型。",
       "modelsHint": "由已连接的运行器提供方发布的模型。",
       "reasoning": "推理",
-      "memory": "对话记忆",
-      "memoryWindowLabel": "记忆消息窗口",
-      "memoryWindowPlaceholder": "最近消息窗口",
       "maxConcurrentChats": "并行对话",
       "maxConcurrentChatsHint": "成员可同时让该代理的多少个对话保持回复中。超出上限的发送会被拒绝，直到其中一个完成。",
       "mcpGrants": "MCP 授权",
@@ -505,21 +478,6 @@
     "runnerStateOffline": "离线",
     "runnerStateNone": "未连接",
     "runnerSeen": "{time} 前在线",
-    "actions": "操作",
-    "actionsHint": "代理在项目中可以执行的操作",
-    "searchActions": "搜索操作",
-    "actionGroup": {
-      "issues": "任务",
-      "initiatives": "举措",
-      "cycles": "周期",
-      "documents": "Docs",
-      "notes": "便签板",
-      "project": "项目"
-    },
-    "loadingActions": "正在加载操作…",
-    "noActions": "暂无可用操作。",
-    "clearAll": "全部清除",
-    "selectAll": "全选",
     "skills": "技能",
     "skillsHint": "代理可以加载的可复用指令",
     "noSkills": "尚无技能",
@@ -533,15 +491,6 @@
     "noToolsHint": "先配置工具，然后在这里启用。",
     "goToTools": "前往工具页面",
     "searchTools": "搜索工具",
-    "advanced": "高级设置",
-    "advancedHint": "采样、步骤上限和记忆",
-    "temperature": "温度",
-    "optional": "可选",
-    "maxSteps": "最大步骤数",
-    "memory": "对话记忆",
-    "memoryHint": "在对话线程中回顾最近的消息。",
-    "memoryCount": "记住最近 N 条消息",
-    "memoryCountPlaceholder": "例如：20",
     "keyWarning": "请立即复制。密钥只显示一次。",
     "apiKeyHint": "智能体用于验证请求的密钥",
     "keyOnCreate": "创建智能体时生成，只显示一次。",
@@ -572,14 +521,9 @@
     "runsSubtitle": "@{username} · 由触发器启动的运行",
     "regenerateMessage": "<v>{name}</v> 的当前密钥会立即失效。请用新密钥更新所有使用它的地方。",
     "deleteMessage": "<v>{name}</v> 及其 API 密钥将被删除，并从所有指派或委派给它的工作项中移除。此操作无法撤销。",
-    "actionCount": "{count, plural, other {# 个操作}}",
-    "toolCount": "{count, plural, other {# 个工具}}",
-    "skillCount": "{count, plural, other {# 个技能}}",
     "triggerMention": "提及",
     "triggerDelegation": "委派",
     "noMatch": "没有与“{query}”匹配的结果。",
-    "useCustomModel": "使用“{query}”",
-    "readOnlyAlwaysOn": "只读权限始终启用，无法关闭。",
     "instructionsLabel": "说明",
     "copyInstructions": "复制 Markdown",
     "showSource": "编辑 Markdown 源码",

@@ -39,7 +39,7 @@ export interface OrganizationAgent {
   userId: string;
   name: string;
   username: string;
-  kind: 'external' | 'internal';
+  kind: 'external';
   // Root of the reporting chain (Home master). Always counted as assigned, never shown
   // as a pool template or as an unassigned agent.
   isHome: boolean;

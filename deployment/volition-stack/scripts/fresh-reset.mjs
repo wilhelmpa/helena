@@ -825,9 +825,6 @@ function hasOperationalRows(inventory) {
 
 export function summarizeInventory(inventory) {
   const count = (name) => inventory.counts.get(name) ?? 0;
-  const mastraRows = [...inventory.counts]
-    .filter(([name]) => name.startsWith('mastra_'))
-    .reduce((sum, [, value]) => sum + value, 0);
   return {
     resetVersion: RESET_VERSION,
     target: isTargetState(inventory),
@@ -840,18 +837,14 @@ export function summarizeInventory(inventory) {
       files: count('issue_attachment') + count('initiative_attachment') + count('chat_attachment'),
       workflows: count('project_workflow_assignment') + count('project_action'),
       cycles: count('cycle'),
-      schedules: count('mastra_schedules'),
-      runs: count('agent_run') + count('project_action_run') + count('mastra_workflow_snapshot'),
-      agents: count('ai_agent') + count('mastra_agents'),
-      skills: count('agent_skill') + count('mastra_skills'),
-      connections:
-        count('integration_credential') +
-        count('git_provider_connection') +
-        count('mastra_tool_provider_connections'),
+      schedules: count('helena_schedule'),
+      runs: count('agent_run') + count('project_action_run') + count('pipeline_run'),
+      agents: count('ai_agent'),
+      skills: count('agent_skill'),
+      connections: count('integration_credential') + count('git_provider_connection'),
       appSecrets: count('app_secret'),
       authSettings: inventory.facts.authSettings,
       otherAppSettings: inventory.facts.otherAppSettings,
-      mastraRows,
     },
   };
 }
@@ -900,6 +893,9 @@ BEGIN
   EXECUTE 'TRUNCATE TABLE ' || names || ' RESTART IDENTITY CASCADE';
 END
 $truncate$;
+-- The workflow engine's execution state belongs to the runs just removed. The API creates
+-- the schema again when it starts.
+DROP SCHEMA IF EXISTS helena_engine CASCADE;
 DELETE FROM app_setting WHERE key <> 'auth';
 DELETE FROM "user" WHERE id <> ${literal(ownerId)};
 INSERT INTO team (name, mcp_enabled) VALUES ('Home', true);
@@ -921,10 +917,10 @@ SELECT id, ${literal(ownerId)}, 'owner' FROM project WHERE key = ${literal(HOME_
 INSERT INTO "user" (id, name, email, email_verified, role, active)
 VALUES (${literal(agentUserId)}, 'Home Master', ${literal(agentEmail)}, false, 'user', true);
 INSERT INTO ai_agent (
-  team_id, user_id, username, kind, tools, trigger_on_mention, trigger_on_assign,
+  team_id, user_id, username, kind, trigger_on_mention, trigger_on_assign,
   delegation_delay_sec, runtime_policy, runtime_state, owner_user_id, runner_scope
 )
-SELECT id, ${literal(agentUserId)}, ${literal(MASTER_AGENT_USERNAME)}, 'external', '[]'::jsonb,
+SELECT id, ${literal(agentUserId)}, ${literal(MASTER_AGENT_USERNAME)}, 'external',
   false, false, 0,
   '{"reasoningEffort":"medium","toolAllow":[],"toolDeny":[],"mcpGrants":[],"files":[]}'::jsonb,
   '{}'::jsonb, ${literal(ownerId)}, 'owner'
@@ -1198,7 +1194,6 @@ const COMPLETION_DATABASE_COUNTS = {
   appSecrets: 0,
   authSettings: 1,
   otherAppSettings: 0,
-  mastraRows: 0,
 };
 
 function hasCompletionDatabaseCounts(value) {

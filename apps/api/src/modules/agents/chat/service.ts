@@ -29,7 +29,6 @@ import {
 } from '../chat-history';
 import { appendReasoningPart, appendTextPart } from '../chat-parts';
 import type { ChatMessagePage, ChatPart, ChatThreadPage } from '../model';
-import { newChatThreadId } from '../core/runtime/thread-ids';
 import { touchRunner, type RunnerAgent } from '../runner/service';
 import { modelCheckOf, type RunModelReport } from '../runtime-sync/model-check';
 import type { AgUiEventBody, ChatMessageStatus } from './model';
@@ -54,9 +53,8 @@ export type ChatCatalogModel = {
   provider?: string;
 };
 
-// Chat with an external agent. The answer is produced by a runner on the operator's
-// machine, so it cannot be generated in this process the way an internal agent's is:
-// the member's message is stored, an empty answer is queued next to it, and the runner
+// Chat with an agent. The answer is produced by a runner on the operator's machine,
+// never in this process: the member's message is stored, an empty answer is queued next to it, and the runner
 // claims that answer, reports AG-UI events as its coding agent produces them, and
 // closes it. The browser reads the same events back through the chat routes.
 //
@@ -87,6 +85,12 @@ export const agentChatConfig = {
 
 const PAGE_SIZE = 25;
 const TITLE_LIMIT = 80;
+
+// A new chat's id. It names the agent and the member it belongs to; the uuid separates a
+// member's several chats with the same agent.
+function newChatThreadId(agentId: number, userId: string): string {
+  return `chat:${agentId}:${userId}:${crypto.randomUUID()}`;
+}
 // How much of an answer is kept as its text. A reply nobody would read to the end is
 // still bounded, the way a run's output is.
 const ANSWER_LIMIT = 100_000;

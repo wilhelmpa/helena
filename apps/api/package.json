@@ -18,18 +18,16 @@
     "test:coverage": "bun test --env-file=../../.env.test --coverage; bun scripts/coverage-report.ts"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^4.0.41",
+    "@dbos-inc/dbos-sdk": "5.0.2",
     "@elysiajs/cors": "^1.4.2",
     "@elysiajs/swagger": "^1.3.1",
     "@firecrawl/pdf-inspector": "^1.17.0",
     "@helena/connectors": "workspace:*",
     "@helena/knowledge": "workspace:*",
     "@helena/locales": "workspace:*",
+    "@helena/loop": "workspace:*",
     "@helena/policy": "workspace:*",
     "@helena/sdk": "workspace:*",
-    "@mastra/core": "^1.58.0",
-    "@mastra/memory": "^1.26.1",
-    "@mastra/pg": "^1.20.0",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "@repo/agent-naming": "workspace:*",
     "@repo/agent-tools": "workspace:*",
@@ -48,7 +46,7 @@
     "mammoth": "^1.12.1",
     "papaparse": "^5.7.0",
     "read-excel-file": "^9.3.10",
-    "zod": "^4.4.3"
+    "standardwebhooks": "1.1.1"
   },
   "devDependencies": {
     "@elysiajs/eden": "^1.4.9",
@@ -57,6 +55,7 @@
     "@types/papaparse": "^5.5.2",
     "eslint": "^9.39.0",
     "typescript": "^6.0.3",
-    "write-excel-file": "^4.1.1"
+    "write-excel-file": "^4.1.1",
+    "zod": "^4.4.3"
   }
 }

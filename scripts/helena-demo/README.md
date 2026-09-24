@@ -33,7 +33,9 @@ It is **idempotent**: every step reads first and creates only what is missing. T
 2026-09-24 against a real API on a throwaway database: the first run made 22 writes, the
 second 0. Two expected warnings came up:
 - that environment has no Home agent (it is bootstrapped by the runner service);
-- no scheduler for routines, until hub/native-engine replaces Mastra.
+- no scheduler for routines: that API had no Mastra to create them in. Routines now run on
+  the Helena engine inside the API, so on a current API the routine is created; the seed
+  still warns and goes on when an instance refuses it.
 
 Helena limits an API key to 100 requests per one-second window. The window only restarts
 after a quiet second, and the API reports the refusal as a 500. The seed therefore pauses

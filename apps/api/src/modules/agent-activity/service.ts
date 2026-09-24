@@ -7,14 +7,13 @@ import {
   issue,
   project,
   projectMember,
-  projectWorkflowAssignment,
   teamMember,
   user,
 } from '@repo/db';
 import { and, desc, eq, exists, inArray, sql, type AnyColumn, type SQL } from 'drizzle-orm';
 import { num } from '#shared/lib';
 import { closings } from '#modules/analytics/service';
-import { runStatus } from '#modules/control-plane-workflows/agent-team';
+import { agentRunStatus as runStatus } from '#modules/pipelines/runs';
 import { projectIdsWithPermission } from '#modules/members/service';
 import {
   compareEntries,
@@ -25,15 +24,10 @@ import {
   type ActivityPage,
 } from './entry';
 import type { ActivityKind } from './model';
-import { workflowRunEntries, type WorkflowSource } from './workflow-runs';
+import { workflowRunEntries } from './workflow-runs';
 
-// One timeline of what the agents did: their chat answers, their runs, and the Mastra
-// workflow runs. The first two are read from Plan's tables, the workflow runs from
-// Mastra, and the three are merged newest first.
-
-// Every workflow of the reader is one or more Mastra requests, so Home reads the ones
-// whose assignment changed last and says so when there are more.
-const HOME_WORKFLOW_SOURCES = 6;
+// One timeline of what the agents did: their chat answers, their runs, and the runs of
+// the Helena engine (agent teams, workflows, routines), merged newest first.
 
 function sortKey(createdAt: AnyColumn, id: SQL) {
   const at = sql`date_trunc('milliseconds', ${createdAt})`;
@@ -190,52 +184,11 @@ async function chatEntries(
   }));
 }
 
-// The enabled workflows a timeline reads from Mastra, narrowed to the kind asked for.
-// A workflow run names no agent, so an agent filter keeps only agent-team.
-async function workflowSources(projectIds: number[], filters: ActivityFilters) {
-  if (
-    projectIds.length === 0 ||
-    filters.kind === 'chat' ||
-    filters.kind === 'agent-run' ||
-    (filters.kind === 'workflow-run' && filters.agentId != null)
-  )
-    return [];
-  const rows = await db
-    .select({
-      workflowId: projectWorkflowAssignment.workflowId,
-      id: project.id,
-      key: project.key,
-      name: project.name,
-      teamId: project.teamId,
-    })
-    .from(projectWorkflowAssignment)
-    .innerJoin(project, eq(project.id, projectWorkflowAssignment.projectId))
-    .where(
-      and(
-        inArray(projectWorkflowAssignment.projectId, projectIds),
-        eq(projectWorkflowAssignment.enabled, true),
-      ),
-    )
-    .orderBy(desc(projectWorkflowAssignment.updatedAt), project.id);
-  const agentTeamOnly = filters.kind === 'agent-team-run' || filters.agentId != null;
-  return rows
-    .filter((row) =>
-      agentTeamOnly
-        ? row.workflowId === 'agent-team'
-        : filters.kind !== 'workflow-run' || row.workflowId !== 'agent-team',
-    )
-    .map(({ workflowId, ...row }): WorkflowSource => ({
-      workflowId,
-      project: row,
-    }));
-}
-
 async function readTimeline(input: {
   userId: string;
   runProjectIds: number[];
   chatProject: { id: number; key: string; name: string } | null;
-  workflows: WorkflowSource[];
-  limited: boolean;
+  workflowProjectIds: number[];
   filters: ActivityFilters;
 }): Promise<ActivityPage> {
   const { filters } = input;
@@ -244,19 +197,15 @@ async function readTimeline(input: {
   const [runs, chats, workflows] = await Promise.all([
     wants('agent-run') ? agentRunEntries(input.runProjectIds, filters, limit) : [],
     wants('chat') ? chatEntries(input.userId, input.chatProject, filters, limit) : [],
-    workflowRunEntries(input.workflows, filters, limit),
+    workflowRunEntries(input.workflowProjectIds, filters, limit),
   ]);
-  const merged = [...runs, ...chats, ...workflows.entries].sort(compareEntries);
+  const merged = [...runs, ...chats, ...workflows].sort(compareEntries);
   const items = merged.slice(0, limit);
   const last = items.at(-1);
   return {
     items,
     nextCursor: merged.length > limit && last ? { at: last.at, id: last.id } : null,
-    notice: workflows.failed
-      ? 'workflow-runs-unavailable'
-      : input.limited || workflows.limited
-        ? 'workflow-runs-limited'
-        : null,
+    notice: null,
   };
 }
 
@@ -270,8 +219,7 @@ export async function listProjectActivity(
     userId,
     runProjectIds: [current.id],
     chatProject: { id: current.id, key: current.key, name: current.name },
-    workflows: includeWorkflows ? await workflowSources([current.id], filters) : [],
-    limited: false,
+    workflowProjectIds: includeWorkflows ? [current.id] : [],
     filters,
   });
 }
@@ -283,16 +231,11 @@ export async function listActivity(userId: string, filters: ActivityFilters) {
     projectIdsWithPermission(userId, 'ai_agents', 'read'),
     projectIdsWithPermission(userId, 'actions', 'read'),
   ]);
-  const sources = await workflowSources(
-    workflowProjects.filter((id) => agentProjects.includes(id)),
-    filters,
-  );
   return readTimeline({
     userId,
     runProjectIds: agentProjects,
     chatProject: null,
-    workflows: sources.slice(0, HOME_WORKFLOW_SOURCES),
-    limited: sources.length > HOME_WORKFLOW_SOURCES,
+    workflowProjectIds: workflowProjects.filter((id) => agentProjects.includes(id)),
     filters,
   });
 }

@@ -88,10 +88,7 @@ export function ToolCredentialStep({
         >
           <ChevronLeft className="size-4" />
         </Button>
-        <IntegrationIcon
-          integration={{ label: integrationLabel, kind: 'tool' }}
-          className="size-8"
-        />
+        <IntegrationIcon integration={{ label: integrationLabel }} className="size-8" />
         <div className="min-w-0">
           <span className="block text-sm font-medium text-foreground">{integrationLabel}</span>
           <span className="block text-xs text-muted-foreground">

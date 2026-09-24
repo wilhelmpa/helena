@@ -462,10 +462,11 @@
       "pending": "En file",
       "running": "En cours",
       "waiting": "En attente",
-      "suspended": "En attente d’approbation",
       "success": "Terminé",
       "failed": "Échec",
-      "canceled": "Annulé"
+      "canceled": "Annulé",
+      "succeeded": "Terminé",
+      "skipped": "Ignoré"
     },
     "outcome": {
       "review": "Tâche passée en Revue",

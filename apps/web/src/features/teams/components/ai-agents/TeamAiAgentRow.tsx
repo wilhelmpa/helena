@@ -1,4 +1,4 @@
-import { History, MessageSquare, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { Bot, History, MessageSquare, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { AgentPausedBadge } from '@/components/common/agent-chat/AgentPausedBadge';
 import { AgentRunnerStatus } from '@/components/common/agent-chat/AgentRunnerStatus';
@@ -12,22 +12,17 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { AGENT_KIND_ICON } from '../../utils/agentKindIcon';
 import { useAgentCan } from '../../context/agentSection';
-import { AgentMetaRow } from './AgentMetaRow';
 import { AgentTriggers } from './AgentTriggers';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
-// One agent as a table row: the Agent cell holds the name, @username, an icon for the
-// kind, and the projects the agent works in; the Configuration cell shows an
-// internal agent's meta line (model, capability/tool/skill counts) or an external
-// agent's runner presence and non-secret key prefix. Row actions
-// (history/chat/edit/delete) sit in the last cell; the key itself is managed in the
-// agent's sheet. `providerLabel` maps a provider key to its catalog label.
+// One agent as a table row: the Agent cell holds the name, @username and the projects
+// the agent works in; the Configuration cell shows its runner's presence and the
+// non-secret key prefix. Row actions (history/chat/edit/delete) sit in the last cell;
+// the key itself is managed in the agent's sheet.
 export function TeamAiAgentRow({
   agent,
-  providerLabel,
   copyCount,
   onChat,
   onRuns,
@@ -35,7 +30,6 @@ export function TeamAiAgentRow({
   onDelete,
 }: {
   agent: AiAgent;
-  providerLabel: (key: string) => string;
   // Set only for a template row (how many project copies of it exist); forwarded to
   // AgentRunnerStatus's template badge.
   copyCount?: number;
@@ -47,7 +41,6 @@ export function TeamAiAgentRow({
   const t = useTranslations('teams.agents');
   const can = useAgentCan();
   const canHistory = can('read');
-  const KindIcon = AGENT_KIND_ICON[agent.kind];
   const hasMenu = canHistory || can('delete');
 
   // The whole row opens the agent's sheet (the same as the pencil), so the name, the
@@ -65,7 +58,7 @@ export function TeamAiAgentRow({
     >
       <TableCell className="px-2 align-middle whitespace-normal">
         <div className="flex min-w-0 items-center gap-2">
-          <KindIcon className="size-4 shrink-0 text-muted-foreground" />
+          <Bot className="size-4 shrink-0 text-muted-foreground" />
           <span className="truncate text-sm font-medium">{agent.name}</span>
           <span className="truncate text-xs text-muted-foreground max-md:hidden">
             @{agent.username}
@@ -100,16 +93,12 @@ export function TeamAiAgentRow({
         <AgentTriggers agent={agent} />
       </TableCell>
       <TableCell className="px-2 align-middle whitespace-normal max-md:hidden">
-        {agent.kind === 'internal' ? (
-          <AgentMetaRow agent={agent} providerLabel={providerLabel} />
-        ) : (
-          <div className="flex min-w-0 items-center gap-3">
-            <AgentRunnerStatus agent={agent} copyCount={copyCount} />
-            <span className="truncate font-mono text-xs text-muted-foreground">
-              {agent.apiKeyStart ? t('apiKeyValue', { start: agent.apiKeyStart }) : t('apiKey')}
-            </span>
-          </div>
-        )}
+        <div className="flex min-w-0 items-center gap-3">
+          <AgentRunnerStatus agent={agent} copyCount={copyCount} />
+          <span className="truncate font-mono text-xs text-muted-foreground">
+            {agent.apiKeyStart ? t('apiKeyValue', { start: agent.apiKeyStart }) : t('apiKey')}
+          </span>
+        </div>
       </TableCell>
       <TableCell className="px-2 py-1 align-middle" onClick={(event) => event.stopPropagation()}>
         <div className="flex items-center justify-end gap-0.5">

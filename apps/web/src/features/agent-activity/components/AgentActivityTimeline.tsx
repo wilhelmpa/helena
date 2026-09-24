@@ -48,7 +48,6 @@ export default function AgentActivityTimeline({
   const feed = useAgentActivityFeed(projectKey, filters);
   const pages = feed.data?.pages ?? [];
   const items = pages.flatMap((page) => page.items);
-  const notice = pages.find((page) => page.notice)?.notice ?? null;
 
   const setFilters = (next: Filters) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -66,11 +65,6 @@ export default function AgentActivityTimeline({
         <AgentActivityLiveRefresh key={projectId} projectId={projectId} projectKey={projectKey} />
       ))}
       <AgentActivityToolbar filters={filters} onChange={setFilters} agents={agents} />
-      {notice && (
-        <p className="rounded-lg border bg-card px-3 py-2 text-xs text-status-waiting">
-          {t(`notice.${notice}`)}
-        </p>
-      )}
       {feed.isPending ? (
         <ListSkeleton rows={6} rowClassName="h-14" />
       ) : feed.isError ? (

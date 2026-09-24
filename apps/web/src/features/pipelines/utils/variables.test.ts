@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import type { PipelineStep } from '@/lib/api/endpoints/pipelines';
+import type { PipelineStep, StepKind } from '@/lib/api/endpoints/pipelines';
 import { newStep } from './editorState';
 import { insertVariable, variablesAt } from './variables';
 
-const step = (kind: PipelineStep['type'], id: string) => newStep(kind, id, id, []);
+const step = (kind: StepKind, id: string) => newStep(kind, id, id, []);
 
 // implement → review? → yes: [notes] / no: [wait] → publish
 const tree: PipelineStep[] = [

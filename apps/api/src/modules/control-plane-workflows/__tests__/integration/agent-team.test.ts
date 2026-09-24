@@ -1,17 +1,38 @@
-import { beforeEach, describe, expect, it } from 'bun:test';
-import { createHash } from 'node:crypto';
-import { apiKeyApi, authedApi, type Api } from '#tests/helpers/app';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  setDefaultTimeout,
+} from 'bun:test';
+import { agentRun, db, issue as issueTable, issueActivity, pipelineRun } from '@repo/db';
+import { and, asc, eq } from 'drizzle-orm';
+import { authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
-import { controlApi, controlPlane, type ControlRequest } from '#tests/helpers/control';
-import { processAgentTeamStarts } from '../../agent-team-starts';
+import {
+  answerStep,
+  finishAgentRun,
+  runSteps,
+  startEngine,
+  stopEngineRuns,
+  stopTestEngine,
+  waitForAgentRun,
+  waitForStatus,
+} from '#tests/helpers/engine';
 
-// The agent team of a project, started from Plan: delegating an issue to a coordinator
-// of a project that runs agent-team, or starting it on the issue directly. The Mastra
-// control endpoint is a stand-in that records the requests Plan sends it.
+// A run takes a few hops through the engine's queues (see helpers/engine.ts).
+setDefaultTimeout(30_000);
 
-const CAPABILITIES = ['hermes-team.v1', 'plan-task-sync.v1'];
+// The agent team of a task on the Helena engine: started by delegating the task to a
+// coordinator of a project that runs agent teams, or on request; the coordinator plans,
+// specialists work in dependency order, the coordinator reviews, and the result goes to
+// the task. Ported from the agent-team, stage-recovery and control-plane tests of the
+// Mastra workflow; the test plays the Hermes runner.
 
 async function setup() {
   const owner = await signUpTestUser({ name: 'Owner' });
@@ -24,24 +45,21 @@ async function setup() {
     (agent) => agent.username === 'hermes-mkt-coordinator',
   )!;
   await organization.agents({ agentId: coordinator.id }).put({ role: 'coordinator' });
+  const columns = view.data!.columns;
   return {
     owner,
     asOwner,
     teamId,
     organization,
     coordinator,
-    columnId: view.data!.columns[0].id,
+    columnId: columns[0]!.id,
+    column: (name: string) => columns.find((column) => column.name === name)!.id,
   };
 }
 
 async function specialist(asOwner: Api, teamId: number, username: string, capabilities: string[]) {
   const agent = (
-    await createAgent(asOwner, 'MKT', {
-      name: username,
-      username,
-      kind: 'external',
-      triggerOnAssign: true,
-    })
+    await createAgent(asOwner, 'MKT', { name: username, username, triggerOnAssign: true } as never)
   ).data!.agent;
   await asOwner
     .teams({ teamId })
@@ -54,34 +72,52 @@ function enableAgentTeam(asOwner: Api, configuration: Record<string, unknown> = 
   return asOwner
     .projects({ projectKey: 'MKT' })
     ['control-plane'].workflows({ workflowId: 'agent-team' })
-    .put({ enabled: true, capabilityRefs: CAPABILITIES, configuration: configuration as never });
+    .put({ enabled: true, capabilityRefs: [], configuration: configuration as never });
 }
 
 async function createIssue(asOwner: Api, columnId: number, body: Record<string, unknown> = {}) {
   return (
     await asOwner
       .projects({ projectKey: 'MKT' })
-      .issues.post({ columnId, title: 'Launch page', ...body })
+      .issues.post({ columnId, title: 'Launch page', ...body } as never)
   ).data!;
 }
 
-// The key the agent-team workflow sends with a stage (teamIdempotencyKey in Mastra).
-function stageKey(eventId: string, taskRef: string, phase: string, subject: string) {
-  return createHash('sha256')
-    .update(`agent-team\0${eventId}\0${taskRef}\0${phase}\0${subject}`)
-    .digest('hex');
+async function teamRuns(issueId: number) {
+  return db
+    .select()
+    .from(pipelineRun)
+    .where(and(eq(pipelineRun.issueId, issueId), eq(pipelineRun.kind, 'agent_team')))
+    .orderBy(asc(pipelineRun.createdAt));
 }
+
+function teamOf(run: { definition: unknown }) {
+  return (run.definition as { steps: { team: Record<string, unknown> }[] }).steps[0]!.team;
+}
+
+const json = (value: unknown) => JSON.stringify(value);
 
 async function runsOf(asOwner: Api, teamId: number, agentId: number) {
   return (await asOwner.teams({ teamId })['ai-agents']({ agentId }).runs.get()).data!.items;
 }
 
-describe('agent team', () => {
-  beforeEach(async () => {
-    await resetDb();
-    controlPlane.reset();
-  });
+beforeAll(async () => {
+  await startEngine();
+});
 
+afterAll(async () => {
+  await stopTestEngine();
+});
+
+beforeEach(async () => {
+  await resetDb();
+});
+
+afterEach(async () => {
+  await stopEngineRuns();
+});
+
+describe('agent team settings', () => {
   it('validates and completes the agent-team configuration', async () => {
     const { asOwner } = await setup();
     const listed = async () =>
@@ -107,7 +143,6 @@ describe('agent team', () => {
       { autonomy: 'done', reviewRequired: false },
     ])
       expect((await enableAgentTeam(asOwner, configuration)).status).toBe(400);
-
     expect(
       (
         await enableAgentTeam(asOwner, {
@@ -125,490 +160,368 @@ describe('agent team', () => {
       runBudgetSeconds: 7_200,
       instructions: 'Keep the scope small.',
     });
-    expect(
-      (await enableAgentTeam(asOwner, { reviewRequired: false, maxTurns: 1, runBudgetSeconds: 60 }))
-        .status,
-    ).toBe(200);
   });
+});
 
-  it('hands an issue delegated to the coordinator to the agent team', async () => {
-    const { asOwner, teamId, columnId, coordinator } = await setup();
+describe('agent team runs', () => {
+  it('plans with the coordinator, works in dependency order, reviews and updates the task', async () => {
+    const { asOwner, teamId, columnId, coordinator, column } = await setup();
     const designer = await specialist(asOwner, teamId, 'designer', ['frontend']);
     const writer = await specialist(asOwner, teamId, 'writer', ['docs', 'copy']);
-    await enableAgentTeam(asOwner, { maxTurns: 40, runBudgetSeconds: 900, autonomy: 'done' });
-    const labelId = (
-      await asOwner.projects({ projectKey: 'MKT' }).labels.post({ name: 'Frontend' })
-    ).data!.id;
-    const issue = await createIssue(asOwner, columnId, {
+    await enableAgentTeam(asOwner, { maxTurns: 40, runBudgetSeconds: 900 });
+    const task = await createIssue(asOwner, columnId, {
       description:
         'Build the page.\n\n- [ ] Hero section\n  - [x] Mobile layout\n* [ ] No regressions',
-      labelIds: [labelId],
     });
-
-    await asOwner.issues({ issueId: issue.id }).patch({ delegateUserId: coordinator.userId });
-
-    const [start] = controlPlane.started();
-    expect(start).toMatchObject({
-      workflowId: 'agent-team',
-      projectRef: 'project:MKT',
-      correlationId: `task:MKT-${issue.sequenceNumber}`,
-      dryRun: false,
-      capabilityRefs: CAPABILITIES,
-      payload: {
-        schemaVersion: 1,
-        task: {
-          taskRef: `task:MKT-${issue.sequenceNumber}`,
-          title: 'Launch page',
-          objective:
-            'Build the page.\n\n- [ ] Hero section\n  - [x] Mobile layout\n* [ ] No regressions',
-          acceptanceCriteria: ['Hero section', 'Mobile layout', 'No regressions'],
-          labels: ['Frontend'],
-        },
-        coordinator: {
-          agentRef: 'agent:hermes-mkt-coordinator',
-          role: 'coordinator',
-          capabilities: [],
-        },
-        specialists: [
-          {
-            agentRef: `agent:${designer.username}`,
-            role: 'specialist',
-            capabilities: ['frontend'],
-          },
-          {
-            agentRef: `agent:${writer.username}`,
-            role: 'specialist',
-            capabilities: ['docs', 'copy'],
-          },
-        ],
-        policy: { reviewRequired: true, autonomy: 'done', maxTurns: 40, runBudgetSeconds: 900 },
-      },
-    });
-    expect(await runsOf(asOwner, teamId, coordinator.id)).toEqual([]);
-  });
-
-  it('lets the coordinator do the work when the project has no specialist', async () => {
-    const { asOwner, teamId, columnId, coordinator } = await setup();
-    await enableAgentTeam(asOwner);
-    const issue = await createIssue(asOwner, columnId, { title: 'Write the brief' });
-
-    await asOwner.issues({ issueId: issue.id }).patch({ delegateUserId: coordinator.userId });
-
-    const [start] = controlPlane.started();
-    const payload = start.payload as Record<string, unknown>;
-    expect(payload).toMatchObject({
+    await asOwner.issues({ issueId: task.id }).patch({ delegateUserId: coordinator.userId });
+    const [run] = await teamRuns(task.id);
+    const taskRef = `task:MKT-${task.sequenceNumber}`;
+    expect(run).toMatchObject({ trigger: 'delegation', agentId: coordinator.id });
+    expect(teamOf(run!)).toMatchObject({
       task: {
-        objective: 'Write the brief',
-        acceptanceCriteria: ['The work item is done as its description asks.'],
+        taskRef,
+        title: 'Launch page',
+        acceptanceCriteria: ['Hero section', 'Mobile layout', 'No regressions'],
         labels: [],
       },
-      specialists: [{ agentRef: 'agent:hermes-mkt-coordinator', role: 'coordinator' }],
-      policy: { reviewRequired: true, autonomy: 'review' },
+      coordinator: { agentRef: 'agent:hermes-mkt-coordinator', role: 'coordinator' },
+      specialists: [
+        { agentRef: 'agent:designer', capabilities: ['frontend'] },
+        { agentRef: 'agent:writer', capabilities: ['docs', 'copy'] },
+      ],
+      policy: { reviewRequired: true, autonomy: 'review', maxTurns: 40, runBudgetSeconds: 900 },
     });
-    expect(payload.policy).not.toHaveProperty('maxTurns');
-    expect(await runsOf(asOwner, teamId, coordinator.id)).toEqual([]);
+    // The delegation went to the team, not to a run of the coordinator of its own.
+    const plan = await waitForAgentRun(run!.id, 'team.coordinate');
+    expect(plan.agentId).toBe(coordinator.id);
+    expect(plan).toMatchObject({ maxTurns: 40, runBudgetSeconds: 900 });
+    expect(plan.prompt).toContain('Phase: coordinate');
+    expect(plan.prompt).toContain('Allowed specialists');
+    await finishAgentRun(plan.id, {
+      output: json({
+        summary: 'Design first, then copy.',
+        delegations: [
+          {
+            assignmentId: 'design',
+            agentRef: 'agent:designer',
+            objective: 'Design the hero.',
+            acceptanceCriteria: ['Hero section'],
+            dependsOn: [],
+          },
+          {
+            assignmentId: 'copy',
+            agentRef: 'agent:writer',
+            objective: 'Write the copy for the hero.',
+            acceptanceCriteria: ['Copy fits the hero'],
+            dependsOn: ['design'],
+          },
+        ],
+      }),
+    });
+    const design = await waitForAgentRun(run!.id, 'team.s1');
+    expect(design.agentId).toBe(designer.id);
+    // The dependent assignment waits until its dependency is done.
+    await Bun.sleep(300);
+    expect(await db.select().from(agentRun).where(eq(agentRun.agentId, writer.id))).toEqual([]);
+    await finishAgentRun(design.id, {
+      output:
+        '```json\n' +
+        json({
+          summary: 'Hero designed.',
+          evidence: [{ kind: 'artifact', ref: 'figma://hero', label: 'Hero design' }],
+        }) +
+        '\n```',
+    });
+    const copy = await waitForAgentRun(run!.id, 'team.s2');
+    expect(copy.agentId).toBe(writer.id);
+    expect(copy.prompt).toContain('Hero designed.');
+    await finishAgentRun(copy.id, { output: json({ summary: 'Copy written.', evidence: [] }) });
+    const review = await waitForAgentRun(run!.id, 'team.review');
+    expect(review.agentId).toBe(coordinator.id);
+    expect(review.prompt).toContain('Specialist results');
+    await finishAgentRun(review.id, {
+      output: json({
+        summary: 'Reviewed.',
+        evidence: [],
+        review: { accepted: true, notes: 'All criteria met.' },
+      }),
+    });
+    const done = await waitForStatus(run!.id, 'succeeded');
+    expect(done.result).toMatchObject({
+      status: 'review',
+      taskRef,
+      summary: 'All criteria met.',
+      evidence: [{ kind: 'artifact', ref: 'figma://hero', label: 'Hero design' }],
+      planSync: { state: 'review' },
+    });
+    const [after] = await db.select().from(issueTable).where(eq(issueTable.id, task.id));
+    expect(after!.columnId).toBe(column('Review'));
+    const comments = await db
+      .select({ body: issueActivity.body, actorName: issueActivity.actorName })
+      .from(issueActivity)
+      .where(and(eq(issueActivity.issueId, task.id), eq(issueActivity.kind, 'comment')));
+    expect(comments).toContainEqual({
+      body: '## Agent team result\n\nAll criteria met.\n\n### Evidence\n- Hero design: figma://hero',
+      actorName: 'Agent team',
+    });
+    expect(await runsOf(asOwner, teamId, coordinator.id)).toHaveLength(2);
+
+    // The issue lists the run with every stage and the agent run behind it.
+    const listed = (await asOwner.issues({ issueId: task.id })['agent-team'].runs.get()).data!;
+    expect(listed[0]).toMatchObject({
+      runId: run!.id,
+      status: 'succeeded',
+      steps: [
+        { id: 'coordinate', status: 'succeeded' },
+        { id: 'specialize', status: 'succeeded' },
+        { id: 'review', status: 'succeeded' },
+        { id: 'synchronize', status: 'succeeded' },
+      ],
+    });
+    expect(listed[0]!.stages.map((stage) => [stage.phase, stage.assignmentId])).toEqual([
+      ['coordinate', null],
+      ['specialize', 'design'],
+      ['specialize', 'copy'],
+      ['review', null],
+    ]);
+  });
+
+  it('routes to the only specialist or the one the labels name without a coordinator stage', async () => {
+    const { asOwner, teamId, columnId } = await setup();
+    const designer = await specialist(asOwner, teamId, 'designer', ['frontend']);
+    await enableAgentTeam(asOwner, { reviewRequired: false });
+    const single = await createIssue(asOwner, columnId);
+    const started = await asOwner.issues({ issueId: single.id })['agent-team'].post({});
+    expect(started.status).toBe(200);
+    const work = await waitForAgentRun(started.data!.runId, 'team.s1');
+    expect(work.agentId).toBe(designer.id);
+    await finishAgentRun(work.id, { output: json({ summary: 'Page built.', evidence: [] }) });
+    const done = await waitForStatus(started.data!.runId, 'succeeded');
+    expect(done.result).toMatchObject({ status: 'review', summary: 'Page built.' });
+    expect(
+      (done.result as { history: { phase: string; summary: string }[] }).history[0],
+    ).toMatchObject({
+      phase: 'route',
+      summary: 'Routed to agent:designer without a coordinator stage: the team has one specialist.',
+    });
+
+    await specialist(asOwner, teamId, 'writer', ['docs']);
+    const labelId = (await asOwner.projects({ projectKey: 'MKT' }).labels.post({ name: 'Docs' }))
+      .data!.id;
+    const labelled = await createIssue(asOwner, columnId, { labelIds: [labelId] });
+    const byLabel = await asOwner.issues({ issueId: labelled.id })['agent-team'].post({});
+    const writerWork = await waitForAgentRun(byLabel.data!.runId, 'team.s1');
+    expect((await runSteps(byLabel.data!.runId)).map((row) => row.stepId)).not.toContain(
+      'team.coordinate',
+    );
+    await finishAgentRun(writerWork.id, {
+      output: json({ summary: 'Docs written.', evidence: [] }),
+    });
+    await waitForStatus(byLabel.data!.runId, 'succeeded');
+  });
+
+  it('moves accepted work to Done under autonomy done and rejected work to Review', async () => {
+    const { asOwner, teamId, columnId, column } = await setup();
+    await specialist(asOwner, teamId, 'designer', ['frontend']);
+    await enableAgentTeam(asOwner, { autonomy: 'done' });
+    const answer = async (accepted: boolean) => {
+      const task = await createIssue(asOwner, columnId);
+      const started = (await asOwner.issues({ issueId: task.id })['agent-team'].post({})).data!;
+      await answerStep(started.runId, 'team.s1', {
+        output: json({ summary: 'Built.', evidence: [] }),
+      });
+      await answerStep(started.runId, 'team.review', {
+        output: json({
+          summary: 'Checked.',
+          evidence: [],
+          review: { accepted, notes: accepted ? 'Good.' : 'Not yet.' },
+        }),
+      });
+      const done = await waitForStatus(started.runId, 'succeeded');
+      const [after] = await db.select().from(issueTable).where(eq(issueTable.id, task.id));
+      return { status: (done.result as { status: string }).status, columnId: after!.columnId };
+    };
+    expect(await answer(true)).toEqual({
+      status: 'done',
+      columnId: column('Done'),
+    });
+    expect(await answer(false)).toEqual({ status: 'review', columnId: column('Review') });
+  });
+
+  it('stops before specialist work when the coordinator plans a dependency cycle', async () => {
+    const { asOwner, teamId, columnId } = await setup();
+    await specialist(asOwner, teamId, 'designer', ['frontend']);
+    await specialist(asOwner, teamId, 'writer', ['docs']);
+    await enableAgentTeam(asOwner);
+    const task = await createIssue(asOwner, columnId);
+    const started = (await asOwner.issues({ issueId: task.id })['agent-team'].post({})).data!;
+    await answerStep(started.runId, 'team.coordinate', {
+      output: json({
+        summary: 'Plan.',
+        delegations: [
+          {
+            assignmentId: 'a',
+            agentRef: 'agent:designer',
+            objective: 'A',
+            acceptanceCriteria: ['A'],
+            dependsOn: ['b'],
+          },
+          {
+            assignmentId: 'b',
+            agentRef: 'agent:writer',
+            objective: 'B',
+            acceptanceCriteria: ['B'],
+            dependsOn: ['a'],
+          },
+        ],
+      }),
+    });
+    const failed = await waitForStatus(started.runId, 'failed');
+    expect(failed.error).toBe('Assignment dependencies form a cycle');
+    expect((await runSteps(started.runId)).map((row) => row.stepId)).not.toContain('team.s1');
+  });
+
+  it('runs a stage again with backoff when its answer is unusable, up to the attempts', async () => {
+    const { asOwner, teamId, columnId } = await setup();
+    await specialist(asOwner, teamId, 'designer', ['frontend']);
+    await enableAgentTeam(asOwner, { reviewRequired: false });
+    const task = await createIssue(asOwner, columnId);
+    const started = (await asOwner.issues({ issueId: task.id })['agent-team'].post({})).data!;
+    const first = await answerStep(started.runId, 'team.s1', { output: 'I did it, trust me.' });
+    const second = await answerStep(started.runId, 'team.s1', {
+      status: 'failed',
+      error: 'Crashed',
+    });
+    expect(second.id).not.toBe(first.id);
+    const third = await answerStep(started.runId, 'team.s1', { output: 'still no json' });
+    const failed = await waitForStatus(started.runId, 'failed');
+    expect(failed.error).toContain('failed after 3 attempts');
+    expect(new Set([first.id, second.id, third.id]).size).toBe(3);
+  });
+
+  it('fails a stage whose agent is blocked and asks, and a retry runs only that stage again', async () => {
+    const { asOwner, teamId, columnId } = await setup();
+    await specialist(asOwner, teamId, 'designer', ['frontend']);
+    await enableAgentTeam(asOwner);
+    const task = await createIssue(asOwner, columnId);
+    const started = (await asOwner.issues({ issueId: task.id })['agent-team'].post({})).data!;
+    const work = await answerStep(started.runId, 'team.s1', {
+      output: json({ summary: 'Built.', evidence: [] }),
+    });
+    await answerStep(started.runId, 'team.review', { blockedQuestion: 'Which brand colour?' });
+    const failed = await waitForStatus(started.runId, 'failed');
+    expect(failed.error).toContain('is blocked and needs input: Which brand colour?');
+
+    const retried = await asOwner
+      .projects({ projectKey: 'MKT' })
+      ['control-plane'].workflows({ workflowId: 'agent-team' })
+      .runs({ runId: started.runId })
+      .retry.post();
+    expect(retried.status).toBe(200);
+    await answerStep(started.runId, 'team.review', {
+      output: json({ summary: 'Ok.', evidence: [], review: { accepted: true, notes: 'Fine.' } }),
+    });
+    await waitForStatus(started.runId, 'succeeded');
+    // The specialist's finished stage kept its run; only the review ran again.
+    const designerRuns = await db
+      .select({ id: agentRun.id })
+      .from(agentRun)
+      .where(eq(agentRun.agentId, work.agentId));
+    expect(designerRuns).toEqual([{ id: work.id }]);
+  });
+
+  it('cancels the stage runs of a canceled team run', async () => {
+    const { asOwner, teamId, columnId } = await setup();
+    await specialist(asOwner, teamId, 'designer', ['frontend']);
+    await enableAgentTeam(asOwner);
+    const task = await createIssue(asOwner, columnId);
+    const started = (await asOwner.issues({ issueId: task.id })['agent-team'].post({})).data!;
+    const work = await waitForAgentRun(started.runId, 'team.s1');
+    const canceled = await asOwner
+      .projects({ projectKey: 'MKT' })
+      ['control-plane'].workflows({ workflowId: 'agent-team' })
+      .runs({ runId: started.runId })
+      .cancel.post();
+    expect(canceled.status).toBe(200);
+    const [stage] = await db.select().from(agentRun).where(eq(agentRun.id, work.id));
+    expect(stage!.status).toBe('canceled');
+    expect((await teamRuns(task.id))[0]!.status).toBe('canceled');
   });
 
   it('queues a direct run when the team does not apply or cannot start', async () => {
     const { asOwner, teamId, columnId, coordinator, organization } = await setup();
     const designer = await specialist(asOwner, teamId, 'designer', ['frontend']);
-
     const disabled = await createIssue(asOwner, columnId);
     await asOwner.issues({ issueId: disabled.id }).patch({ delegateUserId: coordinator.userId });
-    expect(controlPlane.started()).toEqual([]);
+    expect(await teamRuns(disabled.id)).toEqual([]);
     expect(await runsOf(asOwner, teamId, coordinator.id)).toHaveLength(1);
 
     await enableAgentTeam(asOwner);
     const toSpecialist = await createIssue(asOwner, columnId);
     await asOwner.issues({ issueId: toSpecialist.id }).patch({ delegateUserId: designer.userId });
-    expect(controlPlane.started()).toEqual([]);
+    expect(await teamRuns(toSpecialist.id)).toEqual([]);
     expect(await runsOf(asOwner, teamId, designer.id)).toHaveLength(1);
 
-    controlPlane.answer = (request) =>
-      request.operation === 'start'
-        ? Response.json({ message: 'The run belongs to another project' }, { status: 409 })
-        : {};
-    const refused = await createIssue(asOwner, columnId);
-    await asOwner.issues({ issueId: refused.id }).patch({ delegateUserId: coordinator.userId });
-    expect(controlPlane.started()).toHaveLength(1);
-    expect(await runsOf(asOwner, teamId, coordinator.id)).toHaveLength(2);
-
-    controlPlane.reset();
-    await organization.agents({ agentId: coordinator.id }).put({ role: null });
-    const notCoordinator = await createIssue(asOwner, columnId);
-    await asOwner
-      .issues({ issueId: notCoordinator.id })
-      .patch({ delegateUserId: coordinator.userId });
-    expect(controlPlane.started()).toEqual([]);
-    expect(await runsOf(asOwner, teamId, coordinator.id)).toHaveLength(3);
+    // A paused coordinator refuses its team; the delegation queues its own run, which
+    // the pause then holds.
+    await organization.agents({ agentId: coordinator.id }).pause.post({});
+    const paused = await createIssue(asOwner, columnId);
+    await asOwner.issues({ issueId: paused.id }).patch({ delegateUserId: coordinator.userId });
+    expect(await teamRuns(paused.id)).toEqual([]);
   });
 
-  it('starts the agent team on request and replays the same idempotency key', async () => {
-    const { asOwner, columnId, organization, coordinator } = await setup();
-    const issue = await createIssue(asOwner, columnId);
+  it('starts one team per coordinator and task at a time, and replays the same key', async () => {
+    const { asOwner, teamId, columnId, coordinator } = await setup();
+    await specialist(asOwner, teamId, 'designer', ['frontend']);
+    const task = await createIssue(asOwner, columnId);
     const start = (idempotencyKey?: string) =>
-      asOwner.issues({ issueId: issue.id })['agent-team'].post({ idempotencyKey });
-
-    const notEnabled = await start();
-    expect(notEnabled.status).toBe(409);
-
+      asOwner.issues({ issueId: task.id })['agent-team'].post({ idempotencyKey });
+    expect((await start()).status).toBe(409);
     await enableAgentTeam(asOwner);
     const key = crypto.randomUUID();
-    const started = await start(key);
-    expect(started.status).toBe(200);
-    expect(started.data).toEqual({
-      runId: key,
-      status: 'running',
-      taskRef: `task:MKT-${issue.sequenceNumber}`,
-    });
-    expect(controlPlane.started()[0]).toMatchObject({
-      eventId: key,
-      payload: { coordinator: { agentRef: 'agent:hermes-mkt-coordinator' } },
-    });
+    const first = await start(key);
+    expect(first.data).toMatchObject({ runId: key, taskRef: `task:MKT-${task.sequenceNumber}` });
+    expect((await start(key)).data!.runId).toBe(key);
+    // Delegating the task to the coordinator while its team works starts nothing new.
+    await asOwner.issues({ issueId: task.id }).patch({ delegateUserId: coordinator.userId });
+    expect(await teamRuns(task.id)).toHaveLength(1);
     expect((await start('not-a-uuid')).status).toBe(400);
-
-    await organization.agents({ agentId: coordinator.id }).put({ role: null });
-    const noCoordinator = await start();
-    expect(noCoordinator.status).toBe(409);
-    expect(noCoordinator.error?.value).toMatchObject({
-      error: 'The project has no coordinator agent',
-    });
   });
 
   it('leaves a paused specialist out and refuses a paused coordinator', async () => {
     const { asOwner, teamId, columnId, organization, coordinator } = await setup();
-    const designer = await specialist(asOwner, teamId, 'designer', ['frontend']);
+    await specialist(asOwner, teamId, 'designer', ['frontend']);
     const writer = await specialist(asOwner, teamId, 'writer', ['docs']);
     await enableAgentTeam(asOwner);
-    const issue = await createIssue(asOwner, columnId);
-    const start = () => asOwner.issues({ issueId: issue.id })['agent-team'].post({});
-
+    const task = await createIssue(asOwner, columnId);
     await organization.agents({ agentId: writer.id }).pause.post({});
-    expect((await start()).status).toBe(200);
-    expect(controlPlane.started()[0]).toMatchObject({
-      payload: { specialists: [{ agentRef: `agent:${designer.username}` }] },
-    });
-    expect(
-      (controlPlane.started()[0].payload as { specialists: unknown[] }).specialists,
-    ).toHaveLength(1);
-
+    const started = await asOwner.issues({ issueId: task.id })['agent-team'].post({});
+    expect(started.status).toBe(200);
+    const [run] = await teamRuns(task.id);
+    expect((teamOf(run!).specialists as unknown[]).length).toBe(1);
     await organization.agents({ agentId: coordinator.id }).pause.post({});
-    const refused = await start();
+    const other = await createIssue(asOwner, columnId);
+    const refused = await asOwner.issues({ issueId: other.id })['agent-team'].post({});
     expect(refused.status).toBe(409);
     expect(refused.error?.value).toMatchObject({
       error: 'The coordinator @hermes-mkt-coordinator is paused',
     });
   });
 
-  it('needs the delegate to choose between several coordinators', async () => {
-    const { asOwner, teamId, columnId } = await setup();
-    const second = (
-      await createAgent(asOwner, 'MKT', { name: 'Lead', username: 'lead', kind: 'external' })
-    ).data!.agent;
-    await asOwner
-      .teams({ teamId })
-      .organization.agents({ agentId: second.id })
-      .put({ role: 'coordinator' });
-    await enableAgentTeam(asOwner);
-    const issue = await createIssue(asOwner, columnId);
-    const start = () => asOwner.issues({ issueId: issue.id })['agent-team'].post({});
-
-    expect((await start()).status).toBe(409);
-    await asOwner.issues({ issueId: issue.id }).patch({ delegateUserId: second.userId });
-    controlPlane.reset();
-    expect((await start()).status).toBe(200);
-    expect(controlPlane.started()[0]).toMatchObject({
-      payload: { coordinator: { agentRef: 'agent:lead' } },
-    });
-  });
-
-  it('lists the agent-team runs of the issue', async () => {
-    const { asOwner, columnId } = await setup();
-    const issue = await createIssue(asOwner, columnId);
-    controlPlane.answer = (request) =>
-      request.operation === 'runs'
-        ? {
-            runs: [
-              {
-                runId: 'run-2',
-                status: 'running',
-                createdAt: '2026-09-23T10:00:00.000Z',
-                updatedAt: '2026-09-23T10:05:00.000Z',
-                snapshot: {
-                  status: 'running',
-                  context: {
-                    input: {},
-                    'prepare-team': { status: 'success' },
-                    coordinate: { status: 'running' },
-                  },
-                },
-              },
-              {
-                runId: 'run-1',
-                status: 'failed',
-                createdAt: '2026-09-22T10:00:00.000Z',
-                updatedAt: '2026-09-22T10:01:00.000Z',
-                snapshot: {
-                  status: 'failed',
-                  context: { input: {}, 'prepare-team': { status: 'failed' } },
-                  error: { message: 'Agent team execution requires a project context' },
-                },
-              },
-            ],
-            total: 2,
-          }
-        : {};
-
-    const res = await asOwner.issues({ issueId: issue.id })['agent-team'].runs.get();
-    expect(res.status).toBe(200);
-    expect(res.data).toMatchObject([
-      {
-        runId: 'run-2',
-        status: 'running',
-        steps: [
-          { id: 'prepare-team', status: 'success' },
-          { id: 'coordinate', status: 'running' },
-        ],
-        stages: [],
-        result: null,
-        error: null,
+  it('lets the coordinator do the work when the project has no specialist', async () => {
+    const { asOwner, columnId, coordinator } = await setup();
+    await enableAgentTeam(asOwner, { reviewRequired: false });
+    const task = await createIssue(asOwner, columnId, { title: 'Write the brief' });
+    const started = (await asOwner.issues({ issueId: task.id })['agent-team'].post({})).data!;
+    const [run] = await teamRuns(task.id);
+    expect(teamOf(run!)).toMatchObject({
+      task: {
+        objective: 'Write the brief',
+        acceptanceCriteria: ['The work item is done as its description asks.'],
       },
-      {
-        runId: 'run-1',
-        status: 'failed',
-        steps: [{ id: 'prepare-team', status: 'failed' }],
-        error: 'Agent team execution requires a project context',
-      },
-    ]);
-    expect(controlPlane.requests.at(-1)).toMatchObject({
-      operation: 'runs',
-      workflowId: 'agent-team',
-      projectRef: 'project:MKT',
-      taskRef: `task:MKT-${issue.sequenceNumber}`,
+      specialists: [{ agentRef: 'agent:hermes-mkt-coordinator', role: 'coordinator' }],
     });
-  });
-
-  it('shows the Hermes run behind each stage with its duration and tokens', async () => {
-    const { asOwner, columnId } = await setup();
-    const created = await createAgent(asOwner, 'MKT', {
-      name: 'Designer',
-      username: 'designer',
-      kind: 'external',
-    });
-    const asRunner = apiKeyApi(created.data!.apiKey!);
-    const issue = await createIssue(asOwner, columnId);
-    const taskRef = `task:MKT-${issue.sequenceNumber}`;
-    const queue = async (phase: string, subject: string) => {
-      const res = await controlApi().internal.orchestration['agent-run'].post({
-        projectRef: 'project:MKT',
-        task: { taskRef },
-        agent: { agentRef: 'agent:designer' },
-        idempotencyKey: stageKey('run-1', taskRef, phase, subject),
-        prompt: `Run the ${phase} stage.`,
-        policy: { leaseSeconds: 300, heartbeatSeconds: 60, maxAttempts: 3 },
-      });
-      return (res.data as unknown as { runId: number }).runId;
-    };
-    const coordinated = await queue('coordinate', taskRef);
-    await asRunner['agent-runs'].claim.post();
-    await asRunner['agent-runs']({ runId: coordinated }).result.post({
-      status: 'success',
-      output: '{}',
-      usage: { inputTokens: 900, outputTokens: 100 },
-    });
-    const specialized = await queue('specialize', 'assignment-1');
-    await asRunner['agent-runs'].claim.post();
-    controlPlane.answer = (request) =>
-      request.operation === 'runs'
-        ? {
-            runs: [
-              {
-                runId: 'run-1',
-                status: 'running',
-                createdAt: '2026-09-23T10:00:00.000Z',
-                snapshot: {
-                  status: 'running',
-                  context: {
-                    input: {
-                      eventId: 'run-1',
-                      correlationId: taskRef,
-                      payload: { task: { taskRef } },
-                    },
-                    coordinate: {
-                      status: 'success',
-                      output: {
-                        delegations: [
-                          { assignmentId: 'assignment-1' },
-                          { assignmentId: 'assignment-2' },
-                        ],
-                      },
-                    },
-                    specialize: { status: 'running' },
-                  },
-                },
-              },
-            ],
-          }
-        : {};
-
-    const res = await asOwner.issues({ issueId: issue.id })['agent-team'].runs.get();
-    expect(res.status).toBe(200);
-    const agent = { id: created.data!.agent.id, username: 'designer', name: 'Designer' };
-    expect(res.data![0]!.stages).toEqual([
-      {
-        phase: 'coordinate',
-        assignmentId: null,
-        agentRunId: coordinated,
-        agent,
-        status: 'success',
-        startedAt: expect.anything(),
-        finishedAt: expect.anything(),
-        durationMs: expect.any(Number),
-        inputTokens: 900,
-        outputTokens: 100,
-      },
-      {
-        phase: 'specialize',
-        assignmentId: 'assignment-1',
-        agentRunId: specialized,
-        agent,
-        status: 'running',
-        startedAt: expect.anything(),
-        finishedAt: null,
-        durationMs: null,
-        inputTokens: null,
-        outputTokens: null,
-      },
-    ]);
-  });
-
-  it('keeps the agent team of an issue to its project members', async () => {
-    const { asOwner, columnId } = await setup();
-    await enableAgentTeam(asOwner);
-    const issue = await createIssue(asOwner, columnId);
-    const outsider = authedApi((await signUpTestUser({ name: 'Outsider' })).cookie);
-
-    expect((await outsider.issues({ issueId: issue.id })['agent-team'].post({})).status).toBe(403);
-    expect((await outsider.issues({ issueId: issue.id })['agent-team'].runs.get()).status).toBe(
-      403,
-    );
-    expect((await asOwner.issues({ issueId: 999_999 })['agent-team'].post({})).status).toBe(404);
-    expect(controlPlane.started()).toEqual([]);
-  });
-});
-
-// A delegation to a coordinator is recorded before Mastra is asked. A start Mastra does
-// not answer is asked for again with the same event id, and never falls back to a run of
-// the coordinator, which would do the work a second time if Mastra had started the team.
-describe('agent team start', () => {
-  beforeEach(async () => {
-    await resetDb();
-    controlPlane.reset();
-    process.env.AGENT_TEAM_START_RETRY_SECONDS = '1';
-  });
-
-  // Mastra down for starts only; everything else is answered as before.
-  function mastraDown() {
-    const answers = controlPlane.answer;
-    return (request: ControlRequest) =>
-      request.operation === 'start'
-        ? Response.json({ message: 'Workflow control plane is unavailable' }, { status: 502 })
-        : answers(request);
-  }
-  const retryIsDue = () => Bun.sleep(1_100);
-  const eventIds = () => controlPlane.started().map((request) => request.eventId);
-
-  async function delegated() {
-    const context = await setup();
-    await enableAgentTeam(context.asOwner);
-    const issue = await createIssue(context.asOwner, context.columnId);
-    const delegate = (userId: string | null) =>
-      context.asOwner.issues({ issueId: issue.id }).patch({ delegateUserId: userId });
-    return { ...context, issue, delegate };
-  }
-
-  it('asks a Mastra that did not answer again with the same event id', async () => {
-    const { asOwner, teamId, coordinator, delegate } = await delegated();
-    controlPlane.answer = mastraDown();
-    await delegate(coordinator.userId);
-    expect(eventIds()).toHaveLength(1);
-    expect(await runsOf(asOwner, teamId, coordinator.id)).toEqual([]);
-
-    await processAgentTeamStarts();
-    expect(eventIds()).toHaveLength(1);
-
-    controlPlane.answer = (request) =>
-      request.operation === 'start'
-        ? { runId: request.eventId, resourceId: request.projectRef, status: 'running' }
-        : {};
-    await retryIsDue();
-    await processAgentTeamStarts();
-    const [first, second] = eventIds();
-    expect(second).toBe(first);
-    await retryIsDue();
-    await processAgentTeamStarts();
-    expect(eventIds()).toHaveLength(2);
-    expect(await runsOf(asOwner, teamId, coordinator.id)).toEqual([]);
-  });
-
-  it('queues the coordinator run when Mastra refuses a start it was asked for again', async () => {
-    const { asOwner, teamId, coordinator, delegate } = await delegated();
-    controlPlane.answer = mastraDown();
-    await delegate(coordinator.userId);
-
-    await asOwner
-      .projects({ projectKey: 'MKT' })
-      ['control-plane'].workflows({ workflowId: 'agent-team' })
-      .put({ enabled: false, capabilityRefs: CAPABILITIES });
-    await retryIsDue();
-    await processAgentTeamStarts();
-    expect(await runsOf(asOwner, teamId, coordinator.id)).toHaveLength(1);
-  });
-
-  it('keeps one start for an issue delegated again while it waits for Mastra', async () => {
-    const { coordinator, delegate } = await delegated();
-    controlPlane.answer = mastraDown();
-    await delegate(coordinator.userId);
-    await delegate(null);
-    await delegate(coordinator.userId);
-    expect(eventIds()).toHaveLength(1);
-  });
-
-  it('drops a waiting start when the issue is delegated to someone else', async () => {
-    const { asOwner, teamId, coordinator, delegate } = await delegated();
-    const designer = await specialist(asOwner, teamId, 'designer', ['frontend']);
-    controlPlane.answer = mastraDown();
-    await delegate(coordinator.userId);
-    await delegate(designer.userId);
-
-    controlPlane.reset();
-    await retryIsDue();
-    await processAgentTeamStarts();
-    expect(controlPlane.started()).toEqual([]);
-    expect(await runsOf(asOwner, teamId, coordinator.id)).toEqual([]);
-    expect(await runsOf(asOwner, teamId, designer.id)).toHaveLength(1);
-  });
-
-  it('starts no second team run while the first one works on the issue', async () => {
-    const { coordinator, delegate } = await delegated();
-    await delegate(coordinator.userId);
-    const [first] = eventIds();
-
-    let status = 'running';
-    controlPlane.answer = (request) =>
-      request.operation === 'run' && request.runId === first
-        ? { runId: first, status }
-        : request.operation === 'start'
-          ? { runId: request.eventId, status: 'running' }
-          : {};
-    await delegate(null);
-    await delegate(coordinator.userId);
-    expect(eventIds()).toEqual([first]);
-
-    status = 'success';
-    await delegate(null);
-    await delegate(coordinator.userId);
-    expect(eventIds()).toHaveLength(2);
-    expect(eventIds()[1]).not.toBe(first);
+    const work = await waitForAgentRun(started.runId, 'team.s1');
+    expect(work.agentId).toBe(coordinator.id);
   });
 });

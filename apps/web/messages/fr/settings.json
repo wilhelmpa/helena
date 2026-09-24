@@ -386,11 +386,10 @@
     "deleteTemplateMessage": "The template will be removed. Projects that already used it are unchanged.",
     "noTemplates": "No reusable templates yet.",
     "controlPlane": {
-      "title": "Mastra control plane",
-      "description": "Project bindings, workflow graphs, runs, approval gates, and Mastra-owned schedules.",
+      "title": "Workflows intégrés",
       "loading": "Loading workflows…",
-      "unavailable": "The workflow control plane is unavailable.",
-      "empty": "No Mastra workflows are available for this project.",
+      "unavailable": "Impossible de charger les workflows pour le moment.",
+      "empty": "Aucun workflow intégré n’est disponible pour ce projet.",
       "approvalRequired": "Approval required",
       "enabled": "Enabled",
       "disabled": "Disabled",
@@ -400,21 +399,9 @@
       "retryLimit": "Retry limit",
       "saveConfiguration": "Save configuration",
       "notConfigured": "Not configured",
-      "graph": "Workflow graph",
-      "recentRuns": "Recent runs",
-      "noRuns": "No runs for this project.",
-      "reject": "Reject",
-      "approve": "Approve",
-      "retry": "Retry",
-      "stopRun": "Stop run",
-      "schedules": "Mastra schedules",
-      "cron": "Cron",
-      "timezone": "Timezone",
-      "addSchedule": "Add schedule",
-      "runNow": "Run now",
-      "pauseSchedule": "Pause schedule",
-      "resumeSchedule": "Resume schedule",
-      "delete": "Delete",
+      "graph": "Étapes",
+      "recentRuns": "Exécutions",
+      "noRuns": "Pas encore d’exécution dans ce projet.",
       "agentTeam": {
         "result": "Résultat",
         "autonomyReview": "La tâche passe en Revue",
@@ -427,7 +414,29 @@
         "noLimit": "Sans limite",
         "hint": "Les limites s’appliquent à chaque étape Hermes. Une étape qui les atteint s’arrête et rend compte de ce qu’elle a."
       },
-      "configurationSaved": "{name} : configuration enregistrée"
+      "configurationSaved": "{name} : configuration enregistrée",
+      "runsUnavailable": "Impossible de charger les exécutions.",
+      "triggerDelegation": "Délégation au coordinateur",
+      "agentTeamName": "Équipe d’agents du projet",
+      "agentTeamDescription": "Le coordinateur planifie une tâche déléguée, les spécialistes font le travail dans l’ordre des dépendances, le coordinateur le vérifie et le résultat va à la tâche.",
+      "agentTeamSteps": {
+        "coordinate": {
+          "title": "Planifier le travail",
+          "description": "Confier la tâche au seul spécialiste dont les capacités conviennent, ou demander au coordinateur des missions avec leurs dépendances."
+        },
+        "specialize": {
+          "title": "Les spécialistes travaillent",
+          "description": "Exécuter les missions dans l’ordre des dépendances, les indépendantes en parallèle, chacune comme exécution d’agent avec ses limites."
+        },
+        "review": {
+          "title": "Vérifier les preuves",
+          "description": "Le coordinateur confronte les preuves à chaque critère d’acceptation quand le projet demande une vérification."
+        },
+        "synchronize": {
+          "title": "Mettre à jour la tâche",
+          "description": "Écrire le résumé et les preuves sur la tâche et la passer en Revue, ou en Terminé si le projet le permet."
+        }
+      }
     }
   },
   "webhooks": {

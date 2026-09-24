@@ -1,9 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import {
-  getPendingApprovalCount,
-  listApprovalProjects,
-  listWorkflowGates,
-} from '@/lib/api/endpoints/approvals';
+import { getPendingApprovalCount, listApprovalProjects } from '@/lib/api/endpoints/approvals';
 import { qk } from '@/services/queryKeys';
 
 // Global (no projectKey) or one project's pending count, e.g. for the Home badge and
@@ -25,8 +21,3 @@ export const useApprovalProjects = () =>
     queryFn: listApprovalProjects,
     staleTime: 60_000,
   });
-
-// Reading the gates asks the control plane for the runs of every enabled workflow, so
-// the answer is kept for a minute rather than read again on every mount.
-export const useWorkflowGates = (enabled = true) =>
-  useQuery({ queryKey: qk.workflowGates, queryFn: listWorkflowGates, staleTime: 60_000, enabled });

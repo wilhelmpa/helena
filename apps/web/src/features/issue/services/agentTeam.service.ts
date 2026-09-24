@@ -1,4 +1,4 @@
-// The Mastra agent-team runs of one issue. A stage that starts or writes its result to
+// The agent-team runs of one issue, which the Helena engine executes. A stage that starts or writes its result to
 // the issue changes the project's control-plane revision, which reloads them.
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';

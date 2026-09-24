@@ -29,7 +29,7 @@ import {
 } from '@/components/ui/sidebar';
 import SidebarNavItem from '@/components/layout/SidebarNavItem';
 import { useSession } from '@/lib/auth-client';
-import { usePendingApprovalCount, useWorkflowGates } from '@/services/approvals.service';
+import { usePendingApprovalCount } from '@/services/approvals.service';
 import { useProposalCount } from '@/features/agent-runtime/services/agentRuntime.service';
 import { usePipelineApprovals } from '@/services/pipelines.service';
 import { homeNavigation, type HomeNavigationGroup } from './homeNavigation';
@@ -78,7 +78,6 @@ export default function SidebarHomeNav({
   const items = homeNavigation(teamId, mounted && session?.user.role === 'god');
   const pendingApprovals =
     (usePendingApprovalCount().data?.count ?? 0) +
-    (useWorkflowGates().data?.items.length ?? 0) +
     (usePipelineApprovals().data?.length ?? 0) +
     (useProposalCount().data?.count ?? 0);
 

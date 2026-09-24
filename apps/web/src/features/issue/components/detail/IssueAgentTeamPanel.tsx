@@ -74,7 +74,9 @@ export default function IssueAgentTeamPanel({
           ) : rows.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('empty')}</p>
           ) : (
-            rows.slice(0, SHOWN_RUNS).map((run) => <IssueAgentTeamRun key={run.runId} run={run} />)
+            rows
+              .slice(0, SHOWN_RUNS)
+              .map((run) => <IssueAgentTeamRun key={run.runId} run={run} canEdit={canEdit} />)
           )}
         </div>
       )}

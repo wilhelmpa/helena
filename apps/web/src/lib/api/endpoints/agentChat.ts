@@ -200,8 +200,8 @@ export async function uploadChatAttachment(
 
 // One of the caller's saved chat conversations with an agent. `title` is the first
 // prompt (truncated); null when it was never set. `cliSessionId` is the coding agent
-// session an external agent's runner keeps for the thread on its own machine — null
-// before the runner has reported one, and always null for an internal agent.
+// session the agent's runner keeps for the thread on its own machine — null before the
+// runner has reported one.
 // `contextTokens` is the size of the conversation's context after its last completed
 // answer: absent while no answer has completed, null where the agent reports no counts
 // that can be read as one.

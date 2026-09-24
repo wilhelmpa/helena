@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus } from 'lucide-react';
+import { Plus, Puzzle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import {
@@ -8,17 +8,20 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { STEP_KINDS, type StepKind } from '@/lib/api/endpoints/pipelines';
+import { STEP_KINDS, type PluginTypeName, type StepKind } from '@/lib/api/endpoints/pipelines';
 import { PIPELINE_STEP_ICONS } from '@/utils/pipelineStepIcons';
 import { usePipelineEditor } from '../../context/pipelineEditor';
+import { usePluginTypes, type PluginType } from '../../hooks/usePluginTypes';
 import {
   insertStep,
   laneDepth,
   MAX_CONDITION_DEPTH,
   MAX_STEPS,
   newStep,
+  newPluginStep,
   stepCount,
   uniqueStepId,
   type LaneRef,
@@ -40,6 +43,8 @@ export default function PipelineAddStep({
   const full = stepCount(definition.steps) >= MAX_STEPS;
   const deep = laneDepth(definition.steps, lane) >= MAX_CONDITION_DEPTH;
 
+  const plugins = usePluginTypes();
+
   const add = (kind: StepKind) => {
     const id = uniqueStepId(kind, definition.steps);
     change((current) => ({
@@ -51,6 +56,19 @@ export default function PipelineAddStep({
         newStep(kind, id, t(`kinds.${kind}`), current.roles),
       ),
     }));
+    select(id);
+  };
+
+  // A plugin's step, with the defaults its type offers.
+  const addPlugin = ({ type, info }: PluginType) => {
+    const id = uniqueStepId(type, definition.steps);
+    const step = newPluginStep(
+      type as PluginTypeName,
+      id,
+      plugins.text(info.label) || type,
+      info.defaults,
+    );
+    change((current) => ({ ...current, steps: insertStep(current.steps, lane, index, step) }));
     select(id);
   };
 
@@ -79,23 +97,50 @@ export default function PipelineAddStep({
             {t('steps.limit', { max: MAX_STEPS })}
           </DropdownMenuLabel>
         ) : (
-          STEP_KINDS.map((kind) => {
-            const Icon = PIPELINE_STEP_ICONS[kind];
-            return (
-              <DropdownMenuItem
-                key={kind}
-                disabled={kind === 'condition' && deep}
-                className="items-start"
-                onSelect={() => add(kind)}
-              >
-                <Icon className="mt-0.5" />
-                <span className="flex flex-col">
-                  <span>{t(`kinds.${kind}`)}</span>
-                  <span className="text-xs text-muted-foreground">{t(`kindHints.${kind}`)}</span>
-                </span>
-              </DropdownMenuItem>
-            );
-          })
+          <>
+            {STEP_KINDS.map((kind) => {
+              const Icon = PIPELINE_STEP_ICONS[kind];
+              return (
+                <DropdownMenuItem
+                  key={kind}
+                  disabled={kind === 'condition' && deep}
+                  className="items-start"
+                  onSelect={() => add(kind)}
+                >
+                  <Icon className="mt-0.5" />
+                  <span className="flex flex-col">
+                    <span>{t(`kinds.${kind}`)}</span>
+                    <span className="text-xs text-muted-foreground">{t(`kindHints.${kind}`)}</span>
+                  </span>
+                </DropdownMenuItem>
+              );
+            })}
+            {plugins.steps.length > 0 && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                  {t('steps.plugins')}
+                </DropdownMenuLabel>
+                {plugins.steps.map((entry) => (
+                  <DropdownMenuItem
+                    key={entry.type}
+                    className="items-start"
+                    onSelect={() => addPlugin(entry)}
+                  >
+                    <Puzzle className="mt-0.5" />
+                    <span className="flex flex-col">
+                      <span>{plugins.text(entry.info.label) || entry.type}</span>
+                      {entry.info.description && (
+                        <span className="text-xs text-muted-foreground">
+                          {plugins.text(entry.info.description)}
+                        </span>
+                      )}
+                    </span>
+                  </DropdownMenuItem>
+                ))}
+              </>
+            )}
+          </>
         )}
       </DropdownMenuContent>
     </DropdownMenu>

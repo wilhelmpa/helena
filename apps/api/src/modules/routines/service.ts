@@ -1,53 +1,46 @@
-import { aiAgent, db, issue, project, projectMember, teamRole, user } from '@repo/db';
-import { and, eq, inArray, or } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
+import {
+  aiAgent,
+  db,
+  helenaSchedule,
+  issue,
+  pipelineRun,
+  project,
+  projectMember,
+  teamRole,
+  user,
+} from '@repo/db';
+import { and, count, desc, eq, inArray, sql } from 'drizzle-orm';
 import { HttpError, iso } from '#shared/lib';
 import { getLimits } from '#shared/limits';
 import { hasPermission } from '#shared/permissions';
 import { canTriggerAgent } from '#modules/agents/core/service';
 import { toMemberContext, type MemberRole } from '#modules/members/service';
+import { bumpControlPlaneRevision } from '#modules/sync/service';
+import { startRunSoon } from '#modules/engine/runs';
+import { defaultTimezone } from '#modules/engine/settings';
 import {
-  controlPlaneRequest,
-  controlSchedule,
-  createSchedule,
-  DEFAULT_TIMEZONE,
-  projectWorkflowScope,
-  ROUTINE_WORKFLOW,
-  updateSchedule,
-} from '#modules/control-plane-workflows/service';
+  assertCron,
+  nextFireTime,
+  recordScheduleRun,
+  type ScheduleRow,
+} from '#modules/engine/schedules';
+import { runDtos } from '#modules/pipelines/runs';
 import { minCronIntervalSeconds } from './cron';
 
-// A routine is a Mastra schedule of the agent-routine workflow. Every fire creates a
-// task in the project and delegates it to the routine's agent, or reopens the task the
-// routine names; Mastra skips a fire while the routine's task is still open. Plan
-// stores nothing of a routine itself.
+// A routine hands an agent work on a cron: every fire creates a task in the project and
+// delegates it to the routine's agent, or reopens the task the routine names, and is
+// skipped while the routine's task is still open. Helena keeps it in helena_schedule;
+// the engine fires it (modules/engine/schedules.ts) and records every fire as a run.
 
 export type RoutineMode = 'new' | 'reopen';
+export type CatchUp = 'skip' | 'once';
 
 interface RoutineProject {
   id: number;
   key: string;
   name: string;
   teamId: number;
-}
-
-// The schedule as mastra-control answers it: the stored input carries the routine, and
-// `lastRun` is its newest fire with the output of that run.
-interface RoutineSchedule {
-  id: string;
-  cron: string;
-  timezone?: string;
-  status: 'active' | 'paused';
-  nextFireAt?: number;
-  inputData?: { payload?: Record<string, unknown> };
-  requestContext?: { projectRef?: unknown };
-  lastRun?: {
-    status?: string;
-    firedAt?: number | null;
-    result?: Record<string, unknown> | null;
-    error?: string | null;
-  } | null;
-  createdAt: number;
-  updatedAt: number;
 }
 
 export interface RoutineRow {
@@ -62,9 +55,11 @@ export interface RoutineRow {
   task: { id: number; number: number; title: string } | null;
   cron: string;
   timezone: string;
+  catchUp: CatchUp;
   enabled: boolean;
   nextRunAt: string | null;
   lastRun: {
+    id: string;
     status: string;
     outcome: 'created' | 'reopened' | 'skipped' | null;
     skipReason: 'task-open' | 'missed' | null;
@@ -84,149 +79,107 @@ export interface RoutineInput {
   taskId?: number | null;
   cron: string;
   timezone?: string;
+  catchUp?: CatchUp;
 }
 
-function text(value: unknown): string {
-  return typeof value === 'string' ? value : '';
+interface RunResult {
+  outcome?: unknown;
+  skipReason?: unknown;
 }
 
-// The number of `task:KEY-12` when it is a task of the project.
-function taskNumber(taskRef: unknown, projectKey: string): number | null {
-  const match = /^task:(.+)-(\d+)$/.exec(text(taskRef));
-  return match && match[1] === projectKey ? Number(match[2]) : null;
+// The newest run of each schedule.
+async function lastRuns(scheduleIds: string[]) {
+  if (scheduleIds.length === 0)
+    return new Map<string, typeof pipelineRun.$inferSelect & { number: number | null }>();
+  const rows = await db
+    .selectDistinctOn([pipelineRun.scheduleId], {
+      run: pipelineRun,
+      number: issue.sequenceNumber,
+    })
+    .from(pipelineRun)
+    .leftJoin(issue, eq(issue.id, pipelineRun.issueId))
+    .where(inArray(pipelineRun.scheduleId, scheduleIds))
+    .orderBy(pipelineRun.scheduleId, desc(pipelineRun.scheduledFor), desc(pipelineRun.createdAt));
+  return new Map(rows.map((row) => [row.run.scheduleId!, { ...row.run, number: row.number }]));
 }
 
-function lastRunOf(schedule: RoutineSchedule, projectKey: string): RoutineRow['lastRun'] {
-  const run = schedule.lastRun;
-  if (!run) return null;
-  const output = run.result ?? {};
-  const outcome =
-    output.status === 'created' || output.status === 'reopened' || output.status === 'skipped'
-      ? output.status
-      : null;
-  const skipReason =
-    output.skipReason === 'task-open' || output.skipReason === 'missed' ? output.skipReason : null;
-  return {
-    status: run.status ?? 'pending',
-    outcome,
-    skipReason,
-    taskNumber: taskNumber(output.taskRef, projectKey),
-    error: run.error ?? null,
-    firedAt: run.firedAt ? iso(new Date(run.firedAt)) : null,
-  };
-}
-
-// The routines of the schedules, newest first, with their agents and the tasks they
-// reopen resolved in the projects they belong to.
 async function routineRows(
-  schedules: RoutineSchedule[],
+  schedules: ScheduleRow[],
   projects: RoutineProject[],
 ): Promise<RoutineRow[]> {
-  const byRef = new Map(projects.map((item) => [projectWorkflowScope(item).projectRef, item]));
-  const entries = schedules.flatMap((schedule) => {
-    const owner = byRef.get(text(schedule.requestContext?.projectRef));
-    return owner ? [{ schedule, owner, payload: schedule.inputData?.payload ?? {} }] : [];
-  });
-  const usernames = [
-    ...new Set(entries.map((entry) => text(entry.payload.agentRef).slice('agent:'.length))),
-  ].filter(Boolean);
+  const byId = new Map(projects.map((item) => [item.id, item]));
+  const agentIds = [
+    ...new Set(schedules.map((row) => row.agentId).filter((id): id is number => id !== null)),
+  ];
   const agents =
-    usernames.length === 0
+    agentIds.length === 0
       ? []
       : await db
-          .select({
-            id: aiAgent.id,
-            username: aiAgent.username,
-            name: user.name,
-            projectId: projectMember.projectId,
-          })
+          .select({ id: aiAgent.id, name: user.name, projectId: projectMember.projectId })
           .from(aiAgent)
           .innerJoin(user, eq(user.id, aiAgent.userId))
           .innerJoin(projectMember, eq(projectMember.userId, aiAgent.userId))
-          .where(
-            and(
-              inArray(aiAgent.username, usernames),
-              inArray(
-                projectMember.projectId,
-                projects.map((item) => item.id),
-              ),
-            ),
-          );
-  const targets = entries.flatMap((entry) => {
-    const number = taskNumber(entry.payload.taskRef, entry.owner.key);
-    return number === null ? [] : [{ projectId: entry.owner.id, number }];
-  });
+          .where(inArray(aiAgent.id, agentIds));
+  const taskIds = [
+    ...new Set(schedules.map((row) => row.taskId).filter((id): id is number => id !== null)),
+  ];
   const tasks =
-    targets.length === 0
+    taskIds.length === 0
       ? []
       : await db
-          .select({
-            id: issue.id,
-            projectId: issue.projectId,
-            number: issue.sequenceNumber,
-            title: issue.title,
-          })
+          .select({ id: issue.id, number: issue.sequenceNumber, title: issue.title })
           .from(issue)
-          .where(
-            or(
-              ...targets.map((target) =>
-                and(eq(issue.projectId, target.projectId), eq(issue.sequenceNumber, target.number)),
-              ),
-            ),
-          );
-  return entries
-    .sort((a, b) => b.schedule.createdAt - a.schedule.createdAt)
-    .map(({ schedule, owner, payload }) => {
-      const agent = agents.find(
-        (row) => row.projectId === owner.id && `agent:${row.username}` === text(payload.agentRef),
-      );
-      const number = taskNumber(payload.taskRef, owner.key);
-      const task = tasks.find((row) => row.projectId === owner.id && row.number === number);
-      return {
-        id: schedule.id,
+          .where(inArray(issue.id, taskIds));
+  const runs = await lastRuns(schedules.map((row) => row.id));
+  return schedules.flatMap((row) => {
+    const owner = byId.get(row.projectId);
+    if (!owner) return [];
+    const agent = agents.find(
+      (item) => item.id === row.agentId && item.projectId === row.projectId,
+    );
+    const task = tasks.find((item) => item.id === row.taskId);
+    const run = runs.get(row.id);
+    const result = (run?.result ?? {}) as RunResult;
+    const next = row.enabled ? nextFireTime(row.cron, row.timezone) : null;
+    return [
+      {
+        id: row.id,
         projectKey: owner.key,
         projectName: owner.name,
         agent: agent ? { id: agent.id, name: agent.name } : null,
-        title: text(payload.title),
-        instructions: text(payload.instructions),
-        mode: payload.mode === 'reopen' ? 'reopen' : 'new',
-        task: task ? { id: task.id, number: task.number, title: task.title } : null,
-        cron: schedule.cron,
-        timezone: schedule.timezone ?? DEFAULT_TIMEZONE,
-        enabled: schedule.status === 'active',
-        nextRunAt:
-          schedule.status === 'active' && schedule.nextFireAt
-            ? iso(new Date(schedule.nextFireAt))
-            : null,
-        lastRun: lastRunOf(schedule, owner.key),
-        createdAt: iso(new Date(schedule.createdAt)),
-        updatedAt: iso(new Date(schedule.updatedAt)),
-      };
-    });
-}
-
-async function routineSchedules(projects: RoutineProject[]): Promise<RoutineSchedule[]> {
-  const result = await controlPlaneRequest<{ schedules?: RoutineSchedule[] }>({
-    operation: 'schedules',
-    workflowId: ROUTINE_WORKFLOW,
-    projectRefs: projects.map((item) => projectWorkflowScope(item).projectRef),
+        title: row.title,
+        instructions: row.instructions,
+        mode: row.mode === 'reopen' ? 'reopen' : 'new',
+        task: task ?? null,
+        cron: row.cron,
+        timezone: row.timezone,
+        catchUp: row.catchUp === 'once' ? 'once' : 'skip',
+        enabled: row.enabled,
+        nextRunAt: next ? iso(next) : null,
+        lastRun: run
+          ? {
+              id: run.id,
+              status: run.status,
+              outcome:
+                result.outcome === 'created' ||
+                result.outcome === 'reopened' ||
+                result.outcome === 'skipped'
+                  ? result.outcome
+                  : null,
+              skipReason:
+                result.skipReason === 'task-open' || result.skipReason === 'missed'
+                  ? result.skipReason
+                  : null,
+              taskNumber: run.number,
+              error: run.error,
+              firedAt: run.scheduledFor ? iso(run.scheduledFor) : iso(run.createdAt),
+            }
+          : null,
+        createdAt: iso(row.createdAt),
+        updatedAt: iso(row.updatedAt),
+      } satisfies RoutineRow,
+    ];
   });
-  return result.schedules ?? [];
-}
-
-async function routineSchedule(owner: RoutineProject, routineId: string) {
-  try {
-    return await controlPlaneRequest<RoutineSchedule>({
-      operation: 'schedule',
-      workflowId: ROUTINE_WORKFLOW,
-      scheduleId: routineId,
-      projectRef: projectWorkflowScope(owner).projectRef,
-    });
-  } catch (error) {
-    if (error instanceof HttpError && error.status === 404)
-      throw new HttpError(404, 'Routine not found');
-    throw error;
-  }
 }
 
 // The projects whose routines the member may read: every membership whose role grants
@@ -256,15 +209,33 @@ async function readableProjects(userId: string): Promise<RoutineProject[]> {
     .map(({ id, key, name, teamId }) => ({ id, key, name, teamId }));
 }
 
-function page(rows: RoutineRow[], window: { limit: number; offset: number }) {
-  return { items: rows.slice(window.offset, window.offset + window.limit), total: rows.length };
+async function page(projects: RoutineProject[], window: { limit: number; offset: number }) {
+  if (projects.length === 0) return { items: [], total: 0 };
+  const where = and(
+    eq(helenaSchedule.kind, 'routine'),
+    inArray(
+      helenaSchedule.projectId,
+      projects.map((item) => item.id),
+    ),
+  );
+  const [rows, [total]] = await Promise.all([
+    db
+      .select()
+      .from(helenaSchedule)
+      .where(where)
+      .orderBy(desc(helenaSchedule.createdAt), desc(helenaSchedule.id))
+      .limit(window.limit)
+      .offset(window.offset),
+    db.select({ value: count() }).from(helenaSchedule).where(where),
+  ]);
+  return { items: await routineRows(rows, projects), total: total?.value ?? 0 };
 }
 
-export async function listProjectRoutines(
+export function listProjectRoutines(
   owner: RoutineProject,
   window: { limit: number; offset: number },
 ) {
-  return page(await routineRows(await routineSchedules([owner]), [owner]), window);
+  return page([owner], window);
 }
 
 // The routines of every project the member may read them in, for Home.
@@ -272,9 +243,22 @@ export async function listMemberRoutines(
   userId: string,
   window: { limit: number; offset: number },
 ) {
-  const projects = await readableProjects(userId);
-  if (projects.length === 0) return { items: [], total: 0 };
-  return page(await routineRows(await routineSchedules(projects), projects), window);
+  return page(await readableProjects(userId), window);
+}
+
+async function routineSchedule(owner: RoutineProject, routineId: string): Promise<ScheduleRow> {
+  const [row] = await db
+    .select()
+    .from(helenaSchedule)
+    .where(
+      and(
+        eq(helenaSchedule.id, routineId),
+        eq(helenaSchedule.projectId, owner.id),
+        eq(helenaSchedule.kind, 'routine'),
+      ),
+    );
+  if (!row) throw new HttpError(404, 'Routine not found');
+  return row;
 }
 
 export async function getRoutine(owner: RoutineProject, routineId: string): Promise<RoutineRow> {
@@ -285,6 +269,7 @@ export async function getRoutine(owner: RoutineProject, routineId: string): Prom
 
 // Refuses a cron that fires more often than the team's floor allows.
 async function assertCadence(teamId: number, cron: string, timezone: string): Promise<void> {
+  assertCron(cron, timezone);
   const shortest = minCronIntervalSeconds(cron, timezone);
   const { minScheduleIntervalSeconds } = await getLimits({ teamId });
   if (minScheduleIntervalSeconds > 0 && shortest < minScheduleIntervalSeconds) {
@@ -293,16 +278,12 @@ async function assertCadence(teamId: number, cron: string, timezone: string): Pr
   }
 }
 
-// The input of the agent-routine workflow. The agent has to work in the project and
-// take delegated tasks, and a routine is a trigger like a mention: an agent scoped to
-// its owner takes tasks from that member only.
-async function routinePayload(owner: RoutineProject, userId: string, input: RoutineInput) {
+// What the routine does. The agent has to work in the project and take delegated tasks,
+// and a routine is a trigger like a mention: an agent scoped to its owner takes tasks
+// from that member only.
+async function routineFields(owner: RoutineProject, userId: string, input: RoutineInput) {
   const [agent] = await db
-    .select({
-      id: aiAgent.id,
-      username: aiAgent.username,
-      triggerOnAssign: aiAgent.triggerOnAssign,
-    })
+    .select({ id: aiAgent.id, triggerOnAssign: aiAgent.triggerOnAssign })
     .from(aiAgent)
     .innerJoin(
       projectMember,
@@ -316,24 +297,17 @@ async function routinePayload(owner: RoutineProject, userId: string, input: Rout
   const title = input.title.trim();
   const instructions = input.instructions.trim();
   if (!title || !instructions) throw new HttpError(400, 'Title and instructions are required');
-  let taskRef: string | undefined;
+  let taskId: number | null = null;
   if (input.mode === 'reopen') {
     if (input.taskId == null) throw new HttpError(400, 'Select the task to reopen');
     const [task] = await db
-      .select({ number: issue.sequenceNumber })
+      .select({ id: issue.id })
       .from(issue)
       .where(and(eq(issue.id, input.taskId), eq(issue.projectId, owner.id)));
     if (!task) throw new HttpError(400, 'Select a task of this project');
-    taskRef = `task:${owner.key}-${task.number}`;
+    taskId = task.id;
   }
-  return {
-    projectRef: projectWorkflowScope(owner).projectRef,
-    agentRef: `agent:${agent.username}`,
-    title,
-    instructions,
-    mode: input.mode,
-    ...(taskRef ? { taskRef } : {}),
-  };
+  return { agentId: agent.id, title, instructions, mode: input.mode, taskId };
 }
 
 export async function createRoutine(
@@ -341,40 +315,40 @@ export async function createRoutine(
   userId: string,
   input: RoutineInput & { idempotencyKey: string },
 ): Promise<RoutineRow> {
+  const scheduleKey = input.idempotencyKey.toLowerCase();
+  const [existing] = await db
+    .select({ id: helenaSchedule.id })
+    .from(helenaSchedule)
+    .where(
+      and(eq(helenaSchedule.projectId, owner.id), eq(helenaSchedule.scheduleKey, scheduleKey)),
+    );
+  if (existing) return getRoutine(owner, existing.id);
   const cron = input.cron.trim();
-  const timezone = input.timezone ?? DEFAULT_TIMEZONE;
-  const payload = await routinePayload(owner, userId, input);
+  const timezone = input.timezone ?? (await defaultTimezone());
+  const fields = await routineFields(owner, userId, input);
   await assertCadence(owner.teamId, cron, timezone);
-  const created = await createSchedule(owner, ROUTINE_WORKFLOW, userId, {
-    cron,
-    timezone,
-    scheduleKey: input.idempotencyKey.toLowerCase(),
-    capabilityRefs: [],
-    payload,
-  });
-  return getRoutine(owner, text((created as { id?: unknown } | null)?.id));
-}
-
-// The ids behind the stored references, for a change that leaves them as they are.
-async function storedIds(owner: RoutineProject, payload: Record<string, unknown>) {
-  const username = text(payload.agentRef).slice('agent:'.length);
-  const number = taskNumber(payload.taskRef, owner.key);
-  const [agent] = await db
-    .select({ id: aiAgent.id })
-    .from(aiAgent)
-    .innerJoin(
-      projectMember,
-      and(eq(projectMember.userId, aiAgent.userId), eq(projectMember.projectId, owner.id)),
-    )
-    .where(eq(aiAgent.username, username));
-  const [task] =
-    number === null
-      ? []
-      : await db
-          .select({ id: issue.id })
-          .from(issue)
-          .where(and(eq(issue.projectId, owner.id), eq(issue.sequenceNumber, number)));
-  return { agentId: agent?.id, taskId: task?.id };
+  const id = randomUUID();
+  const [created] = await db
+    .insert(helenaSchedule)
+    .values({
+      id,
+      projectId: owner.id,
+      kind: 'routine',
+      ...fields,
+      cron,
+      timezone,
+      catchUp: input.catchUp ?? 'skip',
+      enabled: true,
+      firedThrough: new Date(),
+      actorUserId: userId,
+      scheduleKey,
+      createdBy: userId,
+    })
+    .onConflictDoNothing()
+    .returning({ id: helenaSchedule.id });
+  if (!created) return createRoutine(owner, userId, input);
+  await bumpControlPlaneRevision(owner.id);
+  return getRoutine(owner, id);
 }
 
 // Changes a routine. A change to what it does or when makes the member who saved it
@@ -385,56 +359,86 @@ export async function updateRoutine(
   routineId: string,
   patch: Partial<RoutineInput> & { enabled?: boolean },
 ): Promise<RoutineRow> {
-  const schedule = await routineSchedule(owner, routineId);
-  const { enabled, ...changes } = patch;
+  const row = await routineSchedule(owner, routineId);
+  const { enabled, catchUp, ...changes } = patch;
+  const values: Partial<typeof helenaSchedule.$inferInsert> = {};
   if (Object.values(changes).some((value) => value !== undefined)) {
-    const stored = schedule.inputData?.payload ?? {};
-    const ids = await storedIds(owner, stored);
-    const cron = (changes.cron ?? schedule.cron).trim();
-    const timezone = changes.timezone ?? schedule.timezone ?? DEFAULT_TIMEZONE;
-    const payload = await routinePayload(owner, userId, {
-      agentId: changes.agentId ?? ids.agentId ?? 0,
-      title: changes.title ?? text(stored.title),
-      instructions: changes.instructions ?? text(stored.instructions),
-      mode: changes.mode ?? (stored.mode === 'reopen' ? 'reopen' : 'new'),
-      taskId: changes.taskId !== undefined ? changes.taskId : ids.taskId,
+    const cron = (changes.cron ?? row.cron).trim();
+    const timezone = changes.timezone ?? row.timezone;
+    const fields = await routineFields(owner, userId, {
+      agentId: changes.agentId ?? row.agentId ?? 0,
+      title: changes.title ?? row.title,
+      instructions: changes.instructions ?? row.instructions,
+      mode: changes.mode ?? (row.mode === 'reopen' ? 'reopen' : 'new'),
+      taskId: changes.taskId !== undefined ? changes.taskId : row.taskId,
       cron,
       timezone,
     });
     await assertCadence(owner.teamId, cron, timezone);
-    await updateSchedule(owner, ROUTINE_WORKFLOW, routineId, {
-      cron,
-      timezone,
-      change: { actorUserId: userId, capabilityRefs: [], payload },
-    });
+    Object.assign(values, fields, { cron, timezone, actorUserId: userId });
   }
-  if (enabled !== undefined && enabled !== (schedule.status === 'active')) {
-    await controlSchedule(
-      owner,
-      ROUTINE_WORKFLOW,
-      routineId,
-      enabled ? 'resume-schedule' : 'pause-schedule',
-    );
+  if (catchUp !== undefined) values.catchUp = catchUp;
+  if (enabled !== undefined) values.enabled = enabled;
+  // Switched on again or given another time, the routine starts afresh: the times that
+  // passed meanwhile do not fire.
+  if (
+    (enabled === true && !row.enabled) ||
+    (values.cron !== undefined && values.cron !== row.cron) ||
+    (values.timezone !== undefined && values.timezone !== row.timezone)
+  )
+    values.firedThrough = new Date();
+  if (Object.keys(values).length > 0) {
+    await db
+      .update(helenaSchedule)
+      .set({ ...values, updatedAt: new Date() })
+      .where(eq(helenaSchedule.id, routineId));
+    await bumpControlPlaneRevision(owner.id);
   }
   return getRoutine(owner, routineId);
 }
 
 export async function deleteRoutine(owner: RoutineProject, routineId: string): Promise<void> {
   await routineSchedule(owner, routineId);
-  await controlSchedule(owner, ROUTINE_WORKFLOW, routineId, 'delete-schedule');
+  await db.delete(helenaSchedule).where(eq(helenaSchedule.id, routineId));
+  await bumpControlPlaneRevision(owner.id);
 }
 
-// Fires the routine now and answers the id of the run. The run acts for the member who
+// Runs the routine now and answers the id of the run. The run acts for the member who
 // saved the routine, so the caller has to be allowed to send its agent a task as well.
 export async function runRoutine(
   owner: RoutineProject,
   userId: string,
   routineId: string,
 ): Promise<{ runId: string }> {
+  const row = await routineSchedule(owner, routineId);
   const routine = await getRoutine(owner, routineId);
   if (!routine.agent) throw new HttpError(409, 'The agent of this routine left the project');
   if (!(await canTriggerAgent(routine.agent.id, userId)))
     throw new HttpError(403, 'This agent only takes tasks from its owner');
-  const fired = await controlSchedule(owner, ROUTINE_WORKFLOW, routineId, 'run-schedule');
-  return { runId: text((fired as { claimId?: unknown } | null)?.claimId) };
+  const { runId } = await recordScheduleRun(row, new Date(), 'manual');
+  await startRunSoon(runId);
+  return { runId };
+}
+
+// The runs of a routine, newest first, with the step each executed.
+export async function listRoutineRuns(
+  owner: RoutineProject,
+  routineId: string,
+  window: { limit: number; offset: number },
+) {
+  await routineSchedule(owner, routineId);
+  const where = eq(pipelineRun.scheduleId, routineId);
+  const [items, [total]] = await Promise.all([
+    runDtos(where, window),
+    db.select({ value: count() }).from(pipelineRun).where(where),
+  ]);
+  return { items, total: total?.value ?? 0 };
+}
+
+// The schedules of a project that is going away stop firing.
+export async function stopProjectSchedules(projectId: number): Promise<void> {
+  await db
+    .update(helenaSchedule)
+    .set({ enabled: false, updatedAt: sql`now()` })
+    .where(eq(helenaSchedule.projectId, projectId));
 }

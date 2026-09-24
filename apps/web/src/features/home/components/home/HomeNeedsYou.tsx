@@ -7,10 +7,9 @@ import {
   approvalsPath,
   globalAgentActivityPath,
   issuePath,
-  workflowRunPath,
 } from '@/utils/paths';
 import { useApprovals } from '@/features/approvals/services/approvals.service';
-import { useWorkflowGates } from '@/services/approvals.service';
+import { usePipelineApprovals } from '@/services/pipelines.service';
 import { RowEmpty, RowLink, RowList, SectionLabel } from '@/components/common/page/RowList';
 import { useHomeActiveActivity, HOME_ACTIVE_STATUSES } from '../../services/homeKpis.service';
 
@@ -26,16 +25,16 @@ type NeedsYouEntry = {
 };
 
 // "Braucht dich" (docs/volition-design-helena-ui.md "Start"): approvals waiting on
-// a decision, workflow runs suspended at their approval gate, and runs that failed
-// recently — composed from the existing approvals/workflow-gates/activity endpoints,
-// capped to a handful so it reads as a short list to act on, not a second inbox.
-// Every row opens the place the decision is made: an approval the approvals page, a
-// gate its workflow run, a failed run its task or the project's agent timeline.
+// a decision, workflow runs waiting at an approval step, and runs that failed recently
+// — composed from the existing approvals/pipeline-approvals/activity endpoints, capped
+// to a handful so it reads as a short list to act on, not a second inbox. Every row
+// opens the place the decision is made: an approval or an approval step the approvals
+// page, a failed run its task or the project's agent timeline.
 export default function HomeNeedsYou() {
   const t = useTranslations('nav');
   const tActivity = useTranslations('agentActivity');
   const approvals = useApprovals('pending', { page: 1, pageSize: LIMIT });
-  const gates = useWorkflowGates();
+  const steps = usePipelineApprovals();
   const activity = useHomeActiveActivity();
 
   const failed = (activity.data?.items ?? [])
@@ -51,13 +50,15 @@ export default function HomeNeedsYou() {
       title: `${a.agentName} · ${a.action}`,
       detail: a.issueIdentifier ? `${a.issueIdentifier} · ${a.projectName}` : a.projectName,
     })),
-    ...(gates.data?.items ?? []).map((g): NeedsYouEntry => ({
-      key: `gate:${g.projectKey}:${g.workflowId}:${g.runId}`,
-      href: workflowRunPath(g.projectKey, g.workflowId, g.runId),
+    ...(steps.data ?? []).map((step): NeedsYouEntry => ({
+      key: `step:${step.runId}:${step.stepId}:${step.iteration}`,
+      href: approvalsPath(),
       icon: Workflow,
       tone: 'waiting',
-      title: g.workflowName,
-      detail: g.summary ?? g.reason ?? g.projectName,
+      title: `${step.pipelineName} · ${step.stepName}`,
+      detail: step.issueIdentifier
+        ? `${step.issueIdentifier} · ${step.projectName}`
+        : step.projectName,
     })),
     ...failed.map((entry): NeedsYouEntry => ({
       key: `run:${entry.id}`,

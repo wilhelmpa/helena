@@ -5,7 +5,6 @@ import { Bot, MessageSquare, Settings2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PAGE_CONTROL_ACTIVE_CLASS, PAGE_CONTROL_CLASS } from '@/components/layout/PageToolbar';
 import { agentTabsFor } from '@/features/agent-runtime/agentTabs';
-import { AGENT_KIND_ICON } from '../../utils/agentKindIcon';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { useAiAgentsQuery } from '@/services/aiAgents.service';
 import {
@@ -114,7 +113,6 @@ function SheetBody({
   // works in a project, and until then the chat side says what is missing.
   // A pool template runs nowhere, so it has no chat.
   const chatReady = !!agent && chatProject != null && !agent.template;
-  const KindIcon = agent ? AGENT_KIND_ICON[agent.kind] : Bot;
   // The settings stay mounted behind another tab, so what is typed there is kept.
   const tabs = agentTabsFor(agent);
   const activeTab = tabs.find((entry) => entry.id === tab) ?? null;
@@ -123,7 +121,7 @@ function SheetBody({
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center gap-3 border-b border-border/60 px-4 pt-4 pb-3.5">
         <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-sidebar-border bg-background text-muted-foreground ring-1 ring-border/60">
-          <KindIcon className="size-4.5" />
+          <Bot className="size-4.5" />
         </div>
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <div className="min-w-0">
@@ -134,11 +132,6 @@ function SheetBody({
               {agent ? `@${agent.username}` : t('sheetSubtitle')}
             </SheetDescription>
           </div>
-          {agent && (
-            <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
-              {agent.kind}
-            </span>
-          )}
         </div>
         <SheetClose asChild>
           <Button

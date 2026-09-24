@@ -1,21 +1,17 @@
 import {
   db,
+  helenaSchedule,
   pipeline,
   pipelineVersion,
   project as projectTable,
   projectPipeline,
   user,
 } from '@repo/db';
+import { randomUUID } from 'node:crypto';
 import { and, asc, desc, eq, isNull, or, sql } from 'drizzle-orm';
 import { HttpError, iso } from '#shared/lib';
 import { getLimits } from '#shared/limits';
-import {
-  controlSchedule,
-  createSchedule,
-  DEFAULT_TIMEZONE,
-  PIPELINE_WORKFLOW,
-  updateSchedule,
-} from '#modules/control-plane-workflows/service';
+import { defaultTimezone } from '#modules/engine/settings';
 import { minCronIntervalSeconds } from '#modules/routines/cron';
 import { bumpControlPlaneRevision } from '#modules/sync/service';
 import {
@@ -196,12 +192,7 @@ export async function updatePipeline(
 export async function deletePipeline(pipelineId: number): Promise<void> {
   const row = await getPipelineRow(pipelineId);
   if (!row) throw new HttpError(404, 'Workflow not found');
-  const enabled = await db
-    .select()
-    .from(projectPipeline)
-    .where(eq(projectPipeline.pipelineId, pipelineId));
-  for (const usage of enabled.filter((item) => item.scheduleId))
-    await removeSchedule(await projectOf(usage.projectId), usage.scheduleId!);
+  // Its schedules go with it (on delete cascade).
   await db.delete(pipeline).where(eq(pipeline.id, pipelineId));
 }
 
@@ -375,17 +366,9 @@ async function assertCadence(teamId: number, definition: PipelineDefinition): Pr
     );
 }
 
-async function removeSchedule(project: ProjectRef, scheduleId: string): Promise<void> {
-  await controlSchedule(project, PIPELINE_WORKFLOW, scheduleId, 'delete-schedule').catch(
-    (error) => {
-      if (!(error instanceof HttpError && error.status === 404)) throw error;
-    },
-  );
-}
-
-// Keeps the Mastra schedule of a workflow with a schedule trigger in step with its use
-// in the project: a schedule while it is enabled, none otherwise. Every fire runs the
-// workflow's newest version on a task it creates.
+// Keeps the schedule of a workflow with a schedule trigger in step with its use in the
+// project: a schedule while it is enabled, none otherwise. Every fire runs the
+// workflow's newest version on a task it creates, for the member who enabled it.
 async function syncSchedule(
   project: ProjectRef,
   row: PipelineRow,
@@ -393,42 +376,41 @@ async function syncSchedule(
   definition: PipelineDefinition,
 ): Promise<void> {
   const { trigger } = definition;
-  const scheduled = usage.enabled && trigger.type === 'schedule';
-  if (!scheduled) {
-    if (usage.scheduleId) {
-      await removeSchedule(project, usage.scheduleId);
-      await storeScheduleId(project.id, row.id, null);
-    }
+  const [existing] = await db
+    .select({ id: helenaSchedule.id, cron: helenaSchedule.cron, timezone: helenaSchedule.timezone })
+    .from(helenaSchedule)
+    .where(and(eq(helenaSchedule.projectId, project.id), eq(helenaSchedule.pipelineId, row.id)));
+  if (!usage.enabled || trigger.type !== 'schedule') {
+    if (existing) await db.delete(helenaSchedule).where(eq(helenaSchedule.id, existing.id));
     return;
   }
-  const payload = { schemaVersion: 1, pipelineId: row.id };
-  const actorUserId = usage.updatedBy ?? row.createdBy ?? '';
-  if (usage.scheduleId) {
-    await updateSchedule(project, PIPELINE_WORKFLOW, usage.scheduleId, {
-      cron: trigger.cron,
-      timezone: trigger.timezone || DEFAULT_TIMEZONE,
-      change: { actorUserId, capabilityRefs: [], payload },
-    });
-    return;
-  }
-  const created = await createSchedule(project, PIPELINE_WORKFLOW, actorUserId, {
+  const values = {
+    title: trigger.title,
     cron: trigger.cron,
-    timezone: trigger.timezone || DEFAULT_TIMEZONE,
-    scheduleKey: `pipeline-${row.id}`,
-    capabilityRefs: [],
-    payload,
-  });
-  const scheduleId = (created as { id?: unknown } | null)?.id;
-  if (typeof scheduleId === 'string') await storeScheduleId(project.id, row.id, scheduleId);
-}
-
-async function storeScheduleId(projectId: number, pipelineId: number, scheduleId: string | null) {
-  await db
-    .update(projectPipeline)
-    .set({ scheduleId })
-    .where(
-      and(eq(projectPipeline.projectId, projectId), eq(projectPipeline.pipelineId, pipelineId)),
-    );
+    timezone: trigger.timezone || (await defaultTimezone()),
+    enabled: true,
+    actorUserId: usage.updatedBy ?? row.createdBy,
+    updatedAt: new Date(),
+  };
+  // A new schedule, or one given another time, starts afresh.
+  const restart =
+    !existing || existing.cron !== values.cron || existing.timezone !== values.timezone;
+  const id = existing?.id ?? randomUUID();
+  if (existing)
+    await db
+      .update(helenaSchedule)
+      .set({ ...values, ...(restart ? { firedThrough: new Date() } : {}) })
+      .where(eq(helenaSchedule.id, id));
+  else
+    await db.insert(helenaSchedule).values({
+      id,
+      projectId: project.id,
+      kind: 'workflow',
+      pipelineId: row.id,
+      createdBy: usage.updatedBy,
+      firedThrough: new Date(),
+      ...values,
+    });
 }
 
 async function syncPipelineSchedules(row: PipelineRow, definition: PipelineDefinition) {
@@ -437,8 +419,22 @@ async function syncPipelineSchedules(row: PipelineRow, definition: PipelineDefin
     .from(projectPipeline)
     .where(eq(projectPipeline.pipelineId, row.id));
   for (const usage of usages)
-    if (usage.enabled || usage.scheduleId)
-      await syncSchedule(await projectOf(usage.projectId), row, usage, definition);
+    await syncSchedule(await projectOf(usage.projectId), row, usage, definition);
+}
+
+// Brings the schedules of every workflow in line with its use in the projects: a
+// schedule for each enabled use of a workflow with a schedule trigger, none otherwise.
+// For the move from Mastra (scripts/import-mastra-schedules.ts) and after a restore.
+// Answers how many workflows it looked at.
+export async function syncAllPipelineSchedules(): Promise<number> {
+  const used = await db
+    .selectDistinct({ pipelineId: projectPipeline.pipelineId })
+    .from(projectPipeline);
+  for (const { pipelineId } of used) {
+    const row = await getPipelineRow(pipelineId);
+    if (row) await syncPipelineSchedules(row, await latestDefinition(row));
+  }
+  return used.length;
 }
 
 // Checks a definition as the editor holds it: always on its own, and against a project

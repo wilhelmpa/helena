@@ -3,7 +3,8 @@ import { apiKeyApi, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent, projectIdOf, teamOf } from '#tests/helpers/agents';
-import { controlApi } from '#tests/helpers/control';
+import { cancelStepRun, queueStepRun } from '#modules/engine/agent-runs';
+import { registerBuiltins } from '#modules/engine/builtin/index';
 import { db, organizationProjectAssignment } from '@repo/db';
 import { expireExhaustedRuns } from '../../service';
 
@@ -42,6 +43,8 @@ async function queueRun(asOwner: Api, columnId: number, username: string) {
   await asOwner.issues({ issueId: issue.id }).comments.post({ body: `please review @${username}` });
   return issue;
 }
+
+registerBuiltins();
 
 describe('agent runner queue', () => {
   beforeEach(async () => {
@@ -131,8 +134,6 @@ describe('agent runner queue', () => {
       ['ai-agents']({ agentId: agent.id })
       .patch({
         model: 'openai/gpt-5.6-sol',
-        memoryEnabled: true,
-        memoryLastMessages: 20,
         runtimePolicy: {
           reasoningEffort: 'high',
           toolAllow: ['browser'],
@@ -163,7 +164,6 @@ describe('agent runner queue', () => {
     expect(typeof policy.data!.revision).toBe('string');
     expect(policy.data).toMatchObject({
       model: 'openai/gpt-5.6-sol',
-      memory: { enabled: true, lastMessages: 20 },
       runtimePolicy: { reasoningEffort: 'high', mcpGrants: ['itsaplan__get_issue'] },
       skills: [
         {
@@ -372,21 +372,15 @@ describe('agent runner queue', () => {
     const issue = (
       await asOwner.projects({ projectKey: 'MKT' }).issues.post({ columnId, title: 'Team task' })
     ).data!;
-    const stage = (key: string, policy: Record<string, unknown>) =>
-      controlApi().internal.orchestration['agent-run'].post({
-        projectRef: 'project:MKT',
-        task: { taskRef: `task:MKT-${issue.sequenceNumber}` },
-        agent: { agentRef: `agent:${agent.username}` },
-        idempotencyKey: key.repeat(64),
-        prompt: 'Complete the assignment.',
-        policy: { leaseSeconds: 300, heartbeatSeconds: 60, maxAttempts: 3, ...policy },
-      });
-
-    expect((await stage('b', { maxTurns: 0 })).status).toBe(400);
-    expect((await stage('b', { maxTurns: 201 })).status).toBe(400);
-    expect((await stage('b', { runBudgetSeconds: 59 })).status).toBe(400);
-    expect((await stage('b', { runBudgetSeconds: 7_201 })).status).toBe(400);
-    expect((await stage('a', { maxTurns: 200, runBudgetSeconds: 7_200 })).status).toBe(200);
+    // A stage of an agent team (or an agent step of a workflow) is queued by the engine.
+    await queueStepRun({
+      agentId: agent.id,
+      projectId: issue.projectId,
+      issueId: issue.id,
+      prompt: 'Complete the assignment.',
+      maxTurns: 200,
+      runBudgetSeconds: 7_200,
+    });
     expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({
       trigger: 'manual',
       maxTurns: 200,
@@ -413,7 +407,15 @@ describe('agent runner queue', () => {
       .teams({ teamId })
       ['ai-agents']({ agentId: agent.id })
       .patch({ runtimePolicy: { ...policy, maxTurns: 1, runBudgetSeconds: 60 } });
-    expect((await stage('c', { maxTurns: 20 })).status).toBe(200);
+    // A stage's limit is lowered to the agent's own by the step that queues it; the run
+    // carries what it was queued with.
+    await queueStepRun({
+      agentId: agent.id,
+      projectId: issue.projectId,
+      issueId: issue.id,
+      prompt: 'Complete the assignment.',
+      maxTurns: 20,
+    });
     expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({
       maxTurns: 20,
       runBudgetSeconds: 60,
@@ -589,20 +591,15 @@ describe('agent runner queue', () => {
     const issue = (
       await asOwner.projects({ projectKey: 'MKT' }).issues.post({ columnId, title: 'Team task' })
     ).data!;
-    await controlApi().internal.orchestration['agent-run'].post({
-      projectRef: 'project:MKT',
-      task: { taskRef: `task:MKT-${issue.sequenceNumber}` },
-      agent: { agentRef: `agent:${agent.username}` },
-      idempotencyKey: 'a'.repeat(64),
+    await queueStepRun({
+      agentId: agent.id,
+      projectId: issue.projectId,
+      issueId: issue.id,
       prompt: 'Complete the assignment.',
-      policy: { leaseSeconds: 300, heartbeatSeconds: 60, maxAttempts: 3 },
     });
     const run = (await asRunner['agent-runs'].claim.post()).data!.run!;
 
-    await controlApi().internal.orchestration['agent-run'].cancel.post({
-      runId: run.id,
-      projectRef: 'project:MKT',
-    });
+    await cancelStepRun(run.id);
 
     const beat = await asRunner['agent-runs']({ runId: run.id }).heartbeat.post();
     expect(beat.status).toBe(200);

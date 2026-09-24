@@ -12,9 +12,9 @@ export interface ConfigField {
   help?: string;
 }
 
-// 'llm' is an AI provider (its models an agent runs on, no tools); 'tool' is a tool
-// integration whose `tools` are configured on a credential.
-export type IntegrationKind = 'llm' | 'tool';
+// 'tool' is a tool integration whose `tools` are configured on a credential. Helena
+// runs no model, so there is no model provider kind.
+export type IntegrationKind = 'tool';
 
 // A picker option's kind: an integration's, or 'secret' for a secret or an API key of the
 // Credentials page that an MCP server may name.
@@ -27,12 +27,6 @@ export interface IntegrationMeta {
   kind: IntegrationKind;
   credentialSchema: ConfigField[];
   tools: { key: string; label: string; description: string; scopes?: string[] }[];
-}
-
-// A model an LLM provider offers, from the models.dev registry.
-export interface ProviderModel {
-  id: string;
-  name: string;
 }
 
 // A stored integration credential. `redacted` mirrors the stored credential with
@@ -67,14 +61,11 @@ export interface CredentialPatch {
   credential?: Record<string, unknown>;
 }
 
-// Integrations: the team's stored credentials for LLM providers and tool
-// integrations, shared by every project it owns. The secret is write-only —
+// Integrations: the team's stored credentials for tool integrations, shared by every
+// project it owns. The secret is write-only —
 // responses carry only a redacted view.
 export const listIntegrationCatalog = (teamId: number) =>
   request<IntegrationMeta[]>(`/teams/${teamId}/integrations/catalog`);
-
-export const listIntegrationModels = (teamId: number, provider: string) =>
-  request<ProviderModel[]>(`/teams/${teamId}/integrations/models/${encodeURIComponent(provider)}`);
 
 export const listCredentials = (teamId: number, params: PageParams) =>
   request<Page<IntegrationCredential>>(`/teams/${teamId}/integrations${pageQuery(params)}`);

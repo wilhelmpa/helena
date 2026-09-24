@@ -74,7 +74,7 @@ Legend:
 - **priv**: moves to the private overlay repository `helena-ops` (§2.6).
 - **retire**: deleted before the cut; its history stays in the private repository.
 - **replace**: rewritten for Helena; the draft is named.
-- **D**: removed by hub/native-engine together with Mastra.
+- **D**: removed by hub/native-engine together with Mastra (done: hub/native-engine-deploy).
 
 ### 2.1 Repository root
 
@@ -122,7 +122,8 @@ Legend:
 | `scripts/fresh-reset.mjs`, `probe-secret-boundaries.sh`, `verify-checkpoint.py`, `scripts/test/` | retire | Compose era |
 | `browser/` (router, screencast, input, video) | core | Starts per-project Chromium through systemd today; §8.3 |
 | `integration/` provisioning service: `server.mjs`, `provisioner.mjs`, `config.mjs`, `project-*.mjs`, `areas.mjs`, `boards.mjs`, `plan-coordinator.mjs`, `agent-launcher.mjs`, `purge-trash.mjs`, `move-path.mjs`, `atomic-json.mjs`, `validation.mjs` | core | The only component that changes OS resources. Long term it folds into the runner (hub/hermes-sync already materialises profiles) and the router |
-| `integration/mastra-*.mjs`, `hermes-team-bridge*.mjs`, `triage.mjs` | D | |
+| `integration/mastra-*.mjs`, `hermes-team-bridge*.mjs` | D | Removed |
+| `integration/triage.mjs` | core, open | Kept without a classifier: the Mastra inbox workflow was its only one. A classifier on Hermes is open; until then a triage run fails with "No inbox classifier is configured." |
 | `integration/connections.mjs` | core → access-center | Superseded by hub/access-center connectors |
 | `integration/hermes-plugins/plan-approval-guard/` | core | Becomes `helena-approval-guard`; essential, since it blocks dangerous commands |
 | `integration/hermes-runner/` | core | `hermes-config.fragment.yaml` carries `tirith_path: /home/pw/…` (owner literal) |
@@ -131,14 +132,14 @@ Legend:
 | `isolation/` + `native/isolation.sh` | core (native) | Agent isolation with systemd. In Docker, the separation is per container (§8) |
 | `native/deploy.sh`, `web-release.sh`, `vault-setup.sh`, `files-documents.sh`, `install-browser.sh` | core (native) | "Native Debian install" stays a supported advanced path; it is what the battle test runs on. Owner literals out |
 | `native/systemd/`, `native/chromium/`, `native/nginx/{project-terminal,tool-proxy-security}.conf`, `native/nginx/install-hermes-guard.sh` | core (native) | |
-| `native/nginx/*mastra*` | D | |
+| `native/nginx/*mastra*` | D | Removed; `native/deploy.sh` takes the Studio route out of a host that still has it |
 | `native/terminal/` | core | Project terminal (Wetty + tmux) |
 | `native/owner-terminal/` | opt | Needs TOTP by default. `90-wilhelmpa*` sudoers are priv |
 | `native/syncthing/` | opt | Vault sync to devices |
 | `native/local-owner/` | opt, generalised | LAN auto-login. Today it hard-codes `kingston-server.local` and `192.168.2.0/24`. It becomes an admin setting with explicit host and CIDRs, **off by default**. The current script is priv |
 | `native/google/` | priv | The gog setup with `volition-google` and the owner's sudoers. The connector itself is core (access-center) |
 | `native/kiosk/`, `native/lan/`, `native/dev/` | priv | Owner hardware, the m5 host relays, dev mode on Kingston |
-| `optional/mastra-studio/` | D | |
+| `optional/mastra-studio/` | D | Removed |
 | `backup/` | retire | Garage, Nextcloud and offsite of the compose era. A new `helena-backup` follows (§8.6) |
 | `compose.{apps,gateway,hub,vault}.yml`, `install.sh`, `.env.example`, `config/`, `gateway/`, `files/`, `workspace/`, `workspace-bridge/`, `google-bridge/`, `security-images/` (incl. the vendored `gosu-1.19-source.tar.gz`), `security-patches/`, `factory-reset/`, `fresh-reset/`, `systemd/user/`, `docs/fresh-reset.md`, `test/install.test.mjs`, `README.apps.md` | retire | The whole compose era (Nextcloud, Cloudflare Access gateway, ttyd, Vaultwarden). `docs/secret-boundaries.md` is read for `SECURITY.md` first |
 | `README.md`, `INSTALL.md`, `NATIVE_ARCHITECTURE.md`, `NATIVE_ACCEPTANCE.md` | priv | Kingston runbooks. The generic parts go into `docs/oss/ARCHITECTURE.md` and the native install guide |
@@ -167,7 +168,7 @@ Legend:
 | Where | Literal | Fix |
 |---|---|---|
 | `integration/provisioner.mjs` `projectSlug` | `VERV → verve` | Drop the special case; the owner's slug stays through a migration of the registry |
-| `integration/config.mjs` | `plan.volition.one`, `plan-api.volition.one`, `172.30.95.2:4111`, `VERVE_PROJECT_PATH` | Defaults from `HELENA_PUBLIC_URL`; the Mastra and Verve parts go |
+| `integration/config.mjs` | `plan.volition.one`, `plan-api.volition.one`, `VERVE_PROJECT_PATH` | Defaults from `HELENA_PUBLIC_URL`; the Verve part goes (the Mastra part went with D) |
 | `native/terminal/*router.mjs`, `native/owner-terminal/*router.mjs` | allowed hosts `kingston-server.local,kingston-server` | Derived from `APP_URL` |
 | `apps/web/next.config.ts` | `allowedDevOrigins: ['kingston-server.local', …]` | From an env var |
 | `integration/hermes-runner/hermes-config.fragment.yaml` | `tirith_path: /home/pw/…` | Relative to `HERMES_HOME` |
@@ -215,7 +216,7 @@ orchestrator says so. Its history stays in the private repository.
 | Root: `docker-compose.coolify*.yml`, `charts/itsaplan`, `docs/{coolify,railway,helm}.md` | 2,238 | Upstream deployment targets |
 | **Total, this branch** | **~13,000** | |
 | `google-bridge/` | 603 | Removed by **hub/access-center** with its Google connector |
-| `optional/mastra-studio/`, `integration/mastra-*`, `hermes-team-bridge*`, `triage.mjs` | 5,540+ | Removed by **hub/native-engine** with Mastra |
+| `optional/mastra-studio/`, `integration/mastra-*`, `hermes-team-bridge*` | 5,300+ | Removed by **hub/native-engine** with Mastra (done; `triage.mjs` stays without a classifier) |
 
 Kept for the Docker phase as reference, in `helena-ops/archive/`: the compose files, which
 show the network split and the hardening of the old setup.
@@ -240,11 +241,11 @@ show the network split and the hardening of the old setup.
 | Kind | Old | New |
 |---|---|---|
 | Database / role | `itsaplan`, `itsaplan_dev`, `itsaplan_test*` / role `itsaplan` | `helena`, `helena_dev`, `helena_test*` / role `helena` |
-| Users | `volition-plan`, `volition-hermes`, `volition-browser`, `volition-sync`, `volition-google`, `volition-mastra`, `volition-storage`, `volition-vaultwarden`; isolation `vp-<slug>`, `volition-launcher`, `volition-egress` | `helena`, `helena-hermes`, `helena-browser`, `helena-sync`, `helena-google`, … ; `hp-<slug>`, `helena-launcher`, `helena-egress` |
+| Users | `volition-plan`, `volition-hermes`, `volition-browser`, `volition-sync`, `volition-google`, `volition-storage`, `volition-vaultwarden`; isolation `vp-<slug>`, `volition-launcher`, `volition-egress` | `helena`, `helena-hermes`, `helena-browser`, `helena-sync`, `helena-google`, … ; `hp-<slug>`, `helena-launcher`, `helena-egress` |
 | Groups | `volition`, `volition-plan-secrets`, `volition-hermes-secrets`, `volition-private`, … | `helena`, `helena-secrets`, `helena-hermes-secrets`, `helena-private`, … |
 | Units | `volition-plan-{api,web,worker,migrate}`, `volition-hermes-runner`, `volition-project-browser-*`, `volition-*` | `helena-{api,web,worker,migrate}`, `helena-runner`, `helena-browser-*`, `helena-*`; full table in the map; the stale `-api-dev`, `-gateway`, `novnc/vnc/xvfb` units are retired |
 | Paths | `/srv/volition`, `/var/lib/volition`, `/etc/volition`, `/var/lib/volition-google`, `/var/log/volition`, `/run/volition-*`, `/usr/local/{libexec,lib}/volition-*` | `…/helena…`; the checkout `source/plan` → `source/helena`, app state `/var/lib/helena/app`, `plan.env` → `helena.env`, `hermes-plan-key` → `runner-api.key` |
-| Env vars | `PLAN_*`, `ITSAPLAN_*`, `VOLITION_*`, `MASTRA_*` | `HELENA_*`; `MASTRA_*` goes with D; `PLAN_SECRET_ALLOW_HOST`, `VERVE_PROJECT_PATH` retired |
+| Env vars | `PLAN_*`, `ITSAPLAN_*`, `VOLITION_*`, `MASTRA_*` | `HELENA_*`; `MASTRA_*` went with D; `PLAN_SECRET_ALLOW_HOST`, `VERVE_PROJECT_PATH` retired |
 | Headers | `x-volition-local-access`, `X-Itsaplan-{Event,Event-Id,Signature,Delivery}`, UA `itsaplan`, `itsaplan-webhooks/1` | `x-helena-local-access`, `X-Helena-*`, `helena`, `helena-webhooks/1` |
 | MCP | server `itsaplan`, tools `itsaplan__*`, grant `mcpGrants: ["itsaplan"]` (5 agents live) | `helena`, `helena__*`, data migration of the grants |
 | Hermes | `run/itsaplan-managed`, `itsaplan-{runner,policy-manifest,vault-manifest}.json`, plugin `plan-approval-guard` | `helena-*`; plugin `helena-approval-guard` |
@@ -704,9 +705,10 @@ prebuilt multi-arch images on GHCR.
   seed against localhost; agents with bursts of tool calls can hit it too.
   → hub/access-center (F01 already owns the better-auth rate-limit settings): map the error
   to 429 with `Retry-After`, and use a fixed window.
-- **Hard-coded time zone.** Routines default to `Europe/Berlin`, and the workflow wait
-  `until` uses Europe/Berlin. For other installs this becomes an instance setting (default
-  UTC) → hub/native-engine.
+- **Hard-coded time zone.** Done in hub/native-engine: routines, workflow schedules and wait
+  steps that name no time zone use the instance setting (Administrator → Allgemein →
+  Helena-Motor → Zeitzone), whose default is the server's (`HELENA_TIMEZONE` or `TZ`), and
+  Europe/Berlin when the server names none or runs in UTC.
 - **Private data in a migration:** `0139_project_mail_accounts.sql` (§2.4, §4.3).
 - **Installer gap:** hand-installed units and libexec scripts (§3.3 item 4).
 

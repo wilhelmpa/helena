@@ -102,9 +102,8 @@ async function agentByKey(agentKey: string): Promise<RunnerAgent | null> {
   const headers = new Headers({ 'x-api-key': agentKey });
   const session = await getSessionFromHeaders(headers);
   if (!session || session.user.active === false) return null;
-  const agent = await getRunnerAgent(session.user.id);
-  if (!agent || agent.kind !== 'external') return null;
-  return agent;
+  // Every agent runs on a runner (ai_agent.kind is always 'external').
+  return getRunnerAgent(session.user.id);
 }
 
 // The name people know an agent by ("Coder VOL"), for the live view's "Steuert: …" and the

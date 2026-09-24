@@ -462,10 +462,11 @@
       "pending": "В очереди",
       "running": "Выполняется",
       "waiting": "Ожидает",
-      "suspended": "Ожидает одобрения",
       "success": "Завершён",
       "failed": "Ошибка",
-      "canceled": "Отменён"
+      "canceled": "Отменён",
+      "succeeded": "Завершён",
+      "skipped": "Пропущен"
     },
     "outcome": {
       "review": "Задача переведена в «Ревью»",

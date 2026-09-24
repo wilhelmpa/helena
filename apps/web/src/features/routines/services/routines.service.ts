@@ -6,6 +6,7 @@ import {
   createRoutine,
   deleteRoutine,
   listMemberRoutines,
+  listRoutineRuns,
   listRoutines,
   runRoutine,
   updateRoutine,
@@ -25,6 +26,14 @@ export function useMemberRoutines(params: PageParams) {
   return useQuery({
     queryKey: qk.memberRoutinePage(params),
     queryFn: () => listMemberRoutines(params),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useRoutineRuns(projectKey: string, routineId: string, params: PageParams) {
+  return useQuery({
+    queryKey: qk.routineRuns(projectKey, routineId, params),
+    queryFn: () => listRoutineRuns(projectKey, routineId, params),
     placeholderData: keepPreviousData,
   });
 }

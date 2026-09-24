@@ -190,11 +190,7 @@
     "agent": "الوكيل",
     "delegated": "مفوَّضة",
     "runs": "التشغيلات",
-    "failed": "{count} فاشلة",
-    "kind": {
-      "external": "خارجي",
-      "internal": "داخلي"
-    }
+    "failed": "{count} فاشلة"
   },
   "defaultWidgets": {
     "open": "مفتوحة",

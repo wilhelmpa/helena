@@ -222,6 +222,9 @@ export const usePipelineRun = (runId: string | null) =>
 
 // A changed run is written into its own cache entry and every list that may show it
 // is read again.
+// Every list that shows the run: the engine's run lists (a workflow's, a built-in
+// workflow's, a routine's), the approvals, the task's workflow and agent-team runs, and
+// the routines with their last run.
 function useRefreshRun() {
   const client = useQueryClient();
   return (run: PipelineRun) => {
@@ -232,6 +235,10 @@ function useRefreshRun() {
       run.issueId !== null
         ? client.invalidateQueries({ queryKey: qk.issuePipelineRuns(run.issueId) })
         : undefined,
+      run.issueId !== null && run.kind === 'agent_team'
+        ? client.invalidateQueries({ queryKey: qk.issueAgentTeamRuns(run.issueId) })
+        : undefined,
+      run.kind === 'routine' ? client.invalidateQueries({ queryKey: qk.anyRoutines }) : undefined,
     ]);
   };
 }

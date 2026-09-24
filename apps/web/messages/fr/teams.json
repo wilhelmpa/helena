@@ -28,7 +28,7 @@
     },
     "integrations": {
       "title": "Intégrations",
-      "description": "Les clés de fournisseurs IA et les identifiants d'outils sur lesquels reposent les projets de l'équipe."
+      "description": "Les identifiants d'outils sur lesquels reposent les projets de l'équipe."
     },
     "mcp": {
       "title": "MCP",
@@ -36,7 +36,7 @@
     },
     "agentSkills": {
       "title": "Compétences",
-      "description": "Des instructions réutilisables que les agents internes chargent à la demande."
+      "description": "Des instructions réutilisables que les agents chargent à la demande."
     },
     "agentTools": {
       "title": "Outils",
@@ -233,13 +233,9 @@
     "search": "Rechercher une intégration",
     "noMatches": "Aucune intégration ne correspond à « {query} ».",
     "empty": "Aucun identifiant pour l'instant",
-    "emptyHint": "Sans identifiants, les agents ne peuvent utiliser ni fournisseur d'IA ni outil.",
+    "emptyHint": "Sans identifiants, les agents ne peuvent utiliser aucun outil.",
     "deleteMessage": "Supprimer les identifiants {integration} ? Les agents et les outils qui les utilisent cesseront de fonctionner jusqu'à ce que vous en ajoutiez de nouveaux.",
     "groups": {
-      "llm": {
-        "title": "Fournisseurs d'IA",
-        "hint": "Le modèle sur lequel tourne un agent interne"
-      },
       "tool": {
         "title": "Outils",
         "hint": "Les intégrations qu'un agent peut appeler comme outils"
@@ -296,7 +292,7 @@
   },
   "tools": {
     "title": "Outils d'intégration",
-    "hint": "Outils que les agents internes appellent avec un identifiant d'intégration de l'équipe.",
+    "hint": "Outils que les agents appellent avec un identifiant d'intégration de l'équipe.",
     "add": "Ajouter un outil",
     "delete": "Supprimer l'outil",
     "back": "Retour aux outils",
@@ -382,17 +378,11 @@
     "delete": "Supprimer l'agent IA",
     "edit": "Modifier l'agent IA",
     "empty": "Aucun agent IA pour l'instant",
-    "emptyHint": "Un agent s'exécute sur le runtime intégré ou via l'API.",
+    "emptyHint": "Un agent est piloté par son runner via l'API.",
     "agent": "Agent IA",
     "sheetSubtitle": "Un compte bot auquel vous pouvez déléguer des tickets",
-    "kind": "Type",
     "kindLabel": {
-      "external": "Externe",
-      "internal": "Interne"
-    },
-    "kindHint": {
-      "external": "Piloté via l'API",
-      "internal": "Exécuté par le runtime intégré"
+      "external": "Externe"
     },
     "namePlaceholder": "ex. Bot de triage",
     "username": "Nom d'utilisateur",
@@ -405,20 +395,6 @@
     "templatesHint": "Les projets en ajoutent des copies comme leurs propres spécialistes. Les connaissances partagées par les copies vont dans la bibliothèque de compétences ; chaque copie garde sa propre mémoire.",
     "access": "Disponibilité",
     "accessHint": "Qui peut confier des tâches à cet agent",
-    "model": "Modèle",
-    "modelHint": "Fournisseur et modèle",
-    "credential": "Identifiants",
-    "chooseCredential": "Choisir des identifiants",
-    "searchCredential": "Rechercher des identifiants",
-    "noCredentialsFound": "Aucun identifiant trouvé.",
-    "noCredential": "Aucun fournisseur d'IA connecté",
-    "noCredentialHint": "Connectez une clé de fournisseur dans les intégrations de l'équipe pour choisir un modèle pour cet agent.",
-    "addKey": "Aller aux paramètres de l'équipe",
-    "chooseModel": "Choisir un modèle",
-    "searchModel": "Rechercher ou saisir un identifiant de modèle",
-    "loadingModels": "Chargement des modèles…",
-    "noModels": "Aucun modèle trouvé.",
-    "noModel": "Aucun modèle défini",
     "runtimePolicy": {
       "title": "Politique d'exécution",
       "hint": "Politique neutre vis-à-vis du runtime, appliquée par l'adaptateur connecté",
@@ -430,9 +406,6 @@
       "modelsEmpty": "Le runner connecté n'a encore publié aucun modèle.",
       "modelsHint": "Modèles publiés par le fournisseur du runner connecté.",
       "reasoning": "Raisonnement",
-      "memory": "Mémoire de conversation",
-      "memoryWindowLabel": "Fenêtre de messages en mémoire",
-      "memoryWindowPlaceholder": "Fenêtre des messages récents",
       "maxConcurrentChats": "Chats en parallèle",
       "maxConcurrentChatsHint": "Nombre de chats de cet agent qu'un membre peut laisser répondre en même temps. Au-delà de la limite, un envoi est refusé jusqu'à ce que l'un d'eux se termine.",
       "mcpGrants": "Autorisations MCP",
@@ -505,21 +478,6 @@
     "runnerStateOffline": "Hors ligne",
     "runnerStateNone": "Non connecté",
     "runnerSeen": "Vu il y a {time}",
-    "actions": "Actions",
-    "actionsHint": "Ce que l'agent peut faire dans le projet",
-    "searchActions": "Rechercher une action",
-    "actionGroup": {
-      "issues": "Tickets",
-      "initiatives": "Initiatives",
-      "cycles": "Cycles",
-      "documents": "Docs",
-      "notes": "Tableaux de notes",
-      "project": "Projet"
-    },
-    "loadingActions": "Chargement des actions…",
-    "noActions": "Aucune action disponible.",
-    "clearAll": "Tout désélectionner",
-    "selectAll": "Tout sélectionner",
     "skills": "Compétences",
     "skillsHint": "Des instructions réutilisables que l'agent peut charger",
     "noSkills": "Aucune compétence pour l'instant",
@@ -533,15 +491,6 @@
     "noToolsHint": "Configurez un outil, puis activez-le ici.",
     "goToTools": "Aller aux outils",
     "searchTools": "Rechercher un outil",
-    "advanced": "Avancé",
-    "advancedHint": "Échantillonnage, limite d'étapes et mémoire",
-    "temperature": "Température",
-    "optional": "Facultatif",
-    "maxSteps": "Étapes maximum",
-    "memory": "Mémoire de conversation",
-    "memoryHint": "Se souvenir des messages récents au sein d'un fil de conversation.",
-    "memoryCount": "Retenir les N derniers messages",
-    "memoryCountPlaceholder": "ex. 20",
     "keyWarning": "Copiez-la maintenant. La clé n'est affichée qu'une seule fois.",
     "apiKeyHint": "La clé avec laquelle l'agent s'authentifie",
     "keyOnCreate": "Émise à la création de l'agent, affichée une seule fois.",
@@ -572,14 +521,9 @@
     "runsSubtitle": "@{username} · exécutions déclenchées",
     "regenerateMessage": "La clé actuelle de <v>{name}</v> cesse immédiatement de fonctionner. Mettez à jour avec la nouvelle clé tout ce qui l'utilise.",
     "deleteMessage": "<v>{name}</v> et sa clé d'API seront supprimés, et l'agent sera retiré de tous les tickets qui lui étaient assignés ou délégués. Cette action est irréversible.",
-    "actionCount": "{count, plural, one {# action} other {# actions}}",
-    "toolCount": "{count, plural, one {# outil} other {# outils}}",
-    "skillCount": "{count, plural, one {# compétence} other {# compétences}}",
     "triggerMention": "Mention",
     "triggerDelegation": "Délégation",
     "noMatch": "Aucun résultat pour « {query} ».",
-    "useCustomModel": "Utiliser « {query} »",
-    "readOnlyAlwaysOn": "L'accès en lecture seule est toujours actif et ne peut pas être désactivé.",
     "instructionsLabel": "Instructions",
     "copyInstructions": "Copier le markdown",
     "showSource": "Modifier la source markdown",

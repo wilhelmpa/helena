@@ -66,7 +66,7 @@ The browser gateway (hub/agent-browser-mcp) adds 24 `browser_*` tools with no ca
   - execution (`OPERATIONS` in `control.ts`, Mastra `runStep`)
   - the builder (`PipelineStepInspector`, `newStep`, `useStepSummary`, `STEP_FIELDS`, icons)
 - **Action kinds.** `set_status, add_labels, remove_labels, set_assignee, comment, create_subtask`.
-- **Triggers.** `manual, task_created, task_assigned, status_changed, label_added, schedule`. The issue service calls them directly (`queuePipelineTriggers`).
+- **Triggers.** `manual, task_created, task_assigned, status_changed, label_added, schedule`. Before the engine, the issue service called them directly (`queuePipelineTriggers`); now they listen to `helena.issue.*`.
 - **Other hard-wired trigger lists:** routines (Mastra schedules only), the older actions graph (`issue_state_changed`, `issue_comment_added`), and agent run triggers (a CHECK: `mention, delegation, field, schedule, manual, approval`).
 - **Target.** `WorkflowStepType` and `TriggerType` registries. The worker engine runs steps; triggers subscribe to domain events.
 - **Owner:** hub/native-engine (see §8).
@@ -415,7 +415,7 @@ ctx.usageLimitSources.register({
 
 | Branch | Registry / seam | What to do |
 |---|---|---|
-| hub/native-engine | `WorkflowStepType`, `TriggerType`, `EventTransport` (D-C2) | Register the five step kinds and the six triggers as the internal plugin `helena.workflows`; execute through the registry (`execute`/`resume`), and let the builder read `configSchema`/`ui`. Implement `EventTransport` on the chosen engine and call `useEventTransport` (API) and `eventDelivery.useTransport` (worker). Consume `helena.issue.*` for task triggers instead of `queuePipelineTriggers`. Emit `helena.routine.fired` from the new scheduler. |
+| hub/native-engine (done) | `WorkflowStepType`, `TriggerType`, `EventTransport` (D-C2), `PolicyEvaluator` host | The engine runs a plugin's step and trigger types from `registries.stepTypes` / `registries.triggerTypes` (`engine/plugins.ts`: config under `config` checked against `configSchema`, `{{variables}}` filled, `execute`/`resume` with waits on an approval, an agent run or an event, outputs as `{{step.<id>.<field>}}`, event triggers with patterns); the builder lists them and draws their form from the JSON Schema. Helena's own types stay on the engine's durable interface (`engine/sdk.ts`: `op`, `sleepUntil`, `waitForSignal`), which the SDK shape does not offer. The engine is the `EventTransport` (API and worker). Task triggers consume `helena.issue.*` (the issue service's `queuePipelineTriggers` is gone). Routines emit `helena.routine.fired`. Every step above `report` asks `host.decide` with its category. Open: time-driven plugin triggers (`next`). Decision: `docs/helena-decisions/workflow-engine.md`. |
 | hub/autopilot | `PolicyEvaluator` | One evaluator (`helena.autopilot`) over autopilot levels and budgets. Import `ACTION_CATEGORIES`/`actionRank` from `@helena/sdk`. The MCP endpoint already asks `decide()`; the runtime permission path (ACP) and step execution follow. |
 | hub/access-center | `Connector` | Register credential kinds and the Google/mail connectors as connectors (services with categories, `auth`, `health`); move the `@repo/agent-tools` HTTP clients to MCP servers (F23); categories from the SDK. |
 | hub/hermes-in-helena | `RuntimeType.readers` | The contract is yours, moved into `@helena/sdk` (`runtime-readers.ts`); import the types from there and hang the Hermes/Claude/Codex readers on the built-in types in `packages/runner/src/runtimes.ts`. |

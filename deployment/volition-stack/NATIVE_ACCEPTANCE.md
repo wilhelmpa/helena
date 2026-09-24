@@ -1,5 +1,10 @@
 # Kingston native acceptance — 2026-09-23
 
+This is the record of that day. Mastra and the Hermes team bridge, which it names, were
+removed afterwards: the Helena engine in the API runs agent teams, builder workflows and
+routines now. The engine's agent team needs an acceptance run of its own; this record does
+not cover it.
+
 ## Deployment scope
 
 Plan, Hermes, Mastra, project browsers, code-server, and terminals run as native systemd

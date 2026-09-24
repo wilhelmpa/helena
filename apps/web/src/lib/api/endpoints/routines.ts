@@ -1,10 +1,16 @@
 import { request } from '@/lib/api/core/client';
 import { pageQuery, type Page, type PageParams } from '@/lib/api/core/paging';
+import type { PipelineRun } from '@/lib/api/endpoints/pipelines';
 
 export type RoutineMode = 'new' | 'reopen';
 
-// A routine: a Mastra schedule that creates a task for an agent, or reopens one, on
-// its cron. The API answers it with its project so Home can list several projects.
+// What a fire that comes too late does, after the server was down: 'skip' records it as
+// missed, 'once' runs the newest missed time once.
+export type RoutineCatchUp = 'skip' | 'once';
+
+// A routine: a schedule the Helena engine fires, which creates a task for an agent, or
+// reopens one, on its cron. The API answers it with its project so Home can list several
+// projects.
 export interface Routine {
   id: string;
   projectKey: string;
@@ -18,9 +24,11 @@ export interface Routine {
   task: { id: number; number: number; title: string } | null;
   cron: string;
   timezone: string;
+  catchUp: RoutineCatchUp;
   enabled: boolean;
   nextRunAt: string | null;
   lastRun: {
+    id: string;
     status: string;
     outcome: 'created' | 'reopened' | 'skipped' | null;
     skipReason: 'task-open' | 'missed' | null;
@@ -40,6 +48,7 @@ export interface RoutineInput {
   taskId: number | null;
   cron: string;
   timezone: string;
+  catchUp: RoutineCatchUp;
 }
 
 export const listRoutines = (projectKey: string, params: PageParams) =>
@@ -67,6 +76,12 @@ export const updateRoutine = (
 
 export const deleteRoutine = (projectKey: string, routineId: string) =>
   request<void>(`/projects/${projectKey}/routines/${routineId}`, { method: 'DELETE' });
+
+// The runs of a routine, newest first: when each was due and what it did.
+export const listRoutineRuns = (projectKey: string, routineId: string, params: PageParams) =>
+  request<Page<PipelineRun>>(
+    `/projects/${projectKey}/routines/${routineId}/runs${pageQuery(params)}`,
+  );
 
 export const runRoutine = (projectKey: string, routineId: string) =>
   request<{ runId: string }>(`/projects/${projectKey}/routines/${routineId}/run`, {

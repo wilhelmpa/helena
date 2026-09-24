@@ -12,7 +12,7 @@ import { copyAgentBudgets, copyAgentLevel } from '#modules/autopilot/copy';
 // Helena is the source of truth for a template and every copy of it
 // (copyTemplateIntoProject). A copy's own edits stick (they land in
 // template_overrides), everything else follows the template the next time it changes,
-// through this module — never a second time inside the runner or Mastra, which both
+// through this module — never a second time inside the runner or the engine, which both
 // read the resulting ai_agent row live (see runtime-policy/service.ts and
 // pipelines/project-context.ts).
 //
@@ -130,7 +130,6 @@ interface TemplateRow {
   teamId: number;
   instructions: string | null;
   model: string | null;
-  modelCredentialId: number | null;
   runtimePolicy: unknown;
 }
 
@@ -142,7 +141,6 @@ async function loadTemplateRow(id: number): Promise<TemplateRow | null> {
       template: aiAgent.template,
       instructions: aiAgent.instructions,
       model: aiAgent.model,
-      modelCredentialId: aiAgent.modelCredentialId,
       runtimePolicy: aiAgent.runtimePolicy,
     })
     .from(aiAgent)
@@ -218,10 +216,7 @@ async function applyGroupsToCopy(
 ): Promise<void> {
   const set: Partial<typeof aiAgent.$inferInsert> = {};
   if (groups.includes('instructions')) set.instructions = template.instructions;
-  if (groups.includes('model')) {
-    set.model = template.model;
-    set.modelCredentialId = template.modelCredentialId;
-  }
+  if (groups.includes('model')) set.model = template.model;
   const policyGroups = groups.filter(
     (g): g is 'instructions' | 'model' | 'approvals' | 'budgets' =>
       g === 'instructions' || g === 'model' || g === 'approvals' || g === 'budgets',

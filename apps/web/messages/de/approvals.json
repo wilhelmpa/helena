@@ -34,11 +34,8 @@
   "rejectedBy": "Abgelehnt von {name}",
   "someone": "jemandem",
   "workflows": "Workflow-Freigaben",
-  "workflowsIncomplete": "Die Workflows einiger Projekte konnten nicht gelesen werden, deshalb fehlen hier eventuell deren Freigaben.",
   "gateOf": "{workflow} in {project}",
   "effects": "Wird nach der Freigabe ausgeführt:",
-  "gateApprovedToast": "Freigegeben. Der Workflow läuft weiter.",
-  "gateRejectedToast": "Abgelehnt. Der Workflow endet ohne diese Wirkungen.",
   "loadFailed": "Die Freigaben konnten nicht geladen werden.",
   "loadFailedHint": "Der Server hat nicht geantwortet. Versuche es gleich noch einmal.",
   "openBrowser": "Projekt-Browser öffnen"

@@ -19,9 +19,11 @@ import {
   deleteRoutine,
   listMemberRoutines,
   listProjectRoutines,
+  listRoutineRuns,
   runRoutine,
   updateRoutine,
 } from './service';
+import { PipelineRunPageResponse } from '#modules/pipelines/model';
 
 export const routineRoutes = new Elysia({
   name: 'routines',
@@ -131,6 +133,24 @@ export const routineRoutes = new Elysia({
           'Run the routine once now, outside its cron. It runs in the background; its result ' +
           'is the last run of list_routines.',
         ...mcpTool('run_routine', undefined, 'execute'),
+      },
+    },
+  )
+  .get(
+    '/projects/:projectKey/routines/:routineId/runs',
+    ({ project, params, query }) =>
+      paginate(query, (window) => listRoutineRuns(project, params.routineId, window)),
+    {
+      params: routineParams,
+      query: routinePageQuery,
+      permission: ['ai_agents', 'read'],
+      response: { 200: PipelineRunPageResponse, ...accessErrors },
+      detail: {
+        summary: 'List the runs of a routine',
+        description:
+          'One page of the runs of the routine, newest first: when each was due, what it did ' +
+          '(created, reopened or skipped a task) and why a failed one failed.',
+        ...mcpTool('list_routine_runs'),
       },
     },
   );
