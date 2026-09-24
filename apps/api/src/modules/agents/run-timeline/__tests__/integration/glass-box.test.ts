@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
-import { db, agentUsage, aiAgent } from '@repo/db';
+import { db, agentChatThread, agentUsage, aiAgent } from '@repo/db';
 import { eq, sql } from 'drizzle-orm';
 import { apiKeyApi, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
@@ -107,6 +107,46 @@ describe('runtime requests', () => {
     const res = await asking;
     expect(res.status).toBe(200);
     expect(res.data!.page!.sessions[0]!.id).toBe('20260924_102846_e310ba');
+  });
+
+  it("shows a person only their own chats' sessions and names each session's run", async () => {
+    const { asOwner, asRunner, teamId, agent, columnId } = await setup();
+    await queueRun(asOwner, columnId, agent.username);
+    const run = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    await asRunner['agent-runs']({ runId: run.id }).result.post(
+      { status: 'success', output: 'done', sessionId: 'sess-run' },
+      { query: { claim: run.claim } },
+    );
+    const other = await signUpTestUser({ name: 'Other' });
+    await db.insert(agentChatThread).values({
+      id: 'thread-other',
+      agentId: agent.id,
+      userId: other.userId,
+      title: 'Private chat',
+      cliSessionId: 'sess-chat',
+    });
+    const summary = page.sessions[0]!;
+    const listing = agentRoute(asOwner, teamId, agent.id).runtime.sessions.get({ query: {} });
+    await answerNext(asRunner, () => ({
+      sessions: [
+        { ...summary, id: 'sess-run' },
+        { ...summary, id: 'sess-chat' },
+        { ...summary, id: 'sess-cli', source: 'cli' },
+      ],
+      total: 3,
+    }));
+    const res = await listing;
+    expect(res.data!.page!.total).toBe(2);
+    expect(res.data!.page!.sessions.map((session) => [session.id, session.link?.runId])).toEqual([
+      ['sess-run', run.id],
+      ['sess-cli', null],
+    ]);
+    expect(res.data!.page!.sessions[0]!.link!.issueIdentifier).toBe('MKT-1');
+    // The other person's chat is not there to read either.
+    const transcript = await agentRoute(asOwner, teamId, agent.id)
+      .runtime.sessions({ sessionId: 'sess-chat' })
+      .get({ query: {} });
+    expect(transcript.status).toBe(404);
   });
 
   it("passes the runtime's refusal on and names a missing session", async () => {

@@ -59,6 +59,7 @@
     "tools": "{count, plural, one {# llamada a herramienta} other {# llamadas a herramientas}}",
     "back": "Volver a las sesiones",
     "copyId": "Copiar el ID de sesión",
+    "openRun": "Abrir ejecución",
     "truncated": "Las partes largas están acortadas.",
     "source": {
       "tool": "Ejecución o chat",

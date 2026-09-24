@@ -21,6 +21,8 @@ export interface AgentTabProps {
   canEdit: boolean;
   runId: number | null;
   onRunChange: (runId: number | null) => void;
+  // Opens a run in the runs tab.
+  onOpenRun: (runId: number) => void;
 }
 
 export interface AgentTab {
@@ -53,7 +55,9 @@ export const AGENT_TABS: AgentTab[] = [
     order: 20,
     kinds: ['external'],
     capability: 'sessions',
-    component: ({ teamId, agent }) => <AgentSessionsPanel teamId={teamId} agentId={agent.id} />,
+    component: ({ teamId, agent, onOpenRun }) => (
+      <AgentSessionsPanel teamId={teamId} agentId={agent.id} onOpenRun={onOpenRun} />
+    ),
   },
   {
     id: 'memory',

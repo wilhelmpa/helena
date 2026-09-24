@@ -369,7 +369,8 @@
       "run-janitor": "Уборщик запусков",
       "stage-janitor": "Уборщик этапов",
       "workflow-schedules": "Синхронизация расписаний",
-      "resume-janitor": "Уборщик возобновлений"
+      "resume-janitor": "Уборщик возобновлений",
+      "runtime-janitor": "Очистка среды выполнения"
     },
     "janitorRan": "выполнялся {time} назад",
     "janitorCleaned": "{count, plural, one {очищен # элемент} few {очищено # элемента} many {очищено # элементов} other {очищено # элемента}}",

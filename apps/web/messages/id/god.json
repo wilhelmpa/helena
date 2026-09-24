@@ -369,7 +369,8 @@
       "run-janitor": "Pembersih proses",
       "stage-janitor": "Pembersih tahap",
       "workflow-schedules": "Sinkronisasi jadwal",
-      "resume-janitor": "Pembersih pelanjutan"
+      "resume-janitor": "Pembersih pelanjutan",
+      "runtime-janitor": "Pembersihan runtime"
     },
     "janitorRan": "berjalan {time} lalu",
     "janitorCleaned": "{count, plural, other {membersihkan # item}}",

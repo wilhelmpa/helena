@@ -227,10 +227,11 @@ export function useAgentUsage(
   });
 }
 
-export function useProposals(status: 'pending' | 'decided') {
+export function useProposals(status: 'pending' | 'decided', enabled = true) {
   return useQuery({
     queryKey: qk.proposals(status),
     queryFn: () => listProposals(status),
+    enabled,
     refetchInterval: status === 'pending' ? 15_000 : false,
   });
 }

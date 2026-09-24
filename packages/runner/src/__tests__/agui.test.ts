@@ -161,6 +161,21 @@ describe('answer stream', () => {
     expect(text(sink.events)).toBe('Checked.');
   });
 
+  it("leaves Hermes' own notices beside its stream out of the answer", async () => {
+    const sink = collect();
+    const stream = new AnswerStream('hermes-stream-json', 'chat:1:u:x', '7', sink.send);
+    stream.write(
+      [
+        JSON.stringify({ type: 'system', subtype: 'init', session_id: 's1' }),
+        '  ⚠ tirith security scanner enabled but not available',
+        JSON.stringify({ type: 'text', text: 'Fertig.' }),
+        '',
+      ].join('\n'),
+    );
+    await stream.finish('Fertig.');
+    expect(text(sink.events)).toBe('Fertig.');
+  });
+
   it('reads the Hermes stream with session, text, tools, and final usage', async () => {
     const sink = collect();
     const stream = new AnswerStream('hermes-stream-json', 'chat:1:u:x', '7', sink.send);

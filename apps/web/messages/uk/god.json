@@ -369,7 +369,8 @@
       "run-janitor": "Прибиральник запусків",
       "stage-janitor": "Прибиральник етапів",
       "workflow-schedules": "Синхронізація розкладів",
-      "resume-janitor": "Прибиральник відновлень"
+      "resume-janitor": "Прибиральник відновлень",
+      "runtime-janitor": "Очищення середовища виконання"
     },
     "janitorRan": "виконано {time} тому",
     "janitorCleaned": "{count, plural, one {очищено # елемент} few {очищено # елементи} many {очищено # елементів} other {очищено # елемента}}",

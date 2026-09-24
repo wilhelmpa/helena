@@ -369,7 +369,8 @@
       "run-janitor": "Run janitor",
       "stage-janitor": "Stage janitor",
       "workflow-schedules": "Schedule sync",
-      "resume-janitor": "Resume janitor"
+      "resume-janitor": "Resume janitor",
+      "runtime-janitor": "Runtime janitor"
     },
     "janitorRan": "ran {time} ago",
     "janitorCleaned": "{count, plural, one {cleaned up # thing} other {cleaned up # things}}",

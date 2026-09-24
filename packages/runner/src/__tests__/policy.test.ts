@@ -1010,6 +1010,48 @@ describe('memory writes held for the owner and Hermes settings from Helena', () 
     expect(statuses.at(-1)!.memoryProposals).toBeUndefined();
   });
 
+  it('keeps an approved memory write although the snapshot still names the old baseline', async () => {
+    const { hermesHome, materializer } = await fixture();
+    await mkdir(join(hermesHome, 'memories'), { recursive: true });
+    await writeFile(join(hermesHome, 'memories/MEMORY.md'), 'Uses bun.');
+    const statuses: RuntimeStatus[] = [];
+    const approved = 'Uses bun.\n§\nOwner likes short answers.';
+    const policy: RuntimePolicySnapshot = {
+      ...snapshot('sha256:approved'),
+      memoryWrites: {
+        approval: true,
+        baseline: [{ file: 'MEMORY.md', sha256: sha('Uses bun.'), content: 'Uses bun.' }],
+      },
+      actions: [
+        {
+          id: 7,
+          kind: 'write-memory',
+          file: 'MEMORY.md',
+          content: approved,
+          baseSha256: sha('Uses bun.'),
+        },
+      ],
+    };
+    const sync = new HermesPolicySynchronizer(
+      {
+        runtimePolicy: async () => policy,
+        reportRuntimeStatus: async (status) => {
+          statuses.push(status);
+        },
+        mcpSecrets: async () => ({}),
+        webLogins: async () => [],
+      },
+      materializer,
+      { inventory: () => readHermesInventory(hermesHome, undefined, new Set()) },
+    );
+
+    await sync.ensure();
+
+    expect(await readFile(join(hermesHome, 'memories/MEMORY.md'), 'utf8')).toBe(approved);
+    expect(statuses.at(-1)!.memoryProposals).toBeUndefined();
+    expect(statuses.at(-1)!.actions).toEqual([{ id: 7, error: null }]);
+  });
+
   it('writes the disabled skills and the fallback models into the managed configuration', async () => {
     const { hermesHome, materializer } = await fixture();
     await materializer.apply({

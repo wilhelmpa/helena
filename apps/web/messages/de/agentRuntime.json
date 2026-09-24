@@ -59,6 +59,7 @@
     "tools": "{count, plural, one {# Werkzeugaufruf} other {# Werkzeugaufrufe}}",
     "back": "Zurück zu den Sitzungen",
     "copyId": "Sitzungs-ID kopieren",
+    "openRun": "Lauf öffnen",
     "truncated": "Lange Teile sind gekürzt.",
     "source": {
       "tool": "Lauf oder Chat",

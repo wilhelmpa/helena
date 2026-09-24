@@ -30,6 +30,16 @@ export interface RuntimeSession {
   usage: GenAiUsage;
   estimatedCostUsd: number | null;
   parentSessionId: string | null;
+  // The run or chat of Helena the session belongs to, when known.
+  link?: SessionLink | null;
+}
+
+export interface SessionLink {
+  runId: number | null;
+  issueIdentifier: string | null;
+  issueTitle: string | null;
+  chatThreadId: string | null;
+  chatTitle: string | null;
 }
 
 export interface SessionSearchHit {

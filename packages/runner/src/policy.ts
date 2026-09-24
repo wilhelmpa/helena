@@ -831,6 +831,10 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
   private memoryPolicy: RuntimeMemoryPolicy | null = null;
   // Held-back memory writes not reported yet.
   private memoryProposals: MemoryProposal[] = [];
+  // Memory versions the owner approved or wrote, carried out by this runner, until Helena's
+  // baseline names them: the baseline of a snapshot fetched before the write still holds the
+  // version before it, which must not be put back over the approved one.
+  private writtenMemory = new Map<MemoryFile, { sha256: string; content: string }>();
   private webLogins = false;
   // Helena's MCP servers that are on and the secrets they name, as the last applied
   // revision wrote them. mcpSecrets is null while the managed configuration names no secret.
@@ -1032,12 +1036,18 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
         snapshot,
         this.applyOptions(rewrites.length > 0),
       );
-      const results = [
-        ...rewrites.map((action) => ({ id: action.id, error: null })),
-        ...(await this.materializer.runActions(
-          actions.filter((action) => action.kind !== 'rewrite-profile'),
-        )),
-      ];
+      const others = actions.filter((action) => action.kind !== 'rewrite-profile');
+      const ran = await this.materializer.runActions(others);
+      for (const action of others) {
+        if (action.kind !== 'write-memory') continue;
+        if (ran.find((entry) => entry.id === action.id)?.error == null) {
+          this.writtenMemory.set(action.file, {
+            sha256: digest(action.content),
+            content: action.content,
+          });
+        }
+      }
+      const results = [...rewrites.map((action) => ({ id: action.id, error: null })), ...ran];
       // The links (shared configuration, plugins) belong to the profile as much as its files.
       const links = await this.materializer.ensurePlugins();
       this.appliedRevision = result.revision;
@@ -1183,7 +1193,10 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
   private async holdMemoryWrites(inventory: HermesInventory): Promise<boolean> {
     if (!this.memoryPolicy?.approval) return false;
     const restore: RuntimeAction[] = [];
-    for (const base of this.memoryPolicy.baseline) {
+    for (const snapshotBase of this.memoryPolicy.baseline) {
+      const written = this.writtenMemory.get(snapshotBase.file);
+      if (written?.sha256 === snapshotBase.sha256) this.writtenMemory.delete(snapshotBase.file);
+      const base = written ? { file: snapshotBase.file, ...written } : snapshotBase;
       const now = inventory.memory.find((entry) => entry.file === base.file);
       if (!now || now.sha256 === base.sha256 || now.truncated) continue;
       this.memoryProposals = [

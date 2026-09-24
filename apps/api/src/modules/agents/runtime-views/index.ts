@@ -6,6 +6,7 @@ import { HttpError } from '#shared/lib';
 import { commonErrors, errors } from '#shared/responses';
 import { agentParams } from '../model';
 import { agentForPerson } from '../people-access';
+import { assertSessionVisible, resolveSessions } from './session-access';
 import { askRuntime, getRuntimeRequest, queueRuntimeRequest } from '../runtime-requests/service';
 import {
   CuratorStatusResponse,
@@ -42,8 +43,9 @@ export const runtimeViewRoutes = new Elysia({
   .get(
     '/teams/:teamId/ai-agents/:agentId/runtime/sessions',
     async ({ params, membership, query, user }) => {
-      await agentForPerson(params.agentId, membership);
+      const { projectIds } = await agentForPerson(params.agentId, membership);
       const userId = requireUser(user).id;
+      const viewer = { userId, projectIds };
       const q = query.q?.trim();
       if (q) {
         const hits = await askRuntime<typeof SessionSearchResponse.static>(
@@ -51,14 +53,39 @@ export const runtimeViewRoutes = new Elysia({
           { op: 'sessions.search', query: q, limit: query.limit ?? 20 },
           { userId },
         );
-        return { hits };
-      }
-      return {
-        page: await askRuntime<typeof SessionPageResponse.static>(
+        const seen = await resolveSessions(
           params.agentId,
-          { op: 'sessions.list', limit: query.limit ?? 25, offset: query.offset ?? 0 },
-          { userId },
-        ),
+          hits.map((hit) => hit.sessionId),
+          viewer,
+        );
+        return {
+          hits: hits
+            .filter((hit) => seen.get(hit.sessionId)?.visible)
+            .map((hit) => ({
+              ...hit,
+              session: hit.session && {
+                ...hit.session,
+                link: seen.get(hit.sessionId)?.link ?? null,
+              },
+            })),
+        };
+      }
+      const page = await askRuntime<typeof SessionPageResponse.static>(
+        params.agentId,
+        { op: 'sessions.list', limit: query.limit ?? 25, offset: query.offset ?? 0 },
+        { userId },
+      );
+      const seen = await resolveSessions(
+        params.agentId,
+        page.sessions.map((session) => session.id),
+        viewer,
+      );
+      const sessions = page.sessions
+        .filter((session) => seen.get(session.id)?.visible)
+        .map((session) => ({ ...session, link: seen.get(session.id)?.link ?? null }));
+      // The runtime counts every session; the ones hidden on this page come off the total.
+      return {
+        page: { sessions, total: page.total - (page.sessions.length - sessions.length) },
       };
     },
     {
@@ -70,7 +97,9 @@ export const runtimeViewRoutes = new Elysia({
         summary: "List or search an agent's runtime sessions",
         description:
           'Without `q` a page of the sessions the runtime keeps, newest first; with `q` the ' +
-          'sessions whose messages match.',
+          'sessions whose messages match. Only the sessions the person may read: of runs in ' +
+          'their projects, of their own chats, and, for someone who sees the whole team, the ' +
+          'sessions Helena did not start. Each names its run or chat when Helena knows it.',
       },
     },
   )
@@ -78,7 +107,11 @@ export const runtimeViewRoutes = new Elysia({
   .get(
     '/teams/:teamId/ai-agents/:agentId/runtime/sessions/:sessionId',
     async ({ params, membership, query, user }) => {
-      await agentForPerson(params.agentId, membership);
+      const { projectIds } = await agentForPerson(params.agentId, membership);
+      await assertSessionVisible(params.agentId, params.sessionId, {
+        userId: requireUser(user).id,
+        projectIds,
+      });
       return askRuntime<typeof TranscriptResponse.static>(
         params.agentId,
         {
@@ -107,7 +140,16 @@ export const runtimeViewRoutes = new Elysia({
   .get(
     '/teams/:teamId/ai-agents/:agentId/runtime/logs',
     async ({ params, membership, query, user }) => {
-      await agentForPerson(params.agentId, membership);
+      const { projectIds } = await agentForPerson(params.agentId, membership);
+      // The whole log carries every session's lines: for someone who sees the whole team.
+      if (query.sessionId) {
+        await assertSessionVisible(params.agentId, query.sessionId, {
+          userId: requireUser(user).id,
+          projectIds,
+        });
+      } else if (projectIds !== undefined) {
+        throw new HttpError(403, "Only people who see the whole team read an agent's whole log");
+      }
       return askRuntime<typeof LogLinesResponse.static>(
         params.agentId,
         {

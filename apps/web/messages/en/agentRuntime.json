@@ -59,6 +59,7 @@
     "tools": "{count, plural, one {# tool call} other {# tool calls}}",
     "back": "Back to the sessions",
     "copyId": "Copy the session ID",
+    "openRun": "Open run",
     "truncated": "Long parts are shortened.",
     "source": {
       "tool": "Run or chat",

@@ -26,6 +26,20 @@ export const SessionSummary = t.Object({
   usage,
   estimatedCostUsd: t.Nullable(t.Number()),
   parentSessionId: t.Nullable(t.String()),
+  link: t.Optional(
+    t.Nullable(
+      t.Object(
+        {
+          runId: t.Nullable(t.Number()),
+          issueIdentifier: t.Nullable(t.String()),
+          issueTitle: t.Nullable(t.String()),
+          chatThreadId: t.Nullable(t.String()),
+          chatTitle: t.Nullable(t.String()),
+        },
+        { description: 'The run or the chat of Helena the session belongs to, when known.' },
+      ),
+    ),
+  ),
 });
 
 export const SessionPageResponse = t.Object({

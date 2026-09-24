@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ArrowLeft, Copy, Search } from 'lucide-react';
+import { ArrowLeft, Copy, Search, Waypoints } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,27 +16,48 @@ import TranscriptMessages from './TranscriptMessages';
 
 const PAGE = 25;
 
-// Every session the agent's runtime keeps (runs, chats, reflections), newest first, with a
-// search over their messages; one opens as its full transcript.
+// The sessions of the agent's runtime the reader may see (runs of their projects, their own
+// chats), newest first, each named after its run or chat, with a search over their messages;
+// one opens as its full transcript, and a run's session also opens its run.
 export default function AgentSessionsPanel({
   teamId,
   agentId,
+  onOpenRun,
 }: {
   teamId: number;
   agentId: number;
+  onOpenRun: (runId: number) => void;
 }) {
-  const [open, setOpen] = useState<string | null>(null);
+  const [open, setOpen] = useState<{ id: string; session: RuntimeSession | null } | null>(null);
   if (open) {
     return (
       <SessionTranscript
         teamId={teamId}
         agentId={agentId}
-        sessionId={open}
+        sessionId={open.id}
+        known={open.session}
         onBack={() => setOpen(null)}
+        onOpenRun={onOpenRun}
       />
     );
   }
-  return <SessionList teamId={teamId} agentId={agentId} onOpen={setOpen} />;
+  return (
+    <SessionList
+      teamId={teamId}
+      agentId={agentId}
+      onOpen={(id, session) => setOpen({ id, session })}
+    />
+  );
+}
+
+// What a session was in Helena (the task of its run, the title of its chat), else the
+// runtime's own title.
+function sessionTitle(session: RuntimeSession | null | undefined, fallback: string): string {
+  const link = session?.link;
+  if (link?.issueIdentifier) {
+    return link.issueTitle ? `${link.issueIdentifier} · ${link.issueTitle}` : link.issueIdentifier;
+  }
+  return link?.chatTitle ?? session?.title ?? session?.preview ?? fallback;
 }
 
 function SessionList({
@@ -46,7 +67,7 @@ function SessionList({
 }: {
   teamId: number;
   agentId: number;
-  onOpen: (sessionId: string) => void;
+  onOpen: (sessionId: string, session: RuntimeSession | null) => void;
 }) {
   const t = useTranslations('agentRuntime.sessions');
   const [draft, setDraft] = useState('');
@@ -100,7 +121,7 @@ function SessionList({
             <ul className="divide-y divide-border/50 overflow-hidden rounded-md bg-card">
               {hits.map((hit) => (
                 <li key={hit.sessionId}>
-                  <SearchHitRow hit={hit} onOpen={() => onOpen(hit.sessionId)} />
+                  <SearchHitRow hit={hit} onOpen={() => onOpen(hit.sessionId, hit.session)} />
                 </li>
               ))}
             </ul>
@@ -110,7 +131,7 @@ function SessionList({
             <ul className="divide-y divide-border/50 overflow-hidden rounded-md bg-card">
               {page.sessions.map((session) => (
                 <li key={session.id}>
-                  <SessionRow session={session} onOpen={() => onOpen(session.id)} />
+                  <SessionRow session={session} onOpen={() => onOpen(session.id, session)} />
                 </li>
               ))}
             </ul>
@@ -161,8 +182,8 @@ function SessionRow({ session, onOpen }: { session: RuntimeSession; onOpen: () =
       className="flex w-full flex-col gap-0.5 px-3 py-2.5 text-start hover:bg-accent"
     >
       <span className="flex w-full items-center gap-2 text-sm">
-        <span className="min-w-0 flex-1 truncate">
-          {session.title ?? session.preview ?? session.id}
+        <span className="min-w-0 flex-1 truncate" dir="auto">
+          {sessionTitle(session, session.id)}
         </span>
         <span className="shrink-0 text-xs text-muted-foreground">
           {at ? format.relativeTime(new Date(at)) : ''}
@@ -195,7 +216,9 @@ function SearchHitRow({ hit, onOpen }: { hit: SessionSearchHit; onOpen: () => vo
       onClick={onOpen}
       className="flex w-full flex-col gap-0.5 px-3 py-2.5 text-start hover:bg-accent"
     >
-      <span className="truncate text-sm">{hit.session?.title ?? hit.sessionId}</span>
+      <span className="truncate text-sm" dir="auto">
+        {sessionTitle(hit.session, hit.sessionId)}
+      </span>
       <span className="line-clamp-2 text-xs text-muted-foreground">
         {parts.map((part, index) =>
           part.startsWith('>>>') ? (
@@ -215,12 +238,17 @@ function SessionTranscript({
   teamId,
   agentId,
   sessionId,
+  known,
   onBack,
+  onOpenRun,
 }: {
   teamId: number;
   agentId: number;
   sessionId: string;
+  // The session as the list showed it, with what it was in Helena.
+  known: RuntimeSession | null;
   onBack: () => void;
+  onOpenRun: (runId: number) => void;
 }) {
   const t = useTranslations('agentRuntime.sessions');
   const transcript = useTranscript(teamId, agentId, sessionId);
@@ -241,9 +269,20 @@ function SessionTranscript({
         >
           <ArrowLeft className="size-4 rtl:rotate-180" />
         </Button>
-        <span className="min-w-0 flex-1 truncate text-sm font-medium">
-          {session?.title ?? sessionId}
+        <span className="min-w-0 flex-1 truncate text-sm font-medium" dir="auto">
+          {sessionTitle(known ?? session, sessionId)}
         </span>
+        {known?.link?.runId != null && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8"
+            onClick={() => onOpenRun(known.link!.runId!)}
+          >
+            <Waypoints />
+            {t('openRun')}
+          </Button>
+        )}
         {session && (
           <span className="text-xs text-muted-foreground" dir="ltr">
             {session.model} · {compactTokens(session.usage.inputTokens)} /{' '}

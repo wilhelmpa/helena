@@ -59,6 +59,7 @@
     "tools": "{count, plural, other {# pemanggilan alat}}",
     "back": "Kembali ke daftar sesi",
     "copyId": "Salin ID sesi",
+    "openRun": "Buka run",
     "truncated": "Bagian yang panjang dipersingkat.",
     "source": {
       "tool": "Run atau chat",
