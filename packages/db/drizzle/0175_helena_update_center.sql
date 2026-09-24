@@ -34,6 +34,7 @@ CREATE TABLE "helena_update" (
 	"breaking" boolean,
 	"summary_for" text,
 	"summary_run_id" integer,
+	"summary_run_for" text,
 	"summary_model" text,
 	"summary_error" text,
 	"summarized_at" timestamp with time zone,

@@ -47,6 +47,7 @@ export function launchEngine(): Promise<void> {
     // The workflows have to be registered before the launch, and the built-in types and
     // subscribers before the first run.
     await import('./workflows');
+    await import('./system-jobs');
     const { registerBuiltins } = await import('./builtin/index');
     registerBuiltins();
     const { subscribeEngineTriggers } = await import('./events');

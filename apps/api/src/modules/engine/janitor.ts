@@ -4,6 +4,7 @@ import { and, eq, like, lt, ne, sql } from 'drizzle-orm';
 import { engineExecutorId, engineRunning } from './dbos';
 import { signalFinishedAgentRuns, startLostRuns } from './runs';
 import { fireDueSchedules } from './schedules';
+import { fireDueSystemJobs } from './system-jobs';
 
 // The engine's own background passes, run by the api's background jobs. The quick pass
 // fires the schedules whose time has come, wakes runs whose agent runs finished, starts
@@ -23,6 +24,7 @@ const SKIPPED_RETENTION_DAYS = 90;
 const ENGINE_RETENTION: { names: string[]; statuses: WorkflowStatusString[]; days: number }[] = [
   { names: ['helena.event'], statuses: ['SUCCESS', 'CANCELLED', 'ERROR'], days: 7 },
   { names: ['helena.fire'], statuses: ['SUCCESS', 'CANCELLED', 'ERROR'], days: 30 },
+  { names: ['helena.job'], statuses: ['SUCCESS', 'CANCELLED', 'ERROR'], days: 30 },
   { names: ['helena.run'], statuses: ['SUCCESS', 'CANCELLED'], days: 30 },
   { names: ['helena.run'], statuses: ['ERROR'], days: 90 },
 ];
@@ -32,6 +34,7 @@ export async function engineTick(): Promise<void> {
   await recordServiceCheck('engine', null);
   await recordServiceCheck(`engine:${engineExecutorId()}`, null);
   await fireDueSchedules();
+  await fireDueSystemJobs();
   await signalFinishedAgentRuns();
   await startLostRuns();
 }

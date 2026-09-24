@@ -1,5 +1,5 @@
 {
-  "id": "43a493a0-46c4-477a-8498-131bddfaff3b",
+  "id": "18fc118d-c594-4a80-a0a1-1af0981f1f0e",
   "prevId": "60fdde39-309e-4e84-9dc5-2bfe19b12475",
   "version": "7",
   "dialect": "postgresql",
@@ -20582,6 +20582,12 @@
         "summary_run_id": {
           "name": "summary_run_id",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "summary_run_for": {
+          "name": "summary_run_for",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },

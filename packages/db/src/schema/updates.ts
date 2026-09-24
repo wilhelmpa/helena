@@ -54,6 +54,9 @@ export const helenaUpdate = pgTable(
     summaryRunId: integer('summary_run_id').references(() => agentRun.id, {
       onDelete: 'set null',
     }),
+    // What the queued run is about (the key `summary_for` gets once its answer is stored);
+    // null once the run's outcome was read.
+    summaryRunFor: text('summary_run_for'),
     summaryModel: text('summary_model'),
     summaryError: text('summary_error'),
     summarizedAt: timestamp('summarized_at', { withTimezone: true }),

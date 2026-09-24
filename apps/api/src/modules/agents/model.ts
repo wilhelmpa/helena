@@ -27,6 +27,9 @@ export const agentRunTrigger = t.Union([
   t.Literal('approval'),
   // A job for the runner itself (a repository clone), whose prompt is the job as JSON.
   t.Literal('workspace'),
+  // A text-only run (the update center's summary of release notes): the prompt goes to the
+  // model as it is, with no tools, rules or memory.
+  t.Literal('digest'),
 ]);
 
 export type AgentRunTrigger = typeof agentRunTrigger.static;

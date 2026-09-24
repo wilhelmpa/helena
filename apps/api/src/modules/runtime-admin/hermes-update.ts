@@ -25,7 +25,7 @@ export interface UpdateCheck {
   localPatches: { commit: string; date: string; subject: string }[];
 }
 
-interface StoredState {
+export interface StoredState {
   checkedAt: string;
   check: UpdateCheck;
 }
@@ -50,7 +50,8 @@ async function hermesAgent(): Promise<number> {
   return rows[0].id;
 }
 
-export async function checkHermesUpdate(userId: string): Promise<StoredState> {
+// `userId` is null for the update center's scheduled check.
+export async function checkHermesUpdate(userId: string | null): Promise<StoredState> {
   const check = await askRuntime<UpdateCheck>(
     await hermesAgent(),
     { op: 'runtime.update', action: 'check' },
@@ -59,6 +60,11 @@ export async function checkHermesUpdate(userId: string): Promise<StoredState> {
   const state = { checkedAt: new Date().toISOString(), check };
   await setSetting(STATE_KEY, state);
   return state;
+}
+
+// The last check, without asking the runner again.
+export async function storedHermesUpdate(): Promise<StoredState | null> {
+  return getSetting<StoredState>(STATE_KEY);
 }
 
 interface UpdatePayload {
@@ -176,7 +182,7 @@ interface HelperStatus {
 
 // An approved update that is running is followed through the runner until the helper says
 // it is done or failed.
-async function follow(proposal: typeof agentProposal.$inferSelect, userId: string) {
+async function follow(proposal: typeof agentProposal.$inferSelect, userId: string | null) {
   const payload = proposal.payload as UpdatePayload;
   if (proposal.status !== 'approved' || !payload.helperRequestId || !payload.agentId) return;
   const status = await askRuntime<HelperStatus>(
@@ -195,7 +201,7 @@ async function follow(proposal: typeof agentProposal.$inferSelect, userId: strin
     .where(eq(agentProposal.id, proposal.id));
 }
 
-export async function hermesUpdateState(userId: string) {
+export async function hermesUpdateState(userId: string | null) {
   const [latest] = await db
     .select()
     .from(agentProposal)
