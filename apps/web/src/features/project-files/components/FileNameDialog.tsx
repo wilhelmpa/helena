@@ -24,8 +24,7 @@ export default function FileNameDialog({
 }) {
   const t = useTranslations('files.dialog');
   const [name, setName] = useState(initialName);
-  // The name is preselected once, when the dialog opens; a later click places the caret.
-  const preselected = useRef(false);
+  const input = useRef<HTMLInputElement>(null);
   const trimmed = name.trim();
 
   const submit = (event: FormEvent) => {
@@ -34,26 +33,28 @@ export default function FileNameDialog({
   };
 
   return (
-    <Modal title={title} description={hint} onClose={onClose}>
+    <Modal
+      title={title}
+      description={hint}
+      onClose={onClose}
+      // The name without its extension is what is usually changed, so only that is
+      // selected. The dialog's own opening focus would select the whole field.
+      onOpenAutoFocus={(event) => {
+        event.preventDefault();
+        const field = input.current;
+        if (!field) return;
+        field.focus();
+        const dot = field.value.lastIndexOf('.');
+        field.setSelectionRange(0, dot > 0 ? dot : field.value.length);
+      }}
+    >
       <form onSubmit={submit} className="space-y-4">
         <Input
-          autoFocus
+          ref={input}
           value={name}
           onChange={(event) => setName(event.target.value)}
           aria-label={t('name')}
           dir="auto"
-          onFocus={(event) => {
-            // The name without its extension is what is usually changed. The dialog
-            // selects the whole field right after focusing it, so the range is set
-            // once that has happened.
-            const input = event.target;
-            if (preselected.current) return;
-            preselected.current = true;
-            requestAnimationFrame(() => {
-              const dot = input.value.lastIndexOf('.');
-              input.setSelectionRange(0, dot > 0 ? dot : input.value.length);
-            });
-          }}
         />
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={onClose}>
