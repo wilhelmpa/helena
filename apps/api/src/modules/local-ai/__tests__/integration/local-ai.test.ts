@@ -257,7 +257,7 @@ describe('local AI', () => {
     expect(route.status).toBe(200);
   });
 
-  it('refuses a key file outside /etc/helena-ai and a second server of the same name', async () => {
+  it('refuses a key file outside /etc/helena and a second server of the same name', async () => {
     const { asOwner } = await setup();
     const outside = await asOwner.god['local-ai'].servers.post({
       slug: 'other',

@@ -3,7 +3,7 @@
 // server, without Helena's database. For measuring models before they are registered.
 //
 //   bun apps/api/src/scripts/local-ai-eval.ts --base http://127.0.0.1:13305/api/v1 \
-//     --key-file /etc/helena-ai/api-key --model Qwen3.6-35B-A3B-GGUF \
+//     --key-file /etc/helena/local-ai.key --model Qwen3.6-35B-A3B-GGUF \
 //     [--embed-model Qwen3-Embedding-0.6B-GGUF] [--classes triage,summaries] [--json out.json]
 //
 // Prints one line per class: score, threshold, passed, median latency, tokens per second, and

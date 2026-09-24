@@ -46,8 +46,8 @@ XRT_VERSION=1:2.25.0-4~bpo13+1
 XRT_PACKAGES="libxrt2 libxrt-npu2 libxrt-utils libxrt-utils-npu"
 
 PORT=13305
-ETC=/etc/helena-ai
-KEY=$ETC/api-key
+ETC=/etc/helena
+KEY=$ETC/local-ai.key
 LIB=/usr/local/lib/helena-ai
 OPT=/opt/helena-ai
 MODELS=/var/lib/helena-ai/models
@@ -171,7 +171,8 @@ install_all() {
   [ "$ROCM_BACKEND" = 0 ] || fetch "$ROCM_URL" "$ROCM_ZIP" "$ROCM_SHA256"
 
   say "== the key (root:volition-plan 0640; never printed)"
-  run install -d -m 0751 -o root -g root "$ETC"
+  # Helena's key directory (native/laya keeps its key here too); the key file itself is 0640.
+  run install -d -m 0755 -o root -g root "$ETC"
   if [ ! -s "$KEY" ]; then
     if [ "$DRY_RUN" = 1 ]; then say "would create $KEY"; else
       umask 077; head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n' > "$KEY.new"
@@ -261,7 +262,10 @@ place() {
       mv "$blob.part" "$blob"
     fi
   fi
-  run ln -sfn "../../blobs/$sum" "$dir/snapshots/$commit/$file"
+  # A file in a folder of the repository (UD-Q4_K_XL/…) lies one level deeper.
+  up=$(echo "$file" | sed 's#[^/]*/#../#g; s#[^/]*$##')
+  run install -d -o lemonade -g lemonade -m 0750 "$(dirname "$dir/snapshots/$commit/$file")"
+  run ln -sfn "../../${up}blobs/$sum" "$dir/snapshots/$commit/$file"
   if [ "$DRY_RUN" = 1 ]; then say "would write $dir/refs/main = $commit"; else printf '%s' "$commit" > "$dir/refs/main"; fi
   run chown -R lemonade:lemonade "$dir"
 }
@@ -286,6 +290,21 @@ models_pull() {
     place "$repo" "$commit" "$file" "$size" "$sum"
     i=$((i + 1))
   done
+  case "$name" in
+    user.*)
+      # Not in Lemonade's own registry: register the checkpoint it now finds on disk.
+      variant=$(echo "$files" | cut -d, -f1)
+      case "$variant" in */*) variant=${variant%%/*} ;; esac
+      mmproj=$(echo "$files" | tr ',' '\n' | grep '^mmproj' | head -n 1 || true)
+      body="{\"model_name\":\"$name\",\"checkpoint\":\"$repo:$variant\",\"recipe\":\"llamacpp\""
+      [ -z "$mmproj" ] || body="$body,\"mmproj\":\"$mmproj\",\"labels\":[\"vision\",\"tool-calling\"]"
+      body="$body}"
+      if [ "$DRY_RUN" = 1 ]; then say "would POST /pull $body"; else
+        API_TIMEOUT=120 api /pull -X POST -H 'content-type: application/json' -d "$body"
+        say ""
+      fi
+      ;;
+  esac
   say "Placed $name. Load it with: $0 models load $name"
 }
 

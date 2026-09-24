@@ -109,7 +109,7 @@ export const localAiRoutes = new Elysia({
         summary: 'Add a local model server',
         description:
           'Lemonade on this machine by default (http://127.0.0.1:13305/api/v1, key from ' +
-          '/etc/helena-ai/api-key). Helena reads its status and models at once.',
+          '/etc/helena/local-ai.key). Helena reads its status and models at once.',
       },
     },
   )

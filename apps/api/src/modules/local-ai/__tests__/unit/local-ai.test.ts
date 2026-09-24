@@ -206,11 +206,11 @@ describe('the policy and its routes', () => {
     );
   });
 
-  it('reads a key file only below /etc/helena-ai', () => {
-    expect(allowedKeyFile('/etc/helena-ai/api-key')).toBe('/etc/helena-ai/api-key');
+  it('reads a key file only below /etc/helena', () => {
+    expect(allowedKeyFile('/etc/helena/local-ai.key')).toBe('/etc/helena/local-ai.key');
     expect(allowedKeyFile('/etc/volition/plan.env')).toBeNull();
-    expect(allowedKeyFile('/etc/helena-ai/../volition/plan.env')).toBeNull();
-    expect(allowedKeyFile('/etc/helena-ai')).toBeNull();
+    expect(allowedKeyFile('/etc/helena/../volition/plan.env')).toBeNull();
+    expect(allowedKeyFile('/etc/helena')).toBeNull();
     expect(allowedKeyFile(null)).toBeNull();
   });
 });

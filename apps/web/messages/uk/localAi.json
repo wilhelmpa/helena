@@ -81,7 +81,7 @@
     "name": "Назва",
     "baseUrl": "Адреса API, сумісного з OpenAI",
     "keySource": "Ключ",
-    "keyFile": "Файл ключа (у /etc/helena-ai)",
+    "keyFile": "Файл ключа (у /etc/helena)",
     "key": "Ключ",
     "cancel": "Скасувати",
     "save": "Додати"

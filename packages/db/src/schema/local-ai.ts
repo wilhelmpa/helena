@@ -32,7 +32,7 @@ export const helenaModelServer = pgTable(
     name: text('name').notNull(),
     // The base of its OpenAI-compatible API, ending in /v1.
     baseUrl: text('base_url').notNull(),
-    // Where its key comes from: a key file below /etc/helena-ai (the installer's), a key the
+    // Where its key comes from: a key file below /etc/helena (the installer's), a key the
     // Administrator entered (app_secret `localAi.server.<slug>`), or none.
     keySource: text('key_source').notNull().default('file'),
     keyFile: text('key_file'),

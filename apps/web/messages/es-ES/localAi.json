@@ -81,7 +81,7 @@
     "name": "Nombre",
     "baseUrl": "Dirección de la API compatible con OpenAI",
     "keySource": "Clave",
-    "keyFile": "Archivo de clave (bajo /etc/helena-ai)",
+    "keyFile": "Archivo de clave (bajo /etc/helena)",
     "key": "Clave",
     "cancel": "Cancelar",
     "save": "Añadir"

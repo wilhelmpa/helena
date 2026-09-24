@@ -81,7 +81,7 @@
     "name": "名称",
     "baseUrl": "兼容 OpenAI 的 API 地址",
     "keySource": "密钥",
-    "keyFile": "密钥文件（位于 /etc/helena-ai 下）",
+    "keyFile": "密钥文件（位于 /etc/helena 下）",
     "key": "密钥",
     "cancel": "取消",
     "save": "添加"

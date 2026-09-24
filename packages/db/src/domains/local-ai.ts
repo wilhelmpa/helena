@@ -31,9 +31,9 @@ export const LOCAL_AI_POLICY_KEY = 'localAi.policy';
 // the installer's key file.
 export const localAiServerSecretKey = (slug: string) => `localAi.server.${slug}`;
 // Key files are read only below this directory (native/local-ai/install.sh writes
-// /etc/helena-ai/api-key, root:volition-plan 0640), so no setting can point Helena at
+// /etc/helena/local-ai.key, root:volition-plan 0640), so no setting can point Helena at
 // another file and send what it holds to a server.
-export const LOCAL_AI_KEY_DIR = '/etc/helena-ai';
+export const LOCAL_AI_KEY_DIR = '/etc/helena';
 // How old a server's last status may be before a route treats the server as unknown and
 // checks it again.
 export const STATUS_FRESH_MS = 2 * 60_000;

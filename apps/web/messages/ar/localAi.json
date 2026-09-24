@@ -81,7 +81,7 @@
     "name": "الاسم",
     "baseUrl": "عنوان واجهة API المتوافقة مع OpenAI",
     "keySource": "المفتاح",
-    "keyFile": "ملف المفتاح (تحت ‎/etc/helena-ai)",
+    "keyFile": "ملف المفتاح (تحت ‎/etc/helena)",
     "key": "المفتاح",
     "cancel": "إلغاء",
     "save": "إضافة"

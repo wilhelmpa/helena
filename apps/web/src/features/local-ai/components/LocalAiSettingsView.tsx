@@ -212,7 +212,7 @@ function ServerDialog({
     name: '',
     baseUrl: lemonade?.defaultBaseUrl ?? 'http://127.0.0.1:13305/api/v1',
     keySource: 'file',
-    keyFile: '/etc/helena-ai/api-key',
+    keyFile: '/etc/helena/local-ai.key',
     key: '',
   });
   const set = (patch: Partial<ServerInput>) => setForm((current) => ({ ...current, ...patch }));
