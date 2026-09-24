@@ -41,7 +41,6 @@ import shell from '../../messages/en/shell.json';
 import teams from '../../messages/en/teams.json';
 import updates from '../../messages/en/updates.json';
 import views from '../../messages/en/views.json';
-import whatsNew from '../../messages/en/whatsNew.json';
 import workItems from '../../messages/en/workItems.json';
 import { DEFAULT_LOCALE, type Locale } from './locales';
 
@@ -85,7 +84,6 @@ const defaultMessages = {
   newProject,
   teams,
   updates,
-  whatsNew,
   organization,
   connections,
   credentials,
