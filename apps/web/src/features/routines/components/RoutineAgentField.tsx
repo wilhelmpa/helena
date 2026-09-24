@@ -50,7 +50,7 @@ export function RoutineAgentField({
         <p className="text-xs text-destructive">{t('agentNotDelegated')}</p>
       )}
       {agent?.triggerOnAssign && agent.kind === 'external' && (
-        <div className="flex items-start gap-2.5 rounded-md border border-border/60 bg-muted/30 px-3 py-2.5">
+        <div className="flex items-start gap-2.5 rounded-md border bg-card px-3 py-2.5">
           <Terminal className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
           <div className="min-w-0 flex-1 space-y-1">
             <p className="text-xs text-muted-foreground">{t('externalAgentHint')}</p>

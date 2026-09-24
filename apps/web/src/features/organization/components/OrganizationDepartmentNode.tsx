@@ -38,9 +38,7 @@ export default function OrganizationDepartmentNode({ node }: { node: DepartmentN
               isWarning && 'text-status-danger',
             )}
           />
-          <h3 className={cn('text-sm font-semibold', isWarning && 'text-status-danger')}>
-            {label}
-          </h3>
+          <h3 className={cn('text-sm font-medium', isWarning && 'text-status-danger')}>{label}</h3>
           <span className="font-mono text-xs text-muted-foreground tabular-nums">
             {node.agents.length}
           </span>

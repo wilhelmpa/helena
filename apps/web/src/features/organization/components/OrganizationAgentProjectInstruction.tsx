@@ -22,7 +22,7 @@ export default function OrganizationAgentProjectInstruction({
 
   return (
     <form
-      className="space-y-2 rounded-md bg-muted/40 p-3"
+      className="space-y-2 rounded-md border p-3"
       onSubmit={(event) => {
         event.preventDefault();
         save.mutate({ agentId, projectId: project.id, instructions });
