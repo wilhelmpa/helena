@@ -331,21 +331,40 @@ from Hermes' output and reported to `POST /agent-runtime/credential-uses` for th
 ## Claude Code and Codex from Helena
 
 With the `claude` and `codex` presets the runner reads the agent's policy too, and hands the
-runtime everything Hermes gets, per run, without writing into the working directory or the
-runtime's own home:
+runtime everything Hermes gets, per run, without writing into the working directory
+(docs/helena-decisions/cli-runtimes.md):
 
-- The agent's instructions (the SOUL.md Helena writes for Hermes) in front of the run's own
-  context: Claude Code's `--append-system-prompt`, the start of Codex' prompt.
-- The agent's skills below `HELENA_RUNTIME_DIR` (default `~/.local/state/helena-runner`): a
-  plugin for Claude Code (`--plugin-dir`), an index with their paths for Codex.
+- The agent's instructions (the SOUL.md Helena writes, told in the runtime's terms) in front
+  of the run's own context: Claude Code's `--append-system-prompt`, the start of Codex' prompt.
+- The agent's skills: a plugin for Claude Code (`--plugin-dir`), an index with their paths for
+  Codex.
 - Helena's MCP server and the library's: `--mcp-config` with `--strict-mcp-config` and
-  `--allowedTools mcp__<server>` for Claude Code; `-c mcp_servers.<name>.*` for Codex, whose own
-  `config.toml` servers are turned off. Secrets reach them as variables of the run's environment.
+  `--allowedTools mcp__<server>` for Claude Code; `-c mcp_servers.<name>.*` for Codex. Secrets
+  reach them as variables of the run's environment.
+- The built-in tools the owner turned off on the agent's Abilities (`--disallowedTools`,
+  `-c features.<name>=false`), and the ones no agent gets: Claude Code's scheduler and agent
+  messaging, Codex' ChatGPT apps/plugins and its own browser/computer use.
 - The model and reasoning: `--model` / `--effort`, `-m` / `-c model_reasoning_effort`.
+- The login Helena grants the agent (a "Laufzeit-Anmeldung" in Zugänge), read from
+  `GET /agent-runtime/runtime-login` for the run or chat answer and handed to that one command
+  as `CLAUDE_CODE_OAUTH_TOKEN`, `ANTHROPIC_API_KEY` or `CODEX_API_KEY`. Without one, the
+  runtime's own login in the agent's home is used.
+- Codex' sandbox: `danger-full-access` only inside agent isolation, `read-only` for an agent
+  Helena provisioned outside it, `workspace-write` for your own runner. The runner refuses any
+  Codex command without a sandbox outside isolation, whoever configured it.
+
+An agent Helena provisioned has a home of its own (`HELENA_AGENT_HOME`, its profile
+directory): the skills go to `<home>/.helena`, Claude Code keeps its state in `<home>/.claude`
+(`CLAUDE_CONFIG_DIR`) and Codex in `<home>/.codex` (`CODEX_HOME`, run with
+`--ignore-user-config`). Your own runner without it keeps the skills below
+`HELENA_RUNTIME_DIR` (default `~/.local/state/helena-runner`) and the runtimes' own homes, and
+turns off the servers of Codex' own `config.toml`.
 
 It reports the answer (not the raw event stream), the session for resuming, and a status with
-the applied revision and a profile digest. Set the agent's runtime to Claude Code or Codex in
-Helena, so the server does not also give it a Hermes runtime.
+the applied revision, a profile digest, the runtime's version and what keeps it from its work
+("Laufzeit nicht angemeldet", "Laufzeit fehlt", "Sandbox nicht verfügbar"). Set the agent's
+runtime to Claude Code or Codex in Helena: the server provisions it like a Hermes agent, and
+its runner serves it with that preset.
 
 ## What the coding agent receives
 
