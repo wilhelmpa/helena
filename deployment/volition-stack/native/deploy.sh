@@ -168,8 +168,16 @@ if changed "$chromium_policy"; then
   install -D -m 0644 "$live/$chromium_policy" /etc/chromium/policies/managed/volition-project-browser.json
 fi
 
+# The browser gateway's MCP shim is a build of packages/browser-gateway, installed outside the
+# checkout (an isolated agent's unit hides it); only rebuilt once install-browser-gateway.sh
+# installed it. The gateway itself runs inside the router, from the checkout.
+if changed packages/browser-gateway deployment/volition-stack/native/install-browser-gateway.sh; then
+  "$live/deployment/volition-stack/native/install-browser-gateway.sh" sync
+fi
+
 # The router runs from this checkout; its unit is installed from here as well.
-if changed deployment/volition-stack/browser deployment/volition-stack/native/systemd/volition-project-browser-router.service; then
+if changed deployment/volition-stack/browser packages/browser-gateway \
+  deployment/volition-stack/native/systemd/volition-project-browser-router.service; then
   install -m 0644 "$live/deployment/volition-stack/native/systemd/volition-project-browser-router.service" /etc/systemd/system/
   systemctl daemon-reload
   restart+=(volition-project-browser-router.service)

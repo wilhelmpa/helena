@@ -2,6 +2,7 @@ import { lstat, readFile, readlink, rename, symlink, unlink } from 'node:fs/prom
 import { isAbsolute, join, resolve } from 'node:path';
 import { RequestError } from './client';
 import type { RunnerConfig } from './config';
+import { usesBrowserGateway } from './browser-gateway';
 import { collectProfile, deepMerge, mcpSecretVariable, type ProfileContext } from './contributions';
 import { atomicWrite, digest, ensureRoot, ensureSafeParent } from './files';
 import {
@@ -44,6 +45,14 @@ import {
 } from './runtime';
 
 export { mcpSecretVariable } from './contributions';
+export {
+  BROWSER_GATEWAY_ENV,
+  BROWSER_GATEWAY_LEGACY_MCP_SERVER_NAME,
+  BROWSER_GATEWAY_MCP_SERVER_NAME,
+  BROWSER_GATEWAY_SHIM_PATH,
+  BROWSER_GATEWAY_TOOL_TIMEOUT_SEC,
+  usesBrowserGateway,
+} from './browser-gateway';
 
 export interface RuntimePolicyFile {
   kind: 'instructions';
@@ -828,6 +837,8 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
   private mcpToolsets: string[] = [];
   private runtimeServers: string[] = [];
   private contributedDeny: string[] = [];
+  // Whether the web logins a Hermes vault held from before the gateway were removed yet.
+  private vaultCleared = false;
   private mcpSecrets: number[] | null = null;
   private managedConfig: Record<string, unknown> | null = null;
   private vaultAccess: VaultAccess | null = null;
@@ -913,6 +924,13 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
       env: { ...this.vaultAccessEnv(), ...(await this.mcpEnv(work)) },
     };
     if (!work || !this.options.vault) return settings;
+    // The gateway is this agent's browser (a contribution already keeps Hermes' own toolset
+    // out of `settings`): its web logins reach browser_login/browser_login_code through the
+    // gateway, never Hermes' own vault, which is emptied instead.
+    if (this.onGateway()) {
+      await this.clearVault();
+      return settings;
+    }
     const granted = this.webLogins ? await this.client.webLogins(work) : [];
     const logins = await this.options.vault.sync(granted);
     if (logins.size === 0) return { ...settings, logins };
@@ -922,6 +940,19 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
       this.mcpToolsets,
     );
     return { ...settings, toolsets, logins };
+  }
+
+  private onGateway(): boolean {
+    return usesBrowserGateway((this.applied?.mcpServers ?? []).map(({ name }) => name));
+  }
+
+  // Design §6: an agent that uses the gateway keeps no copy of a web login in its Hermes
+  // vault. Done once per runner process: on the first policy sync (so a restart clears the
+  // vault of an agent that never runs) and again before a run if that failed.
+  private async clearVault(): Promise<void> {
+    if (this.vaultCleared || !this.options.vault) return;
+    await this.options.vault.sync([]);
+    this.vaultCleared = true;
   }
 
   // The knowledge vault paths the agent's file tools may reach, for the approval plugin.
@@ -966,6 +997,7 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
     }
     changed = (await this.checkProfile()) || changed;
     if ((changed || this.unreported) && this.state) await this.report(this.state);
+    if (this.onGateway()) await this.clearVault().catch(() => {});
   }
 
   private applyOptions(force = false): ApplyOptions {

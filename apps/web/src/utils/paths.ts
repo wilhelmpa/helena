@@ -73,6 +73,9 @@ export const agentActivityForAgentPath = (agentId: number, projectKey?: string |
   `${projectKey ? agentActivityPath(projectKey) : globalAgentActivityPath()}?${new URLSearchParams({ agent: String(agentId) })}`;
 export const approvalsPath = () => '/approvals';
 export const schedulesPath = () => '/schedules';
+// Home's "Browser" overview (design §5: a tile per project browser). Not /browser, which
+// nginx hands to the browser router (the live views).
+export const browserOverviewPath = () => '/browsers';
 
 // The workflow builder: the team's library of templates in Home and the editor of one
 // template, and the editor of a project's own workflow.

@@ -635,5 +635,29 @@
     "propertiesHint": "Werden beim Erstellen der Aufgabe übernommen und können vorher noch bearbeitet werden.",
     "emptyTitle": "Noch keine Vorlagen",
     "emptyDescription": "Eine Vorlage füllt eine neue Aufgabe mit Titel, Beschreibung und Eigenschaften."
+  },
+  "browser": {
+    "accessTitle": "Domains",
+    "accessHint": "Steuert, welche Domains der Projekt-Browser der Agenten öffnen darf. Eine Domain deckt auch ihre Subdomains ab.",
+    "blocklistLabel": "Domain-Sperrliste",
+    "blocklistHint": "Diese Domains bleiben immer gesperrt, auch wenn sie auf der Erlaubt-Liste stehen.",
+    "allowlistLabel": "Erlaubt-Liste",
+    "allowlistHint": "Leer erlaubt jede Domain außer den gesperrten. Nicht leer erlaubt nur diese Domains (z. B. Banking gesperrt lassen).",
+    "domainCount": "{count} / {max}",
+    "domainPlaceholder": "beispiel.de",
+    "removeDomain": "{domain} entfernen",
+    "behaviorTitle": "Verhalten",
+    "humanInputLabel": "Menschliche Eingabe",
+    "humanInputHint": "Tippt und klickt mit menschenähnlichen Pausen statt in Bestzeit. Nur für unkritische Testprojekte abschalten.",
+    "allowLocalLabel": "Lokale Adressen erlauben",
+    "allowLocalHint": "Agenten dürfen localhost, das Heimnetz und .local-Adressen öffnen. Aus lassen, außer für eine lokale Testseite: der Browser läuft auf dem Server und erreicht dort Helena und die anderen Browser.",
+    "lockTimeoutLabel": "Sperr-Timeout",
+    "lockTimeoutHint": "Nach so vielen Sekunden ohne Aktion gibt ein Agent die Steuerung des Browsers automatisch wieder frei.",
+    "seconds": "Sekunden",
+    "viewportLabel": "Arbeitsgröße für Agenten",
+    "viewportHint": "So groß ist die Seite, solange ein Agent steuert; Ihre Ansicht zeigt sie verkleinert. Beim Übernehmen folgt sie wieder Ihrem Fenster.",
+    "viewportWidth": "Breite",
+    "viewportHeight": "Höhe",
+    "pixels": "Pixel"
   }
 }

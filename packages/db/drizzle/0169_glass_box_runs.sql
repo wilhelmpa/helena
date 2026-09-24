@@ -1,5 +1,3 @@
-ALTER TABLE "agent_run" ADD COLUMN "continued_from_run_id" integer;--> statement-breakpoint
-ALTER TABLE "agent_run" ADD CONSTRAINT "agent_run_continued_from_run_id_agent_run_id_fk" FOREIGN KEY ("continued_from_run_id") REFERENCES "public"."agent_run"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 CREATE TABLE "agent_memory_revision" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"agent_id" integer NOT NULL,
@@ -53,6 +51,7 @@ CREATE TABLE "agent_runtime_request" (
 	CONSTRAINT "agent_runtime_request_status_check" CHECK ("agent_runtime_request"."status" IN ('pending', 'claimed', 'answered', 'failed'))
 );
 --> statement-breakpoint
+ALTER TABLE "agent_run" ADD COLUMN "continued_from_run_id" integer;--> statement-breakpoint
 ALTER TABLE "agent_memory_revision" ADD CONSTRAINT "agent_memory_revision_agent_id_ai_agent_id_fk" FOREIGN KEY ("agent_id") REFERENCES "public"."ai_agent"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "agent_memory_revision" ADD CONSTRAINT "agent_memory_revision_proposal_id_agent_proposal_id_fk" FOREIGN KEY ("proposal_id") REFERENCES "public"."agent_proposal"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "agent_memory_revision" ADD CONSTRAINT "agent_memory_revision_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
@@ -66,4 +65,5 @@ CREATE UNIQUE INDEX "agent_proposal_external_uq" ON "agent_proposal" USING btree
 CREATE INDEX "agent_proposal_status_idx" ON "agent_proposal" USING btree ("status","id");--> statement-breakpoint
 CREATE INDEX "agent_run_event_run_idx" ON "agent_run_event" USING btree ("run_id","id");--> statement-breakpoint
 CREATE INDEX "agent_runtime_request_agent_idx" ON "agent_runtime_request" USING btree ("agent_id","status","id");--> statement-breakpoint
-CREATE INDEX "agent_runtime_request_created_idx" ON "agent_runtime_request" USING btree ("created_at");
+CREATE INDEX "agent_runtime_request_created_idx" ON "agent_runtime_request" USING btree ("created_at");--> statement-breakpoint
+ALTER TABLE "agent_run" ADD CONSTRAINT "agent_run_continued_from_run_id_agent_run_id_fk" FOREIGN KEY ("continued_from_run_id") REFERENCES "public"."agent_run"("id") ON DELETE set null ON UPDATE no action;

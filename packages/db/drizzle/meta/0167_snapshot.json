@@ -1,5 +1,5 @@
 {
-  "id": "0b0e810d-1178-45d9-bc81-f08e24aecdbb",
+  "id": "4fb6fc11-72e0-478f-8ba9-0bffbb1672f5",
   "prevId": "50cce884-13ca-4067-b9f3-f049ab58c6cb",
   "version": "7",
   "dialect": "postgresql",
@@ -2291,6 +2291,13 @@
           "notNull": true,
           "default": "'[]'::jsonb"
         },
+        "builtin": {
+          "name": "builtin",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -2587,12 +2594,6 @@
           "notNull": true,
           "default": 0
         },
-        "continued_from_run_id": {
-          "name": "continued_from_run_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
         "finished_at": {
           "name": "finished_at",
           "type": "timestamp with time zone",
@@ -2712,19 +2713,6 @@
           "tableTo": "issue_activity",
           "columnsFrom": [
             "source_activity_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "agent_run_continued_from_run_id_agent_run_id_fk": {
-          "name": "agent_run_continued_from_run_id_agent_run_id_fk",
-          "tableFrom": "agent_run",
-          "tableTo": "agent_run",
-          "columnsFrom": [
-            "continued_from_run_id"
           ],
           "columnsTo": [
             "id"
@@ -3370,258 +3358,6 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.agent_usage": {
-      "name": "agent_usage",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "bigserial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "agent_id": {
-          "name": "agent_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "project_id": {
-          "name": "project_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "run_id": {
-          "name": "run_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "chat_message_id": {
-          "name": "chat_message_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "kind": {
-          "name": "kind",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "runtime": {
-          "name": "runtime",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "model": {
-          "name": "model",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "provider": {
-          "name": "provider",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "session_id": {
-          "name": "session_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "input_tokens": {
-          "name": "input_tokens",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "output_tokens": {
-          "name": "output_tokens",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "cache_read_tokens": {
-          "name": "cache_read_tokens",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "cache_write_tokens": {
-          "name": "cache_write_tokens",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "reasoning_tokens": {
-          "name": "reasoning_tokens",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "duration_ms": {
-          "name": "duration_ms",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "occurred_at": {
-          "name": "occurred_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "agent_usage_agent_time_idx": {
-          "name": "agent_usage_agent_time_idx",
-          "columns": [
-            {
-              "expression": "agent_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "occurred_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "agent_usage_project_time_idx": {
-          "name": "agent_usage_project_time_idx",
-          "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "occurred_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "agent_usage_time_idx": {
-          "name": "agent_usage_time_idx",
-          "columns": [
-            {
-              "expression": "occurred_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "agent_usage_run_idx": {
-          "name": "agent_usage_run_idx",
-          "columns": [
-            {
-              "expression": "run_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "agent_usage_agent_id_ai_agent_id_fk": {
-          "name": "agent_usage_agent_id_ai_agent_id_fk",
-          "tableFrom": "agent_usage",
-          "tableTo": "ai_agent",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "agent_usage_project_id_project_id_fk": {
-          "name": "agent_usage_project_id_project_id_fk",
-          "tableFrom": "agent_usage",
-          "tableTo": "project",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "agent_usage_run_id_agent_run_id_fk": {
-          "name": "agent_usage_run_id_agent_run_id_fk",
-          "tableFrom": "agent_usage",
-          "tableTo": "agent_run",
-          "columnsFrom": [
-            "run_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "agent_usage_chat_message_id_agent_chat_message_id_fk": {
-          "name": "agent_usage_chat_message_id_agent_chat_message_id_fk",
-          "tableFrom": "agent_usage",
-          "tableTo": "agent_chat_message",
-          "columnsFrom": [
-            "chat_message_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "agent_usage_kind_check": {
-          "name": "agent_usage_kind_check",
-          "value": "\"agent_usage\".\"kind\" IN ('run', 'chat', 'reflection')"
-        }
-      },
       "isRLSEnabled": false
     },
     "public.ai_agent": {
@@ -4356,6 +4092,128 @@
         "approval_request_status_check": {
           "name": "approval_request_status_check",
           "value": "\"approval_request\".\"status\" IN ('pending', 'approved', 'rejected')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.browser_gateway_event": {
+      "name": "browser_gateway_event",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "agent_id": {
+          "name": "agent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "agent_name": {
+          "name": "agent_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor": {
+          "name": "actor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tool": {
+          "name": "tool",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "target": {
+          "name": "target",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "browser_gateway_event_project_idx": {
+          "name": "browser_gateway_event_project_idx",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "browser_gateway_event_project_id_project_id_fk": {
+          "name": "browser_gateway_event_project_id_project_id_fk",
+          "tableFrom": "browser_gateway_event",
+          "tableTo": "project",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "browser_gateway_event_agent_id_ai_agent_id_fk": {
+          "name": "browser_gateway_event_agent_id_ai_agent_id_fk",
+          "tableFrom": "browser_gateway_event",
+          "tableTo": "ai_agent",
+          "columnsFrom": [
+            "agent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "browser_gateway_event_actor_check": {
+          "name": "browser_gateway_event_actor_check",
+          "value": "\"browser_gateway_event\".\"actor\" IN ('agent', 'owner')"
         }
       },
       "isRLSEnabled": false

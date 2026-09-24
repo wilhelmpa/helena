@@ -116,6 +116,10 @@
     "ai-agents": {
       "label": "AI Agents",
       "description": "AI agents working in this project."
+    },
+    "browser": {
+      "label": "Browser",
+      "description": "Domains the project browser may open, human-like input timing, and the control lock timeout."
     }
   }
 }

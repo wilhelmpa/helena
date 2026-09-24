@@ -50,3 +50,28 @@ export async function browserAction(
     }),
   );
 }
+
+// The control lock's Übernehmen/Zurückgeben actions (design §5): same base as the other
+// toolbar routes, same fetch convention as browserAction, no body. The router side of
+// these two routes is being built in parallel (see useBrowserLock.ts), so a call here can
+// answer 404 until it lands — browserLock* surfaces that as a normal thrown Error, same as
+// any other browserAction failure, for the caller to show as a toast.
+export async function browserLockTakeover(base: string): Promise<void> {
+  await answer(
+    await fetch(`${base}/lock-takeover`, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'content-type': 'application/json' },
+    }),
+  );
+}
+
+export async function browserLockRelease(base: string): Promise<void> {
+  await answer(
+    await fetch(`${base}/lock-release`, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'content-type': 'application/json' },
+    }),
+  );
+}

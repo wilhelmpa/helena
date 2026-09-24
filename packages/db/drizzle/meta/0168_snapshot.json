@@ -1,6 +1,6 @@
 {
-  "id": "638a2223-3a02-41d3-baeb-e15fc36b8ea5",
-  "prevId": "0b0e810d-1178-45d9-bc81-f08e24aecdbb",
+  "id": "e087afa9-8d10-4fe3-aacb-aac96f2c0fec",
+  "prevId": "4fb6fc11-72e0-478f-8ba9-0bffbb1672f5",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -2291,6 +2291,13 @@
           "notNull": true,
           "default": "'[]'::jsonb"
         },
+        "builtin": {
+          "name": "builtin",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -2425,324 +2432,6 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.agent_memory_revision": {
-      "name": "agent_memory_revision",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "agent_id": {
-          "name": "agent_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "file": {
-          "name": "file",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "content": {
-          "name": "content",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "sha256": {
-          "name": "sha256",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "source": {
-          "name": "source",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "proposal_id": {
-          "name": "proposal_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "agent_memory_revision_agent_idx": {
-          "name": "agent_memory_revision_agent_idx",
-          "columns": [
-            {
-              "expression": "agent_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "file",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "agent_memory_revision_agent_id_ai_agent_id_fk": {
-          "name": "agent_memory_revision_agent_id_ai_agent_id_fk",
-          "tableFrom": "agent_memory_revision",
-          "tableTo": "ai_agent",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "agent_memory_revision_proposal_id_agent_proposal_id_fk": {
-          "name": "agent_memory_revision_proposal_id_agent_proposal_id_fk",
-          "tableFrom": "agent_memory_revision",
-          "tableTo": "agent_proposal",
-          "columnsFrom": [
-            "proposal_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "agent_memory_revision_user_id_user_id_fk": {
-          "name": "agent_memory_revision_user_id_user_id_fk",
-          "tableFrom": "agent_memory_revision",
-          "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "agent_memory_revision_file_check": {
-          "name": "agent_memory_revision_file_check",
-          "value": "\"agent_memory_revision\".\"file\" IN ('MEMORY.md', 'USER.md')"
-        },
-        "agent_memory_revision_source_check": {
-          "name": "agent_memory_revision_source_check",
-          "value": "\"agent_memory_revision\".\"source\" IN ('agent', 'owner', 'observed')"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.agent_proposal": {
-      "name": "agent_proposal",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "agent_id": {
-          "name": "agent_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "kind": {
-          "name": "kind",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "external_id": {
-          "name": "external_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "payload": {
-          "name": "payload",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::jsonb"
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'pending'"
-        },
-        "decided_by_user_id": {
-          "name": "decided_by_user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "decided_at": {
-          "name": "decided_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "note": {
-          "name": "note",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "error": {
-          "name": "error",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "agent_proposal_external_uq": {
-          "name": "agent_proposal_external_uq",
-          "columns": [
-            {
-              "expression": "coalesce(\"agent_id\", 0)",
-              "asc": true,
-              "isExpression": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "kind",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "external_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "agent_proposal_status_idx": {
-          "name": "agent_proposal_status_idx",
-          "columns": [
-            {
-              "expression": "status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "agent_proposal_agent_id_ai_agent_id_fk": {
-          "name": "agent_proposal_agent_id_ai_agent_id_fk",
-          "tableFrom": "agent_proposal",
-          "tableTo": "ai_agent",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "agent_proposal_decided_by_user_id_user_id_fk": {
-          "name": "agent_proposal_decided_by_user_id_user_id_fk",
-          "tableFrom": "agent_proposal",
-          "tableTo": "user",
-          "columnsFrom": [
-            "decided_by_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "agent_proposal_kind_check": {
-          "name": "agent_proposal_kind_check",
-          "value": "\"agent_proposal\".\"kind\" IN ('memory-write', 'hermes-update')"
-        },
-        "agent_proposal_status_check": {
-          "name": "agent_proposal_status_check",
-          "value": "\"agent_proposal\".\"status\" IN ('pending', 'approved', 'rejected', 'applied', 'failed')"
-        }
-      },
       "isRLSEnabled": false
     },
     "public.agent_run": {
@@ -2905,12 +2594,6 @@
           "notNull": true,
           "default": 0
         },
-        "continued_from_run_id": {
-          "name": "continued_from_run_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
         "finished_at": {
           "name": "finished_at",
           "type": "timestamp with time zone",
@@ -3036,19 +2719,6 @@
           ],
           "onDelete": "set null",
           "onUpdate": "no action"
-        },
-        "agent_run_continued_from_run_id_agent_run_id_fk": {
-          "name": "agent_run_continued_from_run_id_agent_run_id_fk",
-          "tableFrom": "agent_run",
-          "tableTo": "agent_run",
-          "columnsFrom": [
-            "continued_from_run_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -3064,87 +2734,6 @@
           "value": "\"agent_run\".\"trigger\" IN ('mention', 'delegation', 'field', 'schedule', 'manual', 'approval')"
         }
       },
-      "isRLSEnabled": false
-    },
-    "public.agent_run_event": {
-      "name": "agent_run_event",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "bigserial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "run_id": {
-          "name": "run_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "claim": {
-          "name": "claim",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "payload": {
-          "name": "payload",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "agent_run_event_run_idx": {
-          "name": "agent_run_event_run_idx",
-          "columns": [
-            {
-              "expression": "run_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "agent_run_event_run_id_agent_run_id_fk": {
-          "name": "agent_run_event_run_id_agent_run_id_fk",
-          "tableFrom": "agent_run_event",
-          "tableTo": "agent_run",
-          "columnsFrom": [
-            "run_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.agent_runtime_action": {
@@ -3241,156 +2830,6 @@
         "agent_runtime_action_kind_check": {
           "name": "agent_runtime_action_kind_check",
           "value": "\"agent_runtime_action\".\"kind\" IN ('discard-skill', 'pin-skill', 'write-memory', 'rewrite-profile')"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.agent_runtime_request": {
-      "name": "agent_runtime_request",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "agent_id": {
-          "name": "agent_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "request": {
-          "name": "request",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'pending'"
-        },
-        "result": {
-          "name": "result",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "error": {
-          "name": "error",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "requested_by_user_id": {
-          "name": "requested_by_user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "claimed_at": {
-          "name": "claimed_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "answered_at": {
-          "name": "answered_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "agent_runtime_request_agent_idx": {
-          "name": "agent_runtime_request_agent_idx",
-          "columns": [
-            {
-              "expression": "agent_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "agent_runtime_request_created_idx": {
-          "name": "agent_runtime_request_created_idx",
-          "columns": [
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "agent_runtime_request_agent_id_ai_agent_id_fk": {
-          "name": "agent_runtime_request_agent_id_ai_agent_id_fk",
-          "tableFrom": "agent_runtime_request",
-          "tableTo": "ai_agent",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "agent_runtime_request_requested_by_user_id_user_id_fk": {
-          "name": "agent_runtime_request_requested_by_user_id_user_id_fk",
-          "tableFrom": "agent_runtime_request",
-          "tableTo": "user",
-          "columnsFrom": [
-            "requested_by_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "agent_runtime_request_status_check": {
-          "name": "agent_runtime_request_status_check",
-          "value": "\"agent_runtime_request\".\"status\" IN ('pending', 'claimed', 'answered', 'failed')"
         }
       },
       "isRLSEnabled": false
@@ -4905,6 +4344,128 @@
         "approval_request_status_check": {
           "name": "approval_request_status_check",
           "value": "\"approval_request\".\"status\" IN ('pending', 'approved', 'rejected')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.browser_gateway_event": {
+      "name": "browser_gateway_event",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "agent_id": {
+          "name": "agent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "agent_name": {
+          "name": "agent_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor": {
+          "name": "actor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tool": {
+          "name": "tool",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "target": {
+          "name": "target",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "browser_gateway_event_project_idx": {
+          "name": "browser_gateway_event_project_idx",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "browser_gateway_event_project_id_project_id_fk": {
+          "name": "browser_gateway_event_project_id_project_id_fk",
+          "tableFrom": "browser_gateway_event",
+          "tableTo": "project",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "browser_gateway_event_agent_id_ai_agent_id_fk": {
+          "name": "browser_gateway_event_agent_id_ai_agent_id_fk",
+          "tableFrom": "browser_gateway_event",
+          "tableTo": "ai_agent",
+          "columnsFrom": [
+            "agent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "browser_gateway_event_actor_check": {
+          "name": "browser_gateway_event_actor_check",
+          "value": "\"browser_gateway_event\".\"actor\" IN ('agent', 'owner')"
         }
       },
       "isRLSEnabled": false

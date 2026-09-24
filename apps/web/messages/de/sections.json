@@ -116,6 +116,10 @@
     "ai-agents": {
       "label": "KI-Agenten",
       "description": "KI-Agenten, die in diesem Projekt arbeiten."
+    },
+    "browser": {
+      "label": "Browser",
+      "description": "Domains, die der Projekt-Browser öffnen darf, menschliche Eingabe-Zeitabstände und das Sperr-Timeout."
     }
   }
 }

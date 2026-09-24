@@ -55,6 +55,27 @@ def check(spec: str) -> dict:
                 return result(False, err(error))
             finally:
                 sock.close()
+        if kind in ('unixread', 'unixtwice'):
+            # What a Unix socket answers on connect (the browser gateway proof's stand-in says
+            # which project it serves); `unixtwice` reads again after a pause, across a restart
+            # of the listener, to prove a bound directory still reaches the new socket.
+            def read_once(path: str) -> str:
+                sock = socket.socket(socket.AF_UNIX)
+                sock.settimeout(3)
+                try:
+                    sock.connect(path)
+                    return sock.recv(64).decode('utf-8', 'replace').strip()
+                except OSError as error:
+                    return f'!{err(error)}'
+                finally:
+                    sock.close()
+            first = read_once(args[0])
+            if kind == 'unixread':
+                return result(not first.startswith('!'), first)
+            import time  # noqa: PLC0415
+            time.sleep(float(args[1]))
+            second = read_once(args[0])
+            return result(not first.startswith('!') and not second.startswith('!'), f'{first}|{second}')
         if kind == 'read':
             path = args[0]
             try:

@@ -361,7 +361,18 @@
     "secretHint": "密钥的值只会发送给启用了该服务器的代理的运行器，绝不会发送到此页面。",
     "missingSecret": "已删除的密钥",
     "addValue": "添加",
-    "removeValue": "移除"
+    "removeValue": "移除",
+    "builtinBadge": "内置",
+    "builtin": {
+      "projekt-browser": {
+        "title": "项目浏览器",
+        "description": "Hermes、Claude Code 和 Codex 通过共享网关控制项目浏览器:登录信息来自“凭据”,密码绝不会出现在历史记录中。"
+      },
+      "hermes-browser-legacy": {
+        "title": "Hermes 自带浏览器(旧)",
+        "description": "回退到 Hermes 自带的 CDP 浏览器工具,而不是共享网关。"
+      }
+    }
   },
   "agents": {
     "newAgent": "新建 AI 代理",

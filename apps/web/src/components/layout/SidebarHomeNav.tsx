@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Activity,
+  AppWindow,
   AtSign,
   BookOpenText,
   BookText,
@@ -46,6 +47,7 @@ const icons = {
   agentPool: Bot,
   organization: Building2,
   agentActivity: Activity,
+  browser: AppWindow,
   schedules: Clock3,
   workflows: Workflow,
   skills: BookText,

@@ -635,5 +635,29 @@
     "propertiesHint": "Se aplican cuando se crea el ticket, y son editables antes de que se haga.",
     "emptyTitle": "Todavía no hay plantillas",
     "emptyDescription": "Una plantilla rellena un ticket nuevo con un título, una descripción y propiedades."
+  },
+  "browser": {
+    "accessTitle": "Dominios",
+    "accessHint": "Controla qué dominios puede abrir el navegador del proyecto de los agentes. Un dominio también cubre sus subdominios.",
+    "blocklistLabel": "Lista de bloqueo de dominios",
+    "blocklistHint": "Estos dominios permanecen bloqueados aunque estén en la lista de permitidos.",
+    "allowlistLabel": "Lista de permitidos",
+    "allowlistHint": "Vacía permite cualquier dominio salvo los bloqueados. Si no está vacía, solo permite estos dominios (por ejemplo, dejando la banca bloqueada).",
+    "domainCount": "{count} / {max}",
+    "domainPlaceholder": "ejemplo.com",
+    "removeDomain": "Quitar {domain}",
+    "behaviorTitle": "Comportamiento",
+    "humanInputLabel": "Entrada similar a la humana",
+    "humanInputHint": "Escribe y hace clic con pausas similares a las humanas en lugar de a máxima velocidad. Desactívalo solo en un proyecto de prueba de bajo riesgo.",
+    "allowLocalLabel": "Permitir direcciones locales",
+    "allowLocalHint": "Los agentes pueden abrir localhost, la red local y direcciones .local. Déjalo desactivado salvo para probar un sitio local: el navegador se ejecuta en el servidor, donde estas direcciones llegan a Helena y a los demás navegadores.",
+    "lockTimeoutLabel": "Tiempo de espera del bloqueo",
+    "lockTimeoutHint": "Tras este número de segundos sin actividad, el control del navegador por parte de un agente se libera automáticamente.",
+    "seconds": "segundos",
+    "viewportLabel": "Tamaño de trabajo para agentes",
+    "viewportHint": "La página tiene este tamaño mientras un agente tiene el control; su vista la muestra escalada. Al tomar el control vuelve a seguir su ventana.",
+    "viewportWidth": "Ancho",
+    "viewportHeight": "Alto",
+    "pixels": "píxeles"
   }
 }
