@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FolderPlus, Shield } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { Project } from '@/lib/api/endpoints/projects';
 import { useSession } from '@/lib/auth-client';
+import { cn } from '@/lib/utils';
 import { godPath } from '@/utils/paths';
 import { GOD_SECTIONS } from '@/utils/godSections';
 import { useSidebarSide } from '@/hooks/useSidebarSide';
@@ -60,6 +61,25 @@ export default function AppSidebar({
   // 'classic' keeps them in AppHeader instead, exactly where they are today.
   const { headerLayout } = useAccountPreferences();
 
+  // Whether rows are hidden below the navigation's bottom edge: only then does its last
+  // visible row fade out, so a list that fits never looks greyed at its end.
+  const navRef = useRef<HTMLDivElement>(null);
+  const [moreBelow, setMoreBelow] = useState(false);
+  useEffect(() => {
+    const node = navRef.current;
+    if (!node) return;
+    const check = () => setMoreBelow(node.scrollTop + node.clientHeight < node.scrollHeight - 1);
+    check();
+    const observer = new ResizeObserver(check);
+    observer.observe(node);
+    for (const child of Array.from(node.children)) observer.observe(child);
+    node.addEventListener('scroll', check, { passive: true });
+    return () => {
+      observer.disconnect();
+      node.removeEventListener('scroll', check);
+    };
+  }, [currentProjectKey]);
+
   return (
     <Sidebar collapsible="icon" side={side}>
       <SidebarHeader className="h-12 shrink-0 justify-center px-2 py-0">
@@ -83,9 +103,16 @@ export default function AppSidebar({
           currentProjectKey={currentProjectKey}
           onSelectProject={onSelectProject}
         />
-        {/* A long navigation scrolls; its last visible row fades out instead of being cut
-            off hard at the footer. */}
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [mask-image:linear-gradient(to_bottom,black_calc(100%-1.25rem),transparent)] group-data-[collapsible=icon]:overflow-hidden">
+        {/* A long navigation scrolls; while rows are hidden below, its last visible row
+            fades out instead of being cut off hard at the footer. */}
+        <div
+          ref={navRef}
+          className={cn(
+            'min-h-0 flex-1 overflow-y-auto overscroll-contain group-data-[collapsible=icon]:overflow-hidden',
+            moreBelow &&
+              '[mask-image:linear-gradient(to_bottom,black_calc(100%-1.25rem),transparent)]',
+          )}
+        >
           {currentProjectKey ? (
             <SidebarProjectNav projectKey={currentProjectKey} />
           ) : (
