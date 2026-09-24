@@ -343,11 +343,24 @@ describe('agent MCP servers', () => {
     expect(read.data?.map((s) => s.name)).toEqual(['shopify-dev']);
   });
 
+  // The design turns the browser gateway on for every coordinator
+  // (volition-design-browser-gateway.md §3), so a new project's coordinator can browse.
+  it('switches the project browser on for the coordinator of a new project', async () => {
+    const { asOwner, teamId } = await setup();
+    const agents = await asOwner.teams({ teamId })['ai-agents'].get();
+    const coordinator = agents.data!.find((a) => a.username === 'hermes-mkt-coordinator')!;
+    const read = await agentServers(asOwner, teamId, coordinator.id).get();
+    expect(read.data?.map((s) => s.name)).toContain('projekt-browser');
+  });
+
   it('counts the servers with the tools of the team', async () => {
     const { asOwner, teamId } = await setup();
+    // The project's coordinator brought the built-in servers along; they count as well.
+    const toolCount = async () =>
+      (await asOwner.teams.get()).data!.find((t) => t.id === teamId)!.toolCount;
+    const before = await toolCount();
     await servers(asOwner, teamId).post({ name: 'shopify-dev', transport: 'stdio', command: 'x' });
-    const team = (await asOwner.teams.get()).data!.find((t) => t.id === teamId)!;
-    expect(team.toolCount).toBe(1);
+    expect(await toolCount()).toBe(before + 1);
   });
 
   // A server runs a command with any secret of the team, so the tools permission lets a
