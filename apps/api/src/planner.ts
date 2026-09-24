@@ -23,6 +23,7 @@ import { agentSkillRoutes } from './modules/agents/skills';
 import { agentToolRoutes } from './modules/agents/tools';
 import { agentMcpServerRoutes } from './modules/agents/mcp-servers';
 import { credentialRoutes } from './modules/agents/credentials';
+import { connectorRoutes, connectorToolRoutes } from './modules/connectors';
 import { agentLearningRoutes } from './modules/agents/learning';
 import { customFieldRoutes } from './modules/custom-fields';
 import { issueTemplateRoutes } from './modules/issue-templates';
@@ -119,6 +120,8 @@ export const planner = new Elysia({ name: 'planner' })
   .use(agentToolRoutes)
   .use(agentMcpServerRoutes)
   .use(credentialRoutes)
+  .use(connectorRoutes)
+  .use(connectorToolRoutes)
   .use(agentLearningRoutes)
   .use(customFieldRoutes)
   .use(issueTemplateRoutes)

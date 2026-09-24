@@ -15621,6 +15621,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "reset_requested_at": {
+          "name": "reset_requested_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "enabled": {
           "name": "enabled",
           "type": "boolean",

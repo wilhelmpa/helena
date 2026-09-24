@@ -185,7 +185,8 @@ async function mimeOf(input: Static<typeof mailSend> & { account: string }): Pro
       references: input.inReplyTo ? [input.inReplyTo] : [],
       attachments: [],
     },
-    false,
+    // Gmail reads the recipients from the headers and drops the Bcc header on sending.
+    true,
   );
 }
 

@@ -67,4 +67,5 @@ ALTER TABLE "integration_credential_grant" ADD CONSTRAINT "integration_credentia
 ALTER TABLE "integration_credential_grant" ADD CONSTRAINT "integration_credential_grant_access_check" CHECK ("integration_credential_grant"."access" IN ('read', 'write'));--> statement-breakpoint
 ALTER TABLE "integration_credential_use" ADD CONSTRAINT "integration_credential_use_action_check" CHECK ("integration_credential_use"."action" IN ('delivered', 'used', 'called', 'denied', 'approval', 'changed'));--> statement-breakpoint
 ALTER TABLE "mail_account" ADD CONSTRAINT "mail_account_auth_check" CHECK ("mail_account"."auth" IN ('password', 'xoauth2'));--> statement-breakpoint
-ALTER TABLE "mail_account" ADD CONSTRAINT "mail_account_fetch_days_check" CHECK ("mail_account"."fetch_days" IS NULL OR "mail_account"."fetch_days" BETWEEN 1 AND 36500);
+ALTER TABLE "mail_account" ADD CONSTRAINT "mail_account_fetch_days_check" CHECK ("mail_account"."fetch_days" IS NULL OR "mail_account"."fetch_days" BETWEEN 1 AND 36500);--> statement-breakpoint
+ALTER TABLE "mail_account" ADD COLUMN "reset_requested_at" timestamp with time zone;

@@ -12,6 +12,7 @@ import {
   CredentialEntryResponse,
   CredentialGrantsResponse,
   CredentialUsePageResponse,
+  SshKeysResponse,
   WebLoginsResponse,
   chatWorkParams,
   createCredentialEntryBody,
@@ -33,7 +34,13 @@ import {
   setCredentialGrants,
   updateCredentialEntry,
 } from './service';
-import { claimedWork, deliverWebLogins, recordWebLoginUses, workRefOf } from './delivery';
+import {
+  claimedWork,
+  deliverSshKeys,
+  deliverWebLogins,
+  recordWebLoginUses,
+  workRefOf,
+} from './delivery';
 import { recordOwnerChange } from './audit';
 
 function found<T>(entry: T | null): T {
@@ -236,6 +243,44 @@ export const credentialRoutes = new Elysia({
         description:
           'The web logins granted to the calling agent, for the chat answer the caller ' +
           'holds under a live lease.',
+      },
+    },
+  )
+
+  .get(
+    '/agent-runs/:runId/ssh-keys',
+    async ({ agent, params, set }) => {
+      set.headers['Cache-Control'] = 'private, no-store';
+      const work = await claimedWork(agent.id, { runId: params.runId });
+      return { keys: await deliverSshKeys(agent, work) };
+    },
+    {
+      runnerAgent: true,
+      params: runWorkParams,
+      response: { 200: SshKeysResponse, ...commonErrors },
+      detail: {
+        summary: 'Read the SSH keys of a claimed run',
+        description:
+          'The SSH keys granted to the calling agent (or its project) for git, and the key ' +
+          'of a clone job. Only for a run the caller holds under a live lease.',
+      },
+    },
+  )
+
+  .get(
+    '/agent-chats/:messageId/ssh-keys',
+    async ({ agent, params, set }) => {
+      set.headers['Cache-Control'] = 'private, no-store';
+      const work = await claimedWork(agent.id, { messageId: params.messageId });
+      return { keys: await deliverSshKeys(agent, work) };
+    },
+    {
+      runnerAgent: true,
+      params: chatWorkParams,
+      response: { 200: SshKeysResponse, ...commonErrors },
+      detail: {
+        summary: 'Read the SSH keys of a claimed chat answer',
+        description: 'The SSH keys granted to the calling agent, for git.',
       },
     },
   )

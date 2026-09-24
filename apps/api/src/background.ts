@@ -11,6 +11,7 @@ import { processAgentTeamStarts } from '#modules/control-plane-workflows/agent-t
 import { reconcileWorkflowSchedules } from '#modules/control-plane-workflows/service';
 import { cancelOrphanedStageRuns } from './hermes-team-control';
 import { drainPendingStarts } from '#modules/pipelines/runs';
+import { processConnectorActions } from '#modules/connectors/tools';
 
 const [RUN_JANITOR, STAGE_JANITOR, WORKFLOW_SCHEDULES, RESUME_JANITOR] = JANITOR_JOBS;
 
@@ -32,6 +33,12 @@ export function startBackgroundJobs(): void {
   // Archiving is not time-sensitive, so the sweep runs far less often than the queue
   // is drained.
   startLoop('auto-archive', autoArchive, () => intEnv('AUTO_ARCHIVE_INTERVAL_MS', 3_600_000));
+  // Connector actions the owner approved run within seconds of the decision.
+  startLoop(
+    'connector-actions',
+    async () => void (await processConnectorActions()),
+    () => intEnv('CONNECTOR_ACTION_POLL_INTERVAL_MS', 3_000),
+  );
   startLoop('agent-team-starts', processAgentTeamStarts, () =>
     intEnv('AGENT_TEAM_START_POLL_INTERVAL_MS', 5_000),
   );

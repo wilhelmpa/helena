@@ -1,6 +1,7 @@
 import type { AgUiEvent, ContextUsage } from './agui';
 import type { RunnerConfig } from './config';
 import type { LoginUse, WebLogin, WorkRef } from './logins';
+import type { SshKey } from './ssh';
 import type { RuntimePolicySnapshot, RuntimeStatus } from './policy';
 
 // The agent's API key is the whole authorization: it identifies the agent, and the server
@@ -8,7 +9,8 @@ import type { RuntimePolicySnapshot, RuntimeStatus } from './policy';
 
 export interface Run {
   id: number;
-  trigger: 'mention' | 'delegation' | 'field' | 'schedule' | 'manual' | 'approval';
+  // 'workspace': a job for the runner itself (the prompt is its JSON), not for the model.
+  trigger: 'mention' | 'delegation' | 'field' | 'schedule' | 'manual' | 'approval' | 'workspace';
   prompt: string;
   systemPrompt: string;
   attempts: number;
@@ -150,6 +152,22 @@ export class Client {
         : `/agent-chats/${work.messageId}/web-logins`;
     const body = (await (await this.get(path)).json()) as { logins?: WebLogin[] };
     return body.logins ?? [];
+  }
+
+  // The SSH keys granted to the agent, for the run or chat answer it holds. A server that
+  // predates SSH key delivery answers 404, which is no keys.
+  async sshKeys(work: WorkRef): Promise<SshKey[]> {
+    const path =
+      'runId' in work
+        ? `/agent-runs/${work.runId}/ssh-keys`
+        : `/agent-chats/${work.messageId}/ssh-keys`;
+    try {
+      const body = (await (await this.get(path)).json()) as { keys?: SshKey[] };
+      return body.keys ?? [];
+    } catch (err) {
+      if (err instanceof RequestError && err.status === 404) return [];
+      throw err;
+    }
   }
 
   async reportLoginUses(work: WorkRef, uses: LoginUse[]): Promise<void> {

@@ -239,3 +239,80 @@ export async function recordMcpSecretDelivery(
     })),
   );
 }
+
+export interface DeliveredSshKey {
+  id: number;
+  label: string;
+  updatedAt: string;
+  privateKey: string;
+}
+
+// The key a workspace job (a clone) was started with, which its run receives whatever the
+// agent's standing grants are: the owner picked it for this one job.
+async function workspaceJobKey(work: ClaimedWork): Promise<number | null> {
+  if (work.runId === null) return null;
+  const [run] = await db
+    .select({ trigger: agentRun.trigger, prompt: agentRun.prompt })
+    .from(agentRun)
+    .where(eq(agentRun.id, work.runId));
+  if (run?.trigger !== 'workspace') return null;
+  try {
+    const job = JSON.parse(run.prompt) as { credentialId?: unknown };
+    return typeof job.credentialId === 'number' ? job.credentialId : null;
+  } catch {
+    return null;
+  }
+}
+
+// The SSH keys the agent's runner writes for git before the run or chat answer: the ones
+// granted to the agent or its project, and the key of a workspace job.
+export async function deliverSshKeys(
+  agent: RunnerAgent,
+  work: ClaimedWork,
+): Promise<DeliveredSshKey[]> {
+  const subject = subjectOf(agent, work);
+  const jobKey = await workspaceJobKey(work);
+  const granted = sql`exists (select 1 from ${integrationCredentialGrant} where ${integrationCredentialGrant.credentialId} = ${integrationCredential.id} and ${grantReaches(subject)})`;
+  const rows = await db
+    .select({
+      id: integrationCredential.id,
+      label: integrationCredential.label,
+      updatedAt: integrationCredential.updatedAt,
+      ciphertext: integrationCredential.ciphertext,
+      iv: integrationCredential.iv,
+      authTag: integrationCredential.authTag,
+    })
+    .from(integrationCredential)
+    .where(
+      and(
+        eq(integrationCredential.teamId, agent.teamId),
+        eq(integrationCredential.integrationKey, 'ssh_key'),
+        credentialInScope(subject),
+        jobKey === null ? granted : sql`(${granted} or ${integrationCredential.id} = ${jobKey})`,
+      ),
+    )
+    .orderBy(integrationCredential.id);
+  const keys = rows.flatMap((row): DeliveredSshKey[] => {
+    const secrets = JSON.parse(decryptSecret(row)) as { privateKey?: string };
+    if (!secrets.privateKey) return [];
+    return [
+      {
+        id: row.id,
+        label: row.label ?? '',
+        updatedAt: row.updatedAt.toISOString(),
+        privateKey: secrets.privateKey,
+      },
+    ];
+  });
+  await record(
+    agent,
+    work,
+    'delivered',
+    keys.map((key) => ({
+      credentialId: key.id,
+      label: key.label,
+      purpose: key.id === jobKey ? 'git (SSH), clone job' : 'git (SSH)',
+    })),
+  );
+  return keys;
+}

@@ -8,6 +8,7 @@ import { dispatchTool } from './dispatch';
 import { SERVER_INSTRUCTIONS } from './instructions';
 import type { McpCredential } from './credential';
 import { toolError } from './result';
+import { visibleConnectors } from '#modules/connectors/tools';
 
 // The path param of every team-scoped route.
 const TEAM_PARAM = 'teamId';
@@ -49,10 +50,14 @@ export async function buildMcpServer(
   const table = routeTools(app);
   const byName = new Map(table.map((t) => [t.name, t]));
   const teamId = await callerTeam(userId);
+  // A connector's tools are listed only to an agent that holds a grant on one of its
+  // accounts; calling one without a grant is refused by the route either way.
+  const connectors = table.some((t) => t.connector) ? await visibleConnectors(userId) : new Set();
+  const listed = table.filter((t) => !t.connector || connectors.has(t.connector));
   const needsTeam = (tool: McpRouteTool) => tool.pathParams.includes(TEAM_PARAM);
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: table.map((t) => ({
+    tools: listed.map((t) => ({
       name: t.name,
       description: t.description,
       // A caller whose team is already known does not get to name one.
@@ -62,6 +67,7 @@ export async function buildMcpServer(
           : t.inputSchema,
       annotations: t.annotations,
       outputSchema: t.outputSchema,
+      ...(t.category && { _meta: { 'helena/action': t.category } }),
     })),
   }));
 

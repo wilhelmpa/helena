@@ -73,6 +73,8 @@ export const mailAccount = pgTable(
     fetchDays: integer('fetch_days').default(30),
     // When the worker last pruned mail older than the fetch window.
     prunedAt: timestamp('pruned_at', { withTimezone: true }),
+    // Set by "Zurücksetzen": the worker wipes the imported copies and imports again.
+    resetRequestedAt: timestamp('reset_requested_at', { withTimezone: true }),
     enabled: boolean('enabled').notNull().default(true),
     syncTrash: boolean('sync_trash').notNull().default(false),
     syncSpam: boolean('sync_spam').notNull().default(false),

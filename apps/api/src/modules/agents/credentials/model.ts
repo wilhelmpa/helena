@@ -170,3 +170,14 @@ export const workRefQuery = t.Object({
   runId: t.Optional(t.Numeric()),
   messageId: t.Optional(t.Numeric()),
 });
+
+export const SshKeysResponse = t.Object({
+  keys: t.Array(
+    t.Object({
+      id: t.Number(),
+      label: t.String(),
+      updatedAt: t.String({ description: 'Changes whenever the key pair is regenerated.' }),
+      privateKey: t.String(),
+    }),
+  ),
+});

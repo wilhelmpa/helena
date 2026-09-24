@@ -4,19 +4,36 @@ import {
   integrationCredential,
   mailAccount,
   mailAction,
+  mailAttachment,
   mailFolder,
   mailMessage,
   mailMessageFolder,
+  mailThread,
+  mailThreadIssue,
   project,
 } from '@repo/db';
-import type { FolderRole, MailServerSettings } from '@repo/mail';
+import {
+  assertNoSymlinks,
+  vaultAbsolute,
+  type FolderRole,
+  type MailServerSettings,
+} from '@repo/mail';
+import { deleteObject, deleteObjectFolder } from '@repo/storage';
+import { rmdir, unlink } from 'node:fs/promises';
 import { and, asc, eq, inArray, lt, notExists, sql } from 'drizzle-orm';
+import { mailAccessToken } from './oauth';
 
 export interface SyncAccount {
   id: number;
   teamId: number;
   projectId: number | null;
   address: string;
+  // 'xoauth2': signs in with the OAuth token of the Google account it is the Mail service
+  // of, fetched fresh for every connection (connectSettings).
+  auth: 'password' | 'xoauth2';
+  credentialId: number;
+  // Only mail of the last fetchDays days is imported; null imports everything.
+  fetchDays: number | null;
   syncTrash: boolean;
   syncSpam: boolean;
   triageEnabled: boolean;
@@ -33,9 +50,20 @@ type CredentialRow = Pick<
   'ciphertext' | 'iv' | 'authTag' | 'updatedAt'
 >;
 
-// The server settings of an account, with the password read from its credential (a
-// 'secret' of the credential store, whose value is the password).
+// The server settings of an account. A password account reads its password from its
+// credential (a 'secret' of the credential store, whose value is the password); an
+// XOAUTH2 account gets its token when it connects.
 export function accountSettings(row: AccountRow, credential: CredentialRow): MailServerSettings {
+  const base = {
+    imapHost: row.imapHost,
+    imapPort: row.imapPort,
+    imapTls: row.imapTls,
+    smtpHost: row.smtpHost,
+    smtpPort: row.smtpPort,
+    smtpTls: row.smtpTls,
+    username: row.username,
+  };
+  if (row.auth === 'xoauth2') return base;
   const secret = JSON.parse(decryptSecret(credential)) as { value?: string };
   if (!secret.value) throw new Error('The credential holds no value');
   return {
@@ -84,6 +112,9 @@ export async function loadSyncAccounts(): Promise<SyncAccount[]> {
           syncTrash: account.syncTrash,
           syncSpam: account.syncSpam,
           triageEnabled: account.triageEnabled,
+          auth: account.auth === 'xoauth2' ? 'xoauth2' : 'password',
+          credentialId: account.credentialId!,
+          fetchDays: account.fetchDays,
           version: `${account.updatedAt.toISOString()} ${credential.updatedAt.toISOString()}`,
           settings: accountSettings(account, credential),
         },
@@ -93,6 +124,22 @@ export async function loadSyncAccounts(): Promise<SyncAccount[]> {
       return [];
     }
   });
+}
+
+// The settings to connect with: an XOAUTH2 account's current access token added.
+export async function connectSettings(
+  account: Pick<SyncAccount, 'auth' | 'credentialId' | 'settings'>,
+): Promise<MailServerSettings> {
+  if (account.auth !== 'xoauth2') return account.settings;
+  return { ...account.settings, accessToken: await mailAccessToken(account.credentialId) };
+}
+
+// The start of an account's fetch window, or null when it imports everything.
+export function fetchWindowStart(fetchDays: number | null, now = Date.now()): Date | null {
+  if (fetchDays == null) return null;
+  const start = new Date(now - fetchDays * 86_400_000);
+  start.setUTCHours(0, 0, 0, 0);
+  return start;
 }
 
 export async function setAccountStatus(
@@ -368,4 +415,142 @@ export async function failAction(id: number, error: string): Promise<void> {
     .update(mailAction)
     .set({ attempts: sql`${mailAction.attempts} + 1`, lastError: error.slice(0, 500) })
     .where(eq(mailAction.id, id));
+}
+
+// ── Fetch window and reset ────────────────────────────────────────────────────────────────
+
+const PRUNE_EVERY_MS = 24 * 3_600_000;
+
+// Accounts with a fetch window whose last prune is a day old, or that never pruned.
+export async function accountsDueForPrune(): Promise<{ id: number; fetchDays: number }[]> {
+  const rows = await db
+    .select({ id: mailAccount.id, fetchDays: mailAccount.fetchDays })
+    .from(mailAccount)
+    .where(
+      and(
+        sql`${mailAccount.fetchDays} is not null`,
+        sql`${mailAccount.resetRequestedAt} is null`,
+        sql`(${mailAccount.prunedAt} is null or ${mailAccount.prunedAt} < ${new Date(Date.now() - PRUNE_EVERY_MS)})`,
+      ),
+    );
+  return rows.map((row) => ({ id: row.id, fetchDays: row.fetchDays! }));
+}
+
+export async function accountsToReset(): Promise<number[]> {
+  const rows = await db
+    .select({ id: mailAccount.id })
+    .from(mailAccount)
+    .where(sql`${mailAccount.resetRequestedAt} is not null`);
+  return rows.map((row) => row.id);
+}
+
+// Deletes messages with their files: the .eml in storage and the attachments in the vault
+// (a folder the attachments leave empty goes too). Threads left without a message go.
+async function deleteMessages(ids: number[]): Promise<number> {
+  let deleted = 0;
+  for (let start = 0; start < ids.length; start += 500) {
+    const batch = ids.slice(start, start + 500);
+    const files = await db
+      .select({
+        rawKey: mailMessage.rawKey,
+        folder: mailMessage.attachmentFolder,
+        threadId: mailMessage.threadId,
+      })
+      .from(mailMessage)
+      .where(inArray(mailMessage.id, batch));
+    const attachments = await db
+      .select({ path: mailAttachment.vaultPath })
+      .from(mailAttachment)
+      .where(inArray(mailAttachment.messageId, batch));
+    await db.delete(mailMessage).where(inArray(mailMessage.id, batch));
+    deleted += batch.length;
+    for (const file of files) await deleteObject(file.rawKey).catch(() => undefined);
+    for (const attachment of attachments) await removeVaultFile(attachment.path);
+    for (const folder of new Set(files.flatMap((file) => (file.folder ? [file.folder] : [])))) {
+      await removeEmptyVaultFolder(folder);
+    }
+    const threads = [...new Set(files.map((file) => file.threadId))];
+    if (threads.length > 0) {
+      await db.delete(mailThread).where(
+        and(
+          inArray(mailThread.id, threads),
+          notExists(
+            db
+              .select({ one: sql`1` })
+              .from(mailMessage)
+              .where(eq(mailMessage.threadId, mailThread.id)),
+          ),
+        ),
+      );
+    }
+  }
+  return deleted;
+}
+
+async function removeVaultFile(relative: string): Promise<void> {
+  try {
+    await assertNoSymlinks(relative);
+    await unlink(vaultAbsolute(relative));
+  } catch {
+    // Moved or deleted by the owner already.
+  }
+}
+
+async function removeEmptyVaultFolder(relative: string): Promise<void> {
+  try {
+    await assertNoSymlinks(relative);
+    await rmdir(vaultAbsolute(relative));
+  } catch {
+    // Not empty (the owner filed something there) or gone.
+  }
+}
+
+// Removes the imported copies of mail older than the fetch window. A thread a task was made
+// from or links to keeps all of its mail. The mail on the server is not touched.
+export async function pruneAccount(accountId: number, fetchDays: number): Promise<number> {
+  const start = fetchWindowStart(fetchDays)!;
+  const rows = await db
+    .select({ id: mailMessage.id })
+    .from(mailMessage)
+    .where(
+      and(
+        eq(mailMessage.accountId, accountId),
+        lt(mailMessage.sentAt, start),
+        notExists(
+          db
+            .select({ one: sql`1` })
+            .from(mailThreadIssue)
+            .where(eq(mailThreadIssue.threadId, mailMessage.threadId)),
+        ),
+      ),
+    );
+  const deleted = await deleteMessages(rows.map((row) => row.id));
+  await db.update(mailAccount).set({ prunedAt: new Date() }).where(eq(mailAccount.id, accountId));
+  return deleted;
+}
+
+// "Zurücksetzen": every imported copy of the account goes (messages, threads, attachments,
+// the .eml files, the folder state and pending changes), then the account imports again
+// from the start. Drafts stay.
+export async function wipeAccount(accountId: number): Promise<number> {
+  const rows = await db
+    .select({ id: mailMessage.id })
+    .from(mailMessage)
+    .where(eq(mailMessage.accountId, accountId));
+  const deleted = await deleteMessages(rows.map((row) => row.id));
+  await db.delete(mailAction).where(eq(mailAction.accountId, accountId));
+  await db.delete(mailFolder).where(eq(mailFolder.accountId, accountId));
+  await deleteObjectFolder(`mail/${accountId}`).catch(() => undefined);
+  await db
+    .update(mailAccount)
+    .set({
+      resetRequestedAt: null,
+      prunedAt: null,
+      syncStatus: 'idle',
+      syncError: null,
+      lastSyncAt: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(mailAccount.id, accountId));
+  return deleted;
 }

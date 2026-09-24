@@ -4,6 +4,7 @@ import {
   addLocation,
   applyServerFlags,
   clearFolder,
+  fetchWindowStart,
   flagsOf,
   knownUids,
   messageIdsOf,
@@ -106,14 +107,21 @@ export async function syncFolder(
             (uid) => uid >= folder.uidNext && !known.has(uid),
           )
         : [];
-    const complete = folder.uidNext > 0 && known.size + fresh.length === state.exists;
+    // With a fetch window only the messages since its start are imported: the server is
+    // asked for those (SEARCH SINCE), and a message that left the window leaves the
+    // folder here like one deleted on the server; the prune pass removes its copy.
+    const windowStart = fetchWindowStart(account.fetchDays);
+    const complete =
+      windowStart === null && folder.uidNext > 0 && known.size + fresh.length === state.exists;
     let missing = fresh;
+    let inScope = state.exists;
     if (!complete) {
-      const server = await searchUids(client, { all: true });
+      const server = await searchUids(client, windowStart ? { since: windowStart } : { all: true });
       const onServer = new Set(server);
       const gone = [...known].filter((uid) => !onServer.has(uid));
       if (gone.length > 0) await removeLocations(folder.id, gone);
       missing = server.filter((uid) => !known.has(uid));
+      inScope = server.length;
     }
     missing.sort((left, right) => right - left);
     const newFrom = folder.role === 'inbox' && folder.uidNext > 0 ? folder.uidNext : Infinity;
@@ -124,7 +132,7 @@ export async function syncFolder(
         newFrom,
         config: options.config,
       });
-      await updateSyncedCount(folder.id, state.exists);
+      await updateSyncedCount(folder.id, inScope);
       if (start + HEADER_BATCH >= missing.length) break;
       lock.release();
       await options.between();
@@ -138,7 +146,7 @@ export async function syncFolder(
       uidValidity: state.uidValidity,
       uidNext: state.uidNext,
       highestModseq: state.highestModseq,
-      totalCount: state.exists,
+      totalCount: inScope,
     });
   } finally {
     lock.release();
