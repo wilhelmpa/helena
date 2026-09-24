@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import { ListFilter } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import type { CredentialEntry, CredentialKind } from '@/lib/api/endpoints/credentials';
+import type { CredentialEntry, CredentialKind, ListedKind } from '@/lib/api/endpoints/credentials';
 import { useTeamQuery } from '@/services/teams.service';
 import { useCredentialsPageQuery, useDeleteCredential } from '@/services/credentials.service';
 import SectionPageView from '@/components/common/page/SectionPageView';
@@ -19,13 +19,15 @@ import { CredentialRow } from './CredentialRow';
 import { PageSelect, PageToolbar, PageToolbarSpacer } from '@/components/layout/PageToolbar';
 import { AccessAuditDialog } from '@/features/access/AccessAuditDialog';
 import { CloneDialog } from '@/features/access/CloneDialog';
+import { McpOAuthDialog } from '@/features/access/McpOAuthDialog';
 import { GrantsDialog } from '@/features/access/GrantsDialog';
 import { CREDENTIAL_KINDS } from '../../utils/credentialForm';
 
 type Open =
   | { dialog: 'edit'; entry: CredentialEntry }
   | { dialog: 'new'; kind: CredentialKind }
-  | { dialog: 'grants' | 'audit' | 'delete' | 'clone'; entry: CredentialEntry };
+  | { dialog: 'mcp' }
+  | { dialog: 'grants' | 'audit' | 'delete' | 'clone' | 'signIn'; entry: CredentialEntry };
 
 // The Credentials page: the team's website logins, API keys, SSH keys and secrets. Its
 // owners and managers add, change and grant them; a member whose role reads the team's
@@ -40,10 +42,11 @@ export default function TeamCredentialsSection({
   leading?: ReactNode;
 }) {
   const t = useTranslations('credentials');
+  const tAccess = useTranslations('access');
   const { data: team } = useTeamQuery(teamId);
   const canRead = team?.permissions.integrations.read ?? false;
   const canManage = team?.role === 'owner' || team?.role === 'manager';
-  const [kind, setKind] = useState<CredentialKind | undefined>();
+  const [kind, setKind] = useState<ListedKind | undefined>();
   const paging = usePaging();
   const page = useCredentialsPageQuery(teamId, paging.params, kind);
   const deleteCredential = useDeleteCredential(teamId);
@@ -59,7 +62,7 @@ export default function TeamCredentialsSection({
         {leading}
         {canRead && !leading && (
           <CredentialKindFilter
-            value={kind}
+            value={kind === 'mcp_oauth' ? undefined : kind}
             onChange={(next) => {
               setKind(next);
               paging.reset();
@@ -73,18 +76,23 @@ export default function TeamCredentialsSection({
             value={kind ?? 'all'}
             defaultValue="all"
             onChange={(next) => {
-              setKind(next === 'all' ? undefined : (next as CredentialKind));
+              setKind(next === 'all' ? undefined : (next as ListedKind));
               paging.reset();
             }}
             options={[
               { value: 'all', label: t('all') },
               ...CREDENTIAL_KINDS.map((value) => ({ value, label: t(`kindsPlural.${value}`) })),
+              { value: 'mcp_oauth', label: tAccess('mcp.kindPlural') },
             ]}
           />
         )}
         <PageToolbarSpacer />
         {canManage && (
-          <AddCredentialMenu onSelect={(next) => setOpen({ dialog: 'new', kind: next })} />
+          <AddCredentialMenu
+            onSelect={(next) =>
+              setOpen(next === 'mcp_oauth' ? { dialog: 'mcp' } : { dialog: 'new', kind: next })
+            }
+          />
         )}
       </PageToolbar>
       {!team ? (
@@ -118,10 +126,18 @@ export default function TeamCredentialsSection({
       {open?.dialog === 'new' && (
         <CredentialDialog teamId={teamId} kind={open.kind} entry={null} onClose={close} />
       )}
-      {open?.dialog === 'edit' && (
+      {open?.dialog === 'mcp' && <McpOAuthDialog teamId={teamId} onClose={close} />}
+      {open?.dialog === 'signIn' && (
+        <McpOAuthDialog
+          teamId={teamId}
+          again={{ id: open.entry.id, label: open.entry.label }}
+          onClose={close}
+        />
+      )}
+      {open?.dialog === 'edit' && open.entry.kind !== 'mcp_oauth' && (
         <CredentialDialog
           teamId={teamId}
-          kind={open.entry.kind}
+          kind={open.entry.kind as CredentialKind}
           entry={open.entry}
           onClose={close}
         />

@@ -33,6 +33,11 @@ import {
   cloneBody,
   cloneParams,
   CloneResponse,
+  McpConnectionResponse,
+  McpSignInResponse,
+  mcpConnectionParams,
+  mcpFinishBody,
+  mcpSignInBody,
   deleteGoogleAccountQuery,
   finishSignInBody,
   importClientBody,
@@ -42,6 +47,8 @@ import {
 } from './model';
 import { googleBroker } from './google/engine';
 import { startClone } from './clone';
+import { finishMcpCallback, finishMcpSignIn, getMcpConnection, startMcpSignIn } from './mcp-oauth';
+import { managesTeam, teamOfConnection } from './team-access';
 import {
   adoptGogAccount,
   callbackUrl,
@@ -370,6 +377,100 @@ export const connectorRoutes = new Elysia({
           'The runner of an agent working in the project clones the repository with this ' +
           "SSH key into the area's folder of the workspace, which then ignores it.",
       },
+    },
+  )
+
+  // ── MCP servers with OAuth ──────────────────────────────────────────────────────────────
+
+  .post(
+    '/teams/:teamId/connectors/mcp-oauth',
+    ({ membership, body }) => startMcpSignIn(membership.teamId, body),
+    {
+      params: teamParams,
+      body: mcpSignInBody,
+      teamManager: true,
+      response: { 200: McpSignInResponse, ...commonErrors },
+      detail: {
+        summary: 'Connect an MCP server that signs in with OAuth',
+        description:
+          'Discovers the server, registers Helena as its client and returns the address to ' +
+          'sign in at. In paste mode, paste the address the browser ended on with the ' +
+          'finish call.',
+      },
+    },
+  )
+
+  .post(
+    '/teams/:teamId/connectors/mcp-oauth/:connectionId/sign-in',
+    async ({ membership, params }) => {
+      await getMcpConnection(membership.teamId, params.connectionId);
+      return startMcpSignIn(membership.teamId, { id: params.connectionId });
+    },
+    {
+      params: mcpConnectionParams,
+      teamManager: true,
+      response: { 200: McpSignInResponse, ...commonErrors },
+      detail: { summary: 'Sign in to an MCP server again' },
+    },
+  )
+
+  .post(
+    '/teams/:teamId/connectors/mcp-oauth/:connectionId/finish',
+    async ({ membership, params, body, user }) => {
+      const row = await finishMcpSignIn(membership.teamId, params.connectionId, body.redirectUrl);
+      await recordOwnerChange(membership.teamId, row.id, user, 'signed in');
+      return {
+        id: row.id,
+        label: row.label,
+        serverUrl: String(row.readable.serverUrl ?? ''),
+        status: row.status,
+        statusDetail: row.statusDetail,
+      };
+    },
+    {
+      params: mcpConnectionParams,
+      body: mcpFinishBody,
+      teamManager: true,
+      response: { 200: McpConnectionResponse, ...commonErrors },
+      detail: { summary: 'Finish signing in to an MCP server' },
+    },
+  )
+
+  .get(
+    '/connectors/mcp-oauth/callback',
+    async ({ query, request, user, redirect }) => {
+      const app = trustedOrigins[0] ?? '';
+      const current = requireUser(user);
+      try {
+        if (typeof query.state !== 'string') throw new HttpError(400, 'No state.');
+        await finishMcpCallback(
+          async (id) => {
+            const team = await teamOfConnection(id);
+            // Only an owner or manager of the connection's team finishes its sign-in.
+            if (team === null || !(await managesTeam(team, current.id))) return null;
+            return team;
+          },
+          query.state,
+          request.url,
+        );
+        return redirect(`${app}/access/credentials?connected=1`);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'The sign-in failed.';
+        return redirect(
+          `${app}/access/credentials?error=${encodeURIComponent(message.slice(0, 200))}`,
+        );
+      }
+    },
+    {
+      query: t.Object(
+        {
+          state: t.Optional(t.String()),
+          code: t.Optional(t.String()),
+          error: t.Optional(t.String()),
+        },
+        { additionalProperties: true },
+      ),
+      detail: { summary: "An MCP server's return to Helena after signing in", hide: true },
     },
   )
 

@@ -13,11 +13,17 @@
     "empty": "Nenhuma conta Google ainda",
     "emptyHint": "Crie no Google Cloud um cliente OAuth do tipo “App para computador”, importe aqui o arquivo JSON e conecte cada conta. E-mail, Agenda, Drive e o resto funcionam depois sem senhas de app.",
     "clients": "Clientes OAuth",
-    "clientType": { "installed": "Computador", "web": "Web" },
+    "clientType": {
+      "installed": "Computador",
+      "web": "Web"
+    },
     "clientAccounts": "{count, plural, =0 {sem uso} one {# conta} other {# contas}}",
     "deleteClient": "Excluir cliente OAuth",
     "deleteClientMessage": "Excluir {name}? As contas não poderão mais entrar com ele.",
-    "engine": { "helena": "Helena", "gog": "gog" },
+    "engine": {
+      "helena": "Helena",
+      "gog": "gog"
+    },
     "engineHint": {
       "helena": "A Helena guarda o login criptografado e chama o Google com as bibliotecas do próprio Google.",
       "gog": "O login fica no chaveiro do gog neste servidor; a Helena o alcança pelo broker. Sem caixa na caixa de entrada."
@@ -120,7 +126,10 @@
     "projects": "Projetos",
     "service": "Serviço",
     "allServices": "Todos os serviços",
-    "access": { "read": "Ler", "write": "Ler e escrever" },
+    "access": {
+      "read": "Ler",
+      "write": "Ler e escrever"
+    },
     "saved": "Permissões de {name} salvas",
     "count": "{count, plural, =0 {Sem permissão} one {# permissão} other {# permissões}}",
     "remove": "Remover"
@@ -153,5 +162,25 @@
     "anyAgent": "Qualquer agente do projeto",
     "start": "Clonar",
     "started": "{agent} clona {name}"
+  },
+  "mcp": {
+    "kind": "Servidor MCP (OAuth)",
+    "kindPlural": "Servidores MCP (OAuth)",
+    "kindHint": "Um servidor MCP que entra com OAuth. A Helena guarda o token; a biblioteca de servidores MCP o envia como cabeçalho Authorization.",
+    "title": "Conectar um servidor MCP",
+    "againTitle": "Entrar de novo em {name}",
+    "serverUrl": "Endereço do servidor",
+    "label": "Nome",
+    "scope": "Scopes (opcional)",
+    "hint": "A Helena encontra o login do servidor, registra-se nele e pede que você entre. Depois escolha esta conexão como cabeçalho Authorization do servidor em Servidores MCP.",
+    "open": "Entrar no servidor",
+    "connected": "Servidor MCP conectado",
+    "signIn": "Entrar de novo",
+    "status": {
+      "ok": "Conectado",
+      "needs_auth": "Entrar de novo",
+      "error": "Erro",
+      "unknown": "Não conectado"
+    }
   }
 }

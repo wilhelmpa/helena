@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl';
 import type { PageParams } from '@/lib/api/core/paging';
 import {
   type CredentialInput,
-  type CredentialKind,
+  type ListedKind,
   type NewCredentialInput,
   createCredential,
   deleteCredential,
@@ -17,7 +17,7 @@ import {
 } from '@/lib/api/endpoints/credentials';
 import { qk } from '@/services/queryKeys';
 
-export function useCredentialsPageQuery(teamId: number, params: PageParams, kind?: CredentialKind) {
+export function useCredentialsPageQuery(teamId: number, params: PageParams, kind?: ListedKind) {
   return useQuery({
     queryKey: qk.credentialPage(teamId, params, kind),
     queryFn: () => listCredentials(teamId, params, kind),

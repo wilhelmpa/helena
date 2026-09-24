@@ -210,3 +210,28 @@ export const CloneResponse = t.Object({
   folder: t.String(),
   name: t.String(),
 });
+
+export const mcpSignInBody = t.Object({
+  label: t.Optional(t.String({ maxLength: 200 })),
+  serverUrl: t.String({ minLength: 8, maxLength: 2000, description: 'The MCP server URL.' }),
+  scope: t.Optional(t.Nullable(t.String({ maxLength: 500 }))),
+  projectId: t.Optional(t.Nullable(t.Integer())),
+});
+
+export const McpSignInResponse = t.Object({
+  id: t.Number(),
+  url: t.Nullable(t.String()),
+  mode: t.Union([t.Literal('paste'), t.Literal('callback'), t.Literal('connected')]),
+});
+
+export const mcpConnectionParams = t.Object({ teamId: t.Numeric(), connectionId: t.Numeric() });
+
+export const mcpFinishBody = t.Object({ redirectUrl: t.String({ minLength: 1, maxLength: 4000 }) });
+
+export const McpConnectionResponse = t.Object({
+  id: t.Number(),
+  label: t.String(),
+  serverUrl: t.String(),
+  status: t.Nullable(t.Union([t.Literal('ok'), t.Literal('needs_auth'), t.Literal('error')])),
+  statusDetail: t.Nullable(t.String()),
+});

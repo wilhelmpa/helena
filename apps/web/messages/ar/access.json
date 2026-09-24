@@ -13,11 +13,17 @@
     "empty": "لا يوجد حساب Google بعد",
     "emptyHint": "أنشئ في Google Cloud عميل OAuth من نوع «تطبيق سطح المكتب»، واستورد ملف JSON الخاص به هنا، ثم اربط كل حساب. بعدها يعمل البريد والتقويم وDrive وغيرها دون كلمات مرور للتطبيقات.",
     "clients": "عملاء OAuth",
-    "clientType": { "installed": "سطح المكتب", "web": "الويب" },
+    "clientType": {
+      "installed": "سطح المكتب",
+      "web": "الويب"
+    },
     "clientAccounts": "{count, plural, =0 {غير مستخدم} one {حساب واحد} two {حسابان} few {# حسابات} many {# حسابًا} other {# حساب}}",
     "deleteClient": "حذف عميل OAuth",
     "deleteClientMessage": "حذف {name}؟ لن تتمكن الحسابات من تسجيل الدخول به بعد ذلك.",
-    "engine": { "helena": "Helena", "gog": "gog" },
+    "engine": {
+      "helena": "Helena",
+      "gog": "gog"
+    },
     "engineHint": {
       "helena": "تحفظ Helena تسجيل الدخول مشفّرًا وتستدعي Google بمكتبات Google نفسها.",
       "gog": "يبقى تسجيل الدخول في سلسلة مفاتيح gog على هذا الخادم؛ وتصل إليه Helena عبر الوسيط. بلا صندوق في البريد الوارد."
@@ -120,7 +126,10 @@
     "projects": "المشاريع",
     "service": "الخدمة",
     "allServices": "كل الخدمات",
-    "access": { "read": "قراءة", "write": "قراءة وكتابة" },
+    "access": {
+      "read": "قراءة",
+      "write": "قراءة وكتابة"
+    },
     "saved": "تم حفظ أذونات {name}",
     "count": "{count, plural, =0 {لا أذونات} one {إذن واحد} two {إذنان} few {# أذونات} many {# إذنًا} other {# إذن}}",
     "remove": "إزالة"
@@ -153,5 +162,25 @@
     "anyAgent": "أي وكيل في المشروع",
     "start": "استنساخ",
     "started": "{agent} يستنسخ {name}"
+  },
+  "mcp": {
+    "kind": "خادم MCP (OAuth)",
+    "kindPlural": "خوادم MCP (OAuth)",
+    "kindHint": "خادم MCP يسجّل الدخول عبر OAuth. تحفظ Helena الرمز؛ وترسله مكتبة خوادم MCP كترويسة Authorization.",
+    "title": "ربط خادم MCP",
+    "againTitle": "تسجيل الدخول إلى {name} مجددًا",
+    "serverUrl": "عنوان الخادم",
+    "label": "الاسم",
+    "scope": "النطاقات (اختياري)",
+    "hint": "تعثر Helena على تسجيل دخول الخادم وتسجّل نفسها فيه ثم تطلب منك تسجيل الدخول. بعد ذلك اختر هذا الاتصال كترويسة Authorization للخادم ضمن خوادم MCP.",
+    "open": "تسجيل الدخول لدى الخادم",
+    "connected": "تم ربط خادم MCP",
+    "signIn": "تسجيل الدخول مجددًا",
+    "status": {
+      "ok": "متصل",
+      "needs_auth": "سجّل الدخول مجددًا",
+      "error": "خطأ",
+      "unknown": "لم يُسجَّل الدخول"
+    }
   }
 }

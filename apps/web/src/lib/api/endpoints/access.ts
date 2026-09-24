@@ -131,7 +131,32 @@ export interface CloneStarted {
   name: string;
 }
 
+export interface McpSignInStart {
+  id: number;
+  url: string | null;
+  mode: 'paste' | 'callback' | 'connected';
+}
+
 const json = (body: unknown) => ({ body: JSON.stringify(body) });
+
+export const startMcpSignIn = (
+  teamId: number,
+  input: { id: number } | { label?: string; serverUrl: string; scope?: string | null },
+) =>
+  'id' in input
+    ? request<McpSignInStart>(`/teams/${teamId}/connectors/mcp-oauth/${input.id}/sign-in`, {
+        method: 'POST',
+      })
+    : request<McpSignInStart>(`/teams/${teamId}/connectors/mcp-oauth`, {
+        method: 'POST',
+        ...json(input),
+      });
+
+export const finishMcpSignIn = (teamId: number, id: number, redirectUrl: string) =>
+  request<{ id: number; status: string | null }>(
+    `/teams/${teamId}/connectors/mcp-oauth/${id}/finish`,
+    { method: 'POST', ...json({ redirectUrl }) },
+  );
 
 export const setGrants = (teamId: number, credentialId: number, grants: GrantInput[]) =>
   request<{ grants: Grant[] }>(`/teams/${teamId}/credentials/${credentialId}/grants`, {

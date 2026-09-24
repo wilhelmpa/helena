@@ -13,11 +13,17 @@
     "empty": "No Google account yet",
     "emptyHint": "Create an OAuth client of type “Desktop app” in Google Cloud, import its JSON file here, then connect each account. Mail, Calendar, Drive and the rest then work without app passwords.",
     "clients": "OAuth clients",
-    "clientType": { "installed": "Desktop", "web": "Web" },
+    "clientType": {
+      "installed": "Desktop",
+      "web": "Web"
+    },
     "clientAccounts": "{count, plural, =0 {not used} one {# account} other {# accounts}}",
     "deleteClient": "Delete OAuth client",
     "deleteClientMessage": "Delete {name}? Accounts can no longer sign in with it.",
-    "engine": { "helena": "Helena", "gog": "gog" },
+    "engine": {
+      "helena": "Helena",
+      "gog": "gog"
+    },
     "engineHint": {
       "helena": "Helena keeps the sign-in encrypted and calls Google with Google's own libraries.",
       "gog": "The sign-in stays in gog's keyring on this server; Helena reaches it through the broker. No mailbox in the inbox."
@@ -120,7 +126,10 @@
     "projects": "Projects",
     "service": "Service",
     "allServices": "All services",
-    "access": { "read": "Read", "write": "Read & write" },
+    "access": {
+      "read": "Read",
+      "write": "Read & write"
+    },
     "saved": "Access to {name} saved",
     "count": "{count, plural, =0 {No access} one {# grant} other {# grants}}",
     "remove": "Remove"
@@ -153,5 +162,25 @@
     "anyAgent": "Any agent of the project",
     "start": "Clone",
     "started": "{agent} clones {name}"
+  },
+  "mcp": {
+    "kind": "MCP server (OAuth)",
+    "kindPlural": "MCP servers (OAuth)",
+    "kindHint": "An MCP server that signs in with OAuth. Helena keeps the token; the MCP server library sends it as the Authorization header.",
+    "title": "Connect an MCP server",
+    "againTitle": "Sign in to {name} again",
+    "serverUrl": "Server address",
+    "label": "Name",
+    "scope": "Scopes (optional)",
+    "hint": "Helena finds the server's sign-in, registers itself and asks you to sign in. Then pick this connection as the Authorization header of the server under MCP servers.",
+    "open": "Sign in at the server",
+    "connected": "MCP server connected",
+    "signIn": "Sign in again",
+    "status": {
+      "ok": "Connected",
+      "needs_auth": "Sign in again",
+      "error": "Error",
+      "unknown": "Not signed in"
+    }
   }
 }

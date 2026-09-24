@@ -43,7 +43,7 @@ export function emptyCredentialValue(kind: CredentialKind): CredentialFormValue 
 
 export function credentialValue(entry: CredentialEntry): CredentialFormValue {
   return {
-    ...emptyCredentialValue(entry.kind),
+    ...emptyCredentialValue(entry.kind as CredentialKind),
     label: entry.label,
     projectId: entry.projectId,
     loginUrl: entry.loginUrl ?? '',

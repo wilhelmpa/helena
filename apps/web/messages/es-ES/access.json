@@ -13,11 +13,17 @@
     "empty": "Todavía no hay cuentas de Google",
     "emptyHint": "Crea en Google Cloud un cliente OAuth de tipo «Aplicación de escritorio», importa aquí su archivo JSON y conecta cada cuenta. Correo, Calendar, Drive y el resto funcionan después sin contraseñas de aplicación.",
     "clients": "Clientes OAuth",
-    "clientType": { "installed": "Escritorio", "web": "Web" },
+    "clientType": {
+      "installed": "Escritorio",
+      "web": "Web"
+    },
     "clientAccounts": "{count, plural, =0 {sin uso} one {# cuenta} other {# cuentas}}",
     "deleteClient": "Eliminar cliente OAuth",
     "deleteClientMessage": "¿Eliminar {name}? Las cuentas ya no podrán iniciar sesión con él.",
-    "engine": { "helena": "Helena", "gog": "gog" },
+    "engine": {
+      "helena": "Helena",
+      "gog": "gog"
+    },
     "engineHint": {
       "helena": "Helena guarda el inicio de sesión cifrado y llama a Google con las bibliotecas de Google.",
       "gog": "El inicio de sesión queda en el llavero de gog en este servidor; Helena lo alcanza a través del broker. Sin buzón en la bandeja de entrada."
@@ -120,7 +126,10 @@
     "projects": "Proyectos",
     "service": "Servicio",
     "allServices": "Todos los servicios",
-    "access": { "read": "Leer", "write": "Leer y escribir" },
+    "access": {
+      "read": "Leer",
+      "write": "Leer y escribir"
+    },
     "saved": "Permisos de {name} guardados",
     "count": "{count, plural, =0 {Sin permisos} one {# permiso} other {# permisos}}",
     "remove": "Quitar"
@@ -153,5 +162,25 @@
     "anyAgent": "Cualquier agente del proyecto",
     "start": "Clonar",
     "started": "{agent} clona {name}"
+  },
+  "mcp": {
+    "kind": "Servidor MCP (OAuth)",
+    "kindPlural": "Servidores MCP (OAuth)",
+    "kindHint": "Un servidor MCP que inicia sesión con OAuth. Helena guarda el token; la biblioteca de servidores MCP lo envía como cabecera Authorization.",
+    "title": "Conectar un servidor MCP",
+    "againTitle": "Volver a iniciar sesión en {name}",
+    "serverUrl": "Dirección del servidor",
+    "label": "Nombre",
+    "scope": "Scopes (opcional)",
+    "hint": "Helena encuentra el inicio de sesión del servidor, se registra y te pide que inicies sesión. Después elige esta conexión como cabecera Authorization del servidor en Servidores MCP.",
+    "open": "Iniciar sesión en el servidor",
+    "connected": "Servidor MCP conectado",
+    "signIn": "Volver a iniciar sesión",
+    "status": {
+      "ok": "Conectado",
+      "needs_auth": "Volver a iniciar sesión",
+      "error": "Error",
+      "unknown": "Sin sesión"
+    }
   }
 }

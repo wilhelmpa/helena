@@ -132,7 +132,9 @@ export async function listCredentialOptions(teamId: number): Promise<CredentialO
     .orderBy(integrationCredential.integrationKey);
   return rows.flatMap((row) => {
     const kind =
-      row.integrationKey === 'secret' || row.integrationKey === 'api_key'
+      row.integrationKey === 'secret' ||
+      row.integrationKey === 'api_key' ||
+      row.integrationKey === 'mcp_oauth'
         ? 'secret'
         : integrationKind(row.integrationKey);
     return kind ? [{ ...row, kind }] : [];

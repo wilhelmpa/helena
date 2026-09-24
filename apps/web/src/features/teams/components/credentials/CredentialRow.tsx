@@ -1,4 +1,12 @@
-import { FolderGit2, History, MoreHorizontal, Pencil, Trash2, UsersRound } from 'lucide-react';
+import {
+  FolderGit2,
+  History,
+  LogIn,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  UsersRound,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { CredentialEntry } from '@/lib/api/endpoints/credentials';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +27,7 @@ function detailOf(entry: CredentialEntry): string | null {
     return `${entry.username} · ${new URL(entry.loginUrl).host}`;
   }
   if (entry.kind === 'ssh_key') return entry.publicKey;
+  if (entry.kind === 'mcp_oauth') return entry.serverUrl;
   return null;
 }
 
@@ -29,7 +38,7 @@ export function CredentialRow({
 }: {
   entry: CredentialEntry;
   canManage: boolean;
-  onOpen: (dialog: 'edit' | 'grants' | 'audit' | 'delete' | 'clone') => void;
+  onOpen: (dialog: 'edit' | 'grants' | 'audit' | 'delete' | 'clone' | 'signIn') => void;
 }) {
   const t = useTranslations('credentials');
   const tCommon = useTranslations('common');
@@ -46,8 +55,16 @@ export function CredentialRow({
         <div className="flex flex-wrap items-center gap-2">
           <span className="truncate text-sm font-medium">{entry.label}</span>
           <Badge variant="secondary" className="text-xs font-normal">
-            {t(`kinds.${entry.kind}`)}
+            {entry.kind === 'mcp_oauth' ? tAccess('mcp.kind') : t(`kinds.${entry.kind}`)}
           </Badge>
+          {entry.kind === 'mcp_oauth' && (
+            <Badge
+              variant={entry.status === 'ok' ? 'outline' : 'destructive'}
+              className="text-xs font-normal"
+            >
+              {tAccess(`mcp.status.${entry.status ?? 'unknown'}`)}
+            </Badge>
+          )}
           <Badge variant="outline" className="text-xs font-normal">
             {entry.projectKey ?? t('scopeTeam')}
           </Badge>
@@ -62,7 +79,12 @@ export function CredentialRow({
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-1 max-sm:hidden">
-        {canManage && (
+        {canManage && entry.kind === 'mcp_oauth' && (
+          <CredentialRowAction label={tAccess('mcp.signIn')} onClick={() => onOpen('signIn')}>
+            <LogIn className="size-4" />
+          </CredentialRowAction>
+        )}
+        {canManage && entry.kind !== 'mcp_oauth' && (
           <CredentialRowAction label={t('edit')} onClick={() => onOpen('edit')}>
             <Pencil className="size-4" />
           </CredentialRowAction>
@@ -99,7 +121,13 @@ export function CredentialRow({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-44">
-          {canManage && (
+          {canManage && entry.kind === 'mcp_oauth' && (
+            <DropdownMenuItem onSelect={() => onOpen('signIn')}>
+              <LogIn />
+              {tAccess('mcp.signIn')}
+            </DropdownMenuItem>
+          )}
+          {canManage && entry.kind !== 'mcp_oauth' && (
             <DropdownMenuItem onSelect={() => onOpen('edit')}>
               <Pencil />
               {t('edit')}

@@ -3,14 +3,20 @@ import { pageQuery, type Page, type PageParams } from '@/lib/api/core/paging';
 import type { Grant } from './access';
 
 export type CredentialKind = 'web_login' | 'api_key' | 'ssh_key' | 'secret';
+// What the page lists: the kinds above and MCP servers signed in with OAuth.
+export type ListedKind = CredentialKind | 'mcp_oauth';
 
 // A web login, API key, SSH key or secret of the team. The secret fields are write-only:
 // `secrets` names those that hold a value, the values never arrive here.
 export interface CredentialEntry {
   id: number;
   teamId: number;
-  kind: CredentialKind;
+  kind: ListedKind;
   label: string;
+  // mcp_oauth: the server and the health of its sign-in.
+  serverUrl: string | null;
+  status: 'ok' | 'needs_auth' | 'error' | null;
+  statusDetail: string | null;
   // Null for a credential of the whole team.
   projectId: number | null;
   projectKey: string | null;
@@ -46,7 +52,7 @@ export interface NewCredentialInput extends CredentialInput {
   label: string;
 }
 
-export const listCredentials = (teamId: number, params: PageParams, kind?: CredentialKind) =>
+export const listCredentials = (teamId: number, params: PageParams, kind?: ListedKind) =>
   request<Page<CredentialEntry>>(`/teams/${teamId}/credentials${pageQuery(params, { kind })}`);
 
 export const createCredential = (teamId: number, input: NewCredentialInput) =>

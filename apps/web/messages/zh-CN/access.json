@@ -13,16 +13,27 @@
     "empty": "还没有 Google 账号",
     "emptyHint": "在 Google Cloud 中创建类型为“桌面应用”的 OAuth 客户端，在此导入其 JSON 文件，然后连接每个账号。之后邮件、日历、云端硬盘等都无需应用专用密码。",
     "clients": "OAuth 客户端",
-    "clientType": { "installed": "桌面", "web": "Web" },
+    "clientType": {
+      "installed": "桌面",
+      "web": "Web"
+    },
     "clientAccounts": "{count, plural, =0 {未使用} other {# 个账号}}",
     "deleteClient": "删除 OAuth 客户端",
     "deleteClientMessage": "删除 {name}？账号将无法再用它登录。",
-    "engine": { "helena": "Helena", "gog": "gog" },
+    "engine": {
+      "helena": "Helena",
+      "gog": "gog"
+    },
     "engineHint": {
       "helena": "Helena 加密保存登录，并使用 Google 自己的库调用 Google。",
       "gog": "登录保存在此服务器 gog 的钥匙串中；Helena 通过 broker 访问。收件箱中没有该邮箱。"
     },
-    "status": { "ok": "已连接", "needs_auth": "需重新登录", "error": "错误", "unknown": "未检查" },
+    "status": {
+      "ok": "已连接",
+      "needs_auth": "需重新登录",
+      "error": "错误",
+      "unknown": "未检查"
+    },
     "services": {
       "mail": "邮件",
       "calendar": "日历",
@@ -115,7 +126,10 @@
     "projects": "项目",
     "service": "服务",
     "allServices": "全部服务",
-    "access": { "read": "读取", "write": "读取和写入" },
+    "access": {
+      "read": "读取",
+      "write": "读取和写入"
+    },
     "saved": "已保存 {name} 的授权",
     "count": "{count, plural, =0 {无授权} other {# 项授权}}",
     "remove": "移除"
@@ -148,5 +162,25 @@
     "anyAgent": "项目中的任意智能体",
     "start": "克隆",
     "started": "{agent} 正在克隆 {name}"
+  },
+  "mcp": {
+    "kind": "MCP 服务器（OAuth）",
+    "kindPlural": "MCP 服务器（OAuth）",
+    "kindHint": "使用 OAuth 登录的 MCP 服务器。Helena 保存令牌；MCP 服务器库将其作为 Authorization 请求头发送。",
+    "title": "连接 MCP 服务器",
+    "againTitle": "重新登录 {name}",
+    "serverUrl": "服务器地址",
+    "label": "名称",
+    "scope": "Scope（可选）",
+    "hint": "Helena 会找到服务器的登录方式，在其中注册并请你登录。然后在 MCP 服务器中将此连接选为该服务器的 Authorization 请求头。",
+    "open": "在服务器登录",
+    "connected": "MCP 服务器已连接",
+    "signIn": "重新登录",
+    "status": {
+      "ok": "已连接",
+      "needs_auth": "需重新登录",
+      "error": "错误",
+      "unknown": "未登录"
+    }
   }
 }

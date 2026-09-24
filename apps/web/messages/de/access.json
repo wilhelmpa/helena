@@ -13,11 +13,17 @@
     "empty": "Noch kein Google-Konto",
     "emptyHint": "Lege in Google Cloud einen OAuth-Client vom Typ „Desktop-App“ an, importiere hier seine JSON-Datei und verbinde dann jedes Konto. Mail, Kalender, Drive und der Rest laufen danach ohne App-Passwort.",
     "clients": "OAuth-Clients",
-    "clientType": { "installed": "Desktop", "web": "Web" },
+    "clientType": {
+      "installed": "Desktop",
+      "web": "Web"
+    },
     "clientAccounts": "{count, plural, =0 {nicht genutzt} one {# Konto} other {# Konten}}",
     "deleteClient": "OAuth-Client löschen",
     "deleteClientMessage": "{name} löschen? Konten können sich damit nicht mehr anmelden.",
-    "engine": { "helena": "Helena", "gog": "gog" },
+    "engine": {
+      "helena": "Helena",
+      "gog": "gog"
+    },
     "engineHint": {
       "helena": "Helena bewahrt die Anmeldung verschlüsselt auf und ruft Google mit Googles eigenen Bibliotheken auf.",
       "gog": "Die Anmeldung bleibt im Schlüsselbund von gog auf diesem Server; Helena erreicht sie über den Broker. Kein Postfach im Posteingang."
@@ -120,7 +126,10 @@
     "projects": "Projekte",
     "service": "Dienst",
     "allServices": "Alle Dienste",
-    "access": { "read": "Lesen", "write": "Lesen & Schreiben" },
+    "access": {
+      "read": "Lesen",
+      "write": "Lesen & Schreiben"
+    },
     "saved": "Freigaben für {name} gespeichert",
     "count": "{count, plural, =0 {Keine Freigabe} one {# Freigabe} other {# Freigaben}}",
     "remove": "Entfernen"
@@ -153,5 +162,25 @@
     "anyAgent": "Irgendein Agent des Projekts",
     "start": "Klonen",
     "started": "{agent} klont {name}"
+  },
+  "mcp": {
+    "kind": "MCP-Server (OAuth)",
+    "kindPlural": "MCP-Server (OAuth)",
+    "kindHint": "Ein MCP-Server, der sich mit OAuth anmeldet. Helena bewahrt das Token auf; die MCP-Server-Bibliothek sendet es als Authorization-Header.",
+    "title": "MCP-Server verbinden",
+    "againTitle": "{name} neu anmelden",
+    "serverUrl": "Server-Adresse",
+    "label": "Name",
+    "scope": "Scopes (optional)",
+    "hint": "Helena findet die Anmeldung des Servers, registriert sich dort und bittet dich, dich anzumelden. Danach wählst du diese Verbindung unter MCP-Server als Authorization-Header des Servers.",
+    "open": "Beim Server anmelden",
+    "connected": "MCP-Server verbunden",
+    "signIn": "Neu anmelden",
+    "status": {
+      "ok": "Verbunden",
+      "needs_auth": "Neu anmelden",
+      "error": "Fehler",
+      "unknown": "Nicht angemeldet"
+    }
   }
 }

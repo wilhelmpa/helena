@@ -16,8 +16,16 @@ const CredentialKind = t.Union([
   t.Literal('secret'),
 ]);
 
+const ListedKind = t.Union([
+  t.Literal('web_login'),
+  t.Literal('api_key'),
+  t.Literal('ssh_key'),
+  t.Literal('secret'),
+  t.Literal('mcp_oauth'),
+]);
+
 export const credentialListQuery = t.Object({
-  kind: t.Optional(CredentialKind),
+  kind: t.Optional(ListedKind),
   projectId: t.Optional(t.Numeric({ description: 'Only the credentials of this project.' })),
   ...pageQueryFields,
 });
@@ -93,10 +101,13 @@ export const CredentialGrantsResponse = t.Object({ grants: t.Array(GrantResponse
 export const CredentialEntryResponse = t.Object({
   id: t.Number(),
   teamId: t.Number(),
-  kind: CredentialKind,
+  kind: ListedKind,
   label: t.String(),
   projectId: t.Nullable(t.Number()),
   projectKey: t.Nullable(t.String()),
+  serverUrl: t.Nullable(t.String({ description: 'mcp_oauth: the MCP server.' })),
+  status: t.Nullable(t.Union([t.Literal('ok'), t.Literal('needs_auth'), t.Literal('error')])),
+  statusDetail: t.Nullable(t.String()),
   loginUrl: t.Nullable(t.String()),
   allowedDomains: t.Array(t.String()),
   username: t.Nullable(t.String()),

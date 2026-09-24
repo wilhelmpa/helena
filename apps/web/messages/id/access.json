@@ -13,11 +13,17 @@
     "empty": "Belum ada akun Google",
     "emptyHint": "Buat klien OAuth berjenis “Aplikasi desktop” di Google Cloud, impor file JSON-nya di sini, lalu hubungkan setiap akun. Mail, Kalender, Drive, dan lainnya lalu berjalan tanpa sandi aplikasi.",
     "clients": "Klien OAuth",
-    "clientType": { "installed": "Desktop", "web": "Web" },
+    "clientType": {
+      "installed": "Desktop",
+      "web": "Web"
+    },
     "clientAccounts": "{count, plural, =0 {tidak dipakai} other {# akun}}",
     "deleteClient": "Hapus klien OAuth",
     "deleteClientMessage": "Hapus {name}? Akun tidak bisa masuk lagi dengannya.",
-    "engine": { "helena": "Helena", "gog": "gog" },
+    "engine": {
+      "helena": "Helena",
+      "gog": "gog"
+    },
     "engineHint": {
       "helena": "Helena menyimpan login terenkripsi dan memanggil Google dengan pustaka Google sendiri.",
       "gog": "Login tetap di keyring gog di server ini; Helena menjangkaunya lewat broker. Tanpa kotak surat di kotak masuk."
@@ -120,7 +126,10 @@
     "projects": "Proyek",
     "service": "Layanan",
     "allServices": "Semua layanan",
-    "access": { "read": "Baca", "write": "Baca & tulis" },
+    "access": {
+      "read": "Baca",
+      "write": "Baca & tulis"
+    },
     "saved": "Izin untuk {name} disimpan",
     "count": "{count, plural, =0 {Tanpa izin} other {# izin}}",
     "remove": "Hapus"
@@ -153,5 +162,25 @@
     "anyAgent": "Agen mana pun di proyek",
     "start": "Kloning",
     "started": "{agent} mengkloning {name}"
+  },
+  "mcp": {
+    "kind": "Server MCP (OAuth)",
+    "kindPlural": "Server MCP (OAuth)",
+    "kindHint": "Server MCP yang masuk dengan OAuth. Helena menyimpan tokennya; pustaka server MCP mengirimnya sebagai header Authorization.",
+    "title": "Hubungkan server MCP",
+    "againTitle": "Masuk lagi ke {name}",
+    "serverUrl": "Alamat server",
+    "label": "Nama",
+    "scope": "Scope (opsional)",
+    "hint": "Helena menemukan login server, mendaftar di sana, lalu memintamu masuk. Setelah itu pilih koneksi ini sebagai header Authorization server di Server MCP.",
+    "open": "Masuk di server",
+    "connected": "Server MCP terhubung",
+    "signIn": "Masuk lagi",
+    "status": {
+      "ok": "Terhubung",
+      "needs_auth": "Masuk lagi",
+      "error": "Galat",
+      "unknown": "Belum masuk"
+    }
   }
 }

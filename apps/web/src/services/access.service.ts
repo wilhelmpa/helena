@@ -8,6 +8,7 @@ import {
   deleteGoogleAccount,
   deleteGoogleClient,
   finishGoogleSignIn,
+  finishMcpSignIn,
   getGogStatus,
   getGoogle,
   importGoogleClient,
@@ -15,6 +16,7 @@ import {
   setGrants,
   startClone,
   startGoogleSignIn,
+  startMcpSignIn,
   updateGoogleAccount,
   type AuditAction,
   type CloneInput,
@@ -135,6 +137,23 @@ export function useAdoptGogAccount(teamId: number) {
   return useMutation({
     mutationFn: (input: { email: string; projectId?: number | null }) =>
       adoptGogAccount(teamId, input),
+    onSuccess: invalidate,
+  });
+}
+
+export function useStartMcpSignIn(teamId: number) {
+  return useMutation({
+    mutationFn: (
+      input: { id: number } | { label?: string; serverUrl: string; scope?: string | null },
+    ) => startMcpSignIn(teamId, input),
+  });
+}
+
+export function useFinishMcpSignIn(teamId: number) {
+  const invalidate = useInvalidate(teamId);
+  return useMutation({
+    mutationFn: ({ id, redirectUrl }: { id: number; redirectUrl: string }) =>
+      finishMcpSignIn(teamId, id, redirectUrl),
     onSuccess: invalidate,
   });
 }

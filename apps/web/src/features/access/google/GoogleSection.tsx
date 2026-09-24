@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, type ReactNode } from 'react';
 import { FileUp, Plus, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
@@ -22,7 +21,6 @@ import {
   useGoogleQuery,
 } from '@/services/access.service';
 import { useTeamQuery } from '@/services/teams.service';
-import { accessPath } from '@/utils/paths';
 import { AccessAuditDialog } from '../AccessAuditDialog';
 import { GrantsDialog } from '../GrantsDialog';
 import { GoogleAccountRow, type GoogleRowAction } from './GoogleAccountRow';
@@ -53,20 +51,6 @@ export function GoogleSection({ teamId, leading }: { teamId: number; leading: Re
   const [open, setOpen] = useState<Open | null>(null);
   const [fromGog, setFromGog] = useState(false);
   const close = () => setOpen(null);
-  const router = useRouter();
-  const params = useSearchParams();
-  const announced = useRef(false);
-
-  // Google's return to Helena's callback lands here with the outcome.
-  useEffect(() => {
-    if (announced.current) return;
-    const error = params.get('error');
-    const connected = params.get('connected');
-    if (!error && !connected) return;
-    announced.current = true;
-    if (error) toast.error(error);
-    router.replace(accessPath('google'));
-  }, [params, router]);
 
   function onAction(account: GoogleAccount, action: GoogleRowAction) {
     if (action === 'check') {

@@ -8,14 +8,17 @@ import {
 import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { iso, HttpError, rethrowDuplicate } from '#shared/lib';
 import { onTemplateRelevantChange } from '../core/template-sync';
+import { mcpBearer } from '#modules/connectors/mcp-oauth';
 
 // The team's library of MCP servers and the servers enabled on each agent. An env or
 // header value is a literal or the id of one of the team's secrets: a secret or an API
 // key of the Credentials page that is not limited to a project. Its value is decrypted
 // only for the runner of an agent the server is enabled on.
 
+// An MCP/OAuth connection of the access center counts too: its value is the current bearer
+// token (connectors/mcp-oauth.ts).
 const teamSecret = and(
-  inArray(integrationCredential.integrationKey, ['secret', 'api_key']),
+  inArray(integrationCredential.integrationKey, ['secret', 'api_key', 'mcp_oauth']),
   isNull(integrationCredential.projectId),
 );
 
@@ -362,6 +365,7 @@ export async function agentMcpSecrets(
   const rows = await db
     .select({
       id: integrationCredential.id,
+      kind: integrationCredential.integrationKey,
       ciphertext: integrationCredential.ciphertext,
       iv: integrationCredential.iv,
       authTag: integrationCredential.authTag,
@@ -374,10 +378,17 @@ export async function agentMcpSecrets(
         inArray(integrationCredential.id, ids),
       ),
     );
-  return Object.fromEntries(
-    rows.map((row) => [
+  const values: [string, string][] = [];
+  for (const row of rows) {
+    if (row.kind === 'mcp_oauth') {
+      const bearer = await mcpBearer(teamId, row.id);
+      if (bearer) values.push([String(row.id), bearer]);
+      continue;
+    }
+    values.push([
       String(row.id),
       String((JSON.parse(openCredential(row)) as { value: unknown }).value),
-    ]),
-  );
+    ]);
+  }
+  return Object.fromEntries(values);
 }

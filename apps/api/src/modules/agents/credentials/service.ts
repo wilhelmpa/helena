@@ -19,7 +19,9 @@ import {
 } from './grants';
 import {
   CREDENTIAL_KINDS,
+  LISTED_KINDS,
   SECRET_FIELDS,
+  type ListedKind,
   allowedOrigin,
   assertFieldsOfKind,
   assertTotpSecret,
@@ -37,10 +39,14 @@ import { generateSshKey, sshKeyComment } from './ssh-key';
 export interface CredentialEntry {
   id: number;
   teamId: number;
-  kind: CredentialKind;
+  kind: ListedKind;
   label: string;
   projectId: number | null;
   projectKey: string | null;
+  // An MCP/OAuth connection's server, and the health of its sign-in.
+  serverUrl: string | null;
+  status: 'ok' | 'needs_auth' | 'error' | null;
+  statusDetail: string | null;
   loginUrl: string | null;
   allowedDomains: string[];
   username: string | null;
@@ -69,7 +75,7 @@ type Secrets = Record<string, string>;
 
 const MAX_ALLOWED_DOMAINS = 20;
 
-export const storeKinds = inArray(integrationCredential.integrationKey, [...CREDENTIAL_KINDS]);
+export const storeKinds = inArray(integrationCredential.integrationKey, [...LISTED_KINDS]);
 
 const entryColumns = {
   id: integrationCredential.id,
@@ -79,6 +85,8 @@ const entryColumns = {
   projectId: integrationCredential.projectId,
   projectKey: project.key,
   redacted: integrationCredential.redacted,
+  status: integrationCredential.status,
+  statusDetail: integrationCredential.statusDetail,
   createdAt: integrationCredential.createdAt,
   updatedAt: integrationCredential.updatedAt,
 };
@@ -91,6 +99,8 @@ type EntryRow = {
   projectId: number | null;
   projectKey: string | null;
   redacted: unknown;
+  status: string | null;
+  statusDetail: string | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -100,7 +110,7 @@ function readableOf(value: unknown): Readable {
 }
 
 function toEntry(row: EntryRow, grants: GrantEntry[]): CredentialEntry {
-  const kind = row.kind as CredentialKind;
+  const kind = row.kind as ListedKind;
   const readable = readableOf(row.redacted);
   return {
     id: row.id,
@@ -109,6 +119,9 @@ function toEntry(row: EntryRow, grants: GrantEntry[]): CredentialEntry {
     label: row.label ?? '',
     projectId: row.projectId,
     projectKey: row.projectKey,
+    serverUrl: typeof readable.serverUrl === 'string' ? readable.serverUrl : null,
+    status: (row.status as CredentialEntry['status']) ?? null,
+    statusDetail: row.statusDetail ?? null,
     loginUrl: readable.loginUrl ?? null,
     allowedDomains: readable.allowedDomains ?? [],
     username: readable.username ?? null,
@@ -136,7 +149,7 @@ function selectEntries() {
 
 export async function listCredentialEntries(
   teamId: number,
-  filter: { kind?: CredentialKind; projectId?: number },
+  filter: { kind?: ListedKind; projectId?: number },
   window: { limit: number; offset: number },
 ): Promise<{ items: CredentialEntry[]; total: number }> {
   const where = and(
@@ -304,15 +317,32 @@ export async function updateCredentialEntry(
   const existing = await getCredentialEntry(id, teamId);
   if (!existing) return null;
   const { label, projectId, ...fields } = patch;
-  assertFieldsOfKind(existing.kind, fields);
   const name = label === undefined ? undefined : required(label, 'A name');
   if (projectId != null) await assertProjectOfTeam(projectId, teamId);
+  // An MCP/OAuth connection keeps what its sign-in stored; only its name and scope change.
+  if (existing.kind === 'mcp_oauth') {
+    if (Object.values(fields).some((value) => value !== undefined)) {
+      throw new HttpError(400, 'An MCP connection changes by signing in again.');
+    }
+    await db
+      .update(integrationCredential)
+      .set({
+        ...(name !== undefined && { label: name }),
+        ...(projectId !== undefined && { projectId }),
+        updatedAt: new Date(),
+      })
+      .where(eq(integrationCredential.id, id));
+    if (projectId != null) await pruneGrantsOutside(id, projectId);
+    return getCredentialEntry(id, teamId);
+  }
+  const kind = existing.kind;
+  assertFieldsOfKind(kind, fields);
   const [row] = await db
     .select({ redacted: integrationCredential.redacted })
     .from(integrationCredential)
     .where(eq(integrationCredential.id, id));
   const current = { readable: readableOf(row.redacted), secrets: await readSecrets(id) };
-  const { readable, secrets } = compose(existing.kind, fields, current);
+  const { readable, secrets } = compose(kind, fields, current);
   await db.transaction(async (tx) => {
     await tx
       .update(integrationCredential)
