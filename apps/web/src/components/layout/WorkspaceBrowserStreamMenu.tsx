@@ -2,6 +2,7 @@
 
 import { MonitorCog } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useBrowserPreferences } from '@/hooks/useBrowserPreferences';
 import type { VideoPreference } from '@/hooks/useBrowserScreencast';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,18 +20,14 @@ const PREFERENCES: VideoPreference[] = ['auto', 'video', 'jpeg'];
 // How the live view is streamed on this device: video or single frames as the connection
 // suits (auto), or one of them always; and whether the page keeps its size when this panel
 // changes size ("Größe festhalten"), the view then only scaling it.
-export default function WorkspaceBrowserStreamMenu({
-  videoPreference,
-  onVideoPreferenceChange,
-  holdSize,
-  onToggleHoldSize,
-}: {
-  videoPreference: VideoPreference;
-  onVideoPreferenceChange: (next: VideoPreference) => void;
-  holdSize: boolean;
-  onToggleHoldSize: () => void;
-}) {
+export default function WorkspaceBrowserStreamMenu() {
   const t = useTranslations('nav.workspace.browserBar');
+  const {
+    videoPreference,
+    setVideoPreference: onVideoPreferenceChange,
+    holdSize,
+    toggleHoldSize: onToggleHoldSize,
+  } = useBrowserPreferences();
   const labels: Record<VideoPreference, string> = {
     auto: t('videoPreferenceAuto'),
     video: t('videoPreferenceVideo'),

@@ -201,10 +201,6 @@ export default function WorkspacePanel({
       onViewChange={browserPreferences.setView}
       followAgent={browserPreferences.followAgent}
       onToggleFollowAgent={browserPreferences.toggleFollowAgent}
-      videoPreference={browserPreferences.videoPreference}
-      onVideoPreferenceChange={browserPreferences.setVideoPreference}
-      holdSize={browserPreferences.holdSize}
-      onToggleHoldSize={browserPreferences.toggleHoldSize}
     />
   ) : undefined;
   // Where the showing tool may put its own bar (see PanelHeaderSlotCtx).
@@ -308,8 +304,6 @@ export default function WorkspacePanel({
               key={frame.key}
               base={liveBase}
               followAgent={browserPreferences.followAgent}
-              videoPreference={browserPreferences.videoPreference}
-              holdSize={browserPreferences.holdSize}
               {...props}
             />
           ) : (

@@ -27,8 +27,9 @@
 // {"type":"video","codec":..,"width":..,"height":..,"pageWidth":..,"pageHeight":..} before an
 // initialization segment, with the viewport in CSS pixels at the page's zoom (which input is
 // given in) and at 100 % (the size a view draws the frames at to show them one to one);
-// {"type":"page","width":..,"height":..,"zoom":..} with the page's size in CSS pixels at 100 %
-// and its zoom, whenever either changes, by which a view draws a JPEG frame one to one;
+// {"type":"page","width":..,"height":..,"zoom":..,"fixed":..,"holder":..} with the page's size
+// in CSS pixels at 100 % and its zoom, whenever either changes, by which a view draws a JPEG
+// frame one to one, and whether a controller holds the size (see setViewportAuthority);
 // {"type":"tab"} when the streamed tab, its address or its title
 // changes; {"type":"dialog", ...} while a JavaScript dialog is open;
 // {"type":"dialog","open":false} when it closes; {"type":"pong","t":..} answering a viewer's
@@ -725,8 +726,16 @@ class ScreencastStream {
   // Tells the viewers the page's size once it has it, for them to show frames one to one.
   announcePage() {
     if (!this.size || this.resizing) return;
-    const fixed = viewportAuthorities.get(this.port)?.mode === "fixed";
-    const message = JSON.stringify({ type: "page", width: this.size.width, height: this.size.height, zoom: this.zoom, fixed });
+    const authority = viewportAuthorities.get(this.port);
+    const fixed = authority?.mode === "fixed";
+    const message = JSON.stringify({
+      type: "page",
+      width: this.size.width,
+      height: this.size.height,
+      zoom: this.zoom,
+      fixed,
+      ...(fixed && authority.holder && { holder: authority.holder }),
+    });
     if (message === this.pageMessage) return;
     this.pageMessage = message;
     for (const viewer of this.viewers) viewer.socket.send(message);
@@ -1194,23 +1203,26 @@ const streams = new Map();
 // Open desktop (VNC) connections, by DevTools port.
 const desktopViewers = new Map();
 // Who decides a browser's page size, by DevTools port: absent for "follow" (the driving view,
-// see drivingViewport), or { mode: "fixed", size } while the browser gateway holds a working
-// size for an agent that steers.
+// see drivingViewport), or { mode: "fixed", size, holder } while a controller holds a working
+// size — the browser gateway for an agent that steers, or any other.
 const viewportAuthorities = new Map();
 export const FIXED_VIEWPORT = { width: 1440, height: 900 };
 
-// Hands a browser's page size to the viewers ("follow") or holds it at a size ("fixed", the
-// browser gateway while an agent steers: FIXED_VIEWPORT unless it gives one), so the agent's
-// layout, snapshots and references do not change when a person resizes a panel; the views then
-// show the page scaled. Applies at once, whether or not anyone watches.
-export function setViewportAuthority(port, mode, size) {
+// Hands a browser's page size to the viewers ("follow") or holds it at a size ("fixed":
+// FIXED_VIEWPORT unless the controller gives one), so an agent's layout, snapshots and
+// references do not change when a person resizes a panel; the views then show the page scaled.
+// Any controller may hold it — the browser gateway while an agent steers, or another; holder
+// names it for the viewers (at most 64 characters). Applies at once, whether or not anyone
+// watches.
+export function setViewportAuthority(port, mode, size, holder) {
   if (mode !== "follow" && mode !== "fixed") throw new Error("Unknown viewport mode");
+  if (holder !== undefined && (typeof holder !== "string" || holder.length > 64)) throw new Error("Invalid holder");
   if (mode === "follow") viewportAuthorities.delete(port);
   else {
     const valid = (value, max) => Number.isInteger(value) && value >= 250 && value <= max;
     const fixed = size ?? FIXED_VIEWPORT;
     if (!valid(fixed.width, 8192) || !valid(fixed.height, 8192)) throw new Error("Invalid viewport size");
-    viewportAuthorities.set(port, { mode, size: { width: fixed.width, height: fixed.height } });
+    viewportAuthorities.set(port, { mode, size: { width: fixed.width, height: fixed.height }, holder: holder || null });
   }
   const stream = streams.get(port);
   if (stream) return stream.resize();
@@ -1222,7 +1234,7 @@ export function setViewportAuthority(port, mode, size) {
 
 export function viewportAuthority(port) {
   const authority = viewportAuthorities.get(port);
-  return authority ? { mode: authority.mode, ...authority.size } : { mode: "follow" };
+  return authority ? { mode: authority.mode, ...authority.size, holder: authority.holder } : { mode: "follow" };
 }
 
 // Adds a WebSocket as a viewer of the browser on the given DevTools port, whose display the

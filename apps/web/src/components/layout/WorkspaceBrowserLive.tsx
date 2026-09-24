@@ -4,11 +4,8 @@ import { useCallback, useEffect, useRef } from 'react';
 import { Loader2, Lock } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useBrowserLiveInput, type LiveGeometry } from '@/hooks/useBrowserLiveInput';
-import {
-  useBrowserScreencast,
-  type ShownFrame,
-  type VideoPreference,
-} from '@/hooks/useBrowserScreencast';
+import { useBrowserPreferences } from '@/hooks/useBrowserPreferences';
+import { useBrowserScreencast, type ShownFrame } from '@/hooks/useBrowserScreencast';
 import { useDevicePixelRatio } from '@/hooks/useDevicePixelRatio';
 import { cn } from '@/lib/utils';
 import { frameRect, type Size } from '@/utils/browserLive';
@@ -30,19 +27,17 @@ export default function WorkspaceBrowserLive({
   active,
   reloadToken,
   followAgent,
-  videoPreference,
-  holdSize,
   className,
 }: {
   base: string;
   active: boolean;
   reloadToken: number;
   followAgent: boolean;
-  videoPreference: VideoPreference;
-  holdSize: boolean;
   className?: string;
 }) {
   const t = useTranslations('nav.workspace.browserBar');
+  // This device's choice of stream and of holding the page's size (the bar's stream menu).
+  const { videoPreference, holdSize } = useBrowserPreferences();
   const view = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const video = useRef<HTMLVideoElement>(null);
@@ -185,7 +180,10 @@ export default function WorkspaceBrowserLive({
       )}
       <div className="pointer-events-none absolute end-2 top-2 flex flex-col items-end gap-1">
         {page?.fixed && (
-          <div className={cn(BADGE_CLASS, 'relative')} title={t('fixedSizeHint')}>
+          <div
+            className={cn(BADGE_CLASS, 'relative')}
+            title={page.holder ? `${t('fixedSizeHint')} (${page.holder})` : t('fixedSizeHint')}
+          >
             <Lock className="size-3" />
             {t('fixedSize', { width: page.width, height: page.height })}
           </div>

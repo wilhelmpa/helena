@@ -5,7 +5,6 @@ import { ArrowLeft, ArrowRight, Bot, RotateCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useBrowserControl } from '@/hooks/useBrowserControl';
 import type { BrowserView } from '@/hooks/useBrowserPreferences';
-import type { VideoPreference } from '@/hooks/useBrowserScreencast';
 import { Button } from '@/components/ui/button';
 import WorkspaceBrowserStreamMenu from './WorkspaceBrowserStreamMenu';
 import WorkspaceBrowserTabs from './WorkspaceBrowserTabs';
@@ -20,20 +19,12 @@ export default function WorkspaceBrowserBar({
   onViewChange,
   followAgent,
   onToggleFollowAgent,
-  videoPreference,
-  onVideoPreferenceChange,
-  holdSize,
-  onToggleHoldSize,
 }: {
   base: string;
   view: BrowserView;
   onViewChange: (view: BrowserView) => void;
   followAgent: boolean;
   onToggleFollowAgent: () => void;
-  videoPreference: VideoPreference;
-  onVideoPreferenceChange: (next: VideoPreference) => void;
-  holdSize: boolean;
-  onToggleHoldSize: () => void;
 }) {
   const t = useTranslations('nav.workspace.browserBar');
   const { tabs, active, act } = useBrowserControl(base);
@@ -123,14 +114,7 @@ export default function WorkspaceBrowserBar({
           <Bot />
         </Button>
       )}
-      {view === 'live' && (
-        <WorkspaceBrowserStreamMenu
-          videoPreference={videoPreference}
-          onVideoPreferenceChange={onVideoPreferenceChange}
-          holdSize={holdSize}
-          onToggleHoldSize={onToggleHoldSize}
-        />
-      )}
+      {view === 'live' && <WorkspaceBrowserStreamMenu />}
       {/* A phone keeps reload, the address, the tabs, "follow the agent" and the stream menu;
           back, forward and the Live/Desktop switch need a wider panel. */}
       <div className="contents max-sm:hidden">

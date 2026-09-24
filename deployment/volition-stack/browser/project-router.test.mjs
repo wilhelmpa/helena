@@ -537,10 +537,13 @@ describe("project browser router", () => {
         headers: { "content-type": "application/json" },
         body: JSON.stringify(body),
       }).then(async (response) => [response.status, await response.json()]);
-    assert.deepEqual(await post({ mode: "fixed" }), [200, { mode: "fixed", width: 1440, height: 900 }]);
+    assert.deepEqual(await post({ mode: "fixed", holder: "Coder VOL" }), [
+      200,
+      { mode: "fixed", width: 1440, height: 900, holder: "Coder VOL" },
+    ]);
     await until(() => browser.page().width === 1440);
     assert.deepEqual(browser.page(), { width: 1440, height: 900, ratio: 2 });
-    await until(() => mac.messages.some((message) => typeof message === "string" && message.includes('"fixed":true')));
+    await until(() => mac.messages.some((message) => typeof message === "string" && message.includes('"holder":"Coder VOL"')));
     view(mac, { width: 700, height: 700 });
     await new Promise((resolve) => setTimeout(resolve, 150));
     assert.equal(browser.page().width, 1440);

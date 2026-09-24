@@ -35,6 +35,8 @@ export interface ShownFrame {
 export interface LivePage extends Size {
   zoom: number;
   fixed: boolean;
+  // Who holds the fixed size (an agent, through the browser gateway), when it says.
+  holder?: string;
 }
 
 const RETRY_FIRST_MS = 500;
@@ -79,7 +81,14 @@ type ServerText =
       pageWidth?: number;
       pageHeight?: number;
     }
-  | { type: 'page'; width: number; height: number; zoom?: number; fixed?: boolean }
+  | {
+      type: 'page';
+      width: number;
+      height: number;
+      zoom?: number;
+      fixed?: boolean;
+      holder?: string;
+    }
   | { type: 'tab' }
   | { type: 'pong'; t: number }
   | { type: 'control'; by: 'agent' | 'owner' };
@@ -531,6 +540,7 @@ export function useBrowserScreencast(
             height: message.height,
             zoom: message.zoom ?? 1,
             fixed: message.fixed === true,
+            holder: message.holder,
           };
           pageRef.current = next;
           setPage(next);
