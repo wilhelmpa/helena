@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { RowEmpty, RowList, SectionLabel } from '@/components/common/page/RowList';
 import StatusBadge, { type Status } from '@/components/common/page/StatusBadge';
@@ -36,8 +37,16 @@ export default function UpdateHistory({ actions }: { actions: UpdateAction[] }) 
   );
 }
 
+// An update that is running, or ended in the last ten minutes, opens with its log.
+const RECENT_MS = 10 * 60_000;
+
 function HistoryRow({ action }: { action: UpdateAction }) {
   const t = useTranslations('updates');
+  const [openAtFirst] = useState(
+    () =>
+      action.state === 'running' ||
+      (action.finishedAt !== null && Date.now() - Date.parse(action.finishedAt) < RECENT_MS),
+  );
   const result = action.result ?? {};
   const rollback =
     typeof result.rollback === 'string' && result.rollback.trim() ? result.rollback : null;
@@ -50,7 +59,7 @@ function HistoryRow({ action }: { action: UpdateAction }) {
       ? `${action.fromVersion ?? '–'} → ${action.toVersion ?? '–'}`
       : action.components.join(', ');
   return (
-    <details className="group rounded-md px-2 text-sm open:bg-sidebar-accent/40">
+    <details open={openAtFirst} className="group rounded-md px-2 text-sm open:bg-sidebar-accent/40">
       <summary className="flex h-8 cursor-pointer list-none items-center gap-2 [&::-webkit-details-marker]:hidden">
         <span className="min-w-0 shrink truncate" dir="auto">
           {action.name}
