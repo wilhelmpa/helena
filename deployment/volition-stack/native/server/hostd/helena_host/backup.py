@@ -141,6 +141,8 @@ def status(host: Host, config: Config) -> dict:
         'last': last,
         'targets': public_targets(backup_settings.get('targets') or []),
         'paths': configured_paths(config),
+        # A copy of the owner's own files lands in <ownerHome>/Wiederhergestellt.
+        'ownerHome': config.backup.get('ownerHome'),
     }
 
 

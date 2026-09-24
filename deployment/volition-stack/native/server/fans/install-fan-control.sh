@@ -4,8 +4,9 @@
 #   - ryzen_smu   (amkillam fork, GPL-2.0): SMU access for ryzenadj, as DKMS
 #   - ryzenadj    (FlyGoat, LGPL-3.0): reads back (and may set) the power limits
 #   - power-profiles-daemon (Debian): the OS profile power-saver/balanced/performance
-# Every source is pinned to a commit (docs/helena-decisions/server-admin.md §5). DKMS rebuilds
-# both modules for every new kernel (linux-headers-amd64 pulls the headers along).
+# Every source is pinned to a commit (docs/helena-decisions/server-admin.md §5). Both modules
+# are built for every installed kernel (6.12 and a backports 7.x side by side), and DKMS
+# rebuilds them for every new one (linux-headers-amd64 pulls its headers along).
 #
 #   sudo ./install-fan-control.sh [--dry-run] [--from-clones <dir>] install
 #   sudo ./install-fan-control.sh status
@@ -27,7 +28,7 @@ SMU_VERSION=0.1.7-0bb95d9
 RYZENADJ_REPO=https://github.com/FlyGoat/RyzenAdj.git
 RYZENADJ_COMMIT=527cacc5a8d53f54c259b75b3aba7e47d6bc464d # 2026-01-16, v0.17.0-17 (Strix Halo)
 BOARDS="AXB35-02"
-PACKAGES="dkms linux-headers-amd64 cmake libpci-dev power-profiles-daemon"
+PACKAGES="dkms cmake libpci-dev power-profiles-daemon"
 HOSTD=/usr/local/lib/helena/hostd/helena-hostd
 
 DRY_RUN=0
@@ -58,7 +59,7 @@ fetch() {
     src="$clones/$name"
     git -c safe.directory="$src" -C "$src" cat-file -e "$commit^{commit}" || { echo "$src has no commit $commit" >&2; exit 1; }
   else
-    src=$(mktemp -d)
+    src=$(mktemp -d -p /var/tmp helena-src.XXXXXX)
     git clone --quiet --filter=blob:none --no-checkout "$repo" "$src"
     git -C "$src" cat-file -e "$commit^{commit}" || { echo "$repo has no commit $commit" >&2; exit 1; }
   fi
@@ -67,15 +68,40 @@ fetch() {
   [ -n "$clones" ] || rm -rf "$src"
 }
 
+# Every kernel installed here, not only the running one (a newer kernel waiting for its
+# first boot, the old one kept as the fallback): /lib/modules/<version> with a kernel image.
+kernels() {
+  for dir in /lib/modules/*; do
+    version=$(basename "$dir")
+    [ -e "/boot/vmlinuz-$version" ] && echo "$version"
+  done
+}
+
+# The headers of every installed kernel (Debian: linux-headers-<version>, from the suite its
+# image came from, trixie-backports included) and the metapackage that brings the headers of
+# every future kernel along.
+headers_packages() {
+  echo linux-headers-amd64
+  for version in $(kernels); do echo "linux-headers-$version"; done
+}
+
+# Builds and installs a DKMS module for every installed kernel. A kernel it does not build
+# for is named at the end; the others keep working (DKMS builds per kernel).
+FAILED_BUILDS=
 dkms_install() {
   module=$1 version=$2
-  if dkms status -m "$module" -v "$version" 2>/dev/null | grep -q installed; then
-    echo "$module/$version already installed"
-    return
-  fi
-  run dkms add -m "$module" -v "$version" || true
-  run dkms build -m "$module" -v "$version"
-  run dkms install -m "$module" -v "$version"
+  dkms status -m "$module" -v "$version" 2>/dev/null | grep -q . || run dkms add -m "$module" -v "$version"
+  for kernel in $(kernels); do
+    if dkms status -m "$module" -v "$version" -k "$kernel" 2>/dev/null | grep -q installed; then
+      echo "$module/$version already installed for $kernel"
+      continue
+    fi
+    if run dkms install -m "$module" -v "$version" -k "$kernel"; then
+      :
+    else
+      FAILED_BUILDS="$FAILED_BUILDS $module@$kernel"
+    fi
+  done
 }
 
 case "$command" in
@@ -84,8 +110,8 @@ install)
     echo "This board ($board) is not a Sixunited AXB35-02; the EC driver would write into a foreign EC. Stopping." >&2
     exit 1
   fi
-  [ -x "$HOSTD" ] || { echo "install helena-hostd first (../install.sh install)" >&2; exit 1; }
-  run apt-get install -y --no-install-recommends $PACKAGES "linux-headers-$(uname -r)"
+  [ -x "$HOSTD" ] || [ "$DRY_RUN" = 1 ] || { echo "install helena-hostd first (../install.sh install)" >&2; exit 1; }
+  run apt-get install -y --no-install-recommends $PACKAGES $(headers_packages)
 
   # ec_su_axb35 as DKMS. Its own Makefile builds against KERNEL_BUILD.
   fetch ec-su_axb35-linux "$EC_REPO" "$EC_COMMIT" "/usr/src/ec_su_axb35-$EC_VERSION"
@@ -102,11 +128,16 @@ install)
   dkms_install ryzen_smu "$SMU_VERSION"
 
   run install -m 0644 -o root -g root "$here/helena-fan-control.modules" /etc/modules-load.d/helena-fan-control.conf
+  if echo "$FAILED_BUILDS" | grep -q "@$(uname -r)"; then
+    echo "The modules did not build for the running kernel $(uname -r):$FAILED_BUILDS" >&2
+    echo "Nothing was loaded; see /var/lib/dkms/*/*/build/make.log. Roll back: $0 uninstall" >&2
+    exit 1
+  fi
   run modprobe ec_su_axb35
   run modprobe ryzen_smu
 
   # ryzenadj from the pinned commit.
-  build=$(mktemp -d)
+  if [ "$DRY_RUN" = 1 ]; then build=/var/tmp/helena-ryzenadj.dry-run; else build=$(mktemp -d -p /var/tmp helena-ryzenadj.XXXXXX); fi
   fetch RyzenAdj "$RYZENADJ_REPO" "$RYZENADJ_COMMIT" "$build/src"
   run cmake -S "$build/src" -B "$build/build" -DCMAKE_BUILD_TYPE=Release
   run cmake --build "$build/build" --target ryzenadj -j 4
@@ -117,6 +148,7 @@ install)
   # The first choice: every fan at level 5. The guard applies it now and after every boot.
   run python3 -I "$HOSTD" fans-initial 5
   run systemctl restart helena-power-guard.service
+  [ -z "$FAILED_BUILDS" ] || echo "warning: not built for:$FAILED_BUILDS (that kernel boots without fan control; the guard reports it)" >&2
   echo "Fan control installed. Status: $0 status"
   ;;
 status)
