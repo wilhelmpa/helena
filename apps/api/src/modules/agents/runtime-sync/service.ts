@@ -61,6 +61,8 @@ export async function runtimeSyncOf(agentId: number, teamId: number): Promise<Ru
     adapter: state.adapter,
     detail: state.detail,
     profile: state.profile,
+    version: state.version,
+    issues: state.issues,
     rewritePending: await rewritePending(agentId),
     reportedAt: state.reportedAt,
   };
@@ -131,6 +133,7 @@ export async function runtimeSyncSummary(): Promise<AgentSyncSummary> {
         state,
         adapter: agent.runtimeState.adapter,
         drift: (agent.runtimeState.profile?.drift ?? []).map((entry) => entry.key),
+        issues: agent.runtimeState.issues,
       });
     }
   }

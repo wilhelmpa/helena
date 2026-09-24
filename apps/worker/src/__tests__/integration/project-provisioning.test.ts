@@ -101,7 +101,7 @@ describe('project provisioning', () => {
     await insertAgent(owner.id, 'master', [created.id]);
     await insertAgent(owner.id, `hermes-agt${owner.id}-coordinator`, [created.id]);
     await insertAgent(owner.id, 'elsewhere', [other.id]);
-    // Runs on a Claude Code runner, not in Hermes.
+    // Runs on Claude Code, in a runtime of its own like a Hermes agent.
     const claude = await insertAgent(owner.id, 'claude-coder', [created.id]);
     await db
       .update(aiAgent)
@@ -113,7 +113,7 @@ describe('project provisioning', () => {
 
     await processProjectProvisioning();
 
-    expect(receivedBody.agents).toEqual([coder, writer]);
+    expect(receivedBody.agents).toEqual([coder, writer, claude]);
   });
 
   it('sends every area of the project with its folder', async () => {

@@ -1,8 +1,39 @@
 import { HttpError } from '#shared/lib';
 
 // The kinds of the Credentials page. Each is stored as an integration_credential row
-// whose integration key is the kind.
-export const CREDENTIAL_KINDS = ['web_login', 'api_key', 'ssh_key', 'secret'] as const;
+// whose integration key is the kind. A runtime_login ("Laufzeit-Anmeldung") signs in the
+// Claude Code or Codex runtime of the agents it is granted to: the runner hands it to one
+// command at a time (packages/runner/src/cli-login.ts).
+export const CREDENTIAL_KINDS = [
+  'web_login',
+  'api_key',
+  'ssh_key',
+  'secret',
+  'runtime_login',
+] as const;
+
+// The runtimes a runtime login signs in, and how. Codex takes an API key here; its
+// ChatGPT login is made on the agent's own runtime home instead (device login), because
+// Codex refreshes it in place.
+export const LOGIN_RUNTIMES = ['claude', 'codex'] as const;
+export type LoginRuntime = (typeof LOGIN_RUNTIMES)[number];
+export const LOGIN_METHODS = ['oauth_token', 'api_key'] as const;
+export type LoginMethod = (typeof LOGIN_METHODS)[number];
+
+export function assertLoginMethod(runtime: string, method: string): void {
+  if (!(LOGIN_RUNTIMES as readonly string[]).includes(runtime)) {
+    throw new HttpError(400, 'A runtime login is for Claude Code or Codex.');
+  }
+  if (!(LOGIN_METHODS as readonly string[]).includes(method)) {
+    throw new HttpError(400, 'A runtime login is an OAuth token or an API key.');
+  }
+  if (runtime === 'codex' && method !== 'api_key') {
+    throw new HttpError(
+      400,
+      "Codex takes an API key here; its ChatGPT login is made on the agent's runtime.",
+    );
+  }
+}
 export type CredentialKind = (typeof CREDENTIAL_KINDS)[number];
 
 export function isCredentialKind(key: string): key is CredentialKind {
@@ -15,6 +46,7 @@ export const SECRET_FIELDS = {
   api_key: ['value'],
   ssh_key: ['privateKey'],
   secret: ['value'],
+  runtime_login: ['value'],
 } as const satisfies Record<CredentialKind, readonly string[]>;
 
 // The fields a request may set for each kind. An ssh_key's keys are generated.
@@ -23,6 +55,7 @@ const INPUT_FIELDS: Record<CredentialKind, readonly string[]> = {
   api_key: ['value', 'notes'],
   ssh_key: ['notes'],
   secret: ['value', 'notes'],
+  runtime_login: ['runtime', 'method', 'value', 'notes'],
 };
 
 export interface CredentialFields {
@@ -33,6 +66,8 @@ export interface CredentialFields {
   totpSecret?: string | null;
   value?: string;
   notes?: string;
+  runtime?: LoginRuntime;
+  method?: LoginMethod;
 }
 
 export function assertFieldsOfKind(kind: CredentialKind, fields: CredentialFields): void {

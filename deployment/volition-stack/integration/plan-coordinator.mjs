@@ -440,7 +440,11 @@ async function ensureOrganization(config, fetchImpl, project, agent, hermesIdent
 
 // Plan issues a new key only when the stored one no longer works, so a repeated
 // provisioning run leaves the descriptor and the running Hermes runner untouched.
-async function ensureKeyedDescriptor(config, project, options, { name, route, body, isAgent }) {
+// The runtimes a project agent can run on. Hermes is the default and is not written into
+// the descriptor, so the descriptors of Hermes agents stay as they were.
+const AGENT_RUNTIMES = new Set(['hermes', 'claude', 'codex']);
+
+async function ensureKeyedDescriptor(config, project, options, { name, route, body, isAgent, runtimeOf }) {
   const fetchImpl = options.fetchImpl ?? fetch;
   const filePath = descriptorPath(config, name);
   const descriptorStore = options.descriptorStore ?? { read: readStoredDescriptor, write: writeDescriptor };
@@ -478,6 +482,10 @@ async function ensureKeyedDescriptor(config, project, options, { name, route, bo
   ) {
     throw new PlanCoordinatorError(`Helena returned an invalid agent for ${name}`);
   }
+  const runtime = runtimeOf ? runtimeOf(result) : 'hermes';
+  if (!AGENT_RUNTIMES.has(runtime)) {
+    throw new PlanCoordinatorError(`Helena named an unknown runtime for ${name}`);
+  }
   const descriptor = {
     ...descriptorValue(
       config,
@@ -487,11 +495,13 @@ async function ensureKeyedDescriptor(config, project, options, { name, route, bo
       options.workspace,
       options.browser,
     ),
+    // Claude Code and Codex run in the same profile directory, their home.
+    ...(runtime !== 'hermes' ? { runtime } : {}),
     apiKey,
   };
   const descriptorChanged = !stored || !sameDescriptor(stored, descriptor);
   if (descriptorChanged) await descriptorStore.write(filePath, descriptor);
-  return { result, agent, hermesHome: descriptor.hermesHome, descriptorChanged };
+  return { result, agent, hermesHome: descriptor.hermesHome, descriptorChanged, runtime };
 }
 
 async function ensureControlledCoordinator(config, project, options) {
@@ -527,13 +537,15 @@ export async function ensurePlanProjectAgent(config, project, agentId, options =
     throw new PlanCoordinatorError("Project agents need the Plan control token");
   }
   const name = projectAgentRuntimeName(coordinatorSlug(project), agentId);
-  const { agent, hermesHome, descriptorChanged } = await ensureKeyedDescriptor(config, project, options, {
+  const { agent, hermesHome, descriptorChanged, runtime } = await ensureKeyedDescriptor(config, project, options, {
     name,
     route: '/internal/bootstrap/project-agent',
     body: { projectId: project.id, agentId },
     isAgent: (id, username) => id === agentId && PLAN_USERNAME.test(username ?? ''),
+    // An older Helena names no runtime: its project agents are all Hermes agents.
+    runtimeOf: (result) => result?.runtime ?? 'hermes',
   });
-  return { planAgentId: agent.id, username: agent.username, name, hermesHome, descriptorChanged };
+  return { planAgentId: agent.id, username: agent.username, name, hermesHome, descriptorChanged, runtime };
 }
 
 export async function ensurePlanCoordinator(config, project, options = {}) {
