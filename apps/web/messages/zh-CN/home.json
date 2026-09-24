@@ -79,7 +79,13 @@
       "logins": "登录",
       "janitors": "维护",
       "agents": "代理",
-      "runs": "运行"
+      "runs": "运行",
+      "server": "服务器"
+    },
+    "glance": {
+      "raidOk": "RAID 正常",
+      "backup": "{at}前备份",
+      "cpu": "CPU {temperature}"
     }
   }
 }

@@ -79,7 +79,13 @@
       "logins": "Login",
       "janitors": "Pemeliharaan",
       "agents": "Agen",
-      "runs": "Proses"
+      "runs": "Proses",
+      "server": "Server"
+    },
+    "glance": {
+      "raidOk": "RAID ok",
+      "backup": "cadangan {at} lalu",
+      "cpu": "CPU {temperature}"
     }
   }
 }

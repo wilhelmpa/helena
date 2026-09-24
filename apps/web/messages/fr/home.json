@@ -79,7 +79,13 @@
       "logins": "Connexions",
       "janitors": "Maintenance",
       "agents": "Agents",
-      "runs": "Exécutions"
+      "runs": "Exécutions",
+      "server": "Serveur"
+    },
+    "glance": {
+      "raidOk": "RAID ok",
+      "backup": "sauvegarde il y a {at}",
+      "cpu": "CPU {temperature}"
     }
   }
 }

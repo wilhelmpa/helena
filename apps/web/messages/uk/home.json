@@ -79,7 +79,13 @@
       "logins": "Входи",
       "janitors": "Обслуговування",
       "agents": "Агенти",
-      "runs": "Запуски"
+      "runs": "Запуски",
+      "server": "Сервер"
+    },
+    "glance": {
+      "raidOk": "RAID у нормі",
+      "backup": "бекап {at} тому",
+      "cpu": "ЦП {temperature}"
     }
   }
 }

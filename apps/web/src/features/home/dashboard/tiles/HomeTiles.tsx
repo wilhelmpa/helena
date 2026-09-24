@@ -20,6 +20,14 @@ import {
 } from '@/features/provider-limits/utils/limitsFormat';
 import type { LimitAccount } from '@/lib/api/endpoints/providerLimits';
 import { useSystemHealthQuery } from '../../services/systemHealth.service';
+import { useServerOverview } from '@/features/server/services/server.service';
+import { formatCelsius } from '@/features/server/utils/serverFormat';
+import {
+  serverGlance,
+  serverHealthItems,
+  serverProblems,
+  serverState,
+} from '@/features/server/utils/serverHome';
 import { FigureTile } from '../DashboardParts';
 import { useAgentsNow } from '../sections/AgentsSection';
 import { useMyOpenTasks } from '../sections/TasksSection';
@@ -180,39 +188,56 @@ const PROBLEM_AREA: Record<
   run: 'runs',
 };
 
-// "System": whether everything runs, in words; under it the counts when all is well, or
-// where the problems are. Opens the full health overview. For the Administrator.
+const SERVER_STATUS = { ok: 'success', attention: 'waiting', critical: 'danger', unknown: undefined } as const;
+const RANK = { success: 0, waiting: 1, danger: 2 } as const;
+
+// "System": whether everything runs — the services, logins, agents, runs and maintenance,
+// and the machine (mirror, disks, backup, temperature; hub/server-admin) — in words; under it
+// the mirror, the last backup and the CPU (or the counts) when all is well, or where the
+// problems are. Opens the full health overview. For the Administrator.
 export function SystemTile() {
   const t = useTranslations('home.system');
   const health = useSystemHealthQuery(true);
+  const server = useServerOverview(true);
   const summary = health.data ? systemSummary(health.data) : null;
+  const items = serverHealthItems(server.data);
+  const machine = serverProblems(items);
+  const machineStatus = SERVER_STATUS[serverState(items)];
+  const status =
+    summary && machineStatus && RANK[machineStatus] > RANK[summary.status as keyof typeof RANK]
+      ? machineStatus
+      : summary?.status;
+  const count = (summary?.problems.length ?? 0) + machine.length;
   const areas = summary
-    ? [...new Set(summary.problems.map((problem) => PROBLEM_AREA[problem.key]))]
+    ? [
+        ...new Set([
+          ...summary.problems.map((problem) => t(`areas.${PROBLEM_AREA[problem.key]}`)),
+          ...(machine.length > 0 ? [t('areas.server')] : []),
+        ]),
+      ]
     : [];
+  const glance = serverGlance(items);
+  const glanceParts = [
+    glance.raidOk ? t('glance.raidOk') : null,
+    glance.backupAt ? t('glance.backup', { at: formatDurationShort(glance.backupAt) }) : null,
+    glance.cpuTemperature !== null
+      ? t('glance.cpu', { temperature: formatCelsius(glance.cpuTemperature) })
+      : null,
+  ].filter(Boolean);
   const sub = !summary
     ? ''
     : areas.length > 0
-      ? areas.map((area) => t(`areas.${area}`)).join(' · ')
-      : t('counts', { services: summary.services.total, agents: summary.agents.total });
+      ? areas.join(' · ')
+      : glanceParts.length > 0
+        ? glanceParts.join(' · ')
+        : t('counts', { services: summary.services.total, agents: summary.agents.total });
   return (
     <FigureTile
       onSelect={openSystemDetails}
       label={t('title')}
-      status={summary?.status}
-      value={
-        !summary
-          ? null
-          : summary.problems.length === 0
-            ? t('ok')
-            : t('problems', { count: summary.problems.length })
-      }
-      subTone={
-        summary?.status === 'danger'
-          ? 'danger'
-          : summary?.status === 'waiting'
-            ? 'waiting'
-            : 'default'
-      }
+      status={status}
+      value={!summary ? null : count === 0 ? t('ok') : t('problems', { count })}
+      subTone={status === 'danger' ? 'danger' : status === 'waiting' ? 'waiting' : 'default'}
       sub={sub}
       title={sub}
     />

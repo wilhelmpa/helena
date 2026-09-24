@@ -21,6 +21,7 @@ import SchedulesSection from '@/features/home/dashboard/sections/SchedulesSectio
 import ProjectsSection from '@/features/home/dashboard/sections/ProjectsSection';
 import { BUILTIN_NEEDS_YOU_SOURCES } from '@/features/home/dashboard/sources';
 import UpdatesTile from '@/features/update-center/components/UpdatesTile';
+import { useServerEntries } from '@/features/server/components/serverNeedsYou';
 
 // Start's built-in widgets and "Braucht dich" sources (docs/helena-decisions/dashboard.md),
 // registered as the internal plugin `helena.home` when Start loads this module. A feature
@@ -105,5 +106,8 @@ const BUILTINS = [
 for (const widget of BUILTINS)
   if (!dashboardWidgets.has(widget.id)) registerDashboardWidget(widget, HOME_PLUGIN_ID);
 
-for (const source of BUILTIN_NEEDS_YOU_SOURCES)
+// The machine's red problems (hub/server-admin), right after the services' and logins'.
+const SOURCES = [...BUILTIN_NEEDS_YOU_SOURCES, { id: 'server', order: 15, useEntries: useServerEntries }];
+
+for (const source of SOURCES)
   if (!needsYouSources.has(source.id)) needsYouSources.register(source, HOME_PLUGIN_ID);
