@@ -19,6 +19,7 @@ import {
   type StepExecution,
   type StepResult,
   type WorkflowDefinition,
+  type WorkflowStepType,
 } from './sdk';
 
 // The two DBOS workflows of the engine. `helena.run` interprets one run: it walks the
@@ -78,7 +79,7 @@ function messageOf(error: unknown): string {
 async function passPolicy(
   run: RunInfo,
   step: StepDefinition,
-  type: NonNullable<ReturnType<typeof stepType>>,
+  type: WorkflowStepType,
   execution: StepExecution,
   definition: WorkflowDefinition,
 ): Promise<StepResult | null> {
@@ -141,7 +142,7 @@ async function interpret(runId: string): Promise<string> {
   while (cursor !== null) {
     if (seq >= MAX_EXECUTIONS)
       await fail(`The run executed ${MAX_EXECUTIONS} steps and was stopped`, null, null);
-    const step = locate(steps, cursor)?.step;
+    const step: StepDefinition | undefined = locate(steps, cursor)?.step;
     if (!step) return fail(`The workflow has no step ${cursor}`, null, null);
     const type = stepType(step.type);
     const iteration = (visits[step.id] ?? 0) + 1;

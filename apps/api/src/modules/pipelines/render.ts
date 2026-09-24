@@ -28,7 +28,7 @@ const VARIABLE = /\{\{\s*([^{}]*?)\s*\}\}/g;
 function lookup(name: string, context: RenderContext): string {
   const [scope, key, field] = name.split('.');
   if (scope === 'task') return context.task[key as keyof RenderContext['task']] ?? '';
-  if (scope === 'previous') return context.previous?.[key as keyof StepResult] ?? '';
+  if (scope === 'previous') return context.previous?.[key as 'summary' | 'outcome' | 'note'] ?? '';
   if (scope === 'step') {
     const result = context.steps[key];
     if (!result || !field) return '';
