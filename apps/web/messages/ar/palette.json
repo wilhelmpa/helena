@@ -11,5 +11,15 @@
   "toggleChat": "إظهار محادثة المنسق أو إخفاؤها",
   "board": "اللوحة",
   "commands": "الأوامر",
-  "switchProject": "تبديل المشروع"
+  "switchProject": "تبديل المشروع",
+  "filterAll": "الكل",
+  "filterKinds": "التصفية حسب النوع",
+  "capture": "حفظ",
+  "captureInbox": "حفظ في الوارد: «{text}»",
+  "captureJournal": "إضافة إلى ملاحظة اليوم: «{text}»",
+  "capturedInbox": "حُفظ في الوارد",
+  "capturedJournal": "أُضيف إلى ملاحظة اليوم",
+  "openCaptured": "فتح",
+  "captureFailed": "تعذر الحفظ",
+  "untitled": "بلا عنوان"
 }

@@ -17,7 +17,8 @@
     "drizzle-orm": "^0.45.2",
     "jszip": "^3.10.1",
     "read-excel-file": "^9.3.10",
-    "yaml": "^2.9.0"
+    "yaml": "^2.9.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",

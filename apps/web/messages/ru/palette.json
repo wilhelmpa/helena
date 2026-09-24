@@ -11,5 +11,15 @@
   "toggleChat": "Показать или скрыть чат координатора",
   "board": "Доска",
   "commands": "Команды",
-  "switchProject": "Сменить проект"
+  "switchProject": "Сменить проект",
+  "filterAll": "Все",
+  "filterKinds": "Фильтр по типу",
+  "capture": "Сохранить",
+  "captureInbox": "Сохранить во входящие: «{text}»",
+  "captureJournal": "Добавить в сегодняшнюю заметку: «{text}»",
+  "capturedInbox": "Сохранено во входящие",
+  "capturedJournal": "Добавлено в сегодняшнюю заметку",
+  "openCaptured": "Открыть",
+  "captureFailed": "Не удалось сохранить",
+  "untitled": "Без названия"
 }

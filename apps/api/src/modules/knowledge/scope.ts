@@ -14,6 +14,7 @@ import type { AuthUser } from '#shared/access';
 import { hasPermission } from '#shared/permissions';
 import { toMemberContext, type MemberRole } from '#modules/members/service';
 import { isHomeAgent } from '#modules/agents/core/home-agent';
+import { knowledgeActor, type KnowledgeActor } from './reach';
 
 // Who may read and write which part of the vault.
 //
@@ -41,6 +42,8 @@ export interface VaultScope {
   private: boolean;
   agent: { username: string } | null;
   author: GitAuthor;
+  // Who writes, for the index and the history's trailers (reach.ts).
+  actor: KnowledgeActor;
 }
 
 const NONE: Access = { read: false, write: false };
@@ -76,7 +79,11 @@ async function teamProjects(teamId: number) {
     .where(eq(project.teamId, teamId));
 }
 
-export async function vaultScope(caller: AuthUser, viaMcp: boolean): Promise<VaultScope> {
+export async function vaultScope(
+  caller: AuthUser,
+  viaMcp: boolean,
+  headers: Headers | null = null,
+): Promise<VaultScope> {
   const [person] = await db
     .select({ name: userTable.name, email: userTable.email, role: userTable.role })
     .from(userTable)
@@ -117,6 +124,7 @@ export async function vaultScope(caller: AuthUser, viaMcp: boolean): Promise<Vau
     author: agent
       ? { name: person?.name || agent.username, email: `${agent.username}@agents.volition.local` }
       : { name: person?.name || 'Helena', email: person?.email || 'helena@volition.local' },
+    actor: await knowledgeActor(caller, headers),
   };
 }
 

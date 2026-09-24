@@ -16,6 +16,7 @@ import common from '../../messages/en/common.json';
 import cycles from '../../messages/en/cycles.json';
 import dashboards from '../../messages/en/dashboards.json';
 import devices from '../../messages/en/devices.json';
+import knowledge from '../../messages/en/knowledge.json';
 import display from '../../messages/en/display.json';
 import documents from '../../messages/en/documents.json';
 import files from '../../messages/en/files.json';
@@ -99,6 +100,7 @@ const defaultMessages = {
   routines,
   pipelines,
   devices,
+  knowledge,
 };
 
 export type Messages = typeof defaultMessages;

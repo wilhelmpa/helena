@@ -43,6 +43,10 @@
       "label": "Armazenamento",
       "description": "Quanto as pessoas podem enviar: o tamanho de um único arquivo, os tipos de anexo aceitos e o armazenamento que cada projeto recebe."
     },
+    "knowledge": {
+      "label": "Conhecimento e busca",
+      "description": "As fontes da busca unificada, até onde o índice chegou e a busca semântica."
+    },
     "telegram": {
       "label": "Telegram",
       "description": "O bot ao qual as pessoas conectam sua conta do Telegram, e o que entrega notificações do Telegram para projetos que não definem seu próprio bot."

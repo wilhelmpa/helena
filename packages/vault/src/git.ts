@@ -169,15 +169,22 @@ async function commitRepository(
 // same author's save of the same files within ten minutes amends that commit. A failure
 // is logged: the files are already written, and the watcher's next commit of outside
 // changes picks the paths up.
+//
+// `trailers` are git trailers (`Helena-Actor: agent:12`, `Helena-Run: 481`) appended to
+// the message, the standard place for machine-readable provenance in a commit.
 export async function commitVaultPaths(
   relativePaths: string[],
   message: string,
   author: GitAuthor,
-  options: { continueSession?: boolean } = {},
+  options: { continueSession?: boolean; trailers?: Record<string, string> } = {},
 ): Promise<void> {
+  const trailers = Object.entries(options.trailers ?? {})
+    .filter(([key, value]) => /^[A-Za-z][A-Za-z0-9-]*$/.test(key) && value.trim())
+    .map(([key, value]) => `${key}: ${value.replace(/\s+/g, ' ').trim()}`);
+  const fullMessage = trailers.length > 0 ? `${message}\n\n${trailers.join('\n')}` : message;
   for (const repository of repositories(relativePaths)) {
     try {
-      await commitRepository(repository, message, author, options.continueSession);
+      await commitRepository(repository, fullMessage, author, options.continueSession);
     } catch (error) {
       console.error('[vault] git commit failed:', error);
     }

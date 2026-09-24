@@ -237,6 +237,7 @@ export default function WorkspacePanel({
   const browserBar = browserBase ? (
     <WorkspaceBrowserBar
       base={browserBase}
+      projectKey={contextProjectKey}
       view={browserPreferences.view}
       onViewChange={browserPreferences.setView}
       followAgent={browserPreferences.followAgent}
