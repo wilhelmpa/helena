@@ -753,6 +753,9 @@ class Keeper:
             state = 'ok'
             error = None
         refreshed = record.get('refreshedAt')
+        # A token that lives shorter than the longest agent unit: renewed every min_gap, and a
+        # long run can still outlive it.
+        note = 'short-lived' if record.get('shortLived') and state != 'invalid' else None
         return {
             'store': 'hermes',
             'provider': provider,
@@ -764,6 +767,7 @@ class Keeper:
             'refreshedAt': now_iso(refreshed) if isinstance(refreshed, (int, float)) else None,
             'error': error if state != 'ok' else None,
             'command': self.settings.relogin_command(provider) if state == 'invalid' else None,
+            'note': note,
         }
 
     def status(self, codex: Optional[dict], views: dict) -> dict:
