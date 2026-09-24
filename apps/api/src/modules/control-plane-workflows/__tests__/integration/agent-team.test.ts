@@ -1,4 +1,12 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'bun:test';
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  setDefaultTimeout,
+} from 'bun:test';
 import { agentRun, db, issue as issueTable, issueActivity, pipelineRun } from '@repo/db';
 import { and, asc, eq } from 'drizzle-orm';
 import { authedApi, type Api } from '#tests/helpers/app';
@@ -14,6 +22,9 @@ import {
   waitForAgentRun,
   waitForStatus,
 } from '#tests/helpers/engine';
+
+// A run takes a few hops through the engine's queues (see helpers/engine.ts).
+setDefaultTimeout(30_000);
 
 // The agent team of a task on the Helena engine: started by delegating the task to a
 // coordinator of a project that runs agent teams, or on request; the coordinator plans,

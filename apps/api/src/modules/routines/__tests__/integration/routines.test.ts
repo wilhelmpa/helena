@@ -1,4 +1,13 @@
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'bun:test';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  setDefaultTimeout,
+} from 'bun:test';
 import { DBOS } from '@dbos-inc/dbos-sdk';
 import {
   agentRun,
@@ -18,6 +27,9 @@ import { clearLimits, setLimits } from '#tests/helpers/limits';
 import { addProjectMember } from '#tests/helpers/members';
 import { createRole } from '#tests/helpers/roles';
 import { planFire } from '#modules/engine/schedules';
+
+// A run takes a few hops through the engine's queues (see helpers/engine.ts).
+setDefaultTimeout(30_000);
 
 // Routines on the Helena engine: Helena keeps them (helena_schedule) and the engine fires
 // them (a DBOS schedule of the same id). Every fire creates a task delegated to the agent

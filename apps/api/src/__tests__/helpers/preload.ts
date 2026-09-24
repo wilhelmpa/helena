@@ -22,6 +22,9 @@ if (url && process.env.NODE_ENV === 'test' && process.env.HELENA_TEST_DB_CLONE !
   if (clone) {
     process.env.DATABASE_URL = clone.url;
     afterAll(async () => {
+      // The engine keeps connections to the copy; it stops before the copy goes.
+      const { stopEngine } = await import('#modules/engine/dbos');
+      await stopEngine().catch(() => {});
       await clone.drop();
     });
   }

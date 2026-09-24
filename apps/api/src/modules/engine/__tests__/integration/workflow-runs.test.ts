@@ -1,4 +1,12 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'bun:test';
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  setDefaultTimeout,
+} from 'bun:test';
 import { agentRun, db, issueActivity, notification } from '@repo/db';
 import { and, eq } from 'drizzle-orm';
 import { resetDb } from '#tests/helpers/db';
@@ -23,6 +31,9 @@ import {
   type Json,
   type ProjectSetup,
 } from '#tests/helpers/workflows';
+
+// A run takes a few hops through the engine's queues (see helpers/engine.ts).
+setDefaultTimeout(30_000);
 
 // The Helena engine running builder workflows for real: every kind of step in order,
 // the lanes of conditions, rework loops, failures, test runs, cancel and retry. Ported

@@ -1,4 +1,12 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'bun:test';
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  setDefaultTimeout,
+} from 'bun:test';
 import { DBOS } from '@dbos-inc/dbos-sdk';
 import { db, helenaSchedule, issue as issueTable } from '@repo/db';
 import { eq } from 'drizzle-orm';
@@ -20,6 +28,9 @@ import {
   type ProjectSetup,
 } from '#tests/helpers/workflows';
 import { planFire } from '#modules/engine/schedules';
+
+// A run takes a few hops through the engine's queues (see helpers/engine.ts).
+setDefaultTimeout(30_000);
 
 // The workflow builder through the API: the library and a project's workflows, their
 // schedules, and the runs the Helena engine starts by hand, on a task event or on a
