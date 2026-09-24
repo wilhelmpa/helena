@@ -10,13 +10,17 @@ export default function OrganizationTree({ organization }: { organization: Organ
   const t = useTranslations('organization');
   const tree = buildOrganizationTree(organization);
   if (tree.length === 0) {
-    return <p className="text-sm text-muted-foreground">{t('map.empty')}</p>;
+    return (
+      <p className="rounded-lg border bg-card px-3 py-2 text-sm text-muted-foreground">
+        {t('map.empty')}
+      </p>
+    );
   }
   return (
-    <div className="space-y-4 pb-6">
+    <div className="space-y-3 pb-6">
       <OrganizationSummary agents={organization.agents} />
       <div className="overflow-x-auto">
-        <ul className="min-w-[520px] space-y-5">
+        <ul className="min-w-0 space-y-2">
           {tree.map((node) => (
             <OrganizationDepartmentNode key={node.department?.id ?? node.kind} node={node} />
           ))}

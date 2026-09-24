@@ -19,14 +19,16 @@ export default function CycleTimelineGroupRow({
   const t = useTranslations('cycles');
 
   return (
-    <div className="flex border-b bg-muted/40" style={{ height: CYCLE_GROUP_H }}>
+    <div className="flex border-b bg-sidebar-accent/40" style={{ height: CYCLE_GROUP_H }}>
       <div
-        className="sticky left-0 z-10 flex shrink-0 items-center gap-2 border-r bg-muted px-3 text-sm font-medium"
+        className="sticky start-0 z-10 flex shrink-0 items-center gap-2 border-e bg-sidebar-accent px-3 text-sm font-medium"
         style={{ width: labelW }}
       >
         {colorDot(group.color)}
         <span className="truncate">{t(`status.${group.status}`)}</span>
-        <span className="text-muted-foreground">{group.cycles.length}</span>
+        <span className="text-xs font-normal text-muted-foreground tabular-nums">
+          {group.cycles.length}
+        </span>
       </div>
       <div style={{ width: trackWidth }} />
     </div>

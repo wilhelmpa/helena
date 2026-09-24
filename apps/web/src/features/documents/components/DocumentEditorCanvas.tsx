@@ -105,7 +105,7 @@ export default function DocumentEditorCanvas({
           defaultValue={images.markdown}
           editable={editable}
           placeholder={t('contentPlaceholder')}
-          className="min-h-[58vh] flex-1 text-[15px] leading-7 md:text-base md:leading-7"
+          className="min-h-[58vh] flex-1 text-base leading-7"
           onReady={ready}
           onChange={(markdown) => onEdit(noteBody(markdown))}
           onBlur={onBlur}

@@ -72,5 +72,7 @@
   "dragFailed": "Gagal memindahkan cycle",
   "notFound": "Cycle tidak ditemukan.",
   "defaultName": "Sprint {n}",
-  "issuesDone": "Issue selesai"
+  "issuesDone": "Issue selesai",
+  "daysLeft": "sisa {count} hr",
+  "lengthDays": "{count} hr"
 }

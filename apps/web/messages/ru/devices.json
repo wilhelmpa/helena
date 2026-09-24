@@ -5,7 +5,7 @@
   "ownerOnly": "Устройствами управляет только владелец экземпляра.",
   "unavailable": {
     "unconfiguredTitle": "Syncthing не настроен",
-    "unconfigured": "У Plan нет действующего ключа для Syncthing на этом сервере. Установите пакет Debian syncthing и выполните <code>deployment/volition-stack/native/syncthing/setup.sh</code> от имени root.",
+    "unconfigured": "У Helena нет действующего ключа для Syncthing на этом сервере. Установите пакет Debian syncthing и выполните <code>deployment/volition-stack/native/syncthing/setup.sh</code> от имени root.",
     "unreachableTitle": "Syncthing недоступен",
     "unreachable": "Syncthing не установлен на этом сервере или служба <code>volition-syncthing</code> не запущена."
   },
@@ -71,7 +71,7 @@
     "step2Lan": "Для прямой синхронизации дома укажите адреса устройства <code>{address}, dynamic</code>.",
     "step3": "Затем устройство появится выше в разделе «Устройства, запросившие подключение». Нажмите «Принять».",
     "step4": "На устройстве примите папку Volition в папку с именем Volition: <code>~/Volition</code> на Mac, <code>Volition</code> во внутренней памяти на Android, хранилище Obsidian Volition на iPhone.",
-    "step5": "Дождитесь, пока папка на устройстве покажет «Актуально», затем откройте папку Volition в Obsidian как хранилище. Ссылки из Plan открывают хранилище Volition.",
+    "step5": "Дождитесь, пока папка на устройстве покажет «Актуально», затем откройте папку Volition в Obsidian как хранилище. Ссылки из Helena открывают хранилище Volition.",
     "iphoneTitle": "iPhone",
     "iphone": "На iPhone Obsidian открывает только свои папки. Сначала создайте хранилище Volition в Obsidian (на iPhone, не в iCloud) и закройте Obsidian. Затем в Möbius Sync поместите папку Volition в «На iPhone» › Obsidian › Volition. Obsidian записывает свои настройки при создании хранилища, поэтому после первой синхронизации могут появиться конфликты в <code>.obsidian</code>; их конфликтные копии содержат настройки по умолчанию этого сервера. Möbius Sync синхронизирует, пока приложение открыто или iOS разрешает ему работать в фоне.",
     "spaceTitle": "Экономия места на телефоне (необязательно)",

@@ -49,7 +49,7 @@ export default function CycleInfoPopover({
             </span>
           </div>
           <p className="text-xs text-muted-foreground">
-            <CycleRange cycle={cycle} /> · {cycleLength(cycle)}d
+            <CycleRange cycle={cycle} /> · {t('lengthDays', { count: cycleLength(cycle) })}
           </p>
         </div>
 

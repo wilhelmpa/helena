@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { messageBlocks, messageText, toUIMessage, type PlanUIMessage } from './chatMessages';
+import {
+  mergeNewestPage,
+  mergeOlderPage,
+  messageBlocks,
+  messageText,
+  toUIMessage,
+  type PlanUIMessage,
+} from './chatMessages';
 
 describe('messageBlocks', () => {
   it('groups the parts of an answer into text, reasoning and tool blocks in order', () => {
@@ -106,5 +113,39 @@ describe('toUIMessage / messageText', () => {
     const [part] = ui.parts;
     assert.equal(part.type, 'dynamic-tool');
     assert.equal(part.state === 'output-error' ? part.errorText : undefined, 'permission denied');
+  });
+});
+
+describe('merging transcript pages', () => {
+  const message = (id: string, text = id): PlanUIMessage => ({
+    id,
+    role: 'user',
+    parts: [{ type: 'text', text }],
+  });
+
+  it('puts an older page in front without repeating what is already shown', () => {
+    const merged = mergeOlderPage(
+      [message('3'), message('4')],
+      [message('1'), message('2'), message('3')],
+    );
+    assert.deepEqual(
+      merged.map((m) => m.id),
+      ['1', '2', '3', '4'],
+    );
+  });
+
+  it("lets the server's newest page replace the streamed turns, keeping older ones", () => {
+    const merged = mergeNewestPage(
+      [message('1'), message('2'), message('3', 'streamed')],
+      [message('2'), message('3', 'stored')],
+    );
+    assert.deepEqual(
+      merged.map((m) => [m.id, messageText(m)]),
+      [
+        ['1', '1'],
+        ['2', '2'],
+        ['3', 'stored'],
+      ],
+    );
   });
 });

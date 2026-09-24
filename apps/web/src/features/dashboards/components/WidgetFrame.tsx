@@ -10,9 +10,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
-// A borderless widget section: a quiet header (title + edit affordances) over a
-// hairline divider, then the body directly on the page. No card box — surfaces are
-// separated by space and the header rule, per DESIGN.md. Widget settings live in a
+// A widget box on the sidebar's surface (owner, 2026-09-24: boxes like the sidebar):
+// a quiet 13px header (title + edit affordances), then the body. Widget settings live in a
 // popover opened from the header, not inline in the body, so shrinking the widget's
 // height never hides them. The `.widget-drag-handle` grip is react-grid-layout's
 // drag handle; `movable` is off when the grid does not accept drags, and size is
@@ -42,8 +41,8 @@ export default function WidgetFrame({
   const defaultTitle = t.has(labelKey) ? t(labelKey) : widget.type;
   const title = widget.title || defaultTitle;
   return (
-    <section className="flex h-full flex-col">
-      <header className="mb-4 flex items-center gap-2 border-b border-border/60 pb-2">
+    <section className="flex h-full flex-col rounded-lg border bg-card p-3">
+      <header className="mb-3 flex h-7 shrink-0 items-center gap-2">
         {movable && (
           <button
             type="button"
@@ -59,12 +58,10 @@ export default function WidgetFrame({
             onChange={(e) => onRename(e.target.value)}
             placeholder={defaultTitle}
             aria-label={t('widgetName')}
-            className="min-w-0 flex-1 rounded-md bg-transparent px-1 py-0.5 text-sm font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/60 focus:bg-accent/50"
+            className="min-w-0 flex-1 rounded-md bg-transparent px-1 py-0.5 text-sm font-medium text-foreground outline-none placeholder:text-muted-foreground/60 focus:bg-accent"
           />
         ) : (
-          <h3 className="min-w-0 flex-1 truncate text-sm font-semibold tracking-tight text-foreground">
-            {title}
-          </h3>
+          <h3 className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{title}</h3>
         )}
         {editing && settings && (
           <Popover>
@@ -72,7 +69,8 @@ export default function WidgetFrame({
               <button
                 type="button"
                 title={t('widgetSettings')}
-                className="rounded p-0.5 text-muted-foreground/60 hover:text-foreground"
+                aria-label={t('widgetSettings')}
+                className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
               >
                 <SlidersHorizontal className="size-4" />
               </button>
@@ -88,7 +86,8 @@ export default function WidgetFrame({
               <button
                 type="button"
                 title={t('widgetOptions')}
-                className="rounded p-0.5 text-muted-foreground/60 hover:text-foreground"
+                aria-label={t('widgetOptions')}
+                className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
               >
                 <MoreHorizontal className="size-4" />
               </button>

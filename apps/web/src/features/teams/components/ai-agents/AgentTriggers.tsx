@@ -23,7 +23,13 @@ export function AgentTriggers({ agent }: { agent: AiAgent }) {
           <Tooltip>
             <TooltipTrigger asChild>
               <PopoverTrigger asChild>
-                <button type="button" className={TRIGGER_CHIP} aria-label={t('triggerFieldsTitle')}>
+                <button
+                  type="button"
+                  className={TRIGGER_CHIP}
+                  aria-label={t('triggerFieldsTitle')}
+                  // Inside a clickable agent row: open the popover, not the row's sheet.
+                  onClick={(event) => event.stopPropagation()}
+                >
                   <ListChecks className="size-3 shrink-0" />
                   {fieldCount}
                 </button>

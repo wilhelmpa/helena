@@ -34,7 +34,7 @@ export default function TeamMcpServers({
         hint={canManage ? t('hint') : `${t('hint')} ${t('managerOnly')}`}
         action={
           canManage ? (
-            <Button size="sm" className="h-8 gap-1.5" onClick={() => setEditing('new')}>
+            <Button variant="outline" size="sm" onClick={() => setEditing('new')}>
               <Plus className="size-3.5" />
               {t('add')}
             </Button>

@@ -89,7 +89,7 @@ export default function TeamProjectMembers({
           className="min-w-0 flex-1"
         />
         <Select value={kind} onValueChange={(value) => setKind(value as MemberKind)}>
-          <SelectTrigger className="h-9 w-[150px]" aria-label={tMembers('tabs.label')}>
+          <SelectTrigger className="w-[150px]" aria-label={tMembers('tabs.label')}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

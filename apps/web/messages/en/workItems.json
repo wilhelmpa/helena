@@ -146,6 +146,17 @@
     "emptyHint": "No task matches these filters.",
     "myOpenTasks": "My open tasks",
     "viewAll": "All tasks",
-    "noOpenTasks": "No open task is assigned to you."
+    "noOpenTasks": "No open task is assigned to you.",
+    "filter": {
+      "project": "Project",
+      "state": "State",
+      "assignee": "Assignee",
+      "due": "Due",
+      "group": "Group by",
+      "title": "Filter",
+      "reset": "Reset filters"
+    },
+    "loadFailed": "The tasks could not be loaded.",
+    "loadFailedHint": "The server did not answer. Try again in a moment."
   }
 }

@@ -46,7 +46,7 @@ export default function NewTeamModal({
           </div>
           <input
             dir={name ? 'auto' : undefined}
-            className="w-full bg-transparent text-lg font-semibold outline-none placeholder:text-muted-foreground"
+            className="w-full bg-transparent text-base font-semibold outline-none placeholder:text-muted-foreground"
             placeholder={t('namePlaceholder')}
             value={name}
             onChange={(e) => setName(e.target.value)}

@@ -9,11 +9,10 @@
     "start": "next start -p 3001",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "bun test --preload ./test/setup.ts"
+    "test": "bun test --preload ./test/setup.ts --isolate"
   },
   "dependencies": {
     "@ai-sdk/react": "^4",
-    "@repo/agent-naming": "workspace:*",
     "@base-ui/react": "^1.7.0",
     "@better-auth/api-key": "1.6.27",
     "@better-auth/passkey": "1.6.27",
@@ -31,6 +30,7 @@
     "@radix-ui/react-slot": "^1.3.3",
     "@radix-ui/react-tabs": "^1.1.21",
     "@radix-ui/react-tooltip": "^1.2.16",
+    "@repo/agent-naming": "workspace:*",
     "@scalar/api-reference-react": "^0.9.61",
     "@shadcn/react": "^0.3.0",
     "@tanstack/react-query": "^5.101.4",

@@ -6,6 +6,7 @@ import {
   KeyRound,
   Mail,
   Send,
+  Shield,
   SlidersHorizontal,
   Users,
   UsersRound,
@@ -60,6 +61,11 @@ export const GOD_SECTIONS: GodSection[] = [
     slug: 'hotkeys',
     group: 'instance',
     icon: Keyboard,
+  },
+  {
+    slug: 'security',
+    group: 'instance',
+    icon: Shield,
   },
   {
     slug: 'storage',

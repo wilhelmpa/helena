@@ -22,7 +22,7 @@
       "email": "Correo"
     },
     "registered": "se unió el {date}",
-    "roleGod": "Dios",
+    "roleGod": "Administrador",
     "roleUser": "Usuario",
     "agent": "Agente",
     "noProviders": "ninguno",
@@ -199,6 +199,33 @@
   },
   "hotkeys": {
     "saved": "Los atajos de teclado se han guardado"
+  },
+  "security": {
+    "grantTitle": "Concesión de terminal",
+    "grantDescription": "La ventana de 12 horas que una verificación adicional abre para las sesiones de Shell, Claude Code y Codex.",
+    "grantActive": "Concedida hasta las {time}",
+    "grantInactive": "No hay ninguna concesión activa.",
+    "grantRevoke": "Revocar",
+    "stepUpTitle": "Pedir un código al abrir",
+    "stepUpDescription": "Lo que demuestra que es el propietario quien abre la terminal, cada vez, incluso en la red local.",
+    "stepUpMethod": "TOTP (una aplicación de autenticación), configurado en Cuenta → Seguridad. La clave de acceso lo sustituirá en cuanto esta instancia funcione con HTTPS.",
+    "stepUpOffHint": "En la LAN sin código: el terminal se abre directamente para tu sesión en la red doméstica. A través del túnel (loopback) y desde fuera, el código del autenticador siempre es obligatorio.",
+    "sudoTitle": "sudo en la terminal del navegador pide contraseña",
+    "sudoDescription": "Desactivado (por defecto) deja cada comando sudo sin contraseña en todas partes, en la terminal del propietario igual que en la automatización SSH -- sudo autoriza por cuenta Unix y no puede distinguir entre ambas. Activado reduce el sudo de la terminal del navegador a una lista revisada de comandos de automatización y pide la contraseña de Linux para todo lo demás.",
+    "sudoHint": "Activarlo aquí no basta por sí solo: sudo no se puede cambiar por sesión en tiempo de ejecución, así que un operador aún debe auditar cada comando `sudo -n` que ejecuta la automatización SSH de la instancia, comprobarlo contra la política de sudo e instalar esa política a mano. Consúltalo con el operador antes de activarlo -- hasta entonces, este ajuste no tiene efecto.",
+    "auditTitle": "Registro de auditoría",
+    "auditDescription": "Cada intento de verificación adicional, cada cambio de la concesión y cada sesión de terminal, más recientes primero. Sin pulsaciones de teclado.",
+    "auditEmpty": "Todavía no hay eventos.",
+    "event": {
+      "step_up_ok": "Verificación adicional correcta",
+      "step_up_fail": "Verificación adicional fallida",
+      "rate_limited": "Límite de intentos alcanzado",
+      "grant_revoked": "Concesión revocada",
+      "session_start": "Sesión iniciada",
+      "session_end": "Sesión finalizada",
+      "token_rejected": "Token rechazado"
+    },
+    "grantActiveOpen": "Acceso concedido."
   },
   "storage": {
     "saved": "Los ajustes de almacenamiento se han guardado",

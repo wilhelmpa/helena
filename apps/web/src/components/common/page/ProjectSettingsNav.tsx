@@ -8,7 +8,7 @@ import { SectionNav, type SectionNavItem } from './SectionNav';
 // group-label contract (SidebarGroupLabel in components/ui/sidebar.tsx), repeated
 // here plainly since this nav sits in the page body, not inside the <Sidebar>
 // component itself (its classes read CSS variables only that one provides).
-const GROUP_LABEL_CLASS = 'flex h-8 items-center px-2 text-xs font-medium text-foreground/70';
+const GROUP_LABEL_CLASS = 'flex h-8 items-center px-2 text-xs font-medium text-muted-foreground';
 
 // The project settings sub-navigation (docs/volition-design-helena-ui.md "Eigenes
 // Einstellungs-Layout"): grouped, in a second narrow column inside the settings

@@ -45,14 +45,12 @@ export default function TakeoverScreen({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-background">
       <div className="grid min-h-full w-full lg:grid-cols-[20rem_minmax(0,1fr)] xl:grid-cols-[24rem_minmax(0,1fr)]">
-        <aside className="flex flex-col gap-10 bg-muted/40 px-6 py-10 lg:sticky lg:top-0 lg:h-dvh lg:px-10 lg:py-14">
+        <aside className="flex flex-col gap-6 bg-muted/40 px-4 py-6 lg:sticky lg:top-0 lg:h-dvh lg:px-10 lg:py-14">
           <div>
             <p className="text-xs font-medium tracking-[0.12em] text-balance text-muted-foreground uppercase">
               {eyebrow}
             </p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-balance lg:text-4xl">
-              {title}
-            </h1>
+            <h1 className="mt-3 text-xl font-semibold text-balance">{title}</h1>
           </div>
 
           {sections.length > 1 && (
@@ -89,7 +87,7 @@ export default function TakeoverScreen({
           </Button>
         </aside>
 
-        <main className="flex w-full max-w-[80rem] min-w-0 flex-col px-6 py-10 lg:px-14 lg:py-14 xl:px-20">
+        <main className="flex w-full max-w-[80rem] min-w-0 flex-col px-4 py-6 lg:px-14 lg:py-14 xl:px-20">
           <div className="flex flex-col gap-14">
             {sections.map((section, index) => (
               <section
@@ -97,7 +95,7 @@ export default function TakeoverScreen({
                 id={section.id}
                 className={index === 0 ? 'scroll-mt-8' : 'scroll-mt-8 border-t border-border pt-14'}
               >
-                <h2 className="flex items-center gap-2 text-lg font-semibold">
+                <h2 className="flex items-center gap-2 text-base font-semibold">
                   {section.icon}
                   {section.href ? (
                     <a

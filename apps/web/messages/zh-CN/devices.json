@@ -5,7 +5,7 @@
   "ownerOnly": "只有实例所有者可以管理设备。",
   "unavailable": {
     "unconfiguredTitle": "Syncthing 尚未设置",
-    "unconfigured": "Plan 在此服务器上没有可用的 Syncthing 密钥。请安装 Debian 软件包 syncthing，并以 root 身份运行 <code>deployment/volition-stack/native/syncthing/setup.sh</code>。",
+    "unconfigured": "Helena 在此服务器上没有可用的 Syncthing 密钥。请安装 Debian 软件包 syncthing，并以 root 身份运行 <code>deployment/volition-stack/native/syncthing/setup.sh</code>。",
     "unreachableTitle": "无法连接 Syncthing",
     "unreachable": "此服务器上未安装 Syncthing，或服务 <code>volition-syncthing</code> 未运行。"
   },
@@ -71,7 +71,7 @@
     "step2Lan": "如需在家直接同步，请将设备地址填写为 <code>{address}, dynamic</code>。",
     "step3": "随后该设备会出现在上方的“请求连接的设备”中。选择“接受”。",
     "step4": "在设备上将文件夹 Volition 接受到名为 Volition 的文件夹：Mac 上为 <code>~/Volition</code>，Android 上为内部存储中的 <code>Volition</code>，iPhone 上为 Obsidian 仓库 Volition。",
-    "step5": "等待设备上的文件夹显示“最新”，然后在 Obsidian 中将文件夹 Volition 作为仓库打开。Plan 中的链接会打开仓库 Volition。",
+    "step5": "等待设备上的文件夹显示“最新”，然后在 Obsidian 中将文件夹 Volition 作为仓库打开。Helena 中的链接会打开仓库 Volition。",
     "iphoneTitle": "iPhone",
     "iphone": "在 iPhone 上，Obsidian 只能打开自己的文件夹。请先在 Obsidian 中创建仓库 Volition（存放在 iPhone 上，不要放在 iCloud），然后关闭 Obsidian。接着在 Möbius Sync 中把文件夹 Volition 放到“我的 iPhone › Obsidian › Volition”。Obsidian 创建仓库时会写入自己的设置，因此首次同步后 <code>.obsidian</code> 中可能出现冲突；这些冲突副本包含此服务器的默认设置。Möbius Sync 在应用打开或 iOS 允许其后台运行时进行同步。",
     "spaceTitle": "节省手机空间（可选）",

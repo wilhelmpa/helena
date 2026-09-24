@@ -27,7 +27,7 @@ export function SkillRow({
     <TableRow className="group/item">
       <TableCell className="px-3 py-3 align-top whitespace-normal">
         <div className="flex min-w-0 items-start gap-2.5">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-sidebar-border bg-background text-muted-foreground">
             {skill.source === 'github' ? (
               <GithubIcon className="size-4" />
             ) : (
@@ -37,7 +37,7 @@ export function SkillRow({
           <div className="flex min-w-0 flex-col gap-1 pt-0.5">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <span className="truncate text-sm font-medium text-foreground">{skill.name}</span>
-              <Badge variant="outline" className="text-[10px] font-medium tracking-wide uppercase">
+              <Badge variant="outline" className="text-xs font-medium">
                 {t(`source.${skill.source}`)}
               </Badge>
             </div>
@@ -49,7 +49,7 @@ export function SkillRow({
           </div>
         </div>
       </TableCell>
-      <TableCell className="px-3 py-3 pt-4 align-top whitespace-normal">
+      <TableCell className="px-3 py-3 pt-4 align-top whitespace-normal max-md:hidden">
         <p className="line-clamp-2 text-sm text-muted-foreground">
           {skill.description || t('noDescription')}
         </p>

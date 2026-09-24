@@ -11,7 +11,7 @@ export default function GodEmailSettings({ form }: { form: GodEmailForm }) {
   const t = useTranslations('god.email');
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <GodEmailProviderSection form={form} />
       <SettingsSection
         title={t('teamNotifications')}

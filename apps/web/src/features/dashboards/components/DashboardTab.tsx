@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import type { Dashboard } from '@/lib/api/endpoints/dashboards';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { PAGE_CONTROL_ACTIVE_CLASS, PAGE_CONTROL_CLASS } from '@/components/layout/PageToolbar';
 
 export default function DashboardTab({
   dashboard,
@@ -42,17 +43,21 @@ export default function DashboardTab({
       {...attributes}
       {...listeners}
       className={cn(
-        'flex shrink-0 items-center rounded-md text-sm transition-colors',
+        PAGE_CONTROL_CLASS,
+        'h-7 gap-0 px-0',
         canEdit ? 'cursor-grab' : 'cursor-default',
-        active
-          ? 'bg-secondary font-medium text-foreground'
-          : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+        active && PAGE_CONTROL_ACTIVE_CLASS,
         isDragging && 'opacity-40',
       )}
     >
-      <button type="button" onClick={onSelect} className="flex items-center gap-1.5 py-1 pr-1 pl-2">
-        <LayoutDashboard className="size-3.5" />
-        {dashboard.name}
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-current={active ? 'page' : undefined}
+        className={cn('flex h-full items-center gap-1.5 ps-2', showMenu ? 'pe-1' : 'pe-2')}
+      >
+        <LayoutDashboard className="!size-3.5" />
+        <span className="max-w-48 truncate">{dashboard.name}</span>
       </button>
       {showMenu ? (
         <Popover open={menuOpen} onOpenChange={setMenuOpen}>
@@ -60,9 +65,10 @@ export default function DashboardTab({
             <button
               type="button"
               title={t('options')}
-              className="mr-1.5 rounded p-0.5 hover:bg-accent-foreground/10"
+              aria-label={t('options')}
+              className="me-1 flex size-5 items-center justify-center rounded text-muted-foreground hover:bg-background/60 hover:text-foreground"
             >
-              <MoreHorizontal className="size-3.5" />
+              <MoreHorizontal className="!size-3.5" />
             </button>
           </PopoverTrigger>
           <PopoverContent align="start" className="w-40 p-1">
@@ -73,9 +79,9 @@ export default function DashboardTab({
                   setMenuOpen(false);
                   onRename();
                 }}
-                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-sm hover:bg-accent"
+                className="flex h-8 w-full items-center gap-2 rounded-md px-2 text-start text-sm hover:bg-accent"
               >
-                <Pencil className="size-3.5" /> {t('rename')}
+                <Pencil className="size-4" /> {t('rename')}
               </button>
             )}
             {canDelete && (
@@ -85,16 +91,14 @@ export default function DashboardTab({
                   setMenuOpen(false);
                   onDelete();
                 }}
-                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-sm text-destructive hover:bg-destructive/10"
+                className="flex h-8 w-full items-center gap-2 rounded-md px-2 text-start text-sm text-destructive hover:bg-destructive/10"
               >
-                <Trash2 className="size-3.5" /> {tCommon('delete')}
+                <Trash2 className="size-4" /> {tCommon('delete')}
               </button>
             )}
           </PopoverContent>
         </Popover>
-      ) : (
-        <span className="w-1.5" />
-      )}
+      ) : null}
     </div>
   );
 }

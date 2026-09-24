@@ -48,9 +48,7 @@ export default function InitiativeStateBreakdown({
 
   return (
     <div>
-      <h4 className="mb-2.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-        {t('progress')}
-      </h4>
+      <h4 className="mb-2.5 text-xs font-medium text-muted-foreground">{t('progress')}</h4>
       {total === 0 ? (
         <p className="text-sm text-muted-foreground">{t('noIssuesLinked')}</p>
       ) : (

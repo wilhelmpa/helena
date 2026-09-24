@@ -91,7 +91,7 @@ export default function SettingsCustomFields({ project }: { project: ProjectDeta
     return (
       <SettingsRow
         key={f.id}
-        className="h-11 pl-9"
+        className="h-10 ps-9"
         title={f.name}
         meta={<CustomFieldMeta field={f} />}
         editTitle={t('editField')}
@@ -104,18 +104,18 @@ export default function SettingsCustomFields({ project }: { project: ProjectDeta
 
   return (
     <div>
-      <div className="divide-y divide-border/50">
+      <div className="divide-y overflow-hidden rounded-lg border bg-card">
         {groups.map((g) => {
           const key = String(g.scope);
           const open = !collapsed.has(key);
           return (
             <div key={key}>
-              <div className="flex h-11 items-center gap-2 rounded-md pr-2 transition-colors hover:bg-accent/50">
+              <div className="flex h-10 items-center gap-2 pe-2 transition-colors hover:bg-accent/60">
                 <button
                   type="button"
                   onClick={() => toggle(key)}
                   aria-expanded={open}
-                  className="flex h-full min-w-0 flex-1 items-center gap-2 px-3 text-left outline-none"
+                  className="flex h-full min-w-0 flex-1 items-center gap-2 px-3 text-start outline-none"
                 >
                   <ChevronRight
                     className={cn(
@@ -123,9 +123,7 @@ export default function SettingsCustomFields({ project }: { project: ProjectDeta
                       open && 'rotate-90',
                     )}
                   />
-                  <span className="truncate text-sm font-semibold tracking-tight text-foreground">
-                    {g.label}
-                  </span>
+                  <span className="truncate text-sm font-medium text-foreground">{g.label}</span>
                   {g.fields.length > 0 && (
                     <span className="text-xs text-muted-foreground tabular-nums">
                       {g.fields.length}
@@ -150,7 +148,7 @@ export default function SettingsCustomFields({ project }: { project: ProjectDeta
                 <div className="pb-1">
                   {g.fields.map(renderField)}
                   {g.fields.length === 0 && (
-                    <p className="py-3 pl-9 text-xs text-muted-foreground">{t('noFields')}</p>
+                    <p className="py-3 ps-9 text-xs text-muted-foreground">{t('noFields')}</p>
                   )}
                 </div>
               )}

@@ -44,7 +44,7 @@ export default function MemberSelect({
       trigger={
         <Pill active={!!selected}>
           {selected ? (
-            <Avatar name={selected.name} image={selected.image} className="size-4 text-[8px]" />
+            <Avatar name={selected.name} image={selected.image} className="size-4" />
           ) : (
             <CircleDashed />
           )}

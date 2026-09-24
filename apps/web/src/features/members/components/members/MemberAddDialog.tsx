@@ -132,8 +132,8 @@ export default function MemberAddDialog({
       onClose={onClose}
       wide
     >
-      <div className="space-y-6 py-1">
-        <div className="grid gap-5 sm:grid-cols-2">
+      <div className="space-y-4 py-1">
+        <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground">{t('personLabel')}</p>
             <MemberPicker
@@ -183,7 +183,7 @@ export default function MemberAddDialog({
           </div>
         )}
 
-        <div className="flex justify-end border-t pt-5">
+        <div className="flex justify-end border-t pt-4">
           <Button disabled={!target || !role || busy} onClick={submit}>
             {target?.kind === 'invite' ? t('sendInvite') : t('submit')}
           </Button>

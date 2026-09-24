@@ -4,6 +4,7 @@ import { useShell } from '@/context/shellContext';
 import { settingsSection } from '@/utils/settingsSections';
 import { useSettingsSectionText } from '@/hooks/useSectionLabels';
 import SectionPageView from '@/components/common/page/SectionPageView';
+import SettingsToolbar from './components/SettingsToolbar';
 import RequirePermission from '@/components/common/permissions/RequirePermission';
 import { SettingsResourceProvider } from './context/settingsPermission';
 import CustomFieldsToolbar from './components/custom-fields/CustomFieldsToolbar';
@@ -17,18 +18,15 @@ export default function SettingsCustomFieldsPage() {
   const { project } = useShell();
   if (!project) return null;
   return (
-    <SectionPageView
-      title={sectionText.label}
-      description={sectionText.description}
-      actions={
+    <SectionPageView title={sectionText.label} description={sectionText.description}>
+      <SettingsToolbar>
         <CustomFieldsToolbar
           projectKey={project.project.key}
           resource={section.resource}
           fields={project.customFields}
           types={project.issueTypes}
         />
-      }
-    >
+      </SettingsToolbar>
       <SettingsResourceProvider resource={section.resource}>
         <RequirePermission resource={section.resource} action="read">
           <SettingsCustomFields project={project} />

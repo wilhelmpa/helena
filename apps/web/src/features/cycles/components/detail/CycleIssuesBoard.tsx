@@ -3,28 +3,32 @@
 import { useMemo } from 'react';
 import type { Cycle } from '@/lib/api/endpoints/cycles';
 import { useShell } from '@/context/shellContext';
-import { useShellHeaderExtra } from '@/hooks/useShellHeaderExtra';
 import { applyFilters } from '@/utils/filters';
 import { defaultsFromFilters } from '@/utils/project';
 import { useInitiativeOptionsQuery } from '@/services/initiatives.service';
 import { countIssuesByColumn } from '@/features/work-items/utils/wipLimit';
-import { useLocalBoardSettings } from '@/hooks/useLocalBoardSettings';
-import FilterBar from '@/components/layout/FilterBar';
-import DisplayPopover from '@/components/layout/DisplayPopover';
+import type { useLocalBoardSettings } from '@/hooks/useLocalBoardSettings';
 import BoardLayout from '@/features/work-items/components/BoardLayout';
 
 // Where this board's layout and display settings are kept, per cycle.
-const CYCLE_BOARD_STORE_KEY = 'planner_cycle_board_settings';
+export const CYCLE_BOARD_STORE_KEY = 'planner_cycle_board_settings';
 
 // The cycle's issues rendered as the work items board (kanban/table/timeline/
 // calendar) with filters and display settings, but no saved views. The board is fed
 // a project whose issues are just this cycle's, so drag/edit still hit the real
 // issues and the live board refresh keeps it current. On a finished cycle a new
-// issue is created without one: nothing is planned into a cycle that has ended.
-export default function CycleIssuesBoard({ cycle }: { cycle: Cycle }) {
-  const { project, customFields, onOpenIssue, onAddIssue, headerLayout } = useShell();
+// issue is created without one: nothing is planned into a cycle that has ended. Its
+// filter and display controls are in the page's header row (CycleDetailPage), which
+// holds `board`.
+export default function CycleIssuesBoard({
+  cycle,
+  board,
+}: {
+  cycle: Cycle;
+  board: ReturnType<typeof useLocalBoardSettings>;
+}) {
+  const { project, customFields, onOpenIssue, onAddIssue } = useShell();
   const cycleId = cycle.id;
-  const board = useLocalBoardSettings(CYCLE_BOARD_STORE_KEY, cycleId);
   const initiativeOptions = useInitiativeOptionsQuery(project?.project.key ?? null).data ?? [];
 
   const viewProject = useMemo(() => {
@@ -32,27 +36,6 @@ export default function CycleIssuesBoard({ cycle }: { cycle: Cycle }) {
     const issues = project.issues.filter((i) => i.cycle?.id === cycleId);
     return { ...project, issues: applyFilters(issues, board.filters, project) };
   }, [project, cycleId, board.filters]);
-
-  useShellHeaderExtra(
-    headerLayout === 'single' && project ? (
-      <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
-        <FilterBar
-          filters={board.filters}
-          onChange={board.setFilters}
-          project={project}
-          customFields={customFields}
-        />
-        <DisplayPopover
-          view={board.view}
-          onViewChange={board.changeView}
-          settings={board.settings}
-          onSettingsChange={board.changeSettings}
-          customFields={customFields}
-          issueTypes={project.issueTypes}
-        />
-      </div>
-    ) : null,
-  );
 
   if (!project || !viewProject) return null;
 
@@ -77,33 +60,13 @@ export default function CycleIssuesBoard({ cycle }: { cycle: Cycle }) {
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      {headerLayout !== 'single' && (
-        <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
-          <FilterBar
-            filters={board.filters}
-            onChange={board.setFilters}
-            project={project}
-            customFields={customFields}
-          />
-          <DisplayPopover
-            view={board.view}
-            onViewChange={board.changeView}
-            settings={board.settings}
-            onSettingsChange={board.changeSettings}
-            customFields={customFields}
-            issueTypes={project.issueTypes}
-          />
-        </div>
-      )}
-      <div className="relative flex-1 overflow-hidden">
-        <BoardLayout
-          {...viewProps}
-          view={board.view}
-          widthScope="cycles"
-          allIssues={project.issues}
-        />
-      </div>
+    <div className="relative min-h-0 flex-1 overflow-hidden">
+      <BoardLayout
+        {...viewProps}
+        view={board.view}
+        widthScope="cycles"
+        allIssues={project.issues}
+      />
     </div>
   );
 }

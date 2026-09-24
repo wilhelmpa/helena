@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl';
 import type { PermissionResource } from '@/lib/api/endpoints/roles';
 import type { CustomField } from '@/lib/api/endpoints/customFields';
 import type { IssueType } from '@/lib/api/endpoints/issueTypes';
-import { Button } from '@/components/ui/button';
+import { SETTINGS_MENU_TRIGGER_CLASS } from '../SettingsToolbar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -129,14 +129,9 @@ export default function CustomFieldsToolbar({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-8 text-muted-foreground hover:text-foreground"
-            aria-label={t('menu')}
-          >
-            <MoreHorizontal className="size-4" />
-          </Button>
+          <button type="button" aria-label={t('menu')} className={SETTINGS_MENU_TRIGGER_CLASS}>
+            <MoreHorizontal aria-hidden="true" />
+          </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuItem onClick={() => void copyFields()} disabled={fields.length === 0}>

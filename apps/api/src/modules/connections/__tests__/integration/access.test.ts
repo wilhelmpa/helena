@@ -17,6 +17,7 @@ describe('interactive communications boundary', () => {
     const connections = await authedApi(owner.cookie).connections.get();
     expect(connections.status).toBe(200);
     expect(connections.data?.items).toEqual([]);
+    expect(connections.data?.configured).toBe(false);
     expect(
       (await authedApi(owner.cookie).connections.actions.post({ id: 'hermes', action: 'probe' }))
         .status,

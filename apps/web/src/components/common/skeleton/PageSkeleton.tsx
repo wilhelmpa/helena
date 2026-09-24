@@ -15,8 +15,8 @@ export default function PageSkeleton({
 }) {
   return (
     <div className="flex-1 overflow-y-auto" aria-busy>
-      <div className={cn('mx-auto flex w-full max-w-4xl flex-col px-8 py-10', className)}>
-        <header className="mb-8 flex flex-col gap-2">
+      <div className={cn('mx-auto flex w-full max-w-4xl flex-col px-6 py-6', className)}>
+        <header className="mb-6 flex flex-col gap-2">
           <Skeleton className="h-7 w-52" />
           <Skeleton className="h-4 w-full max-w-md" />
         </header>

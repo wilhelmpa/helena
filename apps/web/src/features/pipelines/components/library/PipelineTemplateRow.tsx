@@ -26,13 +26,13 @@ export default function PipelineTemplateRow({
   const [deleting, setDeleting] = useState(false);
 
   return (
-    <li className="flex items-start gap-3 p-3">
-      <Link href={pipelinePath(pipeline.id)} className="min-w-0 flex-1 space-y-1">
-        <span className="block font-medium hover:underline" dir="auto">
+    <li className="flex items-start gap-2 px-3 py-2.5 transition-colors hover:bg-accent">
+      <Link href={pipelinePath(pipeline.id)} className="min-w-0 flex-1 space-y-1 text-sm">
+        <span className="block font-medium" dir="auto">
           {pipeline.name}
         </span>
         {pipeline.description && (
-          <span className="line-clamp-2 block text-sm text-muted-foreground" dir="auto">
+          <span className="line-clamp-2 block text-muted-foreground" dir="auto">
             {pipeline.description}
           </span>
         )}

@@ -2,8 +2,6 @@
 
 import { useMemo } from 'react';
 import Markdown from '@/components/common/Markdown';
-import { Marker, MarkerContent } from '@/components/ui/marker';
-import { useTranslations } from 'next-intl';
 import { splitArtifacts } from '../../utils/artifacts';
 import { chatSources } from '../../utils/chatSources';
 import { messageBlocks, type PlanUIMessage } from '../../utils/chatMessages';
@@ -22,15 +20,14 @@ export interface ChatMessageBubbleAssistantProps {
 
 // An agent's answer: its reasoning and tool calls where the model made them, its
 // prose as Markdown, any artifact fences as cards instead of raw code, and, once it is
-// done, what it drew on. Empty and still streaming, a status line takes the bubble's
-// place so the reader is not staring at nothing while the runner starts up.
+// done, what it drew on. While it has nothing yet it shows nothing: the composer says
+// the agent is thinking (ChatComposerStatus).
 export default function ChatMessageBubbleAssistant({
   message,
   streaming,
   projectKey,
   onShowArtifact,
 }: ChatMessageBubbleAssistantProps) {
-  const t = useTranslations('chatWorkspace');
   const blocks = useMemo(() => messageBlocks(message), [message]);
   const sources = useMemo(
     () => (streaming ? [] : chatSources(message, projectKey ? [projectKey] : [])),
@@ -38,16 +35,10 @@ export default function ChatMessageBubbleAssistant({
   );
   const error = message.metadata?.error;
 
-  if (blocks.length === 0 && !error) {
-    return (
-      <Marker role="status">
-        <MarkerContent className="shimmer">{t('messages.thinking')}</MarkerContent>
-      </Marker>
-    );
-  }
+  if (blocks.length === 0 && !error) return null;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 text-sm leading-relaxed">
       {blocks.map((block, index) => {
         if (block.kind === 'reasoning') {
           return (

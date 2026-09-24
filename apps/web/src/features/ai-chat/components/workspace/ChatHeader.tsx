@@ -1,10 +1,19 @@
 'use client';
 
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
+import { usePanelHeaderSlot } from '@/context/panelHeaderSlot';
 import { useTranslations } from 'next-intl';
-import { ListPlus, PanelLeft, PanelRight, PanelRightClose } from 'lucide-react';
+import { PanelLeft, PanelRight, PanelRightClose, SquarePen } from 'lucide-react';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { WorkspaceHeader } from '@/components/layout/WorkspaceHeader';
+import {
+  PAGE_CONTROL_ACTIVE_CLASS,
+  PAGE_CONTROL_CLASS,
+  PageToolbar,
+  PageToolbarSpacer,
+} from '@/components/layout/PageToolbar';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useChatListMutations } from '../../hooks/useChatList';
 import { useChatSummary } from '../../hooks/useChatSummary';
@@ -20,17 +29,21 @@ export interface ChatHeaderProps {
   threadId: string | null;
   messages: PlanUIMessage[];
   onOpenList: () => void;
+  onNewChat: (agentId: number) => void;
+  onDeleted: (threadId: string) => void;
   compact: boolean;
   artifactOpen: boolean;
   onToggleArtifact: () => void;
   hasArtifact: boolean;
+  // The chat page (/chat): its bar is the app header's one row (PageToolbar), like
+  // every page's. In the tool panel it stays the panel's own row under its header.
+  inPage?: boolean;
 }
 
-// The bar above the conversation: opening the list on a narrow layout, the chat's
-// title (renamed in place), who it is with, turning it into a task, and the artifact
-// panel's toggle. Kept to one row and h-12, the height every other workspace header in
-// the app uses (see WorkspaceHeader), so the chat reads as part of Helena, not a
-// separate app glued on.
+// The bar above the conversation, one filigree row like the tool panel's: opening the
+// list on a narrow layout, the chat's title (renamed on click), a new chat, the artifact
+// panel's toggle and the chat's own menu. Who the chat is with and how the answer is
+// doing live at the composer (ChatComposer), where they are steered.
 export default function ChatHeader({
   scopeKey,
   projectKey,
@@ -38,10 +51,13 @@ export default function ChatHeader({
   threadId,
   messages,
   onOpenList,
+  onNewChat,
+  onDeleted,
   compact,
   artifactOpen,
   onToggleArtifact,
   hasArtifact,
+  inPage = false,
 }: ChatHeaderProps) {
   const t = useTranslations('chatWorkspace');
   const chat = useChatSummary(threadId);
@@ -50,37 +66,213 @@ export default function ChatHeader({
   const [issueOpen, setIssueOpen] = useState(false);
   const title = chat.data?.title || t('list.untitled');
   const wholeChatText = messages.map(messageText).filter(Boolean).join('\n\n');
+  // In the tool panel the chat's bar joins the panel header's row (its title slot).
+  const panelSlot = usePanelHeaderSlot();
 
-  return (
-    <WorkspaceHeader className="gap-2 bg-background px-3">
-      {compact && (
-        <Button variant="ghost" size="icon" onClick={onOpenList} aria-label={t('list.open')}>
-          <PanelLeft className="size-4" />
-        </Button>
+  const dialogs = (
+    <>
+      {renaming && threadId && (
+        <ChatRenameDialog
+          initialTitle={title}
+          onClose={() => setRenaming(false)}
+          onConfirm={(value) => rename.mutateAsync({ threadId, title: value })}
+        />
       )}
-      <div className="min-w-0 flex-1">
+      {issueOpen && threadId && projectKey && (
+        <ChatToIssueDialog
+          projectKey={projectKey}
+          threadId={threadId}
+          agentId={agent.id}
+          defaultTitle={title !== t('list.untitled') ? title : wholeChatText.slice(0, 120)}
+          defaultDescription={wholeChatText}
+          onClose={() => setIssueOpen(false)}
+        />
+      )}
+    </>
+  );
+
+  if (inPage) {
+    return (
+      <PageToolbar>
+        {compact && (
+          <button
+            type="button"
+            onClick={onOpenList}
+            aria-label={t('list.open')}
+            className={cn(PAGE_CONTROL_CLASS, 'w-8 justify-center px-0')}
+          >
+            <PanelLeft aria-hidden="true" />
+          </button>
+        )}
         <button
           type="button"
           onClick={() => threadId && setRenaming(true)}
           disabled={!threadId}
-          className="max-w-full truncate rounded-md px-1 text-start text-sm font-medium hover:bg-accent disabled:pointer-events-none"
+          title={threadId ? t('list.rename') : undefined}
+          className={cn(
+            PAGE_CONTROL_CLASS,
+            'min-w-0 shrink font-medium text-foreground disabled:opacity-100',
+          )}
         >
-          {threadId ? title : t('list.newChat')}
+          <span dir="auto" className="truncate">
+            {threadId ? title : t('list.newChat')}
+          </span>
         </button>
-        <p className="truncate px-1 text-xs text-muted-foreground">
-          {agent.name}
-          {chat.data?.project && ` · ${chat.data.project.name}`}
-        </p>
-      </div>
-      {threadId && messages.length > 0 && (
-        <Button variant="ghost" size="sm" onClick={() => setIssueOpen(true)}>
-          <ListPlus className="size-4" /> {t('issue.fromChat')}
+        <PageToolbarSpacer />
+        {threadId && (
+          <button
+            type="button"
+            onClick={() => onNewChat(agent.id)}
+            aria-label={t('list.newChat')}
+            title={t('list.newChat')}
+            className={cn(PAGE_CONTROL_CLASS, 'w-8 justify-center px-0')}
+          >
+            <SquarePen aria-hidden="true" />
+          </button>
+        )}
+        {hasArtifact && (
+          <button
+            type="button"
+            onClick={onToggleArtifact}
+            aria-pressed={artifactOpen}
+            aria-label={t('artifact.toggle')}
+            className={cn(
+              PAGE_CONTROL_CLASS,
+              'w-8 justify-center px-0',
+              artifactOpen && PAGE_CONTROL_ACTIVE_CLASS,
+            )}
+          >
+            {artifactOpen ? (
+              <PanelRightClose aria-hidden="true" />
+            ) : (
+              <PanelRight aria-hidden="true" />
+            )}
+          </button>
+        )}
+        {threadId && (
+          <ChatHeaderMenu
+            scopeKey={scopeKey}
+            threadId={threadId}
+            chat={chat.data}
+            messages={messages}
+            agentName={agent.name}
+            onRename={() => setRenaming(true)}
+            onToIssue={projectKey && messages.length > 0 ? () => setIssueOpen(true) : undefined}
+            onDeleted={() => onDeleted(threadId)}
+          />
+        )}
+        {dialogs}
+      </PageToolbar>
+    );
+  }
+
+  if (!inPage && panelSlot) {
+    const control =
+      'flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground [&_svg]:size-4';
+    return createPortal(
+      <>
+        {compact && (
+          <button
+            type="button"
+            onClick={onOpenList}
+            aria-label={t('list.open')}
+            className={control}
+          >
+            <PanelLeft aria-hidden="true" />
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => threadId && setRenaming(true)}
+          disabled={!threadId}
+          title={threadId ? t('list.rename') : undefined}
+          className="h-7 min-w-0 flex-1 truncate rounded-md px-1.5 text-start text-sm font-medium hover:bg-accent disabled:pointer-events-none"
+        >
+          <span dir="auto">{threadId ? title : t('list.newChat')}</span>
+        </button>
+        {threadId && (
+          <button
+            type="button"
+            onClick={() => onNewChat(agent.id)}
+            aria-label={t('list.newChat')}
+            title={t('list.newChat')}
+            className={control}
+          >
+            <SquarePen aria-hidden="true" />
+          </button>
+        )}
+        {hasArtifact && (
+          <button
+            type="button"
+            onClick={onToggleArtifact}
+            aria-pressed={artifactOpen}
+            aria-label={t('artifact.toggle')}
+            className={cn(control, artifactOpen && 'bg-accent text-foreground')}
+          >
+            {artifactOpen ? (
+              <PanelRightClose aria-hidden="true" />
+            ) : (
+              <PanelRight aria-hidden="true" />
+            )}
+          </button>
+        )}
+        {threadId && (
+          <ChatHeaderMenu
+            scopeKey={scopeKey}
+            threadId={threadId}
+            chat={chat.data}
+            messages={messages}
+            agentName={agent.name}
+            onRename={() => setRenaming(true)}
+            onToIssue={projectKey && messages.length > 0 ? () => setIssueOpen(true) : undefined}
+            onDeleted={() => onDeleted(threadId)}
+          />
+        )}
+        {dialogs}
+      </>,
+      panelSlot,
+    );
+  }
+
+  return (
+    <WorkspaceHeader className="h-10 gap-1 border-sidebar-border bg-background px-2">
+      {compact && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-8"
+          onClick={onOpenList}
+          aria-label={t('list.open')}
+        >
+          <PanelLeft className="size-4" />
+        </Button>
+      )}
+      <button
+        type="button"
+        onClick={() => threadId && setRenaming(true)}
+        disabled={!threadId}
+        title={threadId ? t('list.rename') : undefined}
+        className="h-8 min-w-0 flex-1 truncate rounded-md px-2 text-start text-sm font-medium ring-sidebar-ring outline-hidden hover:bg-sidebar-accent focus-visible:ring-2 disabled:pointer-events-none"
+      >
+        <span dir="auto">{threadId ? title : t('list.newChat')}</span>
+      </button>
+      {threadId && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-8"
+          onClick={() => onNewChat(agent.id)}
+          aria-label={t('list.newChat')}
+          title={t('list.newChat')}
+        >
+          <SquarePen className="size-4" />
         </Button>
       )}
       {hasArtifact && (
         <Button
           variant={artifactOpen ? 'secondary' : 'ghost'}
           size="icon"
+          className="size-8"
           onClick={onToggleArtifact}
           aria-pressed={artifactOpen}
           aria-label={t('artifact.toggle')}
@@ -99,25 +291,12 @@ export default function ChatHeader({
           chat={chat.data}
           messages={messages}
           agentName={agent.name}
+          onRename={() => setRenaming(true)}
+          onToIssue={projectKey && messages.length > 0 ? () => setIssueOpen(true) : undefined}
+          onDeleted={() => onDeleted(threadId)}
         />
       )}
-      {renaming && threadId && (
-        <ChatRenameDialog
-          initialTitle={title}
-          onClose={() => setRenaming(false)}
-          onConfirm={(value) => rename.mutateAsync({ threadId, title: value })}
-        />
-      )}
-      {issueOpen && threadId && projectKey && (
-        <ChatToIssueDialog
-          projectKey={projectKey}
-          threadId={threadId}
-          agentId={agent.id}
-          defaultTitle={title !== t('list.untitled') ? title : wholeChatText.slice(0, 120)}
-          defaultDescription={wholeChatText}
-          onClose={() => setIssueOpen(false)}
-        />
-      )}
+      {dialogs}
     </WorkspaceHeader>
   );
 }

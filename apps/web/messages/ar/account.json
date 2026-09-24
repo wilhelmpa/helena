@@ -50,7 +50,27 @@
     "thisDevice": "هذا الجهاز",
     "deleteWarning": "مش هتقدر تسجّل دخول بمفتاح المرور ده تاني، وده مش هينفع ترجع فيه.",
     "passkeyFallback": "مفتاح مرور",
-    "passkeysLoadFailed": "تعذّر تحميل مفاتيح المرور."
+    "passkeysLoadFailed": "تعذّر تحميل مفاتيح المرور.",
+    "totpTitle": "تطبيق المصادقة",
+    "totpDescription": "الرمز الذي تطلبه طرفية المالك في كل مرة تُفتح فيها (الرئيسية ← الطرفية).",
+    "totpStatusEnabled": "تم الإعداد.",
+    "totpStatusDisabled": "لم يُعدّ بعد.",
+    "totpPasswordLabel": "كلمة المرور",
+    "totpPasswordHint": "تُطلب فقط إذا كان لهذا الحساب كلمة مرور. غير ذلك، اتركها فارغة.",
+    "totpEnable": "إعداد",
+    "totpDisable": "إيقاف",
+    "totpEnrollTitle": "إعداد تطبيق المصادقة",
+    "totpSecretLabel": "مفتاح الإعداد",
+    "totpSecretHint": "في تطبيق المصادقة، اختر «إدخال مفتاح الإعداد يدويًا» والصق هذا.",
+    "totpCodeLabel": "الرمز من التطبيق",
+    "totpConfirm": "تأكيد",
+    "totpEnabled": "تم تفعيل تطبيق المصادقة",
+    "totpDisabled": "تم إيقاف تطبيق المصادقة",
+    "totpEnrollFailed": "تعذّر بدء الإعداد.",
+    "totpConfirmFailed": "لم يُقبل الرمز.",
+    "totpDisableFailed": "تعذّر إيقاف تطبيق المصادقة.",
+    "minLength": "{count} أحرف على الأقل.",
+    "added": "أُضيف في {date}"
   },
   "accounts": {
     "label": "الحسابات",
@@ -70,7 +90,8 @@
     "telegramConnectedLabel": "متصل",
     "loadFailed": "تعذّر تحميل الحسابات المرتبطة.",
     "connectFailed": "تعذّر ربط Google.",
-    "disconnectFailed": "تعذّر فصل هذا الحساب."
+    "disconnectFailed": "تعذّر فصل هذا الحساب.",
+    "noneAvailable": "لم يُعدّ على هذه النسخة بعد أي خدمة للربط. يضيف المسؤول تسجيل الدخول عبر Google وبوت Telegram من المسؤول › التكاملات."
   },
   "preferences": {
     "label": "التفضيلات",
@@ -154,5 +175,8 @@
     "autoWatchDescription": "المهام اللي تنشئها أو تتسند ليك أو تعلّق عليها أو يتذكر اسمك فيها.",
     "showChatByDefault": "إظهار المحادثة افتراضيًا",
     "showChatByDefaultDescription": "تفتح لوحة المحادثة مع صفحة المشروع. أغلقها في أي وقت من رأسها أو من أيقونة المحادثة."
+  },
+  "shell": {
+    "title": "الحساب"
   }
 }

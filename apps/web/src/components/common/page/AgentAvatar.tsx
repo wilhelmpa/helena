@@ -57,8 +57,11 @@ export default function AgentAvatar({
   className?: string;
 }) {
   return (
-    <span className={cn('relative inline-flex size-5 shrink-0', className)}>
-      <Avatar name={name} image={image} className="size-full text-[0.4em]" />
+    <span
+      data-slot="agent-avatar"
+      className={cn('relative inline-flex size-5 shrink-0', className)}
+    >
+      <Avatar name={name} image={image} className="size-full" />
       {presence && (
         <span
           className="absolute -end-0.5 -top-0.5 flex size-2 items-center justify-center rounded-full bg-background ring-2 ring-background"
@@ -75,7 +78,8 @@ export default function AgentAvatar({
       )}
       {runtime && (
         <span
-          className="absolute -end-1 -bottom-1 rounded-sm border border-border bg-background px-0.5 font-mono text-[8px] leading-tight font-semibold text-muted-foreground"
+          data-slot="agent-avatar-runtime"
+          className="absolute -end-1 -bottom-1 rounded-sm border border-border bg-background px-0.5 font-mono leading-tight font-semibold text-muted-foreground"
           title={RUNTIME_LABEL[runtime]}
         >
           {RUNTIME_CODE[runtime]}

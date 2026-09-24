@@ -28,9 +28,9 @@ export default function OrganizationOrchestrationBudget({
   const ceiling = parseCeiling(monthly);
 
   return (
-    <section className="space-y-3 rounded-lg border p-4">
+    <section className="space-y-3 rounded-lg border bg-card p-4">
       <div>
-        <h2 className="text-sm font-medium">{t('tokens.projectTitle')}</h2>
+        <h2 className="text-md font-medium">{t('tokens.projectTitle')}</h2>
         <p className="text-xs text-muted-foreground">{t('tokens.projectDescription')}</p>
       </div>
       <OrganizationTokenUsage
@@ -40,7 +40,7 @@ export default function OrganizationOrchestrationBudget({
       />
       <div className="flex items-end gap-2">
         <label className="min-w-0 flex-1 space-y-1 text-sm">
-          <span className="text-muted-foreground">{t('tokens.monthlyCeiling')}</span>
+          <span className="block text-xs text-muted-foreground">{t('tokens.monthlyCeiling')}</span>
           <Input
             inputMode="numeric"
             value={monthly}

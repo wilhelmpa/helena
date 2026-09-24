@@ -47,7 +47,8 @@
     "loadFailed": "无法加载模板。",
     "tryAgain": "重试",
     "noAccess": "你可能无法查看此团队的工作流。",
-    "readOnly": "只有可创建工作流的成员才能在此添加模板。"
+    "readOnly": "只有可创建工作流的成员才能在此添加模板。",
+    "noAccessTitle": "无访问权限"
   },
   "starter": {
     "name": "新建工作流",
@@ -112,7 +113,8 @@
     "openTemplate": "打开模板",
     "issuesTitle": "{count, plural, other {# 个问题}}",
     "warningsTitle": "{count, plural, other {此项目中有 # 个问题}}",
-    "warningsHint": "该工作流可以保存，但在修正这些问题之前无法在此项目中启用。"
+    "warningsHint": "该工作流可以保存，但在修正这些问题之前无法在此项目中启用。",
+    "loadFailedHint": "服务器没有响应，请稍后重试。"
   },
   "trigger": {
     "title": "触发器",
@@ -388,7 +390,12 @@
     "allRuns": "所有运行",
     "onlyTestRuns": "试运行",
     "onlyRealRuns": "正式运行",
-    "allProjects": "所有项目"
+    "allProjects": "所有项目",
+    "filter": "筛选",
+    "filterReset": "重置筛选",
+    "filterProject": "项目",
+    "filterStatus": "状态",
+    "filterKind": "类型"
   },
   "versions": {
     "empty": "没有版本。",

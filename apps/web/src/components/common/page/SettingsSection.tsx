@@ -1,8 +1,11 @@
 import type { ReactNode } from 'react';
 
-// A borderless settings section: a quiet header (title over an optional description)
-// with a right-aligned control slot, above the section body. Separation comes from
-// space and header weight, not a box around the block.
+// A settings section (docs/volition-design-helena-ui.md "SettingsSection"): its title
+// and one-line explanation, then its body — the fields in a SettingsCard. Two columns
+// once the page column is wide enough (a container query on SectionPageView's
+// @container/page, so it also works beside the settings rail): the title block on the
+// left, sticky while its fields scroll, the body on the right. One column below that.
+// A section whose whole control is the header action has no body.
 export default function SettingsSection({
   title,
   description,
@@ -12,19 +15,18 @@ export default function SettingsSection({
   title: string;
   description?: string;
   action?: ReactNode;
-  // Optional: a section whose whole control is the header action has no body.
   children?: ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-4">
-      <header className="flex items-center justify-between gap-4">
-        <div className="space-y-1">
-          <h3 className="text-sm font-medium">{title}</h3>
+    <section className="grid grid-cols-1 gap-3 @3xl/page:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] @3xl/page:gap-6">
+      <header className="flex items-start justify-between gap-4 @3xl/page:sticky @3xl/page:top-0 @3xl/page:flex-col @3xl/page:justify-start @3xl/page:self-start">
+        <div className="space-y-0.5">
+          <h3 className="text-md font-semibold">{title}</h3>
           {description && <p className="text-xs text-muted-foreground">{description}</p>}
         </div>
         {action && <div className="shrink-0">{action}</div>}
       </header>
-      {children}
+      {children && <div className="min-w-0">{children}</div>}
     </section>
   );
 }

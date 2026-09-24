@@ -40,5 +40,8 @@
   "notice": {
     "workflow-runs-unavailable": "Mastra 未响应，因此未显示工作流运行。",
     "workflow-runs-limited": "并非所有工作流运行都会显示：时间线只从 Mastra 读取有限数量的工作流和运行。"
-  }
+  },
+  "filterKind": "类型",
+  "filterAgent": "代理",
+  "unavailableHint": "服务器没有响应，请稍后重试。"
 }

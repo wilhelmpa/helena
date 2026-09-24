@@ -71,7 +71,7 @@ export function buildAgentRoutineWorkflow(
   const dispatch = createStep({
     id: 'dispatch-routine',
     description:
-      'Ask Plan to create or reopen the task and delegate it to the agent, unless the task of the routine is still open.',
+      'Ask Helena to create or reopen the task and delegate it to the agent, unless the task of the routine is still open.',
     inputSchema: agentRoutineStateSchema,
     outputSchema: agentRoutineOutputSchema,
     retries: 2,
@@ -112,7 +112,7 @@ export function buildAgentRoutineWorkflow(
   return createWorkflow({
     id: 'agent-routine',
     description:
-      'Create or reopen a Plan task on a schedule and delegate it to a project agent, one open task at a time.',
+      'Create or reopen a Helena task on a schedule and delegate it to a project agent, one open task at a time.',
     inputSchema: workEnvelopeSchema,
     outputSchema: agentRoutineOutputSchema,
   })

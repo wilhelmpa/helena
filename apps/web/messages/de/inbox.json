@@ -40,5 +40,11 @@
     "messages": "Nachrichten",
     "updates": "Updates",
     "loading": "Nachrichten werden geladen…"
+  },
+  "mailFilter": {
+    "read": "Lesestatus",
+    "attachments": "Anhänge",
+    "any": "Alle",
+    "reset": "Filter zurücksetzen"
   }
 }

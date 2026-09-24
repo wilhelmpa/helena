@@ -2,7 +2,6 @@ import { History, MessageSquare, MoreHorizontal, Pencil, Trash2 } from 'lucide-r
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { AgentPausedBadge } from '@/components/common/agent-chat/AgentPausedBadge';
 import { AgentRunnerStatus } from '@/components/common/agent-chat/AgentRunnerStatus';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -18,6 +17,7 @@ import { useAgentCan } from '../../context/agentSection';
 import { AgentMetaRow } from './AgentMetaRow';
 import { AgentTriggers } from './AgentTriggers';
 import { useTranslations } from 'next-intl';
+import { cn } from '@/lib/utils';
 
 // One agent as a table row: the Agent cell holds the name, @username, an icon for the
 // kind, and the projects the agent works in; the Configuration cell shows an
@@ -50,62 +50,69 @@ export function TeamAiAgentRow({
   const KindIcon = AGENT_KIND_ICON[agent.kind];
   const hasMenu = canHistory || can('delete');
 
+  // The whole row opens the agent's sheet (the same as the pencil), so the name, the
+  // projects and the configuration are one click away wherever the pointer lands; the
+  // action buttons stop the click from reaching the row.
+  const openRow = can('edit') ? onEdit : undefined;
   return (
-    <TableRow className="group/item">
-      <TableCell className="px-3 py-3 align-middle whitespace-normal">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-md border bg-background text-muted-foreground">
-            <KindIcon className="size-4" />
-          </div>
-          <div className="flex min-w-0 flex-col gap-1">
-            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-              <span className="truncate text-sm font-medium">{agent.name}</span>
-              <span className="truncate text-xs text-muted-foreground">@{agent.username}</span>
-              <AgentPausedBadge agent={agent} />
-            </div>
-            <div className="flex min-w-0 flex-wrap items-center gap-1">
-              {agent.projects.length === 0 ? (
-                <span className="text-xs text-muted-foreground/80">{t('noProjectsShort')}</span>
-              ) : (
-                agent.projects.map((project) => (
-                  <Tooltip key={project.id}>
-                    <TooltipTrigger asChild>
-                      <Badge variant="outline" className="shrink-0 font-mono text-xs">
-                        {project.key}
-                      </Badge>
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <div className="font-medium">
-                        {project.name} · {project.roleName ?? t('defaultProjectRole')}
-                      </div>
-                      <div className="text-xs opacity-80">
-                        {project.instructions || t('noProjectInstructions')}
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                ))
-              )}
-            </div>
-          </div>
+    <TableRow
+      className={cn('group/item', openRow && 'cursor-pointer')}
+      onClick={openRow}
+      onKeyDown={(event) => {
+        if (openRow && event.key === 'Enter' && event.target === event.currentTarget) openRow();
+      }}
+      tabIndex={openRow ? 0 : undefined}
+    >
+      <TableCell className="px-2 align-middle whitespace-normal">
+        <div className="flex min-w-0 items-center gap-2">
+          <KindIcon className="size-4 shrink-0 text-muted-foreground" />
+          <span className="truncate text-sm font-medium">{agent.name}</span>
+          <span className="truncate text-xs text-muted-foreground max-md:hidden">
+            @{agent.username}
+          </span>
+          <AgentPausedBadge agent={agent} />
+          {agent.projects.length === 0 ? (
+            <span className="ms-auto shrink-0 text-xs text-muted-foreground/80">
+              {t('noProjectsShort')}
+            </span>
+          ) : (
+            <span className="ms-auto flex shrink-0 items-center gap-1.5">
+              {agent.projects.map((project) => (
+                <Tooltip key={project.id}>
+                  <TooltipTrigger asChild>
+                    <span className="font-mono text-xs text-muted-foreground">{project.key}</span>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <div className="font-medium">
+                      {project.name} · {project.roleName ?? t('defaultProjectRole')}
+                    </div>
+                    <div className="text-xs opacity-80">
+                      {project.instructions || t('noProjectInstructions')}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+            </span>
+          )}
         </div>
       </TableCell>
-      <TableCell className="px-3 py-3 align-middle whitespace-normal">
+      <TableCell className="px-2 align-middle whitespace-normal max-lg:hidden">
         <AgentTriggers agent={agent} />
       </TableCell>
-      <TableCell className="px-3 py-3 align-middle whitespace-normal">
+      <TableCell className="px-2 align-middle whitespace-normal max-md:hidden">
         {agent.kind === 'internal' ? (
           <AgentMetaRow agent={agent} providerLabel={providerLabel} />
         ) : (
-          <div className="flex flex-col gap-1">
+          <div className="flex min-w-0 items-center gap-3">
             <AgentRunnerStatus agent={agent} copyCount={copyCount} />
-            <span className="text-xs text-muted-foreground">
+            <span className="truncate font-mono text-xs text-muted-foreground">
               {agent.apiKeyStart ? t('apiKeyValue', { start: agent.apiKeyStart }) : t('apiKey')}
             </span>
           </div>
         )}
       </TableCell>
-      <TableCell className="px-3 py-2 align-middle">
-        <div className="flex items-center justify-end gap-1">
+      <TableCell className="px-2 py-1 align-middle" onClick={(event) => event.stopPropagation()}>
+        <div className="flex items-center justify-end gap-0.5">
           {canHistory && (
             <IconButton title={t('runHistory')} onClick={onRuns}>
               <History className="size-4" />

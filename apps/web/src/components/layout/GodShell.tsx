@@ -1,20 +1,20 @@
 'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useSession } from '@/lib/auth-client';
-import { useAccountPreferences } from '@/services/preferences.service';
-import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { Separator } from '@/components/ui/separator';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { LocaleToggle } from '@/components/locale-toggle';
+import StandaloneShell from '@/components/common/page/StandaloneShell';
 import SectionPageSkeleton from '@/components/common/skeleton/SectionPageSkeleton';
-import UserMenu from '@/components/layout/UserMenu';
 import GodSidebar from '@/components/layout/GodSidebar';
+import HeaderCrumbs from '@/components/layout/HeaderCrumbs';
+import { useGodSectionText } from '@/hooks/useSectionLabels';
+import { GOD_SECTIONS } from '@/utils/godSections';
+import { godPath } from '@/utils/paths';
 
-// The shell for god mode: the instance settings sidebar and a slim header, with no
-// project loaded. It is the counterpart of Shell for the project routes, but far
-// smaller — nothing here needs the board, overlays, or project permissions.
+// The shell for the Administrator (/god): the instance settings sidebar and the same
+// single-row header as the main Shell ("Administrator › section", then the page's
+// toolbar), with no project loaded — see StandaloneShell.
 //
 // Access is by the global role: only the instance owner ("god") sees the pages. The
 // API enforces the same on every /god route, so this check is about what to render,
@@ -34,38 +34,34 @@ export default function GodShell({
   useEffect(() => setMounted(true), []);
   const isGod = mounted && session?.user.role === 'god';
   const sessionSettled = mounted && !isPending;
-  // 'classic' keeps language/theme/account in this header, exactly as before;
-  // 'single' (the default) moves them to the sidebar footer, the same as the main
-  // Shell — see SidebarUtilityRow in GodSidebar.
-  const { headerLayout } = useAccountPreferences();
+  const god = useGodSectionText();
+  const pathname = usePathname();
+  const section = GOD_SECTIONS.find((s) => pathname.startsWith(godPath(s.slug)));
 
   return (
-    <SidebarProvider defaultOpen={defaultSidebarOpen} className="h-svh overflow-hidden">
-      <GodSidebar />
-      <SidebarInset className="min-w-0">
-        <header className="flex h-12 shrink-0 items-center gap-2 border-b px-2 sm:px-4">
-          <SidebarTrigger />
-          <Separator orientation="vertical" className="mr-1 h-4" />
-          <div className="min-w-0 truncate text-sm font-medium">{t('godMode')}</div>
-          {headerLayout !== 'single' && (
-            <div className="ml-auto flex items-center gap-2">
-              <LocaleToggle />
-              <ThemeToggle />
-              <UserMenu />
-            </div>
-          )}
-        </header>
-
-        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-          {isGod && children}
-          {!isGod && sessionSettled && (
-            <div className="flex h-full items-center justify-center px-4 text-center text-sm text-muted-foreground">
-              {t('godModeOwnerOnly')}
-            </div>
-          )}
-          {!isGod && !sessionSettled && <SectionPageSkeleton />}
+    <StandaloneShell
+      defaultSidebarOpen={defaultSidebarOpen}
+      sidebar={<GodSidebar />}
+      title={
+        section ? (
+          <HeaderCrumbs
+            items={[
+              { label: t('godMode'), href: godPath(GOD_SECTIONS[0]!.slug) },
+              { label: god.section(section.slug).label },
+            ]}
+          />
+        ) : (
+          t('godMode')
+        )
+      }
+    >
+      {isGod && children}
+      {!isGod && sessionSettled && (
+        <div className="flex h-full items-center justify-center px-4 text-center text-sm text-muted-foreground">
+          {t('godModeOwnerOnly')}
         </div>
-      </SidebarInset>
-    </SidebarProvider>
+      )}
+      {!isGod && !sessionSettled && <SectionPageSkeleton />}
+    </StandaloneShell>
   );
 }

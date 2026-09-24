@@ -98,7 +98,7 @@ export default function MemberPicker({
                     <Avatar
                       name={candidate.name || candidate.email}
                       image={candidate.image}
-                      className="size-7 shrink-0 text-[10px]"
+                      className="size-7 shrink-0"
                     />
                     <div className="flex min-w-0 flex-1 flex-col">
                       <span className="truncate">{candidate.name || candidate.email}</span>

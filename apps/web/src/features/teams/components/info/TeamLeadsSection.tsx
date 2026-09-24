@@ -26,7 +26,7 @@ export default function TeamLeadsSection({ teamId }: { teamId: number }) {
               <Avatar
                 name={lead.name || lead.email}
                 image={lead.image}
-                className="size-8 shrink-0 text-[11px]"
+                className="size-8 shrink-0"
               />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{lead.name || lead.email}</p>

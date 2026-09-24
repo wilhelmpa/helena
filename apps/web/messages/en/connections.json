@@ -3,9 +3,19 @@
   "description": "Connected services and accounts",
   "loading": "Checking connections…",
   "loadError": "Connection status could not be loaded.",
+  "loadErrorHint": "The server did not answer. Try again in a moment.",
   "lastCheck": "Last check",
   "never": "Never",
-  "availableTools": "Available tools",
+  "toolCount": "{count, plural, one {# tool} other {# tools}}",
+  "empty": "No connections",
+  "emptyHint": "The connections service reports no connected services.",
+  "unconfigured": {
+    "title": "No connections service set up",
+    "hint": "This server runs no service that checks connections. Mail accounts, credentials and devices have their own pages.",
+    "mail": "Mail accounts",
+    "credentials": "Credentials",
+    "devices": "Devices & Obsidian"
+  },
   "status": {
     "connected": "Connected",
     "available": "Available",
@@ -19,6 +29,7 @@
     "checkAll": "Check all",
     "check": "Check",
     "reconnect": "Reconnect",
-    "openPairing": "Open pairing"
+    "openPairing": "Open pairing",
+    "retry": "Try again"
   }
 }

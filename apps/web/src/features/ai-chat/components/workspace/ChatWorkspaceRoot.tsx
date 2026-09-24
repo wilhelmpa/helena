@@ -6,7 +6,8 @@ import { useTranslations } from 'next-intl';
 import { chatPath, homeChatPath } from '@/utils/paths';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useChatWorkspaceScope } from '../../hooks/useChatWorkspaceScope';
-import ChatWorkspace, { type ChatLocation } from './ChatWorkspace';
+import ChatWorkspace from './ChatWorkspace';
+import type { ChatLocation } from '../../utils/chatLocation';
 
 // The chat page mounted at /chat (Home, every project) and at
 // /project/:projectKey/chat (one project). The open agent and chat stay in the
@@ -26,9 +27,11 @@ export default function ChatWorkspaceRoot({ projectKey }: { projectKey: string |
   };
 
   const onNavigate = useCallback(
-    (next: ChatLocation) => {
+    (next: ChatLocation, options?: { replace?: boolean }) => {
       const query = { agent: next.agentId, thread: next.threadId };
-      router.push(projectKey ? chatPath(projectKey, query) : homeChatPath(query));
+      const href = projectKey ? chatPath(projectKey, query) : homeChatPath(query);
+      if (options?.replace) router.replace(href, { scroll: false });
+      else router.push(href, { scroll: false });
     },
     [router, projectKey],
   );
@@ -53,10 +56,12 @@ export default function ChatWorkspaceRoot({ projectKey }: { projectKey: string |
   return (
     <ChatWorkspace
       scopeKey={scope.scopeKey}
+      teamId={scope.teamId}
       projectKey={projectKey}
       agents={scope.agents}
       location={location}
       onNavigate={onNavigate}
+      inPage
     />
   );
 }

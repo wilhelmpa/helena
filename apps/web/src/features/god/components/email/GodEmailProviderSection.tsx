@@ -31,7 +31,7 @@ export default function GodEmailProviderSection({ form }: { form: GodEmailForm }
         <EnabledSwitch checked={form.enabled} onChange={form.setEnabled} disabled={form.saving} />
       }
     >
-      <SettingsCard className="space-y-6 p-4">
+      <SettingsCard className="space-y-4 p-4">
         <ProviderToggle value={form.provider} onChange={form.setProvider} disabled={form.saving} />
 
         <div className="space-y-1.5 sm:max-w-md">

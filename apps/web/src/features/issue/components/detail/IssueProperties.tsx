@@ -335,7 +335,7 @@ export default function IssueProperties({
   return (
     // Collapsed, the heading row is all there is, so the section pulls itself up
     // against the one below it.
-    <div className={cn('mt-6 border-t pt-5', !open && '-mb-2', className)}>
+    <div className={cn('mt-4 border-t pt-4', !open && '-mb-2', className)}>
       <IssueSectionHeading
         label={t('properties')}
         open={open}

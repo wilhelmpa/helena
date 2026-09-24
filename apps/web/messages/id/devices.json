@@ -5,7 +5,7 @@
   "ownerOnly": "Hanya pemilik instans yang mengelola perangkat.",
   "unavailable": {
     "unconfiguredTitle": "Syncthing belum disiapkan",
-    "unconfigured": "Plan tidak punya kunci yang valid untuk Syncthing di server ini. Pasang paket Debian syncthing lalu jalankan <code>deployment/volition-stack/native/syncthing/setup.sh</code> sebagai root.",
+    "unconfigured": "Helena tidak punya kunci yang valid untuk Syncthing di server ini. Pasang paket Debian syncthing lalu jalankan <code>deployment/volition-stack/native/syncthing/setup.sh</code> sebagai root.",
     "unreachableTitle": "Syncthing tidak dapat dijangkau",
     "unreachable": "Syncthing belum terpasang di server ini, atau layanan <code>volition-syncthing</code> tidak berjalan."
   },
@@ -71,7 +71,7 @@
     "step2Lan": "Untuk sinkronisasi langsung di rumah, masukkan <code>{address}, dynamic</code> sebagai alamat perangkat.",
     "step3": "Perangkat lalu muncul di atas pada “Perangkat yang meminta terhubung”. Pilih Terima.",
     "step4": "Di perangkat, terima folder Volition ke folder bernama Volition: <code>~/Volition</code> di Mac, <code>Volition</code> di penyimpanan internal Android, vault Obsidian Volition di iPhone.",
-    "step5": "Tunggu sampai folder di perangkat menampilkan “Terbaru”, lalu buka folder Volition sebagai vault di Obsidian. Tautan dari Plan membuka vault Volition.",
+    "step5": "Tunggu sampai folder di perangkat menampilkan “Terbaru”, lalu buka folder Volition sebagai vault di Obsidian. Tautan dari Helena membuka vault Volition.",
     "iphoneTitle": "iPhone",
     "iphone": "Di iPhone, Obsidian hanya membuka foldernya sendiri. Buat dulu vault Volition di Obsidian (di iPhone, bukan di iCloud) lalu tutup Obsidian. Kemudian di Möbius Sync, taruh folder Volition di Di iPhone Saya › Obsidian › Volition. Obsidian menulis pengaturannya sendiri saat membuat vault, jadi konflik di <code>.obsidian</code> bisa muncul setelah sinkronisasi pertama; salinan konfliknya berisi pengaturan bawaan server ini. Möbius Sync menyinkronkan selama aplikasi terbuka atau iOS membiarkannya berjalan di latar belakang.",
     "spaceTitle": "Hemat ruang di ponsel (opsional)",

@@ -92,7 +92,7 @@ export default function NoteCanvas({
       className={cn('relative flex-1', fullscreen && 'fixed inset-0 z-50 bg-background')}
       onDoubleClick={onDoubleClick}
     >
-      <NoteCanvasTitle board={board} saveStatus={saveStatus} />
+      <NoteCanvasTitle board={board} saveStatus={saveStatus} fullscreen={fullscreen} />
 
       <NoteCanvasControls
         projectKey={projectKey}

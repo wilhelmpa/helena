@@ -1,24 +1,35 @@
 {
-  "title": "Connections",
-  "description": "Connected services and accounts",
-  "loading": "Checking connections…",
-  "loadError": "Connection status could not be loaded.",
-  "lastCheck": "Last check",
-  "never": "Never",
-  "availableTools": "Available tools",
+  "title": "Подключения",
+  "description": "Подключённые сервисы и аккаунты",
+  "loading": "Проверка подключений…",
+  "loadError": "Не удалось загрузить состояние подключений.",
+  "loadErrorHint": "Сервер не ответил. Попробуйте ещё раз чуть позже.",
+  "lastCheck": "Последняя проверка",
+  "never": "Никогда",
+  "toolCount": "{count, plural, one {# инструмент} few {# инструмента} many {# инструментов} other {# инструмента}}",
+  "empty": "Нет подключений",
+  "emptyHint": "Сервис подключений не сообщает о подключённых сервисах.",
+  "unconfigured": {
+    "title": "Сервис подключений не настроен",
+    "hint": "На этом сервере не работает сервис, проверяющий подключения. У почтовых аккаунтов, доступов и устройств есть свои страницы.",
+    "mail": "Почтовые аккаунты",
+    "credentials": "Доступы",
+    "devices": "Устройства и Obsidian"
+  },
   "status": {
-    "connected": "Connected",
-    "available": "Available",
-    "configured": "Configured",
-    "disabled": "Disabled",
-    "unavailable": "Unavailable",
-    "unsupported": "Unsupported",
-    "error": "Error"
+    "connected": "Подключено",
+    "available": "Доступно",
+    "configured": "Настроено",
+    "disabled": "Отключено",
+    "unavailable": "Недоступно",
+    "unsupported": "Не поддерживается",
+    "error": "Ошибка"
   },
   "actions": {
-    "checkAll": "Check all",
-    "check": "Check",
-    "reconnect": "Reconnect",
-    "openPairing": "Open pairing"
+    "checkAll": "Проверить все",
+    "check": "Проверить",
+    "reconnect": "Переподключить",
+    "openPairing": "Открыть сопряжение",
+    "retry": "Повторить"
   }
 }

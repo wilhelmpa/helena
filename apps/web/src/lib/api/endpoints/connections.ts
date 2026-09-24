@@ -25,6 +25,8 @@ export interface ConnectionItem {
 
 export interface ConnectionsSnapshot {
   checkedAt: string;
+  // Whether this server has a connections service; without one the list is empty.
+  configured: boolean;
   items: ConnectionItem[];
 }
 

@@ -63,7 +63,7 @@ export default function GitProviderConnections({
           ))
         )}
         {!connections.isPending && connections.data?.length === 0 && (
-          <p className="rounded-md border border-dashed p-5 text-sm text-muted-foreground">
+          <p className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
             {t('nativeNoConnections')}
           </p>
         )}

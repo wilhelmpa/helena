@@ -1,0 +1,63 @@
+# wilhelmpa's sudo policy -- DRAFT, not installed by default. setup.sh leaves
+# /etc/sudoers.d/90-wilhelmpa alone unless the orchestrator explicitly passes
+# --install-sudo-policy=narrow, a deliberate step taken only once the command
+# list below has been checked against what the orchestrator's SSH automation
+# actually runs (see setup.sh's own comment). Read this file's reasoning before
+# taking that step, not just its command list.
+#
+# Why a change is needed at all: this instance ran
+# "wilhelmpa ALL=(ALL:ALL) NOPASSWD: ALL" before Owner Terminals existed. sudo
+# authorizes purely by (user, host, command) -- it has no concept of which
+# process asked, so it cannot tell an SSH session started by the orchestrator
+# apart from a browser terminal's shell opened through
+# volition-owner-terminal.service. Both run commands as the same Unix account,
+# wilhelmpa. A blanket NOPASSWD: ALL therefore does not just cover
+# `sudo -n <deploy script>` from SSH, the reason it was added -- it silently
+# also makes every `sudo` typed inside an owner-terminal browser session
+# passwordless, defeating "sudo im Browser-Terminal verlangt Passwort" (Home ->
+# Security) before that setting can mean anything: there is no runtime signal
+# sudo could check to tell the two apart, and NOPASSWD skips the PAM
+# authentication step entirely, so nothing downstream (PAM, the owner-terminal
+# service) can add the prompt back once sudoers has waived it. The only fix
+# sudo actually supports is narrowing what is passwordless, the same pattern
+# already used next to this file for the same reason (91-volition-gog).
+#
+# Everything not named below falls through to the base `%sudo ALL=(ALL:ALL)
+# ALL` rule in /etc/sudoers (wilhelmpa is a member of the `sudo` group), which
+# asks for the Linux password every time -- set once by the owner with `passwd`.
+#
+# Coverage: the aliases below follow the command surface the coordinator named
+# as what the orchestrator's SSH automation actually runs (2026-09-23) -- wider
+# than the deploy-script-only draft this file started as, and explicitly named
+# as "u.a." (non-exhaustive) even by that account. Two paths are best-effort:
+# VOLITION_ISOLATION_SETUP points at the conventional location for
+# hub/agent-isolation's setup script, which has not merged into volition/hub as
+# of this branch and so could not be checked against a real file on disk --
+# verify the path before ever installing this. Every other Cmnd_Alias path was
+# checked against the merged hub tree.
+#
+# Do not install this file by treating it as already reviewed -- it is exactly
+# as unverified as the day it was drafted until someone checks it against the
+# orchestrator's actual `sudo -n` history (e.g. auth.log) and the setting in
+# Home -> Security has been turned on deliberately, not left at its default.
+Cmnd_Alias VOLITION_DEPLOY = /srv/volition/source/plan-dev/deployment/volition-stack/native/deploy.sh
+Cmnd_Alias VOLITION_SETUP_SCRIPTS = /srv/volition/source/plan-dev/deployment/volition-stack/native/google/setup.sh, \
+  /srv/volition/source/plan-dev/deployment/volition-stack/native/kiosk/install.sh
+# Unverified path -- hub/agent-isolation has not merged; confirm before use.
+Cmnd_Alias VOLITION_ISOLATION_SETUP = /srv/volition/source/plan-dev/deployment/volition-stack/native/agent-isolation/isolation.sh
+Cmnd_Alias VOLITION_SERVICE = /usr/bin/systemctl start *, /usr/bin/systemctl stop *, /usr/bin/systemctl restart *, \
+  /usr/bin/systemctl status *, /usr/bin/systemctl is-active *
+Cmnd_Alias VOLITION_LOGS = /usr/bin/journalctl *
+Cmnd_Alias VOLITION_GIT = /usr/bin/git -c safe.directory=* *
+# /var/lib/volition/hermes is Hermes's home and may hold credentials or stored
+# tokens -- passwordless `cat`/`find` under the whole tree reads whatever is
+# there. Worth narrowing to specific subpaths (or dropping `cat`) during review
+# rather than installing this exactly as drafted.
+Cmnd_Alias VOLITION_READ_STATE = /usr/bin/find /var/lib/volition/*, /usr/bin/ls /var/lib/volition/*, \
+  /usr/bin/stat /var/lib/volition/*, /usr/bin/cat /var/lib/volition/*
+Cmnd_Alias VOLITION_APT = /usr/bin/apt-get install *
+Cmnd_Alias VOLITION_VISUDO_CHECK = /usr/sbin/visudo -cf *
+
+wilhelmpa ALL=(ALL:ALL) NOPASSWD: VOLITION_DEPLOY, VOLITION_SETUP_SCRIPTS, VOLITION_ISOLATION_SETUP, \
+  VOLITION_SERVICE, VOLITION_LOGS, VOLITION_GIT, VOLITION_READ_STATE, VOLITION_APT, VOLITION_VISUDO_CHECK
+wilhelmpa ALL=(postgres) NOPASSWD: /usr/bin/psql *

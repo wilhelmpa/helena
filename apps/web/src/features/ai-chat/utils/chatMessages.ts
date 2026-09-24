@@ -20,6 +20,9 @@ export interface PlanChatMetadata {
   durationMs?: number | null;
   stopped?: boolean;
   error?: string;
+  // The browser lost the answer's stream before it ended (see AgUiChunkMapper.end); the
+  // answer itself may still have finished on the operator's machine.
+  interrupted?: boolean;
 }
 
 // `turn` is sent once a question is stored: the thread it went to and the id the
@@ -97,6 +100,13 @@ export function mergeNewestPage(current: PlanUIMessage[], page: PlanUIMessage[])
   const earlier = index >= 0 ? current.slice(0, index) : [];
   const ids = new Set(page.map((message) => message.id));
   return [...earlier.filter((message) => !ids.has(message.id)), ...page];
+}
+
+// An older page of the transcript in front of what the chat holds, without the
+// messages it already has (a page boundary can move while the thread grows).
+export function mergeOlderPage(current: PlanUIMessage[], older: PlanUIMessage[]): PlanUIMessage[] {
+  const ids = new Set(current.map((message) => message.id));
+  return [...older.filter((message) => !ids.has(message.id)), ...current];
 }
 
 // A message read as the stretches the bubble draws in order: text, the model's

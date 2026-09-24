@@ -44,14 +44,14 @@
     "purged": "Chat endgültig gelöscht."
   },
   "empty": {
-    "title": "Kein Chat geöffnet",
-    "description": "Wähle einen Agenten, um einen neuen Chat zu starten. Jeder Chat läuft mit einem Agenten — für einen anderen beginnst du einen neuen."
+    "noAgentsTitle": "Kein Agent für einen Chat",
+    "noAgentsDescription": "Hier gibt es noch keinen Agenten, mit dem ein Chat beginnen kann. Lege einen an oder gib einem vorhandenen Zugriff auf dieses Projekt.",
+    "manageAgents": "Agenten verwalten"
   },
   "messages": {
     "transcript": "Nachrichten",
     "loadOlder": "Frühere Nachrichten laden",
     "loading": "Lädt …",
-    "thinking": "Denkt nach …",
     "reasoning": "Denkprozess",
     "reasoningLive": "Denkt nach …",
     "toolCalls": "{count, plural, one {# Werkzeugaufruf} other {# Werkzeugaufrufe}}",
@@ -64,19 +64,21 @@
     "regenerate": "Neu generieren",
     "previousVersion": "Vorherige Version",
     "nextVersion": "Nächste Version",
-    "clarificationLabel": "Wartet auf deine Antwort",
-    "clarificationPlaceholder": "Antwort eingeben …",
-    "reply": "Antworten",
     "saveAsNote": "Als Notiz speichern",
     "noteSaved": "Chat als Notiz in „Docs“ gespeichert.",
     "noteSaveFailed": "Der Chat konnte nicht als Notiz gespeichert werden.",
     "noteQuestion": "Frage",
     "noteAnswer": "Antwort von {agent}",
-    "noteSource": "Chat mit {agent}, gespeichert am {date}"
+    "noteSource": "Chat mit {agent}, gespeichert am {date}",
+    "restoreFailedTitle": "Dieser Chat konnte nicht geladen werden",
+    "restoreFailed": "Seine Nachrichten konnten nicht gelesen werden. Prüfe die Verbindung und versuche es erneut.",
+    "retry": "Erneut versuchen",
+    "today": "Heute",
+    "yesterday": "Gestern"
   },
   "composer": {
     "placeholder": "Nachricht an {agent} …",
-    "hint": "Umschalt + Eingabe für eine neue Zeile · Dateien zum Anhängen ablegen oder einfügen · / für Befehle und Prompts",
+    "hint": "Eingabe sendet · Umschalt+Eingabe oder ⌘/Strg+Eingabe für eine neue Zeile · Dateien ablegen oder einfügen · / für Befehle und Prompts",
     "send": "Senden",
     "stop": "Antwort stoppen",
     "attach": "Anhängen",
@@ -108,7 +110,21 @@
       "approvals": "Freigabe-Befehle laufen nicht über den Chat — nutze die Freigabe-Karte oder die Freigaben-Seite.",
       "config": "Das ändert die Konfiguration des Agenten selbst — nutze dafür die Agenten-Einstellungen in Helena.",
       "outside": "Das kann der Chat nicht."
-    }
+    },
+    "reasoning": "Denkaufwand",
+    "reasoningDefault": "Standard",
+    "queue": "In die Warteschlange",
+    "queued": "wartet auf {agent}",
+    "queuePaused": "angehalten",
+    "removeQueued": "Aus der Warteschlange nehmen",
+    "dictate": "Diktieren",
+    "stopDictation": "Diktat beenden",
+    "dictationFailed": "Das Diktat konnte nicht gestartet werden.",
+    "dictationBlocked": "Der Browser hat das Mikrofon nicht freigegeben. Erlaube es in den Website-Einstellungen.",
+    "dictationInsecureTitle": "Diktieren braucht eine sichere Verbindung",
+    "dictationInsecure": "Der Browser gibt das Mikrofon nur über HTTPS frei. Bis Helena über HTTPS läuft: in Chrome chrome://flags öffnen, „Insecure origins treated as secure“ aktivieren und {origin} eintragen. Im Kiosk ist es bereits freigeschaltet.",
+    "autoSpeak": "Antworten automatisch vorlesen",
+    "autoSpeakOn": "Antworten werden vorgelesen – zum Ausschalten klicken"
   },
   "artifact": {
     "title": "Artefakt",
@@ -146,5 +162,56 @@
     "approvedBy": "Freigegeben von {name}",
     "rejectedBy": "Abgelehnt von {name}",
     "loading": "Anfrage wird geladen …"
+  },
+  "newChat": {
+    "title": "Neuer Chat mit {agent}",
+    "hint": "Den Agenten wählst du unten links im Eingabefeld – dort siehst du auch seinen Status."
+  },
+  "agents": {
+    "status": {
+      "running": "Arbeitet",
+      "waiting": "Wartet auf dich",
+      "ready": "Bereit",
+      "offline": "Offline",
+      "never": "Nie verbunden",
+      "paused": "Pausiert",
+      "template": "Vorlage – füge sie einem Projekt hinzu, um mit ihr zu chatten"
+    },
+    "runtimeExternal": "Extern",
+    "switch": "Chat mit {agent} – neuen Chat mit einem anderen Agenten beginnen",
+    "newChatWith": "Neuer Chat mit …"
+  },
+  "interrupted": {
+    "lost": "Die Verbindung zur Antwort ist abgerissen. {agent} arbeitet vielleicht noch daran.",
+    "stopped": "Die Antwort wurde gestoppt.",
+    "failed": "Die Antwort ist abgebrochen, bevor sie fertig war.",
+    "sendFailed": "Die Nachricht konnte nicht gesendet werden.",
+    "reconnect": "Neu verbinden",
+    "continue": "Fortsetzen",
+    "continuePrompt": "Bitte mach dort weiter, wo du unterbrochen wurdest.",
+    "resend": "Erneut senden"
+  },
+  "commands": {
+    "new": "Neuen Chat beginnen",
+    "retry": "Letzte Frage neu beantworten",
+    "undo": "Letzten Austausch entfernen",
+    "title": "Chat umbenennen",
+    "model": "Modell wählen",
+    "reasoning": "Denkaufwand einstellen",
+    "skills": "Skills des Agenten öffnen",
+    "memory": "Gedächtnis des Agenten öffnen",
+    "usage": "Token-Verbrauch dieses Chats zeigen",
+    "stop": "Antwort stoppen"
+  },
+  "activity": {
+    "thinking": "{agent} denkt nach …",
+    "writing": "{agent} schreibt …",
+    "queued": "Wartet auf {agent} – sein Runner ist offline. Die Antwort startet, sobald er wieder da ist.",
+    "usingTool": "{agent} nutzt {tool} …"
+  },
+  "session": {
+    "copy": "Session-ID kopieren",
+    "copied": "Session-ID kopiert",
+    "hint": "Im Terminal fortsetzen: hermes --resume {id} (bzw. claude --resume {id})"
   }
 }

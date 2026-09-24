@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useWorkspaceContents } from '@/context/workspaceContents';
+import { PanelHeaderSlotCtx } from '@/context/panelHeaderSlot';
 import { useTranslations } from 'next-intl';
 import { Direction } from 'radix-ui';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -202,6 +203,8 @@ export default function WorkspacePanel({
       onToggleFollowAgent={browserPreferences.toggleFollowAgent}
     />
   ) : undefined;
+  // Where the showing tool may put its own bar (see PanelHeaderSlotCtx).
+  const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
   const overlay = isMobile || mode === 'overlay';
   const title = advanced ? t('advanced') : labels[activeTool];
   const split = secondaryTool !== null;
@@ -249,6 +252,7 @@ export default function WorkspacePanel({
         mode={mode}
         pinned={pinned}
         toolbar={activeTool === 'browser' ? browserBar : undefined}
+        slotRef={setHeaderSlot}
         splitControl={
           isMobile ? null : (
             <WorkspaceSplitMenu
@@ -318,7 +322,11 @@ export default function WorkspacePanel({
                 (!open || side === undefined) && 'hidden',
               )}
             >
-              <ToolContent projectKey={contextProjectKey} />
+              <PanelHeaderSlotCtx.Provider
+                value={open && side === 'primary' && !advanced ? headerSlot : null}
+              >
+                <ToolContent projectKey={contextProjectKey} />
+              </PanelHeaderSlotCtx.Provider>
             </div>
           ) : null;
         })}

@@ -52,7 +52,7 @@ export default function InboxList({
   if (isLoading) return <ListSkeleton rows={6} className="p-3" rowClassName="h-16" />;
   if (items.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center px-6 text-center text-sm text-muted-foreground">
+      <div className="flex h-full items-center justify-center px-4 text-center text-sm text-muted-foreground">
         {t('empty')}
       </div>
     );

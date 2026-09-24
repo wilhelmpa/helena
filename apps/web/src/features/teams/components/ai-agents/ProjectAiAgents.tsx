@@ -27,6 +27,7 @@ import { AgentMetaChip } from './AgentMetaChip';
 import { AgentMetaRow } from './AgentMetaRow';
 import { AgentTriggers } from './AgentTriggers';
 import ProjectAgentAssignmentDialog from './ProjectAgentAssignmentDialog';
+import TableCard from '@/components/common/page/TableCard';
 
 // The agents working in this project. The server leaves the Home agent out. Their role
 // and instructions here are project-specific fields of the membership.
@@ -54,147 +55,150 @@ export default function ProjectAiAgents() {
 
   return (
     <div className="space-y-4">
-      <Table className="min-w-[640px] table-fixed">
-        <colgroup>
-          <col className="w-[25%]" />
-          <col className="w-[25%]" />
-          <col className="w-[14%]" />
-          <col className="w-[25%]" />
-          <col className="w-[11%]" />
-        </colgroup>
-        <TableHeader>
-          <TableRow className="hover:bg-transparent">
-            <TableHead className="text-xs font-medium text-muted-foreground">
-              {tTeam('agent')}
-            </TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground">
-              {t('assignment')}
-            </TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground">
-              {tTeam('columns.triggers')}
-            </TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground">
-              {tTeam('columns.configuration')}
-            </TableHead>
-            <TableHead className="text-end text-xs font-medium text-muted-foreground">
-              {tCommon('actions')}
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {shown.map((agent) => {
-            const KindIcon = AGENT_KIND_ICON[agent.kind];
-            const assignment = project
-              ? agent.projects.find((entry) => entry.id === project.project.id)
-              : undefined;
-            return (
-              <TableRow key={agent.id} className="group/item">
-                <TableCell className="px-3 py-3 align-middle whitespace-normal">
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-md border bg-background text-muted-foreground">
-                      <KindIcon className="size-4" />
-                    </div>
-                    <div className="flex min-w-0 flex-col gap-0.5">
-                      <div className="flex min-w-0 items-center gap-2">
-                        <span className="truncate text-sm font-medium">{agent.name}</span>
-                        <AgentPausedBadge agent={agent} />
+      <TableCard>
+        <Table className="table-fixed xl:min-w-[640px]">
+          <colgroup>
+            <col className="w-[25%]" />
+            <col className="w-[25%] max-md:hidden" />
+            <col className="w-[14%] max-md:hidden" />
+            <col className="w-[25%] max-md:hidden" />
+            <col className="w-[11%]" />
+          </colgroup>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="text-xs font-medium text-muted-foreground">
+                {tTeam('agent')}
+              </TableHead>
+              <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
+                {t('assignment')}
+              </TableHead>
+              <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
+                {tTeam('columns.triggers')}
+              </TableHead>
+              <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
+                {tTeam('columns.configuration')}
+              </TableHead>
+              <TableHead className="text-end text-xs font-medium text-muted-foreground">
+                {tCommon('actions')}
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {shown.map((agent) => {
+              const KindIcon = AGENT_KIND_ICON[agent.kind];
+              const assignment = project
+                ? agent.projects.find((entry) => entry.id === project.project.id)
+                : undefined;
+              return (
+                <TableRow key={agent.id} className="group/item">
+                  <TableCell className="px-3 py-3 align-middle whitespace-normal">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <div className="flex size-8 shrink-0 items-center justify-center rounded-md border bg-background text-muted-foreground">
+                        <KindIcon className="size-4" />
                       </div>
-                      <span className="truncate text-xs text-muted-foreground">
-                        @{agent.username}
-                      </span>
+                      <div className="flex min-w-0 flex-col gap-0.5">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="truncate text-sm font-medium">{agent.name}</span>
+                          <AgentPausedBadge agent={agent} />
+                        </div>
+                        <span className="truncate text-xs text-muted-foreground">
+                          @{agent.username}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                </TableCell>
-                <TableCell className="px-3 py-3 align-middle whitespace-normal">
-                  {assignment && (
-                    <div className="flex min-w-0 flex-col gap-1">
-                      <span className="text-sm font-medium">
-                        {assignment.roleName ?? t('defaultRole')}
-                      </span>
-                      <span className="line-clamp-2 text-xs text-muted-foreground">
-                        {assignment.instructions || t('noProjectInstructions')}
-                      </span>
-                    </div>
-                  )}
-                </TableCell>
-                <TableCell className="px-3 py-3 align-middle whitespace-normal">
-                  <AgentTriggers agent={agent} />
-                </TableCell>
-                <TableCell className="px-3 py-3 align-middle whitespace-normal">
-                  {agent.kind === 'internal' ? (
-                    <AgentMetaRow
-                      agent={agent}
-                      providerLabel={(key: string) => integrationLabel(catalog, key)}
-                    />
-                  ) : (
-                    <div className="flex flex-col items-start gap-1">
-                      <AgentRunnerStatus agent={agent} />
-                      <AgentMetaChip icon={Shield}>
-                        {agent.runnerScope === 'owner'
-                          ? tTeam('runnerScopeOwner')
-                          : tTeam('runnerScopeTeam')}
-                      </AgentMetaChip>
-                    </div>
-                  )}
-                </TableCell>
-                <TableCell className="px-3 py-2 align-middle">
-                  <div className="flex items-center justify-end gap-1">
-                    {assignment && project && (can('members_manage', 'edit') || isAdmin) && (
-                      <ProjectAgentAssignmentDialog
-                        agent={agent}
-                        assignment={assignment}
-                        projectKey={project.project.key}
-                        teamId={teamId}
-                      />
-                    )}
-                    {project && canManageAgents && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-8 text-muted-foreground hover:text-foreground"
-                            disabled={updateAgent.isPending}
-                            aria-label={t('removeFromProject')}
-                            onClick={() =>
-                              updateAgent.mutate({
-                                id: agent.id,
-                                patch: {
-                                  projectIds: agent.projects
-                                    .filter((entry) => entry.id !== project.project.id)
-                                    .map((entry) => entry.id),
-                                },
-                              })
-                            }
-                          >
-                            <UserMinus className="size-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>{t('removeFromProject')}</TooltipContent>
-                      </Tooltip>
-                    )}
+                  </TableCell>
+                  <TableCell className="px-3 py-3 align-middle whitespace-normal max-md:hidden">
                     {assignment && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            size="icon"
-                            className="size-8"
-                            aria-label={tChat('newChat')}
-                            onClick={() => onChatWithAgent(agent.id)}
-                          >
-                            <MessageSquarePlus className="size-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>{tChat('newChat')}</TooltipContent>
-                      </Tooltip>
+                      <div className="flex min-w-0 flex-col gap-1">
+                        <span className="text-sm font-medium">
+                          {assignment.roleName ?? t('defaultRole')}
+                        </span>
+                        <span className="line-clamp-2 text-xs text-muted-foreground">
+                          {assignment.instructions || t('noProjectInstructions')}
+                        </span>
+                      </div>
                     )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+                  </TableCell>
+                  <TableCell className="px-3 py-3 align-middle whitespace-normal max-md:hidden">
+                    <AgentTriggers agent={agent} />
+                  </TableCell>
+                  <TableCell className="px-3 py-3 align-middle whitespace-normal max-md:hidden">
+                    {agent.kind === 'internal' ? (
+                      <AgentMetaRow
+                        agent={agent}
+                        providerLabel={(key: string) => integrationLabel(catalog, key)}
+                      />
+                    ) : (
+                      <div className="flex flex-col items-start gap-1">
+                        <AgentRunnerStatus agent={agent} />
+                        <AgentMetaChip icon={Shield}>
+                          {agent.runnerScope === 'owner'
+                            ? tTeam('runnerScopeOwner')
+                            : tTeam('runnerScopeTeam')}
+                        </AgentMetaChip>
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell className="px-3 py-2 align-middle">
+                    <div className="flex items-center justify-end gap-1">
+                      {assignment && project && (can('members_manage', 'edit') || isAdmin) && (
+                        <ProjectAgentAssignmentDialog
+                          agent={agent}
+                          assignment={assignment}
+                          projectKey={project.project.key}
+                          teamId={teamId}
+                        />
+                      )}
+                      {project && canManageAgents && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-8 text-muted-foreground hover:text-foreground"
+                              disabled={updateAgent.isPending}
+                              aria-label={t('removeFromProject')}
+                              onClick={() =>
+                                updateAgent.mutate({
+                                  id: agent.id,
+                                  patch: {
+                                    projectIds: agent.projects
+                                      .filter((entry) => entry.id !== project.project.id)
+                                      .map((entry) => entry.id),
+                                  },
+                                })
+                              }
+                            >
+                              <UserMinus className="size-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{t('removeFromProject')}</TooltipContent>
+                        </Tooltip>
+                      )}
+                      {assignment && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-8 text-muted-foreground hover:text-foreground"
+                              aria-label={tChat('newChat')}
+                              onClick={() => onChatWithAgent(agent.id)}
+                            >
+                              <MessageSquarePlus className="size-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{tChat('newChat')}</TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </TableCard>
       <ListPager paging={paging} total={agents.length} />
     </div>
   );

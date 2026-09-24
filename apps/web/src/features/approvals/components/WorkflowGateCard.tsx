@@ -21,7 +21,7 @@ export default function WorkflowGateCard({ gate }: { gate: WorkflowGate }) {
         </code>
         {gate.createdAt && <span className="ms-auto">{formatDateTime(gate.createdAt)}</span>}
       </div>
-      {gate.summary && <p className="font-medium">{gate.summary}</p>}
+      {gate.summary && <p className="text-md font-medium">{gate.summary}</p>}
       {gate.reason && <p className="text-sm text-muted-foreground">{gate.reason}</p>}
       {gate.effects.length > 0 && (
         <div className="text-sm">

@@ -22,7 +22,7 @@
       "email": "E-mail"
     },
     "registered": "arrivé {date}",
-    "roleGod": "God",
+    "roleGod": "Administrateur",
     "roleUser": "Utilisateur",
     "agent": "Agent",
     "noProviders": "aucun",
@@ -199,6 +199,33 @@
   },
   "hotkeys": {
     "saved": "Raccourcis clavier enregistrés"
+  },
+  "security": {
+    "grantTitle": "Autorisation du terminal",
+    "grantDescription": "La fenêtre de 12 heures qu'une vérification renforcée ouvre pour les sessions Shell, Claude Code et Codex.",
+    "grantActive": "Autorisé jusqu'à {time}",
+    "grantInactive": "Aucune autorisation active.",
+    "grantRevoke": "Révoquer",
+    "stepUpTitle": "Demander un code à l’ouverture",
+    "stepUpDescription": "Ce qui prouve que c'est bien le propriétaire qui ouvre le terminal, à chaque fois, même sur le réseau local.",
+    "stepUpMethod": "TOTP (une application d'authentification), configuré dans Compte → Sécurité. La clé d'accès prendra le relais dès que cette instance sera derrière HTTPS.",
+    "stepUpOffHint": "Sur le réseau local sans code : le terminal s’ouvre directement pour ta session sur le réseau domestique. Via le tunnel (loopback) et depuis l’extérieur, le code de l’authentificateur reste toujours obligatoire.",
+    "sudoTitle": "sudo dans le terminal du navigateur demande un mot de passe",
+    "sudoDescription": "Désactivé (par défaut) laisse chaque commande sudo sans mot de passe partout, dans le terminal propriétaire comme dans l'automatisation SSH -- sudo autorise par compte Unix et ne peut pas distinguer les deux. Activé restreint le sudo du terminal navigateur à une liste validée de commandes d'automatisation et demande le mot de passe Linux pour tout le reste.",
+    "sudoHint": "L'activer ici ne suffit pas : sudo ne peut pas être basculé par session à l'exécution, un opérateur doit donc d'abord auditer chaque commande `sudo -n` que l'automatisation SSH de l'instance exécute réellement, la comparer à la politique sudo, puis installer cette politique à la main. Vérifiez avec l'opérateur avant d'activer ceci -- jusque-là, ce réglage n'a aucun effet.",
+    "auditTitle": "Journal d'audit",
+    "auditDescription": "Chaque tentative de vérification renforcée, chaque changement d'autorisation et chaque session de terminal, du plus récent au plus ancien. Aucune frappe clavier.",
+    "auditEmpty": "Aucun événement pour l'instant.",
+    "event": {
+      "step_up_ok": "Vérification renforcée réussie",
+      "step_up_fail": "Vérification renforcée échouée",
+      "rate_limited": "Limite de tentatives atteinte",
+      "grant_revoked": "Autorisation révoquée",
+      "session_start": "Session démarrée",
+      "session_end": "Session terminée",
+      "token_rejected": "Jeton refusé"
+    },
+    "grantActiveOpen": "Accès accordé."
   },
   "storage": {
     "saved": "Paramètres de stockage enregistrés",

@@ -40,5 +40,8 @@
   "notice": {
     "workflow-runs-unavailable": "Mastra did not answer, so workflow runs are left out.",
     "workflow-runs-limited": "Not every workflow run is shown: the timeline reads a limited number of workflows and runs from Mastra."
-  }
+  },
+  "filterKind": "Kind",
+  "filterAgent": "Agent",
+  "unavailableHint": "The server did not answer. Try again in a moment."
 }

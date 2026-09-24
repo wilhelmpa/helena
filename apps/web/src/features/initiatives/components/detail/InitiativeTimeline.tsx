@@ -42,9 +42,7 @@ export default function InitiativeTimeline({ initiative }: { initiative: Initiat
     <div>
       <div className="mb-2.5 flex items-center justify-between gap-2">
         <div className="flex items-center gap-1">
-          <h4 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            {t('title')}
-          </h4>
+          <h4 className="text-xs font-medium text-muted-foreground">{t('title')}</h4>
           <HealthInfoPopover />
         </div>
         <HealthBadge health={initiative.health} />

@@ -43,9 +43,9 @@ export function IntegrationPicker({
         />
       </div>
 
-      <div className="max-h-[55vh] space-y-5 overflow-y-auto pr-1">
+      <div className="max-h-[55vh] space-y-4 overflow-y-auto pr-1">
         {matches.length === 0 && (
-          <p className="py-6 text-center text-sm text-muted-foreground">
+          <p className="py-4 text-center text-sm text-muted-foreground">
             {t('noMatches', { query: query.trim() })}
           </p>
         )}
@@ -55,7 +55,7 @@ export function IntegrationPicker({
           return (
             <div key={kind} className="space-y-1.5">
               <div className="flex items-baseline gap-2 px-1">
-                <h3 className="text-xs font-semibold tracking-wide text-foreground uppercase">
+                <h3 className="text-xs font-semibold text-foreground">
                   {t(`groups.${kind}.title`)}
                 </h3>
                 <span className="text-xs text-muted-foreground">{t(`groups.${kind}.hint`)}</span>

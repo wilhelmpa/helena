@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useShell } from '@/context/shellContext';
 import { useLiveRefresh } from '@/hooks/useLiveRefresh';
@@ -8,27 +8,35 @@ import { revScope } from '@/utils/revScopes';
 import { initiativePath, type InitiativeTab } from '@/utils/paths';
 import { qk } from '@/services/queryKeys';
 import { useInitiativeQuery } from '@/services/initiatives.service';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { useLocalBoardSettings } from '@/hooks/useLocalBoardSettings';
 import PageSkeleton from '@/components/common/skeleton/PageSkeleton';
-import InitiativeHeader from './components/detail/InitiativeHeader';
-import InitiativeIssuesBoard from './components/detail/InitiativeIssuesBoard';
+import { PageTabs, PageToolbar, PageToolbarSpacer } from '@/components/layout/PageToolbar';
+import { FilterControl } from '@/components/layout/FilterBar';
+import BoardDisplayControl from '@/features/work-items/components/BoardDisplayControl';
+import InitiativeActions from './components/detail/InitiativeActions';
+import InitiativeIssuesBoard, {
+  INITIATIVE_BOARD_STORE_KEY,
+} from './components/detail/InitiativeIssuesBoard';
 import InitiativeOverview from './components/detail/InitiativeOverview';
 import InitiativeProgress from './components/detail/InitiativeProgress';
 
-// One initiative: a header of its properties, then its description (Overview), how
-// it is going (Progress) and the work items board over its linked issues (Issues).
-// Each tab is its own route, so the open tab survives a reload; the route that
-// mounts this page passes it.
+// One initiative: its title, properties and description (Overview), how it is going
+// (Progress) and the work items board over its linked issues (Issues). Each tab is
+// its own route, so the open tab survives a reload; the route that mounts this page
+// passes it. Everything the page offers is one header row (PageToolbar): the tabs,
+// the board's filter and display on the Issues tab, and the initiative's menu.
 export default function InitiativeDetailPage({ tab = 'overview' }: { tab?: InitiativeTab }) {
   const t = useTranslations('initiatives');
-  const { project } = useShell();
-  const router = useRouter();
+  const { project, customFields } = useShell();
   const params = useParams();
   const raw = Array.isArray(params.initiativeId) ? params.initiativeId[0] : params.initiativeId;
   const initiativeId = raw ? Number(raw) : null;
 
   const query = useInitiativeQuery(initiativeId);
   const projectKey = project?.project.key ?? '';
+  // The Issues tab's layout, display and filters; held here because its controls
+  // are in the header row.
+  const board = useLocalBoardSettings(INITIATIVE_BOARD_STORE_KEY, initiativeId ?? 0);
 
   // Refetch the initiative (progress/health), its files, its linked Docs, its feed
   // and the board issues when its linked issues or its own fields change.
@@ -49,38 +57,53 @@ export default function InitiativeDetailPage({ tab = 'overview' }: { tab?: Initi
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {query.isLoading ? (
-        <PageSkeleton className="mx-0 max-w-none px-6 py-8" />
-      ) : !initiative ? (
-        <p className="px-6 py-8 text-sm text-muted-foreground">{t('notFound')}</p>
-      ) : (
-        <>
-          <InitiativeHeader initiative={initiative} project={project} />
-          <Tabs
+      {initiative && (
+        <PageToolbar>
+          <PageTabs
+            label={initiative.title}
             value={tab}
-            onValueChange={(value) =>
-              router.push(initiativePath(projectKey, initiative.id, value as InitiativeTab))
-            }
-            className="flex min-h-0 flex-1 flex-col"
-          >
-            <div className="px-6 pt-3">
-              <TabsList variant="line">
-                <TabsTrigger value="overview">{t('detailTabs.overview')}</TabsTrigger>
-                <TabsTrigger value="progress">{t('detailTabs.progress')}</TabsTrigger>
-                <TabsTrigger value="issues">{t('detailTabs.issues')}</TabsTrigger>
-              </TabsList>
-            </div>
-            <TabsContent value="overview" className="mt-0 flex-1 overflow-y-auto">
-              <InitiativeOverview initiative={initiative} />
-            </TabsContent>
-            <TabsContent value="progress" className="mt-0 flex-1 overflow-y-auto">
-              <InitiativeProgress initiative={initiative} project={project} />
-            </TabsContent>
-            <TabsContent value="issues" className="mt-0 flex min-h-0 flex-1 flex-col">
-              <InitiativeIssuesBoard initiativeId={initiative.id} />
-            </TabsContent>
-          </Tabs>
-        </>
+            items={(['overview', 'progress', 'issues'] as const).map((value) => ({
+              value,
+              label: t(`detailTabs.${value}`),
+              href: initiativePath(projectKey, initiative.id, value),
+            }))}
+          />
+          <PageToolbarSpacer />
+          {tab === 'issues' && (
+            <>
+              <FilterControl
+                filters={board.filters}
+                onChange={board.setFilters}
+                project={project}
+                customFields={customFields}
+              />
+              <BoardDisplayControl
+                view={board.view}
+                onViewChange={board.changeView}
+                settings={board.settings}
+                onSettingsChange={board.changeSettings}
+                customFields={customFields}
+                issueTypes={project.issueTypes}
+              />
+            </>
+          )}
+          <InitiativeActions initiative={initiative} projectKey={projectKey} />
+        </PageToolbar>
+      )}
+      {query.isLoading ? (
+        <PageSkeleton className="mx-0 max-w-none p-4" />
+      ) : !initiative ? (
+        <p className="p-4 text-sm text-muted-foreground">{t('notFound')}</p>
+      ) : tab === 'issues' ? (
+        <InitiativeIssuesBoard initiativeId={initiative.id} board={board} />
+      ) : (
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {tab === 'progress' ? (
+            <InitiativeProgress initiative={initiative} project={project} />
+          ) : (
+            <InitiativeOverview initiative={initiative} project={project} />
+          )}
+        </div>
       )}
     </div>
   );

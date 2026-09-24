@@ -24,13 +24,13 @@ export function McpServerRow({
 
   return (
     <li className="flex items-start gap-3 py-3">
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+      <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-sidebar-border bg-background text-muted-foreground">
         <Server className="size-4" />
       </div>
       <div className="min-w-0 flex-1 space-y-1">
         <div className="flex items-center gap-2">
           <span className="truncate font-mono text-sm font-medium">{server.name}</span>
-          <Badge variant="secondary" className="text-[10px] font-normal">
+          <Badge variant="secondary" className="text-xs font-normal">
             {t(`transports.${server.transport}`)}
           </Badge>
         </div>
@@ -46,7 +46,7 @@ export function McpServerRow({
               <Badge
                 key={value.name}
                 variant="outline"
-                className={`gap-1 font-mono text-[10px] font-normal ${
+                className={`gap-1 font-mono text-xs font-normal ${
                   value.credentialLabel === null ? 'text-destructive' : ''
                 }`}
               >

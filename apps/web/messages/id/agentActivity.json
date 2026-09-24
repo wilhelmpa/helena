@@ -40,5 +40,8 @@
   "notice": {
     "workflow-runs-unavailable": "Mastra tidak menjawab, jadi proses alur kerja tidak ditampilkan.",
     "workflow-runs-limited": "Tidak semua proses alur kerja ditampilkan: linimasa membaca sejumlah terbatas alur kerja dan proses dari Mastra."
-  }
+  },
+  "filterKind": "Jenis",
+  "filterAgent": "Agen",
+  "unavailableHint": "Server tidak merespons. Coba lagi sebentar lagi."
 }

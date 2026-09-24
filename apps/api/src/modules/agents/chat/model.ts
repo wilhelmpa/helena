@@ -321,6 +321,15 @@ export const ChatSummaryResponse = t.Object({
   match: t.Optional(t.UnionEnum(['title', 'user', 'assistant'])),
   createdAt: t.String(),
   updatedAt: t.String(),
+  model: t.Nullable(
+    t.String({ description: 'The model the chat was last sent with; null: the agent default.' }),
+  ),
+  thinkingLevel: t.Nullable(
+    t.String({ description: 'The reasoning level it was last sent with.' }),
+  ),
+  cliSessionId: t.Nullable(
+    t.String({ description: 'The coding-agent session an external agent keeps for the chat.' }),
+  ),
   contextTokens: t.Optional(
     t.Nullable(
       t.Number({

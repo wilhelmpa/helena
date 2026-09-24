@@ -44,14 +44,14 @@
     "purged": "Obrolan dihapus selamanya."
   },
   "empty": {
-    "title": "Tidak ada obrolan yang terbuka",
-    "description": "Pilih agen untuk memulai obrolan baru. Setiap obrolan hanya dengan satu agen — untuk bicara dengan agen lain, mulai obrolan baru."
+    "noAgentsTitle": "Tidak ada agen untuk diajak chat",
+    "noAgentsDescription": "Belum ada agen di sini yang bisa diajak memulai chat. Tambahkan satu, atau beri agen yang ada akses ke proyek ini.",
+    "manageAgents": "Kelola agen"
   },
   "messages": {
     "transcript": "Pesan",
     "loadOlder": "Muat pesan sebelumnya",
     "loading": "Memuat…",
-    "thinking": "Sedang berpikir…",
     "reasoning": "Proses berpikir",
     "reasoningLive": "Sedang berpikir…",
     "toolCalls": "{count, plural, other {# panggilan alat}}",
@@ -64,19 +64,21 @@
     "regenerate": "Buat ulang",
     "previousVersion": "Versi sebelumnya",
     "nextVersion": "Versi berikutnya",
-    "clarificationLabel": "Menunggu balasanmu",
-    "clarificationPlaceholder": "Ketik balasanmu…",
-    "reply": "Balas",
     "saveAsNote": "Simpan sebagai catatan",
     "noteSaved": "Obrolan disimpan sebagai catatan di Docs.",
     "noteSaveFailed": "Obrolan tidak bisa disimpan sebagai catatan.",
     "noteQuestion": "Pertanyaan",
     "noteAnswer": "Jawaban {agent}",
-    "noteSource": "Obrolan dengan {agent}, disimpan {date}"
+    "noteSource": "Obrolan dengan {agent}, disimpan {date}",
+    "restoreFailedTitle": "Chat ini tidak dapat dimuat",
+    "restoreFailed": "Pesannya tidak dapat dibaca. Periksa koneksi lalu coba lagi.",
+    "retry": "Coba lagi",
+    "today": "Hari ini",
+    "yesterday": "Kemarin"
   },
   "composer": {
     "placeholder": "Pesan untuk {agent}…",
-    "hint": "Shift + Enter untuk baris baru · Jatuhkan atau tempel berkas untuk melampirkannya · / untuk perintah dan prompt",
+    "hint": "Enter mengirim · Shift+Enter atau ⌘/Ctrl+Enter untuk baris baru · lepas atau tempel berkas untuk melampirkan · / untuk perintah dan prompt",
     "send": "Kirim",
     "stop": "Hentikan jawaban",
     "attach": "Lampirkan",
@@ -108,7 +110,21 @@
       "approvals": "Perintah persetujuan tidak dijalankan dari obrolan — gunakan kartu persetujuan atau halaman Persetujuan.",
       "config": "Ini mengubah konfigurasi agen itu sendiri — gunakan pengaturan agen di Helena.",
       "outside": "Ini bukan sesuatu yang bisa dilakukan obrolan."
-    }
+    },
+    "reasoning": "Upaya penalaran",
+    "reasoningDefault": "bawaan",
+    "queue": "Tambahkan ke antrean",
+    "queued": "menunggu {agent}",
+    "queuePaused": "dijeda",
+    "removeQueued": "Hapus dari antrean",
+    "dictate": "Dikte",
+    "stopDictation": "Hentikan dikte",
+    "dictationFailed": "Dikte tidak dapat dimulai.",
+    "dictationBlocked": "Browser tidak mengizinkan mikrofon. Izinkan di pengaturan situs.",
+    "dictationInsecureTitle": "Dikte memerlukan koneksi aman",
+    "dictationInsecure": "Browser hanya meminjamkan mikrofon ke halaman HTTPS. Sampai Helena berjalan di HTTPS: buka chrome://flags di Chrome, aktifkan “Insecure origins treated as secure” dan tambahkan {origin}. Kios sudah mengizinkannya.",
+    "autoSpeak": "Bacakan jawaban secara otomatis",
+    "autoSpeakOn": "Jawaban dibacakan – klik untuk mematikan"
   },
   "artifact": {
     "title": "Artefak",
@@ -146,5 +162,56 @@
     "approvedBy": "Disetujui oleh {name}",
     "rejectedBy": "Ditolak oleh {name}",
     "loading": "Memuat permintaan…"
+  },
+  "newChat": {
+    "title": "Chat baru dengan {agent}",
+    "hint": "Pilih agen di kiri bawah kolom input — statusnya juga terlihat di sana."
+  },
+  "agents": {
+    "status": {
+      "running": "Sedang bekerja",
+      "waiting": "Menunggu Anda",
+      "ready": "Siap",
+      "offline": "Offline",
+      "never": "Belum pernah terhubung",
+      "paused": "Dijeda",
+      "template": "Templat — tambahkan ke proyek untuk chat dengannya"
+    },
+    "runtimeExternal": "Eksternal",
+    "switch": "Chat dengan {agent} — mulai chat baru dengan agen lain",
+    "newChatWith": "Chat baru dengan …"
+  },
+  "interrupted": {
+    "lost": "Koneksi ke jawaban terputus. {agent} mungkin masih mengerjakannya.",
+    "stopped": "Jawaban dihentikan.",
+    "failed": "Jawaban terputus sebelum selesai.",
+    "sendFailed": "Pesan tidak dapat dikirim.",
+    "reconnect": "Sambungkan lagi",
+    "continue": "Lanjutkan",
+    "continuePrompt": "Silakan lanjutkan dari bagian saat kamu terputus.",
+    "resend": "Kirim lagi"
+  },
+  "commands": {
+    "new": "Mulai chat baru",
+    "retry": "Jawab ulang pertanyaan terakhir",
+    "undo": "Hapus percakapan terakhir",
+    "title": "Ganti nama chat ini",
+    "model": "Pilih model",
+    "reasoning": "Atur upaya penalaran",
+    "skills": "Buka skill agen",
+    "memory": "Buka memori agen",
+    "usage": "Tampilkan penggunaan token chat ini",
+    "stop": "Hentikan jawaban"
+  },
+  "activity": {
+    "thinking": "{agent} sedang berpikir…",
+    "writing": "{agent} sedang menulis…",
+    "queued": "Menunggu {agent} — runner-nya offline. Jawaban dimulai begitu runner kembali.",
+    "usingTool": "{agent} sedang memakai {tool} …"
+  },
+  "session": {
+    "copy": "Salin ID sesi",
+    "copied": "ID sesi disalin",
+    "hint": "Lanjutkan di terminal: hermes --resume {id} (atau claude --resume {id})"
   }
 }

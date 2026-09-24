@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import type { View } from '@/lib/api/endpoints/views';
 import { cn } from '@/lib/utils';
 import { ViewIcon } from '@/utils/viewIcons';
+import { PAGE_CONTROL_CLASS } from '@/components/layout/PageToolbar';
 import {
   Command,
   CommandEmpty,
@@ -14,8 +15,8 @@ import {
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
-// Mobile view picker: the tab strip collapses into a dropdown showing the active
-// view, listing All + saved views (searchable) and a New view action. Item values
+// The folded view picker (a phone, a narrow header row): the tab strip collapses into
+// a dropdown showing the active view, listing All + saved views (searchable) and a New view action. Item values
 // are ids, not names — two views may share a name — and the name is passed as a
 // search keyword.
 export default function MobileViewSwitcher({
@@ -40,15 +41,11 @@ export default function MobileViewSwitcher({
         <button
           type="button"
           title={t('switchView')}
-          className="flex h-8 min-w-0 items-center gap-1.5 rounded-md border px-3 text-sm whitespace-nowrap transition-colors hover:bg-accent"
+          className={cn(PAGE_CONTROL_CLASS, 'min-w-0 whitespace-nowrap text-foreground')}
         >
-          {active ? (
-            <ViewIcon name={active.icon} className="size-4 shrink-0" />
-          ) : (
-            <Layers className="size-4 shrink-0" />
-          )}
-          <span className="truncate font-medium">{active ? active.name : t('all')}</span>
-          <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+          {active ? <ViewIcon name={active.icon} /> : <Layers />}
+          <span className="truncate">{active ? active.name : t('all')}</span>
+          <ChevronDown className="!size-3.5 text-muted-foreground" />
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-56 p-0">

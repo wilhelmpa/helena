@@ -59,8 +59,11 @@ export default function ProjectTreeGroup({
             <span className="min-w-0 flex-1 truncate font-medium">{group.name}</span>
             <span
               className={cn(
-                'shrink-0 text-[10px] text-muted-foreground tabular-nums',
-                manage && 'group-hover/menu-item:invisible',
+                'shrink-0 text-xs text-muted-foreground tabular-nums',
+                // Where the row's menu is always shown (a phone, a touch screen) it takes this
+                // place; elsewhere it only replaces it while the row is hovered.
+                manage &&
+                  'group-hover/menu-item:invisible max-md:hidden [@media(hover:none)]:hidden',
               )}
             >
               {group.projects.length}

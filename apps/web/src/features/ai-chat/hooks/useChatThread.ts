@@ -1,78 +1,42 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { getAiAgentThreadMessages, type AiChatMessagePage } from '@/lib/api/endpoints/agentChat';
 import { qk } from '@/services/queryKeys';
-import { toUIMessage, type PlanUIMessage } from '../utils/chatMessages';
 
-// The transcript of one thread, restored the way the workspace shows it: oldest first,
-// with older pages loaded on demand as the reader scrolls up. `page` 0 is the newest
-// page the API serves (see getThreadMessages on the server); pages already read stay in
-// `pages`, newest last, so flattening them in order gives the conversation top to
-// bottom. `activeAnswer` names an answer still being produced, for the workspace to
-// resume its stream instead of showing it as if it had already finished.
-export function useChatThread(scopeKey: string, agentId: number | null, threadId: string | null) {
-  const client = useQueryClient();
-  const enabled = agentId != null && threadId != null;
-  const [pages, setPages] = useState<AiChatMessagePage[]>([]);
-  const seenRef = useRef<unknown>(null);
-
-  const first = useQuery({
-    queryKey: enabled ? qk.chatMessages(threadId) : qk.chatMessages('none'),
-    queryFn: () => getAiAgentThreadMessages(scopeKey, agentId!, threadId!, 0),
-    enabled,
+// The stored transcript of one thread, for the view that opens it. `initial` is the
+// newest page (page 0) as it is right now: read fresh every time a thread is opened —
+// never from a cache filled the last time it was open, which would show the thread
+// without the turns written since and resume an answer that already ended — and read
+// once, since from then on the open view's own chat state is the transcript.
+// `fetchPageOf` reads any page on demand: an older one as the reader scrolls up, or
+// page 0 again when the view wants the server's version of what it shows (a finished
+// answer's model and token counts, the branch a version switch moved to).
+export function useChatThread(scopeKey: string, agentId: number, threadId: string | null) {
+  const initial = useQuery({
+    queryKey: qk.chatMessages(threadId ?? 'none', agentId),
+    queryFn: () => getAiAgentThreadMessages(scopeKey, agentId, threadId!, 0),
+    enabled: threadId != null,
+    gcTime: 0,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
-  // Every arrival of the newest page replaces the whole window: a newly opened thread
-  // starts fresh, and the same thread's page 0 arriving again (a version switch changed
-  // which branch is shown) means the older pages already loaded belong to a branch that
-  // is no longer the one on screen.
-  useEffect(() => {
-    if (!first.data || first.data === seenRef.current) return;
-    seenRef.current = first.data;
-    setPages([first.data]);
-  }, [first.data]);
-
-  const nextPage = pages.at(-1)?.nextPage ?? null;
-  const [loadingOlder, setLoadingOlder] = useState(false);
-
-  const loadOlder = useCallback(async () => {
-    if (nextPage == null || !enabled) return;
-    setLoadingOlder(true);
-    try {
-      const page = await client.fetchQuery({
-        queryKey: [...qk.chatMessages(threadId!), nextPage],
-        queryFn: () => getAiAgentThreadMessages(scopeKey, agentId!, threadId!, nextPage),
-      });
-      setPages((current) => [...current, page]);
-    } finally {
-      setLoadingOlder(false);
-    }
-  }, [client, nextPage, enabled, scopeKey, agentId, threadId]);
-
-  const messages = useMemo<PlanUIMessage[]>(
-    () =>
-      pages
-        .slice()
-        .reverse()
-        .flatMap((page) => page.items.map(toUIMessage)),
-    [pages],
+  // Any page of this agent's thread — named explicitly, since a new chat's thread only
+  // exists once its first answer was queued, long after this hook first ran.
+  const fetchPageOf = useCallback(
+    (id: string, page: number): Promise<AiChatMessagePage> =>
+      getAiAgentThreadMessages(scopeKey, agentId, id, page),
+    [scopeKey, agentId],
   );
 
-  const activeAnswer = pages[0]?.activeAnswer ?? null;
-
   return {
-    messages,
-    activeAnswer,
-    hasOlder: nextPage != null,
-    loadingOlder,
-    loadOlder,
-    // Still loading until the newest page has been copied into `pages`: the query
-    // settles one render before the effect above stores its data, and a view that
-    // restores its transcript the moment loading ends would otherwise take the empty
-    // list of that in-between render and never look again.
-    isLoading: enabled && (first.isLoading || (first.isSuccess && pages[0] !== first.data)),
-    refetch: first.refetch,
+    initial: initial.data ?? null,
+    isLoading: threadId != null && initial.isPending,
+    isError: initial.isError,
+    retry: initial.refetch,
+    fetchPageOf,
   };
 }

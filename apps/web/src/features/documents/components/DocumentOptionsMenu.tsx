@@ -1,9 +1,17 @@
 'use client';
 
-import { Download, ExternalLink, FolderInput, History, MoreHorizontal, Trash2 } from 'lucide-react';
+import {
+  Download,
+  EllipsisVertical,
+  ExternalLink,
+  FolderInput,
+  History,
+  Trash2,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { vaultFileUrl, type VaultDocument } from '@/lib/api/endpoints/knowledge';
-import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { PAGE_CONTROL_CLASS } from '@/components/layout/PageToolbar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,9 +36,14 @@ export default function DocumentOptionsMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button type="button" variant="ghost" size="icon-sm" aria-label={t('noteActions')}>
-          <MoreHorizontal />
-        </Button>
+        <button
+          type="button"
+          aria-label={t('noteActions')}
+          title={t('noteActions')}
+          className={cn(PAGE_CONTROL_CLASS, 'w-8 justify-center px-0')}
+        >
+          <EllipsisVertical aria-hidden="true" />
+        </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuItem asChild>

@@ -31,10 +31,10 @@
     "folder": "Esta carpeta está vacía.",
     "folderHint": "Suelta archivos aquí o usa Subir.",
     "filter": "Ninguna entrada coincide con «{filter}».",
-    "readOnly": "Plan muestra esta carpeta en solo lectura."
+    "readOnly": "Helena muestra esta carpeta en solo lectura."
   },
   "unreadable": {
-    "title": "Plan no puede leer esta carpeta",
+    "title": "Helena no puede leer esta carpeta",
     "body": "El espacio de trabajo pertenece al usuario de los agentes en el servidor. Ábrelo en VS Code.",
     "missing": "Esta carpeta no existe en el servidor."
   },

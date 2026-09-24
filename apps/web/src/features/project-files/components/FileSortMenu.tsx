@@ -1,6 +1,6 @@
 import { ArrowDownWideNarrow, ArrowUpNarrowWide } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Button } from '@/components/ui/button';
+import { PAGE_CONTROL_CLASS, usePageToolbarRoom } from '@/components/layout/PageToolbar';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -20,18 +20,19 @@ export default function FileSortMenu({
   onChange: (sort: FileSort) => void;
 }) {
   const t = useTranslations('files.toolbar');
+  const room = usePageToolbarRoom();
   const Icon = sort.descending ? ArrowDownWideNarrow : ArrowUpNarrowWide;
   const label = { name: t('sortName'), modified: t('sortModified'), size: t('sortSize') };
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-8" aria-label={t('sort')}>
-          <Icon />
-          {label[sort.key]}
-        </Button>
+        <button type="button" className={PAGE_CONTROL_CLASS} aria-label={t('sort')}>
+          <Icon aria-hidden="true" />
+          {room.actions ? <span>{label[sort.key]}</span> : null}
+        </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
+      <DropdownMenuContent align="end">
         {KEYS.map((key) => (
           <DropdownMenuCheckboxItem
             key={key}

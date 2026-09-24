@@ -128,7 +128,7 @@
       "any": "Beliebiger Status"
     },
     "assignee": {
-      "any": "Alle",
+      "any": "Alle Zuständigen",
       "me": "Mir zugewiesen",
       "agents": "An Agenten delegiert",
       "unassigned": "Nicht zugewiesen"
@@ -136,7 +136,7 @@
     "due": {
       "any": "Beliebige Fälligkeit",
       "overdue": "Überfällig",
-      "week": "Innerhalb einer Woche fällig"
+      "week": "Diese Woche fällig"
     },
     "groupBy": {
       "project": "Nach Projekt",
@@ -146,6 +146,17 @@
     "emptyHint": "Keine Aufgabe entspricht diesen Filtern.",
     "myOpenTasks": "Meine offenen Aufgaben",
     "viewAll": "Alle Aufgaben",
-    "noOpenTasks": "Dir ist keine offene Aufgabe zugewiesen."
+    "noOpenTasks": "Dir ist keine offene Aufgabe zugewiesen.",
+    "filter": {
+      "project": "Projekt",
+      "state": "Status",
+      "assignee": "Zuständig",
+      "due": "Fälligkeit",
+      "group": "Gruppierung",
+      "title": "Filter",
+      "reset": "Filter zurücksetzen"
+    },
+    "loadFailed": "Die Aufgaben konnten nicht geladen werden.",
+    "loadFailedHint": "Der Server hat nicht geantwortet. Versuche es gleich noch einmal."
   }
 }

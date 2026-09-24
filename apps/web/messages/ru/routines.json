@@ -28,7 +28,7 @@
   "presetEveryHour": "Каждый час",
   "presetEveryWeekdayAt9": "По будням в 9:00",
   "presetEveryDayAt9": "Каждый день в 9:00",
-  "inputPlaceholder": "Every weekday at 9:00 AM или 0 9 * * 1-5",
+  "inputPlaceholder": "напр. 0 9 * * 1-5",
   "runs": "Запуск: {description}",
   "cronLabel": "Cron:",
   "runsSuffix": "{description}",
@@ -75,5 +75,25 @@
   "empty": "Расписаний пока нет",
   "emptyHint": "Выберите агента, над чем он работает и как часто.",
   "homeHint": "Расписания всех проектов, агентов которых вы видите. Расписание меняется в его проекте.",
-  "homeEmptyHint": "Расписание создаётся на странице «Расписания» проекта."
+  "homeEmptyHint": "Расписание создаётся на странице «Расписания» проекта.",
+  "cron": {
+    "everyMinute": "Каждую минуту",
+    "everyNMinutes": "Каждые {n} мин",
+    "everyHour": "Каждый час",
+    "everyNHours": "Каждые {n} ч",
+    "everyNHoursAtMinute": "Каждые {n} ч, в {minute} мин каждого часа",
+    "at": "В {times}",
+    "everyNMinutesBetween": "Каждые {n} мин с {start} до {end}",
+    "everyHourBetween": "Каждый час с {start} до {end}",
+    "everyNHoursBetween": "Каждые {n} ч с {start} до {end}",
+    "atMinuteDuringHour": "Минута {minute}, час {hour}",
+    "onDays": "{days} числа",
+    "onDaysOrWeekdays": "{days} числа или {weekdays}",
+    "inMonths": "месяц: {months}",
+    "weekdays": "с понедельника по пятницу",
+    "weekends": "суббота и воскресенье",
+    "through": "{start} – {end}",
+    "dayOrdinal": "{n}"
+  },
+  "invalidSchedule": "Недопустимое расписание. Пример: 0 9 * * 1-5 (с понедельника по пятницу в 9:00)."
 }

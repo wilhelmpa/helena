@@ -32,7 +32,7 @@ export default function AccountConnectionRow({
   function action() {
     if (!connectedTo) {
       return (
-        <Button size="sm" disabled={busy} onClick={onConnect}>
+        <Button variant="outline" size="sm" disabled={busy} onClick={onConnect}>
           {t('connect')}
         </Button>
       );
@@ -48,9 +48,9 @@ export default function AccountConnectionRow({
   }
 
   return (
-    <div className="flex items-center justify-between gap-6 py-4">
+    <div className="flex items-center justify-between gap-4 px-4 py-3">
       <div className="flex min-w-0 items-center gap-3">
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-md border bg-muted/40">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-md border border-sidebar-border bg-background">
           {icon}
         </span>
         <div className="min-w-0">

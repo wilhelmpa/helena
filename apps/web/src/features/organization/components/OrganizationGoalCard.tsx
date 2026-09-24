@@ -39,7 +39,7 @@ export default function OrganizationGoalCard({
 
   return (
     <form
-      className="space-y-3 rounded-lg border p-4"
+      className="space-y-3 rounded-lg border bg-card p-4"
       onSubmit={(event) => {
         event.preventDefault();
         update.mutate({
@@ -58,13 +58,13 @@ export default function OrganizationGoalCard({
     >
       <div className="grid gap-3 md:grid-cols-2">
         <label className="space-y-1 text-sm">
-          <span className="text-muted-foreground">{t('fields.title')}</span>
+          <span className="block text-xs text-muted-foreground">{t('fields.title')}</span>
           <Input value={title} maxLength={160} onChange={(event) => setTitle(event.target.value)} />
         </label>
         <label className="space-y-1 text-sm">
-          <span className="text-muted-foreground">{t('fields.status')}</span>
+          <span className="block text-xs text-muted-foreground">{t('fields.status')}</span>
           <select
-            className="h-9 w-full rounded-md border bg-background px-3"
+            className="h-8 w-full rounded-md border bg-background px-2 text-sm"
             value={status}
             onChange={(event) => setStatus(event.target.value as OrganizationGoalStatus)}
           >
@@ -76,9 +76,9 @@ export default function OrganizationGoalCard({
           </select>
         </label>
         <label className="space-y-1 text-sm">
-          <span className="text-muted-foreground">{t('fields.department')}</span>
+          <span className="block text-xs text-muted-foreground">{t('fields.department')}</span>
           <select
-            className="h-9 w-full rounded-md border bg-background px-3"
+            className="h-8 w-full rounded-md border bg-background px-2 text-sm"
             value={departmentId}
             onChange={(event) => setDepartmentId(event.target.value)}
           >
@@ -91,9 +91,9 @@ export default function OrganizationGoalCard({
           </select>
         </label>
         <label className="space-y-1 text-sm">
-          <span className="text-muted-foreground">{t('fields.project')}</span>
+          <span className="block text-xs text-muted-foreground">{t('fields.project')}</span>
           <select
-            className="h-9 w-full rounded-md border bg-background px-3"
+            className="h-8 w-full rounded-md border bg-background px-2 text-sm"
             value={projectId}
             onChange={(event) => setProjectId(event.target.value)}
           >
@@ -106,9 +106,9 @@ export default function OrganizationGoalCard({
           </select>
         </label>
         <label className="space-y-1 text-sm">
-          <span className="text-muted-foreground">{t('fields.parentGoal')}</span>
+          <span className="block text-xs text-muted-foreground">{t('fields.parentGoal')}</span>
           <select
-            className="h-9 w-full rounded-md border bg-background px-3"
+            className="h-8 w-full rounded-md border bg-background px-2 text-sm"
             value={parentGoalId}
             onChange={(event) => setParentGoalId(event.target.value)}
           >
@@ -124,7 +124,7 @@ export default function OrganizationGoalCard({
         </label>
       </div>
       <label className="space-y-1 text-sm">
-        <span className="text-muted-foreground">{t('fields.targetDate')}</span>
+        <span className="block text-xs text-muted-foreground">{t('fields.targetDate')}</span>
         <Input
           type="date"
           value={targetDate}
@@ -132,7 +132,7 @@ export default function OrganizationGoalCard({
         />
       </label>
       <label className="space-y-1 text-sm">
-        <span className="text-muted-foreground">{t('fields.description')}</span>
+        <span className="block text-xs text-muted-foreground">{t('fields.description')}</span>
         <Textarea
           value={description}
           maxLength={2000}
@@ -142,14 +142,20 @@ export default function OrganizationGoalCard({
       <div className="flex justify-end gap-2">
         <Button
           type="button"
-          variant="destructive"
+          variant="ghost"
           size="sm"
+          className="text-destructive hover:text-destructive"
           disabled={remove.isPending}
           onClick={() => remove.mutate(goal.id)}
         >
           {t('actions.delete')}
         </Button>
-        <Button type="submit" size="sm" disabled={update.isPending || !title.trim()}>
+        <Button
+          type="submit"
+          variant="outline"
+          size="sm"
+          disabled={update.isPending || !title.trim()}
+        >
           {t('actions.save')}
         </Button>
       </div>

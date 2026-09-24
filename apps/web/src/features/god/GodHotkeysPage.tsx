@@ -7,18 +7,17 @@ import type { HotkeyOverrides } from '@/lib/api/endpoints/settings';
 import { DEFAULT_COMBOS } from '@/utils/hotkeys';
 import HotkeysEditor from '@/components/common/hotkeys/HotkeysEditor';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
-import { Button } from '@/components/ui/button';
 import GodSectionPage from './components/GodSectionPage';
 import {
   useInstanceHotkeySettingsQuery,
   useUpdateInstanceHotkeySettings,
 } from '@/services/hotkeys.service';
+import PageSaveAction from '@/components/common/page/PageSaveAction';
 
 // The instance keyboard shortcuts. What is stored is the set of commands rebound
 // away from their built-in key; a row reset to the default drops out of the map.
 export default function GodHotkeysPage() {
   const t = useTranslations('god.hotkeys');
-  const tCommon = useTranslations('common');
   const query = useInstanceHotkeySettingsQuery();
   const update = useUpdateInstanceHotkeySettings();
   const [draft, setDraft] = useState<HotkeyOverrides | null>(null);
@@ -38,14 +37,8 @@ export default function GodHotkeysPage() {
   }
 
   return (
-    <GodSectionPage
-      slug="hotkeys"
-      actions={
-        <Button size="sm" disabled={!dirty || update.isPending} onClick={() => void save()}>
-          {update.isPending ? tCommon('saving') : tCommon('save')}
-        </Button>
-      }
-    >
+    <GodSectionPage slug="hotkeys">
+      <PageSaveAction onSave={() => void save()} disabled={!dirty} saving={update.isPending} />
       {stored == null ? (
         <ListSkeleton rows={8} rowClassName="h-9" />
       ) : (

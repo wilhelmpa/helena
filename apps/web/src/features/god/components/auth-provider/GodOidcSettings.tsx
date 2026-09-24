@@ -26,7 +26,7 @@ export default function GodOidcSettings({ form }: { form: GodOidcForm }) {
         />
       }
     >
-      <SettingsCard className="space-y-6 p-4">
+      <SettingsCard className="space-y-4 p-4">
         <div className="space-y-1.5">
           <Label htmlFor="oidc-discovery-url">{t('discoveryUrl')}</Label>
           <Input

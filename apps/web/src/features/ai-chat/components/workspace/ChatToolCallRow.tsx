@@ -24,12 +24,12 @@ export default function ChatToolCallRow({ tool }: { tool: DynamicToolUIPart }) {
 
   return (
     <Collapsible>
-      <CollapsibleTrigger className="group flex min-h-7 w-full items-center gap-1.5 rounded-md px-1.5 text-start text-sm outline-none hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50">
+      <CollapsibleTrigger className="group flex h-7 w-full items-center gap-1.5 rounded-md px-1.5 text-start text-sm outline-none hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-ring/50">
         <ChevronRight className="size-3.5 shrink-0 text-muted-foreground transition-transform duration-150 group-data-[state=open]:rotate-90 rtl:group-data-[state=closed]:rotate-180" />
         {tool.state === 'output-error' ? (
-          <XCircle className="size-3.5 shrink-0 text-destructive" />
+          <XCircle className="size-3.5 shrink-0 text-status-danger" />
         ) : tool.state === 'output-available' ? (
-          <CheckCircle2 className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-500" />
+          <CheckCircle2 className="size-3.5 shrink-0 text-status-success" />
         ) : (
           <CircleDashed className="size-3.5 shrink-0 animate-spin text-muted-foreground" />
         )}
@@ -37,7 +37,7 @@ export default function ChatToolCallRow({ tool }: { tool: DynamicToolUIPart }) {
           {tool.toolName}
         </span>
       </CollapsibleTrigger>
-      <CollapsibleContent className="overflow-hidden ps-8 pe-1.5 motion-safe:data-[state=closed]:animate-collapsible-up motion-safe:data-[state=open]:animate-collapsible-down">
+      <CollapsibleContent className="overflow-hidden ps-6 pe-1.5 motion-safe:data-[state=closed]:animate-collapsible-up motion-safe:data-[state=open]:animate-collapsible-down">
         <div className="space-y-2 py-1.5">
           {input && (
             <div className="min-w-0">

@@ -1,15 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Copy, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTeamQuery } from '@/services/teams.service';
+import { useAiAgentsQuery } from '@/services/aiAgents.service';
 import { AI_AGENTS_SECTION } from '@/utils/settingsSections';
 import { useSettingsSectionText } from '@/hooks/useSectionLabels';
 import SectionPageView from '@/components/common/page/SectionPageView';
 import RequirePermission from '@/components/common/permissions/RequirePermission';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
-import { Button } from '@/components/ui/button';
+import { PageActions, PageToolbar, PageToolbarSpacer } from '@/components/layout/PageToolbar';
 import { AgentSectionProvider } from '../../context/agentSection';
 import ProjectAgentTemplateDialog from './ProjectAgentTemplateDialog';
 import ProjectAiAgents from './ProjectAiAgents';
@@ -28,24 +29,44 @@ export default function ProjectAiAgentsView({
   const sectionText = useSettingsSectionText()(section.slug);
   const permissions = useTeamQuery(teamId).data?.permissions.ai_agents;
   const [creating, setCreating] = useState(false);
+  const [fromTemplate, setFromTemplate] = useState(false);
+  const tSettings = useTranslations('settings.agents');
+  const hasTemplates = (useAiAgentsQuery(teamId).data ?? []).some((agent) => agent.template);
 
   return (
-    <SectionPageView
-      title={sectionText.label}
-      description={sectionText.description}
-      wide
-      actions={
-        permissions?.create ? (
-          <div className="flex items-center gap-2">
-            <ProjectAgentTemplateDialog teamId={teamId} projectId={projectId} />
-            <Button size="sm" className="h-8 gap-1.5" onClick={() => setCreating(true)}>
-              <Plus className="size-3.5" />
-              {t('newAgent')}
-            </Button>
-          </div>
-        ) : undefined
-      }
-    >
+    <SectionPageView title={sectionText.label} description={sectionText.description} wide>
+      {permissions?.create && (
+        <PageToolbar>
+          <PageToolbarSpacer />
+          <PageActions
+            actions={
+              hasTemplates
+                ? [
+                    {
+                      id: 'template',
+                      label: tSettings('newFromTemplate'),
+                      icon: Copy,
+                      onClick: () => setFromTemplate(true),
+                    },
+                  ]
+                : []
+            }
+            primary={{
+              id: 'new',
+              label: t('newAgent'),
+              icon: Plus,
+              onClick: () => setCreating(true),
+            }}
+          />
+        </PageToolbar>
+      )}
+      {fromTemplate && (
+        <ProjectAgentTemplateDialog
+          teamId={teamId}
+          projectId={projectId}
+          onClose={() => setFromTemplate(false)}
+        />
+      )}
       <RequirePermission resource={section.resource} action="read">
         {!permissions ? (
           <ListSkeleton rows={3} rowClassName="h-12" />

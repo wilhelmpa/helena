@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import Shell from '@/components/layout/Shell';
+import { EmptyState } from '@/components/common/page/EmptyState';
+import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { Button } from '@/components/ui/button';
 import { useTeamsQuery } from '@/services/teams.service';
 import { soleTeamId } from '@/utils/homeTeamScope';
@@ -19,16 +21,16 @@ export default function HomePipelinesPage() {
   return (
     <Shell globalHome globalTitle={t('workflows')} autoOpenGlobalChat={false}>
       {teams.isPending ? (
-        <div className="p-6 text-sm text-muted-foreground">{t('loading')}</div>
+        <div className="p-4">
+          <ListSkeleton rows={3} rowClassName="h-12" />
+        </div>
       ) : teamId == null ? (
-        <div className="flex h-full items-center justify-center p-6">
-          <div className="max-w-md rounded-lg border bg-card p-6 text-center">
-            <h1 className="text-lg font-semibold">{t('teamScopeRequired')}</h1>
-            <p className="mt-2 text-sm text-muted-foreground">{t('teamScopeRequiredHint')}</p>
-            <Button asChild className="mt-4">
+        <div className="flex h-full flex-col p-4">
+          <EmptyState title={t('teamScopeRequired')} description={t('teamScopeRequiredHint')}>
+            <Button asChild size="sm" variant="outline">
               <Link href={manageTeamsPath()}>{t('manageTeams')}</Link>
             </Button>
-          </div>
+          </EmptyState>
         </div>
       ) : (
         <PipelineLibrary teamId={teamId} />

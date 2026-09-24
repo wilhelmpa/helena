@@ -1,20 +1,24 @@
 import { ArrowLeft, PanelRight } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import type { VaultDocument } from '@/lib/api/endpoints/knowledge';
-import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { PAGE_CONTROL_CLASS } from '@/components/layout/PageToolbar';
 import type { NoteSaveStatus } from '../utils/noteDraft';
 import DocumentBreadcrumbs from './DocumentBreadcrumbs';
 import type { DocumentEditorDialog } from './DocumentEditorDialogs';
 import DocumentOptionsMenu from './DocumentOptionsMenu';
 import DocumentSaveStatus from './DocumentSaveStatus';
+import type { NoteToolbarParts } from './DocumentsToolbar';
 
-export default function DocumentEditorHeader({
+// The open note's parts of the Docs header row: on a phone a back arrow to the tree,
+// the breadcrumbs, the save state, the details panel toggle and the note's menu.
+export function noteToolbarParts({
   root,
   document,
   status,
   dirty,
   editable,
   inspectorOpen,
+  labels,
   onBack,
   onRetrySave,
   onToggleInspector,
@@ -26,49 +30,40 @@ export default function DocumentEditorHeader({
   dirty: boolean;
   editable: boolean;
   inspectorOpen: boolean;
+  labels: { back: string; openDetails: string; closeDetails: string };
   onBack: () => void;
   onRetrySave: () => void;
   onToggleInspector: () => void;
   onOpenDialog: (dialog: DocumentEditorDialog) => void;
-}) {
-  const t = useTranslations('documents');
-  const inspectorLabel = inspectorOpen ? t('closeDetails') : t('openDetails');
-
-  return (
-    <header className="flex h-12 shrink-0 items-center gap-2 border-b bg-background/90 px-2.5 backdrop-blur-md md:px-4">
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        className="shrink-0 md:hidden"
-        aria-label={t('backToDocuments')}
-        onClick={onBack}
-      >
-        <ArrowLeft className="rtl:rotate-180" />
-      </Button>
-
-      <DocumentBreadcrumbs root={root} path={document.path} />
-
-      <div className="ms-auto flex shrink-0 items-center gap-0.5">
-        <DocumentSaveStatus
-          status={status}
-          dirty={dirty}
-          editable={editable}
-          onRetry={onRetrySave}
-        />
-        <Button
+}): NoteToolbarParts {
+  return {
+    lead: (
+      <>
+        <button
           type="button"
-          variant={inspectorOpen ? 'secondary' : 'ghost'}
-          size="icon-sm"
-          aria-label={inspectorLabel}
-          aria-pressed={inspectorOpen}
-          title={inspectorLabel}
-          onClick={onToggleInspector}
+          aria-label={labels.back}
+          onClick={onBack}
+          className={cn(PAGE_CONTROL_CLASS, 'w-8 justify-center px-0 md:hidden')}
         >
-          <PanelRight />
-        </Button>
-        <DocumentOptionsMenu document={document} canEdit={editable} onOpenDialog={onOpenDialog} />
-      </div>
-    </header>
-  );
+          <ArrowLeft className="rtl:rotate-180" aria-hidden="true" />
+        </button>
+        <DocumentBreadcrumbs root={root} path={document.path} />
+      </>
+    ),
+    status: (
+      <DocumentSaveStatus status={status} dirty={dirty} editable={editable} onRetry={onRetrySave} />
+    ),
+    actions: [
+      {
+        id: 'details',
+        label: inspectorOpen ? labels.closeDetails : labels.openDetails,
+        icon: PanelRight,
+        active: inspectorOpen,
+        onClick: onToggleInspector,
+      },
+    ],
+    menu: (
+      <DocumentOptionsMenu document={document} canEdit={editable} onOpenDialog={onOpenDialog} />
+    ),
+  };
 }

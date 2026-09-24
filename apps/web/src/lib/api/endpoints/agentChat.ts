@@ -1,4 +1,4 @@
-import { API_URL, apiFailure, request } from '@/lib/api/core/client';
+import { API_URL, ApiError, apiFailure, request } from '@/lib/api/core/client';
 import { pageQuery, type Page, type PageParams } from '@/lib/api/core/paging';
 import type { AgentRunEvent } from '@/lib/api/endpoints/agents';
 
@@ -9,22 +9,28 @@ async function* readSseFrames(res: Response): AsyncGenerator<{ id: number | null
   if (!res.ok || !res.body) throw await apiFailure(res);
   const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
   let buffer = '';
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) return;
-    buffer += value;
-    let sep: number;
-    while ((sep = buffer.indexOf('\n\n')) !== -1) {
-      const lines = buffer.slice(0, sep).split('\n');
-      buffer = buffer.slice(sep + 2);
-      const dataLine = lines.find((l) => l.startsWith('data:'));
-      if (!dataLine) continue;
-      const idLine = lines.find((l) => l.startsWith('id:'));
-      yield {
-        id: idLine ? Number(idLine.slice(3).trim()) : null,
-        data: dataLine.slice(5).trim(),
-      };
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) return;
+      buffer += value;
+      let sep: number;
+      while ((sep = buffer.indexOf('\n\n')) !== -1) {
+        const lines = buffer.slice(0, sep).split('\n');
+        buffer = buffer.slice(sep + 2);
+        const dataLine = lines.find((l) => l.startsWith('data:'));
+        if (!dataLine) continue;
+        const idLine = lines.find((l) => l.startsWith('id:'));
+        yield {
+          id: idLine ? Number(idLine.slice(3).trim()) : null,
+          data: dataLine.slice(5).trim(),
+        };
+      }
     }
+  } finally {
+    // A reader that stops early (the answer ended, or the caller left) lets go of the
+    // connection instead of leaving it open until the server closes it.
+    reader.cancel().catch(() => {});
   }
 }
 
@@ -41,9 +47,28 @@ export interface AgUiEvent {
   isError?: boolean;
 }
 
-// How many times a dropped stream is picked up again. The answer keeps being produced
-// on the operator's machine either way; this only decides how long the browser follows it.
-const CHAT_STREAM_RETRIES = 3;
+// How many times in a row a dropped stream is picked up again before the browser stops
+// following it. A connection that delivered something before it dropped resets the
+// count: only a stream that keeps failing without progress is given up. The answer keeps
+// being produced on the operator's machine either way; this only decides how long the
+// browser follows it.
+// `backoffMs` is the wait before the first reconnect, doubled for each one after it.
+// Mutable only for tests.
+export const chatStreamConfig = { retries: 5, backoffMs: 400 };
+
+// Resolves after `ms`, or at once when `signal` is aborted.
+function pause(ms: number, signal: AbortSignal | undefined): Promise<void> {
+  return new Promise((resolve) => {
+    if (signal?.aborted) return resolve();
+    const timer = setTimeout(done, ms);
+    function done() {
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', done);
+      resolve();
+    }
+    signal?.addEventListener('abort', done, { once: true });
+  });
+}
 
 export function agentChatBase(scopeKey: string, agentId: number): string {
   const team = /^team:(\d+)$/.exec(scopeKey);
@@ -160,51 +185,89 @@ async function* streamExistingAiAgentChat(
   }
 }
 
-// The AG-UI events of one answer, from the first, until the answer ends on RUN_FINISHED
-// or RUN_ERROR, which are yielded too. A dropped connection is picked up again from the
-// last event read. Aborting `signal` also asks the API to stop the answer.
+// Asks the API to stop an answer. The runner reads the stop on its next report and ends
+// the command; what the agent wrote until then stays in the transcript.
+export const cancelAiAgentChatAnswer = (scopeKey: string, agentId: number, messageId: number) =>
+  request<void>(`${agentChatBase(scopeKey, agentId)}/chat/${messageId}/cancel`, {
+    method: 'POST',
+  });
+
+// Thrown by streamAnswerEvents when it gave up following an answer: the connection kept
+// dropping, or kept closing before the answer ended. The answer itself may still be
+// running on the operator's machine.
+export class AnswerStreamLostError extends Error {
+  constructor(cause?: unknown) {
+    super('The connection to the answer was lost', { cause });
+    this.name = 'AnswerStreamLostError';
+  }
+}
+
+// The AG-UI events of one answer, from the event after `after` (0: the first), until the
+// answer ends on RUN_FINISHED or RUN_ERROR, which are yielded too. A dropped connection
+// is picked up again from the last event read — the server also closes a stream on its
+// own after a long while, which is a reconnect, not an end. Throws AnswerStreamLostError
+// when it could not keep following the answer (see chatStreamConfig).
+//
+// By default aborting `signal` also asks the API to stop the answer — the old panel's
+// meaning of closing its stream. `cancelOnAbort: false` keeps the two apart: leaving a
+// conversation then only stops following it, and the answer finishes in the background
+// (the chat workspace, where several chats may be answering at once, stops an answer
+// explicitly with cancelAiAgentChatAnswer instead).
 export async function* streamAnswerEvents(
   scopeKey: string,
   agentId: number,
   messageId: number,
   signal?: AbortSignal,
+  options: { cancelOnAbort?: boolean } = {},
 ): AsyncGenerator<AgUiEvent> {
   const chat = agentChatBase(scopeKey, agentId) + '/chat/' + messageId;
   const cancel = () => {
     // A stop the API refused leaves the answer being produced. The stream this belongs
     // to is already gone, so the console is the only place left to report it.
-    request(`${chat}/cancel`, { method: 'POST' }).catch((err) => {
+    cancelAiAgentChatAnswer(scopeKey, agentId, messageId).catch((err) => {
       console.error('Could not stop the answer', err);
     });
   };
-  if (signal?.aborted) cancel();
-  else signal?.addEventListener('abort', cancel, { once: true });
+  const cancelOnAbort = options.cancelOnAbort ?? true;
+  if (cancelOnAbort) {
+    if (signal?.aborted) cancel();
+    else signal?.addEventListener('abort', cancel, { once: true });
+  }
   try {
     const base = `${API_URL}${chat}/stream`;
     let after = 0;
+    let failures = 0;
     // The answer always ends on a terminal event, so a stream that closed without one was
     // cut: pick it up again from the last event already shown.
-    for (let attempt = 0; attempt <= CHAT_STREAM_RETRIES; attempt++) {
-      let ended = false;
+    for (;;) {
+      let progressed = false;
+      let lastError: unknown = null;
       try {
         const res = await fetch(`${base}?after=${after}`, { credentials: 'include', signal });
         for await (const frame of readSseFrames(res)) {
+          progressed = true;
           after = frame.id ?? after;
           const event = JSON.parse(frame.data) as AgUiEvent;
           yield event;
-          if (event.type === 'RUN_FINISHED' || event.type === 'RUN_ERROR') {
-            ended = true;
-            break;
-          }
+          if (event.type === 'RUN_FINISHED' || event.type === 'RUN_ERROR') return;
         }
       } catch (err) {
         if (signal?.aborted) throw err;
-        if (attempt === CHAT_STREAM_RETRIES) throw err;
+        // Refused outright (the answer is not the caller's, or gone): asking again cannot
+        // change that. Throttled or a server hiccup is worth another try.
+        if (err instanceof ApiError && err.status >= 400 && err.status < 500) {
+          if (err.status !== 408 && err.status !== 429) throw new AnswerStreamLostError(err);
+        }
+        lastError = err;
       }
-      if (ended) break;
+      if (signal?.aborted) return;
+      failures = progressed ? 0 : failures + 1;
+      if (failures > chatStreamConfig.retries) throw new AnswerStreamLostError(lastError);
+      await pause(chatStreamConfig.backoffMs * 2 ** Math.max(0, failures - 1), signal);
+      if (signal?.aborted) return;
     }
   } finally {
-    signal?.removeEventListener('abort', cancel);
+    if (cancelOnAbort) signal?.removeEventListener('abort', cancel);
   }
 }
 
@@ -448,6 +511,11 @@ export interface ChatSummary {
   match?: 'title' | 'user' | 'assistant';
   createdAt: string;
   updatedAt: string;
+  // The model and reasoning level the chat was last sent with (null: the agent's
+  // default), and the coding-agent session an external agent keeps for it.
+  model: string | null;
+  thinkingLevel: string | null;
+  cliSessionId: string | null;
   // The context size after the chat's last completed answer: absent while no answer
   // has completed, null where the agent reports no counts that can be read as one.
   contextTokens?: number | null;

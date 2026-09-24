@@ -175,5 +175,8 @@
       "perClosedTask": "Por tarefa concluída",
       "closedTasks": "{count, plural, =0 {Nenhuma tarefa concluída com agentes este mês} one {# tarefa concluída com agentes este mês} other {# tarefas concluídas com agentes este mês}}"
     }
-  }
+  },
+  "managerRequiredTitle": "Sem acesso",
+  "loadFailed": "Não foi possível carregar a organização.",
+  "loadFailedHint": "O servidor não respondeu. Tente de novo em instantes."
 }

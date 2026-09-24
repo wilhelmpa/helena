@@ -28,7 +28,7 @@
   "presetEveryHour": "Every hour",
   "presetEveryWeekdayAt9": "Every weekday at 9:00 AM",
   "presetEveryDayAt9": "Every day at 9:00 AM",
-  "inputPlaceholder": "Every weekday at 9:00 AM or 0 9 * * 1-5",
+  "inputPlaceholder": "e.g. 0 9 * * 1-5",
   "runs": "Runs: {description}",
   "cronLabel": "Cron:",
   "runsSuffix": "{description}",
@@ -75,5 +75,25 @@
   "empty": "No schedules yet",
   "emptyHint": "Pick an agent, what it works on and how often.",
   "homeHint": "The schedules of every project whose agents you can see. A schedule is changed in its project.",
-  "homeEmptyHint": "A schedule is created on the Schedules page of a project."
+  "homeEmptyHint": "A schedule is created on the Schedules page of a project.",
+  "cron": {
+    "everyMinute": "Every minute",
+    "everyNMinutes": "Every {n} minutes",
+    "everyHour": "Every hour",
+    "everyNHours": "Every {n} hours",
+    "everyNHoursAtMinute": "Every {n} hours, {minute} minutes past the hour",
+    "at": "At {times}",
+    "everyNMinutesBetween": "Every {n} minutes from {start} to {end}",
+    "everyHourBetween": "Every hour from {start} to {end}",
+    "everyNHoursBetween": "Every {n} hours from {start} to {end}",
+    "atMinuteDuringHour": "Minute {minute}, hour {hour}",
+    "onDays": "on the {days}",
+    "onDaysOrWeekdays": "on the {days} or on {weekdays}",
+    "inMonths": "in {months}",
+    "weekdays": "Monday to Friday",
+    "weekends": "Saturday and Sunday",
+    "through": "{start} to {end}",
+    "dayOrdinal": "{n, selectordinal, one {#st} two {#nd} few {#rd} other {#th}}"
+  },
+  "invalidSchedule": "Not a valid schedule. Example: 0 9 * * 1-5 (Monday to Friday at 9:00)."
 }

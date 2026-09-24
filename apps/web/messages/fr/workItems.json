@@ -146,6 +146,17 @@
     "emptyHint": "Aucun ticket ne correspond à ces filtres.",
     "myOpenTasks": "Mes tickets ouverts",
     "viewAll": "Tous les tickets",
-    "noOpenTasks": "Aucun ticket ouvert ne vous est assigné."
+    "noOpenTasks": "Aucun ticket ouvert ne vous est assigné.",
+    "filter": {
+      "project": "Projet",
+      "state": "État",
+      "assignee": "Responsable",
+      "due": "Échéance",
+      "group": "Regrouper",
+      "title": "Filtre",
+      "reset": "Réinitialiser les filtres"
+    },
+    "loadFailed": "Impossible de charger les tâches.",
+    "loadFailedHint": "Le serveur n’a pas répondu. Réessaie dans un instant."
   }
 }

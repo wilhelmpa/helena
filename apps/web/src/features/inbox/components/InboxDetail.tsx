@@ -30,7 +30,7 @@ export default function InboxDetail({
         isMobile={isMobile}
         onBack={onBack}
       />
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 xl:px-10">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 xl:px-10">
         <IssueDetailContent
           project={project}
           issueId={issueId}

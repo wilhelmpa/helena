@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { RotateCcw } from 'lucide-react';
+import { Keyboard, RotateCcw, X } from 'lucide-react';
 import { comboFromEvent, formatCombo, type HotkeyDef } from '@/utils/hotkeys';
 import { useIsMac } from '@/context/useHotkeys';
 import { Button } from '@/components/ui/button';
@@ -51,7 +51,7 @@ export default function HotkeysEditorRow({
   }, [recording, onRecord]);
 
   return (
-    <div className="flex items-center gap-4 py-2">
+    <div className="flex min-h-11 items-center gap-3 px-4 py-1.5">
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm">{t(`commands.${def.id}`)}</p>
         {conflictWith && (
@@ -61,18 +61,30 @@ export default function HotkeysEditorRow({
         )}
       </div>
       <kbd
-        className={`w-24 shrink-0 rounded px-1.5 py-1 text-center font-mono text-[11px] ${
-          recording ? 'bg-accent text-accent-foreground' : 'bg-muted text-foreground'
+        className={`w-16 shrink-0 rounded-md border border-sidebar-border px-1.5 py-1 text-center font-mono text-xs sm:w-24 ${
+          recording ? 'bg-accent text-accent-foreground' : 'bg-background text-foreground'
         }`}
       >
         {recording ? t('pressKeys') : formatCombo(combo, isMac)}
       </kbd>
       {def.fixed ? (
-        <span className="w-28 shrink-0 text-right text-xs text-muted-foreground">{t('fixed')}</span>
+        <span className="shrink-0 text-end text-xs text-muted-foreground sm:w-28">
+          {t('fixed')}
+        </span>
       ) : (
-        <div className="flex w-28 shrink-0 justify-end gap-1">
-          <Button variant="ghost" size="sm" onClick={() => setRecording((r) => !r)}>
-            {recording ? tCommon('cancel') : tCommon('change')}
+        <div className="flex shrink-0 justify-end gap-1 sm:w-28">
+          {/* On a phone the command name needs the room: the button keeps its icon. */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="max-sm:size-8 max-sm:px-0"
+            aria-label={recording ? tCommon('cancel') : tCommon('change')}
+            onClick={() => setRecording((r) => !r)}
+          >
+            {recording ? <X className="sm:hidden" /> : <Keyboard className="sm:hidden" />}
+            <span className="max-sm:hidden">
+              {recording ? tCommon('cancel') : tCommon('change')}
+            </span>
           </Button>
           <Button
             variant="ghost"

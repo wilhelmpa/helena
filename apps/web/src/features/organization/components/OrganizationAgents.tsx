@@ -16,7 +16,11 @@ export default function OrganizationAgents({
   const t = useTranslations('organization');
 
   if (agents.length === 0) {
-    return <p className="text-sm text-muted-foreground">{t('agents.empty')}</p>;
+    return (
+      <p className="rounded-lg border bg-card px-3 py-2 text-sm text-muted-foreground">
+        {t('agents.empty')}
+      </p>
+    );
   }
 
   return (

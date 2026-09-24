@@ -92,7 +92,7 @@ export default function LastCommentBubble({
               target?.scrollIntoView({ block: 'center' });
             }}
           >
-            <Avatar name={author} image={image} className="mt-0.5 size-5 text-[10px]" />
+            <Avatar name={author} image={image} className="mt-0.5 size-5" />
             <span className="min-w-0">
               <span className="flex items-baseline gap-2">
                 <span className="truncate text-sm font-medium">{author}</span>

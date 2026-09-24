@@ -18,17 +18,18 @@ export default function AgentActivityDetails({ entry }: { entry: AgentActivityEn
         variant="ghost"
         size="sm"
         className="h-7"
+        aria-label={t('openChat')}
         onClick={() => onOpenChatThread(target.agentId, target.threadId)}
       >
         <MessageSquare />
-        {t('openChat')}
+        <span className="max-sm:hidden">{t('openChat')}</span>
       </Button>
     );
   return (
     <Button asChild variant="ghost" size="sm" className="h-7">
-      <Link href={target.href}>
+      <Link href={target.href} aria-label={t('openRun')}>
         <ArrowUpRight />
-        {t('openRun')}
+        <span className="max-sm:hidden">{t('openRun')}</span>
       </Link>
     </Button>
   );

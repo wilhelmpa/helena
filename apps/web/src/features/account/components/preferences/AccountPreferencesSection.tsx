@@ -1,28 +1,29 @@
 import type { ReactNode } from 'react';
+import SettingsCard from '@/components/common/page/SettingsCard';
+import SettingsSection from '@/components/common/page/SettingsSection';
 
-// A group of related preferences: a heading over an optional explanation, then the
-// rows themselves. Groups are separated by space and a rule, the way the Profile
-// page separates its blocks; the rows carry no box of their own, so every control
-// lines up down the page instead of sitting in stacked cards.
+// A group of related preferences in the settings look every settings page shares: the
+// group's title on the left, its rows in one sidebar-toned card on the right.
 export default function AccountPreferencesSection({
   id,
   title,
   description,
+  bare = false,
   children,
 }: {
-  // The anchor the section rail scrolls to.
+  // The anchor a link to one group of the page lands on.
   id: string;
   title: string;
   description?: string;
+  // For content that brings its own cards (the shortcut editor).
+  bare?: boolean;
   children: ReactNode;
 }) {
   return (
-    <section id={id} className="scroll-mt-16 border-t py-8 first:border-t-0 first:pt-0">
-      <div className="mb-1">
-        <h2 className="text-sm font-medium">{title}</h2>
-        {description && <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
-      </div>
-      <div className="divide-y divide-border/60">{children}</div>
-    </section>
+    <div id={id} className="scroll-mt-4">
+      <SettingsSection title={title} description={description}>
+        {bare ? children : <SettingsCard className="divide-y">{children}</SettingsCard>}
+      </SettingsSection>
+    </div>
   );
 }

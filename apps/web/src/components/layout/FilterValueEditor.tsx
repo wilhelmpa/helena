@@ -30,7 +30,7 @@ export default function FilterValueEditor({
   if (cond.op === 'is_set' || cond.op === 'is_not_set') return null;
 
   const trigger = (
-    <button type="button" className="max-w-40 truncate rounded px-1 text-xs hover:bg-accent">
+    <button type="button" className="h-6 max-w-48 truncate rounded px-1 text-sm hover:bg-accent">
       {valuesLabel(spec, cond)}
     </button>
   );
@@ -64,7 +64,7 @@ export default function FilterValueEditor({
         value={current}
         placeholder={t('valuePlaceholder')}
         onChange={(e) => onChange(e.target.value ? [e.target.value] : [])}
-        className="h-6 w-36 px-1.5 py-0 text-xs"
+        className="h-6 w-40 px-1.5 py-0 text-sm"
       />
     );
   }
@@ -77,7 +77,7 @@ export default function FilterValueEditor({
         value={current}
         placeholder={t('valuePlaceholder')}
         onChange={(e) => onChange(e.target.value === '' ? [] : [Number(e.target.value)])}
-        className="h-6 w-24 px-1.5 py-0 text-xs"
+        className="h-6 w-24 px-1.5 py-0 text-sm"
       />
     );
   }
@@ -101,7 +101,7 @@ export default function FilterValueEditor({
                 type="button"
                 onClick={() => toggle(o.value)}
                 className={cn(
-                  'flex w-full items-center gap-2 rounded px-2 py-1 text-start text-sm hover:bg-accent',
+                  'flex h-8 w-full items-center gap-2 rounded-md px-2 text-start text-sm hover:bg-accent',
                   checked && 'font-medium',
                 )}
               >

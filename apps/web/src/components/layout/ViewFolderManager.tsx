@@ -17,6 +17,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
+import { PAGE_CONTROL_CLASS } from '@/components/layout/PageToolbar';
+import { cn } from '@/lib/utils';
 import AreaDialog from '@/components/layout/AreaDialog';
 
 type FolderDialog =
@@ -55,12 +57,13 @@ export default function ViewFolderManager({
           <button
             type="button"
             title={t('manageFolders')}
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+            aria-label={t('manageFolders')}
+            className={cn(PAGE_CONTROL_CLASS, 'w-8 justify-center px-0')}
           >
-            <FolderCog className="size-4" />
+            <FolderCog aria-hidden="true" />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-64">
+        <DropdownMenuContent align="end" className="w-64">
           <DropdownMenuItem onSelect={() => setDialog({ kind: 'create' })}>
             <FolderPlus /> {t('newFolder')}
           </DropdownMenuItem>

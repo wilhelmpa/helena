@@ -3,12 +3,12 @@
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import type { InstanceEmailSettings } from '@/lib/api/endpoints/god';
-import { Button } from '@/components/ui/button';
 import GodEmailSettings from './components/email/GodEmailSettings';
 import GodSectionPage from './components/GodSectionPage';
 import GodSettingsGate from './components/GodSettingsGate';
 import { useGodEmailForm } from './hooks/useGodEmailForm';
 import { useInstanceEmailSettingsQuery } from './services/god.service';
+import PageSaveAction from '@/components/common/page/PageSaveAction';
 
 export default function GodEmailPage() {
   const query = useInstanceEmailSettingsQuery();
@@ -22,7 +22,6 @@ export default function GodEmailPage() {
 
 function EmailForm({ settings }: { settings: InstanceEmailSettings }) {
   const t = useTranslations('god.email');
-  const tCommon = useTranslations('common');
   const form = useGodEmailForm(settings);
 
   async function save() {
@@ -35,14 +34,8 @@ function EmailForm({ settings }: { settings: InstanceEmailSettings }) {
   }
 
   return (
-    <GodSectionPage
-      slug="email"
-      actions={
-        <Button size="sm" onClick={() => void save()} disabled={!form.dirty || form.saving}>
-          {form.saving ? tCommon('saving') : tCommon('save')}
-        </Button>
-      }
-    >
+    <GodSectionPage slug="email">
+      <PageSaveAction onSave={() => void save()} disabled={!form.dirty} saving={form.saving} />
       <GodEmailSettings form={form} />
     </GodSectionPage>
   );

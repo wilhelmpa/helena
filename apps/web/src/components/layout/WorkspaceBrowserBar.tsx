@@ -36,7 +36,7 @@ export default function WorkspaceBrowserBar({
       <Button
         variant="ghost"
         size="icon"
-        className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
+        className="size-7 shrink-0 text-muted-foreground hover:text-foreground max-sm:hidden"
         disabled={!id}
         onClick={() => act({ action: 'back', id })}
         title={t('back')}
@@ -47,7 +47,7 @@ export default function WorkspaceBrowserBar({
       <Button
         variant="ghost"
         size="icon"
-        className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
+        className="size-7 shrink-0 text-muted-foreground hover:text-foreground max-sm:hidden"
         disabled={!id}
         onClick={() => act({ action: 'forward', id })}
         title={t('forward')}
@@ -113,7 +113,11 @@ export default function WorkspaceBrowserBar({
           <Bot />
         </Button>
       )}
-      <WorkspaceBrowserViewSwitch view={view} onChange={onViewChange} />
+      {/* A phone keeps reload, the address, the tabs and "follow the agent"; back,
+          forward and the Live/Desktop switch need a wider panel. */}
+      <div className="contents max-sm:hidden">
+        <WorkspaceBrowserViewSwitch view={view} onChange={onViewChange} />
+      </div>
     </div>
   );
 }

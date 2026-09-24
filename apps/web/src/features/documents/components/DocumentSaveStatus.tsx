@@ -1,6 +1,6 @@
 import { Check, CircleAlert, Eye, LoaderCircle, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Button } from '@/components/ui/button';
+import { PAGE_CONTROL_CLASS } from '@/components/layout/PageToolbar';
 import { cn } from '@/lib/utils';
 import type { NoteSaveStatus } from '../utils/noteDraft';
 
@@ -38,7 +38,7 @@ export default function DocumentSaveStatus({
     <>
       <div
         className={cn(
-          'me-1 flex h-7 items-center gap-1.5 px-1 text-[11px]',
+          'flex h-8 shrink-0 items-center gap-1.5 px-1 text-xs',
           status === 'error'
             ? 'text-destructive'
             : status === 'conflict'
@@ -49,20 +49,19 @@ export default function DocumentSaveStatus({
         aria-live="polite"
         title={text}
       >
-        <Icon className={cn('size-3', Icon === LoaderCircle && 'animate-spin')} />
-        <span className="hidden lg:inline">{text}</span>
+        <Icon className={cn('size-3.5', Icon === LoaderCircle && 'animate-spin')} />
+        <span className="hidden xl:inline">{text}</span>
       </div>
       {status === 'error' && (
-        <Button
+        <button
           type="button"
-          variant="ghost"
-          size="icon-sm"
           aria-label={t('retrySave')}
           title={t('retrySave')}
           onClick={onRetry}
+          className={cn(PAGE_CONTROL_CLASS, 'w-8 justify-center px-0')}
         >
-          <RefreshCw />
-        </Button>
+          <RefreshCw aria-hidden="true" />
+        </button>
       )}
     </>
   );

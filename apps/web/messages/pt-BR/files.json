@@ -31,10 +31,10 @@
     "folder": "Esta pasta está vazia.",
     "folderHint": "Solte arquivos aqui ou use Enviar.",
     "filter": "Nenhuma entrada corresponde a “{filter}”.",
-    "readOnly": "O Plan mostra esta pasta somente para leitura."
+    "readOnly": "A Helena mostra esta pasta somente para leitura."
   },
   "unreadable": {
-    "title": "O Plan não consegue ler esta pasta",
+    "title": "A Helena não consegue ler esta pasta",
     "body": "O espaço de trabalho pertence ao usuário dos agentes no servidor. Abra-o no VS Code.",
     "missing": "Esta pasta não existe no servidor."
   },

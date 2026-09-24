@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
@@ -12,6 +12,7 @@ import { useProjectsQuery } from '@/services/projects.service';
 import { qk } from '@/services/queryKeys';
 import { revScope } from '@/utils/revScopes';
 import MailFilterBar, { type InboxFilters } from './MailFilterBar';
+import MailPageToolbar from './MailPageToolbar';
 import MailReadingPane from './MailReadingPane';
 import MailThreadList from './MailThreadList';
 import ProjectPickerDialog from './ProjectPickerDialog';
@@ -26,8 +27,20 @@ import {
 // The inbox: every thread the reader reaches, newest first, and the selected one
 // beside the list. The project inbox shows the threads filed under the project; Home
 // shows all of them with a project filter. The selected thread is in the URL
-// (?thread=), so a task or a note links straight to it.
-export default function MailInbox({ teamId, projectId }: { teamId: number; projectId?: number }) {
+// (?thread=), so a task or a note links straight to it. On a page (`toolbar`) its
+// controls are the page's header row, after the page's own tabs (`leading`); in the
+// tool panel they are the inbox's own bar.
+export default function MailInbox({
+  teamId,
+  projectId,
+  toolbar = false,
+  leading,
+}: {
+  teamId: number;
+  projectId?: number;
+  toolbar?: boolean;
+  leading?: ReactNode;
+}) {
   const t = useTranslations('mail');
   const router = useRouter();
   const pathname = usePathname();
@@ -145,20 +158,35 @@ export default function MailInbox({ teamId, projectId }: { teamId: number; proje
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <MailFilterBar
-        teamId={teamId}
-        filters={filters}
-        onFiltersChange={setFilters}
-        search={search}
-        onSearchChange={setSearch}
-        searchRef={searchRef}
-        accounts={accounts.data ?? []}
-        projects={projectId == null ? projects : null}
-        onCompose={() => draft('new')}
-      />
+      {toolbar ? (
+        <MailPageToolbar
+          leading={leading}
+          teamId={teamId}
+          filters={filters}
+          onFiltersChange={setFilters}
+          search={search}
+          onSearchChange={setSearch}
+          searchRef={searchRef}
+          accounts={accounts.data ?? []}
+          projects={projectId == null ? projects : null}
+          onCompose={() => draft('new')}
+        />
+      ) : (
+        <MailFilterBar
+          teamId={teamId}
+          filters={filters}
+          onFiltersChange={setFilters}
+          search={search}
+          onSearchChange={setSearch}
+          searchRef={searchRef}
+          accounts={accounts.data ?? []}
+          projects={projectId == null ? projects : null}
+          onCompose={() => draft('new')}
+        />
+      )}
       <div className="flex min-h-0 flex-1">
         <MailThreadList
-          className={`w-full md:w-96 md:shrink-0 md:border-e ${selectedId ? 'hidden md:flex' : 'flex'}`}
+          className={`w-full bg-card md:w-96 md:shrink-0 md:border-e ${selectedId ? 'hidden md:flex' : 'flex'}`}
           rows={rows}
           selectedId={selectedId}
           showProject={projectId == null}
@@ -182,7 +210,7 @@ export default function MailInbox({ teamId, projectId }: { teamId: number; proje
               onRemoved={() => select(neighbour())}
             />
           ) : (
-            <p className="m-auto p-6 text-sm text-muted-foreground">{t('inbox.nothingSelected')}</p>
+            <p className="m-auto p-4 text-sm text-muted-foreground">{t('inbox.nothingSelected')}</p>
           )}
         </div>
       </div>

@@ -1,0 +1,32 @@
+{
+  "stepUp": {
+    "title": "Konfirmasi bahwa ini kamu",
+    "description": "Masukkan kode dari aplikasi autentikator untuk membuka terminal selama 12 jam.",
+    "codeLabel": "Kode",
+    "confirm": "Konfirmasi",
+    "verifying": "Memeriksa…",
+    "wrongCode": "Kode tidak diterima.",
+    "rateLimited": "Terlalu banyak percobaan. Tunggu 15 menit lalu coba lagi."
+  },
+  "grant": {
+    "active": "Terminal diizinkan hingga {time}",
+    "expired": "Izin terminal telah berakhir.",
+    "end": "Akhiri",
+    "lan": "Terminal terbuka tanpa kode (LAN)"
+  },
+  "kinds": {
+    "shell": "Shell",
+    "claude": "Claude Code",
+    "codex": "Codex",
+    "helena-dev-claude": "Kembangkan Helena (Claude Code)",
+    "helena-dev-codex": "Kembangkan Helena (Codex)",
+    "close": "Tutup tab"
+  },
+  "keys": {
+    "esc": "Esc",
+    "tab": "Tab",
+    "ctrl": "Ctrl",
+    "alt": "Alt",
+    "paste": "Tempel"
+  }
+}

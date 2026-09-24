@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import FileViewer from '@/components/common/files/FileViewer';
 import { fileRawUrl, type FileScope } from '@/lib/api/endpoints/projectFiles';
 import { useFilesQuery } from '@/services/files.service';
@@ -26,6 +26,7 @@ export interface FilePermissions {
 // entries dragged onto folders, the dialogs of its actions and the viewer of the file
 // `selected` names.
 export default function FileBrowser({
+  leading,
   scope,
   path,
   selected,
@@ -34,6 +35,8 @@ export default function FileBrowser({
   onNavigate,
   onSelect,
 }: {
+  // The page's own controls that lead the header toolbar (the project's Wissen/Code tabs).
+  leading?: ReactNode;
   scope: FileScope;
   path: string;
   selected: string | null;
@@ -73,6 +76,7 @@ export default function FileBrowser({
   return (
     <div className="relative flex min-h-0 flex-1 flex-col gap-3" {...transfers.dropHandlers}>
       <FileToolbar
+        leading={leading}
         view={view}
         canCreate={can.create}
         codeUrl={folderCodeUrl}

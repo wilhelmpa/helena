@@ -127,7 +127,7 @@
   "accounts": {
     "title": "Cuentas de correo",
     "add": "Añadir cuenta",
-    "intro": "Plan importa todas las carpetas de estas cuentas por IMAP, con los adjuntos, y envía por SMTP. El correo de una cuenta de proyecto se archiva en ese proyecto.",
+    "intro": "Helena importa todas las carpetas de estas cuentas por IMAP, con los adjuntos, y envía por SMTP. El correo de una cuenta de proyecto se archiva en ese proyecto.",
     "projectIntro": "Las cuentas cuyo correo se archiva en este proyecto.",
     "loadError": "No se han podido cargar las cuentas.",
     "empty": "Aún no hay ninguna cuenta de correo.",
@@ -147,7 +147,7 @@
     "progress": "{synced} de {total} mensajes",
     "lastSync": "Última comprobación {at}",
     "removeTitle": "¿Quitar {address}?",
-    "removeBody": "El correo importado de esta cuenta se quita de Plan. Los adjuntos guardados en el Vault se mantienen.",
+    "removeBody": "El correo importado de esta cuenta se quita de Helena. Los adjuntos guardados en el Vault se mantienen.",
     "testFailed": "Conexión fallida: {error}",
     "testOk": "IMAP y SMTP han aceptado el inicio de sesión.",
     "saved": "{address} guardada",
@@ -179,7 +179,8 @@
     "smtpHost": "Servidor SMTP",
     "port": "Puerto",
     "tls": "TLS desde el inicio (desactivado: STARTTLS)",
-    "username": "Nombre de usuario"
+    "username": "Nombre de usuario",
+    "team": "Equipo"
   },
   "rules": {
     "title": "Reglas de archivado",

@@ -13,7 +13,8 @@ import { useUpdateAccountPreferences } from '@/services/preferences.service';
 // devices; PreferencesSync hands the stored value back to next-themes on load. The
 // icon is rendered only after mount so the server and client markup match (the
 // resolved theme is unknown during SSR).
-export function ThemeToggle() {
+// `ghost` is the sidebar-footer look (no outline box); `outline` the classic header's.
+export function ThemeToggle({ variant = 'outline' }: { variant?: 'outline' | 'ghost' }) {
   const t = useTranslations('common');
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -26,9 +27,9 @@ export function ThemeToggle() {
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
-          variant="outline"
+          variant={variant}
           size="icon"
-          className="size-8 shrink-0"
+          className="size-8 shrink-0 text-muted-foreground hover:text-foreground"
           aria-label={t('toggleTheme')}
           disabled={update.isPending}
           onClick={() => {

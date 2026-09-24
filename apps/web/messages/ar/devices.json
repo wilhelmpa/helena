@@ -5,7 +5,7 @@
   "ownerOnly": "مالك المثيل وحده يدير الأجهزة.",
   "unavailable": {
     "unconfiguredTitle": "لم يتم إعداد Syncthing",
-    "unconfigured": "لا يملك Plan مفتاحًا صالحًا لـ Syncthing على هذا الخادم. ثبّت حزمة Debian ‏syncthing ثم شغّل <code>deployment/volition-stack/native/syncthing/setup.sh</code> بصلاحيات root.",
+    "unconfigured": "لا يملك Helena مفتاحًا صالحًا لـ Syncthing على هذا الخادم. ثبّت حزمة Debian ‏syncthing ثم شغّل <code>deployment/volition-stack/native/syncthing/setup.sh</code> بصلاحيات root.",
     "unreachableTitle": "تعذّر الوصول إلى Syncthing",
     "unreachable": "Syncthing غير مثبّت على هذا الخادم، أو أن الخدمة <code>volition-syncthing</code> لا تعمل."
   },
@@ -71,7 +71,7 @@
     "step2Lan": "للمزامنة المباشرة في المنزل، أدخل <code>{address}, dynamic</code> عناوينَ للجهاز.",
     "step3": "يظهر الجهاز بعدها في الأعلى ضمن «أجهزة تطلب الاتصال». اختر «قبول».",
     "step4": "على الجهاز، اقبل المجلد Volition في مجلد اسمه Volition: <code>~/Volition</code> على Mac، و<code>Volition</code> في وحدة التخزين الداخلية على Android، وخزنة Obsidian ‏Volition على iPhone.",
-    "step5": "انتظر حتى يظهر المجلد على الجهاز بحالة «محدَّث»، ثم افتح المجلد Volition كخزنة في Obsidian. تفتح الروابط من Plan الخزنة Volition.",
+    "step5": "انتظر حتى يظهر المجلد على الجهاز بحالة «محدَّث»، ثم افتح المجلد Volition كخزنة في Obsidian. تفتح الروابط من Helena الخزنة Volition.",
     "iphoneTitle": "iPhone",
     "iphone": "على iPhone لا يفتح Obsidian إلا مجلداته. أنشئ أولًا الخزنة Volition في Obsidian (على iPhone، لا في iCloud) ثم أغلق Obsidian. بعد ذلك، في Möbius Sync، ضع المجلد Volition في «على iPhone» › Obsidian › Volition. يكتب Obsidian إعداداته الخاصة عند إنشاء خزنة، لذا قد تظهر تعارضات في <code>.obsidian</code> بعد المزامنة الأولى؛ وتحتوي نسخ التعارض على الإعدادات الافتراضية لهذا الخادم. يزامن Möbius Sync ما دام التطبيق مفتوحًا أو سمح له iOS بالعمل في الخلفية.",
     "spaceTitle": "توفير المساحة على الهاتف (اختياري)",

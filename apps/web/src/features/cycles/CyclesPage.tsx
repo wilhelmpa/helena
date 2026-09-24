@@ -2,18 +2,22 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus } from 'lucide-react';
+import { GanttChart, Plus, Table2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useShell } from '@/context/shellContext';
 import { usePermissions } from '@/hooks/usePermissions';
-import { Button } from '@/components/ui/button';
 import { WorkspacePageHeader } from '@/components/layout/WorkspaceHeader';
+import {
+  PageActions,
+  PageTabs,
+  PageToolbar,
+  PageToolbarSpacer,
+} from '@/components/layout/PageToolbar';
 import { usePlannedCyclesQuery } from '@/services/cycles.service';
 import { cyclesViewPath, type CyclesView } from '@/utils/paths';
 import { rememberCyclesView } from './utils/cyclesView';
 import { useCompletedCycles } from './hooks/useCompletedCycles';
 import CyclesList from './components/list/CyclesList';
-import CyclesViewTabs from './components/list/CyclesViewTabs';
 import CycleFormDialog from './components/CycleFormDialog';
 
 // A project's cycles, grouped by the status their dates put them in, as a table or
@@ -41,23 +45,32 @@ export default function CyclesPage({ view }: { view: CyclesView }) {
     router.push(cyclesViewPath(projectKey, next));
   };
 
+  const canCreate = can('cycles', 'create');
+
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      <WorkspacePageHeader
-        title={t('title')}
-        actions={
-          can('cycles', 'create') && (
-            <Button size="sm" className="h-8 gap-1.5" onClick={() => setCreating(true)}>
-              <Plus className="size-3.5" />
-              {t('newCycle')}
-            </Button>
-          )
-        }
-      />
-
-      <div className="min-w-0 px-4 pb-2">
-        <CyclesViewTabs view={view} onSelect={changeView} />
-      </div>
+      <WorkspacePageHeader title={t('title')} />
+      {/* One row (docs/volition/ui-standard.md): the layouts and the one primary
+          action. */}
+      <PageToolbar>
+        <PageTabs
+          label={t('title')}
+          value={view}
+          onChange={changeView}
+          items={[
+            { value: 'table', label: t('views.table'), icon: Table2 },
+            { value: 'timeline', label: t('views.timeline'), icon: GanttChart },
+          ]}
+        />
+        <PageToolbarSpacer />
+        <PageActions
+          primary={
+            canCreate
+              ? { id: 'new', label: t('newCycle'), icon: Plus, onClick: () => setCreating(true) }
+              : undefined
+          }
+        />
+      </PageToolbar>
 
       <CyclesList
         cycles={cycles}
@@ -65,8 +78,6 @@ export default function CyclesPage({ view }: { view: CyclesView }) {
         projectKey={projectKey}
         view={view}
         isLoading={query.isLoading || completed.isLoading}
-        canCreate={can('cycles', 'create')}
-        onCreate={() => setCreating(true)}
       />
 
       {creating && <CycleFormDialog projectKey={projectKey} onClose={() => setCreating(false)} />}

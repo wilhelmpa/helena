@@ -21,7 +21,11 @@ mkdir -p "$web/.next"
 chown "$owner" "$web/.next" "$web/next-env.d.ts"
 find "$web/.next" -mindepth 1 -maxdepth 1 ! -name dev -exec chown -R "$owner" {} +
 log=$(mktemp)
-if ! as_owner bash -c "cd '$web' && bun run build" >"$log" 2>&1; then
+# The deployment id is the commit: a page still open from an older release notices on
+# its next navigation that the server moved on and loads the new release in full,
+# instead of asking the new server for code it no longer has and stopping dead.
+deployment_id=$(as_owner git -C "$live" rev-parse --short HEAD)
+if ! as_owner env NEXT_DEPLOYMENT_ID="$deployment_id" bash -c "cd '$web' && bun run build" >"$log" 2>&1; then
   tail -40 "$log" >&2
   rm -f "$log"
   exit 1
@@ -34,6 +38,11 @@ release=$releases/$(date +%Y%m%d-%H%M%S)-$(as_owner git -C "$live" rev-parse --s
 install -d -m 0750 -o root -g volition "$releases" "$release"
 cp -a "$web/.next/standalone/." "$release/"
 cp -a "$web/.next/static" "$release/apps/web/.next/static"
+# The previous release's chunks stay servable, so a page that was open before this
+# deploy can still load what it is about to render until it reloads.
+if [[ -d $releases/current/apps/web/.next/static ]]; then
+  cp -an "$releases/current/apps/web/.next/static/." "$release/apps/web/.next/static/"
+fi
 if [[ -d $web/public ]]; then cp -a "$web/public" "$release/apps/web/public"; fi
 chown -R root:volition "$release"
 chmod -R g+rX,g-w,o-rwx "$release"

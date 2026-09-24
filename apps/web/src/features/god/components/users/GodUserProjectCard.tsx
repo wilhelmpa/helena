@@ -31,7 +31,7 @@ export default function GodUserProjectCard({
           <span className="min-w-0 flex-1 truncate text-sm">{project.projectName}</span>
           <Badge
             variant={isOwner ? 'default' : 'secondary'}
-            className="px-1.5 py-0 text-[10px] font-medium"
+            className="px-1.5 py-0 text-xs font-medium"
           >
             {isOwner ? tCommon('owner') : (project.roleName ?? tCommon('member'))}
           </Badge>

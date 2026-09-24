@@ -105,7 +105,7 @@ export default function IssueDetailContent({
     <>
       <div className="flex items-start gap-2">
         {issue.archivedAt && (
-          <span className="mt-1 shrink-0 rounded border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground uppercase">
+          <span className="mt-1 shrink-0 rounded border border-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground uppercase">
             {t('archived')}
           </span>
         )}
@@ -117,7 +117,7 @@ export default function IssueDetailContent({
             // Laid out by the script the title is written in, not the interface
             // language, so an Arabic title reads correctly in an English session.
             dir="auto"
-            className="field-sizing-content min-w-0 flex-1 resize-none bg-transparent text-lg leading-snug font-semibold outline-none placeholder:text-muted-foreground"
+            className="field-sizing-content min-w-0 flex-1 resize-none bg-transparent text-base font-semibold outline-none placeholder:text-muted-foreground"
             rows={1}
             placeholder={t('titlePlaceholder')}
             defaultValue={issue.title}
@@ -135,7 +135,7 @@ export default function IssueDetailContent({
             }}
           />
         ) : (
-          <h1 dir="auto" className="min-w-0 flex-1 text-lg leading-snug font-semibold">
+          <h1 dir="auto" className="min-w-0 flex-1 text-base font-semibold">
             {issue.title}
           </h1>
         )}
@@ -306,15 +306,13 @@ export default function IssueDetailContent({
     // From xl the issue content sits at the start edge and the actions with
     // Properties are fixed to the end edge (out of flow), so they never shift the
     // content; the end margin reserves their width so the two do not overlap.
-    // Below xl there is no room for two columns, so the same two blocks are shown
-    // inside the content column instead — the actions above the title, Properties
-    // under the description.
+    // Below xl there is no room for two columns, so Properties are shown inside the
+    // content column instead, under the description. The actions are the page's
+    // header row (IssueActionsBar variant 'toolbar').
     return (
       <>
+        <IssueActionsBar project={project} issue={issue} variant="toolbar" onDeleted={onDeleted} />
         <div className="max-w-3xl xl:me-(--issue-properties-w)" style={propertiesWidthVar}>
-          <div className="sticky top-0 z-10 -mt-6 bg-background/85 pt-6 pb-3 backdrop-blur-md xl:hidden">
-            {actions}
-          </div>
           {heading}
           <div className="xl:hidden">{renderProperties()}</div>
           {sections}
@@ -326,8 +324,7 @@ export default function IssueDetailContent({
         >
           {propertiesGrip}
           <div className="max-h-[calc(100vh-5.5rem)] overflow-y-auto">
-            {actions}
-            {sidebarProperties}
+            {renderProperties('mt-0 border-t-0 pt-0')}
           </div>
         </aside>
       </>
@@ -342,7 +339,7 @@ export default function IssueDetailContent({
     // wraps the flex row rather than being it — an element cannot query itself.
     return (
       <div className="@container">
-        <div className="flex gap-8">
+        <div className="flex gap-6">
           <div className="min-w-0 flex-1">
             <div className="@3xl:hidden">{actions}</div>
             {heading}

@@ -31,10 +31,10 @@
     "folder": "Ce dossier est vide.",
     "folderHint": "Déposez des fichiers ici ou utilisez Téléverser.",
     "filter": "Aucune entrée ne correspond à « {filter} ».",
-    "readOnly": "Plan affiche ce dossier en lecture seule."
+    "readOnly": "Helena affiche ce dossier en lecture seule."
   },
   "unreadable": {
-    "title": "Plan ne peut pas lire ce dossier",
+    "title": "Helena ne peut pas lire ce dossier",
     "body": "L'espace de travail appartient à l'utilisateur des agents sur le serveur. Ouvrez-le plutôt dans VS Code.",
     "missing": "Ce dossier n'existe pas sur le serveur."
   },

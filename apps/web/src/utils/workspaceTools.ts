@@ -87,15 +87,22 @@ function codeUrl(
 ): string {
   const provisioned = provisionedResource(resources, 'workspace');
   const provisionedUrl = trustedResourceUrl(provisioned?.url, [config.codeUrl]);
+  const workspacePath = projectValue(config.projectWorkspacePaths, projectKey) || provisioned?.id;
   if (
     provisionedUrl &&
     new URL(provisionedUrl).pathname.replace(/\/+$/, '') ===
       new URL(config.codeUrl).pathname.replace(/\/+$/, '')
   ) {
-    return provisionedUrl;
+    // The provisioner may report code-server's bare address: without a folder it
+    // reopens whatever folder was open last — another project's (2026-09-24, VOL
+    // showed PRIV). The project's own workspace is the resource's id.
+    const url = new URL(provisionedUrl);
+    if (!url.searchParams.has('folder') && workspacePath?.startsWith('/')) {
+      url.searchParams.set('folder', workspacePath);
+    }
+    return url.toString();
   }
   if (!config.codeUrl) return '';
-  const workspacePath = projectValue(config.projectWorkspacePaths, projectKey) || provisioned?.id;
   if (!workspacePath) return frameUrl(config.codeUrl);
   try {
     const url = new URL(config.codeUrl);

@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState, type RefObject } from 'react';
+import { useEffect, useState, type ReactNode, type RefObject } from 'react';
 import type { Editor } from '@tiptap/react';
+import { useTranslations } from 'next-intl';
 import type { VaultDocument } from '@/lib/api/endpoints/knowledge';
 import { useNoteDraft } from '../hooks/useNoteDraft';
 import { useVaultPathActions } from '../hooks/useVaultPathActions';
@@ -10,7 +11,8 @@ import DocumentConflictBanner from './DocumentConflictBanner';
 import DocumentConflictCopies from './DocumentConflictCopies';
 import DocumentEditorCanvas from './DocumentEditorCanvas';
 import DocumentEditorDialogs, { type DocumentEditorDialog } from './DocumentEditorDialogs';
-import DocumentEditorHeader from './DocumentEditorHeader';
+import { noteToolbarParts } from './DocumentEditorHeader';
+import type { NoteToolbarParts } from './DocumentsToolbar';
 import DocumentEditorInspector from './DocumentEditorInspector';
 
 export default function DocumentEditor({
@@ -19,6 +21,7 @@ export default function DocumentEditor({
   canEdit,
   focusTitle,
   flushRef,
+  toolbar,
   onClose,
 }: {
   root: string;
@@ -26,8 +29,10 @@ export default function DocumentEditor({
   canEdit: boolean;
   focusTitle: boolean;
   flushRef: RefObject<() => Promise<boolean>>;
+  toolbar: (note?: NoteToolbarParts) => ReactNode;
   onClose: () => void;
 }) {
+  const t = useTranslations('documents');
   const path = document.path;
   // A note cut short by the API would lose its end on the next save.
   const editable = canEdit && !document.truncated;
@@ -53,18 +58,25 @@ export default function DocumentEditor({
   return (
     <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
       <section className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <DocumentEditorHeader
-          root={root}
-          document={document}
-          status={note.draft.status}
-          dirty={note.dirty}
-          editable={editable}
-          inspectorOpen={inspectorOpen}
-          onBack={onClose}
-          onRetrySave={() => void note.save()}
-          onToggleInspector={() => setInspectorOpen((open) => !open)}
-          onOpenDialog={setDialog}
-        />
+        {toolbar(
+          noteToolbarParts({
+            root,
+            document,
+            status: note.draft.status,
+            dirty: note.dirty,
+            editable,
+            inspectorOpen,
+            labels: {
+              back: t('backToDocuments'),
+              openDetails: t('openDetails'),
+              closeDetails: t('closeDetails'),
+            },
+            onBack: onClose,
+            onRetrySave: () => void note.save(),
+            onToggleInspector: () => setInspectorOpen((open) => !open),
+            onOpenDialog: setDialog,
+          }),
+        )}
         {conflict && dialog !== 'conflict' && (
           <DocumentConflictBanner onReview={() => setDialog('conflict')} />
         )}

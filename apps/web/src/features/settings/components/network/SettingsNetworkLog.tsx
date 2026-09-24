@@ -45,7 +45,7 @@ export default function SettingsNetworkLog({ projectKey }: { projectKey: string 
         <EmptyState title={t('empty')} description={t('emptyHint')} />
       ) : (
         <>
-          <div className="overflow-x-auto rounded-lg border">
+          <div className="overflow-x-auto rounded-lg border bg-card">
             <Table className="min-w-[820px]">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">

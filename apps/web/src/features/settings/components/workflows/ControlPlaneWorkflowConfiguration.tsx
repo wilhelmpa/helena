@@ -42,7 +42,7 @@ export default function ControlPlaneWorkflowConfiguration({
 
   if (!editable) {
     return (
-      <div className="grid gap-3 rounded-lg bg-muted/30 p-3 text-sm sm:grid-cols-2">
+      <div className="grid gap-3 rounded-lg border bg-background p-3 text-sm sm:grid-cols-2">
         <div>
           <p className="text-xs font-medium text-muted-foreground">{t('instructions')}</p>
           <p className="mt-1 whitespace-pre-wrap">{instructions || t('notConfigured')}</p>
@@ -80,7 +80,7 @@ export default function ControlPlaneWorkflowConfiguration({
 
   return (
     <form
-      className="grid gap-3 rounded-lg bg-muted/30 p-3 sm:grid-cols-[1fr_8rem_auto]"
+      className="grid gap-3 rounded-lg border bg-background p-3 sm:grid-cols-[1fr_8rem_auto]"
       onSubmit={(event) => {
         event.preventDefault();
         update.mutate(
@@ -123,7 +123,13 @@ export default function ControlPlaneWorkflowConfiguration({
       {agentTeam && (
         <ControlPlaneAgentTeamPolicy id={workflow.id} value={policy} onChange={setPolicy} />
       )}
-      <Button className="self-end sm:col-start-3" type="submit" disabled={update.isPending}>
+      <Button
+        className="self-end sm:col-start-3"
+        variant="outline"
+        size="sm"
+        type="submit"
+        disabled={update.isPending}
+      >
         {t('saveConfiguration')}
       </Button>
     </form>

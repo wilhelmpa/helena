@@ -127,7 +127,7 @@
   "accounts": {
     "title": "Akun email",
     "add": "Tambahkan akun",
-    "intro": "Plan mengimpor semua folder akun ini lewat IMAP, lengkap dengan lampiran, dan mengirim lewat SMTP. Email akun proyek disimpan di proyek itu.",
+    "intro": "Helena mengimpor semua folder akun ini lewat IMAP, lengkap dengan lampiran, dan mengirim lewat SMTP. Email akun proyek disimpan di proyek itu.",
     "projectIntro": "Akun yang emailnya disimpan di proyek ini.",
     "loadError": "Akun tidak dapat dimuat.",
     "empty": "Belum ada akun email.",
@@ -147,7 +147,7 @@
     "progress": "{synced} dari {total} pesan",
     "lastSync": "Terakhir diperiksa {at}",
     "removeTitle": "Hapus {address}?",
-    "removeBody": "Email yang sudah diimpor dari akun ini akan dihapus dari Plan. Lampiran yang tersimpan di Vault tetap ada.",
+    "removeBody": "Email yang sudah diimpor dari akun ini akan dihapus dari Helena. Lampiran yang tersimpan di Vault tetap ada.",
     "testFailed": "Koneksi gagal: {error}",
     "testOk": "IMAP dan SMTP menerima login ini.",
     "saved": "{address} disimpan",
@@ -179,7 +179,8 @@
     "smtpHost": "Server SMTP",
     "port": "Port",
     "tls": "TLS sejak awal (nonaktif: STARTTLS)",
-    "username": "Nama pengguna"
+    "username": "Nama pengguna",
+    "team": "Tim"
   },
   "rules": {
     "title": "Aturan penyimpanan",

@@ -35,7 +35,7 @@ export default function PipelineApprovalCard({ approval }: { approval: PipelineA
           {t('waitingSince', { time: formatDateTime(approval.waitingSince) })}
         </span>
       </div>
-      <p className="font-medium" dir="auto">
+      <p className="text-md font-medium" dir="auto">
         {t('step', { step: approval.stepName })}
       </p>
       {approval.message && (

@@ -17,9 +17,9 @@ export default function HomeTaskRow({ issue }: { issue: CrossProjectIssue }) {
   return (
     <Link
       href={issuePath(issue.projectKey, issue.sequenceNumber)}
-      className="flex min-w-0 items-center gap-3 rounded-md px-2 py-1.5 text-sm hover:bg-accent/50"
+      className="flex h-8 min-w-0 items-center gap-3 rounded-md px-2 text-sm transition-colors hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
     >
-      <span className="w-20 shrink-0 font-mono text-xs text-muted-foreground" dir="ltr">
+      <span className="w-16 shrink-0 font-mono text-xs text-muted-foreground max-sm:w-14" dir="ltr">
         {issue.identifier}
       </span>
       <span className="min-w-0 flex-1 truncate" dir="auto">
@@ -42,8 +42,8 @@ export default function HomeTaskRow({ issue }: { issue: CrossProjectIssue }) {
       )}
       <span
         className={cn(
-          'w-24 shrink-0 text-end text-xs text-muted-foreground',
-          overdue && 'text-destructive',
+          'w-24 shrink-0 text-end text-xs text-muted-foreground max-sm:w-auto',
+          overdue ? 'text-destructive' : 'max-sm:hidden',
         )}
       >
         {issue.dueDate ? formatDate(issue.dueDate) : ''}

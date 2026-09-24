@@ -28,7 +28,7 @@
   "presetEveryHour": "Cada hora",
   "presetEveryWeekdayAt9": "Cada día laborable a las 9:00",
   "presetEveryDayAt9": "Cada día a las 9:00",
-  "inputPlaceholder": "Cada día laborable a las 9:00 o 0 9 * * 1-5",
+  "inputPlaceholder": "p. ej. 0 9 * * 1-5",
   "runs": "Ejecuciones: {description}",
   "cronLabel": "Cron:",
   "runsSuffix": "{description}",
@@ -75,5 +75,25 @@
   "empty": "Todavía no hay programaciones",
   "emptyHint": "Elige un agente, en qué trabaja y con qué frecuencia.",
   "homeHint": "Las programaciones de todos los proyectos cuyos agentes puedes ver. Una programación se cambia en su proyecto.",
-  "homeEmptyHint": "Las programaciones se crean en la página Tareas programadas de un proyecto."
+  "homeEmptyHint": "Las programaciones se crean en la página Tareas programadas de un proyecto.",
+  "cron": {
+    "everyMinute": "Cada minuto",
+    "everyNMinutes": "Cada {n} minutos",
+    "everyHour": "Cada hora",
+    "everyNHours": "Cada {n} horas",
+    "everyNHoursAtMinute": "Cada {n} horas, {minute} minutos después de la hora en punto",
+    "at": "A las {times}",
+    "everyNMinutesBetween": "Cada {n} minutos de {start} a {end}",
+    "everyHourBetween": "Cada hora de {start} a {end}",
+    "everyNHoursBetween": "Cada {n} horas de {start} a {end}",
+    "atMinuteDuringHour": "Minuto {minute}, hora {hour}",
+    "onDays": "el día {days}",
+    "onDaysOrWeekdays": "el día {days} o el {weekdays}",
+    "inMonths": "en {months}",
+    "weekdays": "de lunes a viernes",
+    "weekends": "sábado y domingo",
+    "through": "{start} a {end}",
+    "dayOrdinal": "{n}"
+  },
+  "invalidSchedule": "No es una programación válida. Ejemplo: 0 9 * * 1-5 (de lunes a viernes a las 9:00)."
 }

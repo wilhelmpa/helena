@@ -1,24 +1,35 @@
 {
-  "title": "Connections",
-  "description": "Connected services and accounts",
-  "loading": "Checking connections…",
-  "loadError": "Connection status could not be loaded.",
-  "lastCheck": "Last check",
-  "never": "Never",
-  "availableTools": "Available tools",
+  "title": "الاتصالات",
+  "description": "الخدمات والحسابات المتصلة",
+  "loading": "جارٍ فحص الاتصالات…",
+  "loadError": "تعذّر تحميل حالة الاتصالات.",
+  "loadErrorHint": "لم يستجب الخادم. حاول مرة أخرى بعد قليل.",
+  "lastCheck": "آخر فحص",
+  "never": "أبدًا",
+  "toolCount": "{count, plural, zero {لا أدوات} one {أداة واحدة} two {أداتان} few {# أدوات} many {# أداة} other {# أداة}}",
+  "empty": "لا توجد اتصالات",
+  "emptyHint": "لا تُبلغ خدمة الاتصالات عن أي خدمة متصلة.",
+  "unconfigured": {
+    "title": "لم يتم إعداد خدمة الاتصالات",
+    "hint": "لا يشغّل هذا الخادم خدمة تفحص الاتصالات. لحسابات البريد وبيانات الدخول والأجهزة صفحاتها الخاصة.",
+    "mail": "حسابات البريد",
+    "credentials": "بيانات الدخول",
+    "devices": "الأجهزة وObsidian"
+  },
   "status": {
-    "connected": "Connected",
-    "available": "Available",
-    "configured": "Configured",
-    "disabled": "Disabled",
-    "unavailable": "Unavailable",
-    "unsupported": "Unsupported",
-    "error": "Error"
+    "connected": "متصل",
+    "available": "متاح",
+    "configured": "مُعدّ",
+    "disabled": "معطّل",
+    "unavailable": "غير متاح",
+    "unsupported": "غير مدعوم",
+    "error": "خطأ"
   },
   "actions": {
-    "checkAll": "Check all",
-    "check": "Check",
-    "reconnect": "Reconnect",
-    "openPairing": "Open pairing"
+    "checkAll": "فحص الكل",
+    "check": "فحص",
+    "reconnect": "إعادة الاتصال",
+    "openPairing": "فتح الاقتران",
+    "retry": "إعادة المحاولة"
   }
 }

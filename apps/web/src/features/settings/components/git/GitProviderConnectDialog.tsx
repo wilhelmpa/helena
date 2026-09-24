@@ -52,7 +52,7 @@ export default function GitProviderConnectDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
-        <form onSubmit={(event) => void submit(event)} className="space-y-5">
+        <form onSubmit={(event) => void submit(event)} className="space-y-4">
           <DialogHeader>
             <DialogTitle>{t('nativeConnectTitle', { provider: label })}</DialogTitle>
             <DialogDescription>{t(`nativeTokenHint.${provider}`)}</DialogDescription>

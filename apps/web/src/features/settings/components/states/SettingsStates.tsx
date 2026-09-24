@@ -125,7 +125,7 @@ export default function SettingsStates({ project }: { project: ProjectDetail }) 
           {STATE_TYPES.map((s) => {
             const group = project.columns.filter((c) => c.stateType === s);
             return (
-              <div key={s} className="mb-8 last:mb-0">
+              <div key={s} className="mb-6 last:mb-0">
                 <div className="mb-1 flex items-center justify-between border-b pb-1">
                   <span className="text-xs font-medium text-muted-foreground">{tStateType(s)}</span>
                   {can('create') && (
@@ -141,13 +141,11 @@ export default function SettingsStates({ project }: { project: ProjectDetail }) 
                     </Button>
                   )}
                 </div>
-                <ItemGroup>
+                <ItemGroup className="overflow-hidden rounded-lg border bg-card">
                   {group.length === 0 && addingType !== s && (
                     <SettingsEmpty
                       title={t('emptyTitle', { type: tStateType(s) })}
                       description={t('emptyHint')}
-                      addLabel={t('newState')}
-                      onAdd={() => startAdd(s)}
                     />
                   )}
                   <SortableContext

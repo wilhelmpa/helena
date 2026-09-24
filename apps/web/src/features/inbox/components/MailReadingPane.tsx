@@ -46,9 +46,9 @@ export default function MailReadingPane({
     if (loaded) endRef.current?.scrollIntoView({ block: 'end' });
   }, [loaded]);
 
-  if (thread.isPending) return <p className="p-6 text-sm text-muted-foreground">{t('loading')}</p>;
+  if (thread.isPending) return <p className="p-4 text-sm text-muted-foreground">{t('loading')}</p>;
   if (thread.isError || !thread.data)
-    return <p className="p-6 text-sm text-destructive">{t('loadError')}</p>;
+    return <p className="p-4 text-sm text-destructive">{t('loadError')}</p>;
 
   const data = thread.data;
   return (

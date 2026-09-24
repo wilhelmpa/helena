@@ -36,10 +36,10 @@ export default function OAuthConsentPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background p-6 text-foreground">
-      <section className="w-full max-w-md space-y-5 rounded-lg border bg-card p-6 shadow-sm">
+    <main className="flex min-h-screen items-center justify-center bg-background p-4 text-foreground">
+      <section className="w-full max-w-md space-y-4 rounded-lg border bg-card p-4 shadow-sm">
         <div className="space-y-2">
-          <h1 className="text-xl font-semibold">{t('oauth.consent.title')}</h1>
+          <h1 className="text-base font-semibold">{t('oauth.consent.title')}</h1>
           <p className="text-sm text-muted-foreground">{t('oauth.consent.description')}</p>
         </div>
         {!consentCode ? (

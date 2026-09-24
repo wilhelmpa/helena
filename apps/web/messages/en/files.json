@@ -31,10 +31,10 @@
     "folder": "This folder is empty.",
     "folderHint": "Drop files here or use Upload.",
     "filter": "No entry matches “{filter}”.",
-    "readOnly": "Plan shows this folder read-only."
+    "readOnly": "Helena shows this folder read-only."
   },
   "unreadable": {
-    "title": "Plan cannot read this folder",
+    "title": "Helena cannot read this folder",
     "body": "The workspace belongs to the agents' user on the server. Open it in VS Code instead.",
     "missing": "This folder does not exist on the server."
   },

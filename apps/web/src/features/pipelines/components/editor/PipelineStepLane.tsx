@@ -11,7 +11,10 @@ import PipelineAddStep from './PipelineAddStep';
 import PipelineStepCard from './PipelineStepCard';
 
 // The steps of one lane in run order. Each lane sorts on its own, so a drag reorders
-// steps within the lane and never moves one into another lane.
+// steps within the lane and never moves one into another lane. Whether the lane can be
+// edited is known only once the permissions have loaded; the sortable list is mounted
+// anew when it changes, because dnd-kit wants the same sensors for the life of a
+// DndContext (see useDndSensors).
 export default function PipelineStepLane({
   lane,
   steps,
@@ -19,7 +22,22 @@ export default function PipelineStepLane({
   lane: LaneRef;
   steps: PipelineStep[];
 }) {
-  const { editable, change } = usePipelineEditor();
+  const { editable } = usePipelineEditor();
+  return (
+    <SortableLane key={editable ? 'edit' : 'read'} lane={lane} steps={steps} editable={editable} />
+  );
+}
+
+function SortableLane({
+  lane,
+  steps,
+  editable,
+}: {
+  lane: LaneRef;
+  steps: PipelineStep[];
+  editable: boolean;
+}) {
+  const { change } = usePipelineEditor();
   const sensors = useDndSensors(!editable);
 
   const onDragEnd = ({ active, over }: DragEndEvent) => {

@@ -2,22 +2,17 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { Initiative } from '@/lib/api/endpoints/initiatives';
 import { initiativesPath } from '@/utils/paths';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useDeleteInitiative } from '@/services/initiatives.service';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { PageActions, type PageAction } from '@/components/layout/PageToolbar';
 import InitiativeDialog from '@/components/common/overlay/InitiativeDialog';
 
-// The initiative's overflow menu. Deleting returns to the initiatives list.
+// The initiative's actions at the end of the page's header row: Edit as an icon, and
+// Delete in the "…" menu. Deleting returns to the initiatives list.
 export default function InitiativeActions({
   initiative,
   projectKey,
@@ -25,7 +20,6 @@ export default function InitiativeActions({
   initiative: Initiative;
   projectKey: string;
 }) {
-  const t = useTranslations('initiatives');
   const tCommon = useTranslations('common');
   const { can } = usePermissions();
   const del = useDeleteInitiative(projectKey);
@@ -41,34 +35,26 @@ export default function InitiativeActions({
     router.push(initiativesPath(projectKey));
   };
 
+  const actions: PageAction[] = [];
+  if (canEdit)
+    actions.push({
+      id: 'edit',
+      label: tCommon('edit'),
+      icon: Pencil,
+      onClick: () => setEditing(true),
+    });
+  if (canDelete)
+    actions.push({
+      id: 'delete',
+      label: tCommon('delete'),
+      icon: Trash2,
+      menuOnly: true,
+      onClick: () => void remove(),
+    });
+
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            aria-label={t('options')}
-            className="rounded p-0.5 text-muted-foreground/60 hover:text-foreground"
-          >
-            <MoreHorizontal className="size-4" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          {canEdit && (
-            <DropdownMenuItem onClick={() => setEditing(true)}>
-              <Pencil className="size-4" />
-              {tCommon('edit')}
-            </DropdownMenuItem>
-          )}
-          {canEdit && canDelete && <DropdownMenuSeparator />}
-          {canDelete && (
-            <DropdownMenuItem variant="destructive" onClick={() => void remove()}>
-              <Trash2 className="size-4" />
-              {tCommon('delete')}
-            </DropdownMenuItem>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <PageActions actions={actions} />
 
       {editing && (
         <InitiativeDialog

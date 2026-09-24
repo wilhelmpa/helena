@@ -1,4 +1,5 @@
 import { Label } from '@/components/ui/label';
+import SettingsCard from '@/components/common/page/SettingsCard';
 import SettingsSection from '@/components/common/page/SettingsSection';
 import EnabledSwitch from '@/components/common/inputs/EnabledSwitch';
 import SecretInput from '@/components/common/inputs/SecretInput';
@@ -18,16 +19,18 @@ export default function TelegramSettings({ form }: { form: TelegramForm }) {
       description={t('telegramBotHint')}
       action={<EnabledSwitch checked={form.enabled} onChange={form.setEnabled} />}
     >
-      <div className="space-y-1.5 sm:max-w-md">
-        <Label htmlFor="telegram-token">{t('botToken')}</Label>
-        <SecretInput
-          id="telegram-token"
-          value={form.botToken}
-          onChange={form.setBotToken}
-          hasStored={settings.telegram.hasBotToken}
-          placeholder="123456:ABC-DEF…"
-        />
-      </div>
+      <SettingsCard className="space-y-4 p-4">
+        <div className="space-y-1.5 sm:max-w-md">
+          <Label htmlFor="telegram-token">{t('botToken')}</Label>
+          <SecretInput
+            id="telegram-token"
+            value={form.botToken}
+            onChange={form.setBotToken}
+            hasStored={settings.telegram.hasBotToken}
+            placeholder="123456:ABC-DEF…"
+          />
+        </div>
+      </SettingsCard>
     </SettingsSection>
   );
 }

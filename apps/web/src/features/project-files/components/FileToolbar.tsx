@@ -1,14 +1,21 @@
-import { useRef } from 'react';
-import { Code2, FilePlus, FolderPlus, LayoutGrid, List, Search, Upload } from 'lucide-react';
+import { useRef, type ReactNode } from 'react';
+import { Code2, FilePlus, FolderPlus, LayoutGrid, List, Upload } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import {
+  PageActions,
+  PageSearch,
+  PageToolbar,
+  PageToolbarSpacer,
+  type PageAction,
+} from '@/components/layout/PageToolbar';
 import type { useFileBrowserView } from '../hooks/useFileBrowserView';
 import FileSortMenu from './FileSortMenu';
 
-// Above the listing: the name filter, the order, list or grid, and what can be added
-// to the open folder.
+// The file browser's controls, in the header row like every page's (PageToolbar): the
+// page's own tabs first (`leading`, e.g. Wissen/Code), then the name filter, the order,
+// list or grid, the code-server link and what can be added to the open folder.
 export default function FileToolbar({
+  leading,
   view,
   canCreate,
   codeUrl,
@@ -17,6 +24,7 @@ export default function FileToolbar({
   onNewFolder,
   onNewFile,
 }: {
+  leading?: ReactNode;
   view: ReturnType<typeof useFileBrowserView>;
   canCreate: boolean;
   codeUrl: string;
@@ -29,65 +37,62 @@ export default function FileToolbar({
   const input = useRef<HTMLInputElement>(null);
   const grid = view.mode === 'grid';
 
+  const actions: PageAction[] = [
+    {
+      id: 'mode',
+      label: grid ? t('list') : t('grid'),
+      icon: grid ? List : LayoutGrid,
+      onClick: () => view.setMode(grid ? 'list' : 'grid'),
+    },
+  ];
+  if (codeUrl) {
+    actions.push({
+      id: 'code',
+      label: t('openInCode'),
+      icon: Code2,
+      href: codeUrl,
+      external: true,
+    });
+  }
+  if (canCreate) {
+    actions.push(
+      { id: 'folder', label: t('newFolder'), icon: FolderPlus, onClick: onNewFolder },
+      { id: 'note', label: t('newFile'), icon: FilePlus, onClick: onNewFile },
+    );
+  }
+
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <div className="relative min-w-40 flex-1 sm:max-w-64">
-        <Search className="pointer-events-none absolute start-2.5 top-2 size-4 text-muted-foreground" />
-        <Input
-          value={view.filter}
-          onChange={(event) => view.setFilter(event.target.value)}
-          placeholder={t('filter')}
-          aria-label={t('filter')}
-          className="h-8 ps-8"
-        />
-      </div>
+    <PageToolbar>
+      {leading}
+      <PageToolbarSpacer />
+      <PageSearch value={view.filter} onChange={view.setFilter} placeholder={t('filter')} />
       <FileSortMenu sort={view.sort} onChange={view.setSort} />
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-8"
-        aria-label={grid ? t('list') : t('grid')}
-        title={grid ? t('list') : t('grid')}
-        onClick={() => view.setMode(grid ? 'list' : 'grid')}
-      >
-        {grid ? <List /> : <LayoutGrid />}
-      </Button>
-      <div className="ms-auto flex flex-wrap items-center gap-2">
-        {codeUrl && (
-          <Button variant="outline" size="sm" asChild>
-            <a href={codeUrl} target="_blank" rel="noopener noreferrer">
-              <Code2 />
-              {t('openInCode')}
-            </a>
-          </Button>
-        )}
-        {canCreate && (
-          <>
-            <Button variant="outline" size="sm" onClick={onNewFolder}>
-              <FolderPlus />
-              {t('newFolder')}
-            </Button>
-            <Button variant="outline" size="sm" onClick={onNewFile}>
-              <FilePlus />
-              {t('newFile')}
-            </Button>
-            <Button size="sm" disabled={uploading} onClick={() => input.current?.click()}>
-              <Upload />
-              {t('upload')}
-            </Button>
-            <input
-              ref={input}
-              type="file"
-              multiple
-              className="hidden"
-              onChange={(event) => {
-                onUpload(Array.from(event.target.files ?? []));
-                event.target.value = '';
-              }}
-            />
-          </>
-        )}
-      </div>
-    </div>
+      <PageActions
+        actions={actions}
+        primary={
+          canCreate
+            ? {
+                id: 'upload',
+                label: t('upload'),
+                icon: Upload,
+                disabled: uploading,
+                onClick: () => input.current?.click(),
+              }
+            : undefined
+        }
+      />
+      {canCreate && (
+        <input
+          ref={input}
+          type="file"
+          multiple
+          className="hidden"
+          onChange={(event) => {
+            onUpload(Array.from(event.target.files ?? []));
+            event.target.value = '';
+          }}
+        />
+      )}
+    </PageToolbar>
   );
 }

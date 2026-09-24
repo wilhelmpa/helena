@@ -36,7 +36,7 @@ export default function IssueViewPage() {
 
   return (
     <div {...scrollRestorationProps} className="flex-1 overflow-y-auto">
-      <div className="flex flex-col px-8 py-6 xl:px-12">
+      <div className="flex flex-col p-4 xl:px-12">
         {issueQuery.data ? (
           <IssueDetailContent
             project={project}
@@ -47,7 +47,7 @@ export default function IssueViewPage() {
         ) : issueQuery.isLoading ? (
           <IssueDetailSkeleton />
         ) : (
-          <div className="py-6 text-sm text-muted-foreground">{t('notFound')}</div>
+          <div className="py-4 text-sm text-muted-foreground">{t('notFound')}</div>
         )}
       </div>
     </div>

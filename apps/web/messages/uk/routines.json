@@ -28,7 +28,7 @@
   "presetEveryHour": "Щогодини",
   "presetEveryWeekdayAt9": "У будні о 9:00",
   "presetEveryDayAt9": "Щодня о 9:00",
-  "inputPlaceholder": "Every weekday at 9:00 AM або 0 9 * * 1-5",
+  "inputPlaceholder": "напр. 0 9 * * 1-5",
   "runs": "Запуск: {description}",
   "cronLabel": "Cron:",
   "runsSuffix": "{description}",
@@ -75,5 +75,25 @@
   "empty": "Розкладів ще немає",
   "emptyHint": "Оберіть агента, над чим він працює і як часто.",
   "homeHint": "Розклади всіх проєктів, агентів яких ви бачите. Розклад змінюється в його проєкті.",
-  "homeEmptyHint": "Розклад створюється на сторінці «Розклади» проєкту."
+  "homeEmptyHint": "Розклад створюється на сторінці «Розклади» проєкту.",
+  "cron": {
+    "everyMinute": "Щохвилини",
+    "everyNMinutes": "Кожні {n} хв",
+    "everyHour": "Щогодини",
+    "everyNHours": "Кожні {n} год",
+    "everyNHoursAtMinute": "Кожні {n} год, о {minute} хв кожної години",
+    "at": "О {times}",
+    "everyNMinutesBetween": "Кожні {n} хв з {start} до {end}",
+    "everyHourBetween": "Щогодини з {start} до {end}",
+    "everyNHoursBetween": "Кожні {n} год з {start} до {end}",
+    "atMinuteDuringHour": "Хвилина {minute}, година {hour}",
+    "onDays": "{days} числа",
+    "onDaysOrWeekdays": "{days} числа або {weekdays}",
+    "inMonths": "місяць: {months}",
+    "weekdays": "з понеділка по п’ятницю",
+    "weekends": "субота й неділя",
+    "through": "{start} – {end}",
+    "dayOrdinal": "{n}"
+  },
+  "invalidSchedule": "Недійсний розклад. Приклад: 0 9 * * 1-5 (з понеділка по п’ятницю о 9:00)."
 }

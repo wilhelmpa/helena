@@ -31,7 +31,7 @@ export default function IssueTimelineLanes({
           columns at the width where those are beside the track, and by the fixed bar
           past its end. */}
       <div className={`mt-1 @md:pl-31 ${layout.hasFixedTail ? 'pr-12 @md:pr-25' : '@md:pr-13'}`}>
-        <div className="relative h-4 text-[10px] text-muted-foreground">
+        <div className="relative h-4 text-xs text-muted-foreground">
           {layout.ticks.map((tick) => (
             <span
               key={tick.leftPct}

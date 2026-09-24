@@ -44,14 +44,14 @@
     "purged": "Chat supprimé définitivement."
   },
   "empty": {
-    "title": "Aucun chat ouvert",
-    "description": "Choisissez un agent pour démarrer un nouveau chat. Chaque chat se fait avec un seul agent — pour en parler à un autre, démarrez-en un nouveau."
+    "noAgentsTitle": "Aucun agent pour discuter",
+    "noAgentsDescription": "Il n’y a encore aucun agent avec lequel démarrer une discussion ici. Ajoutez-en un, ou donnez à un agent existant l’accès à ce projet.",
+    "manageAgents": "Gérer les agents"
   },
   "messages": {
     "transcript": "Messages",
     "loadOlder": "Charger les messages précédents",
     "loading": "Chargement…",
-    "thinking": "Réflexion…",
     "reasoning": "Raisonnement",
     "reasoningLive": "Raisonnement…",
     "toolCalls": "{count, plural, one {# appel d’outil} other {# appels d’outils}}",
@@ -64,19 +64,21 @@
     "regenerate": "Régénérer",
     "previousVersion": "Version précédente",
     "nextVersion": "Version suivante",
-    "clarificationLabel": "En attente de votre réponse",
-    "clarificationPlaceholder": "Écrivez votre réponse…",
-    "reply": "Répondre",
     "saveAsNote": "Enregistrer comme note",
     "noteSaved": "Chat enregistré comme note dans Docs.",
     "noteSaveFailed": "Impossible d’enregistrer le chat comme note.",
     "noteQuestion": "Question",
     "noteAnswer": "Réponse de {agent}",
-    "noteSource": "Chat avec {agent}, enregistré le {date}"
+    "noteSource": "Chat avec {agent}, enregistré le {date}",
+    "restoreFailedTitle": "Impossible de charger cette discussion",
+    "restoreFailed": "Ses messages n’ont pas pu être lus. Vérifiez la connexion et réessayez.",
+    "retry": "Réessayer",
+    "today": "Aujourd’hui",
+    "yesterday": "Hier"
   },
   "composer": {
     "placeholder": "Message à {agent}…",
-    "hint": "Maj + Entrée pour une nouvelle ligne · Déposez ou collez des fichiers pour les joindre · / pour les commandes et les prompts",
+    "hint": "Entrée envoie · Maj+Entrée ou ⌘/Ctrl+Entrée pour une nouvelle ligne · déposez ou collez des fichiers · / pour les commandes et prompts",
     "send": "Envoyer",
     "stop": "Arrêter la réponse",
     "attach": "Joindre",
@@ -108,7 +110,21 @@
       "approvals": "Les commandes d’approbation ne s’exécutent pas depuis le chat — utilisez la carte d’approbation ou la page Approbations.",
       "config": "Cela modifie la configuration propre de l’agent — utilisez les paramètres de l’agent dans Helena.",
       "outside": "Le chat ne peut pas faire cela."
-    }
+    },
+    "reasoning": "Effort de réflexion",
+    "reasoningDefault": "par défaut",
+    "queue": "Mettre en file d’attente",
+    "queued": "en attente de {agent}",
+    "queuePaused": "en pause",
+    "removeQueued": "Retirer de la file d’attente",
+    "dictate": "Dicter",
+    "stopDictation": "Arrêter la dictée",
+    "dictationFailed": "La dictée n’a pas pu démarrer.",
+    "dictationBlocked": "Le navigateur n’a pas autorisé le microphone. Autorisez-le dans les paramètres du site.",
+    "dictationInsecureTitle": "La dictée nécessite une connexion sécurisée",
+    "dictationInsecure": "Les navigateurs ne prêtent le microphone qu’aux pages HTTPS. Tant que Helena ne tourne pas en HTTPS : ouvrez chrome://flags dans Chrome, activez « Insecure origins treated as secure » et ajoutez {origin}. Le kiosque l’autorise déjà.",
+    "autoSpeak": "Lire les réponses à voix haute automatiquement",
+    "autoSpeakOn": "Les réponses sont lues à voix haute – cliquez pour désactiver"
   },
   "artifact": {
     "title": "Artefact",
@@ -146,5 +162,56 @@
     "approvedBy": "Approuvée par {name}",
     "rejectedBy": "Refusée par {name}",
     "loading": "Chargement de la demande…"
+  },
+  "newChat": {
+    "title": "Nouvelle discussion avec {agent}",
+    "hint": "Choisissez l’agent en bas à gauche du champ de saisie — son état y est affiché."
+  },
+  "agents": {
+    "status": {
+      "running": "Au travail",
+      "waiting": "Vous attend",
+      "ready": "Prêt",
+      "offline": "Hors ligne",
+      "never": "Jamais connecté",
+      "paused": "En pause",
+      "template": "Modèle — ajoutez-le à un projet pour discuter avec lui"
+    },
+    "runtimeExternal": "Externe",
+    "switch": "Discussion avec {agent} — démarrer une nouvelle discussion avec un autre agent",
+    "newChatWith": "Nouvelle discussion avec …"
+  },
+  "interrupted": {
+    "lost": "La connexion à la réponse a été perdue. {agent} y travaille peut-être encore.",
+    "stopped": "La réponse a été arrêtée.",
+    "failed": "La réponse s’est interrompue avant d’être terminée.",
+    "sendFailed": "Le message n’a pas pu être envoyé.",
+    "reconnect": "Se reconnecter",
+    "continue": "Continuer",
+    "continuePrompt": "Merci de reprendre là où tu as été interrompu.",
+    "resend": "Renvoyer"
+  },
+  "commands": {
+    "new": "Démarrer une nouvelle discussion",
+    "retry": "Répondre à nouveau à la dernière question",
+    "undo": "Retirer le dernier échange",
+    "title": "Renommer cette discussion",
+    "model": "Choisir le modèle",
+    "reasoning": "Régler l’effort de réflexion",
+    "skills": "Ouvrir les compétences de l’agent",
+    "memory": "Ouvrir la mémoire de l’agent",
+    "usage": "Afficher les jetons utilisés par cette discussion",
+    "stop": "Arrêter la réponse"
+  },
+  "activity": {
+    "thinking": "{agent} réfléchit…",
+    "writing": "{agent} écrit…",
+    "queued": "En attente de {agent} — son runner est hors ligne. La réponse commence dès son retour.",
+    "usingTool": "{agent} utilise {tool} …"
+  },
+  "session": {
+    "copy": "Copier l’ID de session",
+    "copied": "ID de session copié",
+    "hint": "Continuer dans un terminal : hermes --resume {id} (ou claude --resume {id})"
   }
 }

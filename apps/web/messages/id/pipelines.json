@@ -47,7 +47,8 @@
     "loadFailed": "Templat tidak dapat dimuat.",
     "tryAgain": "Coba lagi",
     "noAccess": "Anda mungkin tidak dapat melihat alur kerja tim ini.",
-    "readOnly": "Hanya anggota yang boleh membuat alur kerja yang dapat menambahkan templat di sini."
+    "readOnly": "Hanya anggota yang boleh membuat alur kerja yang dapat menambahkan templat di sini.",
+    "noAccessTitle": "Tidak ada akses"
   },
   "starter": {
     "name": "Alur kerja baru",
@@ -112,7 +113,8 @@
     "openTemplate": "Buka templat",
     "issuesTitle": "{count, plural, other {# masalah}}",
     "warningsTitle": "{count, plural, other {# masalah dalam proyek ini}}",
-    "warningsHint": "Alur kerja dapat disimpan, tetapi tidak dapat diaktifkan di proyek sampai masalah ini diperbaiki."
+    "warningsHint": "Alur kerja dapat disimpan, tetapi tidak dapat diaktifkan di proyek sampai masalah ini diperbaiki.",
+    "loadFailedHint": "Server tidak merespons. Coba lagi sebentar lagi."
   },
   "trigger": {
     "title": "Pemicu",
@@ -388,7 +390,12 @@
     "allRuns": "Semua eksekusi",
     "onlyTestRuns": "Uji coba",
     "onlyRealRuns": "Eksekusi nyata",
-    "allProjects": "Semua proyek"
+    "allProjects": "Semua proyek",
+    "filter": "Filter",
+    "filterReset": "Atur ulang filter",
+    "filterProject": "Proyek",
+    "filterStatus": "Status",
+    "filterKind": "Jenis"
   },
   "versions": {
     "empty": "Tidak ada versi.",

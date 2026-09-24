@@ -35,7 +35,7 @@ export default function InvitesManager({ projectKey }: { projectKey: string }) {
 
   return (
     <div>
-      <div className="mb-8">
+      <div className="mb-6">
         <div className="mb-1 border-b pb-1 text-xs font-medium text-muted-foreground">
           {t('pendingCount', { count: pending.length })}
         </div>

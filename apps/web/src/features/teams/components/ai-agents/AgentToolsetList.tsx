@@ -39,7 +39,7 @@ export default function AgentToolsetList({
             const on = !denied.includes(name);
             const label = (
               <span className="min-w-0">
-                <span className="font-mono text-[13px]">{name}</span>
+                <span className="font-mono text-xs">{name}</span>
                 {isHermesToolset(name) && (
                   <span className="block text-xs text-muted-foreground">
                     {t(`toolset.${name}`)}

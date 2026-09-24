@@ -6,9 +6,9 @@ import { useTranslations } from 'next-intl';
 import { useTeamQuery } from '@/services/teams.service';
 import SectionPageView from '@/components/common/page/SectionPageView';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
-import { Button } from '@/components/ui/button';
 import { SkillCreateDialog } from './SkillCreateDialog';
 import TeamAgentSkills from './TeamAgentSkills';
+import { PageActions, PageToolbar, PageToolbarSpacer } from '@/components/layout/PageToolbar';
 
 // The skill library of a team: the SKILL.md documents its projects' internal agents
 // load on demand, shared by every one of them.
@@ -23,15 +23,22 @@ export default function TeamAgentSkillsSection({ teamId }: { teamId: number }) {
       title={t('sections.agentSkills.title')}
       description={t('sections.agentSkills.description')}
       wide
-      actions={
-        permissions?.create ? (
-          <Button size="sm" className="h-8 gap-1.5" onClick={() => setCreating(true)}>
-            <Plus className="size-3.5" />
-            {t('skills.newSkill')}
-          </Button>
-        ) : undefined
-      }
     >
+      <PageToolbar>
+        <PageToolbarSpacer />
+        <PageActions
+          primary={
+            permissions?.create
+              ? {
+                  id: 'new',
+                  label: t('skills.newSkill'),
+                  icon: Plus,
+                  onClick: () => setCreating(true),
+                }
+              : undefined
+          }
+        />
+      </PageToolbar>
       {!permissions || !team ? (
         <ListSkeleton rows={3} rowClassName="h-12" />
       ) : !permissions.read ? (

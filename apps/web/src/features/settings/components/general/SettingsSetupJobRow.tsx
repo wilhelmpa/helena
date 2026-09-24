@@ -28,7 +28,7 @@ export default function SettingsSetupJobRow({
     job?.status === 'succeeded' ? CheckCircle2 : job?.status === 'failed' ? CircleAlert : Clock3;
 
   return (
-    <div className="flex items-center justify-between gap-6 p-4">
+    <div className="flex items-center justify-between gap-4 p-4">
       <div className="max-w-2xl space-y-1">
         <div className="text-sm font-medium">{title}</div>
         <p className="text-xs text-muted-foreground">{description}</p>

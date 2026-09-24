@@ -17,7 +17,11 @@ import { describe, it } from 'node:test';
 // commits (organization/routines/settings/teams status colors) and before any
 // further cleanup: 203 (147 arbitrary text/row sizes, ~36 raw Tailwind palette
 // colors, 20 raw hex/rgb()).
-const BASELINE = 203;
+//
+// Lowered 2026-09-24 to 62 by hub/helena-design-2: every bracket text size in features
+// and routes moved onto the type scale (text-[10px] x92, text-[11px] x44, …), plus the
+// new off-scale rule (text-lg, text-4xl+, font-bold) starting at zero.
+const BASELINE = 62;
 
 const WEB_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 

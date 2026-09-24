@@ -5,6 +5,7 @@ import { useShell } from '@/context/shellContext';
 import { settingsSection } from '@/utils/settingsSections';
 import { useSettingsSectionText } from '@/hooks/useSectionLabels';
 import SectionPageView from '@/components/common/page/SectionPageView';
+import SettingsToolbar from './components/SettingsToolbar';
 import UnsavedChangesBar from '@/components/common/page/UnsavedChangesBar';
 import RequirePermission from '@/components/common/permissions/RequirePermission';
 import { SettingsResourceProvider } from './context/settingsPermission';
@@ -35,9 +36,10 @@ function GeneralPage({ project }: { project: ProjectDetail }) {
   const features = useFeatureToggles(project);
   return (
     <SectionPageView title={sectionText.label} description={sectionText.description}>
+      <SettingsToolbar />
       <SettingsResourceProvider resource={section.resource}>
         <RequirePermission resource={section.resource} action="read">
-          <div className="space-y-10 pb-16">
+          <div className="space-y-6 pb-16">
             <SettingsGeneral form={form} />
             <SettingsFeatures form={features} />
             <SettingsSetup project={project} />

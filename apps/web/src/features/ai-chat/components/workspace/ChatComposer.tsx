@@ -1,81 +1,133 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import type { ChangeEvent, ClipboardEvent, DragEvent, KeyboardEvent } from 'react';
-import type { ChatStatus } from 'ai';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
-import { ArrowUp, Paperclip, Square } from 'lucide-react';
+import { ArrowUp, RefreshCw, Square } from 'lucide-react';
 import { toast } from 'sonner';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
-import { teamSectionPath } from '@/utils/paths';
+import type { ChatPrompt } from '@/lib/api/endpoints/chatPrompts';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { useVaultUpload } from '../../hooks/useVaultUpload';
 import { useChatPrompts } from '../../hooks/useChatPrompts';
 import { useChatListMutations } from '../../hooks/useChatList';
 import { useChatSummary } from '../../hooks/useChatSummary';
-import { useChatCatalog } from '../../hooks/useChatCatalog';
 import { useConcurrentChatCheck } from '../../hooks/useConcurrentChatCheck';
-import {
-  parseSlashCommand,
-  slashItems,
-  type ChatCommandAction,
-  type ChatCommandRefusal,
-} from '../../utils/chatCommands';
+import { useComposerCommands } from '../../hooks/useComposerCommands';
 import { fillPrompt, promptVariables } from '../../utils/promptVariables';
-import { CHAT_PROMPT_LIMIT } from '../../utils/chatMessages';
+import { CHAT_PROMPT_LIMIT, type PlanChatMetadata } from '../../utils/chatMessages';
 import type { PlanSendOptions } from '../../services/planChatTransport';
-import type { ChatPrompt } from '@/lib/api/endpoints/chatPrompts';
+import type { ChatAgentState } from '../../utils/agentPresence';
+import type { ComposerActivity, PendingChoices } from '../../utils/composerActivity';
+import { AgentContextSize } from '@/components/common/agent-chat/AgentContextSize';
+import ChatDictationButton from './ChatDictationButton';
+import ChatAutoSpeakToggle from './ChatAutoSpeakToggle';
+import ChatQueuedMessages, { type QueuedMessage } from './ChatQueuedMessages';
+import ChatChoiceChips from './ChatChoiceChips';
 import ChatComposerAttachments, { type PendingAttachment } from './ChatComposerAttachments';
 import ChatSlashMenu from './ChatSlashMenu';
 import ChatAttachPicker from './ChatAttachPicker';
 import ChatModelPicker from './ChatModelPicker';
 import ChatRenameDialog from './ChatRenameDialog';
 import ChatPromptVariablesDialog from './ChatPromptVariablesDialog';
+import ChatComposerStatus from './ChatComposerStatus';
+import ChatAgentMenu from './ChatAgentMenu';
 
 export interface ChatComposerProps {
   scopeKey: string;
   agent: AiAgent;
+  // Every agent a chat can be with, and how each is doing, for the picker at the
+  // composer's bottom left — picking another one starts a new chat with it.
+  agents: AiAgent[];
+  states: Map<number, ChatAgentState>;
+  // What the answer is doing, or how it ended (see composerActivity), and the tool it
+  // is running right now, if any.
+  activity: ComposerActivity;
+  tool: string | null;
+  // Messages written while an answer was still coming, waiting to go out in order.
+  queue: QueuedMessage[];
+  queuePaused: boolean;
+  onQueue: (text: string, options: PlanSendOptions, metadata: PlanChatMetadata) => void;
+  onRemoveQueued: (id: string) => void;
+  // The answers the agent offered for its last question (Hermes' clarify), if any.
+  choices: PendingChoices | null;
+  // The conversation's context size after its last answer (see AgentContextSize);
+  // undefined while none has completed.
+  contextTokens: number | null | undefined;
+  // Voice mode: answers are read aloud when complete.
+  autoSpeak: boolean;
+  onAutoSpeakChange: (on: boolean) => void;
   threadId: string | null;
   projectKey: string | null;
-  status: ChatStatus;
-  onSend: (text: string, options: PlanSendOptions) => void;
+  // Where a new chat's text is kept while its agent is still being picked.
+  draft?: { current: string };
+  busy: boolean;
+  model: string | null;
+  thinkingLevel: string | null;
+  onModelChange: (model: string | null, thinkingLevel: string | null) => void;
+  onSend: (text: string, options: PlanSendOptions, metadata: PlanChatMetadata) => void;
   onStop: () => void;
   onNewChat: () => void;
+  onPickAgent: (agentId: number) => void;
   onRetryLast: () => void;
-  // Drops the last exchange (the last question and its answer) from view and reports
-  // whether there was one to drop, for the `/undo` command. Nothing is sent, so this is
-  // a client-side branch point: it only becomes durable once the member sends the next
-  // message, which then continues from before the exchange, same as editing an earlier
-  // question does. Reloading before that shows the exchange again.
+  onReconnect: () => void;
+  onContinue: () => void;
+  onResend: () => void;
+  // Drops the last exchange from view and reports whether there was one (`/undo`).
   onUndo: () => boolean;
 }
 
-// The claude.ai-style composer: an auto-sizing textarea, drag & drop and pasted images
-// landing in the vault, the `/` menu for Hermes' commands and the prompt library, the
-// model picker, and a send button that becomes a stop button while an answer streams.
+// The claude.ai-style composer, kept slim — and the one place the conversation's state
+// is shown and steered (owner, 2026-09-24): its first line says what the answer is
+// doing ("Home is thinking …", "Home nutzt web_search …") or how it ended, with
+// continue / reconnect / regenerate; a stop button sits next to send while an answer is
+// written, and what is sent meanwhile waits in a queue over the field; the agent (with
+// its presence), the model and dictation sit at its bottom left, the context size at
+// its right. Choices the agent offered for its question appear as chips. Files dropped
+// or pasted in land in the vault; `/` opens Hermes' commands and the prompt library.
+// Enter sends, Shift+Enter or ⌘/Ctrl+Enter breaks the line, Escape stops the answer.
 export default function ChatComposer({
   scopeKey,
   agent,
+  agents,
+  states,
+  activity,
+  tool,
+  queue,
+  queuePaused,
+  onQueue,
+  onRemoveQueued,
+  choices,
+  contextTokens,
+  autoSpeak,
+  onAutoSpeakChange,
   threadId,
   projectKey,
-  status,
+  draft,
+  busy,
+  model,
+  thinkingLevel,
+  onModelChange,
   onSend,
   onStop,
   onNewChat,
+  onPickAgent,
   onRetryLast,
+  onReconnect,
+  onContinue,
+  onResend,
   onUndo,
 }: ChatComposerProps) {
   const t = useTranslations('chatWorkspace');
-  const router = useRouter();
-  const [value, setValue] = useState('');
+  const [value, setStoredValue] = useState(() => draft?.current ?? '');
+  const setValue = (next: string) => {
+    setStoredValue(next);
+    if (draft) draft.current = next;
+  };
   const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
-  const [model, setModel] = useState<string | null>(null);
-  const [thinkingLevel, setThinkingLevel] = useState<string | null>(null);
   const [modelPickerOpen, setModelPickerOpen] = useState(false);
   const [dragOver, setDragOver] = useState(false);
-  const [highlight, setHighlight] = useState(0);
   const [renaming, setRenaming] = useState(false);
   const [fillingPrompt, setFillingPrompt] = useState<ChatPrompt | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -83,22 +135,10 @@ export default function ChatComposer({
   const upload = useVaultUpload(scopeKey);
   const prompts = useChatPrompts(projectKey);
   const chatSummary = useChatSummary(threadId);
-  const catalog = useChatCatalog(scopeKey, agent.id);
   const { rename } = useChatListMutations();
-  // The real, server-configured limit (ai_agent.max_concurrent_chats, an agent setting
-  // the owner sets in Helena) — not a per-browser guess, so this pre-flight check
-  // reads the same number the server enforces and cannot go stale against it.
-  const limit = agent.maxConcurrentChats;
+  // The server-configured limit (the agent's max_concurrent_chats), checked before
+  // sending so a member hits it here rather than as a refused send.
   const checkConcurrency = useConcurrentChatCheck(agent.id, threadId);
-
-  const busy = status === 'streaming' || status === 'submitted';
-  const slash = useMemo(() => (!busy ? parseSlashCommand(value) : null), [value, busy]);
-  const items = useMemo(
-    () => (slash ? slashItems(slash.name, prompts.data ?? []) : []),
-    [slash, prompts.data],
-  );
-
-  useEffect(() => setHighlight(0), [slash?.name]);
 
   function resize() {
     const node = textareaRef.current;
@@ -107,13 +147,45 @@ export default function ChatComposer({
     node.style.height = `${Math.min(240, node.scrollHeight)}px`;
   }
 
+  function focusAfter(update: () => void) {
+    update();
+    requestAnimationFrame(() => {
+      resize();
+      textareaRef.current?.focus();
+    });
+  }
+
+  const commands = useComposerCommands(value, {
+    scopeKey,
+    agent,
+    threadId,
+    prompts: prompts.data ?? [],
+    busy,
+    model,
+    onModelChange,
+    openModelPicker: () => setModelPickerOpen(true),
+    openRename: () => setRenaming(true),
+    insertPrompt: (prompt) => {
+      if (promptVariables(prompt.content).length > 0) setFillingPrompt(prompt);
+      else focusAfter(() => setValue(prompt.content));
+    },
+    onNewChat,
+    onStop,
+    onRetryLast,
+    onUndo,
+  });
+
   async function uploadFiles(files: File[]) {
     if (files.length === 0) return;
-    const paths = await upload.mutateAsync(files);
-    setAttachments((current) => [
-      ...current,
-      ...paths.map((path, index) => ({ path, name: files[index].name })),
-    ]);
+    try {
+      const paths = await upload.mutateAsync(files);
+      setAttachments((current) => [
+        ...current,
+        ...paths.map((path, index) => ({ path, name: files[index].name })),
+      ]);
+    } catch {
+      toast.error(t('composer.uploadFailed'));
+    }
   }
 
   function onDrop(event: DragEvent<HTMLDivElement>) {
@@ -123,201 +195,74 @@ export default function ChatComposer({
   }
 
   function onPaste(event: ClipboardEvent<HTMLTextAreaElement>) {
-    const images = Array.from(event.clipboardData.items)
-      .filter((item) => item.type.startsWith('image/'))
+    const files = Array.from(event.clipboardData.items)
+      .filter((item) => item.kind === 'file')
       .map((item) => item.getAsFile())
       .filter((file): file is File => file != null);
-    if (images.length > 0) void uploadFiles(images);
-  }
-
-  function insertPrompt(prompt: ChatPrompt) {
-    setValue('');
-    if (promptVariables(prompt.content).length > 0) {
-      setFillingPrompt(prompt);
-      return;
+    if (files.length > 0) {
+      event.preventDefault();
+      void uploadFiles(files);
     }
-    setValue(prompt.content);
-    requestAnimationFrame(() => {
-      resize();
-      textareaRef.current?.focus();
-    });
-  }
-
-  function refusalMessage(refusal: ChatCommandRefusal): string {
-    switch (refusal) {
-      case 'schedules':
-        return t('composer.refusal.schedules');
-      case 'approvals':
-        return t('composer.refusal.approvals');
-      case 'config':
-        return t('composer.refusal.config');
-      case 'outside':
-        return t('composer.refusal.outside');
-    }
-  }
-
-  // `/model [name]`: with no name, opens the same menu the picker button does; with
-  // one, matches it against the runner's published catalog (id or name, exact first
-  // then a loose match) and sets it directly. A reasoning model picks up its own
-  // recommended level, so `/model` alone is enough to use it.
-  function applyModelCommand(query: string) {
-    const models = catalog.data?.models ?? [];
-    const q = query.trim();
-    if (!q) {
-      setModelPickerOpen(true);
-      return;
-    }
-    const lower = q.toLowerCase();
-    const match =
-      models.find((entry) => entry.id.toLowerCase() === lower) ??
-      models.find((entry) => entry.name.toLowerCase() === lower) ??
-      models.find(
-        (entry) =>
-          entry.id.toLowerCase().includes(lower) || entry.name.toLowerCase().includes(lower),
-      );
-    if (!match) {
-      toast.error(t('composer.modelNotFound', { query: q }));
-      return;
-    }
-    setModel(match.id);
-    setThinkingLevel(
-      match.reasoning ? (match.thinkingDefault ?? match.thinkingLevels[0] ?? null) : null,
-    );
-    toast.success(t('composer.modelSet', { model: match.name }));
-  }
-
-  // `/reasoning [level]`: only meaningful once a specific model is picked (see
-  // applyModelCommand) — the server itself refuses a thinking level on "Agent
-  // default" since it does not know which model that resolves to.
-  function applyReasoningCommand(query: string) {
-    const selected = (catalog.data?.models ?? []).find((entry) => entry.id === model);
-    if (!selected || !selected.reasoning || selected.thinkingLevels.length === 0) {
-      toast.error(t('composer.reasoningNeedsModel'));
-      return;
-    }
-    const q = query.trim();
-    if (!q) {
-      setModelPickerOpen(true);
-      return;
-    }
-    const lower = q.toLowerCase();
-    const level =
-      selected.thinkingLevels.find((entry) => entry.toLowerCase() === lower) ??
-      selected.thinkingLevels.find((entry) => entry.toLowerCase().startsWith(lower));
-    if (!level) {
-      toast.error(t('composer.reasoningNotFound', { query: q, model: selected.name }));
-      return;
-    }
-    setThinkingLevel(level);
-    toast.success(t('composer.reasoningSet', { level }));
-  }
-
-  // `/usage`: the chat's own token count (see useChatSummary), the only figure this
-  // chat's data actually carries — no cost is tracked anywhere in Plan, so none is
-  // shown rather than made up.
-  function showUsage() {
-    const tokens = chatSummary.data?.contextTokens;
-    toast.info(tokens == null ? t('composer.usageNone') : t('composer.usage', { tokens }));
-  }
-
-  // `/skills` and `/memory`: the agent's settings sheet is a team-level page regardless
-  // of where the chat runs, so this always sends the member to the team's AI agents
-  // list — never a dead end — with the agent and section named in the query string;
-  // TeamAiAgents reads them, opens that agent's sheet on that section and drops the
-  // params right away.
-  function openAgentSection(section: 'skills' | 'abilities') {
-    router.push(
-      `${teamSectionPath(agent.teamId, 'ai-agents')}?agent=${agent.id}&section=${section}`,
-    );
-  }
-
-  function runAction(action: ChatCommandAction) {
-    const args = slash?.args ?? '';
-    setValue('');
-    switch (action) {
-      case 'new':
-        onNewChat();
-        return;
-      case 'stop':
-        onStop();
-        return;
-      case 'title':
-        if (threadId) setRenaming(true);
-        return;
-      case 'retry':
-        onRetryLast();
-        return;
-      case 'undo': {
-        const undone = onUndo();
-        toast[undone ? 'success' : 'info'](t(undone ? 'composer.undoDone' : 'composer.undoNone'));
-        return;
-      }
-      case 'model':
-        applyModelCommand(args);
-        return;
-      case 'reasoning':
-        applyReasoningCommand(args);
-        return;
-      case 'usage':
-        showUsage();
-        return;
-      case 'skills':
-        openAgentSection('skills');
-        return;
-      case 'memory':
-        openAgentSection('abilities');
-        return;
-      default:
-        toast.info(t('composer.commandNotAvailable'));
-    }
-  }
-
-  function runItem(item: ReturnType<typeof slashItems>[number]) {
-    if (item.kind === 'prompt') {
-      insertPrompt(item.prompt);
-      return;
-    }
-    if (item.command.refusal) {
-      setValue('');
-      toast.info(refusalMessage(item.command.refusal));
-      return;
-    }
-    if (item.command.action) runAction(item.command.action);
   }
 
   async function submit() {
     const text = value.trim();
-    if (!text || busy) return;
-    if (!(await checkConcurrency(limit))) {
-      toast.error(t('composer.concurrencyLimit', { agent: agent.name, limit }));
-      return;
-    }
-    onSend(text, {
+    if (!text || upload.isPending) return;
+    const options: PlanSendOptions = {
       agentId: agent.id,
       files: attachments.map((item) => item.path),
       model,
       thinkingLevel,
-    });
+    };
+    const metadata: PlanChatMetadata = {
+      attachments: attachments.map((item) => ({
+        kind: 'file' as const,
+        path: item.path,
+        name: item.name,
+        contentType: '',
+        sizeBytes: 0,
+      })),
+    };
+    // While an answer is still coming (or others wait before it), the message waits its
+    // turn instead of being refused or lost.
+    if (busy || queue.length > 0) {
+      onQueue(text, options, metadata);
+    } else {
+      if (!(await checkConcurrency(agent.maxConcurrentChats))) {
+        toast.error(
+          t('composer.concurrencyLimit', { agent: agent.name, limit: agent.maxConcurrentChats }),
+        );
+        return;
+      }
+      onSend(text, options, metadata);
+    }
     setValue('');
     setAttachments([]);
     requestAnimationFrame(resize);
   }
 
+  // ⌘/Ctrl+Enter breaks the line at the caret like Shift+Enter; setRangeText keeps the
+  // browser's own undo working.
+  function insertNewline(node: HTMLTextAreaElement) {
+    node.setRangeText('\n', node.selectionStart, node.selectionEnd, 'end');
+    setValue(node.value);
+    resize();
+  }
+
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (slash && items.length > 0) {
-      if (event.key === 'ArrowDown') {
+    if (commands.open) {
+      const count = commands.items.length;
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         event.preventDefault();
-        setHighlight((index) => (index + 1) % items.length);
-        return;
-      }
-      if (event.key === 'ArrowUp') {
-        event.preventDefault();
-        setHighlight((index) => (index - 1 + items.length) % items.length);
+        const step = event.key === 'ArrowDown' ? 1 : -1;
+        commands.setHighlight((index) => (index + step + count) % count);
         return;
       }
       if (event.key === 'Enter' || event.key === 'Tab') {
         event.preventDefault();
-        runItem(items[highlight]);
+        const item = commands.items[commands.highlight];
+        setValue('');
+        commands.run(item);
         return;
       }
       if (event.key === 'Escape') {
@@ -326,7 +271,18 @@ export default function ChatComposer({
         return;
       }
     }
-    if (event.key === 'Enter' && !event.shiftKey && !slash) {
+    // Escape stops an answer that is being written, as in claude.ai.
+    if (event.key === 'Escape' && busy) {
+      event.preventDefault();
+      onStop();
+      return;
+    }
+    if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault();
+      insertNewline(event.currentTarget);
+      return;
+    }
+    if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
       event.preventDefault();
       void submit();
     }
@@ -334,7 +290,7 @@ export default function ChatComposer({
 
   return (
     <div
-      className="border-t bg-background p-3"
+      className="shrink-0 bg-background px-3 pt-2 pb-3"
       onDragOver={(event) => {
         event.preventDefault();
         setDragOver(true);
@@ -343,23 +299,50 @@ export default function ChatComposer({
       onDrop={onDrop}
     >
       <div className="relative mx-auto w-full max-w-3xl">
-        {slash && items.length > 0 && (
+        {commands.open && (
           <ChatSlashMenu
-            items={items}
-            highlight={highlight}
-            onHighlight={setHighlight}
-            onSelect={runItem}
+            items={commands.items}
+            highlight={commands.highlight}
+            onHighlight={commands.setHighlight}
+            onSelect={(item) => {
+              setValue('');
+              commands.run(item);
+            }}
           />
         )}
         <div
-          className={`rounded-2xl border bg-card shadow-sm transition-colors ${dragOver ? 'border-primary ring-2 ring-primary/30' : ''}`}
+          className={cn(
+            'rounded-xl border border-border bg-background transition-colors focus-within:border-ring/60',
+            dragOver && 'border-brand bg-brand-subtle/40',
+          )}
         >
+          <ChatQueuedMessages
+            queue={queue}
+            agentName={agent.name}
+            paused={queuePaused}
+            onRemove={onRemoveQueued}
+          />
+          {choices && !busy && queue.length === 0 && (
+            <ChatChoiceChips
+              choices={choices}
+              onPick={(choice) => onSend(choice, { agentId: agent.id, model, thinkingLevel }, {})}
+            />
+          )}
+          <ChatComposerStatus
+            activity={activity}
+            tool={tool}
+            agentName={agent.name}
+            onReconnect={onReconnect}
+            onContinue={onContinue}
+            onRegenerate={onRetryLast}
+            onResend={onResend}
+          />
           <ChatComposerAttachments
             attachments={attachments}
             uploading={upload.isPending}
             onRemove={(path) => setAttachments((current) => current.filter((a) => a.path !== path))}
           />
-          <Textarea
+          <textarea
             ref={textareaRef}
             dir="auto"
             value={value}
@@ -371,11 +354,12 @@ export default function ChatComposer({
             onPaste={onPaste}
             placeholder={t('composer.placeholder', { agent: agent.name })}
             aria-label={t('composer.placeholder', { agent: agent.name })}
+            title={t('composer.hint')}
             maxLength={CHAT_PROMPT_LIMIT}
             rows={1}
-            className="max-h-60 resize-none border-0 shadow-none focus-visible:ring-0"
+            className="block max-h-60 min-h-10 w-full resize-none bg-transparent px-3 pt-2.5 pb-1 text-sm outline-none placeholder:text-muted-foreground"
           />
-          <div className="flex items-center gap-1.5 px-2 pb-2">
+          <div className="flex items-center gap-1 px-1.5 pb-1.5">
             <ChatAttachPicker
               scopeKey={scopeKey}
               onUpload={() => fileInputRef.current?.click()}
@@ -393,46 +377,71 @@ export default function ChatComposer({
                 event.target.value = '';
               }}
             />
+            <ChatDictationButton
+              value={value}
+              onChange={(next) => {
+                setValue(next);
+                requestAnimationFrame(resize);
+              }}
+            />
+            <ChatAutoSpeakToggle on={autoSpeak} onChange={onAutoSpeakChange} />
+            <ChatAgentMenu agent={agent} agents={agents} states={states} onPick={onPickAgent} />
             <ChatModelPicker
               scopeKey={scopeKey}
               agentId={agent.id}
               model={model}
               thinkingLevel={thinkingLevel}
-              onChange={(nextModel, nextLevel) => {
-                setModel(nextModel);
-                setThinkingLevel(nextLevel);
-              }}
+              onChange={onModelChange}
               open={modelPickerOpen}
               onOpenChange={setModelPickerOpen}
             />
             <div className="flex-1" />
-            {busy ? (
+            {threadId && contextTokens !== undefined && (
+              <span className="px-1">
+                <AgentContextSize tokens={contextTokens} />
+              </span>
+            )}
+            {activity === 'answered' && !busy && (
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="size-8 text-muted-foreground hover:text-foreground"
+                onClick={onRetryLast}
+                aria-label={t('messages.regenerate')}
+                title={t('messages.regenerate')}
+              >
+                <RefreshCw className="size-4" />
+              </Button>
+            )}
+            {busy && (
               <Button
                 type="button"
                 size="icon"
                 variant="secondary"
+                className="size-8 rounded-lg"
                 onClick={onStop}
                 aria-label={t('composer.stop')}
+                title={t('composer.stop')}
               >
-                <Square className="size-3.5 fill-current" />
+                <Square className="size-3 fill-current" />
               </Button>
-            ) : (
+            )}
+            {(!busy || value.trim()) && (
               <Button
                 type="button"
                 size="icon"
-                disabled={!value.trim()}
+                className="size-8 rounded-lg"
+                disabled={!value.trim() || upload.isPending}
                 onClick={() => void submit()}
-                aria-label={t('composer.send')}
+                aria-label={busy ? t('composer.queue') : t('composer.send')}
+                title={busy ? t('composer.queue') : t('composer.send')}
               >
                 <ArrowUp className="size-4" />
               </Button>
             )}
           </div>
         </div>
-        <p className="mt-1.5 flex items-center gap-1 px-1 text-xs text-muted-foreground">
-          <Paperclip className="size-3" />
-          {t('composer.hint')}
-        </p>
       </div>
       {renaming && threadId && (
         <ChatRenameDialog
@@ -446,12 +455,9 @@ export default function ChatComposer({
           prompt={fillingPrompt}
           onClose={() => setFillingPrompt(null)}
           onConfirm={(values) => {
-            setValue(fillPrompt(fillingPrompt.content, values));
+            const filled = fillPrompt(fillingPrompt.content, values);
             setFillingPrompt(null);
-            requestAnimationFrame(() => {
-              resize();
-              textareaRef.current?.focus();
-            });
+            focusAfter(() => setValue(filled));
           }}
         />
       )}

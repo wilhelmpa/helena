@@ -2,13 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { Users } from 'lucide-react';
+import { PageSelect } from '@/components/layout/PageToolbar';
 import { useProjectsQuery } from '@/services/projects.service';
 import type { WorkspaceContentProps } from '@/context/workspaceContents';
 import { useTeamsQuery } from '@/services/teams.service';
 import MailInbox from './components/MailInbox';
 import { resolveInboxTeamId } from './inboxTeamScope';
 
-export default function InboxWorkspace({ projectKey }: WorkspaceContentProps) {
+// The mail inbox of the tool panel and of Home's inbox page (`page`). On the page its
+// controls, the team among them, are the page's header row (see MailInbox).
+export default function InboxWorkspace({
+  projectKey,
+  page = false,
+}: WorkspaceContentProps & { page?: boolean }) {
   const teamCopy = useTranslations('teams');
   const inboxCopy = useTranslations('inbox.hub');
   const teams = useTeamsQuery();
@@ -30,7 +37,7 @@ export default function InboxWorkspace({ projectKey }: WorkspaceContentProps) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {!projectKey && (teams.data?.length ?? 0) > 1 ? (
+      {!page && !projectKey && (teams.data?.length ?? 0) > 1 ? (
         <label className="flex items-center gap-2 border-b px-3 py-2 text-sm">
           <span className="text-muted-foreground">{teamCopy('info.team')}</span>
           <select
@@ -56,6 +63,21 @@ export default function InboxWorkspace({ projectKey }: WorkspaceContentProps) {
           key={`${teamId}:${project?.id ?? 'all'}`}
           teamId={teamId}
           projectId={project?.id}
+          toolbar={page}
+          leading={
+            page && !projectKey && (teams.data?.length ?? 0) > 1 ? (
+              <PageSelect
+                label={teamCopy('info.team')}
+                icon={Users}
+                value={String(teamId)}
+                onChange={(value) => setTeamId(Number(value))}
+                options={(teams.data ?? []).map((team) => ({
+                  value: String(team.id),
+                  label: team.name,
+                }))}
+              />
+            ) : undefined
+          }
         />
       )}
     </div>

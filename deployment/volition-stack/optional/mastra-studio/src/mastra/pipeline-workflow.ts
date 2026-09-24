@@ -102,7 +102,7 @@ export function buildPipelineWorkflow(
   const prepare = createStep({
     id: 'prepare-pipeline',
     description:
-      'Take the run from Plan: its task and the pinned version of the workflow. A schedule fire gets a task and a run of its own.',
+      'Take the run from Helena: its task and the pinned version of the workflow. A schedule fire gets a task and a run of its own.',
     inputSchema: workEnvelopeSchema,
     outputSchema: pipelineStateSchema,
     retries: 2,
@@ -149,7 +149,7 @@ export function buildPipelineWorkflow(
   const runStep = createStep({
     id: 'run-pipeline-step',
     description:
-      'Execute one step: an agent step through the Plan run queue, an approval that waits for a person, a condition, a task action or a wait.',
+      'Execute one step: an agent step through the Helena run queue, an approval that waits for a person, a condition, a task action or a wait.',
     inputSchema: pipelineStateSchema,
     outputSchema: pipelineStateSchema,
     resumeSchema: approvalDecisionSchema,
@@ -259,7 +259,7 @@ export function buildPipelineWorkflow(
 
   const finish = createStep({
     id: 'finish-pipeline',
-    description: 'Record in Plan that the run succeeded, or ended at a rejected approval.',
+    description: 'Record in Helena that the run succeeded, or ended at a rejected approval.',
     inputSchema: pipelineStateSchema,
     outputSchema: pipelineOutputSchema,
     retries: 2,
@@ -285,7 +285,7 @@ export function buildPipelineWorkflow(
   return createWorkflow({
     id: 'plan-pipeline',
     description:
-      "Run a workflow of Plan's workflow builder: agent steps through the Plan run queue, approvals in Plan's approvals inbox, conditions, task actions and waits.",
+      "Run a workflow of Helena's workflow builder: agent steps through the Helena run queue, approvals in Helena's approvals inbox, conditions, task actions and waits.",
     inputSchema: workEnvelopeSchema,
     outputSchema: pipelineOutputSchema,
   })

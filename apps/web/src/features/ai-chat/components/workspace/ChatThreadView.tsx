@@ -1,46 +1,67 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useChat } from '@ai-sdk/react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
-import { showChatVersion } from '@/lib/api/endpoints/agentChat';
 import { ApiError } from '@/lib/api/core/client';
-import { PlanChatTransport } from '../../services/planChatTransport';
-import { useChatThread } from '../../hooks/useChatThread';
-import type { Artifact } from '../../utils/artifacts';
-import { toUIMessage, type PlanUIMessage } from '../../utils/chatMessages';
+import { usePlanChat } from '../../hooks/usePlanChat';
+import { useChatSummary } from '../../hooks/useChatSummary';
+import type { PlanSendOptions } from '../../services/planChatTransport';
+import type { PlanChatMetadata } from '../../utils/chatMessages';
 import { uuid } from '@/utils/uuid';
+import type { ChatAgentState } from '../../utils/agentPresence';
+import type { Artifact } from '../../utils/artifacts';
 import ChatHeader from './ChatHeader';
 import ChatMessageList from './ChatMessageList';
 import ChatComposer from './ChatComposer';
+import ChatNewChatIntro from './ChatNewChatIntro';
+import ChatRestoreError from './ChatRestoreError';
+import { activeTool, composerActivity, pendingChoices } from '../../utils/composerActivity';
+import { useAutoSpeak } from '../../hooks/useAutoSpeak';
+import { messageText } from '../../utils/chatMessages';
+import { speak } from '../../utils/speak';
+import type { QueuedMessage } from './ChatQueuedMessages';
+
+type Queued = QueuedMessage & { options: PlanSendOptions; metadata: PlanChatMetadata };
 
 export interface ChatThreadViewProps {
   scopeKey: string;
   projectKey: string | null;
   agent: AiAgent;
+  agents: AiAgent[];
+  states: Map<number, ChatAgentState>;
   threadId: string | null;
+  // The text typed into a new chat so far, kept by the workspace across agent picks.
+  newChatDraft: { current: string };
   onThreadCreated: (threadId: string) => void;
-  onNewChat: () => void;
+  onThreadDeleted: (threadId: string) => void;
+  onNewChat: (agentId: number) => void;
   onOpenList: () => void;
   compact: boolean;
   onArtifact: (artifact: Artifact) => void;
   artifactOpen: boolean;
   onToggleArtifact: () => void;
   hasArtifact: boolean;
+  // Mounted as the chat page (its bar goes into the app header), not in the tool panel.
+  inPage?: boolean;
 }
 
-// One open conversation: its transcript restored from the API, the live AI SDK chat
-// state layered on top of it, the header, the message list and the composer. Remounted
-// (see the `key` ChatWorkspace gives it) whenever the agent or the thread changes, so
-// none of this has to reset its own state by hand.
+// One open conversation: the header, the transcript (or, before the first message, a
+// quiet line saying who the new chat is with) and the composer at the bottom, which
+// also shows and steers the answer. Remounted (see the `key` ChatWorkspace gives it)
+// whenever the agent or the thread changes, so none of this has to reset its own state
+// by hand.
 export default function ChatThreadView({
   scopeKey,
   projectKey,
   agent,
+  agents,
+  states,
   threadId,
+  newChatDraft,
   onThreadCreated,
+  onThreadDeleted,
   onNewChat,
   onOpenList,
   compact,
@@ -48,29 +69,16 @@ export default function ChatThreadView({
   artifactOpen,
   onToggleArtifact,
   hasArtifact,
+  inPage = false,
 }: ChatThreadViewProps) {
   const t = useTranslations('chatWorkspace');
-  const thread = useChatThread(scopeKey, agent.id, threadId);
-  const transport = useMemo(() => new PlanChatTransport(scopeKey, agent.id), [scopeKey, agent.id]);
-  const resumedRef = useRef(false);
-
-  // Fixed for the life of this view: a new chat keeps its id when its thread id arrives,
-  // so the AI SDK keeps the same chat, with the answer still streaming into it.
-  const [chatId] = useState(() => threadId ?? `new-${agent.id}-${uuid()}`);
-  const chat = useChat<PlanUIMessage>({
-    id: chatId,
-    transport,
-    messages: [],
-    onData: (part) => {
-      if (part.type === 'data-turn') {
-        const data = part.data as { threadId: string };
-        onThreadCreated(data.threadId);
-      }
-    },
-    // The composer already checks the agent's chat concurrency limit before sending;
-    // this only catches the rare race where two sends (e.g. two tabs) both pass that
-    // check before either reaches the server, so the send that actually loses is still
-    // explained rather than failing silently.
+  const plan = usePlanChat({
+    scopeKey,
+    agent,
+    threadId,
+    onThreadCreated,
+    // The composer checks the agent's chat limit before sending; this catches the race
+    // where two sends (two tabs) both passed it, so the one that lost is explained.
     onError: (error) => {
       if (error instanceof ApiError && error.status === 409) {
         toast.error(
@@ -79,25 +87,65 @@ export default function ChatThreadView({
       }
     },
   });
-
-  const [restored, setRestored] = useState(threadId == null);
-
+  const [model, setModel] = useState<{
+    model: string | null;
+    thinkingLevel: string | null;
+    // Set by the member (the picker or /model); until then a reopened chat follows the
+    // model it was last sent with.
+    chosen: boolean;
+  }>({ model: null, thinkingLevel: null, chosen: false });
+  const summary = useChatSummary(threadId);
   useEffect(() => {
-    if (restored || thread.isLoading) return;
-    transport.threadId = threadId;
-    chat.setMessages(thread.messages);
-    if (thread.activeAnswer && !resumedRef.current) {
-      resumedRef.current = true;
-      transport.resume = {
-        messageId: thread.activeAnswer.messageId,
-        agentId: thread.activeAnswer.agentId ?? agent.id,
-      };
-      void chat.resumeStream();
+    const data = summary.data;
+    if (!data || model.chosen) return;
+    if (data.model !== model.model || data.thinkingLevel !== model.thinkingLevel) {
+      setModel({ model: data.model, thinkingLevel: data.thinkingLevel, chosen: false });
     }
-    setRestored(true);
-    // Runs once the transcript arrives; chat/transport are stable for this mount.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [thread.isLoading, thread.messages, thread.activeAnswer, restored]);
+  }, [summary.data, model]);
+  const state = states.get(agent.id);
+  const empty = !plan.restoring && !plan.restoreFailed && plan.messages.length === 0;
+  const activity = composerActivity(plan.messages, plan.status, state?.online ?? true);
+
+  // What is written while an answer is still coming waits here and goes out in order
+  // once the agent is done (old-chat parity). An answer that failed holds the queue:
+  // nothing more is sent on its own until the member sends again.
+  const [queue, setQueue] = useState<Queued[]>([]);
+  const [queuePaused, setQueuePaused] = useState(false);
+  useEffect(() => {
+    if (activity === 'failed' || activity === 'sendFailed') setQueuePaused(true);
+  }, [activity]);
+  // Voice mode: with "read answers aloud" on, an answer is spoken as soon as it is
+  // complete (not one that was stopped or failed).
+  const [autoSpeak, setAutoSpeak] = useAutoSpeak();
+  const wasBusy = useRef(false);
+  useEffect(() => {
+    if (plan.busy) {
+      wasBusy.current = true;
+      return;
+    }
+    if (!wasBusy.current) return;
+    wasBusy.current = false;
+    const last = plan.messages.at(-1);
+    if (!autoSpeak || last?.role !== 'assistant') return;
+    if (last.metadata?.stopped || last.metadata?.error || last.metadata?.interrupted) return;
+    speak(messageText(last));
+  }, [plan.busy, plan.messages, autoSpeak]);
+
+  // One send per turn: between handing a message to the chat and the chat reporting it
+  // busy there is a render in which it still looks idle; the next status change (the
+  // send taken, or refused) opens the gate again.
+  const dispatching = useRef(false);
+  useEffect(() => {
+    dispatching.current = false;
+  }, [plan.status]);
+  useEffect(() => {
+    if (dispatching.current || plan.busy || plan.restoring || queuePaused) return;
+    if (queue.length === 0) return;
+    const [next, ...rest] = queue;
+    dispatching.current = true;
+    setQueue(rest);
+    void plan.send(next!.text, next!.options, next!.metadata);
+  }, [plan, queue, queuePaused]);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -106,53 +154,68 @@ export default function ChatThreadView({
         projectKey={projectKey}
         agent={agent}
         threadId={threadId}
-        messages={chat.messages}
+        messages={plan.messages}
         onOpenList={onOpenList}
+        onNewChat={onNewChat}
+        onDeleted={onThreadDeleted}
         compact={compact}
         artifactOpen={artifactOpen}
         onToggleArtifact={onToggleArtifact}
         hasArtifact={hasArtifact}
+        inPage={inPage}
       />
-      <ChatMessageList
-        messages={chat.messages}
-        status={chat.status}
-        agent={agent}
-        loading={!restored}
-        hasOlder={thread.hasOlder}
-        loadingOlder={thread.loadingOlder}
-        onLoadOlder={thread.loadOlder}
-        onRegenerate={(messageId) => chat.regenerate({ messageId })}
-        onEdit={(index, text) => {
-          chat.setMessages((messages) => messages.slice(0, index));
-          void chat.sendMessage({ text });
-        }}
-        onReply={(text) => void chat.sendMessage({ text })}
-        onShowArtifact={onArtifact}
-        onSwitchVersion={async (messageId) => {
-          if (!threadId) return;
-          await showChatVersion(threadId, Number(messageId));
-          const page = await thread.refetch();
-          if (page.data) chat.setMessages(page.data.items.map(toUIMessage));
-        }}
-        projectKey={projectKey}
-        threadId={threadId}
-      />
+      {plan.restoreFailed ? (
+        <ChatRestoreError onRetry={() => void plan.retryRestore()} />
+      ) : empty ? (
+        <ChatNewChatIntro agent={agent} />
+      ) : (
+        <ChatMessageList
+          plan={plan}
+          agent={agent}
+          projectKey={projectKey}
+          threadId={threadId}
+          onShowArtifact={onArtifact}
+        />
+      )}
       <ChatComposer
         scopeKey={scopeKey}
         agent={agent}
+        agents={agents}
+        states={states}
+        activity={activity}
+        tool={activeTool(plan.messages, plan.status)}
+        queue={queue}
+        queuePaused={queuePaused}
+        onQueue={(text, options, metadata) => {
+          setQueuePaused(false);
+          setQueue((current) => [...current, { id: uuid(), text, options, metadata }]);
+        }}
+        onRemoveQueued={(id) => setQueue((current) => current.filter((item) => item.id !== id))}
+        choices={activity === 'answered' ? pendingChoices(plan.messages) : null}
+        contextTokens={summary.data?.contextTokens}
+        autoSpeak={autoSpeak}
+        onAutoSpeakChange={setAutoSpeak}
         threadId={threadId}
         projectKey={projectKey}
-        status={chat.status}
-        onSend={(text, options) => void chat.sendMessage({ text }, { body: options })}
-        onStop={() => void chat.stop()}
-        onNewChat={onNewChat}
-        onRetryLast={() => chat.regenerate()}
-        onUndo={() => {
-          const index = chat.messages.findLastIndex((message) => message.role === 'user');
-          if (index === -1) return false;
-          chat.setMessages((messages) => messages.slice(0, index));
-          return true;
+        draft={threadId == null ? newChatDraft : undefined}
+        busy={plan.busy}
+        model={model.model}
+        thinkingLevel={model.thinkingLevel}
+        onModelChange={(next, thinkingLevel) =>
+          setModel({ model: next, thinkingLevel, chosen: true })
+        }
+        onSend={(text, options, metadata) => {
+          setQueuePaused(false);
+          void plan.send(text, options, metadata);
         }}
+        onStop={() => void plan.stop()}
+        onNewChat={() => onNewChat(agent.id)}
+        onPickAgent={onNewChat}
+        onRetryLast={() => void plan.regenerate()}
+        onReconnect={() => void plan.reconnect()}
+        onContinue={() => void plan.send(t('interrupted.continuePrompt'), { agentId: agent.id })}
+        onResend={() => void plan.retrySend()}
+        onUndo={plan.undo}
       />
     </div>
   );

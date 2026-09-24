@@ -361,7 +361,7 @@ export default function NewIssueModal({
           // was typed in. While the field is empty there is nothing to read from,
           // and it would fall back to left-to-right and strand the placeholder.
           dir={title ? 'auto' : undefined}
-          className="w-full bg-transparent text-lg font-semibold outline-none placeholder:text-muted-foreground"
+          className="w-full bg-transparent text-base font-semibold outline-none placeholder:text-muted-foreground"
           placeholder={t('titlePlaceholder')}
           value={title}
           onChange={(e) => setTitle(e.target.value)}

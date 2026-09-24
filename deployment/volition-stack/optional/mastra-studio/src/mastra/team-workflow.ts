@@ -277,7 +277,7 @@ export function buildAgentTeamWorkflow(adapter: HermesTeamAdapter = privateHerme
   const synchronize = createStep({
     id: 'synchronize-plan',
     description:
-      'Write the result to the matching Plan task exactly once and move it to Review, or to Done when the policy allows it and the review accepted the work.',
+      'Write the result to the matching Helena task exactly once and move it to Review, or to Done when the policy allows it and the review accepted the work.',
     inputSchema: agentTeamStateSchema,
     outputSchema: agentTeamOutputSchema,
     retries: 2,
@@ -290,7 +290,7 @@ export function buildAgentTeamWorkflow(adapter: HermesTeamAdapter = privateHerme
           projectRef: projectRef(inputData),
           taskRef: inputData.input.task.taskRef,
           status: 'dry-run-complete' as const,
-          summary: `Validated ${inputData.delegations.length} specialist assignments; no Hermes or Plan call was made.`,
+          summary: `Validated ${inputData.delegations.length} specialist assignments; no Hermes or Helena call was made.`,
           evidence: [],
           history: inputData.history,
           planSync: { state: 'simulated' as const, synchronizedAt: null },
@@ -299,7 +299,7 @@ export function buildAgentTeamWorkflow(adapter: HermesTeamAdapter = privateHerme
       const { policy } = inputData.input;
       const reviewStage = inputData.review;
       if (policy.reviewRequired && !reviewStage?.review)
-        throw new Error('Coordinator review is required before Plan synchronization');
+        throw new Error('Coordinator review is required before Helena synchronization');
       const state =
         policy.autonomy === 'done' && reviewStage?.review?.accepted
           ? ('done' as const)
@@ -339,7 +339,7 @@ export function buildAgentTeamWorkflow(adapter: HermesTeamAdapter = privateHerme
   return createWorkflow({
     id: 'agent-team',
     description:
-      'Coordinate a project agent team through Hermes and synchronize reviewed evidence to Plan.',
+      'Coordinate a project agent team through Hermes and synchronize reviewed evidence to Helena.',
     inputSchema: workEnvelopeSchema,
     outputSchema: agentTeamOutputSchema,
     retryConfig: { attempts: 3, delay: 1_000 },

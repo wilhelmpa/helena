@@ -71,7 +71,7 @@ export const agentChatConfig = {
   // while it waits. The wait is what makes an answer start the moment it is sent.
   claimWaitMs: () => intEnv('AGENT_CHAT_CLAIM_WAIT_MS', 25_000),
   claimPollMs: () => intEnv('AGENT_CHAT_CLAIM_POLL_MS', 500),
-  streamPollMs: () => intEnv('AGENT_CHAT_STREAM_POLL_MS', 300),
+  streamPollMs: () => intEnv('AGENT_CHAT_STREAM_POLL_MS', 100),
   historyMessages: () => intEnv('AGENT_CHAT_HISTORY_MESSAGES', 20),
 };
 

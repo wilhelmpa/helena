@@ -30,7 +30,7 @@ export function TimelineHeader({
           {months.map((m) => (
             <div
               key={m.left}
-              className="absolute top-0 truncate px-1.5 text-[11px] leading-5 font-medium text-muted-foreground"
+              className="absolute top-0 truncate px-1.5 text-xs leading-5 font-medium text-muted-foreground"
               style={{ left: m.left, width: m.width }}
             >
               {m.label}
@@ -48,7 +48,7 @@ export function TimelineHeader({
               <div
                 key={i}
                 className={cn(
-                  'flex shrink-0 items-center justify-center text-[10px]',
+                  'flex shrink-0 items-center justify-center text-xs',
                   weekend ? 'text-muted-foreground/50' : 'text-muted-foreground',
                   isToday && 'font-semibold text-primary',
                 )}
