@@ -19,10 +19,13 @@ describe('isHttpUrl', () => {
   it('accepts absolute http(s) URLs', () => {
     assert.equal(isHttpUrl('https://example.com/hook'), true);
     assert.equal(isHttpUrl('http://example.com'), true);
+    assert.equal(isHttpUrl('http://127.0.0.1:8080/x'), true);
+    assert.equal(isHttpUrl('https://bücher.example/'), true);
   });
   it('refuses words, other schemes and spaces in the host', () => {
     assert.equal(isHttpUrl('abc'), false);
     assert.equal(isHttpUrl('https://kein url'), false);
+    assert.equal(isHttpUrl('https://kein%20url'), false);
     assert.equal(isHttpUrl('ftp://example.com'), false);
     assert.equal(isHttpUrl('mailto:someone@example.com'), false);
   });
