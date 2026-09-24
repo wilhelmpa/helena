@@ -1,15 +1,27 @@
 #!/bin/sh
-# Keeps the firewall's set of home IPv6 networks (inet helena_hardening lan6) equal to the
-# /64s this machine has global addresses in, plus link-local and unique-local. The
-# provider changes the prefix; without this the home network's IPv6 clients would be
-# dropped (IPv4 keeps working). Run by NetworkManager's dispatcher and a 5-minute timer.
+# Keeps the firewall's home networks (inet helena_hardening: lan4, lan6) equal to the
+# networks this machine actually sits in: the IPv4 prefix of the default-route interface,
+# and link-local, unique-local plus the /64s it has global IPv6 addresses in. The provider
+# changes the IPv6 prefix, and a new router can change the IPv4 network; without this the
+# home network's clients (SSH included) would be dropped. Run by NetworkManager's dispatcher,
+# a 5-minute timer, and after the firewall is loaded.
 set -eu
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
 nft list table inet helena_hardening >/dev/null 2>&1 || exit 0
-prefixes=$(ip -6 -o addr show scope global 2>/dev/null | awk '{print $4}' | grep '/64$' \
+v6=$(ip -6 -o addr show scope global 2>/dev/null | awk '{print $4}' | grep '/64$' \
   | python3 -c 'import ipaddress,sys; print(",".join(sorted({str(ipaddress.ip_interface(l.strip()).network) for l in sys.stdin if l.strip()})))')
-elements="fe80::/10, fc00::/7${prefixes:+, $prefixes}"
-nft -f - <<NFT
-flush set inet helena_hardening lan6
-add element inet helena_hardening lan6 { $elements }
-NFT
+dev=$(ip -4 route show default 2>/dev/null | awk '{for(i=1;i<NF;i++) if ($i=="dev") {print $(i+1); exit}}')
+v4=
+if [ -n "$dev" ]; then
+  v4=$(ip -4 -o addr show dev "$dev" scope global | awk '{print $4}' \
+    | python3 -c 'import ipaddress,sys; print(",".join(sorted({str(ipaddress.ip_interface(l.strip()).network) for l in sys.stdin if l.strip()})))')
+fi
+{
+  echo "flush set inet helena_hardening lan6"
+  echo "add element inet helena_hardening lan6 { fe80::/10, fc00::/7${v6:+, $v6} }"
+  # IPv4: only replaced when the default route names one (never emptied on a link flap).
+  if [ -n "$v4" ]; then
+    echo "flush set inet helena_hardening lan4"
+    echo "add element inet helena_hardening lan4 { $v4 }"
+  fi
+} | nft -f -

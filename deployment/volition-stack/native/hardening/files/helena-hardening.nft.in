@@ -8,9 +8,9 @@ table inet helena_hardening
 delete table inet helena_hardening
 
 table inet helena_hardening {
-	# The home network. IPv4 from the interface's own prefix at render time; IPv6 as
-	# link-local and unique-local plus this machine's own /64s, which change with the
-	# provider's prefix and are kept current by helena-lan6-sync.
+	# The home network. IPv4 from the interface's own prefix; IPv6 as link-local and
+	# unique-local plus this machine's own /64s, which change with the provider's prefix.
+	# helena-lan6-sync keeps both current (NetworkManager dispatcher + 5-minute timer).
 	set lan4 {
 		type ipv4_addr; flags interval
 		elements = { @LAN4@ }
