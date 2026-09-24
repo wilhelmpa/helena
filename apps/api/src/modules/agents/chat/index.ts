@@ -49,6 +49,7 @@ import {
   heartbeatMessage,
   readEvents,
   readChatCatalog,
+  readTeamChatCatalog,
   sendMessage,
   publishChatCatalog,
   retryMessage,
@@ -387,14 +388,21 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
   .get(
     '/teams/:teamId/ai-agents/:agentId/chat/catalog',
     async ({ params, membership }) => {
-      await requireTeamExternalAgent(params.agentId, membership);
-      return readChatCatalog(params.agentId);
+      const agent = await requireTeamExternalAgent(params.agentId, membership);
+      return agent.template
+        ? readTeamChatCatalog(membership.teamId)
+        : readChatCatalog(params.agentId);
     },
     {
       params: agentParams,
       teamPermission: ['ai_agents', 'read'],
       response: { 200: ChatCatalogResponse, ...commonErrors },
-      detail: { summary: 'List global Home chat models' },
+      detail: {
+        summary: 'List global Home chat models',
+        description:
+          "The models and thinking levels the agent's runner last published. A template, " +
+          "which runs nowhere, offers every model the team's runners published.",
+      },
     },
   )
 
