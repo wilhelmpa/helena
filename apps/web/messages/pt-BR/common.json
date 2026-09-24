@@ -204,7 +204,22 @@
     "previewCustomField": "Custom field",
     "previewAllWorkItems": "All work items",
     "previewUpdated": "Updated {date}",
-    "previewOtherValues": "({count} more)"
+    "previewOtherValues": "({count} more)",
+    "format": {
+      "heading1": "Título 1",
+      "heading2": "Título 2",
+      "bold": "Negrito",
+      "italic": "Itálico",
+      "strike": "Tachado",
+      "code": "Código",
+      "codeBlock": "Bloco de código",
+      "link": "Link",
+      "blockquote": "Citação",
+      "bulletList": "Lista com marcadores",
+      "orderedList": "Lista numerada"
+    },
+    "linkApply": "Definir link",
+    "linkRemove": "Remover link"
   },
   "chart": {
     "download": "Salvar gráfico",

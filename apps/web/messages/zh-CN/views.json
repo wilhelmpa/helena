@@ -32,5 +32,7 @@
   "areaFolderHint": "小写字母、数字和连字符。智能体在项目工作区的此文件夹中处理该区域的任务，Files 中也有同名文件夹。",
   "areaFolderReserved": "项目自身的文件使用 {folder}。请选择其他文件夹。",
   "areaFolderTaken": "该项目的另一个区域已使用此文件夹。",
-  "openFolder": "打开文件夹"
+  "openFolder": "打开文件夹",
+  "deleteView": "删除视图",
+  "deleteViewConfirm": "删除“{name}”？任务会保留，只删除这个已保存的视图。"
 }

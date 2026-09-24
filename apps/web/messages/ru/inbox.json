@@ -34,7 +34,8 @@
     "commented": "{who} оставил(а) комментарий",
     "stateChanged": "{who} изменил(а) статус с {from} на {to}",
     "stateChangedPlain": "{who} изменил(а) статус",
-    "approval_requested": "{who} запрашивает ваше согласование"
+    "approval_requested": "{who} запрашивает ваше согласование",
+    "automation": "Helena"
   },
   "hub": {
     "messages": "Messages",

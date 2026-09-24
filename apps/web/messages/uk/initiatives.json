@@ -140,7 +140,9 @@
     "typeSet": "встановив(-ла) тип {type}",
     "typeRemoved": "прибрав(-ла) тип",
     "linked": "прив'язав(-ла) до {name}",
-    "unlinked": "відв'язав(-ла) від ініціативи"
+    "unlinked": "відв'язав(-ла) від ініціативи",
+    "linkedIssue": "прив'язав(-ла) <issue>завдання</issue> до {name}",
+    "unlinkedIssue": "відв'язав(-ла) <issue>завдання</issue> від ініціативи"
   },
   "attachments": {
     "title": "Вкладення",

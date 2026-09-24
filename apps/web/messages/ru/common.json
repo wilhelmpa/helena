@@ -204,7 +204,22 @@
     "previewCustomField": "Custom field",
     "previewAllWorkItems": "All work items",
     "previewUpdated": "Updated {date}",
-    "previewOtherValues": "({count} more)"
+    "previewOtherValues": "({count} more)",
+    "format": {
+      "heading1": "Заголовок 1",
+      "heading2": "Заголовок 2",
+      "bold": "Жирный",
+      "italic": "Курсив",
+      "strike": "Зачёркнутый",
+      "code": "Код",
+      "codeBlock": "Блок кода",
+      "link": "Ссылка",
+      "blockquote": "Цитата",
+      "bulletList": "Маркированный список",
+      "orderedList": "Нумерованный список"
+    },
+    "linkApply": "Добавить ссылку",
+    "linkRemove": "Убрать ссылку"
   },
   "chart": {
     "download": "Сохранить график",

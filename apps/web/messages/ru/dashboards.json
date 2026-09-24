@@ -85,6 +85,11 @@
       "type": "По типу",
       "assignee": "По исполнителю",
       "delegate": "По делегату"
+    },
+    "none": {
+      "type": "Без типа",
+      "assignee": "Не назначено",
+      "delegate": "Не делегировано"
     }
   },
   "recentIssues": {
@@ -123,7 +128,8 @@
       "label_remove": "убрал(а) метку",
       "field": "обновил(а) поле",
       "other": "обновил(а)"
-    }
+    },
+    "automation": "Helena"
   },
   "pulse": {
     "caption": {

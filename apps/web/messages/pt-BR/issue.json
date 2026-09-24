@@ -121,7 +121,9 @@
     "submit": "Criar issue",
     "template": "Modelo",
     "applyTemplate": "Aplicar modelo…",
-    "noTemplates": "Sem modelos."
+    "noTemplates": "Sem modelos.",
+    "created": "{identifier} criada",
+    "open": "Abrir"
   },
   "attachments": {
     "title": "Anexos",

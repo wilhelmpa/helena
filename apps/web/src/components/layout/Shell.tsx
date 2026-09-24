@@ -56,6 +56,7 @@ export default function Shell({
   autoOpenGlobalChat?: boolean;
 }) {
   const t = useTranslations('nav');
+  const tShell = useTranslations('shell');
   const router = useRouter();
   const route = useShellRoute();
   const { projectKey, routeIssueSeq } = route;
@@ -71,6 +72,7 @@ export default function Shell({
     canCreateIssue,
     errorMsg,
     forbidden,
+    unreachable,
   } = useShellProject(projectKey, route.activeViewId);
 
   const initiativeOptions = useInitiativeOptionsQuery(projectKey).data ?? [];
@@ -299,7 +301,7 @@ export default function Shell({
 
             {errorMsg && !forbidden && (
               <div className="border-b border-destructive/50 bg-destructive/10 px-4 py-2 text-sm text-destructive">
-                {errorMsg}
+                {unreachable ? tShell('serverUnreachable') : errorMsg}
               </div>
             )}
 
@@ -308,6 +310,7 @@ export default function Shell({
                 forbidden={forbidden}
                 hasProject={!!project}
                 hasError={!!errorMsg}
+                unreachable={unreachable}
                 projectsLoaded={projectsLoaded}
                 projectCount={projects.length}
                 allowNoProject={globalHome}

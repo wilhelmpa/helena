@@ -140,7 +140,9 @@
     "typeSet": "عيّن النوع إلى {type}",
     "typeRemoved": "أزال النوع",
     "linked": "ربط بـ {name}",
-    "unlinked": "ألغى الربط بالمبادرة"
+    "unlinked": "ألغى الربط بالمبادرة",
+    "linkedIssue": "ربط <issue>المهمة</issue> بـ {name}",
+    "unlinkedIssue": "ألغى ربط <issue>المهمة</issue> بالمبادرة"
   },
   "attachments": {
     "title": "المرفقات",

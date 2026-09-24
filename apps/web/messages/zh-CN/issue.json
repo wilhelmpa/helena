@@ -121,7 +121,9 @@
     "submit": "新建工作项",
     "template": "模板",
     "applyTemplate": "套用模板…",
-    "noTemplates": "没有模板。"
+    "noTemplates": "没有模板。",
+    "created": "已创建 {identifier}",
+    "open": "打开"
   },
   "attachments": {
     "title": "附件",

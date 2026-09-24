@@ -59,12 +59,14 @@ export default function WorkspaceBrowserBar({
     );
   };
 
+  // The bar measures its own width (a tool panel can be narrow while the window is
+  // wide): back/forward and the view switch give way first, so the address keeps room.
   return (
-    <div className="flex min-w-0 flex-1 items-center gap-0.5">
+    <div className="@container/browserbar flex min-w-0 flex-1 items-center gap-0.5">
       <Button
         variant="ghost"
         size="icon"
-        className="size-7 shrink-0 text-muted-foreground hover:text-foreground max-sm:hidden"
+        className="size-7 shrink-0 text-muted-foreground hover:text-foreground max-sm:hidden @max-[32rem]/browserbar:hidden"
         disabled={!id}
         onClick={() => act({ action: 'back', id })}
         title={t('back')}
@@ -75,7 +77,7 @@ export default function WorkspaceBrowserBar({
       <Button
         variant="ghost"
         size="icon"
-        className="size-7 shrink-0 text-muted-foreground hover:text-foreground max-sm:hidden"
+        className="size-7 shrink-0 text-muted-foreground hover:text-foreground max-sm:hidden @max-[32rem]/browserbar:hidden"
         disabled={!id}
         onClick={() => act({ action: 'forward', id })}
         title={t('forward')}
@@ -95,7 +97,7 @@ export default function WorkspaceBrowserBar({
         <RotateCw />
       </Button>
       <form
-        className="min-w-0 flex-1"
+        className="min-w-24 flex-1"
         onSubmit={(event) => {
           event.preventDefault();
           if (!draft?.trim()) return;
@@ -160,7 +162,7 @@ export default function WorkspaceBrowserBar({
       {view === 'live' && <WorkspaceBrowserStreamMenu />}
       {/* A phone keeps reload, the address, the tabs, "follow the agent" and the stream menu;
           back, forward and the Live/Desktop switch need a wider panel. */}
-      <div className="contents max-sm:hidden">
+      <div className="contents max-sm:hidden @max-[40rem]/browserbar:hidden">
         <WorkspaceBrowserViewSwitch view={view} onChange={onViewChange} />
       </div>
     </div>

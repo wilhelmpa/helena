@@ -85,6 +85,11 @@
       "type": "Berdasarkan jenis",
       "assignee": "Berdasarkan penerima tugas",
       "delegate": "Berdasarkan delegasi"
+    },
+    "none": {
+      "type": "Tanpa tipe",
+      "assignee": "Belum ditugaskan",
+      "delegate": "Tidak didelegasikan"
     }
   },
   "recentIssues": {
@@ -123,7 +128,8 @@
       "label_remove": "menghapus label dari",
       "field": "memperbarui bidang pada",
       "other": "memperbarui"
-    }
+    },
+    "automation": "Helena"
   },
   "pulse": {
     "caption": {

@@ -32,5 +32,7 @@
   "areaFolderHint": "Lettres minuscules, chiffres et tirets. Les agents traitent les tâches de ce domaine dans ce dossier de l'espace de travail du projet, et Files contient un dossier du même nom.",
   "areaFolderReserved": "Le projet utilise {folder} pour ses propres fichiers. Choisissez un autre dossier.",
   "areaFolderTaken": "Un autre domaine de ce projet utilise ce dossier.",
-  "openFolder": "Ouvrir le dossier"
+  "openFolder": "Ouvrir le dossier",
+  "deleteView": "Supprimer la vue",
+  "deleteViewConfirm": "Supprimer « {name} » ? Les tâches restent, seule cette vue enregistrée disparaît."
 }

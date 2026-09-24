@@ -204,7 +204,22 @@
     "previewCustomField": "Custom field",
     "previewAllWorkItems": "All work items",
     "previewUpdated": "Updated {date}",
-    "previewOtherValues": "({count} more)"
+    "previewOtherValues": "({count} more)",
+    "format": {
+      "heading1": "عنوان 1",
+      "heading2": "عنوان 2",
+      "bold": "غامق",
+      "italic": "مائل",
+      "strike": "يتوسطه خط",
+      "code": "كود",
+      "codeBlock": "كتلة كود",
+      "link": "رابط",
+      "blockquote": "اقتباس",
+      "bulletList": "قائمة نقطية",
+      "orderedList": "قائمة مرقّمة"
+    },
+    "linkApply": "تعيين الرابط",
+    "linkRemove": "إزالة الرابط"
   },
   "chart": {
     "download": "احفظ الرسم البياني",

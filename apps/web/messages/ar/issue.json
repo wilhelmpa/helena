@@ -121,7 +121,9 @@
     "submit": "إنشاء مهمة",
     "template": "قالب",
     "applyTemplate": "تطبيق قالب…",
-    "noTemplates": "لا توجد قوالب."
+    "noTemplates": "لا توجد قوالب.",
+    "created": "تم إنشاء {identifier}",
+    "open": "فتح"
   },
   "attachments": {
     "title": "المرفقات",

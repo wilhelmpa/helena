@@ -121,7 +121,9 @@
     "submit": "Créer le ticket",
     "template": "Modèle",
     "applyTemplate": "Appliquer un modèle…",
-    "noTemplates": "Aucun modèle."
+    "noTemplates": "Aucun modèle.",
+    "created": "{identifier} créée",
+    "open": "Ouvrir"
   },
   "attachments": {
     "title": "Pièces jointes",

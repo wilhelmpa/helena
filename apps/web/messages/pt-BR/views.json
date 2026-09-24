@@ -32,5 +32,7 @@
   "areaFolderHint": "Letras minúsculas, dígitos e hifens. Os agentes trabalham nas tarefas desta área nesta pasta do workspace do projeto, e Files tem uma pasta com o mesmo nome.",
   "areaFolderReserved": "O projeto usa {folder} para os próprios arquivos. Escolha outra pasta.",
   "areaFolderTaken": "Outra área deste projeto já usa esta pasta.",
-  "openFolder": "Abrir pasta"
+  "openFolder": "Abrir pasta",
+  "deleteView": "Excluir visualização",
+  "deleteViewConfirm": "Excluir “{name}”? As tarefas ficam; só esta visualização salva é removida."
 }

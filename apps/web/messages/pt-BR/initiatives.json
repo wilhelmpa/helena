@@ -140,7 +140,9 @@
     "typeSet": "definiu o tipo para {type}",
     "typeRemoved": "removeu o tipo",
     "linked": "vinculou a {name}",
-    "unlinked": "desvinculou da iniciativa"
+    "unlinked": "desvinculou da iniciativa",
+    "linkedIssue": "vinculou <issue>a tarefa</issue> a {name}",
+    "unlinkedIssue": "desvinculou <issue>a tarefa</issue> da iniciativa"
   },
   "attachments": {
     "title": "Anexos",

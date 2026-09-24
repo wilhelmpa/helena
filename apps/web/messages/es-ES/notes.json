@@ -53,5 +53,18 @@
   "addNote": "Añadir nota",
   "accessHint": "Solo estas personas pueden abrirlo",
   "createdBy": "Creada por {name}",
-  "backgroundColors": "Colores de fondo"
+  "backgroundColors": "Colores de fondo",
+  "canvasA11y": {
+    "node": "Intro o Espacio selecciona una nota. Las flechas la mueven y Escape cancela.",
+    "nodeKeyboardDisabled": "Mover con el teclado está desactivado en este tablero.",
+    "nodeMoved": "Nota movida a {x}, {y}.",
+    "edge": "Intro o Espacio selecciona una conexión. Supr la elimina y Escape cancela.",
+    "controls": "Controles del lienzo",
+    "zoomIn": "Acercar",
+    "zoomOut": "Alejar",
+    "fitView": "Mostrar todas las notas",
+    "interactive": "Bloquear o desbloquear el movimiento",
+    "minimap": "Minimapa",
+    "handle": "Punto de conexión"
+  }
 }

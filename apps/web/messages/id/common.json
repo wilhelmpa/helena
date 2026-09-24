@@ -204,7 +204,22 @@
     "previewCustomField": "Bidang kustom",
     "previewAllWorkItems": "Semua item pekerjaan",
     "previewUpdated": "Diperbarui {date}",
-    "previewOtherValues": "({count} lainnya)"
+    "previewOtherValues": "({count} lainnya)",
+    "format": {
+      "heading1": "Judul 1",
+      "heading2": "Judul 2",
+      "bold": "Tebal",
+      "italic": "Miring",
+      "strike": "Coret",
+      "code": "Kode",
+      "codeBlock": "Blok kode",
+      "link": "Tautan",
+      "blockquote": "Kutipan",
+      "bulletList": "Daftar berpoin",
+      "orderedList": "Daftar bernomor"
+    },
+    "linkApply": "Pasang tautan",
+    "linkRemove": "Hapus tautan"
   },
   "chart": {
     "download": "Simpan grafik",

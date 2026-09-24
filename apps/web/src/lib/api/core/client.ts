@@ -27,6 +27,13 @@ export class ApiError extends Error {
   }
 }
 
+// The server could not be reached or failed on its side (a 5xx, often the proxy's 502
+// while the API restarts, or no answer at all), as opposed to refusing the request.
+export function isServerUnreachable(error: unknown): boolean {
+  if (error instanceof ApiError) return error.status >= 500;
+  return error instanceof TypeError;
+}
+
 // Set while the session is being dropped, by the sign-out below or by the app's own
 // `signOut`. Concurrent requests that all fail with 401 then trigger a single
 // sign-out and a single navigation, and a sign-out the person asked for does not

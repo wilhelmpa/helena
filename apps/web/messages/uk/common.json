@@ -204,7 +204,22 @@
     "previewCustomField": "Custom field",
     "previewAllWorkItems": "All work items",
     "previewUpdated": "Updated {date}",
-    "previewOtherValues": "({count} more)"
+    "previewOtherValues": "({count} more)",
+    "format": {
+      "heading1": "Заголовок 1",
+      "heading2": "Заголовок 2",
+      "bold": "Жирний",
+      "italic": "Курсив",
+      "strike": "Закреслений",
+      "code": "Код",
+      "codeBlock": "Блок коду",
+      "link": "Посилання",
+      "blockquote": "Цитата",
+      "bulletList": "Маркований список",
+      "orderedList": "Нумерований список"
+    },
+    "linkApply": "Додати посилання",
+    "linkRemove": "Прибрати посилання"
   },
   "chart": {
     "download": "Зберегти графік",

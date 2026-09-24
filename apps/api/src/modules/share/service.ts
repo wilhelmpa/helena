@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { db, issue, projectView } from '@repo/db';
-import { eq } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull } from 'drizzle-orm';
 import { getProjectById, type ProjectRow } from '#modules/projects/service';
 import { listColumns } from '#modules/columns/service';
 import { listIssueTypes } from '#modules/issue-types/service';
@@ -155,6 +155,18 @@ async function issueBundle(
   ]);
   const shown = (id: number) => !onlyIssueIds || onlyIssueIds.has(id);
   const visible = extended ? issueRow : redactIssue(issueRow);
+  // On a page of its own, a related task that is not shared itself is named by its
+  // identifier only: its title is the owner's, not the link's. (A shared board names
+  // only the tasks it shows anyway.)
+  const named = onlyIssueIds
+    ? null
+    : await sharedAmong([
+        ...links.map((link) => link.issue.id),
+        ...(parent ? [parent.id] : []),
+        ...subtasks.map((subtask) => subtask.id),
+      ]);
+  const titled = <T extends { id: number; title: string }>(ref: T): T =>
+    !named || named.has(ref.id) ? ref : { ...ref, title: '' };
   return {
     project: scaffold,
     issue: {
@@ -162,12 +174,24 @@ async function issueBundle(
       shareToken: keepShareToken ? issueRow.shareToken : null,
       shareExtended: keepShareToken && issueRow.shareExtended,
       fields,
-      links: links.filter((link) => shown(link.issue.id)),
-      parent: parent && shown(parent.id) ? parent : null,
-      subtasks: subtasks.filter((subtask) => shown(subtask.id)),
+      links: links
+        .filter((link) => shown(link.issue.id))
+        .map((link) => ({ ...link, issue: titled(link.issue) })),
+      parent: parent && shown(parent.id) ? titled(parent) : null,
+      subtasks: subtasks.filter((subtask) => shown(subtask.id)).map(titled),
     },
     feed,
   };
+}
+
+// The tasks among `ids` that have a public link of their own.
+async function sharedAmong(ids: number[]): Promise<Set<number>> {
+  if (ids.length === 0) return new Set();
+  const rows = await db
+    .select({ id: issue.id })
+    .from(issue)
+    .where(and(inArray(issue.id, ids), isNotNull(issue.shareToken)));
+  return new Set(rows.map((row) => row.id));
 }
 
 // --- Enable / revoke ------------------------------------------------------------

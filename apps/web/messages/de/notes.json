@@ -53,5 +53,18 @@
   "addNote": "Notiz hinzufügen",
   "accessHint": "Nur diese Personen können es öffnen",
   "createdBy": "Erstellt von {name}",
-  "backgroundColors": "Hintergrundfarben"
+  "backgroundColors": "Hintergrundfarben",
+  "canvasA11y": {
+    "node": "Enter oder Leertaste wählt eine Notiz aus. Die Pfeiltasten verschieben sie, Escape bricht ab.",
+    "nodeKeyboardDisabled": "Verschieben mit der Tastatur ist auf diesem Board aus.",
+    "nodeMoved": "Notiz nach {x}, {y} verschoben.",
+    "edge": "Enter oder Leertaste wählt eine Verbindung aus. Entf löscht sie, Escape bricht ab.",
+    "controls": "Steuerung der Fläche",
+    "zoomIn": "Vergrößern",
+    "zoomOut": "Verkleinern",
+    "fitView": "Alle Notizen zeigen",
+    "interactive": "Verschieben sperren oder freigeben",
+    "minimap": "Übersichtskarte",
+    "handle": "Verbindungspunkt"
+  }
 }

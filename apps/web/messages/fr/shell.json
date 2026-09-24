@@ -4,5 +4,6 @@
   "noProjects": "Aucun projet pour l'instant, créez-en un pour démarrer.",
   "noProjectsTitle": "Aucun projet pour l'instant",
   "noProjectsHint": "Créez votre premier projet pour commencer à organiser vos tickets sur un tableau.",
-  "createProject": "Créer un projet"
+  "createProject": "Créer un projet",
+  "serverUnreachable": "Le serveur est injoignable pour le moment, il redémarre peut-être. Rechargez dans un instant."
 }

@@ -140,7 +140,9 @@
     "typeSet": "a défini le type sur {type}",
     "typeRemoved": "a retiré le type",
     "linked": "a lié à {name}",
-    "unlinked": "a délié de l'initiative"
+    "unlinked": "a délié de l'initiative",
+    "linkedIssue": "a lié <issue>la tâche</issue> à {name}",
+    "unlinkedIssue": "a délié <issue>la tâche</issue> de l’initiative"
   },
   "attachments": {
     "title": "Pièces jointes",

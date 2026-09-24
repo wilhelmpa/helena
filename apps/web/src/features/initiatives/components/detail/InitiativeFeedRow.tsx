@@ -104,22 +104,34 @@ export default function InitiativeFeedRow({
 
   const Icon = (item.action && ICON[item.action]) || CircleDot;
   const actor = item.actorName ?? t('system');
+  const issueLink =
+    item.source === 'issue' && item.issueIdentifier != null ? (
+      <Link
+        href={issuePath(projectKey, Number(item.issueIdentifier.split('-').pop()))}
+        className="text-foreground/70 hover:text-foreground"
+      >
+        {item.issueIdentifier}
+      </Link>
+    ) : null;
+  // Linking a task names it inside the sentence, where the language puts the object
+  // ("hat E2E-4 mit … verknüpft"), not after the verb.
+  const linkSentence =
+    issueLink && item.action === 'initiative'
+      ? item.payload.to?.value
+        ? t.rich('linkedIssue', { name: item.payload.to.value, issue: () => issueLink })
+        : t.rich('unlinkedIssue', { issue: () => issueLink })
+      : null;
   return (
     <li className="flex items-center gap-2.5 text-xs">
       <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
         <Icon className="size-3" />
       </span>
       <span className="min-w-0 text-muted-foreground">
-        <span className="font-medium">{actor}</span> {describe(item)}
-        {item.source === 'issue' && item.issueIdentifier != null && (
+        <span className="font-medium">{actor}</span>{' '}
+        {linkSentence ?? (
           <>
-            {' '}
-            <Link
-              href={issuePath(projectKey, Number(item.issueIdentifier.split('-').pop()))}
-              className="text-foreground/70 hover:text-foreground"
-            >
-              {item.issueIdentifier}
-            </Link>
+            {describe(item)}
+            {issueLink && <> {issueLink}</>}
           </>
         )}
         <span className="ml-1.5">· {relativeTime(item.createdAt)}</span>

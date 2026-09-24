@@ -87,7 +87,8 @@ export default function InboxListItem({
   const te = useTranslations('inbox.event');
   const [pickOpen, setPickOpen] = useState(false);
   const Icon = TYPE_ICON[n.type];
-  const who = n.actorName ?? te('someone');
+  // No person behind the event: a workflow, a routine or Helena itself changed it.
+  const who = n.actorName ?? te('automation');
   // The verb phrase for a notification, addressed to the reader ("you").
   const eventText =
     n.type === 'state_changed'

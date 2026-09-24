@@ -62,7 +62,8 @@
   },
   "weekStart": {
     "0": "Domingo",
-    "1": "Lunes"
+    "1": "Lunes",
+    "locale": "Según el idioma"
   },
   "dateFields": {
     "dueDate": "Fecha de vencimiento",

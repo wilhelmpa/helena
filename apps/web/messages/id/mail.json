@@ -180,7 +180,8 @@
     "port": "Port",
     "tls": "TLS sejak awal (nonaktif: STARTTLS)",
     "username": "Nama pengguna",
-    "team": "Tim"
+    "team": "Tim",
+    "googleConnect": "Hubungkan akun Google"
   },
   "rules": {
     "title": "Aturan penyimpanan",

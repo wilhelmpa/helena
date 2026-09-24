@@ -53,5 +53,18 @@
   "addNote": "Tambah catatan",
   "accessHint": "Hanya orang-orang ini yang dapat membukanya",
   "createdBy": "Dibuat oleh {name}",
-  "backgroundColors": "Warna latar belakang"
+  "backgroundColors": "Warna latar belakang",
+  "canvasA11y": {
+    "node": "Enter atau Spasi memilih catatan. Tombol panah memindahkannya, Escape membatalkan.",
+    "nodeKeyboardDisabled": "Memindahkan dengan keyboard nonaktif di papan ini.",
+    "nodeMoved": "Catatan dipindahkan ke {x}, {y}.",
+    "edge": "Enter atau Spasi memilih sambungan. Delete menghapusnya, Escape membatalkan.",
+    "controls": "Kontrol kanvas",
+    "zoomIn": "Perbesar",
+    "zoomOut": "Perkecil",
+    "fitView": "Tampilkan semua catatan",
+    "interactive": "Kunci atau buka pemindahan",
+    "minimap": "Peta ringkas",
+    "handle": "Titik sambungan"
+  }
 }

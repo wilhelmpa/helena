@@ -1,7 +1,7 @@
 import { and, asc, eq, gt, inArray, sql, type SQL } from 'drizzle-orm';
 import { agentRun, aiAgent, db, issue, project, user } from '@repo/db';
 import type { KnowledgeItem, KnowledgeSource } from '@helena/sdk';
-import { mentionLinks, taskTarget } from '../text';
+import { mentionLinks, readableText, taskTarget } from '../text';
 import { cursorId, iso, nextCursor, numericIds, pageLimit, routes } from './common';
 
 // The agents' runs: what each was asked and what it answered, read by the project's AI
@@ -45,7 +45,10 @@ type RunRow = Awaited<ReturnType<typeof runRows>>[number];
 
 function runItem(row: RunRow): KnowledgeItem {
   const identifier = row.sequenceNumber !== null ? `${row.key}-${row.sequenceNumber}` : null;
-  const parts = [row.prompt, row.output ?? '', row.blockedQuestion ?? ''].filter(Boolean);
+  // A run's answer is often its JSON report; the index keeps its sentences.
+  const parts = [row.prompt, readableText(row.output ?? ''), row.blockedQuestion ?? ''].filter(
+    Boolean,
+  );
   return {
     id: String(row.id),
     title: row.issueTitle ?? `${row.agentName} #${row.id}`,

@@ -140,7 +140,9 @@
     "typeSet": "将类型设为 {type}",
     "typeRemoved": "移除了类型",
     "linked": "关联至 {name}",
-    "unlinked": "取消了与此计划的关联"
+    "unlinked": "取消了与此计划的关联",
+    "linkedIssue": "将 <issue>任务</issue> 关联至 {name}",
+    "unlinkedIssue": "取消了 <issue>任务</issue> 与此计划的关联"
   },
   "attachments": {
     "title": "附件",

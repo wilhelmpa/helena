@@ -117,8 +117,9 @@ export type TimelineScale = 'week' | 'month' | 'quarter';
 export type BuiltinDateField = 'dueDate' | 'startDate';
 export type DateField = BuiltinDateField | CustomFieldKey;
 
-// date-fns weekStartsOn: 0 Sunday, 1 Monday.
-export type WeekStart = 0 | 1;
+// The first day of a calendar week: date-fns weekStartsOn (0 Sunday, 1 Monday), or
+// 'locale' for the reader's language (Monday in German, Sunday in US English).
+export type WeekStart = 0 | 1 | 'locale';
 
 export interface ViewSettings {
   sort: Sort;
@@ -151,7 +152,9 @@ export interface ViewSettings {
   // not update this saved preference.
   timelineCollapseAll: boolean;
   calendarDateField: DateField;
-  weekStart: WeekStart;
+  // Stored as `firstDayOfWeek`: the older `weekStart` key was saved as 0 with every
+  // view whether anyone chose Sunday or not, so it is not read any more.
+  firstDayOfWeek: WeekStart;
   // Group keys collapsed into the "Hidden columns" panel on the flat project (see
   // KanbanBoard). Keys are namespaced by grouping field (c<id>/a<id>/p<v>/t<id>/
   // f<fieldId>u<userId>), so a set from one grouping never matches another. Empty
@@ -181,7 +184,7 @@ const COMMON: Omit<ViewSettings, 'group' | 'subgroup' | 'properties' | 'sort'> =
   timelineScale: 'week',
   timelineCollapseAll: false,
   calendarDateField: 'dueDate',
-  weekStart: 0,
+  firstDayOfWeek: 'locale',
   hiddenGroups: [],
   collapsedGroups: [],
   pinnedGroup: null,
@@ -320,7 +323,10 @@ export function normalizeViewSettings(
       (typeof s.calendarDateField === 'string' && isCustomFieldKey(s.calendarDateField))
         ? s.calendarDateField
         : d.calendarDateField,
-    weekStart: s.weekStart === 0 || s.weekStart === 1 ? s.weekStart : d.weekStart,
+    firstDayOfWeek:
+      s.firstDayOfWeek === 0 || s.firstDayOfWeek === 1 || s.firstDayOfWeek === 'locale'
+        ? s.firstDayOfWeek
+        : d.firstDayOfWeek,
     hiddenGroups: Array.isArray(s.hiddenGroups)
       ? (s.hiddenGroups as unknown[]).filter((x): x is string => typeof x === 'string')
       : d.hiddenGroups,

@@ -85,6 +85,11 @@
       "type": "Por tipo",
       "assignee": "Por responsável",
       "delegate": "Por delegado"
+    },
+    "none": {
+      "type": "Sem tipo",
+      "assignee": "Não atribuída",
+      "delegate": "Não delegada"
     }
   },
   "recentIssues": {
@@ -123,7 +128,8 @@
       "label_remove": "removeu uma etiqueta de",
       "field": "atualizou um campo em",
       "other": "atualizou"
-    }
+    },
+    "automation": "Helena"
   },
   "pulse": {
     "caption": {

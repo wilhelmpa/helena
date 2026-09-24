@@ -62,7 +62,8 @@
   },
   "weekStart": {
     "0": "周日",
-    "1": "周一"
+    "1": "周一",
+    "locale": "按语言"
   },
   "dateFields": {
     "dueDate": "截止日期",

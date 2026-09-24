@@ -121,7 +121,9 @@
     "submit": "Создать задачу",
     "template": "Шаблон",
     "applyTemplate": "Применить шаблон…",
-    "noTemplates": "Шаблонов нет."
+    "noTemplates": "Шаблонов нет.",
+    "created": "{identifier} создана",
+    "open": "Открыть"
   },
   "attachments": {
     "title": "Вложения",

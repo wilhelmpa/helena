@@ -13,6 +13,7 @@ import {
   calendarCustomField,
   rescheduleFieldValue,
 } from '@/utils/calendarFields';
+import { useDateFnsLocale } from '@/hooks/useDateFnsLocale';
 import { buildCalendarModel } from '../../utils/calendar';
 import { CalendarMonthNav } from './CalendarMonthNav';
 import { CalendarDayCell } from './CalendarDayCell';
@@ -28,6 +29,7 @@ export default function CalendarView({
   readOnly,
 }: WorkItemsViewProps) {
   const t = useTranslations('workItems.calendar');
+  const dateLocale = useDateFnsLocale();
   const updateIssue = useUpdateIssue(project.project.key);
   const setFieldValue = useSetFieldValue(project.project.key);
   const [cursor, setCursor] = useState<Date>(() => startOfMonth(new Date()));
@@ -44,7 +46,9 @@ export default function CalendarView({
     project.issues,
     builtinField,
     customFieldDef,
-    settings.weekStart,
+    settings.firstDayOfWeek === 'locale'
+      ? ((dateLocale.options?.weekStartsOn ?? 0) === 1 ? 1 : 0)
+      : settings.firstDayOfWeek,
     cursor,
     WEEKDAY_KEYS.map((key) => t(`weekdays.${key}`)),
   );

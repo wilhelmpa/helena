@@ -191,7 +191,8 @@ export async function enqueueOutbound(
 
   const ref = issueRef(projectRow.key, issueRow.seq);
   const url = issueUrl(projectRow.key, issueRow.seq);
-  const actor = actorName ?? 'Someone';
+  // No person behind the event: a workflow, a routine or Helena itself changed it.
+  const actor = actorName ?? 'Helena';
   // One issue event, so every 'state_changed' row points at the same activity row.
   const statusActivityId =
     notifications.find((n) => n.type === 'state_changed')?.sourceActivityId ?? null;

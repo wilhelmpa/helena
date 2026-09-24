@@ -121,7 +121,9 @@
     "submit": "Crear ticket",
     "template": "Plantilla",
     "applyTemplate": "Aplicar la plantilla…",
-    "noTemplates": "Sin plantillas."
+    "noTemplates": "Sin plantillas.",
+    "created": "{identifier} creada",
+    "open": "Abrir"
   },
   "attachments": {
     "title": "Adjuntos",

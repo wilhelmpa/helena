@@ -35,7 +35,14 @@ function initial(account: MailAccount | null, projectId: number | null): Form {
       name: '',
       address: '',
       projectId,
-      ...GOOGLE_PRESET,
+      // A Google account connects through its Google connection (no app password,
+      // owner decision), so a new account here is another provider's server.
+      imapHost: '',
+      imapPort: GOOGLE_PRESET.imapPort,
+      imapTls: true,
+      smtpHost: '',
+      smtpPort: GOOGLE_PRESET.smtpPort,
+      smtpTls: true,
       username: '',
       password: '',
       enabled: true,
@@ -63,8 +70,10 @@ function initial(account: MailAccount | null, projectId: number | null): Form {
   return { ...fields, password: '' };
 }
 
-// Adds or changes an account. Google is the default: its servers are filled in and
-// the address is the user name. A password left empty keeps the stored one.
+// Adds or changes an account on a mail server of its own (IMAP/SMTP with a password).
+// Google is not set up here: it connects through Zugänge & Verbindungen → Google,
+// without an app password. An older account on Google's servers can still be edited.
+// A password left empty keeps the stored one.
 export default function MailAccountDialog({
   teamId,
   account,
@@ -82,7 +91,10 @@ export default function MailAccountDialog({
   const [result, setResult] = useState<{ imap: string | null; smtp: string | null } | null>(null);
   const save = useSaveMailAccount(teamId);
   const test = useTestMailConnection(teamId);
-  const google = isGooglePreset(form);
+  // Only an existing account still sits on Google's IMAP servers with an app password.
+  const google = !!account && isGooglePreset(form);
+  // "Google" picked for a new account: the dialog points to the Google connection.
+  const [googlePicked, setGooglePicked] = useState(false);
   const set = (patch: Partial<Form>) => setForm((current) => ({ ...current, ...patch }));
   const ready =
     form.name.trim() &&
@@ -115,7 +127,7 @@ export default function MailAccountDialog({
         className="flex flex-col gap-3"
         onSubmit={(event) => {
           event.preventDefault();
-          if (ready) submit();
+          if (ready && !googlePicked) submit();
         }}
       >
         <div className="grid gap-3 sm:grid-cols-2">
@@ -154,21 +166,35 @@ export default function MailAccountDialog({
           <Button
             type="button"
             size="sm"
-            variant={google ? 'secondary' : 'ghost'}
-            onClick={() => set({ ...GOOGLE_PRESET, username: form.address })}
+            variant={google || googlePicked ? 'secondary' : 'ghost'}
+            onClick={() =>
+              account ? set({ ...GOOGLE_PRESET, username: form.address }) : setGooglePicked(true)
+            }
           >
             {t('google')}
           </Button>
           <Button
             type="button"
             size="sm"
-            variant={google ? 'ghost' : 'secondary'}
-            onClick={() => set({ imapHost: '', smtpHost: '' })}
+            variant={google || googlePicked ? 'ghost' : 'secondary'}
+            onClick={() => {
+              setGooglePicked(false);
+              if (google) set({ imapHost: '', smtpHost: '' });
+            }}
           >
             {t('otherServer')}
           </Button>
         </div>
-        {google ? (
+        {googlePicked ? (
+          <div className="flex flex-col items-start gap-2 rounded-md border bg-card p-3">
+            <p className="text-sm text-muted-foreground">{tAccess('gmailHint')}</p>
+            <Button asChild size="sm" variant="outline">
+              <Link href={accessPath('google')} onClick={onClose}>
+                {t('googleConnect')}
+              </Link>
+            </Button>
+          </div>
+        ) : google ? (
           <div className="flex flex-col gap-1">
             <p className="text-xs text-muted-foreground">{t('googleHint')}</p>
             <p className="text-xs text-muted-foreground">
@@ -180,6 +206,8 @@ export default function MailAccountDialog({
         ) : (
           <MailServerFields value={form} onChange={set} />
         )}
+        {!googlePicked && (
+          <>
         <MailPasswordField
           teamId={teamId}
           projectId={form.projectId}
@@ -248,6 +276,8 @@ export default function MailAccountDialog({
             {t('save')}
           </Button>
         </div>
+          </>
+        )}
       </form>
     </Modal>
   );

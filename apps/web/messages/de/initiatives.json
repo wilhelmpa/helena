@@ -140,7 +140,9 @@
     "typeSet": "hat den Typ auf {type} gesetzt",
     "typeRemoved": "hat den Typ entfernt",
     "linked": "hat mit {name} verknüpft",
-    "unlinked": "hat die Verknüpfung zur Initiative entfernt"
+    "unlinked": "hat die Verknüpfung zur Initiative entfernt",
+    "linkedIssue": "hat <issue>die Aufgabe</issue> mit {name} verknüpft",
+    "unlinkedIssue": "hat <issue>die Aufgabe</issue> von der Initiative gelöst"
   },
   "attachments": {
     "title": "Anhänge",

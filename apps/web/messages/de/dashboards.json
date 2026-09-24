@@ -85,6 +85,11 @@
       "type": "Nach Typ",
       "assignee": "Nach zuständiger Person",
       "delegate": "Nach Delegierung"
+    },
+    "none": {
+      "type": "Kein Typ",
+      "assignee": "Nicht zugewiesen",
+      "delegate": "Nicht delegiert"
     }
   },
   "recentIssues": {
@@ -123,7 +128,8 @@
       "label_remove": "entfernte ein Label von",
       "field": "aktualisierte ein Feld von",
       "other": "aktualisierte"
-    }
+    },
+    "automation": "Helena"
   },
   "pulse": {
     "caption": {

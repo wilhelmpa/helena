@@ -140,7 +140,9 @@
     "typeSet": "mengatur tipe ke {type}",
     "typeRemoved": "menghapus tipe",
     "linked": "ditautkan ke {name}",
-    "unlinked": "dilepas tautannya dari inisiatif"
+    "unlinked": "dilepas tautannya dari inisiatif",
+    "linkedIssue": "menautkan <issue>tugas</issue> ke {name}",
+    "unlinkedIssue": "melepas tautan <issue>tugas</issue> dari inisiatif"
   },
   "attachments": {
     "title": "Lampiran",

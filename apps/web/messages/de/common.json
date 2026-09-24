@@ -204,7 +204,22 @@
     "previewCustomField": "Benutzerdefiniertes Feld",
     "previewAllWorkItems": "Alle Aufgaben",
     "previewUpdated": "Aktualisiert am {date}",
-    "previewOtherValues": "({count} weitere)"
+    "previewOtherValues": "({count} weitere)",
+    "format": {
+      "heading1": "Überschrift 1",
+      "heading2": "Überschrift 2",
+      "bold": "Fett",
+      "italic": "Kursiv",
+      "strike": "Durchgestrichen",
+      "code": "Code",
+      "codeBlock": "Codeblock",
+      "link": "Link",
+      "blockquote": "Zitat",
+      "bulletList": "Aufzählung",
+      "orderedList": "Nummerierte Liste"
+    },
+    "linkApply": "Link setzen",
+    "linkRemove": "Link entfernen"
   },
   "chart": {
     "download": "Diagramm speichern",

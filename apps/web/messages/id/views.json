@@ -32,5 +32,7 @@
   "areaFolderHint": "Huruf kecil, angka, dan tanda hubung. Agen mengerjakan tugas area ini di folder ini dalam workspace proyek, dan Files memiliki folder dengan nama yang sama.",
   "areaFolderReserved": "Proyek memakai {folder} untuk berkasnya sendiri. Pilih folder lain.",
   "areaFolderTaken": "Area lain di proyek ini sudah memakai folder ini.",
-  "openFolder": "Buka folder"
+  "openFolder": "Buka folder",
+  "deleteView": "Hapus tampilan",
+  "deleteViewConfirm": "Hapus “{name}”? Tugas tetap ada; hanya tampilan tersimpan ini yang dihapus."
 }

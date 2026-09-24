@@ -62,7 +62,8 @@
   },
   "weekStart": {
     "0": "Sunday",
-    "1": "Monday"
+    "1": "Monday",
+    "locale": "As the language"
   },
   "dateFields": {
     "dueDate": "Due date",

@@ -140,7 +140,9 @@
     "typeSet": "ha definido el tipo a {type}",
     "typeRemoved": "ha quitado el tipo",
     "linked": "la ha enlazado a {name}",
-    "unlinked": "la ha desenlazado de la iniciitiva"
+    "unlinked": "la ha desenlazado de la iniciitiva",
+    "linkedIssue": "ha enlazado <issue>la tarea</issue> a {name}",
+    "unlinkedIssue": "ha desenlazado <issue>la tarea</issue> de la iniciativa"
   },
   "attachments": {
     "title": "Adjuntos",

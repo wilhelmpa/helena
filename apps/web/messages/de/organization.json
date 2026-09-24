@@ -54,7 +54,7 @@
     "projectInstructions": "Projektspezifische Anweisungen",
     "projectInstructionsPlaceholder": "Beschreibe die Verantwortung dieses Agenten im Projekt.",
     "capabilitiesPlaceholder": "recherche, texten, code",
-    "capabilitiesHint": "Kleingeschriebene Wörter, durch Kommas getrennt. Eine Aufgabe, deren Labels zu den Fähigkeiten genau eines Specialists passen, geht ohne Plan des Coordinators direkt an diesen Specialist.",
+    "capabilitiesHint": "Kleingeschriebene Wörter, durch Kommas getrennt. Eine Aufgabe, deren Labels zu den Fähigkeiten genau eines Spezialisten passen, geht ohne Plan des Koordinators direkt an diesen Spezialisten.",
     "saved": "{name} gespeichert"
   },
   "governance": {
@@ -96,13 +96,13 @@
   },
   "summary": {
     "pool": "Agentenpool",
-    "coordinators": "Coordinators",
-    "specialists": "Specialists"
+    "coordinators": "Koordinatoren",
+    "specialists": "Spezialisten"
   },
   "roles": {
     "pool": "Pool",
-    "coordinator": "Coordinator",
-    "specialist": "Specialist",
+    "coordinator": "Koordinator",
+    "specialist": "Spezialist",
     "reviewer": "Reviewer"
   },
   "resources": {
@@ -134,11 +134,11 @@
     "configure": "Konfigurieren",
     "loading": "Workflow wird geladen…",
     "unavailable": "Die Workflow-Liste ist gerade nicht verfügbar.",
-    "offHint": "Für dieses Projekt aus: Eine an einen Coordinator delegierte Aufgabe wird nur für diesen Agenten in die Warteschlange gestellt.",
+    "offHint": "Für dieses Projekt aus: Eine an einen Koordinator delegierte Aufgabe wird nur für diesen Agenten in die Warteschlange gestellt.",
     "result": "Ergebnis",
     "autonomyReview": "Aufgabe geht in „Review“",
     "autonomyDone": "Angenommene Arbeit geht in „Erledigt“",
-    "review": "Review durch Coordinator",
+    "review": "Review durch Koordinator",
     "reviewRequired": "Erforderlich",
     "reviewSkipped": "Übersprungen",
     "maxTurns": "Runden pro Phase",
@@ -146,9 +146,9 @@
     "noLimit": "Kein Limit",
     "minutes": "{count, plural, one {# Minute} other {# Minuten}}",
     "warnings": {
-      "noCoordinator": "Kein Hermes-Agent hat die Rolle Coordinator, daher startet eine delegierte Aufgabe keinen Teamlauf.",
-      "severalCoordinators": "Mehrere Coordinators: Der Coordinator, an den die Aufgabe delegiert wird, leitet den Lauf.",
-      "noSpecialists": "Keine Specialists: Der Coordinator erledigt die Arbeit selbst."
+      "noCoordinator": "Kein Hermes-Agent hat die Rolle Koordinator, daher startet eine delegierte Aufgabe keinen Teamlauf.",
+      "severalCoordinators": "Mehrere Koordinatoren: Der Koordinator, an den die Aufgabe delegiert wird, leitet den Lauf.",
+      "noSpecialists": "Keine Spezialisten: Der Koordinator erledigt die Arbeit selbst."
     },
     "flow": {
       "title": "Wie eine Aufgabe zu den Agenten gelangt",
@@ -157,9 +157,9 @@
       "teamTitle": "Über das Agententeam",
       "team": "Eine an einen Koordinator delegierte oder im Abschnitt Agent-Team der Aufgabe gestartete Aufgabe läuft so ab:",
       "stages": {
-        "coordinate": "Der Coordinator teilt die Aufgabe in Arbeitspakete auf.",
-        "specialize": "Specialists bearbeiten sie in Hermes, voneinander unabhängige parallel.",
-        "review": "Der Coordinator prüft die Ergebnisse.",
+        "coordinate": "Der Koordinator teilt die Aufgabe in Arbeitspakete auf.",
+        "specialize": "Spezialisten bearbeiten sie in Hermes, voneinander unabhängige Pakete parallel.",
+        "review": "Der Koordinator prüft die Ergebnisse.",
         "synchronize": "Zusammenfassung und Nachweise werden in die Aufgabe geschrieben, die dann nach „Review“ oder „Erledigt“ wechselt."
       },
       "route": "Passen die Labels der Aufgabe zu den Fähigkeiten genau eines Spezialisten oder hat das Projekt nur einen, überspringt Helena die Planung und weist die Aufgabe direkt zu."

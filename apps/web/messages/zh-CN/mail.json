@@ -180,7 +180,8 @@
     "port": "端口",
     "tls": "一开始就使用 TLS（关闭则用 STARTTLS）",
     "username": "用户名",
-    "team": "团队"
+    "team": "团队",
+    "googleConnect": "连接 Google 账号"
   },
   "rules": {
     "title": "归档规则",

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import Modal from '@/components/common/overlay/Modal';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,8 @@ export default function FileNameDialog({
 }) {
   const t = useTranslations('files.dialog');
   const [name, setName] = useState(initialName);
+  // The name is preselected once, when the dialog opens; a later click places the caret.
+  const preselected = useRef(false);
   const trimmed = name.trim();
 
   const submit = (event: FormEvent) => {
@@ -41,9 +43,16 @@ export default function FileNameDialog({
           aria-label={t('name')}
           dir="auto"
           onFocus={(event) => {
-            // The name without its extension is what is usually changed.
-            const dot = event.target.value.lastIndexOf('.');
-            event.target.setSelectionRange(0, dot > 0 ? dot : event.target.value.length);
+            // The name without its extension is what is usually changed. The dialog
+            // selects the whole field right after focusing it, so the range is set
+            // once that has happened.
+            const input = event.target;
+            if (preselected.current) return;
+            preselected.current = true;
+            requestAnimationFrame(() => {
+              const dot = input.value.lastIndexOf('.');
+              input.setSelectionRange(0, dot > 0 ? dot : input.value.length);
+            });
           }}
         />
         <div className="flex justify-end gap-2">

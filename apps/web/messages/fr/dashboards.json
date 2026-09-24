@@ -85,6 +85,11 @@
       "type": "Par type",
       "assignee": "Par responsable",
       "delegate": "Par délégué"
+    },
+    "none": {
+      "type": "Sans type",
+      "assignee": "Non assignée",
+      "delegate": "Non déléguée"
     }
   },
   "recentIssues": {
@@ -123,7 +128,8 @@
       "label_remove": "a retiré une étiquette de",
       "field": "a mis à jour un champ de",
       "other": "a mis à jour"
-    }
+    },
+    "automation": "Helena"
   },
   "pulse": {
     "caption": {

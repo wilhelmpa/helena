@@ -180,7 +180,8 @@
     "port": "Port",
     "tls": "TLS von Anfang an (aus: STARTTLS)",
     "username": "Benutzername",
-    "team": "Team"
+    "team": "Team",
+    "googleConnect": "Google-Konto verbinden"
   },
   "rules": {
     "title": "Ablageregeln",

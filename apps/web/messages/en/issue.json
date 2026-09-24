@@ -121,7 +121,9 @@
     "submit": "Create issue",
     "template": "Template",
     "applyTemplate": "Apply template…",
-    "noTemplates": "No templates."
+    "noTemplates": "No templates.",
+    "created": "{identifier} created",
+    "open": "Open"
   },
   "attachments": {
     "title": "Attachments",
