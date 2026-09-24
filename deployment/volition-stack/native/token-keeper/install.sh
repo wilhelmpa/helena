@@ -91,7 +91,8 @@ revoke_direct_access() {
   local path
   for path in "$hermes_home/auth.json" "$hermes_home/.codex"; do
     [[ -e $path ]] || continue
-    if getfacl -p -R "$path" 2>/dev/null | grep -q "group:$agents_group:"; then
+    # Not grep -q: it quits at the first match, getfacl dies of SIGPIPE and pipefail makes the test false.
+    if getfacl -p -R "$path" 2>/dev/null | grep "group:$agents_group:" >/dev/null; then
       say "remove $agents_group's read access to $path"
       run setfacl -R -x "g:$agents_group" "$path" || true
       if [[ -d $path ]]; then
