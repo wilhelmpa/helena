@@ -36,6 +36,9 @@ export function useDocumentTitle(target: RefObject<HTMLElement | null>, lead?: s
     update();
     const observer = new MutationObserver(update);
     observer.observe(node, { subtree: true, childList: true, characterData: true });
+    // Next writes the route's metadata title into <head> after the first paint (and on
+    // every navigation), over this one.
+    observer.observe(document.head, { subtree: true, childList: true, characterData: true });
     return () => {
       observer.disconnect();
       document.title = before;
