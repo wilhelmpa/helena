@@ -42,6 +42,9 @@ export interface PluginProvides {
   usageLimitSources?: string[];
   // Runtime login sources (whether the model logins agents share are usable).
   runtimeLoginSources?: string[];
+  // Kinds of local model servers, and kinds of work local AI may take.
+  modelServers?: string[];
+  localAiTaskClasses?: string[];
   // Event types the plugin publishes; always under its own id.
   events?: string[];
   mcpServers?: McpServerContribution[];

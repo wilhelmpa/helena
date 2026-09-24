@@ -59,6 +59,7 @@ import { godRoutes } from './modules/god';
 import { pluginAdminRoutes, pluginSlotRoutes } from './modules/plugins';
 import { templateBundleRoutes } from './modules/template-bundles';
 import { modelAvailabilityRoutes } from './modules/model-availability';
+import { localAiRoutes } from './modules/local-ai';
 import { agentRunnerRoutes } from './modules/agents/runner';
 import { agentChatRoutes } from './modules/agents/chat';
 import { chatPromptRoutes } from './modules/chat-prompts';
@@ -212,4 +213,5 @@ export const planner = new Elysia({ name: 'planner' })
   .use(pluginAdminRoutes)
   .use(pluginSlotRoutes)
   .use(templateBundleRoutes)
-  .use(modelAvailabilityRoutes);
+  .use(modelAvailabilityRoutes)
+  .use(localAiRoutes);

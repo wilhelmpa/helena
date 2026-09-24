@@ -7,9 +7,11 @@ import {
   KNOWLEDGE_PLUGIN_MANIFEST,
   knowledgePlugin,
   knowledgeSources,
+  localAiEmbeddingRoute,
   runSources,
   seedTemplates,
   syncEmbedder,
+  useEmbeddingRoute,
   useKnowledgeRegistries,
   type Embedder,
 } from '@helena/knowledge';
@@ -46,6 +48,8 @@ export async function startKnowledgeIndexer(options: {
   });
   const loaded = await options.host.load(knowledgePlugin, KNOWLEDGE_PLUGIN_MANIFEST);
   if (loaded.status !== 'loaded') console.error(`[knowledge] plugin failed: ${loaded.error}`);
+  // Embeddings from local AI while it is on for them (docs/helena-decisions/local-ai-platform.md).
+  useEmbeddingRoute(localAiEmbeddingRoute);
   if (options.vault) {
     void (async () => {
       try {

@@ -10,6 +10,7 @@ import {
   type EventInit,
 } from '../events';
 import type { CaptureTarget, KnowledgeSource } from '../knowledge';
+import type { LocalAiTaskClass, ModelServerType } from '../local-ai';
 import type { McpServerContribution, PluginManifest } from '../manifest-types';
 import type { HelenaPlugin, HostProcess, PluginContext, Registrar } from '../plugin';
 import { decide, type PolicyDecision, type PolicyEvaluator, type PolicyRequest } from '../policy';
@@ -85,6 +86,8 @@ export class PluginHost {
   readonly profileContributions: Registry<ProfileContribution>;
   readonly usageLimitSources: Registry<UsageLimitSource>;
   readonly runtimeLoginSources: Registry<RuntimeLoginSource>;
+  readonly modelServers: Registry<ModelServerType>;
+  readonly localAiTaskClasses: Registry<LocalAiTaskClass>;
 
   private readonly plugins = new Map<string, { loaded: LoadedPlugin; plugin?: HelenaPlugin }>();
   private readonly contexts = new Map<string, PluginContext>();
@@ -110,6 +113,8 @@ export class PluginHost {
     this.profileContributions = registries.profileContributions;
     this.usageLimitSources = registries.usageLimitSources;
     this.runtimeLoginSources = registries.runtimeLoginSources;
+    this.modelServers = registries.modelServers;
+    this.localAiTaskClasses = registries.localAiTaskClasses;
     this.logger = options.logger ?? ((id) => consoleLogger(`plugin ${id}`));
     this.settingsOf = options.settings ?? (() => ({}));
   }
@@ -227,6 +232,8 @@ export class PluginHost {
       this.profileContributions,
       this.usageLimitSources,
       this.runtimeLoginSources,
+      this.modelServers,
+      this.localAiTaskClasses,
     ] as unknown as Registry<never>[];
   }
 
@@ -367,6 +374,12 @@ export class PluginHost {
         this.runtimeLoginSources,
         provides.runtimeLoginSources,
         'runtimeLoginSources',
+      ),
+      modelServers: registrar(this.modelServers, provides.modelServers, 'modelServers'),
+      localAiTaskClasses: registrar(
+        this.localAiTaskClasses,
+        provides.localAiTaskClasses,
+        'localAiTaskClasses',
       ),
       events: {
         publish: async (init: EventInit) => {

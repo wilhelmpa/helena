@@ -42,13 +42,15 @@ import { structureSection } from './structure';
 import type { AutopilotLevel } from '@helena/policy';
 import { resolveLevel } from '#modules/autopilot/levels';
 import { autopilotSoulSection } from '#modules/autopilot/prompt';
+import { runtimeLocalAiNow } from '#modules/local-ai/service';
 
 export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
   const agent = await getAgentById(agentRef.id, agentRef.teamId);
   if (!agent) throw new Error('Agent not found');
-  const [runtimeDefaults, baseline] = await Promise.all([
+  const [runtimeDefaults, baseline, localAi] = await Promise.all([
     getAgentRuntimeDefaults(),
     memoryBaseline(agent.id),
+    runtimeLocalAiNow(),
   ]);
   const [skills, tools, structure, areas, mcpServers, webLogins, vaultAccess, actions] =
     await Promise.all([
@@ -118,6 +120,9 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
       fallbackModels: agent.runtimePolicy.fallbackModels ?? runtimeDefaults.fallbackModels,
       sessionRetentionDays: runtimeDefaults.sessionRetentionDays,
     },
+    // Local AI, while it is on (docs/helena-decisions/local-ai-platform.md): part of the
+    // revision, so switching it on or off rewrites every profile.
+    localAi,
     actions,
   };
   // Prefix the digest so API clients consistently keep this as an opaque string.

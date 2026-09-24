@@ -7,6 +7,8 @@ import {
 import {
   KNOWLEDGE_PLUGIN_MANIFEST,
   knowledgePlugin,
+  localAiEmbeddingRoute,
+  useEmbeddingRoute,
   useKnowledgeRegistries,
 } from '@helena/knowledge';
 import { INTEGRATIONS_PLUGIN_ID, builtinConnectors } from '@repo/agent-tools';
@@ -19,6 +21,7 @@ import { loadRepositoryBundles } from '#modules/template-bundles/service';
 import { SPOOL_SOURCE_ID, spoolLimitSource } from '#modules/provider-limits/spool';
 import { LOGIN_STATUS_SOURCE_ID, loginStatusSource } from '#modules/runtime-logins/spool';
 import { AUTOPILOT_EVALUATOR_ID, autopilotPolicyEvaluator } from '#modules/autopilot/evaluator';
+import { LOCAL_AI_PLUGIN_ID, LOCAL_AI_PROVIDES, localAiPlugin } from '#modules/local-ai/plugin';
 
 // Helena's own features as internal plugins: they register through the same host and
 // the same manifest checks as an external plugin (docs/helena-framework.md, §3a
@@ -156,6 +159,14 @@ export async function loadBuiltinPlugins(app: McpApp): Promise<void> {
       provides: { runtimeLoginSources: [LOGIN_STATUS_SOURCE_ID] },
     }),
   );
+  // Local AI: the model server types and the kinds of work it may take
+  // (docs/helena-decisions/local-ai-platform.md).
+  await host.load(
+    localAiPlugin,
+    builtinManifest(LOCAL_AI_PLUGIN_ID, 'localAi', { provides: LOCAL_AI_PROVIDES }),
+  );
+  // Embeddings from local AI while it is on for them.
+  useEmbeddingRoute(localAiEmbeddingRoute);
   // The second brain: Helena's knowledge sources and capture targets live in the host's
   // registries, beside those of plugins (@helena/knowledge).
   useKnowledgeRegistries({

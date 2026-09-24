@@ -199,7 +199,7 @@ export interface ModelPrice {
   cacheReadPerMTok: number | null;
   cacheWritePerMTok: number | null;
   currency: 'EUR';
-  source: 'models.dev' | 'manual';
+  source: 'models.dev' | 'manual' | 'local';
   estimate: true;
   updatedAt: string;
   usd: { input: number; output: number; cacheRead?: number; cacheWrite?: number } | null;

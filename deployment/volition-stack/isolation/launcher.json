@@ -20,9 +20,11 @@
   "tmuxConf": "/usr/local/lib/volition-isolation/tmux.conf",
   "sockets": {
     "egress": "/run/volition-agents/egress.sock",
-    "plan": "/run/volition-agents/plan.sock"
+    "plan": "/run/volition-agents/plan.sock",
+    "localai": "/run/volition-agents/helena-ai.sock"
   },
-  "forwards": { "egress": 3128, "plan": 3000 },
+  "forwards": { "egress": 3128, "plan": 3000, "localai": 13305 },
+  "optionalSockets": ["localai"],
   "browser": {
     "user": "volition-browser",
     "root": "/var/lib/volition/project-browser/projects",

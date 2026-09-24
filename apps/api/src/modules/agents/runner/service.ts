@@ -42,6 +42,7 @@ import {
   runModePreamble,
   type RunForPrompt,
 } from '../core/prompt/framing';
+import { effectiveModelNow } from '#modules/local-ai/service';
 
 // The queue an agent's runner drains. The runner is a process the operator starts on
 // their own machine; it authenticates with the agent's API key, claims one run at a
@@ -268,6 +269,14 @@ export async function expireResumeLimitedRuns(): Promise<number> {
   return rows.length;
 }
 
+async function runSettingsOf(model: string | null, thinkingLevel: string | null) {
+  const effective = await effectiveModelNow(model);
+  return {
+    model: effective,
+    thinkingLevel: effective === model ? thinkingLevel : null,
+  };
+}
+
 // Claims the agent's next due run, or null when it has none or may not start it: a
 // paused agent's runs wait in the queue. FOR UPDATE SKIP LOCKED keeps two runners on
 // the same key from taking the same run.
@@ -408,8 +417,9 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
     issueId: row.issueId,
     issueIdentifier: row.issueIdentifier,
     sourceActivityId: row.sourceActivityId,
-    model: row.model ?? agent.model,
-    thinkingLevel: agent.thinkingLevel,
+    // A local model only while local AI is on; otherwise the agent's default runs, as
+    // without local AI (docs/helena-decisions/local-ai-platform.md §6).
+    ...(await runSettingsOf(row.model ?? agent.model, agent.thinkingLevel)),
     maxTurns: row.maxTurns ?? agent.maxTurns,
     runBudgetSeconds: row.runBudgetSeconds ?? agent.runBudgetSeconds,
     workdir: worksInProjectWorkspace(agent) ? row.issueAreaFolder : null,

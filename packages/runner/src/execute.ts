@@ -7,6 +7,7 @@ import type { CliCommand, RuntimeFailure } from '@helena/sdk';
 import { presetArgv, presetPrompt } from './presets';
 import type { CommandHooks } from './runtime';
 import { runtimeOf } from './runtimes';
+import { localRoute } from './local-ai';
 
 // Runs one task: the command the preset builds, or the operator's own in a shell, with the
 // task on stdin and its context in the environment. Everything the agent needs beyond the
@@ -177,7 +178,15 @@ export function modelProvider(
   config: RunnerConfig,
   model: string | null | undefined,
 ): string | undefined {
+  // A model of Helena's local AI names its provider (`helena-<slug>/<model>`).
+  const local = localRoute(model);
+  if (local) return local.provider;
   return config.models.find((entry) => entry.id === model)?.provider ?? config.provider;
+}
+
+// The model id the runtime is handed: a local model as its server names it.
+export function runtimeModel(model: string | null | undefined): string | null | undefined {
+  return localRoute(model)?.model ?? model;
 }
 
 // A preset is spawned directly, with no shell in between: the session id and the
@@ -193,7 +202,7 @@ function spawnArgs(
     preset.bin,
     presetArgv(preset, task.sessionId ?? null, task.systemPrompt, config.args, task.prompt, {
       provider: modelProvider(config, task.model),
-      model: task.model,
+      model: runtimeModel(task.model),
       thinkingLevel: task.thinkingLevel,
       maxTurns: task.maxTurns,
       runBudgetSeconds: task.runBudgetSeconds,

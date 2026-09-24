@@ -37,6 +37,7 @@ import type { CliLogin, CliLoginState } from './cli-login';
 import { isolationEnabled, profileHelper, type AgentIsolation } from './isolation';
 import { readerCapabilities } from './readers';
 import './hermes-settings';
+import { localKeyVariables } from './local-ai';
 import { pythonVaultStore, WebLoginVault, type WebLogin, type WorkRef } from './logins';
 import {
   profileDigest,
@@ -124,6 +125,8 @@ export interface RuntimePolicyClient {
   runtimePolicy(): Promise<RuntimePolicySnapshot>;
   reportRuntimeStatus(status: RuntimeStatus): Promise<void>;
   mcpSecrets(work?: WorkRef): Promise<Record<string, string>>;
+  // The keys of the local model servers the profile names (local AI).
+  modelServerKeys?(): Promise<Record<string, string>>;
   webLogins(work: WorkRef): Promise<WebLogin[]>;
   // Claude Code and Codex only (cli-login.ts).
   runtimeLogin?(work?: WorkRef): Promise<CliLogin | CliLoginState | null>;
@@ -883,7 +886,11 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
     if (restored.length > 0) this.noteRestored(restored, []);
     const settings = {
       toolsets: this.toolsets(),
-      env: { ...this.vaultAccessEnv(), ...(await this.mcpEnv(work)) },
+      env: {
+        ...this.vaultAccessEnv(),
+        ...(await this.mcpEnv(work)),
+        ...(await this.localAiEnv()),
+      },
     };
     if (!work || !this.options.vault) return settings;
     // The gateway is this agent's browser (a contribution already keeps Hermes' own toolset
@@ -915,6 +922,16 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
     if (this.vaultCleared || !this.options.vault) return;
     await this.options.vault.sync([]);
     this.vaultCleared = true;
+  }
+
+  // The keys of the local model servers the managed configuration names (key_env), read
+  // before each run and chat answer like the MCP secrets. A key Helena no longer hands out
+  // reaches Hermes empty.
+  private async localAiEnv(): Promise<Record<string, string>> {
+    const variables = localKeyVariables(this.applied?.localAi);
+    if (variables.length === 0 || !this.client.modelServerKeys) return {};
+    const keys = await this.client.modelServerKeys();
+    return Object.fromEntries(variables.map((name) => [name, keys[name] ?? '']));
   }
 
   // The knowledge vault paths the agent's file tools may reach, for the approval plugin.

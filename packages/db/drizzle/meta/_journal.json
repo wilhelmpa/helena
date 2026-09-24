@@ -1233,6 +1233,13 @@
       "when": 1790270792945,
       "tag": "0175_helena_model_availability",
       "breakpoints": true
+    },
+    {
+      "idx": 176,
+      "version": "7",
+      "when": 1790283256594,
+      "tag": "0176_helena_local_ai",
+      "breakpoints": true
     }
   ]
 }

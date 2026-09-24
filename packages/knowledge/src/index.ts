@@ -76,6 +76,7 @@ export { webNoteText, webPageToNote, type WebPageNote } from './web-capture';
 export {
   activeEmbedder,
   chunkText,
+  createOpenAiEmbedder,
   createTransformersEmbedder,
   DEFAULT_SEMANTIC_MODEL,
   embedPending,
@@ -89,7 +90,10 @@ export {
   syncEmbedder,
   SEMANTIC_SETTING,
   useEmbedder,
+  useEmbeddingRoute,
   type Embedder,
+  type EmbeddingRoute,
   type SemanticSetting,
   type SemanticStatus,
 } from './vectors';
+export { EMBEDDINGS_CLASS, localAiEmbeddingRoute } from './local-embeddings';

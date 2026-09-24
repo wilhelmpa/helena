@@ -2,6 +2,7 @@ import type { z } from 'zod';
 import type { Connector } from './connectors';
 import type { Logger } from './common';
 import type { EventHandler, EventInit, HelenaEvent } from './events';
+import type { LocalAiTaskClass, ModelServerType } from './local-ai';
 import type { CaptureTarget, KnowledgeSource } from './knowledge';
 import type { PluginManifest, McpServerContribution } from './manifest-types';
 import type { PolicyEvaluator } from './policy';
@@ -63,6 +64,11 @@ export interface PluginContext {
   usageLimitSources: Registrar<UsageLimitSource>;
   // Where Helena reads whether the model logins agents share are usable (API: polls).
   runtimeLoginSources: Registrar<RuntimeLoginSource>;
+  // Kinds of local model servers (Lemonade, any OpenAI-compatible server): how Helena lists
+  // their models and reads their status (API).
+  modelServers: Registrar<ModelServerType>;
+  // Kinds of work local AI may take, each with the eval it must pass first (API).
+  localAiTaskClasses: Registrar<LocalAiTaskClass>;
   events: {
     // Only event types under the plugin's own id: `<pluginId>.<name>`.
     publish(init: EventInit): Promise<HelenaEvent>;
