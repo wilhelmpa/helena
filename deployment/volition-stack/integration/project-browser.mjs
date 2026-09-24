@@ -4,6 +4,14 @@ import path from "node:path";
 import { writeJsonAtomic } from "./atomic-json.mjs";
 import { movePath } from "./move-path.mjs";
 
+// A secret must be readable by its owner only. systemd's own credential directory is the
+// exception: on a native boot it presents LoadCredential files as 0440 (0400 inside a
+// container) and guards the directory itself, so group read is fine there.
+function secretModeMask(file) {
+  const dir = process.env.CREDENTIALS_DIRECTORY;
+  return dir && file.startsWith(`${dir}/`) ? 0o037 : 0o077;
+}
+
 const PROJECT_SLUG = /^[a-z0-9][a-z0-9-]{0,31}$/;
 const MAX_PROJECT_BROWSERS = 128;
 
@@ -24,7 +32,7 @@ async function privateDirectory(directory) {
 
 async function privateFile(filePath) {
   const stat = await fs.lstat(filePath);
-  if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & 0o077) !== 0) {
+  if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & secretModeMask(filePath)) !== 0) {
     throw new Error("Project browser state is not a private regular file");
   }
 }

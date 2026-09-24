@@ -37,6 +37,14 @@ import {
 } from "../../../packages/browser-gateway/src/index.ts";
 import * as screencast from "./project-browser-screencast.mjs";
 
+// A secret must be readable by its owner only. systemd's own credential directory is the
+// exception: on a native boot it presents LoadCredential files as 0440 (0400 inside a
+// container) and guards the directory itself, so group read is fine there.
+function secretModeMask(file) {
+  const dir = process.env.CREDENTIALS_DIRECTORY;
+  return dir && file.startsWith(`${dir}/`) ? 0o037 : 0o077;
+}
+
 const { setControlState, setHandover } = screencast;
 const DEFAULT_AGENT_VIEWPORT = { width: 1440, height: 900 };
 
@@ -74,7 +82,7 @@ async function readToken() {
   const tokenFile = process.env.BROWSER_GATEWAY_TOKEN_FILE;
   if (!tokenFile) throw new Error("BROWSER_GATEWAY_TOKEN_FILE is not set");
   const stat = await fs.lstat(tokenFile);
-  if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & 0o077) !== 0) {
+  if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & secretModeMask(tokenFile)) !== 0) {
     throw new Error("browser gateway token file has the wrong permissions");
   }
   const token = (await fs.readFile(tokenFile, "utf8")).trim();
