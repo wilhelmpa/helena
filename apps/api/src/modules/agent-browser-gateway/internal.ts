@@ -21,6 +21,14 @@ import { fileHandoverCard, resolveHandoverCard } from './handover';
 import { MAX_DOWNLOAD_BYTES, saveDownload } from './downloads';
 import { decideBrowserAction, fileBrowserApproval, isActionCategory } from './policy';
 
+// A secret must be readable by its owner only. systemd's own credential directory is the
+// exception: on a native boot it presents LoadCredential files as 0440 (0400 inside a
+// container) and guards the directory itself, so group read is fine there.
+function secretModeMask(file: string): number {
+  const dir = process.env.CREDENTIALS_DIRECTORY;
+  return dir && file.startsWith(`${dir}/`) ? 0o037 : 0o077;
+}
+
 // The gateway's own routes (design §3: "prüft bei Plan: Agent, Projekt, Browser-Recht,
 // Login-Freigaben (internes API, Service-Token)"). Two factors, like the agent-egress proxy
 // and the agent-isolation launcher before it: a service token of the gateway's own
@@ -48,7 +56,11 @@ async function gatewayToken(): Promise<string> {
   }
   tokenPromise ??= lstat(tokenFile)
     .then(async (stat) => {
-      if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & 0o077) !== 0) {
+      if (
+        !stat.isFile() ||
+        stat.isSymbolicLink() ||
+        (stat.mode & secretModeMask(tokenFile)) !== 0
+      ) {
         throw new Error('invalid secret file');
       }
       const token = (await readFile(tokenFile, 'utf8')).trim();

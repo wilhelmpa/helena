@@ -3,6 +3,14 @@ import { lstat, readFile } from 'node:fs/promises';
 import { Elysia } from 'elysia';
 import { egressPolicies, parseEgressEvents, recordEgressEvents } from './service';
 
+// A secret must be readable by its owner only. systemd's own credential directory is the
+// exception: on a native boot it presents LoadCredential files as 0440 (0400 inside a
+// container) and guards the directory itself, so group read is fine there.
+function secretModeMask(file: string): number {
+  const dir = process.env.CREDENTIALS_DIRECTORY;
+  return dir && file.startsWith(`${dir}/`) ? 0o037 : 0o077;
+}
+
 // The egress proxy's own routes: it reads the settings of every project and reports what
 // it let through. Its token is a file of its own (AGENT_EGRESS_TOKEN_FILE), so the proxy
 // holds no other control credential and nothing else can post reports.
@@ -13,7 +21,11 @@ async function egressToken(): Promise<string> {
   if (!tokenFile) throw new Error('no egress token configured');
   tokenPromise ??= lstat(tokenFile)
     .then(async (stat) => {
-      if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & 0o077) !== 0) {
+      if (
+        !stat.isFile() ||
+        stat.isSymbolicLink() ||
+        (stat.mode & secretModeMask(tokenFile)) !== 0
+      ) {
         throw new Error('invalid secret file');
       }
       const token = (await readFile(tokenFile, 'utf8')).trim();
