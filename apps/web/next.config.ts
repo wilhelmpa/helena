@@ -49,7 +49,7 @@ const nextConfig: NextConfig = {
   // @repo/agent-naming ships plain TypeScript source (no build step, like every
   // package in this monorepo) — Next only bundles that from a workspace package when
   // it is listed here, otherwise it is served/imported unprocessed from node_modules.
-  transpilePackages: ['@repo/agent-naming'],
+  transpilePackages: ['@repo/agent-naming', '@helena/locales'],
   // next dev otherwise appends a block of its own to apps/web/AGENTS.md on every
   // start, which leaves the working tree dirty for anyone running the dev server.
   agentRules: false,

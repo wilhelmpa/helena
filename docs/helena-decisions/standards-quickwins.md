@@ -12,6 +12,7 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 | DB-2 | done | see git log | no library: `escapeLike`/`containsPattern` in `@repo/db` |
 | BRW-01 | done | see git log | `ws` 8.21.3 (MIT) |
 | BRW-03 | done | see git log | `mp4box` 2.4.1 (BSD-3), test only |
+| WEB-17 | done | see git log | `negotiator` 1.1 + `@formatjs/intl-localematcher` 0.8 (MIT), in `@helena/locales` |
 | F16 | done | see git log | `mime-types` 3.0.2 + `file-type` 22.1.1 (MIT) in `@repo/storage/mime` |
 
 ## F21: IP classification with `ipaddr.js`
@@ -82,3 +83,9 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 ## BRW-03: our fMP4 checked by mp4box.js
 
 - The muxer (`project-browser-mp4.mjs`) stays, as the audit says (latency). The router tests now also parse an init segment plus four fragments with `mp4box` 2.4.1 (a devDependency of `@helena/browser-router`) and check what a player sees: fragmented, one track, `avc1.42c01f`, timescale 90000, 1920x1080, and each sample's decode time, duration, sync flag, size and bytes.
+
+## WEB-17: one Accept-Language matcher
+
+- New package `@helena/locales` (`packages/locales`): the shipped `LOCALES` and `DEFAULT_LOCALE`, which the web and the API each kept a copy of, and, as the server-only entry `@helena/locales/accept-language`, `localeFromAcceptLanguage()`: `negotiator` parses the header, `@formatjs/intl-localematcher` (`match`, best fit with CLDR data) picks the language. Both libraries were already in the tree through next-intl; the matcher uses the same 0.8 line rather than 0.9 so there is one copy.
+- Kept on purpose: a wildcard ranks every language after it below "anything", so `ja-JP,*;q=0.9,zh;q=0.8` still gives the default. Malformed tags are skipped instead of throwing. `zh-TW` still falls to `zh-CN`.
+- The web's `i18n/locales.ts` re-exports the list and keeps its web-only parts (labels, flags, cookie, direction); the API's `user-preferences/locale.ts` re-exports both. `transpilePackages` gains `@helena/locales`. The matcher is a separate entry so negotiator never reaches a client bundle.

@@ -1,21 +1,9 @@
-// The languages the interface ships with. `en` is the source language: every key
-// exists in `messages/en.json`, and a missing translation falls back to it.
-export const LOCALES = [
-  'en',
-  'uk',
-  'ru',
-  'zh-CN',
-  'ar',
-  'fr',
-  'pt-BR',
-  'id',
-  'es-ES',
-  'de',
-] as const;
+import { LOCALES, type Locale } from '@helena/locales';
 
-export type Locale = (typeof LOCALES)[number];
-
-export const DEFAULT_LOCALE: Locale = 'en';
+// The languages the interface ships with, shared with the API (@helena/locales). `en` is
+// the source language: every key exists in `messages/en.json`, and a missing translation
+// falls back to it.
+export { DEFAULT_LOCALE, LOCALES, type Locale } from '@helena/locales';
 
 // Read on the server to render the first paint in the right language. Written by
 // the language switcher next to the account preference, so a signed-out screen

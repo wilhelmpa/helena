@@ -1,0 +1,26 @@
+{
+  "name": "@helena/locales",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./accept-language": "./src/accept-language.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@types/bun": "latest",
+    "@types/negotiator": "^0.6.5",
+    "eslint": "^9.39.0",
+    "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "@formatjs/intl-localematcher": "^0.8.14",
+    "negotiator": "^1.1.0"
+  }
+}

@@ -1,6 +1,6 @@
 import { cookies, headers } from 'next/headers';
 import { getRequestConfig } from 'next-intl/server';
-import { localeFromAcceptLanguage } from './accept-language';
+import { localeFromAcceptLanguage } from '@helena/locales/accept-language';
 import { LOCALE_COOKIE, isLocale } from './locales';
 import { loadMessages } from './messages';
 
