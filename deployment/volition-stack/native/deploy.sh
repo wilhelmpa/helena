@@ -194,6 +194,13 @@ if changed deployment/volition-stack/native/browser-restore; then
   systemctl enable volition-project-browser-restore.service >/dev/null
 fi
 
+# The project terminal's nginx routes (the owner terminal's come with its setup.sh below).
+if changed deployment/volition-stack/native/nginx/project-terminal.conf; then
+  install -m 0644 -o root -g root "$live/deployment/volition-stack/native/nginx/project-terminal.conf" \
+    /etc/nginx/snippets/volition-project-terminal.conf
+  nginx -t && systemctl reload nginx.service
+fi
+
 if changed deployment/volition-stack/native/owner-terminal; then
   "$live/deployment/volition-stack/native/owner-terminal/setup.sh"
 fi
