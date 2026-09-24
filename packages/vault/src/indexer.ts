@@ -3,7 +3,8 @@ import { createReadStream, type Stats } from 'node:fs';
 import { lstat, readdir, readFile } from 'node:fs/promises';
 import { isMissing, isUnreadable } from './errors';
 import { extractLinks, noteTitle, splitNote } from './markdown';
-import { isTextFile, vaultMime } from './mime';
+import { mimeFromName } from '@repo/storage/mime';
+import { isTextFile } from './mime';
 import { absoluteVaultPath, baseName, isIgnoredPath, isNotePath, joinVaultPath } from './paths';
 import { isExtractable } from './extract';
 import {
@@ -100,7 +101,7 @@ async function saveFile(relative: string, stats: Stats, knownSha?: string): Prom
   const absolute = absoluteVaultPath(relative);
   const base = {
     path: relative,
-    mime: vaultMime(relative),
+    mime: mimeFromName(relative),
     sizeBytes: stats.size,
     mtime: mtimeOf(stats),
   };

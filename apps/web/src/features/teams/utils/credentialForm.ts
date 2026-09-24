@@ -3,6 +3,8 @@ import type {
   CredentialEntry,
   CredentialInput,
   CredentialKind,
+  LoginMethod,
+  LoginRuntime,
   NewCredentialInput,
 } from '@/lib/api/endpoints/credentials';
 
@@ -21,9 +23,25 @@ export interface CredentialFormValue {
   removeTotp: boolean;
   value: string;
   notes: string;
+  runtime: LoginRuntime;
+  method: LoginMethod;
 }
 
-export const CREDENTIAL_KINDS: CredentialKind[] = ['web_login', 'api_key', 'ssh_key', 'secret'];
+export const CREDENTIAL_KINDS: CredentialKind[] = [
+  'web_login',
+  'api_key',
+  'ssh_key',
+  'secret',
+  'runtime_login',
+];
+
+// How each runtime can be signed in here: Claude Code with a token from `claude
+// setup-token` or an API key, Codex with an API key (its ChatGPT login is made on the
+// agent's runtime itself).
+export const LOGIN_METHODS: Record<LoginRuntime, LoginMethod[]> = {
+  claude: ['oauth_token', 'api_key'],
+  codex: ['api_key'],
+};
 
 export function emptyCredentialValue(kind: CredentialKind): CredentialFormValue {
   return {
@@ -38,6 +56,8 @@ export function emptyCredentialValue(kind: CredentialKind): CredentialFormValue 
     removeTotp: false,
     value: '',
     notes: '',
+    runtime: 'claude',
+    method: 'oauth_token',
   };
 }
 
@@ -52,6 +72,8 @@ export function credentialValue(entry: CredentialEntry): CredentialFormValue {
       .join('\n'),
     username: entry.username ?? '',
     notes: entry.notes,
+    runtime: entry.runtime ?? 'claude',
+    method: entry.method ?? 'oauth_token',
   };
 }
 
@@ -78,6 +100,8 @@ export function isCredentialFormValid(
     case 'api_key':
     case 'secret':
       return filled(value.value, 'value');
+    case 'runtime_login':
+      return LOGIN_METHODS[value.runtime].includes(value.method) && filled(value.value, 'value');
     case 'ssh_key':
       return true;
   }
@@ -101,6 +125,13 @@ function fieldsOf(value: CredentialFormValue): CredentialInput {
     case 'api_key':
     case 'secret':
       return { notes, ...(value.value !== '' && { value: value.value }) };
+    case 'runtime_login':
+      return {
+        runtime: value.runtime,
+        method: value.method,
+        notes,
+        ...(value.value.trim() !== '' && { value: value.value.trim() }),
+      };
     case 'ssh_key':
       return { notes };
   }
@@ -136,11 +167,17 @@ export interface AgentGroup {
 const ROLE_ORDER: AgentRole[] = ['home', 'coordinator', 'specialist'];
 
 // The agents a credential can be granted to, for the picker: those that run in Hermes,
-// and for a credential of one project those working there. The Home agent comes first,
-// then every project with its coordinator ahead of its specialists.
-export function grantableAgentGroups(agents: AiAgent[], projectId: number | null): AgentGroup[] {
+// and for a credential of one project those working there. A runtime login only goes to
+// the agents running on its runtime. The Home agent comes first, then every project with
+// its coordinator ahead of its specialists.
+export function grantableAgentGroups(
+  agents: AiAgent[],
+  projectId: number | null,
+  runtime: LoginRuntime | null = null,
+): AgentGroup[] {
   const grantable = agents
     .filter((agent) => agent.kind === 'external' && !agent.template)
+    .filter((agent) => runtime === null || agent.runtimePolicy?.runtime === runtime)
     .filter(
       (agent) =>
         projectId === null ||

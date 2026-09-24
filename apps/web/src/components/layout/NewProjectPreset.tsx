@@ -1,4 +1,5 @@
 import { useTranslations } from 'next-intl';
+import { RadioGroup as RadioGroupPrimitive } from 'radix-ui';
 import { PRESETS, type PresetKey } from '@/utils/projectPresets';
 
 // Picks the set of issue types a new project starts with and previews the result.
@@ -18,18 +19,16 @@ export default function NewProjectPreset({
     <div className="space-y-2">
       <span className="block text-sm font-medium">{t('issueTypes')}</span>
 
-      <div
-        role="radiogroup"
+      <RadioGroupPrimitive.Root
+        value={value}
+        onValueChange={(next) => onChange(next as PresetKey)}
         aria-label={t('issueTypes')}
         className="grid grid-cols-2 gap-x-2 gap-y-0.5"
       >
         {PRESETS.map((preset) => (
-          <button
+          <RadioGroupPrimitive.Item
             key={preset.key}
-            type="button"
-            role="radio"
-            aria-checked={preset.key === value}
-            onClick={() => onChange(preset.key)}
+            value={preset.key}
             className={`rounded-md px-2 py-1.5 text-left text-sm transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
               preset.key === value
                 ? 'bg-secondary font-medium text-secondary-foreground'
@@ -37,9 +36,9 @@ export default function NewProjectPreset({
             }`}
           >
             {t(`presets.${preset.key}`)}
-          </button>
+          </RadioGroupPrimitive.Item>
         ))}
-      </div>
+      </RadioGroupPrimitive.Root>
 
       {/* The type list wraps to two rows at most and the line below is one row, so
           the block keeps its height when the selection changes. */}

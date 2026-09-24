@@ -229,6 +229,7 @@
     "labelPlaceholder": "مثل: حساب الفريق",
     "labelHint": "بتساعدك تفرّق بين بيانات اعتماد نفس التكامل. الأسرار بتتخزّن مشفّرة.",
     "noFields": "لا توجد حقول",
+    "toolCount": "{count, plural, zero {لا أدوات} one {أداة واحدة} two {أداتان} few {# أدوات} many {# أداة} other {# أداة}}",
     "search": "بحث في التكاملات",
     "noMatches": "لا يوجد تكامل يطابق “{query}”.",
     "empty": "لا توجد بيانات اعتماد بعد",
@@ -434,7 +435,6 @@
       "memoryWindowPlaceholder": "نافذة الرسائل الأخيرة",
       "maxConcurrentChats": "المحادثات المتوازية",
       "maxConcurrentChatsHint": "عدد محادثات هذا الوكيل التي يمكن للعضو تركها تجيب في الوقت نفسه. يُرفض أي إرسال يتجاوز الحد حتى تنتهي إحداها.",
-      "toolAllow": "الأدوات المسموح بها",
       "mcpGrants": "أذونات MCP",
       "keysPlaceholder": "مفتاح واحد في كل سطر",
       "managedFiles": "ملفات Markdown المُدارة",
@@ -451,7 +451,7 @@
         "codex": "Codex"
       },
       "runtimeHermesHint": "يوفّر الخادم Hermes بنفسه ويُبقي ملفه متزامنًا.",
-      "runtimeCliHint": "يعمل على مشغّل بهذا الإعداد المسبق (helena-runner --agent {kind})؛ التعليمات والمهارات وخوادم MCP والنموذج والاستدلال تأتي من Helena."
+      "runtimeCliHint": "يعمل كخدمة مثل وكيل Hermes، في مجلد خاص به. التعليمات والمهارات وخوادم MCP والأدوات والنموذج والاستدلال تأتي من Helena؛ وتسجيل الدخول من «الوصول»."
     },
     "runtimeConflicts": {
       "title": "تم التغيير خارج Helena",
@@ -765,7 +765,34 @@
       },
       "defaults": "الافتراضي لوقت التشغيل: {model} ({provider})، الاستدلال {reasoning}",
       "servers": "خوادم MCP: {servers}",
-      "serversOff": "معطّلة: {servers}"
+      "serversOff": "معطّلة: {servers}",
+      "version": "الإصدار {version}",
+      "runtimes": {
+        "claude": "Claude Code",
+        "codex": "Codex"
+      },
+      "issues": {
+        "notSignedIn": "بيئة التشغيل غير مسجّلة الدخول.",
+        "rejected": "رُفض تسجيل دخول بيئة التشغيل: منتهي الصلاحية أو غير صالح.",
+        "runtimeMissing": "{runtime} غير مثبّت على الخادم.",
+        "sandboxUnavailable": "صندوق العزل غير متاح: لا يعمل صندوق العزل الخاص بـ Codex على هذا الخادم، لذا يعمل Codex للقراءة فقط ولا يصل إلا إلى أدوات Helena، من دون صدفة أوامر. مع عزل الوكلاء يعمل في وحدة خاصة به.",
+        "notSignedInShort": "غير مسجّلة الدخول",
+        "runtimeMissingShort": "بيئة التشغيل مفقودة",
+        "sandboxUnavailableShort": "صندوق العزل غير متاح"
+      },
+      "signIn": {
+        "claude": "شغّل الأمر في الطرفية (الرئيسية ← الطرفية)، وأكّد في المتصفح، ثم أضف الرمز في «الوصول» كتسجيل دخول لبيئة التشغيل (Claude Code). ثم امنحه لهذا الوكيل.",
+        "codex": "أضف مفتاح API في «الوصول» كتسجيل دخول لبيئة التشغيل (Codex) وامنحه لهذا الوكيل. أو سجّل الدخول عبر ChatGPT: شغّل الأمر في الطرفية (الرئيسية ← الطرفية) واتبع الرابط المعروض مع الرمز."
+      },
+      "copyCommand": "نسخ الأمر",
+      "copied": "تم النسخ",
+      "openAccess": "فتح «الوصول»",
+      "sandbox": "صندوق العزل: {mode}",
+      "sandboxModes": {
+        "workspace-write": "مجلد العمل",
+        "read-only": "للقراءة فقط",
+        "danger-full-access": "العزل"
+      }
     },
     "runModel": {
       "title": "النموذج",

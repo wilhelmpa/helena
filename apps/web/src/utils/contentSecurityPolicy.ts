@@ -13,20 +13,27 @@ function apiOrigin(): string {
   }
 }
 
-// Inline scripts stay allowed: Next's own flight payload, the next-themes bootstrap
-// and RuntimeEnvScript are inline and carry no nonce. A nonce policy is the step
-// after this one. Inline styles are what tiptap, Radix, recharts and Scalar emit.
+// Scripts run by nonce ("strict CSP"): the proxy makes a fresh nonce per request, Next
+// puts it on its own scripts and its flight payload, and the two inline scripts of the
+// layout (RuntimeEnvScript, the next-themes bootstrap) carry it. 'strict-dynamic' lets a
+// script with the nonce load Next's chunks. A browser that knows nonces ignores the
+// fallbacks after them ('unsafe-inline', https:, http:), which only an old browser without
+// CSP level 3 reads; so HTML that got into a page (agent-written markdown) runs nothing.
+// Without a nonce (a caller outside the proxy) the policy keeps the old inline allowance.
+// Inline styles are what tiptap, Radix, recharts and Scalar emit.
 // Images and media come from anywhere: markdown embeds by URL, OAuth profile
 // pictures, and the /media proxy on this origin. React evals in development only,
 // to rebuild server error stacks in the browser. Frames come from this origin, where
 // the file viewer opens a PDF, from the configured workspace tools, and from the api,
 // which serves plugins' panel pages.
-export function contentSecurityPolicy(): string {
+export function contentSecurityPolicy(nonce?: string): string {
   const frameOrigins = workspaceFrameOrigins(serverRuntimeEnv().workspace);
-  const scriptSources =
-    process.env.NODE_ENV === 'development'
-      ? "'self' 'unsafe-inline' 'unsafe-eval'"
-      : "'self' 'unsafe-inline'";
+  const scriptSources = [
+    ...(nonce
+      ? [`'nonce-${nonce}'`, "'strict-dynamic'", 'https:', 'http:', "'unsafe-inline'"]
+      : ["'self'", "'unsafe-inline'"]),
+    ...(process.env.NODE_ENV === 'development' ? ["'unsafe-eval'"] : []),
+  ].join(' ');
   return [
     "default-src 'self'",
     `script-src ${scriptSources}`,

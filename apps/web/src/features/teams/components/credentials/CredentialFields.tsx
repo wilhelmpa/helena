@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { CredentialFormValue } from '../../utils/credentialForm';
 import { CredentialLoginFields } from './CredentialLoginFields';
+import { CredentialRuntimeLoginFields } from './CredentialRuntimeLoginFields';
 import { CredentialScopeSelect } from './CredentialScopeSelect';
 import { CredentialSecretInput } from './CredentialSecretInput';
 import { CredentialSshKey } from './CredentialSshKey';
@@ -53,6 +54,9 @@ export function CredentialFields({
           stored={entry?.secrets.includes('value') ?? false}
           onChange={(next) => onChange({ value: next })}
         />
+      )}
+      {value.kind === 'runtime_login' && (
+        <CredentialRuntimeLoginFields value={value} entry={entry} onChange={onChange} />
       )}
       {value.kind === 'ssh_key' &&
         (entry ? (

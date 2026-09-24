@@ -18,6 +18,6 @@ fi
 # The copy of the virtual environment an update can go back to, root's alone.
 run install -d -m 0700 -o root -g root /var/lib/helena /var/lib/helena/hermes-update
 # The runner (volition-hermes) writes requests; the helper (root) writes the status.
-run install -d -m 0770 -o volition-hermes -g volition-hermes /var/lib/volition/hermes/run/helena-update
+run install -d -m 0770 -o volition-hermes -g "$(id -gn volition-hermes)" /var/lib/volition/hermes/run/helena-update
 run systemctl daemon-reload
 run systemctl enable --now helena-hermes-update.path

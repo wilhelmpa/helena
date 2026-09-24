@@ -151,6 +151,7 @@ export default function TeamCredentialsSection({
             label: open.entry.label,
             projectId: open.entry.projectId,
             grants: open.entry.grants,
+            runtime: open.entry.kind === 'runtime_login' ? open.entry.runtime : null,
           }}
           services={[]}
           onClose={close}

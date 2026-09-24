@@ -19,12 +19,13 @@ import { getProjectByKey } from '#modules/projects/service';
 import { listTeams } from '#modules/teams/service';
 import { host, registries } from '#shared/helena';
 import type { McpApp } from './types';
-import { routeTools, withoutFields, type McpRouteTool } from './generate';
+import { routeTools, toolTitle, withoutFields, type McpRouteTool } from './generate';
 import { dispatchTool } from './dispatch';
 import { SERVER_INSTRUCTIONS } from './instructions';
 import type { McpCredential } from './credential';
 import { toolError } from './result';
 import { visibleConnectors } from '#modules/connectors/tools';
+import { SERVER_INFO } from './info';
 
 // The path param of every team-scoped route.
 const TEAM_PARAM = 'teamId';
@@ -88,7 +89,7 @@ export async function buildMcpServer(
   const server = new Server(
     // `name` is the stable programmatic identifier; `title` is the human-readable
     // display name a client shows to the user (per the MCP Implementation spec).
-    { name: 'itsaplan', title: 'Helena', version: '1.0.0' },
+    SERVER_INFO,
     // `instructions` reaches the client in the initialize response and covers what
     // no single tool description can: which tool resolves ids, how a column is
     // picked, how far a request to "work on an issue" goes.
@@ -113,9 +114,11 @@ export async function buildMcpServer(
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: listed().map((tool) => {
       const route = routes.get(tool.name);
-      if (!route) return toMcpTool(tool);
+      // A plugin's tool without a title of its own gets its name spelled out, like a route.
+      if (!route) return { title: toolTitle(tool.name), ...toMcpTool(tool) };
       return {
         name: route.name,
+        title: route.title,
         description: route.description,
         // A caller whose team is already known does not get to name one.
         inputSchema:

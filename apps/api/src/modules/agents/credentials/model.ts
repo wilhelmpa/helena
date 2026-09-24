@@ -14,6 +14,7 @@ const CredentialKind = t.Union([
   t.Literal('api_key'),
   t.Literal('ssh_key'),
   t.Literal('secret'),
+  t.Literal('runtime_login'),
 ]);
 
 const ListedKind = t.Union([
@@ -21,8 +22,11 @@ const ListedKind = t.Union([
   t.Literal('api_key'),
   t.Literal('ssh_key'),
   t.Literal('secret'),
+  t.Literal('runtime_login'),
   t.Literal('mcp_oauth'),
 ]);
+const LoginRuntime = t.Union([t.Literal('claude'), t.Literal('codex')]);
+const LoginMethod = t.Union([t.Literal('oauth_token'), t.Literal('api_key')]);
 
 export const credentialListQuery = t.Object({
   kind: t.Optional(ListedKind),
@@ -53,8 +57,14 @@ const credentialFields = {
       }),
     ),
   ),
-  value: t.Optional(t.String({ maxLength: 16384, description: 'api_key, secret: the value.' })),
+  value: t.Optional(
+    t.String({ maxLength: 16384, description: 'api_key, secret, runtime_login: the value.' }),
+  ),
   notes: t.Optional(t.String({ maxLength: 4000 })),
+  // runtime_login: the runtime it signs in, and whether it is an OAuth token (Claude Code,
+  // from `claude setup-token`) or an API key.
+  runtime: t.Optional(LoginRuntime),
+  method: t.Optional(LoginMethod),
 };
 
 export const createCredentialEntryBody = t.Object({ kind: CredentialKind, ...credentialFields });
@@ -113,6 +123,8 @@ export const CredentialEntryResponse = t.Object({
   username: t.Nullable(t.String()),
   notes: t.String(),
   publicKey: t.Nullable(t.String()),
+  runtime: t.Nullable(LoginRuntime),
+  method: t.Nullable(LoginMethod),
   secrets: t.Array(t.String(), { description: 'The secret fields that hold a value.' }),
   agentIds: t.Array(t.Number(), { description: 'The agents granted by name.' }),
   grants: t.Array(GrantResponse),
@@ -172,6 +184,19 @@ export const credentialUsesBody = t.Object({
       origin: t.String({ maxLength: 300 }),
     }),
     { maxItems: 50 },
+  ),
+});
+
+// The login of the calling agent's Claude Code or Codex runtime. The value is only in the
+// answer for a run or chat answer the agent holds.
+export const RuntimeLoginResponse = t.Object({
+  login: t.Nullable(
+    t.Object({
+      credentialId: t.Number(),
+      runtime: LoginRuntime,
+      method: LoginMethod,
+      value: t.Optional(t.String()),
+    }),
   ),
 });
 

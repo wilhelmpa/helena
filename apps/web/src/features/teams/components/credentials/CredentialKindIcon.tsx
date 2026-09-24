@@ -1,4 +1,4 @@
-import { Globe, KeyRound, Lock, Plug, TerminalSquare } from 'lucide-react';
+import { Cpu, Globe, KeyRound, Lock, Plug, TerminalSquare } from 'lucide-react';
 import type { ListedKind } from '@/lib/api/endpoints/credentials';
 
 export const CREDENTIAL_KIND_ICONS = {
@@ -6,6 +6,7 @@ export const CREDENTIAL_KIND_ICONS = {
   api_key: KeyRound,
   ssh_key: TerminalSquare,
   secret: Lock,
+  runtime_login: Cpu,
   mcp_oauth: Plug,
 } satisfies Record<ListedKind, typeof Globe>;
 

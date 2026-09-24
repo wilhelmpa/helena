@@ -33,6 +33,17 @@ describe('coordinatorSection', () => {
     expect(text).toContain('the project has none yet.');
   });
 
+  it('offers the sub-agents of its own runtime', () => {
+    const input = { projectKeys: ['MKT'], manager: null, specialists: [] };
+    expect(coordinatorSection(input)).toContain('Hermes sub-agents with the delegation');
+    const claude = coordinatorSection({ ...input, runtime: 'claude' });
+    expect(claude).toContain('Claude Code subagents with the Task tool');
+    expect(claude).not.toContain('Hermes');
+    const codex = coordinatorSection({ ...input, runtime: 'codex' });
+    expect(codex).not.toContain('sub-agents');
+    expect(codex).not.toContain('Hermes');
+  });
+
   it('names no manager when the coordinator reports to nobody', () => {
     const text = coordinatorSection({ projectKeys: ['MKT'], manager: null, specialists: [] });
     expect(text).toContain('You coordinate the agent team of MKT.');

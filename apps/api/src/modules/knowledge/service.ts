@@ -3,6 +3,7 @@ import { lstat, readdir, stat } from 'node:fs/promises';
 import { Readable } from 'node:stream';
 import { and, asc, eq, inArray, ne, or, sql } from 'drizzle-orm';
 import { db, vaultEntry, vaultLink } from '@repo/db';
+import { mimeFromName } from '@repo/storage/mime';
 import {
   absoluteVaultPath,
   assertNoSymlink,
@@ -34,7 +35,6 @@ import {
   splitNote,
   TASK_IDENTIFIER,
   trashVaultPath,
-  vaultMime,
   VaultError,
   walkVault,
   writeVaultFile,
@@ -119,7 +119,7 @@ export async function readDocument(relative: string, maxChars = DEFAULT_MAX_CHAR
     path: relative,
     kind: 'file' as const,
     title: entry.title,
-    mime: entry.mime ?? vaultMime(relative),
+    mime: entry.mime ?? mimeFromName(relative),
     sizeBytes: info.size,
     sha256: entry.sha256 ?? '',
     updatedAt: info.mtime.toISOString(),
@@ -269,7 +269,7 @@ export async function listFolder(scope: VaultScope, folder: string) {
         name: entry.name,
         kind,
         title: row?.title || entry.name.replace(/\.md$/i, ''),
-        mime: kind === 'folder' ? null : vaultMime(relative),
+        mime: kind === 'folder' ? null : mimeFromName(relative),
         sizeBytes: kind === 'folder' ? null : info.size,
         updatedAt: info.mtime.toISOString(),
         extractionStatus: row?.extractionStatus ?? null,
@@ -508,7 +508,7 @@ export async function rawFile(relative: string, request: Request, download: bool
     Readable.toWeb(createReadStream(absoluteVaultPath(relative))) as ReadableStream,
     {
       headers: attachmentResponseHeaders({
-        contentType: vaultMime(relative),
+        contentType: mimeFromName(relative),
         filename: baseName(relative),
         contentLength: info.size,
         etag,

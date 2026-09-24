@@ -228,8 +228,8 @@ describe("ensurePlanProjectAgent", () => {
     hermesRunnerDescriptorRoot: "/data/hermes/run/agents",
   };
 
-  function agentRuntime({ answeredId = 31 } = {}) {
-    const state = { validKey: null, issued: 0, offered: [], writes: [], descriptor: null };
+  function agentRuntime({ answeredId = 31, runtime } = {}) {
+    const state = { validKey: null, issued: 0, offered: [], writes: [], descriptor: null, runtime };
     const fetchImpl = async (url, init) => {
       assert.equal(new URL(url).pathname, "/internal/bootstrap/project-agent");
       assert.equal(init.headers.Authorization, `Bearer ${controlConfig.planControlToken}`);
@@ -242,7 +242,11 @@ describe("ensurePlanProjectAgent", () => {
         apiKey = `agent-key-value-${state.issued}-1234567890`;
         state.validKey = apiKey;
       }
-      return json(200, { agent: { id: answeredId, userId: "coder-user", username: "Coder.Bot" }, apiKey });
+      return json(200, {
+        agent: { id: answeredId, userId: "coder-user", username: "Coder.Bot" },
+        apiKey,
+        ...(state.runtime ? { runtime: state.runtime } : {}),
+      });
     };
     const descriptorStore = {
       read: async () => structuredClone(state.descriptor),
@@ -267,6 +271,7 @@ describe("ensurePlanProjectAgent", () => {
       name: "sysqa_31",
       hermesHome: "/data/hermes/profiles/sysqa_31",
       descriptorChanged: true,
+      runtime: "hermes",
     });
     assert.deepEqual(state.writes, ["/data/hermes/run/agents/sysqa_31.json"]);
     assert.deepEqual(state.descriptor, {
@@ -292,6 +297,33 @@ describe("ensurePlanProjectAgent", () => {
     assert.equal(result.descriptorChanged, false);
     assert.deepEqual(state.offered, [null, key]);
     assert.equal(state.writes.length, 1);
+  });
+
+  it("names Claude Code or Codex in the descriptor, and rewrites it when the runtime changes", async () => {
+    const { state, options } = agentRuntime({ runtime: "claude" });
+    const first = await ensurePlanProjectAgent(controlConfig, project, 31, options);
+    assert.equal(first.runtime, "claude");
+    assert.equal(state.descriptor.runtime, "claude");
+    // The same profile directory: it is the agent's home for any runtime.
+    assert.equal(state.descriptor.hermesHome, "/data/hermes/profiles/sysqa_31");
+
+    state.runtime = "codex";
+    const second = await ensurePlanProjectAgent(controlConfig, project, 31, options);
+    assert.equal(second.descriptorChanged, true);
+    assert.equal(state.descriptor.runtime, "codex");
+
+    // Back to Hermes: the field goes, as for every Hermes agent.
+    state.runtime = "hermes";
+    const third = await ensurePlanProjectAgent(controlConfig, project, 31, options);
+    assert.equal(third.descriptorChanged, true);
+    assert.equal("runtime" in state.descriptor, false);
+  });
+
+  it("refuses a runtime it does not know", async () => {
+    await assert.rejects(
+      ensurePlanProjectAgent(controlConfig, project, 31, agentRuntime({ runtime: "opencode" }).options),
+      /unknown runtime/,
+    );
   });
 
   it("never offers the key of another agent's descriptor", async () => {

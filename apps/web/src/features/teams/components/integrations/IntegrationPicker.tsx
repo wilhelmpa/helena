@@ -75,8 +75,7 @@ export function IntegrationPicker({
                       </span>
                       {integration.tools.length > 0 && (
                         <span className="block truncate text-xs text-muted-foreground">
-                          {integration.tools.length}{' '}
-                          {integration.tools.length === 1 ? 'tool' : 'tools'}
+                          {t('toolCount', { count: integration.tools.length })}
                         </span>
                       )}
                     </span>

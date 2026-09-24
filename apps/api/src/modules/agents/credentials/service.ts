@@ -24,10 +24,13 @@ import {
   type ListedKind,
   allowedOrigin,
   assertFieldsOfKind,
+  assertLoginMethod,
   assertTotpSecret,
   loginUrlOf,
   type CredentialFields,
   type CredentialKind,
+  type LoginMethod,
+  type LoginRuntime,
 } from './kinds';
 import { generateSshKey, sshKeyComment } from './ssh-key';
 
@@ -52,6 +55,8 @@ export interface CredentialEntry {
   username: string | null;
   notes: string;
   publicKey: string | null;
+  runtime: LoginRuntime | null;
+  method: LoginMethod | null;
   secrets: string[];
   // The agents granted by name; `grants` holds every grant, to agents and projects.
   agentIds: number[];
@@ -68,6 +73,8 @@ interface Readable {
   username?: string;
   notes?: string;
   publicKey?: string;
+  runtime?: LoginRuntime;
+  method?: LoginMethod;
   [secretField: string]: unknown;
 }
 
@@ -127,6 +134,8 @@ function toEntry(row: EntryRow, grants: GrantEntry[]): CredentialEntry {
     username: readable.username ?? null,
     notes: readable.notes ?? '',
     publicKey: readable.publicKey ?? null,
+    runtime: kind === 'runtime_login' ? (readable.runtime ?? null) : null,
+    method: kind === 'runtime_login' ? (readable.method ?? null) : null,
     secrets: SECRET_FIELDS[kind].filter((field) => Boolean(readable[field])),
     agentIds: grants.flatMap((grant) => (grant.agentId === null ? [] : [grant.agentId])),
     grants,
@@ -247,6 +256,16 @@ function compose(
     return {
       readable: { publicKey: current.readable.publicKey, notes },
       secrets: { privateKey: current.secrets.privateKey },
+    };
+  }
+  if (kind === 'runtime_login') {
+    const runtime = required(fields.runtime ?? current.readable.runtime, 'A runtime');
+    const method = required(fields.method ?? current.readable.method, 'A sign-in method');
+    assertLoginMethod(runtime, method);
+    const value = fields.value === undefined ? current.secrets.value : fields.value?.trim();
+    return {
+      readable: { runtime: runtime as LoginRuntime, method: method as LoginMethod, notes },
+      secrets: { value: requiredSecret(value, 'A token or key') },
     };
   }
   const value = fields.value === undefined ? current.secrets.value : fields.value;
@@ -408,6 +427,7 @@ export async function setCredentialGrants(
       kind: integrationCredential.integrationKey,
       projectId: integrationCredential.projectId,
       projectKey: project.key,
+      runtime: sql<string | null>`${integrationCredential.redacted}->>'runtime'`,
     })
     .from(integrationCredential)
     .leftJoin(project, eq(project.id, integrationCredential.projectId))
@@ -420,7 +440,10 @@ export async function setCredentialGrants(
     );
   if (!row) return null;
   const services = connectors.get(row.kind)?.services.map((service) => service.id) ?? [];
-  await replaceGrants({ ...row, teamId, services }, grants);
+  await replaceGrants(
+    { ...row, teamId, services, runtime: row.kind === 'runtime_login' ? row.runtime : null },
+    grants,
+  );
   return (await grantsOf([id])).get(id) ?? [];
 }
 

@@ -72,6 +72,9 @@ interface GrantTarget {
   projectKey: string | null;
   // The services a grant may name; empty for a credential without services.
   services: readonly string[];
+  // A runtime login signs in one runtime (claude, codex): an agent granted it by name
+  // has to run on it. A project grant reaches only that project's agents on it.
+  runtime?: string | null;
 }
 
 function sameGrant(left: GrantInput, right: GrantInput): boolean {
@@ -110,7 +113,13 @@ async function validGrants(target: GrantTarget, grants: GrantInput[]): Promise<G
   const agentIds = [...new Set(out.flatMap((grant) => (grant.agentId ? [grant.agentId] : [])))];
   if (agentIds.length > 0) {
     const agents = await db
-      .select({ id: aiAgent.id, name: user.name, kind: aiAgent.kind, template: aiAgent.template })
+      .select({
+        id: aiAgent.id,
+        name: user.name,
+        kind: aiAgent.kind,
+        template: aiAgent.template,
+        runtime: sql<string | null>`${aiAgent.runtimePolicy}->>'runtime'`,
+      })
       .from(aiAgent)
       .innerJoin(user, eq(user.id, aiAgent.userId))
       .where(and(eq(aiAgent.teamId, target.teamId), inArray(aiAgent.id, agentIds)));
@@ -119,6 +128,9 @@ async function validGrants(target: GrantTarget, grants: GrantInput[]): Promise<G
     for (const agent of agents) {
       if (agent.kind !== 'external' || agent.template) {
         throw new HttpError(400, `${agent.name} does not run in a runner.`);
+      }
+      if (target.runtime && (agent.runtime ?? 'hermes') !== target.runtime) {
+        throw new HttpError(400, `${agent.name} does not run on ${target.runtime}.`);
       }
       if (target.projectId !== null && !(await agentWorksInProject(agent.id, target.projectId))) {
         throw new HttpError(400, `${agent.name} does not work in ${target.projectKey}.`);

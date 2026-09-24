@@ -201,12 +201,14 @@
   },
   "subtaskDisposal": {
     "intro": "{issues, plural, one {Este ticket tiene} other {Estos tickets tienen}} {count, plural, one {# subtarea} other {# subtareas}}.",
+    "choose": "Elige qué pasa con {count, plural, one {ella} other {ellas}}.",
     "deleteToo": "{count, plural, one {Eliminarla también} other {Eliminarlas también}}",
     "archiveToo": "{count, plural, one {Archivarla también} other {Archivarlas también}}",
     "detach": "{count, plural, one {Mantenerla sin padre} other {Mantenerlas sin padre}}",
     "reassign": "{count, plural, one {Moverla a otro ticket} other {Moverlas a otro ticket}}",
     "reassignTitle": "Mover las subtareas a otro ticket",
     "change": "Cambiar",
+    "newParent": "Nuevo padre:",
     "searchParent": "Buscar la nuevo ticket madre…"
   },
   "comments": {

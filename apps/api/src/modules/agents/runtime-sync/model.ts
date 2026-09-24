@@ -42,6 +42,29 @@ export const profileReport = t.Object({
   }),
 });
 
+// Why an agent's runtime cannot do its work, or only part of it (the runner's
+// RuntimeIssue): its program is missing, no login reaches it ('missing') or its login was
+// refused ('rejected'), or Codex runs read-only without agent isolation.
+export const runtimeIssue = t.Object({
+  code: t.Union([
+    t.Literal('runtime-missing'),
+    t.Literal('not-signed-in'),
+    t.Literal('sandbox-unavailable'),
+  ]),
+  detail: t.Optional(t.String({ maxLength: 100 })),
+  // The command the owner runs in the owner terminal to put it right (sign the runtime in).
+  command: t.Optional(t.String({ maxLength: 600 })),
+});
+
+// Where a runtime with a sandbox of its own (Codex) runs the model's commands: its own
+// sandbox with writes in the working folder, read-only, or none inside agent isolation,
+// whose unit is the sandbox then.
+export const runtimeSandbox = t.Union([
+  t.Literal('workspace-write'),
+  t.Literal('read-only'),
+  t.Literal('danger-full-access'),
+]);
+
 // What a run or chat answer reports about its model (the runner's RunModelReport).
 export const runModelReport = t.Object({
   requested: t.Object({
@@ -109,6 +132,10 @@ export const RuntimeSyncResponse = t.Object({
   adapter: t.Nullable(t.String()),
   detail: t.Nullable(t.String()),
   profile: t.Nullable(profileReport),
+  // The runtime's version, what keeps it from its work, and its sandbox.
+  version: t.Nullable(t.String()),
+  issues: t.Array(runtimeIssue),
+  sandbox: t.Nullable(runtimeSandbox),
   // A "Neu schreiben" the runner has not carried out yet.
   rewritePending: t.Boolean(),
   reportedAt: t.Nullable(t.String()),
@@ -145,6 +172,7 @@ export const agentSyncSummary = t.Object({
       state: syncStateName,
       adapter: t.Nullable(t.String()),
       drift: t.Array(t.String(), { description: 'The keys that drifted.' }),
+      issues: t.Array(runtimeIssue),
     }),
   ),
 });

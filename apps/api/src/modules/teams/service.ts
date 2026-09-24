@@ -14,6 +14,7 @@ import {
   teamMember,
   teamRole,
   user,
+  containsPattern,
 } from '@repo/db';
 import { and, desc, eq, ilike, inArray, isNull, notInArray, or, sql } from 'drizzle-orm';
 import { HttpError, iso } from '#shared/lib';
@@ -488,7 +489,9 @@ function visibleTeamProjects(
       ? undefined
       : sql`exists (select 1 from ${projectMember} where ${projectMember.projectId} = ${project.id}
       and ${projectMember.userId} = ${userId})`,
-    term ? or(ilike(project.key, `%${term}%`), ilike(project.name, `%${term}%`)) : undefined,
+    term
+      ? or(ilike(project.key, containsPattern(term)), ilike(project.name, containsPattern(term)))
+      : undefined,
   );
 }
 

@@ -5,6 +5,8 @@ export {
   resolveMcpValue,
   runModelReport,
   templateOf,
+  type CommandHooks,
+  type CommandSandbox,
   type DriftCode,
   type McpNamedValue,
   type McpServerSpec,
@@ -17,6 +19,9 @@ export {
   type RuntimeAdapter,
   type RuntimeDefaults,
   type RuntimeId,
+  type RuntimeIssue,
+  type RuntimeIssueCode,
   type SessionFacts,
+  type StartGate,
 } from '@helena/sdk';
 export { maskValue, profileDigest } from '@helena/sdk/server';

@@ -1,0 +1,9 @@
+{
+  "name": "helena-runtime-codex-acp",
+  "private": true,
+  "description": "ACP adapter for Codex, installed outside Helena's tree by install-cli-runtimes.sh; it runs the installed codex binary (CODEX_PATH)",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@agentclientprotocol/codex-acp": "1.13.1"
+  }
+}

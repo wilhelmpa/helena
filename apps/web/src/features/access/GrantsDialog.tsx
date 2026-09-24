@@ -21,6 +21,7 @@ import { useAiAgentsQuery } from '@/services/aiAgents.service';
 import { useProjectsQuery } from '@/services/projects.service';
 import { useSetGrants } from '@/services/access.service';
 import { grantableAgentGroups } from '@/features/teams/utils/credentialForm';
+import type { LoginRuntime } from '@/lib/api/endpoints/credentials';
 
 interface Row {
   agentId: number | null;
@@ -44,7 +45,14 @@ export function GrantsDialog({
   onClose,
 }: {
   teamId: number;
-  target: { id: number; label: string; projectId: number | null; grants: Grant[] };
+  // `runtime`: a runtime login is granted by name only to agents running on it.
+  target: {
+    id: number;
+    label: string;
+    projectId: number | null;
+    grants: Grant[];
+    runtime?: LoginRuntime | null;
+  };
   // The services of an account, with their labels; none for a plain credential.
   services: { id: string; label: string }[];
   onClose: () => void;
@@ -71,9 +79,11 @@ export function GrantsDialog({
         project.teamId === teamId && (target.projectId === null || project.id === target.projectId),
     );
     // The Home agent first, then each project with its coordinator ahead.
-    const grantable = grantableAgentGroups(agents ?? [], target.projectId).flatMap(
-      (group) => group.agents,
-    );
+    const grantable = grantableAgentGroups(
+      agents ?? [],
+      target.projectId,
+      target.runtime ?? null,
+    ).flatMap((group) => group.agents);
     return {
       projects: teamProjects.map((project) => ({
         key: `p${project.id}`,
@@ -82,7 +92,7 @@ export function GrantsDialog({
       })),
       agents: grantable.map((agent) => ({ key: `a${agent.id}`, label: agent.name, agent })),
     };
-  }, [agents, projects, teamId, target.projectId]);
+  }, [agents, projects, teamId, target.projectId, target.runtime]);
 
   const labelOf = (row: Row) => {
     if (row.agentId !== null) {

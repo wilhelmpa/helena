@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./mime": "./src/mime.ts"
   },
   "scripts": {
     "lint": "eslint .",
@@ -14,7 +15,12 @@
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
     "@types/bun": "latest",
+    "@types/mime-types": "^3.0.1",
     "eslint": "^9.39.0",
     "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "file-type": "^22.1.1",
+    "mime-types": "^3.0.2"
   }
 }

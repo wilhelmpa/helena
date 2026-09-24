@@ -100,6 +100,14 @@ describe('mcp tool table', () => {
     ]);
     expect(routeTools(app)[0]!.description).toBe('The long one.');
   });
+
+  it('titles a tool with its summary, or with its name spelled out', () => {
+    const app = appWith([
+      { method: 'GET', path: '/a', detail: { summary: 'List issues', ...mcpTool('list_issues') } },
+      { method: 'POST', path: '/b', detail: { ...mcpTool('create_issue') } },
+    ]);
+    expect(routeTools(app).map((t) => t.title)).toEqual(['List issues', 'Create issue']);
+  });
 });
 
 // Builds a route whose hooks carry the given schemas, the way a real route declares

@@ -201,12 +201,14 @@
   },
   "subtaskDisposal": {
     "intro": "{issues, plural, one {У этой задачи} other {У этих задач}} {count, plural, one {# подзадача} few {# подзадачи} many {# подзадач} other {# подзадачи}}.",
+    "choose": "Выберите, что {count, plural, one {с ней} few {с ними} many {с ними} other {с ними}} сделать.",
     "deleteToo": "{count, plural, one {Удалить её тоже} other {Удалить их тоже}}",
     "archiveToo": "{count, plural, one {Архивировать её тоже} other {Архивировать их тоже}}",
     "detach": "{count, plural, one {Оставить её без родительской задачи} other {Оставить их без родительской задачи}}",
     "reassign": "{count, plural, one {Перенести её к другой задаче} other {Перенести их к другой задаче}}",
     "reassignTitle": "Перенести подзадачи к другой задаче",
     "change": "Изменить",
+    "newParent": "Новая родительская задача:",
     "searchParent": "Поиск новой родительской задачи…"
   },
   "comments": {

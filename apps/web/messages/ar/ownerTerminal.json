@@ -30,5 +30,8 @@
     "ctrl": "Ctrl",
     "alt": "Alt",
     "paste": "لصق"
+  },
+  "clipboard": {
+    "copied": "تم النسخ إلى الحافظة"
   }
 }

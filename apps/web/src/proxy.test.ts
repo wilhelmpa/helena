@@ -86,6 +86,24 @@ describe('proxy security headers', () => {
     assert.match(csp!, /(^|; )object-src 'none'(;|$)/);
   });
 
+  it('runs scripts by a fresh nonce per request and hands it to the page', async () => {
+    const first = await run('/login');
+    const second = await run('/login');
+    const nonceOf = (res: Response) =>
+      /script-src 'nonce-([^']+)' 'strict-dynamic'/.exec(
+        res.headers.get('content-security-policy') ?? '',
+      )?.[1];
+    const nonce = nonceOf(first);
+    assert.ok(nonce);
+    assert.notEqual(nonce, nonceOf(second));
+    // Next reads the nonce from the policy on the request; the layout reads x-nonce.
+    assert.equal(first.headers.get('x-middleware-request-x-nonce'), nonce);
+    assert.match(
+      first.headers.get('x-middleware-request-content-security-policy') ?? '',
+      new RegExp(`'nonce-${nonce}'`),
+    );
+  });
+
   it('keeps the policy on a redirect and on the expired screen', async () => {
     assert.ok((await run('/', undefined)).headers.get('content-security-policy'));
     assert.ok((await run('/login?expired=1', COOKIE)).headers.get('content-security-policy'));

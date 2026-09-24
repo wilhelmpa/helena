@@ -81,16 +81,10 @@
     },
     "claude": {
       "exec": "/usr/local/bin/claude",
-      "credentialBinds": [
-        { "source": "/var/lib/volition/agent-credentials/claude/.credentials.json", "target": "{home}/.claude/.credentials.json" }
-      ],
-      "env": { "DISABLE_AUTOUPDATER": "1", "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1" }
+      "env": { "DISABLE_AUTOUPDATER": "1", "DISABLE_UPDATES": "1", "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1" }
     },
     "codex": {
-      "exec": "/usr/local/bin/codex",
-      "credentialBinds": [
-        { "source": "/var/lib/volition/agent-credentials/codex/auth.json", "target": "{home}/.codex/auth.json" }
-      ]
+      "exec": "/usr/local/bin/codex"
     },
     "profile-helper": {
       "exec": "/usr/local/bin/node",

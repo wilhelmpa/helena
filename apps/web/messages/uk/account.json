@@ -130,6 +130,7 @@
     "timezone": "Часовий пояс",
     "timezoneDescription": "Виберіть пояс, у якому працюєте.",
     "timezonePlaceholder": "Виберіть часовий пояс",
+    "timezoneSearch": "Пошук часового поясу",
     "timezoneEmpty": "Часових поясів не знайдено.",
     "timezoneGroups": {
       "America": "Америка",

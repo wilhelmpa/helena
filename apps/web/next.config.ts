@@ -46,11 +46,11 @@ const nextConfig: NextConfig = {
   // files (default-stylesheet.css) by a path relative to its module. Bundling it
   // breaks that path, so it is required from node_modules at runtime instead.
   serverExternalPackages: ['isomorphic-dompurify'],
-  // @repo/agent-naming and @helena/sdk ship plain TypeScript source (no build step,
-  // like every package in this monorepo) — Next only bundles that from a workspace
-  // package when it is listed here, otherwise it is served/imported unprocessed from
-  // node_modules. The web imports only @helena/sdk/web, which has no server code.
-  transpilePackages: ['@repo/agent-naming', '@helena/sdk'],
+  // @repo/agent-naming, @helena/sdk and @helena/locales ship plain TypeScript source (no
+  // build step, like every package in this monorepo) — Next only bundles that from a
+  // workspace package when it is listed here, otherwise it is served/imported unprocessed
+  // from node_modules. The web imports only @helena/sdk/web, which has no server code.
+  transpilePackages: ['@repo/agent-naming', '@helena/sdk', '@helena/locales'],
   // next dev otherwise appends a block of its own to apps/web/AGENTS.md on every
   // start, which leaves the working tree dirty for anyone running the dev server.
   agentRules: false,

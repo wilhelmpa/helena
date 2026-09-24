@@ -144,13 +144,18 @@ export {
   type McpValue,
   type ProfileDrift,
   type ProfileMcpServer,
+  type CommandHooks,
+  type CommandSandbox,
   type ProfileReport,
   type RunModelReport,
   type RunSettings,
   type RuntimeAdapter,
   type RuntimeDefaults,
   type RuntimeId,
+  type RuntimeIssue,
+  type RuntimeIssueCode,
   type SessionFacts,
+  type StartGate,
   type WorkRef,
 } from './runtime-profile';
 export type {

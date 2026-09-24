@@ -201,12 +201,14 @@
   },
   "subtaskDisposal": {
     "intro": "{issues, plural, one {Issue ini memiliki} other {Issue tersebut memiliki}} {count, plural, one {# subtugas} other {# subtugas}}.",
+    "choose": "Pilih apa yang terjadi pada {count, plural, other {subtugas tersebut}}.",
     "deleteToo": "{count, plural, one {Hapus juga} other {Hapus juga}}",
     "archiveToo": "{count, plural, one {Arsipkan juga} other {Arsipkan juga}}",
     "detach": "{count, plural, one {Pertahankan tanpa induk} other {Pertahankan tanpa induk}}",
     "reassign": "{count, plural, one {Pindahkan ke issue lain} other {Pindahkan ke issue lain}}",
     "reassignTitle": "Pindahkan subtugas ke issue lain",
     "change": "Ubah",
+    "newParent": "Induk baru:",
     "searchParent": "Cari issue induk baru…"
   },
   "comments": {

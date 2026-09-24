@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { convert } from 'html-to-text';
 import { simpleParser, type AddressObject, type Attachment } from 'mailparser';
+import { extensionForMime } from '@repo/storage/mime';
 import { sanitizeMailHtml } from './sanitize';
 import { safeFileName } from './vault-path';
 
@@ -40,16 +41,6 @@ export interface ParsedMessage {
 
 const TINY_INLINE_IMAGE_BYTES = 16 * 1024;
 const MAX_TEXT_CHARS = 200_000;
-
-const EXTENSIONS: Record<string, string> = {
-  'application/pdf': '.pdf',
-  'image/png': '.png',
-  'image/jpeg': '.jpg',
-  'image/gif': '.gif',
-  'text/calendar': '.ics',
-  'text/plain': '.txt',
-  'message/rfc822': '.eml',
-};
 
 function addresses(value: AddressObject | AddressObject[] | undefined): MailAddress[] {
   const list = Array.isArray(value) ? value : value ? [value] : [];
@@ -96,7 +87,7 @@ export function isRealAttachment(attachment: Attachment, html: string | null): b
 }
 
 function attachmentName(attachment: Attachment, index: number): string {
-  const extension = EXTENSIONS[attachment.contentType.toLowerCase()] ?? '.bin';
+  const extension = extensionForMime(attachment.contentType);
   return safeFileName(attachment.filename ?? '', `attachment-${index + 1}${extension}`);
 }
 

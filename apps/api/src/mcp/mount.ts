@@ -44,6 +44,18 @@ function withoutCredentials(request: Request): Request {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function mountMcp(app: any): void {
   const mcpApp = app as McpApp;
+  // Streamable HTTP lets a client GET the endpoint for a server-to-client stream and
+  // DELETE it to end a session. This server is stateless (a fresh server per POST), so
+  // it offers neither and answers 405 with Allow: POST, as the transport spec asks,
+  // in the JSON-RPC error shape the SDK's transport uses for the same answer.
+  const methodNotAllowed = () =>
+    Response.json(
+      { jsonrpc: '2.0', error: { code: -32000, message: 'Method not allowed.' }, id: null },
+      { status: 405, headers: { Allow: 'POST' } },
+    );
+  for (const method of ['get', 'delete'] as const) {
+    app[method]('/mcp', methodNotAllowed, { detail: { hide: true } });
+  }
   app.post(
     '/mcp',
     async ({ request, body }: { request: Request; body: unknown }) => {

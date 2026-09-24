@@ -201,12 +201,14 @@
   },
   "subtaskDisposal": {
     "intro": "{issues, plural, one {Esta issue tem} other {Estas issues têm}} {count, plural, one {# subtarefa} other {# subtarefas}}.",
+    "choose": "Escolha o que acontece com {count, plural, one {ela} other {elas}}.",
     "deleteToo": "{count, plural, one {Excluí-la também} other {Excluí-las também}}",
     "archiveToo": "{count, plural, one {Arquivá-la também} other {Arquivá-las também}}",
     "detach": "{count, plural, one {Mantê-la sem pai} other {Mantê-las sem pai}}",
     "reassign": "{count, plural, one {Movê-la para outra issue} other {Movê-las para outra issue}}",
     "reassignTitle": "Mover as subtarefas para outra issue",
     "change": "Alterar",
+    "newParent": "Novo pai:",
     "searchParent": "Buscar a nova issue pai…"
   },
   "comments": {

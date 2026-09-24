@@ -48,12 +48,30 @@ export default function ResizeGrip({
     grip.addEventListener('lostpointercapture', onUp);
   }
 
+  // The keyboard moves it too: the arrow keys by 10px, with Shift by 50px, reported the
+  // same way as a drag of that distance.
+  function onKeyDown(e: React.KeyboardEvent) {
+    const step = e.shiftKey ? 50 : 10;
+    if (e.key === 'ArrowLeft') onDrag(-step);
+    else if (e.key === 'ArrowRight') onDrag(step);
+    else return;
+    e.preventDefault();
+  }
+
+  // A focusable separator (WAI-ARIA window splitter) between the two sides it sizes.
+  // jsx-a11y counts a separator as non-interactive; a focusable one is a widget.
   return (
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <div
-      onPointerDown={beginResize}
+      role="separator"
+      aria-orientation="vertical"
       aria-label={label}
+      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+      tabIndex={0}
+      onPointerDown={beginResize}
+      onKeyDown={onKeyDown}
       className={cn(
-        'w-1.5 cursor-col-resize touch-none select-none hover:bg-primary/40',
+        'w-1.5 cursor-col-resize touch-none outline-none select-none hover:bg-primary/40 focus-visible:bg-primary/40',
         className,
       )}
     />
