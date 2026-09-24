@@ -20,7 +20,7 @@ import type { RuntimePolicyClient, RuntimePolicySnapshot, RuntimeStatus } from '
 import {
   profileDigest,
   resolveMcpValue,
-  type CodexSandbox,
+  type CommandSandbox,
   type CommandHooks,
   type McpServerSpec,
   type ProfileDrift,
@@ -98,7 +98,7 @@ function isolated(config: Pick<RunnerConfig, 'isolation'>): boolean {
 // agent isolation, where its unit is the sandbox, and read-only otherwise: then it reaches
 // Helena's tools, but no shell command runs. An operator's own runner keeps Codex'
 // workspace-write.
-export function codexSandbox(config: Pick<RunnerConfig, 'env' | 'isolation'>): CodexSandbox {
+export function codexSandbox(config: Pick<RunnerConfig, 'env' | 'isolation'>): CommandSandbox {
   if (isolated(config)) return 'danger-full-access';
   return cliAgentHome(config) ? 'read-only' : 'workspace-write';
 }

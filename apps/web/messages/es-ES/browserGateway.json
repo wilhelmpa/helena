@@ -1,0 +1,15 @@
+{
+  "homeTitle": "Navegador",
+  "homeDescription": "Los navegadores de los proyectos: qué está abierto, quién tiene el control y si un agente le espera.",
+  "homeBrowser": "Inicio",
+  "empty": "Aún no hay navegadores de proyecto",
+  "emptyHint": "Un proyecto recibe su navegador al crearse; aparece aquí en cuanto se ejecuta.",
+  "noLiveImage": "Sin imagen",
+  "noPage": "Ninguna página abierta",
+  "controlledByAgent": "{agentName} tiene el control",
+  "controlledByOwner": "Usted tiene el control",
+  "agentActive": "Un agente está trabajando",
+  "free": "Libre",
+  "unreachable": "No disponible",
+  "handover": "Pide que tome el control"
+}

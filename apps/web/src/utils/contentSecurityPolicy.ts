@@ -19,7 +19,8 @@ function apiOrigin(): string {
 // Images and media come from anywhere: markdown embeds by URL, OAuth profile
 // pictures, and the /media proxy on this origin. React evals in development only,
 // to rebuild server error stacks in the browser. Frames come from this origin, where
-// the file viewer opens a PDF, and from the configured workspace tools.
+// the file viewer opens a PDF, from the configured workspace tools, and from the api,
+// which serves plugins' panel pages.
 export function contentSecurityPolicy(): string {
   const frameOrigins = workspaceFrameOrigins(serverRuntimeEnv().workspace);
   const scriptSources =
@@ -34,7 +35,8 @@ export function contentSecurityPolicy(): string {
     "media-src 'self' data: blob: https: http:",
     "font-src 'self' data:",
     `connect-src 'self' ${apiOrigin()}`.trimEnd(),
-    ["frame-src 'self'", ...frameOrigins].join(' '),
+    // Plugins' panel pages come from the api (/plugins/<id>/ui/…), sandboxed.
+    ["frame-src 'self'", ...frameOrigins, apiOrigin()].filter(Boolean).join(' '),
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

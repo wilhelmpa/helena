@@ -1,17 +1,20 @@
 'use client';
 
-import { useFormatter } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { formatTime } from '@/utils/dates';
 import type { PlanUIMessage } from '../../utils/chatMessages';
 
-// When a message was written, always visible next to its actions (old-chat parity).
+// When a message was written, always visible next to its actions, and "Stopped ·" in
+// front of an answer the member stopped (old-chat parity).
 export function ChatMessageTime({ message }: { message: PlanUIMessage }) {
+  const t = useTranslations('chatWorkspace.messages');
   const at = message.metadata?.createdAt;
   if (!at) return null;
   return (
-    <time dateTime={at} className="px-1 text-xs text-muted-foreground tabular-nums">
-      {formatTime(at)}
-    </time>
+    <span className="px-1 text-xs text-muted-foreground tabular-nums">
+      {message.metadata?.stopped ? `${t('stopped')} · ` : null}
+      <time dateTime={at}>{formatTime(at)}</time>
+    </span>
   );
 }
 

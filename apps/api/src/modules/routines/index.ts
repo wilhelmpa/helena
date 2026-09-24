@@ -130,7 +130,7 @@ export const routineRoutes = new Elysia({
         description:
           'Run the routine once now, outside its cron. It runs in the background; its result ' +
           'is the last run of list_routines.',
-        ...mcpTool('run_routine'),
+        ...mcpTool('run_routine', undefined, 'execute'),
       },
     },
   );

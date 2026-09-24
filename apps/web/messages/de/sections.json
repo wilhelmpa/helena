@@ -58,6 +58,10 @@
     "scim": {
       "label": "SCIM",
       "description": "Lass einen Identitätsanbieter Konten auf dieser Instanz erstellen, aktualisieren und deaktivieren und über seine Gruppen Projektzugriff gewähren."
+    },
+    "plugins": {
+      "label": "Plugins",
+      "description": "Helenas eigene Plugins und die externen aus dem Plugin-Ordner: was sie bereitstellen, welche Rechte sie verlangen und welche laufen dürfen."
     }
   },
   "settings": {
@@ -112,6 +116,10 @@
     "ai-agents": {
       "label": "KI-Agenten",
       "description": "KI-Agenten, die in diesem Projekt arbeiten."
+    },
+    "browser": {
+      "label": "Browser",
+      "description": "Domains, die der Projekt-Browser öffnen darf, menschliche Eingabe-Zeitabstände und das Sperr-Timeout."
     }
   }
 }

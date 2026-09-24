@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { WORKSPACE_TOOL_IDS } from '@/utils/workspaceTools';
 import type { WorkspaceToolId } from '@/utils/workspaceTools';
+import { panelTool } from '@/extensions/panelTools';
 
 export type WorkspacePanelMode = 'overlay' | 'push';
 
@@ -13,7 +13,8 @@ const FULLSCREEN_KEY = 'workspace:panel:fullscreen';
 const PROJECT_KEY = 'workspace:panel:project';
 const SPLIT_KEY = 'workspace:panel:split';
 
-const PROJECT_SCOPED_TOOLS = new Set<WorkspaceToolId>(['terminal', 'code']);
+// A project's own tool (its terminal, its code) closes when the project changes.
+const projectScoped = (tool: WorkspaceToolId) => panelTool(tool)?.projectScoped === true;
 
 function write(key: string, value: string) {
   try {
@@ -23,8 +24,10 @@ function write(key: string, value: string) {
   }
 }
 
+// A registered panel tool, or a plugin's, whose registration arrives with the API's list
+// of plugin UI slots after the page loaded.
 function isToolId(value: string | null): value is WorkspaceToolId {
-  return WORKSPACE_TOOL_IDS.some((tool) => tool === value);
+  return !!value && (!!panelTool(value) || value.startsWith('plugin:'));
 }
 
 // A pinned panel stays open beside the page, as on the kiosk's second screen: it cannot
@@ -49,12 +52,32 @@ export function useWorkspacePanel({
     // never overwrite a tool the user has already opened.
     if (restored.current) return;
     restored.current = true;
+    // A link can open a tool: ?tool=browser (Home's browser overview, a handover card in
+    // Freigaben). The parameter is taken off the address again, so a reload does not reopen it.
+    const linked = new URLSearchParams(window.location.search).get('tool');
+    if (isToolId(linked)) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('tool');
+      window.history.replaceState(window.history.state, '', url);
+      setActiveTool(linked);
+      setOpenState(true);
+      write(TOOL_KEY, linked);
+      write(OPEN_KEY, 'open');
+      if (projectScoped(linked)) write(PROJECT_KEY, projectKey ?? '');
+      try {
+        setMode(localStorage.getItem(MODE_KEY) === 'push' ? 'push' : 'overlay');
+        setFullscreen(localStorage.getItem(FULLSCREEN_KEY) === 'true');
+      } catch {
+        // Storage off: the defaults stay.
+      }
+      return;
+    }
     try {
       const savedOpen = localStorage.getItem(OPEN_KEY);
       const storedTool = localStorage.getItem(TOOL_KEY);
       const tool = isToolId(storedTool) ? storedTool : 'chat';
       const staleProjectTool =
-        PROJECT_SCOPED_TOOLS.has(tool) && localStorage.getItem(PROJECT_KEY) !== (projectKey ?? '');
+        projectScoped(tool) && localStorage.getItem(PROJECT_KEY) !== (projectKey ?? '');
       // Home opens the chat beside the page on first visit — on a desktop. On a phone
       // the panel covers the whole page, so Home starts on Home there.
       const roomBeside =
@@ -80,7 +103,7 @@ export function useWorkspacePanel({
   useEffect(() => {
     if (previousProjectKey.current === projectKey) return;
     previousProjectKey.current = projectKey;
-    if (open && PROJECT_SCOPED_TOOLS.has(activeTool)) {
+    if (open && projectScoped(activeTool)) {
       setOpenState(false);
       write(OPEN_KEY, 'closed');
     }
@@ -103,7 +126,7 @@ export function useWorkspacePanel({
       setOpenState(true);
       write(TOOL_KEY, tool);
       write(OPEN_KEY, 'open');
-      if (PROJECT_SCOPED_TOOLS.has(tool)) write(PROJECT_KEY, projectKey ?? '');
+      if (projectScoped(tool)) write(PROJECT_KEY, projectKey ?? '');
     },
     [projectKey],
   );

@@ -333,6 +333,17 @@
     "saved": "{name} saved",
     "custom": "Another server",
     "customHint": "A command Hermes starts, or the URL of a remote server",
+    "builtinBadge": "Built in",
+    "builtin": {
+      "projekt-browser": {
+        "title": "Project browser",
+        "description": "Hermes, Claude Code, and Codex control the project browser through a shared gateway: logins from Credentials, never a password in the history."
+      },
+      "hermes-browser-legacy": {
+        "title": "Hermes' own browser (legacy)",
+        "description": "Falls back to Hermes' own CDP browser tool instead of the shared gateway."
+      }
+    },
     "presets": {
       "shopify-dev": "Searches Shopify's documentation and API schemas and validates GraphQL, Liquid and extension code. Needs no credentials.",
       "jev-browser": "Navigates a headless browser with TypeSafe's Jev model. Needs a TypeSafe API key as the secret TYPESAFE_API_KEY."
@@ -788,7 +799,8 @@
         "model": "model",
         "reasoning": "reasoning"
       }
-    }
+    },
+    "chatTemplate": "A template does not run. Add it to a project as an agent to try it here."
   },
   "members": {
     "roleSaved": "{name} is now {role}",
@@ -813,5 +825,22 @@
   "settingState": {
     "on": "On",
     "off": "Off"
+  },
+  "templateBundles": {
+    "importAction": "Import templates",
+    "exportAction": "Export templates",
+    "importTitle": "Import templates",
+    "counts": "{agents} agent templates · {skills} skills · {servers} MCP servers",
+    "chooseFile": "Choose a bundle file",
+    "fileChosen": "File: {name}",
+    "dryRun": "Check only (change nothing)",
+    "update": "Overwrite differences",
+    "check": "Check",
+    "import": "Import",
+    "close": "Close",
+    "failed": "That did not work.",
+    "notJson": "The file is not a JSON bundle.",
+    "summary": "{written} written · {unchanged} unchanged · {drift} different · {warnings} warnings",
+    "summaryDryRun": "Check only, nothing changed · {unchanged} unchanged · {drift} different · {warnings} warnings"
   }
 }

@@ -107,7 +107,21 @@
       "reconnecting": "Die Verbindung zum Browser wurde getrennt. Neue Verbindung wird hergestellt…",
       "dialogTitle": "Die Seite fragt",
       "dialogOk": "OK",
-      "dialogCancel": "Abbrechen"
+      "dialogCancel": "Abbrechen",
+      "controlPrefix": "Steuert:",
+      "controlledByAgentGeneric": "ein Agent",
+      "takeOver": "Übernehmen",
+      "handBack": "Zurückgeben",
+      "takeOverError": "Übernehmen war nicht möglich.",
+      "handBackError": "Zurückgeben war nicht möglich.",
+      "handoverTitle": "{agentName} bittet Sie zu übernehmen",
+      "youControl": "Sie steuern",
+      "handoverDone": "Fertig – zurückgeben",
+      "takeOverTitle": "{agentName} steuert gerade. Übernehmen?",
+      "takeOverHint": "Solange Sie steuern, wartet der Agent. Mit „Zurückgeben“ macht er weiter.",
+      "idleTitle": "Sind Sie fertig?",
+      "idleHint": "Seit 10 Minuten keine Eingabe. Ohne Antwort geht die Steuerung in einer Minute an die Agenten zurück.",
+      "idleKeep": "Weiter steuern"
     }
   },
   "groups": {
@@ -149,5 +163,6 @@
     "dropUngrouped": "Hier ablegen, um das Projekt aus der Gruppe zu nehmen"
   },
   "agentActivity": "Aktivität",
-  "approvals": "Freigaben"
+  "approvals": "Freigaben",
+  "browser": "Browser"
 }

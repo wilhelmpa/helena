@@ -361,7 +361,18 @@
     "secretHint": "Der Wert eines Secrets erreicht nur den Runner eines Agenten, für den der Server aktiviert ist, nie diese Seite.",
     "missingSecret": "gelöschtes Secret",
     "addValue": "Hinzufügen",
-    "removeValue": "Entfernen"
+    "removeValue": "Entfernen",
+    "builtinBadge": "Integriert",
+    "builtin": {
+      "projekt-browser": {
+        "title": "Projekt-Browser",
+        "description": "Hermes, Claude Code und Codex steuern den Projekt-Browser über ein gemeinsames Gateway: Logins aus Zugänge, keine Passwörter im Verlauf."
+      },
+      "hermes-browser-legacy": {
+        "title": "Hermes-eigener Browser (alt)",
+        "description": "Fällt auf Hermes' eigenes CDP-Browser-Werkzeug zurück statt auf das Gateway."
+      }
+    }
   },
   "agents": {
     "newAgent": "Neuer KI-Agent",
@@ -788,7 +799,8 @@
         "model": "Modell",
         "reasoning": "Reasoning"
       }
-    }
+    },
+    "chatTemplate": "Eine Vorlage läuft nicht selbst. Füge sie einem Projekt als Agent hinzu, um ihn hier auszuprobieren."
   },
   "members": {
     "roleSaved": "{name} ist jetzt {role}",
@@ -813,5 +825,22 @@
   "settingState": {
     "on": "An",
     "off": "Aus"
+  },
+  "templateBundles": {
+    "importAction": "Vorlagen importieren",
+    "exportAction": "Vorlagen exportieren",
+    "importTitle": "Vorlagen importieren",
+    "counts": "{agents} Agenten-Vorlagen · {skills} Skills · {servers} MCP-Server",
+    "chooseFile": "Paket-Datei wählen",
+    "fileChosen": "Datei: {name}",
+    "dryRun": "Nur prüfen (nichts ändern)",
+    "update": "Abweichungen übernehmen",
+    "check": "Prüfen",
+    "import": "Importieren",
+    "close": "Schließen",
+    "failed": "Das hat nicht geklappt.",
+    "notJson": "Die Datei ist kein JSON-Paket.",
+    "summary": "{written} geschrieben · {unchanged} unverändert · {drift} abweichend · {warnings} Warnungen",
+    "summaryDryRun": "Nur geprüft, nichts geändert · {unchanged} unverändert · {drift} abweichend · {warnings} Warnungen"
   }
 }

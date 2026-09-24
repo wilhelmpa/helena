@@ -361,7 +361,18 @@
     "secretHint": "El valor de un secreto solo llega al runner de un agente que tiene el servidor activado, nunca a esta página.",
     "missingSecret": "secreto eliminado",
     "addValue": "Añadir",
-    "removeValue": "Quitar"
+    "removeValue": "Quitar",
+    "builtinBadge": "Integrado",
+    "builtin": {
+      "projekt-browser": {
+        "title": "Navegador del proyecto",
+        "description": "Hermes, Claude Code y Codex controlan el navegador del proyecto a través de una puerta de enlace compartida: los inicios de sesión provienen de Credenciales, y nunca aparece una contraseña en el historial."
+      },
+      "hermes-browser-legacy": {
+        "title": "Navegador propio de Hermes (antiguo)",
+        "description": "Recurre a la propia herramienta de navegador CDP de Hermes en lugar de la puerta de enlace compartida."
+      }
+    }
   },
   "agents": {
     "newAgent": "Nuevo agente de IA",
@@ -788,7 +799,8 @@
         "model": "modelo",
         "reasoning": "razonamiento"
       }
-    }
+    },
+    "chatTemplate": "Una plantilla no se ejecuta. Añádela a un proyecto como agente para probarla aquí."
   },
   "members": {
     "roleSaved": "{name} es ahora {role}",
@@ -813,5 +825,22 @@
   "settingState": {
     "on": "Activado",
     "off": "Apagado"
+  },
+  "templateBundles": {
+    "importAction": "Importar plantillas",
+    "exportAction": "Exportar plantillas",
+    "importTitle": "Importar plantillas",
+    "counts": "{agents} plantillas de agentes · {skills} habilidades · {servers} servidores MCP",
+    "chooseFile": "Elegir archivo de paquete",
+    "fileChosen": "Archivo: {name}",
+    "dryRun": "Solo comprobar (no cambiar nada)",
+    "update": "Sobrescribir diferencias",
+    "check": "Comprobar",
+    "import": "Importar",
+    "close": "Cerrar",
+    "failed": "No ha funcionado.",
+    "notJson": "El archivo no es un paquete JSON.",
+    "summary": "{written} escritos · {unchanged} sin cambios · {drift} distintos · {warnings} avisos",
+    "summaryDryRun": "Solo comprobación, nada cambió · {unchanged} sin cambios · {drift} distintos · {warnings} avisos"
   }
 }

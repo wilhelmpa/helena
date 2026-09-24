@@ -1,0 +1,27 @@
+{
+  "$schema": "../../../packages/sdk/schema/helena.plugin.schema.json",
+  "id": "hello-helena",
+  "name": { "en": "Hello Helena", "de": "Hallo Helena" },
+  "version": "0.1.0",
+  "description": {
+    "en": "Example plugin: a connector with a tool, a tool of its own, a workflow step and a panel tool.",
+    "de": "Beispiel-Plugin: ein Connector mit Werkzeug, ein eigenes Werkzeug, ein Workflow-Schritt und ein Werkzeug im Panel."
+  },
+  "author": "Helena",
+  "license": "Apache-2.0",
+  "sdk": "^0.1.0",
+  "main": { "server": "server.ts" },
+  "provides": {
+    "connectors": ["hello-greeter"],
+    "tools": ["hello_greet", "hello_time"],
+    "stepTypes": ["hello-helena.greet"],
+    "uiSlots": ["panel-tool:hello"],
+    "events": ["hello-helena.greeted"]
+  },
+  "permissions": {
+    "actions": ["read", "report", "send"],
+    "events": ["helena.issue.created"],
+    "network": [],
+    "credentials": true
+  }
+}

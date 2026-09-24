@@ -6,13 +6,13 @@ import WorkspaceFrame from '@/components/layout/WorkspaceFrame';
 import { useProjectProvisioningQuery } from '@/services/projects.service';
 import { runtimeEnv } from '@/utils/runtimeEnv';
 import { workspaceTools } from '@/utils/workspaceTools';
-import type { WorkspaceContentProps } from '@/context/workspaceContents';
+import type { WorkspaceContentProps } from '@/extensions/panelTools';
 import OwnerTerminalPanel from './OwnerTerminalPanel';
 
 // The "terminal" tool in the Werkzeug-Panel: the owner terminal in Home, the
 // existing project terminal (a plain iframe, unchanged) everywhere else. See
 // docs/volition-design-owner-terminals.md's Nachtrag ("Home-Terminal =
-// Owner-Terminal"). Registered in app/WorkspaceToolsProvider.tsx.
+// Owner-Terminal"). Registered as a panel tool in extensions/panelTools.tsx.
 export default function TerminalWorkspace({ projectKey }: WorkspaceContentProps) {
   const t = useTranslations('nav.workspace');
   const workspaceConfig = runtimeEnv().workspace;

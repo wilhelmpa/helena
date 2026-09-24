@@ -58,6 +58,10 @@
     "scim": {
       "label": "SCIM",
       "description": "Let an identity provider create, update and deactivate accounts on this instance, and grant project access through its groups."
+    },
+    "plugins": {
+      "label": "Plugins",
+      "description": "Helena's own plugins and the external ones in the plugin folder: what they provide, the rights they ask for, and which may run."
     }
   },
   "settings": {
@@ -112,6 +116,10 @@
     "ai-agents": {
       "label": "AI Agents",
       "description": "AI agents working in this project."
+    },
+    "browser": {
+      "label": "Browser",
+      "description": "Domains the project browser may open, human-like input timing, and the control lock timeout."
     }
   }
 }

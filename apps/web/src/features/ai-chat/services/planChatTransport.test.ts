@@ -83,7 +83,7 @@ describe('PlanChatTransport', () => {
       path: '/projects/WEB/ai-agents/4/chat',
       body: { prompt: 'Why does it fail?', attachments: { files: ['Home/log.txt'] } },
     });
-    assert.equal(calls[1].path, '/projects/WEB/ai-agents/4/chat/12/stream?after=0');
+    assert.equal(calls[1].path, '/projects/WEB/ai-agents/4/chat/12/stream');
     assert.deepEqual(turns, [
       { threadId: 'chat:4:u:t', questionId: '11', clientId: chat.messages[0].id },
     ]);
@@ -280,13 +280,13 @@ describe('PlanChatTransport', () => {
     chatStreamConfig.backoffMs = 1;
     chatStreamConfig.retries = 2;
     try {
-      const streams: string[] = [];
-      globalThis.fetch = (async (input) => {
+      const streams: (string | null)[] = [];
+      globalThis.fetch = (async (input, init) => {
         const url = new URL(String(input));
         if (url.pathname.endsWith('/chat')) {
           return Response.json({ threadId: 't', messageId: 12, userMessageId: 11 });
         }
-        streams.push(url.search);
+        streams.push(new Headers(init?.headers).get('last-event-id'));
         // The first connection delivers half the answer and drops; every later one
         // fails outright.
         if (streams.length > 1) throw new TypeError('network error');
@@ -298,7 +298,7 @@ describe('PlanChatTransport', () => {
       const { chat } = chatWith(new PlanChatTransport('WEB', 4));
 
       await chat.sendMessage({ text: 'Q' });
-      assert.deepEqual(streams, ['?after=0', '?after=7', '?after=7', '?after=7']);
+      assert.deepEqual(streams, [null, '7', '7', '7']);
       assert.equal(chat.status, 'ready');
       assert.equal(chat.messages[1].metadata?.interrupted, true);
       assert.deepEqual(chat.messages[1].parts.map(plain), [

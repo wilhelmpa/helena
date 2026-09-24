@@ -36,5 +36,6 @@
   "gateApprovedToast": "已批准。工作流继续执行。",
   "gateRejectedToast": "已拒绝。工作流结束，不执行这些操作。",
   "loadFailed": "无法加载审批。",
-  "loadFailedHint": "服务器没有响应，请稍后重试。"
+  "loadFailedHint": "服务器没有响应，请稍后重试。",
+  "openBrowser": "打开项目浏览器"
 }

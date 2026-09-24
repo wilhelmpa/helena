@@ -1,0 +1,15 @@
+{
+  "homeTitle": "Browser",
+  "homeDescription": "Browser proyek: apa yang terbuka, siapa yang mengendalikan, dan apakah ada agen yang menunggu Anda.",
+  "homeBrowser": "Beranda",
+  "empty": "Belum ada browser proyek",
+  "emptyHint": "Proyek mendapat browsernya saat dibuat; browser muncul di sini setelah berjalan.",
+  "noLiveImage": "Tidak ada gambar",
+  "noPage": "Tidak ada halaman terbuka",
+  "controlledByAgent": "{agentName} mengendalikan",
+  "controlledByOwner": "Anda yang mengendalikan",
+  "agentActive": "Seorang agen sedang bekerja",
+  "free": "Bebas",
+  "unreachable": "Tidak dapat dijangkau",
+  "handover": "Meminta Anda mengambil alih"
+}

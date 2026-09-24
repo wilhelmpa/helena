@@ -62,6 +62,10 @@ export const McpServerResponse = t.Object({
   url: t.Nullable(t.String()),
   env: t.Array(valueResponse),
   headers: t.Array(valueResponse),
+  builtin: t.Boolean({
+    description:
+      'An instance-seeded entry ("Projekt-Browser" and its legacy fallback); a team cannot edit or delete it, only enable it per agent.',
+  }),
   createdAt: t.String(),
 });
 

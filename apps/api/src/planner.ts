@@ -45,6 +45,8 @@ import { analyticsRoutes } from './modules/analytics';
 import { chartRoutes } from './modules/charts';
 import { settingsRoutes } from './modules/settings';
 import { godRoutes } from './modules/god';
+import { pluginAdminRoutes, pluginSlotRoutes } from './modules/plugins';
+import { templateBundleRoutes } from './modules/template-bundles';
 import { agentRunnerRoutes } from './modules/agents/runner';
 import { agentChatRoutes } from './modules/agents/chat';
 import { chatPromptRoutes } from './modules/chat-prompts';
@@ -61,6 +63,7 @@ import { linkPreviewRoutes } from './modules/link-previews';
 import { hubInboxRoutes } from './modules/hub-inbox';
 import { agentActivityRoutes } from './modules/agent-activity';
 import { agentNetworkRoutes } from './modules/agent-egress';
+import { agentBrowserGatewayRoutes } from './modules/agent-browser-gateway';
 import { approvalRoutes } from './modules/approvals';
 import { pipelineRoutes } from './modules/pipelines';
 import { mailAccountRoutes } from './modules/mail/accounts';
@@ -161,6 +164,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(hubInboxRoutes)
   .use(agentActivityRoutes)
   .use(agentNetworkRoutes)
+  .use(agentBrowserGatewayRoutes)
   .use(approvalRoutes)
   .use(pipelineRoutes)
   .use(mailAccountRoutes)
@@ -171,4 +175,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(deviceSyncRoutes)
   .use(ownerTerminalRoutes)
   .use(settingsRoutes)
-  .use(godRoutes);
+  .use(godRoutes)
+  .use(pluginAdminRoutes)
+  .use(pluginSlotRoutes)
+  .use(templateBundleRoutes);

@@ -361,7 +361,18 @@
     "secretHint": "O valor de um segredo só chega ao runner de um agente em que o servidor está ativado, nunca a esta página.",
     "missingSecret": "segredo excluído",
     "addValue": "Adicionar",
-    "removeValue": "Remover"
+    "removeValue": "Remover",
+    "builtinBadge": "Integrado",
+    "builtin": {
+      "projekt-browser": {
+        "title": "Navegador do projeto",
+        "description": "Hermes, Claude Code e Codex controlam o navegador do projeto por meio de um gateway compartilhado: os logins vêm de Credenciais, e nenhuma senha aparece no histórico."
+      },
+      "hermes-browser-legacy": {
+        "title": "Navegador próprio do Hermes (antigo)",
+        "description": "Recorre à própria ferramenta de navegador CDP do Hermes em vez do gateway compartilhado."
+      }
+    }
   },
   "agents": {
     "newAgent": "Novo agente de IA",
@@ -788,7 +799,8 @@
         "model": "modelo",
         "reasoning": "raciocínio"
       }
-    }
+    },
+    "chatTemplate": "Um modelo não é executado. Adicione-o a um projeto como agente para testá-lo aqui."
   },
   "members": {
     "roleSaved": "{name} agora é {role}",
@@ -813,5 +825,22 @@
   "settingState": {
     "on": "Ligado",
     "off": "Desligado"
+  },
+  "templateBundles": {
+    "importAction": "Importar modelos",
+    "exportAction": "Exportar modelos",
+    "importTitle": "Importar modelos",
+    "counts": "{agents} modelos de agentes · {skills} habilidades · {servers} servidores MCP",
+    "chooseFile": "Escolher arquivo de pacote",
+    "fileChosen": "Arquivo: {name}",
+    "dryRun": "Só verificar (não mudar nada)",
+    "update": "Sobrescrever diferenças",
+    "check": "Verificar",
+    "import": "Importar",
+    "close": "Fechar",
+    "failed": "Não deu certo.",
+    "notJson": "O arquivo não é um pacote JSON.",
+    "summary": "{written} gravados · {unchanged} sem mudança · {drift} diferentes · {warnings} avisos",
+    "summaryDryRun": "Só verificação, nada mudou · {unchanged} sem mudança · {drift} diferentes · {warnings} avisos"
   }
 }

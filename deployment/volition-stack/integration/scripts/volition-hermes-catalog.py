@@ -265,6 +265,14 @@ def private_directory(directory: Path) -> None:
 
 
 
+BROWSER_GATEWAY_SOCKET_ROOT = Path('/run/volition-browser/gateway')
+
+
+def browser_gateway_socket(slug: str) -> str:
+    # The browser router's per-project socket (browser-gateway-server.mjs socketDirectory).
+    return str(BROWSER_GATEWAY_SOCKET_ROOT / slug / 'gateway.sock')
+
+
 def project_browser_env(
     browser_root: Path | None,
     slug: str,
@@ -525,6 +533,9 @@ def descriptor_entry(
         'env': {
             'HERMES_HOME': str(home),
             'HERMES_SHARED_AUTH_DIR': str(global_home / 'shared'),
+            # Without isolation the browser gateway's shim finds the project's socket
+            # here; an isolated unit has it bound at the shim's default path.
+            'BROWSER_GATEWAY_SOCKET': browser_gateway_socket(slug),
             **project_browser_env(
                 browser_root,
                 slug,
@@ -622,7 +633,11 @@ def write_runtime(
         home = {
             'name': 'hermes-home-master',
             'apiKey': home_key,
-            'env': {'HERMES_HOME': str(global_home), **home_browser},
+            'env': {
+                'HERMES_HOME': str(global_home),
+                'BROWSER_GATEWAY_SOCKET': browser_gateway_socket('home'),
+                **home_browser,
+            },
         }
     agents = [home]
     for entry in descriptor_entries(descriptor_root, global_home, browser_root, isolated, problems):

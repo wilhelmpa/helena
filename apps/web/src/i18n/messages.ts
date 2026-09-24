@@ -7,6 +7,7 @@ import aiChat from '../../messages/en/aiChat.json';
 import apiKeys from '../../messages/en/apiKeys.json';
 import approvals from '../../messages/en/approvals.json';
 import auth from '../../messages/en/auth.json';
+import browserGateway from '../../messages/en/browserGateway.json';
 import chatWorkspace from '../../messages/en/chatWorkspace.json';
 import common from '../../messages/en/common.json';
 import cycles from '../../messages/en/cycles.json';
@@ -88,6 +89,7 @@ const defaultMessages = {
   connections,
   credentials,
   agentActivity,
+  browserGateway,
   routines,
   pipelines,
   devices,

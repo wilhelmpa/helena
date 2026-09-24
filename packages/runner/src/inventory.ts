@@ -10,16 +10,9 @@ import { digest } from './files';
 // The toolsets and MCP servers the profile's config.yaml enables for the cli platform, and
 // the plugins Plan requires in every home it serves, by name, each with the directory the
 // home's plugins/ entry has to link to.
-export interface HermesProfile {
-  toolsets: string[];
-  mcpServers: string[];
-  plugins?: Record<string, string>;
-  // The shared config.yaml every agent home links to (not set for the home that holds it).
-  sharedConfig?: string;
-  // The browser-harness MCP server's command, which the runner points at the project's
-  // browser (contributions.ts). Absent where the harness is not installed.
-  browserHarness?: string;
-}
+// What the Hermes profile enables: @helena/sdk runtime-policy.ts.
+export type { HermesProfile } from '@helena/sdk';
+import type { HermesProfile } from '@helena/sdk';
 
 // 'plan' is a skill the policy materializer wrote, 'hub' one installed from the Skills Hub,
 // and 'agent' one that is neither bundled with Hermes nor installed, which Hermes counts as
@@ -37,7 +30,8 @@ export interface InventorySkill {
   pinned: boolean;
 }
 
-export type MemoryFile = 'MEMORY.md' | 'USER.md';
+export type { MemoryFile } from '@helena/sdk';
+import type { MemoryFile } from '@helena/sdk';
 
 export interface InventoryMemory {
   file: MemoryFile;

@@ -58,6 +58,10 @@
     "scim": {
       "label": "SCIM",
       "description": "Izinkan penyedia identitas membuat, memperbarui, dan menonaktifkan akun di instance ini, serta memberikan akses proyek melalui grupnya."
+    },
+    "plugins": {
+      "label": "Plugin",
+      "description": "Plugin bawaan Helena dan plugin eksternal di folder plugin: apa yang disediakan, hak yang diminta, dan mana yang boleh berjalan."
     }
   },
   "settings": {
@@ -112,6 +116,10 @@
     "ai-agents": {
       "label": "Agen AI",
       "description": "Agen AI yang bekerja dalam proyek ini."
+    },
+    "browser": {
+      "label": "Browser",
+      "description": "Domain yang boleh dibuka browser proyek, waktu input mirip manusia, dan batas waktu kunci."
     }
   }
 }

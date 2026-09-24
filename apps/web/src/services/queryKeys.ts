@@ -56,6 +56,10 @@ export const qk = {
   agentNetworkSettings: (projectKey: string) => ['agentNetworkSettings', projectKey] as const,
   agentNetworkEvents: (projectKey: string, decision: 'all' | 'blocked') =>
     ['agentNetworkEvents', projectKey, decision] as const,
+  // The project's browser gateway settings (the Browser settings section).
+  browserGatewaySettings: (projectKey: string) => ['browserGatewaySettings', projectKey] as const,
+  // Home's "Browser" overview: every project that could have a project browser.
+  browserGatewayOverview: () => ['browserGatewayOverview'] as const,
   // The project's repository integration settings (the Repositories settings section).
   gitSettings: (projectKey: string) => ['gitSettings', projectKey] as const,
   gitConnections: (projectKey: string) => ['gitConnections', projectKey] as const,
@@ -375,6 +379,9 @@ export const qk = {
   instanceProjectDefaults: ['instanceProjectDefaults'] as const,
   instanceStorageSettings: ['instanceStorageSettings'] as const,
   instanceRunResumeSettings: ['instanceRunResumeSettings'] as const,
+  // Plugins: the Administrator's list and decisions, and the UI slots of loaded plugins.
+  plugins: ['plugins'] as const,
+  pluginUiSlots: ['pluginUiSlots'] as const,
   // The services around Plan and the agent runs that wait or overran (Home, god only).
   systemHealth: ['systemHealth'] as const,
   // The upload limits as read by the upload UI (open to any signed-in user).

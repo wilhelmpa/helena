@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["bun"],
+    // DOM types are for the strings this package evaluates inside a page (snapshot
+    // tagging, credential-field covering, ...), not for anything running in this Node
+    // process — see session.ts for where they're actually used.
+    "lib": ["ES2022", "DOM"],
+    // This package's own internal imports carry an explicit .ts extension (index.ts,
+    // session.ts, session-types.ts, server.ts) because the deployment glue
+    // (deployment/volition-stack/browser/browser-gateway-server.mjs) runs under plain
+    // Node's native TypeScript stripping, which resolves ESM imports exactly like
+    // JavaScript — no bundler, no extensionless resolution. noEmit (from the base config)
+    // is required for this flag, and is already set there.
+    "allowImportingTsExtensions": true
+  },
+  "include": ["src"]
+}

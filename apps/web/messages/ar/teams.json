@@ -361,7 +361,18 @@
     "secretHint": "قيمة السر بتوصل بس للـ runner بتاع الوكيل المفعّل عنده الخادم، وعمرها ما بتوصل للصفحة دي.",
     "missingSecret": "سر محذوف",
     "addValue": "إضافة",
-    "removeValue": "إزالة"
+    "removeValue": "إزالة",
+    "builtinBadge": "مدمج",
+    "builtin": {
+      "projekt-browser": {
+        "title": "متصفح المشروع",
+        "description": "يتحكم كل من Hermes وClaude Code وCodex في متصفح المشروع عبر بوابة مشتركة: تُملأ بيانات الدخول من صفحة «بيانات الدخول»، ولا تظهر كلمة مرور في السجلّ أبدًا."
+      },
+      "hermes-browser-legacy": {
+        "title": "متصفح Hermes الخاص (قديم)",
+        "description": "يعود إلى أداة متصفح CDP الخاصة بـ Hermes بدلاً من البوابة المشتركة."
+      }
+    }
   },
   "agents": {
     "newAgent": "وكيل ذكاء اصطناعي جديد",
@@ -788,7 +799,8 @@
         "model": "النموذج",
         "reasoning": "الاستدلال"
       }
-    }
+    },
+    "chatTemplate": "القالب لا يعمل بنفسه. أضفه إلى مشروع كوكيل لتجربته هنا."
   },
   "members": {
     "roleSaved": "{name} الآن {role}",
@@ -813,5 +825,22 @@
   "settingState": {
     "on": "مُفعّل",
     "off": "مُعطّل"
+  },
+  "templateBundles": {
+    "importAction": "استيراد القوالب",
+    "exportAction": "تصدير القوالب",
+    "importTitle": "استيراد القوالب",
+    "counts": "{agents} قوالب وكلاء · {skills} مهارات · {servers} خوادم MCP",
+    "chooseFile": "اختر ملف الحزمة",
+    "fileChosen": "الملف: {name}",
+    "dryRun": "فحص فقط (دون أي تغيير)",
+    "update": "استبدال الاختلافات",
+    "check": "فحص",
+    "import": "استيراد",
+    "close": "إغلاق",
+    "failed": "لم ينجح ذلك.",
+    "notJson": "الملف ليس حزمة JSON.",
+    "summary": "{written} مكتوبة · {unchanged} دون تغيير · {drift} مختلفة · {warnings} تحذيرات",
+    "summaryDryRun": "فحص فقط دون تغيير · {unchanged} دون تغيير · {drift} مختلفة · {warnings} تحذيرات"
   }
 }

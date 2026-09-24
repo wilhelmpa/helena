@@ -58,6 +58,10 @@
     "scim": {
       "label": "SCIM",
       "description": "Permita que um provedor de identidade crie, atualize e desative contas nesta instância e conceda acesso a projetos por seus grupos."
+    },
+    "plugins": {
+      "label": "Plugins",
+      "description": "Os plugins próprios do Helena e os externos da pasta de plugins: o que fornecem, as permissões que pedem e quais podem rodar."
     }
   },
   "settings": {
@@ -112,6 +116,10 @@
     "ai-agents": {
       "label": "Agentes de IA",
       "description": "Agentes de IA trabalhando neste projeto."
+    },
+    "browser": {
+      "label": "Navegador",
+      "description": "Os domínios que o navegador do projeto pode abrir, o ritmo de entrada humanizado e o tempo limite do bloqueio."
     }
   }
 }

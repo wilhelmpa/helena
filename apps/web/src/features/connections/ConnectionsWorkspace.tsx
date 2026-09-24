@@ -1,6 +1,6 @@
 'use client';
 
-import type { WorkspaceContentProps } from '@/context/workspaceContents';
+import type { WorkspaceContentProps } from '@/extensions/panelTools';
 import ConnectionsContent from './ConnectionsContent';
 
 // The connections in the tool panel: the same list, with its check button in the panel

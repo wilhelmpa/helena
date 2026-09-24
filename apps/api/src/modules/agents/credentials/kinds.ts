@@ -1,3 +1,4 @@
+import { parseTotpSecret, TotpSecretError } from '@repo/crypto';
 import { HttpError } from '#shared/lib';
 
 // The kinds of the Credentials page. Each is stored as an integration_credential row
@@ -117,28 +118,14 @@ export function loginOrigins(loginUrl: string, allowedDomains: string[]): string
   return [...new Set([new URL(loginUrl).origin, ...allowedDomains])];
 }
 
-const TOTP_ALGORITHMS = ['SHA1', 'SHA256', 'SHA512'];
-
 // The rules Hermes' vault applies to an authenticator key, checked here so that a key it
-// would refuse is refused on save rather than when the runner delivers it.
+// would refuse is refused on save rather than when the runner delivers it. The one parser
+// is @repo/crypto's (otpauth), which also computes the codes.
 export function assertTotpSecret(value: string): void {
-  const trimmed = value.trim();
-  let seed = trimmed;
-  if (trimmed.toLowerCase().startsWith('otpauth://')) {
-    const url = URL.parse(trimmed);
-    if (!url || url.host.toLowerCase() !== 'totp') {
-      throw new HttpError(400, 'Only otpauth://totp links are supported.');
-    }
-    seed = url.searchParams.get('secret') ?? '';
-    const digits = Number(url.searchParams.get('digits') ?? 6);
-    const period = Number(url.searchParams.get('period') ?? 30);
-    const algorithm = (url.searchParams.get('algorithm') ?? 'SHA1').toUpperCase().replace('-', '');
-    if (![6, 7, 8].includes(digits) || !(period > 0) || !TOTP_ALGORITHMS.includes(algorithm)) {
-      throw new HttpError(400, 'The otpauth link has settings Hermes does not support.');
-    }
-  }
-  const normalized = seed.replace(/[\s-]/g, '').toUpperCase().replace(/=+$/, '');
-  if (!normalized || !/^[A-Z2-7]+$/.test(normalized)) {
-    throw new HttpError(400, 'The authenticator key must be a base32 key or an otpauth:// link.');
+  try {
+    parseTotpSecret(value);
+  } catch (error) {
+    if (error instanceof TotpSecretError) throw new HttpError(400, error.message);
+    throw error;
   }
 }
