@@ -420,7 +420,7 @@ class EndToEndTest(unittest.TestCase):
             "--map", self.map_path,
             "--root", self.root,
             "--backup-dir", "/var/backups/helena-rename/test",
-            "--pg-connect", PG,
+            "--pg-connect=" + PG,
         ]
         result = subprocess.run(argv, env=self.env, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         if check and result.returncode != 0:
