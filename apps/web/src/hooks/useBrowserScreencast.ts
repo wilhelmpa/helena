@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import { browserTabsQueryKey } from '@/utils/browserControl';
 import {
   JPEG_FRAME,
+  JPEG_FRAME_CROPPED,
   readFrame,
   screencastUrl,
   VIDEO_FRAGMENT,
@@ -266,14 +267,17 @@ export function useBrowserScreencast(
       pending.current = null;
       drawing.current = true;
       try {
-        const { size, jpeg } = readFrame(data);
+        const { size, crop, jpeg } = readFrame(data);
         const bitmap = await createImageBitmap(jpeg);
         const target = canvas.current;
         // A video that started meanwhile is newer than this frame.
         if (target && !video.current) {
-          if (target.width !== bitmap.width) target.width = bitmap.width;
-          if (target.height !== bitmap.height) target.height = bitmap.height;
-          target.getContext('2d')?.drawImage(bitmap, 0, 0);
+          // A cropped frame shows only its left part, the page (see readFrame).
+          const width = Math.round(bitmap.width * (crop?.width ?? 1));
+          const height = Math.round(bitmap.height * (crop?.height ?? 1));
+          if (target.width !== width) target.width = width;
+          if (target.height !== height) target.height = height;
+          target.getContext('2d')?.drawImage(bitmap, 0, 0, width, height, 0, 0, width, height);
           const zoom = pageRef.current?.zoom ?? 1;
           showFrame({
             natural: {
@@ -358,7 +362,7 @@ export function useBrowserScreencast(
         const cutoff = now - THROUGHPUT_WINDOW_MS;
         while (received.current.length && received.current[0].at < cutoff) received.current.shift();
       }
-      if (bytes[0] === JPEG_FRAME) {
+      if (bytes[0] === JPEG_FRAME || bytes[0] === JPEG_FRAME_CROPPED) {
         // A frame that was on its way before the router switched this view to video.
         if (video.current && performance.now() - videoStartedAt.current < LATE_JPEG_MS) {
           send({ type: 'ack' });

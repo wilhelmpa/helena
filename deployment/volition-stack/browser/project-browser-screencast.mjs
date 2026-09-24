@@ -22,7 +22,8 @@
 // JPEG screencast at the same time, so one of them does not take video from the others.
 //
 // Server to viewer, binary: a kind byte, then for kind 0 a JPEG frame after the page's
-// viewport in CSS pixels as two big-endian 16-bit integers; for kind 1 the video's MP4
+// viewport in CSS pixels as two big-endian 16-bit integers (kind 3: the frame's, then the
+// page's in its left part, see frameMessage); for kind 1 the video's MP4
 // initialization segment; for kind 2 a keyframe flag byte and one frame's MP4 fragment. Text:
 // {"type":"video","codec":..,"width":..,"height":..,"pageWidth":..,"pageHeight":..} before an
 // initialization segment, with the viewport in CSS pixels at the page's zoom (which input is
@@ -36,13 +37,22 @@
 // {"type":"ping","t":..}; {"type":"control","by":"agent"|"owner"} when who last acted on the
 // page changes (informational only, see ScreencastStream's controlBy). Viewer to server: JSON
 // text, see viewerMessage.
-import { activateTab, isAgentTitle, listTabs, openBrowser, setLiveViewport, windowChrome } from "./project-browser-control.mjs";
+import {
+  activateTab,
+  isAgentTitle,
+  listTabs,
+  MIN_WINDOW_WIDTH,
+  openBrowser,
+  setLiveViewport,
+  windowChrome,
+} from "./project-browser-control.mjs";
 import { InputSender, viewerMessage } from "./project-browser-input.mjs";
 import { AreaEncoder, chooseTier, sameArea, TIERS } from "./project-browser-video.mjs";
 
 const JPEG_FRAME = 0;
 const VIDEO_INIT = 1;
 const VIDEO_FRAGMENT = 2;
+const JPEG_FRAME_CROPPED = 3;
 
 // JPEG stream settings while only viewers act, and while the agent acts. Chromium sends the
 // next frame once the last one is acknowledged, so a delayed acknowledgement limits the rate.
@@ -181,13 +191,20 @@ export function captureArea(size, chrome) {
 }
 
 // The binary message of one JPEG frame. The frame's metadata gives the viewport in DIP, which
-// the page zoom makes larger than CSS pixels.
-export function frameMessage(jpeg, metadata, zoom) {
+// the page zoom makes larger than CSS pixels. A page pinned narrower than its window (a phone's
+// view, see the window keeper) fills only the frame's left part: its frame is sent as kind 3,
+// with the page's own size after the frame's, and a view shows that part.
+export function frameMessage(jpeg, metadata, zoom, page) {
   const cssPixels = (value) => Math.min(0xffff, Math.max(0, Math.round((value || 0) / zoom)));
-  const header = Buffer.alloc(5);
-  header[0] = JPEG_FRAME;
+  const cropped = page && page.width < (metadata.deviceWidth || 0) - 2;
+  const header = Buffer.alloc(cropped ? 9 : 5);
+  header[0] = cropped ? JPEG_FRAME_CROPPED : JPEG_FRAME;
   header.writeUInt16BE(cssPixels(metadata.deviceWidth), 1);
   header.writeUInt16BE(cssPixels(metadata.deviceHeight), 3);
+  if (cropped) {
+    header.writeUInt16BE(cssPixels(page.width), 5);
+    header.writeUInt16BE(cssPixels(Math.min(page.height, metadata.deviceHeight || page.height)), 7);
+  }
   return Buffer.concat([header, jpeg]);
 }
 
@@ -931,8 +948,12 @@ class ScreencastStream {
         format: "jpeg",
         quality: this.stream.quality,
         // Frames at the page's ratio for the viewers: a browser drawing at factor 2 sends
-        // ratio 1 frames scaled down.
-        maxWidth: Math.min(MAX_FRAME_SIDE, Math.round((this.size?.width ?? MAX_FRAME_SIDE) * (this.size?.ratio ?? 1))),
+        // ratio 1 frames scaled down. The frame is the window's width, which is wider than a
+        // page pinned narrower than a window can be (frameMessage).
+        maxWidth: Math.min(
+          MAX_FRAME_SIDE,
+          Math.round(Math.max(this.size?.width ?? MAX_FRAME_SIDE, MIN_WINDOW_WIDTH) * (this.size?.ratio ?? 1)),
+        ),
         maxHeight: Math.min(MAX_FRAME_SIDE, Math.round((this.size?.height ?? MAX_FRAME_SIDE) * (this.size?.ratio ?? 1))),
       },
       session,
@@ -1147,7 +1168,7 @@ class ScreencastStream {
 
   showFrame(screencastFrame) {
     this.screencastFrame = screencastFrame;
-    this.frame = frameMessage(screencastFrame.jpeg, screencastFrame.metadata, this.zoom);
+    this.frame = frameMessage(screencastFrame.jpeg, screencastFrame.metadata, this.zoom, this.size);
     for (const viewer of this.viewers) if (this.getsJpeg(viewer)) viewer.offer(this.frame);
   }
 

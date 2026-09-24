@@ -46,9 +46,19 @@ describe('live view frames', () => {
 
   it('reads the viewport in CSS pixels in front of the JPEG', async () => {
     const data = new Uint8Array([0, 0x03, 0x20, 0x02, 0x01, 0xff, 0xd8]).buffer;
-    const { size, jpeg } = readFrame(data);
+    const { size, crop, jpeg } = readFrame(data);
     assert.deepEqual(size, { width: 800, height: 513 });
+    assert.equal(crop, null);
     assert.equal(jpeg.type, 'image/jpeg');
+    assert.deepEqual([...new Uint8Array(await jpeg.arrayBuffer())], [0xff, 0xd8]);
+  });
+
+  it('reads a cropped frame: the page fills the left part of a wider frame', async () => {
+    // A 390x700 page in a frame of the 500 DIP wide window.
+    const data = new Uint8Array([3, 0x01, 0xf4, 0x02, 0xbc, 0x01, 0x86, 0x02, 0xbc, 0xff, 0xd8]).buffer;
+    const { size, crop, jpeg } = readFrame(data);
+    assert.deepEqual(size, { width: 390, height: 700 });
+    assert.deepEqual(crop, { width: 0.78, height: 1 });
     assert.deepEqual([...new Uint8Array(await jpeg.arrayBuffer())], [0xff, 0xd8]);
   });
 });

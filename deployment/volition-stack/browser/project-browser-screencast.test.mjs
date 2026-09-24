@@ -255,6 +255,11 @@ describe("live view messages", () => {
     assert.equal(frame.readUInt16BE(1), 812);
     assert.equal(frame.readUInt16BE(3), 0xffff);
     assert.equal(frame.subarray(5).toString(), "jpeg");
+    // A page pinned narrower than its window fills the frame's left part: kind 3 names both.
+    const narrow = frameMessage(Buffer.from("jpeg"), { deviceWidth: 500, deviceHeight: 700 }, 1, { width: 390, height: 700 });
+    assert.deepEqual([narrow[0], ...[1, 3, 5, 7].map((at) => narrow.readUInt16BE(at))], [3, 500, 700, 390, 700]);
+    assert.equal(narrow.subarray(9).toString(), "jpeg");
+    assert.equal(frameMessage(Buffer.from("jpeg"), { deviceWidth: 390, deviceHeight: 700 }, 1, { width: 390, height: 700 })[0], 0);
     // The metadata is in DIP: a page 1280 DIP wide at 125 % page zoom shows 1024 CSS pixels.
     const scaled = frameMessage(Buffer.from("jpeg"), { deviceWidth: 1280, deviceHeight: 800 }, 1.25);
     assert.deepEqual([scaled.readUInt16BE(1), scaled.readUInt16BE(3)], [1024, 640]);

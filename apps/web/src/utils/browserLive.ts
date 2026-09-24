@@ -89,13 +89,22 @@ export function screencastUrl(controlBase: string): string {
 export const JPEG_FRAME = 0;
 export const VIDEO_INIT = 1;
 export const VIDEO_FRAGMENT = 2;
+export const JPEG_FRAME_CROPPED = 3;
 
-// A JPEG frame message: the page's viewport in CSS pixels, then the JPEG.
-export function readFrame(data: ArrayBuffer): { size: Size; jpeg: Blob } {
-  const header = new DataView(data, 1, 4);
+// A JPEG frame message: the page's viewport in CSS pixels, then the JPEG. A cropped one (a
+// page pinned narrower than its window, a phone's view) gives the frame's size and then the
+// page's, which fills the frame's left part (crop, the part of the frame to show).
+export function readFrame(data: ArrayBuffer): { size: Size; crop: Size | null; jpeg: Blob } {
+  const cropped = new Uint8Array(data, 0, 1)[0] === JPEG_FRAME_CROPPED;
+  const header = new DataView(data, 1, cropped ? 8 : 4);
+  const frame = { width: header.getUint16(0), height: header.getUint16(2) };
+  const page = cropped ? { width: header.getUint16(4), height: header.getUint16(6) } : null;
   return {
-    size: { width: header.getUint16(0), height: header.getUint16(2) },
-    jpeg: new Blob([new Uint8Array(data, 5)], { type: 'image/jpeg' }),
+    size: page ?? frame,
+    crop: page
+      ? { width: page.width / frame.width, height: page.height / frame.height }
+      : null,
+    jpeg: new Blob([new Uint8Array(data, cropped ? 9 : 5)], { type: 'image/jpeg' }),
   };
 }
 
