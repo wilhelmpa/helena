@@ -13,7 +13,8 @@ import {
 //   - 'access-center.grants' denies what no grant covers, and anything but reading on a
 //     read-only grant. It stays whatever else is registered.
 //   - 'access-center.defaults' sends every action that reaches outside Helena (send,
-//     publish, pay) or removes something (delete) to the owner for approval. It stands in
+//     publish, pay), runs something (execute), removes something (delete) or changes
+//     credentials to the owner for approval; read, report and write run. It stands in
 //     for the autopilot (hub/autopilot), which removes it with `replaceDefaultPolicy` when
 //     it registers its own evaluator for the levels per project and agent.
 
@@ -31,7 +32,14 @@ export const grantEvaluator: PolicyEvaluator = {
   },
 };
 
-const NEEDS_APPROVAL: readonly ActionCategory[] = ['send', 'publish', 'pay', 'delete', 'execute'];
+const NEEDS_APPROVAL: readonly ActionCategory[] = [
+  'send',
+  'publish',
+  'execute',
+  'delete',
+  'pay',
+  'credentials',
+];
 
 export const defaultApprovalEvaluator: PolicyEvaluator = {
   id: 'access-center.defaults',

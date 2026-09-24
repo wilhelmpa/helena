@@ -8,12 +8,16 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
     "@types/bun": "latest",
     "eslint": "^9.39.0",
     "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "otpauth": "^9.5.2"
   }
 }

@@ -3,27 +3,37 @@
 // (packages/sdk on hub/framework) name for name, so that once the SDK lands this file
 // becomes a re-export of it and nothing else changes.
 
+// mirror of @helena/sdk ACTION_CATEGORIES (orchestrator decision D-C1): nine categories in
+// the order of their risk.
 export const ACTION_CATEGORIES = [
   // Looks, changes nothing.
   'read',
-  // Changes data the account holds; undoable.
+  // Posts status or results into Helena itself (a comment on its own task, a run report).
+  'report',
+  // Changes data; undoable.
   'write',
-  // Runs code or a command.
-  'execute',
   // Reaches a person or system outside Helena: a mail, an invitation.
   'send',
-  // Removes something.
-  'delete',
   // Makes something visible to others: a shared file, a post.
   'publish',
+  // Runs code or a command.
+  'execute',
+  // Removes something.
+  'delete',
   // Spends money.
   'pay',
+  // Changes logins, keys or grants.
+  'credentials',
 ] as const;
 
 export type ActionCategory = (typeof ACTION_CATEGORIES)[number];
 
 export function isActionCategory(value: unknown): value is ActionCategory {
   return typeof value === 'string' && (ACTION_CATEGORIES as readonly string[]).includes(value);
+}
+
+export function actionRank(category: ActionCategory): number {
+  return ACTION_CATEGORIES.indexOf(category);
 }
 
 // The standard MCP tool annotations a category implies.
@@ -38,17 +48,29 @@ export function annotationsForCategory(category: ActionCategory): ToolAnnotation
   switch (category) {
     case 'read':
       return { readOnlyHint: true, destructiveHint: false };
+    case 'report':
     case 'write':
-      return { readOnlyHint: false, destructiveHint: false };
-    case 'execute':
-      return { readOnlyHint: false, destructiveHint: true, openWorldHint: true };
+      return { readOnlyHint: false, destructiveHint: false, openWorldHint: false };
     case 'send':
     case 'publish':
     case 'pay':
       return { readOnlyHint: false, destructiveHint: false, openWorldHint: true };
+    case 'execute':
+      return { readOnlyHint: false, destructiveHint: true, openWorldHint: true };
     case 'delete':
+    case 'credentials':
       return { readOnlyHint: false, destructiveHint: true };
   }
+}
+
+// A tool that declares no category counts by its annotations, with the MCP defaults for
+// what it leaves out (destructive, open world): without any it is a `send`, never a
+// `write`.
+export function categoryFromAnnotations(annotations: ToolAnnotations | undefined): ActionCategory {
+  if (annotations?.readOnlyHint === true) return 'read';
+  if (annotations?.destructiveHint ?? true) return annotations ? 'delete' : 'send';
+  if (annotations?.openWorldHint ?? true) return 'send';
+  return 'write';
 }
 
 export type JsonSchema = Record<string, unknown>;

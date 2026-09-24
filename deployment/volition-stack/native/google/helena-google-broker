@@ -1,0 +1,203 @@
+#!/usr/bin/env python3
+# Helena's door to gog (the Google Workspace CLI) for accounts whose tokens live in gog's
+# keyring. Helena's API and worker run it through sudo as volition-google, the only user
+# that can read the keyring (sudoers-helena-broker). It reads one JSON request on stdin,
+# checks it against a fixed allowlist, runs gog and prints one JSON answer:
+#   {"ok": true, "result": ...}  or  {"ok": false, "error": "..."}
+#
+# Operations: accounts (auth list --check), auth-start / auth-finish (the two steps of
+# gog's remote sign-in), credentials (import an OAuth client file), remove (forget an
+# account), run (one allowlisted tool command, pinned with --enable-commands-exact).
+# It never exports a token and never runs `auth tokens`, `backup` or anything else.
+#
+# HELENA_GOG_BINARY / HELENA_GOG_HOME override the paths for tests only; sudo's env_reset
+# drops them, and the sudoers rule allows no arguments.
+import json
+import os
+import re
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+BINARY = os.environ.get('HELENA_GOG_BINARY', '/usr/local/libexec/volition-gog')
+HOME = os.environ.get('HELENA_GOG_HOME', '/var/lib/volition-google/gog')
+TIMEOUT = 80
+MAX_INPUT = 2 * 1024 * 1024
+MAX_OUTPUT = 8 * 1024 * 1024
+
+EMAIL = re.compile(r'^[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,253}\.[A-Za-z]{2,63}$')
+SERVICES = {'gmail', 'calendar', 'drive', 'docs', 'sheets', 'contacts', 'tasks', 'people', 'slides', 'forms'}
+URL = re.compile(r'https://accounts\.google\.com/[^\s"\'<>]+')
+
+# The tool commands Helena may run: the command words, the positional arguments they take
+# and the flags allowed after them (name=value flags as a prefix, bare flags whole).
+COMMANDS = {
+    'gmail.search': {'words': ['gmail', 'search'], 'positional': 1, 'flags': ['--max=']},
+    'gmail.thread.get': {'words': ['gmail', 'thread', 'get'], 'positional': 1, 'flags': ['--sanitize-content']},
+    'gmail.send': {'words': ['gmail', 'send'], 'positional': 0, 'flags': ['--raw-file', '-']},
+    'gmail.trash': {'words': ['gmail', 'trash'], 'positional': 1, 'flags': []},
+    'calendar.events': {'words': ['calendar', 'events'], 'positional': 1, 'flags': ['--from=', '--to=', '--max=', '--query=']},
+    'contacts.search': {'words': ['contacts', 'search'], 'positional': 1, 'flags': ['--max=']},
+}
+
+
+class Refused(Exception):
+    pass
+
+
+def answer(ok, value):
+    sys.stdout.write(json.dumps({'ok': True, 'result': value} if ok else {'ok': False, 'error': value}))
+    sys.stdout.flush()
+
+
+def environment():
+    env = {'HOME': str(Path(HOME).parent), 'PATH': '/usr/bin:/bin', 'LANG': 'C.UTF-8'}
+    password_file = Path(HOME, 'keyring.pass')
+    if password_file.exists():
+        env['GOG_KEYRING_PASSWORD'] = password_file.read_text(encoding='utf-8').rstrip('\r\n')
+    return env
+
+
+def gog(args, stdin=None):
+    try:
+        completed = subprocess.run(
+            [BINARY, '--home', HOME, *args],
+            input=stdin.encode('utf-8') if stdin is not None else None,
+            stdin=None if stdin is not None else subprocess.DEVNULL,
+            capture_output=True,
+            timeout=TIMEOUT,
+            env=environment(),
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        raise Refused('gog did not answer in time')
+    out = completed.stdout[:MAX_OUTPUT].decode('utf-8', 'replace')
+    if completed.returncode != 0:
+        # The first line of gog's error, without anything that looks like a token.
+        err = completed.stderr.decode('utf-8', 'replace').strip().splitlines()
+        first = err[0] if err else f'gog exited with {completed.returncode}'
+        first = re.sub(r'(ya29\.|1//)[A-Za-z0-9._-]+', '[token]', first)
+        raise Refused(first[:300])
+    return out
+
+
+def parsed(out):
+    try:
+        return json.loads(out) if out.strip() else None
+    except json.JSONDecodeError:
+        return {'text': out[:MAX_OUTPUT]}
+
+
+def email_of(request):
+    email = request.get('email')
+    if not isinstance(email, str) or not EMAIL.match(email):
+        raise Refused('invalid account address')
+    return email
+
+
+def services_of(request):
+    services = request.get('services')
+    if not isinstance(services, list) or not services or not all(
+        isinstance(s, str) and s in SERVICES for s in services
+    ):
+        raise Refused('invalid services')
+    return ','.join(dict.fromkeys(services))
+
+
+def check_args(spec, args):
+    words = spec['words']
+    if args[: len(words)] != words:
+        raise Refused('arguments do not match the command')
+    rest = args[len(words):]
+    positional = [a for a in rest if not a.startswith('-')]
+    flags = [a for a in rest if a.startswith('-')]
+    if spec['command'] == 'gmail.send':
+        if rest != ['--raw-file', '-']:
+            raise Refused('gmail.send takes only --raw-file -')
+        return
+    if len(positional) != spec['positional'] or rest[: spec['positional']] != positional:
+        raise Refused('unexpected arguments')
+    for flag in flags:
+        if not any(flag == allowed or (allowed.endswith('=') and flag.startswith(allowed)) for allowed in spec['flags']):
+            raise Refused(f'flag not allowed: {flag.split("=")[0]}')
+    for value in positional:
+        if len(value) > 1000 or '\0' in value:
+            raise Refused('argument too long')
+
+
+def handle(request):
+    op = request.get('op')
+    if op == 'accounts':
+        return parsed(gog(['auth', 'list', '--check', '--json', '--no-input']))
+    if op == 'auth-start':
+        out = gog(['auth', 'add', email_of(request), '--services', services_of(request), '--remote', '--step', '1', '--no-input'])
+        match = URL.search(out)
+        if not match:
+            raise Refused('gog printed no sign-in address')
+        return {'url': match.group(0)}
+    if op == 'auth-finish':
+        redirect = request.get('redirectUrl')
+        if not isinstance(redirect, str) or not redirect.startswith('http') or len(redirect) > 4000:
+            raise Refused('invalid redirect address')
+        gog(['auth', 'add', email_of(request), '--services', services_of(request), '--remote', '--step', '2', '--auth-url', redirect, '--no-input'])
+        return {'ok': True}
+    if op == 'credentials':
+        content = request.get('json')
+        if not isinstance(content, str) or len(content) > 20000:
+            raise Refused('invalid client file')
+        json.loads(content)
+        fd, path = tempfile.mkstemp(prefix='.client-', suffix='.json', dir=HOME)
+        try:
+            with os.fdopen(fd, 'w', encoding='utf-8') as handle_:
+                handle_.write(content)
+            gog(['auth', 'credentials', 'set', path, '--no-input'])
+        finally:
+            os.unlink(path)
+        return {'ok': True}
+    if op == 'remove':
+        gog(['auth', 'remove', email_of(request), '--no-input'])
+        return {'ok': True}
+    if op == 'run':
+        command = request.get('command')
+        spec = COMMANDS.get(command) if isinstance(command, str) else None
+        args = request.get('args')
+        if not spec or not isinstance(args, list) or not all(isinstance(a, str) for a in args):
+            raise Refused('command not allowed')
+        check_args({**spec, 'command': command}, args)
+        stdin = request.get('stdin')
+        if stdin is not None and (not isinstance(stdin, str) or command != 'gmail.send'):
+            raise Refused('input not allowed')
+        out = gog(
+            ['--account', email_of(request), '--enable-commands-exact', command, '--json', '--results-only', '--no-input', *args],
+            stdin=stdin,
+        )
+        return parsed(out)
+    raise Refused('unknown operation')
+
+
+def main():
+    os.umask(0o077)
+    if len(sys.argv) > 1:
+        answer(False, 'the broker takes no arguments')
+        return 2
+    raw = sys.stdin.buffer.read(MAX_INPUT + 1)
+    if len(raw) > MAX_INPUT:
+        answer(False, 'request too large')
+        return 2
+    try:
+        request = json.loads(raw.decode('utf-8'))
+        if not isinstance(request, dict):
+            raise Refused('invalid request')
+        answer(True, handle(request))
+        return 0
+    except Refused as refused:
+        answer(False, str(refused))
+        return 1
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        answer(False, 'invalid request')
+        return 2
+
+
+if __name__ == '__main__':
+    sys.exit(main())
