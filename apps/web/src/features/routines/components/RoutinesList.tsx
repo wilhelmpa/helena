@@ -104,7 +104,7 @@ export function RoutinesList({
       {routines.length === 0 ? (
         <EmptyState title={t('empty')} description={t('emptyHint')} />
       ) : (
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
           <RoutinesTable
             routines={routines}
             actionsFor={(routine) => ({

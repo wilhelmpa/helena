@@ -22,7 +22,7 @@ export default function HomeRoutinesPage() {
   return (
     <Shell globalHome globalTitle={tNav('schedules')} autoOpenGlobalChat={false}>
       <SectionPageView title={tNav('schedules')} description={t('homeHint')} wide>
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-1 flex-col gap-4">
           {query.isError ? (
             <EmptyState title={t('loadFailed')} description={t('loadFailedHint')}>
               <Button size="sm" variant="outline" onClick={() => void query.refetch()}>

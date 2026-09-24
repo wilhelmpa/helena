@@ -2,11 +2,12 @@ import Link from 'next/link';
 import { Bot, RotateCcw, SquarePlus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { Routine } from '@/lib/api/endpoints/routines';
+import StatusBadge from '@/components/common/page/StatusBadge';
 import { Switch } from '@/components/ui/switch';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { aiTeamPath, issuePath } from '@/utils/paths';
-import { parseScheduleInput } from '../utils/cronSchedule';
+import { useCronDescription } from '../hooks/useCronDescription';
 import { formatInZone } from '../utils/schedulePreview';
 import { RoutineActionsMenu, type RoutineActions } from './RoutineActionsMenu';
 import { RoutineLastRun } from './RoutineLastRun';
@@ -23,11 +24,11 @@ export function RoutineRow({
   actions?: RoutineActions;
 }) {
   const t = useTranslations('routines');
-  const cron = parseScheduleInput(routine.cron);
+  const describe = useCronDescription();
   return (
     <TableRow className="group/item">
       {showProject && (
-        <TableCell className="px-3 py-4 align-top whitespace-normal">
+        <TableCell className="px-3 py-2.5 align-top whitespace-normal">
           <Link
             href={aiTeamPath(routine.projectKey, 'schedules')}
             className="text-sm font-medium underline-offset-2 hover:underline"
@@ -37,7 +38,7 @@ export function RoutineRow({
           <p className="font-mono text-xs text-muted-foreground">{routine.projectKey}</p>
         </TableCell>
       )}
-      <TableCell className="px-3 py-4 align-top whitespace-normal">
+      <TableCell className="px-3 py-2.5 align-top whitespace-normal">
         <p dir="auto" className="truncate text-sm font-medium" title={routine.instructions}>
           {routine.title}
         </p>
@@ -70,9 +71,9 @@ export function RoutineRow({
           )}
         </p>
       </TableCell>
-      <TableCell className="px-3 py-4 align-top whitespace-normal">
+      <TableCell className="px-3 py-2.5 align-top whitespace-normal">
         <p className="text-sm" title={routine.cron}>
-          {cron.ok ? cron.description : routine.cron}
+          {describe(routine.cron) ?? routine.cron}
         </p>
         <p className="mt-0.5 text-xs text-muted-foreground">{routine.timezone}</p>
         <p className="mt-1 text-xs whitespace-nowrap text-muted-foreground tabular-nums">
@@ -81,10 +82,10 @@ export function RoutineRow({
             : t('paused')}
         </p>
       </TableCell>
-      <TableCell className="px-3 py-4 align-top whitespace-normal">
+      <TableCell className="px-3 py-2.5 align-top whitespace-normal">
         <RoutineLastRun routine={routine} />
       </TableCell>
-      <TableCell className="px-3 py-4 align-top">
+      <TableCell className="px-3 py-2.5 align-top">
         {actions?.canEdit ? (
           <Switch
             checked={routine.enabled}
@@ -92,19 +93,13 @@ export function RoutineRow({
             aria-label={t('runOnSchedule')}
           />
         ) : (
-          <span className="flex items-center gap-2 text-sm">
-            <span
-              className={cn(
-                'size-2 rounded-full',
-                routine.enabled ? 'bg-status-success' : 'bg-muted-foreground/40',
-              )}
-            />
+          <StatusBadge status={routine.enabled ? 'success' : 'idle'}>
             {routine.enabled ? t('active') : t('paused')}
-          </span>
+          </StatusBadge>
         )}
       </TableCell>
       {actions && (
-        <TableCell className="px-3 py-3 text-end align-top">
+        <TableCell className="px-3 py-2 text-end align-top">
           <RoutineActionsMenu actions={actions} />
         </TableCell>
       )}
