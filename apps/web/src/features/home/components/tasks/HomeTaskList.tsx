@@ -3,7 +3,7 @@ import type { CrossProjectIssue } from '@/lib/api/endpoints/issues';
 import { STATE_TYPES } from '@/utils/fieldOptions';
 import { byKey } from '@/utils/messageKey';
 import HomeTaskRow from '../HomeTaskRow';
-import type { HomeTaskGrouping } from './HomeTasksFilters';
+import type { HomeTaskGrouping } from './HomeTasksToolbar';
 
 interface TaskGroup {
   key: string;

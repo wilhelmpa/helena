@@ -14,9 +14,9 @@ import HomeServiceState from './HomeServiceState';
 // The instance owner's view of the services around Helena — the Hermes runner, Mastra,
 // the bridge between them, the provisioning service and the worker — the agent runs
 // that wait or overran, and the janitor loops that clean up hung runs, orphaned stage
-// runs and stale workflow schedules. A status report in two columns of 32px lines, not
-// a grid of cards: nothing here is a control, so nothing here looks like one. No secret
-// or path ever appears, only counts, times and short reasons.
+// runs and stale workflow schedules. A status report of 32px lines in the sidebar's
+// surface, without hover: nothing here is a control, so nothing here looks like one. No
+// secret or path ever appears, only counts, times and short reasons.
 export default function HomeSystemHealth() {
   const t = useTranslations('god.systemHealth');
   const { data: session } = useSession();
@@ -40,7 +40,7 @@ export default function HomeSystemHealth() {
     <section className="grid min-w-0 grid-cols-1 gap-x-6 gap-y-4 lg:grid-cols-2">
       <div className="min-w-0">
         <SectionLabel icon={<Activity />}>{t('title')}</SectionLabel>
-        <ul className="grid grid-cols-1 border-t border-sidebar-border pt-1 sm:grid-cols-2">
+        <ul className="grid grid-cols-1 rounded-lg border bg-card p-1 sm:grid-cols-2">
           {data.services.map((health) => (
             <HomeServiceState key={health.service} health={health} />
           ))}
@@ -55,7 +55,7 @@ export default function HomeSystemHealth() {
       </div>
       <div className="min-w-0">
         <SectionLabel icon={<Brush />}>{t('janitorsTitle')}</SectionLabel>
-        <ul className="grid grid-cols-1 border-t border-sidebar-border pt-1">
+        <ul className="grid grid-cols-1 rounded-lg border bg-card p-1">
           {data.janitors.map((health) => (
             <HomeJanitorState key={health.job} health={health} />
           ))}

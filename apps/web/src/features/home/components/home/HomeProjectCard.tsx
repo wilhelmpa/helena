@@ -19,7 +19,7 @@ export default function HomeProjectCard({ project }: { project: Project }) {
   return (
     <Link
       href={projectPath(project.key)}
-      className="group flex min-w-0 flex-col gap-1 rounded-lg border border-sidebar-border px-3 py-2.5 transition-colors hover:bg-sidebar-accent/60 focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
+      className="group flex min-w-0 flex-col gap-1 rounded-lg border bg-card px-3 py-2.5 transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
     >
       <div className="flex min-w-0 items-center gap-2">
         <FolderKanban className="size-4 shrink-0 text-muted-foreground group-hover:text-foreground" />

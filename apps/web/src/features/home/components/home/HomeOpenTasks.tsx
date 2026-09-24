@@ -23,7 +23,7 @@ export default function HomeOpenTasks() {
       <SectionLabel
         trailing={
           <Link
-            href={tasksPath()}
+            href={`${tasksPath()}?assignee=me`}
             className="rounded-sm text-xs text-muted-foreground transition-colors hover:text-foreground"
           >
             {t('viewAll')}
@@ -32,7 +32,7 @@ export default function HomeOpenTasks() {
       >
         {t('myOpenTasks')} · <span className="font-mono tabular-nums">{total}</span>
       </SectionLabel>
-      <RowList>
+      <RowList className="bg-card">
         {issues.length === 0 ? (
           <RowEmpty icon={<ListTodo />}>{t('noOpenTasks')}</RowEmpty>
         ) : (

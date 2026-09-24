@@ -146,6 +146,17 @@
     "emptyHint": "Ningún elemento de trabajo coincide con estos filtros.",
     "myOpenTasks": "Mis elementos abiertos",
     "viewAll": "Todos los elementos de trabajo",
-    "noOpenTasks": "No tienes ningún elemento de trabajo abierto asignado."
+    "noOpenTasks": "No tienes ningún elemento de trabajo abierto asignado.",
+    "filter": {
+      "project": "Proyecto",
+      "state": "Estado",
+      "assignee": "Responsable",
+      "due": "Vencimiento",
+      "group": "Agrupar",
+      "title": "Filtro",
+      "reset": "Restablecer filtros"
+    },
+    "loadFailed": "No se pudieron cargar las tareas.",
+    "loadFailedHint": "El servidor no respondió. Vuelve a intentarlo en un momento."
   }
 }

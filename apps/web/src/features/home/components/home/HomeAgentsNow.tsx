@@ -42,7 +42,7 @@ export default function HomeAgentsNow() {
       >
         {t('agentsNow')}
       </SectionLabel>
-      <RowList>
+      <RowList className="bg-card">
         {running.length === 0 ? (
           <RowEmpty icon={<Bot />}>{t('agentsNowEmpty')}</RowEmpty>
         ) : (

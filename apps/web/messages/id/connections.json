@@ -1,24 +1,35 @@
 {
-  "title": "Connections",
-  "description": "Connected services and accounts",
-  "loading": "Checking connections…",
-  "loadError": "Connection status could not be loaded.",
-  "lastCheck": "Last check",
-  "never": "Never",
-  "availableTools": "Available tools",
+  "title": "Koneksi",
+  "description": "Layanan dan akun yang terhubung",
+  "loading": "Memeriksa koneksi…",
+  "loadError": "Status koneksi tidak dapat dimuat.",
+  "loadErrorHint": "Server tidak merespons. Coba lagi sebentar lagi.",
+  "lastCheck": "Pemeriksaan terakhir",
+  "never": "Belum pernah",
+  "toolCount": "{count, plural, other {# alat}}",
+  "empty": "Tidak ada koneksi",
+  "emptyHint": "Layanan koneksi tidak melaporkan layanan yang terhubung.",
+  "unconfigured": {
+    "title": "Belum ada layanan koneksi",
+    "hint": "Server ini tidak menjalankan layanan yang memeriksa koneksi. Akun email, kredensial, dan perangkat punya halaman sendiri.",
+    "mail": "Akun email",
+    "credentials": "Kredensial",
+    "devices": "Perangkat & Obsidian"
+  },
   "status": {
-    "connected": "Connected",
-    "available": "Available",
-    "configured": "Configured",
-    "disabled": "Disabled",
-    "unavailable": "Unavailable",
-    "unsupported": "Unsupported",
-    "error": "Error"
+    "connected": "Terhubung",
+    "available": "Tersedia",
+    "configured": "Dikonfigurasi",
+    "disabled": "Nonaktif",
+    "unavailable": "Tidak tersedia",
+    "unsupported": "Tidak didukung",
+    "error": "Galat"
   },
   "actions": {
-    "checkAll": "Check all",
-    "check": "Check",
-    "reconnect": "Reconnect",
-    "openPairing": "Open pairing"
+    "checkAll": "Periksa semua",
+    "check": "Periksa",
+    "reconnect": "Hubungkan ulang",
+    "openPairing": "Buka pemasangan",
+    "retry": "Coba lagi"
   }
 }

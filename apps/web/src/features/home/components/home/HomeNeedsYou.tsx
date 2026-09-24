@@ -87,7 +87,7 @@ export default function HomeNeedsYou() {
       >
         {t('needsYou')}
       </SectionLabel>
-      <RowList>
+      <RowList className="bg-card">
         {entries.length === 0 ? (
           <RowEmpty icon={<CircleCheckBig className="text-status-success" />}>
             {t('needsYouEmpty')}

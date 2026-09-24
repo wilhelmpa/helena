@@ -3,9 +3,19 @@
   "description": "Verbundene Dienste und Konten",
   "loading": "Verbindungen werden geprüft…",
   "loadError": "Der Verbindungsstatus konnte nicht geladen werden.",
+  "loadErrorHint": "Der Server hat nicht geantwortet. Versuche es gleich noch einmal.",
   "lastCheck": "Letzte Prüfung",
   "never": "Nie",
-  "availableTools": "Verfügbare Tools",
+  "toolCount": "{count, plural, one {# Tool} other {# Tools}}",
+  "empty": "Keine Verbindungen",
+  "emptyHint": "Der Verbindungsdienst meldet keine verbundenen Dienste.",
+  "unconfigured": {
+    "title": "Kein Verbindungsdienst eingerichtet",
+    "hint": "Auf diesem Server läuft kein Dienst, der Verbindungen prüft. E-Mail-Konten, Zugänge und Geräte haben eigene Seiten.",
+    "mail": "E-Mail-Konten",
+    "credentials": "Zugänge",
+    "devices": "Geräte & Obsidian"
+  },
   "status": {
     "connected": "Verbunden",
     "available": "Verfügbar",
@@ -19,6 +29,7 @@
     "checkAll": "Alle prüfen",
     "check": "Prüfen",
     "reconnect": "Erneut verbinden",
-    "openPairing": "Kopplung öffnen"
+    "openPairing": "Kopplung öffnen",
+    "retry": "Erneut versuchen"
   }
 }
