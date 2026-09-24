@@ -28,6 +28,8 @@ export interface Task {
   toolsets?: string[] | null;
   // An image the model reads with the prompt.
   image?: string | null;
+  // Helena's Autopilot level; absent on an older server.
+  autopilotLevel?: number | null;
 }
 
 export interface Outcome {
@@ -174,8 +176,22 @@ function spawnArgs(
       runBudgetSeconds: task.runBudgetSeconds,
       toolsets: task.toolsets,
       image: task.image,
+      autopilotLevel: task.autopilotLevel,
+      policyHook: task.autopilotLevel == null ? null : policyHookCommand(),
     }),
   ];
+}
+
+// The command Claude Code runs before each tool call: this runner's `policy-hook`, which
+// asks Helena's policy engine. It blocks the call (exit 2) when it cannot even start, so a
+// missing runner never lets a call through unchecked.
+export function policyHookCommand(
+  node: string = process.execPath,
+  script: string | null | undefined = process.argv[1],
+): string | null {
+  if (!script) return null;
+  const quote = (value: string) => `'${value.replace(/'/g, `'\\''`)}'`;
+  return `${quote(node)} ${quote(script)} policy-hook || exit 2`;
 }
 
 // A CLI that took the task as an argument would read it twice if it also arrived here.

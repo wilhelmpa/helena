@@ -58,6 +58,7 @@ export async function answer(
       thinkingLevel: message.thinkingLevel,
       toolsets: hermes?.toolsets ?? null,
       image: message.images?.[0] ?? null,
+      autopilotLevel: message.autopilotLevel ?? null,
       env: {
         ITSAPLAN_TRIGGER: 'chat',
         ITSAPLAN_SYSTEM_PROMPT: message.systemPrompt,

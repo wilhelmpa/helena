@@ -19,6 +19,28 @@ export interface PresetTaskSettings {
   runBudgetSeconds?: number | null;
   toolsets?: string[] | null;
   image?: string | null;
+  // Helena's Autopilot level for this run or chat answer (absent on an older server), and
+  // the command a runtime with pre-tool hooks runs to ask Helena's policy engine.
+  autopilotLevel?: number | null;
+  policyHook?: string | null;
+}
+
+// Claude Code asks Helena's policy engine before each tool call through a PreToolUse hook
+// (the runner's `policy-hook`). At level 0 it plans only: it proposes, it changes nothing.
+function claudeAutopilotArgs({ autopilotLevel, policyHook }: PresetTaskSettings): string[] {
+  return [
+    ...(autopilotLevel === 0 ? ['--permission-mode', 'plan'] : []),
+    ...(policyHook
+      ? [
+          '--settings',
+          JSON.stringify({
+            hooks: {
+              PreToolUse: [{ matcher: '*', hooks: [{ type: 'command', command: policyHook }] }],
+            },
+          }),
+        ]
+      : []),
+  ];
 }
 
 export interface Preset {
@@ -60,6 +82,7 @@ export const PRESETS: Record<PresetName, Preset> = {
       '--permission-mode',
       'auto',
     ],
+    taskArgs: claudeAutopilotArgs,
     tail: [],
   },
 
@@ -77,6 +100,10 @@ export const PRESETS: Record<PresetName, Preset> = {
       '-c',
       'sandbox_mode="workspace-write"',
     ],
+    // Codex has no hook to ask Helena before a tool call; at Autopilot level 0 its sandbox
+    // is read-only, so it can only propose.
+    taskArgs: ({ autopilotLevel }) =>
+      autopilotLevel === 0 ? ['-c', 'sandbox_mode="read-only"'] : [],
     tail: ['-'],
   },
 

@@ -29,6 +29,8 @@ export interface Run {
   // The coding agent session to resume, when the runner that held this run before died
   // mid run and reported one. Absent on a server that predates run resume.
   sessionId?: string | null;
+  // Helena's Autopilot level for the run. Absent on a server that predates the Autopilot.
+  autopilotLevel?: number | null;
 }
 
 // `prompt` carries the conversation so far framed into a task — unless `sessionId` is set,
@@ -44,6 +46,8 @@ export interface ChatMessage {
   thinkingLevel: string | null;
   // Absolute paths of the images attached to the question. Older servers send none.
   images?: string[];
+  // Helena's Autopilot level for the chat's project. Older servers send none.
+  autopilotLevel?: number | null;
 }
 
 // A follow-up turn in the session of a finished run, in which the agent keeps what the run
