@@ -97,14 +97,20 @@ fi
 
 # Listeners on a wildcard or LAN address. Allowed from the network: SSH, HTTP(S), mDNS,
 # DHCP client, Syncthing. Everything else must be loopback-only (or behind the firewall).
+# avahi and Syncthing also hold UDP sockets on random ports for their own queries; their
+# answers come back as replies, which the firewall's conntrack admits, so only their
+# well-known ports count as listeners.
 unexpected_listeners() {
-  ss -H -ltnu 2>/dev/null | awk '{print $1, $5}' | while read -r proto addr; do
+  ss -H -ltnup 2>/dev/null | awk '{print $1, $5, $7}' | while read -r proto addr users; do
     local port=${addr##*:} host=${addr%:*}
     case "$host" in
       127.*|"[::1]"|"[::ffff:127."*|*%*) continue ;;
     esac
     case "$proto:$port" in
       tcp:22|tcp:80|tcp:443|udp:5353|udp:546|udp:68|udp:21027|udp:22000|tcp:22000) continue ;;
+    esac
+    case "$proto:$users" in
+      udp:*'"avahi-daemon"'*|udp:*'"syncthing"'*) continue ;;
     esac
     echo "$proto/$port"
   done | sort -u | paste -sd, -

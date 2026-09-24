@@ -1,0 +1,8 @@
+[Unit]
+Description=Helena: renew the local HTTPS certificate (Let's Encrypt, DNS-01)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/libexec/helena-tls-setup --apply renew
