@@ -86,9 +86,6 @@ uids() { # uids USER... → "0, 1000, 995" with the ones that exist
   for u in "$@"; do u=$(uid_of "$u") && out+=", $u"; done
   echo "$out"
 }
-# The session this runs in, if it is an SSH session: its client address.
-ssh_client() { awk '{print $1}' <<<"${SSH_CONNECTION:-}"; }
-
 lan4_cidr() {
   local dev
   dev=$(ip -4 route show default 2>/dev/null | awk '{for(i=1;i<NF;i++) if ($i=="dev") {print $(i+1); exit}}')
@@ -97,22 +94,36 @@ lan4_cidr() {
     | python3 -c 'import ipaddress,sys; print(ipaddress.ip_interface(sys.stdin.read().strip()).network)'
 }
 
-# An SSH session from outside the home network must not run a step that could cut it off.
+# A step that could cut SSH off runs only when every open SSH connection comes from the home
+# network (sudo drops SSH_CONNECTION, so the connections are read from the kernel instead):
+# the session running this, whichever it is, keeps working afterwards.
 guard_ssh_session() {
-  local client lan4
-  client=$(ssh_client)
-  [[ -z $client ]] && return 0
+  local lan4 peers
   lan4=$(lan4_cidr) || die "cannot tell the home network; refusing to touch SSH or the firewall"
-  python3 - "$client" "$lan4" <<'PY' || die "this SSH session ($client) is not from the home network; run the step from the LAN or the console"
+  peers=$(ss -Htn state established '( sport = :22 )' 2>/dev/null | awk '{print $4}' | sed -E 's/:[0-9]+$//; s/^\[//; s/\]$//' | sort -u)
+  [[ -n ${SSH_CONNECTION:-} ]] && peers+=$'\n'$(awk '{print $1}' <<<"$SSH_CONNECTION")
+  [[ -n ${peers//[[:space:]]/} ]] || return 0
+  python3 - "$lan4" $peers <<'PY' || die "an SSH connection comes from outside the home network (see above); run the step from the LAN or the console"
 import ipaddress, subprocess, sys
-client = ipaddress.ip_address(sys.argv[1].split('%')[0])
-if client.version == 4:
-    ok = client in ipaddress.ip_network(sys.argv[2])
-else:
-    own = subprocess.run(['ip', '-6', '-o', 'addr', 'show', 'scope', 'global'], capture_output=True, text=True).stdout
-    nets = [ipaddress.ip_interface(line.split()[3]).network for line in own.splitlines() if line.split()[3].endswith('/64')]
-    ok = client.is_link_local or client in ipaddress.ip_network('fc00::/7') or any(client in n for n in nets)
-sys.exit(0 if ok else 1)
+lan4 = ipaddress.ip_network(sys.argv[1])
+own = subprocess.run(['ip', '-6', '-o', 'addr', 'show', 'scope', 'global'], capture_output=True, text=True).stdout
+nets = [ipaddress.ip_interface(line.split()[3]).network for line in own.splitlines()
+        if len(line.split()) > 3 and line.split()[3].endswith('/64')]
+bad = []
+for peer in sys.argv[2:]:
+    address = ipaddress.ip_address(peer.split('%')[0])
+    if address.version == 6 and address.ipv4_mapped:
+        address = address.ipv4_mapped
+    if address.version == 4:
+        ok = address in lan4 or address.is_loopback
+    else:
+        ok = (address.is_link_local or address.is_loopback or address in ipaddress.ip_network('fc00::/7')
+              or any(address in n for n in nets))
+    if not ok:
+        bad.append(str(address))
+if bad:
+    print('apply.sh: SSH from outside the home network: ' + ', '.join(bad))
+sys.exit(1 if bad else 0)
 PY
 }
 
