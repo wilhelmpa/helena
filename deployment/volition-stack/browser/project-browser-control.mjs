@@ -383,7 +383,8 @@ export async function controlBrowser(port, action, body) {
       await devtoolsJson(port, `/json/close/${targetId(body.id)}`);
       return { ok: true };
     case "new": {
-      const url = body.url ? navigableUrl(body.url) : "about:blank";
+      // A new tab opens Google unless it was given an address (owner, 2026-09-24).
+      const url = body.url ? navigableUrl(body.url) : "https://www.google.com/";
       const tab = await devtoolsJson(port, `/json/new?${encodeURIComponent(url)}`, "PUT");
       return { ok: true, id: tab?.id ?? null };
     }

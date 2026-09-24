@@ -63,6 +63,7 @@ export default function OwnerTerminalPanel() {
   const [tabs, setTabs] = useState<OpenTerminalTab[]>(DEFAULT_TABS);
   const [activeKey, setActiveKey] = useState('shell:main');
   const frames = useRef<Record<string, HTMLIFrameElement | null>>({});
+  const area = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const loaded = loadTabs();
@@ -79,6 +80,28 @@ export default function OwnerTerminalPanel() {
     if (!grant.data?.active) return;
     const [kind, name] = activeKey.split(':') as [OwnerTerminalKind, string];
     void startOwnerTerminalAuditSession(kind, name);
+  }, [activeKey, grant.data?.active]);
+
+  // xterm in each frame fits itself on its window's resize event. A frame hidden with
+  // display:none measured nothing, and a panel resize or a tab switch does not always
+  // resize the frame's window, so the terminal kept its old size (owner, 2026-09-24: "das
+  // Terminal muss responsive die Fläche ausfüllen"). The active frame is told to fit on
+  // every change of the area and of the tab.
+  useEffect(() => {
+    const fit = () => {
+      try {
+        frames.current[activeKey]?.contentWindow?.dispatchEvent(new Event('resize'));
+      } catch {
+        // Not loaded yet; its own load fits it.
+      }
+    };
+    const frame = requestAnimationFrame(fit);
+    const observer = new ResizeObserver(fit);
+    if (area.current) observer.observe(area.current);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
   }, [activeKey, grant.data?.active]);
 
   if (grant.isLoading) return null;
@@ -114,7 +137,7 @@ export default function OwnerTerminalPanel() {
         onClose={closeTab}
         onAdd={addTab}
       />
-      <div className="relative min-h-0 flex-1">
+      <div ref={area} className="relative min-h-0 flex-1">
         {tabs.map((tab) => {
           const key = `${tab.kind}:${tab.name}`;
           return (
@@ -128,9 +151,12 @@ export default function OwnerTerminalPanel() {
               loading="lazy"
               className={cn(
                 'absolute inset-0 h-full w-full border-0 bg-background',
-                key !== activeKey && 'hidden',
+                key !== activeKey && 'pointer-events-none invisible',
               )}
               allow="clipboard-read; clipboard-write"
+              onLoad={(event) =>
+                event.currentTarget.contentWindow?.dispatchEvent(new Event('resize'))
+              }
             />
           );
         })}

@@ -120,7 +120,11 @@
       "takeOverHint": "Mientras usted tenga el control, el agente espera. Continúa cuando lo devuelva.",
       "idleTitle": "¿Ha terminado?",
       "idleHint": "Sin actividad desde hace 10 minutos. Sin respuesta, el control vuelve a los agentes en un minuto.",
-      "idleKeep": "Seguir con el control"
+      "idleKeep": "Seguir con el control",
+      "bookmarks": "Marcadores",
+      "bookmarkPage": "Guardar esta página",
+      "removeBookmark": "Quitar marcador",
+      "noBookmarks": "Aún no hay marcadores"
     }
   },
   "groups": {

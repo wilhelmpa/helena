@@ -12,6 +12,16 @@ export interface BrowserTab {
 export type BrowserAction =
   'navigate' | 'back' | 'forward' | 'reload' | 'activate' | 'close' | 'new';
 
+// A bookmark of the project's browser (the browser bar's star menu), kept by the router.
+export interface BrowserBookmark {
+  url: string;
+  title: string;
+}
+
+export function browserBookmarksQueryKey(base: string) {
+  return ['browser-bookmarks', base] as const;
+}
+
 export function browserTabsQueryKey(base: string) {
   return ['browser-tabs', base] as const;
 }
@@ -74,4 +84,26 @@ export async function browserLockRelease(base: string): Promise<void> {
       headers: { 'content-type': 'application/json' },
     }),
   );
+}
+
+export async function browserBookmarks(base: string): Promise<BrowserBookmark[]> {
+  const body = await answer<{ bookmarks: BrowserBookmark[] }>(
+    await fetch(`${base}/bookmarks`, { credentials: 'same-origin', cache: 'no-store' }),
+  );
+  return body.bookmarks;
+}
+
+export async function saveBrowserBookmarks(
+  base: string,
+  bookmarks: BrowserBookmark[],
+): Promise<BrowserBookmark[]> {
+  const body = await answer<{ bookmarks: BrowserBookmark[] }>(
+    await fetch(`${base}/bookmarks`, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ bookmarks }),
+    }),
+  );
+  return body.bookmarks;
 }
