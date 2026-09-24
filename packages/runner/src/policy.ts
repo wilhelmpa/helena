@@ -1,5 +1,5 @@
 import { lstat, readFile, readlink, rename, symlink, unlink } from 'node:fs/promises';
-import { isAbsolute, join, resolve } from 'node:path';
+import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { RequestError } from './client';
 import type { RunnerConfig } from './config';
 import { usesBrowserGateway } from './browser-gateway';
@@ -9,6 +9,7 @@ import {
   enabledMcpServers,
   ensureConfigLink,
   ensureEnvFile,
+  ensureSharedLink,
   hermesDrift,
   hermesManagedMcp,
   hermesSessionFacts,
@@ -486,8 +487,15 @@ export class HermesPolicyMaterializer implements PolicyMaterializer {
     const restored: string[] = [];
     const shared = this.profile?.sharedConfig;
     if (shared && (await ensureConfigLink(this.hermesHome, shared))) restored.push('config.yaml');
-    // Not a change made outside Helena: a new or older home simply has none yet.
-    await ensureEnvFile(this.hermesHome);
+    // An agent's home links the shared .env as the catalog script does (volition-hermes-
+    // catalog.py materialize_agent_home); a home without one keeps an empty file of its own,
+    // which `hermes doctor` needs. Neither is a change made outside Helena.
+    const sharedEnv = shared ? join(dirname(shared), '.env') : null;
+    if (sharedEnv && (await lstat(sharedEnv).catch(() => null))?.isFile()) {
+      await ensureSharedLink(this.hermesHome, '.env', sharedEnv);
+    } else {
+      await ensureEnvFile(this.hermesHome);
+    }
     const plugins = join(this.hermesHome, 'plugins');
     for (const [name, source] of Object.entries(this.profile?.plugins ?? {})) {
       if (!PLUGIN_NAME.test(name) || !isAbsolute(source)) {

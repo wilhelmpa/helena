@@ -28,3 +28,20 @@ describe('ensureEnvFile', () => {
     expect((await stat(join(home, '.env'))).mode & 0o777).toBe(0o640);
   });
 });
+
+describe('ensureSharedLink', () => {
+  it('puts the link to the shared .env in place of a file and keeps the file aside', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'helena-env-'));
+    homes.push(root);
+    const shared = join(root, '.env');
+    await writeFile(shared, '');
+    const home = join(root, 'profile');
+    await ensureEnvFile(home);
+    expect(await ensureSharedLink(home, '.env', shared)).toBe(true);
+    expect(await readlink(join(home, '.env'))).toBe(shared);
+    expect(
+      (await readdir(join(home, 'run'))).some((name) => name.startsWith('.env.outside-')),
+    ).toBe(true);
+    expect(await ensureSharedLink(home, '.env', shared)).toBe(false);
+  });
+});

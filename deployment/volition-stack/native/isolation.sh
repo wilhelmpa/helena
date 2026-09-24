@@ -170,15 +170,32 @@ active_browsers() {
   systemctl list-units --plain --no-legend --state=active 'volition-project-browser@*.target' | awk '{print $1}'
 }
 
+# volition-hermes-bootstrap.timer starts the runner every 30 s; while the agents are being
+# switched it would start the runner again mid-way (2026-09-24: "Job for
+# volition-hermes-runner.service canceled", the apply stopped half done).
+bootstrap_timer=volition-hermes-bootstrap.timer
+has_unit() { systemctl cat "$1" >/dev/null 2>&1; }
+
 stop_agents() {
+  if has_unit "$bootstrap_timer"; then run systemctl stop "$bootstrap_timer" volition-hermes-bootstrap.service; fi
   run systemctl stop volition-hermes-runner.service volition-terminal.service volition-project-browser-router.service
   for target in "$@"; do run systemctl stop "$target"; done
 }
 
 start_agents() {
   for target in "$@"; do run systemctl start "$target"; done
+  run systemctl reset-failed volition-project-browser-router.service 2>/dev/null || true
   run systemctl restart volition-project-browser-router.service volition-provisioning.service
   run systemctl start volition-terminal.service volition-hermes-runner.service
+  if has_unit "$bootstrap_timer"; then run systemctl start "$bootstrap_timer"; fi
+}
+
+# A step that fails after the agents were stopped must not leave them stopped: start them
+# again as they are and say how to go back.
+restore_after_failure() {
+  echo "isolation.sh: $1 stopped half way; starting the agents again as they are." >&2
+  echo "isolation.sh: run 'isolation.sh status', and 'isolation.sh rollback' to go back to one runner user." >&2
+  start_agents "${browsers[@]}" || true
 }
 
 model_auth() {
@@ -238,6 +255,7 @@ case $command in
       echo "would restart: the runner, provisioning, the terminal, the browser router and ${#browsers[@]} project browser(s)"
       exit 0
     fi
+    trap 'restore_after_failure apply' ERR
     stop_agents "${browsers[@]}"
     run install -d -o volition-browser -g volition -m 0700 "$browser_state/trash"
     migrate apply
@@ -245,6 +263,7 @@ case $command in
     run systemctl try-restart volition-agent-launcher.service volition-egress.service volition-agent-plan.service
     run systemctl restart volition-plan-api.service
     start_agents "${browsers[@]}"
+    trap - ERR
     check
     echo "isolation.sh: agents run isolated"
     ;;
@@ -255,10 +274,12 @@ case $command in
       migrate rollback
       exit 0
     fi
+    trap 'restore_after_failure rollback' ERR
     stop_agents "${browsers[@]}"
     switch off
     migrate rollback
     start_agents "${browsers[@]}"
+    trap - ERR
     echo "isolation.sh: agents run as volition-hermes again; the project users and the launcher stay"
     ;;
   status)

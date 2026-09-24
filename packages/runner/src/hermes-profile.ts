@@ -417,16 +417,25 @@ export function hermesDrift(
 // took its place is moved to run/ next to the other copies of what was changed outside
 // Helena, never read. True when it had to be put back.
 export async function ensureConfigLink(home: string, shared: string): Promise<boolean> {
+  return ensureSharedLink(home, 'config.yaml', shared);
+}
+
+// The same for any file the home shares with the global one (config.yaml, .env).
+export async function ensureSharedLink(
+  home: string,
+  name: string,
+  shared: string,
+): Promise<boolean> {
   if (!isAbsolute(shared)) throw new Error('the runner config names an invalid shared config');
   await ensureRoot(home);
-  const target = join(home, 'config.yaml');
+  const target = join(home, name);
   const info = await lstat(target).catch((error: NodeJS.ErrnoException) => {
     if (error.code === 'ENOENT') return null;
     throw error;
   });
   if (info?.isSymbolicLink() && (await readlink(target)) === shared) return false;
   if (info) {
-    const aside = join(home, 'run', `config.yaml.outside-${Date.now()}`);
+    const aside = join(home, 'run', `${name}.outside-${Date.now()}`);
     await ensureSafeParent(home, aside);
     await rename(target, aside);
   }
