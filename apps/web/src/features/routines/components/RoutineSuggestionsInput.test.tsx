@@ -20,7 +20,6 @@ let current = '';
 let RoutineSuggestionsInput: typeof import('./RoutineSuggestionsInput').RoutineSuggestionsInput;
 function Field() {
   const [value, setValue] = useState('');
-  current = value;
   return (
     <form onSubmit={(event) => event.preventDefault()}>
       <label htmlFor="schedule">Schedule</label>
@@ -28,7 +27,10 @@ function Field() {
         id="schedule"
         value={value}
         suggestions={SUGGESTIONS}
-        onValueChange={setValue}
+        onValueChange={(next) => {
+          current = next;
+          setValue(next);
+        }}
         triggerLabel="Show presets"
       />
     </form>
@@ -86,6 +88,7 @@ function installDom() {
 }
 
 beforeEach(async () => {
+  current = '';
   installDom();
   ({ RoutineSuggestionsInput } = await import('./RoutineSuggestionsInput'));
   const { createRoot } = await import('react-dom/client');

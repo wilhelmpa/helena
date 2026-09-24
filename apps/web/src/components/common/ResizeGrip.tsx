@@ -59,11 +59,14 @@ export default function ResizeGrip({
   }
 
   // A focusable separator (WAI-ARIA window splitter) between the two sides it sizes.
+  // jsx-a11y counts a separator as non-interactive; a focusable one is a widget.
   return (
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <div
       role="separator"
       aria-orientation="vertical"
       aria-label={label}
+      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
       tabIndex={0}
       onPointerDown={beginResize}
       onKeyDown={onKeyDown}
