@@ -5,6 +5,7 @@ import { apiKeyApi, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
+import { scheduleCuratorRuns } from '../../../runtime-requests/curator-schedule';
 
 // Glass-box runs: Helena asks an agent's runtime through its runner (sessions, transcripts,
 // logs), stores a run's timeline while it runs, records what every run spent in the token
@@ -125,6 +126,49 @@ describe('runtime requests', () => {
     expect(res.status).toBe(503);
   });
 
+  it('pins a skill through the runner and asks enabled curators for their weekly review', async () => {
+    const { asOwner, asRunner, teamId, agent } = await setup();
+    await asRunner['agent-runs'].claim.post();
+    const pinning = agentRoute(asOwner, teamId, agent.id).runtime.curator.post({
+      action: 'pin',
+      skill: 'release-notes',
+    });
+    const claimed = await answerNext(asRunner, () => ({
+      paused: false,
+      report: 'curator: ENABLED',
+    }));
+    expect(claimed.request as unknown).toEqual({
+      op: 'curator.set',
+      action: 'pin',
+      skill: 'release-notes',
+    });
+    expect((await pinning).data).toEqual({ paused: false, report: 'curator: ENABLED' });
+    // A name that reads as an option never reaches the runner.
+    const bad = await agentRoute(asOwner, teamId, agent.id).runtime.curator.post({
+      action: 'pin',
+      skill: '--all',
+    });
+    expect(bad.status).toBe(422);
+
+    // The curator is off: nothing is scheduled. On, with the capability, one review a week.
+    expect(await scheduleCuratorRuns()).toBe(0);
+    const [row] = await db.select().from(aiAgent).where(eq(aiAgent.id, agent.id));
+    await db
+      .update(aiAgent)
+      .set({
+        runtimePolicy: { ...row!.runtimePolicy, curator: true },
+        runtimeState: { ...(row!.runtimeState as object), capabilities: ['curator'] },
+        lastSeenAt: new Date(),
+      } as never)
+      .where(eq(aiAgent.id, agent.id));
+    const now = new Date();
+    expect(await scheduleCuratorRuns(now)).toBe(1);
+    expect(await scheduleCuratorRuns(new Date(now.getTime() + 3_600_000))).toBe(0);
+    const review = await answerNext(asRunner, () => ({ report: 'reviewed' }));
+    expect(review.request as unknown).toEqual({ op: 'curator.run' });
+    expect(await scheduleCuratorRuns(new Date(now.getTime() + 8 * 86_400_000))).toBe(1);
+  });
+
   it("never shows an agent another agent's transcripts", async () => {
     const { asOwner, asRunner, teamId, agent } = await setup();
     await asRunner['agent-runs'].claim.post();
@@ -189,6 +233,11 @@ describe('run timeline and usage', () => {
           reasoningTokens: 0,
           durationMs: 9870,
         },
+        runtime: {
+          requested: { model: 'fake-model', reasoning: null },
+          defaults: null,
+          used: { model: 'other-model', reasoning: null, provider: 'custom' },
+        },
       },
       { query: { claim: run.claim } },
     );
@@ -198,6 +247,9 @@ describe('run timeline and usage', () => {
       status: 'success',
       sessionId: 'sess-1',
       usage: [{ kind: 'run', model: 'fake-model', inputTokens: 2400, cacheReadTokens: 1600 }],
+      blockedQuestion: null,
+      reflection: null,
+      modelCheck: { configured: { model: 'fake-model', source: 'agent' }, mismatch: ['model'] },
     });
 
     const usage = await asOwner.teams({ teamId })['agent-usage'].get({
