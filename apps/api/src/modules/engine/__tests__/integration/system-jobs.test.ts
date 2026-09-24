@@ -38,20 +38,6 @@ registerSystemJob({
   },
 });
 
-const EAGER = 'helena.test-eager';
-let eagerRuns = 0;
-registerSystemJob({
-  id: EAGER,
-  runWhenNew: true,
-  // Once a year: only the first sight runs it within the test.
-  schedule: async () => ({ enabled: true, cron: '0 0 1 1 *', timezone: 'Europe/Berlin' }),
-  async run(context) {
-    await context.step('count', async () => {
-      eagerRuns += 1;
-    });
-  },
-});
-
 async function row() {
   const [found] = await db.select().from(helenaSystemJob).where(eq(helenaSystemJob.id, JOB));
   return found ?? null;
@@ -122,7 +108,19 @@ describe('system jobs', () => {
   });
 
   it('runs a job that asks for it once when it is first seen', async () => {
-    eagerRuns = 0;
+    // Registered here, under an id of its own: the first sight is once per id and database.
+    let eagerRuns = 0;
+    registerSystemJob({
+      id: `helena.test-eager-${Date.now()}`,
+      runWhenNew: true,
+      // Once a year: only the first sight runs it within the test.
+      schedule: async () => ({ enabled: true, cron: '0 0 1 1 *', timezone: 'Europe/Berlin' }),
+      async run(context) {
+        await context.step('count', async () => {
+          eagerRuns += 1;
+        });
+      },
+    });
     await fireDueSystemJobs();
     await fireDueSystemJobs();
     const deadline = Date.now() + 10_000;
