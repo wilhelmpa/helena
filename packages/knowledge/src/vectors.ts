@@ -227,6 +227,12 @@ export async function embedPending(embedder: Embedder, batch = 16, maxItems = 50
   return done;
 }
 
+// A Postgres array literal, passed as one text parameter (drizzle would spread a JS
+// array into a parameter list).
+function arrayLiteral(vector: number[]): string {
+  return `{${vector.map((value) => (Number.isFinite(value) ? value : 0)).join(',')}}`;
+}
+
 function vectorLiteral(vector: number[]): string {
   return `[${vector.map((value) => (Number.isFinite(value) ? value : 0)).join(',')}]`;
 }
@@ -241,7 +247,7 @@ export async function semanticRetriever(): Promise<SemanticRetriever | null> {
     const query = normalize(raw!);
     const similarity: SQL<number> = indexed
       ? sql<number>`1 - (${knowledgeChunk}.embedding_vec <=> ${vectorLiteral(query)}::vector)`
-      : sql<number>`(select sum(a * b) from unnest(${knowledgeChunk.embedding}, ${query}::real[]) as pair(a, b))`;
+      : sql<number>`(select sum(a * b) from unnest(${knowledgeChunk.embedding}, ${arrayLiteral(query)}::real[]) as pair(a, b))`;
     const rows = await db
       .select({
         rowId: knowledgeChunk.itemId,
