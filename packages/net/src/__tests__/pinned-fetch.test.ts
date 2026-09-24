@@ -80,13 +80,15 @@ describe('SSRF_ALLOWED_HOSTS', () => {
 
 // node sends no User-Agent of its own, unlike the fetch this replaced, and GitHub
 // answers 403 to a request without one. The requests go to a loopback server, which
-// the guard admits only outside production and test, so NODE_ENV is relaxed around
-// them and restored afterwards.
+// the guard admits only with SSRF_ALLOW_PRIVATE=1, so that is set around them and
+// restored afterwards.
 describe('pinnedFetch User-Agent', () => {
-  const saved = process.env.NODE_ENV;
-  afterEach(() => {
-    process.env.NODE_ENV = saved;
-  });
+  const saved = process.env.SSRF_ALLOW_PRIVATE;
+  const restore = () => {
+    if (saved === undefined) delete process.env.SSRF_ALLOW_PRIVATE;
+    else process.env.SSRF_ALLOW_PRIVATE = saved;
+  };
+  afterEach(restore);
 
   async function headersSeenBy(init?: { headers: Record<string, string> }) {
     let seen: IncomingHttpHeaders = {};
@@ -97,11 +99,11 @@ describe('pinnedFetch User-Agent', () => {
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     const address = server.address();
     const port = typeof address === 'object' && address ? address.port : 0;
-    process.env.NODE_ENV = 'development';
+    process.env.SSRF_ALLOW_PRIVATE = '1';
     try {
       await pinnedFetch(`http://127.0.0.1:${port}/`, init);
     } finally {
-      process.env.NODE_ENV = saved;
+      restore();
       server.close();
     }
     return seen;
