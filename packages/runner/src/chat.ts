@@ -1,9 +1,10 @@
 import { AnswerStream } from './agui';
 import type { ChatMessage, Client } from './client';
 import { presetOf, type RunnerConfig } from './config';
-import { execute } from './execute';
+import { execute, modelProvider } from './execute';
 import { LoginUseReader } from './logins';
 import type { HermesRunSettings } from './policy';
+import { SpendReader } from './spend';
 
 // The command is the same one that handles a queued run; what differs is that its output
 // is reported while it is still being written, so the person waiting in the chat reads the
@@ -48,6 +49,10 @@ export async function answer(
     void stream.flush().catch(() => {});
   }, FLUSH_MS);
   const logins = new LoginUseReader(hermes?.logins ?? new Map());
+  const spend = new SpendReader(
+    config.outputFormat,
+    config.command ? null : (config.agent ?? null),
+  );
   const outcome = await execute(
     config,
     {
@@ -70,6 +75,7 @@ export async function answer(
     {
       onData: (chunk) => {
         stream.write(chunk);
+        spend.write(chunk);
         logins.write(chunk);
       },
       signal: stop.signal,
@@ -77,6 +83,10 @@ export async function answer(
     },
   ).finally(() => clearInterval(flushing));
   if (stop.signal.aborted) return;
+  const spent = spend.value({
+    model: message.model,
+    provider: modelProvider(config, message.model) ?? null,
+  });
   const uses = logins.uses();
   if (uses.length > 0) {
     await client.reportLoginUses({ messageId: message.id }, uses).catch(() => {});
@@ -89,6 +99,7 @@ export async function answer(
     await client.chatResult(message.id, {
       status: 'success',
       usage: stream.contextUsage(),
+      spend: spent,
       ...(stream.model() && { model: stream.model()! }),
     });
     return;
@@ -97,7 +108,12 @@ export async function answer(
   // The server unbinds the session and queues the answer again, with the conversation
   // framed into its prompt, so the person sees no failure for it.
   if (message.sessionId !== null && presetOf(config)?.sessionLost?.(error)) {
-    await client.chatResult(message.id, { status: 'failed', error, sessionLost: true });
+    await client.chatResult(message.id, {
+      status: 'failed',
+      error,
+      sessionLost: true,
+      spend: spent,
+    });
     return;
   }
   await stream.fail(error, outcome.output);
@@ -105,6 +121,7 @@ export async function answer(
     status: 'failed',
     error,
     usage: stream.contextUsage(),
+    spend: spent,
     ...(stream.model() && { model: stream.model()! }),
   });
 }
