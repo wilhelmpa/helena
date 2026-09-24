@@ -3,7 +3,6 @@
 import { Maximize2, Minimize2, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { NoteBoardVisibility } from '@/lib/api/endpoints/noteBoards';
-import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import NoteBoardAccessList from './NoteBoardAccessList';
 import NoteBoardAccessPicker from './NoteBoardAccessPicker';
@@ -54,9 +53,9 @@ export default function NoteCanvasControls({
       <Tooltip>
         <TooltipTrigger
           aria-label={t('boardAccess')}
-          className="flex size-6 cursor-default items-center justify-center rounded text-muted-foreground"
+          className="flex size-7 cursor-default items-center justify-center rounded-md text-muted-foreground"
         >
-          <VisibilityIcon className="size-3.5" />
+          <VisibilityIcon className="size-4" />
         </TooltipTrigger>
         <TooltipContent>{t(`visibilityHint.${visibility}`)}</TooltipContent>
       </Tooltip>
@@ -64,20 +63,26 @@ export default function NoteCanvasControls({
   }
 
   return (
-    <div className="absolute end-3 top-3 z-10 flex items-center gap-2">
+    // A small floating bar on the canvas (it stays with the canvas in fullscreen, where
+    // the header is covered): the sidebar surface, 28px controls, 16px icons.
+    <div className="absolute end-3 top-3 z-10 flex items-center gap-0.5 rounded-lg border bg-card p-0.5 shadow-sm">
       {canEdit && (
-        <Button variant="secondary" size="sm" onClick={onAddNote}>
+        <button
+          type="button"
+          onClick={onAddNote}
+          className="flex h-7 items-center gap-1.5 rounded-md px-2 text-sm hover:bg-accent"
+        >
           <Plus className="size-4" /> {t('addNote')}
-        </Button>
+        </button>
       )}
       {renderAccess()}
       <Tooltip>
         <TooltipTrigger
           aria-label={fullscreen ? t('exitFullscreen') : t('fullscreen')}
           onClick={onToggleFullscreen}
-          className="flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
+          className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
         >
-          {fullscreen ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
+          {fullscreen ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
         </TooltipTrigger>
         <TooltipContent>{fullscreen ? t('exitFullscreen') : t('fullscreen')}</TooltipContent>
       </Tooltip>

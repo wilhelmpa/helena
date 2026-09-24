@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/command';
 import { useNoteBoardSearch } from '../services/noteBoards.service';
 import { boardListIcon } from '../utils/visibility';
+import { PAGE_CONTROL_CLASS, usePageToolbarRoom } from '@/components/layout/PageToolbar';
 
 // The list sections, in order.
 const GROUPS: NoteBoardVisibility[] = ['public', 'restricted', 'private'];
@@ -35,6 +36,7 @@ export default function BoardSwitcher({
 }) {
   const [open, setOpen] = useState(false);
   const t = useTranslations('notes');
+  const room = usePageToolbarRoom();
   const [query, setQuery] = useState('');
   const debounced = useDebouncedValue(query, 250);
   const { data, isLoading } = useNoteBoardSearch(projectKey, debounced);
@@ -52,7 +54,7 @@ export default function BoardSwitcher({
       <CommandItem key={b.id} value={`board-${b.id}`} onSelect={() => select(b.id)}>
         <Icon className="size-3.5" />
         <span className="truncate">{b.name}</span>
-        {b.id === activeBoardId && <Check className="ml-auto size-3.5" />}
+        {b.id === activeBoardId && <Check className="ms-auto size-3.5" />}
       </CommandItem>
     );
   };
@@ -68,13 +70,10 @@ export default function BoardSwitcher({
         if (next) setQuery('');
       }}
     >
-      <PopoverTrigger
-        aria-label={t('allBoards')}
-        className="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
-      >
-        <Layers className="size-3.5" />
-        <span className="hidden sm:inline">{t('allBoards')}</span>
-        <ChevronsUpDown className="size-3.5" />
+      <PopoverTrigger aria-label={t('allBoards')} className={PAGE_CONTROL_CLASS}>
+        <Layers />
+        {room.actions ? <span>{t('allBoards')}</span> : null}
+        <ChevronsUpDown className="!size-3.5" />
       </PopoverTrigger>
       <PopoverContent align="start" className="w-72 p-0">
         <Command shouldFilter={false}>

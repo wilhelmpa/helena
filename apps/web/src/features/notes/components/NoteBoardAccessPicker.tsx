@@ -98,9 +98,9 @@ export default function NoteBoardAccessPicker({
           type="button"
           aria-label={t('boardAccess')}
           title={t(`visibilityHint.${visibility}`)}
-          className="flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
+          className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
         >
-          <Icon className="size-3.5" />
+          <Icon className="size-4" />
         </button>
       }
       inputPlaceholder={t('boardAccessPlaceholder')}

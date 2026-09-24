@@ -126,9 +126,9 @@ export default function NotesPage() {
     }
     // A board is selected but its canvas is still loading.
     if (activeBoardId != null && !isError) {
-      return <Skeleton className="m-6 flex-1" />;
+      return <Skeleton className="m-4 flex-1" />;
     }
-    return <NotesEmptyState projectKey={projectKey} onCreate={create} />;
+    return <NotesEmptyState />;
   }
 
   return (

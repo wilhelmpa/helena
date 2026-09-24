@@ -32,9 +32,9 @@ export default function NoteBoardAccessList({
     <Popover modal>
       <PopoverTrigger
         aria-label={t('boardAccess')}
-        className="flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
+        className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
       >
-        <Icon className="size-3.5" />
+        <Icon className="size-4" />
       </PopoverTrigger>
       <PopoverContent align="end" className="w-60 p-0">
         <div className="border-b px-3 py-2">
@@ -50,7 +50,7 @@ export default function NoteBoardAccessList({
               <Avatar name={person.name} image={person.image} className="size-6" />
               <span className="truncate">{person.name}</span>
               {(person.userId === ownerUserId || person.kind === 'agent') && (
-                <Badge variant="secondary" className="ml-auto px-1.5 py-0 text-xs">
+                <Badge variant="secondary" className="ms-auto px-1.5 py-0 text-xs">
                   {person.userId === ownerUserId ? tCommon('owner') : t('agent')}
                 </Badge>
               )}

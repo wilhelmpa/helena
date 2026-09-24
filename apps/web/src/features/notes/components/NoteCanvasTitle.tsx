@@ -9,14 +9,18 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { cn } from '@/lib/utils';
 import type { SaveStatus } from '../hooks/useCanvasAutosave';
 
-// The canvas label overlay. A board created before the creator was recorded (the
-// column is newer than the feature) shows no avatar.
+// The canvas label overlay: who made the board and whether it is saved. The name is
+// the open tab in the header row, so it shows here only in fullscreen, where the
+// header is covered. A board created before the creator was recorded (the column is
+// newer than the feature) shows no avatar.
 export default function NoteCanvasTitle({
   board,
   saveStatus,
+  fullscreen = false,
 }: {
   board: NoteBoard;
   saveStatus: SaveStatus;
+  fullscreen?: boolean;
 }) {
   const { project } = useShell();
   const t = useTranslations('notes');
@@ -44,7 +48,9 @@ export default function NoteCanvasTitle({
           <TooltipContent>{t('createdBy', { name: creator.name })}</TooltipContent>
         </Tooltip>
       )}
-      <span className="text-sm leading-none font-medium text-foreground">{board.name}</span>
+      {fullscreen && (
+        <span className="text-sm leading-none font-medium text-foreground">{board.name}</span>
+      )}
       {showStatus && (
         <span
           className={cn(

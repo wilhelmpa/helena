@@ -1,21 +1,25 @@
 'use client';
 
-import { useState } from 'react';
-import { ArrowLeft, FilePlus2, FolderPlus, Trash2 } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
-import DocumentIconButton from './DocumentIconButton';
 import DocumentSyncConflicts from './DocumentSyncConflicts';
 import DocumentTrashList from './DocumentTrashList';
 import DocumentTree from './DocumentTree';
 import DocumentTreeDialog, { type DocumentTreeAction } from './DocumentTreeDialog';
 
+// The tree of the Docs page (or its trash), on the sidebar's surface. Its actions (new
+// note, new folder, trash) are in the page's header row (DocumentsWorkspace), so the
+// pane has no header of its own; in the trash a short row names it and leads back.
 export default function DocumentSidebar({
   className,
   root,
   openPath,
   canEdit,
-  creating,
+  showTrash,
+  onCloseTrash,
+  action,
+  onAction,
   onNewNote,
   flush,
 }: {
@@ -23,51 +27,30 @@ export default function DocumentSidebar({
   root: string;
   openPath: string | null;
   canEdit: boolean;
-  creating: boolean;
+  showTrash: boolean;
+  onCloseTrash: () => void;
+  action: DocumentTreeAction | null;
+  onAction: (action: DocumentTreeAction | null) => void;
   onNewNote: (folder: string) => void;
   flush: () => Promise<boolean>;
 }) {
   const t = useTranslations('documents');
-  const [showTrash, setShowTrash] = useState(false);
-  const [action, setAction] = useState<DocumentTreeAction | null>(null);
 
   return (
     <aside
-      className={cn('flex w-full shrink-0 flex-col border-e bg-muted/10 md:w-72', className)}
+      className={cn('flex w-full shrink-0 flex-col border-e bg-card md:w-72', className)}
       aria-label={t('treeLabel')}
     >
-      <div className="flex h-12 shrink-0 items-center gap-0.5 border-b px-3">
-        {showTrash && (
-          <DocumentIconButton label={t('backToDocuments')} onClick={() => setShowTrash(false)}>
-            <ArrowLeft className="rtl:rotate-180" />
-          </DocumentIconButton>
-        )}
-        <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">
-          {showTrash ? t('trash') : t('title')}
-        </h2>
-        {!showTrash && canEdit && (
-          <>
-            <DocumentIconButton
-              label={t('newNote')}
-              disabled={creating}
-              onClick={() => onNewNote(root)}
-            >
-              <FilePlus2 />
-            </DocumentIconButton>
-            <DocumentIconButton
-              label={t('newFolder')}
-              onClick={() => setAction({ kind: 'newFolder', path: root })}
-            >
-              <FolderPlus />
-            </DocumentIconButton>
-          </>
-        )}
-        {!showTrash && (
-          <DocumentIconButton label={t('trash')} onClick={() => setShowTrash(true)}>
-            <Trash2 />
-          </DocumentIconButton>
-        )}
-      </div>
+      {showTrash && (
+        <button
+          type="button"
+          onClick={onCloseTrash}
+          className="mx-2 mt-2 flex h-8 shrink-0 items-center gap-2 rounded-md px-2 text-sm font-medium hover:bg-sidebar-accent/60"
+        >
+          <ArrowLeft className="size-4 text-muted-foreground rtl:rotate-180" />
+          {t('trash')}
+        </button>
+      )}
       <DocumentSyncConflicts root={root} />
       <div className="min-h-0 flex-1 overflow-y-auto p-2">
         {showTrash ? (
@@ -78,7 +61,7 @@ export default function DocumentSidebar({
             openPath={openPath}
             canEdit={canEdit}
             onNewNote={onNewNote}
-            onAction={setAction}
+            onAction={onAction}
           />
         )}
       </div>
@@ -88,7 +71,7 @@ export default function DocumentSidebar({
           root={root}
           openPath={openPath}
           flush={flush}
-          onClose={() => setAction(null)}
+          onClose={() => onAction(null)}
         />
       )}
     </aside>
