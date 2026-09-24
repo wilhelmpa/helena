@@ -2,6 +2,7 @@ import { and, desc, eq, gt, isNull, sql } from 'drizzle-orm';
 import { auth, getSessionFromHeaders } from '@repo/auth';
 import { db, getSetting, setSetting, ownerTerminalGrant, ownerTerminalAudit } from '@repo/db';
 import { HttpError } from '#shared/lib';
+import { isLanAddress } from './lan';
 import { mintOwnerTerminalToken } from './token';
 import type { OwnerTerminalKind } from './model';
 
@@ -83,18 +84,8 @@ async function requireSession(request: Request): Promise<RequestSession> {
   return { userId: session.user.id, sessionId: session.session.id };
 }
 
-// Private LAN ranges only. 127.0.0.0/8 and ::1 are deliberately not here: the
-// Cloudflare tunnel will reach nginx over loopback, so "no step-up" must never
-// extend to it.
-export function isLanAddress(ip: string): boolean {
-  const v4 = ip.startsWith('::ffff:') ? ip.slice(7) : ip;
-  const parts = v4.split('.').map(Number);
-  if (parts.length === 4 && parts.every((n) => Number.isInteger(n) && n >= 0 && n <= 255)) {
-    const [a, b] = parts as [number, number, number, number];
-    return a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
-  }
-  return /^f[cd][0-9a-f]{2}:/i.test(ip);
-}
+// The LAN rule itself (IPv4 private ranges, IPv6 on the home network) is in ./lan.
+export { isLanAddress };
 
 // True when this request may use the terminal without a grant: the owner turned
 // the step-up off (Administrator -> Sicherheit) and the request comes from the LAN.
