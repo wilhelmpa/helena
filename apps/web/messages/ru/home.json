@@ -51,9 +51,9 @@
   },
   "problems": {
     "serviceDown": "{service} недоступен",
-    "loginRejected": "Вход {provider} отклонён",
-    "loginExpired": "Вход {provider} истёк",
-    "loginHint": "Войдите снова в терминале владельца"
+    "relogin": "Снова войти в {provider}",
+    "rejected": "отклонён провайдером",
+    "ranOut": "истёк, никто его не обновляет"
   },
   "agents": {
     "empty": "Сейчас ни один агент не работает.",
@@ -73,6 +73,13 @@
     "title": "Система",
     "ok": "Всё работает",
     "problems": "{count, plural, one {# проблема} few {# проблемы} many {# проблем} other {# проблемы}}",
-    "summary": "Службы {services} · агенты {agents}"
+    "counts": "Службы: {services} · агенты: {agents}",
+    "areas": {
+      "services": "Службы",
+      "logins": "Входы",
+      "janitors": "Обслуживание",
+      "agents": "Агенты",
+      "runs": "Запуски"
+    }
   }
 }

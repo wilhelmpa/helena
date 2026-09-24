@@ -10,8 +10,9 @@ import type { RuntimeLogin, RuntimeLoginsHealth } from '@/lib/api/endpoints/god'
 import HomeLogins from './HomeLogins';
 
 // The health overview's "Anmeldungen" (docs/helena-decisions/token-keeper.md), rendered with
-// the real German messages: a rejected login names the owner's command, a working one its
-// remaining time, and nothing shows without a token keeper.
+// the real German messages: by what the owner has to do. A rejected login names the owner's
+// command, a renewed one reads "aktiv" with the access token's time only in its tooltip, and
+// nothing shows without a token keeper.
 
 const MESSAGES_DIR = join(process.cwd(), 'messages');
 const messages = (locale: string) => ({
@@ -127,11 +128,24 @@ describe('HomeLogins', () => {
     assert.match(text, /Anmeldungen/);
     assert.match(text, /1 braucht dich/);
     assert.match(text, /Claude in Hermes neu anmelden/);
-    assert.match(text, /ungültig/);
+    assert.match(text, /Neu anmelden/);
     assert.match(text, /ChatGPT/);
-    assert.match(text, /gültig, noch/);
+    assert.match(text, /aktiv · erneuert sich automatisch/);
+    // No countdown of the access token in the row, only in its tooltip.
+    assert.doesNotMatch(text, /noch \d/);
+    assert.match(
+      view.querySelector('[title*="Zugangsschlüssel bis"]')?.getAttribute('title') ?? '',
+      /wird vorher erneuert/,
+    );
     assert.equal(view.querySelector('code')?.textContent, COMMAND);
     assert.ok(view.querySelector('button[aria-label="Befehl kopieren"]'));
+  });
+
+  it('shows a renewal that fails for now in amber, without a command', () => {
+    const text = render(health([login({ state: 'error' })])).textContent ?? '';
+    assert.match(text, /Erneuerung klappt gerade nicht · nächster Versuch automatisch/);
+    assert.match(text, /1 Erneuerung hakt/);
+    assert.doesNotMatch(text, /braucht dich/);
   });
 
   it('shows nothing without a keeper, and says when the keeper stopped', () => {
@@ -139,6 +153,7 @@ describe('HomeLogins', () => {
     assert.equal(render({ reports: [], problems: 0 }).textContent, '');
     const stale = render(health([login({ state: 'expired' })], true)).textContent ?? '';
     assert.match(stale, /Token-Keeper hat sich seit/);
+    assert.match(stale, /Token-Keeper meldet sich nicht/);
     assert.doesNotMatch(stale, /braucht dich/);
   });
 

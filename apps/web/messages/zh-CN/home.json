@@ -51,9 +51,9 @@
   },
   "problems": {
     "serviceDown": "{service} 无法访问",
-    "loginRejected": "{provider} 登录被拒绝",
-    "loginExpired": "{provider} 登录已过期",
-    "loginHint": "请在所有者终端中重新登录"
+    "relogin": "重新登录 {provider}",
+    "rejected": "被提供方拒绝",
+    "ranOut": "已过期，无人续期"
   },
   "agents": {
     "empty": "当前没有代理在工作。",
@@ -73,6 +73,13 @@
     "title": "系统",
     "ok": "一切正常",
     "problems": "{count} 个问题",
-    "summary": "服务 {services} · 代理 {agents}"
+    "counts": "{services} 项服务 · {agents} 个代理",
+    "areas": {
+      "services": "服务",
+      "logins": "登录",
+      "janitors": "维护",
+      "agents": "代理",
+      "runs": "运行"
+    }
   }
 }

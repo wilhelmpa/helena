@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import {
   createRegistries,
   normalizeRuntimeLoginReport,
+  runtimeLoginCondition,
   runtimeLoginNeedsOwner,
   type RuntimeLoginSource,
 } from '../index';
@@ -78,12 +79,35 @@ describe('normalizeRuntimeLoginReport', () => {
   });
 });
 
-describe('runtimeLoginNeedsOwner', () => {
-  test('a rejected login, or a renewed one that does not work', () => {
+describe('runtimeLoginCondition', () => {
+  // The owner sees what to do, not the access token's countdown: a renewed login is simply
+  // active; only a rejected one, or one that ran out with nothing renewing it, needs him.
+  test('reads what a login asks of the owner', () => {
+    expect(runtimeLoginCondition({ state: 'ok', managed: true })).toBe('active');
+    expect(runtimeLoginCondition({ state: 'expiring', managed: true })).toBe('active');
+    expect(runtimeLoginCondition({ state: 'error', managed: true })).toBe('renewFailing');
+    expect(runtimeLoginCondition({ state: 'expired', managed: true })).toBe('renewFailing');
+    expect(runtimeLoginCondition({ state: 'invalid', managed: true })).toBe('relogin');
+    expect(runtimeLoginCondition({ state: 'expired', managed: false })).toBe('relogin');
+    expect(runtimeLoginCondition({ state: 'ok', managed: false })).toBe('valid');
+    expect(
+      runtimeLoginCondition({
+        state: 'expired',
+        managed: false,
+        store: 'codex-cli',
+        note: 'separate',
+      }),
+    ).toBe('separate');
+    expect(runtimeLoginCondition({ state: 'invalid', managed: false, note: 'separate' })).toBe(
+      'relogin',
+    );
+  });
+
+  test('only a login to sign in again needs the owner', () => {
     expect(runtimeLoginNeedsOwner({ state: 'invalid', managed: false })).toBe(true);
-    expect(runtimeLoginNeedsOwner({ state: 'expired', managed: true })).toBe(true);
-    expect(runtimeLoginNeedsOwner({ state: 'error', managed: true })).toBe(true);
-    expect(runtimeLoginNeedsOwner({ state: 'expired', managed: false })).toBe(false);
+    expect(runtimeLoginNeedsOwner({ state: 'expired', managed: false })).toBe(true);
+    expect(runtimeLoginNeedsOwner({ state: 'expired', managed: true })).toBe(false);
+    expect(runtimeLoginNeedsOwner({ state: 'error', managed: true })).toBe(false);
     expect(runtimeLoginNeedsOwner({ state: 'expiring', managed: true })).toBe(false);
     expect(runtimeLoginNeedsOwner({ state: 'ok', managed: true })).toBe(false);
   });

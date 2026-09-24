@@ -105,9 +105,10 @@ function useFailureEntries(): { entries: NeedsYouEntry[]; isPending: boolean } {
   };
 }
 
-// For the Administrator: a service Helena works with that is down, and a model login the
-// provider rejected (or that ran out unrenewed). Both open the health overview, which
-// names the reason and, for a login, the command that signs it in again.
+// For the Administrator: a service Helena works with that is down, and a model login to sign
+// in again (the provider rejected it, or it ran out and nothing renews it). Both open the
+// health overview, which names the reason and, for a login, the command to copy. A renewal
+// that only fails for now is amber and stays in the System tile.
 function useSystemEntries({ owner }: { owner: boolean }): {
   entries: NeedsYouEntry[];
   isPending: boolean;
@@ -138,12 +139,12 @@ function useSystemEntries({ owner }: { owner: boolean }): {
       at: row.login.refreshedAt ?? '',
       onSelect: openSystemDetails,
       icon: KeyRound,
-      title: t(row.login.state === 'invalid' ? 'loginRejected' : 'loginExpired', {
+      title: t('relogin', {
         provider: KNOWN_PROVIDERS.has(row.login.provider)
           ? tp(`providers.${row.login.provider}` as 'providers.anthropic')
           : row.login.provider,
       }),
-      detail: t('loginHint'),
+      detail: t(row.login.state === 'invalid' ? 'rejected' : 'ranOut'),
     }));
   return { entries: [...services, ...logins], isPending: false };
 }

@@ -51,9 +51,9 @@
   },
   "problems": {
     "serviceDown": "{service} inacessível",
-    "loginRejected": "Login de {provider} recusado",
-    "loginExpired": "Login de {provider} expirou",
-    "loginHint": "Entre novamente pelo terminal do proprietário"
+    "relogin": "Entrar novamente em {provider}",
+    "rejected": "recusado pelo provedor",
+    "ranOut": "expirou, nada o renova"
   },
   "agents": {
     "empty": "Nenhum agente trabalhando agora.",
@@ -73,6 +73,13 @@
     "title": "Sistema",
     "ok": "Tudo funcionando",
     "problems": "{count, plural, one {# problema} other {# problemas}}",
-    "summary": "{services} serviços · {agents} agentes"
+    "counts": "{services} serviços · {agents} agentes",
+    "areas": {
+      "services": "Serviços",
+      "logins": "Logins",
+      "janitors": "Manutenção",
+      "agents": "Agentes",
+      "runs": "Execuções"
+    }
   }
 }

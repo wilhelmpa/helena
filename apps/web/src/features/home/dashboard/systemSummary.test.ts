@@ -120,6 +120,17 @@ describe('systemSummary', () => {
     );
   });
 
+  it('is amber, not red, for a login whose renewal fails for now', () => {
+    const health = healthy();
+    health.logins!.reports[0]!.logins[0]!.state = 'error';
+    const summary = systemSummary(health);
+    assert.equal(summary.status, 'waiting');
+    assert.deepEqual(
+      summary.problems.map((problem) => problem.key),
+      ['loginRenewing'],
+    );
+  });
+
   it('leaves failed runs to "Braucht dich" and resuming runs out', () => {
     const health = healthy();
     health.runs.failedLastDay = 3;

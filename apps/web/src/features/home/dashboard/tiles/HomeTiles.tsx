@@ -24,7 +24,7 @@ import { FigureTile } from '../DashboardParts';
 import { useAgentsNow } from '../sections/AgentsSection';
 import { useMyOpenTasks } from '../sections/TasksSection';
 import { openSystemDetails } from '../systemDetails';
-import { systemSummary } from '../systemSummary';
+import { systemSummary, type SystemProblem } from '../systemSummary';
 import { useHomeDashboardContext } from '../useHomeDashboard';
 import { useNeedsYou } from '../useNeedsYou';
 
@@ -165,12 +165,35 @@ export function LimitsTiles() {
   );
 }
 
-// "System": whether everything runs, in words, with the counts under it; opens the full
-// health overview. For the Administrator.
+// Where a problem of the system sits, for the System tile's sub-line.
+const PROBLEM_AREA: Record<
+  SystemProblem['key'],
+  'services' | 'logins' | 'janitors' | 'agents' | 'runs'
+> = {
+  serviceDown: 'services',
+  loginNeedsOwner: 'logins',
+  loginRenewing: 'logins',
+  loginsStale: 'logins',
+  janitorDown: 'janitors',
+  agentsDrift: 'agents',
+  modelsRefused: 'agents',
+  run: 'runs',
+};
+
+// "System": whether everything runs, in words; under it the counts when all is well, or
+// where the problems are. Opens the full health overview. For the Administrator.
 export function SystemTile() {
   const t = useTranslations('home.system');
   const health = useSystemHealthQuery(true);
   const summary = health.data ? systemSummary(health.data) : null;
+  const areas = summary
+    ? [...new Set(summary.problems.map((problem) => PROBLEM_AREA[problem.key]))]
+    : [];
+  const sub = !summary
+    ? ''
+    : areas.length > 0
+      ? areas.map((area) => t(`areas.${area}`)).join(' · ')
+      : t('counts', { services: summary.services.total, agents: summary.agents.total });
   return (
     <FigureTile
       onSelect={openSystemDetails}
@@ -190,14 +213,8 @@ export function SystemTile() {
             ? 'waiting'
             : 'default'
       }
-      sub={
-        summary
-          ? t('summary', {
-              services: `${summary.services.ok}/${summary.services.total}`,
-              agents: `${summary.agents.synced}/${summary.agents.total}`,
-            })
-          : ''
-      }
+      sub={sub}
+      title={sub}
     />
   );
 }

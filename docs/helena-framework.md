@@ -104,7 +104,7 @@ There is no event bus. Instead there are polling outboxes (`webhook_delivery`, `
 - **Project nav.** JSX.
 - **Administrator.** `GOD_SECTIONS` plus 12 static routes.
 - **Target.** A `UiSlot` registry with the slots `panel-tool`, `project-settings`, `agent-section`, `dashboard-widget`, `header-action`, `home-nav`, `admin-section`, `capture-action` and `workspace-layout`.
-- **Done:** panel tools, workspace layouts (hub/layout, `docs/helena-decisions/layout.md`). **Open:** the other slots, one at a time, each by the agent working on that screen.
+- **Done:** panel tools, workspace layouts (hub/layout, `docs/helena-decisions/layout.md`), dashboard widgets on Start with the "Braucht dich" sources (hub/dashboard, `docs/helena-decisions/dashboard.md`). **Open:** the other slots, one at a time, each by the agent working on that screen.
 
 ### Templates and packs
 
@@ -273,7 +273,7 @@ ctx.uiSlots.register({
 });
 ```
 
-The web app wires the panel (`extensions/panelTools.tsx`) and the layouts (`extensions/workspaceLayouts.ts`). The other slots are typed and served by `/plugins/ui-slots`. Each gets wired when its screen is next reworked (§8).
+The web app wires the panel (`extensions/panelTools.tsx`), the layouts (`extensions/workspaceLayouts.ts`) and Start's widgets (`extensions/dashboardWidgets.ts`, built-ins in `extensions/homeWidgets.tsx`; figure tiles and sections, `docs/helena-decisions/dashboard.md`). The other slots are typed and served by `/plugins/ui-slots`. Each gets wired when its screen is next reworked (§8).
 
 ### 3.7 Runtimes
 

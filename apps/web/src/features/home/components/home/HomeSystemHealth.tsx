@@ -16,7 +16,7 @@ import HomeServiceState from './HomeServiceState';
 import LimitsHealthLines from '@/features/provider-limits/components/LimitsHealthLines';
 import ModelAvailabilityHealthLines from '@/features/model-availability/components/ModelAvailabilityHealthLines';
 
-// The instance owner's view of the services around Helena — the Hermes runner, the
+// The instance owner's view of the services around Helena (Start → System, in a dialog) — the Hermes runner, the
 // Helena engine (workflows, agent teams, routines), the provisioning service and the
 // worker — the runs that wait, stall or overran, what the engine is doing, the model logins
 // agents share, and the janitor loops that clean up hung runs. A status report of 32px lines in the sidebar's
@@ -42,38 +42,40 @@ export default function HomeSystemHealth() {
   );
 
   return (
-    <section className="grid min-w-0 grid-cols-1 gap-x-6 gap-y-4 lg:grid-cols-2">
-      <div className="min-w-0">
-        <SectionLabel icon={<Activity />}>{t('title')}</SectionLabel>
-        <ul className="grid grid-cols-1 rounded-lg border bg-card p-1 sm:grid-cols-2">
-          {data.services.map((health) => (
-            <HomeServiceState key={health.service} health={health} />
-          ))}
-        </ul>
-        <HomeEngineState engine={data.engine} />
-        {problems.length > 0 && (
-          <ul className="mt-1 space-y-0.5 px-2 text-xs text-status-waiting">
-            {problems.map((problem) => (
-              <li key={problem}>{problem}</li>
+    <section className="@container grid min-w-0 grid-cols-1 gap-x-6 gap-y-4">
+      <div className="grid min-w-0 grid-cols-1 gap-x-6 gap-y-4 @2xl:grid-cols-2">
+        <div className="min-w-0">
+          <SectionLabel icon={<Activity />}>{t('title')}</SectionLabel>
+          <ul className="grid grid-cols-1 rounded-lg border bg-card p-1">
+            {data.services.map((health) => (
+              <HomeServiceState key={health.service} health={health} />
             ))}
           </ul>
-        )}
-        <LimitsHealthLines />
-        <ModelAvailabilityHealthLines models={data.models} />
-        <HomeLogins health={data.logins} />
-        {data.agents && (
-          <div className="mt-2">
-            <HomeAgentSync summary={data.agents} />
-          </div>
-        )}
-      </div>
-      <div className="min-w-0">
-        <SectionLabel icon={<Brush />}>{t('janitorsTitle')}</SectionLabel>
-        <ul className="grid grid-cols-1 rounded-lg border bg-card p-1">
-          {data.janitors.map((health) => (
-            <HomeJanitorState key={health.job} health={health} />
-          ))}
-        </ul>
+          <HomeEngineState engine={data.engine} />
+          {problems.length > 0 && (
+            <ul className="mt-1 space-y-0.5 px-2 text-xs text-status-waiting">
+              {problems.map((problem) => (
+                <li key={problem}>{problem}</li>
+              ))}
+            </ul>
+          )}
+          <LimitsHealthLines />
+          <ModelAvailabilityHealthLines models={data.models} />
+          <HomeLogins health={data.logins} />
+          {data.agents && (
+            <div className="mt-2">
+              <HomeAgentSync summary={data.agents} />
+            </div>
+          )}
+        </div>
+        <div className="min-w-0">
+          <SectionLabel icon={<Brush />}>{t('janitorsTitle')}</SectionLabel>
+          <ul className="grid grid-cols-1 rounded-lg border bg-card p-1">
+            {data.janitors.map((health) => (
+              <HomeJanitorState key={health.job} health={health} />
+            ))}
+          </ul>
+        </div>
       </div>
     </section>
   );

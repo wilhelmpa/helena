@@ -276,8 +276,10 @@ export {
 } from './usage-limits';
 export {
   normalizeRuntimeLoginReport,
+  runtimeLoginCondition,
   runtimeLoginNeedsOwner,
   type RuntimeLogin,
+  type RuntimeLoginCondition,
   type RuntimeLoginPollContext,
   type RuntimeLoginReport,
   type RuntimeLoginSource,

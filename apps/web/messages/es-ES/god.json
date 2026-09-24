@@ -391,18 +391,16 @@
     },
     "logins": {
       "title": "Inicios de sesión",
-      "summaryOk": "todos válidos",
+      "summaryOk": "todos activos",
       "summaryProblems": "{count, plural, one {# te necesita} other {# te necesitan}}",
       "state": {
-        "ok": "válido",
-        "okFor": "válido durante {time}",
-        "expiring": "se renovará pronto",
-        "expired": "caducado",
-        "error": "la renovación falla por ahora",
-        "invalid": "no válido",
+        "active": "activo · se renueva solo",
+        "valid": "válido, no se renueva",
+        "renewFailing": "La renovación falla por ahora · nuevo intento automático",
+        "relogin": "Volver a iniciar sesión",
         "unknown": "desconocido"
       },
-      "separate": "inicio de sesión propio, solo se muestra",
+      "separate": "inicio de sesión propio, se renueva solo",
       "codexCli": "CLI de Codex",
       "relogin": "Vuelve a iniciar sesión de {provider} en Hermes: ejecútalo en el terminal del propietario:",
       "stale": "El guardián de tokens no informa desde hace {time}; los inicios de sesión no se renuevan.",
@@ -410,7 +408,11 @@
       "copied": "Copiado",
       "sources": {
         "keeper": "Guardián de tokens"
-      }
+      },
+      "summaryRenewing": "{count, plural, one {# renovación falla} other {# renovaciones fallan}}",
+      "keeperSilent": "El guardián de tokens no responde",
+      "tokenUntil": "Token de acceso hasta {time}, se renueva antes",
+      "refreshedAt": "renovado por última vez {time}"
     }
   },
   "plugins": {

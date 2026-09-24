@@ -51,9 +51,9 @@
   },
   "problems": {
     "serviceDown": "{service} no responde",
-    "loginRejected": "Inicio de sesión de {provider} rechazado",
-    "loginExpired": "Inicio de sesión de {provider} caducado",
-    "loginHint": "Vuelve a iniciarla desde el terminal del propietario"
+    "relogin": "Volver a iniciar sesión en {provider}",
+    "rejected": "rechazado por el proveedor",
+    "ranOut": "caducado, nadie lo renueva"
   },
   "agents": {
     "empty": "Ahora no trabaja ningún agente.",
@@ -73,6 +73,13 @@
     "title": "Sistema",
     "ok": "Todo funciona",
     "problems": "{count, plural, one {# problema} other {# problemas}}",
-    "summary": "{services} servicios · {agents} agentes"
+    "counts": "{services} servicios · {agents} agentes",
+    "areas": {
+      "services": "Servicios",
+      "logins": "Inicios de sesión",
+      "janitors": "Mantenimiento",
+      "agents": "Agentes",
+      "runs": "Ejecuciones"
+    }
   }
 }

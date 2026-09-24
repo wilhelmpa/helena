@@ -51,9 +51,9 @@
   },
   "problems": {
     "serviceDown": "{service} nicht erreichbar",
-    "loginRejected": "Anmeldung {provider} abgelehnt",
-    "loginExpired": "Anmeldung {provider} abgelaufen",
-    "loginHint": "Im Owner-Terminal neu anmelden"
+    "relogin": "{provider} neu anmelden",
+    "rejected": "vom Anbieter abgelehnt",
+    "ranOut": "abgelaufen, wird nicht erneuert"
   },
   "agents": {
     "empty": "Gerade arbeitet kein Agent.",
@@ -73,6 +73,13 @@
     "title": "System",
     "ok": "Alles läuft",
     "problems": "{count, plural, one {# Problem} other {# Probleme}}",
-    "summary": "{services} Dienste · {agents} Agenten"
+    "counts": "{services} Dienste · {agents} Agenten",
+    "areas": {
+      "services": "Dienste",
+      "logins": "Anmeldungen",
+      "janitors": "Wartung",
+      "agents": "Agenten",
+      "runs": "Läufe"
+    }
   }
 }

@@ -51,9 +51,9 @@
   },
   "problems": {
     "serviceDown": "تعذّر الوصول إلى {service}",
-    "loginRejected": "رُفض تسجيل دخول {provider}",
-    "loginExpired": "انتهى تسجيل دخول {provider}",
-    "loginHint": "سجّل الدخول مجددًا من طرفية المالك"
+    "relogin": "سجّل الدخول مجددًا إلى {provider}",
+    "rejected": "رفضه المزوّد",
+    "ranOut": "انتهى ولا شيء يجدده"
   },
   "agents": {
     "empty": "لا يعمل أي وكيل الآن.",
@@ -73,6 +73,13 @@
     "title": "النظام",
     "ok": "كل شيء يعمل",
     "problems": "{count, plural, zero {لا مشكلات} one {مشكلة واحدة} two {مشكلتان} few {# مشكلات} many {# مشكلة} other {# مشكلة}}",
-    "summary": "الخدمات {services} · الوكلاء {agents}"
+    "counts": "الخدمات: {services} · الوكلاء: {agents}",
+    "areas": {
+      "services": "الخدمات",
+      "logins": "تسجيلات الدخول",
+      "janitors": "الصيانة",
+      "agents": "الوكلاء",
+      "runs": "عمليات التشغيل"
+    }
   }
 }

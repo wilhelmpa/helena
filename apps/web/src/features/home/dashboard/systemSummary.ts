@@ -12,6 +12,7 @@ export type SystemProblem =
   | { key: 'serviceDown'; tone: 'danger'; service: string }
   | { key: 'janitorDown'; tone: 'waiting'; job: string }
   | { key: 'loginNeedsOwner'; tone: 'danger'; provider: string }
+  | { key: 'loginRenewing'; tone: 'waiting'; provider: string }
   | { key: 'loginsStale'; tone: 'waiting'; since: string }
   | { key: 'agentsDrift'; tone: 'waiting'; count: number }
   | { key: 'modelsRefused'; tone: 'waiting'; count: number }
@@ -40,9 +41,12 @@ export function systemSummary(health: SystemHealth): SystemSummary {
     if (service.state === 'down')
       problems.push({ key: 'serviceDown', tone: 'danger', service: service.service });
   const rows = loginRows(health.logins);
-  for (const row of rows)
+  for (const row of rows) {
     if (row.needsOwner)
       problems.push({ key: 'loginNeedsOwner', tone: 'danger', provider: row.login.provider });
+    else if (!row.stale && row.condition === 'renewFailing')
+      problems.push({ key: 'loginRenewing', tone: 'waiting', provider: row.login.provider });
+  }
   const stale = staleSince(health.logins);
   if (stale) problems.push({ key: 'loginsStale', tone: 'waiting', since: stale });
   for (const janitor of health.janitors)

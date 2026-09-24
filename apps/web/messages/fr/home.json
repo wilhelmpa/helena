@@ -51,9 +51,9 @@
   },
   "problems": {
     "serviceDown": "{service} injoignable",
-    "loginRejected": "Connexion {provider} refusée",
-    "loginExpired": "Connexion {provider} expirée",
-    "loginHint": "Reconnectez-la depuis le terminal propriétaire"
+    "relogin": "Reconnecter {provider}",
+    "rejected": "refusée par le fournisseur",
+    "ranOut": "expirée, rien ne la renouvelle"
   },
   "agents": {
     "empty": "Aucun agent ne travaille en ce moment.",
@@ -73,6 +73,13 @@
     "title": "Système",
     "ok": "Tout fonctionne",
     "problems": "{count, plural, one {# problème} other {# problèmes}}",
-    "summary": "{services} services · {agents} agents"
+    "counts": "{services} services · {agents} agents",
+    "areas": {
+      "services": "Services",
+      "logins": "Connexions",
+      "janitors": "Maintenance",
+      "agents": "Agents",
+      "runs": "Exécutions"
+    }
   }
 }

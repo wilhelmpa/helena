@@ -391,18 +391,16 @@
     },
     "logins": {
       "title": "Logins",
-      "summaryOk": "all valid",
+      "summaryOk": "all active",
       "summaryProblems": "{count, plural, one {# needs you} other {# need you}}",
       "state": {
-        "ok": "valid",
-        "okFor": "valid for {time}",
-        "expiring": "renewed soon",
-        "expired": "expired",
-        "error": "renewal failing for now",
-        "invalid": "invalid",
+        "active": "active · renews itself",
+        "valid": "valid, not renewed",
+        "renewFailing": "Renewal failing for now · retried automatically",
+        "relogin": "Sign in again",
         "unknown": "unknown"
       },
-      "separate": "own login, only shown",
+      "separate": "its own login, renews itself",
       "codexCli": "Codex CLI",
       "relogin": "Sign {provider} in to Hermes again – run in the owner terminal:",
       "stale": "The token keeper has not reported for {time}; the logins are not being renewed.",
@@ -410,7 +408,11 @@
       "copied": "Copied",
       "sources": {
         "keeper": "Token keeper"
-      }
+      },
+      "summaryRenewing": "{count, plural, one {# renewal failing} other {# renewals failing}}",
+      "keeperSilent": "Token keeper is silent",
+      "tokenUntil": "Access token until {time}, renewed before then",
+      "refreshedAt": "last renewed {time}"
     }
   },
   "plugins": {

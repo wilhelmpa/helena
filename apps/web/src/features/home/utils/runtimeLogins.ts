@@ -1,53 +1,61 @@
+import { runtimeLoginCondition, type RuntimeLoginCondition } from '@helena/sdk/web';
 import type { Status } from '@/components/common/page/StatusBadge';
 import type { RuntimeLogin, RuntimeLoginsHealth } from '@/lib/api/endpoints/god';
 
-// How the health overview reads the model logins agents share (the token keeper's status):
-// one row per login, the ones the owner has to act on first, each in the app's one status
-// vocabulary (StatusBadge).
+// How the health overview and Start read the model logins agents share (the token keeper's
+// status): by what the owner has to do, not by the access token's countdown (owner,
+// 2026-09-24: the logins "sind so kurz gültig" — Claude's access token lasts 8 hours,
+// ChatGPT's about 10 days, and the keeper renews both before they run out). One row per
+// login, the ones the owner has to act on first, each in the app's one status vocabulary.
+//   active        green  "aktiv · erneuert sich automatisch"
+//   renewFailing  amber  "Erneuerung klappt gerade nicht · nächster Versuch automatisch"
+//   relogin       red    "Neu anmelden" with the owner's command (also in "Braucht dich")
+// A report the keeper stopped writing (stale) says so; its logins are shown without a state.
 
 export interface LoginRow {
   key: string;
   login: RuntimeLogin;
+  condition: RuntimeLoginCondition;
   // Its report is stale: the keeper stopped writing, so nothing renews it now.
   stale: boolean;
-  // Rejected, or renewed and not usable: the owner signs it in again (or looks at why).
+  // The owner signs it in again.
   needsOwner: boolean;
   status: Status;
 }
 
-export function loginNeedsOwner(login: Pick<RuntimeLogin, 'state' | 'managed'>): boolean {
-  if (login.state === 'invalid') return true;
-  return login.managed && (login.state === 'expired' || login.state === 'error');
-}
+const STATUS: Record<RuntimeLoginCondition, Status> = {
+  active: 'success',
+  valid: 'success',
+  renewFailing: 'waiting',
+  relogin: 'danger',
+  separate: 'idle',
+  unknown: 'idle',
+};
 
-export function loginStatus(
-  login: Pick<RuntimeLogin, 'state' | 'managed'>,
-  stale: boolean,
-): Status {
-  if (loginNeedsOwner(login)) return 'danger';
-  if (stale || login.state === 'unknown' || login.state === 'expired') return 'idle';
-  if (login.state === 'expiring' || login.state === 'error') return 'waiting';
-  return 'success';
+export function loginStatus(condition: RuntimeLoginCondition, stale: boolean): Status {
+  return stale ? 'idle' : STATUS[condition];
 }
 
 export function loginRows(health: RuntimeLoginsHealth | undefined): LoginRow[] {
   if (!health) return [];
   const rows = health.reports.flatMap((report) =>
     report.logins.map((login) => {
-      const needsOwner = !report.stale && loginNeedsOwner(login);
+      const condition = runtimeLoginCondition(login);
       return {
         key: `${report.source}:${report.reporter}:${login.store}:${login.provider}:${login.id}`,
         login,
+        condition,
         stale: report.stale,
-        needsOwner,
-        status: report.stale && !needsOwner ? 'idle' : loginStatus(login, report.stale),
+        needsOwner: !report.stale && condition === 'relogin',
+        status: loginStatus(condition, report.stale),
       } satisfies LoginRow;
     }),
   );
+  const rank = (row: LoginRow) =>
+    row.needsOwner ? 0 : row.status === 'waiting' ? 1 : row.login.managed ? 2 : 3;
   return rows.sort(
     (a, b) =>
-      Number(b.needsOwner) - Number(a.needsOwner) ||
-      Number(b.login.managed) - Number(a.login.managed) ||
+      rank(a) - rank(b) ||
       a.login.provider.localeCompare(b.login.provider) ||
       a.login.store.localeCompare(b.login.store),
   );

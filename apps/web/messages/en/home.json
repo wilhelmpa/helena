@@ -51,9 +51,9 @@
   },
   "problems": {
     "serviceDown": "{service} is not reachable",
-    "loginRejected": "{provider} login was rejected",
-    "loginExpired": "{provider} login ran out",
-    "loginHint": "Sign it in again from the owner terminal"
+    "relogin": "Sign in to {provider} again",
+    "rejected": "rejected by the provider",
+    "ranOut": "ran out, nothing renews it"
   },
   "agents": {
     "empty": "No agent is working right now.",
@@ -73,6 +73,13 @@
     "title": "System",
     "ok": "All running",
     "problems": "{count, plural, one {# problem} other {# problems}}",
-    "summary": "{services} services · {agents} agents"
+    "counts": "{services} services · {agents} agents",
+    "areas": {
+      "services": "Services",
+      "logins": "Logins",
+      "janitors": "Maintenance",
+      "agents": "Agents",
+      "runs": "Runs"
+    }
   }
 }

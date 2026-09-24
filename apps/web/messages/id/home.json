@@ -51,9 +51,9 @@
   },
   "problems": {
     "serviceDown": "{service} tidak dapat dijangkau",
-    "loginRejected": "Login {provider} ditolak",
-    "loginExpired": "Login {provider} kedaluwarsa",
-    "loginHint": "Masuk lagi dari terminal pemilik"
+    "relogin": "Masuk lagi ke {provider}",
+    "rejected": "ditolak penyedia",
+    "ranOut": "kedaluwarsa, tidak ada yang memperbarui"
   },
   "agents": {
     "empty": "Saat ini tidak ada agen yang bekerja.",
@@ -73,6 +73,13 @@
     "title": "Sistem",
     "ok": "Semua berjalan",
     "problems": "{count} masalah",
-    "summary": "{services} layanan · {agents} agen"
+    "counts": "{services} layanan · {agents} agen",
+    "areas": {
+      "services": "Layanan",
+      "logins": "Login",
+      "janitors": "Pemeliharaan",
+      "agents": "Agen",
+      "runs": "Proses"
+    }
   }
 }

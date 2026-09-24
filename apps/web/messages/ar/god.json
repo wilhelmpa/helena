@@ -391,18 +391,16 @@
     },
     "logins": {
       "title": "تسجيلات الدخول",
-      "summaryOk": "كلها صالحة",
+      "summaryOk": "الكل نشط",
       "summaryProblems": "{count, plural, zero {لا شيء يحتاجك} one {واحد يحتاجك} two {اثنان يحتاجانك} few {# تحتاجك} many {# تحتاجك} other {# تحتاجك}}",
       "state": {
-        "ok": "صالح",
-        "okFor": "صالح لمدة {time}",
-        "expiring": "سيُجدَّد قريبًا",
-        "expired": "منتهي الصلاحية",
-        "error": "التجديد يفشل حاليًا",
-        "invalid": "غير صالح",
+        "active": "نشط · يتجدد تلقائيًا",
+        "valid": "صالح، لا يتجدد",
+        "renewFailing": "التجديد يتعثر حاليًا · محاولة تلقائية تالية",
+        "relogin": "سجّل الدخول مجددًا",
         "unknown": "غير معروف"
       },
-      "separate": "تسجيل دخول مستقل، للعرض فقط",
+      "separate": "تسجيل دخول مستقل، يتجدد بنفسه",
       "codexCli": "Codex CLI",
       "relogin": "سجّل دخول {provider} في Hermes من جديد – نفّذ في طرفية المالك:",
       "stale": "لم يُبلغ حارس الرموز منذ {time}؛ لا تُجدَّد تسجيلات الدخول.",
@@ -410,7 +408,11 @@
       "copied": "تم النسخ",
       "sources": {
         "keeper": "حارس الرموز"
-      }
+      },
+      "summaryRenewing": "تجديدات متعثرة: {count}",
+      "keeperSilent": "حارس الرموز لا يستجيب",
+      "tokenUntil": "رمز الوصول حتى {time}، ويُجدَّد قبل ذلك",
+      "refreshedAt": "آخر تجديد {time}"
     }
   },
   "plugins": {
