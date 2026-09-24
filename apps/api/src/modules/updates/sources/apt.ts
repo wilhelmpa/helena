@@ -63,6 +63,7 @@ export const aptSource: UpdateSource = {
   kind: 'system',
   order: 30,
   hosts: [CHANGELOG_HOST],
+  backupFirst: true,
   async check(context) {
     const inventory = await hostInventory(context);
     // Without the helper nothing is known about the packages: the source fails and keeps

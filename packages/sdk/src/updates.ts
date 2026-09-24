@@ -118,6 +118,9 @@ export interface UpdateSource {
   order?: number;
   // The hosts `fetchText` may reach for this source, exact names (`registry.npmjs.org`).
   hosts?: string[];
+  // Helena takes a database dump before it applies an update of this source (the system's
+  // packages: an upgrade can reach the database server).
+  backupFirst?: boolean;
   check(context: UpdateCheckContext): Promise<UpdateCandidate[]>;
   // The notes between `installed` and `available`, as plain text or Markdown. Untrusted:
   // Helena passes them to the summary as data. Null when there are none to read.

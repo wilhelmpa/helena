@@ -478,7 +478,7 @@ export async function applyUpdate(
     .where(and(eq(helenaUpdateAction.source, row.source), eq(helenaUpdateAction.state, 'running')));
   if (running) throw new HttpError(409, 'An update of this source is already running');
   let backupPath: string | null = null;
-  if (source.id === 'apt') {
+  if (source.backupFirst) {
     // An upgrade of the database server or a library it uses must have a way back.
     try {
       backupPath = (await writeBackup([], { dir: backupDir(), label: 'pre-update' })).path;
@@ -557,7 +557,8 @@ async function finishAction(
     .update(helenaUpdateAction)
     .set({
       state: progress.state === 'done' ? 'done' : 'failed',
-      log: progress.log?.slice(-20_000) ?? null,
+      // A timeout names no log: the one the helper wrote so far stays.
+      ...(progress.log != null && { log: progress.log.slice(-20_000) }),
       error:
         progress.state === 'done' ? null : (progress.error ?? 'The update failed').slice(0, 500),
       result: progress.result ?? null,
