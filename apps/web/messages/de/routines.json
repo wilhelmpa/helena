@@ -28,7 +28,7 @@
   "presetEveryHour": "Stündlich",
   "presetEveryWeekdayAt9": "Montag bis Freitag um 9:00 Uhr",
   "presetEveryDayAt9": "Täglich um 9:00 Uhr",
-  "inputPlaceholder": "z. B. 0 9 * * 1-5",
+  "inputPlaceholder": "z. B. jeden Werktag um 9 Uhr oder 0 9 * * 1-5",
   "runs": "Ausführung: {description}",
   "cronLabel": "Cron:",
   "runsSuffix": "{description}",
