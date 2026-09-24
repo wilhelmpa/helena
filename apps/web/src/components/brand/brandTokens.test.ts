@@ -1,7 +1,8 @@
-import { describe, expect, test } from 'bun:test';
+import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { BANDS, TILE } from '@helena/brand';
+import { describe, it } from 'node:test';
+import { BANDS, TILE, type BandColor } from '@helena/brand';
 
 // globals.css repeats the brand's colours as CSS tokens (a stylesheet cannot import
 // them); this keeps the two in step.
@@ -13,16 +14,16 @@ const token = (body: string, name: string) =>
 describe('brand tokens in globals.css', () => {
   const light = block(/:root \{([\s\S]*?)\n\}/);
   const dark = block(/\.dark,\s*\.helena-on-ink \{([\s\S]*?)\}/);
+  const bands: BandColor[] = ['gold', 'amber', 'bronze'];
 
-  test.each(['gold', 'amber', 'bronze'] as const)(
-    '%s matches the palette in both themes',
-    (band) => {
-      expect(token(light, band)).toBe(BANDS.light[band].toLowerCase());
-      expect(token(dark, band)).toBe(BANDS.dark[band].toLowerCase());
-    },
-  );
+  for (const band of bands) {
+    it(`${band} matches the palette in both themes`, () => {
+      assert.equal(token(light, band), BANDS.light[band].toLowerCase());
+      assert.equal(token(dark, band), BANDS.dark[band].toLowerCase());
+    });
+  }
 
-  test('the ink is the tile colour', () => {
-    expect(token(light, 'ink')).toBe(TILE.toLowerCase());
+  it('the ink is the tile colour', () => {
+    assert.equal(token(light, 'ink'), TILE.toLowerCase());
   });
 });
