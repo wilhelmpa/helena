@@ -131,6 +131,7 @@ export function backup(over: Partial<BackupStatus> = {}): BackupStatus {
     },
     targets: [],
     paths: ['/etc'],
+    ownerHome: '/home/owner',
     history: [],
     restores: [],
     ...over,

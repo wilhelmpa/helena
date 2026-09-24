@@ -171,9 +171,11 @@ describe('Administrator → Server', () => {
       level: 3,
       actor: 'root@example.com',
     });
+    // A level outside 1–5 never reaches the helper.
     expect((await api.god.server.power.fans.put({ mode: 'fixed', level: 7 } as never)).status).toBe(
-      422,
+      400,
     );
+    expect(calls.filter((call) => call.method === 'SetFans')).toHaveLength(1);
   });
 
   it('restoring in place needs the path typed again', async () => {

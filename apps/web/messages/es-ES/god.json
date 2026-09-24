@@ -440,7 +440,8 @@
       "bundles": "Paquetes de plantillas",
       "limits": "Límites",
       "autopilot": "Autopilot",
-      "logins": "Inicios de sesión"
+      "logins": "Inicios de sesión",
+      "server": "Servidor"
     },
     "problems": {
       "external-off": "Se carga cuando se activen los plugins externos.",

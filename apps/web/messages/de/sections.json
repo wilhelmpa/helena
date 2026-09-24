@@ -27,6 +27,10 @@
       "label": "Allgemein",
       "description": "Standardwerte für neue Projekte."
     },
+    "server": {
+      "label": "Server",
+      "description": "Die Maschine, auf der Helena läuft: Platten und RAID, Backup, Leistung und Lüfter."
+    },
     "authentication": {
       "label": "Authentifizierung",
       "description": "Wer sich auf dieser Instanz registrieren darf, wie Konten bestätigt werden und mit welchen Anbietern man sich anmeldet."

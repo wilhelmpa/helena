@@ -290,6 +290,7 @@ export interface BackupStatus {
   };
   targets: BackupTarget[];
   paths: string[];
+  ownerHome: string | null;
   history: {
     kind: string;
     ok: boolean;

@@ -440,7 +440,8 @@
       "bundles": "Пакети шаблонів",
       "limits": "Ліміти",
       "autopilot": "Autopilot",
-      "logins": "Входи"
+      "logins": "Входи",
+      "server": "Сервер"
     },
     "problems": {
       "external-off": "Завантажиться, щойно зовнішні плагіни буде ввімкнено.",

@@ -1,0 +1,141 @@
+'use client';
+
+import Link from 'next/link';
+import { useQueryClient } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
+import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
+import { formatDuration } from '@/utils/dates';
+import { serverPath } from '@/utils/paths';
+import { serverKeys, useServerOverview, useServerSystem } from '../services/server.service';
+import { formatMemory, isServerTab, orderedHealth, type ServerTab } from '../utils/serverFormat';
+import { CardHeader, Fact, Facts, HealthLine, ServerSections } from './ServerParts';
+import ServerToolbar from './ServerToolbar';
+
+// Server → Übersicht: the machine at a glance, its memory (the GPU's share is the owner's
+// firmware choice for local models and is shown as it is, without judging it), and every
+// health line of every area, problems first.
+export default function OverviewTab({ tabs }: { tabs: ServerTab[] }) {
+  const t = useTranslations('server');
+  const qc = useQueryClient();
+  const overview = useServerOverview();
+  const system = useServerSystem();
+  const data = system.data;
+  const refreshing = overview.isFetching || system.isFetching;
+
+  const areas = (overview.data?.capabilities ?? [])
+    .filter((capability) => capability.available && capability.health.length > 0)
+    .map((capability) => ({ capability, items: orderedHealth(capability.health) }));
+
+  return (
+    <>
+      <ServerToolbar
+        tab="overview"
+        tabs={tabs}
+        refreshing={refreshing}
+        onRefresh={() => void qc.invalidateQueries({ queryKey: serverKeys.all })}
+      />
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <section className="space-y-3 rounded-lg border border-sidebar-border bg-card p-4">
+          <CardHeader title={t('overview.machine')} />
+          {data ? (
+            <Facts>
+              <Fact label={t('overview.board')}>
+                {[data.boardVendor, data.boardName, data.productName].filter(Boolean).join(' · ') ||
+                  '–'}
+              </Fact>
+              <Fact label={t('overview.cpu')}>
+                {data.cpuModel ?? '–'}
+                {data.cpuCount ? ` · ${t('overview.threads', { count: data.cpuCount })}` : ''}
+              </Fact>
+              <Fact label={t('overview.hostname')}>{data.hostname ?? '–'}</Fact>
+              <Fact label={t('overview.kernel')}>
+                <span dir="ltr">{data.kernel ?? '–'}</span>
+              </Fact>
+              <Fact label={t('overview.uptime')}>
+                {data.uptimeSeconds !== null ? formatDuration(data.uptimeSeconds * 1000) : '–'}
+              </Fact>
+              <Fact label={t('overview.load')}>
+                <span dir="ltr">
+                  {data.load.map((value) => value.toFixed(2)).join(' · ') || '–'}
+                </span>
+              </Fact>
+            </Facts>
+          ) : (
+            <ListSkeleton rows={2} />
+          )}
+        </section>
+
+        <section className="space-y-3 rounded-lg border border-sidebar-border bg-card p-4">
+          <CardHeader title={t('overview.memory')} />
+          {data ? (
+            <Facts>
+              <Fact label={t('overview.memorySystem')}>{formatMemory(data.memory.totalBytes)}</Fact>
+              <Fact label={t('overview.memoryAvailable')}>
+                {formatMemory(data.memory.availableBytes)}
+              </Fact>
+              {data.gpuMemory && (
+                <Fact label={t('overview.memoryGpu')}>
+                  {formatMemory(data.gpuMemory.vramTotalBytes)}
+                </Fact>
+              )}
+              {data.gpuMemory && (
+                <Fact label={t('overview.memoryGpuUsed')}>
+                  {formatMemory(data.gpuMemory.vramUsedBytes)}
+                </Fact>
+              )}
+              {!!data.memory.swapTotalBytes && (
+                <Fact label={t('overview.swap')}>
+                  {t('overview.swapUsed', {
+                    used: formatMemory(
+                      (data.memory.swapTotalBytes ?? 0) - (data.memory.swapFreeBytes ?? 0),
+                    ),
+                    total: formatMemory(data.memory.swapTotalBytes),
+                  })}
+                </Fact>
+              )}
+            </Facts>
+          ) : (
+            <ListSkeleton rows={2} />
+          )}
+        </section>
+
+        <section className="space-y-2 rounded-lg border border-sidebar-border bg-card p-4 xl:col-span-2">
+          <CardHeader title={t('overview.health')} />
+          {overview.data ? (
+            <div className="grid grid-cols-1 gap-x-6 gap-y-3 lg:grid-cols-2">
+              {areas.map(({ capability, items }) => (
+                <div key={capability.id} className="min-w-0">
+                  {isServerTab(capability.area) ? (
+                    <Link
+                      href={serverPath(capability.area)}
+                      className="flex h-8 items-center px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+                    >
+                      {t(`areas.${capability.area}`)}
+                    </Link>
+                  ) : (
+                    <div className="flex h-8 items-center px-2 text-xs font-medium text-muted-foreground">
+                      {capability.area}
+                    </div>
+                  )}
+                  <ul>
+                    {items.map((item) => (
+                      <HealthLine key={item.id} item={item} />
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <ListSkeleton rows={3} />
+          )}
+          {overview.data?.helper.version && (
+            <p className="px-2 pt-2 text-xs text-muted-foreground">
+              {t('overview.helper', { version: overview.data.helper.version })}
+            </p>
+          )}
+        </section>
+        <ServerSections area="overview" />
+      </div>
+    </>
+  );
+}

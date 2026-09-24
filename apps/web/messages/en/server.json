@@ -1,0 +1,426 @@
+{
+  "title": "Server",
+  "areas": {
+    "overview": "Overview",
+    "disks": "Disks & RAID",
+    "backup": "Backup",
+    "power": "Power & fans",
+    "updates": "Updates"
+  },
+  "capabilities": {
+    "system": "Machine",
+    "storage": "Disks & RAID",
+    "backup": "Backup",
+    "power": "Power & fans"
+  },
+  "refresh": "Read again",
+  "refreshing": "Reading …",
+  "readFailed": "The host helper did not answer. It may not be running right now.",
+  "unavailable": {
+    "title": "Nothing to manage here",
+    "noHelper": "Helena runs without the host helper (in a container, for example). Disks, backups and fans are then managed outside Helena.",
+    "failed": "The host helper did not answer."
+  },
+  "health": {
+    "raidRebuilding": "Mirror {name} is being rebuilt: {percent}, about {remaining} to go. Until then there is only one copy.",
+    "raidDegraded": "Mirror {name} is incomplete: {missing, plural, one {one disk is missing} other {# disks are missing}}.",
+    "raidChecking": "Mirror {name} is being checked: {percent}, about {remaining} to go.",
+    "raidResyncing": "Mirror {name} is resyncing: {percent}.",
+    "raidMismatches": "Mirror {name}: {count, plural, one {# mismatch} other {# mismatches}} in the last check.",
+    "raidOk": "Mirror {name}: {disks, plural, one {one disk} other {# disks}}, in sync.",
+    "diskUnknown": "Disk {disk}: health not readable.",
+    "diskFailing": "Disk {disk} reports a failure. Replace it.",
+    "diskSpareLow": "Disk {disk}: spare almost used up ({spare} %). Replace it.",
+    "diskErrors": "Disk {disk}: {count, plural, one {# read error} other {# read errors}} reported.",
+    "diskWorn": "Disk {disk} is {wear} % worn.",
+    "diskHot": "Disk {disk} is hot ({temperature}).",
+    "diskOk": "Disk {disk}: healthy, {temperature}, {wear} % worn.",
+    "espNotMounted": "EFI partition {mount} is not mounted.",
+    "espOutOfSync": "The two EFI partitions differ ({count, plural, one {# file} other {# files}}).",
+    "espInSync": "Both EFI partitions are equal.",
+    "eventsCritical": "{count, plural, one {One serious report} other {# serious reports}} from mdadm or smartd, not seen yet.",
+    "backupNotInitialized": "Backups are installed but not set up yet.",
+    "backupRunning": "The first backup is running.",
+    "backupNever": "There is no backup yet.",
+    "backupFailed": "The last backup failed ({at} ago).",
+    "backupLate": "The last backup was {at} ago, later than planned.",
+    "backupOk": "Last backup {at} ago.",
+    "backupPasswordPending": "The backup password has not been written down yet.",
+    "backupCheckFailed": "The backup check failed.",
+    "restoreTestFailed": "The restore test failed.",
+    "backupTargetFailed": "The copy to {target} failed.",
+    "fansRaised": "Fans raised to level 5: CPU at {temperature}.",
+    "cpuHot": "CPU is hot: {temperature}.",
+    "cpuTemperature": "CPU {temperature}.",
+    "fansFixed": "Fans at level {level}.",
+    "fansAuto": "Fans automatic.",
+    "memoryPressure": "Memory is tight: only {available} free.",
+    "memoryOk": "Memory: {available} free.",
+    "healthFailed": "The health could not be read."
+  },
+  "overview": {
+    "machine": "Machine",
+    "board": "Board",
+    "cpu": "Processor",
+    "threads": "{count} threads",
+    "hostname": "Name",
+    "kernel": "Kernel",
+    "uptime": "Up for",
+    "load": "Load (1 · 5 · 15 min)",
+    "memory": "Memory",
+    "memorySystem": "RAM for the system",
+    "memoryAvailable": "Of that free",
+    "memoryGpu": "Reserved for the GPU",
+    "memoryGpuUsed": "Used by the GPU",
+    "swap": "Swap",
+    "swapUsed": "{used} of {total}",
+    "health": "Health",
+    "helper": "Host helper {version}"
+  },
+  "disks": {
+    "arrays": "Mirrors",
+    "noArrays": "No RAID on this machine.",
+    "arrayTitle": "Mirror {name} ({level})",
+    "diskLetter": "Disk {letter}",
+    "serial": "Serial {serial}",
+    "checkStart": "Start check",
+    "checkStop": "Stop check",
+    "checkStarted": "The check is running.",
+    "checkStopped": "The check was stopped.",
+    "checkConfirmTitle": "Check the mirror?",
+    "checkConfirmBody": "Reads both disks completely and compares them (the same as the automatic monthly check). It takes a few hours and slows the disks down a little; Helena keeps running.",
+    "syncAction": {
+      "idle": "Idle",
+      "resync": "Resync",
+      "recover": "Rebuild",
+      "check": "Check",
+      "repair": "Repair",
+      "reshape": "Reshape",
+      "frozen": "Frozen"
+    },
+    "syncProgress": "{action}: {percent} · about {remaining} to go · {speed}/s",
+    "member": {
+      "inSync": "in sync",
+      "rebuilding": "rebuilding",
+      "faulty": "faulty",
+      "missing": "disk missing"
+    },
+    "mismatches": "{count, plural, =0 {No mismatches in the last check.} one {# mismatch in the last check.} other {# mismatches in the last check.}}",
+    "selfTest": "Self-test",
+    "selfTestRunning": "Self-test running",
+    "selfTestStarted": "The self-test is running (a few minutes).",
+    "memberOf": "Part of {arrays}",
+    "smart": {
+      "state": "SMART",
+      "passed": "OK",
+      "failing": "failing",
+      "unknown": "unknown",
+      "temperature": "Temperature",
+      "wear": "Wear",
+      "spare": "Spare",
+      "spareValue": "{spare} (threshold {threshold})",
+      "powerOn": "Power-on hours",
+      "hours": "{hours} h",
+      "written": "Written",
+      "mediaErrors": "Read errors",
+      "unsafeShutdowns": "Unsafe shutdowns",
+      "firmware": "Firmware",
+      "none": "This disk gives no SMART data."
+    },
+    "boot": {
+      "title": "Boot",
+      "espInSync": "EFI partitions equal: {mounts}",
+      "espDiffer": "The EFI partitions differ ({count, plural, one {# file} other {# files}}). They are made equal after every package update.",
+      "espMissing": "Not mounted: {mounts}",
+      "espUnknown": "The state of the EFI partitions is unknown.",
+      "current": "booted",
+      "next": "next boot",
+      "first": "first",
+      "none": "No EFI boot entries readable.",
+      "reserveOnce": "Boot the reserve once",
+      "cancel": "Cancel reserve boot",
+      "canceled": "The next boot uses the normal order again.",
+      "set": "The next restart boots the reserve disk.",
+      "pending": "The next restart boots once from the reserve disk; normal again after that.",
+      "confirmTitle": "Boot once from the reserve disk?",
+      "confirmBody": "At the next restart the machine boots once through the entry \"Debian (Reserve)\" from the second disk. This proves it also comes up without the first disk. You restart it yourself; afterwards the normal order applies again."
+    },
+    "replace": {
+      "open": "Replace a disk",
+      "title": "Replace a disk of the mirror",
+      "intro": "Step by step, with the commands for this machine. Helena does not run them: you type them into the owner terminal. The server keeps running on the other disk meanwhile.",
+      "which": "Which disk comes out?",
+      "disk": "Disk {letter}",
+      "noPlan": "There is no plan for this disk: it is not part of a mirror, or a healthy second disk is missing.",
+      "step": {
+        "remove": "Take it out of the mirror",
+        "removeBody": "Mark disk {disk} (partition {partition}) as failed and remove it. If it is already gone, skip this step.",
+        "swap": "Shut down and swap",
+        "swapBody": "Shut the machine down and swap the disk. The new one must be at least {size}. The machine boots from disk {other} (after about 20 seconds, because the mirror is incomplete).",
+        "find": "Find the new disk",
+        "newDevice": "Device of the new disk (the one without partitions)",
+        "newDeviceInvalid": "Give a whole device, for example /dev/nvme0n1.",
+        "partition": "Copy the partitions",
+        "esp": "Create the EFI partition",
+        "espBody": "Formats the EFI partition, enters it into /etc/fstab as {mount} and copies the contents of {other}.",
+        "add": "Add it to the mirror",
+        "addBody": "The mirror then rebuilds; the progress shows on this page (a few hours).",
+        "boot": "Renew the boot entry",
+        "bootBody": "Creates the firmware entry \"{label}\" for the new disk and removes the orphaned one. The new number is in the output.",
+        "test": "Check",
+        "testBody": "When the mirror shows \"in sync\": boot the reserve disk once from this page and restart."
+      }
+    }
+  },
+  "events": {
+    "title": "Reports",
+    "none": "No reports.",
+    "markSeen": "{count, plural, one {Mark as seen} other {Mark # as seen}}",
+    "source": {
+      "mdadm": "RAID",
+      "smartd": "SMART",
+      "guard": "Fan guard",
+      "backup": "Backup"
+    },
+    "codes": {
+      "Fail": "Disk failed",
+      "FailSpare": "Spare disk failed",
+      "DegradedArray": "Mirror incomplete",
+      "DeviceDisappeared": "Mirror disappeared",
+      "SparesMissing": "Spare disk missing",
+      "MoveSpare": "Spare disk moved",
+      "SpareActive": "Disk back in the mirror",
+      "NewArray": "New mirror",
+      "RebuildStarted": "Rebuild started",
+      "RebuildFinished": "Rebuild finished",
+      "TestMessage": "Test report",
+      "Health": "SMART reports a failure",
+      "FailedHealthCheck": "SMART check failed",
+      "Usage": "SMART value past its threshold",
+      "SelfTest": "Self-test failed",
+      "ErrorCount": "New errors in the log",
+      "CurrentPendingSector": "Unreadable sectors",
+      "OfflineUncorrectableSector": "Uncorrectable sectors",
+      "Temperature": "Disk too warm",
+      "FailedReadSmartData": "SMART data not readable",
+      "FailedOpenDevice": "Disk not reachable",
+      "EmailTest": "Test report",
+      "FansRaised": "Fans raised",
+      "FansRestored": "Fans back to the chosen level",
+      "BackupFailed": "Backup failed",
+      "CheckFailed": "Backup check failed",
+      "RestoreTestFailed": "Restore test failed"
+    }
+  },
+  "backup": {
+    "runNow": "Back up now",
+    "running": "Running …",
+    "runMaintenance": "Prune and check",
+    "runRestoreTest": "Test a restore",
+    "started": {
+      "backup": "The backup is running.",
+      "maintenance": "Pruning and the check are running.",
+      "restore-test": "The restore test is running."
+    },
+    "notSetUp": {
+      "title": "Backups are not set up yet",
+      "description": "Run this once on the server: it creates the password and the repository on the RAID and schedules the backups."
+    },
+    "status": "Status",
+    "runningNow": "A backup is running right now.",
+    "lastSnapshot": "Last snapshot",
+    "added": "Newly added",
+    "processed": "Backed up",
+    "filesAndSize": "{files} files, {size}",
+    "repositorySize": "Size of the backup",
+    "nextRun": "Next backup",
+    "noNextRun": "none scheduled",
+    "repository": "Repository",
+    "unreadable": "{count, plural, one {One file was not readable} other {# files were not readable}} and is missing from the last snapshot.",
+    "saved": "Saved.",
+    "checkWeekly": "Prune weekly and check a sample",
+    "restoreTestMonthly": "Test a restore every month",
+    "schedule": {
+      "title": "Schedule and retention",
+      "frequency": "How often",
+      "hourly": "Hourly",
+      "every6h": "Every 6 hours",
+      "daily": "Daily",
+      "off": "Off",
+      "time": "Time",
+      "minute": "Minute (time)",
+      "explain": {
+        "hourly": "Every hour at minute {minute}.",
+        "every6h": "Every six hours, starting {time}.",
+        "daily": "Every day at {time}.",
+        "off": "No scheduled backups; \"Back up now\" still works."
+      }
+    },
+    "retention": {
+      "hourly": "Hourly",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "keepSomething": "At least one snapshot has to be kept."
+    },
+    "never": "never",
+    "okAt": "OK, {time} ago",
+    "failedAt": "failed, {time} ago",
+    "checks": {
+      "title": "Checks",
+      "maintenance": "Prune and check",
+      "restoreTest": "Restore test",
+      "restoreTestDetail": "{files} sample files and the database {database} ({tables} tables) could be restored.",
+      "next": "Next: check {maintenance}, restore test {restoreTest}."
+    },
+    "snapshots": {
+      "title": "Snapshots",
+      "count": "{count, plural, one {# snapshot} other {# snapshots}}",
+      "none": "No snapshots yet.",
+      "added": "+{size}",
+      "browse": "Browse"
+    },
+    "restores": {
+      "title": "Restores",
+      "location": "Lies in",
+      "movedAside": "Previous version moved to"
+    },
+    "paths": {
+      "title": "What is backed up",
+      "explain": "Plus the databases (pg_dump) and the agents' SQLite files. Caches, node_modules and the agents' test environments are left out."
+    },
+    "password": {
+      "title": "Write down the backup password",
+      "explain": "Without this password the backup cannot be read, also not by Helena after a reinstall. Write it on paper or into your password manager. After you confirm, Helena never shows it again.",
+      "show": "Show password",
+      "written": "I have written the password down safely.",
+      "confirm": "Confirm",
+      "confirmed": "Confirmed. Helena no longer shows the password."
+    },
+    "targets": {
+      "title": "Offsite",
+      "explain": "Every backup is also copied into S3 storage (Backblaze B2, Hetzner, Cloudflare R2, for example). The key stays with the host helper.",
+      "repository": "S3 address",
+      "accessKeyId": "Access Key ID",
+      "secretAccessKey": "Secret Access Key",
+      "add": "Add target",
+      "saved": "The target is saved; the next backup is copied there.",
+      "enabled": "Active",
+      "remove": "Remove target",
+      "neverCopied": "not copied yet"
+    },
+    "browse": {
+      "title": "Snapshot {snapshot}",
+      "explain": "Open folders, then restore a file or a folder.",
+      "path": "Path",
+      "up": "One level up",
+      "empty": "This folder is empty.",
+      "notFound": "This folder is not in this snapshot.",
+      "truncated": "Only the first 2000 entries.",
+      "restore": "Restore",
+      "restoreWhat": "Restore:",
+      "mode": {
+        "copy": "As a copy",
+        "copyHome": "Into a new folder ~/Wiederhergestellt/…. Nothing is overwritten.",
+        "copyRoot": "Into a new folder under /var/backups/helena/restores (root only). Nothing is overwritten.",
+        "original": "In its original place",
+        "originalExplain": "What is there now is first moved to ….vor-wiederherstellung-…."
+      },
+      "confirmPath": "Type the path to confirm",
+      "startCopy": "Restore a copy",
+      "startOriginal": "Restore in place",
+      "back": "Back",
+      "job": {
+        "queued": "Waiting …",
+        "running": "Restoring …",
+        "done": "Done.",
+        "failed": "Failed.",
+        "location": "Lies in",
+        "movedAside": "Previous version moved to"
+      }
+    }
+  },
+  "power": {
+    "notInstalled": {
+      "title": "Fan and power control is not installed",
+      "description": "Board {board}. The control needs the EC driver, ryzen_smu, ryzenadj and power-profiles-daemon; the install script sets them up and puts the fans to level 5 first."
+    },
+    "profile": {
+      "title": "Profile",
+      "saver": "Power saver",
+      "balanced": "Balanced",
+      "performance": "Performance",
+      "mixed": "The layers disagree",
+      "set": "Profile \"{profile}\" is active.",
+      "partly": "Not every layer took the profile: {layers}.",
+      "explain": {
+        "saver": "BIOS quiet ({stapm} W sustained, {fast} W short), OS power saving.",
+        "balanced": "BIOS balanced ({stapm} W sustained, {fast} W short), OS balanced.",
+        "performance": "BIOS performance ({stapm} W sustained, {fast} W short), OS performance."
+      }
+    },
+    "layer": {
+      "ec": "BIOS (EC)",
+      "os": "Operating system",
+      "ryzenadj": "Power limits (ryzenadj)",
+      "unavailable": "not available",
+      "ecLimits": "{stapm} W sustained · {fast} W short · {slow} W average",
+      "epp": "EPP {epp} · {driver}",
+      "limits": "{stapm} · {fast} · {slow}",
+      "now": "now {power} · CPU {tctl} (limit {limit})",
+      "noSmu": "ryzen_smu not loaded",
+      "notInstalled": "not installed"
+    },
+    "ecMode": {
+      "quiet": "Quiet",
+      "balanced": "Balanced",
+      "performance": "Performance"
+    },
+    "osProfile": {
+      "power-saver": "Power saver",
+      "balanced": "Balanced",
+      "performance": "Performance"
+    },
+    "fans": {
+      "title": "Fans",
+      "auto": "Automatic",
+      "level": "Level {level}",
+      "autoExplain": "The EC runs the fans on its own curve.",
+      "fixedExplain": "All three fans fixed at {percent} %.",
+      "unknown": "No choice made yet.",
+      "heldByGuard": "Saved. The fans stay at level 5 until the CPU has cooled down.",
+      "guardActive": "The fan guard holds the fans at level 5 (CPU at {temperature}, for {since}).",
+      "rpm": "{rpm} rpm",
+      "name": {
+        "fan1": "CPU fan 1",
+        "fan2": "CPU fan 2",
+        "fan3": "Case fan"
+      }
+    },
+    "temperatures": {
+      "title": "Temperatures",
+      "max": "at most {max}"
+    },
+    "sensor": {
+      "ec": "CPU (EC)",
+      "cpu": "CPU (Tctl)",
+      "gpu": "GPU",
+      "gpuPower": "APU power",
+      "nvme": "SSD {id}",
+      "board": "Mainboard"
+    },
+    "guard": {
+      "title": "Fan guard",
+      "explain": "When the fans are fixed below level 5 and the CPU stays at {limit} or more for a few seconds, Helena puts them to level 5. Below {release} for two minutes, your level comes back.",
+      "limit": "Limit",
+      "saved": "Saved.",
+      "active": "Holding the fans at level 5 right now.",
+      "watching": "Watching.",
+      "waitingForDriver": "Waiting for the EC driver."
+    }
+  },
+  "home": {
+    "title": "Server",
+    "allGood": "All good."
+  }
+}

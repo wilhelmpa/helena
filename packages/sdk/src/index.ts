@@ -207,6 +207,7 @@ export {
   uiSlotDescriptor,
   uiSlotKey,
   type AdminSectionSlot,
+  type ServerSectionSlot,
   type AgentSectionProps,
   type AgentSectionSlot,
   type CaptureActionSlot,

@@ -27,6 +27,10 @@
       "label": "Geral",
       "description": "Padrões para novos projetos."
     },
+    "server": {
+      "label": "Servidor",
+      "description": "A máquina em que a Helena roda: discos e RAID, backups, energia e ventoinhas."
+    },
     "authentication": {
       "label": "Autenticação",
       "description": "Quem pode se registrar nesta instância, como contas são confirmadas e os provedores com que as pessoas entram."

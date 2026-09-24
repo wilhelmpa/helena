@@ -1,0 +1,426 @@
+{
+  "title": "Serveur",
+  "areas": {
+    "overview": "Vue d’ensemble",
+    "disks": "Disques et RAID",
+    "backup": "Sauvegarde",
+    "power": "Puissance et ventilateurs",
+    "updates": "Mises à jour"
+  },
+  "capabilities": {
+    "system": "Machine",
+    "storage": "Disques et RAID",
+    "backup": "Sauvegarde",
+    "power": "Puissance et ventilateurs"
+  },
+  "refresh": "Relire",
+  "refreshing": "Lecture…",
+  "readFailed": "L’assistant hôte n’a pas répondu. Il n’est peut-être pas en cours d’exécution.",
+  "unavailable": {
+    "title": "Rien à gérer ici",
+    "noHelper": "Helena tourne sans l’assistant hôte (dans un conteneur, par exemple). Les disques, les sauvegardes et les ventilateurs se gèrent alors en dehors de Helena.",
+    "failed": "L’assistant hôte n’a pas répondu."
+  },
+  "health": {
+    "raidRebuilding": "Le miroir {name} est en reconstruction : {percent}, encore environ {remaining}. D’ici là, il n’existe qu’une seule copie.",
+    "raidDegraded": "Le miroir {name} est incomplet : {missing, plural, one {un disque manque} other {# disques manquent}}.",
+    "raidChecking": "Le miroir {name} est en cours de vérification : {percent}, encore environ {remaining}.",
+    "raidResyncing": "Le miroir {name} se resynchronise : {percent}.",
+    "raidMismatches": "Miroir {name} : {count, plural, one {# écart} other {# écarts}} lors de la dernière vérification.",
+    "raidOk": "Miroir {name} : {disks, plural, one {un disque} other {# disques}}, synchronisé.",
+    "diskUnknown": "Disque {disk} : état illisible.",
+    "diskFailing": "Le disque {disk} signale une panne. Remplacez-le.",
+    "diskSpareLow": "Disque {disk} : réserve presque épuisée ({spare} %). Remplacez-le.",
+    "diskErrors": "Disque {disk} : {count, plural, one {# erreur de lecture signalée} other {# erreurs de lecture signalées}}.",
+    "diskWorn": "Le disque {disk} est usé à {wear} %.",
+    "diskHot": "Le disque {disk} est chaud ({temperature}).",
+    "diskOk": "Disque {disk} : sain, {temperature}, usé à {wear} %.",
+    "espNotMounted": "La partition EFI {mount} n’est pas montée.",
+    "espOutOfSync": "Les deux partitions EFI diffèrent ({count, plural, one {# fichier} other {# fichiers}}).",
+    "espInSync": "Les deux partitions EFI sont identiques.",
+    "eventsCritical": "{count, plural, one {Un signalement grave de mdadm ou smartd, pas encore consulté} other {# signalements graves de mdadm ou smartd, pas encore consultés}}.",
+    "backupNotInitialized": "La sauvegarde est installée, mais pas encore configurée.",
+    "backupRunning": "La première sauvegarde est en cours.",
+    "backupNever": "Il n’y a pas encore de sauvegarde.",
+    "backupFailed": "La dernière sauvegarde a échoué (il y a {at}).",
+    "backupLate": "Dernière sauvegarde il y a {at}, plus tard que prévu.",
+    "backupOk": "Dernière sauvegarde il y a {at}.",
+    "backupPasswordPending": "Le mot de passe de sauvegarde n’a pas encore été noté.",
+    "backupCheckFailed": "La vérification de la sauvegarde a échoué.",
+    "restoreTestFailed": "Le test de restauration a échoué.",
+    "backupTargetFailed": "La copie vers {target} a échoué.",
+    "fansRaised": "Ventilateurs montés au niveau 5 : CPU à {temperature}.",
+    "cpuHot": "Le CPU est chaud : {temperature}.",
+    "cpuTemperature": "CPU {temperature}.",
+    "fansFixed": "Ventilateurs au niveau {level}.",
+    "fansAuto": "Ventilateurs en automatique.",
+    "memoryPressure": "Mémoire juste : plus que {available} de libre.",
+    "memoryOk": "Mémoire : {available} de libre.",
+    "healthFailed": "L’état n’a pas pu être lu."
+  },
+  "overview": {
+    "machine": "Machine",
+    "board": "Carte mère",
+    "cpu": "Processeur",
+    "threads": "{count} threads",
+    "hostname": "Nom",
+    "kernel": "Noyau",
+    "uptime": "En marche depuis",
+    "load": "Charge (1 · 5 · 15 min)",
+    "memory": "Mémoire",
+    "memorySystem": "RAM pour le système",
+    "memoryAvailable": "Dont libre",
+    "memoryGpu": "Réservée au GPU",
+    "memoryGpuUsed": "Utilisée par le GPU",
+    "swap": "Swap",
+    "swapUsed": "{used} sur {total}",
+    "health": "État",
+    "helper": "Assistant hôte {version}"
+  },
+  "disks": {
+    "arrays": "Miroirs",
+    "noArrays": "Pas de RAID sur cette machine.",
+    "arrayTitle": "Miroir {name} ({level})",
+    "diskLetter": "Disque {letter}",
+    "serial": "N° de série {serial}",
+    "checkStart": "Lancer la vérification",
+    "checkStop": "Arrêter la vérification",
+    "checkStarted": "La vérification est en cours.",
+    "checkStopped": "La vérification a été arrêtée.",
+    "checkConfirmTitle": "Vérifier le miroir ?",
+    "checkConfirmBody": "Lit entièrement les deux disques et les compare (comme la vérification mensuelle automatique). Cela prend quelques heures et ralentit un peu les disques ; Helena continue de tourner.",
+    "syncAction": {
+      "idle": "Au repos",
+      "resync": "Resynchronisation",
+      "recover": "Reconstruction",
+      "check": "Vérification",
+      "repair": "Réparation",
+      "reshape": "Restructuration",
+      "frozen": "Figé"
+    },
+    "syncProgress": "{action} : {percent} · encore environ {remaining} · {speed}/s",
+    "member": {
+      "inSync": "synchronisé",
+      "rebuilding": "en reconstruction",
+      "faulty": "défectueux",
+      "missing": "disque manquant"
+    },
+    "mismatches": "{count, plural, =0 {Aucun écart lors de la dernière vérification.} one {# écart lors de la dernière vérification.} other {# écarts lors de la dernière vérification.}}",
+    "selfTest": "Autotest",
+    "selfTestRunning": "Autotest en cours",
+    "selfTestStarted": "L’autotest est en cours (quelques minutes).",
+    "memberOf": "Fait partie de {arrays}",
+    "smart": {
+      "state": "SMART",
+      "passed": "OK",
+      "failing": "défaillant",
+      "unknown": "inconnu",
+      "temperature": "Température",
+      "wear": "Usure",
+      "spare": "Réserve",
+      "spareValue": "{spare} (seuil {threshold})",
+      "powerOn": "Heures de fonctionnement",
+      "hours": "{hours} h",
+      "written": "Écrit",
+      "mediaErrors": "Erreurs de lecture",
+      "unsafeShutdowns": "Arrêts brutaux",
+      "firmware": "Firmware",
+      "none": "Ce disque ne fournit pas de données SMART."
+    },
+    "boot": {
+      "title": "Démarrage",
+      "espInSync": "Partitions EFI identiques : {mounts}",
+      "espDiffer": "Les partitions EFI diffèrent ({count, plural, one {# fichier} other {# fichiers}}). Elles sont réalignées après chaque mise à jour de paquets.",
+      "espMissing": "Non montées : {mounts}",
+      "espUnknown": "L’état des partitions EFI est inconnu.",
+      "current": "démarrage actuel",
+      "next": "prochain démarrage",
+      "first": "en premier",
+      "none": "Aucune entrée de démarrage EFI lisible.",
+      "reserveOnce": "Démarrer une fois sur la réserve",
+      "cancel": "Annuler le démarrage sur la réserve",
+      "canceled": "Le prochain démarrage reprend l’ordre normal.",
+      "set": "Au prochain redémarrage, la machine démarre sur le disque de réserve.",
+      "pending": "Le prochain redémarrage se fait une fois sur le disque de réserve ; ensuite, retour à la normale.",
+      "confirmTitle": "Démarrer une fois sur le disque de réserve ?",
+      "confirmBody": "Au prochain redémarrage, la machine démarre une fois via l’entrée « Debian (Reserve) » depuis le second disque. Cela prouve qu’elle démarre aussi sans le premier disque. Vous la redémarrez vous-même ; ensuite, l’ordre normal s’applique à nouveau."
+    },
+    "replace": {
+      "open": "Remplacer un disque",
+      "title": "Remplacer un disque du miroir",
+      "intro": "Étape par étape, avec les commandes pour cette machine. Helena ne les exécute pas : vous les saisissez dans le terminal du propriétaire. Pendant ce temps, le serveur continue de tourner sur l’autre disque.",
+      "which": "Quel disque retirer ?",
+      "disk": "Disque {letter}",
+      "noPlan": "Il n’y a pas de plan pour ce disque : il ne fait pas partie d’un miroir, ou il manque un second disque sain.",
+      "step": {
+        "remove": "Le retirer du miroir",
+        "removeBody": "Marquez le disque {disk} (partition {partition}) comme défaillant et retirez-le. S’il a déjà disparu, sautez cette étape.",
+        "swap": "Éteindre et remplacer",
+        "swapBody": "Éteignez la machine et remplacez le disque. Le nouveau doit faire au moins {size}. La machine démarre sur le disque {other} (après environ 20 secondes, car le miroir est incomplet).",
+        "find": "Trouver le nouveau disque",
+        "newDevice": "Périphérique du nouveau disque (celui sans partitions)",
+        "newDeviceInvalid": "Indiquez un périphérique entier, par exemple /dev/nvme0n1.",
+        "partition": "Copier les partitions",
+        "esp": "Créer la partition EFI",
+        "espBody": "Formate la partition EFI, l’inscrit dans /etc/fstab comme {mount} et copie le contenu de {other}.",
+        "add": "L’ajouter au miroir",
+        "addBody": "Le miroir se reconstruit ensuite ; la progression s’affiche sur cette page (quelques heures).",
+        "boot": "Renouveler l’entrée de démarrage",
+        "bootBody": "Crée l’entrée de firmware « {label} » pour le nouveau disque et supprime l’entrée orpheline. Le nouveau numéro figure dans la sortie.",
+        "test": "Vérifier",
+        "testBody": "Quand le miroir affiche « synchronisé » : démarrez une fois sur le disque de réserve depuis cette page, puis redémarrez."
+      }
+    }
+  },
+  "events": {
+    "title": "Signalements",
+    "none": "Aucun signalement.",
+    "markSeen": "{count, plural, one {Marquer comme vu} other {Marquer # comme vus}}",
+    "source": {
+      "mdadm": "RAID",
+      "smartd": "SMART",
+      "guard": "Protection des ventilateurs",
+      "backup": "Sauvegarde"
+    },
+    "codes": {
+      "Fail": "Disque en panne",
+      "FailSpare": "Disque de secours en panne",
+      "DegradedArray": "Miroir incomplet",
+      "DeviceDisappeared": "Miroir disparu",
+      "SparesMissing": "Disque de secours manquant",
+      "MoveSpare": "Disque de secours déplacé",
+      "SpareActive": "Disque de retour dans le miroir",
+      "NewArray": "Nouveau miroir",
+      "RebuildStarted": "Reconstruction lancée",
+      "RebuildFinished": "Reconstruction terminée",
+      "TestMessage": "Signalement de test",
+      "Health": "SMART signale une panne",
+      "FailedHealthCheck": "Échec de la vérification SMART",
+      "Usage": "Valeur SMART au-delà de son seuil",
+      "SelfTest": "Échec de l’autotest",
+      "ErrorCount": "Nouvelles erreurs dans le journal",
+      "CurrentPendingSector": "Secteurs illisibles",
+      "OfflineUncorrectableSector": "Secteurs non corrigibles",
+      "Temperature": "Disque trop chaud",
+      "FailedReadSmartData": "Données SMART illisibles",
+      "FailedOpenDevice": "Disque inaccessible",
+      "EmailTest": "Signalement de test",
+      "FansRaised": "Ventilateurs montés",
+      "FansRestored": "Ventilateurs revenus au niveau choisi",
+      "BackupFailed": "Échec de la sauvegarde",
+      "CheckFailed": "Échec de la vérification de la sauvegarde",
+      "RestoreTestFailed": "Échec du test de restauration"
+    }
+  },
+  "backup": {
+    "runNow": "Sauvegarder maintenant",
+    "running": "En cours…",
+    "runMaintenance": "Nettoyer et vérifier",
+    "runRestoreTest": "Tester une restauration",
+    "started": {
+      "backup": "La sauvegarde est en cours.",
+      "maintenance": "Le nettoyage et la vérification sont en cours.",
+      "restore-test": "Le test de restauration est en cours."
+    },
+    "notSetUp": {
+      "title": "La sauvegarde n’est pas encore configurée",
+      "description": "À exécuter une fois sur le serveur : cela crée le mot de passe et le dépôt sur le RAID, et planifie les sauvegardes."
+    },
+    "status": "État",
+    "runningNow": "Une sauvegarde est en cours.",
+    "lastSnapshot": "Dernier instantané",
+    "added": "Nouvellement ajouté",
+    "processed": "Sauvegardé",
+    "filesAndSize": "{files} fichiers, {size}",
+    "repositorySize": "Taille de la sauvegarde",
+    "nextRun": "Prochaine sauvegarde",
+    "noNextRun": "aucune planifiée",
+    "repository": "Dépôt",
+    "unreadable": "{count, plural, one {Un fichier n’était pas lisible et manque} other {# fichiers n’étaient pas lisibles et manquent}} dans le dernier instantané.",
+    "saved": "Enregistré.",
+    "checkWeekly": "Nettoyer chaque semaine et vérifier un échantillon",
+    "restoreTestMonthly": "Tester une restauration chaque mois",
+    "schedule": {
+      "title": "Planification et conservation",
+      "frequency": "Fréquence",
+      "hourly": "Toutes les heures",
+      "every6h": "Toutes les 6 heures",
+      "daily": "Tous les jours",
+      "off": "Désactivée",
+      "time": "Heure",
+      "minute": "Minute (dans l’heure)",
+      "explain": {
+        "hourly": "Toutes les heures à la minute {minute}.",
+        "every6h": "Toutes les six heures, à partir de {time}.",
+        "daily": "Tous les jours à {time}.",
+        "off": "Aucune sauvegarde planifiée ; « Sauvegarder maintenant » fonctionne toujours."
+      }
+    },
+    "retention": {
+      "hourly": "Horaires",
+      "daily": "Quotidiens",
+      "weekly": "Hebdomadaires",
+      "monthly": "Mensuels",
+      "keepSomething": "Au moins un instantané doit être conservé."
+    },
+    "never": "jamais",
+    "okAt": "OK, il y a {time}",
+    "failedAt": "échec, il y a {time}",
+    "checks": {
+      "title": "Vérifications",
+      "maintenance": "Nettoyage et vérification",
+      "restoreTest": "Test de restauration",
+      "restoreTestDetail": "{files} fichiers d’échantillon et la base de données {database} ({tables} tables) ont pu être restaurés.",
+      "next": "À venir : vérification {maintenance}, test de restauration {restoreTest}."
+    },
+    "snapshots": {
+      "title": "Instantanés",
+      "count": "{count, plural, one {# instantané} other {# instantanés}}",
+      "none": "Pas encore d’instantané.",
+      "added": "+{size}",
+      "browse": "Parcourir"
+    },
+    "restores": {
+      "title": "Restaurations",
+      "location": "Se trouve dans",
+      "movedAside": "Version précédente déplacée vers"
+    },
+    "paths": {
+      "title": "Ce qui est sauvegardé",
+      "explain": "S’y ajoutent les bases de données (pg_dump) et les fichiers SQLite des agents. Les caches, node_modules et les environnements de test des agents sont exclus."
+    },
+    "password": {
+      "title": "Noter le mot de passe de sauvegarde",
+      "explain": "Sans ce mot de passe, la sauvegarde est illisible, y compris pour Helena après une réinstallation. Notez-le sur papier ou dans votre gestionnaire de mots de passe. Une fois la confirmation faite, Helena ne l’affiche plus jamais.",
+      "show": "Afficher le mot de passe",
+      "written": "J’ai noté le mot de passe en lieu sûr.",
+      "confirm": "Confirmer",
+      "confirmed": "Confirmé. Helena n’affiche plus le mot de passe."
+    },
+    "targets": {
+      "title": "Hors site",
+      "explain": "Chaque sauvegarde est aussi copiée vers un stockage S3 (Backblaze B2, Hetzner, Cloudflare R2, par exemple). La clé reste chez l’assistant hôte.",
+      "repository": "Adresse S3",
+      "accessKeyId": "Access Key ID",
+      "secretAccessKey": "Secret Access Key",
+      "add": "Ajouter une cible",
+      "saved": "La cible est enregistrée ; la prochaine sauvegarde y sera copiée.",
+      "enabled": "Active",
+      "remove": "Supprimer la cible",
+      "neverCopied": "pas encore copiée"
+    },
+    "browse": {
+      "title": "Instantané {snapshot}",
+      "explain": "Ouvrez des dossiers, puis restaurez un fichier ou un dossier.",
+      "path": "Chemin",
+      "up": "Remonter d’un niveau",
+      "empty": "Ce dossier est vide.",
+      "notFound": "Ce dossier n’existe pas dans cet instantané.",
+      "truncated": "Uniquement les 2000 premières entrées.",
+      "restore": "Restaurer",
+      "restoreWhat": "Restaurer :",
+      "mode": {
+        "copy": "En copie",
+        "copyHome": "Dans un nouveau dossier ~/Wiederhergestellt/…. Rien n’est écrasé.",
+        "copyRoot": "Dans un nouveau dossier sous /var/backups/helena/restores (root uniquement). Rien n’est écrasé.",
+        "original": "À son emplacement d’origine",
+        "originalExplain": "Ce qui s’y trouve actuellement est d’abord déplacé vers ….vor-wiederherstellung-…."
+      },
+      "confirmPath": "Saisissez le chemin pour confirmer",
+      "startCopy": "Restaurer une copie",
+      "startOriginal": "Restaurer sur place",
+      "back": "Retour",
+      "job": {
+        "queued": "En attente…",
+        "running": "Restauration…",
+        "done": "Terminé.",
+        "failed": "Échec.",
+        "location": "Se trouve dans",
+        "movedAside": "Version précédente déplacée vers"
+      }
+    }
+  },
+  "power": {
+    "notInstalled": {
+      "title": "Le contrôle des ventilateurs et de la puissance n’est pas installé",
+      "description": "Carte mère {board}. Le contrôle nécessite le pilote EC, ryzen_smu, ryzenadj et power-profiles-daemon ; le script d’installation les met en place et règle d’abord les ventilateurs au niveau 5."
+    },
+    "profile": {
+      "title": "Profil",
+      "saver": "Économie d’énergie",
+      "balanced": "Équilibré",
+      "performance": "Performance",
+      "mixed": "Les couches ne concordent pas",
+      "set": "Le profil « {profile} » est actif.",
+      "partly": "Certaines couches n’ont pas pris le profil : {layers}.",
+      "explain": {
+        "saver": "BIOS silencieux ({stapm} W en continu, {fast} W en pointe), système en économie d’énergie.",
+        "balanced": "BIOS équilibré ({stapm} W en continu, {fast} W en pointe), système équilibré.",
+        "performance": "BIOS performance ({stapm} W en continu, {fast} W en pointe), système en performance."
+      }
+    },
+    "layer": {
+      "ec": "BIOS (EC)",
+      "os": "Système d’exploitation",
+      "ryzenadj": "Limites de puissance (ryzenadj)",
+      "unavailable": "non disponible",
+      "ecLimits": "{stapm} W en continu · {fast} W en pointe · {slow} W en moyenne",
+      "epp": "EPP {epp} · {driver}",
+      "limits": "{stapm} · {fast} · {slow}",
+      "now": "actuellement {power} · CPU {tctl} (limite {limit})",
+      "noSmu": "ryzen_smu non chargé",
+      "notInstalled": "non installé"
+    },
+    "ecMode": {
+      "quiet": "Silencieux",
+      "balanced": "Équilibré",
+      "performance": "Performance"
+    },
+    "osProfile": {
+      "power-saver": "Économie d’énergie",
+      "balanced": "Équilibré",
+      "performance": "Performance"
+    },
+    "fans": {
+      "title": "Ventilateurs",
+      "auto": "Automatique",
+      "level": "Niveau {level}",
+      "autoExplain": "L’EC pilote les ventilateurs selon sa propre courbe.",
+      "fixedExplain": "Les trois ventilateurs sont fixés à {percent} %.",
+      "unknown": "Aucun choix fait pour l’instant.",
+      "heldByGuard": "Enregistré. Les ventilateurs restent au niveau 5 jusqu’à ce que le CPU ait refroidi.",
+      "guardActive": "La protection des ventilateurs les maintient au niveau 5 (CPU à {temperature}, depuis {since}).",
+      "rpm": "{rpm} tr/min",
+      "name": {
+        "fan1": "Ventilateur CPU 1",
+        "fan2": "Ventilateur CPU 2",
+        "fan3": "Ventilateur du boîtier"
+      }
+    },
+    "temperatures": {
+      "title": "Températures",
+      "max": "au plus {max}"
+    },
+    "sensor": {
+      "ec": "CPU (EC)",
+      "cpu": "CPU (Tctl)",
+      "gpu": "GPU",
+      "gpuPower": "Puissance de l’APU",
+      "nvme": "SSD {id}",
+      "board": "Carte mère"
+    },
+    "guard": {
+      "title": "Protection des ventilateurs",
+      "explain": "Lorsque les ventilateurs sont fixés sous le niveau 5 et que le CPU reste à {limit} ou plus pendant quelques secondes, Helena les passe au niveau 5. Après deux minutes sous {release}, votre niveau revient.",
+      "limit": "Limite",
+      "saved": "Enregistré.",
+      "active": "Maintient actuellement les ventilateurs au niveau 5.",
+      "watching": "Sous surveillance.",
+      "waitingForDriver": "En attente du pilote EC."
+    }
+  },
+  "home": {
+    "title": "Serveur",
+    "allGood": "Tout va bien."
+  }
+}

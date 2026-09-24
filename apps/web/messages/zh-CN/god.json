@@ -440,7 +440,8 @@
       "bundles": "模板包",
       "limits": "限额",
       "autopilot": "Autopilot",
-      "logins": "登录"
+      "logins": "登录",
+      "server": "服务器"
     },
     "problems": {
       "external-off": "开启外部插件后加载。",

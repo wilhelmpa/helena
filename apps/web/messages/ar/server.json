@@ -1,0 +1,426 @@
+{
+  "title": "الخادم",
+  "areas": {
+    "overview": "نظرة عامة",
+    "disks": "الأقراص والـ RAID",
+    "backup": "النسخ الاحتياطي",
+    "power": "الطاقة والمراوح",
+    "updates": "التحديثات"
+  },
+  "capabilities": {
+    "system": "الجهاز",
+    "storage": "الأقراص والـ RAID",
+    "backup": "النسخ الاحتياطي",
+    "power": "الطاقة والمراوح"
+  },
+  "refresh": "إعادة القراءة",
+  "refreshing": "جارٍ القراءة…",
+  "readFailed": "مساعد المضيف مردّش. ممكن يكون مش شغال دلوقتي.",
+  "unavailable": {
+    "title": "مفيش حاجة تتدار هنا",
+    "noHelper": "Helena شغالة من غير مساعد المضيف (مثلًا جوه حاوية). الأقراص والنسخ الاحتياطي والمراوح بتتدار ساعتها برّه Helena.",
+    "failed": "مساعد المضيف مردّش."
+  },
+  "health": {
+    "raidRebuilding": "المرآة {name} بيتعاد بناؤها: {percent}، فاضل حوالي {remaining}. لحد ما تخلص فيه نسخة واحدة بس.",
+    "raidDegraded": "المرآة {name} ناقصة: {missing, plural, zero {مفيش أقراص ناقصة} one {قرص واحد ناقص} two {قرصين ناقصين} few {# أقراص ناقصة} many {# قرص ناقص} other {# قرص ناقص}}.",
+    "raidChecking": "المرآة {name} بيتم فحصها: {percent}، فاضل حوالي {remaining}.",
+    "raidResyncing": "المرآة {name} بتتزامن: {percent}.",
+    "raidMismatches": "المرآة {name}: {count, plural, zero {مفيش اختلافات} one {اختلاف واحد} two {اختلافين} few {# اختلافات} many {# اختلاف} other {# اختلاف}} في آخر فحص.",
+    "raidOk": "المرآة {name}: {disks, plural, zero {مفيش أقراص} one {قرص واحد} two {قرصين} few {# أقراص} many {# قرص} other {# قرص}}، متزامنة.",
+    "diskUnknown": "القرص {disk}: حالته مش مقروءة.",
+    "diskFailing": "القرص {disk} بيبلّغ عن عطل. غيّره.",
+    "diskSpareLow": "القرص {disk}: المساحة الاحتياطية قرّبت تخلص ({spare} %). غيّره.",
+    "diskErrors": "القرص {disk}: {count, plural, zero {مفيش أخطاء قراءة} one {بلّغ عن خطأ قراءة واحد} two {بلّغ عن خطأين في القراءة} few {بلّغ عن # أخطاء قراءة} many {بلّغ عن # خطأ قراءة} other {بلّغ عن # خطأ قراءة}}.",
+    "diskWorn": "القرص {disk} مستهلك بنسبة {wear} %.",
+    "diskHot": "القرص {disk} سخن ({temperature}).",
+    "diskOk": "القرص {disk}: سليم، {temperature}، مستهلك {wear} %.",
+    "espNotMounted": "قسم EFI {mount} مش متركّب.",
+    "espOutOfSync": "قسمين الـ EFI مختلفين ({count, plural, zero {مفيش ملفات} one {ملف واحد} two {ملفين} few {# ملفات} many {# ملف} other {# ملف}}).",
+    "espInSync": "قسمين الـ EFI زي بعض.",
+    "eventsCritical": "{count, plural, zero {مفيش بلاغات خطيرة جديدة من mdadm أو smartd} one {بلاغ خطير واحد من mdadm أو smartd لسه متشافش} two {بلاغين خطيرين من mdadm أو smartd لسه متشافوش} few {# بلاغات خطيرة من mdadm أو smartd لسه متشافتش} many {# بلاغ خطير من mdadm أو smartd لسه متشافش} other {# بلاغ خطير من mdadm أو smartd لسه متشافش}}.",
+    "backupNotInitialized": "النسخ الاحتياطي متثبّت بس لسه متظبطش.",
+    "backupRunning": "أول نسخة احتياطية شغالة دلوقتي.",
+    "backupNever": "لسه مفيش نسخة احتياطية.",
+    "backupFailed": "آخر نسخة احتياطية فشلت (من {at}).",
+    "backupLate": "آخر نسخة احتياطية كانت من {at}، متأخرة عن المخطط.",
+    "backupOk": "آخر نسخة احتياطية من {at}.",
+    "backupPasswordPending": "كلمة مرور النسخ الاحتياطي لسه متكتبتش.",
+    "backupCheckFailed": "فحص النسخ الاحتياطي فشل.",
+    "restoreTestFailed": "اختبار الاسترجاع فشل.",
+    "backupTargetFailed": "النسخ لـ {target} فشل.",
+    "fansRaised": "المراوح اترفعت للدرجة 5: الـ CPU عند {temperature}.",
+    "cpuHot": "الـ CPU سخن: {temperature}.",
+    "cpuTemperature": "CPU {temperature}.",
+    "fansFixed": "المراوح على الدرجة {level}.",
+    "fansAuto": "المراوح على التلقائي.",
+    "memoryPressure": "الذاكرة قليلة: فاضل {available} بس.",
+    "memoryOk": "الذاكرة: {available} فاضية.",
+    "healthFailed": "الحالة متقريتش."
+  },
+  "overview": {
+    "machine": "الجهاز",
+    "board": "اللوحة",
+    "cpu": "المعالج",
+    "threads": "الخيوط: {count}",
+    "hostname": "الاسم",
+    "kernel": "النواة",
+    "uptime": "شغال بقاله",
+    "load": "الحمل (1 · 5 · 15 د)",
+    "memory": "الذاكرة",
+    "memorySystem": "RAM للنظام",
+    "memoryAvailable": "الفاضي منها",
+    "memoryGpu": "محجوز للـ GPU",
+    "memoryGpuUsed": "مستخدم من الـ GPU",
+    "swap": "ذاكرة التبديل",
+    "swapUsed": "{used} من {total}",
+    "health": "الحالة",
+    "helper": "مساعد المضيف {version}"
+  },
+  "disks": {
+    "arrays": "المرايا",
+    "noArrays": "مفيش RAID على الجهاز ده.",
+    "arrayTitle": "المرآة {name} ({level})",
+    "diskLetter": "القرص {letter}",
+    "serial": "الرقم التسلسلي {serial}",
+    "checkStart": "بدء الفحص",
+    "checkStop": "إيقاف الفحص",
+    "checkStarted": "الفحص شغال.",
+    "checkStopped": "الفحص اتوقف.",
+    "checkConfirmTitle": "تفحص المرآة؟",
+    "checkConfirmBody": "بيقرا القرصين بالكامل ويقارنهم ببعض (نفس الفحص الشهري التلقائي). بياخد كام ساعة وبيبطّأ الأقراص شوية؛ Helena بتفضل شغالة.",
+    "syncAction": {
+      "idle": "خامل",
+      "resync": "مزامنة",
+      "recover": "إعادة بناء",
+      "check": "فحص",
+      "repair": "إصلاح",
+      "reshape": "إعادة تشكيل",
+      "frozen": "متجمّد"
+    },
+    "syncProgress": "{action}: {percent} · فاضل حوالي {remaining} · {speed}/ث",
+    "member": {
+      "inSync": "متزامن",
+      "rebuilding": "بيتعاد بناؤه",
+      "faulty": "عطلان",
+      "missing": "القرص مش موجود"
+    },
+    "mismatches": "{count, plural, =0 {مفيش اختلافات في آخر فحص.} zero {مفيش اختلافات في آخر فحص.} one {اختلاف واحد في آخر فحص.} two {اختلافين في آخر فحص.} few {# اختلافات في آخر فحص.} many {# اختلاف في آخر فحص.} other {# اختلاف في آخر فحص.}}",
+    "selfTest": "اختبار ذاتي",
+    "selfTestRunning": "الاختبار الذاتي شغال",
+    "selfTestStarted": "الاختبار الذاتي شغال (كام دقيقة).",
+    "memberOf": "جزء من {arrays}",
+    "smart": {
+      "state": "SMART",
+      "passed": "سليم",
+      "failing": "عطلان",
+      "unknown": "مش معروف",
+      "temperature": "الحرارة",
+      "wear": "الاستهلاك",
+      "spare": "الاحتياطي",
+      "spareValue": "{spare} (الحد {threshold})",
+      "powerOn": "ساعات التشغيل",
+      "hours": "{hours} س",
+      "written": "المكتوب",
+      "mediaErrors": "أخطاء القراءة",
+      "unsafeShutdowns": "إطفاء غير آمن",
+      "firmware": "البرنامج الثابت",
+      "none": "القرص ده مبيدّيش بيانات SMART."
+    },
+    "boot": {
+      "title": "الإقلاع",
+      "espInSync": "أقسام EFI زي بعض: {mounts}",
+      "espDiffer": "أقسام EFI مختلفة ({count, plural, zero {مفيش ملفات} one {ملف واحد} two {ملفين} few {# ملفات} many {# ملف} other {# ملف}}). بتتظبط زي بعض بعد كل تحديث للحزم.",
+      "espMissing": "مش متركّبة: {mounts}",
+      "espUnknown": "حالة أقسام EFI مش معروفة.",
+      "current": "الحالي",
+      "next": "الإقلاع الجاي",
+      "first": "الأول",
+      "none": "مفيش مدخلات إقلاع EFI مقروءة.",
+      "reserveOnce": "إقلاع مرة واحدة من الاحتياطي",
+      "cancel": "إلغاء الإقلاع من الاحتياطي",
+      "canceled": "الإقلاع الجاي هيرجع للترتيب العادي.",
+      "set": "إعادة التشغيل الجاية هتقلع من القرص الاحتياطي.",
+      "pending": "إعادة التشغيل الجاية هتقلع مرة واحدة من القرص الاحتياطي؛ وبعدها يرجع عادي.",
+      "confirmTitle": "تقلع مرة واحدة من القرص الاحتياطي؟",
+      "confirmBody": "في إعادة التشغيل الجاية الجهاز هيقلع مرة واحدة من القرص التاني عن طريق المدخل «Debian (Reserve)». كده بتتأكد إنه بيشتغل من غير القرص الأول. إعادة التشغيل بتعملها انت بنفسك؛ وبعدها الترتيب العادي يرجع تاني."
+    },
+    "replace": {
+      "open": "تغيير قرص",
+      "title": "تغيير قرص في المرآة",
+      "intro": "خطوة بخطوة، بالأوامر الخاصة بالجهاز ده. Helena مش بتنفّذها: انت بتكتبها في طرفية المالك. الخادم بيفضل شغال على القرص التاني في الوقت ده.",
+      "which": "أنهي قرص هيطلع؟",
+      "disk": "القرص {letter}",
+      "noPlan": "مفيش خطة للقرص ده: هو مش جزء من مرآة، أو مفيش قرص تاني سليم.",
+      "step": {
+        "remove": "إخراجه من المرآة",
+        "removeBody": "علّم القرص {disk} (القسم {partition}) إنه عطلان وشيله. لو هو أصلًا مش موجود، اتخطّى الخطوة دي.",
+        "swap": "الإطفاء والتبديل",
+        "swapBody": "اطفي الجهاز وبدّل القرص. الجديد لازم يكون {size} على الأقل. الجهاز هيقلع من القرص {other} (بعد حوالي 20 ثانية، علشان المرآة ناقصة).",
+        "find": "إيجاد القرص الجديد",
+        "newDevice": "جهاز القرص الجديد (اللي من غير أقسام)",
+        "newDeviceInvalid": "اكتب الجهاز كله، مثلًا /dev/nvme0n1.",
+        "partition": "نسخ الأقسام",
+        "esp": "إنشاء قسم EFI",
+        "espBody": "بيعمل فورمات لقسم EFI، ويضيفه في /etc/fstab على إنه {mount}، وينسخ محتوى {other}.",
+        "add": "إضافته للمرآة",
+        "addBody": "بعد كده المرآة بتتبني من جديد؛ التقدّم بيظهر في الصفحة دي (كام ساعة).",
+        "boot": "تجديد مدخل الإقلاع",
+        "bootBody": "بيعمل مدخل البرنامج الثابت «{label}» للقرص الجديد ويشيل المدخل اليتيم. الرقم الجديد بيظهر في المخرجات.",
+        "test": "الفحص",
+        "testBody": "لما المرآة تظهر «متزامن»: اقلع مرة واحدة من القرص الاحتياطي من الصفحة دي واعمل إعادة تشغيل."
+      }
+    }
+  },
+  "events": {
+    "title": "البلاغات",
+    "none": "مفيش بلاغات.",
+    "markSeen": "{count, plural, zero {تعليم كمقروء} one {تعليم كمقروء} two {تعليم الاتنين كمقروءين} few {تعليم # كمقروءة} many {تعليم # كمقروءة} other {تعليم # كمقروءة}}",
+    "source": {
+      "mdadm": "RAID",
+      "smartd": "SMART",
+      "guard": "حماية المراوح",
+      "backup": "النسخ الاحتياطي"
+    },
+    "codes": {
+      "Fail": "عطل في قرص",
+      "FailSpare": "عطل في القرص البديل",
+      "DegradedArray": "المرآة ناقصة",
+      "DeviceDisappeared": "المرآة اختفت",
+      "SparesMissing": "القرص البديل ناقص",
+      "MoveSpare": "القرص البديل اتنقل",
+      "SpareActive": "القرص رجع للمرآة",
+      "NewArray": "مرآة جديدة",
+      "RebuildStarted": "إعادة البناء بدأت",
+      "RebuildFinished": "إعادة البناء خلصت",
+      "TestMessage": "بلاغ تجريبي",
+      "Health": "SMART بيبلّغ عن عطل",
+      "FailedHealthCheck": "فحص SMART فشل",
+      "Usage": "قيمة SMART عدّت الحد",
+      "SelfTest": "الاختبار الذاتي فشل",
+      "ErrorCount": "أخطاء جديدة في السجل",
+      "CurrentPendingSector": "قطاعات مش مقروءة",
+      "OfflineUncorrectableSector": "قطاعات مش قابلة للتصحيح",
+      "Temperature": "القرص سخن زيادة",
+      "FailedReadSmartData": "بيانات SMART مش مقروءة",
+      "FailedOpenDevice": "القرص مش متاح",
+      "EmailTest": "بلاغ تجريبي",
+      "FansRaised": "المراوح اترفعت",
+      "FansRestored": "المراوح رجعت للدرجة المختارة",
+      "BackupFailed": "النسخ الاحتياطي فشل",
+      "CheckFailed": "فحص النسخ الاحتياطي فشل",
+      "RestoreTestFailed": "اختبار الاسترجاع فشل"
+    }
+  },
+  "backup": {
+    "runNow": "نسخ احتياطي دلوقتي",
+    "running": "شغال…",
+    "runMaintenance": "تنظيف وفحص",
+    "runRestoreTest": "اختبار الاسترجاع",
+    "started": {
+      "backup": "النسخ الاحتياطي شغال.",
+      "maintenance": "التنظيف والفحص شغالين.",
+      "restore-test": "اختبار الاسترجاع شغال."
+    },
+    "notSetUp": {
+      "title": "النسخ الاحتياطي لسه متظبطش",
+      "description": "شغّل ده مرة واحدة على الخادم: بيعمل كلمة المرور والمستودع على الـ RAID وبيجدول النسخ الاحتياطية."
+    },
+    "status": "الحالة",
+    "runningNow": "فيه نسخة احتياطية شغالة دلوقتي.",
+    "lastSnapshot": "آخر لقطة",
+    "added": "الجديد",
+    "processed": "اتنسخ",
+    "filesAndSize": "الملفات: {files}، {size}",
+    "repositorySize": "حجم النسخة الاحتياطية",
+    "nextRun": "النسخة الاحتياطية الجاية",
+    "noNextRun": "مفيش حاجة متجدولة",
+    "repository": "المستودع",
+    "unreadable": "{count, plural, zero {مفيش ملفات ناقصة} one {ملف واحد مكانش مقروء وناقص} two {ملفين مكانوش مقروءين وناقصين} few {# ملفات مكانتش مقروءة وناقصة} many {# ملف مكانش مقروء وناقص} other {# ملف مكانش مقروء وناقص}} في آخر لقطة.",
+    "saved": "تم الحفظ.",
+    "checkWeekly": "تنظيف أسبوعي وفحص عيّنة",
+    "restoreTestMonthly": "اختبار استرجاع كل شهر",
+    "schedule": {
+      "title": "الجدول والاحتفاظ",
+      "frequency": "كل قد إيه",
+      "hourly": "كل ساعة",
+      "every6h": "كل 6 ساعات",
+      "daily": "يوميًا",
+      "off": "مقفول",
+      "time": "الوقت",
+      "minute": "الدقيقة (الوقت)",
+      "explain": {
+        "hourly": "كل ساعة عند الدقيقة {minute}.",
+        "every6h": "كل ست ساعات، ابتداءً من {time}.",
+        "daily": "كل يوم الساعة {time}.",
+        "off": "مفيش نسخ احتياطي متجدول؛ «نسخ احتياطي دلوقتي» لسه شغال."
+      }
+    },
+    "retention": {
+      "hourly": "كل ساعة",
+      "daily": "يومية",
+      "weekly": "أسبوعية",
+      "monthly": "شهرية",
+      "keepSomething": "لازم تحتفظ بلقطة واحدة على الأقل."
+    },
+    "never": "ولا مرة",
+    "okAt": "تمام، من {time}",
+    "failedAt": "فشل، من {time}",
+    "checks": {
+      "title": "الفحوصات",
+      "maintenance": "التنظيف والفحص",
+      "restoreTest": "اختبار الاسترجاع",
+      "restoreTestDetail": "ملفات العيّنة ({files}) وقاعدة البيانات {database} (الجداول: {tables}) اتسترجعوا بنجاح.",
+      "next": "الجاي: الفحص {maintenance}، اختبار الاسترجاع {restoreTest}."
+    },
+    "snapshots": {
+      "title": "اللقطات",
+      "count": "{count, plural, zero {مفيش لقطات} one {لقطة واحدة} two {لقطتين} few {# لقطات} many {# لقطة} other {# لقطة}}",
+      "none": "لسه مفيش لقطات.",
+      "added": "+{size}",
+      "browse": "تصفّح"
+    },
+    "restores": {
+      "title": "عمليات الاسترجاع",
+      "location": "موجودة في",
+      "movedAside": "النسخة القديمة اتنقلت لـ"
+    },
+    "paths": {
+      "title": "إيه اللي بيتنسخ",
+      "explain": "ومعاها قواعد البيانات (pg_dump) وملفات SQLite بتاعة الوكلاء. الكاش وnode_modules وبيئات الاختبار بتاعة الوكلاء مش داخلين."
+    },
+    "password": {
+      "title": "اكتب كلمة مرور النسخ الاحتياطي",
+      "explain": "من غير كلمة المرور دي محدش يقدر يقرا النسخة الاحتياطية، ولا حتى Helena بعد إعادة التثبيت. اكتبها على ورقة أو في مدير كلمات المرور بتاعك. بعد التأكيد Helena مش هتعرضها تاني أبدًا.",
+      "show": "عرض كلمة المرور",
+      "written": "كتبت كلمة المرور في مكان آمن.",
+      "confirm": "تأكيد",
+      "confirmed": "اتأكّد. Helena مش هتعرض كلمة المرور تاني."
+    },
+    "targets": {
+      "title": "نسخة خارجية",
+      "explain": "كل نسخة احتياطية بتتنسخ كمان على تخزين S3 (مثلًا Backblaze B2 أو Hetzner أو Cloudflare R2). المفتاح بيفضل عند مساعد المضيف بس.",
+      "repository": "عنوان S3",
+      "accessKeyId": "Access Key ID",
+      "secretAccessKey": "Secret Access Key",
+      "add": "إضافة وجهة",
+      "saved": "الوجهة اتحفظت؛ النسخة الاحتياطية الجاية هتتنسخ هناك.",
+      "enabled": "مفعّلة",
+      "remove": "إزالة الوجهة",
+      "neverCopied": "لسه متنسختش"
+    },
+    "browse": {
+      "title": "اللقطة {snapshot}",
+      "explain": "افتح المجلدات، وبعدين استرجع ملف أو مجلد.",
+      "path": "المسار",
+      "up": "مستوى لفوق",
+      "empty": "المجلد ده فاضي.",
+      "notFound": "المجلد ده مش موجود في اللقطة دي.",
+      "truncated": "أول 2000 عنصر بس.",
+      "restore": "استرجاع",
+      "restoreWhat": "استرجاع:",
+      "mode": {
+        "copy": "كنسخة",
+        "copyHome": "في مجلد جديد ~/Wiederhergestellt/…. مفيش حاجة هتتكتب فوقها.",
+        "copyRoot": "في مجلد جديد تحت /var/backups/helena/restores (لـ root بس). مفيش حاجة هتتكتب فوقها.",
+        "original": "في مكانه الأصلي",
+        "originalExplain": "اللي موجود هناك دلوقتي هيتنقل الأول لـ ….vor-wiederherstellung-…."
+      },
+      "confirmPath": "اكتب المسار للتأكيد",
+      "startCopy": "استرجاع نسخة",
+      "startOriginal": "استرجاع في المكان",
+      "back": "رجوع",
+      "job": {
+        "queued": "مستني…",
+        "running": "جارٍ الاسترجاع…",
+        "done": "تم.",
+        "failed": "فشل.",
+        "location": "موجودة في",
+        "movedAside": "النسخة القديمة اتنقلت لـ"
+      }
+    }
+  },
+  "power": {
+    "notInstalled": {
+      "title": "التحكم في المراوح والطاقة مش متثبّت",
+      "description": "اللوحة {board}. التحكم محتاج درايفر EC، وryzen_smu، وryzenadj، وpower-profiles-daemon؛ سكربت التثبيت بيظبطهم وبيحط المراوح على الدرجة 5 الأول."
+    },
+    "profile": {
+      "title": "الوضع",
+      "saver": "موفّر",
+      "balanced": "متوازن",
+      "performance": "أداء",
+      "mixed": "الطبقات مش متفقة",
+      "set": "الوضع «{profile}» شغال.",
+      "partly": "مش كل الطبقات أخدت الوضع: {layers}.",
+      "explain": {
+        "saver": "BIOS هادي ({stapm} W مستمر، {fast} W لفترة قصيرة)، ونظام التشغيل موفّر للطاقة.",
+        "balanced": "BIOS متوازن ({stapm} W مستمر، {fast} W لفترة قصيرة)، ونظام التشغيل متوازن.",
+        "performance": "BIOS أداء ({stapm} W مستمر، {fast} W لفترة قصيرة)، ونظام التشغيل على الأداء."
+      }
+    },
+    "layer": {
+      "ec": "BIOS (EC)",
+      "os": "نظام التشغيل",
+      "ryzenadj": "حدود الطاقة (ryzenadj)",
+      "unavailable": "مش متاح",
+      "ecLimits": "{stapm} W مستمر · {fast} W قصير · {slow} W متوسط",
+      "epp": "EPP {epp} · {driver}",
+      "limits": "{stapm} · {fast} · {slow}",
+      "now": "دلوقتي {power} · CPU {tctl} (الحد {limit})",
+      "noSmu": "ryzen_smu مش متحمّل",
+      "notInstalled": "مش متثبّت"
+    },
+    "ecMode": {
+      "quiet": "هادي",
+      "balanced": "متوازن",
+      "performance": "أداء"
+    },
+    "osProfile": {
+      "power-saver": "توفير الطاقة",
+      "balanced": "متوازن",
+      "performance": "أداء"
+    },
+    "fans": {
+      "title": "المراوح",
+      "auto": "تلقائي",
+      "level": "الدرجة {level}",
+      "autoExplain": "الـ EC بيشغّل المراوح على المنحنى بتاعه.",
+      "fixedExplain": "المراوح التلاتة ثابتة على {percent} %.",
+      "unknown": "لسه متختارش حاجة.",
+      "heldByGuard": "تم الحفظ. المراوح هتفضل على الدرجة 5 لحد ما الـ CPU يبرد.",
+      "guardActive": "حماية المراوح ماسكة المراوح على الدرجة 5 (الـ CPU عند {temperature}، بقالها {since}).",
+      "rpm": "{rpm} لفة/دقيقة",
+      "name": {
+        "fan1": "مروحة CPU 1",
+        "fan2": "مروحة CPU 2",
+        "fan3": "مروحة الكيسة"
+      }
+    },
+    "temperatures": {
+      "title": "درجات الحرارة",
+      "max": "بحد أقصى {max}"
+    },
+    "sensor": {
+      "ec": "CPU (EC)",
+      "cpu": "CPU (Tctl)",
+      "gpu": "GPU",
+      "gpuPower": "طاقة الـ APU",
+      "nvme": "SSD {id}",
+      "board": "اللوحة الأم"
+    },
+    "guard": {
+      "title": "حماية المراوح",
+      "explain": "لو المراوح ثابتة تحت الدرجة 5 والـ CPU فضل عند {limit} أو أكتر لكام ثانية، Helena بتحطها على الدرجة 5. لو فضل تحت {release} لمدة دقيقتين، درجتك بترجع.",
+      "limit": "الحد",
+      "saved": "تم الحفظ.",
+      "active": "ماسكة المراوح على الدرجة 5 دلوقتي.",
+      "watching": "بتراقب.",
+      "waitingForDriver": "مستنية درايفر الـ EC."
+    }
+  },
+  "home": {
+    "title": "الخادم",
+    "allGood": "كله تمام."
+  }
+}

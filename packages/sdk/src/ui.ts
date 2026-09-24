@@ -19,6 +19,7 @@ export type UiSlotName =
   | 'header-action'
   | 'home-nav'
   | 'admin-section'
+  | 'server-section'
   | 'capture-action'
   | 'workspace-layout';
 
@@ -122,6 +123,15 @@ export interface AdminSectionSlot extends SlotBase {
   render: SlotRender<Record<string, never>>;
 }
 
+// A section of Administrator → Server (docs/helena-decisions/server-admin.md): a status or a
+// control of the machine, shown on one of the Server tabs (`overview`, `disks`, `backup`,
+// `power`, `updates`), below the tab's own sections. Local AI's GPU/NPU status is one.
+export interface ServerSectionSlot extends SlotBase {
+  slot: 'server-section';
+  area: string;
+  render: SlotRender<Record<string, never>>;
+}
+
 // "Save to knowledge" offered by a surface: the capture target it sends to, for the
 // kinds of content that surface has.
 export interface CaptureActionSlot extends SlotBase {
@@ -169,6 +179,7 @@ export type UiSlot =
   | HeaderActionSlot
   | HomeNavSlot
   | AdminSectionSlot
+  | ServerSectionSlot
   | CaptureActionSlot
   | WorkspaceLayoutSlot;
 

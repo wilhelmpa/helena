@@ -19,8 +19,8 @@ export const HOST_HEALTH_STATES: readonly HostHealthState[] = [
   'unknown',
 ];
 
-// The built-in areas (tabs) of Administrator → Server. A plugin names its own area and brings
-// the UI for it as an `admin-section` slot with the same id.
+// The built-in areas (tabs) of Administrator → Server. The UI of a capability's area comes
+// from the web app for the built-ins and from `server-section` UI slots for the rest.
 export const HOST_AREAS = ['overview', 'disks', 'backup', 'power', 'updates'] as const;
 export type BuiltinHostArea = (typeof HOST_AREAS)[number];
 

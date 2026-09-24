@@ -27,6 +27,10 @@
       "label": "通用",
       "description": "新建项目的默认设置。"
     },
+    "server": {
+      "label": "服务器",
+      "description": "Helena 运行所在的机器：磁盘与 RAID、备份、功耗与风扇。"
+    },
     "authentication": {
       "label": "身份验证",
       "description": "设置谁可以注册、如何验证账户以及可用的外部登录提供商。"
