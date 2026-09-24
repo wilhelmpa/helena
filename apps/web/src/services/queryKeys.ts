@@ -322,6 +322,15 @@ export const qk = {
   // pending count of the sidebar badges, and the workflow runs waiting at an approval
   // gate. approvalsPendingCountAll is the invalidation target for every pending count,
   // global and per-project alike (a query key prefix match).
+  // Helena's Autopilot: a project's level and budgets, an agent's, the decision log, and
+  // the model price table.
+  projectAutopilot: (projectKey: string) => ['autopilot', 'project', projectKey] as const,
+  agentAutopilot: (teamId: number, agentId: number) =>
+    ['autopilot', 'agent', teamId, agentId] as const,
+  policyDecisions: (projectKey: string, params: unknown, outcome?: string) =>
+    ['autopilot', 'decisions', projectKey, params, outcome ?? null] as const,
+  anyAutopilot: ['autopilot'] as const,
+  modelPrices: ['modelPrices'] as const,
   approvalLists: ['approvals', 'list'] as const,
   approvals: (status: string, params: unknown, projectKey?: string) =>
     ['approvals', 'list', status, params, projectKey ?? null] as const,

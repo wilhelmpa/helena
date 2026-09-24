@@ -1,0 +1,187 @@
+{
+  "level": {
+    "0": {
+      "name": "建议",
+      "description": "智能体只阅读和提出建议。每项更改都需要你的批准。"
+    },
+    "1": {
+      "name": "需批准",
+      "description": "智能体修改项目中的任务和文件。所有有后果的操作都需要你的批准。"
+    },
+    "2": {
+      "name": "执行并汇报",
+      "description": "智能体在自己的工作区内自行删除和执行高风险命令，事后汇报。对外的操作需要你的批准。"
+    },
+    "3": {
+      "name": "预算内自主",
+      "description": "智能体无需批准即可行动，直到预算用完。付款、工作区外的删除和凭据始终由你批准。"
+    }
+  },
+  "levelTitle": "级别",
+  "levelSaved": "Autopilot 已设为级别 {level}。",
+  "badge": "A{level}",
+  "badgeTitle": "Autopilot 级别 {level}：{name}",
+  "summaryMay": "本项目的智能体可以",
+  "summaryAsk": "以下操作需要你的批准",
+  "category": {
+    "read": "阅读",
+    "report": "评论和汇报",
+    "write": "修改任务和文件",
+    "send": "发送和提交",
+    "publish": "发布、推送、部署",
+    "execute": "执行高风险命令",
+    "delete": "删除",
+    "pay": "付款",
+    "credentials": "更改访问、密钥和权限"
+  },
+  "categoryLabel": {
+    "read": "阅读",
+    "report": "汇报",
+    "write": "修改",
+    "send": "发送",
+    "publish": "发布",
+    "execute": "执行",
+    "delete": "删除",
+    "pay": "付款",
+    "credentials": "凭据"
+  },
+  "scope": {
+    "workspace": "工作区内",
+    "external": "工作区外"
+  },
+  "source": {
+    "project": "来自项目",
+    "agent": "自身更严格的级别",
+    "agent-raised": "自身级别，由所有者提高",
+    "default": "默认"
+  },
+  "reason": {
+    "always-allowed": "阅读和汇报始终允许。",
+    "level-allows": "级别 {level}（{name}）允许此操作。",
+    "approved": "已批准。",
+    "level-requires-approval": "级别 {level}（{name}）要求在此批准。",
+    "hard-block": "此操作始终由人批准，即使在级别 3。",
+    "budget-exhausted": "预算已用完。",
+    "policy": "规则要求如此。"
+  },
+  "outcome": {
+    "allow": "允许",
+    "needs-approval": "需要批准",
+    "deny": "已阻止"
+  },
+  "budgetsTitle": "预算",
+  "budgetsHint": "日和月按 UTC 计算。达到 80 % 时提醒，达到 100 % 时停止工作。",
+  "metric": {
+    "tokens": "令牌",
+    "cost": "费用",
+    "time": "工作时间"
+  },
+  "metricUnit": {
+    "tokens": "令牌",
+    "cost": "€",
+    "time": "小时"
+  },
+  "period": {
+    "day": "每天",
+    "month": "每月"
+  },
+  "noLimit": "无限制",
+  "usedOf": "{used} / {limit}",
+  "usedNoLimit": "已用 {used}",
+  "reached": "已用完",
+  "warned": "超过 80 %",
+  "graceRuns": "超出后还可运行 {count} 次",
+  "unpriced": "{tokens} 个令牌没有价格",
+  "estimate": "费用是根据价格表估算的。",
+  "budgetsSaved": "预算已保存。",
+  "invalidLimit": "限额必须是大于 0 的数字。",
+  "agentsTitle": "智能体",
+  "agentsEmpty": "本项目还没有智能体。",
+  "paused": "已暂停",
+  "logTitle": "决策",
+  "logEmpty": "还没有决策。",
+  "logAll": "全部",
+  "logMore": "加载更多",
+  "adapter": {
+    "hermes": "Hermes",
+    "claude": "Claude Code",
+    "codex": "Codex",
+    "mcp": "Helena 工具",
+    "gateway": "浏览器",
+    "workflow": "工作流",
+    "approval": "批准请求",
+    "chat": "聊天"
+  },
+  "agent": {
+    "title": "Autopilot",
+    "hint": "智能体的自主程度和可花费的额度",
+    "own": "自身级别",
+    "followProject": "与项目相同",
+    "raise": "允许高于项目的级别",
+    "raiseHint": "否则以更严格的级别为准。只有团队所有者可以允许智能体更多。",
+    "inProject": "在 {project}",
+    "noProjects": "该智能体不在任何项目中工作。",
+    "usage": "用量",
+    "today": "今天",
+    "month": "本月",
+    "pausedBecause": "已暂停：{reason}",
+    "budgetsHint": "涵盖智能体的所有工作：运行和聊天。",
+    "projectBudgets": "{project} 的预算"
+  },
+  "card": {
+    "title": "预算已用完",
+    "agentBudget": "{agent} 的{period}{metric}",
+    "projectBudget": "项目 {project} 的{period}{metric}",
+    "raise": "提高预算",
+    "once": "继续一次",
+    "keep": "保持停止",
+    "newLimit": "新限额",
+    "raisedToast": "预算已提高，工作继续。",
+    "onceToast": "可以再开始一次运行。",
+    "keptToast": "工作保持停止。",
+    "raised": "{name} 提高了预算",
+    "continuedOnce": "{name} 允许继续一次",
+    "kept": "{name} 保持停止",
+    "limitTooLow": "新限额必须高于已用量。"
+  },
+  "request": {
+    "level": "级别 {level}",
+    "reason": "为何需要批准"
+  },
+  "prices": {
+    "estimate": "所有价格均为估算：由 models.dev 换算为欧元或手动输入。",
+    "search": "搜索模型",
+    "model": "模型",
+    "provider": "提供方",
+    "input": "输入",
+    "output": "输出",
+    "cacheRead": "缓存读取",
+    "cacheWrite": "缓存写入",
+    "perMTok": "每 100 万令牌 €",
+    "sourceLabel": "来源",
+    "source": {
+      "models.dev": "models.dev",
+      "manual": "手动"
+    },
+    "import": "从 models.dev 更新",
+    "importing": "正在更新…",
+    "importedToast": "已更新 {count} 个价格，保留 {manual} 个手动价格。",
+    "rate": "汇率",
+    "rateHint": "models.dev 价格的欧元/美元汇率",
+    "rateSaved": "汇率已保存，价格已重新换算。",
+    "importedAt": "上次更新：{date}（{from}）",
+    "from": {
+      "snapshot": "Helena 自带列表",
+      "models.dev": "models.dev"
+    },
+    "add": "输入价格",
+    "edit": "编辑",
+    "reset": "重置",
+    "resetToast": "{model} 的价格重新来自 models.dev。",
+    "savedToast": "{model} 的价格已保存。",
+    "dialogTitle": "手动价格",
+    "dialogHint": "手动输入的价格不会被导入覆盖。",
+    "empty": "未找到价格。",
+    "none": "–"
+  }
+}

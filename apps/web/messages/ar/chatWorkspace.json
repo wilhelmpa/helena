@@ -152,7 +152,11 @@
       "publish": "نشر",
       "pay": "دفع",
       "delete": "حذف",
-      "other": "أخرى"
+      "other": "أخرى",
+      "write": "تغيير",
+      "execute": "تنفيذ",
+      "credentials": "وصول",
+      "budget": "ميزانية"
     },
     "notePlaceholder": "ملاحظة مع قرارك (اختياري)",
     "approve": "موافقة",

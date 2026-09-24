@@ -362,7 +362,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
     agentUsername: agent.username,
     threadContext,
   };
-  await recordAgentRunStarted(forPrompt);
+  await recordAgentRunStarted({ ...forPrompt, autopilotLevel: autopilot.level });
   return {
     id: row.id,
     trigger: row.trigger,

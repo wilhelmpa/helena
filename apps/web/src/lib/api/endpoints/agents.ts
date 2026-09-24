@@ -187,6 +187,10 @@ export interface AiAgent {
   // Null is no ceiling. Days and months are UTC.
   dailyTokenCeiling: number | null;
   monthlyTokenCeiling: number | null;
+  // The agent's own Autopilot level (null follows the project) and whether the owner let it
+  // exceed the project's.
+  autopilotLevel?: number | null;
+  autopilotRaise?: boolean;
   // When the agent's runner last polled, or null while none ever has.
   lastSeenAt: string | null;
   // Set while the agent takes no new work, with why.
@@ -228,6 +232,8 @@ export interface AgentRun {
   // The question the agent asked when it marked its issue blocked during the run.
   blockedQuestion: string | null;
   reflection: ReflectionView | null;
+  // The Autopilot level the run worked at; null for a run from before the Autopilot.
+  autopilotLevel?: number | null;
   nextAttemptAt: string;
   createdAt: string;
 }

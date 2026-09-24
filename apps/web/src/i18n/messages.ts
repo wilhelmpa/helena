@@ -6,6 +6,7 @@ import agentActivity from '../../messages/en/agentActivity.json';
 import aiChat from '../../messages/en/aiChat.json';
 import apiKeys from '../../messages/en/apiKeys.json';
 import approvals from '../../messages/en/approvals.json';
+import autopilot from '../../messages/en/autopilot.json';
 import auth from '../../messages/en/auth.json';
 import chatWorkspace from '../../messages/en/chatWorkspace.json';
 import common from '../../messages/en/common.json';
@@ -71,6 +72,7 @@ const defaultMessages = {
   chatWorkspace,
   inbox,
   approvals,
+  autopilot,
   permissions,
   members,
   cycles,

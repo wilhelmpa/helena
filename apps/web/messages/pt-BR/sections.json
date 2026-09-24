@@ -58,6 +58,10 @@
     "scim": {
       "label": "SCIM",
       "description": "Permita que um provedor de identidade crie, atualize e desative contas nesta instância e conceda acesso a projetos por seus grupos."
+    },
+    "model-prices": {
+      "label": "Preços de modelos",
+      "description": "Euros por milhão de tokens por modelo, a base de toda estimativa de custo."
     }
   },
   "settings": {
@@ -112,6 +116,10 @@
     "ai-agents": {
       "label": "Agentes de IA",
       "description": "Agentes de IA trabalhando neste projeto."
+    },
+    "autopilot": {
+      "label": "Autopilot",
+      "description": "Com quanta independência os agentes deste projeto agem, e seus orçamentos."
     }
   }
 }

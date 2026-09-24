@@ -58,6 +58,10 @@
     "scim": {
       "label": "SCIM",
       "description": "Permettez à un fournisseur d'identité de créer, mettre à jour et désactiver des comptes sur cette instance, et d'accorder l'accès aux projets via ses groupes."
+    },
+    "model-prices": {
+      "label": "Prix des modèles",
+      "description": "Euros par million de tokens par modèle, la base de toute estimation de coût."
     }
   },
   "settings": {
@@ -112,6 +116,10 @@
     "ai-agents": {
       "label": "Agents",
       "description": "Des comptes bots auxquels vous pouvez déléguer des tickets."
+    },
+    "autopilot": {
+      "label": "Autopilot",
+      "description": "Avec quelle autonomie agissent les agents de ce projet, et leurs budgets."
     }
   }
 }

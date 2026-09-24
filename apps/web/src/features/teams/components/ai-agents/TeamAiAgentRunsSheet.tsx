@@ -7,6 +7,7 @@ import { useAgentRuns } from '@/services/aiAgents.service';
 import { AgentContextSize } from '@/components/common/agent-chat/AgentContextSize';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { Badge } from '@/components/ui/badge';
+import AutopilotLevelBadge from '@/features/autopilot/components/AutopilotLevelBadge';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -124,6 +125,7 @@ function RunItem({ run: r }: { run: AgentRun }) {
           </Badge>
         )}
         <span className="shrink-0 text-muted-foreground capitalize">{r.trigger}</span>
+        <AutopilotLevelBadge level={r.autopilotLevel} />
         <span className="truncate font-medium">{subject}</span>
         {r.attempts > 1 && (
           <span className="shrink-0 text-muted-foreground">·{r.attempts} attempts</span>

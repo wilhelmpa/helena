@@ -152,7 +152,11 @@
       "publish": "Publikasikan",
       "pay": "Bayar",
       "delete": "Hapus",
-      "other": "Lainnya"
+      "other": "Lainnya",
+      "write": "Ubah",
+      "execute": "Jalankan",
+      "credentials": "Akses",
+      "budget": "Anggaran"
     },
     "notePlaceholder": "Catatan untuk keputusan Anda (opsional)",
     "approve": "Setujui",

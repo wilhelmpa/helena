@@ -1,0 +1,187 @@
+{
+  "level": {
+    "0": {
+      "name": "اقتراح",
+      "description": "الوكلاء يقرأون ويقترحون. كل تغيير يحتاج إلى موافقتك."
+    },
+    "1": {
+      "name": "بموافقة",
+      "description": "الوكلاء يغيّرون المهام والملفات في المشروع. كل ما له عواقب يحتاج إلى موافقتك."
+    },
+    "2": {
+      "name": "التنفيذ والإبلاغ",
+      "description": "الوكلاء يحذفون وينفّذون أوامر خطرة داخل مساحة عملهم ثم يبلغون. كل ما يخرج إلى الخارج يحتاج إلى موافقتك."
+    },
+    "3": {
+      "name": "مستقل ضمن الميزانية",
+      "description": "الوكلاء يعملون دون موافقة حتى تنفد الميزانية. الدفع والحذف خارج المساحة وبيانات الدخول توافق عليها دائمًا بنفسك."
+    }
+  },
+  "levelTitle": "المستوى",
+  "levelSaved": "تم ضبط Autopilot على المستوى {level}.",
+  "badge": "A{level}",
+  "badgeTitle": "مستوى Autopilot ‏{level}: {name}",
+  "summaryMay": "يمكن لوكلاء هذا المشروع",
+  "summaryAsk": "يحتاجون إلى موافقتك من أجل",
+  "category": {
+    "read": "القراءة",
+    "report": "التعليق والإبلاغ",
+    "write": "تغيير المهام والملفات",
+    "send": "الإرسال",
+    "publish": "النشر والدفع والتشغيل",
+    "execute": "تنفيذ أوامر خطرة",
+    "delete": "الحذف",
+    "pay": "الدفع",
+    "credentials": "تغيير الوصول والمفاتيح والصلاحيات"
+  },
+  "categoryLabel": {
+    "read": "قراءة",
+    "report": "إبلاغ",
+    "write": "تغيير",
+    "send": "إرسال",
+    "publish": "نشر",
+    "execute": "تنفيذ",
+    "delete": "حذف",
+    "pay": "دفع",
+    "credentials": "وصول"
+  },
+  "scope": {
+    "workspace": "داخل مساحة العمل",
+    "external": "خارجها"
+  },
+  "source": {
+    "project": "من المشروع",
+    "agent": "مستواه الخاص الأكثر صرامة",
+    "agent-raised": "مستواه الخاص، رفعه المالك",
+    "default": "افتراضي"
+  },
+  "reason": {
+    "always-allowed": "القراءة والإبلاغ مسموحان دائمًا.",
+    "level-allows": "المستوى {level} ({name}) يسمح بذلك.",
+    "approved": "تمت الموافقة.",
+    "level-requires-approval": "المستوى {level} ({name}) يطلب موافقة هنا.",
+    "hard-block": "يوافق شخص على هذا دائمًا، حتى في المستوى 3.",
+    "budget-exhausted": "نفدت إحدى الميزانيات.",
+    "policy": "قاعدة تطلب ذلك."
+  },
+  "outcome": {
+    "allow": "مسموح",
+    "needs-approval": "يحتاج موافقة",
+    "deny": "محظور"
+  },
+  "budgetsTitle": "الميزانيات",
+  "budgetsHint": "الأيام والأشهر بتوقيت UTC. تنبيه عند 80 %، ويتوقف العمل عند 100 %.",
+  "metric": {
+    "tokens": "الرموز",
+    "cost": "التكلفة",
+    "time": "وقت العمل"
+  },
+  "metricUnit": {
+    "tokens": "رمز",
+    "cost": "€",
+    "time": "ساعات"
+  },
+  "period": {
+    "day": "يوميًا",
+    "month": "شهريًا"
+  },
+  "noLimit": "بلا حد",
+  "usedOf": "{used} من {limit}",
+  "usedNoLimit": "استُخدم {used}",
+  "reached": "نفدت",
+  "warned": "أكثر من 80 %",
+  "graceRuns": "{count, plural, zero {لا تشغيل} one {تشغيل واحد} two {تشغيلان} few {# تشغيلات} many {# تشغيلًا} other {# تشغيل}} بعد الحد",
+  "unpriced": "{tokens} رمز بلا سعر",
+  "estimate": "التكاليف تقديرات من قائمة الأسعار.",
+  "budgetsSaved": "تم حفظ الميزانيات.",
+  "invalidLimit": "يجب أن يكون الحد رقمًا أكبر من 0.",
+  "agentsTitle": "الوكلاء",
+  "agentsEmpty": "لا يعمل أي وكيل في هذا المشروع بعد.",
+  "paused": "متوقف مؤقتًا",
+  "logTitle": "القرارات",
+  "logEmpty": "لا توجد قرارات بعد.",
+  "logAll": "الكل",
+  "logMore": "تحميل المزيد",
+  "adapter": {
+    "hermes": "Hermes",
+    "claude": "Claude Code",
+    "codex": "Codex",
+    "mcp": "أداة Helena",
+    "gateway": "المتصفح",
+    "workflow": "سير العمل",
+    "approval": "طلب موافقة",
+    "chat": "المحادثة"
+  },
+  "agent": {
+    "title": "Autopilot",
+    "hint": "مدى استقلالية الوكيل وما يمكنه إنفاقه",
+    "own": "المستوى الخاص",
+    "followProject": "مثل المشروع",
+    "raise": "السماح بأكثر من المشروع",
+    "raiseHint": "وإلا يُطبَّق المستوى الأكثر صرامة. مالك الفريق وحده يمكنه السماح بالمزيد.",
+    "inProject": "في {project}",
+    "noProjects": "لا يعمل الوكيل في أي مشروع.",
+    "usage": "الاستهلاك",
+    "today": "اليوم",
+    "month": "هذا الشهر",
+    "pausedBecause": "متوقف مؤقتًا: {reason}",
+    "budgetsHint": "يشمل كل ما يفعله الوكيل: التشغيلات والمحادثات.",
+    "projectBudgets": "ميزانيات {project}"
+  },
+  "card": {
+    "title": "نفدت الميزانية",
+    "agentBudget": "{metric} {period} لـ {agent}",
+    "projectBudget": "{metric} {period} للمشروع {project}",
+    "raise": "رفع الميزانية",
+    "once": "المتابعة مرة واحدة",
+    "keep": "إبقاء التوقف",
+    "newLimit": "الحد الجديد",
+    "raisedToast": "تم رفع الميزانية. يستمر العمل.",
+    "onceToast": "يمكن بدء تشغيل واحد إضافي.",
+    "keptToast": "يبقى العمل متوقفًا.",
+    "raised": "رفع {name} الميزانية",
+    "continuedOnce": "سمح {name} بالمتابعة مرة واحدة",
+    "kept": "أبقى {name} العمل متوقفًا",
+    "limitTooLow": "يجب أن يكون الحد الجديد أعلى من الاستهلاك."
+  },
+  "request": {
+    "level": "المستوى {level}",
+    "reason": "لماذا تحتاج موافقة"
+  },
+  "prices": {
+    "estimate": "كل الأسعار تقديرات: محوّلة إلى اليورو من models.dev أو مدخلة يدويًا.",
+    "search": "البحث عن نموذج",
+    "model": "النموذج",
+    "provider": "المزوّد",
+    "input": "الإدخال",
+    "output": "الإخراج",
+    "cacheRead": "قراءة الذاكرة المؤقتة",
+    "cacheWrite": "كتابة الذاكرة المؤقتة",
+    "perMTok": "€ لكل مليون رمز",
+    "sourceLabel": "المصدر",
+    "source": {
+      "models.dev": "models.dev",
+      "manual": "يدويًا"
+    },
+    "import": "التحديث من models.dev",
+    "importing": "جارٍ التحديث …",
+    "importedToast": "تم تحديث {count} سعرًا والإبقاء على {manual} مدخلة يدويًا.",
+    "rate": "سعر الصرف",
+    "rateHint": "يورو لكل دولار أمريكي لأسعار models.dev",
+    "rateSaved": "تم حفظ سعر الصرف وإعادة تحويل الأسعار.",
+    "importedAt": "آخر تحديث: {date} ({from})",
+    "from": {
+      "snapshot": "القائمة المرفقة مع Helena",
+      "models.dev": "models.dev"
+    },
+    "add": "إدخال سعر",
+    "edit": "تعديل",
+    "reset": "إعادة تعيين",
+    "resetToast": "يعود سعر {model} من models.dev.",
+    "savedToast": "تم حفظ سعر {model}.",
+    "dialogTitle": "سعر يدوي",
+    "dialogHint": "السعر المدخل يدويًا لا يُستبدل أبدًا عند الاستيراد.",
+    "empty": "لم يتم العثور على أسعار.",
+    "none": "–"
+  }
+}

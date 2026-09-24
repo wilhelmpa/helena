@@ -58,6 +58,10 @@
     "scim": {
       "label": "SCIM",
       "description": "让身份提供方在此实例上创建、更新和停用账号，并通过其群组授予项目访问权限。"
+    },
+    "model-prices": {
+      "label": "模型价格",
+      "description": "每个模型每百万令牌的欧元价格，是所有费用估算的基础。"
     }
   },
   "settings": {
@@ -112,6 +116,10 @@
     "ai-agents": {
       "label": "AI 代理",
       "description": "在该项目中工作的 AI 代理。"
+    },
+    "autopilot": {
+      "label": "Autopilot",
+      "description": "本项目智能体的自主程度及其预算。"
     }
   }
 }

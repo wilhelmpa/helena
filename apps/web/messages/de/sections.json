@@ -58,6 +58,10 @@
     "scim": {
       "label": "SCIM",
       "description": "Lass einen Identitätsanbieter Konten auf dieser Instanz erstellen, aktualisieren und deaktivieren und über seine Gruppen Projektzugriff gewähren."
+    },
+    "model-prices": {
+      "label": "Modellpreise",
+      "description": "Euro pro Million Tokens je Modell, die Grundlage jeder Kostenschätzung."
     }
   },
   "settings": {
@@ -112,6 +116,10 @@
     "ai-agents": {
       "label": "KI-Agenten",
       "description": "KI-Agenten, die in diesem Projekt arbeiten."
+    },
+    "autopilot": {
+      "label": "Autopilot",
+      "description": "Wie selbstständig die Agenten dieses Projekts handeln, und ihre Budgets."
     }
   }
 }

@@ -1,5 +1,6 @@
 import {
   Bot,
+  Gauge,
   Clock3,
   Columns3,
   FileText,
@@ -107,6 +108,12 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
   {
     slug: 'network',
     icon: Globe,
+    resource: 'ai_agents',
+    group: 'automation',
+  },
+  {
+    slug: 'autopilot',
+    icon: Gauge,
     resource: 'ai_agents',
     group: 'automation',
   },

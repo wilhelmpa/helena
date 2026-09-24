@@ -1,0 +1,187 @@
+{
+  "level": {
+    "0": {
+      "name": "Propose",
+      "description": "Agents read and propose. Every change needs your approval."
+    },
+    "1": {
+      "name": "With approval",
+      "description": "Agents change tasks and files in the project. Everything with consequences needs your approval."
+    },
+    "2": {
+      "name": "Act & report",
+      "description": "Agents delete and run risky commands inside their own workspace and report afterwards. Anything outward needs your approval."
+    },
+    "3": {
+      "name": "Autonomous within budget",
+      "description": "Agents act without approval until a budget is used up. You always approve paying, deleting outside and credentials."
+    }
+  },
+  "levelTitle": "Level",
+  "levelSaved": "Autopilot set to level {level}.",
+  "badge": "A{level}",
+  "badgeTitle": "Autopilot level {level}: {name}",
+  "summaryMay": "Agents in this project may",
+  "summaryAsk": "They need your approval to",
+  "category": {
+    "read": "read",
+    "report": "comment and report",
+    "write": "change tasks and files",
+    "send": "send and submit",
+    "publish": "publish, push, deploy",
+    "execute": "run risky commands",
+    "delete": "delete",
+    "pay": "pay",
+    "credentials": "change logins, keys and permissions"
+  },
+  "categoryLabel": {
+    "read": "Read",
+    "report": "Report",
+    "write": "Change",
+    "send": "Send",
+    "publish": "Publish",
+    "execute": "Execute",
+    "delete": "Delete",
+    "pay": "Pay",
+    "credentials": "Credentials"
+  },
+  "scope": {
+    "workspace": "in the workspace",
+    "external": "outside"
+  },
+  "source": {
+    "project": "from the project",
+    "agent": "its own, stricter level",
+    "agent-raised": "its own level, raised by the owner",
+    "default": "default"
+  },
+  "reason": {
+    "always-allowed": "Reading and reporting are always allowed.",
+    "level-allows": "Level {level} ({name}) allows this.",
+    "approved": "Approved.",
+    "level-requires-approval": "Level {level} ({name}) asks for approval here.",
+    "hard-block": "A person always approves this, even at level 3.",
+    "budget-exhausted": "A budget is used up.",
+    "policy": "A rule asks for it."
+  },
+  "outcome": {
+    "allow": "allowed",
+    "needs-approval": "needs approval",
+    "deny": "blocked"
+  },
+  "budgetsTitle": "Budgets",
+  "budgetsHint": "Days and months in UTC. A warning at 80 %, the work stops at 100 %.",
+  "metric": {
+    "tokens": "Tokens",
+    "cost": "Cost",
+    "time": "Working time"
+  },
+  "metricUnit": {
+    "tokens": "tokens",
+    "cost": "€",
+    "time": "hours"
+  },
+  "period": {
+    "day": "per day",
+    "month": "per month"
+  },
+  "noLimit": "no limit",
+  "usedOf": "{used} of {limit}",
+  "usedNoLimit": "{used} used",
+  "reached": "used up",
+  "warned": "over 80 %",
+  "graceRuns": "{count, plural, one {# run} other {# runs}} past it",
+  "unpriced": "{tokens} tokens without a price",
+  "estimate": "Costs are estimates from the price list.",
+  "budgetsSaved": "Budgets saved.",
+  "invalidLimit": "A limit has to be a number above 0.",
+  "agentsTitle": "Agents",
+  "agentsEmpty": "No agents work in this project yet.",
+  "paused": "paused",
+  "logTitle": "Decisions",
+  "logEmpty": "No decisions yet.",
+  "logAll": "All",
+  "logMore": "Load more",
+  "adapter": {
+    "hermes": "Hermes",
+    "claude": "Claude Code",
+    "codex": "Codex",
+    "mcp": "Helena tool",
+    "gateway": "Browser",
+    "workflow": "Workflow",
+    "approval": "Approval request",
+    "chat": "Chat"
+  },
+  "agent": {
+    "title": "Autopilot",
+    "hint": "How independently the agent acts and what it may spend",
+    "own": "Own level",
+    "followProject": "Same as the project",
+    "raise": "Allow more than the project",
+    "raiseHint": "Otherwise the stricter level applies. Only the team owner can allow an agent more.",
+    "inProject": "In {project}",
+    "noProjects": "The agent works in no project.",
+    "usage": "Usage",
+    "today": "Today",
+    "month": "This month",
+    "pausedBecause": "Paused: {reason}",
+    "budgetsHint": "Covers everything the agent does: runs and chats.",
+    "projectBudgets": "Budgets of {project}"
+  },
+  "card": {
+    "title": "Budget used up",
+    "agentBudget": "{period} {metric} of {agent}",
+    "projectBudget": "{period} {metric} of project {project}",
+    "raise": "Raise the budget",
+    "once": "Continue once",
+    "keep": "Keep stopped",
+    "newLimit": "New limit",
+    "raisedToast": "Budget raised. The work goes on.",
+    "onceToast": "One more run may start.",
+    "keptToast": "The work stays stopped.",
+    "raised": "Budget raised by {name}",
+    "continuedOnce": "Continued once by {name}",
+    "kept": "Kept stopped by {name}",
+    "limitTooLow": "The new limit has to be above what is used."
+  },
+  "request": {
+    "level": "Level {level}",
+    "reason": "Why it needs approval"
+  },
+  "prices": {
+    "estimate": "Every price is an estimate: converted to euros from models.dev or entered by hand.",
+    "search": "Search models",
+    "model": "Model",
+    "provider": "Provider",
+    "input": "Input",
+    "output": "Output",
+    "cacheRead": "Cache read",
+    "cacheWrite": "Cache write",
+    "perMTok": "€ per 1M tokens",
+    "sourceLabel": "Source",
+    "source": {
+      "models.dev": "models.dev",
+      "manual": "by hand"
+    },
+    "import": "Update from models.dev",
+    "importing": "Updating …",
+    "importedToast": "{count} prices updated, {manual} entered by hand kept.",
+    "rate": "Exchange rate",
+    "rateHint": "Euros per US dollar for the models.dev prices",
+    "rateSaved": "Exchange rate saved, prices converted again.",
+    "importedAt": "Last updated: {date} ({from})",
+    "from": {
+      "snapshot": "list shipped with Helena",
+      "models.dev": "models.dev"
+    },
+    "add": "Enter a price",
+    "edit": "Edit",
+    "reset": "Reset",
+    "resetToast": "The price of {model} comes from models.dev again.",
+    "savedToast": "Price of {model} saved.",
+    "dialogTitle": "Price by hand",
+    "dialogHint": "A price entered by hand is never overwritten by an import.",
+    "empty": "No prices found.",
+    "none": "–"
+  }
+}

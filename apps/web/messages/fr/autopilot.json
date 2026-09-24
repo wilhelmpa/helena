@@ -1,0 +1,187 @@
+{
+  "level": {
+    "0": {
+      "name": "Proposer",
+      "description": "Les agents lisent et proposent. Chaque modification demande ton approbation."
+    },
+    "1": {
+      "name": "Avec approbation",
+      "description": "Les agents modifient les tâches et les fichiers du projet. Tout ce qui a des conséquences demande ton approbation."
+    },
+    "2": {
+      "name": "Agir et rendre compte",
+      "description": "Les agents suppriment et exécutent des commandes risquées dans leur propre espace de travail, puis en rendent compte. Ce qui sort demande ton approbation."
+    },
+    "3": {
+      "name": "Autonome dans le budget",
+      "description": "Les agents agissent sans approbation jusqu’à épuisement d’un budget. Payer, supprimer à l’extérieur et les identifiants, c’est toujours toi qui approuves."
+    }
+  },
+  "levelTitle": "Niveau",
+  "levelSaved": "Autopilot réglé sur le niveau {level}.",
+  "badge": "A{level}",
+  "badgeTitle": "Niveau d’Autopilot {level} : {name}",
+  "summaryMay": "Les agents de ce projet peuvent",
+  "summaryAsk": "Ils ont besoin de ton approbation pour",
+  "category": {
+    "read": "lire",
+    "report": "commenter et rendre compte",
+    "write": "modifier les tâches et les fichiers",
+    "send": "envoyer et soumettre",
+    "publish": "publier, pousser, déployer",
+    "execute": "exécuter des commandes risquées",
+    "delete": "supprimer",
+    "pay": "payer",
+    "credentials": "modifier les accès, clés et droits"
+  },
+  "categoryLabel": {
+    "read": "Lire",
+    "report": "Rendre compte",
+    "write": "Modifier",
+    "send": "Envoyer",
+    "publish": "Publier",
+    "execute": "Exécuter",
+    "delete": "Supprimer",
+    "pay": "Payer",
+    "credentials": "Accès"
+  },
+  "scope": {
+    "workspace": "dans l’espace de travail",
+    "external": "à l’extérieur"
+  },
+  "source": {
+    "project": "du projet",
+    "agent": "niveau propre, plus strict",
+    "agent-raised": "niveau propre, relevé par le propriétaire",
+    "default": "par défaut"
+  },
+  "reason": {
+    "always-allowed": "Lire et rendre compte est toujours permis.",
+    "level-allows": "Le niveau {level} ({name}) le permet.",
+    "approved": "Approuvé.",
+    "level-requires-approval": "Le niveau {level} ({name}) demande une approbation ici.",
+    "hard-block": "Une personne l’approuve toujours, même au niveau 3.",
+    "budget-exhausted": "Un budget est épuisé.",
+    "policy": "Une règle l’exige."
+  },
+  "outcome": {
+    "allow": "autorisé",
+    "needs-approval": "approbation requise",
+    "deny": "bloqué"
+  },
+  "budgetsTitle": "Budgets",
+  "budgetsHint": "Jours et mois en UTC. Avertissement à 80 %, le travail s’arrête à 100 %.",
+  "metric": {
+    "tokens": "Tokens",
+    "cost": "Coût",
+    "time": "Temps de travail"
+  },
+  "metricUnit": {
+    "tokens": "tokens",
+    "cost": "€",
+    "time": "heures"
+  },
+  "period": {
+    "day": "par jour",
+    "month": "par mois"
+  },
+  "noLimit": "sans limite",
+  "usedOf": "{used} sur {limit}",
+  "usedNoLimit": "{used} utilisés",
+  "reached": "épuisé",
+  "warned": "plus de 80 %",
+  "graceRuns": "{count, plural, one {# exécution} other {# exécutions}} au-delà",
+  "unpriced": "{tokens} tokens sans prix",
+  "estimate": "Les coûts sont des estimations tirées de la liste de prix.",
+  "budgetsSaved": "Budgets enregistrés.",
+  "invalidLimit": "Une limite doit être un nombre supérieur à 0.",
+  "agentsTitle": "Agents",
+  "agentsEmpty": "Aucun agent ne travaille encore dans ce projet.",
+  "paused": "en pause",
+  "logTitle": "Décisions",
+  "logEmpty": "Pas encore de décisions.",
+  "logAll": "Toutes",
+  "logMore": "Charger plus",
+  "adapter": {
+    "hermes": "Hermes",
+    "claude": "Claude Code",
+    "codex": "Codex",
+    "mcp": "Outil Helena",
+    "gateway": "Navigateur",
+    "workflow": "Workflow",
+    "approval": "Demande d’approbation",
+    "chat": "Chat"
+  },
+  "agent": {
+    "title": "Autopilot",
+    "hint": "Avec quelle autonomie l’agent agit et ce qu’il peut dépenser",
+    "own": "Niveau propre",
+    "followProject": "Comme le projet",
+    "raise": "Permettre plus que le projet",
+    "raiseHint": "Sinon, c’est le niveau le plus strict qui s’applique. Seul le propriétaire de l’équipe peut permettre plus à un agent.",
+    "inProject": "Dans {project}",
+    "noProjects": "L’agent ne travaille dans aucun projet.",
+    "usage": "Consommation",
+    "today": "Aujourd’hui",
+    "month": "Ce mois-ci",
+    "pausedBecause": "En pause : {reason}",
+    "budgetsHint": "Couvre tout ce que fait l’agent : exécutions et chats.",
+    "projectBudgets": "Budgets de {project}"
+  },
+  "card": {
+    "title": "Budget épuisé",
+    "agentBudget": "{metric} {period} de {agent}",
+    "projectBudget": "{metric} {period} du projet {project}",
+    "raise": "Augmenter le budget",
+    "once": "Continuer une fois",
+    "keep": "Laisser arrêté",
+    "newLimit": "Nouvelle limite",
+    "raisedToast": "Budget augmenté. Le travail continue.",
+    "onceToast": "Une exécution de plus peut démarrer.",
+    "keptToast": "Le travail reste arrêté.",
+    "raised": "Budget augmenté par {name}",
+    "continuedOnce": "Poursuivi une fois par {name}",
+    "kept": "Laissé arrêté par {name}",
+    "limitTooLow": "La nouvelle limite doit dépasser la consommation."
+  },
+  "request": {
+    "level": "Niveau {level}",
+    "reason": "Pourquoi une approbation"
+  },
+  "prices": {
+    "estimate": "Tous les prix sont des estimations : convertis en euros depuis models.dev ou saisis à la main.",
+    "search": "Rechercher un modèle",
+    "model": "Modèle",
+    "provider": "Fournisseur",
+    "input": "Entrée",
+    "output": "Sortie",
+    "cacheRead": "Lecture du cache",
+    "cacheWrite": "Écriture du cache",
+    "perMTok": "€ pour 1 M de tokens",
+    "sourceLabel": "Source",
+    "source": {
+      "models.dev": "models.dev",
+      "manual": "à la main"
+    },
+    "import": "Mettre à jour depuis models.dev",
+    "importing": "Mise à jour …",
+    "importedToast": "{count} prix mis à jour, {manual} saisis à la main conservés.",
+    "rate": "Taux de change",
+    "rateHint": "Euros par dollar américain pour les prix de models.dev",
+    "rateSaved": "Taux de change enregistré, prix reconvertis.",
+    "importedAt": "Dernière mise à jour : {date} ({from})",
+    "from": {
+      "snapshot": "liste fournie avec Helena",
+      "models.dev": "models.dev"
+    },
+    "add": "Saisir un prix",
+    "edit": "Modifier",
+    "reset": "Réinitialiser",
+    "resetToast": "Le prix de {model} revient de models.dev.",
+    "savedToast": "Prix de {model} enregistré.",
+    "dialogTitle": "Prix à la main",
+    "dialogHint": "Un prix saisi à la main n’est jamais écrasé par une importation.",
+    "empty": "Aucun prix trouvé.",
+    "none": "–"
+  }
+}
