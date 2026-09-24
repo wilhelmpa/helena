@@ -14,6 +14,7 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 | BRW-03 | done | see git log | `mp4box` 2.4.1 (BSD-3), test only |
 | WEB-17 | done | see git log | `negotiator` 1.1 + `@formatjs/intl-localematcher` 0.8 (MIT), in `@helena/locales` |
 | WEB-18 | done | see git log | no library |
+| WEB-19 | done | see git log | no library (Puppeteer's US layout as reference) |
 | F16 | done | see git log | `mime-types` 3.0.2 + `file-type` 22.1.1 (MIT) in `@repo/storage/mime` |
 
 ## F21: IP classification with `ipaddr.js`
@@ -96,3 +97,8 @@ Status: in progress, 2026-09-24. Scope: the backlog in `docs/helena-decisions/st
 - Finding beyond the audit: xterm.js (6.0 in WeTTY 3.2.2) decides what a key sends by the legacy `keyCode`, and the bar built its events from `key` and `code` only (keyCode 0). Checked in headless Chrome against WeTTY's own `xterm.js`: the old events sent nothing at all, not only Ctrl combinations. The paste button typed characters as keydowns, which xterm ignores for the same reason.
 - Now (`features/owner-terminal/utils/terminalKeys.ts`): every key carries its keyCode; Ctrl and Alt are latched toggles (`aria-pressed`, accent while held) that apply to the next key from the bar **or** from the phone's keyboard (the next typed character is taken over in the frame's document, from `keydown` or, for soft keyboards, `beforeinput`); paste is one `insertText` input event with CR line ends, the path xterm uses for typed text.
 - Verified with the real xterm.js: Esc, Tab, arrows, `|`, Ctrl+C (0x03), paste, and a latched Ctrl followed by a typed key (Ctrl+D, and Ctrl+E via `insertText` as a soft keyboard sends it). Alt+letter becomes ESC+letter on phones; on a Mac xterm treats Option as a compose key, which does not concern the phone-only bar.
+
+## WEB-19: live view key codes from key and code
+
+- `utils/browserLive.ts` `virtualKeyCode()` builds the Windows virtual key code DevTools wants from `KeyboardEvent.key` and `.code` instead of passing the deprecated `keyCode` on. Deviation from "map from `code`" alone: a letter or digit follows `key` (what the person's layout typed), because mapping German Z (physical `KeyY`) by place would turn Ctrl+Z (undo) into Ctrl+Y (redo). A letter of another script (Russian м) and every other key follow the US place of `code`, which is what browsers themselves report, and named keys (Enter, arrows, F1–F24) follow `key`. The raw `keyCode` is only the last fallback (never 229).
+- The paste-shortcut check uses the same code, so Ctrl+V is found when a browser reports keyCode 0.

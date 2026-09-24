@@ -5,6 +5,7 @@ import {
   frameRect,
   heldButton,
   keyMessage,
+  virtualKeyCode,
   modifiers,
   mouseButton,
   pagePoint,
@@ -199,6 +200,40 @@ describe('live view keys', () => {
     );
     assert.equal(keyMessage(key({}), 'up', false)?.text, undefined);
     assert.equal(keyMessage(key({ ctrlKey: true }), 'down', false)?.text, undefined);
+  });
+
+  it('derives the virtual key code from the key and its place, not the event keyCode', () => {
+    const code = (key: string, code: string, keyCode = 0, location = 0) =>
+      virtualKeyCode({ key, code, keyCode, location });
+    // The Z of a German keyboard sits where a US one has Y: Control+Z stays undo.
+    assert.equal(code('z', 'KeyY', 0), 90);
+    // A Cyrillic letter is the Latin key in its place, as browsers report it.
+    assert.equal(code('м', 'KeyV', 0), 86);
+    // Punctuation of another layout by its US place, even where Firefox reports 0.
+    assert.equal(code('ü', 'BracketLeft', 0), 219);
+    assert.equal(code('ß', 'Minus', 0), 189);
+    assert.equal(code('Enter', 'NumpadEnter'), 13);
+    assert.equal(code('F5', 'F5'), 116);
+    assert.equal(code('F12', 'F12'), 123);
+    assert.equal(code('5', 'Numpad5', 0, 3), 101);
+    assert.equal(code('%', 'Digit5', 0), 53);
+    assert.equal(code('ArrowDown', 'ArrowDown'), 40);
+    // Nothing to derive it from: the browser's own value, never the composition marker.
+    assert.equal(code('AudioVolumeUp', 'AudioVolumeUp', 175), 175);
+    assert.equal(code('Unknown', '', 229), 0);
+  });
+
+  it('finds Control+V on a German keyboard whose browser reports no keyCode', () => {
+    assert.equal(
+      keyMessage(key({ key: 'v', code: 'KeyV', keyCode: 0, ctrlKey: true }), 'down', false),
+      null,
+    );
+    const undo = keyMessage(
+      key({ key: 'z', code: 'KeyY', keyCode: 0, ctrlKey: true }),
+      'down',
+      false,
+    );
+    assert.equal(undo?.keyCode, 90);
   });
 
   it('sends Enter with a carriage return and editing keys without text', () => {
