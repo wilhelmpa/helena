@@ -267,7 +267,13 @@ function target(
     label: { i18n: label },
     icon,
     accepts: ['text', 'chat-message', 'web-page', 'mail-message', 'issue', 'file'],
-    capture: (input, ctx) => run(input, { ref: ctx.actor }),
+    capture: (input, ctx) =>
+      run(input, {
+        ref: ctx.actor,
+        runId: ctx.runId ?? null,
+        timeZone: ctx.timeZone,
+        locale: ctx.locale,
+      }),
   };
 }
 

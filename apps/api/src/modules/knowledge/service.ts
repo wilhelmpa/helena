@@ -40,6 +40,7 @@ import {
   writeVaultFile,
   type Frontmatter,
 } from '@repo/vault';
+import { reindexVaultPaths } from '@helena/knowledge';
 import { HttpError, iso } from '#shared/lib';
 import { attachmentResponseHeaders, safeAttachmentFilename } from '#modules/attachments/storage';
 import { canAccess, readableEntries, type VaultScope } from './scope';
@@ -134,17 +135,39 @@ export async function readDocument(relative: string, maxChars = DEFAULT_MAX_CHAR
   };
 }
 
+// The knowledge index follows a write right away; a failure there never fails the write
+// (the worker's catch-up brings it in).
+export async function reindexVaultItems(paths: string[]): Promise<void> {
+  try {
+    await reindexVaultPaths(paths);
+  } catch (error) {
+    console.error('[knowledge] reindexing after a write failed:', error);
+  }
+}
+
 // The note after the write, and the commit that records it. The index is updated
 // right away, so the Docs tree, search and backlinks show the change before the
 // watcher sees it.
+//
+// The index records who wrote it (and in which run), the commit carries the same as git
+// trailers, and the knowledge index takes the change in at once, so the search (⌘K and
+// the agents' search_knowledge) finds it before the worker's next catch-up.
 async function recordWrite(
   paths: string[],
   message: string,
   scope: VaultScope,
   options: { continueSession?: boolean } = {},
 ): Promise<void> {
-  await indexVaultPaths(paths);
-  await commitVaultPaths(paths, message, scope.author, options);
+  const { actor } = scope;
+  await indexVaultPaths(paths, { author: actor.ref, runId: actor.runId });
+  await commitVaultPaths(paths, message, scope.author, {
+    ...options,
+    trailers: {
+      'Helena-Actor': actor.ref,
+      ...(actor.runId ? { 'Helena-Run': String(actor.runId) } : {}),
+    },
+  });
+  await reindexVaultItems(paths);
 }
 
 export async function writeNote(

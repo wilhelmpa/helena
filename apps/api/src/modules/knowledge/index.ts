@@ -4,6 +4,8 @@ import { authContext } from '#shared/auth-context';
 import { HttpError } from '#shared/lib';
 import { mcpTool } from '#mcp/generate';
 import { commonErrors, errors } from '#shared/responses';
+import { captureRoutes } from './capture-routes';
+import { everythingRoutes } from './everything';
 import { vaultGuard } from './guard';
 import {
   backlinksQuery,
@@ -66,6 +68,8 @@ export const knowledgeRoutes = new Elysia({
 })
   .use(authContext)
   .use(vaultGuard)
+  .use(everythingRoutes)
+  .use(captureRoutes)
   .get(
     '/knowledge/search',
     ({ scope, paths, query }) =>
@@ -74,11 +78,12 @@ export const knowledgeRoutes = new Elysia({
       vault: { action: 'read', fields: ['folder'] },
       query: searchQuery,
       response: { 200: SearchResponse, ...commonErrors },
+      // Agents search through /knowledge/find (everything.ts), which covers the vault and
+      // every other source under the same tool name; this one serves the Docs search.
       detail: {
         summary: 'Search the knowledge vault',
         description:
-          'Ranked full-text search over the notes of the knowledge vault and the text extracted from its PDFs, scans, images and office files. Returns vault paths with a short excerpt (matches in **bold**); open one with read_document. `folder` limits the search, e.g. "Projects/VOL" for one project or "Templates".',
-        ...mcpTool('search_knowledge'),
+          'Ranked full-text search over the notes of the knowledge vault and the text extracted from its PDFs, scans, images and office files. Returns vault paths with a short excerpt (matches in **bold**). `folder` limits the search, e.g. "Projects/VOL" for one project or "Templates".',
       },
     },
   )

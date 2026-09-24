@@ -1,6 +1,7 @@
-import { and, asc, eq, gt, gte, inArray, ne, type SQL } from 'drizzle-orm';
-import { db, project, vaultEntry, vaultLink } from '@repo/db';
-import { frontmatterTags, locateVaultPath } from '@repo/vault';
+import { and, asc, eq, gt, gte, inArray, like, ne, or, type SQL } from 'drizzle-orm';
+import { db, knowledgeItem, project, vaultEntry, vaultLink } from '@repo/db';
+import { belowPattern, frontmatterTags, locateVaultPath, pathOrBelow } from '@repo/vault';
+import { reindexItems } from '../indexer';
 import type { KnowledgeItem, KnowledgeLink, KnowledgeScope, KnowledgeSource } from '@helena/sdk';
 import { taskTarget } from '../text';
 import {
@@ -182,3 +183,32 @@ export const vaultSource: KnowledgeSource = {
     return row?.path ?? null;
   },
 };
+
+// Brings the vault items at and below the given paths up to date at once: after a write
+// through the API, so the search shows it before the worker's next catch-up.
+export async function reindexVaultPaths(paths: string[]): Promise<void> {
+  const ids = new Set<string>();
+  for (const relative of new Set(paths.filter(Boolean))) {
+    const [onDisk, indexed] = await Promise.all([
+      db
+        .select({ path: vaultEntry.path })
+        .from(vaultEntry)
+        .where(and(ne(vaultEntry.kind, 'folder'), pathOrBelow(relative))),
+      db
+        .select({ itemId: knowledgeItem.itemId })
+        .from(knowledgeItem)
+        .where(
+          and(
+            eq(knowledgeItem.source, 'vault'),
+            or(
+              eq(knowledgeItem.itemId, relative),
+              like(knowledgeItem.itemId, belowPattern(relative)),
+            ),
+          ),
+        ),
+    ]);
+    for (const row of onDisk) ids.add(row.path);
+    for (const row of indexed) ids.add(row.itemId);
+  }
+  if (ids.size > 0) await reindexItems(vaultSource, [...ids]);
+}

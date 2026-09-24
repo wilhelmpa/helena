@@ -11,6 +11,7 @@ export {
   useKnowledgeRegistries,
 } from './registry';
 export { builtinKnowledgeSources } from './sources';
+export { reindexVaultPaths, vaultSource } from './sources/vault';
 export { instanceHome, routes, type InstanceHome } from './sources/common';
 export {
   DEFAULT_INDEXER_OPTIONS,
@@ -71,3 +72,24 @@ export {
   type TemplateInfo,
 } from './templates';
 export { mentionLinks, parseRef, plainText, taskMentions, taskTarget, vaultTarget } from './text';
+export { webNoteText, webPageToNote, type WebPageNote } from './web-capture';
+export {
+  activeEmbedder,
+  chunkText,
+  createTransformersEmbedder,
+  DEFAULT_SEMANTIC_MODEL,
+  embedPending,
+  ensureVectorIndex,
+  hasPgvector,
+  normalize,
+  saveSemanticSetting,
+  semanticRetriever,
+  semanticSetting,
+  semanticStatus,
+  syncEmbedder,
+  SEMANTIC_SETTING,
+  useEmbedder,
+  type Embedder,
+  type SemanticSetting,
+  type SemanticStatus,
+} from './vectors';

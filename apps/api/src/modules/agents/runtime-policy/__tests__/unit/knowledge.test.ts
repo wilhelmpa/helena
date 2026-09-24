@@ -13,6 +13,7 @@ function scope(overrides: Partial<VaultScope>): VaultScope {
     private: false,
     agent: { username: 'writer' },
     author,
+    actor: { ref: 'agent:1', agentId: 1, runId: null, timeZone: 'UTC', locale: 'en' },
     ...overrides,
   };
 }

@@ -16,7 +16,10 @@
     "@helena/sdk": "workspace:*",
     "@repo/db": "workspace:*",
     "@repo/vault": "workspace:*",
-    "drizzle-orm": "^0.45.2"
+    "defuddle": "0.19.4",
+    "drizzle-orm": "^0.45.2",
+    "linkedom": "0.18.13",
+    "turndown": "7.2.4"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",

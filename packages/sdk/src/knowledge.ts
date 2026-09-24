@@ -131,5 +131,15 @@ export interface CaptureTarget {
   label: LocalizedText;
   icon?: string;
   accepts: CaptureKind[];
-  capture(input: CaptureInput, ctx: { actor: string }): Promise<CaptureResult>;
+  capture(input: CaptureInput, ctx: CaptureContext): Promise<CaptureResult>;
+}
+
+export interface CaptureContext {
+  // `user:<id>` or `agent:<id>`.
+  actor: string;
+  // The agent run the capture happens in, for provenance.
+  runId?: number | null;
+  // The actor's time zone and locale, for dates in names and daily notes.
+  timeZone?: string;
+  locale?: string;
 }

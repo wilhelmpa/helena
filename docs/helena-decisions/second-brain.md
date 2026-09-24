@@ -91,7 +91,20 @@ Model candidates (all ONNX, all multilingual incl. German):
 - **Templates:** Tagesnotiz, Meeting, Entscheidung (ADR-shaped: context, options, decision, consequences), Recherche, Projektbrief; English equivalents on an English instance.
 - **Linking and resurfacing:** backlinks everywhere (task ↔ note ↔ mail ↔ chat ↔ run), "recent" in the empty search box; later: "on this day" in the daily note and related items by embedding similarity once semantic search is on.
 
-## 8. The framework shape
+## 8. Markdown parsing: marked outside the chat (orchestrator decision D-C6 left this to package K)
+
+| Where | Parser | Why |
+|---|---|---|
+| Chat | Streamdown (unified/remark inside) | D-C6, streaming-safe; hub/chat-standards |
+| Editor (Docs, stickers) | `@tiptap/markdown` (built on **marked**) | D-C6 / WEB-02, hub/standards-quickwins |
+| Every other display (previews, task descriptions, file viewer, search snippets) | **marked** + DOMPurify | the same parser as the editor, so a note reads the same in the editor and in a preview; one place for Helena's extensions |
+| Server (links, frontmatter) | the tested extractors in `@repo/vault` (`yaml` for frontmatter, a code-aware link scanner) | no AST needed today; if one is (block refs, embeds), `marked.lexer` rather than a second pipeline |
+
+Decision: **marked everywhere outside the chat.** Obsidian syntax Helena understands (`[[wikilinks]]`, `![[embeds]]`, `==highlight==`, callouts) is written once as marked extensions and shared by the editor (`@tiptap/markdown` accepts marked tokenizers) and the display. Rejected: remark everywhere: it would mean a second parser beside the editor's marked (the editor cannot move to remark without leaving TipTap's official Markdown package), and the only remark user, Streamdown, keeps its own pipeline by design.
+
+Backlog from the standards audit (§5.11): F22 (JSON Canvas boards) and DB-2 (one Postgres FTS search across sources) are this package; WEB-02 is coordinated (the editor's Markdown output must keep frontmatter and wikilinks byte-stable on round trips; the round-trip test in `packages/knowledge` covers the file side); F19 (one extraction module) is owned by hub/oss-packaging, and `@helena/knowledge` only reads the text `@repo/vault` extracted.
+
+## 9. The framework shape
 
 `@helena/knowledge` is the extension point's first user: the built-ins register through the `@helena/sdk` `KnowledgeSource` / `CaptureTarget` registries as the internal plugin `helena.knowledge`, exactly as an outside plugin would. SDK additions made here (additive): `KnowledgeScope.permission` (the role-matrix resource a reader needs), `KnowledgeItem.group` (collapse a thread into one result), `KnowledgeSource.present(ids)` (cheap sweep of deleted items).
 

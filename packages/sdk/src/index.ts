@@ -103,6 +103,7 @@ export {
 export type {
   CaptureInput,
   CaptureKind,
+  CaptureContext,
   CaptureResult,
   CaptureTarget,
   KnowledgeItem,
