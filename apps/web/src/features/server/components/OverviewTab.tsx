@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { resolveText } from '@helena/sdk/web';
+import { byKey } from '@/utils/messageKey';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { formatDuration } from '@/utils/dates';
 import { serverPath } from '@/utils/paths';
@@ -16,6 +18,8 @@ import ServerToolbar from './ServerToolbar';
 // health line of every area, problems first.
 export default function OverviewTab({ tabs }: { tabs: ServerTab[] }) {
   const t = useTranslations('server');
+  const tRoot = useTranslations();
+  const locale = useLocale();
   const qc = useQueryClient();
   const overview = useServerOverview();
   const system = useServerSystem();
@@ -110,11 +114,11 @@ export default function OverviewTab({ tabs }: { tabs: ServerTab[] }) {
                       href={serverPath(capability.area)}
                       className="flex h-8 items-center px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
                     >
-                      {t(`areas.${capability.area}`)}
+                      {resolveText(capability.label, locale, (key) => byKey(tRoot)(key))}
                     </Link>
                   ) : (
                     <div className="flex h-8 items-center px-2 text-xs font-medium text-muted-foreground">
-                      {capability.area}
+                      {resolveText(capability.label, locale, (key) => byKey(tRoot)(key))}
                     </div>
                   )}
                   <ul>

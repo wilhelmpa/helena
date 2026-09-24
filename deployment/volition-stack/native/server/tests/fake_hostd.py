@@ -51,11 +51,11 @@ class Fake:
         self.targets: list[dict] = []
         self.events = [
             {'id': 1, 'at': iso(-7200), 'source': 'mdadm', 'severity': 'critical', 'code': 'DegradedArray',
-             'device': '/dev/md/helena-root', 'message': 'DegradedArray /dev/md/helena-root'},
+             'device': '/dev/md/helena-root', 'message': None},
             {'id': 2, 'at': iso(-7100), 'source': 'mdadm', 'severity': 'info', 'code': 'RebuildStarted',
-             'device': '/dev/md/helena-root', 'message': 'RebuildStarted /dev/md/helena-root'},
+             'device': '/dev/md/helena-root', 'message': '/dev/nvme0n1p2'},
             {'id': 3, 'at': iso(-600), 'source': 'mdadm', 'severity': 'info', 'code': 'Rebuild40',
-             'device': '/dev/md/helena-root', 'message': 'Rebuild40 /dev/md/helena-root'},
+             'device': '/dev/md/helena-root', 'message': None},
         ]
         self.seen = 0
 
@@ -149,8 +149,8 @@ class Fake:
                                                ('performance', 'performance', 'performance'))},
             'temperatures': [
                 {'sensor': 'acpitz', 'id': 'hwmon0/temp1', 'label': None, 'celsius': 73.0},
-                {'sensor': 'nvme', 'id': 'hwmon1/temp1', 'label': 'Composite', 'celsius': 48.9},
-                {'sensor': 'nvme', 'id': 'hwmon2/temp1', 'label': 'Composite', 'celsius': 53.9},
+                {'sensor': 'nvme', 'id': 'hwmon1/temp1', 'label': 'Composite', 'celsius': 48.9, 'disk': 'nvme1n1'},
+                {'sensor': 'nvme', 'id': 'hwmon2/temp1', 'label': 'Composite', 'celsius': 53.9, 'disk': 'nvme0n1'},
                 {'sensor': 'k10temp', 'id': 'hwmon3/temp1', 'label': 'Tctl', 'celsius': 57.5},
                 {'sensor': 'amdgpu', 'id': 'hwmon5/temp1', 'label': 'edge', 'celsius': 40.0},
                 {'sensor': 'amdgpu', 'id': 'hwmon5/power1', 'label': 'PPT', 'watts': 23.0},

@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { formatDurationShort } from '@/utils/dates';
 import {
   serverKeys,
+  useServerDisks,
   useServerPower,
   useSetFans,
   useSetGuardLimit,
@@ -326,11 +327,14 @@ function FansCard({ data }: { data: PowerStatus }) {
 
 function TemperatureCard({ data }: { data: PowerStatus }) {
   const t = useTranslations('server.power');
+  const disks = useServerDisks();
+  const letterOf = (kname: string | null | undefined) =>
+    disks.data?.storage.disks.find((disk) => disk.kname === kname)?.letter ?? kname ?? '';
   const label = (sensor: PowerStatus['temperatures'][number]) => {
     if (sensor.sensor === 'k10temp') return t('sensor.cpu');
     if (sensor.sensor === 'amdgpu' && sensor.watts !== undefined) return t('sensor.gpuPower');
     if (sensor.sensor === 'amdgpu') return t('sensor.gpu');
-    if (sensor.sensor === 'nvme') return t('sensor.nvme', { id: sensor.id.split('/')[0] ?? '' });
+    if (sensor.sensor === 'nvme') return t('sensor.nvme', { id: letterOf(sensor.disk) });
     if (sensor.sensor === 'acpitz') return t('sensor.board');
     return sensor.label ?? sensor.sensor;
   };

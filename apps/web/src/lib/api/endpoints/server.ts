@@ -198,6 +198,8 @@ export interface PowerStatus {
     label: string | null;
     celsius?: number;
     watts?: number;
+    // NVMe: the drive's block device (nvme0n1).
+    disk?: string | null;
   }[];
   cpuTemperatureC: number | null;
   guard: {

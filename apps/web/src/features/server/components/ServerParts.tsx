@@ -52,7 +52,7 @@ export function Fact({ label, children }: { label: string; children: ReactNode }
   return (
     <div className="min-w-0">
       <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 truncate">{children}</dd>
+      <dd className="min-w-0 break-words">{children}</dd>
     </div>
   );
 }

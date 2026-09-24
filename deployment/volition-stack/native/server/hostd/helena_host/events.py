@@ -32,7 +32,7 @@ MDADM_SEVERITY = {
 SMARTD_CRITICAL = {
     'Health', 'FailedHealthCheck', 'SelfTest', 'CurrentPendingSector', 'OfflineUncorrectableSector',
 }
-PRINTABLE = re.compile(r'[^\x20-\x7e -￿]')
+PRINTABLE = re.compile('[^\\x20-\\x7e\\u00a0-\\uffff]')
 
 
 def _clean(value: object, limit: int = 300) -> str:
@@ -113,7 +113,8 @@ def from_mdadm(args: list[str]) -> dict:
         'severity': severity,
         'code': event,
         'device': device,
-        'message': f'{event} {device or ""} {component or ""}'.strip(),
+        # The event and the array are the code and the device; the component is the rest.
+        'message': component,
     }
 
 

@@ -137,6 +137,18 @@ def validate_fans(mode: object, level: object) -> tuple[str, int | None]:
 
 # ── Temperatures (hwmon) ────────────────────────────────────────────────────────────────
 
+def nvme_disk(host: Host, hwmon: str) -> str | None:
+    """The block device of an NVMe drive's hwmon: …/nvme/nvme0 → nvme0n1."""
+    try:
+        controller = os.path.basename(os.path.realpath(host.path(f'{hwmon}/device')))
+    except OSError:
+        return None
+    if not re.match(r'^nvme\d+$', controller):
+        return None
+    namespaces = [name for name in host.listdir(f'{hwmon}/device') if re.match(rf'^{controller}n\d+$', name)]
+    return sorted(namespaces)[0] if namespaces else f'{controller}n1'
+
+
 def read_temperatures(host: Host) -> list[dict]:
     sensors = []
     for entry in host.listdir('/sys/class/hwmon'):
@@ -151,12 +163,15 @@ def read_temperatures(host: Host) -> list[dict]:
             label = (host.read(f'{base}/temp{index}_label', 64) or '').strip() or None
             if name == 'nvme' and label not in (None, 'Composite'):
                 continue
-            sensors.append({
+            sensor = {
                 'sensor': name,
                 'id': f'{entry}/temp{index}',
                 'label': label,
                 'celsius': round(value / 1000, 1),
-            })
+            }
+            if name == 'nvme':
+                sensor['disk'] = nvme_disk(host, base)
+            sensors.append(sensor)
         if name == 'amdgpu':
             watts = host.read_int(f'{base}/power1_average') or host.read_int(f'{base}/power1_input')
             if watts is not None:

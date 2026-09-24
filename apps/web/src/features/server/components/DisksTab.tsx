@@ -409,6 +409,12 @@ function EventsCard({ events }: { events: HostEvents | null }) {
   const tCodes = useTranslations('server.events.codes');
   const seen = useMarkEventsSeen();
   const list = events?.events ?? [];
+  // mdadm reports a rebuild's progress as Rebuild20, Rebuild40, …
+  const eventTitle = (code: string) => {
+    const progress = /^Rebuild(\d+)$/.exec(code);
+    if (progress) return tCodes('RebuildProgress', { percent: Number(progress[1]) });
+    return tCodes.has(code as never) ? read(code) : code;
+  };
   return (
     <section className={`${CARD} xl:col-span-2`}>
       <CardHeader title={t('title')}>
@@ -443,7 +449,7 @@ function EventsCard({ events }: { events: HostEvents | null }) {
               </span>
               <span className="min-w-0 flex-1">
                 <span className={event.id > (events?.seenUpTo ?? 0) ? 'font-medium' : undefined}>
-                  {tCodes.has(event.code as never) ? read(event.code) : event.code}
+                  {eventTitle(event.code)}
                 </span>
                 <span className="text-muted-foreground">
                   {' · '}
