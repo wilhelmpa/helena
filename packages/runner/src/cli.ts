@@ -3,16 +3,14 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { answer } from './chat';
 import { Client, RequestError, type ChatMessage, type Run } from './client';
 import { loadConfig, type RunnerConfig } from './config';
+import { runtimeAdapter } from './adapters';
 import { readHermesInventory, type HermesProfile } from './inventory';
 import { readLearnedSkills } from './learning';
 import { pythonVaultStore, WebLoginVault } from './logins';
-import {
-  HermesPolicyMaterializer,
-  hermesPolicySynchronizer,
-  type HermesPolicySynchronizer,
-} from './policy';
+import { HermesPolicyMaterializer, type ApplyOptions, type MaterializerContext } from './policy';
 import { reflect } from './reflect';
 import { perform } from './run';
+import type { RuntimeAdapter } from './runtime';
 
 // The runner holds no state — the queue is the server's. A runner stopped by its service
 // manager (SIGTERM) kills the commands in flight and hands their runs back, so they are
@@ -69,7 +67,7 @@ async function handle(
   client: Client,
   log: Log,
   run: Run,
-  policy: HermesPolicySynchronizer | null,
+  policy: RuntimeAdapter | null,
 ): Promise<void> {
   const label = run.issueIdentifier ?? `run ${run.id}`;
   const stop = new AbortController();
@@ -91,7 +89,7 @@ async function handle(
             lost.abort();
             stop.abort();
           },
-          perform(config, client, run, stop, hermes, { lost: lost.signal }),
+          perform(config, client, run, stop, hermes, { lost: lost.signal, runtime: policy }),
         );
     if (performed) {
       const { outcome, reflection } = performed;
@@ -130,7 +128,7 @@ async function handleChat(
   client: Client,
   log: Log,
   message: ChatMessage,
-  policy: HermesPolicySynchronizer | null,
+  policy: RuntimeAdapter | null,
 ): Promise<void> {
   log(`chat ${message.id}: answering`);
   const stop = new AbortController();
@@ -141,7 +139,7 @@ async function handleChat(
       async () => {
         if (await client.chatHeartbeat(message.id)) stop.abort();
       },
-      answer(config, client, message, stop, hermes),
+      answer(config, client, message, stop, hermes, policy),
     );
   } catch (err) {
     // Without a reported failure the chat waits for an answer that is no longer coming.
@@ -251,7 +249,7 @@ async function serve(state: State, config: RunnerConfig): Promise<void> {
     `running ${config.agent ?? 'the configured command'}, polling ${config.url} every ` +
       `${config.pollIntervalMs}ms, up to ${config.concurrency} at once`,
   );
-  const policy = hermesPolicySynchronizer(config, client);
+  const policy = runtimeAdapter(config, client);
   await policy?.ensure();
   if (config.models.length > 0) void publishCatalog(state, log, client, config);
   let chatSupported = true;
@@ -341,15 +339,29 @@ async function profileHelper(): Promise<void> {
     const request = JSON.parse(await readStdin(64 * 1024 * 1024)) as {
       op?: string;
       snapshot?: unknown;
+      options?: ApplyOptions;
+      context?: Pick<MaterializerContext, 'url'> | null;
       profile?: HermesProfile | null;
       logins?: unknown;
       actions?: unknown;
+      keys?: unknown;
+      sessionId?: unknown;
     };
     const profile = request.profile ?? undefined;
-    const materializer = new HermesPolicyMaterializer({ hermesHome: home, profile });
+    const materializer = new HermesPolicyMaterializer({
+      hermesHome: home,
+      profile,
+      context: { url: request.context?.url, python: 'python3' },
+    });
     let result: unknown;
     if (request.op === 'materialize') {
-      result = await materializer.apply(request.snapshot as never);
+      result = await materializer.apply(request.snapshot as never, request.options ?? {});
+    } else if (request.op === 'probe') {
+      if (!Array.isArray(request.keys)) throw new Error('keys must be a list');
+      result = await materializer.probe(request.keys.filter((key) => typeof key === 'string'));
+    } else if (request.op === 'session') {
+      if (typeof request.sessionId !== 'string') throw new Error('sessionId must be a string');
+      result = await materializer.sessionFacts(request.sessionId);
     } else if (request.op === 'plugins') {
       result = await materializer.ensurePlugins();
     } else if (request.op === 'actions') {

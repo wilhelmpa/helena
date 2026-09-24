@@ -17,6 +17,7 @@ import {
   type RuntimePolicyClient,
   type RuntimePolicySnapshot,
 } from '../policy';
+import { fakeHermes } from './hermes-fake';
 
 const roots: string[] = [];
 
@@ -283,6 +284,8 @@ describe('login use reader', () => {
 
 describe('run settings with website logins', () => {
   const profile = { toolsets: ['file', 'terminal'], mcpServers: ['itsaplan'] };
+  // Helena's own MCP server is the runner's to write; Hermes is read back by a stand-in.
+  const helena = { url: 'http://127.0.0.1:3000', reader: fakeHermes() };
 
   function client(snapshot: RuntimePolicySnapshot, logins: WebLogin[]) {
     const asked: unknown[] = [];
@@ -311,7 +314,7 @@ describe('run settings with website logins', () => {
     const { value, asked } = client(policy(true, ['browser', 'terminal']), [shop]);
     const sync = new HermesPolicySynchronizer(
       value,
-      new HermesPolicyMaterializer({ hermesHome, profile }),
+      new HermesPolicyMaterializer({ hermesHome, profile, context: helena }),
       {
         profile: { ...profile, toolsets: ['browser', ...profile.toolsets] },
         vault: new WebLoginVault(hermesHome, store),
@@ -332,7 +335,7 @@ describe('run settings with website logins', () => {
     const vault = new WebLoginVault(hermesHome, store);
     await vault.sync([shop]);
     const { value, asked } = client(policy(false), [shop]);
-    const materializer = new HermesPolicyMaterializer({ hermesHome, profile });
+    const materializer = new HermesPolicyMaterializer({ hermesHome, profile, context: helena });
     const sync = new HermesPolicySynchronizer(value, materializer, { profile, vault });
     await sync.ensure();
 

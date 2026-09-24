@@ -26,6 +26,9 @@ export interface RuntimeLearning {
 // An owner's decision Plan hands the runner with the policy. Each is carried out once,
 // after the revision that carries it applied, and its result is reported back.
 export type RuntimeAction =
+  // Write the whole profile again and read it back ("Neu schreiben"); the synchronizer
+  // carries it out with the apply of its revision.
+  | { id: number; kind: 'rewrite-profile' }
   | { id: number; kind: 'discard-skill'; path: string }
   | { id: number; kind: 'pin-skill'; path: string; pinned: boolean }
   | {

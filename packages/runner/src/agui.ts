@@ -403,6 +403,7 @@ export class AnswerStream {
 
   private readClaudeLine(message: StreamJsonLine): void {
     if (message.session_id) this.sessionId ??= message.session_id;
+    if (message.type === 'system' && message.model) this.reportedModel ??= message.model;
     switch (message.type) {
       case 'stream_event':
         this.readPartial(message.event);
@@ -482,6 +483,7 @@ export class AnswerStream {
 export class UsageReader {
   private last: ContextUsage | null = null;
   private buffered = '';
+  private reportedModel: string | null = null;
 
   constructor(private readonly format: OutputFormat) {}
 
@@ -521,7 +523,16 @@ export class UsageReader {
     }
   }
 
+  // The model the command named on its opening line (Claude Code, Hermes), or null.
+  model(): string | null {
+    return this.reportedModel;
+  }
+
   readLine(parsed: object): void {
+    const opening = parsed as { type?: unknown; model?: unknown };
+    if (opening.type === 'system' && typeof opening.model === 'string' && opening.model) {
+      this.reportedModel ??= opening.model;
+    }
     switch (this.format) {
       case 'claude-stream-json':
         this.readClaude(parsed as StreamJsonLine);
@@ -626,6 +637,8 @@ function textOfResult(content: unknown): string {
 interface StreamJsonLine {
   type?: string;
   session_id?: string;
+  // On the opening `system` line: the model the session runs on.
+  model?: string;
   event?: StreamEvent;
   message?: { content?: ContentBlock[] };
   result?: unknown;
