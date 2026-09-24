@@ -464,6 +464,34 @@ describe("project browser router", () => {
     viewer.close();
   });
 
+  it("does not take a viewer's own click for the agent's", async () => {
+    // The page records the press before the router has sent the release: measured against the
+    // release alone, every click of a viewer read as the agent's, which held the page's size
+    // and lowered the JPEG quality for 30 seconds.
+    const browser = fakeBrowser();
+    upstream = browser.server;
+    await state("demo", 16000, await listen(upstream));
+    router = createProjectBrowserRouter({ root });
+    const viewer = new WebSocket(`ws://127.0.0.1:${await listen(router)}/projects/demo/api/screencast`);
+    const received = [];
+    viewer.addEventListener("message", (event) => received.push(event.data));
+    await new Promise((resolve) => viewer.addEventListener("open", resolve));
+    viewer.send(JSON.stringify({ type: "viewport", width: 800, height: 600, dpr: 2 }));
+    await until(() => browser.page().width === 800);
+    const pressedAt = Date.now();
+    viewer.send(JSON.stringify({ type: "mouse", event: "down", x: 10, y: 10, button: "left", buttons: 1 }));
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    viewer.send(JSON.stringify({ type: "mouse", event: "up", x: 10, y: 10, button: "left", buttons: 0 }));
+    await until(() => browser.sent("Input.dispatchMouseEvent").length === 2);
+    browser.lastInput = pressedAt + 5;
+    // The activity is read once a second.
+    await new Promise((resolve) => setTimeout(resolve, 2_200));
+    assert.ok(!received.includes(JSON.stringify({ type: "control", by: "agent" })));
+    viewer.send(JSON.stringify({ type: "viewport", width: 900, height: 600, dpr: 2 }));
+    await until(() => browser.page().width === 900);
+    viewer.close();
+  });
+
   it("lets the view that last changed size set the page's size, not a held, hidden or fixed one", async () => {
     const browser = fakeBrowser();
     upstream = browser.server;
@@ -636,18 +664,18 @@ describe("project browser router", () => {
     await setLiveViewport(port, null);
   });
 
-  it("corrects a page's pixel ratio before reading its chrome, not after", async () => {
-    // fitWindows reads a window's chrome (its tab strip and toolbar) from the page's own
-    // outerWidth/innerWidth/devicePixelRatio; a page left emulated at the wrong ratio from
-    // before this link's session throws that off. The fix must run early enough in the same
-    // pass to still matter, not only after a measurement that pass already got wrong.
+  it("leaves the windows alone just after a restart until a live view or the screen asks", async () => {
+    // A live view open when the router restarted reconnects within seconds; filling the
+    // screen meanwhile would lay its page out twice.
     const browser = fakeBrowser();
     upstream = browser.server;
     const port = await listen(upstream);
-    const link = new BrowserLink(port);
-    await fitWindows(link);
-    const emulateCalls = browser.sent("Emulation.clearDeviceMetricsOverride").length;
-    assert.ok(emulateCalls > 0, "a fresh link corrects the ratio on its very first pass");
+    await fitWindows(new BrowserLink(port));
+    assert.equal(browser.sent("Browser.setWindowBounds").length, 0);
+    assert.equal(browser.sent("Emulation.clearDeviceMetricsOverride").length, 0);
+    // Asked to fill the screen, the keeper ends any emulation another client left.
+    await setLiveViewport(port, null);
+    assert.equal(browser.sent("Emulation.clearDeviceMetricsOverride").length, 1);
   });
 
   it("accepts the live view's WebSocket from the Plan origin only", async () => {

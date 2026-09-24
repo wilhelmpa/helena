@@ -111,6 +111,9 @@ const SHARP_MIN_EDGE = 785;
 // Input on the page within this long after a viewer's own is the viewer's; a navigation
 // within the longer time after a viewer's action is the viewer's.
 const OWN_INPUT_MS = 1_000;
+const OWN_INPUTS_KEPT = 32;
+// The page can record a viewer's input a moment before the router notes it as sent.
+const OWN_INPUT_SLACK_MS = 50;
 const OWN_NAVIGATION_MS = 10_000;
 // How long after its last action the agent counts as acting: longer than it usually thinks
 // between a screenshot and the click it reads from it.
@@ -339,7 +342,15 @@ class ScreencastStream {
     this.activityContext = null;
     this.activityRead = null;
     this.lastInput = 0;
+    // Whether the next read of the page's last input only sets where later ones count from:
+    // the first read in a fresh activity world, which may hold input from before this stream
+    // (a router restart) that is nobody's action now.
+    this.activityBaseline = true;
+    // When viewers' input other than pointer moves was last sent to the page, and the times of
+    // the recent ones: the page's trusted input within OWN_INPUT_MS after one of them is the
+    // viewer's (see isOwnInput).
     this.ownInputAt = 0;
+    this.ownInputs = [];
     this.viewerActionAt = 0;
     this.pageNavigationAt = 0;
     this.agentActiveAt = 0;
@@ -580,7 +591,11 @@ class ScreencastStream {
   sendInput(method, params) {
     if (!this.session) return Promise.resolve();
     // A pointer move raises none of the events the activity script records.
-    if (params.type !== "mouseMoved") this.ownInputAt = Date.now();
+    if (params.type !== "mouseMoved") {
+      this.ownInputAt = Date.now();
+      this.ownInputs.push(this.ownInputAt);
+      if (this.ownInputs.length > OWN_INPUTS_KEPT) this.ownInputs.shift();
+    }
     return this.connection.send(method, params, this.session).catch(() => {});
   }
 
@@ -649,7 +664,14 @@ class ScreencastStream {
     }
     const viewport = this.sizingViewport();
     this.scale = windowChrome(this.port)?.scale ?? this.scale;
-    const size = viewport && targetSize(viewport, this.size, quietIn > 0, this.allVideo(), this.agentInBrowser, this.scale);
+    // A fixed working size (the gateway's, while an agent steers) applies at once, agent or
+    // not; any other size waits while the agent acts (see targetSize).
+    const fixed = viewportAuthorities.get(this.port)?.mode === "fixed";
+    const size =
+      viewport &&
+      (fixed
+        ? { ...pageSize(viewport, this.agentInBrowser || quietIn > 0, this.scale), ...(quietIn > 0 && !this.allVideo() && { ratio: 1 }) }
+        : targetSize(viewport, this.size, quietIn > 0, this.allVideo(), this.agentInBrowser, this.scale));
     const current = this.size;
     const same = current && ["width", "height", "ratio", "pin1"].every((key) => current[key] === size?.[key]);
     if (size && !same) {
@@ -974,6 +996,7 @@ class ScreencastStream {
       });
       await send("Runtime.evaluate", { expression: ACTIVITY_SCRIPT, contextId: world.executionContextId });
       this.activityContext = world.executionContextId;
+      this.activityBaseline = true;
     }
     let lastInput;
     try {
@@ -987,10 +1010,21 @@ class ScreencastStream {
       this.activityContext = null;
       throw error;
     }
+    if (this.activityBaseline) {
+      this.activityBaseline = false;
+      this.lastInput = Math.max(this.lastInput, lastInput || 0);
+      return;
+    }
     if (!(lastInput > this.lastInput)) return;
     this.lastInput = lastInput;
-    const sinceOwnInput = lastInput - this.ownInputAt;
-    if (sinceOwnInput < 0 || sinceOwnInput > OWN_INPUT_MS) this.noteAgentActivity();
+    if (!this.isOwnInput(lastInput)) this.noteAgentActivity();
+  }
+
+  // Whether the page's trusted input at a time came from a viewer: within OWN_INPUT_MS after
+  // input a viewer sent. Only the latest time would not do: a click's release is sent after
+  // the page recorded its press, and every viewer's click read as the agent's.
+  isOwnInput(time) {
+    return this.ownInputs.some((sent) => time - sent >= -OWN_INPUT_SLACK_MS && time - sent <= OWN_INPUT_MS);
   }
 
   // The navigation replaces the world readActivity reads, so the press that started it is

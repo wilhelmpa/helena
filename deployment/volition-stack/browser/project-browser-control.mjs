@@ -284,6 +284,14 @@ const links = new Map();
 // The page size each browser's live view asked for, by DevTools port: CSS pixels and the
 // window pixels per CSS pixel.
 const liveViewports = new Map();
+// Browsers whose windows were asked to fill the screen (a desktop viewer, or the last live
+// viewer gone), by DevTools port. Until a browser is in either map, the keeper leaves its
+// windows' size alone for STARTUP_GRACE_MS after the router starts: a live view open when the
+// router restarted reconnects within seconds, and filling the screen meanwhile would lay the
+// page out twice.
+const screenRequested = new Set();
+const STARTUP_GRACE_MS = 15_000;
+const startedAt = Date.now();
 
 function linkFor(port) {
   let link = links.get(port);
@@ -402,8 +410,13 @@ export async function readJsonBody(request) {
 // the windows fill the screen again, and fits the windows at once. Resolves once the page has
 // its new size and has drawn it, so a live view's video can start on the new page.
 export async function setLiveViewport(port, viewport) {
-  if (viewport) liveViewports.set(port, viewport);
-  else liveViewports.delete(port);
+  if (viewport) {
+    liveViewports.set(port, viewport);
+    screenRequested.delete(port);
+  } else {
+    liveViewports.delete(port);
+    screenRequested.add(port);
+  }
   await fitWindows(linkFor(port));
 }
 
@@ -505,6 +518,7 @@ async function fitWindowsNow(link) {
   link.keep(new Set(pages.map((target) => target.targetId)));
   const live = liveViewports.get(link.port);
   const pin = live?.pin1 ? { width: live.width, height: live.height } : null;
+  const waiting = !live && !screenRequested.has(link.port) && Date.now() - startedAt < STARTUP_GRACE_MS;
   const windows = new Map();
   for (const target of pages) {
     const { windowId, bounds } = await connection.send("Browser.getWindowForTarget", {
@@ -538,6 +552,8 @@ async function fitWindowsNow(link) {
         link.scale = sizes.scale;
       }
     }
+    // Just after a router restart, a window keeps its size for the live view to come back.
+    if (waiting) continue;
     const chrome = link.chrome;
     const fitted = sizes && chrome ? fittedBounds(bounds, windowSize(sizes.screen, chrome, live)) : null;
     let changed = false;
@@ -579,6 +595,7 @@ export function startWindowKeeper({ listBrowsers, intervalMs = 1_000, log = () =
           link.close();
           links.delete(port);
           liveViewports.delete(port);
+          screenRequested.delete(port);
         }
       }
       for (const { cdpPort } of current) {
