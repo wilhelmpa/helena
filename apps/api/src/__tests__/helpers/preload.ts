@@ -27,7 +27,7 @@ if (url && process.env.NODE_ENV === 'test' && process.env.HELENA_TEST_DB_CLONE !
       const { stopEngine } = await import('#modules/engine/dbos');
       await Promise.race([stopEngine().catch(() => {}), Bun.sleep(3_000)]);
       await clone.drop();
-    });
+    }, 30_000);
   }
 }
 
