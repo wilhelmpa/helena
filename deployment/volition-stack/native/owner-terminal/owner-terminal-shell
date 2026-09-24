@@ -63,5 +63,36 @@ export TERM=xterm-256color
 socket=${OWNER_TERMINAL_TMUX_SOCKET:-/run/helena-owner-tmux/tmux.sock}
 socket_args=()
 [[ -S "$socket" ]] && socket_args=(-S "$socket")
-exec /usr/bin/tmux "${socket_args[@]}" -f "$(dirname -- "$(realpath -- "$0")")/tmux.conf" \
-  new-session -A -s "owner-$kind-$name" -c "$workdir" "${command[@]}"
+tmux=(/usr/bin/tmux "${socket_args[@]}" -f "$(dirname -- "$(realpath -- "$0")")/tmux.conf")
+session="owner-$kind-$name"
+
+# tmux keeps a program running across restarts of the terminal service, but a reboot ends
+# it. A tab that starts again then continues its last conversation instead of an empty one
+# (owner, 2026-09-24: "Sitzungen müssen unbedingt persistent sein"). Only decided when the
+# tmux session is new; an open tab is simply attached to.
+if ! "${tmux[@]}" has-session -t "=$session" 2>/dev/null; then
+  state_dir=${XDG_STATE_HOME:-$HOME/.local/state}/helena-owner-terminal
+  mkdir -p -m 0700 "$state_dir"
+  case "$kind" in
+    claude | helena-dev-claude)
+      # Each tab keeps one conversation of its own: its id is chosen at the first start
+      # and resumed from then on, once Claude Code has written it.
+      id_file=$state_dir/$kind-$name.claude-session
+      id=$(cat -- "$id_file" 2>/dev/null || true)
+      if [[ $id =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]] &&
+        compgen -G "$HOME/.claude/projects/*/$id.jsonl" >/dev/null; then
+        command+=(--resume "$id")
+      else
+        id=$(cat /proc/sys/kernel/random/uuid)
+        printf '%s\n' "$id" >"$id_file"
+        command+=(--session-id "$id")
+      fi
+      ;;
+    codex | helena-dev-codex)
+      # Codex has no id to choose up front; it continues the newest session of the
+      # working directory, and starts a new one where there is none.
+      command=(bash -c '"$1" resume --last || exec "$1"' codex "${command[0]}")
+      ;;
+  esac
+fi
+exec "${tmux[@]}" new-session -A -s "$session" -c "$workdir" "${command[@]}"
