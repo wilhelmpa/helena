@@ -3,7 +3,7 @@ import http from "node:http";
 import net from "node:net";
 import { afterEach, describe, it } from "node:test";
 import { InputSender, viewerMessage } from "./project-browser-input.mjs";
-import { frameMessage, pageSize, targetSize } from "./project-browser-screencast.mjs";
+import { frameMessage, pageSize, targetSize, videoAllowance } from "./project-browser-screencast.mjs";
 import { acceptWebSocket } from "./websocket.mjs";
 
 const input = (message) => viewerMessage(JSON.stringify(message));
@@ -44,6 +44,22 @@ describe("live view messages", () => {
     // Chromium keeps a window 500 pixels wide, so a narrower page is drawn wider.
     assert.deepEqual(pageSize({ width: 360, height: 640, dpr: 1 }), { width: 500, height: 640, ratio: 1 });
     assert.deepEqual(pageSize({ width: 360, height: 800, dpr: 2 }), { width: 360, height: 800, ratio: 2 });
+    // At ratio 1 an odd size is made even, so the video's frame is the page to the pixel.
+    assert.deepEqual(pageSize({ width: 933, height: 601, dpr: 1 }), { width: 932, height: 600, ratio: 1 });
+    assert.deepEqual(pageSize({ width: 933, height: 601, dpr: 2 }), { width: 933, height: 601, ratio: 2 });
+  });
+
+  it("lets a video viewer fall behind by two keyframes and a stats report's worth of frames", () => {
+    // Never less than half a megabyte, as before.
+    assert.equal(videoAllowance({}), 512 * 1024);
+    assert.equal(videoAllowance({ keyframeBytes: 100_000, encodedKbps: 1_000, rttMs: 20 }), 512 * 1024);
+    // A 1.5 MB keyframe at pixel ratio 2, 20 Mbit/s, 20 ms round trip: 3 MB + 800 KB.
+    assert.equal(videoAllowance({ keyframeBytes: 1_500_000, encodedKbps: 20_000, rttMs: 20 }), 3_800_000);
+    // A round trip counts for at most a second.
+    assert.equal(
+      videoAllowance({ keyframeBytes: 1_500_000, encodedKbps: 8_000, rttMs: 60_000 }),
+      videoAllowance({ keyframeBytes: 1_500_000, encodedKbps: 8_000, rttMs: 1_000 }),
+    );
   });
 
   it("keeps the page's CSS size at ratio 1 while the agent acts", () => {

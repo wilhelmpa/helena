@@ -17,13 +17,16 @@
 // same tier share its encoder — at most one running encoder per tier, never one per viewer. A
 // covered view (the browser tab behind another, a minimised window) reports itself hidden and
 // gets no frames until shown again, at which point it gets a fresh one at once; a tier with no
-// shown viewer left stops its encoder.
+// shown viewer left stops its encoder. Viewers that cannot or do not want to play video get the
+// JPEG screencast at the same time, so one of them does not take video from the others.
 //
 // Server to viewer, binary: a kind byte, then for kind 0 a JPEG frame after the page's
 // viewport in CSS pixels as two big-endian 16-bit integers; for kind 1 the video's MP4
 // initialization segment; for kind 2 a keyframe flag byte and one frame's MP4 fragment. Text:
 // {"type":"video","codec":..,"width":..,"height":..} before an initialization segment, with
-// the viewport in CSS pixels; {"type":"tab"} when the streamed tab, its address or its title
+// the viewport in CSS pixels; {"type":"page","width":..,"height":..} with the page's size in
+// CSS pixels at 100 % zoom, which is the size a view shows a frame at to show it one to one,
+// whenever it changes; {"type":"tab"} when the streamed tab, its address or its title
 // changes; {"type":"dialog", ...} while a JavaScript dialog is open;
 // {"type":"dialog","open":false} when it closes; {"type":"pong","t":..} answering a viewer's
 // {"type":"ping","t":..}; {"type":"control","by":"agent"|"owner"} when who last acted on the
@@ -46,14 +49,19 @@ const MAX_FRAME_SIDE = 4096;
 // it misses the frames after them. A video viewer with more waiting skips to the next keyframe.
 const FRAMES_IN_FLIGHT = 2;
 const MAX_BUFFERED = 16 * 1024 * 1024;
-// A fraction of a second of the busiest tier's own output, not the many megabytes a perfectly
-// healthy stream can briefly hold: a viewer this far behind is asked to wait for the next
-// keyframe rather than pile on frames it cannot show in time anyway.
-const MAX_VIDEO_BUFFERED = 512 * 1024;
-// A viewer's own acknowledged receipt (see Viewer.unackedBytes) is the true measure of how
-// far behind it is; this is sized the same as MAX_VIDEO_BUFFERED, the same fraction of a
-// second of the busiest tier's own output.
-const MAX_VIDEO_UNACKED = 512 * 1024;
+// How far behind a video viewer may be (its socket's backlog, or what it has not yet
+// acknowledged, see Viewer.unackedBytes) before it waits for the next keyframe instead of
+// piling on frames it cannot show in time anyway: two of its tier's recent keyframes, since
+// one can still be arriving when the next is sent, plus what the tier sends while a stats
+// report makes its way back (videoAllowance). A fixed 512 KiB was less than one keyframe of a
+// page at pixel ratio 2 (up to 1.5 MB on the bench): every frame after a keyframe was dropped
+// and a viewer on the best tier saw one frame every two seconds.
+const MIN_VIDEO_BACKLOG = 512 * 1024;
+// How often a viewer reports what it received (STATS_INTERVAL_MS in useBrowserScreencast.ts),
+// with room for a report that is a little late.
+const STATS_REPORT_MS = 300;
+// Keyframes of a tier remembered for its allowance.
+const KEYFRAMES_KEPT = 3;
 // How long a fresh video's own catch-up burst is given before its viewer's acknowledged
 // receipt is trusted: long enough for one real stats report (sent every 200ms on the client,
 // see useBrowserScreencast.ts) to have had time to arrive even over a slow connection.
@@ -73,6 +81,11 @@ const ENCODE_WINDOW_MS = 3_000;
 // shortfall — dropping the tier, restarting its encoder, and reproducing the same spike again.
 // Below this span, kbps() reports 0 (no meaningful data yet) rather than a number.
 const MIN_KBPS_WINDOW_MS = 500;
+// After an encoder fails, the stream tries video again after this long, doubling up to the
+// maximum; an encoder that ran this long without failing clears the count.
+const VIDEO_RETRY_MS = 5_000;
+const VIDEO_RETRY_MAX_MS = 60_000;
+const VIDEO_HEALTHY_MS = 30_000;
 // How long a restart forced by one viewer's requestKeyframe protects a tier's encoder from
 // another: restarting it is disruptive to every viewer on the tier, so a request is answered
 // with the fresh keyframe the tier's encoder already just started with when one is recent
@@ -104,10 +117,21 @@ for (const type of ["pointerdown", "keydown", "input", "wheel"]) {
 
 // The page size for a view: its CSS size, and the window pixels per CSS pixel, which is 2 on
 // a high-density screen where the agent's screenshots allow it and 1 otherwise. A page too
-// narrow for a window is drawn wider and shown scaled down.
+// narrow for a window is drawn wider and shown scaled down. At ratio 1 an odd size is made
+// even, which the video needs: the frame then is the page to the pixel and a view shows it
+// one to one, where a frame one pixel short would be stretched over the whole view.
 export function pageSize({ width, height, dpr }) {
   const ratio = dpr >= 1.5 && Math.max(width, height) >= SHARP_MIN_EDGE ? 2 : 1;
-  return { width: Math.max(width, Math.ceil(MIN_WINDOW_WIDTH / ratio)), height, ratio };
+  const even = (value) => (ratio === 1 ? Math.floor(value / 2) * 2 : value);
+  return { width: even(Math.max(width, Math.ceil(MIN_WINDOW_WIDTH / ratio))), height: even(height), ratio };
+}
+
+// How many bytes a video viewer may be behind before it waits for the next keyframe: see
+// MIN_VIDEO_BACKLOG. keyframeBytes is the largest recent keyframe of its tier, encodedKbps the
+// tier's recent output and rttMs the viewer's round trip.
+export function videoAllowance({ keyframeBytes = 0, encodedKbps = 0, rttMs = 0 }) {
+  const windowSeconds = (STATS_REPORT_MS + Math.min(rttMs, 1_000)) / 1000;
+  return Math.max(MIN_VIDEO_BACKLOG, Math.round(2 * keyframeBytes + encodedKbps * 125 * windowSeconds));
 }
 
 // The page size for the most recent view: while the agent acts, the current CSS size, at
@@ -212,17 +236,22 @@ class Viewer {
     return Math.max(0, this.sentBytes - this.receivedBytes);
   }
 
-  // Frames depend on the ones before them back to a keyframe, so a viewer that cannot keep
-  // up misses frames up to the next keyframe.
-  offerVideo(message, keyframe) {
+  // How far behind this viewer is: what it has been sent but not acknowledged, or its
+  // socket's own backlog if that is larger. Neither counts during the burst a fresh video
+  // starts with (see startVideo), before the viewer has had a chance to acknowledge it.
+  backlogBytes() {
+    if (Date.now() - this.videoStartedAt <= ACK_GRACE_MS) return 0;
+    return Math.max(this.socket.bufferedAmount, this.unackedBytes());
+  }
+
+  // Frames depend on the ones before them back to a keyframe, so a viewer more than its
+  // allowance behind (videoAllowance) misses frames up to the next keyframe.
+  offerVideo(message, keyframe, allowance) {
     // The catch-up burst a fresh video starts with (see startVideo) can itself be as large as
     // the tier's own keyframe interval, sent before this viewer has had any chance to
     // acknowledge even its first byte; read that soon, it looks exactly like the stall this
     // is meant to catch, and would cut its own burst short.
-    const ackGraceElapsed = Date.now() - this.videoStartedAt > ACK_GRACE_MS;
-    if (this.socket.bufferedAmount > MAX_VIDEO_BUFFERED || (ackGraceElapsed && this.unackedBytes() > MAX_VIDEO_UNACKED)) {
-      this.waitingForKeyframe = true;
-    }
+    if (this.socket.bufferedAmount > allowance || this.backlogBytes() > allowance) this.waitingForKeyframe = true;
     if (this.waitingForKeyframe && !keyframe) return;
     this.waitingForKeyframe = false;
     this.sentBytes += message.length;
@@ -230,14 +259,14 @@ class Viewer {
   }
 
   // The video from its initialization segment and the frames since the last keyframe.
-  startVideo(video) {
+  startVideo(video, allowance) {
     this.waitingForKeyframe = true;
     this.sentBytes = 0;
     this.receivedBytes = 0;
     this.videoStartedAt = Date.now();
     this.socket.send(JSON.stringify(video.announcement));
     this.socket.send(video.init);
-    for (const { message, keyframe } of video.sinceKeyframe) this.offerVideo(message, keyframe);
+    for (const { message, keyframe } of video.sinceKeyframe) this.offerVideo(message, keyframe, allowance);
   }
 }
 
@@ -259,7 +288,19 @@ class ScreencastStream {
     // that tier: never one per viewer. { encoder, video: { announcement, init, sinceKeyframe } }
     this.tiers = new Map();
     this.videoArea = null;
-    this.videoFailed = false;
+    // Whether the stream is in video mode: video viewers get video, not JPEG. Stays set while
+    // the encoders are stopped for a resize, so they do not get JPEG in between.
+    this.videoLive = false;
+    // Encoder failures in a row, and when the last one was: video is tried again after a
+    // growing pause (videoPossible), and at once when the page size changes.
+    this.videoFailures = 0;
+    this.videoFailedAt = 0;
+    // Resizes in progress: the window and page are changing, no encoder starts meanwhile.
+    this.resizing = 0;
+    this.modeRun = null;
+    this.modeWanted = false;
+    // The page size last told to the viewers ({type:"page"}).
+    this.pageMessage = null;
     this.zoom = 1;
     // The page size in effect.
     this.size = null;
@@ -303,6 +344,7 @@ class ScreencastStream {
     const viewer = new Viewer(socket, (method, params) => this.sendInput(method, params));
     this.viewers.add(viewer);
     if (this.dialog) socket.send(JSON.stringify(this.dialog));
+    if (this.pageMessage) socket.send(this.pageMessage);
     socket.send(JSON.stringify({ type: "control", by: this.controlBy }));
     socket.on("message", (data, binary) => {
       if (!binary) this.receive(viewer, data.toString("utf8"));
@@ -325,16 +367,25 @@ class ScreencastStream {
       return;
     }
     if (message.ack) {
-      viewer.acknowledge(this.frame);
+      viewer.acknowledge(this.getsJpeg(viewer) ? this.frame : null);
       return this.acknowledgeWhenWanted();
     }
     if (message.viewport) {
-      const first = !viewer.viewport;
+      const previous = viewer.viewport;
       viewer.viewport = message.viewport;
-      // The set keeps insertion order, so its last viewer with a view is the most recent.
-      this.viewers.delete(viewer);
-      this.viewers.add(viewer);
-      if (first) this.welcome(viewer);
+      // The set keeps insertion order, so its last viewer with a view is the most recent,
+      // whose size the page takes. A view that only switches between video and JPEG keeps
+      // its place: it does not take the page's size from another viewer.
+      const resized = !previous || ["width", "height", "dpr"].some((key) => previous[key] !== message.viewport[key]);
+      if (resized) {
+        this.viewers.delete(viewer);
+        this.viewers.add(viewer);
+      }
+      if (previous && previous.video !== message.viewport.video) {
+        viewer.tierIndex = null;
+        viewer.waitingForKeyframe = true;
+      }
+      if (!previous || previous.video !== message.viewport.video) this.welcome(viewer);
       return void this.resizeAfterReadingActivity();
     }
     if (message.followAgent !== undefined) {
@@ -384,21 +435,26 @@ class ScreencastStream {
   }
 
   // A covered view gets no frames; a view shown again gets a fresh one right away, whether or
-  // not its tier's encoder kept running for another viewer meanwhile.
+  // not its tier's encoder kept running for another viewer meanwhile. The page takes the size
+  // of the most recent view that is shown (see drivingViewport).
   setViewerHidden(viewer, hidden) {
     const was = viewer.hidden;
     viewer.hidden = hidden;
     if (was === hidden) return;
-    if (hidden) return void this.syncTierEncoders();
-    viewer.waitingForKeyframe = true;
+    if (!hidden) viewer.waitingForKeyframe = true;
+    this.resize();
+    if (hidden) return;
     this.reassignTiers();
-    this.resumeVideo(viewer);
+    this.welcome(viewer);
   }
 
-  // A viewer's first view: it gets what the stream shows now.
+  // What a viewer that joined, was shown again or switched between video and JPEG gets: the
+  // video of its tier from the last keyframe, or the newest JPEG frame.
   welcome(viewer) {
-    if (this.videoArea && viewer.viewport.video) {
-      viewer.tierIndex = chooseTier(this.connectionOf(viewer), null);
+    if (viewer.hidden || !viewer.viewport) return;
+    if (!this.getsJpeg(viewer)) {
+      if (!this.videoArea) return;
+      if (viewer.tierIndex === null) viewer.tierIndex = chooseTier(this.connectionOf(viewer), null);
       this.syncTierEncoders();
       this.resumeVideo(viewer);
     } else {
@@ -407,24 +463,47 @@ class ScreencastStream {
     }
   }
 
+  // The viewers that are shown and have told their view's size.
+  shownViewers() {
+    return [...this.viewers].filter((viewer) => viewer.viewport && !viewer.hidden);
+  }
+
+  // Whether a viewer gets the JPEG screencast: one that does not play video, or every viewer
+  // while the stream has no video.
+  getsJpeg(viewer) {
+    return Boolean(viewer.viewport) && !viewer.hidden && !(viewer.viewport.video && this.videoLive);
+  }
+
+  // The view whose size the page takes: the most recent one that is shown, else the most
+  // recent one at all.
+  drivingViewport() {
+    const recent = [...this.viewers].reverse();
+    return (recent.find((viewer) => viewer.viewport && !viewer.hidden) ?? recent.find((viewer) => viewer.viewport))?.viewport;
+  }
+
+  // How far behind a viewer may be on its tier before it waits for a keyframe.
+  allowanceOf(viewer) {
+    const entry = viewer.tierIndex === null ? null : this.tiers.get(TIERS[viewer.tierIndex].name);
+    if (!entry) return videoAllowance({});
+    return videoAllowance({ keyframeBytes: entry.keyframeBytes(), encodedKbps: entry.kbps(), rttMs: viewer.rttMs });
+  }
+
   // A viewer's last reported round trip and downlink, how far behind its own acknowledged
-  // receipt says it is (or, failing that, Node's own backlog figure), how long since its last
-  // stats report, and its tier's own recent encoder output — the last two give chooseTier a
-  // read on the connection even when a backlog figure cannot.
+  // receipt says it is (or, failing that, Node's own backlog figure) and how far it may be,
+  // how long since its last stats report, and its tier's own recent encoder output — the last
+  // two give chooseTier a read on the connection even when a backlog figure cannot.
   connectionOf(viewer) {
-    const ackGraceElapsed = Date.now() - viewer.videoStartedAt > ACK_GRACE_MS;
     return {
       downlinkKbps: viewer.downlinkKbps,
       rttMs: viewer.rttMs,
-      // Node's own bufferedAmount, not just the ack-based unackedBytes() figure, is also
-      // given the grace period: startVideo can itself send a burst as large as the tier's own
-      // keyframe interval in one tick (the catch-up since the last keyframe), on a perfectly
-      // healthy connection, before the OS has even had a chance to drain it — measured with
-      // two viewers on the same tier, a fast one's own burst briefly read as its own
-      // congestion this way and, now that a real drop's tier stays off the table for a few
-      // seconds (see chooseTier's RETRY_COOLDOWN_MS), took far longer than it should have to
-      // recover from a spike it only ever caused itself.
-      bufferedBytes: ackGraceElapsed ? Math.max(viewer.socket.bufferedAmount, viewer.unackedBytes()) : 0,
+      // Both figures are given a grace period after a video starts (see Viewer.backlogBytes):
+      // startVideo can itself send a burst as large as the tier's own keyframe interval in one
+      // tick, on a perfectly healthy connection, before the OS has even had a chance to drain
+      // it — measured with two viewers on the same tier, a fast one's own burst briefly read as
+      // its own congestion, and a real drop's tier stays off the table for a while (see
+      // chooseTier's RETRY_COOLDOWN_MS).
+      bufferedBytes: viewer.backlogBytes(),
+      congestedBytes: this.allowanceOf(viewer),
       feedbackAgeMs: Date.now() - viewer.lastStatsAt,
       encodedKbps: viewer.tierIndex === null ? 0 : (this.tiers.get(TIERS[viewer.tierIndex].name)?.kbps() ?? 0),
       droppedAgoMs: Date.now() - viewer.lastDroppedAt,
@@ -438,7 +517,7 @@ class ScreencastStream {
   resumeVideo(viewer) {
     if (!viewer.viewport?.video || viewer.hidden || viewer.tierIndex === null) return;
     const entry = this.tiers.get(TIERS[viewer.tierIndex].name);
-    if (entry?.video) viewer.startVideo(entry.video);
+    if (entry?.video) viewer.startVideo(entry.video, this.allowanceOf(viewer));
   }
 
   sendInput(method, params) {
@@ -474,9 +553,21 @@ class ScreencastStream {
     this.resize();
   }
 
-  wantsVideo() {
-    const viewports = [...this.viewers].map((viewer) => viewer.viewport).filter(Boolean);
-    return Boolean(this.display) && !this.videoFailed && viewports.length > 0 && viewports.every((view) => view.video);
+  // Whether video may run: the stream knows the display, and no encoder failed just now. A
+  // failed encoder is tried again after VIDEO_RETRY_MS, doubling up to VIDEO_RETRY_MAX_MS, and
+  // at once for a new page size.
+  videoPossible() {
+    if (!this.display) return false;
+    if (this.videoFailures === 0) return true;
+    const pause = Math.min(VIDEO_RETRY_MAX_MS, VIDEO_RETRY_MS * 2 ** (this.videoFailures - 1));
+    return Date.now() - this.videoFailedAt >= pause;
+  }
+
+  // Whether every shown viewer plays video, which lets the page keep its pixel ratio while
+  // the agent acts (see targetSize).
+  allVideo() {
+    const shown = this.shownViewers();
+    return this.videoPossible() && shown.length > 0 && shown.every((viewer) => viewer.viewport.video);
   }
 
   // Applies the page size and stream settings for the most recent view and the agent's
@@ -491,44 +582,75 @@ class ScreencastStream {
       this.stream = stream;
       if (this.screencasting) this.startScreencast(this.session).catch(() => {});
     }
-    const viewport = [...this.viewers].reverse().find((viewer) => viewer.viewport)?.viewport;
-    const size = viewport && targetSize(viewport, this.size, quietIn > 0, this.wantsVideo());
+    const viewport = this.drivingViewport();
+    const size = viewport && targetSize(viewport, this.size, quietIn > 0, this.allVideo());
     const current = this.size;
     if (size && !(current?.width === size.width && current.height === size.height && current.ratio === size.ratio)) {
       this.size = size;
-      this.videoFailed = false;
+      this.videoFailures = 0;
+      // The window changes size now. An encoder grabbing it meanwhile would send the page
+      // while it is laid out again (and, pinned at ratio 2, drawn at half size in a corner of
+      // its window), so the encoders stop first: every viewer keeps showing its last frame
+      // until the page has its new size, has drawn it, and new encoders start on it.
+      this.stopAllTiers();
+      this.resizing++;
       return void setLiveViewport(this.port, size)
         .catch(() => {})
-        .then(() => this.updateMode());
+        .finally(() => {
+          this.resizing--;
+          this.announcePage();
+          void this.updateMode();
+        });
     }
+    this.announcePage();
     void this.updateMode();
   }
 
-  // Runs one encoder per quality tier a viewer is on when every viewer plays video, and the
-  // JPEG screencast otherwise.
-  async updateMode() {
-    if (this.ended || !this.session || !this.size) return;
+  // Tells the viewers the page's size once it has it, for them to show frames one to one.
+  announcePage() {
+    if (!this.size || this.resizing) return;
+    const message = JSON.stringify({ type: "page", width: this.size.width, height: this.size.height });
+    if (message === this.pageMessage) return;
+    this.pageMessage = message;
+    for (const viewer of this.viewers) viewer.socket.send(message);
+  }
+
+  // Runs one encoder per quality tier a shown video viewer is on, and the JPEG screencast
+  // while a shown viewer gets JPEG. Runs once at a time, and once more when it was asked
+  // again meanwhile.
+  updateMode() {
+    this.modeWanted = true;
+    this.modeRun ??= (async () => {
+      try {
+        while (this.modeWanted) {
+          this.modeWanted = false;
+          await this.applyMode();
+        }
+      } finally {
+        this.modeRun = null;
+      }
+    })();
+    return this.modeRun;
+  }
+
+  async applyMode() {
+    if (this.ended || !this.session || !this.size || this.resizing) return;
     const chrome = windowChrome(this.port);
-    const area = this.wantsVideo() && chrome && captureArea(this.size, chrome);
-    if (!area) {
-      this.stopAllTiers();
-      if (!this.screencasting) await this.startScreencast(this.session).catch(() => {});
-      return;
-    }
-    if (sameArea(this.videoArea, area)) {
+    const wanted = this.videoPossible() && this.shownViewers().some((viewer) => viewer.viewport.video);
+    const area = wanted && chrome ? captureArea(this.size, chrome) : null;
+    this.videoLive = Boolean(area);
+    if (!area) this.stopAllTiers();
+    else {
+      if (!sameArea(this.videoArea, area)) {
+        this.stopAllTiers();
+        this.videoArea = area;
+      }
       this.assignMissingTiers();
       this.syncTierEncoders();
-      return;
     }
-    this.stopAllTiers();
-    if (this.screencasting) {
-      this.screencasting = false;
-      this.pendingAck = null;
-      await this.connection.send("Page.stopScreencast", {}, this.session).catch(() => {});
-    }
-    this.videoArea = area;
-    this.assignMissingTiers();
-    this.syncTierEncoders();
+    const jpeg = this.shownViewers().some((viewer) => this.getsJpeg(viewer));
+    if (jpeg && !this.screencasting) await this.startScreencast(this.session).catch(() => {});
+    else if (!jpeg && this.screencasting) await this.stopScreencast();
   }
 
   // Gives a video viewer without a tier yet — a fresh join, or one that was waiting out an
@@ -587,16 +709,19 @@ class ScreencastStream {
     // bytesWindow tracks what this tier's own encoder has produced over the last
     // ENCODE_WINDOW_MS, so chooseTier can tell a slow connection from a quiet page: the
     // former's viewers report a downlink well under what the encoder is actually producing.
-    const entry = { encoder, video: null, bytesWindow: [], startedAt: Date.now() };
+    // keyframes holds the sizes of its last few keyframes, for its viewers' allowance.
+    const entry = { encoder, video: null, bytesWindow: [], windowBytes: 0, keyframes: [], startedAt: Date.now() };
     entry.kbps = () => {
       const cutoff = Date.now() - ENCODE_WINDOW_MS;
-      while (entry.bytesWindow.length && entry.bytesWindow[0].at < cutoff) entry.bytesWindow.shift();
+      while (entry.bytesWindow.length && entry.bytesWindow[0].at < cutoff) {
+        entry.windowBytes -= entry.bytesWindow.shift().bytes;
+      }
       if (entry.bytesWindow.length < 2) return 0;
       const spanMs = Date.now() - entry.bytesWindow[0].at;
       if (spanMs < MIN_KBPS_WINDOW_MS) return 0;
-      const bytes = entry.bytesWindow.reduce((sum, sample) => sum + sample.bytes, 0);
-      return Math.round((bytes * 8) / 1000 / (spanMs / 1000));
+      return Math.round((entry.windowBytes * 8) / 1000 / (spanMs / 1000));
     };
+    entry.keyframeBytes = () => Math.max(0, ...entry.keyframes);
     this.tiers.set(tier.name, entry);
     const size = this.size;
     const onTier = (viewer) => viewer.viewport?.video && !viewer.hidden && TIERS[viewer.tierIndex ?? -1]?.name === tier.name;
@@ -612,35 +737,49 @@ class ScreencastStream {
         init: Buffer.concat([Buffer.from([VIDEO_INIT]), init]),
         sinceKeyframe: [],
       };
-      for (const viewer of this.viewers) if (onTier(viewer)) viewer.startVideo(entry.video);
+      for (const viewer of this.viewers) if (onTier(viewer)) viewer.startVideo(entry.video, this.allowanceOf(viewer));
     });
     encoder.on("fragment", (fragment, keyframe) => {
       if (!entry.video) return;
       const message = Buffer.concat([Buffer.from([VIDEO_FRAGMENT, keyframe ? 1 : 0]), fragment]);
       entry.bytesWindow.push({ at: Date.now(), bytes: message.length });
-      if (keyframe) entry.video.sinceKeyframe = [];
+      entry.windowBytes += message.length;
+      if (keyframe) {
+        entry.video.sinceKeyframe = [];
+        entry.keyframes.push(message.length);
+        if (entry.keyframes.length > KEYFRAMES_KEPT) entry.keyframes.shift();
+      }
       entry.video.sinceKeyframe.push({ message, keyframe });
-      for (const viewer of this.viewers) if (onTier(viewer)) viewer.offerVideo(message, keyframe);
+      if (this.videoFailures && Date.now() - entry.startedAt > VIDEO_HEALTHY_MS) this.videoFailures = 0;
+      for (const viewer of this.viewers) if (onTier(viewer)) viewer.offerVideo(message, keyframe, this.allowanceOf(viewer));
     });
-    encoder.on("exit", (code) => {
-      if (code === null || this.tiers.get(tier.name)?.encoder !== encoder) return;
-      // The JPEG screencast shows the page until the page size changes again.
-      this.videoFailed = true;
-      this.stopAllTiers();
-      void this.updateMode();
-    });
-    encoder.start().catch(() => {
+    const failed = () => {
       if (this.tiers.get(tier.name)?.encoder !== encoder) return;
-      this.videoFailed = true;
+      // The JPEG screencast shows the page meanwhile; video is tried again after a pause
+      // (videoPossible), or at once when the page size changes.
+      this.videoFailures++;
+      this.videoFailedAt = Date.now();
       this.stopAllTiers();
       void this.updateMode();
+    };
+    encoder.on("exit", (code) => {
+      if (code !== null) failed();
     });
+    encoder.start().catch(failed);
   }
 
   stopAllTiers() {
     for (const entry of this.tiers.values()) entry.encoder.stop();
     this.tiers.clear();
     this.videoArea = null;
+  }
+
+  async stopScreencast() {
+    this.screencasting = false;
+    this.pendingAck = null;
+    this.frame = null;
+    this.screencastFrame = null;
+    if (this.session) await this.connection.send("Page.stopScreencast", {}, this.session).catch(() => {});
   }
 
   startScreencast(session) {
@@ -672,6 +811,9 @@ class ScreencastStream {
       else if (this.session) {
         await this.readZoom(this.session);
         await this.readActivity(this.session);
+        // Picks up what changed without a resize: a video retry that is due, or the window
+        // keeper's first measurement of the toolbar after a restart.
+        void this.updateMode();
       }
     } catch {
       // The next pass tries again.
@@ -839,7 +981,7 @@ class ScreencastStream {
   showFrame(screencastFrame) {
     this.screencastFrame = screencastFrame;
     this.frame = frameMessage(screencastFrame.jpeg, screencastFrame.metadata, (this.size?.ratio ?? 1) * this.zoom);
-    for (const viewer of this.viewers) viewer.offer(this.frame);
+    for (const viewer of this.viewers) if (this.getsJpeg(viewer)) viewer.offer(this.frame);
   }
 
   receiveFrame({ data, metadata, sessionId: frameId }, session) {
@@ -853,7 +995,7 @@ class ScreencastStream {
   // that every viewer would miss.
   acknowledgeWhenWanted() {
     const pending = this.pendingAck;
-    if (!pending || ![...this.viewers].some((viewer) => viewer.ready())) return;
+    if (!pending || ![...this.viewers].some((viewer) => this.getsJpeg(viewer) && viewer.ready())) return;
     this.pendingAck = null;
     const delay = Math.max(0, this.nextAck - Date.now());
     this.nextAck = Date.now() + delay + this.stream.frameIntervalMs;

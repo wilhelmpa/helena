@@ -92,6 +92,15 @@ describe("quality tiers", () => {
     );
   });
 
+  it("judges a backlog against what the viewer's own tier allows, which a big keyframe needs", () => {
+    // A page at pixel ratio 2 sends keyframes of well over a megabyte: a viewer that has not
+    // yet acknowledged one is not congested.
+    const highIndex = TIERS.findIndex((tier) => tier.name === "high");
+    const measurement = { downlinkKbps: 20_000, encodedKbps: 20_000, rttMs: 10, bufferedBytes: 1_400_000 };
+    assert.equal(TIERS[chooseTier({ ...measurement, congestedBytes: 3_500_000 }, highIndex)].name, "high");
+    assert.equal(TIERS[chooseTier({ ...measurement, congestedBytes: 1_000_000 }, highIndex)].name, "low");
+  });
+
   it("rises one tier at a time but drops as far as the numbers call for", () => {
     const lowIndex = TIERS.findIndex((tier) => tier.name === "low");
     const mediumIndex = TIERS.findIndex((tier) => tier.name === "medium");

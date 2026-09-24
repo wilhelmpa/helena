@@ -39,10 +39,11 @@ export const TIERS = [
 // The round trip a tier needs to be worth trying (see chooseTier). Node's own bufferedAmount
 // is bytes not yet handed to the kernel; on a real network, or one shaped for a bench, a
 // socket can be badly backed up well before that number moves, because the kernel and the
-// network path both buffer far more than Node ever sees. A backlog past CONGESTED_BYTES still
-// means the worst tier at once when it does show — sized to a fraction of a second of the
-// busiest tier, not the many megabytes a perfectly healthy stream can briefly hold — but it is
-// a safety net, not the primary signal.
+// network path both buffer far more than Node ever sees. A backlog past what the viewer's own
+// tier allows (congestedBytes, the router's videoAllowance: two of the tier's keyframes plus
+// what it sends while a stats report comes back) still means the worst tier at once when it
+// does show, but it is a safety net, not the primary signal. CONGESTED_BYTES stands in when
+// no allowance is given.
 const RTT_MS = { high: 60, medium: 250, low: Infinity };
 const CONGESTED_BYTES = 384 * 1024;
 // Below this, the tier's own encoder is producing too little — a quiet page — for its bitrate
@@ -96,12 +97,13 @@ export function chooseTier(measurement, currentIndex = null) {
     downlinkKbps = 0,
     rttMs = 0,
     bufferedBytes = 0,
+    congestedBytes = CONGESTED_BYTES,
     encodedKbps = 0,
     feedbackAgeMs = 0,
     droppedAgoMs = Infinity,
   } = measurement;
   const strained = encodedKbps > MEANINGFUL_ENCODE_KBPS && downlinkKbps < encodedKbps * SHORTFALL_RATIO;
-  if (bufferedBytes > CONGESTED_BYTES || feedbackAgeMs > FEEDBACK_TIMEOUT_MS || strained) {
+  if (bufferedBytes > congestedBytes || feedbackAgeMs > FEEDBACK_TIMEOUT_MS || strained) {
     return TIERS.length - 1;
   }
   let affordable = TIERS.length - 1;

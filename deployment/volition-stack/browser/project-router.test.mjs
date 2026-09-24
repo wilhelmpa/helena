@@ -16,8 +16,10 @@ import {
   fittedBounds,
   fitWindows,
   navigableUrl,
+  readWindowSizes,
   setLiveViewport,
   targetId,
+  windowChrome,
   windowSize,
 } from "./project-browser-control.mjs";
 import { acceptWebSocket } from "./websocket.mjs";
@@ -73,10 +75,32 @@ const BEHIND = "B".repeat(32);
 // the first of its tabs that is visible. A tab behind it reports the sizes it had when it
 // was last shown. The browser records every DevTools command, answers a screencast with one
 // frame, and sends the events a test emits to every connection.
+//
+// Its pages report their sizes as Chromium 153 does (measured on the bench): an emulation that
+// follows the window (width and height 0) divides the window by its ratio, a pinned one keeps
+// its CSS size, and an emulation cleared after the window changed size meanwhile leaves the
+// page at the size it had when the emulation began, until the window changes size again.
+const CHROME_HEIGHT = 87;
 function fakeBrowser(tabs = [{ id: PAGE, visible: true }]) {
   const commands = [];
   const connections = new Set();
   let bounds = { left: 0, top: 0, width: 1920, height: 1080, windowState: "normal" };
+  // The page's emulation: null, or { width, height, ratio } with width 0 following the window.
+  let emulation = null;
+  // The page size an emulation began at, whether the window changed size since, and the old
+  // size a clear left the page at.
+  let emulatedFrom = null;
+  let resizedWhileEmulated = false;
+  let stale = null;
+  const windowPage = () => ({ width: bounds.width, height: bounds.height - CHROME_HEIGHT });
+  const pageSizes = () => {
+    if (emulation?.width) return { ...emulation };
+    if (emulation) {
+      const { width, height } = windowPage();
+      return { width: width / emulation.ratio, height: height / emulation.ratio, ratio: emulation.ratio };
+    }
+    return { ...(stale ?? windowPage()), ratio: 1 };
+  };
   const server = http.createServer((request, response) => {
     response.writeHead(200, { "content-type": "application/json" });
     if (request.url === "/json/version") {
@@ -91,6 +115,11 @@ function fakeBrowser(tabs = [{ id: PAGE, visible: true }]) {
   });
   // lastInput is the time of the last trusted input the router's activity world reports.
   const browser = { server, commands, connections: 0, lastInput: 0 };
+  // Leaves the page at an old size, as a clear after a resize does.
+  browser.makeStale = (size) => {
+    stale = size;
+  };
+  browser.page = pageSizes;
   server.on("upgrade", (request, socket, head) => {
     upgraded.add(socket);
     browser.connections++;
@@ -107,8 +136,27 @@ function fakeBrowser(tabs = [{ id: PAGE, visible: true }]) {
           return reply({ sessionId: `S-${message.params.targetId}` });
         case "Browser.getWindowForTarget":
           return reply({ windowId: 1, bounds });
-        case "Browser.setWindowBounds":
+        case "Browser.setWindowBounds": {
+          const before = bounds;
           bounds = { ...bounds, ...message.params.bounds };
+          if (before.width !== bounds.width || before.height !== bounds.height) {
+            if (emulation) resizedWhileEmulated = true;
+            else stale = null;
+          }
+          return reply();
+        }
+        case "Emulation.setDeviceMetricsOverride": {
+          if (!emulation) {
+            emulatedFrom = stale ?? windowPage();
+            resizedWhileEmulated = false;
+          }
+          const { width, height, deviceScaleFactor } = message.params;
+          emulation = { width, height, ratio: deviceScaleFactor };
+          return reply();
+        }
+        case "Emulation.clearDeviceMetricsOverride":
+          if (emulation && resizedWhileEmulated) stale = emulatedFrom;
+          emulation = null;
           return reply();
         case "Page.getFrameTree":
           return reply({ frameTree: { frame: { id: PAGE } } });
@@ -116,10 +164,13 @@ function fakeBrowser(tabs = [{ id: PAGE, visible: true }]) {
           return reply({ executionContextId: 5 });
         case "Runtime.evaluate": {
           if (message.params.contextId) return reply({ result: { value: browser.lastInput } });
+          if (message.params.awaitPromise) return reply({ result: { value: true } });
           const tab = tabs.find(({ id }) => message.sessionId === `S-${id}`);
-          const sizes = tab.visible ? ["visible", 1920, 1080, 0, 87] : ["hidden", 1920, 1080, 0, 0];
+          const page = pageSizes();
+          const visibility = tab.visible ? "visible" : "hidden";
+          const sizes = [visibility, 1920, 1080, bounds.width, bounds.height, page.width, page.height, page.ratio];
           const visibilityOnly = message.params.expression === "document.visibilityState";
-          return reply({ result: { value: visibilityOnly ? sizes[0] : sizes } });
+          return reply({ result: { value: visibilityOnly ? visibility : sizes } });
         }
         case "Page.startScreencast":
           reply();
@@ -317,9 +368,14 @@ describe("project browser router", () => {
     assert.deepEqual([mouse.params.type, mouse.params.x, mouse.params.y], ["mousePressed", 10, 20]);
     assert.equal(browser.sent("Page.navigate").length, 0);
 
+    // The first view sized the window for its page at ratio 1, and the viewers were told the
+    // page's size.
+    await until(() => received.includes(JSON.stringify({ type: "page", width: 800, height: 600 })));
+    assert.deepEqual(browser.page(), { width: 800, height: 600, ratio: 1 });
+
     // A retina view: the window takes the view's size in window pixels plus the browser's
-    // own toolbar, and the tab is drawn at pixel ratio 2. The page's CSS size is pinned while
-    // the window changes.
+    // own toolbar, and the tab is drawn at pixel ratio 2. For the change of ratio the page's
+    // CSS size is pinned while the window changes, and let go once the window has its size.
     // The view already sent its initial size when it connected, which sized the window once;
     // this resize is counted from there on, not from zero.
     const priorBounds = browser.sent("Browser.setWindowBounds").length;
@@ -333,13 +389,12 @@ describe("project browser router", () => {
     assert.deepEqual(
       browser.sent("Emulation.setDeviceMetricsOverride").slice(priorMetrics).map((command) => command.params),
       [
-        // The plain ratio change runs first, so a page left emulated from before a restart
-        // is corrected even on a pass whose own chrome measurement it would otherwise still
-        // be wrong for; pinning the exact CSS size for the resize follows it.
-        { width: 0, height: 0, deviceScaleFactor: 2, scale: 2, mobile: false },
         { width: 800, height: 900, deviceScaleFactor: 2, mobile: false },
+        { width: 0, height: 0, deviceScaleFactor: 2, scale: 2, mobile: false },
       ],
     );
+    await until(() => received.includes(JSON.stringify({ type: "page", width: 800, height: 900 })));
+    assert.deepEqual(browser.page(), { width: 800, height: 900, ratio: 2 });
     const frames = () => received.filter((message) => message instanceof ArrayBuffer);
     viewer.send(JSON.stringify({ type: "ack" }));
     browser.emit("Page.screencastFrame", {
@@ -364,7 +419,6 @@ describe("project browser router", () => {
     // and quality 75, and a new CSS size waits. Trusted input on the page more than a second
     // after the viewer's own is the agent's.
     await new Promise((resolve) => setTimeout(resolve, 1_100));
-    const clears = browser.sent("Emulation.clearDeviceMetricsOverride").length;
     browser.lastInput = Date.now();
     await until(() => browser.sent("Browser.setWindowBounds").length === priorBounds + 2);
     assert.deepEqual(browser.sent("Browser.setWindowBounds")[priorBounds + 1].params.bounds, {
@@ -373,7 +427,19 @@ describe("project browser router", () => {
       width: 800,
       height: 987,
     });
-    await until(() => browser.sent("Emulation.clearDeviceMetricsOverride").length === clears + 1);
+    // Ratio 1 is emulated too, never cleared: a clear after the window changed size would
+    // give the page an old size back (see BrowserLink).
+    await until(() => browser.sent("Emulation.setDeviceMetricsOverride").at(-1).params.deviceScaleFactor === 1);
+    assert.deepEqual(browser.sent("Emulation.setDeviceMetricsOverride").at(-1).params, {
+      width: 0,
+      height: 0,
+      deviceScaleFactor: 1,
+      scale: 1,
+      mobile: false,
+    });
+    assert.equal(browser.sent("Emulation.clearDeviceMetricsOverride").length, 0);
+    await until(() => browser.page().ratio === 1);
+    assert.deepEqual(browser.page(), { width: 800, height: 900, ratio: 1 });
     assert.deepEqual(
       browser.sent("Page.startScreencast").map((command) => command.params.quality),
       [90, 75],
@@ -388,13 +454,24 @@ describe("project browser router", () => {
     await new Promise((resolve) => setTimeout(resolve, 200));
     const routerPort = router.address().port;
     await upgradeStatus(routerPort, "/projects/demo/websockify", {});
-    await until(() => browser.sent("Browser.setWindowBounds").length === priorBounds + 3);
+    await until(() => browser.sent("Browser.setWindowBounds").length >= priorBounds + 3);
     assert.deepEqual(browser.sent("Browser.setWindowBounds")[priorBounds + 2].params.bounds, {
       left: 0,
       top: 0,
       width: 1920,
       height: 1080,
     });
+    // Without a live view the emulation ends, and the window is nudged (one pixel taller and
+    // back) so the page takes the window's size rather than the one it had when the
+    // emulation began.
+    await until(() => browser.sent("Browser.setWindowBounds").length === priorBounds + 5);
+    assert.deepEqual(
+      browser.sent("Browser.setWindowBounds").slice(priorBounds + 3).map((command) => command.params.bounds.height),
+      [1081, 1080],
+    );
+    await until(() => browser.sent("Emulation.clearDeviceMetricsOverride").length === 1);
+    await until(() => browser.page().width === 1920);
+    assert.deepEqual(browser.page(), { width: 1920, height: 993, ratio: 1 });
   });
 
   it("sizes a window from its visible tab", async () => {
@@ -434,16 +511,71 @@ describe("project browser router", () => {
     upstream = browser.server;
     const port = await listen(upstream);
     const link = new BrowserLink(port);
-    await link.emulate(PAGE, 1);
+    assert.equal(await link.emulate(PAGE, null), true);
     assert.equal(browser.sent("Emulation.clearDeviceMetricsOverride").length, 1);
     // Once this link has itself set a page to a ratio, asking for the same one again is a
     // no-op, as it always was.
-    await link.emulate(PAGE, 1);
+    assert.equal(await link.emulate(PAGE, null), false);
     assert.equal(browser.sent("Emulation.clearDeviceMetricsOverride").length, 1);
     await link.emulate(PAGE, 2);
     assert.equal(browser.sent("Emulation.setDeviceMetricsOverride").length, 1);
     await link.emulate(PAGE, 2);
     assert.equal(browser.sent("Emulation.setDeviceMetricsOverride").length, 1);
+    // Ratio 1 is an emulation of its own, not a clear.
+    assert.equal(await link.emulate(PAGE, 1), false);
+    assert.deepEqual(browser.sent("Emulation.setDeviceMetricsOverride").at(-1).params, {
+      width: 0,
+      height: 0,
+      deviceScaleFactor: 1,
+      scale: 1,
+      mobile: false,
+    });
+    assert.equal(browser.sent("Emulation.clearDeviceMetricsOverride").length, 1);
+  });
+
+  it("gives a page its window's size again when a cleared emulation left it at an old one", async () => {
+    // Measured on the bench: a clear after the window changed size left a 3839 pixel wide
+    // page in a 1280 pixel wide window. Its toolbar then reads as negative, the window keeper
+    // could not measure it, and a live view that needed that measurement stayed on JPEG.
+    const browser = fakeBrowser();
+    upstream = browser.server;
+    const port = await listen(upstream);
+    browser.makeStale({ width: 3839, height: 2312 });
+    await setLiveViewport(port, { width: 1280, height: 800, ratio: 1 });
+    const bounds = browser.sent("Browser.setWindowBounds").map((command) => command.params.bounds);
+    // One pixel taller and back, then the window for the live view.
+    assert.deepEqual(bounds.slice(0, 2), [
+      { left: 0, top: 0, width: 1920, height: 1081 },
+      { left: 0, top: 0, width: 1920, height: 1080 },
+    ]);
+    assert.deepEqual(bounds.at(-1), { left: 0, top: 0, width: 1280, height: 887 });
+    assert.deepEqual(browser.page(), { width: 1280, height: 800, ratio: 1 });
+    assert.deepEqual(windowChrome(port), { width: 0, height: 87 });
+    await setLiveViewport(port, null);
+  });
+
+  it("changes the window alone when the ratio stays, and pins the page only for a new ratio", async () => {
+    const browser = fakeBrowser();
+    upstream = browser.server;
+    const port = await listen(upstream);
+    await setLiveViewport(port, { width: 1280, height: 800, ratio: 2 });
+    const pins = () => browser.sent("Emulation.setDeviceMetricsOverride").filter((command) => command.params.width > 0);
+    assert.equal(pins().length, 1);
+    assert.deepEqual(browser.page(), { width: 1280, height: 800, ratio: 2 });
+    await setLiveViewport(port, { width: 1000, height: 700, ratio: 2 });
+    assert.equal(pins().length, 1);
+    assert.deepEqual(browser.sent("Browser.setWindowBounds").at(-1).params.bounds, {
+      left: 0,
+      top: 0,
+      width: 2000,
+      height: 1487,
+    });
+    assert.deepEqual(browser.page(), { width: 1000, height: 700, ratio: 2 });
+    await setLiveViewport(port, { width: 1000, height: 700, ratio: 1 });
+    assert.equal(pins().length, 2);
+    assert.deepEqual(browser.page(), { width: 1000, height: 700, ratio: 1 });
+    assert.equal(browser.sent("Emulation.clearDeviceMetricsOverride").length, 0);
+    await setLiveViewport(port, null);
   });
 
   it("corrects a page's pixel ratio before reading its chrome, not after", async () => {
@@ -515,6 +647,21 @@ describe("project browser control", () => {
       null,
     );
     assert.equal(fittedBounds({ windowState: "normal" }, { width: 0, height: 0 }), null);
+  });
+
+  it("reads a tab's toolbar from its window and page, and tells a page that disagrees", () => {
+    assert.deepEqual(readWindowSizes(["visible", 1920, 1080, 2560, 1687, 1280, 800, 2]), {
+      visible: true,
+      screen: { width: 1920, height: 1080 },
+      outer: { width: 2560, height: 1687 },
+      chrome: { width: 0, height: 87 },
+      ratio: 2,
+      consistent: true,
+    });
+    assert.equal(readWindowSizes(["visible", 3840, 2400, 1280, 887, 3839, 2312, 1]).consistent, false);
+    assert.equal(readWindowSizes(["visible", 3840, 2400, 1280, 887, 640, 100, 1]).consistent, false);
+    assert.equal(readWindowSizes(["visible", 1920, 1080, 0, 87]), null);
+    assert.equal(readWindowSizes(null), null);
   });
 
   it("sizes a window to the live view's page plus the browser's toolbar while one is watched", () => {
