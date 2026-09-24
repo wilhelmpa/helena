@@ -171,6 +171,11 @@ export async function runDtos(where: SQL | undefined, window?: { limit: number; 
       dryRun: run.dryRun,
       status: run.status as RunStatus,
       error: run.error,
+      // A failed run names the failure of the step that ended it, where one was explained.
+      failure:
+        run.status === 'failed'
+          ? (own.find((step) => step.status === 'failed' && step.failure)?.failure ?? null)
+          : null,
       result: run.result ?? null,
       actorName: joined.actorName,
       inputTokens: counted.length
@@ -223,6 +228,7 @@ async function stepDtos(runs: RunRow[]) {
         outputTokens: agentRun.outputTokens,
         startedAt: agentRun.startedAt,
         finishedAt: agentRun.finishedAt,
+        failure: agentRun.failure,
       },
     })
     .from(pipelineRunStep)
@@ -261,6 +267,7 @@ function stepDto(row: {
     outputTokens: number | null;
     startedAt: Date | null;
     finishedAt: Date | null;
+    failure: unknown;
   } | null;
 }) {
   const { step } = row;
@@ -297,9 +304,49 @@ function stepDto(row: {
     note: step.note,
     wakeAt: step.wakeAt ? iso(step.wakeAt) : null,
     error: step.error,
+    failure: stepFailure(row.agentRun?.failure, step.state),
     startedAt: iso(step.startedAt),
     finishedAt: step.finishedAt ? iso(step.finishedAt) : null,
   };
+}
+
+// Why a step failed, where the runtime's words said: its agent run's failure, or the one the
+// engine recorded when it did not start the run (a model the provider already refused).
+// Only the code and the model: the run view words it in the reader's language.
+export function stepFailure(
+  runFailure: unknown,
+  state: unknown,
+): { code: string; model: string | null } | null {
+  const found =
+    (runFailure as { code?: unknown; model?: unknown } | null) ??
+    ((state as { runtimeFailure?: { code?: unknown; model?: unknown } } | null)?.runtimeFailure ??
+      null);
+  if (!found || typeof found.code !== 'string') return null;
+  return { code: found.code, model: typeof found.model === 'string' ? found.model : null };
+}
+
+// The explained failure of each failed run that has one (see stepFailure), by run id: for the
+// views that show a run's error without its steps (a task's agent team, the health overview).
+export async function runFailures(
+  runIds: string[],
+): Promise<Map<string, { code: string; model: string | null }>> {
+  const found = new Map<string, { code: string; model: string | null }>();
+  if (runIds.length === 0) return found;
+  const rows = await db
+    .select({
+      runId: pipelineRunStep.runId,
+      state: pipelineRunStep.state,
+      failure: agentRun.failure,
+    })
+    .from(pipelineRunStep)
+    .leftJoin(agentRun, eq(agentRun.id, pipelineRunStep.agentRunId))
+    .where(and(inArray(pipelineRunStep.runId, runIds), eq(pipelineRunStep.status, 'failed')))
+    .orderBy(asc(pipelineRunStep.seq), asc(pipelineRunStep.startedAt));
+  for (const row of rows) {
+    const failure = stepFailure(row.failure, row.state);
+    if (failure && !found.has(row.runId)) found.set(row.runId, failure);
+  }
+  return found;
 }
 
 const RECENT_ISSUE_RUNS = 20;

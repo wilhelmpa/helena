@@ -28,7 +28,7 @@ import {
   type ThreadRow,
 } from '../chat-history';
 import { appendReasoningPart, appendTextPart } from '../chat-parts';
-import type { ChatMessagePage, ChatPart, ChatThreadPage } from '../model';
+import type { ChatMessageDTO, ChatMessagePage, ChatPart, ChatThreadPage } from '../model';
 import { touchRunner, type RunnerAgent } from '../runner/service';
 import { modelCheckOf, type RunModelReport } from '../runtime-sync/model-check';
 import type { AgUiEventBody, ChatMessageStatus } from './model';
@@ -43,6 +43,14 @@ import {
   type MessageTree,
 } from './branches';
 import { publishDomainEvent } from '#shared/helena';
+import type { RuntimeFailure } from '@helena/sdk';
+import {
+  annotateCatalog,
+  learnFromOutcome,
+  loadModelAvailability,
+  runtimeOfPolicy,
+  type UnavailableCatalogModel,
+} from '#modules/model-availability/service';
 
 export type ChatCatalogModel = {
   id: string;
@@ -51,6 +59,21 @@ export type ChatCatalogModel = {
   thinkingLevels: string[];
   thinkingDefault: string | null;
   provider?: string;
+  // Whether the account's own model list names it, and the model it is a variant of (as
+  // the runner published them).
+  listed?: boolean;
+  variantOf?: string;
+  // Whether it is confirmed: listed by the account or seen working (true), only expected to
+  // work by the runtime (false). Unset when nothing tells.
+  verified?: boolean;
+};
+
+// What the pickers read: the models the agent can be set to, and those its provider
+// refused this account, which they leave out (model-availability).
+export type ChatCatalog = {
+  models: ChatCatalogModel[];
+  unavailable: UnavailableCatalogModel[];
+  updatedAt: string | null;
 };
 
 // Chat with an agent. The answer is produced by a runner on the operator's machine,
@@ -327,9 +350,7 @@ export async function getThreadMessages(
           r.startedAt && r.finishedAt ? r.finishedAt.getTime() - r.startedAt.getTime() : null,
       }),
       ...(r.status === 'canceled' ? { stopped: true } : {}),
-      ...(r.status === 'failed'
-        ? { error: r.lastError ?? 'The agent did not finish the answer' }
-        : {}),
+      ...failedFields(r),
     }))
     // An answer whose runner has reported nothing yet has nothing to show; the browser
     // is streaming it. A failed one is kept for its error, so it can be tried again.
@@ -339,6 +360,21 @@ export async function getThreadMessages(
     nextPage: end - PAGE_SIZE > 0 ? page + 1 : null,
     ...(activeAnswer && { activeAnswer }),
   };
+}
+
+// Why a failed answer failed: its error, and the code and model of a failure the runtime
+// explained (see ChatMessageDTO.errorCode).
+function failedFields(row: {
+  status: string;
+  lastError: string | null;
+  failure: unknown;
+  model: string | null;
+}): Pick<ChatMessageDTO, 'error' | 'errorCode' | 'errorModel'> {
+  if (row.status !== 'failed') return {};
+  const error = row.lastError ?? 'The agent did not finish the answer';
+  const failure = row.failure as Partial<RuntimeFailure> | null;
+  if (!failure || typeof failure.code !== 'string') return { error };
+  return { error, errorCode: failure.code, errorModel: failure.model ?? row.model ?? null };
 }
 
 // The event types a transcript is made of: the answer's text, the model's reasoning
@@ -898,44 +934,60 @@ export async function publishChatCatalog(
     });
 }
 
-export async function readChatCatalog(agentId: number): Promise<{
-  models: ChatCatalogModel[];
-  updatedAt: string | null;
-}> {
+export async function readChatCatalog(agentId: number): Promise<ChatCatalog> {
   const [row] = await db
     .select({
       models: agentChatCatalog.models,
       updatedAt: agentChatCatalog.updatedAt,
+      runtimePolicy: aiAgent.runtimePolicy,
     })
     .from(agentChatCatalog)
+    .innerJoin(aiAgent, eq(aiAgent.id, agentChatCatalog.agentId))
     .where(eq(agentChatCatalog.agentId, agentId))
     .limit(1);
-  return {
-    models: (row?.models as ChatCatalogModel[] | undefined) ?? [],
-    updatedAt: row ? iso(row.updatedAt) : null,
-  };
+  if (!row) return { models: [], unavailable: [], updatedAt: null };
+  const annotated = annotateCatalog(
+    (row.models as ChatCatalogModel[] | null) ?? [],
+    runtimeOfPolicy(row.runtimePolicy),
+    await loadModelAvailability(),
+  );
+  return { ...annotated, updatedAt: iso(row.updatedAt) };
 }
 
 // A template runs nowhere, so no runner publishes a catalog of its own. Its model and
 // reasoning are picked for the copies it will have, which run on the team's runners:
 // it offers every model those runners published, newest catalog first.
-export async function readTeamChatCatalog(teamId: number): Promise<{
-  models: ChatCatalogModel[];
-  updatedAt: string | null;
-}> {
+export async function readTeamChatCatalog(teamId: number): Promise<ChatCatalog> {
   const rows = await db
-    .select({ models: agentChatCatalog.models, updatedAt: agentChatCatalog.updatedAt })
+    .select({
+      models: agentChatCatalog.models,
+      updatedAt: agentChatCatalog.updatedAt,
+      runtimePolicy: aiAgent.runtimePolicy,
+    })
     .from(agentChatCatalog)
     .innerJoin(aiAgent, eq(aiAgent.id, agentChatCatalog.agentId))
     .where(and(eq(aiAgent.teamId, teamId), eq(aiAgent.template, false)))
     .orderBy(desc(agentChatCatalog.updatedAt));
+  const index = await loadModelAvailability();
   const models = new Map<string, ChatCatalogModel>();
+  const unavailable = new Map<string, UnavailableCatalogModel>();
   for (const row of rows) {
-    for (const model of (row.models as ChatCatalogModel[] | null) ?? []) {
-      if (!models.has(model.id)) models.set(model.id, model);
-    }
+    const annotated = annotateCatalog(
+      (row.models as ChatCatalogModel[] | null) ?? [],
+      runtimeOfPolicy(row.runtimePolicy),
+      index,
+    );
+    for (const model of annotated.models) if (!models.has(model.id)) models.set(model.id, model);
+    for (const model of annotated.unavailable)
+      if (!unavailable.has(model.id)) unavailable.set(model.id, model);
   }
-  return { models: [...models.values()], updatedAt: rows[0] ? iso(rows[0].updatedAt) : null };
+  // A model one runtime refused and another serves stays on offer.
+  for (const id of models.keys()) unavailable.delete(id);
+  return {
+    models: [...models.values()],
+    unavailable: [...unavailable.values()],
+    updatedAt: rows[0] ? iso(rows[0].updatedAt) : null,
+  };
 }
 
 async function validateChatSettings(
@@ -1102,7 +1154,10 @@ export async function finishMessage(
     model?: string;
     spend?: Spend | null;
     runtime?: RunModelReport;
+    failure?: RuntimeFailure;
   },
+  // The runtime the agent runs on, which a finding about its model is recorded under.
+  runtime = 'hermes',
 ): Promise<boolean> {
   await touchRunner(agentId);
   const check = modelCheckOf(result.runtime);
@@ -1119,6 +1174,7 @@ export async function finishMessage(
       finishedAt: new Date(),
       ...(model && { model: model.slice(0, 200) }),
       ...(check && { modelCheck: check }),
+      failure: result.status === 'failed' ? (result.failure ?? null) : null,
       ...(result.usage && {
         inputTokens: result.usage.inputTokens,
         outputTokens: result.usage.outputTokens,
@@ -1134,6 +1190,13 @@ export async function finishMessage(
       >`(SELECT t.project_id FROM agent_chat_thread t WHERE t.id = ${agentChatMessage.threadId})`,
     });
   if (rows.length > 0) {
+    await learnFromOutcome({
+      runtime,
+      report: result.runtime,
+      status: result.status,
+      failure: result.failure,
+      source: { agentId, chatMessageId: rows[0].id },
+    });
     await recordUsage({
       agentId,
       projectId: rows[0].projectId,

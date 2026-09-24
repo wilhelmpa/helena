@@ -379,11 +379,39 @@ export const SystemHealthResponse = t.Object({
         projectKey: t.String(),
         name: t.String(),
         error: t.String(),
+        // Why it failed, where the runtime's words said (a model the provider refused).
+        failure: t.Nullable(t.Object({ code: t.String(), model: t.Nullable(t.String()) })),
         at: t.String(),
       }),
       { description: 'The newest failures, newest first.' },
     ),
   }),
+  models: t.Object(
+    {
+      unavailable: t.Array(
+        t.Object({
+          runtime: t.String(),
+          provider: t.String(),
+          model: t.String(),
+          detail: t.Nullable(t.String()),
+          since: t.String(),
+          agents: t.Array(
+            t.Object({
+              id: t.Number(),
+              teamId: t.Number(),
+              username: t.String(),
+              template: t.Boolean(),
+            }),
+          ),
+        }),
+      ),
+    },
+    {
+      description:
+        'Models the providers refused for this installation, each with the agents still set ' +
+        'to it: they fail until they get another model.',
+    },
+  ),
   janitors: t.Array(
     t.Object({
       job: t.Union([

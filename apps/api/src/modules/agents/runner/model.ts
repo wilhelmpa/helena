@@ -1,6 +1,7 @@
 import { t } from 'elysia';
 import { agentRunTrigger, contextUsageBody, spendBody } from '../model';
 import { runModelReport } from '../runtime-sync/model';
+import { runFailure } from '#modules/model-availability/model';
 
 export const MAX_RUN_OUTPUT_BYTES = 128 * 1024;
 
@@ -107,6 +108,7 @@ export const resultBody = t.Object({
   ),
   spend: spendBody,
   runtime: t.Optional(runModelReport),
+  failure: t.Optional(runFailure),
 });
 
 // The answer to a run result: a reflection the runner starts in the run's session, or

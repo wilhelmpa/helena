@@ -143,6 +143,10 @@ export type ChatMessageDTO = {
   outputTokens?: number | null;
   durationMs?: number | null;
   error?: string;
+  // Why it failed, where the runtime's words said: the chat words it in the reader's
+  // language (a model the provider refused this account).
+  errorCode?: string;
+  errorModel?: string | null;
 };
 
 export type ChatMessagePage = {

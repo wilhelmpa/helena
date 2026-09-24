@@ -1,5 +1,5 @@
 import { t } from 'elysia';
-
+import { runFailure, unavailableCatalogModel } from '#modules/model-availability/model';
 import { pageQueryFields, pageResponse } from '#shared/pagination';
 import { contextUsageBody, spendBody } from '../model';
 import { runModelReport } from '../runtime-sync/model';
@@ -172,12 +172,43 @@ const chatModel = t.Object({
   thinkingDefault: t.Nullable(t.String({ maxLength: 40 })),
   // The provider that serves the model when the runner lists more than one.
   provider: t.Optional(t.String({ minLength: 1, maxLength: 64 })),
+  listed: t.Optional(
+    t.Boolean({
+      description:
+        "Whether the account's own model list names it; false for a model the runtime only " +
+        'expects to work (Hermes adds newer models it has not seen listed).',
+    }),
+  ),
+  variantOf: t.Optional(
+    t.String({
+      maxLength: 200,
+      description: 'The model this one is a variant of (a larger context window of it).',
+    }),
+  ),
 });
 
 export const chatCatalogBody = t.Object({ models: t.Array(chatModel, { maxItems: 200 }) });
 
 export const ChatCatalogResponse = t.Object({
-  models: t.Array(chatModel),
+  models: t.Array(
+    t.Composite([
+      chatModel,
+      t.Object({
+        verified: t.Optional(
+          t.Boolean({
+            description:
+              'Confirmed: listed by the account or seen working (true), or only expected to ' +
+              'work (false). Unset when nothing tells.',
+          }),
+        ),
+      }),
+    ]),
+  ),
+  unavailable: t.Array(unavailableCatalogModel, {
+    description:
+      'Models the provider refused for this account: left out of `models` until a use of ' +
+      'them succeeds or the owner lets them be tried again.',
+  }),
   updatedAt: t.Nullable(t.String()),
 });
 
@@ -324,6 +355,7 @@ export const chatResultBody = t.Object({
   ),
   spend: spendBody,
   runtime: t.Optional(runModelReport),
+  failure: t.Optional(runFailure),
 });
 
 // The answer of every runner call that reports progress. `canceled` is how the stop

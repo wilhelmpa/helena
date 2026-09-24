@@ -116,4 +116,15 @@ export const AgentTeamRunResponse = t.Object({
   stages: t.Array(AgentTeamStageResponse),
   result: t.Any(),
   error: t.Nullable(t.String()),
+  failure: t.Nullable(
+    t.Object(
+      { code: t.String(), model: t.Nullable(t.String()) },
+      {
+        description:
+          "Why the run failed, where the runtime's words said: 'model-unavailable' (the " +
+          'provider does not serve the model to this account) or ' +
+          "'provider-rejected'. Null otherwise.",
+      },
+    ),
+  ),
 });

@@ -4,7 +4,13 @@ import { listColumns } from '#modules/columns/service';
 import { updateIssue } from '#modules/issues/service';
 import { bumpControlPlaneRevision } from '#modules/sync/service';
 import type { AgentTeamStep } from '#modules/pipelines/definition';
-import { cancelStepRun, queueStepRun, stepRunStatus } from '../../agent-runs';
+import type { RuntimeFailure } from '@helena/sdk';
+import {
+  cancelStepRun,
+  ModelRefusedFailure,
+  queueStepRun,
+  stepRunStatus,
+} from '../../agent-runs';
 import { clip, loadRun, stepRow, writeStep } from '../../run-context';
 import {
   StepFailure,
@@ -341,6 +347,9 @@ interface StageState {
   deadline?: number;
   result?: StageResult;
   failure?: string;
+  // Why the stage failed, where the runtime's words said (a model the provider does not
+  // serve this account): the run view words it in the reader's language.
+  runtimeFailure?: RuntimeFailure;
 }
 
 const STAGE_NAMES: Record<Phase, string> = {
@@ -381,15 +390,32 @@ async function queueStage(
   const agent = await resolveAgent(projectId, state.input.agent.agentRef);
   if (!agent) throw new StepFailure(`${state.input.agent.agentRef} does not work in this project`);
   const context = await loadRun(runId);
-  const agentRunId = await queueStepRun({
-    agentId: agent.id,
-    projectId,
-    issueId: context.task?.id ?? null,
-    prompt: stagePrompt(state.input, `project:${context.project.key}`),
-    maxTurns: team.policy.maxTurns ?? null,
-    runBudgetSeconds: team.policy.runBudgetSeconds ?? null,
-    expect: { model: team.execution.model, reasoning: team.execution.reasoning },
-  });
+  let agentRunId: number;
+  try {
+    agentRunId = await queueStepRun({
+      agentId: agent.id,
+      projectId,
+      issueId: context.task?.id ?? null,
+      prompt: stagePrompt(state.input, `project:${context.project.key}`),
+      maxTurns: team.policy.maxTurns ?? null,
+      runBudgetSeconds: team.policy.runBudgetSeconds ?? null,
+      expect: { model: team.execution.model, reasoning: team.execution.reasoning },
+    });
+  } catch (error) {
+    // A model the provider refused this account: the stage fails at once, saying so.
+    if (error instanceof ModelRefusedFailure) {
+      await writeStep(runId, { type: 'agent', name: row.name }, row, {
+        status: 'failed',
+        agentId: agent.id,
+        outcome: 'failed',
+        attempt,
+        error: clip(error.message, 2_000),
+        state: { ...state, failure: error.message, runtimeFailure: error.failure },
+        finishedAt: new Date(),
+      });
+    }
+    throw error;
+  }
   await writeStep(runId, { type: 'agent', name: row.name }, row, {
     status: 'running',
     agentId: agent.id,
@@ -554,6 +580,21 @@ async function advanceStages(
       attemptError =
         run.error ||
         (run.status === 'canceled' ? 'The agent run was canceled' : 'The agent run failed');
+    // A failure no retry passes (the provider does not serve the model to this account)
+    // ends the stage after this attempt, whatever attempts the policy has left.
+    const final = run.status === 'failed' && run.failure?.retryable === false ? run.failure : null;
+    if (final) {
+      const message = `The stage ${row.name} failed: ${finalFailureText(final, attemptError)}`;
+      await writeStep(runId, { type: 'agent', name: row.name }, at, {
+        status: 'failed',
+        outcome: 'failed',
+        error: clip(message, 2_000),
+        state: { ...state, failure: message, runtimeFailure: final },
+        finishedAt: new Date(),
+      });
+      failure ??= message;
+      continue;
+    }
     if (row.attempt < policy.maxAttempts) {
       const delay = backoff(policy, row.attempt);
       await writeStep(runId, { type: 'agent', name: row.name }, at, {
@@ -576,6 +617,15 @@ async function advanceStages(
     failure ??= message;
   }
   return { done: done && failure === null, failure, results, wakeInMs };
+}
+
+// What a stage that no retry can pass says: the model the provider refused, in the
+// provider's own words.
+function finalFailureText(failure: RuntimeFailure, error: string): string {
+  const said = failure.detail ?? error.split('\n')[0] ?? error;
+  if (failure.code === 'model-unavailable')
+    return `${failure.model ? `the model ${failure.model}` : 'the model'} is not available for this account (${said}); retrying does not help, choose another model for the agent`;
+  return `the provider refused the request for good (${said}); retrying does not help`;
 }
 
 async function awaitStages(
