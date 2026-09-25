@@ -147,7 +147,9 @@ lemonade_config() {
   # it only adds the binary's folder to LD_LIBRARY_PATH. `--load-mode none`: the weights are
   # read into VRAM, not memory-mapped (llama.cpp's former --no-mmap; with mmap the page cache
   # of a 60 GB model competes with the 31 GB the OS has).
-  backend=rocm rocm_bin=$OPT/llamacpp/rocm-$LLAMA_TAG
+  # Lemonade runs *_bin as the llama-server executable itself (found live: with the folder it
+  # logs "Failed to execute: …/rocm-b11166" and every load fails with HTTP 500).
+  backend=rocm rocm_bin=$OPT/llamacpp/rocm-$LLAMA_TAG/llama-server
   if [ "$ROCM" = 0 ]; then backend=vulkan rocm_bin=builtin; fi
   cat <<EOF
 {
@@ -166,7 +168,7 @@ lemonade_config() {
   "llamacpp": {
     "backend": "$backend",
     "prefer_system": false,
-    "vulkan_bin": "$OPT/llamacpp/vulkan-$LLAMA_TAG",
+    "vulkan_bin": "$OPT/llamacpp/vulkan-$LLAMA_TAG/llama-server",
     "rocm_bin": "$rocm_bin",
     "args": "--load-mode none"
   },
@@ -414,6 +416,12 @@ place() {
   run chown -R lemonade:lemonade "$dir"
 }
 
+# True when Lemonade answers and has no model loaded (then a restart costs nothing).
+lemonade_loaded_none() {
+  health=$(curl -s -m 5 -H "Authorization: Bearer $(cat "$KEY")" "http://127.0.0.1:$PORT/api/v1/health" 2>/dev/null) || return 1
+  printf '%s' "$health" | python3 -c 'import json,sys; sys.exit(0 if not json.load(sys.stdin).get("all_models_loaded") else 1)' 2>/dev/null
+}
+
 models_pull() {
   name=$1
   line=$(model_line "$name")
@@ -449,6 +457,13 @@ models_pull() {
       fi
       ;;
   esac
+  # Lemonade builds its list of downloaded models once at start ("Cache built: … downloaded")
+  # and never rescans, so a model placed later stays "not downloaded" and a load tries the
+  # (offline) internet. Restart it now if nothing is loaded; otherwise say so.
+  if [ "$DRY_RUN" = 0 ] && systemctl is-active --quiet lemond; then
+    if lemonade_loaded_none; then run systemctl restart lemond; else
+      say "Lemonade has models loaded; restart lemond (it unloads them) before loading $name"; fi
+  fi
   say "Placed $name. Load it with: $0 models load $name"
 }
 

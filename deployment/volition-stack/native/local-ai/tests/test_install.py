@@ -113,8 +113,8 @@ class InstallScriptTest(unittest.TestCase):
         self.assertFalse(config['broadcast'])
         self.assertFalse(config['telemetry']['enabled'])
         self.assertEqual(config['llamacpp']['backend'], 'rocm')
-        self.assertEqual(config['llamacpp']['rocm_bin'], f'{OPT}/llamacpp/rocm-b11166')
-        self.assertEqual(config['llamacpp']['vulkan_bin'], f'{OPT}/llamacpp/vulkan-b11166')
+        self.assertEqual(config['llamacpp']['rocm_bin'], f'{OPT}/llamacpp/rocm-b11166/llama-server')
+        self.assertEqual(config['llamacpp']['vulkan_bin'], f'{OPT}/llamacpp/vulkan-b11166/llama-server')
         self.assertIn('--load-mode none', config['llamacpp']['args'])
         self.assertTrue(config['flm']['prefer_system'])
 
