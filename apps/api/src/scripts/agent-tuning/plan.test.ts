@@ -574,7 +574,10 @@ describe('the target of this installation', () => {
     );
     for (const copy of COPIES) {
       expect(copy.assignments?.[copy.copyOf!.projectKey]?.text.length).toBeGreaterThan(80);
-      expect(copy).toMatchObject({ projectBrowser: true, triggers: { mention: true, assign: true } });
+      expect(copy).toMatchObject({
+        projectBrowser: true,
+        triggers: { mention: true, assign: true },
+      });
     }
     expect(TEMPLATES.map((t) => t.username).sort()).toEqual([
       'assistant',
@@ -591,7 +594,9 @@ describe('the target of this installation', () => {
       const coordinator = TARGET.agents.find(
         (a) => a.username === `hermes-${key.toLowerCase()}-coordinator`,
       )!;
-      const current = state([agent({ username: copy.username, projects: [{ id: 1, key, assignment: '' }] })]);
+      const current = state([
+        agent({ username: copy.username, projects: [{ id: 1, key, assignment: '' }] }),
+      ]);
       const text = resolveText(coordinator.instructions!, current).text;
       expect(text).toContain(`@${copy.username}:`);
       const alone = resolveText(coordinator.instructions!, state([])).text;
@@ -604,10 +609,20 @@ describe('the target of this installation', () => {
   });
 
   it('writes German texts without the old product names', () => {
+    const everyone = state(
+      TARGET.agents.map((a, index) =>
+        agent({
+          id: index + 1,
+          username: a.username,
+          projects: ['PRIV', 'FAM', 'VOL', 'VERVE'].map((key, id) => ({ id, key, assignment: '' })),
+        }),
+      ),
+    );
     const texts = [
       ...TARGET.projects.map((p) => p.instructions.text),
       ...TARGET.agents.flatMap((a) => [
-        a.instructions?.text ?? '',
+        // A coordinator's text with its whole team, so every specialist line is checked.
+        a.instructions ? resolveText(a.instructions, everyone).text : '',
         a.soul?.text ?? '',
         ...Object.values(a.assignments ?? {}).map((t) => t.text),
       ]),

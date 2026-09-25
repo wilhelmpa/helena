@@ -448,9 +448,10 @@ export const COPIES: AgentTarget[] = POOL_COPIES.map(({ template, projectKey }) 
 });
 
 // What every copy should have goes onto its template, so the copy keeps following it.
-export const TEMPLATES = [...new Set(POOL_COPIES.map((copy) => copy.template))].map(
-  (username) => ({ username, denyToolsets: DENIED_TOOLSETS }),
-);
+export const TEMPLATES = [...new Set(POOL_COPIES.map((copy) => copy.template))].map((username) => ({
+  username,
+  denyToolsets: DENIED_TOOLSETS,
+}));
 
 export const TARGET: TuningTarget = {
   projects: PROJECTS,

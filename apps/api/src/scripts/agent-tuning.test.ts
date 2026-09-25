@@ -126,7 +126,11 @@ describe('agent tuning', () => {
     });
     const state = await loadTuningState(teamId);
     const tuned = state.agents.find((a) => a.username === 'coder-vol')!;
-    expect(tuned).toMatchObject({ model: 'gpt-6-sol', reasoningEffort: 'medium', browser: 'gateway' });
+    expect(tuned).toMatchObject({
+      model: 'gpt-6-sol',
+      reasoningEffort: 'medium',
+      browser: 'gateway',
+    });
     const snapshot = await runtimePolicySnapshot((await getRunnerAgent(agent.userId))!);
     expect(snapshot.model).toBe('gpt-6-sol');
     expect(snapshot.mcpServers.map((s) => s.name)).toContain('projekt-browser');
@@ -178,7 +182,13 @@ describe('agent tuning', () => {
       projects: [],
       templates: [{ username: 'qa', denyToolsets: ['computer_use', 'tts'] }],
       agents: [
-        { username: coordinator, addSkills: [], denyToolsets: [], disableSkills: [], instructions: team },
+        {
+          username: coordinator,
+          addSkills: [],
+          denyToolsets: [],
+          disableSkills: [],
+          instructions: team,
+        },
         {
           username: 'qa-vol',
           copyOf: { template: 'qa', projectKey: 'VOL' },

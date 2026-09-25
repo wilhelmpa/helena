@@ -146,83 +146,83 @@ function inventoryOf(value: unknown): CurrentAgent['inventory'] {
 export async function loadTuningState(teamId: number): Promise<CurrentState> {
   const [agents, links, library, members, assignments, proposals, runs, servers, org, refused] =
     await Promise.all([
-    db
-      .select({
-        id: aiAgent.id,
-        userId: aiAgent.userId,
-        username: aiAgent.username,
-        template: aiAgent.template,
-        sourceTemplateId: aiAgent.sourceTemplateId,
-        model: aiAgent.model,
-        instructions: aiAgent.instructions,
-        runtimePolicy: aiAgent.runtimePolicy,
-        runtimeState: aiAgent.runtimeState,
-        learned: aiAgent.runtimeLearnedSkills,
-        triggerOnMention: aiAgent.triggerOnMention,
-        triggerOnAssign: aiAgent.triggerOnAssign,
-      })
-      .from(aiAgent)
-      .where(eq(aiAgent.teamId, teamId)),
-    db
-      .select({ agentId: agentSkillLink.agentId, name: agentSkill.name })
-      .from(agentSkillLink)
-      .innerJoin(agentSkill, eq(agentSkill.id, agentSkillLink.skillId))
-      .where(eq(agentSkill.teamId, teamId)),
-    db.select({ name: agentSkill.name }).from(agentSkill).where(eq(agentSkill.teamId, teamId)),
-    db
-      .select({
-        projectId: project.id,
-        key: project.key,
-        userId: projectMember.userId,
-        description: projectMember.description,
-      })
-      .from(projectMember)
-      .innerJoin(project, eq(project.id, projectMember.projectId))
-      .where(eq(project.teamId, teamId)),
-    db
-      .select({
-        projectId: organizationProjectAssignment.projectId,
-        instructions: organizationProjectAssignment.instructions,
-      })
-      .from(organizationProjectAssignment)
-      .where(eq(organizationProjectAssignment.teamId, teamId)),
-    db
-      .select({ agentId: agentProposal.agentId, pending: count() })
-      .from(agentProposal)
-      .where(and(eq(agentProposal.kind, 'memory-write'), eq(agentProposal.status, 'pending')))
-      .groupBy(agentProposal.agentId),
-    db
-      .select({ agentId: agentRun.agentId, reflection: agentRun.reflection })
-      .from(agentRun)
-      .where(
-        and(
-          isNotNull(agentRun.reflection),
-          gt(agentRun.createdAt, sql`now() - make_interval(days => ${REFLECTION_DAYS})`),
+      db
+        .select({
+          id: aiAgent.id,
+          userId: aiAgent.userId,
+          username: aiAgent.username,
+          template: aiAgent.template,
+          sourceTemplateId: aiAgent.sourceTemplateId,
+          model: aiAgent.model,
+          instructions: aiAgent.instructions,
+          runtimePolicy: aiAgent.runtimePolicy,
+          runtimeState: aiAgent.runtimeState,
+          learned: aiAgent.runtimeLearnedSkills,
+          triggerOnMention: aiAgent.triggerOnMention,
+          triggerOnAssign: aiAgent.triggerOnAssign,
+        })
+        .from(aiAgent)
+        .where(eq(aiAgent.teamId, teamId)),
+      db
+        .select({ agentId: agentSkillLink.agentId, name: agentSkill.name })
+        .from(agentSkillLink)
+        .innerJoin(agentSkill, eq(agentSkill.id, agentSkillLink.skillId))
+        .where(eq(agentSkill.teamId, teamId)),
+      db.select({ name: agentSkill.name }).from(agentSkill).where(eq(agentSkill.teamId, teamId)),
+      db
+        .select({
+          projectId: project.id,
+          key: project.key,
+          userId: projectMember.userId,
+          description: projectMember.description,
+        })
+        .from(projectMember)
+        .innerJoin(project, eq(project.id, projectMember.projectId))
+        .where(eq(project.teamId, teamId)),
+      db
+        .select({
+          projectId: organizationProjectAssignment.projectId,
+          instructions: organizationProjectAssignment.instructions,
+        })
+        .from(organizationProjectAssignment)
+        .where(eq(organizationProjectAssignment.teamId, teamId)),
+      db
+        .select({ agentId: agentProposal.agentId, pending: count() })
+        .from(agentProposal)
+        .where(and(eq(agentProposal.kind, 'memory-write'), eq(agentProposal.status, 'pending')))
+        .groupBy(agentProposal.agentId),
+      db
+        .select({ agentId: agentRun.agentId, reflection: agentRun.reflection })
+        .from(agentRun)
+        .where(
+          and(
+            isNotNull(agentRun.reflection),
+            gt(agentRun.createdAt, sql`now() - make_interval(days => ${REFLECTION_DAYS})`),
+          ),
         ),
-      ),
-    db
-      .select({ agentId: agentMcpServerLink.agentId, name: agentMcpServer.name })
-      .from(agentMcpServerLink)
-      .innerJoin(agentMcpServer, eq(agentMcpServer.id, agentMcpServerLink.mcpServerId))
-      .where(eq(agentMcpServer.teamId, teamId)),
-    db
-      .select({
-        agentId: organizationAgentAssignment.agentId,
-        role: organizationAgentAssignment.role,
-        managerId: organizationAgentAssignment.reportsToAgentId,
-      })
-      .from(organizationAgentAssignment)
-      .where(eq(organizationAgentAssignment.teamId, teamId)),
-    db
-      .selectDistinct({ model: helenaModelAvailability.model })
-      .from(helenaModelAvailability)
-      .where(
-        and(
-          eq(helenaModelAvailability.runtime, 'hermes'),
-          eq(helenaModelAvailability.state, 'unavailable'),
+      db
+        .select({ agentId: agentMcpServerLink.agentId, name: agentMcpServer.name })
+        .from(agentMcpServerLink)
+        .innerJoin(agentMcpServer, eq(agentMcpServer.id, agentMcpServerLink.mcpServerId))
+        .where(eq(agentMcpServer.teamId, teamId)),
+      db
+        .select({
+          agentId: organizationAgentAssignment.agentId,
+          role: organizationAgentAssignment.role,
+          managerId: organizationAgentAssignment.reportsToAgentId,
+        })
+        .from(organizationAgentAssignment)
+        .where(eq(organizationAgentAssignment.teamId, teamId)),
+      db
+        .selectDistinct({ model: helenaModelAvailability.model })
+        .from(helenaModelAvailability)
+        .where(
+          and(
+            eq(helenaModelAvailability.runtime, 'hermes'),
+            eq(helenaModelAvailability.state, 'unavailable'),
+          ),
         ),
-      ),
-  ]);
+    ]);
   const projects = await db
     .select({ id: project.id, key: project.key })
     .from(project)

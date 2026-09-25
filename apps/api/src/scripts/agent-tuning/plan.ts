@@ -90,7 +90,13 @@ export const SECTIONS = [
 ] as const;
 export type Section = (typeof SECTIONS)[number];
 // New agents, the project browser and models are the owner's call: only on request.
-export const DEFAULT_SECTIONS: Section[] = ['skills', 'tools', 'instructions', 'projects', 'report'];
+export const DEFAULT_SECTIONS: Section[] = [
+  'skills',
+  'tools',
+  'instructions',
+  'projects',
+  'report',
+];
 
 // The API's own bounds (organization/model.ts), which a text written here keeps as well, so
 // the owner can still save it from Helena.
@@ -199,7 +205,13 @@ export type Change =
       model: string | null;
       modelRefused: boolean;
     }
-  | { kind: 'projectInstructions'; projectId: number; projectKey: string; from: string; to: string };
+  | {
+      kind: 'projectInstructions';
+      projectId: number;
+      projectKey: string;
+      from: string;
+      to: string;
+    };
 
 export interface Plan {
   changes: Change[];
@@ -228,10 +240,7 @@ export function textDecision(
 }
 
 function subsets<T>(items: T[]): T[][] {
-  return items.reduce<T[][]>(
-    (all, item) => [...all, ...all.map((set) => [...set, item])],
-    [[]],
-  );
+  return items.reduce<T[][]>((all, item) => [...all, ...all.map((set) => [...set, item])], [[]]);
 }
 
 // A team text as the text it is for this state: the candidates that work in its project,
@@ -702,9 +711,7 @@ export function auditState(state: CurrentState): string[] {
       if (missing.length) findings.push(`linked but not in the profile: ${missing.join(', ')}`);
       const clash = agent.skills.filter((name) => bundled.has(name));
       if (clash.length)
-        findings.push(
-          `same name as a Hermes skill (skill_view refuses both): ${clash.join(', ')}`,
-        );
+        findings.push(`same name as a Hermes skill (skill_view refuses both): ${clash.join(', ')}`);
       findings.push(
         `skills: ${plan.size} Helena, ${bundled.size} Hermes-bundled, ${byOrigin('hub').length} hub, ${byOrigin('agent').length} learned`,
       );
