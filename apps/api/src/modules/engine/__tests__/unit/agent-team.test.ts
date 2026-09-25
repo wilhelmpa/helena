@@ -162,6 +162,17 @@ describe('agent team stage contract', () => {
     expect(prompt).toContain('Only plan assignments. Helena executes each delegation');
     expect(prompt).toContain('"agentRef":"agent:writer"');
     expect(prompt).not.toContain('Mastra');
+    expect(prompt).not.toContain('already started');
+  });
+
+  // A routine's instructions that @mention specialists start them on the task directly; the
+  // coordinator the routine delegates to must not hand them their parts again.
+  it('tells the coordinator which agents a routine already started on the task', () => {
+    const prompt = stagePrompt(coordinate, 'project:MKT', ['writer', 'coder']);
+    expect(prompt).toContain(
+      'The routine behind this task already started @writer, @coder on it directly',
+    );
+    expect(prompt).toContain('Do not assign those parts again; plan only the rest.');
   });
 });
 

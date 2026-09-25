@@ -435,7 +435,13 @@
       "reopened": "已重新打开任务",
       "skipped": "已跳过",
       "review": "已移至审查",
-      "done": "已移至完成"
+      "done": "已移至完成",
+      "mention-started": "已启动",
+      "mention-not-in-project": "不在此项目中工作",
+      "mention-agent-author": "由代理保存：不启动任何代理",
+      "mention-owner-only": "只接受其所有者的任务",
+      "mention-mentions-off": "不响应提及",
+      "mention-paused": "已暂停"
     },
     "agentRunStatus": {
       "pending": "已排队",
@@ -497,7 +503,8 @@
       "specialize": "专家执行：{assignment}",
       "review": "协调者审查",
       "sync": "结果写入任务"
-    }
+    },
+    "routineMention": "在说明中被提及"
   },
   "versions": {
     "empty": "没有版本。",

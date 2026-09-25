@@ -22,6 +22,18 @@
   "instructionsPlaceholder": "Revise as tarefas abertas e atualize o que precisar de atenção.",
   "instructionsHintNew": "A descrição de cada tarefa que o agendamento cria.",
   "instructionsHintReopen": "Adicionadas como comentário sempre que a tarefa é reaberta.",
+  "mentionsHint": "Os agentes mencionados com @ também começam na tarefa a cada execução.",
+  "mentionsTitle": "Agentes mencionados",
+  "mentionStarts": "começa a cada execução",
+  "mentionReason": {
+    "not-in-project": "não trabalha neste projeto",
+    "agent-author": "salvo por um agente: as menções dele não iniciam ninguém",
+    "owner-only": "só aceita tarefas do seu dono",
+    "mentions-off": "não reage a menções",
+    "paused": "pausado"
+  },
+  "mentionsStart": "Também inicia {names}",
+  "mentionsRefused": "{count, plural, one {# menção não inicia ninguém} other {# menções não iniciam ninguém}}",
   "schedule": "Horário",
   "showPresets": "Mostrar horários predefinidos",
   "presetEvery15Minutes": "A cada 15 minutos",

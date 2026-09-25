@@ -10,6 +10,7 @@ import { useCronDescription } from '../hooks/useCronDescription';
 import { formatInZone } from '../utils/schedulePreview';
 import { RoutineActionsMenu, type RoutineActions } from './RoutineActionsMenu';
 import { RoutineLastRun } from './RoutineLastRun';
+import { RoutineMentionsLine } from './RoutineMentions';
 
 // One routine on a phone, where the table has no room: the same facts stacked in one
 // row of the list — title and switch, agent and project, when it runs, how it last ran.
@@ -60,6 +61,7 @@ export function RoutineItem({
           </Link>
         )}
       </p>
+      <RoutineMentionsLine mentions={routine.mentions} className="" />
       <p className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
         <Clock className="size-3.5 shrink-0" />
         <span className="truncate text-foreground" title={routine.cron}>

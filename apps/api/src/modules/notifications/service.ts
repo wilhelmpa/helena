@@ -1,6 +1,8 @@
 import {
+  aiAgent,
   db,
   notification,
+  pipelineRun,
   projectMember,
   user,
   issue,
@@ -9,9 +11,10 @@ import {
   projectColumn,
   type ActivityPayload,
 } from '@repo/db';
-import { and, desc, eq, inArray, lt, or, sql, isNull } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, lt, or, sql, isNull } from 'drizzle-orm';
 import { addedMentionHandles, resolveMentionHandles, type MentionedUsers } from '#shared/mentions';
 import { autoWatchIssue, watcherUserIds } from '#modules/issues/watchers';
+import { activeRoutineRun, type RoutineOfRun } from '#modules/routines/agent-runs';
 import { iso } from '#shared/lib';
 import { enqueueOutbound } from './outbound';
 
@@ -63,8 +66,12 @@ async function insertNotifications(rows: NewNotificationRow[], detail?: string):
   if (rows.length === 0) return;
   const name = await actorName(rows[0].actorUserId);
   await db.insert(notification).values(rows.map((r) => ({ ...r, actorName: name })));
-  // Fan out to the project's enabled delivery channels (email, Telegram). Best-effort:
-  // a delivery failure must not break the inbox insert or the domain mutation.
+  await deliver(rows, name, detail);
+}
+
+// Fan out to the project's enabled delivery channels (email, Telegram). Best-effort:
+// a delivery failure must not break the inbox insert or the domain mutation.
+async function deliver(rows: NewNotificationRow[], name: string | null, detail?: string) {
   try {
     await enqueueOutbound(rows, name, detail);
   } catch (err) {
@@ -72,17 +79,137 @@ async function insertNotifications(rows: NewNotificationRow[], detail?: string):
   }
 }
 
+// ---- a routine's work is quiet ------------------------------------------------------
+// A routine's run leaves its result in the routine's task (docs/helena-decisions/
+// routine-mentions.md): what an agent writes there while it works on a routine's run — a
+// comment, a status change — tells none of the task's watchers. A person it mentions is
+// told at most once a day per routine, in the routine's time zone; the other mentions of
+// that day stay in the task. A comment that asks for an answer the agent cannot go on
+// without (a blocked question) always reaches the people it mentions, and a failed run or
+// an approval request reach people by their own ways, as ever.
+
+// The routine whose run the author of a write works on, when the author is an agent in one.
+function routineRunOfActor(issueId: number, actorUserId: string | null) {
+  return actorUserId ? activeRoutineRun(issueId, actorUserId) : Promise.resolve(null);
+}
+
+// Inserts the 'mentioned' rows of a routine run's write, leaving out every person an
+// agent already mentioned on a task of the same routine today. The check and the insert
+// hold a lock per routine, so two agents of one fire mentioning the same person at once
+// still tell them once. Answers the rows it kept.
+async function insertRoutineMentions(
+  rows: NewNotificationRow[],
+  routine: RoutineOfRun,
+  issueId: number,
+): Promise<NewNotificationRow[]> {
+  if (rows.length === 0) return [];
+  const name = await actorName(rows[0].actorUserId);
+  const zone = routine.timezone ?? 'UTC';
+  const kept = await db.transaction(async (tx) => {
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtextextended(${`routine-mentions:${routine.scheduleId ?? routine.fireId}`}, 0))`,
+    );
+    const tasks = routine.scheduleId
+      ? inArray(
+          notification.issueId,
+          tx
+            .select({ id: pipelineRun.issueId })
+            .from(pipelineRun)
+            .where(
+              and(eq(pipelineRun.kind, 'routine'), eq(pipelineRun.scheduleId, routine.scheduleId)),
+            ),
+        )
+      : eq(notification.issueId, issueId);
+    const told = await tx
+      .selectDistinct({ userId: notification.userId })
+      .from(notification)
+      .innerJoin(aiAgent, eq(aiAgent.userId, notification.actorUserId))
+      .where(
+        and(
+          eq(notification.type, 'mentioned'),
+          inArray(
+            notification.userId,
+            rows.map((row) => row.userId),
+          ),
+          gte(
+            notification.createdAt,
+            sql`(date_trunc('day', now() AT TIME ZONE ${zone}) AT TIME ZONE ${zone})`,
+          ),
+          tasks,
+        ),
+      );
+    const already = new Set(told.map((row) => row.userId));
+    const fresh = rows.filter((row) => !already.has(row.userId));
+    if (fresh.length > 0)
+      await tx.insert(notification).values(fresh.map((row) => ({ ...row, actorName: name })));
+    return fresh;
+  });
+  if (kept.length > 0) await deliver(kept, name);
+  return kept;
+}
+
+// The mentions of a write an agent made in a routine's run: told as above, and only the
+// people told are subscribed to the task by it.
+async function notifyRoutineMentions(
+  projectId: number,
+  issueId: number,
+  rows: NewNotificationRow[],
+  routine: RoutineOfRun,
+  asksForInput: boolean,
+): Promise<void> {
+  if (asksForInput) {
+    await autoWatchIssue(
+      projectId,
+      issueId,
+      rows.map((row) => row.userId),
+    );
+    await insertNotifications(rows);
+    return;
+  }
+  const kept = await insertRoutineMentions(rows, routine, issueId);
+  await autoWatchIssue(
+    projectId,
+    issueId,
+    kept.map((row) => row.userId),
+  );
+}
+
 // Fan out a new comment. Mentioned members get a 'mentioned' notification; the
 // watchers get 'commented'. A mentioned user gets only the 'mentioned' one. The
 // comment author is never notified. Commenting and being mentioned both subscribe
 // to the issue, so the watchers are resolved after that.
+//
+// An agent's comment in a routine's run keeps quiet (see above): no watcher is told, and
+// a mention reaches a person once a day per routine unless `asksForInput`.
 export async function notifyComment(
   projectId: number,
   comment: { issueId: number; id: number; actorUserId: string | null; body: string | null },
   mentionedUsers: MentionedUsers,
+  opts?: { asksForInput?: boolean },
 ): Promise<void> {
   const actor = comment.actorUserId;
   const mentioned = new Set([...mentionedUsers.memberIds, ...mentionedUsers.agentUserIds]);
+  const routine = await routineRunOfActor(comment.issueId, actor);
+  if (routine) {
+    const rows = [...mentioned]
+      .filter((userId) => userId !== actor)
+      .map((userId) => ({
+        userId,
+        projectId,
+        issueId: comment.issueId,
+        sourceActivityId: comment.id,
+        type: 'mentioned' as const,
+        actorUserId: actor,
+      }));
+    await notifyRoutineMentions(
+      projectId,
+      comment.issueId,
+      rows,
+      routine,
+      opts?.asksForInput === true,
+    );
+    return;
+  }
   await autoWatchIssue(projectId, comment.issueId, [actor, ...mentioned]);
   const watchers = await watcherUserIds(projectId, comment.issueId);
 
@@ -125,17 +252,21 @@ export async function notifyEditedCommentMentions(
     (userId) => userId !== comment.actorUserId,
   );
   if (mentioned.length === 0) return;
+  const rows = mentioned.map((userId) => ({
+    userId,
+    projectId,
+    issueId: comment.issueId,
+    sourceActivityId: comment.id,
+    type: 'mentioned' as const,
+    actorUserId: comment.actorUserId,
+  }));
+  const routine = await routineRunOfActor(comment.issueId, comment.actorUserId);
+  if (routine) {
+    await notifyRoutineMentions(projectId, comment.issueId, rows, routine, false);
+    return;
+  }
   await autoWatchIssue(projectId, comment.issueId, mentioned);
-  await insertNotifications(
-    mentioned.map((userId) => ({
-      userId,
-      projectId,
-      issueId: comment.issueId,
-      sourceActivityId: comment.id,
-      type: 'mentioned' as const,
-      actorUserId: comment.actorUserId,
-    })),
-  );
+  await insertNotifications(rows);
 }
 
 // Fan out the mentions an issue's description or markdown custom field gained. Only
@@ -176,7 +307,9 @@ export async function notifyTextMentions(input: {
 // Fan out issue field changes recorded by an update. A new assignee (if a member and
 // not the actor) gets 'assigned'; a status change notifies the issue's watchers with
 // 'state_changed'. The actor is never notified. Being assigned subscribes to the
-// issue, and stays that way when the issue is later handed to someone else.
+// issue, and stays that way when the issue is later handed to someone else. A `quiet`
+// change (a routine reopening its task) and a status change an agent makes in a routine's
+// run tell no watcher.
 export async function notifyIssueChange(input: {
   projectId: number;
   issueId: number;
@@ -185,6 +318,7 @@ export async function notifyIssueChange(input: {
   assignedActivityId?: number | null;
   statusChanged?: boolean;
   statusActivityId?: number | null;
+  quiet?: boolean;
 }): Promise<void> {
   const { projectId, issueId, actorUserId: actor } = input;
   const rows: NewNotificationRow[] = [];
@@ -206,7 +340,11 @@ export async function notifyIssueChange(input: {
     }
   }
 
-  if (input.statusChanged) {
+  if (
+    input.statusChanged &&
+    !input.quiet &&
+    !(await routineRunOfActor(input.issueId, input.actorUserId))
+  ) {
     const assigned = input.assignedUserId ?? null;
     const watchers = await watcherUserIds(projectId, issueId);
     for (const userId of watchers) {

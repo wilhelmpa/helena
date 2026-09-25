@@ -435,7 +435,13 @@
       "reopened": "أُعيد فتح المهمة",
       "skipped": "تم تخطيه",
       "review": "نُقلت إلى المراجعة",
-      "done": "نُقلت إلى منجز"
+      "done": "نُقلت إلى منجز",
+      "mention-started": "اشتغل",
+      "mention-not-in-project": "مش شغّال في المشروع ده",
+      "mention-agent-author": "اتحفظت من وكيل: ما بتشغّلش حد",
+      "mention-owner-only": "بياخد مهام من صاحبه بس",
+      "mention-mentions-off": "ما بيستجيبش للإشارات",
+      "mention-paused": "متوقف مؤقتًا"
     },
     "agentRunStatus": {
       "pending": "في الانتظار",
@@ -497,7 +503,8 @@
       "specialize": "المختص يعمل: {assignment}",
       "review": "المنسق يراجع",
       "sync": "النتيجة إلى المهمة"
-    }
+    },
+    "routineMention": "مذكور في التعليمات"
   },
   "versions": {
     "empty": "لا توجد إصدارات.",

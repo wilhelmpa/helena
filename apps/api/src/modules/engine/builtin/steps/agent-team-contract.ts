@@ -174,8 +174,14 @@ export interface StageInput {
 }
 
 // The prompt of a stage: the task, what the stage is to do, and the exact JSON it has
-// to answer with.
-export function stagePrompt(stage: StageInput, projectRef: string): string {
+// to answer with. `startedByRoutine`: the agents a routine's instructions @mention, which
+// its fire started on the task beside the team — the coordinator plans only the rest
+// (docs/helena-decisions/routine-mentions.md).
+export function stagePrompt(
+  stage: StageInput,
+  projectRef: string,
+  startedByRoutine: string[] = [],
+): string {
   const contract =
     stage.phase === 'coordinate'
       ? '{"summary":"...","delegations":[{"assignmentId":"...","agentRef":"agent:...","objective":"...","acceptanceCriteria":["..."],"dependsOn":[]}]}'
@@ -199,6 +205,9 @@ export function stagePrompt(stage: StageInput, projectRef: string): string {
       : '',
     stage.phase === 'coordinate'
       ? `Allowed specialists: ${JSON.stringify(stage.team.specialists)}`
+      : '',
+    stage.phase === 'coordinate' && startedByRoutine.length > 0
+      ? `The routine behind this task already started ${startedByRoutine.map((handle) => '@' + handle).join(', ')} on it directly, for the parts its objective names them for. Do not assign those parts again; plan only the rest.`
       : '',
     stage.assignment ? `Assignment: ${JSON.stringify(stage.assignment)}` : '',
     stage.dependencyResults?.length

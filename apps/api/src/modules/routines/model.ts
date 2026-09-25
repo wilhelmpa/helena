@@ -26,7 +26,10 @@ const routineFields = {
   instructions: t.String({
     minLength: 1,
     maxLength: 20_000,
-    description: 'Description of a created task, or the comment on a reopened one.',
+    description:
+      'Description of a created task, or the comment on a reopened one. An @mention of an ' +
+      'agent of the project starts that agent on the task as well, on every run, the way a ' +
+      'mention in a comment does; the mentions count as yours.',
   }),
   mode: routineMode,
   taskId: t.Optional(
@@ -75,6 +78,34 @@ export const updateRoutineBody = t.Partial(
 
 export const routinePageQuery = t.Object(pageQueryFields);
 
+// Why a mention starts no run of an agent (MentionRefusal).
+const mentionReason = oneOf(
+  ['not-in-project', 'agent-author', 'owner-only', 'mentions-off', 'paused'],
+  {
+    description:
+      "'not-in-project': the agent does not work in this project; 'agent-author': an " +
+      "agent saved the routine, and an agent's mentions start nobody; 'owner-only': the " +
+      "agent takes work from its owner only; 'mentions-off': it does not react to mentions; " +
+      "'paused': it is paused.",
+  },
+);
+
+export const RoutineMentionResponse = t.Object({
+  agent: t.Object({ id: t.Number(), name: t.String(), username: t.String() }),
+  starts: t.Boolean({ description: 'Whether a run of the routine starts the agent.' }),
+  reason: t.Nullable(mentionReason),
+});
+
+export const mentionPreviewBody = t.Object(
+  {
+    instructions: t.String({ maxLength: 20_000 }),
+    agentId: t.Optional(
+      t.Nullable(t.Number({ description: "The routine's own agent, which is left out." })),
+    ),
+  },
+  { additionalProperties: false },
+);
+
 // A routine DTO (RoutineRow from the service).
 export const RoutineResponse = t.Object({
   id: t.String(),
@@ -88,6 +119,11 @@ export const RoutineResponse = t.Object({
   ),
   title: t.String(),
   instructions: t.String(),
+  mentions: t.Array(RoutineMentionResponse, {
+    description:
+      "The agents the instructions @mention besides the routine's own, and whether a run " +
+      'starts each, for the member the routine acts for.',
+  }),
   mode: routineMode,
   task: t.Nullable(
     t.Object(
