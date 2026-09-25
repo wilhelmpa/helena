@@ -27,6 +27,10 @@ export interface CloneJob {
   // server, which leaves the runner's working directory.
   slug?: string;
   workspace?: string;
+  // The SSH key the owner picked for the clone. GitHub takes the first key it knows, and a
+  // deploy key of another repository is refused for this one, so the clone offers this key
+  // alone.
+  credentialId?: number;
 }
 
 const NAME = /^[A-Za-z0-9._-]{1,100}$/;
@@ -60,6 +64,12 @@ export function parseWorkspaceJob(prompt: string): CloneJob {
   ) {
     throw new Error('The workspace of the job is not valid');
   }
+  if (
+    value.credentialId !== undefined &&
+    (typeof value.credentialId !== 'number' || !Number.isInteger(value.credentialId))
+  ) {
+    throw new Error('The key of the job is not valid');
+  }
   return {
     op: 'git_clone',
     url: value.url,
@@ -67,6 +77,7 @@ export function parseWorkspaceJob(prompt: string): CloneJob {
     name: value.name,
     ...(value.slug !== undefined && { slug: value.slug }),
     ...(value.workspace !== undefined && { workspace: resolve(value.workspace) }),
+    ...(value.credentialId !== undefined && { credentialId: value.credentialId }),
   };
 }
 
@@ -153,9 +164,12 @@ export async function excludeNested(workspace: string, path: string): Promise<bo
 // job's own in a directory private to it, which is removed with it.
 export async function cloneSshEnv(
   sshDir: string | null,
+  credentialId?: number,
 ): Promise<{ env: Record<string, string>; cleanup: () => Promise<void> }> {
   if (!sshDir) return { env: {}, cleanup: async () => {} };
-  const keys = await sshKeyFiles(sshDir);
+  const all = await sshKeyFiles(sshDir);
+  const own = all.filter((file) => file.endsWith(`/id_${credentialId}`));
+  const keys = credentialId !== undefined && own.length > 0 ? own : all;
   if (keys.length === 0) return { env: {}, cleanup: async () => {} };
   await writeSshSupport(sshDir);
   const scratch = await mkdtemp(join(tmpdir(), 'helena-clone-'));
@@ -216,7 +230,7 @@ export async function runWorkspaceJobLocally(
   } catch (error) {
     return { status: 'failed', output: '', error: (error as Error).message };
   }
-  const ssh = await cloneSshEnv(sshDir);
+  const ssh = await cloneSshEnv(sshDir, job.credentialId);
   try {
     return await runWorkspaceJob(
       base,

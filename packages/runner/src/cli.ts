@@ -632,7 +632,7 @@ async function profileHelper(): Promise<void> {
       if (!base || base !== job.workspace) throw new Error('base must be the job workspace');
       const dir = typeof request.dir === 'string' ? resolve(request.dir) : '';
       if (!dir.startsWith(`${resolve(home)}/`)) throw new Error('dir must be inside the profile');
-      const ssh = await cloneSshEnv(dir);
+      const ssh = await cloneSshEnv(dir, job.credentialId);
       try {
         result = await runWorkspaceJob(
           base,

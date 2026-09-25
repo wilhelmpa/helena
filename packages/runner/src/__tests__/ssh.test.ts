@@ -217,6 +217,16 @@ describe('ssh through the egress', () => {
     expect(statSync(scratch).isDirectory()).toBe(true);
     await ssh.cleanup();
     expect(() => statSync(scratch)).toThrow();
+    // The job's own key alone, where the owner picked one: GitHub would take another
+    // repository's deploy key first and refuse this repository.
+    await applySshKeys(dir, [
+      { id: 42, label: 'Deploy', updatedAt: 'a', privateKey: KEY(42) },
+      { id: 7, label: 'Other repo', updatedAt: 'a', privateKey: KEY(7) },
+    ]);
+    const picked = await cloneSshEnv(dir, 42);
+    expect(picked.env.GIT_SSH_COMMAND).toContain(`-i '${join(dir, 'id_42')}'`);
+    expect(picked.env.GIT_SSH_COMMAND).not.toContain('id_7');
+    await picked.cleanup();
     // No keys: git runs without Helena's ssh.
     expect((await cloneSshEnv(join(root, 'empty'))).env).toEqual({});
     expect((await cloneSshEnv(null)).env).toEqual({});
@@ -285,6 +295,8 @@ describe('where a clone lands', () => {
 
   it("reads the project's slug and workspace from the job", () => {
     expect(parseWorkspaceJob(JSON.stringify(job))).toEqual(job);
+    expect(parseWorkspaceJob(JSON.stringify({ ...job, credentialId: 42 })).credentialId).toBe(42);
+    expect(() => parseWorkspaceJob(JSON.stringify({ ...job, credentialId: '42' }))).toThrow();
     expect(() => parseWorkspaceJob(JSON.stringify({ ...job, slug: '../x' }))).toThrow();
     expect(() => parseWorkspaceJob(JSON.stringify({ ...job, workspace: 'relative' }))).toThrow();
   });

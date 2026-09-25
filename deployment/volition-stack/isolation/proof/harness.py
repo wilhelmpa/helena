@@ -532,6 +532,7 @@ def prove(args: argparse.Namespace) -> None:
         ('4', prove_4_no_foreign_files), ('5', prove_5_function), ('6', prove_6_launcher_refuses),
         ('7', prove_7_browser), ('M', prove_modes), ('P', prove_plan_socket), ('T', prove_terminal),
         ('G', prove_migration), ('U', prove_users), ('B', prove_browser_gateway),
+        ('E', prove_agent_env),
     ]
     for number, function in tests:
         if only and number not in only:
@@ -772,6 +773,14 @@ def prove_7_browser(report: Report) -> None:
 
     run_browser_proofs(report, sh, ROOT, load_state())
     run_browser_state_proofs(report, sh, ROOT)
+
+
+def prove_agent_env(report: Report) -> None:
+    """Delivered environment variables stay in the command, and a clone runs as the project user."""
+    from proof_agent_env import run_clone_proofs, run_env_proofs  # noqa: PLC0415
+
+    run_env_proofs(report, probe, client, sh, ROOT, ISO)
+    run_clone_proofs(report, probe, client, sh, ROOT)
 
 
 def prove_modes(report: Report) -> None:
