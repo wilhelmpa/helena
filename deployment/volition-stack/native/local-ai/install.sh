@@ -545,7 +545,7 @@ vram_of() {
 
 preload_list() { [ -r "$PRELOAD" ] && grep -v '^#' "$PRELOAD" | grep -v '^[[:space:]]*$' || true; }
 
-gb() { awk -v b="$1" 'BEGIN { printf "%.1f GB", b / 1e9 }'; }
+gb() { LC_ALL=C awk -v b="$1" 'BEGIN { printf "%.1f GB", b / 1e9 }'; }
 
 # preload_check <names...>: every name a llama.cpp model of the catalog, on disk, and all of
 # them together within the VRAM budget. NPU models (FastFlowLM) load on demand: they take
