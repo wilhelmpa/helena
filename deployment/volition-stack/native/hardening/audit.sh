@@ -344,7 +344,10 @@ if systemctl cat "$TUNNEL_UNIT" >/dev/null 2>&1; then
   systemctl is-active --quiet "$TUNNEL_UNIT" || problems+=("not active")
   user=$(systemctl show -p User --value "$TUNNEL_UNIT")
   [[ -z $user || $user == root ]] && problems+=("runs as root")
-  systemctl cat "$TUNNEL_UNIT" | grep -q -- '--no-autoupdate' || problems+=("self-update not disabled")
+  # The unit starts a wrapper (cloudflare/helena-cloudflared) that passes --no-autoupdate.
+  tunnel_exec=$(systemctl show -p ExecStart --value "$TUNNEL_UNIT" | grep -o 'path=[^ ;]*' | head -n1 | cut -d= -f2)
+  { systemctl cat "$TUNNEL_UNIT"; [[ -n $tunnel_exec && -r $tunnel_exec ]] && cat "$tunnel_exec"; } 2>/dev/null \
+    | grep -q -- '--no-autoupdate' || problems+=("self-update not disabled")
   ((${#problems[@]})) \
     && record tunnel.service tunnel high fail "$(IFS=';'; echo "${problems[*]}")" \
     || record tunnel.service tunnel high pass "active as $user, no self-update"
@@ -491,9 +494,11 @@ if [[ $is_root -eq 1 ]]; then
   for dir in $SECRET_DIRS; do
     [[ -d $dir ]] || continue
     # local-ai-preload only names the models to load at start (the preload unit's dynamic
-    # user reads it); it holds nothing secret.
+    # user reads it); cloudflare/resolv.conf is the tunnel's public DNS servers. Neither
+    # holds anything secret.
     while IFS= read -r f; do wide+=("$f"); done < <(find "$dir" -type f -perm /004 \
-      ! -name '*.json' ! -name 'README*' ! -name '*.pem.pub' ! -name 'local-ai-preload' 2>/dev/null)
+      ! -name '*.json' ! -name 'README*' ! -name '*.pem.pub' ! -name 'local-ai-preload' \
+      ! -name 'resolv.conf' 2>/dev/null)
   done
   key=/etc/volition/owner-terminal.key
   if [[ -e $key ]] && [[ $(stat -c %G "$key") == volition ]]; then
