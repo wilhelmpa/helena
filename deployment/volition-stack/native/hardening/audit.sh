@@ -138,7 +138,7 @@ elif [[ $is_root -eq 0 ]]; then
 else
   problems=()
   grep -Eq '^\s*(127\.|::1)' "$lo_conf" && problems+=("loopback in the owner geo")
-  if [[ -e $guard_conf ]] && grep -rqs 'helena_owner_capability' /etc/nginx/sites-enabled/; then
+  if [[ -e $guard_conf ]] && grep -Rqs 'helena_owner_capability' /etc/nginx/sites-enabled/; then
     :
   else
     grep -Eq '^\s*fe80::/10\s+1;' "$lo_conf" && problems+=("link-local fe80::/10 in the owner geo")
