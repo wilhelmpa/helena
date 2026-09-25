@@ -305,7 +305,9 @@ function BootCard({ storage }: { storage: StorageStatus }) {
   const problems = useAreaHealth('disks').filter(
     (item) =>
       item.state !== 'ok' &&
-      (item.id === 'esp:sync' || item.id.startsWith('esp:removable') || item.id.startsWith('boot:')),
+      (item.id === 'esp:sync' ||
+        item.id.startsWith('esp:removable') ||
+        item.id.startsWith('boot:')),
   );
   const boot = storage.boot;
   const esp = storage.esp;

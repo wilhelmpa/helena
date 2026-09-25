@@ -83,14 +83,35 @@ The RAID was set up with its loader in `EFI/helena-raid`, which apt never update
 `grub-efi-amd64` and `shim-signed` postinst scripts run `grub-install` for `EFI/debian`, and
 with debconf `grub2/update_nvram=true` they add their own "debian" entry at the front of the
 boot order. `helena-hostd boot-layout` (`bootlayout.py`) moves the machine onto the standard
-path: config `bootLoader` = `\EFI\debian\shimx64.efi`, debconf `grub2/update_nvram=false`,
-`grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=debian
---uefi-secure-boot --no-nvram` (skipped when `EFI/debian` already checks out), a check that
+path: config `bootLoader` = `\EFI\debian\shimx64.efi`, debconf `grub2/update_nvram=false` and
+`grub2/force_efi_extra_removable=true`, `grub-install --target=x86_64-efi
+--efi-directory=/boot/efi --bootloader-id=debian --uefi-secure-boot --force-extra-removable
+--no-nvram` (skipped when `EFI/debian` and `EFI/BOOT` already check out), a check that
 `EFI/debian` holds Debian's signed shim/GRUB/MokManager and a `grub.cfg` that finds `/boot/grub`
 like the old stub (`search.fs_uuid <root uuid> root mduuid/<array uuid>`, prefix `/boot/grub`;
 otherwise the folder is moved to `EFI/debian-failed-<time>` and nothing else changes), the
-guarded ESP copy, and the boot entry repair. It refuses while an array is degraded or
-rebuilding, or an ESP is not mounted or its disk not on the bus. Idempotent.
+removable path `EFI/BOOT` made equal to it (below), the guarded ESP copy, and the boot entry
+repair. It refuses while an array is degraded or rebuilding, or an ESP is not mounted or its disk
+not on the bus. Idempotent.
+
+**The removable path `EFI/BOOT`.** The AXB35 firmware rewrites BootOrder at every boot and, in the
+reboot test of 2026-09-25, started its own "UEFI OS" entry (`\EFI\BOOT\BOOTX64.EFI` on the second
+ESP) although "Debian" and "Debian (Reserve)" came first. So `EFI/BOOT` must start the same
+binaries: with `force_efi_extra_removable=true` apt's `grub-install` refreshes it at every GRUB or
+shim update. Debian's `grub-install --force-extra-removable` (patch
+`grub-install-removable-shim.patch`) writes shim as `BOOTX64.EFI`, `grubx64.efi` and `mmx64.efi`
+there; `fbx64.efi` only when it may write NVRAM, so never with `--no-nvram` (shim would run it and
+create entries of its own); and no `grub.cfg`, so `boot-layout` copies the stub from `EFI/debian`
+(it changes only with the root file system's UUID). A leftover `fbx64.efi` is removed. The Disks tab
+shows an amber line (`espRemovableStale`) when `EFI/BOOT` on an ESP would start other binaries than
+the loader folder, holds `fbx64.efi`, or has a stub that does not find the root; the ESP copy
+refuses a source without `BOOTX64.EFI`, `grubx64.efi` and `grub.cfg` there.
+
+**The order the firmware leaves.** `helena-boot-entries.service` logs it at every boot
+(`boot-repair: firmware order was …; booted …`) and keeps the last 100 in
+`/var/lib/helena/hostd/boot-history.json` (`bootCurrent`, `firmwareOrder`, the order afterwards),
+then puts Debian, Debian (Reserve) first again:
+`sudo python3 -c 'import json; [print(e["at"], e["bootCurrent"], ",".join(e["firmwareOrder"])) for e in json.load(open("/var/lib/helena/hostd/boot-history.json"))]'`.
 
 ```sh
 cd /srv/volition/source/plan/deployment/volition-stack/native/server
@@ -100,6 +121,9 @@ sudo efibootmgr                              # Debian / Debian (Reserve) → \EF
 sudo debconf-show grub-efi-amd64 | grep update_nvram     # false
 sudo diff -r /boot/efi/EFI/debian /boot/efi2/EFI/debian  # no output
 sudo cat /boot/efi/EFI/debian/grub.cfg       # search.fs_uuid <root> root mduuid/<array>
+sudo debconf-show grub-efi-amd64 | grep force_efi_extra_removable   # true
+sudo sh -c 'cd /boot/efi/EFI && cmp BOOT/BOOTX64.EFI debian/shimx64.efi && cmp BOOT/grubx64.efi debian/grubx64.efi && cmp BOOT/grub.cfg debian/grub.cfg && ! ls BOOT/fbx64.efi'
+sudo diff -r /boot/efi/EFI/BOOT /boot/efi2/EFI/BOOT       # no output
 # then the reboot test: both entries once each (Server → "Einmal von Reserve starten" for the second)
 ```
 

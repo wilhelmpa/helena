@@ -58,7 +58,7 @@ Count: **4 critical, 10 high, 11 medium, 9 low, plus 6 notes.**
 | H-04 | **The owner-terminal signing key is readable by group `volition`** (`/etc/volition/owner-terminal.key` 0640 root:volition). With it a token for the terminal router can be minted; only the socket's `www-data` group stands between that and a root shell. | `stat`. | `apply.sh terminal-key`: own group `helena-terminal-key`, only the API and the terminal router get it (unit drop-ins), both restarted. |
 | H-05 | **The clock is not synchronised**: no NTP client installed (`NTP=no`, `NTPSynchronized=no`). TOTP codes, Access JWT expiry, Let's Encrypt and certificate checks depend on it. | `timedatectl`. | Install `systemd-timesyncd` (Debian, owner's OK) and `timedatectl set-ntp true`. The JWT check tolerates 60 s. |
 | H-06 | **KasmVNC's UDP listeners face every address** (0.0.0.0:16080–16084). The repo README says the units restrict them; the installed units have no `IPAddressDeny`/`RestrictNetworkInterfaces`. | `ss`, `systemctl show`. | Firewall drops them (C-02); `apply.sh kasm-loopback` adds `IPAddressAllow=localhost`/`IPAddressDeny=any` (works natively now; restarts the browsers). |
-| H-07 | **The browser terminal is root without a password** (`wilhelmpa ALL=(ALL:ALL) NOPASSWD: ALL`), and Claude Code/Codex in the owner terminal run as that user. After go-live this is reachable from the internet behind Access + TOTP. | sudoers. | Owner decision §8.3: a separate automation account for SSH (`helena-ops`, NOPASSWD, key-only, LAN-only) and `wilhelmpa` with a password for sudo. The narrow policy drafted in `owner-terminal/90-wilhelmpa` is not a real boundary (`journalctl *`, `apt-get install *`, `git -c … *` and `cat /var/lib/volition/*` all lead to root); do not install it as is. |
+| H-07 | **The browser terminal is root without a password** (`wilhelmpa ALL=(ALL:ALL) NOPASSWD: ALL`), and Claude Code/Codex in the owner terminal run as that user. After go-live this is reachable from the internet behind Access + TOTP. | sudoers. | **Done 2026-09-25** (§8.3, `apply.sh sudo-model`): the automation account `helena-ops` has `NOPASSWD: ALL` (`/etc/sudoers.d/80-helena-ops`), its password is locked, SSH takes its key only (`/etc/ssh/sshd_config.d/60-helena-ops.conf`: `Match User helena-ops` → `AuthenticationMethods publickey`) and only from the home network (AllowUsers + firewall); the owner's blanket rule is moved aside, so `wilhelmpa` types his password for sudo. `audit.sh` `auth.sudo` passes only in that shape. The narrow policy drafted in `owner-terminal/90-wilhelmpa` is not a real boundary (`journalctl *`, `apt-get install *`, `git -c … *` and `cat /var/lib/volition/*` all lead to root); do not install it as is. |
 | H-08 | **SSH listens on the global IPv6 address** without `AllowUsers`, with agent and TCP forwarding, 6 tries. Key-only and no root login already hold. An authorized key named `codex-home-server` belongs to the wiped Ubuntu host. | `sshd -T`, key comments. | `apply.sh sshd` (+ firewall = home network only); owner reviews the `codex-home-server` key and removes it if unused. |
 | H-09 | **Tunnel traffic could be taken for the LAN** (design, go-live): the owner-terminal "no code on the LAN" rule reads `X-Real-IP`. | Code review. | Code: a request marked by the tunnel entry is never LAN (`lanBypass`), whatever address it names; the tunnel entry sets `X-Real-IP` from `CF-Connecting-IP`. Test in `edge-access.test.ts`. |
 | H-10 | **The session cookie would be shared with all of volition.one** on the public name: `packages/auth` derives `COOKIE_DOMAIN` from the first origin, `helena.volition.one` → `.volition.one`, so every other site of the company domain would receive the owner's session. | `packages/auth/src/index.ts parentDomain`. | Code: `packages/auth/src/cookie-domain.ts` derives a parent domain only when the app and the api are on different hosts (tests). `cloudflare/switch_origin.py` also sets `COOKIE_DOMAIN=host-only` explicitly (and one origin: `APP_URL=https://helena.volition.one`, `API_URL=…/backend`). |
@@ -315,7 +315,25 @@ the new path). Every `apply.sh` step without `--apply` is a dry run; run it firs
 4. `sudo nft list table inet helena_hardening | grep -c helena:` → 8 markers; `audit.sh` net.* pass.
 
 **6.3 SSH**: same as 6.2 with `sshd` (`--apply sshd`, new session, `--apply confirm sshd`).
-Owner first decides on the `codex-home-server` key.
+Owner first decides on the `codex-home-server` key. `AllowUsers` defaults to the owner plus
+`helena-ops` once that account exists (`HELENA_SSH_USERS` overrides), so a later `sshd` run never
+drops the automation account.
+
+**6.3a sudo model** (H-07, §8.3; done live on 2026-09-25 by the orchestrator, the step detects it):
+1. The owner has a usable password (`passwd`), is in group `sudo`, and `/etc/sudoers` has the
+   `%sudo ALL=(ALL:ALL) ALL` rule; `helena-ops` exists with the orchestrator's key in
+   `~helena-ops/.ssh/authorized_keys` (the step creates a missing account, never a key).
+2. `sudo $H/hardening/apply.sh sudo-model` (dry run: what it would change), then `--apply
+   sudo-model`: locks `helena-ops`' password (`passwd -l`), installs
+   `sshd_config.d/60-helena-ops.conf` (`sshd -t`, reload), installs `sudoers.d/80-helena-ops`
+   (`visudo -cf`, 0440; a live file with the same rule and other comments is left as it is), and
+   moves every other `NOPASSWD: ALL` rule in `/etc/sudoers.d` aside into the run's backup (a file
+   with other rules too keeps them; only the blanket line is commented out). It refuses before
+   changing anything when the owner would lose sudo, and never edits `/etc/sudoers` itself.
+3. Check: `ssh helena-ops@kingston-server.local sudo -n true` works with the key; `sudo -k; sudo
+   true` asks the owner for his password; `audit.sh` `auth.sudo` pass.
+4. Rollback (the owner's rule back; `helena-ops` stays): `sudo $H/hardening/apply.sh --apply
+   rollback sudo-model`.
 
 **6.4 Units** (a quiet moment, no chat answer or run in flight):
 `--apply units` (API, web, worker one by one with health checks), `--apply terminal-key`,
@@ -401,9 +419,12 @@ automatic rollbacks cover firewall and SSH; backups of every replaced file are u
    applies to the tunnel.
 2. **At home: tunnel (A) or split horizon (B)?** Recommendation: start with A (nothing to run),
    add B if the live view is too slow at home.
-3. **sudo model** (H-07): recommendation — a separate `helena-ops` account for the orchestrator's
-   SSH automation (NOPASSWD, key-only, LAN-only) and a sudo password for `wilhelmpa`, so the browser
-   terminal and the AI CLIs in it need the password for root.
+3. **sudo model** (H-07): **decided and live (2026-09-25)** — a separate `helena-ops` account for
+   the orchestrator's SSH automation (NOPASSWD, key-only, LAN-only, password locked) and a sudo
+   password for `wilhelmpa`, so the browser terminal and the AI CLIs in it need the password for
+   root. In the repo as `apply.sh sudo-model` (§6.3a); `audit.sh` `auth.sudo` passes only in that
+   shape and warns for any other account with `NOPASSWD: ALL` (`why=others`) or a `helena-ops` whose
+   password is not locked or whose SSH is not key-only (`why=ops`, `problem=password|ssh|both`).
 4. **Access identity**: Google (recommended) and/or One-time PIN; session 24 h (or 7 d for
    convenience; the owner terminal still asks for TOTP).
 5. **WARP device posture**: not now; possible later (only enrolled devices reach Helena).
@@ -480,6 +501,12 @@ automatic rollbacks cover firewall and SSH; backups of every replaced file are u
   LAN still gets it. All pass.
 - `tests/nginx-config-selftest.sh`: `nginx -t` of the live LAN site after `lan_https.py` + the guard,
   together with the tunnel entry. Passes.
+- `tests/sudo-model-selftest.sh` (private user + mount namespace, scratch sudoers/sshd folders, fake
+  passwd/sshd/systemctl/useradd/id/getent, the real visudo): dry run changes nothing; `--apply`
+  locks the account, installs both files, moves the owner's rule aside, `visudo -c` passes and
+  `auth.sudo` passes; a second run is a no-op; a hand-made equal rule is kept; rollback restores the
+  owner's rule; a mixed file keeps its other rules; refusals (owner without password, no key)
+  change nothing; the audit's `why`/`problem` cases. All pass (2026-09-25).
 - Tunnel entry end to end (throw-away API of this branch + nginx from the template): page, API,
   forged assertion, a client-sent LAN capability, code, browser, both terminals and the sign-in
   endpoint all answer 403 without Access; the API says `edge_not_configured`.
