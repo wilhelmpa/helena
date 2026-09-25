@@ -70,6 +70,124 @@
     "svc_exposure": "Layanan Helena diisolasi oleh systemd",
     "svc_tools_loopback": "Alat hanya terjangkau lewat loopback"
   },
+  "finding": {
+    "net_firewall": {
+      "fail": "Tidak ada rantai input yang membuang secara default: semua yang mendengarkan di semua alamat dapat dijangkau."
+    },
+    "net_self_guard": {
+      "fail": "Proses di server dapat menjangkau nginx lewat alamat LAN dan mendapat login pemilik."
+    },
+    "net_loopback_acl": {
+      "fail": "Setiap pengguna lokal menjangkau kontrol browser, router browser, code-server, dan router terminal."
+    },
+    "net_listeners": {
+      "warn": "Terbuka di jaringan tetapi dibuang oleh firewall: {ports}",
+      "fail": "Terbuka di jaringan: {ports}"
+    },
+    "net_local_owner": {
+      "fail": "Login LAN juga berlaku untuk loopback atau server itu sendiri."
+    },
+    "net_redis": {
+      "fail": "Redis berjalan tanpa kata sandi dan tidak dipakai Helena."
+    },
+    "net_syncthing_nat": {
+      "warn": "Syncthing meminta router (UPnP/NAT-PMP) membuka port 22000."
+    },
+    "ssh_password": {
+      "fail": "SSH menerima kata sandi."
+    },
+    "ssh_root": {
+      "fail": "SSH mengizinkan login sebagai root ({value})."
+    },
+    "ssh_allow_users": {
+      "fail": "Setiap akun dengan kunci boleh login lewat SSH."
+    },
+    "ssh_options": {
+      "fail": "SSH mengizinkan banyak percobaan atau penerusan."
+    },
+    "web_https": {
+      "warn": "Tidak ada HTTPS di jaringan rumah: browser kamu tidak punya konteks aman secara lokal."
+    },
+    "web_tunnel_entry": {
+      "fail": "Pintu masuk tunnel tidak diamankan sebagaimana mestinya."
+    },
+    "web_production": {
+      "warn": "API tidak berjalan dalam mode produksi (NODE_ENV={value})."
+    },
+    "web_leftovers": {
+      "warn": "Di nginx ada sisa pengembangan atau salinan cadangan yang dapat dibaca."
+    },
+    "tunnel_service": {
+      "fail": "Tunnel Cloudflare tidak terisolasi sebagaimana mestinya."
+    },
+    "tunnel_edge": {
+      "fail": "Tidak ada tim Cloudflare Access (domain/AUD) di Helena: pintu masuk tunnel menolak semuanya."
+    },
+    "tunnel_acl": {
+      "fail": "Setiap pengguna lokal menjangkau pintu masuk tunnel."
+    },
+    "tls_certificate": {
+      "fail": "Sertifikat kedaluwarsa dalam kurang dari 14 hari."
+    },
+    "tls_renewal": {
+      "fail": "Pembaruan sertifikat otomatis tidak aktif."
+    },
+    "auth_second_factor": {
+      "fail": "Pemilik tidak punya TOTP maupun passkey."
+    },
+    "auth_step_up": {
+      "fail": "Di jaringan rumah, terminal membuka shell root tanpa kode."
+    },
+    "auth_registration": {
+      "fail": "Pendaftaran tidak ditutup ({value})."
+    },
+    "auth_sessions": {
+      "warn": "{count} sesi pemilik terbuka: setiap kunjungan LAN tanpa cookie membuka sesi baru."
+    },
+    "auth_sudo": {
+      "warn": "sudo tanpa kata sandi (NOPASSWD: ALL) untuk {value}: terminal browser adalah root tanpa kata sandi."
+    },
+    "sys_time": {
+      "fail": "Jam tidak disinkronkan; TOTP, token Access, dan sertifikat bergantung padanya."
+    },
+    "sys_sysctl": {
+      "fail": "Pengaturan perlindungan kernel belum ada."
+    },
+    "sys_updates": {
+      "fail": "Pembaruan keamanan otomatis (unattended-upgrades) mati."
+    },
+    "sys_reboot": {
+      "warn": "Ada mulai ulang yang tertunda setelah pembaruan."
+    },
+    "sys_journald": {
+      "warn": "Ukuran log tidak dibatasi."
+    },
+    "sys_services": {
+      "warn": "Ada layanan berjalan yang tidak diperlukan."
+    },
+    "sys_shells": {
+      "warn": "Akun layanan punya shell login."
+    },
+    "sys_secure_boot": {
+      "warn": "Secure Boot mati (modul DKMS tanpa tanda tangan); keputusan pemilik."
+    },
+    "sys_encryption": {
+      "warn": "Disk tidak dienkripsi; keputusan pemilik."
+    },
+    "files_backups": {
+      "fail": "Cadangan basis data dapat dibaca di luar layanannya."
+    },
+    "files_secrets": {
+      "fail": "Rahasia atau kunci dapat dibaca oleh pihak lain."
+    },
+    "svc_exposure": {
+      "warn": "systemd mengisolasi layanan Helena lebih lemah dari yang direncanakan."
+    },
+    "svc_tools_loopback": {
+      "fail": "Alat dapat dijangkau di luar loopback."
+    },
+    "skipped": "Tidak diperiksa"
+  },
   "owner": {
     "totpOn": "Aplikasi autentikator (TOTP) sudah diatur",
     "totpOff": "Belum ada aplikasi autentikator (TOTP)",

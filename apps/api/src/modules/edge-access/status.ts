@@ -21,6 +21,11 @@ export interface AuditCheck {
   group: string;
   state: AuditState;
   severity: AuditSeverity;
+  // A stable name for the finding (`<id>.<state>`) the page words in the reader's language,
+  // with the values it fills in; the English detail is only its tooltip. Older reports
+  // have neither: the code is derived from the id and state, the params are empty.
+  code: string;
+  params: Record<string, string | number>;
   detail: string;
 }
 
@@ -38,6 +43,19 @@ export function auditFile(): string {
 // The timer runs the audit hourly; a report older than a day says the timer stopped.
 const STALE_MS = 26 * 3600_000;
 const ID = /^[a-z0-9][a-z0-9_.-]{0,63}$/;
+const CODE = /^[a-z0-9][a-z0-9_.-]{0,79}$/;
+const PARAM = /^[a-zA-Z][a-zA-Z0-9_]{0,31}$/;
+
+function auditParams(value: unknown): Record<string, string | number> {
+  const params: Record<string, string | number> = {};
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return params;
+  for (const [name, raw] of Object.entries(value).slice(0, 8)) {
+    if (!PARAM.test(name)) continue;
+    if (typeof raw === 'number' && Number.isFinite(raw)) params[name] = raw;
+    else if (typeof raw === 'string') params[name] = raw.slice(0, 200);
+  }
+  return params;
+}
 
 function text(value: unknown, max: number): string {
   return typeof value === 'string' ? value.slice(0, max) : '';
@@ -66,11 +84,14 @@ export function parseAuditReport(raw: string, now = Date.now()): AuditReport | n
     if (!ID.test(id) || !AUDIT_STATES.includes(state) || !AUDIT_SEVERITIES.includes(severity)) {
       continue;
     }
+    const code = text(check.code, 80);
     checks.push({
       id,
       group: text(check.group, 32) || 'other',
       state,
       severity,
+      code: CODE.test(code) ? code : `${id}.${state}`,
+      params: auditParams(check.params),
       detail: text(check.detail, 300),
     });
   }

@@ -7,7 +7,20 @@ import { CHECK_KEYS, GROUP_KEYS, checkKey, groupKey, sortChecks } from './checks
 const messages = (locale: string) =>
   JSON.parse(
     readFileSync(join(__dirname, '../../../messages', locale, 'serverSecurity.json'), 'utf8'),
-  ) as { check: Record<string, string>; group: Record<string, string> };
+  ) as {
+    check: Record<string, string>;
+    group: Record<string, string>;
+    finding: Record<string, Record<string, string> | string>;
+  };
+
+// Every finding the audit can report (`record <id> <group> <severity> fail|warn`).
+const auditFindings = () =>
+  [
+    ...readFileSync(
+      join(__dirname, '../../../../../deployment/volition-stack/native/hardening/audit.sh'),
+      'utf8',
+    ).matchAll(/record ([a-z_.]+) [a-z]+ [a-z]+ (fail|warn)\b/g),
+  ].map(([, id, state]) => [checkKey(id!), state!] as const);
 
 describe('audit checks', () => {
   it('maps an audit id to its translation key and leaves unknown ones alone', () => {
@@ -37,6 +50,24 @@ describe('audit checks', () => {
       const texts = messages(locale);
       assert.deepEqual(Object.keys(texts.check).sort(), [...CHECK_KEYS].sort(), locale);
       assert.deepEqual(Object.keys(texts.group).sort(), [...GROUP_KEYS].sort(), locale);
+    }
+  });
+
+  it('words every finding the audit reports, in every locale, with the same placeholders', () => {
+    const findings = auditFindings();
+    assert.ok(findings.length > 30);
+    const placeholders = (text: string) => [...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();
+    const german = messages('de').finding;
+    for (const locale of ['de', 'en', 'es-ES', 'fr', 'pt-BR', 'id', 'ru', 'uk', 'zh-CN', 'ar']) {
+      const texts = messages(locale).finding;
+      assert.equal(typeof texts.skipped, 'string', locale);
+      for (const [key, state] of findings) {
+        assert.ok(key, 'every audited check has a title key');
+        const text = (texts[key!] as Record<string, string> | undefined)?.[state];
+        assert.ok(text, `${locale}: finding.${key}.${state}`);
+        const de = (german[key!] as Record<string, string>)[state]!;
+        assert.deepEqual(placeholders(text), placeholders(de), `${locale}: ${key}.${state}`);
+      }
     }
   });
 });

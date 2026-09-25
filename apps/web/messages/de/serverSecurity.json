@@ -70,6 +70,124 @@
     "svc_exposure": "Helena-Dienste von systemd abgeschottet",
     "svc_tools_loopback": "Werkzeuge nur über Loopback erreichbar"
   },
+  "finding": {
+    "net_firewall": {
+      "fail": "Keine Eingangsregel verwirft standardmäßig – alles, was auf allen Adressen lauscht, ist erreichbar."
+    },
+    "net_self_guard": {
+      "fail": "Ein Prozess auf dem Server kann nginx über die LAN-Adresse erreichen und bekommt die Owner-Anmeldung."
+    },
+    "net_loopback_acl": {
+      "fail": "Jeder lokale Benutzer erreicht Browser-Steuerung, Browser-Router, code-server und Terminal-Router."
+    },
+    "net_listeners": {
+      "warn": "Im Netz offen, aber von der Firewall verworfen: {ports}",
+      "fail": "Im Netz offen: {ports}"
+    },
+    "net_local_owner": {
+      "fail": "Die LAN-Anmeldung gilt auch für Loopback oder den Server selbst."
+    },
+    "net_redis": {
+      "fail": "Redis läuft ohne Passwort und wird von Helena nicht genutzt."
+    },
+    "net_syncthing_nat": {
+      "warn": "Syncthing bittet den Router (UPnP/NAT-PMP), Port 22000 zu öffnen."
+    },
+    "ssh_password": {
+      "fail": "SSH nimmt Passwörter an."
+    },
+    "ssh_root": {
+      "fail": "SSH erlaubt die Anmeldung als root ({value})."
+    },
+    "ssh_allow_users": {
+      "fail": "Jedes Konto mit einem Schlüssel darf sich per SSH anmelden."
+    },
+    "ssh_options": {
+      "fail": "SSH erlaubt viele Versuche oder Weiterleitungen."
+    },
+    "web_https": {
+      "warn": "Kein HTTPS im Heimnetz – deine Browser haben lokal keinen sicheren Kontext."
+    },
+    "web_tunnel_entry": {
+      "fail": "Der Tunnel-Eingang ist nicht wie vorgesehen abgesichert."
+    },
+    "web_production": {
+      "warn": "Die API läuft nicht im Produktionsmodus (NODE_ENV={value})."
+    },
+    "web_leftovers": {
+      "warn": "In nginx liegen Entwicklungsreste oder lesbare Sicherungskopien."
+    },
+    "tunnel_service": {
+      "fail": "Der Cloudflare-Tunnel ist nicht wie vorgesehen abgeschottet."
+    },
+    "tunnel_edge": {
+      "fail": "In Helena ist kein Cloudflare-Access-Team (Domain/AUD) hinterlegt – der Tunnel-Eingang lehnt alles ab."
+    },
+    "tunnel_acl": {
+      "fail": "Jeder lokale Benutzer erreicht den Tunnel-Eingang."
+    },
+    "tls_certificate": {
+      "fail": "Das Zertifikat läuft in weniger als 14 Tagen ab."
+    },
+    "tls_renewal": {
+      "fail": "Die automatische Zertifikatserneuerung ist nicht aktiv."
+    },
+    "auth_second_factor": {
+      "fail": "Der Owner hat weder TOTP noch einen Passkey."
+    },
+    "auth_step_up": {
+      "fail": "Das Terminal öffnet im Heimnetz eine root-Shell ohne Code."
+    },
+    "auth_registration": {
+      "fail": "Die Registrierung ist nicht geschlossen ({value})."
+    },
+    "auth_sessions": {
+      "warn": "{count} offene Owner-Sitzungen – jeder LAN-Besuch ohne Cookie öffnet eine neue."
+    },
+    "auth_sudo": {
+      "warn": "sudo ohne Passwort (NOPASSWD: ALL) für {value} – das Browser-Terminal ist root ohne Passwort."
+    },
+    "sys_time": {
+      "fail": "Die Uhr wird nicht synchronisiert – TOTP, Access-Tokens und Zertifikate hängen davon ab."
+    },
+    "sys_sysctl": {
+      "fail": "Kernel-Schutzeinstellungen fehlen."
+    },
+    "sys_updates": {
+      "fail": "Automatische Sicherheitsupdates (unattended-upgrades) sind aus."
+    },
+    "sys_reboot": {
+      "warn": "Nach Updates steht ein Neustart aus."
+    },
+    "sys_journald": {
+      "warn": "Die Größe der Protokolle ist nicht begrenzt."
+    },
+    "sys_services": {
+      "warn": "Es laufen Dienste, die nicht gebraucht werden."
+    },
+    "sys_shells": {
+      "warn": "Dienstkonten haben eine Login-Shell."
+    },
+    "sys_secure_boot": {
+      "warn": "Secure Boot ist aus (nicht signierte DKMS-Module) – Owner-Entscheidung."
+    },
+    "sys_encryption": {
+      "warn": "Die Festplatten sind nicht verschlüsselt – Owner-Entscheidung."
+    },
+    "files_backups": {
+      "fail": "Datenbank-Sicherungen sind über ihren Dienst hinaus lesbar."
+    },
+    "files_secrets": {
+      "fail": "Geheimnisse oder Schlüssel sind für andere lesbar."
+    },
+    "svc_exposure": {
+      "warn": "Helena-Dienste sind von systemd schwächer abgeschottet als vorgesehen."
+    },
+    "svc_tools_loopback": {
+      "fail": "Werkzeuge sind über Loopback hinaus erreichbar."
+    },
+    "skipped": "Nicht geprüft"
+  },
   "owner": {
     "totpOn": "Authenticator-App (TOTP) eingerichtet",
     "totpOff": "Keine Authenticator-App (TOTP) eingerichtet",

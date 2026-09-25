@@ -162,6 +162,15 @@ describe('edge access (the internet tunnel entry)', () => {
             severity: 'critical',
             detail: 'accept',
           },
+          {
+            id: 'auth.sessions',
+            group: 'auth',
+            state: 'warn',
+            severity: 'low',
+            code: 'auth.sessions.warn',
+            params: { count: 425, 'bad key': 'x', note: 'n'.repeat(300) },
+            detail: '425 open owner sessions',
+          },
           { id: 'bad id!', group: 'x', state: 'pass', severity: 'low', detail: '' },
           { id: 'sys.time_sync', group: 'system', state: 'maybe', severity: 'high', detail: '' },
         ],
@@ -175,8 +184,18 @@ describe('edge access (the internet tunnel entry)', () => {
       owner: { totp: boolean; passkey: boolean; activeSessions: number };
       edge: { configured: boolean };
     };
-    expect(status.audit.checks).toHaveLength(2);
-    expect(status.audit.summary).toMatchObject({ pass: 1, fail: 1 });
+    expect(status.audit.checks).toHaveLength(3);
+    expect(status.audit.summary).toMatchObject({ pass: 1, fail: 1, warn: 1 });
+    // A report without codes gets them from id and state; params are bounded.
+    expect(status.audit.checks).toContainEqual(
+      expect.objectContaining({ id: 'net.firewall', code: 'net.firewall.fail', params: {} }),
+    );
+    expect(status.audit.checks).toContainEqual(
+      expect.objectContaining({
+        code: 'auth.sessions.warn',
+        params: { count: 425, note: 'n'.repeat(200) },
+      }),
+    );
     expect(status.health.state).toBe('critical');
     expect(status.owner).toMatchObject({ totp: false, passkey: false });
     expect(status.owner.activeSessions).toBeGreaterThan(0);

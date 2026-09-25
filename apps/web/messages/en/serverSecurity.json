@@ -70,6 +70,124 @@
     "svc_exposure": "Helena services sandboxed by systemd",
     "svc_tools_loopback": "Tools reachable over loopback only"
   },
+  "finding": {
+    "net_firewall": {
+      "fail": "No input chain drops by default: everything listening on all addresses is reachable."
+    },
+    "net_self_guard": {
+      "fail": "A process on the server can reach nginx via the LAN address and get the owner sign-in."
+    },
+    "net_loopback_acl": {
+      "fail": "Every local user reaches browser control, the browser router, code-server and the terminal router."
+    },
+    "net_listeners": {
+      "warn": "Open on the network but dropped by the firewall: {ports}",
+      "fail": "Open on the network: {ports}"
+    },
+    "net_local_owner": {
+      "fail": "The LAN sign-in also applies to loopback or the server itself."
+    },
+    "net_redis": {
+      "fail": "Redis runs without a password and Helena does not use it."
+    },
+    "net_syncthing_nat": {
+      "warn": "Syncthing asks the router (UPnP/NAT-PMP) to open port 22000."
+    },
+    "ssh_password": {
+      "fail": "SSH accepts passwords."
+    },
+    "ssh_root": {
+      "fail": "SSH allows root to sign in ({value})."
+    },
+    "ssh_allow_users": {
+      "fail": "Every account with a key may sign in over SSH."
+    },
+    "ssh_options": {
+      "fail": "SSH allows many attempts or forwarding."
+    },
+    "web_https": {
+      "warn": "No HTTPS on the home network, so your browsers have no secure context locally."
+    },
+    "web_tunnel_entry": {
+      "fail": "The tunnel entry is not locked down as intended."
+    },
+    "web_production": {
+      "warn": "The API does not run in production mode (NODE_ENV={value})."
+    },
+    "web_leftovers": {
+      "warn": "nginx holds development leftovers or readable backup copies."
+    },
+    "tunnel_service": {
+      "fail": "The Cloudflare tunnel is not isolated as intended."
+    },
+    "tunnel_edge": {
+      "fail": "No Cloudflare Access team (domain/AUD) is set in Helena, so the tunnel entry refuses everything."
+    },
+    "tunnel_acl": {
+      "fail": "Every local user reaches the tunnel entry."
+    },
+    "tls_certificate": {
+      "fail": "The certificate expires within 14 days."
+    },
+    "tls_renewal": {
+      "fail": "Automatic certificate renewal is not active."
+    },
+    "auth_second_factor": {
+      "fail": "The owner has neither TOTP nor a passkey."
+    },
+    "auth_step_up": {
+      "fail": "On the home network the terminal opens a root shell without a code."
+    },
+    "auth_registration": {
+      "fail": "Registration is not closed ({value})."
+    },
+    "auth_sessions": {
+      "warn": "{count} open owner sessions; every LAN visit without a cookie opens a new one."
+    },
+    "auth_sudo": {
+      "warn": "sudo without a password (NOPASSWD: ALL) for {value}: the browser terminal is root without a password."
+    },
+    "sys_time": {
+      "fail": "The clock is not synchronised; TOTP, Access tokens and certificates depend on it."
+    },
+    "sys_sysctl": {
+      "fail": "Kernel protection settings are missing."
+    },
+    "sys_updates": {
+      "fail": "Automatic security updates (unattended-upgrades) are off."
+    },
+    "sys_reboot": {
+      "warn": "A reboot after updates is pending."
+    },
+    "sys_journald": {
+      "warn": "The size of the logs is not limited."
+    },
+    "sys_services": {
+      "warn": "Services that are not needed are running."
+    },
+    "sys_shells": {
+      "warn": "Service accounts have a login shell."
+    },
+    "sys_secure_boot": {
+      "warn": "Secure Boot is off (unsigned DKMS modules); an owner decision."
+    },
+    "sys_encryption": {
+      "warn": "The disks are not encrypted; an owner decision."
+    },
+    "files_backups": {
+      "fail": "Database backups can be read beyond their service."
+    },
+    "files_secrets": {
+      "fail": "Secrets or keys can be read by others."
+    },
+    "svc_exposure": {
+      "warn": "Helena's services are less isolated by systemd than intended."
+    },
+    "svc_tools_loopback": {
+      "fail": "Tools can be reached beyond loopback."
+    },
+    "skipped": "Not checked"
+  },
   "owner": {
     "totpOn": "Authenticator app (TOTP) set up",
     "totpOff": "No authenticator app (TOTP) set up",

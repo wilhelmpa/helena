@@ -8,6 +8,8 @@ export const AuditCheckDto = t.Object({
   group: t.String(),
   state: State,
   severity: Severity,
+  code: t.String(),
+  params: t.Record(t.String(), t.Union([t.String(), t.Number()])),
   detail: t.String(),
 });
 

@@ -70,6 +70,124 @@
     "svc_exposure": "Helena 服务由 systemd 隔离",
     "svc_tools_loopback": "工具只能通过回环地址访问"
   },
+  "finding": {
+    "net_firewall": {
+      "fail": "没有默认丢弃的入站链：所有在全部地址上监听的服务都可访问。"
+    },
+    "net_self_guard": {
+      "fail": "服务器上的进程可以通过局域网地址访问 nginx 并获得所有者登录。"
+    },
+    "net_loopback_acl": {
+      "fail": "任何本地用户都能访问浏览器控制、浏览器路由器、code-server 和终端路由器。"
+    },
+    "net_listeners": {
+      "warn": "在网络上开放，但被防火墙丢弃：{ports}",
+      "fail": "在网络上开放：{ports}"
+    },
+    "net_local_owner": {
+      "fail": "局域网登录也适用于回环地址或服务器本身。"
+    },
+    "net_redis": {
+      "fail": "Redis 在无密码状态下运行，且 Helena 并不使用它。"
+    },
+    "net_syncthing_nat": {
+      "warn": "Syncthing 请求路由器（UPnP/NAT-PMP）打开端口 22000。"
+    },
+    "ssh_password": {
+      "fail": "SSH 接受密码登录。"
+    },
+    "ssh_root": {
+      "fail": "SSH 允许以 root 身份登录（{value}）。"
+    },
+    "ssh_allow_users": {
+      "fail": "任何拥有密钥的账户都可以通过 SSH 登录。"
+    },
+    "ssh_options": {
+      "fail": "SSH 允许多次尝试或转发。"
+    },
+    "web_https": {
+      "warn": "家庭网络中没有 HTTPS：你的浏览器在本地没有安全上下文。"
+    },
+    "web_tunnel_entry": {
+      "fail": "隧道入口没有按预期加固。"
+    },
+    "web_production": {
+      "warn": "API 未以生产模式运行（NODE_ENV={value}）。"
+    },
+    "web_leftovers": {
+      "warn": "nginx 中存在开发遗留或可读的备份副本。"
+    },
+    "tunnel_service": {
+      "fail": "Cloudflare 隧道没有按预期隔离。"
+    },
+    "tunnel_edge": {
+      "fail": "Helena 中未设置 Cloudflare Access 团队（域名/AUD）：隧道入口会拒绝一切请求。"
+    },
+    "tunnel_acl": {
+      "fail": "任何本地用户都能访问隧道入口。"
+    },
+    "tls_certificate": {
+      "fail": "证书将在 14 天内过期。"
+    },
+    "tls_renewal": {
+      "fail": "证书自动续期未启用。"
+    },
+    "auth_second_factor": {
+      "fail": "所有者既没有 TOTP 也没有通行密钥。"
+    },
+    "auth_step_up": {
+      "fail": "在家庭网络中，终端无需验证码即可打开 root shell。"
+    },
+    "auth_registration": {
+      "fail": "注册未关闭（{value}）。"
+    },
+    "auth_sessions": {
+      "warn": "所有者有 {count} 个打开的会话；每次不带 Cookie 的局域网访问都会新开一个。"
+    },
+    "auth_sudo": {
+      "warn": "{value} 的 sudo 无需密码（NOPASSWD: ALL）：浏览器终端就是无需密码的 root。"
+    },
+    "sys_time": {
+      "fail": "时钟未同步；TOTP、Access 令牌和证书都依赖它。"
+    },
+    "sys_sysctl": {
+      "fail": "缺少内核保护设置。"
+    },
+    "sys_updates": {
+      "fail": "自动安全更新（unattended-upgrades）已关闭。"
+    },
+    "sys_reboot": {
+      "warn": "更新后有待处理的重启。"
+    },
+    "sys_journald": {
+      "warn": "日志大小没有限制。"
+    },
+    "sys_services": {
+      "warn": "有不需要的服务在运行。"
+    },
+    "sys_shells": {
+      "warn": "服务账户拥有登录 shell。"
+    },
+    "sys_secure_boot": {
+      "warn": "Secure Boot 已关闭（未签名的 DKMS 模块）；由所有者决定。"
+    },
+    "sys_encryption": {
+      "warn": "磁盘未加密；由所有者决定。"
+    },
+    "files_backups": {
+      "fail": "数据库备份可被其服务之外的用户读取。"
+    },
+    "files_secrets": {
+      "fail": "密钥或机密可被他人读取。"
+    },
+    "svc_exposure": {
+      "warn": "systemd 对 Helena 服务的隔离弱于预期。"
+    },
+    "svc_tools_loopback": {
+      "fail": "工具可在回环地址之外访问。"
+    },
+    "skipped": "未检查"
+  },
   "owner": {
     "totpOn": "已设置身份验证器应用（TOTP）",
     "totpOff": "未设置身份验证器应用（TOTP）",

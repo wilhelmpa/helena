@@ -55,12 +55,20 @@ NGINX_TUNNEL_SITE=${HELENA_NGINX_TUNNEL_SITE:-/etc/nginx/sites-enabled/helena-tu
 is_root=0; [[ $EUID -eq 0 ]] && is_root=1
 results=()
 
-# record ID GROUP SEVERITY STATE DETAIL. The detail is a short technical fact (a mode, a
-# port, a setting's value); it must never carry a secret.
+# record ID GROUP SEVERITY STATE DETAIL [NAME=VALUE ...]. The detail is a short technical fact
+# (a mode, a port, a setting's value) in English; it must never carry a secret. Helena words
+# a finding from its code (ID.STATE) in the reader's language and fills in the NAME=VALUE
+# params; the detail is only its tooltip.
 record() {
-  local detail=${5//$'\t'/ }
+  local field row detail=${5//$'\t'/ }
   detail=${detail//$'\n'/ }
-  results+=("$1"$'\t'"$2"$'\t'"$3"$'\t'"$4"$'\t'"${detail:0:280}")
+  row="$1"$'\t'"$2"$'\t'"$3"$'\t'"$4"$'\t'"${detail:0:280}"
+  shift 5
+  for field in "$@"; do
+    field=${field//$'\t'/ }
+    row+=$'\t'"${field//$'\n'/ }"
+  done
+  results+=("$row")
 }
 need_root() { # ID GROUP SEVERITY
   record "$1" "$2" "$3" skip "needs root"
@@ -120,9 +128,9 @@ if have ss; then
   if [[ -z $unexpected ]]; then
     record net.listeners network high pass "only 22, 80, 443 and Syncthing/mDNS face the network"
   elif grep -q 'helena:input-drop' <<<"$nft_rules"; then
-    record net.listeners network high warn "open on the network but dropped by the firewall: $unexpected"
+    record net.listeners network high warn "open on the network but dropped by the firewall: $unexpected" "ports=$unexpected"
   else
-    record net.listeners network high fail "open on the network: $unexpected"
+    record net.listeners network high fail "open on the network: $unexpected" "ports=$unexpected"
   fi
 else
   record net.listeners network high skip "ss not installed"
@@ -187,7 +195,7 @@ if [[ $is_root -eq 1 ]] && have sshd; then
     || record ssh.password ssh critical fail "passwordauthentication=$(val passwordauthentication) kbdinteractive=$(val kbdinteractiveauthentication)"
   [[ $(val permitrootlogin) == no ]] \
     && record ssh.root ssh high pass "permitrootlogin no" \
-    || record ssh.root ssh high fail "permitrootlogin $(val permitrootlogin)"
+    || record ssh.root ssh high fail "permitrootlogin $(val permitrootlogin)" "value=$(val permitrootlogin)"
   allow=$(awk '$1=="allowusers" {print $2}' <<<"$sshd_t" | paste -sd, -)
   [[ -n $allow ]] \
     && record ssh.allow_users ssh medium pass "allowusers $allow" \
@@ -230,7 +238,8 @@ api_env=$(systemctl show -p Environment --value volition-plan-api 2>/dev/null)
 if grep -q 'NODE_ENV=production' <<<"$api_env"; then
   record web.production web medium pass "NODE_ENV=production"
 else
-  record web.production web medium warn "API unit runs NODE_ENV=$(grep -o 'NODE_ENV=[^ ]*' <<<"$api_env" | cut -d= -f2)"
+  node_env=$(grep -o 'NODE_ENV=[^ ]*' <<<"$api_env" | cut -d= -f2)
+  record web.production web medium warn "API unit runs NODE_ENV=$node_env" "value=${node_env:-–}"
 fi
 
 leftovers=()
@@ -299,11 +308,11 @@ if [[ $is_root -eq 1 ]] && have psql; then
   reg=$(psql_ro "select coalesce(value->>'registration','open') from app_setting where key='auth'")
   [[ ${reg:-open} == closed ]] \
     && record auth.registration auth high pass "closed" \
-    || record auth.registration auth high fail "registration ${reg:-open}"
+    || record auth.registration auth high fail "registration ${reg:-open}" "value=${reg:-open}"
   sessions=$(psql_ro "select count(*) from session s join \"user\" u on u.id=s.user_id where u.role='god' and s.expires_at > now()")
   [[ ${sessions:-0} -le 50 ]] \
     && record auth.sessions auth low pass "$sessions open owner sessions" \
-    || record auth.sessions auth low warn "$sessions open owner sessions (every LAN visit without a cookie opens one)"
+    || record auth.sessions auth low warn "$sessions open owner sessions (every LAN visit without a cookie opens one)" "count=$sessions"
 else
   for id in auth.second_factor auth.step_up auth.registration auth.sessions; do need_root "$id" auth high; done
 fi
@@ -311,7 +320,7 @@ if [[ $is_root -eq 1 ]]; then
   nopasswd=$(grep -Rhs -E '^[^#]*NOPASSWD:\s*ALL\s*$' /etc/sudoers /etc/sudoers.d/ | awk '{print $1}' | sort -u | paste -sd, -)
   [[ -z $nopasswd ]] \
     && record auth.sudo auth medium pass "no blanket NOPASSWD" \
-    || record auth.sudo auth medium warn "NOPASSWD: ALL for $nopasswd (the browser terminal is root without a password)"
+    || record auth.sudo auth medium warn "NOPASSWD: ALL for $nopasswd (the browser terminal is root without a password)" "value=$nopasswd"
 else
   need_root auth.sudo auth medium
 fi
@@ -458,8 +467,17 @@ for line in sys.stdin:
     line = line.rstrip("\n")
     if not line:
         continue
-    cid, group, severity, state, detail = (line.split("\t") + [""] * 5)[:5]
-    checks.append({"id": cid, "group": group, "severity": severity, "state": state, "detail": detail})
+    fields = line.split("\t")
+    cid, group, severity, state, detail = (fields + [""] * 5)[:5]
+    params = {}
+    for field in fields[5:]:
+        name, sep, value = field.partition("=")
+        if sep and name:
+            params[name] = int(value) if value.isdigit() else value
+    # code: a stable name for the finding (check id and state); Helena words it from its
+    # translations and fills in the params. detail stays for older readers and tooltips.
+    checks.append({"id": cid, "group": group, "severity": severity, "state": state,
+                   "code": f"{cid}.{state}", "params": params, "detail": detail})
 print(json.dumps({
     "version": 1,
     "host": socket.gethostname(),

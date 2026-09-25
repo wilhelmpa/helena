@@ -70,6 +70,124 @@
     "svc_exposure": "Services Helena isolés par systemd",
     "svc_tools_loopback": "Outils accessibles seulement via loopback"
   },
+  "finding": {
+    "net_firewall": {
+      "fail": "Aucune chaîne d’entrée ne rejette par défaut : tout ce qui écoute sur toutes les adresses est joignable."
+    },
+    "net_self_guard": {
+      "fail": "Un processus du serveur peut joindre nginx par l’adresse du LAN et obtenir la connexion du propriétaire."
+    },
+    "net_loopback_acl": {
+      "fail": "Tout utilisateur local atteint le contrôle du navigateur, le routeur du navigateur, code-server et le routeur du terminal."
+    },
+    "net_listeners": {
+      "warn": "Ouvert sur le réseau mais rejeté par le pare-feu : {ports}",
+      "fail": "Ouvert sur le réseau : {ports}"
+    },
+    "net_local_owner": {
+      "fail": "La connexion du LAN vaut aussi pour la boucle locale ou le serveur lui-même."
+    },
+    "net_redis": {
+      "fail": "Redis tourne sans mot de passe et Helena ne l’utilise pas."
+    },
+    "net_syncthing_nat": {
+      "warn": "Syncthing demande au routeur (UPnP/NAT-PMP) d’ouvrir le port 22000."
+    },
+    "ssh_password": {
+      "fail": "SSH accepte les mots de passe."
+    },
+    "ssh_root": {
+      "fail": "SSH autorise la connexion en root ({value})."
+    },
+    "ssh_allow_users": {
+      "fail": "Tout compte avec une clé peut se connecter en SSH."
+    },
+    "ssh_options": {
+      "fail": "SSH autorise de nombreuses tentatives ou des redirections."
+    },
+    "web_https": {
+      "warn": "Pas de HTTPS sur le réseau domestique : tes navigateurs n’ont pas de contexte sécurisé en local."
+    },
+    "web_tunnel_entry": {
+      "fail": "L’entrée du tunnel n’est pas protégée comme prévu."
+    },
+    "web_production": {
+      "warn": "L’API ne tourne pas en mode production (NODE_ENV={value})."
+    },
+    "web_leftovers": {
+      "warn": "nginx contient des restes de développement ou des copies de sauvegarde lisibles."
+    },
+    "tunnel_service": {
+      "fail": "Le tunnel Cloudflare n’est pas isolé comme prévu."
+    },
+    "tunnel_edge": {
+      "fail": "Aucune équipe Cloudflare Access (domaine/AUD) n’est définie dans Helena : l’entrée du tunnel refuse tout."
+    },
+    "tunnel_acl": {
+      "fail": "Tout utilisateur local atteint l’entrée du tunnel."
+    },
+    "tls_certificate": {
+      "fail": "Le certificat expire dans moins de 14 jours."
+    },
+    "tls_renewal": {
+      "fail": "Le renouvellement automatique du certificat n’est pas actif."
+    },
+    "auth_second_factor": {
+      "fail": "Le propriétaire n’a ni TOTP ni passkey."
+    },
+    "auth_step_up": {
+      "fail": "Sur le réseau domestique, le terminal ouvre un shell root sans code."
+    },
+    "auth_registration": {
+      "fail": "L’inscription n’est pas fermée ({value})."
+    },
+    "auth_sessions": {
+      "warn": "{count} sessions du propriétaire ouvertes : chaque visite depuis le LAN sans cookie en ouvre une nouvelle."
+    },
+    "auth_sudo": {
+      "warn": "sudo sans mot de passe (NOPASSWD: ALL) pour {value} : le terminal du navigateur est root sans mot de passe."
+    },
+    "sys_time": {
+      "fail": "L’horloge n’est pas synchronisée ; TOTP, les jetons Access et les certificats en dépendent."
+    },
+    "sys_sysctl": {
+      "fail": "Des réglages de protection du noyau manquent."
+    },
+    "sys_updates": {
+      "fail": "Les mises à jour de sécurité automatiques (unattended-upgrades) sont désactivées."
+    },
+    "sys_reboot": {
+      "warn": "Un redémarrage est en attente après des mises à jour."
+    },
+    "sys_journald": {
+      "warn": "La taille des journaux n’est pas limitée."
+    },
+    "sys_services": {
+      "warn": "Des services inutiles sont en cours d’exécution."
+    },
+    "sys_shells": {
+      "warn": "Des comptes de service ont un shell de connexion."
+    },
+    "sys_secure_boot": {
+      "warn": "Secure Boot est désactivé (modules DKMS non signés) ; décision du propriétaire."
+    },
+    "sys_encryption": {
+      "warn": "Les disques ne sont pas chiffrés ; décision du propriétaire."
+    },
+    "files_backups": {
+      "fail": "Les sauvegardes de la base de données sont lisibles au-delà de leur service."
+    },
+    "files_secrets": {
+      "fail": "Des secrets ou des clés sont lisibles par d’autres."
+    },
+    "svc_exposure": {
+      "warn": "systemd isole les services de Helena moins que prévu."
+    },
+    "svc_tools_loopback": {
+      "fail": "Des outils sont joignables au-delà de la boucle locale."
+    },
+    "skipped": "Non vérifié"
+  },
   "owner": {
     "totpOn": "Application d’authentification (TOTP) configurée",
     "totpOff": "Aucune application d’authentification (TOTP) configurée",

@@ -11,6 +11,11 @@ export interface AuditCheck {
   group: string;
   state: AuditState;
   severity: AuditSeverity;
+  // The finding's stable name (`<id>.<state>`) and the values its sentence fills in; the
+  // page words it from serverSecurity.finding. `detail` is the audit's English fact, shown
+  // only as a tooltip.
+  code?: string;
+  params?: Record<string, string | number>;
   detail: string;
 }
 
