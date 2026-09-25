@@ -261,7 +261,7 @@ describe('voice settings', () => {
       pauseMs: 900,
       speed: 1,
     });
-    expect((await asOwner.god.voice.settings.patch({ pauseMs: 50 })).status).toBe(422);
+    expect((await asOwner.god.voice.settings.patch({ pauseMs: 50 })).status).toBe(400);
   });
 });
 
