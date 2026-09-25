@@ -22,6 +22,7 @@ import {
   type Organization,
   type Transport,
 } from '../../../scripts/helena-bundle-sync.ts';
+import { POOL_COORDINATOR_SKILLS, POOL_COPIES } from './setup-agent-pool.copies.ts';
 
 export const SECTIONS = ['bundle', 'agents', 'copies', 'org', 'goals', 'report'] as const;
 export type Section = (typeof SECTIONS)[number];
@@ -48,28 +49,7 @@ const RUNNING_AGENTS: { handle: string; skills: string[]; mcpServers: string[] }
   },
 ];
 
-// copies: project copies that close the gaps of docs/volition-agent-pool-research.md C.
-// VOL stands in for the company as a whole, which has no project of its own.
-const COPIES: { template: string; projectKey: string }[] = [
-  { template: 'content', projectKey: 'VERVE' },
-  { template: 'qa', projectKey: 'VOL' },
-  { template: 'qa', projectKey: 'VERVE' },
-  { template: 'assistant', projectKey: 'FAM' },
-  { template: 'assistant', projectKey: 'PRIV' },
-  { template: 'finance', projectKey: 'PRIV' },
-  { template: 'finance', projectKey: 'VOL' },
-  { template: 'researcher', projectKey: 'VOL' },
-];
-
-// org: what every project coordinator should have, and the department of FAM and PRIV.
-const COORDINATOR_SKILLS = [
-  'brainstorming',
-  'dispatching-parallel-agents',
-  'writing-plans',
-  'receiving-code-review',
-  'requesting-code-review',
-  'verification-before-completion',
-];
+// org: the coordinator skills (setup-agent-pool.copies.ts) and the department of FAM and PRIV.
 const FAMILY_DEPARTMENT = {
   name: 'Familie & Privat',
   description: 'FAM und PRIV: Familie und private Organisation, ohne Kundenbezug.',
@@ -134,7 +114,7 @@ async function ensureCopies(log: SyncLog, teamId: number): Promise<void> {
   log.log('\n== Project copies ==');
   const projects = await log.api<{ id: number; key: string; teamId: number }[]>('GET', '/projects');
   const agents = await log.api<AgentRow[]>('GET', `/teams/${teamId}/ai-agents`);
-  for (const copy of COPIES) {
+  for (const copy of POOL_COPIES) {
     const template = byHandle(agents, copy.template);
     const project = projects.find((p) => p.key === copy.projectKey && p.teamId === teamId);
     if (!template?.template || !project) {
@@ -158,7 +138,7 @@ async function ensureOrg(log: SyncLog, teamId: number): Promise<void> {
   const agents = await log.api<AgentRow[]>('GET', `/teams/${teamId}/ai-agents`);
   const skillIds = await teamSkillIds(log, teamId);
   for (const coordinator of agents.filter((a) => /^hermes-.+-coordinator$/i.test(a.username))) {
-    await addAgentSkills(log, teamId, coordinator, COORDINATOR_SKILLS, skillIds);
+    await addAgentSkills(log, teamId, coordinator, [...POOL_COORDINATOR_SKILLS], skillIds);
   }
   const org = await log.api<Organization>('GET', `/teams/${teamId}/organization`);
   let department = org.departments.find((d) => d.name === FAMILY_DEPARTMENT.name);

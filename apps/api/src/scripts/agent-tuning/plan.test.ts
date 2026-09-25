@@ -3,20 +3,24 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   auditState,
+  copyHandle,
   formatPlan,
   nextPolicy,
   planTuning,
+  projectState,
+  resolveText,
   sha256,
   textDecision,
   validateTarget,
   type AgentTarget,
   type CurrentAgent,
   type CurrentState,
-  type Plan,
   type PolicyLike,
+  type TeamText,
   type TuningTarget,
 } from './plan';
-import { DISABLED_BUNDLED_SKILLS, TARGET } from './target';
+import { COPIES, DISABLED_BUNDLED_SKILLS, TARGET, TEMPLATES } from './target';
+import { POOL_COPIES } from '../../../../../deployment/volition-stack/scripts/setup-agent-pool.copies';
 
 // The planning of the agent tuning: what it adds, what it replaces and what it leaves to the
 // owner, and that a second run over the result has nothing left to do.
@@ -26,14 +30,19 @@ function agent(overrides: Partial<CurrentAgent> = {}): CurrentAgent {
     id: 1,
     username: 'coder-vol',
     template: false,
+    copyOf: null,
     runtime: 'hermes',
+    model: null,
     instructions: 'old',
     soul: null,
     toolDeny: [],
     skillsDisabled: [],
     reasoningEffort: null,
     skills: [],
+    browser: 'none',
     projects: [{ id: 5, key: 'VOL', assignment: '' }],
+    role: 'specialist',
+    manager: 'hermes-vol-coordinator',
     triggerOnMention: true,
     triggerOnAssign: true,
     inventory: null,
@@ -49,8 +58,9 @@ function agent(overrides: Partial<CurrentAgent> = {}): CurrentAgent {
 function state(agents: CurrentAgent[], overrides: Partial<CurrentState> = {}): CurrentState {
   return {
     agents,
-    projects: [{ id: 5, key: 'VOL', instructions: '' }],
+    projects: [{ id: 5, key: 'VOL', instructions: '', coordinator: 'hermes-vol-coordinator' }],
     library: ['brainstorming', 'writing-plans', 'systematic-debugging', 'frontend-design'],
+    unavailableModels: [],
     ...overrides,
   };
 }
@@ -69,30 +79,6 @@ function target(overrides: Partial<AgentTarget> = {}, projects = true): TuningTa
       },
     ],
   };
-}
-
-// The state as the services leave it after the plan, for the second run.
-function applied(current: CurrentState, plan: Plan): CurrentState {
-  const next = structuredClone(current);
-  for (const change of plan.changes) {
-    if (change.kind === 'projectInstructions') {
-      next.projects.find((p) => p.id === change.projectId)!.instructions = change.to;
-      continue;
-    }
-    const row = next.agents.find((a) => a.id === change.agentId)!;
-    if (change.kind === 'skills') {
-      const removed = new Set(change.remove.map((r) => r.name));
-      row.skills = [...row.skills.filter((n) => !removed.has(n)), ...change.add];
-    } else if (change.kind === 'toolDeny') row.toolDeny.push(...change.add);
-    else if (change.kind === 'skillsDisabled') row.skillsDisabled.push(...change.add);
-    else if (change.kind === 'instructions') row.instructions = change.to;
-    else if (change.kind === 'soul') row.soul = change.to;
-    else if (change.kind === 'reasoning') row.reasoningEffort = change.to;
-    else if (change.kind === 'assignment') {
-      row.projects.find((p) => p.id === change.projectId)!.assignment = change.to;
-    }
-  }
-  return next;
 }
 
 describe('textDecision', () => {
@@ -134,7 +120,7 @@ describe('planTuning', () => {
     const first = state([agent({ skills: ['writing-plans'], toolDeny: ['browser'] })]);
     const plan = planTuning(first, target());
     expect(plan.changes.length).toBeGreaterThan(0);
-    const second = planTuning(applied(first, plan), target());
+    const second = planTuning(projectState(first, plan.changes), target());
     expect(second.changes).toEqual([]);
   });
 
@@ -145,7 +131,7 @@ describe('planTuning', () => {
     );
     const skills = plan.changes.find((c) => c.kind === 'skills');
     expect(skills?.kind === 'skills' && skills.remove).toEqual([]);
-    const next = applied(state([agent({ skills: ['writing-plans'] })]), plan);
+    const next = projectState(state([agent({ skills: ['writing-plans'] })]), plan.changes);
     expect(next.agents[0]!.skills).toContain('writing-plans');
   });
 
@@ -159,7 +145,9 @@ describe('planTuning', () => {
 
   it('leaves project instructions the owner wrote', () => {
     const plan = planTuning(
-      state([agent()], { projects: [{ id: 5, key: 'VOL', instructions: 'vom Owner' }] }),
+      state([agent()], {
+        projects: [{ id: 5, key: 'VOL', instructions: 'vom Owner', coordinator: null }],
+      }),
       target(),
     );
     expect(plan.changes.some((c) => c.kind === 'projectInstructions')).toBe(false);
@@ -262,6 +250,215 @@ describe('planTuning', () => {
     expect(() =>
       planTuning(state([agent()]), target({ disableSkills: ['brainstorming'] })),
     ).toThrow('brainstorming is added and disabled');
+  });
+});
+
+// A pool template and the project it is copied into.
+function withTemplate(overrides: Partial<CurrentAgent> = {}): CurrentState {
+  return state([
+    agent({
+      id: 21,
+      username: 'qa',
+      template: true,
+      role: null,
+      manager: null,
+      projects: [],
+      model: 'gpt-5.6-terra',
+      reasoningEffort: 'medium',
+      instructions: 'Du bist QA-Tester.',
+      skills: ['systematic-debugging'],
+      toolDeny: ['computer_use'],
+      ...overrides,
+    }),
+    agent({
+      id: 6,
+      username: 'hermes-vol-coordinator',
+      role: 'coordinator',
+      manager: 'master',
+      instructions: 'alt',
+    }),
+  ]);
+}
+
+function copyTarget(): TuningTarget {
+  const team: TeamText = {
+    project: 'VOL',
+    candidates: ['coder-vol', 'qa-vol'],
+    render: (present) => `Team: ${present.join(', ') || 'keins'}`,
+    replaces: [sha256('alt')],
+  };
+  return {
+    projects: [],
+    templates: [{ username: 'qa', denyToolsets: ['computer_use', 'tts'] }],
+    agents: [
+      {
+        username: 'hermes-vol-coordinator',
+        addSkills: [],
+        denyToolsets: [],
+        disableSkills: [],
+        instructions: team,
+      },
+      {
+        username: 'qa-vol',
+        copyOf: { template: 'qa', projectKey: 'VOL' },
+        addSkills: [],
+        denyToolsets: ['computer_use', 'tts'],
+        disableSkills: ['obsidian'],
+        projectBrowser: true,
+        triggers: { mention: true, assign: true },
+        assignments: { VOL: { text: 'Du testest die Website.', replaces: [] } },
+      },
+    ],
+  };
+}
+
+const ALL: Parameters<typeof planTuning>[2] = [
+  'skills',
+  'tools',
+  'instructions',
+  'projects',
+  'copies',
+  'browser',
+  'reasoning',
+];
+
+describe('copies', () => {
+  it('creates a missing copy and tunes it in the same plan, after its template', () => {
+    const plan = planTuning(withTemplate(), copyTarget(), ALL);
+    expect(plan.changes.map((c) => `${c.kind} ${'username' in c ? c.username : ''}`)).toEqual([
+      'templateToolDeny qa',
+      'copy qa-vol',
+      'instructions hermes-vol-coordinator',
+      'skillsDisabled qa-vol',
+      'assignment qa-vol',
+      'browser qa-vol',
+    ]);
+    const copy = plan.changes.find((c) => c.kind === 'copy');
+    expect(copy).toMatchObject({ projectKey: 'VOL', model: 'gpt-5.6-terra', modelRefused: false });
+    // The coordinator's text names the copy the same run creates.
+    const text = plan.changes.find((c) => c.kind === 'instructions');
+    expect(text?.kind === 'instructions' && text.to).toBe('Team: qa-vol');
+    // The toolsets reach the copy through its template, so the copy keeps following it.
+    expect(plan.changes.some((c) => c.kind === 'toolDeny')).toBe(false);
+  });
+
+  it('has nothing left to do once the copy exists', () => {
+    const first = withTemplate();
+    const plan = planTuning(first, copyTarget(), ALL);
+    const done = projectState(first, plan.changes);
+    const created = done.agents.find((a) => a.username === 'qa-vol')!;
+    expect(created).toMatchObject({
+      template: false,
+      copyOf: 'qa',
+      model: 'gpt-5.6-terra',
+      reasoningEffort: 'medium',
+      skills: ['systematic-debugging'],
+      toolDeny: ['computer_use', 'tts'],
+      role: 'specialist',
+      manager: 'hermes-vol-coordinator',
+      browser: 'gateway',
+    });
+    expect(planTuning(done, copyTarget(), ALL).changes).toEqual([]);
+  });
+
+  it('gives a copy the runtime default when the provider refused the template model', () => {
+    const current = withTemplate();
+    current.unavailableModels = ['gpt-5.6-terra'];
+    const copy = planTuning(current, copyTarget(), ALL).changes.find((c) => c.kind === 'copy');
+    expect(copy).toMatchObject({ model: null, modelRefused: true });
+    const done = projectState(current, [copy!]);
+    expect(done.agents.find((a) => a.username === 'qa-vol')).toMatchObject({
+      model: null,
+      reasoningEffort: null,
+    });
+  });
+
+  it('creates nothing without the section, and says the copy is missing', () => {
+    const plan = planTuning(withTemplate(), copyTarget());
+    expect(plan.changes.some((c) => c.kind === 'copy')).toBe(false);
+    expect(plan.skipped).toContain('@qa-vol: not created yet (section copies)');
+  });
+
+  it('leaves an agent of the copy handle that is not that copy alone', () => {
+    const current = withTemplate();
+    current.agents.push(agent({ id: 40, username: 'qa-vol', copyOf: null }));
+    const plan = planTuning(current, copyTarget(), ['copies']);
+    expect(plan.changes).toEqual([]);
+    expect(plan.skipped).toContain(
+      '@qa-vol: exists, but not as the copy of @qa in VOL; left as it is',
+    );
+  });
+
+  it('sets the triggers of a copy whose template starts on nothing', () => {
+    const plan = planTuning(
+      withTemplate({ triggerOnMention: false, triggerOnAssign: false }),
+      copyTarget(),
+      ['copies'],
+    );
+    expect(plan.changes.find((c) => c.kind === 'triggers')).toMatchObject({
+      username: 'qa-vol',
+      mention: true,
+      assign: true,
+    });
+  });
+});
+
+describe('team texts', () => {
+  const team: TeamText = {
+    project: 'VOL',
+    candidates: ['a', 'b', 'c'],
+    render: (present) => `Team ${present.join('+')}`,
+    replaces: ['x'],
+  };
+
+  it('names the candidates that work in the project, and owns every other set', () => {
+    const current = state([
+      agent({ username: 'a' }),
+      agent({ id: 2, username: 'c' }),
+      agent({ id: 3, username: 'b', projects: [{ id: 6, key: 'FAM', assignment: '' }] }),
+    ]);
+    const text = resolveText(team, current);
+    expect(text.text).toBe('Team a+c');
+    expect(text.replaces).toContain('x');
+    expect(text.replaces).toContain(sha256('Team a'));
+    expect(text.replaces).toContain(sha256('Team a+b+c'));
+    expect(text.replaces).toHaveLength(1 + 8);
+  });
+});
+
+describe('browser and model', () => {
+  it('turns the project browser on, but leaves one who chose the old Hermes browser', () => {
+    const wanted = target({ projectBrowser: true }, false);
+    expect(planTuning(state([agent()]), wanted, ['browser']).changes).toEqual([
+      { kind: 'browser', agentId: 1, username: 'coder-vol' },
+    ]);
+    expect(planTuning(state([agent({ browser: 'gateway' })]), wanted, ['browser']).changes).toEqual(
+      [],
+    );
+    const legacy = planTuning(state([agent({ browser: 'legacy' })]), wanted, ['browser']);
+    expect(legacy.changes).toEqual([]);
+    expect(legacy.skipped).toEqual([
+      '@coder-vol: uses the old Hermes browser someone chose; left as it is',
+    ]);
+  });
+
+  it('sets a model only on the default and never one the provider refused', () => {
+    const wanted = target({ model: 'gpt-6-sol' }, false);
+    expect(planTuning(state([agent()]), wanted, ['reasoning']).changes).toEqual([
+      { kind: 'model', agentId: 1, username: 'coder-vol', from: null, to: 'gpt-6-sol' },
+    ]);
+    expect(
+      planTuning(state([agent({ model: 'gpt-6-sol' })]), wanted, ['reasoning']).changes,
+    ).toEqual([]);
+    const own = planTuning(state([agent({ model: 'claude-opus-5' })]), wanted, ['reasoning']);
+    expect(own.skipped).toEqual(['@coder-vol: model claude-opus-5 was set by hand; left as it is']);
+    const refused = planTuning(state([agent()], { unavailableModels: ['gpt-6-sol'] }), wanted, [
+      'reasoning',
+    ]);
+    expect(refused.changes).toEqual([]);
+    expect(refused.skipped).toEqual([
+      '@coder-vol: the provider refused gpt-6-sol; left on the default',
+    ]);
   });
 });
 
@@ -369,6 +566,37 @@ describe('the target of this installation', () => {
   it('names only skills of the pool', () => {
     const unknown = TARGET.agents.flatMap((a) => a.addSkills).filter((name) => !pool.has(name));
     expect(unknown).toEqual([]);
+  });
+
+  it('creates every approved pool copy, each with its assignment', () => {
+    expect(COPIES.map((c) => c.username)).toEqual(
+      POOL_COPIES.map((c) => copyHandle(c.template, c.projectKey)),
+    );
+    for (const copy of COPIES) {
+      expect(copy.assignments?.[copy.copyOf!.projectKey]?.text.length).toBeGreaterThan(80);
+      expect(copy).toMatchObject({ projectBrowser: true, triggers: { mention: true, assign: true } });
+    }
+    expect(TEMPLATES.map((t) => t.username).sort()).toEqual([
+      'assistant',
+      'content',
+      'finance',
+      'qa',
+      'researcher',
+    ]);
+  });
+
+  it('names every copy in its coordinator's instructions once it exists', () => {
+    for (const copy of COPIES) {
+      const key = copy.copyOf!.projectKey;
+      const coordinator = TARGET.agents.find(
+        (a) => a.username === `hermes-${key.toLowerCase()}-coordinator`,
+      )!;
+      const current = state([agent({ username: copy.username, projects: [{ id: 1, key, assignment: '' }] })]);
+      const text = resolveText(coordinator.instructions!, current).text;
+      expect(text).toContain(`@${copy.username}:`);
+      const alone = resolveText(coordinator.instructions!, state([])).text;
+      expect(alone).not.toContain(`@${copy.username}`);
+    }
   });
 
   it('never turns off a skill of the pool', () => {
