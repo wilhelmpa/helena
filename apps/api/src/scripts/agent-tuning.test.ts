@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
-import { aiAgent, db } from '@repo/db';
+import { agentSkill, aiAgent, db } from '@repo/db';
 import { eq } from 'drizzle-orm';
 import { authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
@@ -8,7 +8,7 @@ import { createAgent } from '#tests/helpers/agents';
 import { getRunnerAgent } from '#modules/agents/runner/service';
 import { runtimePolicySnapshot } from '#modules/agents/runtime-policy/service';
 import { loadTuningState, runAgentTuning } from './agent-tuning';
-import { sha256, type TuningTarget } from './agent-tuning/plan';
+import { sha256, type TeamText, type TuningTarget } from './agent-tuning/plan';
 
 // The agent tuning end to end: a dry run writes nothing, --apply writes through Helena's
 // services, the SOUL.md the runner gets carries the result, and a second run has nothing
@@ -44,7 +44,9 @@ async function setup() {
         disableSkills: ['obsidian', 'himalaya'],
         instructions: { text: 'Neuer Text', replaces: [sha256('Alter Text')] },
         soul: { text: 'Du bist Coder VOL.', replaces: [] },
+        model: 'gpt-6-sol',
         reasoning: 'medium',
+        projectBrowser: true,
         assignments: { VOL: { text: 'Du entwickelst die Website.', replaces: [] } },
       },
     ],
@@ -113,11 +115,143 @@ describe('agent tuning', () => {
     expect(again.changes).toEqual([]);
   });
 
-  it('sets reasoning on request', async () => {
-    const { teamId, target } = await setup();
-    await runAgentTuning({ teamId, target, apply: true, sections: ['reasoning'], log: quiet });
+  it('sets model, reasoning and the project browser on request', async () => {
+    const { teamId, agent, target } = await setup();
+    await runAgentTuning({
+      teamId,
+      target,
+      apply: true,
+      sections: ['reasoning', 'browser'],
+      log: quiet,
+    });
     const state = await loadTuningState(teamId);
-    expect(state.agents.find((a) => a.username === 'coder-vol')!.reasoningEffort).toBe('medium');
+    const tuned = state.agents.find((a) => a.username === 'coder-vol')!;
+    expect(tuned).toMatchObject({
+      model: 'gpt-6-sol',
+      reasoningEffort: 'medium',
+      browser: 'gateway',
+    });
+    const snapshot = await runtimePolicySnapshot((await getRunnerAgent(agent.userId))!);
+    expect(snapshot.model).toBe('gpt-6-sol');
+    expect(snapshot.mcpServers.map((s) => s.name)).toContain('projekt-browser');
+    const again = await runAgentTuning({
+      teamId,
+      target,
+      sections: ['reasoning', 'browser'],
+      log: quiet,
+    });
+    expect(again.changes).toEqual([]);
+  });
+
+  it('creates a pool copy through Helena, tunes it and names it to its coordinator', async () => {
+    const { api, teamId } = await setup();
+    const template = (
+      await api.teams({ teamId })['ai-agents'].post({
+        name: 'QA-Tester',
+        username: 'qa',
+        kind: 'external',
+        template: true,
+        instructions: 'Du bist QA-Tester.',
+        model: 'gpt-5.6-terra',
+        triggerOnMention: true,
+        triggerOnAssign: true,
+        runtimePolicy: {
+          reasoningEffort: 'medium',
+          toolAllow: [],
+          toolDeny: ['computer_use'],
+          mcpGrants: [],
+          files: [],
+        },
+      })
+    ).data!.agent;
+    const [skill] = await db.select().from(agentSkill).where(eq(agentSkill.name, 'writing-plans'));
+    await api
+      .teams({ teamId })
+      ['ai-agents']({ agentId: template.id })
+      .skills.put({ skillIds: [skill!.id] });
+    const before = await loadTuningState(teamId);
+    const coordinator = before.projects.find((p) => p.key === 'VOL')!.coordinator!;
+    const created = before.agents.find((a) => a.username === coordinator)!.instructions ?? '';
+    const team: TeamText = {
+      project: 'VOL',
+      candidates: ['coder-vol', 'qa-vol'],
+      render: (present) => `Delegiere an: ${present.map((name) => `@${name}`).join(', ')}`,
+      replaces: [sha256(created)],
+    };
+    const target: TuningTarget = {
+      projects: [],
+      templates: [{ username: 'qa', denyToolsets: ['computer_use', 'tts'] }],
+      departments: [{ name: 'Entwicklung', parent: null, description: 'Bereich dev/' }],
+      agents: [
+        {
+          username: coordinator,
+          addSkills: [],
+          denyToolsets: [],
+          disableSkills: [],
+          instructions: team,
+        },
+        {
+          username: 'qa-vol',
+          copyOf: { template: 'qa', projectKey: 'VOL' },
+          addSkills: [],
+          denyToolsets: ['computer_use', 'tts'],
+          disableSkills: ['obsidian'],
+          projectBrowser: true,
+          triggers: { mention: true, assign: true },
+          name: 'Tests VOL',
+          org: { department: 'Entwicklung', role: 'reviewer' },
+          assignments: { VOL: { text: 'Du testest die Website.', replaces: [] } },
+        },
+      ],
+    };
+    const sections = ['tools', 'instructions', 'projects', 'copies', 'browser'] as const;
+
+    const dry = await runAgentTuning({ teamId, target, sections: [...sections], log: quiet });
+    expect(dry.changes.map((c) => c.kind)).toEqual([
+      'templateToolDeny',
+      'department',
+      'copy',
+      'instructions',
+      'skillsDisabled',
+      'assignment',
+      'name',
+      'org',
+      'browser',
+    ]);
+    expect((await loadTuningState(teamId)).agents.some((a) => a.username === 'qa-vol')).toBe(false);
+
+    await runAgentTuning({ teamId, target, sections: [...sections], apply: true, log: quiet });
+    const state = await loadTuningState(teamId);
+    const copy = state.agents.find((a) => a.username === 'qa-vol')!;
+    expect(copy).toMatchObject({
+      template: false,
+      copyOf: 'qa',
+      model: 'gpt-5.6-terra',
+      reasoningEffort: 'medium',
+      skills: ['writing-plans'],
+      toolDeny: ['computer_use', 'tts'],
+      skillsDisabled: ['obsidian'],
+      browser: 'gateway',
+      name: 'Tests VOL',
+      role: 'reviewer',
+      department: 'Entwicklung',
+      manager: coordinator,
+      triggerOnMention: true,
+      triggerOnAssign: true,
+    });
+    expect(copy.projects).toEqual([
+      expect.objectContaining({ key: 'VOL', assignment: 'Du testest die Website.' }),
+    ]);
+    expect(state.agents.find((a) => a.username === coordinator)!.instructions).toBe(
+      'Delegiere an: @coder-vol, @qa-vol',
+    );
+    // Only the project browser is the copy's own choice; its toolsets, skills and model still
+    // follow the template.
+    const [row] = await db.select().from(aiAgent).where(eq(aiAgent.id, copy.id));
+    expect(row!.templateOverrides).toEqual(['mcpServers']);
+
+    const again = await runAgentTuning({ teamId, target, sections: [...sections], log: quiet });
+    expect(again.changes).toEqual([]);
   });
 
   it('leaves texts the owner wrote after the audit', async () => {

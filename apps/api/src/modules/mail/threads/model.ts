@@ -202,6 +202,20 @@ export const searchMailQuery = t.Object({
   ),
   unread: t.Optional(t.Boolean({ description: 'Only threads with unread mail.' })),
   limit: t.Optional(t.Integer({ minimum: 1, maximum: 50, default: 20 })),
+  // Paging: the last thread of the previous page. Without them an agent saw only the
+  // newest page of a mailbox (a triage of 718 threads stopped after 50, 2026-09-25).
+  beforeAt: t.Optional(
+    t.String({
+      format: 'date-time',
+      description: 'Next page: the lastMessageAt of the last thread of the previous page.',
+    }),
+  ),
+  beforeThreadId: t.Optional(
+    t.Integer({
+      minimum: 1,
+      description: 'Next page: the threadId of the last thread of the previous page.',
+    }),
+  ),
 });
 
 export const MailSearchResponse = t.Array(
