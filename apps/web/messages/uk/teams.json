@@ -731,12 +731,16 @@
       },
       "copyCommand": "Копіювати команду",
       "copied": "Скопійовано",
-      "openAccess": "Відкрити «Доступи»",
       "sandbox": "Пісочниця: {mode}",
       "sandboxModes": {
         "workspace-write": "робоча тека",
         "read-only": "лише читання",
         "danger-full-access": "ізоляція"
+      },
+      "login": {
+        "title": "Вхід",
+        "signedInAs": "Вхід виконано як {account}",
+        "view": "Переглянути в доступах"
       }
     },
     "runModel": {

@@ -13,6 +13,8 @@ const op = t.Union([
   t.Literal('estop.set'),
   t.Literal('runtime.update'),
   t.Literal('limits.read'),
+  t.Literal('login.read'),
+  t.Literal('login.logout'),
 ]);
 
 export const RuntimeRequestClaimResponse = t.Object({

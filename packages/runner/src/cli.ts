@@ -303,6 +303,17 @@ async function handleRuntimeRequest(
     if (request.op === 'runtime.update') {
       // The Hermes installation is the runner's own, isolated agents or not.
       result = await runtimeUpdate(request);
+    } else if (request.op === 'login.read' || request.op === 'login.logout') {
+      // The runtime's own login (Claude Code, Codex): its adapter asks the runtime, in the
+      // agent's own unit when it is isolated. The account's facts only.
+      if (!runtime?.account || (request.op === 'login.logout' && !runtime.signOut)) {
+        throw new Error('This runtime keeps no login of its own');
+      }
+      const account =
+        request.op === 'login.read'
+          ? await runtime.account({ force: true })
+          : await runtime.signOut!();
+      result = await runnerRedactor(config).value({ account });
     } else if (request.op === 'limits.read' && limits && !isolated) {
       // The runner's prober: the agents it serves share one probe per login. Numbers only;
       // the runner's redaction still runs over them, as over every answer.

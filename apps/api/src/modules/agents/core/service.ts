@@ -18,6 +18,7 @@ import {
   helenaBudget,
 } from '@repo/db';
 import { and, asc, eq, inArray, isNull, ne, notInArray, or, sql } from 'drizzle-orm';
+import { normalizeRuntimeAccount, type RuntimeAccount } from '@helena/sdk';
 import { API_KEY_MAX_NAME_LENGTH, auth } from '@repo/auth';
 import { iso, HttpError, rethrowDuplicate } from '#shared/lib';
 import { listAgentMemberFieldIds } from '#modules/custom-fields/service';
@@ -133,6 +134,9 @@ export interface AgentRuntimeState {
   issues: AgentRuntimeIssue[];
   // Where the runtime runs the model's commands, for one with a sandbox of its own (Codex).
   sandbox: AgentRuntimeSandbox | null;
+  // The runtime's own login in the agent's home (Claude Code, Codex), as the runtime told
+  // the runner: the account's facts, never the login.
+  account: RuntimeAccount | null;
   reportedAt: string | null;
 }
 
@@ -174,6 +178,7 @@ const EMPTY_RUNTIME_STATE: AgentRuntimeState = {
   version: null,
   issues: [],
   sandbox: null,
+  account: null,
   reportedAt: null,
 };
 
@@ -220,6 +225,8 @@ function normalizeRuntimeState(value: unknown): AgentRuntimeState {
       state.sandbox === 'danger-full-access'
         ? state.sandbox
         : null,
+    // Checked again field by field, whatever was stored.
+    account: normalizeRuntimeAccount(state.account),
     reportedAt: typeof state.reportedAt === 'string' ? state.reportedAt : null,
   };
 }

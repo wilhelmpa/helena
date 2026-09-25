@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test';
-import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, stat, utimes, writeFile } from 'node:fs/promises';
 import { createServer, type Server } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -153,6 +153,10 @@ async function managed(
       };
     }
     const loggedIn = options.localLogin === true;
+    if (args[0] === 'logout' || args[1] === 'logout') {
+      options.localLogin = false;
+      return { code: 0, stdout: '', missing: false };
+    }
     return runtime === 'claude'
       ? { code: loggedIn ? 0 : 1, stdout: JSON.stringify({ loggedIn }), missing: false }
       : {
@@ -180,7 +184,17 @@ async function managed(
     outputFormat: runtime === 'claude' ? 'claude-stream-json' : 'codex-jsonl',
     models: [],
   };
-  const adapter = new CliRuntimeAdapter(runtime, config, client, Date.now, program);
+  // Codex' app-server, as `account/read` answers for the login the options name.
+  const appServer = async (method: string) => {
+    probes.push(['codex', 'app-server', method]);
+    return {
+      account: options.localLogin
+        ? { type: 'chatgpt', email: 'owner@example.com', planType: 'pro' }
+        : null,
+      requiresOpenaiAuth: true,
+    };
+  };
+  const adapter = new CliRuntimeAdapter(runtime, config, client, Date.now, program, appServer);
   return { home, statuses, asked, probes, config, adapter, program };
 }
 
@@ -357,7 +371,13 @@ describe('an isolated Claude Code agent', () => {
     // Unchanged skills are not written again: each write starts a unit.
     adapter.inventoryChanged();
     await adapter.ensure();
-    expect(requests.filter((entry) => entry.request.runtime === 'profile-helper')).toHaveLength(1);
+    expect(
+      requests.filter(
+        (entry) =>
+          entry.request.runtime === 'profile-helper' &&
+          (JSON.parse(entry.stdin) as { op?: string }).op === 'cli-files',
+      ),
+    ).toHaveLength(1);
   });
 });
 
@@ -679,5 +699,211 @@ describe('tool arguments', () => {
   it("withholds Claude Code's scheduler from every agent", () => {
     expect(claudeToolArgs([])).toContain('CronCreate');
     expect(codexToolArgs([])).toContain('features.apps=false');
+  });
+});
+
+// The token-like values a login file holds; none may ever leave the runner.
+const TOKEN_LIKE =
+  /eyJ[A-Za-z0-9_-]{10,}|\brt_[A-Za-z0-9_]{6,}|\bsk-[A-Za-z0-9-]{6,}|refresh_token|access_token|id_token/;
+
+describe("the runtime's own login (Zugänge)", () => {
+  it('reports what Codex says about its account, with the command that signs it in', async () => {
+    delete process.env.AGENT_ISOLATION;
+    const { adapter, statuses, home, probes } = await managed('codex', {
+      localLogin: true,
+      ownSandbox: true,
+    });
+    await adapter.ensure();
+    const status = statuses.at(-1)!;
+    expect(status.account).toMatchObject({
+      signedIn: true,
+      method: 'chatgpt',
+      email: 'owner@example.com',
+      plan: 'pro',
+      command: `sudo -u volition-hermes env HOME=${home} CODEX_HOME=${home}/.codex /usr/local/bin/codex login --device-auth`,
+    });
+    expect(status.capabilities).toEqual(expect.arrayContaining(['login', 'logout']));
+    // Asked Codex itself, never its file.
+    expect(probes).toContainEqual(['codex', 'app-server', 'account/read']);
+    expect(JSON.stringify(status)).not.toMatch(TOKEN_LIKE);
+  });
+
+  it("takes the login file's time as the last renewal, never its content", async () => {
+    delete process.env.AGENT_ISOLATION;
+    const { adapter, home } = await managed('codex', { localLogin: true, ownSandbox: true });
+    await adapter.ensure();
+    await writeFile(
+      join(home, '.codex', 'auth.json'),
+      JSON.stringify({ tokens: { refresh_token: 'rt_secret_value', id_token: 'eyJabc.def.ghi' } }),
+    );
+    const when = new Date('2026-09-25T08:00:00.000Z');
+    await utimes(join(home, '.codex', 'auth.json'), when, when);
+    const account = await adapter.account({ force: true });
+    expect(account?.refreshedAt).toBe(when.toISOString());
+    expect(JSON.stringify(account)).not.toMatch(TOKEN_LIKE);
+  });
+
+  it('signs its own login out with its own command, and looks again', async () => {
+    delete process.env.AGENT_ISOLATION;
+    const { adapter, statuses, probes } = await managed('codex', {
+      localLogin: true,
+      ownSandbox: true,
+    });
+    await adapter.ensure();
+    const account = await adapter.signOut();
+    expect(probes).toContainEqual(['codex', 'logout']);
+    expect(account).toMatchObject({ signedIn: false, email: null, plan: null });
+    expect(statuses.at(-1)).toMatchObject({
+      issues: [{ code: 'not-signed-in', detail: 'missing' }],
+      account: { signedIn: false },
+    });
+  });
+
+  it("offers no sign-out on an operator's own runner", async () => {
+    delete process.env.AGENT_ISOLATION;
+    const statuses: RuntimeStatus[] = [];
+    const client: RuntimePolicyClient = {
+      runtimePolicy: async () => snapshot(),
+      reportRuntimeStatus: async (status) => {
+        statuses.push(structuredClone(status));
+      },
+      mcpSecrets: async () => ({}),
+      webLogins: async () => [],
+    };
+    const dir = await mkdtemp(join(tmpdir(), 'helena-operator-'));
+    roots.push(dir);
+    const config: RunnerConfig = {
+      name: '',
+      url: 'http://127.0.0.1:3000',
+      apiKey: 'itp_operator_key',
+      agent: 'claude',
+      args: [],
+      cwd: dir,
+      // Its user's own Claude Code directory; here a folder of the test's.
+      env: { HELENA_RUNTIME_DIR: dir, CLAUDE_CONFIG_DIR: dir },
+      concurrency: 1,
+      pollIntervalMs: 1000,
+      timeoutMs: 60_000,
+      outputFormat: 'claude-stream-json',
+      models: [],
+    };
+    const program: ShortCommand = async (_bin, args) =>
+      args[0] === '--version'
+        ? { code: 0, stdout: '2.1.282 (Claude Code)', missing: false }
+        : {
+            code: 0,
+            stdout: JSON.stringify({
+              loggedIn: true,
+              authMethod: 'claude.ai',
+              email: 'op@example.com',
+              subscriptionType: 'max',
+            }),
+            missing: false,
+          };
+    const adapter = new CliRuntimeAdapter('claude', config, client, Date.now, program);
+    await adapter.ensure();
+    expect(statuses.at(-1)?.capabilities).toContain('login');
+    expect(statuses.at(-1)?.capabilities).not.toContain('logout');
+    expect(statuses.at(-1)?.account).toMatchObject({
+      signedIn: true,
+      method: 'claude.ai',
+      email: 'op@example.com',
+      plan: 'max',
+    });
+    await expect(adapter.signOut()).rejects.toThrow(/operator/);
+  });
+
+  it("reads an isolated agent's login in its own unit, and signs it out there", async () => {
+    const { path, requests } = await fakeLauncher((request, stdin) => {
+      if (request.runtime === 'profile-helper') {
+        const op = JSON.parse(stdin) as { op: string; request?: { op: string } };
+        if (op.op === 'runtime-request' && op.request?.op === 'login.read') {
+          return `${JSON.stringify({
+            ok: true,
+            result: {
+              account: {
+                signedIn: true,
+                method: 'chatgpt',
+                email: 'owner@example.com',
+                plan: 'pro',
+                organization: null,
+                refreshedAt: '2026-09-25T08:00:00.000Z',
+                checkedAt: '2026-09-25T10:00:00.000Z',
+                command: null,
+                // Whatever else a helper sent is dropped.
+                refresh_token: 'rt_should_never_leave',
+              },
+            },
+          })}\n`;
+        }
+        return `${JSON.stringify({ ok: true, result: { written: 1 } })}\n`;
+      }
+      return '';
+    });
+    process.env.AGENT_ISOLATION = 'on';
+    process.env.VOLITION_LAUNCHER_SOCKET = path;
+    const home = '/var/lib/volition/hermes/profiles/vol_33';
+    const statuses: RuntimeStatus[] = [];
+    const client: RuntimePolicyClient = {
+      runtimePolicy: async () => snapshot(),
+      reportRuntimeStatus: async (status) => {
+        statuses.push(structuredClone(status));
+      },
+      mcpSecrets: async () => ({}),
+      webLogins: async () => [],
+      runtimeLogin: async () => null,
+    };
+    const config: RunnerConfig = {
+      name: '',
+      url: 'http://127.0.0.1:3000',
+      apiKey: 'itp_isolated_codex_key',
+      agent: 'codex',
+      args: [],
+      cwd: '/srv/volition/workspaces/projects/vol',
+      env: { HELENA_AGENT_HOME: home, CODEX_HOME: `${home}/.codex` },
+      concurrency: 1,
+      pollIntervalMs: 1000,
+      timeoutMs: 60_000,
+      outputFormat: 'codex-jsonl',
+      models: [],
+      isolation: { slug: 'vol', profile: 'vol_33', agentId: 33, runtime: 'codex' },
+    };
+    const program: ShortCommand = async () => ({
+      code: 0,
+      stdout: 'codex-cli 0.156.1',
+      missing: false,
+    });
+    const adapter = new CliRuntimeAdapter('codex', config, client, Date.now, program);
+    await adapter.ensure();
+    const read = requests.find(
+      (entry) =>
+        entry.request.runtime === 'profile-helper' &&
+        (JSON.parse(entry.stdin) as { op: string }).op === 'runtime-request',
+    )!;
+    expect(read.request).toMatchObject({ slug: 'vol', profile: 'vol_33', agentId: 33 });
+    expect(JSON.parse(read.stdin)).toMatchObject({
+      op: 'runtime-request',
+      request: { op: 'login.read' },
+      runtime: 'codex',
+    });
+    expect(statuses.at(-1)?.account).toMatchObject({
+      signedIn: true,
+      email: 'owner@example.com',
+      plan: 'pro',
+    });
+    expect(statuses.at(-1)?.account?.command).toContain('launch_client.py');
+    expect(JSON.stringify(statuses)).not.toContain('rt_should_never_leave');
+
+    await adapter.signOut();
+    const logout = requests.find(
+      (entry) => entry.request.runtime === 'codex' && (entry.request.args as string[])[0] === 'logout',
+    )!;
+    expect(logout.request).toMatchObject({
+      slug: 'vol',
+      profile: 'vol_33',
+      args: ['logout'],
+      env: { CODEX_HOME: `${home}/.codex` },
+      work: { kind: 'helper', id: null },
+    });
   });
 });

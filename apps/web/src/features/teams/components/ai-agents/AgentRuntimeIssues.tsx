@@ -5,15 +5,18 @@ import { useTranslations } from 'next-intl';
 import CopyableCommand from '@/components/common/page/CopyableCommand';
 import { Button } from '@/components/ui/button';
 import type { RuntimeIssue } from '@/lib/api/endpoints/agentRuntimeSync';
-import { credentialsPath } from '@/utils/paths';
+import { accessLoginsPath } from '@/utils/paths';
 
 // What keeps a Claude Code or Codex agent's runtime from its work, with what the owner does
 // about it: sign it in (a runtime login in Zugänge, or the command the runner names for
-// the owner terminal), install it, or switch agent isolation on for Codex.
+// the owner terminal), install it, or switch agent isolation on for Codex. "In Zugänge
+// ansehen" opens the agent's row in "Anmeldungen".
 export default function AgentRuntimeIssues({
+  agentId,
   adapter,
   issues,
 }: {
+  agentId: number;
   adapter: string | null;
   issues: RuntimeIssue[];
 }) {
@@ -42,7 +45,7 @@ export default function AgentRuntimeIssues({
                 />
               )}
               <Button asChild size="sm" variant="outline">
-                <Link href={credentialsPath()}>{t('openAccess')}</Link>
+                <Link href={accessLoginsPath(agentId)}>{t('login.view')}</Link>
               </Button>
             </>
           )}

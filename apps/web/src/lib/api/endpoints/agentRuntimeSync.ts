@@ -51,6 +51,19 @@ export interface RuntimeIssue {
   command?: string;
 }
 
+// The login a Claude Code or Codex runtime keeps of its own in the agent's home (a Codex
+// device login), as the runtime told the runner: the account's facts, never a token.
+export interface RuntimeAccount {
+  signedIn: boolean | null;
+  method: string | null;
+  email: string | null;
+  plan: string | null;
+  organization: string | null;
+  refreshedAt: string | null;
+  checkedAt: string;
+  command: string | null;
+}
+
 export interface RuntimeSync {
   state: RuntimeSyncState;
   revision: string;
@@ -64,6 +77,8 @@ export interface RuntimeSync {
   // Where Codex runs the model's commands: its own sandbox with writes in the working folder,
   // read-only, or none inside agent isolation (the unit is the sandbox). Null for others.
   sandbox?: 'workspace-write' | 'read-only' | 'danger-full-access' | null;
+  // The runtime's own login (Claude Code, Codex); shown in full in Zugänge.
+  account?: RuntimeAccount | null;
   rewritePending: boolean;
   reportedAt: string | null;
 }

@@ -161,7 +161,8 @@
       "settings": "设置已更改",
       "removed": "已移除",
       "listed-from-gog": "从 gog 显示",
-      "clone": "已克隆仓库"
+      "clone": "已克隆仓库",
+      "signed-out": "已退出登录"
     }
   },
   "clone": {

@@ -262,6 +262,8 @@ export const qk = {
   accessGoogle: (teamId: number) => ['access', teamId, 'google'] as const,
   accessAudit: (teamId: number, params: unknown, filter: unknown) =>
     ['access', teamId, 'audit', params, filter] as const,
+  // "Anmeldungen" in Zugänge: the agents' logins and the shared ones.
+  accessLogins: (teamId: number) => ['access', teamId, 'logins'] as const,
   credentialPage: (teamId: number, params: unknown, kind?: string) =>
     ['credentials', teamId, 'page', params, kind ?? 'all'] as const,
   agentMcpServers: (teamId: number, agentId: number) =>

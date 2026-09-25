@@ -17,7 +17,13 @@ import type { HermesInventory } from './inventory';
 import { isolationEnabled, launch, profileHelper } from './isolation';
 import { limitsCapable } from './limits';
 import type { WorkRef } from './logins';
+import {
+  cliRuntimeEnv,
+  readRuntimeAccount,
+  signOutArgs,
+} from './runtime-account';
 import type { RuntimePolicyClient, RuntimePolicySnapshot, RuntimeStatus } from './policy';
+import { normalizeRuntimeAccount, type RuntimeAccount } from '@helena/sdk';
 import {
   profileDigest,
   resolveMcpValue,
@@ -569,6 +575,8 @@ interface Probe {
   missing: boolean;
   // Null where it could not be told.
   localLogin: boolean | null;
+  // The runtime's own login as the runtime tells it (runtime-account.ts), for Zugänge.
+  account: RuntimeAccount | null;
 }
 
 export class CliRuntimeAdapter implements RuntimeAdapter {
@@ -600,6 +608,8 @@ export class CliRuntimeAdapter implements RuntimeAdapter {
     private readonly now: () => number = Date.now,
     // How the runtime's program is asked for its version and its login.
     private readonly command: ShortCommand = runShort,
+    // One request to Codex' app-server (its account), where the runner asks it itself.
+    private readonly appServer?: (method: string, params: unknown) => Promise<unknown>,
   ) {
     this.home = cliAgentHome(config);
     // An agent's own home, or a directory named after a digest of the agent's key: unique
@@ -623,16 +633,18 @@ export class CliRuntimeAdapter implements RuntimeAdapter {
 
   private runtimeEnv(): Record<string, string> {
     const dir = this.runtimeDir();
-    if (!dir) return {};
-    return this.runtime === 'claude'
-      ? {
-          CLAUDE_CONFIG_DIR: dir,
-          // The installation is Helena's (install-cli-runtimes.sh); no command updates it.
-          DISABLE_AUTOUPDATER: '1',
-          DISABLE_UPDATES: '1',
-          CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1',
-        }
-      : { CODEX_HOME: dir };
+    return dir ? cliRuntimeEnv(this.runtime, dir) : {};
+  }
+
+  // Where the runtime keeps its own login: the agent's home, or its user's own on an
+  // operator's runner.
+  private loginDir(): string {
+    return (
+      this.runtimeDir() ??
+      (this.runtime === 'claude'
+        ? (this.config.env.CLAUDE_CONFIG_DIR ?? join(homedir(), '.claude'))
+        : this.codexHome())
+    );
   }
 
   ensure(): Promise<void> {
@@ -688,13 +700,8 @@ export class CliRuntimeAdapter implements RuntimeAdapter {
   // runtime's directory and environment, the gate its commands start through, and the
   // Helena login its commands get, without the login itself.
   limitsLogin(): { dir: string; env: Record<string, string>; gate: StartGate; ref: string | null } {
-    const dir =
-      this.runtimeDir() ??
-      (this.runtime === 'claude'
-        ? (this.config.env.CLAUDE_CONFIG_DIR ?? join(homedir(), '.claude'))
-        : this.codexHome());
     return {
-      dir,
+      dir: this.loginDir(),
       env: this.runtimeEnv(),
       gate: this.gate,
       ref: this.granted ? `runtime_login:${this.granted.credentialId}` : null,
@@ -704,6 +711,59 @@ export class CliRuntimeAdapter implements RuntimeAdapter {
   // The sandbox this agent's Codex commands run in.
   sandbox(): CommandSandbox {
     return codexSandbox(this.config, this.ownSandbox);
+  }
+
+  // The runtime's own login as Zugänge shows it, with the command that signs it in (again).
+  private accountView(): RuntimeAccount | null {
+    const account = this.probe?.account ?? null;
+    if (!account) return null;
+    return { ...account, command: signInCommand(this.runtime, this.config) ?? null };
+  }
+
+  // The runtime's own login in the agent's home (@helena/sdk RuntimeAdapter.account): the
+  // last look, or a new one with `force` (Zugänge "Prüfen", after the owner signed in).
+  async account(options: { force?: boolean } = {}): Promise<RuntimeAccount | null> {
+    await this.refreshProbe(options.force === true);
+    if (this.applied) await this.report(this.applied.snapshot);
+    return this.accountView();
+  }
+
+  // "Abmelden" in Zugänge: the runtime's own sign-out (`codex logout`, `claude auth logout`)
+  // as the user the agent runs as, in its own unit when it is isolated. The runner never
+  // opens the login file. Only for an agent Helena provisioned: an operator's runner would
+  // sign its user out. A command starting meanwhile waits, as for a renewal.
+  async signOut(): Promise<RuntimeAccount | null> {
+    if (!this.home) throw new Error("An operator's own runner keeps its user's login");
+    const args = signOutArgs(this.runtime);
+    const isolation = this.config.isolation;
+    const release = await this.gate.acquire();
+    let code: number | null;
+    try {
+      if (isolated(this.config) && isolation && this.config.cwd) {
+        const result = await launch({
+          slug: isolation.slug,
+          profile: isolation.profile,
+          runtime: this.runtime,
+          args,
+          env: this.runtimeEnv(),
+          cwd: this.config.cwd,
+          agentId: isolation.agentId,
+          work: { kind: 'helper', id: null },
+          limits: { runtimeMaxSec: 120 },
+        });
+        code = result.code;
+      } else {
+        const result = await this.command(this.runtime, args, this.runtimeEnv());
+        code = result.missing ? null : result.code;
+      }
+    } finally {
+      release();
+    }
+    if (code !== 0) throw new Error(`${this.runtime} could not sign out (exit ${String(code)})`);
+    // A login refused before is gone now; the next look says what is left.
+    this.refused = false;
+    this.inventoryChanged();
+    return this.account({ force: true });
   }
 
   // Whether Helena grants the agent a login, without reading it.
@@ -726,12 +786,66 @@ export class CliRuntimeAdapter implements RuntimeAdapter {
     if (!force && this.probe && this.now() - this.probe.at < PROBE_INTERVAL_MS) return;
     const bin = this.runtime;
     const version = await this.command(bin, ['--version'], {});
-    const localLogin = version.missing ? null : await this.probeLocalLogin(bin);
+    const account = version.missing ? null : await this.probeAccount(bin);
     this.probe = {
       at: this.now(),
       version: version.missing ? null : parseVersion(version.stdout),
       missing: version.missing,
-      localLogin,
+      localLogin: account?.signedIn ?? null,
+      account,
+    };
+  }
+
+  // The runtime's own login with what it says about the account, read by the runtime: in
+  // the agent's own unit by its profile helper when the agent is isolated. Codex' login is
+  // read through the gate its commands start through, as its limits are. Where the account
+  // cannot be read, only whether a login is there.
+  private async probeAccount(bin: string): Promise<RuntimeAccount | null> {
+    const isolation = this.config.isolation;
+    const release = this.runtime === 'codex' ? await this.gate.acquire() : () => {};
+    try {
+      if (isolated(this.config) && isolation && this.config.cwd) {
+        try {
+          const answer = await profileHelper<{ account?: unknown }>(isolation, this.config.cwd, {
+            op: 'runtime-request',
+            request: { op: 'login.read' },
+            runtime: this.runtime,
+            cwd: this.config.cwd,
+            known: [],
+          });
+          const account = normalizeRuntimeAccount(answer?.account);
+          if (account) return account;
+        } catch {
+          // A profile helper from before `login.read`: asked the old way below.
+        }
+        const signedIn = await this.probeLocalLogin(bin);
+        return signedIn === null ? null : this.bareAccount(signedIn);
+      }
+      return await readRuntimeAccount({
+        runtime: this.runtime,
+        dir: this.loginDir(),
+        env: this.runtimeEnv(),
+        command: this.command,
+        ...(this.appServer && { appServer: this.appServer }),
+        now: this.now,
+      });
+    } catch {
+      return null;
+    } finally {
+      release();
+    }
+  }
+
+  private bareAccount(signedIn: boolean): RuntimeAccount {
+    return {
+      signedIn,
+      method: null,
+      email: null,
+      plan: null,
+      organization: null,
+      refreshedAt: null,
+      checkedAt: new Date(this.now()).toISOString(),
+      command: null,
     };
   }
 
@@ -918,6 +1032,9 @@ export class CliRuntimeAdapter implements RuntimeAdapter {
         'profile-drift',
         // Helena asks the runner for the plan limits of this runtime's logins.
         ...(limitsCapable(this.runtime) ? ['limits'] : []),
+        // The runtime's own login, shown in Zugänge; signed out only where it is the agent's.
+        'login',
+        ...(this.home ? ['logout'] : []),
       ],
       ...(inventory && { inventory }),
       ...(this.profile && { profile: this.profile }),
@@ -925,6 +1042,8 @@ export class CliRuntimeAdapter implements RuntimeAdapter {
       issues,
       // Where Codex runs the model's commands: Helena shows it on the agent.
       ...(this.runtime === 'codex' && { sandbox: this.sandbox() }),
+      // The runtime's own login for Zugänge: the account's facts, never the login.
+      account: this.accountView(),
       // An owner's actions on what an agent learned are Hermes'; here each is done at once.
       actions: (snapshot.actions ?? []).map((action) => ({
         id: action.id,

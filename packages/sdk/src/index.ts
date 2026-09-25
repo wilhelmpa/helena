@@ -303,6 +303,7 @@ export {
   type UsageLimitWindow,
   type UsageLimitWindowKind,
 } from './usage-limits';
+export { normalizeRuntimeAccount, type RuntimeAccount } from './runtime-account';
 export {
   normalizeRuntimeLoginReport,
   runtimeLoginCondition,

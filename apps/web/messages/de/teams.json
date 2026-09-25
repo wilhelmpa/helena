@@ -731,12 +731,16 @@
       },
       "copyCommand": "Befehl kopieren",
       "copied": "Kopiert",
-      "openAccess": "Zugänge öffnen",
       "sandbox": "Sandbox: {mode}",
       "sandboxModes": {
         "workspace-write": "Arbeitsordner",
         "read-only": "nur lesen",
         "danger-full-access": "Isolation"
+      },
+      "login": {
+        "title": "Anmeldung",
+        "signedInAs": "Angemeldet als {account}",
+        "view": "In Zugänge ansehen"
       }
     },
     "runModel": {
