@@ -12,11 +12,13 @@ import {
 // The audit runs hourly on the host; a minute is plenty for a page left open.
 const STATUS_POLL_MS = 60_000;
 
-export function useSecurityStatusQuery() {
+// `enabled` false for a reader who is not the owner (Start asks for everyone).
+export function useSecurityStatusQuery(enabled = true) {
   return useQuery({
     queryKey: qk.securityStatus,
     queryFn: () => getSecurityStatus(),
     refetchInterval: STATUS_POLL_MS,
+    enabled,
   });
 }
 

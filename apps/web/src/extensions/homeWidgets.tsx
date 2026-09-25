@@ -22,6 +22,7 @@ import ProjectsSection from '@/features/home/dashboard/sections/ProjectsSection'
 import { BUILTIN_NEEDS_YOU_SOURCES } from '@/features/home/dashboard/sources';
 import UpdatesTile from '@/features/update-center/components/UpdatesTile';
 import { useServerEntries } from '@/features/server/components/serverNeedsYou';
+import { useSecurityEntries } from '@/features/security-status/securityNeedsYou';
 
 // Start's built-in widgets and "Braucht dich" sources (docs/helena-decisions/dashboard.md),
 // registered as the internal plugin `helena.home` when Start loads this module. A feature
@@ -110,6 +111,8 @@ for (const widget of BUILTINS)
 const SOURCES = [
   ...BUILTIN_NEEDS_YOU_SOURCES,
   { id: 'server', order: 15, useEntries: useServerEntries },
+  // Severe failed checks of the host audit (hub/hardening).
+  { id: 'security', order: 17, useEntries: useSecurityEntries },
 ];
 
 for (const source of SOURCES)

@@ -53,7 +53,8 @@
     "serviceDown": "{service} injoignable",
     "relogin": "Reconnecter {provider}",
     "rejected": "refusée par le fournisseur",
-    "ranOut": "expirée, rien ne la renouvelle"
+    "ranOut": "expirée, rien ne la renouvelle",
+    "securityCheck": "Contrôle de sécurité échoué"
   },
   "agents": {
     "empty": "Aucun agent ne travaille en ce moment.",

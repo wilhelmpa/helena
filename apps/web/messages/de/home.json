@@ -53,7 +53,8 @@
     "serviceDown": "{service} nicht erreichbar",
     "relogin": "{provider} neu anmelden",
     "rejected": "vom Anbieter abgelehnt",
-    "ranOut": "abgelaufen, wird nicht erneuert"
+    "ranOut": "abgelaufen, wird nicht erneuert",
+    "securityCheck": "Sicherheitsprüfung fehlgeschlagen"
   },
   "agents": {
     "empty": "Gerade arbeitet kein Agent.",

@@ -53,7 +53,8 @@
     "serviceDown": "تعذّر الوصول إلى {service}",
     "relogin": "سجّل الدخول مجددًا إلى {provider}",
     "rejected": "رفضه المزوّد",
-    "ranOut": "انتهى ولا شيء يجدده"
+    "ranOut": "انتهى ولا شيء يجدده",
+    "securityCheck": "فشل فحص الأمان"
   },
   "agents": {
     "empty": "لا يعمل أي وكيل الآن.",

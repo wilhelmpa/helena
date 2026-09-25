@@ -117,7 +117,7 @@ becomes `plugin:<pluginId>:<id>`.
 ```ts
 interface NeedsYouSource {
   id: string;
-  order: number;   // within a kind; built-ins: system 10, approvals 20, workflow-steps 30, proposals 40, failures 50
+  order: number;   // within a kind; built-ins: system 10, server 15, security 17, approvals 20, workflow-steps 30, proposals 40, failures 50
   useEntries(ctx: { owner: boolean }): { entries: NeedsYouEntry[]; isPending: boolean };  // a hook
 }
 interface NeedsYouEntry {
@@ -130,8 +130,10 @@ interface NeedsYouEntry {
 }
 ```
 
-- Only **red** things are a `problem`: a service down, a rejected or expired login, a degraded
-  RAID, a failing disk, a failed backup or check, the thermal guard active.
+- Only **red** things are a `problem`: a service down, a login to sign in again, a degraded
+  RAID, a failing disk, a failed backup or check, the thermal guard active
+  (`features/server/components/serverNeedsYou.ts`), and a failed critical or high check of
+  the host audit (`features/security-status/securityNeedsYou.ts`).
 - Amber warnings stay in the System tile and its dialog.
 - The list is read once when "Braucht dich" mounts and every hook is called in that fixed
   order. So a source registers when `extensions/homeWidgets` loads, never later.
@@ -204,7 +206,7 @@ export default function RecentNotesSection() {
 homeWidget({ id: 'recent-notes', kind: 'section', group: 'work', order: 45, rows: 5, component: RecentNotesSection, hiddenByDefault: true }),
 ```
 
-A red problem of a feature (hub/server-admin, for example) is a source, not a card:
+A red problem of a feature is a source, not a card (the real one: `features/server/components/serverNeedsYou.ts`):
 
 ```ts
 needsYouSources.register({

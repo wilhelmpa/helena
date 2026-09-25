@@ -53,7 +53,8 @@
     "serviceDown": "{service} inacessível",
     "relogin": "Entrar novamente em {provider}",
     "rejected": "recusado pelo provedor",
-    "ranOut": "expirou, nada o renova"
+    "ranOut": "expirou, nada o renova",
+    "securityCheck": "Verificação de segurança falhou"
   },
   "agents": {
     "empty": "Nenhum agente trabalhando agora.",

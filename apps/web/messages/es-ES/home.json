@@ -53,7 +53,8 @@
     "serviceDown": "{service} no responde",
     "relogin": "Volver a iniciar sesión en {provider}",
     "rejected": "rechazado por el proveedor",
-    "ranOut": "caducado, nadie lo renueva"
+    "ranOut": "caducado, nadie lo renueva",
+    "securityCheck": "Comprobación de seguridad fallida"
   },
   "agents": {
     "empty": "Ahora no trabaja ningún agente.",

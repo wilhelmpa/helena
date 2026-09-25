@@ -53,7 +53,8 @@
     "serviceDown": "{service} tidak dapat dijangkau",
     "relogin": "Masuk lagi ke {provider}",
     "rejected": "ditolak penyedia",
-    "ranOut": "kedaluwarsa, tidak ada yang memperbarui"
+    "ranOut": "kedaluwarsa, tidak ada yang memperbarui",
+    "securityCheck": "Pemeriksaan keamanan gagal"
   },
   "agents": {
     "empty": "Saat ini tidak ada agen yang bekerja.",
