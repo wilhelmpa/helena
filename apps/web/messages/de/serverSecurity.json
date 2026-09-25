@@ -67,6 +67,7 @@
     "sys_encryption": "Festplatten verschlüsselt",
     "files_backups": "Datenbank-Sicherungen nur für ihren Dienst lesbar",
     "files_secrets": "Geheimnisse und Schlüssel für andere nicht lesbar",
+    "files_agent_code": "Agenten können ihren Laufzeit-Code lesen",
     "svc_exposure": "Helena-Dienste von systemd abgeschottet",
     "svc_tools_loopback": "Werkzeuge nur über Loopback erreichbar"
   },
@@ -180,6 +181,10 @@
     },
     "files_secrets": {
       "fail": "Geheimnisse oder Schlüssel sind für andere lesbar."
+    },
+    "files_agent_code": {
+      "fail": "{count} Dateien in {path} kann nur ihr Besitzer lesen: Agenten, die sie laden, starten nicht.",
+      "warn": "{count} Bytecode-Caches kann nur ihr Besitzer lesen: Agenten starten langsamer."
     },
     "svc_exposure": {
       "warn": "Helena-Dienste sind von systemd schwächer abgeschottet als vorgesehen."

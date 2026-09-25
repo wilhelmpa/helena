@@ -67,6 +67,7 @@
     "sys_encryption": "Disk terenkripsi",
     "files_backups": "Cadangan basis data hanya terbaca oleh layanannya",
     "files_secrets": "Rahasia dan kunci tidak terbaca oleh pihak lain",
+    "files_agent_code": "Agen dapat membaca kode runtime mereka",
     "svc_exposure": "Layanan Helena diisolasi oleh systemd",
     "svc_tools_loopback": "Alat hanya terjangkau lewat loopback"
   },
@@ -180,6 +181,10 @@
     },
     "files_secrets": {
       "fail": "Rahasia atau kunci dapat dibaca oleh pihak lain."
+    },
+    "files_agent_code": {
+      "fail": "{count} berkas di {path} hanya dapat dibaca pemiliknya: agen yang memuatnya gagal berjalan.",
+      "warn": "{count} cache bytecode hanya dapat dibaca pemiliknya: agen berjalan lebih lambat."
     },
     "svc_exposure": {
       "warn": "systemd mengisolasi layanan Helena lebih lemah dari yang direncanakan."

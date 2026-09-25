@@ -67,6 +67,7 @@
     "sys_encryption": "Discos criptografados",
     "files_backups": "Backups do banco legíveis só pelo seu serviço",
     "files_secrets": "Segredos e chaves não legíveis por outros",
+    "files_agent_code": "Os agentes conseguem ler o código de execução",
     "svc_exposure": "Serviços da Helena isolados pelo systemd",
     "svc_tools_loopback": "Ferramentas acessíveis só por loopback"
   },
@@ -180,6 +181,10 @@
     },
     "files_secrets": {
       "fail": "Segredos ou chaves podem ser lidos por outros."
+    },
+    "files_agent_code": {
+      "fail": "{count} arquivos em {path} só podem ser lidos pelo dono: os agentes que os carregam não iniciam.",
+      "warn": "{count} caches de bytecode só podem ser lidos pelo dono: os agentes iniciam mais devagar."
     },
     "svc_exposure": {
       "warn": "O systemd isola os serviços da Helena menos do que o previsto."

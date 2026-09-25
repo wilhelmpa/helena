@@ -53,6 +53,7 @@ TUNNEL_USER=${HELENA_TUNNEL_USER:-helena-tunnel}
 TUNNEL_PORT=${HELENA_TUNNEL_PORT:-8090}
 PLAN_BACKUPS=${HELENA_PLAN_BACKUPS:-/var/lib/volition/plan/backups}
 SECRET_DIRS=${HELENA_SECRET_DIRS:-/etc/volition /etc/helena}
+ISOLATION_LIB=${HELENA_ISOLATION_LIB:-/usr/local/lib/volition-isolation}
 API_UNITS=${HELENA_API_UNITS:-volition-plan-api volition-plan-web volition-plan-worker}
 TUNNEL_UNIT=${HELENA_TUNNEL_UNIT:-helena-cloudflared}
 NGINX_TUNNEL_SITE=${HELENA_NGINX_TUNNEL_SITE:-/etc/nginx/sites-enabled/helena-tunnel.conf}
@@ -549,6 +550,41 @@ if [[ $is_root -eq 1 ]]; then
 else
   need_root files.backups files high; need_root files.secrets files high
 fi
+
+# files.agent_code (2026-09-26): isolated agents run Hermes as their project users from code the
+# units bind read-only (isolation launcher.json sharedCode: the venv, its Python, its tools). A
+# bind keeps the modes, so a file there only its owner reads fails every agent that imports it:
+# on 2026-09-25 the anthropic SDK's docstring_parser (root 0600) stopped every agent on a Claude
+# model at "credentials or agent init failed". Bytecode caches only its owner reads cost start
+# time, not the start. isolation.sh sync (every deploy) opens the trees again.
+check_agent_code() {
+  local modes=$ISOLATION_LIB/runtime_modes.py report sources bytecode tree
+  if [[ ! -f $modes ]]; then
+    record files.agent_code files high skip "agent isolation not installed"
+    return
+  fi
+  report=$(python3 -I "$modes" check --config "$ISOLATION_LIB/launcher.json" --json 2>/dev/null) || true
+  read -r sources bytecode tree < <(python3 -I -c '
+import json, sys
+try:
+    trees = json.loads(sys.stdin.read())["trees"]
+    print(sum(t["sources"] for t in trees), sum(t["unreadable"] - t["sources"] for t in trees),
+          next((t["path"] for t in trees if t["sources"]), "-"))
+except Exception:
+    print("? ? -")' <<<"$report")
+  if [[ $sources == "?" ]]; then
+    record files.agent_code files high skip "runtime_modes.py gave no report"
+  elif ((sources > 0)); then
+    record files.agent_code files high fail "$sources file(s) in $tree only their owner reads (repair: isolation.sh sync)" \
+      "count=$sources" "path=$tree"
+  elif ((bytecode > 0)); then
+    record files.agent_code files high warn "$bytecode bytecode cache entries only their owner reads (repair: isolation.sh sync)" \
+      "count=$bytecode"
+  else
+    record files.agent_code files high pass "every agent reads the runtime code it runs"
+  fi
+}
+if [[ $is_root -eq 1 ]]; then check_agent_code; else need_root files.agent_code files high; fi
 
 # ── Services ───────────────────────────────────────────────────────────────────
 worst=
