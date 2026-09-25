@@ -57,7 +57,7 @@ async function launch({ secure }) {
     '--no-first-run',
     '--no-default-browser-check',
     '--lang=de-DE',
-    '--window-size=1280,900',
+    `--window-size=${args.window ?? '1280,900'}`,
     '--use-fake-ui-for-media-stream',
     '--use-fake-device-for-media-stream',
     `--use-file-for-fake-audio-capture=${WAV}`,
