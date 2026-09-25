@@ -163,7 +163,11 @@ PY
   python3 "$work/auth.py" 18300 & pids+=($!)
   nginx_conf "$work/e2e" "$sock" 18300 18447 18091
   /usr/sbin/nginx -p "$work/e2e" -c "$work/e2e/nginx.conf" 2>"$work/e2e/start.err" & pids+=($!)
-  for _ in $(seq 1 30); do [[ -S $sock ]] && curl -sk -o /dev/null https://127.0.0.1:18447/.client/manifest.json && break; sleep 0.3; done
+  for _ in $(seq 1 50); do
+    [[ -S $sock ]] && curl -s -o /dev/null http://127.0.0.1:18300/ \
+      && curl -sk -o /dev/null https://127.0.0.1:18447/.client/manifest.json && break
+    sleep 0.2
+  done
   base=https://helena-home.volition.one:18447
   r=(-sk --resolve helena-home.volition.one:18447:127.0.0.1 -m 5)
   code() { curl "${r[@]}" -o /dev/null -w '%{http_code}' "$@"; }
