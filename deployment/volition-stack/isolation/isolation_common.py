@@ -271,14 +271,15 @@ def load_config(path: str, *, require_root: bool = True) -> Config:
 
 
 # Trees root opens to every reader (runtime_modes.py repair): never / or a top-level system
-# directory, and nothing below /etc, a login's home or the kernel's file systems.
-_SHARED_CODE_REFUSED = ('/', '/etc', '/root', '/home', '/usr', '/var', '/var/lib', '/srv', '/opt', '/run', '/tmp')
+# directory, and nothing below /etc, /boot or the kernel's file systems.
+_SHARED_CODE_REFUSED = ('/', '/etc', '/root', '/home', '/usr', '/var', '/var/lib', '/srv', '/opt', '/run', '/tmp',
+                        '/boot')
 
 
 def _shared_code(value: Any) -> tuple[str, ...]:
     paths = tuple(_absolute(p, 'sharedCode') for p in _strings(value, 'sharedCode'))
     for path in paths:
-        if path in _SHARED_CODE_REFUSED or path.startswith(('/etc/', '/root/', '/home/', '/proc/', '/sys/', '/dev/')):
+        if path in _SHARED_CODE_REFUSED or path.startswith(('/etc/', '/boot/', '/proc/', '/sys/', '/dev/')):
             raise IsolationError('config', f'sharedCode may not name {path}')
     return paths
 

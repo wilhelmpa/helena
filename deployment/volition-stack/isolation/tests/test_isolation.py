@@ -757,7 +757,7 @@ class SharedCodeTest(unittest.TestCase):
             self.assertFalse(tree.endswith(('.env', 'config.yaml')), tree)
 
     def test_refuses_system_directories(self):
-        for tree in ('/', '/etc', '/etc/volition', '/home/wilhelmpa', '/var/lib', '/usr', 'relative'):
+        for tree in ('/', '/etc', '/etc/volition', '/home', '/var/lib', '/usr', '/proc/self', 'relative'):
             with self.subTest(tree=tree), self.assertRaises(common.IsolationError):
                 common.load_config(str(config_file(self.dir, sharedCode=[tree])), require_root=False)
 
