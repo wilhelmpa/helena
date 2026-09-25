@@ -87,7 +87,7 @@ export function AgentLoginItem({
   return (
     <li
       id={`login-agent-${login.agentId}`}
-      className={cn('flex items-start gap-3 px-4 py-3', highlighted && 'bg-accent')}
+      className={cn('flex items-start gap-3 px-4 py-3', highlighted && 'bg-accent/50')}
     >
       <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-sidebar-border bg-background text-muted-foreground">
         <CredentialKindIcon kind="runtime_login" className="size-4" />
