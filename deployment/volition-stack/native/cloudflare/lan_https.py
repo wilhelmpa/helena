@@ -148,9 +148,12 @@ def main() -> int:
         raise SystemExit('lan_https.py: invalid host')
 
     if args.rollback:
-        kept = sorted(BACKUPS.glob('lan-https-*/' + site.name))
+        # The newest backup of a site that had no HTTPS yet (a later apply that changed the
+        # HTTPS site itself keeps its own backup, which is not the way back).
+        kept = [path for path in sorted(BACKUPS.glob('lan-https-*/' + site.name))
+                if 'listen 443 ssl default_server;' not in path.read_text()]
         if not kept:
-            raise SystemExit('lan_https.py: no backup to roll back to')
+            raise SystemExit('lan_https.py: no backup of the site before HTTPS to roll back to')
         print(f'lan_https.py: restoring {site} from {kept[-1]} (HTTPS on the LAN off)')
         if args.apply:
             restore(kept[-1].parent, site)
@@ -165,9 +168,15 @@ def main() -> int:
     after = edit(before, args.host, certs)
     sys.stdout.writelines(difflib.unified_diff(
         before.splitlines(True), after.splitlines(True), str(site), str(site) + ' (new)'))
-    for path, text in ((MAPS, MAPS_TEXT), (TLS_SNIPPET, TLS)):
-        if not path.exists() or path.read_text() != text:
-            print(f'lan_https.py: {"new" if not path.exists() else "changed"} {path}')
+    stale = [path for path, text in ((MAPS, MAPS_TEXT), (TLS_SNIPPET, TLS))
+             if not path.exists() or path.read_text() != text]
+    for path in stale:
+        print(f'lan_https.py: {"new" if not path.exists() else "changed"} {path}')
+    if after == before and not stale:
+        # Nothing to write, and no backup: the newest backup must stay the site before HTTPS,
+        # which is what --rollback restores.
+        print(f'lan_https.py: https://{args.host} is already served on the LAN; nothing to change')
+        return 0
     if not args.apply:
         print('lan_https.py: dry run; add --apply to write')
         return 0

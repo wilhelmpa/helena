@@ -48,6 +48,7 @@ export default function HomeAutoConnect() {
       failedUntil: readNumber(localStorage, FAILED_KEY),
       stay: readNumber(sessionStorage, STAY_KEY) !== null,
       now: Date.now(),
+      pathname: window.location.pathname,
     };
     if (!homeUrl || !shouldProbe(context)) return;
     const controller = new AbortController();
@@ -57,7 +58,7 @@ export default function HomeAutoConnect() {
     void (async () => {
       try {
         const config = await getEdgeHome();
-        if (!config.autoConnect || config.homeUrl !== new URL(homeUrl).origin) return pause();
+        if (!config?.autoConnect || config.homeUrl !== new URL(homeUrl).origin) return pause();
         // A plain GET without credentials: no preflight, no cookie of either origin. Chrome
         // asks once whether this site may reach the local network. Away from home the name
         // leads nowhere (or to another network's device without Helena's certificate).

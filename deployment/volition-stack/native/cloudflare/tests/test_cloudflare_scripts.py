@@ -91,6 +91,87 @@ class LanHttpsEdit(unittest.TestCase):
         self.assertLess(text.index('~^80:127'), text.index('"~^80:"'))
 
 
+class LanHttpsApplyAndRollback(unittest.TestCase):
+    """main() against scratch paths, with nginx -t and the reload replaced."""
+
+    def setUp(self):
+        import tempfile
+        self.tmp = pathlib.Path(tempfile.mkdtemp())
+        self.site = self.tmp / 'volition.conf'
+        self.site.write_text(FIXTURE.read_text())
+        (self.tmp / 'live' / HOME).mkdir(parents=True)
+        (self.tmp / 'live' / HOME / 'fullchain.pem').write_text('cert')
+        self.saved = {name: getattr(lan_https, name)
+                      for name in ('MAPS', 'TLS_SNIPPET', 'BACKUPS', 'LETSENCRYPT',
+                                   'OLD_REDIRECT_SITE', 'OLD_REDIRECT_LINK')}
+        lan_https.MAPS = self.tmp / 'helena-lan-https.conf'
+        lan_https.TLS_SNIPPET = self.tmp / 'helena-tls.conf'
+        lan_https.BACKUPS = self.tmp / 'backup'
+        lan_https.LETSENCRYPT = self.tmp / 'live'
+        lan_https.OLD_REDIRECT_SITE = self.tmp / 'old-redirect.conf'
+        lan_https.OLD_REDIRECT_LINK = self.tmp / 'old-redirect-link.conf'
+        self.nginx_ok = True
+        self.calls = []
+
+        def run(cmd, check=False, **_kwargs):
+            self.calls.append(cmd)
+            code = 0 if (cmd[0] != 'nginx' or self.nginx_ok) else 1
+            if check and code:
+                raise RuntimeError(cmd)
+            return type('Done', (), {'returncode': code})()
+        self.saved_run = lan_https.subprocess.run
+        lan_https.subprocess.run = run
+
+    def tearDown(self):
+        import shutil
+        for name, value in self.saved.items():
+            setattr(lan_https, name, value)
+        lan_https.subprocess.run = self.saved_run
+        shutil.rmtree(self.tmp)
+
+    def main(self, *args):
+        import contextlib, io
+        argv = sys.argv
+        sys.argv = ['lan_https.py', '--site', str(self.site), *args]
+        out = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(out):
+                lan_https.main()
+        finally:
+            sys.argv = argv
+        return out.getvalue()
+
+    def backups(self):
+        return sorted((self.tmp / 'backup').glob('lan-https-*'))
+
+    def test_dry_run_writes_nothing(self):
+        out = self.main()
+        self.assertIn('dry run', out)
+        self.assertEqual(self.site.read_text(), FIXTURE.read_text())
+        self.assertFalse(lan_https.MAPS.exists())
+
+    def test_apply_then_nothing_to_change_then_rollback(self):
+        self.main('--apply')
+        self.assertIn('listen 443 ssl default_server;', self.site.read_text())
+        self.assertEqual(lan_https.MAPS.read_text(), lan_https.MAPS_TEXT)
+        self.assertEqual(len(self.backups()), 1)
+        self.assertIn(['systemctl', 'reload', 'nginx'], self.calls)
+        out = self.main('--apply')
+        self.assertIn('nothing to change', out)
+        self.assertEqual(len(self.backups()), 1, 'an unchanged run keeps no backup')
+        self.main('--apply', '--rollback')
+        self.assertEqual(self.site.read_text(), FIXTURE.read_text())
+        self.assertFalse(lan_https.MAPS.exists())
+
+    def test_a_refused_config_puts_the_old_files_back(self):
+        self.nginx_ok = False
+        with self.assertRaises(SystemExit):
+            self.main('--apply')
+        self.assertEqual(self.site.read_text(), FIXTURE.read_text())
+        self.assertFalse(lan_https.MAPS.exists())
+        self.assertNotIn(['systemctl', 'reload', 'nginx'], self.calls)
+
+
 class SwitchOrigin(unittest.TestCase):
     ENV = [
         'DATABASE_URL=postgres://example/unchanged\n',

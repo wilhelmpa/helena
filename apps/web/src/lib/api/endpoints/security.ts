@@ -1,4 +1,4 @@
-import { request } from '@/lib/api/core/client';
+import { API_URL, request } from '@/lib/api/core/client';
 
 // Administrator → Sicherheit: the host audit and the edge sign-in (Cloudflare Access).
 // Mirrors apps/api/src/modules/edge-access.
@@ -110,5 +110,18 @@ export const getSignInEvents = (method?: SignInEvent['method'], limit = 20) =>
     `/god/security/sign-ins?limit=${limit}${method ? `&method=${method}` : ''}`,
   );
 
-// Public: whether the app switches to the home network's origin by itself.
-export const getEdgeHome = () => request<EdgeHome>('/edge/home');
+// Public: whether the app switches to the home network's origin by itself. Asked in the
+// background of every page on the public name, so it never counts as a failed request of the
+// session (request() would sign out on a 401, e.g. from an expired edge login): no answer
+// means "stay".
+export async function getEdgeHome(): Promise<EdgeHome | null> {
+  try {
+    const response = await fetch(`${API_URL}/edge/home`, {
+      credentials: 'include',
+      cache: 'no-store',
+    });
+    return response.ok ? ((await response.json()) as EdgeHome) : null;
+  } catch {
+    return null;
+  }
+}

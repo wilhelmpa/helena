@@ -19,6 +19,9 @@ describe('at home, the fast way', () => {
     assert.equal(shouldProbe({ ...base, stay: true }), false);
     assert.equal(shouldProbe({ ...base, failedUntil: now + 1 }), false);
     assert.equal(shouldProbe({ ...base, failedUntil: now - 1 }), true);
+    // Public share pages are for other people.
+    assert.equal(shouldProbe({ ...base, pathname: '/share/abc' }), false);
+    assert.equal(shouldProbe({ ...base, pathname: '/project/VOL' }), true);
   });
 
   it('asks the home origin’s own probe', () => {

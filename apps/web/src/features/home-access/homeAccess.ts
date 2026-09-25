@@ -21,11 +21,22 @@ export interface ProbeContext {
   failedUntil: number | null;
   stay: boolean;
   now: number;
+  // The page's path: a public share page is for other people, whose browsers must not be
+  // asked for local network access.
+  pathname?: string;
 }
 
 // Whether this page should ask the home origin at all.
-export function shouldProbe({ here, homeUrl, failedUntil, stay, now }: ProbeContext): boolean {
+export function shouldProbe({
+  here,
+  homeUrl,
+  failedUntil,
+  stay,
+  now,
+  pathname = '/',
+}: ProbeContext): boolean {
   if (!homeUrl || stay) return false;
+  if (pathname === '/share' || pathname.startsWith('/share/')) return false;
   let home: URL;
   try {
     home = new URL(homeUrl);
