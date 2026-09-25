@@ -13,6 +13,7 @@ import type { Listener, Speaker } from '../utils/voiceEngine';
 import { encodeWav16, isSilent } from '../utils/wav';
 import { startRecognitionEar } from './recognitionEar';
 import { MicrophoneError } from './recorder';
+import { createEarcon, type Earcon } from './earcon';
 import { stopSpeaking } from './speak';
 import { createBrowserSpeaker, createLocalSpeaker, type VoiceSpeaker } from './speakers';
 import { DEFAULT_PAUSE_MS } from '../utils/voiceSettings';
@@ -71,6 +72,9 @@ interface Utterance {
 
 // If a sent message is not taken up (the chat refused it) the conversation does not wait on.
 const SEND_TIMEOUT_MS = 10_000;
+// When an answer has not started this long after a turn was sent, a soft chime says "heard you,
+// working on it" (the agent's runtime takes seconds; the voice reply is quicker than this).
+const WAITING_CHIME_MS = 1_600;
 // A finished-looking last sentence of a streaming answer is read once the text has been quiet
 // this long (speechChunks.settledTail): the runner sends text every 150 ms while it comes.
 const TAIL_QUIET_MS = 300;
@@ -99,6 +103,8 @@ export class ConversationController {
   // A new conversation (or its end) makes everything still on its way from the last one stale.
   private generation = 0;
   private tailTimer = 0;
+  private chimeTimer = 0;
+  private earcon: Earcon | null = null;
   // How long a pause ends a turn, and how fast the browser's voice reads (the owner's settings).
   private pauseMs = DEFAULT_PAUSE_MS;
   private speed = 1;
@@ -143,6 +149,7 @@ export class ConversationController {
     this.utterances = [];
     this.voice = this.createVoice(this.speaker);
     this.voice?.unlock();
+    this.earcon = createEarcon();
     this.dispatch({ type: 'start' });
     void this.openEar().then((opened) => {
       if (opened) this.dispatch({ type: 'ready' });
@@ -195,6 +202,11 @@ export class ConversationController {
         return;
       case 'send':
         if (this.marks && !this.marks.sentAt) this.marks.sentAt = performance.now();
+        window.clearTimeout(this.chimeTimer);
+        this.chimeTimer = window.setTimeout(() => {
+          if (this.state.awaitingAnswer && !this.state.speaking && !this.state.userSpeaking)
+            this.earcon?.play();
+        }, WAITING_CHIME_MS);
         this.sawBusy = this.busy;
         window.clearTimeout(this.sendTimer);
         this.sendTimer = window.setTimeout(() => {
@@ -217,6 +229,9 @@ export class ConversationController {
         this.generation += 1;
         window.clearTimeout(this.sendTimer);
         window.clearTimeout(this.tailTimer);
+        window.clearTimeout(this.chimeTimer);
+        this.earcon?.close();
+        this.earcon = null;
         this.marks = null;
         void this.ear?.destroy();
         this.ear = null;
@@ -353,8 +368,10 @@ export class ConversationController {
     if (this.reading?.id !== message.id)
       this.reading = { id: message.id, offset: 0, dropped: false };
     if (this.reading.dropped) return;
-    if (message.text.trim() && this.marks?.sentAt && !this.marks.answerAt)
+    if (message.text.trim() && this.marks?.sentAt && !this.marks.answerAt) {
       this.marks.answerAt = performance.now();
+      window.clearTimeout(this.chimeTimer);
+    }
     const streaming = this.busy && index === this.messages.length - 1;
     this.handOver(message.text, !streaming);
     // A last sentence that looks finished is read after a short quiet, not when the answer is
