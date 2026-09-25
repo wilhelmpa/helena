@@ -200,7 +200,10 @@
       "title": "Voz",
       "hint": "La voz local con la que Helena responde en una conversación (IA local → «Leer en voz alta»).",
       "default": "Voz predeterminada del servidor",
-      "none": "Aún no hay voz local; hasta entonces lee el navegador."
+      "none": "Aún no hay voz local; hasta entonces lee el navegador.",
+      "preview": "Escuchar",
+      "sample": "Hola, soy Helena. Así sueno en una conversación: dime lo que necesitas.",
+      "previewFailed": "No se pudo reproducir la voz."
     },
     "model": {
       "title": "Modelo para conversaciones",

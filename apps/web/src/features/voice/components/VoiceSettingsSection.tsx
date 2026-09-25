@@ -15,7 +15,10 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import type { VoiceSettings, VoiceSettingsPatch } from '@/lib/api/endpoints/voice';
-import { useUpdateVoiceSettings, useVoiceSettings } from '../hooks/useVoiceSettings';
+import { speak } from '../browser/speak';
+import { createLocalSpeaker } from '../browser/speakers';
+import { useVoiceSettings, useUpdateVoiceSettings } from '../hooks/useVoiceSettings';
+import { useVoiceStatus } from '../hooks/useVoice';
 
 // Lokale KI → Sprache (docs/helena-decisions/voice-2.md §5): the owner's voice settings — how
 // long a pause ends a turn, the words the transcription should know, the local voice, and the
@@ -78,6 +81,37 @@ function WordsRow({
         {t('words.save')}
       </Button>
     </Row>
+  );
+}
+
+// Plays a sample sentence in the voice the conversation would use now: Helena's local voice
+// (Lokale KI → Vorlesen) where it runs, otherwise the browser's.
+function PreviewButton() {
+  const t = useTranslations('localAi.voice');
+  const status = useVoiceStatus();
+  const [playing, setPlaying] = useState(false);
+  const play = () => {
+    const sample = t('voice.sample');
+    setPlaying(true);
+    if (!status.data?.speech.local) {
+      if (!speak(sample, () => setPlaying(false))) setPlaying(false);
+      return;
+    }
+    const speaker = createLocalSpeaker({
+      onStart: () => {},
+      onIdle: () => {
+        setPlaying(false);
+        speaker.destroy();
+      },
+      onError: () => toast.error(t('voice.previewFailed')),
+    });
+    speaker.unlock();
+    speaker.enqueue(sample);
+  };
+  return (
+    <Button variant="outline" size="sm" className="self-end" disabled={playing} onClick={play}>
+      {t('voice.preview')}
+    </Button>
   );
 }
 
@@ -160,6 +194,7 @@ function VoiceSettingsRows({ settings }: { settings: VoiceSettings }) {
         {settings.voices.length === 0 && (
           <p className="text-xs text-muted-foreground">{t('voice.none')}</p>
         )}
+        <PreviewButton />
       </Row>
 
       <Row title={t('speed.title')} hint={t('speed.hint')}>

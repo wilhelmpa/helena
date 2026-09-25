@@ -200,7 +200,10 @@
       "title": "Voice",
       "hint": "The local voice Helena answers with in a conversation (Local AI → “Read aloud”).",
       "default": "The server's default voice",
-      "none": "No local voice set up yet – until then the browser reads aloud."
+      "none": "No local voice set up yet – until then the browser reads aloud.",
+      "preview": "Listen",
+      "sample": "Hi, I am Helena. This is how I sound in a conversation – just tell me what you need.",
+      "previewFailed": "The voice could not be played."
     },
     "model": {
       "title": "Model for conversations",

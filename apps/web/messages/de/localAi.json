@@ -200,7 +200,10 @@
       "title": "Stimme",
       "hint": "Die lokale Stimme, mit der Helena im Gespräch antwortet (Lokale KI → „Vorlesen“).",
       "default": "Standardstimme des Servers",
-      "none": "Noch keine lokale Stimme eingerichtet – bis dahin liest der Browser vor."
+      "none": "Noch keine lokale Stimme eingerichtet – bis dahin liest der Browser vor.",
+      "preview": "Probehören",
+      "sample": "Hallo, ich bin Helena. So klinge ich im Gespräch – sag einfach, was du brauchst.",
+      "previewFailed": "Die Stimme konnte nicht abgespielt werden."
     },
     "model": {
       "title": "Modell für Gespräche",

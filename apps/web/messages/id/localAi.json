@@ -200,7 +200,10 @@
       "title": "Suara",
       "hint": "Suara lokal yang dipakai Helena untuk menjawab dalam percakapan (AI lokal → “Bacakan”).",
       "default": "Suara bawaan server",
-      "none": "Belum ada suara lokal – sampai saat itu browser yang membacakan."
+      "none": "Belum ada suara lokal – sampai saat itu browser yang membacakan.",
+      "preview": "Dengarkan",
+      "sample": "Halo, aku Helena. Beginilah suaraku dalam percakapan – bilang saja apa yang kamu butuhkan.",
+      "previewFailed": "Suara tidak dapat diputar."
     },
     "model": {
       "title": "Model untuk percakapan",

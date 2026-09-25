@@ -1,6 +1,8 @@
 # Decision: voice in the chat (dictation and conversation mode)
 
-Status: accepted and built on `hub/voice`. Date: 2026-09-25. Owner request (2026-09-25): "Sprache
+Status: accepted and built on `hub/voice`. Date: 2026-09-25. **Continued in `voice-2.md`
+(2026-09-26):** German Whisper and a German voice on the GPU, the transcript judged, Helena's
+voice reply, the timings — where the two disagree, voice-2.md is newer. Owner request (2026-09-25): "Sprache
 muss im Chat auch funktionieren und Konversation." Builds on Lokale KI
 (`local-ai-platform.md`) and the chat standards (`chat-ui.md` §5, which this replaces for voice).
 

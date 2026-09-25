@@ -200,7 +200,10 @@
       "title": "Voix",
       "hint": "La voix locale avec laquelle Helena répond en conversation (IA locale → « Lecture à voix haute »).",
       "default": "Voix par défaut du serveur",
-      "none": "Pas encore de voix locale – en attendant, le navigateur lit."
+      "none": "Pas encore de voix locale – en attendant, le navigateur lit.",
+      "preview": "Écouter",
+      "sample": "Bonjour, je suis Helena. Voici ma voix en conversation – dis-moi simplement ce dont tu as besoin.",
+      "previewFailed": "La voix n’a pas pu être lue."
     },
     "model": {
       "title": "Modèle pour les conversations",
