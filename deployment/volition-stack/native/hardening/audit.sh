@@ -555,8 +555,9 @@ fi
 # units bind read-only (isolation launcher.json sharedCode: the venv, its Python, its tools). A
 # bind keeps the modes, so a file there only its owner reads fails every agent that imports it:
 # on 2026-09-25 the anthropic SDK's docstring_parser (root 0600) stopped every agent on a Claude
-# model at "credentials or agent init failed". Bytecode caches only its owner reads cost start
-# time, not the start. isolation.sh sync (every deploy) opens the trees again.
+# model at "credentials or agent init failed". A bytecode cache only its owner reads is harmless
+# (Python compiles the source in memory; measured: no slower start), so it is only named.
+# isolation.sh sync (every deploy) opens the trees again.
 check_agent_code() {
   local modes=$ISOLATION_LIB/runtime_modes.py report sources bytecode tree
   if [[ ! -f $modes ]]; then
@@ -577,11 +578,8 @@ except Exception:
   elif ((sources > 0)); then
     record files.agent_code files high fail "$sources file(s) in $tree only their owner reads (repair: isolation.sh sync)" \
       "count=$sources" "path=$tree"
-  elif ((bytecode > 0)); then
-    record files.agent_code files high warn "$bytecode bytecode cache entries only their owner reads (repair: isolation.sh sync)" \
-      "count=$bytecode"
   else
-    record files.agent_code files high pass "every agent reads the runtime code it runs"
+    record files.agent_code files high pass "every agent reads the runtime code it runs$( ((bytecode)) && echo " ($bytecode bytecode cache entries only their owner reads: harmless)")"
   fi
 }
 if [[ $is_root -eq 1 ]]; then check_agent_code; else need_root files.agent_code files high; fi

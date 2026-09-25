@@ -183,8 +183,7 @@
       "fail": "Des secrets ou des clés sont lisibles par d’autres."
     },
     "files_agent_code": {
-      "fail": "{count} fichiers dans {path} ne sont lisibles que par leur propriétaire : les agents qui les chargent ne démarrent pas.",
-      "warn": "{count} caches de bytecode ne sont lisibles que par leur propriétaire : les agents démarrent plus lentement."
+      "fail": "{count} fichiers dans {path} ne sont lisibles que par leur propriétaire : les agents qui les chargent ne démarrent pas."
     },
     "svc_exposure": {
       "warn": "systemd isole les services de Helena moins que prévu."

@@ -183,8 +183,7 @@
       "fail": "Secrets or keys can be read by others."
     },
     "files_agent_code": {
-      "fail": "{count} files in {path} can only be read by their owner: agents that load them fail to start.",
-      "warn": "{count} bytecode caches can only be read by their owner: agents start more slowly."
+      "fail": "{count} files in {path} can only be read by their owner: agents that load them fail to start."
     },
     "svc_exposure": {
       "warn": "Helena's services are less isolated by systemd than intended."

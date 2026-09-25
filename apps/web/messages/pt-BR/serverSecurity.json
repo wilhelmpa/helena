@@ -183,8 +183,7 @@
       "fail": "Segredos ou chaves podem ser lidos por outros."
     },
     "files_agent_code": {
-      "fail": "{count} arquivos em {path} só podem ser lidos pelo dono: os agentes que os carregam não iniciam.",
-      "warn": "{count} caches de bytecode só podem ser lidos pelo dono: os agentes iniciam mais devagar."
+      "fail": "{count} arquivos em {path} só podem ser lidos pelo dono: os agentes que os carregam não iniciam."
     },
     "svc_exposure": {
       "warn": "O systemd isola os serviços da Helena menos do que o previsto."

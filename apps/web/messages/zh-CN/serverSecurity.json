@@ -183,8 +183,7 @@
       "fail": "密钥或机密可被他人读取。"
     },
     "files_agent_code": {
-      "fail": "{path} 中有 {count} 个文件只有所有者可读：加载它们的智能体无法启动。",
-      "warn": "有 {count} 个字节码缓存只有所有者可读：智能体启动变慢。"
+      "fail": "{path} 中有 {count} 个文件只有所有者可读：加载它们的智能体无法启动。"
     },
     "svc_exposure": {
       "warn": "systemd 对 Helena 服务的隔离弱于预期。"

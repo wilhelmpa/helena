@@ -183,8 +183,7 @@
       "fail": "Rahasia atau kunci dapat dibaca oleh pihak lain."
     },
     "files_agent_code": {
-      "fail": "{count} berkas di {path} hanya dapat dibaca pemiliknya: agen yang memuatnya gagal berjalan.",
-      "warn": "{count} cache bytecode hanya dapat dibaca pemiliknya: agen berjalan lebih lambat."
+      "fail": "{count} berkas di {path} hanya dapat dibaca pemiliknya: agen yang memuatnya gagal berjalan."
     },
     "svc_exposure": {
       "warn": "systemd mengisolasi layanan Helena lebih lemah dari yang direncanakan."
