@@ -146,6 +146,10 @@
       "label": "Autopilot",
       "description": "Avec quelle autonomie agissent les agents de ce projet, et leurs budgets."
     },
+    "environment": {
+      "label": "Variables d’environnement",
+      "description": "Les variables des Identifiants que les agents de ce projet reçoivent dans leurs exécutions."
+    },
     "browser": {
       "label": "Navigateur",
       "description": "Les domaines que le navigateur du projet peut ouvrir, le rythme de saisie de type humain et le délai du verrou."

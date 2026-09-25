@@ -109,6 +109,11 @@ def test_config(source: str) -> dict:
             'hermes', 'workspaces', 'vault', 'provisioning', 'secrets', 'project-browser',
             'launcher-state', 'proof', 'hermes-global')],
     })
+    # Sockets the production config marks optional (local AI's forwarder) and the test does not
+    # have: the launcher refuses an optional socket it has no path for (2026-09-25, the launcher
+    # restarted in a loop on "optionalSockets is invalid").
+    config['optionalSockets'] = [name for name in config.get('optionalSockets', [])
+                                 if name in config['sockets']]
     # The production target, which the MCP shim looks in; the test's own sources.
     config['browserGateway'] = {'root': RUN_GATEWAY, 'target': '/run/volition-agents/browser'}
     config['browser'] = {
@@ -532,6 +537,7 @@ def prove(args: argparse.Namespace) -> None:
         ('4', prove_4_no_foreign_files), ('5', prove_5_function), ('6', prove_6_launcher_refuses),
         ('7', prove_7_browser), ('M', prove_modes), ('P', prove_plan_socket), ('T', prove_terminal),
         ('G', prove_migration), ('U', prove_users), ('B', prove_browser_gateway),
+        ('E', prove_agent_env),
     ]
     for number, function in tests:
         if only and number not in only:
@@ -772,6 +778,14 @@ def prove_7_browser(report: Report) -> None:
 
     run_browser_proofs(report, sh, ROOT, load_state())
     run_browser_state_proofs(report, sh, ROOT)
+
+
+def prove_agent_env(report: Report) -> None:
+    """Delivered environment variables stay in the command, and a clone runs as the project user."""
+    from proof_agent_env import run_clone_proofs, run_env_proofs  # noqa: PLC0415
+
+    run_env_proofs(report, probe, client, sh, ROOT, ISO)
+    run_clone_proofs(report, probe, client, sh, ROOT)
 
 
 def prove_modes(report: Report) -> None:

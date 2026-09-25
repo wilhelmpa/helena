@@ -5,6 +5,7 @@ import { agentMcpSecrets } from '../mcp-servers/service';
 import { RuntimeLoginResponse, workRefQuery } from '../credentials/model';
 import { claimedWork, recordMcpSecretDelivery, workRefOf } from '../credentials/delivery';
 import { runtimeLoginOf } from '../credentials/runtime-login';
+import { maskForTeam } from '../credentials/env';
 import {
   McpSecretsResponse,
   RuntimePolicySnapshotResponse,
@@ -71,9 +72,15 @@ export const agentRuntimePolicyRoutes = new Elysia({
       },
     },
   )
-  .post('/agent-runtime/status', ({ agent, body }) => reportRuntimeState(agent.id, body), {
-    runnerAgent: true,
-    body: RuntimeStateBody,
-    response: { 200: RuntimeStateResponse, ...errors(401, 403, 413) },
-    detail: { summary: "Report the calling agent's runtime adapter status" },
-  });
+  // What the agent learned (memory proposals, skills) is text it wrote: a delivered secret
+  // in it is masked before Helena stores or shows it.
+  .post(
+    '/agent-runtime/status',
+    async ({ agent, body }) => reportRuntimeState(agent.id, await maskForTeam(agent.teamId, body)),
+    {
+      runnerAgent: true,
+      body: RuntimeStateBody,
+      response: { 200: RuntimeStateResponse, ...errors(401, 403, 413) },
+      detail: { summary: "Report the calling agent's runtime adapter status" },
+    },
+  );

@@ -133,6 +133,36 @@ class ConfigTest(unittest.TestCase):
                 common.load_config(str(config_file(self.dir, **overrides)), require_root=False)
 
 
+class ProofConfigTest(unittest.TestCase):
+    """The launcher.json the proof harness writes (proof/harness.py test_config) is read by the
+    launcher's own validation. It is built from the shipped file, so a field added there must
+    stay valid after the harness puts its test paths in, or the test launcher exits at start."""
+
+    def setUp(self):
+        self.dir = Path(tempfile.mkdtemp())
+
+    def tearDown(self):
+        shutil.rmtree(self.dir)
+
+    def test_the_harness_config_passes_the_launchers_validation(self):
+        sys.path.insert(0, str(ISOLATION / 'proof'))
+        try:
+            import harness  # noqa: PLC0415
+        finally:
+            sys.path.remove(str(ISOLATION / 'proof'))
+        path = self.dir / 'launcher.json'
+        path.write_text(json.dumps(harness.test_config(str(ISOLATION))))
+        config = common.load_config(str(path), require_root=False)
+        self.assertEqual(config.user_prefix, 'vpt-')
+        self.assertEqual(config.callers, ('vpt-hermes',))
+        self.assertTrue(set(config.optional_sockets) <= set(config.sockets))
+        self.assertEqual(set(config.forwards), set(config.sockets))
+        for runtime in ('probe', 'hermes', 'claude', 'codex', 'profile-helper'):
+            self.assertIn(runtime, config.runtimes)
+        for path_ in (config.workspace_root, config.profiles_root, config.registry_root):
+            self.assertTrue(path_.startswith(harness.ROOT), path_)
+
+
 class AclTest(unittest.TestCase):
     def test_round_trip_and_mask(self):
         base = common._base_entries(0o700)

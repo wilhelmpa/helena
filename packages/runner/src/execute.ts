@@ -1,4 +1,7 @@
 import { spawn } from 'node:child_process';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { StringDecoder } from 'node:string_decoder';
 import type { ContextUsage } from './agui';
 import { presetOf, type RunnerConfig } from './config';
@@ -36,6 +39,9 @@ export interface Task {
   hooks?: CommandHooks;
   // Helena's Autopilot level; absent on an older server.
   autopilotLevel?: number | null;
+  // The names of the environment variables Helena delivered for this work (their values are
+  // in `env`), which a runtime that filters its tool processes' environment lets through.
+  delivered?: string[];
 }
 
 export interface Outcome {
@@ -198,6 +204,7 @@ function spawnArgs(
   config: RunnerConfig,
   preset: CliCommand | undefined,
   task: Task,
+  present: string[] = [],
 ): [string, string[]] {
   if (!preset) return ['sh', ['-c', config.command ?? '']];
   return [
@@ -213,8 +220,38 @@ function spawnArgs(
       sandbox: task.hooks?.sandbox,
       autopilotLevel: task.autopilotLevel,
       policyHook: task.autopilotLevel == null ? null : policyHookCommand(),
+      toolEnv: task.delivered?.length ? { delivered: task.delivered, present } : null,
     }),
   ];
+}
+
+// The names in the environment the command starts with (the launcher and the sandbox add
+// only their own, none of them a secret).
+function commandEnvNames(config: RunnerConfig, task: Task): string[] {
+  const env = isolationEnabled()
+    ? isolatedEnv(
+        config.env,
+        { ITSAPLAN_URL: config.url, ITSAPLAN_API_KEY: config.apiKey },
+        task.env,
+      )
+    : childEnv(config, task);
+  return Object.keys(env);
+}
+
+// A directory private to one command, for a runtime whose scratch files can hold the
+// environment (Hermes' terminal snapshot: `export -p` of the shell, delivered variables
+// included). An isolated command's /tmp is its unit's own and goes with the unit; a command
+// the runner starts itself gets a fresh 0700 directory that is removed when it ends. The
+// operator's own setting of the variable is left alone.
+async function scratchDir(
+  config: RunnerConfig,
+  preset: CliCommand | undefined,
+): Promise<{ env: Record<string, string>; cleanup: () => Promise<void> } | null> {
+  const name = preset?.scratchDirEnv;
+  if (!name || config.env[name]) return null;
+  if (isolationEnabled()) return { env: { [name]: '/tmp' }, cleanup: async () => {} };
+  const dir = await mkdtemp(join(tmpdir(), 'helena-run-'));
+  return { env: { [name]: dir }, cleanup: () => rm(dir, { recursive: true, force: true }) };
 }
 
 // The command Claude Code runs before each tool call: this runner's `policy-hook`, which
@@ -324,17 +361,23 @@ export async function execute(
   opts: ExecuteOptions = {},
 ): Promise<Outcome> {
   const preset = presetOf(config);
-  const [bin, args] = spawnArgs(config, preset, task);
-  assertCodexSandbox(config, preset, args);
-  const gate = await openGate(task.hooks);
+  const scratch = await scratchDir(config, preset);
+  const run = scratch ? { ...task, env: { ...task.env, ...scratch.env } } : task;
   try {
-    const outcome = isolationEnabled()
-      ? await executeIsolated(config, task, preset, args, opts, gate.seen)
-      : await executeLocal(config, task, preset, bin, args, opts, gate.seen);
-    task.hooks?.finished?.({ status: outcome.status, error: outcome.error });
-    return outcome;
+    const [bin, args] = spawnArgs(config, preset, run, commandEnvNames(config, run));
+    assertCodexSandbox(config, preset, args);
+    const gate = await openGate(run.hooks);
+    try {
+      const outcome = isolationEnabled()
+        ? await executeIsolated(config, run, preset, args, opts, gate.seen)
+        : await executeLocal(config, run, preset, bin, args, opts, gate.seen);
+      run.hooks?.finished?.({ status: outcome.status, error: outcome.error });
+      return outcome;
+    } finally {
+      gate.release();
+    }
   } finally {
-    gate.release();
+    await scratch?.cleanup().catch(() => {});
   }
 }
 

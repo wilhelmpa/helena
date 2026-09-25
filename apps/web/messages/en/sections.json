@@ -146,6 +146,10 @@
       "label": "Autopilot",
       "description": "How independently the agents of this project act, and their budgets."
     },
+    "environment": {
+      "label": "Environment variables",
+      "description": "Which variables from Credentials this project's agents receive in their runs."
+    },
     "browser": {
       "label": "Browser",
       "description": "Domains the project browser may open, human-like input timing, and the control lock timeout."

@@ -146,6 +146,10 @@
       "label": "Autopilot",
       "description": "Wie selbstständig die Agenten dieses Projekts handeln, und ihre Budgets."
     },
+    "environment": {
+      "label": "Umgebungsvariablen",
+      "description": "Welche Variablen aus Zugänge die Agenten dieses Projekts in ihren Läufen bekommen."
+    },
     "browser": {
       "label": "Browser",
       "description": "Domains, die der Projekt-Browser öffnen darf, menschliche Eingabe-Zeitabstände und das Sperr-Timeout."

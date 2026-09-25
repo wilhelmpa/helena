@@ -1160,6 +1160,11 @@ export const integrationCredential = pgTable(
     ),
     index('integration_credential_team_idx').on(t.teamId),
     index('integration_credential_project_idx').on(t.projectId),
+    // An environment variable name is used by one credential of the team, and by one of
+    // each project (apps/api/src/modules/agents/credentials/env.ts).
+    uniqueIndex('integration_credential_env_name_uq')
+      .on(t.teamId, sql`coalesce(${t.projectId}, 0)`, sql`(${t.redacted}->>'envName')`)
+      .where(sql`(${t.redacted}->>'envName') IS NOT NULL`),
   ],
 );
 

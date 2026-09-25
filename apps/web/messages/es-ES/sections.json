@@ -146,6 +146,10 @@
       "label": "Autopilot",
       "description": "Con cuánta independencia actúan los agentes de este proyecto, y sus presupuestos."
     },
+    "environment": {
+      "label": "Variables de entorno",
+      "description": "Qué variables de Credenciales reciben los agentes de este proyecto en sus ejecuciones."
+    },
     "browser": {
       "label": "Navegador",
       "description": "Los dominios que puede abrir el navegador del proyecto, el ritmo de entrada similar al humano y el tiempo de espera del bloqueo."

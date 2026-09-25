@@ -4,6 +4,7 @@ import type { CliLogin, CliLoginState } from './cli-login';
 import type { RunnerConfig } from './config';
 import type { LoginUse, WebLogin, WorkRef } from './logins';
 import type { SshKey } from './ssh';
+import type { EnvVariable } from './agent-env';
 import type { RuntimePolicySnapshot, RuntimeStatus } from './policy';
 import type { RuntimeRequest } from './readers';
 import type { Spend } from './spend';
@@ -232,6 +233,21 @@ export class Client {
     try {
       const body = (await (await this.get(path)).json()) as { keys?: SshKey[] };
       return body.keys ?? [];
+    } catch (err) {
+      if (err instanceof RequestError && err.status === 404) return [];
+      throw err;
+    }
+  }
+
+  // The environment variables granted to the agent (Zugänge, "Als Umgebungsvariable an
+  // Agenten geben"), for the run or chat answer it holds. A server that predates them
+  // answers 404, which is none.
+  async envVariables(work: WorkRef): Promise<EnvVariable[]> {
+    const path =
+      'runId' in work ? `/agent-runs/${work.runId}/env` : `/agent-chats/${work.messageId}/env`;
+    try {
+      const body = (await (await this.get(path)).json()) as { variables?: EnvVariable[] };
+      return body.variables ?? [];
     } catch (err) {
       if (err instanceof RequestError && err.status === 404) return [];
       throw err;

@@ -35,6 +35,7 @@ import {
 import { generateSshKey, sshKeyComment } from './ssh-key';
 import { composeDecisionModel } from './decision-model';
 import type { DecisionKeySource } from './kinds';
+import { ENV_KINDS, assertEnvName, assertEnvNameFree, forgetTeamSecrets } from './env';
 
 // The credentials of the Credentials page: web logins, API keys, SSH keys and secrets
 // of a team, each for the whole team or one project, and the agents they are granted
@@ -67,6 +68,10 @@ export interface CredentialEntry {
   allowPrivateAddress: boolean;
   keySource: DecisionKeySource | null;
   modelServer: string | null;
+  // api_key, secret, variable: the environment variable the agents' commands receive it in.
+  envName: string | null;
+  // variable: its value, which is not secret.
+  value: string | null;
   secrets: string[];
   // The agents granted by name; `grants` holds every grant, to agents and projects.
   agentIds: number[];
@@ -91,6 +96,9 @@ interface Readable {
   allowPrivateAddress?: boolean;
   keySource?: DecisionKeySource;
   modelServer?: string;
+  envName?: string;
+  // variable: its value, readable.
+  value?: string;
   [secretField: string]: unknown;
 }
 
@@ -161,7 +169,12 @@ function toEntry(row: EntryRow, grants: GrantEntry[]): CredentialEntry {
       kind === 'decision_model' && readable.keySource === 'local-ai'
         ? (readable.modelServer ?? 'local')
         : null,
-    secrets: SECRET_FIELDS[kind].filter((field) => Boolean(readable[field])),
+    envName:
+      (ENV_KINDS as readonly string[]).includes(kind) && typeof readable.envName === 'string'
+        ? readable.envName
+        : null,
+    value: kind === 'variable' && typeof readable.value === 'string' ? readable.value : null,
+    secrets: (SECRET_FIELDS[kind] as readonly string[]).filter((field) => Boolean(readable[field])),
     agentIds: grants.flatMap((grant) => (grant.agentId === null ? [] : [grant.agentId])),
     grants,
     createdAt: iso(row.createdAt),
@@ -297,8 +310,27 @@ function compose(
     const composed = composeDecisionModel(fields, current);
     return { readable: { ...composed.readable, notes }, secrets: composed.secrets };
   }
+  const envName = envNameOf(fields, current.readable);
+  if (kind === 'variable') {
+    // Not secret: stored readable, exactly as typed but for a trailing line break.
+    const value = (fields.value ?? current.readable.value ?? '').replace(/\r?\n$/, '');
+    if (!value.trim()) throw new HttpError(400, 'A value is required.');
+    if (!envName) throw new HttpError(400, 'A variable needs a name.');
+    return { readable: { envName, value, notes }, secrets: {} };
+  }
   const value = fields.value === undefined ? current.secrets.value : fields.value;
-  return { readable: { notes }, secrets: { value: requiredSecret(value, 'A value') } };
+  return {
+    readable: { notes, ...(envName && { envName }) },
+    secrets: { value: requiredSecret(value, 'A value') },
+  };
+}
+
+// The variable name a credential ends up with: the submitted one over the stored one. An
+// empty or null name takes it away.
+function envNameOf(fields: CredentialFields, readable: Readable): string | undefined {
+  if (fields.envName === undefined) return readable.envName;
+  const name = fields.envName?.trim() ?? '';
+  return name ? assertEnvName(name) : undefined;
 }
 
 function stored(id: number, readable: Readable, secrets: Secrets) {
@@ -336,6 +368,7 @@ export async function createCredentialEntry(
     current.secrets = { privateKey: key.privateKey };
   }
   const { readable, secrets } = compose(kind, fields, current);
+  if (readable.envName) await assertEnvNameFree(teamId, projectId, readable.envName, null);
   const id = await nextCredentialId();
   const [row] = await db
     .insert(integrationCredential)
@@ -348,6 +381,7 @@ export async function createCredentialEntry(
       ...stored(id, readable, secrets),
     })
     .returning({ id: integrationCredential.id });
+  forgetTeamSecrets(teamId);
   return (await getCredentialEntry(row.id, teamId))!;
 }
 
@@ -391,6 +425,10 @@ export async function updateCredentialEntry(
     .where(eq(integrationCredential.id, id));
   const current = { readable: readableOf(row.redacted), secrets: await readSecrets(id) };
   const { readable, secrets } = compose(kind, fields, current);
+  if (readable.envName) {
+    const scope = projectId === undefined ? existing.projectId : projectId;
+    await assertEnvNameFree(teamId, scope, readable.envName, id);
+  }
   await db.transaction(async (tx) => {
     await tx
       .update(integrationCredential)
@@ -403,6 +441,7 @@ export async function updateCredentialEntry(
       .where(eq(integrationCredential.id, id));
     if (projectId != null) await pruneGrantsOutside(id, projectId, tx);
   });
+  forgetTeamSecrets(teamId);
   return getCredentialEntry(id, teamId);
 }
 
@@ -436,6 +475,7 @@ export async function deleteCredentialEntry(id: number, teamId: number): Promise
       and(eq(integrationCredential.id, id), eq(integrationCredential.teamId, teamId), storeKinds),
     )
     .returning({ id: integrationCredential.id });
+  forgetTeamSecrets(teamId);
   return deleted.length > 0;
 }
 

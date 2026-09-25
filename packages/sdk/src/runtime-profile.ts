@@ -60,6 +60,10 @@ export interface RunSettings {
   // the adapter puts them in front of the run's own context.
   instructions?: string;
   hooks?: CommandHooks;
+  // The environment variables Helena delivered for this work (Zugänge), by name, and the
+  // secret values among them, which everything reported about the work masks. Their values
+  // are in `env`.
+  delivered?: { names: string[]; secrets: string[] };
 }
 
 // Why an agent's runtime cannot do its work, or only part of it, as Helena shows it on the

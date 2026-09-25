@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { CredentialFormValue } from '../../utils/credentialForm';
 import { CredentialDecisionModelFields } from './CredentialDecisionModelFields';
+import { CredentialEnvFields, CredentialEnvName } from './CredentialEnvFields';
 import { CredentialLoginFields } from './CredentialLoginFields';
 import { CredentialRuntimeLoginFields } from './CredentialRuntimeLoginFields';
 import { CredentialScopeSelect } from './CredentialScopeSelect';
@@ -49,12 +50,33 @@ export function CredentialFields({
         <CredentialLoginFields value={value} entry={entry} onChange={onChange} />
       )}
       {(value.kind === 'api_key' || value.kind === 'secret') && (
-        <CredentialSecretInput
-          label={t('value')}
-          value={value.value}
-          stored={entry?.secrets.includes('value') ?? false}
-          onChange={(next) => onChange({ value: next })}
-        />
+        <>
+          <CredentialSecretInput
+            label={t('value')}
+            value={value.value}
+            stored={entry?.secrets.includes('value') ?? false}
+            onChange={(next) => onChange({ value: next })}
+          />
+          <CredentialEnvFields value={value} onChange={onChange} />
+        </>
+      )}
+      {value.kind === 'variable' && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <CredentialEnvName value={value} onChange={onChange} />
+          <div className="space-y-1.5">
+            <Label htmlFor="credential-variable-value">{t('value')}</Label>
+            <Input
+              id="credential-variable-value"
+              dir="ltr"
+              autoComplete="off"
+              spellCheck={false}
+              className="font-mono"
+              value={value.value}
+              onChange={(e) => onChange({ value: e.target.value })}
+            />
+            <p className="text-xs text-muted-foreground">{t('env.variableHint')}</p>
+          </div>
+        </div>
       )}
       {value.kind === 'runtime_login' && (
         <CredentialRuntimeLoginFields value={value} entry={entry} onChange={onChange} />
