@@ -824,6 +824,18 @@ class BootLayoutTests(ResilienceTest):
                          'grub.cfg sets another prefix')
         self.assertEqual(bootlayout.check_grub_cfg('', root), 'grub.cfg is missing')
 
+    def test_the_stub_check_sees_through_the_units_bind_mount_of_boot(self):
+        # In helena-hostd's namespace (ProtectSystem=true) /boot is a bind mount of the root
+        # file system's /boot, so findmnt answers /boot with FSROOT /boot. The good stub must
+        # still pass (it reported "stub" on both ESPs live, 2026-09-25).
+        self.runner.on('/usr/bin/findmnt', '-J', out=json.dumps({'filesystems': [
+            {'target': '/boot', 'source': '/dev/md127[/boot]', 'uuid': ROOT_UUID, 'fsroot': '/boot'}]}))
+        root = bootlayout.root_filesystem(self.host, [])
+        self.assertEqual((root['source'], root['md'], root['grubPath']), ('/dev/md127', True, '/boot/grub'))
+        self.assertIsNone(bootlayout.check_grub_cfg(STUB, root))
+        self.assertEqual(bootlayout.check_grub_cfg(STUB.replace("'/boot/grub'", "'/grub'"), root),
+                         'grub.cfg sets another prefix')
+
 
 # ── Configuration ────────────────────────────────────────────────────────────────────────
 

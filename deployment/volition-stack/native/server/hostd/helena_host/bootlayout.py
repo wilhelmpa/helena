@@ -102,14 +102,20 @@ def root_filesystem(host: Host, devices: list[dict]) -> dict | None:
     findmnt = host.which('findmnt')
     if not findmnt:
         return None
-    result = host.run([findmnt, '-J', '-n', '-o', 'TARGET,SOURCE,UUID', '-T', '/boot/grub'], timeout=10)
+    result = host.run([findmnt, '-J', '-n', '-o', 'TARGET,SOURCE,UUID,FSROOT', '-T', '/boot/grub'], timeout=10)
     try:
         found = (json.loads(result.stdout).get('filesystems') or [None])[0] if result.returncode == 0 else None
     except ValueError:
         found = None
     if not found or not found.get('uuid'):
         return None
-    source = found.get('source') or ''
+    # helena-hostd runs with ProtectSystem=true, so in its namespace /boot is a read-only bind
+    # mount of the root file system's /boot: findmnt answers TARGET /boot, SOURCE
+    # /dev/md127[/boot], FSROOT /boot. /boot/grub's path inside the file system is what the
+    # ESP's stub has to name, so it is taken from FSROOT, and the [/boot] suffix is dropped.
+    source = (found.get('source') or '').split('[', 1)[0]
+    target = found.get('target') or '/'
+    grub_path = os.path.normpath(os.path.join(found.get('fsroot') or '/', os.path.relpath('/boot/grub', target)))
     array_uuid = None
     if source.startswith('/dev/md'):
         # /dev/md127 (or /dev/md/<name> → ../md127): its members carry the array's UUID.
@@ -119,8 +125,8 @@ def root_filesystem(host: Host, devices: list[dict]) -> dict | None:
                 if part.get('fstype') == 'linux_raid_member' and any(
                         child.get('kname') in names for child in part.get('children') or []):
                     array_uuid = (part.get('uuid') or '').replace('-', '').lower() or None
-    return {'target': found.get('target') or '/', 'source': source, 'uuid': found['uuid'].lower(),
-            'md': source.startswith('/dev/md'), 'arrayUuid': array_uuid}
+    return {'target': target, 'source': source, 'uuid': found['uuid'].lower(),
+            'md': source.startswith('/dev/md'), 'arrayUuid': array_uuid, 'grubPath': grub_path}
 
 
 def check_grub_cfg(text: str | None, root: dict | None) -> str | None:
@@ -138,7 +144,7 @@ def check_grub_cfg(text: str | None, root: dict | None) -> str | None:
         wanted = f"mduuid/{root['arrayUuid']}" if root.get('arrayUuid') else 'mduuid/'
         if not any(hint.startswith(wanted) for hint in hints):
             return 'grub.cfg has no mduuid hint for the RAID'
-    prefix = '/' + os.path.relpath('/boot/grub', root['target'])
+    prefix = root.get('grubPath') or '/' + os.path.relpath('/boot/grub', root['target'])
     if f"set prefix=($root)'{prefix}'" not in text:
         return 'grub.cfg sets another prefix'
     if 'configfile $prefix/grub.cfg' not in text:
