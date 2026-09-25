@@ -80,7 +80,7 @@ export const LIVE_TRADING_HOSTS: readonly string[] = [
 
 // The MCP servers that are Helena itself. Their tools carry their own category (Helena's
 // paper tools are `write`: a paper account moves no money).
-export const HELENA_MCP_SERVERS: readonly string[] = ['itsaplan', 'helena'];
+export const HELENA_MCP_SERVERS: readonly string[] = ['itsaplan', 'helena', 'plan'];
 
 const escape = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 

@@ -9,6 +9,10 @@ Alle Strategien des [[Strategie-Labor]]s. Jede Strategie hat einen Ordner `Strat
 
 | Strategie | Markt | Zeitrahmen | Aktuelle Version | Status | Index |
 |---|---|---|---|---|---|
-| – | | | | | |
+| Eröffnungsspannen-Ausbruch SPY | Aktien (Daytrading) | 5 min | [[orb-spy v1.0]] | entwurf | [[orb-spy]] |
+| RSI(2)-Rücksetzer SPY | Aktien (Swing) | Tag | [[spy-rsi2 v1.0]] | entwurf | [[spy-rsi2]] |
+| Trendfolge BTC | Krypto | Tag | [[btc-trend v1.0]] | entwurf | [[btc-trend]] |
+
+Die drei Startkandidaten sind Hypothesen: zuerst Backtest (Gate B), dann deine Freigabe (Gate C), erst dann Paper-Trading.
 
 Zurück zu [[Trading-Start]].

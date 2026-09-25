@@ -278,6 +278,7 @@ Nothing is installed by this branch; the quant agent reports a missing package.
 **Knowledge** (`Projects/TRADE/Docs/`):
 - `Trading-Start` (the map of content), `Regelwerk` (draft with proposed numbers for the owner), `Strategie-Labor`, `Datenquellen`.
 - Overviews: `Strategien/Trading-Strategien`, `Backtests/Trading-Backtests`, `Journal/Trading-Journal`, `Berichte/Trading-Berichte`, `Reviews/Trading-Reviews`, `Research/Trading-Research`, `Märkte/Trading-Watchlist`, `Steuern/Kapitalerträge 2026`.
+- Three starter strategies, one per market, as drafts (status `entwurf`, untested hypotheses with explicit rules, parameters and a pre-mortem): `orb-spy v1.0` (opening-range breakout in SPY, day trading), `spy-rsi2 v1.0` (RSI(2) pullback in SPY above the 200-day average, swing) and `btc-trend v1.0` (Donchian trend following in BTC/USD, daily). Each has an index note. They go to the backtest first; nothing trades before Gate B and the owner's approval.
 - Note names are unique across the vault, so a `[[link]]` hits exactly one note. Tests check that every link resolves and that no note is an orphan.
 
 **Templates** (`Templates/Trading/`, used by Helena's "Aus Vorlage" and by Obsidian): Analyse, Strategie, Backtest, Trade, Tagesbericht, Wochenreview, Monatsreview, Pre-Market-Briefing, Watchlist. Each has front matter with `typ`, and the analysing ones carry the no-advice line.
