@@ -1,4 +1,4 @@
-import { assertLinkableGoal, linkIssueGoalTx } from '#modules/goals/service';
+import { assertLinkableGoal, issueGoal, linkIssueGoalTx } from '#modules/goals/service';
 import { Elysia, t } from 'elysia';
 import { mcpTool } from '#mcp/generate';
 import { noContent } from '#shared/http';
@@ -515,7 +515,8 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
       const subtasks = await listSubtasks(issue.id);
       const checklists = await listChecklists(issue.id);
       const development = await listIssueDevelopmentLinks(issue.id);
-      return { ...issue, fields, links, watchers, parent, subtasks, checklists, development };
+      const goal = await issueGoal(issue.id);
+      return { ...issue, fields, links, watchers, parent, subtasks, checklists, development, goal };
     },
     {
       params: issueSequenceParams,
@@ -549,7 +550,8 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
       const subtasks = await listSubtasks(issue.id);
       const checklists = await listChecklists(issue.id);
       const development = await listIssueDevelopmentLinks(issue.id);
-      return { ...issue, fields, links, watchers, parent, subtasks, checklists, development };
+      const goal = await issueGoal(issue.id);
+      return { ...issue, fields, links, watchers, parent, subtasks, checklists, development, goal };
     },
     {
       params: issueParams,

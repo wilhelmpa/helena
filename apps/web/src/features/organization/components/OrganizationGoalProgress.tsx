@@ -2,14 +2,19 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Bot, ChevronDown, ChevronRight, CircleDot } from 'lucide-react';
+import { Bot, ChevronDown, ChevronRight, CircleDot, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { GoalNote, OrganizationGoal } from '@/lib/api/endpoints/organization';
 import { formatDateTime } from '@/utils/dates';
 import { issuePath } from '@/utils/paths';
-import { useDecideGoalNote, useGoalDetailQuery } from '../services/organization.service';
+import { Input } from '@/components/ui/input';
+import {
+  useDecideGoalNote,
+  useGoalDetailQuery,
+  useLinkGoalTask,
+} from '../services/organization.service';
 
 // A task identifier ("VOL-12") as the parts its page is addressed by.
 function taskHref(identifier: string): string | null {
@@ -38,6 +43,8 @@ export default function OrganizationGoalProgress({
   const waiting = goal.pendingProposals ?? 0;
   const detail = useGoalDetailQuery(teamId, goal.id, open || waiting > 0);
   const decide = useDecideGoalNote(teamId);
+  const link = useLinkGoalTask(teamId);
+  const [identifier, setIdentifier] = useState('');
   const percent = progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
   const proposals = (detail.data?.notes ?? []).filter(
     (note) => note.proposedStatus !== null && note.decision === null,
@@ -155,10 +162,54 @@ export default function OrganizationGoalProgress({
                             ? `${task.stateName} · ${task.assignee.username ? `@${task.assignee.username}` : task.assignee.name}`
                             : task.stateName}
                       </span>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="size-6 shrink-0"
+                        aria-label={t('goals.unlink', { task: task.identifier })}
+                        disabled={link.isPending}
+                        onClick={() => link.mutate({ goalId: null, issueId: task.issueId })}
+                      >
+                        <X className="size-3.5" />
+                      </Button>
                     </li>
                   );
                 })}
               </ul>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Input
+              className="h-8 max-w-40"
+              placeholder={t('goals.linkPlaceholder')}
+              aria-label={t('goals.link')}
+              value={identifier}
+              onChange={(event) => setIdentifier(event.target.value)}
+              onKeyDown={(event) => {
+                // Inside the goal's form: Enter links the task, it does not save the goal.
+                if (event.key !== 'Enter') return;
+                event.preventDefault();
+                if (identifier.trim())
+                  link.mutate(
+                    { goalId: goal.id, identifier },
+                    { onSuccess: () => setIdentifier('') },
+                  );
+              }}
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={link.isPending || !identifier.trim()}
+              onClick={() =>
+                link.mutate({ goalId: goal.id, identifier }, { onSuccess: () => setIdentifier('') })
+              }
+            >
+              {t('goals.link')}
+            </Button>
+            {link.isError && (
+              <span className="text-xs text-destructive">{t('goals.linkFailed')}</span>
             )}
           </div>
           <div className="space-y-1">

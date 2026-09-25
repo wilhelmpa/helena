@@ -66,7 +66,11 @@
     "decision": {
       "accepted": "aceito",
       "rejected": "recusado"
-    }
+    },
+    "link": "Vincular",
+    "linkPlaceholder": "Tarefa, ex. VOL-12",
+    "linkFailed": "Tarefa não encontrada ou não pode ser vinculada.",
+    "unlink": "Desvincular {task} da meta"
   },
   "agents": {
     "empty": "This team has no agents.",

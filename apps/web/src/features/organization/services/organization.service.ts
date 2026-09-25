@@ -19,12 +19,14 @@ import {
   setAgentAssignment,
   setAgentProjectInstructions,
   setAgentTokenCeilings,
+  setIssueGoal,
   setProjectAssignment,
   setProjectTokenCeiling,
   updateDepartment,
   updateGoal,
 } from '@/lib/api/endpoints/organization';
 import { getAgentUsage } from '@/lib/api/endpoints/agentActivity';
+import { getIssueBySeq } from '@/lib/api/endpoints/issues';
 import { qk } from '@/services/queryKeys';
 
 export function useOrganizationQuery(teamId: number | null, projectId?: number) {
@@ -162,5 +164,21 @@ export function useDecideGoalNote(teamId: number) {
   return useOrganizationMutation<{ goalId: number; noteId: number; accept: boolean }>(
     teamId,
     ({ goalId, noteId, accept }) => decideGoalNote(teamId, goalId, noteId, accept),
+  );
+}
+
+// Links the task an identifier ("VOL-12") names to a goal, or unlinks a task (goalId null).
+export function useLinkGoalTask(teamId: number) {
+  return useOrganizationMutation<{ goalId: number | null; identifier?: string; issueId?: number }>(
+    teamId,
+    async ({ goalId, identifier, issueId }) => {
+      let id = issueId;
+      if (id === undefined) {
+        const match = /^([A-Z][A-Z0-9]*)-(\d+)$/.exec((identifier ?? '').trim().toUpperCase());
+        if (!match) throw new Error('invalid identifier');
+        id = (await getIssueBySeq(match[1]!, Number(match[2]))).id;
+      }
+      return setIssueGoal(id, goalId);
+    },
   );
 }

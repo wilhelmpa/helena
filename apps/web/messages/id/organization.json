@@ -66,7 +66,11 @@
     "decision": {
       "accepted": "diterima",
       "rejected": "ditolak"
-    }
+    },
+    "link": "Tautkan",
+    "linkPlaceholder": "Tugas, mis. VOL-12",
+    "linkFailed": "Tugas tidak ditemukan atau tidak bisa ditautkan.",
+    "unlink": "Lepaskan {task} dari sasaran"
   },
   "agents": {
     "empty": "This team has no agents.",

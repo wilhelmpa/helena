@@ -285,3 +285,10 @@ export const decideGoalNote = (teamId: number, goalId: number, noteId: number, a
     method: 'POST',
     body: JSON.stringify({ accept }),
   });
+
+// Links a task to a goal (at most one per task), or unlinks it with null.
+export const setIssueGoal = (issueId: number, goalId: number | null) =>
+  request<{ issueId: number; goalId: number | null }>(`/issues/${issueId}/goal`, {
+    method: 'PUT',
+    body: JSON.stringify({ goalId }),
+  });

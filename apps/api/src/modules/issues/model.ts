@@ -295,6 +295,21 @@ export const IssueWithFieldsResponse = t.Composite([
     subtasks: t.Array(IssueRefResponse),
     checklists: t.Array(ChecklistResponse),
     development: t.Array(DevelopmentLinkResponse),
+    // The goal the issue serves (modules/goals), for an agent reading it.
+    goal: t.Optional(
+      t.Nullable(
+        t.Object({
+          id: t.Number(),
+          title: t.String(),
+          status: t.Union([
+            t.Literal('planned'),
+            t.Literal('active'),
+            t.Literal('achieved'),
+            t.Literal('paused'),
+          ]),
+        }),
+      ),
+    ),
   }),
 ]);
 

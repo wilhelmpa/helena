@@ -107,6 +107,13 @@ describe('goals', () => {
     const after = (await api.projects({ projectKey: 'MKT' }).issues.get({ query: {} })).data;
     expect(JSON.stringify(after)).toBe(JSON.stringify(before));
 
+    const read = await agentApi.issues({ issueId: created.data!.id }).get();
+    expect(read.data!.goal).toEqual({
+      id: goals.launch.id,
+      title: 'Launch the new website',
+      status: 'active',
+    });
+
     const detail = await agentApi.teams({ teamId }).goals({ goalId: goals.launch.id }).get();
     expect(detail.data!.tasks).toMatchObject([
       { identifier: 'MKT-1', title: 'Write the landing page', stateType: 'unstarted' },

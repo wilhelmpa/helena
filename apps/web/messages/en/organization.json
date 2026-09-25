@@ -66,7 +66,11 @@
     "decision": {
       "accepted": "accepted",
       "rejected": "rejected"
-    }
+    },
+    "link": "Link",
+    "linkPlaceholder": "Task, e.g. VOL-12",
+    "linkFailed": "Task not found or cannot be linked.",
+    "unlink": "Unlink {task} from the goal"
   },
   "agents": {
     "empty": "This team has no agents.",

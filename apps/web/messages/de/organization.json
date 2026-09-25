@@ -66,7 +66,11 @@
     "decision": {
       "accepted": "übernommen",
       "rejected": "abgelehnt"
-    }
+    },
+    "link": "Verknüpfen",
+    "linkPlaceholder": "Aufgabe, z. B. VOL-12",
+    "linkFailed": "Aufgabe nicht gefunden oder nicht verknüpfbar.",
+    "unlink": "{task} vom Ziel lösen"
   },
   "agents": {
     "empty": "Dieses Team hat keine Agenten.",
