@@ -159,11 +159,22 @@ for name in sorted({str(n) for n in shared} | {str(n) for n in pinned} | portabl
 result["mcpServers"] = servers
 effective = load_config_readonly()
 def leaf(path):
+    # Keys may hold dots themselves (model ids like Qwen3.6-35B): a part that is not a key
+    # joins the next ones until it names one.
     node = effective
-    for part in path.split("."):
-        if not isinstance(node, dict) or part not in node:
+    parts = path.split(".")
+    i = 0
+    while i < len(parts):
+        if not isinstance(node, dict):
             return None
-        node = node[part]
+        for j in range(i + 1, len(parts) + 1):
+            name = ".".join(parts[i:j])
+            if name in node:
+                node = node[name]
+                i = j
+                break
+        else:
+            return None
     if node is None or isinstance(node, (bool, int, float, str)):
         return node
     return json.loads(json.dumps(node, default=str))
