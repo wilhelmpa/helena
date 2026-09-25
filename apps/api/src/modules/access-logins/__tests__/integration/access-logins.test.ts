@@ -140,12 +140,15 @@ describe('logins in Zugänge', () => {
       source: 'own',
       state: 'signedIn',
       account: { method: 'chatgpt', email: 'owner@example.com', plan: 'pro' },
-      refreshedAt: '2026-09-25T08:00:00.000Z',
       credential: null,
       command: COMMAND,
       canCheck: true,
       canSignOut: true,
     });
+    // The client reads a time as a Date.
+    expect(new Date(data!.agents[0]!.refreshedAt!).toISOString()).toBe(
+      '2026-09-25T08:00:00.000Z',
+    );
     expect(data!.shared).toEqual([]);
     assertNoTokens(data);
 
