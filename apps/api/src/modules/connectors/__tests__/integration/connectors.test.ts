@@ -1,5 +1,13 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test';
-import { db, mailAccount, connectorAction, integrationCredential } from '@repo/db';
+import path from 'node:path';
+import {
+  db,
+  agentRun,
+  mailAccount,
+  connectorAction,
+  integrationCredential,
+  organizationAgentAssignment,
+} from '@repo/db';
 import { eq } from 'drizzle-orm';
 import {
   clearGoogleTokenCache,
@@ -576,6 +584,53 @@ describe('SSH keys', () => {
       .teams({ teamId })
       .access.audit.get({ query: { credentialId: key.id } });
     expect(log.data!.items.map((item) => item.purpose)).toContain('git (SSH), clone job');
+  });
+
+  it("sends a clone to the project's own agent and names the project's workspace", async () => {
+    const { asOwner, teamId, mkt } = await setup();
+    // The Home agent works in every project and has the lowest id; runs 90/91 on 2026-09-25
+    // went to it and landed in Home's workspace.
+    const home = await externalAgent(asOwner, 'master');
+    const writer = await externalAgent(asOwner, 'writer');
+    const lead = await externalAgent(asOwner, 'lead');
+    const key = (
+      await asOwner.teams({ teamId }).credentials.post({ kind: 'ssh_key', label: 'Deploy' })
+    ).data!;
+    const clone = (agentId?: number) =>
+      asOwner
+        .teams({ teamId })
+        .credentials({ credentialId: key.id })
+        .clone.post({
+          projectId: mkt.id,
+          url: 'git@github.com:wilhelmpa/homepage.git',
+          ...(agentId !== undefined && { agentId }),
+        });
+
+    // Without a coordinator: an agent of this one project, not the Home agent.
+    expect((await clone()).data).toMatchObject({ agentId: writer.id });
+    await db.insert(organizationAgentAssignment).values({
+      teamId,
+      agentId: lead.id,
+      role: 'coordinator',
+    });
+    const started = (await clone()).data!;
+    expect(started).toMatchObject({ agentId: lead.id, name: 'homepage' });
+    const [run] = await db.select().from(agentRun).where(eq(agentRun.id, started.runId));
+    const workspace = path.join(
+      path.resolve(process.env.PROJECT_WORKSPACE_ROOT?.trim() || '/srv/volition/workspaces/projects'),
+      'mkt',
+    );
+    expect(JSON.parse(run!.prompt)).toEqual({
+      op: 'git_clone',
+      url: 'git@github.com:wilhelmpa/homepage.git',
+      folder: '',
+      name: 'homepage',
+      credentialId: key.id,
+      slug: 'mkt',
+      workspace,
+    });
+    // The owner may still name the agent.
+    expect((await clone(home.id)).data).toMatchObject({ agentId: home.id });
   });
 
   it('checks the repository address of a clone', () => {
