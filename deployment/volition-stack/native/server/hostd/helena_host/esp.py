@@ -4,7 +4,9 @@
 copy from a broken source is worse than none. It runs only when:
 
 - both ESPs are mounted, as vfat, and are two different file systems;
-- the source holds the loader (EFI/helena-raid/shimx64.efi) and its grub.cfg, not empty;
+- the source holds, for every loader folder of this layout found on either ESP (the
+  configured one, EFI/debian, and the old one, EFI/helena-raid), the shim and its grub.cfg,
+  not empty — so a copy never removes a loader the mirror still starts;
 - every file of the source reads back in full (a disk falling off the bus answers EIO);
 
 and it counts only when rsync exits 0 and every file of the copy equals its source. A copy
@@ -19,7 +21,7 @@ import json
 import os
 
 from . import audit, events
-from .boot import layout_in_use, loader_relative
+from .boot import layout_in_use, loader_files, loader_relative, loaders
 from .common import Host, atomic_write_json, clip, file_lock, iso, json_load_file
 
 STATE_FILE = 'esp-sync.json'
@@ -82,8 +84,7 @@ def sync(host: Host, config, *, dry_run: bool = False, log=lambda message: None,
          trigger: str = 'console') -> dict:
     storage = config.storage
     mounts = list(storage.get('espMounts') or [])
-    loader = loader_relative(storage['bootLoader'])
-    required = [loader, os.path.join(os.path.dirname(loader), 'grub.cfg')]
+    current, legacy = loaders(storage)
     state_dir = config.state_dir
     if not layout_in_use(host, storage):
         # Not this machine's layout (no EFI/helena-raid on either ESP): nothing to mirror, and
@@ -134,6 +135,12 @@ def sync(host: Host, config, *, dry_run: bool = False, log=lambda message: None,
             return finish('skipped', 'notMounted', mount=source)
         if (first.st_dev, first.st_ino) == (second.st_dev, second.st_ino):
             return finish('skipped', 'sameDevice', mount=target)
+        required = [relative for loader in (current, *legacy)
+                    if any(os.path.isdir(os.path.join(root, os.path.dirname(loader_relative(loader))))
+                           for root in (source_dir, target_dir))
+                    for relative in loader_files(loader)]
+        if not required:
+            return finish('failed', 'sourceIncomplete', mount=source, detail=loader_files(current)[0])
         for relative in required:
             try:
                 if os.path.getsize(os.path.join(source_dir, relative)) <= 0:

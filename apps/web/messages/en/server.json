@@ -243,6 +243,7 @@
       "EspSyncFailed": "EFI copy failed",
       "EspSyncRecovered": "EFI copy working again",
       "BootEntryRepaired": "Boot entry repaired",
+      "BootEntriesMoved": "Boot entries moved to the new loader",
       "BootEntryRepairFailed": "Boot entry not repaired"
     }
   },

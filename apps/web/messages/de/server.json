@@ -243,6 +243,7 @@
       "EspSyncFailed": "EFI-Kopie fehlgeschlagen",
       "EspSyncRecovered": "EFI-Kopie wieder in Ordnung",
       "BootEntryRepaired": "Starteintrag repariert",
+      "BootEntriesMoved": "Starteinträge auf den neuen Bootloader umgestellt",
       "BootEntryRepairFailed": "Starteintrag nicht repariert"
     }
   },

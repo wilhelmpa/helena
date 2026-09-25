@@ -30,7 +30,12 @@ DEFAULT_CONFIG: dict = {
         'mainBootLabel': 'Debian',
         'reserveBootLabel': 'Debian (Reserve)',
         # The loader both entries start (shim), as the firmware writes it: backslashes.
-        'bootLoader': '\\EFI\\helena-raid\\shimx64.efi',
+        # Debian's own folder, which apt's grub-install keeps current (`helena-hostd
+        # boot-layout` moves a machine set up with EFI/helena-raid onto it; `--rollback` back).
+        'bootLoader': '\\EFI\\debian\\shimx64.efi',
+        # Loaders of the old layout that entries may still start (moved once the configured
+        # one is complete on that ESP). null: the other known loader (boot.KNOWN_LOADERS).
+        'legacyBootLoaders': None,
         # Partition labels name the disks: HELENA-RAID-A → "A".
         'diskLabelPattern': '^HELENA-(?:RAID|EFI)-([A-Z])$',
     },
@@ -169,8 +174,40 @@ def validate_storage(storage: dict) -> None:
             or labels[0] == labels[1]):
         raise HostError('Config', 'storage boot labels must be two different names')
     loader = storage.get('bootLoader')
-    if not isinstance(loader, str) or not LOADER_RE.match(loader) or _dot_segment(loader, '\\'):
+    if not _loader_ok(loader):
         raise HostError('Config', 'storage.bootLoader must look like \\EFI\\<dir>\\<file>.efi')
+    legacy = storage.get('legacyBootLoaders')
+    if legacy is not None and (not isinstance(legacy, list) or len(legacy) > 4
+                               or not all(_loader_ok(item) for item in legacy)):
+        raise HostError('Config', 'storage.legacyBootLoaders must be a list of loaders or null')
+
+
+def _loader_ok(loader: object) -> bool:
+    return isinstance(loader, str) and bool(LOADER_RE.match(loader)) and not _dot_segment(loader, '\\')
+
+
+def write_storage_override(config: Config, updates: dict) -> None:
+    """Sets (or, with None, removes) keys of the `storage` section in the config file, keeps
+    everything else as it is, and reloads the result into `config`. For the boot layout
+    change; the file stays root's, 0644."""
+    raw = json_load_file(config.path, None) if os.path.exists(config.path) else {}
+    if not isinstance(raw, dict):
+        raise HostError('Config', 'the configuration is not valid JSON')
+    section = dict(raw.get('storage') or {})
+    for key, value in updates.items():
+        if value is None:
+            section.pop(key, None)
+        else:
+            section[key] = value
+    if section:
+        raw['storage'] = section
+    else:
+        raw.pop('storage', None)
+    merged = _merge(DEFAULT_CONFIG, raw)
+    validate_storage(merged['storage'])
+    os.makedirs(os.path.dirname(config.path), exist_ok=True)
+    atomic_write_json(config.path, raw, mode=0o644)
+    config.data['storage'] = merged['storage']
 
 
 # ── Settings ─────────────────────────────────────────────────────────────────────────────

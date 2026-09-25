@@ -243,6 +243,7 @@
       "EspSyncFailed": "Salinan EFI gagal",
       "EspSyncRecovered": "Salinan EFI kembali normal",
       "BootEntryRepaired": "Entri boot diperbaiki",
+      "BootEntriesMoved": "Entri boot dipindahkan ke boot loader baru",
       "BootEntryRepairFailed": "Entri boot tidak diperbaiki"
     }
   },

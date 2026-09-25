@@ -243,6 +243,7 @@
       "EspSyncFailed": "Копия EFI не удалась",
       "EspSyncRecovered": "Копия EFI снова в порядке",
       "BootEntryRepaired": "Загрузочная запись исправлена",
+      "BootEntriesMoved": "Загрузочные записи переведены на новый загрузчик",
       "BootEntryRepairFailed": "Загрузочная запись не исправлена"
     }
   },

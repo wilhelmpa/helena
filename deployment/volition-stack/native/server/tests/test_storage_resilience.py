@@ -1,6 +1,7 @@
 """Tests of the storage safeguards added after the 2026-09-25 incident (a disk fell off the
 PCIe bus; the firmware rewrote its boot entry to VenHw(…)): the boot entry check and repair,
-the guarded ESP copy, the NVMe power rules and their helper. Run with the other hostd tests:
+the guarded ESP copy, the move of the entries onto Debian's EFI/debian, the NVMe power rules
+and their helper. Run with the other hostd tests:
 
     python3 -m unittest discover -s deployment/volition-stack/native/server/tests -v
 """
@@ -16,13 +17,18 @@ import unittest
 
 from test_hostd import HostTest, fixture  # noqa: E402  (the shared fake host)
 
-from helena_host import boot, esp, events, service, storage  # noqa: E402
+from helena_host import boot, bootlayout, esp, events, service, storage  # noqa: E402
 from helena_host.common import CommandResult, HostError  # noqa: E402
-from helena_host.config import load_config  # noqa: E402
+from helena_host.config import load_config, write_storage_override  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HOOKS = os.path.join(HERE, '..', 'hooks')
-LOADER = '\\EFI\\helena-raid\\shimx64.efi'
+OLD_LOADER = '\\EFI\\helena-raid\\shimx64.efi'
+NEW_LOADER = '\\EFI\\debian\\shimx64.efi'
+ROOT_UUID = '7a3b588b-a269-457b-a281-67748156782a'
+ARRAY_UUID = '3a9a9cf25e0c71773502594f9df09b21'
+STUB = (f'search.fs_uuid {ROOT_UUID} root mduuid/{ARRAY_UUID} \n'
+        "set prefix=($root)'/boot/grub'\nconfigfile $prefix/grub.cfg\n")
 ESP_A = '2a7ccb77-d727-4df5-aa1a-e619e847d2e8'
 ESP_B = '9da3b062-2afc-42d2-9cbb-6c9128eae4a9'
 
@@ -94,6 +100,23 @@ class ResilienceTest(HostTest):
             self.esp_files(mount)
         self.mounted = {'/boot/efi': 'vfat', '/boot/efi2': 'vfat'}
         self.runner.on('/usr/bin/findmnt', fn=self.findmnt)
+        self.runner.on('/usr/bin/rsync', fn=self.copy_tree)
+        # The mirrored layout: both ESPs in fstab, the RAID idle and whole.
+        self.write('/etc/fstab', 'UUID=7a3b588b / ext4 defaults 0 1\n'
+                                 'UUID=19BA-D77A /boot/efi vfat umask=0077,nofail 0 1\n'
+                                 'UUID=E6D1-53D4 /boot/efi2 vfat umask=0077,nofail 0 1\n')
+        self.mirror()
+
+    def mirror(self, degraded: int = 0, action: str = 'idle') -> None:
+        base = '/sys/block/md127/md'
+        for name, value in (('level', 'raid1'), ('raid_disks', '2'), ('degraded', str(degraded)),
+                            ('sync_action', action), ('sync_completed', 'none'), ('array_state', 'clean')):
+            self.write(f'{base}/{name}', value + '\n')
+
+    def copy_tree(self, argv, **_):
+        shutil.rmtree(argv[-1])
+        shutil.copytree(argv[-2], argv[-1])
+        return CommandResult(0, '', '')
 
     def esp_files(self, mount: str, *, grub: str = 'search.fs_uuid 7a3b588b root\n') -> None:
         self.write(f'{mount}/EFI/helena-raid/shimx64.efi', 'shim-15.8')
@@ -102,6 +125,9 @@ class ResilienceTest(HostTest):
         self.write(f'{mount}/EFI/BOOT/BOOTX64.EFI', 'shim-15.8')
 
     def findmnt(self, argv, **_):
+        if '-T' in argv:  # the file system that holds /boot/grub: the RAID's
+            return CommandResult(0, json.dumps({'filesystems': [
+                {'target': '/', 'source': '/dev/md127', 'uuid': ROOT_UUID}]}), '')
         mount = argv[argv.index('--mountpoint') + 1]
         fstype = self.mounted.get(mount)
         if not fstype:
@@ -125,13 +151,19 @@ class ResilienceTest(HostTest):
 # ── Boot entries ─────────────────────────────────────────────────────────────────────────
 
 class BootEntryTests(ResilienceTest):
+    """The repair on the layout of 2026-09-25: both entries on EFI/helena-raid."""
+
+    def setUp(self):
+        super().setUp()
+        self.config.data['storage']['bootLoader'] = OLD_LOADER
+
     def test_the_parser_keeps_the_loader_and_sees_a_rewritten_entry(self):
         parsed = storage.parse_efibootmgr(fixture('efibootmgr-venhw.txt'))
         debian, reserve, uefi = parsed['entries'][:3]
         self.assertEqual((debian['number'], debian['label'], debian['partuuid']), ('000F', 'Debian', None))
         self.assertTrue(debian['vendorHardware'])
         self.assertIsNone(debian['loader'])
-        self.assertEqual(reserve['loader'], LOADER)
+        self.assertEqual(reserve['loader'], OLD_LOADER)
         self.assertEqual(reserve['partuuid'], ESP_B)
         self.assertFalse(reserve['vendorHardware'])
         self.assertEqual(uefi['loader'], '\\EFI\\BOOT\\BOOTX64.EFI')
@@ -157,14 +189,14 @@ class BootEntryTests(ResilienceTest):
         self.assertEqual([a['op'] for a in result['actions']], ['create', 'delete'])
         create = fake.log[0].split(' ')
         self.assertEqual(create[:6], ['--create', '--disk', '/dev/nvme1n1', '--part', '1', '--label'])
-        self.assertIn(LOADER, fake.log[0])
+        self.assertIn(OLD_LOADER, fake.log[0])
         self.assertEqual(fake.log[1], '--bootnum 000F --delete-bootnum')
         new = result['actions'][0]['number']
         self.assertEqual(fake.order, [new, '001A', '001B', '001C', '001D', '001E'])
         after = storage.parse_efibootmgr(fake.text())
         debian = [entry for entry in after['entries'] if entry['label'] == 'Debian']
         self.assertEqual(len(debian), 1)
-        self.assertEqual((debian[0]['partuuid'], debian[0]['loader']), (ESP_A, LOADER))
+        self.assertEqual((debian[0]['partuuid'], debian[0]['loader']), (ESP_A, OLD_LOADER))
         self.assertEqual(result['roles'][0]['state'], 'ok')
         # Audited, and an event for the Server tab.
         with open(os.path.join(self.config.state_dir, 'audit.log')) as handle:
@@ -234,8 +266,8 @@ class BootEntryTests(ResilienceTest):
     def test_missing_wrong_loader_inactive_and_duplicates(self):
         text = '\n'.join([
             'BootCurrent: 0001', 'BootOrder: 0003,0001,0002,0004',
-            f'Boot0001  Debian (Reserve)\tHD(1,GPT,{ESP_B},0x800,0x400000)/File({LOADER})',
-            f'Boot0002* Debian (Reserve)\tHD(1,GPT,{ESP_B},0x800,0x400000)/File({LOADER})',
+            f'Boot0001  Debian (Reserve)\tHD(1,GPT,{ESP_B},0x800,0x400000)/File({OLD_LOADER})',
+            f'Boot0002* Debian (Reserve)\tHD(1,GPT,{ESP_B},0x800,0x400000)/File({OLD_LOADER})',
             f'Boot0003* Debian\tHD(1,GPT,{ESP_A},0x800,0x400000)/File(\\EFI\\debian\\shimx64.efi)',
             'Boot0004* Debian\tHD(1,GPT,0badc0de-0000-4000-8000-000000000000,0x800,0x400000)/File(\\EFI\\x.efi)',
         ]) + '\n'
@@ -281,19 +313,29 @@ class BootEntryTests(ResilienceTest):
         self.assertEqual(fake.log, [])
 
     def test_another_boot_layout_gets_no_lines_and_no_repair(self):
-        for mount in ('/boot/efi', '/boot/efi2'):
-            shutil.rmtree(self.host.path(f'{mount}/EFI/helena-raid'))
+        # Debian's usual single ESP with its own "debian" entry: not ours to judge.
+        self.write('/etc/fstab', 'UUID=19BA-D77A /boot/efi vfat umask=0077 0 1\n')
+        self.write('/boot/efi/EFI/debian/shimx64.efi', 'shim')
+        self.write('/boot/efi/EFI/debian/grub.cfg', STUB)
         fake = self.firmware('BootCurrent: 0001\nBootOrder: 0001\n'
-                             f'Boot0001* debian\tHD(1,GPT,{ESP_A},0x800,0x400000)/File(\\EFI\\debian\\shimx64.efi)\n')
-        self.assertEqual(boot.check(self.host, self.config.storage, storage.parse_efibootmgr(fake.text()),
-                                    self.devices), [])
-        result = boot.repair(self.host, self.config)
-        self.assertEqual((result['reason'], result['actions']), ('notInUse', []))
+                             f'Boot0001* debian\tHD(1,GPT,{ESP_A},0x800,0x400000)/File({NEW_LOADER})\n')
+        for loader in (OLD_LOADER, NEW_LOADER):
+            self.config.data['storage']['bootLoader'] = loader
+            self.assertEqual(boot.check(self.host, self.config.storage, storage.parse_efibootmgr(fake.text()),
+                                        self.devices), [])
+            result = boot.repair(self.host, self.config)
+            self.assertEqual((result['reason'], result['actions']), ('notInUse', []))
+            synced = esp.sync(self.host, self.config)
+            self.assertEqual((synced['state'], synced['reason']), ('skipped', 'notInUse'))
         self.assertEqual(fake.log, [])
-        synced = esp.sync(self.host, self.config)
-        self.assertEqual((synced['state'], synced['reason']), ('skipped', 'notInUse'))
         self.assertFalse(os.path.exists(os.path.join(self.config.state_dir, 'esp-sync.json')))
         self.assertEqual(events.listing(self.config.state_dir)['events'], [])
+        # Both ESPs in fstab but no known loader folder on either: not in use either.
+        self.write('/etc/fstab', 'x /boot/efi vfat d 0 1\nx /boot/efi2 vfat d 0 1\n')
+        for mount in ('/boot/efi', '/boot/efi2'):
+            shutil.rmtree(self.host.path(f'{mount}/EFI/helena-raid'))
+        shutil.rmtree(self.host.path('/boot/efi/EFI/debian'))
+        self.assertFalse(boot.layout_in_use(self.host, self.config.storage))
 
     def test_a_machine_without_efi_is_not_supported(self):
         shutil.rmtree(self.host.path('/sys/firmware'))
@@ -303,8 +345,6 @@ class BootEntryTests(ResilienceTest):
 
     def test_storage_status_carries_the_checks_and_the_last_copy(self):
         self.firmware(fixture('efibootmgr-venhw.txt'))
-        self.runner.on('/usr/bin/rsync', fn=lambda argv, **_: (
-            shutil.rmtree(argv[-1]), shutil.copytree(argv[-2], argv[-1]), CommandResult(0, '', ''))[-1])
         self.runner.on('/usr/bin/smartctl', out=fixture('smart-nvme-samsung.json'), rc=4)
         storage._smart_cache.clear()
         status = storage.status(self.host, self.config.storage, fresh=True, state_dir=self.config.state_dir)
@@ -449,6 +489,244 @@ class EspSyncTests(ResilienceTest):
         self.assertRegex(hook, r'if \[ -x /usr/local/lib/helena/hostd/helena-esp-sync \]')
 
 
+class EspDebianFolderTests(ResilienceTest):
+    def test_every_loader_folder_on_either_esp_must_be_complete_on_the_source(self):
+        # EFI/debian on the source only, without its grub.cfg: never copied.
+        self.write('/boot/efi/EFI/debian/shimx64.efi', 'shim-15.8')
+        result = esp.sync(self.host, self.config)
+        self.assertEqual((result['state'], result['reason'], result['detail']),
+                         ('failed', 'sourceIncomplete', 'EFI/debian/grub.cfg'))
+        # Complete on the source: copied along with EFI/helena-raid.
+        self.write('/boot/efi/EFI/debian/grub.cfg', STUB)
+        self.assertEqual(esp.sync(self.host, self.config)['state'], 'ok')
+        self.assertEqual(self.read('/boot/efi2/EFI/debian/grub.cfg'), STUB)
+        self.assertEqual(self.read('/boot/efi2/EFI/helena-raid/shimx64.efi'), 'shim-15.8')
+        # A loader the mirror still has but the source lost: the copy would delete it. Refused.
+        shutil.rmtree(self.host.path('/boot/efi/EFI/helena-raid'))
+        result = esp.sync(self.host, self.config)
+        self.assertEqual((result['state'], result['detail']), ('failed', 'EFI/helena-raid/shimx64.efi'))
+        # Removed from both ESPs at once (the documented clean-up): fine again.
+        shutil.rmtree(self.host.path('/boot/efi2/EFI/helena-raid'))
+        self.assertEqual(esp.sync(self.host, self.config)['state'], 'ok')
+
+
+class OldLayoutTests(ResilienceTest):
+    """The default config names EFI/debian; the entries of 2026-09-24 start EFI/helena-raid."""
+
+    def debian(self, mount: str, *, grub: bool = True) -> None:
+        self.write(f'{mount}/EFI/debian/shimx64.efi', 'shim-15.8')
+        self.write(f'{mount}/EFI/debian/grubx64.efi', 'grub-2.12')
+        if grub:
+            self.write(f'{mount}/EFI/debian/grub.cfg', STUB)
+
+    def test_entries_on_the_old_layout_are_left_alone_until_debian_is_complete(self):
+        fake = self.firmware(fixture('efibootmgr.txt'))
+        self.debian('/boot/efi', grub=False)  # a shim without its grub.cfg is not a loader
+        result = boot.repair(self.host, self.config)
+        self.assertEqual([(c['state'], c['number']) for c in result['roles']],
+                         [('oldLayout', '000F'), ('oldLayout', '001A')])
+        self.assertEqual((result['actions'], fake.log), ([], []))
+
+    def test_an_entry_moves_once_its_esp_has_debian(self):
+        fake = self.firmware(fixture('efibootmgr.txt'))
+        self.debian('/boot/efi')  # only the first ESP so far
+        result = boot.repair(self.host, self.config)
+        self.assertTrue(result['ok'])
+        self.assertEqual([a['op'] for a in result['actions']], ['create', 'delete'])
+        self.assertEqual(result['actions'][1]['reason'], 'oldLayout')
+        self.assertEqual([c['state'] for c in result['roles']], ['ok', 'oldLayout'])
+        entries = {e['label']: e for e in storage.parse_efibootmgr(fake.text())['entries']}
+        self.assertEqual((entries['Debian']['loader'], entries['Debian']['partuuid']), (NEW_LOADER, ESP_A))
+        self.assertEqual(entries['Debian (Reserve)']['loader'], OLD_LOADER)
+        self.assertEqual(fake.order[:2], [entries['Debian']['number'], '001A'])
+        latest = events.listing(self.config.state_dir)['events'][0]
+        self.assertEqual((latest['code'], latest['severity']), ('BootEntriesMoved', 'info'))
+
+    def test_a_rewritten_entry_is_created_on_debian_when_it_is_there(self):
+        fake = self.firmware(fixture('efibootmgr-venhw.txt'))
+        self.debian('/boot/efi')
+        result = boot.repair(self.host, self.config)
+        self.assertEqual(result['roles'][0]['state'], 'ok')
+        debian = [e for e in storage.parse_efibootmgr(fake.text())['entries'] if e['label'] == 'Debian']
+        self.assertEqual([(e['loader'], e['partuuid']) for e in debian], [(NEW_LOADER, ESP_A)])
+        latest = events.listing(self.config.state_dir)['events'][0]
+        self.assertEqual(latest['code'], 'BootEntryRepaired')  # a VenHw entry is a repair, not a move
+
+
+class BootLayoutTests(ResilienceTest):
+    """helena-hostd boot-layout: the move onto Debian's EFI/debian, and back."""
+
+    def setUp(self):
+        super().setUp()
+        for name in ('grub-install', 'debconf-show', 'debconf-set-selections'):
+            self.programs[name] = f'/usr/sbin/{name}'
+        for mount in ('/boot/efi', '/boot/efi2'):
+            self.write(f'{mount}/EFI/helena-raid/mmx64.efi', 'mm-15.8')
+            self.write(f'{mount}/EFI/helena-raid/grub.cfg', STUB)
+        self.write('/usr/lib/shim/shimx64.efi.signed', 'shim-15.8')
+        self.write('/usr/lib/grub/x86_64-efi-signed/grubx64.efi.signed', 'grub-2.12')
+        self.write('/usr/lib/shim/mmx64.efi.signed', 'mm-15.8')
+        self.debconf = {'grub2/update_nvram': 'true'}
+        self.runner.on('/usr/sbin/debconf-show', fn=lambda argv, **_: CommandResult(
+            0, '  grub2/force_efi_extra_removable: false\n'
+               + ''.join(f'* {k}: {v}\n' for k, v in self.debconf.items()), ''))
+        self.runner.on('/usr/sbin/debconf-set-selections', fn=self.set_selections)
+        self.grub_cfg = STUB
+        self.grub_binary = None
+        # The config file the change writes its override into (with this test's folders).
+        with open(self.config.path, 'w') as handle:
+            json.dump({'stateDir': self.config.state_dir, 'runDir': self.config.run_dir}, handle)
+        self.runner.on('/usr/sbin/grub-install', fn=self.grub_install)
+        self.fake = self.firmware(fixture('efibootmgr.txt'))
+
+    def set_selections(self, argv, input=None, **_):
+        package, question, kind, value = input.split()
+        assert (package, kind) == ('grub-efi-amd64', 'boolean')
+        self.debconf[question] = value
+        return CommandResult(0, '', '')
+
+    def grub_install(self, argv, **_):
+        """Debian's grub-install --uefi-secure-boot: the signed images and the stub."""
+        efi = next(a for a in argv if a.startswith('--efi-directory=')).split('=', 1)[1]
+        folder = next(a for a in argv if a.startswith('--bootloader-id=')).split('=', 1)[1]
+        for name, signed in bootlayout.SIGNED:
+            self.write(f'{efi}/EFI/{folder}/{name}', self.read(signed))
+        if self.grub_binary:
+            self.write(f'{efi}/EFI/{folder}/grubx64.efi', self.grub_binary)
+        self.write(f'{efi}/EFI/{folder}/grub.cfg', self.grub_cfg)
+        return CommandResult(0, '', 'Installation finished. No error reported.')
+
+    def entries(self) -> dict:
+        return {e['label']: e for e in storage.parse_efibootmgr(self.fake.text())['entries']}
+
+    def test_the_dry_run_says_what_it_would_do_and_does_nothing(self):
+        result = bootlayout.migrate(self.host, self.config, dry_run=True)
+        self.assertTrue(result['ok'])
+        steps = {step['step']: step for step in result['steps']}
+        self.assertEqual(list(steps), ['config', 'debconf', 'grubInstall', 'copy', 'bootRepair'])
+        self.assertTrue(steps['config']['already'])
+        self.assertEqual((steps['debconf']['was'], steps['debconf']['set']), ('true', 'false'))
+        self.assertEqual(steps['grubInstall']['argv'][1:], [
+            '--target=x86_64-efi', '--efi-directory=/boot/efi', '--bootloader-id=debian',
+            '--uefi-secure-boot', '--no-nvram'])
+        self.assertIn('EFI/debian/shimx64.efi is missing', steps['grubInstall']['because'])
+        self.assertEqual([e['state'] for e in steps['bootRepair']['entries']], ['oldLayout', 'oldLayout'])
+        self.assertEqual(self.runner.called('/usr/sbin/grub-install'), [])
+        self.assertEqual(self.runner.called('/usr/sbin/debconf-set-selections'), [])
+        self.assertEqual(self.runner.called('/usr/bin/rsync'), [])
+        self.assertEqual(self.fake.log, [])
+        self.assertFalse(os.path.exists(self.host.path('/boot/efi/EFI/debian')))
+
+    def test_the_move_installs_debian_copies_it_and_moves_both_entries(self):
+        result = bootlayout.migrate(self.host, self.config)
+        self.assertTrue(result['ok'], result)
+        self.assertEqual(self.debconf['grub2/update_nvram'], 'false')
+        [argv] = self.runner.called('/usr/sbin/grub-install')
+        self.assertIn('--no-nvram', argv)
+        for mount in ('/boot/efi', '/boot/efi2'):
+            self.assertEqual(self.read(f'{mount}/EFI/debian/grub.cfg'), STUB)
+            self.assertEqual(self.read(f'{mount}/EFI/helena-raid/shimx64.efi'), 'shim-15.8')  # the fallback stays
+        entries = self.entries()
+        self.assertEqual((entries['Debian']['loader'], entries['Debian']['partuuid']), (NEW_LOADER, ESP_A))
+        self.assertEqual((entries['Debian (Reserve)']['loader'], entries['Debian (Reserve)']['partuuid']),
+                         (NEW_LOADER, ESP_B))
+        self.assertNotIn('000F', self.fake.entries)
+        self.assertNotIn('001A', self.fake.entries)
+        self.assertEqual(self.fake.order[:2], [entries['Debian']['number'], entries['Debian (Reserve)']['number']])
+        codes = [e['code'] for e in events.listing(self.config.state_dir)['events']]
+        self.assertEqual(codes, ['BootEntriesMoved'])
+        with open(os.path.join(self.config.state_dir, 'audit.log')) as handle:
+            methods = [json.loads(line)['method'] for line in handle]
+        self.assertEqual(methods[-1], 'BootLayout')
+        self.assertIn('BootRepair', methods)
+        # Once more: nothing to do.
+        self.fake.log.clear()
+        again = bootlayout.migrate(self.host, self.config)
+        self.assertTrue(again['ok'])
+        self.assertTrue(all(step.get('already') for step in again['steps'][:3]))
+        self.assertEqual(len(self.runner.called('/usr/sbin/grub-install')), 1)
+        self.assertEqual(len(self.runner.called('/usr/sbin/debconf-set-selections')), 1)
+        self.assertEqual(self.fake.log, [])
+
+    def test_it_refuses_a_degraded_or_rebuilding_mirror_and_a_missing_esp(self):
+        for degraded, action in ((1, 'idle'), (1, 'recover'), (0, 'resync')):
+            with self.subTest(degraded=degraded, action=action):
+                self.mirror(degraded, action)
+                with self.assertRaises(HostError) as caught:
+                    bootlayout.migrate(self.host, self.config, dry_run=True)
+                self.assertEqual(caught.exception.code, 'NotAllowed')
+        self.mirror()
+        self.mounted.pop('/boot/efi2')
+        with self.assertRaisesRegex(HostError, '/boot/efi2 is not mounted'):
+            bootlayout.migrate(self.host, self.config)
+        self.mounted['/boot/efi2'] = 'vfat'
+        self.unplug('nvme1n1')
+        with self.assertRaises(HostError):
+            bootlayout.migrate(self.host, self.config)
+        self.assertEqual(self.runner.called('/usr/sbin/grub-install'), [])
+        self.assertEqual(self.fake.log, [])
+
+    def test_a_stub_that_would_not_find_the_root_is_moved_aside(self):
+        bad = {
+            'another uuid': STUB.replace(ROOT_UUID, '00000000-0000-4000-8000-000000000000'),
+            'no mduuid hint': STUB.replace(f' mduuid/{ARRAY_UUID}', ''),
+            'another array': STUB.replace(ARRAY_UUID, 'f' * 32),
+            'another prefix': STUB.replace("'/boot/grub'", "'/grub'"),
+        }
+        for name, text in bad.items():
+            with self.subTest(name):
+                self.grub_cfg = text
+                result = bootlayout.migrate(self.host, self.config)
+                self.assertFalse(result['ok'])
+                self.assertEqual(result['failedStep'], 'grubInstall')
+                self.assertIn('moved to /boot/efi/EFI/debian-failed-', result['error'])
+                self.assertFalse(os.path.exists(self.host.path('/boot/efi/EFI/debian')))
+        self.assertEqual(len([n for n in os.listdir(self.host.path('/boot/efi/EFI'))
+                              if n.startswith('debian-failed-')]), 4)
+        self.assertEqual(self.runner.called('/usr/bin/rsync'), [])
+        self.assertEqual(self.fake.log, [])  # the entries were never touched
+        # And the repair at the next boot leaves them on EFI/helena-raid.
+        self.assertEqual(boot.repair(self.host, self.config)['actions'], [])
+
+    def test_an_unsigned_grub_is_refused(self):
+        self.grub_binary = 'grub-built-here'
+        result = bootlayout.migrate(self.host, self.config)
+        self.assertFalse(result['ok'])
+        self.assertIn("grubx64.efi is not Debian's signed image", result['error'])
+        self.assertEqual(self.fake.log, [])
+
+    def test_the_rollback_puts_the_entries_back_on_helena_raid(self):
+        self.assertTrue(bootlayout.migrate(self.host, self.config)['ok'])
+        dry = bootlayout.rollback(self.host, self.config, dry_run=True)
+        self.assertEqual([a['op'] for a in dry['steps'][1]['actions']].count('create'), 2)
+        self.assertEqual(self.entries()['Debian']['loader'], NEW_LOADER)
+        result = bootlayout.rollback(self.host, self.config)
+        self.assertTrue(result['ok'], result)
+        entries = self.entries()
+        self.assertEqual((entries['Debian']['loader'], entries['Debian (Reserve)']['loader']),
+                         (OLD_LOADER, OLD_LOADER))
+        self.assertEqual(load_config(self.config.path).storage['bootLoader'], OLD_LOADER)
+        # The next boot's repair keeps them there (the override is the config now).
+        self.assertEqual(boot.repair(self.host, load_config(self.config.path))['actions'], [])
+        # And the move again removes the override.
+        self.assertTrue(bootlayout.migrate(self.host, self.config)['ok'])
+        self.assertEqual(load_config(self.config.path).storage['bootLoader'], NEW_LOADER)
+        self.assertEqual(self.entries()['Debian']['loader'], NEW_LOADER)
+
+    def test_no_rollback_without_a_complete_helena_raid(self):
+        os.unlink(self.host.path('/boot/efi2/EFI/helena-raid/grub.cfg'))
+        with self.assertRaisesRegex(HostError, 'EFI/helena-raid is not complete on /boot/efi2'):
+            bootlayout.rollback(self.host, self.config, dry_run=True)
+
+    def test_the_stub_check_follows_a_separate_boot_partition(self):
+        root = {'target': '/boot', 'source': '/dev/nvme0n1p3', 'uuid': 'abcd', 'md': False, 'arrayUuid': None}
+        stub = "search.fs_uuid abcd root hd0,gpt3\nset prefix=($root)'/grub'\nconfigfile $prefix/grub.cfg\n"
+        self.assertIsNone(bootlayout.check_grub_cfg(stub, root))
+        self.assertEqual(bootlayout.check_grub_cfg(stub.replace("'/grub'", "'/boot/grub'"), root),
+                         'grub.cfg sets another prefix')
+        self.assertEqual(bootlayout.check_grub_cfg('', root), 'grub.cfg is missing')
+
+
 # ── Configuration ────────────────────────────────────────────────────────────────────────
 
 class LayoutConfigTests(HostTest):
@@ -461,12 +739,32 @@ class LayoutConfigTests(HostTest):
     def test_defaults_and_refusals(self):
         config = self.load({})
         self.assertEqual(config.storage['mainBootLabel'], 'Debian')
-        self.assertEqual(config.storage['bootLoader'], LOADER)
+        self.assertEqual(config.storage['bootLoader'], NEW_LOADER)
+        self.assertEqual(boot.loaders(config.storage), (NEW_LOADER, [OLD_LOADER]))
+        self.assertEqual(boot.loaders({**config.storage, 'bootLoader': OLD_LOADER}), (OLD_LOADER, [NEW_LOADER]))
         for bad in ({'mainBootLabel': 'Debian (Reserve)'}, {'bootLoader': '/EFI/x.efi'},
                     {'bootLoader': '\\EFI\\..\\x.efi'}, {'espMounts': ['/boot/efi', '/boot/efi']},
-                    {'espMounts': ['boot/efi']}, {'reserveBootLabel': ''}):
+                    {'espMounts': ['boot/efi']}, {'reserveBootLabel': ''}, {'legacyBootLoaders': 'x'},
+                    {'legacyBootLoaders': ['/EFI/x.efi']}):
             with self.subTest(bad=bad), self.assertRaises(HostError):
                 self.load(bad)
+
+    def test_an_override_is_written_and_removed_keeping_the_rest(self):
+        config = self.load({'mainBootLabel': 'Debian'})
+        with open(config.path) as handle:
+            raw = json.load(handle)
+        raw['callers'] = ['volition-plan']
+        with open(config.path, 'w') as handle:
+            json.dump(raw, handle)
+        write_storage_override(config, {'bootLoader': OLD_LOADER})
+        self.assertEqual(config.storage['bootLoader'], OLD_LOADER)
+        self.assertEqual(load_config(config.path).storage['bootLoader'], OLD_LOADER)
+        write_storage_override(config, {'bootLoader': None, 'mainBootLabel': None})
+        with open(config.path) as handle:
+            self.assertEqual(json.load(handle), {'callers': ['volition-plan']})
+        self.assertEqual(config.storage['bootLoader'], NEW_LOADER)
+        with self.assertRaises(HostError):
+            write_storage_override(config, {'bootLoader': '../x'})
 
 
 # ── NVMe power rules ─────────────────────────────────────────────────────────────────────
@@ -549,6 +847,11 @@ class InstallerTests(unittest.TestCase):
             self.assertIn(piece, uninstall)
         # Enabled for the next boot, never started by the installer.
         self.assertNotRegex(install, r'(enable --now|start) helena-boot-entries')
+        # The layout change runs the installed helper as root, its dry run too.
+        layout = install.split('\nboot-layout)', 1)[1].split(';;', 1)[0]
+        self.assertIn('[ "$(id -u)" = 0 ]', layout)
+        self.assertIn('helena-hostd" boot-layout --dry-run $rollback', layout)
+        self.assertIn('systemctl try-restart helena-hostd.service', layout)
         with open(os.path.join(HERE, '..', 'systemd', 'helena-boot-entries.service')) as handle:
             unit = handle.read()
         self.assertIn('ConditionPathExists=/sys/firmware/efi', unit)

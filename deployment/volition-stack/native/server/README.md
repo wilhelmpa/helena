@@ -20,6 +20,7 @@ Decision and alternatives: `docs/helena-decisions/server-admin.md`.
 | `/etc/udev/rules.d/60-helena-nvme.rules` + `helena-nvme-pm` | NVMe disks stay awake: APST off, no D3cold, no runtime suspend of the disk or its root port |
 | `/etc/apt/apt.conf.d/99helena-esp-sync` + `helena-esp-sync` | after every package change the second ESP gets the first one's content, guarded and verified |
 | `helena-boot-entries.service` | at every boot: the firmware entries "Debian" / "Debian (Reserve)" point at their ESPs (`helena-hostd boot-repair`) |
+| `helena-hostd boot-layout` (`install.sh boot-layout`) | once: the entries onto Debian's own `EFI/debian`, which apt keeps current (`--rollback`: back to `EFI/helena-raid`) |
 
 ## Protocol
 
@@ -51,7 +52,9 @@ alternatives: `docs/helena-decisions/server-admin.md` §3a.
   `cat /sys/bus/pci/devices/*/d3cold_allowed` of the NVMe functions (0).
 - **ESP copy** (`esp.py`, run by apt's `DPkg::Post-Invoke`): copies `/boot/efi` onto
   `/boot/efi2` only when both are mounted vfat file systems (not the same one), the source has
-  `EFI/helena-raid/shimx64.efi` and `grub.cfg`, and every file of it reads back in full; then
+  `shimx64.efi` and `grub.cfg` in every loader folder of the layout found on either ESP
+  (`EFI/debian`, and `EFI/helena-raid` while it exists), and every file of it reads back in
+  full; then
   `rsync -a --delete --modify-window=1` must exit 0 and every copied file must hash like its
   source. Anything else leaves the mirror alone. The outcome is in
   `/var/lib/helena/hostd/esp-sync.json` (Server → Platten & RAID: amber "skipped" while the
@@ -61,14 +64,54 @@ alternatives: `docs/helena-decisions/server-admin.md` §3a.
   `sudo /usr/local/lib/helena/hostd/helena-hostd boot-repair [--dry-run]`): for each ESP that
   is mounted and whose disk is on the bus, exactly one active entry with its label ("Debian"
   for the first, "Debian (Reserve)" for the second, config `mainBootLabel`/`reserveBootLabel`)
-  on that partition's GUID, starting `bootLoader` (`\EFI\helena-raid\shimx64.efi`). A missing,
-  `VenHw(…)`-rewritten, wrong-disk or wrong-loader entry is replaced: the new one is created
-  and read back **before** the wrong one is deleted. An ESP that is not mounted is left alone,
+  on that partition's GUID, starting `bootLoader` (default `\EFI\debian\shimx64.efi`). A
+  missing, `VenHw(…)`-rewritten, wrong-disk or wrong-loader entry is replaced: the new one is
+  created and read back **before** the wrong one is deleted. An entry still starting the old
+  layout (`\EFI\helena-raid\shimx64.efi`, config `legacyBootLoaders`) keeps working and is
+  moved once `EFI/debian` has its shim and `grub.cfg` on that ESP (event "Starteinträge
+  umgestellt"). An ESP that is not mounted is left alone,
   and so is an entry with the label that belongs to another install on another disk. The
   boot order becomes Debian, Debian (Reserve), then the rest, once "Debian" is verified.
   Every change goes to the audit log, the journal and the events.
-- The ESP copy and the boot entry repair stay silent on a machine whose ESPs do not hold the
-  loader's folder (`EFI/helena-raid`): another boot layout is not theirs to judge.
+- The ESP copy and the boot entry repair stay silent on a machine without this layout (both
+  ESP mounts in `/etc/fstab` and a known loader folder on one of them): another boot layout is
+  not theirs to judge.
+
+## Boot layout: onto Debian's EFI/debian (once)
+
+The RAID was set up with its loader in `EFI/helena-raid`, which apt never updates: Debian's
+`grub-efi-amd64` and `shim-signed` postinst scripts run `grub-install` for `EFI/debian`, and
+with debconf `grub2/update_nvram=true` they add their own "debian" entry at the front of the
+boot order. `helena-hostd boot-layout` (`bootlayout.py`) moves the machine onto the standard
+path: config `bootLoader` = `\EFI\debian\shimx64.efi`, debconf `grub2/update_nvram=false`,
+`grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=debian
+--uefi-secure-boot --no-nvram` (skipped when `EFI/debian` already checks out), a check that
+`EFI/debian` holds Debian's signed shim/GRUB/MokManager and a `grub.cfg` that finds `/boot/grub`
+like the old stub (`search.fs_uuid <root uuid> root mduuid/<array uuid>`, prefix `/boot/grub`;
+otherwise the folder is moved to `EFI/debian-failed-<time>` and nothing else changes), the
+guarded ESP copy, and the boot entry repair. It refuses while an array is degraded or
+rebuilding, or an ESP is not mounted or its disk not on the bus. Idempotent.
+
+```sh
+cd /srv/volition/source/plan/deployment/volition-stack/native/server
+sudo ./install.sh --dry-run boot-layout      # steps it would take, the entries as they are now
+sudo ./install.sh boot-layout                # the change; restarts helena-hostd afterwards
+sudo efibootmgr                              # Debian / Debian (Reserve) → \EFI\debian\shimx64.efi, first
+sudo debconf-show grub-efi-amd64 | grep update_nvram     # false
+sudo diff -r /boot/efi/EFI/debian /boot/efi2/EFI/debian  # no output
+sudo cat /boot/efi/EFI/debian/grub.cfg       # search.fs_uuid <root> root mduuid/<array>
+# then the reboot test: both entries once each (Server → "Einmal von Reserve starten" for the second)
+```
+
+**Rollback** (entries back to `EFI/helena-raid`, which stays untouched): `sudo ./install.sh
+--rollback boot-layout` (dry run with `--dry-run`). It writes `storage.bootLoader =
+\EFI\helena-raid\shimx64.efi` into `/etc/helena/hostd.json`, so the repair at every boot keeps
+them there; debconf stays `false`. `boot-layout` without `--rollback` moves them again.
+
+**Later clean-up** (after some weeks on `EFI/debian`, no rollback wanted any more): remove the
+old folder from **both** ESPs at once — the ESP copy refuses to delete a loader folder the
+mirror still has but the source lost:
+`sudo rm -r /boot/efi/EFI/helena-raid /boot/efi2/EFI/helena-raid`.
 
 ## Runbook: a disk falls off the bus
 
@@ -113,7 +156,8 @@ verschwunden?" has the same steps with this machine's names):
    **Wait for `[UU]` before the next reboot:** until the member is in sync, GRUB may read
    `/boot/grub/grub.cfg` from the stale member (seen on 2026-09-25: the boot missed a kernel
    parameter added after the disk fell off).
-5. ESP and boot entry: `mountpoint -q /boot/efi || { sudo fsck.vfat -a
+5. ESP and boot entry (the entries start `\EFI\debian\shimx64.efi` after the layout change):
+   `mountpoint -q /boot/efi || { sudo fsck.vfat -a
    /dev/disk/by-partlabel/HELENA-EFI-A && sudo mount /boot/efi; }`, then
    `sudo /usr/local/lib/helena/hostd/helena-hostd boot-repair --dry-run`, read it, run it
    without `--dry-run`, and catch up the ESP copy with
@@ -131,6 +175,7 @@ sudo ./install.sh --dry-run --owner wilhelmpa install   # what it would do
 sudo ./install.sh --owner wilhelmpa install     # helper, units, hooks; then restart the API
 sudo /usr/local/lib/helena/hostd/helena-hostd boot-repair --dry-run   # should list no actions
 sudo /usr/local/lib/helena/hostd/helena-esp-sync --dry-run            # should say "ready"
+sudo ./install.sh --dry-run boot-layout && sudo ./install.sh boot-layout   # once: onto EFI/debian
 sudo ./install.sh backup-init                    # password + repository + timers
 sudo systemctl start helena-backup.service       # the first backup (long: every folder once)
 sudo fans/install-fan-control.sh --from-clones /home/wilhelmpa/Projekte/Linux install

@@ -145,16 +145,33 @@ Both the copy and the repair only act where the layout is in use (the loader's f
 one of the ESPs), so an installation with another boot layout gets no lines from them.
 "Platte ersetzen" now uses the same repair instead of hand-built efibootmgr commands.
 
-**Found while building this (not changed):** Debian 13's `grub-efi-amd64.postinst` runs
-`grub-install` whenever `/boot/grub/x86_64-efi/core.efi` exists, with the bootloader id from
-`GRUB_DISTRIBUTOR` (`debian`) and `grub2/update_nvram=true`. The next GRUB package update
-will therefore write `EFI/debian/*` onto `/boot/efi` and put a new `debian` entry first in the
-boot order, while "Debian"/"Debian (Reserve)" keep starting the `EFI/helena-raid` binaries of
-2026-09-24. The ESP copy mirrors `EFI/debian` too and the boot repair puts "Debian" first again
-at the next boot, so nothing breaks, but `EFI/helena-raid` is never updated by apt. Options
-for the owner/orchestrator: re-run `grub-install --bootloader-id=helena-raid` after GRUB/shim
-updates (a small dpkg hook), or set `grub2/update_nvram=false` and point the entries at
-`EFI/debian`.
+**Boot layout: Debian's own `EFI/debian` (decided 2026-09-25 by the orchestrator, standard
+path, fewer custom parts).** Debian 13's `grub-efi-amd64.postinst` runs `grub-install`
+whenever `/boot/grub/x86_64-efi/core.efi` exists, and `shim-signed.postinst` whenever
+`/boot/efi/EFI/debian` exists, both with the bootloader id from `GRUB_DISTRIBUTOR` (`debian`)
+and, with `grub2/update_nvram=true`, an NVRAM write that puts a "debian" entry first. The RAID
+was set up with `--bootloader-id=helena-raid`, a folder apt never updates.
+
+| Option | Decision |
+|---|---|
+| Keep `EFI/helena-raid` and re-run `grub-install --bootloader-id=helena-raid` from a dpkg hook after GRUB/shim updates | Rejected: one more custom part to keep working, against the package's own path. |
+| `GRUB_DISTRIBUTOR=helena-raid` | Rejected: changes the GRUB menu title and every other place the distributor appears. |
+| **Entries on `EFI/debian`, apt keeps it current, NVRAM left to Helena** | **Chosen.** `helena-hostd boot-layout` (once, idempotent, dry run first): config `bootLoader` → `\EFI\debian\shimx64.efi`; debconf `grub2/update_nvram=false` (apt never adds its "debian" entry or reorders); `grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=debian --uefi-secure-boot --no-nvram`; a check that the result is Debian's signed shim/GRUB/MokManager (hashes of `/usr/lib/shim/*.signed`, `/usr/lib/grub/x86_64-efi-signed/grubx64.efi.signed`) and that `EFI/debian/grub.cfg` finds `/boot/grub` like the helena-raid stub (`search.fs_uuid <uuid> root mduuid/<array>`, prefix `/boot/grub`) — else the folder is moved aside and nothing else changes; the guarded ESP copy; the boot entry repair. Refuses while an array is degraded or rebuilding or an ESP is missing. |
+
+The repair knows both loaders: the configured one and the old one (`legacyBootLoaders`, by
+default the other of `\EFI\debian\shimx64.efi` / `\EFI\helena-raid\shimx64.efi`). An
+entry on the right ESP that starts the old one is `oldLayout`: it keeps working (no health
+line) and is moved (create, read back, delete; event "Starteinträge umgestellt", info) once
+the configured loader has its shim and `grub.cfg` on that ESP. The ESP copy requires both
+files in every loader folder found on either ESP, so it never deletes a loader the mirror
+still starts. `EFI/helena-raid` stays as the fallback; **rollback** = `helena-hostd
+boot-layout --rollback` (config override back to `\EFI\helena-raid\shimx64.efi`, entries
+repaired back); **clean-up later** = remove `EFI/helena-raid` from both ESPs at once. The
+current `EFI/helena-raid` binaries were byte-identical to Debian's signed images on
+2026-09-25 (Secure Boot is off; Debian's `grub-install` installs the signed shim layout by
+default when the signed packages are present, as the 2026-09-24 setup did without a flag).
+Not changed: `grub2/force_efi_extra_removable` stays `false`, so the firmware's fallback path
+`EFI/BOOT` keeps the files of 2026-09-24 (it is copied to the second ESP like everything else).
 
 **Out of band alerting** (mail, push) is not built: the owner chooses the channel. The events
 file and the red health lines are ready to be forwarded.

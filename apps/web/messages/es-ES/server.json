@@ -243,6 +243,7 @@
       "EspSyncFailed": "Copia EFI fallida",
       "EspSyncRecovered": "Copia EFI de nuevo en orden",
       "BootEntryRepaired": "Entrada de arranque reparada",
+      "BootEntriesMoved": "Entradas de arranque movidas al nuevo cargador",
       "BootEntryRepairFailed": "Entrada de arranque no reparada"
     }
   },

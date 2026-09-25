@@ -128,6 +128,7 @@ export interface BootEntryCheck {
   number: string | null;
   state:
     | 'ok'
+    | 'oldLayout'
     | 'missing'
     | 'noPartuuid'
     | 'wrongDisk'

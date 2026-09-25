@@ -152,6 +152,12 @@ describe('ESP copy and boot entries (the 2026-09-25 disk that fell off the bus)'
     expect(byId(items, 'boot:main')).toBeUndefined();
   });
 
+  it('an entry still on the old loader folder counts as right', () => {
+    const items = withEntries({ state: 'oldLayout' });
+    expect(byId(items, 'boot:main')).toBeUndefined();
+    expect(byId(items, 'boot')).toMatchObject({ state: 'ok', code: 'bootEntriesOk' });
+  });
+
   it('an entry the firmware rewrote is amber until the next boot repairs it', () => {
     const items = withEntries({ state: 'noPartuuid', number: '000F', entries: ['000F'] });
     expect(byId(items, 'boot:main')).toMatchObject({

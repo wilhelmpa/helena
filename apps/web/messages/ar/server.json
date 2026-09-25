@@ -243,6 +243,7 @@
       "EspSyncFailed": "نسخ EFI فشل",
       "EspSyncRecovered": "نسخ EFI رجع تمام",
       "BootEntryRepaired": "مدخل الإقلاع اتصلّح",
+      "BootEntriesMoved": "مداخل الإقلاع اتنقلت لمحمّل الإقلاع الجديد",
       "BootEntryRepairFailed": "مدخل الإقلاع ما اتصلّحش"
     }
   },

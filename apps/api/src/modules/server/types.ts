@@ -120,8 +120,11 @@ export interface BootEntry {
 // One ESP's firmware entry ("Debian" on the first ESP, "Debian (Reserve)" on the second),
 // judged by the helper against the partition mounted now (helena_host/boot.py).
 // `unchecked`: its ESP is not mounted (a disk away), so nothing is compared or changed.
+// `oldLayout`: it starts the old loader folder (EFI/helena-raid before `helena-hostd
+// boot-layout`); it works and moves once the configured loader is complete on its ESP.
 export type BootEntryState =
   | 'ok'
+  | 'oldLayout'
   | 'missing'
   | 'noPartuuid'
   | 'wrongDisk'

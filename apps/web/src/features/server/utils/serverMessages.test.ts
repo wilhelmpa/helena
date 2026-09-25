@@ -42,7 +42,10 @@ function hostdSources(): { sources: string[]; codes: string[] } {
     const source = readFileSync(join(HOSTD, file), 'utf8');
     for (const match of source.matchAll(/(?:source=|'source': )'([a-z]+)'/g))
       sources.add(match[1]!);
-    for (const match of source.matchAll(/\bcode='([A-Za-z]+)'/g)) codes.add(match[1]!);
+    // code='BackupFailed', and severity, code = 'info', 'BootEntriesMoved'
+    for (const match of source.matchAll(/\bcode\s*=\s*(?:'[a-z]+',\s*)?'([A-Z][A-Za-z]+)'/g)) {
+      codes.add(match[1]!);
+    }
   }
   return { sources: [...sources].sort(), codes: [...codes].sort() };
 }
@@ -64,10 +67,9 @@ describe('Server messages', () => {
   it('names every event source and words every event the host helper records', () => {
     const { sources, codes } = hostdSources();
     assert.deepEqual(sources, ['backup', 'boot', 'esp', 'guard', 'mdadm', 'smartd']);
-    assert.ok(
-      codes.includes('EspSyncSkipped') && codes.includes('BootEntryRepaired'),
-      codes.join(),
-    );
+    for (const code of ['EspSyncSkipped', 'BootEntryRepaired', 'BootEntriesMoved']) {
+      assert.ok(codes.includes(code), `${code} not found in ${codes.join()}`);
+    }
     for (const locale of LOCALES) {
       const events = messages(locale).events;
       assert.deepEqual(

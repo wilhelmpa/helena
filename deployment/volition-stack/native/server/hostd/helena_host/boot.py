@@ -18,6 +18,10 @@ Rules, because a mistake here can leave a machine that does not boot:
   install of its own that happens to share the name); it is reported instead.
 - The boot order becomes main, reserve, then the rest as it was, and only once the main
   entry is verified.
+- An entry that starts a loader of the other known layout (`\\EFI\\helena-raid\\…` while
+  the config names Debian's `\\EFI\\debian\\…`, or the reverse after a rollback) on the
+  right ESP is the "old layout": it is moved to the configured loader once that loader is
+  complete on that ESP (shim and grub.cfg), and left alone until then.
 """
 
 from __future__ import annotations
@@ -30,7 +34,12 @@ from .common import Host, HostError, clip, file_lock
 
 ROLES = ('main', 'reserve')
 # Worst first: what `check()` reports when a role has no right entry.
-PROBLEMS = ('noPartuuid', 'wrongDisk', 'wrongLoader', 'inactive')
+PROBLEMS = ('noPartuuid', 'wrongDisk', 'wrongLoader', 'inactive', 'oldLayout')
+# The loaders this layout knows: Debian's own folder (apt keeps it current) and the folder
+# the RAID was set up with on 2026-09-24. The config names one; the other is the old layout.
+DEBIAN_LOADER = '\\EFI\\debian\\shimx64.efi'
+HELENA_RAID_LOADER = '\\EFI\\helena-raid\\shimx64.efi'
+KNOWN_LOADERS = (DEBIAN_LOADER, HELENA_RAID_LOADER)
 KNAME = re.compile(r'^[a-z0-9]{2,32}$')
 NUMBER = re.compile(r'^[0-9A-F]{4}$')
 
@@ -89,23 +98,59 @@ def esp_partition(host: Host, mount: str, devices: list[dict]) -> dict | None:
     return None
 
 
+def loaders(config_storage: dict) -> tuple[str, list[str]]:
+    """The configured loader and the old-layout ones (config `legacyBootLoaders`, by default
+    the other known loader)."""
+    current = config_storage.get('bootLoader') or DEBIAN_LOADER
+    legacy = config_storage.get('legacyBootLoaders')
+    if legacy is None:
+        legacy = [loader for loader in KNOWN_LOADERS if normalize_loader(loader) != normalize_loader(current)]
+    return current, [loader for loader in legacy if normalize_loader(loader) != normalize_loader(current)]
+
+
+def loader_files(loader: str) -> list[str]:
+    """What a loader needs on its ESP to start: the shim and the grub.cfg next to it (the
+    stub that finds the root file system)."""
+    relative = loader_relative(loader)
+    return [relative, os.path.join(os.path.dirname(relative), 'grub.cfg')]
+
+
+def loader_complete(host: Host, mount: str, loader: str) -> bool:
+    try:
+        return all(os.path.getsize(os.path.join(host.path(mount), relative)) > 0
+                   for relative in loader_files(loader))
+    except OSError:
+        return False
+
+
+def _fstab_mounts(host: Host) -> set[str]:
+    mounts = set()
+    for line in (host.read('/etc/fstab') or '').splitlines():
+        fields = line.split()
+        if len(fields) >= 2 and not fields[0].startswith('#'):
+            mounts.add(fields[1])
+    return mounts
+
+
 def layout_in_use(host: Host, config_storage: dict) -> bool:
-    """Whether this machine boots the configured way at all: the loader's folder is on one of
-    the ESPs. A machine with another layout (one ESP with EFI/debian) gets no boot entry lines
-    and no repair."""
-    loader = config_storage.get('bootLoader') or '\\EFI\\helena-raid\\shimx64.efi'
-    folder = os.path.dirname(loader_relative(loader))
-    return any(os.path.isdir(os.path.join(host.path(mount), folder))
-               for mount in list(config_storage.get('espMounts') or [])[:2])
+    """Whether this machine boots the mirrored way at all: both ESP mounts are in /etc/fstab
+    and one of them holds a known loader's folder. A machine with another layout (one ESP
+    with Debian's usual entry) gets no boot entry lines, no repair and no ESP copy."""
+    mounts = list(config_storage.get('espMounts') or [])[:2]
+    if len(mounts) < 2 or not set(mounts) <= _fstab_mounts(host):
+        return False
+    current, legacy = loaders(config_storage)
+    folders = {os.path.dirname(loader_relative(loader)) for loader in (current, *legacy)}
+    return any(os.path.isdir(os.path.join(host.path(mount), folder)) for mount in mounts for folder in folders)
 
 
 def layout(host: Host, config_storage: dict, devices: list[dict]) -> list[dict]:
-    """The roles of this machine: which label belongs to which mount, and where that mount's
-    partition is now (None when it is not there)."""
+    """The roles of this machine: which label belongs to which mount, where that mount's
+    partition is now (None when it is not there), and which loaders are complete on it."""
     mounts = list(config_storage.get('espMounts') or [])[:2]
     labels = [config_storage.get('mainBootLabel') or 'Debian',
               config_storage.get('reserveBootLabel') or 'Debian (Reserve)']
-    loader = config_storage.get('bootLoader') or '\\EFI\\helena-raid\\shimx64.efi'
+    current, legacy = loaders(config_storage)
     roles = []
     for index, mount in enumerate(mounts):
         esp = esp_partition(host, mount, devices)
@@ -114,23 +159,26 @@ def layout(host: Host, config_storage: dict, devices: list[dict]) -> list[dict]:
             'label': labels[index],
             'mount': mount,
             'esp': esp,
-            'loaderPresent': esp is not None and os.path.isfile(
-                os.path.join(host.path(mount), loader_relative(loader))),
+            'loaderPresent': esp is not None and loader_complete(host, mount, current),
+            'legacyPresent': {normalize_loader(loader) for loader in legacy
+                              if esp is not None and loader_complete(host, mount, loader)},
         })
     return roles
 
 
 # ── Judging the entries ──────────────────────────────────────────────────────────────────
 
-def classify(entry: dict, esp: dict, loader: str, others: set[str]) -> str:
+def classify(entry: dict, esp: dict, loader: str, others: set[str], legacy: tuple[str, ...] = ()) -> str:
     """One entry against the ESP its label belongs to. `others`: partition GUIDs on this
-    machine that are not one of the ESPs (an entry there is someone else's)."""
+    machine that are not one of the ESPs (an entry there is someone else's). `legacy`: the
+    old layout's loaders (an entry starting one of them is `oldLayout`)."""
     if not entry.get('partuuid'):
         return 'noPartuuid'
     if entry['partuuid'] != esp['partuuid']:
         return 'foreign' if entry['partuuid'] in others else 'wrongDisk'
-    if normalize_loader(entry.get('loader')) != normalize_loader(loader):
-        return 'wrongLoader'
+    started = normalize_loader(entry.get('loader'))
+    if started != normalize_loader(loader):
+        return 'oldLayout' if started in {normalize_loader(item) for item in legacy} else 'wrongLoader'
     if not entry.get('active'):
         return 'inactive'
     return 'ok'
@@ -141,7 +189,7 @@ def _rank(entries: list[dict], order: list[str]) -> list[dict]:
     return sorted(entries, key=lambda entry: (position.get(entry['number'], len(order)), entry['number']))
 
 
-def plan(boot: dict, roles: list[dict], loader: str, present: set[str]) -> dict:
+def plan(boot: dict, roles: list[dict], loader: str, present: set[str], legacy: tuple[str, ...] = ()) -> dict:
     """What `repair()` would do: per role its state and the entry it keeps, and the actions
     (create, activate, delete, order) in the order they run."""
     ours = {role['esp']['partuuid'] for role in roles if role['esp']}
@@ -174,14 +222,19 @@ def plan(boot: dict, roles: list[dict], loader: str, present: set[str]) -> dict:
                 check.update(state='noPartuuid' if all(not e.get('partuuid') for e in same) else 'unchecked',
                              number=_rank(same, order)[0]['number'])
             continue
+        states = {entry['number']: classify(entry, esp, loader, others, legacy) for entry in same}
         if not role['loaderPresent']:
-            # An entry for a loader that is not on the ESP would not start: leave it to the
-            # owner (the ESP copy or grub-install), never create one.
-            check['state'] = 'loaderMissing'
-            if same:
-                check['number'] = _rank(same, order)[0]['number']
+            # An entry for a loader that is not on the ESP would not start: never create one.
+            # An old-layout entry whose loader is still complete there keeps working: leave it.
+            old = [entry for entry in same if states[entry['number']] == 'oldLayout' and entry.get('active')
+                   and normalize_loader(entry.get('loader')) in role.get('legacyPresent', set())]
+            if old:
+                check.update(state='oldLayout', number=_rank(old, order)[0]['number'])
+            else:
+                check['state'] = 'loaderMissing'
+                if same:
+                    check['number'] = _rank(same, order)[0]['number']
             continue
-        states = {entry['number']: classify(entry, esp, loader, others) for entry in same}
         good = [entry for entry in same if states[entry['number']] == 'ok']
         inactive = [entry for entry in same if states[entry['number']] == 'inactive']
         keep = (_rank(good, order) or _rank(inactive, order) or [None])[0]
@@ -219,8 +272,8 @@ def check(host: Host, config_storage: dict, boot: dict | None, devices: list[dic
     if not boot or 'entries' not in boot or not layout_in_use(host, config_storage):
         return []
     roles = layout(host, config_storage, devices)
-    loader = config_storage.get('bootLoader') or '\\EFI\\helena-raid\\shimx64.efi'
-    return plan(boot, roles, loader, present_partuuids(devices))['roles']
+    loader, legacy = loaders(config_storage)
+    return plan(boot, roles, loader, present_partuuids(devices), tuple(legacy))['roles']
 
 
 # ── Repairing them ───────────────────────────────────────────────────────────────────────
@@ -240,7 +293,7 @@ def repair(host: Host, config, *, dry_run: bool = False, log=lambda message: Non
     if not efibootmgr or not host.exists('/sys/firmware/efi'):
         raise HostError('NotSupported', 'this machine has no EFI boot manager')
     config_storage = config.storage
-    loader = config_storage['bootLoader']
+    loader, legacy = loaders(config_storage)
     if not layout_in_use(host, config_storage):
         return {'dryRun': dry_run, 'roles': [], 'actions': [], 'changed': False, 'ok': True,
                 'reason': 'notInUse'}
@@ -249,14 +302,14 @@ def repair(host: Host, config, *, dry_run: bool = False, log=lambda message: Non
         devices = storage.lsblk(host)
         roles = layout(host, config_storage, devices)
         present = present_partuuids(devices)
-        planned = plan(before, roles, loader, present)
+        planned = plan(before, roles, loader, present, tuple(legacy))
         result = {'dryRun': dry_run, 'roles': planned['roles'], 'actions': [], 'changed': False, 'ok': True}
         by_role = {check['role']: check for check in planned['roles']}
         esp_of = {role['role']: role['esp'] for role in roles}
         if dry_run:
             actions = list(planned['actions'])
             main = by_role.get('main')
-            if main and (main['state'] in ('ok', 'duplicate', 'inactive') or _creates(actions, 'main')):
+            if main and (main['state'] in ('ok', 'duplicate', 'inactive', 'oldLayout') or _creates(actions, 'main')):
                 deleted = {action['number'] for action in actions if action['op'] == 'delete'}
                 existing = ({entry['number'] for entry in before['entries']} | {'new'}) - deleted
                 order = desired_order(before['order'], _front(by_role, actions), existing)
@@ -265,7 +318,9 @@ def repair(host: Host, config, *, dry_run: bool = False, log=lambda message: Non
             result['actions'] = actions
             return result
 
-        verified: set[str] = {role for role, check in by_role.items() if check['state'] in ('ok', 'duplicate')}
+        # A kept old-layout entry starts fine: it may lead the order like a right one.
+        verified: set[str] = {role for role, check in by_role.items()
+                              if check['state'] in ('ok', 'duplicate', 'oldLayout')}
         done: list[dict] = []
 
         def run(argv: list[str], action: dict) -> bool:
@@ -338,9 +393,17 @@ def repair(host: Host, config, *, dry_run: bool = False, log=lambda message: Non
                 'at': audit.now_iso(host), 'caller': 'root', 'actor': actor, 'method': 'BootRepair',
                 'params': {}, 'ok': result['ok'], 'actions': done,
             }, log)
-            events.record(config.state_dir, source='boot',
-                          severity='warning' if result['ok'] else 'critical',
-                          code='BootEntryRepaired' if result['ok'] else 'BootEntryRepairFailed',
+            # Moving entries from the old layout to the configured loader is expected (after
+            # the layout change, or apt's first grub-install): news, not a warning.
+            deletes = [action for action in done if action['op'] == 'delete']
+            moved = bool(deletes) and all(action['reason'] == 'oldLayout' for action in deletes)
+            if not result['ok']:
+                severity, code = 'critical', 'BootEntryRepairFailed'
+            elif moved:
+                severity, code = 'info', 'BootEntriesMoved'
+            else:
+                severity, code = 'warning', 'BootEntryRepaired'
+            events.record(config.state_dir, source='boot', severity=severity, code=code,
                           device=', '.join(sorted({by_role[a['role']]['label'] for a in done if a.get('role')})) or None,
                           message=summary, at=host.now())
         return result
@@ -359,7 +422,7 @@ def _front(by_role: dict, actions: list[dict]) -> list[str]:
             continue
         if _creates(actions, role):
             front.append('new')
-        elif check['state'] in ('ok', 'duplicate', 'inactive') and check['number']:
+        elif check['state'] in ('ok', 'duplicate', 'inactive', 'oldLayout') and check['number']:
             front.append(check['number'])
     return front
 

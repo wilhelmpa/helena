@@ -243,6 +243,7 @@
       "EspSyncFailed": "EFI 复制失败",
       "EspSyncRecovered": "EFI 复制已恢复正常",
       "BootEntryRepaired": "启动项已修复",
+      "BootEntriesMoved": "启动项已切换到新的引导程序",
       "BootEntryRepairFailed": "启动项未修复"
     }
   },

@@ -11,6 +11,8 @@ power and fans). See ../README.md and docs/helena-decisions/server-admin.md.
                                      (apt's DPkg::Post-Invoke: /etc/apt/apt.conf.d/99helena-esp-sync)
   helena-hostd boot-repair [--dry-run]   make the firmware entries of both ESPs right
                                      (helena-boot-entries.service at every boot)
+  helena-hostd boot-layout [--dry-run] [--rollback]   move the entries onto Debian's EFI/debian
+                                     once (or back to EFI/helena-raid); see bootlayout.py
   helena-hostd fans-initial [level]  installer: the first fan choice (default 5 = maximum)
   helena-hostd call <Method> [json]  a client, for root on the console
 """
@@ -39,7 +41,7 @@ _trusted_directory(HERE)
 _trusted_directory(os.path.join(HERE, 'helena_host'))
 sys.path.insert(0, HERE)
 
-from helena_host import backup, boot, esp, events, guard  # noqa: E402
+from helena_host import backup, boot, bootlayout, esp, events, guard  # noqa: E402
 from helena_host.common import VERSION, Host, HostError  # noqa: E402
 from helena_host.config import DEFAULT_CONFIG_PATH, load_config, load_settings  # noqa: E402
 from helena_host.service import DESCRIPTION, INTERFACE, Dispatcher  # noqa: E402
@@ -183,6 +185,18 @@ def run_boot_repair(args: list[str]) -> int:
     return 0 if result['ok'] else 1
 
 
+def run_boot_layout(args: list[str]) -> int:
+    if set(args) - {'--dry-run', '--rollback'}:
+        print(__doc__, file=sys.stderr)
+        return 2
+    change = bootlayout.rollback if '--rollback' in args else bootlayout.migrate
+    result = change(Host(), config(), dry_run='--dry-run' in args, log=log_journal, actor='console')
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+    if not result['ok']:
+        log_journal(f"boot-layout: failed at {result.get('failedStep') or 'bootRepair'}: {result.get('error')}")
+    return 0 if result['ok'] else 1
+
+
 def main(argv: list[str]) -> int:
     command = argv[0] if argv else 'serve'
     try:
@@ -198,6 +212,8 @@ def main(argv: list[str]) -> int:
             return run_esp_sync(argv[1:])
         if command == 'boot-repair':
             return run_boot_repair(argv[1:])
+        if command == 'boot-layout':
+            return run_boot_layout(argv[1:])
         if command == 'fans-initial':
             level = int(argv[1]) if len(argv) > 1 else 5
             if level not in range(1, 6):

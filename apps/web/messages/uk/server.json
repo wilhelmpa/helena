@@ -243,6 +243,7 @@
       "EspSyncFailed": "Копіювання EFI не вдалося",
       "EspSyncRecovered": "Копія EFI знову в порядку",
       "BootEntryRepaired": "Завантажувальний запис виправлено",
+      "BootEntriesMoved": "Завантажувальні записи переведено на новий завантажувач",
       "BootEntryRepairFailed": "Завантажувальний запис не виправлено"
     }
   },

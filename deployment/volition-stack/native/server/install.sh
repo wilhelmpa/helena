@@ -8,6 +8,8 @@
 #   sudo ./install.sh [--dry-run] [--owner <user>] [--api-user <user>] install
 #   sudo ./install.sh [--dry-run] backup-init      password + restic repository + timers
 #   sudo ./install.sh status
+#   sudo ./install.sh [--dry-run] [--rollback] boot-layout   boot entries onto EFI/debian once
+#                                                           (or back); runs the installed helper
 #   sudo ./install.sh [--dry-run] uninstall        keeps the repository and its password
 #
 # See README.md and docs/helena-decisions/server-admin.md.
@@ -17,17 +19,19 @@ DRY_RUN=0
 owner=
 api_user=volition-plan
 command=
+rollback=
 while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run) DRY_RUN=1 ;;
+    --rollback) rollback=--rollback ;;
     --owner) owner=$2; shift ;;
     --api-user) api_user=$2; shift ;;
-    install|backup-init|status|uninstall) command=$1 ;;
+    install|backup-init|status|uninstall|boot-layout) command=$1 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
   shift
 done
-[ -n "$command" ] || { sed -n '2,12p' "$0"; exit 2; }
+[ -n "$command" ] || { sed -n '2,15p' "$0"; exit 2; }
 run() { if [ "$DRY_RUN" = 1 ]; then echo "would: $*"; else "$@"; fi; }
 [ "$(id -u)" = 0 ] || [ "$DRY_RUN" = 1 ] || [ "$command" = status ] || { echo "run as root" >&2; exit 1; }
 
@@ -139,6 +143,19 @@ backup-init)
   run python3 -I "$LIB/helena-hostd" backup init
   echo "Backup ready. The owner writes the password down in Helena: Administrator → Server → Backup."
   echo "First backup: systemctl start helena-backup.service (journalctl -fu helena-backup)."
+  ;;
+boot-layout)
+  # Even the dry run reads the ESPs and debconf: root only. The helper checks and refuses
+  # (degraded array, missing ESP) itself; see helena_host/bootlayout.py.
+  [ "$(id -u)" = 0 ] || { echo "run as root" >&2; exit 1; }
+  [ -x "$LIB/helena-hostd" ] || { echo "install first: $0 --owner <user> install" >&2; exit 1; }
+  if [ "$DRY_RUN" = 1 ]; then
+    python3 -I "$LIB/helena-hostd" boot-layout --dry-run $rollback
+  else
+    python3 -I "$LIB/helena-hostd" boot-layout $rollback
+    # The helper serves the config it started with; a rollback wrote an override.
+    systemctl try-restart helena-hostd.service
+  fi
   ;;
 status)
   for unit in $UNITS; do printf '%-40s %s\n' "$unit" "$(systemctl is-active "$unit" 2>/dev/null || true)"; done

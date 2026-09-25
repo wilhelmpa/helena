@@ -193,7 +193,8 @@ function espSyncHealth(sync: StorageStatus['esp']['sync']): HostHealthItem[] {
 // The firmware entries of both ESPs. A wrong one is amber: helena-boot-entries.service repairs
 // it at the next boot when its ESP is there (`repair: nextBoot`), once the disk is back
 // otherwise (`diskMissing`). An entry whose ESP is away but looks right (`unchecked`) says
-// nothing: the RAID and ESP lines already tell about the disk.
+// nothing: the RAID and ESP lines already tell about the disk. An entry still on the old loader
+// folder (`oldLayout`) starts fine and counts as right.
 function bootEntryHealth(checks: BootEntryCheck[] | undefined): HostHealthItem[] {
   if (!checks || checks.length === 0) return [];
   const items: HostHealthItem[] = [];
@@ -203,6 +204,7 @@ function bootEntryHealth(checks: BootEntryCheck[] | undefined): HostHealthItem[]
     const label = check.label;
     switch (check.state) {
       case 'ok':
+      case 'oldLayout':
       case 'unchecked':
         break;
       case 'missing':
@@ -233,7 +235,10 @@ function bootEntryHealth(checks: BootEntryCheck[] | undefined): HostHealthItem[]
         });
     }
   }
-  if (items.length === 0 && checks.every((check) => check.state === 'ok')) {
+  if (
+    items.length === 0 &&
+    checks.every((check) => check.state === 'ok' || check.state === 'oldLayout')
+  ) {
     items.push({
       id: 'boot',
       state: 'ok',
