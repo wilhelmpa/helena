@@ -203,7 +203,14 @@ sudo ./install.sh --dry-run boot-layout && sudo ./install.sh boot-layout   # onc
 sudo ./install.sh backup-init                    # password + repository + timers
 sudo systemctl start helena-backup.service       # the first backup (long: every folder once)
 sudo fans/install-fan-control.sh --from-clones /home/wilhelmpa/Projekte/Linux install
+sudo ./swap.sh --dry-run apply && sudo ./swap.sh apply   # 32 GB /helena.swap + zswap (zstd)
 ```
+
+Swap: the OS gets ~31 GB (the rest is the GPU's). A `next build` (~10 GB), the local
+models and agent test stacks together outgrow that, and with the Debian installer's 8 GB
+swap file the machine thrashed (memory pressure 95 %, 2026-09-26). `swap.sh` keeps one
+32 GB file on the RAID root and zswap in front of it; it retires other swap files in
+fstab, so run it when the machine is not busy.
 
 Rollback: `sudo fans/install-fan-control.sh uninstall` (fans back to auto, modules and
 ryzenadj removed), `sudo ./install.sh uninstall` (keeps the repository and its password).
