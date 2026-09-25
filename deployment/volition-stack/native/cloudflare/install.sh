@@ -95,7 +95,11 @@ package() {
 }
 
 token() {
-  run install -d -m 0700 -o root -g root /etc/helena "$etc"
+  # /etc/helena itself stays 0755: the API reads local-ai.key (0640, group
+  # volition-plan-secrets) and the preload unit's dynamic user local-ai-preload from it.
+  # Only the tunnel's own folder is closed. (A 0700 here cut the API off the local AI key.)
+  run install -d -m 0755 -o root -g root /etc/helena
+  run install -d -m 0700 -o root -g root "$etc"
   if [[ $apply -eq 0 ]]; then say "[dry-run] would read the token from the terminal (no echo) into $token_file (0600 root)"; return; fi
   [[ -t 0 ]] || die "run this in a terminal: the token is read without echo"
   local value
