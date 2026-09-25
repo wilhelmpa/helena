@@ -83,7 +83,7 @@ has "config: task links to Helena" "$work/CONFIG.md" '\["helena-home\.volition\.
 if python3 -c 'import json,sys,re; t=open(sys.argv[1]).read(); m=re.search(r"HELENA_NOTES_URLS=(.*)'"'"'", t); d=json.loads(m.group(1)); assert d=={"https://helena-home.volition.one":"https://helena-home.volition.one:8446","https://helena.volition.one":"https://helena-notes.volition.one"}, d' "$work/web.conf"; then
   pass "web: HELENA_NOTES_URLS maps each Helena origin to its notes origin"
 else fail "web: HELENA_NOTES_URLS"; fi
-if grep -q "folder: 'Home/Docs/Journal'" "$native/../../../packages/knowledge/src/templates.ts" 2>/dev/null; then
+if grep -q "DAILY_NOTES_FOLDER = 'Home/Docs/Journal'" "$native/../../../packages/knowledge/src/templates.ts" 2>/dev/null; then
   pass "config: journal folder matches packages/knowledge DEFAULT_DAILY_NOTES"
 else fail "config: journal folder differs from packages/knowledge DEFAULT_DAILY_NOTES"; fi
 
