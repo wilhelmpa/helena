@@ -7,6 +7,10 @@ power and fans). See ../README.md and docs/helena-decisions/server-admin.md.
   helena-hostd backup run|maintenance|restore-test|init|restore <id>
   helena-hostd event mdadm <event> <md> [component]   (mdadm.conf PROGRAM)
   helena-hostd event smartd          (smartd's run.d, reads SMARTD_* from the environment)
+  helena-hostd esp-sync [--dry-run] [--from-apt]   copy the first ESP onto the second, guarded
+                                     (apt's DPkg::Post-Invoke: /etc/apt/apt.conf.d/99helena-esp-sync)
+  helena-hostd boot-repair [--dry-run]   make the firmware entries of both ESPs right
+                                     (helena-boot-entries.service at every boot)
   helena-hostd fans-initial [level]  installer: the first fan choice (default 5 = maximum)
   helena-hostd call <Method> [json]  a client, for root on the console
 """
@@ -19,6 +23,7 @@ import os
 import signal
 import socket
 import sys
+import syslog
 
 HERE = os.path.dirname(os.path.realpath(__file__))
 
@@ -34,7 +39,7 @@ _trusted_directory(HERE)
 _trusted_directory(os.path.join(HERE, 'helena_host'))
 sys.path.insert(0, HERE)
 
-from helena_host import backup, events, guard  # noqa: E402
+from helena_host import backup, boot, esp, events, guard  # noqa: E402
 from helena_host.common import VERSION, Host, HostError  # noqa: E402
 from helena_host.config import DEFAULT_CONFIG_PATH, load_config, load_settings  # noqa: E402
 from helena_host.service import DESCRIPTION, INTERFACE, Dispatcher  # noqa: E402
@@ -45,6 +50,18 @@ SOCKET = '/run/helena-hostd/hostd.sock'
 
 def log(message: str) -> None:
     print(f'helena-hostd: {message}', file=sys.stderr, flush=True)
+
+
+def log_journal(message: str) -> None:
+    """stderr and the journal: a console command run from apt or a shell leaves its trace in
+    the journal too (under a unit, stderr already is the journal)."""
+    log(message)
+    if not os.environ.get('INVOCATION_ID'):
+        try:
+            syslog.openlog('helena-hostd', 0, syslog.LOG_DAEMON)
+            syslog.syslog(syslog.LOG_NOTICE, message)
+        except OSError:
+            pass
 
 
 def config():
@@ -135,6 +152,37 @@ def run_event(args: list[str]) -> int:
     return 0
 
 
+def run_esp_sync(args: list[str]) -> int:
+    unknown = set(args) - {'--dry-run', '--from-apt'}
+    if unknown:
+        print(__doc__, file=sys.stderr)
+        return 2
+    result = esp.sync(Host(), config(), dry_run='--dry-run' in args, log=log_journal,
+                      trigger='apt' if '--from-apt' in args else 'console')
+    print(json.dumps(result, ensure_ascii=False))
+    if result['state'] in ('ok', 'ready'):
+        return 0
+    if '--from-apt' in args:
+        # apt's own output shows it; Helena's health overview keeps it until a copy works.
+        print(f"helena-hostd: WARNING: the second EFI partition was not updated ({result['state']}: "
+              f"{result.get('reason')} {result.get('mount') or ''}). See Administrator → Server.",
+              file=sys.stderr)
+    return 1
+
+
+def run_boot_repair(args: list[str]) -> int:
+    if set(args) - {'--dry-run'}:
+        print(__doc__, file=sys.stderr)
+        return 2
+    actor = 'helena-boot-entries.service' if os.environ.get('INVOCATION_ID') else 'console'
+    result = boot.repair(Host(), config(), dry_run='--dry-run' in args, log=log_journal, actor=actor)
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+    for check in result['roles']:
+        log_journal(f"boot-repair: {check['label']}: {check['state']}"
+                    f"{' (its ESP is not mounted: left alone)' if not check['espPresent'] else ''}")
+    return 0 if result['ok'] else 1
+
+
 def main(argv: list[str]) -> int:
     command = argv[0] if argv else 'serve'
     try:
@@ -146,6 +194,10 @@ def main(argv: list[str]) -> int:
             return run_backup(argv[1:])
         if command == 'event':
             return run_event(argv[1:])
+        if command == 'esp-sync':
+            return run_esp_sync(argv[1:])
+        if command == 'boot-repair':
+            return run_boot_repair(argv[1:])
         if command == 'fans-initial':
             level = int(argv[1]) if len(argv) > 1 else 5
             if level not in range(1, 6):

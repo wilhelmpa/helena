@@ -1,0 +1,5 @@
+// Helena RAID 1: after every package change the second disk's EFI partition gets the first
+// one's content (grub/shim updates). helena-hostd copies only from a mounted, complete and
+// readable source and verifies the copy; a skipped or failed copy shows in Administrator →
+// Server and never fails apt. Installed by deployment/volition-stack/native/server/install.sh.
+DPkg::Post-Invoke { "if [ -x /usr/local/lib/helena/hostd/helena-esp-sync ]; then /usr/local/lib/helena/hostd/helena-esp-sync --from-apt >/dev/null || true; fi"; };

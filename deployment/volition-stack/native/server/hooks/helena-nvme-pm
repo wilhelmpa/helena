@@ -1,0 +1,66 @@
+#!/bin/sh
+# udev RUN helper of 60-helena-nvme.rules: what a rule cannot write itself because it sits on
+# another device than the event's.
+#
+#   helena-nvme-pm pci <devpath>        every PCIe bridge above an NVMe function: power/control=on
+#   helena-nvme-pm namespace <devpath>  the namespace's controller(s): APST off (latency tolerance 0)
+#
+# <devpath> is udev's %p (/devices/…). HELENA_SYSFS points the tests at a fake /sys.
+set -u
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+sysfs=${HELENA_SYSFS:-/sys}
+mode=${1:-}
+devpath=${2:-}
+case "$devpath" in
+  /devices/*) ;;
+  *) echo "helena-nvme-pm: unexpected device path" >&2; exit 2 ;;
+esac
+case "$devpath" in
+  *..*) echo "helena-nvme-pm: unexpected device path" >&2; exit 2 ;;
+esac
+dir=$sysfs$devpath
+
+write() {
+  # $1 file, $2 value; a value the kernel refuses is reported, never fatal (udev goes on).
+  [ -w "$1" ] || return 0
+  printf '%s' "$2" > "$1" 2>/dev/null || echo "helena-nvme-pm: could not write $2 to ${1#"$sysfs"}" >&2
+}
+
+controller() {
+  # $1 a controller's sysfs directory.
+  write "$1/power/pm_qos_latency_tolerance_us" 0
+}
+
+case "$mode" in
+pci)
+  # /sys/devices is the real hierarchy: the parent directory is the upstream port.
+  parent=${dir%/*}
+  while [ -f "$parent/class" ]; do
+    case $(cat "$parent/class") in
+      0x0604*) write "$parent/power/control" on ;;
+    esac
+    parent=${parent%/*}
+  done
+  ;;
+namespace)
+  parent=${dir%/*}
+  subsystem=$(basename "$(readlink "$parent/subsystem" 2>/dev/null)" 2>/dev/null)
+  case "$subsystem" in
+    nvme) controller "$parent" ;;
+    nvme-subsystem)
+      # A multipath namespace hangs under its subsystem: every controller of it.
+      for ctrl in "$parent"/nvme[0-9]*; do
+        case ${ctrl##*/} in
+          nvme*[0-9]n[0-9]*) continue ;;  # the namespace itself, not a controller
+        esac
+        [ -d "$ctrl" ] && controller "$ctrl"
+      done
+      ;;
+  esac
+  ;;
+*)
+  echo "usage: helena-nvme-pm pci|namespace <devpath>" >&2
+  exit 2
+  ;;
+esac
+exit 0
