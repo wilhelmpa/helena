@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
-import { mkdir, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdir, rename, rm, stat, utimes, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { sql } from 'drizzle-orm';
 import { db, vaultEntry, vaultLink, vaultMove } from '@repo/db';
@@ -8,6 +8,7 @@ import { commitExternalChanges, commitVaultPaths, fileHistory } from '../git';
 import { indexVaultPaths, rescanVault } from '../indexer';
 import { findEntry, resolveVaultPath } from '../store';
 import { startVaultWatcher, type VaultWatcher } from '../watcher';
+import { resetNotesUidForTests } from '../writers';
 import { has, tempDir, textPdf } from './fixtures';
 
 let root = '';
@@ -202,6 +203,35 @@ describe.skipIf(!has('git'))('history', () => {
     expect((await fileHistory('Home/Docs/External.md')).map((entry) => entry.authorName)).toEqual([
       'extern',
     ]);
+  });
+
+  it('names the notes as the author of what they wrote, and only that', async () => {
+    // The notes' account is this test's own user here; a real vault has helena-notes.
+    process.env.HELENA_NOTES_UID = String(process.getuid!());
+    resetNotesUidForTests();
+    try {
+      await git('init', '--quiet');
+      await put('Home/Docs/Notiz.md', 'aus den Notizen');
+      await put('Home/Docs/Agent.md', 'erst die Notizen');
+      // An edit in place a while later: same owner, but the file was not born with it.
+      const agent = path.join(root, 'Home/Docs/Agent.md');
+      const born = (await stat(agent)).birthtimeMs;
+      if (!born) return; // a file system without birth times attributes nothing to the notes
+      await utimes(agent, new Date(), new Date(born + 60_000));
+      await rescanVault();
+      expect((await findEntry('Home/Docs/Notiz.md'))?.lastAuthor).toBe('notes');
+      expect((await findEntry('Home/Docs/Agent.md'))?.lastAuthor).toBe('extern');
+      await commitExternalChanges();
+      expect(await git('log', '--format=%an|%s')).toBe(
+        'extern|External changes\nNotizen|Changes in the notes\n',
+      );
+      const notesCommit = await git('log', '-1', '--author=Notizen', '--format=%B');
+      expect(notesCommit).toContain('Helena-Actor: notes');
+      expect(await git('show', '--name-only', '--format=', 'HEAD~1')).toBe('Home/Docs/Notiz.md\n');
+    } finally {
+      delete process.env.HELENA_NOTES_UID;
+      resetNotesUidForTests();
+    }
   });
 
   it('keeps Private in a repository of its own', async () => {

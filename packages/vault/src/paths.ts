@@ -56,9 +56,17 @@ export function absoluteVaultPath(relative: string): string {
   return target;
 }
 
-// Folders the index and the API leave alone: version control, Obsidian's own state,
-// the trash, and Syncthing's markers.
+// Folders the index and the API leave alone: version control, a desktop editor's own state
+// (.obsidian, left over from before the notes), the trash, and Syncthing's markers.
 const IGNORED_SEGMENTS = new Set(['.git', '.obsidian', TRASH_DIR, '.stfolder', '.stversions']);
+
+// The notes (SilverBullet, deployment/volition-stack/native/notes) keep their settings page
+// and any library of theirs at the vault root; neither is knowledge. Their writes go to a
+// hidden sibling first (".Note.md.sb-write-<pid>-<n>", renamed over the note), and on start
+// they probe the root once (".sb-case-probe-<pid>-<n>").
+export const NOTES_CONFIG_PAGE = 'CONFIG.md';
+const NOTES_LIBRARY_DIR = 'Library';
+const NOTES_TEMPORARY = /^\..+\.sb-write-\d+-\d+$|^\.sb-case-probe-/;
 
 // The copy Syncthing keeps of a file two devices changed at the same time:
 // "Note.sync-conflict-20260923-101500-ABCDEF7.md" beside "Note.md".
@@ -85,7 +93,10 @@ export function isIgnoredPath(relative: string): boolean {
     name.endsWith('.tmp') ||
     name.startsWith('.~') ||
     name.startsWith('.syncthing.') ||
-    SYNC_CONFLICT.test(name)
+    SYNC_CONFLICT.test(name) ||
+    NOTES_TEMPORARY.test(name) ||
+    relative === NOTES_CONFIG_PAGE ||
+    parts[0] === NOTES_LIBRARY_DIR
   );
 }
 
