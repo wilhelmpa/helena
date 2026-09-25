@@ -6,7 +6,8 @@
     "action": "Acción sobre la tarea",
     "wait": "Espera",
     "notify": "Notificar",
-    "webhook": "Webhook"
+    "webhook": "Webhook",
+    "decision": "Decisión"
   },
   "kindHints": {
     "agent": "Un agente trabaja en la tarea",
@@ -15,7 +16,8 @@
     "action": "Cambia la tarea",
     "wait": "Pausa la ejecución",
     "notify": "Avisa a las personas del proceso",
-    "webhook": "Envía la tarea a una URL"
+    "webhook": "Envía la tarea a una URL",
+    "decision": "Un modelo de decisión elige una de tus opciones; la ejecución sigue esa elección."
   },
   "triggers": {
     "manual": "Iniciado a mano",
@@ -171,7 +173,9 @@
     "endsRun": "La ejecución termina después de esto",
     "limit": "Un flujo de trabajo tiene como máximo {max} pasos.",
     "problems": "{count, plural, one {# problema} other {# problemas}}",
-    "plugins": "Extensiones"
+    "plugins": "Extensiones",
+    "decisionThen": "Elegida",
+    "decisionElse": "Si no"
   },
   "summary": {
     "agentRole": "Rol {role}",
@@ -195,7 +199,9 @@
     "waitUntil": "Hasta la {field} a las {time}",
     "notify": "Avisar a {who}: {text}",
     "webhook": "Enviar a {host}",
-    "noUrl": "Aún sin URL"
+    "noUrl": "Aún sin URL",
+    "decision": "{question} → {options}",
+    "decisionFrom": "Respuesta de «{step}» → {options}"
   },
   "duration": {
     "minutes": "{count, plural, one {# minuto} other {# minutos}}",
@@ -340,6 +346,27 @@
       "noSettings": "Sin ajustes.",
       "choose": "Elegir",
       "missing": "El tipo de paso {type} no está instalado: la extensión que lo aporta está desactivada."
+    },
+    "decision": {
+      "source": "Pregunta",
+      "ask": "Hacer una pregunta nueva",
+      "reuse": "Reutilizar la respuesta de «{step}»",
+      "question": "Pregunta",
+      "questionHint": "p. ej. ¿Qué tipo de solicitud es esta?",
+      "context": "Sobre qué",
+      "contextHint": "Por defecto: el título y la descripción de la tarea. Aquí también funcionan las variables de pasos anteriores.",
+      "options": "Opciones",
+      "optionsHint": "Una por línea, como máximo {max}.",
+      "thenOptions": "A la primera rama con",
+      "thenHint": "Las demás opciones, y la falta de una respuesta clara si así se elige abajo, van a la segunda rama.",
+      "noOptions": "Introduce primero las opciones.",
+      "unsure": "Cuando el modelo no está seguro",
+      "unsureHint": "Por debajo del umbral de «Decisiones generales», o sin respuesta.",
+      "unsureModes": {
+        "else": "Segunda rama",
+        "then": "Primera rama",
+        "fail": "Detener la ejecución"
+      }
     }
   },
   "issues": {
@@ -347,6 +374,7 @@
     "required": "Esto es obligatorio.",
     "too_long": "Como máximo {max} caracteres.",
     "too_many": "Como máximo {max} entradas.",
+    "too_few": "Al menos {min} entradas.",
     "out_of_range": "Entre {min} y {max}.",
     "too_deep": "Las condiciones se anidan como máximo {max} niveles.",
     "invalid_cron": "La expresión cron no es válida.",

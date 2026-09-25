@@ -1,0 +1,168 @@
+{
+  "tabs": {
+    "open": "Open",
+    "review": "Review",
+    "matched": "Matched",
+    "accounts": "Accounts"
+  },
+  "month": "Month",
+  "allMonths": "All months",
+  "search": "Search receipts and transactions",
+  "actions": {
+    "upload": "Upload receipt",
+    "import": "Import bank statement",
+    "export": "Export month",
+    "exportPickMonth": "Pick a month to export",
+    "fromVault": "Receipt from files"
+  },
+  "upload": {
+    "done": "{count, plural, one {# receipt uploaded} other {# receipts uploaded}}",
+    "doneMatched": "{count, plural, one {# receipt uploaded} other {# receipts uploaded}}, {matched} matched right away",
+    "duplicate": "{name} is already here."
+  },
+  "noAccessTitle": "For project administrators only",
+  "noAccessHint": "Receipts and bank transactions are visible to the project's owners and the team's owners and managers.",
+  "noName": "(no name)",
+  "creditNote": "Credit note",
+  "directDebit": "Direct debit",
+  "method": {
+    "rule": "Rule",
+    "decision": "AI",
+    "manual": "By hand"
+  },
+  "open": {
+    "receipts": "Receipts without a transaction",
+    "noReceipts": "Every receipt has its transaction.",
+    "transactions": "Transactions without a receipt",
+    "noTransactions": "Every transaction has its receipt.",
+    "noReceiptNeeded": "No receipt needed",
+    "ignored": "No receipt needed",
+    "undoIgnore": "Needs a receipt after all"
+  },
+  "review": {
+    "emptyTitle": "Nothing to review",
+    "emptyHint": "Matches Helena was not sure enough about wait here.",
+    "score": "Rules",
+    "confidence": "AI",
+    "confirm": "Match",
+    "reject": "Reject",
+    "others": "{count, plural, one {# other transaction} other {# other transactions}}",
+    "pickOther": "Match this one instead",
+    "useThis": "Match this"
+  },
+  "reasons": {
+    "amount": {
+      "exact": "amount fits",
+      "near": "amount close",
+      "skonto": "amount with early-payment discount",
+      "fee": "amount minus a fee",
+      "none": "amount unknown"
+    },
+    "reference": "invoice number in the purpose",
+    "identity": {
+      "iban": "IBAN fits",
+      "creditor": "creditor ID fits",
+      "name": "name fits",
+      "weak-name": "name similar"
+    },
+    "date": {
+      "primary": "date fits",
+      "extended": "date late",
+      "outside": "date far off"
+    }
+  },
+  "matched": {
+    "emptyTitle": "Nothing matched yet",
+    "emptyHint": "Upload receipts and import a bank statement, and Helena matches them.",
+    "unmatch": "Remove the match"
+  },
+  "accounts": {
+    "title": "Bank accounts",
+    "none": "No account yet. Add one, or simply import a bank statement.",
+    "noIban": "no IBAN",
+    "counts": "{open} open · {matched} matched · {ignored} without receipt",
+    "import": "Import bank statement",
+    "edit": "Edit",
+    "delete": "Delete account",
+    "name": "Account name",
+    "namePlaceholder": "e.g. Business account",
+    "iban": "IBAN",
+    "ibanPlaceholder": "DE.. (optional)",
+    "add": "Add account",
+    "imports": "Imports",
+    "noImports": "No bank statement imported yet.",
+    "importResult": "{added} new · {duplicates} already there",
+    "deleteTitle": "Delete {name}?",
+    "deleteHint": "{count, plural, one {Its # transaction and its match are deleted.} other {Its # transactions and their matches are deleted.}} The receipts stay and are open again."
+  },
+  "import": {
+    "title": "Import bank statement",
+    "account": "Account",
+    "newAccount": "New account …",
+    "accountName": "Name of the new account",
+    "accountNamePlaceholder": "e.g. Business account",
+    "ibanFromFile": "The IBAN comes from the file.",
+    "file": "File",
+    "fileHint": "A CAMT statement (XML), a ZIP of statements, or your bank's CSV export, at most 20 MB.",
+    "submit": "Import",
+    "importing": "Importing …",
+    "doneTitle": "Bank statement imported",
+    "result": "{added, plural, one {# new transaction} other {# new transactions}}, {duplicates} already there.",
+    "pending": "{count, plural, one {# pending entry} other {# pending entries}} skipped – they come with the next statement.",
+    "matched": "{count, plural, one {# receipt} other {# receipts}} matched right away.",
+    "warnings": "Notes"
+  },
+  "detail": {
+    "title": "Receipt",
+    "loading": "Loading …",
+    "openFile": "Open file",
+    "inFiles": "Show in Files",
+    "extract": "Read again",
+    "match": "Transaction",
+    "matchAgain": "Match again",
+    "noCandidates": "No fitting transaction found.",
+    "text": "Text read",
+    "delete": "Remove receipt",
+    "deleteTitle": "Remove the receipt?",
+    "deleteHint": "The receipt leaves the list; its file stays in the project's files.",
+    "saved": "Saved.",
+    "badAmount": "That amount is not readable. Write it like this: 172.50"
+  },
+  "fields": {
+    "issuer": "Issuer",
+    "invoiceNumber": "Invoice number",
+    "invoiceDate": "Invoice date",
+    "dueDate": "Due",
+    "gross": "Gross amount",
+    "vat": "VAT",
+    "currency": "Currency",
+    "iban": "Payee IBAN",
+    "direction": "Kind"
+  },
+  "direction": {
+    "incoming": "Bill (we pay)",
+    "outgoing": "Our invoice (we get paid)"
+  },
+  "source": {
+    "mail": "From a mail",
+    "upload": "Uploaded",
+    "vault": "From the files"
+  },
+  "extraction": {
+    "zugferd": "E-invoice (ZUGFeRD/Factur-X) read",
+    "xrechnung": "E-invoice (XRechnung) read",
+    "text": "PDF text read",
+    "ocr": "Scan read by OCR",
+    "manual": "Entered by hand",
+    "none": "Nothing read"
+  },
+  "problems": {
+    "missingPrograms": "Reading it needs a program the server lacks: {programs}",
+    "notEinvoice": "The XML file is not an e-invoice.",
+    "noFacts": "The text had no invoice data. Enter it below."
+  },
+  "vaultPicker": {
+    "title": "Receipt from files",
+    "description": "Pick a file from this project's folder. It stays where it is."
+  }
+}

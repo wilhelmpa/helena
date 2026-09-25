@@ -16,6 +16,8 @@ import chatWorkspace from '../../messages/en/chatWorkspace.json';
 import common from '../../messages/en/common.json';
 import cycles from '../../messages/en/cycles.json';
 import dashboards from '../../messages/en/dashboards.json';
+import decisions from '../../messages/en/decisions.json';
+import receipts from '../../messages/en/receipts.json';
 import devices from '../../messages/en/devices.json';
 import knowledge from '../../messages/en/knowledge.json';
 import display from '../../messages/en/display.json';
@@ -89,6 +91,8 @@ const defaultMessages = {
   members,
   cycles,
   dashboards,
+  decisions,
+  receipts,
   initiatives,
   notes,
   ownerTerminal,

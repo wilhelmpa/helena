@@ -271,6 +271,13 @@ export async function startLabRun(
   ) {
     throw new HttpError(400, 'That decision model connection is not one of this project.');
   }
+  // jev-browser has no read-only mode (it clicks, types and submits on its own judgement), so a
+  // read task never goes to it.
+  if (input.backend === 'jev-browser' && mode === 'read')
+    throw new HttpError(
+      400,
+      'jev-browser has no read-only mode; use a decision model or Standard.',
+    );
   const policy = input.policy && input.policy !== 'auto' ? input.policy : connection.backend.policy;
   const { token, hash } = newTaskToken();
   const [row] = await db

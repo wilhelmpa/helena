@@ -6,7 +6,8 @@
     "action": "Task action",
     "wait": "Wait",
     "notify": "Notify",
-    "webhook": "Webhook"
+    "webhook": "Webhook",
+    "decision": "Decision"
   },
   "kindHints": {
     "agent": "An agent works on the task",
@@ -15,7 +16,8 @@
     "action": "Changes the task",
     "wait": "Pauses the run",
     "notify": "Tells people about the run",
-    "webhook": "Sends the task to a URL"
+    "webhook": "Sends the task to a URL",
+    "decision": "A decision model picks one of your options; the run follows the choice."
   },
   "triggers": {
     "manual": "Started by hand",
@@ -171,7 +173,9 @@
     "endsRun": "Run ends after this",
     "limit": "A workflow holds at most {max} steps.",
     "problems": "{count, plural, one {# problem} other {# problems}}",
-    "plugins": "Extensions"
+    "plugins": "Extensions",
+    "decisionThen": "Chosen",
+    "decisionElse": "Otherwise"
   },
   "summary": {
     "agentRole": "Role {role}",
@@ -195,7 +199,9 @@
     "waitUntil": "Until the {field} at {time}",
     "notify": "Tell {who}: {text}",
     "webhook": "Send to {host}",
-    "noUrl": "No URL yet"
+    "noUrl": "No URL yet",
+    "decision": "{question} → {options}",
+    "decisionFrom": "Answer of “{step}” → {options}"
   },
   "duration": {
     "minutes": "{count, plural, one {# minute} other {# minutes}}",
@@ -340,6 +346,27 @@
       "noSettings": "No settings.",
       "choose": "Choose",
       "missing": "The step type {type} is not installed: the extension that brings it is off."
+    },
+    "decision": {
+      "source": "Question",
+      "ask": "Ask a new question",
+      "reuse": "Reuse the answer of “{step}”",
+      "question": "Question",
+      "questionHint": "e.g. What kind of request is this?",
+      "context": "About",
+      "contextHint": "Default: the task’s title and description. Variables of earlier steps work here.",
+      "options": "Options",
+      "optionsHint": "One per line, at most {max}.",
+      "thenOptions": "Into the first lane on",
+      "thenHint": "The other options, and no clear answer if chosen below, take the second lane.",
+      "noOptions": "Enter the options first.",
+      "unsure": "When the model is not sure",
+      "unsureHint": "Below the threshold of “General decisions”, or without an answer.",
+      "unsureModes": {
+        "else": "Second lane",
+        "then": "First lane",
+        "fail": "Stop the run"
+      }
     }
   },
   "issues": {
@@ -347,6 +374,7 @@
     "required": "This is required.",
     "too_long": "At most {max} characters.",
     "too_many": "At most {max} entries.",
+    "too_few": "At least {min} entries.",
     "out_of_range": "Between {min} and {max}.",
     "too_deep": "Conditions nest at most {max} levels deep.",
     "invalid_cron": "The cron expression is invalid.",

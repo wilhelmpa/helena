@@ -135,6 +135,10 @@
     "coordinator-triage": {
       "label": "协调者初审",
       "description": "对新任务的第一次查看；真正的工作都交给协调者已配置的模型。"
+    },
+    "decisions": {
+      "label": "决策",
+      "description": "通过 logit 读取进行类型化决策：邮件分类、模型选择、票据、工作流步骤。在“决策”中开启各类型。"
     }
   },
   "updates": {

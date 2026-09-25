@@ -1,0 +1,168 @@
+{
+  "tabs": {
+    "open": "待处理",
+    "review": "待审核",
+    "matched": "已匹配",
+    "accounts": "银行账户"
+  },
+  "month": "月份",
+  "allMonths": "所有月份",
+  "search": "搜索票据和流水",
+  "actions": {
+    "upload": "上传票据",
+    "import": "导入银行对账单",
+    "export": "导出月份",
+    "exportPickMonth": "请选择要导出的月份",
+    "fromVault": "从文件添加票据"
+  },
+  "upload": {
+    "done": "{count, plural, other {已上传 # 张票据}}",
+    "doneMatched": "{count, plural, other {已上传 # 张票据}}，其中 {matched} 张已直接匹配",
+    "duplicate": "{name} 已存在。"
+  },
+  "noAccessTitle": "仅限项目管理员",
+  "noAccessHint": "只有项目所有者以及团队的所有者和管理者可以查看票据和银行流水。",
+  "noName": "（无名称）",
+  "creditNote": "贷项通知单",
+  "directDebit": "直接扣款",
+  "method": {
+    "rule": "规则",
+    "decision": "AI",
+    "manual": "手动"
+  },
+  "open": {
+    "receipts": "无流水的票据",
+    "noReceipts": "每张票据都有对应的流水。",
+    "transactions": "无票据的流水",
+    "noTransactions": "每笔流水都有对应的票据。",
+    "noReceiptNeeded": "无需票据",
+    "ignored": "无需票据",
+    "undoIgnore": "仍需票据"
+  },
+  "review": {
+    "emptyTitle": "没有需要审核的内容",
+    "emptyHint": "Helena 不够确定的匹配会在这里等待。",
+    "score": "规则",
+    "confidence": "AI",
+    "confirm": "匹配",
+    "reject": "拒绝",
+    "others": "{count, plural, other {另外 # 笔流水}}",
+    "pickOther": "改为匹配这笔",
+    "useThis": "匹配这笔"
+  },
+  "reasons": {
+    "amount": {
+      "exact": "金额一致",
+      "near": "金额接近",
+      "skonto": "金额含提前付款折扣",
+      "fee": "金额扣除手续费",
+      "none": "金额未知"
+    },
+    "reference": "用途中含发票号",
+    "identity": {
+      "iban": "IBAN 一致",
+      "creditor": "债权人 ID 一致",
+      "name": "名称一致",
+      "weak-name": "名称相似"
+    },
+    "date": {
+      "primary": "日期吻合",
+      "extended": "日期偏晚",
+      "outside": "日期相差较远"
+    }
+  },
+  "matched": {
+    "emptyTitle": "尚未匹配任何内容",
+    "emptyHint": "上传票据并导入银行对账单，Helena 就会将它们匹配起来。",
+    "unmatch": "解除匹配"
+  },
+  "accounts": {
+    "title": "银行账户",
+    "none": "还没有账户。添加一个，或直接导入银行对账单。",
+    "noIban": "无 IBAN",
+    "counts": "{open} 待处理 · {matched} 已匹配 · {ignored} 无需票据",
+    "import": "导入银行对账单",
+    "edit": "编辑",
+    "delete": "删除账户",
+    "name": "账户名称",
+    "namePlaceholder": "例如：企业账户",
+    "iban": "IBAN",
+    "ibanPlaceholder": "DE..（可选）",
+    "add": "添加账户",
+    "imports": "导入记录",
+    "noImports": "尚未导入银行对账单。",
+    "importResult": "{added} 条新增 · {duplicates} 条已存在",
+    "deleteTitle": "删除 {name}？",
+    "deleteHint": "{count, plural, other {将删除其 # 笔流水及其匹配。}}票据会保留，并重新变为待处理。"
+  },
+  "import": {
+    "title": "导入银行对账单",
+    "account": "账户",
+    "newAccount": "新账户 …",
+    "accountName": "新账户名称",
+    "accountNamePlaceholder": "例如：企业账户",
+    "ibanFromFile": "IBAN 取自文件。",
+    "file": "文件",
+    "fileHint": "CAMT 对账单（XML）、包含多份对账单的 ZIP，或你银行导出的 CSV，最大 20 MB。",
+    "submit": "导入",
+    "importing": "正在导入 …",
+    "doneTitle": "银行对账单已导入",
+    "result": "{added, plural, other {新增 # 笔流水}}，{duplicates} 笔已存在。",
+    "pending": "已跳过 {count, plural, other {# 笔待入账记录}}——它们会随下一份对账单一起到来。",
+    "matched": "{count, plural, other {# 张票据}}已直接匹配。",
+    "warnings": "提示"
+  },
+  "detail": {
+    "title": "票据",
+    "loading": "正在加载 …",
+    "openFile": "打开文件",
+    "inFiles": "在“文件”中显示",
+    "extract": "重新读取",
+    "match": "流水",
+    "matchAgain": "重新匹配",
+    "noCandidates": "未找到合适的流水。",
+    "text": "识别出的文本",
+    "delete": "移除票据",
+    "deleteTitle": "移除票据？",
+    "deleteHint": "票据会从列表中移除，其文件仍保留在项目文件中。",
+    "saved": "已保存。",
+    "badAmount": "无法识别该金额。请这样填写：172.50"
+  },
+  "fields": {
+    "issuer": "开具方",
+    "invoiceNumber": "发票号",
+    "invoiceDate": "发票日期",
+    "dueDate": "到期日",
+    "gross": "含税金额",
+    "vat": "增值税",
+    "currency": "币种",
+    "iban": "收款人 IBAN",
+    "direction": "类型"
+  },
+  "direction": {
+    "incoming": "收到的发票（我们付款）",
+    "outgoing": "我们开出的发票（我们收款）"
+  },
+  "source": {
+    "mail": "来自邮件",
+    "upload": "已上传",
+    "vault": "来自文件"
+  },
+  "extraction": {
+    "zugferd": "已读取电子发票（ZUGFeRD/Factur-X）",
+    "xrechnung": "已读取电子发票（XRechnung）",
+    "text": "已读取 PDF 文本",
+    "ocr": "已通过 OCR 识别扫描件",
+    "manual": "手动录入",
+    "none": "未读取到内容"
+  },
+  "problems": {
+    "missingPrograms": "服务器缺少读取所需的程序：{programs}",
+    "notEinvoice": "该 XML 文件不是电子发票。",
+    "noFacts": "文本中没有发票数据。请在下方填写。"
+  },
+  "vaultPicker": {
+    "title": "从文件添加票据",
+    "description": "从此项目的文件夹中选择一个文件。文件保留在原处。"
+  }
+}

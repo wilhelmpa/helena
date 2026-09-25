@@ -162,6 +162,7 @@
   "agentActivity": "Aktivität",
   "approvals": "Freigaben",
   "access": "Zugänge & Verbindungen",
+  "decisions": "Entscheidungen",
   "browser": "Browser",
   "layout": {
     "menu": "Layout",
@@ -185,5 +186,6 @@
     "full": "Werkzeug groß",
     "resizeArea": "Breite ändern"
   },
+  "receipts": "Belege",
   "browserLab": "Browser 2.0"
 }

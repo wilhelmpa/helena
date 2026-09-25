@@ -1,4 +1,5 @@
 import type { RuntimeFailure } from '@helena/sdk';
+import { routesOfRuns, type RouteView } from '#modules/model-router/service';
 import { db, agentRun, agentRunEvent, agentUsage, aiAgent, issue, project, user } from '@repo/db';
 import { and, asc, eq, gt, inArray, sql } from 'drizzle-orm';
 import { HttpError, intEnv, iso } from '#shared/lib';
@@ -116,6 +117,8 @@ export interface RunDetail {
   reflection: ReflectionView | null;
   // The model the run was configured with against the one its session ran on.
   modelCheck: ModelCheck | null;
+  // What the model router did for the run (decisions.md §4), or null without it.
+  modelRoute: RouteView | null;
   // Why the run failed, where the runtime's words said (a model the provider refused).
   failure: RuntimeFailure | null;
   startedAt: string | null;
@@ -205,6 +208,7 @@ export async function getRunDetail(
     blockedQuestion: run.blockedQuestion,
     reflection: reflectionView(run.reflection, run.finishedAt),
     modelCheck: (run.modelCheck as ModelCheck | null) ?? null,
+    modelRoute: (await routesOfRuns([run.id])).get(run.id) ?? null,
     failure: (run.failure as RuntimeFailure | null) ?? null,
     startedAt: run.startedAt ? iso(run.startedAt) : null,
     finishedAt: run.finishedAt ? iso(run.finishedAt) : null,

@@ -201,5 +201,33 @@
     "title": "E-mails",
     "noSubject": "(sem assunto)",
     "reply": "Responder"
+  },
+  "triage": {
+    "classify": "Classificar",
+    "category": "Tipo",
+    "priority": "Prioridade",
+    "needsReply": "Precisa de resposta",
+    "noReply": "Não precisa de resposta",
+    "unsure": "incerto",
+    "failed": "não classificado",
+    "corrected": "Correção salva",
+    "accepted": "Concluído",
+    "createTask": "Criar tarefa",
+    "handToAgent": "Passar para o agente",
+    "categories": {
+      "invoice": "Fatura",
+      "appointment": "Compromisso",
+      "request": "Solicitação",
+      "newsletter": "Newsletter",
+      "notification": "Notificação",
+      "personal": "Pessoal",
+      "advertising": "Publicidade",
+      "other": "Outro"
+    },
+    "priorities": {
+      "high": "Urgente",
+      "normal": "Normal",
+      "low": "Pode esperar"
+    }
   }
 }

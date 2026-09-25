@@ -201,5 +201,33 @@
     "title": "邮件",
     "noSubject": "(无主题)",
     "reply": "回复"
+  },
+  "triage": {
+    "classify": "分类",
+    "category": "类型",
+    "priority": "优先级",
+    "needsReply": "需要回复",
+    "noReply": "无需回复",
+    "unsure": "不确定",
+    "failed": "未分类",
+    "corrected": "纠正已保存",
+    "accepted": "完成",
+    "createTask": "创建任务",
+    "handToAgent": "交给智能体",
+    "categories": {
+      "invoice": "发票",
+      "appointment": "预约",
+      "request": "请求",
+      "newsletter": "新闻通讯",
+      "notification": "通知",
+      "personal": "私人",
+      "advertising": "广告",
+      "other": "其他"
+    },
+    "priorities": {
+      "high": "紧急",
+      "normal": "普通",
+      "low": "可以等"
+    }
   }
 }

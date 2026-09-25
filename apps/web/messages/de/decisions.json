@@ -1,0 +1,186 @@
+{
+  "title": "Entscheidungen",
+  "team": "Team",
+  "local": "lokal",
+  "cloud": "Cloud",
+  "noTeam": "Wähle zuerst ein Team.",
+  "noConnections": "Noch keine Verbindung zu einem Entscheidungsmodell. Lege eine unter Zugänge an (Laya auf diesem Server, die lokale KI oder Jev).",
+  "toAccess": "Zu den Zugängen",
+  "tabs": {
+    "label": "Entscheidungen",
+    "classes": "Arten",
+    "router": "Modellwahl",
+    "log": "Protokoll"
+  },
+  "classes": {
+    "router": {
+      "label": "Modellwahl",
+      "description": "Vor einem Lauf oder einer Chat-Antwort: Reicht ein günstigeres Modell derselben Laufzeit? Beantwortet auch den Router deines eigenen Claude Code."
+    },
+    "mail": {
+      "label": "Mail einordnen",
+      "description": "Neue Mail: Projekt, Art, Priorität, ob sie eine Antwort oder eine Aufgabe braucht."
+    },
+    "receipts": {
+      "label": "Belege zuordnen",
+      "description": "Welche Kontobewegung einen Beleg bezahlt."
+    },
+    "general": {
+      "label": "Allgemeine Entscheidungen",
+      "description": "Das Werkzeug „decide“ der Agenten und der Workflow-Schritt „Entscheidung“."
+    }
+  },
+  "class": {
+    "on": "An",
+    "off": "Aus",
+    "connection": "Beantwortet von",
+    "connectionHint": "Die Verbindung zu einem Entscheidungsmodell aus den Zugängen. Ein Cloud-Dienst bekommt den Text jeder Frage.",
+    "connectionLocalOnly": "Nur eine Verbindung auf diesem Rechner oder im LAN: Diese Eingaben dürfen ihn nicht verlassen.",
+    "noConnection": "Keine",
+    "fallback": "Ersatz",
+    "fallbackHint": "Wird gefragt, wenn die erste Verbindung ausfällt oder zu langsam ist, im selben Zeitlimit.",
+    "noFallback": "Keiner",
+    "threshold": "Schwelle",
+    "thresholdHint": "Darunter wird nichts entschieden, und es bleibt wie bisher. Standard {value}.",
+    "timeout": "Zeitlimit",
+    "timeoutHint": "Eine spätere Antwort zählt als keine. Standard {value}.",
+    "storeInput": "Eingaben im Protokoll behalten",
+    "storeInputHint": "Sonst behält das Protokoll nur einen Fingerabdruck davon.",
+    "storeInputNever": "Diese Art behält ihre Eingaben nie.",
+    "contextThreshold": "Bleiben, wenn Kontext nötig ist",
+    "contextThresholdHint": "Ab dieser Wahrscheinlichkeit, dass die Anfrage auf dem bisherigen Gespräch aufbaut, bleibt das eingestellte Modell. Standard 50 %.",
+    "evalTitle": "Auswertung",
+    "evalHint": "{cases} beschriftete Fälle, so gefragt wie die Funktion fragt. Bestanden ab {precision} Trefferquote und {coverage} Abdeckung.",
+    "noEval": "Diese Art hat keine Auswertung.",
+    "runEval": "Auswerten",
+    "enabled": "Eingeschaltet",
+    "enabledHint": "Erst nach einer bestandenen Auswertung auf der gewählten Verbindung.",
+    "stats": "Letzte 7 Tage: {total} Fragen, {decided} entschieden, {unsure} unsicher, {failed} ohne Antwort, {wrong} von {corrected} korrigierten falsch · Median {latency} · {cost}"
+  },
+  "reasons": {
+    "no_connection": "Wähle zuerst eine Verbindung.",
+    "no_eval": "Werte sie zuerst auf dieser Verbindung aus.",
+    "eval_failed": "Die letzte Auswertung auf dieser Verbindung hat nicht bestanden.",
+    "eval_threshold": "Die letzte Auswertung lief mit einer höheren Schwelle; werte erneut aus."
+  },
+  "eval": {
+    "running": "Wird ausgewertet …",
+    "cancel": "Abbrechen",
+    "passed": "Bestanden",
+    "notPassed": "Nicht bestanden",
+    "failedRun": "Abgebrochen: {error}",
+    "precision": "Trefferquote",
+    "coverage": "Abdeckung",
+    "accuracy": "Richtig insgesamt",
+    "latency": "Median / 95 %",
+    "questions": "Entschieden",
+    "threshold": "Schwelle",
+    "tokens": "Tokens",
+    "cost": "Kosten",
+    "needed": "nötig {value}",
+    "details": "Einzelheiten",
+    "byQuestion": "Je Frage",
+    "question": "Frage",
+    "answeredShort": "Entschieden",
+    "sweep": "Andere Schwellen"
+  },
+  "mail": {
+    "modes": {
+      "off": "Aus",
+      "suggest": "Vorschlagen",
+      "auto": "Automatisch"
+    },
+    "project": "Projekt",
+    "projectHint": "Das Projekt vorschlagen, oder Mail unter Home gleich dorthin verschieben.",
+    "task": "Aufgabe",
+    "taskHint": "Wenn eine Mail um etwas bittet: eine Aufgabe in ihrem Projekt vorschlagen oder anlegen.",
+    "agent": "An einen Agenten geben",
+    "agentPick": "Agent",
+    "agentHint": "Diese Aufgabe einem Agenten zugewiesen, der sie dann bearbeitet.",
+    "noAgent": "Kein Agent",
+    "receipts": "Rechnungen als Belege",
+    "receiptsHint": "Die PDF- und XML-Anhänge einer Rechnung kommen zu den Belegen des Projekts."
+  },
+  "router": {
+    "agents": "Agenten",
+    "agentsHint": "Standardmäßig aus. An: Läufe und Chat-Antworten ohne eigenes Modell dürfen ein günstigeres Modell der Laufzeit des Agenten nehmen.",
+    "noAgents": "Noch keine Agenten.",
+    "defaultModel": "Standard der Laufzeit (keine Modellwahl)",
+    "enabled": "Modellwahl",
+    "allowUpgrade": "Auch stärker",
+    "projects": "Projekte",
+    "projectsHint": "An, solange sie hier nicht ausgeschaltet ist.",
+    "recent": "Zuletzt",
+    "recentHint": "Was die Modellwahl getan hat, und warum.",
+    "noRoutes": "Noch keine Entscheidungen.",
+    "run": "Lauf #{id}",
+    "chat": "Chat",
+    "noRoutesHint": "Sobald die Modellwahl etwas entscheidet, steht es hier."
+  },
+  "routeLine": {
+    "routed": "Modellwahl: {from} → {to}",
+    "stayed": "Modellwahl: {model} bleibt"
+  },
+  "routeReasons": {
+    "cheaper_tier": "ein günstigeres Modell reicht",
+    "upgrade": "braucht ein stärkeres Modell",
+    "same_tier": "braucht dieses Modell",
+    "needs_context": "baut auf dem Gespräch auf",
+    "unsure": "nicht sicher genug",
+    "no_candidates": "kein anderes Modell",
+    "off": "ausgeschaltet",
+    "timeout": "keine Antwort in der Zeit",
+    "error": "Fehler",
+    "no_backend": "keine Verbindung"
+  },
+  "log": {
+    "class": "Art",
+    "allClasses": "Alle Arten",
+    "statusFilter": "Status",
+    "allStatuses": "Alle",
+    "status": {
+      "decided": "entschieden",
+      "unsure": "unsicher",
+      "off": "aus",
+      "no_backend": "keine Verbindung",
+      "timeout": "Zeitlimit",
+      "error": "Fehler"
+    },
+    "confidence": "Sicherheit {value}",
+    "noAnswer": "keine Antwort",
+    "correct": "Korrigieren …",
+    "corrected": "Korrektur gespeichert",
+    "wasWrong": "Korrigiert: {outcome}",
+    "input": "Eingabe",
+    "empty": "Noch keine Entscheidungen",
+    "emptyHint": "Sie erscheinen hier, sobald eine Art eingeschaltet ist.",
+    "yes": "ja",
+    "no": "nein",
+    "noProject": "kein Projekt",
+    "noTransaction": "keine Buchung",
+    "transaction": "Buchung #{id}"
+  },
+  "noTeamHint": "Entscheidungen gelten je Team.",
+  "tiers": {
+    "light": "leicht",
+    "standard": "Standard",
+    "strong": "stark",
+    "strongest": "am stärksten"
+  },
+  "questions": {
+    "router": {
+      "route": "Stufe",
+      "needs_context": "Braucht den Verlauf"
+    },
+    "mail": {
+      "project": "Projekt",
+      "category": "Art",
+      "priority": "Priorität",
+      "needs_reply": "Braucht Antwort",
+      "create_task": "Aufgabe nötig"
+    },
+    "receipts": {
+      "match": "Buchung"
+    }
+  }
+}

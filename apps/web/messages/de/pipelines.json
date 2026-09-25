@@ -6,7 +6,8 @@
     "action": "Aufgabenaktion",
     "wait": "Warten",
     "notify": "Benachrichtigen",
-    "webhook": "Webhook"
+    "webhook": "Webhook",
+    "decision": "Entscheidung"
   },
   "kindHints": {
     "agent": "Ein Agent arbeitet an der Aufgabe",
@@ -15,7 +16,8 @@
     "action": "Ändert die Aufgabe",
     "wait": "Pausiert den Lauf",
     "notify": "Sagt Menschen Bescheid",
-    "webhook": "Schickt die Aufgabe an eine URL"
+    "webhook": "Schickt die Aufgabe an eine URL",
+    "decision": "Ein Entscheidungsmodell wählt eine deiner Optionen; der Lauf folgt der Wahl."
   },
   "triggers": {
     "manual": "Von Hand gestartet",
@@ -171,7 +173,9 @@
     "endsRun": "Lauf endet danach",
     "limit": "Ein Workflow hat höchstens {max} Schritte.",
     "problems": "{count, plural, one {# Problem} other {# Probleme}}",
-    "plugins": "Erweiterungen"
+    "plugins": "Erweiterungen",
+    "decisionThen": "Gewählt",
+    "decisionElse": "Sonst"
   },
   "summary": {
     "agentRole": "Rolle {role}",
@@ -195,7 +199,9 @@
     "waitUntil": "Bis zum {field} um {time}",
     "notify": "An {who}: {text}",
     "webhook": "An {host} senden",
-    "noUrl": "Noch keine URL"
+    "noUrl": "Noch keine URL",
+    "decision": "{question} → {options}",
+    "decisionFrom": "Antwort von „{step}“ → {options}"
   },
   "duration": {
     "minutes": "{count, plural, one {# Minute} other {# Minuten}}",
@@ -340,6 +346,27 @@
       "noSettings": "Keine Einstellungen.",
       "choose": "Auswählen",
       "missing": "Der Schritttyp {type} ist nicht installiert: Die Erweiterung, die ihn bringt, ist aus."
+    },
+    "decision": {
+      "source": "Frage",
+      "ask": "Neue Frage stellen",
+      "reuse": "Antwort von „{step}“ verwenden",
+      "question": "Frage",
+      "questionHint": "z. B. Welche Art von Anfrage ist das?",
+      "context": "Worüber",
+      "contextHint": "Standard: Titel und Beschreibung der Aufgabe. Variablen früherer Schritte gehen hier auch.",
+      "options": "Optionen",
+      "optionsHint": "Eine pro Zeile, höchstens {max}.",
+      "thenOptions": "In den ersten Zweig bei",
+      "thenHint": "Die anderen Optionen, und keine klare Antwort, wenn unten so gewählt, nehmen den zweiten Zweig.",
+      "noOptions": "Trage zuerst die Optionen ein.",
+      "unsure": "Wenn das Modell nicht sicher ist",
+      "unsureHint": "Unter der Schwelle von „Allgemeine Entscheidungen“ oder ohne Antwort.",
+      "unsureModes": {
+        "else": "Zweiter Zweig",
+        "then": "Erster Zweig",
+        "fail": "Lauf anhalten"
+      }
     }
   },
   "issues": {
@@ -347,6 +374,7 @@
     "required": "Das ist ein Pflichtfeld.",
     "too_long": "Höchstens {max} Zeichen.",
     "too_many": "Höchstens {max} Einträge.",
+    "too_few": "Mindestens {min} Einträge.",
     "out_of_range": "Zwischen {min} und {max}.",
     "too_deep": "Bedingungen lassen sich höchstens {max} Ebenen tief verschachteln.",
     "invalid_cron": "Der Cron-Ausdruck ist ungültig.",

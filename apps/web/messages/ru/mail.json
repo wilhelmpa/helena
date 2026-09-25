@@ -201,5 +201,33 @@
     "title": "Письма",
     "noSubject": "(без темы)",
     "reply": "Ответить"
+  },
+  "triage": {
+    "classify": "Разобрать",
+    "category": "Вид",
+    "priority": "Приоритет",
+    "needsReply": "Нужен ответ",
+    "noReply": "Ответ не нужен",
+    "unsure": "неуверенно",
+    "failed": "не разобрано",
+    "corrected": "Исправление сохранено",
+    "accepted": "Готово",
+    "createTask": "Создать задачу",
+    "handToAgent": "Передать агенту",
+    "categories": {
+      "invoice": "Счёт",
+      "appointment": "Встреча",
+      "request": "Запрос",
+      "newsletter": "Рассылка",
+      "notification": "Уведомление",
+      "personal": "Личное",
+      "advertising": "Реклама",
+      "other": "Другое"
+    },
+    "priorities": {
+      "high": "Срочно",
+      "normal": "Обычно",
+      "low": "Может подождать"
+    }
   }
 }

@@ -26,6 +26,7 @@ import { uiSlotKey, type UiSlot } from '../ui';
 import type { RuntimeLoginSource } from '../runtime-logins';
 import type { UpdateSource } from '../updates';
 import type { DecisionBackendType } from '../decision-backends';
+import type { DecisionClass } from '../decisions';
 import type { UsageLimitSource } from '../usage-limits';
 import type { TriggerType, WorkflowStepType } from '../workflows';
 
@@ -94,6 +95,7 @@ export class PluginHost {
   readonly localAiTaskClasses: Registry<LocalAiTaskClass>;
   readonly updateSources: Registry<UpdateSource>;
   readonly decisionBackends: Registry<DecisionBackendType>;
+  readonly decisionClasses: Registry<DecisionClass>;
 
   private readonly plugins = new Map<string, { loaded: LoadedPlugin; plugin?: HelenaPlugin }>();
   private readonly contexts = new Map<string, PluginContext>();
@@ -124,6 +126,7 @@ export class PluginHost {
     this.localAiTaskClasses = registries.localAiTaskClasses;
     this.updateSources = registries.updateSources;
     this.decisionBackends = registries.decisionBackends;
+    this.decisionClasses = registries.decisionClasses;
     this.logger = options.logger ?? ((id) => consoleLogger(`plugin ${id}`));
     this.settingsOf = options.settings ?? (() => ({}));
   }
@@ -246,6 +249,7 @@ export class PluginHost {
       this.localAiTaskClasses,
       this.updateSources,
       this.decisionBackends,
+      this.decisionClasses,
     ] as unknown as Registry<never>[];
   }
 
@@ -404,6 +408,7 @@ export class PluginHost {
         provides.decisionBackends,
         'decisionBackends',
       ),
+      decisionClasses: registrar(this.decisionClasses, provides.decisionClasses, 'decisionClasses'),
       events: {
         publish: async (init: EventInit) => {
           if (!init.type.startsWith(`${pluginId}.`)) {

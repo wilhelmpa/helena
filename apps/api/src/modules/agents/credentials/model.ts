@@ -27,7 +27,11 @@ const ListedKind = t.Union([
   t.Literal('decision_model'),
   t.Literal('mcp_oauth'),
 ]);
-const DecisionKeySource = t.Union([t.Literal('stored'), t.Literal('local-laya')]);
+const DecisionKeySource = t.Union([
+  t.Literal('stored'),
+  t.Literal('local-laya'),
+  t.Literal('local-ai'),
+]);
 const LoginRuntime = t.Union([t.Literal('claude'), t.Literal('codex')]);
 const LoginMethod = t.Union([t.Literal('oauth_token'), t.Literal('api_key')]);
 
@@ -80,6 +84,12 @@ const credentialFields = {
   model: t.Optional(t.String({ maxLength: 200 })),
   allowPrivateAddress: t.Optional(t.Boolean()),
   keySource: t.Optional(DecisionKeySource),
+  modelServer: t.Optional(
+    t.String({
+      maxLength: 32,
+      description: "decision_model with keySource 'local-ai': the local AI model server's slug.",
+    }),
+  ),
 };
 
 export const createCredentialEntryBody = t.Object({ kind: CredentialKind, ...credentialFields });
@@ -145,6 +155,7 @@ export const CredentialEntryResponse = t.Object({
   model: t.Nullable(t.String()),
   allowPrivateAddress: t.Boolean(),
   keySource: t.Nullable(DecisionKeySource),
+  modelServer: t.Nullable(t.String()),
   secrets: t.Array(t.String(), { description: 'The secret fields that hold a value.' }),
   agentIds: t.Array(t.Number(), { description: 'The agents granted by name.' }),
   grants: t.Array(GrantResponse),

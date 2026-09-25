@@ -162,6 +162,7 @@
     "dropUngrouped": "拖放到此处可将项目移出分组"
   },
   "access": "访问与连接",
+  "decisions": "决策",
   "browser": "浏览器",
   "layout": {
     "menu": "布局",
@@ -185,5 +186,6 @@
     "full": "工具全屏",
     "resizeArea": "调整宽度"
   },
+  "receipts": "票据",
   "browserLab": "Browser 2.0"
 }

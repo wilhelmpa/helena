@@ -28,7 +28,7 @@ export function localized(label: LocalizedLabel, locale: string): string {
 // The choice as the select shows it: a kind of service, or one of its presets ("Laya (lokal
 // auf diesem Server)").
 function choiceOf(value: CredentialFormValue): string {
-  return value.keySource === 'local-laya' ? `${value.provider}:local-laya` : value.provider;
+  return value.keySource === 'stored' ? value.provider : `${value.provider}:${value.keySource}`;
 }
 
 // A decision model connection ("Entscheidungsmodell (Jev)", docs/helena-decisions/browser-task.md
@@ -50,7 +50,7 @@ export function CredentialDecisionModelFields({
   const backends = useDecisionBackendsQuery().data?.backends ?? [];
   const test = useTestDecisionConnection(teamId);
   const backend: DecisionBackend | undefined = backends.find((b) => b.id === value.provider);
-  const local = value.keySource === 'local-laya';
+  const local = value.keySource !== 'stored';
 
   const choose = (choice: string) => {
     const [id, preset] = choice.split(':');
@@ -94,7 +94,11 @@ export function CredentialDecisionModelFields({
           <p className="text-xs text-muted-foreground">{t('cloudNote')}</p>
         )}
         {backend?.location === 'local' && (
-          <p className="text-xs text-muted-foreground">{t('localNote')}</p>
+          <p className="text-xs text-muted-foreground">
+            {backend.protocol && backend.protocol !== 'systemone'
+              ? t('localModelNote')
+              : t('localNote')}
+          </p>
         )}
       </div>
 
@@ -121,7 +125,7 @@ export function CredentialDecisionModelFields({
         </div>
       </div>
 
-      {value.provider === 'compatible' && !local && (
+      {backend?.location === 'local' && !local && (
         <div className="flex items-start justify-between gap-4 rounded-md border border-sidebar-border bg-card px-3 py-2">
           <div className="space-y-0.5">
             <Label htmlFor="decision-private">{t('allowPrivate')}</Label>
@@ -137,7 +141,7 @@ export function CredentialDecisionModelFields({
 
       {local ? (
         <p className="rounded-md border border-sidebar-border bg-card px-3 py-2 text-sm text-muted-foreground">
-          {t('localKey')}
+          {value.keySource === 'local-ai' ? t('localAiKey') : t('localKey')}
         </p>
       ) : (
         <CredentialSecretInput

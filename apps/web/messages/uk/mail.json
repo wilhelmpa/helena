@@ -201,5 +201,33 @@
     "title": "Листи",
     "noSubject": "(без теми)",
     "reply": "Відповісти"
+  },
+  "triage": {
+    "classify": "Розібрати",
+    "category": "Вид",
+    "priority": "Пріоритет",
+    "needsReply": "Потрібна відповідь",
+    "noReply": "Відповідь не потрібна",
+    "unsure": "невпевнено",
+    "failed": "не розібрано",
+    "corrected": "Виправлення збережено",
+    "accepted": "Готово",
+    "createTask": "Створити задачу",
+    "handToAgent": "Передати агенту",
+    "categories": {
+      "invoice": "Рахунок",
+      "appointment": "Зустріч",
+      "request": "Запит",
+      "newsletter": "Розсилка",
+      "notification": "Сповіщення",
+      "personal": "Особисте",
+      "advertising": "Реклама",
+      "other": "Інше"
+    },
+    "priorities": {
+      "high": "Терміново",
+      "normal": "Звичайно",
+      "low": "Може зачекати"
+    }
   }
 }

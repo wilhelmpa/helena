@@ -23,6 +23,11 @@ export default function PipelineStepDetails({ step }: { step: PipelineStep }) {
     rows.push([t('agent.model'), step.model ?? t('agent.agentModel')]);
   }
   if (step.type === 'approval' && step.message) rows.push([t('approval.message'), step.message]);
+  if (step.type === 'decision') {
+    if (step.question) rows.push([t('decision.question'), step.question]);
+    rows.push([t('decision.options'), step.options.join('\n')]);
+    rows.push([t('decision.thenOptions'), step.thenOptions.join(', ')]);
+  }
   if (step.type === 'notify' && step.message) rows.push([t('notify.message'), step.message]);
   if (step.type === 'webhook') {
     rows.push([t('webhook.url'), step.url]);

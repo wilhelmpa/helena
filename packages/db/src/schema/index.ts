@@ -13,3 +13,5 @@ export * from './model-availability';
 export * from './local-ai';
 export * from './updates';
 export * from './browser-task';
+export * from './decisions';
+export * from './finance';

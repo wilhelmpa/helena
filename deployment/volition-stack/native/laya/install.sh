@@ -7,6 +7,9 @@
 #   sudo deployment/volition-stack/native/laya/install.sh install     # or: status, rotate-key,
 #                                                                     #     uninstall [--purge]
 #   sudo deployment/volition-stack/native/laya/install.sh install --rocm
+#   sudo deployment/volition-stack/native/laya/install.sh typed-decisions   # add the general
+#        checkpoint for Helena's typed decisions (docs/helena-decisions/decisions.md §3.1; owner OK
+#        2026-09-25): convaiinnovations/laya-typed-decisions, 842 MB, served next to the browser one
 #
 # --rocm: Laya on the GPU. No second PyTorch: the venv reaches the ROCm 10.0.0 tree of
 # native/local-ai/install.sh (/opt/helena-ai/rocm-10.0.0: ROCm and torch 2.13.0+rocm10.0.0,
@@ -16,7 +19,7 @@
 # What it does (install): a system user helena-laya; a venv in /opt/helena/laya with pinned
 # PyTorch (CPU) and Laya; the checkpoint at a pinned revision in /var/lib/helena-laya/models
 # (safetensors only, checked against its SHA-256); a generated key in /etc/helena/laya.key
-# (root:volition-plan 0640: the API reads it, the service gets it through systemd's credentials);
+# (root:volition-plan-secrets 0640: the API reads it, the service gets it through systemd's credentials);
 # helena-laya.service on 127.0.0.1:8791 with CPU and memory limits; a health check and one probe.
 # In Helena: Zugänge → Hinzufügen → Entscheidungsmodell (Jev) → "Laya (lokal auf diesem Server)".
 set -euo pipefail
@@ -29,13 +32,28 @@ MODEL_REVISION=4219958196e2c566c141688c773e08da10c1ff3b
 SUBFOLDER=v10s
 # SHA-256 of v10s/model.safetensors at MODEL_REVISION (Hugging Face LFS oid).
 MODEL_SHA256=${HELENA_LAYA_MODEL_SHA256:-b11217df18bf79cfcd4ab639caf1ae8652b91c9c44fcb9457fbe480237332335}
+# The general typed-decisions checkpoint (English; ModernBERT-large, 421M), pinned.
+TYPED_REPO=convaiinnovations/laya-typed-decisions
+TYPED_REVISION=1a793eb568e6718f15941d08f85432581df534e3
+TYPED_SHA256=4fa56de72383a9d3efa9cfa78955733c81b9fc8067a587ca4beb82c78107a24e
 
 SERVICE_USER=helena-laya
 PREFIX=/opt/helena/laya
 STATE=/var/lib/helena-laya
 KEY_DIR=/etc/helena
 KEY_FILE=$KEY_DIR/laya.key
-API_GROUP=${HELENA_API_GROUP:-volition-plan}
+# The group the API reads the key through: on Kingston the API user's secrets group
+# `volition-plan-secrets` (there is no group `volition-plan`; found 2026-09-25). HELENA_API_GROUP
+# overrides it; otherwise the first of these that exists (after the rename: helena-secrets).
+api_group() {
+  if [ -n "${HELENA_API_GROUP:-}" ]; then echo "$HELENA_API_GROUP"; return; fi
+  local group
+  for group in helena-secrets volition-plan-secrets volition-plan; do
+    if getent group "$group" >/dev/null; then echo "$group"; return; fi
+  done
+  echo volition-plan-secrets
+}
+API_GROUP=$(api_group)
 UNIT=/etc/systemd/system/helena-laya.service
 ROCM_DROPIN=/etc/systemd/system/helena-laya.service.d/rocm.conf
 ROCM_VENV=/opt/helena-ai/rocm-10.0.0
@@ -66,7 +84,8 @@ install_all() {
   fi
   id "$SERVICE_USER" >/dev/null 2>&1 ||
     useradd --system --home-dir "$STATE" --no-create-home --shell /usr/sbin/nologin "$SERVICE_USER"
-  getent group "$API_GROUP" >/dev/null || die "group $API_GROUP (the API's) does not exist"
+  getent group "$API_GROUP" >/dev/null ||
+    die "group $API_GROUP (the API's secrets group) does not exist; set HELENA_API_GROUP"
   install -d -o root -g root -m 0755 /opt/helena "$PREFIX"
   install -d -o "$SERVICE_USER" -g "$SERVICE_USER" -m 0750 "$STATE" "$STATE/models" "$STATE/hf"
   install -d -o root -g root -m 0755 /var/cache/helena-laya
@@ -165,9 +184,46 @@ rotate_key() {
   log "key rotated; Helena reads it on the next call"
 }
 
+# Adds laya-typed-decisions next to the browser checkpoint: download at the pinned revision,
+# check the weights, and a drop-in that serves both (the browser one stays the default) with
+# the memory the second one needs.
+typed_decisions() {
+  [ -x "$PREFIX/venv/bin/python" ] || die "install first"
+  log "checkpoint $TYPED_REPO@$TYPED_REVISION"
+  sudo -u "$SERVICE_USER" HF_HOME="$STATE/hf" "$PREFIX/venv/bin/python" - <<PY
+from huggingface_hub import snapshot_download
+snapshot_download("$TYPED_REPO", revision="$TYPED_REVISION",
+                  allow_patterns=["model.safetensors", "rl_agent_config.json", "encoder/*", "tokenizer/*"],
+                  local_dir="$STATE/models/laya-typed-decisions")
+PY
+  local weights="$STATE/models/laya-typed-decisions/model.safetensors"
+  echo "$TYPED_SHA256  $weights" | sha256sum -c --quiet - || die "typed-decisions checksum mismatch"
+  # Two checkpoints need more room; on the GPU (rocm.conf, read before this file) ROCm's
+  # libraries count too, so this drop-in never lowers that ceiling.
+  local high=5G max=6G
+  [ -f "$ROCM_DROPIN" ] && high=7G max=9G
+  install -d -o root -g root -m 0755 "$(dirname "$ROCM_DROPIN")"
+  cat >"$(dirname "$ROCM_DROPIN")/typed-decisions.conf" <<CONF
+# Written by install.sh typed-decisions: both checkpoints, the browser one the default.
+[Service]
+Environment=HELENA_LAYA_MODELS=laya-browser-$SUBFOLDER=$STATE/models/laya-browser:$SUBFOLDER,laya-typed-decisions=$STATE/models/laya-typed-decisions
+MemoryHigh=$high
+MemoryMax=$max
+CONF
+  systemctl daemon-reload
+  systemctl restart helena-laya.service
+  for _ in $(seq 1 120); do
+    curl -sf -m 2 "http://127.0.0.1:$PORT/health" | grep -q laya-typed-decisions && break
+    sleep 2
+  done
+  curl -sf -m 2 "http://127.0.0.1:$PORT/health" | grep -q laya-typed-decisions ||
+    die "the service does not serve laya-typed-decisions (journalctl -u helena-laya)"
+  log "ready: model laya-typed-decisions on http://127.0.0.1:$PORT (Zugänge → Entscheidungsmodell → Laya, Modell laya-typed-decisions)"
+}
+
 uninstall() {
   systemctl disable --now helena-laya.service 2>/dev/null || true
-  rm -f "$UNIT" "$ROCM_DROPIN"
+  rm -f "$UNIT" "$ROCM_DROPIN" "$(dirname "$ROCM_DROPIN")/typed-decisions.conf"
   rmdir "$(dirname "$ROCM_DROPIN")" 2>/dev/null || true
   systemctl daemon-reload
   if [ "${1:-}" = "--purge" ]; then
@@ -181,8 +237,9 @@ uninstall() {
 
 case "${1:-}" in
   install) install_all "${2:-}" ;;
+  typed-decisions) typed_decisions ;;
   status) status ;;
   rotate-key) rotate_key ;;
   uninstall) uninstall "${2:-}" ;;
-  *) echo "usage: $0 install [--rocm]|status|rotate-key|uninstall [--purge]" >&2; exit 2 ;;
+  *) echo "usage: $0 install [--rocm]|typed-decisions|status|rotate-key|uninstall [--purge]" >&2; exit 2 ;;
 esac

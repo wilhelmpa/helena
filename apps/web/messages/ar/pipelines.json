@@ -6,7 +6,8 @@
     "action": "إجراء على المهمة",
     "wait": "انتظار",
     "notify": "إشعار",
-    "webhook": "Webhook"
+    "webhook": "Webhook",
+    "decision": "قرار"
   },
   "kindHints": {
     "agent": "وكيل يعمل على المهمة",
@@ -15,7 +16,8 @@
     "action": "يغيّر المهمة",
     "wait": "يوقف التشغيل مؤقتًا",
     "notify": "يُبلغ الأشخاص بالتشغيل",
-    "webhook": "يرسل المهمة إلى عنوان URL"
+    "webhook": "يرسل المهمة إلى عنوان URL",
+    "decision": "يختار نموذج قرار أحد خياراتك، ويتبع التشغيل هذا الاختيار."
   },
   "triggers": {
     "manual": "بدء يدوي",
@@ -171,7 +173,9 @@
     "endsRun": "ينتهي التشغيل بعد هذه الخطوة",
     "limit": "يحتوي سير العمل على {max} خطوة كحد أقصى.",
     "problems": "{count, plural, zero {لا مشاكل} one {مشكلة واحدة} two {مشكلتان} few {# مشاكل} many {# مشكلةً} other {# مشكلة}}",
-    "plugins": "الإضافات"
+    "plugins": "الإضافات",
+    "decisionThen": "المختار",
+    "decisionElse": "وإلا"
   },
   "summary": {
     "agentRole": "الدور {role}",
@@ -195,7 +199,9 @@
     "waitUntil": "حتى {field} الساعة {time}",
     "notify": "إلى {who}: {text}",
     "webhook": "إرسال إلى {host}",
-    "noUrl": "لا يوجد عنوان URL بعد"
+    "noUrl": "لا يوجد عنوان URL بعد",
+    "decision": "{question} ← {options}",
+    "decisionFrom": "إجابة “{step}” ← {options}"
   },
   "duration": {
     "minutes": "{count, plural, zero {لا دقائق} one {دقيقة واحدة} two {دقيقتان} few {# دقائق} many {# دقيقةً} other {# دقيقة}}",
@@ -340,6 +346,27 @@
       "noSettings": "لا توجد إعدادات.",
       "choose": "اختر",
       "missing": "نوع الخطوة {type} غير مثبت: الإضافة التي توفره معطلة."
+    },
+    "decision": {
+      "source": "السؤال",
+      "ask": "طرح سؤال جديد",
+      "reuse": "إعادة استخدام إجابة “{step}”",
+      "question": "السؤال",
+      "questionHint": "مثلًا: ما نوع هذا الطلب؟",
+      "context": "حول",
+      "contextHint": "الافتراضي: عنوان المهمة ووصفها. تعمل هنا أيضًا متغيرات الخطوات السابقة.",
+      "options": "الخيارات",
+      "optionsHint": "خيار في كل سطر، {max} كحد أقصى.",
+      "thenOptions": "إلى الفرع الأول عند",
+      "thenHint": "الخيارات الأخرى، وغياب الإجابة الواضحة إذا اختير ذلك أدناه، تذهب إلى الفرع الثاني.",
+      "noOptions": "أدخل الخيارات أولًا.",
+      "unsure": "عندما لا يكون النموذج متأكدًا",
+      "unsureHint": "دون عتبة “قرارات عامة”، أو دون إجابة.",
+      "unsureModes": {
+        "else": "الفرع الثاني",
+        "then": "الفرع الأول",
+        "fail": "إيقاف التشغيل"
+      }
     }
   },
   "issues": {
@@ -347,6 +374,7 @@
     "required": "هذا الحقل مطلوب.",
     "too_long": "بحد أقصى {max} حرفًا.",
     "too_many": "بحد أقصى {max} عنصرًا.",
+    "too_few": "{min} إدخالات على الأقل.",
     "out_of_range": "بين {min} و{max}.",
     "too_deep": "تتداخل الشروط بحد أقصى {max} مستويات.",
     "invalid_cron": "تعبير Cron غير صالح.",

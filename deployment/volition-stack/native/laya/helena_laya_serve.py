@@ -16,11 +16,17 @@ answers it with the open Laya model on this machine, so page content never leave
   file the installer wrote, no CORS header (the project browsers run on this machine and must not
   be able to call it), body and question caps, one inference at a time, 127.0.0.1 by default.
 
+- Several checkpoints can be served side by side (docs/helena-decisions/decisions.md §3.1): the
+  browser-tuned one for the browser's fast path and `laya-typed-decisions` (convaiinnovations,
+  Apache-2.0, English) for Helena's typed decisions; the request's `model` picks one, the first
+  is the default.
+
 Environment (set by helena-laya.service):
   HELENA_LAYA_HOST      bind address                    127.0.0.1
   HELENA_LAYA_PORT      port                            8791
   HELENA_LAYA_MODEL_DIR checkpoint repo directory       /var/lib/helena-laya/models/laya-browser
   HELENA_LAYA_SUBFOLDER checkpoint inside it            v10s
+  HELENA_LAYA_MODELS    several: name=dir[:subfolder],… (overrides the two above)
   HELENA_LAYA_KEY_FILE  Bearer key (required)           /etc/helena/laya.key
   HELENA_LAYA_THREADS   torch intra-op threads          8
   HELENA_LAYA_DEVICE    cpu, or cuda: the GPU through   cpu
@@ -59,6 +65,24 @@ MAXOPT = max(2, int(_env("HELENA_LAYA_MAXOPT", "12")))
 MODEL_NAME = f"laya-browser-{SUBFOLDER}"
 
 
+def _model_specs() -> List[Tuple[str, str, Any]]:
+    """(name, directory, subfolder) of every checkpoint to serve, the default first."""
+    raw = os.environ.get("HELENA_LAYA_MODELS", "").strip()
+    if not raw:
+        return [(MODEL_NAME, MODEL_DIR, SUBFOLDER)]
+    specs: List[Tuple[str, str, Any]] = []
+    for entry in raw.split(","):
+        entry = entry.strip()
+        if not entry or "=" not in entry:
+            continue
+        name, target = entry.split("=", 1)
+        directory, _, subfolder = target.partition(":")
+        specs.append((name.strip(), directory.strip(), subfolder.strip() or None))
+    if not specs:
+        raise SystemExit("HELENA_LAYA_MODELS names no checkpoint")
+    return specs
+
+
 def _read_key() -> bytes:
     with open(KEY_FILE, "rb") as handle:
         key = handle.read().strip()
@@ -67,26 +91,36 @@ def _read_key() -> bytes:
     return b"Bearer " + key
 
 
-class Model:
-    """The loaded checkpoint and one lock: a CPU forward pass at a time is what this machine wants."""
+# One inference at a time across every checkpoint: a CPU forward pass at a time is what this
+# machine wants.
+LOCK = threading.Lock()
 
-    def __init__(self) -> None:
+
+class Model:
+    """One loaded checkpoint."""
+
+    def __init__(self, name: str, directory: str, subfolder: Any) -> None:
         import torch
         import laya
 
         torch.set_num_threads(max(1, THREADS))
         started = time.time()
+        self.name = name
         # ROCm's PyTorch calls the GPU "cuda". Without one (no /dev/kfd, CPU wheel) the CPU answers.
         self.device = DEVICE if DEVICE == "cpu" or torch.cuda.is_available() else "cpu"
         if self.device != DEVICE:
             print(f"[helena-laya] {DEVICE} requested, PyTorch sees no GPU: using the CPU", flush=True)
-        self.agent = laya.load(MODEL_DIR, subfolder=SUBFOLDER, device=self.device)
+        self.agent = (
+            laya.load(directory, subfolder=subfolder, device=self.device)
+            if subfolder
+            else laya.load(directory, device=self.device)
+        )
         cfg = self.agent.cfg
         if cfg.get("head_max_len_train"):
             cfg["head_max_len"] = cfg["head_max_len_train"]
         self.fmt = cfg.get("laya_fmt", "v1")
-        self.lock = threading.Lock()
-        print(f"[helena-laya] {MODEL_NAME} ({self.fmt}) loaded on {self.device} in {time.time() - started:.1f}s", flush=True)
+        self.lock = LOCK
+        print(f"[helena-laya] {name} ({self.fmt}) loaded on {self.device} in {time.time() - started:.1f}s", flush=True)
 
     def compact(self, value: Any) -> Any:
         # jev-ultrafast element criteria ({'element': '[3] Search', 'role': 'button', ...}) as one
@@ -169,14 +203,26 @@ class Model:
                         "confidence": final.get("confidence", probabilities[chosen]),
                     }
         return {
-            "model": MODEL_NAME,
+            "model": self.name,
             "answers": answers,
             "usage": {"input_tokens": int(usage.get("input_tokens", 0)), "output_tokens": int(usage.get("output_tokens", 0))},
         }
 
 
-MODEL: Model | None = None
+MODELS: Dict[str, Model] = {}
+DEFAULT: str = ""
 EXPECTED: bytes = b""
+
+
+def _pick(requested: Any) -> Model:
+    """The checkpoint a request names (exactly, or by the start of its name), else the default."""
+    if isinstance(requested, str) and requested:
+        if requested in MODELS:
+            return MODELS[requested]
+        for name, model in MODELS.items():
+            if name.startswith(requested) or requested.startswith(name):
+                return model
+    return MODELS[DEFAULT]
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -202,13 +248,16 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         path = self.path.split("?", 1)[0].rstrip("/")
         if path == "/health":
-            self._send(200, {"status": "ok", "model": MODEL_NAME})
+            self._send(200, {"status": "ok", "model": DEFAULT, "models": list(MODELS)})
             return
         if not self._authorized():
             self._send(401, {"detail": "invalid or missing bearer token"})
             return
         if path == "/v1/models":
-            self._send(200, {"models": [{"name": MODEL_NAME, "description": "Laya, browser-tuned, local", "release_date": None}]})
+            self._send(
+                200,
+                {"models": [{"name": name, "description": "Laya, local", "release_date": None} for name in MODELS]},
+            )
             return
         self._send(404, {"detail": "not found"})
 
@@ -241,7 +290,7 @@ class Handler(BaseHTTPRequestHandler):
             return
         started = time.perf_counter()
         try:
-            result = MODEL.answer(body.get("state"), questions)  # type: ignore[union-attr]
+            result = _pick(body.get("model")).answer(body.get("state"), questions)
         except (ValueError, KeyError) as error:
             self._send(422, {"detail": str(error)[:300]})
             return
@@ -256,9 +305,11 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
-    global MODEL, EXPECTED
+    global DEFAULT, EXPECTED
     EXPECTED = _read_key()
-    MODEL = Model()
+    for name, directory, subfolder in _model_specs():
+        MODELS[name] = Model(name, directory, subfolder)
+        DEFAULT = DEFAULT or name
     server = ThreadingHTTPServer((HOST, PORT), Handler)
     server.daemon_threads = True
     print(f"[helena-laya] serving /v1/systemone on http://{HOST}:{PORT}", flush=True)

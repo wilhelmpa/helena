@@ -126,6 +126,15 @@ function RunRow({ run, onOpen }: { run: AgentRun; onOpen: () => void }) {
           {tModel('refusedShort')}
         </Badge>
       )}
+      {run.modelRoute?.routed && (
+        <Badge
+          variant="outline"
+          className="shrink-0"
+          title={`${run.modelRoute.fromModel} → ${run.modelRoute.toModel}`}
+        >
+          {`→ ${run.modelRoute.toModel}`}
+        </Badge>
+      )}
       {run.modelCheck && run.modelCheck.mismatch.length > 0 && (
         <Badge variant="outline" className="shrink-0 border-status-waiting/50 text-status-waiting">
           {t('modelMismatch')}

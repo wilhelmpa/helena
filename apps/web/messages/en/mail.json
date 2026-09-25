@@ -201,5 +201,33 @@
     "title": "Mails",
     "noSubject": "(no subject)",
     "reply": "Reply"
+  },
+  "triage": {
+    "classify": "Classify",
+    "category": "Kind",
+    "priority": "Priority",
+    "needsReply": "Needs a reply",
+    "noReply": "No reply needed",
+    "unsure": "not sure",
+    "failed": "not classified",
+    "corrected": "Correction saved",
+    "accepted": "Done",
+    "createTask": "Create task",
+    "handToAgent": "Hand to the agent",
+    "categories": {
+      "invoice": "Invoice",
+      "appointment": "Appointment",
+      "request": "Request",
+      "newsletter": "Newsletter",
+      "notification": "Notification",
+      "personal": "Personal",
+      "advertising": "Advertising",
+      "other": "Other"
+    },
+    "priorities": {
+      "high": "Urgent",
+      "normal": "Normal",
+      "low": "Can wait"
+    }
   }
 }

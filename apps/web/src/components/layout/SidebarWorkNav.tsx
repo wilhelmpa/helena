@@ -5,6 +5,7 @@ import {
   Folder,
   Inbox,
   LayoutDashboard,
+  ReceiptText,
   RefreshCw,
   SquareKanban,
   StickyNote,
@@ -19,6 +20,7 @@ import {
   initiativesPath,
   notesPath,
   projectPath,
+  receiptsPath,
 } from '@/utils/paths';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useProjectFeatures } from '@/hooks/useProjectFeatures';
@@ -35,6 +37,8 @@ export default function SidebarWorkNav({ projectKey }: { projectKey: string | nu
   const t = useTranslations('nav');
   const pathname = usePathname();
   const { can } = usePermissions();
+  // Receipts are finance data: the project's administrators only, as on the API.
+  const { isAdmin } = usePermissions();
   const features = useProjectFeatures();
   const disabled = !projectKey;
   const onWorkItems =
@@ -87,6 +91,15 @@ export default function SidebarWorkNav({ projectKey }: { projectKey: string | nu
               icon={Folder}
               label={t('workspace.files')}
               active={pathname.includes('/files')}
+              disabled={disabled}
+            />
+          )}
+          {isAdmin && (
+            <SidebarNavItem
+              href={projectKey ? receiptsPath(projectKey) : '#'}
+              icon={ReceiptText}
+              label={t('receipts')}
+              active={pathname.includes('/receipts')}
               disabled={disabled}
             />
           )}

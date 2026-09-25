@@ -162,6 +162,7 @@
     "dropUngrouped": "Suelta aquí para sacar el proyecto de su grupo"
   },
   "access": "Accesos y conexiones",
+  "decisions": "Decisiones",
   "browser": "Navegador",
   "layout": {
     "menu": "Diseño",
@@ -185,5 +186,6 @@
     "full": "Herramienta a pantalla completa",
     "resizeArea": "Cambiar ancho"
   },
+  "receipts": "Justificantes",
   "browserLab": "Browser 2.0"
 }

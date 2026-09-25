@@ -1,3 +1,4 @@
+import type { ModelRoute } from '@/lib/api/endpoints/decisions';
 import type { DynamicToolUIPart, UIMessage } from 'ai';
 import type { AiChatAttachment, AiChatMessage } from '@/lib/api/endpoints/agentChat';
 
@@ -24,6 +25,8 @@ export interface PlanChatMetadata {
   // chat words it in the reader's language.
   errorCode?: string;
   errorModel?: string | null;
+  // What the model router did for the answer (decisions.md §4).
+  modelRoute?: ModelRoute | null;
   // The browser lost the answer's stream before it ended (see AgUiChunkMapper.end); the
   // answer itself may still have finished on the operator's machine.
   interrupted?: boolean;
@@ -85,6 +88,7 @@ export function toUIMessage(message: AiChatMessage): PlanUIMessage {
       error: message.error,
       ...(message.errorCode && { errorCode: message.errorCode }),
       ...(message.errorModel !== undefined && { errorModel: message.errorModel }),
+      ...(message.modelRoute ? { modelRoute: message.modelRoute } : {}),
     },
   };
 }

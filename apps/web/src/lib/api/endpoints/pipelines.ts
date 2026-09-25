@@ -16,6 +16,7 @@ export const STEP_KINDS = [
   'wait',
   'notify',
   'webhook',
+  'decision',
 ] as const;
 export type StepKind = (typeof STEP_KINDS)[number];
 
@@ -137,6 +138,29 @@ export interface ConditionStep extends StepBase {
   elseEnd: boolean;
 }
 
+// A typed decision (docs/helena-decisions/decisions.md §6): a decision model picks one of
+// `options` for the context; `thenOptions` take the `then` lane. `from` reuses an earlier
+// decision step's answer; `unsure` is where the run goes when the model is not sure enough.
+export interface DecisionStep extends StepBase {
+  type: 'decision';
+  question: string;
+  context: string;
+  options: string[];
+  thenOptions: string[];
+  unsure: 'else' | 'then' | 'fail';
+  from: string | null;
+  then: PipelineStep[];
+  else: PipelineStep[];
+  thenEnd: boolean;
+  elseEnd: boolean;
+}
+
+// The steps with two lanes of steps.
+export type BranchingStep = ConditionStep | DecisionStep;
+
+export const isBranching = (step: PipelineStep): step is BranchingStep =>
+  step.type === 'condition' || step.type === 'decision';
+
 export interface ActionStep extends StepBase {
   type: 'action';
   action: TaskAction;
@@ -172,6 +196,7 @@ export type PipelineStep =
   | AgentStep
   | ApprovalStep
   | ConditionStep
+  | DecisionStep
   | ActionStep
   | WaitStep
   | NotifyStep

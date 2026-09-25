@@ -1,0 +1,186 @@
+{
+  "title": "Keputusan",
+  "team": "Tim",
+  "local": "lokal",
+  "cloud": "cloud",
+  "noTeam": "Pilih tim terlebih dahulu.",
+  "noConnections": "Belum ada koneksi model keputusan. Tambahkan di Akses (Laya di server ini, AI lokal, atau Jev).",
+  "toAccess": "Buka Akses",
+  "tabs": {
+    "label": "Keputusan",
+    "classes": "Jenis",
+    "router": "Pilihan model",
+    "log": "Log"
+  },
+  "classes": {
+    "router": {
+      "label": "Pilihan model",
+      "description": "Sebelum run atau jawaban chat: apakah model yang lebih murah dari runtime yang sama sudah cukup? Juga menjawab router Claude Code milik Anda sendiri."
+    },
+    "mail": {
+      "label": "Pilah email",
+      "description": "Email baru: proyek, jenis, prioritas, apakah perlu balasan atau tugas."
+    },
+    "receipts": {
+      "label": "Cocokkan bukti",
+      "description": "Mutasi rekening mana yang membayar sebuah bukti."
+    },
+    "general": {
+      "label": "Keputusan umum",
+      "description": "Alat decide milik agen dan langkah alur kerja “Keputusan”."
+    }
+  },
+  "class": {
+    "on": "Aktif",
+    "off": "Nonaktif",
+    "connection": "Dijawab oleh",
+    "connectionHint": "Koneksi model keputusan dari Akses. Layanan cloud menerima teks setiap pertanyaan.",
+    "connectionLocalOnly": "Hanya koneksi di mesin ini atau di LAN: masukan ini tidak boleh keluar darinya.",
+    "noConnection": "Tidak ada",
+    "fallback": "Cadangan",
+    "fallbackHint": "Ditanya jika yang pertama gagal atau terlalu lambat, dalam batas waktu yang sama.",
+    "noFallback": "Tidak ada",
+    "threshold": "Ambang",
+    "thresholdHint": "Di bawah keyakinan ini tidak ada yang diputuskan dan perilaku sebelumnya tetap berlaku. Bawaan {value}.",
+    "timeout": "Batas waktu",
+    "timeoutHint": "Jawaban yang lebih lambat dianggap tidak ada. Bawaan {value}.",
+    "storeInput": "Simpan masukan di log",
+    "storeInputHint": "Jika tidak, log hanya menyimpan sidik jarinya.",
+    "storeInputNever": "Jenis ini tidak pernah menyimpan masukannya.",
+    "contextThreshold": "Tetap jika konteks diperlukan",
+    "contextThresholdHint": "Mulai dari probabilitas ini bahwa permintaan bergantung pada percakapan sebelumnya, model yang disetel tetap dipakai. Bawaan 50 %.",
+    "evalTitle": "Evaluasi",
+    "evalHint": "{cases} kasus berlabel, ditanyakan seperti fitur menanyakannya. Lulus pada presisi {precision} dan cakupan {coverage}.",
+    "noEval": "Jenis ini tidak punya evaluasi.",
+    "runEval": "Evaluasi",
+    "enabled": "Diaktifkan",
+    "enabledHint": "Hanya setelah evaluasi lulus pada koneksi yang dipilih.",
+    "stats": "7 hari terakhir: {total} pertanyaan, {decided} diputuskan, {unsure} ragu, {failed} tanpa jawaban, {wrong} dari {corrected} yang dikoreksi salah · median {latency} · {cost}"
+  },
+  "reasons": {
+    "no_connection": "Pilih koneksi terlebih dahulu.",
+    "no_eval": "Evaluasi dulu pada koneksi ini.",
+    "eval_failed": "Evaluasi terakhir pada koneksi ini tidak lulus.",
+    "eval_threshold": "Evaluasi terakhir memakai ambang yang lebih tinggi; evaluasi lagi."
+  },
+  "eval": {
+    "running": "Mengevaluasi …",
+    "cancel": "Batal",
+    "passed": "Lulus",
+    "notPassed": "Tidak lulus",
+    "failedRun": "Dihentikan: {error}",
+    "precision": "Presisi",
+    "coverage": "Cakupan",
+    "accuracy": "Akurasi",
+    "latency": "Median / 95 %",
+    "questions": "Diputuskan",
+    "threshold": "Ambang",
+    "tokens": "Token",
+    "cost": "Biaya",
+    "needed": "perlu {value}",
+    "details": "Rincian",
+    "byQuestion": "Per pertanyaan",
+    "question": "Pertanyaan",
+    "answeredShort": "Diputuskan",
+    "sweep": "Ambang lain"
+  },
+  "mail": {
+    "modes": {
+      "off": "Nonaktif",
+      "suggest": "Sarankan",
+      "auto": "Otomatis"
+    },
+    "project": "Proyek",
+    "projectHint": "Sarankan proyeknya, atau langsung pindahkan ke sana email yang ada di Beranda.",
+    "task": "Tugas",
+    "taskHint": "Jika email meminta sesuatu dikerjakan: sarankan tugas di proyeknya, atau langsung buat.",
+    "agent": "Serahkan ke agen",
+    "agentPick": "Agen",
+    "agentHint": "Tugas itu ditugaskan ke agen, yang lalu mengerjakannya.",
+    "noAgent": "Tanpa agen",
+    "receipts": "Faktur sebagai bukti",
+    "receiptsHint": "Lampiran PDF dan XML faktur masuk ke bukti proyek."
+  },
+  "router": {
+    "agents": "Agen",
+    "agentsHint": "Nonaktif secara bawaan. Aktif: run dan jawaban chat tanpa model sendiri boleh memakai model yang lebih murah dari runtime agen.",
+    "noAgents": "Belum ada agen.",
+    "defaultModel": "Bawaan runtime (tanpa pilihan model)",
+    "enabled": "Pilihan model",
+    "allowUpgrade": "Juga lebih kuat",
+    "projects": "Proyek",
+    "projectsHint": "Aktif kecuali dimatikan di sini.",
+    "recent": "Terbaru",
+    "recentHint": "Apa yang dilakukan pilihan model, dan alasannya.",
+    "noRoutes": "Belum ada keputusan.",
+    "run": "Run #{id}",
+    "chat": "Chat",
+    "noRoutesHint": "Begitu pilihan model memutuskan sesuatu, hasilnya muncul di sini."
+  },
+  "routeLine": {
+    "routed": "Pilihan model: {from} → {to}",
+    "stayed": "Pilihan model: {model} tetap"
+  },
+  "routeReasons": {
+    "cheaper_tier": "model yang lebih murah cukup",
+    "upgrade": "butuh model yang lebih kuat",
+    "same_tier": "butuh model ini",
+    "needs_context": "bergantung pada percakapan",
+    "unsure": "kurang yakin",
+    "no_candidates": "tidak ada model lain",
+    "off": "dimatikan",
+    "timeout": "tidak ada jawaban tepat waktu",
+    "error": "galat",
+    "no_backend": "tidak ada koneksi"
+  },
+  "log": {
+    "class": "Jenis",
+    "allClasses": "Semua jenis",
+    "statusFilter": "Status",
+    "allStatuses": "Semua",
+    "status": {
+      "decided": "diputuskan",
+      "unsure": "ragu",
+      "off": "nonaktif",
+      "no_backend": "tidak ada koneksi",
+      "timeout": "waktu habis",
+      "error": "galat"
+    },
+    "confidence": "keyakinan {value}",
+    "noAnswer": "tidak ada jawaban",
+    "correct": "Koreksi …",
+    "corrected": "Koreksi disimpan",
+    "wasWrong": "Dikoreksi: {outcome}",
+    "input": "Masukan",
+    "empty": "Belum ada keputusan",
+    "emptyHint": "Keputusan muncul di sini begitu suatu jenis diaktifkan.",
+    "yes": "ya",
+    "no": "tidak",
+    "noProject": "tanpa proyek",
+    "noTransaction": "tanpa mutasi",
+    "transaction": "Mutasi #{id}"
+  },
+  "noTeamHint": "Keputusan berlaku per tim.",
+  "tiers": {
+    "light": "ringan",
+    "standard": "standar",
+    "strong": "kuat",
+    "strongest": "terkuat"
+  },
+  "questions": {
+    "router": {
+      "route": "Tingkat",
+      "needs_context": "Perlu riwayat"
+    },
+    "mail": {
+      "project": "Proyek",
+      "category": "Jenis",
+      "priority": "Prioritas",
+      "needs_reply": "Perlu balasan",
+      "create_task": "Perlu tugas"
+    },
+    "receipts": {
+      "match": "Mutasi"
+    }
+  }
+}

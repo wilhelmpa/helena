@@ -6,7 +6,8 @@
     "action": "Aksi pada tugas",
     "wait": "Tunggu",
     "notify": "Beri tahu",
-    "webhook": "Webhook"
+    "webhook": "Webhook",
+    "decision": "Keputusan"
   },
   "kindHints": {
     "agent": "Agen mengerjakan tugas",
@@ -15,7 +16,8 @@
     "action": "Mengubah tugas",
     "wait": "Menjeda eksekusi",
     "notify": "Memberi tahu orang tentang proses",
-    "webhook": "Mengirim tugas ke URL"
+    "webhook": "Mengirim tugas ke URL",
+    "decision": "Model keputusan memilih salah satu opsi Anda; eksekusi mengikuti pilihan itu."
   },
   "triggers": {
     "manual": "Dimulai secara manual",
@@ -171,7 +173,9 @@
     "endsRun": "Eksekusi berakhir setelah langkah ini",
     "limit": "Sebuah alur kerja memuat paling banyak {max} langkah.",
     "problems": "{count, plural, other {# masalah}}",
-    "plugins": "Ekstensi"
+    "plugins": "Ekstensi",
+    "decisionThen": "Terpilih",
+    "decisionElse": "Selain itu"
   },
   "summary": {
     "agentRole": "Peran {role}",
@@ -195,7 +199,9 @@
     "waitUntil": "Sampai {field} pada {time}",
     "notify": "Beri tahu {who}: {text}",
     "webhook": "Kirim ke {host}",
-    "noUrl": "Belum ada URL"
+    "noUrl": "Belum ada URL",
+    "decision": "{question} → {options}",
+    "decisionFrom": "Jawaban dari “{step}” → {options}"
   },
   "duration": {
     "minutes": "{count, plural, other {# menit}}",
@@ -340,6 +346,27 @@
       "noSettings": "Tidak ada pengaturan.",
       "choose": "Pilih",
       "missing": "Jenis langkah {type} belum terpasang: ekstensi yang menyediakannya nonaktif."
+    },
+    "decision": {
+      "source": "Pertanyaan",
+      "ask": "Ajukan pertanyaan baru",
+      "reuse": "Pakai ulang jawaban dari “{step}”",
+      "question": "Pertanyaan",
+      "questionHint": "mis. Permintaan jenis apa ini?",
+      "context": "Tentang",
+      "contextHint": "Bawaan: judul dan deskripsi tugas. Variabel dari langkah sebelumnya juga bisa dipakai di sini.",
+      "options": "Opsi",
+      "optionsHint": "Satu per baris, maksimal {max}.",
+      "thenOptions": "Ke cabang pertama jika",
+      "thenHint": "Opsi lainnya, dan tanpa jawaban jelas jika dipilih demikian di bawah, masuk ke cabang kedua.",
+      "noOptions": "Isi opsinya terlebih dahulu.",
+      "unsure": "Jika model tidak yakin",
+      "unsureHint": "Di bawah ambang “Keputusan umum”, atau tanpa jawaban.",
+      "unsureModes": {
+        "else": "Cabang kedua",
+        "then": "Cabang pertama",
+        "fail": "Hentikan eksekusi"
+      }
     }
   },
   "issues": {
@@ -347,6 +374,7 @@
     "required": "Wajib diisi.",
     "too_long": "Paling banyak {max} karakter.",
     "too_many": "Paling banyak {max} entri.",
+    "too_few": "Minimal {min} entri.",
     "out_of_range": "Antara {min} dan {max}.",
     "too_deep": "Kondisi bertingkat paling banyak {max} level.",
     "invalid_cron": "Ekspresi cron tidak valid.",

@@ -15,6 +15,7 @@ import PipelineActionStepForm from './PipelineActionStepForm';
 import PipelineAgentStepForm from './PipelineAgentStepForm';
 import PipelineApprovalStepForm from './PipelineApprovalStepForm';
 import PipelineConditionStepForm from './PipelineConditionStepForm';
+import PipelineDecisionStepForm from './PipelineDecisionStepForm';
 import PipelineField from './PipelineField';
 import PipelineNotifyStepForm from './PipelineNotifyStepForm';
 import PipelinePluginFields from './PipelinePluginFields';
@@ -75,6 +76,7 @@ export default function PipelineStepInspector() {
           {step.type === 'agent' && <PipelineAgentStepForm step={step} onChange={update} />}
           {step.type === 'approval' && <PipelineApprovalStepForm step={step} onChange={update} />}
           {step.type === 'condition' && <PipelineConditionStepForm step={step} onChange={update} />}
+          {step.type === 'decision' && <PipelineDecisionStepForm step={step} onChange={update} />}
           {step.type === 'action' && <PipelineActionStepForm step={step} onChange={update} />}
           {step.type === 'wait' && <PipelineWaitStepForm step={step} onChange={update} />}
           {step.type === 'notify' && <PipelineNotifyStepForm step={step} onChange={update} />}

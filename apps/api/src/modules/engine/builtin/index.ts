@@ -5,6 +5,7 @@ import { agentStep } from './steps/agent';
 import { agentTeamStep } from './steps/agent-team';
 import { approvalStep } from './steps/approval';
 import { conditionStep } from './steps/condition';
+import { decisionStep } from './steps/decision';
 import { delegateStep } from './steps/delegate';
 import { notifyStep } from './steps/notify';
 import { waitStep } from './steps/wait';
@@ -23,6 +24,7 @@ export function registerBuiltins(): void {
     agentStep,
     approvalStep,
     conditionStep,
+    decisionStep,
     actionStep,
     waitStep,
     notifyStep,

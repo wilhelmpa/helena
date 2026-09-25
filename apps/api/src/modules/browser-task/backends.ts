@@ -1,6 +1,7 @@
 import type { DecisionBackendType, HelenaPlugin } from '@helena/sdk';
 import { registries } from '#shared/helena';
 import { useDecisionBackendLookup } from '#modules/agents/credentials/decision-model';
+import { DECISIONS_BACKENDS } from '#modules/decisions/classes';
 
 // The decision backends Helena ships (docs/helena-decisions/browser-task.md §3.3), registered as
 // the internal plugin "helena.browser-task" at the framework's extension point
@@ -70,14 +71,14 @@ export function decisionBackend(id: string | null | undefined): DecisionBackendT
   if (!id) return null;
   return (
     registries.decisionBackends.get(id) ??
-    BUILTIN_DECISION_BACKENDS.find((backend) => backend.id === id) ??
+    [...BUILTIN_DECISION_BACKENDS, ...DECISIONS_BACKENDS].find((backend) => backend.id === id) ??
     null
   );
 }
 
 export function decisionBackends(): DecisionBackendType[] {
   const listed = registries.decisionBackends.list();
-  return listed.length > 0 ? listed : BUILTIN_DECISION_BACKENDS;
+  return listed.length > 0 ? listed : [...BUILTIN_DECISION_BACKENDS, ...DECISIONS_BACKENDS];
 }
 
 // The credential form validates a plugin's backend kind through the same registry.

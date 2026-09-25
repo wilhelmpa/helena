@@ -1,0 +1,168 @@
+{
+  "tabs": {
+    "open": "Ouverts",
+    "review": "À vérifier",
+    "matched": "Associés",
+    "accounts": "Comptes"
+  },
+  "month": "Mois",
+  "allMonths": "Tous les mois",
+  "search": "Rechercher justificatifs et mouvements",
+  "actions": {
+    "upload": "Téléverser un justificatif",
+    "import": "Importer un relevé bancaire",
+    "export": "Exporter le mois",
+    "exportPickMonth": "Choisissez un mois à exporter",
+    "fromVault": "Justificatif depuis les fichiers"
+  },
+  "upload": {
+    "done": "{count, plural, one {# justificatif téléversé} other {# justificatifs téléversés}}",
+    "doneMatched": "{count, plural, one {# justificatif téléversé} other {# justificatifs téléversés}}, dont {matched} associés tout de suite",
+    "duplicate": "{name} est déjà là."
+  },
+  "noAccessTitle": "Réservé aux administrateurs du projet",
+  "noAccessHint": "Seuls les propriétaires du projet et les propriétaires et responsables de l'équipe voient les justificatifs et les mouvements bancaires.",
+  "noName": "(sans nom)",
+  "creditNote": "Avoir",
+  "directDebit": "Prélèvement",
+  "method": {
+    "rule": "Règle",
+    "decision": "IA",
+    "manual": "Manuel"
+  },
+  "open": {
+    "receipts": "Justificatifs sans mouvement",
+    "noReceipts": "Chaque justificatif a son mouvement.",
+    "transactions": "Mouvements sans justificatif",
+    "noTransactions": "Chaque mouvement a son justificatif.",
+    "noReceiptNeeded": "Pas de justificatif nécessaire",
+    "ignored": "Pas de justificatif nécessaire",
+    "undoIgnore": "Justificatif nécessaire finalement"
+  },
+  "review": {
+    "emptyTitle": "Rien à vérifier",
+    "emptyHint": "Les associations dont Helena n'était pas assez sûre attendent ici.",
+    "score": "Règles",
+    "confidence": "IA",
+    "confirm": "Associer",
+    "reject": "Refuser",
+    "others": "{count, plural, one {# autre mouvement} other {# autres mouvements}}",
+    "pickOther": "Associer celui-ci à la place",
+    "useThis": "Associer celui-ci"
+  },
+  "reasons": {
+    "amount": {
+      "exact": "montant exact",
+      "near": "montant proche",
+      "skonto": "montant avec escompte",
+      "fee": "montant moins des frais",
+      "none": "montant inconnu"
+    },
+    "reference": "numéro de facture dans le libellé",
+    "identity": {
+      "iban": "IBAN identique",
+      "creditor": "identifiant créancier identique",
+      "name": "nom identique",
+      "weak-name": "nom proche"
+    },
+    "date": {
+      "primary": "date cohérente",
+      "extended": "date tardive",
+      "outside": "date très éloignée"
+    }
+  },
+  "matched": {
+    "emptyTitle": "Rien d'associé pour l'instant",
+    "emptyHint": "Téléversez des justificatifs et importez un relevé bancaire, et Helena les associe.",
+    "unmatch": "Supprimer l'association"
+  },
+  "accounts": {
+    "title": "Comptes bancaires",
+    "none": "Aucun compte pour l'instant. Ajoutez-en un, ou importez simplement un relevé bancaire.",
+    "noIban": "sans IBAN",
+    "counts": "{open} ouverts · {matched} associés · {ignored} sans justificatif",
+    "import": "Importer un relevé bancaire",
+    "edit": "Modifier",
+    "delete": "Supprimer le compte",
+    "name": "Nom du compte",
+    "namePlaceholder": "p. ex. Compte professionnel",
+    "iban": "IBAN",
+    "ibanPlaceholder": "DE.. (facultatif)",
+    "add": "Ajouter un compte",
+    "imports": "Imports",
+    "noImports": "Aucun relevé bancaire importé pour l'instant.",
+    "importResult": "{added} nouveaux · {duplicates} déjà présents",
+    "deleteTitle": "Supprimer {name} ?",
+    "deleteHint": "{count, plural, one {# mouvement et son association sont supprimés.} other {# mouvements et leurs associations sont supprimés.}} Les justificatifs restent et redeviennent ouverts."
+  },
+  "import": {
+    "title": "Importer un relevé bancaire",
+    "account": "Compte",
+    "newAccount": "Nouveau compte …",
+    "accountName": "Nom du nouveau compte",
+    "accountNamePlaceholder": "p. ex. Compte professionnel",
+    "ibanFromFile": "L'IBAN provient du fichier.",
+    "file": "Fichier",
+    "fileHint": "Un relevé CAMT (XML), un ZIP de relevés ou l'export CSV de votre banque, 20 Mo au maximum.",
+    "submit": "Importer",
+    "importing": "Import en cours …",
+    "doneTitle": "Relevé bancaire importé",
+    "result": "{added, plural, one {# nouveau mouvement} other {# nouveaux mouvements}}, {duplicates} déjà présents.",
+    "pending": "{count, plural, one {# opération en attente ignorée – elle arrivera avec le prochain relevé.} other {# opérations en attente ignorées – elles arriveront avec le prochain relevé.}}",
+    "matched": "{count, plural, one {# justificatif associé} other {# justificatifs associés}} tout de suite.",
+    "warnings": "Remarques"
+  },
+  "detail": {
+    "title": "Justificatif",
+    "loading": "Chargement …",
+    "openFile": "Ouvrir le fichier",
+    "inFiles": "Afficher dans Fichiers",
+    "extract": "Relire",
+    "match": "Mouvement",
+    "matchAgain": "Associer à nouveau",
+    "noCandidates": "Aucun mouvement correspondant trouvé.",
+    "text": "Texte lu",
+    "delete": "Retirer le justificatif",
+    "deleteTitle": "Retirer le justificatif ?",
+    "deleteHint": "Le justificatif quitte la liste ; son fichier reste dans les fichiers du projet.",
+    "saved": "Enregistré.",
+    "badAmount": "Ce montant est illisible. Écrivez-le ainsi : 172,50"
+  },
+  "fields": {
+    "issuer": "Émetteur",
+    "invoiceNumber": "Numéro de facture",
+    "invoiceDate": "Date de facture",
+    "dueDate": "Échéance",
+    "gross": "Montant TTC",
+    "vat": "TVA",
+    "currency": "Devise",
+    "iban": "IBAN du bénéficiaire",
+    "direction": "Type"
+  },
+  "direction": {
+    "incoming": "Facture fournisseur (nous payons)",
+    "outgoing": "Notre facture (nous sommes payés)"
+  },
+  "source": {
+    "mail": "D'un e-mail",
+    "upload": "Téléversé",
+    "vault": "Depuis les fichiers"
+  },
+  "extraction": {
+    "zugferd": "Facture électronique (ZUGFeRD/Factur-X) lue",
+    "xrechnung": "Facture électronique (XRechnung) lue",
+    "text": "Texte du PDF lu",
+    "ocr": "Scan lu par OCR",
+    "manual": "Saisi à la main",
+    "none": "Rien de lu"
+  },
+  "problems": {
+    "missingPrograms": "La lecture nécessite un programme absent du serveur : {programs}",
+    "notEinvoice": "Le fichier XML n'est pas une facture électronique.",
+    "noFacts": "Le texte ne contenait aucune donnée de facture. Saisissez-les ci-dessous."
+  },
+  "vaultPicker": {
+    "title": "Justificatif depuis les fichiers",
+    "description": "Choisissez un fichier du dossier de ce projet. Il reste à sa place."
+  }
+}

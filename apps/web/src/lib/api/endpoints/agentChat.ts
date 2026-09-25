@@ -1,3 +1,4 @@
+import type { ModelRoute } from '@/lib/api/endpoints/decisions';
 import { API_URL, ApiError, apiFailure, request } from '@/lib/api/core/client';
 import { pageQuery, type Page, type PageParams } from '@/lib/api/core/paging';
 import { EventSourceParserStream, type EventSourceMessage } from 'eventsource-parser/stream';
@@ -266,6 +267,8 @@ export interface AiChatMessage {
   // Why it failed, where the runtime's words said ('model-unavailable'), and the model.
   errorCode?: string;
   errorModel?: string | null;
+  // What the model router did for the answer (docs/helena-decisions/decisions.md §4).
+  modelRoute?: ModelRoute | null;
 }
 
 export interface AiChatThreadPage {

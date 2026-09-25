@@ -201,5 +201,33 @@
     "title": "البريد",
     "noSubject": "(من غير موضوع)",
     "reply": "رد"
+  },
+  "triage": {
+    "classify": "تصنيف",
+    "category": "النوع",
+    "priority": "الأولوية",
+    "needsReply": "يحتاج إلى رد",
+    "noReply": "لا يحتاج إلى رد",
+    "unsure": "غير مؤكد",
+    "failed": "غير مصنّف",
+    "corrected": "حُفظ التصحيح",
+    "accepted": "تم",
+    "createTask": "إنشاء مهمة",
+    "handToAgent": "التسليم إلى الوكيل",
+    "categories": {
+      "invoice": "فاتورة",
+      "appointment": "موعد",
+      "request": "طلب",
+      "newsletter": "نشرة إخبارية",
+      "notification": "إشعار",
+      "personal": "شخصي",
+      "advertising": "إعلان",
+      "other": "أخرى"
+    },
+    "priorities": {
+      "high": "عاجل",
+      "normal": "عادي",
+      "low": "يمكن أن ينتظر"
+    }
   }
 }

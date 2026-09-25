@@ -36,6 +36,7 @@ describe('home sidebar navigation', () => {
       { id: 'tools', group: 'globalSettings', href: '/tools' },
       { id: 'mcps', group: 'globalSettings', href: '/mcps' },
       { id: 'access', group: 'globalSettings', href: '/access' },
+      { id: 'decisions', group: 'globalSettings', href: '/decisions' },
       { id: 'devices', group: 'globalSettings', href: '/devices' },
       { id: 'teamSettings', group: 'globalSettings', href: '/account/teams' },
     ]);

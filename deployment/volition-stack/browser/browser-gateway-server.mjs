@@ -357,7 +357,14 @@ export async function startBrowserGateway({ listBrowsers, log = () => {} }) {
           TMPDIR: process.env.TMPDIR ?? "/tmp",
           LANG: "de_DE.UTF-8",
         },
-        stdio: ["pipe", "pipe", "ignore"],
+        stdio: ["pipe", "pipe", "pipe"],
+      });
+      // The last lines Chromium and jev-browser wrote to stderr: when the run ends without a
+      // result, the first telling one goes into the run's summary (a Chromium that could not
+      // start says why there, e.g. crashpad or the sandbox).
+      let stderrTail = "";
+      child.stderr.on("data", (chunk) => {
+        stderrTail = (stderrTail + chunk.toString("utf8")).slice(-4096);
       });
       const timer = setTimeout(() => child.kill("SIGKILL"), 15 * 60 * 1000);
       let finished = false;
@@ -390,7 +397,16 @@ export async function startBrowserGateway({ listBrowsers, log = () => {} }) {
       child.on("exit", () => {
         clearTimeout(timer);
         jevRuns -= 1;
-        if (!finished) void failRun(runToken, "jev-browser stopped without a result");
+        if (!finished) {
+          const telling = stderrTail
+            .split("\n")
+            .map((line) => line.replace(/^\[[\d:/.]+:[A-Z]+:[^\]]*\]\s*/, "").trim())
+            .find((line) => /fatal|crashpad|sandbox|cannot|could not|error/i.test(line));
+          void failRun(
+            runToken,
+            telling ? `jev-browser stopped without a result: ${telling.slice(0, 200)}` : "jev-browser stopped without a result",
+          );
+        }
       });
       child.stdin.end(
         `${JSON.stringify({

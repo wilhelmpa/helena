@@ -51,6 +51,8 @@ export interface PluginProvides {
   updateSources?: string[];
   // Decision backends (System One services the browser's fast path asks).
   decisionBackends?: string[];
+  // Decision classes (kinds of typed decisions a feature asks).
+  decisionClasses?: string[];
   // Event types the plugin publishes; always under its own id.
   events?: string[];
   mcpServers?: McpServerContribution[];

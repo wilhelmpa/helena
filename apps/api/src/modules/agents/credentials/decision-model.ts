@@ -90,8 +90,27 @@ export function composeDecisionModel(fields: CredentialFields, current: Current)
   if (keySource === 'stored' && kind.keyRequired && !value) {
     throw new HttpError(400, 'This service needs a key.');
   }
+  // A model server of Helena's local AI brings its own address and key (decisions.md §3.3).
+  const modelServer =
+    keySource === 'local-ai'
+      ? (
+          fields.modelServer ??
+          (current.readable.modelServer as string | undefined) ??
+          'local'
+        ).trim()
+      : undefined;
+  if (modelServer !== undefined && !/^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/.test(modelServer)) {
+    throw new HttpError(400, 'The model server is named by its slug (lower case, digits, -).');
+  }
   return {
-    readable: { provider, baseUrl, model, allowPrivateAddress, keySource },
+    readable: {
+      provider,
+      baseUrl,
+      model,
+      allowPrivateAddress,
+      keySource,
+      ...(modelServer ? { modelServer } : {}),
+    },
     secrets: keySource === 'stored' && value ? { value } : ({} as Record<string, string>),
   };
 }

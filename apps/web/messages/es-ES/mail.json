@@ -201,5 +201,33 @@
     "title": "Correos",
     "noSubject": "(sin asunto)",
     "reply": "Responder"
+  },
+  "triage": {
+    "classify": "Clasificar",
+    "category": "Tipo",
+    "priority": "Prioridad",
+    "needsReply": "Necesita respuesta",
+    "noReply": "No necesita respuesta",
+    "unsure": "inseguro",
+    "failed": "sin clasificar",
+    "corrected": "Corrección guardada",
+    "accepted": "Hecho",
+    "createTask": "Crear tarea",
+    "handToAgent": "Pasar al agente",
+    "categories": {
+      "invoice": "Factura",
+      "appointment": "Cita",
+      "request": "Solicitud",
+      "newsletter": "Newsletter",
+      "notification": "Notificación",
+      "personal": "Personal",
+      "advertising": "Publicidad",
+      "other": "Otro"
+    },
+    "priorities": {
+      "high": "Urgente",
+      "normal": "Normal",
+      "low": "Puede esperar"
+    }
   }
 }

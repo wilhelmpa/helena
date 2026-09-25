@@ -135,6 +135,10 @@
     "coordinator-triage": {
       "label": "Coordinator first pass",
       "description": "A coordinator's first look at a new task; anything real escalates to its configured model."
+    },
+    "decisions": {
+      "label": "Decisions",
+      "description": "Typed decisions by logit readout: sorting mail, model choice, receipts, the workflow step. The kinds are switched on under Decisions."
     }
   },
   "updates": {

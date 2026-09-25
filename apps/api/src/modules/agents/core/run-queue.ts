@@ -1,4 +1,5 @@
 import type { RuntimeFailure } from '@helena/sdk';
+import { routesOfRuns, type RouteView } from '#modules/model-router/service';
 import { db, agentRun, issue, project } from '@repo/db';
 import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm';
 import { intEnv, iso } from '#shared/lib';
@@ -134,6 +135,8 @@ export interface AgentRunRow {
   autopilotLevel: number | null;
   // The configured model and reasoning next to what the run's session really ran on.
   modelCheck: ModelCheck | null;
+  // What the model router did for the run (decisions.md §4).
+  modelRoute?: RouteView | null;
   // Why the run failed, where the runtime's words said (a model the provider refused).
   failure: RuntimeFailure | null;
   nextAttemptAt: string;
@@ -207,6 +210,7 @@ export async function listAgentRuns(
     .limit(limit + 1);
   const hasMore = rows.length > limit;
   const page = hasMore ? rows.slice(0, limit) : rows;
+  const routes = await routesOfRuns(page.map((r) => r.id));
   return {
     items: page.map((r) => ({
       id: r.id,
@@ -224,6 +228,7 @@ export async function listAgentRuns(
       reflection: reflectionView(r.reflection, r.finishedAt),
       autopilotLevel: r.autopilotLevel,
       modelCheck: (r.modelCheck as ModelCheck | null) ?? null,
+      modelRoute: routes.get(r.id) ?? null,
       failure: (r.failure as RuntimeFailure | null) ?? null,
       nextAttemptAt: iso(r.nextAttemptAt),
       createdAt: iso(r.createdAt),

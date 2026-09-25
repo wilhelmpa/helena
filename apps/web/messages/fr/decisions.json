@@ -1,0 +1,186 @@
+{
+  "title": "Décisions",
+  "team": "Équipe",
+  "local": "local",
+  "cloud": "cloud",
+  "noTeam": "Choisissez d'abord une équipe.",
+  "noConnections": "Aucune connexion à un modèle de décision pour l'instant. Ajoutez-en une dans Accès (Laya sur ce serveur, l'IA locale ou Jev).",
+  "toAccess": "Ouvrir Accès",
+  "tabs": {
+    "label": "Décisions",
+    "classes": "Types",
+    "router": "Choix du modèle",
+    "log": "Journal"
+  },
+  "classes": {
+    "router": {
+      "label": "Choix du modèle",
+      "description": "Avant une exécution ou une réponse de chat : un modèle moins cher du même runtime suffit-il ? Répond aussi au routeur de votre propre Claude Code."
+    },
+    "mail": {
+      "label": "Trier les e-mails",
+      "description": "Nouvel e-mail : projet, type, priorité, s'il demande une réponse ou une tâche."
+    },
+    "receipts": {
+      "label": "Associer les justificatifs",
+      "description": "Quel mouvement bancaire paie un justificatif."
+    },
+    "general": {
+      "label": "Décisions générales",
+      "description": "L'outil decide des agents et l'étape de flux de travail « Décision »."
+    }
+  },
+  "class": {
+    "on": "Activé",
+    "off": "Désactivé",
+    "connection": "Réponse de",
+    "connectionHint": "La connexion à un modèle de décision, depuis Accès. Un service cloud reçoit le texte de chaque question.",
+    "connectionLocalOnly": "Uniquement une connexion sur cette machine ou dans le LAN : ces données ne doivent pas en sortir.",
+    "noConnection": "Aucune",
+    "fallback": "Secours",
+    "fallbackHint": "Interrogée quand la première échoue ou est trop lente, dans le même délai.",
+    "noFallback": "Aucune",
+    "threshold": "Seuil",
+    "thresholdHint": "En dessous de cette confiance, rien n'est décidé et le comportement précédent s'applique. Par défaut {value}.",
+    "timeout": "Délai",
+    "timeoutHint": "Une réponse plus tardive compte comme aucune. Par défaut {value}.",
+    "storeInput": "Garder l'entrée dans le journal",
+    "storeInputHint": "Sinon, le journal n'en garde qu'une empreinte.",
+    "storeInputNever": "Ce type ne garde jamais son entrée.",
+    "contextThreshold": "Rester si le contexte est nécessaire",
+    "contextThresholdHint": "À partir de cette probabilité que la demande s'appuie sur la conversation précédente, le modèle configuré reste. Par défaut 50 %.",
+    "evalTitle": "Évaluation",
+    "evalHint": "{cases} cas étiquetés, posés comme la fonction les pose. Réussie à partir de {precision} de précision et {coverage} de couverture.",
+    "noEval": "Ce type n'a pas d'évaluation.",
+    "runEval": "Évaluer",
+    "enabled": "Activé",
+    "enabledHint": "Seulement après une évaluation réussie sur la connexion choisie.",
+    "stats": "7 derniers jours : {total} questions, {decided} décidées, {unsure} incertaines, {failed} sans réponse, {wrong} sur {corrected} corrigées étaient fausses · médiane {latency} · {cost}"
+  },
+  "reasons": {
+    "no_connection": "Choisissez d'abord une connexion.",
+    "no_eval": "Évaluez-le d'abord sur cette connexion.",
+    "eval_failed": "La dernière évaluation sur cette connexion n'a pas réussi.",
+    "eval_threshold": "La dernière évaluation utilisait un seuil plus élevé ; évaluez à nouveau."
+  },
+  "eval": {
+    "running": "Évaluation en cours …",
+    "cancel": "Annuler",
+    "passed": "Réussie",
+    "notPassed": "Non réussie",
+    "failedRun": "Interrompue : {error}",
+    "precision": "Précision",
+    "coverage": "Couverture",
+    "accuracy": "Exactitude",
+    "latency": "Médiane / 95 %",
+    "questions": "Décidées",
+    "threshold": "Seuil",
+    "tokens": "Jetons",
+    "cost": "Coût",
+    "needed": "requis {value}",
+    "details": "Détails",
+    "byQuestion": "Par question",
+    "question": "Question",
+    "answeredShort": "Décidée",
+    "sweep": "Autres seuils"
+  },
+  "mail": {
+    "modes": {
+      "off": "Désactivé",
+      "suggest": "Suggérer",
+      "auto": "Automatiquement"
+    },
+    "project": "Projet",
+    "projectHint": "Suggérer le projet, ou y déplacer directement les e-mails classés sous Accueil.",
+    "task": "Tâche",
+    "taskHint": "Quand un e-mail demande quelque chose : suggérer une tâche dans son projet, ou la créer.",
+    "agent": "Confier à un agent",
+    "agentPick": "Agent",
+    "agentHint": "Cette tâche est assignée à un agent, qui la traite ensuite.",
+    "noAgent": "Aucun agent",
+    "receipts": "Factures comme justificatifs",
+    "receiptsHint": "Les pièces jointes PDF et XML d'une facture vont dans les justificatifs du projet."
+  },
+  "router": {
+    "agents": "Agents",
+    "agentsHint": "Désactivé par défaut. Activé : les exécutions et réponses de chat sans modèle propre peuvent utiliser un modèle moins cher du runtime de l'agent.",
+    "noAgents": "Aucun agent pour l'instant.",
+    "defaultModel": "Par défaut du runtime (sans choix du modèle)",
+    "enabled": "Choix du modèle",
+    "allowUpgrade": "Aussi plus puissant",
+    "projects": "Projets",
+    "projectsHint": "Activé, sauf s'il est désactivé ici.",
+    "recent": "Dernières",
+    "recentHint": "Ce que le choix du modèle a fait, et pourquoi.",
+    "noRoutes": "Aucune décision pour l'instant.",
+    "run": "Exécution #{id}",
+    "chat": "Chat",
+    "noRoutesHint": "Dès que le choix du modèle décide quelque chose, cela s'affiche ici."
+  },
+  "routeLine": {
+    "routed": "Choix du modèle : {from} → {to}",
+    "stayed": "Choix du modèle : {model} reste"
+  },
+  "routeReasons": {
+    "cheaper_tier": "un modèle moins cher suffit",
+    "upgrade": "nécessite un modèle plus puissant",
+    "same_tier": "nécessite ce modèle",
+    "needs_context": "s'appuie sur la conversation",
+    "unsure": "pas assez sûr",
+    "no_candidates": "aucun autre modèle",
+    "off": "désactivé",
+    "timeout": "pas de réponse à temps",
+    "error": "erreur",
+    "no_backend": "aucune connexion"
+  },
+  "log": {
+    "class": "Type",
+    "allClasses": "Tous les types",
+    "statusFilter": "Statut",
+    "allStatuses": "Tous",
+    "status": {
+      "decided": "décidé",
+      "unsure": "incertain",
+      "off": "désactivé",
+      "no_backend": "aucune connexion",
+      "timeout": "délai dépassé",
+      "error": "erreur"
+    },
+    "confidence": "confiance {value}",
+    "noAnswer": "aucune réponse",
+    "correct": "Corriger …",
+    "corrected": "Correction enregistrée",
+    "wasWrong": "Corrigé : {outcome}",
+    "input": "Entrée",
+    "empty": "Aucune décision pour l'instant",
+    "emptyHint": "Elles apparaissent ici dès qu'un type est activé.",
+    "yes": "oui",
+    "no": "non",
+    "noProject": "aucun projet",
+    "noTransaction": "aucun mouvement",
+    "transaction": "Mouvement n° {id}"
+  },
+  "noTeamHint": "Les décisions s'appliquent par équipe.",
+  "tiers": {
+    "light": "léger",
+    "standard": "standard",
+    "strong": "fort",
+    "strongest": "le plus fort"
+  },
+  "questions": {
+    "router": {
+      "route": "Niveau",
+      "needs_context": "A besoin de l'historique"
+    },
+    "mail": {
+      "project": "Projet",
+      "category": "Type",
+      "priority": "Priorité",
+      "needs_reply": "Réponse nécessaire",
+      "create_task": "Tâche nécessaire"
+    },
+    "receipts": {
+      "match": "Mouvement"
+    }
+  }
+}

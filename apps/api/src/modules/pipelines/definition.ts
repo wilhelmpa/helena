@@ -28,6 +28,7 @@ export const BUILTIN_STEP_KINDS = [
   'webhook',
   'delegate',
   'agent_team',
+  'decision',
 ] as const;
 export type StepKind = (typeof BUILTIN_STEP_KINDS)[number];
 
@@ -118,6 +119,24 @@ export interface ConditionStep extends StepBase {
   elseEnd: boolean;
 }
 
+// A typed decision (docs/helena-decisions/decisions.md §6): which of `options` fits the
+// context, asked of a decision model; `thenOptions` take the `then` lane. `from` reuses an
+// earlier decision step's answer instead of asking again. `unsure` is the lane (or failure)
+// when the model is not sure enough or does not answer.
+export interface DecisionStep extends StepBase {
+  type: 'decision';
+  question: string;
+  context: string;
+  options: string[];
+  thenOptions: string[];
+  unsure: 'else' | 'then' | 'fail';
+  from: string | null;
+  then: PipelineStep[];
+  else: PipelineStep[];
+  thenEnd: boolean;
+  elseEnd: boolean;
+}
+
 export interface ActionStep extends StepBase {
   type: 'action';
   action: TaskAction;
@@ -173,7 +192,8 @@ export type PipelineStep =
   | NotifyStep
   | WebhookStep
   | DelegateStep
-  | AgentTeamStep;
+  | AgentTeamStep
+  | DecisionStep;
 
 export interface PipelineDefinition {
   schemaVersion: 1;
@@ -581,6 +601,7 @@ const MESSAGES: Record<string, string> = {
   required: 'The value is required',
   too_long: 'The value is too long',
   too_many: 'There are too many entries',
+  too_few: 'There are too few entries',
   out_of_range: 'The value is out of range',
   too_deep: 'Conditions are nested too deeply',
   invalid_cron: 'The cron expression is invalid',

@@ -35,6 +35,9 @@ export interface CredentialFormValue {
   keySource: DecisionKeySource;
 }
 
+// The decision services in the cloud: a key is required, and their address is never local.
+export const CLOUD_DECISION_PROVIDERS = ['typesafe', 'vercel'];
+
 export const CREDENTIAL_KINDS: CredentialKind[] = [
   'web_login',
   'api_key',
@@ -124,12 +127,15 @@ export function isCredentialFormValid(
     case 'ssh_key':
       return true;
     case 'decision_model':
-      // A cloud service needs a key; a server of the owner's own may run without one.
+      // A cloud service needs a key; a server of the owner's own may run without one, and a
+      // local installation (Laya, the local AI) brings its own address and key.
       return (
         value.provider !== '' &&
-        (value.provider === 'compatible' ? value.baseUrl.trim() !== '' : true) &&
-        (value.keySource === 'local-laya' ||
-          value.provider === 'compatible' ||
+        (value.keySource !== 'stored' ||
+          CLOUD_DECISION_PROVIDERS.includes(value.provider) ||
+          value.baseUrl.trim() !== '') &&
+        (value.keySource !== 'stored' ||
+          !CLOUD_DECISION_PROVIDERS.includes(value.provider) ||
           filled(value.value, 'value'))
       );
   }
@@ -167,7 +173,8 @@ function fieldsOf(value: CredentialFormValue): CredentialInput {
         provider: value.provider,
         ...(value.baseUrl.trim() !== '' && { baseUrl: value.baseUrl.trim() }),
         ...(value.model.trim() !== '' && { model: value.model.trim() }),
-        allowPrivateAddress: value.provider === 'compatible' && value.allowPrivateAddress,
+        allowPrivateAddress:
+          !CLOUD_DECISION_PROVIDERS.includes(value.provider) && value.allowPrivateAddress,
         keySource: value.keySource,
         notes,
         ...(value.keySource === 'stored' &&

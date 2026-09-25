@@ -1,0 +1,168 @@
+{
+  "tabs": {
+    "open": "Em aberto",
+    "review": "Revisar",
+    "matched": "Associados",
+    "accounts": "Contas"
+  },
+  "month": "Mês",
+  "allMonths": "Todos os meses",
+  "search": "Buscar comprovantes e transações",
+  "actions": {
+    "upload": "Enviar comprovante",
+    "import": "Importar extrato bancário",
+    "export": "Exportar mês",
+    "exportPickMonth": "Escolha um mês para exportar",
+    "fromVault": "Comprovante dos arquivos"
+  },
+  "upload": {
+    "done": "{count, plural, one {# comprovante enviado} other {# comprovantes enviados}}",
+    "doneMatched": "{count, plural, one {# comprovante enviado} other {# comprovantes enviados}}, {matched} associados na hora",
+    "duplicate": "{name} já está aqui."
+  },
+  "noAccessTitle": "Só para administradores do projeto",
+  "noAccessHint": "Comprovantes e transações bancárias só são vistos pelos donos do projeto e pelos donos e gerentes da equipe.",
+  "noName": "(sem nome)",
+  "creditNote": "Nota de crédito",
+  "directDebit": "Débito automático",
+  "method": {
+    "rule": "Regra",
+    "decision": "IA",
+    "manual": "Manual"
+  },
+  "open": {
+    "receipts": "Comprovantes sem transação",
+    "noReceipts": "Todo comprovante tem sua transação.",
+    "transactions": "Transações sem comprovante",
+    "noTransactions": "Toda transação tem seu comprovante.",
+    "noReceiptNeeded": "Não precisa de comprovante",
+    "ignored": "Não precisa de comprovante",
+    "undoIgnore": "Precisa de comprovante, afinal"
+  },
+  "review": {
+    "emptyTitle": "Nada para revisar",
+    "emptyHint": "Aqui ficam as associações sobre as quais a Helena não tinha certeza suficiente.",
+    "score": "Regras",
+    "confidence": "IA",
+    "confirm": "Associar",
+    "reject": "Rejeitar",
+    "others": "{count, plural, one {# outra transação} other {# outras transações}}",
+    "pickOther": "Associar esta em vez disso",
+    "useThis": "Associar esta"
+  },
+  "reasons": {
+    "amount": {
+      "exact": "valor confere",
+      "near": "valor próximo",
+      "skonto": "valor com desconto por pagamento antecipado",
+      "fee": "valor menos uma tarifa",
+      "none": "valor desconhecido"
+    },
+    "reference": "número da fatura na descrição",
+    "identity": {
+      "iban": "IBAN confere",
+      "creditor": "ID do credor confere",
+      "name": "nome confere",
+      "weak-name": "nome parecido"
+    },
+    "date": {
+      "primary": "data confere",
+      "extended": "data tardia",
+      "outside": "data muito distante"
+    }
+  },
+  "matched": {
+    "emptyTitle": "Nada associado ainda",
+    "emptyHint": "Envie comprovantes e importe um extrato bancário, e a Helena os associa.",
+    "unmatch": "Desfazer a associação"
+  },
+  "accounts": {
+    "title": "Contas bancárias",
+    "none": "Nenhuma conta ainda. Adicione uma, ou simplesmente importe um extrato bancário.",
+    "noIban": "sem IBAN",
+    "counts": "{open} em aberto · {matched} associadas · {ignored} sem comprovante",
+    "import": "Importar extrato bancário",
+    "edit": "Editar",
+    "delete": "Excluir conta",
+    "name": "Nome da conta",
+    "namePlaceholder": "ex.: Conta empresarial",
+    "iban": "IBAN",
+    "ibanPlaceholder": "DE.. (opcional)",
+    "add": "Adicionar conta",
+    "imports": "Importações",
+    "noImports": "Nenhum extrato bancário importado ainda.",
+    "importResult": "{added} novas · {duplicates} já existentes",
+    "deleteTitle": "Excluir {name}?",
+    "deleteHint": "{count, plural, one {A # transação e a associação dela são excluídas.} other {As # transações e as associações delas são excluídas.}} Os comprovantes ficam e voltam a ficar em aberto."
+  },
+  "import": {
+    "title": "Importar extrato bancário",
+    "account": "Conta",
+    "newAccount": "Nova conta …",
+    "accountName": "Nome da nova conta",
+    "accountNamePlaceholder": "ex.: Conta empresarial",
+    "ibanFromFile": "O IBAN vem do arquivo.",
+    "file": "Arquivo",
+    "fileHint": "Um extrato CAMT (XML), um ZIP com vários extratos ou a exportação CSV do seu banco, no máximo 20 MB.",
+    "submit": "Importar",
+    "importing": "Importando …",
+    "doneTitle": "Extrato bancário importado",
+    "result": "{added, plural, one {# nova transação} other {# novas transações}}, {duplicates} já existentes.",
+    "pending": "{count, plural, one {# lançamento pendente ignorado – ele virá com o próximo extrato.} other {# lançamentos pendentes ignorados – eles virão com o próximo extrato.}}",
+    "matched": "{count, plural, one {# comprovante associado} other {# comprovantes associados}} na hora.",
+    "warnings": "Observações"
+  },
+  "detail": {
+    "title": "Comprovante",
+    "loading": "Carregando …",
+    "openFile": "Abrir arquivo",
+    "inFiles": "Mostrar em Arquivos",
+    "extract": "Ler de novo",
+    "match": "Transação",
+    "matchAgain": "Associar de novo",
+    "noCandidates": "Nenhuma transação correspondente encontrada.",
+    "text": "Texto lido",
+    "delete": "Remover comprovante",
+    "deleteTitle": "Remover o comprovante?",
+    "deleteHint": "O comprovante sai da lista; o arquivo dele fica nos arquivos do projeto.",
+    "saved": "Salvo.",
+    "badAmount": "Não entendi esse valor. Escreva assim: 172,50"
+  },
+  "fields": {
+    "issuer": "Emissor",
+    "invoiceNumber": "Número da fatura",
+    "invoiceDate": "Data da fatura",
+    "dueDate": "Vencimento",
+    "gross": "Valor bruto",
+    "vat": "IVA",
+    "currency": "Moeda",
+    "iban": "IBAN do favorecido",
+    "direction": "Tipo"
+  },
+  "direction": {
+    "incoming": "Fatura recebida (nós pagamos)",
+    "outgoing": "Nossa fatura (nós recebemos)"
+  },
+  "source": {
+    "mail": "De um e-mail",
+    "upload": "Enviado",
+    "vault": "Dos arquivos"
+  },
+  "extraction": {
+    "zugferd": "Fatura eletrônica (ZUGFeRD/Factur-X) lida",
+    "xrechnung": "Fatura eletrônica (XRechnung) lida",
+    "text": "Texto do PDF lido",
+    "ocr": "Digitalização lida por OCR",
+    "manual": "Inserido manualmente",
+    "none": "Nada lido"
+  },
+  "problems": {
+    "missingPrograms": "Para ler, falta um programa no servidor: {programs}",
+    "notEinvoice": "O arquivo XML não é uma fatura eletrônica.",
+    "noFacts": "O texto não tinha dados de fatura. Preencha abaixo."
+  },
+  "vaultPicker": {
+    "title": "Comprovante dos arquivos",
+    "description": "Escolha um arquivo da pasta deste projeto. Ele continua onde está."
+  }
+}

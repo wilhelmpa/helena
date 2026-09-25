@@ -533,7 +533,7 @@ const DEFINED_TOOLS: ToolDef[] = [
           enum: ['act', 'read'],
           default: 'act',
           description:
-            '"read" only follows links and tabs and scrolls; "act" also types, selects and sends.',
+            '"read" never changes the page: it only scrolls and waits, and stops before any click; "act" clicks, types, selects and sends.',
         },
         allowIrreversible: {
           type: 'boolean',

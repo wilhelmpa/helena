@@ -38,20 +38,11 @@ export const OPERATION_LABELS: Record<Operation, string> = {
   BLOCKED: 'No supported operation can progress.',
 };
 
-// In mode `read` a click may only look around: links, tabs, menu entries, disclosure toggles,
-// sortable headers. Buttons that do something, typing, selecting and Enter are not offered.
-const READ_ROLES = new Set(['link', 'tab', 'menuitem', 'treeitem', 'option']);
-
-export function readSafe(element: PageElement): boolean {
-  if (element.submits || element.editable || element.selectable) return false;
-  return (
-    READ_ROLES.has(element.role) ||
-    element.href !== undefined ||
-    element.expanded !== undefined ||
-    element.tag === 'summary' ||
-    element.tag === 'th'
-  );
-}
+// In mode `read` the task never changes the page: every click, typing, selecting and Enter is a
+// `write` (or more) for Helena's policy, so none is offered — only scrolling, waiting and the
+// answer. The loop and the gateway's read-only page refuse them again (loop.ts, run.ts), so a
+// model that names an operation it was not offered still changes nothing (found live
+// 2026-09-25: "nichts anklicken" in read mode, Laya clicked twice).
 
 function usable(element: PageElement): boolean {
   return !element.disabled && !element.file && !element.credential;
@@ -69,7 +60,7 @@ export function targetsFor(
   );
   if (mode === 'read') {
     return {
-      CLICK: candidates.filter(readSafe),
+      CLICK: [],
       TYPE_TEXT: [],
       SELECT: [],
       PRESS_ENTER: [],

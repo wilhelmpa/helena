@@ -31,6 +31,7 @@ import { appendReasoningPart, appendTextPart } from '../chat-parts';
 import type { ChatMessageDTO, ChatMessagePage, ChatPart, ChatThreadPage } from '../model';
 import { touchRunner, type RunnerAgent } from '../runner/service';
 import { modelCheckOf, type RunModelReport } from '../runtime-sync/model-check';
+import { routeRequest, routesOfChatMessages } from '#modules/model-router/service';
 import type { AgUiEventBody, ChatMessageStatus } from './model';
 import { notifyChatAnswer } from './wake';
 import { questionText, imagePaths, type ChatAttachment } from './attachments';
@@ -332,6 +333,9 @@ export async function getThreadMessages(
   const answers = await readAnswerParts(
     turns.filter((r) => r.role === 'assistant').map((r) => r.id),
   );
+  const routes = await routesOfChatMessages(
+    turns.filter((r) => r.role === 'assistant').map((r) => r.id),
+  );
   const items = turns
     .map((r) => ({
       id: String(r.id),
@@ -351,6 +355,7 @@ export async function getThreadMessages(
         outputTokens: r.outputTokens,
         durationMs:
           r.startedAt && r.finishedAt ? r.finishedAt.getTime() - r.startedAt.getTime() : null,
+        modelRoute: routes.get(r.id) ?? null,
       }),
       ...(r.status === 'canceled' ? { stopped: true } : {}),
       ...failedFields(r),
@@ -859,21 +864,41 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
   const history = await readBranch(row.threadId, row.id);
   const question = history.pop();
   const sessionId = await resumableSession(row.threadId, history, agent.id);
-  // A thread without its own model follows the agent's settings, the way a run does.
+  const attachments = (question?.attachments as ChatAttachment[] | null) ?? [];
+  const text = questionText(question?.content ?? '', attachments);
+  // A thread without its own model follows the agent's settings, the way a run does, and the
+  // model router may send the answer to a cheaper model (decisions.md §4). A model the owner
+  // chose for the thread is never routed.
   const chosen = row.model
     ? { model: row.model, thinkingLevel: row.thinkingLevel }
     : { model: agent.model, thinkingLevel: agent.thinkingLevel };
   // A local model only while local AI is on; otherwise the agent's default answers, as
   // without local AI (docs/helena-decisions/local-ai-platform.md §6).
   const model = await effectiveModelNow(chosen.model);
-  const settings =
+  let settings =
     model === chosen.model ? chosen : { model, thinkingLevel: model ? chosen.thinkingLevel : null };
+  if (!row.model) {
+    const routed = await routeRequest({
+      teamId: agent.teamId,
+      agentId: agent.id,
+      projectId: row.projectId,
+      configuredModel: settings.model,
+      thinkingLevel: settings.thinkingLevel,
+      text,
+      chatMessageId: row.id,
+    });
+    // A routed model that local AI would not run right now (it is off) is not taken.
+    if (
+      routed.route?.routed &&
+      routed.model &&
+      (await effectiveModelNow(routed.model)) === routed.model
+    )
+      settings = { model: routed.model, thinkingLevel: routed.thinkingLevel };
+  }
   await db
     .update(agentChatMessage)
     .set({ model: settings.model, sessionId })
     .where(eq(agentChatMessage.id, row.id));
-  const attachments = (question?.attachments as ChatAttachment[] | null) ?? [];
-  const text = questionText(question?.content ?? '', attachments);
   const earlier = sessionId ? [] : history.slice(-agentChatConfig.historyMessages());
   return {
     id: row.id,

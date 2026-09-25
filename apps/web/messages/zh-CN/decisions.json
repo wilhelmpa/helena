@@ -1,0 +1,186 @@
+{
+  "title": "决策",
+  "team": "团队",
+  "local": "本地",
+  "cloud": "云端",
+  "noTeam": "请先选择一个团队。",
+  "noConnections": "还没有决策模型连接。请在“访问”中添加一个（本服务器上的 Laya、本地 AI 或 Jev）。",
+  "toAccess": "打开“访问”",
+  "tabs": {
+    "label": "决策",
+    "classes": "类型",
+    "router": "模型选择",
+    "log": "日志"
+  },
+  "classes": {
+    "router": {
+      "label": "模型选择",
+      "description": "在运行或聊天回答之前：同一运行时中更便宜的模型能否胜任？也会回答你自己 Claude Code 的路由器。"
+    },
+    "mail": {
+      "label": "邮件分类",
+      "description": "新邮件：项目、类型、优先级，以及是否需要回复或任务。"
+    },
+    "receipts": {
+      "label": "匹配票据",
+      "description": "哪笔银行流水支付了某张票据。"
+    },
+    "general": {
+      "label": "通用决策",
+      "description": "智能体的 decide 工具和工作流步骤“决策”。"
+    }
+  },
+  "class": {
+    "on": "开启",
+    "off": "关闭",
+    "connection": "回答方",
+    "connectionHint": "来自“访问”的决策模型连接。云服务会收到每个问题的文本。",
+    "connectionLocalOnly": "仅限本机或局域网内的连接：这些输入不得离开本机。",
+    "noConnection": "无",
+    "fallback": "备用",
+    "fallbackHint": "当第一个连接失败或太慢时询问，仍在同一时间限制内。",
+    "noFallback": "无",
+    "threshold": "阈值",
+    "thresholdHint": "低于此置信度时不做决定，保持原有行为。默认 {value}。",
+    "timeout": "时间限制",
+    "timeoutHint": "晚于此时间的回答视为无回答。默认 {value}。",
+    "storeInput": "在日志中保留输入",
+    "storeInputHint": "否则日志只保留其指纹。",
+    "storeInputNever": "此类型从不保留输入。",
+    "contextThreshold": "需要上下文时保持",
+    "contextThresholdHint": "当请求依赖之前对话的概率达到此值时，保持已配置的模型。默认 50 %。",
+    "evalTitle": "评估",
+    "evalHint": "{cases} 个已标注用例，按功能实际的提问方式提问。精确率达到 {precision} 且覆盖率达到 {coverage} 即为通过。",
+    "noEval": "此类型没有评估。",
+    "runEval": "评估",
+    "enabled": "已启用",
+    "enabledHint": "只有在所选连接上评估通过后才能启用。",
+    "stats": "最近 7 天：{total} 个问题，{decided} 个已决定，{unsure} 个不确定，{failed} 个无回答，{corrected} 个已纠正中 {wrong} 个错误 · 中位数 {latency} · {cost}"
+  },
+  "reasons": {
+    "no_connection": "请先选择一个连接。",
+    "no_eval": "请先在此连接上评估。",
+    "eval_failed": "此连接上最近一次评估未通过。",
+    "eval_threshold": "最近一次评估使用了更高的阈值；请重新评估。"
+  },
+  "eval": {
+    "running": "正在评估 …",
+    "cancel": "取消",
+    "passed": "已通过",
+    "notPassed": "未通过",
+    "failedRun": "已中止：{error}",
+    "precision": "精确率",
+    "coverage": "覆盖率",
+    "accuracy": "准确率",
+    "latency": "中位数 / 95 %",
+    "questions": "已决定",
+    "threshold": "阈值",
+    "tokens": "Token",
+    "cost": "费用",
+    "needed": "需 {value}",
+    "details": "详情",
+    "byQuestion": "按问题",
+    "question": "问题",
+    "answeredShort": "已决定",
+    "sweep": "其他阈值"
+  },
+  "mail": {
+    "modes": {
+      "off": "关闭",
+      "suggest": "建议",
+      "auto": "自动"
+    },
+    "project": "项目",
+    "projectHint": "建议项目，或直接把归在主页下的邮件移过去。",
+    "task": "任务",
+    "taskHint": "当邮件请求做某事时：在其项目中建议一个任务，或直接创建。",
+    "agent": "交给智能体",
+    "agentPick": "智能体",
+    "agentHint": "该任务分配给一个智能体，由它随后处理。",
+    "noAgent": "无智能体",
+    "receipts": "发票作为票据",
+    "receiptsHint": "发票的 PDF 和 XML 附件会进入项目的票据。"
+  },
+  "router": {
+    "agents": "智能体",
+    "agentsHint": "默认关闭。开启后：没有自己模型的运行和聊天回答可以使用该智能体运行时中更便宜的模型。",
+    "noAgents": "还没有智能体。",
+    "defaultModel": "运行时默认（不做模型选择）",
+    "enabled": "模型选择",
+    "allowUpgrade": "也可更强",
+    "projects": "项目",
+    "projectsHint": "默认开启，除非在此关闭。",
+    "recent": "最近",
+    "recentHint": "模型选择做了什么，以及原因。",
+    "noRoutes": "还没有决策。",
+    "run": "运行 #{id}",
+    "chat": "聊天",
+    "noRoutesHint": "模型选择一旦做出决定，就会显示在这里。"
+  },
+  "routeLine": {
+    "routed": "模型选择：{from} → {to}",
+    "stayed": "模型选择：保持 {model}"
+  },
+  "routeReasons": {
+    "cheaper_tier": "更便宜的模型就够了",
+    "upgrade": "需要更强的模型",
+    "same_tier": "需要此模型",
+    "needs_context": "依赖之前的对话",
+    "unsure": "不够确定",
+    "no_candidates": "没有其他模型",
+    "off": "已关闭",
+    "timeout": "未及时回答",
+    "error": "错误",
+    "no_backend": "无连接"
+  },
+  "log": {
+    "class": "类型",
+    "allClasses": "所有类型",
+    "statusFilter": "状态",
+    "allStatuses": "全部",
+    "status": {
+      "decided": "已决定",
+      "unsure": "不确定",
+      "off": "关闭",
+      "no_backend": "无连接",
+      "timeout": "超时",
+      "error": "错误"
+    },
+    "confidence": "置信度 {value}",
+    "noAnswer": "无回答",
+    "correct": "纠正 …",
+    "corrected": "纠正已保存",
+    "wasWrong": "已纠正：{outcome}",
+    "input": "输入",
+    "empty": "还没有决策",
+    "emptyHint": "启用某个类型后，决策会显示在这里。",
+    "yes": "是",
+    "no": "否",
+    "noProject": "无项目",
+    "noTransaction": "无流水",
+    "transaction": "流水 #{id}"
+  },
+  "noTeamHint": "决策按团队分别设置。",
+  "tiers": {
+    "light": "轻量",
+    "standard": "标准",
+    "strong": "强",
+    "strongest": "最强"
+  },
+  "questions": {
+    "router": {
+      "route": "档位",
+      "needs_context": "需要上下文"
+    },
+    "mail": {
+      "project": "项目",
+      "category": "类型",
+      "priority": "优先级",
+      "needs_reply": "需要回复",
+      "create_task": "需要任务"
+    },
+    "receipts": {
+      "match": "流水"
+    }
+  }
+}

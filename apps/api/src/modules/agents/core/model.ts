@@ -3,6 +3,7 @@ import { t } from 'elysia';
 import { agentRunTrigger, maxTurnsLimit, runBudgetSecondsLimit, runContextTokens } from '../model';
 import { instructionsRuntimeFile } from '../runtime-files/model';
 import { modelCheck, profileReport, runtimeIssue, runtimeSandbox } from '../runtime-sync/model';
+import { modelRoute } from '#modules/model-router/model';
 import { runFailure } from '#modules/model-availability/model';
 
 export { agentParams, projectAgentParams } from '../model';
@@ -409,6 +410,7 @@ export const AgentRunResponse = t.Object({
     ),
   ),
   modelCheck: t.Nullable(modelCheck),
+  modelRoute: t.Optional(t.Nullable(modelRoute)),
   failure: t.Nullable(runFailure),
   nextAttemptAt: t.String(),
   createdAt: t.String(),
@@ -515,6 +517,7 @@ export const ChatMessagesResponse = t.Object({
         }),
       ),
       errorModel: t.Optional(t.Nullable(t.String())),
+      modelRoute: t.Optional(t.Nullable(modelRoute)),
     }),
   ),
   nextPage: t.Nullable(t.Number()),

@@ -1,0 +1,186 @@
+{
+  "title": "Decisões",
+  "team": "Equipe",
+  "local": "local",
+  "cloud": "nuvem",
+  "noTeam": "Escolha uma equipe primeiro.",
+  "noConnections": "Ainda não há conexão com um modelo de decisão. Adicione uma em Acessos (Laya neste servidor, a IA local ou Jev).",
+  "toAccess": "Abrir Acessos",
+  "tabs": {
+    "label": "Decisões",
+    "classes": "Tipos",
+    "router": "Escolha de modelo",
+    "log": "Registro"
+  },
+  "classes": {
+    "router": {
+      "label": "Escolha de modelo",
+      "description": "Antes de uma execução ou resposta de chat: um modelo mais barato do mesmo runtime dá conta? Também responde ao roteador do seu próprio Claude Code."
+    },
+    "mail": {
+      "label": "Classificar e-mails",
+      "description": "E-mail novo: projeto, tipo, prioridade, se precisa de resposta ou de uma tarefa."
+    },
+    "receipts": {
+      "label": "Associar comprovantes",
+      "description": "Qual transação bancária paga um comprovante."
+    },
+    "general": {
+      "label": "Decisões gerais",
+      "description": "A ferramenta decide dos agentes e a etapa de fluxo de trabalho “Decisão”."
+    }
+  },
+  "class": {
+    "on": "Ativado",
+    "off": "Desativado",
+    "connection": "Respondido por",
+    "connectionHint": "A conexão com um modelo de decisão, de Acessos. Um serviço em nuvem recebe o texto de cada pergunta.",
+    "connectionLocalOnly": "Só uma conexão nesta máquina ou na LAN: estes dados não podem sair dela.",
+    "noConnection": "Nenhuma",
+    "fallback": "Reserva",
+    "fallbackHint": "Consultada quando a primeira falha ou é lenta demais, dentro do mesmo limite de tempo.",
+    "noFallback": "Nenhuma",
+    "threshold": "Limiar",
+    "thresholdHint": "Abaixo desta confiança nada é decidido e vale o comportamento anterior. Padrão: {value}.",
+    "timeout": "Limite de tempo",
+    "timeoutHint": "Uma resposta depois disso conta como nenhuma. Padrão: {value}.",
+    "storeInput": "Manter a entrada no registro",
+    "storeInputHint": "Caso contrário, o registro guarda só uma impressão digital dela.",
+    "storeInputNever": "Este tipo nunca guarda a entrada.",
+    "contextThreshold": "Manter quando o contexto for necessário",
+    "contextThresholdHint": "A partir desta probabilidade de que o pedido dependa da conversa anterior, o modelo configurado é mantido. Padrão: 50 %.",
+    "evalTitle": "Avaliação",
+    "evalHint": "{cases} casos rotulados, perguntados como a função pergunta. Aprovada a partir de {precision} de precisão e {coverage} de cobertura.",
+    "noEval": "Este tipo não tem avaliação.",
+    "runEval": "Avaliar",
+    "enabled": "Ativado",
+    "enabledHint": "Só depois de uma avaliação aprovada na conexão escolhida.",
+    "stats": "Últimos 7 dias: {total} perguntas, {decided} decididas, {unsure} incertas, {failed} sem resposta, {wrong} de {corrected} corrigidas estavam erradas · mediana {latency} · {cost}"
+  },
+  "reasons": {
+    "no_connection": "Escolha uma conexão primeiro.",
+    "no_eval": "Avalie-o primeiro nesta conexão.",
+    "eval_failed": "A última avaliação nesta conexão não foi aprovada.",
+    "eval_threshold": "A última avaliação usou um limiar mais alto; avalie de novo."
+  },
+  "eval": {
+    "running": "Avaliando …",
+    "cancel": "Cancelar",
+    "passed": "Aprovada",
+    "notPassed": "Não aprovada",
+    "failedRun": "Interrompida: {error}",
+    "precision": "Precisão",
+    "coverage": "Cobertura",
+    "accuracy": "Acurácia",
+    "latency": "Mediana / 95 %",
+    "questions": "Decididas",
+    "threshold": "Limiar",
+    "tokens": "Tokens",
+    "cost": "Custo",
+    "needed": "necessário {value}",
+    "details": "Detalhes",
+    "byQuestion": "Por pergunta",
+    "question": "Pergunta",
+    "answeredShort": "Decidida",
+    "sweep": "Outros limiares"
+  },
+  "mail": {
+    "modes": {
+      "off": "Desativado",
+      "suggest": "Sugerir",
+      "auto": "Automaticamente"
+    },
+    "project": "Projeto",
+    "projectHint": "Sugerir o projeto, ou mover para lá na hora o e-mail arquivado em Início.",
+    "task": "Tarefa",
+    "taskHint": "Quando um e-mail pede que algo seja feito: sugerir uma tarefa no projeto dele, ou criá-la.",
+    "agent": "Passar para um agente",
+    "agentPick": "Agente",
+    "agentHint": "Essa tarefa é atribuída a um agente, que então trabalha nela.",
+    "noAgent": "Nenhum agente",
+    "receipts": "Faturas como comprovantes",
+    "receiptsHint": "Os anexos PDF e XML de uma fatura vão para os comprovantes do projeto."
+  },
+  "router": {
+    "agents": "Agentes",
+    "agentsHint": "Desativado por padrão. Ativado: execuções e respostas de chat sem modelo próprio podem usar um modelo mais barato do runtime do agente.",
+    "noAgents": "Nenhum agente ainda.",
+    "defaultModel": "Padrão do runtime (sem escolha de modelo)",
+    "enabled": "Escolha de modelo",
+    "allowUpgrade": "Também mais forte",
+    "projects": "Projetos",
+    "projectsHint": "Ativada, a menos que seja desativada aqui.",
+    "recent": "Recentes",
+    "recentHint": "O que a escolha de modelo fez, e por quê.",
+    "noRoutes": "Nenhuma decisão ainda.",
+    "run": "Execução #{id}",
+    "chat": "Chat",
+    "noRoutesHint": "Assim que a escolha de modelo decidir algo, aparece aqui."
+  },
+  "routeLine": {
+    "routed": "Escolha de modelo: {from} → {to}",
+    "stayed": "Escolha de modelo: {model} mantido"
+  },
+  "routeReasons": {
+    "cheaper_tier": "um modelo mais barato basta",
+    "upgrade": "precisa de um modelo mais forte",
+    "same_tier": "precisa deste modelo",
+    "needs_context": "depende da conversa",
+    "unsure": "sem certeza suficiente",
+    "no_candidates": "nenhum outro modelo",
+    "off": "desativada",
+    "timeout": "sem resposta a tempo",
+    "error": "erro",
+    "no_backend": "sem conexão"
+  },
+  "log": {
+    "class": "Tipo",
+    "allClasses": "Todos os tipos",
+    "statusFilter": "Status",
+    "allStatuses": "Todos",
+    "status": {
+      "decided": "decidida",
+      "unsure": "incerta",
+      "off": "desativada",
+      "no_backend": "sem conexão",
+      "timeout": "tempo esgotado",
+      "error": "erro"
+    },
+    "confidence": "confiança {value}",
+    "noAnswer": "sem resposta",
+    "correct": "Corrigir …",
+    "corrected": "Correção salva",
+    "wasWrong": "Corrigido: {outcome}",
+    "input": "Entrada",
+    "empty": "Nenhuma decisão ainda",
+    "emptyHint": "Elas aparecem aqui assim que um tipo é ativado.",
+    "yes": "sim",
+    "no": "não",
+    "noProject": "nenhum projeto",
+    "noTransaction": "nenhuma transação",
+    "transaction": "Transação nº {id}"
+  },
+  "noTeamHint": "As decisões valem por equipe.",
+  "tiers": {
+    "light": "leve",
+    "standard": "padrão",
+    "strong": "forte",
+    "strongest": "o mais forte"
+  },
+  "questions": {
+    "router": {
+      "route": "Nível",
+      "needs_context": "Precisa do histórico"
+    },
+    "mail": {
+      "project": "Projeto",
+      "category": "Tipo",
+      "priority": "Prioridade",
+      "needs_reply": "Precisa de resposta",
+      "create_task": "Tarefa necessária"
+    },
+    "receipts": {
+      "match": "Transação"
+    }
+  }
+}

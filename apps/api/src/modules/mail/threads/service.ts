@@ -1,3 +1,4 @@
+import { classificationsOfThreads } from '#modules/mail-triage/classify';
 import {
   db,
   issue,
@@ -188,9 +189,23 @@ export async function listThreads(filters: ThreadFilters) {
     .where(and(...where))
     .orderBy(desc(mailThread.lastMessageAt), desc(mailThread.id))
     .limit(limit + 1);
-  const page = rows
-    .slice(0, limit)
-    .map((row) => ({ ...row, lastMessageAt: iso(row.lastMessageAt) }));
+  // What the mail classifier made of each thread (decisions.md §5), for the list's badges.
+  const triage = await classificationsOfThreads(rows.slice(0, limit).map((row) => row.id));
+  const page = rows.slice(0, limit).map((row) => {
+    const found = triage.get(row.id);
+    return {
+      ...row,
+      lastMessageAt: iso(row.lastMessageAt),
+      triage: found
+        ? {
+            status: found.status,
+            category: found.category,
+            priority: found.priority,
+            needsReply: found.needsReply,
+          }
+        : null,
+    };
+  });
   const last = page.at(-1);
   return {
     items: page,

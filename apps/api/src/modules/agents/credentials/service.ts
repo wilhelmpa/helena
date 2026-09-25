@@ -66,6 +66,7 @@ export interface CredentialEntry {
   model: string | null;
   allowPrivateAddress: boolean;
   keySource: DecisionKeySource | null;
+  modelServer: string | null;
   secrets: string[];
   // The agents granted by name; `grants` holds every grant, to agents and projects.
   agentIds: number[];
@@ -89,6 +90,7 @@ interface Readable {
   model?: string;
   allowPrivateAddress?: boolean;
   keySource?: DecisionKeySource;
+  modelServer?: string;
   [secretField: string]: unknown;
 }
 
@@ -155,6 +157,10 @@ function toEntry(row: EntryRow, grants: GrantEntry[]): CredentialEntry {
     model: kind === 'decision_model' ? (readable.model ?? null) : null,
     allowPrivateAddress: kind === 'decision_model' && readable.allowPrivateAddress === true,
     keySource: kind === 'decision_model' ? (readable.keySource ?? 'stored') : null,
+    modelServer:
+      kind === 'decision_model' && readable.keySource === 'local-ai'
+        ? (readable.modelServer ?? 'local')
+        : null,
     secrets: SECRET_FIELDS[kind].filter((field) => Boolean(readable[field])),
     agentIds: grants.flatMap((grant) => (grant.agentId === null ? [] : [grant.agentId])),
     grants,

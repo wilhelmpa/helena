@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import type { MailThread } from '@/lib/api/endpoints/mail';
 import { issuePath } from '@/utils/paths';
 import { useMoveThread } from '../services/mail.service';
+import { MailClassificationCard } from './MailClassificationCard';
 
 export default function MailThreadHeader({
   thread,
@@ -61,6 +62,7 @@ export default function MailThreadHeader({
           </Button>
         </div>
       )}
+      <MailClassificationCard threadId={thread.id} />
     </div>
   );
 }

@@ -1,0 +1,168 @@
+{
+  "tabs": {
+    "open": "Pendientes",
+    "review": "Revisar",
+    "matched": "Asignados",
+    "accounts": "Cuentas"
+  },
+  "month": "Mes",
+  "allMonths": "Todos los meses",
+  "search": "Buscar justificantes y movimientos",
+  "actions": {
+    "upload": "Subir justificante",
+    "import": "Importar extracto bancario",
+    "export": "Exportar mes",
+    "exportPickMonth": "Elige un mes para exportar",
+    "fromVault": "Justificante desde archivos"
+  },
+  "upload": {
+    "done": "{count, plural, one {# justificante subido} other {# justificantes subidos}}",
+    "doneMatched": "{count, plural, one {# justificante subido} other {# justificantes subidos}}, {matched} asignados al momento",
+    "duplicate": "{name} ya está aquí."
+  },
+  "noAccessTitle": "Solo para administradores del proyecto",
+  "noAccessHint": "Los justificantes y los movimientos bancarios solo los ven los propietarios del proyecto y los propietarios y administradores del equipo.",
+  "noName": "(sin nombre)",
+  "creditNote": "Abono",
+  "directDebit": "Adeudo directo",
+  "method": {
+    "rule": "Regla",
+    "decision": "IA",
+    "manual": "A mano"
+  },
+  "open": {
+    "receipts": "Justificantes sin movimiento",
+    "noReceipts": "Cada justificante tiene su movimiento.",
+    "transactions": "Movimientos sin justificante",
+    "noTransactions": "Cada movimiento tiene su justificante.",
+    "noReceiptNeeded": "No necesita justificante",
+    "ignored": "No necesita justificante",
+    "undoIgnore": "Sí necesita justificante"
+  },
+  "review": {
+    "emptyTitle": "Nada que revisar",
+    "emptyHint": "Aquí esperan las asignaciones de las que Helena no estaba lo bastante segura.",
+    "score": "Reglas",
+    "confidence": "IA",
+    "confirm": "Asignar",
+    "reject": "Rechazar",
+    "others": "{count, plural, one {# otro movimiento} other {# otros movimientos}}",
+    "pickOther": "Asignar este en su lugar",
+    "useThis": "Asignar este"
+  },
+  "reasons": {
+    "amount": {
+      "exact": "importe exacto",
+      "near": "importe parecido",
+      "skonto": "importe con descuento por pronto pago",
+      "fee": "importe menos una comisión",
+      "none": "importe desconocido"
+    },
+    "reference": "número de factura en el concepto",
+    "identity": {
+      "iban": "IBAN coincide",
+      "creditor": "ID de acreedor coincide",
+      "name": "nombre coincide",
+      "weak-name": "nombre parecido"
+    },
+    "date": {
+      "primary": "fecha encaja",
+      "extended": "fecha tardía",
+      "outside": "fecha muy lejana"
+    }
+  },
+  "matched": {
+    "emptyTitle": "Todavía no hay nada asignado",
+    "emptyHint": "Sube justificantes e importa un extracto bancario, y Helena los asigna.",
+    "unmatch": "Quitar la asignación"
+  },
+  "accounts": {
+    "title": "Cuentas bancarias",
+    "none": "Todavía no hay cuentas. Añade una o simplemente importa un extracto bancario.",
+    "noIban": "sin IBAN",
+    "counts": "{open} pendientes · {matched} asignados · {ignored} sin justificante",
+    "import": "Importar extracto bancario",
+    "edit": "Editar",
+    "delete": "Eliminar cuenta",
+    "name": "Nombre de la cuenta",
+    "namePlaceholder": "p. ej. Cuenta de empresa",
+    "iban": "IBAN",
+    "ibanPlaceholder": "DE.. (opcional)",
+    "add": "Añadir cuenta",
+    "imports": "Importaciones",
+    "noImports": "Todavía no se ha importado ningún extracto bancario.",
+    "importResult": "{added} nuevos · {duplicates} ya estaban",
+    "deleteTitle": "¿Eliminar {name}?",
+    "deleteHint": "{count, plural, one {Se eliminan su # movimiento y su asignación.} other {Se eliminan sus # movimientos y sus asignaciones.}} Los justificantes se quedan y vuelven a estar pendientes."
+  },
+  "import": {
+    "title": "Importar extracto bancario",
+    "account": "Cuenta",
+    "newAccount": "Cuenta nueva …",
+    "accountName": "Nombre de la cuenta nueva",
+    "accountNamePlaceholder": "p. ej. Cuenta de empresa",
+    "ibanFromFile": "El IBAN se toma del archivo.",
+    "file": "Archivo",
+    "fileHint": "Un extracto CAMT (XML), un ZIP con varios extractos o la exportación CSV de tu banco, 20 MB como máximo.",
+    "submit": "Importar",
+    "importing": "Importando …",
+    "doneTitle": "Extracto bancario importado",
+    "result": "{added, plural, one {# movimiento nuevo} other {# movimientos nuevos}}, {duplicates} ya estaban.",
+    "pending": "{count, plural, one {# apunte pendiente omitido – llegará con el próximo extracto.} other {# apuntes pendientes omitidos – llegarán con el próximo extracto.}}",
+    "matched": "{count, plural, one {# justificante asignado} other {# justificantes asignados}} al momento.",
+    "warnings": "Avisos"
+  },
+  "detail": {
+    "title": "Justificante",
+    "loading": "Cargando …",
+    "openFile": "Abrir archivo",
+    "inFiles": "Mostrar en Archivos",
+    "extract": "Volver a leer",
+    "match": "Movimiento",
+    "matchAgain": "Volver a asignar",
+    "noCandidates": "No se ha encontrado ningún movimiento que encaje.",
+    "text": "Texto leído",
+    "delete": "Quitar justificante",
+    "deleteTitle": "¿Quitar el justificante?",
+    "deleteHint": "El justificante sale de la lista; su archivo se queda en los archivos del proyecto.",
+    "saved": "Guardado.",
+    "badAmount": "No se entiende ese importe. Escríbelo así: 172,50"
+  },
+  "fields": {
+    "issuer": "Emisor",
+    "invoiceNumber": "Número de factura",
+    "invoiceDate": "Fecha de factura",
+    "dueDate": "Vencimiento",
+    "gross": "Importe bruto",
+    "vat": "IVA",
+    "currency": "Moneda",
+    "iban": "IBAN del beneficiario",
+    "direction": "Tipo"
+  },
+  "direction": {
+    "incoming": "Factura recibida (pagamos)",
+    "outgoing": "Factura emitida (nos pagan)"
+  },
+  "source": {
+    "mail": "De un correo",
+    "upload": "Subido",
+    "vault": "De los archivos"
+  },
+  "extraction": {
+    "zugferd": "Factura electrónica (ZUGFeRD/Factur-X) leída",
+    "xrechnung": "Factura electrónica (XRechnung) leída",
+    "text": "Texto del PDF leído",
+    "ocr": "Escaneo leído por OCR",
+    "manual": "Introducido a mano",
+    "none": "No se ha leído nada"
+  },
+  "problems": {
+    "missingPrograms": "Para leerlo falta un programa en el servidor: {programs}",
+    "notEinvoice": "El archivo XML no es una factura electrónica.",
+    "noFacts": "El texto no tenía datos de factura. Introdúcelos abajo."
+  },
+  "vaultPicker": {
+    "title": "Justificante desde archivos",
+    "description": "Elige un archivo de la carpeta de este proyecto. Se queda donde está."
+  }
+}

@@ -162,6 +162,7 @@
     "dropUngrouped": "Drop here to take the project out of its group"
   },
   "access": "Access & connections",
+  "decisions": "Decisions",
   "browser": "Browser",
   "layout": {
     "menu": "Layout",
@@ -185,5 +186,6 @@
     "full": "Tool full size",
     "resizeArea": "Resize"
   },
+  "receipts": "Receipts",
   "browserLab": "Browser 2.0"
 }

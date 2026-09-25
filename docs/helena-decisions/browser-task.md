@@ -140,8 +140,12 @@ because it cannot load the browser checkpoint. Installer and unit: §3.8.
 - **Every action is decided by Helena's policy exactly like the single-step tool** it stands for: a
   click `write`, a click that submits a form or Enter in a form field `send`, typing `write`,
   scrolling and waiting `read`. "Freigabe nötig" stops the task with status `needs_approval` and the
-  card number; a denial stops it with `denied`. In mode `read` only non-submitting clicks, scrolling
-  and waiting are offered. jev-browser's `irreversible` noul (≥ 0.6 on a click or Enter) pauses the
+  card number; a denial stops it with `denied`. **Mode `read` never changes the page**: only
+  scrolling and waiting are offered, and the loop (`input.mode === 'read'` and a category above
+  `read` → `denied`, nothing done) and the gateway's read-only page (`readOnlyPage`, run.ts) refuse
+  every other operation, whatever a policy or model proposes. Following a link is a click (`write`),
+  so it needs mode `act` (found live 2026-09-25: Laya clicked twice on "nichts anklicken" in read
+  mode, when read mode still offered links; `loop.test.ts` proves the fix). jev-browser's `irreversible` noul (≥ 0.6 on a click or Enter) pauses the
   task with `needs_confirmation` unless the agent passed `allowIrreversible: true` — on top of, never
   instead of, the policy.
 - **Lock and takeover**: the task acts as the calling agent and holds its lock for the whole run; the
@@ -277,7 +281,7 @@ orchestrator, owner OK for the CPU install and its downloads 2026-09-24):
 - checkpoint `cklxx/laya-browser` subfolder `v10s` at a pinned revision, checked against its
   SHA-256, in `/var/lib/helena-laya/models`, then `HF_HUB_OFFLINE=1`; safetensors only, no
   `trust_remote_code`;
-- key `/etc/helena/laya.key` (root:volition-plan 0640): the API reads it (default path of
+- key `/etc/helena/laya.key` (root:volition-plan-secrets 0640, the API user's secrets group): the API reads it (default path of
   `HELENA_LAYA_KEY_FILE`), the service gets it through systemd's `LoadCredential`;
 - `helena-laya.service`: `127.0.0.1:8791`, 8 threads, `CPUQuota=800%`, `MemoryHigh=3G`,
   `MemoryMax=4G` (the OS has only ~31 GB), `Nice=10`, `ProtectSystem=strict`, `PrivateTmp`, no

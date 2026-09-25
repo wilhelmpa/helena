@@ -201,5 +201,33 @@
     "title": "Email",
     "noSubject": "(tanpa subjek)",
     "reply": "Balas"
+  },
+  "triage": {
+    "classify": "Pilah",
+    "category": "Jenis",
+    "priority": "Prioritas",
+    "needsReply": "Perlu balasan",
+    "noReply": "Tidak perlu balasan",
+    "unsure": "ragu",
+    "failed": "belum dipilah",
+    "corrected": "Koreksi disimpan",
+    "accepted": "Selesai",
+    "createTask": "Buat tugas",
+    "handToAgent": "Serahkan ke agen",
+    "categories": {
+      "invoice": "Faktur",
+      "appointment": "Janji temu",
+      "request": "Permintaan",
+      "newsletter": "Newsletter",
+      "notification": "Notifikasi",
+      "personal": "Pribadi",
+      "advertising": "Iklan",
+      "other": "Lainnya"
+    },
+    "priorities": {
+      "high": "Mendesak",
+      "normal": "Normal",
+      "low": "Bisa menunggu"
+    }
   }
 }

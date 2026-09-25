@@ -1,5 +1,6 @@
 'use client';
 
+import { ModelRouteLine } from '@/features/decisions/components/ModelRouteLine';
 import { useMemo } from 'react';
 import { AgentMessageParts } from '@/components/agent-message/AgentMessageParts';
 import type { RenderTool } from '@/components/agent-message/AgentToolGroup';
@@ -63,6 +64,9 @@ export default function ChatMessageBubbleAssistant({
           </p>
         )}
         {sources.length > 0 && <ChatSources sources={sources} projectKey={projectKey} />}
+        {!streaming && message.metadata?.modelRoute?.routed && (
+          <ModelRouteLine route={message.metadata.modelRoute} />
+        )}
       </div>
     </ArtifactOpenContext.Provider>
   );

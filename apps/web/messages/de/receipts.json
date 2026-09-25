@@ -1,0 +1,168 @@
+{
+  "tabs": {
+    "open": "Offen",
+    "review": "Prüfen",
+    "matched": "Zugeordnet",
+    "accounts": "Konten"
+  },
+  "month": "Monat",
+  "allMonths": "Alle Monate",
+  "search": "Belege und Buchungen durchsuchen",
+  "actions": {
+    "upload": "Beleg hochladen",
+    "import": "Kontoauszug importieren",
+    "export": "Monat exportieren",
+    "exportPickMonth": "Für den Export einen Monat wählen",
+    "fromVault": "Beleg aus den Dateien"
+  },
+  "upload": {
+    "done": "{count, plural, one {# Beleg hochgeladen} other {# Belege hochgeladen}}",
+    "doneMatched": "{count, plural, one {# Beleg hochgeladen} other {# Belege hochgeladen}}, {matched} davon gleich zugeordnet",
+    "duplicate": "{name} ist schon da."
+  },
+  "noAccessTitle": "Nur für Projektverwalter",
+  "noAccessHint": "Belege und Kontobewegungen sehen nur die Inhaber des Projekts und die Leitung des Teams.",
+  "noName": "(ohne Namen)",
+  "creditNote": "Gutschrift",
+  "directDebit": "Lastschrift",
+  "method": {
+    "rule": "Regel",
+    "decision": "KI",
+    "manual": "Von Hand"
+  },
+  "open": {
+    "receipts": "Belege ohne Kontobewegung",
+    "noReceipts": "Jeder Beleg hat seine Kontobewegung.",
+    "transactions": "Kontobewegungen ohne Beleg",
+    "noTransactions": "Jede Kontobewegung hat ihren Beleg.",
+    "noReceiptNeeded": "Kein Beleg nötig",
+    "ignored": "Kein Beleg nötig",
+    "undoIgnore": "Doch einen Beleg zuordnen"
+  },
+  "review": {
+    "emptyTitle": "Nichts zu prüfen",
+    "emptyHint": "Hier landen Zuordnungen, bei denen Helena nicht sicher genug war.",
+    "score": "Regeln",
+    "confidence": "KI",
+    "confirm": "Zuordnen",
+    "reject": "Ablehnen",
+    "others": "{count, plural, one {# andere Kontobewegung} other {# andere Kontobewegungen}}",
+    "pickOther": "Stattdessen zuordnen",
+    "useThis": "Diese zuordnen"
+  },
+  "reasons": {
+    "amount": {
+      "exact": "Betrag stimmt",
+      "near": "Betrag ähnlich",
+      "skonto": "Betrag mit Skonto",
+      "fee": "Betrag abzüglich Gebühr",
+      "none": "Betrag unbekannt"
+    },
+    "reference": "Rechnungsnummer im Verwendungszweck",
+    "identity": {
+      "iban": "IBAN stimmt",
+      "creditor": "Gläubiger-ID stimmt",
+      "name": "Name stimmt",
+      "weak-name": "Name ähnlich"
+    },
+    "date": {
+      "primary": "Datum passt",
+      "extended": "Datum spät",
+      "outside": "Datum weit weg"
+    }
+  },
+  "matched": {
+    "emptyTitle": "Noch nichts zugeordnet",
+    "emptyHint": "Lade Belege hoch und importiere einen Kontoauszug, dann ordnet Helena sie einander zu.",
+    "unmatch": "Zuordnung lösen"
+  },
+  "accounts": {
+    "title": "Bankkonten",
+    "none": "Noch kein Konto. Lege eins an oder importiere einfach einen Kontoauszug.",
+    "noIban": "ohne IBAN",
+    "counts": "{open} offen · {matched} zugeordnet · {ignored} ohne Beleg",
+    "import": "Kontoauszug importieren",
+    "edit": "Bearbeiten",
+    "delete": "Konto löschen",
+    "name": "Name des Kontos",
+    "namePlaceholder": "z. B. Geschäftskonto",
+    "iban": "IBAN",
+    "ibanPlaceholder": "DE.. (optional)",
+    "add": "Konto anlegen",
+    "imports": "Importe",
+    "noImports": "Noch kein Kontoauszug importiert.",
+    "importResult": "{added} neu · {duplicates} schon da",
+    "deleteTitle": "{name} löschen?",
+    "deleteHint": "{count, plural, one {Die # Kontobewegung und ihre Zuordnung werden gelöscht.} other {Die # Kontobewegungen und ihre Zuordnungen werden gelöscht.}} Die Belege bleiben und sind wieder offen."
+  },
+  "import": {
+    "title": "Kontoauszug importieren",
+    "account": "Konto",
+    "newAccount": "Neues Konto …",
+    "accountName": "Name des neuen Kontos",
+    "accountNamePlaceholder": "z. B. Geschäftskonto",
+    "ibanFromFile": "Die IBAN kommt aus der Datei.",
+    "file": "Datei",
+    "fileHint": "CAMT-Auszug (XML), ZIP mit mehreren Auszügen oder CSV-Export deiner Bank, höchstens 20 MB.",
+    "submit": "Importieren",
+    "importing": "Wird importiert …",
+    "doneTitle": "Kontoauszug importiert",
+    "result": "{added, plural, one {# neue Kontobewegung} other {# neue Kontobewegungen}}, {duplicates} schon vorhanden.",
+    "pending": "{count, plural, one {# vorgemerkte Buchung} other {# vorgemerkte Buchungen}} übersprungen – sie kommen mit dem nächsten Auszug.",
+    "matched": "{count, plural, one {# Beleg} other {# Belege}} gleich zugeordnet.",
+    "warnings": "Hinweise"
+  },
+  "detail": {
+    "title": "Beleg",
+    "loading": "Wird geladen …",
+    "openFile": "Datei öffnen",
+    "inFiles": "In Dateien zeigen",
+    "extract": "Erneut auslesen",
+    "match": "Kontobewegung",
+    "matchAgain": "Erneut zuordnen",
+    "noCandidates": "Keine passende Kontobewegung gefunden.",
+    "text": "Gelesener Text",
+    "delete": "Beleg entfernen",
+    "deleteTitle": "Beleg entfernen?",
+    "deleteHint": "Der Beleg verschwindet aus der Liste, seine Datei bleibt in den Dateien des Projekts.",
+    "saved": "Gespeichert.",
+    "badAmount": "Den Betrag verstehe ich nicht. Schreib ihn z. B. so: 172,50"
+  },
+  "fields": {
+    "issuer": "Aussteller",
+    "invoiceNumber": "Rechnungsnummer",
+    "invoiceDate": "Rechnungsdatum",
+    "dueDate": "Fällig am",
+    "gross": "Betrag brutto",
+    "vat": "Umsatzsteuer",
+    "currency": "Währung",
+    "iban": "IBAN des Empfängers",
+    "direction": "Art"
+  },
+  "direction": {
+    "incoming": "Eingangsrechnung (wir zahlen)",
+    "outgoing": "Ausgangsrechnung (wir bekommen Geld)"
+  },
+  "source": {
+    "mail": "Aus einer Mail",
+    "upload": "Hochgeladen",
+    "vault": "Aus den Dateien"
+  },
+  "extraction": {
+    "zugferd": "E-Rechnung (ZUGFeRD/Factur-X) gelesen",
+    "xrechnung": "E-Rechnung (XRechnung) gelesen",
+    "text": "Text der PDF gelesen",
+    "ocr": "Scan per Texterkennung gelesen",
+    "manual": "Von Hand erfasst",
+    "none": "Nichts gelesen"
+  },
+  "problems": {
+    "missingPrograms": "Zum Auslesen fehlt auf dem Server: {programs}",
+    "notEinvoice": "Die XML-Datei ist keine E-Rechnung.",
+    "noFacts": "Im Text standen keine Rechnungsdaten. Trag sie unten ein."
+  },
+  "vaultPicker": {
+    "title": "Beleg aus den Dateien",
+    "description": "Wähle eine Datei aus dem Ordner dieses Projekts. Sie bleibt, wo sie ist."
+  }
+}

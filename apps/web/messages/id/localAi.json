@@ -135,6 +135,10 @@
     "coordinator-triage": {
       "label": "Pandangan pertama koordinator",
       "description": "Tinjauan pertama tugas baru; semua pekerjaan nyata diteruskan ke model koordinator yang dikonfigurasi."
+    },
+    "decisions": {
+      "label": "Keputusan",
+      "description": "Keputusan bertipe lewat pembacaan logit: memilah email, pilihan model, bukti, langkah workflow. Jenisnya diaktifkan di Keputusan."
     }
   },
   "updates": {

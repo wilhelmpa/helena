@@ -1,4 +1,4 @@
-import type { PipelineStep } from '@/lib/api/endpoints/pipelines';
+import { isBranching, type PipelineStep } from '@/lib/api/endpoints/pipelines';
 import { flattenSteps, type FlatStep } from './editorState';
 
 // The {{…}} variables a step's texts may use, as definition.ts checks them.
@@ -20,7 +20,7 @@ export function producesResult(step: PipelineStep): boolean {
 }
 
 function descendants(step: PipelineStep): PipelineStep[] {
-  return step.type === 'condition'
+  return isBranching(step)
     ? [...step.then, ...step.else].flatMap((child) => [child, ...descendants(child)])
     : [];
 }
@@ -29,9 +29,7 @@ function descendants(step: PipelineStep): PipelineStep[] {
 // of the earlier conditions on it.
 function stepsBefore(entry: FlatStep): PipelineStep[] {
   return entry.path.flatMap((step) =>
-    step.type === 'condition' && !entry.ancestors.includes(step)
-      ? [step, ...descendants(step)]
-      : [step],
+    isBranching(step) && !entry.ancestors.includes(step) ? [step, ...descendants(step)] : [step],
   );
 }
 

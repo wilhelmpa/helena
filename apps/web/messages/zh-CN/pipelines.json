@@ -6,7 +6,8 @@
     "action": "任务操作",
     "wait": "等待",
     "notify": "通知",
-    "webhook": "Webhook"
+    "webhook": "Webhook",
+    "decision": "决策"
   },
   "kindHints": {
     "agent": "由代理处理任务",
@@ -15,7 +16,8 @@
     "action": "更改任务",
     "wait": "暂停运行",
     "notify": "告知相关人员此次运行",
-    "webhook": "将任务发送到某个 URL"
+    "webhook": "将任务发送到某个 URL",
+    "decision": "决策模型从你的选项中选出一个；运行按所选结果继续。"
   },
   "triggers": {
     "manual": "手动启动",
@@ -171,7 +173,9 @@
     "endsRun": "运行在此步骤后结束",
     "limit": "一个工作流最多包含 {max} 个步骤。",
     "problems": "{count, plural, other {# 个问题}}",
-    "plugins": "扩展"
+    "plugins": "扩展",
+    "decisionThen": "已选中",
+    "decisionElse": "否则"
   },
   "summary": {
     "agentRole": "角色 {role}",
@@ -195,7 +199,9 @@
     "waitUntil": "直到 {field} 的 {time}",
     "notify": "通知 {who}：{text}",
     "webhook": "发送到 {host}",
-    "noUrl": "尚无 URL"
+    "noUrl": "尚无 URL",
+    "decision": "{question} → {options}",
+    "decisionFrom": "“{step}”的回答 → {options}"
   },
   "duration": {
     "minutes": "{count, plural, other {# 分钟}}",
@@ -340,6 +346,27 @@
       "noSettings": "没有设置。",
       "choose": "选择",
       "missing": "步骤类型 {type} 未安装：提供它的扩展已关闭。"
+    },
+    "decision": {
+      "source": "问题",
+      "ask": "提出新问题",
+      "reuse": "复用“{step}”的回答",
+      "question": "问题",
+      "questionHint": "例如：这是哪类请求？",
+      "context": "关于",
+      "contextHint": "默认：任务的标题和描述。这里也可以使用之前步骤的变量。",
+      "options": "选项",
+      "optionsHint": "每行一个，最多 {max} 个。",
+      "thenOptions": "进入第一分支的选项",
+      "thenHint": "其他选项，以及在下方如此选择时的无明确回答，走第二分支。",
+      "noOptions": "请先填写选项。",
+      "unsure": "当模型不确定时",
+      "unsureHint": "低于“通用决策”的阈值，或没有回答。",
+      "unsureModes": {
+        "else": "第二分支",
+        "then": "第一分支",
+        "fail": "停止运行"
+      }
     }
   },
   "issues": {
@@ -347,6 +374,7 @@
     "required": "此项为必填。",
     "too_long": "最多 {max} 个字符。",
     "too_many": "最多 {max} 个条目。",
+    "too_few": "至少 {min} 项。",
     "out_of_range": "须在 {min} 与 {max} 之间。",
     "too_deep": "条件最多嵌套 {max} 层。",
     "invalid_cron": "Cron 表达式无效。",

@@ -162,6 +162,7 @@
     "dropUngrouped": "Déposez ici pour retirer le projet de son groupe"
   },
   "access": "Accès et connexions",
+  "decisions": "Décisions",
   "browser": "Navigateur",
   "layout": {
     "menu": "Disposition",
@@ -185,5 +186,6 @@
     "full": "Outil en grand",
     "resizeArea": "Redimensionner"
   },
+  "receipts": "Justificatifs",
   "browserLab": "Browser 2.0"
 }

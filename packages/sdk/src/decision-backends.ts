@@ -13,6 +13,22 @@ import type { LocalizedText } from './text';
 
 export type DecisionPolicyKind = 'jev' | 'laya';
 
+// How Helena talks to a backend. Every protocol answers the same System One questions
+// (`noul`, `choice`), so the browser loop and the decisions service ask any backend alike:
+// - `systemone`: POST /v1/systemone (TypeSafe's Jev, Laya, Jev-compatible servers);
+// - `openai-logprobs`: an OpenAI-compatible chat completion of one token whose top log
+//   probabilities over the option labels are the answer (a small local LLM on llama.cpp or
+//   Lemonade: the "local logit" backend, SemIf-OpenJev's idea without its Python stack);
+// - `openai-json`: an OpenAI-compatible chat completion constrained to a JSON answer
+//   (any chat model; the stated confidence is not calibrated, the class threshold decides).
+export type DecisionProtocol = 'systemone' | 'openai-logprobs' | 'openai-json';
+
+export const DECISION_PROTOCOLS: readonly DecisionProtocol[] = [
+  'systemone',
+  'openai-logprobs',
+  'openai-json',
+];
+
 export interface DecisionBackendPreset {
   id: string;
   label: LocalizedText;
@@ -20,8 +36,11 @@ export interface DecisionBackendPreset {
   model: string;
   // The address is local or private and the owner allows it for this connection.
   allowPrivateAddress?: boolean;
-  // The key comes from the local installation's key file (Laya on this server), not from Zugänge.
-  keySource?: 'local-laya';
+  // The key comes from the local installation's key file (Laya on this server), or from a
+  // model server of Helena's local AI (its address and key; `modelServer` names it), not
+  // from Zugänge.
+  keySource?: 'local-laya' | 'local-ai';
+  modelServer?: string;
 }
 
 export interface DecisionBackendType {
@@ -37,6 +56,8 @@ export interface DecisionBackendType {
   presets?: DecisionBackendPreset[];
   // The loop policy its models are served best by (browser-task.md §3.1).
   policy: DecisionPolicyKind;
+  // How Helena asks it; `systemone` when absent.
+  protocol?: DecisionProtocol;
   keyRequired: boolean;
   // Where the owner gets a key.
   signupUrl?: string;
@@ -48,6 +69,12 @@ export const SYSTEM_ONE_PATH = '/v1/systemone';
 export const SYSTEM_ONE_MODELS_PATH = '/v1/models';
 
 // The address a connection posts to: the base URL without a trailing slash, plus the path.
+// A base that already ends in the path's version (`…/api/v1`, as OpenAI-compatible servers and
+// Helena's local AI write it) does not get it twice.
 export function systemOneUrl(baseUrl: string, path: string = SYSTEM_ONE_PATH): string {
-  return `${baseUrl.trim().replace(/\/+$/, '')}${path}`;
+  const base = baseUrl.trim().replace(/\/+$/, '');
+  const version = /^\/v\d+\//.exec(path)?.[0].slice(0, -1);
+  return version && base.endsWith(version)
+    ? `${base}${path.slice(version.length)}`
+    : `${base}${path}`;
 }

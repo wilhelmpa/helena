@@ -80,6 +80,10 @@ import { agentActivityRoutes } from './modules/agent-activity';
 import { agentNetworkRoutes } from './modules/agent-egress';
 import { agentBrowserGatewayRoutes } from './modules/agent-browser-gateway';
 import { browserTaskRoutes } from './modules/browser-task';
+import { decisionRoutes } from './modules/decisions';
+import { modelRouterRoutes } from './modules/model-router';
+import { mailTriageRoutes } from './modules/mail-triage';
+import { receiptRoutes } from './modules/receipts';
 import { approvalRoutes } from './modules/approvals';
 import { modelPriceRoutes } from './modules/model-prices';
 import { autopilotRoutes } from './modules/autopilot';
@@ -96,6 +100,8 @@ const plannerOperations = new Elysia({ name: 'planner-operations' })
   .use(agentNetworkRoutes)
   .use(agentBrowserGatewayRoutes)
   .use(browserTaskRoutes)
+  .use(decisionRoutes)
+  .use(modelRouterRoutes)
   .use(approvalRoutes)
   .use(modelPriceRoutes)
   .use(autopilotRoutes)
@@ -103,6 +109,8 @@ const plannerOperations = new Elysia({ name: 'planner-operations' })
   .use(mailAccountRoutes)
   .use(mailThreadRoutes)
   .use(mailDraftRoutes)
+  .use(mailTriageRoutes)
+  .use(receiptRoutes)
   .use(organizationRoutes)
   .use(connectionsRoutes)
   .use(deviceSyncRoutes)

@@ -9,21 +9,30 @@ import { Button } from '@/components/ui/button';
 import { listFiles } from '@/lib/api/endpoints/projectFiles';
 import { useProjectsQuery } from '@/services/projects.service';
 
-// Browses a project's vault folder to attach one of its files.
+// Browses a project's vault folder to pick one of its files: any project of the team (a mail
+// attachment), or one fixed project (`projectKey`, e.g. a receipt of this project). The pick is
+// the vault path (`Projects/<KEY>/…`) and the path inside the project's folder.
 export default function VaultFilePicker({
   teamId,
+  projectKey: fixedKey,
+  title,
+  description,
   onClose,
   onPick,
 }: {
-  teamId: number;
+  teamId?: number;
+  projectKey?: string;
+  title?: string;
+  description?: string;
   onClose: () => void;
-  onPick: (vaultPath: string) => void;
+  onPick: (vaultPath: string, projectPath: string) => void;
 }) {
   const t = useTranslations('mail.compose');
-  const projects = (useProjectsQuery().data ?? []).filter((item) => item.teamId === teamId);
+  const allProjects = useProjectsQuery().data ?? [];
+  const projects = fixedKey ? [] : allProjects.filter((item) => item.teamId === teamId);
   const [projectKey, setProjectKey] = useState<string | null>(null);
   const [path, setPath] = useState('');
-  const key = projectKey ?? projects[0]?.key ?? null;
+  const key = fixedKey ?? projectKey ?? projects[0]?.key ?? null;
   const listing = useQuery({
     queryKey: ['projectFiles', key, path],
     queryFn: () => listFiles({ kind: 'project', projectKey: key!, root: 'vault' }, path),
@@ -31,24 +40,30 @@ export default function VaultFilePicker({
   });
 
   return (
-    <Modal title={t('vaultTitle')} description={t('vaultDescription')} onClose={onClose}>
+    <Modal
+      title={title ?? t('vaultTitle')}
+      description={description ?? t('vaultDescription')}
+      onClose={onClose}
+    >
       <div className="flex flex-col gap-2">
-        <div className="flex flex-wrap gap-1">
-          {projects.map((project) => (
-            <Button
-              key={project.id}
-              type="button"
-              size="sm"
-              variant={project.key === key ? 'secondary' : 'ghost'}
-              onClick={() => {
-                setProjectKey(project.key);
-                setPath('');
-              }}
-            >
-              {project.name}
-            </Button>
-          ))}
-        </div>
+        {projects.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {projects.map((project) => (
+              <Button
+                key={project.id}
+                type="button"
+                size="sm"
+                variant={project.key === key ? 'secondary' : 'ghost'}
+                onClick={() => {
+                  setProjectKey(project.key);
+                  setPath('');
+                }}
+              >
+                {project.name}
+              </Button>
+            ))}
+          </div>
+        )}
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           {path && (
             <Button
@@ -72,7 +87,7 @@ export default function VaultFilePicker({
                 onClick={() =>
                   item.kind === 'folder'
                     ? setPath(item.path)
-                    : onPick(`Projects/${key}/${item.path}`)
+                    : onPick(`Projects/${key}/${item.path}`, item.path)
                 }
               >
                 {item.kind === 'folder' ? (

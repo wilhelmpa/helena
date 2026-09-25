@@ -97,6 +97,28 @@ export interface TaskDeps {
 }
 
 const IRREVERSIBLE_AT = 0.6;
+
+// The operations a read-only task may carry out: they never change the page.
+const READ_OPERATIONS: ReadonlySet<Operation> = new Set(['SCROLL_DOWN', 'SCROLL_UP', 'WAIT']);
+
+// The page a task in mode `read` works on: it observes like any other, and refuses every
+// operation that could change the page, whatever a policy or a model proposes. The loop checks
+// the category before this is ever reached; this is the gateway's own backstop.
+export function readOnlyPage(page: TaskPage): TaskPage {
+  return {
+    observe: () => page.observe(),
+    fresh: (observation, element) => page.fresh(observation, element),
+    act: async (input) => {
+      if (!READ_OPERATIONS.has(input.operation)) {
+        throw new TaskActError(
+          'refused',
+          `Read mode never changes the page: ${input.operation} was not done.`,
+        );
+      }
+      await page.act(input);
+    },
+  };
+}
 const MAX_WAITS = 6;
 
 function realSleep(ms: number): Promise<void> {
@@ -408,6 +430,21 @@ export async function runTask(input: TaskInput, deps: TaskDeps): Promise<TaskRes
     }
 
     const element = answer.element;
+    // Mode `read` never carries out anything above `read`, whatever the policy offered or the
+    // model answered (a click, typing, selecting, Enter).
+    if (input.mode === 'read' && categoryOfStep(op, element) !== 'read') {
+      return finish(
+        'denied',
+        `Read mode never changes the page: the model proposed ${op}${element ? ` on ${brief(element)}` : ''}, which was not done. Call browser_task with mode "act" (or use the step tools) if that is wanted.`,
+        {
+          pending: {
+            operation: op,
+            element: brief(element),
+            category: categoryOfStep(op, element),
+          },
+        },
+      );
+    }
     const targeted =
       op === 'CLICK' || op === 'TYPE_TEXT' || op === 'SELECT' || op === 'PRESS_ENTER';
     if (targeted && !element)

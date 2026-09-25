@@ -1,0 +1,168 @@
+{
+  "tabs": {
+    "open": "Terbuka",
+    "review": "Tinjau",
+    "matched": "Cocok",
+    "accounts": "Rekening"
+  },
+  "month": "Bulan",
+  "allMonths": "Semua bulan",
+  "search": "Cari bukti dan mutasi",
+  "actions": {
+    "upload": "Unggah bukti",
+    "import": "Impor rekening koran",
+    "export": "Ekspor bulan",
+    "exportPickMonth": "Pilih bulan untuk diekspor",
+    "fromVault": "Bukti dari berkas"
+  },
+  "upload": {
+    "done": "{count, plural, other {# bukti diunggah}}",
+    "doneMatched": "{count, plural, other {# bukti diunggah}}, {matched} langsung dicocokkan",
+    "duplicate": "{name} sudah ada."
+  },
+  "noAccessTitle": "Khusus pengelola proyek",
+  "noAccessHint": "Bukti dan mutasi rekening hanya terlihat oleh pemilik proyek serta pemilik dan manajer tim.",
+  "noName": "(tanpa nama)",
+  "creditNote": "Nota kredit",
+  "directDebit": "Debit langsung",
+  "method": {
+    "rule": "Aturan",
+    "decision": "AI",
+    "manual": "Manual"
+  },
+  "open": {
+    "receipts": "Bukti tanpa mutasi",
+    "noReceipts": "Setiap bukti sudah punya mutasinya.",
+    "transactions": "Mutasi tanpa bukti",
+    "noTransactions": "Setiap mutasi sudah punya buktinya.",
+    "noReceiptNeeded": "Tidak perlu bukti",
+    "ignored": "Tidak perlu bukti",
+    "undoIgnore": "Ternyata perlu bukti"
+  },
+  "review": {
+    "emptyTitle": "Tidak ada yang perlu ditinjau",
+    "emptyHint": "Pencocokan yang kurang diyakini Helena menunggu di sini.",
+    "score": "Aturan",
+    "confidence": "AI",
+    "confirm": "Cocokkan",
+    "reject": "Tolak",
+    "others": "{count, plural, other {# mutasi lain}}",
+    "pickOther": "Cocokkan yang ini saja",
+    "useThis": "Cocokkan ini"
+  },
+  "reasons": {
+    "amount": {
+      "exact": "jumlah pas",
+      "near": "jumlah mirip",
+      "skonto": "jumlah dengan diskon bayar cepat",
+      "fee": "jumlah dikurangi biaya",
+      "none": "jumlah tidak diketahui"
+    },
+    "reference": "nomor faktur di keterangan",
+    "identity": {
+      "iban": "IBAN cocok",
+      "creditor": "ID kreditur cocok",
+      "name": "nama cocok",
+      "weak-name": "nama mirip"
+    },
+    "date": {
+      "primary": "tanggal pas",
+      "extended": "tanggal terlambat",
+      "outside": "tanggal jauh"
+    }
+  },
+  "matched": {
+    "emptyTitle": "Belum ada yang dicocokkan",
+    "emptyHint": "Unggah bukti dan impor rekening koran, lalu Helena mencocokkannya.",
+    "unmatch": "Hapus pencocokan"
+  },
+  "accounts": {
+    "title": "Rekening bank",
+    "none": "Belum ada rekening. Tambahkan satu, atau cukup impor rekening koran.",
+    "noIban": "tanpa IBAN",
+    "counts": "{open} terbuka · {matched} cocok · {ignored} tanpa bukti",
+    "import": "Impor rekening koran",
+    "edit": "Edit",
+    "delete": "Hapus rekening",
+    "name": "Nama rekening",
+    "namePlaceholder": "mis. Rekening usaha",
+    "iban": "IBAN",
+    "ibanPlaceholder": "DE.. (opsional)",
+    "add": "Tambah rekening",
+    "imports": "Riwayat impor",
+    "noImports": "Belum ada rekening koran yang diimpor.",
+    "importResult": "{added} baru · {duplicates} sudah ada",
+    "deleteTitle": "Hapus {name}?",
+    "deleteHint": "{count, plural, other {# mutasinya beserta pencocokannya akan dihapus.}} Bukti tetap ada dan kembali terbuka."
+  },
+  "import": {
+    "title": "Impor rekening koran",
+    "account": "Rekening",
+    "newAccount": "Rekening baru …",
+    "accountName": "Nama rekening baru",
+    "accountNamePlaceholder": "mis. Rekening usaha",
+    "ibanFromFile": "IBAN diambil dari berkas.",
+    "file": "Berkas",
+    "fileHint": "Rekening koran CAMT (XML), ZIP berisi beberapa rekening koran, atau ekspor CSV dari bank Anda, maksimal 20 MB.",
+    "submit": "Impor",
+    "importing": "Mengimpor …",
+    "doneTitle": "Rekening koran diimpor",
+    "result": "{added, plural, other {# mutasi baru}}, {duplicates} sudah ada.",
+    "pending": "{count, plural, other {# transaksi tertunda}} dilewati – akan masuk bersama rekening koran berikutnya.",
+    "matched": "{count, plural, other {# bukti}} langsung dicocokkan.",
+    "warnings": "Catatan"
+  },
+  "detail": {
+    "title": "Bukti",
+    "loading": "Memuat …",
+    "openFile": "Buka berkas",
+    "inFiles": "Tampilkan di Berkas",
+    "extract": "Baca ulang",
+    "match": "Mutasi",
+    "matchAgain": "Cocokkan ulang",
+    "noCandidates": "Tidak ada mutasi yang cocok.",
+    "text": "Teks terbaca",
+    "delete": "Hapus bukti",
+    "deleteTitle": "Hapus bukti?",
+    "deleteHint": "Bukti hilang dari daftar; berkasnya tetap ada di berkas proyek.",
+    "saved": "Tersimpan.",
+    "badAmount": "Jumlah itu tidak terbaca. Tulis seperti ini: 172,50"
+  },
+  "fields": {
+    "issuer": "Penerbit",
+    "invoiceNumber": "Nomor faktur",
+    "invoiceDate": "Tanggal faktur",
+    "dueDate": "Jatuh tempo",
+    "gross": "Jumlah bruto",
+    "vat": "PPN",
+    "currency": "Mata uang",
+    "iban": "IBAN penerima",
+    "direction": "Jenis"
+  },
+  "direction": {
+    "incoming": "Tagihan masuk (kita bayar)",
+    "outgoing": "Faktur kita (kita dibayar)"
+  },
+  "source": {
+    "mail": "Dari email",
+    "upload": "Diunggah",
+    "vault": "Dari berkas"
+  },
+  "extraction": {
+    "zugferd": "Faktur elektronik (ZUGFeRD/Factur-X) terbaca",
+    "xrechnung": "Faktur elektronik (XRechnung) terbaca",
+    "text": "Teks PDF terbaca",
+    "ocr": "Pindaian dibaca dengan OCR",
+    "manual": "Diisi manual",
+    "none": "Tidak ada yang terbaca"
+  },
+  "problems": {
+    "missingPrograms": "Server tidak punya program yang diperlukan untuk membacanya: {programs}",
+    "notEinvoice": "Berkas XML ini bukan faktur elektronik.",
+    "noFacts": "Teks tidak berisi data faktur. Isi di bawah."
+  },
+  "vaultPicker": {
+    "title": "Bukti dari berkas",
+    "description": "Pilih berkas dari folder proyek ini. Berkas tetap di tempatnya."
+  }
+}

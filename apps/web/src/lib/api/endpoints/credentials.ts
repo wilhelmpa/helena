@@ -6,7 +6,7 @@ export type CredentialKind =
   'web_login' | 'api_key' | 'ssh_key' | 'secret' | 'runtime_login' | 'decision_model';
 // decision_model: where its key comes from — stored here, or the local Laya installation's key
 // file (docs/helena-decisions/browser-task.md §3.3).
-export type DecisionKeySource = 'stored' | 'local-laya';
+export type DecisionKeySource = 'stored' | 'local-laya' | 'local-ai';
 // What the page lists: the kinds above and MCP servers signed in with OAuth.
 export type ListedKind = CredentialKind | 'mcp_oauth';
 

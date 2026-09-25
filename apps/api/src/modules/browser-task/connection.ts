@@ -1,7 +1,8 @@
 import { lstat, readFile } from 'node:fs/promises';
 import { TypeSafeClient } from '@typesafe-ai/sdk';
 import { SYSTEM_ONE_MODELS_PATH, systemOneUrl, type DecisionBackendType } from '@helena/sdk';
-import { pinnedFetch, UrlNotAllowedError } from '@repo/net';
+import { askByJson, askByLogprobs, type OpenAiCompatibleServer } from '@helena/decisions';
+import { isPrivateIp, pinnedFetch, UrlNotAllowedError } from '@repo/net';
 import { db, integrationCredential, openCredential } from '@repo/db';
 import { and, eq } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
@@ -23,7 +24,9 @@ export interface DecisionConnection {
   baseUrl: string;
   model: string;
   allowPrivateAddress: boolean;
-  keySource: 'stored' | 'local-laya';
+  keySource: 'stored' | 'local-laya' | 'local-ai';
+  // keySource 'local-ai': the model server of Helena's local AI whose address and key it uses.
+  modelServer: string | null;
 }
 
 export interface SystemOneReply {
@@ -36,7 +39,7 @@ export interface SystemOneReply {
   providerCostUsd: number | null;
 }
 
-// The key file of the local Laya service (install.sh writes it, root:volition-plan 0640).
+// The key file of the local Laya service (install.sh writes it, root:volition-plan-secrets 0640).
 export function localLayaKeyFile(): string {
   return process.env.HELENA_LAYA_KEY_FILE?.trim() || '/etc/helena/laya.key';
 }
@@ -71,8 +74,73 @@ export async function loadConnection(credentialId: number): Promise<DecisionConn
     model:
       typeof readable.model === 'string' && readable.model ? readable.model : backend.defaultModel,
     allowPrivateAddress: readable.allowPrivateAddress === true,
-    keySource: readable.keySource === 'local-laya' ? 'local-laya' : 'stored',
+    keySource:
+      readable.keySource === 'local-laya' || readable.keySource === 'local-ai'
+        ? readable.keySource
+        : 'stored',
+    modelServer:
+      readable.keySource === 'local-ai'
+        ? typeof readable.modelServer === 'string'
+          ? readable.modelServer
+          : 'local'
+        : null,
   };
+}
+
+// Where a connection with keySource 'local-ai' finds its server: Helena's local AI registers
+// the resolver (its model servers, their address and key; hub/local-ai), so this module does
+// not depend on it. Without one such a connection is not usable.
+export interface ModelServerAccess {
+  baseUrl: string;
+  key: string | null;
+  // The model the local AI routes this work to; the connection's own model otherwise.
+  model?: string | null;
+}
+
+let modelServerResolver: ((slug: string) => Promise<ModelServerAccess | null>) | null = null;
+
+export function useModelServerResolver(
+  resolver: ((slug: string) => Promise<ModelServerAccess | null>) | null,
+): void {
+  modelServerResolver = resolver;
+}
+
+// The address a call goes to: the connection's own, or its local AI model server's.
+async function addressOf(
+  connection: DecisionConnection,
+): Promise<{ baseUrl: string; key: string | null; model?: string | null }> {
+  if (connection.keySource === 'local-ai') {
+    const server = modelServerResolver
+      ? await modelServerResolver(connection.modelServer ?? 'local')
+      : null;
+    if (!server) {
+      throw new HttpError(
+        409,
+        `The local AI model server "${connection.modelServer ?? 'local'}" is not set up (Administrator → Lokale KI).`,
+      );
+    }
+    return {
+      baseUrl: server.baseUrl.replace(/\/+$/, '').replace(/\/v1$/, ''),
+      key: server.key,
+      model: server.model ?? null,
+    };
+  }
+  return { baseUrl: connection.baseUrl, key: await keyOf(connection) };
+}
+
+// Whether a connection's questions leave this machine: a cloud backend, or an address that is
+// not loopback or private. A class whose input may not go to the cloud refuses such a one.
+export function connectionIsLocal(connection: DecisionConnection): boolean {
+  if (connection.backend.location === 'cloud') return false;
+  if (connection.keySource === 'local-ai' || connection.keySource === 'local-laya') return true;
+  let host: string;
+  try {
+    host = new URL(connection.baseUrl).hostname.replace(/^\[|\]$/g, '').toLowerCase();
+  } catch {
+    return false;
+  }
+  if (host === 'localhost' || host.endsWith('.local') || host.endsWith('.lan')) return true;
+  return isPrivateIp(host);
 }
 
 async function keyOf(connection: DecisionConnection): Promise<string | null> {
@@ -101,10 +169,12 @@ async function keyOf(connection: DecisionConnection): Promise<string | null> {
   return secrets.value?.trim() || null;
 }
 
-function privateHosts(connection: DecisionConnection): string[] {
-  if (!connection.allowPrivateAddress) return [];
+// The one host a connection may reach although it is local or private: the owner's allowance
+// for its own address, or the local AI's own server.
+function privateHosts(connection: DecisionConnection, baseUrl = connection.baseUrl): string[] {
+  if (!connection.allowPrivateAddress && connection.keySource !== 'local-ai') return [];
   try {
-    return [new URL(connection.baseUrl).hostname.replace(/^\[|\]$/g, '')];
+    return [new URL(baseUrl).hostname.replace(/^\[|\]$/g, '')];
   } catch {
     return [];
   }
@@ -135,13 +205,17 @@ export function guardedFetch(allowPrivateHosts: string[], timeoutMs = 20_000): t
 
 const quiet = { debug() {}, info() {}, warn() {}, error() {} };
 
-function clientOf(connection: DecisionConnection, key: string | null): TypeSafeClient {
+function clientOf(
+  connection: DecisionConnection,
+  key: string | null,
+  baseUrl = connection.baseUrl,
+): TypeSafeClient {
   return new TypeSafeClient({
     // A server without a key (a local one) ignores the header.
     apiKey: key ?? 'none',
-    baseURL: connection.baseUrl,
+    baseURL: baseUrl,
     defaultModel: connection.model,
-    fetch: guardedFetch(privateHosts(connection)),
+    fetch: guardedFetch(privateHosts(connection, baseUrl)),
     timeout: 20_000,
     // One retry on 429/529 (the SDK honours retry-after); the loop has its own budget.
     retry: { maxRetries: 1 },
@@ -188,17 +262,65 @@ export function describeFailure(error: unknown): { status: number; message: stri
   };
 }
 
+// An OpenAI-compatible server as the local logit and JSON backends talk to it: JSON posts to
+// `<base><path>` through the pinned fetch, with the key as a Bearer token.
+function openAiServer(
+  connection: DecisionConnection,
+  address: { baseUrl: string; key: string | null; model?: string | null },
+): OpenAiCompatibleServer {
+  const fetcher = guardedFetch(privateHosts(connection, address.baseUrl));
+  return {
+    model: address.model || connection.model,
+    async post(path, body, signal) {
+      const res = await fetcher(systemOneUrl(address.baseUrl, path), {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          ...(address.key ? { authorization: `Bearer ${address.key}` } : {}),
+        },
+        body: JSON.stringify(body),
+        signal,
+      });
+      if (!res.ok) throw Object.assign(new Error(`HTTP ${res.status}`), { status: res.status });
+      return res.json();
+    },
+  };
+}
+
+// One System One request to a connection, whatever protocol its backend speaks: the System One
+// endpoint itself, or an OpenAI-compatible server read by logit or asked for JSON
+// (@helena/decisions). Every answer comes back in System One shape.
 export async function askSystemOne(
   connection: DecisionConnection,
   request: { state: unknown; questions: Record<string, unknown> },
   signal?: AbortSignal,
 ): Promise<SystemOneReply> {
-  const key = await keyOf(connection);
-  if (!key && connection.backend.keyRequired) {
+  const address = await addressOf(connection);
+  if (!address.key && connection.backend.keyRequired) {
     throw new HttpError(409, `The connection "${connection.label}" has no key yet (Zugänge).`);
   }
   const started = performance.now();
-  const response = await clientOf(connection, key)
+  const protocol = connection.backend.protocol ?? 'systemone';
+  if (protocol !== 'systemone') {
+    const server = openAiServer(connection, address);
+    const ask = protocol === 'openai-logprobs' ? askByLogprobs : askByJson;
+    const result = await ask(server, request as Parameters<typeof askByLogprobs>[1], signal).catch(
+      (error: unknown) => {
+        if (error instanceof HttpError) throw error;
+        const failure = describeFailure(error);
+        throw new HttpError(failure.status, failure.message);
+      },
+    );
+    return {
+      model: result.model,
+      answers: result.answers as unknown as Record<string, unknown>,
+      inputTokens: result.inputTokens,
+      outputTokens: result.outputTokens,
+      latencyMs: Math.round(performance.now() - started),
+      providerCostUsd: null,
+    };
+  }
+  const response = await clientOf(connection, address.key, address.baseUrl)
     .systemOne(
       {
         state: request.state as never,
@@ -241,7 +363,18 @@ export interface ConnectionTest {
 // "Verbindung testen": the model list where the service has one (TypeSafe, Vercel,
 // laya-browser-agent), otherwise a one-question probe.
 export async function testConnection(connection: DecisionConnection): Promise<ConnectionTest> {
-  const key = await keyOf(connection);
+  let address: { baseUrl: string; key: string | null };
+  try {
+    address = await addressOf(connection);
+  } catch (error) {
+    return {
+      ok: false,
+      message: error instanceof HttpError ? error.message : 'no_model_server',
+      models: [],
+      latencyMs: null,
+    };
+  }
+  const key = address.key;
   if (!key && connection.backend.keyRequired) {
     return { ok: false, message: 'no_key', models: [], latencyMs: null };
   }
@@ -250,8 +383,8 @@ export async function testConnection(connection: DecisionConnection): Promise<Co
   }
   const started = performance.now();
   try {
-    const res = await guardedFetch(privateHosts(connection), 10_000)(
-      systemOneUrl(connection.baseUrl, SYSTEM_ONE_MODELS_PATH),
+    const res = await guardedFetch(privateHosts(connection, address.baseUrl), 10_000)(
+      systemOneUrl(address.baseUrl, SYSTEM_ONE_MODELS_PATH),
       { headers: key ? { authorization: `Bearer ${key}` } : {} },
     );
     if (res.ok) {

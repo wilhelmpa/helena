@@ -72,6 +72,9 @@ export const credentialsPath = () => accessPath('credentials');
 
 export const devicesPath = () => '/devices';
 
+// Einstellungen → Entscheidungen (docs/helena-decisions/decisions.md).
+export const decisionsPath = () => '/decisions';
+
 // The Home pages that read across every project: the task list, the inbox and the
 // agent activity, the approvals and the schedules.
 export const tasksPath = () => '/tasks';
@@ -131,6 +134,9 @@ function filesQuery(folder: string | undefined, location: FilesLocation): string
 
 export const filesPath = (key: string, folder?: string, location: FilesLocation = {}) =>
   `${projectPath(key)}/files${filesQuery(folder, location)}`;
+
+// The project's receipts (Belege): receipts, bank transactions, their matches.
+export const receiptsPath = (key: string) => `${projectPath(key)}/receipts`;
 
 // The Home Files page: Home, Private, Templates and the folder of every project.
 export const homeFilesPath = (folder?: string, location: FilesLocation = {}) =>

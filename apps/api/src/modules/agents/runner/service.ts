@@ -25,6 +25,7 @@ import { learnFromOutcome, routeOf, runtimeOfPolicy } from '#modules/model-avail
 import { getRunResumeSettings } from '#modules/settings/service';
 import type { AgentRunTrigger } from '../model';
 import { modelCheckOf, type RunModelReport } from '../runtime-sync/model-check';
+import { routeRequest } from '#modules/model-router/service';
 import { DIGEST_SYSTEM_PROMPT } from '#modules/updates/digest-prompt';
 import { MAX_RUN_OUTPUT_BYTES, type reflectionBody } from './model';
 import { recordUsage, type Spend } from '../usage/service';
@@ -400,6 +401,39 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
   // A digest run is text only: its prompt is the whole task and its system prompt says the
   // input is data (updates/digest.ts); nothing about projects, people or the Autopilot.
   const digest = row.trigger === 'digest';
+  // The model router (docs/helena-decisions/decisions.md §4): a fresh run without a model of
+  // its own may go to a cheaper model of the agent's runtime. The routed model is stored on
+  // the run, so a resumed session keeps it and the model check compares against it.
+  // A local model only while local AI is on; otherwise the agent's default runs, as without
+  // local AI (docs/helena-decisions/local-ai-platform.md §6).
+  let { model, thinkingLevel } = await runSettingsOf(
+    row.model ?? agent.model,
+    row.reasoning ?? agent.thinkingLevel,
+  );
+  if (!row.model && !row.sessionId && !digest && row.trigger !== 'workspace') {
+    const routed = await routeRequest({
+      teamId: agent.teamId,
+      agentId: agent.id,
+      projectId: next.projectId,
+      configuredModel: model,
+      thinkingLevel,
+      text: [row.issueTitle, row.prompt].filter(Boolean).join('\n\n'),
+      runId: row.id,
+    });
+    // A routed model that local AI would not run right now (it is off) is not taken.
+    const settled =
+      routed.route?.routed && routed.model
+        ? await runSettingsOf(routed.model, routed.thinkingLevel)
+        : null;
+    if (settled && settled.model === routed.model) {
+      model = settled.model;
+      thinkingLevel = settled.thinkingLevel;
+      await db
+        .update(agentRun)
+        .set({ model, reasoning: thinkingLevel })
+        .where(eq(agentRun.id, row.id));
+    }
+  }
   return {
     id: row.id,
     trigger: row.trigger,
@@ -425,9 +459,8 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
     issueId: row.issueId,
     issueIdentifier: row.issueIdentifier,
     sourceActivityId: row.sourceActivityId,
-    // A local model only while local AI is on; otherwise the agent's default runs, as
-    // without local AI (docs/helena-decisions/local-ai-platform.md §6).
-    ...(await runSettingsOf(row.model ?? agent.model, row.reasoning ?? agent.thinkingLevel)),
+    model,
+    thinkingLevel,
     maxTurns: row.maxTurns ?? agent.maxTurns,
     runBudgetSeconds: row.runBudgetSeconds ?? agent.runBudgetSeconds,
     workdir: worksInProjectWorkspace(agent) ? row.issueAreaFolder : null,
