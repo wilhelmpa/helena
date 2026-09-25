@@ -58,5 +58,30 @@ export {
   setPluginSettings,
   type PluginSettings,
 } from './domains/plugins';
+export {
+  LOCAL_AI_KEY_DIR,
+  LOCAL_AI_POLICY_KEY,
+  STATUS_FRESH_MS,
+  allowedKeyFile,
+  defaultLocalAiPolicy,
+  failedEvalModels,
+  listModelServers,
+  localAiServerSecretKey,
+  modelServerBySlug,
+  normalizeLocalAiPolicy,
+  pickModel,
+  readLocalAiPolicy,
+  readModelServerKey,
+  resolveLocalRoute,
+  routeFor,
+  writeLocalAiPolicy,
+  type LocalAiClassSetting,
+  type LocalAiPolicy,
+  type LocalAiPreset,
+  type LocalRoute,
+  type ModelServerRow,
+  type RouteRefusal,
+  type RouteResult,
+} from './domains/local-ai';
 // A database dump on demand (the update center takes one before an update).
 export { writeBackup, type BackupResult } from './backup';

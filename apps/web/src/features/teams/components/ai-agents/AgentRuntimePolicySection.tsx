@@ -70,6 +70,7 @@ export default function AgentRuntimePolicySection({
 }) {
   const t = useTranslations('teams.agents.runtimePolicy');
   const tModel = useTranslations('modelAvailability');
+  const tLocal = useTranslations('localAi');
   const { teamId } = useAgentSection();
   const canEdit = useAgentCan()('edit');
   // The template library is already cached for the editor (AgentTemplateDriftSection).
@@ -184,6 +185,11 @@ export default function AgentRuntimePolicySection({
               {models.map((model) => (
                 <SelectItem key={model.id} value={model.id}>
                   {model.name} · {model.id}
+                  {model.local && (
+                    <span className="ms-1.5 text-xs text-muted-foreground">
+                      {tLocal('pickerMark')}
+                    </span>
+                  )}
                   {isUnverified(model) && (
                     <span
                       className="ms-1.5 text-xs text-muted-foreground"

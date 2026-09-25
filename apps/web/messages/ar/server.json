@@ -56,7 +56,9 @@
     "fansAuto": "المراوح على التلقائي.",
     "memoryPressure": "الذاكرة قليلة: فاضل {available} بس.",
     "memoryOk": "الذاكرة: {available} فاضية.",
-    "healthFailed": "الحالة متقريتش."
+    "healthFailed": "الحالة متقريتش.",
+    "localAiServerUp": "الذكاء الاصطناعي المحلي: {name} متاح",
+    "localAiServerDown": "الذكاء الاصطناعي المحلي: {name} لا يستجيب"
   },
   "overview": {
     "machine": "الجهاز",

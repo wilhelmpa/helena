@@ -14,6 +14,7 @@ import {
 } from '@helena/policy';
 import { HttpError } from '#shared/lib';
 import { modelsDevRegistry } from '#shared/models-dev';
+import { isLocalProvider, parseLocalModelId } from '@helena/sdk';
 
 // The model price table (docs/helena-decisions/policy-engine.md): euros per million tokens
 // per model, for estimating what agents spend. Every price is an estimate. Rows come from
@@ -34,7 +35,8 @@ export interface ModelPrice {
   cacheReadPerMTok: number | null;
   cacheWritePerMTok: number | null;
   currency: 'EUR';
-  source: 'models.dev' | 'manual';
+  // `local`: a model of Helena's local AI, which costs nothing per token.
+  source: 'models.dev' | 'manual' | 'local';
   estimate: true;
 }
 
@@ -181,6 +183,20 @@ function toPrice(row: PriceRow, longContext: boolean, usdToEur: number): ModelPr
   };
 }
 
+function localPrice(model: string, provider: string | null | undefined): ModelPrice {
+  return {
+    model,
+    provider: provider ?? parseLocalModelId(model)?.provider ?? null,
+    inputPerMTok: 0,
+    outputPerMTok: 0,
+    cacheReadPerMTok: 0,
+    cacheWritePerMTok: 0,
+    currency: 'EUR',
+    source: 'local',
+    estimate: true,
+  };
+}
+
 // The price of a model as a runtime reports it, or null when the table has none. Tried in
 // order: the id as it is, with dots as dashes, without a provider prefix, and without a
 // context-size suffix (priced at the long-context tier where models.dev lists one). A row
@@ -190,6 +206,9 @@ export async function price(
   provider?: string | null,
 ): Promise<ModelPrice | null> {
   if (!modelId?.trim()) return null;
+  // Helena's local AI runs on the owner's machine: no price per token
+  // (docs/helena-decisions/local-ai-platform.md).
+  if (isLocalProvider(provider) || parseLocalModelId(modelId)) return localPrice(modelId, provider);
   const { rows, usdToEur } = await table();
   const wanted = normalizeProvider(provider);
   let fallback: ModelPrice | null = null;

@@ -71,6 +71,8 @@ export const pluginManifestSchema = z
         profileContributions: ids.optional(),
         usageLimitSources: ids.optional(),
         runtimeLoginSources: ids.optional(),
+        modelServers: ids.optional(),
+        localAiTaskClasses: ids.optional(),
         updateSources: ids.optional(),
         decisionBackends: ids.optional(),
         events: ids.optional(),

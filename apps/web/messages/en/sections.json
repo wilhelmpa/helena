@@ -82,6 +82,10 @@
     "updates": {
       "label": "Updates",
       "description": "What Helena runs on, which new versions exist, what they change, and updating."
+    },
+    "local-ai": {
+      "label": "Local AI",
+      "description": "The model servers on this machine (GPU, NPU), which work runs there first, and the evaluations behind it."
     }
   },
   "settings": {

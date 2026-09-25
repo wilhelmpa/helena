@@ -56,7 +56,9 @@
     "fansAuto": "Ventilateurs en automatique.",
     "memoryPressure": "Mémoire juste : plus que {available} de libre.",
     "memoryOk": "Mémoire : {available} de libre.",
-    "healthFailed": "L’état n’a pas pu être lu."
+    "healthFailed": "L’état n’a pas pu être lu.",
+    "localAiServerUp": "IA locale : {name} est joignable",
+    "localAiServerDown": "IA locale : {name} ne répond pas"
   },
   "overview": {
     "machine": "Machine",

@@ -14,6 +14,7 @@ import { scheduleCuratorRuns } from '#modules/agents/runtime-requests/curator-sc
 import { pruneRunEvents } from '#modules/agents/run-timeline/service';
 import { scheduleLimitProbes } from '#modules/provider-limits/service';
 import { prunePolicyDecisions } from '#modules/autopilot/engine';
+import { checkAllServers } from '#modules/local-ai/service';
 import { followActions } from '#modules/updates/service';
 
 const [RUN_JANITOR, RESUME_JANITOR, ENGINE_MAINTENANCE, RUNTIME_JANITOR] = JANITOR_JOBS;
@@ -71,6 +72,8 @@ export function startBackgroundJobs(): void {
     },
     () => 15_000,
   );
+  // Local AI: each enabled model server's status and models, for the routes and the card.
+  startLoop('local-ai-servers', checkAllServers, () => intEnv('HELENA_LOCAL_AI_CHECK_MS', 60_000));
   startLoop('engine', engineTick, () => intEnv('HELENA_ENGINE_TICK_MS', 3_000));
   startLoop(ENGINE_MAINTENANCE, maintainEngine, () =>
     intEnv('HELENA_ENGINE_MAINTENANCE_MS', 300_000),

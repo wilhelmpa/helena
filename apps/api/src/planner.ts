@@ -61,6 +61,7 @@ import { godRoutes } from './modules/god';
 import { pluginAdminRoutes, pluginSlotRoutes } from './modules/plugins';
 import { templateBundleRoutes } from './modules/template-bundles';
 import { modelAvailabilityRoutes } from './modules/model-availability';
+import { localAiRoutes } from './modules/local-ai';
 import { agentRunnerRoutes } from './modules/agents/runner';
 import { agentChatRoutes } from './modules/agents/chat';
 import { chatPromptRoutes } from './modules/chat-prompts';
@@ -111,7 +112,8 @@ const plannerOperations = new Elysia({ name: 'planner-operations' })
   .use(pluginAdminRoutes)
   .use(pluginSlotRoutes)
   .use(templateBundleRoutes)
-  .use(modelAvailabilityRoutes);
+  .use(modelAvailabilityRoutes)
+  .use(localAiRoutes);
 
 // Administrator → Server and its Updates tab, as one plugin: one more link in the chain below
 // would pass TypeScript's instantiation depth for the app's type (TS2589).

@@ -123,7 +123,7 @@ export async function semanticStatus(): Promise<SemanticStatus> {
       .from(knowledgeChunk),
   ]);
   return {
-    enabled: setting.enabled && current !== null,
+    enabled: (setting.enabled || (current !== null && isRoutedId(current.id))) && current !== null,
     pgvector,
     model: current?.id ?? (setting.enabled ? setting.model : null),
     passages: Number(counts[0]?.passages ?? 0),
@@ -240,10 +240,16 @@ function vectorLiteral(vector: number[]): string {
 // The retriever search.ts fuses in, or null while semantic search is off.
 export async function semanticRetriever(): Promise<SemanticRetriever | null> {
   const embedder = current;
-  if (!embedder || !(await semanticSetting()).enabled) return null;
+  if (!embedder || (!isRoutedId(embedder.id) && !(await semanticSetting()).enabled)) return null;
   const indexed = await hasVectorColumn();
   return async ({ q, readable, filters, limit }) => {
-    const [raw] = await embedder.embed([q], 'query');
+    let raw: number[] | undefined;
+    try {
+      [raw] = await embedder.embed([q], 'query');
+    } catch {
+      // A model server that does not answer: the search answers from full text alone.
+      return [];
+    }
     const query = normalize(raw!);
     const similarity: SQL<number> = indexed
       ? sql<number>`1 - (${knowledgeChunk}.embedding_vec <=> ${vectorLiteral(query)}::vector)`
@@ -321,14 +327,92 @@ export async function createTransformersEmbedder(model: string): Promise<Embedde
   };
 }
 
+// An embedder over an OpenAI-compatible `/embeddings` endpoint (a local model server:
+// Lemonade on the NPU or the GPU, docs/helena-decisions/local-ai-platform.md). `id` names
+// the model the way the vectors are stored (`helena-local/<model>`), so switching to or
+// from it embeds again. A failed call throws: the search then answers from full text, the
+// indexer tries the passages again later.
+export function createOpenAiEmbedder(options: {
+  id: string;
+  baseUrl: string;
+  model: string;
+  apiKey: string | null;
+  dims: number;
+  timeoutMs?: number;
+}): Embedder {
+  const url = `${options.baseUrl.replace(/\/+$/, '')}/embeddings`;
+  return {
+    id: options.id,
+    dims: options.dims,
+    async embed(texts) {
+      if (texts.length === 0) return [];
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          ...(options.apiKey ? { authorization: `Bearer ${options.apiKey}` } : {}),
+        },
+        body: JSON.stringify({ model: options.model, input: texts }),
+        signal: AbortSignal.timeout(options.timeoutMs ?? 60_000),
+      });
+      if (!response.ok) throw new Error(`embeddings: HTTP ${response.status}`);
+      const body = (await response.json()) as { data?: { embedding?: number[]; index?: number }[] };
+      const rows = [...(body.data ?? [])].sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
+      if (rows.length !== texts.length) throw new Error('embeddings: wrong number of vectors');
+      return rows.map((row) => normalize(row.embedding ?? []));
+    },
+  };
+}
+
+// Where the embeddings come from when not from the in-process model: a route the host sets
+// (the API and the worker set the local AI one). It answers the embedder to use, or null for
+// the Administrator's own setting.
+export interface EmbeddingRoute {
+  id: string;
+  create(): Promise<Embedder>;
+}
+
+let embeddingRoute: (() => Promise<EmbeddingRoute | null>) | null = null;
+
+export function useEmbeddingRoute(route: (() => Promise<EmbeddingRoute | null>) | null): void {
+  embeddingRoute = route;
+}
+
+// A routed embedder's id names its server's provider (`helena-<slug>/<model>`).
+function isRoutedId(id: string): boolean {
+  return /^helena-[a-z0-9-]+\//.test(id);
+}
+
 let loading: Promise<void> | null = null;
 let lastAttempt = 0;
 const RETRY_MS = 5 * 60_000;
+
+async function routedEmbedder(): Promise<EmbeddingRoute | null> {
+  if (!embeddingRoute) return null;
+  try {
+    return await embeddingRoute();
+  } catch {
+    return null;
+  }
+}
 
 // Loads the embedder when semantic search is switched on and drops it when it is switched
 // off. A failed load (runtime not installed, model not downloaded) is retried after five
 // minutes and reported by semanticStatus.
 export async function syncEmbedder(): Promise<Embedder | null> {
+  const routed = await routedEmbedder();
+  if (routed) {
+    if (current?.id === routed.id) return current;
+    try {
+      useEmbedder(await routed.create());
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      useEmbedder(null, `model-unavailable: ${message.slice(0, 300)}`);
+    }
+    return current;
+  }
+  // The route ended (local AI switched off): back to the Administrator's own setting.
+  if (current && isRoutedId(current.id)) useEmbedder(null);
   const setting = await semanticSetting();
   if (!setting.enabled) {
     if (current) useEmbedder(null);

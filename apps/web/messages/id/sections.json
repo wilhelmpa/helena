@@ -82,6 +82,10 @@
     "updates": {
       "label": "Pembaruan",
       "description": "Apa yang digunakan Helena, versi baru yang ada, apa yang berubah, dan memperbarui."
+    },
+    "local-ai": {
+      "label": "AI lokal",
+      "description": "Server model di mesin ini (GPU, NPU), pekerjaan yang berjalan di sana lebih dulu, dan evaluasi di baliknya."
     }
   },
   "settings": {

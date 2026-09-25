@@ -43,6 +43,7 @@ import {
   type MessageTree,
 } from './branches';
 import { publishDomainEvent } from '#shared/helena';
+import { effectiveModelNow, localCatalogModelsNow } from '#modules/local-ai/service';
 import type { RuntimeFailure } from '@helena/sdk';
 import {
   annotateCatalog,
@@ -66,6 +67,8 @@ export type ChatCatalogModel = {
   // Whether it is confirmed: listed by the account or seen working (true), only expected to
   // work by the runtime (false). Unset when nothing tells.
   verified?: boolean;
+  // A model of Helena's local AI (`helena-<slug>/<id>`), free of charge.
+  local?: boolean;
 };
 
 // What the pickers read: the models the agent can be set to, and those its provider
@@ -857,9 +860,14 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
   const question = history.pop();
   const sessionId = await resumableSession(row.threadId, history, agent.id);
   // A thread without its own model follows the agent's settings, the way a run does.
-  const settings = row.model
+  const chosen = row.model
     ? { model: row.model, thinkingLevel: row.thinkingLevel }
     : { model: agent.model, thinkingLevel: agent.thinkingLevel };
+  // A local model only while local AI is on; otherwise the agent's default answers, as
+  // without local AI (docs/helena-decisions/local-ai-platform.md §6).
+  const model = await effectiveModelNow(chosen.model);
+  const settings =
+    model === chosen.model ? chosen : { model, thinkingLevel: model ? chosen.thinkingLevel : null };
   await db
     .update(agentChatMessage)
     .set({ model: settings.model, sessionId })
@@ -921,6 +929,19 @@ async function resumableSession(
   return latest?.id === last.id ? last.sessionId : null;
 }
 
+// The local models a runtime's picker offers (docs/helena-decisions/local-ai-platform.md):
+// Hermes reaches them as a named provider the runner writes. Claude Code and Codex get none
+// yet. Empty while local AI is off.
+async function localModelsFor(runtime: string): Promise<ChatCatalogModel[]> {
+  if (runtime !== 'hermes') return [];
+  try {
+    return await localCatalogModelsNow();
+  } catch (error) {
+    console.error('[local-ai] listing the local models failed', error);
+    return [];
+  }
+}
+
 export async function publishChatCatalog(
   agentId: number,
   models: ChatCatalogModel[],
@@ -945,13 +966,28 @@ export async function readChatCatalog(agentId: number): Promise<ChatCatalog> {
     .innerJoin(aiAgent, eq(aiAgent.id, agentChatCatalog.agentId))
     .where(eq(agentChatCatalog.agentId, agentId))
     .limit(1);
-  if (!row) return { models: [], unavailable: [], updatedAt: null };
+  if (!row) {
+    // No runner has published a catalog yet (a new agent): the local models are known
+    // without one.
+    const [agent] = await db
+      .select({ runtimePolicy: aiAgent.runtimePolicy })
+      .from(aiAgent)
+      .where(eq(aiAgent.id, agentId))
+      .limit(1);
+    const local = agent ? await localModelsFor(runtimeOfPolicy(agent.runtimePolicy)) : [];
+    return { models: local, unavailable: [], updatedAt: null };
+  }
+  const runtime = runtimeOfPolicy(row.runtimePolicy);
   const annotated = annotateCatalog(
     (row.models as ChatCatalogModel[] | null) ?? [],
-    runtimeOfPolicy(row.runtimePolicy),
+    runtime,
     await loadModelAvailability(),
   );
-  return { ...annotated, updatedAt: iso(row.updatedAt) };
+  return {
+    ...annotated,
+    models: [...annotated.models, ...(await localModelsFor(runtime))],
+    updatedAt: iso(row.updatedAt),
+  };
 }
 
 // A template runs nowhere, so no runner publishes a catalog of its own. Its model and
@@ -980,6 +1016,11 @@ export async function readTeamChatCatalog(teamId: number): Promise<ChatCatalog> 
     for (const model of annotated.models) if (!models.has(model.id)) models.set(model.id, model);
     for (const model of annotated.unavailable)
       if (!unavailable.has(model.id)) unavailable.set(model.id, model);
+  }
+  // Local models, while local AI is on, for the Hermes agents' copies.
+  if (rows.some((row) => runtimeOfPolicy(row.runtimePolicy) === 'hermes')) {
+    for (const model of await localModelsFor('hermes'))
+      if (!models.has(model.id)) models.set(model.id, model);
   }
   // A model one runtime refused and another serves stays on offer.
   for (const id of models.keys()) unavailable.delete(id);

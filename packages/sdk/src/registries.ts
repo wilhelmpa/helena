@@ -1,4 +1,5 @@
 import type { Connector } from './connectors';
+import type { LocalAiTaskClass, ModelServerType } from './local-ai';
 import type { CaptureTarget, KnowledgeSource } from './knowledge';
 import type { McpServerContribution } from './manifest-types';
 import type { PolicyEvaluator } from './policy';
@@ -34,6 +35,8 @@ export interface HelenaRegistries {
   profileContributions: Registry<ProfileContribution>;
   usageLimitSources: Registry<UsageLimitSource>;
   runtimeLoginSources: Registry<RuntimeLoginSource>;
+  modelServers: Registry<ModelServerType>;
+  localAiTaskClasses: Registry<LocalAiTaskClass>;
   updateSources: Registry<UpdateSource>;
   decisionBackends: Registry<DecisionBackendType>;
 }
@@ -60,6 +63,9 @@ export function createRegistries(given: Partial<HelenaRegistries> = {}): HelenaR
       given.usageLimitSources ?? createRegistry<UsageLimitSource>('usage-limit source'),
     runtimeLoginSources:
       given.runtimeLoginSources ?? createRegistry<RuntimeLoginSource>('runtime login source'),
+    modelServers: given.modelServers ?? createRegistry<ModelServerType>('model server type'),
+    localAiTaskClasses:
+      given.localAiTaskClasses ?? createRegistry<LocalAiTaskClass>('local AI task class'),
     updateSources: given.updateSources ?? createRegistry<UpdateSource>('update source'),
     decisionBackends:
       given.decisionBackends ?? createRegistry<DecisionBackendType>('decision backend'),

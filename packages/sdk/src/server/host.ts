@@ -11,6 +11,7 @@ import {
 } from '../events';
 import type { HostCapability } from '../host';
 import type { CaptureTarget, KnowledgeSource } from '../knowledge';
+import type { LocalAiTaskClass, ModelServerType } from '../local-ai';
 import type { McpServerContribution, PluginManifest } from '../manifest-types';
 import type { HelenaPlugin, HostProcess, PluginContext, Registrar } from '../plugin';
 import { decide, type PolicyDecision, type PolicyEvaluator, type PolicyRequest } from '../policy';
@@ -89,6 +90,8 @@ export class PluginHost {
   readonly profileContributions: Registry<ProfileContribution>;
   readonly usageLimitSources: Registry<UsageLimitSource>;
   readonly runtimeLoginSources: Registry<RuntimeLoginSource>;
+  readonly modelServers: Registry<ModelServerType>;
+  readonly localAiTaskClasses: Registry<LocalAiTaskClass>;
   readonly updateSources: Registry<UpdateSource>;
   readonly decisionBackends: Registry<DecisionBackendType>;
 
@@ -117,6 +120,8 @@ export class PluginHost {
     this.profileContributions = registries.profileContributions;
     this.usageLimitSources = registries.usageLimitSources;
     this.runtimeLoginSources = registries.runtimeLoginSources;
+    this.modelServers = registries.modelServers;
+    this.localAiTaskClasses = registries.localAiTaskClasses;
     this.updateSources = registries.updateSources;
     this.decisionBackends = registries.decisionBackends;
     this.logger = options.logger ?? ((id) => consoleLogger(`plugin ${id}`));
@@ -237,6 +242,8 @@ export class PluginHost {
       this.profileContributions,
       this.usageLimitSources,
       this.runtimeLoginSources,
+      this.modelServers,
+      this.localAiTaskClasses,
       this.updateSources,
       this.decisionBackends,
     ] as unknown as Registry<never>[];
@@ -384,6 +391,12 @@ export class PluginHost {
         this.runtimeLoginSources,
         provides.runtimeLoginSources,
         'runtimeLoginSources',
+      ),
+      modelServers: registrar(this.modelServers, provides.modelServers, 'modelServers'),
+      localAiTaskClasses: registrar(
+        this.localAiTaskClasses,
+        provides.localAiTaskClasses,
+        'localAiTaskClasses',
       ),
       updateSources: registrar(this.updateSources, provides.updateSources, 'updateSources'),
       decisionBackends: registrar(

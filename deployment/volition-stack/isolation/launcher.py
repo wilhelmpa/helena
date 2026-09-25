@@ -368,7 +368,10 @@ class Launcher:
         props += [f'{key}={value}' for key, value in limits.items()]
         props += [f'TemporaryFileSystem={path}:ro' for path in config.hide]
         props += [f'InaccessiblePaths=-{path}' for path in config.inaccessible]
-        props += [f'BindReadOnlyPaths={path}' for path in config.sockets.values()]
+        props += [
+            f'BindReadOnlyPaths={"-" if name in config.optional_sockets else ""}{path}'
+            for name, path in config.sockets.items()
+        ]
         gateway_bind = self.browser_gateway_bind(slug)
         if gateway_bind:
             props.append(gateway_bind)

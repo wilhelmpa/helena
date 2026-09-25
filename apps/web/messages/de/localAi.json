@@ -1,0 +1,153 @@
+{
+  "title": "Lokale KI",
+  "units": {
+    "gpu": "GPU",
+    "npu": "NPU",
+    "cpu": "CPU"
+  },
+  "unitStates": {
+    "off": "aus",
+    "missing": "nicht vorhanden",
+    "idle": "frei",
+    "busy": "arbeitet"
+  },
+  "card": {
+    "loading": "Wird geladen …",
+    "noServer": "Kein Server",
+    "off": "Aus",
+    "serverDown": "Server nicht erreichbar",
+    "on": "An",
+    "master": "Lokale KI nutzen",
+    "classes": "Arbeit, die zuerst lokal läuft",
+    "share": "{percent} % der Agenten-Tokens liefen lokal ({days} Tage)",
+    "latency": "Server antwortet in {ms} ms",
+    "settings": "Einstellungen",
+    "unitSwitch": "{unit} nutzen",
+    "vram": "{used} von {total}",
+    "noModel": "Kein Modell geladen"
+  },
+  "blockers": {
+    "not-wired": "Noch nicht angebunden",
+    "no-model": "Kein passendes Modell",
+    "eval-missing": "Auswertung nötig",
+    "eval-failed": "Auswertung nicht bestanden"
+  },
+  "jev": {
+    "label": "Jev / Laya (Browser-Schritte)",
+    "experimental": "Experimentell",
+    "connect": "Verbindung anlegen"
+  },
+  "classesTitle": "Arten von Arbeit",
+  "classesDescription": "Lokale KI ersetzt nie ein eingestelltes Modell: Wo sie an ist, wird sie zuerst versucht, und das eingestellte Modell antwortet, sobald sie aus, nicht erreichbar, zu langsam oder falsch ist. Eine Art von Arbeit lässt sich erst einschalten, wenn ihre Auswertung bestanden ist.",
+  "planned": "Geplant",
+  "model": "Modell",
+  "mode": "Modus",
+  "autoModel": "Automatisch ({model})",
+  "modes": {
+    "off": "Aus",
+    "prefer": "Lokal bevorzugt",
+    "only": "Nur lokal"
+  },
+  "eval": {
+    "result": "{score} % (nötig: {threshold} %)",
+    "latency": "Median {ms} ms",
+    "speed": "{tps} Tok./s",
+    "none": "Noch nicht ausgewertet",
+    "run": "Auswerten",
+    "done": "Auswertung fertig: {score} %"
+  },
+  "servers": {
+    "title": "Modell-Server",
+    "description": "Lemonade auf diesem Rechner (GPU und NPU) oder ein anderer OpenAI-kompatibler Server. Seine Modelle stehen in jeder Modellauswahl, solange die lokale KI an ist.",
+    "add": "Server hinzufügen",
+    "none": "Noch kein Server. Lokale KI mit native/local-ai/install.sh einrichten, dann hier hinzufügen.",
+    "reachable": "Erreichbar · {version}",
+    "reachableBare": "Erreichbar",
+    "unreachable": "Nicht erreichbar",
+    "keys": {
+      "file": "Schlüssel aus Datei",
+      "stored": "Schlüssel in Helena gespeichert",
+      "none": "Kein Schlüssel",
+      "invalid": "Schlüsseldatei nicht erlaubt"
+    },
+    "context": "{tokens} Token Kontext",
+    "enabled": "Server aktiv",
+    "check": "Prüfen",
+    "remove": "Server entfernen",
+    "removeConfirm": "{name} entfernen? Die Agenten nutzen dann wieder ihre eingestellten Modelle.",
+    "loaded": "Geladen",
+    "notDownloaded": "Nicht heruntergeladen",
+    "kind": "Art",
+    "slug": "Kurzname (bleibt fest)",
+    "name": "Name",
+    "baseUrl": "Adresse der OpenAI-kompatiblen API",
+    "keySource": "Schlüssel",
+    "keyFile": "Schlüsseldatei (unter /etc/helena)",
+    "key": "Schlüssel",
+    "cancel": "Abbrechen",
+    "save": "Hinzufügen"
+  },
+  "presets": {
+    "title": "Voreinstellung",
+    "description": "Schaltet die Arten von Arbeit auf einmal, soweit ihre Auswertungen bestanden sind.",
+    "sparsam": "Sparsam",
+    "ausgewogen": "Ausgewogen",
+    "qualitaet": "Qualität",
+    "eigene": "Eigene",
+    "sparsamHint": "Alles, was seine Auswertung bestanden hat, läuft zuerst lokal; spart am meisten Abo-Limit.",
+    "ausgewogenHint": "Embeddings, Hermes-Hilfsaufrufe, Zusammenfassungen, Triage und Transkription lokal; die eigentliche Arbeit der Agenten bleibt auf den eingestellten Modellen.",
+    "qualitaetHint": "Nur Embeddings und Transkription lokal; alles andere auf den eingestellten Modellen.",
+    "eigeneHint": "Die Arten von Arbeit wie unten eingestellt."
+  },
+  "serverTypes": {
+    "lemonade": "Lemonade Server (GPU + NPU)",
+    "openaiCompatible": "OpenAI-kompatibler Server"
+  },
+  "classes": {
+    "embeddings": {
+      "label": "Embeddings (Suche)",
+      "description": "Vektoren für die semantische Suche im Wissen; ist der Server nicht erreichbar, antwortet die Suche aus dem Volltext."
+    },
+    "hermes-helpers": {
+      "label": "Hermes-Hilfsaufrufe",
+      "description": "Kontext-Kompression und Bildbeschreibungen; scheitert das lokale Modell, antwortet das Hauptmodell des Agenten."
+    },
+    "summaries": {
+      "label": "Zusammenfassungen und Digests",
+      "description": "Update-Digests, Zusammenfassungen von Läufen, Aktivität und Mails, Briefings."
+    },
+    "triage": {
+      "label": "Triage und Zuordnung",
+      "description": "Eingehende Arbeit sortieren: Kategorie, Priorität, welcher Agent."
+    },
+    "transcription": {
+      "label": "Transkription (Diktat)",
+      "description": "Sprache zu Text für Diktat und Sprachmodus (Whisper auf der NPU)."
+    },
+    "routines": {
+      "label": "Routinen-Agenten",
+      "description": "Geplante Routinen versuchen zuerst das lokale Arbeitspferd, mit dem eingestellten Modell des Agenten als Rückfall."
+    },
+    "reflection": {
+      "label": "Nächtliche Reflexion",
+      "description": "Was ein Lauf gelehrt hat, Skill-Pflege: Stapelarbeit in der Nacht auf dem großen lokalen Modell."
+    },
+    "coordinator-triage": {
+      "label": "Erster Blick des Koordinators",
+      "description": "Die erste Sichtung einer neuen Aufgabe; alles Echte geht an das eingestellte Modell des Koordinators."
+    }
+  },
+  "updates": {
+    "label": "Lokale KI",
+    "hint": "Aktualisieren über native/local-ai/install.sh, danach neu auswerten."
+  },
+  "pickerMark": "lokal",
+  "tile": {
+    "offSub": "Alles wie eingestellt"
+  },
+  "problems": {
+    "serverDown": "Lokale KI: {name} antwortet nicht",
+    "evalFailed": "Lokale KI: „{class}“ hat die Auswertung nicht bestanden",
+    "evalFailedDetail": "{model} – bis eine Auswertung besteht, antwortet das eingestellte Modell"
+  }
+}

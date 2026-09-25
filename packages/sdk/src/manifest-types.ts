@@ -44,6 +44,9 @@ export interface PluginProvides {
   usageLimitSources?: string[];
   // Runtime login sources (whether the model logins agents share are usable).
   runtimeLoginSources?: string[];
+  // Kinds of local model servers, and kinds of work local AI may take.
+  modelServers?: string[];
+  localAiTaskClasses?: string[];
   // Update sources (whether a newer version of something Helena runs on exists).
   updateSources?: string[];
   // Decision backends (System One services the browser's fast path asks).

@@ -56,7 +56,9 @@
     "fansAuto": "Вентилятори в автоматичному режимі.",
     "memoryPressure": "Мало пам’яті: вільно лише {available}.",
     "memoryOk": "Пам’ять: вільно {available}.",
-    "healthFailed": "Не вдалося прочитати стан."
+    "healthFailed": "Не вдалося прочитати стан.",
+    "localAiServerUp": "Локальний ШІ: {name} доступний",
+    "localAiServerDown": "Локальний ШІ: {name} не відповідає"
   },
   "overview": {
     "machine": "Машина",

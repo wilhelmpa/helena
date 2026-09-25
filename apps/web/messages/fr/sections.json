@@ -82,6 +82,10 @@
     "updates": {
       "label": "Mises à jour",
       "description": "Ce qu’utilise Helena, les nouvelles versions, ce qu’elles changent, et la mise à jour."
+    },
+    "local-ai": {
+      "label": "IA locale",
+      "description": "Les serveurs de modèles de cette machine (GPU, NPU), le travail qui y passe d'abord et les évaluations derrière."
     }
   },
   "settings": {

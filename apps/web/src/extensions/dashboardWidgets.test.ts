@@ -22,7 +22,7 @@ describe('dashboard widgets', () => {
     const list = dashboardWidgets.list().sort((a, b) => a.order - b.order);
     assert.deepEqual(
       list.filter((w) => w.kind === 'figure').map((w) => w.id),
-      ['waiting', 'agents', 'tasks', 'limits', 'system', 'updates'],
+      ['waiting', 'agents', 'tasks', 'limits', 'system', 'local-ai', 'updates'],
     );
     assert.deepEqual(
       list.filter((w) => w.kind === 'section').map((w) => w.id),
@@ -30,7 +30,7 @@ describe('dashboard widgets', () => {
     );
     assert.deepEqual(
       list.filter((w) => w.audience === 'owner').map((w) => w.id),
-      ['limits', 'system', 'updates'],
+      ['limits', 'system', 'local-ai', 'updates'],
     );
     assert.equal(dashboardWidgets.get('projects')?.width, 'full');
     assert.equal(dashboardWidgets.pluginOf('waiting'), 'helena.home');
@@ -83,7 +83,16 @@ describe('needs-you sources', () => {
   it('registers the built-ins: red problems of the system first, failures last', () => {
     assert.deepEqual(
       sortedNeedsYouSources().map((source) => source.id),
-      ['system', 'server', 'security', 'approvals', 'workflow-steps', 'proposals', 'failures'],
+      [
+        'system',
+        'server',
+        'security',
+        'local-ai',
+        'approvals',
+        'workflow-steps',
+        'proposals',
+        'failures',
+      ],
     );
     assert.equal(needsYouSources.pluginOf('system'), 'helena.home');
   });

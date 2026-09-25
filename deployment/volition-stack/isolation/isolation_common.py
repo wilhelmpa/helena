@@ -101,6 +101,11 @@ class Config:
     # read-only into each of its agent units at `target` (sandbox_properties in launcher.py);
     # a directory, so a router restart, which creates the socket anew, reaches units that run.
     browser_gateway: tuple[str, str] | None = None
+    # Sockets a unit starts without when they are not there (bound with `-`): services that
+    # are optional on a machine, such as local AI's model server (native/local-ai). Their
+    # forwarders then refuse connections, and the runtime falls back as it would for a
+    # server that is down.
+    optional_sockets: tuple[str, ...] = ()
     systemd_run: str = '/usr/bin/systemd-run'
     systemctl: str = '/usr/bin/systemctl'
     useradd: str = '/usr/sbin/useradd'
@@ -207,6 +212,12 @@ def load_config(path: str, *, require_root: bool = True) -> Config:
         or len(set(forwards.values())) != len(forwards)
     ):
         raise IsolationError('config', 'forwards is invalid')
+    optional_sockets = raw.get('optionalSockets', [])
+    if not isinstance(optional_sockets, list) or not all(
+        isinstance(name, str) and name in sockets and name not in {'egress', 'plan'}
+        for name in optional_sockets
+    ):
+        raise IsolationError('config', 'optionalSockets is invalid')
     runtimes = raw.get('runtimes') or {}
     if not isinstance(runtimes, dict) or not runtimes:
         raise IsolationError('config', 'runtimes is missing')
@@ -249,6 +260,7 @@ def load_config(path: str, *, require_root: bool = True) -> Config:
         systemctl=_absolute(raw.get('systemctl', '/usr/bin/systemctl'), 'systemctl'),
         browser=_browser(raw.get('browser')),
         browser_gateway=_browser_gateway(raw.get('browserGateway')),
+        optional_sockets=tuple(optional_sockets),
         extra={k: v for k, v in raw.items() if k in {'test'}},
     )
 

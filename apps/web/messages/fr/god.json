@@ -445,7 +445,8 @@
       "logins": "Connexions",
       "server": "Serveur",
       "updates": "Mises à jour",
-      "browserTask": "Tâches du navigateur"
+      "browserTask": "Tâches du navigateur",
+      "localAi": "IA locale"
     },
     "problems": {
       "external-off": "Se charge une fois les plugins externes activés.",

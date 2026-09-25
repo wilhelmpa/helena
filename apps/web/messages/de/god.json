@@ -445,7 +445,8 @@
       "logins": "Anmeldungen",
       "server": "Server",
       "updates": "Updates",
-      "browserTask": "Browser-Aufgaben"
+      "browserTask": "Browser-Aufgaben",
+      "localAi": "Lokale KI"
     },
     "problems": {
       "external-off": "Lädt, sobald externe Plugins eingeschaltet sind.",

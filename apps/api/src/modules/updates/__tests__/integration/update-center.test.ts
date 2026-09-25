@@ -241,6 +241,8 @@ describe('update center: checking', () => {
       'apt',
       'host-tools',
       'helena',
+      // Local AI's own source (helena.local-ai): check only, empty without a model server.
+      'local-ai',
     ]);
     expect(state.data!.sources[0]!.pluginId).toBe('helena.updates');
   });

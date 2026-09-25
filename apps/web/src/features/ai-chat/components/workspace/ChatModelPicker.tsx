@@ -71,6 +71,7 @@ export default function ChatModelPicker({
 }: ChatModelPickerProps) {
   const t = useTranslations('chatWorkspace');
   const tModel = useTranslations('modelAvailability');
+  const tLocal = useTranslations('localAi');
   const catalog = useChatCatalog(scopeKey, agentId);
   const models = catalog.data?.models ?? [];
   const selected = models.find((entry) => entry.id === model);
@@ -80,7 +81,12 @@ export default function ChatModelPicker({
   const refused = refusalOf(model, catalog.data?.unavailable);
   // An entry only the runtime expects to work carries a quiet mark.
   const entryName = (entry: AiChatModel) =>
-    isUnverified(entry) ? (
+    entry.local ? (
+      <span>
+        {entry.name}
+        <span className="ms-1.5 text-xs text-muted-foreground">{tLocal('pickerMark')}</span>
+      </span>
+    ) : isUnverified(entry) ? (
       <span title={tModel('unverifiedHint')}>
         {entry.name}
         <span className="ms-1.5 text-xs text-muted-foreground">{tModel('unverified')}</span>
@@ -124,7 +130,9 @@ export default function ChatModelPicker({
             <DropdownMenuSeparator />
             {provider && (
               <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
-                {PROVIDER_NAME[provider] ?? provider}
+                {provider.startsWith('helena-')
+                  ? tLocal('title')
+                  : (PROVIDER_NAME[provider] ?? provider)}
               </DropdownMenuLabel>
             )}
             {entries.map((entry) =>

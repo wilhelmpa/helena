@@ -6,6 +6,12 @@
 #
 #   sudo deployment/volition-stack/native/laya/install.sh install     # or: status, rotate-key,
 #                                                                     #     uninstall [--purge]
+#   sudo deployment/volition-stack/native/laya/install.sh install --rocm
+#
+# --rocm: Laya on the GPU. No second PyTorch: the venv reaches the ROCm 10.0.0 tree of
+# native/local-ai/install.sh (/opt/helena-ai/rocm-10.0.0: ROCm and torch 2.13.0+rocm10.0.0,
+# hash-pinned) through a .pth line, and the service gets /dev/kfd and the render node
+# (docs/helena-decisions/local-ai-platform.md §4.6). Without it: PyTorch CPU, as before.
 #
 # What it does (install): a system user helena-laya; a venv in /opt/helena/laya with pinned
 # PyTorch (CPU) and Laya; the checkpoint at a pinned revision in /var/lib/helena-laya/models
@@ -31,6 +37,8 @@ KEY_DIR=/etc/helena
 KEY_FILE=$KEY_DIR/laya.key
 API_GROUP=${HELENA_API_GROUP:-volition-plan}
 UNIT=/etc/systemd/system/helena-laya.service
+ROCM_DROPIN=/etc/systemd/system/helena-laya.service.d/rocm.conf
+ROCM_VENV=/opt/helena-ai/rocm-10.0.0
 PORT=8791
 here=$(cd "$(dirname "$0")" && pwd)
 
@@ -50,6 +58,12 @@ probe() {
 }
 
 install_all() {
+  local rocm=0
+  [ "${1:-}" = "--rocm" ] && rocm=1
+  if [ "$rocm" = 1 ]; then
+    [ -x "$ROCM_VENV/bin/python" ] || die "no ROCm tree: run native/local-ai/install.sh install first"
+    [ -c /dev/kfd ] || die "no /dev/kfd: boot kernel 7.1.8 first (native/local-ai/kernel.sh)"
+  fi
   id "$SERVICE_USER" >/dev/null 2>&1 ||
     useradd --system --home-dir "$STATE" --no-create-home --shell /usr/sbin/nologin "$SERVICE_USER"
   getent group "$API_GROUP" >/dev/null || die "group $API_GROUP (the API's) does not exist"
@@ -57,11 +71,26 @@ install_all() {
   install -d -o "$SERVICE_USER" -g "$SERVICE_USER" -m 0750 "$STATE" "$STATE/models" "$STATE/hf"
   install -d -o root -g root -m 0755 /var/cache/helena-laya
 
-  log "venv with PyTorch $TORCH_VERSION (CPU) and Laya $LAYA_VERSION"
   export UV_CACHE_DIR=/var/cache/helena-laya/uv
   [ -x "$PREFIX/venv/bin/python" ] || uv venv -q -p python3.13 "$PREFIX/venv"
-  uv pip install -q --python "$PREFIX/venv/bin/python" --index-url "$TORCH_INDEX" "torch==$TORCH_VERSION"
-  uv pip install -q --python "$PREFIX/venv/bin/python" "laya==$LAYA_VERSION" "huggingface_hub>=0.20"
+  local sp
+  sp=$("$PREFIX/venv/bin/python" -c 'import sysconfig; print(sysconfig.get_path("purelib"))')
+  if [ "$rocm" = 1 ]; then
+    log "venv with Laya $LAYA_VERSION; PyTorch and ROCm from $ROCM_VENV"
+    # A CPU torch of an earlier install would shadow the shared one.
+    uv pip uninstall -q --python "$PREFIX/venv/bin/python" torch 2>/dev/null || true
+    # The shared tree's packages sit behind Laya's own; the override keeps torch out of
+    # Laya's resolution, so nothing downloads a second PyTorch.
+    echo "$ROCM_VENV/lib/python3.13/site-packages" > "$sp/helena-rocm.pth"
+    printf 'torch; sys_platform == "never"\n' > /var/cache/helena-laya/no-torch.txt
+    uv pip install -q --python "$PREFIX/venv/bin/python" --override /var/cache/helena-laya/no-torch.txt \
+      "laya==$LAYA_VERSION" "huggingface_hub>=0.20"
+  else
+    log "venv with PyTorch $TORCH_VERSION (CPU) and Laya $LAYA_VERSION"
+    rm -f "$sp/helena-rocm.pth"
+    uv pip install -q --python "$PREFIX/venv/bin/python" --index-url "$TORCH_INDEX" "torch==$TORCH_VERSION"
+    uv pip install -q --python "$PREFIX/venv/bin/python" "laya==$LAYA_VERSION" "huggingface_hub>=0.20"
+  fi
   install -o root -g root -m 0644 "$here/helena_laya_serve.py" "$PREFIX/helena_laya_serve.py"
 
   log "checkpoint $MODEL_REPO@$MODEL_REVISION ($SUBFOLDER)"
@@ -87,6 +116,25 @@ PY
   chmod 0640 "$KEY_FILE"
 
   install -o root -g root -m 0644 "$here/helena-laya.service" "$UNIT"
+  if [ "$rocm" = 1 ]; then
+    install -d -o root -g root -m 0755 "$(dirname "$ROCM_DROPIN")"
+    # The GPU for this service only: the KFD and the render node, nothing else of /dev. ROCm's
+    # libraries are mapped into the process (charged to its memory), hence the higher ceiling.
+    cat >"$ROCM_DROPIN" <<EOF
+[Service]
+Environment=HELENA_LAYA_DEVICE=cuda
+PrivateDevices=no
+DevicePolicy=closed
+DeviceAllow=/dev/kfd rw
+DeviceAllow=/dev/dri/renderD128 rw
+SupplementaryGroups=render video
+MemoryHigh=6G
+MemoryMax=8G
+EOF
+    chmod 0644 "$ROCM_DROPIN"
+  else
+    rm -f "$ROCM_DROPIN"
+  fi
   systemctl daemon-reload
   systemctl enable --now helena-laya.service
   systemctl restart helena-laya.service
@@ -104,7 +152,8 @@ status() {
   systemctl --no-pager --lines=5 status helena-laya.service || true
   curl -s -m 2 "http://127.0.0.1:$PORT/health" && echo
   [ -f "$KEY_FILE" ] && stat -c 'key: %U:%G %a %n' "$KEY_FILE"
-  "$PREFIX/venv/bin/python" -c 'import torch, laya; print("torch", torch.__version__, "laya", laya.__version__)' 2>/dev/null || true
+  "$PREFIX/venv/bin/python" -c 'import torch, laya; print("torch", torch.__version__, "hip", torch.version.hip, "laya", laya.__version__)' 2>/dev/null || true
+  [ -f "$ROCM_DROPIN" ] && log "on the GPU (ROCm, $ROCM_DROPIN); the log says where the model loaded" || true
 }
 
 rotate_key() {
@@ -118,7 +167,8 @@ rotate_key() {
 
 uninstall() {
   systemctl disable --now helena-laya.service 2>/dev/null || true
-  rm -f "$UNIT"
+  rm -f "$UNIT" "$ROCM_DROPIN"
+  rmdir "$(dirname "$ROCM_DROPIN")" 2>/dev/null || true
   systemctl daemon-reload
   if [ "${1:-}" = "--purge" ]; then
     rm -rf "$PREFIX" "$STATE" /var/cache/helena-laya "$KEY_FILE"
@@ -130,9 +180,9 @@ uninstall() {
 }
 
 case "${1:-}" in
-  install) install_all ;;
+  install) install_all "${2:-}" ;;
   status) status ;;
   rotate-key) rotate_key ;;
   uninstall) uninstall "${2:-}" ;;
-  *) echo "usage: $0 install|status|rotate-key|uninstall [--purge]" >&2; exit 2 ;;
+  *) echo "usage: $0 install [--rocm]|status|rotate-key|uninstall [--purge]" >&2; exit 2 ;;
 esac

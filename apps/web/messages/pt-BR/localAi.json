@@ -1,0 +1,153 @@
+{
+  "title": "IA local",
+  "units": {
+    "gpu": "GPU",
+    "npu": "NPU",
+    "cpu": "CPU"
+  },
+  "unitStates": {
+    "off": "desligada",
+    "missing": "indisponível",
+    "idle": "livre",
+    "busy": "trabalhando"
+  },
+  "card": {
+    "loading": "Carregando …",
+    "noServer": "Nenhum servidor",
+    "off": "Desligada",
+    "serverDown": "Servidor inacessível",
+    "on": "Ligada",
+    "master": "Usar IA local",
+    "classes": "Trabalho que roda primeiro localmente",
+    "share": "{percent} % dos tokens dos agentes ficaram locais ({days} dias)",
+    "latency": "O servidor responde em {ms} ms",
+    "settings": "Configurações",
+    "unitSwitch": "Usar a {unit}",
+    "vram": "{used} de {total}",
+    "noModel": "Nenhum modelo carregado"
+  },
+  "blockers": {
+    "not-wired": "Ainda não conectado",
+    "no-model": "Nenhum modelo adequado",
+    "eval-missing": "Avaliação necessária",
+    "eval-failed": "Avaliação reprovada"
+  },
+  "jev": {
+    "label": "Jev / Laya (passos do navegador)",
+    "experimental": "Experimental",
+    "connect": "Adicionar uma conexão"
+  },
+  "classesTitle": "Tipos de trabalho",
+  "classesDescription": "A IA local nunca substitui um modelo configurado: onde está ligada, é tentada primeiro, e o modelo configurado responde sempre que ela está desligada, inacessível, lenta demais ou errada. Um tipo de trabalho só pode ser ligado depois que sua avaliação for aprovada.",
+  "planned": "Planejado",
+  "model": "Modelo",
+  "mode": "Modo",
+  "autoModel": "Automático ({model})",
+  "modes": {
+    "off": "Desligado",
+    "prefer": "Local primeiro",
+    "only": "Somente local"
+  },
+  "eval": {
+    "result": "{score} % (necessário: {threshold} %)",
+    "latency": "mediana {ms} ms",
+    "speed": "{tps} tokens/s",
+    "none": "Ainda não avaliado",
+    "run": "Avaliar",
+    "done": "Avaliação concluída: {score} %"
+  },
+  "servers": {
+    "title": "Servidores de modelos",
+    "description": "Lemonade nesta máquina (GPU e NPU) ou outro servidor compatível com OpenAI. Seus modelos aparecem em todo seletor de modelos enquanto a IA local estiver ligada.",
+    "add": "Adicionar servidor",
+    "none": "Nenhum servidor ainda. Instale a IA local com native/local-ai/install.sh e adicione-o aqui.",
+    "reachable": "Acessível · {version}",
+    "reachableBare": "Acessível",
+    "unreachable": "Inacessível",
+    "keys": {
+      "file": "Chave de arquivo",
+      "stored": "Chave salva no Helena",
+      "none": "Sem chave",
+      "invalid": "Arquivo de chave não permitido"
+    },
+    "context": "Contexto de {tokens} tokens",
+    "enabled": "Servidor ativo",
+    "check": "Verificar",
+    "remove": "Remover servidor",
+    "removeConfirm": "Remover {name}? Os agentes voltam aos modelos configurados.",
+    "loaded": "Carregado",
+    "notDownloaded": "Não baixado",
+    "kind": "Tipo",
+    "slug": "Nome curto (nunca muda)",
+    "name": "Nome",
+    "baseUrl": "Endereço da API compatível com OpenAI",
+    "keySource": "Chave",
+    "keyFile": "Arquivo de chave (em /etc/helena)",
+    "key": "Chave",
+    "cancel": "Cancelar",
+    "save": "Adicionar"
+  },
+  "presets": {
+    "title": "Predefinição",
+    "description": "Liga os tipos de trabalho de uma vez, na medida em que suas avaliações foram aprovadas.",
+    "sparsam": "Econômico",
+    "ausgewogen": "Equilibrado",
+    "qualitaet": "Qualidade",
+    "eigene": "Personalizado",
+    "sparsamHint": "Tudo o que passou na avaliação roda primeiro localmente; economiza o máximo de limite da assinatura.",
+    "ausgewogenHint": "Embeddings, chamadas auxiliares do Hermes, resumos, triagem e transcrição localmente; o trabalho real dos agentes fica nos modelos configurados.",
+    "qualitaetHint": "Somente embeddings e transcrição localmente; todo o resto nos modelos configurados.",
+    "eigeneHint": "Os tipos de trabalho como configurados abaixo."
+  },
+  "serverTypes": {
+    "lemonade": "Lemonade Server (GPU + NPU)",
+    "openaiCompatible": "Servidor compatível com OpenAI"
+  },
+  "classes": {
+    "embeddings": {
+      "label": "Embeddings (busca)",
+      "description": "Vetores para a busca semântica no conhecimento; com o servidor inacessível, a busca responde por texto completo."
+    },
+    "hermes-helpers": {
+      "label": "Chamadas auxiliares do Hermes",
+      "description": "Compressão de contexto e descrições de imagens; se o modelo local falhar, o modelo principal do agente responde."
+    },
+    "summaries": {
+      "label": "Resumos e digests",
+      "description": "Digests de atualizações, resumos de execuções, atividade e e-mails, briefings."
+    },
+    "triage": {
+      "label": "Triagem e encaminhamento",
+      "description": "Organizar o trabalho que chega: categoria, prioridade, qual agente."
+    },
+    "transcription": {
+      "label": "Transcrição (ditado)",
+      "description": "Fala para texto no ditado e no modo de voz (Whisper na NPU)."
+    },
+    "routines": {
+      "label": "Agentes de rotina",
+      "description": "Rotinas agendadas tentam primeiro o modelo local principal, com o modelo configurado do agente como reserva."
+    },
+    "reflection": {
+      "label": "Reflexão noturna",
+      "description": "O que uma execução ensinou, cuidado de skills: trabalho em lote à noite no modelo local grande."
+    },
+    "coordinator-triage": {
+      "label": "Primeira olhada do coordenador",
+      "description": "A primeira análise de uma tarefa nova; tudo o que é real vai para o modelo configurado do coordenador."
+    }
+  },
+  "updates": {
+    "label": "IA local",
+    "hint": "Atualize com native/local-ai/install.sh e avalie de novo."
+  },
+  "pickerMark": "local",
+  "tile": {
+    "offSub": "Como configurado"
+  },
+  "problems": {
+    "serverDown": "IA local: {name} não responde",
+    "evalFailed": "IA local: “{class}” não passou na avaliação",
+    "evalFailedDetail": "{model} – o modelo configurado responde até uma avaliação passar"
+  }
+}

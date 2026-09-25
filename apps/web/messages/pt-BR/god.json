@@ -445,7 +445,8 @@
       "logins": "Logins",
       "server": "Servidor",
       "updates": "Atualizações",
-      "browserTask": "Tarefas do navegador"
+      "browserTask": "Tarefas do navegador",
+      "localAi": "IA local"
     },
     "problems": {
       "external-off": "Carrega quando os plugins externos forem ativados.",

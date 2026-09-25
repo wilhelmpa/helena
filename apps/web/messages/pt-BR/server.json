@@ -56,7 +56,9 @@
     "fansAuto": "Ventoinhas no automático.",
     "memoryPressure": "Memória apertada: só {available} livres.",
     "memoryOk": "Memória: {available} livres.",
-    "healthFailed": "Não foi possível ler o estado."
+    "healthFailed": "Não foi possível ler o estado.",
+    "localAiServerUp": "IA local: {name} está acessível",
+    "localAiServerDown": "IA local: {name} não responde"
   },
   "overview": {
     "machine": "Máquina",

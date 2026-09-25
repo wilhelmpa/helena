@@ -445,7 +445,8 @@
       "logins": "Logins",
       "server": "Server",
       "updates": "Updates",
-      "browserTask": "Browser tasks"
+      "browserTask": "Browser tasks",
+      "localAi": "Local AI"
     },
     "problems": {
       "external-off": "Loads once external plugins are switched on.",

@@ -17,7 +17,7 @@ export const ModelPriceResponse = t.Object({
   cacheReadPerMTok: t.Nullable(t.Number()),
   cacheWritePerMTok: t.Nullable(t.Number()),
   currency: t.Literal('EUR'),
-  source: t.Union([t.Literal('models.dev'), t.Literal('manual')]),
+  source: t.Union([t.Literal('models.dev'), t.Literal('manual'), t.Literal('local')]),
   estimate: t.Literal(true),
   updatedAt: t.String(),
   usd: t.Nullable(

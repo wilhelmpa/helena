@@ -23,6 +23,8 @@ Environment (set by helena-laya.service):
   HELENA_LAYA_SUBFOLDER checkpoint inside it            v10s
   HELENA_LAYA_KEY_FILE  Bearer key (required)           /etc/helena/laya.key
   HELENA_LAYA_THREADS   torch intra-op threads          8
+  HELENA_LAYA_DEVICE    cpu, or cuda: the GPU through   cpu
+                        ROCm (install.sh --rocm); falls back to the CPU when PyTorch sees no GPU
   HELENA_LAYA_MAXOPT    widest choice asked at once     12
 """
 from __future__ import annotations
@@ -52,6 +54,7 @@ MODEL_DIR = _env("HELENA_LAYA_MODEL_DIR", "/var/lib/helena-laya/models/laya-brow
 SUBFOLDER = _env("HELENA_LAYA_SUBFOLDER", "v10s")
 KEY_FILE = _env("HELENA_LAYA_KEY_FILE", "/etc/helena/laya.key")
 THREADS = int(_env("HELENA_LAYA_THREADS", "8"))
+DEVICE = _env("HELENA_LAYA_DEVICE", "cpu")
 MAXOPT = max(2, int(_env("HELENA_LAYA_MAXOPT", "12")))
 MODEL_NAME = f"laya-browser-{SUBFOLDER}"
 
@@ -73,13 +76,17 @@ class Model:
 
         torch.set_num_threads(max(1, THREADS))
         started = time.time()
-        self.agent = laya.load(MODEL_DIR, subfolder=SUBFOLDER, device="cpu")
+        # ROCm's PyTorch calls the GPU "cuda". Without one (no /dev/kfd, CPU wheel) the CPU answers.
+        self.device = DEVICE if DEVICE == "cpu" or torch.cuda.is_available() else "cpu"
+        if self.device != DEVICE:
+            print(f"[helena-laya] {DEVICE} requested, PyTorch sees no GPU: using the CPU", flush=True)
+        self.agent = laya.load(MODEL_DIR, subfolder=SUBFOLDER, device=self.device)
         cfg = self.agent.cfg
         if cfg.get("head_max_len_train"):
             cfg["head_max_len"] = cfg["head_max_len_train"]
         self.fmt = cfg.get("laya_fmt", "v1")
         self.lock = threading.Lock()
-        print(f"[helena-laya] {MODEL_NAME} ({self.fmt}) loaded in {time.time() - started:.1f}s", flush=True)
+        print(f"[helena-laya] {MODEL_NAME} ({self.fmt}) loaded on {self.device} in {time.time() - started:.1f}s", flush=True)
 
     def compact(self, value: Any) -> Any:
         # jev-ultrafast element criteria ({'element': '[3] Search', 'role': 'button', ...}) as one

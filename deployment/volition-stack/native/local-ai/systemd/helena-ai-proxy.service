@@ -1,0 +1,16 @@
+# The other half of helena-ai-proxy.socket: systemd's own socket proxy to Lemonade.
+[Unit]
+Description=Helena local AI forwarder for isolated agents
+Requires=helena-ai-proxy.socket
+After=helena-ai-proxy.socket lemond.service
+
+[Service]
+ExecStart=/usr/lib/systemd/systemd-socket-proxyd --exit-idle-time=10min 127.0.0.1:13305
+DynamicUser=yes
+PrivateTmp=yes
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+IPAddressDeny=any
+IPAddressAllow=localhost

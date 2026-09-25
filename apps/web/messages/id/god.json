@@ -445,7 +445,8 @@
       "logins": "Login",
       "server": "Server",
       "updates": "Pembaruan",
-      "browserTask": "Tugas browser"
+      "browserTask": "Tugas browser",
+      "localAi": "AI lokal"
     },
     "problems": {
       "external-off": "Dimuat setelah plugin eksternal diaktifkan.",
