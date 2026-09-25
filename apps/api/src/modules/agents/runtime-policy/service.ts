@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { db, aiAgent } from '@repo/db';
 import { eq } from 'drizzle-orm';
+import { normalizeRuntimeAccount } from '@helena/sdk';
 import { HttpError } from '#shared/lib';
 
 import {
@@ -301,6 +302,7 @@ export async function reportRuntimeState(
     | 'version'
     | 'issues'
     | 'sandbox'
+    | 'account'
   > & {
     conflicts?: AgentRuntimeConflict[];
     restored?: string[];
@@ -309,6 +311,7 @@ export async function reportRuntimeState(
     version?: string | null;
     issues?: AgentRuntimeState['issues'];
     sandbox?: AgentRuntimeState['sandbox'];
+    account?: unknown;
     learnedSkills?: LearnedSkill[];
     actions?: RuntimeActionResult[];
     memoryProposals?: MemoryProposalReport[];
@@ -336,6 +339,8 @@ export async function reportRuntimeState(
     version: state.version ?? null,
     issues: state.issues ?? [],
     sandbox: state.sandbox ?? null,
+    // The account's facts only, checked again whatever the runner sent.
+    account: normalizeRuntimeAccount(state.account ?? null),
     reportedAt: new Date().toISOString(),
   };
   await db

@@ -731,12 +731,16 @@
       },
       "copyCommand": "Копировать команду",
       "copied": "Скопировано",
-      "openAccess": "Открыть «Доступы»",
       "sandbox": "Песочница: {mode}",
       "sandboxModes": {
         "workspace-write": "рабочая папка",
         "read-only": "только чтение",
         "danger-full-access": "изоляция"
+      },
+      "login": {
+        "title": "Вход",
+        "signedInAs": "Вход выполнен как {account}",
+        "view": "Открыть в доступах"
       }
     },
     "runModel": {

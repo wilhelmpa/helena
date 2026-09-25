@@ -69,6 +69,9 @@ export const toolsPath = () => '/tools';
 export const skillsPath = () => '/skills';
 
 export const credentialsPath = () => accessPath('credentials');
+// "Anmeldungen" in Zugänge, with an agent's row marked.
+export const accessLoginsPath = (agentId?: number) =>
+  agentId === undefined ? credentialsPath() : `${credentialsPath()}?agent=${agentId}`;
 
 export const devicesPath = () => '/devices';
 

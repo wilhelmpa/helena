@@ -161,7 +161,8 @@
       "settings": "Pengaturan diubah",
       "removed": "Dilepas",
       "listed-from-gog": "Ditampilkan dari gog",
-      "clone": "Repo dikloning"
+      "clone": "Repo dikloning",
+      "signed-out": "Dikeluarkan"
     }
   },
   "clone": {

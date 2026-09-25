@@ -731,12 +731,16 @@
       },
       "copyCommand": "نسخ الأمر",
       "copied": "تم النسخ",
-      "openAccess": "فتح «الوصول»",
       "sandbox": "صندوق العزل: {mode}",
       "sandboxModes": {
         "workspace-write": "مجلد العمل",
         "read-only": "للقراءة فقط",
         "danger-full-access": "العزل"
+      },
+      "login": {
+        "title": "تسجيل الدخول",
+        "signedInAs": "مسجّل الدخول باسم {account}",
+        "view": "عرض في بيانات الوصول"
       }
     },
     "runModel": {

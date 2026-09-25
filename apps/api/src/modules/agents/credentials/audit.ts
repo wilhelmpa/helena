@@ -26,6 +26,8 @@ export const OWNER_CHANGES = [
   'removed',
   'listed-from-gog',
   'clone',
+  // An agent's own runtime login signed out in Zugänge (access-logins); no credential.
+  'signed-out',
 ] as const;
 export type OwnerChange = (typeof OWNER_CHANGES)[number];
 

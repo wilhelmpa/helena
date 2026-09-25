@@ -731,12 +731,16 @@
       },
       "copyCommand": "Salin perintah",
       "copied": "Tersalin",
-      "openAccess": "Buka Akses",
       "sandbox": "Sandbox: {mode}",
       "sandboxModes": {
         "workspace-write": "folder kerja",
         "read-only": "hanya-baca",
         "danger-full-access": "isolasi"
+      },
+      "login": {
+        "title": "Login",
+        "signedInAs": "Masuk sebagai {account}",
+        "view": "Lihat di Akses"
       }
     },
     "runModel": {

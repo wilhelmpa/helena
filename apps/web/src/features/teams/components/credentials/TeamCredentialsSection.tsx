@@ -23,6 +23,8 @@ import { McpOAuthDialog } from '@/features/access/McpOAuthDialog';
 import { GrantsDialog } from '@/features/access/GrantsDialog';
 import { CREDENTIAL_KINDS } from '../../utils/credentialForm';
 import { useTestDecisionConnection } from '@/features/browser-lab/services/browserTask.service';
+import { AccessLoginsSection } from '@/features/access/logins/AccessLoginsSection';
+import { useAccessLoginsQuery } from '@/services/accessLogins.service';
 
 type Open =
   | { dialog: 'edit'; entry: CredentialEntry }
@@ -54,6 +56,14 @@ export default function TeamCredentialsSection({
   const testConnection = useTestDecisionConnection(teamId);
   const [open, setOpen] = useState<Open | null>(null);
   const close = () => setOpen(null);
+  // Every login the agents use ("Anmeldungen") leads the page, with all kinds or the
+  // runtime logins shown; the stored credentials follow under a title of their own.
+  const showLogins = canRead && (kind === undefined || kind === 'runtime_login');
+  const logins = useAccessLoginsQuery(teamId, showLogins);
+  const hasLogins =
+    showLogins &&
+    !!logins.data &&
+    logins.data.agents.length + (logins.data.shared?.length ?? 0) > 0;
 
   return (
     <SectionPageView title={t('title')} wide>
@@ -100,6 +110,16 @@ export default function TeamCredentialsSection({
         <p className="text-sm text-muted-foreground">{t('noAccess')}</p>
       ) : (
         <div className="flex flex-1 flex-col gap-4">
+          {showLogins && (
+            <AccessLoginsSection
+              teamId={teamId}
+              canManage={canManage}
+              onAddRuntimeLogin={
+                canManage ? () => setOpen({ dialog: 'new', kind: 'runtime_login' }) : undefined
+              }
+            />
+          )}
+          {hasLogins && <h2 className="-mb-2 text-md font-medium">{t('logins.storedTitle')}</h2>}
           {!page.data ? (
             <ListSkeleton rows={3} rowClassName="h-14" />
           ) : page.data.total === 0 ? (

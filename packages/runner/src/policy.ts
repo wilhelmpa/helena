@@ -78,6 +78,7 @@ export type {
   VaultAccess,
 } from '@helena/sdk';
 import type {
+  RuntimeAccount,
   RuntimeMcpServer,
   RuntimeMemoryPolicy,
   RuntimePolicySnapshot,
@@ -115,6 +116,8 @@ export interface RuntimeStatus {
   issues?: RuntimeIssue[];
   // The sandbox the runtime runs the model's commands in, where it has one of its own (Codex).
   sandbox?: CommandSandbox | null;
+  // The runtime's own login in the agent's home, as the runtime tells it (Claude Code, Codex).
+  account?: RuntimeAccount | null;
 }
 
 // A memory file the agent changed while its writes wait for the owner: what it wrote, and

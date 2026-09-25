@@ -34,7 +34,7 @@ async function agentRuntime(agentId: number): Promise<LoginRuntime | null> {
 }
 
 export async function runtimeLoginOf(
-  agent: RunnerAgent,
+  agent: Pick<RunnerAgent, 'id' | 'teamId' | 'userId' | 'username'>,
   ref: WorkRef | null,
 ): Promise<RuntimeLogin | null> {
   const work = ref

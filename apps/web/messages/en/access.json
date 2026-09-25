@@ -161,7 +161,8 @@
       "settings": "Settings changed",
       "removed": "Removed",
       "listed-from-gog": "Listed from gog",
-      "clone": "Repo cloned"
+      "clone": "Repo cloned",
+      "signed-out": "Signed out"
     }
   },
   "clone": {
