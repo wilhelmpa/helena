@@ -518,6 +518,13 @@ export const ChatMessagesResponse = t.Object({
       ),
       errorModel: t.Optional(t.Nullable(t.String())),
       modelRoute: t.Optional(t.Nullable(modelRoute)),
+      // A local model was asked for and the configured one answered (model check).
+      localFallback: t.Optional(
+        t.Object({
+          from: t.String(),
+          reason: t.Union([t.Literal('off'), t.Literal('down'), t.Literal('failed')]),
+        }),
+      ),
     }),
   ),
   nextPage: t.Nullable(t.Number()),

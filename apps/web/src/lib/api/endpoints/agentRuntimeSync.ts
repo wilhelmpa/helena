@@ -77,6 +77,15 @@ export interface ModelCheck {
   };
   used: { model: string | null; reasoning: string | null; provider: string | null } | null;
   mismatch: ('model' | 'reasoning')[];
+  // A local model was asked for and the configured one ran instead.
+  fallback?: LocalFallback;
+}
+
+export interface LocalFallback {
+  // The local model asked for (`helena-<slug>/<id>`).
+  from: string;
+  // Local AI was off, its server did not answer at the start, or it failed during the run.
+  reason: 'off' | 'down' | 'failed';
 }
 
 export const getRuntimeSync = (teamId: number, agentId: number) =>

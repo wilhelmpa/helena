@@ -482,6 +482,13 @@ models_load() {
   backend=$(echo "$line" | cut -f12)
   body="{\"model_name\":\"$name\",\"ctx_size\":${ctx:-65536},\"save_options\":true"
   [ -z "$backend" ] || [ "$backend" = - ] || body="$body,\"llamacpp_backend\":\"$backend\""
+  # Per model, so Lemonade's own recipe cannot replace it: some recipes add their own
+  # --chat-template-kwargs (Qwen3.6: {"preserve_thinking":true}), which dropped our global
+  # "thinking off unless asked" (found live 2026-09-25). Lemonade splits these args like a
+  # shell, so the JSON sits in single quotes.
+  if [ "$(echo "$line" | cut -f2)" = gguf ]; then
+    body="$body,\"llamacpp_args\":\"--load-mode none --chat-template-kwargs '{\\\"enable_thinking\\\":false,\\\"preserve_thinking\\\":true}'\""
+  fi
   body="$body}"
   if [ "$DRY_RUN" = 1 ]; then say "would POST /load $body"; return; fi
   API_TIMEOUT=600 api /load -X POST -H 'content-type: application/json' -d "$body"

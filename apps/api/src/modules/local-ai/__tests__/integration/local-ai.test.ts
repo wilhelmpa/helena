@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test';
-import { agentUsage, db } from '@repo/db';
+import { agentUsage, db, helenaModelServer } from '@repo/db';
+import { eq } from 'drizzle-orm';
 import { apiKeyApi, authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
@@ -7,7 +8,7 @@ import { createAgent } from '#tests/helpers/agents';
 import { costOfUsage } from '#modules/model-prices/service';
 import { host } from '#shared/helena';
 import { LOCAL_AI_PLUGIN_ID, LOCAL_AI_PROVIDES, localAiPlugin } from '../../plugin';
-import { checkAllServers, localAiStatus } from '../../service';
+import { checkAllServers, forgetServerAnswers, localAiStatus } from '../../service';
 import { COMPRESSION_CASES } from '../../evals';
 
 // Local AI end to end against a fake Lemonade (docs/helena-decisions/local-ai-platform.md): the
@@ -17,6 +18,8 @@ import { COMPRESSION_CASES } from '../../evals';
 const KEY = 'test-local-key';
 let fake: ReturnType<typeof Bun.serve>;
 const requests: { path: string; auth: string | null }[] = [];
+// Set while the fake Lemonade is "stopped": it answers nothing but 503.
+let serverDown = false;
 // The chat-completions bodies the evals sent.
 const chatBodies: Record<string, unknown>[] = [];
 
@@ -52,6 +55,7 @@ beforeAll(async () => {
     async fetch(request) {
       const url = new URL(request.url);
       requests.push({ path: url.pathname, auth: request.headers.get('authorization') });
+      if (serverDown) return new Response('stopped', { status: 503 });
       if (request.headers.get('authorization') !== `Bearer ${KEY}`)
         return new Response('no', { status: 401 });
       switch (url.pathname) {
@@ -264,6 +268,49 @@ describe('local AI', () => {
     const fallback = await run();
     expect(fallback.model).toBeNull();
     expect(fallback.thinkingLevel).toBeNull();
+  });
+
+  it('answers with the configured model when the local server does not, and says so', async () => {
+    const { asOwner, asRunner, agent, server } = await setup();
+    await asOwner.god['local-ai'].policy.patch({ enabled: true });
+    const chat = asOwner.projects({ projectKey: 'LAI' })['ai-agents']({ agentId: agent.id });
+    serverDown = true;
+    try {
+      // The server stopped since its last check: the claim asks it once and gets no answer.
+      forgetServerAnswers();
+      await db
+        .update(helenaModelServer)
+        .set({ checkedAt: new Date(Date.now() - 60_000) })
+        .where(eq(helenaModelServer.id, server.id));
+      const sent = await chat.chat.post({
+        prompt: 'Hallo',
+        model: 'helena-local/Qwen3.6-35B-A3B-GGUF',
+      });
+      expect(sent.status).toBe(200);
+      const claimed = (await asRunner['agent-chats'].claim.post()).data!.message!;
+      // The agent's own model, with its own reasoning, instead of waiting for the server.
+      expect(claimed.model).toBe('gpt-5.6-luna');
+      await asRunner['agent-chats']({ messageId: claimed.id }).events.post({
+        events: [{ type: 'TEXT_MESSAGE_CONTENT', messageId: 'm', delta: 'Hallo zurück' }],
+      });
+      await asRunner['agent-chats']({ messageId: claimed.id }).result.post({
+        status: 'success',
+        runtime: {
+          requested: { model: 'gpt-5.6-luna', reasoning: 'low', provider: 'openai-codex' },
+          defaults: null,
+          used: { model: 'gpt-5.6-luna', reasoning: 'low', provider: 'openai-codex' },
+        },
+      });
+      const threadId = sent.data!.threadId;
+      const items = (await chat.threads({ threadId }).messages.get()).data!.items;
+      expect(items.find((item) => item.role === 'assistant')?.localFallback).toEqual({
+        from: 'helena-local/Qwen3.6-35B-A3B-GGUF',
+        reason: 'down',
+      });
+    } finally {
+      serverDown = false;
+      forgetServerAnswers();
+    }
   });
 
   it('prices local tokens at nothing, and reports the machine', async () => {

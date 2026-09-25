@@ -37,7 +37,12 @@ import type { CliLogin, CliLoginState } from './cli-login';
 import { isolationEnabled, profileHelper, type AgentIsolation } from './isolation';
 import { readerCapabilities } from './readers';
 import './hermes-settings';
-import { localKeyVariables } from './local-ai';
+import {
+  cloudFallback,
+  localKeyVariables,
+  withLocalFallback,
+  type FallbackModel,
+} from './local-ai';
 import { pythonVaultStore, WebLoginVault, type WebLogin, type WorkRef } from './logins';
 import {
   profileDigest,
@@ -685,6 +690,12 @@ export interface SynchronizerOptions {
   now?: () => number;
   // The agent's Hermes vault, which receives its website logins.
   vault?: LoginVault;
+  // The model the agent runs on without local AI (its own, else the runtime's default), which
+  // heads its fallback chain while local AI is on (local-ai.ts withLocalFallback).
+  localFallback?: (
+    model: string | null | undefined,
+    defaults: RuntimeDefaults | null,
+  ) => FallbackModel | null;
 }
 
 // An isolated agent's profile belongs to the project's user, and the runner never opens a
@@ -779,6 +790,9 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
   private appliedRevision: string | null = null;
   // The snapshot of the applied revision, which each check applies again.
   private applied: RuntimePolicySnapshot | null = null;
+  // The fallback chain the applied snapshot was written with: it follows the runtime's default
+  // model, which the runner reads after the first write, so it may change within a revision.
+  private appliedFallback: string | null = null;
   private failed: { revision: string; at: number } | null = null;
   private checkFailed = false;
   private active: Promise<void> | null = null;
@@ -999,8 +1013,14 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
   // True when the revision was applied or failed to apply, either of which is reported.
   // The actions it carries run once, after it applied; "Neu schreiben" (rewrite-profile)
   // is the apply itself, with every file written again and the profile read back at once.
-  private async apply(snapshot: RuntimePolicySnapshot): Promise<boolean> {
-    if (snapshot.revision === this.appliedRevision) return false;
+  private async apply(received: RuntimePolicySnapshot): Promise<boolean> {
+    const snapshot = withLocalFallback(
+      received,
+      this.options.localFallback?.(received.model, this.defaults()) ?? null,
+    );
+    const fallback = JSON.stringify(snapshot.hermes?.fallbackModels ?? null);
+    const sameRevision = snapshot.revision === this.appliedRevision;
+    if (sameRevision && fallback === this.appliedFallback) return false;
     if (
       this.failed?.revision === snapshot.revision &&
       this.now() - this.failed.at < RETRY_FAILED_MS
@@ -1008,7 +1028,8 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
       return false;
     }
     try {
-      const actions = snapshot.actions ?? [];
+      // Written again for a changed fallback chain alone, the revision's actions do not repeat.
+      const actions = sameRevision ? [] : (snapshot.actions ?? []);
       const rewrites = actions.filter((action) => action.kind === 'rewrite-profile');
       const result = await this.materializer.apply(
         snapshot,
@@ -1030,6 +1051,7 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
       const links = await this.materializer.ensurePlugins();
       this.appliedRevision = result.revision;
       this.applied = snapshot;
+      this.appliedFallback = fallback;
       this.take(result);
       this.probeDue = true;
       this.failed = null;
@@ -1245,6 +1267,19 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
 }
 
 // Hermes' Python: the one of its venv, which the wrapper puts first on PATH.
+// The agent's cloud model for its fallback chain: a model the catalog lists under a provider
+// runs there, any other on the runner's own provider (as execute.ts modelProvider routes it).
+export function localFallbackOf(config: Pick<RunnerConfig, 'models' | 'provider'>) {
+  return (model: string | null | undefined, defaults: RuntimeDefaults | null) =>
+    cloudFallback({
+      model,
+      providerOf: (id) =>
+        config.models.find((entry) => entry.id === id)?.provider ?? config.provider,
+      defaults,
+      runnerProvider: config.provider,
+    });
+}
+
 function hermesPython(config: RunnerConfig): string {
   return config.env.HERMES_PYTHON ?? process.env.HERMES_PYTHON ?? 'python3';
 }
@@ -1273,6 +1308,7 @@ export function hermesPolicySynchronizer(
       learned: () => profile.learnedSkills(),
       profile: config.hermes,
       vault: profile.vault(),
+      localFallback: localFallbackOf(config),
     });
   }
   const python = hermesPython(config);
@@ -1282,6 +1318,7 @@ export function hermesPolicySynchronizer(
     context: { url: config.url, env: config.env, python },
   });
   return new HermesPolicySynchronizer(client, materializer, {
+    localFallback: localFallbackOf(config),
     inventory: async () =>
       readHermesInventory(materializer.hermesHome, config.hermes, await materializer.planSkills()),
     learned: (skills) => readLearnedSkills(materializer.hermesHome, skills),

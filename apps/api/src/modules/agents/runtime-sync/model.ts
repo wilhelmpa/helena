@@ -103,6 +103,15 @@ export const modelCheck = t.Object(
       }),
     ),
     mismatch: t.Array(t.Union([t.Literal('model'), t.Literal('reasoning')])),
+    // A local model was asked for and the configured one ran instead: local AI (or its server
+    // or model) was off, the server did not answer at the start, or it failed during the run
+    // and Hermes moved to its fallback (docs/helena-decisions/local-ai-platform.md §6.3).
+    fallback: t.Optional(
+      t.Object({
+        from: t.String({ description: 'The local model asked for (`helena-<slug>/<id>`)' }),
+        reason: t.Union([t.Literal('off'), t.Literal('down'), t.Literal('failed')]),
+      }),
+    ),
   },
   {
     description:

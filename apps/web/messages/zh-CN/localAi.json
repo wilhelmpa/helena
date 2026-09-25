@@ -163,5 +163,14 @@
     "low": "简短思考",
     "medium": "思考",
     "high": "深入思考"
+  },
+  "fallback": {
+    "line": "{to}（代替 {from}）",
+    "defaultModel": "默认模型",
+    "reasons": {
+      "off": "本地 AI 已关闭",
+      "down": "本地服务器无法访问",
+      "failed": "本地服务器出错"
+    }
   }
 }

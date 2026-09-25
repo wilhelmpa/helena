@@ -696,7 +696,10 @@ async function main(): Promise<void> {
       ),
     ),
   );
-  process.exit(served.includes(false) ? 1 : 0);
+  // A stop the service manager asked for (a restart after an agent was removed, a deploy)
+  // is a clean exit, even when an agent ended on its way out: a removed agent's key is
+  // refused by then, and systemd would otherwise log every such restart as a failure.
+  process.exit(served.includes(false) && !state.stopping ? 1 : 0);
 }
 
 main().catch((err) => {

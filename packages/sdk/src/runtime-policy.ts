@@ -97,6 +97,8 @@ export interface RuntimeHermesSettings {
 
 export interface RuntimePolicySnapshot {
   revision: string;
+  // The agent's configured model (null: the runtime's default). An older server sends none.
+  model?: string | null;
   runtimePolicy: {
     files: RuntimePolicyFile[];
     // The Hermes toolsets and MCP servers of the Hermes configuration the agent may not use.

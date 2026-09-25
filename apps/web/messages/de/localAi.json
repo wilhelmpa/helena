@@ -163,5 +163,14 @@
     "low": "denkt kurz nach",
     "medium": "denkt nach",
     "high": "denkt gründlich nach"
+  },
+  "fallback": {
+    "line": "{to} statt {from}",
+    "defaultModel": "Standardmodell",
+    "reasons": {
+      "off": "Lokale KI aus",
+      "down": "lokaler Server nicht erreichbar",
+      "failed": "lokaler Server fiel aus"
+    }
   }
 }

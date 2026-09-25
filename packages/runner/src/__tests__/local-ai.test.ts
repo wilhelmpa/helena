@@ -3,7 +3,13 @@ import type { RuntimeLocalAi } from '@helena/sdk';
 import type { RunnerConfig } from '../config';
 import { collectProfile } from '../contributions';
 import { modelProvider, runtimeModel } from '../execute';
-import { hermesLocalAiConfig, localKeyVariables, localRoute } from '../local-ai';
+import {
+  cloudFallback,
+  hermesLocalAiConfig,
+  localKeyVariables,
+  localRoute,
+  withLocalFallback,
+} from '../local-ai';
 import type { RuntimePolicySnapshot } from '../policy';
 // The contribution registers itself where the Hermes materializer is.
 import '../policy';
@@ -42,6 +48,46 @@ function snapshot(localAi: RuntimeLocalAi | null): RuntimePolicySnapshot {
 }
 
 describe('local AI in the runner', () => {
+  it('names the model an agent runs on without local AI for its fallback chain', () => {
+    const providerOf = (model: string) => (model === 'claude-opus-5' ? 'anthropic' : undefined);
+    const defaults = { model: 'gpt-6-luna', provider: 'openai-codex', reasoning: 'low' };
+    expect(cloudFallback({ model: 'claude-opus-5', providerOf, defaults })).toEqual({
+      provider: 'anthropic',
+      model: 'claude-opus-5',
+    });
+    // Its own model is local (or unset): the runtime's default.
+    expect(cloudFallback({ model: 'helena-local/Qwen3.6', providerOf, defaults })).toEqual({
+      provider: 'openai-codex',
+      model: 'gpt-6-luna',
+    });
+    expect(cloudFallback({ model: null, providerOf, defaults: null })).toBeNull();
+    expect(
+      cloudFallback({
+        model: null,
+        providerOf,
+        defaults: { ...defaults, provider: null },
+        runnerProvider: 'openai-codex',
+      }),
+    ).toEqual({ provider: 'openai-codex', model: 'gpt-6-luna' });
+    // A model no provider is known for is no fallback.
+    expect(cloudFallback({ model: 'mystery', providerOf, defaults })).toBeNull();
+  });
+
+  it('puts that model first in the chain only while local AI is on', () => {
+    const configured = [
+      { provider: 'openrouter', model: 'google/gemini-3.6-flash' },
+      { provider: 'openai-codex', model: 'gpt-6-luna' },
+    ];
+    const base = snapshot(LOCAL);
+    const on = { ...base, hermes: { fallbackModels: configured } };
+    const cloud = { provider: 'openai-codex', model: 'gpt-6-luna' };
+    expect(withLocalFallback(on, cloud).hermes?.fallbackModels).toEqual([
+      cloud,
+      { provider: 'openrouter', model: 'google/gemini-3.6-flash' },
+    ]);
+    expect(withLocalFallback({ ...on, localAi: null }, cloud)).toEqual({ ...on, localAi: null });
+    expect(withLocalFallback(on, null)).toBe(on);
+  });
   it('writes each server as a named provider and the helpers with the main model behind them', () => {
     expect(hermesLocalAiConfig(LOCAL)).toEqual({
       providers: {
@@ -52,6 +98,8 @@ describe('local AI in the runner', () => {
           context_length: 65536,
           discover_models: false,
           extra_body: { chat_template_kwargs: { enable_thinking: true } },
+          stale_timeout_seconds: 240,
+          request_timeout_seconds: 900,
           models: {
             'Qwen3.6-35B-A3B-GGUF': { context_length: 131072, supports_vision: true },
             'Tiny-GGUF': {},

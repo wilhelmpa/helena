@@ -163,5 +163,14 @@
     "low": "raciocina brevemente",
     "medium": "raciocina",
     "high": "raciocina a fundo"
+  },
+  "fallback": {
+    "line": "{to} em vez de {from}",
+    "defaultModel": "modelo padrão",
+    "reasons": {
+      "off": "IA local desligada",
+      "down": "servidor local inacessível",
+      "failed": "o servidor local falhou"
+    }
   }
 }

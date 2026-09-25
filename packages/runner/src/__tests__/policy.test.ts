@@ -36,6 +36,7 @@ import {
   type RuntimeStatus,
 } from '../policy';
 import { fakeHermes, type FakeHermes } from './hermes-fake';
+import { localFallbackOf } from '../policy';
 
 const roots: string[] = [];
 // Where Helena answers, for a materializer that writes Helena's own MCP server.
@@ -457,6 +458,81 @@ describe('Hermes runtime policy synchronizer', () => {
     await sync.ensure();
 
     expect(statuses.map(({ status }) => status)).toEqual(['degraded', 'degraded']);
+  });
+
+  it('heads the fallback chain with the cloud model while local AI is on', async () => {
+    const { hermesHome, materializer } = await fixture();
+    const statuses: RuntimeStatus[] = [];
+    const localAi = {
+      servers: [
+        {
+          provider: 'helena-local',
+          baseUrl: 'http://127.0.0.1:13305/api/v1',
+          keyEnv: 'HELENA_MODEL_SERVER_KEY_LOCAL',
+          contextLength: 65536,
+          models: [{ id: 'Qwen3.6-35B-A3B-MTP-GGUF', contextLength: null, vision: false }],
+        },
+      ],
+      helpers: [],
+    };
+    const configured = [{ provider: 'openrouter', model: 'google/gemini-3.6-flash' }];
+    // The agent itself runs on the local model: its fallback is the runtime's default model,
+    // which the runner reads (the fake: gpt-test on test-provider) after the first write.
+    const local = {
+      ...snapshot('sha256:local'),
+      model: 'helena-local/Qwen3.6-35B-A3B-MTP-GGUF',
+      localAi,
+      hermes: { fallbackModels: configured },
+    };
+    const sync = new HermesPolicySynchronizer(
+      client([local, local, local], statuses),
+      materializer,
+      {
+        localFallback: localFallbackOf({
+          provider: 'openai-codex',
+          models: [
+            {
+              id: 'gpt-6-luna',
+              name: 'GPT-6 Luna',
+              reasoning: true,
+              thinkingLevels: ['low'],
+              thinkingDefault: 'low',
+              provider: 'openai-codex',
+            },
+          ],
+        }),
+      },
+    );
+
+    await sync.ensure();
+    expect((await managedConfig(hermesHome)).fallback_providers).toEqual(configured);
+    await sync.ensure();
+    const written = await managedConfig(hermesHome);
+    expect(written.fallback_providers).toEqual([
+      { provider: 'test-provider', model: 'gpt-test' },
+      ...configured,
+    ]);
+    // The local server fails fast enough for the fallback to take over.
+    expect(written).toMatchObject({
+      providers: {
+        'helena-local': { stale_timeout_seconds: 240, request_timeout_seconds: 900 },
+      },
+    });
+
+    // An agent on a cloud model has it first at once; with local AI off nothing changes.
+    const { hermesHome: cloudHome, materializer: cloudMaterializer } = await fixture();
+    const cloud = { ...local, revision: 'sha256:cloud', model: 'gpt-6-luna' };
+    const off = { ...cloud, revision: 'sha256:off', localAi: null };
+    const cloudSync = new HermesPolicySynchronizer(client([cloud, off], []), cloudMaterializer, {
+      localFallback: localFallbackOf({ provider: 'openai-codex', models: [] }),
+    });
+    await cloudSync.ensure();
+    expect((await managedConfig(cloudHome)).fallback_providers).toEqual([
+      { provider: 'openai-codex', model: 'gpt-6-luna' },
+      ...configured,
+    ]);
+    await cloudSync.ensure();
+    expect((await managedConfig(cloudHome)).fallback_providers).toEqual(configured);
   });
 
   it('reports the files it replaced', async () => {

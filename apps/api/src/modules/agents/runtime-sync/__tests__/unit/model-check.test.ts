@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { modelCheckOf, sameModel } from '../../model-check';
+import { claimedModelCheck, modelCheckOf, sameModel, withStoredFallback } from '../../model-check';
 
 describe('the model a run really ran on', () => {
   it('reads a dated or provider-prefixed id and an alias as the same model', () => {
@@ -38,5 +38,48 @@ describe('the model a run really ran on', () => {
       modelCheckOf({ requested: { model: 'x', reasoning: 'high' }, defaults: null, used: null }),
     ).toMatchObject({ configured: { model: 'x', source: 'agent' }, used: null, mismatch: [] });
     expect(modelCheckOf(undefined)).toBeNull();
+  });
+
+  it('reads a local model that the configured one replaced as a fallback, not a mismatch', () => {
+    const local = 'helena-local/Qwen3.6-35B-A3B-MTP-GGUF';
+    // Hermes moved to its fallback during the run.
+    const failed = modelCheckOf({
+      requested: { model: local, reasoning: null, provider: 'helena-local' },
+      defaults: null,
+      used: { model: 'gpt-6-luna', reasoning: 'low', provider: 'openai-codex' },
+    });
+    expect(failed).toMatchObject({ mismatch: [], fallback: { from: local, reason: 'failed' } });
+    // The local model answered: nothing to note.
+    expect(
+      modelCheckOf({
+        requested: { model: local, reasoning: null, provider: 'helena-local' },
+        defaults: null,
+        used: {
+          model: 'Qwen3.6-35B-A3B-MTP-GGUF',
+          reasoning: null,
+          provider: 'custom:helena-local',
+        },
+      }),
+    ).toEqual({
+      configured: { model: local, reasoning: null, source: 'agent' },
+      used: { model: 'Qwen3.6-35B-A3B-MTP-GGUF', reasoning: null, provider: 'custom:helena-local' },
+      mismatch: [],
+    });
+    // The claim already chose the configured model (the server did not answer): the report
+    // keeps that reason.
+    const claimed = claimedModelCheck('gpt-6-luna', 'low', 'agent', {
+      from: local,
+      reason: 'down',
+    });
+    const reported = modelCheckOf({
+      requested: { model: 'gpt-6-luna', reasoning: 'low' },
+      defaults: null,
+      used: { model: 'gpt-6-luna', reasoning: 'low', provider: 'openai-codex' },
+    });
+    expect(withStoredFallback(reported, claimed)).toMatchObject({
+      mismatch: [],
+      fallback: { from: local, reason: 'down' },
+    });
+    expect(withStoredFallback(reported, null)).toBe(reported);
   });
 });

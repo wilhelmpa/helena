@@ -1,4 +1,5 @@
 import type { ModelRoute } from '@/lib/api/endpoints/decisions';
+import type { LocalFallback } from '@/lib/api/endpoints/agentRuntimeSync';
 import { API_URL, ApiError, apiFailure, request } from '@/lib/api/core/client';
 import { pageQuery, type Page, type PageParams } from '@/lib/api/core/paging';
 import { EventSourceParserStream, type EventSourceMessage } from 'eventsource-parser/stream';
@@ -269,6 +270,8 @@ export interface AiChatMessage {
   errorModel?: string | null;
   // What the model router did for the answer (docs/helena-decisions/decisions.md §4).
   modelRoute?: ModelRoute | null;
+  // A local model was asked for and the configured one answered.
+  localFallback?: LocalFallback;
 }
 
 export interface AiChatThreadPage {

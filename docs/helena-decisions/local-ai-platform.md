@@ -427,6 +427,26 @@ starts `hermes --provider helena-local --model <model>`. The key reaches the age
 - **Embeddings** (wired): the knowledge index uses the local embedding model while the class is on
   (`useEmbeddingRoute`, API and worker). While the server is down the same model stays chosen
   (other vectors are another space): search answers from full text, the indexer retries.
+- **A local server that stops never blocks** (found in the live E2E test: with `lemond` stopped a
+  chat on a local model hung for more than five minutes, the profile had `fallback_providers: []`
+  and Hermes parked the turn in its auto-recovery):
+  - *At the start:* the API asks the server before it hands a run or chat answer a local model
+    (its last status when younger than 15 s, else one status call with a 2 s timeout). A server
+    that does not answer, or local AI, its server or its model being off, hands the model the
+    agent runs on without local AI: its own model, or the runtime's default when its own is local
+    (`chooseModelNow`). The run's or answer's model check records it at once.
+  - *During a turn:* while local AI is on, the runner puts that cloud model first in the profile's
+    `fallback_providers` (its catalog names the provider; for the runtime's default it reads the
+    deployment's config.yaml), before the chain the owner configured (`withLocalFallback`). Hermes
+    skips an entry that is the backend that just failed, so a run on the cloud model loses
+    nothing. A refused connection makes Hermes retry (`agent.api_max_retries`, 3) and then switch,
+    in well under a minute; Hermes has no per-provider connect timeout or retry count, so the local
+    provider gets `stale_timeout_seconds: 240` and `request_timeout_seconds: 900` for a server
+    that accepts and hangs.
+  - *Shown:* the model check carries `fallback: {from, reason}` (`off`, `down`, `failed`, the
+    last when the session ran on a non-local provider although a local model was asked for), which
+    is no mismatch; the chat answer and the run say "gpt-6-luna statt Qwen3.6-… · lokaler Server
+    nicht erreichbar".
 - **Which model answered** is on every run already (the model check: configured vs used, with
   the provider); a local provider reads "lokal".
 - Price: `price()` answers 0 for a local provider or id (`source: 'local'`), so budgets and the

@@ -30,7 +30,12 @@ import {
 import { appendReasoningPart, appendTextPart } from '../chat-parts';
 import type { ChatMessageDTO, ChatMessagePage, ChatPart, ChatThreadPage } from '../model';
 import { touchRunner, type RunnerAgent } from '../runner/service';
-import { modelCheckOf, type RunModelReport } from '../runtime-sync/model-check';
+import {
+  claimedModelCheck,
+  modelCheckOf,
+  withStoredFallback,
+  type RunModelReport,
+} from '../runtime-sync/model-check';
 import { routeRequest, routesOfChatMessages } from '#modules/model-router/service';
 import type { AgUiEventBody, ChatMessageStatus } from './model';
 import { notifyChatAnswer } from './wake';
@@ -44,7 +49,11 @@ import {
   type MessageTree,
 } from './branches';
 import { publishDomainEvent } from '#shared/helena';
-import { effectiveModelNow, localCatalogModelsNow } from '#modules/local-ai/service';
+import {
+  chooseModelNow,
+  effectiveModelNow,
+  localCatalogModelsNow,
+} from '#modules/local-ai/service';
 import type { RuntimeFailure } from '@helena/sdk';
 import {
   annotateCatalog,
@@ -356,6 +365,7 @@ export async function getThreadMessages(
         durationMs:
           r.startedAt && r.finishedAt ? r.finishedAt.getTime() - r.startedAt.getTime() : null,
         modelRoute: routes.get(r.id) ?? null,
+        ...localFallbackOf(r.modelCheck),
       }),
       ...(r.status === 'canceled' ? { stopped: true } : {}),
       ...failedFields(r),
@@ -368,6 +378,15 @@ export async function getThreadMessages(
     nextPage: end - PAGE_SIZE > 0 ? page + 1 : null,
     ...(activeAnswer && { activeAnswer }),
   };
+}
+
+// The model check's fallback of an answer: a local model was asked for and the configured
+// one answered.
+function localFallbackOf(check: unknown): {
+  localFallback?: NonNullable<ChatMessageDTO['localFallback']>;
+} {
+  const fallback = (check as { fallback?: ChatMessageDTO['localFallback'] } | null)?.fallback;
+  return fallback && typeof fallback.from === 'string' ? { localFallback: fallback } : {};
 }
 
 // Why a failed answer failed: its error, and the code and model of a failure the runtime
@@ -872,11 +891,17 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
   const chosen = row.model
     ? { model: row.model, thinkingLevel: row.thinkingLevel }
     : { model: agent.model, thinkingLevel: agent.thinkingLevel };
-  // A local model only while local AI is on; otherwise the agent's default answers, as
-  // without local AI (docs/helena-decisions/local-ai-platform.md §6).
-  const model = await effectiveModelNow(chosen.model);
-  let settings =
-    model === chosen.model ? chosen : { model, thinkingLevel: model ? chosen.thinkingLevel : null };
+  // A local model only while local AI runs it and its server answers; otherwise the model the
+  // agent answers with without local AI (its own, or the runtime's default when that is local
+  // too), and the answer notes the fallback (docs/helena-decisions/local-ai-platform.md §6.3).
+  const choice = await chooseModelNow(chosen.model, agent.model);
+  let settings = choice.fallback
+    ? {
+        model: choice.model,
+        thinkingLevel:
+          choice.model !== null && choice.model === agent.model ? agent.thinkingLevel : null,
+      }
+    : chosen;
   if (!row.model) {
     const routed = await routeRequest({
       teamId: agent.teamId,
@@ -897,7 +922,19 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
   }
   await db
     .update(agentChatMessage)
-    .set({ model: settings.model, sessionId })
+    .set({
+      model: settings.model,
+      sessionId,
+      // Shown with the answer until its runner reports what really ran (which keeps it).
+      ...(choice.fallback && {
+        modelCheck: claimedModelCheck(
+          settings.model,
+          settings.thinkingLevel,
+          settings.model ? 'agent' : 'default',
+          choice.fallback,
+        ),
+      }),
+    })
     .where(eq(agentChatMessage.id, row.id));
   const earlier = sessionId ? [] : history.slice(-agentChatConfig.historyMessages());
   return {
@@ -1226,7 +1263,14 @@ export async function finishMessage(
   runtime = 'hermes',
 ): Promise<boolean> {
   await touchRunner(agentId);
-  const check = modelCheckOf(result.runtime);
+  // A fallback the claim recorded (local AI off, its server not answering) is kept.
+  const [stored] = result.runtime
+    ? await db
+        .select({ modelCheck: agentChatMessage.modelCheck })
+        .from(agentChatMessage)
+        .where(eq(agentChatMessage.id, messageId))
+    : [];
+  const check = withStoredFallback(modelCheckOf(result.runtime), stored?.modelCheck ?? null);
   // What the session really ran on wins over what the command named on its first line.
   const model = result.runtime?.used?.model ?? result.model;
   if (result.status === 'failed' && result.sessionLost)
