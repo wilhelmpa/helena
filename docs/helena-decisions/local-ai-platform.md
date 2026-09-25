@@ -393,7 +393,7 @@ Two new registries in `@helena/sdk` (`local-ai.ts`), registered by the internal 
   the ability its model needs, its priority, whether it is experimental or wired, and its eval.
 
 Data: `helena_model_server` (servers, last models and status), `helena_local_ai_eval` (every eval
-run) — migration `0178_helena_local_ai` (renumber if the hub takes 0178 first); the policy is one `app_setting`
+run) — migration `0179_helena_local_ai` (after hub/dashboard's 0178); the policy is one `app_setting`
 (`localAi.policy`). The key is never stored in a table: a key file below `/etc/helena` (the
 installer's; any other path is refused, so no setting can make Helena send another file's
 content) or the Administrator's key encrypted in `app_secret`.
@@ -615,12 +615,14 @@ the card and Administrator → Browser-Steuerung show the same state.
 "Lokale KI" (owner, group `system`, order 55): An/Aus, the GPU's load as a bar, the model in
 memory or "Server nicht erreichbar" in red; a click opens this card in a dialog (master switch,
 units, kinds of work, Jev / Laya). Hidden until a model server is set up. Red problems go to
-"Braucht dich" through a `needsYouSources` entry (order 15), only while local AI is on: an
-enabled server that does not answer, and a switched-on class whose model failed its newest eval
-(§6.6). Both link to Administrator → Lokale KI. Built and click-checked against hub/dashboard
-on a local branch (`local-ai-dashboard`, patches also in `~/agent-work/local-ai/dashboard-tile/`);
-it lands on hub/local-ai once hub/dashboard is in the hub (one line in
-`extensions/homeWidgets.tsx`, `LocalAiTile.tsx`, `localAiProblems.ts`, 10 locales).
+"Braucht dich" through a `needsYouSources` entry (order 18, after the machine's and the host
+audit's), only while local AI is on: an enabled server that does not answer, and a switched-on
+class whose model failed its newest eval (§6.6). Both link to Administrator → Lokale KI.
+
+**On Administrator → Server** (hub/server-admin): the host capability `local-ai` (area
+`overview`, order 50) gives one health line per enabled server (`localAiServerUp`/`Down`, amber
+when down: the agents fall back, and the red line is the one in "Braucht dich"), and the
+`server-section` `local-ai` shows this card under the machine's own sections.
 
 ## 8. Security
 
@@ -637,8 +639,8 @@ only; nothing runs with `trust_remote_code`.
 | Branch | What connects | Done here | To do at merge |
 |---|---|---|---|
 | hub/update-center (merged) | `UpdateSource` `local-ai`, check only: Lemonade and FastFlowLM versions (GitHub Atom feeds), each model's installed revision vs its repository's newest, a newer model of the same family (Qwen3.6 → Qwen3.7), and the watch list (`MODEL_WATCH`: Qwen Flash-Next, Qwen4 MoE) as "neues Modell verfügbar"; switching stays an owner click after a new eval | registered by `helena.local-ai` (`provides.updateSources`) | – |
-| hub/server-admin | `HostCapability` `local-ai` (area `local-ai`, health lines per server) and the `admin-section` slot with `LocalAiSettingsView` | `localAiHostCapability` (mirrored), the view is mountable | register both; messages `server.health.local-ai.server-{up,down}`; `dkms install -k` for every kernel |
-| hub/dashboard | the figure tile and the red problems (§7.5) | built against its branch, click-checked (tile off/on/down, dialog, both problems, phone) | after it lands: merge the hub, apply the tile commit; its migration is also 0178 — whichever lands second is renumbered (the local branch has this one as 0179) |
+| hub/server-admin (merged) | `HostCapability` `local-ai` on the overview and the `server-section` with the card (§7.5) | registered by `helena.local-ai` (API) and `extensions/serverSections` (web); messages `server.health.localAiServerUp/Down` in 10 locales | its fan installer builds DKMS for the running kernel only: `kernel.sh dkms` after it |
+| hub/dashboard | the figure tile and the red problems (§7.5) | merged into this branch with the tile; click-checked (tile off/on/down, dialog, both problems, phone) | – (migration renumbered to 0179) |
 | hub/browser-task (merged) | the Jev toggle uses its instance setting; Laya `--rocm` (§4.6) | the toggle uses its queries (`useInstanceBrowserControlQuery`, same cache as its page); `--rocm` built into its merged installer and server | its owner reviews the Laya change |
 | hub/decisions | `decide()` with a local "logit readout" backend on this endpoint | the interface of §6.6 (class registration, `resolveLocalRoute`, the endpoint, logprobs verified) | it registers its own classes (router, mail, receipts); no decision classes here |
 | hub/second-brain (merged) | the local embedding route | `useEmbeddingRoute(localAiEmbeddingRoute)` in API and worker | the owner's pgvector/embedding decision (§5.4) |

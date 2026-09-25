@@ -56,7 +56,9 @@
     "fansAuto": "Fans automatic.",
     "memoryPressure": "Memory is tight: only {available} free.",
     "memoryOk": "Memory: {available} free.",
-    "healthFailed": "The health could not be read."
+    "healthFailed": "The health could not be read.",
+    "localAiServerUp": "Local AI: {name} is reachable",
+    "localAiServerDown": "Local AI: {name} does not answer"
   },
   "overview": {
     "machine": "Machine",

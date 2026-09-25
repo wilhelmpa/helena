@@ -46,7 +46,6 @@ VULKAN_SHA256=69e26c5e577e1c17dec0b59d3146f008424297a2c64a92fa445365e264585667
 # tree for the HIP build and Laya, every wheel hash-pinned in rocm-requirements.txt.
 ROCM_VERSION=10.0.0
 ROCM_INDEX=https://stable.repo.amd.com/rocm/whl-next/
-ROCM_VENV=/opt/helena-ai/rocm-${ROCM_VERSION}
 ROCM_PYTHON=/usr/bin/python3.13
 # From trixie-backports, at exactly these versions (preferences.d/helena-ai).
 BPO_PINS="libcpp-httplib0.41=0.41.0+ds-3~bpo13+1"
@@ -54,7 +53,10 @@ XRT_VERSION=1:2.25.0-4~bpo13+1
 XRT_PACKAGES="libxrt2 libxrt-npu2 libxrt-utils libxrt-utils-npu"
 
 PORT=13305
-ETC=/etc/helena
+# Where the installer keeps its state. Tests point HELENA_AI_TEST_ROOT at a temporary directory
+# so a dry run reads that instead of the machine's (only with --dry-run, checked below).
+R=${HELENA_AI_TEST_ROOT:-}
+ETC=$R/etc/helena
 KEY=$ETC/local-ai.key
 # The group the API reads the key through: on Kingston the API user's secrets group
 # `volition-plan-secrets` (there is no group `volition-plan`); after the rename helena-secrets.
@@ -69,9 +71,12 @@ api_group() {
 }
 API_GROUP=$(api_group)
 LIB=/usr/local/lib/helena-ai
-OPT=/opt/helena-ai
-MODELS=/var/lib/helena-ai/models
-DOWNLOADS=/var/cache/helena-ai/downloads
+OPT=$R/opt/helena-ai
+# The ROCm tree; native/laya/install.sh --rocm uses it too (a fixed path there).
+ROCM_VENV=$OPT/rocm-${ROCM_VERSION}
+MODELS=$R/var/lib/helena-ai/models
+CACHE=$R/var/cache/helena-ai
+DOWNLOADS=$CACHE/downloads
 DROPIN=/etc/systemd/system/lemond.service.d/helena.conf
 PREFERENCES=/etc/apt/preferences.d/helena-ai
 PROXY_SOCKET=/etc/systemd/system/helena-ai-proxy.socket
@@ -96,6 +101,7 @@ while [ $# -gt 0 ]; do
   shift
 done
 [ -n "$command" ] || { sed -n '2,22p' "$0"; exit 2; }
+[ -z "$R" ] || [ "$DRY_RUN" = 1 ] || { echo "HELENA_AI_TEST_ROOT is for --dry-run only" >&2; exit 2; }
 
 say() { printf '%s\n' "$*"; }
 run() { if [ "$DRY_RUN" = 1 ]; then say "would: $*"; else "$@"; fi; }
@@ -186,25 +192,25 @@ install_rocm() {
     command -v uv >/dev/null || die "uv is missing (/usr/local/bin/uv, as for Hermes)"
     [ -x "$ROCM_PYTHON" ] || die "$ROCM_PYTHON is missing"
   fi
-  run install -d -m 0755 /var/cache/helena-ai/uv
-  run env UV_CACHE_DIR=/var/cache/helena-ai/uv uv venv -q -p "$ROCM_PYTHON" "$ROCM_VENV"
+  run install -d -m 0755 "$CACHE/uv"
+  run env UV_CACHE_DIR="$CACHE/uv" uv venv -q -p "$ROCM_PYTHON" "$ROCM_VENV"
   # --require-hashes: every wheel must match the hash recorded in rocm-requirements.txt (AMD's
   # index publishes none of its own). Installed ≈ 8 GB: SDK devel 4.3 GB (hipcc, headers, and
   # the libraries llama.cpp links), core 1.4 GB, PyTorch 0.9 GB, Triton 1.4 GB.
-  run env UV_CACHE_DIR=/var/cache/helena-ai/uv uv pip install -q --python "$ROCM_VENV/bin/python" \
+  run env UV_CACHE_DIR="$CACHE/uv" uv pip install -q --python "$ROCM_VENV/bin/python" \
     --require-hashes --index-url "$ROCM_INDEX" --extra-index-url https://pypi.org/simple \
     --index-strategy unsafe-best-match -r "$here/rocm-requirements.txt"
   run chmod -R go-w "$ROCM_VENV"
   # The unpacked wheels in uv's cache are as large as the venv (8 GB); a reinstall downloads
   # the same hash-pinned files again.
-  run rm -rf /var/cache/helena-ai/uv
+  run rm -rf "$CACHE/uv"
 }
 
 # llama.cpp's HIP backend for gfx1151, built from the pinned commit against the ROCm above.
 build_llama_hip() {
   dest=$OPT/llamacpp/rocm-$LLAMA_TAG
   if [ -x "$dest/llama-server" ]; then say "have $dest"; return; fi
-  src=/var/cache/helena-ai/build/llama.cpp-$LLAMA_TAG
+  src=$CACHE/build/llama.cpp-$LLAMA_TAG
   run rm -rf "$src"
   run install -d -m 0755 "$src"
   run tar --no-same-owner -xzf "$DOWNLOADS/$LLAMA_SRC" -C "$src" --strip-components=1
@@ -509,7 +515,7 @@ uninstall() {
   run rm -rf "$LIB" "$OPT/llamacpp"
   if [ "$PURGE" = 1 ]; then
     # Only this installer's key: /etc/helena also holds other keys (native/laya).
-    run rm -rf "$KEY" "$MODELS" "$DOWNLOADS" /var/cache/helena-ai "$ROCM_VENV"
+    run rm -rf "$KEY" "$MODELS" "$DOWNLOADS" "$CACHE" "$ROCM_VENV"
     run rmdir --ignore-fail-on-non-empty "$OPT"
   else
     # The ROCm tree stays: Laya (--rocm) may use its PyTorch.

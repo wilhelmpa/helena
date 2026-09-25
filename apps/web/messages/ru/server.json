@@ -56,7 +56,9 @@
     "fansAuto": "Вентиляторы в автоматическом режиме.",
     "memoryPressure": "Мало памяти: свободно только {available}.",
     "memoryOk": "Память: свободно {available}.",
-    "healthFailed": "Не удалось прочитать состояние."
+    "healthFailed": "Не удалось прочитать состояние.",
+    "localAiServerUp": "Локальный ИИ: {name} доступен",
+    "localAiServerDown": "Локальный ИИ: {name} не отвечает"
   },
   "overview": {
     "machine": "Машина",

@@ -56,7 +56,9 @@
     "fansAuto": "Lüfter automatisch.",
     "memoryPressure": "Arbeitsspeicher knapp: nur noch {available} frei.",
     "memoryOk": "Arbeitsspeicher: {available} frei.",
-    "healthFailed": "Der Zustand konnte nicht gelesen werden."
+    "healthFailed": "Der Zustand konnte nicht gelesen werden.",
+    "localAiServerUp": "Lokale KI: {name} ist erreichbar",
+    "localAiServerDown": "Lokale KI: {name} antwortet nicht"
   },
   "overview": {
     "machine": "Maschine",

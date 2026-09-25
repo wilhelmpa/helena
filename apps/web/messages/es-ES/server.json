@@ -56,7 +56,9 @@
     "fansAuto": "Ventiladores en automático.",
     "memoryPressure": "Memoria escasa: solo quedan {available} libres.",
     "memoryOk": "Memoria: {available} libres.",
-    "healthFailed": "No se pudo leer el estado."
+    "healthFailed": "No se pudo leer el estado.",
+    "localAiServerUp": "IA local: {name} está accesible",
+    "localAiServerDown": "IA local: {name} no responde"
   },
   "overview": {
     "machine": "Máquina",

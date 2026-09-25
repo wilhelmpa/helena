@@ -56,7 +56,9 @@
     "fansAuto": "风扇自动调节。",
     "memoryPressure": "内存紧张：仅剩 {available} 可用。",
     "memoryOk": "内存：{available} 可用。",
-    "healthFailed": "无法读取健康状态。"
+    "healthFailed": "无法读取健康状态。",
+    "localAiServerUp": "本地 AI：{name} 可访问",
+    "localAiServerDown": "本地 AI：{name} 无响应"
   },
   "overview": {
     "machine": "机器",

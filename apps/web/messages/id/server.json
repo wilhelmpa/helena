@@ -56,7 +56,9 @@
     "fansAuto": "Kipas otomatis.",
     "memoryPressure": "Memori menipis: hanya {available} yang bebas.",
     "memoryOk": "Memori: {available} bebas.",
-    "healthFailed": "Kondisi tidak dapat dibaca."
+    "healthFailed": "Kondisi tidak dapat dibaca.",
+    "localAiServerUp": "AI lokal: {name} terjangkau",
+    "localAiServerDown": "AI lokal: {name} tidak menjawab"
   },
   "overview": {
     "machine": "Mesin",

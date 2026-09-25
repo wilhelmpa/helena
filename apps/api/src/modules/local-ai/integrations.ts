@@ -1,25 +1,18 @@
 import { listModelServers, readModelServerKey, type ModelServerRow } from '@repo/db';
-import type { LocalizedText, UpdateCandidate, UpdateCheckContext, UpdateSource } from '@helena/sdk';
+import type {
+  HostCapability,
+  HostHealthItem,
+  LocalizedText,
+  UpdateCandidate,
+  UpdateCheckContext,
+  UpdateSource,
+} from '@helena/sdk';
 import { serverContext } from './service';
 
 // Local AI in the extension points of other features (docs/helena-decisions/local-ai-platform.md
-// §9): an update source for Administrator → Updates (`updateSources`, registered by the
-// `helena.local-ai` plugin) and a host capability for Administrator → Server (hub/server-admin,
-// `hostCapabilities`). hub/server-admin is not merged yet, so its contract is mirrored here
-// (same field names, same meaning); after its merge the capability is registered too and the
-// mirror goes.
-
-// ── mirror of @helena/sdk HostCapability (hub/server-admin, packages/sdk/src/host.ts) ────
-
-export type LocalAiHealthState = 'ok' | 'attention' | 'critical' | 'unknown';
-
-export interface LocalAiHealthItem {
-  id: string;
-  state: LocalAiHealthState;
-  code?: string;
-  values?: Record<string, string | number>;
-  since?: string | null;
-}
+// §9), both registered by the `helena.local-ai` plugin: an update source for Administrator →
+// Updates (`updateSources`) and a host capability for Administrator → Server
+// (`hostCapabilities`, hub/server-admin): the model servers' health lines on the overview.
 
 // ── Versions ───────────────────────────────────────────────────────────────────────────
 
@@ -307,29 +300,28 @@ export const localAiUpdateSource: UpdateSource = {
 
 // ── The host capability ────────────────────────────────────────────────────────────────
 
-export const localAiHostCapability = {
+// On the Server overview (its web section shows the card with the units and models there). A
+// server that does not answer is amber here: the agents fall back to their configured models.
+// While local AI is on, Start's "Braucht dich" lists it in red (the local AI source, which
+// links to where it is fixed), so the machine's own red list does not repeat it.
+export const localAiHostCapability: HostCapability = {
   id: 'local-ai',
-  label: { i18n: 'localAi.title' } as LocalizedText,
-  // Its own tab in Administrator → Server (an `admin-section` slot of the same id).
-  area: 'local-ai',
-  order: 10,
+  label: { i18n: 'localAi.title' },
+  area: 'overview',
+  order: 50,
   async probe() {
     const servers = await listModelServers();
     return servers.length > 0
       ? { available: true }
-      : { available: false, reason: 'not_installed' as const, detail: 'No local model server' };
+      : { available: false, reason: 'not_installed', detail: 'No local model server' };
   },
-  async health(): Promise<LocalAiHealthItem[]> {
+  async health(): Promise<HostHealthItem[]> {
     return (await listModelServers())
       .filter((server) => server.enabled)
       .map((server) => ({
         id: `local-ai:${server.slug}`,
-        state: !server.status
-          ? ('unknown' as const)
-          : server.status.reachable
-            ? ('ok' as const)
-            : ('attention' as const),
-        code: server.status?.reachable ? 'local-ai.server-up' : 'local-ai.server-down',
+        state: !server.status ? 'unknown' : server.status.reachable ? 'ok' : 'attention',
+        code: server.status?.reachable ? 'localAiServerUp' : 'localAiServerDown',
         values: { name: server.name },
         since: server.checkedAt ? server.checkedAt.toISOString() : null,
       }));

@@ -3,9 +3,14 @@
     python3 -m unittest discover -s deployment/volition-stack/native/local-ai/tests
 """
 
+from __future__ import annotations
+
 import json
+import os
 import re
+import shutil
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -13,9 +18,25 @@ HERE = Path(__file__).resolve().parent
 SCRIPT = HERE.parent / 'install.sh'
 CATALOG = HERE.parent / 'models.tsv'
 
+# The installer's state (downloads, /opt/helena-ai, models, the key) in a temporary directory, so a
+# dry run on a machine where local AI is installed reads that instead ("have …" otherwise).
+ROOT = tempfile.mkdtemp(prefix='helena-ai-test-')
+OPT = f'{ROOT}/opt/helena-ai'
+
+
+def tearDownModule():
+    shutil.rmtree(ROOT, ignore_errors=True)
+
+
+def run(*args: str, root: str | None = ROOT) -> subprocess.CompletedProcess:
+    env = {**os.environ, 'HELENA_AI_TEST_ROOT': root} if root else dict(os.environ)
+    if not root:
+        env.pop('HELENA_AI_TEST_ROOT', None)
+    return subprocess.run(['sh', str(SCRIPT), *args], capture_output=True, text=True, env=env)
+
 
 def dry(*args: str) -> str:
-    result = subprocess.run(['sh', str(SCRIPT), '--dry-run', *args], capture_output=True, text=True)
+    result = run('--dry-run', *args)
     if result.returncode != 0:
         raise AssertionError(f'install.sh {args} failed:\n{result.stdout}\n{result.stderr}')
     return result.stdout
@@ -40,12 +61,12 @@ class InstallScriptTest(unittest.TestCase):
 
     def test_rocm_is_one_hash_pinned_tree_and_llama_cpp_is_built_for_gfx1151(self):
         out = dry('install')
-        self.assertIn('uv venv -q -p /usr/bin/python3.13 /opt/helena-ai/rocm-10.0.0', out)
+        self.assertIn(f'uv venv -q -p /usr/bin/python3.13 {OPT}/rocm-10.0.0', out)
         self.assertIn('--require-hashes --index-url https://stable.repo.amd.com/rocm/whl-next/', out)
         for flag in ('-DGGML_HIP=ON', '-DAMDGPU_TARGETS=gfx1151', '-DGGML_HIP_ROCWMMA_FATTN=ON',
                      '-DLLAMA_CURL=OFF', '-DCMAKE_BUILD_RPATH=$ORIGIN;'):
             self.assertIn(flag, out)
-        self.assertIn('/opt/helena-ai/llamacpp/rocm-b11166', out)
+        self.assertIn(f'{OPT}/llamacpp/rocm-b11166', out)
         # gfx1151 is native in ROCm 10: no override of the GPU's identity anywhere.
         self.assertIsNone(re.search(r'HSA_OVERRIDE\w*=', SCRIPT.read_text()))
         requirements = (SCRIPT.parent / 'rocm-requirements.txt').read_text()
@@ -57,6 +78,23 @@ class InstallScriptTest(unittest.TestCase):
         self.assertGreaterEqual(len(pinned), 20)
         for block in pinned:
             self.assertIn('--hash=sha256:', block, block.split()[0])
+
+    def test_a_file_already_there_is_kept_not_fetched_again(self):
+        # What made the dry run depend on the machine: an existing, checked download.
+        downloads = Path(ROOT, 'var/cache/helena-ai/downloads')
+        downloads.mkdir(parents=True, exist_ok=True)
+        (downloads / 'llama.cpp-b11166.tar.gz').write_bytes(b'not the release')
+        try:
+            out = dry('install')
+            # A file with the wrong checksum is fetched again, never used.
+            self.assertIn('ggml-org/llama.cpp/archive/refs/tags/b11166.tar.gz', out)
+        finally:
+            (downloads / 'llama.cpp-b11166.tar.gz').unlink()
+
+    def test_the_test_root_is_for_dry_runs_only(self):
+        result = run('status')
+        self.assertEqual(result.returncode, 2)
+        self.assertIn('--dry-run only', result.stderr)
 
     def test_no_rocm_is_vulkan_only(self):
         out = dry('--no-rocm', 'install')
@@ -75,8 +113,8 @@ class InstallScriptTest(unittest.TestCase):
         self.assertFalse(config['broadcast'])
         self.assertFalse(config['telemetry']['enabled'])
         self.assertEqual(config['llamacpp']['backend'], 'rocm')
-        self.assertEqual(config['llamacpp']['rocm_bin'], '/opt/helena-ai/llamacpp/rocm-b11166')
-        self.assertEqual(config['llamacpp']['vulkan_bin'], '/opt/helena-ai/llamacpp/vulkan-b11166')
+        self.assertEqual(config['llamacpp']['rocm_bin'], f'{OPT}/llamacpp/rocm-b11166')
+        self.assertEqual(config['llamacpp']['vulkan_bin'], f'{OPT}/llamacpp/vulkan-b11166')
         self.assertIn('--load-mode none', config['llamacpp']['args'])
         self.assertTrue(config['flm']['prefer_system'])
 
@@ -89,7 +127,7 @@ class InstallScriptTest(unittest.TestCase):
         out = dry('models', 'pull', 'user.Mistral-Small-4-119B-GGUF')
         self.assertIn(
             'ln -sfn ../../../blobs/f51e11020a2f36c542f3bdfda4c7e127d8d2a865e85a982e0a9185fa60d7b8f7 '
-            '/var/lib/helena-ai/models/hub/models--unsloth--Mistral-Small-4-119B-2603-GGUF/snapshots/'
+            f'{ROOT}/var/lib/helena-ai/models/hub/models--unsloth--Mistral-Small-4-119B-2603-GGUF/snapshots/'
             'bd93c721735aa32c035c0f19e738cb3371fd56ff/UD-Q4_K_XL/'
             'Mistral-Small-4-119B-2603-UD-Q4_K_XL-00002-of-00003.gguf', out)
         self.assertIn('resolve/bd93c721735aa32c035c0f19e738cb3371fd56ff/mmproj-F16.gguf', out)
