@@ -167,7 +167,16 @@ export function useUpdateTeamProject() {
 // Drops the project from the cached list immediately (so it disappears even
 // before the refetch resolves) and discards its now-dead per-project caches so it
 // cannot be reopened with stale data. Then refetches the list to reconcile.
+// Projects this page deleted or left. The project layout's route sync would otherwise send
+// the still-open page of such a project to the first remaining project before the caller's
+// own navigation (to Start) lands (found live: deleting a project ended on Familie).
+const forgottenProjectKeys = new Set<string>();
+export function wasProjectForgotten(projectKey: string): boolean {
+  return forgottenProjectKeys.has(projectKey);
+}
+
 function forgetProject(qc: ReturnType<typeof useQueryClient>, projectKey: string) {
+  forgottenProjectKeys.add(projectKey);
   qc.setQueryData<Project[]>(qk.projects, (prev) => prev?.filter((p) => p.key !== projectKey));
   qc.removeQueries({ queryKey: qk.project(projectKey) });
   qc.removeQueries({ queryKey: qk.projectProvisioning(projectKey) });

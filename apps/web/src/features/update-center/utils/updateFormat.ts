@@ -64,12 +64,21 @@ export function runningAction(
 }
 
 // Whether the page should look again soon: a check, a summary or an update is going.
-export function isBusy(center: UpdateCenter | undefined): boolean {
+// An update that just finished is followed a little longer: the API then asks its source
+// again in the background (what is installed now), and the list should show that result
+// without waiting for the next slow poll (found live: the page kept "Aktualisieren" up).
+export const JUST_FINISHED_MS = 2 * 60_000;
+
+export function isBusy(center: UpdateCenter | undefined, now = Date.now()): boolean {
   if (!center) return false;
   return (
     center.job.lastStatus === 'running' ||
     center.items.some((item) => item.summaryPending) ||
-    center.actions.some((action) => action.state === 'running')
+    center.actions.some(
+      (action) =>
+        action.state === 'running' ||
+        (action.finishedAt != null && now - Date.parse(action.finishedAt) < JUST_FINISHED_MS),
+    )
   );
 }
 

@@ -2,13 +2,14 @@ import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Project } from '@/lib/api/endpoints/projects';
 import { projectPath } from '@/utils/paths';
+import { wasProjectForgotten } from '@/services/projects.service';
 import {
   useAccountPreferencesQuery,
   useUpdateAccountPreferences,
 } from '@/services/preferences.service';
 
 // Keeps the routed project and the account in step: it redirects away from a
-// project key that no longer exists, and stores the open project so the index
+// project key that no longer exists (to Start when this page deleted or left it), and stores the open project so the index
 // route reopens it after the next sign-in, on any device. `projectsLoaded` tells
 // an empty list apart from a list that has not arrived yet.
 export function useProjectRouteSync({
@@ -32,6 +33,11 @@ export function useProjectRouteSync({
     if (!projectsLoaded) return;
     if (allowEmpty && !projectKey) return;
     if (projectKey && projects.some((p) => p.key === projectKey)) return;
+    // A project this page just deleted or left: its own flow goes to Start.
+    if (projectKey && wasProjectForgotten(projectKey)) {
+      router.replace('/');
+      return;
+    }
     const first = projects[0]?.key;
     if (first) router.replace(projectPath(first));
   }, [allowEmpty, projectsLoaded, projects, projectKey, router]);

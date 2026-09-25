@@ -153,6 +153,11 @@ describe('updateFormat', () => {
     assert.equal(isBusy(center({ items: [item({ summaryPending: true })] })), true);
     assert.equal(isBusy(center({ actions: [action({})] })), true);
     assert.equal(isBusy(center({ job: { ...center({}).job, lastStatus: 'running' } })), true);
+    const now = Date.parse('2026-09-25T08:00:00Z');
+    const finished = (at: string) =>
+      center({ actions: [action({ state: 'done', finishedAt: at })] });
+    assert.equal(isBusy(finished('2026-09-25T07:59:30Z'), now), true);
+    assert.equal(isBusy(finished('2026-09-25T07:50:00Z'), now), false);
   });
 
   it('writes the version step and the daily time', () => {
