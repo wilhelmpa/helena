@@ -425,7 +425,7 @@ export function auditState(state: CurrentState): string[] {
     if (agent.runtime !== 'hermes') {
       if (!agent.triggerOnMention && !agent.triggerOnAssign && agent.projects.length) {
         findings.push(
-          `starts on no mention or assignment, yet works in ${agent.projects.map((p) => p.key).join(', ')}: a coordinator that delegates to it waits for nothing`,
+          `starts on no mention or assignment, yet works in ${agent.projects.map((p) => p.key).join(', ')}: a task delegated to it never starts a run`,
         );
       }
       lines.push(`${who}: ${findings.length ? findings.join('; ') : 'ok'}`);
