@@ -119,7 +119,7 @@ production. `proof/plan-api.sh` runs a Plan API of the checkout against a test d
 proof/plan-api.sh start && proof/plan-api.sh seed
 sudo python3 proof/harness.py setup --source deployment/volition-stack/isolation
 sudo python3 proof/harness.py start
-sudo python3 proof/harness.py prove            # or --only 1,2,…
+sudo python3 proof/harness.py prove            # or --only 1,2,…  (E: delivered variables and the clone job)
 sudo python3 proof/harness.py teardown --users --all
 ```
 

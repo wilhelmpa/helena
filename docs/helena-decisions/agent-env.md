@@ -249,15 +249,15 @@ print a secret one.
 
 ## 9. Tests
 
-- **@helena/sdk:** `secret-mask.test.ts`, 5 tests.
-- **Runner:** 345 pass, 0 fail. New tests:
+- **@helena/sdk:** `secret-mask.test.ts`, 5 tests. The whole SDK suite: 85 pass, 0 fail.
+- **Runner:** the whole suite, 345 pass, 0 fail. New tests:
   - `agent-env.test.ts`: delivery filter, precedence, Codex arguments, the variable in a real
     child's environment and not in its arguments, the Hermes scratch dir created 0700 and removed,
     the isolated launch header carrying the variable and `TERMINAL_TEMP_DIR=/tmp`, and the stream
     masking a token split across flushes, tool results and errors;
-  - `ssh.test.ts`: pinned fingerprints, the `ssh -G` view of the config, the proxy command through
-    a CONNECT proxy and directly, strict clone ssh with the job's own key, where a clone lands,
-    and the half-made target removed.
+  - `ssh.test.ts`: pinned fingerprints (`ssh-keygen -lf`), the `ssh -G` view of the config, the
+    proxy command through a CONNECT proxy and directly, strict clone ssh with the job's own key,
+    where a clone lands, and the half-made target removed.
 - **API:** `credentials/…/env.test.ts`, 8 tests:
   - names and the deny list;
   - resolution, including the ambiguous case;
@@ -269,11 +269,24 @@ print a secret one.
   - masking of run output/error, timeline, chat content/events/error and transcripts, including a
     rotated value at once.
 
-  `connectors.test.ts` gained a test for the clone's agent choice and job. Suites credentials,
-  connectors, run-timeline, chat, runtime-requests and runner: 175 pass, 0 fail.
-- **Web:** form tests for the switch, the name, the variable kind and reading back. The web suites
-  of teams/utils: 199 pass. `tsc -p apps/web` is clean; eslint and prettier are clean on every
+  `connectors.test.ts` gained a test for the clone's agent choice and job (a real Home agent and
+  the coordinator a new project gets). The whole API suite, on a private Postgres: **2737 pass,
+  16 fail**. The 16 are the known baseline (analytics 5, teams 4, ai agents 4, projects, god teams
+  and columns 1 each); the four ai-agents failures were checked to fail identically on
+  `volition/hub`.
+- **Web:** the whole suite, 807 pass, 0 fail. It includes form tests for the switch, the name, the
+  variable kind and reading back. `tsc -p apps/web` is clean; eslint and prettier are clean on every
   changed file.
+- **Click check** on a private dev stack (API 25560 and web 25561 against Postgres 55523), headless
+  Chrome at 1440×900 and 390×844:
+  - Zugänge list, with the variable row, `$NAME` and whom it is granted to;
+  - the API key dialog, with the switch and the name;
+  - the add menu, with the new kind;
+  - the variable dialog;
+  - Projekt → Einstellungen → Umgebungsvariablen;
+  - the agent editor's section.
+
+  No console errors. Screenshots are in `~/volition/tools/shots-agentenv/`.
 - **Isolation harness:** new proof group **E** (`proof/proof_agent_env.py`, `harness.py prove
   --only E`). It needs root, so the orchestrator runs it. It checks:
   - the variable reaches the command;
@@ -348,6 +361,16 @@ merge and deploy back to back.
      - the workspace's `.git/info/exclude` holds the new path;
      - `git -C <target> log -1` works as the project user.
    - Before that, remove the leftover `/srv/volition/workspaces/home/homepage`.
+
+## Found on the way (not changed here)
+
+- `/opt/volition/runtime/node-v24.21.0-linux-x64` is owned by `plan-kiosk:volition-private`
+  (tar kept the archive's uid). It is the `node` of the runner, the profile helper and every agent's
+  `npx`. It should be `root:root`, as the local-AI tree was fixed on 2026-09-25.
+- An agent that holds several GitHub deploy keys (the Home agent, with VOL's and VERVE's) offers
+  them in id order when it runs git itself. GitHub takes the first key it knows and refuses another
+  repository's deploy key. The clone job now offers only its own key (§8). For agents' own `git
+  push` it is only a problem where one agent works in several projects' repositories.
 
 ## Not verified here
 
