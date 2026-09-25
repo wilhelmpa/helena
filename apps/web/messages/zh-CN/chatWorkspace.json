@@ -258,6 +258,7 @@
       "echo": "使用扬声器时，今后请用“打断”来打断我。戴耳机或使用本地语音时，直接开口也可以。"
     },
     "misheard": "没听清——请再说一遍。",
-    "timings": "上次回答用时 {total} 秒：停顿 {pause} 秒 · 转写 {transcribe} 秒 · 回答 {answer} 秒 · 声音 {voice} 秒"
+    "timings": "上次回答用时 {total} 秒：停顿 {pause} 秒 · 转写 {transcribe} 秒 · 回答 {answer} 秒 · 声音 {voice} 秒",
+    "replyLine": "快速语音回复（{model}）——并非智能体"
   }
 }

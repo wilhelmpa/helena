@@ -368,6 +368,7 @@ export async function getThreadMessages(
         modelRoute: routes.get(r.id) ?? null,
         ...localFallbackOf(r.modelCheck),
       }),
+      ...(r.via === 'voice' ? { via: 'voice' as const } : {}),
       ...(r.status === 'canceled' ? { stopped: true } : {}),
       ...failedFields(r),
     }))

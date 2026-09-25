@@ -539,6 +539,8 @@ export const ChatMessagesResponse = t.Object({
           reason: t.Union([t.Literal('off'), t.Literal('down'), t.Literal('failed')]),
         }),
       ),
+      // Said in the conversation mode (a question), or given by Helena's voice reply (an answer).
+      via: t.Optional(t.Literal('voice')),
     }),
   ),
   nextPage: t.Nullable(t.Number()),

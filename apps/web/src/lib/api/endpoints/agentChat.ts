@@ -272,6 +272,8 @@ export interface AiChatMessage {
   modelRoute?: ModelRoute | null;
   // A local model was asked for and the configured one answered.
   localFallback?: LocalFallback;
+  // Said in the conversation mode, or answered by Helena's voice reply.
+  via?: 'voice';
 }
 
 export interface AiChatThreadPage {

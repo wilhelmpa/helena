@@ -415,16 +415,19 @@ describe('the voice reply', () => {
     const thread = chatOf(asOwner, agent.id).threads({ threadId });
     const items = await until(
       async () => (await thread.messages.get()).data!.items,
-      (list) => list.some((item) => item.role === 'assistant' && item.status === 'success'),
+      (list) => list.some((item) => item.role === 'assistant' && item.durationMs != null),
     );
     const answer = items.find((item) => item.role === 'assistant')!;
     expect(answer.parts).toEqual([{ type: 'text', text: 'Ja, ich höre dich gut.' }]);
     expect(answer.model).toBe('helena-local/Qwen3.6-35B-A3B-GGUF');
+    expect(answer.via).toBe('voice');
+    expect(items.find((item) => item.role === 'user')?.via).toBe('voice');
     // The agent's runner never saw it.
     expect((await asAgent['agent-chats'].claim.post()).data!.message).toBeNull();
     // The model heard the conversation's names and the question, and could only hand over.
-    const request = received.findLast((entry) => entry.path === '/api/v1/chat/completions')!
-      .json as { stream: boolean; tools: { function: { name: string } }[] };
+    const request = received
+      .filter((entry) => entry.path === '/api/v1/chat/completions')
+      .at(-1)!.json as { stream: boolean; tools: { function: { name: string } }[] };
     expect(request.stream).toBe(true);
     expect(request.tools.map((tool) => tool.function.name)).toEqual(['hand_to_agent']);
   });

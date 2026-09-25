@@ -258,6 +258,7 @@
       "echo": "On loudspeakers, interrupt me with “Interrupt” from now on. With headphones or the local voice, speaking works too."
     },
     "misheard": "Didn't catch that – please say it again.",
-    "timings": "Last answer after {total} s: pause {pause} s · transcription {transcribe} s · answer {answer} s · voice {voice} s"
+    "timings": "Last answer after {total} s: pause {pause} s · transcription {transcribe} s · answer {answer} s · voice {voice} s",
+    "replyLine": "Fast voice reply ({model}) – not the agent"
   }
 }

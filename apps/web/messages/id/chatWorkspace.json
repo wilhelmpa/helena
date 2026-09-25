@@ -258,6 +258,7 @@
       "echo": "Dengan pengeras suara, mulai sekarang sela saya dengan “Sela”. Dengan headphone atau suara lokal, berbicara juga bisa."
     },
     "misheard": "Tidak terdengar jelas – tolong ulangi.",
-    "timings": "Jawaban terakhir setelah {total} dtk: jeda {pause} dtk · transkripsi {transcribe} dtk · jawaban {answer} dtk · suara {voice} dtk"
+    "timings": "Jawaban terakhir setelah {total} dtk: jeda {pause} dtk · transkripsi {transcribe} dtk · jawaban {answer} dtk · suara {voice} dtk",
+    "replyLine": "Balasan suara cepat ({model}) – bukan agen"
   }
 }
