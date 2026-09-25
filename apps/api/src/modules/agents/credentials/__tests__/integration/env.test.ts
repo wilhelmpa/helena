@@ -198,7 +198,7 @@ describe('credentials as environment variables', () => {
         name: 'CLOUDFLARE_ACCOUNT_ID',
         value: ACCOUNT,
         secret: false,
-        updatedAt: expect.any(String),
+        updatedAt: expect.any(Date),
       },
       {
         id: token.id,
@@ -206,7 +206,7 @@ describe('credentials as environment variables', () => {
         name: 'CLOUDFLARE_API_TOKEN',
         value: VERVE_TOKEN,
         secret: true,
-        updatedAt: expect.any(String),
+        updatedAt: expect.any(Date),
       },
     ]);
 
@@ -411,19 +411,25 @@ describe('what the agents report is masked', () => {
       result: {
         sessions: [
           {
-            id: 's1',
+            id: '20260925_210000_e310ba',
             title: `ran wrangler with ${VERVE_TOKEN}`,
-            preview: null,
+            preview: `CLOUDFLARE_API_TOKEN=${VERVE_TOKEN}`,
             source: 'tool',
-            model: null,
-            startedAt: 1,
-            endedAt: null,
-            lastActiveAt: 1,
-            endReason: null,
-            messageCount: 1,
+            model: 'fake-model',
+            startedAt: 1790238536024,
+            endedAt: 1790238536493,
+            lastActiveAt: 1790238536468,
+            endReason: 'cli_close',
+            messageCount: 4,
             toolCallCount: 1,
-            usage: null,
-            estimatedCostUsd: null,
+            usage: {
+              inputTokens: 2400,
+              outputTokens: 80,
+              cacheReadTokens: 1600,
+              cacheWriteTokens: 0,
+              reasoningTokens: 0,
+            },
+            estimatedCostUsd: 0,
             parentSessionId: null,
           },
         ],
