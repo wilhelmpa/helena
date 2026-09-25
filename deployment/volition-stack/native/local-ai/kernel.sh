@@ -107,7 +107,8 @@ esp_disk() {
 }
 
 trial_bootnum() {
-  efibootmgr 2>/dev/null | sed -n "s/^Boot\\([0-9A-Fa-f]\\{4\\}\\)\\*\\{0,1\\} $TRIAL_LABEL\$/\\1/p" | head -n 1
+  # efibootmgr 18 prints the device path after a tab on the same line.
+  efibootmgr 2>/dev/null | sed -n "s/^Boot\\([0-9A-Fa-f]\\{4\\}\\)\\*\\{0,1\\} $TRIAL_LABEL\\([[:space:]].*\\)\\{0,1\\}\$/\\1/p" | head -n 1
 }
 
 sync_esps() {

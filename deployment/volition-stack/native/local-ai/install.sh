@@ -56,6 +56,18 @@ XRT_PACKAGES="libxrt2 libxrt-npu2 libxrt-utils libxrt-utils-npu"
 PORT=13305
 ETC=/etc/helena
 KEY=$ETC/local-ai.key
+# The group the API reads the key through: on Kingston the API user's secrets group
+# `volition-plan-secrets` (there is no group `volition-plan`); after the rename helena-secrets.
+# HELENA_API_GROUP overrides it (same rule as native/laya/install.sh).
+api_group() {
+  if [ -n "${HELENA_API_GROUP:-}" ]; then echo "$HELENA_API_GROUP"; return; fi
+  local group
+  for group in helena-secrets volition-plan-secrets volition-plan; do
+    if getent group "$group" >/dev/null; then echo "$group"; return; fi
+  done
+  echo volition-plan-secrets
+}
+API_GROUP=$(api_group)
 LIB=/usr/local/lib/helena-ai
 OPT=/opt/helena-ai
 MODELS=/var/lib/helena-ai/models
@@ -267,7 +279,7 @@ install_all() {
   if [ "$NPU" = 1 ] && [ ! -e /dev/accel/accel0 ] && [ "$DRY_RUN" = 0 ]; then
     die "no NPU device (/dev/accel/accel0): boot kernel 7.x first (kernel.sh), or pass --no-npu"
   fi
-  getent group volition-plan >/dev/null || [ "$DRY_RUN" = 1 ] || die "group volition-plan missing (the API's group, it reads the key)"
+  getent group "$API_GROUP" >/dev/null || [ "$DRY_RUN" = 1 ] || die "group $API_GROUP missing (the API's secrets group, it reads the key)"
 
   say "== pins for trixie-backports"
   {
@@ -293,13 +305,13 @@ install_all() {
     fi
   fi
 
-  say "== the key (root:volition-plan 0640; never printed)"
+  say "== the key (root:$API_GROUP 0640; never printed)"
   # Helena's key directory (native/laya keeps its key here too); the key file itself is 0640.
   run install -d -m 0755 -o root -g root "$ETC"
   if [ ! -s "$KEY" ]; then
     if [ "$DRY_RUN" = 1 ]; then say "would create $KEY"; else
       umask 077; head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n' > "$KEY.new"
-      chown root:volition-plan "$KEY.new"; chmod 0640 "$KEY.new"; mv "$KEY.new" "$KEY"
+      chown "root:$API_GROUP" "$KEY.new"; chmod 0640 "$KEY.new"; mv "$KEY.new" "$KEY"
     fi
   fi
 
