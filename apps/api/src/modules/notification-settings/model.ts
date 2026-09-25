@@ -1,7 +1,8 @@
 import { t } from 'elysia';
 import { ENCRYPTION_MODES } from './service';
+import { oneOf } from '#shared/schemas';
 
-const encryption = t.UnionEnum([...ENCRYPTION_MODES]);
+const encryption = oneOf(ENCRYPTION_MODES);
 
 // The redacted settings DTO (NotificationSettingsDto from the service): the
 // team's provider credentials. Secrets are never returned; each is replaced by a

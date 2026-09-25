@@ -5,8 +5,9 @@ import { PermissionMatrixSchema } from '#shared/permissions';
 import { USER_KINDS } from './service';
 import { agentSyncSummary } from '#modules/agents/runtime-sync/model';
 import { runtimeLoginsHealth } from '#modules/runtime-logins/model';
+import { oneOf } from '#shared/schemas';
 
-const encryption = t.UnionEnum(['none', 'ssl', 'tls']);
+const encryption = oneOf(['none', 'ssl', 'tls']);
 
 export const userParams = t.Object({ userId: t.String() });
 
@@ -16,7 +17,7 @@ export const listUsersQuery = t.Object({
   search: t.Optional(t.String()),
   // Agent bot users are accounts too, but they are managed on a project's AI
   // Agents screen, so the directory lists people unless asked otherwise.
-  kind: t.Optional(t.UnionEnum([...USER_KINDS])),
+  kind: t.Optional(oneOf(USER_KINDS)),
   ...pageQueryFields,
 });
 
@@ -48,7 +49,7 @@ export const AuthSettingsResponse = t.Object({
 });
 
 export const AuthSettingsBody = t.Object({
-  registration: t.Optional(t.UnionEnum([...REGISTRATION_MODES])),
+  registration: t.Optional(oneOf(REGISTRATION_MODES)),
   requireEmailVerification: t.Optional(t.Boolean()),
   magicLink: t.Optional(t.Boolean()),
   emailPassword: t.Optional(t.Boolean()),
@@ -150,7 +151,7 @@ export const ScimTokenResponse = t.Object({
 
 const scimGroupMapping = t.Object({
   projectId: t.Integer(),
-  role: t.UnionEnum(['owner', 'member']),
+  role: oneOf(['owner', 'member']),
   // Which project_role a member joins on. Null for an owner (owners bypass the
   // permission matrix) or to fall back to the project's default role.
   roleId: t.Nullable(t.Integer()),

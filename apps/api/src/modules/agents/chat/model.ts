@@ -3,6 +3,7 @@ import { runFailure, unavailableCatalogModel } from '#modules/model-availability
 import { pageQueryFields, pageResponse } from '#shared/pagination';
 import { contextUsageBody, spendBody } from '../model';
 import { runModelReport } from '../runtime-sync/model';
+import { oneOf } from '#shared/schemas';
 
 export { agentParams, projectAgentParams } from '../model';
 
@@ -387,7 +388,7 @@ export const chatListQuery = t.Object({
     }),
   ),
   view: t.Optional(
-    t.UnionEnum(['active', 'archived', 'trash'], {
+    oneOf(['active', 'archived', 'trash'], {
       description: 'The listed chats, the archived ones, or the deleted ones. Default active.',
     }),
   ),
@@ -406,7 +407,7 @@ export const ChatSummaryResponse = t.Object({
   archivedAt: t.Nullable(t.String()),
   deletedAt: t.Nullable(t.String()),
   snippet: t.Optional(t.String()),
-  match: t.Optional(t.UnionEnum(['title', 'user', 'assistant'])),
+  match: t.Optional(oneOf(['title', 'user', 'assistant'])),
   createdAt: t.String(),
   updatedAt: t.String(),
   model: t.Nullable(

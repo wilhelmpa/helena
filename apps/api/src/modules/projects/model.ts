@@ -9,6 +9,7 @@ import { PermissionMatrixSchema } from '#shared/permissions';
 import { LocaleSchema } from '#modules/user-preferences/model';
 import { PROJECT_PRESET_KEYS } from './service';
 import { COPY_INCLUDE_KEYS } from './copy';
+import { oneOf } from '#shared/schemas';
 
 // The description goes into the system prompt of every agent run, where it costs
 // input tokens each time, so it is capped on the way in and cut again in the prompt.
@@ -38,7 +39,7 @@ export const createProjectBody = t.Composite([
   t.Object({
     templateId: t.Optional(t.Integer({ minimum: 1 })),
     preset: t.Optional(
-      t.UnionEnum(PROJECT_PRESET_KEYS, {
+      oneOf(PROJECT_PRESET_KEYS, {
         description: `Issue-type preset: ${PROJECT_PRESET_KEYS.join(', ')}.`,
       }),
     ),

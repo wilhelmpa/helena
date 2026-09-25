@@ -1,5 +1,6 @@
 import { t } from 'elysia';
 import { pageQueryFields, pageResponse } from '#shared/pagination';
+import { oneOf } from '#shared/schemas';
 
 const memberRole = t.Union([t.Literal('owner'), t.Literal('member')]);
 
@@ -34,7 +35,7 @@ export const MemberPageResponse = t.Composite([
 export const memberListQuery = t.Object({
   search: t.Optional(t.String({ description: 'Matches the name, the address or the handle.' })),
   kind: t.Optional(
-    t.UnionEnum(['all', 'human', 'agent'], {
+    oneOf(['all', 'human', 'agent'], {
       description: "Everyone, the people, or the AI agents' bot users. Defaults to everyone.",
     }),
   ),

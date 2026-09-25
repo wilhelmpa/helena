@@ -1,9 +1,10 @@
 import { t } from 'elysia';
 import { HOME_ROOTS, PROJECT_ROOTS } from './roots';
+import { oneOf } from '#shared/schemas';
 
 const filePath = t.String({ maxLength: 1024 });
-const projectRootName = t.Optional(t.UnionEnum([...PROJECT_ROOTS]));
-const homeRootName = t.UnionEnum([...HOME_ROOTS]);
+const projectRootName = t.Optional(oneOf(PROJECT_ROOTS));
+const homeRootName = oneOf(HOME_ROOTS);
 
 export const projectFilesQuery = t.Object({
   root: projectRootName,

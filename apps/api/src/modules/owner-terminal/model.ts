@@ -1,4 +1,5 @@
 import { t } from 'elysia';
+import { oneOf } from '#shared/schemas';
 
 // The only sessions the owner terminal ever starts. Fixed on purpose: nothing in
 // this feature accepts a free-form command, from the API down to the shell script
@@ -31,7 +32,7 @@ export const OwnerTerminalGrantResponse = t.Object({
 });
 
 export const SessionEventBody = t.Object({
-  kind: t.UnionEnum([...OWNER_TERMINAL_KINDS]),
+  kind: oneOf(OWNER_TERMINAL_KINDS),
   name: t.String({ pattern: SESSION_NAME_PATTERN }),
 });
 
