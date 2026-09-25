@@ -72,7 +72,8 @@ install_file() { # mode source target
 
 install_code() {
   ((dry_run)) || install -d -m 0755 "$lib" "$lib/browser"
-  for file in isolation_common.py launcher.py sandbox.py egress.py plan_proxy.py launch_client.py migrate.py; do
+  for file in isolation_common.py launcher.py sandbox.py egress.py plan_proxy.py launch_client.py migrate.py \
+    runtime_modes.py; do
     install_file 0644 "$source_dir/$file" "$lib/$file"
   done
   install_file 0644 "$source_dir/launcher.json" "$lib/launcher.json"
@@ -122,6 +123,29 @@ install_units() {
       run systemctl enable --now "$socket"
     fi
   done
+  return 0
+}
+
+# ── the runtimes' code, readable by every agent ─────────────────────────────────────────
+# The units bind Hermes' venv, its Python and its tools read-only (launcher.json sharedCode);
+# a bind keeps the files' modes, so one only its owner may read fails every agent that imports
+# it (2026-09-25: docstring_parser in the venv was root 0600, and every agent on a Claude
+# model stopped at "credentials or agent init failed"). A repair never stops a deploy: what it
+# cannot open it names, and the hourly audit (files.agent_code) keeps reporting it.
+open_shared_code() {
+  local script=$lib/runtime_modes.py args=(repair --config "$lib/launcher.json") tree trees
+  if [[ ! -f $script ]]; then
+    say "open the agents' shared runtime code to every reader (after install)"
+    return 0
+  fi
+  # The script's own test names its trees; the live ones come from launcher.json.
+  if [[ -n ${ISOLATION_SHARED_CODE:-} ]]; then
+    IFS=: read -ra trees <<<"$ISOLATION_SHARED_CODE"
+    for tree in "${trees[@]}"; do args+=(--tree "$tree"); done
+  fi
+  ((dry_run)) && args+=(--dry-run)
+  "$python" -I "$script" "${args[@]}" \
+    || echo "isolation.sh: some of the agents' runtime code is still closed to them (see above)" >&2
   return 0
 }
 
@@ -235,20 +259,24 @@ case $command in
   install)
     ensure_accounts
     install_code
+    open_shared_code
     install_token
     install_units
     ;;
   sync)
-    # What deploy.sh runs: keeps an installed isolation's code and units current. It installs
-    # nothing new, migrates nothing and restarts no agent; `apply` does that.
+    # What deploy.sh runs: keeps an installed isolation's code and units current and the
+    # agents' runtime code readable for them. It installs nothing new, migrates nothing and
+    # restarts no agent; `apply` does that.
     [[ -f $lib/launcher.py ]] || exit 0
     install_code
+    open_shared_code
     install_units
     run systemctl try-restart volition-agent-launcher.service volition-egress.service volition-agent-plan.service
     ;;
   apply)
     ensure_accounts
     install_code
+    open_shared_code
     install_token
     install_units
     mapfile -t browsers < <(active_browsers)
@@ -289,6 +317,9 @@ case $command in
     if enabled; then echo "AGENT_ISOLATION=on"; else echo "AGENT_ISOLATION=off"; fi
     for unit in "${sockets[@]}"; do printf '%-34s %s\n' "$unit" "$(systemctl is-active "$unit" || true)"; done
     getent group volition-agents | cut -d: -f4 | tr ',' '\n' | sed 's/^/project user: /'
+    if [[ -f $lib/runtime_modes.py ]]; then
+      "$python" -I "$lib/runtime_modes.py" check --config "$lib/launcher.json" | sed 's/^/runtime code: /' || true
+    fi
     ;;
   *)
     sed -n '2,15p' "$0" >&2

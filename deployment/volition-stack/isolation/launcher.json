@@ -40,6 +40,12 @@
   "hide": ["/var/lib/volition", "/srv/volition", "/var/lib/volition-agent-launcher", "/var/lib/volition-egress", "/var/lib/helena-token-keeper"],
   "inaccessible": ["/etc/volition", "/var/lib/volition-google", "/var/lib/postgresql", "/var/lib/redis", "/var/backups", "/var/log"],
   "path": "/usr/local/bin:/usr/bin:/bin",
+  "sharedCode": [
+    "/var/lib/volition/hermes/venv",
+    "/var/lib/volition/hermes/python",
+    "/var/lib/volition/hermes/bin",
+    "/var/lib/volition/hermes/.local/share/uv/tools"
+  ],
   "limits": {
     "memoryMax": "6G",
     "cpuQuota": "400%",

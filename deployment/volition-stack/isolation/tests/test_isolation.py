@@ -699,6 +699,140 @@ class MigrateTest(unittest.TestCase):
             migrate.grant_model_auth(['/nonexistent/auth.json'], 'no-such-group-vpt', migrate.Changes(False))
 
 
+class SharedCodeTest(unittest.TestCase):
+    """The runtimes' code every agent runs is readable by every agent (runtime_modes.py). On
+    2026-09-25 docstring_parser in Hermes' venv was root 0600: the anthropic SDK imports it, so
+    every agent on a Claude model failed at "credentials or agent init failed"."""
+
+    def setUp(self):
+        import runtime_modes  # noqa: PLC0415
+
+        self.modes = runtime_modes
+        self.dir = Path(tempfile.mkdtemp()).resolve()
+        self.tree = self.dir / 'venv'
+        site = self.tree / 'lib' / 'site-packages'
+        (site / 'docstring_parser').mkdir(parents=True)
+        (site / 'anthropic' / '__pycache__').mkdir(parents=True)
+        self.files = {
+            'ok': site / 'anthropic' / '__init__.py',
+            'closed': site / 'docstring_parser' / '__init__.py',
+            'pyc': site / 'anthropic' / '__pycache__' / '_client.cpython-313.pyc',
+            'program': self.tree / 'hermes',
+            'group_writable': site / 'anthropic' / '_client.py',
+        }
+        for path in self.files.values():
+            path.write_text('x')
+        os.chmod(self.files['ok'], 0o644)
+        os.chmod(self.files['closed'], 0o600)
+        os.chmod(self.files['pyc'], 0o600)
+        os.chmod(self.files['program'], 0o744)
+        os.chmod(self.files['group_writable'], 0o664)
+        os.chmod(site / 'anthropic' / '__pycache__', 0o700)
+        # Outside the tree, reached only through a link, which is never followed.
+        self.secret = self.dir / 'secret.json'
+        self.secret.write_text('{}')
+        os.chmod(self.secret, 0o600)
+        os.symlink(self.secret, site / 'linked.json')
+
+    def tearDown(self):
+        for path in self.dir.rglob('*'):
+            if not path.is_symlink():
+                os.chmod(path, 0o700 if path.is_dir() else 0o600)
+        shutil.rmtree(self.dir)
+
+    def mode(self, path: Path) -> int:
+        return stat.S_IMODE(os.lstat(path).st_mode)
+
+    def test_the_shipped_config_lists_the_code_the_hermes_units_bind(self):
+        config = common.load_config(str(config_file(self.dir)), require_root=False)
+        self.assertIn('/var/lib/volition/hermes/venv', config.shared_code)
+        self.assertIn('/var/lib/volition/hermes/python', config.shared_code)
+        hermes = config.runtimes['hermes']
+        bound = hermes.read_only + hermes.optional_read_only
+        for tree in config.shared_code:
+            self.assertTrue(any(common.within(root, tree) for root in bound), tree)
+        # Never a login or a secret: the views and the stores are not code.
+        for tree in config.shared_code:
+            self.assertNotIn('auth', tree)
+            self.assertFalse(tree.endswith(('.env', 'config.yaml')), tree)
+
+    def test_refuses_system_directories(self):
+        for tree in ('/', '/etc', '/etc/volition', '/home/wilhelmpa', '/var/lib', '/usr', 'relative'):
+            with self.subTest(tree=tree), self.assertRaises(common.IsolationError):
+                common.load_config(str(config_file(self.dir, sharedCode=[tree])), require_root=False)
+
+    def test_check_counts_what_breaks_an_import_apart_from_the_bytecode_cache(self):
+        report = self.modes.walk(str(self.tree))
+        # docstring_parser/__init__.py and the program others may read but not run; the cache
+        # folder and its file only cost time.
+        self.assertEqual(report.sources, 2)
+        self.assertEqual(report.unreadable, 4)
+        self.assertEqual(report.examples, ['hermes', 'lib/site-packages/docstring_parser/__init__.py'])
+        self.assertEqual(self.mode(self.files['closed']), 0o600)  # a check changes nothing
+
+    def test_repair_opens_the_tree_to_every_reader_and_follows_no_link(self):
+        os.environ['RUNTIME_MODES_TEST'] = '1'
+        try:
+            dry = self.modes.walk(str(self.tree), repair=True, dry_run=True)
+            self.assertEqual(dry.opened, 4)
+            self.assertEqual(self.mode(self.files['closed']), 0o600)
+            done = self.modes.walk(str(self.tree), repair=True)
+        finally:
+            del os.environ['RUNTIME_MODES_TEST']
+        self.assertEqual((done.opened, done.skipped), (4, 0))
+        self.assertEqual(self.mode(self.files['closed']), 0o644)
+        self.assertEqual(self.mode(self.files['pyc']), 0o644)
+        self.assertEqual(self.mode(self.files['pyc'].parent), 0o755)
+        self.assertEqual(self.mode(self.files['program']), 0o755)
+        self.assertEqual(self.mode(self.files['ok']), 0o644)
+        self.assertEqual(self.mode(self.files['group_writable']), 0o664)  # readable already: left as is
+        self.assertEqual(self.mode(self.secret), 0o600)
+        self.assertEqual(self.modes.walk(str(self.tree)).unreadable, 0)
+
+    def test_repair_takes_write_away_from_group_and_others(self):
+        self.assertEqual(self.modes.opened_mode(stat.S_IFREG | 0o620), 0o644)
+        self.assertEqual(self.modes.opened_mode(stat.S_IFREG | 0o700), 0o755)
+        self.assertEqual(self.modes.opened_mode(stat.S_IFDIR | 0o2770), 0o2755)
+
+    def test_a_file_with_a_second_name_of_another_owner_is_left_alone(self):
+        # The owner of a tree could link its own secret into it; only root's links are opened.
+        other = self.dir / 'elsewhere'
+        os.link(self.files['closed'], other)
+        done = self.modes.walk(str(self.tree), repair=True)
+        if os.geteuid() == 0:
+            self.skipTest('as root every multi-linked file is root\'s')
+        self.assertEqual(done.skipped, 1)
+        self.assertEqual(self.mode(other), 0o600)
+
+    def test_a_missing_tree_is_reported_not_an_error(self):
+        report = self.modes.walk(str(self.dir / 'nothing'))
+        self.assertFalse(report.exists)
+        self.assertEqual(report.unreadable, 0)
+
+    def test_command_line(self):
+        import contextlib  # noqa: PLC0415
+        import io  # noqa: PLC0415
+
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = self.modes.main(['check', '--config', '/nonexistent', '--tree', str(self.tree), '--json'])
+        self.assertEqual(code, 1)
+        tree = json.loads(out.getvalue())['trees'][0]
+        self.assertEqual((tree['sources'], tree['unreadable']), (2, 4))
+        os.chmod(self.files['closed'], 0o644)
+        os.chmod(self.files['program'], 0o755)
+        with contextlib.redirect_stdout(io.StringIO()):
+            # Only the bytecode cache left: slower, not broken.
+            self.assertEqual(self.modes.main(['check', '--config', '/nonexistent', '--tree', str(self.tree)]), 0)
+        if os.geteuid() != 0:
+            with contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(self.modes.main(['repair', '--config', '/nonexistent', '--tree', str(self.tree)]), 2)
+
+    def test_reads_the_trees_from_the_launcher_config(self):
+        path = config_file(self.dir, sharedCode=[str(self.tree)])
+        self.assertEqual(self.modes.shared_code(str(path)), (str(self.tree),))
+
+
 @unittest.skipUnless(sys.platform.startswith('linux') and shutil.which('bash'), 'isolation.sh runs on Linux')
 class IsolationScriptTest(unittest.TestCase):
     """isolation.sh against a temporary tree, with systemctl and the account tools stubbed."""
@@ -720,15 +854,26 @@ class IsolationScriptTest(unittest.TestCase):
                 'PATH': f'{stubs}:/usr/bin:/bin', 'ISOLATION_TEST': '1', 'ISOLATION_LIB': str(directory / 'lib'),
                 'ISOLATION_UNITS': str(directory / 'units'), 'ISOLATION_TOKEN': str(directory / 'token'),
                 'ISOLATION_HERMES_HOME': str(directory / 'hermes'), 'ISOLATION_BROWSER_STATE': str(directory / 'browser'),
+                # The agents' runtime code (launcher.json sharedCode), here a tree of the test's.
+                'ISOLATION_SHARED_CODE': str(directory / 'venv'), 'RUNTIME_MODES_TEST': '1',
             }
+            closed = directory / 'venv' / 'docstring_parser' / '__init__.py'
+            closed.parent.mkdir(parents=True)
+            closed.write_text('x')
+            closed.chmod(0o600)
             script = ISOLATION.parent / 'native' / 'isolation.sh'
             dry = subprocess.run(['bash', str(script), 'install', '--dry-run'], env=env, capture_output=True, text=True)
             self.assertEqual(dry.returncode, 0, dry.stderr)
             self.assertIn('would create group volition-agents', dry.stdout)
             self.assertFalse((directory / 'lib').exists())
             self.assertFalse((directory / 'token').exists())
+            self.assertIn("would open the agents' shared runtime code", dry.stdout)
+            self.assertEqual(stat.S_IMODE(closed.stat().st_mode), 0o600)
             done = subprocess.run(['bash', str(script), 'install'], env=env, capture_output=True, text=True)
             self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertTrue((directory / 'lib/runtime_modes.py').is_file())
+            self.assertIn('opened 1 of 1 unreadable entries', done.stdout)
+            self.assertEqual(stat.S_IMODE(closed.stat().st_mode), 0o644)
             self.assertTrue((directory / 'lib/launcher.py').is_file())
             self.assertTrue((directory / 'units/volition-egress.socket').is_file())
             self.assertEqual(stat.S_IMODE((directory / 'token').stat().st_mode), 0o600)
