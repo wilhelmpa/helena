@@ -11,6 +11,13 @@ Decision and build record of `hub/agent-context`, 2026-09-25/26. It builds the "
 - Goals reach the agents: in their context, through four MCP tools, as a link on tasks, and on the goal pages with progress, workers and status proposals.
 - Helena's MCP server tells Claude Code and Codex the truth about Helena (no "Itsaplan", no "never commit").
 
+**Standards and framework (oss §3a/§3b).** Nothing new is built where a layer already has the mechanism, and no dependency is added.
+- The bundled skills are seeded by Hermes' own `sync_skills`.
+- Compression is Hermes' own configuration, written through a profile contribution.
+- Chat learning is an internal plugin subscribing to the framework's `helena.chat.message` domain event.
+- The goal tools are ordinary route tools of Helena's MCP server, annotated with the D-C1 categories.
+- Public links use the one origin Helena is configured with.
+
 ## 1. Workspace context (audit §3.1, §3.2)
 
 **Problem.** The workspace `AGENTS.md`, which Hermes loads into every run's system prompt (`agent/prompt_builder.py` AGENTS.md chain), still said `browser_exec` and "Plan". `PROJECT.json` linked to `http://kingston-server.local`, set as `PLAN_PUBLIC_URL` in the provisioning unit. And its `organizationInstructions` was always empty: the coordinator bootstrap answered `projectInstructions: ''` whatever the project held.
