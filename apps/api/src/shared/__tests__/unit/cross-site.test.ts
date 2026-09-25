@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 import { crossSiteRefusal } from '../../cross-site';
 
+const OWN = ['https://helena.example.com', 'https://helena-home.example.com'];
+
 function request(method: string, headers: Record<string, string>) {
   return new Request('http://localhost/projects', { method, headers });
 }
@@ -27,15 +29,18 @@ describe('crossSiteRefusal (Fetch Metadata)', () => {
       ['OPTIONS', { cookie: 's=1', 'sec-fetch-site': 'cross-site' }],
       ['POST', { 'x-api-key': 'k', 'sec-fetch-site': 'cross-site' }],
       ['POST', {}],
+      // The web app on another origin of Helena's own (APP_URL), e.g. web and API on two ports.
+      ['POST', { cookie: 's=1', 'sec-fetch-site': 'same-site', origin: OWN[1]! }],
     ];
     for (const [method, headers] of cases) {
-      expect(crossSiteRefusal(request(method, headers))).toBeNull();
+      expect(crossSiteRefusal(request(method, headers), OWN)).toBeNull();
     }
   });
 
   it('says why', async () => {
     const refusal = crossSiteRefusal(
       request('POST', { cookie: 's=1', 'sec-fetch-site': 'same-site' }),
+      OWN,
     )!;
     expect(((await refusal.json()) as { code: string }).code).toBe('cross_site_refused');
     expect(refusal.headers.get('cache-control')).toBe('no-store');

@@ -121,6 +121,30 @@ describe('the cross-site guard on the API', () => {
     // Reading stays possible (CORS decides whether the page may see the answer).
     const read = await call('/me', { cookie: owner.cookie, 'sec-fetch-site': 'same-site' });
     expect(read.status).toBe(200);
+    // Nor from the notes' own origin, which is not one of Helena's.
+    const withOrigin = await call(
+      '/projects',
+      {
+        cookie: owner.cookie,
+        'content-type': 'application/json',
+        'sec-fetch-site': 'same-site',
+        origin: 'http://localhost:8446',
+      },
+      { method: 'POST', body },
+    );
+    expect(withOrigin.status).toBe(403);
+    // The web app on another origin of Helena's (APP_URL, here a second port) is.
+    const fromWeb = await call(
+      '/projects',
+      {
+        cookie: owner.cookie,
+        'content-type': 'application/json',
+        'sec-fetch-site': 'same-site',
+        origin: ORIGIN,
+      },
+      { method: 'POST', body },
+    );
+    expect(fromWeb.status).not.toBe(403);
     // Helena's own page is not affected.
     const own = await call(
       '/projects',
