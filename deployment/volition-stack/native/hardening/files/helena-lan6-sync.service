@@ -1,5 +1,5 @@
 [Unit]
-Description=Helena: home IPv6 networks for the firewall
+Description=Helena: home networks for the firewall and the owner sign-in
 After=nftables.service network-online.target
 Wants=network-online.target
 

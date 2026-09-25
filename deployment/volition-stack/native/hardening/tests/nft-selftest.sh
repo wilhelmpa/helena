@@ -102,7 +102,7 @@ ip addr add 10.20.30.5/24 dev eno1
 ip addr del 192.168.2.58/24 dev eno1
 ip route add default via 10.20.30.1 dev eno1
 ip -6 addr add 2001:db8:1:2::5/64 dev eno1 nodad
-sh "$2"
+python3 -I "$2" --firewall-only
 lan4=$(nft list set inet helena_hardening lan4 | tr -d '\n\t ')
 lan6=$(nft list set inet helena_hardening lan6 | tr -d '\n\t ')
 case "$lan4" in *10.20.30.0/24*) echo "PASS network sync: lan4 follows the new network" ;; *) echo "FAIL network sync: $lan4"; exit 1 ;; esac
