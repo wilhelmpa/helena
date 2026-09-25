@@ -114,11 +114,9 @@
     "queuePaused": "angehalten",
     "removeQueued": "Aus der Warteschlange nehmen",
     "dictate": "Diktieren",
+    "dictateLocal": "Diktieren (Whisper auf diesem Rechner)",
     "stopDictation": "Diktat beenden",
-    "dictationFailed": "Das Diktat konnte nicht gestartet werden.",
-    "dictationBlocked": "Der Browser hat das Mikrofon nicht freigegeben. Erlaube es in den Website-Einstellungen.",
-    "dictationInsecureTitle": "Diktieren braucht eine sichere Verbindung",
-    "dictationInsecure": "Der Browser gibt das Mikrofon nur über HTTPS frei. Bis Helena über HTTPS läuft: in Chrome chrome://flags öffnen, „Insecure origins treated as secure“ aktivieren und {origin} eintragen. Im Kiosk ist es bereits freigeschaltet.",
+    "dictationUnavailable": "Diktieren geht hier gerade nicht – klicken für den Grund",
     "autoSpeak": "Antworten automatisch vorlesen",
     "autoSpeakOn": "Antworten werden vorgelesen – zum Ausschalten klicken",
     "queuedList": "Wartet auf das Senden"
@@ -215,5 +213,48 @@
     "copy": "Session-ID kopieren",
     "copied": "Session-ID kopiert",
     "hint": "Im Terminal fortsetzen: hermes --resume {id} (bzw. claude --resume {id})"
+  },
+  "voice": {
+    "startConversation": "Gespräch starten – freihändig sprechen und zuhören",
+    "endConversation": "Gespräch beenden",
+    "placeholder": "Sprich einfach – oder tippe …",
+    "interrupt": "Unterbrechen",
+    "end": "Beenden",
+    "heard": "„{text}“",
+    "phase": {
+      "starting": "Mikrofon startet …",
+      "listening": "Ich höre zu – sprich einfach.",
+      "hearing": "Ich höre dich …",
+      "transcribing": "Schreibe mit …",
+      "thinking": "{agent} antwortet gleich …",
+      "speaking": "{agent} spricht – sprich, um zu unterbrechen",
+      "speakingTap": "{agent} spricht"
+    },
+    "where": {
+      "listenLocal": "Spracherkennung: Whisper auf diesem Rechner",
+      "listenBrowser": "Spracherkennung: Browser (Chrome und Safari senden die Aufnahme an Google bzw. Apple)",
+      "speakLocal": "Stimme: lokal auf diesem Rechner",
+      "speakBrowser": "Stimme: Browser",
+      "speakNone": "Antworten werden nicht vorgelesen (Nur lokal)"
+    },
+    "problems": {
+      "insecureTitle": "Das Mikrofon braucht eine sichere Verbindung",
+      "insecure": "Browser geben das Mikrofon nur über HTTPS frei, und Helena läuft hier noch über http. Bis HTTPS kommt: in Chrome {flag} öffnen, {origin} eintragen, „Enabled“ wählen und Chrome neu starten. Safari und Firefox: erst mit HTTPS.",
+      "copyFlag": "Adresse kopieren",
+      "flagCopied": "Adresse kopiert – in die Adresszeile von Chrome einfügen.",
+      "localOnlyDownTitle": "Lokale Transkription gerade nicht erreichbar",
+      "localOnlyDown": "Transkription steht auf „Nur lokal“: Deine Stimme verlässt diesen Rechner nicht, also springt auch der Browser nicht ein. Versuch es gleich noch einmal oder sieh unter Administrator → Lokale KI nach.",
+      "unsupportedTitle": "Dieser Browser erkennt keine Sprache",
+      "unsupported": "Schalte unter Administrator → Lokale KI die „Transkription (Diktat)“ ein – dann schreibt Whisper auf diesem Rechner mit, in jedem Browser.",
+      "blocked": "Der Browser hat das Mikrofon nicht freigegeben. Erlaube es in den Website-Einstellungen (das Symbol links in der Adresszeile).",
+      "missing": "Kein Mikrofon gefunden.",
+      "failed": "Das Mikrofon konnte nicht gestartet werden.",
+      "transcribeFailed": "Die Transkription ist fehlgeschlagen. Versuch es noch einmal.",
+      "voiceFailed": "Die lokale Stimme ist ausgefallen. Die Antwort steht im Chat; wo erlaubt, liest der Browser weiter.",
+      "nothingHeard": "Nichts verstanden – war das Mikrofon an?",
+      "limit": "Nach {seconds} Sekunden beendet – so lang darf ein Diktat höchstens sein.",
+      "echoTitle": "Ich habe mich selbst gehört",
+      "echo": "Über Lautsprecher unterbrichst du mich ab jetzt mit „Unterbrechen“. Mit Kopfhörern oder der lokalen Stimme geht es auch per Stimme."
+    }
   }
 }

@@ -122,7 +122,11 @@
     },
     "transcription": {
       "label": "Transcrição (ditado)",
-      "description": "Fala para texto no ditado e no modo de voz (Whisper na NPU)."
+      "description": "Fala para texto no ditado e no modo conversa (Whisper na NPU)."
+    },
+    "speech": {
+      "label": "Leitura em voz alta (voz)",
+      "description": "Texto para fala no modo conversa: respostas lidas por uma voz local. Ative quando a voz falar o seu idioma (o Kokoro não fala alemão)."
     },
     "routines": {
       "label": "Agentes de rotina",

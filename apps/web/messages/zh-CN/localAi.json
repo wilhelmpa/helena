@@ -122,7 +122,11 @@
     },
     "transcription": {
       "label": "转写（听写）",
-      "description": "听写和语音模式的语音转文字（NPU 上的 Whisper）。"
+      "description": "听写和对话模式的语音转文字（NPU 上的 Whisper）。"
+    },
+    "speech": {
+      "label": "朗读（语音）",
+      "description": "对话模式的文字转语音：由本地语音朗读回答。请在语音能说你的语言后再开启（Kokoro 不会说德语）。"
     },
     "routines": {
       "label": "例行任务智能体",

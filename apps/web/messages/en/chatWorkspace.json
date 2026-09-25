@@ -114,11 +114,9 @@
     "queuePaused": "paused",
     "removeQueued": "Remove from queue",
     "dictate": "Dictate",
+    "dictateLocal": "Dictate (Whisper on this machine)",
     "stopDictation": "Stop dictation",
-    "dictationFailed": "Dictation could not be started.",
-    "dictationBlocked": "The browser did not allow the microphone. Allow it in the site settings.",
-    "dictationInsecureTitle": "Dictation needs a secure connection",
-    "dictationInsecure": "Browsers only lend the microphone to HTTPS pages. Until Helena runs on HTTPS: open chrome://flags in Chrome, enable “Insecure origins treated as secure” and add {origin}. The kiosk already allows it.",
+    "dictationUnavailable": "Dictation is not possible here right now – click for the reason",
     "autoSpeak": "Read answers aloud automatically",
     "autoSpeakOn": "Answers are read aloud – click to turn off",
     "queuedList": "Waiting to send"
@@ -215,5 +213,48 @@
     "copy": "Copy session ID",
     "copied": "Session ID copied",
     "hint": "Continue in a terminal: hermes --resume {id} (or claude --resume {id})"
+  },
+  "voice": {
+    "startConversation": "Start a conversation – talk and listen hands-free",
+    "endConversation": "End the conversation",
+    "placeholder": "Just speak – or type …",
+    "interrupt": "Interrupt",
+    "end": "End",
+    "heard": "“{text}”",
+    "phase": {
+      "starting": "Starting the microphone …",
+      "listening": "Listening – just speak.",
+      "hearing": "Hearing you …",
+      "transcribing": "Writing it down …",
+      "thinking": "{agent} will answer shortly …",
+      "speaking": "{agent} is speaking – speak to interrupt",
+      "speakingTap": "{agent} is speaking"
+    },
+    "where": {
+      "listenLocal": "Speech recognition: Whisper on this machine",
+      "listenBrowser": "Speech recognition: the browser (Chrome and Safari send the recording to Google or Apple)",
+      "speakLocal": "Voice: local on this machine",
+      "speakBrowser": "Voice: the browser",
+      "speakNone": "Answers are not read aloud (Local only)"
+    },
+    "problems": {
+      "insecureTitle": "The microphone needs a secure connection",
+      "insecure": "Browsers only lend the microphone over HTTPS, and Helena runs over http here. Until HTTPS arrives: open {flag} in Chrome, enter {origin}, choose “Enabled” and restart Chrome. Safari and Firefox: only with HTTPS.",
+      "copyFlag": "Copy address",
+      "flagCopied": "Address copied – paste it into Chrome's address bar.",
+      "localOnlyDownTitle": "Local transcription is unavailable right now",
+      "localOnlyDown": "Transcription is set to “Local only”: your voice does not leave this machine, so the browser does not step in. Try again shortly or check Administrator → Local AI.",
+      "unsupportedTitle": "This browser cannot recognize speech",
+      "unsupported": "Turn on “Transcription (dictation)” under Administrator → Local AI – Whisper on this machine then writes along, in any browser.",
+      "blocked": "The browser did not allow the microphone. Allow it in the site settings (the icon at the left of the address bar).",
+      "missing": "No microphone found.",
+      "failed": "The microphone could not be started.",
+      "transcribeFailed": "Transcription failed. Please try again.",
+      "voiceFailed": "The local voice failed. The answer is in the chat; where allowed, the browser reads on.",
+      "nothingHeard": "Nothing understood – was the microphone on?",
+      "limit": "Stopped after {seconds} seconds – the longest a dictation can be.",
+      "echoTitle": "I heard myself",
+      "echo": "On loudspeakers, interrupt me with “Interrupt” from now on. With headphones or the local voice, speaking works too."
+    }
   }
 }

@@ -1,74 +1,45 @@
 'use client';
 
 // Adapted from AI Elements `speech-input` (Apache-2.0, see ./LICENSE): dictation into a
-// text field with the browser's Web Speech API, and, where a browser has none (Firefox),
-// a recording handed to `onAudioRecorded` for a server to transcribe.
+// text field, either with the browser's Web Speech API or by recording for a server to
+// transcribe.
 //
-// Changed for Helena: the words appear in the field while they are spoken (interim
-// results), after whatever was typed before; the language is the page's; and a page on
-// plain http — where no browser lends the microphone — gets `onError('insecure')`
-// instead of a button that silently does nothing.
+// Changed for Helena: which engine listens is the caller's choice (Helena's local Whisper or
+// the browser's recognition, see features/voice); the browser's words appear in the field while
+// they are spoken (interim results), after whatever was typed before; a recording shows the
+// microphone's level and stops by itself at its limit; the language is the page's; and when
+// nothing can listen (plain http, "Nur lokal" while local AI is down, a browser without
+// recognition) the button stays and says why instead of silently doing nothing.
 
 import { useCallback, useEffect, useRef, useState, type ComponentProps } from 'react';
 import { Loader2, Mic, Square } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { InputGroupButton } from '@/components/ui/input-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  recognitionConstructor,
+  recognitionLanguage,
+  type BrowserRecognition,
+} from '@/utils/speechRecognition';
 
-interface RecognitionResultList {
-  length: number;
-  [index: number]: { isFinal: boolean; 0: { transcript: string } };
+// A recording in progress: `stop` hands back its text.
+export interface SpeechRecording {
+  stop: () => Promise<string>;
+  cancel: () => void;
 }
 
-interface BrowserRecognition extends EventTarget {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  onend: (() => void) | null;
-  onerror: ((event: Event & { error: string }) => void) | null;
-  onresult:
-    ((event: Event & { resultIndex: number; results: RecognitionResultList }) => void) | null;
-  start: () => void;
-  stop: () => void;
-  abort: () => void;
+// Records for a server to transcribe. `onLevel` gets the microphone's level (0…1) while it
+// records; `onLimit` is called when the recording stopped at its length limit.
+export interface SpeechRecorder {
+  start: (options: {
+    onLevel: (level: number) => void;
+    onLimit: () => void;
+  }) => Promise<SpeechRecording>;
 }
 
-type RecognitionConstructor = new () => BrowserRecognition;
+export type SpeechInputEngine = 'recognition' | 'recorder' | 'none';
 
-function recognitionConstructor(): RecognitionConstructor | undefined {
-  if (typeof window === 'undefined') return undefined;
-  const speech = window as typeof window & {
-    SpeechRecognition?: RecognitionConstructor;
-    webkitSpeechRecognition?: RecognitionConstructor;
-  };
-  return speech.SpeechRecognition ?? speech.webkitSpeechRecognition;
-}
-
-// The page's language for recognition ("de" → "de-DE"), else the browser's.
-export function recognitionLanguage(): string {
-  const page = document.documentElement.lang;
-  if (page && page.includes('-')) return page;
-  if (page === 'de') return 'de-DE';
-  if (page === 'en') return 'en-US';
-  return navigator.language || 'de-DE';
-}
-
-type Mode = 'speech-recognition' | 'media-recorder' | 'none';
-
-function detectMode(canTranscribe: boolean): Mode {
-  if (recognitionConstructor()) return 'speech-recognition';
-  if (
-    canTranscribe &&
-    typeof window !== 'undefined' &&
-    'MediaRecorder' in window &&
-    'mediaDevices' in navigator
-  ) {
-    return 'media-recorder';
-  }
-  return 'none';
-}
-
-export type SpeechInputError = 'insecure' | 'blocked' | 'failed';
+export type SpeechInputError = 'blocked' | 'failed' | 'nothing-heard' | 'limit';
 
 export type SpeechInputProps = Omit<
   ComponentProps<typeof InputGroupButton>,
@@ -78,45 +49,50 @@ export type SpeechInputProps = Omit<
   value: string;
   onChange: (text: string) => void;
   maxLength?: number;
-  // Transcribes a recording where the browser cannot recognize speech itself.
-  onAudioRecorded?: (audio: Blob) => Promise<string>;
-  onError?: (error: SpeechInputError) => void;
-  labels: { start: string; stop: string; insecure: string };
+  engine: SpeechInputEngine;
+  // With engine "recorder".
+  recorder?: SpeechRecorder;
+  // With engine "none": says why nothing can listen.
+  onUnavailable?: () => void;
+  onError?: (error: SpeechInputError, cause?: unknown) => void;
+  labels: { start: string; stop: string; unavailable: string };
 };
+
+function appended(current: string, text: string): string {
+  if (!text) return current;
+  return current && !/\s$/.test(current) ? `${current} ${text}` : `${current}${text}`;
+}
 
 export function SpeechInput({
   value,
   onChange,
   maxLength = Infinity,
-  onAudioRecorded,
+  engine,
+  recorder,
+  onUnavailable,
   onError,
   labels,
   className,
   disabled,
   ...props
 }: SpeechInputProps) {
-  const [mode, setMode] = useState<Mode>('none');
-  const [secure, setSecure] = useState(true);
   const [listening, setListening] = useState(false);
   const [processing, setProcessing] = useState(false);
   const recognition = useRef<BrowserRecognition | null>(null);
-  const recorder = useRef<MediaRecorder | null>(null);
+  const recording = useRef<SpeechRecording | null>(null);
+  const ring = useRef<HTMLSpanElement>(null);
   // The field's text when dictation started, and what has been recognized for good since.
   const base = useRef('');
   const finals = useRef('');
-  const latest = useRef({ value, onChange, onAudioRecorded, onError });
-  latest.current = { value, onChange, onAudioRecorded, onError };
-
-  // Decided after mount: the server render cannot know the browser.
+  const latest = useRef({ value, onChange, onError });
   useEffect(() => {
-    setMode(detectMode(onAudioRecorded != null));
-    setSecure(window.isSecureContext);
-  }, [onAudioRecorded]);
+    latest.current = { value, onChange, onError };
+  });
 
   useEffect(
     () => () => {
       recognition.current?.abort();
-      if (recorder.current?.state === 'recording') recorder.current.stop();
+      recording.current?.cancel();
     },
     [],
   );
@@ -148,7 +124,11 @@ export function SpeechInput({
     next.onerror = (event) => {
       setListening(false);
       if (event.error === 'aborted' || event.error === 'no-speech') return;
-      latest.current.onError?.(event.error === 'not-allowed' ? 'blocked' : 'failed');
+      latest.current.onError?.(
+        event.error === 'not-allowed' || event.error === 'service-not-allowed'
+          ? 'blocked'
+          : 'failed',
+      );
     };
     next.onend = () => {
       setListening(false);
@@ -158,64 +138,65 @@ export function SpeechInput({
     try {
       next.start();
       setListening(true);
-    } catch {
-      latest.current.onError?.('failed');
+    } catch (error) {
+      latest.current.onError?.('failed', error);
+    }
+  }, [emit]);
+
+  const finishRecording = useCallback(async () => {
+    const active = recording.current;
+    recording.current = null;
+    setListening(false);
+    if (ring.current) ring.current.style.transform = 'scale(1)';
+    if (!active) return;
+    setProcessing(true);
+    try {
+      const text = await active.stop();
+      if (text) emit(appended(latest.current.value, text));
+      else latest.current.onError?.('nothing-heard');
+    } catch (error) {
+      latest.current.onError?.('failed', error);
+    } finally {
+      setProcessing(false);
     }
   }, [emit]);
 
   const startRecorder = useCallback(async () => {
+    if (!recorder) return;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const next = new MediaRecorder(stream);
-      const chunks: Blob[] = [];
-      next.addEventListener('dataavailable', (event) => {
-        if (event.data.size > 0) chunks.push(event.data);
+      recording.current = await recorder.start({
+        onLevel: (level) => {
+          if (ring.current) ring.current.style.transform = `scale(${1 + level * 0.6})`;
+        },
+        onLimit: () => {
+          latest.current.onError?.('limit');
+          void finishRecording();
+        },
       });
-      next.addEventListener('stop', async () => {
-        for (const track of stream.getTracks()) track.stop();
-        setListening(false);
-        const audio = new Blob(chunks, { type: next.mimeType || 'audio/webm' });
-        const transcribe = latest.current.onAudioRecorded;
-        if (audio.size === 0 || !transcribe) return;
-        setProcessing(true);
-        try {
-          const text = await transcribe(audio);
-          const current = latest.current.value;
-          if (text)
-            emit(current && !/\s$/.test(current) ? `${current} ${text}` : `${current}${text}`);
-        } catch {
-          latest.current.onError?.('failed');
-        } finally {
-          setProcessing(false);
-        }
-      });
-      recorder.current = next;
-      next.start();
       setListening(true);
     } catch (error) {
-      latest.current.onError?.(
-        error instanceof DOMException && error.name === 'NotAllowedError' ? 'blocked' : 'failed',
-      );
+      const blocked =
+        (error instanceof Error && 'reason' in error && error.reason === 'blocked') ||
+        (error instanceof DOMException && error.name === 'NotAllowedError');
+      latest.current.onError?.(blocked ? 'blocked' : 'failed', error);
     }
-  }, [emit]);
+  }, [recorder, finishRecording]);
 
   const toggle = useCallback(() => {
-    if (!secure) {
-      latest.current.onError?.('insecure');
+    if (engine === 'none') {
+      onUnavailable?.();
       return;
     }
     if (listening) {
       recognition.current?.stop();
-      if (recorder.current?.state === 'recording') recorder.current.stop();
+      if (recording.current) void finishRecording();
       return;
     }
-    if (mode === 'speech-recognition') startRecognition();
-    else if (mode === 'media-recorder') void startRecorder();
-  }, [secure, listening, mode, startRecognition, startRecorder]);
+    if (engine === 'recognition') startRecognition();
+    else void startRecorder();
+  }, [engine, listening, onUnavailable, startRecognition, startRecorder, finishRecording]);
 
-  if (mode === 'none') return null;
-
-  const label = listening ? labels.stop : labels.start;
+  const label = engine === 'none' ? labels.unavailable : listening ? labels.stop : labels.start;
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -228,24 +209,31 @@ export function SpeechInput({
           disabled={disabled || processing}
           onClick={toggle}
           className={cn(
-            'text-muted-foreground hover:text-foreground',
+            'relative text-muted-foreground hover:text-foreground',
             listening &&
               'bg-destructive/10 text-destructive hover:bg-destructive/15 hover:text-destructive',
-            !secure && 'opacity-60',
+            engine === 'none' && 'opacity-60',
             className,
           )}
           {...props}
         >
+          {listening && engine === 'recorder' ? (
+            <span
+              ref={ring}
+              aria-hidden="true"
+              className="absolute inset-1 rounded-full bg-destructive/15 transition-transform duration-75"
+            />
+          ) : null}
           {processing ? (
             <Loader2 className="size-4 animate-spin" aria-hidden="true" />
           ) : listening ? (
-            <Square className="size-3.5 animate-pulse fill-current" aria-hidden="true" />
+            <Square className="relative size-3.5 animate-pulse fill-current" aria-hidden="true" />
           ) : (
             <Mic className="size-4" aria-hidden="true" />
           )}
         </InputGroupButton>
       </TooltipTrigger>
-      <TooltipContent side="top">{secure ? label : labels.insecure}</TooltipContent>
+      <TooltipContent side="top">{label}</TooltipContent>
     </Tooltip>
   );
 }

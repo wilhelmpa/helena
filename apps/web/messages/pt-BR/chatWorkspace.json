@@ -114,11 +114,9 @@
     "queuePaused": "pausada",
     "removeQueued": "Remover da fila",
     "dictate": "Ditar",
+    "dictateLocal": "Ditar (Whisper nesta máquina)",
     "stopDictation": "Parar ditado",
-    "dictationFailed": "Não foi possível iniciar o ditado.",
-    "dictationBlocked": "O navegador não permitiu o microfone. Permita nas configurações do site.",
-    "dictationInsecureTitle": "O ditado precisa de uma conexão segura",
-    "dictationInsecure": "Os navegadores só liberam o microfone para páginas HTTPS. Até a Helena rodar em HTTPS: abra chrome://flags no Chrome, ative “Insecure origins treated as secure” e adicione {origin}. O quiosque já permite.",
+    "dictationUnavailable": "Não é possível ditar aqui agora – clique para ver o motivo",
     "autoSpeak": "Ler as respostas em voz alta automaticamente",
     "autoSpeakOn": "As respostas são lidas em voz alta – clique para desligar",
     "queuedList": "Aguardando envio"
@@ -215,5 +213,48 @@
     "copy": "Copiar ID da sessão",
     "copied": "ID da sessão copiado",
     "hint": "Continuar em um terminal: hermes --resume {id} (ou claude --resume {id})"
+  },
+  "voice": {
+    "startConversation": "Iniciar uma conversa – falar e ouvir sem as mãos",
+    "endConversation": "Encerrar a conversa",
+    "placeholder": "É só falar – ou digite …",
+    "interrupt": "Interromper",
+    "end": "Encerrar",
+    "heard": "“{text}”",
+    "phase": {
+      "starting": "Ligando o microfone …",
+      "listening": "Estou ouvindo – é só falar.",
+      "hearing": "Ouvindo você …",
+      "transcribing": "Anotando …",
+      "thinking": "{agent} vai responder já …",
+      "speaking": "{agent} está falando – fale para interromper",
+      "speakingTap": "{agent} está falando"
+    },
+    "where": {
+      "listenLocal": "Reconhecimento de fala: Whisper nesta máquina",
+      "listenBrowser": "Reconhecimento de fala: o navegador (Chrome e Safari enviam a gravação ao Google ou à Apple)",
+      "speakLocal": "Voz: local nesta máquina",
+      "speakBrowser": "Voz: o navegador",
+      "speakNone": "As respostas não são lidas em voz alta (Somente local)"
+    },
+    "problems": {
+      "insecureTitle": "O microfone precisa de uma conexão segura",
+      "insecure": "Os navegadores só liberam o microfone via HTTPS, e aqui a Helena roda em http. Até o HTTPS chegar: abra {flag} no Chrome, informe {origin}, escolha “Enabled” e reinicie o Chrome. Safari e Firefox: só com HTTPS.",
+      "copyFlag": "Copiar endereço",
+      "flagCopied": "Endereço copiado – cole-o na barra de endereços do Chrome.",
+      "localOnlyDownTitle": "A transcrição local está indisponível agora",
+      "localOnlyDown": "A transcrição está em “Somente local”: sua voz não sai desta máquina, então o navegador também não assume. Tente de novo em instantes ou verifique Administrador → IA local.",
+      "unsupportedTitle": "Este navegador não reconhece fala",
+      "unsupported": "Ative “Transcrição (ditado)” em Administrador → IA local – o Whisper nesta máquina passa a anotar, em qualquer navegador.",
+      "blocked": "O navegador não liberou o microfone. Permita-o nas configurações do site (o ícone à esquerda da barra de endereços).",
+      "missing": "Nenhum microfone encontrado.",
+      "failed": "Não foi possível iniciar o microfone.",
+      "transcribeFailed": "A transcrição falhou. Tente novamente.",
+      "voiceFailed": "A voz local falhou. A resposta está no chat; onde permitido, o navegador continua lendo.",
+      "nothingHeard": "Nada entendido – o microfone estava ligado?",
+      "limit": "Encerrado após {seconds} segundos – a duração máxima de um ditado.",
+      "echoTitle": "Eu me ouvi",
+      "echo": "Com alto-falantes, a partir de agora me interrompa com “Interromper”. Com fones de ouvido ou com a voz local, falar também funciona."
+    }
   }
 }

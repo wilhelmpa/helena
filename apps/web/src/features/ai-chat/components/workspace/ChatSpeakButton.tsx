@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Square, Volume2 } from 'lucide-react';
 import { MessageAction } from '@/components/ai-elements/message';
-import { canSpeak, speak, stopSpeaking } from '../../utils/speak';
-import { speechText } from '../../utils/speechText';
+import { canSpeak, speak, stopSpeaking } from '@/features/voice/browser/speak';
+import { speechText } from '@/features/voice/utils/speechText';
 
 // Reads an answer aloud with the browser's speech synthesis: its words without the
 // Markdown around them, in the page's language; stops on a second press or when the

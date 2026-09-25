@@ -122,7 +122,11 @@
     },
     "transcription": {
       "label": "Transcription (dictée)",
-      "description": "Parole vers texte pour la dictée et le mode vocal (Whisper sur le NPU)."
+      "description": "Parole vers texte pour la dictée et le mode conversation (Whisper sur le NPU)."
+    },
+    "speech": {
+      "label": "Lecture à voix haute (voix)",
+      "description": "Synthèse vocale pour le mode conversation : les réponses lues par une voix locale. À activer une fois que la voix parle votre langue (Kokoro ne parle pas allemand)."
     },
     "routines": {
       "label": "Agents de routine",

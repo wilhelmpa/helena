@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev -p 3001",
-    "build": "next build",
+    "dev": "node scripts/voice-assets.mjs && next dev -p 3001",
+    "build": "node scripts/voice-assets.mjs && next build",
     "start": "next start -p 3001",
     "lint": "eslint --pass-on-unpruned-suppressions .",
     "typecheck": "tsc --noEmit",
@@ -26,6 +26,7 @@
     "@helena/sdk": "workspace:*",
     "@radix-ui/react-use-controllable-state": "^1.2.6",
     "@repo/agent-naming": "workspace:*",
+    "@ricky0123/vad-web": "0.0.31",
     "@scalar/api-reference-react": "^0.9.61",
     "@shadcn/react": "^0.3.0",
     "@streamdown/code": "^1.1.1",

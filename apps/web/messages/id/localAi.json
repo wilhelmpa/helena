@@ -122,7 +122,11 @@
     },
     "transcription": {
       "label": "Transkripsi (dikte)",
-      "description": "Ucapan ke teks untuk dikte dan mode suara (Whisper di NPU)."
+      "description": "Ucapan ke teks untuk dikte dan mode percakapan (Whisper di NPU)."
+    },
+    "speech": {
+      "label": "Membacakan (suara)",
+      "description": "Teks ke ucapan untuk mode percakapan: jawaban dibacakan oleh suara lokal. Aktifkan setelah suaranya berbicara dalam bahasa Anda (Kokoro tidak berbahasa Jerman)."
     },
     "routines": {
       "label": "Agen rutin",

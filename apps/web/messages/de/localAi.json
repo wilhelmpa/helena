@@ -122,7 +122,11 @@
     },
     "transcription": {
       "label": "Transkription (Diktat)",
-      "description": "Sprache zu Text für Diktat und Sprachmodus (Whisper auf der NPU)."
+      "description": "Sprache zu Text für Diktat und Gesprächsmodus (Whisper auf der NPU)."
+    },
+    "speech": {
+      "label": "Vorlesen (Stimme)",
+      "description": "Text zu Sprache für den Gesprächsmodus: Antworten mit einer lokalen Stimme vorlesen. Erst einschalten, wenn die Stimme deine Sprache spricht (Kokoro spricht kein Deutsch)."
     },
     "routines": {
       "label": "Routinen-Agenten",

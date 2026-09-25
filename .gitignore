@@ -47,3 +47,6 @@ coverage
 
 # local pre-migration environment snapshots
 /.env.pre-*
+
+# Voice detector files copied from node_modules at build time (apps/web/scripts/voice-assets.mjs)
+apps/web/public/voice/

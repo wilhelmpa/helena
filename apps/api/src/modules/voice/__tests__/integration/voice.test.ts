@@ -191,7 +191,8 @@ describe('voice', () => {
         auth: `Bearer ${KEY}`,
         model: 'whisper-v3-turbo-FLM',
         language: 'de',
-        fileType: 'audio/wav',
+        // Bun's multipart names WAV by its extension.
+        fileType: expect.stringMatching(/^audio\/(x-)?wav$/),
         fileBytes: 44 + 80000,
       },
     ]);

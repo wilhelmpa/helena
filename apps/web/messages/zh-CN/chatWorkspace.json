@@ -114,11 +114,9 @@
     "queuePaused": "已暂停",
     "removeQueued": "从队列移除",
     "dictate": "语音输入",
+    "dictateLocal": "听写（本机 Whisper）",
     "stopDictation": "停止语音输入",
-    "dictationFailed": "无法开始语音输入。",
-    "dictationBlocked": "浏览器未允许使用麦克风。请在网站设置中允许。",
-    "dictationInsecureTitle": "语音输入需要安全连接",
-    "dictationInsecure": "浏览器只向 HTTPS 页面提供麦克风。在 Helena 使用 HTTPS 之前：在 Chrome 中打开 chrome://flags，启用 “Insecure origins treated as secure” 并添加 {origin}。展台模式已允许。",
+    "dictationUnavailable": "此处暂时无法听写——点击查看原因",
     "autoSpeak": "自动朗读回答",
     "autoSpeakOn": "正在朗读回答——点击关闭",
     "queuedList": "等待发送"
@@ -215,5 +213,48 @@
     "copy": "复制会话 ID",
     "copied": "已复制会话 ID",
     "hint": "在终端中继续：hermes --resume {id}（或 claude --resume {id}）"
+  },
+  "voice": {
+    "startConversation": "开始对话——免手动说话和收听",
+    "endConversation": "结束对话",
+    "placeholder": "直接说话——或输入 …",
+    "interrupt": "打断",
+    "end": "结束",
+    "heard": "“{text}”",
+    "phase": {
+      "starting": "正在打开麦克风 …",
+      "listening": "我在听——直接说吧。",
+      "hearing": "正在听你说 …",
+      "transcribing": "正在记录 …",
+      "thinking": "{agent} 马上回答 …",
+      "speaking": "{agent} 正在说话——开口即可打断",
+      "speakingTap": "{agent} 正在说话"
+    },
+    "where": {
+      "listenLocal": "语音识别：本机上的 Whisper",
+      "listenBrowser": "语音识别：浏览器（Chrome 和 Safari 会把录音发送给 Google 或 Apple）",
+      "speakLocal": "语音：本机本地语音",
+      "speakBrowser": "语音：浏览器",
+      "speakNone": "回答不会朗读（仅本地）"
+    },
+    "problems": {
+      "insecureTitle": "麦克风需要安全连接",
+      "insecure": "浏览器只在 HTTPS 下开放麦克风，而这里的 Helena 仍通过 http 运行。在 HTTPS 就绪之前：在 Chrome 中打开 {flag}，填入 {origin}，选择“Enabled”并重启 Chrome。Safari 和 Firefox：需要 HTTPS。",
+      "copyFlag": "复制地址",
+      "flagCopied": "地址已复制——粘贴到 Chrome 的地址栏。",
+      "localOnlyDownTitle": "本地转写暂时不可用",
+      "localOnlyDown": "转写设为“仅本地”：你的声音不会离开这台机器，所以浏览器也不会接替。请稍后再试，或查看 管理员 → 本地 AI。",
+      "unsupportedTitle": "此浏览器无法识别语音",
+      "unsupported": "在 管理员 → 本地 AI 中开启“转写（听写）”——之后本机上的 Whisper 会记录，任何浏览器都可以。",
+      "blocked": "浏览器没有允许使用麦克风。请在网站设置中允许（地址栏左侧的图标）。",
+      "missing": "未找到麦克风。",
+      "failed": "无法启动麦克风。",
+      "transcribeFailed": "转写失败，请重试。",
+      "voiceFailed": "本地语音出现故障。回答已在聊天中；在允许的情况下，浏览器会继续朗读。",
+      "nothingHeard": "没有听清——麦克风打开了吗？",
+      "limit": "{seconds} 秒后已停止——这是听写的最长时长。",
+      "echoTitle": "我听到了自己的声音",
+      "echo": "使用扬声器时，今后请用“打断”来打断我。戴耳机或使用本地语音时，直接开口也可以。"
+    }
   }
 }

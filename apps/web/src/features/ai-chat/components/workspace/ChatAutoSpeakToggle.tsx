@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { AudioLines } from 'lucide-react';
+import { Volume2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PromptInputButton } from '@/components/ai-elements/prompt-input';
-import { canSpeak, stopSpeaking } from '../../utils/speak';
+import { canSpeak, stopSpeaking } from '@/features/voice/browser/speak';
 
-// The composer's voice-mode switch: when on, every complete answer is read aloud (see
-// ChatThreadView). Turning it off also stops what is being read.
+// The composer's "read answers aloud" switch: when on, every complete answer is read aloud (see
+// ChatThreadView). Turning it off also stops what is being read. The hands-free conversation is
+// the button in the send button's place (features/voice).
 export default function ChatAutoSpeakToggle({
   on,
   onChange,
@@ -30,7 +31,7 @@ export default function ChatAutoSpeakToggle({
       }}
       className={cn(on && 'bg-accent text-foreground')}
     >
-      <AudioLines className="size-4" aria-hidden="true" />
+      <Volume2 className="size-4" aria-hidden="true" />
     </PromptInputButton>
   );
 }

@@ -16,9 +16,13 @@ import {
   PromptInputTextarea,
   PromptInputTools,
 } from '@/components/ai-elements/prompt-input';
-import { SpeechInput, type SpeechInputError } from '@/components/ai-elements/speech-input';
+import { SpeechInput } from '@/components/ai-elements/speech-input';
 import { Suggestion, Suggestions } from '@/components/ai-elements/suggestion';
 import { AgentContextSize } from '@/components/common/agent-chat/AgentContextSize';
+import ConversationBar from '@/features/voice/components/ConversationBar';
+import ConversationButton from '@/features/voice/components/ConversationButton';
+import { useDictation } from '@/features/voice/hooks/useDictation';
+import type { Conversation } from '@/features/voice/hooks/useConversation';
 import { useVaultUpload } from '../../hooks/useVaultUpload';
 import { useChatPrompts } from '../../hooks/useChatPrompts';
 import { useChatListMutations } from '../../hooks/useChatList';
@@ -68,9 +72,11 @@ export interface ChatComposerProps {
   // The conversation's context size after its last answer (see AgentContextSize);
   // undefined while none has completed.
   contextTokens: number | null | undefined;
-  // Voice mode: answers are read aloud when complete.
+  // Answers are read aloud when complete.
   autoSpeak: boolean;
   onAutoSpeakChange: (on: boolean) => void;
+  // The hands-free conversation mode (features/voice).
+  conversation: Conversation;
   threadId: string | null;
   projectKey: string | null;
   // Where a new chat's text is kept while its agent is still being picked.
@@ -118,6 +124,7 @@ export default function ChatComposer({
   contextTokens,
   autoSpeak,
   onAutoSpeakChange,
+  conversation,
   threadId,
   projectKey,
   draft,
@@ -155,6 +162,8 @@ export default function ChatComposer({
   // The server-configured limit (the agent's max_concurrent_chats), checked before
   // sending so a member hits it here rather than as a refused send.
   const checkConcurrency = useConcurrentChatCheck(agent.id, threadId);
+  const dictation = useDictation();
+  const talking = conversation.phase !== 'off';
 
   function focusAfter(update: () => void) {
     update();
@@ -272,19 +281,6 @@ export default function ChatComposer({
     }
   }
 
-  function onDictationError(error: SpeechInputError) {
-    if (error === 'insecure') {
-      toast.info(t('composer.dictationInsecureTitle'), {
-        description: t('composer.dictationInsecure', { origin: window.location.origin }),
-        duration: 12000,
-      });
-    } else {
-      toast.error(
-        error === 'blocked' ? t('composer.dictationBlocked') : t('composer.dictationFailed'),
-      );
-    }
-  }
-
   const showChoices = choices != null && !busy && queue.length === 0;
 
   return (
@@ -309,6 +305,7 @@ export default function ChatComposer({
           onFiles={(files) => void uploadFiles(files)}
         >
           <PromptInputHeader>
+            <ConversationBar conversation={conversation} agentName={agent.name} />
             <ChatComposerQueue
               queue={queue}
               agentName={agent.name}
@@ -370,7 +367,9 @@ export default function ChatComposer({
               value={value}
               onChange={(event) => setValue(event.target.value)}
               onKeyDown={onKeyDown}
-              placeholder={t('composer.placeholder', { agent: agent.name })}
+              placeholder={
+                talking ? t('voice.placeholder') : t('composer.placeholder', { agent: agent.name })
+              }
               aria-label={t('composer.placeholder', { agent: agent.name })}
               title={t('composer.hint')}
               maxLength={CHAT_PROMPT_LIMIT}
@@ -395,17 +394,22 @@ export default function ChatComposer({
                   event.target.value = '';
                 }}
               />
-              <SpeechInput
-                value={value}
-                onChange={setValue}
-                maxLength={CHAT_PROMPT_LIMIT}
-                onError={onDictationError}
-                labels={{
-                  start: t('composer.dictate'),
-                  stop: t('composer.stopDictation'),
-                  insecure: t('composer.dictationInsecureTitle'),
-                }}
-              />
+              {dictation.ready && !talking && (
+                <SpeechInput
+                  value={value}
+                  onChange={setValue}
+                  maxLength={CHAT_PROMPT_LIMIT}
+                  engine={dictation.engine}
+                  recorder={dictation.recorder}
+                  onUnavailable={dictation.onUnavailable}
+                  onError={dictation.onError}
+                  labels={{
+                    start: dictation.local ? t('composer.dictateLocal') : t('composer.dictate'),
+                    stop: t('composer.stopDictation'),
+                    unavailable: t('composer.dictationUnavailable'),
+                  }}
+                />
+              )}
               <ChatAutoSpeakToggle on={autoSpeak} onChange={onAutoSpeakChange} />
               <ChatAgentMenu agent={agent} agents={agents} states={states} onPick={onPickAgent} />
               <ChatModelPicker
@@ -439,11 +443,17 @@ export default function ChatComposer({
                   <Square className="size-3 fill-current" />
                 </PromptInputButton>
               )}
-              {(!busy || value.trim()) && (
+              {value.trim() ? (
                 <PromptInputSubmit
                   label={busy ? t('composer.queue') : t('composer.send')}
-                  disabled={!value.trim() || upload.isPending}
+                  disabled={upload.isPending}
                 />
+              ) : conversation.ready || talking ? (
+                // With nothing typed, the send button's place starts a conversation (the
+                // claude.ai/ChatGPT pattern); while one runs, it ends it.
+                <ConversationButton conversation={conversation} />
+              ) : (
+                !busy && <PromptInputSubmit label={t('composer.send')} disabled />
               )}
             </PromptInputTools>
           </PromptInputFooter>

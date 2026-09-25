@@ -48,9 +48,18 @@ describe('contentSecurityPolicy', () => {
   it('runs scripts by nonce, with fallbacks only old browsers read', () => {
     assert.match(
       contentSecurityPolicy('abc123'),
-      /(^|; )script-src 'nonce-abc123' 'strict-dynamic' https: http: 'unsafe-inline'(;|$)/,
+      /(^|; )script-src 'nonce-abc123' 'strict-dynamic' https: http: 'unsafe-inline' 'wasm-unsafe-eval'(;|$)/,
     );
-    assert.match(contentSecurityPolicy(), /(^|; )script-src 'self' 'unsafe-inline'(;|$)/);
+    assert.match(
+      contentSecurityPolicy(),
+      /(^|; )script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'(;|$)/,
+    );
+  });
+
+  it('lets WebAssembly compile but never evaluates JavaScript outside development', () => {
+    const policy = contentSecurityPolicy('abc123');
+    assert.match(policy, /'wasm-unsafe-eval'/);
+    assert.doesNotMatch(policy, /'unsafe-eval'/);
   });
 
   it('allows same-origin frames only when no workspace is configured', () => {

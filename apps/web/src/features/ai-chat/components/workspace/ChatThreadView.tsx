@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
@@ -20,7 +20,9 @@ import ChatRestoreError from './ChatRestoreError';
 import { activeTool, composerActivity, pendingChoices } from '../../utils/composerActivity';
 import { useAutoSpeak } from '../../hooks/useAutoSpeak';
 import { messageText } from '../../utils/chatMessages';
-import { speak } from '../../utils/speak';
+import { speak } from '@/features/voice/browser/speak';
+import { useConversation } from '@/features/voice/hooks/useConversation';
+import { useVoiceProblem } from '@/features/voice/hooks/useVoiceProblem';
 import type { QueuedMessage } from './ChatComposerQueue';
 
 type Queued = QueuedMessage & { options: PlanSendOptions; metadata: PlanChatMetadata };
@@ -118,8 +120,47 @@ export default function ChatThreadView({
   useEffect(() => {
     if (activity === 'failed' || activity === 'sendFailed') setQueuePaused(true);
   }, [activity]);
-  // Voice mode: with "read answers aloud" on, an answer is spoken as soon as it is
-  // complete (not one that was stopped or failed).
+  // The hands-free conversation (features/voice): what is said is sent like a typed message
+  // (waiting its turn while an answer is still coming), and each new answer is read aloud
+  // while it streams.
+  const reportVoice = useVoiceProblem();
+  const voiceMessages = useMemo(
+    () =>
+      plan.messages.map((message) => ({
+        id: message.id,
+        role: message.role,
+        text: message.role === 'assistant' ? messageText(message) : '',
+      })),
+    [plan.messages],
+  );
+  const conversation = useConversation({
+    messages: voiceMessages,
+    busy: plan.busy,
+    queued: queue.length,
+    send: (text) => {
+      const options: PlanSendOptions = {
+        agentId: agent.id,
+        model: model.model,
+        thinkingLevel: model.thinkingLevel,
+      };
+      setQueuePaused(false);
+      if (plan.busy || queue.length > 0) {
+        setQueue((current) => [...current, { id: uuid(), text, options, metadata: {} }]);
+      } else {
+        void plan.send(text, options, {});
+      }
+    },
+    onProblem: reportVoice,
+  });
+  const talking = conversation.phase !== 'off';
+  useEffect(() => {
+    if (conversation.state.notice !== 'echo') return;
+    reportVoice('echo');
+    conversation.dismissNotice();
+  }, [conversation, reportVoice]);
+
+  // With "read answers aloud" on, an answer is spoken as soon as it is complete (not one that
+  // was stopped or failed) — unless a conversation reads it already.
   const [autoSpeak, setAutoSpeak] = useAutoSpeak();
   const wasBusy = useRef(false);
   useEffect(() => {
@@ -130,10 +171,10 @@ export default function ChatThreadView({
     if (!wasBusy.current) return;
     wasBusy.current = false;
     const last = plan.messages.at(-1);
-    if (!autoSpeak || last?.role !== 'assistant') return;
+    if (!autoSpeak || talking || last?.role !== 'assistant') return;
     if (last.metadata?.stopped || last.metadata?.error || last.metadata?.interrupted) return;
     speak(messageText(last));
-  }, [plan.busy, plan.messages, autoSpeak]);
+  }, [plan.busy, plan.messages, autoSpeak, talking]);
 
   // One send per turn: between handing a message to the chat and the chat reporting it
   // busy there is a render in which it still looks idle; the next status change (the
@@ -201,6 +242,7 @@ export default function ChatThreadView({
         contextTokens={summary.data?.contextTokens}
         autoSpeak={autoSpeak}
         onAutoSpeakChange={setAutoSpeak}
+        conversation={conversation}
         threadId={threadId}
         projectKey={projectKey}
         draft={threadId == null ? newChatDraft : undefined}

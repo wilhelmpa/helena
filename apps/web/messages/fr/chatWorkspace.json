@@ -114,11 +114,9 @@
     "queuePaused": "en pause",
     "removeQueued": "Retirer de la file d’attente",
     "dictate": "Dicter",
+    "dictateLocal": "Dicter (Whisper sur cette machine)",
     "stopDictation": "Arrêter la dictée",
-    "dictationFailed": "La dictée n’a pas pu démarrer.",
-    "dictationBlocked": "Le navigateur n’a pas autorisé le microphone. Autorisez-le dans les paramètres du site.",
-    "dictationInsecureTitle": "La dictée nécessite une connexion sécurisée",
-    "dictationInsecure": "Les navigateurs ne prêtent le microphone qu’aux pages HTTPS. Tant que Helena ne tourne pas en HTTPS : ouvrez chrome://flags dans Chrome, activez « Insecure origins treated as secure » et ajoutez {origin}. Le kiosque l’autorise déjà.",
+    "dictationUnavailable": "La dictée n'est pas possible ici pour l'instant – cliquez pour savoir pourquoi",
     "autoSpeak": "Lire les réponses à voix haute automatiquement",
     "autoSpeakOn": "Les réponses sont lues à voix haute – cliquez pour désactiver",
     "queuedList": "En attente d’envoi"
@@ -215,5 +213,48 @@
     "copy": "Copier l’ID de session",
     "copied": "ID de session copié",
     "hint": "Continuer dans un terminal : hermes --resume {id} (ou claude --resume {id})"
+  },
+  "voice": {
+    "startConversation": "Démarrer une conversation – parler et écouter mains libres",
+    "endConversation": "Terminer la conversation",
+    "placeholder": "Parlez simplement – ou tapez …",
+    "interrupt": "Interrompre",
+    "end": "Terminer",
+    "heard": "« {text} »",
+    "phase": {
+      "starting": "Démarrage du micro …",
+      "listening": "Je vous écoute – parlez simplement.",
+      "hearing": "Je vous entends …",
+      "transcribing": "Je note …",
+      "thinking": "{agent} répond dans un instant …",
+      "speaking": "{agent} parle – parlez pour l'interrompre",
+      "speakingTap": "{agent} parle"
+    },
+    "where": {
+      "listenLocal": "Reconnaissance vocale : Whisper sur cette machine",
+      "listenBrowser": "Reconnaissance vocale : le navigateur (Chrome et Safari envoient l'enregistrement à Google ou Apple)",
+      "speakLocal": "Voix : locale sur cette machine",
+      "speakBrowser": "Voix : le navigateur",
+      "speakNone": "Les réponses ne sont pas lues à voix haute (Local uniquement)"
+    },
+    "problems": {
+      "insecureTitle": "Le micro a besoin d'une connexion sécurisée",
+      "insecure": "Les navigateurs n'accordent le micro qu'en HTTPS, et Helena tourne ici en http. En attendant HTTPS : ouvrez {flag} dans Chrome, saisissez {origin}, choisissez « Enabled » et redémarrez Chrome. Safari et Firefox : seulement avec HTTPS.",
+      "copyFlag": "Copier l'adresse",
+      "flagCopied": "Adresse copiée – collez-la dans la barre d'adresse de Chrome.",
+      "localOnlyDownTitle": "La transcription locale est indisponible pour l'instant",
+      "localOnlyDown": "La transcription est réglée sur « Local uniquement » : votre voix ne quitte pas cette machine, le navigateur ne prend donc pas le relais. Réessayez dans un instant ou vérifiez Administrateur → IA locale.",
+      "unsupportedTitle": "Ce navigateur ne reconnaît pas la parole",
+      "unsupported": "Activez « Transcription (dictée) » dans Administrateur → IA locale : Whisper sur cette machine prendra alors note, dans n'importe quel navigateur.",
+      "blocked": "Le navigateur n'a pas autorisé le micro. Autorisez-le dans les paramètres du site (l'icône à gauche de la barre d'adresse).",
+      "missing": "Aucun micro trouvé.",
+      "failed": "Le micro n'a pas pu démarrer.",
+      "transcribeFailed": "La transcription a échoué. Réessayez.",
+      "voiceFailed": "La voix locale est tombée en panne. La réponse est dans le chat ; là où c'est permis, le navigateur continue la lecture.",
+      "nothingHeard": "Rien compris – le micro était-il allumé ?",
+      "limit": "Arrêté après {seconds} secondes – la durée maximale d'une dictée.",
+      "echoTitle": "Je me suis entendue",
+      "echo": "Sur haut-parleurs, interrompez-moi désormais avec « Interrompre ». Avec un casque ou la voix locale, la parole fonctionne aussi."
+    }
   }
 }

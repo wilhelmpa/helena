@@ -21,6 +21,7 @@ function apiOrigin(): string {
 // CSP level 3 reads; so HTML that got into a page (agent-written markdown) runs nothing.
 // Without a nonce (a caller outside the proxy) the policy keeps the old inline allowance.
 // Inline styles are what tiptap, Radix, recharts and Scalar emit.
+// Scripts may compile WebAssembly ('wasm-unsafe-eval', which allows no eval of JavaScript).
 // Images and media come from anywhere: markdown embeds by URL, OAuth profile
 // pictures, and the /media proxy on this origin. React evals in development only,
 // to rebuild server error stacks in the browser. Frames come from this origin, where
@@ -32,6 +33,9 @@ export function contentSecurityPolicy(nonce?: string): string {
     ...(nonce
       ? [`'nonce-${nonce}'`, "'strict-dynamic'", 'https:', 'http:', "'unsafe-inline'"]
       : ["'self'", "'unsafe-inline'"]),
+    // WebAssembly may be compiled (not JavaScript evaluated): the conversation mode's voice
+    // detector runs Silero VAD in ONNX Runtime's WebAssembly build (features/voice).
+    "'wasm-unsafe-eval'",
     ...(process.env.NODE_ENV === 'development' ? ["'unsafe-eval'"] : []),
   ].join(' ');
   return [
