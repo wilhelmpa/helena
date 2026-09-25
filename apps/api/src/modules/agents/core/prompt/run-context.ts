@@ -19,6 +19,9 @@ export interface RunPeople {
   // The handles of the other people the triggering text named (the agent itself
   // excluded), which may include handles nobody in the project answers to.
   mentioned?: string[];
+  // A routine's run, which tags nobody (its framing says when it may ask): the block names
+  // the people without the advice to tag them.
+  quiet?: boolean;
 }
 
 // A person written so the model can both read the name and tag them, e.g. `Ada (@ada)`.
@@ -40,6 +43,7 @@ export function peoplePreamble(people: RunPeople): string {
   }
   if (lines.length === 0) return '';
 
+  if (people.quiet) return ['## People', ...lines, '', ''].join('\n');
   const guidance = ['To mention a person in a comment, write @username in the comment body.'];
   if (people.assignee?.username) {
     guidance.push(

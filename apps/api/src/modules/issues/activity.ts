@@ -265,6 +265,10 @@ export async function createComment(input: {
   body: string;
   // The comment being replied to. It has to be a comment on the same issue.
   replyToId?: number | null;
+  // The comment asks the people it mentions for an answer the author cannot go on
+  // without (an agent's blocked question): it reaches them even from a routine's run,
+  // which otherwise keeps quiet (notifyComment).
+  asksForInput?: boolean;
 }): Promise<FeedItemRow> {
   const actorUserId = input.actorUserId ?? null;
   const actorName = await userName(actorUserId);
@@ -309,7 +313,7 @@ export async function createComment(input: {
       mentioned.agentUserIds,
       issueRef?.delegateUserId ?? null,
     );
-    await notifyComment(projectId, comment, mentioned);
+    await notifyComment(projectId, comment, mentioned, { asksForInput: input.asksForInput });
   }
 
   return comment;
@@ -648,6 +652,8 @@ export async function logIssueUpdate(
   before: IssueSnapshot,
   after: IssueSnapshot,
   actor?: ActivityActor,
+  // `quiet`: the watchers are not told of the status change (a routine reopening its task).
+  opts?: { quiet?: boolean },
 ): Promise<void> {
   const events: ActivityInput[] = [];
   if (before.title !== after.title)
@@ -753,6 +759,7 @@ export async function logIssueUpdate(
       assignedActivityId: idByAction.get('assignee') ?? null,
       statusChanged,
       statusActivityId: idByAction.get('status') ?? null,
+      quiet: opts?.quiet,
     });
   }
   if (descriptionChanged) {

@@ -13,6 +13,7 @@ import { getMembership } from '#modules/members/service';
 import { bumpControlPlaneRevision } from '#modules/sync/service';
 import { publishDomainEvent as publishBusEvent } from '#shared/helena';
 import type { DelegateStep } from '#modules/pipelines/definition';
+import { routineMentions, startRoutineMentions } from '#modules/routines/mentions';
 import { loadRun, stepRow, writeStep } from '../../run-context';
 import {
   StepFailure,
@@ -26,7 +27,10 @@ import {
 // While the routine's task is open (the one it names, or the one its newest earlier fire
 // created) the fire changes nothing and is recorded as skipped. The delegation goes
 // through the normal delegation path, so a coordinator of a project that runs agent
-// teams gets the task through its team.
+// teams gets the task through its team. The agents the instructions @mention start on the
+// task as well, as the routine's author's mentions (routines/mentions.ts). A routine's
+// work is quiet: its task subscribes nobody and its reopening tells no watcher
+// (docs/helena-decisions/routine-mentions.md).
 
 type Step = DelegateStep & { [field: string]: unknown };
 
@@ -177,6 +181,18 @@ async function dispatch(
     });
   const unstarted = columns.find((column) => column.stateType === 'unstarted');
   if (!unstarted) throw new StepFailure('Project has no unstarted state');
+  // Resolved before the task is written: the runs of the agents it names are queued in
+  // the transaction that writes it.
+  const targets = await routineMentions(project, step.instructions, actor, agent.id);
+  const mentions = (tx: Parameters<typeof startRoutineMentions>[0], issueId: number) =>
+    startRoutineMentions(tx, {
+      runId,
+      parent: at,
+      projectId: project.id,
+      issueId,
+      instructions: step.instructions,
+      targets,
+    });
 
   if (step.mode === 'new') {
     let taskId: number | null = null;
@@ -191,6 +207,8 @@ async function dispatch(
         },
         actor,
         {
+          // The routine files the task, not its author: nobody follows it by that.
+          subscribeAuthor: false,
           afterInsert: async (tx, issueId) => {
             const [row] = await tx
               .select({ state: pipelineRunStep.state })
@@ -205,6 +223,7 @@ async function dispatch(
               .update(pipelineRun)
               .set({ issueId, updatedAt: new Date() })
               .where(eq(pipelineRun.id, runId));
+            await mentions(tx, issueId);
           },
         },
       );
@@ -234,12 +253,14 @@ async function dispatch(
       body: `Reopened by the schedule "${step.title}".\n\n${step.instructions}`,
     });
     await writeStep(runId, step, at, { state: { taskId: task.id, commented: true } }, tx);
+    await mentions(tx, task.id);
   });
   if (task.archivedAt) await restoreIssue(task.id, actor);
   const after = await updateIssue(
     task.id,
     { columnId: unstarted.id, delegateUserId: agent.userId },
     actor,
+    { quiet: true },
   );
   if (after && task.delegateUserId === agent.userId) await enqueueDelegateRun(after, actor);
   return finish(runId, step, at, project.id, {
