@@ -11,7 +11,7 @@ import { runtimeEnv } from '@/utils/runtimeEnv';
 import { useProjectProvisioningQuery } from '@/services/projects.service';
 import type { WorkspaceTool, WorkspaceToolId } from '@/utils/workspaceTools';
 import { workspaceTools } from '@/utils/workspaceTools';
-import { panelTool, usePanelTools } from '@/extensions/panelTools';
+import { panelTool, useOfferedPanelTools, usePanelTools } from '@/extensions/panelTools';
 import { usePanelToolLabel } from '@/extensions/pluginPanelTools';
 import { cn } from '@/lib/utils';
 import WorkspaceAreaHeader from './WorkspaceAreaHeader';
@@ -92,6 +92,8 @@ export default function WorkspacePanel({
   );
   // Every panel tool (extensions/panelTools.tsx): the built-ins and plugins' tools.
   const registered = usePanelTools();
+  // What the area's tool picker offers: without a tool this origin does not have.
+  const offered = useOfferedPanelTools();
   const labelOf = usePanelToolLabel();
   const labels = useMemo<Record<WorkspaceToolId, string>>(
     () => Object.fromEntries(registered.map((entry) => [entry.id, labelOf(entry)])),
@@ -259,7 +261,7 @@ export default function WorkspacePanel({
     area ? { gridColumn: String(area.column), gridRow: row } : undefined;
   const picker = (area: PanelArea) => (
     <WorkspaceToolPicker
-      tools={registered}
+      tools={offered}
       current={area.tool}
       shown={areas.map((entry) => entry.tool)}
       labels={labels}

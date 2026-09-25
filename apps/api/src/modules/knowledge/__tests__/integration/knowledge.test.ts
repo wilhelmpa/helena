@@ -59,7 +59,6 @@ describe('knowledge', () => {
         sha256: created.data!.sha256,
         projectKey: 'MKT',
         body: '# Release\n\nRun the workflow.\n',
-        obsidianUrl: `obsidian://open?vault=Volition&file=${encodeURIComponent(notePath)}`,
       });
       expect(note.data!.absolutePath).toBe(path.join(root(), notePath));
 

@@ -1,6 +1,6 @@
 {
-  "title": "Dispositivos y Obsidian",
-  "description": "Syncthing sincroniza las notas y archivos de Home, de los proyectos y de Private/ con Obsidian en tu Mac y tu teléfono: directamente en casa y mediante relés cifrados fuera de ella.",
+  "title": "Dispositivos",
+  "description": "Syncthing mantiene al día las notas y archivos de Home, de los proyectos y de Private/ como una carpeta normal en tu Mac y tu teléfono: directamente en casa y mediante relés cifrados fuera de ella.",
   "loadError": "No se pudo leer el estado de la sincronización.",
   "ownerOnly": "Solo el propietario de la instancia gestiona los dispositivos.",
   "unavailable": {
@@ -58,7 +58,7 @@
   },
   "conflicts": {
     "title": "Conflictos",
-    "hint": "Syncthing guarda una copia de conflicto cuando un archivo se modificó en dos dispositivos antes de que se sincronizaran. Abre ambos archivos en Obsidian, lleva al original lo que quieras conservar y borra la copia de conflicto; el borrado llega a todos los dispositivos.",
+    "hint": "Syncthing guarda una copia de conflicto cuando un archivo se modificó en dos dispositivos antes de que se sincronizaran. Abre ambos archivos, lleva al original lo que quieras conservar y borra la copia de conflicto; el borrado llega a todos los dispositivos.",
     "empty": "No hay conflictos.",
     "loadError": "No se pudieron leer los conflictos.",
     "original": "Original: {path}",
@@ -66,14 +66,14 @@
   },
   "guide": {
     "title": "Configurar un dispositivo",
-    "step1": "Instala Syncthing y Obsidian en el dispositivo. Mac: la app Syncthing de syncthing.net. iPhone: Möbius Sync desde la App Store. Android: Syncthing-Fork desde F-Droid o Google Play.",
+    "step1": "Instala Syncthing en el dispositivo. Mac: la app Syncthing de syncthing.net. iPhone: Möbius Sync desde la App Store. Android: Syncthing-Fork desde F-Droid o Google Play.",
     "step2": "En Syncthing, añade un dispositivo e introduce el ID de dispositivo de este servidor, o escanea el código QR.",
     "step2Lan": "Para sincronizar directamente en casa, introduce <code>{address}, dynamic</code> como direcciones del dispositivo.",
     "step3": "El dispositivo aparece entonces arriba en «Dispositivos que piden conectarse». Elige Aceptar.",
-    "step4": "En el dispositivo, acepta la carpeta Helena en una carpeta llamada Helena: <code>~/Helena</code> en el Mac, <code>Helena</code> en el almacenamiento interno en Android, la bóveda de Obsidian Helena en el iPhone.",
-    "step5": "Espera a que la carpeta muestre «Al día» en el dispositivo y abre la carpeta Helena como bóveda en Obsidian. Los enlaces de Helena abren la bóveda Helena.",
+    "step4": "En el dispositivo, acepta la carpeta Helena en una carpeta llamada Helena: <code>~/Helena</code> en el Mac, <code>Helena</code> en el almacenamiento interno en Android, en «En mi iPhone» dentro de Möbius Sync en el iPhone.",
+    "step5": "Espera a que la carpeta muestre «Al día» en el dispositivo. Las notas y archivos son entonces archivos normales en el dispositivo; las notas se escriben mejor en Helena, en Notas.",
     "iphoneTitle": "iPhone",
-    "iphone": "En el iPhone, Obsidian solo abre sus propias carpetas. Primero crea la bóveda Helena en Obsidian (en el iPhone, no en iCloud) y cierra Obsidian. Después, en Möbius Sync, coloca la carpeta Helena en En mi iPhone › Obsidian › Helena. Obsidian escribe sus propios ajustes al crear una bóveda, así que pueden aparecer conflictos en <code>.obsidian</code> tras la primera sincronización; sus copias de conflicto contienen los ajustes predeterminados de este servidor. Möbius Sync sincroniza mientras la app está abierta o iOS la deja funcionar en segundo plano.",
+    "iphone": "Möbius Sync coloca la carpeta Helena en «En mi iPhone», donde la app Archivos la muestra. Möbius Sync sincroniza mientras la app está abierta o iOS la deja funcionar en segundo plano.",
     "spaceTitle": "Ahorrar espacio en el teléfono (opcional)",
     "space": "Los patrones de exclusión solo se aplican en el dispositivo donde se introducen. Para no cargar los archivos de correo en el teléfono, abre la carpeta Helena en Möbius Sync o Syncthing-Fork, añade la línea <code>Files/Mail</code> en los patrones de exclusión y guarda, mejor justo después de aceptar la carpeta. Los archivos se quedan en este servidor y en los demás dispositivos."
   }

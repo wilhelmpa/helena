@@ -1,6 +1,6 @@
 {
-  "title": "الأجهزة وObsidian",
-  "description": "يزامن Syncthing ملاحظات وملفات Home والمشاريع وPrivate/ مع Obsidian على جهاز Mac والهاتف: مباشرةً في المنزل، وعبر مرحّلات مشفّرة أثناء التنقل.",
+  "title": "الأجهزة",
+  "description": "يُبقي Syncthing ملاحظات وملفات Home والمشاريع وPrivate/ محدَّثة كمجلد عادي على جهاز Mac والهاتف: مباشرةً في المنزل، وعبر مرحّلات مشفّرة أثناء التنقل.",
   "loadError": "تعذّرت قراءة حالة المزامنة.",
   "ownerOnly": "مالك المثيل وحده يدير الأجهزة.",
   "unavailable": {
@@ -58,7 +58,7 @@
   },
   "conflicts": {
     "title": "التعارضات",
-    "hint": "يحتفظ Syncthing بنسخة تعارض عندما يتغيّر ملف على جهازين قبل أن يتزامنا. افتح الملفين في Obsidian، وانقل ما تريد الاحتفاظ به إلى الملف الأصلي، ثم احذف نسخة التعارض؛ يصل الحذف إلى كل جهاز.",
+    "hint": "يحتفظ Syncthing بنسخة تعارض عندما يتغيّر ملف على جهازين قبل أن يتزامنا. افتح الملفين، وانقل ما تريد الاحتفاظ به إلى الملف الأصلي، ثم احذف نسخة التعارض؛ يصل الحذف إلى كل جهاز.",
     "empty": "لا توجد تعارضات.",
     "loadError": "تعذّرت قراءة التعارضات.",
     "original": "الأصل: {path}",
@@ -66,14 +66,14 @@
   },
   "guide": {
     "title": "إعداد جهاز",
-    "step1": "ثبّت Syncthing وObsidian على الجهاز. Mac: تطبيق Syncthing من syncthing.net. iPhone: ‏Möbius Sync من App Store. Android: ‏Syncthing-Fork من F-Droid أو Google Play.",
+    "step1": "ثبّت Syncthing على الجهاز. Mac: تطبيق Syncthing من syncthing.net. iPhone: ‏Möbius Sync من App Store. Android: ‏Syncthing-Fork من F-Droid أو Google Play.",
     "step2": "في Syncthing، أضف جهازًا وأدخل معرّف جهاز هذا الخادم، أو امسح رمز QR.",
     "step2Lan": "للمزامنة المباشرة في المنزل، أدخل <code>{address}, dynamic</code> عناوينَ للجهاز.",
     "step3": "يظهر الجهاز بعدها في الأعلى ضمن «أجهزة تطلب الاتصال». اختر «قبول».",
-    "step4": "على الجهاز، اقبل المجلد Helena في مجلد اسمه Helena: <code>~/Helena</code> على Mac، و<code>Helena</code> في وحدة التخزين الداخلية على Android، وخزنة Obsidian ‏Helena على iPhone.",
-    "step5": "انتظر حتى يظهر المجلد على الجهاز بحالة «محدَّث»، ثم افتح المجلد Helena كخزنة في Obsidian. تفتح الروابط من Helena الخزنة Helena.",
+    "step4": "على الجهاز، اقبل المجلد Helena في مجلد اسمه Helena: <code>~/Helena</code> على Mac، و<code>Helena</code> في وحدة التخزين الداخلية على Android، وضمن «على iPhone» في Möbius Sync على iPhone.",
+    "step5": "انتظر حتى يظهر المجلد على الجهاز بحالة «محدَّث». تصبح الملاحظات والملفات عندها ملفات عادية على الجهاز؛ والأفضل كتابة الملاحظات في Helena ضمن «الملاحظات».",
     "iphoneTitle": "iPhone",
-    "iphone": "على iPhone لا يفتح Obsidian إلا مجلداته. أنشئ أولًا الخزنة Helena في Obsidian (على iPhone، لا في iCloud) ثم أغلق Obsidian. بعد ذلك، في Möbius Sync، ضع المجلد Helena في «على iPhone» › Obsidian › Helena. يكتب Obsidian إعداداته الخاصة عند إنشاء خزنة، لذا قد تظهر تعارضات في <code>.obsidian</code> بعد المزامنة الأولى؛ وتحتوي نسخ التعارض على الإعدادات الافتراضية لهذا الخادم. يزامن Möbius Sync ما دام التطبيق مفتوحًا أو سمح له iOS بالعمل في الخلفية.",
+    "iphone": "يضع Möbius Sync المجلد Helena ضمن «على iPhone»، حيث يعرضه تطبيق «الملفات». يزامن Möbius Sync ما دام التطبيق مفتوحًا أو ما دام iOS يتركه يعمل في الخلفية.",
     "spaceTitle": "توفير المساحة على الهاتف (اختياري)",
     "space": "تنطبق أنماط التجاهل على الجهاز الذي أُدخلت فيه فقط. لكي لا تُحمَّل ملفات البريد على الهاتف، افتح المجلد Helena في Möbius Sync أو Syncthing-Fork، وأضف السطر <code>Files/Mail</code> ضمن أنماط التجاهل واحفظ، ويُفضَّل فعل ذلك مباشرةً بعد قبول المجلد. تبقى الملفات على هذا الخادم وعلى الأجهزة الأخرى."
   }

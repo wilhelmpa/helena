@@ -28,7 +28,7 @@ import { routes } from './sources/common';
 
 // "Save to knowledge" targets. A capture is a Markdown note with the properties
 // Obsidian's web clipper uses (`source`, `created`, `tags`), so a note clipped in the
-// browser, in Obsidian or by an agent looks the same:
+// browser, in the notes or by an agent looks the same:
 // - inbox: a new note in the project's Inbox/ (Home/Inbox without a project), to be
 //   sorted later;
 // - journal: a line under "Eingang" in today's daily note, made from the template when

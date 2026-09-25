@@ -12,29 +12,31 @@ import {
   writeVaultFile,
 } from '@repo/vault';
 
-// Note templates and daily notes the way Obsidian's core plugins keep them, so Helena
-// and Obsidian agree without a plugin: the templates are Markdown files in Templates/
-// (`.obsidian/templates.json` names the folder), with Obsidian's variables {{title}},
-// {{date}}, {{time}} and {{date:FORMAT}}; the daily note's folder, name format and
-// template come from `.obsidian/daily-notes.json`. Helena seeds both once and then only
-// reads them, so the owner's changes (in Obsidian or in Helena) win.
+// Note templates and daily notes. The templates are Markdown files in Templates/ with the
+// variables {{title}}, {{date}}, {{time}} and {{date:FORMAT}} (a moment.js format); the daily
+// note is Home/Docs/Journal/YYYY-MM-DD.md, made from Templates/Tagesnotiz (Templates/Daily
+// note on an English instance) and tagged `journal`. The notes (SilverBullet) keep their
+// journal in the same folder (deployment/volition-stack/native/notes/CONFIG.md.in), so
+// Helena's daily note and the notes' "Journal: Today" are one file. Helena seeds the
+// templates once; the owner's changes to them win.
 
-export const DAILY_NOTES_CONFIG = '.obsidian/daily-notes.json';
-export const TEMPLATES_CONFIG = '.obsidian/templates.json';
 const SEEDED_KEY = 'knowledge.templatesSeeded';
 
 export interface DailyNotesConfig {
   folder: string;
-  // A moment.js format, as Obsidian stores it. Helena understands the tokens below.
+  // A moment.js format. Helena understands the tokens formatDate lists.
   format: string;
-  // A vault path without ".md", as Obsidian stores it; empty for none.
+  // A vault path without ".md"; empty for none.
   template: string;
 }
 
+export const DAILY_NOTES_FOLDER = 'Home/Docs/Journal';
+const DAILY_TEMPLATES = [`${TEMPLATES_DIR}/Tagesnotiz`, `${TEMPLATES_DIR}/Daily note`];
+
 export const DEFAULT_DAILY_NOTES: DailyNotesConfig = {
-  folder: 'Home/Docs/Journal',
+  folder: DAILY_NOTES_FOLDER,
   format: 'YYYY-MM-DD',
-  template: `${TEMPLATES_DIR}/Tagesnotiz`,
+  template: DAILY_TEMPLATES[0]!,
 };
 
 const WEEKDAYS: Record<string, string[]> = {
@@ -117,7 +119,7 @@ export function formatDate(date: Date, format: string, locale = 'de', timeZone?:
   );
 }
 
-// Fills Obsidian's template variables.
+// Fills the template variables.
 export function expandTemplate(
   template: string,
   values: { title: string; date: Date; locale?: string; timeZone?: string },
@@ -138,26 +140,21 @@ export function expandTemplate(
   );
 }
 
-async function readJson<T>(relative: string): Promise<T | null> {
-  try {
-    return JSON.parse(await readFile(absoluteVaultPath(relative), 'utf8')) as T;
-  } catch {
-    return null;
-  }
-}
-
+// The daily note settings: the folder and name are fixed; the template is the seeded one of
+// the instance's language that exists (none when the owner deleted both).
 export async function dailyNotesConfig(): Promise<DailyNotesConfig> {
-  const stored = await readJson<Partial<DailyNotesConfig>>(DAILY_NOTES_CONFIG);
-  return {
-    folder: (stored?.folder ?? DEFAULT_DAILY_NOTES.folder).replace(/^\/+|\/+$/g, ''),
-    format: stored?.format?.trim() || DEFAULT_DAILY_NOTES.format,
-    template: (stored?.template ?? DEFAULT_DAILY_NOTES.template).replace(/^\/+|\.md$/g, ''),
-  };
+  let template = '';
+  for (const candidate of DAILY_TEMPLATES) {
+    if ((await readTemplate(`${candidate}.md`)) !== null) {
+      template = candidate;
+      break;
+    }
+  }
+  return { ...DEFAULT_DAILY_NOTES, template };
 }
 
 export async function templatesFolder(): Promise<string> {
-  const stored = await readJson<{ folder?: string }>(TEMPLATES_CONFIG);
-  return (stored?.folder ?? TEMPLATES_DIR).replace(/^\/+|\/+$/g, '') || TEMPLATES_DIR;
+  return TEMPLATES_DIR;
 }
 
 export interface TemplateInfo {
@@ -188,7 +185,7 @@ export async function readTemplate(relative: string): Promise<string | null> {
   }
 }
 
-// The five starter templates, German and English. Obsidian variables only.
+// The five starter templates, German and English. Only the variables above.
 const STARTERS: Record<'de' | 'en', Record<string, string>> = {
   de: {
     Tagesnotiz: `---
@@ -435,9 +432,8 @@ async function seeded(): Promise<boolean> {
   return row?.value === true;
 }
 
-// Writes the starter templates and Obsidian's two config files once per instance, in
-// the instance's language. A file that exists is never replaced, and a template the
-// owner deleted later does not come back.
+// Writes the starter templates once per instance, in the instance's language. A file that
+// exists is never replaced, and a template the owner deleted later does not come back.
 export async function seedTemplates(language: 'de' | 'en' = 'de'): Promise<string[]> {
   if (await seeded()) return [];
   const written: string[] = [];
@@ -452,12 +448,6 @@ export async function seedTemplates(language: 'de' | 'en' = 'de'): Promise<strin
   for (const [name, content] of Object.entries(STARTERS[language])) {
     await put(`${TEMPLATES_DIR}/${name}.md`, content);
   }
-  const daily = {
-    ...DEFAULT_DAILY_NOTES,
-    template: `${TEMPLATES_DIR}/${language === 'de' ? 'Tagesnotiz' : 'Daily note'}`,
-  };
-  await put(DAILY_NOTES_CONFIG, `${JSON.stringify(daily, null, 2)}\n`);
-  await put(TEMPLATES_CONFIG, `${JSON.stringify({ folder: TEMPLATES_DIR }, null, 2)}\n`);
   if (written.length > 0) {
     await indexVaultPaths(written);
     await commitVaultPaths(written, 'Add note templates', PLAN_AUTHOR);

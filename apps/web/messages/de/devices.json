@@ -1,6 +1,6 @@
 {
-  "title": "Geräte & Obsidian",
-  "description": "Syncthing hält die Notizen und Dateien von Home, den Projekten und Private/ mit Obsidian auf Mac und Telefon synchron: zu Hause direkt, unterwegs über verschlüsselte Relays.",
+  "title": "Geräte",
+  "description": "Syncthing hält die Notizen und Dateien von Home, den Projekten und Private/ als gewöhnlichen Ordner auf Mac und Telefon aktuell: zu Hause direkt, unterwegs über verschlüsselte Relays.",
   "loadError": "Der Synchronisationsstatus konnte nicht gelesen werden.",
   "ownerOnly": "Nur der Eigentümer der Instanz verwaltet die Geräte.",
   "unavailable": {
@@ -58,7 +58,7 @@
   },
   "conflicts": {
     "title": "Konflikte",
-    "hint": "Syncthing legt eine Konfliktkopie an, wenn eine Datei auf zwei Geräten geändert wurde, bevor sie synchronisiert haben. Beide Dateien in Obsidian öffnen, das Gewünschte ins Original übernehmen und die Konfliktkopie löschen; das Löschen erreicht jedes Gerät.",
+    "hint": "Syncthing legt eine Konfliktkopie an, wenn eine Datei auf zwei Geräten geändert wurde, bevor sie synchronisiert haben. Beide Dateien öffnen, das Gewünschte ins Original übernehmen und die Konfliktkopie löschen; das Löschen erreicht jedes Gerät.",
     "empty": "Keine Konflikte.",
     "loadError": "Die Konflikte konnten nicht gelesen werden.",
     "original": "Original: {path}",
@@ -66,14 +66,14 @@
   },
   "guide": {
     "title": "Gerät einrichten",
-    "step1": "Syncthing und Obsidian auf dem Gerät installieren. Mac: die App Syncthing von syncthing.net. iPhone: Möbius Sync aus dem App Store. Android: Syncthing-Fork aus F-Droid oder Google Play.",
+    "step1": "Syncthing auf dem Gerät installieren. Mac: die App Syncthing von syncthing.net. iPhone: Möbius Sync aus dem App Store. Android: Syncthing-Fork aus F-Droid oder Google Play.",
     "step2": "In Syncthing ein Gerät hinzufügen und die Geräte-ID dieses Servers eintragen oder den QR-Code scannen.",
     "step2Lan": "Für direkte Synchronisation zu Hause als Adressen des Geräts <code>{address}, dynamic</code> eintragen.",
     "step3": "Das Gerät erscheint dann oben unter „Geräte mit Verbindungsanfrage“. „Annehmen“ wählen.",
-    "step4": "Auf dem Gerät den Ordner Helena in einen Ordner namens Helena annehmen: auf dem Mac <code>~/Helena</code>, auf Android <code>Helena</code> im internen Speicher, auf dem iPhone der Obsidian-Tresor Helena.",
-    "step5": "Warten, bis der Ordner auf dem Gerät „Aktuell“ zeigt, dann in Obsidian den Ordner Helena als Tresor öffnen. Links aus Helena öffnen den Tresor Helena.",
+    "step4": "Auf dem Gerät den Ordner Helena in einen Ordner namens Helena annehmen: auf dem Mac <code>~/Helena</code>, auf Android <code>Helena</code> im internen Speicher, auf dem iPhone in Möbius Sync unter „Auf meinem iPhone“.",
+    "step5": "Warten, bis der Ordner auf dem Gerät „Aktuell“ zeigt. Die Notizen und Dateien liegen dann als gewöhnliche Dateien auf dem Gerät; schreiben lassen sich die Notizen am besten in Helena unter Notizen.",
     "iphoneTitle": "iPhone",
-    "iphone": "Obsidian auf dem iPhone öffnet nur eigene Ordner. Zuerst in Obsidian den Tresor Helena anlegen (auf dem iPhone, nicht in iCloud) und Obsidian schließen. Dann in Möbius Sync den Ordner Helena nach Auf meinem iPhone › Obsidian › Helena legen. Obsidian schreibt beim Anlegen eines Tresors eigene Einstellungen, deshalb können nach der ersten Synchronisation Konflikte in <code>.obsidian</code> erscheinen; ihre Konfliktkopien enthalten die Vorgaben dieses Servers. Möbius Sync synchronisiert, solange die App offen ist oder iOS sie im Hintergrund laufen lässt.",
+    "iphone": "Möbius Sync legt den Ordner Helena unter „Auf meinem iPhone“ ab; die App Dateien zeigt ihn dort. Möbius Sync synchronisiert, solange die App offen ist oder iOS sie im Hintergrund laufen lässt.",
     "spaceTitle": "Platz sparen auf dem Telefon (optional)",
     "space": "Ignoriermuster gelten nur auf dem Gerät, auf dem sie eingetragen sind. Um die Mail-Dateien nicht aufs Telefon zu laden, in Möbius Sync oder Syncthing-Fork den Ordner Helena öffnen, unter Ignoriermuster die Zeile <code>Files/Mail</code> eintragen und speichern, am besten direkt nach dem Annehmen des Ordners. Die Dateien bleiben auf diesem Server und den anderen Geräten."
   }

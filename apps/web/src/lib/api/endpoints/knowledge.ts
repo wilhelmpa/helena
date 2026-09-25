@@ -45,7 +45,6 @@ export interface VaultDocument {
   truncated: boolean;
   extractionStatus: string;
   absolutePath: string;
-  obsidianUrl: string;
 }
 
 export interface WriteNoteInput {

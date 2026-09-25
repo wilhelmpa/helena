@@ -15,7 +15,7 @@
     "hintAccess": "Ce serveur n’exécute aucun service qui vérifie les connexions. Google, les e-mails et les identifiants sont dans les onglets voisins ; les appareils ont leur propre page.",
     "mail": "Comptes e-mail",
     "credentials": "Identifiants",
-    "devices": "Appareils et Obsidian"
+    "devices": "Appareils"
   },
   "status": {
     "connected": "Connecté",

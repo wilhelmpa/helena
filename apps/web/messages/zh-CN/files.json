@@ -53,7 +53,7 @@
     "rename": "重命名",
     "move": "移动",
     "copyPath": "复制路径",
-    "openInObsidian": "在 Obsidian 中打开",
+    "openInNotes": "在笔记中打开",
     "openInCode": "在 VS Code 中打开",
     "openInDocs": "在文档中打开",
     "linkToTask": "关联到任务",

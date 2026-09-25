@@ -27,8 +27,9 @@ import it; the runner does not.
   vectors, so no migration needs pgvector; with the extension installed,
   `ensureVectorIndex` adds an indexed `vector` column. The model runs in-process
   (Transformers.js) and is loaded by name only after the owner approved it.
-- **Templates and daily notes** follow Obsidian's settings files in the vault; Helena
-  seeds them once and then only reads them.
+- **Templates and daily notes**: templates are Markdown files in `Templates/`, seeded once;
+  the daily note is `Home/Docs/Journal/YYYY-MM-DD.md`, the same file the notes'
+  (SilverBullet's) "Journal: Today" opens. No editor settings files are read or written.
 
 ## Tests
 

@@ -3,7 +3,7 @@
 import { MoreHorizontal } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { WorkspaceToolId } from '@/utils/workspaceTools';
-import { usePanelTools } from '@/extensions/panelTools';
+import { useOfferedPanelTools } from '@/extensions/panelTools';
 import { usePanelToolLabel } from '@/extensions/pluginPanelTools';
 import { cn } from '@/lib/utils';
 import {
@@ -15,7 +15,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 // The header's tool buttons: the panel tools the registry puts in the header
-// (extensions/panelTools.tsx; chat, terminal, code, browser, mail and plugins' tools),
+// (extensions/panelTools.tsx; chat, terminal, code, notes, browser, mail and plugins' tools),
 // 32px icon buttons with the sidebar's hover and active fill, each with a tooltip. On a
 // phone only the pinned tool (chat) stays in the row and the rest open from one overflow
 // menu, so the single-row header never wraps or scrolls sideways.
@@ -30,7 +30,7 @@ export default function WorkspaceToolbar({
   const t = useTranslations('nav.workspace');
   const tCommon = useTranslations('common');
   const label = usePanelToolLabel();
-  const tools = usePanelTools().filter((tool) => tool.inHeader);
+  const tools = useOfferedPanelTools().filter((tool) => tool.inHeader);
   const overflow = tools.filter((tool) => !tool.phonePinned);
   const overflowActive = overflow.some((tool) => shown.includes(tool.id));
 

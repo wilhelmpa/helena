@@ -15,7 +15,7 @@
     "hintAccess": "Server ini tidak menjalankan layanan yang memeriksa koneksi. Google, email, dan kredensial ada di tab di sebelahnya; perangkat punya halaman sendiri.",
     "mail": "Akun email",
     "credentials": "Kredensial",
-    "devices": "Perangkat & Obsidian"
+    "devices": "Perangkat"
   },
   "status": {
     "connected": "Terhubung",

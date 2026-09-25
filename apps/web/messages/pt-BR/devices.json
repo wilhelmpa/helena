@@ -1,6 +1,6 @@
 {
-  "title": "Dispositivos e Obsidian",
-  "description": "O Syncthing sincroniza as notas e arquivos do Home, dos projetos e do Private/ com o Obsidian no seu Mac e no seu celular: diretamente em casa e por relays criptografados fora dela.",
+  "title": "Dispositivos",
+  "description": "O Syncthing mantém as notas e arquivos do Home, dos projetos e do Private/ atualizados como uma pasta comum no seu Mac e no seu celular: diretamente em casa e por relays criptografados fora dela.",
   "loadError": "Não foi possível ler o status da sincronização.",
   "ownerOnly": "Somente o proprietário da instância gerencia os dispositivos.",
   "unavailable": {
@@ -58,7 +58,7 @@
   },
   "conflicts": {
     "title": "Conflitos",
-    "hint": "O Syncthing mantém uma cópia de conflito quando um arquivo foi alterado em dois dispositivos antes de sincronizarem. Abra os dois arquivos no Obsidian, leve para o original o que quiser manter e apague a cópia de conflito; a exclusão chega a todos os dispositivos.",
+    "hint": "O Syncthing mantém uma cópia de conflito quando um arquivo foi alterado em dois dispositivos antes de sincronizarem. Abra os dois arquivos, leve para o original o que quiser manter e apague a cópia de conflito; a exclusão chega a todos os dispositivos.",
     "empty": "Nenhum conflito.",
     "loadError": "Não foi possível ler os conflitos.",
     "original": "Original: {path}",
@@ -66,14 +66,14 @@
   },
   "guide": {
     "title": "Configurar um dispositivo",
-    "step1": "Instale o Syncthing e o Obsidian no dispositivo. Mac: o app Syncthing de syncthing.net. iPhone: Möbius Sync na App Store. Android: Syncthing-Fork no F-Droid ou no Google Play.",
+    "step1": "Instale o Syncthing no dispositivo. Mac: o app Syncthing de syncthing.net. iPhone: Möbius Sync na App Store. Android: Syncthing-Fork no F-Droid ou no Google Play.",
     "step2": "No Syncthing, adicione um dispositivo e informe o ID de dispositivo deste servidor, ou escaneie o código QR.",
     "step2Lan": "Para sincronizar diretamente em casa, informe <code>{address}, dynamic</code> como endereços do dispositivo.",
     "step3": "O dispositivo aparece então acima em “Dispositivos pedindo conexão”. Escolha Aceitar.",
-    "step4": "No dispositivo, aceite a pasta Helena em uma pasta chamada Helena: <code>~/Helena</code> no Mac, <code>Helena</code> no armazenamento interno no Android, o cofre do Obsidian Helena no iPhone.",
-    "step5": "Espere até a pasta mostrar “Atualizado” no dispositivo e então abra a pasta Helena como cofre no Obsidian. Links da Helena abrem o cofre Helena.",
+    "step4": "No dispositivo, aceite a pasta Helena em uma pasta chamada Helena: <code>~/Helena</code> no Mac, <code>Helena</code> no armazenamento interno no Android, em “No Meu iPhone” no Möbius Sync no iPhone.",
+    "step5": "Espere até a pasta mostrar “Atualizado” no dispositivo. As notas e arquivos passam a ser arquivos comuns no dispositivo; as notas se escrevem melhor na Helena, em Notas.",
     "iphoneTitle": "iPhone",
-    "iphone": "No iPhone, o Obsidian só abre as próprias pastas. Primeiro crie o cofre Helena no Obsidian (no iPhone, não no iCloud) e feche o Obsidian. Depois, no Möbius Sync, coloque a pasta Helena em No Meu iPhone › Obsidian › Helena. O Obsidian grava suas próprias configurações ao criar um cofre, por isso podem aparecer conflitos em <code>.obsidian</code> após a primeira sincronização; as cópias de conflito contêm os padrões deste servidor. O Möbius Sync sincroniza enquanto o app está aberto ou o iOS o deixa rodar em segundo plano.",
+    "iphone": "O Möbius Sync coloca a pasta Helena em “No Meu iPhone”, onde o app Arquivos a mostra. O Möbius Sync sincroniza enquanto o app está aberto ou o iOS o deixa rodar em segundo plano.",
     "spaceTitle": "Economizar espaço no celular (opcional)",
     "space": "Os padrões de exclusão valem apenas no dispositivo em que são informados. Para não baixar os arquivos de e-mail no celular, abra a pasta Helena no Möbius Sync ou no Syncthing-Fork, adicione a linha <code>Files/Mail</code> em padrões de exclusão e salve, de preferência logo após aceitar a pasta. Os arquivos continuam neste servidor e nos outros dispositivos."
   }

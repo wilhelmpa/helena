@@ -58,7 +58,7 @@ export {
   type CaptureActor,
 } from './capture';
 export {
-  DAILY_NOTES_CONFIG,
+  DAILY_NOTES_FOLDER,
   dailyNotesConfig,
   DEFAULT_DAILY_NOTES,
   expandTemplate,
@@ -66,7 +66,6 @@ export {
   listTemplates,
   readTemplate,
   seedTemplates,
-  TEMPLATES_CONFIG,
   templatesFolder,
   type DailyNotesConfig,
   type TemplateInfo,

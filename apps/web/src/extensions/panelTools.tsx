@@ -1,12 +1,13 @@
 'use client';
 
-import { useSyncExternalStore, type ComponentType } from 'react';
+import { useMemo, useSyncExternalStore, type ComponentType } from 'react';
 import {
   Code2,
   Globe2,
   Inbox,
   Mail,
   MessageSquare,
+  NotebookPen,
   PlugZap,
   Puzzle,
   Terminal,
@@ -19,6 +20,7 @@ import ConnectionsWorkspace from '@/features/connections/ConnectionsWorkspace';
 import MailComposeWorkspace from '@/features/mail/MailComposeWorkspace';
 import NativeChatWorkspace from '@/features/ai-chat/components/panel/NativeChatWorkspace';
 import TerminalWorkspace from '@/features/owner-terminal/TerminalWorkspace';
+import { runtimeEnv } from '@/utils/runtimeEnv';
 
 // The tools of the side panel, as a registry (@helena/sdk UI slot `panel-tool`). The
 // panel, its header buttons, the split menu and the panel state read this list instead
@@ -50,6 +52,9 @@ export interface PanelTool {
   projectScoped: boolean;
   view: PanelToolView;
   pluginId: string;
+  // Whether this page's origin has the tool at all (the notes: only where the deployment
+  // names an address for this origin). Asked in the browser only; without it, always.
+  available?: () => boolean;
 }
 
 export const PANEL_PLUGIN_ID = 'helena.panel';
@@ -61,7 +66,7 @@ function builtin(
   Icon: LucideIcon,
   order: number,
   view: PanelToolView,
-  flags: Partial<Pick<PanelTool, 'inHeader' | 'phonePinned' | 'projectScoped'>> = {},
+  flags: Partial<Pick<PanelTool, 'inHeader' | 'phonePinned' | 'projectScoped' | 'available'>> = {},
 ): PanelTool {
   return {
     id,
@@ -73,6 +78,7 @@ function builtin(
     projectScoped: flags.projectScoped ?? false,
     view,
     pluginId: PANEL_PLUGIN_ID,
+    ...(flags.available ? { available: flags.available } : {}),
   };
 }
 
@@ -91,6 +97,19 @@ for (const tool of [
     projectScoped: true,
   }),
   builtin('code', Code2, 30, { kind: 'workspace' }, { inHeader: true, projectScoped: true }),
+  // The notes (SilverBullet on the vault), on an origin of their own; offered only where
+  // this origin has an address for them (utils/runtimeEnv notesUrl).
+  builtin(
+    'notes',
+    NotebookPen,
+    35,
+    { kind: 'workspace' },
+    {
+      inHeader: true,
+      projectScoped: true,
+      available: () => runtimeEnv().workspace.notesUrl !== '',
+    },
+  ),
   builtin('browser', Globe2, 40, { kind: 'workspace' }, { inHeader: true }),
   builtin('mail', Mail, 50, component(MailComposeWorkspace), { inHeader: true }),
   builtin('inbox', Inbox, 60, component(InboxWorkspace)),
@@ -129,6 +148,24 @@ function snapshot(): PanelTool[] {
 // Every panel tool, in order; re-renders when a plugin's tool arrives or leaves.
 export function usePanelTools(): PanelTool[] {
   return useSyncExternalStore((listener) => panelTools.subscribe(listener), snapshot, snapshot);
+}
+
+const noSubscription = () => () => {};
+
+// The panel tools this page offers: every tool except one whose origin check (available)
+// says no. The origin is known in the browser only, so such a tool is left out of the
+// server's render and appears once the page is hydrated (no mismatch between the two).
+export function useOfferedPanelTools(): PanelTool[] {
+  const tools = usePanelTools();
+  const hydrated = useSyncExternalStore(
+    noSubscription,
+    () => true,
+    () => false,
+  );
+  return useMemo(
+    () => tools.filter((tool) => !tool.available || (hydrated && tool.available())),
+    [hydrated, tools],
+  );
 }
 
 export function panelTool(id: string): PanelTool | undefined {

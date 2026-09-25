@@ -53,7 +53,7 @@
     "rename": "إعادة التسمية",
     "move": "نقل",
     "copyPath": "نسخ المسار",
-    "openInObsidian": "فتح في Obsidian",
+    "openInNotes": "فتح في الملاحظات",
     "openInCode": "فتح في VS Code",
     "openInDocs": "فتح في المستندات",
     "linkToTask": "ربط بمهمة",

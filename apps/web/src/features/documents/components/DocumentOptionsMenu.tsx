@@ -1,16 +1,11 @@
 'use client';
 
-import {
-  Download,
-  EllipsisVertical,
-  ExternalLink,
-  FolderInput,
-  History,
-  Trash2,
-} from 'lucide-react';
+import { Download, EllipsisVertical, FolderInput, History, NotebookPen, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { vaultFileUrl, type VaultDocument } from '@/lib/api/endpoints/knowledge';
 import { cn } from '@/lib/utils';
+import { runtimeEnv } from '@/utils/runtimeEnv';
+import { notesFileUrl } from '@/utils/vaultLinks';
 import { PAGE_CONTROL_CLASS } from '@/components/layout/PageToolbar';
 import {
   DropdownMenu,
@@ -32,6 +27,8 @@ export default function DocumentOptionsMenu({
   onOpenDialog: (dialog: DocumentEditorDialog) => void;
 }) {
   const t = useTranslations('documents');
+  // The note in the notes (a new tab on their own origin), where this origin has them.
+  const notes = notesFileUrl(runtimeEnv().workspace.notesUrl, document.path);
 
   return (
     <DropdownMenu>
@@ -46,12 +43,14 @@ export default function DocumentOptionsMenu({
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuItem asChild>
-          <a href={document.obsidianUrl}>
-            <ExternalLink />
-            {t('openInObsidian')}
-          </a>
-        </DropdownMenuItem>
+        {notes && (
+          <DropdownMenuItem asChild>
+            <a href={notes} target="_blank" rel="noopener noreferrer">
+              <NotebookPen />
+              {t('openInNotes')}
+            </a>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem asChild>
           <a href={vaultFileUrl(document.path)} download={baseName(document.path)}>
             <Download />

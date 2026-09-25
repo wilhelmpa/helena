@@ -59,6 +59,7 @@ describe('the runtime env on two origins', () => {
     'SSO_LOGOUT_URL',
     'HELENA_HOME_URL',
     'PASSKEY_RP_ID',
+    'HELENA_NOTES_URLS',
   ] as const;
   let saved: Record<string, string | undefined>;
   beforeEach(() => {
@@ -97,6 +98,25 @@ describe('the runtime env on two origins', () => {
     assert.equal(serverRuntimeEnv().apiUrl, `${PUBLIC}/backend`);
     // An origin that is not the instance's moves nothing.
     assert.equal(serverRuntimeEnv('https://evil.example.com').apiUrl, `${PUBLIC}/backend`);
+  });
+
+  it('hands out the notes of the origin the page was opened on, on an origin of their own', () => {
+    process.env.HELENA_NOTES_URLS = JSON.stringify({
+      [HOME]: `${HOME}:8446/`,
+      [PUBLIC]: 'https://notes.example.com',
+    });
+    assert.equal(serverRuntimeEnv(HOME).workspace.notesUrl, `${HOME}:8446`);
+    assert.equal(serverRuntimeEnv(PUBLIC).workspace.notesUrl, 'https://notes.example.com');
+    // Without a request: the primary origin's.
+    assert.equal(serverRuntimeEnv().workspace.notesUrl, 'https://notes.example.com');
+    // An origin that has none, a stranger, a path under Helena's own origin, a script URL.
+    process.env.HELENA_NOTES_URLS = JSON.stringify({ [PUBLIC]: `${PUBLIC}/notes` });
+    assert.equal(serverRuntimeEnv(PUBLIC).workspace.notesUrl, '');
+    assert.equal(serverRuntimeEnv(HOME).workspace.notesUrl, '');
+    process.env.HELENA_NOTES_URLS = JSON.stringify({ [HOME]: 'javascript:alert(1)' });
+    assert.equal(serverRuntimeEnv(HOME).workspace.notesUrl, '');
+    process.env.HELENA_NOTES_URLS = 'not json';
+    assert.equal(serverRuntimeEnv(HOME).workspace.notesUrl, '');
   });
 
   it('names no home origin that is not one of the instance origins', () => {

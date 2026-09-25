@@ -1,4 +1,4 @@
-import { Code2, Download, FileText, Gem, Link2 } from 'lucide-react';
+import { Code2, Download, FileText, Link2, NotebookPen } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ export default function FileViewerActions({
   actions: FileActions;
 }) {
   const t = useTranslations('files.actions');
-  const obsidian = actions.obsidianUrl(item);
+  const notes = actions.notesUrl(item);
   const code = actions.codeUrl(item);
   const vaultPath = actions.vaultPath(item);
   const docs =
@@ -48,11 +48,11 @@ export default function FileViewerActions({
           </a>
         </Button>
       )}
-      {obsidian && (
+      {notes && (
         <Button size="sm" variant="outline" asChild>
-          <a href={obsidian}>
-            <Gem />
-            {t('openInObsidian')}
+          <a href={notes} target="_blank" rel="noopener noreferrer">
+            <NotebookPen />
+            {t('openInNotes')}
           </a>
         </Button>
       )}
