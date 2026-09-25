@@ -161,7 +161,8 @@
       "settings": "Réglages modifiés",
       "removed": "Retiré",
       "listed-from-gog": "Affiché depuis gog",
-      "clone": "Dépôt cloné"
+      "clone": "Dépôt cloné",
+      "signed-out": "Déconnecté"
     }
   },
   "clone": {

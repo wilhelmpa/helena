@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FlaskConical, LoaderCircle, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
@@ -59,6 +59,7 @@ export default function LocalAiSettingsView() {
   const t = useTranslations('localAi');
   const settings = useLocalAiSettings();
   const data = settings.data;
+  useFinishedEvalToasts(data);
 
   return (
     <div className="flex flex-col gap-6">
@@ -367,6 +368,26 @@ function PresetSection({ settings }: { settings: LocalAiSettings }) {
   );
 }
 
+// Says when an eval the page saw running has finished, with its score. An eval runs in the
+// background; the page may have been opened while it ran.
+function useFinishedEvalToasts(data: LocalAiSettings | undefined) {
+  const t = useTranslations('localAi');
+  const running = useRef<Set<number> | null>(null);
+  useEffect(() => {
+    if (!data) return;
+    const now = new Set(data.runningEvals.map((item) => item.id));
+    for (const id of running.current ?? []) {
+      if (now.has(id)) continue;
+      const done = data.evals.find((item) => item.id === id);
+      if (done)
+        toast[done.passed ? 'success' : 'error'](
+          t('eval.done', { score: Math.round(done.score * 100) }),
+        );
+    }
+    running.current = now;
+  }, [data, t]);
+}
+
 // The newest eval of the class's model in the class's current eval version: an older one
 // measured something the class no longer does, and the class needs a new one.
 function latestEval(settings: LocalAiSettings, entry: LocalAiClass): LocalAiEval | null {
@@ -396,6 +417,9 @@ function ClassRow({ entry, settings }: { entry: LocalAiClass; settings: LocalAiS
       ),
     );
   const result = latestEval(settings, entry);
+  const running = settings.runningEvals.find(
+    (item) => item.classId === entry.id && item.modelId === entry.resolvedModel,
+  );
   return (
     <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-start">
       <div className="min-w-0 flex-1 space-y-0.5">
@@ -451,6 +475,12 @@ function ClassRow({ entry, settings }: { entry: LocalAiClass; settings: LocalAiS
         ) : (
           entry.hasEval && <p className="text-xs text-muted-foreground">{t('eval.none')}</p>
         )}
+        {running && (
+          <p className="flex items-center gap-1 text-xs text-muted-foreground">
+            <LoaderCircle className="size-3.5 animate-spin" aria-hidden />
+            {t('eval.running', { model: shortModel(running.modelId) })}
+          </p>
+        )}
         {entry.blocker && entry.mode === 'off' && (
           <p className="text-xs text-muted-foreground">{t(`blockers.${entry.blocker}`)}</p>
         )}
@@ -504,22 +534,20 @@ function ClassRow({ entry, settings }: { entry: LocalAiClass; settings: LocalAiS
           <Button
             variant="outline"
             size="sm"
-            disabled={!entry.resolvedModel || run.isPending}
+            disabled={!entry.resolvedModel || run.isPending || running !== undefined}
             onClick={() =>
               entry.resolvedModel &&
               run.mutate(
                 { classId: entry.id, modelId: entry.resolvedModel },
-                {
-                  onSuccess: (value) =>
-                    toast[value.passed ? 'success' : 'error'](
-                      t('eval.done', { score: Math.round(value.score * 100) }),
-                    ),
-                  onError,
-                },
+                { onSuccess: () => toast(t('eval.started')), onError },
               )
             }
           >
-            {run.isPending ? <LoaderCircle className="animate-spin" /> : <FlaskConical />}
+            {run.isPending || running ? (
+              <LoaderCircle className="animate-spin" />
+            ) : (
+              <FlaskConical />
+            )}
             {t('eval.run')}
           </Button>
         )}

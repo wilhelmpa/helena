@@ -93,10 +93,10 @@ export async function reflect(
     report = { status: 'failed', saved: [], error: 'The agent has no memory or skill tools' };
   } else {
     const reader = new ReflectionReader();
-    // The model Helena named, with no reasoning level of the run's (the local provider says
-    // how its turns think), or the run's own.
+    // The model Helena named with the reasoning it named (`none`: the server's provider
+    // without thinking; null: the local provider's turns think), or the run's own.
     const model = request.model ?? run.model;
-    const thinkingLevel = request.model ? null : run.thinkingLevel;
+    const thinkingLevel = request.model ? (request.thinkingLevel ?? null) : run.thinkingLevel;
     const spend = new SpendReader(
       config.outputFormat,
       config.command ? null : (config.agent ?? null),
@@ -131,7 +131,7 @@ export async function reflect(
     report = {
       status: outcome.status,
       usage: outcome.usage ?? null,
-      spend: spend.value({ model, provider: modelProvider(config, model) ?? null }),
+      spend: spend.value({ model, provider: modelProvider(config, model, thinkingLevel) ?? null }),
       saved: reader.saved,
       summary: outcome.output.trim().slice(0, MAX_SUMMARY) || null,
       ...(outcome.error && { error: outcome.error.slice(0, 500) }),

@@ -731,12 +731,16 @@
       },
       "copyCommand": "复制命令",
       "copied": "已复制",
-      "openAccess": "打开“访问”",
       "sandbox": "沙箱：{mode}",
       "sandboxModes": {
         "workspace-write": "工作文件夹",
         "read-only": "只读",
         "danger-full-access": "隔离"
+      },
+      "login": {
+        "title": "登录",
+        "signedInAs": "已登录为 {account}",
+        "view": "在凭据中查看"
       }
     },
     "runModel": {

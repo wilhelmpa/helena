@@ -303,6 +303,7 @@ export {
   type UsageLimitWindow,
   type UsageLimitWindowKind,
 } from './usage-limits';
+export { normalizeRuntimeAccount, type RuntimeAccount } from './runtime-account';
 export {
   normalizeRuntimeLoginReport,
   runtimeLoginCondition,
@@ -320,6 +321,7 @@ export {
   LOCAL_AI_THINKING,
   LOCAL_AI_UNITS,
   LOCAL_MODEL_CAPABILITIES,
+  LOCAL_NO_THINKING_SUFFIX,
   LOCAL_PROVIDER_PREFIX,
   classEvalVersion,
   classModes,
@@ -327,6 +329,7 @@ export {
   isModelServerSlug,
   localModelId,
   localProviderName,
+  localProviderWithoutThinking,
   localThinkingFields,
   median,
   normalizeLocalModel,

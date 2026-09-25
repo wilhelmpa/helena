@@ -17,9 +17,10 @@ import {
 //
 // `wired` says whether Helena already sends the work to local AI, and where (the class →
 // producer map is in local-ai-platform.md §7.1). `thinking` is how much a reasoning model may
-// think for the class, and its eval runs the same way: off for work Helena sends itself that
-// only compresses or classifies; `low` for work that runs as an agent's turn on the local
-// model, because the agent's turns there think (the provider's `extra_body`, §6.7).
+// think for the class, and its eval runs the same way: off for work that only compresses,
+// classifies or keeps a few facts; `low` for work whose eval passed thinking. An agent's turn
+// on a local model thinks (the provider's `extra_body`, §6.7); one of a class with `off` is
+// started on the server's provider without thinking (`classModelNow` hands `none`).
 //
 // Work that runs as an agent's turn (a digest, a routine's task, a coordinator's first plan, a
 // reflection) is handed its local model when the run starts (`classModelNow`, the claim),
@@ -154,14 +155,16 @@ export const BUILTIN_TASK_CLASSES: LocalAiTaskClass[] = [
     // The turn after a run in which the agent keeps what it learned, with its memory and
     // skill tools (agents/runner/reflection.ts), for sessions small enough to load quickly.
     // Version 2: its own eval (the right fact kept, nothing kept of a trivial task, never a
-    // secret) instead of the summaries'.
-    thinking: 'low',
+    // secret) instead of the summaries'. Version 3: without thinking, live and in the eval
+    // (with it, 0.00 on Qwen3.6: every case thought past its token limit, p50 68 s); the run
+    // starts on the server's provider without thinking (runner local-ai.ts).
+    thinking: 'off',
     // It writes the agent's memory and skills, which every later run reads.
     inMasterDefault: false,
     wired: true,
     modes: PREFER_ONLY,
     evaluate: evaluateReflection,
-    evalVersion: 2,
+    evalVersion: 3,
     threshold: 0.85,
   },
   {

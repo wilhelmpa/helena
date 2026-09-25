@@ -177,9 +177,11 @@ function stopGroup(pid: number): void {
 export function modelProvider(
   config: RunnerConfig,
   model: string | null | undefined,
+  thinkingLevel?: string | null,
 ): string | undefined {
-  // A model of Helena's local AI names its provider (`helena-<slug>/<model>`).
-  const local = localRoute(model);
+  // A model of Helena's local AI names its provider (`helena-<slug>/<model>`); without
+  // thinking, the same server's provider whose turns do not think (local-ai.ts).
+  const local = localRoute(model, thinkingLevel);
   if (local) return local.provider;
   return config.models.find((entry) => entry.id === model)?.provider ?? config.provider;
 }
@@ -201,7 +203,7 @@ function spawnArgs(
   return [
     preset.bin,
     presetArgv(preset, task.sessionId ?? null, task.systemPrompt, config.args, task.prompt, {
-      provider: modelProvider(config, task.model),
+      provider: modelProvider(config, task.model, task.thinkingLevel),
       model: runtimeModel(task.model),
       thinkingLevel: task.thinkingLevel,
       maxTurns: task.maxTurns,

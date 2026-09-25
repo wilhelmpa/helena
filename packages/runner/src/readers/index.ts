@@ -1,5 +1,7 @@
+import { runShort } from '../cli-runtime';
 import { Redactor } from '../redact';
 import { answerLimitsRead, limitsCapable } from '../limits';
+import { answerLoginRead } from '../runtime-account';
 import { hermesReaders } from './hermes';
 import { claudeReaders, codexReaders } from './jsonl';
 import {
@@ -57,6 +59,14 @@ export async function answerRuntimeRequest(
   if (request.op === 'limits.read') {
     // Numbers only; the redaction still runs over them.
     return redactor.value(await answerLimitsRead(request, context));
+  }
+  if (request.op === 'login.read') {
+    // The account's facts only, as the runtime tells them (runtime-account.ts).
+    return redactor.value(await answerLoginRead(context, runShort));
+  }
+  if (request.op === 'login.logout') {
+    // Signed out by the runtime's own command, in the agent's unit (cli-runtime.ts).
+    throw new Error('A sign-out is not answered here');
   }
   const readers = readersFor(context.runtime);
   if (!readers || !readers.ops.includes(request.op)) {

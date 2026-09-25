@@ -56,6 +56,45 @@ export const runtimeIssue = t.Object({
   command: t.Optional(t.String({ maxLength: 600 })),
 });
 
+// The login a Claude Code or Codex runtime keeps of its own in the agent's home (a Codex
+// device login), as the runtime told the runner (@helena/sdk runtime-account.ts): whether it
+// holds one, how, the account's e-mail and plan, when the runtime last wrote it. Never a
+// token.
+export const runtimeAccount = t.Object(
+  {
+    signedIn: t.Nullable(t.Boolean({ description: 'Null where the runtime could not tell.' })),
+    method: t.Nullable(
+      t.String({
+        maxLength: 80,
+        description: "How it signs in: 'chatgpt', 'api-key', 'claude.ai', 'console' …",
+      }),
+    ),
+    email: t.Nullable(t.String({ maxLength: 255 })),
+    plan: t.Nullable(
+      t.String({ maxLength: 80, description: "The account's plan ('pro', 'max')." }),
+    ),
+    organization: t.Nullable(t.String({ maxLength: 80 })),
+    refreshedAt: t.Nullable(
+      t.String({
+        maxLength: 40,
+        description: 'When the runtime last wrote its login (signed in or renewed it).',
+      }),
+    ),
+    checkedAt: t.String({ maxLength: 40 }),
+    command: t.Nullable(
+      t.String({
+        maxLength: 600,
+        description: 'What the owner runs in the owner terminal to sign the runtime in (again).',
+      }),
+    ),
+  },
+  {
+    description:
+      "The runtime's own login in the agent's home, as the runtime told the runner. Stored " +
+      'and returned checked field by field; never a token.',
+  },
+);
+
 // Where a runtime with a sandbox of its own (Codex) runs the model's commands: its own
 // sandbox with writes in the working folder, read-only, or none inside agent isolation,
 // whose unit is the sandbox then.
@@ -158,6 +197,8 @@ export const RuntimeSyncResponse = t.Object({
   version: t.Nullable(t.String()),
   issues: t.Array(runtimeIssue),
   sandbox: t.Nullable(runtimeSandbox),
+  // The runtime's own login (Claude Code, Codex), shown in full in Zugänge.
+  account: t.Nullable(runtimeAccount),
   // A "Neu schreiben" the runner has not carried out yet.
   rewritePending: t.Boolean(),
   reportedAt: t.Nullable(t.String()),

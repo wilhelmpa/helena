@@ -125,7 +125,13 @@ export type RuntimeRequest =
   // (usage-limits.ts); answered with `{ snapshots: UsageLimitSnapshot[] }`. `force` skips
   // the runner's cache of the last probe (still at most one probe per login a minute).
   // `providers` is filled in by the runner for the profile helper of an isolated agent.
-  | { op: 'limits.read'; force?: boolean; providers?: string[] };
+  | { op: 'limits.read'; force?: boolean; providers?: string[] }
+  // The runtime's own login in the agent's home (runtime-account.ts), read now; answered
+  // with `{ account: RuntimeAccount | null }`. Claude Code and Codex agents only.
+  | { op: 'login.read' }
+  // Signs that login out with the runtime's own command in the agent's sandbox; answered
+  // with `{ account: RuntimeAccount | null }` as read afterwards.
+  | { op: 'login.logout' };
 
 export type RuntimeRequestOp = RuntimeRequest['op'];
 
@@ -144,6 +150,8 @@ export const REQUEST_CAPABILITY: Record<RuntimeRequestOp, string> = {
   'estop.set': 'estop',
   'runtime.update': 'update',
   'limits.read': 'limits',
+  'login.read': 'login',
+  'login.logout': 'logout',
 };
 
 // Where an adapter reads: the agent's runtime home and working directory. For an isolated

@@ -37,7 +37,8 @@ export function useLocalAiSettings(enabled = true) {
     queryKey: localAiSettingsKey,
     queryFn: getLocalAiSettings,
     enabled,
-    refetchInterval: 60_000,
+    // While an eval runs in the background (minutes on a local model), the page follows it.
+    refetchInterval: (query) => (query.state.data?.runningEvals.length ? 3_000 : 60_000),
     staleTime: 30_000,
     retry: false,
   });

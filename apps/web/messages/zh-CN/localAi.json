@@ -54,6 +54,8 @@
     "speed": "{tps} token/秒",
     "none": "尚未评估",
     "run": "评估",
+    "started": "评估在后台运行，需要几分钟；结果会显示在这里。",
+    "running": "正在 {model} 上评估 …",
     "done": "评估完成：{score} %"
   },
   "servers": {

@@ -731,12 +731,16 @@
       },
       "copyCommand": "Copy command",
       "copied": "Copied",
-      "openAccess": "Open Access",
       "sandbox": "Sandbox: {mode}",
       "sandboxModes": {
         "workspace-write": "working folder",
         "read-only": "read-only",
         "danger-full-access": "isolation"
+      },
+      "login": {
+        "title": "Sign-in",
+        "signedInAs": "Signed in as {account}",
+        "view": "View in Access"
       }
     },
     "runModel": {

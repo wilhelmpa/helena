@@ -1,6 +1,6 @@
 import { readFile, stat } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq } from 'drizzle-orm';
 import {
   LOCAL_AI_MODES,
   LOCAL_AI_UNITS,
@@ -269,7 +269,8 @@ export async function failedEvalModels(classId: string, evalVersion = 1): Promis
     })
     .from(helenaLocalAiEval)
     .innerJoin(helenaModelServer, eq(helenaModelServer.id, helenaLocalAiEval.serverId))
-    .where(eq(helenaLocalAiEval.classId, classId))
+    // An eval still running gates nothing yet.
+    .where(and(eq(helenaLocalAiEval.classId, classId), eq(helenaLocalAiEval.status, 'done')))
     .orderBy(desc(helenaLocalAiEval.ranAt))
     .limit(200);
   const seen = new Set<string>();

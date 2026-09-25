@@ -38,11 +38,10 @@ export const authClient = createAuthClient({
     // what was typed is not an address, and the plugin types `username` on the
     // session user so the profile page can show it.
     usernameClient(),
-    // TOTP enrollment for the owner terminal's step-up (Account -> Security):
-    // twoFactor.enable()/getTotpUri()/verifyTotp()/disable(). Sign-in itself never
-    // asks for a second factor -- LAN auto-login / password stays as it is; only
-    // apps/api's owner-terminal step-up calls verifyTOTP, server-side, against an
-    // already open session.
+    // TOTP (Account -> Security): twoFactor.enable()/getTotpUri()/verifyTotp()/disable().
+    // Once set up, a password sign-in asks for the code as its second step (the login
+    // form's code step, verifySignInCode); the owner terminal's step-up checks it too.
+    // The LAN auto sign-in and passkeys need no code.
     twoFactorClient(),
   ],
 });

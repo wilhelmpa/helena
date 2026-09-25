@@ -54,6 +54,8 @@
     "speed": "{tps} tokens/s",
     "none": "Ainda não avaliado",
     "run": "Avaliar",
+    "started": "A avaliação roda em segundo plano e leva alguns minutos; o resultado aparece aqui.",
+    "running": "Avaliação em andamento em {model} …",
     "done": "Avaliação concluída: {score} %"
   },
   "servers": {

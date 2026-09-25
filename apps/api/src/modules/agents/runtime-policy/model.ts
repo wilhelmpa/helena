@@ -2,7 +2,7 @@ import { t } from 'elysia';
 
 import { runtimeConflict, runtimeInventory, runtimePolicy, runtimeState } from '../core/model';
 import { learnedSkill, runtimeActionResult, runtimeActionSnapshot } from '../learning/model';
-import { profileReport, runtimeIssue, runtimeSandbox } from '../runtime-sync/model';
+import { profileReport, runtimeAccount, runtimeIssue, runtimeSandbox } from '../runtime-sync/model';
 
 // A literal, or the id of a secret whose value GET /agent-runtime/mcp-secrets returns.
 const runtimeMcpValue = t.Union([
@@ -99,6 +99,15 @@ export const RuntimePolicySnapshotResponse = t.Object({
           t.Object({
             provider: t.String({ description: '`helena-<slug>`, the Hermes provider name' }),
             baseUrl: t.String(),
+            noThinkingBaseUrl: t.Optional(
+              t.Nullable(
+                t.String({
+                  description:
+                    "The same server's other address, for a second provider " +
+                    '(`helena-<slug>--nothink`) whose turns do not think; null when it has none',
+                }),
+              ),
+            ),
             keyEnv: t.Nullable(t.String()),
             contextLength: t.Number(),
             models: t.Array(
@@ -162,6 +171,7 @@ export const RuntimeStateBody = t.Object({
   version: t.Optional(t.Nullable(t.String({ maxLength: 64 }))),
   issues: t.Optional(t.Array(runtimeIssue, { maxItems: 8 })),
   sandbox: t.Optional(t.Nullable(runtimeSandbox)),
+  account: t.Optional(t.Nullable(runtimeAccount)),
 });
 
 export const RuntimeStateResponse = runtimeState;

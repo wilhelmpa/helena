@@ -1,5 +1,5 @@
 {
-  "id": "d4e6e7e6-43bd-4284-8eec-99e76e3938e7",
+  "id": "96c5c527-60b9-4c42-9908-4cebf3a4aeb2",
   "prevId": "f973a5cf-ce75-44b5-93cb-181043182a11",
   "version": "7",
   "dialect": "postgresql",
@@ -20666,6 +20666,13 @@
           "notNull": true,
           "default": 1
         },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'done'"
+        },
         "ran_by": {
           "name": "ran_by",
           "type": "text",
@@ -20678,6 +20685,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "finished_at": {
+          "name": "finished_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -20734,7 +20747,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "helena_local_ai_eval_status_check": {
+          "name": "helena_local_ai_eval_status_check",
+          "value": "\"helena_local_ai_eval\".\"status\" IN ('running', 'done')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.helena_model_server": {
@@ -24545,140 +24563,6 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.helena_sign_in_event": {
-      "name": "helena_sign_in_event",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "method": {
-          "name": "method",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "outcome": {
-          "name": "outcome",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "reason": {
-          "name": "reason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "identity": {
-          "name": "identity",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "provider": {
-          "name": "provider",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "ip_address": {
-          "name": "ip_address",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "user_agent": {
-          "name": "user_agent",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "helena_sign_in_event_created_idx": {
-          "name": "helena_sign_in_event_created_idx",
-          "columns": [
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": false,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "helena_sign_in_event_method_idx": {
-          "name": "helena_sign_in_event_method_idx",
-          "columns": [
-            {
-              "expression": "method",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": false,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "helena_sign_in_event_user_id_user_id_fk": {
-          "name": "helena_sign_in_event_user_id_user_id_fk",
-          "tableFrom": "helena_sign_in_event",
-          "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "helena_sign_in_event_method_check": {
-          "name": "helena_sign_in_event_method_check",
-          "value": "\"helena_sign_in_event\".\"method\" IN ('edge', 'local_owner')"
-        },
-        "helena_sign_in_event_outcome_check": {
-          "name": "helena_sign_in_event_outcome_check",
-          "value": "\"helena_sign_in_event\".\"outcome\" IN ('ok', 'refused')"
-        }
-      },
       "isRLSEnabled": false
     }
   },

@@ -1,10 +1,13 @@
 'use client';
 
+import Link from 'next/link';
 import { RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import StatusBadge from '@/components/common/page/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { formatDurationShort } from '@/utils/dates';
+import { accessLoginsPath } from '@/utils/paths';
+import { planLabel } from '@/features/access/logins/loginsView';
 import {
   useRewriteRuntimeProfile,
   useRuntimeSyncQuery,
@@ -32,6 +35,14 @@ export default function AgentProfileSync({
   if (!sync) return null;
 
   const drift = sync.state === 'drift' ? (sync.profile?.drift ?? []) : [];
+  // A Claude Code or Codex agent's login, in full in Zugänge ("Anmeldungen"); a missing one
+  // is an issue below, with the same link.
+  const cliRuntime = sync.adapter === 'claude' || sync.adapter === 'codex';
+  const notSignedIn = (sync.issues ?? []).some((issue) => issue.code === 'not-signed-in');
+  const account = sync.account?.signedIn ? sync.account : null;
+  const accountName = account
+    ? [account.email, planLabel(account.plan)].filter(Boolean).join(' · ')
+    : '';
   const defaults = sync.profile?.defaults ?? null;
   const servers = profileServers(sync);
   const checkedAt = sync.profile?.checkedAt ?? null;
@@ -75,7 +86,20 @@ export default function AgentProfileSync({
         <p className="text-xs text-destructive">{sync.detail}</p>
       )}
       {sync.state !== 'offline' && (
-        <AgentRuntimeIssues adapter={sync.adapter} issues={sync.issues ?? []} />
+        <AgentRuntimeIssues agentId={agentId} adapter={sync.adapter} issues={sync.issues ?? []} />
+      )}
+      {cliRuntime && !notSignedIn && (
+        <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+          <span>
+            {accountName ? t('login.signedInAs', { account: accountName }) : t('login.title')}
+          </span>
+          <Link
+            href={accessLoginsPath(agentId)}
+            className="text-foreground underline-offset-2 hover:underline"
+          >
+            {t('login.view')}
+          </Link>
+        </p>
       )}
       {drift.length > 0 && (
         <ul className="space-y-1">

@@ -101,6 +101,12 @@ export interface ModelServerType {
   defaultBaseUrl?: string;
   models(context: ModelServerContext): Promise<LocalModel[]>;
   status(context: ModelServerContext): Promise<ModelServerStatus>;
+  // A second address of the same API, for the agent turns that run without thinking. Hermes
+  // tells its providers apart by their address (a provider's `extra_body` is looked up by it),
+  // so the turns that must not think need a provider at another address than the ones that
+  // do. Lemonade serves the same API under /api/v1 and /v1. Absent or null: the server has
+  // none, and every agent turn on it thinks.
+  noThinkingBaseUrl?(baseUrl: string): string | null;
 }
 
 // ── The policy ─────────────────────────────────────────────────────────────────────────
@@ -169,6 +175,9 @@ export interface LocalAiChatAnswer {
   inputTokens: number | null;
   outputTokens: number | null;
   latencyMs: number;
+  // Why the answer ended (`stop`, `tool_calls`, `length` when `maxTokens` cut it off), where
+  // the server said.
+  finishReason?: string | null;
 }
 
 export interface LocalAiEvalContext {
@@ -250,8 +259,20 @@ export const LOCAL_PROVIDER_PREFIX = 'helena-';
 
 const SLUG = /^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/;
 
+// No `--` in a slug: the provider of a server's turns without thinking is `helena-<slug>--nothink`
+// (localProviderWithoutThinking), which must never be another server's.
 export function isModelServerSlug(value: string): boolean {
-  return SLUG.test(value);
+  return SLUG.test(value) && !value.includes('--');
+}
+
+export const LOCAL_NO_THINKING_SUFFIX = '--nothink';
+
+// The provider of a local server's agent turns that do not think (RuntimeModelServer
+// `noThinkingBaseUrl`): the runner starts a run whose reasoning is `none` there.
+export function localProviderWithoutThinking(provider: string): string {
+  return provider.endsWith(LOCAL_NO_THINKING_SUFFIX)
+    ? provider
+    : `${provider}${LOCAL_NO_THINKING_SUFFIX}`;
 }
 
 export function localProviderName(slug: string): string {
@@ -362,6 +383,10 @@ export interface RuntimeModelServer {
   keyEnv: string | null;
   contextLength: number;
   models: { id: string; contextLength: number | null; vision: boolean }[];
+  // The server's second address (ModelServerType.noThinkingBaseUrl): the runner writes a
+  // second provider there, `localProviderWithoutThinking(provider)`, whose turns do not think.
+  // Absent on a server without one, and from an older API.
+  noThinkingBaseUrl?: string | null;
 }
 
 export type HermesHelperTask = 'compression' | 'vision';

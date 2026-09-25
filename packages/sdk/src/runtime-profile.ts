@@ -1,3 +1,5 @@
+import type { RuntimeAccount } from './runtime-account';
+
 // The runtime profile contract (from hub/hermes-sync, docs/helena-decisions/
 // runtime-protocol.md): the per-agent adapter the runner keeps for an agent's runtime. One
 // adapter per runtime (Hermes, Claude Code, Codex, or a plugin's) brings the runtime to the
@@ -148,6 +150,14 @@ export interface RuntimeAdapter {
   sessionFacts(sessionId: string | undefined): Promise<SessionFacts | null>;
   // The model and reasoning the runtime falls back to, once the adapter has read them.
   defaults(): RuntimeDefaults | null;
+  // The runtime's own login in the agent's home (runtime-account.ts), read by the runtime
+  // itself, never from its file: for Zugänge. `force` asks now instead of reusing the last
+  // look. Left out by a runtime whose logins are not the agent's own (Hermes shares them;
+  // the token keeper reports those).
+  account?(options?: { force?: boolean }): Promise<RuntimeAccount | null>;
+  // Signs that login out with the runtime's own command, in the agent's own sandbox, and
+  // reads it again. The owner's "Abmelden" in Zugänge.
+  signOut?(): Promise<RuntimeAccount | null>;
 }
 
 // ── MCP servers, runtime-neutral ─────────────────────────────────────────────────────

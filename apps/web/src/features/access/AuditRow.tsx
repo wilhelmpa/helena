@@ -14,6 +14,7 @@ const CHANGES = [
   'removed',
   'listed-from-gog',
   'clone',
+  'signed-out',
 ] as const;
 type Change = (typeof CHANGES)[number];
 

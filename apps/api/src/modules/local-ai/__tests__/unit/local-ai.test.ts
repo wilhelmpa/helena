@@ -11,6 +11,8 @@ import {
   classEvalVersion,
   classModes,
   isLocalProvider,
+  isModelServerSlug,
+  localProviderWithoutThinking,
   localModelId,
   localThinkingFields,
   normalizeLocalModel,
@@ -23,6 +25,7 @@ import {
   lemonadeLoad,
   lemonadeLoaded,
   lemonadeModel,
+  lemonadeNoThinkingBaseUrl,
   unitOf,
 } from '../../server-types';
 import {
@@ -100,6 +103,22 @@ describe('local model ids', () => {
     expect(isLocalProvider('helena-local')).toBe(true);
     expect(isLocalProvider('custom:helena-local')).toBe(true);
     expect(isLocalProvider('openai-codex')).toBe(false);
+  });
+
+  it("names a server's provider without thinking at its other address", () => {
+    expect(localProviderWithoutThinking('helena-local')).toBe('helena-local--nothink');
+    expect(localProviderWithoutThinking('helena-local--nothink')).toBe('helena-local--nothink');
+    expect(isLocalProvider(localProviderWithoutThinking('helena-local'))).toBe(true);
+    // No slug may end up as another server's provider without thinking.
+    expect(isModelServerSlug('local')).toBe(true);
+    expect(isModelServerSlug('local--nothink')).toBe(false);
+    expect(lemonadeNoThinkingBaseUrl('http://127.0.0.1:13305/api/v1')).toBe(
+      'http://127.0.0.1:13305/v1',
+    );
+    expect(lemonadeNoThinkingBaseUrl('http://127.0.0.1:13305/v1/')).toBe(
+      'http://127.0.0.1:13305/api/v1',
+    );
+    expect(lemonadeNoThinkingBaseUrl('http://lan-box:8080/openai')).toBeNull();
   });
 
   it('keeps only what a model entry may carry', () => {
@@ -504,7 +523,9 @@ describe('kinds of work that run as an agent turn', () => {
       tokensPerSecond: null,
       error: null,
       evalVersion,
+      status: 'done',
       ranAt: new Date().toISOString(),
+      finishedAt: new Date().toISOString(),
     });
     expect(classBlocker(entry, 'helena-local/Q', [view(1)])).toBe('eval-missing');
     expect(classBlocker(entry, 'helena-local/Q', [view(2)])).toBeNull();
@@ -522,12 +543,13 @@ describe('thinking', () => {
     });
   });
 
-  it('keeps the helpers off, lets the agent turns think, and every chat class declares it', () => {
+  it('keeps the helpers and the reflection off, and every chat class declares it', () => {
     const of = (id: string) => BUILTIN_TASK_CLASSES.find((entry) => entry.id === id)?.thinking;
     expect(of('hermes-helpers')).toBe('off');
-    // They run as an agent's turn on the local model, which thinks (runner local-ai.ts).
+    // They run as an agent's turn on the local model, which thinks (runner local-ai.ts); the
+    // reflection runs on the provider without thinking.
     expect(of('summaries')).toBe('low');
-    expect(of('reflection')).toBe('low');
+    expect(of('reflection')).toBe('off');
     expect(of('routines')).toBe('low');
     expect(of('coordinator-triage')).toBe('low');
     for (const entry of BUILTIN_TASK_CLASSES) {
