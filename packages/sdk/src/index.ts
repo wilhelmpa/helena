@@ -251,6 +251,26 @@ export {
   type TemplateBundle,
 } from './templates';
 export {
+  BLUEPRINT_FORMAT,
+  BLUEPRINT_FORMAT_VERSION,
+  BLUEPRINT_LIMITS,
+  BLUEPRINT_MANIFEST,
+  blueprintCopyHandle,
+  isBlueprintFilePath,
+  parseBlueprintJson,
+  validateBlueprint,
+  type BlueprintAgent,
+  type BlueprintBoard,
+  type BlueprintCoordinator,
+  type BlueprintFile,
+  type BlueprintGoal,
+  type BlueprintGoalStatus,
+  type BlueprintNetworkMode,
+  type BlueprintRoutine,
+  type BlueprintSticker,
+  type ProjectBlueprint,
+} from './blueprints';
+export {
   HOST_AREAS,
   HOST_HEALTH_STATES,
   isHostHealthState,

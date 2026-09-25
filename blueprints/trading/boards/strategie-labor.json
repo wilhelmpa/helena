@@ -1,0 +1,147 @@
+{
+  "name": "Strategie-Labor",
+  "stickers": [
+    {
+      "id": "idee",
+      "title": "1 Idee",
+      "body": "Hypothese mit Begründung und Quelle.\n\nAus [[Trading-Research]] und [[Trading-Reviews]].",
+      "color": "#FFF9B1",
+      "x": 0,
+      "y": 0,
+      "width": 260,
+      "height": 200
+    },
+    {
+      "id": "strategie",
+      "title": "2 Strategie-Notiz",
+      "body": "Eindeutige Regeln und Parameter, Version v1.0.\n\nGate A: Regeln eindeutig, Pre-Mortem.\n\n[[Trading-Strategien]]",
+      "color": "#FFF9B1",
+      "x": 320,
+      "y": 0,
+      "width": 260,
+      "height": 200
+    },
+    {
+      "id": "backtest",
+      "title": "3 Backtest",
+      "body": "In-/Out-of-Sample, Walk-Forward, Kosten, genug Trades.\n\nGate B.\n\n[[Trading-Backtests]]",
+      "color": "#A8E6D8",
+      "x": 640,
+      "y": 0,
+      "width": 260,
+      "height": 200
+    },
+    {
+      "id": "freigabe",
+      "title": "4 Freigabe durch den Owner",
+      "body": "Freigabe-Anfrage mit Zusammenfassung und Backtest-Link.\n\nGate C.",
+      "color": "#FFD59E",
+      "x": 960,
+      "y": 0,
+      "width": 260,
+      "height": 200
+    },
+    {
+      "id": "paper",
+      "title": "5 Paper-Trading",
+      "body": "Nur Spielgeld, kleine Größe, mindestens 4 Wochen und 20 Trades.\n\nJede Order mit Strategie-ID und Version.",
+      "color": "#D5F692",
+      "x": 960,
+      "y": 260,
+      "width": 260,
+      "height": 200
+    },
+    {
+      "id": "journal",
+      "title": "6 Journal",
+      "body": "Ein Eintrag je Trade, sofort.\n\n[[Trading-Journal]] · [[Trading-Berichte]]",
+      "color": "#D5F692",
+      "x": 640,
+      "y": 260,
+      "width": 260,
+      "height": 200
+    },
+    {
+      "id": "review",
+      "title": "7 Review",
+      "body": "Kennzahlen gegen den Backtest, Regeltreue, Lehren (Memory- und Skill-Vorschläge).\n\n[[Trading-Reviews]]",
+      "color": "#D0BFFF",
+      "x": 320,
+      "y": 260,
+      "width": 260,
+      "height": 200
+    },
+    {
+      "id": "verbesserung",
+      "title": "8 Verbesserung",
+      "body": "Neue Version mit 1–2 Änderungen → zurück zum Backtest.",
+      "color": "#D0BFFF",
+      "x": 0,
+      "y": 260,
+      "width": 260,
+      "height": 200
+    },
+    {
+      "id": "ausmustern",
+      "title": "Pausieren / Ausmustern",
+      "body": "Nach den Kriterien in [[Strategie-Labor]].",
+      "color": "#F7C1D9",
+      "x": 320,
+      "y": 520,
+      "width": 260,
+      "height": 200
+    },
+    {
+      "id": "regeln",
+      "title": "Regelwerk",
+      "body": "Gilt über allen Strategien.\n\n[[Regelwerk]]",
+      "color": "#FFD59E",
+      "x": 960,
+      "y": 520,
+      "width": 260,
+      "height": 200
+    }
+  ],
+  "edges": [
+    {
+      "from": "idee",
+      "to": "strategie"
+    },
+    {
+      "from": "strategie",
+      "to": "backtest"
+    },
+    {
+      "from": "backtest",
+      "to": "freigabe"
+    },
+    {
+      "from": "freigabe",
+      "to": "paper"
+    },
+    {
+      "from": "paper",
+      "to": "journal"
+    },
+    {
+      "from": "journal",
+      "to": "review"
+    },
+    {
+      "from": "review",
+      "to": "verbesserung"
+    },
+    {
+      "from": "verbesserung",
+      "to": "strategie"
+    },
+    {
+      "from": "review",
+      "to": "ausmustern"
+    },
+    {
+      "from": "regeln",
+      "to": "paper"
+    }
+  ]
+}

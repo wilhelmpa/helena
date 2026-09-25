@@ -1,0 +1,104 @@
+import { Elysia } from 'elysia';
+import { aiAgent, agentRun, db } from '@repo/db';
+import { and, eq } from 'drizzle-orm';
+import { tradingQuestions, type TradingDecisionKind } from '@helena/trading';
+import { authContext } from '#shared/auth-context';
+import { guards } from '#shared/guards';
+import { assertMcpEnabled, requireProjectAccess, requireUser } from '#shared/access';
+import { HttpError } from '#shared/lib';
+import { isMcpRequest } from '#shared/mcp-request';
+import { commonErrors, errors } from '#shared/responses';
+import { mcpTool } from '#mcp/generate';
+import { decide } from '#modules/decisions/service';
+import { classifyBody, ClassifyResponse, tradingProjectParams } from './model';
+
+// The trading decisions as one agent tool (docs/helena-decisions/trading.md §6): sort a news
+// item, check a planned trade against one written rule, or route a task. The questions are
+// the classes' own, so what is asked is what their evals measured. Sorting only: never an
+// entry or exit signal.
+
+async function callerAgentId(userId: string): Promise<number | null> {
+  const [row] = await db
+    .select({ id: aiAgent.id })
+    .from(aiAgent)
+    .where(eq(aiAgent.userId, userId))
+    .limit(1);
+  return row?.id ?? null;
+}
+
+async function runOf(header: string | null, agentId: number | null): Promise<number | null> {
+  const runId = Number(header);
+  if (!agentId || !Number.isInteger(runId) || runId <= 0) return null;
+  const [row] = await db
+    .select({ id: agentRun.id })
+    .from(agentRun)
+    .where(and(eq(agentRun.id, runId), eq(agentRun.agentId, agentId)));
+  return row?.id ?? null;
+}
+
+export const tradingRoutes = new Elysia({ name: 'trading', detail: { tags: ['Trading'] } })
+  .use(authContext)
+  .use(guards)
+  .post(
+    '/projects/:projectKey/trading/classify',
+    async ({ params, user, body, request }) => {
+      const project = await requireProjectAccess(params.projectKey, user);
+      assertMcpEnabled(project, isMcpRequest(request.headers));
+      let asked: ReturnType<typeof tradingQuestions>;
+      try {
+        asked = tradingQuestions(body.kind as TradingDecisionKind, body.rule);
+      } catch (error) {
+        throw new HttpError(400, error instanceof Error ? error.message : String(error));
+      }
+      const agentId = await callerAgentId(requireUser(user).id);
+      const outcome = await decide({
+        teamId: project.teamId,
+        classId: asked.classId,
+        context: body.context,
+        questions: asked.questions,
+        subject: `trading:${body.kind}`,
+        projectId: project.id,
+        agentId,
+        runId: await runOf(request.headers.get('x-helena-run'), agentId),
+      });
+      const answers = Object.fromEntries(
+        Object.entries(asked.questions).map(([key, question]) => {
+          const answer = outcome.answers[key];
+          const choice = answer?.choice ?? null;
+          const label =
+            choice === null
+              ? null
+              : question.kind === 'yesno'
+                ? choice
+                : (question.options?.find((option) => option.id === choice)?.label ?? null);
+          return [
+            key,
+            { choice, label, confidence: answer?.confidence ?? null, decided: !!answer?.decided },
+          ];
+        }),
+      );
+      return {
+        status: outcome.status,
+        answers,
+        threshold: outcome.threshold,
+        model: outcome.model,
+        latencyMs: outcome.latencyMs,
+      };
+    },
+    {
+      params: tradingProjectParams,
+      body: classifyBody,
+      response: { 200: ClassifyResponse, ...commonErrors, ...errors(400) },
+      detail: {
+        summary: 'Sort news, check a rule or route a task (trading)',
+        description:
+          "Ask the trading project's small decision model, in well under a few seconds: " +
+          "kind 'news' sorts one news item (relevance for the watchlist, direction, kind of " +
+          "event); kind 'rule' says whether a planned paper trade meets one written rule of " +
+          "Regelwerk.md; kind 'routing' names the role of the trading team for a task. Act on " +
+          'an answer only when it is decided; otherwise judge yourself. It is never an entry ' +
+          'or exit signal, and it writes nothing.',
+        ...mcpTool('trading_classify', { readOnlyHint: true }, 'read'),
+      },
+    },
+  );

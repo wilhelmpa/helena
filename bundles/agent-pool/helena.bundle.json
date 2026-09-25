@@ -3,8 +3,8 @@
   "formatVersion": 1,
   "name": "helena-agent-pool",
   "displayName": "Agentenpool",
-  "version": "1.0.0",
-  "description": "Agenten-Vorlagen für Entwicklung, Prüfung, Betrieb, Wissen, Assistenz, Finanzen und Recht, mit geprüften Skill-Sets.",
+  "version": "1.1.0",
+  "description": "Agenten-Vorlagen für Entwicklung, Prüfung, Betrieb, Wissen, Assistenz, Finanzen, Recht und Trading (Research, Analyse, Backtests, Paper-Trading, Journal), mit geprüften Skill-Sets.",
   "license": "AGPL-3.0-only",
   "author": {
     "name": "Helena"
@@ -453,6 +453,120 @@
       "github": "https://github.com/agiprolabs/claude-trading-skills/tree/981e1d736cdc02bdc1c55c74ec9224e956414706/skills/trade-journal",
       "license": "MIT",
       "attribution": "© agiprolabs (agiprolabs/claude-trading-skills), MIT"
+    },
+    {
+      "name": "backtest-expert",
+      "github": "https://github.com/tradermonty/claude-trading-skills/tree/28503f67265b9e57a40175b8ded222cd9271deac/skills/backtest-expert",
+      "license": "MIT",
+      "attribution": "© TraderMonty (tradermonty/claude-trading-skills), MIT"
+    },
+    {
+      "name": "edge-strategy-reviewer",
+      "github": "https://github.com/tradermonty/claude-trading-skills/tree/28503f67265b9e57a40175b8ded222cd9271deac/skills/edge-strategy-reviewer",
+      "license": "MIT",
+      "attribution": "© TraderMonty (tradermonty/claude-trading-skills), MIT"
+    },
+    {
+      "name": "technical-analyst",
+      "github": "https://github.com/tradermonty/claude-trading-skills/tree/28503f67265b9e57a40175b8ded222cd9271deac/skills/technical-analyst",
+      "license": "MIT",
+      "attribution": "© TraderMonty (tradermonty/claude-trading-skills), MIT"
+    },
+    {
+      "name": "us-stock-analysis",
+      "github": "https://github.com/tradermonty/claude-trading-skills/tree/28503f67265b9e57a40175b8ded222cd9271deac/skills/us-stock-analysis",
+      "license": "MIT",
+      "attribution": "© TraderMonty (tradermonty/claude-trading-skills), MIT"
+    },
+    {
+      "name": "market-news-analyst",
+      "github": "https://github.com/tradermonty/claude-trading-skills/tree/28503f67265b9e57a40175b8ded222cd9271deac/skills/market-news-analyst",
+      "license": "MIT",
+      "attribution": "© TraderMonty (tradermonty/claude-trading-skills), MIT"
+    },
+    {
+      "name": "trade-performance-coach",
+      "github": "https://github.com/tradermonty/claude-trading-skills/tree/28503f67265b9e57a40175b8ded222cd9271deac/skills/trade-performance-coach",
+      "license": "MIT",
+      "attribution": "© TraderMonty (tradermonty/claude-trading-skills), MIT"
+    },
+    {
+      "name": "walk-forward-validation",
+      "github": "https://github.com/agiprolabs/claude-trading-skills/tree/981e1d736cdc02bdc1c55c74ec9224e956414706/skills/walk-forward-validation",
+      "license": "MIT",
+      "attribution": "© agiprolabs (agiprolabs/claude-trading-skills), MIT"
+    },
+    {
+      "name": "ta-lib",
+      "github": "https://github.com/agiprolabs/claude-trading-skills/tree/981e1d736cdc02bdc1c55c74ec9224e956414706/skills/ta-lib",
+      "license": "MIT",
+      "attribution": "© agiprolabs (agiprolabs/claude-trading-skills), MIT"
+    },
+    {
+      "name": "token-economics",
+      "github": "https://github.com/agiprolabs/claude-trading-skills/tree/981e1d736cdc02bdc1c55c74ec9224e956414706/skills/token-economics",
+      "license": "MIT",
+      "attribution": "© agiprolabs (agiprolabs/claude-trading-skills), MIT"
+    },
+    {
+      "name": "position-sizing",
+      "github": "https://github.com/agiprolabs/claude-trading-skills/tree/981e1d736cdc02bdc1c55c74ec9224e956414706/skills/position-sizing",
+      "license": "MIT",
+      "attribution": "© agiprolabs (agiprolabs/claude-trading-skills), MIT"
+    },
+    {
+      "name": "exit-strategies",
+      "github": "https://github.com/agiprolabs/claude-trading-skills/tree/981e1d736cdc02bdc1c55c74ec9224e956414706/skills/exit-strategies",
+      "license": "MIT",
+      "attribution": "© agiprolabs (agiprolabs/claude-trading-skills), MIT"
+    },
+    {
+      "name": "ohlcv-processing",
+      "github": "https://github.com/agiprolabs/claude-trading-skills/tree/981e1d736cdc02bdc1c55c74ec9224e956414706/skills/ohlcv-processing",
+      "license": "MIT",
+      "attribution": "© agiprolabs (agiprolabs/claude-trading-skills), MIT"
+    },
+    {
+      "name": "financial-statements",
+      "github": "https://github.com/JoelLewis/finance_skills/tree/5c498eacf7057e31238c4c5a8012a1afe9ec7c8a/plugins/wealth-management/skills/financial-statements",
+      "license": "MIT",
+      "attribution": "© Joel Lewis (JoelLewis/finance_skills), MIT"
+    },
+    {
+      "name": "digital-assets",
+      "github": "https://github.com/JoelLewis/finance_skills/tree/5c498eacf7057e31238c4c5a8012a1afe9ec7c8a/plugins/wealth-management/skills/digital-assets",
+      "license": "MIT",
+      "attribution": "© Joel Lewis (JoelLewis/finance_skills), MIT"
+    },
+    {
+      "name": "company-valuation",
+      "github": "https://github.com/himself65/finance-skills/tree/7fe91853b536304b13bce210ecf8b685cf77ec48/plugins/market-analysis/skills/company-valuation",
+      "license": "MIT",
+      "attribution": "© Alex Yang (himself65/finance-skills), MIT"
+    },
+    {
+      "name": "morning-note",
+      "github": "https://github.com/anthropics/financial-services/tree/574ed3624aebd0418c7e96cd101262f30210ab26/plugins/vertical-plugins/equity-research/skills/morning-note",
+      "license": "Apache-2.0",
+      "attribution": "© Anthropic, PBC (anthropics/financial-services), Apache-2.0"
+    },
+    {
+      "name": "catalyst-calendar",
+      "github": "https://github.com/anthropics/financial-services/tree/574ed3624aebd0418c7e96cd101262f30210ab26/plugins/vertical-plugins/equity-research/skills/catalyst-calendar",
+      "license": "Apache-2.0",
+      "attribution": "© Anthropic, PBC (anthropics/financial-services), Apache-2.0"
+    },
+    {
+      "name": "earnings-preview",
+      "github": "https://github.com/anthropics/financial-services/tree/574ed3624aebd0418c7e96cd101262f30210ab26/plugins/vertical-plugins/equity-research/skills/earnings-preview",
+      "license": "Apache-2.0",
+      "attribution": "© Anthropic, PBC (anthropics/financial-services), Apache-2.0"
+    },
+    {
+      "name": "thesis-tracker",
+      "github": "https://github.com/anthropics/financial-services/tree/574ed3624aebd0418c7e96cd101262f30210ab26/plugins/vertical-plugins/equity-research/skills/thesis-tracker",
+      "license": "Apache-2.0",
+      "attribution": "© Anthropic, PBC (anthropics/financial-services), Apache-2.0"
     }
   ]
 }

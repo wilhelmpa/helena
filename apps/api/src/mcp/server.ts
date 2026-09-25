@@ -25,6 +25,7 @@ import { SERVER_INSTRUCTIONS } from './instructions';
 import type { McpCredential } from './credential';
 import { toolError } from './result';
 import { visibleConnectors } from '#modules/connectors/tools';
+import { callConfiguredTool, configuredToolsOf } from '#modules/agents/tools/run';
 import { SERVER_INFO } from './info';
 
 // The path param of every team-scoped route.
@@ -112,9 +113,12 @@ export async function buildMcpServer(
       const connector = routes.get(tool.name)?.connector;
       return !connector || granted.has(connector);
     });
+  // A connector's tool the owner bound to a credential and enabled on this agent (a
+  // configured tool, agents/tools/run.ts): listed and run with that credential.
+  const configured = await configuredToolsOf(userId);
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: listed().map((tool) => {
+    tools: [...listed(), ...[...configured.values()].map((entry) => entry.tool)].map((tool) => {
       const route = routes.get(tool.name);
       // A plugin's tool without a title of its own gets its name spelled out, like a route.
       if (!route) return { title: toolTitle(tool.name), ...toMcpTool(tool) };
@@ -135,6 +139,18 @@ export async function buildMcpServer(
   }));
 
   server.setRequestHandler(CallToolRequestSchema, async (req) => {
+    const bound = configured.get(req.params.name);
+    if (bound) {
+      return callConfiguredTool(
+        bound,
+        { ...(req.params.arguments ?? {}) },
+        {
+          userId,
+          auth: credential,
+          runId: context.runId ?? null,
+        },
+      );
+    }
     const tool = registries.tools.get(req.params.name);
     if (!tool || tool.connector) return refusal(404, `Unknown tool: ${req.params.name}`);
     const args = { ...(req.params.arguments ?? {}) };

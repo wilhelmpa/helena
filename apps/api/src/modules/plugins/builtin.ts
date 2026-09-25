@@ -52,6 +52,7 @@ import {
   chatLearningPlugin,
 } from '#modules/agents/chat-reflection/plugin';
 import { EDGE_PLUGIN_ID, edgePlugin, homeHttpsCapability } from '#modules/edge-access/home-https';
+import { TRADING_PLUGIN_ID, tradingManifest, tradingPlugin } from '#modules/trading/plugin';
 
 // Helena's own features as internal plugins: they register through the same host and
 // the same manifest checks as an external plugin (docs/helena-framework.md, §3a
@@ -246,6 +247,10 @@ export async function loadBuiltinPlugins(app: McpApp): Promise<void> {
       },
     }),
   );
+  // Trading (docs/helena-decisions/trading.md): the Alpaca paper account as a connector
+  // with hard pre-trade limits, and the trading decision classes.
+  // A script (the project blueprint) may have loaded it on its own before the app.
+  if (!host.get(TRADING_PLUGIN_ID)) await host.load(tradingPlugin, tradingManifest());
   // Web Push to the owner's devices (docs/helena-decisions/push.md): the notification
   // categories, the alert sources watched on the server, and the event subscriber.
   await host.load(

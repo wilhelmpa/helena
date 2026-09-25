@@ -68,3 +68,7 @@ Import is idempotent. Differences are reported as drift and written only on requ
 - [GitHub Copilot custom agents configuration](https://docs.github.com/en/copilot/reference/custom-agents-configuration)
 - [Open Agent Specification](https://github.com/oracle/agent-spec)
 - [Agent Skills](https://agentskills.io)
+
+## Project blueprints (2026-09-26)
+
+A bundle carries agent templates and skills; a **project blueprint** (`helena.project-blueprint`, `@helena/sdk` `blueprints.ts`) carries what a ready-to-work project needs on top of them. That is the project and its instructions, areas, the agent team as copies of a bundle's templates, network rules, notes, note templates, a board, goals, and routines (always created switched off). It names the bundles it `requires`. Blueprints live under `blueprints/` in the repository and are applied with `apps/api/src/scripts/project-blueprint.ts`. The format, the idempotency rules and the first blueprint (trading) are in `trading.md` §7–8.

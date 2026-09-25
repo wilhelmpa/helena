@@ -1,5 +1,6 @@
 import { categoryFromAnnotations as sdkCategoryFromAnnotations } from '@helena/sdk';
 import { ACTION_CATEGORIES, actionRank, type ActionCategory, type ActionScope } from './categories';
+import { isHelenaMcpServer, isOrderToolName, mentionsLiveTradingHost } from './trading';
 
 // How a tool call becomes an action category (docs/helena-decisions/policy-engine.md).
 // Every tool is or becomes an MCP tool, so the MCP tool annotations are the basis; the
@@ -331,6 +332,8 @@ export function classifyShell(
   if (/\|\s*(sudo\s+)?(ba|z|da|k)?sh\b/.test(command)) {
     result = { category: 'execute', scope: 'external' };
   }
+  // A broker's or an exchange's trading API moves money (trading.ts): a person decides.
+  if (mentionsLiveTradingHost(command)) return { category: 'pay', scope: 'external' };
   for (const part of simpleCommands(command)) {
     const one = classifyOne(part, options.workspace);
     if (RANK[one.category] > RANK[result.category]) result = { ...one, scope: result.scope };
@@ -552,6 +555,11 @@ function baseCategory(call: ToolCall): Classified {
     const bare = call.tool.startsWith(hermesPrefix)
       ? call.tool.slice(hermesPrefix.length)
       : call.tool.replace(/^.*__/, '');
+    // An order, a closed position or a withdrawal through anyone's server but Helena's own
+    // (whose paper tools carry their category) is money moving (trading.ts).
+    if (!isHelenaMcpServer(call.mcp.server) && isOrderToolName(bare)) {
+      return { category: 'pay', scope: 'external' };
+    }
     const known = table?.[call.tool] ?? table?.[bare];
     const category = known ?? categoryFromAnnotations(call.mcp.annotations, call.mcp.action);
     return {
@@ -570,6 +578,7 @@ function baseCategory(call: ToolCall): Classified {
     return classifyShell(call.command, { workspace, dangerous: call.dangerous });
   }
   if (call.runtime === 'hermes' && call.tool === 'execute_code') {
+    if (mentionsLiveTradingHost(call.command)) return { category: 'pay', scope: 'external' };
     return { category: 'execute', scope: 'workspace' };
   }
   const table = call.runtime === 'claude' ? CLAUDE_TOOL_CATEGORY : HERMES_TOOL_CATEGORY;

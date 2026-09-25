@@ -450,7 +450,8 @@
       "localAi": "AI lokal",
       "push": "Notifikasi push",
       "edge": "Akses dari luar",
-      "chatLearning": "Belajar dari obrolan"
+      "chatLearning": "Belajar dari obrolan",
+      "trading": "Trading (simulasi)"
     },
     "problems": {
       "external-off": "Dimuat setelah plugin eksternal diaktifkan.",

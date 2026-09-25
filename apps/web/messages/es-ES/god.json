@@ -450,7 +450,8 @@
       "localAi": "IA local",
       "push": "Notificaciones push",
       "edge": "Acceso desde fuera",
-      "chatLearning": "Aprender de los chats"
+      "chatLearning": "Aprender de los chats",
+      "trading": "Trading (simulado)"
     },
     "problems": {
       "external-off": "Se carga cuando se activen los plugins externos.",

@@ -31,6 +31,7 @@
     "@helena/policy": "workspace:*",
     "@helena/push": "workspace:*",
     "@helena/sdk": "workspace:*",
+    "@helena/trading": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "@repo/agent-naming": "workspace:*",
     "@repo/agent-tools": "workspace:*",
