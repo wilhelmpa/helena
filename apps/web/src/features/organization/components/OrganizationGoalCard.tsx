@@ -12,6 +12,7 @@ import type {
   OrganizationProject,
 } from '@/lib/api/endpoints/organization';
 import { useDeleteGoal, useUpdateGoal } from '../services/organization.service';
+import OrganizationGoalProgress from './OrganizationGoalProgress';
 
 export default function OrganizationGoalCard({
   teamId,
@@ -139,6 +140,7 @@ export default function OrganizationGoalCard({
           onChange={(event) => setDescription(event.target.value)}
         />
       </label>
+      <OrganizationGoalProgress teamId={teamId} goal={goal} />
       <div className="flex justify-end gap-2">
         <Button
           type="button"

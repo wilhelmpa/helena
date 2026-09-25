@@ -240,6 +240,13 @@
     "usageDescription": "Pemakaian agen dalam sebuah tim, dari buku token Helena, dengan biaya menurut tabel harga model.",
     "team": "Tim",
     "noTeam": "Belum ada tim.",
-    "openUpdates": "Buka di Pembaruan"
+    "openUpdates": "Buka di Pembaruan",
+    "profilesTitle": "Profil Hermes",
+    "compressionThreshold": "Padatkan konteks mulai (token)",
+    "compressionThresholdHint": "Untuk setiap agen tanpa nilai sendiri. 100.000 menjaga obrolan panjang jauh di bawah jendela model saat ini tanpa terlalu sering merangkum run yang sedang berjalan.",
+    "bundledSkills": "Skill bawaan Hermes",
+    "bundledSkillsHint": "Helena menanamnya dengan cara sama di setiap profil Hermes (docx, pdf, xlsx, debugging …). Matikan satu per satu di agen. “Hanya yang penting” tidak menambah yang baru; yang ada tetap.",
+    "bundledSkillsAll": "Semua",
+    "bundledSkillsEssential": "Hanya yang penting"
   }
 }

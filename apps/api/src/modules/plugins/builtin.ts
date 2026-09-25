@@ -46,6 +46,11 @@ import {
 } from '#modules/decisions/classes';
 import { DECISIONS_LOCAL_AI_CLASS } from '#modules/decisions/local-ai-class';
 import { PUSH_PERMISSIONS, PUSH_PLUGIN_ID, PUSH_PROVIDES, pushPlugin } from '#modules/push/plugin';
+import {
+  CHAT_LEARNING_EVENTS,
+  CHAT_LEARNING_PLUGIN_ID,
+  chatLearningPlugin,
+} from '#modules/agents/chat-reflection/plugin';
 import { EDGE_PLUGIN_ID, edgePlugin, homeHttpsCapability } from '#modules/edge-access/home-https';
 
 // Helena's own features as internal plugins: they register through the same host and
@@ -248,6 +253,14 @@ export async function loadBuiltinPlugins(app: McpApp): Promise<void> {
     builtinManifest(PUSH_PLUGIN_ID, 'push', {
       provides: PUSH_PROVIDES,
       permissions: PUSH_PERMISSIONS,
+    }),
+  );
+  // Learning from chats (docs/helena-decisions/agent-context.md §5): the subscriber that
+  // queues an agent's reflection on a chat after its answers.
+  await host.load(
+    chatLearningPlugin,
+    builtinManifest(CHAT_LEARNING_PLUGIN_ID, 'chatLearning', {
+      permissions: { events: CHAT_LEARNING_EVENTS },
     }),
   );
   // The second brain: Helena's knowledge sources and capture targets live in the host's

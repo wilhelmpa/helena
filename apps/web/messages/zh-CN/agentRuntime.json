@@ -240,6 +240,13 @@
     "usageDescription": "团队中各代理的用量，来自 Helena 的令牌账本，费用按模型价格表计算。",
     "team": "团队",
     "noTeam": "暂无团队。",
-    "openUpdates": "在“更新”中打开"
+    "openUpdates": "在“更新”中打开",
+    "profilesTitle": "Hermes 配置档",
+    "compressionThreshold": "上下文压缩阈值（令牌）",
+    "compressionThresholdHint": "适用于所有未设置自身值的代理。100,000 能让长聊天远低于当今模型的窗口，又不会在运行途中过于频繁地汇总。",
+    "bundledSkills": "Hermes 自带技能",
+    "bundledSkillsHint": "Helena 会以相同方式放入每个 Hermes 配置档（docx、pdf、xlsx、调试……）。可在代理上单独关闭。“仅必需”不再添加新技能，已有的保留。",
+    "bundledSkillsAll": "全部",
+    "bundledSkillsEssential": "仅必需"
   }
 }

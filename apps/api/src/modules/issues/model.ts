@@ -295,6 +295,21 @@ export const IssueWithFieldsResponse = t.Composite([
     subtasks: t.Array(IssueRefResponse),
     checklists: t.Array(ChecklistResponse),
     development: t.Array(DevelopmentLinkResponse),
+    // The goal the issue serves (modules/goals), for an agent reading it.
+    goal: t.Optional(
+      t.Nullable(
+        t.Object({
+          id: t.Number(),
+          title: t.String(),
+          status: t.Union([
+            t.Literal('planned'),
+            t.Literal('active'),
+            t.Literal('achieved'),
+            t.Literal('paused'),
+          ]),
+        }),
+      ),
+    ),
   }),
 ]);
 
@@ -462,6 +477,15 @@ export const createIssueBody = t.Object({
   dueDate: t.Optional(t.Nullable(isoDate("Due date 'YYYY-MM-DD', or null."))),
   labelIds: t.Optional(
     t.Array(t.Integer(), { description: 'Label ids to attach. From get_project.labels.' }),
+  ),
+  goalId: t.Optional(
+    t.Nullable(
+      t.Integer({
+        description:
+          'The goal this issue serves, or null. From list_goals; it counts the issue in the ' +
+          "goal's progress.",
+      }),
+    ),
   ),
 });
 

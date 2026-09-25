@@ -369,6 +369,10 @@ export interface RuntimeDefaults {
   fallbackModels: FallbackModel[];
   // Days Hermes keeps the sessions of ended runs and chats; null keeps Hermes' own (90).
   sessionRetentionDays: number | null;
+  // Which of the skills that ship with Hermes every Hermes profile carries.
+  bundledSkills: 'all' | 'essential';
+  // From how many tokens Hermes compresses a conversation, for agents without their own.
+  compressionThresholdTokens: number;
 }
 
 export const getRuntimeDefaults = () => request<RuntimeDefaults>('/god/agent-runtime-settings');

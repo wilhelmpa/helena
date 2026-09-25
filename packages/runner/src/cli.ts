@@ -3,10 +3,12 @@ import { readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { answer } from './chat';
+import { reflectOnChat } from './chat-reflect';
 import {
   Client,
   RequestError,
   type ChatMessage,
+  type ChatReflectionClaim,
   type Run,
   type RuntimeRequestClaim,
 } from './client';
@@ -59,6 +61,8 @@ const CATALOG_RETRY_MS = 30_000;
 // Runtime requests read files and start short commands; two at once keep a slow doctor run
 // from holding up a transcript.
 const REQUEST_CONCURRENCY = 2;
+// How often the runner asks for a due chat reflection: they wait minutes by design.
+const CHAT_REFLECTION_POLL_MS = 60_000;
 
 type Log = (message: string) => void;
 
@@ -479,6 +483,7 @@ async function serve(state: State, config: RunnerConfig): Promise<void> {
   if (config.models.length > 0) void publishCatalog(state, log, client, config);
   let chatSupported = true;
   let requestsSupported = true;
+  let chatReflectionsSupported = true;
   const inFlight = new Map<number, Run>();
   await Promise.all([
     drain<Run>(
@@ -538,6 +543,39 @@ async function serve(state: State, config: RunnerConfig): Promise<void> {
         policy?.inventoryChanged();
       },
       () => Promise.resolve(chatSupported),
+    ),
+    // Reflections on chats that went quiet (docs/helena-decisions/agent-context.md §5), one
+    // at a time and without hurry. An instance without them answers 404, and that loop ends.
+    drain<ChatReflectionClaim>(
+      state,
+      log,
+      1,
+      async () => {
+        try {
+          return await client.claimChatReflection();
+        } catch (err) {
+          if (err instanceof RequestError && err.status === 404) {
+            chatReflectionsSupported = false;
+            return null;
+          }
+          throw err;
+        }
+      },
+      async (claim) => {
+        log(`chat reflection ${claim.id}: reflecting on ${claim.threadId}`);
+        const report = await reflectOnChat(config, client, claim, policy).catch((err) => {
+          log(`chat reflection ${claim.id}: not reported — ${String(err)}`);
+          return null;
+        });
+        if (report)
+          log(`chat reflection ${claim.id}: ${report.status}, ${report.saved.length} saved`);
+        policy?.inventoryChanged();
+      },
+      async () => {
+        if (!chatReflectionsSupported) return false;
+        await sleep(CHAT_REFLECTION_POLL_MS);
+        return true;
+      },
     ),
     // Helena's questions about the runtime: sessions, transcripts, logs, health. An instance
     // too old to ask any answers 404, and that loop ends.

@@ -46,7 +46,31 @@
   },
   "goals": {
     "newPlaceholder": "New goal",
-    "empty": "No organization goals have been created."
+    "empty": "No organization goals have been created.",
+    "noTasks": "Nenhuma tarefa vinculada a esta meta ainda.",
+    "progress": "{done} de {total} tarefas concluídas",
+    "progressShort": "{done}/{total}",
+    "progressLabel": "Progresso",
+    "workingOn": "Trabalhando nisso: {agents}",
+    "proposal": "{author} propõe: {status}",
+    "accept": "Aceitar",
+    "reject": "Recusar",
+    "details": "Tarefas e notas",
+    "loading": "Carregando…",
+    "tasks": "Tarefas",
+    "tasksEmpty": "Nenhuma tarefa vinculada.",
+    "running": "Um agente está trabalhando nisso",
+    "notes": "Notas",
+    "notesEmpty": "Nenhuma nota ainda.",
+    "proposed": "propõe “{status}”",
+    "decision": {
+      "accepted": "aceito",
+      "rejected": "recusado"
+    },
+    "link": "Vincular",
+    "linkPlaceholder": "Tarefa, ex. VOL-12",
+    "linkFailed": "Tarefa não encontrada ou não pode ser vinculada.",
+    "unlink": "Desvincular {task} da meta"
   },
   "agents": {
     "empty": "This team has no agents.",

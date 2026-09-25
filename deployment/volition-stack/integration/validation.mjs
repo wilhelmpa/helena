@@ -1,3 +1,4 @@
+import { publicOrigin } from "./config.mjs";
 const EVENT_TYPES = new Set(["project.provision", "project.deprovision"]);
 const PROJECT_KEY = /^[A-Z][A-Z0-9]{0,31}$/;
 const UUID =
@@ -147,6 +148,18 @@ export function validateEnvelope(value, headers) {
   ) {
     throw new RequestValidationError("areas contains a duplicate");
   }
+  // Helena's public origin (its first APP_URL), which the links written for the agents use.
+  let publicUrl = "";
+  if (value.publicUrl != null) {
+    if (typeof value.publicUrl !== "string" || value.publicUrl.length > 300) {
+      throw new RequestValidationError("publicUrl is invalid");
+    }
+    try {
+      publicUrl = publicOrigin(value.publicUrl);
+    } catch {
+      throw new RequestValidationError("publicUrl must be a bare http(s) origin");
+    }
+  }
   const createdAt = requiredString(value.createdAt, "createdAt", 40);
   const created = new Date(createdAt);
   if (
@@ -170,6 +183,7 @@ export function validateEnvelope(value, headers) {
     ...(cleanBoards.length ? { boards: cleanBoards } : {}),
     ...(agents.length ? { agents } : {}),
     ...(cleanAreas.length ? { areas: cleanAreas } : {}),
+    ...(publicUrl ? { publicUrl } : {}),
     createdAt,
   };
 }

@@ -1,4 +1,5 @@
 import { t } from 'elysia';
+import { GoalProgressResponse } from '#modules/goals/model';
 
 export const organizationTeamParams = t.Object({ teamId: t.Numeric() });
 export const organizationQuery = t.Object({
@@ -122,6 +123,10 @@ const GoalResponse = t.Object({
   targetDate: t.Nullable(t.String()),
   createdAt: t.String(),
   updatedAt: t.String(),
+  // Only on the organization read: its linked tasks and who works on them
+  // (modules/goals), and the status proposals of agents that wait for a decision.
+  progress: t.Optional(GoalProgressResponse),
+  pendingProposals: t.Optional(t.Number()),
 });
 
 const AgentProjectResponse = t.Object({

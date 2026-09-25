@@ -104,6 +104,64 @@ export const runtimePolicy = t.Object({
       description: "Skills of the agent's runtime turned off by name (Hermes skills.disabled).",
     }),
   ),
+  compression: t.Optional(
+    t.Object(
+      {
+        thresholdTokens: t.Optional(
+          t.Integer({
+            minimum: 16_000,
+            maximum: 1_000_000,
+            description:
+              "Compress once a call's context reaches this many tokens. Unset, the " +
+              "instance's default.",
+          }),
+        ),
+        targetRatio: t.Optional(
+          t.Number({
+            minimum: 0.1,
+            maximum: 0.5,
+            description: 'What the compressed context keeps, as a share of the threshold.',
+          }),
+        ),
+        idleCompactMinutes: t.Optional(
+          t.Integer({
+            minimum: 0,
+            maximum: 10_080,
+            description: 'Compress a session resumed after this many idle minutes; 0 never.',
+          }),
+        ),
+        model: t.Optional(
+          t.Object({
+            provider: t.String({ minLength: 1, maxLength: 100 }),
+            model: t.String({ minLength: 1, maxLength: 200 }),
+          }),
+        ),
+      },
+      { description: 'How Hermes compresses a long conversation. Unset fields take the defaults.' },
+    ),
+  ),
+  chatReflection: t.Optional(
+    t.Boolean({
+      description:
+        'Whether a learning agent reflects on its chats once they go quiet. Unset, it does.',
+    }),
+  ),
+  chatReflectionIdleMinutes: t.Optional(
+    t.Integer({
+      minimum: 2,
+      maximum: 1440,
+      description: 'Minutes a chat stays quiet before the agent reflects on it. Unset, 10.',
+    }),
+  ),
+  chatReflectionEveryTurns: t.Optional(
+    t.Integer({
+      minimum: 2,
+      maximum: 200,
+      description:
+        "The person's messages after which the agent reflects even while the chat goes on. " +
+        'Unset, 20.',
+    }),
+  ),
   fallbackModels: t.Optional(
     t.Nullable(
       t.Array(

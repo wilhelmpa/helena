@@ -25,6 +25,53 @@ export interface OrganizationGoal {
   targetDate: string | null;
   createdAt: string;
   updatedAt: string;
+  // Its linked tasks and the agents working on them, and the status proposals of agents
+  // that wait for a decision.
+  progress?: GoalProgress;
+  pendingProposals?: number;
+}
+
+export interface GoalProgress {
+  total: number;
+  done: number;
+  agents: { id: number; username: string; name: string }[];
+}
+
+export interface GoalPerson {
+  name: string;
+  username: string | null;
+  agent: boolean;
+}
+
+export interface GoalTask {
+  issueId: number;
+  identifier: string;
+  title: string;
+  stateType: string;
+  stateName: string;
+  assignee: GoalPerson | null;
+  running: boolean;
+}
+
+export interface GoalNote {
+  id: number;
+  body: string;
+  author: GoalPerson | null;
+  proposedStatus: OrganizationGoalStatus | null;
+  decision: 'accepted' | 'rejected' | null;
+  decidedAt: string | null;
+  createdAt: string;
+}
+
+export interface GoalDetail {
+  id: number;
+  title: string;
+  status: OrganizationGoalStatus;
+  path: string[];
+  progress: GoalProgress;
+  children: { id: number; title: string; status: OrganizationGoalStatus }[];
+  tasks: GoalTask[];
+  notes: GoalNote[];
 }
 
 export interface OrganizationAgentProject {
@@ -226,4 +273,22 @@ export const setProjectTokenCeiling = (teamId: number, projectId: number, monthl
   request<void>(`${base(teamId)}/projects/${projectId}/token-ceiling`, {
     method: 'PUT',
     body: JSON.stringify({ monthly }),
+  });
+
+// A goal with its linked tasks and notes (modules/goals).
+export const getGoalDetail = (teamId: number, goalId: number) =>
+  request<GoalDetail>(`/teams/${teamId}/goals/${goalId}`);
+
+// Accepts or rejects an agent's proposed status; accepting sets it.
+export const decideGoalNote = (teamId: number, goalId: number, noteId: number, accept: boolean) =>
+  request<GoalNote>(`/teams/${teamId}/goals/${goalId}/notes/${noteId}/decision`, {
+    method: 'POST',
+    body: JSON.stringify({ accept }),
+  });
+
+// Links a task to a goal (at most one per task), or unlinks it with null.
+export const setIssueGoal = (issueId: number, goalId: number | null) =>
+  request<{ issueId: number; goalId: number | null }>(`/issues/${issueId}/goal`, {
+    method: 'PUT',
+    body: JSON.stringify({ goalId }),
   });

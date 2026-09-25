@@ -424,7 +424,22 @@
         "codex": "Codex"
       },
       "runtimeHermesHint": "O servidor provisiona o Hermes e mantém o perfil sincronizado.",
-      "runtimeCliHint": "Roda como serviço, como um agente Hermes, em um diretório próprio. Instruções, skills, servidores MCP, ferramentas, modelo e raciocínio vêm da Helena; o login, de Acessos."
+      "runtimeCliHint": "Roda como serviço, como um agente Hermes, em um diretório próprio. Instruções, skills, servidores MCP, ferramentas, modelo e raciocínio vêm da Helena; o login, de Acessos.",
+      "compression": {
+        "title": "Compressão do contexto",
+        "hint": "Um chat ou execução longos enviam todo o histórico a cada chamada. A partir do limite, o Hermes resume as partes antigas: menos tokens por chamada, ao custo de uma chamada de resumo e menos detalhes literais. Vazio: o padrão da instância.",
+        "threshold": "Comprimir a partir de (tokens)",
+        "thresholdPlaceholder": "Padrão",
+        "target": "Manter depois",
+        "targetDefault": "Padrão (20%)",
+        "targetValue": "{percent}% do limite",
+        "idle": "Comprimir após uma pausa",
+        "idleOff": "Nunca",
+        "idleMinutes": "Após {minutes} minutos",
+        "idleHours": "{hours, plural, one {Após # hora} other {Após # horas}}",
+        "model": "Modelo que resume",
+        "modelDefault": "Automático (modelo próprio ou IA local)"
+      }
     },
     "runtimeConflicts": {
       "title": "Alterado fora do Helena",
@@ -573,7 +588,8 @@
       "origin": {
         "agent": "Aprendida",
         "hub": "Do Skills Hub",
-        "plan": "Da Helena"
+        "plan": "Da Helena",
+        "bundled": "Vem com o Hermes"
       },
       "memory": "Memória",
       "memoryHint": "O Hermes escreve essa memória sozinho; ela aparece como o runner a informou por último. Uma alteração chega ao agente na próxima sincronização do runner.",
@@ -642,10 +658,28 @@
         "memoryClearTitle": "Limpar {file}?",
         "memoryClearBody": "O agente perde essas notas na próxima sincronização do runner.",
         "memoryApproval": "Aprovar alterações na memória",
-        "memoryApprovalHint": "O que o agente escreve na memória aguarda como diff na página de aprovações; até a aprovação, ele mantém a versão aprovada."
+        "memoryApprovalHint": "O que o agente escreve na memória aguarda como diff na página de aprovações; até a aprovação, ele mantém a versão aprovada.",
+        "chatReflection": "Aprender com os chats",
+        "chatReflectionHint": "Quando um chat fica parado por um tempo, o agente guarda num turno curto o que aprendeu sobre você e como você quer as coisas. Entradas de memória esperam sua aprovação como sempre; os tokens contam no consumo dele.",
+        "chatReflectionIdle": "após minutos parado",
+        "chatReflectionTurns": "no máximo após mensagens",
+        "chatReflections": "Aprendido recentemente com os chats",
+        "chatUntitled": "Chat sem título",
+        "chatReflectionStatus": {
+          "pending": "Planejado",
+          "running": "Em andamento",
+          "success": "Concluído",
+          "failed": "Falhou",
+          "canceled": "Descartado"
+        },
+        "chatReflectionNothing": "Nada guardado",
+        "chatReflectionMemory": "Memória ({target})",
+        "chatReflectionSkill": "Habilidade {target}"
       },
       "skillEnabled": "{name} ativada",
-      "skillsDisabled": "desativadas: {count}"
+      "skillsDisabled": "desativadas: {count}",
+      "skillClashes": "{count, plural, one {Um nome pertence} other {# nomes pertencem}} a mais de uma habilidade. O Hermes então não carrega nenhuma delas:",
+      "skillClashesFix": "Tire a habilidade do Helena do agente (a adaptada ao Hermes passa a valer) ou renomeie-a na biblioteca de habilidades."
     },
     "paused": "Pausado",
     "pausedNoReason": "Pausado. Nenhum motivo foi informado.",

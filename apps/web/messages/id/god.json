@@ -449,7 +449,8 @@
       "decisions": "Keputusan",
       "localAi": "AI lokal",
       "push": "Notifikasi push",
-      "edge": "Akses dari luar"
+      "edge": "Akses dari luar",
+      "chatLearning": "Belajar dari obrolan"
     },
     "problems": {
       "external-off": "Dimuat setelah plugin eksternal diaktifkan.",

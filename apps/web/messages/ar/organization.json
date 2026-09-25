@@ -46,7 +46,31 @@
   },
   "goals": {
     "newPlaceholder": "New goal",
-    "empty": "No organization goals have been created."
+    "empty": "No organization goals have been created.",
+    "noTasks": "لا توجد مهام مرتبطة بهذا الهدف بعد.",
+    "progress": "أُنجزت {done} من {total} مهام",
+    "progressShort": "{done}/{total}",
+    "progressLabel": "التقدم",
+    "workingOn": "يعمل عليه: {agents}",
+    "proposal": "{author} يقترح: {status}",
+    "accept": "قبول",
+    "reject": "رفض",
+    "details": "المهام والملاحظات",
+    "loading": "جارٍ التحميل…",
+    "tasks": "المهام",
+    "tasksEmpty": "لا توجد مهام مرتبطة.",
+    "running": "وكيل يعمل عليه الآن",
+    "notes": "الملاحظات",
+    "notesEmpty": "لا توجد ملاحظات بعد.",
+    "proposed": "يقترح „{status}“",
+    "decision": {
+      "accepted": "مقبول",
+      "rejected": "مرفوض"
+    },
+    "link": "ربط",
+    "linkPlaceholder": "مهمة، مثل VOL-12",
+    "linkFailed": "المهمة غير موجودة أو لا يمكن ربطها.",
+    "unlink": "فك ربط {task} بالهدف"
   },
   "agents": {
     "empty": "This team has no agents.",

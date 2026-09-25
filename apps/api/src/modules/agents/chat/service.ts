@@ -861,6 +861,15 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
         AND q.status IN ('pending', 'streaming')
         AND q.next_attempt_at <= now()
         AND (SELECT paused_at FROM ai_agent a WHERE a.id = q.agent_id) IS NULL
+        -- The thread's reflection continues the same session: an answer waits while one
+        -- is out (chat-reflection/service.ts).
+        AND NOT EXISTS (
+          SELECT 1 FROM helena_chat_reflection r
+          WHERE r.thread_id = q.thread_id
+            AND r.status = 'pending'
+            AND r.claimed_at IS NOT NULL
+            AND r.next_attempt_at > now()
+        )
       ORDER BY q.next_attempt_at, q.id
       FOR UPDATE SKIP LOCKED
       LIMIT 1

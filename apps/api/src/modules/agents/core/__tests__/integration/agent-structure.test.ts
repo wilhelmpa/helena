@@ -481,7 +481,7 @@ describe('SOUL.md of the structure', () => {
     expect(soul).toContain('instead: @writer.');
   });
 
-  it('adds nothing for a specialist', async () => {
+  it('tells a specialist whom it reports to and how it hands its work back', async () => {
     const { asOwner, teamId, project } = await setup();
     const created = await agents(asOwner, teamId).post({
       name: 'Writer',
@@ -492,7 +492,10 @@ describe('SOUL.md of the structure', () => {
 
     const policy = await apiKeyApi(created.data!.apiKey!)['agent-runtime'].policy.get();
     const soul = policy.data!.runtimePolicy.files[0].content;
-    expect(soul).not.toContain('## Agent team');
+    expect(soul).toContain('## Agent team');
+    expect(soul).toContain('You are a specialist in the agent team of MKT and report to');
+    expect(soul).toContain('@hermes-mkt-coordinator');
+    expect(soul).toContain('Handing your work back:');
     expect(soul).not.toContain('## Home agent');
   });
 });

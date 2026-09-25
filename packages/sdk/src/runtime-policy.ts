@@ -93,6 +93,20 @@ export interface RuntimeHermesSettings {
   skillsDisabled?: string[];
   fallbackModels?: { provider: string; model: string }[];
   sessionRetentionDays?: number | null;
+  // How Hermes compresses a long conversation (compression.*, auxiliary.compression); an
+  // older server sends none and Hermes' own defaults apply.
+  compression?: RuntimeCompression;
+  // Which of the skills that ship with Hermes the profile carries; the runner seeds them
+  // with Hermes' own sync, the same way for every profile. An older server sends none and
+  // the profile keeps what it has.
+  bundledSkills?: 'all' | 'essential';
+}
+
+export interface RuntimeCompression {
+  thresholdTokens: number;
+  targetRatio?: number;
+  idleCompactAfterSeconds?: number;
+  model?: { provider: string; model: string } | null;
 }
 
 export interface RuntimePolicySnapshot {

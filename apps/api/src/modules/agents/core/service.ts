@@ -82,7 +82,40 @@ export interface AgentRuntimePolicy {
   // Which runtime runs the agent. Unset is Hermes, which the server provisions itself; a
   // Claude Code or Codex agent runs on a runner started with that preset.
   runtime?: AgentRuntimeKind;
+  // How Hermes compresses a long conversation (docs/helena-decisions/agent-context.md §6).
+  // A field left out takes the instance's default (the threshold) or Hermes' own.
+  compression?: AgentCompression;
+  // Whether a learning agent reflects on its chats (§5): a follow-up turn in the chat's
+  // session once the chat went quiet for `chatReflectionIdleMinutes`, or after
+  // `chatReflectionEveryTurns` of the person's messages. Unset: on, 10 and 20.
+  chatReflection?: boolean;
+  chatReflectionIdleMinutes?: number;
+  chatReflectionEveryTurns?: number;
 }
+
+export interface AgentCompression {
+  // Hermes compresses once a call's context reaches this many tokens
+  // (compression.threshold_tokens), whatever the model's window allows.
+  thresholdTokens?: number;
+  // What the compressed context keeps, as a share of the threshold (compression.target_ratio).
+  targetRatio?: number;
+  // A session resumed after this many idle minutes is compressed before it answers
+  // (compression.idle_compact_after_seconds); unset or 0 never.
+  idleCompactMinutes?: number;
+  // The model that writes the summaries (auxiliary.compression); unset: Hermes' choice, the
+  // agent's own model or the local model Lokale KI names.
+  model?: { provider: string; model: string };
+}
+
+export const COMPRESSION_LIMITS = {
+  thresholdTokens: { min: 16_000, max: 1_000_000 },
+  targetRatio: { min: 0.1, max: 0.5 },
+  idleCompactMinutes: { min: 0, max: 7 * 24 * 60 },
+} as const;
+export const CHAT_REFLECTION_LIMITS = {
+  idleMinutes: { min: 2, max: 24 * 60, default: 10 },
+  everyTurns: { min: 2, max: 200, default: 20 },
+} as const;
 
 export type ReflectionMode = 'off' | 'failure' | 'complex';
 const REFLECTION_MODES: ReflectionMode[] = ['off', 'failure', 'complex'];
@@ -292,7 +325,64 @@ export function normalizeRuntimePolicy(value: unknown): AgentRuntimePolicy {
     // Hermes is the default and is left out, so an agent's policy keeps its revision.
     ...(AGENT_RUNTIMES.includes(policy.runtime as AgentRuntimeKind) &&
       policy.runtime !== 'hermes' && { runtime: policy.runtime }),
+    ...compressionField(policy.compression),
+    ...(typeof policy.chatReflection === 'boolean' && { chatReflection: policy.chatReflection }),
+    ...boundedInteger(
+      'chatReflectionIdleMinutes',
+      policy.chatReflectionIdleMinutes,
+      CHAT_REFLECTION_LIMITS.idleMinutes,
+    ),
+    ...boundedInteger(
+      'chatReflectionEveryTurns',
+      policy.chatReflectionEveryTurns,
+      CHAT_REFLECTION_LIMITS.everyTurns,
+    ),
   };
+}
+
+// A whole number within its bounds as `{ [key]: value }`, else nothing: a value out of
+// bounds is dropped rather than clamped, like the run limits.
+function boundedInteger<K extends string>(
+  key: K,
+  value: unknown,
+  limits: { min: number; max: number },
+): Partial<Record<K, number>> {
+  return typeof value === 'number' &&
+    Number.isInteger(value) &&
+    value >= limits.min &&
+    value <= limits.max
+    ? ({ [key]: value } as Record<K, number>)
+    : {};
+}
+
+// The compression settings that are set and valid; nothing at all when none is, so an agent
+// without them keeps its revision.
+function compressionField(value: unknown): { compression?: AgentCompression } {
+  if (!value || typeof value !== 'object') return {};
+  const input = value as Record<string, unknown>;
+  const ratio = input.targetRatio;
+  const model = input.model as { provider?: unknown; model?: unknown } | null | undefined;
+  const compression: AgentCompression = {
+    ...boundedInteger('thresholdTokens', input.thresholdTokens, COMPRESSION_LIMITS.thresholdTokens),
+    ...(typeof ratio === 'number' &&
+      ratio >= COMPRESSION_LIMITS.targetRatio.min &&
+      ratio <= COMPRESSION_LIMITS.targetRatio.max && {
+        targetRatio: Math.round(ratio * 100) / 100,
+      }),
+    ...boundedInteger(
+      'idleCompactMinutes',
+      input.idleCompactMinutes,
+      COMPRESSION_LIMITS.idleCompactMinutes,
+    ),
+    ...(model &&
+      typeof model.provider === 'string' &&
+      typeof model.model === 'string' &&
+      model.provider.trim() &&
+      model.model.trim() && {
+        model: { provider: model.provider.trim(), model: model.model.trim() },
+      }),
+  };
+  return Object.keys(compression).length > 0 ? { compression } : {};
 }
 
 // One member custom field an agent reacts to, with the seconds its run waits before

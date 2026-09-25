@@ -16,6 +16,39 @@ export function learningOf(policy: AgentRuntimePolicy): {
   };
 }
 
+// Reflection on chats with its defaults (docs/helena-decisions/agent-context.md §5): on for a
+// learning agent, once a chat has been quiet for 10 minutes, at the latest after 20 of the
+// person's messages. The bounds are the server's.
+export const CHAT_REFLECTION_BOUNDS = {
+  idleMinutes: { min: 2, max: 1440 },
+  everyTurns: { min: 2, max: 200 },
+} as const;
+
+export function chatReflectionOf(policy: AgentRuntimePolicy): {
+  enabled: boolean;
+  idleMinutes: number;
+  everyTurns: number;
+} {
+  return {
+    enabled: (policy.learning ?? true) && (policy.chatReflection ?? true),
+    idleMinutes: policy.chatReflectionIdleMinutes ?? 10,
+    everyTurns: policy.chatReflectionEveryTurns ?? 20,
+  };
+}
+
+// A number typed into a bounded field: the whole number within the bounds, or undefined
+// (the default) for an empty or invalid entry.
+export function boundedNumber(
+  value: string,
+  bounds: { min: number; max: number },
+): number | undefined {
+  if (value.trim() === '') return undefined;
+  const number = Number(value);
+  return Number.isInteger(number) && number >= bounds.min && number <= bounds.max
+    ? number
+    : undefined;
+}
+
 // Whether the agent's runner carries out the owner's actions on what it learned. An older
 // runner reports no skill paths and no memory versions to act on.
 export function canActOnLearning(state: AgentRuntimeState): boolean {

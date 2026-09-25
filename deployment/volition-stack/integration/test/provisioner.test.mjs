@@ -315,7 +315,7 @@ describe("createProvisioner", () => {
     }
     assert.equal((await fs.stat(path.join(root, "vault/Projects/DEMO/backend"))).mode & 0o7777, 0o2770);
     const instructions = await fs.readFile(path.join(root, "projects/demo/backend/AGENTS.md"), "utf8");
-    assert.match(instructions, /^# Area: Backend\n/);
+    assert.match(instructions, /^<!-- helena:area-context -->\n# Area: Backend\n/);
     assert.match(instructions, /project "Demo" \(DEMO\)/);
     await assert.rejects(fs.lstat(path.join(root, "vault/Projects/DEMO/backend/AGENTS.md")), { code: "ENOENT" });
     await fs.writeFile(path.join(root, "projects/demo/backend/AGENTS.md"), "# Edited");
@@ -458,7 +458,7 @@ describe("createProvisioner", () => {
       areas: [{ id: 4, name: "Frontend", folder: "frontend" }],
     });
     assert.deepEqual(await fs.readdir(path.join(root, "projects/demo/apps")), ["main.ts"]);
-    assert.match(await fs.readFile(path.join(root, "projects/demo/frontend/AGENTS.md"), "utf8"), /^# Area: Frontend/);
+    assert.match(await fs.readFile(path.join(root, "projects/demo/frontend/AGENTS.md"), "utf8"), /^<!-- helena:area-context -->\n# Area: Frontend/);
     assert.equal(await fs.stat(path.join(root, "vault/Projects/DEMO/frontend")).then((stat) => stat.isDirectory()), true);
     await assert.rejects(fs.lstat(path.join(root, "vault/Projects/DEMO/apps")), { code: "ENOENT" });
 

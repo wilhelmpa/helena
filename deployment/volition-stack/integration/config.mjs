@@ -57,6 +57,58 @@ function publicUrl(value) {
   return url.toString();
 }
 
+// A public service address: an absolute http(s) URL, or a path below Helena's public
+// origin ("/code/"), which each provisioning request resolves against the origin Helena
+// names in it (withPublicOrigin below). A path keeps the unit free of a host name that a
+// move to another origin would leave stale (docs/helena-decisions/agent-context.md §1).
+function publicUrlOrPath(value, name) {
+  if (!value) return "";
+  if (value.startsWith("/")) {
+    if (!/^\/[A-Za-z0-9/_.-]*$/.test(value) || value.includes("//") || value.includes("..")) {
+      throw new Error(`${name} must be an http(s) URL or a plain path`);
+    }
+    return value;
+  }
+  return publicUrl(value);
+}
+
+// Helena's public origin as a provisioning request names it: the first entry of its APP_URL
+// (apps/worker), always "https://host/" or "http://host/" with nothing else. Empty when the
+// request names none (an older Helena).
+export function publicOrigin(value) {
+  if (typeof value !== "string" || !value) return "";
+  const url = new URL(value);
+  if (
+    (url.protocol !== "https:" && url.protocol !== "http:") ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash ||
+    url.pathname !== "/"
+  ) {
+    throw new Error("The public origin must be a bare http(s) origin");
+  }
+  return url.toString();
+}
+
+// The public addresses for one provisioning request. Helena's origin from the request wins
+// over PLAN_PUBLIC_URL, which only an older Helena that sends none still needs; the service
+// addresses given as paths are resolved against it, and ones given as URLs are kept.
+export function withPublicOrigin(config, origin) {
+  const planUrl = publicOrigin(origin) || config.planUrl || "";
+  const resolve = (value) => {
+    if (!value || !value.startsWith("/")) return value || "";
+    return planUrl ? new URL(value, planUrl).toString() : "";
+  };
+  return {
+    ...config,
+    planUrl,
+    codeUrl: resolve(config.codeUrl),
+    terminalUrl: resolve(config.terminalUrl),
+    projectBrowserPublicUrl: resolve(config.projectBrowserPublicUrl),
+  };
+}
+
 function privateServiceBaseUrl(value, fallback, name) {
   const url = new URL(value || fallback);
   const host = url.hostname;
@@ -86,6 +138,11 @@ function boundedText(value, fallback, name, maximum) {
 }
 
 function projectBrowserPublicUrl(value) {
+  if (value?.startsWith("/")) {
+    const path = publicUrlOrPath(value, "PROJECT_BROWSER_PUBLIC_URL");
+    if (path === "/") throw new Error("PROJECT_BROWSER_PUBLIC_URL needs a base path");
+    return path.endsWith("/") ? path : `${path}/`;
+  }
   const url = new URL(value || "https://plan.volition.one/browser/");
   const localHttp =
     url.protocol === "http:" &&
@@ -211,6 +268,7 @@ export function loadConfig(env = process.env) {
       env.PROVISIONING_LEDGER_PATH,
       path.join(provisioningStateRoot, "provisioning-ledger.json"),
     ),
+    // Only for an older Helena that names no public origin in its requests.
     planUrl: publicUrl(env.PLAN_PUBLIC_URL),
     planInternalUrl: privateServiceBaseUrl(
       env.PLAN_INTERNAL_URL,
@@ -231,8 +289,8 @@ export function loadConfig(env = process.env) {
       "plan-api.volition.one",
       "PLAN_SECRET_ALLOW_HOST",
     ),
-    codeUrl: publicUrl(env.CODE_PUBLIC_URL),
-    terminalUrl: publicUrl(env.TERMINAL_PUBLIC_URL),
+    codeUrl: publicUrlOrPath(env.CODE_PUBLIC_URL, "CODE_PUBLIC_URL"),
+    terminalUrl: publicUrlOrPath(env.TERMINAL_PUBLIC_URL, "TERMINAL_PUBLIC_URL"),
     projectBrowserRoot: absolutePath(
       env.PROJECT_BROWSER_ROOT,
       "/var/lib/volition/project-browser/projects",

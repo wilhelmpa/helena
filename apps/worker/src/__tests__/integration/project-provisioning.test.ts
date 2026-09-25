@@ -85,6 +85,36 @@ describe('project provisioning', () => {
     expect(receivedBody.agents).toEqual([coder, writer, claude]);
   });
 
+  it("names Helena's public origin, the first entry of APP_URL", async () => {
+    let receivedBody: { publicUrl?: unknown } = {};
+    server = Bun.serve({
+      port: 0,
+      fetch: async (incoming) => {
+        receivedBody = (await incoming.json()) as { publicUrl?: unknown };
+        return Response.json({ resources: [] });
+      },
+    });
+    process.env.PROJECT_PROVISIONING_URL = `http://127.0.0.1:${server.port}/api/provision`;
+    process.env.PROJECT_PROVISIONING_TOKEN = 'integration-test-token';
+    const appUrl = process.env.APP_URL;
+    process.env.APP_URL = 'https://helena.example.com,https://helena-home.example.com';
+    try {
+      const [owner] = await db.insert(team).values({ name: 'Origin provisioning' }).returning();
+      const [created] = await db
+        .insert(project)
+        .values({ teamId: owner.id, key: `ORG${owner.id}`, name: 'Origin' })
+        .returning();
+      await db
+        .insert(projectProvisioningJob)
+        .values({ projectId: created.id, requestedResources: ['workspace'] });
+      await processProjectProvisioning();
+      expect(receivedBody.publicUrl).toBe('https://helena.example.com/');
+    } finally {
+      if (appUrl === undefined) delete process.env.APP_URL;
+      else process.env.APP_URL = appUrl;
+    }
+  });
+
   it('sends every area of the project with its folder', async () => {
     let receivedBody: { areas?: unknown } = {};
     server = Bun.serve({

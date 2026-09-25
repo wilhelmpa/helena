@@ -58,6 +58,21 @@ export interface AgentRuntimePolicy {
   skillsDisabled?: string[];
   // The models the runtime falls back to, in order. Unset or null: the instance's list.
   fallbackModels?: FallbackModel[] | null;
+  // How Hermes compresses a long conversation; unset fields take the defaults.
+  compression?: AgentCompression;
+  // Whether a learning agent reflects on its chats once they go quiet (unset: it does),
+  // after how many quiet minutes (unset: 10) and after how many of the person's messages
+  // at the latest (unset: 20).
+  chatReflection?: boolean;
+  chatReflectionIdleMinutes?: number;
+  chatReflectionEveryTurns?: number;
+}
+
+export interface AgentCompression {
+  thresholdTokens?: number;
+  targetRatio?: number;
+  idleCompactMinutes?: number;
+  model?: FallbackModel;
 }
 
 export interface FallbackModel {

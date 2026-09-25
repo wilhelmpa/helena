@@ -1,11 +1,12 @@
 import { createHash } from 'node:crypto';
 import { db, aiAgent } from '@repo/db';
 import { eq } from 'drizzle-orm';
-import { normalizeRuntimeAccount } from '@helena/sdk';
+import { normalizeRuntimeAccount, type RuntimeCompression } from '@helena/sdk';
 import { HttpError } from '#shared/lib';
 
 import {
   getAgentById,
+  type AgentCompression,
   type AgentRuntimeConflict,
   type AgentRuntimeInventory,
   type AgentRuntimePolicy,
@@ -40,6 +41,7 @@ import { getAgentRuntimeDefaults } from '#modules/runtime-admin/settings';
 import { areasSection } from './areas';
 import { agentVaultAccess, knowledgeSection } from './knowledge';
 import { structureSection } from './structure';
+import { agentGoalsSection } from './goals';
 import type { AutopilotLevel } from '@helena/policy';
 import { resolveLevel } from '#modules/autopilot/levels';
 import { autopilotSoulSection } from '#modules/autopilot/prompt';
@@ -55,11 +57,12 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
     memoryBaseline(agent.id),
     runtimeLocalAiNow(),
   ]);
-  const [skills, tools, structure, areas, mcpServers, webLogins, vaultAccess, actions] =
+  const [skills, tools, structure, goals, areas, mcpServers, webLogins, vaultAccess, actions] =
     await Promise.all([
       listAgentRuntimeSkills(agent.id),
       listAgentToolLinks(agent.id),
       structureSection(agent),
+      agentGoalsSection(agent),
       areasSection(agent),
       agentRuntimeMcpServers(agent.id),
       hasWebLoginGrant(agent.id),
@@ -98,6 +101,7 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
           path: 'SOUL.md',
           content: soul(agentRef, agent, {
             structure,
+            goals,
             areas,
             knowledge: knowledgeSection(vaultAccess, agent.runtimePolicy.runtime ?? 'hermes'),
             webLogins,
@@ -136,6 +140,11 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
       skillsDisabled: agent.runtimePolicy.skillsDisabled ?? [],
       fallbackModels: agent.runtimePolicy.fallbackModels ?? runtimeDefaults.fallbackModels,
       sessionRetentionDays: runtimeDefaults.sessionRetentionDays,
+      compression: runtimeCompression(
+        agent.runtimePolicy.compression,
+        runtimeDefaults.compressionThresholdTokens,
+      ),
+      bundledSkills: runtimeDefaults.bundledSkills,
     },
     // Local AI, while it is on (docs/helena-decisions/local-ai-platform.md): part of the
     // revision, so switching it on or off rewrites every profile.
@@ -146,6 +155,22 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
   // Eden's response parser treats a bare 64-character digest as an encoded value.
   const revision = `sha256:${createHash('sha256').update(JSON.stringify(snapshot)).digest('hex')}`;
   return { revision, ...snapshot };
+}
+
+// The compression the agent's Hermes profile gets: its own settings over the instance's
+// threshold (docs/helena-decisions/agent-context.md §6).
+export function runtimeCompression(
+  own: AgentCompression | undefined,
+  defaultThreshold: number,
+): RuntimeCompression {
+  return {
+    thresholdTokens: own?.thresholdTokens ?? defaultThreshold,
+    ...(own?.targetRatio !== undefined && { targetRatio: own.targetRatio }),
+    ...(own?.idleCompactMinutes !== undefined && {
+      idleCompactAfterSeconds: own.idleCompactMinutes * 60,
+    }),
+    ...(own?.model && { model: own.model }),
+  };
 }
 
 // Ends the operator's own SOUL.md, so a SOUL.md that was changed outside Helena can be
@@ -164,6 +189,7 @@ function soul(
   config: { name: string; runtimePolicy: AgentRuntimePolicy },
   sections: {
     structure: string;
+    goals?: string;
     areas: string;
     knowledge: string;
     webLogins: boolean;
@@ -171,7 +197,15 @@ function soul(
     browserTask?: string[];
   },
 ): string {
-  const { structure, areas, knowledge, webLogins, autopilot, browserTask = [] } = sections;
+  const {
+    structure,
+    goals = '',
+    areas,
+    knowledge,
+    webLogins,
+    autopilot,
+    browserTask = [],
+  } = sections;
   const files = [...config.runtimePolicy.files].sort((a, b) => a.path.localeCompare(b.path));
   const own = files.find((file) => file.path === 'SOUL.md')?.content.trim();
   const instructions = agent.instructions?.trim();
@@ -190,6 +224,7 @@ function soul(
     areas,
     knowledge,
     structure,
+    goals,
     chatPreamble().trim(),
     blockedPreamble(),
     autopilotSoulSection(autopilot),

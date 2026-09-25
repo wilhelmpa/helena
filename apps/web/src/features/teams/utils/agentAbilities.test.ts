@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { AgentInventorySkill } from '@/lib/api/endpoints/agents';
-import { isHermesToolset, skillGroups, templateToolsets, toggleToolset } from './agentAbilities';
+import {
+  isHermesToolset,
+  skillGroups,
+  skillNameClashes,
+  templateToolsets,
+  toggleToolset,
+} from './agentAbilities';
 
 describe('agent toolsets', () => {
   it('denies a toolset switched off and allows it again when switched on', () => {
@@ -82,5 +88,46 @@ describe('agent skill inventory', () => {
     assert.deepEqual(names('papers'), ['arxiv']);
     assert.deepEqual(names('productivity'), ['airtable', 'notion']);
     assert.deepEqual(names('nothing like this'), []);
+  });
+});
+
+describe('skill name clashes', () => {
+  const skill = (
+    name: string,
+    origin: AgentInventorySkill['origin'],
+    path: string,
+  ): AgentInventorySkill => ({
+    name,
+    origin,
+    path,
+    category: null,
+    description: '',
+    pinned: false,
+  });
+
+  it('finds a Helena skill named like one that ships with Hermes, and nothing else', () => {
+    const clashes = skillNameClashes([
+      skill('systematic-debugging', 'plan', 'plan-managed/plan-12'),
+      skill('systematic-debugging', 'bundled', 'software-development/systematic-debugging'),
+      skill('docx', 'bundled', 'productivity/docx'),
+      skill('brainstorming', 'plan', 'plan-managed/plan-3'),
+    ]);
+    assert.deepEqual(clashes, [
+      {
+        name: 'systematic-debugging',
+        origins: ['plan', 'bundled'],
+        paths: ['plan-managed/plan-12', 'software-development/systematic-debugging'],
+      },
+    ]);
+  });
+
+  it('does not count one skill listed twice', () => {
+    assert.deepEqual(
+      skillNameClashes([
+        skill('docx', 'bundled', 'productivity/docx'),
+        skill('docx', 'bundled', 'productivity/docx'),
+      ]),
+      [],
+    );
   });
 });

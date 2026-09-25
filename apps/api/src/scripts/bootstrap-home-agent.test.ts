@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
 import { createHash } from 'node:crypto';
-import { aiAgent, db, teamMember } from '@repo/db';
+import { aiAgent, db, projectProvisioningJob, teamMember } from '@repo/db';
 import { eq } from 'drizzle-orm';
 
 import { signUpTestUser } from '#tests/helpers/auth';
@@ -152,6 +152,31 @@ describe('Project coordinator bootstrap', () => {
 
   it('reports a missing project', async () => {
     expect(await bootstrapProjectCoordinator(999_999)).toBeNull();
+  });
+
+  it('hands over the project-wide instructions and queues the workspace again when they change', async () => {
+    const owner = await signUpTestUser();
+    const api = authedApi(owner.cookie);
+    const project = (await api.projects.post({ key: 'COORD', name: 'Coord' })).data!;
+    expect((await bootstrapProjectCoordinator(project.id))?.projectInstructions).toBe('');
+
+    const [before] = await db
+      .select({ id: projectProvisioningJob.id })
+      .from(projectProvisioningJob)
+      .where(eq(projectProvisioningJob.projectId, project.id));
+    await api
+      .teams({ teamId: project.teamId })
+      .organization.projects({ projectId: project.id })
+      .put({ instructions: 'The site is in homepage/.' });
+    expect((await bootstrapProjectCoordinator(project.id))?.projectInstructions).toBe(
+      'The site is in homepage/.',
+    );
+    const [after] = await db
+      .select({ id: projectProvisioningJob.id, status: projectProvisioningJob.status })
+      .from(projectProvisioningJob)
+      .where(eq(projectProvisioningJob.projectId, project.id));
+    expect(after?.status).toBe('pending');
+    expect(after?.id).not.toBe(before?.id);
   });
 });
 

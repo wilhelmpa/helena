@@ -46,7 +46,31 @@
   },
   "goals": {
     "newPlaceholder": "New goal",
-    "empty": "No organization goals have been created."
+    "empty": "No organization goals have been created.",
+    "noTasks": "No tasks linked to this goal yet.",
+    "progress": "{done} of {total} tasks done",
+    "progressShort": "{done}/{total}",
+    "progressLabel": "Progress",
+    "workingOn": "Working on it: {agents}",
+    "proposal": "{author} proposes: {status}",
+    "accept": "Accept",
+    "reject": "Reject",
+    "details": "Tasks and notes",
+    "loading": "Loading …",
+    "tasks": "Tasks",
+    "tasksEmpty": "No linked tasks.",
+    "running": "An agent is on it",
+    "notes": "Notes",
+    "notesEmpty": "No notes yet.",
+    "proposed": "proposes “{status}”",
+    "decision": {
+      "accepted": "accepted",
+      "rejected": "rejected"
+    },
+    "link": "Link",
+    "linkPlaceholder": "Task, e.g. VOL-12",
+    "linkFailed": "Task not found or cannot be linked.",
+    "unlink": "Unlink {task} from the goal"
   },
   "agents": {
     "empty": "This team has no agents.",

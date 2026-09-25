@@ -37,10 +37,12 @@ Environment=SYSTEMCTL_SCOPE=system
 Environment=ITSAPLAN_MCP_BEARER_FILE=%d/plan_api_key
 Environment=PLAN_CONTROL_TOKEN_FILE=%d/plan_control_token
 Environment=PLAN_INTERNAL_URL=http://127.0.0.1:3000
-Environment=PLAN_PUBLIC_URL=http://kingston-server.local/
-Environment=PROJECT_BROWSER_PUBLIC_URL=http://kingston-server.local/browser/
-Environment=CODE_PUBLIC_URL=http://kingston-server.local/code/
-Environment=TERMINAL_PUBLIC_URL=http://kingston-server.local/focus/terminal-project/
+# The public links the provisioning writes for the agents (PROJECT.json) and returns to
+# Helena are Helena's own origin, which each request names (the first APP_URL); these are
+# only the paths below it. No host name here, so a move to another origin needs no edit.
+Environment=PROJECT_BROWSER_PUBLIC_URL=/browser/
+Environment=CODE_PUBLIC_URL=/code/
+Environment=TERMINAL_PUBLIC_URL=/focus/terminal-project/
 Environment=CONNECTIONS_ENABLED=false
 ExecStart=/usr/local/bin/node /srv/volition/source/plan/deployment/volition-stack/integration/server.mjs
 Restart=always

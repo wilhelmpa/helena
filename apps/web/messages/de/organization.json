@@ -46,7 +46,31 @@
   },
   "goals": {
     "newPlaceholder": "Neues Ziel",
-    "empty": "Noch keine Organisationsziele erstellt."
+    "empty": "Noch keine Organisationsziele erstellt.",
+    "noTasks": "Noch keine Aufgaben mit diesem Ziel verknüpft.",
+    "progress": "{done} von {total} Aufgaben erledigt",
+    "progressShort": "{done}/{total}",
+    "progressLabel": "Fortschritt",
+    "workingOn": "Daran arbeiten: {agents}",
+    "proposal": "{author} schlägt vor: {status}",
+    "accept": "Übernehmen",
+    "reject": "Ablehnen",
+    "details": "Aufgaben und Notizen",
+    "loading": "Wird geladen …",
+    "tasks": "Aufgaben",
+    "tasksEmpty": "Keine verknüpften Aufgaben.",
+    "running": "Agent arbeitet gerade",
+    "notes": "Notizen",
+    "notesEmpty": "Noch keine Notizen.",
+    "proposed": "schlägt „{status}“ vor",
+    "decision": {
+      "accepted": "übernommen",
+      "rejected": "abgelehnt"
+    },
+    "link": "Verknüpfen",
+    "linkPlaceholder": "Aufgabe, z. B. VOL-12",
+    "linkFailed": "Aufgabe nicht gefunden oder nicht verknüpfbar.",
+    "unlink": "{task} vom Ziel lösen"
   },
   "agents": {
     "empty": "Dieses Team hat keine Agenten.",

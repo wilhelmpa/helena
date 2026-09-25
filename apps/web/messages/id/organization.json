@@ -46,7 +46,31 @@
   },
   "goals": {
     "newPlaceholder": "New goal",
-    "empty": "No organization goals have been created."
+    "empty": "No organization goals have been created.",
+    "noTasks": "Belum ada tugas yang terhubung ke sasaran ini.",
+    "progress": "{done} dari {total} tugas selesai",
+    "progressShort": "{done}/{total}",
+    "progressLabel": "Kemajuan",
+    "workingOn": "Sedang dikerjakan: {agents}",
+    "proposal": "{author} mengusulkan: {status}",
+    "accept": "Terima",
+    "reject": "Tolak",
+    "details": "Tugas dan catatan",
+    "loading": "Memuat…",
+    "tasks": "Tugas",
+    "tasksEmpty": "Tidak ada tugas terhubung.",
+    "running": "Agen sedang mengerjakan",
+    "notes": "Catatan",
+    "notesEmpty": "Belum ada catatan.",
+    "proposed": "mengusulkan “{status}”",
+    "decision": {
+      "accepted": "diterima",
+      "rejected": "ditolak"
+    },
+    "link": "Tautkan",
+    "linkPlaceholder": "Tugas, mis. VOL-12",
+    "linkFailed": "Tugas tidak ditemukan atau tidak bisa ditautkan.",
+    "unlink": "Lepaskan {task} dari sasaran"
   },
   "agents": {
     "empty": "This team has no agents.",

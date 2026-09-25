@@ -59,7 +59,9 @@ export default function OrganizationGoals({
         <div className="grid gap-3 xl:grid-cols-2">
           {goals.map((goal) => (
             <OrganizationGoalCard
-              key={goal.id}
+              // A goal changed on the server (a status the owner accepted from a proposal)
+              // opens its form anew with the new values instead of the old ones.
+              key={`${goal.id}:${goal.updatedAt}`}
               teamId={teamId}
               goal={goal}
               goals={goals}

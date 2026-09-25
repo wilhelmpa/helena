@@ -46,7 +46,31 @@
   },
   "goals": {
     "newPlaceholder": "New goal",
-    "empty": "No organization goals have been created."
+    "empty": "No organization goals have been created.",
+    "noTasks": "尚无任务关联到此目标。",
+    "progress": "已完成 {done}/{total} 个任务",
+    "progressShort": "{done}/{total}",
+    "progressLabel": "进度",
+    "workingOn": "正在处理：{agents}",
+    "proposal": "{author} 建议：{status}",
+    "accept": "接受",
+    "reject": "拒绝",
+    "details": "任务和备注",
+    "loading": "加载中…",
+    "tasks": "任务",
+    "tasksEmpty": "没有关联的任务。",
+    "running": "代理正在处理",
+    "notes": "备注",
+    "notesEmpty": "暂无备注。",
+    "proposed": "建议“{status}”",
+    "decision": {
+      "accepted": "已接受",
+      "rejected": "已拒绝"
+    },
+    "link": "关联",
+    "linkPlaceholder": "任务，例如 VOL-12",
+    "linkFailed": "找不到任务或无法关联。",
+    "unlink": "将 {task} 与目标解除关联"
   },
   "agents": {
     "empty": "This team has no agents.",

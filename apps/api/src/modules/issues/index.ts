@@ -1,3 +1,4 @@
+import { assertLinkableGoal, issueGoal, linkIssueGoalTx } from '#modules/goals/service';
 import { Elysia, t } from 'elysia';
 import { mcpTool } from '#mcp/generate';
 import { noContent } from '#shared/http';
@@ -265,7 +266,15 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
     '/projects/:projectKey/issues',
     async ({ project, body, user, set }) => {
       set.status = 201;
-      return createIssue(project, body, requireUser(user).id);
+      const { goalId, ...input } = body;
+      const actorUserId = requireUser(user).id;
+      // The goal is checked before the issue exists, so a refused goal creates nothing.
+      if (goalId == null) return createIssue(project, input, actorUserId);
+      await assertLinkableGoal({ userId: actorUserId }, project.teamId, goalId);
+      return createIssue(project, input, actorUserId, {
+        afterInsert: (tx, issueId) =>
+          linkIssueGoalTx(tx, { issueId, goalId, teamId: project.teamId, actorUserId }),
+      });
     },
     {
       body: createIssueBody,
@@ -506,7 +515,8 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
       const subtasks = await listSubtasks(issue.id);
       const checklists = await listChecklists(issue.id);
       const development = await listIssueDevelopmentLinks(issue.id);
-      return { ...issue, fields, links, watchers, parent, subtasks, checklists, development };
+      const goal = await issueGoal(issue.id);
+      return { ...issue, fields, links, watchers, parent, subtasks, checklists, development, goal };
     },
     {
       params: issueSequenceParams,
@@ -540,7 +550,8 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
       const subtasks = await listSubtasks(issue.id);
       const checklists = await listChecklists(issue.id);
       const development = await listIssueDevelopmentLinks(issue.id);
-      return { ...issue, fields, links, watchers, parent, subtasks, checklists, development };
+      const goal = await issueGoal(issue.id);
+      return { ...issue, fields, links, watchers, parent, subtasks, checklists, development, goal };
     },
     {
       params: issueParams,

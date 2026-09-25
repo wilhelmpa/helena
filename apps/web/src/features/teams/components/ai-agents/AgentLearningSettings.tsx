@@ -8,7 +8,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { AgentRuntimePolicy } from '@/lib/api/endpoints/agents';
-import { learningOf } from '../../utils/agentLearning';
+import { CHAT_REFLECTION_BOUNDS, chatReflectionOf, learningOf } from '../../utils/agentLearning';
+import BoundedNumberInput from './BoundedNumberInput';
 import { TeamSettingState } from '../TeamSettingState';
 
 const REFLECTION_MODES = ['off', 'failure', 'complex'] as const;
@@ -117,7 +118,79 @@ export default function AgentLearningSettings({
             </span>
           )}
         </li>
+        <AgentChatReflectionRow policy={policy} canEdit={canEdit} onChange={onChange} />
       </ul>
     </div>
+  );
+}
+
+// Learning from chats (docs/helena-decisions/agent-context.md §5): whether the agent reflects
+// on a chat once it has gone quiet, after how many quiet minutes and after how many of the
+// person's messages at the latest.
+function AgentChatReflectionRow({
+  policy,
+  canEdit,
+  onChange,
+}: {
+  policy: AgentRuntimePolicy;
+  canEdit: boolean;
+  onChange: (policy: AgentRuntimePolicy) => void;
+}) {
+  const t = useTranslations('teams.agents.abilities.learning');
+  const current = chatReflectionOf(policy);
+  const learning = policy.learning ?? true;
+  const label = (
+    <span className="min-w-0">
+      <span className="text-sm">{t('chatReflection')}</span>
+      <span className="block text-xs text-muted-foreground">{t('chatReflectionHint')}</span>
+    </span>
+  );
+  return (
+    <li className="space-y-2">
+      {canEdit ? (
+        <label className="flex cursor-pointer items-start gap-2">
+          <Checkbox
+            className="mt-0.5"
+            checked={current.enabled}
+            disabled={!learning}
+            onCheckedChange={(checked) => onChange({ ...policy, chatReflection: checked === true })}
+          />
+          {label}
+        </label>
+      ) : (
+        <div className="flex items-start justify-between gap-4">
+          {label}
+          <TeamSettingState on={current.enabled} />
+        </div>
+      )}
+      {current.enabled && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 ps-6 text-xs text-muted-foreground">
+          <label className="flex items-center gap-2">
+            {t('chatReflectionIdle')}
+            <BoundedNumberInput
+              bounds={CHAT_REFLECTION_BOUNDS.idleMinutes}
+              placeholder="10"
+              disabled={!canEdit}
+              value={policy.chatReflectionIdleMinutes}
+              onValue={(chatReflectionIdleMinutes) =>
+                onChange({ ...policy, chatReflectionIdleMinutes })
+              }
+            />
+          </label>
+          <label className="flex items-center gap-2">
+            {t('chatReflectionTurns')}
+            <BoundedNumberInput
+              bounds={CHAT_REFLECTION_BOUNDS.everyTurns}
+              placeholder="20"
+              disabled={!canEdit}
+              value={policy.chatReflectionEveryTurns}
+              onValue={(chatReflectionEveryTurns) =>
+                onChange({ ...policy, chatReflectionEveryTurns })
+              }
+            />
+          </label>
+        </div>
+      )}
+    </li>
   );
 }

@@ -17,3 +17,4 @@ export * from './decisions';
 export * from './finance';
 export * from './push';
 export * from './sign-in';
+export * from './learning';

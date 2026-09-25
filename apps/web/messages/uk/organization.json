@@ -46,7 +46,31 @@
   },
   "goals": {
     "newPlaceholder": "New goal",
-    "empty": "No organization goals have been created."
+    "empty": "No organization goals have been created.",
+    "noTasks": "До цієї цілі ще не прив’язано завдань.",
+    "progress": "Виконано завдань: {done} з {total}",
+    "progressShort": "{done}/{total}",
+    "progressLabel": "Прогрес",
+    "workingOn": "Працюють: {agents}",
+    "proposal": "{author} пропонує: {status}",
+    "accept": "Прийняти",
+    "reject": "Відхилити",
+    "details": "Завдання та нотатки",
+    "loading": "Завантаження…",
+    "tasks": "Завдання",
+    "tasksEmpty": "Немає прив’язаних завдань.",
+    "running": "Агент працює",
+    "notes": "Нотатки",
+    "notesEmpty": "Нотаток поки немає.",
+    "proposed": "пропонує «{status}»",
+    "decision": {
+      "accepted": "прийнято",
+      "rejected": "відхилено"
+    },
+    "link": "Прив’язати",
+    "linkPlaceholder": "Завдання, напр. VOL-12",
+    "linkFailed": "Завдання не знайдено або його не можна прив’язати.",
+    "unlink": "Відв’язати {task} від цілі"
   },
   "agents": {
     "empty": "This team has no agents.",

@@ -11,7 +11,9 @@ import type { AgentFormValue } from '../../utils/agentForm';
 import { templateToolsets } from '../../utils/agentAbilities';
 import { canActOnLearning } from '../../utils/agentLearning';
 import { AgentFormSection } from './AgentFormSection';
+import AgentChatReflections from './AgentChatReflections';
 import AgentLearningSettings from './AgentLearningSettings';
+import AgentSkillClashes from './AgentSkillClashes';
 import AgentProfileSync from './AgentProfileSync';
 import AgentRuntimeNotices from './AgentRuntimeNotices';
 import AgentSkillInventory from './AgentSkillInventory';
@@ -66,6 +68,9 @@ export default function AgentAbilitiesSection({
         canEdit={canEdit}
         onChange={(runtimePolicy) => onChange({ runtimePolicy })}
       />
+      {agent && !isTemplate && (policy.runtime ?? 'hermes') === 'hermes' && (
+        <AgentChatReflections teamId={teamId} agentId={agent.id} />
+      )}
       {agent && agent.kind === 'external' && !isTemplate && (
         <AgentProfileSync teamId={teamId} agentId={agent.id} canEdit={canEdit} />
       )}
@@ -109,6 +114,7 @@ export default function AgentAbilitiesSection({
             onChange={(toolDeny) => onChange({ runtimePolicy: { ...policy, toolDeny } })}
           />
           {mcpServersContent}
+          <AgentSkillClashes skills={inventory.skills} />
           <AgentSkillInventory
             skills={inventory.skills}
             disabled={policy.skillsDisabled ?? []}

@@ -5,7 +5,9 @@ import {
   createProjectBrowserDeprovisioner,
   createProjectBrowserProvisioner,
   createProjectBrowserStatus,
+  publicBrowserUrl,
 } from "./project-browser.mjs";
+import { withPublicOrigin } from "./config.mjs";
 import { createAgentLauncher } from "./agent-launcher.mjs";
 import { provisionBoards } from "./boards.mjs";
 import { presentAreas, provisionAreas, validAreas } from "./areas.mjs";
@@ -427,6 +429,9 @@ export function createProvisioner(config, options = {}) {
   }
 
   async function provisionResources(envelope) {
+    // The links written for the agents and returned to Helena use the public origin the
+    // request names (Helena's first APP_URL); config.mjs withPublicOrigin.
+    const urls = withPublicOrigin(config, envelope.publicUrl);
     const requested = new Set(envelope.requestedResources);
     const needsWorkspace =
       requested.has("workspace") ||
@@ -452,9 +457,11 @@ export function createProvisioner(config, options = {}) {
     }
     if (needsWorkspace) await ensureProjectGit(workspace);
 
-    const browser = requested.has("browser")
+    const started = requested.has("browser")
       ? await ensureProjectBrowser(envelope.project, workspace.slug)
       : null;
+    const browserUrl = started && publicBrowserUrl(urls.projectBrowserPublicUrl, workspace.slug);
+    const browser = started && browserUrl ? { ...started, url: browserUrl } : started;
     const planCoordinator = requested.has("coordinator")
       ? await ensurePlanCoordinatorImpl(config, envelope.project, { workspace, browser })
       : null;
@@ -468,7 +475,7 @@ export function createProvisioner(config, options = {}) {
     if (coordinator) {
       await ensureProfileDirectory(coordinator.hermesHome);
       await writeProjectContext(
-        config,
+        urls,
         envelope,
         coordinator,
         workspace,
@@ -494,7 +501,7 @@ export function createProvisioner(config, options = {}) {
       ? resource(
           "terminal",
           `terminal-project:${workspace.slug}`,
-          terminalUrl(config, workspace.slug),
+          terminalUrl(urls, workspace.slug),
         )
       : null;
     const projectAreas = await provisionProjectAreas(envelope, workspace, quarantineRoot);
@@ -504,7 +511,7 @@ export function createProvisioner(config, options = {}) {
       ...(await quarantineRemovedBoards(envelope, workspace)),
     ];
     if (quarantined.length) await writeTrashReceipt(quarantineRoot, envelope, quarantined);
-    const boardResources = await provisionBoards(config, envelope, workspace, ensureBoardFiles);
+    const boardResources = await provisionBoards(urls, envelope, workspace, ensureBoardFiles);
     const registryPath = await writeRegistry(
       envelope,
       workspace,
@@ -530,7 +537,7 @@ export function createProvisioner(config, options = {}) {
         resource(
           "workspace",
           workspace.containerPath,
-          workspaceUrl(config, workspace.containerPath),
+          workspaceUrl(urls, workspace.containerPath),
         ),
       );
     }

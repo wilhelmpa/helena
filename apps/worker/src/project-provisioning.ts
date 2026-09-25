@@ -198,6 +198,8 @@ async function deliverProvisioningJob(job: ClaimedProvisioningJob): Promise<void
         ...(boards.length ? { boards } : {}),
         ...(agents.length ? { agents } : {}),
         ...(areas.length ? { areas } : {}),
+        // The links the provisioning writes for the agents (PROJECT.json) use it.
+        ...(config.publicOrigin ? { publicUrl: `${config.publicOrigin}/` } : {}),
         createdAt: new Date(job.createdAt).toISOString(),
       }),
     });

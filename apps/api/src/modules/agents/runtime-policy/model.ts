@@ -91,6 +91,27 @@ export const RuntimePolicySnapshotResponse = t.Object({
           "Days Hermes keeps ended sessions (sessions.retention_days); null keeps Hermes' own.",
       }),
     ),
+    compression: t.Object(
+      {
+        thresholdTokens: t.Number({ description: 'compression.threshold_tokens' }),
+        targetRatio: t.Optional(t.Number({ description: 'compression.target_ratio' })),
+        idleCompactAfterSeconds: t.Optional(
+          t.Number({ description: 'compression.idle_compact_after_seconds' }),
+        ),
+        model: t.Optional(
+          t.Nullable(
+            t.Object(
+              { provider: t.String(), model: t.String() },
+              { description: 'auxiliary.compression provider and model' },
+            ),
+          ),
+        ),
+      },
+      { description: 'How Hermes compresses a long conversation.' },
+    ),
+    bundledSkills: t.Union([t.Literal('all'), t.Literal('essential')], {
+      description: 'Which of the skills that ship with Hermes the profile carries.',
+    }),
   }),
   localAi: t.Nullable(
     t.Object(

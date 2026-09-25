@@ -211,6 +211,8 @@ describe('Hermes settings from Helena', () => {
       skillsDisabled: [],
       fallbackModels: [{ provider: 'openrouter', model: 'google/gemini-3.6-flash' }],
       sessionRetentionDays: 365,
+      compression: { thresholdTokens: 100_000 },
+      bundledSkills: 'all',
     });
 
     const agent = (await asOwner.teams({ teamId })['ai-agents']({ agentId }).get()).data!;
@@ -222,12 +224,39 @@ describe('Hermes settings from Helena', () => {
           ...agent.runtimePolicy,
           skillsDisabled: ['airtable'],
           fallbackModels: [],
+          compression: {
+            thresholdTokens: 80_000,
+            targetRatio: 0.3,
+            idleCompactMinutes: 60,
+            model: { provider: 'openai-codex', model: 'gpt-5.6-luna' },
+          },
         },
       });
     expect((await asRunner['agent-runtime'].policy.get()).data!.hermes).toEqual({
       skillsDisabled: ['airtable'],
       fallbackModels: [],
       sessionRetentionDays: 365,
+      compression: {
+        thresholdTokens: 80_000,
+        targetRatio: 0.3,
+        idleCompactAfterSeconds: 3600,
+        model: { provider: 'openai-codex', model: 'gpt-5.6-luna' },
+      },
+      bundledSkills: 'all',
+    });
+
+    // The instance's threshold and seeding for the agents without their own.
+    await asOwner.god['agent-runtime-settings'].put({
+      bundledSkills: 'essential',
+      compressionThresholdTokens: 150_000,
+    });
+    await asOwner
+      .teams({ teamId })
+      ['ai-agents']({ agentId })
+      .patch({ runtimePolicy: { ...agent.runtimePolicy } });
+    expect((await asRunner['agent-runtime'].policy.get()).data!.hermes).toMatchObject({
+      compression: { thresholdTokens: 150_000 },
+      bundledSkills: 'essential',
     });
   });
 });

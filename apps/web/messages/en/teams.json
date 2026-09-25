@@ -424,7 +424,22 @@
         "codex": "Codex"
       },
       "runtimeHermesHint": "The server provisions Hermes itself and keeps its profile in sync.",
-      "runtimeCliHint": "Runs as a service like a Hermes agent, in a directory of its own. Instructions, skills, MCP servers, tools, model and reasoning come from Helena; its sign-in from Access (runtime login)."
+      "runtimeCliHint": "Runs as a service like a Hermes agent, in a directory of its own. Instructions, skills, MCP servers, tools, model and reasoning come from Helena; its sign-in from Access (runtime login).",
+      "compression": {
+        "title": "Context compression",
+        "hint": "A long chat or run sends its whole history with every call. From the threshold on, Hermes summarises the older parts: fewer tokens per call, at the cost of one summarising call and fewer verbatim details. Empty: the instance default.",
+        "threshold": "Compress from (tokens)",
+        "thresholdPlaceholder": "Default",
+        "target": "Keep afterwards",
+        "targetDefault": "Default (20%)",
+        "targetValue": "{percent}% of the threshold",
+        "idle": "Compress after a pause",
+        "idleOff": "Never",
+        "idleMinutes": "After {minutes} minutes",
+        "idleHours": "{hours, plural, one {After # hour} other {After # hours}}",
+        "model": "Model that summarises",
+        "modelDefault": "Automatic (own model or local AI)"
+      }
     },
     "runtimeConflicts": {
       "title": "Changed outside Helena",
@@ -573,7 +588,8 @@
       "origin": {
         "agent": "Learned",
         "hub": "From the Skills Hub",
-        "plan": "From Helena"
+        "plan": "From Helena",
+        "bundled": "Ships with Hermes"
       },
       "memory": "Memory",
       "memoryHint": "Hermes writes this memory itself; it is shown as the runner last reported it. An edit reaches the agent with the runner's next sync.",
@@ -642,10 +658,28 @@
         "memoryClearTitle": "Clear {file}?",
         "memoryClearBody": "The agent loses these notes with the runner's next sync.",
         "memoryApproval": "Approve memory changes",
-        "memoryApprovalHint": "What the agent writes into its memory waits on the approvals page as a diff; until approved it keeps the approved version."
+        "memoryApprovalHint": "What the agent writes into its memory waits on the approvals page as a diff; until approved it keeps the approved version.",
+        "chatReflection": "Learn from chats",
+        "chatReflectionHint": "When a chat has been quiet for a while, the agent keeps in a short follow-up turn what it learned about you and how you want things done. Memory entries wait for your approval as always; the tokens count towards its usage.",
+        "chatReflectionIdle": "after quiet minutes",
+        "chatReflectionTurns": "at the latest after messages",
+        "chatReflections": "Recently learned from chats",
+        "chatUntitled": "Untitled chat",
+        "chatReflectionStatus": {
+          "pending": "Planned",
+          "running": "Running",
+          "success": "Done",
+          "failed": "Failed",
+          "canceled": "Dropped"
+        },
+        "chatReflectionNothing": "Nothing kept",
+        "chatReflectionMemory": "Memory ({target})",
+        "chatReflectionSkill": "Skill {target}"
       },
       "skillEnabled": "{name} on",
-      "skillsDisabled": "{count} off"
+      "skillsDisabled": "{count} off",
+      "skillClashes": "{count, plural, one {One name belongs} other {# names belong}} to more than one skill. Hermes then loads none of them:",
+      "skillClashesFix": "Take the Helena skill off the agent (the one adapted to Hermes then serves) or rename it in the skill library."
     },
     "paused": "Paused",
     "pausedNoReason": "Paused. No reason was given.",

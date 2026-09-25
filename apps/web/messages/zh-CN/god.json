@@ -449,7 +449,8 @@
       "decisions": "决策",
       "localAi": "本地 AI",
       "push": "推送通知",
-      "edge": "外部访问"
+      "edge": "外部访问",
+      "chatLearning": "从聊天中学习"
     },
     "problems": {
       "external-off": "开启外部插件后加载。",

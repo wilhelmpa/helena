@@ -240,6 +240,13 @@
     "usageDescription": "What the agents of a team spent, from Helena's token ledger, with cost by the model price table.",
     "team": "Team",
     "noTeam": "No team yet.",
-    "openUpdates": "Open in Updates"
+    "openUpdates": "Open in Updates",
+    "profilesTitle": "Hermes profiles",
+    "compressionThreshold": "Compress context from (tokens)",
+    "compressionThresholdHint": "For every agent without its own value. 100,000 keeps long chats well below the windows of today’s models without summarising runs mid-work too often.",
+    "bundledSkills": "Skills that ship with Hermes",
+    "bundledSkillsHint": "Helena seeds them the same way into every Hermes profile (docx, pdf, xlsx, debugging …). Turn single ones off on the agent. “Only the essential” seeds no new ones; existing ones stay.",
+    "bundledSkillsAll": "All",
+    "bundledSkillsEssential": "Only the essential"
   }
 }

@@ -1,3 +1,5 @@
+import { requeueProjectProvisioning } from '#modules/projects/provisioning-queue';
+import { goalProgress, pendingProposals } from '#modules/goals/service';
 import {
   aiAgent,
   db,
@@ -194,6 +196,7 @@ function nonBlank(value: string, label: string): string {
 // The team's organization. With projectId, its agents are the ones working in that
 // project, the Home agent left out.
 export async function getOrganization(teamId: number, projectId?: number) {
+  const [progress, proposals] = await Promise.all([goalProgress(teamId), pendingProposals(teamId)]);
   const [departments, goals, agents, agentProjects, projects] = await Promise.all([
     db
       .select({
@@ -329,6 +332,10 @@ export async function getOrganization(teamId: number, projectId?: number) {
       status: row.status as GoalStatus,
       createdAt: iso(row.createdAt),
       updatedAt: iso(row.updatedAt),
+      // Its linked tasks and the agents working on them, and the status proposals that
+      // wait for a decision (modules/goals).
+      progress: progress.get(row.id) ?? { total: 0, done: 0, agents: [] },
+      pendingProposals: proposals.get(row.id) ?? 0,
     })),
     agents: agents.map((row) => ({
       ...row,
@@ -617,6 +624,9 @@ export async function setProjectAssignment(
         },
       })
       .returning();
+    // The project-wide instructions are also in the workspace's PROJECT.json, which the
+    // provisioning writes: a change queues it again.
+    if (input.instructions !== undefined) await requeueProjectProvisioning([projectId], tx);
     return row!;
   });
 }

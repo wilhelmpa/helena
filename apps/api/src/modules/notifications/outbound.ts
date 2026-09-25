@@ -1,3 +1,4 @@
+import { primaryOrigin } from '@repo/net';
 import {
   db,
   notificationDelivery,
@@ -44,13 +45,13 @@ function issueRef(projectKey: string, seq: number): string {
 // The public URL of an issue, or undefined when the web origin is not configured
 // (then messages carry no link rather than a localhost fallback).
 function issueUrl(projectKey: string, seq: number): string | undefined {
-  const base = process.env.APP_URL;
+  const base = primaryOrigin();
   return base ? `${base}/project/${projectKey}/issue/${seq}` : undefined;
 }
 
 // An approval request is decided on the approvals page, not on the issue.
 function approvalsUrl(): string | undefined {
-  const base = process.env.APP_URL;
+  const base = primaryOrigin();
   return base ? `${base}/approvals` : undefined;
 }
 

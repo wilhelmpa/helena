@@ -280,6 +280,12 @@ export const qk = {
     ['aiAgents', teamId, agentId, 'runtime-actions'] as const,
   learnedSkill: (teamId: number, agentId: number, path: string) =>
     ['aiAgents', teamId, agentId, 'learned-skill', path] as const,
+  // The agent's reflections on its chats.
+  agentChatReflections: (teamId: number, agentId: number) =>
+    ['aiAgents', teamId, agentId, 'chat-reflections'] as const,
+  // A goal with its linked tasks and notes; below the organization, so a change there
+  // reloads it.
+  goalDetail: (teamId: number, goalId: number) => ['organization', teamId, 'goal', goalId] as const,
   // What an agent's runtime keeps, read through its runner, and a run's timeline.
   agentRuntime: (teamId: number, agentId: number, what: string, params?: unknown) =>
     ['aiAgents', teamId, agentId, 'runtime', what, params ?? null] as const,
