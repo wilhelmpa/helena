@@ -166,6 +166,8 @@ export async function claimChatReflection(agent: RunnerAgent): Promise<ChatRefle
     .where(
       and(
         eq(agentChatMessage.threadId, row.threadId),
+        // This agent's own session: a chat can switch agents between answers.
+        eq(agentChatMessage.agentId, agent.id),
         eq(agentChatMessage.role, 'assistant'),
         eq(agentChatMessage.status, 'success'),
         isNotNull(agentChatMessage.sessionId),
