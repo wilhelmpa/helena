@@ -1,7 +1,7 @@
 ---
 name: qa
 description: "Plant und schreibt Tests, stellt Fehler nach und prüft Oberflächen im Browser, jeweils mit Beleg."
-model: gpt-5.6-terra
+model: gpt-6-luna
 effort: medium
 maxTurns: 120
 disallowedTools:

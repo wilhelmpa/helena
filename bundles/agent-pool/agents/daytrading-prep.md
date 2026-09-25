@@ -1,7 +1,7 @@
 ---
 name: daytrading-prep
 description: "Bereitet Handelstage vor: Pre-Market-Briefing, Watchlist, Levels, Termine und Session-Plan – plant, handelt nie."
-model: gpt-5.6-luna
+model: gpt-6-luna
 effort: medium
 maxTurns: 60
 disallowedTools:

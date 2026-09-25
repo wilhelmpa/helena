@@ -1,7 +1,7 @@
 ---
 name: data-analyst
 description: "Beantwortet Fragen mit Daten: SQL, Tabellen, Statistik, Diagramme und Berichte, Datenbanken nur lesend."
-model: gpt-5.6-terra
+model: gpt-6-luna
 effort: medium
 maxTurns: 80
 disallowedTools:
