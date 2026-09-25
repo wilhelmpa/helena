@@ -64,6 +64,8 @@ export interface Outcome {
 const OUTPUT_LIMIT = 8000;
 const ERROR_LIMIT = 400;
 const HERMES_RESULT_LIMIT_BYTES = 128 * 1024;
+// How much of what Hermes printed outside the protocol a failure keeps: its last lines.
+const HERMES_PRINTED_LIMIT = 1200;
 
 // Hermes' closing `result` line carries the final answer and the token counts of its
 // session, summed over every model call of the run.
@@ -86,6 +88,12 @@ class HermesResultReader {
   // session to a new id.
   sessionId: string | undefined;
   toolCalls = 0;
+  // What Hermes printed on stdout outside the protocol. A turn that never started says why
+  // only there: a failed agent start prints "Hermes couldn't start the model connection: …"
+  // through its console and then the bare result "credentials or agent init failed"
+  // (2026-09-25: a file of the anthropic SDK the agent could not read, three days unseen).
+  printed: string[] = [];
+  private printedLength = 0;
 
   // Told as soon as a session id is read, and again if a compression moves it to a new
   // one, so the caller can save it well before the run itself is done.
@@ -133,12 +141,24 @@ class HermesResultReader {
         };
       }
     } catch {
-      // Non-JSON CLI diagnostics do not replace the final result.
+      // Non-JSON CLI diagnostics do not replace the final result; a failure names them.
+      this.keepPrinted();
     }
     this.line = '';
     this.oversized = false;
   }
+
+  private keepPrinted(): void {
+    const text = this.oversized ? '' : this.line.trim();
+    if (!text) return;
+    this.printed.push(text);
+    this.printedLength += text.length;
+    while (this.printed.length > 1 && this.printedLength > HERMES_PRINTED_LIMIT) {
+      this.printedLength -= this.printed.shift()!.length;
+    }
+  }
 }
+
 
 // Applied as the output arrives, so a command that prints for half an hour does not buffer
 // all of it to have everything but the last few kilobytes thrown away.
@@ -605,11 +625,13 @@ function settle(
   if (code === 0 && hermesResult && !hermesResult.result)
     return { status: 'failed', output: '', error: 'Hermes stream ended without a final result' };
   const result = hermesResult?.result;
+  const printed = hermesResult?.printed ?? [];
   if (code === 0 && result?.exitCode)
     return {
       status: 'failed',
       output,
-      error: hermesError(result, stderr, false) ?? `Hermes reported exit code ${result.exitCode}`,
+      error:
+        hermesError(result, stderr, false, printed) ?? `Hermes reported exit code ${result.exitCode}`,
     };
   if (code === 0) return { status: 'success', output };
   // The timeout says more about the failure than whatever the command printed.
@@ -618,7 +640,7 @@ function settle(
     status: 'failed',
     output,
     error:
-      (hermesResult ? hermesError(result, stderr, true) : stderr.trim()) ||
+      (hermesResult ? hermesError(result, stderr, true, printed) : stderr.trim()) ||
       (signal ? `Command killed by ${signal}` : `Command exited with ${code}`),
   };
 }
@@ -626,8 +648,10 @@ function settle(
 // Hermes ends its stderr with the session it ran in ("session_id: …"), which says nothing
 // about a failure. What failed is on its result line: the provider's summary in `error`, and,
 // for a process that failed, Hermes' own account of the failed turn in the text ("…
-// rejected the request and retrying won't help … Provider said: HTTP 400: …"). Anything
-// else on stderr (a sandbox note, a traceback) is kept after it.
+// rejected the request and retrying won't help … Provider said: HTTP 400: …"). What it printed
+// on stdout outside the protocol comes next (a start that failed says why only there, wrapped
+// at the console's width, so its lines are joined), then anything else on stderr (a sandbox
+// note, a traceback).
 const HERMES_SESSION_LINE = /^\s*session_id:\s*\S*\s*$/gm;
 const HERMES_ERROR_LIMIT = 500;
 
@@ -635,13 +659,33 @@ export function hermesError(
   result: HermesResultReader['result'],
   stderr: string,
   fromText: boolean,
+  stdoutLines: readonly string[] = [],
 ): string | undefined {
   const printed = stderr.replace(HERMES_SESSION_LINE, '').trim();
+  const said = stdoutLines.join(' ').replace(/\s+/g, ' ').trim();
   const text = fromText ? (result?.text.trim() ?? '') : '';
   const told =
     result?.error ||
     (!printed && text ? (/Provider said:\s*([^\n]+)/.exec(text)?.[1] ?? text.split('\n')[0]!) : '');
-  const error = [told, printed].filter(Boolean).join('\n');
-  if (!error) return undefined;
-  return error.length > HERMES_ERROR_LIMIT ? `${error.slice(0, HERMES_ERROR_LIMIT - 1)}…` : error;
+  // Within the limit: the result's words whole where they fit, then the end of the print (its
+  // last line says what happened), then the start of stderr.
+  const pieces: string[] = [];
+  let room = HERMES_ERROR_LIMIT;
+  for (const [part, keepEnd] of [
+    [told, false],
+    [said, true],
+    [printed, false],
+  ] as const) {
+    const budget = room - (pieces.length ? 1 : 0);
+    if (!part || budget < 2) continue;
+    const piece =
+      part.length <= budget
+        ? part
+        : keepEnd
+          ? `…${part.slice(-(budget - 1))}`
+          : `${part.slice(0, budget - 1)}…`;
+    pieces.push(piece);
+    room = budget - piece.length;
+  }
+  return pieces.length ? pieces.join('\n') : undefined;
 }
