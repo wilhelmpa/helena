@@ -109,6 +109,11 @@ def test_config(source: str) -> dict:
             'hermes', 'workspaces', 'vault', 'provisioning', 'secrets', 'project-browser',
             'launcher-state', 'proof', 'hermes-global')],
     })
+    # Sockets the production config marks optional (local AI's forwarder) and the test does not
+    # have: the launcher refuses an optional socket it has no path for (2026-09-25, the launcher
+    # restarted in a loop on "optionalSockets is invalid").
+    config['optionalSockets'] = [name for name in config.get('optionalSockets', [])
+                                 if name in config['sockets']]
     # The production target, which the MCP shim looks in; the test's own sources.
     config['browserGateway'] = {'root': RUN_GATEWAY, 'target': '/run/volition-agents/browser'}
     config['browser'] = {

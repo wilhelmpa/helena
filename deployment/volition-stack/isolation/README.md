@@ -113,15 +113,31 @@ code and units; nothing is installed or switched on by a deploy.
 `proof/harness.py` runs design §6 on Kingston in a test environment of its own (users `vpt-*`,
 group `vpt-agents`, data below `/srv/vpt-test`, sockets below `/run/vpt-*`, units `vpt-*`), built
 from these unit files and `launcher.json`; the live paths stay hidden in the test units as in
-production. `proof/plan-api.sh` runs a Plan API of the checkout against a test database.
+production. `proof/plan-api.sh` runs a Plan API of the checkout against a test database, as the
+ordinary user.
+
+Only the harness needs root. wilhelmpa's sudo asks for a password (since 2026-09-25), so root work
+goes through the `helena-ops` account from the Mac. `proof/reprove.sh` splits a run at that point:
 
 ```sh
-proof/plan-api.sh start && proof/plan-api.sh seed
+R=/home/wilhelmpa/agent-work/plan-isolation/deployment/volition-stack/isolation/proof
+ssh wilhelmpa@kingston-server.local "$R/reprove.sh prepare"               # bundle, Postgres, API, seed
+ssh helena-ops@kingston-server.local "sudo $R/reprove.sh root --only E"   # teardown, setup, start, prove
+ssh wilhelmpa@kingston-server.local "$R/reprove.sh finish"                # API and Postgres stopped
+```
+
+The harness steps one by one, as root:
+
+```sh
 sudo python3 proof/harness.py setup --source deployment/volition-stack/isolation
 sudo python3 proof/harness.py start
 sudo python3 proof/harness.py prove            # or --only 1,2,…  (E: delivered variables and the clone job)
 sudo python3 proof/harness.py teardown --users --all
 ```
+
+The `launcher.json` the harness writes is the shipped one with the test paths put in;
+`tests/test_isolation.py` (`ProofConfigTest`) checks it passes the launcher's own validation, so a
+field added to the shipped file cannot break the test launcher unnoticed.
 
 Unit tests without root: `python3 -m unittest discover -s tests` (also run by the integration
 suite, `integration/test/isolation-python.test.mjs`).
