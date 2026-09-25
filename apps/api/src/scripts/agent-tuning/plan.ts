@@ -22,6 +22,8 @@ export interface TextTarget {
   text: string;
   // SHA-256 of the texts this one may replace. An empty field is always replaced.
   replaces: string[];
+  // A copy's instructions: replaces them while they are still its template's.
+  overTemplate?: boolean;
 }
 
 // A text that names the agents of a team: rendered from those of `candidates` that work in
@@ -54,8 +56,12 @@ export interface AgentTarget {
   reasoning?: string;
   // Section `browser`: the project browser ("Projekt-Browser").
   projectBrowser?: boolean;
-  // Section `copies`: that a mention and a delegation start a run of it.
+  // Section `copies`: that a mention and a delegation start a run of it, the name it is shown
+  // by (a copy's is "<template name> <KEY>" until then), and its place in the organisation:
+  // its department (by name), its agent-team role and whom it reports to (by username).
   triggers?: { mention: boolean; assign: boolean };
+  name?: string;
+  org?: { department?: string; role?: 'specialist' | 'reviewer'; reportsTo?: string };
   // The agent's assignment in a project (the project member description), by project key.
   assignments?: Record<string, TextTarget>;
 }
@@ -72,10 +78,18 @@ export interface ProjectTarget {
   instructions: TextTarget;
 }
 
+// A department of the organisation the section `copies` creates, below its parent department.
+export interface DepartmentTarget {
+  name: string;
+  parent: string | null;
+  description: string;
+}
+
 export interface TuningTarget {
   projects: ProjectTarget[];
   agents: AgentTarget[];
   templates?: TemplateTarget[];
+  departments?: DepartmentTarget[];
 }
 
 export const SECTIONS = [
@@ -104,7 +118,7 @@ export const PROJECT_INSTRUCTIONS_MAX = 4000;
 export const ASSIGNMENT_MAX = 500;
 const NAME_MAX = 128;
 // A team text is checked against every set of its candidates it could have rendered.
-const TEAM_CANDIDATES_MAX = 8;
+const TEAM_CANDIDATES_MAX = 10;
 
 // ── Current state ──────────────────────────────────────────────────────────────────────
 
@@ -122,6 +136,8 @@ export interface CurrentAgent {
   id: number;
   username: string;
   template: boolean;
+  // The name it is shown by.
+  name: string;
   // The template the agent is a copy of, by username; null for any other agent.
   copyOf: string | null;
   // 'hermes', 'claude' or 'codex'.
@@ -140,6 +156,7 @@ export interface CurrentAgent {
   // The agent's place in the organisation: its agent-team role and whom it reports to.
   role: string | null;
   manager: string | null;
+  department: string | null;
   triggerOnMention: boolean;
   triggerOnAssign: boolean;
   // What the runner last read from the agent's Hermes home; null before it reported one.
@@ -166,6 +183,7 @@ export interface CurrentState {
   library: string[];
   // Models the provider refused for Hermes (helena_model_availability), which no agent is set to.
   unavailableModels: string[];
+  departments: { id: number; name: string; parent: string | null }[];
 }
 
 // ── The plan ───────────────────────────────────────────────────────────────────────────
@@ -186,6 +204,14 @@ export type Change =
   | (AgentRef & { kind: 'reasoning' | 'model'; from: string | null; to: string })
   | (AgentRef & { kind: 'browser' })
   | (AgentRef & { kind: 'triggers'; mention: boolean; assign: boolean })
+  | (AgentRef & { kind: 'name'; from: string; to: string })
+  | (AgentRef & {
+      kind: 'org';
+      department?: { from: string | null; to: string };
+      role?: { from: string | null; to: string };
+      reportsTo?: { from: string | null; to: string };
+    })
+  | { kind: 'department'; name: string; parent: string | null; description: string }
   | (AgentRef & {
       kind: 'assignment';
       projectId: number;
@@ -314,6 +340,10 @@ export function projectState(state: CurrentState, changes: Change[]): CurrentSta
       if (project) project.instructions = change.to;
       continue;
     }
+    if (change.kind === 'department') {
+      next.departments.push({ id: --newId, name: change.name, parent: change.parent });
+      continue;
+    }
     if (change.kind === 'copy') {
       const template = find(change.templateId);
       if (!template) continue;
@@ -321,6 +351,7 @@ export function projectState(state: CurrentState, changes: Change[]): CurrentSta
         ...structuredClone(template),
         id: --newId,
         username: change.username,
+        name: `${template.name} ${change.projectKey}`,
         template: false,
         copyOf: template.username,
         model: change.model,
@@ -328,6 +359,7 @@ export function projectState(state: CurrentState, changes: Change[]): CurrentSta
         projects: [{ id: change.projectId, key: change.projectKey, assignment: '' }],
         role: 'specialist',
         manager: next.projects.find((p) => p.id === change.projectId)?.coordinator ?? null,
+        department: null,
         inventory: null,
         status: 'new',
         drift: [],
@@ -370,6 +402,14 @@ export function projectState(state: CurrentState, changes: Change[]): CurrentSta
       case 'triggers':
         agent.triggerOnMention = change.mention;
         agent.triggerOnAssign = change.assign;
+        break;
+      case 'name':
+        agent.name = change.to;
+        break;
+      case 'org':
+        if (change.department) agent.department = change.department.to;
+        if (change.role) agent.role = change.role.to;
+        if (change.reportsTo) agent.manager = change.reportsTo.to;
         break;
       case 'assignment': {
         const membership = agent.projects.find((p) => p.id === change.projectId);
@@ -435,7 +475,18 @@ function planAgent(
       if (!wanted) continue;
       const text = resolveText(wanted, state);
       const current = kind === 'soul' ? agent.soul : agent.instructions;
-      const decision = textDecision(current, text);
+      let decision = textDecision(current, text);
+      const template = state.agents.find((a) => a.template && a.username === agent.copyOf);
+      if (
+        decision === 'owned' &&
+        kind === 'instructions' &&
+        'overTemplate' in wanted &&
+        wanted.overTemplate &&
+        template &&
+        (current ?? '').trim() === (template.instructions ?? '').trim()
+      ) {
+        decision = 'replace';
+      }
       if (decision === 'replace') {
         plan.changes.push({ kind, ...ref, from: current ?? '', to: text.text.trim() });
       } else if (decision === 'owned') {
@@ -472,6 +523,41 @@ function planAgent(
     if (agent.triggerOnMention !== mention || agent.triggerOnAssign !== assign) {
       plan.changes.push({ kind: 'triggers', ...ref, mention, assign });
     }
+  }
+
+  if (sections.has('copies') && target.name && agent.name !== target.name) {
+    const template = state.agents.find((a) => a.template && a.username === agent.copyOf);
+    const key = agent.projects[0]?.key;
+    // A copy's name is its template's with the project key until someone renames it.
+    if (template && key && agent.name === `${template.name} ${key}`)
+      plan.changes.push({ kind: 'name', ...ref, from: agent.name, to: target.name });
+    else plan.skipped.push(`${who}: named "${agent.name}" by hand; left as it is`);
+  }
+
+  if (sections.has('copies') && target.org) {
+    const change: Extract<Change, { kind: 'org' }> = { kind: 'org', ...ref };
+    const { department, role, reportsTo } = target.org;
+    if (department && agent.department !== department) {
+      if (!state.departments.some((d) => d.name === department))
+        plan.skipped.push(`${who}: no department "${department}"`);
+      else if (agent.department !== null)
+        plan.skipped.push(`${who}: in department "${agent.department}" by hand; left as it is`);
+      else change.department = { from: null, to: department };
+    }
+    if (role && agent.role !== role) {
+      // createAgent makes every project agent a specialist; any other role was chosen.
+      if (agent.role === null || agent.role === 'specialist')
+        change.role = { from: agent.role, to: role };
+      else plan.skipped.push(`${who}: agent-team role ${agent.role} by hand; left as it is`);
+    }
+    if (reportsTo && agent.manager !== reportsTo) {
+      if (!state.agents.some((a) => a.username === reportsTo && !a.template))
+        plan.skipped.push(`${who}: @${reportsTo} does not exist`);
+      else if (agent.manager !== null)
+        plan.skipped.push(`${who}: reports to @${agent.manager} by hand; left as it is`);
+      else change.reportsTo = { from: null, to: reportsTo };
+    }
+    if (change.department || change.role || change.reportsTo) plan.changes.push(change);
   }
 
   if (sections.has('browser') && target.projectBrowser) {
@@ -515,6 +601,26 @@ function planTemplates(state: CurrentState, target: TuningTarget, plan: Plan): v
         add,
       });
     }
+  }
+}
+
+function planDepartments(state: CurrentState, target: TuningTarget, plan: Plan): void {
+  const known = new Set(state.departments.map((d) => d.name));
+  for (const entry of target.departments ?? []) {
+    if (known.has(entry.name)) {
+      const current = state.departments.find((d) => d.name === entry.name)!;
+      if (current.parent !== entry.parent)
+        plan.skipped.push(
+          `department "${entry.name}": below "${current.parent ?? 'nothing'}"; left as it is`,
+        );
+      continue;
+    }
+    if (entry.parent !== null && !known.has(entry.parent)) {
+      plan.skipped.push(`department "${entry.name}": no parent department "${entry.parent}"`);
+      continue;
+    }
+    plan.changes.push({ kind: 'department', ...entry });
+    known.add(entry.name);
   }
 }
 
@@ -565,7 +671,10 @@ export function planTuning(
   // What every copy should have goes onto its template first, so a copy made in the same
   // run starts with it and keeps following its template.
   if (wanted.has('tools')) planTemplates(state, target, plan);
-  if (wanted.has('copies')) planCopies(projectState(state, plan.changes), target, plan);
+  if (wanted.has('copies')) {
+    planDepartments(state, target, plan);
+    planCopies(projectState(state, plan.changes), target, plan);
+  }
   const projected = projectState(state, plan.changes);
   for (const entry of target.agents) {
     const agent = projected.agents.find((a) => a.username === entry.username);
@@ -616,7 +725,9 @@ export function planTuning(
 // The changes that have to exist before the rest can be applied: templates and new copies.
 // After them the state is loaded again and planned anew, with real ids for the copies.
 export function isFirstPhase(change: Change): boolean {
-  return change.kind === 'copy' || change.kind === 'templateToolDeny';
+  return (
+    change.kind === 'copy' || change.kind === 'templateToolDeny' || change.kind === 'department'
+  );
 }
 
 // ── The policy an agent ends up with ───────────────────────────────────────────────────
@@ -748,7 +859,12 @@ function indent(text: string): string {
 export function formatPlan(plan: Plan): string[] {
   const lines: string[] = [];
   for (const change of plan.changes) {
-    const who = 'username' in change ? `@${change.username}` : change.projectKey;
+    const who =
+      'username' in change
+        ? `@${change.username}`
+        : 'projectKey' in change
+          ? change.projectKey
+          : '';
     switch (change.kind) {
       case 'copy':
         lines.push(
@@ -784,6 +900,23 @@ export function formatPlan(plan: Plan): string[] {
       case 'browser':
         lines.push(`${who}: project browser on`);
         break;
+      case 'department':
+        lines.push(
+          `new department "${change.name}"${change.parent ? ` below "${change.parent}"` : ''}: ${change.description}`,
+        );
+        break;
+      case 'name':
+        lines.push(`${who}: name "${change.from}" → "${change.to}"`);
+        break;
+      case 'org': {
+        const parts = [
+          change.department && `department → "${change.department.to}"`,
+          change.role && `agent-team role ${change.role.from ?? 'none'} → ${change.role.to}`,
+          change.reportsTo && `reports to → @${change.reportsTo.to}`,
+        ].filter(Boolean);
+        lines.push(`${who}: ${parts.join(', ')}`);
+        break;
+      }
       case 'triggers':
         lines.push(
           `${who}: runs when mentioned ${change.mention ? 'on' : 'off'}, when delegated to ${change.assign ? 'on' : 'off'}`,

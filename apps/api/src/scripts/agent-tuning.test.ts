@@ -181,6 +181,7 @@ describe('agent tuning', () => {
     const target: TuningTarget = {
       projects: [],
       templates: [{ username: 'qa', denyToolsets: ['computer_use', 'tts'] }],
+      departments: [{ name: 'Entwicklung', parent: null, description: 'Bereich dev/' }],
       agents: [
         {
           username: coordinator,
@@ -197,6 +198,8 @@ describe('agent tuning', () => {
           disableSkills: ['obsidian'],
           projectBrowser: true,
           triggers: { mention: true, assign: true },
+          name: 'Tests VOL',
+          org: { department: 'Entwicklung', role: 'reviewer' },
           assignments: { VOL: { text: 'Du testest die Website.', replaces: [] } },
         },
       ],
@@ -206,10 +209,13 @@ describe('agent tuning', () => {
     const dry = await runAgentTuning({ teamId, target, sections: [...sections], log: quiet });
     expect(dry.changes.map((c) => c.kind)).toEqual([
       'templateToolDeny',
+      'department',
       'copy',
       'instructions',
       'skillsDisabled',
       'assignment',
+      'name',
+      'org',
       'browser',
     ]);
     expect((await loadTuningState(teamId)).agents.some((a) => a.username === 'qa-vol')).toBe(false);
@@ -226,7 +232,9 @@ describe('agent tuning', () => {
       toolDeny: ['computer_use', 'tts'],
       skillsDisabled: ['obsidian'],
       browser: 'gateway',
-      role: 'specialist',
+      name: 'Tests VOL',
+      role: 'reviewer',
+      department: 'Entwicklung',
       manager: coordinator,
       triggerOnMention: true,
       triggerOnAssign: true,

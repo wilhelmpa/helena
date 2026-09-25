@@ -4,16 +4,25 @@
 
 // copies: project copies that close the gaps of docs/volition-agent-pool-research.md C.
 // VOL stands in for the company as a whole, which has no project of its own. A copy's handle
-// is "<template>-<project key in lower case>" (copyTemplateIntoProject).
-export const POOL_COPIES: readonly { template: string; projectKey: string }[] = [
-  { template: 'content', projectKey: 'VERVE' },
+// is "<template>-<project key in lower case>" (copyTemplateIntoProject). VERVE has a whole team,
+// one per area (owner, 2026-09-25: "Leg für Verve eine ganze Orga gemäß der Area-Bereiche an"):
+// `area` is the folder of the project area the copy works in.
+export const POOL_COPIES: readonly { template: string; projectKey: string; area?: string }[] = [
   { template: 'qa', projectKey: 'VOL' },
-  { template: 'qa', projectKey: 'VERVE' },
   { template: 'assistant', projectKey: 'FAM' },
   { template: 'assistant', projectKey: 'PRIV' },
   { template: 'finance', projectKey: 'PRIV' },
   { template: 'finance', projectKey: 'VOL' },
   { template: 'researcher', projectKey: 'VOL' },
+  { template: 'shopify-dev', projectKey: 'VERVE', area: 'dev' },
+  { template: 'qa', projectKey: 'VERVE', area: 'dev' },
+  { template: 'devops', projectKey: 'VERVE', area: 'dev' },
+  { template: 'code-reviewer', projectKey: 'VERVE', area: 'dev' },
+  { template: 'content', projectKey: 'VERVE', area: 'marketing' },
+  { template: 'market-analyst', projectKey: 'VERVE', area: 'marketing' },
+  { template: 'designer', projectKey: 'VERVE', area: 'marketing' },
+  { template: 'assistant', projectKey: 'VERVE', area: 'support' },
+  { template: 'tech-writer', projectKey: 'VERVE', area: 'support' },
 ];
 
 // org: what every project coordinator should have.

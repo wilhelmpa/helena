@@ -29,6 +29,7 @@ function agent(overrides: Partial<CurrentAgent> = {}): CurrentAgent {
   return {
     id: 1,
     username: 'coder-vol',
+    name: 'Coder VOL',
     template: false,
     copyOf: null,
     runtime: 'hermes',
@@ -43,6 +44,7 @@ function agent(overrides: Partial<CurrentAgent> = {}): CurrentAgent {
     projects: [{ id: 5, key: 'VOL', assignment: '' }],
     role: 'specialist',
     manager: 'hermes-vol-coordinator',
+    department: null,
     triggerOnMention: true,
     triggerOnAssign: true,
     inventory: null,
@@ -61,6 +63,7 @@ function state(agents: CurrentAgent[], overrides: Partial<CurrentState> = {}): C
     projects: [{ id: 5, key: 'VOL', instructions: '', coordinator: 'hermes-vol-coordinator' }],
     library: ['brainstorming', 'writing-plans', 'systematic-debugging', 'frontend-design'],
     unavailableModels: [],
+    departments: [{ id: 1, name: 'Volition', parent: null }],
     ...overrides,
   };
 }
@@ -403,6 +406,85 @@ describe('copies', () => {
   });
 });
 
+describe('organisation', () => {
+  function orgTarget(): TuningTarget {
+    return {
+      projects: [],
+      departments: [
+        { name: 'Verve · Support', parent: 'Volition', description: 'Bereich support/' },
+        { name: 'Nirgends', parent: 'Fehlt', description: '' },
+      ],
+      agents: [
+        {
+          username: 'coder-vol',
+          addSkills: [],
+          denyToolsets: [],
+          disableSkills: [],
+          name: 'Support VOL',
+          org: { department: 'Verve · Support', role: 'reviewer', reportsTo: 'master' },
+          instructions: { text: 'Du bist der Support.', replaces: [], overTemplate: true },
+        },
+      ],
+    };
+  }
+
+  function copied(overrides: Partial<CurrentAgent> = {}): CurrentState {
+    const current = withTemplate({ username: 'assistant', name: 'Assistent', instructions: 'Privat' });
+    current.agents.push(
+      agent({ id: 1, copyOf: 'assistant', name: 'Assistent VOL', instructions: 'Privat', manager: null, ...overrides }),
+      agent({ id: 2, username: 'master', role: null, manager: null }),
+    );
+    return current;
+  }
+
+  it('creates a missing department below its parent, and places the agent in it', () => {
+    const plan = planTuning(copied(), orgTarget(), ['instructions', 'copies']);
+    expect(plan.changes).toEqual([
+      { kind: 'department', name: 'Verve · Support', parent: 'Volition', description: 'Bereich support/' },
+      {
+        kind: 'instructions',
+        agentId: 1,
+        username: 'coder-vol',
+        from: 'Privat',
+        to: 'Du bist der Support.',
+      },
+      { kind: 'name', agentId: 1, username: 'coder-vol', from: 'Assistent VOL', to: 'Support VOL' },
+      {
+        kind: 'org',
+        agentId: 1,
+        username: 'coder-vol',
+        department: { from: null, to: 'Verve · Support' },
+        role: { from: 'specialist', to: 'reviewer' },
+        reportsTo: { from: null, to: 'master' },
+      },
+    ]);
+    expect(plan.skipped).toContain('department "Nirgends": no parent department "Fehlt"');
+    const done = projectState(copied(), plan.changes);
+    expect(planTuning(done, orgTarget(), ['instructions', 'copies']).changes).toEqual([]);
+  });
+
+  it("leaves what the owner chose: a renamed copy, its own text, department, role, manager", () => {
+    const current = copied({
+      name: 'Mein Support',
+      instructions: 'Eigener Text',
+      department: 'Volition',
+      role: 'coordinator',
+      manager: 'hermes-vol-coordinator',
+    });
+    const plan = planTuning(current, orgTarget(), ['instructions', 'copies']);
+    expect(plan.changes.map((c) => c.kind)).toEqual(['department']);
+    expect(plan.skipped).toEqual(
+      expect.arrayContaining([
+        '@coder-vol: instructions changed since the audit; left as it is',
+        '@coder-vol: named "Mein Support" by hand; left as it is',
+        '@coder-vol: in department "Volition" by hand; left as it is',
+        '@coder-vol: agent-team role coordinator by hand; left as it is',
+        '@coder-vol: reports to @hermes-vol-coordinator by hand; left as it is',
+      ]),
+    );
+  });
+});
+
 describe('team texts', () => {
   const team: TeamText = {
     project: 'VOL',
@@ -581,10 +663,16 @@ describe('the target of this installation', () => {
     }
     expect(TEMPLATES.map((t) => t.username).sort()).toEqual([
       'assistant',
+      'code-reviewer',
       'content',
+      'designer',
+      'devops',
       'finance',
+      'market-analyst',
       'qa',
       'researcher',
+      'shopify-dev',
+      'tech-writer',
     ]);
   });
 
@@ -602,6 +690,23 @@ describe('the target of this installation', () => {
       const alone = resolveText(coordinator.instructions!, state([])).text;
       expect(alone).not.toContain(`@${copy.username}`);
     }
+  });
+
+  it('gives VERVE a team per area, all reporting to its coordinator', () => {
+    const verve = TARGET.agents.filter(
+      (a) => a.copyOf?.projectKey === 'VERVE' || a.username === 'coder-verve',
+    );
+    expect(verve).toHaveLength(10);
+    for (const entry of verve) {
+      expect(entry.org?.department).toMatch(/^Verve · (Entwicklung|Marketing|Support)$/);
+      const text = entry.assignments!.VERVE!.text;
+      expect(text).toContain('/srv/volition/workspaces/projects/verve/');
+      expect(text).toContain('@hermes-verve-coordinator');
+      expect(text.length).toBeLessThanOrEqual(500);
+    }
+    expect(TARGET.departments?.map((d) => d.parent)).toEqual(['Volition', 'Volition', 'Volition']);
+    expect(verve.find((a) => a.username === 'code-reviewer-verve')?.org?.role).toBe('reviewer');
+    expect(verve.find((a) => a.username === 'assistant-verve')?.name).toBe('Support VERVE');
   });
 
   it('never turns off a skill of the pool', () => {

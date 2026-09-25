@@ -40,10 +40,12 @@ import {
   db,
   helenaModelAvailability,
   organizationAgentAssignment,
+  organizationDepartment,
   organizationProjectAssignment,
   project,
   projectMember,
   teamMember,
+  user,
 } from '@repo/db';
 import { and, count, eq, gt, isNotNull, sql } from 'drizzle-orm';
 import {
@@ -60,7 +62,13 @@ import {
   setAgentMcpServers,
 } from '#modules/agents/mcp-servers/service';
 import { setAgentSkills } from '#modules/agents/skills/service';
-import { setAgentProjectInstructions, setProjectAssignment } from '#modules/organization/service';
+import {
+  createDepartment,
+  setAgentAssignment,
+  setAgentProjectInstructions,
+  setProjectAssignment,
+  type AgentTeamRole,
+} from '#modules/organization/service';
 import {
   auditState,
   DEFAULT_SECTIONS,
@@ -153,6 +161,7 @@ export async function loadTuningState(teamId: number): Promise<CurrentState> {
           username: aiAgent.username,
           template: aiAgent.template,
           sourceTemplateId: aiAgent.sourceTemplateId,
+          name: user.name,
           model: aiAgent.model,
           instructions: aiAgent.instructions,
           runtimePolicy: aiAgent.runtimePolicy,
@@ -162,6 +171,7 @@ export async function loadTuningState(teamId: number): Promise<CurrentState> {
           triggerOnAssign: aiAgent.triggerOnAssign,
         })
         .from(aiAgent)
+        .innerJoin(user, eq(user.id, aiAgent.userId))
         .where(eq(aiAgent.teamId, teamId)),
       db
         .select({ agentId: agentSkillLink.agentId, name: agentSkill.name })
@@ -210,6 +220,7 @@ export async function loadTuningState(teamId: number): Promise<CurrentState> {
           agentId: organizationAgentAssignment.agentId,
           role: organizationAgentAssignment.role,
           managerId: organizationAgentAssignment.reportsToAgentId,
+          departmentId: organizationAgentAssignment.departmentId,
         })
         .from(organizationAgentAssignment)
         .where(eq(organizationAgentAssignment.teamId, teamId)),
@@ -223,10 +234,21 @@ export async function loadTuningState(teamId: number): Promise<CurrentState> {
           ),
         ),
     ]);
-  const projects = await db
-    .select({ id: project.id, key: project.key })
-    .from(project)
-    .where(eq(project.teamId, teamId));
+  const [projects, departments] = await Promise.all([
+    db
+      .select({ id: project.id, key: project.key })
+      .from(project)
+      .where(eq(project.teamId, teamId)),
+    db
+      .select({
+        id: organizationDepartment.id,
+        name: organizationDepartment.name,
+        parentId: organizationDepartment.parentId,
+      })
+      .from(organizationDepartment)
+      .where(eq(organizationDepartment.teamId, teamId)),
+  ]);
+  const departmentName = new Map(departments.map((row) => [row.id, row.name]));
 
   const username = new Map(agents.map((row) => [row.id, row.username]));
   const roleOf = (agentId: number) => org.find((entry) => entry.agentId === agentId);
@@ -248,6 +270,11 @@ export async function loadTuningState(teamId: number): Promise<CurrentState> {
   return {
     library: library.map((row) => row.name),
     unavailableModels: refused.map((row) => row.model),
+    departments: departments.map((row) => ({
+      id: row.id,
+      name: row.name,
+      parent: row.parentId === null ? null : (departmentName.get(row.parentId) ?? null),
+    })),
     projects: projects.map((row) => ({
       id: row.id,
       key: row.key,
@@ -264,6 +291,7 @@ export async function loadTuningState(teamId: number): Promise<CurrentState> {
         id: row.id,
         username: row.username,
         template: row.template,
+        name: row.name,
         copyOf: row.sourceTemplateId ? (username.get(row.sourceTemplateId) ?? null) : null,
         runtime: policy.runtime ?? 'hermes',
         model: row.model,
@@ -276,6 +304,7 @@ export async function loadTuningState(teamId: number): Promise<CurrentState> {
         browser: browserOf(row.id),
         role: roleOf(row.id)?.role ?? null,
         manager: username.get(roleOf(row.id)?.managerId ?? -1) ?? null,
+        department: departmentName.get(roleOf(row.id)?.departmentId ?? -1) ?? null,
         projects: members
           .filter((member) => member.userId === row.userId)
           .map((member) => ({
@@ -306,6 +335,26 @@ export async function loadTuningState(teamId: number): Promise<CurrentState> {
 // The templates and new copies of a plan: they have to exist before the rest is applied.
 async function applyFirstPhase(teamId: number, changes: Change[], actor: string): Promise<void> {
   for (const change of changes) {
+    if (change.kind !== 'department') continue;
+    const [parent] = change.parent
+      ? await db
+          .select({ id: organizationDepartment.id })
+          .from(organizationDepartment)
+          .where(
+            and(
+              eq(organizationDepartment.teamId, teamId),
+              eq(organizationDepartment.name, change.parent),
+            ),
+          )
+      : [];
+    if (change.parent && !parent) throw new Error(`No department "${change.parent}"`);
+    await createDepartment(teamId, {
+      name: change.name,
+      description: change.description,
+      parentId: parent?.id ?? null,
+    });
+  }
+  for (const change of changes) {
     if (change.kind === 'templateToolDeny') {
       const template = await getAgentById(change.agentId, teamId);
       if (!template?.template) throw new Error(`Template @${change.username} disappeared`);
@@ -325,6 +374,55 @@ async function applyFirstPhase(teamId: number, changes: Change[], actor: string)
     // Helena issues the copy's key again when it provisions its runtime; this one is dropped.
     await copyTemplateIntoProject(template, change.projectId, actor);
   }
+}
+
+// The agent's place in the organisation. The service writes every field of the assignment,
+// so the ones the change leaves alone go back as they are.
+async function applyOrg(
+  teamId: number,
+  agentId: number,
+  change: Extract<Change, { kind: 'org' }>,
+): Promise<void> {
+  const [current] = await db
+    .select()
+    .from(organizationAgentAssignment)
+    .where(
+      and(
+        eq(organizationAgentAssignment.teamId, teamId),
+        eq(organizationAgentAssignment.agentId, agentId),
+      ),
+    );
+  const idOf = async (table: 'department' | 'agent', name: string) => {
+    const [row] =
+      table === 'department'
+        ? await db
+            .select({ id: organizationDepartment.id })
+            .from(organizationDepartment)
+            .where(
+              and(
+                eq(organizationDepartment.teamId, teamId),
+                eq(organizationDepartment.name, name),
+              ),
+            )
+        : await db
+            .select({ id: aiAgent.id })
+            .from(aiAgent)
+            .where(and(eq(aiAgent.teamId, teamId), eq(aiAgent.username, name)));
+    if (!row) throw new Error(`No ${table} "${name}"`);
+    return row.id;
+  };
+  await setAgentAssignment(teamId, agentId, {
+    departmentId: change.department
+      ? await idOf('department', change.department.to)
+      : (current?.departmentId ?? null),
+    reportsToAgentId: change.reportsTo
+      ? await idOf('agent', change.reportsTo.to)
+      : (current?.reportsToAgentId ?? null),
+    roleTitle: current?.roleTitle ?? '',
+    role: (change.role?.to ?? current?.role ?? null) as AgentTeamRole | null,
+    capabilities: current?.capabilities ?? [],
+    runtimeAgentId: current?.runtimeAgentId ?? null,
+  });
 }
 
 // Carries the plan out through the services the editor in Helena uses. Each agent's policy,
@@ -364,7 +462,8 @@ async function applyPlan(teamId: number, plan: Plan, state: CurrentState): Promi
     const instructions = changes.find((c) => c.kind === 'instructions');
     const model = changes.find((c) => c.kind === 'model');
     const triggers = changes.find((c) => c.kind === 'triggers');
-    if (policy || instructions || model || triggers) {
+    const name = changes.find((c) => c.kind === 'name');
+    if (policy || instructions || model || triggers || name) {
       await updateAgent(
         agentId,
         teamId,
@@ -372,6 +471,7 @@ async function applyPlan(teamId: number, plan: Plan, state: CurrentState): Promi
           ...(policy && { runtimePolicy: policy }),
           ...(instructions?.kind === 'instructions' && { instructions: instructions.to }),
           ...(model?.kind === 'model' && { model: model.to }),
+          ...(name?.kind === 'name' && { name: name.to }),
           ...(triggers?.kind === 'triggers' && {
             triggerOnMention: triggers.mention,
             triggerOnAssign: triggers.assign,
@@ -399,6 +499,8 @@ async function applyPlan(teamId: number, plan: Plan, state: CurrentState): Promi
       }
       await setAgentMcpServers(agentId, teamId, [...(await agentMcpServerIds(agentId)), gateway]);
     }
+    const org = changes.find((c) => c.kind === 'org');
+    if (org?.kind === 'org') await applyOrg(teamId, agentId, org);
     for (const change of changes) {
       if (change.kind === 'assignment') {
         await setAgentProjectInstructions(teamId, agentId, change.projectId, change.to);
@@ -427,6 +529,7 @@ export async function runAgentTuning(options: TuningOptions = {}): Promise<Plan>
         projects: [],
         agents,
         templates: (target.templates ?? []).filter((entry) => copied.has(entry.username)),
+        departments: target.departments,
       }
     : target;
 
