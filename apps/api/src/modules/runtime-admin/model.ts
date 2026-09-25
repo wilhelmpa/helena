@@ -5,9 +5,17 @@ const fallbackModel = t.Object({
   model: t.String({ minLength: 1, maxLength: 200 }),
 });
 
+const bundledSkills = t.Union([t.Literal('all'), t.Literal('essential')], {
+  description:
+    'Which of the skills that ship with Hermes every Hermes profile carries: all of them, or ' +
+    'only the one Hermes needs itself.',
+});
+
 export const AgentRuntimeDefaultsResponse = t.Object({
   fallbackModels: t.Array(fallbackModel),
   sessionRetentionDays: t.Nullable(t.Number()),
+  bundledSkills,
+  compressionThresholdTokens: t.Number(),
 });
 
 export const agentRuntimeDefaultsBody = t.Object({
@@ -20,6 +28,15 @@ export const agentRuntimeDefaultsBody = t.Object({
         description: 'Days Hermes keeps ended sessions; null keeps its own 90.',
       }),
     ),
+  ),
+  bundledSkills: t.Optional(bundledSkills),
+  compressionThresholdTokens: t.Optional(
+    t.Integer({
+      minimum: 16_000,
+      maximum: 1_000_000,
+      description:
+        'Tokens from which Hermes compresses a conversation, for every agent without its own.',
+    }),
   ),
 });
 

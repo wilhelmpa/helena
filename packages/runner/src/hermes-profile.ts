@@ -240,6 +240,59 @@ if latest and latest[0]:
 json.dump({"model": model, "reasoning": effort, "provider": provider}, sys.stdout)
 `;
 
+// The skills that ship with Hermes, seeded into a profile by Hermes' own sync
+// (tools/skills_sync.py sync_skills: new skills are copied, unchanged ones updated, a skill
+// the profile changed or removed is left as it is), the same way for every profile
+// (docs/helena-decisions/agent-context.md §3). Hermes itself runs it only on a profile's first
+// start or a gateway start, which Helena's one-shot runs never are, so profiles differed.
+// 'essential' is Hermes' own opt-out marker (.no-bundled-skills: only the skill Hermes needs
+// itself); what an earlier sync copied stays. It prints counts only.
+export const HERMES_SKILLS_SYNC_SCRIPT = String.raw`
+import json, os, sys
+from pathlib import Path
+request = json.load(sys.stdin)
+home = Path(request["home"])
+marker = home / ".no-bundled-skills"
+if request["mode"] == "essential":
+    if not marker.exists():
+        marker.write_text("")
+elif marker.exists():
+    marker.unlink()
+from tools.skills_sync import sync_skills
+result = sync_skills(quiet=True)
+def count(value):
+    return len(value) if isinstance(value, (list, tuple, set)) else (value if isinstance(value, int) else 0)
+json.dump({
+    "copied": count(result.get("copied")),
+    "updated": count(result.get("updated")),
+    "userModified": count(result.get("user_modified")),
+    "total": count(result.get("total_bundled")),
+}, sys.stdout)
+`;
+
+export interface BundledSkillsSync {
+  copied: number;
+  updated: number;
+  userModified: number;
+  total: number;
+}
+
+export function syncBundledSkills(
+  home: string,
+  mode: 'all' | 'essential',
+  python: string,
+  env: Record<string, string>,
+): Promise<BundledSkillsSync> {
+  return runPython<BundledSkillsSync>(
+    python,
+    HERMES_SKILLS_SYNC_SCRIPT,
+    { home, mode },
+    { ...env, HERMES_HOME: home },
+    // Hashing every bundled skill takes a few seconds on a cold cache.
+    60_000,
+  );
+}
+
 // Hermes can hang on a lock like any process; a check must never hold up the claim loop.
 const PYTHON_TIMEOUT_MS = 30_000;
 

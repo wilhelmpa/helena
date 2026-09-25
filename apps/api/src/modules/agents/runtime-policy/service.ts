@@ -1,11 +1,12 @@
 import { createHash } from 'node:crypto';
 import { db, aiAgent } from '@repo/db';
 import { eq } from 'drizzle-orm';
-import { normalizeRuntimeAccount } from '@helena/sdk';
+import { normalizeRuntimeAccount, type RuntimeCompression } from '@helena/sdk';
 import { HttpError } from '#shared/lib';
 
 import {
   getAgentById,
+  type AgentCompression,
   type AgentRuntimeConflict,
   type AgentRuntimeInventory,
   type AgentRuntimePolicy,
@@ -139,6 +140,11 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
       skillsDisabled: agent.runtimePolicy.skillsDisabled ?? [],
       fallbackModels: agent.runtimePolicy.fallbackModels ?? runtimeDefaults.fallbackModels,
       sessionRetentionDays: runtimeDefaults.sessionRetentionDays,
+      compression: runtimeCompression(
+        agent.runtimePolicy.compression,
+        runtimeDefaults.compressionThresholdTokens,
+      ),
+      bundledSkills: runtimeDefaults.bundledSkills,
     },
     // Local AI, while it is on (docs/helena-decisions/local-ai-platform.md): part of the
     // revision, so switching it on or off rewrites every profile.
@@ -149,6 +155,22 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
   // Eden's response parser treats a bare 64-character digest as an encoded value.
   const revision = `sha256:${createHash('sha256').update(JSON.stringify(snapshot)).digest('hex')}`;
   return { revision, ...snapshot };
+}
+
+// The compression the agent's Hermes profile gets: its own settings over the instance's
+// threshold (docs/helena-decisions/agent-context.md §6).
+export function runtimeCompression(
+  own: AgentCompression | undefined,
+  defaultThreshold: number,
+): RuntimeCompression {
+  return {
+    thresholdTokens: own?.thresholdTokens ?? defaultThreshold,
+    ...(own?.targetRatio !== undefined && { targetRatio: own.targetRatio }),
+    ...(own?.idleCompactMinutes !== undefined && {
+      idleCompactAfterSeconds: own.idleCompactMinutes * 60,
+    }),
+    ...(own?.model && { model: own.model }),
+  };
 }
 
 // Ends the operator's own SOUL.md, so a SOUL.md that was changed outside Helena can be

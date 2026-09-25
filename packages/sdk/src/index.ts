@@ -173,6 +173,7 @@ export type {
   ProfileContext,
   ProfileContribution,
   RuntimeAction,
+  RuntimeCompression,
   RuntimeHermesSettings,
   RuntimeLearning,
   RuntimeMcpServer,

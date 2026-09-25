@@ -15,6 +15,8 @@ import {
   hermesSessionFacts,
   leaves,
   probeHermesProfile,
+  syncBundledSkills,
+  type BundledSkillsSync,
   type HermesProbe,
 } from './hermes-profile';
 import {
@@ -366,12 +368,15 @@ export interface MaterializerContext {
 export interface HermesReader {
   probe(home: string, managedDir: string, keys: string[]): Promise<HermesProbe>;
   session(home: string, sessionId: string): Promise<SessionFacts | null>;
+  // Seeds the skills that ship with Hermes (hermes-profile.ts syncBundledSkills).
+  seedSkills?(home: string, mode: 'all' | 'essential'): Promise<BundledSkillsSync>;
 }
 
 function pythonReader(python: string, env: Record<string, string>): HermesReader {
   return {
     probe: (home, managedDir, keys) => probeHermesProfile(home, managedDir, python, env, keys),
     session: (home, sessionId) => hermesSessionFacts(home, sessionId, python, env),
+    seedSkills: (home, mode) => syncBundledSkills(home, mode, python, env),
   };
 }
 
@@ -381,6 +386,9 @@ export interface ApplyOptions {
   // Servers the last check found in the shared configuration or in plugins, which the
   // managed configuration turns off like the ones the runner config names.
   sharedMcpServers?: string[];
+  // Seed the skills that ship with Hermes as the snapshot says (hermes.bundledSkills). The
+  // synchronizer asks for it once per revision and runner start, not on every check.
+  seedBundledSkills?: boolean;
 }
 
 export class HermesPolicyMaterializer implements PolicyMaterializer {
@@ -455,6 +463,17 @@ export class HermesPolicyMaterializer implements PolicyMaterializer {
       options.force,
     );
     if (snapshot.learning) await setCuratorPaused(this.hermesHome, !snapshot.learning.curator);
+    // A seeding that fails leaves the profile as it is and is reported; it never keeps the
+    // revision from applying.
+    let bundledSkills: MaterializeResult['bundledSkills'];
+    const mode = snapshot.hermes?.bundledSkills;
+    if (options.seedBundledSkills && mode) {
+      try {
+        bundledSkills = (await this.reader().seedSkills?.(this.hermesHome, mode)) ?? undefined;
+      } catch (error) {
+        bundledSkills = { error: describeFailure(error) };
+      }
+    }
 
     const manifest: Manifest = {
       schemaVersion: 1,
@@ -472,6 +491,7 @@ export class HermesPolicyMaterializer implements PolicyMaterializer {
       runtimeServers: managed.runtimeServers,
       deniedToolsets: managed.deniedToolsets,
       managedChanged,
+      ...(bundledSkills && { bundledSkills }),
     };
   }
 
@@ -665,6 +685,8 @@ export interface MaterializeResult {
   deniedToolsets: string[];
   // Whether the managed configuration had to be written.
   managedChanged: boolean;
+  // What seeding the skills that ship with Hermes did, when it was asked for.
+  bundledSkills?: BundledSkillsSync | { error: string };
 }
 
 // What writes the policy into the agent's profile: the runner itself, or, for an isolated
@@ -784,6 +806,7 @@ const RESTORED_DETAIL =
 const PROBE_INTERVAL_MS = 5 * 60_000;
 
 const PROFILE_DRIFT_DETAIL = "The agent's profile differs from Helena's settings.";
+const BUNDLED_SKILLS_DETAIL = 'The skills that ship with Hermes could not be seeded:';
 
 // Hermes behind the runtime adapter interface (runtime.ts): brings the agent's Hermes home to
 // the policy Helena keeps for it, checks it again every minute, reads back what Hermes will
@@ -1034,10 +1057,12 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
       // Written again for a changed fallback chain alone, the revision's actions do not repeat.
       const actions = sameRevision ? [] : (snapshot.actions ?? []);
       const rewrites = actions.filter((action) => action.kind === 'rewrite-profile');
-      const result = await this.materializer.apply(
-        snapshot,
-        this.applyOptions(rewrites.length > 0),
-      );
+      // A new revision (and the first one after the runner starts) and "Neu schreiben" seed
+      // the skills that ship with Hermes again; a changed fallback chain alone does not.
+      const result = await this.materializer.apply(snapshot, {
+        ...this.applyOptions(rewrites.length > 0),
+        seedBundledSkills: !sameRevision || rewrites.length > 0,
+      });
       const others = actions.filter((action) => action.kind !== 'rewrite-profile');
       const ran = await this.materializer.runActions(others);
       for (const action of others) {
@@ -1061,9 +1086,15 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
       this.checkFailed = false;
       const restored = latest([...this.pendingRestored, ...result.restored, ...links]);
       this.pendingRestored = [];
+      const seeding = result.bundledSkills && 'error' in result.bundledSkills;
       this.state = {
         status: 'online',
-        detail: result.conflicts.length > 0 || restored.length > 0 ? RESTORED_DETAIL : null,
+        detail:
+          result.conflicts.length > 0 || restored.length > 0
+            ? RESTORED_DETAIL
+            : seeding
+              ? `${BUNDLED_SKILLS_DETAIL} ${(result.bundledSkills as { error: string }).error}`
+              : null,
         conflicts: result.conflicts,
         restored,
         actions: results,

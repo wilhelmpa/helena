@@ -87,7 +87,12 @@ export function withLocalFallback(
   return { ...snapshot, hermes: { ...snapshot.hermes, fallbackModels: chain } };
 }
 
-export function hermesLocalAiConfig(localAi: RuntimeLocalAi | null | undefined) {
+// `ownTasks` are the helper calls the agent names a model for itself (its compression model,
+// hermes-settings.ts), which the policy's helper then leaves alone.
+export function hermesLocalAiConfig(
+  localAi: RuntimeLocalAi | null | undefined,
+  ownTasks: string[] = [],
+) {
   if (!localAi || localAi.servers.length === 0) return {};
   const providers: Record<string, Record<string, unknown>> = {};
   for (const server of localAi.servers) {
@@ -127,6 +132,7 @@ export function hermesLocalAiConfig(localAi: RuntimeLocalAi | null | undefined) 
   }
   const auxiliary: Record<string, Record<string, unknown>> = {};
   for (const helper of localAi.helpers) {
+    if (ownTasks.includes(helper.task)) continue;
     auxiliary[helper.task] = {
       provider: helper.provider,
       model: helper.model,
@@ -143,7 +149,12 @@ export function hermesLocalAiConfig(localAi: RuntimeLocalAi | null | undefined) 
 registerProfileContribution({
   id: 'local-ai',
   hermesConfig: ({ runtime, snapshot }) =>
-    runtime === 'hermes' ? hermesLocalAiConfig(snapshot.localAi) : {},
+    runtime === 'hermes'
+      ? hermesLocalAiConfig(
+          snapshot.localAi,
+          snapshot.hermes?.compression?.model ? ['compression'] : [],
+        )
+      : {},
 });
 
 // Where a model id sends a run: a local model id names its provider and the model as its
