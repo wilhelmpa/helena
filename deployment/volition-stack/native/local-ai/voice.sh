@@ -171,16 +171,18 @@ models_verify() {
 rocm_root() { "$ROCM_VENV/bin/rocm-sdk" path --root; }
 
 # CMake for gfx1151 on Helena's ROCm, as install.sh builds llama.cpp (see the flags there):
-# ROCm's own clang for host and device code, flash attention through rocWMMA, the ROCm
-# libraries found through RPATH, no downloads. Static libraries of the project itself, so each
-# binary is one file next to nothing but ROCm.
+# ROCm's own clang for host and device code, the ROCm libraries found through RPATH, no
+# downloads. Static libraries of the project itself, so each binary is one file next to nothing
+# but ROCm. NOT with rocWMMA flash attention (GGML_HIP_ROCWMMA_FATTN): measured 2026-09-26,
+# whisper.cpp 1.8.4 built with it transcribes garbage on gfx1151 ("Pos.com.com.", 100 % WER);
+# ggml's own flash-attention kernels are right (5.2 %) and the fastest (340 ms p50).
 hip_cmake() {
   src=$1; shift
   root=$( [ "$DRY_RUN" = 1 ] && echo "$ROCM_VENV/lib/python3.13/site-packages/_rocm_sdk_devel" || rocm_root )
   run env PATH="$ROCM_VENV/bin:$PATH" HIP_PATH="$root" ROCM_PATH="$root" \
     cmake -S "$src" -B "$src/build" -G Ninja \
       -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF \
-      -DGGML_HIP=ON -DAMDGPU_TARGETS=gfx1151 -DGGML_HIP_ROCWMMA_FATTN=ON -DGGML_NATIVE=OFF \
+      -DGGML_HIP=ON -DAMDGPU_TARGETS=gfx1151 -DGGML_NATIVE=OFF \
       -DCMAKE_C_COMPILER="$root/lib/llvm/bin/clang" -DCMAKE_CXX_COMPILER="$root/lib/llvm/bin/clang++" \
       -DCMAKE_HIP_COMPILER="$root/lib/llvm/bin/clang++" -DCMAKE_PREFIX_PATH="$root" \
       "-DCMAKE_BUILD_RPATH=$root/lib" "$@"

@@ -52,6 +52,9 @@ class VoiceScriptTest(unittest.TestCase):
         self.assertEqual(out.count('-DAMDGPU_TARGETS=gfx1151'), 2)
         self.assertIn('rocm-10.0.0', out)
         self.assertNotIn('HSA_OVERRIDE_GFX_VERSION', out)
+        # rocWMMA flash attention makes whisper.cpp transcribe garbage on gfx1151 (measured).
+        self.assertNotIn('ROCWMMA', out)
+        self.assertIn('--flash-attn', out)
 
     def test_units_listen_on_loopback_in_a_sandbox(self):
         out = dry('install')
