@@ -8,6 +8,7 @@ import {
   pipelineRunStep,
 } from '@repo/db';
 import { and, asc, desc, eq, isNotNull } from 'drizzle-orm';
+import { WORK_CLASS } from '#modules/local-ai/work-classes';
 
 // The agent runs a routine's fire started, read back: the delegation run of the agent the
 // routine hands its task to, and the mention runs of the agents its instructions name
@@ -40,6 +41,9 @@ type RunRef = {
   trigger: string;
   issueId: number | null;
   sourceActivityId: number | null;
+  // The kind of work the run is (agent_run.work_class): `routines` for the delegation run a
+  // routine's fire starts.
+  workClass?: string | null;
 };
 
 const routineColumns = {
@@ -50,9 +54,10 @@ const routineColumns = {
 };
 
 // The routine fire an agent run belongs to, or null. A mention run a fire started is
-// linked by the fire's mention part; a delegation run on a task a routine created or
-// reopens is that routine's work (the fire enqueues it through the task's delegation). A
-// run a person started on such a task by mentioning the agent is not.
+// linked by the fire's mention part; the delegation run a fire starts on the task it
+// created or reopened carries the work class `routines` (the fire enqueues it through the
+// task's delegation, so its routine is the newest that worked on the task). A run a person
+// starts on such a task later — a mention, a reply, a delegation — is not the routine's.
 export async function routineOfAgentRun(run: RunRef): Promise<RoutineOfRun | null> {
   if (run.trigger === 'mention' && run.sourceActivityId == null) {
     const [row] = await db
@@ -65,7 +70,11 @@ export async function routineOfAgentRun(run: RunRef): Promise<RoutineOfRun | nul
       .limit(1);
     return row ? { ...row, title: row.title ?? '' } : null;
   }
-  if (run.trigger === 'delegation' && run.issueId != null) {
+  if (
+    run.trigger === 'delegation' &&
+    run.workClass === WORK_CLASS.routines &&
+    run.issueId != null
+  ) {
     const [row] = await db
       .select(routineColumns)
       .from(pipelineRun)
@@ -91,6 +100,7 @@ export async function activeRoutineRun(
       trigger: agentRun.trigger,
       issueId: agentRun.issueId,
       sourceActivityId: agentRun.sourceActivityId,
+      workClass: agentRun.workClass,
     })
     .from(agentRun)
     .innerJoin(aiAgent, eq(aiAgent.id, agentRun.agentId))
@@ -107,6 +117,28 @@ export async function activeRoutineRun(
   return run ? routineOfAgentRun(run) : null;
 }
 
+// The agents the newest routine fire on a task started there by a mention, by handle: an
+// agent team the fire's delegation started plans only the rest of the work.
+export async function routineMentionedOnTask(issueId: number): Promise<string[]> {
+  const [fire] = await db
+    .select({ id: pipelineRun.id })
+    .from(pipelineRun)
+    .where(and(eq(pipelineRun.issueId, issueId), eq(pipelineRun.kind, 'routine')))
+    .orderBy(desc(pipelineRun.createdAt))
+    .limit(1);
+  return fire ? startedUsernames(fire.id) : [];
+}
+
+function startedUsernames(fireId: string): Promise<string[]> {
+  return db
+    .select({ username: aiAgent.username })
+    .from(pipelineRunStep)
+    .innerJoin(aiAgent, eq(aiAgent.id, pipelineRunStep.agentId))
+    .where(and(eq(pipelineRunStep.runId, fireId), eq(pipelineRunStep.outcome, MENTION_STARTED)))
+    .orderBy(asc(pipelineRunStep.seq), asc(pipelineRunStep.stepId))
+    .then((rows) => rows.map((row) => row.username));
+}
+
 // What an agent is told about the routine a run of it belongs to: the routine's name, the
 // agent its task is delegated to, and the agents the fire started beside it for the parts
 // the instructions name them for.
@@ -120,17 +152,7 @@ export async function routinePromptContext(run: RunRef): Promise<RoutinePromptCo
   const routine = await routineOfAgentRun(run);
   if (!routine) return null;
   const [started, delegate] = await Promise.all([
-    db
-      .select({ username: aiAgent.username })
-      .from(pipelineRunStep)
-      .innerJoin(aiAgent, eq(aiAgent.id, pipelineRunStep.agentId))
-      .where(
-        and(
-          eq(pipelineRunStep.runId, routine.fireId),
-          eq(pipelineRunStep.outcome, MENTION_STARTED),
-        ),
-      )
-      .orderBy(asc(pipelineRunStep.seq), asc(pipelineRunStep.startedAt)),
+    startedUsernames(routine.fireId),
     run.issueId == null
       ? Promise.resolve([])
       : db
@@ -142,6 +164,6 @@ export async function routinePromptContext(run: RunRef): Promise<RoutinePromptCo
   return {
     title: routine.title,
     delegateUsername: delegate[0]?.username ?? null,
-    startedUsernames: started.map((row) => row.username),
+    startedUsernames: started,
   };
 }

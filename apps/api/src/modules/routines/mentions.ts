@@ -5,6 +5,7 @@ import { mentionedAgents, type MentionedAgent } from '#modules/agents/core/servi
 import { enqueueAgentRun } from '#modules/agents/core/run-queue';
 import { writeStep } from '#modules/engine/run-context';
 import type { StepExecution } from '#modules/engine/sdk';
+import { WORK_CLASS } from '#modules/local-ai/work-classes';
 import { MENTION_STARTED, mentionPartId } from './agent-runs';
 
 // A routine's instructions may @mention agents of the project: every fire starts each of
@@ -91,6 +92,8 @@ export async function startRoutineMentions(
         sourceActivityId: null,
         prompt: input.instructions,
         trigger: 'mention',
+        // The routine's work, like its delegation run: Lokale KI's class `routines`.
+        workClass: WORK_CLASS.routines,
       },
       tx,
     );

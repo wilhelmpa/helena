@@ -39,8 +39,9 @@ installed and there is no migration.
   `mention-started` with the agent run, or `mention-<reason>` as skipped. The run history
   shows these parts under the step ("Erwähnt in den Anweisungen · Gestartet · Agentenlauf #12
   · Läuft"), so it says which agents a run started and which it could not.
-- **The run:** a `mention` run on the routine's task with the instructions as prompt and no
-  source comment. It is queued in the same transaction that creates (or reopens) the task and
+- **The run:** a `mention` run on the routine's task with the instructions as prompt, no
+  source comment and the work class `routines` (Lokale KI treats it like the routine's
+  delegation run). It is queued in the same transaction that creates (or reopens) the task and
   writes the part, so no runner claims it before it is known as the routine's, and a replayed
   fire starts nobody twice. The Autopilot, budgets, pause and approvals apply to it as to any
   run.
@@ -75,11 +76,11 @@ created (the author of a task follows it), so every run also sent him "commented
    nobody (`createIssue(…, { subscribeAuthor: false })`). A reopening tells no watcher
    (`updateIssue(…, { quiet: true })`).
 3. **Quiet while the routine's run lasts.** What an agent writes on the task while its claimed
-   run there is a routine's (the delegation run on a routine's task, or a mention run a fire
-   started) tells none of the task's watchers — no "commented", no "state_changed". This covers
+   run there is a routine's (the delegation run a fire starts — work class `routines` — or a
+   mention run a fire started) tells none of the task's watchers — no "commented", no "state_changed". This covers
    the watchers a reopened task already has. A run a person starts later on the same task (by
-   mentioning the agent, or answering it) is ordinary again: that is a conversation. A
-   delegation of a routine's task counts as the routine's work, whoever delegates it.
+   mentioning the agent, answering it, delegating the task anew) is ordinary again: that is
+   a conversation.
 4. **A mention anyway: once a day.** If an agent still tags a person during a routine's run,
    that person gets at most one "mentioned" per routine and calendar day (in the routine's time
    zone); the others stay visible in the task. Check and insert hold a lock per routine, so two
@@ -90,9 +91,12 @@ created (the author of a task follows it), so every run also sent him "commented
    { asksForInput: true })`), approval requests, and failures (Start → "Braucht dich", and the
    `helena.run.failed` push of hub/push) are untouched.
 
-Not covered: the agent team's own "Result to the task" status change on a reopened routine
-task still tells that task's watchers (engine sync, `steps/agent-team.ts`); a created routine
-task has no watchers, so this matters only for a reopened task someone follows.
+**Agent team.** A routine delegated to a coordinator whose project runs agent teams starts
+the team; the coordinator's plan stage is told which agents the fire already started by a
+mention (`stagePrompt(…, startedByRoutine)`), so it plans only the rest. Not covered: the
+team's own "Result to the task" status change on a reopened routine task still tells that
+task's watchers (engine sync, `steps/agent-team.ts`); a created routine task has no watchers,
+so this matters only for a reopened task someone follows.
 
 ## 3. Where it lives
 
