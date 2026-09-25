@@ -144,9 +144,6 @@
     },
     "empty": "没有工作项",
     "emptyHint": "没有符合这些筛选条件的工作项。",
-    "myOpenTasks": "我的未完成工作项",
-    "viewAll": "全部工作项",
-    "noOpenTasks": "没有分配给你的未完成工作项。",
     "filter": {
       "project": "项目",
       "state": "状态",

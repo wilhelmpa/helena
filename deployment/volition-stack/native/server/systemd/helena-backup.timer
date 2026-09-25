@@ -1,0 +1,10 @@
+[Unit]
+Description=Helena backup schedule (Helena writes the time into helena-backup.timer.d)
+
+[Timer]
+OnCalendar=*-*-* *:15:00
+Persistent=true
+RandomizedDelaySec=2min
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,4 @@
+#!/bin/sh
+# mdadm --monitor → Helena (PROGRAM in /etc/mdadm/mdadm.conf.d/helena.conf). mdadm passes the
+# event, the md device and, for some events, the component device.
+exec /usr/bin/python3 -I /usr/local/lib/helena/hostd/helena-hostd event mdadm "$@"

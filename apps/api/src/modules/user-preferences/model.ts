@@ -26,6 +26,16 @@ const StartPage = t.Union([
 const IssueStatsView = t.Union([t.Literal('compact'), t.Literal('timeline')]);
 const IssueActivityView = t.Union([t.Literal('flat'), t.Literal('grouped')]);
 
+// Start as the user arranged it: widget ids (and, in `dismissed`, the keys of hidden
+// failures of "Braucht dich"). Ids only, bounded, so the row stays small.
+const WidgetId = t.String({ minLength: 1, maxLength: 160 });
+export const HomeDashboardSchema = t.Object({
+  order: t.Array(WidgetId, { maxItems: 100 }),
+  hidden: t.Array(WidgetId, { maxItems: 100 }),
+  shown: t.Array(WidgetId, { maxItems: 100 }),
+  dismissed: t.Array(WidgetId, { maxItems: 200 }),
+});
+
 export const PreferenceResponse = t.Object({
   timezone: t.String(),
   locale: LocaleSchema,
@@ -40,6 +50,7 @@ export const PreferenceResponse = t.Object({
   autoWatch: t.Boolean(),
   lastProjectId: t.Nullable(t.Number()),
   hotkeys: HotkeyCombosSchema,
+  homeDashboard: HomeDashboardSchema,
 });
 
 export const PreferencePatch = t.Object({
@@ -56,4 +67,5 @@ export const PreferencePatch = t.Object({
   autoWatch: t.Optional(t.Boolean()),
   lastProjectId: t.Optional(t.Nullable(t.Number())),
   hotkeys: t.Optional(HotkeyCombosSchema),
+  homeDashboard: t.Optional(HomeDashboardSchema),
 });

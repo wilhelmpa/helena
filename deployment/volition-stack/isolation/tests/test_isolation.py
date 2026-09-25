@@ -68,7 +68,8 @@ class ConfigTest(unittest.TestCase):
     def test_reads_the_shipped_configuration(self):
         config = common.load_config(str(config_file(self.dir)), require_root=False)
         self.assertEqual(config.user_prefix, 'vp-')
-        self.assertEqual(config.forwards, {'egress': 3128, 'plan': 3000})
+        self.assertEqual(config.forwards, {'egress': 3128, 'plan': 3000, 'localai': 13305})
+        self.assertEqual(config.optional_sockets, ('localai',))
         self.assertEqual(set(config.runtimes), {'hermes', 'claude', 'codex', 'profile-helper'})
         self.assertIn('/var/lib/volition', config.hide)
         self.assertIn('/etc/volition', config.inaccessible)
@@ -125,7 +126,9 @@ class ConfigTest(unittest.TestCase):
         for overrides in ({'userPrefix': 'root'}, {'uidRange': [0, 10]}, {'forwards': {'egress': 80}},
                           {'forwards': {'nope': 4000}}, {'workspaceRoot': 'relative'}, {'callers': []},
                           {'browserGateway': {'root': 'relative', 'target': '/run/volition-agents/browser'}},
-                          {'browserGateway': {'root': '/run/volition-browser/gateway'}}):
+                          {'browserGateway': {'root': '/run/volition-browser/gateway'}},
+                          {'optionalSockets': ['egress']}, {'optionalSockets': ['nope']},
+                          {'optionalSockets': 'localai'}):
             with self.subTest(overrides=overrides), self.assertRaises(common.IsolationError):
                 common.load_config(str(config_file(self.dir, **overrides)), require_root=False)
 
@@ -440,6 +443,16 @@ class LauncherRequestTest(unittest.TestCase):
         self.assertIn(
             'BindReadOnlyPaths=-/run/volition-browser/gateway/home:/run/volition-agents/browser',
             home)
+
+    def test_local_ai_socket_is_optional_and_the_core_ones_are_not(self):
+        # docs/helena-decisions/local-ai-platform.md: a machine without local AI has no
+        # helena-ai.sock; its agents still start, and only egress and plan stay required.
+        checked = self.worker.check_run(self.base)
+        props = self.worker.sandbox_properties(
+            'alpha', checked['account'], [checked['workspace']], [], checked['limits'])
+        self.assertIn('BindReadOnlyPaths=-/run/volition-agents/helena-ai.sock', props)
+        self.assertIn('BindReadOnlyPaths=/run/volition-agents/egress.sock', props)
+        self.assertIn('BindReadOnlyPaths=/run/volition-agents/plan.sock', props)
 
     def test_no_browser_gateway_bind_without_the_config(self):
         path = config_file(self.dir, registryRoot=str(self.dir / 'registry'),

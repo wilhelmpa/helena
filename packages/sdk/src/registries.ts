@@ -1,4 +1,5 @@
 import type { Connector } from './connectors';
+import type { LocalAiTaskClass, ModelServerType } from './local-ai';
 import type { CaptureTarget, KnowledgeSource } from './knowledge';
 import type { McpServerContribution } from './manifest-types';
 import type { PolicyEvaluator } from './policy';
@@ -8,6 +9,7 @@ import type { RuntimeLoginSource } from './runtime-logins';
 import type { DecisionBackendType } from './decision-backends';
 import type { DecisionClass } from './decisions';
 import type { ProfileContribution } from './runtime-policy';
+import type { HostCapability } from './host';
 import type { BundleOffer } from './templates';
 import type { AnyAgentTool } from './tools';
 import { uiSlotKey, type UiSlot } from './ui';
@@ -29,10 +31,13 @@ export interface HelenaRegistries {
   knowledgeSources: Registry<KnowledgeSource>;
   captureTargets: Registry<CaptureTarget>;
   bundles: Registry<BundleOffer>;
+  hostCapabilities: Registry<HostCapability>;
   mcpServers: Registry<McpServerContribution>;
   profileContributions: Registry<ProfileContribution>;
   usageLimitSources: Registry<UsageLimitSource>;
   runtimeLoginSources: Registry<RuntimeLoginSource>;
+  modelServers: Registry<ModelServerType>;
+  localAiTaskClasses: Registry<LocalAiTaskClass>;
   updateSources: Registry<UpdateSource>;
   decisionBackends: Registry<DecisionBackendType>;
   decisionClasses: Registry<DecisionClass>;
@@ -50,6 +55,7 @@ export function createRegistries(given: Partial<HelenaRegistries> = {}): HelenaR
     knowledgeSources: given.knowledgeSources ?? createRegistry<KnowledgeSource>('knowledge source'),
     captureTargets: given.captureTargets ?? createRegistry<CaptureTarget>('capture target'),
     bundles: given.bundles ?? createRegistry<BundleOffer>('template bundle'),
+    hostCapabilities: given.hostCapabilities ?? createRegistry<HostCapability>('host capability'),
     mcpServers:
       given.mcpServers ??
       new Registry<McpServerContribution>('MCP server', (server) => server.name),
@@ -59,6 +65,9 @@ export function createRegistries(given: Partial<HelenaRegistries> = {}): HelenaR
       given.usageLimitSources ?? createRegistry<UsageLimitSource>('usage-limit source'),
     runtimeLoginSources:
       given.runtimeLoginSources ?? createRegistry<RuntimeLoginSource>('runtime login source'),
+    modelServers: given.modelServers ?? createRegistry<ModelServerType>('model server type'),
+    localAiTaskClasses:
+      given.localAiTaskClasses ?? createRegistry<LocalAiTaskClass>('local AI task class'),
     updateSources: given.updateSources ?? createRegistry<UpdateSource>('update source'),
     decisionBackends:
       given.decisionBackends ?? createRegistry<DecisionBackendType>('decision backend'),

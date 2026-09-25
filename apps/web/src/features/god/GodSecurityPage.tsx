@@ -15,9 +15,12 @@ import {
 } from '@/features/owner-terminal/services/owner-terminal.service';
 import GodSectionPage from './components/GodSectionPage';
 import GodSecurityAuditList from './components/security/GodSecurityAuditList';
+import SecurityStatusSections from '@/features/security-status/SecurityStatusSections';
 
-// Home -> Security: the owner terminal's step-up policy, its current grant and
-// its audit trail. See docs/volition-design-owner-terminals.md §2.
+// Administrator -> Sicherheit: the server's security (host audit, the owner's factors,
+// access from outside; docs/helena-decisions/security-hardening.md), then the owner
+// terminal's step-up policy, its current grant and its audit trail
+// (docs/volition-design-owner-terminals.md §2).
 export default function GodSecurityPage() {
   const t = useTranslations('god.security');
   const settings = useOwnerTerminalSettingsQuery();
@@ -28,6 +31,8 @@ export default function GodSecurityPage() {
 
   return (
     <GodSectionPage slug="security">
+      <SecurityStatusSections />
+
       <SettingsSection title={t('grantTitle')} description={t('grantDescription')}>
         <SettingsCard className="space-y-2 p-4 text-sm">
           {grant.data?.active ? (

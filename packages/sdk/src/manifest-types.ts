@@ -36,12 +36,17 @@ export interface PluginProvides {
   captureTargets?: string[];
   // Template bundles offered for import (agent templates, skills, MCP servers).
   bundles?: string[];
+  // Host capabilities (Administrator → Server: disks, backups, power, a plugin's own).
+  hostCapabilities?: string[];
   // Contributions to every agent's runtime profile (runner).
   profileContributions?: string[];
   // Usage-limit sources (how much of a subscription's limits is used).
   usageLimitSources?: string[];
   // Runtime login sources (whether the model logins agents share are usable).
   runtimeLoginSources?: string[];
+  // Kinds of local model servers, and kinds of work local AI may take.
+  modelServers?: string[];
+  localAiTaskClasses?: string[];
   // Update sources (whether a newer version of something Helena runs on exists).
   updateSources?: string[];
   // Decision backends (System One services the browser's fast path asks).

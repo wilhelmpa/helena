@@ -201,6 +201,13 @@ export const ChatCatalogResponse = t.Object({
               'work (false). Unset when nothing tells.',
           }),
         ),
+        local: t.Optional(
+          t.Boolean({
+            description:
+              "A model of Helena's local AI (`helena-<slug>/<id>`): runs on the owner's own " +
+              'machine and costs nothing per token.',
+          }),
+        ),
       }),
     ]),
   ),

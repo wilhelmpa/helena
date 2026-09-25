@@ -1,0 +1,11 @@
+[Unit]
+Description=Helena: home IPv6 networks for the firewall
+After=nftables.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/libexec/helena-lan6-sync
+
+[Install]
+WantedBy=multi-user.target

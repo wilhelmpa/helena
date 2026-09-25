@@ -1,0 +1,93 @@
+{
+  "in": "dalam {time}",
+  "widgetFailed": "Sedang tidak tersedia",
+  "customize": {
+    "title": "Sesuaikan",
+    "description": "Apa yang ditampilkan Beranda dan urutannya. Disimpan di akun Anda.",
+    "figures": "Angka",
+    "sections": "Bagian",
+    "drag": "Pindahkan {name}",
+    "up": "Naikkan {name}",
+    "down": "Turunkan {name}",
+    "show": "Tampilkan {name}",
+    "reset": "Kembalikan bawaan",
+    "done": "Selesai"
+  },
+  "widgets": {
+    "waiting": "Menunggu Anda",
+    "agents": "Agen bekerja",
+    "tasks": "Tugas saya",
+    "limits": "Batas paket",
+    "system": "Sistem",
+    "updates": "Pembaruan",
+    "needs-you": "Butuh Anda",
+    "my-tasks": "Tugas saya",
+    "running": "Sedang berjalan",
+    "schedules": "Berikutnya",
+    "projects": "Proyek"
+  },
+  "figures": {
+    "problems": "{count} masalah",
+    "failed": "{count} gagal",
+    "nothingWaits": "Tidak ada yang menunggu",
+    "lastFinished": "terakhir selesai {time} lalu",
+    "nobodyWorks": "Tidak ada yang bekerja",
+    "overdue": "{count} terlambat",
+    "nextDue": "jatuh tempo berikutnya {date}"
+  },
+  "links": {
+    "all": "Semua",
+    "activity": "Aktivitas",
+    "schedules": "Jadwal"
+  },
+  "needsYou": {
+    "empty": "Saat ini tidak ada yang membutuhkan Anda.",
+    "proposals": "{count} usulan menunggu",
+    "chatFailed": "Jawaban chat gagal",
+    "hide": "Sembunyikan",
+    "more": "{count} lagi",
+    "aged": "{count} kegagalan lebih lama",
+    "hidden": "{count} disembunyikan"
+  },
+  "problems": {
+    "serviceDown": "{service} tidak dapat dijangkau",
+    "relogin": "Masuk lagi ke {provider}",
+    "rejected": "ditolak penyedia",
+    "ranOut": "kedaluwarsa, tidak ada yang memperbarui",
+    "securityCheck": "Pemeriksaan keamanan gagal",
+    "securityChecks": "{count} pemeriksaan keamanan gagal"
+  },
+  "agents": {
+    "empty": "Saat ini tidak ada agen yang bekerja.",
+    "waiting": "menunggu",
+    "finished": "Baru selesai"
+  },
+  "tasks": {
+    "empty": "Tidak ada tugas terbuka untuk Anda."
+  },
+  "schedules": {
+    "empty": "Tidak ada yang dijadwalkan."
+  },
+  "projects": {
+    "empty": "Belum ada proyek."
+  },
+  "system": {
+    "title": "Sistem",
+    "ok": "Semua berjalan",
+    "problems": "{count} masalah",
+    "counts": "{services} layanan · {agents} agen",
+    "areas": {
+      "services": "Layanan",
+      "logins": "Login",
+      "janitors": "Pemeliharaan",
+      "agents": "Agen",
+      "runs": "Proses",
+      "server": "Server"
+    },
+    "glance": {
+      "raidOk": "RAID ok",
+      "backup": "cadangan {at} lalu",
+      "cpu": "CPU {temperature}"
+    }
+  }
+}

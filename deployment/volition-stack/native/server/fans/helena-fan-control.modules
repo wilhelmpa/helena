@@ -1,0 +1,4 @@
+# Helena fan control (install-fan-control.sh): the EC driver of the Sixunited AXB35-02 board
+# and the SMU driver ryzenadj reads the power limits through.
+ec_su_axb35
+ryzen_smu

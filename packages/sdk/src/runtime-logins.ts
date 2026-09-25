@@ -65,10 +65,41 @@ export interface RuntimeLoginSource {
   poll(context: RuntimeLoginPollContext): Promise<RuntimeLoginReport[]>;
 }
 
-// A login the owner has to act on: rejected, or one that should be renewed and is not usable.
-export function runtimeLoginNeedsOwner(login: Pick<RuntimeLogin, 'state' | 'managed'>): boolean {
-  if (login.state === 'invalid') return true;
-  return login.managed && (login.state === 'expired' || login.state === 'error');
+// What a login asks of the owner (owner, 2026-09-24: the logins "sind so kurz gültig" — the
+// short time shown was the access token's, which the keeper renews on its own):
+//   active        renewed automatically (managed, ok or expiring): nothing to do.
+//   valid         usable, but nothing renews it; it becomes `relogin` once it runs out.
+//   renewFailing  a renewal failed for now, or the access token ran out before the next
+//                 try (managed, error or expired): retried automatically, worth a look.
+//   relogin       the provider rejected it, or it ran out and nothing renews it: the owner
+//                 signs it in again (its `command`).
+//   separate      a program's own login next to Hermes' (the Codex CLI's `separate`): that
+//                 program renews it; only reported.
+//   unknown       nothing to say.
+export type RuntimeLoginCondition =
+  'active' | 'valid' | 'renewFailing' | 'relogin' | 'separate' | 'unknown';
+
+export function runtimeLoginCondition(
+  login: Pick<RuntimeLogin, 'state' | 'managed'> & Partial<Pick<RuntimeLogin, 'note' | 'store'>>,
+): RuntimeLoginCondition {
+  if (login.state === 'invalid') return 'relogin';
+  if (!login.managed && (login.note === 'separate' || login.store === 'codex-cli'))
+    return 'separate';
+  if (login.managed) {
+    if (login.state === 'ok' || login.state === 'expiring') return 'active';
+    if (login.state === 'error' || login.state === 'expired') return 'renewFailing';
+    return 'unknown';
+  }
+  if (login.state === 'expired') return 'relogin';
+  if (login.state === 'ok' || login.state === 'expiring') return 'valid';
+  return 'unknown';
+}
+
+// A login the owner has to sign in again: rejected, or run out with nothing renewing it.
+export function runtimeLoginNeedsOwner(
+  login: Pick<RuntimeLogin, 'state' | 'managed'> & Partial<Pick<RuntimeLogin, 'note' | 'store'>>,
+): boolean {
+  return runtimeLoginCondition(login) === 'relogin';
 }
 
 // ── Checking what a source hands over ───────────────────────────────────────────────────

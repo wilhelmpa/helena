@@ -1,3 +1,4 @@
+import type { RuntimeLocalAi } from './local-ai';
 import type { McpServerSpec, RuntimeId } from './runtime-profile';
 
 // What Helena hands a runner for one agent (GET /agent-runtime/policy): its instructions,
@@ -114,6 +115,9 @@ export interface RuntimePolicySnapshot {
   memoryWrites?: RuntimeMemoryPolicy;
   // Helena's settings for Hermes' own configuration. An older server sends none.
   hermes?: RuntimeHermesSettings;
+  // The local model servers and the helper calls that go there first, while local AI is on
+  // (docs/helena-decisions/local-ai-platform.md). Absent while it is off.
+  localAi?: RuntimeLocalAi | null;
   // The owner's decisions on what the agent learned, not carried out yet.
   actions?: RuntimeAction[];
 }

@@ -1,0 +1,153 @@
+{
+  "title": "Local AI",
+  "units": {
+    "gpu": "GPU",
+    "npu": "NPU",
+    "cpu": "CPU"
+  },
+  "unitStates": {
+    "off": "off",
+    "missing": "not available",
+    "idle": "idle",
+    "busy": "working"
+  },
+  "card": {
+    "loading": "Loading …",
+    "noServer": "No server",
+    "off": "Off",
+    "serverDown": "Server not reachable",
+    "on": "On",
+    "master": "Use local AI",
+    "classes": "Work that runs locally first",
+    "share": "{percent} % of the agents' tokens stayed local ({days} days)",
+    "latency": "Server answers in {ms} ms",
+    "settings": "Settings",
+    "unitSwitch": "Use the {unit}",
+    "vram": "{used} of {total}",
+    "noModel": "No model loaded"
+  },
+  "blockers": {
+    "not-wired": "Not connected yet",
+    "no-model": "No suitable model",
+    "eval-missing": "Evaluation needed",
+    "eval-failed": "Evaluation failed"
+  },
+  "jev": {
+    "label": "Jev / Laya (browser steps)",
+    "experimental": "Experimental",
+    "connect": "Add a connection"
+  },
+  "classesTitle": "Kinds of work",
+  "classesDescription": "Local AI never replaces a configured model: where it is on, it is tried first, and the configured model answers whenever it is off, down, too slow or wrong. A kind of work can be switched on once its evaluation passed.",
+  "planned": "Planned",
+  "model": "Model",
+  "mode": "Mode",
+  "autoModel": "Automatic ({model})",
+  "modes": {
+    "off": "Off",
+    "prefer": "Local first",
+    "only": "Local only"
+  },
+  "eval": {
+    "result": "{score} % (needs {threshold} %)",
+    "latency": "median {ms} ms",
+    "speed": "{tps} tok/s",
+    "none": "Not evaluated yet",
+    "run": "Evaluate",
+    "done": "Evaluation finished: {score} %"
+  },
+  "servers": {
+    "title": "Model servers",
+    "description": "Lemonade on this machine (GPU and NPU) or another OpenAI-compatible server. Its models appear in every model picker while local AI is on.",
+    "add": "Add server",
+    "none": "No server yet. Install local AI with native/local-ai/install.sh, then add it here.",
+    "reachable": "Reachable · {version}",
+    "reachableBare": "Reachable",
+    "unreachable": "Not reachable",
+    "keys": {
+      "file": "Key from file",
+      "stored": "Key stored in Helena",
+      "none": "No key",
+      "invalid": "Key file not allowed"
+    },
+    "context": "{tokens} tokens context",
+    "enabled": "Server enabled",
+    "check": "Check",
+    "remove": "Remove server",
+    "removeConfirm": "Remove {name}? Agents fall back to their configured models.",
+    "loaded": "Loaded",
+    "notDownloaded": "Not downloaded",
+    "kind": "Type",
+    "slug": "Short name (never changes)",
+    "name": "Name",
+    "baseUrl": "Address of the OpenAI-compatible API",
+    "keySource": "Key",
+    "keyFile": "Key file (below /etc/helena)",
+    "key": "Key",
+    "cancel": "Cancel",
+    "save": "Add"
+  },
+  "presets": {
+    "title": "Preset",
+    "description": "Switches the kinds of work at once, as far as their evaluations passed.",
+    "sparsam": "Economical",
+    "ausgewogen": "Balanced",
+    "qualitaet": "Quality",
+    "eigene": "Custom",
+    "sparsamHint": "Everything that passed its evaluation runs locally first; saves the most subscription limit.",
+    "ausgewogenHint": "Embeddings, Hermes' helper calls, summaries, triage and transcription locally; agents' real work stays on the configured models.",
+    "qualitaetHint": "Only embeddings and transcription locally; everything else on the configured models.",
+    "eigeneHint": "The kinds of work as set below."
+  },
+  "serverTypes": {
+    "lemonade": "Lemonade Server (GPU + NPU)",
+    "openaiCompatible": "OpenAI-compatible server"
+  },
+  "classes": {
+    "embeddings": {
+      "label": "Embeddings (search)",
+      "description": "Vectors for semantic search in the knowledge base; while the server is down, search answers from full text."
+    },
+    "hermes-helpers": {
+      "label": "Hermes helper calls",
+      "description": "Context compression and image descriptions; the agent's main model answers when the local one fails."
+    },
+    "summaries": {
+      "label": "Summaries and digests",
+      "description": "Update digests, run, activity and mail summaries, briefings."
+    },
+    "triage": {
+      "label": "Triage and routing",
+      "description": "Sorting incoming work: category, priority, which agent."
+    },
+    "transcription": {
+      "label": "Transcription (dictation)",
+      "description": "Speech to text for dictation and voice mode (Whisper on the NPU)."
+    },
+    "routines": {
+      "label": "Routine agents",
+      "description": "Scheduled routines try the local workhorse model first, with the agent's configured model as fallback."
+    },
+    "reflection": {
+      "label": "Nightly reflection",
+      "description": "What a run taught, skill curation: batch work at night on the heavy local model."
+    },
+    "coordinator-triage": {
+      "label": "Coordinator first pass",
+      "description": "A coordinator's first look at a new task; anything real escalates to its configured model."
+    }
+  },
+  "updates": {
+    "label": "Local AI",
+    "hint": "Update through native/local-ai/install.sh, then evaluate again."
+  },
+  "pickerMark": "local",
+  "tile": {
+    "offSub": "As configured"
+  },
+  "problems": {
+    "serverDown": "Local AI: {name} does not answer",
+    "evalFailed": "Local AI: “{class}” failed its eval",
+    "evalFailedDetail": "{model} – the configured model answers until an eval passes"
+  }
+}

@@ -1,0 +1,429 @@
+{
+  "title": "Server",
+  "areas": {
+    "overview": "Ringkasan",
+    "disks": "Disk dan RAID",
+    "backup": "Cadangan",
+    "power": "Daya dan kipas",
+    "updates": "Pembaruan"
+  },
+  "capabilities": {
+    "system": "Mesin",
+    "storage": "Disk dan RAID",
+    "backup": "Cadangan",
+    "power": "Daya dan kipas"
+  },
+  "refresh": "Baca ulang",
+  "refreshing": "Membaca…",
+  "readFailed": "Helper host tidak menjawab. Mungkin helper sedang tidak berjalan.",
+  "unavailable": {
+    "title": "Tidak ada yang perlu dikelola di sini",
+    "noHelper": "Helena berjalan tanpa helper host (misalnya di dalam kontainer). Disk, cadangan, dan kipas lalu dikelola di luar Helena.",
+    "failed": "Helper host tidak menjawab."
+  },
+  "health": {
+    "raidRebuilding": "Mirror {name} sedang dibangun ulang: {percent}, sekitar {remaining} lagi. Sampai selesai, hanya ada satu salinan.",
+    "raidDegraded": "Mirror {name} tidak lengkap: {missing, plural, other {# disk hilang}}.",
+    "raidChecking": "Mirror {name} sedang diperiksa: {percent}, sekitar {remaining} lagi.",
+    "raidResyncing": "Mirror {name} sedang disinkronkan ulang: {percent}.",
+    "raidMismatches": "Mirror {name}: {count, plural, other {# ketidakcocokan}} pada pemeriksaan terakhir.",
+    "raidOk": "Mirror {name}: {disks, plural, other {# disk}}, sinkron.",
+    "diskUnknown": "Disk {disk}: kondisi tidak terbaca.",
+    "diskFailing": "Disk {disk} melaporkan kerusakan. Ganti disk ini.",
+    "diskSpareLow": "Disk {disk}: blok pengganti hampir habis ({spare} %). Ganti disk ini.",
+    "diskErrors": "Disk {disk}: {count, plural, other {# galat baca}} dilaporkan.",
+    "diskWorn": "Disk {disk} sudah aus {wear} %.",
+    "diskHot": "Disk {disk} panas ({temperature}).",
+    "diskOk": "Disk {disk}: sehat, {temperature}, aus {wear} %.",
+    "espNotMounted": "Partisi EFI {mount} tidak terpasang.",
+    "espOutOfSync": "Kedua partisi EFI berbeda ({count, plural, other {# file}}).",
+    "espInSync": "Kedua partisi EFI sama.",
+    "eventsCritical": "{count, plural, other {# laporan serius}} dari mdadm atau smartd, belum dilihat.",
+    "backupNotInitialized": "Cadangan sudah terpasang, tetapi belum disiapkan.",
+    "backupRunning": "Pencadangan pertama sedang berjalan.",
+    "backupNever": "Belum ada cadangan.",
+    "backupFailed": "Pencadangan terakhir gagal ({at} lalu).",
+    "backupLate": "Pencadangan terakhir {at} lalu, lebih lama dari jadwal.",
+    "backupOk": "Pencadangan terakhir {at} lalu.",
+    "backupPasswordPending": "Kata sandi cadangan belum dicatat.",
+    "backupCheckFailed": "Pemeriksaan cadangan gagal.",
+    "restoreTestFailed": "Uji pemulihan gagal.",
+    "backupTargetFailed": "Penyalinan ke {target} gagal.",
+    "fansRaised": "Kipas dinaikkan ke level 5: CPU pada {temperature}.",
+    "cpuHot": "CPU panas: {temperature}.",
+    "cpuTemperature": "CPU {temperature}.",
+    "fansFixed": "Kipas di level {level}.",
+    "fansAuto": "Kipas otomatis.",
+    "memoryPressure": "Memori menipis: hanya {available} yang bebas.",
+    "memoryOk": "Memori: {available} bebas.",
+    "healthFailed": "Kondisi tidak dapat dibaca.",
+    "localAiServerUp": "AI lokal: {name} terjangkau",
+    "localAiServerDown": "AI lokal: {name} tidak menjawab"
+  },
+  "overview": {
+    "machine": "Mesin",
+    "board": "Papan induk",
+    "cpu": "Prosesor",
+    "threads": "{count} thread",
+    "hostname": "Nama",
+    "kernel": "Kernel",
+    "uptime": "Menyala selama",
+    "load": "Beban (1 · 5 · 15 mnt)",
+    "memory": "Memori",
+    "memorySystem": "RAM untuk sistem",
+    "memoryAvailable": "Yang bebas",
+    "memoryGpu": "Dicadangkan untuk GPU",
+    "memoryGpuUsed": "Dipakai GPU",
+    "swap": "Swap",
+    "swapUsed": "{used} dari {total}",
+    "health": "Kondisi",
+    "helper": "Helper host {version}"
+  },
+  "disks": {
+    "arrays": "Mirror",
+    "noArrays": "Tidak ada RAID di mesin ini.",
+    "arrayTitle": "Mirror {name} ({level})",
+    "diskLetter": "Disk {letter}",
+    "serial": "Nomor seri {serial}",
+    "checkStart": "Mulai pemeriksaan",
+    "checkStop": "Hentikan pemeriksaan",
+    "checkStarted": "Pemeriksaan sedang berjalan.",
+    "checkStopped": "Pemeriksaan dihentikan.",
+    "checkConfirmTitle": "Periksa mirror?",
+    "checkConfirmBody": "Membaca kedua disk sepenuhnya dan membandingkannya (sama dengan pemeriksaan bulanan otomatis). Ini memakan beberapa jam dan sedikit memperlambat disk; Helena tetap berjalan.",
+    "syncAction": {
+      "idle": "Diam",
+      "resync": "Sinkron ulang",
+      "recover": "Bangun ulang",
+      "check": "Pemeriksaan",
+      "repair": "Perbaikan",
+      "reshape": "Pembentukan ulang",
+      "frozen": "Dibekukan"
+    },
+    "syncProgress": "{action}: {percent} · sekitar {remaining} lagi · {speed}/s",
+    "member": {
+      "inSync": "sinkron",
+      "rebuilding": "sedang dibangun ulang",
+      "faulty": "rusak",
+      "missing": "disk hilang"
+    },
+    "mismatches": "{count, plural, =0 {Tidak ada ketidakcocokan pada pemeriksaan terakhir.} other {# ketidakcocokan pada pemeriksaan terakhir.}}",
+    "selfTest": "Uji mandiri",
+    "selfTestRunning": "Uji mandiri berjalan",
+    "selfTestStarted": "Uji mandiri sedang berjalan (beberapa menit).",
+    "memberOf": "Bagian dari {arrays}",
+    "smart": {
+      "state": "SMART",
+      "passed": "OK",
+      "failing": "rusak",
+      "unknown": "tidak diketahui",
+      "temperature": "Suhu",
+      "wear": "Keausan",
+      "spare": "Blok pengganti",
+      "spareValue": "{spare} (ambang {threshold})",
+      "powerOn": "Jam menyala",
+      "hours": "{hours, number} jam",
+      "written": "Tertulis",
+      "mediaErrors": "Galat baca",
+      "unsafeShutdowns": "Mati tidak aman",
+      "firmware": "Firmware",
+      "none": "Disk ini tidak memberikan data SMART."
+    },
+    "boot": {
+      "title": "Boot",
+      "espInSync": "Partisi EFI sama: {mounts}",
+      "espDiffer": "Partisi EFI berbeda ({count, plural, other {# file}}). Keduanya disamakan setelah setiap pembaruan paket.",
+      "espMissing": "Tidak terpasang: {mounts}",
+      "espUnknown": "Keadaan partisi EFI tidak diketahui.",
+      "current": "boot saat ini",
+      "next": "boot berikutnya",
+      "first": "pertama",
+      "none": "Tidak ada entri boot EFI yang terbaca.",
+      "reserveOnce": "Boot sekali dari serep",
+      "cancel": "Batalkan boot dari serep",
+      "canceled": "Boot berikutnya kembali memakai urutan normal.",
+      "set": "Saat dimulai ulang berikutnya, mesin melakukan boot dari disk serep.",
+      "pending": "Saat dimulai ulang berikutnya, mesin melakukan boot sekali dari disk serep; setelah itu kembali normal.",
+      "confirmTitle": "Boot sekali dari disk serep?",
+      "confirmBody": "Saat dimulai ulang berikutnya, mesin melakukan boot sekali melalui entri “Debian (Reserve)” dari disk kedua. Ini membuktikan bahwa mesin juga bisa menyala tanpa disk pertama. Anda sendiri yang memulai ulang; setelah itu urutan normal berlaku lagi."
+    },
+    "replace": {
+      "open": "Ganti disk",
+      "title": "Ganti disk mirror",
+      "intro": "Langkah demi langkah, dengan perintah untuk mesin ini. Helena tidak menjalankannya: Anda mengetiknya di terminal pemilik. Sementara itu, server tetap berjalan di disk yang lain.",
+      "which": "Disk mana yang dilepas?",
+      "disk": "Disk {letter}",
+      "noPlan": "Tidak ada rencana untuk disk ini: disk ini bukan bagian dari mirror, atau disk kedua yang sehat tidak ada.",
+      "step": {
+        "remove": "Keluarkan dari mirror",
+        "removeBody": "Tandai disk {disk} (partisi {partition}) sebagai rusak lalu keluarkan. Jika disk sudah tidak ada, lewati langkah ini.",
+        "swap": "Matikan dan tukar",
+        "swapBody": "Matikan mesin lalu tukar disknya. Disk baru minimal {size}. Mesin menyala dari disk {other} (setelah sekitar 20 detik, karena mirror tidak lengkap).",
+        "find": "Temukan disk baru",
+        "newDevice": "Perangkat disk baru (yang tanpa partisi)",
+        "newDeviceInvalid": "Masukkan perangkat utuh, misalnya /dev/nvme0n1.",
+        "partition": "Salin partisi",
+        "esp": "Buat partisi EFI",
+        "espBody": "Memformat partisi EFI, mendaftarkannya di /etc/fstab sebagai {mount}, dan menyalin isi {other}.",
+        "add": "Tambahkan ke mirror",
+        "addBody": "Setelah itu mirror dibangun ulang; progresnya tampil di halaman ini (beberapa jam).",
+        "boot": "Perbarui entri boot",
+        "bootBody": "Membuat entri firmware “{label}” untuk disk baru dan menghapus entri yatim. Nomor barunya ada di keluaran.",
+        "test": "Periksa",
+        "testBody": "Jika mirror menampilkan “sinkron”: boot sekali dari disk serep lewat halaman ini, lalu mulai ulang."
+      }
+    }
+  },
+  "events": {
+    "title": "Laporan",
+    "none": "Tidak ada laporan.",
+    "markSeen": "{count, plural, one {Tandai sebagai dilihat} other {Tandai # sebagai dilihat}}",
+    "source": {
+      "mdadm": "RAID",
+      "smartd": "SMART",
+      "guard": "Pelindung kipas",
+      "backup": "Cadangan"
+    },
+    "codes": {
+      "Fail": "Disk gagal",
+      "FailSpare": "Disk pengganti gagal",
+      "DegradedArray": "Mirror tidak lengkap",
+      "DeviceDisappeared": "Mirror hilang",
+      "SparesMissing": "Disk pengganti tidak ada",
+      "MoveSpare": "Disk pengganti dipindahkan",
+      "SpareActive": "Disk kembali ke mirror",
+      "NewArray": "Mirror baru",
+      "RebuildStarted": "Pembangunan ulang dimulai",
+      "RebuildProgress": "Pembangunan ulang {percent} %",
+      "RebuildFinished": "Pembangunan ulang selesai",
+      "TestMessage": "Laporan uji",
+      "Health": "SMART melaporkan kerusakan",
+      "FailedHealthCheck": "Pemeriksaan SMART gagal",
+      "Usage": "Nilai SMART melewati ambang",
+      "SelfTest": "Uji mandiri gagal",
+      "ErrorCount": "Galat baru di log",
+      "CurrentPendingSector": "Sektor tidak terbaca",
+      "OfflineUncorrectableSector": "Sektor tidak dapat dikoreksi",
+      "Temperature": "Disk terlalu panas",
+      "FailedReadSmartData": "Data SMART tidak terbaca",
+      "FailedOpenDevice": "Disk tidak dapat dijangkau",
+      "EmailTest": "Laporan uji",
+      "FansRaised": "Kipas dinaikkan",
+      "FansRestored": "Kipas kembali ke level pilihan",
+      "BackupFailed": "Pencadangan gagal",
+      "CheckFailed": "Pemeriksaan cadangan gagal",
+      "RestoreTestFailed": "Uji pemulihan gagal"
+    }
+  },
+  "backup": {
+    "runNow": "Cadangkan sekarang",
+    "running": "Berjalan…",
+    "runMaintenance": "Rapikan dan periksa",
+    "runRestoreTest": "Uji pemulihan",
+    "started": {
+      "backup": "Pencadangan sedang berjalan.",
+      "maintenance": "Perapian dan pemeriksaan sedang berjalan.",
+      "restore-test": "Uji pemulihan sedang berjalan."
+    },
+    "notSetUp": {
+      "title": "Cadangan belum disiapkan",
+      "description": "Jalankan sekali di server: membuat kata sandi dan repositori di RAID, lalu menjadwalkan pencadangan."
+    },
+    "status": "Status",
+    "runningNow": "Pencadangan sedang berjalan.",
+    "lastSnapshot": "Snapshot terakhir",
+    "added": "Baru ditambahkan",
+    "processed": "Dicadangkan",
+    "filesAndSize": "{files, number} file, {size}",
+    "repositorySize": "Ukuran cadangan",
+    "nextRun": "Pencadangan berikutnya",
+    "noNextRun": "tidak ada yang dijadwalkan",
+    "repository": "Repositori",
+    "unreadable": "{count, plural, other {# file tidak terbaca}} dan tidak ada di snapshot terakhir.",
+    "saved": "Tersimpan.",
+    "checkWeekly": "Rapikan setiap minggu dan periksa sampel",
+    "restoreTestMonthly": "Uji pemulihan setiap bulan",
+    "schedule": {
+      "title": "Jadwal dan retensi",
+      "frequency": "Seberapa sering",
+      "hourly": "Setiap jam",
+      "every6h": "Setiap 6 jam",
+      "daily": "Setiap hari",
+      "off": "Mati",
+      "time": "Waktu",
+      "minute": "Menit (dalam jam)",
+      "explain": {
+        "hourly": "Setiap jam pada menit {minute}.",
+        "every6h": "Setiap enam jam, mulai {time}.",
+        "daily": "Setiap hari pukul {time}.",
+        "off": "Tidak ada pencadangan terjadwal; “Cadangkan sekarang” tetap bisa dipakai."
+      }
+    },
+    "retention": {
+      "hourly": "Per jam",
+      "daily": "Harian",
+      "weekly": "Mingguan",
+      "monthly": "Bulanan",
+      "keepSomething": "Minimal satu snapshot harus disimpan."
+    },
+    "never": "belum pernah",
+    "okAt": "OK, {time} lalu",
+    "failedAt": "gagal, {time} lalu",
+    "checks": {
+      "title": "Pemeriksaan",
+      "maintenance": "Perapian dan pemeriksaan",
+      "restoreTest": "Uji pemulihan",
+      "restoreTestDetail": "{files} file sampel dan basis data {database} ({tables} tabel) berhasil dipulihkan.",
+      "next": "Berikutnya: pemeriksaan {maintenance}, uji pemulihan {restoreTest}."
+    },
+    "snapshots": {
+      "title": "Snapshot",
+      "count": "{count, plural, other {# snapshot}}",
+      "none": "Belum ada snapshot.",
+      "added": "+{size}",
+      "browse": "Jelajahi"
+    },
+    "restores": {
+      "title": "Pemulihan",
+      "location": "Berada di",
+      "movedAside": "Versi sebelumnya dipindahkan ke"
+    },
+    "paths": {
+      "title": "Yang dicadangkan",
+      "explain": "Ditambah basis data (pg_dump) dan file SQLite milik agen. Cache, node_modules, dan lingkungan uji agen tidak disertakan."
+    },
+    "password": {
+      "title": "Catat kata sandi cadangan",
+      "explain": "Tanpa kata sandi ini, cadangan tidak bisa dibaca, juga tidak oleh Helena setelah instalasi ulang. Tulis di kertas atau di pengelola kata sandi Anda. Setelah Anda konfirmasi, Helena tidak akan menampilkannya lagi.",
+      "show": "Tampilkan kata sandi",
+      "written": "Saya sudah mencatat kata sandi dengan aman.",
+      "confirm": "Konfirmasi",
+      "confirmed": "Terkonfirmasi. Helena tidak lagi menampilkan kata sandi."
+    },
+    "targets": {
+      "title": "Di luar lokasi",
+      "explain": "Setiap cadangan juga disalin ke penyimpanan S3 (misalnya Backblaze B2, Hetzner, Cloudflare R2). Kuncinya tetap di helper host.",
+      "repository": "Alamat S3",
+      "accessKeyId": "Access Key ID",
+      "secretAccessKey": "Secret Access Key",
+      "add": "Tambah tujuan",
+      "saved": "Tujuan tersimpan; pencadangan berikutnya akan disalin ke sana.",
+      "enabled": "Aktif",
+      "remove": "Hapus tujuan",
+      "neverCopied": "belum disalin"
+    },
+    "browse": {
+      "title": "Snapshot {snapshot}",
+      "explain": "Buka folder, lalu pulihkan file atau folder.",
+      "path": "Jalur",
+      "up": "Naik satu tingkat",
+      "empty": "Folder ini kosong.",
+      "notFound": "Folder ini tidak ada di snapshot ini.",
+      "truncated": "Hanya 2000 entri pertama.",
+      "restore": "Pulihkan",
+      "restoreWhat": "Pulihkan:",
+      "mode": {
+        "copy": "Sebagai salinan",
+        "copyHome": "Ke folder baru ~/Wiederhergestellt/…. Tidak ada yang ditimpa.",
+        "copyRoot": "Ke folder baru di /var/backups/helena/restores (hanya root). Tidak ada yang ditimpa.",
+        "original": "Di tempat asalnya",
+        "originalExplain": "Isi yang ada di sana sekarang lebih dulu dipindahkan ke ….vor-wiederherstellung-…."
+      },
+      "confirmPath": "Ketik jalurnya untuk konfirmasi",
+      "startCopy": "Pulihkan salinan",
+      "startOriginal": "Pulihkan di tempat",
+      "back": "Kembali",
+      "job": {
+        "queued": "Menunggu…",
+        "running": "Memulihkan…",
+        "done": "Selesai.",
+        "failed": "Gagal.",
+        "location": "Berada di",
+        "movedAside": "Versi sebelumnya dipindahkan ke"
+      }
+    }
+  },
+  "power": {
+    "notInstalled": {
+      "title": "Kontrol kipas dan daya belum terpasang",
+      "description": "Papan induk {board}. Kontrol ini memerlukan driver EC, ryzen_smu, ryzenadj, dan power-profiles-daemon; skrip instalasi memasangnya dan lebih dulu menyetel kipas ke level 5."
+    },
+    "profile": {
+      "title": "Profil",
+      "saver": "Hemat daya",
+      "balanced": "Seimbang",
+      "performance": "Performa",
+      "mixed": "Lapisan-lapisannya tidak sama",
+      "set": "Profil “{profile}” aktif.",
+      "partly": "Tidak semua lapisan menerapkan profil: {layers}.",
+      "explain": {
+        "saver": "BIOS senyap ({stapm} W berkelanjutan, {fast} W singkat), sistem operasi hemat daya.",
+        "balanced": "BIOS seimbang ({stapm} W berkelanjutan, {fast} W singkat), sistem operasi seimbang.",
+        "performance": "BIOS performa ({stapm} W berkelanjutan, {fast} W singkat), sistem operasi performa."
+      }
+    },
+    "layer": {
+      "ec": "BIOS (EC)",
+      "os": "Sistem operasi",
+      "ryzenadj": "Batas daya (ryzenadj)",
+      "unavailable": "tidak tersedia",
+      "ecLimits": "{stapm} W berkelanjutan · {fast} W singkat · {slow} W rata-rata",
+      "epp": "EPP {epp} · {driver}",
+      "limits": "{stapm} · {fast} · {slow}",
+      "now": "sekarang {power} · CPU {tctl} (batas {limit})",
+      "noSmu": "ryzen_smu tidak dimuat",
+      "notInstalled": "tidak terpasang"
+    },
+    "ecMode": {
+      "quiet": "Senyap",
+      "balanced": "Seimbang",
+      "performance": "Performa"
+    },
+    "osProfile": {
+      "power-saver": "Hemat daya",
+      "balanced": "Seimbang",
+      "performance": "Performa"
+    },
+    "fans": {
+      "title": "Kipas",
+      "auto": "Otomatis",
+      "level": "Level {level}",
+      "autoExplain": "EC mengatur kipas menurut kurvanya sendiri.",
+      "fixedExplain": "Ketiga kipas tetap di {percent} %.",
+      "unknown": "Belum ada pilihan.",
+      "heldByGuard": "Tersimpan. Kipas tetap di level 5 sampai CPU dingin.",
+      "guardActive": "Pelindung kipas menahan kipas di level 5 (CPU pada {temperature}, selama {since}).",
+      "rpm": "{rpm, number} rpm",
+      "name": {
+        "fan1": "Kipas CPU 1",
+        "fan2": "Kipas CPU 2",
+        "fan3": "Kipas casing"
+      }
+    },
+    "temperatures": {
+      "title": "Suhu",
+      "max": "maksimal {max}"
+    },
+    "sensor": {
+      "ec": "CPU (EC)",
+      "cpu": "CPU (Tctl)",
+      "gpu": "GPU",
+      "gpuPower": "Daya APU",
+      "nvme": "SSD {id}",
+      "board": "Papan induk"
+    },
+    "guard": {
+      "title": "Pelindung kipas",
+      "explain": "Jika kipas disetel tetap di bawah level 5 dan CPU bertahan di {limit} atau lebih selama beberapa detik, Helena menyetelnya ke level 5. Setelah dua menit di bawah {release}, level Anda kembali.",
+      "limit": "Batas",
+      "saved": "Tersimpan.",
+      "active": "Sedang menahan kipas di level 5.",
+      "watching": "Mengawasi.",
+      "waitingForDriver": "Menunggu driver EC."
+    }
+  },
+  "home": {
+    "title": "Server",
+    "allGood": "Semua baik."
+  }
+}

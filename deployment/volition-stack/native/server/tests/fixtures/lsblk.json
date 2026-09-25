@@ -1,0 +1,161 @@
+{
+   "blockdevices": [
+      {
+         "name": "nvme1n1",
+         "kname": "nvme1n1",
+         "path": "/dev/nvme1n1",
+         "type": "disk",
+         "size": 2000398934016,
+         "model": "Samsung SSD 990 PRO with Heatsink 2TB",
+         "serial": "S7TESTSERIAL0A",
+         "partlabel": null,
+         "label": null,
+         "fstype": null,
+         "mountpoints": [],
+         "pkname": null,
+         "uuid": null,
+         "partuuid": null,
+         "rota": false,
+         "tran": "nvme",
+         "children": [
+            {
+               "name": "nvme1n1p1",
+               "kname": "nvme1n1p1",
+               "path": "/dev/nvme1n1p1",
+               "type": "part",
+               "size": 2147483648,
+               "model": null,
+               "serial": null,
+               "partlabel": "HELENA-EFI-A",
+               "label": "HELENAEFIA",
+               "fstype": "vfat",
+               "mountpoints": [
+                   "/boot/efi"
+               ],
+               "pkname": "nvme1n1",
+               "uuid": "19BA-D77A",
+               "partuuid": "2a7ccb77-d727-4df5-aa1a-e619e847d2e8",
+               "rota": false,
+               "tran": "nvme"
+            },{
+               "name": "nvme1n1p2",
+               "kname": "nvme1n1p2",
+               "path": "/dev/nvme1n1p2",
+               "type": "part",
+               "size": 1998250384896,
+               "model": null,
+               "serial": null,
+               "partlabel": "HELENA-RAID-A",
+               "label": "kingston-server:helena-root",
+               "fstype": "linux_raid_member",
+               "mountpoints": [],
+               "pkname": "nvme1n1",
+               "uuid": "3a9a9cf2-5e0c-7177-3502-594f9df09b21",
+               "partuuid": "1fe4a82c-657a-4460-b39f-1c80fbf6c066",
+               "rota": false,
+               "tran": "nvme",
+               "children": [
+                  {
+                     "name": "md127",
+                     "kname": "md127",
+                     "path": "/dev/md127",
+                     "type": "raid1",
+                     "size": 1998115110912,
+                     "model": null,
+                     "serial": null,
+                     "partlabel": null,
+                     "label": "HELENA_ROOT",
+                     "fstype": "ext4",
+                     "mountpoints": [
+                         "/"
+                     ],
+                     "pkname": "nvme1n1p2",
+                     "uuid": "7a3b588b-a269-457b-a281-67748156782a",
+                     "partuuid": null,
+                     "rota": false,
+                     "tran": null
+                  }
+               ]
+            }
+         ]
+      },{
+         "name": "nvme0n1",
+         "kname": "nvme0n1",
+         "path": "/dev/nvme0n1",
+         "type": "disk",
+         "size": 2048408248320,
+         "model": "KINGSTON OM8TAP42048K1-A00",
+         "serial": "50026BTESTSERIAL",
+         "partlabel": null,
+         "label": null,
+         "fstype": null,
+         "mountpoints": [],
+         "pkname": null,
+         "uuid": null,
+         "partuuid": null,
+         "rota": false,
+         "tran": "nvme",
+         "children": [
+            {
+               "name": "nvme0n1p1",
+               "kname": "nvme0n1p1",
+               "path": "/dev/nvme0n1p1",
+               "type": "part",
+               "size": 2147483648,
+               "model": null,
+               "serial": null,
+               "partlabel": "HELENA-EFI-B",
+               "label": "HELENAEFIB",
+               "fstype": "vfat",
+               "mountpoints": [
+                   "/boot/efi2"
+               ],
+               "pkname": "nvme0n1",
+               "uuid": "E6D1-53D4",
+               "partuuid": "9da3b062-2afc-42d2-9cbb-6c9128eae4a9",
+               "rota": false,
+               "tran": "nvme"
+            },{
+               "name": "nvme0n1p2",
+               "kname": "nvme0n1p2",
+               "path": "/dev/nvme0n1p2",
+               "type": "part",
+               "size": 2046259699200,
+               "model": null,
+               "serial": null,
+               "partlabel": "HELENA-RAID-B",
+               "label": "kingston-server:helena-root",
+               "fstype": "linux_raid_member",
+               "mountpoints": [],
+               "pkname": "nvme0n1",
+               "uuid": "3a9a9cf2-5e0c-7177-3502-594f9df09b21",
+               "partuuid": "d2b9649a-80d2-4098-863f-45bdc8ee39b8",
+               "rota": false,
+               "tran": "nvme",
+               "children": [
+                  {
+                     "name": "md127",
+                     "kname": "md127",
+                     "path": "/dev/md127",
+                     "type": "raid1",
+                     "size": 1998115110912,
+                     "model": null,
+                     "serial": null,
+                     "partlabel": null,
+                     "label": "HELENA_ROOT",
+                     "fstype": "ext4",
+                     "mountpoints": [
+                         "/"
+                     ],
+                     "pkname": "nvme0n1p2",
+                     "uuid": "7a3b588b-a269-457b-a281-67748156782a",
+                     "partuuid": null,
+                     "rota": false,
+                     "tran": null
+                  }
+               ]
+            }
+         ]
+      }
+   ]
+}

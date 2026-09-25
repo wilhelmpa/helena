@@ -19,6 +19,7 @@ export type UiSlotName =
   | 'header-action'
   | 'home-nav'
   | 'admin-section'
+  | 'server-section'
   | 'capture-action'
   | 'workspace-layout';
 
@@ -91,15 +92,46 @@ export interface AgentSectionSlot extends SlotBase {
   render: SlotRender<AgentSectionProps>;
 }
 
+// Where a dashboard widget can appear: Start (every reader's own dashboard, `home`) and a
+// project's dashboards (`project`).
+export type DashboardSurface = 'home' | 'project';
+
+// Who sees a widget on Start: everyone signed in, or only the instance owner (the
+// Administrator), for the machine, the plan limits and the like.
+export type DashboardAudience = 'everyone' | 'owner';
+
+// What a widget is on Start: a `figure` tile in the row at the top (a value, its label, a
+// sub-line, optionally a progress bar or a status dot; a click opens the details), or a
+// `section` below (a framed list with a label, like the sidebar's groups).
+export type DashboardWidgetKind = 'figure' | 'section';
+
 export interface DashboardWidgetProps {
+  // The project a project dashboard shows; null on Start.
   projectKey: string | null;
   config: Record<string, unknown>;
 }
 
 export interface DashboardWidgetSlot extends SlotBase {
   slot: 'dashboard-widget';
+  // What "Anpassen" groups it under: 'work', 'agents', 'system', or a plugin's own word.
   group: string;
-  size: { w: number; h: number; minH?: number };
+  // Where it may appear. Default: ['project'].
+  surfaces?: DashboardSurface[];
+  // Start: a figure tile or a section. Default: 'section'.
+  kind?: DashboardWidgetKind;
+  // Start: who sees it. Default: 'everyone'.
+  audience?: DashboardAudience;
+  // Start, a section: half the width (the sections pair up in two columns on a wide
+  // screen) or the whole width. Default: 'half'.
+  width?: 'half' | 'full';
+  // Start, a section: how many 32px rows its placeholder takes while it loads, so nothing
+  // moves when it arrives. Default: 3.
+  rows?: number;
+  // Start: off until the reader turns it on in "Anpassen".
+  hiddenByDefault?: boolean;
+  // A project dashboard's grid (12 columns, 40px rows); required there.
+  size?: { w: number; h: number; minH?: number };
+  // A figure tile's frame is one tile high (80px); a section's is `rows` × 32px.
   render: SlotRender<DashboardWidgetProps>;
 }
 
@@ -119,6 +151,15 @@ export interface HomeNavSlot extends SlotBase {
 export interface AdminSectionSlot extends SlotBase {
   slot: 'admin-section';
   group: 'management' | 'instance';
+  render: SlotRender<Record<string, never>>;
+}
+
+// A section of Administrator → Server (docs/helena-decisions/server-admin.md): a status or a
+// control of the machine, shown on one of the Server tabs (`overview`, `disks`, `backup`,
+// `power`, `updates`), below the tab's own sections. Local AI's GPU/NPU status is one.
+export interface ServerSectionSlot extends SlotBase {
+  slot: 'server-section';
+  area: string;
   render: SlotRender<Record<string, never>>;
 }
 
@@ -169,6 +210,7 @@ export type UiSlot =
   | HeaderActionSlot
   | HomeNavSlot
   | AdminSectionSlot
+  | ServerSectionSlot
   | CaptureActionSlot
   | WorkspaceLayoutSlot;
 

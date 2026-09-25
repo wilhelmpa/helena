@@ -1,0 +1,93 @@
+{
+  "in": "in {time}",
+  "widgetFailed": "Not available right now",
+  "customize": {
+    "title": "Customize",
+    "description": "What Start shows and in which order. Saved with your account.",
+    "figures": "Figures",
+    "sections": "Sections",
+    "drag": "Move {name}",
+    "up": "Move {name} up",
+    "down": "Move {name} down",
+    "show": "Show {name}",
+    "reset": "Restore defaults",
+    "done": "Done"
+  },
+  "widgets": {
+    "waiting": "Waiting for you",
+    "agents": "Agents working",
+    "tasks": "My tasks",
+    "limits": "Plan limits",
+    "system": "System",
+    "updates": "Updates",
+    "needs-you": "Needs you",
+    "my-tasks": "My tasks",
+    "running": "Running now",
+    "schedules": "Coming up",
+    "projects": "Projects"
+  },
+  "figures": {
+    "problems": "{count, plural, one {# problem} other {# problems}}",
+    "failed": "{count} failed",
+    "nothingWaits": "Nothing waits",
+    "lastFinished": "last finished {time} ago",
+    "nobodyWorks": "Nobody is working",
+    "overdue": "{count} overdue",
+    "nextDue": "next due {date}"
+  },
+  "links": {
+    "all": "All",
+    "activity": "Activity",
+    "schedules": "Schedules"
+  },
+  "needsYou": {
+    "empty": "Nothing needs you right now.",
+    "proposals": "{count, plural, one {# proposal waits} other {# proposals wait}}",
+    "chatFailed": "Chat answer failed",
+    "hide": "Hide",
+    "more": "{count} more",
+    "aged": "{count, plural, one {# older failure} other {# older failures}}",
+    "hidden": "{count} hidden"
+  },
+  "problems": {
+    "serviceDown": "{service} is not reachable",
+    "relogin": "Sign in to {provider} again",
+    "rejected": "rejected by the provider",
+    "ranOut": "ran out, nothing renews it",
+    "securityCheck": "Security check failed",
+    "securityChecks": "{count} security checks failed"
+  },
+  "agents": {
+    "empty": "No agent is working right now.",
+    "waiting": "waiting",
+    "finished": "Finished lately"
+  },
+  "tasks": {
+    "empty": "No open task is assigned to you."
+  },
+  "schedules": {
+    "empty": "Nothing scheduled."
+  },
+  "projects": {
+    "empty": "No projects yet."
+  },
+  "system": {
+    "title": "System",
+    "ok": "All running",
+    "problems": "{count, plural, one {# problem} other {# problems}}",
+    "counts": "{services} services · {agents} agents",
+    "areas": {
+      "services": "Services",
+      "logins": "Logins",
+      "janitors": "Maintenance",
+      "agents": "Agents",
+      "runs": "Runs",
+      "server": "Server"
+    },
+    "glance": {
+      "raidOk": "RAID ok",
+      "backup": "backup {at} ago",
+      "cpu": "CPU {temperature}"
+    }
+  }
+}

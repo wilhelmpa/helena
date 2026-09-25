@@ -279,3 +279,6 @@ export const inviteLink = (origin: string, token: string) => `${origin}/invite/$
 
 // God mode: instance administration, outside the project shell (see GOD_SECTIONS).
 export const godPath = (section: string) => `/god/${section}`;
+
+// Administrator → Server, one route per tab (overview, disks, backup, power, updates).
+export const serverPath = (tab: string) => `/god/server/${tab}`;

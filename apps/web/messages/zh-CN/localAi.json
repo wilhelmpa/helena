@@ -1,0 +1,153 @@
+{
+  "title": "本地 AI",
+  "units": {
+    "gpu": "GPU",
+    "npu": "NPU",
+    "cpu": "CPU"
+  },
+  "unitStates": {
+    "off": "已关闭",
+    "missing": "不可用",
+    "idle": "空闲",
+    "busy": "工作中"
+  },
+  "card": {
+    "loading": "加载中 …",
+    "noServer": "无服务器",
+    "off": "关闭",
+    "serverDown": "服务器无法访问",
+    "on": "开启",
+    "master": "使用本地 AI",
+    "classes": "优先在本地运行的工作",
+    "share": "{percent} % 的智能体 token 留在本地（{days} 天）",
+    "latency": "服务器 {ms} 毫秒内响应",
+    "settings": "设置",
+    "unitSwitch": "使用 {unit}",
+    "vram": "{used} / {total}",
+    "noModel": "未加载模型"
+  },
+  "blockers": {
+    "not-wired": "尚未接入",
+    "no-model": "没有合适的模型",
+    "eval-missing": "需要评估",
+    "eval-failed": "评估未通过"
+  },
+  "jev": {
+    "label": "Jev / Laya（浏览器步骤）",
+    "experimental": "实验性",
+    "connect": "添加连接"
+  },
+  "classesTitle": "工作类型",
+  "classesDescription": "本地 AI 永远不会替代已配置的模型：开启时先尝试本地，一旦本地关闭、无法访问、过慢或出错，就由已配置的模型回答。某类工作只有在评估通过后才能开启。",
+  "planned": "计划中",
+  "model": "模型",
+  "mode": "模式",
+  "autoModel": "自动（{model}）",
+  "modes": {
+    "off": "关闭",
+    "prefer": "优先本地",
+    "only": "仅本地"
+  },
+  "eval": {
+    "result": "{score} %（需要 {threshold} %）",
+    "latency": "中位数 {ms} 毫秒",
+    "speed": "{tps} token/秒",
+    "none": "尚未评估",
+    "run": "评估",
+    "done": "评估完成：{score} %"
+  },
+  "servers": {
+    "title": "模型服务器",
+    "description": "本机上的 Lemonade（GPU 和 NPU）或其他兼容 OpenAI 的服务器。本地 AI 开启时，其模型会出现在每个模型选择器中。",
+    "add": "添加服务器",
+    "none": "还没有服务器。先用 native/local-ai/install.sh 安装本地 AI，再在这里添加。",
+    "reachable": "可访问 · {version}",
+    "reachableBare": "可访问",
+    "unreachable": "无法访问",
+    "keys": {
+      "file": "从文件读取密钥",
+      "stored": "密钥保存在 Helena 中",
+      "none": "无密钥",
+      "invalid": "不允许的密钥文件"
+    },
+    "context": "{tokens} token 上下文",
+    "enabled": "服务器已启用",
+    "check": "检查",
+    "remove": "移除服务器",
+    "removeConfirm": "移除 {name}？智能体将回到其已配置的模型。",
+    "loaded": "已加载",
+    "notDownloaded": "未下载",
+    "kind": "类型",
+    "slug": "短名称（不会改变）",
+    "name": "名称",
+    "baseUrl": "兼容 OpenAI 的 API 地址",
+    "keySource": "密钥",
+    "keyFile": "密钥文件（位于 /etc/helena 下）",
+    "key": "密钥",
+    "cancel": "取消",
+    "save": "添加"
+  },
+  "presets": {
+    "title": "预设",
+    "description": "一次性开启各类工作，前提是它们的评估已通过。",
+    "sparsam": "节省",
+    "ausgewogen": "均衡",
+    "qualitaet": "质量",
+    "eigene": "自定义",
+    "sparsamHint": "凡是评估通过的工作都优先在本地运行；最节省订阅额度。",
+    "ausgewogenHint": "嵌入、Hermes 辅助调用、摘要、分拣和转写在本地；智能体的正式工作仍用已配置的模型。",
+    "qualitaetHint": "只有嵌入和转写在本地；其余都用已配置的模型。",
+    "eigeneHint": "按下方设置的工作类型。"
+  },
+  "serverTypes": {
+    "lemonade": "Lemonade Server（GPU + NPU）",
+    "openaiCompatible": "兼容 OpenAI 的服务器"
+  },
+  "classes": {
+    "embeddings": {
+      "label": "嵌入（搜索）",
+      "description": "用于知识库语义搜索的向量；服务器无法访问时，搜索改用全文。"
+    },
+    "hermes-helpers": {
+      "label": "Hermes 辅助调用",
+      "description": "上下文压缩和图片描述；本地模型失败时由智能体的主模型回答。"
+    },
+    "summaries": {
+      "label": "摘要与简报",
+      "description": "更新简报、运行、活动和邮件摘要、每日简报。"
+    },
+    "triage": {
+      "label": "分拣与分派",
+      "description": "整理进来的工作：类别、优先级、交给哪个智能体。"
+    },
+    "transcription": {
+      "label": "转写（听写）",
+      "description": "听写和语音模式的语音转文字（NPU 上的 Whisper）。"
+    },
+    "routines": {
+      "label": "例行任务智能体",
+      "description": "计划中的例行任务先尝试本地主力模型，以智能体已配置的模型作为后备。"
+    },
+    "reflection": {
+      "label": "夜间反思",
+      "description": "一次运行学到了什么、技能维护：夜间在大型本地模型上批量处理。"
+    },
+    "coordinator-triage": {
+      "label": "协调者初审",
+      "description": "对新任务的第一次查看；真正的工作都交给协调者已配置的模型。"
+    }
+  },
+  "updates": {
+    "label": "本地 AI",
+    "hint": "通过 native/local-ai/install.sh 更新，然后重新评估。"
+  },
+  "pickerMark": "本地",
+  "tile": {
+    "offSub": "按已配置的模型"
+  },
+  "problems": {
+    "serverDown": "本地 AI：{name} 无响应",
+    "evalFailed": "本地 AI：“{class}”未通过评估",
+    "evalFailedDetail": "{model} – 在评估通过之前，由已配置的模型回答"
+  }
+}

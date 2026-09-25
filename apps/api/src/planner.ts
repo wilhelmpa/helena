@@ -35,6 +35,7 @@ import { agentProposalRoutes } from './modules/agents/proposals';
 import { emergencyStopRoutes } from './modules/emergency-stop';
 import { runtimeAdminRoutes } from './modules/runtime-admin';
 import { providerLimitRoutes } from './modules/provider-limits';
+import { serverRoutes } from './modules/server';
 import { updateCenterRoutes } from './modules/updates';
 import { customFieldRoutes } from './modules/custom-fields';
 import { issueTemplateRoutes } from './modules/issue-templates';
@@ -60,6 +61,7 @@ import { godRoutes } from './modules/god';
 import { pluginAdminRoutes, pluginSlotRoutes } from './modules/plugins';
 import { templateBundleRoutes } from './modules/template-bundles';
 import { modelAvailabilityRoutes } from './modules/model-availability';
+import { localAiRoutes } from './modules/local-ai';
 import { agentRunnerRoutes } from './modules/agents/runner';
 import { agentChatRoutes } from './modules/agents/chat';
 import { chatPromptRoutes } from './modules/chat-prompts';
@@ -118,7 +120,14 @@ const plannerOperations = new Elysia({ name: 'planner-operations' })
   .use(pluginAdminRoutes)
   .use(pluginSlotRoutes)
   .use(templateBundleRoutes)
-  .use(modelAvailabilityRoutes);
+  .use(modelAvailabilityRoutes)
+  .use(localAiRoutes);
+
+// Administrator → Server and its Updates tab, as one plugin: one more link in the chain below
+// would pass TypeScript's instantiation depth for the app's type (TS2589).
+const instanceHostRoutes = new Elysia({ name: 'instance-host' })
+  .use(serverRoutes)
+  .use(updateCenterRoutes);
 
 // The planner API: projects and their columns, issue types, labels, AI agents,
 // custom fields, issues, attachments, saved views, and actions. Mounted on the
@@ -190,7 +199,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(emergencyStopRoutes)
   .use(runtimeAdminRoutes)
   .use(providerLimitRoutes)
-  .use(updateCenterRoutes)
+  .use(instanceHostRoutes)
   .use(customFieldRoutes)
   .use(issueTemplateRoutes)
   .use(issueRoutes)

@@ -1,0 +1,16 @@
+#!/bin/sh
+# Starts Lemonade Server for Helena (native/local-ai/install.sh): only on 127.0.0.1, only with
+# the key. The key arrives as a systemd credential (LoadCredential in the helena drop-in), so it
+# is never in the unit's environment for `systemctl show` to print, and root reads its file.
+set -eu
+key="${CREDENTIALS_DIRECTORY:-}/api-key"
+if [ -z "${CREDENTIALS_DIRECTORY:-}" ] || [ ! -s "$key" ]; then
+  echo "helena-ai: no API key credential; Lemonade is not started without one" >&2
+  exit 1
+fi
+LEMONADE_API_KEY=$(cat "$key")
+export LEMONADE_API_KEY
+# The admin routes (/internal) take the same key.
+LEMONADE_ADMIN_API_KEY=$LEMONADE_API_KEY
+export LEMONADE_ADMIN_API_KEY
+exec /usr/bin/lemond --host 127.0.0.1 --port 13305 "$@"

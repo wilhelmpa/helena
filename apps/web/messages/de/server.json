@@ -1,0 +1,429 @@
+{
+  "title": "Server",
+  "areas": {
+    "overview": "Übersicht",
+    "disks": "Platten & RAID",
+    "backup": "Backup",
+    "power": "Leistung & Lüfter",
+    "updates": "Updates"
+  },
+  "capabilities": {
+    "system": "Maschine",
+    "storage": "Platten & RAID",
+    "backup": "Backup",
+    "power": "Leistung & Lüfter"
+  },
+  "refresh": "Neu lesen",
+  "refreshing": "Wird gelesen …",
+  "readFailed": "Der Host-Helfer hat nicht geantwortet. Er läuft vielleicht gerade nicht.",
+  "unavailable": {
+    "title": "Hier gibt es nichts zu verwalten",
+    "noHelper": "Helena läuft ohne den Host-Helfer (zum Beispiel in einem Container). Platten, Backup und Lüfter werden dann außerhalb von Helena verwaltet.",
+    "failed": "Der Host-Helfer hat nicht geantwortet."
+  },
+  "health": {
+    "raidRebuilding": "Spiegel {name} wird aufgebaut: {percent}, noch etwa {remaining}. Bis dahin gibt es nur eine Kopie.",
+    "raidDegraded": "Spiegel {name} ist unvollständig: {missing, plural, one {eine Platte fehlt} other {# Platten fehlen}}.",
+    "raidChecking": "Spiegel {name} wird geprüft: {percent}, noch etwa {remaining}.",
+    "raidResyncing": "Spiegel {name} gleicht sich ab: {percent}.",
+    "raidMismatches": "Spiegel {name}: {count, plural, one {# Abweichung} other {# Abweichungen}} bei der letzten Prüfung.",
+    "raidOk": "Spiegel {name}: {disks, plural, one {eine Platte} other {# Platten}}, gleich.",
+    "diskUnknown": "Platte {disk}: Zustand nicht lesbar.",
+    "diskFailing": "Platte {disk} meldet einen Defekt. Ersetzen.",
+    "diskSpareLow": "Platte {disk}: Reserve fast aufgebraucht ({spare} %). Ersetzen.",
+    "diskErrors": "Platte {disk}: {count, plural, one {# Lesefehler} other {# Lesefehler}} gemeldet.",
+    "diskWorn": "Platte {disk} ist zu {wear} % abgenutzt.",
+    "diskHot": "Platte {disk} ist heiß ({temperature}).",
+    "diskOk": "Platte {disk}: gesund, {temperature}, {wear} % abgenutzt.",
+    "espNotMounted": "EFI-Partition {mount} ist nicht eingehängt.",
+    "espOutOfSync": "Die beiden EFI-Partitionen unterscheiden sich ({count, plural, one {# Datei} other {# Dateien}}).",
+    "espInSync": "Beide EFI-Partitionen sind gleich.",
+    "eventsCritical": "{count, plural, one {Eine ernste Meldung} other {# ernste Meldungen}} von mdadm oder smartd, noch nicht gesehen.",
+    "backupNotInitialized": "Das Backup ist installiert, aber noch nicht eingerichtet.",
+    "backupRunning": "Das erste Backup läuft.",
+    "backupNever": "Es gibt noch kein Backup.",
+    "backupFailed": "Das letzte Backup ist fehlgeschlagen (vor {at}).",
+    "backupLate": "Das letzte Backup ist {at} her, später als geplant.",
+    "backupOk": "Letztes Backup vor {at}",
+    "backupPasswordPending": "Das Backup-Passwort ist noch nicht notiert.",
+    "backupCheckFailed": "Die Prüfung des Backups ist fehlgeschlagen.",
+    "restoreTestFailed": "Der Wiederherstellungstest ist fehlgeschlagen.",
+    "backupTargetFailed": "Die Kopie nach {target} ist fehlgeschlagen.",
+    "fansRaised": "Lüfter auf Stufe 5 angehoben: CPU bei {temperature}.",
+    "cpuHot": "CPU ist heiß: {temperature}.",
+    "cpuTemperature": "CPU {temperature}.",
+    "fansFixed": "Lüfter auf Stufe {level}.",
+    "fansAuto": "Lüfter automatisch.",
+    "memoryPressure": "Arbeitsspeicher knapp: nur noch {available} frei.",
+    "memoryOk": "Arbeitsspeicher: {available} frei.",
+    "healthFailed": "Der Zustand konnte nicht gelesen werden.",
+    "localAiServerUp": "Lokale KI: {name} ist erreichbar",
+    "localAiServerDown": "Lokale KI: {name} antwortet nicht"
+  },
+  "overview": {
+    "machine": "Maschine",
+    "board": "Board",
+    "cpu": "Prozessor",
+    "threads": "{count} Threads",
+    "hostname": "Name",
+    "kernel": "Kernel",
+    "uptime": "Läuft seit",
+    "load": "Last (1 · 5 · 15 Min.)",
+    "memory": "Arbeitsspeicher",
+    "memorySystem": "RAM fürs System",
+    "memoryAvailable": "Davon frei",
+    "memoryGpu": "GPU reserviert",
+    "memoryGpuUsed": "GPU belegt",
+    "swap": "Auslagerung",
+    "swapUsed": "{used} von {total}",
+    "health": "Zustand",
+    "helper": "Host-Helfer {version}"
+  },
+  "disks": {
+    "arrays": "Spiegel",
+    "noArrays": "Kein RAID auf dieser Maschine.",
+    "arrayTitle": "Spiegel {name} ({level})",
+    "diskLetter": "Platte {letter}",
+    "serial": "Seriennummer {serial}",
+    "checkStart": "Prüfung starten",
+    "checkStop": "Prüfung abbrechen",
+    "checkStarted": "Die Prüfung läuft.",
+    "checkStopped": "Die Prüfung ist abgebrochen.",
+    "checkConfirmTitle": "Spiegel prüfen?",
+    "checkConfirmBody": "Liest beide Platten vollständig und vergleicht sie (dasselbe, was einmal im Monat automatisch läuft). Das dauert einige Stunden und bremst die Platten etwas; Helena läuft weiter.",
+    "syncAction": {
+      "idle": "Ruht",
+      "resync": "Abgleich",
+      "recover": "Aufbau",
+      "check": "Prüfung",
+      "repair": "Reparatur",
+      "reshape": "Umbau",
+      "frozen": "Angehalten"
+    },
+    "syncProgress": "{action}: {percent} · noch etwa {remaining} · {speed}/s",
+    "member": {
+      "inSync": "gleich",
+      "rebuilding": "wird aufgebaut",
+      "faulty": "defekt",
+      "missing": "Platte fehlt"
+    },
+    "mismatches": "{count, plural, =0 {Keine Abweichungen bei der letzten Prüfung.} one {# Abweichung bei der letzten Prüfung.} other {# Abweichungen bei der letzten Prüfung.}}",
+    "selfTest": "Selbsttest",
+    "selfTestRunning": "Selbsttest läuft",
+    "selfTestStarted": "Der Selbsttest läuft (wenige Minuten).",
+    "memberOf": "Teil von {arrays}",
+    "smart": {
+      "state": "SMART",
+      "passed": "in Ordnung",
+      "failing": "defekt",
+      "unknown": "unbekannt",
+      "temperature": "Temperatur",
+      "wear": "Abnutzung",
+      "spare": "Reserve",
+      "spareValue": "{spare} (Grenze {threshold})",
+      "powerOn": "Betriebsstunden",
+      "hours": "{hours, number} h",
+      "written": "Geschrieben",
+      "mediaErrors": "Lesefehler",
+      "unsafeShutdowns": "Unsaubere Abschaltungen",
+      "firmware": "Firmware",
+      "none": "Diese Platte liefert keine SMART-Werte."
+    },
+    "boot": {
+      "title": "Starten",
+      "espInSync": "EFI-Partitionen gleich: {mounts}",
+      "espDiffer": "EFI-Partitionen unterscheiden sich ({count, plural, one {# Datei} other {# Dateien}}). Sie werden nach jedem Paket-Update angeglichen.",
+      "espMissing": "Nicht eingehängt: {mounts}",
+      "espUnknown": "Der Stand der EFI-Partitionen ist unbekannt.",
+      "current": "gestartet",
+      "next": "nächster Start",
+      "first": "zuerst",
+      "none": "Keine EFI-Starteinträge lesbar.",
+      "reserveOnce": "Einmal von Reserve starten",
+      "cancel": "Reserve-Start abbrechen",
+      "canceled": "Der nächste Start nimmt wieder die normale Reihenfolge.",
+      "set": "Beim nächsten Neustart startet die Reserve-Platte.",
+      "pending": "Der nächste Neustart startet einmal von der Reserve-Platte; danach wieder normal.",
+      "confirmTitle": "Einmal von der Reserve-Platte starten?",
+      "confirmBody": "Beim nächsten Neustart startet der Rechner einmal über den Eintrag „Debian (Reserve)“ von der zweiten Platte. So prüfst du, dass er auch ohne die erste Platte hochkommt. Neu starten musst du selbst; danach gilt wieder die normale Reihenfolge."
+    },
+    "replace": {
+      "open": "Platte ersetzen",
+      "title": "Eine Platte des Spiegels ersetzen",
+      "intro": "Schritt für Schritt, mit den Befehlen für diesen Rechner. Helena führt sie nicht aus: du gibst sie im Owner-Terminal ein. Der Server läuft währenddessen auf der anderen Platte weiter.",
+      "which": "Welche Platte kommt raus?",
+      "disk": "Platte {letter}",
+      "noPlan": "Für diese Platte gibt es keinen Plan: sie ist nicht Teil eines Spiegels, oder es fehlt eine gesunde zweite Platte.",
+      "step": {
+        "remove": "Aus dem Spiegel nehmen",
+        "removeBody": "Platte {disk} (Partition {partition}) als defekt markieren und entfernen. Fehlt sie schon, entfällt dieser Schritt.",
+        "swap": "Ausschalten und tauschen",
+        "swapBody": "Rechner herunterfahren, Platte tauschen. Die neue muss mindestens {size} groß sein. Beim Start kommt der Rechner von Platte {other} hoch (nach etwa 20 Sekunden, weil der Spiegel unvollständig ist).",
+        "find": "Die neue Platte finden",
+        "newDevice": "Gerät der neuen Platte (die ohne Partitionen)",
+        "newDeviceInvalid": "Bitte ein ganzes Gerät angeben, zum Beispiel /dev/nvme0n1.",
+        "partition": "Partitionen übernehmen",
+        "esp": "EFI-Partition anlegen",
+        "espBody": "Formatiert die EFI-Partition, trägt sie in /etc/fstab als {mount} ein und kopiert den Inhalt von {other}.",
+        "add": "In den Spiegel aufnehmen",
+        "addBody": "Danach baut sich der Spiegel auf; der Fortschritt steht auf dieser Seite (einige Stunden).",
+        "boot": "Starteintrag erneuern",
+        "bootBody": "Legt den Firmware-Eintrag „{label}“ für die neue Platte an und entfernt den verwaisten. Die neue Nummer steht in der Ausgabe.",
+        "test": "Prüfen",
+        "testBody": "Wenn der Spiegel „gleich“ zeigt: auf dieser Seite einmal von der Reserve-Platte starten und neu starten."
+      }
+    }
+  },
+  "events": {
+    "title": "Meldungen",
+    "none": "Keine Meldungen.",
+    "markSeen": "{count, plural, one {Als gesehen markieren} other {# als gesehen markieren}}",
+    "source": {
+      "mdadm": "RAID",
+      "smartd": "SMART",
+      "guard": "Lüfterschutz",
+      "backup": "Backup"
+    },
+    "codes": {
+      "Fail": "Platte ausgefallen",
+      "FailSpare": "Ersatzplatte ausgefallen",
+      "DegradedArray": "Spiegel unvollständig",
+      "DeviceDisappeared": "Spiegel verschwunden",
+      "SparesMissing": "Ersatzplatte fehlt",
+      "MoveSpare": "Ersatzplatte verschoben",
+      "SpareActive": "Platte wieder im Spiegel",
+      "NewArray": "Neuer Spiegel",
+      "RebuildStarted": "Aufbau gestartet",
+      "RebuildProgress": "Aufbau bei {percent} %",
+      "RebuildFinished": "Aufbau fertig",
+      "TestMessage": "Testmeldung",
+      "Health": "SMART meldet einen Defekt",
+      "FailedHealthCheck": "SMART-Prüfung fehlgeschlagen",
+      "Usage": "SMART-Wert über der Grenze",
+      "SelfTest": "Selbsttest fehlgeschlagen",
+      "ErrorCount": "Neue Fehler im Protokoll",
+      "CurrentPendingSector": "Unlesbare Sektoren",
+      "OfflineUncorrectableSector": "Nicht korrigierbare Sektoren",
+      "Temperature": "Platte zu warm",
+      "FailedReadSmartData": "SMART-Werte nicht lesbar",
+      "FailedOpenDevice": "Platte nicht erreichbar",
+      "EmailTest": "Testmeldung",
+      "FansRaised": "Lüfter angehoben",
+      "FansRestored": "Lüfter zurück auf die gewählte Stufe",
+      "BackupFailed": "Backup fehlgeschlagen",
+      "CheckFailed": "Backup-Prüfung fehlgeschlagen",
+      "RestoreTestFailed": "Wiederherstellungstest fehlgeschlagen"
+    }
+  },
+  "backup": {
+    "runNow": "Jetzt sichern",
+    "running": "Läuft …",
+    "runMaintenance": "Aufräumen und prüfen",
+    "runRestoreTest": "Wiederherstellung testen",
+    "started": {
+      "backup": "Das Backup läuft.",
+      "maintenance": "Aufräumen und Prüfung laufen.",
+      "restore-test": "Der Wiederherstellungstest läuft."
+    },
+    "notSetUp": {
+      "title": "Das Backup ist noch nicht eingerichtet",
+      "description": "Einmal auf dem Server ausführen: legt das Passwort und das Repository auf dem RAID an und plant die Sicherungen."
+    },
+    "status": "Stand",
+    "runningNow": "Ein Backup läuft gerade.",
+    "lastSnapshot": "Letzter Stand",
+    "added": "Neu dazugekommen",
+    "processed": "Gesichert",
+    "filesAndSize": "{files, number} Dateien, {size}",
+    "repositorySize": "Größe des Backups",
+    "nextRun": "Nächstes Backup",
+    "noNextRun": "keines geplant",
+    "repository": "Ablage",
+    "unreadable": "{count, plural, one {Eine Datei war nicht lesbar} other {# Dateien waren nicht lesbar}} und fehlt im letzten Stand.",
+    "saved": "Gespeichert.",
+    "checkWeekly": "Wöchentlich aufräumen und eine Stichprobe prüfen",
+    "restoreTestMonthly": "Monatlich eine Wiederherstellung testen",
+    "schedule": {
+      "title": "Zeitplan und Aufbewahrung",
+      "frequency": "Wie oft",
+      "hourly": "Stündlich",
+      "every6h": "Alle 6 Stunden",
+      "daily": "Täglich",
+      "off": "Aus",
+      "time": "Uhrzeit",
+      "minute": "Minute (Uhrzeit)",
+      "explain": {
+        "hourly": "Jede Stunde zur Minute {minute}.",
+        "every6h": "Alle sechs Stunden, beginnend {time}.",
+        "daily": "Jeden Tag um {time}.",
+        "off": "Keine geplanten Backups; „Jetzt sichern“ geht weiter."
+      }
+    },
+    "retention": {
+      "hourly": "Stündliche",
+      "daily": "Tägliche",
+      "weekly": "Wöchentliche",
+      "monthly": "Monatliche",
+      "keepSomething": "Mindestens ein Stand muss aufbewahrt werden."
+    },
+    "never": "noch nie",
+    "okAt": "in Ordnung, vor {time}",
+    "failedAt": "fehlgeschlagen, vor {time}",
+    "checks": {
+      "title": "Prüfungen",
+      "maintenance": "Aufräumen und Prüfen",
+      "restoreTest": "Wiederherstellungstest",
+      "restoreTestDetail": "{files} Stichproben-Dateien und die Datenbank {database} ({tables} Tabellen) ließen sich wiederherstellen.",
+      "next": "Als Nächstes: Prüfung {maintenance}, Wiederherstellungstest {restoreTest}."
+    },
+    "snapshots": {
+      "title": "Stände",
+      "count": "{count, plural, one {# Stand} other {# Stände}}",
+      "none": "Noch keine Stände.",
+      "added": "+{size}",
+      "browse": "Durchsuchen"
+    },
+    "restores": {
+      "title": "Wiederherstellungen",
+      "location": "Liegt in",
+      "movedAside": "Vorherige Fassung verschoben nach"
+    },
+    "paths": {
+      "title": "Was gesichert wird",
+      "explain": "Dazu die Datenbanken (pg_dump) und die SQLite-Dateien der Agenten. Caches, node_modules und die Testumgebungen der Agenten sind ausgenommen."
+    },
+    "password": {
+      "title": "Backup-Passwort notieren",
+      "explain": "Ohne dieses Passwort lässt sich das Backup nicht lesen, auch nicht von Helena nach einer Neuinstallation. Schreib es auf Papier oder in deinen Passwortmanager. Nach der Bestätigung zeigt Helena es nie wieder.",
+      "show": "Passwort anzeigen",
+      "written": "Ich habe das Passwort sicher notiert.",
+      "confirm": "Bestätigen",
+      "confirmed": "Bestätigt. Helena zeigt das Passwort nicht mehr an."
+    },
+    "targets": {
+      "title": "Außer Haus",
+      "explain": "Jedes Backup wird zusätzlich in einen S3-Speicher kopiert (zum Beispiel Backblaze B2, Hetzner, Cloudflare R2). Der Schlüssel liegt nur beim Host-Helfer.",
+      "repository": "S3-Adresse",
+      "accessKeyId": "Access Key ID",
+      "secretAccessKey": "Secret Access Key",
+      "add": "Ziel hinzufügen",
+      "saved": "Das Ziel ist gespeichert; das nächste Backup wird dorthin kopiert.",
+      "enabled": "Aktiv",
+      "remove": "Ziel entfernen",
+      "neverCopied": "noch nicht kopiert"
+    },
+    "browse": {
+      "title": "Stand {snapshot}",
+      "explain": "Ordner öffnen, dann eine Datei oder einen Ordner wiederherstellen.",
+      "path": "Pfad",
+      "up": "Eine Ebene höher",
+      "empty": "Dieser Ordner ist leer.",
+      "notFound": "Diesen Ordner gibt es in diesem Stand nicht.",
+      "truncated": "Nur die ersten 2000 Einträge.",
+      "restore": "Wiederherstellen",
+      "restoreWhat": "Wiederherstellen:",
+      "mode": {
+        "copy": "Als Kopie",
+        "copyHome": "In einen neuen Ordner ~/Wiederhergestellt/…. Nichts wird überschrieben.",
+        "copyRoot": "In einen neuen Ordner unter /var/backups/helena/restores (nur root). Nichts wird überschrieben.",
+        "original": "Am ursprünglichen Ort",
+        "originalExplain": "Was dort jetzt liegt, wird vorher nach ….vor-wiederherstellung-… verschoben."
+      },
+      "confirmPath": "Zur Bestätigung den Pfad eintippen",
+      "startCopy": "Kopie wiederherstellen",
+      "startOriginal": "Am Ort wiederherstellen",
+      "back": "Zurück",
+      "job": {
+        "queued": "Wartet …",
+        "running": "Wird wiederhergestellt …",
+        "done": "Fertig.",
+        "failed": "Fehlgeschlagen.",
+        "location": "Liegt in",
+        "movedAside": "Vorherige Fassung verschoben nach"
+      }
+    }
+  },
+  "power": {
+    "notInstalled": {
+      "title": "Lüfter- und Leistungssteuerung ist nicht installiert",
+      "description": "Board {board}. Die Steuerung braucht den EC-Treiber, ryzen_smu, ryzenadj und power-profiles-daemon; das Installationsskript richtet sie ein und stellt die Lüfter zuerst auf Stufe 5."
+    },
+    "profile": {
+      "title": "Profil",
+      "saver": "Sparsam",
+      "balanced": "Ausgewogen",
+      "performance": "Leistung",
+      "mixed": "Die Ebenen stehen unterschiedlich",
+      "set": "Profil „{profile}“ ist aktiv.",
+      "partly": "Nicht alle Ebenen haben das Profil übernommen: {layers}.",
+      "explain": {
+        "saver": "BIOS leise ({stapm} W dauerhaft, {fast} W kurz), Betriebssystem stromsparend.",
+        "balanced": "BIOS ausgewogen ({stapm} W dauerhaft, {fast} W kurz), Betriebssystem ausgewogen.",
+        "performance": "BIOS Leistung ({stapm} W dauerhaft, {fast} W kurz), Betriebssystem auf Leistung."
+      }
+    },
+    "layer": {
+      "ec": "BIOS (EC)",
+      "os": "Betriebssystem",
+      "ryzenadj": "Leistungsgrenzen (ryzenadj)",
+      "unavailable": "nicht verfügbar",
+      "ecLimits": "{stapm} W dauerhaft · {fast} W kurz · {slow} W Mittel",
+      "epp": "EPP {epp} · {driver}",
+      "limits": "{stapm} · {fast} · {slow}",
+      "now": "jetzt {power} · CPU {tctl} (Grenze {limit})",
+      "noSmu": "ryzen_smu nicht geladen",
+      "notInstalled": "nicht installiert"
+    },
+    "ecMode": {
+      "quiet": "Leise",
+      "balanced": "Ausgewogen",
+      "performance": "Leistung"
+    },
+    "osProfile": {
+      "power-saver": "Stromsparen",
+      "balanced": "Ausgewogen",
+      "performance": "Leistung"
+    },
+    "fans": {
+      "title": "Lüfter",
+      "auto": "Automatisch",
+      "level": "Stufe {level}",
+      "autoExplain": "Der EC regelt die Lüfter nach seiner eigenen Kurve.",
+      "fixedExplain": "Alle drei Lüfter fest auf {percent} %.",
+      "unknown": "Noch keine Wahl getroffen.",
+      "heldByGuard": "Gespeichert. Die Lüfter bleiben auf Stufe 5, bis die CPU abgekühlt ist.",
+      "guardActive": "Der Lüfterschutz hält die Lüfter auf Stufe 5 (CPU bei {temperature}, seit {since}).",
+      "rpm": "{rpm, number} U/min",
+      "name": {
+        "fan1": "CPU-Lüfter 1",
+        "fan2": "CPU-Lüfter 2",
+        "fan3": "Gehäuselüfter"
+      }
+    },
+    "temperatures": {
+      "title": "Temperaturen",
+      "max": "höchstens {max}"
+    },
+    "sensor": {
+      "ec": "CPU (EC)",
+      "cpu": "CPU (Tctl)",
+      "gpu": "GPU",
+      "gpuPower": "APU-Leistung",
+      "nvme": "SSD {id}",
+      "board": "Mainboard"
+    },
+    "guard": {
+      "title": "Lüfterschutz",
+      "explain": "Stehen die Lüfter fest unter Stufe 5 und bleibt die CPU einige Sekunden bei {limit} oder mehr, stellt Helena sie auf Stufe 5. Unter {release} für zwei Minuten kommt deine Stufe zurück.",
+      "limit": "Grenze",
+      "saved": "Gespeichert.",
+      "active": "Hält die Lüfter gerade auf Stufe 5.",
+      "watching": "Wacht.",
+      "waitingForDriver": "Wartet auf den EC-Treiber."
+    }
+  },
+  "home": {
+    "title": "Server",
+    "allGood": "Alles in Ordnung."
+  }
+}

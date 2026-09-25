@@ -27,6 +27,10 @@
       "label": "Général",
       "description": "Les valeurs par défaut des nouveaux projets."
     },
+    "server": {
+      "label": "Serveur",
+      "description": "La machine sur laquelle Helena tourne : disques et RAID, sauvegardes, puissance et ventilateurs."
+    },
     "authentication": {
       "label": "Authentification",
       "description": "Qui peut s'inscrire sur cette instance, comment les comptes sont confirmés, et les fournisseurs par lesquels les utilisateurs se connectent."
@@ -78,6 +82,10 @@
     "updates": {
       "label": "Mises à jour",
       "description": "Ce qu’utilise Helena, les nouvelles versions, ce qu’elles changent, et la mise à jour."
+    },
+    "local-ai": {
+      "label": "IA locale",
+      "description": "Les serveurs de modèles de cette machine (GPU, NPU), le travail qui y passe d'abord et les évaluations derrière."
     }
   },
   "settings": {

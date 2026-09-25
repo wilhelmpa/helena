@@ -44,6 +44,7 @@ import {
   runModePreamble,
   type RunForPrompt,
 } from '../core/prompt/framing';
+import { effectiveModelNow } from '#modules/local-ai/service';
 
 // The queue an agent's runner drains. The runner is a process the operator starts on
 // their own machine; it authenticates with the agent's API key, claims one run at a
@@ -272,6 +273,14 @@ export async function expireResumeLimitedRuns(): Promise<number> {
   return rows.length;
 }
 
+async function runSettingsOf(model: string | null, thinkingLevel: string | null) {
+  const effective = await effectiveModelNow(model);
+  return {
+    model: effective,
+    thinkingLevel: effective === model ? thinkingLevel : null,
+  };
+}
+
 // Claims the agent's next due run, or null when it has none or may not start it: a
 // paused agent's runs wait in the queue. FOR UPDATE SKIP LOCKED keeps two runners on
 // the same key from taking the same run.
@@ -395,8 +404,12 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
   // The model router (docs/helena-decisions/decisions.md §4): a fresh run without a model of
   // its own may go to a cheaper model of the agent's runtime. The routed model is stored on
   // the run, so a resumed session keeps it and the model check compares against it.
-  let model = row.model ?? agent.model;
-  let thinkingLevel = row.reasoning ?? agent.thinkingLevel;
+  // A local model only while local AI is on; otherwise the agent's default runs, as without
+  // local AI (docs/helena-decisions/local-ai-platform.md §6).
+  let { model, thinkingLevel } = await runSettingsOf(
+    row.model ?? agent.model,
+    row.reasoning ?? agent.thinkingLevel,
+  );
   if (!row.model && !row.sessionId && !digest && row.trigger !== 'workspace') {
     const routed = await routeRequest({
       teamId: agent.teamId,
@@ -407,9 +420,14 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
       text: [row.issueTitle, row.prompt].filter(Boolean).join('\n\n'),
       runId: row.id,
     });
-    if (routed.route?.routed && routed.model) {
-      model = routed.model;
-      thinkingLevel = routed.thinkingLevel;
+    // A routed model that local AI would not run right now (it is off) is not taken.
+    const settled =
+      routed.route?.routed && routed.model
+        ? await runSettingsOf(routed.model, routed.thinkingLevel)
+        : null;
+    if (settled && settled.model === routed.model) {
+      model = settled.model;
+      thinkingLevel = settled.thinkingLevel;
       await db
         .update(agentRun)
         .set({ model, reasoning: thinkingLevel })

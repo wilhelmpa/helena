@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, type ReactNode } from 'react';
+import { useMemo, type CSSProperties, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import { Direction } from 'radix-ui';
 import type { WorkspaceLayoutState } from '@/hooks/useWorkspaceLayout';
@@ -104,7 +104,16 @@ export default function WorkspaceLayoutHost({
           'relative row-span-full flex min-h-0 min-w-0 flex-col overflow-hidden',
           !resolved.pageVisible && 'hidden',
         )}
-        style={{ gridColumn: geometry.pageColumn }}
+        style={{
+          gridColumn: geometry.pageColumn,
+          // How much of the page a floating panel covers, for a page that would rather
+          // make room than be covered (Start: pe-(--workspace-overlay-inset)).
+          ...(overlay && !phone && panelAreas.length > 0
+            ? ({
+                '--workspace-overlay-inset': `${Math.round(panelWidth.width)}px`,
+              } as CSSProperties)
+            : {}),
+        }}
       >
         {children}
       </div>

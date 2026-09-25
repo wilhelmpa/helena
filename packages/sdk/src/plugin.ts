@@ -2,7 +2,9 @@ import type { z } from 'zod';
 import type { Connector } from './connectors';
 import type { Logger } from './common';
 import type { EventHandler, EventInit, HelenaEvent } from './events';
+import type { LocalAiTaskClass, ModelServerType } from './local-ai';
 import type { CaptureTarget, KnowledgeSource } from './knowledge';
+import type { HostCapability } from './host';
 import type { PluginManifest, McpServerContribution } from './manifest-types';
 import type { PolicyEvaluator } from './policy';
 import type { RuntimeType } from './runtime';
@@ -58,6 +60,8 @@ export interface PluginContext {
   captureTargets: Registrar<CaptureTarget>;
   // Template bundles (agent templates, skills, MCP servers) offered for import.
   bundles: Registrar<BundleOffer>;
+  // What the machine Helena runs on offers the Administrator (disks, backups, power, …).
+  hostCapabilities: Registrar<HostCapability>;
   mcpServers: Registrar<McpServerContribution>;
   // What a runner writes into every agent's runtime profile (MCP servers, Hermes settings).
   profileContributions: Registrar<ProfileContribution>;
@@ -66,6 +70,11 @@ export interface PluginContext {
   usageLimitSources: Registrar<UsageLimitSource>;
   // Where Helena reads whether the model logins agents share are usable (API: polls).
   runtimeLoginSources: Registrar<RuntimeLoginSource>;
+  // Kinds of local model servers (Lemonade, any OpenAI-compatible server): how Helena lists
+  // their models and reads their status (API).
+  modelServers: Registrar<ModelServerType>;
+  // Kinds of work local AI may take, each with the eval it must pass first (API).
+  localAiTaskClasses: Registrar<LocalAiTaskClass>;
   // What Helena runs on and whether a newer version exists (the update center).
   updateSources: Registrar<UpdateSource>;
   // System One services the browser's fast path (browser_task) can ask (API).

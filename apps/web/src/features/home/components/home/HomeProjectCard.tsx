@@ -5,10 +5,10 @@ import type { Project } from '@/lib/api/endpoints/projects';
 import { useProjectProvisioningQuery } from '@/services/projects.service';
 import { projectPath } from '@/utils/paths';
 
-// A project on Home: one compact tile that opens the project's board. Name and key on
-// the first line (the key in mono, as in the sidebar), the team and the setup state on
-// the second, the description as one muted line. The whole tile is the link; hover
-// fills it with the sidebar's accent, the way a sidebar row answers.
+// A project on Start, inside the "Projekte" section: one compact cell that opens the
+// project's board. Name and key on the first line (the key in mono, as in the sidebar), the
+// team and the setup state on the second, the description as one muted line. The whole
+// cell is the link; hover fills it with the sidebar's accent, the way a sidebar row answers.
 export default function HomeProjectCard({ project }: { project: Project }) {
   const statusCopy = useTranslations('settings.actions.runStatus');
   const provisioning = useProjectProvisioningQuery(project.key).data;
@@ -19,7 +19,7 @@ export default function HomeProjectCard({ project }: { project: Project }) {
   return (
     <Link
       href={projectPath(project.key)}
-      className="group flex min-w-0 flex-col gap-1 rounded-lg border bg-card px-3 py-2.5 transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
+      className="group flex min-w-0 flex-col gap-1 rounded-md px-2 py-2 transition-colors hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
     >
       <div className="flex min-w-0 items-center gap-2">
         <FolderKanban className="size-4 shrink-0 text-muted-foreground group-hover:text-foreground" />

@@ -7,6 +7,8 @@ import {
 import {
   KNOWLEDGE_PLUGIN_MANIFEST,
   knowledgePlugin,
+  localAiEmbeddingRoute,
+  useEmbeddingRoute,
   useKnowledgeRegistries,
 } from '@helena/knowledge';
 import { INTEGRATIONS_PLUGIN_ID, builtinConnectors } from '@repo/agent-tools';
@@ -19,6 +21,13 @@ import { loadRepositoryBundles } from '#modules/template-bundles/service';
 import { SPOOL_SOURCE_ID, spoolLimitSource } from '#modules/provider-limits/spool';
 import { LOGIN_STATUS_SOURCE_ID, loginStatusSource } from '#modules/runtime-logins/spool';
 import { AUTOPILOT_EVALUATOR_ID, autopilotPolicyEvaluator } from '#modules/autopilot/evaluator';
+import { BUILTIN_HOST_CAPABILITIES, SERVER_PLUGIN_ID, serverPlugin } from '#modules/server/service';
+import {
+  LOCAL_AI_PERMISSIONS,
+  LOCAL_AI_PLUGIN_ID,
+  LOCAL_AI_PROVIDES,
+  localAiPlugin,
+} from '#modules/local-ai/plugin';
 import {
   BUILTIN_UPDATE_SOURCES,
   UPDATES_PLUGIN_ID,
@@ -150,6 +159,14 @@ export async function loadBuiltinPlugins(app: McpApp): Promise<void> {
       provides: { policies: [AUTOPILOT_EVALUATOR_ID] },
     }),
   );
+  // Administrator → Server (docs/helena-decisions/server-admin.md): the host's disks and RAID,
+  // backups, power and fans, through the root helper helena-hostd.
+  await host.load(
+    serverPlugin,
+    builtinManifest(SERVER_PLUGIN_ID, 'server', {
+      provides: { hostCapabilities: BUILTIN_HOST_CAPABILITIES.map((capability) => capability.id) },
+    }),
+  );
   await host.load(
     routeToolsPlugin(app),
     builtinManifest(MCP_ROUTES_PLUGIN_ID, 'mcp', {
@@ -172,6 +189,17 @@ export async function loadBuiltinPlugins(app: McpApp): Promise<void> {
       provides: { runtimeLoginSources: [LOGIN_STATUS_SOURCE_ID] },
     }),
   );
+  // Local AI: the model server types and the kinds of work it may take
+  // (docs/helena-decisions/local-ai-platform.md).
+  await host.load(
+    localAiPlugin,
+    builtinManifest(LOCAL_AI_PLUGIN_ID, 'localAi', {
+      provides: LOCAL_AI_PROVIDES,
+      permissions: LOCAL_AI_PERMISSIONS,
+    }),
+  );
+  // Embeddings from local AI while it is on for them.
+  useEmbeddingRoute(localAiEmbeddingRoute);
   // The update center (docs/helena-decisions/update-center.md): what Helena runs on and
   // whether a newer version exists.
   await host.load(

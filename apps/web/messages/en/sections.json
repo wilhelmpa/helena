@@ -27,6 +27,10 @@
       "label": "General",
       "description": "Defaults for new projects."
     },
+    "server": {
+      "label": "Server",
+      "description": "The machine Helena runs on: disks and RAID, backups, power and fans."
+    },
     "authentication": {
       "label": "Authentication",
       "description": "Who may register on this instance, how accounts are confirmed, and the providers people sign in with."
@@ -78,6 +82,10 @@
     "updates": {
       "label": "Updates",
       "description": "What Helena runs on, which new versions exist, what they change, and updating."
+    },
+    "local-ai": {
+      "label": "Local AI",
+      "description": "The model servers on this machine (GPU, NPU), which work runs there first, and the evaluations behind it."
     }
   },
   "settings": {

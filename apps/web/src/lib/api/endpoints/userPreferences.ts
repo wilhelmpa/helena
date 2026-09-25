@@ -24,6 +24,16 @@ export type IssueStatsView = 'compact' | 'timeline';
 
 export type IssueActivityView = 'flat' | 'grouped';
 
+// Start as this user arranged it (docs/helena-decisions/dashboard.md): the widgets' order,
+// the ones hidden, the ones shown although off by default, and the failures of "Braucht
+// dich" they hid.
+export interface HomeDashboardPreference {
+  order: string[];
+  hidden: string[];
+  shown: string[];
+  dismissed: string[];
+}
+
 export interface AccountPreferences {
   timezone: string;
   // The interface language. Mirrored into the NEXT_LOCALE cookie, which is what the
@@ -48,6 +58,7 @@ export interface AccountPreferences {
   // changed ones; the rest come from the instance settings, then the built-in
   // bindings (see lib/hotkeys).
   hotkeys: HotkeyOverrides;
+  homeDashboard: HomeDashboardPreference;
 }
 
 export type AccountPreferencesPatch = Partial<AccountPreferences>;

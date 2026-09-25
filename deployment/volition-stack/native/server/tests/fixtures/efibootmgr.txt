@@ -1,0 +1,5 @@
+BootCurrent: 000A
+Timeout: 2 seconds
+BootOrder: 000F,001A
+Boot000F* Debian	HD(1,GPT,2a7ccb77-d727-4df5-aa1a-e619e847d2e8,0x800,0x400000)/File(\EFI\helena-raid\shimx64.efi)
+Boot001A* Debian (Reserve)	HD(1,GPT,9da3b062-2afc-42d2-9cbb-6c9128eae4a9,0x800,0x400000)/File(\EFI\helena-raid\shimx64.efi)

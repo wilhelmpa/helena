@@ -62,6 +62,8 @@ DEFAULT_LAUNCHER_CONFIG = '/usr/local/lib/volition-isolation/launcher.json'
 DEFAULT_RUNNER_USER = 'volition-hermes'
 DEFAULT_UNIT = 'helena-token-keeper.service'
 DEFAULT_UNIT_PREFIX = 'volition-agent-'
+# isolation_common.unit_name: {prefix}{slug}--a{agent}-{kind}{work}-{nonce}.service
+AGENT_UNIT_RE = re.compile(r'^\S+?--a\d+-(?P<kind>[a-z]+)\d+-[0-9a-f]+\.service$')
 # How long an agent unit may run at most (launcher.json limits.runtimeMaxSecLimit), when the
 # launcher's configuration cannot be read.
 DEFAULT_UNIT_MAX_SECONDS = 4 * 3600
@@ -317,8 +319,20 @@ class State:
 # ── Agent units ───────────────────────────────────────────────────────────────────────────
 
 
+def is_agent_run_unit(name: str, prefix: str) -> bool:
+    """An agent's run or chat unit, the only kind that holds a login view while it runs.
+
+    The launcher names them `{prefix}{slug}--a{agent}-{kind}{work}-{nonce}.service`
+    (isolation_common.unit_name). The launcher's own services share the prefix
+    (`volition-agent-launcher`, `volition-agent-plan`) and always run, a project terminal
+    (kind `t`) runs as long as it is open, and neither uses an agent's login, so waiting for
+    them would put every refresh off until it is forced."""
+    match = AGENT_UNIT_RE.match(name)
+    return bool(match) and name.startswith(prefix) and match.group('kind') != 't'
+
+
 def running_agent_units(prefix: str, runner: Callable[..., Any] = subprocess.run) -> Optional[int]:
-    """How many agent units run now; None when systemd cannot be asked (then nobody waits)."""
+    """How many agent runs and chats run now; None when systemd cannot be asked (then nobody waits)."""
     if not shutil.which('systemctl'):
         return None
     try:
@@ -331,7 +345,8 @@ def running_agent_units(prefix: str, runner: Callable[..., Any] = subprocess.run
         return None
     if result.returncode != 0:
         return None
-    return sum(1 for line in result.stdout.splitlines() if line.strip().startswith(prefix))
+    names = (line.split()[0] for line in result.stdout.splitlines() if line.split())
+    return sum(1 for name in names if is_agent_run_unit(name, prefix))
 
 
 # ── Hermes ────────────────────────────────────────────────────────────────────────────────

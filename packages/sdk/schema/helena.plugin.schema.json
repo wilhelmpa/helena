@@ -194,6 +194,15 @@
             "maxLength": 160
           }
         },
+        "hostCapabilities": {
+          "maxItems": 500,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          }
+        },
         "profileContributions": {
           "maxItems": 500,
           "type": "array",
@@ -213,6 +222,24 @@
           }
         },
         "runtimeLoginSources": {
+          "maxItems": 500,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          }
+        },
+        "modelServers": {
+          "maxItems": 500,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          }
+        },
+        "localAiTaskClasses": {
           "maxItems": 500,
           "type": "array",
           "items": {

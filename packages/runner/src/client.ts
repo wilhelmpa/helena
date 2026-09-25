@@ -175,6 +175,20 @@ export class Client {
     return body.secrets ?? {};
   }
 
+  // The keys of the local model servers the agent's profile names (local AI), by the variable
+  // its runtime reads them from. An older server has no such route: no keys.
+  async modelServerKeys(): Promise<Record<string, string>> {
+    try {
+      const body = (await (await this.get('/agent-runtime/model-server-keys')).json()) as {
+        keys?: Record<string, string>;
+      };
+      return body.keys ?? {};
+    } catch (error) {
+      if (error instanceof RequestError && error.status === 404) return {};
+      throw error;
+    }
+  }
+
   // The login of the agent's Claude Code or Codex runtime that Helena grants it
   // ("Laufzeit-Anmeldung" in Zugänge). Named with the run or chat answer it is for, the
   // answer carries the value and the read is recorded in the audit log; without one, only

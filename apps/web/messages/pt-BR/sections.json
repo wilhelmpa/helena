@@ -27,6 +27,10 @@
       "label": "Geral",
       "description": "Padrões para novos projetos."
     },
+    "server": {
+      "label": "Servidor",
+      "description": "A máquina em que a Helena roda: discos e RAID, backups, energia e ventoinhas."
+    },
     "authentication": {
       "label": "Autenticação",
       "description": "Quem pode se registrar nesta instância, como contas são confirmadas e os provedores com que as pessoas entram."
@@ -78,6 +82,10 @@
     "updates": {
       "label": "Atualizações",
       "description": "O que o Helena usa, quais versões novas existem, o que mudam e a atualização."
+    },
+    "local-ai": {
+      "label": "IA local",
+      "description": "Os servidores de modelos desta máquina (GPU, NPU), qual trabalho roda lá primeiro e as avaliações por trás."
     }
   },
   "settings": {

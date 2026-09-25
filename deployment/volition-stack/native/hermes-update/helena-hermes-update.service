@@ -17,6 +17,11 @@ PrivateTmp=yes
 ProtectSystem=strict
 ProtectHome=read-only
 ReadWritePaths=/srv/volition/source/hermes /var/lib/volition/hermes /var/lib/helena/hermes-update
+# uv (the install step) needs a writable cache. It runs as the owner of the venv (root)
+# with HOME=/root, which ProtectHome makes read-only ("Failed to initialize cache at
+# /root/.cache/uv"). A venv of another owner would need that owner's cache here.
+CacheDirectory=helena-hermes-update
+Environment=UV_CACHE_DIR=/var/cache/helena-hermes-update
 ProtectKernelTunables=yes
 ProtectKernelModules=yes
 ProtectControlGroups=yes

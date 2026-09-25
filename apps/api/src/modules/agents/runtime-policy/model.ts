@@ -92,6 +92,39 @@ export const RuntimePolicySnapshotResponse = t.Object({
       }),
     ),
   }),
+  localAi: t.Nullable(
+    t.Object(
+      {
+        servers: t.Array(
+          t.Object({
+            provider: t.String({ description: '`helena-<slug>`, the Hermes provider name' }),
+            baseUrl: t.String(),
+            keyEnv: t.Nullable(t.String()),
+            contextLength: t.Number(),
+            models: t.Array(
+              t.Object({
+                id: t.String(),
+                contextLength: t.Nullable(t.Number()),
+                vision: t.Boolean(),
+              }),
+            ),
+          }),
+        ),
+        helpers: t.Array(
+          t.Object({
+            task: t.Union([t.Literal('compression'), t.Literal('vision')]),
+            provider: t.String(),
+            model: t.String(),
+          }),
+        ),
+      },
+      {
+        description:
+          'The local model servers and the Hermes helper calls that try them first, while local ' +
+          'AI is on; null while it is off.',
+      },
+    ),
+  ),
   actions: t.Array(runtimeActionSnapshot, {
     description: "The owner's decisions on what the agent learned, not carried out yet.",
   }),

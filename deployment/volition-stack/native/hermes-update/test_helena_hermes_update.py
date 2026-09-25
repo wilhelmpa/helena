@@ -147,5 +147,13 @@ class HelperTest(unittest.TestCase):
         self.assertFalse((self.spool / "request.json").exists())
 
 
+class UnitTest(unittest.TestCase):
+    def test_uv_gets_a_writable_cache_outside_the_read_only_home(self):
+        unit = (HERE / "helena-hermes-update.service").read_text()
+        self.assertIn("CacheDirectory=helena-hermes-update", unit)
+        self.assertIn("Environment=UV_CACHE_DIR=/var/cache/helena-hermes-update", unit)
+        self.assertIn("ProtectHome=read-only", unit)
+
+
 if __name__ == "__main__":
     unittest.main()

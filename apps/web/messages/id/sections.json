@@ -27,6 +27,10 @@
       "label": "Umum",
       "description": "Pengaturan bawaan untuk proyek baru."
     },
+    "server": {
+      "label": "Server",
+      "description": "Mesin tempat Helena berjalan: disk dan RAID, cadangan, daya, dan kipas."
+    },
     "authentication": {
       "label": "Autentikasi",
       "description": "Siapa yang boleh mendaftar di instance ini, cara akun dikonfirmasi, dan penyedia yang digunakan untuk masuk."
@@ -78,6 +82,10 @@
     "updates": {
       "label": "Pembaruan",
       "description": "Apa yang digunakan Helena, versi baru yang ada, apa yang berubah, dan memperbarui."
+    },
+    "local-ai": {
+      "label": "AI lokal",
+      "description": "Server model di mesin ini (GPU, NPU), pekerjaan yang berjalan di sana lebih dulu, dan evaluasi di baliknya."
     }
   },
   "settings": {

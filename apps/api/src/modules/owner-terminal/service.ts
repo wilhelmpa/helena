@@ -3,6 +3,7 @@ import { auth, getSessionFromHeaders } from '@repo/auth';
 import { db, getSetting, setSetting, ownerTerminalGrant, ownerTerminalAudit } from '@repo/db';
 import { HttpError } from '#shared/lib';
 import { isLanAddress } from './lan';
+import { edgeEntry } from '#modules/edge-access/service';
 import { mintOwnerTerminalToken } from './token';
 import type { OwnerTerminalKind } from './model';
 
@@ -89,7 +90,11 @@ export { isLanAddress };
 
 // True when this request may use the terminal without a grant: the owner turned
 // the step-up off (Administrator -> Sicherheit) and the request comes from the LAN.
+// A request from the internet tunnel is never the LAN, whatever address it names: nginx
+// takes the tunnel's client address from Cloudflare's header, and a mistake anywhere on
+// that path must not turn into a terminal without a code.
 async function lanBypass(request: Request): Promise<boolean> {
+  if (edgeEntry(request.headers)) return false;
   const settings = await getOwnerTerminalSettings();
   return !settings.stepUpRequired && isLanAddress(clientIp(request));
 }

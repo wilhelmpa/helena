@@ -1,0 +1,93 @@
+{
+  "in": "in {time}",
+  "widgetFailed": "Gerade nicht verfügbar",
+  "customize": {
+    "title": "Anpassen",
+    "description": "Was Start zeigt und in welcher Reihenfolge. Gespeichert in deinem Konto.",
+    "figures": "Kennzahlen",
+    "sections": "Bereiche",
+    "drag": "{name} verschieben",
+    "up": "{name} nach oben",
+    "down": "{name} nach unten",
+    "show": "{name} anzeigen",
+    "reset": "Standard wiederherstellen",
+    "done": "Fertig"
+  },
+  "widgets": {
+    "waiting": "Warten auf dich",
+    "agents": "Agenten arbeiten",
+    "tasks": "Meine Aufgaben",
+    "limits": "Plan-Limits",
+    "system": "System",
+    "updates": "Updates",
+    "needs-you": "Braucht dich",
+    "my-tasks": "Meine Aufgaben",
+    "running": "Läuft gerade",
+    "schedules": "Als Nächstes",
+    "projects": "Projekte"
+  },
+  "figures": {
+    "problems": "{count, plural, one {# Problem} other {# Probleme}}",
+    "failed": "{count} fehlgeschlagen",
+    "nothingWaits": "Nichts wartet",
+    "lastFinished": "zuletzt fertig vor {time}",
+    "nobodyWorks": "Gerade arbeitet niemand",
+    "overdue": "{count} überfällig",
+    "nextDue": "nächste fällig {date}"
+  },
+  "links": {
+    "all": "Alle",
+    "activity": "Aktivität",
+    "schedules": "Zeitpläne"
+  },
+  "needsYou": {
+    "empty": "Gerade braucht dich nichts.",
+    "proposals": "{count, plural, one {# Vorschlag wartet} other {# Vorschläge warten}}",
+    "chatFailed": "Chat-Antwort fehlgeschlagen",
+    "hide": "Ausblenden",
+    "more": "{count} weitere",
+    "aged": "{count, plural, one {# ältere Störung} other {# ältere Störungen}}",
+    "hidden": "{count} ausgeblendet"
+  },
+  "problems": {
+    "serviceDown": "{service} nicht erreichbar",
+    "relogin": "{provider} neu anmelden",
+    "rejected": "vom Anbieter abgelehnt",
+    "ranOut": "abgelaufen, wird nicht erneuert",
+    "securityCheck": "Sicherheitsprüfung fehlgeschlagen",
+    "securityChecks": "{count} Sicherheitsprüfungen fehlgeschlagen"
+  },
+  "agents": {
+    "empty": "Gerade arbeitet kein Agent.",
+    "waiting": "wartet",
+    "finished": "Zuletzt fertig"
+  },
+  "tasks": {
+    "empty": "Dir ist keine offene Aufgabe zugewiesen."
+  },
+  "schedules": {
+    "empty": "Nichts geplant."
+  },
+  "projects": {
+    "empty": "Noch keine Projekte."
+  },
+  "system": {
+    "title": "System",
+    "ok": "Alles läuft",
+    "problems": "{count, plural, one {# Problem} other {# Probleme}}",
+    "counts": "{services} Dienste · {agents} Agenten",
+    "areas": {
+      "services": "Dienste",
+      "logins": "Anmeldungen",
+      "janitors": "Wartung",
+      "agents": "Agenten",
+      "runs": "Läufe",
+      "server": "Server"
+    },
+    "glance": {
+      "raidOk": "RAID ok",
+      "backup": "Backup vor {at}",
+      "cpu": "CPU {temperature}"
+    }
+  }
+}

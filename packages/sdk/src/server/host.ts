@@ -9,7 +9,9 @@ import {
   type EventBus,
   type EventInit,
 } from '../events';
+import type { HostCapability } from '../host';
 import type { CaptureTarget, KnowledgeSource } from '../knowledge';
+import type { LocalAiTaskClass, ModelServerType } from '../local-ai';
 import type { McpServerContribution, PluginManifest } from '../manifest-types';
 import type { HelenaPlugin, HostProcess, PluginContext, Registrar } from '../plugin';
 import { decide, type PolicyDecision, type PolicyEvaluator, type PolicyRequest } from '../policy';
@@ -84,10 +86,13 @@ export class PluginHost {
   readonly knowledgeSources: Registry<KnowledgeSource>;
   readonly captureTargets: Registry<CaptureTarget>;
   readonly bundles: Registry<BundleOffer>;
+  readonly hostCapabilities: Registry<HostCapability>;
   readonly mcpServers: Registry<McpServerContribution>;
   readonly profileContributions: Registry<ProfileContribution>;
   readonly usageLimitSources: Registry<UsageLimitSource>;
   readonly runtimeLoginSources: Registry<RuntimeLoginSource>;
+  readonly modelServers: Registry<ModelServerType>;
+  readonly localAiTaskClasses: Registry<LocalAiTaskClass>;
   readonly updateSources: Registry<UpdateSource>;
   readonly decisionBackends: Registry<DecisionBackendType>;
   readonly decisionClasses: Registry<DecisionClass>;
@@ -112,10 +117,13 @@ export class PluginHost {
     this.knowledgeSources = registries.knowledgeSources;
     this.captureTargets = registries.captureTargets;
     this.bundles = registries.bundles;
+    this.hostCapabilities = registries.hostCapabilities;
     this.mcpServers = registries.mcpServers;
     this.profileContributions = registries.profileContributions;
     this.usageLimitSources = registries.usageLimitSources;
     this.runtimeLoginSources = registries.runtimeLoginSources;
+    this.modelServers = registries.modelServers;
+    this.localAiTaskClasses = registries.localAiTaskClasses;
     this.updateSources = registries.updateSources;
     this.decisionBackends = registries.decisionBackends;
     this.decisionClasses = registries.decisionClasses;
@@ -232,10 +240,13 @@ export class PluginHost {
       this.knowledgeSources,
       this.captureTargets,
       this.bundles,
+      this.hostCapabilities,
       this.mcpServers,
       this.profileContributions,
       this.usageLimitSources,
       this.runtimeLoginSources,
+      this.modelServers,
+      this.localAiTaskClasses,
       this.updateSources,
       this.decisionBackends,
       this.decisionClasses,
@@ -354,6 +365,11 @@ export class PluginHost {
         const problems = validateBundle(offer.bundle);
         if (problems.length) fail(`bundle ${offer.id} is invalid: ${problems.join('; ')}`);
       }),
+      hostCapabilities: registrar(
+        this.hostCapabilities,
+        provides.hostCapabilities,
+        'hostCapabilities',
+      ),
       mcpServers: registrar(
         this.mcpServers,
         (provides.mcpServers ?? []).map((server) => server.name),
@@ -379,6 +395,12 @@ export class PluginHost {
         this.runtimeLoginSources,
         provides.runtimeLoginSources,
         'runtimeLoginSources',
+      ),
+      modelServers: registrar(this.modelServers, provides.modelServers, 'modelServers'),
+      localAiTaskClasses: registrar(
+        this.localAiTaskClasses,
+        provides.localAiTaskClasses,
+        'localAiTaskClasses',
       ),
       updateSources: registrar(this.updateSources, provides.updateSources, 'updateSources'),
       decisionBackends: registrar(

@@ -1,0 +1,93 @@
+{
+  "in": "{time}后",
+  "widgetFailed": "暂时不可用",
+  "customize": {
+    "title": "自定义",
+    "description": "首页显示哪些内容以及顺序。保存在你的账户中。",
+    "figures": "指标",
+    "sections": "板块",
+    "drag": "移动{name}",
+    "up": "上移{name}",
+    "down": "下移{name}",
+    "show": "显示{name}",
+    "reset": "恢复默认",
+    "done": "完成"
+  },
+  "widgets": {
+    "waiting": "等你处理",
+    "agents": "工作中的代理",
+    "tasks": "我的任务",
+    "limits": "套餐限额",
+    "system": "系统",
+    "updates": "更新",
+    "needs-you": "需要你处理",
+    "my-tasks": "我的任务",
+    "running": "正在运行",
+    "schedules": "即将执行",
+    "projects": "项目"
+  },
+  "figures": {
+    "problems": "{count} 个问题",
+    "failed": "{count} 个失败",
+    "nothingWaits": "暂无待办",
+    "lastFinished": "最近一次完成于 {time}前",
+    "nobodyWorks": "当前无人工作",
+    "overdue": "{count} 个已逾期",
+    "nextDue": "下一个截止 {date}"
+  },
+  "links": {
+    "all": "全部",
+    "activity": "活动",
+    "schedules": "定时任务"
+  },
+  "needsYou": {
+    "empty": "目前没有需要你处理的事项。",
+    "proposals": "{count} 条建议待处理",
+    "chatFailed": "聊天回复失败",
+    "hide": "隐藏",
+    "more": "还有 {count} 条",
+    "aged": "{count} 个较早的失败",
+    "hidden": "已隐藏 {count} 条"
+  },
+  "problems": {
+    "serviceDown": "{service} 无法访问",
+    "relogin": "重新登录 {provider}",
+    "rejected": "被提供方拒绝",
+    "ranOut": "已过期，无人续期",
+    "securityCheck": "安全检查未通过",
+    "securityChecks": "{count} 项安全检查未通过"
+  },
+  "agents": {
+    "empty": "当前没有代理在工作。",
+    "waiting": "等待中",
+    "finished": "最近完成"
+  },
+  "tasks": {
+    "empty": "没有分配给你的未完成任务。"
+  },
+  "schedules": {
+    "empty": "暂无计划。"
+  },
+  "projects": {
+    "empty": "还没有项目。"
+  },
+  "system": {
+    "title": "系统",
+    "ok": "一切正常",
+    "problems": "{count} 个问题",
+    "counts": "{services} 项服务 · {agents} 个代理",
+    "areas": {
+      "services": "服务",
+      "logins": "登录",
+      "janitors": "维护",
+      "agents": "代理",
+      "runs": "运行",
+      "server": "服务器"
+    },
+    "glance": {
+      "raidOk": "RAID 正常",
+      "backup": "{at}前备份",
+      "cpu": "CPU {temperature}"
+    }
+  }
+}
