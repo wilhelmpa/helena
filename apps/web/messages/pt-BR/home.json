@@ -54,7 +54,8 @@
     "relogin": "Entrar novamente em {provider}",
     "rejected": "recusado pelo provedor",
     "ranOut": "expirou, nada o renova",
-    "securityCheck": "Verificação de segurança falhou"
+    "securityCheck": "Verificação de segurança falhou",
+    "securityChecks": "{count} verificações de segurança falharam"
   },
   "agents": {
     "empty": "Nenhum agente trabalhando agora.",

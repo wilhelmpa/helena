@@ -54,7 +54,8 @@
     "relogin": "Volver a iniciar sesión en {provider}",
     "rejected": "rechazado por el proveedor",
     "ranOut": "caducado, nadie lo renueva",
-    "securityCheck": "Comprobación de seguridad fallida"
+    "securityCheck": "Comprobación de seguridad fallida",
+    "securityChecks": "{count} comprobaciones de seguridad fallidas"
   },
   "agents": {
     "empty": "Ahora no trabaja ningún agente.",

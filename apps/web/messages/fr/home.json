@@ -54,7 +54,8 @@
     "relogin": "Reconnecter {provider}",
     "rejected": "refusée par le fournisseur",
     "ranOut": "expirée, rien ne la renouvelle",
-    "securityCheck": "Contrôle de sécurité échoué"
+    "securityCheck": "Contrôle de sécurité échoué",
+    "securityChecks": "{count} contrôles de sécurité échoués"
   },
   "agents": {
     "empty": "Aucun agent ne travaille en ce moment.",

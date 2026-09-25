@@ -54,7 +54,8 @@
     "relogin": "سجّل الدخول مجددًا إلى {provider}",
     "rejected": "رفضه المزوّد",
     "ranOut": "انتهى ولا شيء يجدده",
-    "securityCheck": "فشل فحص الأمان"
+    "securityCheck": "فشل فحص الأمان",
+    "securityChecks": "فحوص أمان فاشلة: {count}"
   },
   "agents": {
     "empty": "لا يعمل أي وكيل الآن.",

@@ -54,7 +54,8 @@
     "relogin": "Sign in to {provider} again",
     "rejected": "rejected by the provider",
     "ranOut": "ran out, nothing renews it",
-    "securityCheck": "Security check failed"
+    "securityCheck": "Security check failed",
+    "securityChecks": "{count} security checks failed"
   },
   "agents": {
     "empty": "No agent is working right now.",

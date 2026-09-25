@@ -54,7 +54,8 @@
     "relogin": "Masuk lagi ke {provider}",
     "rejected": "ditolak penyedia",
     "ranOut": "kedaluwarsa, tidak ada yang memperbarui",
-    "securityCheck": "Pemeriksaan keamanan gagal"
+    "securityCheck": "Pemeriksaan keamanan gagal",
+    "securityChecks": "{count} pemeriksaan keamanan gagal"
   },
   "agents": {
     "empty": "Saat ini tidak ada agen yang bekerja.",

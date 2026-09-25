@@ -54,7 +54,8 @@
     "relogin": "{provider} neu anmelden",
     "rejected": "vom Anbieter abgelehnt",
     "ranOut": "abgelaufen, wird nicht erneuert",
-    "securityCheck": "Sicherheitsprüfung fehlgeschlagen"
+    "securityCheck": "Sicherheitsprüfung fehlgeschlagen",
+    "securityChecks": "{count} Sicherheitsprüfungen fehlgeschlagen"
   },
   "agents": {
     "empty": "Gerade arbeitet kein Agent.",
