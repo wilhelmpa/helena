@@ -20,10 +20,22 @@ DEFAULT_CONFIG: dict = {
     'stateDir': '/var/lib/helena/hostd',
     'runDir': '/run/helena-hostd',
     'storage': {
-        # The ESP mounts that must stay equal (the RAID layout mirrors the ESP by rsync).
+        # The ESP mounts that must stay equal (the RAID layout mirrors the ESP by rsync): the
+        # first is the source of the copy after every package change (esp.py), the second
+        # its mirror. The first belongs to the firmware entry `mainBootLabel`, the second to
+        # `reserveBootLabel` (boot.py keeps both entries right).
         'espMounts': ['/boot/efi', '/boot/efi2'],
-        # The firmware entry "Debian (Reserve)" boots from the second disk's ESP.
+        # The firmware entry "Debian" boots from the first disk's ESP, "Debian (Reserve)"
+        # from the second disk's.
+        'mainBootLabel': 'Debian',
         'reserveBootLabel': 'Debian (Reserve)',
+        # The loader both entries start (shim), as the firmware writes it: backslashes.
+        # Debian's own folder, which apt's grub-install keeps current (`helena-hostd
+        # boot-layout` moves a machine set up with EFI/helena-raid onto it; `--rollback` back).
+        'bootLoader': '\\EFI\\debian\\shimx64.efi',
+        # Loaders of the old layout that entries may still start (moved once the configured
+        # one is complete on that ESP). null: the other known loader (boot.KNOWN_LOADERS).
+        'legacyBootLoaders': None,
         # Partition labels name the disks: HELENA-RAID-A → "A".
         'diskLabelPattern': '^HELENA-(?:RAID|EFI)-([A-Z])$',
     },
@@ -136,7 +148,66 @@ def load_config(path: str = DEFAULT_CONFIG_PATH, *, require_root: bool = False) 
     for key in ('stateDir', 'runDir'):
         if not isinstance(data.get(key), str) or not data[key].startswith('/'):
             raise HostError('Config', f'{key} must be an absolute path')
+    validate_storage(data['storage'])
     return Config(data, path)
+
+
+LOADER_RE = re.compile(r'^(\\[A-Za-z0-9._-]{1,64}){2,6}\.efi$', re.IGNORECASE)
+MOUNT_RE = re.compile(r'^(/[A-Za-z0-9._-]{1,64}){1,8}$')
+
+
+def _dot_segment(path: str, separator: str) -> bool:
+    return any(part in ('.', '..') for part in path.split(separator))
+
+
+def validate_storage(storage: dict) -> None:
+    """The boot layout: the ESP mounts (absolute, different), the two entry labels (different,
+    printable) and the loader (an EFI path with backslashes). boot.py and esp.py act as root
+    on these, so a wrong value stops the helper rather than a copy or an entry going astray."""
+    mounts = storage.get('espMounts')
+    if (not isinstance(mounts, list) or len(mounts) > 2
+            or not all(isinstance(m, str) and MOUNT_RE.match(m) and not _dot_segment(m, '/') for m in mounts)
+            or len(set(mounts)) != len(mounts)):
+        raise HostError('Config', 'storage.espMounts must be up to two different absolute paths')
+    labels = [storage.get('mainBootLabel'), storage.get('reserveBootLabel')]
+    if (not all(isinstance(label, str) and 0 < len(label) <= 64 and label.isprintable() for label in labels)
+            or labels[0] == labels[1]):
+        raise HostError('Config', 'storage boot labels must be two different names')
+    loader = storage.get('bootLoader')
+    if not _loader_ok(loader):
+        raise HostError('Config', 'storage.bootLoader must look like \\EFI\\<dir>\\<file>.efi')
+    legacy = storage.get('legacyBootLoaders')
+    if legacy is not None and (not isinstance(legacy, list) or len(legacy) > 4
+                               or not all(_loader_ok(item) for item in legacy)):
+        raise HostError('Config', 'storage.legacyBootLoaders must be a list of loaders or null')
+
+
+def _loader_ok(loader: object) -> bool:
+    return isinstance(loader, str) and bool(LOADER_RE.match(loader)) and not _dot_segment(loader, '\\')
+
+
+def write_storage_override(config: Config, updates: dict) -> None:
+    """Sets (or, with None, removes) keys of the `storage` section in the config file, keeps
+    everything else as it is, and reloads the result into `config`. For the boot layout
+    change; the file stays root's, 0644."""
+    raw = json_load_file(config.path, None) if os.path.exists(config.path) else {}
+    if not isinstance(raw, dict):
+        raise HostError('Config', 'the configuration is not valid JSON')
+    section = dict(raw.get('storage') or {})
+    for key, value in updates.items():
+        if value is None:
+            section.pop(key, None)
+        else:
+            section[key] = value
+    if section:
+        raw['storage'] = section
+    else:
+        raw.pop('storage', None)
+    merged = _merge(DEFAULT_CONFIG, raw)
+    validate_storage(merged['storage'])
+    os.makedirs(os.path.dirname(config.path), exist_ok=True)
+    atomic_write_json(config.path, raw, mode=0o644)
+    config.data['storage'] = merged['storage']
 
 
 # ── Settings ─────────────────────────────────────────────────────────────────────────────

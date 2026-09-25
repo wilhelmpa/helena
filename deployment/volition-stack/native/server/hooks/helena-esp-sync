@@ -1,0 +1,6 @@
+#!/bin/sh
+# apt → Helena: after every package change the second EFI partition gets the first one's
+# content, guarded (both mounted, source complete and readable, copy verified); see
+# helena_host/esp.py. Called by /etc/apt/apt.conf.d/99helena-esp-sync; by hand as root:
+#   /usr/local/lib/helena/hostd/helena-esp-sync [--dry-run]
+exec /usr/bin/python3 -I /usr/local/lib/helena/hostd/helena-hostd esp-sync "$@"

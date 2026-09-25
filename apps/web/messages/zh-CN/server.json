@@ -38,6 +38,13 @@
     "espNotMounted": "EFI 分区 {mount} 未挂载。",
     "espOutOfSync": "两个 EFI 分区不一致（{count, plural, other {# 个文件}}）。",
     "espInSync": "两个 EFI 分区一致。",
+    "espSyncSkipped": "{at}前第二个 EFI 分区未同步：{reason, select, notMounted {{mount} 未挂载} notVfat {{mount} 不是 FAT 分区} sameDevice {两个挂载点是同一个分区} other {已跳过}}。备用盘可能会启动旧版本。",
+    "espSyncFailed": "{at}前复制到第二个 EFI 分区失败：{reason, select, sourceIncomplete {第一个分区缺少引导程序} readFailed {第一个分区无法完整读取} noRsync {缺少 rsync} rsyncFailed {写入错误} verifyFailed {副本与原件不一致} other {未知错误}}。复制成功之前，从备用盘启动并不安全。",
+    "bootEntryMissing": "缺少启动项“{label}”。{repair, select, nextBoot {Helena 会在下次启动时创建它。} diskMissing {磁盘恢复后 Helena 会创建它。} other {}}",
+    "bootEntryBroken": "启动项“{label}”无效：{problem, select, noPartuuid {固件改写了它} wrongDisk {它指向另一块磁盘} wrongLoader {它启动的是另一个文件} inactive {它已被停用} other {它不匹配}}。{repair, select, nextBoot {Helena 会在下次启动时修复它。} diskMissing {磁盘恢复后 Helena 会修复它。} other {}}",
+    "bootEntryDuplicate": "启动项“{label}”存在多个。{repair, select, nextBoot {Helena 会在下次启动时清理。} diskMissing {磁盘恢复后 Helena 会清理。} other {}}",
+    "bootLoaderMissing": "{mount} 上缺少引导程序；启动项“{label}”无法启动。",
+    "bootEntriesOk": "{count, plural, other {# 个启动项均正常。}}",
     "eventsCritical": "来自 mdadm 或 smartd 的 {count, plural, other {# 条严重报告}}尚未查看。",
     "backupNotInitialized": "备份已安装，但尚未设置。",
     "backupRunning": "首次备份正在运行。",
@@ -147,6 +154,23 @@
       "confirmTitle": "从备用盘启动一次？",
       "confirmBody": "下次重启时，机器将通过启动项“Debian (Reserve)”从第二块磁盘启动一次，以证明没有第一块磁盘也能启动。需要你自己重启；之后恢复正常顺序。"
     },
+    "recover": {
+      "open": "先检查：磁盘 {letter} 只是掉线了吗？",
+      "intro": "如果磁盘在运行中从总线上掉线（日志中有“controller is down”，镜像在没有它的情况下运行，lsblk 不再显示它），它往往并没有损坏。重启通常无法让它回来，冷启动则可以。在此之前，不要更新内核或 GRUB。",
+      "step": {
+        "poweroff": "正常关机",
+        "poweroffBody": "Helena 和智能体会停止；另一块磁盘上的镜像是完整的。",
+        "powerOn": "重新开机",
+        "powerOnBody": "按电源键，或从家庭网络中的另一台电脑通过网络唤醒（Wake-on-LAN）。",
+        "smart": "检查 SMART",
+        "smartBody": "没有介质错误且错误日志为空：磁盘正常。",
+        "readd": "重新加入镜像",
+        "readdBody": "通常 mdadm 会在启动时自动重新加入它，并在几分钟内完成同步（位图）；否则请运行此命令。下次重启前，请等镜像显示“已同步”：在此之前 GRUB 可能会读取回来的磁盘上的旧状态。",
+        "esp": "EFI 分区和启动项",
+        "espBody": "检查并挂载 {mount}，先查看启动项修复计划再执行，然后补做 EFI 复制。"
+      },
+      "replaceWhen": "如果 SMART 显示介质错误或错误日志中有条目，或者磁盘再次掉线，请更换磁盘。"
+    },
     "replace": {
       "open": "更换磁盘",
       "title": "更换镜像中的一块磁盘",
@@ -182,7 +206,9 @@
       "mdadm": "RAID",
       "smartd": "SMART",
       "guard": "风扇保护",
-      "backup": "备份"
+      "backup": "备份",
+      "esp": "EFI 复制",
+      "boot": "启动项"
     },
     "codes": {
       "Fail": "磁盘故障",
@@ -212,7 +238,13 @@
       "FansRestored": "风扇已恢复到所选档位",
       "BackupFailed": "备份失败",
       "CheckFailed": "备份检查失败",
-      "RestoreTestFailed": "恢复测试失败"
+      "RestoreTestFailed": "恢复测试失败",
+      "EspSyncSkipped": "EFI 复制已跳过",
+      "EspSyncFailed": "EFI 复制失败",
+      "EspSyncRecovered": "EFI 复制已恢复正常",
+      "BootEntryRepaired": "启动项已修复",
+      "BootEntriesMoved": "启动项已切换到新的引导程序",
+      "BootEntryRepairFailed": "启动项未修复"
     }
   },
   "backup": {

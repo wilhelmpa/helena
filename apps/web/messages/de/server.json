@@ -38,6 +38,13 @@
     "espNotMounted": "EFI-Partition {mount} ist nicht eingehängt.",
     "espOutOfSync": "Die beiden EFI-Partitionen unterscheiden sich ({count, plural, one {# Datei} other {# Dateien}}).",
     "espInSync": "Beide EFI-Partitionen sind gleich.",
+    "espSyncSkipped": "Die zweite EFI-Partition wurde vor {at} nicht angeglichen: {reason, select, notMounted {{mount} war nicht eingehängt} notVfat {{mount} ist keine FAT-Partition} sameDevice {beide Einhängepunkte sind dieselbe Partition} other {übersprungen}}. Die Reserve-Platte startet so vielleicht einen alten Stand.",
+    "espSyncFailed": "Die Kopie auf die zweite EFI-Partition ist vor {at} fehlgeschlagen: {reason, select, sourceIncomplete {auf der ersten fehlt der Bootloader} readFailed {die erste ließ sich nicht vollständig lesen} noRsync {rsync fehlt} rsyncFailed {Schreibfehler} verifyFailed {die Kopie weicht vom Original ab} other {unbekannter Fehler}}. Der Start von der Reserve-Platte ist erst nach einer gelungenen Kopie wieder sicher.",
+    "bootEntryMissing": "Starteintrag „{label}“ fehlt. {repair, select, nextBoot {Helena legt ihn beim nächsten Start an.} diskMissing {Helena legt ihn an, sobald die Platte wieder da ist.} other {}}",
+    "bootEntryBroken": "Starteintrag „{label}“ ist ungültig: {problem, select, noPartuuid {die Firmware hat ihn umgeschrieben} wrongDisk {er zeigt auf eine andere Platte} wrongLoader {er startet eine andere Datei} inactive {er ist abgeschaltet} other {er stimmt nicht}}. {repair, select, nextBoot {Helena repariert ihn beim nächsten Start.} diskMissing {Helena repariert ihn, sobald die Platte wieder da ist.} other {}}",
+    "bootEntryDuplicate": "Starteintrag „{label}“ gibt es mehrfach. {repair, select, nextBoot {Helena räumt beim nächsten Start auf.} diskMissing {Helena räumt auf, sobald die Platte wieder da ist.} other {}}",
+    "bootLoaderMissing": "Auf {mount} fehlt der Bootloader; Starteintrag „{label}“ kann nicht starten.",
+    "bootEntriesOk": "{count, plural, one {Der Starteintrag stimmt.} other {Alle # Starteinträge stimmen.}}",
     "eventsCritical": "{count, plural, one {Eine ernste Meldung} other {# ernste Meldungen}} von mdadm oder smartd, noch nicht gesehen.",
     "backupNotInitialized": "Das Backup ist installiert, aber noch nicht eingerichtet.",
     "backupRunning": "Das erste Backup läuft.",
@@ -147,6 +154,23 @@
       "confirmTitle": "Einmal von der Reserve-Platte starten?",
       "confirmBody": "Beim nächsten Neustart startet der Rechner einmal über den Eintrag „Debian (Reserve)“ von der zweiten Platte. So prüfst du, dass er auch ohne die erste Platte hochkommt. Neu starten musst du selbst; danach gilt wieder die normale Reihenfolge."
     },
+    "recover": {
+      "open": "Erst prüfen: ist Platte {letter} nur verschwunden?",
+      "intro": "Fällt eine Platte im Betrieb vom Bus (im Protokoll „controller is down“, der Spiegel läuft ohne sie, lsblk zeigt sie nicht), ist sie oft nicht kaputt. Ein Neustart holt sie meist nicht zurück, ein Kaltstart schon. Bis dahin keine Kernel- oder GRUB-Updates.",
+      "step": {
+        "poweroff": "Sauber ausschalten",
+        "poweroffBody": "Helena und die Agenten halten an; auf der anderen Platte ist der Spiegel vollständig.",
+        "powerOn": "Wieder einschalten",
+        "powerOnBody": "Mit dem Einschaltknopf oder per Wake-on-LAN von einem anderen Rechner im Heimnetz.",
+        "smart": "SMART prüfen",
+        "smartBody": "Keine Medienfehler und ein leeres Fehlerprotokoll: die Platte ist in Ordnung.",
+        "readd": "Zurück in den Spiegel",
+        "readdBody": "Meist nimmt mdadm sie beim Start selbst wieder auf und gleicht in Minuten ab (Bitmap), sonst mit diesem Befehl. Vor dem nächsten Neustart warten, bis der Spiegel „gleich“ zeigt: bis dahin liest GRUB womöglich den alten Stand der zurückgekehrten Platte.",
+        "esp": "EFI-Partition und Starteintrag",
+        "espBody": "{mount} prüfen und einhängen, die Reparatur des Starteintrags erst ansehen, dann ausführen, und die EFI-Kopie nachholen."
+      },
+      "replaceWhen": "Ersetzen, wenn SMART Medienfehler oder Einträge im Fehlerprotokoll zeigt oder die Platte wieder verschwindet."
+    },
     "replace": {
       "open": "Platte ersetzen",
       "title": "Eine Platte des Spiegels ersetzen",
@@ -182,7 +206,9 @@
       "mdadm": "RAID",
       "smartd": "SMART",
       "guard": "Lüfterschutz",
-      "backup": "Backup"
+      "backup": "Backup",
+      "esp": "EFI-Kopie",
+      "boot": "Starteinträge"
     },
     "codes": {
       "Fail": "Platte ausgefallen",
@@ -212,7 +238,13 @@
       "FansRestored": "Lüfter zurück auf die gewählte Stufe",
       "BackupFailed": "Backup fehlgeschlagen",
       "CheckFailed": "Backup-Prüfung fehlgeschlagen",
-      "RestoreTestFailed": "Wiederherstellungstest fehlgeschlagen"
+      "RestoreTestFailed": "Wiederherstellungstest fehlgeschlagen",
+      "EspSyncSkipped": "EFI-Kopie übersprungen",
+      "EspSyncFailed": "EFI-Kopie fehlgeschlagen",
+      "EspSyncRecovered": "EFI-Kopie wieder in Ordnung",
+      "BootEntryRepaired": "Starteintrag repariert",
+      "BootEntriesMoved": "Starteinträge auf den neuen Bootloader umgestellt",
+      "BootEntryRepairFailed": "Starteintrag nicht repariert"
     }
   },
   "backup": {

@@ -111,6 +111,62 @@ export interface BootEntry {
   label: string;
   partuuid: string | null;
   disk: string | null;
+  // The file it starts (\EFI\helena-raid\shimx64.efi); null for BBS/network entries and
+  // for one the firmware rewrote to VenHw(…) when its disk was missing at boot.
+  loader?: string | null;
+  vendorHardware?: boolean;
+}
+
+// One ESP's firmware entry ("Debian" on the first ESP, "Debian (Reserve)" on the second),
+// judged by the helper against the partition mounted now (helena_host/boot.py).
+// `unchecked`: its ESP is not mounted (a disk away), so nothing is compared or changed.
+// `oldLayout`: it starts the old loader folder (EFI/helena-raid before `helena-hostd
+// boot-layout`); it works and moves once the configured loader is complete on its ESP.
+export type BootEntryState =
+  | 'ok'
+  | 'oldLayout'
+  | 'missing'
+  | 'noPartuuid'
+  | 'wrongDisk'
+  | 'wrongLoader'
+  | 'inactive'
+  | 'duplicate'
+  | 'loaderMissing'
+  | 'unchecked';
+
+export interface BootEntryCheck {
+  role: 'main' | 'reserve';
+  label: string;
+  mount: string;
+  espPresent: boolean;
+  partuuid: string | null;
+  number: string | null;
+  state: BootEntryState;
+  entries: string[];
+  // Entries with the label that belong to another install on another disk (left alone).
+  foreign: string[];
+}
+
+// The last copy of the first ESP onto the second (apt hook, helena_host/esp.py). `pending`:
+// the mirror may lack what changed on the first ESP since the last verified copy.
+export interface EspSyncState {
+  state: 'ok' | 'skipped' | 'failed';
+  reason:
+    | 'notMounted'
+    | 'notVfat'
+    | 'sameDevice'
+    | 'notConfigured'
+    | 'sourceIncomplete'
+    | 'readFailed'
+    | 'noRsync'
+    | 'rsyncFailed'
+    | 'verifyFailed'
+    | null;
+  at: string | null;
+  mount: string | null;
+  pending: boolean | null;
+  syncedAt: string | null;
+  detail: string | null;
 }
 
 export interface StorageStatus {
@@ -128,6 +184,8 @@ export interface StorageStatus {
     inSync: boolean | null;
     differences: string[];
     differenceCount: number;
+    // Absent from helpers older than the ESP copy guard.
+    sync?: EspSyncState | null;
   };
   boot: {
     current: string | null;
@@ -138,6 +196,8 @@ export interface StorageStatus {
     error?: string;
   } | null;
   reserveEntry: BootEntry | null;
+  // Absent from helpers older than the boot entry repair.
+  bootEntries?: BootEntryCheck[];
   checkedAt: string;
 }
 

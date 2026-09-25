@@ -4,21 +4,18 @@ the machine is written to the audit log (who, what, the result; never a password
 
 from __future__ import annotations
 
-import json
-import os
 import pwd
 import re
 import threading
 from dataclasses import dataclass
 from typing import Callable
 
-from . import backup, events, guard, power, storage, system
+from . import audit, backup, events, guard, power, storage, system
 from .common import VERSION, Host, HostError, iso
 from .config import GUARD_LIMIT_RANGE, Config, load_settings, save_settings
 from .varlink import VarlinkError
 
 INTERFACE = 'io.helena.hostd'
-AUDIT_MAX = 1_048_576
 ACTOR = re.compile(r'^[\x20-\x7e]{1,128}$')
 
 DESCRIPTION = """# Helena's host helper: the disks and the RAID, backups, power and fans of the machine
@@ -174,7 +171,8 @@ def mark_seen(ctx: Context, params: dict) -> dict:
 
 
 def storage_status(ctx: Context, params: dict) -> dict:
-    return storage.status(ctx.host, ctx.config.storage, fresh=bool(params.get('fresh')))
+    return storage.status(ctx.host, ctx.config.storage, fresh=bool(params.get('fresh')),
+                          state_dir=ctx.config.state_dir)
 
 
 storage_lock = threading.Lock()
@@ -257,7 +255,6 @@ class Dispatcher:
         self.host = host
         self.config = config
         self.log = log
-        self.audit_lock = threading.Lock()
 
     def authorize(self, uid: int) -> str | None:
         if uid == 0:
@@ -290,16 +287,4 @@ class Dispatcher:
         shown = {key: ('…' if key in method.secret else value) for key, value in params.items() if key != 'actor'}
         entry = {'at': iso(self.host.now()), 'caller': caller.get('name'), 'actor': params.get('actor'),
                  'method': name, 'params': shown, 'ok': ok, **({'error': error} if error else {})}
-        line = json.dumps(entry, ensure_ascii=False, separators=(',', ':'))
-        self.log(f'audit {line}')
-        path = os.path.join(self.config.state_dir, 'audit.log')
-        with self.audit_lock:
-            try:
-                os.makedirs(self.config.state_dir, mode=0o700, exist_ok=True)
-                if os.path.exists(path) and os.path.getsize(path) > AUDIT_MAX:
-                    os.replace(path, path + '.1')
-                fd = os.open(path, os.O_WRONLY | os.O_APPEND | os.O_CREAT | os.O_NOFOLLOW | os.O_CLOEXEC, 0o600)
-                with os.fdopen(fd, 'a', encoding='utf-8') as handle:
-                    handle.write(line + '\n')
-            except OSError as failure:
-                self.log(f'could not write the audit log: {failure}')
+        audit.append(self.config.state_dir, entry, self.log)

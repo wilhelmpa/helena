@@ -114,6 +114,42 @@ export interface BootEntry {
   label: string;
   partuuid: string | null;
   disk: string | null;
+  loader?: string | null;
+  vendorHardware?: boolean;
+}
+
+// One ESP's firmware entry judged by the host helper (see the API's types.ts).
+export interface BootEntryCheck {
+  role: 'main' | 'reserve';
+  label: string;
+  mount: string;
+  espPresent: boolean;
+  partuuid: string | null;
+  number: string | null;
+  state:
+    | 'ok'
+    | 'oldLayout'
+    | 'missing'
+    | 'noPartuuid'
+    | 'wrongDisk'
+    | 'wrongLoader'
+    | 'inactive'
+    | 'duplicate'
+    | 'loaderMissing'
+    | 'unchecked';
+  entries: string[];
+  foreign: string[];
+}
+
+// The last copy of the first ESP onto the second (after a package change).
+export interface EspSyncState {
+  state: 'ok' | 'skipped' | 'failed';
+  reason: string | null;
+  at: string | null;
+  mount: string | null;
+  pending: boolean | null;
+  syncedAt: string | null;
+  detail: string | null;
 }
 
 export interface StorageStatus {
@@ -131,6 +167,7 @@ export interface StorageStatus {
     inSync: boolean | null;
     differences: string[];
     differenceCount: number;
+    sync?: EspSyncState | null;
   };
   boot: {
     current: string | null;
@@ -141,6 +178,7 @@ export interface StorageStatus {
     error?: string;
   } | null;
   reserveEntry: BootEntry | null;
+  bootEntries?: BootEntryCheck[];
   checkedAt: string;
 }
 
