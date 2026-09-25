@@ -23,7 +23,10 @@ const KIND_ICON = {
 
 export default function OrganizationDepartmentNode({ node }: { node: DepartmentNode }) {
   const t = useTranslations('organization');
-  if (node.kind === 'home') return <HomeRoot node={node} />;
+  // Home, and the top of a chain outside every department (a project's coordinator on
+  // the project page, where Home is not shown), are roots, not a group called
+  // "Ohne Abteilung": departments come from projects, so that label only confused.
+  if (node.kind === 'home' || node.kind === 'none') return <PlainRoots node={node} />;
   const Icon = KIND_ICON[node.kind];
   const label =
     node.department?.name ??
@@ -94,9 +97,10 @@ export default function OrganizationDepartmentNode({ node }: { node: DepartmentN
   );
 }
 
-// The Home master as the root of the chart: no group header above it (it is not "without
-// a department", it is above them); the departments and its other reports hang under it.
-function HomeRoot({ node }: { node: DepartmentNode }) {
+// Agents shown as roots of the chart without a group header: the Home master (it is not
+// "without a department", it is above them; the departments hang under it) and the top
+// of a chain outside every department.
+function PlainRoots({ node }: { node: DepartmentNode }) {
   const t = useTranslations('organization');
   return (
     <>
