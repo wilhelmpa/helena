@@ -47,7 +47,7 @@ export function EnvironmentVariableList({
                 <Variable className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
               )}
               <div className="min-w-0 flex-1">
-                <div dir="ltr" className="truncate font-mono text-[13px]">
+                <div dir="ltr" className="truncate font-mono text-sm">
                   {variable.name}
                 </div>
                 <div className="truncate text-xs text-muted-foreground">{source(variable)}</div>

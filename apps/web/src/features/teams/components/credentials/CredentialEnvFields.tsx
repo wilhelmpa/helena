@@ -45,16 +45,17 @@ export function CredentialEnvFields({
   const t = useTranslations('credentials.env');
   return (
     <div className="space-y-3 rounded-md border border-sidebar-border bg-card px-3 py-2.5">
-      <label className="flex cursor-pointer items-center justify-between gap-2">
-        <span>
+      <div className="flex items-center justify-between gap-2">
+        <label htmlFor="credential-env-toggle" className="cursor-pointer">
           <span className="text-sm">{t('toggle')}</span>
           <span className="block text-xs text-muted-foreground">{t('toggleHint')}</span>
-        </span>
+        </label>
         <Switch
+          id="credential-env-toggle"
           checked={value.envEnabled}
           onCheckedChange={(envEnabled) => onChange({ envEnabled })}
         />
-      </label>
+      </div>
       {value.envEnabled && <CredentialEnvName value={value} onChange={onChange} />}
     </div>
   );
