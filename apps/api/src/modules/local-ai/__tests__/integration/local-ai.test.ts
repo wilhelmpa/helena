@@ -454,7 +454,12 @@ describe('local AI takes kinds of work', () => {
     const settings = (await asOwner.god['local-ai'].get()).data!;
     for (const id of ['summaries', 'routines', 'reflection', 'coordinator-triage']) {
       const entry = settings.classes.find((c) => c.id === id)!;
-      expect(entry).toMatchObject({ wired: true, modes: ['off', 'prefer'], evalVersion: 2 });
+      expect(entry).toMatchObject({
+        wired: true,
+        modes: ['off', 'prefer'],
+        // The reflection's eval changed once more: it runs without thinking.
+        evalVersion: id === 'reflection' ? 3 : 2,
+      });
     }
     expect(settings.classes.find((c) => c.id === 'embeddings')?.modes).toEqual([
       'off',
