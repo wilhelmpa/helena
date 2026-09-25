@@ -192,7 +192,9 @@ describe('the trading blueprint, applied', () => {
     // A call runs with the stored keys against the paper host only, and is audited.
     const hosts: string[] = [];
     globalThis.fetch = (async (input: string | URL | Request) => {
-      const url = new URL(typeof input === 'string' ? input : input instanceof URL ? input : input.url);
+      const url = new URL(
+        typeof input === 'string' ? input : input instanceof URL ? input : input.url,
+      );
       hosts.push(url.hostname);
       const body =
         url.pathname === '/v2/account'
@@ -209,7 +211,11 @@ describe('the trading blueprint, applied', () => {
           : [];
       return new Response(JSON.stringify(body), { status: 200 });
     }) as typeof fetch;
-    const caller = { userId: trader.userId, auth: { kind: 'api-key' as const, apiKey: 'x' }, runId: null };
+    const caller = {
+      userId: trader.userId,
+      auth: { kind: 'api-key' as const, apiKey: 'x' },
+      runId: null,
+    };
     const result = await callConfiguredTool(tools.get('alpaca_paper_account')!, {}, caller);
     expect(result.isError).toBeFalsy();
     expect(hosts.every((host) => host === 'paper-api.alpaca.markets')).toBe(true);
