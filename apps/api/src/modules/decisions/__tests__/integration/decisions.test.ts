@@ -24,6 +24,10 @@ import { routePrompt } from '#modules/model-router/prompt';
 import { classifyMessage } from '#modules/mail-triage/classify';
 import { mailTriageConfig } from '#modules/mail-triage/config';
 import { projectOptionId } from '../../questions';
+import { host } from '#shared/helena';
+import { LOCAL_AI_PLUGIN_ID, LOCAL_AI_PROVIDES, localAiPlugin } from '#modules/local-ai/plugin';
+import { DECISIONS_LOCAL_AI_CLASS } from '../../local-ai-class';
+import { GENERIC_EVAL_CASES } from '../../evals/generic';
 
 // The decisions service (docs/helena-decisions/decisions.md): classes and their settings, the
 // eval gate, decide over a System One server and a local logit server, the failsafe and the
@@ -598,5 +602,167 @@ describe('the mail classifier', () => {
       .from(helenaMailClassification)
       .where(eq(helenaMailClassification.threadId, view.threadId));
     expect(stored!.issueId).toBe(accepted.data!.issueId);
+  });
+});
+
+// A decision connection "Lokale KI auf diesem Server" goes through the local AI's route
+// (local-ai-platform.md §6.6): nothing while Lokale KI does not take decisions, then the
+// class's model on the registered server with its key, and "Nur lokal" keeps the cloud out.
+describe('decisions through the local AI', () => {
+  const LOCAL_KEY = 'test-lemonade-key';
+  let lemonade: ReturnType<typeof Bun.serve>;
+  const asked: { model: string; logprobs: boolean; auth: string | null }[] = [];
+
+  beforeAll(async () => {
+    lemonade = Bun.serve({
+      port: 0,
+      async fetch(request) {
+        if (request.headers.get('authorization') !== `Bearer ${LOCAL_KEY}`)
+          return new Response('no', { status: 401 });
+        const path = new URL(request.url).pathname;
+        if (path === '/api/v1/health')
+          return Response.json({
+            status: 'ok',
+            version: '2026.39.1',
+            all_models_loaded: [
+              { model_name: 'Qwen3.6-35B-A3B-GGUF', recipe: 'llamacpp', device: 'gpu' },
+            ],
+          });
+        if (path === '/api/v1/models')
+          return Response.json({
+            object: 'list',
+            data: [
+              {
+                id: 'Qwen3.6-35B-A3B-GGUF',
+                recipe: 'llamacpp',
+                labels: ['tool-calling'],
+                downloaded: true,
+              },
+            ],
+          });
+        if (path !== '/api/v1/chat/completions') return new Response('nf', { status: 404 });
+        const body = (await request.json()) as {
+          model: string;
+          logprobs?: boolean;
+          messages: { role: string; content: string }[];
+        };
+        asked.push({
+          model: body.model,
+          logprobs: body.logprobs === true,
+          auth: request.headers.get('authorization'),
+        });
+        const user = body.messages.find((message) => message.role === 'user')!.content;
+        if (body.logprobs) {
+          // The logit readout: the first letter gets most of the probability.
+          const options = (JSON.parse(user) as { options: { letter: string }[] }).options;
+          const top = options.map((option, index) => ({
+            token: option.letter,
+            logprob: Math.log(index === 0 ? 0.9 : 0.1 / (options.length - 1)),
+          }));
+          return Response.json({
+            model: body.model,
+            choices: [{ logprobs: { content: [{ token: 'A', top_logprobs: top }] } }],
+            usage: { prompt_tokens: 40, completion_tokens: 1 },
+          });
+        }
+        // Lokale KI's eval of the class: the right JSON answer for every case.
+        const asking = JSON.parse(user) as { text: string };
+        const item = GENERIC_EVAL_CASES.find((entry) => entry.context === asking.text)!;
+        const expected = [Object.values(item.expected)[0]!].flat()[0];
+        return Response.json({
+          choices: [
+            { message: { role: 'assistant', content: JSON.stringify({ choice: expected }) } },
+          ],
+          usage: { prompt_tokens: 60, completion_tokens: 8 },
+        });
+      },
+    });
+    if (!host.modelServers.get('lemonade')) {
+      await host.load(localAiPlugin, {
+        id: LOCAL_AI_PLUGIN_ID,
+        name: 'Local AI',
+        version: '1.0.0',
+        sdk: '^0.1.0',
+        provides: LOCAL_AI_PROVIDES,
+      });
+    }
+    if (!host.localAiTaskClasses.get(DECISIONS_LOCAL_AI_CLASS.id))
+      host.localAiTaskClasses.register(DECISIONS_LOCAL_AI_CLASS);
+  });
+
+  afterAll(() => lemonade.stop(true));
+
+  it('asks the model Lokale KI routes decisions to, only while it does', async () => {
+    const { asOwner, teamId } = await setup();
+    const server = await asOwner.god['local-ai'].servers.post({
+      kind: 'lemonade',
+      baseUrl: `http://127.0.0.1:${lemonade.port}/api/v1`,
+      keySource: 'stored',
+      key: LOCAL_KEY,
+    });
+    expect(server.status).toBe(200);
+    const local = await connection(asOwner, teamId, {
+      label: 'Lokale KI',
+      provider: 'local-logit',
+      baseUrl: 'http://127.0.0.1:13305/api/v1',
+      model: 'Qwen3.6-35B-A3B-MTP-GGUF',
+      keySource: 'local-ai',
+      value: undefined,
+    });
+    await switchOn(asOwner, teamId, GENERAL_CLASS, local);
+    const question = {
+      teamId,
+      classId: GENERAL_CLASS,
+      context: 'Das Paket kam kaputt an.',
+      questions: {
+        q: {
+          kind: 'choice' as const,
+          question: 'Which team?',
+          options: [
+            { id: 'support', label: 'Support' },
+            { id: 'sales', label: 'Sales' },
+          ],
+        },
+      },
+    };
+    // Lokale KI off: the connection refuses, nothing is asked.
+    const off = await decide(question);
+    expect(off.status).toBe('error');
+    expect(off.error).toContain('Local AI is switched off');
+    expect(asked).toHaveLength(0);
+
+    // Lokale KI evaluates its class, then takes decisions.
+    const evaluated = await asOwner.god['local-ai'].evals.post({
+      classId: DECISIONS_LOCAL_AI_CLASS.id,
+      modelId: 'helena-local/Qwen3.6-35B-A3B-GGUF',
+    });
+    expect(evaluated.data).toMatchObject({ passed: true, score: 1 });
+    await asOwner.god['local-ai'].policy.patch({ enabled: true });
+    const on = await asOwner.god['local-ai'].policy.patch({
+      classes: { [DECISIONS_LOCAL_AI_CLASS.id]: { mode: 'prefer' } },
+    });
+    expect(on.status).toBe(200);
+    asked.length = 0;
+    const answered = await decide(question);
+    expect(answered).toMatchObject({ status: 'decided', choice: 'support' });
+    // The route's model on the registered server, with its key.
+    expect(asked).toEqual([
+      { model: 'Qwen3.6-35B-A3B-GGUF', logprobs: true, auth: `Bearer ${LOCAL_KEY}` },
+    ]);
+
+    // "Nur lokal": a cloud connection is refused before it is asked.
+    await asOwner.god['local-ai'].policy.patch({
+      classes: { [DECISIONS_LOCAL_AI_CLASS.id]: { mode: 'only' } },
+    });
+    const cloud = await connection(asOwner, teamId, {
+      label: 'Jev',
+      provider: 'typesafe',
+      baseUrl: 'https://api.typesafe.ai',
+      allowPrivateAddress: false,
+    });
+    await switchOn(asOwner, teamId, GENERAL_CLASS, cloud);
+    const refused = await decide(question);
+    expect(refused.status).not.toBe('decided');
+    expect(refused.error ?? '').toContain('Nur lokal');
   });
 });

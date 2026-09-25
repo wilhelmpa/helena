@@ -93,6 +93,8 @@ export async function loadConnection(credentialId: number): Promise<DecisionConn
 export interface ModelServerAccess {
   baseUrl: string;
   key: string | null;
+  // The model the local AI routes this work to; the connection's own model otherwise.
+  model?: string | null;
 }
 
 let modelServerResolver: ((slug: string) => Promise<ModelServerAccess | null>) | null = null;
@@ -106,7 +108,7 @@ export function useModelServerResolver(
 // The address a call goes to: the connection's own, or its local AI model server's.
 async function addressOf(
   connection: DecisionConnection,
-): Promise<{ baseUrl: string; key: string | null }> {
+): Promise<{ baseUrl: string; key: string | null; model?: string | null }> {
   if (connection.keySource === 'local-ai') {
     const server = modelServerResolver
       ? await modelServerResolver(connection.modelServer ?? 'local')
@@ -117,7 +119,11 @@ async function addressOf(
         `The local AI model server "${connection.modelServer ?? 'local'}" is not set up (Administrator → Lokale KI).`,
       );
     }
-    return { baseUrl: server.baseUrl.replace(/\/+$/, '').replace(/\/v1$/, ''), key: server.key };
+    return {
+      baseUrl: server.baseUrl.replace(/\/+$/, '').replace(/\/v1$/, ''),
+      key: server.key,
+      model: server.model ?? null,
+    };
   }
   return { baseUrl: connection.baseUrl, key: await keyOf(connection) };
 }
@@ -260,11 +266,11 @@ export function describeFailure(error: unknown): { status: number; message: stri
 // `<base><path>` through the pinned fetch, with the key as a Bearer token.
 function openAiServer(
   connection: DecisionConnection,
-  address: { baseUrl: string; key: string | null },
+  address: { baseUrl: string; key: string | null; model?: string | null },
 ): OpenAiCompatibleServer {
   const fetcher = guardedFetch(privateHosts(connection, address.baseUrl));
   return {
-    model: connection.model,
+    model: address.model || connection.model,
     async post(path, body, signal) {
       const res = await fetcher(systemOneUrl(address.baseUrl, path), {
         method: 'POST',

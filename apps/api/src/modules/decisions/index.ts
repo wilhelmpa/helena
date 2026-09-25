@@ -29,6 +29,8 @@ import {
 } from './model';
 import { cancelEval, listEvals, startEval } from './evals-runner';
 import { decide, recordOutcome } from './service';
+// Decision connections to Helena's local AI (its route, server and key).
+import './local-ai';
 import {
   decisionConnections,
   getClassView,

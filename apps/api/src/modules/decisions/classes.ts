@@ -4,6 +4,7 @@ import { GENERIC_EVAL } from './evals/generic';
 import { MAIL_EVAL } from './evals/mail';
 import { RECEIPT_EVAL } from './evals/receipts';
 import { ROUTER_EVAL } from './evals/router';
+import { DECISIONS_LOCAL_AI_CLASS } from './local-ai-class';
 
 // Helena's own decision classes and the backends the decisions service adds to the browser
 // task's (docs/helena-decisions/decisions.md §2, §4), registered as the internal plugin
@@ -129,6 +130,9 @@ export const decisionsPlugin: HelenaPlugin = {
     for (const backend of DECISIONS_BACKENDS) ctx.decisionBackends.register(backend);
     for (const decisionClass of BUILTIN_DECISION_CLASSES)
       ctx.decisionClasses.register(decisionClass);
+    // Local AI answers the decisions only while Lokale KI routes this class (its master
+    // switch, the class's mode, its model's eval).
+    ctx.localAiTaskClasses.register(DECISIONS_LOCAL_AI_CLASS);
   },
 };
 

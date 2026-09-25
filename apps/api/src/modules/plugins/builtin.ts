@@ -44,6 +44,7 @@ import {
   DECISIONS_PLUGIN_ID,
   decisionsPlugin,
 } from '#modules/decisions/classes';
+import { DECISIONS_LOCAL_AI_CLASS } from '#modules/decisions/local-ai-class';
 
 // Helena's own features as internal plugins: they register through the same host and
 // the same manifest checks as an external plugin (docs/helena-framework.md, §3a
@@ -226,6 +227,7 @@ export async function loadBuiltinPlugins(app: McpApp): Promise<void> {
       provides: {
         decisionBackends: DECISIONS_BACKENDS.map((backend) => backend.id),
         decisionClasses: BUILTIN_DECISION_CLASSES.map((entry) => entry.id),
+        localAiTaskClasses: [DECISIONS_LOCAL_AI_CLASS.id],
       },
     }),
   );
