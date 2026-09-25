@@ -17,6 +17,9 @@ Decision and alternatives: `docs/helena-decisions/server-admin.md`.
 | `helena-backup{,-maintenance,-restore-test}.{service,timer}` | restic backup (schedule from Helena), weekly prune + check, monthly restore test |
 | `/etc/smartmontools/run.d/50helena`, `/etc/mdadm/mdadm.conf.d/helena.conf` | smartd and mdadm report events to Helena |
 | `/var/backups/helena/restic` | the local repository; password `/etc/helena/backup/restic.password` (root, 0400) |
+| `/etc/udev/rules.d/60-helena-nvme.rules` + `helena-nvme-pm` | NVMe disks stay awake: APST off, no D3cold, no runtime suspend of the disk or its root port |
+| `/etc/apt/apt.conf.d/99helena-esp-sync` + `helena-esp-sync` | after every package change the second ESP gets the first one's content, guarded and verified |
+| `helena-boot-entries.service` | at every boot: the firmware entries "Debian" / "Debian (Reserve)" point at their ESPs (`helena-hostd boot-repair`) |
 
 ## Protocol
 
@@ -33,10 +36,101 @@ Only root and the users in `callers` may connect (peer credentials). Every metho
 parameters against a fixed schema; unknown parameters are refused. Changes are written to
 `/var/lib/helena/hostd/audit.log` and the journal, never with a secret.
 
+## Storage safeguards
+
+Added after 2026-09-25, when the Samsung of the RAID fell off the PCIe bus. Decision and
+alternatives: `docs/helena-decisions/server-admin.md` §3a.
+
+- **NVMe power** (`hooks/60-helena-nvme.rules`): the controller's latency tolerance 0 (APST
+  off; also the `nvme_core` default, for a controller probed again after a rescan), the NVMe
+  PCI function `d3cold_allowed=0` and `power/control=on`, and `power/control=on` on every PCIe
+  bridge above it. Independent of the kernel command line (a boot that read a stale
+  `grub.cfg` ran without `nvme_core.default_ps_max_latency_us=0`). ASPM stays with the
+  firmware (these devices have no `link/*aspm*` attributes). Check:
+  `cat /sys/class/nvme/nvme*/power/pm_qos_latency_tolerance_us` (0),
+  `cat /sys/bus/pci/devices/*/d3cold_allowed` of the NVMe functions (0).
+- **ESP copy** (`esp.py`, run by apt's `DPkg::Post-Invoke`): copies `/boot/efi` onto
+  `/boot/efi2` only when both are mounted vfat file systems (not the same one), the source has
+  `EFI/helena-raid/shimx64.efi` and `grub.cfg`, and every file of it reads back in full; then
+  `rsync -a --delete --modify-window=1` must exit 0 and every copied file must hash like its
+  source. Anything else leaves the mirror alone. The outcome is in
+  `/var/lib/helena/hostd/esp-sync.json` (Server → Platten & RAID: amber "skipped" while the
+  mirror may lack something, red "failed"); a change of it is an event. By hand:
+  `sudo /usr/local/lib/helena/hostd/helena-esp-sync [--dry-run]`.
+- **Boot entry repair** (`boot.py`, `helena-boot-entries.service` at every boot, or
+  `sudo /usr/local/lib/helena/hostd/helena-hostd boot-repair [--dry-run]`): for each ESP that
+  is mounted and whose disk is on the bus, exactly one active entry with its label ("Debian"
+  for the first, "Debian (Reserve)" for the second, config `mainBootLabel`/`reserveBootLabel`)
+  on that partition's GUID, starting `bootLoader` (`\EFI\helena-raid\shimx64.efi`). A missing,
+  `VenHw(…)`-rewritten, wrong-disk or wrong-loader entry is replaced: the new one is created
+  and read back **before** the wrong one is deleted. An ESP that is not mounted is left alone,
+  and so is an entry with the label that belongs to another install on another disk. The
+  boot order becomes Debian, Debian (Reserve), then the rest, once "Debian" is verified.
+  Every change goes to the audit log, the journal and the events.
+- The ESP copy and the boot entry repair stay silent on a machine whose ESPs do not hold the
+  loader's folder (`EFI/helena-raid`): another boot layout is not theirs to judge.
+
+## Runbook: a disk falls off the bus
+
+**Symptoms.** The journal shows `nvme nvmeX: controller is down; will reset:
+CSTS=0xffffffff, PCI_STATUS=0xffff`, `Does your device have a faulty power saving mode
+enabled?` and `Unable to change power state from D3cold to D0, device inaccessible`. The
+mirror runs on one disk (`cat /proc/mdstat`: `[_U]` or `[U_]`), mdadm reported `Fail`, the
+disk is missing from `lsblk`, its ESP is not mounted. Helena shows the RAID red and the
+events "Platte ausgefallen" / "Spiegel unvollständig".
+
+**Do not** install kernel or GRUB updates while the mirror is degraded if it can wait: the
+ESP copy is skipped, and `grub-install` may write into an unmounted `/boot/efi` directory.
+Do not reboot to "try again": a warm reboot usually does not bring the disk back (on the
+AXB35 the firmware did not even enumerate it, and it rewrote the "Debian" entry to
+`VenHw(99e275e7-…)`). Do not rescan PCI or reset the bus: it did not help.
+
+**Recover** (the Server tab's "Platte ersetzen" → "Erst prüfen: ist Platte X nur
+verschwunden?" has the same steps with this machine's names):
+
+1. Shut down cleanly: `sudo systemctl poweroff`.
+2. Power on: the power button, or Wake-on-LAN from any machine on the LAN (the NIC's
+   profile has `802-3-ethernet.wake-on-lan magic`; the MAC is in `ip link` /
+   `nmcli -g GENERAL.HWADDR device show <nic>`):
+
+   ```sh
+   wakeonlan AA:BB:CC:DD:EE:FF          # Debian/Ubuntu: apt install wakeonlan; macOS: brew install wakeonlan
+   ```
+
+   ```python
+   import socket
+   mac = bytes.fromhex('AA:BB:CC:DD:EE:FF'.replace(':', ''))
+   with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+       s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+       s.sendto(b'\xff' * 6 + mac * 16, ('255.255.255.255', 9))
+   ```
+3. Check SMART: `sudo smartctl -a /dev/$(lsblk -dno PKNAME /dev/disk/by-partlabel/HELENA-EFI-A)`
+   (the letter of the disk that was gone). Media errors 0, an empty error log, critical
+   warning 0: the disk is fine.
+4. Back into the mirror: mdadm usually re-adds it at boot and, with the internal bitmap,
+   catches up in minutes. Otherwise
+   `sudo mdadm --manage /dev/md/helena-root --re-add /dev/disk/by-partlabel/HELENA-RAID-A`.
+   **Wait for `[UU]` before the next reboot:** until the member is in sync, GRUB may read
+   `/boot/grub/grub.cfg` from the stale member (seen on 2026-09-25: the boot missed a kernel
+   parameter added after the disk fell off).
+5. ESP and boot entry: `mountpoint -q /boot/efi || { sudo fsck.vfat -a
+   /dev/disk/by-partlabel/HELENA-EFI-A && sudo mount /boot/efi; }`, then
+   `sudo /usr/local/lib/helena/hostd/helena-hostd boot-repair --dry-run`, read it, run it
+   without `--dry-run`, and catch up the ESP copy with
+   `sudo /usr/local/lib/helena/hostd/helena-esp-sync`. (At the next boot
+   `helena-boot-entries.service` would repair the entry by itself.)
+
+**Replace the disk** ("Platte ersetzen" in the same dialog) when SMART shows media errors,
+entries in the error log, a critical warning or the spare below its threshold, or when it
+falls off again after these safeguards.
+
 ## Install (orchestrator)
 
 ```sh
+sudo ./install.sh --dry-run --owner wilhelmpa install   # what it would do
 sudo ./install.sh --owner wilhelmpa install     # helper, units, hooks; then restart the API
+sudo /usr/local/lib/helena/hostd/helena-hostd boot-repair --dry-run   # should list no actions
+sudo /usr/local/lib/helena/hostd/helena-esp-sync --dry-run            # should say "ready"
 sudo ./install.sh backup-init                    # password + repository + timers
 sudo systemctl start helena-backup.service       # the first backup (long: every folder once)
 sudo fans/install-fan-control.sh --from-clones /home/wilhelmpa/Projekte/Linux install

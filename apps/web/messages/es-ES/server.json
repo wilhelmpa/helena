@@ -38,6 +38,13 @@
     "espNotMounted": "La partición EFI {mount} no está montada.",
     "espOutOfSync": "Las dos particiones EFI son distintas ({count, plural, one {# archivo} other {# archivos}}).",
     "espInSync": "Las dos particiones EFI son iguales.",
+    "espSyncSkipped": "La segunda partición EFI no se actualizó hace {at}: {reason, select, notMounted {{mount} no estaba montada} notVfat {{mount} no es una partición FAT} sameDevice {ambos puntos de montaje son la misma partición} other {se omitió}}. El disco de reserva podría arrancar una versión antigua.",
+    "espSyncFailed": "La copia a la segunda partición EFI falló hace {at}: {reason, select, sourceIncomplete {falta el cargador de arranque en la primera} readFailed {la primera no se pudo leer por completo} noRsync {falta rsync} rsyncFailed {error de escritura} verifyFailed {la copia difiere del original} other {error desconocido}}. Arrancar desde el disco de reserva solo vuelve a ser seguro tras una copia correcta.",
+    "bootEntryMissing": "Falta la entrada de arranque «{label}». {repair, select, nextBoot {Helena la crea en el próximo arranque.} diskMissing {Helena la crea en cuanto vuelva el disco.} other {}}",
+    "bootEntryBroken": "La entrada de arranque «{label}» no es válida: {problem, select, noPartuuid {el firmware la reescribió} wrongDisk {apunta a otro disco} wrongLoader {inicia otro archivo} inactive {está desactivada} other {no coincide}}. {repair, select, nextBoot {Helena la repara en el próximo arranque.} diskMissing {Helena la repara en cuanto vuelva el disco.} other {}}",
+    "bootEntryDuplicate": "La entrada de arranque «{label}» existe varias veces. {repair, select, nextBoot {Helena lo ordena en el próximo arranque.} diskMissing {Helena lo ordena en cuanto vuelva el disco.} other {}}",
+    "bootLoaderMissing": "Falta el cargador de arranque en {mount}; la entrada «{label}» no puede arrancar.",
+    "bootEntriesOk": "{count, plural, one {La entrada de arranque es correcta.} other {Las # entradas de arranque son correctas.}}",
     "eventsCritical": "{count, plural, one {Un aviso grave} other {# avisos graves}} de mdadm o smartd, todavía sin ver.",
     "backupNotInitialized": "La copia de seguridad está instalada, pero todavía no configurada.",
     "backupRunning": "La primera copia de seguridad está en curso.",
@@ -147,6 +154,23 @@
       "confirmTitle": "¿Arrancar una vez desde el disco de reserva?",
       "confirmBody": "En el próximo reinicio, la máquina arranca una vez mediante la entrada «Debian (Reserve)» desde el segundo disco. Así compruebas que también arranca sin el primer disco. El reinicio lo haces tú; después vuelve a aplicarse el orden normal."
     },
+    "recover": {
+      "open": "Primero comprueba: ¿el disco {letter} solo ha desaparecido?",
+      "intro": "Cuando un disco se cae del bus en marcha («controller is down» en el registro, el espejo funciona sin él, lsblk no lo muestra), a menudo no está roto. Un reinicio no suele recuperarlo; un arranque en frío sí. Hasta entonces, nada de actualizaciones del kernel ni de GRUB.",
+      "step": {
+        "poweroff": "Apagar limpiamente",
+        "poweroffBody": "Helena y los agentes se detienen; el espejo está completo en el otro disco.",
+        "powerOn": "Volver a encender",
+        "powerOnBody": "Con el botón de encendido o por Wake-on-LAN desde otro ordenador de la red doméstica.",
+        "smart": "Comprobar SMART",
+        "smartBody": "Sin errores de medio y con el registro de errores vacío: el disco está bien.",
+        "readd": "De vuelta al espejo",
+        "readdBody": "Normalmente mdadm lo vuelve a incorporar al arrancar y se pone al día en minutos (bitmap); si no, con este comando. Antes del próximo reinicio, espera a que el espejo muestre «sincronizado»: hasta entonces GRUB podría leer el estado antiguo del disco que ha vuelto.",
+        "esp": "Partición EFI y entrada de arranque",
+        "espBody": "Comprueba y monta {mount}, revisa primero la reparación de la entrada de arranque y luego ejecútala, y recupera la copia EFI."
+      },
+      "replaceWhen": "Sustituye el disco si SMART muestra errores de medio o entradas en el registro de errores, o si vuelve a desaparecer."
+    },
     "replace": {
       "open": "Sustituir un disco",
       "title": "Sustituir un disco del espejo",
@@ -182,7 +206,9 @@
       "mdadm": "RAID",
       "smartd": "SMART",
       "guard": "Protección de ventiladores",
-      "backup": "Copia de seguridad"
+      "backup": "Copia de seguridad",
+      "esp": "Copia EFI",
+      "boot": "Entradas de arranque"
     },
     "codes": {
       "Fail": "Disco averiado",
@@ -212,7 +238,12 @@
       "FansRestored": "Ventiladores de vuelta al nivel elegido",
       "BackupFailed": "Copia de seguridad fallida",
       "CheckFailed": "Comprobación de la copia fallida",
-      "RestoreTestFailed": "Prueba de restauración fallida"
+      "RestoreTestFailed": "Prueba de restauración fallida",
+      "EspSyncSkipped": "Copia EFI omitida",
+      "EspSyncFailed": "Copia EFI fallida",
+      "EspSyncRecovered": "Copia EFI de nuevo en orden",
+      "BootEntryRepaired": "Entrada de arranque reparada",
+      "BootEntryRepairFailed": "Entrada de arranque no reparada"
     }
   },
   "backup": {

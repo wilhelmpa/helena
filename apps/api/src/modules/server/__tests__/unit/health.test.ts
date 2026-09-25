@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { backupHealth, powerHealth, storageHealth, systemHealth } from '../../health';
+import type { BootEntryCheck, EspSyncState } from '../../types';
 import { backup, power, storage } from '../fixtures';
 
 // The machine's health lines: red for what needs the owner now, amber for what runs or
@@ -80,6 +81,114 @@ describe('storage health', () => {
     );
     expect(byId(items, 'esp')).toMatchObject({ state: 'attention', code: 'espOutOfSync' });
     expect(byId(items, 'events')).toMatchObject({ state: 'critical', values: { count: 1 } });
+  });
+});
+
+describe('ESP copy and boot entries (the 2026-09-25 disk that fell off the bus)', () => {
+  const sync = (over: Partial<EspSyncState>): EspSyncState => ({
+    state: 'ok',
+    reason: null,
+    at: '2026-09-25T16:30:00Z',
+    mount: '/boot/efi2',
+    pending: false,
+    syncedAt: '2026-09-25T10:00:00Z',
+    detail: null,
+    ...over,
+  });
+  const withSync = (value: EspSyncState) => {
+    const base = storage();
+    return byId(storageHealth({ ...base, esp: { ...base.esp, sync: value } }), 'esp:sync');
+  };
+
+  it('a failed copy is red, a skipped one amber only while the mirror may lack something', () => {
+    expect(
+      withSync(sync({ state: 'failed', reason: 'readFailed', mount: '/boot/efi' })),
+    ).toMatchObject({ state: 'critical', code: 'espSyncFailed', values: { reason: 'readFailed' } });
+    expect(withSync(sync({ state: 'skipped', reason: 'notMounted', pending: true }))).toMatchObject(
+      {
+        state: 'attention',
+        code: 'espSyncSkipped',
+        values: { reason: 'notMounted', mount: '/boot/efi2', at: '2026-09-25T16:30:00Z' },
+        since: '2026-09-25T16:30:00Z',
+      },
+    );
+    expect(
+      withSync(sync({ state: 'skipped', reason: 'notMounted', pending: false })),
+    ).toBeUndefined();
+    expect(withSync(sync({}))).toBeUndefined();
+    // An older helper without the field says nothing.
+    expect(byId(storageHealth(storage()), 'esp:sync')).toBeUndefined();
+  });
+
+  const entry = (over: Partial<BootEntryCheck>): BootEntryCheck => ({
+    role: 'main',
+    label: 'Debian',
+    mount: '/boot/efi',
+    espPresent: true,
+    partuuid: '2a7ccb77-d727-4df5-aa1a-e619e847d2e8',
+    number: '0000',
+    state: 'ok',
+    entries: ['0000'],
+    foreign: [],
+    ...over,
+  });
+  const reserve = entry({
+    role: 'reserve',
+    label: 'Debian (Reserve)',
+    mount: '/boot/efi2',
+    number: '001A',
+    entries: ['001A'],
+  });
+  const withEntries = (main: Partial<BootEntryCheck>) =>
+    storageHealth({ ...storage(), bootEntries: [entry(main), reserve] });
+
+  it('both entries right is one green line', () => {
+    const items = withEntries({});
+    expect(byId(items, 'boot')).toMatchObject({
+      state: 'ok',
+      code: 'bootEntriesOk',
+      values: { count: 2 },
+    });
+    expect(byId(items, 'boot:main')).toBeUndefined();
+  });
+
+  it('an entry the firmware rewrote is amber until the next boot repairs it', () => {
+    const items = withEntries({ state: 'noPartuuid', number: '000F', entries: ['000F'] });
+    expect(byId(items, 'boot:main')).toMatchObject({
+      state: 'attention',
+      code: 'bootEntryBroken',
+      values: { label: 'Debian', problem: 'noPartuuid', repair: 'nextBoot' },
+    });
+    expect(byId(items, 'boot')).toBeUndefined();
+  });
+
+  it('with its disk away the entry waits for the disk; a plausible one says nothing', () => {
+    expect(
+      byId(withEntries({ state: 'noPartuuid', espPresent: false, partuuid: null }), 'boot:main'),
+    ).toMatchObject({ values: { repair: 'diskMissing' } });
+    expect(
+      byId(
+        withEntries({ state: 'missing', espPresent: false, number: null, entries: [] }),
+        'boot:main',
+      ),
+    ).toMatchObject({
+      state: 'attention',
+      code: 'bootEntryMissing',
+      values: { repair: 'diskMissing' },
+    });
+    const unchecked = withEntries({ state: 'unchecked', espPresent: false, partuuid: null });
+    expect(byId(unchecked, 'boot:main')).toBeUndefined();
+    expect(byId(unchecked, 'boot')).toBeUndefined();
+  });
+
+  it('duplicates and a missing loader have their own lines', () => {
+    expect(byId(withEntries({ state: 'duplicate' }), 'boot:main')).toMatchObject({
+      code: 'bootEntryDuplicate',
+    });
+    expect(byId(withEntries({ state: 'loaderMissing' }), 'boot:main')).toMatchObject({
+      code: 'bootLoaderMissing',
+      values: { label: 'Debian', mount: '/boot/efi' },
+    });
   });
 });
 

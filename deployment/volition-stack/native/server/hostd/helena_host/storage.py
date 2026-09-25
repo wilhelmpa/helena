@@ -20,6 +20,7 @@ DISK_TYPES = {'disk'}
 SYNC_ACTIONS = {'idle', 'resync', 'recover', 'check', 'repair', 'reshape', 'frozen'}
 BOOT_ENTRY = re.compile(r'^Boot([0-9A-Fa-f]{4})(\*?)\s+(.*?)(?:\t(.*))?$')
 PARTUUID = re.compile(r'HD\(\d+,GPT,([0-9A-Fa-f-]{36})', re.IGNORECASE)
+LOADER_FILE = re.compile(r'File\(([^)]*)\)', re.IGNORECASE)
 
 _cache_lock = threading.Lock()
 _smart_cache: dict[str, tuple[float, dict]] = {}
@@ -273,11 +274,12 @@ def read_smart(host: Host, kname: str, *, fresh: bool = False) -> dict | None:
     return facts
 
 
-def read_disks(host: Host, config_storage: dict, arrays: list[dict]) -> list[dict]:
+def read_disks(host: Host, config_storage: dict, arrays: list[dict],
+               devices: list[dict] | None = None) -> list[dict]:
     pattern = re.compile(config_storage.get('diskLabelPattern') or r'^$')
     member_of = {member['device']: array['name'] for array in arrays for member in array['members']}
     disks = []
-    for device in lsblk(host):
+    for device in (lsblk(host) if devices is None else devices):
         if device.get('type') not in DISK_TYPES:
             continue
         kname = device.get('kname') or device.get('name')
@@ -428,11 +430,17 @@ def parse_efibootmgr(text: str) -> dict:
             if match:
                 number, active, label, path = match.groups()
                 uuid = PARTUUID.search(path or '')
+                loader = LOADER_FILE.search(path or '')
                 result['entries'].append({
                     'number': number.upper(),
                     'active': active == '*',
                     'label': label.strip(),
                     'partuuid': uuid.group(1).lower() if uuid else None,
+                    # The file the entry starts (\EFI\helena-raid\shimx64.efi), or None for
+                    # an entry without one: a BBS/network entry, or one the firmware rewrote
+                    # to VenHw(…) when its disk was missing at boot.
+                    'loader': loader.group(1) if loader else None,
+                    'vendorHardware': (path or '').startswith('VenHw('),
                 })
     return result
 
@@ -483,15 +491,22 @@ def clear_boot_next(host: Host) -> dict:
     return {'next': None}
 
 
-def status(host: Host, config_storage: dict, *, fresh: bool = False) -> dict:
+def status(host: Host, config_storage: dict, *, fresh: bool = False, state_dir: str | None = None) -> dict:
+    # Imported here: boot and esp build on this module's readers.
+    from . import boot as boot_entries
+    from . import esp as esp_sync
+
     arrays = read_arrays(host)
     for array in arrays:
         array['health'] = array_health(array)
     if fresh:
         with _cache_lock:
             _smart_cache.clear()
-    disks = read_disks(host, config_storage, arrays)
-    esp = read_esps(host, list(config_storage.get('espMounts') or []), fresh=fresh)
+    devices = lsblk(host)
+    disks = read_disks(host, config_storage, arrays, devices)
+    esp = dict(read_esps(host, list(config_storage.get('espMounts') or []), fresh=fresh))
+    # The last copy onto the second ESP (after a package change): ok, skipped or failed.
+    esp['sync'] = esp_sync.read_state(state_dir) if state_dir else None
     boot = read_boot(host, disks)
     reserve = None
     if boot and 'entries' in boot:
@@ -503,5 +518,7 @@ def status(host: Host, config_storage: dict, *, fresh: bool = False) -> dict:
         'esp': esp,
         'boot': boot,
         'reserveEntry': reserve,
+        # Each ESP's firmware entry judged against the partition mounted now (boot.py).
+        'bootEntries': boot_entries.check(host, config_storage, boot, devices),
         'checkedAt': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(host.now())),
     }

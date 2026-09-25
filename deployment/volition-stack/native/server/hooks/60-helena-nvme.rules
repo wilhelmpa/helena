@@ -1,0 +1,34 @@
+# Helena: NVMe disks stay awake (installed by helena-hostd's install.sh to /etc/udev/rules.d).
+#
+# On 2026-09-25 the Samsung 990 PRO of the RAID fell off the PCIe bus ("controller is down;
+# will reset: CSTS=0xffffffff" … "Unable to change power state from D3cold to D0"), and the
+# kernel itself suggested turning NVMe power saving off. These rules do that for every NVMe
+# disk and its PCIe path, independently of the kernel command line (a boot that read a stale
+# grub.cfg ran without nvme_core.default_ps_max_latency_us=0):
+#
+# - APST off: the controller's latency tolerance 0 (nvme_set_latency_tolerance() then
+#   disables Autonomous Power State Transitions). The attribute appears only once the driver
+#   has identified the controller, which can be after the controller's "add"; so it is set
+#   again when its namespaces appear (they come after identification). The module default
+#   is set too, for controllers probed later (a disk that returns after a rescan).
+# - The NVMe PCI function (class 0x010802) never enters D3cold and never runtime-suspends;
+#   the PCIe bridges above it (the root port) never runtime-suspend either.
+#
+# ASPM is not touched here: the firmware owns it on this board (no link/*aspm* attributes).
+# Removing this file does not undo the values until the next boot.
+
+ACTION!="add|change", GOTO="helena_nvme_end"
+
+SUBSYSTEM=="module", KERNEL=="nvme_core", TEST=="parameters/default_ps_max_latency_us", \
+  ATTR{parameters/default_ps_max_latency_us}="0"
+
+SUBSYSTEM=="nvme", KERNEL=="nvme[0-9]*", TEST=="power/pm_qos_latency_tolerance_us", \
+  ATTR{power/pm_qos_latency_tolerance_us}="0"
+
+SUBSYSTEM=="block", ACTION=="add", KERNEL=="nvme[0-9]*n[0-9]*", ENV{DEVTYPE}=="disk", \
+  RUN+="/usr/local/lib/helena/hostd/helena-nvme-pm namespace %p"
+
+SUBSYSTEM=="pci", ATTR{class}=="0x010802", ATTR{d3cold_allowed}="0", ATTR{power/control}="on", \
+  RUN+="/usr/local/lib/helena/hostd/helena-nvme-pm pci %p"
+
+LABEL="helena_nvme_end"

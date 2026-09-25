@@ -1,0 +1,9 @@
+BootCurrent: 001A
+Timeout: 2 seconds
+BootOrder: 000F,001A,001B,001C,001D,001E
+Boot000F* Debian	VenHw(99e275e7-75a0-4b37-a2e6-c5385e6c00cb)
+Boot001A* Debian (Reserve)	HD(1,GPT,9da3b062-2afc-42d2-9cbb-6c9128eae4a9,0x800,0x400000)/File(\EFI\helena-raid\shimx64.efi)
+Boot001B* UEFI OS	HD(1,GPT,9da3b062-2afc-42d2-9cbb-6c9128eae4a9,0x800,0x400000)/File(\EFI\BOOT\BOOTX64.EFI)0000424f
+Boot001C* UEFI:CD/DVD Drive	BBS(129,,0x0)
+Boot001D* UEFI:Removable Device	BBS(130,,0x0)
+Boot001E* UEFI:Network Device	BBS(131,,0x0)

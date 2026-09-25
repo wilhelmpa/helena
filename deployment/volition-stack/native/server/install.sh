@@ -1,6 +1,8 @@
 #!/bin/sh
 # Installs Helena's host helper (helena-hostd): the code, its config (kept when present), the
-# socket, the power guard, the backup units, and the event hooks of smartd and mdadm.
+# socket, the power guard, the backup units, the event hooks of smartd and mdadm, and the
+# storage safeguards: NVMe power rules (udev), the guarded ESP copy after package changes
+# (apt hook, replaces a hand-made one of the same name) and the boot entry repair at boot.
 # Idempotent. Backups are set up by a separate, explicit step (backup-init).
 #
 #   sudo ./install.sh [--dry-run] [--owner <user>] [--api-user <user>] install
@@ -31,7 +33,9 @@ run() { if [ "$DRY_RUN" = 1 ]; then echo "would: $*"; else "$@"; fi; }
 
 LIB=/usr/local/lib/helena/hostd
 CONF=/etc/helena/hostd.json
-UNITS="helena-hostd.socket helena-hostd.service helena-power-guard.service helena-backup.service helena-backup.timer helena-backup-maintenance.service helena-backup-maintenance.timer helena-backup-restore-test.service helena-backup-restore-test.timer"
+UNITS="helena-hostd.socket helena-hostd.service helena-power-guard.service helena-backup.service helena-backup.timer helena-backup-maintenance.service helena-backup-maintenance.timer helena-backup-restore-test.service helena-backup-restore-test.timer helena-boot-entries.service"
+UDEV_RULE=/etc/udev/rules.d/60-helena-nvme.rules
+APT_HOOK=/etc/apt/apt.conf.d/99helena-esp-sync
 
 write_config() {
   home=
@@ -73,6 +77,8 @@ install_code() {
     run install -m 0644 -o root -g root "$file" "$LIB/helena_host/$(basename "$file")"
   done
   run install -m 0755 -o root -g root "$here/hooks/helena-md-event" "$LIB/helena-md-event"
+  run install -m 0755 -o root -g root "$here/hooks/helena-esp-sync" "$LIB/helena-esp-sync"
+  run install -m 0755 -o root -g root "$here/hooks/helena-nvme-pm" "$LIB/helena-nvme-pm"
   run install -m 0644 -o root -g root "$here/README.md" "$LIB/README.md"
   # Compiled caches from an older copy never shadow the new code (python3 -I writes none).
   run rm -rf "$LIB/helena_host/__pycache__"
@@ -99,14 +105,34 @@ install)
   fi
   run install -d -m 0755 -o root -g root /etc/mdadm/mdadm.conf.d
   run install -m 0644 -o root -g root "$here/hooks/mdadm-helena.conf" /etc/mdadm/mdadm.conf.d/helena.conf
+  # NVMe power: APST, D3cold and runtime suspend off for every NVMe disk and its PCIe path.
+  # Applied now to the matching devices only (nvme controllers, NVMe PCI functions, the
+  # nvme_core module), not with a machine-wide trigger.
+  run install -m 0644 -o root -g root "$here/hooks/60-helena-nvme.rules" "$UDEV_RULE"
+  if command -v udevadm >/dev/null; then
+    run udevadm control --reload
+    run udevadm trigger --type=subsystems --action=change --subsystem-match=module --sysname-match=nvme_core
+    run udevadm trigger --action=change --subsystem-match=nvme
+    run udevadm trigger --action=change --subsystem-match=pci --attr-match=class=0x010802
+    run udevadm settle --timeout=15 || true
+  fi
+  # The guarded ESP copy after every package change (same file name as the hand-made hook it
+  # replaces, so there is only ever one).
+  if [ -d /etc/apt/apt.conf.d ]; then
+    run install -m 0644 -o root -g root "$here/hooks/99helena-esp-sync" "$APT_HOOK"
+  fi
   run systemctl daemon-reload
   run systemctl enable --now helena-hostd.socket
   # Restarted so a new version of the code is served (the socket keeps listening meanwhile).
   run systemctl try-restart helena-hostd.service
   run systemctl enable helena-power-guard.service
   run systemctl restart helena-power-guard.service
+  # Runs at the next boot; not now: check it first with `helena-hostd boot-repair --dry-run`.
+  if [ -d /sys/firmware/efi ]; then run systemctl enable helena-boot-entries.service; fi
   if systemctl is-active --quiet mdmonitor.service; then run systemctl restart mdmonitor.service; fi
   echo "helena-hostd installed. The API needs a restart to join the helena-hostd group."
+  echo "Boot entries: sudo $LIB/helena-hostd boot-repair --dry-run  (then without --dry-run, or at the next boot)."
+  echo "ESP copy:     sudo $LIB/helena-esp-sync --dry-run"
   ;;
 backup-init)
   command -v restic >/dev/null || { echo "restic is not installed" >&2; exit 1; }
@@ -123,16 +149,19 @@ status)
   ;;
 uninstall)
   for unit in helena-backup.timer helena-backup-maintenance.timer helena-backup-restore-test.timer \
-              helena-power-guard.service helena-hostd.service helena-hostd.socket; do
+              helena-power-guard.service helena-boot-entries.service helena-hostd.service helena-hostd.socket; do
     run systemctl disable --now "$unit" 2>/dev/null || true
   done
   for unit in $UNITS; do run rm -f "/etc/systemd/system/$unit"; done
   run rm -rf /etc/systemd/system/helena-backup.timer.d
-  run rm -f /etc/smartmontools/run.d/50helena /etc/mdadm/mdadm.conf.d/helena.conf
+  run rm -f /etc/smartmontools/run.d/50helena /etc/mdadm/mdadm.conf.d/helena.conf "$UDEV_RULE" "$APT_HOOK"
+  if command -v udevadm >/dev/null; then run udevadm control --reload; fi
   run rm -rf "$LIB"
   run systemctl daemon-reload
   if systemctl is-active --quiet mdmonitor.service; then run systemctl restart mdmonitor.service; fi
   echo "Removed. Kept: /etc/helena/hostd.json, /var/lib/helena/hostd, /etc/helena/backup (password),"
   echo "/var/backups/helena (the repository). Remove those by hand only if the backups are no longer needed."
+  echo "The NVMe power values stay until the next boot. The second ESP is no longer copied after"
+  echo "package changes: rsync /boot/efi/ to /boot/efi2/ by hand after a grub or shim update."
   ;;
 esac

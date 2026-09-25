@@ -18,7 +18,7 @@ export interface ReplacementPlan {
 }
 
 const DEVICE = /^\/dev\/(nvme\d+n\d+|sd[a-z]{1,2}|vd[a-z]{1,2})$/;
-const LOADER = String.raw`\EFI\helena-raid\shimx64.efi`;
+const HOSTD_DIR = '/usr/local/lib/helena/hostd';
 
 export function isDiskDevice(value: string): boolean {
   return DEVICE.test(value);
@@ -75,19 +75,11 @@ export function replacementPlan(
   const p1 = valid ? partitionOf(newDevice, 1) : `${target}p1`;
   const p2 = valid ? partitionOf(newDevice, 2) : `${target}p2`;
   const md = `/dev/md/${array.name}`;
-  // The first disk's entry is "Debian" and boots first; the second's is the reserve, created
-  // outside the boot order and added after "Debian".
-  const reserve = letter !== 'A';
-  const bootLabel = reserve ? 'Debian (Reserve)' : 'Debian';
-  const stale = (storage.boot?.entries ?? []).filter(
-    (entry) => entry.label === bootLabel && entry.disk === null,
-  );
-  const debian = (storage.boot?.entries ?? []).find((entry) => entry.label === 'Debian');
-  const boot = [
-    ...stale.map((entry) => `sudo efibootmgr --bootnum ${entry.number} --delete-bootnum`),
-    `sudo efibootmgr ${reserve ? '--create-only' : '--create'} --disk ${target} --part 1 --label "${bootLabel}" --loader '${LOADER}'`,
-    ...(reserve && debian ? [`sudo efibootmgr --bootorder ${debian.number},<neu>`] : []),
-  ].join(' && ');
+  // The first disk's entry is "Debian", the second's "Debian (Reserve)". The host helper's
+  // boot repair creates the entry on the new ESP, reads it back, then removes the orphaned one
+  // and puts Debian, Reserve first (it also runs at every boot).
+  const bootLabel = letter !== 'A' ? 'Debian (Reserve)' : 'Debian';
+  const boot = `sudo ${HOSTD_DIR}/helena-hostd boot-repair`;
   return {
     letter,
     healthyLetter,
@@ -117,6 +109,55 @@ export function replacementPlan(
       ].join(' && '),
       add: `sudo mdadm --manage ${md} --add ${p2}`,
       boot,
+    },
+  };
+}
+
+// "Nur verschwunden?": a disk that fell off the bus (the kernel's "controller is down", the
+// mirror without it, lsblk without it) is often not broken; a cold start brings it back. The
+// commands name the partitions by their GPT labels (HELENA-RAID-A, HELENA-EFI-B), which stay
+// the same when the kernel numbers the disks differently after the restart.
+
+export interface RecoveryPlan {
+  letter: string;
+  // The disk is not on the bus now (fewer lettered disks than ESP mounts).
+  missing: boolean;
+  espMount: string;
+  commands: {
+    poweroff: string;
+    smart: string;
+    readd: string;
+    esp: string;
+    bootCheck: string;
+    bootRepair: string;
+    espCopy: string;
+  };
+}
+
+export function recoveryPlan(storage: StorageStatus, selected: string): RecoveryPlan {
+  const espMounts = storage.esp.mounts.map((mount) => mount.mount);
+  // A: the first ESP's disk, B: the second's (as in the plan above).
+  const expected = espMounts.map((_, index) => String.fromCharCode(65 + index));
+  const present = new Set(storage.disks.map((disk) => disk.letter).filter(Boolean));
+  const gone = expected.find((letter) => !present.has(letter));
+  const chosen = storage.disks.find((disk) => disk.kname === selected)?.letter ?? undefined;
+  const letter = gone ?? chosen ?? expected[expected.length - 1] ?? 'B';
+  const espMount = espMounts[letter.charCodeAt(0) - 65] ?? '/boot/efi';
+  const array = storage.arrays[0]?.name ?? 'helena-root';
+  const efi = `/dev/disk/by-partlabel/HELENA-EFI-${letter}`;
+  const raid = `/dev/disk/by-partlabel/HELENA-RAID-${letter}`;
+  return {
+    letter,
+    missing: gone !== undefined,
+    espMount,
+    commands: {
+      poweroff: 'sudo systemctl poweroff',
+      smart: `sudo smartctl -a /dev/$(lsblk -dno PKNAME ${efi})`,
+      readd: `sudo mdadm --manage /dev/md/${array} --re-add ${raid}`,
+      esp: `mountpoint -q ${espMount} || { sudo fsck.vfat -a ${efi} && sudo mount ${espMount}; }`,
+      bootCheck: `sudo ${HOSTD_DIR}/helena-hostd boot-repair --dry-run`,
+      bootRepair: `sudo ${HOSTD_DIR}/helena-hostd boot-repair`,
+      espCopy: `sudo ${HOSTD_DIR}/helena-esp-sync`,
     },
   };
 }

@@ -38,6 +38,13 @@
     "espNotMounted": "قسم EFI {mount} مش متركّب.",
     "espOutOfSync": "قسمين الـ EFI مختلفين ({count, plural, zero {مفيش ملفات} one {ملف واحد} two {ملفين} few {# ملفات} many {# ملف} other {# ملف}}).",
     "espInSync": "قسمين الـ EFI زي بعض.",
+    "espSyncSkipped": "قسم EFI التاني ما اتحدّثش من {at}: {reason, select, notMounted {{mount} ماكانش متركّب} notVfat {{mount} مش قسم FAT} sameDevice {نقطتين التركيب هما نفس القسم} other {اتفوّت}}. القرص الاحتياطي ممكن يقلع بنسخة قديمة.",
+    "espSyncFailed": "النسخ لقسم EFI التاني فشل من {at}: {reason, select, sourceIncomplete {محمّل الإقلاع مش موجود على الأول} readFailed {الأول ما اتقراش كله} noRsync {rsync مش موجود} rsyncFailed {غلطة كتابة} verifyFailed {النسخة مختلفة عن الأصل} other {غلطة مش معروفة}}. الإقلاع من القرص الاحتياطي مش آمن غير بعد نسخة ناجحة.",
+    "bootEntryMissing": "مدخل الإقلاع «{label}» مش موجود. {repair, select, nextBoot {Helena هتعمله في الإقلاع الجاي.} diskMissing {Helena هتعمله أول ما القرص يرجع.} other {}}",
+    "bootEntryBroken": "مدخل الإقلاع «{label}» مش صالح: {problem, select, noPartuuid {البرنامج الثابت كتبه من جديد} wrongDisk {بيشاور على قرص تاني} wrongLoader {بيشغّل ملف تاني} inactive {متقفّل} other {مش مطابق}}. {repair, select, nextBoot {Helena هتصلّحه في الإقلاع الجاي.} diskMissing {Helena هتصلّحه أول ما القرص يرجع.} other {}}",
+    "bootEntryDuplicate": "مدخل الإقلاع «{label}» موجود أكتر من مرة. {repair, select, nextBoot {Helena هتنضّف في الإقلاع الجاي.} diskMissing {Helena هتنضّف أول ما القرص يرجع.} other {}}",
+    "bootLoaderMissing": "محمّل الإقلاع مش موجود على {mount}؛ المدخل «{label}» مش هيقدر يقلع.",
+    "bootEntriesOk": "{count, plural, zero {مفيش مداخل إقلاع.} one {مدخل الإقلاع مظبوط.} two {مدخلين الإقلاع مظبوطين.} few {كل مداخل الإقلاع الـ# مظبوطة.} many {كل مداخل الإقلاع الـ# مظبوطة.} other {كل مداخل الإقلاع الـ# مظبوطة.}}",
     "eventsCritical": "{count, plural, zero {مفيش بلاغات خطيرة جديدة من mdadm أو smartd} one {بلاغ خطير واحد من mdadm أو smartd لسه متشافش} two {بلاغين خطيرين من mdadm أو smartd لسه متشافوش} few {# بلاغات خطيرة من mdadm أو smartd لسه متشافتش} many {# بلاغ خطير من mdadm أو smartd لسه متشافش} other {# بلاغ خطير من mdadm أو smartd لسه متشافش}}.",
     "backupNotInitialized": "النسخ الاحتياطي متثبّت بس لسه متظبطش.",
     "backupRunning": "أول نسخة احتياطية شغالة دلوقتي.",
@@ -147,6 +154,23 @@
       "confirmTitle": "تقلع مرة واحدة من القرص الاحتياطي؟",
       "confirmBody": "في إعادة التشغيل الجاية الجهاز هيقلع مرة واحدة من القرص التاني عن طريق المدخل «Debian (Reserve)». كده بتتأكد إنه بيشتغل من غير القرص الأول. إعادة التشغيل بتعملها انت بنفسك؛ وبعدها الترتيب العادي يرجع تاني."
     },
+    "recover": {
+      "open": "اتأكد الأول: القرص {letter} اختفى بس؟",
+      "intro": "لو قرص وقع من الناقل وهو شغّال («controller is down» في السجل، والمرآة شغّالة من غيره، وlsblk مش بيعرضه)، غالبًا مش بايظ. إعادة التشغيل عادةً مش بترجّعه، لكن التشغيل من البارد بيرجّعه. لحد ساعتها، مفيش تحديثات للنواة أو GRUB.",
+      "step": {
+        "poweroff": "اقفل بشكل سليم",
+        "poweroffBody": "Helena والوكلاء بيوقفوا؛ المرآة كاملة على القرص التاني.",
+        "powerOn": "شغّل تاني",
+        "powerOnBody": "بزرار التشغيل أو بـ Wake-on-LAN من جهاز تاني على شبكة البيت.",
+        "smart": "افحص SMART",
+        "smartBody": "مفيش أخطاء وسائط وسجل الأخطاء فاضي: القرص سليم.",
+        "readd": "رجّعه للمرآة",
+        "readdBody": "عادةً mdadm بيرجّعه لوحده وقت الإقلاع وبيلحق في دقايق (bitmap)، وإلا بالأمر ده. قبل إعادة التشغيل الجاية، استنى لما المرآة تظهر «متزامن»: لحد ساعتها GRUB ممكن يقرا الحالة القديمة للقرص اللي رجع.",
+        "esp": "قسم EFI ومدخل الإقلاع",
+        "espBody": "افحص {mount} وركّبه، بص على تصليح مدخل الإقلاع الأول وبعدين نفّذه، وكمّل نسخ EFI."
+      },
+      "replaceWhen": "غيّر القرص لو SMART بيبيّن أخطاء وسائط أو مداخل في سجل الأخطاء، أو لو اختفى تاني."
+    },
     "replace": {
       "open": "تغيير قرص",
       "title": "تغيير قرص في المرآة",
@@ -182,7 +206,9 @@
       "mdadm": "RAID",
       "smartd": "SMART",
       "guard": "حماية المراوح",
-      "backup": "النسخ الاحتياطي"
+      "backup": "النسخ الاحتياطي",
+      "esp": "نسخ EFI",
+      "boot": "مداخل الإقلاع"
     },
     "codes": {
       "Fail": "عطل في قرص",
@@ -212,7 +238,12 @@
       "FansRestored": "المراوح رجعت للدرجة المختارة",
       "BackupFailed": "النسخ الاحتياطي فشل",
       "CheckFailed": "فحص النسخ الاحتياطي فشل",
-      "RestoreTestFailed": "اختبار الاسترجاع فشل"
+      "RestoreTestFailed": "اختبار الاسترجاع فشل",
+      "EspSyncSkipped": "نسخ EFI اتفوّت",
+      "EspSyncFailed": "نسخ EFI فشل",
+      "EspSyncRecovered": "نسخ EFI رجع تمام",
+      "BootEntryRepaired": "مدخل الإقلاع اتصلّح",
+      "BootEntryRepairFailed": "مدخل الإقلاع ما اتصلّحش"
     }
   },
   "backup": {

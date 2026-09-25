@@ -38,6 +38,13 @@
     "espNotMounted": "Partisi EFI {mount} tidak terpasang.",
     "espOutOfSync": "Kedua partisi EFI berbeda ({count, plural, other {# file}}).",
     "espInSync": "Kedua partisi EFI sama.",
+    "espSyncSkipped": "Partisi EFI kedua tidak diperbarui {at} lalu: {reason, select, notMounted {{mount} tidak terpasang} notVfat {{mount} bukan partisi FAT} sameDevice {kedua titik kait adalah partisi yang sama} other {dilewati}}. Disk serep mungkin memulai versi lama.",
+    "espSyncFailed": "Penyalinan ke partisi EFI kedua gagal {at} lalu: {reason, select, sourceIncomplete {boot loader tidak ada di partisi pertama} readFailed {partisi pertama tidak terbaca sepenuhnya} noRsync {rsync tidak ada} rsyncFailed {kesalahan tulis} verifyFailed {salinan berbeda dari aslinya} other {kesalahan tak dikenal}}. Boot dari disk serep baru aman lagi setelah penyalinan berhasil.",
+    "bootEntryMissing": "Entri boot “{label}” tidak ada. {repair, select, nextBoot {Helena membuatnya saat mulai berikutnya.} diskMissing {Helena membuatnya begitu disk kembali.} other {}}",
+    "bootEntryBroken": "Entri boot “{label}” tidak valid: {problem, select, noPartuuid {firmware menulis ulang entri ini} wrongDisk {entri ini menunjuk ke disk lain} wrongLoader {entri ini memulai berkas lain} inactive {entri ini dinonaktifkan} other {entri ini tidak cocok}}. {repair, select, nextBoot {Helena memperbaikinya saat mulai berikutnya.} diskMissing {Helena memperbaikinya begitu disk kembali.} other {}}",
+    "bootEntryDuplicate": "Entri boot “{label}” ada lebih dari satu. {repair, select, nextBoot {Helena merapikannya saat mulai berikutnya.} diskMissing {Helena merapikannya begitu disk kembali.} other {}}",
+    "bootLoaderMissing": "Boot loader tidak ada di {mount}; entri “{label}” tidak bisa memulai.",
+    "bootEntriesOk": "{count, plural, other {Semua # entri boot benar.}}",
     "eventsCritical": "{count, plural, other {# laporan serius}} dari mdadm atau smartd, belum dilihat.",
     "backupNotInitialized": "Cadangan sudah terpasang, tetapi belum disiapkan.",
     "backupRunning": "Pencadangan pertama sedang berjalan.",
@@ -147,6 +154,23 @@
       "confirmTitle": "Boot sekali dari disk serep?",
       "confirmBody": "Saat dimulai ulang berikutnya, mesin melakukan boot sekali melalui entri “Debian (Reserve)” dari disk kedua. Ini membuktikan bahwa mesin juga bisa menyala tanpa disk pertama. Anda sendiri yang memulai ulang; setelah itu urutan normal berlaku lagi."
     },
+    "recover": {
+      "open": "Periksa dulu: apakah disk {letter} hanya hilang?",
+      "intro": "Jika disk terlepas dari bus saat berjalan (“controller is down” di log, mirror berjalan tanpanya, lsblk tidak menampilkannya), sering kali disk itu tidak rusak. Mulai ulang biasanya tidak mengembalikannya; menyalakan dari keadaan mati bisa. Sampai saat itu, jangan perbarui kernel atau GRUB.",
+      "step": {
+        "poweroff": "Matikan dengan rapi",
+        "poweroffBody": "Helena dan para agen berhenti; mirror lengkap di disk yang lain.",
+        "powerOn": "Nyalakan lagi",
+        "powerOnBody": "Dengan tombol daya atau lewat Wake-on-LAN dari komputer lain di jaringan rumah.",
+        "smart": "Periksa SMART",
+        "smartBody": "Tanpa kesalahan media dan log kesalahan kosong: disk dalam keadaan baik.",
+        "readd": "Kembali ke mirror",
+        "readdBody": "Biasanya mdadm memasukkannya kembali sendiri saat boot dan menyusul dalam beberapa menit (bitmap); jika tidak, dengan perintah ini. Sebelum mulai ulang berikutnya, tunggu sampai mirror menampilkan “sinkron”: sampai saat itu GRUB mungkin membaca keadaan lama dari disk yang kembali.",
+        "esp": "Partisi EFI dan entri boot",
+        "espBody": "Periksa dan pasang {mount}, lihat dulu perbaikan entri boot lalu jalankan, dan susul salinan EFI."
+      },
+      "replaceWhen": "Ganti disk jika SMART menunjukkan kesalahan media atau entri di log kesalahan, atau jika disk hilang lagi."
+    },
     "replace": {
       "open": "Ganti disk",
       "title": "Ganti disk mirror",
@@ -182,7 +206,9 @@
       "mdadm": "RAID",
       "smartd": "SMART",
       "guard": "Pelindung kipas",
-      "backup": "Cadangan"
+      "backup": "Cadangan",
+      "esp": "Salinan EFI",
+      "boot": "Entri boot"
     },
     "codes": {
       "Fail": "Disk gagal",
@@ -212,7 +238,12 @@
       "FansRestored": "Kipas kembali ke level pilihan",
       "BackupFailed": "Pencadangan gagal",
       "CheckFailed": "Pemeriksaan cadangan gagal",
-      "RestoreTestFailed": "Uji pemulihan gagal"
+      "RestoreTestFailed": "Uji pemulihan gagal",
+      "EspSyncSkipped": "Salinan EFI dilewati",
+      "EspSyncFailed": "Salinan EFI gagal",
+      "EspSyncRecovered": "Salinan EFI kembali normal",
+      "BootEntryRepaired": "Entri boot diperbaiki",
+      "BootEntryRepairFailed": "Entri boot tidak diperbaiki"
     }
   },
   "backup": {

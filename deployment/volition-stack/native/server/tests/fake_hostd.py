@@ -6,7 +6,9 @@ machine. Run as any user:
 
     python3 fake_hostd.py /path/to/hostd.sock
 
-and start the API with HELENA_HOSTD_SOCKET=/path/to/hostd.sock.
+and start the API with HELENA_HOSTD_SOCKET=/path/to/hostd.sock. HELENA_FAKE_INCIDENT=1 shows the
+state after the 2026-09-25 incident instead: the "Debian" entry rewritten to VenHw(…) and the
+ESP copy skipped while the first disk was away.
 """
 
 from __future__ import annotations
@@ -104,18 +106,38 @@ class Fake:
                           'arrays': ['helena-root'], 'mountpoints': sorted(set(mounts)), 'partitions': partitions,
                           'smart': facts, 'health': storage.disk_health(facts)})
         disks.sort(key=lambda d: d['letter'] or '')
-        boot = storage.parse_efibootmgr(open(os.path.join(FIXTURES, 'efibootmgr.txt')).read())
-        boot['current'] = '000F'
+        incident = os.environ.get('HELENA_FAKE_INCIDENT') == '1'
+        boot = storage.parse_efibootmgr(open(os.path.join(
+            FIXTURES, 'efibootmgr-venhw.txt' if incident else 'efibootmgr.txt')).read())
+        boot['current'] = '001A' if incident else '000F'
         boot['next'] = self.boot_next
         for entry in boot['entries']:
-            entry['disk'] = 'A' if entry['label'] == 'Debian' else 'B'
+            entry['disk'] = None if not entry['partuuid'] else ('A' if entry['label'] == 'Debian' else 'B')
+        if incident:
+            # The first disk is off the bus: not listed, its ESP not mounted.
+            disks = [disk for disk in disks if disk['letter'] != 'A']
+        checks = [
+            {'role': 'main', 'label': 'Debian', 'mount': '/boot/efi', 'espPresent': not incident,
+             'partuuid': '2a7ccb77-d727-4df5-aa1a-e619e847d2e8', 'number': '000F',
+             'state': 'noPartuuid' if incident else 'ok', 'entries': ['000F'], 'foreign': []},
+            {'role': 'reserve', 'label': 'Debian (Reserve)', 'mount': '/boot/efi2', 'espPresent': True,
+             'partuuid': '9da3b062-2afc-42d2-9cbb-6c9128eae4a9', 'number': '001A', 'state': 'ok',
+             'entries': ['001A'], 'foreign': []},
+        ]
+        sync = ({'state': 'skipped', 'reason': 'notMounted', 'at': iso(-5400), 'mount': '/boot/efi',
+                 'pending': True, 'syncedAt': iso(-86400), 'detail': None} if incident else
+                {'state': 'ok', 'reason': None, 'at': iso(-86400), 'mount': '/boot/efi2', 'pending': False,
+                 'syncedAt': iso(-86400), 'detail': None})
         return {
             'arrays': arrays, 'disks': disks,
             'esp': {'mounts': [
-                {'mount': '/boot/efi', 'mounted': True, 'source': '/dev/nvme1n1p1', 'files': 14, 'bytes': 9437184, 'digest': 'a1'},
+                {'mount': '/boot/efi', 'mounted': not incident, 'source': None if incident else '/dev/nvme1n1p1',
+                 'files': None if incident else 14, 'bytes': None if incident else 9437184,
+                 'digest': None if incident else 'a1'},
                 {'mount': '/boot/efi2', 'mounted': True, 'source': '/dev/nvme0n1p1', 'files': 14, 'bytes': 9437184, 'digest': 'a1'},
-            ], 'inSync': True, 'differences': [], 'differenceCount': 0},
+            ], 'inSync': None if incident else True, 'differences': [], 'differenceCount': 0, 'sync': sync},
             'boot': boot, 'reserveEntry': next(e for e in boot['entries'] if e['label'] == 'Debian (Reserve)'),
+            'bootEntries': checks,
             'checkedAt': iso(),
         }
 

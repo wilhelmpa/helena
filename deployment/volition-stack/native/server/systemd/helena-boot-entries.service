@@ -1,0 +1,44 @@
+[Unit]
+Description=Helena: firmware boot entries of both EFI partitions (repairs an entry the firmware rewrote)
+Documentation=file:/usr/local/lib/helena/hostd/README.md
+ConditionPathExists=/sys/firmware/efi
+# Nothing waits for this unit (no implicit ordering into multi-user.target): with a disk
+# missing, its ESP's nofail mount waits up to 90 s for the device, and the boot should not.
+# The two mounts are the installer's layout (/boot/efi, /boot/efi2; helena-hostd's config
+# storage.espMounts); an ESP that is not mounted is left alone by the repair.
+DefaultDependencies=no
+After=sysinit.target local-fs.target boot-efi.mount boot-efi2.mount
+Conflicts=shutdown.target
+Before=shutdown.target
+
+[Service]
+Type=oneshot
+# Reads the entries (efibootmgr), the partitions (lsblk, findmnt) and changes only what is
+# wrong: see helena_host/boot.py. Every change goes to the audit log, the journal and
+# Helena's events.
+ExecStart=/usr/bin/python3 -I /usr/local/lib/helena/hostd/helena-hostd boot-repair
+Environment=HELENA_HOSTD_CONFIG=/etc/helena/hostd.json
+StateDirectory=helena/hostd
+StateDirectoryMode=0700
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+# The whole tree read-only except the state directory; /sys stays writable for efivars.
+ProtectSystem=strict
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+InaccessiblePaths=-/etc/volition
+
+[Install]
+WantedBy=multi-user.target

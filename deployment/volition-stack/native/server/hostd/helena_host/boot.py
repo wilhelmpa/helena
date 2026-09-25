@@ -1,0 +1,374 @@
+"""The firmware's boot entries of the RAID's two EFI system partitions: "Debian" starts the
+shim on the first disk's ESP, "Debian (Reserve)" the same shim on the second disk's.
+
+When a disk is missing at boot, some firmware (the AXB35's AMI BIOS among them) rewrites the
+entry that pointed to it into `VenHw(…)` and never writes it back; the machine then boots from
+the reserve entry and, once the disk returns, no entry points to it any more. `check()` judges
+both entries against the partitions that are mounted now; `repair()` (run at every boot by
+helena-boot-entries.service, and by `helena-hostd boot-repair` on the console) makes each
+right: exactly one active entry per label, on its ESP's partition GUID, starting the loader.
+
+Rules, because a mistake here can leave a machine that does not boot:
+- An ESP that is not mounted, or whose disk is not on the bus, is left alone: its entry is
+  neither created nor deleted (a degraded boot changes nothing).
+- The right entry is created and read back before any wrong one is deleted; a wrong entry is
+  only deleted when its role has a verified right one.
+- Only entries with one of the two labels are ever touched, and of those never one that
+  points to a partition of another disk on this machine that is not one of the two ESPs (an
+  install of its own that happens to share the name); it is reported instead.
+- The boot order becomes main, reserve, then the rest as it was, and only once the main
+  entry is verified.
+"""
+
+from __future__ import annotations
+
+import os
+import re
+
+from . import audit, events, storage
+from .common import Host, HostError, clip, file_lock
+
+ROLES = ('main', 'reserve')
+# Worst first: what `check()` reports when a role has no right entry.
+PROBLEMS = ('noPartuuid', 'wrongDisk', 'wrongLoader', 'inactive')
+KNAME = re.compile(r'^[a-z0-9]{2,32}$')
+NUMBER = re.compile(r'^[0-9A-F]{4}$')
+
+
+def normalize_loader(path: str | None) -> str:
+    """Firmware paths compare case-insensitively (FAT), with either slash."""
+    return (path or '').replace('/', '\\').lower()
+
+
+def loader_relative(loader: str) -> str:
+    """\\EFI\\helena-raid\\shimx64.efi → EFI/helena-raid/shimx64.efi (a path on the ESP)."""
+    return loader.replace('\\', '/').lstrip('/')
+
+
+# ── Where the ESPs are ───────────────────────────────────────────────────────────────────
+
+def _walk(device: dict):
+    yield device
+    for child in device.get('children') or []:
+        yield from _walk(child)
+
+
+def present_partuuids(devices: list[dict]) -> set[str]:
+    """Every partition GUID on a disk that is on the bus now."""
+    found = set()
+    for device in devices:
+        for part in _walk(device):
+            if part.get('partuuid'):
+                found.add(part['partuuid'].lower())
+    return found
+
+
+def esp_partition(host: Host, mount: str, devices: list[dict]) -> dict | None:
+    """The partition mounted at `mount`, from lsblk: so only while its disk is on the bus.
+    None when nothing is mounted there, the disk is gone, or it is no GPT partition."""
+    for device in devices:
+        if device.get('type') != 'disk':
+            continue
+        for part in _walk(device):
+            if part is device or part.get('type') != 'part':
+                continue
+            if mount not in (part.get('mountpoints') or []):
+                continue
+            kname = part.get('kname') or ''
+            disk = device.get('kname') or ''
+            number = host.read_int(f'/sys/class/block/{kname}/partition')
+            if not part.get('partuuid') or number is None or not KNAME.match(kname) or not KNAME.match(disk):
+                return None
+            return {
+                'kname': kname,
+                'disk': disk,
+                'partition': number,
+                'partuuid': part['partuuid'].lower(),
+                'fstype': part.get('fstype'),
+            }
+    return None
+
+
+def layout_in_use(host: Host, config_storage: dict) -> bool:
+    """Whether this machine boots the configured way at all: the loader's folder is on one of
+    the ESPs. A machine with another layout (one ESP with EFI/debian) gets no boot entry lines
+    and no repair."""
+    loader = config_storage.get('bootLoader') or '\\EFI\\helena-raid\\shimx64.efi'
+    folder = os.path.dirname(loader_relative(loader))
+    return any(os.path.isdir(os.path.join(host.path(mount), folder))
+               for mount in list(config_storage.get('espMounts') or [])[:2])
+
+
+def layout(host: Host, config_storage: dict, devices: list[dict]) -> list[dict]:
+    """The roles of this machine: which label belongs to which mount, and where that mount's
+    partition is now (None when it is not there)."""
+    mounts = list(config_storage.get('espMounts') or [])[:2]
+    labels = [config_storage.get('mainBootLabel') or 'Debian',
+              config_storage.get('reserveBootLabel') or 'Debian (Reserve)']
+    loader = config_storage.get('bootLoader') or '\\EFI\\helena-raid\\shimx64.efi'
+    roles = []
+    for index, mount in enumerate(mounts):
+        esp = esp_partition(host, mount, devices)
+        roles.append({
+            'role': ROLES[index],
+            'label': labels[index],
+            'mount': mount,
+            'esp': esp,
+            'loaderPresent': esp is not None and os.path.isfile(
+                os.path.join(host.path(mount), loader_relative(loader))),
+        })
+    return roles
+
+
+# ── Judging the entries ──────────────────────────────────────────────────────────────────
+
+def classify(entry: dict, esp: dict, loader: str, others: set[str]) -> str:
+    """One entry against the ESP its label belongs to. `others`: partition GUIDs on this
+    machine that are not one of the ESPs (an entry there is someone else's)."""
+    if not entry.get('partuuid'):
+        return 'noPartuuid'
+    if entry['partuuid'] != esp['partuuid']:
+        return 'foreign' if entry['partuuid'] in others else 'wrongDisk'
+    if normalize_loader(entry.get('loader')) != normalize_loader(loader):
+        return 'wrongLoader'
+    if not entry.get('active'):
+        return 'inactive'
+    return 'ok'
+
+
+def _rank(entries: list[dict], order: list[str]) -> list[dict]:
+    position = {number: index for index, number in enumerate(order)}
+    return sorted(entries, key=lambda entry: (position.get(entry['number'], len(order)), entry['number']))
+
+
+def plan(boot: dict, roles: list[dict], loader: str, present: set[str]) -> dict:
+    """What `repair()` would do: per role its state and the entry it keeps, and the actions
+    (create, activate, delete, order) in the order they run."""
+    ours = {role['esp']['partuuid'] for role in roles if role['esp']}
+    others = present - ours
+    order = list(boot.get('order') or [])
+    checks: list[dict] = []
+    actions: list[dict] = []
+    for role in roles:
+        same = [entry for entry in boot['entries'] if entry['label'] == role['label']]
+        esp = role['esp']
+        check = {
+            'role': role['role'],
+            'label': role['label'],
+            'mount': role['mount'],
+            'espPresent': esp is not None,
+            'partuuid': esp['partuuid'] if esp else None,
+            'number': None,
+            'state': 'missing',
+            'entries': [entry['number'] for entry in same],
+            'foreign': [],
+        }
+        checks.append(check)
+        if esp is None:
+            # Nothing to compare with: judge the entries alone and change nothing.
+            usable = [entry for entry in same if entry.get('partuuid') and entry.get('active')
+                      and normalize_loader(entry.get('loader')) == normalize_loader(loader)]
+            if usable:
+                check.update(state='unchecked', number=_rank(usable, order)[0]['number'])
+            elif same:
+                check.update(state='noPartuuid' if all(not e.get('partuuid') for e in same) else 'unchecked',
+                             number=_rank(same, order)[0]['number'])
+            continue
+        if not role['loaderPresent']:
+            # An entry for a loader that is not on the ESP would not start: leave it to the
+            # owner (the ESP copy or grub-install), never create one.
+            check['state'] = 'loaderMissing'
+            if same:
+                check['number'] = _rank(same, order)[0]['number']
+            continue
+        states = {entry['number']: classify(entry, esp, loader, others) for entry in same}
+        good = [entry for entry in same if states[entry['number']] == 'ok']
+        inactive = [entry for entry in same if states[entry['number']] == 'inactive']
+        keep = (_rank(good, order) or _rank(inactive, order) or [None])[0]
+        wrong = [entry for entry in same
+                 if entry is not keep and states[entry['number']] != 'foreign']
+        check['foreign'] = [entry['number'] for entry in same if states[entry['number']] == 'foreign']
+        if keep is None:
+            problems = [states[entry['number']] for entry in wrong]
+            check['state'] = next((p for p in PROBLEMS if p in problems), 'missing')
+            actions.append({'op': 'create', 'role': role['role'], 'label': role['label'],
+                            'disk': esp['disk'], 'partition': esp['partition'], 'partuuid': esp['partuuid']})
+        elif states[keep['number']] == 'inactive':
+            check.update(state='inactive', number=keep['number'])
+            actions.append({'op': 'activate', 'role': role['role'], 'number': keep['number']})
+        else:
+            check.update(state='duplicate' if wrong else 'ok', number=keep['number'])
+        for entry in wrong:
+            reason = states[entry['number']]
+            actions.append({'op': 'delete', 'role': role['role'], 'number': entry['number'],
+                            'reason': 'duplicate' if reason in ('ok', 'inactive') else reason})
+    return {'roles': checks, 'actions': actions}
+
+
+def desired_order(order: list[str], numbers: list[str], existing: set[str]) -> list[str]:
+    """main, reserve, then the rest as it was (without entries that no longer exist)."""
+    front = [number for number in numbers if number in existing]
+    rest = [number for number in order if number not in front and number in existing]
+    return front + rest
+
+
+def check(host: Host, config_storage: dict, boot: dict | None, devices: list[dict]) -> list[dict]:
+    """The state of both entries for StorageStatus (bootEntries): ok, missing, noPartuuid
+    (the firmware rewrote it), wrongDisk, wrongLoader, inactive, duplicate, loaderMissing, or
+    unchecked (its ESP is not there to compare with)."""
+    if not boot or 'entries' not in boot or not layout_in_use(host, config_storage):
+        return []
+    roles = layout(host, config_storage, devices)
+    loader = config_storage.get('bootLoader') or '\\EFI\\helena-raid\\shimx64.efi'
+    return plan(boot, roles, loader, present_partuuids(devices))['roles']
+
+
+# ── Repairing them ───────────────────────────────────────────────────────────────────────
+
+def _read(host: Host, efibootmgr: str) -> dict:
+    result = host.run([efibootmgr], timeout=15)
+    if result.returncode != 0:
+        raise HostError('CommandFailed', 'efibootmgr could not read the boot entries')
+    return storage.parse_efibootmgr(result.stdout)
+
+
+def repair(host: Host, config, *, dry_run: bool = False, log=lambda message: None,
+           actor: str = 'boot-repair') -> dict:
+    """Makes both entries right (see the module's rules). Returns the plan with the outcome
+    of each action; `ok` is False when an action failed."""
+    efibootmgr = host.which('efibootmgr')
+    if not efibootmgr or not host.exists('/sys/firmware/efi'):
+        raise HostError('NotSupported', 'this machine has no EFI boot manager')
+    config_storage = config.storage
+    loader = config_storage['bootLoader']
+    if not layout_in_use(host, config_storage):
+        return {'dryRun': dry_run, 'roles': [], 'actions': [], 'changed': False, 'ok': True,
+                'reason': 'notInUse'}
+    with file_lock(os.path.join(config.state_dir, 'boot.lock')):
+        before = _read(host, efibootmgr)
+        devices = storage.lsblk(host)
+        roles = layout(host, config_storage, devices)
+        present = present_partuuids(devices)
+        planned = plan(before, roles, loader, present)
+        result = {'dryRun': dry_run, 'roles': planned['roles'], 'actions': [], 'changed': False, 'ok': True}
+        by_role = {check['role']: check for check in planned['roles']}
+        esp_of = {role['role']: role['esp'] for role in roles}
+        if dry_run:
+            actions = list(planned['actions'])
+            main = by_role.get('main')
+            if main and (main['state'] in ('ok', 'duplicate', 'inactive') or _creates(actions, 'main')):
+                deleted = {action['number'] for action in actions if action['op'] == 'delete'}
+                existing = ({entry['number'] for entry in before['entries']} | {'new'}) - deleted
+                order = desired_order(before['order'], _front(by_role, actions), existing)
+                if order != before['order']:
+                    actions.append({'op': 'order', 'order': order})
+            result['actions'] = actions
+            return result
+
+        verified: set[str] = {role for role, check in by_role.items() if check['state'] in ('ok', 'duplicate')}
+        done: list[dict] = []
+
+        def run(argv: list[str], action: dict) -> bool:
+            outcome = host.run([efibootmgr, *argv], timeout=30)
+            action = {**action, 'ok': outcome.returncode == 0}
+            if outcome.returncode != 0:
+                action['error'] = clip(outcome.stderr or outcome.stdout, 200)
+                result['ok'] = False
+            else:
+                result['changed'] = True
+            done.append(action)
+            log(f"boot-repair: {action['op']} {action.get('number') or action.get('label')}: "
+                f"{'ok' if action['ok'] else action.get('error')}")
+            return action['ok']
+
+        # 1. Create or activate the right entry of each role, and read it back.
+        for action in planned['actions']:
+            role = action.get('role')
+            if action['op'] == 'create':
+                if not KNAME.match(action['disk']) or not 1 <= int(action['partition']) <= 128:
+                    raise HostError('Internal', 'unexpected partition')
+                known = {entry['number'] for entry in _read(host, efibootmgr)['entries']}
+                if not run(['--create', '--disk', f"/dev/{action['disk']}", '--part', str(action['partition']),
+                            '--label', action['label'], '--loader', loader], action):
+                    continue
+                after = _read(host, efibootmgr)
+                new = [entry for entry in after['entries']
+                       if entry['number'] not in known and entry['label'] == action['label']
+                       and classify(entry, esp_of[role], loader, set()) == 'ok']
+                if not new:
+                    done[-1].update(ok=False, error='the new entry could not be read back')
+                    result['ok'] = False
+                    continue
+                by_role[role]['number'] = new[0]['number']
+                by_role[role]['state'] = 'ok'
+                done[-1]['number'] = new[0]['number']
+                verified.add(role)
+            elif action['op'] == 'activate':
+                if run(['--bootnum', action['number'], '--active'], action):
+                    after = _read(host, efibootmgr)
+                    entry = next((e for e in after['entries'] if e['number'] == action['number']), None)
+                    if entry and classify(entry, esp_of[role], loader, set()) == 'ok':
+                        by_role[role]['state'] = 'ok'
+                        verified.add(role)
+
+        # 2. Delete what is wrong, only where the role's right entry is verified.
+        for action in planned['actions']:
+            if action['op'] != 'delete' or action['role'] not in verified:
+                continue
+            if not NUMBER.match(action['number']) or action['number'] == by_role[action['role']]['number']:
+                continue
+            if run(['--bootnum', action['number'], '--delete-bootnum'], action):
+                by_role[action['role']]['entries'] = [
+                    n for n in by_role[action['role']]['entries'] if n != action['number']]
+                if by_role[action['role']]['state'] == 'duplicate':
+                    by_role[action['role']]['state'] = 'ok'
+
+        # 3. The order: main, reserve, the rest — once the main entry is verified.
+        if 'main' in verified:
+            current = _read(host, efibootmgr)
+            front = [by_role[role]['number'] for role in ROLES if role in verified and by_role[role]['number']]
+            order = desired_order(current['order'], front, {entry['number'] for entry in current['entries']})
+            if order and order != current['order']:
+                run(['--bootorder', ','.join(order)], {'op': 'order', 'order': order})
+
+        result['actions'] = done
+        if done:
+            summary = '; '.join(_describe(action) for action in done)
+            audit.append(config.state_dir, {
+                'at': audit.now_iso(host), 'caller': 'root', 'actor': actor, 'method': 'BootRepair',
+                'params': {}, 'ok': result['ok'], 'actions': done,
+            }, log)
+            events.record(config.state_dir, source='boot',
+                          severity='warning' if result['ok'] else 'critical',
+                          code='BootEntryRepaired' if result['ok'] else 'BootEntryRepairFailed',
+                          device=', '.join(sorted({by_role[a['role']]['label'] for a in done if a.get('role')})) or None,
+                          message=summary, at=host.now())
+        return result
+
+
+def _creates(actions: list[dict], role: str) -> bool:
+    return any(action['op'] == 'create' and action['role'] == role for action in actions)
+
+
+def _front(by_role: dict, actions: list[dict]) -> list[str]:
+    """For a dry run: the numbers that would lead the order ("new" for one to be created)."""
+    front = []
+    for role in ROLES:
+        check = by_role.get(role)
+        if not check:
+            continue
+        if _creates(actions, role):
+            front.append('new')
+        elif check['state'] in ('ok', 'duplicate', 'inactive') and check['number']:
+            front.append(check['number'])
+    return front
+
+
+def _describe(action: dict) -> str:
+    what = {
+        'create': lambda a: f"created Boot{a.get('number') or '?'} {a['label']} on {a['disk']} partition {a['partition']}",
+        'activate': lambda a: f"activated Boot{a['number']}",
+        'delete': lambda a: f"removed Boot{a['number']} ({a['reason']})",
+        'order': lambda a: f"boot order {','.join(a['order'])}",
+    }[action['op']](action)
+    return what if action.get('ok') else f"{what} failed"

@@ -1,6 +1,7 @@
 import type { HostHealthItem } from '@helena/sdk';
 import type {
   BackupStatus,
+  BootEntryCheck,
   HostEvents,
   HostSystemStatus,
   PowerStatus,
@@ -147,12 +148,97 @@ export function storageHealth(
   } else if (storage.esp.inSync) {
     items.push({ id: 'esp', state: 'ok', code: 'espInSync' });
   }
+  items.push(...espSyncHealth(storage.esp.sync), ...bootEntryHealth(storage.bootEntries));
   if (events && events.unseenCritical > 0) {
     items.push({
       id: 'events',
       state: 'critical',
       code: 'eventsCritical',
       values: { count: events.unseenCritical },
+    });
+  }
+  return items;
+}
+
+// The copy of the first ESP onto the second after a package change. Failed is red: the
+// reserve boot may start a half-written or stale loader. Skipped (a mount missing) is amber,
+// and only while the mirror may lack something (`pending`); it stays until a copy works.
+function espSyncHealth(sync: StorageStatus['esp']['sync']): HostHealthItem[] {
+  if (!sync) return [];
+  if (sync.state === 'failed') {
+    return [
+      {
+        id: 'esp:sync',
+        state: 'critical',
+        code: 'espSyncFailed',
+        values: { reason: sync.reason ?? 'unknown', at: sync.at ?? '' },
+        since: sync.at,
+      },
+    ];
+  }
+  if (sync.state === 'skipped' && sync.pending) {
+    return [
+      {
+        id: 'esp:sync',
+        state: 'attention',
+        code: 'espSyncSkipped',
+        values: { reason: sync.reason ?? 'unknown', mount: sync.mount ?? '', at: sync.at ?? '' },
+        since: sync.at,
+      },
+    ];
+  }
+  return [];
+}
+
+// The firmware entries of both ESPs. A wrong one is amber: helena-boot-entries.service repairs
+// it at the next boot when its ESP is there (`repair: nextBoot`), once the disk is back
+// otherwise (`diskMissing`). An entry whose ESP is away but looks right (`unchecked`) says
+// nothing: the RAID and ESP lines already tell about the disk.
+function bootEntryHealth(checks: BootEntryCheck[] | undefined): HostHealthItem[] {
+  if (!checks || checks.length === 0) return [];
+  const items: HostHealthItem[] = [];
+  for (const check of checks) {
+    const id = `boot:${check.role}`;
+    const repair = check.espPresent ? 'nextBoot' : 'diskMissing';
+    const label = check.label;
+    switch (check.state) {
+      case 'ok':
+      case 'unchecked':
+        break;
+      case 'missing':
+        items.push({ id, state: 'attention', code: 'bootEntryMissing', values: { label, repair } });
+        break;
+      case 'duplicate':
+        items.push({
+          id,
+          state: 'attention',
+          code: 'bootEntryDuplicate',
+          values: { label, repair },
+        });
+        break;
+      case 'loaderMissing':
+        items.push({
+          id,
+          state: 'attention',
+          code: 'bootLoaderMissing',
+          values: { label, mount: check.mount },
+        });
+        break;
+      default:
+        items.push({
+          id,
+          state: 'attention',
+          code: 'bootEntryBroken',
+          values: { label, problem: check.state, repair },
+        });
+    }
+  }
+  if (items.length === 0 && checks.every((check) => check.state === 'ok')) {
+    items.push({
+      id: 'boot',
+      state: 'ok',
+      code: 'bootEntriesOk',
+      values: { count: checks.length },
     });
   }
   return items;
