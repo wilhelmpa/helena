@@ -10,7 +10,7 @@ here=$(cd "$(dirname "$0")/.." && pwd)
 work=$(mktemp -d "${TMPDIR:-/tmp}/helena-sudo-test.XXXXXX")
 trap 'rm -rf "$work"' EXIT
 mkdir -p "$work"/{sudoers.d,sshd.d,state,bin,pw,home/helena-ops/.ssh}
-: >"$work/sudoers"
+: >"$work/sudoers"; : >"$work/sudo.conf"
 
 cat >"$work/bin/passwd" <<'SH'
 #!/bin/sh
@@ -59,6 +59,7 @@ cat >"$work/inside.sh" <<'INNER'
 set -euo pipefail
 here=$1
 mount --bind "$W/sudoers" /etc/sudoers
+mount --bind "$W/sudo.conf" /etc/sudo.conf
 mount --bind "$W/sudoers.d" /etc/sudoers.d
 mount --bind "$W/sshd.d" /etc/ssh/sshd_config.d
 mount --bind "$W/bin" /usr/local/sbin
@@ -95,7 +96,7 @@ cmp -s "$here/files/80-helena-ops" "$W/sudoers.d/80-helena-ops" || fail "sudoers
 [[ ! -e $W/sudoers.d/90-wilhelmpa ]] || fail "the owner's rule is still there"
 ls "$W"/state/backup/*/etc/sudoers.d/90-wilhelmpa >/dev/null || fail "no backup of the owner's rule"
 grep -q 'systemctl reload ssh' "$W/calls" || fail "sshd not reloaded"
-visudo -c >/dev/null || fail "visudo -c fails afterwards"
+/usr/sbin/visudo -c >/dev/null || fail "visudo -c fails afterwards"
 audit | grep -q $'\tpass\t' || fail "audit should pass now: $(audit)"
 
 # Again: nothing to do (the orchestrator did it live already).
