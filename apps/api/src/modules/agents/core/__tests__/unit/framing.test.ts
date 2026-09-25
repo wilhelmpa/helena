@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'bun:test';
 import {
   framePrompt,
+  peopleContext,
   projectPreamble,
   runModePreamble,
   type RunForPrompt,
@@ -101,5 +102,96 @@ describe('a mention run', () => {
   it('adds nothing when the comment tags only this agent', () => {
     const text = framePrompt({ ...run, prompt: '@lead please look at this' });
     expect(text).not.toContain('The comment also tags');
+  });
+});
+
+// A routine's work is read in its task, not announced (docs/helena-decisions/
+// routine-mentions.md): in the E2E test every run of a routine tagged the owner, because a
+// delegation with no assignee said to tag a project owner.
+describe('a routine run', () => {
+  const routine = {
+    title: 'Weekly check',
+    delegateUsername: 'writer',
+    startedUsernames: ['coder', 'seo'],
+  };
+  const delegation: RunForPrompt = {
+    id: 21,
+    trigger: 'delegation',
+    prompt: 'MKT-9 Weekly check',
+    issueId: 30,
+    issueIdentifier: 'MKT-9',
+    issueTitle: 'Weekly check',
+    issueArea: null,
+    issueAreaFolder: null,
+    assigneeName: null,
+    assigneeUsername: null,
+    requesterName: null,
+    requesterUsername: null,
+    agentUserId: 'writer-user',
+    agentUsername: 'writer',
+    threadContext: null,
+    sourceActivityId: null,
+    routine,
+  };
+  const instructions = 'Montags: @coder prüf die Abhängigkeiten, @seo fasse zusammen.';
+  const mention: RunForPrompt = {
+    ...delegation,
+    id: 22,
+    trigger: 'mention',
+    prompt: instructions,
+    agentUserId: 'coder-user',
+    agentUsername: 'coder',
+  };
+
+  it('delegates without telling the agent to tag anyone', () => {
+    const text = framePrompt(delegation);
+    expect(text).toContain('comes from the routine "Weekly check"');
+    expect(text).toContain('tag nobody in your comments');
+    expect(text).toContain('mark_issue_blocked');
+    expect(text).not.toContain('tag a project owner');
+    expect(text).not.toContain('tag the responsible assignee');
+    // The same issue without a routine still asks for one person to be tagged.
+    expect(framePrompt({ ...delegation, routine: null })).toContain('tag a project owner');
+  });
+
+  it('names the agents the routine started beside the delegate, so it leaves their part', () => {
+    const text = framePrompt(delegation);
+    expect(text).toContain('The routine also started @coder, @seo on this issue');
+    expect(text).toContain('do not hand their parts to them again');
+    const alone = framePrompt({ ...delegation, routine: { ...routine, startedUsernames: [] } });
+    expect(alone).not.toContain('also started');
+  });
+
+  it('frames a mentioned agent with the instructions, its delegate and the others', () => {
+    const text = framePrompt(mention);
+    expect(text).toContain('The routine "Weekly check" of your project names you');
+    expect(text).toContain('Working on it besides you: @writer, to whom the issue is delegated; @seo.');
+    expect(text).toContain("Leave the issue's status to the agent it is delegated to.");
+    expect(text).toContain('tag nobody in your comments');
+    expect(text).toContain(`The routine's instructions:\n\n${instructions}`);
+    expect(text).not.toContain('The comment that mentioned you');
+  });
+
+  it('frames a mention a person wrote on the routine task as a comment again', () => {
+    const text = framePrompt({ ...mention, sourceActivityId: 40, routine: null });
+    expect(text).toContain('You were mentioned in a comment');
+  });
+
+  it('names the people without the advice to tag them', () => {
+    const people = peopleContext({
+      ...mention,
+      assigneeName: 'Pat',
+      assigneeUsername: 'pat',
+    });
+    expect(people).toContain('The issue is assigned to Pat (@pat)');
+    expect(people).not.toContain('Tag the responsible assignee');
+    expect(people).not.toContain('To mention a person');
+    const ordinary = peopleContext({
+      ...mention,
+      routine: null,
+      assigneeName: 'Pat',
+      assigneeUsername: 'pat',
+    });
+    expect(ordinary).toContain('Tag the responsible assignee');
   });
 });
