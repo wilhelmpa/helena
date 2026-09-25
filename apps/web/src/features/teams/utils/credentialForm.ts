@@ -33,6 +33,19 @@ export interface CredentialFormValue {
   model: string;
   allowPrivateAddress: boolean;
   keySource: DecisionKeySource;
+  // api_key, secret: whether the granted agents' commands get it as an environment variable,
+  // and its name; a variable always has a name.
+  envEnabled: boolean;
+  envName: string;
+}
+
+// A variable name as the API takes it (apps/api/src/modules/agents/credentials/env.ts
+// checks it in full, including the names Helena and the system keep for themselves).
+export const ENV_NAME_PATTERN = /^[A-Z_][A-Z0-9_]{0,63}$/;
+
+// Typed names become capitals, with anything that cannot be in one as an underscore.
+export function envNameOf(text: string): string {
+  return text.toUpperCase().replace(/[^A-Z0-9_]/g, '_').slice(0, 64);
 }
 
 // The decision services in the cloud: a key is required, and their address is never local.
@@ -45,7 +58,11 @@ export const CREDENTIAL_KINDS: CredentialKind[] = [
   'secret',
   'runtime_login',
   'decision_model',
+  'variable',
 ];
+
+// The kinds that can reach the agents' commands as an environment variable.
+export const ENV_KINDS: CredentialKind[] = ['api_key', 'secret', 'variable'];
 
 // How each runtime can be signed in here: Claude Code with a token from `claude
 // setup-token` or an API key, Codex with an API key (its ChatGPT login is made on the
@@ -75,6 +92,8 @@ export function emptyCredentialValue(kind: CredentialKind): CredentialFormValue 
     model: '',
     allowPrivateAddress: false,
     keySource: 'stored',
+    envEnabled: kind === 'variable',
+    envName: '',
   };
 }
 
@@ -96,7 +115,15 @@ export function credentialValue(entry: CredentialEntry): CredentialFormValue {
     model: entry.model ?? '',
     allowPrivateAddress: entry.allowPrivateAddress,
     keySource: entry.keySource ?? 'stored',
+    envEnabled: entry.kind === 'variable' || entry.envName !== null,
+    envName: entry.envName ?? '',
+    value: entry.kind === 'variable' ? (entry.value ?? '') : '',
   };
+}
+
+// Whether the variable part of the form is complete: off, or a name of the right shape.
+export function isEnvNameValid(value: Pick<CredentialFormValue, 'envEnabled' | 'envName'>): boolean {
+  return !value.envEnabled || ENV_NAME_PATTERN.test(value.envName);
 }
 
 export function domainsOf(text: string): string[] {
@@ -121,7 +148,9 @@ export function isCredentialFormValid(
       return filled(value.loginUrl) && filled(value.username) && filled(value.password, 'password');
     case 'api_key':
     case 'secret':
-      return filled(value.value, 'value');
+      return filled(value.value, 'value') && isEnvNameValid(value);
+    case 'variable':
+      return filled(value.value) && ENV_NAME_PATTERN.test(value.envName);
     case 'runtime_login':
       return LOGIN_METHODS[value.runtime].includes(value.method) && filled(value.value, 'value');
     case 'ssh_key':
@@ -158,7 +187,13 @@ function fieldsOf(value: CredentialFormValue): CredentialInput {
       };
     case 'api_key':
     case 'secret':
-      return { notes, ...(value.value !== '' && { value: value.value }) };
+      return {
+        notes,
+        ...(value.value !== '' && { value: value.value }),
+        envName: value.envEnabled ? value.envName : null,
+      };
+    case 'variable':
+      return { notes, value: value.value, envName: value.envName };
     case 'runtime_login':
       return {
         runtime: value.runtime,

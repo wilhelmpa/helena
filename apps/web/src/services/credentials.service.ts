@@ -11,11 +11,25 @@ import {
   type NewCredentialInput,
   createCredential,
   deleteCredential,
+  getAgentEnvironment,
   listCredentials,
   regenerateSshKey,
   updateCredential,
 } from '@/lib/api/endpoints/credentials';
 import { qk } from '@/services/queryKeys';
+
+// The environment variables that reach an agent's runs, or those of a project's agents.
+export function useAgentEnvironmentQuery(
+  teamId: number | undefined,
+  target: { agentId: number } | { projectId: number } | null,
+) {
+  const key = target ? ('agentId' in target ? `a${target.agentId}` : `p${target.projectId}`) : '';
+  return useQuery({
+    queryKey: qk.agentEnvironment(teamId ?? 0, key),
+    queryFn: () => getAgentEnvironment(teamId!, target!),
+    enabled: teamId !== undefined && target !== null,
+  });
+}
 
 export function useCredentialsPageQuery(teamId: number, params: PageParams, kind?: ListedKind) {
   return useQuery({

@@ -34,7 +34,18 @@ function detailOf(entry: CredentialEntry): string | null {
       .filter(Boolean)
       .join(' · ');
   }
+  // The variable the agents' commands get it in; a plain variable shows its value.
+  if (entry.kind === 'variable') return `${entry.envName ?? ''}=${entry.value ?? ''}`;
+  if (entry.envName) return `$${entry.envName}`;
   return null;
+}
+
+// Who receives a credential: the projects and the agents it is granted to, by name.
+function receiversOf(entry: CredentialEntry): string {
+  return entry.grants
+    .map((grant) => grant.projectKey ?? grant.agentName)
+    .filter((name): name is string => !!name)
+    .join(', ');
 }
 
 export function CredentialRow({
@@ -92,8 +103,9 @@ export function CredentialRow({
             {detail}
           </p>
         )}
-        <p className="text-xs text-muted-foreground">
+        <p className="truncate text-xs text-muted-foreground">
           {tAccess('grants.count', { count: entry.grants.length })}
+          {entry.grants.length > 0 && ` · ${receiversOf(entry)}`}
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-1 max-sm:hidden">

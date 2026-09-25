@@ -146,6 +146,10 @@
       "label": "Autopilot",
       "description": "Seberapa mandiri agen proyek ini bertindak, dan anggarannya."
     },
+    "environment": {
+      "label": "Variabel lingkungan",
+      "description": "Variabel dari Kredensial yang diterima agen proyek ini dalam run mereka."
+    },
     "browser": {
       "label": "Browser",
       "description": "Domain yang boleh dibuka browser proyek, waktu input mirip manusia, dan batas waktu kunci."

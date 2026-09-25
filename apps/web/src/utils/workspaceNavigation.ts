@@ -40,6 +40,7 @@ const PROJECT_SETTINGS_SECTIONS = new Set([
   'actions',
   'configuration',
   'custom-fields',
+  'environment',
   'general',
   'git',
   'issue-templates',

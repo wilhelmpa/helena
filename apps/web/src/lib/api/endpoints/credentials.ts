@@ -3,7 +3,13 @@ import { pageQuery, type Page, type PageParams } from '@/lib/api/core/paging';
 import type { Grant } from './access';
 
 export type CredentialKind =
-  'web_login' | 'api_key' | 'ssh_key' | 'secret' | 'runtime_login' | 'decision_model';
+  | 'web_login'
+  | 'api_key'
+  | 'ssh_key'
+  | 'secret'
+  | 'runtime_login'
+  | 'decision_model'
+  | 'variable';
 // decision_model: where its key comes from — stored here, or the local Laya installation's key
 // file (docs/helena-decisions/browser-task.md §3.3).
 export type DecisionKeySource = 'stored' | 'local-laya' | 'local-ai';
@@ -45,6 +51,11 @@ export interface CredentialEntry {
   model: string | null;
   allowPrivateAddress: boolean;
   keySource: DecisionKeySource | null;
+  // api_key, secret, variable: the environment variable the granted agents' commands get it
+  // in (docs/helena-decisions/agent-env.md).
+  envName: string | null;
+  // variable: its value, which is not secret.
+  value: string | null;
   secrets: string[];
   // The agents granted by name; `grants` holds every grant, to agents and projects.
   agentIds: number[];
@@ -71,6 +82,8 @@ export interface CredentialInput {
   model?: string;
   allowPrivateAddress?: boolean;
   keySource?: DecisionKeySource;
+  // Null takes the variable name away.
+  envName?: string | null;
 }
 
 export interface NewCredentialInput extends CredentialInput {
@@ -98,3 +111,33 @@ export const deleteCredential = (teamId: number, id: number) =>
 
 export const regenerateSshKey = (teamId: number, id: number) =>
   request<CredentialEntry>(`/teams/${teamId}/credentials/${id}/ssh-key`, { method: 'POST' });
+
+// The environment variables that reach an agent's runs, or the runs of a project's agents:
+// names and where they come from, never a value.
+export interface EnvironmentVariable {
+  name: string;
+  credentialId: number;
+  label: string;
+  kind: 'api_key' | 'secret' | 'variable';
+  secret: boolean;
+  projectId: number | null;
+  projectKey: string | null;
+  grants: {
+    agentId: number | null;
+    agentName: string | null;
+    projectId: number | null;
+    projectKey: string | null;
+  }[];
+}
+
+export const getAgentEnvironment = (
+  teamId: number,
+  target: { agentId: number } | { projectId: number },
+) =>
+  request<{ variables: EnvironmentVariable[] }>(
+    `/teams/${teamId}/agent-environment?${new URLSearchParams(
+      'agentId' in target
+        ? { agentId: String(target.agentId) }
+        : { projectId: String(target.projectId) },
+    )}`,
+  );

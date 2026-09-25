@@ -267,6 +267,10 @@ export const qk = {
     ['access', teamId, 'audit', params, filter] as const,
   // "Anmeldungen" in Zugänge: the agents' logins and the shared ones.
   accessLogins: (teamId: number) => ['access', teamId, 'logins'] as const,
+  // The environment variables of an agent or a project (names only); below the team's
+  // credentials, so a change there reloads them.
+  agentEnvironment: (teamId: number, target: string) =>
+    ['credentials', teamId, 'environment', target] as const,
   credentialPage: (teamId: number, params: unknown, kind?: string) =>
     ['credentials', teamId, 'page', params, kind ?? 'all'] as const,
   agentMcpServers: (teamId: number, agentId: number) =>
