@@ -520,10 +520,15 @@ ctx.localAiTaskClasses.register({
   wired: true,                      // false: listed as planned, cannot leave "Aus"
   evaluate: async (ctx) => …,       // LocalAiEvalContext → LocalAiEvalResult (fixed cases, 0–1)
   threshold: 0.85,                  // the score a model needs before the class may leave "Aus"
+  evalVersion: 1,                   // raise it when the eval changes: older passes stop counting
+  modes: ['off', 'prefer'],         // optional; all three when absent, `off` always
 });
 ```
 
-At call time, one question — where does this run now, or why not:
+Work that is an agent's turn does not call the server itself: its producer stores the class on
+the run (`agent_run.work_class`, `WORK_CLASS` in `modules/local-ai/work-classes.ts`) and the claim
+hands the local model (`classModelNow`, §6.3). Work Helena sends itself asks at call time — where
+does this run now, or why not:
 
 ```ts
 import { resolveLocalRoute, readModelServerKey } from '@repo/db';
