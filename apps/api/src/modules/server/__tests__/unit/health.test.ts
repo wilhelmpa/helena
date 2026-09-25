@@ -101,16 +101,20 @@ describe('ESP copy and boot entries (the 2026-09-25 disk that fell off the bus)'
   };
 
   it('a failed copy is red, a skipped one amber only while the mirror may lack something', () => {
-    expect(withSync(sync({ state: 'failed', reason: 'readFailed', mount: '/boot/efi' }))).toMatchObject(
-      { state: 'critical', code: 'espSyncFailed', values: { reason: 'readFailed' } },
+    expect(
+      withSync(sync({ state: 'failed', reason: 'readFailed', mount: '/boot/efi' })),
+    ).toMatchObject({ state: 'critical', code: 'espSyncFailed', values: { reason: 'readFailed' } });
+    expect(withSync(sync({ state: 'skipped', reason: 'notMounted', pending: true }))).toMatchObject(
+      {
+        state: 'attention',
+        code: 'espSyncSkipped',
+        values: { reason: 'notMounted', mount: '/boot/efi2', at: '2026-09-25T16:30:00Z' },
+        since: '2026-09-25T16:30:00Z',
+      },
     );
-    expect(withSync(sync({ state: 'skipped', reason: 'notMounted', pending: true }))).toMatchObject({
-      state: 'attention',
-      code: 'espSyncSkipped',
-      values: { reason: 'notMounted', mount: '/boot/efi2', at: '2026-09-25T16:30:00Z' },
-      since: '2026-09-25T16:30:00Z',
-    });
-    expect(withSync(sync({ state: 'skipped', reason: 'notMounted', pending: false }))).toBeUndefined();
+    expect(
+      withSync(sync({ state: 'skipped', reason: 'notMounted', pending: false })),
+    ).toBeUndefined();
     expect(withSync(sync({}))).toBeUndefined();
     // An older helper without the field says nothing.
     expect(byId(storageHealth(storage()), 'esp:sync')).toBeUndefined();
@@ -140,7 +144,11 @@ describe('ESP copy and boot entries (the 2026-09-25 disk that fell off the bus)'
 
   it('both entries right is one green line', () => {
     const items = withEntries({});
-    expect(byId(items, 'boot')).toMatchObject({ state: 'ok', code: 'bootEntriesOk', values: { count: 2 } });
+    expect(byId(items, 'boot')).toMatchObject({
+      state: 'ok',
+      code: 'bootEntriesOk',
+      values: { count: 2 },
+    });
     expect(byId(items, 'boot:main')).toBeUndefined();
   });
 
@@ -159,8 +167,15 @@ describe('ESP copy and boot entries (the 2026-09-25 disk that fell off the bus)'
       byId(withEntries({ state: 'noPartuuid', espPresent: false, partuuid: null }), 'boot:main'),
     ).toMatchObject({ values: { repair: 'diskMissing' } });
     expect(
-      byId(withEntries({ state: 'missing', espPresent: false, number: null, entries: [] }), 'boot:main'),
-    ).toMatchObject({ state: 'attention', code: 'bootEntryMissing', values: { repair: 'diskMissing' } });
+      byId(
+        withEntries({ state: 'missing', espPresent: false, number: null, entries: [] }),
+        'boot:main',
+      ),
+    ).toMatchObject({
+      state: 'attention',
+      code: 'bootEntryMissing',
+      values: { repair: 'diskMissing' },
+    });
     const unchecked = withEntries({ state: 'unchecked', espPresent: false, partuuid: null });
     expect(byId(unchecked, 'boot:main')).toBeUndefined();
     expect(byId(unchecked, 'boot')).toBeUndefined();

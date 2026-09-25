@@ -209,7 +209,12 @@ function bootEntryHealth(checks: BootEntryCheck[] | undefined): HostHealthItem[]
         items.push({ id, state: 'attention', code: 'bootEntryMissing', values: { label, repair } });
         break;
       case 'duplicate':
-        items.push({ id, state: 'attention', code: 'bootEntryDuplicate', values: { label, repair } });
+        items.push({
+          id,
+          state: 'attention',
+          code: 'bootEntryDuplicate',
+          values: { label, repair },
+        });
         break;
       case 'loaderMissing':
         items.push({
@@ -229,7 +234,12 @@ function bootEntryHealth(checks: BootEntryCheck[] | undefined): HostHealthItem[]
     }
   }
   if (items.length === 0 && checks.every((check) => check.state === 'ok')) {
-    items.push({ id: 'boot', state: 'ok', code: 'bootEntriesOk', values: { count: checks.length } });
+    items.push({
+      id: 'boot',
+      state: 'ok',
+      code: 'bootEntriesOk',
+      values: { count: checks.length },
+    });
   }
   return items;
 }

@@ -113,8 +113,11 @@ class Fake:
         boot['next'] = self.boot_next
         for entry in boot['entries']:
             entry['disk'] = None if not entry['partuuid'] else ('A' if entry['label'] == 'Debian' else 'B')
+        if incident:
+            # The first disk is off the bus: not listed, its ESP not mounted.
+            disks = [disk for disk in disks if disk['letter'] != 'A']
         checks = [
-            {'role': 'main', 'label': 'Debian', 'mount': '/boot/efi', 'espPresent': True,
+            {'role': 'main', 'label': 'Debian', 'mount': '/boot/efi', 'espPresent': not incident,
              'partuuid': '2a7ccb77-d727-4df5-aa1a-e619e847d2e8', 'number': '000F',
              'state': 'noPartuuid' if incident else 'ok', 'entries': ['000F'], 'foreign': []},
             {'role': 'reserve', 'label': 'Debian (Reserve)', 'mount': '/boot/efi2', 'espPresent': True,
@@ -128,9 +131,11 @@ class Fake:
         return {
             'arrays': arrays, 'disks': disks,
             'esp': {'mounts': [
-                {'mount': '/boot/efi', 'mounted': True, 'source': '/dev/nvme1n1p1', 'files': 14, 'bytes': 9437184, 'digest': 'a1'},
+                {'mount': '/boot/efi', 'mounted': not incident, 'source': None if incident else '/dev/nvme1n1p1',
+                 'files': None if incident else 14, 'bytes': None if incident else 9437184,
+                 'digest': None if incident else 'a1'},
                 {'mount': '/boot/efi2', 'mounted': True, 'source': '/dev/nvme0n1p1', 'files': 14, 'bytes': 9437184, 'digest': 'a1'},
-            ], 'inSync': True, 'differences': [], 'differenceCount': 0, 'sync': sync},
+            ], 'inSync': None if incident else True, 'differences': [], 'differenceCount': 0, 'sync': sync},
             'boot': boot, 'reserveEntry': next(e for e in boot['entries'] if e['label'] == 'Debian (Reserve)'),
             'bootEntries': checks,
             'checkedAt': iso(),
