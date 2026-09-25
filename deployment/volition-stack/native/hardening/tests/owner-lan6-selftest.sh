@@ -130,6 +130,16 @@ probe - 2001:db8:1:2::58 ::1 kingston-server.local "" "machine: own IPv6 to ::1"
 [[ -n $ll ]] && probe - "$ll" 2001:db8:1:2::58 kingston-server.local "" "machine: link-local to own IPv6"
 stop
 
+# Control: without the machine's own addresses in the include, the self map alone does not
+# catch one own address talking to another (IPv6 hosts have several) — that is the hole the
+# own-address lines close.
+cp "$work/owner-networks.conf" "$work/owner-networks.full"
+grep -v '/128 0;$' "$work/owner-networks.full" >"$work/owner-networks.conf"
+start
+probe - 2001:db8:1:2::77 2001:db8:1:2::58 kingston-server.local FAKE "control: without the own-address lines one own address to another WOULD be the owner"
+stop
+cp "$work/owner-networks.full" "$work/owner-networks.conf"
+
 # The LAN interface gets a ULA too: then the ULA prefix is the home network's as well.
 ip -6 addr add fd00:1::58/64 dev eno1 nodad
 echo "networks include after the LAN interface got a ULA:"
