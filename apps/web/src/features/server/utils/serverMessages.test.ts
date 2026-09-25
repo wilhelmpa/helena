@@ -28,8 +28,10 @@ function healthCodes(): string[] {
   const codes = new Set<string>();
   for (const file of ['health.ts', 'service.ts']) {
     const source = readFileSync(join(REPO, 'apps/api/src/modules/server', file), 'utf8');
-    for (const line of source.split('\n').filter((text) => /\bcode: /.test(text))) {
-      for (const match of line.matchAll(/(?<![=!]== )'([a-z][A-Za-z]+)'/g)) codes.add(match[1]!);
+    for (const [, expression] of source.matchAll(/\bcode: ([^,}]+)/g)) {
+      for (const match of expression!.matchAll(/(?<![=!]== )'([a-z][A-Za-z]+)'/g)) {
+        codes.add(match[1]!);
+      }
     }
   }
   return [...codes].sort();
