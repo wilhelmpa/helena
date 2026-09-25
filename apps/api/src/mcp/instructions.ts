@@ -3,11 +3,16 @@
 // what to call first, how ids are resolved, how an issue is expected to move — so
 // that individual tool descriptions stay a plain statement of what one tool does.
 //
-// Keep it short and true for every project. Anything project-specific (column
-// names, issue types, labels) is data, and the model reads it from get_project.
+// Keep it short and true for every project and every client: Claude Code and Codex read
+// it (Hermes does not), an agent may be in a chat with a person or in an autonomous run
+// with nobody to ask, and a person may call the tools from their own client. Anything
+// project-specific (column names, issue types, labels) is data, and the model reads it
+// from get_project; what an agent may do in a repository comes from its own instructions.
+
 export const SERVER_INSTRUCTIONS = `
-Itsaplan is a project tracker. A project holds issues, and defines its own columns
-(states), issue types, labels, custom fields, and members.
+Helena is the workspace this server belongs to: projects with their tasks (issues),
+goals, notes and files, and the AI agents that work on them. A project holds issues and
+defines its own columns (states), issue types, labels, custom fields and members.
 
 ## Resolving ids
 
@@ -44,35 +49,44 @@ completed, canceled. Select a column by its stateType, never by its name.
 
 ## Working on an issue
 
-When asked to actually work on an issue, keep its state honest as you go:
+When you work on an issue, keep its state honest as you go:
 
 1. Read it with get_issue, or get_issue_by_number when you were given a "KEY-42"
    identifier, including its acceptance criteria and custom fields.
 2. Check the issue says enough to build the right thing: what is wanted, where it
-   applies, how to tell it is done. If anything is missing or can be read two ways,
-   ask the person in the chat and wait for the answer before starting.
+   applies, how to tell it is done. If a decision only a person can make is missing,
+   ask: in a chat, ask the person you are talking to; in an autonomous run, where
+   nobody is there to answer, call mark_issue_blocked with one clear question and stop.
+   Settle smaller gaps with a sensible assumption and name it in your report.
 3. Before starting, move it to a column whose stateType is "started"
    (update_issue with that columnId).
 4. When the work is finished, move it to a "completed" column; if it is abandoned,
-   "canceled". Do not leave an issue in "started" once you have stopped.
-5. Add a comment only when part of the issue was not done: say what is left and why,
-   in one or two plain sentences. When everything asked for is done, add no comment.
-6. Then propose a commit message in the chat, for the person to use or edit. Do not
-   commit anything yourself, and do not put the message in a comment on the issue.
-
-The proposed message is one line, in English, in the form "KEY-42 short summary of
-the change" — the issue's identifier, then what the change does, at the level of the
-whole task. Keep it to the outcome; do not list files, functions, or each edit.
+   "canceled". Do not leave an issue in "started" once you have stopped. When the
+   project's agent team reviews your work, hand it back the way your instructions say.
+5. In an autonomous run, report the outcome in a short comment on the issue: what
+   changed, what is verified, what is left and why. In a chat, tell the person instead,
+   and comment only on what was left undone. No file paths, code or lists of edits.
+6. Actions with effects outside Helena — pushing or deploying, sending, publishing,
+   paying, deleting — follow your instructions and the approval rules: ask with
+   request_approval first where they require it. Commit in a repository only where your
+   instructions let you; a commit message starts with the issue's identifier
+   ("KEY-42 short summary of the change").
 
 Read list_issue_activity before commenting on a long-running issue, so you do not
-repeat what is already there. A comment is for the people on the project: keep it
-short and readable, no file paths, no code, no lists of edits.
+repeat what is already there.
 
 A comment that answers another one carries that comment's id in replyToId, and the
 replies of the comments on a page come with them, so a thread arrives whole. Answer
 a question someone asked in a comment with add_comment carrying replyToId set to
 that comment's id, so the answer reads in the thread rather than at the end of the
 issue.
+
+## Goals
+
+Goals say what a project or a department works towards (list_goals, get_goal). A task
+that serves a goal is linked to it (goalId on create_issue, or link_issue_to_goal), so
+the goal shows its progress. add_goal_note reports progress on a goal; a goal's status
+changes only when a person confirms it, so propose a new status with the note instead.
 
 ## Mentions
 

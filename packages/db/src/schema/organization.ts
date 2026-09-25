@@ -13,7 +13,8 @@ import {
   timestamp,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
-import { aiAgent, project, team } from './app';
+import { aiAgent, issue, project, team } from './app';
+import { user } from './auth';
 
 export const organizationDepartment = pgTable(
   'organization_department',
@@ -138,5 +139,64 @@ export const organizationProjectAssignment = pgTable(
   (t) => [
     primaryKey({ columns: [t.teamId, t.projectId] }),
     index('organization_project_department_idx').on(t.teamId, t.departmentId),
+  ],
+);
+
+// The goal a task serves (docs/helena-decisions/agent-context.md §7): at most one per task,
+// which is what "a task references a goal" means. Kept apart from the issue row so the
+// goals stay a module of their own; the goal's page shows the tasks and their progress.
+export const helenaGoalTask = pgTable(
+  'helena_goal_task',
+  {
+    issueId: integer('issue_id')
+      .primaryKey()
+      .references(() => issue.id, { onDelete: 'cascade' }),
+    goalId: integer('goal_id')
+      .notNull()
+      .references(() => organizationGoal.id, { onDelete: 'cascade' }),
+    teamId: integer('team_id')
+      .notNull()
+      .references(() => team.id, { onDelete: 'cascade' }),
+    // Who linked it: a member or an agent's user.
+    linkedByUserId: text('linked_by_user_id').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('helena_goal_task_goal_idx').on(t.goalId)],
+);
+
+// Progress notes on a goal, written by its agents (add_goal_note) or by people. A note may
+// propose a new status; the goal changes only when a team owner or manager accepts it
+// (`decision`), so an agent never marks a goal achieved on its own.
+export const helenaGoalNote = pgTable(
+  'helena_goal_note',
+  {
+    id: serial('id').primaryKey(),
+    teamId: integer('team_id')
+      .notNull()
+      .references(() => team.id, { onDelete: 'cascade' }),
+    goalId: integer('goal_id')
+      .notNull()
+      .references(() => organizationGoal.id, { onDelete: 'cascade' }),
+    authorUserId: text('author_user_id').references(() => user.id, { onDelete: 'set null' }),
+    body: text('body').notNull(),
+    proposedStatus: text('proposed_status'),
+    // Null while a proposal waits; 'accepted' or 'rejected' once a person decided it.
+    decision: text('decision'),
+    decidedByUserId: text('decided_by_user_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    decidedAt: timestamp('decided_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('helena_goal_note_goal_idx').on(t.goalId, t.createdAt),
+    check(
+      'helena_goal_note_status_check',
+      sql`${t.proposedStatus} IS NULL OR ${t.proposedStatus} IN ('planned', 'active', 'achieved', 'paused')`,
+    ),
+    check(
+      'helena_goal_note_decision_check',
+      sql`${t.decision} IS NULL OR ${t.decision} IN ('accepted', 'rejected')`,
+    ),
   ],
 );
