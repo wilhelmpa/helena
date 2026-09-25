@@ -16,6 +16,7 @@ const CredentialKind = t.Union([
   t.Literal('secret'),
   t.Literal('runtime_login'),
   t.Literal('decision_model'),
+  t.Literal('variable'),
 ]);
 
 const ListedKind = t.Union([
@@ -25,6 +26,7 @@ const ListedKind = t.Union([
   t.Literal('secret'),
   t.Literal('runtime_login'),
   t.Literal('decision_model'),
+  t.Literal('variable'),
   t.Literal('mcp_oauth'),
 ]);
 const DecisionKeySource = t.Union([
@@ -65,9 +67,24 @@ const credentialFields = {
     ),
   ),
   value: t.Optional(
-    t.String({ maxLength: 16384, description: 'api_key, secret, runtime_login: the value.' }),
+    t.String({
+      maxLength: 16384,
+      description:
+        'api_key, secret, runtime_login: the value, write-only. variable: its value, which is not secret.',
+    }),
   ),
   notes: t.Optional(t.String({ maxLength: 4000 })),
+  envName: t.Optional(
+    t.Nullable(
+      t.String({
+        maxLength: 64,
+        description:
+          'api_key, secret, variable: the environment variable the granted agents receive it ' +
+          'in for each run and chat answer (e.g. CLOUDFLARE_API_TOKEN). Null or empty takes ' +
+          'it away; a variable always has one.',
+      }),
+    ),
+  ),
   // runtime_login: the runtime it signs in, and whether it is an OAuth token (Claude Code,
   // from `claude setup-token`) or an API key.
   runtime: t.Optional(LoginRuntime),
@@ -156,6 +173,10 @@ export const CredentialEntryResponse = t.Object({
   allowPrivateAddress: t.Boolean(),
   keySource: t.Nullable(DecisionKeySource),
   modelServer: t.Nullable(t.String()),
+  envName: t.Nullable(
+    t.String({ description: 'The environment variable the granted agents receive it in.' }),
+  ),
+  value: t.Nullable(t.String({ description: 'variable: its value, which is not secret.' })),
   secrets: t.Array(t.String(), { description: 'The secret fields that hold a value.' }),
   agentIds: t.Array(t.Number(), { description: 'The agents granted by name.' }),
   grants: t.Array(GrantResponse),
@@ -245,6 +266,51 @@ export const SshKeysResponse = t.Object({
       label: t.String(),
       updatedAt: t.String({ description: 'Changes whenever the key pair is regenerated.' }),
       privateKey: t.String(),
+    }),
+  ),
+});
+
+// The environment variables of a run or chat answer the calling runner holds. The runner sets
+// them for that one command; `secret` ones are masked in everything it reports.
+export const EnvVariablesResponse = t.Object({
+  variables: t.Array(
+    t.Object({
+      id: t.Number(),
+      label: t.String(),
+      name: t.String(),
+      value: t.String(),
+      secret: t.Boolean(),
+      updatedAt: t.String(),
+    }),
+  ),
+});
+
+export const environmentQuery = t.Object({
+  agentId: t.Optional(t.Numeric({ description: 'The variables that reach this agent.' })),
+  projectId: t.Optional(
+    t.Numeric({ description: "The variables that reach this project's agents." }),
+  ),
+});
+
+// Names and sources only: a value never leaves the credential store here.
+export const EnvironmentResponse = t.Object({
+  variables: t.Array(
+    t.Object({
+      name: t.String(),
+      credentialId: t.Number(),
+      label: t.String(),
+      kind: t.Union([t.Literal('api_key'), t.Literal('secret'), t.Literal('variable')]),
+      secret: t.Boolean(),
+      projectId: t.Nullable(t.Number()),
+      projectKey: t.Nullable(t.String()),
+      grants: t.Array(
+        t.Object({
+          agentId: t.Nullable(t.Number()),
+          agentName: t.Nullable(t.String()),
+          projectId: t.Nullable(t.Number()),
+          projectKey: t.Nullable(t.String()),
+        }),
+      ),
     }),
   ),
 });

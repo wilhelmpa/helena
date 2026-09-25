@@ -493,10 +493,12 @@ export const connectorRoutes = new Elysia({
       detail: {
         summary: 'List your connections',
         description:
-          'The Google accounts, website logins and SSH keys granted to you in this project, ' +
-          'with the services and tools you may use on each and whether you may only read. ' +
-          'Secrets never appear: a login is filled by the browser, an SSH key reaches git ' +
-          'through your runner.',
+          'The Google accounts, website logins, SSH keys and environment variables granted ' +
+          'to you in this project, with the services and tools you may use on each and ' +
+          'whether you may only read. Secrets never appear: a login is filled by the browser, ' +
+          'an SSH key reaches git through your runner, and an environment variable (e.g. ' +
+          'CLOUDFLARE_API_TOKEN for wrangler) is set for your commands — use it as $NAME and ' +
+          'never print a secret one.',
         ...mcpTool('list_connections'),
       },
     },

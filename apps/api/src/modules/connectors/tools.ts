@@ -14,6 +14,7 @@ import { HttpError, iso } from '#shared/lib';
 import { createApprovalRequest, type RequestKind } from '#modules/approvals/service';
 import { accessTo, effectiveGrants, type GrantSubject } from '#modules/agents/credentials/grants';
 import { recordAgentUses, type UseAction } from '#modules/agents/credentials/delivery';
+import { ENV_KINDS } from '#modules/agents/credentials/env';
 import { listAccounts, getAccount, type AccountRow } from './store';
 import { googleReadable, googleToolContext } from './google/engine';
 import { decideConnectorAction } from './policy';
@@ -380,15 +381,18 @@ export interface ConnectionListing {
   }[];
   webLogins: { id: number; label: string; origins: string[] }[];
   sshKeys: { id: number; label: string; publicKey: string | null }[];
+  // The environment variables the agent's commands receive (Zugänge, "Als
+  // Umgebungsvariable an Agenten geben"): names only.
+  environment: { name: string; label: string; secret: boolean }[];
 }
 
 // The accounts and credentials the agent reaches in the project, with what it may do with
 // each. Secret values never appear.
 export async function listCallerConnections(caller: ToolCaller): Promise<ConnectionListing> {
   const grants = await effectiveGrants(subjectOf(caller), {
-    kinds: ['google', 'web_login', 'ssh_key'],
+    kinds: ['google', 'web_login', 'ssh_key', ...ENV_KINDS],
   });
-  if (grants.size === 0) return { google: [], webLogins: [], sshKeys: [] };
+  if (grants.size === 0) return { google: [], webLogins: [], sshKeys: [], environment: [] };
   const rows = await db
     .select({
       id: integrationCredential.id,
@@ -399,7 +403,7 @@ export async function listCallerConnections(caller: ToolCaller): Promise<Connect
     .from(integrationCredential)
     .where(inArray(integrationCredential.id, [...grants.keys()]))
     .orderBy(asc(integrationCredential.label));
-  const listing: ConnectionListing = { google: [], webLogins: [], sshKeys: [] };
+  const listing: ConnectionListing = { google: [], webLogins: [], sshKeys: [], environment: [] };
   const serviceIds = connectors.get('google')?.services.map((service) => service.id) ?? [];
   for (const row of rows) {
     const readable = (row.redacted ?? {}) as Record<string, unknown>;
@@ -439,8 +443,15 @@ export async function listCallerConnections(caller: ToolCaller): Promise<Connect
         label: row.label ?? '',
         publicKey: typeof readable.publicKey === 'string' ? readable.publicKey : null,
       });
+    } else if (typeof readable.envName === 'string') {
+      listing.environment.push({
+        name: readable.envName,
+        label: row.label ?? '',
+        secret: row.kind !== 'variable',
+      });
     }
   }
+  listing.environment.sort((a, b) => a.name.localeCompare(b.name));
   return listing;
 }
 

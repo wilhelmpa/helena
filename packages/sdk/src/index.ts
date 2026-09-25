@@ -25,6 +25,7 @@ export {
   type ActionScope,
 } from './actions';
 export { consoleLogger, type AgentRef, type Logger, type ProjectRef } from './common';
+export { MIN_SECRET_LENGTH, SECRET_MASK, SecretMask, SecretStream } from './secret-mask';
 export { resolveText, type LocalizedText, type Translate } from './text';
 export {
   SchemaError,
