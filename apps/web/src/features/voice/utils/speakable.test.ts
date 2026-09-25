@@ -8,7 +8,10 @@ describe('speakable', () => {
       speakable('Das kostet ca. 40 € bzw. 12 % mehr, z. B. bei Verve & Co.'),
       'Das kostet circa 40 Euro beziehungsweise 12 Prozent mehr, zum Beispiel bei Verve und Co.',
     );
-    assert.equal(speakable('Siehe Nr. 3, d.h. die Liste usw.'), 'Siehe Nummer 3, das heißt die Liste und so weiter');
+    assert.equal(
+      speakable('Siehe Nr. 3, d.h. die Liste usw.'),
+      'Siehe Nummer 3, das heißt die Liste und so weiter',
+    );
   });
 
   it('says links as their site, task keys as words, and drops emojis', () => {

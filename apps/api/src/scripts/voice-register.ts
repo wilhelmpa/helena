@@ -26,8 +26,18 @@ await host.load(localAiPlugin, {
 });
 
 const SERVERS = [
-  { slug: 'stt', kind: WHISPER_CPP, name: 'Spracherkennung (whisper.cpp, GPU)', baseUrl: WHISPER_CPP_DEFAULT_BASE_URL },
-  { slug: 'tts', kind: QWEN_TTS, name: 'Stimme (Qwen3-TTS, GPU)', baseUrl: QWEN_TTS_DEFAULT_BASE_URL },
+  {
+    slug: 'stt',
+    kind: WHISPER_CPP,
+    name: 'Spracherkennung (whisper.cpp, GPU)',
+    baseUrl: WHISPER_CPP_DEFAULT_BASE_URL,
+  },
+  {
+    slug: 'tts',
+    kind: QWEN_TTS,
+    name: 'Stimme (Qwen3-TTS, GPU)',
+    baseUrl: QWEN_TTS_DEFAULT_BASE_URL,
+  },
 ];
 
 for (const entry of SERVERS) {
@@ -37,7 +47,9 @@ for (const entry of SERVERS) {
     : await createServer({ ...entry, keySource: 'none' });
   console.log(
     `${existing ? 'checked' : 'registered'} ${server.name}: ${
-      server.status?.reachable ? 'reachable' : `not reachable (${server.status?.error ?? 'unknown'})`
+      server.status?.reachable
+        ? 'reachable'
+        : `not reachable (${server.status?.error ?? 'unknown'})`
     }`,
   );
   for (const model of server.models)

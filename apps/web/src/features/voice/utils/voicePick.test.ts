@@ -22,7 +22,11 @@ describe('bestVoice', () => {
   });
 
   it('never picks a novelty voice while another speaks the language', () => {
-    const voices = [voice('Grandpa (Deutsch)', 'de-DE'), voice('Eddy (Deutsch)', 'de-DE'), voice('Anna', 'de-DE')];
+    const voices = [
+      voice('Grandpa (Deutsch)', 'de-DE'),
+      voice('Eddy (Deutsch)', 'de-DE'),
+      voice('Anna', 'de-DE'),
+    ];
     assert.equal(bestVoice(voices, 'de-DE')?.name, 'Anna');
   });
 
@@ -31,7 +35,10 @@ describe('bestVoice', () => {
       bestVoice([voice('Google Deutsch', 'de-DE', false), voice('Helena', 'de-AT')], 'de-DE')?.name,
       'Helena',
     );
-    assert.equal(bestVoice([voice('Google Deutsch', 'de-DE', false)], 'de-DE')?.name, 'Google Deutsch');
+    assert.equal(
+      bestVoice([voice('Google Deutsch', 'de-DE', false)], 'de-DE')?.name,
+      'Google Deutsch',
+    );
     assert.equal(bestVoice([voice('Samantha', 'en-US')], 'de-DE'), undefined);
   });
 });

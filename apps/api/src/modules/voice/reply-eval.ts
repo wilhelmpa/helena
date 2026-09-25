@@ -32,7 +32,16 @@ export const VOICE_REPLY_CASES: Case[] = [
     id: 'time',
     question: 'Wie spät ist es gerade?',
     expect: 'answer',
-    mustSay: [['14:35', '14.35', '14 uhr 35', 'vierzehn uhr fünfunddreißig', 'fünf nach halb drei', '14 uhr']],
+    mustSay: [
+      [
+        '14:35',
+        '14.35',
+        '14 uhr 35',
+        'vierzehn uhr fünfunddreißig',
+        'fünf nach halb drei',
+        '14 uhr',
+      ],
+    ],
   },
   {
     id: 'shorter',
@@ -54,12 +63,20 @@ export const VOICE_REPLY_CASES: Case[] = [
   { id: 'morning', question: 'Guten Morgen!', expect: 'answer', maxWords: 25 },
   // Only the agent can: the owner's data, anything to do, anything current.
   { id: 'tasks', question: 'Wie viele offene Aufgaben hat Verve gerade?', expect: 'hand-over' },
-  { id: 'create', question: 'Erstelle bitte eine Aufgabe: Checkout-Seite testen.', expect: 'hand-over' },
+  {
+    id: 'create',
+    question: 'Erstelle bitte eine Aufgabe: Checkout-Seite testen.',
+    expect: 'hand-over',
+  },
   { id: 'mail', question: 'Schreib Anna eine Mail, dass ich später komme.', expect: 'hand-over' },
   { id: 'calendar', question: 'Was steht heute noch in meinem Kalender?', expect: 'hand-over' },
   { id: 'restart', question: 'Kannst du den Docker-Container neu starten?', expect: 'hand-over' },
   { id: 'yesterday', question: 'Was hat der Koordinator gestern erledigt?', expect: 'hand-over' },
-  { id: 'remember', question: 'Merk dir, dass ich Kaffee ohne Zucker trinke.', expect: 'hand-over' },
+  {
+    id: 'remember',
+    question: 'Merk dir, dass ich Kaffee ohne Zucker trinke.',
+    expect: 'hand-over',
+  },
   { id: 'weather', question: 'Wie wird das Wetter morgen in Hamburg?', expect: 'hand-over' },
   {
     id: 'follow-up',

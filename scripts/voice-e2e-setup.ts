@@ -10,7 +10,11 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 
 const args = Object.fromEntries(
   process.argv.slice(2).reduce<string[][]>((pairs, value, index, all) => {
-    if (value.startsWith('--')) pairs.push([value.slice(2), all[index + 1]?.startsWith('--') ? 'true' : (all[index + 1] ?? 'true')]);
+    if (value.startsWith('--'))
+      pairs.push([
+        value.slice(2),
+        all[index + 1]?.startsWith('--') ? 'true' : (all[index + 1] ?? 'true'),
+      ]);
     return pairs;
   }, []),
 );
@@ -32,7 +36,8 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
     },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  if (!response.ok) throw new Error(`${method} ${path}: ${response.status} ${await response.text()}`);
+  if (!response.ok)
+    throw new Error(`${method} ${path}: ${response.status} ${await response.text()}`);
   const setCookies = response.headers.getSetCookie();
   if (setCookies.length) cookie = setCookies.map((entry) => entry.split(';')[0]).join('; ');
   const text = await response.text();
@@ -95,5 +100,10 @@ if (args.reply) {
 writeFileSync(`${OUT}/cookie`, cookie);
 writeFileSync(`${OUT}/agent-key`, created.apiKey);
 console.log(
-  JSON.stringify({ project: 'VOX', agentId: created.agent.id, path: '/project/VOX/chat', reply: !!args.reply }),
+  JSON.stringify({
+    project: 'VOX',
+    agentId: created.agent.id,
+    path: '/project/VOX/chat',
+    reply: !!args.reply,
+  }),
 );

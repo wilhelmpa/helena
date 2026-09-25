@@ -54,7 +54,10 @@ for (;;) {
     });
     await sleep(CLOSE_MS);
     await post(`/agent-chats/${message.id}/events`, {
-      events: [{ type: 'TEXT_MESSAGE_END', messageId }, { type: 'RUN_FINISHED', runId: String(message.id) }],
+      events: [
+        { type: 'TEXT_MESSAGE_END', messageId },
+        { type: 'RUN_FINISHED', runId: String(message.id) },
+      ],
     });
     await post(`/agent-chats/${message.id}/result`, { status: 'success' });
   } catch (error) {

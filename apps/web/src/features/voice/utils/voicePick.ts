@@ -13,7 +13,8 @@ export interface VoiceInfo {
 }
 
 const NATURAL = /premium|enhanced|natural|neural|siri|verbessert|erweitert|online \(natural\)/i;
-const ROBOTIC = /\b(eddy|flo|grandma|grandpa|reed|rocko|sandy|shelley|espeak|albert|bad news|bahh|bells|boing|bubbles|cellos|jester|organ|superstar|trinoids|whisper|wobble|zarvox)\b/i;
+const ROBOTIC =
+  /\b(eddy|flo|grandma|grandpa|reed|rocko|sandy|shelley|espeak|albert|bad news|bahh|bells|boing|bubbles|cellos|jester|organ|superstar|trinoids|whisper|wobble|zarvox)\b/i;
 
 export function voiceScore(voice: VoiceInfo, lang: string): number {
   const wanted = lang.toLowerCase();

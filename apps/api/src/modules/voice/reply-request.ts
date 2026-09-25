@@ -134,4 +134,3 @@ export function parseStreamLine(line: string): StreamDelta | 'done' | null {
     usage: body.usage ?? null,
   };
 }
-

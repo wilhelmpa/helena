@@ -29,13 +29,15 @@ function replyTo(prompt: string): { text: string } | { handOver: true } {
   const said = prompt.split('The person says now:').at(-1) ?? '';
   if (HAND_OVER.test(said)) return { handOver: true };
   if (/spät/.test(said)) return { text: 'Es ist gerade 14:35.' };
-  if (/kürzer/.test(said)) return { text: 'Kurz: Steuerberater, Checkout-Freigabe, Server-Update.' };
+  if (/kürzer/.test(said))
+    return { text: 'Kurz: Steuerberater, Checkout-Freigabe, Server-Update.' };
   if (/Hauptstadt/.test(said)) return { text: 'Die Hauptstadt von Australien ist Canberra.' };
   return { text: 'Ja, ich höre dich gut.' };
 }
 
 function sse(chunks: unknown[]): Response {
-  const body = chunks.map((chunk) => `data: ${JSON.stringify(chunk)}\n\n`).join('') + 'data: [DONE]\n\n';
+  const body =
+    chunks.map((chunk) => `data: ${JSON.stringify(chunk)}\n\n`).join('') + 'data: [DONE]\n\n';
   return new Response(body, { headers: { 'content-type': 'text/event-stream' } });
 }
 
@@ -426,9 +428,8 @@ describe('the voice reply', () => {
     // The agent's runner never saw it.
     expect((await asAgent['agent-chats'].claim.post()).data!.message).toBeNull();
     // The model heard the conversation's names and the question, and could only hand over.
-    const request = received
-      .filter((entry) => entry.path === '/api/v1/chat/completions')
-      .at(-1)!.json as { stream: boolean; tools: { function: { name: string } }[] };
+    const request = received.filter((entry) => entry.path === '/api/v1/chat/completions').at(-1)!
+      .json as { stream: boolean; tools: { function: { name: string } }[] };
     expect(request.stream).toBe(true);
     expect(request.tools.map((tool) => tool.function.name)).toEqual(['hand_to_agent']);
   });
@@ -468,7 +469,8 @@ describe('the voice reply', () => {
     const thread = chatOf(asOwner, agent.id).threads({ threadId });
     await until(
       async () => (await thread.messages.get()).data!.items,
-      (list) => list.filter((item) => item.via === 'voice' && item.role === 'assistant').length === 1,
+      (list) =>
+        list.filter((item) => item.via === 'voice' && item.role === 'assistant').length === 1,
     );
     await chatOf(asOwner, agent.id).chat.post({
       prompt: 'Wie viele Aufgaben hat Verve?',

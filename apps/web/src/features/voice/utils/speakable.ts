@@ -43,8 +43,15 @@ export function speakable(text: string, lang = 'de'): string {
     .replace(/\b([A-Z][A-Z0-9]{1,9})-(\d+)\b/g, '$1 $2')
     .replace(/\s?(→|->|=>)\s?/g, ', ')
     .replace(/[\p{Extended_Pictographic}\p{Emoji_Modifier}\u{FE0F}\u{200D}]+/gu, '');
-  for (const [pattern, words] of lang.startsWith('de') ? GERMAN : lang.startsWith('en') ? ENGLISH : []) {
+  for (const [pattern, words] of lang.startsWith('de')
+    ? GERMAN
+    : lang.startsWith('en')
+      ? ENGLISH
+      : []) {
     out = out.replace(pattern, words);
   }
-  return out.replace(/\s+/g, ' ').replace(/\s+([,.!?])/g, '$1').trim();
+  return out
+    .replace(/\s+/g, ' ')
+    .replace(/\s+([,.!?])/g, '$1')
+    .trim();
 }

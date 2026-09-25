@@ -112,10 +112,7 @@ export async function helenaWords(): Promise<string[]> {
       .innerJoin(user, eq(user.id, aiAgent.userId))
       .where(eq(aiAgent.template, false))
       .orderBy(asc(aiAgent.id)),
-    db
-      .select({ name: project.name, key: project.key })
-      .from(project)
-      .orderBy(asc(project.id)),
+    db.select({ name: project.name, key: project.key }).from(project).orderBy(asc(project.id)),
   ]);
   return uniqueWords(
     [
@@ -157,7 +154,9 @@ export async function replyModelChoices(): Promise<ReplyModelChoice[]> {
         id,
         name: typeof model.name === 'string' && model.name ? model.name : id,
         thinkingLevels: Array.isArray(model.thinkingLevels)
-          ? (model.thinkingLevels as unknown[]).filter((level): level is string => typeof level === 'string')
+          ? (model.thinkingLevels as unknown[]).filter(
+              (level): level is string => typeof level === 'string',
+            )
           : [],
       });
     }

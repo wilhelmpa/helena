@@ -1055,7 +1055,10 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
   // session: the session resumes from the agent's own last answer, and what was said since is
   // put in front of the question.
   let lastOwn = history.length - 1;
-  while (lastOwn >= 0 && !(history[lastOwn]!.role === 'assistant' && history[lastOwn]!.via !== 'voice'))
+  while (
+    lastOwn >= 0 &&
+    !(history[lastOwn]!.role === 'assistant' && history[lastOwn]!.via !== 'voice')
+  )
     lastOwn -= 1;
   const sessionId = await resumableSession(row.threadId, history.slice(0, lastOwn + 1), agent.id);
   const attachments = (question?.attachments as ChatAttachment[] | null) ?? [];

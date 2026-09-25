@@ -23,7 +23,8 @@ function replyTo(prompt: string): { text: string } | { handOver: true } {
   const said = prompt.split('The person says now:').at(-1) ?? '';
   if (HAND_OVER.test(said)) return { handOver: true };
   if (/spät/.test(said)) return { text: 'Es ist gerade 14:35. Brauchst du noch etwas?' };
-  if (/kürzer/.test(said)) return { text: 'Kurz: Steuerberater, Checkout-Freigabe, Server-Update.' };
+  if (/kürzer/.test(said))
+    return { text: 'Kurz: Steuerberater, Checkout-Freigabe, Server-Update.' };
   if (/Hauptstadt/.test(said)) return { text: 'Die Hauptstadt von Australien ist Canberra.' };
   return { text: 'Ja, ich höre dich gut.' };
 }
@@ -53,7 +54,10 @@ async function chat(request: Request): Promise<Response> {
         {
           message:
             'handOver' in reply
-              ? { content: null, tool_calls: [{ function: { name: 'hand_to_agent', arguments: '{}' } }] }
+              ? {
+                  content: null,
+                  tool_calls: [{ function: { name: 'hand_to_agent', arguments: '{}' } }],
+                }
               : { content: reply.text },
         },
       ],
@@ -65,7 +69,9 @@ async function chat(request: Request): Promise<Response> {
       controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
     await sleep(REPLY_TTFT_MS);
     if ('handOver' in reply) {
-      send({ choices: [{ delta: { tool_calls: [{ index: 0, function: { name: 'hand_to_agent' } }] } }] });
+      send({
+        choices: [{ delta: { tool_calls: [{ index: 0, function: { name: 'hand_to_agent' } }] } }],
+      });
       return;
     }
     // ~50 tokens/s, as Qwen3.6-35B-A3B generates on the 8060S.
@@ -89,7 +95,11 @@ function tone(seconds: number): Response {
           const bytes = new Uint8Array(n * 2);
           const view = new DataView(bytes.buffer);
           for (let i = 0; i < n; i += 1)
-            view.setInt16(i * 2, Math.round(Math.sin(((at + i) / RATE) * 2 * Math.PI * 220) * 3000), true);
+            view.setInt16(
+              i * 2,
+              Math.round(Math.sin(((at + i) / RATE) * 2 * Math.PI * 220) * 3000),
+              true,
+            );
           controller.enqueue(bytes);
           // Faster than real time (RTF ~0.3), like the GPU.
           await sleep(25);
@@ -114,7 +124,14 @@ const server = Bun.serve({
       if (path === '/api/v1/system-stats') return Response.json({});
       if (path === '/api/v1/models')
         return Response.json({
-          data: [{ id: 'Qwen3.6-35B-A3B-GGUF', recipe: 'llamacpp', labels: ['tool-calling'], downloaded: true }],
+          data: [
+            {
+              id: 'Qwen3.6-35B-A3B-GGUF',
+              recipe: 'llamacpp',
+              labels: ['tool-calling'],
+              downloaded: true,
+            },
+          ],
         });
       if (path === '/api/v1/chat/completions') return chat(request);
     }

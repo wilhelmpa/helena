@@ -361,10 +361,15 @@ if (['dictation', 'conversation', 'bargein', 'timing'].some((name) => STEPS.incl
           return sorted[Math.floor(sorted.length / 2)];
         };
         const summary = Object.fromEntries(
-          ['pauseMs', 'transcribeMs', 'answerMs', 'voiceMs', 'totalMs'].map((key) => [key, median(key)]),
+          ['pauseMs', 'transcribeMs', 'answerMs', 'voiceMs', 'totalMs'].map((key) => [
+            key,
+            median(key),
+          ]),
         );
         if (maxTotal !== null && summary.totalMs > maxTotal)
-          throw new Error(`median turn ${summary.totalMs} ms > ${maxTotal} ms: ${JSON.stringify(summary)}`);
+          throw new Error(
+            `median turn ${summary.totalMs} ms > ${maxTotal} ms: ${JSON.stringify(summary)}`,
+          );
         return `${seen.length} turns, median ${JSON.stringify(summary)}`;
       });
     }

@@ -198,7 +198,10 @@ function VoiceSettingsRows({ settings }: { settings: VoiceSettings }) {
       </Row>
 
       <Row title={t('speed.title')} hint={t('speed.hint')}>
-        <Select value={String(settings.speed)} onValueChange={(value) => save({ speed: Number(value) })}>
+        <Select
+          value={String(settings.speed)}
+          onValueChange={(value) => save({ speed: Number(value) })}
+        >
           <SelectTrigger className="w-full" aria-label={t('speed.title')}>
             <SelectValue />
           </SelectTrigger>
@@ -240,7 +243,9 @@ function VoiceSettingsRows({ settings }: { settings: VoiceSettings }) {
         {model && model.thinkingLevels.length > 0 && (
           <Select
             value={settings.replyThinkingLevel ?? DEFAULT}
-            onValueChange={(value) => save({ replyThinkingLevel: value === DEFAULT ? null : value })}
+            onValueChange={(value) =>
+              save({ replyThinkingLevel: value === DEFAULT ? null : value })
+            }
           >
             <SelectTrigger className="w-full" aria-label={t('model.thinking')}>
               <SelectValue />

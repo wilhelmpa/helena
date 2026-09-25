@@ -67,7 +67,9 @@ const settingsFields = {
     maxItems: 60,
     description: 'Words the transcription should know (names, products, terms)',
   }),
-  voice: t.Nullable(t.String({ maxLength: 120, description: "The local voice; null: the server's" })),
+  voice: t.Nullable(
+    t.String({ maxLength: 120, description: "The local voice; null: the server's" }),
+  ),
   speed: t.Number({ minimum: 0.7, maximum: 1.4 }),
   replyModel: t.Nullable(
     t.String({
