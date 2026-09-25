@@ -144,6 +144,7 @@ export default function AccountPreferencesPage() {
         >
           <AccountPreferenceRow label={t('showStats')} description={t('showStatsDescription')}>
             <Switch
+              aria-label={t('showStats')}
               checked={prefs.issueStatsOpen}
               onCheckedChange={(issueStatsOpen) => save({ issueStatsOpen })}
               disabled={disabled}
@@ -183,6 +184,7 @@ export default function AccountPreferencesPage() {
         >
           <AccountPreferenceRow label={t('autoWatch')} description={t('autoWatchDescription')}>
             <Switch
+              aria-label={t('autoWatch')}
               checked={prefs.autoWatch}
               onCheckedChange={(autoWatch) => save({ autoWatch })}
               disabled={disabled}

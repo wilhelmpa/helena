@@ -38,9 +38,10 @@ export default function SettingsAutoArchiveRow({
             onChange={(e) => onDays(e.target.value)}
             disabled={!editable || !on}
             className="h-8 w-20"
+            aria-label={`${title}: ${t('days')}`}
           />
           <span className="text-xs text-muted-foreground">{t('days')}</span>
-          <Switch checked={on} onCheckedChange={onToggle} disabled={!editable} />
+          <Switch aria-label={title} checked={on} onCheckedChange={onToggle} disabled={!editable} />
         </div>
       }
     />
