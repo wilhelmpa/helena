@@ -96,9 +96,14 @@ export default function ConversationBar({
           phase === 'thinking' && 'shimmer',
         )}
       >
-        <span className="shrink-0">{label}</span>
+        <span className="min-w-0 truncate">{label}</span>
+        {/* What was understood, where the composer is wide enough (the text is also the
+            message in the transcript). */}
         {heard && phase !== 'hearing' ? (
-          <span dir="auto" className="min-w-0 truncate text-muted-foreground">
+          <span
+            dir="auto"
+            className="hidden min-w-0 flex-1 truncate text-muted-foreground @md/composer:inline"
+          >
             {t('heard', { text: heard })}
           </span>
         ) : null}
@@ -108,20 +113,24 @@ export default function ConversationBar({
           type="button"
           size="sm"
           variant="ghost"
+          aria-label={t('interrupt')}
           className="h-6 shrink-0 gap-1 px-1.5 text-xs font-normal text-foreground"
           onClick={conversation.interrupt}
         >
-          <Square className="size-3 fill-current" aria-hidden="true" /> {t('interrupt')}
+          <Square className="size-3 fill-current" aria-hidden="true" />
+          <span className="hidden @sm/composer:inline">{t('interrupt')}</span>
         </Button>
       )}
       <Button
         type="button"
         size="sm"
         variant="ghost"
+        aria-label={t('end')}
         className="h-6 shrink-0 gap-1 px-1.5 text-xs font-normal text-foreground"
         onClick={conversation.stop}
       >
-        <X className="size-3.5" aria-hidden="true" /> {t('end')}
+        <X className="size-3.5" aria-hidden="true" />
+        <span className="hidden @sm/composer:inline">{t('end')}</span>
       </Button>
     </Marker>
   );

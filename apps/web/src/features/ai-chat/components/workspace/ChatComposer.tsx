@@ -164,6 +164,8 @@ export default function ChatComposer({
   const checkConcurrency = useConcurrentChatCheck(agent.id, threadId);
   const dictation = useDictation();
   const talking = conversation.phase !== 'off';
+  // Dictation and the conversation share the microphone: one at a time.
+  const [dictating, setDictating] = useState(false);
 
   function focusAfter(update: () => void) {
     update();
@@ -403,6 +405,7 @@ export default function ChatComposer({
                   recorder={dictation.recorder}
                   onUnavailable={dictation.onUnavailable}
                   onError={dictation.onError}
+                  onBusyChange={setDictating}
                   labels={{
                     start: dictation.local ? t('composer.dictateLocal') : t('composer.dictate'),
                     stop: t('composer.stopDictation'),
@@ -448,7 +451,7 @@ export default function ChatComposer({
                   label={busy ? t('composer.queue') : t('composer.send')}
                   disabled={upload.isPending}
                 />
-              ) : conversation.ready || talking ? (
+              ) : (conversation.ready && !dictating) || talking ? (
                 // With nothing typed, the send button's place starts a conversation (the
                 // claude.ai/ChatGPT pattern); while one runs, it ends it.
                 <ConversationButton conversation={conversation} />

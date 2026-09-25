@@ -56,6 +56,8 @@ export type SpeechInputProps = Omit<
   // With engine "none": says why nothing can listen.
   onUnavailable?: () => void;
   onError?: (error: SpeechInputError, cause?: unknown) => void;
+  // Whether the microphone is in use by dictation (recording or transcribing).
+  onBusyChange?: (busy: boolean) => void;
   labels: { start: string; stop: string; unavailable: string };
 };
 
@@ -72,6 +74,7 @@ export function SpeechInput({
   recorder,
   onUnavailable,
   onError,
+  onBusyChange,
   labels,
   className,
   disabled,
@@ -79,6 +82,10 @@ export function SpeechInput({
 }: SpeechInputProps) {
   const [listening, setListening] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const busy = listening || processing;
+  useEffect(() => {
+    onBusyChange?.(busy);
+  }, [busy, onBusyChange]);
   const recognition = useRef<BrowserRecognition | null>(null);
   const recording = useRef<SpeechRecording | null>(null);
   const ring = useRef<HTMLSpanElement>(null);
