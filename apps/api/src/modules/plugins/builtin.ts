@@ -45,6 +45,7 @@ import {
   decisionsPlugin,
 } from '#modules/decisions/classes';
 import { DECISIONS_LOCAL_AI_CLASS } from '#modules/decisions/local-ai-class';
+import { PUSH_PERMISSIONS, PUSH_PLUGIN_ID, PUSH_PROVIDES, pushPlugin } from '#modules/push/plugin';
 
 // Helena's own features as internal plugins: they register through the same host and
 // the same manifest checks as an external plugin (docs/helena-framework.md, §3a
@@ -229,6 +230,15 @@ export async function loadBuiltinPlugins(app: McpApp): Promise<void> {
         decisionClasses: BUILTIN_DECISION_CLASSES.map((entry) => entry.id),
         localAiTaskClasses: [DECISIONS_LOCAL_AI_CLASS.id],
       },
+    }),
+  );
+  // Web Push to the owner's devices (docs/helena-decisions/push.md): the notification
+  // categories, the alert sources watched on the server, and the event subscriber.
+  await host.load(
+    pushPlugin,
+    builtinManifest(PUSH_PLUGIN_ID, 'push', {
+      provides: PUSH_PROVIDES,
+      permissions: PUSH_PERMISSIONS,
     }),
   );
   // The second brain: Helena's knowledge sources and capture targets live in the host's

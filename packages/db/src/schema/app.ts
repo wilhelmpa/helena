@@ -1426,14 +1426,19 @@ export const userTelegramAccount = pgTable(
 );
 
 // Outbox for outbound notification delivery. One row per (recipient, channel,
-// message) to send for an issue event: an email or a Telegram message to one member.
-// Rows are enqueued when inbox notifications are created (see
+// message) to send: an email or a Telegram message to one member for an issue event,
+// or a Web Push message to one of a person's devices. Email and Telegram rows are
+// enqueued when inbox notifications are created (see
 // apps/api/src/modules/notifications/outbound.ts) and drained by the worker
-// following the same claim/retry pattern as webhook_delivery. The message text is
-// composed at enqueue time and stored in `payload`; the channel credentials are read
-// from team_notification_setting at send time. channel is 'email' | 'telegram'
-// ('email' picks SMTP or Resend from the team config). recipient is the member's
-// email address for email rows, or their Telegram chat id for telegram rows.
+// following the same claim/retry pattern as webhook_delivery; push rows are enqueued
+// and drained by @helena/push in the api and the worker alike (an emergency must reach
+// the phone while the worker is down; docs/helena-decisions/push.md). The message text
+// is composed at enqueue time and stored in `payload`; the channel credentials are read
+// at send time (team_notification_setting, the instance's VAPID keys). channel is
+// 'email' | 'telegram' | 'push' ('email' picks SMTP or Resend from the team config).
+// recipient is the member's email address for email rows, their Telegram chat id for
+// telegram rows, and the id of the push subscription (helena_push_subscription) for
+// push rows. A push row belongs to no project.
 // The stored message on a notification_delivery row, composed at enqueue time by the
 // api and read by the worker that sends it. `subject`/`html` are channel-specific:
 // email uses `subject` and builds its own HTML from `text`; Telegram sends `html`
@@ -1450,15 +1455,39 @@ export interface DeliveryPayload {
   idempotencyKey?: string;
   dedupeKey?: string;
   projectInviteId?: number;
+  // A push row's message, rendered for the device (@helena/push).
+  push?: PushDeliveryMessage;
+}
+
+// What a device shows for a push row: the notification's title and body, where a tap
+// leads inside Helena, the tag a later message replaces it by (a recovery replaces the
+// alarm), and how the push service is to treat it (RFC 8030 §5).
+export interface PushDeliveryMessage {
+  category: string;
+  title: string;
+  body: string;
+  // A path inside Helena, `/god/server/disks`.
+  url: string;
+  tag: string;
+  // Ring and vibrate again although a notification with the tag is shown.
+  renotify?: boolean;
+  // Stay on screen until the person acts (desktop browsers).
+  requireInteraction?: boolean;
+  urgency: 'very-low' | 'low' | 'normal' | 'high';
+  ttlSeconds: number;
+  // RFC 8030 §5.4: a newer message with the topic replaces one still waiting at the push
+  // service. At most 32 characters of the base64url alphabet.
+  topic?: string;
+  // ISO 8601: when it happened.
+  at: string;
 }
 
 export const notificationDelivery = pgTable(
   'notification_delivery',
   {
     id: serial('id').primaryKey(),
-    projectId: integer('project_id')
-      .notNull()
-      .references(() => project.id, { onDelete: 'cascade' }),
+    // Null for a push row, which belongs to a person, not a project.
+    projectId: integer('project_id').references(() => project.id, { onDelete: 'cascade' }),
     channel: text('channel').notNull(),
     recipient: text('recipient'),
     payload: jsonb('payload').$type<DeliveryPayload>().notNull(),
@@ -1469,11 +1498,26 @@ export const notificationDelivery = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    check('notification_delivery_channel_check', sql`${t.channel} IN ('email', 'telegram')`),
+    check(
+      'notification_delivery_channel_check',
+      sql`${t.channel} IN ('email', 'telegram', 'push')`,
+    ),
+    // Only a push row may go without a project.
+    check(
+      'notification_delivery_project_check',
+      sql`${t.projectId} IS NOT NULL OR ${t.channel} = 'push'`,
+    ),
     // Backs the worker's claim query: due pending rows ordered by next_attempt_at.
     index('notification_delivery_due_idx')
       .on(t.nextAttemptAt)
       .where(sql`${t.status} = 'pending'`),
+    // The same push message is queued once per device while it waits (an alert checked
+    // by two api replicas, an event handed over twice).
+    uniqueIndex('notification_delivery_push_dedupe_idx')
+      .on(t.recipient, sql`(${t.payload} ->> 'dedupeKey')`)
+      .where(
+        sql`${t.channel} = 'push' AND ${t.status} = 'pending' AND (${t.payload} ->> 'dedupeKey') IS NOT NULL`,
+      ),
   ],
 );
 

@@ -1,0 +1,85 @@
+{
+  "alert": {
+    "emergencies": {
+      "open": "紧急：{subject}",
+      "reminder": "仍未解决：{subject}",
+      "resolved": "已恢复正常：{subject}"
+    },
+    "needs-you": {
+      "open": "需要你处理：{subject}",
+      "reminder": "仍未解决：{subject}",
+      "resolved": "已解决：{subject}"
+    },
+    "other": {
+      "open": "{subject}",
+      "reminder": "仍未解决：{subject}",
+      "resolved": "已解决：{subject}"
+    },
+    "reminderBody": "{text} 已持续 {duration}。",
+    "resolvedBody": "{duration}后已解决。"
+  },
+  "duration": {
+    "minutes": "{count, plural, other {# 分钟}}",
+    "hours": "{count, plural, other {# 小时}}",
+    "days": "{count, plural, other {# 天}}"
+  },
+  "approval": {
+    "title": "审批：{agent}",
+    "body": "{action}",
+    "bodyWhere": "{action} · {where}"
+  },
+  "reply": {
+    "title": "{agent} 已回复",
+    "empty": "回复已就绪。"
+  },
+  "chatFailed": {
+    "title": "回复失败：{agent}",
+    "body": "聊天中的回复失败了。"
+  },
+  "runFailed": {
+    "title": "运行失败：{agent}",
+    "noTask": "一次运行失败了。"
+  },
+  "test": {
+    "title": "Helena",
+    "body": "此设备上的推送通知正常工作。"
+  },
+  "subjects": {
+    "raid": "镜像 {name}",
+    "disk": "磁盘 {disk}",
+    "backup": "备份",
+    "esp": "EFI 分区",
+    "cpu": "CPU",
+    "fans": "风扇",
+    "events": "存储报告",
+    "server": "服务器",
+    "hostd": "系统助手",
+    "service": "服务 {service}",
+    "login": "{provider} 登录",
+    "security": "安全",
+    "localAi": "本地 AI {name}"
+  },
+  "health": {
+    "raidDegraded": "镜像 {name} 不完整：缺少 {missing} 块磁盘。数据只剩一份。",
+    "raidRebuilding": "镜像 {name} 正在重建：{percent}%。在此之前只有一份副本。",
+    "diskFailing": "磁盘 {disk} 报告故障。请更换。",
+    "diskSpareLow": "磁盘 {disk}：备用空间几乎用尽（{spare}%）。请更换。",
+    "eventsCritical": "来自 mdadm 或 smartd 的 {count} 条严重报告。",
+    "backupFailed": "上一次备份失败。",
+    "backupCheckFailed": "备份检查失败。",
+    "restoreTestFailed": "恢复测试失败。",
+    "cpuHot": "CPU 过热：{temperature} °C。",
+    "fansRaised": "过热保护已将风扇提升到 5 级：CPU {temperature} °C。",
+    "espOutOfSync": "两个 EFI 分区不一致（{count} 个文件）。备用磁盘可能无法启动。",
+    "espNotMounted": "EFI 分区 {mount} 未挂载。",
+    "healthFailed": "无法读取其状态。"
+  },
+  "problems": {
+    "serviceDown": "未运行或不再报告。",
+    "loginRejected": "服务商拒绝了登录。请重新登录。",
+    "loginRanOut": "登录已过期且不会自动续期。请重新登录。",
+    "securityChecks": "{count} 项重要检查未通过。",
+    "localAiDown": "模型服务器没有响应。",
+    "hostdDown": "helena-hostd 没有响应，磁盘、备份和温度都未受监控。"
+  }
+}

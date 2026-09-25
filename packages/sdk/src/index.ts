@@ -263,6 +263,20 @@ export {
   type HostUnavailableReason,
 } from './host';
 export {
+  BUILTIN_NOTIFICATION_CATEGORY_IDS,
+  PUSH_URGENCIES,
+  isPushUrgency,
+  normalizeAlertItem,
+  type AlertItem,
+  type AlertSource,
+  type AlertSourceContext,
+  type AlertText,
+  type BuiltinNotificationCategoryId,
+  type NotificationAudience,
+  type NotificationCategory,
+  type PushUrgency,
+} from './notifications';
+export {
   definePlugin,
   type HelenaPlugin,
   type HostProcess,

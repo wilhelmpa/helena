@@ -5,6 +5,7 @@ import type { EventHandler, EventInit, HelenaEvent } from './events';
 import type { LocalAiTaskClass, ModelServerType } from './local-ai';
 import type { CaptureTarget, KnowledgeSource } from './knowledge';
 import type { HostCapability } from './host';
+import type { AlertSource, NotificationCategory } from './notifications';
 import type { PluginManifest, McpServerContribution } from './manifest-types';
 import type { PolicyEvaluator } from './policy';
 import type { RuntimeType } from './runtime';
@@ -82,6 +83,10 @@ export interface PluginContext {
   // Kinds of typed decisions a feature asks (the router, the mail classifier, a plugin's):
   // their questions' privacy, defaults and eval (API).
   decisionClasses: Registrar<DecisionClass>;
+  // Kinds of messages people switch on or off per device (push; API).
+  notificationCategories: Registrar<NotificationCategory>;
+  // Problems that are red right now, pushed while they last (API).
+  alertSources: Registrar<AlertSource>;
   events: {
     // Only event types under the plugin's own id: `<pluginId>.<name>`.
     publish(init: EventInit): Promise<HelenaEvent>;

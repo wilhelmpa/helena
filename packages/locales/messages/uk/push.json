@@ -1,0 +1,85 @@
+{
+  "alert": {
+    "emergencies": {
+      "open": "Аварія: {subject}",
+      "reminder": "Досі не вирішено: {subject}",
+      "resolved": "Знову гаразд: {subject}"
+    },
+    "needs-you": {
+      "open": "Потрібна ваша участь: {subject}",
+      "reminder": "Досі не вирішено: {subject}",
+      "resolved": "Вирішено: {subject}"
+    },
+    "other": {
+      "open": "{subject}",
+      "reminder": "Досі не вирішено: {subject}",
+      "resolved": "Вирішено: {subject}"
+    },
+    "reminderBody": "{text} Вже {duration}.",
+    "resolvedBody": "Усунуто через {duration}."
+  },
+  "duration": {
+    "minutes": "{count, plural, one {# хвилину} few {# хвилини} many {# хвилин} other {# хвилини}}",
+    "hours": "{count, plural, one {# годину} few {# години} many {# годин} other {# години}}",
+    "days": "{count, plural, one {# день} few {# дні} many {# днів} other {# дня}}"
+  },
+  "approval": {
+    "title": "Підтвердження: {agent}",
+    "body": "{action}",
+    "bodyWhere": "{action} · {where}"
+  },
+  "reply": {
+    "title": "{agent} відповів",
+    "empty": "Відповідь готова."
+  },
+  "chatFailed": {
+    "title": "Відповідь не вдалася: {agent}",
+    "body": "Відповідь у чаті не вдалася."
+  },
+  "runFailed": {
+    "title": "Запуск не вдався: {agent}",
+    "noTask": "Запуск не вдався."
+  },
+  "test": {
+    "title": "Helena",
+    "body": "Push-сповіщення працюють на цьому пристрої."
+  },
+  "subjects": {
+    "raid": "Дзеркало {name}",
+    "disk": "Диск {disk}",
+    "backup": "Резервна копія",
+    "esp": "Розділи EFI",
+    "cpu": "Процесор",
+    "fans": "Вентилятори",
+    "events": "Повідомлення про сховище",
+    "server": "Сервер",
+    "hostd": "Системний помічник",
+    "service": "Служба {service}",
+    "login": "Вхід {provider}",
+    "security": "Безпека",
+    "localAi": "Локальний ШІ {name}"
+  },
+  "health": {
+    "raidDegraded": "Дзеркало {name} неповне: {missing, plural, one {бракує # диска} few {бракує # дисків} many {бракує # дисків} other {бракує # диска}}. Дані є лише в одній копії.",
+    "raidRebuilding": "Дзеркало {name} відновлюється: {percent} %. Доти є лише одна копія.",
+    "diskFailing": "Диск {disk} повідомляє про несправність. Замініть його.",
+    "diskSpareLow": "Диск {disk}: резерв майже вичерпано ({spare} %). Замініть його.",
+    "eventsCritical": "{count, plural, one {# серйозне повідомлення} few {# серйозні повідомлення} many {# серйозних повідомлень} other {# серйозного повідомлення}} від mdadm або smartd.",
+    "backupFailed": "Останнє резервне копіювання не вдалося.",
+    "backupCheckFailed": "Перевірка резервної копії не вдалася.",
+    "restoreTestFailed": "Тест відновлення не вдався.",
+    "cpuHot": "Процесор гарячий: {temperature} °C.",
+    "fansRaised": "Теплозахист підняв вентилятори до рівня 5: процесор {temperature} °C.",
+    "espOutOfSync": "Два розділи EFI відрізняються ({count, plural, one {# файл} few {# файли} many {# файлів} other {# файлу}}). Резервний диск може не завантажитися.",
+    "espNotMounted": "Розділ EFI {mount} не змонтовано.",
+    "healthFailed": "Не вдалося прочитати стан."
+  },
+  "problems": {
+    "serviceDown": "Не працює або більше не відповідає.",
+    "loginRejected": "Провайдер відхилив вхід. Увійдіть знову.",
+    "loginRanOut": "Вхід закінчився й не оновлюється. Увійдіть знову.",
+    "securityChecks": "{count, plural, one {# важлива перевірка не проходить.} few {# важливі перевірки не проходять.} many {# важливих перевірок не проходять.} other {# важливої перевірки не проходять.}}",
+    "localAiDown": "Сервер моделей не відповідає.",
+    "hostdDown": "helena-hostd не відповідає: диски, резервні копії та температура не відстежуються."
+  }
+}

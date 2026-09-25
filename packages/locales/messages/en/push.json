@@ -1,0 +1,85 @@
+{
+  "alert": {
+    "emergencies": {
+      "open": "Emergency: {subject}",
+      "reminder": "Still open: {subject}",
+      "resolved": "Fine again: {subject}"
+    },
+    "needs-you": {
+      "open": "Needs you: {subject}",
+      "reminder": "Still open: {subject}",
+      "resolved": "Done: {subject}"
+    },
+    "other": {
+      "open": "{subject}",
+      "reminder": "Still open: {subject}",
+      "resolved": "Done: {subject}"
+    },
+    "reminderBody": "{text} For {duration} now.",
+    "resolvedBody": "Resolved after {duration}."
+  },
+  "duration": {
+    "minutes": "{count, plural, one {# minute} other {# minutes}}",
+    "hours": "{count, plural, one {# hour} other {# hours}}",
+    "days": "{count, plural, one {# day} other {# days}}"
+  },
+  "approval": {
+    "title": "Approval: {agent}",
+    "body": "{action}",
+    "bodyWhere": "{action} · {where}"
+  },
+  "reply": {
+    "title": "{agent} answered",
+    "empty": "The answer is ready."
+  },
+  "chatFailed": {
+    "title": "Answer failed: {agent}",
+    "body": "The answer in the chat failed."
+  },
+  "runFailed": {
+    "title": "Run failed: {agent}",
+    "noTask": "A run failed."
+  },
+  "test": {
+    "title": "Helena",
+    "body": "Push works on this device."
+  },
+  "subjects": {
+    "raid": "Mirror {name}",
+    "disk": "Disk {disk}",
+    "backup": "Backup",
+    "esp": "EFI partitions",
+    "cpu": "CPU",
+    "fans": "Fans",
+    "events": "Storage reports",
+    "server": "Server",
+    "hostd": "Host helper",
+    "service": "Service {service}",
+    "login": "{provider} sign-in",
+    "security": "Security",
+    "localAi": "Local AI {name}"
+  },
+  "health": {
+    "raidDegraded": "Mirror {name} is incomplete: {missing, plural, one {one disk is missing} other {# disks are missing}}. There is only one copy of the data.",
+    "raidRebuilding": "Mirror {name} is being rebuilt: {percent} %. Until then there is only one copy.",
+    "diskFailing": "Disk {disk} reports a failure. Replace it.",
+    "diskSpareLow": "Disk {disk}: spare almost used up ({spare} %). Replace it.",
+    "eventsCritical": "{count, plural, one {One serious report} other {# serious reports}} from mdadm or smartd.",
+    "backupFailed": "The last backup failed.",
+    "backupCheckFailed": "The backup check failed.",
+    "restoreTestFailed": "The restore test failed.",
+    "cpuHot": "The CPU is hot: {temperature} °C.",
+    "fansRaised": "The thermal guard raised the fans to level 5: CPU at {temperature} °C.",
+    "espOutOfSync": "The two EFI partitions differ ({count, plural, one {# file} other {# files}}). The spare disk may not boot.",
+    "espNotMounted": "EFI partition {mount} is not mounted.",
+    "healthFailed": "Its state could not be read."
+  },
+  "problems": {
+    "serviceDown": "Is not running or no longer reports.",
+    "loginRejected": "The provider rejected the sign-in. Sign in again.",
+    "loginRanOut": "The sign-in ran out and does not renew itself. Sign in again.",
+    "securityChecks": "{count, plural, one {One important check fails.} other {# important checks fail.}}",
+    "localAiDown": "The model server does not answer.",
+    "hostdDown": "helena-hostd does not answer, so disks, backup and temperatures are not watched."
+  }
+}
