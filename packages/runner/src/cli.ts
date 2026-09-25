@@ -26,7 +26,7 @@ import { reflect } from './reflect';
 import { runtimeUpdate } from './update';
 import { perform, reportUntilTaken, type Performed } from './run';
 import { runPolicyHook } from './policy-hook';
-import type { RunSettings, RuntimeAdapter } from './runtime';
+import type { RuntimeAdapter } from './runtime';
 import { applySshKeys, sshDir, type SshKey } from './ssh';
 import {
   cloneSshEnv,
