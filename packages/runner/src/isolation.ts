@@ -242,7 +242,11 @@ export async function profileHelper<T>(
     result = await attempt(isolation.runtime);
   } catch (error) {
     // A launcher from before agentRuntime refuses the field; the helper then runs as it did.
-    if (!(error instanceof LaunchError && error.code === 'request' && error.message.includes('agentRuntime'))) {
+    if (!(
+      error instanceof LaunchError &&
+      error.code === 'request' &&
+      error.message.includes('agentRuntime')
+    )) {
       throw error;
     }
     result = await attempt(undefined);

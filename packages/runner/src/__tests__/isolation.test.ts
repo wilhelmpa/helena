@@ -201,17 +201,28 @@ describe('launcher client', () => {
         if (!accepted) {
           const end = buffered.indexOf(10);
           if (end < 0) return;
-          const request = JSON.parse(buffered.subarray(0, end).toString()) as Record<string, unknown>;
+          const request = JSON.parse(buffered.subarray(0, end).toString()) as Record<
+            string,
+            unknown
+          >;
           requests.push(request);
           buffered = buffered.subarray(end + 1);
           if ('agentRuntime' in request) {
             socket.end(
-              frame(0x14, JSON.stringify({ error: 'request', message: "unexpected fields: ['agentRuntime']" })),
+              frame(
+                0x14,
+                JSON.stringify({
+                  error: 'request',
+                  message: "unexpected fields: ['agentRuntime']",
+                }),
+              ),
             );
             return;
           }
           accepted = true;
-          socket.write(frame(0x10, JSON.stringify({ unit: 'volition-agent-alpha--a7-h-0.service' })));
+          socket.write(
+            frame(0x10, JSON.stringify({ unit: 'volition-agent-alpha--a7-h-0.service' })),
+          );
         }
         if (buffered.includes(Buffer.from([0x02, 0, 0, 0, 0]))) {
           socket.write(frame(0x11, `${JSON.stringify({ ok: true, result: 'fine' })}\n`));
@@ -237,7 +248,9 @@ describe('launcher client', () => {
     const path = join(dir, 'launch.sock');
     const server = createServer((socket) => {
       socket.once('data', () =>
-        socket.end(frame(0x14, JSON.stringify({ error: 'credentials', message: 'the profile is odd' }))),
+        socket.end(
+          frame(0x14, JSON.stringify({ error: 'credentials', message: 'the profile is odd' })),
+        ),
       );
     });
     servers.push(server);
@@ -394,7 +407,12 @@ describe('isolation in the config', () => {
     );
     const [first, second] = await loadConfig(file);
     // With the agent's runtime, which the launcher needs for the profile helper.
-    expect(first.isolation).toEqual({ slug: 'alpha', profile: 'alpha_7', agentId: 7, runtime: 'hermes' });
+    expect(first.isolation).toEqual({
+      slug: 'alpha',
+      profile: 'alpha_7',
+      agentId: 7,
+      runtime: 'hermes',
+    });
     expect(second.isolation).toEqual({
       slug: 'home',
       profile: 'home',
