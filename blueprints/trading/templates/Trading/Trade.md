@@ -14,7 +14,7 @@ risiko_usd:
 order_id:
 status: eingereicht
 konto: paper
-datum: {{date}}
+datum: "{{date}}"
 ausstieg:
 ergebnis_usd:
 ergebnis_r:

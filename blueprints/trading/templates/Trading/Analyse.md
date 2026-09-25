@@ -1,6 +1,6 @@
 ---
 typ: analyse
-datum: {{date}}
+datum: "{{date}}"
 instrumente: []
 markt:
 quellen: []

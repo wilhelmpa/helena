@@ -1,7 +1,7 @@
 ---
 typ: briefing
 session:
-datum: {{date}}
+datum: "{{date}}"
 handelstag: ja
 tags: [trading, briefing]
 ---

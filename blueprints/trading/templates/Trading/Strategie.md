@@ -9,7 +9,7 @@ instrumente: []
 vorgaenger:
 backtest:
 freigabe:
-datum: {{date}}
+datum: "{{date}}"
 tags: [trading, strategie]
 ---
 # {{title}}

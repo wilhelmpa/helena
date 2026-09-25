@@ -1,6 +1,6 @@
 ---
 typ: watchlist
-stand: {{date}}
+stand: "{{date}}"
 tags: [trading, watchlist]
 ---
 # {{title}}

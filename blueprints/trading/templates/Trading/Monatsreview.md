@@ -2,7 +2,7 @@
 typ: review
 zeitraum:
 strategien: []
-datum: {{date}}
+datum: "{{date}}"
 tags: [trading, review, monat]
 ---
 # {{title}}

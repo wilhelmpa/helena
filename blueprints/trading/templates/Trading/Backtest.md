@@ -8,7 +8,7 @@ daten:
 kosten:
 trades:
 ergebnis:
-datum: {{date}}
+datum: "{{date}}"
 tags: [trading, backtest]
 ---
 # {{title}}

@@ -1,6 +1,6 @@
 ---
 typ: tagesbericht
-datum: {{date}}
+datum: "{{date}}"
 konto: paper
 equity:
 tages_pnl_usd:
