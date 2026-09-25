@@ -29,12 +29,12 @@ Lemonade, Laya, bank format specs) was read as untrusted data.
   (Qwen3.5-4B) auf der lokalen KI liest die Wahrscheinlichkeiten der Antwortbuchstaben aus einem
   einzigen Rechenschritt aus — die Idee von SemIf-OpenJev, ohne dessen Python-Stack. Dazu eine
   JSON-Antwort als Rückfall.
-- **Ergebnis der Messungen bisher (CPU, bevor der Rechner entlastet werden musste):** Laya mit dem
-  allgemeinen Checkpoint ist auf deutschen Texten zu unsicher (52–60 % richtig, fast nichts über
-  der Schwelle) — er ist nur für Englisch trainiert. **Qwen3.5-4B per Logit-Auswertung trifft die
-  allgemeinen Fragen zu 96 %** (100 % Trefferquote über der Schwelle) und die Frage "braucht die
-  Anfrage den bisherigen Chat?" zu 90 %; die Einstufung schwer/leicht beim Router nur zu 57 %.
-  Der GPU-Lauf mit allen Arten steht aus (§8).
+- **Ergebnis der Messungen (GPU, 25.9. früh):** Das große lokale Modell der lokalen KI,
+  **Qwen3.6-35B-A3B, besteht per Logit-Auswertung jede Art**: Modellwahl 91 % Trefferquote,
+  Mail 92 %, Belege 96 %, Allgemein 100 %, bei 0,5–3 s je Fall. Das kleine Qwen3.5-4B reicht für
+  allgemeine Fragen und Mail, nicht für die Modellwahl; Qwen3-0.6B ist unbrauchbar und dabei
+  übermäßig sicher — genau dafür gibt es die Auswertung vor dem Einschalten. Laya ist auf
+  deutschen Texten zu unsicher (52–60 % richtig, fast nichts über der Schwelle). Zahlen in §8.
 - **Modellwahl für Helenas Agenten:** vor einem Lauf oder einer Chat-Antwort ohne eigenes Modell
   kann ein günstigeres Modell derselben Laufzeit übernehmen — nur wenn sicher, nur wenn die Anfrage
   für sich steht, nie teurer als eingestellt (außer du erlaubst es je Agent). Aus, bis du es je
@@ -336,36 +336,49 @@ question and a threshold sweep. In Helena ("Auswerten") and from the command lin
 | receipts | 25 (18 with a match, 7 without; Skonto, PayPal, direct debit, own invoices, near amounts) | match | 0.9 / 0.4 |
 | general | 24 (sentiment, team, deadline, meeting reply, review, label, language, intent, complaint) | 9 kinds | 0.85 / 0.5 |
 
-**Numbers so far** (Kingston, 2026-09-25 ~00:30, **CPU only**, while the RAID resynced; the run was
-stopped early on the orchestrator's request because the host was overloaded; the GPU run with
-`-ngl 99` is pending):
+**Numbers** (Kingston, 2026-09-25 03:45–04:20; `~/agent-work/decisions/results/*.json`). GPU runs:
+llama-server from the local AI's ROCm build b11166 (`-ngl 99 -t 4 -c 16384 -np 2`), one at a time;
+Laya on the CPU with 4 threads. Accuracy / precision at the class threshold / coverage; p50 per
+case (one case asks all of its class's questions; the logit readout asks each question once):
 
-| Backend | Set | Accuracy | Precision @ threshold | Coverage | p50 / p95 per case |
-|---|---|---|---|---|---|
-| Laya typed-decisions (CPU, 8 threads) | router | 60 % (route 43 %, context 78 %) | 100 % (1 answer) | 1 % | 1.2 / 1.4 s |
-| | mail | 52 % (project 60, kind 45, priority 45, reply 48, task 60) | 100 % (2 answers) | 1 % | 5.1 / 5.6 s |
-| | receipts | 52 % | – | 0 % | 0.9 / 1.1 s |
-| | general | 59 % | – | 0 % | 0.36 / 0.55 s |
-| Qwen3.5-4B Q4_K_M, logit readout (CPU, 12 threads) | general | **96 %** | **100 %** | **96 %** → passes | 1.8 / 3.6 s |
-| | router | 74 % (route 57 %, **context 90 %**) | 100 % | 39 % → fails coverage | 4.7 / 5.1 s |
-| Qwen3.5-4B, logit, debiased (both orders) | general | 100 % | 100 % | 93 % → passes | 2.0 / 4.3 s |
-| Qwen3.5-4B, JSON answer | general | 96 % | 96 % | 100 % → passes | 2.4 / 5.4 s |
+| Backend | router (0.6) | mail (0.7) | receipts (0.85) | general (0.7) |
+|---|---|---|---|---|
+| **Qwen3.6-35B-A3B** (Lemonade's workhorse), logit | **88 / 91 / 83 PASS**, 1.1 s | **90 / 92 / 90 PASS**, 3.2 s | **96 / 96 / 100 PASS**, 1.0 s | **100 / 100 / 96 PASS**, 0.5 s |
+| Qwen3.6-35B-A3B, logit debiased | 86 / 95 / 75 PASS, 2.2 s | 90 / 91 / 87 PASS, 6.6 s | 96 / 100 / 60 PASS, 2.0 s | 100 / 100 / 93 PASS, 0.9 s |
+| Qwen3.6-35B-A3B, JSON answer | 89 / 89 / 100 PASS, 2.3 s | 90 / 90 / 100 PASS, 6.4 s | 96 / 96 / 100 PASS, 1.7 s | 96 / 96 / 100 PASS, 1.0 s |
+| Qwen3.5-4B Q4_K_M, logit | 75 / 100 / 39 fail, 0.8 s | 84 / 91 / 71 PASS, 2.5 s | 80 / 88 / 64 fail, 0.8 s | 96 / 100 / 96 PASS, 0.3 s |
+| Qwen3.5-4B, logit debiased | 80 / 100 / 23 fail | 86 / 93 / 65 PASS | 84 / 94 / 64 PASS | 100 / 100 / 89 PASS |
+| Qwen3.5-4B, JSON answer | 71 / 71 / 100 fail | 84 / 84 / 100 fail | 76 / 76 / 100 fail | 96 / 96 / 100 PASS |
+| Qwen3-0.6B, logit | 25 / 25 / 100 fail | 40 / 41 / 35 fail | 48 / – / 0 fail | 37 / 36 / 41 fail |
+| Laya typed-decisions (CPU, 4 threads) | 60 / 100 / 1 fail, 2.5 s | 52 / 100 / 1 fail, 11.9 s | 52 / – / 0 fail, 2.4 s | 59 / – / 0 fail, 0.7 s |
 
-What this means so far:
+Per question on Qwen3.6-35B-A3B (logit): router route 90 % (34/40 answered, precision 91 %),
+needs_context 85 % (91 %); mail project 93 % (95 %), kind 100 % (100 %), priority 80 % (81 %),
+needs reply 98 % (98 %), task 80 % (82 %); receipts match 96 %. Threshold sweeps (same run): the
+router reaches 96 % precision at 0.8 (64 % coverage) and 97 % at 0.9 (49 %); receipts 100 % at 0.95
+(92 % coverage); mail stays at 92–94 % from 0.5 to 0.95.
 
-- **Laya's typed-decisions checkpoint does not suit German content**: its answers are close to
-  chance on the German sets and its confidence stays low, so almost nothing would be decided — a
-  class on it simply falls back to the default (safe, but useless). It stays useful for the
-  browser (its browser checkpoint) and for English content.
-- **The logit readout of a 4B decoder is the strongest local backend**: near-perfect on general
-  typed questions, very good at "depends on context", weak at rating difficulty (the tier scale is
-  judgement, not reading). The router class would therefore mostly keep the configured model —
-  the safe direction.
-- On the CPU a request with several questions takes seconds; the router's 5 s failsafe would often
-  cut it. The GPU (Lemonade/llama.cpp, the local AI) is the intended place; the numbers above are
-  an upper bound for latency.
+What this means:
+
+- **Qwen3.6-35B-A3B on the local AI passes every class** with the logit readout, at 0.5–3 s per
+  case; the readout also gives calibrated confidence (precision rises with the threshold), which a
+  JSON answer does not (its "confidence" is always high: coverage 100 %, precision = accuracy).
+  Debiasing (both option orders) costs twice the time and brings little on this model.
+- **The 4B is good enough for general questions and mail**, not for the router's difficulty scale
+  or receipts without debiasing. **The 0.6B is not usable and overconfident** (router: 25 %
+  precision at 100 % coverage) — the eval gate is what keeps such a model from being switched on.
+- **Laya's typed-decisions checkpoint does not suit German content**: close to chance, and its
+  confidence stays low, so nothing is decided (safe, but useless). It stays useful for the browser
+  (its browser checkpoint) and for English content; installing it is not recommended.
+- Mail's priority and task questions are the weakest (80–83 %): keep "Aufgabe" and "An einen
+  Agenten geben" on **Vorschlagen**, not automatic.
+- Recommended thresholds with Qwen3.6-35B-A3B: router 0.8, mail 0.7, receipts 0.95 (auto-matching
+  also needs the rules to agree), general 0.7.
+- Latency: the router's 5 s failsafe holds (p95 1.1 s); mail and receipts have 8 s.
 - Jev Cloud numbers need the owner's key; the same harness runs them
   (`--backends '[{"name":"jev","protocol":"systemone","url":"https://api.typesafe.ai","keyFile":"…","model":"jev-latest"}]'`).
+  Earlier CPU numbers (00:30, before the host had to be relieved) agree with these: Laya 52–60 %,
+  Qwen3.5-4B general 96 %.
 
 ## 9. Safety
 
@@ -427,14 +440,16 @@ useDecisionGate(async ({ local }) =>
 
 ## 11. Open owner decisions
 
-1. Which backend answers each class once the GPU evals are in (recommendation: the local logit
-   backend on Lemonade for mail, receipts and general; router only if its GPU eval passes).
+1. Which classes to switch on. Recommendation: all four on the connection "Lokale KI auf diesem
+   Server (Logit-Auswertung)" with Qwen3.6-35B-A3B (passed every eval, §8), thresholds router 0.8,
+   mail 0.7, receipts 0.95, general 0.7; the model router then per agent, starting with one.
 2. Jev Cloud: a key from console.typesafe.ai (sign-ups paused) or the Vercel AI Gateway — then the
    same evals decide.
 3. Installing the Claude Code router hook in the owner terminal (`install.sh install --claude-md`,
    then an API key and `/router on`).
 4. Installing the typed-decisions checkpoint next to the browser one (`laya/install.sh
-   typed-decisions`, 842 MB, memory limit 6 GB) — not recommended for German content (§8).
+   typed-decisions`, 842 MB, memory limit 6 GB) — not recommended: near chance on German content
+   (§8); the local AI answers every class better.
 5. Mail: which actions to allow automatically; receipts from invoice mail automatically.
 6. Receipts: which projects get bank accounts; later ERPNext pull or Enable Banking (§7.4).
 7. Whether the local AI master switch also covers decision classes pointed at a local connection

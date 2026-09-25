@@ -24,7 +24,9 @@ export const BUILTIN_DECISION_CLASSES: DecisionClass[] = [
     description: { i18n: 'decisions.classes.router.description' },
     // The request text of a run or chat answer, or of the owner's Claude Code prompt.
     input: { store: 'optional', cloud: 'allowed' },
-    defaults: { threshold: 0.6, timeoutMs: 5000 },
+    // Thresholds from the evals (decisions.md §8): the router's tier question reaches 96 %
+    // precision at 0.8 on the local AI; a wrong downgrade costs more than a kept model.
+    defaults: { threshold: 0.8, timeoutMs: 5000 },
     eval: ROUTER_EVAL,
   },
   {
@@ -40,7 +42,8 @@ export const BUILTIN_DECISION_CLASSES: DecisionClass[] = [
     label: { i18n: 'decisions.classes.receipts.label' },
     description: { i18n: 'decisions.classes.receipts.description' },
     input: { store: 'optional', cloud: 'allowed' },
-    defaults: { threshold: 0.85, timeoutMs: 8000 },
+    // 100 % precision at 0.95 on the local AI; auto-matching also needs the rules to agree.
+    defaults: { threshold: 0.95, timeoutMs: 8000 },
     eval: RECEIPT_EVAL,
   },
   {
@@ -58,6 +61,9 @@ export const BUILTIN_DECISION_CLASSES: DecisionClass[] = [
 // answer of any chat model (docs/helena-decisions/decisions.md §3.2). Both answer the same
 // System One questions as TypeSafe's Jev and Laya, so the browser's fast path can use them too.
 export const LOCAL_AI_URL = 'http://127.0.0.1:13305/api/v1';
+// The local AI's workhorse, which passed every class's eval by logit readout on 2026-09-25
+// (decisions.md §8); Lemonade's name for it.
+export const LOCAL_DECISION_MODEL = 'Qwen3.6-35B-A3B-MTP-GGUF';
 
 export const DECISIONS_BACKENDS: DecisionBackendType[] = [
   {
@@ -68,7 +74,7 @@ export const DECISIONS_BACKENDS: DecisionBackendType[] = [
     },
     location: 'local',
     defaultBaseUrl: null,
-    defaultModel: 'Qwen3.5-4B-GGUF',
+    defaultModel: LOCAL_DECISION_MODEL,
     presets: [
       {
         id: 'local-ai',
@@ -77,7 +83,7 @@ export const DECISIONS_BACKENDS: DecisionBackendType[] = [
           de: 'Lokale KI auf diesem Server (Logit-Auswertung)',
         },
         baseUrl: LOCAL_AI_URL,
-        model: 'Qwen3.5-4B-GGUF',
+        model: LOCAL_DECISION_MODEL,
         allowPrivateAddress: true,
         keySource: 'local-ai',
         modelServer: 'local',
@@ -96,7 +102,7 @@ export const DECISIONS_BACKENDS: DecisionBackendType[] = [
     },
     location: 'local',
     defaultBaseUrl: null,
-    defaultModel: 'Qwen3.5-4B-GGUF',
+    defaultModel: LOCAL_DECISION_MODEL,
     presets: [
       {
         id: 'local-ai',
@@ -105,7 +111,7 @@ export const DECISIONS_BACKENDS: DecisionBackendType[] = [
           de: 'Lokale KI auf diesem Server (JSON-Antwort)',
         },
         baseUrl: LOCAL_AI_URL,
-        model: 'Qwen3.5-4B-GGUF',
+        model: LOCAL_DECISION_MODEL,
         allowPrivateAddress: true,
         keySource: 'local-ai',
         modelServer: 'local',
