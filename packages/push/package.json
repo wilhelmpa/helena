@@ -1,0 +1,31 @@
+{
+  "name": "@helena/push",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Web Push to a person's own devices: the instance's VAPID keys, the push channel of the notification outbox, and sending (RFC 8030, 8291, 8292)",
+  "exports": {
+    ".": "./src/index.ts",
+    "./testing": "./src/testing.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@block65/webcrypto-web-push": "^2.0.0",
+    "@helena/loop": "workspace:*",
+    "@helena/sdk": "workspace:*",
+    "@repo/db": "workspace:*",
+    "@repo/net": "workspace:*",
+    "drizzle-orm": "^0.45.2"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@types/bun": "latest",
+    "eslint": "^9.39.0",
+    "http_ece": "^1.2.1",
+    "typescript": "^6.0.3"
+  }
+}

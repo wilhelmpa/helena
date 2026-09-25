@@ -179,5 +179,84 @@
   },
   "shell": {
     "title": "账户"
+  },
+  "notifications": {
+    "title": "通知",
+    "thisDevice": {
+      "title": "此设备上的推送",
+      "description": "即使没有打开 Helena，也能在这部手机或电脑上收到 Helena 的消息。",
+      "switch": "推送消息",
+      "off": "关闭",
+      "never": "已开启，尚未送达任何消息",
+      "lastDelivered": "已开启，最近送达于 {when}",
+      "enabled": "此设备已开启推送",
+      "disabled": "此设备已关闭推送",
+      "enableFailed": "无法开启推送：{error}",
+      "test": "发送测试",
+      "testSent": "测试已发送，稍后就会出现。",
+      "testFailed": "测试未送达：{error}"
+    },
+    "hints": {
+      "insecure": {
+        "title": "推送需要安全连接",
+        "body": "浏览器只允许通过 HTTPS 或在 localhost 上使用推送。设置好 https 地址后，请通过它打开 Helena。"
+      },
+      "iosInstall": {
+        "title": "在 iPhone 和 iPad 上，请先把 Helena 添加到主屏幕",
+        "body": "在 Safari 中：分享 →“添加到主屏幕”。然后从主屏幕打开 Helena，并在这里开启推送（iOS 16.4 或更高版本）。"
+      },
+      "unsupported": {
+        "title": "此浏览器不支持推送",
+        "body": "请使用最新版的 Chrome、Edge、Firefox 或 Safari。"
+      },
+      "denied": {
+        "title": "通知已被阻止",
+        "body": "请在浏览器的网站设置中允许此网站的通知，然后重新加载页面。"
+      },
+      "noKey": {
+        "title": "此服务器尚未配置推送",
+        "body": "服务器缺少加密密钥（APP_ENCRYPTION_KEY）。"
+      }
+    },
+    "devices": {
+      "title": "你的设备",
+      "description": "每台设备只接收在其上开启的内容。",
+      "empty": "还没有设备。请在每台需要接收消息的设备上，在上方开启推送。",
+      "unnamed": "设备",
+      "thisDevice": "此设备",
+      "noneOn": "全部关闭",
+      "lastDelivered": "最近送达于 {when}",
+      "failing": "送达失败：{error}",
+      "resubscribe": "需要在该设备上重新开启。",
+      "gone": "推送服务已不再识别该设备，已将其移除。",
+      "menu": "{name} 的设置",
+      "receives": "接收",
+      "test": "发送测试",
+      "remove": "移除"
+    },
+    "services": {
+      "apple": "Apple",
+      "google": "Google",
+      "mozilla": "Mozilla",
+      "microsoft": "Microsoft"
+    },
+    "categories": {
+      "emergencies": {
+        "label": "紧急情况",
+        "description": "磁盘或 RAID 故障、备份失败、过热、服务停止。发生时通知一次，解决后再通知一次。"
+      },
+      "approvals": {
+        "label": "审批",
+        "description": "有代理请求你的审批。"
+      },
+      "needs-you": {
+        "label": "需要你处理",
+        "description": "需要重新登录、安全检查未通过、运行和回复失败。"
+      },
+      "agent-replies": {
+        "label": "代理回复",
+        "description": "你没有打开 Helena 时，聊天中的回复已完成。"
+      }
+    }
   }
 }

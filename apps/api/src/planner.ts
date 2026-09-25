@@ -74,6 +74,7 @@ import { notificationSettingsRoutes } from './modules/notification-settings';
 import { notificationPreferenceRoutes } from './modules/notification-preferences';
 import { userPreferenceRoutes } from './modules/user-preferences';
 import { telegramRoutes } from './modules/telegram';
+import { pushRoutes } from './modules/push';
 import { syncRoutes } from './modules/sync';
 import { linkPreviewRoutes } from './modules/link-previews';
 import { hubInboxRoutes } from './modules/hub-inbox';
@@ -238,6 +239,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(notificationPreferenceRoutes)
   .use(userPreferenceRoutes)
   .use(telegramRoutes)
+  .use(pushRoutes)
   .use(syncRoutes)
   .use(linkPreviewRoutes)
   .use(hubInboxRoutes)

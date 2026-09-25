@@ -58,21 +58,41 @@ export function modelCheckOf(
   };
 }
 
-// A check computed from the runner's report, with a fallback the claim already recorded
-// (local AI off or its server not answering when the run or answer started) kept.
+// A check computed from the runner's report, with what the claim already recorded kept: a
+// fallback (local AI off or its server not answering when the run or answer started), and
+// that Lokale KI chose the local model for the run's kind of work.
 export function withStoredFallback(check: ModelCheck | null, stored: unknown): ModelCheck | null {
-  const fallback = (stored as Partial<ModelCheck> | null)?.fallback;
-  if (!check || !fallback || check.fallback) return check;
-  return { ...check, fallback };
+  const claimed = stored as Partial<ModelCheck> | null;
+  if (!check || !claimed) return check;
+  const fallback = claimed.fallback;
+  const workClass = claimed.configured?.workClass;
+  const local = claimed.configured?.source === 'local';
+  if (!fallback && !workClass && !local) return check;
+  return {
+    ...check,
+    configured: {
+      ...check.configured,
+      ...(local && { source: 'local' as const }),
+      ...(workClass && { workClass }),
+    },
+    ...(fallback && !check.fallback && { fallback }),
+  };
 }
 
-// What a run or chat answer is stored with when its claim already chose the configured model
-// over a local one; the runner's report replaces it and keeps the fallback.
+// What a run or chat answer is stored with when its claim decided on local AI: the configured
+// model ran instead of a local one (`fallback`), or Lokale KI handed the local model for the
+// run's kind of work (source `local`). The runner's report replaces it and keeps both.
 export function claimedModelCheck(
   model: string | null,
   reasoning: string | null,
   source: ModelCheck['configured']['source'],
-  fallback: NonNullable<ModelCheck['fallback']>,
+  fallback: ModelCheck['fallback'] | null,
+  workClass?: string | null,
 ): ModelCheck {
-  return { configured: { model, reasoning, source }, used: null, mismatch: [], fallback };
+  return {
+    configured: { model, reasoning, source, ...(workClass && { workClass }) },
+    used: null,
+    mismatch: [],
+    ...(fallback && { fallback }),
+  };
 }

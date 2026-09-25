@@ -1,0 +1,39 @@
+# Helena local AI (native/local-ai/install.sh): after Lemonade starts (at boot, after a restart),
+# load and pin the models Helena's switched-on kinds of work use, so the first request does not
+# wait for a load (~50 s for the workhorse) and a decision with a 5 s budget does not fall back.
+# The list is /etc/helena/local-ai-preload (`install.sh models preload set …`, checked against
+# the VRAM budget there and here); NPU models load on demand. It runs the installer's own copy
+# in /usr/local/lib/helena-ai, as a throwaway user that only reaches the loopback and gets the
+# key as a credential, like Lemonade.
+[Unit]
+Description=Helena local AI: load the models in use
+After=lemond.service
+Requires=lemond.service
+# A restart of Lemonade (it unloads every model) loads them again.
+PartOf=lemond.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/lib/helena-ai/install.sh models preload run
+LoadCredential=api-key:/etc/helena/local-ai.key
+Environment=HELENA_AI_KEY_FILE=%d/api-key
+# A model load reads the weights into VRAM: the first one after a boot may take minutes.
+TimeoutStartSec=30min
+DynamicUser=yes
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+IPAddressDeny=any
+IPAddressAllow=localhost
+Nice=5
+
+[Install]
+WantedBy=lemond.service

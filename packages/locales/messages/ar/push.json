@@ -1,0 +1,85 @@
+{
+  "alert": {
+    "emergencies": {
+      "open": "حالة طارئة: {subject}",
+      "reminder": "لا يزال قائمًا: {subject}",
+      "resolved": "عاد إلى طبيعته: {subject}"
+    },
+    "needs-you": {
+      "open": "يحتاج إليك: {subject}",
+      "reminder": "لا يزال قائمًا: {subject}",
+      "resolved": "تمّ: {subject}"
+    },
+    "other": {
+      "open": "{subject}",
+      "reminder": "لا يزال قائمًا: {subject}",
+      "resolved": "تمّ: {subject}"
+    },
+    "reminderBody": "{text} منذ {duration}.",
+    "resolvedBody": "حُلّ بعد {duration}."
+  },
+  "duration": {
+    "minutes": "{count, plural, zero {# دقيقة} one {دقيقة واحدة} two {دقيقتين} few {# دقائق} many {# دقيقة} other {# دقيقة}}",
+    "hours": "{count, plural, zero {# ساعة} one {ساعة واحدة} two {ساعتين} few {# ساعات} many {# ساعة} other {# ساعة}}",
+    "days": "{count, plural, zero {# يوم} one {يوم واحد} two {يومين} few {# أيام} many {# يومًا} other {# يوم}}"
+  },
+  "approval": {
+    "title": "موافقة: {agent}",
+    "body": "{action}",
+    "bodyWhere": "{action} · {where}"
+  },
+  "reply": {
+    "title": "ردّ {agent}",
+    "empty": "الردّ جاهز."
+  },
+  "chatFailed": {
+    "title": "فشل الردّ: {agent}",
+    "body": "فشل الردّ في المحادثة."
+  },
+  "runFailed": {
+    "title": "فشل التشغيل: {agent}",
+    "noTask": "فشل أحد التشغيلات."
+  },
+  "test": {
+    "title": "Helena",
+    "body": "الإشعارات الفورية تعمل على هذا الجهاز."
+  },
+  "subjects": {
+    "raid": "المرآة {name}",
+    "disk": "القرص {disk}",
+    "backup": "النسخ الاحتياطي",
+    "esp": "أقسام EFI",
+    "cpu": "المعالج",
+    "fans": "المراوح",
+    "events": "تقارير التخزين",
+    "server": "الخادم",
+    "hostd": "مساعد النظام",
+    "service": "الخدمة {service}",
+    "login": "تسجيل الدخول إلى {provider}",
+    "security": "الأمان",
+    "localAi": "الذكاء الاصطناعي المحلي {name}"
+  },
+  "health": {
+    "raidDegraded": "المرآة {name} غير مكتملة: عدد الأقراص المفقودة {missing}. البيانات موجودة في نسخة واحدة فقط.",
+    "raidRebuilding": "تُعاد بناء المرآة {name}: {percent}٪. حتى ذلك الحين توجد نسخة واحدة فقط.",
+    "diskFailing": "القرص {disk} يبلّغ عن عطل. استبدله.",
+    "diskSpareLow": "القرص {disk}: الاحتياطي على وشك النفاد ({spare}٪). استبدله.",
+    "eventsCritical": "تقارير خطيرة من mdadm أو smartd: {count}.",
+    "backupFailed": "فشل آخر نسخ احتياطي.",
+    "backupCheckFailed": "فشل فحص النسخة الاحتياطية.",
+    "restoreTestFailed": "فشل اختبار الاستعادة.",
+    "cpuHot": "المعالج ساخن: {temperature} °م.",
+    "fansRaised": "رفعت الحماية الحرارية المراوح إلى المستوى 5: المعالج عند {temperature} °م.",
+    "espOutOfSync": "قسما EFI مختلفان (عدد الملفات: {count}). قد لا يقلع القرص الاحتياطي.",
+    "espNotMounted": "قسم EFI {mount} غير موصول.",
+    "healthFailed": "تعذّرت قراءة حالته."
+  },
+  "problems": {
+    "serviceDown": "لا يعمل أو لم يعد يُبلّغ.",
+    "loginRejected": "رفض المزوّد تسجيل الدخول. سجّل الدخول من جديد.",
+    "loginRanOut": "انتهى تسجيل الدخول ولا يتجدّد تلقائيًا. سجّل الدخول من جديد.",
+    "securityChecks": "عدد الفحوص المهمة التي تفشل: {count}.",
+    "localAiDown": "خادم النماذج لا يستجيب.",
+    "hostdDown": "helena-hostd لا يستجيب، لذا لا تُراقَب الأقراص والنسخ الاحتياطي ودرجات الحرارة."
+  }
+}

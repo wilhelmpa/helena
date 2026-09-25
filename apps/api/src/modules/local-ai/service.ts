@@ -10,6 +10,7 @@ import {
   pickModel,
   readLocalAiPolicy,
   readModelServerKey,
+  resolveLocalRoute,
   routeFor,
   writeLocalAiPolicy,
   type LocalAiPolicy,
@@ -18,6 +19,8 @@ import {
 import { and, desc, eq, gte, sql } from 'drizzle-orm';
 import {
   LOCAL_AI_UNITS,
+  classEvalVersion,
+  classModes,
   isLocalProvider,
   isModelServerSlug,
   localModelId,
@@ -324,6 +327,7 @@ export async function runEval(input: { classId: string; modelId: string; userId:
     throw new HttpError(400, `The model cannot do what the class needs (${entry.capability})`);
   const key = await readModelServerKey(server);
   const threshold = entry.threshold ?? 0.8;
+  const evalVersion = classEvalVersion(entry);
   let values: typeof helenaLocalAiEval.$inferInsert;
   try {
     const result = await entry.evaluate(
@@ -348,6 +352,7 @@ export async function runEval(input: { classId: string; modelId: string; userId:
         .map((item) => ({ id: item.id, detail: item.detail?.slice(0, 200) ?? null })),
       latencyMsP50: result.latencyMsP50 === null ? null : Math.round(result.latencyMsP50),
       tokensPerSecond: result.tokensPerSecond,
+      evalVersion,
       ranBy: input.userId,
     };
   } catch (error) {
@@ -360,6 +365,7 @@ export async function runEval(input: { classId: string; modelId: string; userId:
       passed: false,
       cases: 0,
       error: (error instanceof Error ? error.message : String(error)).slice(0, 300),
+      evalVersion,
       ranBy: input.userId,
     };
   }
@@ -380,6 +386,7 @@ function evalView(row: typeof helenaLocalAiEval.$inferSelect, slug: string) {
     latencyMsP50: row.latencyMsP50,
     tokensPerSecond: row.tokensPerSecond,
     error: row.error,
+    evalVersion: row.evalVersion,
     ranAt: iso(row.ranAt),
   };
 }
@@ -432,7 +439,8 @@ export function classBlocker(
   if (!modelId) return 'no-model';
   if (!entry.evaluate) return null;
   const latest = evals.find((item) => item.classId === entry.id && item.modelId === modelId);
-  if (!latest) return 'eval-missing';
+  // An eval of an older version measured something the class no longer does.
+  if (!latest || latest.evalVersion < classEvalVersion(entry)) return 'eval-missing';
   return latest.passed ? null : 'eval-failed';
 }
 
@@ -487,6 +495,10 @@ export async function updatePolicy(patch: PolicyPatch): Promise<LocalAiPolicy> {
     }
     if (model !== null && !parseLocalModelId(model))
       throw new HttpError(400, `${model} is not a local model`);
+    if (!classModes(entry).includes(mode)) {
+      if (strict) throw new HttpError(400, `${id} does not offer the mode ${mode}`);
+      return;
+    }
     const resolved = classModel(entry, model, servers);
     if (mode !== 'off') {
       const blocker = classBlocker(entry, resolved, evals);
@@ -747,6 +759,43 @@ export async function effectiveModelNow(model: string | null): Promise<string | 
   return (await chooseModelNow(model, null)).model;
 }
 
+// ── Work Helena hands to local AI by its kind ──────────────────────────────────────────
+
+// The local model a kind of work runs on now that runs as an agent's turn (a digest, a
+// routine's task, a coordinator's first plan, a reflection): the class's model while the
+// master switch and the class are on, its unit allowed, its eval passed in its current
+// version, and its server answering (its last status when younger than 15 s, else one status
+// call of at most 2 s, as for a run on a local model). Otherwise null: the work runs on the
+// model it runs on without local AI. A server that does not answer is named, so the run's
+// model check says why its configured model ran.
+export interface ClassModelChoice {
+  // `helena-<slug>/<id>`, or null for the configured model.
+  model: string | null;
+  fallback: LocalFallback | null;
+}
+
+export async function classModelNow(classId: string): Promise<ClassModelChoice> {
+  const entry = taskClass(classId);
+  if (!entry?.wired) return { model: null, fallback: null };
+  const result = await resolveLocalRoute({
+    classId: entry.id,
+    unit: entry.unit,
+    capability: entry.capability,
+    // The server is asked below, the same way as for a run on a local model.
+    requireUp: false,
+    evalVersion: classEvalVersion(entry),
+  });
+  if (!('route' in result)) return { model: null, fallback: null };
+  const { server, model, modelId } = result.route;
+  // An agent's turn runs on the models its profile lists: the server's chat models on disk.
+  const listed = server.models.find((item) => item.id === model);
+  if (!listed?.capabilities.includes('chat') || listed.downloaded === false)
+    return { model: null, fallback: null };
+  if (!(await serverAnswers(server)))
+    return { model: null, fallback: { from: modelId, reason: 'down' } };
+  return { model: modelId, fallback: null };
+}
+
 // Local models cost nothing per token (the price table's `price` asks this first).
 export function isFreeModel(model: string | null | undefined, provider: string | null | undefined) {
   return isLocalProvider(provider) || parseLocalModelId(model) !== null;
@@ -951,7 +1000,9 @@ export async function localAiSettings() {
         experimental: entry.experimental === true,
         inMasterDefault: entry.inMasterDefault,
         wired: entry.wired,
+        modes: [...classModes(entry)],
         hasEval: entry.evaluate !== undefined,
+        evalVersion: classEvalVersion(entry),
         threshold: entry.threshold ?? 0.8,
         mode: setting.mode,
         model: setting.model,

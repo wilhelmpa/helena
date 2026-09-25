@@ -660,6 +660,7 @@
       "reasonFailure": "because the run failed",
       "reasonRework": "because this was rework",
       "reasonComplex": "because the run took many steps",
+      "local": "local: {model}",
       "nothingSaved": "Nothing saved",
       "toolMemory": "Memory",
       "toolSkill": "Skill",
@@ -748,7 +749,8 @@
       "source": {
         "run": "from the workflow step",
         "agent": "from the agent",
-        "default": "agent default"
+        "default": "agent default",
+        "local": "by Local AI"
       },
       "part": {
         "model": "model",

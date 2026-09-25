@@ -12,6 +12,17 @@ export const COMPLEX_TOOL_CALLS = 10;
 
 export const REFLECTION_LIMITS = { maxTurns: 8, runBudgetSeconds: 120 };
 
+// A reflection on the local model (Lokale KI's class `reflection`): only after a run that read
+// at most this much in all its model calls together. That bounds the session the reflection
+// resumes (Hermes reports no context size of its own), so its prefill on the workhorse stays
+// around a minute (~1,000 tokens/s at 32–64k, docs/helena-decisions/local-ai-platform.md §4.3);
+// a larger one would spend the budget loading or compressing the session while the agent's
+// runner waits for its reflection before the next run. In practice: short runs, a failure
+// after a few steps or a rework; a run of many tool calls reads far more and stays on its
+// model. More time for the same turns, since a local model reads and writes slower.
+export const LOCAL_REFLECTION_MAX_READ = 64_000;
+export const LOCAL_REFLECTION_LIMITS = { maxTurns: 8, runBudgetSeconds: 240 };
+
 // Why the run is worth a reflection, or null when it is not. A failed run with no tool
 // call failed before the agent did anything, often at its provider, which a follow-up
 // turn would meet again.
@@ -64,6 +75,8 @@ export function reflectionPrompt(reason: ReflectionReason): string {
 export interface ReflectionView {
   status: 'pending' | 'success' | 'failed' | 'lost';
   reason: ReflectionReason;
+  // The local model it ran on, when Lokale KI took it; null on the run's model.
+  model?: string | null;
   saved: { tool: 'memory' | 'skill'; action: string; target: string }[];
   summary: string | null;
   error: string | null;
@@ -89,6 +102,7 @@ export function reflectionView(value: unknown, finishedAt: Date | null): Reflect
   return {
     status: lost ? 'lost' : (stored.status ?? 'pending'),
     reason: stored.reason ?? 'complex',
+    ...(stored.model && { model: stored.model }),
     saved: Array.isArray(stored.saved) ? stored.saved : [],
     summary: stored.summary ?? null,
     error: stored.error ?? null,

@@ -73,7 +73,9 @@ export interface ModelCheck {
   configured: {
     model: string | null;
     reasoning: string | null;
-    source: 'run' | 'agent' | 'default';
+    // `local`: Lokale KI handed the run a local model for its kind of work (`workClass`).
+    source: 'run' | 'agent' | 'default' | 'local';
+    workClass?: string;
   };
   used: { model: string | null; reasoning: string | null; provider: string | null } | null;
   mismatch: ('model' | 'reasoning')[];

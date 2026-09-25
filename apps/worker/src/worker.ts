@@ -1,5 +1,6 @@
 import { workerConfig } from './config';
 import { deliver } from './delivery';
+import { processPushDeliveries } from '@helena/push';
 import { processNotificationDeliveries } from './notification-delivery';
 import { equalJitterBackoffMs } from './backoff';
 import { startPollLoop, type WorkerHandle } from './poll-loop';
@@ -45,6 +46,13 @@ async function tick(): Promise<void> {
     await Promise.all(claimed.map(processDelivery));
   }
   await processNotificationDeliveries();
+  // Web Push to people's devices; the api drains the same rows, so a push leaves while
+  // either process is down.
+  try {
+    await processPushDeliveries();
+  } catch (error) {
+    console.error('[worker] push deliveries failed:', error);
+  }
   await processProjectProvisioning();
   if (Date.now() - lastProjectReconcileAt >= cfg.projectReconcileIntervalMs) {
     lastProjectReconcileAt = Date.now();

@@ -15,6 +15,7 @@
     "@helena/connectors": "workspace:*",
     "@helena/knowledge": "workspace:*",
     "@helena/loop": "workspace:*",
+    "@helena/push": "workspace:*",
     "@helena/sdk": "workspace:*",
     "@repo/crypto": "workspace:*",
     "@repo/db": "workspace:*",

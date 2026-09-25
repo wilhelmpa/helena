@@ -2,7 +2,7 @@ export { db, listen } from './client';
 export * from './schema';
 export * from './permissions';
 export { getSetting, getOrCreateSetting, setSetting } from './settings';
-export { readSecret, writeSecret } from './secrets';
+export { insertSecretIfAbsent, readRedactedSecret, readSecret, writeSecret } from './secrets';
 export { containsPattern, escapeLike } from './like';
 export { recordServiceCheck } from './service-heartbeat';
 export {

@@ -72,6 +72,10 @@ export interface ReflectionRequest {
   prompt: string;
   maxTurns: number;
   runBudgetSeconds: number;
+  // The model the reflection runs on when it is not the run's: a local model
+  // (`helena-<slug>/<id>`) Helena's local AI takes the reflection on. An older server sends
+  // none.
+  model?: string | null;
 }
 
 // What the agent saved in a reflection: one entry per memory or skill write that succeeded.

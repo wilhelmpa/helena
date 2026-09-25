@@ -220,6 +220,24 @@ export interface LocalAiTaskClass {
   // score it needs.
   evaluate?(context: LocalAiEvalContext): Promise<LocalAiEvalResult>;
   threshold?: number;
+  // The version of the eval (1 when absent). A class that changes what its eval measures
+  // raises it: an eval of an older version no longer counts, so the class stays off (or
+  // stops routing) until its model passed the new one.
+  evalVersion?: number;
+  // The modes the class offers (all three when absent). Work that runs as an agent's turn
+  // cannot promise `only`: the turn keeps the agent's configured model as its fallback.
+  modes?: readonly LocalAiMode[];
+}
+
+// The modes a class offers, in the order of LOCAL_AI_MODES; `off` always.
+export function classModes(entry: Pick<LocalAiTaskClass, 'modes'>): readonly LocalAiMode[] {
+  if (!entry.modes || entry.modes.length === 0) return LOCAL_AI_MODES;
+  return LOCAL_AI_MODES.filter((mode) => mode === 'off' || entry.modes!.includes(mode));
+}
+
+// The version of a class's eval.
+export function classEvalVersion(entry: Pick<LocalAiTaskClass, 'evalVersion'>): number {
+  return entry.evalVersion && entry.evalVersion > 0 ? Math.trunc(entry.evalVersion) : 1;
 }
 
 // ── Model ids ──────────────────────────────────────────────────────────────────────────

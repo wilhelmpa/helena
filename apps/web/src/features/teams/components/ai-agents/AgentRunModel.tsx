@@ -6,7 +6,14 @@ import { LocalFallbackLine } from '@/features/local-ai/components/LocalFallbackL
 // on, as its runner read them back. A mismatch is named: the run did not run as set.
 export default function AgentRunModel({ check }: { check: ModelCheck }) {
   const t = useTranslations('teams.agents.runModel');
+  const tLocal = useTranslations('localAi.classes');
   const { configured, used, mismatch } = check;
+  // Lokale KI chose the model for the run's kind of work: named by its class where it has one.
+  const classKey = `${configured.workClass ?? ''}.label` as Parameters<typeof tLocal.has>[0];
+  const workClass =
+    configured.source === 'local' && configured.workClass && tLocal.has(classKey)
+      ? tLocal(classKey as Parameters<typeof tLocal>[0])
+      : null;
   const configuredText = [configured.model ?? '–', configured.reasoning]
     .filter(Boolean)
     .join(' · ');
@@ -17,7 +24,10 @@ export default function AgentRunModel({ check }: { check: ModelCheck }) {
       <div className="rounded-md bg-muted/50 p-2.5 text-xs">
         <p>
           {t('configured', { value: configuredText })}{' '}
-          <span className="text-muted-foreground">({t(`source.${configured.source}`)})</span>
+          <span className="text-muted-foreground">
+            ({t(`source.${configured.source}`)}
+            {workClass ? ` · ${workClass}` : ''})
+          </span>
         </p>
         <p>{usedText ? t('used', { value: usedText }) : t('notReported')}</p>
         {check.fallback && (

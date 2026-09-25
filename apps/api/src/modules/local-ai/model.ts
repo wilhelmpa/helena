@@ -75,6 +75,9 @@ export const EvalResult = t.Object({
   latencyMsP50: t.Nullable(t.Number()),
   tokensPerSecond: t.Nullable(t.Number()),
   error: t.Nullable(t.String()),
+  evalVersion: t.Number({
+    description: "The version of the class's eval it ran; an older one no longer gates it",
+  }),
   ranAt: t.String({ format: 'date-time' }),
 });
 
@@ -117,7 +120,13 @@ export const LocalAiSettings = t.Object({
       experimental: t.Boolean(),
       inMasterDefault: t.Boolean(),
       wired: t.Boolean({ description: 'Helena already sends this work to local AI' }),
+      modes: t.Array(mode, {
+        description:
+          'The modes the class offers: work that runs as an agent turn keeps its configured ' +
+          'model as the fallback, so it offers no `only`',
+      }),
       hasEval: t.Boolean(),
+      evalVersion: t.Number({ description: "The version of the class's eval" }),
       threshold: t.Number(),
       mode,
       model: t.Nullable(t.String()),

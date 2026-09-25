@@ -10,6 +10,7 @@ import {
   type EventInit,
 } from '../events';
 import type { HostCapability } from '../host';
+import type { AlertSource, NotificationCategory } from '../notifications';
 import type { CaptureTarget, KnowledgeSource } from '../knowledge';
 import type { LocalAiTaskClass, ModelServerType } from '../local-ai';
 import type { McpServerContribution, PluginManifest } from '../manifest-types';
@@ -96,6 +97,8 @@ export class PluginHost {
   readonly updateSources: Registry<UpdateSource>;
   readonly decisionBackends: Registry<DecisionBackendType>;
   readonly decisionClasses: Registry<DecisionClass>;
+  readonly notificationCategories: Registry<NotificationCategory>;
+  readonly alertSources: Registry<AlertSource>;
 
   private readonly plugins = new Map<string, { loaded: LoadedPlugin; plugin?: HelenaPlugin }>();
   private readonly contexts = new Map<string, PluginContext>();
@@ -127,6 +130,8 @@ export class PluginHost {
     this.updateSources = registries.updateSources;
     this.decisionBackends = registries.decisionBackends;
     this.decisionClasses = registries.decisionClasses;
+    this.notificationCategories = registries.notificationCategories;
+    this.alertSources = registries.alertSources;
     this.logger = options.logger ?? ((id) => consoleLogger(`plugin ${id}`));
     this.settingsOf = options.settings ?? (() => ({}));
   }
@@ -250,6 +255,8 @@ export class PluginHost {
       this.updateSources,
       this.decisionBackends,
       this.decisionClasses,
+      this.notificationCategories,
+      this.alertSources,
     ] as unknown as Registry<never>[];
   }
 
@@ -409,6 +416,12 @@ export class PluginHost {
         'decisionBackends',
       ),
       decisionClasses: registrar(this.decisionClasses, provides.decisionClasses, 'decisionClasses'),
+      notificationCategories: registrar(
+        this.notificationCategories,
+        provides.notificationCategories,
+        'notificationCategories',
+      ),
+      alertSources: registrar(this.alertSources, provides.alertSources, 'alertSources'),
       events: {
         publish: async (init: EventInit) => {
           if (!init.type.startsWith(`${pluginId}.`)) {

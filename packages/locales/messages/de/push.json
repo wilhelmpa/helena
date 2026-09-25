@@ -1,0 +1,85 @@
+{
+  "alert": {
+    "emergencies": {
+      "open": "Notfall: {subject}",
+      "reminder": "Noch offen: {subject}",
+      "resolved": "Wieder in Ordnung: {subject}"
+    },
+    "needs-you": {
+      "open": "Braucht dich: {subject}",
+      "reminder": "Noch offen: {subject}",
+      "resolved": "Erledigt: {subject}"
+    },
+    "other": {
+      "open": "{subject}",
+      "reminder": "Noch offen: {subject}",
+      "resolved": "Erledigt: {subject}"
+    },
+    "reminderBody": "{text} Seit {duration}.",
+    "resolvedBody": "Nach {duration} behoben."
+  },
+  "duration": {
+    "minutes": "{count, plural, one {# Minute} other {# Minuten}}",
+    "hours": "{count, plural, one {# Stunde} other {# Stunden}}",
+    "days": "{count, plural, one {# Tag} other {# Tagen}}"
+  },
+  "approval": {
+    "title": "Freigabe: {agent}",
+    "body": "{action}",
+    "bodyWhere": "{action} · {where}"
+  },
+  "reply": {
+    "title": "{agent} hat geantwortet",
+    "empty": "Die Antwort ist da."
+  },
+  "chatFailed": {
+    "title": "Antwort fehlgeschlagen: {agent}",
+    "body": "Die Antwort im Chat ist fehlgeschlagen."
+  },
+  "runFailed": {
+    "title": "Lauf fehlgeschlagen: {agent}",
+    "noTask": "Ein Lauf ist fehlgeschlagen."
+  },
+  "test": {
+    "title": "Helena",
+    "body": "Push funktioniert auf diesem Gerät."
+  },
+  "subjects": {
+    "raid": "Spiegel {name}",
+    "disk": "Platte {disk}",
+    "backup": "Backup",
+    "esp": "EFI-Partitionen",
+    "cpu": "CPU",
+    "fans": "Lüfter",
+    "events": "Speicher-Meldungen",
+    "server": "Server",
+    "hostd": "Server-Helfer",
+    "service": "Dienst {service}",
+    "login": "Anmeldung {provider}",
+    "security": "Sicherheit",
+    "localAi": "Lokale KI {name}"
+  },
+  "health": {
+    "raidDegraded": "Spiegel {name} ist unvollständig: {missing, plural, one {eine Platte fehlt} other {# Platten fehlen}}. Die Daten liegen nur noch einmal vor.",
+    "raidRebuilding": "Spiegel {name} wird aufgebaut: {percent} %. Bis dahin gibt es nur eine Kopie.",
+    "diskFailing": "Platte {disk} meldet einen Defekt. Ersetzen.",
+    "diskSpareLow": "Platte {disk}: Reserve fast aufgebraucht ({spare} %). Ersetzen.",
+    "eventsCritical": "{count, plural, one {Eine ernste Meldung} other {# ernste Meldungen}} von mdadm oder smartd.",
+    "backupFailed": "Das letzte Backup ist fehlgeschlagen.",
+    "backupCheckFailed": "Die Prüfung des Backups ist fehlgeschlagen.",
+    "restoreTestFailed": "Der Wiederherstellungstest ist fehlgeschlagen.",
+    "cpuHot": "Die CPU ist heiß: {temperature} °C.",
+    "fansRaised": "Der Hitzeschutz hat die Lüfter auf Stufe 5 angehoben: CPU bei {temperature} °C.",
+    "espOutOfSync": "Die beiden EFI-Partitionen unterscheiden sich ({count, plural, one {# Datei} other {# Dateien}}). Die Reserveplatte startet dann vielleicht nicht.",
+    "espNotMounted": "EFI-Partition {mount} ist nicht eingehängt.",
+    "healthFailed": "Der Zustand konnte nicht gelesen werden."
+  },
+  "problems": {
+    "serviceDown": "Läuft nicht oder meldet sich nicht mehr.",
+    "loginRejected": "Der Anbieter hat die Anmeldung abgelehnt. Neu anmelden.",
+    "loginRanOut": "Die Anmeldung ist abgelaufen und erneuert sich nicht. Neu anmelden.",
+    "securityChecks": "{count, plural, one {Eine wichtige Prüfung schlägt fehl.} other {# wichtige Prüfungen schlagen fehl.}}",
+    "localAiDown": "Der Modellserver antwortet nicht.",
+    "hostdDown": "helena-hostd antwortet nicht, Platten, Backup und Temperaturen werden nicht überwacht."
+  }
+}

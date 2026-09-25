@@ -46,6 +46,9 @@ export function contentSecurityPolicy(nonce?: string): string {
     "media-src 'self' data: blob: https: http:",
     "font-src 'self' data:",
     `connect-src 'self' ${apiOrigin()}`.trimEnd(),
+    // The service worker (public/sw.js) that shows push notifications. Named on its own:
+    // workers fall back to script-src, whose nonce no worker script can carry.
+    "worker-src 'self'",
     // Plugins' panel pages come from the api (/plugins/<id>/ui/…), sandboxed.
     ["frame-src 'self'", ...frameOrigins, apiOrigin()].filter(Boolean).join(' '),
     "object-src 'none'",

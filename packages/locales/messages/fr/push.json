@@ -1,0 +1,85 @@
+{
+  "alert": {
+    "emergencies": {
+      "open": "Urgence : {subject}",
+      "reminder": "Toujours en cours : {subject}",
+      "resolved": "Rétabli : {subject}"
+    },
+    "needs-you": {
+      "open": "Requiert votre attention : {subject}",
+      "reminder": "Toujours en cours : {subject}",
+      "resolved": "Réglé : {subject}"
+    },
+    "other": {
+      "open": "{subject}",
+      "reminder": "Toujours en cours : {subject}",
+      "resolved": "Réglé : {subject}"
+    },
+    "reminderBody": "{text} Depuis {duration}.",
+    "resolvedBody": "Résolu après {duration}."
+  },
+  "duration": {
+    "minutes": "{count, plural, one {# minute} other {# minutes}}",
+    "hours": "{count, plural, one {# heure} other {# heures}}",
+    "days": "{count, plural, one {# jour} other {# jours}}"
+  },
+  "approval": {
+    "title": "Approbation : {agent}",
+    "body": "{action}",
+    "bodyWhere": "{action} · {where}"
+  },
+  "reply": {
+    "title": "{agent} a répondu",
+    "empty": "La réponse est prête."
+  },
+  "chatFailed": {
+    "title": "Réponse échouée : {agent}",
+    "body": "La réponse dans le chat a échoué."
+  },
+  "runFailed": {
+    "title": "Exécution échouée : {agent}",
+    "noTask": "Une exécution a échoué."
+  },
+  "test": {
+    "title": "Helena",
+    "body": "Les notifications push fonctionnent sur cet appareil."
+  },
+  "subjects": {
+    "raid": "Miroir {name}",
+    "disk": "Disque {disk}",
+    "backup": "Sauvegarde",
+    "esp": "Partitions EFI",
+    "cpu": "Processeur",
+    "fans": "Ventilateurs",
+    "events": "Signalements de stockage",
+    "server": "Serveur",
+    "hostd": "Assistant système",
+    "service": "Service {service}",
+    "login": "Connexion {provider}",
+    "security": "Sécurité",
+    "localAi": "IA locale {name}"
+  },
+  "health": {
+    "raidDegraded": "Le miroir {name} est incomplet : {missing, plural, one {un disque manque} other {# disques manquent}}. Les données n'existent plus qu'en un exemplaire.",
+    "raidRebuilding": "Le miroir {name} est en reconstruction : {percent} %. D'ici là, il n'y a qu'une seule copie.",
+    "diskFailing": "Le disque {disk} signale une panne. Remplacez-le.",
+    "diskSpareLow": "Disque {disk} : réserve presque épuisée ({spare} %). Remplacez-le.",
+    "eventsCritical": "{count, plural, one {Un signalement grave} other {# signalements graves}} de mdadm ou smartd.",
+    "backupFailed": "La dernière sauvegarde a échoué.",
+    "backupCheckFailed": "La vérification de la sauvegarde a échoué.",
+    "restoreTestFailed": "Le test de restauration a échoué.",
+    "cpuHot": "Le processeur est chaud : {temperature} °C.",
+    "fansRaised": "La protection thermique a poussé les ventilateurs au niveau 5 : processeur à {temperature} °C.",
+    "espOutOfSync": "Les deux partitions EFI diffèrent ({count, plural, one {# fichier} other {# fichiers}}). Le disque de secours risque de ne pas démarrer.",
+    "espNotMounted": "La partition EFI {mount} n'est pas montée.",
+    "healthFailed": "Son état n'a pas pu être lu."
+  },
+  "problems": {
+    "serviceDown": "Ne tourne pas ou ne se signale plus.",
+    "loginRejected": "Le fournisseur a refusé la connexion. Reconnectez-vous.",
+    "loginRanOut": "La connexion a expiré et ne se renouvelle pas. Reconnectez-vous.",
+    "securityChecks": "{count, plural, one {Une vérification importante échoue.} other {# vérifications importantes échouent.}}",
+    "localAiDown": "Le serveur de modèles ne répond pas.",
+    "hostdDown": "helena-hostd ne répond pas : disques, sauvegarde et températures ne sont plus surveillés."
+  }
+}

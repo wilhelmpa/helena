@@ -198,6 +198,8 @@ describe('agent team runs', () => {
     expect(plan).toMatchObject({ maxTurns: 40, runBudgetSeconds: 900 });
     expect(plan.prompt).toContain('Phase: coordinate');
     expect(plan.prompt).toContain('Allowed specialists');
+    // The coordinator's first plan is Lokale KI's `coordinator-triage`; the rest is not.
+    expect(plan.workClass).toBe('coordinator-triage');
     await finishAgentRun(plan.id, {
       output: json({
         summary: 'Design first, then copy.',
@@ -221,6 +223,7 @@ describe('agent team runs', () => {
     });
     const design = await waitForAgentRun(run!.id, 'team.s1');
     expect(design.agentId).toBe(designer.id);
+    expect(design.workClass).toBeNull();
     // The dependent assignment waits until its dependency is done.
     await Bun.sleep(300);
     expect(await db.select().from(agentRun).where(eq(agentRun.agentId, writer.id))).toEqual([]);
@@ -380,6 +383,20 @@ describe('agent team runs', () => {
     const failed = await waitForStatus(started.runId, 'failed');
     expect(failed.error).toBe('Assignment dependencies form a cycle');
     expect((await runSteps(started.runId)).map((row) => row.stepId)).not.toContain('team.s1');
+  });
+
+  it("plans again on the coordinator's own model when its first plan is unusable", async () => {
+    const { asOwner, teamId, columnId } = await setup();
+    await specialist(asOwner, teamId, 'designer', ['frontend']);
+    await specialist(asOwner, teamId, 'writer', ['docs']);
+    await enableAgentTeam(asOwner, { reviewRequired: false });
+    const task = await createIssue(asOwner, columnId);
+    const started = (await asOwner.issues({ issueId: task.id })['agent-team'].post({})).data!;
+    const first = await answerStep(started.runId, 'team.coordinate', { output: 'no plan' });
+    expect(first.workClass).toBe('coordinator-triage');
+    const second = await waitForAgentRun(started.runId, 'team.coordinate');
+    expect(second.id).not.toBe(first.id);
+    expect(second.workClass).toBeNull();
   });
 
   it('runs a stage again with backoff when its answer is unusable, up to the attempts', async () => {

@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./accept-language": "./src/accept-language.ts",
-    "./defaults": "./src/defaults.ts"
+    "./defaults": "./src/defaults.ts",
+    "./push": "./src/push.ts"
   },
   "scripts": {
     "lint": "eslint .",
@@ -22,6 +23,7 @@
   },
   "dependencies": {
     "@formatjs/intl-localematcher": "^0.8.14",
+    "intl-messageformat": "^11.2.15",
     "negotiator": "^1.1.0"
   }
 }
