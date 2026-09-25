@@ -1184,3 +1184,58 @@ html[data-kiosk-display='dual'] [data-slot='dialog-content'],
 html[data-kiosk-display='dual'] [data-slot='alert-dialog-content'] {
   left: 25vw;
 }
+
+/* Installed Helena without a title bar (manifest display_override; the browser's "hide
+   title bar" toggle): the sidebar header and the app header are the title bar. They move
+   the window, their controls stay clickable, and nothing sits under the window buttons —
+   on macOS those are on the left (titlebar-area-x), on Windows and Linux on the right. */
+@media (display-mode: window-controls-overlay) {
+  [data-slot='sidebar-header'],
+  [data-app-header] {
+    -webkit-app-region: drag;
+    app-region: drag;
+  }
+  [data-slot='sidebar-header']
+    :is(a, button, input, select, textarea, [role='button'], [role='menuitem'], [tabindex]),
+  [data-app-header]
+    :is(
+      a,
+      button,
+      input,
+      select,
+      textarea,
+      [role='button'],
+      [role='tab'],
+      [role='combobox'],
+      [tabindex],
+      [data-slot='app-header-page']
+    ) {
+    -webkit-app-region: no-drag;
+    app-region: no-drag;
+  }
+  [data-slot='sidebar'][data-state='expanded'] [data-slot='sidebar-header'] {
+    padding-inline-start: max(0.5rem, env(titlebar-area-x, 0px));
+  }
+  /* Icons only: the buttons cover the narrow sidebar's top, so its mark gives way and the
+     header starts after them. */
+  [data-slot='sidebar'][data-state='collapsed'] [data-slot='sidebar-header'] {
+    visibility: hidden;
+  }
+  html:has([data-slot='sidebar'][data-state='collapsed']) [data-app-header] {
+    padding-inline-start: max(
+      0.5rem,
+      calc(env(titlebar-area-x, 0px) - var(--sidebar-width-icon, 3rem))
+    );
+  }
+  [data-app-header] {
+    padding-inline-end: max(
+      0.5rem,
+      calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw))
+    );
+  }
+}
+@media (display-mode: window-controls-overlay) and (max-width: 767px) {
+  [data-app-header] {
+    padding-inline-start: max(0.5rem, env(titlebar-area-x, 0px));
+  }
+}

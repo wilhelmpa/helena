@@ -3,6 +3,7 @@ import { describe, test } from 'node:test';
 import type { Organization } from '@/lib/api/endpoints/organization';
 import {
   buildOrganizationTree,
+  countAgents,
   organizationAgentRole,
   organizationAgentStatus,
 } from './organizationTree';
@@ -214,17 +215,96 @@ describe('buildOrganizationTree', () => {
       assert.equal(unassignedNode?.agents[0].agent.username, 'stray');
     });
 
-    test('Home, coordinator and specialist land in the "no department" bucket, nested by reporting line', () => {
+    test('Home is the root of the chart, with coordinator and specialist nested under it', () => {
       const tree = buildOrganizationTree(organization);
-      const noneNode = tree.find((node) => node.kind === 'none');
-      // Only Home is a root here: the coordinator reports to it, so it nests under
-      // Home's `reports`, not as a second top-level entry.
-      assert.equal(noneNode?.agents.length, 1);
-      const homeNode = noneNode?.agents[0];
+      // Home is not "without a department": it is the first root, and there is no
+      // "no department" bucket when everyone else hangs under it.
+      assert.equal(tree[0].kind, 'home');
+      assert.equal(
+        tree.find((node) => node.kind === 'none'),
+        undefined,
+      );
+      assert.equal(tree[0].agents.length, 1);
+      const homeNode = tree[0].agents[0];
       assert.equal(homeNode?.agent.username, 'master');
       const coordinatorNode = homeNode?.reports[0];
       assert.equal(coordinatorNode?.agent.username, 'hermes-vol-coordinator');
       assert.equal(coordinatorNode?.reports[0]?.agent.username, 'coder-vol');
+    });
+
+    test('a coordinator of a project in a department hangs under Home inside that department', () => {
+      const withDepartment = {
+        ...organization,
+        departments: [
+          {
+            id: 1,
+            name: 'Volition',
+            description: '',
+            parentId: null,
+            position: 0,
+            createdAt: '',
+            updatedAt: '',
+          },
+        ],
+        projects: [
+          { id: 5, key: 'VOL', name: 'volition.one', departmentId: 1 },
+          { id: 3, key: 'PRIV', name: 'Privat', departmentId: null },
+        ],
+        agents: organization.agents
+          .map((agent) =>
+            agent.id === 4 || agent.id === 10
+              ? {
+                  ...agent,
+                  projects: [{ id: 5, key: 'VOL', name: 'volition.one', instructions: '' }],
+                }
+              : agent.id === 1
+                ? {
+                    ...agent,
+                    projects: [
+                      { id: 5, key: 'VOL', name: 'volition.one', instructions: '' },
+                      { id: 3, key: 'PRIV', name: 'Privat', instructions: '' },
+                    ],
+                  }
+                : agent,
+          )
+          .concat({
+            ...agentBase,
+            id: 3,
+            username: 'hermes-priv-coordinator',
+            name: 'PRIV Coordinator',
+            role: 'coordinator',
+            reportsToAgentId: 1,
+            projects: [{ id: 3, key: 'PRIV', name: 'Privat', instructions: '' }],
+          }),
+      } as Organization;
+      const tree = buildOrganizationTree(withDepartment);
+      const home = tree[0].agents[0];
+      assert.equal(tree[0].kind, 'home');
+      assert.equal(home.agent.username, 'master');
+      // The VOL coordinator (its project is in "Volition") and its specialist sit in the
+      // department under Home; the PRIV coordinator (no department) reports directly.
+      assert.equal(home.departments?.[0].department?.name, 'Volition');
+      assert.equal(home.departments?.[0].agents[0].agent.username, 'hermes-vol-coordinator');
+      assert.equal(home.departments?.[0].agents[0].reports[0].agent.username, 'coder-vol');
+      assert.equal(countAgents(home.departments![0]), 2);
+      assert.deepEqual(
+        home.reports.map((report) => report.agent.username),
+        ['hermes-priv-coordinator'],
+      );
+      assert.equal(
+        tree.find((node) => node.kind === 'department'),
+        undefined,
+      );
+    });
+
+    test('an agent pointing at an unknown department stays visible', () => {
+      const tree = buildOrganizationTree({
+        ...organization,
+        agents: organization.agents.map((agent) =>
+          agent.id === 4 ? { ...agent, departmentId: 99 } : agent,
+        ),
+      } as Organization);
+      assert.equal(tree[0].agents[0].reports[0]?.agent.username, 'hermes-vol-coordinator');
     });
 
     test('the pool template lands in its own bucket, not in "no department" or "unassigned"', () => {
