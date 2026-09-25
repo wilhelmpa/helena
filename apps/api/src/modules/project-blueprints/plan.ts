@@ -190,7 +190,6 @@ export function planBlueprint(
   const plan: BlueprintPlan = { changes: [], skipped: [], blockers: [] };
   const on = (section: BlueprintSection) => sections.includes(section);
   const key = blueprint.project.key;
-  const projectExists = state.project !== null;
   const department = blueprint.project.department
     ? state.departments.find((entry) => entry.name === blueprint.project.department)
     : undefined;
