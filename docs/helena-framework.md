@@ -375,6 +375,32 @@ ctx.hostCapabilities.register({
 - `GET /god/server` lists every capability with its availability and health; every health line passes `normalizeHostHealthItem`.
 - The UI of a capability comes from the web app for the built-ins and from the `server-section` UI slot (`ServerSectionSlot`: `area` + render; web registry `apps/web/src/extensions/serverSections.tsx`) for the rest; local AI's GPU/NPU status is meant to be the first.
 
+### 3.13 Notification categories and alert sources (push)
+
+Helena reaches people outside the app with Web Push to their own devices (decision:
+[helena-decisions/push.md](helena-decisions/push.md)). Two extension points:
+
+- A `NotificationCategory` is a kind of message a person switches on or off per device ("Notfälle", "Freigaben", …): `defaultOn`, `audience` (`owner` or `everyone`), urgency and TTL for the push service. Built-ins (internal plugin `helena.push`): `emergencies`, `approvals`, `needs-you`, `agent-replies`.
+- An `AlertSource` reports the problems that are red right now. The api watches every source every minute, whether or not Helena is open, and pushes a problem to the owners once it has lasted the source's grace period, once more as a reminder after 12 hours, and once when a successful read no longer reports it. A source that throws changes nothing (a failed read is never a recovery).
+
+```ts
+ctx.notificationCategories.register({
+  id: 'acme.ups', label: { en: 'UPS', de: 'USV' }, defaultOn: true, audience: 'owner',
+  urgency: 'high', ttlSeconds: 86_400,
+});
+ctx.alertSources.register({
+  id: 'acme.ups', category: 'acme.ups', graceSeconds: 60,
+  collect: async () => (await onBattery())
+    ? [{ key: 'ups:battery', subject: { en: 'UPS', de: 'USV' },
+         text: { en: 'Running on battery.', de: 'Läuft auf Akku.' }, href: '/god/server/overview' }]
+    : [],
+});
+```
+
+- Everything a source hands over passes `normalizeAlertItem` (bounded key, texts, a path inside Helena only).
+- A `HostCapability`'s critical health lines are already alerts (the built-in source `helena.server`), so a plugin's host capability needs no source of its own.
+- Push is the `push` channel of the notification outbox (`notification_delivery`), queued and sent by `@helena/push` in the api and the worker. Helena's own event pushes (approvals, chat answers, failed runs) are the plugin's subscriber of the core events.
+
 ## 4. Plugin schreiben
 
 1. **Ordner anlegen.** Ein Plugin ist ein Ordner mit `helena.plugin.json`. Vorbild: `examples/plugins/hello-helena`.
@@ -466,5 +492,6 @@ ctx.hostCapabilities.register({
 | hub/provider-limits | `UsageLimitSource` | The registry and its built-ins (`hermes`, `codex`, `claude-code` in the runner, `spool` in the API). hub/autopilot: an evaluator may read `agentLimitState(agentId)` (`#modules/provider-limits/service`) to hold non-urgent runs back while the agent's account is at its limit (optional, proposed in provider-limits.md). |
 | hub/server-admin | `HostCapability`, `server-section` slot | The registry and its built-ins (`helena.server`: system, storage, backup, power) over the root helper `helena-hostd`; the update center is the Server area's Updates tab. hub/local-ai: register the GPU/NPU/model status as a `serverSections` entry (area `overview`) and, where it has health lines, a `HostCapability`. hub/dashboard: the Start card becomes a `DashboardWidget` over `GET /god/server`. |
 | hub/update-center | `UpdateSource`, engine system jobs | The registry and its built-ins; the digest run (`agent_run.trigger = 'digest'`, `agent_run.reasoning`). Package G: the Docker image carries its own inventory (the helper's `inventory` answer shape) and the CLI runtimes' installer. |
+| hub/push | `NotificationCategory`, `AlertSource` | The registries and their built-ins (`helena.push`: four categories; sources `helena.server`, `helena.hostd`, `helena.services`, `helena.logins`, `helena.security`, `helena.local-ai`). A feature with a red problem of its own registers an alert source next to its code (its needs-you entry on Start stays in the web's `needsYouSources`). |
 | hub/oss-packaging | plugins dir, logger | `HELENA_PLUGINS_DIR` in the units/compose; OPS-01 pino logger behind `ctx.log`. |
 | web owners | UI slots | Settings sections, agent sections, dashboard widgets, header actions, home nav and admin sections move onto the slot registry one at a time, the way the panel did. |
