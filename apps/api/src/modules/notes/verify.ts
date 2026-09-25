@@ -57,7 +57,7 @@ export const notesVerifyRoutes = new Elysia({ name: 'notes-verify' }).get(
       summary: 'Check the owner for the notes proxy',
       description:
         "nginx's auth_request target in front of the notes (Notizen). 204 for the instance " +
-        "owner: his signed-in session at home, or through the tunnel a Cloudflare Access " +
+        'owner: his signed-in session at home, or through the tunnel a Cloudflare Access ' +
         "assertion naming his account's e-mail. 401 without a session, 403 for anyone else, " +
         'for an invalid assertion and for any request that carries an API key.',
     },

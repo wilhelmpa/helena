@@ -5,12 +5,7 @@ import { Button } from '@/components/ui/button';
 import type { Attachment } from '@/lib/api/endpoints/attachments';
 import { filesPath } from '@/utils/paths';
 import { runtimeEnv } from '@/utils/runtimeEnv';
-import {
-  notesFileUrl,
-  parentPath,
-  projectRelativePath,
-  vaultProjectKey,
-} from '@/utils/vaultLinks';
+import { notesFileUrl, parentPath, projectRelativePath, vaultProjectKey } from '@/utils/vaultLinks';
 
 // The buttons of the viewer for an attachment: save it, and find it in the project's
 // Files and in the notes.

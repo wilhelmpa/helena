@@ -48,7 +48,10 @@ describe('vault links', () => {
       notesFolderUrl('https://notes.example.com', 'VOL'),
       'https://notes.example.com/ordner%3AProjects/VOL',
     );
-    assert.equal(notesFolderUrl('https://notes.example.com', null), 'https://notes.example.com/ordner%3AHome');
+    assert.equal(
+      notesFolderUrl('https://notes.example.com', null),
+      'https://notes.example.com/ordner%3AHome',
+    );
     assert.equal(notesFolderUrl('', 'VOL'), '');
   });
 

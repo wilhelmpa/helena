@@ -1,6 +1,13 @@
 'use client';
 
-import { Download, EllipsisVertical, FolderInput, History, NotebookPen, Trash2 } from 'lucide-react';
+import {
+  Download,
+  EllipsisVertical,
+  FolderInput,
+  History,
+  NotebookPen,
+  Trash2,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { vaultFileUrl, type VaultDocument } from '@/lib/api/endpoints/knowledge';
 import { cn } from '@/lib/utils';

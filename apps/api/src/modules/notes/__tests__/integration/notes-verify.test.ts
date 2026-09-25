@@ -49,9 +49,7 @@ describe('the notes’ owner check (/auth/verify/notes)', () => {
     const owner = await signUpTestUser({ email: 'Owner@Example.com' });
     await signUpTestUser({ email: 'member@example.com' });
     // Nothing configured: every tunnel request is refused (the API's edge guard).
-    expect((await verify({ ...TUNNEL, 'cf-access-jwt-assertion': await sign() })).status).toBe(
-      403,
-    );
+    expect((await verify({ ...TUNNEL, 'cf-access-jwt-assertion': await sign() })).status).toBe(403);
     const configured = await call(
       '/god/security/edge',
       { cookie: owner.cookie, origin: ORIGIN, 'content-type': 'application/json' },
@@ -63,9 +61,7 @@ describe('the notes’ owner check (/auth/verify/notes)', () => {
     expect(configured.status).toBe(200);
 
     // The owner's e-mail (compared without case): in.
-    expect((await verify({ ...TUNNEL, 'cf-access-jwt-assertion': await sign() })).status).toBe(
-      204,
-    );
+    expect((await verify({ ...TUNNEL, 'cf-access-jwt-assertion': await sign() })).status).toBe(204);
     // Another account, an unknown person, a service token without e-mail: out.
     for (const claims of [{ email: 'member@example.com' }, { email: 'stranger@example.com' }]) {
       const token = await sign(claims);
@@ -102,9 +98,7 @@ describe('the notes’ owner check (/auth/verify/notes)', () => {
     const { user } = await import('@repo/db/schema');
     const { eq } = await import('drizzle-orm');
     await db.update(user).set({ active: false }).where(eq(user.id, owner.userId));
-    expect((await verify({ ...TUNNEL, 'cf-access-jwt-assertion': await sign() })).status).toBe(
-      403,
-    );
+    expect((await verify({ ...TUNNEL, 'cf-access-jwt-assertion': await sign() })).status).toBe(403);
     expect([401, 403]).toContain((await verify({ cookie: owner.cookie })).status);
   });
 });

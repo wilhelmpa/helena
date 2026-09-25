@@ -9,7 +9,9 @@ describe('crossSiteRefusal (Fetch Metadata)', () => {
   it('refuses a change a page of another origin makes with the owner’s cookie', () => {
     for (const site of ['same-site', 'cross-site', 'Same-Site']) {
       for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {
-        const refusal = crossSiteRefusal(request(method, { cookie: 's=1', 'sec-fetch-site': site }));
+        const refusal = crossSiteRefusal(
+          request(method, { cookie: 's=1', 'sec-fetch-site': site }),
+        );
         expect(refusal?.status).toBe(403);
       }
     }
