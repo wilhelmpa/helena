@@ -27,7 +27,10 @@ RuntimeDirectoryMode=0750
 # nginx (www-data) connects to the socket: the folder becomes www-data's group, setgid, so
 # the socket SilverBullet binds there is www-data's too (0770 by the UMask). No one else
 # can enter the folder.
-ExecStartPre=+/usr/bin/install -d -m 2750 -o helena-notes -g www-data /run/helena-notes
+# systemd re-applies RuntimeDirectory's owner and mode (0750, own group) before every
+# command it starts, the main one included, so www-data's group is set once the socket is
+# there: after the start.
+ExecStartPost=+/bin/sh -c 'for i in $(seq 100); do [ -S /run/helena-notes/notes.sock ] && break; sleep 0.1; done; chown helena-notes:www-data /run/helena-notes /run/helena-notes/notes.sock && chmod 2750 /run/helena-notes && chmod 0770 /run/helena-notes/notes.sock'
 ExecStart=@BINARY@ --single @VAULT@
 UMask=0007
 Environment=SB_UNIX_SOCKET=/run/helena-notes/notes.sock
