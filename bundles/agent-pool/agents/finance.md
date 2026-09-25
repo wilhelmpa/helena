@@ -17,6 +17,7 @@ skills:
   - monatsabschluss
   - reconciliation
   - variance-analysis
+  - kapitalertraege-dokumentieren
   - verification-before-completion
 mcpServers: []
 helena:

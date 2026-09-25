@@ -47,12 +47,7 @@ import {
 import { DECISIONS_LOCAL_AI_CLASS } from '#modules/decisions/local-ai-class';
 import { PUSH_PERMISSIONS, PUSH_PLUGIN_ID, PUSH_PROVIDES, pushPlugin } from '#modules/push/plugin';
 import { EDGE_PLUGIN_ID, edgePlugin, homeHttpsCapability } from '#modules/edge-access/home-https';
-import {
-  TRADING_PERMISSIONS,
-  TRADING_PLUGIN_ID,
-  TRADING_PROVIDES,
-  tradingPlugin,
-} from '#modules/trading/plugin';
+import { tradingManifest, tradingPlugin } from '#modules/trading/plugin';
 
 // Helena's own features as internal plugins: they register through the same host and
 // the same manifest checks as an external plugin (docs/helena-framework.md, §3a
@@ -249,13 +244,7 @@ export async function loadBuiltinPlugins(app: McpApp): Promise<void> {
   );
   // Trading (docs/helena-decisions/trading.md): the Alpaca paper account as a connector
   // with hard pre-trade limits, and the trading decision classes.
-  await host.load(
-    tradingPlugin,
-    builtinManifest(TRADING_PLUGIN_ID, 'trading', {
-      provides: TRADING_PROVIDES,
-      permissions: TRADING_PERMISSIONS,
-    }),
-  );
+  await host.load(tradingPlugin, tradingManifest());
   // Web Push to the owner's devices (docs/helena-decisions/push.md): the notification
   // categories, the alert sources watched on the server, and the event subscriber.
   await host.load(

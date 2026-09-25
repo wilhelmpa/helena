@@ -22,6 +22,19 @@ export const TRADING_PERMISSIONS: PluginManifest['permissions'] = {
   network: [...PAPER_HOSTS],
 };
 
+// The manifest the API loads it with (modules/plugins/builtin.ts) and scripts that need its
+// connector in the registry (the blueprint script).
+export function tradingManifest(): PluginManifest {
+  return {
+    id: TRADING_PLUGIN_ID,
+    name: { i18n: 'god.plugins.names.trading' },
+    version: '1.0.0',
+    sdk: '^0.1.0',
+    provides: TRADING_PROVIDES,
+    permissions: TRADING_PERMISSIONS,
+  };
+}
+
 export const tradingPlugin: HelenaPlugin = {
   register(ctx) {
     ctx.connectors.register(connector);

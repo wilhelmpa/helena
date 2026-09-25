@@ -39,7 +39,7 @@ import { routineMentions } from './mentions';
 export type RoutineMode = 'new' | 'reopen';
 export type CatchUp = 'skip' | 'once';
 
-interface RoutineProject {
+export interface RoutineProject {
   id: number;
   key: string;
   name: string;
@@ -364,10 +364,12 @@ async function routineFields(owner: RoutineProject, userId: string, input: Routi
   return { agentId: agent.id, title, instructions, mode: input.mode, taskId };
 }
 
+// A routine starts switched on; a setup that only proposes one (a project blueprint) creates
+// it switched off with `enabled: false`, so it never fires before the owner turns it on.
 export async function createRoutine(
   owner: RoutineProject,
   userId: string,
-  input: RoutineInput & { idempotencyKey: string },
+  input: RoutineInput & { idempotencyKey: string; enabled?: boolean },
 ): Promise<RoutineRow> {
   const scheduleKey = input.idempotencyKey.toLowerCase();
   const [existing] = await db
@@ -392,7 +394,7 @@ export async function createRoutine(
       cron,
       timezone,
       catchUp: input.catchUp ?? 'skip',
-      enabled: true,
+      enabled: input.enabled ?? true,
       firedThrough: new Date(),
       actorUserId: userId,
       scheduleKey,

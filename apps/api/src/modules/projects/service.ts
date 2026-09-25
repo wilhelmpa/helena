@@ -372,7 +372,7 @@ export async function newProjectAgentUserIds(teamId: number): Promise<string[]> 
   return rows.filter(({ username }) => isHomeAgent(username)).map(({ userId }) => userId);
 }
 
-function hermesProjectCoordinatorInstructions(projectKey: string, projectName: string): string {
+export function hermesProjectCoordinatorInstructions(projectKey: string, projectName: string): string {
   return [
     `You coordinate project ${projectKey} (${projectName.trim()}) for its owner.`,
     'Use the project instructions and authorized work items as your scope.',
