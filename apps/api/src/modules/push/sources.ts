@@ -30,6 +30,21 @@ const text = (i18n: string, values: Record<string, string | number> = {}): Alert
   values,
 });
 
+// Two sources read the machine and two read the system health in one check: each is read
+// once per check (the check's `now` names it), not once per source.
+function perCheck<T>(load: () => Promise<T>): (now: Date) => Promise<T> {
+  let hit: { at: number; value: Promise<T> } | null = null;
+  return (now) => {
+    if (hit && hit.at === now.getTime()) return hit.value;
+    const value = load();
+    hit = { at: now.getTime(), value };
+    return value;
+  };
+}
+
+const overview = perCheck(serverOverview);
+const health = perCheck(systemHealth);
+
 // ── The machine ───────────────────────────────────────────────────────────────────────────
 
 // Red is always an emergency; these amber ones too: a mirror rebuilding still has one copy,
@@ -81,18 +96,18 @@ export const serverAlertSource: AlertSource = {
   id: SERVER_SOURCE_ID,
   category: 'emergencies',
   graceSeconds: 60,
-  async collect() {
-    const overview = await serverOverview();
+  async collect({ now }) {
+    const current = await overview(now);
     const open = await openKeys(SERVER_SOURCE_ID);
     const items: AlertItem[] = [];
-    if (!overview.helper.available) {
+    if (!current.helper.available) {
       // No helper on this host (a container, a development machine): nothing to watch. A
       // helper that answered before and stopped is an emergency of its own (hostd below),
       // and what it reported stays open: a helper that went away is not a recovery.
       if (open.length === 0) return [];
-      throw new Error(`the host helper does not answer (${overview.helper.reason ?? 'failed'})`);
+      throw new Error(`the host helper does not answer (${current.helper.reason ?? 'failed'})`);
     }
-    for (const capability of overview.capabilities) {
+    for (const capability of current.capabilities) {
       // A capability whose state could not be read this time keeps its problems open.
       const unread =
         (!capability.available && capability.reason === 'failed') ||
@@ -137,9 +152,9 @@ export const hostdAlertSource: AlertSource = {
   id: HOSTD_SOURCE_ID,
   category: 'emergencies',
   graceSeconds: 180,
-  async collect() {
-    const overview = await serverOverview();
-    if (overview.helper.available) {
+  async collect({ now }) {
+    const current = await overview(now);
+    if (current.helper.available) {
       helperSeen = true;
       return [];
     }
@@ -167,9 +182,9 @@ export const servicesAlertSource: AlertSource = {
   category: 'emergencies',
   // A deploy restarts every service; only one that stays away is an emergency.
   graceSeconds: 240,
-  async collect() {
-    const health = await systemHealth();
-    return health.services
+  async collect({ now }) {
+    const system = await health(now);
+    return system.services
       .filter((service) => service.state === 'down')
       .map((service) => ({
         key: `service:${service.service}`,
@@ -197,10 +212,10 @@ export const loginsAlertSource: AlertSource = {
   id: LOGINS_SOURCE_ID,
   category: 'needs-you',
   graceSeconds: 300,
-  async collect() {
-    const health = await systemHealth();
+  async collect({ now }) {
+    const system = await health(now);
     const items: AlertItem[] = [];
-    for (const report of health.logins.reports) {
+    for (const report of system.logins.reports) {
       if (report.stale) continue;
       for (const login of report.logins) {
         if (!runtimeLoginNeedsOwner(login)) continue;
