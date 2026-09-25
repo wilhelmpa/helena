@@ -279,7 +279,7 @@ render_nft() { # render_nft OUT
   tunnel_uids=$(uids "$tunnel_user")
   sed -e "s|@LAN4@|$lan4|" \
     -e "s|@UIDS_CDP@|$(uids volition-browser volition-hermes "$owner_user")|" \
-    -e "s|@UIDS_ROUTER@|$(uids volition-browser www-data "$owner_user")|" \
+    -e "s|@UIDS_ROUTER@|$(uids volition-browser www-data volition-plan "$owner_user")|" \
     -e "s|@UIDS_TOOLS@|$(uids www-data "$owner_user")|" \
     -e "s|@UIDS_SYNCTHING@|$(uids volition-sync volition-plan "$owner_user")|" \
     -e "s|@UIDS_TUNNEL@|$tunnel_uids|" \
