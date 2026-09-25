@@ -203,31 +203,31 @@
     "reply": "Balas"
   },
   "triage": {
-    "classify": "Classify",
-    "category": "Kind",
-    "priority": "Priority",
-    "needsReply": "Needs a reply",
-    "noReply": "No reply needed",
-    "unsure": "not sure",
-    "failed": "not classified",
-    "corrected": "Correction saved",
-    "accepted": "Done",
-    "createTask": "Create task",
-    "handToAgent": "Hand to the agent",
+    "classify": "Pilah",
+    "category": "Jenis",
+    "priority": "Prioritas",
+    "needsReply": "Perlu balasan",
+    "noReply": "Tidak perlu balasan",
+    "unsure": "ragu",
+    "failed": "belum dipilah",
+    "corrected": "Koreksi disimpan",
+    "accepted": "Selesai",
+    "createTask": "Buat tugas",
+    "handToAgent": "Serahkan ke agen",
     "categories": {
-      "invoice": "Invoice",
-      "appointment": "Appointment",
-      "request": "Request",
+      "invoice": "Faktur",
+      "appointment": "Janji temu",
+      "request": "Permintaan",
       "newsletter": "Newsletter",
-      "notification": "Notification",
-      "personal": "Personal",
-      "advertising": "Advertising",
-      "other": "Other"
+      "notification": "Notifikasi",
+      "personal": "Pribadi",
+      "advertising": "Iklan",
+      "other": "Lainnya"
     },
     "priorities": {
-      "high": "Urgent",
+      "high": "Mendesak",
       "normal": "Normal",
-      "low": "Can wait"
+      "low": "Bisa menunggu"
     }
   }
 }

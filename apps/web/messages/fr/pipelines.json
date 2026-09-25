@@ -7,7 +7,7 @@
     "wait": "Attente",
     "notify": "Notifier",
     "webhook": "Webhook",
-    "decision": "Decision"
+    "decision": "Décision"
   },
   "kindHints": {
     "agent": "Un agent travaille sur la tâche",
@@ -17,7 +17,7 @@
     "wait": "Met l’exécution en pause",
     "notify": "Informe des personnes de l’exécution",
     "webhook": "Envoie la tâche à une URL",
-    "decision": "A decision model picks one of your options; the run follows the choice."
+    "decision": "Un modèle de décision choisit l’une de vos options ; l’exécution suit ce choix."
   },
   "triggers": {
     "manual": "Démarré manuellement",
@@ -174,8 +174,8 @@
     "limit": "Un flux de travail contient au plus {max} étapes.",
     "problems": "{count, plural, one {# problème} other {# problèmes}}",
     "plugins": "Extensions",
-    "decisionThen": "Chosen",
-    "decisionElse": "Otherwise"
+    "decisionThen": "Choisi",
+    "decisionElse": "Sinon"
   },
   "summary": {
     "agentRole": "Rôle {role}",
@@ -201,7 +201,7 @@
     "webhook": "Envoyer à {host}",
     "noUrl": "Pas encore d’URL",
     "decision": "{question} → {options}",
-    "decisionFrom": "Answer of “{step}” → {options}"
+    "decisionFrom": "Réponse de « {step} » → {options}"
   },
   "duration": {
     "minutes": "{count, plural, one {# minute} other {# minutes}}",
@@ -349,23 +349,23 @@
     },
     "decision": {
       "source": "Question",
-      "ask": "Ask a new question",
-      "reuse": "Reuse the answer of “{step}”",
+      "ask": "Poser une nouvelle question",
+      "reuse": "Réutiliser la réponse de « {step} »",
       "question": "Question",
-      "questionHint": "e.g. What kind of request is this?",
-      "context": "About",
-      "contextHint": "Default: the task’s title and description. Variables of earlier steps work here.",
+      "questionHint": "p. ex. De quel type de demande s’agit-il ?",
+      "context": "Sur quoi",
+      "contextHint": "Par défaut : le titre et la description de la tâche. Les variables des étapes précédentes fonctionnent aussi ici.",
       "options": "Options",
-      "optionsHint": "One per line, at most {max}.",
-      "thenOptions": "Into the first lane on",
-      "thenHint": "The other options, and no clear answer if chosen below, take the second lane.",
-      "noOptions": "Enter the options first.",
-      "unsure": "When the model is not sure",
-      "unsureHint": "Below the threshold of “General decisions”, or without an answer.",
+      "optionsHint": "Une par ligne, {max} au plus.",
+      "thenOptions": "Vers la première branche pour",
+      "thenHint": "Les autres options, et l’absence de réponse claire si c’est choisi ci-dessous, prennent la seconde branche.",
+      "noOptions": "Saisissez d’abord les options.",
+      "unsure": "Quand le modèle n’est pas sûr",
+      "unsureHint": "Sous le seuil de « Décisions générales », ou sans réponse.",
       "unsureModes": {
-        "else": "Second lane",
-        "then": "First lane",
-        "fail": "Stop the run"
+        "else": "Seconde branche",
+        "then": "Première branche",
+        "fail": "Arrêter l’exécution"
       }
     }
   },

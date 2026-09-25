@@ -7,7 +7,7 @@
     "wait": "انتظار",
     "notify": "إشعار",
     "webhook": "Webhook",
-    "decision": "Decision"
+    "decision": "قرار"
   },
   "kindHints": {
     "agent": "وكيل يعمل على المهمة",
@@ -17,7 +17,7 @@
     "wait": "يوقف التشغيل مؤقتًا",
     "notify": "يُبلغ الأشخاص بالتشغيل",
     "webhook": "يرسل المهمة إلى عنوان URL",
-    "decision": "A decision model picks one of your options; the run follows the choice."
+    "decision": "يختار نموذج قرار أحد خياراتك، ويتبع التشغيل هذا الاختيار."
   },
   "triggers": {
     "manual": "بدء يدوي",
@@ -174,8 +174,8 @@
     "limit": "يحتوي سير العمل على {max} خطوة كحد أقصى.",
     "problems": "{count, plural, zero {لا مشاكل} one {مشكلة واحدة} two {مشكلتان} few {# مشاكل} many {# مشكلةً} other {# مشكلة}}",
     "plugins": "الإضافات",
-    "decisionThen": "Chosen",
-    "decisionElse": "Otherwise"
+    "decisionThen": "المختار",
+    "decisionElse": "وإلا"
   },
   "summary": {
     "agentRole": "الدور {role}",
@@ -200,8 +200,8 @@
     "notify": "إلى {who}: {text}",
     "webhook": "إرسال إلى {host}",
     "noUrl": "لا يوجد عنوان URL بعد",
-    "decision": "{question} → {options}",
-    "decisionFrom": "Answer of “{step}” → {options}"
+    "decision": "{question} ← {options}",
+    "decisionFrom": "إجابة “{step}” ← {options}"
   },
   "duration": {
     "minutes": "{count, plural, zero {لا دقائق} one {دقيقة واحدة} two {دقيقتان} few {# دقائق} many {# دقيقةً} other {# دقيقة}}",
@@ -348,24 +348,24 @@
       "missing": "نوع الخطوة {type} غير مثبت: الإضافة التي توفره معطلة."
     },
     "decision": {
-      "source": "Question",
-      "ask": "Ask a new question",
-      "reuse": "Reuse the answer of “{step}”",
-      "question": "Question",
-      "questionHint": "e.g. What kind of request is this?",
-      "context": "About",
-      "contextHint": "Default: the task’s title and description. Variables of earlier steps work here.",
-      "options": "Options",
-      "optionsHint": "One per line, at most {max}.",
-      "thenOptions": "Into the first lane on",
-      "thenHint": "The other options, and no clear answer if chosen below, take the second lane.",
-      "noOptions": "Enter the options first.",
-      "unsure": "When the model is not sure",
-      "unsureHint": "Below the threshold of “General decisions”, or without an answer.",
+      "source": "السؤال",
+      "ask": "طرح سؤال جديد",
+      "reuse": "إعادة استخدام إجابة “{step}”",
+      "question": "السؤال",
+      "questionHint": "مثلًا: ما نوع هذا الطلب؟",
+      "context": "حول",
+      "contextHint": "الافتراضي: عنوان المهمة ووصفها. تعمل هنا أيضًا متغيرات الخطوات السابقة.",
+      "options": "الخيارات",
+      "optionsHint": "خيار في كل سطر، {max} كحد أقصى.",
+      "thenOptions": "إلى الفرع الأول عند",
+      "thenHint": "الخيارات الأخرى، وغياب الإجابة الواضحة إذا اختير ذلك أدناه، تذهب إلى الفرع الثاني.",
+      "noOptions": "أدخل الخيارات أولًا.",
+      "unsure": "عندما لا يكون النموذج متأكدًا",
+      "unsureHint": "دون عتبة “قرارات عامة”، أو دون إجابة.",
       "unsureModes": {
-        "else": "Second lane",
-        "then": "First lane",
-        "fail": "Stop the run"
+        "else": "الفرع الثاني",
+        "then": "الفرع الأول",
+        "fail": "إيقاف التشغيل"
       }
     }
   },

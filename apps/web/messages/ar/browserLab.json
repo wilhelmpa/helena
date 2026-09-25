@@ -27,7 +27,7 @@
     "allowPrivate": "السماح بهذا العنوان المحلي",
     "allowPrivateHint": "لا تتصل Helena عادةً بعناوين شبكتك. هذا يسمح بهذا العنوان تحديدًا ولا شيء غيره.",
     "localKey": "يُقرأ مفتاح خدمة Laya المحلية من الخادم؛ لا حاجة لإدخال شيء.",
-    "localAiKey": "Address and key come from Helena's local AI (Administrator → Lokale KI); nothing to enter.",
+    "localAiKey": "يأتي العنوان والمفتاح من الذكاء الاصطناعي المحلي في Helena (المسؤول ← الذكاء الاصطناعي المحلي)؛ لا حاجة لإدخال شيء.",
     "key": "المفتاح",
     "keyHintTypesafe": "من console.typesafe.ai ← Keys.",
     "keyHintVercel": "مفتاح AI Gateway من فريقك في Vercel.",

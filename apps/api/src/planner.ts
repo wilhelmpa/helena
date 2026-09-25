@@ -81,6 +81,7 @@ import { browserTaskRoutes } from './modules/browser-task';
 import { decisionRoutes } from './modules/decisions';
 import { modelRouterRoutes } from './modules/model-router';
 import { mailTriageRoutes } from './modules/mail-triage';
+import { receiptRoutes } from './modules/receipts';
 import { approvalRoutes } from './modules/approvals';
 import { modelPriceRoutes } from './modules/model-prices';
 import { autopilotRoutes } from './modules/autopilot';
@@ -107,6 +108,7 @@ const plannerOperations = new Elysia({ name: 'planner-operations' })
   .use(mailThreadRoutes)
   .use(mailDraftRoutes)
   .use(mailTriageRoutes)
+  .use(receiptRoutes)
   .use(organizationRoutes)
   .use(connectionsRoutes)
   .use(deviceSyncRoutes)

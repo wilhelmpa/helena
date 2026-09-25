@@ -7,7 +7,7 @@
     "wait": "Espera",
     "notify": "Notificar",
     "webhook": "Webhook",
-    "decision": "Decision"
+    "decision": "Decisão"
   },
   "kindHints": {
     "agent": "Um agente trabalha na tarefa",
@@ -17,7 +17,7 @@
     "wait": "Pausa a execução",
     "notify": "Avisa as pessoas sobre a execução",
     "webhook": "Envia a tarefa para uma URL",
-    "decision": "A decision model picks one of your options; the run follows the choice."
+    "decision": "Um modelo de decisão escolhe uma das suas opções; a execução segue a escolha."
   },
   "triggers": {
     "manual": "Iniciado manualmente",
@@ -174,8 +174,8 @@
     "limit": "Um fluxo de trabalho tem no máximo {max} etapas.",
     "problems": "{count, plural, one {# problema} other {# problemas}}",
     "plugins": "Extensões",
-    "decisionThen": "Chosen",
-    "decisionElse": "Otherwise"
+    "decisionThen": "Escolhida",
+    "decisionElse": "Senão"
   },
   "summary": {
     "agentRole": "Função {role}",
@@ -201,7 +201,7 @@
     "webhook": "Enviar para {host}",
     "noUrl": "Ainda sem URL",
     "decision": "{question} → {options}",
-    "decisionFrom": "Answer of “{step}” → {options}"
+    "decisionFrom": "Resposta de “{step}” → {options}"
   },
   "duration": {
     "minutes": "{count, plural, one {# minuto} other {# minutos}}",
@@ -348,24 +348,24 @@
       "missing": "O tipo de etapa {type} não está instalado: a extensão que o fornece está desligada."
     },
     "decision": {
-      "source": "Question",
-      "ask": "Ask a new question",
-      "reuse": "Reuse the answer of “{step}”",
-      "question": "Question",
-      "questionHint": "e.g. What kind of request is this?",
-      "context": "About",
-      "contextHint": "Default: the task’s title and description. Variables of earlier steps work here.",
-      "options": "Options",
-      "optionsHint": "One per line, at most {max}.",
-      "thenOptions": "Into the first lane on",
-      "thenHint": "The other options, and no clear answer if chosen below, take the second lane.",
-      "noOptions": "Enter the options first.",
-      "unsure": "When the model is not sure",
-      "unsureHint": "Below the threshold of “General decisions”, or without an answer.",
+      "source": "Pergunta",
+      "ask": "Fazer uma nova pergunta",
+      "reuse": "Reutilizar a resposta de “{step}”",
+      "question": "Pergunta",
+      "questionHint": "ex.: Que tipo de solicitação é esta?",
+      "context": "Sobre o quê",
+      "contextHint": "Padrão: o título e a descrição da tarefa. Variáveis de etapas anteriores também funcionam aqui.",
+      "options": "Opções",
+      "optionsHint": "Uma por linha, no máximo {max}.",
+      "thenOptions": "Para o primeiro ramo com",
+      "thenHint": "As outras opções, e a falta de resposta clara se assim escolhido abaixo, vão para o segundo ramo.",
+      "noOptions": "Informe as opções primeiro.",
+      "unsure": "Quando o modelo não tem certeza",
+      "unsureHint": "Abaixo do limiar de “Decisões gerais”, ou sem resposta.",
       "unsureModes": {
-        "else": "Second lane",
-        "then": "First lane",
-        "fail": "Stop the run"
+        "else": "Segundo ramo",
+        "then": "Primeiro ramo",
+        "fail": "Parar a execução"
       }
     }
   },

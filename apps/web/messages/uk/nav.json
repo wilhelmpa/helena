@@ -170,7 +170,7 @@
     "dropUngrouped": "Перетягніть сюди, щоб вилучити проєкт із групи"
   },
   "access": "Доступи та підключення",
-  "decisions": "Decisions",
+  "decisions": "Рішення",
   "browser": "Браузер",
   "layout": {
     "menu": "Макет",
@@ -194,5 +194,6 @@
     "full": "Інструмент на весь екран",
     "resizeArea": "Змінити ширину"
   },
+  "receipts": "Receipts",
   "browserLab": "Browser 2.0"
 }

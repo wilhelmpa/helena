@@ -170,7 +170,7 @@
     "dropUngrouped": "Перетащите сюда, чтобы убрать проект из группы"
   },
   "access": "Доступы и подключения",
-  "decisions": "Decisions",
+  "decisions": "Решения",
   "browser": "Браузер",
   "layout": {
     "menu": "Макет",
@@ -194,5 +194,6 @@
     "full": "Инструмент на весь экран",
     "resizeArea": "Изменить ширину"
   },
+  "receipts": "Receipts",
   "browserLab": "Browser 2.0"
 }

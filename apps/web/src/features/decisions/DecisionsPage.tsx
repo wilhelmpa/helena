@@ -27,7 +27,7 @@ export type DecisionsTab = 'classes' | 'router' | 'log';
 
 const STATUSES = ['decided', 'unsure', 'timeout', 'error', 'no_backend'] as const;
 
-// Einstellungen → Entscheidungen (docs/helena-decisions/decisions.md): the typed decisions
+// Home → Entscheidungen (docs/helena-decisions/decisions.md): the typed decisions
 // Helena asks — which model answers each kind, with which threshold, whether it passed its
 // eval and is on —, the model router's switches, and the log of every decision.
 export default function DecisionsPage({ tab: initial = 'classes' }: { tab?: DecisionsTab }) {

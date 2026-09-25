@@ -443,7 +443,7 @@
       "logins": "Inicios de sesión",
       "updates": "Actualizaciones",
       "browserTask": "Tareas del navegador",
-      "decisions": "Decisions"
+      "decisions": "Decisiones"
     },
     "problems": {
       "external-off": "Se carga cuando se activen los plugins externos.",

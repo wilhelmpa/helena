@@ -13,7 +13,7 @@ import {
   project as projectTable,
 } from '@repo/db';
 import { absoluteVaultPath } from '@repo/vault';
-import { and, count, desc, eq, ilike, inArray, isNotNull, or, sql } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, isNotNull, or, sql } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
 import { joinPath, relativePath, safeFileName } from '#modules/project-files/paths';
 import { projectRoot, projectVaultPath } from '#modules/project-files/roots';
@@ -88,7 +88,7 @@ function extractedColumns(facts: ExtractedReceipt) {
     extraction: facts.extraction,
     extractionError: facts.extractionError,
     textExcerpt: facts.textExcerpt,
-    details: facts.details as Record<string, unknown>,
+    details: facts.details as unknown as Record<string, unknown>,
   };
 }
 

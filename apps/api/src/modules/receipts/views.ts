@@ -5,7 +5,7 @@ import {
   helenaReceipt,
   helenaReceiptMatch,
 } from '@repo/db';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql, type SQL } from 'drizzle-orm';
 import { numericToCents } from './amounts';
 import type { ReceiptDetails } from './extract';
 
@@ -92,7 +92,7 @@ export interface TransactionView {
 }
 
 export function detailsOf(row: ReceiptRow): ReceiptDetails {
-  return (row.details ?? {}) as ReceiptDetails;
+  return (row.details ?? {}) as unknown as ReceiptDetails;
 }
 
 function baseReceiptView(
@@ -249,7 +249,7 @@ export async function transactionViews(rows: TransactionRow[]): Promise<Transact
   }));
 }
 
-// A month filter on a date column, or on the day a row was created when it has no date.
-export function inMonth(column: ReturnType<typeof sql>, range: { from: string; to: string }) {
-  return sql`${column} >= ${range.from}::date AND ${column} < ${range.to}::date`;
+// A month filter ([from, to) from monthRange) on a date expression.
+export function inMonth(day: SQL, range: { from: string; to: string }) {
+  return sql`${day} >= ${range.from}::date AND ${day} < ${range.to}::date`;
 }

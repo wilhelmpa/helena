@@ -7,7 +7,7 @@
     "wait": "Ожидание",
     "notify": "Уведомить",
     "webhook": "Вебхук",
-    "decision": "Decision"
+    "decision": "Решение"
   },
   "kindHints": {
     "agent": "Агент работает над задачей",
@@ -17,7 +17,7 @@
     "wait": "Приостанавливает запуск",
     "notify": "Сообщает людям о запуске",
     "webhook": "Отправляет задачу на URL",
-    "decision": "A decision model picks one of your options; the run follows the choice."
+    "decision": "Модель решений выбирает один из ваших вариантов; запуск следует этому выбору."
   },
   "triggers": {
     "manual": "Запускается вручную",
@@ -174,8 +174,8 @@
     "limit": "Рабочий процесс содержит не более {max} шагов.",
     "problems": "{count, plural, one {# проблема} few {# проблемы} many {# проблем} other {# проблемы}}",
     "plugins": "Расширения",
-    "decisionThen": "Chosen",
-    "decisionElse": "Otherwise"
+    "decisionThen": "Выбрано",
+    "decisionElse": "Иначе"
   },
   "summary": {
     "agentRole": "Роль {role}",
@@ -201,7 +201,7 @@
     "webhook": "Отправить на {host}",
     "noUrl": "URL ещё не указан",
     "decision": "{question} → {options}",
-    "decisionFrom": "Answer of “{step}” → {options}"
+    "decisionFrom": "Ответ шага «{step}» → {options}"
   },
   "duration": {
     "minutes": "{count, plural, one {# минута} few {# минуты} many {# минут} other {# минуты}}",
@@ -348,24 +348,24 @@
       "missing": "Тип шага {type} не установлен: расширение, которое его добавляет, выключено."
     },
     "decision": {
-      "source": "Question",
-      "ask": "Ask a new question",
-      "reuse": "Reuse the answer of “{step}”",
-      "question": "Question",
-      "questionHint": "e.g. What kind of request is this?",
-      "context": "About",
-      "contextHint": "Default: the task’s title and description. Variables of earlier steps work here.",
-      "options": "Options",
-      "optionsHint": "One per line, at most {max}.",
-      "thenOptions": "Into the first lane on",
-      "thenHint": "The other options, and no clear answer if chosen below, take the second lane.",
-      "noOptions": "Enter the options first.",
-      "unsure": "When the model is not sure",
-      "unsureHint": "Below the threshold of “General decisions”, or without an answer.",
+      "source": "Вопрос",
+      "ask": "Задать новый вопрос",
+      "reuse": "Использовать ответ шага «{step}»",
+      "question": "Вопрос",
+      "questionHint": "например: Что это за запрос?",
+      "context": "О чём",
+      "contextHint": "По умолчанию: название и описание задачи. Здесь также работают переменные предыдущих шагов.",
+      "options": "Варианты",
+      "optionsHint": "По одному в строке, не больше {max}.",
+      "thenOptions": "В первую ветку при",
+      "thenHint": "Остальные варианты, а также отсутствие ясного ответа, если так выбрано ниже, идут во вторую ветку.",
+      "noOptions": "Сначала введите варианты.",
+      "unsure": "Когда модель не уверена",
+      "unsureHint": "Ниже порога вида «Общие решения» или без ответа.",
       "unsureModes": {
-        "else": "Second lane",
-        "then": "First lane",
-        "fail": "Stop the run"
+        "else": "Вторая ветка",
+        "then": "Первая ветка",
+        "fail": "Остановить запуск"
       }
     }
   },

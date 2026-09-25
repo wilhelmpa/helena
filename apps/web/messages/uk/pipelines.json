@@ -7,7 +7,7 @@
     "wait": "Очікування",
     "notify": "Сповістити",
     "webhook": "Вебхук",
-    "decision": "Decision"
+    "decision": "Рішення"
   },
   "kindHints": {
     "agent": "Агент працює над задачею",
@@ -17,7 +17,7 @@
     "wait": "Призупиняє запуск",
     "notify": "Повідомляє людей про запуск",
     "webhook": "Надсилає задачу на URL",
-    "decision": "A decision model picks one of your options; the run follows the choice."
+    "decision": "Модель рішень вибирає один із ваших варіантів; запуск іде за цим вибором."
   },
   "triggers": {
     "manual": "Запускається вручну",
@@ -174,8 +174,8 @@
     "limit": "Робочий процес містить не більше {max} кроків.",
     "problems": "{count, plural, one {# проблема} few {# проблеми} many {# проблем} other {# проблеми}}",
     "plugins": "Розширення",
-    "decisionThen": "Chosen",
-    "decisionElse": "Otherwise"
+    "decisionThen": "Вибрано",
+    "decisionElse": "Інакше"
   },
   "summary": {
     "agentRole": "Роль {role}",
@@ -201,7 +201,7 @@
     "webhook": "Надіслати на {host}",
     "noUrl": "URL ще не вказано",
     "decision": "{question} → {options}",
-    "decisionFrom": "Answer of “{step}” → {options}"
+    "decisionFrom": "Відповідь кроку «{step}» → {options}"
   },
   "duration": {
     "minutes": "{count, plural, one {# хвилина} few {# хвилини} many {# хвилин} other {# хвилини}}",
@@ -348,24 +348,24 @@
       "missing": "Тип кроку {type} не встановлено: розширення, яке його додає, вимкнене."
     },
     "decision": {
-      "source": "Question",
-      "ask": "Ask a new question",
-      "reuse": "Reuse the answer of “{step}”",
-      "question": "Question",
-      "questionHint": "e.g. What kind of request is this?",
-      "context": "About",
-      "contextHint": "Default: the task’s title and description. Variables of earlier steps work here.",
-      "options": "Options",
-      "optionsHint": "One per line, at most {max}.",
-      "thenOptions": "Into the first lane on",
-      "thenHint": "The other options, and no clear answer if chosen below, take the second lane.",
-      "noOptions": "Enter the options first.",
-      "unsure": "When the model is not sure",
-      "unsureHint": "Below the threshold of “General decisions”, or without an answer.",
+      "source": "Питання",
+      "ask": "Поставити нове питання",
+      "reuse": "Використати відповідь кроку «{step}»",
+      "question": "Питання",
+      "questionHint": "наприклад: Що це за запит?",
+      "context": "Про що",
+      "contextHint": "За замовчуванням: назва й опис задачі. Тут також працюють змінні попередніх кроків.",
+      "options": "Варіанти",
+      "optionsHint": "По одному в рядку, не більше {max}.",
+      "thenOptions": "У першу гілку при",
+      "thenHint": "Інші варіанти, а також відсутність чіткої відповіді, якщо так вибрано нижче, ідуть у другу гілку.",
+      "noOptions": "Спочатку введіть варіанти.",
+      "unsure": "Коли модель не впевнена",
+      "unsureHint": "Нижче порогу виду «Загальні рішення» або без відповіді.",
       "unsureModes": {
-        "else": "Second lane",
-        "then": "First lane",
-        "fail": "Stop the run"
+        "else": "Друга гілка",
+        "then": "Перша гілка",
+        "fail": "Зупинити запуск"
       }
     }
   },

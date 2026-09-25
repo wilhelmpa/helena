@@ -35,6 +35,7 @@ export {
   EXPORT_COLUMNS,
   buildMonthExport,
   exportFileName,
+  readExportZip,
   type ExportReceipt,
   type ExportRow,
   type MonthExport,

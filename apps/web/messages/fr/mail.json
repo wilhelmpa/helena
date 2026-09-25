@@ -203,31 +203,31 @@
     "reply": "Répondre"
   },
   "triage": {
-    "classify": "Classify",
-    "category": "Kind",
-    "priority": "Priority",
-    "needsReply": "Needs a reply",
-    "noReply": "No reply needed",
-    "unsure": "not sure",
-    "failed": "not classified",
-    "corrected": "Correction saved",
-    "accepted": "Done",
-    "createTask": "Create task",
-    "handToAgent": "Hand to the agent",
+    "classify": "Classer",
+    "category": "Type",
+    "priority": "Priorité",
+    "needsReply": "Réponse nécessaire",
+    "noReply": "Pas de réponse nécessaire",
+    "unsure": "incertain",
+    "failed": "non classé",
+    "corrected": "Correction enregistrée",
+    "accepted": "Terminé",
+    "createTask": "Créer une tâche",
+    "handToAgent": "Confier à l'agent",
     "categories": {
-      "invoice": "Invoice",
-      "appointment": "Appointment",
-      "request": "Request",
+      "invoice": "Facture",
+      "appointment": "Rendez-vous",
+      "request": "Demande",
       "newsletter": "Newsletter",
       "notification": "Notification",
-      "personal": "Personal",
-      "advertising": "Advertising",
-      "other": "Other"
+      "personal": "Personnel",
+      "advertising": "Publicité",
+      "other": "Autre"
     },
     "priorities": {
       "high": "Urgent",
       "normal": "Normal",
-      "low": "Can wait"
+      "low": "Peut attendre"
     }
   }
 }

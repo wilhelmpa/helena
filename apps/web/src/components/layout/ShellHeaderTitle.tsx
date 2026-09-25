@@ -47,6 +47,7 @@ export default function ShellHeaderTitle({
     if (sub === 'notes') return t('notes');
     if (sub === 'chat') return t('chat');
     if (sub === 'approvals') return t('approvals');
+    if (sub === 'receipts') return t('receipts');
     if (sub === 'organization') return t('teamOrchestration');
     if (sub === 'notifications') return t('notifications');
     if (sub === 'mcp') return t('mcpServer');

@@ -7,7 +7,7 @@
     "wait": "等待",
     "notify": "通知",
     "webhook": "Webhook",
-    "decision": "Decision"
+    "decision": "决策"
   },
   "kindHints": {
     "agent": "由代理处理任务",
@@ -17,7 +17,7 @@
     "wait": "暂停运行",
     "notify": "告知相关人员此次运行",
     "webhook": "将任务发送到某个 URL",
-    "decision": "A decision model picks one of your options; the run follows the choice."
+    "decision": "决策模型从你的选项中选出一个；运行按所选结果继续。"
   },
   "triggers": {
     "manual": "手动启动",
@@ -174,8 +174,8 @@
     "limit": "一个工作流最多包含 {max} 个步骤。",
     "problems": "{count, plural, other {# 个问题}}",
     "plugins": "扩展",
-    "decisionThen": "Chosen",
-    "decisionElse": "Otherwise"
+    "decisionThen": "已选中",
+    "decisionElse": "否则"
   },
   "summary": {
     "agentRole": "角色 {role}",
@@ -201,7 +201,7 @@
     "webhook": "发送到 {host}",
     "noUrl": "尚无 URL",
     "decision": "{question} → {options}",
-    "decisionFrom": "Answer of “{step}” → {options}"
+    "decisionFrom": "“{step}”的回答 → {options}"
   },
   "duration": {
     "minutes": "{count, plural, other {# 分钟}}",
@@ -348,24 +348,24 @@
       "missing": "步骤类型 {type} 未安装：提供它的扩展已关闭。"
     },
     "decision": {
-      "source": "Question",
-      "ask": "Ask a new question",
-      "reuse": "Reuse the answer of “{step}”",
-      "question": "Question",
-      "questionHint": "e.g. What kind of request is this?",
-      "context": "About",
-      "contextHint": "Default: the task’s title and description. Variables of earlier steps work here.",
-      "options": "Options",
-      "optionsHint": "One per line, at most {max}.",
-      "thenOptions": "Into the first lane on",
-      "thenHint": "The other options, and no clear answer if chosen below, take the second lane.",
-      "noOptions": "Enter the options first.",
-      "unsure": "When the model is not sure",
-      "unsureHint": "Below the threshold of “General decisions”, or without an answer.",
+      "source": "问题",
+      "ask": "提出新问题",
+      "reuse": "复用“{step}”的回答",
+      "question": "问题",
+      "questionHint": "例如：这是哪类请求？",
+      "context": "关于",
+      "contextHint": "默认：任务的标题和描述。这里也可以使用之前步骤的变量。",
+      "options": "选项",
+      "optionsHint": "每行一个，最多 {max} 个。",
+      "thenOptions": "进入第一分支的选项",
+      "thenHint": "其他选项，以及在下方如此选择时的无明确回答，走第二分支。",
+      "noOptions": "请先填写选项。",
+      "unsure": "当模型不确定时",
+      "unsureHint": "低于“通用决策”的阈值，或没有回答。",
       "unsureModes": {
-        "else": "Second lane",
-        "then": "First lane",
-        "fail": "Stop the run"
+        "else": "第二分支",
+        "then": "第一分支",
+        "fail": "停止运行"
       }
     }
   },

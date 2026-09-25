@@ -27,7 +27,7 @@
     "allowPrivate": "允许此本地地址",
     "allowPrivateHint": "Helena 通常从不访问你网络中的地址。这里只允许这一个地址。",
     "localKey": "本地 Laya 服务的密钥从服务器读取，无需填写。",
-    "localAiKey": "Address and key come from Helena's local AI (Administrator → Lokale KI); nothing to enter.",
+    "localAiKey": "地址和密钥来自 Helena 的本地 AI（管理员 → 本地 AI），无需填写。",
     "key": "密钥",
     "keyHintTypesafe": "来自 console.typesafe.ai → Keys。",
     "keyHintVercel": "你的 Vercel 团队的 AI Gateway 密钥。",

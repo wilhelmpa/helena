@@ -203,31 +203,31 @@
     "reply": "رد"
   },
   "triage": {
-    "classify": "Classify",
-    "category": "Kind",
-    "priority": "Priority",
-    "needsReply": "Needs a reply",
-    "noReply": "No reply needed",
-    "unsure": "not sure",
-    "failed": "not classified",
-    "corrected": "Correction saved",
-    "accepted": "Done",
-    "createTask": "Create task",
-    "handToAgent": "Hand to the agent",
+    "classify": "تصنيف",
+    "category": "النوع",
+    "priority": "الأولوية",
+    "needsReply": "يحتاج إلى رد",
+    "noReply": "لا يحتاج إلى رد",
+    "unsure": "غير مؤكد",
+    "failed": "غير مصنّف",
+    "corrected": "حُفظ التصحيح",
+    "accepted": "تم",
+    "createTask": "إنشاء مهمة",
+    "handToAgent": "التسليم إلى الوكيل",
     "categories": {
-      "invoice": "Invoice",
-      "appointment": "Appointment",
-      "request": "Request",
-      "newsletter": "Newsletter",
-      "notification": "Notification",
-      "personal": "Personal",
-      "advertising": "Advertising",
-      "other": "Other"
+      "invoice": "فاتورة",
+      "appointment": "موعد",
+      "request": "طلب",
+      "newsletter": "نشرة إخبارية",
+      "notification": "إشعار",
+      "personal": "شخصي",
+      "advertising": "إعلان",
+      "other": "أخرى"
     },
     "priorities": {
-      "high": "Urgent",
-      "normal": "Normal",
-      "low": "Can wait"
+      "high": "عاجل",
+      "normal": "عادي",
+      "low": "يمكن أن ينتظر"
     }
   }
 }

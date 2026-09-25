@@ -27,7 +27,7 @@
     "allowPrivate": "Дозволити цю локальну адресу",
     "allowPrivateHint": "Зазвичай Helena не звертається до адрес вашої мережі. Це дозволяє саме цю адресу, нічого більше.",
     "localKey": "Ключ локальної служби Laya зчитується із сервера; вводити нічого не потрібно.",
-    "localAiKey": "Address and key come from Helena's local AI (Administrator → Lokale KI); nothing to enter.",
+    "localAiKey": "Адреса й ключ беруться з локального ШІ Helena (Адміністратор → Локальний ШІ); вводити нічого не потрібно.",
     "key": "Ключ",
     "keyHintTypesafe": "З console.typesafe.ai → Keys.",
     "keyHintVercel": "Ключ AI Gateway вашої команди у Vercel.",

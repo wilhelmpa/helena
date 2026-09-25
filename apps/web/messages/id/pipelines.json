@@ -7,7 +7,7 @@
     "wait": "Tunggu",
     "notify": "Beri tahu",
     "webhook": "Webhook",
-    "decision": "Decision"
+    "decision": "Keputusan"
   },
   "kindHints": {
     "agent": "Agen mengerjakan tugas",
@@ -17,7 +17,7 @@
     "wait": "Menjeda eksekusi",
     "notify": "Memberi tahu orang tentang proses",
     "webhook": "Mengirim tugas ke URL",
-    "decision": "A decision model picks one of your options; the run follows the choice."
+    "decision": "Model keputusan memilih salah satu opsi Anda; eksekusi mengikuti pilihan itu."
   },
   "triggers": {
     "manual": "Dimulai secara manual",
@@ -174,8 +174,8 @@
     "limit": "Sebuah alur kerja memuat paling banyak {max} langkah.",
     "problems": "{count, plural, other {# masalah}}",
     "plugins": "Ekstensi",
-    "decisionThen": "Chosen",
-    "decisionElse": "Otherwise"
+    "decisionThen": "Terpilih",
+    "decisionElse": "Selain itu"
   },
   "summary": {
     "agentRole": "Peran {role}",
@@ -201,7 +201,7 @@
     "webhook": "Kirim ke {host}",
     "noUrl": "Belum ada URL",
     "decision": "{question} → {options}",
-    "decisionFrom": "Answer of “{step}” → {options}"
+    "decisionFrom": "Jawaban dari “{step}” → {options}"
   },
   "duration": {
     "minutes": "{count, plural, other {# menit}}",
@@ -348,24 +348,24 @@
       "missing": "Jenis langkah {type} belum terpasang: ekstensi yang menyediakannya nonaktif."
     },
     "decision": {
-      "source": "Question",
-      "ask": "Ask a new question",
-      "reuse": "Reuse the answer of “{step}”",
-      "question": "Question",
-      "questionHint": "e.g. What kind of request is this?",
-      "context": "About",
-      "contextHint": "Default: the task’s title and description. Variables of earlier steps work here.",
-      "options": "Options",
-      "optionsHint": "One per line, at most {max}.",
-      "thenOptions": "Into the first lane on",
-      "thenHint": "The other options, and no clear answer if chosen below, take the second lane.",
-      "noOptions": "Enter the options first.",
-      "unsure": "When the model is not sure",
-      "unsureHint": "Below the threshold of “General decisions”, or without an answer.",
+      "source": "Pertanyaan",
+      "ask": "Ajukan pertanyaan baru",
+      "reuse": "Pakai ulang jawaban dari “{step}”",
+      "question": "Pertanyaan",
+      "questionHint": "mis. Permintaan jenis apa ini?",
+      "context": "Tentang",
+      "contextHint": "Bawaan: judul dan deskripsi tugas. Variabel dari langkah sebelumnya juga bisa dipakai di sini.",
+      "options": "Opsi",
+      "optionsHint": "Satu per baris, maksimal {max}.",
+      "thenOptions": "Ke cabang pertama jika",
+      "thenHint": "Opsi lainnya, dan tanpa jawaban jelas jika dipilih demikian di bawah, masuk ke cabang kedua.",
+      "noOptions": "Isi opsinya terlebih dahulu.",
+      "unsure": "Jika model tidak yakin",
+      "unsureHint": "Di bawah ambang “Keputusan umum”, atau tanpa jawaban.",
       "unsureModes": {
-        "else": "Second lane",
-        "then": "First lane",
-        "fail": "Stop the run"
+        "else": "Cabang kedua",
+        "then": "Cabang pertama",
+        "fail": "Hentikan eksekusi"
       }
     }
   },

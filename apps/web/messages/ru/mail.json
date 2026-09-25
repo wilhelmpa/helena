@@ -203,31 +203,31 @@
     "reply": "Ответить"
   },
   "triage": {
-    "classify": "Classify",
-    "category": "Kind",
-    "priority": "Priority",
-    "needsReply": "Needs a reply",
-    "noReply": "No reply needed",
-    "unsure": "not sure",
-    "failed": "not classified",
-    "corrected": "Correction saved",
-    "accepted": "Done",
-    "createTask": "Create task",
-    "handToAgent": "Hand to the agent",
+    "classify": "Разобрать",
+    "category": "Вид",
+    "priority": "Приоритет",
+    "needsReply": "Нужен ответ",
+    "noReply": "Ответ не нужен",
+    "unsure": "неуверенно",
+    "failed": "не разобрано",
+    "corrected": "Исправление сохранено",
+    "accepted": "Готово",
+    "createTask": "Создать задачу",
+    "handToAgent": "Передать агенту",
     "categories": {
-      "invoice": "Invoice",
-      "appointment": "Appointment",
-      "request": "Request",
-      "newsletter": "Newsletter",
-      "notification": "Notification",
-      "personal": "Personal",
-      "advertising": "Advertising",
-      "other": "Other"
+      "invoice": "Счёт",
+      "appointment": "Встреча",
+      "request": "Запрос",
+      "newsletter": "Рассылка",
+      "notification": "Уведомление",
+      "personal": "Личное",
+      "advertising": "Реклама",
+      "other": "Другое"
     },
     "priorities": {
-      "high": "Urgent",
-      "normal": "Normal",
-      "low": "Can wait"
+      "high": "Срочно",
+      "normal": "Обычно",
+      "low": "Может подождать"
     }
   }
 }

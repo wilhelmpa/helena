@@ -170,7 +170,7 @@
     "dropUngrouped": "Lepaskan di sini untuk mengeluarkan proyek dari grupnya"
   },
   "access": "Akses & koneksi",
-  "decisions": "Decisions",
+  "decisions": "Keputusan",
   "browser": "Browser",
   "layout": {
     "menu": "Tata letak",
@@ -194,5 +194,6 @@
     "full": "Alat layar penuh",
     "resizeArea": "Ubah lebar"
   },
+  "receipts": "Receipts",
   "browserLab": "Browser 2.0"
 }

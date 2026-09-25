@@ -1,4 +1,4 @@
-import { strToU8, zipSync, type Zippable } from 'fflate';
+import { strToU8, unzipSync, zipSync, type Zippable } from 'fflate';
 
 import { formatAmountDe } from './money';
 import { transliterate } from './names';
@@ -299,4 +299,9 @@ export function buildMonthExport(input: MonthExportInput): MonthExport {
   }
 
   return { zip: zipSync(entries), csv, files: Object.keys(entries).length };
+}
+
+/** The files of an export ZIP by path, for a preview of the export and for tests. */
+export function readExportZip(zip: Uint8Array): Record<string, Uint8Array> {
+  return unzipSync(zip);
 }
