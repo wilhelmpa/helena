@@ -20,6 +20,9 @@
 #   journald      journal limits (/etc/systemd/journald.conf.d/50-helena-journald.conf)
 #   firewall      nftables default-deny inbound + loopback ACLs + the self guard. Arms a
 #                 5-minute automatic rollback; "confirm firewall" keeps it.
+#   firewall-uids add accounts created after the firewall step (helena-tunnel from
+#                 cloudflare/install.sh service) to the uid sets of the loopback ACLs, in
+#                 the loaded table and the installed ruleset. Adds only; no rollback window
 #   sshd          keys only, AllowUsers, no agent forwarding. Arms a 5-minute rollback;
 #                 "confirm sshd" keeps it.
 #   owner-lan6    the LAN owner sign-in over IPv6 too (C-01/H-01): helena-lan6-sync keeps the
@@ -282,16 +285,28 @@ rollback_journald() {
   run systemctl restart systemd-journald
 }
 
+# The accounts of each uid set of the loopback ACLs (files/helena-hardening.nft.in). The
+# ruleset names them by number, so an account created later is added by "firewall-uids".
+UID_SETS="cdp_uids router_uids tool_uids syncthing_gui_uids tunnel_uids"
+set_users() { # set_users SET → the account names
+  case "$1" in
+    cdp_uids) echo "volition-browser volition-hermes $owner_user" ;;
+    router_uids) echo "volition-browser www-data volition-plan $owner_user" ;;
+    tool_uids) echo "www-data $owner_user" ;;
+    syncthing_gui_uids) echo "volition-sync volition-plan $owner_user" ;;
+    tunnel_uids) echo "$tunnel_user" ;;
+  esac
+}
 render_nft() { # render_nft OUT
-  local lan4 tunnel_uids
+  local lan4
   lan4=$(lan4_cidr) || die "cannot read the home network from the default route"
-  tunnel_uids=$(uids "$tunnel_user")
+  # shellcheck disable=SC2046 # the account names are single words
   sed -e "s|@LAN4@|$lan4|" \
-    -e "s|@UIDS_CDP@|$(uids volition-browser volition-hermes "$owner_user")|" \
-    -e "s|@UIDS_ROUTER@|$(uids volition-browser www-data volition-plan "$owner_user")|" \
-    -e "s|@UIDS_TOOLS@|$(uids www-data "$owner_user")|" \
-    -e "s|@UIDS_SYNCTHING@|$(uids volition-sync volition-plan "$owner_user")|" \
-    -e "s|@UIDS_TUNNEL@|$tunnel_uids|" \
+    -e "s|@UIDS_CDP@|$(uids $(set_users cdp_uids))|" \
+    -e "s|@UIDS_ROUTER@|$(uids $(set_users router_uids))|" \
+    -e "s|@UIDS_TOOLS@|$(uids $(set_users tool_uids))|" \
+    -e "s|@UIDS_SYNCTHING@|$(uids $(set_users syncthing_gui_uids))|" \
+    -e "s|@UIDS_TUNNEL@|$(uids $(set_users tunnel_uids))|" \
     -e "s|@TUNNEL_PORT@|$tunnel_port|" \
     "$files/helena-hardening.nft.in" >"$1"
 }
@@ -339,6 +354,76 @@ rollback_firewall() {
   run rm -f /etc/nftables.d/helena-hardening.nft /etc/NetworkManager/dispatcher.d/90-helena-lan6
   run systemctl disable --now helena-lan6-sync.timer helena-lan6-sync.service 2>/dev/null
   true
+}
+
+# firewall-uids (2026-09-25): the firewall step ran before cloudflare/install.sh service
+# created helena-tunnel, so tunnel_uids held only root; cloudflared got "connection refused"
+# on the tunnel entry and the owner Cloudflare's 502. This adds every account the sets name
+# that exists now and is missing, live (nft add element) and in the installed and pending
+# ruleset files (checked with nft -c, the old file kept on failure). It only ever adds the
+# accounts the ruleset was written for, so it opens nothing else.
+set_file_add() { # set_file_add FILE SET UID [--check]: 0 = present/added, 1 = missing (with --check)
+  python3 -I - "$@" <<'PY'
+import re, sys
+path, name, uid = sys.argv[1], sys.argv[2], int(sys.argv[3])
+check = '--check' in sys.argv[4:]
+text = open(path).read()
+block = re.search(r'(\tset ' + re.escape(name) + r' \{[^}]*?elements = \{)([^}]*)(\})', text)
+if not block:
+    sys.exit(0)  # this ruleset has no such set: nothing to add
+present = [int(v) for v in re.findall(r'\d+', block.group(2))]
+if uid in present:
+    sys.exit(0)
+if check:
+    sys.exit(1)
+elements = ' ' + ', '.join(str(v) for v in present + [uid]) + ' '
+open(path, 'w').write(text[:block.start(2)] + elements + text[block.end(2):])
+PY
+}
+live_set_has() { # live_set_has SET UID
+  nft -j list set inet helena_hardening "$1" 2>/dev/null | python3 -I -c '
+import json, sys
+uid = int(sys.argv[1])
+data = json.load(sys.stdin)
+elems = [e for item in data.get("nftables", []) for e in item.get("set", {}).get("elem", [])]
+sys.exit(0 if uid in elems else 1)' "$2"
+}
+step_firewall_uids() {
+  local real_state=${HELENA_HARDENING_STATE:-/var/lib/helena/hardening} set user uid file live=0 changed=0
+  local files=(/etc/nftables.d/helena-hardening.nft "$real_state/pending/helena-hardening.nft")
+  nft list table inet helena_hardening >/dev/null 2>&1 && live=1
+  [[ $live -eq 1 || -e ${files[0]} || -e ${files[1]} ]] || { say "firewall-uids: no firewall table or ruleset; nothing to do"; return 0; }
+  for set in $UID_SETS; do
+    for user in $(set_users "$set"); do
+      uid=$(uid_of "$user") || continue
+      if [[ $live -eq 1 ]] && ! live_set_has "$set" "$uid"; then
+        say "firewall-uids: $set lacks $user ($uid) in the loaded table"
+        run nft add element inet helena_hardening "$set" "{ $uid }"
+        changed=1
+      fi
+      for file in "${files[@]}"; do
+        [[ -e $file ]] || continue
+        set_file_add "$file" "$set" "$uid" --check && continue
+        say "firewall-uids: $set lacks $user ($uid) in $file"
+        changed=1
+        [[ $apply -eq 1 ]] || continue
+        keep "$file"
+        cp -a "$file" "$file.uids-new"
+        set_file_add "$file.uids-new" "$set" "$uid"
+        if nft -c -f "$file.uids-new" >/dev/null 2>&1; then
+          mv -f "$file.uids-new" "$file"
+        else
+          rm -f "$file.uids-new"
+          die "firewall-uids: the edited $file does not load (nft -c); left as it was"
+        fi
+      done
+    done
+  done
+  [[ $changed -eq 1 ]] && log "firewall uid sets completed" || say "firewall-uids: every account of the uid sets is in (nothing to do)"
+  true
+}
+rollback_firewall_uids() {
+  say "firewall-uids only adds the accounts the ruleset was written for; nothing to roll back (the firewall step's rollback removes the whole table)"
 }
 
 step_sshd() {

@@ -13,6 +13,7 @@ import AccountSecurityAddPasskey from './components/security/AccountSecurityAddP
 import AccountSecurityPasskeyList from './components/security/AccountSecurityPasskeyList';
 import AccountSecurityDeletePasskeyDialog from './components/security/AccountSecurityDeletePasskeyDialog';
 import AccountSecurityTotpSection from './components/security/AccountSecurityTotpSection';
+import { usePasskeyHome } from '@/features/home-access/passkeys';
 
 // How the account is signed in to: the password and the passkeys registered for it.
 // Owns the passkey list query and the delete target; the child components refresh
@@ -24,6 +25,9 @@ export default function AccountSecurityPage() {
   const [deleting, setDeleting] = useState<PasskeyRow | null>(null);
 
   const { data: passkeys, isPending } = usePasskeysQuery();
+  // Passkeys belong to the public name; on the home network's origin they are listed and
+  // removed here but added there (features/home-access/passkeys.ts).
+  const passkeyHome = usePasskeyHome();
   const invalidate = () => queryClient.invalidateQueries({ queryKey: qk.passkeys });
 
   return (
@@ -36,9 +40,14 @@ export default function AccountSecurityPage() {
         <AccountSection
           title={t('passkeysTitle')}
           description={t('passkeysDescription')}
-          actions={<AccountSecurityAddPasskey onAdded={invalidate} />}
+          actions={passkeyHome ? undefined : <AccountSecurityAddPasskey onAdded={invalidate} />}
           flush
         >
+          {passkeyHome && (
+            <p className="px-4 py-3 text-xs text-muted-foreground">
+              {t('passkeysElsewhere', { host: passkeyHome })}
+            </p>
+          )}
           <AccountSecurityPasskeyList
             passkeys={passkeys ?? []}
             isPending={isPending}

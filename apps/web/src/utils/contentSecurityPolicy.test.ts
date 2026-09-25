@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, it } from 'node:test';
 import { contentSecurityPolicy } from './contentSecurityPolicy';
 
 const envNames = [
+  'APP_URL',
+  'HELENA_HOME_URL',
   'API_URL',
   'TERMINAL_URL',
   'CODE_URL',
@@ -33,6 +35,21 @@ describe('contentSecurityPolicy', () => {
   it('allows requests to the api origin only, without its path', () => {
     process.env.API_URL = 'https://api.example.com/base/';
     assert.match(contentSecurityPolicy(), /connect-src 'self' https:\/\/api\.example\.com;/);
+  });
+
+  it('follows the origin the page is served on, and lets the public one ask the home one', () => {
+    process.env.APP_URL = 'https://helena.example.com,https://home.example.com';
+    process.env.HELENA_HOME_URL = 'https://home.example.com';
+    process.env.API_URL = 'https://helena.example.com/backend';
+    process.env.TERMINAL_URL = 'https://helena.example.com/terminal';
+    const home = contentSecurityPolicy('n', 'https://home.example.com');
+    assert.match(home, /connect-src 'self' https:\/\/home\.example\.com;/);
+    assert.match(home, /frame-src 'self' https:\/\/home\.example\.com;/);
+    const pub = contentSecurityPolicy('n', 'https://helena.example.com');
+    assert.match(
+      pub,
+      /connect-src 'self' https:\/\/helena\.example\.com https:\/\/home\.example\.com;/,
+    );
   });
 
   it('falls back to same-origin requests when the api url is not absolute', () => {

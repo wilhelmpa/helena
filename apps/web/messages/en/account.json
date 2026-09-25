@@ -70,7 +70,8 @@
     "totpConfirmFailed": "The code was not accepted.",
     "totpDisableFailed": "Could not turn off the authenticator app.",
     "minLength": "At least {count} characters.",
-    "added": "Added {date}"
+    "added": "Added {date}",
+    "passkeysElsewhere": "Passkeys belong to {host}. Here on the home network Helena signs you in automatically; add new passkeys on {host}."
   },
   "accounts": {
     "label": "Accounts",

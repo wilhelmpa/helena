@@ -2,7 +2,10 @@ import { randomBytes } from 'node:crypto';
 import { NextResponse, type NextRequest } from 'next/server';
 import { getSessionCookie } from 'better-auth/cookies';
 import { contentSecurityPolicy } from '@/utils/contentSecurityPolicy';
+import { requestOrigin } from '@/utils/appOrigins';
+import { appOrigins } from '@/utils/runtimeEnv';
 import { localOwnerSession } from '@/lib/local-owner-session';
+import { edgeSignInSession } from '@/lib/edge-sign-in-session';
 
 // Routes reachable without a session, and that bounce a signed-in user back to
 // the app. Everything else requires one.
@@ -48,7 +51,9 @@ export async function proxy(request: NextRequest) {
     return gate(request, () => NextResponse.next());
   }
   const nonce = randomBytes(16).toString('base64');
-  const policy = contentSecurityPolicy(nonce);
+  // The api and the tools are on the origin the page was opened on (utils/appOrigins.ts).
+  const origin = requestOrigin(request.headers, appOrigins(), request.nextUrl.protocol);
+  const policy = contentSecurityPolicy(nonce, origin);
   const headers = new Headers(request.headers);
   headers.set('x-nonce', nonce);
   headers.set('Content-Security-Policy', policy);
@@ -73,9 +78,12 @@ async function gate(request: NextRequest, next: () => NextResponse): Promise<Nex
 
   const isPublic = PUBLIC_PATHS.some(matches);
   const expired = isPublic && request.nextUrl.searchParams.get('expired') === '1';
+  // Without a session (or after the API refused one), the password-less sign-ins: the LAN
+  // owner at home, the Cloudflare sign-in through the tunnel. Each needs its own proof from
+  // nginx and answers null otherwise.
   if (!hasSession || expired) {
-    const localSession = await localOwnerSession(request);
-    if (localSession) return localSession;
+    const signedIn = (await localOwnerSession(request)) ?? (await edgeSignInSession(request));
+    if (signedIn) return signedIn;
   }
 
   if (isPublic) {

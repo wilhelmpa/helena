@@ -11,7 +11,8 @@
     "system": "الجهاز",
     "storage": "الأقراص والـ RAID",
     "backup": "النسخ الاحتياطي",
-    "power": "الطاقة والمراوح"
+    "power": "الطاقة والمراوح",
+    "homeHttps": "HTTPS في المنزل"
   },
   "refresh": "إعادة القراءة",
   "refreshing": "جارٍ القراءة…",
@@ -66,7 +67,10 @@
     "memoryOk": "الذاكرة: {available} فاضية.",
     "healthFailed": "الحالة متقريتش.",
     "localAiServerUp": "الذكاء الاصطناعي المحلي: {name} متاح",
-    "localAiServerDown": "الذكاء الاصطناعي المحلي: {name} لا يستجيب"
+    "localAiServerDown": "الذكاء الاصطناعي المحلي: {name} لا يستجيب",
+    "homeHttpsOk": "HTTPS في المنزل ({host}): الشهادة صالحة {days, plural, zero {لأقل من يوم} one {ليوم واحد} two {ليومين} few {لـ # أيام} many {لـ # يوماً} other {لـ # يوم}} أخرى.",
+    "homeHttpsExpiring": "HTTPS في المنزل ({host}): تنتهي الشهادة {days, plural, zero {اليوم} one {بعد يوم} two {بعد يومين} few {بعد # أيام} many {بعد # يوماً} other {بعد # يوم}}؛ لم ينجح التجديد.",
+    "homeHttpsInvalid": "HTTPS في المنزل ({host}): {reason, select, expired {انتهت صلاحية الشهادة} name {الشهادة ليست لهذا الاسم} untrusted {الشهادة غير موثوقة} unreachable {غير قابل للوصول} other {غير صالح}}."
   },
   "overview": {
     "machine": "الجهاز",

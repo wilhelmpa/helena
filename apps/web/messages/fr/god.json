@@ -448,7 +448,8 @@
       "browserTask": "Tâches du navigateur",
       "decisions": "Décisions",
       "localAi": "IA locale",
-      "push": "Notifications push"
+      "push": "Notifications push",
+      "edge": "Accès depuis l’extérieur"
     },
     "problems": {
       "external-off": "Se charge une fois les plugins externes activés.",

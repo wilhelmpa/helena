@@ -106,7 +106,8 @@
       "fail": "SSH erlaubt viele Versuche oder Weiterleitungen."
     },
     "web_https": {
-      "warn": "Kein HTTPS im Heimnetz – deine Browser haben lokal keinen sicheren Kontext."
+      "warn": "Kein HTTPS im Heimnetz – deine Browser haben lokal keinen sicheren Kontext.",
+      "fail": "{host} antwortet im Heimnetz nicht mit einem gültigen Zertifikat."
     },
     "web_tunnel_entry": {
       "fail": "Der Tunnel-Eingang ist nicht wie vorgesehen abgesichert."
@@ -124,10 +125,10 @@
       "fail": "In Helena ist kein Cloudflare-Access-Team (Domain/AUD) hinterlegt – der Tunnel-Eingang lehnt alles ab."
     },
     "tunnel_acl": {
-      "fail": "Jeder lokale Benutzer erreicht den Tunnel-Eingang."
+      "fail": "{why, select, user {Der Tunnel-Benutzer {user} darf den Tunnel-Eingang nicht erreichen: cloudflared bekommt keine Verbindung, Cloudflare antwortet mit 502 (hardening/apply.sh --apply firewall-uids).} other {Jeder lokale Benutzer erreicht den Tunnel-Eingang.}}"
     },
     "tls_certificate": {
-      "fail": "Das Zertifikat läuft in weniger als 14 Tagen ab."
+      "fail": "Das Zertifikat für {host} läuft in weniger als 14 Tagen ab – die automatische Erneuerung hat nicht geklappt."
     },
     "tls_renewal": {
       "fail": "Die automatische Zertifikatserneuerung ist nicht aktiv."
@@ -206,7 +207,33 @@
     "audiences": "Application Audience (AUD)",
     "audiencesHint": "Der AUD-Tag der Access-Anwendung für helena.volition.one, 64 Zeichen. Einer pro Zeile.",
     "allowedEmails": "Erlaubte Identitäten",
-    "allowedEmailsHint": "Optional: nur diese E-Mail-Adressen, auch wenn die Access-Regel mehr zulässt. Eine pro Zeile.",
-    "saved": "Zugang von außen gespeichert"
+    "allowedEmailsHint": "Optional: nur diese E-Mail-Adressen, auch wenn die Access-Regel mehr zulässt. Eine pro Zeile. Für die Cloudflare-Anmeldung nötig.",
+    "saved": "Zugang von außen gespeichert",
+    "signInTitle": "Mit der Cloudflare-Anmeldung direkt bei Helena anmelden",
+    "signInDescription": "Wer sich bei Cloudflare Access als erlaubte Identität anmeldet, ist ohne weiteres Passwort bei Helena angemeldet – höchstens 24 Stunden, nie länger als die Access-Sitzung. Access ist dann die einzige Anmeldung: verlange dort einen zweiten Faktor (Passkey/Touch ID oder Authenticator-App). Das Terminal fragt weiter nach seinem Code.",
+    "signInNeedsSetup": "Braucht Team-Domain, AUD und mindestens eine erlaubte Identität.",
+    "signInNeedsProof": "Der Tunnel-Eingang hat noch keinen Nachweis für Helena: auf dem Server cloudflare/install.sh --apply entry-token ausführen, dann API und Web neu starten.",
+    "homeTitle": "Zu Hause automatisch direkt verbinden",
+    "homeDescription": "Unter der öffentlichen Adresse prüft Helena, ob {home} von diesem Gerät aus antwortet, und wechselt dann dorthin – direkt über das Heimnetz, ohne Umweg über Cloudflare. Dort meldet dich die Heimnetz-Anmeldung an. Chrome fragt einmal nach Zugriff aufs lokale Netzwerk.",
+    "homeDescriptionGeneric": "Unter der öffentlichen Adresse prüft Helena, ob die Heimnetz-Adresse von diesem Gerät aus antwortet, und wechselt dann dorthin – direkt über das Heimnetz, ohne Umweg über Cloudflare.",
+    "homeNotSetUp": "Keine Heimnetz-Adresse eingerichtet (HELENA_HOME_URL, cloudflare/switch_origin.py --home-host)."
+  },
+  "signIns": {
+    "title": "Anmeldungen ohne Passwort",
+    "description": "Über die Cloudflare-Anmeldung und die Heimnetz-Anmeldung, auch abgelehnte.",
+    "empty": "Noch keine.",
+    "methodEdge": "Cloudflare",
+    "methodLocalOwner": "Heimnetz",
+    "refused": "Abgelehnt",
+    "reason": {
+      "disabled": "Anmeldung aus",
+      "not_configured": "nicht eingerichtet",
+      "missing_assertion": "ohne Access-Nachweis",
+      "invalid_assertion": "ungültiger Access-Nachweis",
+      "identity_not_allowed": "Identität nicht erlaubt",
+      "no_account": "kein Konto mit dieser Adresse",
+      "not_eligible": "Konto darf sich so nicht anmelden",
+      "deactivated": "Konto deaktiviert"
+    }
   }
 }

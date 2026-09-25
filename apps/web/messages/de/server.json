@@ -11,7 +11,8 @@
     "system": "Maschine",
     "storage": "Platten & RAID",
     "backup": "Backup",
-    "power": "Leistung & Lüfter"
+    "power": "Leistung & Lüfter",
+    "homeHttps": "HTTPS zu Hause"
   },
   "refresh": "Neu lesen",
   "refreshing": "Wird gelesen …",
@@ -66,7 +67,10 @@
     "memoryOk": "Arbeitsspeicher: {available} frei.",
     "healthFailed": "Der Zustand konnte nicht gelesen werden.",
     "localAiServerUp": "Lokale KI: {name} ist erreichbar",
-    "localAiServerDown": "Lokale KI: {name} antwortet nicht"
+    "localAiServerDown": "Lokale KI: {name} antwortet nicht",
+    "homeHttpsOk": "HTTPS zu Hause ({host}): Zertifikat noch {days, plural, one {# Tag} other {# Tage}} gültig.",
+    "homeHttpsExpiring": "HTTPS zu Hause ({host}): Zertifikat läuft in {days, plural, one {# Tag} other {# Tagen}} ab – die Erneuerung hat nicht geklappt.",
+    "homeHttpsInvalid": "HTTPS zu Hause ({host}): {reason, select, expired {Zertifikat abgelaufen} name {Zertifikat gilt nicht für diesen Namen} untrusted {Zertifikat nicht vertrauenswürdig} unreachable {nicht erreichbar} other {ungültig}}."
   },
   "overview": {
     "machine": "Maschine",

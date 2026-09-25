@@ -106,7 +106,8 @@
       "fail": "SSH 允许多次尝试或转发。"
     },
     "web_https": {
-      "warn": "家庭网络中没有 HTTPS：你的浏览器在本地没有安全上下文。"
+      "warn": "家庭网络中没有 HTTPS：你的浏览器在本地没有安全上下文。",
+      "fail": "{host} 在家庭网络中没有以有效证书响应。"
     },
     "web_tunnel_entry": {
       "fail": "隧道入口没有按预期加固。"
@@ -124,10 +125,10 @@
       "fail": "Helena 中未设置 Cloudflare Access 团队（域名/AUD）：隧道入口会拒绝一切请求。"
     },
     "tunnel_acl": {
-      "fail": "任何本地用户都能访问隧道入口。"
+      "fail": "{why, select, user {隧道用户 {user} 无法访问隧道入口：cloudflared 无法连接，Cloudflare 返回 502（hardening/apply.sh --apply firewall-uids）。} other {任何本地用户都能访问隧道入口。}}"
     },
     "tls_certificate": {
-      "fail": "证书将在 14 天内过期。"
+      "fail": "{host} 的证书将在 14 天内过期：自动续期没有成功。"
     },
     "tls_renewal": {
       "fail": "证书自动续期未启用。"
@@ -206,7 +207,33 @@
     "audiences": "Application Audience (AUD)",
     "audiencesHint": "helena.volition.one 的 Access 应用的 AUD 标签，64 个字符。每行一个。",
     "allowedEmails": "允许的身份",
-    "allowedEmailsHint": "可选：只允许这些电子邮件地址，即使 Access 策略允许更多。每行一个。",
-    "saved": "外部访问已保存"
+    "allowedEmailsHint": "可选：只允许这些电子邮件地址，即使 Access 策略允许更多。每行一个。使用 Cloudflare 登录时必填。",
+    "saved": "外部访问已保存",
+    "signInTitle": "使用 Cloudflare 登录直接登录 Helena",
+    "signInDescription": "以允许的身份登录 Cloudflare Access 后，无需另一个密码即可登录 Helena，最长 24 小时，且不会超过 Access 会话。此后 Access 是唯一的登录方式：请在那里要求第二因素（通行密钥/Touch ID 或身份验证器应用）。终端仍会要求输入它的代码。",
+    "signInNeedsSetup": "需要团队域、AUD 和至少一个允许的身份。",
+    "signInNeedsProof": "隧道入口尚无 Helena 的凭证：请在服务器上运行 cloudflare/install.sh --apply entry-token，然后重启 API 和 Web 应用。",
+    "homeTitle": "在家时自动直连",
+    "homeDescription": "在公共地址上，Helena 会检查 {home} 是否能从此设备访问，若能则切换过去：直接通过家庭网络，不绕道 Cloudflare。在那里家庭网络登录会让你登录。Chrome 会询问一次本地网络访问权限。",
+    "homeDescriptionGeneric": "在公共地址上，Helena 会检查家庭网络地址是否能从此设备访问，若能则切换过去：直接通过家庭网络，不绕道 Cloudflare。",
+    "homeNotSetUp": "尚未设置家庭网络地址（HELENA_HOME_URL，cloudflare/switch_origin.py --home-host）。"
+  },
+  "signIns": {
+    "title": "无密码登录",
+    "description": "通过 Cloudflare 登录和家庭网络登录，包括被拒绝的。",
+    "empty": "暂无。",
+    "methodEdge": "Cloudflare",
+    "methodLocalOwner": "家庭网络",
+    "refused": "已拒绝",
+    "reason": {
+      "disabled": "登录已关闭",
+      "not_configured": "未设置",
+      "missing_assertion": "缺少 Access 断言",
+      "invalid_assertion": "Access 断言无效",
+      "identity_not_allowed": "身份不被允许",
+      "no_account": "没有使用此地址的账户",
+      "not_eligible": "该账户不能以此方式登录",
+      "deactivated": "账户已停用"
+    }
   }
 }

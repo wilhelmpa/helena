@@ -70,7 +70,8 @@
     "totpConfirmFailed": "Le code n'a pas été accepté.",
     "totpDisableFailed": "Impossible de désactiver l'application d'authentification.",
     "minLength": "Au moins {count} caractères.",
-    "added": "Ajoutée le {date}"
+    "added": "Ajoutée le {date}",
+    "passkeysElsewhere": "Les passkeys appartiennent à {host}. Ici, sur le réseau domestique, Helena vous connecte automatiquement ; ajoutez de nouvelles passkeys sur {host}."
   },
   "accounts": {
     "label": "Comptes",

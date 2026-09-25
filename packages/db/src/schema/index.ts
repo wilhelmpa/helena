@@ -16,3 +16,4 @@ export * from './browser-task';
 export * from './decisions';
 export * from './finance';
 export * from './push';
+export * from './sign-in';

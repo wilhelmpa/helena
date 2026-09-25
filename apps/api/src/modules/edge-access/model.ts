@@ -19,6 +19,13 @@ export const EdgeAccessSettingsDto = t.Object({
   teamDomain: t.String(),
   audiences: t.Array(t.String()),
   allowedEmails: t.Array(t.String()),
+  signIn: t.Boolean(),
+  homeAutoConnect: t.Boolean(),
+  // The home network's own origin (HELENA_HOME_URL), when this instance has one.
+  homeUrl: t.Union([t.String(), t.Null()]),
+  // Whether the tunnel entry's proof is known to the api (cloudflare/install.sh
+  // entry-token): without it the Cloudflare sign-in cannot work, whatever the switch says.
+  entryProof: t.Boolean(),
   updatedAt: t.Union([t.String(), t.Null()]),
   configured: t.Boolean(),
 });
@@ -28,6 +35,36 @@ export const EdgeAccessPatchBody = t.Object({
   teamDomain: t.Optional(t.String({ maxLength: 100 })),
   audiences: t.Optional(t.Array(t.String({ maxLength: 100 }), { maxItems: 10 })),
   allowedEmails: t.Optional(t.Array(t.String({ maxLength: 254 }), { maxItems: 50 })),
+  signIn: t.Optional(t.Boolean()),
+  homeAutoConnect: t.Optional(t.Boolean()),
+});
+
+export const SignInEventDto = t.Object({
+  id: t.Number(),
+  method: oneOf(['edge', 'local_owner']),
+  outcome: oneOf(['ok', 'refused']),
+  reason: t.Union([t.String(), t.Null()]),
+  identity: t.Union([t.String(), t.Null()]),
+  provider: t.Union([t.String(), t.Null()]),
+  ipAddress: t.Union([t.String(), t.Null()]),
+  userAgent: t.Union([t.String(), t.Null()]),
+  userName: t.Union([t.String(), t.Null()]),
+  createdAt: t.String(),
+});
+
+export const SignInEventsQuery = t.Object({
+  limit: t.Optional(t.Numeric({ minimum: 1, maximum: 100 })),
+  method: t.Optional(oneOf(['edge', 'local_owner'])),
+});
+
+export const EdgeHomeDto = t.Object({
+  homeUrl: t.Union([t.String(), t.Null()]),
+  autoConnect: t.Boolean(),
+});
+
+export const EdgeHomeProbeDto = t.Object({
+  home: t.Boolean(),
+  host: t.String(),
 });
 
 export const SecurityStatusDto = t.Object({
@@ -53,6 +90,9 @@ export const SecurityStatusDto = t.Object({
     teamDomain: t.String(),
     audiences: t.Array(t.String()),
     allowedEmails: t.Array(t.String()),
+    signIn: t.Boolean(),
+    homeAutoConnect: t.Boolean(),
+    homeUrl: t.Union([t.String(), t.Null()]),
     updatedAt: t.Union([t.String(), t.Null()]),
   }),
   owner: t.Object({

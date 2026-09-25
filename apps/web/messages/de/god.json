@@ -448,7 +448,8 @@
       "browserTask": "Browser-Aufgaben",
       "decisions": "Entscheidungen",
       "localAi": "Lokale KI",
-      "push": "Push-Benachrichtigungen"
+      "push": "Push-Benachrichtigungen",
+      "edge": "Zugang von außen"
     },
     "problems": {
       "external-off": "Lädt, sobald externe Plugins eingeschaltet sind.",

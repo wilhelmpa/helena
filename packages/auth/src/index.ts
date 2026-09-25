@@ -22,6 +22,7 @@ import {
 import { sendAuthEmail } from './mail';
 import { oidcProfileLabel } from './oidc-profile';
 import { localOwner } from './local-owner';
+import { edgeSignIn } from './edge-sign-in';
 import { consumeKeyRequest, RateLimitedError } from './key-rate-limit';
 import { sessionCookieDomain } from './cookie-domain';
 
@@ -582,6 +583,9 @@ export const auth = betterAuth({
 
   plugins: [
     localOwner(),
+    // The Cloudflare sign-in: a Helena session from a valid Access assertion that came
+    // through the tunnel entry, when the owner turned it on (./edge-sign-in.ts).
+    edgeSignIn(),
     // WebAuthn passkeys, a second sign-in method alongside email + password. A
     // passkey is added to an already signed-in account (passkey.addPasskey) and
     // then used to sign in (signIn.passkey). Adds the `passkey` table.
@@ -741,6 +745,9 @@ export const auth = betterAuth({
     customRules: {
       '/get-session': false,
       '/sign-in/local-owner': false,
+      // The web app asks once per page load without a session through the tunnel; the
+      // client's address is Cloudflare's view of it.
+      '/sign-in/edge': fromNetwork(60, 30),
       '/sign-in/email': fromNetwork(60, 10),
       '/sign-in/username': fromNetwork(60, 10),
       '/sign-up/email': fromNetwork(60, 5),
@@ -784,6 +791,17 @@ export async function getSessionFromHeaders(
 }
 
 export { RateLimitedError, resetKeyRateLimitForTests } from './key-rate-limit';
+
+// The Cloudflare sign-in's seam: apps/api registers the edge-access check as its verifier.
+export {
+  EDGE_SIGN_IN_ROLES,
+  EdgeSignInRefused,
+  setEdgeSignInVerifier,
+  type EdgeSignInIdentity,
+  type EdgeSignInReason,
+  type EdgeSignInVerifier,
+} from './edge-sign-in';
+export { recordSignIn, type SignInEvent } from './sign-in-events';
 
 // Instance-wide authentication settings (registration mode, mail provider, invite
 // links). Read here by the sign-up gate and the mail senders; managed over HTTP by

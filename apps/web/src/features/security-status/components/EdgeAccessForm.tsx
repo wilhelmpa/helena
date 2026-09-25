@@ -4,10 +4,12 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import SettingsCard from '@/components/common/page/SettingsCard';
+import SettingsRow from '@/components/common/page/SettingsRow';
 import StatusBadge from '@/components/common/page/StatusBadge';
 import PageSaveAction from '@/components/common/page/PageSaveAction';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import type { EdgeAccessSettings } from '@/lib/api/endpoints/security';
 import { useUpdateEdgeAccess } from '../services/security.service';
@@ -22,17 +24,34 @@ const lines = (value: string) =>
 // the Application Audience tag Helena checks every request from the internet against,
 // and optionally the identities it admits. None of these is a secret; the tunnel token
 // and the DNS token never pass through Helena (the owner enters them on the server).
+// Below them the two switches that build on it: the Cloudflare sign-in (an Access login of
+// an allowed identity is the Helena sign-in) and the switch to the home network's own
+// origin at home (docs/helena-decisions/security-hardening.md §4.8, §5).
 export default function EdgeAccessForm({ settings }: { settings: EdgeAccessSettings }) {
   const t = useTranslations('serverSecurity.edge');
   const update = useUpdateEdgeAccess();
   const [teamDomain, setTeamDomain] = useState(settings.teamDomain);
   const [audiences, setAudiences] = useState(settings.audiences.join('\n'));
   const [allowedEmails, setAllowedEmails] = useState(settings.allowedEmails.join('\n'));
+  const [signIn, setSignIn] = useState(settings.signIn);
+  const [homeAutoConnect, setHomeAutoConnect] = useState(settings.homeAutoConnect);
 
   const dirty =
     teamDomain.trim() !== settings.teamDomain ||
     lines(audiences).join('\n') !== settings.audiences.join('\n') ||
-    lines(allowedEmails).join('\n') !== settings.allowedEmails.join('\n');
+    lines(allowedEmails).join('\n') !== settings.allowedEmails.join('\n') ||
+    signIn !== settings.signIn ||
+    homeAutoConnect !== settings.homeAutoConnect;
+
+  // The sign-in needs the provider and an explicit list of identities (the api refuses it
+  // otherwise); it can always be switched off.
+  const signInReady =
+    teamDomain.trim() !== '' && lines(audiences).length > 0 && lines(allowedEmails).length > 0;
+  const signInNote = !signInReady
+    ? t('signInNeedsSetup')
+    : !settings.entryProof
+      ? t('signInNeedsProof')
+      : undefined;
 
   async function save() {
     try {
@@ -42,6 +61,8 @@ export default function EdgeAccessForm({ settings }: { settings: EdgeAccessSetti
         teamDomain: teamDomain.trim(),
         audiences: lines(audiences),
         allowedEmails: lines(allowedEmails),
+        signIn,
+        homeAutoConnect,
       });
       toast.success(t('saved'));
     } catch {
@@ -92,6 +113,36 @@ export default function EdgeAccessForm({ settings }: { settings: EdgeAccessSetti
           />
           <p className="text-xs text-muted-foreground">{t('allowedEmailsHint')}</p>
         </div>
+      </SettingsCard>
+      <SettingsCard className="mt-3 divide-y p-0">
+        <SettingsRow
+          title={t('signInTitle')}
+          description={t('signInDescription')}
+          note={signInNote}
+          control={
+            <Switch
+              checked={signIn}
+              onCheckedChange={setSignIn}
+              disabled={!signIn && !signInReady}
+            />
+          }
+        />
+        <SettingsRow
+          title={t('homeTitle')}
+          description={
+            settings.homeUrl
+              ? t('homeDescription', { home: new URL(settings.homeUrl).host })
+              : t('homeDescriptionGeneric')
+          }
+          note={settings.homeUrl ? undefined : t('homeNotSetUp')}
+          control={
+            <Switch
+              checked={homeAutoConnect}
+              onCheckedChange={setHomeAutoConnect}
+              disabled={!settings.homeUrl && !homeAutoConnect}
+            />
+          }
+        />
       </SettingsCard>
     </>
   );

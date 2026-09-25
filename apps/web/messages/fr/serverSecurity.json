@@ -106,7 +106,8 @@
       "fail": "SSH autorise de nombreuses tentatives ou des redirections."
     },
     "web_https": {
-      "warn": "Pas de HTTPS sur le réseau domestique : tes navigateurs n’ont pas de contexte sécurisé en local."
+      "warn": "Pas de HTTPS sur le réseau domestique : tes navigateurs n’ont pas de contexte sécurisé en local.",
+      "fail": "{host} ne répond pas sur le réseau domestique avec un certificat valide."
     },
     "web_tunnel_entry": {
       "fail": "L’entrée du tunnel n’est pas protégée comme prévu."
@@ -124,10 +125,10 @@
       "fail": "Aucune équipe Cloudflare Access (domaine/AUD) n’est définie dans Helena : l’entrée du tunnel refuse tout."
     },
     "tunnel_acl": {
-      "fail": "Tout utilisateur local atteint l’entrée du tunnel."
+      "fail": "{why, select, user {L’utilisateur du tunnel {user} ne peut pas joindre l’entrée du tunnel : cloudflared n’obtient pas de connexion et Cloudflare répond 502 (hardening/apply.sh --apply firewall-uids).} other {Tout utilisateur local joint l’entrée du tunnel.}}"
     },
     "tls_certificate": {
-      "fail": "Le certificat expire dans moins de 14 jours."
+      "fail": "Le certificat de {host} expire dans moins de 14 jours : le renouvellement automatique n’a pas fonctionné."
     },
     "tls_renewal": {
       "fail": "Le renouvellement automatique du certificat n’est pas actif."
@@ -206,7 +207,33 @@
     "audiences": "Application Audience (AUD)",
     "audiencesHint": "Le tag AUD de l’application Access pour helena.volition.one, 64 caractères. Un par ligne.",
     "allowedEmails": "Identités autorisées",
-    "allowedEmailsHint": "Facultatif : seulement ces adresses e-mail, même si la règle Access en admet davantage. Une par ligne.",
-    "saved": "Accès depuis l’extérieur enregistré"
+    "allowedEmailsHint": "Facultatif : seulement ces adresses e-mail, même si la règle Access en admet davantage. Une par ligne. Nécessaire pour la connexion Cloudflare.",
+    "saved": "Accès depuis l’extérieur enregistré",
+    "signInTitle": "Se connecter à Helena avec la connexion Cloudflare",
+    "signInDescription": "Se connecter à Cloudflare Access avec une identité autorisée connecte à Helena sans autre mot de passe, 24 heures au plus et jamais plus longtemps que la session Access. Access devient alors la seule connexion : exigez-y un second facteur (passkey/Touch ID ou application d’authentification). Le terminal demande toujours son code.",
+    "signInNeedsSetup": "Nécessite le domaine d’équipe, l’AUD et au moins une identité autorisée.",
+    "signInNeedsProof": "L’entrée du tunnel n’a pas encore de preuve pour Helena : lancez cloudflare/install.sh --apply entry-token sur le serveur, puis redémarrez l’API et l’application web.",
+    "homeTitle": "Se connecter directement à la maison, automatiquement",
+    "homeDescription": "Sur l’adresse publique, Helena vérifie si {home} répond depuis cet appareil, puis y bascule : directement par le réseau domestique, sans détour par Cloudflare. La connexion du réseau domestique vous y connecte. Chrome demande une fois l’accès au réseau local.",
+    "homeDescriptionGeneric": "Sur l’adresse publique, Helena vérifie si l’adresse du réseau domestique répond depuis cet appareil, puis y bascule : directement par le réseau domestique, sans détour par Cloudflare.",
+    "homeNotSetUp": "Aucune adresse de réseau domestique configurée (HELENA_HOME_URL, cloudflare/switch_origin.py --home-host)."
+  },
+  "signIns": {
+    "title": "Connexions sans mot de passe",
+    "description": "Par la connexion Cloudflare et la connexion du réseau domestique, refusées comprises.",
+    "empty": "Aucune pour l’instant.",
+    "methodEdge": "Cloudflare",
+    "methodLocalOwner": "Réseau domestique",
+    "refused": "Refusée",
+    "reason": {
+      "disabled": "connexion désactivée",
+      "not_configured": "non configurée",
+      "missing_assertion": "sans assertion Access",
+      "invalid_assertion": "assertion Access invalide",
+      "identity_not_allowed": "identité non autorisée",
+      "no_account": "aucun compte avec cette adresse",
+      "not_eligible": "ce compte ne peut pas se connecter ainsi",
+      "deactivated": "compte désactivé"
+    }
   }
 }
