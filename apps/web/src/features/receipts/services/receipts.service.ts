@@ -146,6 +146,7 @@ export function useReceiptFromVault(projectKey: string) {
   return useMutation({
     mutationFn: (path: string) => receiptFromVault(projectKey, path),
     onSuccess: refresh,
+    meta: { suppressErrorToast: true },
   });
 }
 

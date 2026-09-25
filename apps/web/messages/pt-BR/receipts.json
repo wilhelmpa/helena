@@ -12,7 +12,8 @@
     "upload": "Enviar comprovante",
     "import": "Importar extrato bancário",
     "export": "Exportar mês",
-    "exportPickMonth": "Escolha um mês para exportar"
+    "exportPickMonth": "Escolha um mês para exportar",
+    "fromVault": "Comprovante dos arquivos"
   },
   "upload": {
     "done": "{count, plural, one {# comprovante enviado} other {# comprovantes enviados}}",
@@ -159,5 +160,9 @@
     "missingPrograms": "Para ler, falta um programa no servidor: {programs}",
     "notEinvoice": "O arquivo XML não é uma fatura eletrônica.",
     "noFacts": "O texto não tinha dados de fatura. Preencha abaixo."
+  },
+  "vaultPicker": {
+    "title": "Comprovante dos arquivos",
+    "description": "Escolha um arquivo da pasta deste projeto. Ele continua onde está."
   }
 }

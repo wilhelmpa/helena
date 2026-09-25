@@ -12,7 +12,8 @@
     "upload": "Téléverser un justificatif",
     "import": "Importer un relevé bancaire",
     "export": "Exporter le mois",
-    "exportPickMonth": "Choisissez un mois à exporter"
+    "exportPickMonth": "Choisissez un mois à exporter",
+    "fromVault": "Justificatif depuis les fichiers"
   },
   "upload": {
     "done": "{count, plural, one {# justificatif téléversé} other {# justificatifs téléversés}}",
@@ -159,5 +160,9 @@
     "missingPrograms": "La lecture nécessite un programme absent du serveur : {programs}",
     "notEinvoice": "Le fichier XML n'est pas une facture électronique.",
     "noFacts": "Le texte ne contenait aucune donnée de facture. Saisissez-les ci-dessous."
+  },
+  "vaultPicker": {
+    "title": "Justificatif depuis les fichiers",
+    "description": "Choisissez un fichier du dossier de ce projet. Il reste à sa place."
   }
 }

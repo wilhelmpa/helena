@@ -12,7 +12,8 @@
     "upload": "Subir justificante",
     "import": "Importar extracto bancario",
     "export": "Exportar mes",
-    "exportPickMonth": "Elige un mes para exportar"
+    "exportPickMonth": "Elige un mes para exportar",
+    "fromVault": "Justificante desde archivos"
   },
   "upload": {
     "done": "{count, plural, one {# justificante subido} other {# justificantes subidos}}",
@@ -159,5 +160,9 @@
     "missingPrograms": "Para leerlo falta un programa en el servidor: {programs}",
     "notEinvoice": "El archivo XML no es una factura electrónica.",
     "noFacts": "El texto no tenía datos de factura. Introdúcelos abajo."
+  },
+  "vaultPicker": {
+    "title": "Justificante desde archivos",
+    "description": "Elige un archivo de la carpeta de este proyecto. Se queda donde está."
   }
 }

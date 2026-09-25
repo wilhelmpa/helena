@@ -7,6 +7,7 @@ import {
   CircleDot,
   Download,
   FileUp,
+  FolderOpen,
   Landmark,
   ListChecks,
   Upload,
@@ -25,6 +26,7 @@ import {
   PageToolbar,
   PageToolbarSpacer,
 } from '@/components/layout/PageToolbar';
+import VaultFilePicker from '@/features/mail/components/VaultFilePicker';
 import { ApiError } from '@/lib/api/core/client';
 import { downloadMonthExport, type ReviewItem } from '@/lib/api/endpoints/receipts';
 import { AccountsTab } from './components/AccountsTab';
@@ -36,6 +38,7 @@ import { ReviewTab } from './components/ReviewTab';
 import {
   useBankAccountsQuery,
   useImportsQuery,
+  useReceiptFromVault,
   useReceiptsQuery,
   useReceiptSummaryQuery,
   useReviewQuery,
@@ -84,6 +87,8 @@ export default function ReceiptsPage() {
   const [exporting, setExporting] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const upload = useUploadReceipt(projectKey);
+  const fromVault = useReceiptFromVault(projectKey);
+  const [vaultOpen, setVaultOpen] = useState(false);
 
   const deferred = useDeferredValue(search.trim());
   const monthFilter = month === ALL_MONTHS ? undefined : month;
@@ -157,6 +162,24 @@ export default function ReceiptsPage() {
       );
   }
 
+  // A file already in the project's folder becomes a receipt where it is; nothing is copied.
+  async function takeFromVault(projectPath: string) {
+    setVaultOpen(false);
+    const name = projectPath.split('/').pop() ?? projectPath;
+    try {
+      const receipt = await fromVault.mutateAsync(projectPath);
+      toast.success(
+        receipt.status === 'matched'
+          ? t('upload.doneMatched', { count: 1, matched: 1 })
+          : t('upload.done', { count: 1 }),
+      );
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409)
+        toast.info(t('upload.duplicate', { name }));
+      else toast.error(`${name}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
   async function exportMonth() {
     if (month === ALL_MONTHS) return;
     setExporting(true);
@@ -228,6 +251,13 @@ export default function ReceiptsPage() {
               onClick: () => setImportFor({ accountId: accountList[0]?.id ?? null }),
             },
             {
+              id: 'fromVault',
+              label: t('actions.fromVault'),
+              icon: FolderOpen,
+              disabled: fromVault.isPending,
+              onClick: () => setVaultOpen(true),
+            },
+            {
               id: 'export',
               label: month === ALL_MONTHS ? t('actions.exportPickMonth') : t('actions.export'),
               icon: Download,
@@ -289,6 +319,15 @@ export default function ReceiptsPage() {
           />
         )}
       </SectionPageView>
+      {vaultOpen && (
+        <VaultFilePicker
+          projectKey={projectKey}
+          title={t('vaultPicker.title')}
+          description={t('vaultPicker.description')}
+          onClose={() => setVaultOpen(false)}
+          onPick={(_vaultPath, projectPath) => void takeFromVault(projectPath)}
+        />
+      )}
       <ReceiptSheet
         projectKey={projectKey}
         receiptId={receiptId}

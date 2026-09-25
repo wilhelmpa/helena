@@ -12,7 +12,8 @@
     "upload": "上传票据",
     "import": "导入银行对账单",
     "export": "导出月份",
-    "exportPickMonth": "请选择要导出的月份"
+    "exportPickMonth": "请选择要导出的月份",
+    "fromVault": "从文件添加票据"
   },
   "upload": {
     "done": "{count, plural, other {已上传 # 张票据}}",
@@ -159,5 +160,9 @@
     "missingPrograms": "服务器缺少读取所需的程序：{programs}",
     "notEinvoice": "该 XML 文件不是电子发票。",
     "noFacts": "文本中没有发票数据。请在下方填写。"
+  },
+  "vaultPicker": {
+    "title": "从文件添加票据",
+    "description": "从此项目的文件夹中选择一个文件。文件保留在原处。"
   }
 }

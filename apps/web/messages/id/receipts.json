@@ -12,7 +12,8 @@
     "upload": "Unggah bukti",
     "import": "Impor rekening koran",
     "export": "Ekspor bulan",
-    "exportPickMonth": "Pilih bulan untuk diekspor"
+    "exportPickMonth": "Pilih bulan untuk diekspor",
+    "fromVault": "Bukti dari berkas"
   },
   "upload": {
     "done": "{count, plural, other {# bukti diunggah}}",
@@ -159,5 +160,9 @@
     "missingPrograms": "Server tidak punya program yang diperlukan untuk membacanya: {programs}",
     "notEinvoice": "Berkas XML ini bukan faktur elektronik.",
     "noFacts": "Teks tidak berisi data faktur. Isi di bawah."
+  },
+  "vaultPicker": {
+    "title": "Bukti dari berkas",
+    "description": "Pilih berkas dari folder proyek ini. Berkas tetap di tempatnya."
   }
 }

@@ -12,7 +12,8 @@
     "upload": "Beleg hochladen",
     "import": "Kontoauszug importieren",
     "export": "Monat exportieren",
-    "exportPickMonth": "Für den Export einen Monat wählen"
+    "exportPickMonth": "Für den Export einen Monat wählen",
+    "fromVault": "Beleg aus den Dateien"
   },
   "upload": {
     "done": "{count, plural, one {# Beleg hochgeladen} other {# Belege hochgeladen}}",
@@ -159,5 +160,9 @@
     "missingPrograms": "Zum Auslesen fehlt auf dem Server: {programs}",
     "notEinvoice": "Die XML-Datei ist keine E-Rechnung.",
     "noFacts": "Im Text standen keine Rechnungsdaten. Trag sie unten ein."
+  },
+  "vaultPicker": {
+    "title": "Beleg aus den Dateien",
+    "description": "Wähle eine Datei aus dem Ordner dieses Projekts. Sie bleibt, wo sie ist."
   }
 }

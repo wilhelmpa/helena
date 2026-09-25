@@ -12,7 +12,8 @@
     "upload": "Upload receipt",
     "import": "Import bank statement",
     "export": "Export month",
-    "exportPickMonth": "Pick a month to export"
+    "exportPickMonth": "Pick a month to export",
+    "fromVault": "Receipt from files"
   },
   "upload": {
     "done": "{count, plural, one {# receipt uploaded} other {# receipts uploaded}}",
@@ -159,5 +160,9 @@
     "missingPrograms": "Reading it needs a program the server lacks: {programs}",
     "notEinvoice": "The XML file is not an e-invoice.",
     "noFacts": "The text had no invoice data. Enter it below."
+  },
+  "vaultPicker": {
+    "title": "Receipt from files",
+    "description": "Pick a file from this project's folder. It stays where it is."
   }
 }
