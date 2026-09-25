@@ -40,6 +40,7 @@ export const CHECK_KEYS = [
   'sys_encryption',
   'files_backups',
   'files_secrets',
+  'files_agent_code',
   'svc_exposure',
   'svc_tools_loopback',
 ] as const;

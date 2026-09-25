@@ -67,6 +67,7 @@
     "sys_encryption": "Disks encrypted",
     "files_backups": "Database dumps readable only by their service",
     "files_secrets": "Secrets and keys not readable by others",
+    "files_agent_code": "Agents can read their runtime code",
     "svc_exposure": "Helena services sandboxed by systemd",
     "svc_tools_loopback": "Tools reachable over loopback only"
   },
@@ -180,6 +181,9 @@
     },
     "files_secrets": {
       "fail": "Secrets or keys can be read by others."
+    },
+    "files_agent_code": {
+      "fail": "{count} files in {path} can only be read by their owner: agents that load them fail to start."
     },
     "svc_exposure": {
       "warn": "Helena's services are less isolated by systemd than intended."

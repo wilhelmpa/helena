@@ -67,6 +67,7 @@
     "sys_encryption": "磁盘已加密",
     "files_backups": "数据库备份只有其服务可读",
     "files_secrets": "机密和密钥对他人不可读",
+    "files_agent_code": "智能体可以读取其运行时代码",
     "svc_exposure": "Helena 服务由 systemd 隔离",
     "svc_tools_loopback": "工具只能通过回环地址访问"
   },
@@ -180,6 +181,9 @@
     },
     "files_secrets": {
       "fail": "密钥或机密可被他人读取。"
+    },
+    "files_agent_code": {
+      "fail": "{path} 中有 {count} 个文件只有所有者可读：加载它们的智能体无法启动。"
     },
     "svc_exposure": {
       "warn": "systemd 对 Helena 服务的隔离弱于预期。"

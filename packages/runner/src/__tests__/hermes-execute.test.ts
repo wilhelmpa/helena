@@ -225,6 +225,89 @@ describe('Hermes subprocess adapter', () => {
     expect(plain.error).toBe('The tool loop gave up.');
   });
 
+  // A start that failed (live, 2026-09-25, every agent on a Claude model): Hermes prints why
+  // through its console on stdout, wrapped at 80 columns, then only the bare result line.
+  async function printedRun(stdout: string, code = 1) {
+    const dir = await mkdtemp(join(tmpdir(), 'itsaplan-hermes-printed-'));
+    dirs.push(dir);
+    const output = join(dir, 'stdout');
+    await writeFile(output, stdout);
+    const binary = join(dir, 'hermes');
+    await writeFile(
+      binary,
+      `#!/bin/sh\ncat > /dev/null\ncat "${output}"\nprintf '\\nsession_id: 20260926_001051_6cfc6e\\n' >&2\nexit ${code}\n`,
+    );
+    await chmod(binary, 0o755);
+    return execute(
+      {
+        name: '',
+        url: 'http://plan.test',
+        apiKey: 'secret',
+        agent: 'hermes',
+        args: [],
+        cwd: dir,
+        env: { PATH: `${dir}:${process.env.PATH ?? ''}` },
+        concurrency: 1,
+        pollIntervalMs: 1000,
+        timeoutMs: 5000,
+        outputFormat: 'hermes-stream-json',
+        models: [],
+      },
+      { prompt: 'Hallo', systemPrompt: '', env: {}, model: 'claude-sonnet-5' },
+    );
+  }
+
+  const INIT_FAILED = [
+    JSON.stringify({
+      type: 'system',
+      subtype: 'init',
+      model: 'claude-sonnet-5',
+      session_id: 's-1',
+    }),
+    "Hermes couldn't start the model connection: [Errno 13] Permission denied: ",
+    "'/srv/volition/source/hermes/.venv/lib/python3.13/site-packages/docstring_parser",
+    '/__init__…. Your message was not sent. Run `hermes doctor` to check the setup, ',
+    'or /model to pick a different provider.',
+    JSON.stringify({
+      type: 'result',
+      session_id: 's-1',
+      exit_code: 1,
+      text: '',
+      error: 'credentials or agent init failed',
+    }),
+    '',
+  ].join('\n');
+
+  it('says why a start failed: what Hermes printed besides the protocol', async () => {
+    const outcome = await printedRun(INIT_FAILED);
+    expect(outcome.status).toBe('failed');
+    expect(outcome.error).toBe(
+      'credentials or agent init failed\n' +
+        "Hermes couldn't start the model connection: [Errno 13] Permission denied: " +
+        "'/srv/volition/source/hermes/.venv/lib/python3.13/site-packages/docstring_parser " +
+        '/__init__…. Your message was not sent. Run `hermes doctor` to check the setup, or /model ' +
+        'to pick a different provider.',
+    );
+    // Not a model the provider refuses: nothing to switch off in the catalog.
+    expect(outcome.failure).toBeUndefined();
+  });
+
+  it('keeps only the last of a long print, and nothing of it on success', async () => {
+    const noise = Array.from({ length: 400 }, (_, index) => `warning line ${index}`).join('\n');
+    const failed = await printedRun(`${noise}\n${INIT_FAILED}`);
+    expect(failed.error!.length).toBeLessThanOrEqual(500);
+    // The result's words, then the end of the print: Hermes' own message is its last line.
+    expect(failed.error).toStartWith('credentials or agent init failed\n…');
+    expect(failed.error).toEndWith('or /model to pick a different provider.');
+    expect(failed.error).not.toContain('warning line 0 ');
+    const done = await printedRun(
+      `${noise}\n${JSON.stringify({ type: 'result', text: 'OK', exit_code: 0 })}\n`,
+      0,
+    );
+    expect(done).toMatchObject({ status: 'success', output: 'OK' });
+    expect(done.error).toBeUndefined();
+  });
+
   it("leaves an operator's own command unread", async () => {
     const outcome = await refusedRun(REFUSAL, undefined);
     expect(outcome.status).toBe('failed');

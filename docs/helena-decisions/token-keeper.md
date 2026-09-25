@@ -146,6 +146,11 @@ problem), then `sudo deployment/volition-stack/native/token-keeper/install.sh re
 
 ## 8. Open
 
+- 2026-09-26: after the owner's new Claude login (2026-09-25 23:47) the keeper's view was right,
+  yet every Claude agent still failed with "credentials or agent init failed": not a login
+  problem, a file of the anthropic SDK in Hermes' venv the isolated agents could not read. See
+  `agent-runtime-code.md`; a failed start now says why in Helena.
+
 - Per-agent issue: Hermes agents whose model runs on a dead login could show "Laufzeit nicht
   angemeldet" on the agent page (the runner can read the keeper's status). The Home line and
   the catalog cover it for now.

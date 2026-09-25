@@ -250,6 +250,10 @@ if changed deployment/volition-stack/isolation deployment/volition-stack/native/
   deployment/volition-stack/integration/project-browser-state.mjs; then
   "$live/deployment/volition-stack/native/isolation.sh" sync
 fi
+# The agents' runtime code (Hermes' venv, its Python, its tools) stays readable for them on every
+# deploy, whatever installed into it since (docs/helena-decisions/agent-runtime-code.md): no
+# restart, a no-op where isolation is not installed.
+"$live/deployment/volition-stack/native/isolation.sh" open-code
 # Now that the installed launcher binds the views, the keeper's sync takes the agents' group's
 # read access to the real stores away (idempotent; nothing to do on later deploys).
 if changed deployment/volition-stack/native/token-keeper deployment/volition-stack/isolation/launcher.json; then

@@ -67,6 +67,7 @@
     "sys_encryption": "Disques chiffrés",
     "files_backups": "Sauvegardes de la base lisibles seulement par leur service",
     "files_secrets": "Secrets et clés non lisibles par les autres",
+    "files_agent_code": "Les agents peuvent lire leur code d'exécution",
     "svc_exposure": "Services Helena isolés par systemd",
     "svc_tools_loopback": "Outils accessibles seulement via loopback"
   },
@@ -180,6 +181,9 @@
     },
     "files_secrets": {
       "fail": "Des secrets ou des clés sont lisibles par d’autres."
+    },
+    "files_agent_code": {
+      "fail": "{count} fichiers dans {path} ne sont lisibles que par leur propriétaire : les agents qui les chargent ne démarrent pas."
     },
     "svc_exposure": {
       "warn": "systemd isole les services de Helena moins que prévu."

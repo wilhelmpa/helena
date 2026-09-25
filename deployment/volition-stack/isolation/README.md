@@ -26,6 +26,7 @@ namespace of its own (`PrivateNetwork=yes`): its loopback is not the host's.
 | `egress.py` | `volition-egress`, socket `/run/volition-agents/egress.sock` (0660 `root:volition-agents`) | HTTP `CONNECT` and forward proxy. The project comes from the peer's Unix user, agent and run from its unit's cgroup. Resolves names itself, refuses a name with any non-public address, connects to the address it checked (no rebinding), ports 80/443, 465/587/993 with the mail role, the project's mode and lists from Plan. Reports host, port, decision and bytes per unit to Plan, never content. |
 | `plan_proxy.py` | dynamic user, socket `/run/volition-agents/plan.sock` | one request per connection to `127.0.0.1:3000`, head rebuilt from a strict parse, an allowlist of headers (no cookie, no forwarding header), body reframed (`Content-Length` or `chunked`, never both), `X-Volition-Agent-Project` / `X-Volition-Agent-Unit` set. |
 | `migrate.py` | root, from `native/isolation.sh` | walks every tree through directory descriptors, follows no link, leaves hard-linked files alone (reported): an agent that ran as the runner user could have planted either. |
+| `runtime_modes.py` | root, from `native/isolation.sh`, the audit | checks that every agent can read the runtimes' shared code (`sharedCode`) and opens what is closed: by file descriptor, no link followed, a multi-linked file only when root owns it. |
 | `launch_client.py` | caller | CLI of the protocol (provisioning from the shell, the terminal, the proofs). |
 | `packages/runner/src/isolation.ts` | `volition-hermes` | the runner's client: runs, chat answers and the `profile-helper` (policy files, inventory, web-login vault) go through the launcher, so the runner never opens a file in an agent-writable profile. |
 
@@ -72,6 +73,14 @@ launcher's and egress's state), `InaccessiblePaths=` for `/etc/volition`, `/var/
   runner sends `agentRuntime`) gets no login views at all: it works in the agent's own profile,
   and the Hermes views over `.codex` would hide the agent's own login and answer with the shared
   ChatGPT one (`cli-files`, the limits of a `runtime-request`). Nothing binds over `.claude`.
+- The runtimes' code (`launcher.json` `sharedCode`: Hermes' venv, its Python, its `bin`, its uv
+  tools) is bound read-only, and a bind keeps the files' modes: a file there only its owner may
+  read fails every agent that imports it (2026-09-25: the anthropic SDK's `docstring_parser`,
+  root 0600, stopped every agent on a Claude model at "credentials or agent init failed").
+  `runtime_modes.py` checks the trees and opens what is closed (go+rX, go-w; by file
+  descriptor, no link followed); `isolation.sh` runs it on install, sync, apply and
+  `open-code` (every deploy), the Hermes update helper after each install, the hourly audit
+  reports it (`files.agent_code`). `docs/helena-decisions/agent-runtime-code.md`.
 - Home gets `profiles/home` (a copy of the Home agent's state in the global home, databases
   through SQLite's backup) and `/srv/volition/workspaces/home`.
 - Browser state (`/var/lib/volition/project-browser`) belongs to `volition-browser`; Chromium and
@@ -106,7 +115,9 @@ sudo deployment/volition-stack/native/isolation.sh rollback          # one runne
 ```
 
 `deploy.sh` runs `isolation.sh sync` when these files change: an installed isolation gets the new
-code and units; nothing is installed or switched on by a deploy.
+code and units; nothing is installed or switched on by a deploy. On every deploy it runs
+`isolation.sh open-code`, which only opens the agents' runtime code to them again (no restart);
+`status` ends with what the agents cannot read of it.
 
 ## Proofs
 

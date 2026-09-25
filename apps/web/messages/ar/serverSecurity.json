@@ -67,6 +67,7 @@
     "sys_encryption": "الأقراص مشفّرة",
     "files_backups": "نسخ قاعدة البيانات مقروءة لخدمتها فقط",
     "files_secrets": "الأسرار والمفاتيح غير مقروءة للآخرين",
+    "files_agent_code": "يمكن للوكلاء قراءة شيفرة بيئة التشغيل الخاصة بهم",
     "svc_exposure": "خدمات Helena معزولة بواسطة systemd",
     "svc_tools_loopback": "الأدوات متاحة عبر loopback فقط"
   },
@@ -180,6 +181,9 @@
     },
     "files_secrets": {
       "fail": "يمكن للآخرين قراءة الأسرار أو المفاتيح."
+    },
+    "files_agent_code": {
+      "fail": "{count} ملفات في {path} لا يقرؤها إلا مالكها: الوكلاء الذين يحمّلونها لا يبدؤون."
     },
     "svc_exposure": {
       "warn": "يعزل systemd خدمات Helena أقل مما هو مخطط له."
