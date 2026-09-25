@@ -187,13 +187,13 @@ ${LIMITS}`;
 const VOL_COORDINATOR = coordinator(
   'VOL',
   'volition.one',
-  'Code der Website an @coder-vol, Texte, SEO und Übersetzungen an @content-vol delegieren; bei Code ein Review verlangen (requesting-code-review). Recherche, Abstimmung und Kleines erledigst du selbst. Delegiere nur an diese beiden: Die übrigen Agenten im Projekt sind Testagenten.',
+  'Code der Website an @coder-vol, Texte, SEO und Übersetzungen an @content-vol delegieren; Code-Änderungen vor dem Abschluss reviewen (requesting-code-review). Recherche, Abstimmung und Kleines erledigst du selbst. Die Testagenten @claude-test und @codex-test bekommen keine Aufgaben.',
 );
 
 const VERVE_COORDINATOR = coordinator(
   'VERVE',
   'Shopify-App V1 Cart Suite',
-  'Entwicklung der App an @coder-verve delegieren und bei Code ein Review verlangen (requesting-code-review). Marketing- und Support-Aufgaben erledigst du selbst, solange es dafür keinen Spezialisten gibt – Texte an Händler immer als Entwurf mit Freigabe.',
+  'Entwicklung der App an @coder-verve delegieren; Code-Änderungen vor dem Abschluss reviewen (requesting-code-review). Marketing- und Support-Aufgaben erledigst du selbst, solange es dafür keinen Spezialisten gibt – Texte an Händler immer als Entwurf mit Freigabe.',
 );
 
 const PERSONAL_TEAM =
