@@ -157,7 +157,7 @@ entry_token() {
     for unit in $entry_units; do say "[dry-run] would add /etc/systemd/system/$unit.service.d/55-helena-edge-entry.conf"; done
     return 1
   fi
-  install -d -m 0700 -o root -g root /etc/helena "$etc"
+  install -d -m 0755 -o root -g root /etc/helena && install -d -m 0700 -o root -g root "$etc"
   if [[ $rotate -eq 0 && -s $entry_env ]]; then
     token=$(sed -n 's/^HELENA_EDGE_ENTRY_TOKEN=//p' "$entry_env")
   fi

@@ -97,7 +97,7 @@ case "$cmd" in
     printf '%-24s %s\n' "nginx deploy hook" "$( [[ -x $hook ]] && echo present || echo 'missing (renewal)')"
     ;;
   token)
-    run install -d -m 0700 -o root -g root /etc/helena "$etc"
+    run install -d -m 0755 -o root -g root /etc/helena; run install -d -m 0700 -o root -g root "$etc"
     if [[ $apply -eq 0 ]]; then say "[dry-run] would read the DNS token (no echo) into $dns_token (0600 root)"; exit 0; fi
     [[ -t 0 ]] || die "run this in a terminal: the token is read without echo"
     read -rsp "Cloudflare DNS API token (input hidden): " value; echo
