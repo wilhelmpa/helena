@@ -275,6 +275,19 @@ export const auth = betterAuth({
   basePath: `${new URL(baseURL).pathname.replace(/\/+$/, '')}/api/auth`,
   secret: process.env.BETTER_AUTH_SECRET,
 
+  // Google sign-in stays registered without credentials, so the owner can add them in
+  // Administrator without a restart (see googleOptions); better-auth warns about the empty
+  // client id at every start and in every script. Everything else is printed as before.
+  logger: {
+    log(level, message, ...args) {
+      if (level === 'warn' && message.startsWith('Social provider google is missing')) return;
+      const line = `${new Date().toISOString()} ${level.toUpperCase()} [Better Auth]: ${message}`;
+      if (level === 'error') console.error(line, ...args);
+      else if (level === 'warn') console.warn(line, ...args);
+      else console.log(line, ...args);
+    },
+  },
+
   database: drizzleAdapter(db, {
     provider: 'pg',
     schema: {
