@@ -68,7 +68,8 @@
     "files_backups": "Cadangan basis data hanya terbaca oleh layanannya",
     "files_secrets": "Rahasia dan kunci tidak terbaca oleh pihak lain",
     "svc_exposure": "Layanan Helena diisolasi oleh systemd",
-    "svc_tools_loopback": "Alat hanya terjangkau lewat loopback"
+    "svc_tools_loopback": "Alat hanya terjangkau lewat loopback",
+    "svc_notes": "Catatan terlindungi"
   },
   "finding": {
     "net_firewall": {
@@ -186,6 +187,9 @@
     },
     "svc_tools_loopback": {
       "fail": "Alat dapat dijangkau di luar loopback."
+    },
+    "svc_notes": {
+      "fail": "Catatan tidak terlindungi seperti seharusnya: {problems}"
     },
     "skipped": "Tidak diperiksa"
   },

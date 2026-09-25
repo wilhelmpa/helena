@@ -56,6 +56,10 @@ SECRET_DIRS=${HELENA_SECRET_DIRS:-/etc/volition /etc/helena}
 API_UNITS=${HELENA_API_UNITS:-volition-plan-api volition-plan-web volition-plan-worker}
 TUNNEL_UNIT=${HELENA_TUNNEL_UNIT:-helena-cloudflared}
 NGINX_TUNNEL_SITE=${HELENA_NGINX_TUNNEL_SITE:-/etc/nginx/sites-enabled/helena-tunnel.conf}
+# The notes (notes/install.sh): SilverBullet behind nginx on the home name's second port.
+NOTES_PORT=${HELENA_NOTES_PORT:-8446}
+NOTES_UNIT=${HELENA_NOTES_UNIT:-helena-notes}
+NOTES_VAULT=${HELENA_VAULT:-/srv/volition/vault}
 
 is_root=0; [[ $EUID -eq 0 ]] && is_root=1
 results=()
@@ -168,8 +172,9 @@ else
   fi
 fi
 
-# Listeners on a wildcard or LAN address. Allowed from the network: SSH, HTTP(S), mDNS,
-# DHCP client, Syncthing. Everything else must be loopback-only (or behind the firewall).
+# Listeners on a wildcard or LAN address. Allowed from the network: SSH, HTTP(S), the notes'
+# HTTPS port (nginx, notes/install.sh), mDNS, DHCP client, Syncthing. Everything else must be
+# loopback-only (or behind the firewall).
 # avahi and Syncthing also hold UDP sockets on random ports for their own queries; their
 # answers come back as replies, which the firewall's conntrack admits, so only their
 # well-known ports count as listeners.
@@ -181,6 +186,7 @@ unexpected_listeners() {
     esac
     case "$proto:$port" in
       tcp:22|tcp:80|tcp:443|udp:5353|udp:546|udp:68|udp:21027|udp:22000|tcp:22000) continue ;;
+      "tcp:$NOTES_PORT") [[ $users == *'"nginx"'* ]] && continue ;;
     esac
     case "$proto:$users" in
       udp:*'"avahi-daemon"'*|udp:*'"syncthing"'*) continue ;;
@@ -191,7 +197,7 @@ unexpected_listeners() {
 if have ss; then
   unexpected=$(unexpected_listeners)
   if [[ -z $unexpected ]]; then
-    record net.listeners network high pass "only 22, 80, 443 and Syncthing/mDNS face the network"
+    record net.listeners network high pass "only 22, 80, 443, the notes' port and Syncthing/mDNS face the network"
   elif grep -q 'helena:input-drop' <<<"$nft_rules"; then
     record net.listeners network high warn "open on the network but dropped by the firewall: $unexpected" "ports=$unexpected"
   else
@@ -584,6 +590,54 @@ if have ss; then
     && record svc.tools_loopback services high pass "API, web, tools, CDP, VNC and tunnel entry on loopback" \
     || record svc.tools_loopback services high fail "bound beyond loopback: $exposed"
 fi
+
+# svc.notes: the notes (SilverBullet on the vault, notes/install.sh) are shielded the way
+# docs/helena-decisions/notes-silverbullet.md §3 says: a socket only nginx reaches, no
+# network, neither Private/ nor the vault's git history, no shell or headless runtime, and
+# every nginx entry checks the owner and refuses hidden paths and Private/.
+check_notes() {
+  local unit_file=/etc/systemd/system/$NOTES_UNIT.service problems=() props site
+  if [[ ! -e $unit_file ]]; then
+    record svc.notes services high pass "notes not installed"
+    return
+  fi
+  props=$(systemctl show "$NOTES_UNIT" -p PrivateNetwork -p InaccessiblePaths -p Environment -p User 2>/dev/null)
+  grep -q '^PrivateNetwork=yes$' <<<"$props" || problems+=("PrivateNetwork not yes")
+  grep -q "^InaccessiblePaths=.*$NOTES_VAULT/\.git" <<<"$props" || problems+=("vault .git reachable")
+  grep -q "^InaccessiblePaths=.*$NOTES_VAULT/Private" <<<"$props" || problems+=("Private/ reachable")
+  grep -q 'SB_SHELL_BACKEND=off' <<<"$props" || problems+=("shell not off")
+  grep -q 'SB_RUNTIME_API=0' <<<"$props" || problems+=("runtime API not off")
+  grep -q 'SB_UNIX_SOCKET=' <<<"$props" || problems+=("no Unix socket")
+  if systemctl is-active --quiet "$NOTES_UNIT"; then
+    local dir; dir=$(stat -c '%G %a' /run/helena-notes 2>/dev/null)
+    [[ $dir == "www-data 2750" ]] || problems+=("socket folder ${dir:-missing}")
+    if ss -H -ltn 2>/dev/null | awk '{print $4}' | grep -q .; then
+      local pid; pid=$(systemctl show -p MainPID --value "$NOTES_UNIT" 2>/dev/null)
+      if [[ -n $pid && $pid != 0 ]] && ss -H -ltnp 2>/dev/null | grep -q "pid=$pid,"; then
+        problems+=("listens on TCP")
+      fi
+    fi
+  fi
+  for site in /etc/nginx/sites-enabled/helena-notes-home.conf /etc/nginx/sites-enabled/helena-tunnel.notes.conf; do
+    [[ -e $site ]] || continue
+    grep -q '/auth/verify/notes' "$site" || problems+=("$(basename "$site"): no owner check")
+    grep -q 'include /etc/nginx/snippets/helena-notes-common.conf' "$site" || problems+=("$(basename "$site"): rules missing")
+  done
+  if [[ -e /etc/nginx/snippets/helena-notes-common.conf ]]; then
+    local common=/etc/nginx/snippets/helena-notes-common.conf
+    grep -q '^auth_request /_helena_notes_auth;' "$common" || problems+=("rules: no owner check")
+    grep -Fq 'location ~ ^/\.fs/Private(/|$)' "$common" || problems+=("rules: Private/ not refused")
+    grep -Fq 'location ~ ^/\.fs/(.*/)?\.' "$common" || problems+=("rules: hidden paths not refused")
+    grep -Fq "connect-src 'self'" "$common" || problems+=("rules: no connect-src self")
+  fi
+  if ((${#problems[@]})); then
+    local list; list=$(IFS=,; echo "${problems[*]}")
+    record svc.notes services high fail "notes not shielded: $list" "problems=$list"
+  else
+    record svc.notes services high pass "socket for nginx only, no network, no Private/ or git history, owner check and path rules on every entry"
+  fi
+}
+if [[ $is_root -eq 1 ]]; then check_notes; else need_root svc.notes services high; fi
 
 # ── Output ─────────────────────────────────────────────────────────────────────
 failed=0

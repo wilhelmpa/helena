@@ -19,12 +19,13 @@ table inet helena_hardening {
 		type ipv6_addr; flags interval
 		elements = { fe80::/10, fc00::/7 }
 	}
-	# What the home network may reach: SSH, HTTP, HTTPS, Syncthing (sync and local
-	# discovery) and mDNS. Nothing is open to the internet: the Cloudflare tunnel only
+	# What the home network may reach: SSH, HTTP, HTTPS, the notes (HTTPS on the home name's
+	# second port, notes/install.sh; closed while nothing listens there), Syncthing (sync and
+	# local discovery) and mDNS. Nothing is open to the internet: the Cloudflare tunnel only
 	# connects out.
 	set lan_tcp {
 		type inet_service
-		elements = { 22, 80, 443, 22000 }
+		elements = { 22, 80, 443, 8446, 22000 }
 	}
 	set lan_udp {
 		type inet_service

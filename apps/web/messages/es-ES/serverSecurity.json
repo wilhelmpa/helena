@@ -68,7 +68,8 @@
     "files_backups": "Copias de la base de datos legibles solo por su servicio",
     "files_secrets": "Secretos y claves no legibles por otros",
     "svc_exposure": "Servicios de Helena aislados por systemd",
-    "svc_tools_loopback": "Herramientas accesibles solo por loopback"
+    "svc_tools_loopback": "Herramientas accesibles solo por loopback",
+    "svc_notes": "Notas protegidas"
   },
   "finding": {
     "net_firewall": {
@@ -186,6 +187,9 @@
     },
     "svc_tools_loopback": {
       "fail": "Las herramientas son accesibles más allá de loopback."
+    },
+    "svc_notes": {
+      "fail": "Las notas no están protegidas como se previó: {problems}"
     },
     "skipped": "No comprobado"
   },

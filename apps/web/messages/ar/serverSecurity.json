@@ -68,7 +68,8 @@
     "files_backups": "نسخ قاعدة البيانات مقروءة لخدمتها فقط",
     "files_secrets": "الأسرار والمفاتيح غير مقروءة للآخرين",
     "svc_exposure": "خدمات Helena معزولة بواسطة systemd",
-    "svc_tools_loopback": "الأدوات متاحة عبر loopback فقط"
+    "svc_tools_loopback": "الأدوات متاحة عبر loopback فقط",
+    "svc_notes": "الملاحظات معزولة"
   },
   "finding": {
     "net_firewall": {
@@ -186,6 +187,9 @@
     },
     "svc_tools_loopback": {
       "fail": "يمكن الوصول إلى الأدوات خارج الاسترجاع المحلي."
+    },
+    "svc_notes": {
+      "fail": "الملاحظات ليست معزولة كما هو مقصود: {problems}"
     },
     "skipped": "لم يُفحص"
   },

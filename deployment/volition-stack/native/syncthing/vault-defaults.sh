@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# Writes the vault files Syncthing and Obsidian read. Lines missing from .stignore are
-# appended and the owner's own lines stay. An Obsidian settings file is written only
-# while it does not exist, so a setting the owner changed is never replaced.
+# Writes the vault's .stignore (what Syncthing leaves on this server) and the folders every
+# vault has. Lines missing from .stignore are appended and the owner's own lines stay.
 #
 #   vault-defaults.sh VAULT
 set -euo pipefail
@@ -22,10 +21,15 @@ while IFS= read -r line; do
 done <<'EOF'
 // Every Git repository: the vault's and the one of Private/.
 .git
-// Plan's trash, which Obsidian's "Move to Obsidian trash" also uses, stays on each device.
+// Helena's trash stays on each device.
 /.trash
-// Obsidian's open tabs and window layout differ per device.
-/.obsidian/workspace*.json
+// A desktop editor's settings folder (Obsidian's, from before the notes) never syncs: the
+// notes in Helena are the editor, and a device must not bring such a folder back.
+/.obsidian
+// The notes (SilverBullet) write a note as a hidden sibling first and rename it over the
+// note, and probe the vault root once on start.
+.*.sb-write-*
+.sb-case-probe-*
 // Temporary and system files. (?d) lets Syncthing delete them with their directory.
 (?d).DS_Store
 (?d)._*
@@ -37,39 +41,4 @@ done <<'EOF'
 .~lock.*#
 EOF
 
-settings=$vault/.obsidian
-mkdir -p "$settings" "$vault/Templates" "$vault/Home/Journal"
-
-write_absent() {
-  [[ -e $settings/$1 ]] || cat >"$settings/$1"
-}
-
-# Wikilinks with the shortest unique name. Deleted notes go to the vault's .trash.
-# Attachments go to an Assets folder beside the note: a note of a project keeps its
-# files inside that project, and one in Private/ keeps them inside Private/.
-write_absent app.json <<'EOF'
-{
-  "useMarkdownLinks": false,
-  "newLinkFormat": "shortest",
-  "trashOption": "local",
-  "attachmentFolderPath": "./Assets"
-}
-EOF
-write_absent core-plugins.json <<'EOF'
-{
-  "backlink": true,
-  "graph": true,
-  "templates": true,
-  "daily-notes": true
-}
-EOF
-write_absent templates.json <<'EOF'
-{
-  "folder": "Templates"
-}
-EOF
-write_absent daily-notes.json <<'EOF'
-{
-  "folder": "Home/Journal"
-}
-EOF
+mkdir -p "$vault/Templates" "$vault/Home/Docs/Journal"

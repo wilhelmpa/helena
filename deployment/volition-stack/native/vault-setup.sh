@@ -90,8 +90,7 @@ repository() {
 }
 
 repository "$vault" "$shared_group" "$text_only
-/.obsidian/workspace*
-/.obsidian/cache
+/.obsidian/
 /Private/"
 repository "$vault/Private" "$private_group" "$text_only"
 

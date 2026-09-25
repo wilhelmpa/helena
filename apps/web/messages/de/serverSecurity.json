@@ -68,7 +68,8 @@
     "files_backups": "Datenbank-Sicherungen nur für ihren Dienst lesbar",
     "files_secrets": "Geheimnisse und Schlüssel für andere nicht lesbar",
     "svc_exposure": "Helena-Dienste von systemd abgeschottet",
-    "svc_tools_loopback": "Werkzeuge nur über Loopback erreichbar"
+    "svc_tools_loopback": "Werkzeuge nur über Loopback erreichbar",
+    "svc_notes": "Notizen abgeschirmt"
   },
   "finding": {
     "net_firewall": {
@@ -186,6 +187,9 @@
     },
     "svc_tools_loopback": {
       "fail": "Werkzeuge sind über Loopback hinaus erreichbar."
+    },
+    "svc_notes": {
+      "fail": "Die Notizen sind nicht wie vorgesehen abgeschirmt: {problems}"
     },
     "skipped": "Nicht geprüft"
   },

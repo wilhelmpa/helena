@@ -68,7 +68,8 @@
     "files_backups": "Резервные копии базы доступны только своей службе",
     "files_secrets": "Секреты и ключи недоступны другим для чтения",
     "svc_exposure": "Службы Helena изолированы systemd",
-    "svc_tools_loopback": "Инструменты доступны только через loopback"
+    "svc_tools_loopback": "Инструменты доступны только через loopback",
+    "svc_notes": "Заметки изолированы"
   },
   "finding": {
     "net_firewall": {
@@ -186,6 +187,9 @@
     },
     "svc_tools_loopback": {
       "fail": "Инструменты доступны не только через loopback."
+    },
+    "svc_notes": {
+      "fail": "Заметки изолированы не так, как задумано: {problems}"
     },
     "skipped": "Не проверено"
   },

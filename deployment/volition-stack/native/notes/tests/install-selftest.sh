@@ -63,6 +63,13 @@ has "nginx: SilverBullet's own endpoints closed" "$c" '^location \^~ /\. \{'
 hasnt "nginx: /.fs/ is no ^~ location (the refusals must be checked)" "$c" 'location \^~ /\.fs'
 has "nginx: CSP connect-src self" "$c" "connect-src 'self';"
 has "nginx: framed by Helena only" "$c" 'frame-ancestors https://helena-home\.volition\.one https://helena\.volition\.one"'
+# The strings hardening/audit.sh (svc.notes) looks for in the installed snippet.
+for rule in 'location ~ ^/\.fs/Private(/|$)' 'location ~ ^/\.fs/(.*/)?\.' "connect-src 'self'"; do
+  grep -Fq "$rule" "$c" && pass "audit finds: $rule" || fail "audit would not find: $rule"
+done
+grep -q '^auth_request /_helena_notes_auth;' "$c" && pass "audit finds the owner check" || fail "audit would not find the owner check"
+grep -q 'elements = { 22, 80, 443, 8446, 22000 }' "$native/hardening/files/helena-hardening.nft.in" \
+  && pass "firewall template opens 8446 for the home network" || fail "firewall template lacks 8446"
 has "proxy: no cookie to SilverBullet" "$work/proxy.conf" '^proxy_set_header Cookie "";'
 has "proxy: no Set-Cookie from SilverBullet" "$work/proxy.conf" '^proxy_hide_header Set-Cookie;'
 has "proxy: no Access assertion to SilverBullet" "$work/proxy.conf" '^proxy_set_header Cf-Access-Jwt-Assertion "";'
