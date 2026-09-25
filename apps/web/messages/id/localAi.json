@@ -54,6 +54,8 @@
     "speed": "{tps} token/dtk",
     "none": "Belum dievaluasi",
     "run": "Evaluasi",
+    "started": "Evaluasi berjalan di latar belakang dan butuh beberapa menit; hasilnya muncul di sini.",
+    "running": "Evaluasi berjalan di {model} …",
     "done": "Evaluasi selesai: {score} %"
   },
   "servers": {

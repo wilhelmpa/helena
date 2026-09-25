@@ -76,6 +76,8 @@ export interface ReflectionRequest {
   // (`helena-<slug>/<id>`) Helena's local AI takes the reflection on. An older server sends
   // none.
   model?: string | null;
+  // Its reasoning with that model; `none` starts it on the server's provider without thinking.
+  thinkingLevel?: string | null;
 }
 
 // What the agent saved in a reflection: one entry per memory or skill write that succeeded.

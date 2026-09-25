@@ -15,6 +15,7 @@ const EVAL_TIMEOUT_MS = 180_000;
 
 interface ChatCompletion {
   choices?: {
+    finish_reason?: string | null;
     message?: {
       content?: string | null;
       tool_calls?: { function?: { name?: string; arguments?: string } }[];
@@ -72,6 +73,7 @@ export function openAiEvalContext(options: {
       })) as ChatCompletion;
       const message = body.choices?.[0]?.message;
       return {
+        finishReason: body.choices?.[0]?.finish_reason ?? null,
         text: message?.content ?? '',
         toolCalls: (message?.tool_calls ?? []).map((call) => ({
           name: call.function?.name ?? '',

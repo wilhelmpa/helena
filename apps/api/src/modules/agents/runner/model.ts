@@ -128,6 +128,15 @@ export const ResultResponse = t.Object({
           }),
         ),
       ),
+      thinkingLevel: t.Optional(
+        t.Nullable(
+          t.String({
+            description:
+              "The reflection's reasoning with that model: `none` runs it on the server's " +
+              'provider without thinking',
+          }),
+        ),
+      ),
     }),
   ),
 });

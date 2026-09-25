@@ -310,7 +310,64 @@ export async function refreshServer(id: number): Promise<ServerView> {
 
 // ── Evals ──────────────────────────────────────────────────────────────────────────────
 
-export async function runEval(input: { classId: string; modelId: string; userId: string }) {
+// An eval asks its cases one after the other; on a local model a class takes minutes (the
+// reflection with thinking: 6 × 68 s), longer than a request may stay open behind nginx
+// (60 s). So it runs in the background, like the decision evals: the request answers 202 with
+// the eval's row, `running`, and its score comes in on the row. An eval that has not finished
+// after this long was cut off (the API restarted) and no longer holds its class and model.
+export const EVAL_STALE_MS = 30 * 60_000;
+
+export type EvalStatus = 'running' | 'done' | 'stale';
+
+// The evals running in this process, so a test (or a shutdown) can wait for them.
+const runningEvals = new Map<number, Promise<void>>();
+
+async function evaluateInto(
+  rowId: number,
+  entry: LocalAiTaskClass,
+  server: ModelServerRow,
+  model: LocalModel,
+  threshold: number,
+): Promise<void> {
+  let values: Partial<typeof helenaLocalAiEval.$inferInsert>;
+  try {
+    const key = await readModelServerKey(server);
+    const result = await entry.evaluate!(
+      openAiEvalContext({
+        baseUrl: server.baseUrl,
+        key,
+        model: model.id,
+        thinking: entry.thinking ?? 'off',
+      }),
+    );
+    values = {
+      score: result.score,
+      passed: result.score >= threshold,
+      cases: result.cases.length,
+      details: result.cases
+        .filter((item) => !item.passed)
+        .slice(0, 20)
+        .map((item) => ({ id: item.id, detail: item.detail?.slice(0, 200) ?? null })),
+      latencyMsP50: result.latencyMsP50 === null ? null : Math.round(result.latencyMsP50),
+      tokensPerSecond: result.tokensPerSecond,
+    };
+  } catch (error) {
+    values = {
+      score: 0,
+      passed: false,
+      cases: 0,
+      error: (error instanceof Error ? error.message : String(error)).slice(0, 300),
+    };
+  }
+  await db
+    .update(helenaLocalAiEval)
+    .set({ ...values, status: 'done', finishedAt: new Date() })
+    .where(eq(helenaLocalAiEval.id, rowId));
+}
+
+// Starts the eval of a class on a local model and answers its row, still `running`. One eval
+// of a class and model at a time.
+export async function startEval(input: { classId: string; modelId: string; userId: string }) {
   const entry = taskClass(input.classId);
   if (!entry) throw new HttpError(404, 'No such task class');
   if (!entry.evaluate) throw new HttpError(400, 'This task class has no eval yet');
@@ -325,38 +382,24 @@ export async function runEval(input: { classId: string; modelId: string; userId:
   if (!model) throw new HttpError(400, 'The server does not list this model');
   if (!model.capabilities.includes(entry.capability))
     throw new HttpError(400, `The model cannot do what the class needs (${entry.capability})`);
-  const key = await readModelServerKey(server);
+  const [busy] = await db
+    .select({ id: helenaLocalAiEval.id })
+    .from(helenaLocalAiEval)
+    .where(
+      and(
+        eq(helenaLocalAiEval.classId, entry.id),
+        eq(helenaLocalAiEval.serverId, server.id),
+        eq(helenaLocalAiEval.model, model.id),
+        eq(helenaLocalAiEval.status, 'running'),
+        gte(helenaLocalAiEval.ranAt, new Date(Date.now() - EVAL_STALE_MS)),
+      ),
+    )
+    .limit(1);
+  if (busy) throw new HttpError(409, 'An eval of this kind of work on this model is running');
   const threshold = entry.threshold ?? 0.8;
-  const evalVersion = classEvalVersion(entry);
-  let values: typeof helenaLocalAiEval.$inferInsert;
-  try {
-    const result = await entry.evaluate(
-      openAiEvalContext({
-        baseUrl: server.baseUrl,
-        key,
-        model: model.id,
-        thinking: entry.thinking ?? 'off',
-      }),
-    );
-    values = {
-      classId: entry.id,
-      serverId: server.id,
-      model: model.id,
-      score: result.score,
-      threshold,
-      passed: result.score >= threshold,
-      cases: result.cases.length,
-      details: result.cases
-        .filter((item) => !item.passed)
-        .slice(0, 20)
-        .map((item) => ({ id: item.id, detail: item.detail?.slice(0, 200) ?? null })),
-      latencyMsP50: result.latencyMsP50 === null ? null : Math.round(result.latencyMsP50),
-      tokensPerSecond: result.tokensPerSecond,
-      evalVersion,
-      ranBy: input.userId,
-    };
-  } catch (error) {
-    values = {
+  const [row] = await db
+    .insert(helenaLocalAiEval)
+    .values({
       classId: entry.id,
       serverId: server.id,
       model: model.id,
@@ -364,20 +407,44 @@ export async function runEval(input: { classId: string; modelId: string; userId:
       threshold,
       passed: false,
       cases: 0,
-      error: (error instanceof Error ? error.message : String(error)).slice(0, 300),
-      evalVersion,
+      evalVersion: classEvalVersion(entry),
+      status: 'running',
       ranBy: input.userId,
-    };
-  }
-  const [row] = await db.insert(helenaLocalAiEval).values(values).returning();
+    })
+    .returning();
+  const running = evaluateInto(row!.id, entry, server, model, threshold)
+    .catch((error: unknown) => console.error('[local-ai] eval result not stored', error))
+    .finally(() => runningEvals.delete(row!.id));
+  runningEvals.set(row!.id, running);
   return evalView(row!, server.slug);
 }
 
-function evalView(row: typeof helenaLocalAiEval.$inferSelect, slug: string) {
+// Waits for the evals this process runs (tests).
+export async function settleEvals(): Promise<void> {
+  await Promise.all(runningEvals.values());
+}
+
+export async function evalById(id: number): Promise<EvalView | null> {
+  const [found] = await db
+    .select({ row: helenaLocalAiEval, slug: helenaModelServer.slug })
+    .from(helenaLocalAiEval)
+    .innerJoin(helenaModelServer, eq(helenaModelServer.id, helenaLocalAiEval.serverId))
+    .where(eq(helenaLocalAiEval.id, id));
+  return found ? evalView(found.row, found.slug) : null;
+}
+
+function evalView(row: typeof helenaLocalAiEval.$inferSelect, slug: string, now = Date.now()) {
+  const status: EvalStatus =
+    row.status === 'done'
+      ? 'done'
+      : now - row.ranAt.getTime() > EVAL_STALE_MS
+        ? 'stale'
+        : 'running';
   return {
     id: row.id,
     classId: row.classId,
     modelId: localModelId(slug, row.model),
+    status,
     score: row.score,
     threshold: row.threshold,
     passed: row.passed,
@@ -388,17 +455,19 @@ function evalView(row: typeof helenaLocalAiEval.$inferSelect, slug: string) {
     error: row.error,
     evalVersion: row.evalVersion,
     ranAt: iso(row.ranAt),
+    finishedAt: row.finishedAt ? iso(row.finishedAt) : null,
   };
 }
 
 export type EvalView = ReturnType<typeof evalView>;
 
-// The newest eval of each class and model.
+// The newest finished eval of each class and model: what gates the classes.
 export async function latestEvals(): Promise<EvalView[]> {
   const rows = await db
     .select({ row: helenaLocalAiEval, slug: helenaModelServer.slug })
     .from(helenaLocalAiEval)
     .innerJoin(helenaModelServer, eq(helenaModelServer.id, helenaLocalAiEval.serverId))
+    .where(eq(helenaLocalAiEval.status, 'done'))
     .orderBy(desc(helenaLocalAiEval.ranAt))
     .limit(500);
   const seen = new Set<string>();
@@ -410,6 +479,22 @@ export async function latestEvals(): Promise<EvalView[]> {
     result.push(evalView(row, slug));
   }
   return result;
+}
+
+// The evals still asking their cases, for the settings page to show and follow.
+export async function evalsInProgress(): Promise<EvalView[]> {
+  const rows = await db
+    .select({ row: helenaLocalAiEval, slug: helenaModelServer.slug })
+    .from(helenaLocalAiEval)
+    .innerJoin(helenaModelServer, eq(helenaModelServer.id, helenaLocalAiEval.serverId))
+    .where(
+      and(
+        eq(helenaLocalAiEval.status, 'running'),
+        gte(helenaLocalAiEval.ranAt, new Date(Date.now() - EVAL_STALE_MS)),
+      ),
+    )
+    .orderBy(desc(helenaLocalAiEval.ranAt));
+  return rows.map(({ row, slug }) => evalView(row, slug));
 }
 
 // ── Policy ─────────────────────────────────────────────────────────────────────────────
@@ -556,6 +641,11 @@ function chatModels(server: ModelServerRow): LocalModel[] {
   );
 }
 
+// The server's second address for agent turns without thinking, where its type has one.
+export function noThinkingBaseUrl(server: Pick<ModelServerRow, 'kind' | 'baseUrl'>): string | null {
+  return serverType(server.kind)?.noThinkingBaseUrl?.(server.baseUrl) ?? null;
+}
+
 // What an agent's runner writes into its Hermes profile: the local servers (only while the
 // master switch is on) and the helper calls Hermes sends there first. Null while local AI is
 // off, so nothing of it is left in any profile.
@@ -594,6 +684,7 @@ export function runtimeLocalAi(
     servers: enabled.map((server) => ({
       provider: localProviderName(server.slug),
       baseUrl: server.baseUrl,
+      noThinkingBaseUrl: noThinkingBaseUrl(server),
       keyEnv: server.keySource === 'none' ? null : keyVariable(server.slug),
       contextLength: Math.max(server.contextLength, HERMES_MIN_CONTEXT),
       models: chatModels(server).map((model) => ({
@@ -771,12 +862,17 @@ export async function effectiveModelNow(model: string | null): Promise<string | 
 export interface ClassModelChoice {
   // `helena-<slug>/<id>`, or null for the configured model.
   model: string | null;
+  // The reasoning the run is handed with a local model: `none` for a class that does not think
+  // (its run starts on the server's provider without thinking), else null (the local
+  // provider's turns think).
+  thinkingLevel: string | null;
   fallback: LocalFallback | null;
 }
 
 export async function classModelNow(classId: string): Promise<ClassModelChoice> {
+  const none: ClassModelChoice = { model: null, thinkingLevel: null, fallback: null };
   const entry = taskClass(classId);
-  if (!entry?.wired) return { model: null, fallback: null };
+  if (!entry?.wired) return none;
   const result = await resolveLocalRoute({
     classId: entry.id,
     unit: entry.unit,
@@ -785,15 +881,16 @@ export async function classModelNow(classId: string): Promise<ClassModelChoice> 
     requireUp: false,
     evalVersion: classEvalVersion(entry),
   });
-  if (!('route' in result)) return { model: null, fallback: null };
+  if (!('route' in result)) return none;
   const { server, model, modelId } = result.route;
   // An agent's turn runs on the models its profile lists: the server's chat models on disk.
   const listed = server.models.find((item) => item.id === model);
-  if (!listed?.capabilities.includes('chat') || listed.downloaded === false)
-    return { model: null, fallback: null };
+  if (!listed?.capabilities.includes('chat') || listed.downloaded === false) return none;
   if (!(await serverAnswers(server)))
-    return { model: null, fallback: { from: modelId, reason: 'down' } };
-  return { model: modelId, fallback: null };
+    return { ...none, fallback: { from: modelId, reason: 'down' } };
+  // A class whose eval ran without thinking runs so, where the server has the address for it.
+  const quiet = (entry.thinking ?? 'off') === 'off' && noThinkingBaseUrl(server) !== null;
+  return { model: modelId, thinkingLevel: quiet ? 'none' : null, fallback: null };
 }
 
 // Local models cost nothing per token (the price table's `price` asks this first).
@@ -973,10 +1070,11 @@ export async function localAiStatus() {
 // ── The settings page ──────────────────────────────────────────────────────────────────
 
 export async function localAiSettings() {
-  const [policy, servers, evals] = await Promise.all([
+  const [policy, servers, evals, running] = await Promise.all([
     readLocalAiPolicy(),
     listModelServers(),
     latestEvals(),
+    evalsInProgress(),
   ]);
   return {
     policy,
@@ -1011,5 +1109,6 @@ export async function localAiSettings() {
       };
     }),
     evals,
+    runningEvals: running,
   };
 }

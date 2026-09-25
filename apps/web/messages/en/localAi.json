@@ -54,6 +54,8 @@
     "speed": "{tps} tok/s",
     "none": "Not evaluated yet",
     "run": "Evaluate",
+    "started": "The evaluation runs in the background and takes a few minutes; its result shows up here.",
+    "running": "Evaluation running on {model} …",
     "done": "Evaluation finished: {score} %"
   },
   "servers": {

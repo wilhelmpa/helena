@@ -80,8 +80,16 @@ export const helenaLocalAiEval = pgTable(
     // The version of the class's eval it ran (@helena/sdk LocalAiTaskClass.evalVersion): an
     // eval of an older version no longer gates the class.
     evalVersion: integer('eval_version').notNull().default(1),
+    // `running` while the eval asks its cases (it runs in the background: a class takes minutes
+    // on a local model), `done` once its score is in. Only a done eval gates a class.
+    status: text('status').notNull().default('done'),
     ranBy: text('ran_by').references(() => user.id, { onDelete: 'set null' }),
+    // When it started; `finishedAt` when its score came in.
     ranAt: timestamp('ran_at', { withTimezone: true }).notNull().defaultNow(),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
   },
-  (t) => [index('helena_local_ai_eval_class_idx').on(t.classId, t.ranAt)],
+  (t) => [
+    index('helena_local_ai_eval_class_idx').on(t.classId, t.ranAt),
+    check('helena_local_ai_eval_status_check', sql`${t.status} IN ('running', 'done')`),
+  ],
 );

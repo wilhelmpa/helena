@@ -99,6 +99,15 @@ export const RuntimePolicySnapshotResponse = t.Object({
           t.Object({
             provider: t.String({ description: '`helena-<slug>`, the Hermes provider name' }),
             baseUrl: t.String(),
+            noThinkingBaseUrl: t.Optional(
+              t.Nullable(
+                t.String({
+                  description:
+                    "The same server's other address, for a second provider " +
+                    '(`helena-<slug>--nothink`) whose turns do not think; null when it has none',
+                }),
+              ),
+            ),
             keyEnv: t.Nullable(t.String()),
             contextLength: t.Number(),
             models: t.Array(

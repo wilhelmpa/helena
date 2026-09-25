@@ -67,6 +67,11 @@ export const EvalResult = t.Object({
   id: t.Number(),
   classId: t.String(),
   modelId: t.String(),
+  status: t.Union([t.Literal('running'), t.Literal('done'), t.Literal('stale')], {
+    description:
+      '`running` while the eval asks its cases (minutes on a local model), `done` once its ' +
+      'score is in, `stale` when it was cut off (the API restarted) and never finished',
+  }),
   score: t.Number(),
   threshold: t.Number(),
   passed: t.Boolean(),
@@ -78,7 +83,8 @@ export const EvalResult = t.Object({
   evalVersion: t.Number({
     description: "The version of the class's eval it ran; an older one no longer gates it",
   }),
-  ranAt: t.String({ format: 'date-time' }),
+  ranAt: t.String({ format: 'date-time', description: 'When it started' }),
+  finishedAt: t.Nullable(t.String({ format: 'date-time' })),
 });
 
 const classSetting = t.Object({ mode, model: t.Nullable(t.String()) });
@@ -141,7 +147,8 @@ export const LocalAiSettings = t.Object({
       ),
     }),
   ),
-  evals: t.Array(EvalResult),
+  evals: t.Array(EvalResult, { description: 'The newest finished eval of each class and model' }),
+  runningEvals: t.Array(EvalResult, { description: 'The evals still running' }),
 });
 
 const loadedEntry = t.Object({
@@ -244,6 +251,8 @@ export const serverBody = t.Object({
 });
 
 export const serverParams = t.Object({ id: t.Numeric() });
+
+export const evalParams = t.Object({ id: t.Numeric() });
 
 export const evalBody = t.Object({
   classId: t.String({ maxLength: 48 }),
