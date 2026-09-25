@@ -374,6 +374,7 @@
     "required": "Ce champ est requis.",
     "too_long": "Au plus {max} caractères.",
     "too_many": "Au plus {max} éléments.",
+    "too_few": "Au moins {min} entrées.",
     "out_of_range": "Entre {min} et {max}.",
     "too_deep": "Les conditions s’imbriquent sur au plus {max} niveaux.",
     "invalid_cron": "L’expression cron est invalide.",

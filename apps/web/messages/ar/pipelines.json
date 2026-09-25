@@ -374,6 +374,7 @@
     "required": "هذا الحقل مطلوب.",
     "too_long": "بحد أقصى {max} حرفًا.",
     "too_many": "بحد أقصى {max} عنصرًا.",
+    "too_few": "{min} إدخالات على الأقل.",
     "out_of_range": "بين {min} و{max}.",
     "too_deep": "تتداخل الشروط بحد أقصى {max} مستويات.",
     "invalid_cron": "تعبير Cron غير صالح.",

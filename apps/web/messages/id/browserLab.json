@@ -20,8 +20,9 @@
   },
   "connection": {
     "service": "Layanan",
-    "cloudNote": "Teks halaman yang terlihat dan tugasnya dikirim ke layanan ini. Kata sandi dan nilai yang diketik tidak.",
+    "cloudNote": "Yang diputuskan untuk Helena, seperti teks halaman yang terlihat atau email, dikirim ke layanan ini. Kata sandi dan nilai yang diketik tidak.",
     "localNote": "Server milik Anda sendiri (Laya atau server System One lain). Helena hanya menjangkaunya di alamat ini.",
+    "localModelNote": "Server yang kompatibel dengan OpenAI dengan logprobs (llama.cpp, Lemonade, vLLM). Helena hanya menjangkaunya di alamat ini.",
     "address": "Alamat",
     "model": "Model",
     "allowPrivate": "Izinkan alamat lokal ini",

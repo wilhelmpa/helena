@@ -601,6 +601,7 @@ const MESSAGES: Record<string, string> = {
   required: 'The value is required',
   too_long: 'The value is too long',
   too_many: 'There are too many entries',
+  too_few: 'There are too few entries',
   out_of_range: 'The value is out of range',
   too_deep: 'Conditions are nested too deeply',
   invalid_cron: 'The cron expression is invalid',

@@ -374,6 +374,7 @@
     "required": "Das ist ein Pflichtfeld.",
     "too_long": "Höchstens {max} Zeichen.",
     "too_many": "Höchstens {max} Einträge.",
+    "too_few": "Mindestens {min} Einträge.",
     "out_of_range": "Zwischen {min} und {max}.",
     "too_deep": "Bedingungen lassen sich höchstens {max} Ebenen tief verschachteln.",
     "invalid_cron": "Der Cron-Ausdruck ist ungültig.",

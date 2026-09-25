@@ -20,8 +20,9 @@
   },
   "connection": {
     "service": "Servicio",
-    "cloudNote": "El texto visible de la página y la tarea se envían a este servicio. Las contraseñas y los valores escritos no.",
+    "cloudNote": "Lo que Helena manda decidir, como el texto visible de una página o un correo, va a este servicio. Las contraseñas y los valores tecleados, no.",
     "localNote": "Un servidor propio (Laya u otro servidor System One). Helena solo lo alcanza en esta dirección.",
+    "localModelNote": "Un servidor compatible con OpenAI con logprobs (llama.cpp, Lemonade, vLLM). Helena solo lo alcanza en esta dirección.",
     "address": "Dirección",
     "model": "Modelo",
     "allowPrivate": "Permitir esta dirección local",

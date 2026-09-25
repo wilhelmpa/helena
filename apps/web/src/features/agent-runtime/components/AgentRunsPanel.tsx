@@ -132,7 +132,7 @@ function RunRow({ run, onOpen }: { run: AgentRun; onOpen: () => void }) {
           className="shrink-0"
           title={`${run.modelRoute.fromModel} → ${run.modelRoute.toModel}`}
         >
-          {run.modelRoute.toModel}
+          {`→ ${run.modelRoute.toModel}`}
         </Badge>
       )}
       {run.modelCheck && run.modelCheck.mismatch.length > 0 && (

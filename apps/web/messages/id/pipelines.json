@@ -374,6 +374,7 @@
     "required": "Wajib diisi.",
     "too_long": "Paling banyak {max} karakter.",
     "too_many": "Paling banyak {max} entri.",
+    "too_few": "Minimal {min} entri.",
     "out_of_range": "Antara {min} dan {max}.",
     "too_deep": "Kondisi bertingkat paling banyak {max} level.",
     "invalid_cron": "Ekspresi cron tidak valid.",

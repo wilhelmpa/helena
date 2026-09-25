@@ -94,7 +94,11 @@ export function CredentialDecisionModelFields({
           <p className="text-xs text-muted-foreground">{t('cloudNote')}</p>
         )}
         {backend?.location === 'local' && (
-          <p className="text-xs text-muted-foreground">{t('localNote')}</p>
+          <p className="text-xs text-muted-foreground">
+            {backend.protocol && backend.protocol !== 'systemone'
+              ? t('localModelNote')
+              : t('localNote')}
+          </p>
         )}
       </div>
 

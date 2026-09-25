@@ -374,6 +374,7 @@
     "required": "此项为必填。",
     "too_long": "最多 {max} 个字符。",
     "too_many": "最多 {max} 个条目。",
+    "too_few": "至少 {min} 项。",
     "out_of_range": "须在 {min} 与 {max} 之间。",
     "too_deep": "条件最多嵌套 {max} 层。",
     "invalid_cron": "Cron 表达式无效。",

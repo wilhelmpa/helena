@@ -374,6 +374,7 @@
     "required": "Isto é obrigatório.",
     "too_long": "No máximo {max} caracteres.",
     "too_many": "No máximo {max} itens.",
+    "too_few": "Pelo menos {min} entradas.",
     "out_of_range": "Entre {min} e {max}.",
     "too_deep": "As condições se aninham no máximo {max} níveis.",
     "invalid_cron": "A expressão cron é inválida.",

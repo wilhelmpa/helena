@@ -304,7 +304,7 @@ export function DecisionClassCard({
                 save({ credentialId: value === NONE ? null : Number(value) })
               }
             >
-              <SelectTrigger className="w-72 max-w-full" aria-label={t('connection')}>
+              <SelectTrigger className="w-40 shrink-0 sm:w-72" aria-label={t('connection')}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -330,7 +330,7 @@ export function DecisionClassCard({
                 save({ fallbackCredentialId: value === NONE ? null : Number(value) })
               }
             >
-              <SelectTrigger className="w-72 max-w-full" aria-label={t('fallback')}>
+              <SelectTrigger className="w-40 shrink-0 sm:w-72" aria-label={t('fallback')}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

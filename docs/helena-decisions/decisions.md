@@ -146,10 +146,13 @@ attachments (a large dependency where poppler is there), `@e-invoice-eu/core` (W
    then aborts the request). The fallback only gets the time that is left.
 4. Every answer checked; a question is `decided` when its confidence reaches the threshold.
 5. One row per question in `helena_decision`: class, subject (`run:12`, `chat:34`, `mail:56`,
-   `receipt:7`, `workflow:<run>:<step>`, `claude-code:<session>`), choice, probabilities,
+   `receipt:7`, `workflow:<run>:<step>`, `claude-code:<session>`), the question and the option
+   labels (Helena's wording or the caller's, so the log reads by itself), choice, probabilities,
    confidence, threshold, status, backend, model, latency, tokens and cost (on the first row of a
-   request), the input's SHA-256, and the input text **only** where the class allows it and the
-   owner switched "Eingaben behalten" on. Failures are logged too (status timeout/error/no_backend).
+   request), the input's SHA-256, and the input (the context) **only** where the class allows it
+   and the owner switched "Eingaben behalten" on. Failures are logged too (status
+   timeout/error/no_backend). The log shows Helena's own questions and answers in the owner's
+   language (Art, Priorität, "Buchung #12", "kein Projekt") and the connection by its name.
 6. An agent's decision goes into `agent_usage` (kind `tool`, runtime `decisions`, provider as the
    backend names it; local costs 0).
 7. The right answer later: `recordOutcome` (the owner's correction in the log, the mail
