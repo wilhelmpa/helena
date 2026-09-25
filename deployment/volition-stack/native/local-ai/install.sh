@@ -10,6 +10,7 @@
 #   sudo ./install.sh status                 (with the ROCm checks: rocminfo, KFD memory, HIP)
 #   sudo ./install.sh [--dry-run] [--no-rocm] [--no-npu] install
 #   sudo ./install.sh [--dry-run] models list | pull <name> | load <name> | verify
+#   sudo ./install.sh [--dry-run] models preload list | set <name>... | clear | run
 #   sudo ./install.sh [--dry-run] [--purge] uninstall
 #
 # --no-rocm   Vulkan only (no ROCm SDK, no HIP build): a GPU-only setup on an older kernel.
@@ -57,7 +58,11 @@ PORT=13305
 # so a dry run reads that instead of the machine's (only with --dry-run, checked below).
 R=${HELENA_AI_TEST_ROOT:-}
 ETC=$R/etc/helena
-KEY=$ETC/local-ai.key
+# helena-ai-preload.service hands the key over as a systemd credential (its throwaway user may
+# not read the file itself).
+KEY=${HELENA_AI_KEY_FILE:-$ETC/local-ai.key}
+# The models loaded and pinned whenever Lemonade starts (`models preload set`).
+PRELOAD=$ETC/local-ai-preload
 # The group the API reads the key through: on Kingston the API user's secrets group
 # `volition-plan-secrets` (there is no group `volition-plan`); after the rename helena-secrets.
 # HELENA_API_GROUP overrides it (same rule as native/laya/install.sh).
@@ -81,7 +86,12 @@ DROPIN=/etc/systemd/system/lemond.service.d/helena.conf
 PREFERENCES=/etc/apt/preferences.d/helena-ai
 PROXY_SOCKET=/etc/systemd/system/helena-ai-proxy.socket
 PROXY_SERVICE=/etc/systemd/system/helena-ai-proxy.service
+PRELOAD_SERVICE=/etc/systemd/system/helena-ai-preload.service
 CATALOG=$here/models.tsv
+# The VRAM a preload list may fill: the GPU's memory (the 96 GiB carve-out) minus room for the
+# models that load on demand (a second one for a benchmark, the vision projector's buffers).
+VRAM_FALLBACK=103079215104
+VRAM_HEADROOM=6442450944
 
 DRY_RUN=0
 ROCM=1
@@ -100,7 +110,7 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
-[ -n "$command" ] || { sed -n '2,22p' "$0"; exit 2; }
+[ -n "$command" ] || { sed -n '2,23p' "$0"; exit 2; }
 [ -z "$R" ] || [ "$DRY_RUN" = 1 ] || { echo "HELENA_AI_TEST_ROOT is for --dry-run only" >&2; exit 2; }
 
 say() { printf '%s\n' "$*"; }
@@ -116,7 +126,12 @@ put() {
   chown "$owner" "$tmp"
   mv "$tmp" "$1"
 }
-case "$command $args" in "status "*|"models  list"|"models "|"models  verify") readonly_command=1 ;; *) readonly_command=0 ;; esac
+# `models preload run` is what helena-ai-preload.service runs as its throwaway user: it only
+# asks Lemonade to load models, with the key the unit hands over.
+case "$command $args" in
+  "status "*|"models  list"|"models "|"models  verify"|"models  preload list"|"models  preload"|"models  preload run") readonly_command=1 ;;
+  *) readonly_command=0 ;;
+esac
 [ "$(id -u)" = 0 ] || [ "$DRY_RUN" = 1 ] || [ "$readonly_command" = 1 ] || die "run as root"
 
 # fetch <url> <file> <sha256>: into the download cache, checked; an existing good file is kept.
@@ -375,6 +390,8 @@ install_all() {
     say "no agent isolation here (group volition-agents): no forwarder needed"
   fi
 
+  say "== the models in use load when Lemonade starts ($PRELOAD, models preload set)"
+  install_preload_unit
   run systemctl enable lemond.service
   run systemctl restart lemond.service
   if [ "$DRY_RUN" = 0 ]; then
@@ -385,6 +402,17 @@ install_all() {
   run chmod -R u=rwX,go=rX "$OPT"
   say "Installed. Next: add the server in Helena (Administrator → Server → Lokale KI, or"
   say "apps/api/src/scripts/local-ai-register.ts), then: $0 models pull <name>"
+}
+
+# helena-ai-preload.service runs the installer's own copy (never the checkout, which a deploy
+# changes), with the catalog next to it.
+install_preload_unit() {
+  run install -d -m 0755 "$LIB"
+  run install -m 0755 "$here/install.sh" "$LIB/install.sh"
+  run install -m 0644 "$CATALOG" "$LIB/models.tsv"
+  put "$PRELOAD_SERVICE" 0644 root:root < "$here/systemd/helena-ai-preload.service"
+  run systemctl daemon-reload
+  run systemctl enable helena-ai-preload.service
 }
 
 # ── Models ───────────────────────────────────────────────────────────────────────────────
@@ -474,13 +502,15 @@ models_pull() {
   say "Placed $name. Load it with: $0 models load $name"
 }
 
+# models_load <name> [pin]: `pin` keeps it loaded (Lemonade's LRU never evicts a pinned model).
 models_load() {
-  name=$1
+  name=$1 pin=${2:-}
   line=$(model_line "$name")
   [ -n "$line" ] || die "no model $name in models.tsv"
   ctx=$(echo "$line" | cut -f11)
   backend=$(echo "$line" | cut -f12)
   body="{\"model_name\":\"$name\",\"ctx_size\":${ctx:-65536},\"save_options\":true"
+  [ -z "$pin" ] || body="$body,\"pinned\":true"
   [ -z "$backend" ] || [ "$backend" = - ] || body="$body,\"llamacpp_backend\":\"$backend\""
   # Per model, so Lemonade's own recipe cannot replace it: some recipes add their own
   # --chat-template-kwargs (Qwen3.6: {"preserve_thinking":true}), which dropped our global
@@ -493,6 +523,105 @@ models_load() {
   if [ "$DRY_RUN" = 1 ]; then say "would POST /load $body"; return; fi
   API_TIMEOUT=600 api /load -X POST -H 'content-type: application/json' -d "$body"
   say ""
+}
+
+# ── Models loaded at start (helena-ai-preload.service) ──────────────────────────────────
+
+# The GPU's memory, from the amdgpu driver; the carve-out's size when none is found.
+vram_total() {
+  for card in "$R"/sys/class/drm/card*/device; do
+    [ "$(cat "$card/vendor" 2>/dev/null)" = 0x1002 ] || continue
+    total=$(cat "$card/mem_info_vram_total" 2>/dev/null) && [ -n "$total" ] && { echo "$total"; return; }
+  done
+  echo "$VRAM_FALLBACK"
+}
+
+# What a model takes in VRAM once loaded: its weights, 5 % for the runtime's buffers, and 2.5 GB
+# for the KV cache at its context (Qwen3.6-35B-A3B at 131k measured 26 GB: 23.8 GB of weights).
+vram_of() {
+  total=$(model_line "$1" | cut -f8)
+  echo $((total * 105 / 100 + 2500000000))
+}
+
+preload_list() { [ -r "$PRELOAD" ] && grep -v '^#' "$PRELOAD" | grep -v '^[[:space:]]*$' || true; }
+
+gb() { awk -v b="$1" 'BEGIN { printf "%.1f GB", b / 1e9 }'; }
+
+# preload_check <names...>: every name a llama.cpp model of the catalog, on disk, and all of
+# them together within the VRAM budget. NPU models (FastFlowLM) load on demand: they take
+# system RAM, of which the OS has ~31 GB, and load in seconds.
+preload_check() {
+  budget=$(( $(vram_total) - VRAM_HEADROOM ))
+  used=0
+  for name in "$@"; do
+    line=$(model_line "$name")
+    [ -n "$line" ] || die "no model $name in models.tsv ($0 models list)"
+    [ "$(echo "$line" | cut -f2)" = gguf ] || die "$name runs on the NPU and loads on demand; only GPU models are preloaded"
+    repo=$(echo "$line" | cut -f4)
+    [ -d "$MODELS/hub/models--$(echo "$repo" | sed 's#/#--#')" ] || die "$name is not pulled ($0 models pull $name)"
+    used=$((used + $(vram_of "$name")))
+  done
+  [ "$used" -le "$budget" ] || die "together $(gb "$used") of VRAM, more than the $(gb "$budget") there is room for; leave one out"
+  say "VRAM:          $(gb "$used") of $(gb "$budget") for the models loaded at start"
+}
+
+models_preload_set() {
+  [ $# -gt 0 ] || die "models preload set <name>... (models preload clear empties it)"
+  preload_check "$@"
+  {
+    say "# The models helena-ai-preload.service loads and pins whenever Lemonade starts:"
+    say "# the ones Helena's switched-on kinds of work use (install.sh models preload set)."
+    for name in "$@"; do say "$name"; done
+  } | put "$PRELOAD" 0644 root:root
+  # The unit runs the installer's copy: keep it and the catalog current.
+  install_preload_unit
+  say "Set. They load at the next start of Lemonade, or now with: $0 models preload run"
+}
+
+models_preload_run() {
+  names=$(preload_list)
+  if [ -z "$names" ]; then say "helena-ai: no models to load at start ($PRELOAD)"; return 0; fi
+  if [ "$DRY_RUN" = 0 ]; then
+    i=0
+    until api /health >/dev/null 2>&1; do
+      i=$((i + 1)); [ $i -lt 180 ] || die "Lemonade did not answer on 127.0.0.1:$PORT"; sleep 1
+    done
+  fi
+  # A list edited by hand past the budget loads what fits, in its order.
+  budget=$(( $(vram_total) - VRAM_HEADROOM ))
+  used=0 failed=0
+  for name in $names; do
+    if [ -z "$(model_line "$name")" ] || [ "$(model_line "$name" | cut -f2)" != gguf ]; then
+      say "helena-ai: $name is no GPU model of models.tsv, skipped"; failed=1; continue
+    fi
+    need=$(vram_of "$name")
+    if [ $((used + need)) -gt "$budget" ]; then
+      say "helena-ai: $name does not fit in VRAM next to the others ($(gb $((used + need))) > $(gb "$budget")), skipped"
+      failed=1; continue
+    fi
+    say "helena-ai: loading $name"
+    if (models_load "$name" pin); then used=$((used + need)); else say "helena-ai: $name did not load"; failed=1; fi
+  done
+  return $failed
+}
+
+models_preload() {
+  sub=${1:-list}
+  [ $# -gt 0 ] && shift
+  case "$sub" in
+    list)
+      say "Loaded when Lemonade starts ($PRELOAD):"
+      preload_list | sed 's/^/  /'
+      ;;
+    set) models_preload_set "$@" ;;
+    clear)
+      printf '# No models are loaded at start (install.sh models preload set <name>...).\n' \
+        | put "$PRELOAD" 0644 root:root
+      say "Cleared: models load on first use again."
+      ;;
+    run) models_preload_run ;;
+    *) die "models preload list | set <name>... | clear | run" ;;
+  esac
 }
 
 models_verify() {
@@ -517,13 +646,15 @@ status() {
   say "libxrt-npu2:   $(dpkg-query -W -f='${Version}' libxrt-npu2 2>/dev/null || echo 'not installed')"
   say "NPU device:    $([ -e /dev/accel/accel0 ] && echo present || echo missing)"
   say "forwarder:     $(systemctl is-active helena-ai-proxy.socket 2>/dev/null || true)"
+  preload_state=$(systemctl is-enabled helena-ai-preload.service 2>/dev/null) || true
+  say "preload:       ${preload_state:-not installed}, $(systemctl is-active helena-ai-preload.service 2>/dev/null || true): $(preload_list | tr '\n' ' ')"
   say "key file:      $([ -e "$KEY" ] && stat -c '%U:%G %a' "$KEY" || echo missing)"
   say "backends:      $(ls "$OPT/llamacpp" 2>/dev/null | tr '\n' ' ')"
   rocm_check
   if [ -r "$KEY" ]; then
     health=$(api /health 2>/dev/null || true)
     if [ -n "$health" ]; then
-      say "health:        $(printf '%s' "$health" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("status"), d.get("version"), "loaded:", ", ".join(m.get("model_name","?")+"@"+str(m.get("device")) for m in d.get("all_models_loaded",[])) or "none")' 2>/dev/null)"
+      say "health:        $(printf '%s' "$health" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("status"), d.get("version"), "loaded:", ", ".join(m.get("model_name","?")+"@"+str(m.get("device"))+(" (pinned)" if m.get("pinned") else "") for m in d.get("all_models_loaded",[])) or "none")' 2>/dev/null)"
     else
       say "health:        no answer on 127.0.0.1:$PORT"
     fi
@@ -545,15 +676,16 @@ status() {
 }
 
 uninstall() {
+  run systemctl disable --now helena-ai-preload.service || true
   run systemctl disable --now lemond.service || true
   run systemctl disable --now helena-ai-proxy.socket helena-ai-proxy.service || true
-  run rm -f "$DROPIN" "$PROXY_SOCKET" "$PROXY_SERVICE" "$PREFERENCES"
+  run rm -f "$DROPIN" "$PROXY_SOCKET" "$PROXY_SERVICE" "$PRELOAD_SERVICE" "$PREFERENCES"
   run systemctl daemon-reload
   run apt-get purge -y lemonade-server fastflowlm || true
   run rm -rf "$LIB" "$OPT/llamacpp"
   if [ "$PURGE" = 1 ]; then
-    # Only this installer's key: /etc/helena also holds other keys (native/laya).
-    run rm -rf "$KEY" "$MODELS" "$DOWNLOADS" "$CACHE" "$ROCM_VENV"
+    # Only this installer's files: /etc/helena also holds other keys (native/laya).
+    run rm -rf "$KEY" "$PRELOAD" "$MODELS" "$DOWNLOADS" "$CACHE" "$ROCM_VENV"
     run rmdir --ignore-fail-on-non-empty "$OPT"
   else
     # The ROCm tree stays: Laya (--rocm) may use its PyTorch.
@@ -573,7 +705,8 @@ case "$command" in
       pull) [ -n "${2:-}" ] || die "models pull <name>"; models_pull "$2" ;;
       load) [ -n "${2:-}" ] || die "models load <name>"; models_load "$2" ;;
       verify) models_verify ;;
-      *) die "models list | pull <name> | load <name> | verify" ;;
+      preload) shift; models_preload "$@" ;;
+      *) die "models list | pull <name> | load <name> | verify | preload ..." ;;
     esac
     ;;
 esac
