@@ -57,9 +57,11 @@ export function SharedLoginItem({ login }: { login: SharedLogin }) {
           </Badge>
           <StatusBadge status={sharedLoginStatus(login)}>{state}</StatusBadge>
         </div>
-        <p className="truncate text-xs text-muted-foreground" title={times}>
-          {detail || t('sharedDetail')}
-        </p>
+        {(detail || login.store === 'hermes') && (
+          <p className="truncate text-xs text-muted-foreground" title={times}>
+            {detail || t('sharedDetail')}
+          </p>
+        )}
         {needsOwner && (
           <div className="space-y-1.5 pt-1">
             {login.error && (

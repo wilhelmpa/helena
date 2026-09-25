@@ -48,7 +48,9 @@ export function AgentLoginItem({
   const tRuntime = useTranslations('credentials.runtimeLogin');
   const tCommon = useTranslations('common');
   const needsOwner = agentNeedsOwner(login);
-  const [expanded, setExpanded] = useState(needsOwner);
+  // A login the owner has to make shows its command anyway; "Neu anmelden" opens it for one
+  // that works.
+  const [expanded, setExpanded] = useState(false);
   const showCommand = (expanded || needsOwner) && !!login.command;
   const account = login.account;
 
@@ -65,15 +67,18 @@ export function AgentLoginItem({
             planLabel(account.plan),
             account.email || account.plan ? null : method,
             account.organization,
-            login.refreshedAt
-              ? t('refreshed', { time: formatDurationShort(login.refreshedAt) })
-              : null,
+            login.refreshedAt ? renewedText(login.refreshedAt) : null,
           ]
             .filter(Boolean)
             .join(' · ')
         : login.state === 'unknown'
           ? t('notReported')
           : t('noLogin');
+  function renewedText(at: string): string {
+    return Date.now() - Date.parse(at) < 60_000
+      ? t('refreshedNow')
+      : t('refreshed', { time: formatDurationShort(at) });
+  }
   const checked = login.checkedAt
     ? t('checkedAt', { time: formatDateTime(login.checkedAt) })
     : undefined;
