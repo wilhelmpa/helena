@@ -78,6 +78,16 @@ export function unitOf(backend: string | null, device: string | null): LocalAiUn
   return null;
 }
 
+// What a model of a plain OpenAI-compatible server can do, from its id alone: such servers list
+// no labels. Speech servers (whisper.cpp's, Speaches, a Piper or Kokoro server) name their models
+// after the engine.
+export function capabilitiesFromId(id: string): LocalModelCapability[] {
+  if (/embed/i.test(id)) return ['embeddings'];
+  if (/whisper|parakeet|transcri|(^|[^a-z])(asr|stt)([^a-z]|$)/i.test(id)) return ['transcription'];
+  if (/kokoro|piper|(^|[^a-z])tts([^a-z]|$)|text-to-speech/i.test(id)) return ['speech'];
+  return ['chat'];
+}
+
 function openAiModels(body: unknown): LocalModel[] {
   return entries(body)
     .map((entry) => {
@@ -86,7 +96,7 @@ function openAiModels(body: unknown): LocalModel[] {
         id,
         name: id,
         unit: null,
-        capabilities: /embed/i.test(id ?? '') ? ['embeddings'] : ['chat'],
+        capabilities: capabilitiesFromId(id ?? ''),
         contextLength: number(entry.context_length) ?? number(entry.max_model_len),
         loaded: false,
       });

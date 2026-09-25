@@ -85,7 +85,24 @@ export const BUILTIN_TASK_CLASSES: LocalAiTaskClass[] = [
     capability: 'transcription',
     priority: 'interactive',
     inMasterDefault: true,
-    wired: false,
+    // The chat's dictation and conversation mode (modules/voice, docs/helena-decisions/voice.md).
+    // No eval gate: the case set would be recorded speech, which the eval context cannot send
+    // yet; Whisper's German is measured in the voice E2E instead.
+    wired: true,
+  },
+  {
+    id: 'speech',
+    label: label('speech'),
+    description: description('speech'),
+    // Kokoro and Piper run on the CPU; a GPU engine (MOSS-TTS) names its unit itself.
+    unit: 'cpu',
+    capability: 'speech',
+    priority: 'interactive',
+    // Not in the first set: the voice has to speak the owner's language, which the owner
+    // decides (Lemonade's Kokoro speaks no German).
+    inMasterDefault: false,
+    // The conversation mode reads answers aloud through it (modules/voice).
+    wired: true,
   },
   {
     id: 'routines',
