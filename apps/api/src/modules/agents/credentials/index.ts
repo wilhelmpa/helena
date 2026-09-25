@@ -12,6 +12,8 @@ import {
   CredentialEntryResponse,
   CredentialGrantsResponse,
   CredentialUsePageResponse,
+  EnvVariablesResponse,
+  EnvironmentResponse,
   SshKeysResponse,
   WebLoginsResponse,
   chatWorkParams,
@@ -20,6 +22,7 @@ import {
   credentialListQuery,
   credentialUseListQuery,
   credentialUsesBody,
+  environmentQuery,
   runWorkParams,
   setCredentialGrantsBody,
   updateCredentialEntryBody,
@@ -42,6 +45,7 @@ import {
   workRefOf,
 } from './delivery';
 import { recordOwnerChange } from './audit';
+import { deliverEnvVariables, listEnvironment } from './env';
 
 function found<T>(entry: T | null): T {
   if (!entry) throw new HttpError(404, 'Credential not found');
@@ -198,6 +202,36 @@ export const credentialRoutes = new Elysia({
   )
 
   .get(
+    '/teams/:teamId/agent-environment',
+    async ({ membership, query }) => {
+      if ((query.agentId === undefined) === (query.projectId === undefined)) {
+        throw new HttpError(400, 'Name an agent or a project.');
+      }
+      return {
+        variables: await listEnvironment(
+          membership.teamId,
+          query.agentId !== undefined
+            ? { agentId: query.agentId }
+            : { projectId: query.projectId! },
+        ),
+      };
+    },
+    {
+      params: teamParams,
+      query: environmentQuery,
+      teamPermission: ['integrations', 'read'],
+      response: { 200: EnvironmentResponse, ...commonErrors },
+      detail: {
+        summary: "List an agent's or a project's environment variables",
+        description:
+          'The environment variables from Zugänge that reach the runs of an agent, or of the ' +
+          "agents of a project: each variable's name, its credential and the grants it comes " +
+          'through. Values are never returned.',
+      },
+    },
+  )
+
+  .get(
     '/teams/:teamId/credentials/:credentialId/uses',
     async ({ params, membership, query }) => {
       found(await getCredentialEntry(params.credentialId, membership.teamId));
@@ -293,6 +327,47 @@ export const credentialRoutes = new Elysia({
       detail: {
         summary: 'Read the SSH keys of a claimed chat answer',
         description: 'The SSH keys granted to the calling agent, for git.',
+      },
+    },
+  )
+
+  .get(
+    '/agent-runs/:runId/env',
+    async ({ agent, params, set }) => {
+      set.headers['Cache-Control'] = 'private, no-store';
+      const work = await claimedWork(agent.id, { runId: params.runId });
+      return { variables: await deliverEnvVariables(agent, work) };
+    },
+    {
+      runnerAgent: true,
+      params: runWorkParams,
+      response: { 200: EnvVariablesResponse, ...commonErrors },
+      detail: {
+        summary: 'Read the environment variables of a claimed run',
+        description:
+          'The API keys, secrets and variables granted to the calling agent (or its ' +
+          "project) with an environment variable name, for the run's command. Only for a " +
+          'run the caller holds under a live lease; every delivery is in the audit log.',
+      },
+    },
+  )
+
+  .get(
+    '/agent-chats/:messageId/env',
+    async ({ agent, params, set }) => {
+      set.headers['Cache-Control'] = 'private, no-store';
+      const work = await claimedWork(agent.id, { messageId: params.messageId });
+      return { variables: await deliverEnvVariables(agent, work) };
+    },
+    {
+      runnerAgent: true,
+      params: chatWorkParams,
+      response: { 200: EnvVariablesResponse, ...commonErrors },
+      detail: {
+        summary: 'Read the environment variables of a claimed chat answer',
+        description:
+          "The environment variables granted to the calling agent, for the chat answer's " +
+          "command; the chat's project decides between a team's and a project's credential.",
       },
     },
   )

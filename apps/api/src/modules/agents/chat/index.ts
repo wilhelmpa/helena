@@ -65,6 +65,7 @@ import {
   updateChat,
 } from './threads';
 import { resolveAttachments } from './attachments';
+import { maskForTeam } from '../credentials/env';
 
 // Chatting with an external agent: the member's side (send a message, follow the
 // answer) and the runner's side (take the next answer to produce, report AG-UI events,
@@ -672,7 +673,8 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
   .post(
     '/agent-chats/:messageId/events',
     async ({ agent, params, body }) => {
-      const ack = await appendEvents(agent.id, params.messageId, body.events, body.sessionId);
+      const events = await maskForTeam(agent.teamId, body.events);
+      const ack = await appendEvents(agent.id, params.messageId, events, body.sessionId);
       if (!ack) throw new HttpError(404, 'Message not found');
       return ack;
     },
@@ -716,7 +718,8 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
   .post(
     '/agent-chats/:messageId/result',
     async ({ agent, params, body }) => {
-      const ok = await finishMessage(agent.id, params.messageId, body, agent.runtime);
+      const result = await maskForTeam(agent.teamId, body);
+      const ok = await finishMessage(agent.id, params.messageId, result, agent.runtime);
       if (!ok) throw new HttpError(404, 'Message not found');
       return noContent();
     },

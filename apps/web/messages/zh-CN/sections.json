@@ -146,6 +146,10 @@
       "label": "Autopilot",
       "description": "本项目智能体的自主程度及其预算。"
     },
+    "environment": {
+      "label": "环境变量",
+      "description": "此项目的智能体在运行中从凭据获得哪些变量。"
+    },
     "browser": {
       "label": "浏览器",
       "description": "项目浏览器可以打开的域名、拟人输入节奏以及锁定超时。"

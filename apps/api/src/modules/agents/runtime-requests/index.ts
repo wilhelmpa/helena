@@ -9,6 +9,7 @@ import {
   runtimeRequestParams,
 } from './model';
 import { answerRuntimeRequest, claimRuntimeRequest } from './service';
+import { maskForTeam } from '../credentials/env';
 
 // The runner's side of Helena's questions to an agent's runtime (sessions, transcripts,
 // logs, health, curator, emergency stop), authenticated with the agent's own key.
@@ -36,7 +37,10 @@ export const agentRuntimeRequestRoutes = new Elysia({
   .post(
     '/agent-runtime/requests/:requestId/answer',
     async ({ agent, params, body }) => {
-      if (!(await answerRuntimeRequest(agent.id, params.requestId, body))) {
+      // Transcripts and logs can hold a delivered secret long after its run: masked here,
+      // with the team's values as they are now.
+      const answer = await maskForTeam(agent.teamId, body);
+      if (!(await answerRuntimeRequest(agent.id, params.requestId, answer))) {
         throw new HttpError(404, 'Request not found or already closed');
       }
       return noContent();

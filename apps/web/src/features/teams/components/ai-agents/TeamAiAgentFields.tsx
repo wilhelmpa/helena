@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { type AgentFormValue } from '../../utils/agentForm';
 import { AgentFormSection } from './AgentFormSection';
 import AgentAccessSection from './AgentAccessSection';
+import AgentEnvironmentSection from './AgentEnvironmentSection';
 import AgentProjectsSection from './AgentProjectsSection';
 import AgentTokenSection from './AgentTokenSection';
 import AgentTriggersSection from './AgentTriggersSection';
@@ -152,6 +153,12 @@ export default function TeamAiAgentFields({
     />
   );
 
+  // An agent that exists shows the variables its runs receive; a template runs nowhere.
+  const environmentSection =
+    agent && !agent.template ? (
+      <AgentEnvironmentSection key="environment" {...sectionProps('environment')} agent={agent} />
+    ) : null;
+
   // A template works in no project, and an agent created in a project works in that one.
   const projectsSection =
     value.template || value.projectId != null ? null : (
@@ -258,6 +265,7 @@ export default function TeamAiAgentFields({
     toolsSection,
     tokenSection,
     accessSection,
+    environmentSection,
     triggersSection,
     runnerSection,
   ];

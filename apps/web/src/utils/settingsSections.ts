@@ -13,6 +13,7 @@ import {
   Shapes,
   SlidersHorizontal,
   Tags,
+  Variable,
   Webhook,
   Zap,
 } from 'lucide-react';
@@ -109,6 +110,12 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
   {
     slug: 'network',
     icon: Globe,
+    resource: 'ai_agents',
+    group: 'automation',
+  },
+  {
+    slug: 'environment',
+    icon: Variable,
     resource: 'ai_agents',
     group: 'automation',
   },

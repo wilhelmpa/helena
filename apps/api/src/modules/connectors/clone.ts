@@ -2,6 +2,7 @@ import {
   db,
   aiAgent,
   integrationCredential,
+  organizationAgentAssignment,
   project,
   projectMember,
   projectViewFolder,
@@ -9,13 +10,19 @@ import {
 } from '@repo/db';
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
+import { projectSlug } from '#shared/agent-socket';
 import { enqueueAgentRun } from '#modules/agents/core/run-queue';
+import { HOME_AGENT_USERNAME } from '#modules/agents/core/home-agent';
+import { projectRoot } from '#modules/project-files/roots';
 
 // "Repo in Bereichsordner klonen": the owner picks an SSH key, a project area and a
 // repository; the runner of an agent working in the project clones it with that key into
-// the area's folder of the workspace (a run with trigger 'workspace', see
+// the area's folder of the project's workspace (a run with trigger 'workspace', see
 // packages/runner/src/workspace-job.ts). The workspace repository then ignores the nested
-// repository.
+// repository. With agent isolation the clone runs as the project's own user, so the agent
+// has to be one whose runner works in that project: its coordinator first, then an agent
+// of that project alone; the Home agent, whose runner works in a workspace of its own, only
+// when the project has no agent (2026-09-25: runs 90/91 cloned into Home's workspace).
 
 export interface CloneTarget {
   url: string;
@@ -124,7 +131,7 @@ export async function startClone(
         sql`exists (select 1 from ${projectMember} where ${projectMember.userId} = ${aiAgent.userId} and ${projectMember.projectId} = ${target.id})`,
       ),
     )
-    .orderBy(asc(aiAgent.id))
+    .orderBy(cloneAgentRank(), asc(aiAgent.id))
     .limit(1);
   const agent = agents[0];
   if (!agent) {
@@ -141,7 +148,28 @@ export async function startClone(
     issueId: null,
     sourceActivityId: null,
     trigger: 'workspace',
-    prompt: JSON.stringify({ op: 'git_clone', url, folder, name, credentialId: key.id }),
+    // The project's workspace, which the runner resolves the folder against (never its own
+    // working directory), and its slug, which an isolated runner checks is its own.
+    prompt: JSON.stringify({
+      op: 'git_clone',
+      url,
+      folder,
+      name,
+      credentialId: key.id,
+      slug: projectSlug(target.key),
+      workspace: projectRoot(target.key, 'code').directory,
+    }),
   });
   return { runId, agentId: agent.id, agentName: agent.name, folder, name };
+}
+
+// The project's coordinator first, then an agent that works in this one project, then one
+// that works in several, and the Home agent last.
+function cloneAgentRank() {
+  return sql`case
+    when lower(${aiAgent.username}) = ${HOME_AGENT_USERNAME} then 3
+    when exists (select 1 from ${organizationAgentAssignment} oa where oa.agent_id = ${aiAgent.id} and oa.role = 'coordinator') then 0
+    when (select count(*) from ${projectMember} pm where pm.user_id = ${aiAgent.userId}) = 1 then 1
+    else 2
+  end`;
 }

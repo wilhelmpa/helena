@@ -162,6 +162,11 @@ export const ConnectionsResponse = t.Object({
   sshKeys: t.Array(
     t.Object({ id: t.Number(), label: t.String(), publicKey: t.Nullable(t.String()) }),
   ),
+  environment: t.Array(t.Object({ name: t.String(), label: t.String(), secret: t.Boolean() }), {
+    description:
+      'The environment variables your commands receive in each run and chat answer. Use ' +
+      'them by name ($NAME); never print a secret one.',
+  }),
 });
 
 export const ToolCallResponse = t.Object({

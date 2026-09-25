@@ -3,6 +3,7 @@ import { noContent } from '#shared/http';
 import { HttpError } from '#shared/lib';
 import { commonErrors, errors } from '#shared/responses';
 import { runnerAuth } from '../runner-auth';
+import { maskForTeam } from '../credentials/env';
 import {
   ClaimResponse,
   releaseQuery,
@@ -66,7 +67,12 @@ export const agentRunnerRoutes = new Elysia({
   .post(
     '/agent-runs/:runId/result',
     async ({ agent, params, query, body }) => {
-      const answer = await finishRun(agent, params.runId, body, query.claim);
+      const answer = await finishRun(
+        agent,
+        params.runId,
+        await maskForTeam(agent.teamId, body),
+        query.claim,
+      );
       if (!answer) throw new HttpError(404, 'Run not found');
       return answer;
     },
@@ -89,7 +95,7 @@ export const agentRunnerRoutes = new Elysia({
   .post(
     '/agent-runs/:runId/reflection',
     async ({ agent, params, body }) => {
-      if (!(await recordReflection(agent, params.runId, body))) {
+      if (!(await recordReflection(agent, params.runId, await maskForTeam(agent.teamId, body)))) {
         throw new HttpError(404, 'No reflection of this run is waiting');
       }
       return noContent();

@@ -32,6 +32,11 @@ export interface RuntimeTaskSettings {
   // the command a runtime with pre-tool hooks runs to ask Helena's policy engine.
   autopilotLevel?: number | null;
   policyHook?: string | null;
+  // The environment variables Helena delivered for this run or chat answer (Zugänge →
+  // "Als Umgebungsvariable an Agenten geben"), by name, and the other names in the command's
+  // environment. A runtime that filters what its tool processes inherit lets the delivered
+  // ones through and keeps filtering the rest (Codex: shell_environment_policy).
+  toolEnv?: { delivered: string[]; present: string[] } | null;
 }
 
 export interface RuntimeCapabilities {
@@ -85,6 +90,10 @@ export interface CliCommand {
   tail: string[];
   // Whether a failure says the resumed session is gone.
   sessionLost?: (error: string) => boolean;
+  // The variable naming the directory the runtime keeps its scratch files in, when those
+  // can hold the environment (Hermes' terminal writes its shell snapshot there). The runner
+  // points it at a directory private to the run and removes it afterwards.
+  scratchDirEnv?: string;
 }
 
 export interface AcpLaunch {

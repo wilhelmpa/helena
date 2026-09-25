@@ -6,8 +6,9 @@ import { LoginUseReader } from './logins';
 import type { HermesRunSettings } from './policy';
 import { SpendReader } from './spend';
 import { observeLimits } from './limits/context';
-import { withInstructions } from './run';
+import { runRedactor, withInstructions } from './run';
 import { runModelReport, type RuntimeAdapter } from './runtime';
+import { SecretMask } from '@helena/sdk';
 
 // The command is the same one that handles a queued run; what differs is that its output
 // is reported while it is still being written, so the person waiting in the chat reads the
@@ -38,6 +39,11 @@ export async function answer(
 ): Promise<void> {
   // Reported once: repeating it on every batch is a field the server has to ignore.
   let reported = message.sessionId !== null;
+  // The values handed to the command (the agent's key, its MCP secrets, the variables
+  // delivered for this answer) never reach the chat.
+  const mask = new SecretMask(
+    runRedactor(config, hermes?.env ?? {}, hermes?.delivered?.secrets).secrets(),
+  );
   const stream: AnswerStream = new AnswerStream(
     config.outputFormat,
     message.threadId,
@@ -47,6 +53,7 @@ export async function answer(
       if (started) reported = true;
       if (await client.chatEvents(message.id, events, started)) stop.abort();
     },
+    mask,
   );
   // A flush that fails is not fatal: the next one carries what it left behind.
   const flushing = setInterval(() => {
@@ -80,6 +87,7 @@ export async function answer(
         ...hermes?.env,
       },
       hooks: hermes?.hooks,
+      delivered: hermes?.delivered?.names,
     },
     {
       onData: (chunk) => {
@@ -126,7 +134,7 @@ export async function answer(
     });
     return;
   }
-  const error = outcome.error ?? 'The command failed';
+  const error = mask.text(outcome.error ?? 'The command failed');
   // The server unbinds the session and queues the answer again, with the conversation
   // framed into its prompt, so the person sees no failure for it.
   if (message.sessionId !== null && presetOf(config)?.sessionLost?.(error)) {

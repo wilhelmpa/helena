@@ -1,5 +1,13 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test';
-import { db, mailAccount, connectorAction, integrationCredential } from '@repo/db';
+import path from 'node:path';
+import {
+  db,
+  agentRun,
+  mailAccount,
+  connectorAction,
+  integrationCredential,
+  projectMember,
+} from '@repo/db';
 import { eq } from 'drizzle-orm';
 import {
   clearGoogleTokenCache,
@@ -14,6 +22,7 @@ import { processConnectorActions } from '../../tools';
 import { setGogBrokerForTests } from '../../google/engine';
 import { replaceDefaultPolicy } from '../../policy';
 import { cloneTarget } from '../../clone';
+import { bootstrapHomeAgent } from '../../../../scripts/bootstrap-home-agent';
 
 // The access center's connectors: a Google account signed in through a fake Google, its
 // grants to agents and projects (read vs write, per service), the policy and the owner's
@@ -576,6 +585,62 @@ describe('SSH keys', () => {
       .teams({ teamId })
       .access.audit.get({ query: { credentialId: key.id } });
     expect(log.data!.items.map((item) => item.purpose)).toContain('git (SSH), clone job');
+  });
+
+  it("sends a clone to the project's own agent and names the project's workspace", async () => {
+    // The Home agent works in every project and has the lowest id; runs 90/91 on 2026-09-25
+    // went to it and landed in Home's workspace.
+    const owner = await signUpTestUser({ name: 'Owner' });
+    const asOwner = authedApi(owner.cookie);
+    const home = await bootstrapHomeAgent();
+    if (home.status !== 'ready') throw new Error('Home agent was not provisioned');
+    const mkt = (await asOwner.projects.post({ key: 'MKT', name: 'Marketing' })).data!;
+    const teamId = mkt.teamId;
+    const homeProjects = (await asOwner.teams({ teamId })['ai-agents'].get()).data!.find(
+      (agent) => agent.id === home.agentId,
+    )!.projects;
+    expect(homeProjects.map((project) => project.key)).toContain('MKT');
+    const writer = await externalAgent(asOwner, 'writer');
+    const key = (
+      await asOwner.teams({ teamId }).credentials.post({ kind: 'ssh_key', label: 'Deploy' })
+    ).data!;
+    const clone = (agentId?: number) =>
+      asOwner
+        .teams({ teamId })
+        .credentials({ credentialId: key.id })
+        .clone.post({
+          projectId: mkt.id,
+          url: 'git@github.com:wilhelmpa/homepage.git',
+          ...(agentId !== undefined && { agentId }),
+        });
+
+    // The project's coordinator, which a new project gets.
+    const started = (await clone()).data!;
+    expect(started).toMatchObject({ agentName: 'Hermes MKT Coordinator', name: 'homepage' });
+    // Without one: an agent of this one project, still not the Home agent.
+    const coordinatorUser = (await asOwner.teams({ teamId })['ai-agents'].get()).data!.find(
+      (agent) => agent.id === started.agentId,
+    )!.userId;
+    await db.delete(projectMember).where(eq(projectMember.userId, coordinatorUser));
+    expect((await clone()).data).toMatchObject({ agentId: writer.id });
+    const [run] = await db.select().from(agentRun).where(eq(agentRun.id, started.runId));
+    const workspace = path.join(
+      path.resolve(
+        process.env.PROJECT_WORKSPACE_ROOT?.trim() || '/srv/volition/workspaces/projects',
+      ),
+      'mkt',
+    );
+    expect(JSON.parse(run!.prompt)).toEqual({
+      op: 'git_clone',
+      url: 'git@github.com:wilhelmpa/homepage.git',
+      folder: '',
+      name: 'homepage',
+      credentialId: key.id,
+      slug: 'mkt',
+      workspace,
+    });
+    // The owner may still name the agent.
+    expect((await clone(home.agentId)).data).toMatchObject({ agentId: home.agentId });
   });
 
   it('checks the repository address of a clone', () => {

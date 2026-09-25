@@ -1,4 +1,13 @@
-import { BrainCircuit, Cpu, Globe, KeyRound, Lock, Plug, TerminalSquare } from 'lucide-react';
+import {
+  BrainCircuit,
+  Cpu,
+  Globe,
+  KeyRound,
+  Lock,
+  Plug,
+  TerminalSquare,
+  Variable,
+} from 'lucide-react';
 import type { ListedKind } from '@/lib/api/endpoints/credentials';
 
 export const CREDENTIAL_KIND_ICONS = {
@@ -8,6 +17,7 @@ export const CREDENTIAL_KIND_ICONS = {
   secret: Lock,
   runtime_login: Cpu,
   decision_model: BrainCircuit,
+  variable: Variable,
   mcp_oauth: Plug,
 } satisfies Record<ListedKind, typeof Globe>;
 

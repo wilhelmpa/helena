@@ -18,6 +18,7 @@ import {
   runEventsRunnerQuery,
 } from './model';
 import { appendRunEvents, continueRun, getRunDetail, listRunEvents } from './service';
+import { maskForTeam } from '../credentials/env';
 
 // A run as a timeline: the runner sends what the command writes while it runs, a person
 // reads it live and afterwards, and can continue the run's session with a new instruction.
@@ -32,7 +33,8 @@ export const runTimelineRoutes = new Elysia({
   .post(
     '/agent-runs/:runId/events',
     async ({ agent, params, query, body }) => {
-      const ack = await appendRunEvents(agent.id, params.runId, query.claim, body.events);
+      const events = await maskForTeam(agent.teamId, body.events);
+      const ack = await appendRunEvents(agent.id, params.runId, query.claim, events);
       if (!ack) throw new HttpError(404, 'Run not found');
       return ack;
     },

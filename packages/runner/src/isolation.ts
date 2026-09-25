@@ -199,14 +199,22 @@ export function launch(
   });
 }
 
+export interface HelperOptions {
+  // How long the operation may run; five minutes by default (a clone takes longer).
+  runtimeMaxSec?: number;
+  socketPath?: string;
+}
+
 // Runs one operation of the runner's own profile helper (cli.ts `profile-helper`) as the
 // project user, in the agent's profile, and returns what it answers.
 export async function profileHelper<T>(
   isolation: AgentIsolation,
   cwd: string,
   operation: Record<string, unknown>,
-  socketPath = launcherSocket(),
+  options: HelperOptions | string = {},
 ): Promise<T> {
+  const { runtimeMaxSec = 300, socketPath = launcherSocket() } =
+    typeof options === 'string' ? { socketPath: options } : options;
   let stdout = '';
   let stderr = '';
   const attempt = (agentRuntime: string | undefined) => {
@@ -222,7 +230,7 @@ export async function profileHelper<T>(
         cwd,
         agentId: isolation.agentId,
         work: { kind: 'helper', id: null },
-        limits: { runtimeMaxSec: 300 },
+        limits: { runtimeMaxSec },
         ...(agentRuntime ? { agentRuntime } : {}),
       },
       {

@@ -11,6 +11,7 @@ import { runModelReport, type RuntimeAdapter } from './runtime';
 import { SpendReader } from './spend';
 import { observeLimits } from './limits/context';
 import { runCwd } from './workdir';
+import { SecretMask } from '@helena/sdk';
 
 // `stop` is aborted when the heartbeat says the run was canceled or is no longer this
 // runner's, and when the runner stops. The command is killed and nothing is reported.
@@ -24,13 +25,17 @@ const SERVER_ERROR_RETRIES = 20;
 // How often the run's timeline in Helena receives what the command wrote since.
 const EVENTS_FLUSH_MS = 1_000;
 
-// The secrets a run's command was handed, which its timeline must not show: the runner's own
-// and the MCP secrets of this run.
-export function runRedactor(config: RunnerConfig, env: Record<string, string>): Redactor {
+// The secrets a run's command was handed, which its timeline must not show: the runner's own,
+// the MCP secrets of this run and the environment variables Helena delivered for it.
+export function runRedactor(
+  config: RunnerConfig,
+  env: Record<string, string>,
+  delivered: string[] = [],
+): Redactor {
   const mcpSecrets = Object.entries(env)
     .filter(([name]) => name.startsWith('ITSAPLAN_MCP_SECRET_'))
     .map(([, value]) => value);
-  return new Redactor([...runnerRedactor(config).secrets(), ...mcpSecrets]);
+  return new Redactor([...runnerRedactor(config).secrets(), ...mcpSecrets, ...delivered]);
 }
 
 // The command's output as AG-UI events for the run's timeline in Helena, redacted, while the
@@ -49,6 +54,7 @@ function runTimeline(
     async (events) => {
       await client.runEvents(run.id, run.claim, await redactor.value(events));
     },
+    new SecretMask(redactor.secrets()),
   );
   const timer = setInterval(() => {
     void stream.flush().catch(() => {});
@@ -141,7 +147,9 @@ export async function perform(
     }
   };
   const answer = new FinalAnswerReader(config.outputFormat, saveSession);
-  const timeline = runTimeline(config, client, run, runRedactor(config, hermes?.env ?? {}));
+  const redactor = runRedactor(config, hermes?.env ?? {}, hermes?.delivered?.secrets);
+  const mask = new SecretMask(redactor.secrets());
+  const timeline = runTimeline(config, client, run, redactor);
   // Reported as soon as it is known, not only with the result: a crash before the run
   // reports keeps this session for the next claim to resume. Best effort -- a stale
   // claim or a server that predates this route is not fatal to the run itself.
@@ -157,6 +165,7 @@ export async function perform(
       toolsets: hermes?.toolsets ?? null,
       env: { ...task.env, ...hermes?.env },
       hooks: hermes?.hooks,
+      delivered: hermes?.delivered?.names,
     },
     {
       onData: (chunk) => {
@@ -203,10 +212,12 @@ export async function perform(
     sessionId,
     usage.model(),
   );
+  // The answer and the error are the command's own words: masked like its timeline.
   const result = {
     ...outcome,
+    ...(outcome.error !== undefined && { error: mask.text(outcome.error) }),
     // The answer itself, where the command prints an event stream (Claude Code, Codex).
-    output: answer.text() ?? outcome.output,
+    output: mask.text(answer.text() ?? outcome.output),
     usage: outcome.usage ?? usage.value(),
     spend: spend.value({
       model: run.model,

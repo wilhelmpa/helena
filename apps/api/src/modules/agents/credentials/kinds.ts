@@ -12,6 +12,7 @@ export const CREDENTIAL_KINDS = [
   'secret',
   'runtime_login',
   'decision_model',
+  'variable',
 ] as const;
 
 // A decision_model ("Entscheidungsmodell (Jev)", docs/helena-decisions/browser-task.md §3.3) is
@@ -65,15 +66,18 @@ export const SECRET_FIELDS = {
   secret: ['value'],
   runtime_login: ['value'],
   decision_model: ['value'],
+  // A variable's value is not secret (an account id, a region): it is stored readable and
+  // shown, and delivered like a secret's.
+  variable: [],
   mcp_oauth: ['tokens', 'client'],
 } as const satisfies Record<ListedKind, readonly string[]>;
 
 // The fields a request may set for each kind. An ssh_key's keys are generated.
 const INPUT_FIELDS: Record<CredentialKind, readonly string[]> = {
   web_login: ['loginUrl', 'allowedDomains', 'username', 'password', 'totpSecret', 'notes'],
-  api_key: ['value', 'notes'],
+  api_key: ['value', 'envName', 'notes'],
   ssh_key: ['notes'],
-  secret: ['value', 'notes'],
+  secret: ['value', 'envName', 'notes'],
   runtime_login: ['runtime', 'method', 'value', 'notes'],
   decision_model: [
     'provider',
@@ -85,6 +89,7 @@ const INPUT_FIELDS: Record<CredentialKind, readonly string[]> = {
     'value',
     'notes',
   ],
+  variable: ['value', 'envName', 'notes'],
 };
 
 export interface CredentialFields {
@@ -95,6 +100,9 @@ export interface CredentialFields {
   totpSecret?: string | null;
   value?: string;
   notes?: string;
+  // api_key, secret, variable: the environment variable it reaches the agents' commands in
+  // (env.ts); null or empty takes it away.
+  envName?: string | null;
   runtime?: LoginRuntime;
   method?: LoginMethod;
   // decision_model
