@@ -89,11 +89,22 @@ export const modelCheck = t.Object(
     configured: t.Object({
       model: t.Nullable(t.String()),
       reasoning: t.Nullable(t.String()),
-      source: t.Union([t.Literal('run'), t.Literal('agent'), t.Literal('default')], {
-        description:
-          "'run' when the run names its own model (a workflow step), 'agent' when the " +
-          "agent's settings do, 'default' when the runtime's own default applies.",
-      }),
+      source: t.Union(
+        [t.Literal('run'), t.Literal('agent'), t.Literal('default'), t.Literal('local')],
+        {
+          description:
+            "'run' when the run names its own model (a workflow step), 'agent' when the " +
+            "agent's settings do, 'default' when the runtime's own default applies, 'local' " +
+            'when Lokale KI handed the run a local model for its kind of work.',
+        },
+      ),
+      workClass: t.Optional(
+        t.String({
+          description:
+            "The run's kind of work for Lokale KI (a task class: `summaries`, `routines`, " +
+            '`coordinator-triage`), when it has one',
+        }),
+      ),
     }),
     used: t.Nullable(
       t.Object({

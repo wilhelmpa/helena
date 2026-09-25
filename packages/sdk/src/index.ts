@@ -307,6 +307,8 @@ export {
   LOCAL_AI_UNITS,
   LOCAL_MODEL_CAPABILITIES,
   LOCAL_PROVIDER_PREFIX,
+  classEvalVersion,
+  classModes,
   isLocalProvider,
   isModelServerSlug,
   localModelId,

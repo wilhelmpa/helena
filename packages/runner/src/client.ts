@@ -72,6 +72,10 @@ export interface ReflectionRequest {
   prompt: string;
   maxTurns: number;
   runBudgetSeconds: number;
+  // The model the reflection runs on when it is not the run's: a local model
+  // (`helena-<slug>/<id>`) Helena's local AI takes the reflection on. An older server sends
+  // none.
+  model?: string | null;
 }
 
 // What the agent saved in a reflection: one entry per memory or skill write that succeeded.
@@ -304,6 +308,9 @@ export class Client {
       output?: string;
       error?: string;
       usage?: ContextUsage | null;
+      // The last model call's counts: how large the session is, which decides where Helena
+      // runs its reflection. An older server ignores it.
+      context?: ContextUsage | null;
       sessionId?: string;
       toolCalls?: number;
       // Every model call of the run summed, with the model that ran, for the token ledger.

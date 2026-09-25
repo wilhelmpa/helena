@@ -257,12 +257,15 @@ export function routeFor(
 
 // The models whose newest eval for a class failed, as Helena names them. A class in `prefer`
 // or `only` does not route to them: its configured model answers until a new eval passes.
-export async function failedEvalModels(classId: string): Promise<Set<string>> {
+// With `evalVersion`, a newest eval of an older version (the class's eval changed since)
+// counts as failed too.
+export async function failedEvalModels(classId: string, evalVersion = 1): Promise<Set<string>> {
   const rows = await db
     .select({
       model: helenaLocalAiEval.model,
       slug: helenaModelServer.slug,
       passed: helenaLocalAiEval.passed,
+      evalVersion: helenaLocalAiEval.evalVersion,
     })
     .from(helenaLocalAiEval)
     .innerJoin(helenaModelServer, eq(helenaModelServer.id, helenaLocalAiEval.serverId))
@@ -275,7 +278,7 @@ export async function failedEvalModels(classId: string): Promise<Set<string>> {
     const id = localModelId(row.slug, row.model);
     if (seen.has(id)) continue;
     seen.add(id);
-    if (!row.passed) failed.add(id);
+    if (!row.passed || row.evalVersion < evalVersion) failed.add(id);
   }
   return failed;
 }
@@ -286,11 +289,15 @@ export async function resolveLocalRoute(input: {
   unit: LocalAiUnit;
   capability: LocalModelCapability;
   requireUp?: boolean;
+  // The class's eval version (@helena/sdk classEvalVersion): an older eval gates like a
+  // failed one.
+  evalVersion?: number;
 }): Promise<RouteResult> {
+  const { evalVersion, ...route } = input;
   const [policy, servers, failed] = await Promise.all([
     readLocalAiPolicy(),
     listModelServers(),
-    failedEvalModels(input.classId),
+    failedEvalModels(input.classId, evalVersion),
   ]);
-  return routeFor({ ...input, policy, servers, failed });
+  return routeFor({ ...route, policy, servers, failed });
 }

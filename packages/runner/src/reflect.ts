@@ -6,10 +6,12 @@ import { runEnv } from './run';
 import { SpendReader } from './spend';
 import { runCwd } from './workdir';
 
-// A reflection continues the session of a finished run with the prompt Plan sent. The
+// A reflection continues the session of a finished run with the prompt Helena sent. The
 // agent keeps what the run taught it with its memory and skill tools and has no other
-// tool, so the turn cannot do more work. Its tokens are reported to Plan, which adds them
-// to the run's.
+// tool, so the turn cannot do more work. Its tokens are reported to Helena, which adds them
+// to the run's. Helena may name another model for it: a local one (its local AI takes the
+// reflection of a small session), whose provider the profile lists while local AI is on; the
+// profile's fallback chain starts with the agent's own model, which answers if it fails.
 
 const REFLECTION_TOOLSETS = ['memory', 'skills'];
 const SAVED_TOOLS: Record<string, ReflectionSaved['tool']> = {
@@ -91,6 +93,10 @@ export async function reflect(
     report = { status: 'failed', saved: [], error: 'The agent has no memory or skill tools' };
   } else {
     const reader = new ReflectionReader();
+    // The model Helena named, with no reasoning level of the run's (the local provider says
+    // how its turns think), or the run's own.
+    const model = request.model ?? run.model;
+    const thinkingLevel = request.model ? null : run.thinkingLevel;
     const spend = new SpendReader(
       config.outputFormat,
       config.command ? null : (config.agent ?? null),
@@ -105,8 +111,8 @@ export async function reflect(
         prompt: request.prompt,
         systemPrompt: '',
         sessionId,
-        model: run.model,
-        thinkingLevel: run.thinkingLevel,
+        model,
+        thinkingLevel,
         maxTurns: request.maxTurns,
         runBudgetSeconds: request.runBudgetSeconds,
         toolsets,
@@ -125,7 +131,7 @@ export async function reflect(
     report = {
       status: outcome.status,
       usage: outcome.usage ?? null,
-      spend: spend.value({ model: run.model, provider: modelProvider(config, run.model) ?? null }),
+      spend: spend.value({ model, provider: modelProvider(config, model) ?? null }),
       saved: reader.saved,
       summary: outcome.output.trim().slice(0, MAX_SUMMARY) || null,
       ...(outcome.error && { error: outcome.error.slice(0, 500) }),

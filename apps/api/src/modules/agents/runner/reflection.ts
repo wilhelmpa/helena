@@ -12,6 +12,14 @@ export const COMPLEX_TOOL_CALLS = 10;
 
 export const REFLECTION_LIMITS = { maxTurns: 8, runBudgetSeconds: 120 };
 
+// A reflection on the local model (Lokale KI's class `reflection`): only for a session this
+// small, whose prefill on the workhorse takes under a minute (~1,100 tokens/s at 32k,
+// docs/helena-decisions/local-ai-platform.md §5); a longer one would spend the budget loading
+// or compressing the session, and the agent's runner waits for its reflection before the next
+// run. More time for the same turns, since a local model reads and writes slower.
+export const LOCAL_REFLECTION_MAX_CONTEXT = 48_000;
+export const LOCAL_REFLECTION_LIMITS = { maxTurns: 8, runBudgetSeconds: 240 };
+
 // Why the run is worth a reflection, or null when it is not. A failed run with no tool
 // call failed before the agent did anything, often at its provider, which a follow-up
 // turn would meet again.
@@ -64,6 +72,8 @@ export function reflectionPrompt(reason: ReflectionReason): string {
 export interface ReflectionView {
   status: 'pending' | 'success' | 'failed' | 'lost';
   reason: ReflectionReason;
+  // The local model it ran on, when Lokale KI took it; null on the run's model.
+  model?: string | null;
   saved: { tool: 'memory' | 'skill'; action: string; target: string }[];
   summary: string | null;
   error: string | null;
@@ -89,6 +99,7 @@ export function reflectionView(value: unknown, finishedAt: Date | null): Reflect
   return {
     status: lost ? 'lost' : (stored.status ?? 'pending'),
     reason: stored.reason ?? 'complex',
+    ...(stored.model && { model: stored.model }),
     saved: Array.isArray(stored.saved) ? stored.saved : [],
     summary: stored.summary ?? null,
     error: stored.error ?? null,

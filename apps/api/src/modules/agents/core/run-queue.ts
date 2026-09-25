@@ -43,6 +43,9 @@ export async function enqueueAgentRun(
     // The session of an earlier run this one continues (an approval decision resumes the
     // run that asked), so the agent still has its plan.
     continueSession?: { runId: number; sessionId: string };
+    // The kind of work the run is for Lokale KI (agent_run.work_class): a routine's
+    // delegation is `routines`. Null for everything else.
+    workClass?: string | null;
   },
   executor: typeof db | Transaction = db,
 ): Promise<number> {
@@ -75,6 +78,7 @@ export async function enqueueAgentRun(
         prompt: input.prompt,
         trigger: input.trigger ?? (input.sourceActivityId == null ? 'delegation' : 'mention'),
         nextAttemptAt: delay > 0 ? sql`now() + make_interval(secs => ${delay})` : undefined,
+        workClass: input.workClass ?? null,
         ...(input.continueSession && {
           sessionId: input.continueSession.sessionId,
           continuedFromRunId: input.continueSession.runId,

@@ -77,6 +77,9 @@ export const helenaLocalAiEval = pgTable(
     latencyMsP50: integer('latency_ms_p50'),
     tokensPerSecond: real('tokens_per_second'),
     error: text('error'),
+    // The version of the class's eval it ran (@helena/sdk LocalAiTaskClass.evalVersion): an
+    // eval of an older version no longer gates the class.
+    evalVersion: integer('eval_version').notNull().default(1),
     ranBy: text('ran_by').references(() => user.id, { onDelete: 'set null' }),
     ranAt: timestamp('ran_at', { withTimezone: true }).notNull().defaultNow(),
   },

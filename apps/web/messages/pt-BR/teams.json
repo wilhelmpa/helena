@@ -660,6 +660,7 @@
       "reasonFailure": "porque a execução falhou",
       "reasonRework": "porque isso foi retrabalho",
       "reasonComplex": "porque a execução teve muitos passos",
+      "local": "local: {model}",
       "nothingSaved": "Nada salvo",
       "toolMemory": "Memória",
       "toolSkill": "Skill",
@@ -748,7 +749,8 @@
       "source": {
         "run": "da etapa do workflow",
         "agent": "do agente",
-        "default": "padrão do agente"
+        "default": "padrão do agente",
+        "local": "pela IA local"
       },
       "part": {
         "model": "modelo",

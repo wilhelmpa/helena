@@ -114,11 +114,11 @@
     },
     "summaries": {
       "label": "Zusammenfassungen und Digests",
-      "description": "Update-Digests, Zusammenfassungen von Läufen, Aktivität und Mails, Briefings."
+      "description": "Die Update-Digests (was eine neue Version ändert) schreibt das lokale Modell; antwortet der Server nicht, das eingestellte Modell."
     },
     "triage": {
       "label": "Triage und Zuordnung",
-      "description": "Eingehende Arbeit sortieren: Kategorie, Priorität, welcher Agent."
+      "description": "Übernimmt „Entscheidungen“ (Mails einordnen, Modellwahl, Workflow-Schritt „Entscheidung“); hier ist nichts weiter angebunden."
     },
     "transcription": {
       "label": "Transkription (Diktat)",
@@ -130,15 +130,15 @@
     },
     "routines": {
       "label": "Routinen-Agenten",
-      "description": "Geplante Routinen versuchen zuerst das lokale Arbeitspferd, mit dem eingestellten Modell des Agenten als Rückfall."
+      "description": "Der Lauf, den eine Routine startet, versucht zuerst das lokale Modell, mit dem eingestellten Modell des Agenten als Rückfall. Der Agent handelt dabei mit allen seinen Werkzeugen."
     },
     "reflection": {
-      "label": "Nächtliche Reflexion",
-      "description": "Was ein Lauf gelehrt hat, Skill-Pflege: Stapelarbeit in der Nacht auf dem großen lokalen Modell."
+      "label": "Reflexion nach Läufen",
+      "description": "Die Rückschau nach einem Lauf (Gedächtnis und Skills) auf dem lokalen Modell, wenn die Sitzung klein genug ist; sonst auf dem Modell des Laufs."
     },
     "coordinator-triage": {
-      "label": "Erster Blick des Koordinators",
-      "description": "Die erste Sichtung einer neuen Aufgabe; alles Echte geht an das eingestellte Modell des Koordinators."
+      "label": "Erster Plan des Koordinators",
+      "description": "Der erste Plan eines Agenten-Teams (wer macht was); ist er unbrauchbar, plant das eingestellte Modell des Koordinators neu."
     },
     "decisions": {
       "label": "Entscheidungen",

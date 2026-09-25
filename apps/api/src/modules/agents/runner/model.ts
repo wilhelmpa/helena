@@ -96,6 +96,9 @@ export const resultBody = t.Object({
   ),
   error: t.Optional(t.Nullable(t.String({ description: 'Why the run failed.' }))),
   usage: contextUsageBody,
+  // The last model call's counts: the size of the session a reflection resumes. Helena
+  // hands a small one's reflection to Lokale KI (docs/helena-decisions/local-ai-platform.md).
+  context: contextUsageBody,
   sessionId: t.Optional(
     t.String({
       minLength: 1,
@@ -119,6 +122,15 @@ export const ResultResponse = t.Object({
       prompt: t.String(),
       maxTurns: t.Number(),
       runBudgetSeconds: t.Number(),
+      model: t.Optional(
+        t.Nullable(
+          t.String({
+            description:
+              "The model the reflection runs on when it is not the run's: a local model " +
+              '(`helena-<slug>/<id>`) Lokale KI hands it',
+          }),
+        ),
+      ),
     }),
   ),
 });

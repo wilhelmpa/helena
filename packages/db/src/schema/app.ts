@@ -696,6 +696,13 @@ export const agentRun = pgTable(
     // The reasoning effort of this run when it overrides the agent's own (a digest run of
     // the update center). Null runs the agent's.
     reasoning: text('reasoning'),
+    // The kind of work the run is for Lokale KI (a task class of @helena/sdk
+    // localAiTaskClasses: `summaries` for a digest, `routines` for a routine's task,
+    // `coordinator-triage` for a coordinator's first plan). While the class runs locally the
+    // claim hands the run the class's local model; otherwise, and whenever the local server
+    // does not answer, it runs on `model` (or the agent's), exactly as without local AI
+    // (docs/helena-decisions/local-ai-platform.md §7.1). Null for all other work.
+    workClass: text('work_class'),
     // The question the agent asked when it reported itself blocked during the run. A
     // blocked run ends as a success: the agent did what it could and waits for input.
     blockedQuestion: text('blocked_question'),

@@ -1,7 +1,9 @@
-import type { LocalAiTaskClass } from '@helena/sdk';
+import type { LocalAiMode, LocalAiTaskClass } from '@helena/sdk';
 import {
+  evaluateCoordinatorTriage,
   evaluateEmbeddings,
   evaluateHermesHelpers,
+  evaluateReflection,
   evaluateRoutines,
   evaluateSummaries,
   evaluateTriage,
@@ -13,13 +15,22 @@ import {
 // with side effects outside Helena) stay on the configured models unless the owner assigns a
 // local model to an agent in the model picker.
 //
-// `wired` says whether Helena already sends the work to local AI. The others are the plan:
-// listed with their eval, so the owner sees the numbers before they are built. `thinking`
-// is how much a reasoning model may think for the class (its eval runs the same way): off
-// for work that only summarises or compresses, on where the evals passed with it.
+// `wired` says whether Helena already sends the work to local AI, and where (the class →
+// producer map is in local-ai-platform.md §7.1). `thinking` is how much a reasoning model may
+// think for the class, and its eval runs the same way: off for work Helena sends itself that
+// only compresses or classifies; `low` for work that runs as an agent's turn on the local
+// model, because the agent's turns there think (the provider's `extra_body`, §6.7).
+//
+// Work that runs as an agent's turn (a digest, a routine's task, a coordinator's first plan, a
+// reflection) is handed its local model when the run starts (`classModelNow`, the claim),
+// and the agent's configured model stays first in the turn's fallback chain: it offers
+// `prefer`, never `only`.
 
 const label = (id: string) => ({ i18n: `localAi.classes.${id}.label` });
 const description = (id: string) => ({ i18n: `localAi.classes.${id}.description` });
+
+// The modes of work whose configured model always remains its fallback.
+const PREFER_ONLY: readonly LocalAiMode[] = ['off', 'prefer'];
 
 export const BUILTIN_TASK_CLASSES: LocalAiTaskClass[] = [
   {
@@ -45,7 +56,9 @@ export const BUILTIN_TASK_CLASSES: LocalAiTaskClass[] = [
     // these calls itself: off there is Lemonade's default (local-ai-platform.md §6.7).
     thinking: 'off',
     inMasterDefault: true,
+    // Hermes' auxiliary calls (runner local-ai.ts): the agent's main model is their fallback.
     wired: true,
+    modes: PREFER_ONLY,
     evaluate: evaluateHermesHelpers,
     threshold: 0.75,
   },
@@ -56,11 +69,15 @@ export const BUILTIN_TASK_CLASSES: LocalAiTaskClass[] = [
     unit: 'gpu',
     capability: 'chat',
     priority: 'background',
-    // a JSON summary; thinking used up max_tokens before any answer (eval 0.25 with it)
-    thinking: 'off',
+    // The update center's digest runs (updates/digest.ts): an agent's text-only turn, which
+    // thinks on the local model. Version 2: the eval thinks too, with room for it (it failed
+    // at 800 tokens with thinking, 0.25, and passed without, 1.00).
+    thinking: 'low',
     inMasterDefault: true,
-    wired: false,
+    wired: true,
+    modes: PREFER_ONLY,
     evaluate: evaluateSummaries,
+    evalVersion: 2,
     threshold: 0.75,
   },
   {
@@ -73,6 +90,10 @@ export const BUILTIN_TASK_CLASSES: LocalAiTaskClass[] = [
     // passed (0.94) with thinking on
     thinking: 'low',
     inMasterDefault: true,
+    // What Helena classifies today goes through the decisions service (`decide()`): the mail
+    // classifier, the model router, receipts and the workflow step "Entscheidung", on the
+    // class `decisions` (modules/decisions/local-ai-class.ts). Nothing is left for this class
+    // (proposal: retire it in favour of `decisions`, local-ai-platform.md §7.1).
     wired: false,
     evaluate: evaluateTriage,
     threshold: 0.85,
@@ -111,11 +132,16 @@ export const BUILTIN_TASK_CLASSES: LocalAiTaskClass[] = [
     unit: 'gpu',
     capability: 'tools',
     priority: 'background',
-    // tool choice with arguments; passed (1.00) with thinking on
+    // The run a routine's fire starts (engine delegate step → the task's delegation run): a
+    // full agent turn with all of the agent's tools. Version 2: the eval offers a toolset of
+    // the agent's size (22 tools) instead of four.
     thinking: 'low',
+    // Real routines act: never switched on by the master switch (local-ai-platform.md §7.1).
     inMasterDefault: false,
-    wired: false,
+    wired: true,
+    modes: PREFER_ONLY,
     evaluate: evaluateRoutines,
+    evalVersion: 2,
     threshold: 0.9,
   },
   {
@@ -124,12 +150,18 @@ export const BUILTIN_TASK_CLASSES: LocalAiTaskClass[] = [
     description: description('reflection'),
     unit: 'gpu',
     capability: 'chat',
-    priority: 'batch',
-    // long summaries of the day; thinking used up max_tokens (eval 0.25 with it)
-    thinking: 'off',
+    priority: 'background',
+    // The turn after a run in which the agent keeps what it learned, with its memory and
+    // skill tools (agents/runner/reflection.ts), for sessions small enough to load quickly.
+    // Version 2: its own eval (the right fact kept, nothing kept of a trivial task, never a
+    // secret) instead of the summaries'.
+    thinking: 'low',
+    // It writes the agent's memory and skills, which every later run reads.
     inMasterDefault: false,
-    wired: false,
-    evaluate: evaluateSummaries,
+    wired: true,
+    modes: PREFER_ONLY,
+    evaluate: evaluateReflection,
+    evalVersion: 2,
     threshold: 0.85,
   },
   {
@@ -139,11 +171,15 @@ export const BUILTIN_TASK_CLASSES: LocalAiTaskClass[] = [
     unit: 'gpu',
     capability: 'tools',
     priority: 'background',
-    // passed (1.00) with thinking on
+    // The coordinate stage of an agent team, first attempt only (engine agent-team.ts): a plan
+    // the stage cannot use is planned again on the coordinator's configured model. Version 2:
+    // its own eval over the stage's real prompt and parser instead of the routines'.
     thinking: 'low',
     inMasterDefault: false,
-    wired: false,
-    evaluate: evaluateRoutines,
-    threshold: 0.9,
+    wired: true,
+    modes: PREFER_ONLY,
+    evaluate: evaluateCoordinatorTriage,
+    evalVersion: 2,
+    threshold: 0.8,
   },
 ];
