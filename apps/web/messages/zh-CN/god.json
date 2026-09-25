@@ -449,7 +449,8 @@
       "decisions": "决策",
       "localAi": "本地 AI",
       "push": "推送通知",
-      "edge": "外部访问"
+      "edge": "外部访问",
+      "trading": "交易（模拟盘）"
     },
     "problems": {
       "external-off": "开启外部插件后加载。",

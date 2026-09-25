@@ -84,6 +84,7 @@ import { agentNetworkRoutes } from './modules/agent-egress';
 import { agentBrowserGatewayRoutes } from './modules/agent-browser-gateway';
 import { browserTaskRoutes } from './modules/browser-task';
 import { decisionRoutes } from './modules/decisions';
+import { tradingRoutes } from './modules/trading';
 import { modelRouterRoutes } from './modules/model-router';
 import { mailTriageRoutes } from './modules/mail-triage';
 import { receiptRoutes } from './modules/receipts';
@@ -104,6 +105,7 @@ const plannerOperations = new Elysia({ name: 'planner-operations' })
   .use(agentBrowserGatewayRoutes)
   .use(browserTaskRoutes)
   .use(decisionRoutes)
+  .use(tradingRoutes)
   .use(modelRouterRoutes)
   .use(approvalRoutes)
   .use(modelPriceRoutes)

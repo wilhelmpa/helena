@@ -449,7 +449,8 @@
       "decisions": "Decisiones",
       "localAi": "IA local",
       "push": "Notificaciones push",
-      "edge": "Acceso desde fuera"
+      "edge": "Acceso desde fuera",
+      "trading": "Trading (simulado)"
     },
     "problems": {
       "external-off": "Se carga cuando se activen los plugins externos.",

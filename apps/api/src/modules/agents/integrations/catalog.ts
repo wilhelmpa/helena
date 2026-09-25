@@ -27,20 +27,20 @@ export interface UnifiedIntegration {
   }[];
 }
 
-// A connector as the catalog lists it. Labels a plugin gives per locale are shown in
-// English here; the catalog has no locale of its own yet.
-function connectorEntry(connector: Connector): UnifiedIntegration {
+// A connector as the catalog lists it, its labels in the reader's language where the
+// connector brings one (English otherwise).
+function connectorEntry(connector: Connector, locale = 'en'): UnifiedIntegration {
   return {
     key: connector.id,
-    label: resolveText(connector.label, 'en'),
+    label: resolveText(connector.label, locale),
     kind: 'tool',
     credentialSchema: connector.credentialSchema.map((field) => ({
       key: field.key,
-      label: resolveText(field.label, 'en'),
+      label: resolveText(field.label, locale),
       type: field.type === 'text' ? 'string' : field.type,
       required: field.required,
       ...(field.placeholder ? { placeholder: field.placeholder } : {}),
-      ...(field.help ? { help: resolveText(field.help, 'en') } : {}),
+      ...(field.help ? { help: resolveText(field.help, locale) } : {}),
     })),
     tools: (connector.tools ?? []).map((tool) => ({
       key: tool.name,
@@ -53,8 +53,8 @@ function connectorEntry(connector: Connector): UnifiedIntegration {
 }
 
 // Read at call time: a plugin's connectors join the registry at start.
-export function integrationCatalog(): UnifiedIntegration[] {
-  return registries.connectors.list().map(connectorEntry);
+export function integrationCatalog(locale = 'en'): UnifiedIntegration[] {
+  return registries.connectors.list().map((connector) => connectorEntry(connector, locale));
 }
 
 function byKey(key: string): UnifiedIntegration | undefined {

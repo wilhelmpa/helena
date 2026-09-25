@@ -570,6 +570,21 @@
         "typescript": "^6.0.3",
       },
     },
+    "packages/trading": {
+      "name": "@helena/trading",
+      "version": "0.1.0",
+      "dependencies": {
+        "@helena/policy": "workspace:*",
+        "@helena/sdk": "workspace:*",
+        "zod": "^4.4.3",
+      },
+      "devDependencies": {
+        "@repo/eslint-config": "workspace:*",
+        "@types/bun": "latest",
+        "eslint": "^9.39.0",
+        "typescript": "^6.0.3",
+      },
+    },
     "packages/vault": {
       "name": "@repo/vault",
       "version": "0.0.0",
@@ -916,6 +931,8 @@
     "@helena/push": ["@helena/push@workspace:packages/push"],
 
     "@helena/sdk": ["@helena/sdk@workspace:packages/sdk"],
+
+    "@helena/trading": ["@helena/trading@workspace:packages/trading"],
 
     "@hexagon/base64": ["@hexagon/base64@1.1.28", "", {}, "sha512-lhqDEAvWixy3bZ+UOYbPwUbBkwBq5C1LAJ/xPC8Oi+lL54oyakv/npbA0aU2hgCsx/1NUd4IBvV03+aUBWxerw=="],
 

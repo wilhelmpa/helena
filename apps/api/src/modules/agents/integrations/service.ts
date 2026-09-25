@@ -164,6 +164,12 @@ async function decrypt(id: number, teamId: number): Promise<ToolConfig | null> {
   return JSON.parse(openCredential(row)) as ToolConfig;
 }
 
+// The decrypted values of a credential of the team, for a configured tool that runs with
+// it (agents/tools/run.ts). Never returned over HTTP.
+export function credentialValues(id: number, teamId: number): Promise<ToolConfig | null> {
+  return decrypt(id, teamId);
+}
+
 export interface NewCredentialInput {
   integrationKey: string;
   label?: string | null;

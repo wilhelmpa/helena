@@ -8,6 +8,8 @@ import { mcpTool } from '#mcp/generate';
 import { paginate } from '#shared/pagination';
 import { teamParams } from '#modules/teams/model';
 import { integrationCatalog } from './catalog';
+import { browserLocale } from '#modules/user-preferences/locale';
+import { preferredLocale } from '#modules/user-preferences/service';
 import {
   CredentialPageResponse,
   credentialListQuery,
@@ -44,7 +46,13 @@ export const integrationRoutes = new Elysia({
 
   // The frontend builds the credential form from credentialSchema. Open to any team
   // member: the catalog is a constant in this codebase, not team data.
-  .get('/teams/:teamId/integrations/catalog', () => integrationCatalog(), {
+  .get(
+    '/teams/:teamId/integrations/catalog',
+    async ({ user, request }) =>
+      integrationCatalog(
+        user ? await preferredLocale(user.id, browserLocale(request)) : browserLocale(request),
+      ),
+    {
     params: teamParams,
     teamMember: true,
     response: { 200: IntegrationCatalogResponse, ...accessErrors },
@@ -55,7 +63,8 @@ export const integrationRoutes = new Elysia({
         'be stored for, each with its credential fields and its tools.',
       ...mcpTool('list_integrations'),
     },
-  })
+  },
+  )
 
   // Fills the credential selects in the tool and MCP server forms. Open to any team member,
   // and deliberately separate from the credential list below: that one is the
