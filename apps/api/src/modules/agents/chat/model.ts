@@ -231,6 +231,13 @@ export const sendChatBody = t.Object({
   ),
   model: t.Optional(t.Nullable(t.String({ minLength: 1, maxLength: 200 }))),
   thinkingLevel: t.Optional(t.Nullable(t.String({ minLength: 1, maxLength: 40 }))),
+  via: t.Optional(
+    t.Literal('voice', {
+      description:
+        'Said in the conversation mode: the answer is read aloud, so the agent is asked to ' +
+        'answer short and speakable (and Helena’s voice reply may answer it, where switched on).',
+    }),
+  ),
   parentId: t.Optional(
     t.Nullable(
       t.Numeric({

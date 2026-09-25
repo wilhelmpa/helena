@@ -7,13 +7,15 @@ import {
   type ConversationEvent,
   type ConversationState,
 } from '../utils/conversation';
-import { nextSpeechChunks } from '../utils/speechChunks';
+import { nextSpeechChunks, settledTail } from '../utils/speechChunks';
+import { turnTimings, type TurnMarks, type TurnTimings } from '../utils/turnTimings';
 import type { Listener, Speaker } from '../utils/voiceEngine';
 import { encodeWav16, isSilent } from '../utils/wav';
 import { startRecognitionEar } from './recognitionEar';
 import { MicrophoneError } from './recorder';
 import { stopSpeaking } from './speak';
 import { createBrowserSpeaker, createLocalSpeaker, type VoiceSpeaker } from './speakers';
+import { DEFAULT_PAUSE_MS } from '../utils/voiceSettings';
 import { startVadEar, type ConversationEar, type EarEvents } from './vadListener';
 
 // Runs the conversation mode (utils/conversation.ts is its turn-taking): owns the ear (the voice
@@ -46,9 +48,18 @@ export interface ConversationDeps {
   onLevel(level: number): void;
   onProblem(problem: ConversationProblem): void;
   send(text: string): void;
-  transcribe(wav: Blob, language: string | null): Promise<string>;
+  // What was said; `dropped` when something was heard but it was not the owner's words
+  // (noise, a line Whisper invents on silence, another language).
+  transcribe(
+    wav: Blob,
+    language: string | null,
+  ): Promise<{ text: string; dropped?: string | null }>;
+  // Speech was heard but not understood (the model wrote another language): say so.
+  onMisheard?(): void;
   // Lokale KI's answer may have changed (a refusal came back).
   refreshStatus(): void;
+  // Where the time of the last turn went (the owner stopped speaking → the answer is heard).
+  onTimings?(timings: TurnTimings): void;
 }
 
 interface Utterance {
@@ -60,6 +71,9 @@ interface Utterance {
 
 // If a sent message is not taken up (the chat refused it) the conversation does not wait on.
 const SEND_TIMEOUT_MS = 10_000;
+// A finished-looking last sentence of a streaming answer is read once the text has been quiet
+// this long (speechChunks.settledTail): the runner sends text every 150 ms while it comes.
+const TAIL_QUIET_MS = 300;
 
 function pageLanguage(): string | null {
   const lang = (document.documentElement.lang || '').slice(0, 2).toLowerCase();
@@ -84,6 +98,11 @@ export class ConversationController {
   private sendTimer = 0;
   // A new conversation (or its end) makes everything still on its way from the last one stale.
   private generation = 0;
+  private tailTimer = 0;
+  // How long a pause ends a turn (the owner's voice setting).
+  private pauseMs = DEFAULT_PAUSE_MS;
+  // The turn being timed: from the end of the owner's speech to the first sound of the answer.
+  private marks: TurnMarks | null = null;
 
   constructor(private readonly deps: ConversationDeps) {}
 
@@ -99,6 +118,11 @@ export class ConversationController {
     // Lokale KI changed while talking (local went down in "prefer", or came back): the ear
     // follows. A voice keeps reading what it has; the next answer uses the new one.
     void this.openEar();
+  }
+
+  // The owner's voice settings; a changed pause applies from the next conversation.
+  configure(options: { pauseMs?: number }): void {
+    if (options.pauseMs) this.pauseMs = options.pauseMs;
   }
 
   // Starts from a click: the voice is unlocked before anything waits.
@@ -168,6 +192,7 @@ export class ConversationController {
         this.utterances.shift();
         return;
       case 'send':
+        if (this.marks && !this.marks.sentAt) this.marks.sentAt = performance.now();
         this.sawBusy = this.busy;
         window.clearTimeout(this.sendTimer);
         this.sendTimer = window.setTimeout(() => {
@@ -189,6 +214,8 @@ export class ConversationController {
       case 'stopAll':
         this.generation += 1;
         window.clearTimeout(this.sendTimer);
+        window.clearTimeout(this.tailTimer);
+        this.marks = null;
         void this.ear?.destroy();
         this.ear = null;
         this.voice?.destroy();
@@ -214,6 +241,10 @@ export class ConversationController {
       onMisfire: () => this.dispatch({ type: 'speechMisfire' }),
       onUtterance: (samples, text) => {
         if (generation !== this.generation) return;
+        // A new turn is timed from the moment the owner stopped speaking: the ear decides a
+        // pause (its `pauseMs`) after that.
+        const now = performance.now();
+        this.marks = { stoppedAt: now - (this.ear?.pauseMs ?? 0), heardAt: now };
         this.utterances.push({ samples, text, reading: this.voice?.reading() ?? '' });
         this.dispatch({ type: 'speechEnd' });
       },
@@ -226,7 +257,9 @@ export class ConversationController {
     };
     try {
       const ear =
-        listener.engine === 'local' ? await startVadEar(events) : startRecognitionEar(events);
+        listener.engine === 'local'
+          ? await startVadEar(events, this.pauseMs)
+          : startRecognitionEar(events);
       if (generation !== this.generation) {
         void ear.destroy();
         return false;
@@ -254,6 +287,7 @@ export class ConversationController {
         this.ear?.setGuarded(false);
         this.dispatch({ type: 'speakerIdle' });
       },
+      onAudible: () => this.heard(),
       onError: (text: string) => this.voiceFailed(text),
     };
     if (speaker.engine === 'local') return createLocalSpeaker(events);
@@ -280,6 +314,7 @@ export class ConversationController {
     const generation = this.generation;
     const finish = (text: string) => {
       if (generation !== this.generation) return;
+      if (this.marks && !this.marks.transcribedAt) this.marks.transcribedAt = performance.now();
       const echo =
         this.state.readingPaused && text !== '' && looksLikeEcho(text, utterance?.reading ?? '');
       if (text && !echo) this.deps.onHeard(text);
@@ -291,7 +326,10 @@ export class ConversationController {
     if (!samples || isSilent(samples)) return finish('');
     try {
       const wav = new Blob([encodeWav16(samples) as BlobPart], { type: 'audio/wav' });
-      finish(await this.deps.transcribe(wav, pageLanguage()));
+      const result = await this.deps.transcribe(wav, pageLanguage());
+      if (result.dropped === 'other-language' && generation === this.generation)
+        this.deps.onMisheard?.();
+      finish(result.text);
     } catch (error) {
       if (generation !== this.generation) return;
       this.deps.onProblem('transcribe-failed');
@@ -303,6 +341,7 @@ export class ConversationController {
 
   // Hands the newest answer's next complete sentences to the voice.
   private readAnswer(): void {
+    window.clearTimeout(this.tailTimer);
     if (this.state.active !== 'on' || !this.voice) return;
     const index = this.messages.findLastIndex(
       (message) => message.role === 'assistant' && !this.baseline.has(message.id),
@@ -312,9 +351,36 @@ export class ConversationController {
     if (this.reading?.id !== message.id)
       this.reading = { id: message.id, offset: 0, dropped: false };
     if (this.reading.dropped) return;
+    if (message.text.trim() && this.marks?.sentAt && !this.marks.answerAt)
+      this.marks.answerAt = performance.now();
     const streaming = this.busy && index === this.messages.length - 1;
-    const next = nextSpeechChunks(message.text, this.reading.offset, !streaming);
+    this.handOver(message.text, !streaming);
+    // A last sentence that looks finished is read after a short quiet, not when the answer is
+    // closed (which comes a second or two after its text).
+    if (streaming && settledTail(message.text, this.reading.offset)) {
+      const { id } = message;
+      const length = message.text.length;
+      this.tailTimer = window.setTimeout(() => {
+        const current = this.messages.find((candidate) => candidate.id === id);
+        if (!current || current.text.length !== length || this.reading?.id !== id) return;
+        if (this.reading.dropped) return;
+        this.handOver(current.text, true);
+      }, TAIL_QUIET_MS);
+    }
+  }
+
+  private handOver(text: string, final: boolean): void {
+    if (!this.reading || !this.voice) return;
+    const next = nextSpeechChunks(text, this.reading.offset, final);
     this.reading.offset = next.offset;
     for (const chunk of next.chunks) this.voice.enqueue(chunk);
+  }
+
+  // The first sound of an answer: the turn's time is complete.
+  private heard(): void {
+    const marks = this.marks;
+    if (!marks?.answerAt) return;
+    this.marks = null;
+    this.deps.onTimings?.(turnTimings({ ...marks, audibleAt: performance.now() }));
   }
 }

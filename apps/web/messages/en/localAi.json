@@ -103,7 +103,9 @@
   },
   "serverTypes": {
     "lemonade": "Lemonade Server (GPU + NPU)",
-    "openaiCompatible": "OpenAI-compatible server"
+    "openaiCompatible": "OpenAI-compatible server",
+    "whisperCpp": "whisper.cpp (speech recognition, GPU)",
+    "qwenTts": "Qwen3-TTS (voice, GPU)"
   },
   "classes": {
     "embeddings": {
@@ -124,7 +126,7 @@
     },
     "transcription": {
       "label": "Transcription (dictation)",
-      "description": "Speech to text for dictation and the conversation mode (Whisper on the NPU)."
+      "description": "Speech to text for dictation and the conversation mode (Whisper on this machine)."
     },
     "speech": {
       "label": "Reading aloud (voice)",
@@ -145,6 +147,10 @@
     "decisions": {
       "label": "Decisions",
       "description": "Typed decisions by logit readout: sorting mail, model choice, receipts, the workflow step. The kinds are switched on under Decisions."
+    },
+    "voice-reply": {
+      "label": "Voice reply (fast)",
+      "description": "In a conversation, a fast local model answers what the conversation itself answers (a greeting, “can you hear me?”, the time, “say that shorter”) in a fraction of a second; anything that needs your data or an action goes to the agent at once. It never acts itself."
     }
   },
   "updates": {
@@ -173,6 +179,35 @@
       "off": "local AI off",
       "down": "local server not reachable",
       "failed": "local server failed"
+    }
+  },
+  "voice": {
+    "title": "Voice in the chat",
+    "loading": "Loading …",
+    "failed": "The voice settings could not be loaded.",
+    "pause": {
+      "title": "Pause before the answer",
+      "hint": "How long you have to be silent before Helena sends your sentence. Shorter answers faster, longer interrupts you less often.",
+      "option": "{seconds} s"
+    },
+    "words": {
+      "title": "Words Helena should know",
+      "hint": "Names, products and terms, so speech recognition spells them right. It already knows: {words}.",
+      "placeholder": "e.g. accountant Miller, Shopify, Kubernetes",
+      "save": "Save words"
+    },
+    "voice": {
+      "title": "Voice",
+      "hint": "The local voice Helena answers with in a conversation (Local AI → “Read aloud”).",
+      "default": "The server's default voice",
+      "none": "No local voice set up yet – until then the browser reads aloud."
+    },
+    "model": {
+      "title": "Model for conversations",
+      "hint": "What your agents answer spoken turns with. A fast model with little thinking keeps the conversation flowing; agents that do not offer it answer as usual.",
+      "default": "As when typing (the agent's model)",
+      "thinking": "Thinking",
+      "thinkingDefault": "The model's default"
     }
   }
 }

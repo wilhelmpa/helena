@@ -49,6 +49,7 @@ import {
   type MessageTree,
 } from './branches';
 import { publishDomainEvent } from '#shared/helena';
+import { spokenQuestion, voiceReplyModel } from '#modules/voice/spoken';
 import {
   chooseModelNow,
   effectiveModelNow,
@@ -638,12 +639,22 @@ export async function sendMessage(input: {
   attachments?: ChatAttachment[];
   model?: string | null;
   thinkingLevel?: string | null;
+  // 'voice': said in the conversation mode (docs/helena-decisions/voice-2.md).
+  via?: 'voice' | null;
   maxConcurrentChats: number;
 }): Promise<{ threadId: string; messageId: number; userMessageId: number } | null> {
   const { agentId, userId, prompt } = input;
   await assertNotPaused(agentId);
   await assertProjectNotHeld(input.projectId);
-  return db.transaction(async (tx) => {
+  // A spoken question Helena's voice reply takes (where switched on and up): its answer is held
+  // back from the agent's runner for a moment and answered by the voice reply, which hands it
+  // back to the runner when the question needs the agent.
+  const answerer = spokenAnswerer;
+  const held =
+    input.via === 'voice' && answerer
+      ? await answerer.available(agentId).catch(() => false)
+      : false;
+  const sent = await db.transaction(async (tx) => {
     await assertSendRate(tx, agentId, userId);
     await assertConcurrencyLimit(tx, agentId, userId, input.maxConcurrentChats);
     let threadId = input.threadId;
@@ -678,11 +689,20 @@ export async function sendMessage(input: {
         content: prompt,
         status: 'success',
         attachments: input.attachments?.length ? input.attachments : null,
+        via: input.via ?? null,
       })
       .returning({ id: agentChatMessage.id });
     const [answer] = await tx
       .insert(agentChatMessage)
-      .values({ threadId, agentId, parentId: question.id, role: 'assistant' })
+      .values({
+        threadId,
+        agentId,
+        parentId: question.id,
+        role: 'assistant',
+        ...(held && {
+          nextAttemptAt: sql`now() + make_interval(secs => ${SPOKEN_HOLD_SECONDS})`,
+        }),
+      })
       .returning({ id: agentChatMessage.id });
     await tx
       .update(agentChatThread)
@@ -708,6 +728,154 @@ export async function sendMessage(input: {
     );
     return { threadId, messageId: answer.id, userMessageId: question.id };
   });
+  if (sent && held && answerer) {
+    const job = {
+      agentId,
+      messageId: sent.messageId,
+      threadId: sent.threadId,
+      userId,
+      projectId: input.projectId,
+    };
+    // Never awaited: the question is stored and the chat follows the answer's stream. Should
+    // the voice reply fail before it hands the answer back, the hold runs out and the runner
+    // takes it.
+    void answerer.answer(job).catch(async (error: unknown) => {
+      console.warn('[voice] the voice reply failed; the agent answers', error);
+      await releaseHeldAnswer(agentId, sent.messageId).catch(() => {});
+    });
+  }
+  return sent;
+}
+
+// ── Spoken questions answered by Helena's voice reply ───────────────────────────────────
+// (docs/helena-decisions/voice-2.md §4; the answerer is modules/voice/reply.ts)
+
+export interface SpokenAnswerJob {
+  agentId: number;
+  messageId: number;
+  threadId: string;
+  userId: string;
+  projectId: number | null;
+}
+
+export interface SpokenAnswerer {
+  // Whether it takes a spoken question to this agent now (its model switched on and up).
+  available(agentId: number): Promise<boolean>;
+  // Answers the held answer, or hands it back to the agent's runner (releaseHeldAnswer).
+  answer(job: SpokenAnswerJob): Promise<void>;
+}
+
+// How long a held answer waits for the voice reply before the runner may take it anyway.
+export const SPOKEN_HOLD_SECONDS = 30;
+
+let spokenAnswerer: SpokenAnswerer | null = null;
+
+export function registerSpokenAnswerer(answerer: SpokenAnswerer | null): void {
+  spokenAnswerer = answerer;
+}
+
+// The voice reply takes the held answer: no runner has it (it is still pending).
+export async function takeHeldAnswer(agentId: number, messageId: number): Promise<boolean> {
+  const rows = await db
+    .update(agentChatMessage)
+    .set({
+      status: 'streaming',
+      startedAt: sql`coalesce(${agentChatMessage.startedAt}, now())`,
+      nextAttemptAt: leaseUntil(),
+    })
+    .where(
+      and(
+        eq(agentChatMessage.id, messageId),
+        eq(agentChatMessage.agentId, agentId),
+        eq(agentChatMessage.status, 'pending'),
+      ),
+    )
+    .returning({ id: agentChatMessage.id });
+  return rows.length > 0;
+}
+
+// Hands a held answer to the agent's runner at once: nothing of the voice reply stays in it.
+export async function releaseHeldAnswer(agentId: number, messageId: number): Promise<void> {
+  await db.transaction(async (tx) => {
+    const rows = await tx
+      .update(agentChatMessage)
+      .set({ status: 'pending', content: '', model: null, nextAttemptAt: sql`now()` })
+      .where(liveAnswer(agentId, messageId))
+      .returning({ id: agentChatMessage.id });
+    if (rows.length === 0) return;
+    await tx.delete(agentChatEvent).where(eq(agentChatEvent.messageId, messageId));
+    await notifyChatAnswer(messageId, tx);
+  });
+}
+
+// Closes an answer the voice reply gave. Unlike a runner's result it says nothing about the
+// agent's runner (which was not involved) and nothing is spent.
+export async function finishSpokenAnswer(
+  agentId: number,
+  messageId: number,
+  result: { model: string; inputTokens: number | null; outputTokens: number | null },
+): Promise<boolean> {
+  const rows = await db
+    .update(agentChatMessage)
+    .set({
+      status: 'success',
+      via: 'voice',
+      finishedAt: new Date(),
+      model: result.model.slice(0, 200),
+      inputTokens: result.inputTokens,
+      outputTokens: result.outputTokens,
+      lastError: null,
+    })
+    .where(liveAnswer(agentId, messageId))
+    .returning({ threadId: agentChatMessage.threadId });
+  if (rows.length === 0) return wasCanceled(agentId, messageId);
+  await notifyChatAnswer(messageId);
+  const [thread] = await db
+    .select({ userId: agentChatThread.userId, projectId: agentChatThread.projectId })
+    .from(agentChatThread)
+    .where(eq(agentChatThread.id, rows[0]!.threadId));
+  await publishDomainEvent({
+    type: 'helena.chat.message',
+    projectId: thread?.projectId ?? null,
+    subject: `chats/${rows[0]!.threadId}/messages/${messageId}`,
+    actor: `agent:${agentId}`,
+    data: {
+      threadId: rows[0]!.threadId,
+      messageId,
+      role: 'assistant',
+      status: 'success',
+      agentId,
+      userId: thread?.userId ?? null,
+      projectId: thread?.projectId ?? null,
+    },
+  });
+  return true;
+}
+
+// What the voice reply reads: the turns of the branch before the held answer (oldest first,
+// the last is the spoken question), the agent's and the person's names.
+export async function spokenConversation(
+  threadId: string,
+  answerId: number,
+): Promise<{
+  turns: { role: 'user' | 'assistant'; text: string; mine: boolean }[];
+  agentName: string | null;
+}> {
+  const history = await readBranch(threadId, answerId);
+  const [answer] = await db
+    .select({ agentName: user.name, agentId: agentChatMessage.agentId })
+    .from(agentChatMessage)
+    .innerJoin(aiAgent, eq(aiAgent.id, agentChatMessage.agentId))
+    .innerJoin(user, eq(user.id, aiAgent.userId))
+    .where(eq(agentChatMessage.id, answerId));
+  return {
+    turns: history.map((turn) => ({
+      role: turn.role === 'user' ? 'user' : 'assistant',
+      text: questionText(turn.content, turn.attachments as ChatAttachment[] | null),
+      mine: turn.role === 'assistant' && turn.agentId === answer?.agentId,
+    })),
+    agentName: answer?.agentName ?? null,
+  };
 }
 
 // Queues another answer to a question of the thread, next to the answers it already
@@ -884,13 +1052,17 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
   const question = history.pop();
   const sessionId = await resumableSession(row.threadId, history, agent.id);
   const attachments = (question?.attachments as ChatAttachment[] | null) ?? [];
+  const spoken = question?.via === 'voice';
   const text = questionText(question?.content ?? '', attachments);
+  // A spoken turn of a thread that follows the agent is answered with the model the owner set
+  // for conversations (Lokale KI → Sprache), where he set one.
+  const voiceModel = spoken && !row.model ? await spokenModel(agent.id) : null;
   // A thread without its own model follows the agent's settings, the way a run does, and the
   // model router may send the answer to a cheaper model (decisions.md §4). A model the owner
   // chose for the thread is never routed.
   const chosen = row.model
     ? { model: row.model, thinkingLevel: row.thinkingLevel }
-    : { model: agent.model, thinkingLevel: agent.thinkingLevel };
+    : (voiceModel ?? { model: agent.model, thinkingLevel: agent.thinkingLevel });
   // A local model only while local AI runs it and its server answers; otherwise the model the
   // agent answers with without local AI (its own, or the runtime's default when that is local
   // too), and the answer notes the fallback (docs/helena-decisions/local-ai-platform.md §6.3).
@@ -902,7 +1074,7 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
           choice.model !== null && choice.model === agent.model ? agent.thinkingLevel : null,
       }
     : chosen;
-  if (!row.model) {
+  if (!row.model && !voiceModel) {
     const routed = await routeRequest({
       teamId: agent.teamId,
       agentId: agent.id,
@@ -937,10 +1109,11 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
     })
     .where(eq(agentChatMessage.id, row.id));
   const earlier = sessionId ? [] : history.slice(-agentChatConfig.historyMessages());
+  const asked = spoken ? spokenQuestion(text) : text;
   return {
     id: row.id,
     threadId: row.threadId,
-    prompt: earlier.length > 0 ? frameChatPrompt(earlier, text, agent.id) : text,
+    prompt: earlier.length > 0 ? frameChatPrompt(earlier, asked, agent.id) : asked,
     systemPrompt: '',
     attempts: row.attempts,
     sessionId,
@@ -948,6 +1121,23 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
     images: imagePaths(attachments),
     autopilotLevel: (await resolveLevel(agent.id, row.projectId)).level,
   };
+}
+
+// The model the owner set for spoken turns, where this agent offers it (a Codex model is no
+// answer for a Claude agent); its reasoning where the model has that level.
+async function spokenModel(
+  agentId: number,
+): Promise<{ model: string; thinkingLevel: string | null } | null> {
+  const wanted = await voiceReplyModel();
+  if (!wanted) return null;
+  const catalog = await readChatCatalog(agentId);
+  const entry = catalog.models.find((model) => model.id === wanted.model);
+  if (!entry) return null;
+  const level =
+    wanted.thinkingLevel && entry.thinkingLevels.includes(wanted.thinkingLevel)
+      ? wanted.thinkingLevel
+      : null;
+  return { model: entry.id, thinkingLevel: level };
 }
 
 type BranchTurn = typeof agentChatMessage.$inferSelect & { agentName: string };

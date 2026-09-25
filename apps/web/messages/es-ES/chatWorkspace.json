@@ -256,6 +256,8 @@
       "limit": "Detenido tras {seconds} segundos: es la duración máxima de un dictado.",
       "echoTitle": "Me he oído a mí misma",
       "echo": "Con altavoces, a partir de ahora me interrumpes con «Interrumpir». Con auriculares o con la voz local también funciona hablando."
-    }
+    },
+    "misheard": "No te he entendido; dilo otra vez, por favor.",
+    "timings": "Última respuesta tras {total} s: pausa {pause} s · transcripción {transcribe} s · respuesta {answer} s · voz {voice} s"
   }
 }

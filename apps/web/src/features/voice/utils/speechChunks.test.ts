@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { nextSpeechChunks } from './speechChunks';
+import { nextSpeechChunks, settledTail } from './speechChunks';
 
 // Reads a text the way the conversation mode does while an answer streams: the text grows in
 // steps, each step hands over what is complete, and the end hands over the rest.
@@ -93,5 +93,21 @@ describe('nextSpeechChunks', () => {
       chunks: [],
       offset: 14,
     });
+  });
+});
+
+describe('settledTail', () => {
+  it('sees a finished last sentence that only waits for more text', () => {
+    assert.equal(settledTail('Ja, ich kann dich hören.', 0), true);
+    assert.equal(settledTail('Gut. Ja, ich kann dich hören?“ ', 5), true);
+    assert.equal(settledTail('Das ist alles!', 0), true);
+  });
+
+  it('keeps waiting where the sentence may go on', () => {
+    assert.equal(settledTail('Ja, ich kann dich', 0), false);
+    assert.equal(settledTail('Das sind z. B.', 0), false);
+    assert.equal(settledTail('Am 3.', 0), false);
+    assert.equal(settledTail('Hier der Code:\n```sh\nls.', 0), false);
+    assert.equal(settledTail('Gut.', 4), false);
   });
 });

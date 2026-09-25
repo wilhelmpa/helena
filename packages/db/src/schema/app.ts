@@ -992,6 +992,11 @@ export const agentChatMessage = pgTable(
     // name, contentType, sizeBytes }` with the vault path, or `{ kind: 'task', issueId,
     // identifier, title }`.
     attachments: jsonb('attachments'),
+    // How the turn came about, when not typed (docs/helena-decisions/voice-2.md): a question
+    // `voice` was said in the conversation mode (its answer is read aloud, so the agent is
+    // asked to answer short and speakable); an answer `voice` was given by Helena's voice
+    // reply (a fast local model, modules/voice/reply.ts) instead of the agent's runtime.
+    via: text('via'),
     // The runner session that produced the answer. The next answer resumes it only
     // while this answer is the last one produced in it.
     sessionId: text('session_id'),
@@ -1019,6 +1024,7 @@ export const agentChatMessage = pgTable(
       'agent_chat_message_status_check',
       sql`${t.status} IN ('pending', 'streaming', 'success', 'failed', 'canceled')`,
     ),
+    check('agent_chat_message_via_check', sql`${t.via} IS NULL OR ${t.via} IN ('voice')`),
     index('agent_chat_message_thread_idx').on(t.threadId, t.id),
     index('agent_chat_message_parent_idx').on(t.parentId),
     index('agent_chat_message_due_idx')

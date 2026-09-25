@@ -406,6 +406,8 @@ export const sendAiAgentChat = (
     attachments?: { files?: string[]; issueIds?: number[] };
     model?: string | null;
     thinkingLevel?: string | null;
+    // Said in the conversation mode: the agent answers short and speakable.
+    via?: 'voice';
   },
 ) =>
   request<{ threadId: string; messageId: number; userMessageId: number }>(

@@ -107,6 +107,24 @@ export interface ModelServerType {
   // do. Lemonade serves the same API under /api/v1 and /v1. Absent or null: the server has
   // none, and every agent turn on it thinks.
   noThinkingBaseUrl?(baseUrl: string): string | null;
+  // What its speech endpoints take beyond the plain OpenAI fields (docs/helena-decisions/
+  // voice-2.md). Absent: the full OpenAI shape (`prompt`, `temperature`, `verbose_json` on
+  // `/audio/transcriptions`) and a plain WAV from `/audio/speech`.
+  audio?: ModelServerAudio;
+  // The voices its speech model offers (names for `/audio/speech`'s `voice`), for the owner to
+  // pick one. Absent: the server offers no choice Helena knows how to list.
+  voices?(context: ModelServerContext): Promise<string[]>;
+}
+
+export interface ModelServerAudio {
+  // `/audio/transcriptions` takes `prompt` (the words the recording is likely to contain),
+  // `temperature` and `response_format: verbose_json` with each segment's confidence.
+  transcriptionContext: boolean;
+  // `/audio/speech` streams raw 16-bit PCM as it is generated (`response_format: pcm`), at
+  // this sample rate (mono); null: it answers a whole WAV file only.
+  speechPcmRate: number | null;
+  // `/audio/speech` takes `language` (the name its model knows, e.g. "German").
+  speechLanguage: boolean;
 }
 
 // ── The policy ─────────────────────────────────────────────────────────────────────────

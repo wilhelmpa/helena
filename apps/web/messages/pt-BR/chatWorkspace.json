@@ -256,6 +256,8 @@
       "limit": "Encerrado após {seconds} segundos – a duração máxima de um ditado.",
       "echoTitle": "Eu me ouvi",
       "echo": "Com alto-falantes, a partir de agora me interrompa com “Interromper”. Com fones de ouvido ou com a voz local, falar também funciona."
-    }
+    },
+    "misheard": "Não entendi – pode repetir, por favor?",
+    "timings": "Última resposta após {total} s: pausa {pause} s · transcrição {transcribe} s · resposta {answer} s · voz {voice} s"
   }
 }

@@ -103,7 +103,9 @@
   },
   "serverTypes": {
     "lemonade": "Lemonade Server（GPU + NPU）",
-    "openaiCompatible": "兼容 OpenAI 的服务器"
+    "openaiCompatible": "兼容 OpenAI 的服务器",
+    "whisperCpp": "whisper.cpp（语音识别，GPU）",
+    "qwenTts": "Qwen3-TTS（语音，GPU）"
   },
   "classes": {
     "embeddings": {
@@ -124,7 +126,7 @@
     },
     "transcription": {
       "label": "转写（听写）",
-      "description": "听写和对话模式的语音转文字（NPU 上的 Whisper）。"
+      "description": "用于听写和对话模式的语音转文字（本机上的 Whisper）。"
     },
     "speech": {
       "label": "朗读（语音）",
@@ -145,6 +147,10 @@
     "decisions": {
       "label": "决策",
       "description": "通过 logit 读取进行类型化决策：邮件分类、模型选择、票据、工作流步骤。在“决策”中开启各类型。"
+    },
+    "voice-reply": {
+      "label": "语音回复（快速）",
+      "description": "对话中，一个快速的本地模型会在不到一秒内回答对话本身就能回答的内容（问候、“你能听到我吗？”、时间、“说短一点”）；凡是需要你的数据或需要执行操作的，都会立即交给智能体。它自己从不执行操作。"
     }
   },
   "updates": {
@@ -173,6 +179,35 @@
       "off": "本地 AI 已关闭",
       "down": "本地服务器无法访问",
       "failed": "本地服务器出错"
+    }
+  },
+  "voice": {
+    "title": "聊天中的语音",
+    "loading": "加载中 …",
+    "failed": "无法加载语音设置。",
+    "pause": {
+      "title": "回答前的停顿",
+      "hint": "你需要沉默多久，Helena 才会发送你的话。越短回答越快，越长越少打断你。",
+      "option": "{seconds} 秒"
+    },
+    "words": {
+      "title": "Helena 应该认识的词",
+      "hint": "人名、产品和术语，让语音识别写对它们。已认识：{words}。",
+      "placeholder": "例如 税务顾问 Müller、Shopify、Kubernetes",
+      "save": "保存词语"
+    },
+    "voice": {
+      "title": "声音",
+      "hint": "Helena 在对话中回答时使用的本地声音（本地 AI → “朗读”）。",
+      "default": "服务器默认声音",
+      "none": "尚未设置本地声音——在此之前由浏览器朗读。"
+    },
+    "model": {
+      "title": "对话使用的模型",
+      "hint": "你的智能体用什么模型回答语音输入。思考较少的快速模型让对话更流畅；不提供该模型的智能体照常回答。",
+      "default": "与打字时相同（智能体的模型）",
+      "thinking": "思考",
+      "thinkingDefault": "模型默认"
     }
   }
 }

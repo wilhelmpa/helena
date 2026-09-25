@@ -256,6 +256,8 @@
       "limit": "Stopped after {seconds} seconds – the longest a dictation can be.",
       "echoTitle": "I heard myself",
       "echo": "On loudspeakers, interrupt me with “Interrupt” from now on. With headphones or the local voice, speaking works too."
-    }
+    },
+    "misheard": "Didn't catch that – please say it again.",
+    "timings": "Last answer after {total} s: pause {pause} s · transcription {transcribe} s · answer {answer} s · voice {voice} s"
   }
 }

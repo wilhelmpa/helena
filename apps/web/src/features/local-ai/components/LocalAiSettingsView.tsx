@@ -47,6 +47,7 @@ import {
 } from '../services/localAi.service';
 import { gib, resolveLabel, shortModel } from '../utils/localAi';
 import LocalAiCard from './LocalAiCard';
+import VoiceSettingsSection from '@/features/voice/components/VoiceSettingsSection';
 
 const MODES: LocalAiMode[] = ['off', 'prefer', 'only'];
 const PRESETS: LocalAiPreset[] = ['sparsam', 'ausgewogen', 'qualitaet', 'eigene'];
@@ -77,6 +78,7 @@ export default function LocalAiSettingsView() {
               ))}
             </SettingsCard>
           </SettingsSection>
+          <VoiceSettingsSection />
         </>
       )}
     </div>

@@ -1,4 +1,5 @@
 import { speakText } from '@/lib/api/endpoints/voice';
+import { Pcm16Decoder, SampleBatcher } from '../utils/pcm';
 
 // The conversation mode's voice: pieces of an answer (whole sentences, see speechChunks) are
 // queued as they arrive and read one after the other. Two engines behind one interface:
@@ -33,6 +34,8 @@ export interface VoiceSpeaker {
 export interface SpeakerEvents {
   onStart(): void;
   onIdle(): void;
+  // A piece is audible now (its sound started), not only queued or on its way.
+  onAudible?(): void;
   onError?(text: string, error: unknown): void;
 }
 
@@ -95,6 +98,9 @@ export function createBrowserSpeaker(events: SpeakerEvents): VoiceSpeaker {
       current = null;
       queue.shift();
       next();
+    };
+    utterance.onstart = () => {
+      if (mine === turn) events.onAudible?.();
     };
     utterance.onend = done;
     utterance.onerror = (event) => {
@@ -162,22 +168,79 @@ export function createBrowserSpeaker(events: SpeakerEvents): VoiceSpeaker {
 
 // How many pieces are fetched ahead of the one playing.
 const PREFETCH = 2;
+// A streamed piece starts playing once this much sound has arrived, and goes on in larger
+// batches (fewer nodes, same timeline).
+const FIRST_BATCH_S = 0.08;
+const LATER_BATCH_S = 0.25;
+// Sound is scheduled this far ahead of the audio clock, so the first batch starts cleanly.
+const LEAD_S = 0.04;
 
 interface Piece {
   text: string;
-  audio: Promise<AudioBuffer> | null;
   abort: AbortController;
+  // The sound as it arrives, in order; `done` once all of it is here (or it failed).
+  buffers: AudioBuffer[];
+  done: boolean;
+  failed: unknown;
+  loading: boolean;
+  // Wakes the player waiting for more of this piece.
+  changed: (() => void) | null;
+}
+
+interface Playing {
+  piece: Piece;
+  turn: number;
+  // The next buffer to schedule, and when on the audio clock it starts.
+  index: number;
+  at: number;
+  sources: Set<AudioBufferSourceNode>;
+  audible: boolean;
+}
+
+// The piece's audio, read as it comes: a WAV (any server) is decoded whole; raw PCM
+// (`audio/pcm`, a server that generates as it goes) is turned into buffers batch by batch, so
+// the first words play while the rest of the sentence is still being made.
+async function readPiece(
+  response: Response,
+  context: AudioContext,
+  push: (buffer: AudioBuffer) => void,
+): Promise<void> {
+  const type = response.headers.get('content-type') ?? '';
+  if (!type.startsWith('audio/pcm') || !response.body) {
+    push(await context.decodeAudioData(await response.arrayBuffer()));
+    return;
+  }
+  const rate = Number(response.headers.get('x-helena-sample-rate')) || 24_000;
+  const decoder = new Pcm16Decoder();
+  const batcher = new SampleBatcher(Math.round(rate * FIRST_BATCH_S));
+  const toBuffer = (samples: Float32Array) => {
+    const buffer = context.createBuffer(1, samples.length, rate);
+    buffer.copyToChannel(samples as Float32Array<ArrayBuffer>, 0);
+    return buffer;
+  };
+  const reader = response.body.getReader();
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const batch = batcher.add(decoder.push(value));
+    if (batch) {
+      push(toBuffer(batch));
+      batcher.min = Math.round(rate * LATER_BATCH_S);
+    }
+  }
+  const rest = batcher.flush();
+  if (rest) push(toBuffer(rest));
 }
 
 export function createLocalSpeaker(
   events: SpeakerEvents,
-  fetchAudio: (text: string, signal: AbortSignal) => Promise<Blob> = speakText,
+  fetchAudio: (text: string, signal: AbortSignal) => Promise<Response> = (text, signal) =>
+    speakText(text, speechLanguage().slice(0, 2).toLowerCase(), signal),
 ): VoiceSpeaker {
   const queue: Piece[] = [];
   let context: AudioContext | null = null;
-  let source: AudioBufferSourceNode | null = null;
+  let playing: Playing | null = null;
   let paused = false;
-  let playing = false;
   let turn = 0;
   let wasBusy = false;
 
@@ -190,30 +253,92 @@ export function createLocalSpeaker(
     else events.onIdle();
   };
 
+  const wake = (piece: Piece) => {
+    const changed = piece.changed;
+    piece.changed = null;
+    changed?.();
+  };
+
   const load = (piece: Piece) => {
-    piece.audio ??= fetchAudio(piece.text, piece.abort.signal)
-      .then((blob) => blob.arrayBuffer())
-      .then((data) => audioContext().decodeAudioData(data));
-    // A failure is handled when the piece's turn comes.
-    piece.audio.catch(() => {});
+    if (piece.loading) return;
+    piece.loading = true;
+    void fetchAudio(piece.text, piece.abort.signal)
+      .then((response) =>
+        readPiece(response, audioContext(), (buffer) => {
+          piece.buffers.push(buffer);
+          wake(piece);
+        }),
+      )
+      .catch((error: unknown) => {
+        piece.failed = error ?? new Error('failed');
+      })
+      .finally(() => {
+        piece.done = true;
+        wake(piece);
+      });
   };
 
   const prefetch = () => {
     for (const piece of queue.slice(0, PREFETCH + 1)) load(piece);
   };
 
-  const stopSource = () => {
+  const stopSources = () => {
     turn += 1;
-    playing = false;
-    if (source) {
-      source.onended = null;
+    const current = playing;
+    playing = null;
+    if (!current) return;
+    current.piece.changed = null;
+    for (const node of current.sources) {
+      node.onended = null;
       try {
-        source.stop();
+        node.stop();
       } catch {
         // already stopped
       }
-      source = null;
     }
+    current.sources.clear();
+  };
+
+  // Schedules what has arrived of the playing piece, back to back on the audio clock, and moves
+  // on once all of it has been heard.
+  const pump = () => {
+    const current = playing;
+    if (!current || current.turn !== turn) return;
+    const { piece } = current;
+    const ctx = audioContext();
+    while (current.index < piece.buffers.length) {
+      const buffer = piece.buffers[current.index]!;
+      current.index += 1;
+      const node = ctx.createBufferSource();
+      node.buffer = buffer;
+      node.connect(ctx.destination);
+      const at = Math.max(current.at, ctx.currentTime + LEAD_S);
+      node.start(at);
+      current.at = at + buffer.duration;
+      current.sources.add(node);
+      node.onended = () => {
+        current.sources.delete(node);
+        if (current.turn === turn) pump();
+      };
+      if (!current.audible) {
+        current.audible = true;
+        window.setTimeout(
+          () => {
+            if (current.turn === turn) events.onAudible?.();
+          },
+          Math.max(0, (at - ctx.currentTime) * 1000),
+        );
+      }
+    }
+    if (!piece.done || current.sources.size > 0) {
+      if (!piece.done) piece.changed = pump;
+      return;
+    }
+    // All of it heard (or it failed): the next piece.
+    playing = null;
+    queue.shift();
+    if (piece.failed) events.onError?.(piece.text, piece.failed);
+    next();
   };
 
   const next = () => {
@@ -223,33 +348,10 @@ export function createLocalSpeaker(
       setBusy(false);
       return;
     }
-    playing = true;
     setBusy(true);
     prefetch();
-    const mine = ++turn;
-    piece
-      .audio!.then((buffer) => {
-        if (mine !== turn) return;
-        const node = audioContext().createBufferSource();
-        node.buffer = buffer;
-        node.connect(audioContext().destination);
-        node.onended = () => {
-          if (mine !== turn) return;
-          source = null;
-          playing = false;
-          queue.shift();
-          next();
-        };
-        source = node;
-        node.start();
-      })
-      .catch((error: unknown) => {
-        if (mine !== turn) return;
-        playing = false;
-        queue.shift();
-        events.onError?.(piece.text, error);
-        next();
-      });
+    playing = { piece, turn: ++turn, index: 0, at: 0, sources: new Set(), audible: false };
+    pump();
   };
 
   const forget = (pieces: Piece[]) => {
@@ -260,13 +362,21 @@ export function createLocalSpeaker(
     engine: 'local',
     enqueue(text) {
       if (!text.trim()) return;
-      queue.push({ text, audio: null, abort: new AbortController() });
+      queue.push({
+        text,
+        abort: new AbortController(),
+        buffers: [],
+        done: false,
+        failed: null,
+        loading: false,
+        changed: null,
+      });
       prefetch();
       next();
     },
     pause() {
       paused = true;
-      stopSource();
+      stopSources();
     },
     resume() {
       if (!paused) return;
@@ -275,13 +385,13 @@ export function createLocalSpeaker(
     },
     clear() {
       paused = false;
-      stopSource();
+      stopSources();
       forget(queue.splice(0));
       setBusy(false);
     },
     drain() {
       paused = false;
-      stopSource();
+      stopSources();
       const rest = queue.splice(0);
       forget(rest);
       setBusy(false);
@@ -297,7 +407,7 @@ export function createLocalSpeaker(
       void audioContext().resume();
     },
     destroy() {
-      stopSource();
+      stopSources();
       forget(queue.splice(0));
       void context?.close();
       context = null;

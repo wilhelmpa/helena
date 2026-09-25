@@ -219,11 +219,21 @@ export function lemonadeNoThinkingBaseUrl(baseUrl: string): string | null {
   return null;
 }
 
+// Lemonade 2026.39.1 documents only `file`, `model`, `language` and `response_format` for its
+// transcriptions (FastFlowLM's Whisper answers the compact shape and ignores `language`), and
+// buffered WAV or streamed PCM for speech (streaming is OpenMOSS-only, at its own rate).
+const LEMONADE_AUDIO = {
+  transcriptionContext: false,
+  speechPcmRate: null,
+  speechLanguage: false,
+} as const;
+
 export const lemonadeServer: ModelServerType = {
   id: LEMONADE,
   label: { i18n: 'localAi.serverTypes.lemonade' },
   defaultBaseUrl: LEMONADE_DEFAULT_BASE_URL,
   noThinkingBaseUrl: lemonadeNoThinkingBaseUrl,
+  audio: LEMONADE_AUDIO,
   async models(context) {
     const [models, health] = await Promise.all([
       context.fetch('/models?show_all=true').then(json),
@@ -261,6 +271,127 @@ export const lemonadeServer: ModelServerType = {
   },
 };
 
-export const BUILTIN_MODEL_SERVERS: ModelServerType[] = [lemonadeServer, openAiCompatibleServer];
+// ── whisper.cpp's whisper-server ──────────────────────────────────────────────────────────
+
+export const WHISPER_CPP = 'whisper-cpp';
+
+// Helena's voice on the GPU (native/local-ai/voice.sh) runs it at 127.0.0.1:13306 with
+// `--request-path /v1 --inference-path /audio/transcriptions`, so it answers the OpenAI path.
+export const WHISPER_CPP_DEFAULT_BASE_URL = 'http://127.0.0.1:13306/v1';
+
+// The one model a whisper-server holds (it lists none): Helena calls it `whisper`; which
+// weights it loaded is the installer's (voice.sh, models.tsv).
+export const WHISPER_CPP_MODEL = 'whisper';
+
+// whisper.cpp's own server (MIT, ggml-org/whisper.cpp examples/server): one model, loaded at
+// start, `GET /health`, and the OpenAI transcription fields including `prompt`, `temperature`
+// and `verbose_json` with each segment's confidence. No key of its own: it listens on loopback
+// and the firewall lets only Helena's API reach it (voice.sh).
+export const whisperCppServer: ModelServerType = {
+  id: WHISPER_CPP,
+  label: { i18n: 'localAi.serverTypes.whisperCpp' },
+  defaultBaseUrl: WHISPER_CPP_DEFAULT_BASE_URL,
+  audio: { transcriptionContext: true, speechPcmRate: null, speechLanguage: false },
+  async models(context) {
+    const up = await context
+      .fetch('/health')
+      .then((response) => response.ok)
+      .catch(() => false);
+    const model = normalizeLocalModel({
+      id: WHISPER_CPP_MODEL,
+      name: 'Whisper (whisper.cpp)',
+      // voice.sh builds it for the GPU (HIP); a CPU build would say so in its server's name.
+      unit: 'gpu',
+      capabilities: ['transcription'],
+      contextLength: null,
+      loaded: up,
+    });
+    return model ? [model] : [];
+  },
+  async status(context) {
+    const started = Date.now();
+    try {
+      const response = await context.fetch('/health');
+      // 503 while the model loads: reachable, not ready.
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return {
+        reachable: true,
+        version: null,
+        latencyMs: Date.now() - started,
+        error: null,
+        loaded: [{ id: WHISPER_CPP_MODEL, unit: 'gpu', backend: 'whisper.cpp' }],
+      };
+    } catch (error) {
+      return unreachable(error);
+    }
+  },
+};
+
+// ── qwentts.cpp's tts-server ─────────────────────────────────────────────────────────────
+
+export const QWEN_TTS = 'qwentts-cpp';
+export const QWEN_TTS_DEFAULT_BASE_URL = 'http://127.0.0.1:13307/v1';
+
+// qwentts.cpp's OpenAI-compatible server (MIT; Qwen3-TTS weights Apache-2.0): one model resident
+// on the GPU, `GET /v1/models`, `GET /health`, `/v1/audio/speech` streaming 16-bit PCM at 24 kHz
+// as it is generated (or a WAV file), `language` per request, and a registry of voices
+// (`GET /v1/audio/voices`: the model's own speakers plus the cloned ones voice.sh registers).
+// No key of its own: loopback, and the firewall lets only Helena's API reach it.
+export const qwenTtsServer: ModelServerType = {
+  id: QWEN_TTS,
+  label: { i18n: 'localAi.serverTypes.qwenTts' },
+  defaultBaseUrl: QWEN_TTS_DEFAULT_BASE_URL,
+  audio: { transcriptionContext: false, speechPcmRate: 24_000, speechLanguage: true },
+  async models(context) {
+    return openAiModels(await json(await context.fetch('/models'))).map((model) => ({
+      ...model,
+      unit: 'gpu' as const,
+      capabilities: ['speech' as const],
+      loaded: true,
+    }));
+  },
+  async status(context) {
+    const started = Date.now();
+    try {
+      const models = openAiModels(await json(await context.fetch('/models')));
+      return {
+        reachable: true,
+        version: null,
+        latencyMs: Date.now() - started,
+        error: null,
+        loaded: models.map(({ id }) => ({ id, unit: 'gpu' as const, backend: 'qwentts.cpp' })),
+      };
+    } catch (error) {
+      return unreachable(error);
+    }
+  },
+  async voices(context) {
+    const body = await json(await context.fetch('/audio/voices'));
+    return voiceNames(body);
+  },
+};
+
+// `GET /audio/voices`: `{ voices: [...] }` or `{ data: [...] }`, each a name or `{ name | id }`.
+export function voiceNames(body: unknown): string[] {
+  const value = body && typeof body === 'object' ? (body as Record<string, unknown>) : {};
+  const items = list(value.voices ?? value.data ?? body);
+  const names = items.flatMap((item) => {
+    if (typeof item === 'string') return [item];
+    if (item && typeof item === 'object') {
+      const entry = item as Record<string, unknown>;
+      const name = text(entry.name) ?? text(entry.id) ?? text(entry.voice);
+      return name ? [name] : [];
+    }
+    return [];
+  });
+  return [...new Set(names)].slice(0, 100);
+}
+
+export const BUILTIN_MODEL_SERVERS: ModelServerType[] = [
+  lemonadeServer,
+  openAiCompatibleServer,
+  whisperCppServer,
+  qwenTtsServer,
+];
 
 export type { ModelServerContext };

@@ -103,7 +103,9 @@
   },
   "serverTypes": {
     "lemonade": "Lemonade Server (GPU + NPU)",
-    "openaiCompatible": "Server kompatibel OpenAI"
+    "openaiCompatible": "Server kompatibel OpenAI",
+    "whisperCpp": "whisper.cpp (pengenalan suara, GPU)",
+    "qwenTts": "Qwen3-TTS (suara, GPU)"
   },
   "classes": {
     "embeddings": {
@@ -124,7 +126,7 @@
     },
     "transcription": {
       "label": "Transkripsi (dikte)",
-      "description": "Ucapan ke teks untuk dikte dan mode percakapan (Whisper di NPU)."
+      "description": "Ucapan ke teks untuk dikte dan mode percakapan (Whisper di mesin ini)."
     },
     "speech": {
       "label": "Membacakan (suara)",
@@ -145,6 +147,10 @@
     "decisions": {
       "label": "Keputusan",
       "description": "Keputusan bertipe lewat pembacaan logit: memilah email, pilihan model, bukti, langkah workflow. Jenisnya diaktifkan di Keputusan."
+    },
+    "voice-reply": {
+      "label": "Balasan suara (cepat)",
+      "description": "Dalam percakapan, model lokal yang cepat menjawab hal yang bisa dijawab dari percakapan itu sendiri (salam, “kamu dengar aku?”, jam, “katakan lebih singkat”) dalam sepersekian detik; apa pun yang butuh datamu atau tindakan langsung diteruskan ke agen. Ia tidak pernah bertindak sendiri."
     }
   },
   "updates": {
@@ -173,6 +179,35 @@
       "off": "AI lokal mati",
       "down": "server lokal tidak terjangkau",
       "failed": "server lokal gagal"
+    }
+  },
+  "voice": {
+    "title": "Suara di chat",
+    "loading": "Memuat …",
+    "failed": "Pengaturan suara tidak dapat dimuat.",
+    "pause": {
+      "title": "Jeda sebelum jawaban",
+      "hint": "Berapa lama kamu harus diam sebelum Helena mengirim kalimatmu. Lebih singkat menjawab lebih cepat, lebih lama jarang memotongmu.",
+      "option": "{seconds} dtk"
+    },
+    "words": {
+      "title": "Kata yang harus dikenal Helena",
+      "hint": "Nama, produk, dan istilah, agar pengenalan suara menulisnya dengan benar. Yang sudah dikenal: {words}.",
+      "placeholder": "mis. konsultan pajak Müller, Shopify, Kubernetes",
+      "save": "Simpan kata"
+    },
+    "voice": {
+      "title": "Suara",
+      "hint": "Suara lokal yang dipakai Helena untuk menjawab dalam percakapan (AI lokal → “Bacakan”).",
+      "default": "Suara bawaan server",
+      "none": "Belum ada suara lokal – sampai saat itu browser yang membacakan."
+    },
+    "model": {
+      "title": "Model untuk percakapan",
+      "hint": "Model yang dipakai agenmu untuk menjawab ucapan. Model cepat dengan sedikit berpikir menjaga percakapan tetap lancar; agen yang tidak menawarkannya menjawab seperti biasa.",
+      "default": "Seperti saat mengetik (model agen)",
+      "thinking": "Berpikir",
+      "thinkingDefault": "Bawaan model"
     }
   }
 }

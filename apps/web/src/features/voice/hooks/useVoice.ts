@@ -3,6 +3,7 @@
 import { useMemo, useSyncExternalStore } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getVoiceStatus } from '@/lib/api/endpoints/voice';
+import { clampPause } from '../utils/voiceSettings';
 import {
   detectBrowserVoice,
   pickListener,
@@ -48,6 +49,8 @@ export function useVoice(): {
   listener: Listener;
   speaker: Speaker;
   maxSeconds: number;
+  // How long a pause ends a conversation turn (Sprache settings).
+  pauseMs: number;
   refresh: () => void;
 } {
   const status = useVoiceStatus();
@@ -62,6 +65,7 @@ export function useVoice(): {
       listener: pickListener(known, browser ?? NOTHING),
       speaker: pickSpeaker(known, browser ?? NOTHING),
       maxSeconds: known?.limits.maxSeconds ?? 120,
+      pauseMs: clampPause(known?.settings?.pauseMs),
       refresh: () => void refetch(),
     }),
     [browser, known, settled, refetch],

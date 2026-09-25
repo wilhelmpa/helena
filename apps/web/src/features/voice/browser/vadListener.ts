@@ -1,3 +1,4 @@
+import { DEFAULT_PAUSE_MS } from '../utils/voiceSettings';
 import { SPEECH_CONSTRAINTS, microphoneError } from './recorder';
 
 // The conversation mode's ear for Helena's local transcription: Silero VAD v5 in the browser
@@ -11,6 +12,8 @@ import { SPEECH_CONSTRAINTS, microphoneError } from './recorder';
 export const VOICE_ASSET_PATH = '/voice/';
 
 export interface ConversationEar {
+  // How long a pause ends a turn: the time between the owner stopping and the ear saying so.
+  readonly pauseMs: number;
   // While reading an answer aloud: only clear, sustained speech counts (the echo of the reading
   // is quieter and less sure than the owner's own voice).
   setGuarded(guarded: boolean): void;
@@ -27,18 +30,29 @@ export interface EarEvents {
   onError?(reason: 'blocked' | 'missing' | 'failed' | 'network'): void;
 }
 
-// How the detector decides (vad-web's FrameProcessor, frames of 32 ms). A pause of 0.8 s ends
-// a turn — long enough for a breath inside a sentence, short enough to feel like a conversation.
-const NORMAL = {
+// How the detector decides (vad-web's FrameProcessor, frames of 32 ms). The pause that ends a
+// turn is the owner's setting (Sprache → "Pause bis zur Antwort", default 0.6 s; it was a fixed
+// 0.8 s): long enough for a breath inside a sentence, short enough to feel like a conversation.
+// 400 ms are kept before the detector was sure (320 cut the first syllable of a quiet start).
+const detector = (pauseMs: number) => ({
   positiveSpeechThreshold: 0.5,
   negativeSpeechThreshold: 0.35,
-  redemptionMs: 800,
-  preSpeechPadMs: 320,
+  redemptionMs: pauseMs,
+  preSpeechPadMs: 400,
   minSpeechMs: 250,
-};
-const GUARDED = { ...NORMAL, positiveSpeechThreshold: 0.8, minSpeechMs: 500 };
+});
+const guarded = (pauseMs: number) => ({
+  ...detector(pauseMs),
+  positiveSpeechThreshold: 0.8,
+  minSpeechMs: 500,
+});
 
-export async function startVadEar(events: EarEvents): Promise<ConversationEar> {
+export async function startVadEar(
+  events: EarEvents,
+  pauseMs = DEFAULT_PAUSE_MS,
+): Promise<ConversationEar> {
+  const NORMAL = detector(pauseMs);
+  const GUARDED = guarded(pauseMs);
   const [{ MicVAD }, { log }] = await Promise.all([
     import('@ricky0123/vad-web'),
     import('@ricky0123/vad-web/dist/logging'),
@@ -85,8 +99,9 @@ export async function startVadEar(events: EarEvents): Promise<ConversationEar> {
     throw microphoneError(error);
   }
   return {
-    setGuarded(guarded) {
-      vad.setOptions(guarded ? GUARDED : NORMAL);
+    pauseMs,
+    setGuarded(on) {
+      vad.setOptions(on ? GUARDED : NORMAL);
     },
     async destroy() {
       await vad.destroy().catch(() => {});

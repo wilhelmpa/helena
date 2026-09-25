@@ -1,9 +1,27 @@
 import { Elysia } from 'elysia';
-import { requireUser } from '#shared/access';
+import { requireGod, requireUser } from '#shared/access';
 import { authContext } from '#shared/auth-context';
 import { errors } from '#shared/responses';
-import { TranscriptionResponse, VoiceStatusResponse, speechBody, transcriptionBody } from './model';
-import { acquireVoice, requireHuman, synthesize, transcribe, voiceStatus } from './service';
+import {
+  TranscriptionResponse,
+  VoiceSettingsResponse,
+  VoiceStatusResponse,
+  speechBody,
+  transcriptionBody,
+  voiceSettingsBody,
+} from './model';
+import {
+  acquireVoice,
+  forgetVoiceVocabulary,
+  requireHuman,
+  speechVoices,
+  synthesize,
+  transcribe,
+  voiceStatus,
+} from './service';
+import { helenaWords, readVoiceSettings, replyModelChoices, writeVoiceSettings } from './settings';
+// The voice reply answers spoken questions where switched on (it registers itself).
+import './reply';
 
 // Voice in the chat (docs/helena-decisions/voice.md): which way dictation and reading aloud go
 // now, a recording to text and a sentence to audio on Helena's local AI. For signed-in people;
@@ -67,12 +85,15 @@ export const voiceRoutes = new Elysia({ name: 'voice', detail: { tags: ['Voice']
       await requireHuman(current.id);
       const release = acquireVoice('speak', current.id);
       try {
-        const speech = await synthesize({ text: body.text });
+        const speech = await synthesize({ text: body.text, language: body.language ?? null });
         return new Response(speech.audio, {
           headers: {
             'content-type': speech.contentType,
             'cache-control': 'private, no-store',
             'x-helena-model': speech.model,
+            ...(speech.sampleRate && { 'x-helena-sample-rate': String(speech.sampleRate) }),
+            // nginx passes a stream on as it comes instead of buffering it.
+            ...(speech.sampleRate && { 'x-accel-buffering': 'no' }),
           },
         });
       } finally {
@@ -86,8 +107,57 @@ export const voiceRoutes = new Elysia({ name: 'voice', detail: { tags: ['Voice']
       detail: {
         summary: 'Read a sentence aloud',
         description:
-          'Audio (WAV) of the text from the local speech model (Lokale KI → Vorlesen), at most ' +
-          '1000 characters. Same refusals as the transcription.',
+          'Audio of the text from the local speech model (Lokale KI → Vorlesen), at most 1000 ' +
+          'characters: a WAV file, or — where the server streams — raw 16-bit mono PCM ' +
+          '(`audio/pcm`, the rate in `x-helena-sample-rate`) as it is generated. Same refusals ' +
+          'as the transcription.',
+      },
+    },
+  )
+
+  .get(
+    '/god/voice/settings',
+    async ({ user }) => {
+      requireGod(user);
+      const [settings, words, voices, replyModels] = await Promise.all([
+        readVoiceSettings(),
+        helenaWords(),
+        speechVoices(),
+        replyModelChoices(),
+      ]);
+      return { ...settings, helenaWords: words, voices, replyModels };
+    },
+    {
+      response: { 200: VoiceSettingsResponse, ...errors(401, 403) },
+      detail: {
+        summary: 'Read the voice settings',
+        description:
+          'The pause that ends a spoken turn, the words the transcription should know (and the ' +
+          'names Helena adds itself), the local voice and its speed, and the model agents ' +
+          'answer spoken turns with.',
+      },
+    },
+  )
+
+  .patch(
+    '/god/voice/settings',
+    async ({ user, body }) => {
+      requireGod(user);
+      const settings = await writeVoiceSettings(body);
+      forgetVoiceVocabulary();
+      const [words, voices, replyModels] = await Promise.all([
+        helenaWords(),
+        speechVoices(),
+        replyModelChoices(),
+      ]);
+      return { ...settings, helenaWords: words, voices, replyModels };
+    },
+    {
+      body: voiceSettingsBody,
+      response: { 200: VoiceSettingsResponse, ...errors(400, 401, 403) },
+      detail: {
+        summary: 'Change the voice settings',
+        description: 'Any of the fields; the others stay. Takes effect with the next turn.',
       },
     },
   );
