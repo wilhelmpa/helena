@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'bun:test';
 import { HttpError } from '#shared/lib';
 import { capabilitiesFromId } from '#modules/local-ai/server-types';
 import { cleanTranscript } from '../../transcript';
-import { readWav } from '../../wav';
+import { canonicalWav, readWav } from '../../wav';
 import { QUOTAS, acquireVoice, resetVoiceQuotas } from '../../service';
 import { wav } from '../fixtures';
 
@@ -16,6 +16,7 @@ describe('readWav', () => {
       sampleRate: 16000,
       channels: 1,
       bitsPerSample: 16,
+      dataOffset: 44,
       dataBytes: 80000,
       durationMs: 2500,
     });
@@ -32,6 +33,8 @@ describe('readWav', () => {
     extra.set(plain.subarray(36), 50);
     expect(readWav(extra)?.durationMs).toBe(1000);
     expect(readWav(extra)?.channels).toBe(2);
+    // What goes on to the model server is the plain file again, without the extra chunk.
+    expect(canonicalWav(extra, readWav(extra)!)).toEqual(plain);
   });
 
   it('refuses what is not uncompressed PCM in a whole RIFF/WAVE file', () => {

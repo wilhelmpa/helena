@@ -8,9 +8,38 @@ export interface WavInfo {
   sampleRate: number;
   channels: number;
   bitsPerSample: number;
-  // The bytes of audio in the data chunk.
+  // Where the audio starts, and how many bytes of it the data chunk holds.
+  dataOffset: number;
   dataBytes: number;
   durationMs: number;
+}
+
+// The same audio behind the plain 44-byte header every WAV reader knows: other chunks (a
+// `LIST`, macOS's `FLLR` padding) and WAVE_FORMAT_EXTENSIBLE are left out, so the model
+// server's parser never meets them.
+export function canonicalWav(bytes: Uint8Array, info: WavInfo): Uint8Array {
+  const out = new Uint8Array(44 + info.dataBytes);
+  const view = new DataView(out.buffer);
+  const put = (offset: number, text: string) => {
+    for (let index = 0; index < 4; index += 1)
+      view.setUint8(offset + index, text.charCodeAt(index));
+  };
+  const frame = info.channels * (info.bitsPerSample / 8);
+  put(0, 'RIFF');
+  view.setUint32(4, 36 + info.dataBytes, true);
+  put(8, 'WAVE');
+  put(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, info.channels, true);
+  view.setUint32(24, info.sampleRate, true);
+  view.setUint32(28, info.sampleRate * frame, true);
+  view.setUint16(32, frame, true);
+  view.setUint16(34, info.bitsPerSample, true);
+  put(36, 'data');
+  view.setUint32(40, info.dataBytes, true);
+  out.set(bytes.subarray(info.dataOffset, info.dataOffset + info.dataBytes), 44);
+  return out;
 }
 
 const PCM = 1;
@@ -64,6 +93,7 @@ export function readWav(bytes: Uint8Array): WavInfo | null {
         sampleRate,
         channels,
         bitsPerSample: bits,
+        dataOffset: body,
         dataBytes: size,
         durationMs: Math.round((size / frameBytes / sampleRate) * 1000),
       };

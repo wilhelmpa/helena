@@ -10,7 +10,7 @@ import { joinUrl } from '#modules/local-ai/eval-context';
 import { taskClass } from '#modules/local-ai/service';
 import { isAgentUser } from '#modules/agents/core/service';
 import { cleanTranscript } from './transcript';
-import { readWav } from './wav';
+import { canonicalWav, readWav } from './wav';
 
 // Voice in the chat (docs/helena-decisions/voice.md): dictation and the conversation mode send
 // their recordings here, and the conversation mode's reading aloud asks here for audio. Both go
@@ -145,7 +145,11 @@ export async function transcribe(input: {
   const route = await requireRoute(TRANSCRIPTION_CLASS);
   const key = await readModelServerKey(route.server);
   const form = new FormData();
-  form.append('file', new Blob([input.audio], { type: 'audio/wav' }), 'recording.wav');
+  form.append(
+    'file',
+    new Blob([canonicalWav(input.audio, info)], { type: 'audio/wav' }),
+    'recording.wav',
+  );
   form.append('model', route.model);
   form.append('response_format', 'json');
   if (input.language) form.append('language', input.language);

@@ -96,6 +96,12 @@ async function launch({ secure }) {
       const details = message.params.exceptionDetails;
       errors.push(`[exception] ${(details.exception?.description ?? details.text).slice(0, 300)}`);
     }
+    // Content-security-policy refusals and failed loads arrive here, not on the console API.
+    if (message.method === 'Log.entryAdded' && message.params.entry.level === 'error') {
+      errors.push(
+        `[log.error] ${message.params.entry.text.slice(0, 300)} ${message.params.entry.url ?? ''}`,
+      );
+    }
     if (message.method === 'Runtime.consoleAPICalled' && args.verbose) {
       console.log(
         `  [console.${message.params.type}]`,
@@ -123,6 +129,7 @@ async function launch({ secure }) {
   await send('Runtime.enable');
   await send('Page.enable');
   await send('Network.enable');
+  await send('Log.enable');
   if (args['cookie-file']) {
     const cookies = readFileSync(args['cookie-file'], 'utf8').trim().split(/;\s*/);
     for (const pair of cookies) {
