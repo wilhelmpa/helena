@@ -229,7 +229,11 @@ function spawnArgs(
 // only their own, none of them a secret).
 function commandEnvNames(config: RunnerConfig, task: Task): string[] {
   const env = isolationEnabled()
-    ? isolatedEnv(config.env, { ITSAPLAN_URL: config.url, ITSAPLAN_API_KEY: config.apiKey }, task.env)
+    ? isolatedEnv(
+        config.env,
+        { ITSAPLAN_URL: config.url, ITSAPLAN_API_KEY: config.apiKey },
+        task.env,
+      )
     : childEnv(config, task);
   return Object.keys(env);
 }

@@ -53,11 +53,39 @@ function config(overrides: Partial<RunnerConfig>): RunnerConfig {
 describe('what the runner takes from Helena', () => {
   it('sets the delivered variables, masks only the secret ones, and refuses its own names', () => {
     const delivered = deliveredEnv([
-      { id: 1, label: 'VERVE', name: 'CLOUDFLARE_API_TOKEN', value: TOKEN, secret: true, updatedAt: 'a' },
-      { id: 2, label: 'Account', name: 'CLOUDFLARE_ACCOUNT_ID', value: '42a48d019d819276f79d3cf42750689b', secret: false, updatedAt: 'a' },
-      { id: 3, label: 'x', name: 'ITSAPLAN_API_KEY', value: 'stolen-key-123456', secret: true, updatedAt: 'a' },
+      {
+        id: 1,
+        label: 'VERVE',
+        name: 'CLOUDFLARE_API_TOKEN',
+        value: TOKEN,
+        secret: true,
+        updatedAt: 'a',
+      },
+      {
+        id: 2,
+        label: 'Account',
+        name: 'CLOUDFLARE_ACCOUNT_ID',
+        value: '42a48d019d819276f79d3cf42750689b',
+        secret: false,
+        updatedAt: 'a',
+      },
+      {
+        id: 3,
+        label: 'x',
+        name: 'ITSAPLAN_API_KEY',
+        value: 'stolen-key-123456',
+        secret: true,
+        updatedAt: 'a',
+      },
       { id: 4, label: 'x', name: 'PATH', value: '/evil', secret: false, updatedAt: 'a' },
-      { id: 5, label: 'x', name: 'lower_case', value: 'nope-nope-nope', secret: true, updatedAt: 'a' },
+      {
+        id: 5,
+        label: 'x',
+        name: 'lower_case',
+        value: 'nope-nope-nope',
+        secret: true,
+        updatedAt: 'a',
+      },
     ]);
     expect(delivered.env).toEqual({
       CLOUDFLARE_API_TOKEN: TOKEN,
@@ -65,7 +93,13 @@ describe('what the runner takes from Helena', () => {
     });
     expect(delivered.names).toEqual(['CLOUDFLARE_ACCOUNT_ID', 'CLOUDFLARE_API_TOKEN']);
     expect(delivered.secrets).toEqual([TOKEN]);
-    for (const name of ['GIT_SSH_COMMAND', 'HERMES_HOME', 'TERMINAL_TEMP_DIR', 'LD_PRELOAD', 'NODE_OPTIONS']) {
+    for (const name of [
+      'GIT_SSH_COMMAND',
+      'HERMES_HOME',
+      'TERMINAL_TEMP_DIR',
+      'LD_PRELOAD',
+      'NODE_OPTIONS',
+    ]) {
       expect(acceptedName(name)).toBe(false);
     }
     expect(acceptedName('WRANGLER_SEND_METRICS')).toBe(true);
@@ -73,7 +107,14 @@ describe('what the runner takes from Helena', () => {
 
   it("puts the runner's and the adapter's own variables over a delivered one", () => {
     const delivered = deliveredEnv([
-      { id: 1, label: 'x', name: 'CLOUDFLARE_API_TOKEN', value: TOKEN, secret: true, updatedAt: 'a' },
+      {
+        id: 1,
+        label: 'x',
+        name: 'CLOUDFLARE_API_TOKEN',
+        value: TOKEN,
+        secret: true,
+        updatedAt: 'a',
+      },
     ]);
     const settings = withEnv(
       { toolsets: null, env: { HERMES_MANAGED_DIR: '/m' } },
@@ -96,7 +137,13 @@ describe('how the variables reach the tools', () => {
     expect(
       codexToolEnvArgs({
         delivered: ['CLOUDFLARE_API_TOKEN', 'CLOUDFLARE_ACCOUNT_ID'],
-        present: ['PATH', 'CLOUDFLARE_API_TOKEN', 'ITSAPLAN_API_KEY', 'ITSAPLAN_MCP_SECRET_4', 'HOME'],
+        present: [
+          'PATH',
+          'CLOUDFLARE_API_TOKEN',
+          'ITSAPLAN_API_KEY',
+          'ITSAPLAN_MCP_SECRET_4',
+          'HOME',
+        ],
       }),
     ).toEqual([
       '-c',
@@ -112,14 +159,17 @@ describe('how the variables reach the tools', () => {
     expect(argv.at(-1)).toBe('sandbox_mode="workspace-write"');
   });
 
-  it("gives a command the delivered variables in its environment and nowhere on its command line", async () => {
+  it('gives a command the delivered variables in its environment and nowhere on its command line', async () => {
     const cwd = await tempDir('agent-env-local-');
-    const outcome = await execute(config({ cwd, command: 'printf "%s|%s" "$CLOUDFLARE_API_TOKEN" "$0"' }), {
-      prompt: '',
-      systemPrompt: '',
-      env: { CLOUDFLARE_API_TOKEN: TOKEN },
-      delivered: ['CLOUDFLARE_API_TOKEN'],
-    });
+    const outcome = await execute(
+      config({ cwd, command: 'printf "%s|%s" "$CLOUDFLARE_API_TOKEN" "$0"' }),
+      {
+        prompt: '',
+        systemPrompt: '',
+        env: { CLOUDFLARE_API_TOKEN: TOKEN },
+        delivered: ['CLOUDFLARE_API_TOKEN'],
+      },
+    );
     expect(outcome).toMatchObject({ status: 'success', output: `${TOKEN}|sh` });
   });
 
@@ -146,7 +196,12 @@ describe('how the variables reach the tools', () => {
         outputFormat: 'hermes-stream-json',
         env: { PATH: `${bin}:${process.env.PATH ?? '/usr/bin:/bin'}` },
       }),
-      { prompt: 'hi', systemPrompt: '', env: { CLOUDFLARE_API_TOKEN: TOKEN }, delivered: ['CLOUDFLARE_API_TOKEN'] },
+      {
+        prompt: 'hi',
+        systemPrompt: '',
+        env: { CLOUDFLARE_API_TOKEN: TOKEN },
+        delivered: ['CLOUDFLARE_API_TOKEN'],
+      },
     );
     expect(outcome.status).toBe('success');
     const [scratch, mode] = (await Bun.file(record).text()).trim().split('\n');
@@ -190,7 +245,12 @@ describe('how the variables reach the tools', () => {
         outputFormat: 'hermes-stream-json',
         isolation: { slug: 'verve', profile: 'verve', agentId: 6 },
       }),
-      { prompt: 'hi', systemPrompt: '', env: { CLOUDFLARE_API_TOKEN: TOKEN }, delivered: ['CLOUDFLARE_API_TOKEN'] },
+      {
+        prompt: 'hi',
+        systemPrompt: '',
+        env: { CLOUDFLARE_API_TOKEN: TOKEN },
+        delivered: ['CLOUDFLARE_API_TOKEN'],
+      },
       { work: { kind: 'run', id: 1 } },
     );
     expect(outcome.status).toBe('success');
@@ -239,11 +299,25 @@ describe('what the runner reports', () => {
 
   it('masks tool calls, tool output and the error of a Hermes stream', async () => {
     const sink = collect();
-    const stream = new AnswerStream('hermes-stream-json', 't', '1', sink.send, new SecretMask([TOKEN]));
+    const stream = new AnswerStream(
+      'hermes-stream-json',
+      't',
+      '1',
+      sink.send,
+      new SecretMask([TOKEN]),
+    );
     stream.write(
       [
-        JSON.stringify({ type: 'tool_use', name: 'terminal', input: { command: `curl -H "Bearer ${TOKEN}"` } }),
-        JSON.stringify({ type: 'tool_result', name: 'terminal', output: `CLOUDFLARE_API_TOKEN=${TOKEN}` }),
+        JSON.stringify({
+          type: 'tool_use',
+          name: 'terminal',
+          input: { command: `curl -H "Bearer ${TOKEN}"` },
+        }),
+        JSON.stringify({
+          type: 'tool_result',
+          name: 'terminal',
+          output: `CLOUDFLARE_API_TOKEN=${TOKEN}`,
+        }),
         '',
       ].join('\n'),
     );

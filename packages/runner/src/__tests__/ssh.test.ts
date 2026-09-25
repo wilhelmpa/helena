@@ -290,11 +290,17 @@ describe('where a clone lands', () => {
   });
 
   it("an isolated runner clones only into its own project's workspace", () => {
-    const vol = { cwd: '/srv/volition/workspaces/projects/vol', isolation: { slug: 'vol', profile: 'vol', agentId: 5 } };
+    const vol = {
+      cwd: '/srv/volition/workspaces/projects/vol',
+      isolation: { slug: 'vol', profile: 'vol', agentId: 5 },
+    };
     expect(jobWorkspace(vol, job, true)).toBe('/srv/volition/workspaces/projects/vol');
     // The Home agent's runner (runs 90/91 on 2026-09-25) is refused rather than cloning
     // into Home's workspace.
-    const home = { cwd: '/srv/volition/workspaces/home', isolation: { slug: 'home', profile: 'home', agentId: null } };
+    const home = {
+      cwd: '/srv/volition/workspaces/home',
+      isolation: { slug: 'home', profile: 'home', agentId: null },
+    };
     expect(() => jobWorkspace(home, job, true)).toThrow(/works in home; the clone belongs to vol/);
   });
 

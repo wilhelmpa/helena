@@ -3,13 +3,7 @@ import { pageQuery, type Page, type PageParams } from '@/lib/api/core/paging';
 import type { Grant } from './access';
 
 export type CredentialKind =
-  | 'web_login'
-  | 'api_key'
-  | 'ssh_key'
-  | 'secret'
-  | 'runtime_login'
-  | 'decision_model'
-  | 'variable';
+  'web_login' | 'api_key' | 'ssh_key' | 'secret' | 'runtime_login' | 'decision_model' | 'variable';
 // decision_model: where its key comes from — stored here, or the local Laya installation's key
 // file (docs/helena-decisions/browser-task.md §3.3).
 export type DecisionKeySource = 'stored' | 'local-laya' | 'local-ai';

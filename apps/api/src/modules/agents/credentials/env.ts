@@ -401,7 +401,9 @@ export async function listEnvironment(
       label: integrationCredential.label,
       name: envName,
       projectId: integrationCredential.projectId,
-      projectKey: sql<string | null>`(select ${project.key} from ${project} where ${project.id} = ${integrationCredential.projectId})`,
+      projectKey: sql<
+        string | null
+      >`(select ${project.key} from ${project} where ${project.id} = ${integrationCredential.projectId})`,
       grantAgentId: integrationCredentialGrant.agentId,
       grantAgentName: user.name,
       grantProjectId: integrationCredentialGrant.projectId,

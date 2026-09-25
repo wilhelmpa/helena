@@ -24,9 +24,7 @@ export function EnvironmentVariableList({
 
   function source(variable: EnvironmentVariable): string {
     const receivers = variable.grants.map((grant) =>
-      grant.agentName
-        ? grant.agentName
-        : t('allAgentsOf', { project: grant.projectKey ?? '' }),
+      grant.agentName ? grant.agentName : t('allAgentsOf', { project: grant.projectKey ?? '' }),
     );
     return [variable.label, ...new Set(receivers)].join(' · ');
   }

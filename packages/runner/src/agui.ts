@@ -181,7 +181,11 @@ export class AnswerStream {
   // `code` names a failure the reader's chat words itself (model-unavailable).
   async fail(message: string, fallback = '', code?: string): Promise<void> {
     this.closeText(fallback);
-    this.queued.push({ type: 'RUN_ERROR', message: this.mask.text(message), ...(code && { code }) });
+    this.queued.push({
+      type: 'RUN_ERROR',
+      message: this.mask.text(message),
+      ...(code && { code }),
+    });
     await this.flush();
   }
 

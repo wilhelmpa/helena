@@ -625,7 +625,9 @@ describe('SSH keys', () => {
     expect((await clone()).data).toMatchObject({ agentId: writer.id });
     const [run] = await db.select().from(agentRun).where(eq(agentRun.id, started.runId));
     const workspace = path.join(
-      path.resolve(process.env.PROJECT_WORKSPACE_ROOT?.trim() || '/srv/volition/workspaces/projects'),
+      path.resolve(
+        process.env.PROJECT_WORKSPACE_ROOT?.trim() || '/srv/volition/workspaces/projects',
+      ),
       'mkt',
     );
     expect(JSON.parse(run!.prompt)).toEqual({

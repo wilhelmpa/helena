@@ -45,7 +45,10 @@ export const ENV_NAME_PATTERN = /^[A-Z_][A-Z0-9_]{0,63}$/;
 
 // Typed names become capitals, with anything that cannot be in one as an underscore.
 export function envNameOf(text: string): string {
-  return text.toUpperCase().replace(/[^A-Z0-9_]/g, '_').slice(0, 64);
+  return text
+    .toUpperCase()
+    .replace(/[^A-Z0-9_]/g, '_')
+    .slice(0, 64);
 }
 
 // The decision services in the cloud: a key is required, and their address is never local.
@@ -122,7 +125,9 @@ export function credentialValue(entry: CredentialEntry): CredentialFormValue {
 }
 
 // Whether the variable part of the form is complete: off, or a name of the right shape.
-export function isEnvNameValid(value: Pick<CredentialFormValue, 'envEnabled' | 'envName'>): boolean {
+export function isEnvNameValid(
+  value: Pick<CredentialFormValue, 'envEnabled' | 'envName'>,
+): boolean {
   return !value.envEnabled || ENV_NAME_PATTERN.test(value.envName);
 }
 

@@ -50,7 +50,9 @@ export function codexToolEnvArgs(toolEnv: PresetTaskSettings['toolEnv']): string
   return [
     '-c',
     'shell_environment_policy.ignore_default_excludes=true',
-    ...(hidden.length > 0 ? ['-c', `shell_environment_policy.exclude=${JSON.stringify(hidden)}`] : []),
+    ...(hidden.length > 0
+      ? ['-c', `shell_environment_policy.exclude=${JSON.stringify(hidden)}`]
+      : []),
   ];
 }
 

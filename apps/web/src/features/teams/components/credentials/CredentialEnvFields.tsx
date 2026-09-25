@@ -2,11 +2,7 @@ import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import {
-  ENV_NAME_PATTERN,
-  envNameOf,
-  type CredentialFormValue,
-} from '../../utils/credentialForm';
+import { ENV_NAME_PATTERN, envNameOf, type CredentialFormValue } from '../../utils/credentialForm';
 
 // The name the agents' commands get a credential in (docs/helena-decisions/agent-env.md):
 // for an API key or secret behind "Als Umgebungsvariable an Agenten geben", for a plain

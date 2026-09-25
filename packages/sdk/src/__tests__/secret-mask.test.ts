@@ -16,7 +16,12 @@ describe('SecretMask', () => {
     const mask = new SecretMask([TOKEN]);
     expect(
       mask.value({ [TOKEN]: 1, list: [TOKEN, 2, { deep: `x${TOKEN}` }], ok: true, n: null }),
-    ).toEqual({ [TOKEN]: 1, list: [SECRET_MASK, 2, { deep: `x${SECRET_MASK}` }], ok: true, n: null });
+    ).toEqual({
+      [TOKEN]: 1,
+      list: [SECRET_MASK, 2, { deep: `x${SECRET_MASK}` }],
+      ok: true,
+      n: null,
+    });
     const empty = new SecretMask();
     const value = { a: TOKEN };
     expect(empty.value(value)).toBe(value);
@@ -25,7 +30,13 @@ describe('SecretMask', () => {
   test('a stream holds back what could still become a secret', () => {
     const stream = new SecretMask([TOKEN]).stream();
     let out = '';
-    for (const piece of ['The value ', 'is cf-to', 'ken-0123456789', 'abcdefghijklmnopqrstuv', ', done.']) {
+    for (const piece of [
+      'The value ',
+      'is cf-to',
+      'ken-0123456789',
+      'abcdefghijklmnopqrstuv',
+      ', done.',
+    ]) {
       out += stream.push(piece);
       expect(out).not.toContain('cf-to');
     }

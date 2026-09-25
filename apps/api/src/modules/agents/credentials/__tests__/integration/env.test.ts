@@ -81,7 +81,12 @@ async function cloudflareForVerve(asOwner: Api, teamId: number, verveId: number)
 
 describe('variable names', () => {
   it('takes capital names and refuses what the system, Helena or the runtimes set', () => {
-    for (const name of ['CLOUDFLARE_API_TOKEN', 'CLOUDFLARE_ACCOUNT_ID', '_X', 'WRANGLER_SEND_METRICS']) {
+    for (const name of [
+      'CLOUDFLARE_API_TOKEN',
+      'CLOUDFLARE_ACCOUNT_ID',
+      '_X',
+      'WRANGLER_SEND_METRICS',
+    ]) {
       expect(envNameProblem(name)).toBeNull();
     }
     for (const name of [
@@ -164,7 +169,9 @@ describe('credentials as environment variables', () => {
     });
     expect(forVol.status).toBe(201);
     // Moving it into VERVE would collide there.
-    expect((await credential(asOwner, teamId, forVol.data!.id).patch({ projectId: verve.id })).status).toBe(409);
+    expect(
+      (await credential(asOwner, teamId, forVol.data!.id).patch({ projectId: verve.id })).status,
+    ).toBe(409);
 
     // Refused names and kinds without one.
     for (const body of [
@@ -172,7 +179,14 @@ describe('credentials as environment variables', () => {
       { kind: 'api_key' as const, label: 'x', value: 'value-12345678', envName: 'lower' },
       { kind: 'variable' as const, label: 'x', value: 'plain' },
       { kind: 'variable' as const, label: 'x', value: '  ', envName: 'SOME_VALUE' },
-      { kind: 'web_login' as const, label: 'x', loginUrl: 'https://a.b', username: 'u', password: 'p', envName: 'X' },
+      {
+        kind: 'web_login' as const,
+        label: 'x',
+        loginUrl: 'https://a.b',
+        username: 'u',
+        password: 'p',
+        envName: 'X',
+      },
     ]) {
       expect((await credentials(asOwner, teamId).post(body)).status).toBe(400);
     }

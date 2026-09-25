@@ -134,7 +134,9 @@ async function envDelivery(client: Client, log: Log, work: WorkRef): Promise<Del
   try {
     return deliveredEnv(await client.envVariables(work));
   } catch (err) {
-    log(`environment variables not delivered — ${err instanceof Error ? err.message : String(err)}`);
+    log(
+      `environment variables not delivered — ${err instanceof Error ? err.message : String(err)}`,
+    );
     return NO_DELIVERED_ENV;
   }
 }
