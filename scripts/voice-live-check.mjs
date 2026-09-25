@@ -31,9 +31,17 @@ const check = `(async () => {
   const started = performance.now();
   const answer = await fetch(api + '/voice/transcriptions', { method: 'POST', credentials: 'include', body: form });
   out.transcription = { http: answer.status, roundTripMs: Math.round(performance.now() - started), body: await answer.json().catch(() => null) };
+  const settings = await fetch(api + '/god/voice/settings', { credentials: 'include' });
+  out.settings = settings.status === 200 ? await settings.json() : settings.status;
   if (out.status?.speech?.local) {
-    const spoken = await fetch(api + '/voice/speech', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: 'Guten Morgen, hier spricht Helena.' }) });
-    out.speech = { http: spoken.status, type: spoken.headers.get('content-type'), bytes: (await spoken.arrayBuffer()).byteLength };
+    // hub/voice-2: the first sound is what counts — a streaming server's first bytes.
+    const started = performance.now();
+    const spoken = await fetch(api + '/voice/speech', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: 'Guten Morgen, hier spricht Helena. Wie kann ich dir helfen?', language: 'de' }) });
+    const reader = spoken.body.getReader();
+    let bytes = 0, firstMs = null;
+    for (;;) { const { done, value } = await reader.read(); if (done) break; if (firstMs === null) firstMs = Math.round(performance.now() - started); bytes += value.byteLength; }
+    const rate = Number(spoken.headers.get('x-helena-sample-rate')) || null;
+    out.speech = { http: spoken.status, type: spoken.headers.get('content-type'), rate, bytes, firstAudioMs: firstMs, totalMs: Math.round(performance.now() - started), audioS: rate ? +(bytes / 2 / rate).toFixed(2) : null };
   }
   return JSON.stringify(out);
 })()`;
