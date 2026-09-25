@@ -207,7 +207,7 @@
     "audiences": "Application Audience (AUD)",
     "audiencesHint": "La etiqueta AUD de la aplicación de Access para helena.volition.one, 64 caracteres. Una por línea.",
     "allowedEmails": "Identidades permitidas",
-    "allowedEmailsHint": "Opcional: solo estas direcciones de correo, aunque la política de Access admita más. Una por línea.",
+    "allowedEmailsHint": "Opcional: solo estas direcciones de correo, aunque la política de Access admita más. Una por línea. Necesario para el inicio de sesión de Cloudflare.",
     "saved": "Acceso desde fuera guardado",
     "signInTitle": "Iniciar sesión en Helena con el inicio de sesión de Cloudflare",
     "signInDescription": "Quien inicia sesión en Cloudflare Access con una identidad permitida entra en Helena sin otra contraseña, durante 24 horas como máximo y nunca más que la sesión de Access. Access es entonces el único inicio de sesión: exige allí un segundo factor (passkey/Touch ID o una app de autenticación). El terminal sigue pidiendo su código.",

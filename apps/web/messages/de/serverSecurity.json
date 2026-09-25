@@ -207,7 +207,7 @@
     "audiences": "Application Audience (AUD)",
     "audiencesHint": "Der AUD-Tag der Access-Anwendung für helena.volition.one, 64 Zeichen. Einer pro Zeile.",
     "allowedEmails": "Erlaubte Identitäten",
-    "allowedEmailsHint": "Optional: nur diese E-Mail-Adressen, auch wenn die Access-Regel mehr zulässt. Eine pro Zeile.",
+    "allowedEmailsHint": "Optional: nur diese E-Mail-Adressen, auch wenn die Access-Regel mehr zulässt. Eine pro Zeile. Für die Cloudflare-Anmeldung nötig.",
     "saved": "Zugang von außen gespeichert",
     "signInTitle": "Mit der Cloudflare-Anmeldung direkt bei Helena anmelden",
     "signInDescription": "Wer sich bei Cloudflare Access als erlaubte Identität anmeldet, ist ohne weiteres Passwort bei Helena angemeldet – höchstens 24 Stunden, nie länger als die Access-Sitzung. Access ist dann die einzige Anmeldung: verlange dort einen zweiten Faktor (Passkey/Touch ID oder Authenticator-App). Das Terminal fragt weiter nach seinem Code.",

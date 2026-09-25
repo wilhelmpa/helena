@@ -31,8 +31,16 @@ export function requestOrigin(
   const proto =
     headers.get('x-forwarded-proto')?.split(',')[0]?.trim() || fallbackProtocol.replace(/:$/, '');
   try {
-    const origin = new URL(`${proto}://${host}`).origin;
-    return origins.includes(origin) ? origin : null;
+    const url = new URL(`${proto}://${host}`);
+    if (origins.includes(url.origin)) return url.origin;
+    // nginx's $host carries no port: a Host without one names the instance origin with that
+    // scheme and name, when there is exactly one.
+    if (url.port || host.includes(':')) return null;
+    const named = origins.filter((origin) => {
+      const candidate = new URL(origin);
+      return candidate.protocol === url.protocol && candidate.hostname === url.hostname;
+    });
+    return named.length === 1 ? named[0]! : null;
   } catch {
     return null;
   }

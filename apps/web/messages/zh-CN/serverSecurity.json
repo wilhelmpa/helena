@@ -207,7 +207,7 @@
     "audiences": "Application Audience (AUD)",
     "audiencesHint": "helena.volition.one 的 Access 应用的 AUD 标签，64 个字符。每行一个。",
     "allowedEmails": "允许的身份",
-    "allowedEmailsHint": "可选：只允许这些电子邮件地址，即使 Access 策略允许更多。每行一个。",
+    "allowedEmailsHint": "可选：只允许这些电子邮件地址，即使 Access 策略允许更多。每行一个。使用 Cloudflare 登录时必填。",
     "saved": "外部访问已保存",
     "signInTitle": "使用 Cloudflare 登录直接登录 Helena",
     "signInDescription": "以允许的身份登录 Cloudflare Access 后，无需另一个密码即可登录 Helena，最长 24 小时，且不会超过 Access 会话。此后 Access 是唯一的登录方式：请在那里要求第二因素（通行密钥/Touch ID 或身份验证器应用）。终端仍会要求输入它的代码。",

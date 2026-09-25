@@ -207,7 +207,7 @@
     "audiences": "Application Audience (AUD)",
     "audiencesHint": "Тег AUD застосунку Access для helena.volition.one, 64 символи. По одному в рядку.",
     "allowedEmails": "Дозволені особи",
-    "allowedEmailsHint": "Необов’язково: лише ці адреси, навіть якщо правило Access допускає більше. По одній у рядку.",
+    "allowedEmailsHint": "Необов’язково: лише ці адреси, навіть якщо правило Access допускає більше. По одній у рядку. Обов’язково для входу через Cloudflare.",
     "saved": "Доступ ззовні збережено",
     "signInTitle": "Входити в Helena через вхід Cloudflare",
     "signInDescription": "Вхід у Cloudflare Access як дозволена особа відкриває Helena без іншого пароля — щонайбільше на 24 години й ніколи довше за сесію Access. Тоді Access — єдиний вхід: вимагайте там другий фактор (passkey/Touch ID або застосунок-автентифікатор). Термінал і далі запитує свій код.",

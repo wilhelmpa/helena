@@ -207,7 +207,7 @@
     "audiences": "Application Audience (AUD)",
     "audiencesHint": "Tag AUD aplikasi Access untuk helena.volition.one, 64 karakter. Satu per baris.",
     "allowedEmails": "Identitas yang diizinkan",
-    "allowedEmailsHint": "Opsional: hanya alamat email ini, meskipun kebijakan Access mengizinkan lebih. Satu per baris.",
+    "allowedEmailsHint": "Opsional: hanya alamat email ini, meskipun kebijakan Access mengizinkan lebih. Satu per baris. Wajib untuk login Cloudflare.",
     "saved": "Akses dari luar disimpan",
     "signInTitle": "Masuk ke Helena dengan login Cloudflare",
     "signInDescription": "Masuk ke Cloudflare Access sebagai identitas yang diizinkan langsung memasukkan Anda ke Helena tanpa kata sandi lain, paling lama 24 jam dan tidak pernah lebih lama dari sesi Access. Access lalu menjadi satu-satunya login: wajibkan faktor kedua di sana (passkey/Touch ID atau aplikasi autentikator). Terminal tetap meminta kodenya.",

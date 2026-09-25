@@ -74,7 +74,7 @@ describe('the Cloudflare sign-in in the web app', () => {
   });
 
   it('never asks without the proof, the assertion or on a foreign origin', async () => {
-    for (const headers of [
+    const refused: Record<string, string>[] = [
       { 'x-helena-edge-entry': '' },
       { 'x-helena-edge-entry': 'forged-proof-of-the-same-length'.padEnd(64, 'z') },
       { 'cf-access-jwt-assertion': '' },
@@ -82,7 +82,8 @@ describe('the Cloudflare sign-in in the web app', () => {
       { 'x-forwarded-proto': 'http' },
       { origin: 'https://evil.example.com' },
       { 'sec-fetch-site': 'cross-site' },
-    ]) {
+    ];
+    for (const headers of refused) {
       assert.equal(await edgeSignInSession(request('/', headers)), null, JSON.stringify(headers));
     }
     delete process.env.HELENA_EDGE_ENTRY_TOKEN;

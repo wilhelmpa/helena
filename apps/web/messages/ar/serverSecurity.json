@@ -207,7 +207,7 @@
     "audiences": "Application Audience (AUD)",
     "audiencesHint": "وسم AUD لتطبيق Access الخاص بـ helena.volition.one، من 64 حرفًا. واحد في كل سطر.",
     "allowedEmails": "الهويات المسموح بها",
-    "allowedEmailsHint": "اختياري: هذه العناوين فقط، حتى لو سمحت سياسة Access بأكثر. واحد في كل سطر.",
+    "allowedEmailsHint": "اختياري: هذه العناوين فقط، حتى لو سمحت سياسة Access بأكثر. واحد في كل سطر. مطلوب لتسجيل الدخول عبر Cloudflare.",
     "saved": "تم حفظ الوصول من الخارج",
     "signInTitle": "تسجيل الدخول إلى Helena عبر تسجيل دخول Cloudflare",
     "signInDescription": "من يسجّل الدخول إلى Cloudflare Access بهوية مسموح بها يدخل إلى Helena دون كلمة مرور أخرى، لمدة 24 ساعة على الأكثر ولا تتجاوز جلسة Access. يصبح Access حينها تسجيل الدخول الوحيد: اطلب هناك عاملاً ثانياً (مفتاح مرور/Touch ID أو تطبيق مصادقة). تبقى الطرفية تطلب رمزها.",

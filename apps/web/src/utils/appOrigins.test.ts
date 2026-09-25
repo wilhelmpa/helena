@@ -26,6 +26,11 @@ describe('the instance origins', () => {
     assert.equal(requestOrigin(headers('evil.example.com', 'https'), origins), null);
     assert.equal(requestOrigin(headers('helena-home.example.com'), origins, 'https:'), HOME);
     assert.equal(requestOrigin(new Headers(), origins), null);
+    // nginx's $host drops the port: the one origin with that scheme and name.
+    const dev = ['http://localhost:25602', 'http://127.0.0.1:25602'];
+    assert.equal(requestOrigin(headers('127.0.0.1', 'http'), dev), 'http://127.0.0.1:25602');
+    assert.equal(requestOrigin(headers('127.0.0.1:9999', 'http'), dev), null);
+    assert.equal(requestOrigin(headers('127.0.0.1', 'https'), dev), null);
   });
 
   it('moves an address on one origin to another and leaves the rest alone', () => {
