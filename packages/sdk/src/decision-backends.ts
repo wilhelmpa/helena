@@ -69,6 +69,12 @@ export const SYSTEM_ONE_PATH = '/v1/systemone';
 export const SYSTEM_ONE_MODELS_PATH = '/v1/models';
 
 // The address a connection posts to: the base URL without a trailing slash, plus the path.
+// A base that already ends in the path's version (`…/api/v1`, as OpenAI-compatible servers and
+// Helena's local AI write it) does not get it twice.
 export function systemOneUrl(baseUrl: string, path: string = SYSTEM_ONE_PATH): string {
-  return `${baseUrl.trim().replace(/\/+$/, '')}${path}`;
+  const base = baseUrl.trim().replace(/\/+$/, '');
+  const version = /^\/v\d+\//.exec(path)?.[0].slice(0, -1);
+  return version && base.endsWith(version)
+    ? `${base}${path.slice(version.length)}`
+    : `${base}${path}`;
 }

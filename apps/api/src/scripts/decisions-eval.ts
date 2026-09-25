@@ -11,7 +11,7 @@
 //     --out results.json [--concurrency 2] [--debias]
 import { readFile, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import type { DecisionEvalSet, DecisionQuestion } from '@helena/sdk';
+import { systemOneUrl, type DecisionEvalSet, type DecisionQuestion } from '@helena/sdk';
 import {
   askByJson,
   askByLogprobs,
@@ -73,14 +73,14 @@ async function asker(backend: Backend, debias: boolean) {
   const server: OpenAiCompatibleServer = {
     model: backend.model,
     debias: debias || backend.debias === true,
-    post: (path, body, signal) => postJson(`${base}${path}`, key, body, signal),
+    post: (path, body, signal) => postJson(systemOneUrl(base, path), key, body, signal),
   };
   return async (context: string, questions: Record<string, DecisionQuestion>) => {
     const started = performance.now();
     let result: SystemOneResult;
     const request = { state: context, questions: toSystemOne(questions) };
     if (backend.protocol === 'systemone') {
-      const body = (await postJson(`${base}/v1/systemone`, key, {
+      const body = (await postJson(systemOneUrl(base), key, {
         model: backend.model,
         ...request,
       })) as {

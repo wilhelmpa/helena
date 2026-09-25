@@ -10,6 +10,7 @@ import {
   categoryFromAcpToolKind,
   categoryFromAnnotations,
   cliArgv,
+  systemOneUrl,
   createEvent,
   createEventBus,
   createRegistry,
@@ -302,5 +303,20 @@ describe('text and bundles', () => {
     };
     expect(validateBundle(bundle)).toEqual([]);
     expect(validateBundle({ ...bundle, license: 'SSPL-1.0' })).toEqual(['license SSPL-1.0']);
+  });
+});
+
+describe('systemOneUrl', () => {
+  test('joins the base and the path once, whether or not the base carries the version', () => {
+    expect(systemOneUrl('https://api.typesafe.ai/')).toBe('https://api.typesafe.ai/v1/systemone');
+    expect(systemOneUrl('http://127.0.0.1:13305/api/v1', '/v1/chat/completions')).toBe(
+      'http://127.0.0.1:13305/api/v1/chat/completions',
+    );
+    expect(systemOneUrl('http://127.0.0.1:8791', '/v1/models')).toBe(
+      'http://127.0.0.1:8791/v1/models',
+    );
+    expect(systemOneUrl('https://ai-gateway.vercel.sh/typesafe')).toBe(
+      'https://ai-gateway.vercel.sh/typesafe/v1/systemone',
+    );
   });
 });

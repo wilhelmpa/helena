@@ -396,25 +396,29 @@ What this means so far:
 
 | Branch | What connects | Done here | To do at merge |
 |---|---|---|---|
-| hub/local-ai | Lemonade + model servers; the "Lokale KI" policy | `useModelServerResolver` (connection.ts) and `useDecisionGate` (decisions/service.ts) as hooks; `local-logit`/`llm-json` presets point at `http://127.0.0.1:13305/api` with `keySource: 'local-ai'` | register both in `helena.local-ai` (below); a task class `decisions` ("Entscheidungen", wired, eval = the classes' own) if the owner wants the master switch to cover it |
+| hub/local-ai | Lemonade + model servers; the "Lokale KI" policy | `useModelServerResolver` (connection.ts) and `useDecisionGate` (decisions/service.ts) as hooks; `local-logit`/`llm-json` presets point at `http://127.0.0.1:13305/api/v1` (local-ai's convention; a doubled `/v1` is avoided) with `keySource: 'local-ai'` | register the resolver in `helena.local-ai` (below), the gate only if the owner wants the master switch to cover decisions (§11.7) |
 | hub/browser-task (merged) | decision backends, System One client, Laya | `protocol` dispatch in `askSystemOne`; Laya serves several checkpoints (`HELENA_LAYA_MODELS`) | – |
 | hub/native-engine (merged) | step registry, system jobs | step `decision`, job `helena.mail-triage` | – |
 | hub/mail (merged) | mail model | classification table, list badges, `createTaskFromThread(…, {assigneeUserId})` | – |
 | hub/autopilot, hub/model-availability | price table, refused models | read by the router's tiers | – |
 
-Local AI registration (to add in hub/local-ai's plugin once both are merged):
+Local AI registration (to add in hub/local-ai's plugin once both are merged; names as on
+hub/local-ai be4bbf69):
 
 ```ts
+import { modelServerBySlug, readLocalAiPolicy, readModelServerKey } from '@repo/db';
 import { useModelServerResolver } from '#modules/browser-task/connection';
 import { useDecisionGate } from '#modules/decisions/service';
 
 useModelServerResolver(async (slug) => {
-  const server = (await listModelServers()).find((row) => row.slug === slug);
+  const server = await modelServerBySlug(slug);
   return server ? { baseUrl: server.baseUrl, key: await readModelServerKey(server) } : null;
 });
-// Local AI's master switch covers local decision backends; the cloud is not its business.
+// Only if the owner wants the "Lokale KI" master switch to cover decisions too (§11): a class
+// the owner pointed at a local connection is otherwise his explicit choice, not local AI acting
+// on its own.
 useDecisionGate(async ({ local }) =>
-  local && !(await readLocalAiPolicy()).enabled ? 'local AI is switched off' : null,
+  local && !(await readLocalAiPolicy()).enabled ? 'Lokale KI ist ausgeschaltet' : null,
 );
 ```
 
@@ -430,6 +434,8 @@ useDecisionGate(async ({ local }) =>
    typed-decisions`, 842 MB, memory limit 6 GB) — not recommended for German content (§8).
 5. Mail: which actions to allow automatically; receipts from invoice mail automatically.
 6. Receipts: which projects get bank accounts; later ERPNext pull or Enable Banking (§7.4).
+7. Whether the local AI master switch also covers decision classes pointed at a local connection
+   (§10; recommendation: no, the class switch is already the owner's explicit choice).
 
 ## 12. Sources
 

@@ -266,7 +266,7 @@ function openAiServer(
   return {
     model: connection.model,
     async post(path, body, signal) {
-      const res = await fetcher(`${address.baseUrl.replace(/\/+$/, '')}${path}`, {
+      const res = await fetcher(systemOneUrl(address.baseUrl, path), {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
