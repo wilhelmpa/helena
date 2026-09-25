@@ -20,6 +20,7 @@ The web never gets root, and the API never runs a privileged command itself.
         ▼
  root helena-hostd  (Python 3 stdlib, socket-activated, fixed method list, audit log)
         ├─ md sysfs, lsblk -J, smartctl -j, findmnt, efibootmgr        (disks, RAID, boot)
+        ├─ boot-repair (helena-boot-entries.service), esp-sync (apt hook), NVMe udev rule
         ├─ /sys/class/ec_su_axb35, powerprofilesctl, ryzenadj -i       (power, fans)
         ├─ systemctl start helena-backup*.service, restic --json       (backup)
         └─ events.json ← smartd run.d hook, mdadm PROGRAM hook, guard, backup jobs
@@ -90,7 +91,71 @@ are Python, the tests run with `unittest`, nothing to build. Go or Rust would ne
   event file. Unseen critical events are red on Start until marked seen. No mail is needed.
 - **"Platte ersetzen"** is a guided runbook with the commands filled in from this machine
   (sgdisk `--replicate` + `--randomize-guids`, labels, mkfs.vfat + fstab + rsync of the ESP,
-  `mdadm --add`, the firmware entry). Helena shows them; the owner runs them.
+  `mdadm --add`, the firmware entry through `helena-hostd boot-repair`). Helena shows them;
+  the owner runs them. Its first, folded section ("Erst prüfen: ist Platte X nur
+  verschwunden?", open while a disk is missing) is the §3a runbook for a disk that only fell
+  off the bus.
+
+## 3a. Storage safeguards (after the 2026-09-25 incident)
+
+Branch `hub/storage-resilience`. On 2026-09-25 at 16:21 the Samsung 990 PRO (FW 4B2QJXD7,
+root port 00:03.1) dropped off the PCIe bus: `controller is down; will reset:
+CSTS=0xffffffff, PCI_STATUS=0xffff`, the kernel's own hint `nvme_core.default_ps_max_latency_us=0
+pcie_aspm=off pcie_port_pm=off`, then `Unable to change power state from D3cold to D0`. md
+failed the member; the array ran on the Kingston. PCI remove/rescan, a secondary bus reset
+and a warm reboot did not bring it back; the firmware did not enumerate it and rewrote the
+"Debian" entry to `VenHw(99e275e7-75a0-4b37-a2e6-c5385e6c00cb)`, so the machine booted
+"Debian (Reserve)". A poweroff and Wake-on-LAN brought it back with clean SMART; mdadm
+re-added it from the bitmap in minutes. Afterwards GRUB had read `grub.cfg` from the stale
+member (the boot lacked a parameter added after 16:21). The mdadm `PROGRAM` hook reported the
+failure to hostd, but nobody was told out of band (no MTA).
+
+**NVMe power (udev rule, not only the kernel command line).**
+
+| Option | Decision |
+|---|---|
+| `nvme_core.default_ps_max_latency_us=0` on the GRUB command line | Kept (set live), but not enough alone: the boot that read a stale `grub.cfg` ran without it. |
+| `options nvme_core default_ps_max_latency_us=0` in `/etc/modprobe.d` | Rejected for now: nvme_core loads from the initramfs, so it needs an `update-initramfs` per kernel; the udev rule below reaches the same without touching the initramfs. |
+| **udev rule** (`60-helena-nvme.rules`, the standard place for per-device power policy, as TLP and powertop use it) | **Chosen.** `power/pm_qos_latency_tolerance_us=0` on each controller (the driver then disables APST: `nvme_set_latency_tolerance()` → `nvme_configure_apst()`); the attribute only exists once the controller is identified, so it is set again when the namespace block device appears, and the module default is set for controllers probed later. NVMe PCI functions (class `0x010802`): `d3cold_allowed=0`, `power/control=on`; every PCIe bridge above them: `power/control=on` (the root ports were `auto`). |
+| `pcie_aspm=off` / `pcie_port_pm=off` on the command line | Not added: the firmware owns ASPM on this board (no `link/*aspm*` attributes, only `clkpm`), and `pcie_port_pm=off` is covered for these ports by the rule. |
+
+**ESP copy (guarded, in the repo).** The hand-made apt hook ran `rsync -a --delete` whenever
+both ESPs were mounted, even from a source that a dying disk could no longer read.
+
+| Option | Decision |
+|---|---|
+| ESP on md RAID 1 with metadata 1.0 (superblock at the end, firmware sees FAT) | Rejected: the firmware and fwupd write to the ESP behind md's back, and a divergent mirror is then undetectable and unrepairable. |
+| Ubuntu's `grub-multi-install` (`grub-efi/install_devices`) | Not in Debian 13 (checked: no `/usr/lib/grub/grub-multi-install`, no such debconf question). |
+| systemd-boot / `bootctl` with two ESPs | Would replace shim+GRUB; out of scope. |
+| **Guarded copy after every package change** (same `99helena-esp-sync` name, so the installer replaces the hand-made hook) | **Chosen.** Copies only when both are mounted vfat and different file systems (same source device or same root inode → skipped), the source has the loader and its `grub.cfg` (non-empty), and every source file reads back in full; then rsync must exit 0 and every copied file must hash like its source. Never `--delete` from a source that failed a check. The outcome (`esp-sync.json`) feeds the health lines `espSyncSkipped` (amber, only while the mirror may lack something: the source changed since the last verified copy or could not be read) and `espSyncFailed` (red); a change of the outcome is an event; it never fails apt. |
+
+**Boot entry self-repair.** `efibootmgr` (the standard) is driven by `helena_host/boot.py`,
+run at every boot by `helena-boot-entries.service` (oneshot after both ESP mounts,
+`DefaultDependencies=no` so a missing disk's 90-s mount wait delays nothing) and by
+`helena-hostd boot-repair [--dry-run]`. For each ESP that is mounted and whose disk is on the
+bus: exactly one active entry with its label on that partition's GUID, starting the loader.
+Rules: create and read back **before** deleting; delete a wrong entry only when its role has a
+verified right one; never touch an ESP that is not mounted (a degraded boot changes nothing)
+or an entry with the label pointing to another disk's partition that is not one of the ESPs
+(another install; reported as `foreign`); order Debian, Debian (Reserve), the rest, only once
+"Debian" is verified. `StorageStatus.bootEntries` reports each entry's state (`ok`, `missing`,
+`noPartuuid` = rewritten by the firmware, `wrongDisk`, `wrongLoader`, `inactive`, `duplicate`,
+`loaderMissing`, `unchecked`); the API shows amber lines until the next boot repairs them.
+"Platte ersetzen" now uses the same repair instead of hand-built efibootmgr commands.
+
+**Found while building this (not changed):** Debian 13's `grub-efi-amd64.postinst` runs
+`grub-install` whenever `/boot/grub/x86_64-efi/core.efi` exists, with the bootloader id from
+`GRUB_DISTRIBUTOR` (`debian`) and `grub2/update_nvram=true`. The next GRUB package update
+will therefore write `EFI/debian/*` onto `/boot/efi` and put a new `debian` entry first in the
+boot order, while "Debian"/"Debian (Reserve)" keep starting the `EFI/helena-raid` binaries of
+2026-09-24. The ESP copy mirrors `EFI/debian` too and the boot repair puts "Debian" first again
+at the next boot, so nothing breaks, but `EFI/helena-raid` is never updated by apt. Options
+for the owner/orchestrator: re-run `grub-install --bootloader-id=helena-raid` after GRUB/shim
+updates (a small dpkg hook), or set `grub2/update_nvram=false` and point the entries at
+`EFI/debian`.
+
+**Out of band alerting** (mail, push) is not built: the owner chooses the channel. The events
+file and the red health lines are ready to be forwarded.
 
 ## 4. Backup
 
@@ -240,6 +305,10 @@ host helper, so a container still shows Server with only Updates. hostd never ap
   meant first for hub/local-ai's GPU/NPU/VRAM/model status on the overview.
 
 ## 9. Not built / later
+
+- Out-of-band alerts for critical events (a failed disk, a failed ESP copy): channel open.
+- A "Starteinträge jetzt reparieren" button (hostd.service runs with `ProtectSystem=true`;
+  efivars are writable, so a Varlink method would work; today the repair runs at boot).
 
 - SFTP offsite targets; the S3 key in Zugänge (needs an access-center credential kind).
 - A plugin's `server-section` as a sandboxed frame (only built-in components render).
