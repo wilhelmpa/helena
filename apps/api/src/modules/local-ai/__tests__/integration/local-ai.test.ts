@@ -513,6 +513,47 @@ describe('local AI takes kinds of work', () => {
     expect(await checkOf(off)).toBeNull();
   });
 
+  it('resumes a run on the model its session began with', async () => {
+    const { asOwner, asRunner, agent, server } = await setup();
+    await asOwner.god['local-ai'].policy.patch({ enabled: true });
+    await passed(server.id, 'summaries', 2);
+    const summaries = (mode: 'off' | 'prefer') =>
+      asOwner.god['local-ai'].policy.patch({ classes: { summaries: { mode } } });
+    // The runner that held it stopped, its lease ran out: the next claim resumes the session.
+    const interrupt = async (id: number, claim: number, sessionId: string) => {
+      await asRunner['agent-runs']({ runId: id }).session.post({ sessionId }, { query: { claim } });
+      await db
+        .update(agentRun)
+        .set({ nextAttemptAt: sql`now() - interval '1 second'` })
+        .where(eq(agentRun.id, id));
+    };
+
+    await summaries('prefer');
+    const local = await queueWork(agent.id, 'summaries');
+    const first = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    expect(first).toMatchObject({ id: local, model: LOCAL });
+    await interrupt(local, first.claim, 'sess-local');
+    expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({
+      id: local,
+      sessionId: 'sess-local',
+      model: LOCAL,
+    });
+    await asRunner['agent-runs']({ runId: local }).result.post({ status: 'success' });
+
+    await summaries('off');
+    const cloud = await queueWork(agent.id, 'summaries');
+    const began = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    expect(began).toMatchObject({ id: cloud, model: 'gpt-5.6-luna' });
+    await interrupt(cloud, began.claim, 'sess-cloud');
+    // Switched on meanwhile: the session that began on the cloud model is not moved.
+    await summaries('prefer');
+    expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({
+      id: cloud,
+      sessionId: 'sess-cloud',
+      model: 'gpt-5.6-luna',
+    });
+  });
+
   it('keeps a run on its model while its eval failed, and a routine run follows its own class', async () => {
     const { asOwner, asRunner, agent, server } = await setup();
     await asOwner.god['local-ai'].policy.patch({ enabled: true });

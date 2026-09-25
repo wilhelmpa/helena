@@ -614,7 +614,8 @@ describe('the key file', () => {
     const installer = await Bun.file(
       `${here}/../../../../../../../deployment/volition-stack/native/local-ai/install.sh`,
     ).text();
-    expect(installer).toContain('KEY=$ETC/local-ai.key');
+    // The preload unit hands the same file over as a credential (HELENA_AI_KEY_FILE).
+    expect(installer).toContain('KEY=${HELENA_AI_KEY_FILE:-$ETC/local-ai.key}');
     expect(service).toContain('DEFAULT_KEY_FILE = `${LOCAL_AI_KEY_DIR}/local-ai.key`');
     expect(allowedKeyFile('/etc/helena/local-ai.key')).toBe('/etc/helena/local-ai.key');
   });

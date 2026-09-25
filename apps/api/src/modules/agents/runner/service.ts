@@ -185,6 +185,8 @@ type ClaimedRow = Omit<RunnerRun, 'systemPrompt' | 'autopilotLevel'> & {
   reasoning: string | null;
   // The kind of work the run is for Lokale KI (agent_run.work_class), or null.
   workClass: string | null;
+  // What the last claim recorded about its model (agent_run.model_check), or null.
+  modelCheck: unknown;
   // Claimed before, by a claim that ended without a result: the runner stopped, handed
   // the run back, or lost its lease.
   interrupted: boolean;
@@ -375,6 +377,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
       r.model,
       r.reasoning,
       r.work_class AS "workClass",
+      r.model_check AS "modelCheck",
       r.session_id AS "sessionId",
       r.resumes,
       (r.continued_from_run_id IS NOT NULL AND r.resumes = 1) AS "continuation",
@@ -437,10 +440,15 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
   // The kind of work the run is (a digest, a routine's task, a coordinator's first plan) may
   // run on its local model while Lokale KI takes it (docs/helena-decisions/local-ai-platform.md
   // §7.1); otherwise, and whenever the server does not answer, on the model above, exactly as
-  // without local AI. Decided at every claim, so a resumed run follows the switch too. A run
-  // that names a local model of its own keeps it.
+  // without local AI. A run that names a local model of its own keeps it. A resumed run whose
+  // session began on the configured model stays there: it is not moved to a local model with
+  // the whole session to read again; one that began locally is asked again (its server may be
+  // gone since).
+  const resumedElsewhere =
+    row.sessionId !== null &&
+    (row.modelCheck as { configured?: { source?: string } } | null)?.configured?.source !== 'local';
   const local =
-    row.workClass && !fallback && !parseLocalModelId(model)
+    row.workClass && !fallback && !parseLocalModelId(model) && !resumedElsewhere
       ? await classModelNow(row.workClass)
       : null;
   if (local?.model) {
