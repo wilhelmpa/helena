@@ -4,6 +4,15 @@ import {
   type LocalAiEvalContext,
   type LocalAiEvalResult,
 } from '@helena/sdk';
+// Both without a database, so the command-line eval (scripts/local-ai-eval.ts) runs them too.
+import { reflectionPrompt, type ReflectionReason } from '#modules/agents/runner/reflection';
+import {
+  DEFAULT_POLICY,
+  parseStage,
+  stagePrompt,
+  type TeamMember,
+  type TeamPayload,
+} from '#modules/engine/builtin/steps/agent-team-contract';
 
 // The small evals a local model has to pass before a kind of work may run on it
 // (docs/helena-decisions/local-ai-platform.md §7). Each is a fixed set of cases with an
@@ -198,6 +207,11 @@ const SUMMARY_SYSTEM =
   'Fasse den Text auf Deutsch zusammen. Behalte alle Zahlen, Versionen und Kennungen genau ' +
   'bei. Antworte nur mit JSON: {"summary": "<höchstens drei Sätze>"}.';
 
+// Room for a model that thinks first: the digest runs as an agent turn on the local model,
+// which thinks (docs/helena-decisions/local-ai-platform.md §6.7), and 800 tokens were spent
+// on thinking before the JSON came (found live, 2026-09-25).
+const SUMMARY_MAX_TOKENS = 2_500;
+
 const GERMAN_WORDS = /\b(der|die|das|und|ist|wurde|wird|mit|für|auf|nicht|ein|eine|im)\b/gi;
 
 export async function evaluateSummaries(context: LocalAiEvalContext): Promise<LocalAiEvalResult> {
@@ -209,7 +223,7 @@ export async function evaluateSummaries(context: LocalAiEvalContext): Promise<Lo
       system: SUMMARY_SYSTEM,
       prompt: item.text,
       json: true,
-      maxTokens: 800,
+      maxTokens: SUMMARY_MAX_TOKENS,
     });
     tokens += answer.outputTokens ?? 0;
     seconds += answer.latencyMs / 1000;
@@ -384,6 +398,64 @@ const ROUTINE_TOOLS = [
   },
 ];
 
+// A routine's agent sees many more tools than the four the cases need (Helena's MCP tools,
+// mail, calendar, browser, files, the shell). The eval offers a set of that size, so a model
+// that only picks right among four does not pass.
+const ROUTINE_DISTRACTORS = [
+  [
+    'list_tasks',
+    'Listet die Aufgaben eines Projekts, gefiltert nach Status.',
+    { project: 'string', status: 'string' },
+  ],
+  ['get_task', 'Liest eine Aufgabe mit Beschreibung und Kommentaren.', { task: 'string' }],
+  [
+    'update_task',
+    'Ändert Titel, Beschreibung oder Fälligkeit einer Aufgabe.',
+    { task: 'string', title: 'string', due: 'string' },
+  ],
+  [
+    'create_subtask',
+    'Legt eine Unteraufgabe unter einer Aufgabe an.',
+    { parent: 'string', title: 'string' },
+  ],
+  [
+    'assign_task',
+    'Weist eine Aufgabe einer Person oder einem Agenten zu.',
+    { task: 'string', assignee: 'string' },
+  ],
+  ['list_projects', 'Listet die Projekte.', {}],
+  ['search_mail', 'Sucht in den E-Mails.', { query: 'string' }],
+  [
+    'draft_mail',
+    'Legt einen E-Mail-Entwurf an.',
+    { to: 'string', subject: 'string', body: 'string' },
+  ],
+  ['send_mail', 'Sendet eine E-Mail.', { to: 'string', subject: 'string', body: 'string' }],
+  ['list_calendar_events', 'Listet Termine eines Zeitraums.', { from: 'string', to: 'string' }],
+  ['create_calendar_event', 'Legt einen Termin an.', { title: 'string', start: 'string' }],
+  ['browser_navigate', 'Öffnet eine Adresse im Projekt-Browser.', { url: 'string' }],
+  ['browser_snapshot', 'Liest die offene Seite im Projekt-Browser.', {}],
+  ['read_file', 'Liest eine Datei im Arbeitsordner.', { path: 'string' }],
+  ['write_file', 'Schreibt eine Datei im Arbeitsordner.', { path: 'string', content: 'string' }],
+  ['terminal', 'Führt einen Befehl in der Shell aus.', { command: 'string' }],
+  ['web_search', 'Sucht im Internet.', { query: 'string' }],
+  ['todo', 'Führt die eigene Liste der nächsten Schritte.', { items: 'string' }],
+] as const;
+
+const ROUTINE_TOOLSET = [
+  ...ROUTINE_TOOLS,
+  ...ROUTINE_DISTRACTORS.map(([name, description, properties]) => ({
+    name,
+    description,
+    parameters: {
+      type: 'object',
+      properties: Object.fromEntries(
+        Object.entries(properties).map(([key, type]) => [key, { type }]),
+      ),
+    },
+  })),
+];
+
 export const ROUTINE_CASES: {
   id: string;
   prompt: string;
@@ -467,8 +539,8 @@ export async function evaluateRoutines(context: LocalAiEvalContext): Promise<Loc
     const answer = await context.chat({
       system: 'Du bist ein Agent. Nutze genau ein Werkzeug für die Bitte.',
       prompt: item.prompt,
-      tools: ROUTINE_TOOLS,
-      maxTokens: 600,
+      tools: ROUTINE_TOOLSET,
+      maxTokens: 1_500,
     });
     tokens += answer.outputTokens ?? 0;
     seconds += answer.latencyMs / 1000;
@@ -491,6 +563,326 @@ export async function evaluateRoutines(context: LocalAiEvalContext): Promise<Loc
         : call
           ? `called ${call.name}${wrongArgs.length ? `, wrong ${wrongArgs.join(', ')}` : ''}`
           : `no tool call: ${clip(answer.text, 80)}`,
+      latencyMs: answer.latencyMs,
+    });
+  }
+  return result(cases, tokens, seconds);
+}
+
+// ── Reflection: what a finished run taught, kept with the memory and skill tools ─────────
+//
+// The turn after a run (agents/runner/reflection.ts): the agent looks back at its session and
+// keeps what helps next time, with nothing but Hermes' `memory` and `skill_manage`. A wrong
+// entry there is read in every later run, so the cases check that the right fact is kept,
+// that nothing is kept when nothing is worth it, and that a secret is never kept.
+
+const REFLECTION_TOOLS = [
+  {
+    name: 'memory',
+    description:
+      "Save durable facts to persistent memory. TARGETS: 'user' = who the user is (name, " +
+      "role, preferences, style). 'memory' = your notes (environment, conventions, tool " +
+      'quirks, lessons). SKIP: trivial info, task progress, completed-work logs, secrets.',
+    parameters: {
+      type: 'object',
+      properties: {
+        action: { type: 'string', enum: ['add', 'replace', 'remove'] },
+        target: { type: 'string', enum: ['memory', 'user'] },
+        content: { type: 'string', description: 'The entry content' },
+        old_text: { type: 'string', description: 'For replace and remove: the entry to change' },
+      },
+      required: ['action', 'target'],
+    },
+  },
+  {
+    name: 'skill_manage',
+    description:
+      'Create or change a skill: how to do a class of task well (the steps in order, the ' +
+      'commands and tools that work, each pitfall as a rule with its reason).',
+    parameters: {
+      type: 'object',
+      properties: {
+        action: { type: 'string', enum: ['create', 'patch', 'edit'] },
+        name: { type: 'string', description: 'The skill, named for the class of task' },
+        content: { type: 'string', description: 'The SKILL.md content, or the patch' },
+      },
+      required: ['action', 'name'],
+    },
+  },
+];
+
+export const REFLECTION_CASES: {
+  id: string;
+  reason: ReflectionReason;
+  session: string;
+  // Every alternative list names words one kept entry must hold (any of them); none: nothing
+  // may be kept. `never`: text no call may carry.
+  keep: string[][] | null;
+  never?: string[];
+}[] = [
+  {
+    id: 'f1',
+    reason: 'rework',
+    session: [
+      'Patrick: Schreib den Wochenbericht für VERVE.',
+      'Agent: (schreibt einen Fließtext auf Englisch, postet ihn an VERVE-31)',
+      'Patrick: Bitte immer auf Deutsch und in Stichpunkten, so lese ich Berichte am liebsten.',
+      'Agent: (schreibt den Bericht neu, auf Deutsch in Stichpunkten; Patrick setzt VERVE-31 auf erledigt)',
+    ].join('\n'),
+    keep: [['deutsch', 'german']],
+  },
+  {
+    id: 'f2',
+    reason: 'failure',
+    session: [
+      'Aufgabe VOL-77: Die Shop-Vorschau auf Staging aktualisieren.',
+      'Agent: terminal `npm run deploy-staging` → "Missing script: deploy-staging"',
+      'Agent: terminal `cat package.json` → scripts: build, test, deploy:staging, deploy:prod',
+      'Agent: terminal `bun run deploy:staging` im Ordner apps/shop → "Deployed to staging.verve.test"',
+      'Agent: Kommentar an VOL-77: Staging ist aktuell.',
+    ].join('\n'),
+    keep: [['deploy:staging']],
+  },
+  {
+    id: 'f3',
+    reason: 'failure',
+    session: [
+      'Aufgabe VERVE-40: Preise aller 3.000 Produkte um 5 % erhöhen.',
+      'Agent: 3.000 einzelne productUpdate-Aufrufe → nach 412 Aufrufen "429 Throttled", Abbruch.',
+      'Agent: Shopify-Doku gelesen: für viele Produkte gibt es bulkOperationRunMutation (Bulk-Operation, JSONL-Upload).',
+      'Agent: Bulk-Operation gestartet, nach 6 Minuten fertig, alle 3.000 Preise geändert.',
+    ].join('\n'),
+    keep: [['bulk']],
+  },
+  {
+    id: 'f4',
+    reason: 'complex',
+    session: [
+      'Aufgabe VOL-90: Alte Backups aufräumen, die Platte /srv/backup ist zu 97 % voll.',
+      'Agent: terminal `restic snapshots` → 212 Snapshots',
+      'Agent: terminal `restic forget --keep-daily 7 --keep-weekly 4 --keep-monthly 12` → 171 entfernt',
+      'Agent: terminal `restic prune` → 188 GB frei',
+      'Agent: terminal `restic check` → no errors were found',
+      'Agent: terminal `df -h /srv/backup` → 41 % belegt',
+      'Agent: Kommentar an VOL-90: Aufgeräumt, 41 % belegt.',
+    ].join('\n'),
+    keep: [['forget', 'prune']],
+  },
+  {
+    id: 'f5',
+    reason: 'complex',
+    session: [
+      'Aufgabe FAM-12: Titel der Aufgabe FAM-11 von "Arzt" in "Zahnarzt Termin" ändern.',
+      'Agent: get_task FAM-11 → Titel "Arzt"',
+      'Agent: update_task FAM-11 title="Zahnarzt Termin" → ok',
+      'Agent: Kommentar an FAM-12: Erledigt.',
+    ].join('\n'),
+    keep: null,
+  },
+  {
+    id: 'f6',
+    reason: 'failure',
+    session: [
+      'Aufgabe VOL-95: Den Newsletter-Dienst anbinden.',
+      'Patrick (Kommentar): Der API-Schlüssel ist sk-live-4f9a2b7c1d, nimm den.',
+      'Agent: POST https://api.newsletter.test/v1/lists mit Bearer sk-live-4f9a2b7c1d → 401 "use the X-Api-Key header"',
+      'Agent: derselbe Aufruf mit Header X-Api-Key → 200',
+    ].join('\n'),
+    keep: [['x-api-key']],
+    never: ['sk-live-4f9a2b7c1d'],
+  },
+];
+
+// Everything a tool call would keep, lower case.
+function keptText(args: Record<string, unknown>): string {
+  return JSON.stringify(args).toLowerCase();
+}
+
+export async function evaluateReflection(context: LocalAiEvalContext): Promise<LocalAiEvalResult> {
+  const cases: LocalAiEvalCaseResult[] = [];
+  let tokens = 0;
+  let seconds = 0;
+  for (const item of REFLECTION_CASES) {
+    const answer = await context.chat({
+      system:
+        'Du bist ein Agent in Helena. Die Sitzung unten hast du gerade beendet; jetzt hast du ' +
+        'nur noch deine Werkzeuge memory und skill_manage.',
+      prompt: `<session>\n${item.session}\n</session>\n\n${reflectionPrompt(item.reason)}`,
+      tools: REFLECTION_TOOLS,
+      maxTokens: 2_500,
+    });
+    tokens += answer.outputTokens ?? 0;
+    seconds += answer.latencyMs / 1000;
+    const kept = answer.toolCalls
+      .filter((call) => call.name === 'memory' || call.name === 'skill_manage')
+      .map((call) => {
+        try {
+          return keptText(JSON.parse(call.arguments) as Record<string, unknown>);
+        } catch {
+          return '';
+        }
+      });
+    const problems: string[] = [];
+    if (item.keep === null) {
+      if (kept.length > 0) problems.push(`kept ${kept.length} entries of a trivial task`);
+    } else {
+      const missing = item.keep.filter(
+        (any) => !kept.some((text) => any.some((w) => text.includes(w))),
+      );
+      if (kept.length === 0) problems.push('kept nothing');
+      else if (missing.length) problems.push(`missing ${missing.map((any) => any[0]).join(', ')}`);
+    }
+    const leaked = (item.never ?? []).filter((secret) =>
+      kept.some((text) => text.includes(secret.toLowerCase())),
+    );
+    if (leaked.length) problems.push('kept a secret');
+    cases.push({
+      id: item.id,
+      passed: problems.length === 0,
+      detail: problems.length ? problems.join('; ') : null,
+      latencyMs: answer.latencyMs,
+    });
+  }
+  return result(cases, tokens, seconds);
+}
+
+// ── A coordinator's first plan: the right specialists, in the right order ──────────────
+//
+// The coordinate stage of an agent team (engine/builtin/steps/agent-team.ts): the coordinator
+// gets the task and the team and answers with one JSON plan of assignments. The eval asks
+// exactly that prompt and reads the answer with the stage's own parser, so a plan the team
+// step would refuse fails here too.
+
+const TEAM_SPECIALISTS: TeamMember[] = [
+  {
+    agentRef: 'agent:coder-verve',
+    role: 'Coder',
+    capabilities: ['code', 'shopify', 'bug', 'frontend'],
+  },
+  {
+    agentRef: 'agent:content-verve',
+    role: 'Content & SEO',
+    capabilities: ['content', 'texte', 'seo', 'newsletter'],
+  },
+  { agentRef: 'agent:qa-verve', role: 'QA', capabilities: ['test', 'qa'] },
+];
+
+export const COORDINATOR_CASES: {
+  id: string;
+  title: string;
+  objective: string;
+  criteria: string[];
+  // Every one of these gets an assignment; none of `never` does.
+  need: string[];
+  never: string[];
+  // An assignment of the first waits for one of the second.
+  after?: [string, string];
+}[] = [
+  {
+    id: 'k1',
+    title: 'Checkout: falscher Preis nach Gutschein',
+    objective: 'Nach dem Einlösen eines Gutscheins zeigt der Checkout den Preis ohne Rabatt.',
+    criteria: ['Der Gutschein wird im Checkout abgezogen', 'Ein Test deckt den Fall ab'],
+    need: ['agent:coder-verve'],
+    never: ['agent:content-verve'],
+  },
+  {
+    id: 'k2',
+    title: 'Produkttexte für drei neue Taschen',
+    objective: 'Die Taschen Mila, Noor und Ida brauchen Produkttexte mit SEO-Titel.',
+    criteria: ['Je ein Text pro Tasche', 'SEO-Titel unter 60 Zeichen'],
+    need: ['agent:content-verve'],
+    never: ['agent:coder-verve'],
+  },
+  {
+    id: 'k3',
+    title: 'Landingpage Herbstkollektion',
+    objective:
+      'Erst die Texte der Landingpage schreiben, dann die Seite mit diesen Texten im Shop bauen.',
+    criteria: ['Texte liegen vor', 'Die Seite ist im Shop mit den Texten online'],
+    need: ['agent:content-verve', 'agent:coder-verve'],
+    never: [],
+    after: ['agent:coder-verve', 'agent:content-verve'],
+  },
+  {
+    id: 'k4',
+    title: 'CSV export of orders',
+    objective: 'Add a CSV export of orders to the admin and write a help center article about it.',
+    criteria: ['Orders can be exported as CSV', 'A help article explains the export'],
+    need: ['agent:coder-verve', 'agent:content-verve'],
+    never: [],
+  },
+  {
+    id: 'k5',
+    title: 'Checkout auf dem iPhone prüfen',
+    objective:
+      'Nach dem Release prüfen, ob der Checkout auf dem iPhone funktioniert, und berichten.',
+    criteria: ['Der Checkout wurde auf iOS Safari durchgespielt', 'Das Ergebnis ist berichtet'],
+    need: ['agent:qa-verve'],
+    never: ['agent:content-verve'],
+  },
+];
+
+function teamOf(item: (typeof COORDINATOR_CASES)[number]): TeamPayload {
+  return {
+    schemaVersion: 1,
+    task: {
+      taskRef: `task:VERVE-${60 + COORDINATOR_CASES.indexOf(item)}`,
+      title: item.title,
+      objective: item.objective,
+      acceptanceCriteria: item.criteria,
+      labels: [],
+    },
+    coordinator: { agentRef: 'agent:coordinator-verve', role: 'Koordinator', capabilities: [] },
+    specialists: TEAM_SPECIALISTS,
+    policy: DEFAULT_POLICY,
+    execution: {},
+  };
+}
+
+export async function evaluateCoordinatorTriage(
+  context: LocalAiEvalContext,
+): Promise<LocalAiEvalResult> {
+  const cases: LocalAiEvalCaseResult[] = [];
+  let tokens = 0;
+  let seconds = 0;
+  for (const item of COORDINATOR_CASES) {
+    const team = teamOf(item);
+    const stage = { phase: 'coordinate' as const, team, agent: team.coordinator };
+    const answer = await context.chat({
+      system:
+        'Du bist der Koordinator des Projekts VERVE in Helena. Du planst die Arbeit für die ' +
+        'Spezialisten deines Teams.',
+      prompt: stagePrompt(stage, 'project:VERVE'),
+      maxTokens: 3_000,
+    });
+    tokens += answer.outputTokens ?? 0;
+    seconds += answer.latencyMs / 1000;
+    const problems: string[] = [];
+    try {
+      const plan = parseStage(stage, withoutThinking(answer.text));
+      const agents = new Set(plan.delegations.map((entry) => entry.agentRef));
+      const missing = item.need.filter((ref) => !agents.has(ref));
+      const wrong = item.never.filter((ref) => agents.has(ref));
+      if (missing.length) problems.push(`no assignment for ${missing.join(', ')}`);
+      if (wrong.length) problems.push(`assigned ${wrong.join(', ')}`);
+      if (item.after) {
+        const [later, first] = item.after;
+        const firstIds = new Set(
+          plan.delegations.filter((entry) => entry.agentRef === first).map((e) => e.assignmentId),
+        );
+        const waits = plan.delegations
+          .filter((entry) => entry.agentRef === later)
+          .some((entry) => entry.dependsOn.some((id) => firstIds.has(id)));
+        if (!waits) problems.push(`${later} does not wait for ${first}`);
+      }
+    } catch (error) {
+      problems.push(error instanceof Error ? error.message : String(error));
+    }
+    cases.push({
+      id: item.id,
+      passed: problems.length === 0,
+      detail: problems.length ? clip(problems.join('; '), 120) : null,
       latencyMs: answer.latencyMs,
     });
   }

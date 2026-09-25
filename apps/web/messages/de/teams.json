@@ -659,6 +659,7 @@
       "reasonFailure": "weil der Lauf fehlgeschlagen ist",
       "reasonRework": "weil das Nacharbeit war",
       "reasonComplex": "weil der Lauf viele Schritte brauchte",
+      "local": "lokal: {model}",
       "nothingSaved": "Nichts gespeichert",
       "toolMemory": "Gedächtnis",
       "toolSkill": "Skill",
@@ -748,7 +749,8 @@
       "source": {
         "run": "vom Workflow-Schritt",
         "agent": "vom Agenten",
-        "default": "Agent-Standard"
+        "default": "Agent-Standard",
+        "local": "von Lokale KI"
       },
       "part": {
         "model": "Modell",

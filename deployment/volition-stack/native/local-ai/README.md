@@ -66,6 +66,27 @@ Check that no agent run or chat answer is in flight before every reboot or servi
    ```
    Pull the large ones (gpt-oss-120b 63 GB, Mistral Small 4 75 GB) only while nothing else is
    heavy: each read passes through the ~31 GB page cache.
+
+   **Loaded at start:** Lemonade loads a model on its first request (~50 s for the workhorse),
+   and a restart or reboot unloads everything. The GPU models Helena's switched-on kinds of work
+   use (Lokale KI: their class's model) are loaded and pinned whenever Lemonade starts, by
+   `helena-ai-preload.service` (installed and enabled by `install`; a oneshot after `lemond`,
+   `PartOf` it, as a throwaway user with the key as a credential):
+   ```sh
+   sudo ./install.sh models preload list
+   sudo ./install.sh --dry-run models preload set Qwen3.6-35B-A3B-MTP-GGUF Qwen3-Embedding-0.6B-GGUF
+   sudo ./install.sh models preload set Qwen3.6-35B-A3B-MTP-GGUF Qwen3-Embedding-0.6B-GGUF
+   sudo systemctl restart helena-ai-preload.service   # or: sudo ./install.sh models preload run
+   ```
+   `set` refuses a list over the VRAM budget (the GPU's memory minus 6 GiB; per model its
+   weights + 5 % + 2.5 GB of KV cache: the workhorse ≈ 27 GB, gpt-oss-120b ≈ 69 GB, so both
+   together with the embeddings do not fit), a model not pulled, and NPU models (FastFlowLM loads
+   those on demand in seconds; they take system RAM). Pinned models are never evicted by
+   Lemonade's LRU; `models load` for a benchmark still works next to them while VRAM allows,
+   otherwise stop `helena-ai-preload.service` first (`systemctl stop` unloads nothing; unload with
+   Lemonade's `/unload` or restart `lemond`, which loads the list again). After changing a class's
+   model in Helena, `set` the list again. `models pull` restarts `lemond` only while nothing is
+   loaded: with a preload list, restart it yourself before loading a newly pulled model.
 8. **Measure and choose**: for every candidate
    `sudo ./bench.sh speed <name>` (ROCm and Vulkan; the faster backend per model goes into
    `models.tsv`'s last column, then `models load` again) and
@@ -95,7 +116,9 @@ Check that no agent run or chat answer is in flight before every reboot or servi
 | Path | Owner | What |
 |---|---|---|
 | `/etc/helena/local-ai.key` | root:volition-plan 0640 | the key (API reads it; Lemonade gets it as a systemd credential) |
-| `/usr/local/lib/helena-ai/` | root | `lemond-start`, `lemonade-defaults.json` |
+| `/usr/local/lib/helena-ai/` | root | `lemond-start`, `lemonade-defaults.json`, the installer's copy and `models.tsv` for `helena-ai-preload.service` |
+| `/etc/helena/local-ai-preload` | root 0644 | the models loaded and pinned when Lemonade starts (`models preload set`) |
+| `/etc/systemd/system/helena-ai-preload.service` | root | loads them after `lemond` starts |
 | `/opt/helena-ai/llamacpp/{rocm,vulkan}-b11166/` | root | llama.cpp: our HIP build for gfx1151, the Vulkan build |
 | `/opt/helena-ai/rocm-10.0.0/` | root | ROCm 10.0.0 + PyTorch 2.13 venv (8 GB), shared with Laya |
 | `/var/lib/helena-ai/models/hub/` | lemonade | pinned models (Hugging Face cache layout) |

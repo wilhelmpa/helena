@@ -25,6 +25,9 @@ export interface StepRunRequest {
   // The model and reasoning effort the step was planned for; a run is refused when the
   // agent is configured differently.
   expect?: { model?: string | null; reasoning?: string | null };
+  // The kind of work the run is for Lokale KI (agent_run.work_class): a coordinator's first
+  // plan is `coordinator-triage`.
+  workClass?: string | null;
 }
 
 async function teamRunsModel(teamId: number, model: string): Promise<boolean> {
@@ -91,6 +94,7 @@ export async function queueStepRun(request: StepRunRequest): Promise<number> {
       maxTurns: runLimit(request.maxTurns ?? null, maxTurnsLimit),
       runBudgetSeconds: runLimit(request.runBudgetSeconds ?? null, runBudgetSecondsLimit),
       model,
+      workClass: request.workClass ?? null,
     })
     .returning({ id: agentRun.id });
   await bumpControlPlaneRevision(request.projectId);

@@ -119,6 +119,15 @@ export const ResultResponse = t.Object({
       prompt: t.String(),
       maxTurns: t.Number(),
       runBudgetSeconds: t.Number(),
+      model: t.Optional(
+        t.Nullable(
+          t.String({
+            description:
+              "The model the reflection runs on when it is not the run's: a local model " +
+              '(`helena-<slug>/<id>`) Lokale KI hands it',
+          }),
+        ),
+      ),
     }),
   ),
 });

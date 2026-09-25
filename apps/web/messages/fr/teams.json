@@ -660,6 +660,7 @@
       "reasonFailure": "parce que l'exécution a échoué",
       "reasonRework": "parce que c'était une reprise",
       "reasonComplex": "parce que l'exécution a pris de nombreuses étapes",
+      "local": "local : {model}",
       "nothingSaved": "Rien enregistré",
       "toolMemory": "Mémoire",
       "toolSkill": "Compétence",
@@ -748,7 +749,8 @@
       "source": {
         "run": "de l'étape du workflow",
         "agent": "de l'agent",
-        "default": "défaut de l'agent"
+        "default": "défaut de l'agent",
+        "local": "par l’IA locale"
       },
       "part": {
         "model": "modèle",

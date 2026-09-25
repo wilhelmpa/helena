@@ -83,6 +83,8 @@ export interface ReflectionSaved {
 export interface ReflectionView {
   status: 'pending' | 'success' | 'failed' | 'lost';
   reason: 'failure' | 'rework' | 'complex';
+  // The local model it ran on when Lokale KI took it; absent: the run's model.
+  model?: string | null;
   saved: ReflectionSaved[];
   summary: string | null;
   error: string | null;
