@@ -585,7 +585,7 @@ describe('the target of this installation', () => {
     ]);
   });
 
-  it('names every copy in its coordinator's instructions once it exists', () => {
+  it('names every copy in the instructions of its coordinator once it exists', () => {
     for (const copy of COPIES) {
       const key = copy.copyOf!.projectKey;
       const coordinator = TARGET.agents.find(
