@@ -1,5 +1,6 @@
 import { useTranslations } from 'next-intl';
 import type { ModelCheck } from '@/lib/api/endpoints/agentRuntimeSync';
+import { LocalFallbackLine } from '@/features/local-ai/components/LocalFallbackLine';
 
 // The model and reasoning a run was configured with next to what its session really ran
 // on, as its runner read them back. A mismatch is named: the run did not run as set.
@@ -19,6 +20,13 @@ export default function AgentRunModel({ check }: { check: ModelCheck }) {
           <span className="text-muted-foreground">({t(`source.${configured.source}`)})</span>
         </p>
         <p>{usedText ? t('used', { value: usedText }) : t('notReported')}</p>
+        {check.fallback && (
+          <LocalFallbackLine
+            fallback={check.fallback}
+            model={used?.model ?? configured.model}
+            className="flex items-center gap-1"
+          />
+        )}
         {mismatch.length > 0 && (
           <p className="font-medium text-status-waiting">
             {t('mismatch', { what: mismatch.map((part) => t(`part.${part}`)).join(', ') })}

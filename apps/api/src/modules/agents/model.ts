@@ -150,6 +150,8 @@ export type ChatMessageDTO = {
   // language (a model the provider refused this account).
   errorCode?: string;
   errorModel?: string | null;
+  // A local model was asked for and the configured one answered (the model check's fallback).
+  localFallback?: { from: string; reason: 'off' | 'down' | 'failed' };
   // What the model router did for an answer (decisions.md §4).
   modelRoute?: {
     fromModel: string;

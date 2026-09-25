@@ -24,7 +24,12 @@ import type { RuntimeFailure } from '@helena/sdk';
 import { learnFromOutcome, routeOf, runtimeOfPolicy } from '#modules/model-availability/service';
 import { getRunResumeSettings } from '#modules/settings/service';
 import type { AgentRunTrigger } from '../model';
-import { modelCheckOf, type RunModelReport } from '../runtime-sync/model-check';
+import {
+  claimedModelCheck,
+  modelCheckOf,
+  withStoredFallback,
+  type RunModelReport,
+} from '../runtime-sync/model-check';
 import { routeRequest } from '#modules/model-router/service';
 import { DIGEST_SYSTEM_PROMPT } from '#modules/updates/digest-prompt';
 import { MAX_RUN_OUTPUT_BYTES, type reflectionBody } from './model';
@@ -44,7 +49,7 @@ import {
   runModePreamble,
   type RunForPrompt,
 } from '../core/prompt/framing';
-import { effectiveModelNow } from '#modules/local-ai/service';
+import { chooseModelNow, type LocalFallback } from '#modules/local-ai/service';
 
 // The queue an agent's runner drains. The runner is a process the operator starts on
 // their own machine; it authenticates with the agent's API key, claims one run at a
@@ -273,11 +278,21 @@ export async function expireResumeLimitedRuns(): Promise<number> {
   return rows.length;
 }
 
-async function runSettingsOf(model: string | null, thinkingLevel: string | null) {
-  const effective = await effectiveModelNow(model);
+// The model a run starts on. A local model only while local AI runs it and its server
+// answers; otherwise the model the agent runs on without local AI (its own, or the runtime's
+// default when that is local too), with its own reasoning, and the fallback noted.
+async function runSettingsOf(
+  model: string | null,
+  thinkingLevel: string | null,
+  agent: { model: string | null; thinkingLevel: string | null },
+): Promise<{ model: string | null; thinkingLevel: string | null; fallback: LocalFallback | null }> {
+  const choice = await chooseModelNow(model, agent.model);
+  if (!choice.fallback) return { model, thinkingLevel, fallback: null };
   return {
-    model: effective,
-    thinkingLevel: effective === model ? thinkingLevel : null,
+    model: choice.model,
+    thinkingLevel:
+      choice.model !== null && choice.model === agent.model ? agent.thinkingLevel : null,
+    fallback: choice.fallback,
   };
 }
 
@@ -406,10 +421,26 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
   // the run, so a resumed session keeps it and the model check compares against it.
   // A local model only while local AI is on; otherwise the agent's default runs, as without
   // local AI (docs/helena-decisions/local-ai-platform.md §6).
-  let { model, thinkingLevel } = await runSettingsOf(
+  const configured = await runSettingsOf(
     row.model ?? agent.model,
     row.reasoning ?? agent.thinkingLevel,
+    agent,
   );
+  let { model, thinkingLevel } = configured;
+  if (configured.fallback) {
+    // Shown with the run until its runner reports what really ran (which keeps it).
+    await db
+      .update(agentRun)
+      .set({
+        modelCheck: claimedModelCheck(
+          model,
+          thinkingLevel,
+          row.model ? 'run' : model ? 'agent' : 'default',
+          configured.fallback,
+        ),
+      })
+      .where(eq(agentRun.id, row.id));
+  }
   if (!row.model && !row.sessionId && !digest && row.trigger !== 'workspace') {
     const routed = await routeRequest({
       teamId: agent.teamId,
@@ -423,9 +454,9 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
     // A routed model that local AI would not run right now (it is off) is not taken.
     const settled =
       routed.route?.routed && routed.model
-        ? await runSettingsOf(routed.model, routed.thinkingLevel)
+        ? await runSettingsOf(routed.model, routed.thinkingLevel, agent)
         : null;
-    if (settled && settled.model === routed.model) {
+    if (settled && !settled.fallback) {
       model = settled.model;
       thinkingLevel = settled.thinkingLevel;
       await db
@@ -689,9 +720,15 @@ export async function finishRun(
   const error = result.status === 'failed' ? (result.error?.slice(0, 500) ?? 'Run failed') : null;
   // A run that names a model of its own (a workflow step's) was configured with that one.
   const [own] = result.runtime
-    ? await db.select({ model: agentRun.model }).from(agentRun).where(eq(agentRun.id, runId))
+    ? await db
+        .select({ model: agentRun.model, modelCheck: agentRun.modelCheck })
+        .from(agentRun)
+        .where(eq(agentRun.id, runId))
     : [];
-  const check = modelCheckOf(result.runtime, own?.model ?? null);
+  const check = withStoredFallback(
+    modelCheckOf(result.runtime, own?.model ?? null),
+    own?.modelCheck ?? null,
+  );
   const blocked = sql`${agentRun.blockedQuestion} IS NOT NULL`;
   const rows = await db
     .update(agentRun)

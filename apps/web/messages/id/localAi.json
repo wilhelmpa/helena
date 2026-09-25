@@ -159,5 +159,14 @@
     "low": "berpikir singkat",
     "medium": "berpikir",
     "high": "berpikir mendalam"
+  },
+  "fallback": {
+    "line": "{to} sebagai ganti {from}",
+    "defaultModel": "model bawaan",
+    "reasons": {
+      "off": "AI lokal mati",
+      "down": "server lokal tidak terjangkau",
+      "failed": "server lokal gagal"
+    }
   }
 }

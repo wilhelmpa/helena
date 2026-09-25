@@ -1,4 +1,5 @@
 import type { ModelRoute } from '@/lib/api/endpoints/decisions';
+import type { LocalFallback } from '@/lib/api/endpoints/agentRuntimeSync';
 import type { DynamicToolUIPart, UIMessage } from 'ai';
 import type { AiChatAttachment, AiChatMessage } from '@/lib/api/endpoints/agentChat';
 
@@ -27,6 +28,8 @@ export interface PlanChatMetadata {
   errorModel?: string | null;
   // What the model router did for the answer (decisions.md §4).
   modelRoute?: ModelRoute | null;
+  // A local model was asked for and the configured one answered (local-ai-platform.md §6.3).
+  localFallback?: LocalFallback;
   // The browser lost the answer's stream before it ended (see AgUiChunkMapper.end); the
   // answer itself may still have finished on the operator's machine.
   interrupted?: boolean;
@@ -89,6 +92,7 @@ export function toUIMessage(message: AiChatMessage): PlanUIMessage {
       ...(message.errorCode && { errorCode: message.errorCode }),
       ...(message.errorModel !== undefined && { errorModel: message.errorModel }),
       ...(message.modelRoute ? { modelRoute: message.modelRoute } : {}),
+      ...(message.localFallback ? { localFallback: message.localFallback } : {}),
     },
   };
 }

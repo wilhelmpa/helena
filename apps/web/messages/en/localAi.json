@@ -159,5 +159,14 @@
     "low": "thinks briefly",
     "medium": "thinks",
     "high": "thinks thoroughly"
+  },
+  "fallback": {
+    "line": "{to} instead of {from}",
+    "defaultModel": "default model",
+    "reasons": {
+      "off": "local AI off",
+      "down": "local server not reachable",
+      "failed": "local server failed"
+    }
   }
 }

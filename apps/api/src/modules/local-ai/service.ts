@@ -675,10 +675,76 @@ export function effectiveModel(
   return server.models.some((item) => item.id === parsed.model) ? model : null;
 }
 
-export async function effectiveModelNow(model: string | null): Promise<string | null> {
-  if (!parseLocalModelId(model)) return model;
+// ── Falling back to the configured model ───────────────────────────────────────────────
+
+// Why a run or chat answer that asked for a local model ran on another: local AI (or the
+// server, or the model) was off, the server did not answer when it started, or Hermes
+// switched to its fallback while it ran (the model check sees that, model-check.ts).
+export type LocalFallbackReason = 'off' | 'down' | 'failed';
+
+export interface LocalFallback {
+  // The local model that was asked for (`helena-<slug>/<id>`).
+  from: string;
+  reason: LocalFallbackReason;
+}
+
+export interface LocalModelChoice {
+  model: string | null;
+  fallback: LocalFallback | null;
+}
+
+// A server's last status counts while it is this fresh; otherwise a run or chat answer asks
+// it once, and waits no longer than the timeout before its configured model takes over.
+const ANSWER_FRESH_MS = 15_000;
+const ANSWER_TIMEOUT_MS = 2_000;
+const answers = new Map<number, { up: boolean; at: number }>();
+
+export async function serverAnswers(server: ModelServerRow, now = Date.now()): Promise<boolean> {
+  if (server.status && server.checkedAt && now - server.checkedAt.getTime() <= ANSWER_FRESH_MS)
+    return server.status.reachable;
+  const asked = answers.get(server.id);
+  if (asked && now - asked.at <= ANSWER_FRESH_MS) return asked.up;
+  const type = serverType(server.kind);
+  let up = false;
+  if (type) {
+    try {
+      const key = await readModelServerKey(server);
+      up = (await type.status(serverContext(server, key, ANSWER_TIMEOUT_MS))).reachable;
+    } catch {
+      up = false;
+    }
+  }
+  answers.set(server.id, { up, at: Date.now() });
+  return up;
+}
+
+// Forgets what the servers answered (tests).
+export function forgetServerAnswers(): void {
+  answers.clear();
+}
+
+// The model a run or chat answer runs on. A local model only while local AI is on, its server
+// enabled, listing it and answering; otherwise `instead`, the model the agent runs on without
+// local AI (its own model, or null for the runtime's default when that is local too), with
+// the reason, which the run's or answer's model check shows. Any other model is kept.
+export async function chooseModelNow(
+  model: string | null,
+  instead: string | null,
+): Promise<LocalModelChoice> {
+  const parsed = parseLocalModelId(model);
+  if (!model || !parsed) return { model, fallback: null };
+  const configured = parseLocalModelId(instead) ? null : instead;
   const [policy, servers] = await Promise.all([readLocalAiPolicy(), listModelServers()]);
-  return effectiveModel(model, policy, servers);
+  if (effectiveModel(model, policy, servers) === null)
+    return { model: configured, fallback: { from: model, reason: 'off' } };
+  const server = servers.find((item) => item.slug === parsed.slug)!;
+  if (!(await serverAnswers(server)))
+    return { model: configured, fallback: { from: model, reason: 'down' } };
+  return { model, fallback: null };
+}
+
+export async function effectiveModelNow(model: string | null): Promise<string | null> {
+  return (await chooseModelNow(model, null)).model;
 }
 
 // Local models cost nothing per token (the price table's `price` asks this first).

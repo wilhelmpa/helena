@@ -159,5 +159,14 @@
     "low": "réfléchit brièvement",
     "medium": "réfléchit",
     "high": "réfléchit en profondeur"
+  },
+  "fallback": {
+    "line": "{to} au lieu de {from}",
+    "defaultModel": "modèle par défaut",
+    "reasons": {
+      "off": "IA locale désactivée",
+      "down": "serveur local injoignable",
+      "failed": "le serveur local a échoué"
+    }
   }
 }
