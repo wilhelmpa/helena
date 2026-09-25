@@ -413,6 +413,22 @@ def read_esps(host: Host, mounts: list[str], *, fresh: bool = False) -> dict:
     return value
 
 
+def _removable(host: Host, config_storage: dict, devices: list[dict], *, fresh: bool) -> list[dict]:
+    """bootlayout.removable_check, cached like the ESP manifest (it hashes a few MB)."""
+    from . import bootlayout
+
+    now = host.now()
+    key = 'removable|' + '|'.join(config_storage.get('espMounts') or [])
+    with _cache_lock:
+        cached = _esp_cache.get(key)
+        if cached and not fresh and now - cached[0] < ESP_TTL:  # type: ignore[index]
+            return cached[1]  # type: ignore[index]
+    value = bootlayout.removable_check(host, config_storage, devices)
+    with _cache_lock:
+        _esp_cache[key] = (now, value)
+    return value
+
+
 def parse_efibootmgr(text: str) -> dict:
     result: dict = {'current': None, 'next': None, 'order': [], 'timeoutSeconds': None, 'entries': []}
     for line in text.splitlines():
@@ -507,6 +523,8 @@ def status(host: Host, config_storage: dict, *, fresh: bool = False, state_dir: 
     esp = dict(read_esps(host, list(config_storage.get('espMounts') or []), fresh=fresh))
     # The last copy onto the second ESP (after a package change): ok, skipped or failed.
     esp['sync'] = esp_sync.read_state(state_dir) if state_dir else None
+    # The firmware's removable path (EFI/BOOT) against the loader folder, per ESP.
+    esp['removable'] = _removable(host, config_storage, devices, fresh=fresh)
     boot = read_boot(host, disks)
     reserve = None
     if boot and 'entries' in boot:

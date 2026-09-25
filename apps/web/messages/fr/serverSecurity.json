@@ -55,7 +55,7 @@
     "auth_step_up": "Le terminal demande un code à l’ouverture",
     "auth_registration": "Inscription fermée",
     "auth_sessions": "Peu de sessions ouvertes",
-    "auth_sudo": "sudo pas sans mot de passe pour tout",
+    "auth_sudo": "sudo sans mot de passe seulement pour le compte d’automatisation",
     "sys_time": "L’horloge est synchronisée (NTP)",
     "sys_sysctl": "Réglages de protection du noyau appliqués",
     "sys_updates": "Les mises à jour de sécurité s’installent automatiquement",
@@ -145,7 +145,7 @@
       "warn": "{count} sessions du propriétaire ouvertes : chaque visite depuis le LAN sans cookie en ouvre une nouvelle."
     },
     "auth_sudo": {
-      "warn": "sudo sans mot de passe (NOPASSWD: ALL) pour {value} : le terminal du navigateur est root sans mot de passe."
+      "warn": "{why, select, ops {Le compte d’automatisation {value} a sudo sans mot de passe mais n’est pas verrouillé : {problem, select, password {son mot de passe n’est pas verrouillé} ssh {SSH n’exige pas uniquement sa clé} other {son mot de passe n’est pas verrouillé et SSH n’exige pas uniquement sa clé}}.} other {sudo sans mot de passe (NOPASSWD: ALL) pour {value} : qui a ce compte est root sans mot de passe.}}"
     },
     "sys_time": {
       "fail": "L’horloge n’est pas synchronisée ; TOTP, les jetons Access et les certificats en dépendent."

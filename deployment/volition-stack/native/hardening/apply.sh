@@ -22,6 +22,9 @@
 #                 5-minute automatic rollback; "confirm firewall" keeps it.
 #   sshd          keys only, AllowUsers, no agent forwarding. Arms a 5-minute rollback;
 #                 "confirm sshd" keeps it.
+#   sudo-model    H-07/§8.3: helena-ops is the automation account (sudo without a password,
+#                 SSH key only, password locked); any other blanket NOPASSWD rule (the
+#                 owner's) is moved aside, so the owner types his password for sudo
 #   units         systemd sandboxing drop-ins for the API, web and worker, restarted one
 #                 by one with a health check; a unit that does not come back is rolled back
 #   terminal-key  the owner-terminal signing key readable by the API and the terminal
@@ -38,11 +41,14 @@ export LC_ALL=C PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bi
 
 here=$(cd "$(dirname "$0")" && pwd)
 files=$here/files
-state=/var/lib/helena/hardening
+state=${HELENA_HARDENING_STATE:-/var/lib/helena/hardening}
 stamp=$(date +%Y%m%d-%H%M%S)
 backup=$state/backup/$stamp
 owner_user=${HELENA_OWNER_USER:-wilhelmpa}
-ssh_users=${HELENA_SSH_USERS:-$owner_user}
+ops_user=${HELENA_OPS_USER:-helena-ops}
+# AllowUsers: the owner, and the automation account once it exists (a later "sshd" run must
+# never drop it).
+ssh_users=${HELENA_SSH_USERS:-$owner_user$(id "$ops_user" >/dev/null 2>&1 && echo " $ops_user")}
 tunnel_user=${HELENA_TUNNEL_USER:-helena-tunnel}
 tunnel_port=${HELENA_TUNNEL_PORT:-8090}
 plan_backups=${HELENA_PLAN_BACKUPS:-/var/lib/volition/plan/backups}
@@ -360,6 +366,130 @@ rollback_sshd() {
   disarm_rollback sshd
   run rm -f /etc/ssh/sshd_config.d/50-helena-sshd.conf
   run systemctl reload ssh
+}
+
+# ── sudo model (H-07, docs/helena-decisions/security-hardening.md §8.3) ─────────
+# Active (non-comment) lines of a sudoers file that grant NOPASSWD: ALL.
+blanket_rules() { grep -E '^[[:space:]]*[^#[:space:]].*NOPASSWD:[[:space:]]*ALL[[:space:]]*$' "$1" 2>/dev/null; }
+# The rules of a sudoers file without comments and blank lines, whitespace folded.
+active_rules() { grep -Ev '^[[:space:]]*(#|$)' "$1" 2>/dev/null | tr -s '[:space:]' ' ' | sed 's/ $//'; }
+sudo_ok() { visudo -c >/dev/null 2>&1; }
+
+step_sudo_model() {
+  local ops_sudoers=/etc/sudoers.d/80-helena-ops ops_sshd=/etc/ssh/sshd_config.d/60-helena-ops.conf
+  local home keys status file rules others moved=0 blanket_files=()
+  # 0. Other blanket rules go aside at the end — only while the owner can still reach root
+  #    with his password (group sudo + a %sudo rule, a usable password). Checked first, so a
+  #    refusal changes nothing.
+  if blanket_rules /etc/sudoers | awk '{print $1}' | grep -vqxF -- "$ops_user"; then
+    die "sudo-model: /etc/sudoers itself grants NOPASSWD: ALL to someone else; change it with visudo by hand"
+  fi
+  for file in /etc/sudoers.d/*; do
+    [[ -f $file && $file != "$ops_sudoers" ]] || continue
+    [[ -n $(blanket_rules "$file" | awk -v ops="$ops_user" '$1 != ops') ]] && blanket_files+=("$file")
+  done
+  if [[ ${#blanket_files[@]} -gt 0 ]]; then
+    [[ $(passwd -S "$owner_user" 2>/dev/null | awk '{print $2}') == P ]] \
+      || die "sudo-model: $owner_user has no usable password; set one (passwd) before sudo asks for it"
+    if ! id -nG "$owner_user" 2>/dev/null | tr ' ' '\n' | grep -qx sudo \
+       || ! grep -Eq '^[[:space:]]*%sudo[[:space:]]+ALL[[:space:]]*=' /etc/sudoers; then
+      die "sudo-model: $owner_user would lose sudo (not in group sudo, or no %sudo rule in /etc/sudoers)"
+    fi
+  fi
+  # 1. The automation account: it exists, it has a key, its password is locked.
+  if ! id "$ops_user" >/dev/null 2>&1; then
+    say "sudo-model: $ops_user does not exist; creating it (home, bash, no password)"
+    run useradd --create-home --shell /bin/bash --comment "Helena automation (SSH key only, LAN)" "$ops_user"
+  fi
+  home=$(getent passwd "$ops_user" | cut -d: -f6)
+  keys=${home:-/nonexistent}/.ssh/authorized_keys
+  if [[ ! -s $keys ]]; then
+    [[ $apply -eq 1 ]] && die "sudo-model: $keys is empty; put the automation key there first (this step never makes a key)"
+    say "sudo-model: $keys is empty; --apply stops here until the automation key is there"
+  fi
+  status=$(passwd -S "$ops_user" 2>/dev/null | awk '{print $2}')
+  if [[ $status == L ]]; then
+    say "sudo-model: $ops_user password locked (already)"
+  else
+    say "sudo-model: locking the password of $ops_user (was ${status:-unknown})"
+    run passwd -l "$ops_user"
+  fi
+  # 2. SSH takes its key only.
+  if cmp -s "$files/60-helena-ops.conf" "$ops_sshd"; then
+    say "sudo-model: $ops_sshd unchanged"
+  else
+    show_diff "$ops_sshd" "$files/60-helena-ops.conf"
+    if [[ $apply -eq 1 ]]; then
+      keep "$ops_sshd"
+      install -m 0644 -o root -g root "$files/60-helena-ops.conf" "$ops_sshd"
+      if ! sshd -t; then
+        rm -f "$ops_sshd"; [[ -e $backup$ops_sshd ]] && cp -a "$backup$ops_sshd" "$ops_sshd"
+        die "sudo-model: sshd -t failed; $ops_sshd left as it was"
+      fi
+      systemctl reload ssh
+      log "sudo-model: $ops_sshd installed"
+    fi
+  fi
+  # 3. Its sudo rule.
+  visudo -cf "$files/80-helena-ops" >/dev/null || die "sudo-model: files/80-helena-ops does not parse"
+  if cmp -s "$files/80-helena-ops" "$ops_sudoers"; then
+    say "sudo-model: $ops_sudoers unchanged"
+  elif [[ -e $ops_sudoers && "$(active_rules "$ops_sudoers")" == "$(active_rules "$files/80-helena-ops")" ]]; then
+    say "sudo-model: $ops_sudoers already grants the same rule (only comments differ); left as it is"
+  else
+    show_diff "$ops_sudoers" "$files/80-helena-ops"
+    if [[ $apply -eq 1 ]]; then
+      keep "$ops_sudoers"
+      install -m 0440 -o root -g root "$files/80-helena-ops" "$ops_sudoers"
+      sudo_ok || { rm -f "$ops_sudoers"; [[ -e $backup$ops_sudoers ]] && cp -a "$backup$ops_sudoers" "$ops_sudoers"; die "sudo-model: visudo -c failed; $ops_sudoers left as it was"; }
+      log "sudo-model: $ops_sudoers installed"
+    fi
+  fi
+  # 4. Every other blanket NOPASSWD rule goes aside (checked in step 0).
+  for file in "${blanket_files[@]}"; do
+    rules=$(blanket_rules "$file" | awk -v ops="$ops_user" '$1 != ops')
+    moved=1
+    say "sudo-model: $file grants NOPASSWD: ALL: $(tr '\n' ';' <<<"$rules")"
+    others=$(grep -Ev '^[[:space:]]*(#|$)' "$file" | grep -vxF -f <(blanket_rules "$file" | awk -v ops="$ops_user" '$1 != ops') || true)
+    if [[ -z $others ]]; then
+      say "sudo-model: moving $file aside (to the backup of this run)"
+      if [[ $apply -eq 1 ]]; then
+        keep "$file"; rm -f "$file"
+        echo "$file" >>"$state/sudo-model.moved"
+      fi
+    else
+      say "sudo-model: commenting out those lines in $file (it has other rules too)"
+      if [[ $apply -eq 1 ]]; then
+        local new; new=$(mktemp)
+        awk -v ops="$ops_user" '/^[[:space:]]*[^#[:space:]].*NOPASSWD:[[:space:]]*ALL[[:space:]]*$/ && $1 != ops { print "# helena sudo-model: " $0; next } { print }' "$file" >"$new"
+        visudo -cf "$new" >/dev/null || { rm -f "$new"; die "sudo-model: $file would not parse without those lines"; }
+        keep "$file"; install -m 0440 -o root -g root "$new" "$file"; rm -f "$new"
+        echo "$file" >>"$state/sudo-model.moved"
+      fi
+    fi
+    if [[ $apply -eq 1 ]] && ! sudo_ok; then
+      cp -a "$backup$file" "$file"; die "sudo-model: visudo -c failed; $file restored"
+    fi
+    [[ $apply -eq 1 ]] && log "sudo-model: blanket rule of $file set aside (backup $backup$file)"
+  done
+  [[ $moved -eq 1 ]] || say "sudo-model: no other account has NOPASSWD: ALL (already)"
+  [[ $apply -eq 1 ]] && say "sudo-model: done. The owner now types his password for sudo; $ops_user keeps key-only root."
+  true
+}
+rollback_sudo_model() {
+  # Puts the owner's moved-aside rules back (the automation account stays as it is).
+  local file saved
+  [[ -s $state/sudo-model.moved ]] || { say "sudo-model: nothing was moved aside"; return 0; }
+  while read -r file; do
+    saved=$(ls -1d "$state"/backup/*"$file" 2>/dev/null | sort | tail -n 1)
+    [[ -n $saved ]] || { say "sudo-model: no backup of $file"; continue; }
+    say "sudo-model: restoring $file from $saved"
+    run install -m 0440 -o root -g root "$saved" "$file"
+  done < <(sort -u "$state/sudo-model.moved")
+  if [[ $apply -eq 1 ]]; then
+    sudo_ok || die "sudo-model: visudo -c failed after the restore; check /etc/sudoers.d by hand"
+    rm -f "$state/sudo-model.moved"
+  fi
 }
 
 unit_healthy() { # unit_healthy UNIT: active for 20 s and its port answers

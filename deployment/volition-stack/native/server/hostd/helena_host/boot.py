@@ -30,7 +30,7 @@ import os
 import re
 
 from . import audit, events, storage
-from .common import Host, HostError, clip, file_lock
+from .common import Host, HostError, atomic_write_json, clip, file_lock, json_load_file
 
 ROLES = ('main', 'reserve')
 # Worst first: what `check()` reports when a role has no right entry.
@@ -113,6 +113,22 @@ def loader_files(loader: str) -> list[str]:
     stub that finds the root file system)."""
     relative = loader_relative(loader)
     return [relative, os.path.join(os.path.dirname(relative), 'grub.cfg')]
+
+
+REMOVABLE_FOLDER = 'EFI/BOOT'
+
+
+def removable_names(loader: str) -> dict | None:
+    """The firmware's removable-media path for a shim loader (\\EFI\\debian\\shimx64.efi):
+    shim as BOOTX64.EFI, grubx64.efi, mmx64.efi next to it, and the shim fallback fbx64.efi,
+    which must NOT be there (shim would run it and write NVRAM entries of its own). None for
+    a loader that is not a shim."""
+    match = re.match(r'^shim(\w+)\.efi$', os.path.basename(loader_relative(loader)), re.IGNORECASE)
+    if not match:
+        return None
+    arch = match.group(1).lower()
+    return {'shim': f'BOOT{arch.upper()}.EFI', 'grub': f'grub{arch}.efi', 'mm': f'mm{arch}.efi',
+            'fallback': f'fb{arch}.efi'}
 
 
 def loader_complete(host: Host, mount: str, loader: str) -> bool:
@@ -299,11 +315,16 @@ def repair(host: Host, config, *, dry_run: bool = False, log=lambda message: Non
                 'reason': 'notInUse'}
     with file_lock(os.path.join(config.state_dir, 'boot.lock')):
         before = _read(host, efibootmgr)
+        # The AXB35's firmware rewrites BootOrder at every boot (it put its own "UEFI OS"
+        # removable-path entry first): keep a trace of what it left, to see the pattern.
+        log(f"boot-repair: firmware order was {','.join(before['order']) or '-'}; "
+            f"booted {before['current'] or '?'}")
         devices = storage.lsblk(host)
         roles = layout(host, config_storage, devices)
         present = present_partuuids(devices)
         planned = plan(before, roles, loader, present, tuple(legacy))
-        result = {'dryRun': dry_run, 'roles': planned['roles'], 'actions': [], 'changed': False, 'ok': True}
+        result = {'dryRun': dry_run, 'roles': planned['roles'], 'actions': [], 'changed': False, 'ok': True,
+                  'bootCurrent': before['current'], 'firmwareOrder': list(before['order'])}
         by_role = {check['role']: check for check in planned['roles']}
         esp_of = {role['role']: role['esp'] for role in roles}
         if dry_run:
@@ -387,6 +408,13 @@ def repair(host: Host, config, *, dry_run: bool = False, log=lambda message: Non
                 run(['--bootorder', ','.join(order)], {'op': 'order', 'order': order})
 
         result['actions'] = done
+        final = _read(host, efibootmgr) if done else before
+        result['order'] = list(final['order'])
+        _remember(config.state_dir, {
+            'at': audit.now_iso(host), 'actor': actor, 'bootCurrent': before['current'],
+            'firmwareOrder': list(before['order']), 'order': list(final['order']),
+            'changed': bool(done),
+        })
         if done:
             summary = '; '.join(_describe(action) for action in done)
             audit.append(config.state_dir, {
@@ -407,6 +435,21 @@ def repair(host: Host, config, *, dry_run: bool = False, log=lambda message: Non
                           device=', '.join(sorted({by_role[a['role']]['label'] for a in done if a.get('role')})) or None,
                           message=summary, at=host.now())
         return result
+
+
+HISTORY = 'boot-history.json'
+HISTORY_KEEP = 100
+
+
+def history(state_dir: str) -> list[dict]:
+    """The boot orders the firmware left, newest last (one line per repair run)."""
+    data = json_load_file(os.path.join(state_dir, HISTORY), [])
+    return data if isinstance(data, list) else []
+
+
+def _remember(state_dir: str, entry: dict) -> None:
+    os.makedirs(state_dir, mode=0o700, exist_ok=True)
+    atomic_write_json(os.path.join(state_dir, HISTORY), (history(state_dir) + [entry])[-HISTORY_KEEP:])
 
 
 def _creates(actions: list[dict], role: str) -> bool:

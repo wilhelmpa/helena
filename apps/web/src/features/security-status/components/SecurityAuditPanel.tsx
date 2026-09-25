@@ -18,8 +18,8 @@ const STATE_STATUS: Record<AuditState, Status> = {
 };
 
 // Placeholders a finding's sentence may use; a report from before the audit sent params
-// leaves them visibly open instead of failing to format.
-const EMPTY_PARAMS = { ports: '…', value: '…', count: '…' };
+// leaves them visibly open instead of failing to format (a select falls to its `other` case).
+const EMPTY_PARAMS = { ports: '…', value: '…', count: '…', why: 'other', problem: 'other' };
 
 // The host audit (deployment/volition-stack/native/hardening/audit.sh) as a list: the
 // findings first, the checks that passed behind a toggle. A finding is worded in the

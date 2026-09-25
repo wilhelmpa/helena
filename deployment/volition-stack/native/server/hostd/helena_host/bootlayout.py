@@ -19,6 +19,14 @@ the boot order. `helena-hostd boot-layout` moves the machine onto that standard 
 5. the boot entry repair (boot.py): both entries move to EFI/debian, created and read back
    before the old ones go.
 
+The firmware's own removable-path entry ("UEFI OS", EFI/BOOT/BOOTX64.EFI) can win over our
+entries (the AXB35 rewrites BootOrder at every boot), so EFI/BOOT has to start the same
+binaries: the change also sets debconf grub2/force_efi_extra_removable=true (apt refreshes
+EFI/BOOT with every GRUB/shim update) and installs with --force-extra-removable. Debian's
+grub-install then puts shim as BOOTX64.EFI, grubx64.efi and mmx64.efi there; fbx64.efi only
+when it writes NVRAM, which --no-nvram rules out (shim would run it and add entries), and no
+grub.cfg, so the stub from EFI/debian is copied next to them. A leftover fbx64.efi is removed.
+
 EFI/helena-raid stays as a fallback (remove it later from both ESPs at once). `--rollback`
 points the config at EFI/helena-raid and repairs the entries back (debconf stays false).
 Both refuse while an array is degraded or rebuilding, or an ESP is not mounted or its disk is
@@ -44,7 +52,8 @@ SIGNED = (
     ('mmx64.efi', '/usr/lib/shim/mmx64.efi.signed'),
 )
 DEBCONF_PACKAGE = 'grub-efi-amd64'
-DEBCONF_QUESTION = 'grub2/update_nvram'
+# What the layout needs from apt's grub-install (grub-efi-amd64 and shim-signed postinst).
+DEBCONF_WANTED = {'grub2/update_nvram': 'false', 'grub2/force_efi_extra_removable': 'true'}
 DEBIAN_FOLDER = 'EFI/debian'
 
 
@@ -152,17 +161,70 @@ def check_debian_folder(host: Host, mount: str, devices: list[dict]) -> str | No
     return check_grub_cfg(host.read(os.path.join(mount, DEBIAN_FOLDER, 'grub.cfg')), root_filesystem(host, devices))
 
 
-def debconf_value(host: Host) -> str | None:
-    """grub2/update_nvram as debconf holds it: 'true', 'false', '' (unset) or None (no debconf)."""
+def debconf_values(host: Host) -> dict[str, str] | None:
+    """grub-efi-amd64's debconf answers ('true', 'false', '' when unset); None without debconf."""
     tool = host.which('debconf-show')
     if not tool:
         return None
     result = host.run([tool, DEBCONF_PACKAGE], timeout=30)
+    values = {}
     for line in result.stdout.splitlines():
-        match = re.match(r'^[\s*]*grub2/update_nvram:\s*(\S*)', line)
+        match = re.match(r'^[\s*]*(grub2/[\w-]+):\s*(\S*)', line)
         if match:
-            return match.group(1)
+            values[match.group(1)] = match.group(2)
+    return values
+
+
+def debconf_value(host: Host, question: str = 'grub2/update_nvram') -> str | None:
+    values = debconf_values(host)
+    return None if values is None else values.get(question, '')
+
+
+# ── The firmware's removable-media path (EFI/BOOT) ───────────────────────────────────────
+
+def _loader_folder(host: Host, mount: str, config_storage: dict) -> str | None:
+    """The folder whose binaries EFI/BOOT has to match: the configured loader's when it is
+    complete on this ESP, else the first complete old one (before the change)."""
+    current, legacy = boot.loaders(config_storage)
+    for loader in (current, *legacy):
+        if boot.loader_complete(host, mount, loader):
+            return os.path.dirname(boot.loader_relative(loader))
     return None
+
+
+def removable_state(host: Host, mount: str, config_storage: dict, root: dict | None) -> dict:
+    """EFI/BOOT on one ESP, the first problem found: `missing` (no shim there), `differs`
+    (not the loader folder's shim/GRUB/MokManager), `fallback` (fbx64.efi present), `stub`
+    (its grub.cfg would not find the root); else `ok`, or `unknown` (no complete loader
+    folder to compare with)."""
+    names = boot.removable_names(config_storage.get('bootLoader') or boot.DEBIAN_LOADER)
+    base = os.path.join(host.path(mount), boot.REMOVABLE_FOLDER)
+    state = {'mount': mount, 'state': 'unknown', 'detail': None}
+    folder = _loader_folder(host, mount, config_storage)
+    if names is None or folder is None:
+        return state
+    if not os.path.isfile(os.path.join(base, names['shim'])):
+        return {**state, 'state': 'missing', 'detail': f"{boot.REMOVABLE_FOLDER}/{names['shim']}"}
+    arch = names['grub'][len('grub'):-len('.efi')]
+    for removable, original in ((names['shim'], f'shim{arch}.efi'), (names['grub'], names['grub']),
+                                (names['mm'], names['mm'])):
+        theirs = _sha256(os.path.join(host.path(mount), folder, original))
+        if theirs is not None and _sha256(os.path.join(base, removable)) != theirs:
+            return {**state, 'state': 'differs', 'detail': f'{boot.REMOVABLE_FOLDER}/{removable}'}
+    if os.path.exists(os.path.join(base, names['fallback'])):
+        return {**state, 'state': 'fallback', 'detail': f"{boot.REMOVABLE_FOLDER}/{names['fallback']}"}
+    if check_grub_cfg(host.read(os.path.join(mount, boot.REMOVABLE_FOLDER, 'grub.cfg')), root):
+        return {**state, 'state': 'stub', 'detail': f'{boot.REMOVABLE_FOLDER}/grub.cfg'}
+    return {**state, 'state': 'ok'}
+
+
+def removable_check(host: Host, config_storage: dict, devices: list[dict]) -> list[dict]:
+    """EFI/BOOT on every mounted ESP of the layout, for StorageStatus (esp.removable)."""
+    if not boot.layout_in_use(host, config_storage):
+        return []
+    root = root_filesystem(host, devices)
+    return [removable_state(host, mount, config_storage, root)
+            for mount in list(config_storage.get('espMounts') or [])[:2] if esp._mounted(host, mount)]
 
 
 # ── The change ───────────────────────────────────────────────────────────────────────────
@@ -209,32 +271,39 @@ def migrate(host: Host, config: Config, *, dry_run: bool = False, log=lambda mes
     else:
         steps.append({'step': 'config', 'already': True})
 
-    # 2. apt keeps EFI/debian current without touching the firmware's entries.
-    value = debconf_value(host)
-    if value is None:
+    # 2. apt keeps EFI/debian and EFI/BOOT current without touching the firmware's entries.
+    values = debconf_values(host)
+    if values is None:
         return done(False, 'debconf is not available', 'debconf')
-    if value == 'false':
+    change = {question: wanted for question, wanted in DEBCONF_WANTED.items() if values.get(question) != wanted}
+    if not change:
         steps.append({'step': 'debconf', 'already': True})
     else:
-        steps.append({'step': 'debconf', 'was': value, 'set': 'false'})
+        steps.append({'step': 'debconf', 'was': {q: values.get(q, '') for q in change}, 'set': change})
         if not dry_run:
             tool = host.which('debconf-set-selections')
-            outcome = host.run([tool], input=f'{DEBCONF_PACKAGE} {DEBCONF_QUESTION} boolean false\n',
-                               timeout=30) if tool else None
-            if outcome is None or outcome.returncode != 0 or debconf_value(host) != 'false':
-                return done(False, 'debconf-set-selections did not take grub2/update_nvram=false', 'debconf')
+            lines = ''.join(f'{DEBCONF_PACKAGE} {q} boolean {v}\n' for q, v in change.items())
+            outcome = host.run([tool], input=lines, timeout=30) if tool else None
+            after = debconf_values(host) or {}
+            if outcome is None or outcome.returncode != 0 or any(after.get(q) != v for q, v in change.items()):
+                return done(False, 'debconf-set-selections did not take ' + ', '.join(
+                    f'{q}={v}' for q, v in change.items()), 'debconf')
 
-    # 3. Debian's own folder on the first ESP, checked.
+    # 3. Debian's own folder and the removable path on the first ESP, checked.
+    root = root_filesystem(host, devices)
+    debian_config = {**storage_config, 'bootLoader': boot.DEBIAN_LOADER, 'legacyBootLoaders': None}
     problem = check_debian_folder(host, main, devices)
-    if problem is None:
+    removable = removable_state(host, main, debian_config, root) if problem is None else None
+    if problem is None and removable['state'] not in ('missing', 'differs'):
         steps.append({'step': 'grubInstall', 'already': True})
     else:
         grub_install = host.which('grub-install')
         if not grub_install:
             return done(False, 'grub-install is not installed', 'grubInstall')
         argv = [grub_install, '--target=x86_64-efi', f'--efi-directory={main}', '--bootloader-id=debian',
-                '--uefi-secure-boot', '--no-nvram']
-        steps.append({'step': 'grubInstall', 'because': problem, 'argv': argv})
+                '--uefi-secure-boot', '--force-extra-removable', '--no-nvram']
+        steps.append({'step': 'grubInstall', 'because': problem or f"{removable['detail']} {removable['state']}",
+                      'argv': argv})
         if not dry_run:
             installed = host.run(argv, timeout=600)
             log(f'boot-layout: grub-install exited {installed.returncode}')
@@ -245,6 +314,26 @@ def migrate(host: Host, config: Config, *, dry_run: bool = False, log=lambda mes
                 aside = _move_aside(host, main)
                 return done(False, problem + (f'; moved to {aside}' if aside else ''), 'grubInstall')
 
+    # 3b. EFI/BOOT: no shim fallback (it would write NVRAM entries), and the stub next to GRUB.
+    names = boot.removable_names(boot.DEBIAN_LOADER)
+    base = os.path.join(host.path(main), boot.REMOVABLE_FOLDER)
+    fallback = os.path.join(base, names['fallback'])
+    stub = os.path.join(base, 'grub.cfg')
+    fixes = []
+    if os.path.exists(fallback):
+        fixes.append(f"remove {boot.REMOVABLE_FOLDER}/{names['fallback']}")
+        if not dry_run:
+            os.unlink(fallback)
+    if check_grub_cfg(host.read(os.path.join(main, boot.REMOVABLE_FOLDER, 'grub.cfg')), root):
+        fixes.append(f'write {boot.REMOVABLE_FOLDER}/grub.cfg from {DEBIAN_FOLDER}/grub.cfg')
+        if not dry_run and os.path.isdir(base):
+            shutil.copyfile(os.path.join(host.path(main), DEBIAN_FOLDER, 'grub.cfg'), stub)
+    steps.append({'step': 'removablePath', **({'fix': fixes} if fixes else {'already': True})})
+    if not dry_run:
+        removable = removable_state(host, main, debian_config, root)
+        if removable['state'] != 'ok':
+            return done(False, f"{removable['detail']}: {removable['state']} after the install", 'removablePath')
+
     # 4. The same onto the second ESP (guarded, verified).
     if dry_run:
         steps.append({'step': 'copy', 'from': main, 'to': esps[1]['mount']})
@@ -253,6 +342,9 @@ def migrate(host: Host, config: Config, *, dry_run: bool = False, log=lambda mes
         steps.append({'step': 'copy', 'state': copied['state'], 'reason': copied.get('reason')})
         if copied['state'] != 'ok':
             return done(False, f"the ESP copy ended {copied['state']} ({copied.get('reason')})", 'copy')
+        mirrored = removable_state(host, esps[1]['mount'], debian_config, root)
+        if mirrored['state'] != 'ok':
+            return done(False, f"{esps[1]['mount']}/{mirrored['detail']}: {mirrored['state']}", 'copy')
 
     # 5. Both entries onto EFI/debian.
     preview = config if not dry_run else _preview_config(config, boot.DEBIAN_LOADER)

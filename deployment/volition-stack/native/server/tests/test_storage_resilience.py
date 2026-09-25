@@ -118,11 +118,14 @@ class ResilienceTest(HostTest):
         shutil.copytree(argv[-2], argv[-1])
         return CommandResult(0, '', '')
 
-    def esp_files(self, mount: str, *, grub: str = 'search.fs_uuid 7a3b588b root\n') -> None:
-        self.write(f'{mount}/EFI/helena-raid/shimx64.efi', 'shim-15.8')
-        self.write(f'{mount}/EFI/helena-raid/grubx64.efi', 'grub-2.12')
-        self.write(f'{mount}/EFI/helena-raid/grub.cfg', grub)
-        self.write(f'{mount}/EFI/BOOT/BOOTX64.EFI', 'shim-15.8')
+    def esp_files(self, mount: str, *, grub: str = STUB) -> None:
+        """An ESP as the RAID setup of 2026-09-24 left it: EFI/helena-raid and the firmware's
+        removable path EFI/BOOT with the same shim, GRUB and MokManager, and the stub."""
+        for folder, shim in (('EFI/helena-raid', 'shimx64.efi'), ('EFI/BOOT', 'BOOTX64.EFI')):
+            self.write(f'{mount}/{folder}/{shim}', 'shim-15.8')
+            self.write(f'{mount}/{folder}/grubx64.efi', 'grub-2.12')
+            self.write(f'{mount}/{folder}/mmx64.efi', 'mm-15.8')
+            self.write(f'{mount}/{folder}/grub.cfg', grub)
 
     def findmnt(self, argv, **_):
         if '-T' in argv:  # the file system that holds /boot/grub: the RAID's
@@ -210,6 +213,20 @@ class BootEntryTests(ResilienceTest):
         again = boot.repair(self.host, self.config)
         self.assertEqual(again['actions'], [])
         self.assertEqual(fake.log, [])
+
+    def test_the_order_the_firmware_left_is_logged_and_kept(self):
+        text = fixture('efibootmgr.txt').replace('BootOrder: 000F,001A', 'BootOrder: 001A,000F')
+        fake = self.firmware(text)
+        logs: list[str] = []
+        result = boot.repair(self.host, self.config, log=logs.append, actor='test')
+        self.assertIn('boot-repair: firmware order was 001A,000F; booted 000A', logs)
+        self.assertEqual((result['firmwareOrder'], result['order']), (['001A', '000F'], ['000F', '001A']))
+        self.assertEqual(fake.order, ['000F', '001A'])
+        boot.repair(self.host, self.config)
+        [first, second] = boot.history(self.config.state_dir)
+        self.assertEqual((first['firmwareOrder'], first['order'], first['changed']),
+                         (['001A', '000F'], ['000F', '001A'], True))
+        self.assertEqual((second['firmwareOrder'], second['changed']), (['000F', '001A'], False))
 
     def test_a_failed_create_deletes_nothing(self):
         fake = self.firmware(fixture('efibootmgr-venhw.txt'))
@@ -508,6 +525,10 @@ class EspDebianFolderTests(ResilienceTest):
         # Removed from both ESPs at once (the documented clean-up): fine again.
         shutil.rmtree(self.host.path('/boot/efi2/EFI/helena-raid'))
         self.assertEqual(esp.sync(self.host, self.config)['state'], 'ok')
+        # The firmware's removable path is guarded the same way.
+        os.unlink(self.host.path('/boot/efi/EFI/BOOT/grub.cfg'))
+        result = esp.sync(self.host, self.config)
+        self.assertEqual((result['state'], result['detail']), ('failed', 'EFI/BOOT/grub.cfg'))
 
 
 class OldLayoutTests(ResilienceTest):
@@ -566,10 +587,9 @@ class BootLayoutTests(ResilienceTest):
         self.write('/usr/lib/shim/shimx64.efi.signed', 'shim-15.8')
         self.write('/usr/lib/grub/x86_64-efi-signed/grubx64.efi.signed', 'grub-2.12')
         self.write('/usr/lib/shim/mmx64.efi.signed', 'mm-15.8')
-        self.debconf = {'grub2/update_nvram': 'true'}
+        self.debconf = {'grub2/force_efi_extra_removable': 'false', 'grub2/update_nvram': 'true'}
         self.runner.on('/usr/sbin/debconf-show', fn=lambda argv, **_: CommandResult(
-            0, '  grub2/force_efi_extra_removable: false\n'
-               + ''.join(f'* {k}: {v}\n' for k, v in self.debconf.items()), ''))
+            0, '  grub2/linux_cmdline:\n' + ''.join(f'* {k}: {v}\n' for k, v in self.debconf.items()), ''))
         self.runner.on('/usr/sbin/debconf-set-selections', fn=self.set_selections)
         self.grub_cfg = STUB
         self.grub_binary = None
@@ -580,21 +600,37 @@ class BootLayoutTests(ResilienceTest):
         self.fake = self.firmware(fixture('efibootmgr.txt'))
 
     def set_selections(self, argv, input=None, **_):
-        package, question, kind, value = input.split()
-        assert (package, kind) == ('grub-efi-amd64', 'boolean')
-        self.debconf[question] = value
+        for line in input.splitlines():
+            package, question, kind, value = line.split()
+            assert (package, kind) == ('grub-efi-amd64', 'boolean')
+            self.debconf[question] = value
         return CommandResult(0, '', '')
 
     def grub_install(self, argv, **_):
-        """Debian's grub-install --uefi-secure-boot: the signed images and the stub."""
+        """Debian's grub-install --uefi-secure-boot (grub-install-removable-shim.patch): the
+        signed images and the stub in the vendor folder; with --force-extra-removable shim as
+        BOOTX64.EFI, grubx64.efi and mmx64.efi in EFI/BOOT, fbx64.efi only when it may write
+        NVRAM, never a grub.cfg there."""
         efi = next(a for a in argv if a.startswith('--efi-directory=')).split('=', 1)[1]
         folder = next(a for a in argv if a.startswith('--bootloader-id=')).split('=', 1)[1]
         for name, signed in bootlayout.SIGNED:
             self.write(f'{efi}/EFI/{folder}/{name}', self.read(signed))
+        self.write(f'{efi}/EFI/{folder}/fbx64.efi', 'fb-15.8')
         if self.grub_binary:
             self.write(f'{efi}/EFI/{folder}/grubx64.efi', self.grub_binary)
         self.write(f'{efi}/EFI/{folder}/grub.cfg', self.grub_cfg)
+        if '--force-extra-removable' in argv:
+            self.write(f'{efi}/EFI/BOOT/BOOTX64.EFI', self.read('/usr/lib/shim/shimx64.efi.signed'))
+            self.write(f'{efi}/EFI/BOOT/grubx64.efi', self.grub_binary or self.read(bootlayout.SIGNED[1][1]))
+            self.write(f'{efi}/EFI/BOOT/mmx64.efi', self.read('/usr/lib/shim/mmx64.efi.signed'))
+            if '--no-nvram' not in argv:
+                self.write(f'{efi}/EFI/BOOT/fbx64.efi', 'fb-15.8')
         return CommandResult(0, '', 'Installation finished. No error reported.')
+
+    def package_update(self) -> None:
+        """A newer shim and GRUB from apt (the signed files under /usr/lib change)."""
+        self.write('/usr/lib/shim/shimx64.efi.signed', 'shim-16.1')
+        self.write('/usr/lib/grub/x86_64-efi-signed/grubx64.efi.signed', 'grub-2.14')
 
     def entries(self) -> dict:
         return {e['label']: e for e in storage.parse_efibootmgr(self.fake.text())['entries']}
@@ -603,12 +639,13 @@ class BootLayoutTests(ResilienceTest):
         result = bootlayout.migrate(self.host, self.config, dry_run=True)
         self.assertTrue(result['ok'])
         steps = {step['step']: step for step in result['steps']}
-        self.assertEqual(list(steps), ['config', 'debconf', 'grubInstall', 'copy', 'bootRepair'])
+        self.assertEqual(list(steps), ['config', 'debconf', 'grubInstall', 'removablePath', 'copy', 'bootRepair'])
         self.assertTrue(steps['config']['already'])
-        self.assertEqual((steps['debconf']['was'], steps['debconf']['set']), ('true', 'false'))
+        self.assertEqual(steps['debconf']['set'], {'grub2/update_nvram': 'false',
+                                                   'grub2/force_efi_extra_removable': 'true'})
         self.assertEqual(steps['grubInstall']['argv'][1:], [
             '--target=x86_64-efi', '--efi-directory=/boot/efi', '--bootloader-id=debian',
-            '--uefi-secure-boot', '--no-nvram'])
+            '--uefi-secure-boot', '--force-extra-removable', '--no-nvram'])
         self.assertIn('EFI/debian/shimx64.efi is missing', steps['grubInstall']['because'])
         self.assertEqual([e['state'] for e in steps['bootRepair']['entries']], ['oldLayout', 'oldLayout'])
         self.assertEqual(self.runner.called('/usr/sbin/grub-install'), [])
@@ -620,9 +657,14 @@ class BootLayoutTests(ResilienceTest):
     def test_the_move_installs_debian_copies_it_and_moves_both_entries(self):
         result = bootlayout.migrate(self.host, self.config)
         self.assertTrue(result['ok'], result)
-        self.assertEqual(self.debconf['grub2/update_nvram'], 'false')
+        self.assertEqual(self.debconf, {'grub2/update_nvram': 'false', 'grub2/force_efi_extra_removable': 'true'})
         [argv] = self.runner.called('/usr/sbin/grub-install')
         self.assertIn('--no-nvram', argv)
+        for mount in ('/boot/efi', '/boot/efi2'):
+            self.assertEqual(bootlayout.removable_state(self.host, mount, self.config.storage,
+                                                        bootlayout.root_filesystem(self.host, self.devices))['state'],
+                             'ok', mount)
+            self.assertFalse(os.path.exists(self.host.path(f'{mount}/EFI/BOOT/fbx64.efi')))
         for mount in ('/boot/efi', '/boot/efi2'):
             self.assertEqual(self.read(f'{mount}/EFI/debian/grub.cfg'), STUB)
             self.assertEqual(self.read(f'{mount}/EFI/helena-raid/shimx64.efi'), 'shim-15.8')  # the fallback stays
@@ -643,10 +685,66 @@ class BootLayoutTests(ResilienceTest):
         self.fake.log.clear()
         again = bootlayout.migrate(self.host, self.config)
         self.assertTrue(again['ok'])
-        self.assertTrue(all(step.get('already') for step in again['steps'][:3]))
+        self.assertTrue(all(step.get('already') for step in again['steps'][:4]), again['steps'])
         self.assertEqual(len(self.runner.called('/usr/sbin/grub-install')), 1)
         self.assertEqual(len(self.runner.called('/usr/sbin/debconf-set-selections')), 1)
         self.assertEqual(self.fake.log, [])
+
+    def test_a_machine_already_on_debian_only_gets_the_debconf_answer(self):
+        # Kingston after f452afc7: EFI/debian verified, EFI/BOOT the same binaries.
+        self.assertTrue(bootlayout.migrate(self.host, self.config)['ok'])
+        self.debconf['grub2/force_efi_extra_removable'] = 'false'
+        result = bootlayout.migrate(self.host, self.config)
+        steps = {step['step']: step for step in result['steps']}
+        self.assertEqual(steps['debconf']['set'], {'grub2/force_efi_extra_removable': 'true'})
+        self.assertTrue(steps['grubInstall']['already'] and steps['removablePath']['already'])
+        self.assertEqual(len(self.runner.called('/usr/sbin/grub-install')), 1)
+
+    def test_an_old_removable_path_is_reinstalled_and_a_fallback_removed(self):
+        self.assertTrue(bootlayout.migrate(self.host, self.config)['ok'])
+        self.package_update()  # apt updated shim and GRUB; the postinst ran without EFI/BOOT
+        self.write('/boot/efi/EFI/debian/shimx64.efi', 'shim-16.1')
+        self.write('/boot/efi/EFI/debian/grubx64.efi', 'grub-2.14')
+        root = bootlayout.root_filesystem(self.host, self.devices)
+        self.assertEqual(bootlayout.removable_state(self.host, '/boot/efi', self.config.storage, root)['state'],
+                         'differs')
+        self.write('/boot/efi/EFI/BOOT/fbx64.efi', 'fb-15.8')
+        os.unlink(self.host.path('/boot/efi/EFI/BOOT/grub.cfg'))
+        result = bootlayout.migrate(self.host, self.config)
+        self.assertTrue(result['ok'], result)
+        steps = {step['step']: step for step in result['steps']}
+        self.assertIn('EFI/BOOT/BOOTX64.EFI differs', steps['grubInstall']['because'])
+        self.assertEqual(steps['removablePath']['fix'], [
+            'remove EFI/BOOT/fbx64.efi', 'write EFI/BOOT/grub.cfg from EFI/debian/grub.cfg'])
+        for mount in ('/boot/efi', '/boot/efi2'):
+            self.assertEqual(self.read(f'{mount}/EFI/BOOT/BOOTX64.EFI'), 'shim-16.1')
+            self.assertEqual(self.read(f'{mount}/EFI/BOOT/grubx64.efi'), 'grub-2.14')
+            self.assertEqual(self.read(f'{mount}/EFI/BOOT/grub.cfg'), STUB)
+            self.assertFalse(os.path.exists(self.host.path(f'{mount}/EFI/BOOT/fbx64.efi')))
+
+    def test_the_removable_path_states(self):
+        root = bootlayout.root_filesystem(self.host, self.devices)
+
+        def state():
+            return bootlayout.removable_state(self.host, '/boot/efi', self.config.storage, root)['state']
+        # Before the change EFI/BOOT is compared with EFI/helena-raid (the complete folder).
+        self.assertEqual(state(), 'ok')
+        self.write('/boot/efi/EFI/BOOT/grub.cfg', STUB.replace(ROOT_UUID, 'x'))
+        self.assertEqual(state(), 'stub')
+        self.write('/boot/efi/EFI/BOOT/grub.cfg', STUB)
+        self.write('/boot/efi/EFI/BOOT/fbx64.efi', 'fb')
+        self.assertEqual(state(), 'fallback')
+        self.write('/boot/efi/EFI/BOOT/mmx64.efi', 'mm-old')
+        self.assertEqual(state(), 'differs')  # old binaries first: they decide the reinstall
+        os.unlink(self.host.path('/boot/efi/EFI/BOOT/BOOTX64.EFI'))
+        self.assertEqual(state(), 'missing')
+        shutil.rmtree(self.host.path('/boot/efi/EFI/helena-raid'))
+        self.assertEqual(state(), 'unknown')
+        # StorageStatus carries it per mounted ESP.
+        self.runner.on('/usr/bin/smartctl', out=fixture('smart-nvme-samsung.json'), rc=4)
+        status = storage.status(self.host, self.config.storage, fresh=True, state_dir=self.config.state_dir)
+        self.assertEqual([(r['mount'], r['state']) for r in status['esp']['removable']],
+                         [('/boot/efi', 'unknown'), ('/boot/efi2', 'ok')])
 
     def test_it_refuses_a_degraded_or_rebuilding_mirror_and_a_missing_esp(self):
         for degraded, action in ((1, 'idle'), (1, 'recover'), (0, 'resync')):

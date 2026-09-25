@@ -1,0 +1,6 @@
+# Helena automation account (docs/helena-decisions/security-hardening.md H-07, §8.3): the
+# orchestrator's SSH automation runs as helena-ops. Its password is locked (passwd -l), SSH
+# takes its key only (sshd_config.d/60-helena-ops.conf) and only from the home network
+# (AllowUsers + firewall). No other account has sudo without a password; the owner types his.
+# Installed by hardening/apply.sh sudo-model.
+helena-ops ALL=(ALL:ALL) NOPASSWD: ALL

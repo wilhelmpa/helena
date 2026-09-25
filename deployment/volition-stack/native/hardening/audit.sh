@@ -73,6 +73,43 @@ record() {
 need_root() { # ID GROUP SEVERITY
   record "$1" "$2" "$3" skip "needs root"
 }
+
+# auth.sudo (H-07, §8.3). The automation account (helena-ops) is the only one allowed sudo
+# without a password, and only while its password is locked and SSH takes its key only
+# (sshd_config.d/60-helena-ops.conf, checked in sshd's effective config). Anyone else with
+# NOPASSWD: ALL is root without a password for whoever holds that account.
+OPS_USER=${HELENA_OPS_USER:-helena-ops}
+check_sudo() {
+  local blanket others status methods problem=
+  blanket=$(grep -Rhs -E '^[^#]*NOPASSWD:\s*ALL\s*$' /etc/sudoers /etc/sudoers.d/ | awk '{print $1}' | sort -u)
+  others=$(grep -vxF -- "$OPS_USER" <<<"$blanket" | grep . | paste -sd, -)
+  if [[ -n $others ]]; then
+    record auth.sudo auth medium warn "NOPASSWD: ALL for $others (root without a password for that account)" \
+      "why=others" "value=$others"
+    return
+  fi
+  if ! grep -qxF -- "$OPS_USER" <<<"$blanket"; then
+    record auth.sudo auth medium pass "no blanket NOPASSWD"
+    return
+  fi
+  status=$(passwd -S "$OPS_USER" 2>/dev/null | awk '{print $2}')
+  methods=$(sshd -T -C "user=$OPS_USER,host=localhost,addr=127.0.0.1" 2>/dev/null \
+    | awk '$1 == "authenticationmethods" {print $2}')
+  [[ $status == L ]] || problem=password
+  if [[ $methods != publickey ]]; then problem=${problem:+both}; problem=${problem:-ssh}; fi
+  if [[ -z $problem ]]; then
+    record auth.sudo auth medium pass "only $OPS_USER (the automation account: password locked, SSH key only)"
+  else
+    record auth.sudo auth medium warn "$OPS_USER has NOPASSWD: ALL; password ${status:-?}, SSH authenticationmethods ${methods:-?}" \
+      "why=ops" "value=$OPS_USER" "problem=$problem"
+  fi
+}
+# tests/sudo-model-selftest.sh runs this one check (in a private namespace with fakes).
+if [[ ${HELENA_AUDIT_ONLY:-} == auth.sudo ]]; then
+  [[ $is_root -eq 1 ]] && check_sudo || need_root auth.sudo auth medium
+  printf '%s\n' "${results[@]}"
+  exit 0
+fi
 have() { command -v "$1" >/dev/null 2>&1; }
 psql_ro() { # one value from Helena's database, read-only, as the postgres user
   runuser -u postgres -- psql -d "$HELENA_DB" -XAtq -v ON_ERROR_STOP=1 \
@@ -317,10 +354,7 @@ else
   for id in auth.second_factor auth.step_up auth.registration auth.sessions; do need_root "$id" auth high; done
 fi
 if [[ $is_root -eq 1 ]]; then
-  nopasswd=$(grep -Rhs -E '^[^#]*NOPASSWD:\s*ALL\s*$' /etc/sudoers /etc/sudoers.d/ | awk '{print $1}' | sort -u | paste -sd, -)
-  [[ -z $nopasswd ]] \
-    && record auth.sudo auth medium pass "no blanket NOPASSWD" \
-    || record auth.sudo auth medium warn "NOPASSWD: ALL for $nopasswd (the browser terminal is root without a password)" "value=$nopasswd"
+  check_sudo
 else
   need_root auth.sudo auth medium
 fi
