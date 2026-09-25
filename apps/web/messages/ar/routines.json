@@ -22,6 +22,18 @@
   "instructionsPlaceholder": "راجع المهام المفتوحة وحدّث اللي محتاج انتباه.",
   "instructionsHintNew": "وصف كل مهمة الجدولة بتنشئها.",
   "instructionsHintReopen": "بتتضاف كتعليق كل مرة المهمة تتفتح من تاني.",
+  "mentionsHint": "الوكلاء اللي بتذكرهم بـ @ بيبدؤوا يشتغلوا على المهمة كمان في كل تشغيل.",
+  "mentionsTitle": "الوكلاء المذكورين",
+  "mentionStarts": "بيبدأ في كل تشغيل",
+  "mentionReason": {
+    "not-in-project": "مش شغّال في المشروع ده",
+    "agent-author": "اتحفظت من وكيل: الإشارات بتاعته ما بتشغّلش حد",
+    "owner-only": "بياخد مهام من صاحبه بس",
+    "mentions-off": "ما بيستجيبش للإشارات",
+    "paused": "متوقف مؤقتًا"
+  },
+  "mentionsStart": "بيشغّل كمان {names}",
+  "mentionsRefused": "{count, plural, zero {مفيش إشارات} one {إشارة واحدة ما بتشغّلش حد} two {إشارتين ما بيشغّلوش حد} few {# إشارات ما بتشغّلش حد} many {# إشارة ما بتشغّلش حد} other {# إشارة ما بتشغّلش حد}}",
   "schedule": "الجدولة",
   "showPresets": "عرض الجدولات الجاهزة",
   "presetEvery15Minutes": "كل 15 دقيقة",

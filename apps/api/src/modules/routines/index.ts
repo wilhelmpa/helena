@@ -8,6 +8,8 @@ import { accessErrors, commonErrors, errors } from '#shared/responses';
 import { mcpTool } from '#mcp/generate';
 import {
   createRoutineBody,
+  mentionPreviewBody,
+  RoutineMentionResponse,
   RoutinePageResponse,
   routinePageQuery,
   routineParams,
@@ -20,6 +22,7 @@ import {
   listMemberRoutines,
   listProjectRoutines,
   listRoutineRuns,
+  previewRoutineMentions,
   runRoutine,
   updateRoutine,
 } from './service';
@@ -76,8 +79,24 @@ export const routineRoutes = new Elysia({
         summary: 'Create a routine',
         description:
           'Create a routine that, on a cron, creates a task delegated to an agent or reopens ' +
-          'a task. A run is skipped while the task of the routine is still open.',
+          'a task. A run is skipped while the task of the routine is still open. Agents the ' +
+          'instructions @mention start on the task too.',
         ...mcpTool('create_routine'),
+      },
+    },
+  )
+  .post(
+    '/projects/:projectKey/routines/mentions',
+    ({ project, body, user }) => previewRoutineMentions(project, requireUser(user).id, body),
+    {
+      body: mentionPreviewBody,
+      permission: ['ai_agents', 'read'],
+      response: { 200: t.Array(RoutineMentionResponse), ...commonErrors },
+      detail: {
+        summary: 'Preview the mentions of routine instructions',
+        description:
+          'The agents the instructions @mention besides the given agent, and whether a run of ' +
+          'a routine you save with them starts each. For the routine editor.',
       },
     },
   )

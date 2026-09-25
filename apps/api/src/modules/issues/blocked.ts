@@ -84,6 +84,7 @@ export async function markIssueBlocked(input: {
     issueId: input.issueId,
     actorUserId: input.actorUserId,
     body: [...handles, `**${blockedCommentPrefix(locale)}** ${input.question.trim()}`].join(' '),
+    asksForInput: true,
   });
   const [run] = await db
     .update(agentRun)

@@ -99,7 +99,11 @@ token() {
   if [[ $apply -eq 0 ]]; then say "[dry-run] would read the token from the terminal (no echo) into $token_file (0600 root)"; return; fi
   [[ -t 0 ]] || die "run this in a terminal: the token is read without echo"
   local value
-  read -rsp "Tunnel token (input hidden, Enter to finish): " value; echo
+  read -rsp "Tunnel token or the whole install command (input hidden, Enter to finish): " value; echo
+  # Cloudflare's copy button copies the whole command ("sudo cloudflared service install
+  # <token>" or "cloudflared tunnel run --token <token>"): the token is its last word.
+  value=${value%"${value##*[![:space:]]}"}
+  value=${value##*[[:space:]]}
   [[ ${#value} -ge 100 && $value =~ ^[A-Za-z0-9+/=_-]+$ ]] || die "that does not look like a tunnel token; nothing written"
   (umask 077; printf '%s' "$value" >"$token_file.new")
   unset value

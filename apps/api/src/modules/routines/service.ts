@@ -14,7 +14,7 @@ import { and, count, desc, eq, inArray, sql } from 'drizzle-orm';
 import { HttpError, iso } from '#shared/lib';
 import { getLimits } from '#shared/limits';
 import { hasPermission } from '#shared/permissions';
-import { canTriggerAgent } from '#modules/agents/core/service';
+import { canTriggerAgent, type MentionRefusal } from '#modules/agents/core/service';
 import { toMemberContext, type MemberRole } from '#modules/members/service';
 import { bumpControlPlaneRevision } from '#modules/sync/service';
 import { startRunSoon } from '#modules/engine/runs';
@@ -27,11 +27,14 @@ import {
 } from '#modules/engine/schedules';
 import { runDtos } from '#modules/pipelines/runs';
 import { minCronIntervalSeconds } from './cron';
+import { routineMentions } from './mentions';
 
 // A routine hands an agent work on a cron: every fire creates a task in the project and
 // delegates it to the routine's agent, or reopens the task the routine names, and is
 // skipped while the routine's task is still open. Helena keeps it in helena_schedule;
 // the engine fires it (modules/engine/schedules.ts) and records every fire as a run.
+// The agents its instructions @mention start on the task too, as the mentions of the
+// member it acts for (mentions.ts, docs/helena-decisions/routine-mentions.md).
 
 export type RoutineMode = 'new' | 'reopen';
 export type CatchUp = 'skip' | 'once';
@@ -43,6 +46,14 @@ interface RoutineProject {
   teamId: number;
 }
 
+// An agent the instructions @mention besides the routine's own, and whether a fire starts
+// it; `reason` says why not.
+export interface RoutineMention {
+  agent: { id: number; name: string; username: string };
+  starts: boolean;
+  reason: MentionRefusal | null;
+}
+
 export interface RoutineRow {
   id: string;
   projectKey: string;
@@ -51,6 +62,8 @@ export interface RoutineRow {
   agent: { id: number; name: string } | null;
   title: string;
   instructions: string;
+  // For the member the routine acts for.
+  mentions: RoutineMention[];
   mode: RoutineMode;
   task: { id: number; number: number; title: string } | null;
   cron: string;
@@ -131,6 +144,17 @@ async function routineRows(
           .from(issue)
           .where(inArray(issue.id, taskIds));
   const runs = await lastRuns(schedules.map((row) => row.id));
+  const mentions = new Map(
+    await Promise.all(
+      schedules.map(async (row) => {
+        const owner = byId.get(row.projectId);
+        const found = owner
+          ? await routineMentions(owner, row.instructions, row.actorUserId, row.agentId)
+          : [];
+        return [row.id, found.map(mentionRow)] as const;
+      }),
+    ),
+  );
   return schedules.flatMap((row) => {
     const owner = byId.get(row.projectId);
     if (!owner) return [];
@@ -149,6 +173,7 @@ async function routineRows(
         agent: agent ? { id: agent.id, name: agent.name } : null,
         title: row.title,
         instructions: row.instructions,
+        mentions: mentions.get(row.id) ?? [],
         mode: row.mode === 'reopen' ? 'reopen' : 'new',
         task: task ?? null,
         cron: row.cron,
@@ -180,6 +205,14 @@ async function routineRows(
       } satisfies RoutineRow,
     ];
   });
+}
+
+function mentionRow(agent: Awaited<ReturnType<typeof routineMentions>>[number]): RoutineMention {
+  return {
+    agent: { id: agent.id, name: agent.name, username: agent.username },
+    starts: agent.refused === null,
+    reason: agent.refused,
+  };
 }
 
 // The projects whose routines the member may read: every membership whose role grants
@@ -278,9 +311,29 @@ async function assertCadence(teamId: number, cron: string, timezone: string): Pr
   }
 }
 
+// Refuses a routine whose instructions @mention an agent that takes work only from its
+// owner, for a member other than that owner: saving it would hand the agent work from
+// them. An agent that is paused, or does not react to mentions, is only reported
+// (RoutineRow.mentions), since that can change before the next fire.
+async function assertMentions(
+  owner: RoutineProject,
+  userId: string,
+  instructions: string,
+  agentId: number | null,
+): Promise<void> {
+  const refused = (await routineMentions(owner, instructions, userId, agentId)).filter(
+    (agent) => agent.refused === 'owner-only',
+  );
+  if (refused.length > 0)
+    throw new HttpError(
+      403,
+      `Only its owner can hand this agent work: ${refused.map((agent) => '@' + agent.username).join(', ')}`,
+    );
+}
+
 // What the routine does. The agent has to work in the project and take delegated tasks,
 // and a routine is a trigger like a mention: an agent scoped to its owner takes tasks
-// from that member only.
+// from that member only. The same holds for the agents its instructions mention.
 async function routineFields(owner: RoutineProject, userId: string, input: RoutineInput) {
   const [agent] = await db
     .select({ id: aiAgent.id, triggerOnAssign: aiAgent.triggerOnAssign })
@@ -297,6 +350,7 @@ async function routineFields(owner: RoutineProject, userId: string, input: Routi
   const title = input.title.trim();
   const instructions = input.instructions.trim();
   if (!title || !instructions) throw new HttpError(400, 'Title and instructions are required');
+  await assertMentions(owner, userId, instructions, agent.id);
   let taskId: number | null = null;
   if (input.mode === 'reopen') {
     if (input.taskId == null) throw new HttpError(400, 'Select the task to reopen');
@@ -415,9 +469,22 @@ export async function runRoutine(
   if (!routine.agent) throw new HttpError(409, 'The agent of this routine left the project');
   if (!(await canTriggerAgent(routine.agent.id, userId)))
     throw new HttpError(403, 'This agent only takes tasks from its owner');
+  await assertMentions(owner, userId, row.instructions, routine.agent.id);
   const { runId } = await recordScheduleRun(row, new Date(), 'manual');
   await startRunSoon(runId);
   return { runId };
+}
+
+// The agents the instructions would start, for the member writing them, while the
+// routine is edited: the same answer RoutineRow.mentions gives once it is saved.
+export async function previewRoutineMentions(
+  owner: RoutineProject,
+  userId: string,
+  input: { instructions: string; agentId?: number | null },
+): Promise<RoutineMention[]> {
+  return (await routineMentions(owner, input.instructions, userId, input.agentId ?? null)).map(
+    mentionRow,
+  );
 }
 
 // The runs of a routine, newest first, with the step each executed.

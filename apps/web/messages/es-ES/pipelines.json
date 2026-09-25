@@ -435,7 +435,13 @@
       "reopened": "Tarea reabierta",
       "skipped": "Omitido",
       "review": "Movida a Revisión",
-      "done": "Movida a Hecho"
+      "done": "Movida a Hecho",
+      "mention-started": "Iniciado",
+      "mention-not-in-project": "No trabaja en este proyecto",
+      "mention-agent-author": "Guardada por un agente: no inicia a nadie",
+      "mention-owner-only": "Solo acepta tareas de su propietario",
+      "mention-mentions-off": "No reacciona a menciones",
+      "mention-paused": "En pausa"
     },
     "agentRunStatus": {
       "pending": "En cola",
@@ -497,7 +503,8 @@
       "specialize": "El especialista trabaja: {assignment}",
       "review": "El coordinador revisa",
       "sync": "Resultado a la tarea"
-    }
+    },
+    "routineMention": "Mencionado en las instrucciones"
   },
   "versions": {
     "empty": "Sin versiones.",

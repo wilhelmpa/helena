@@ -8,10 +8,12 @@ import {
   listMemberRoutines,
   listRoutineRuns,
   listRoutines,
+  previewRoutineMentions,
   runRoutine,
   updateRoutine,
   type RoutineInput,
 } from '@/lib/api/endpoints/routines';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { qk } from '@/services/queryKeys';
 
 export function useRoutines(projectKey: string, params: PageParams) {
@@ -34,6 +36,22 @@ export function useRoutineRuns(projectKey: string, routineId: string, params: Pa
   return useQuery({
     queryKey: qk.routineRuns(projectKey, routineId, params),
     queryFn: () => listRoutineRuns(projectKey, routineId, params),
+    placeholderData: keepPreviousData,
+  });
+}
+
+// The agents the instructions being written would start, asked once the typing pauses.
+// Nothing is asked while the text names nobody.
+export function useRoutineMentionsPreview(
+  projectKey: string,
+  instructions: string,
+  agentId: number | null,
+) {
+  const text = useDebouncedValue(instructions, 400);
+  return useQuery({
+    queryKey: qk.routineMentions(projectKey, text, agentId),
+    queryFn: () => previewRoutineMentions(projectKey, { instructions: text, agentId }),
+    enabled: text.includes('@'),
     placeholderData: keepPreviousData,
   });
 }

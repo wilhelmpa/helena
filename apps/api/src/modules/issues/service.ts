@@ -1043,6 +1043,9 @@ export async function createIssue(
     fromWorkflow?: boolean;
     // What the delegate's run is, when the issue is created delegated (a routine's task).
     delegation?: DelegationOptions;
+    // False when no person filed the task, though it acts for one: a routine's fire files
+    // the routine's task, and its author does not follow every task the routine makes.
+    subscribeAuthor?: boolean;
   },
 ): Promise<IssueRow> {
   await assertAssignments(project.id, input);
@@ -1110,7 +1113,7 @@ export async function createIssue(
   const created = (await getIssue(issueId))!;
   // The author follows what they filed; the assignee is subscribed by the
   // assignment notification below, the same as a later assignment does.
-  await autoWatchIssue(project.id, issueId, [actorUserId]);
+  if (opts?.subscribeAuthor !== false) await autoWatchIssue(project.id, issueId, [actorUserId]);
   await emitWebhookEvent(
     project.id,
     'issue.created',
@@ -1228,6 +1231,9 @@ export async function updateIssue(
     actionChain?: ActionChain;
     // What the new delegate's run is, when the patch delegates (a routine's task).
     delegation?: DelegationOptions;
+    // The write tells no watcher: a routine reopening its task (the assignment and
+    // mention notifications, addressed to one person, still go out).
+    quiet?: boolean;
   },
 ): Promise<IssueRow | null> {
   const before = await loadSnapshot(id);
@@ -1311,7 +1317,7 @@ export async function updateIssue(
     const afterSnapshot = snapshot(after);
     if (before.columnId !== afterSnapshot.columnId)
       await recordStatusChange([id], afterSnapshot.columnId);
-    await logIssueUpdate(before, afterSnapshot, actor);
+    await logIssueUpdate(before, afterSnapshot, actor, { quiet: opts?.quiet });
     await recordCycleChange(id, before.cycleId, afterSnapshot.cycleId);
     if (before.parentId !== after.parentId)
       await recordParentChange(id, before.parentId, after.parentId, actor);

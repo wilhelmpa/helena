@@ -678,6 +678,81 @@ export async function listMentionTriggerAgents(
     .map((row) => ({ id: row.id, userId: row.userId }));
 }
 
+// Why a mention of an agent starts no run of it: the agent works outside the project,
+// the text was written by an agent (the loop guard: only a delegation hands one agent's
+// work to another), the agent takes work only from its owner, it does not react to
+// mentions, or it is paused.
+export type MentionRefusal =
+  'not-in-project' | 'agent-author' | 'owner-only' | 'mentions-off' | 'paused';
+
+export interface MentionedAgent {
+  id: number;
+  userId: string;
+  username: string;
+  name: string;
+  // Null when a mention by the author starts the agent.
+  refused: MentionRefusal | null;
+}
+
+// The agents of the team a text's handles name, each with whether a mention by
+// `actorUserId` starts it, by the rules a comment's mentions follow
+// (listMentionTriggerAgents): in the project, not written by an agent, the agent reacts to
+// mentions, is not paused and takes work from the author. Unlike a comment, which just
+// leaves an agent out, the reason is named, for a text that is saved and started later
+// (a routine's instructions). Handles that name no agent of the team (a member, plain
+// text) are left out; the order is the text's.
+export async function mentionedAgents(
+  projectId: number,
+  teamId: number,
+  handles: string[],
+  actorUserId: string | null,
+): Promise<MentionedAgent[]> {
+  if (handles.length === 0) return [];
+  const rows = await db
+    .select({
+      id: aiAgent.id,
+      userId: aiAgent.userId,
+      username: aiAgent.username,
+      name: user.name,
+      triggerOnMention: aiAgent.triggerOnMention,
+      pausedAt: aiAgent.pausedAt,
+      inProject: sql<boolean>`${inProject(projectId)}`,
+      ...triggerScopeColumns,
+    })
+    .from(aiAgent)
+    .innerJoin(user, eq(user.id, aiAgent.userId))
+    .where(
+      and(
+        eq(aiAgent.teamId, teamId),
+        eq(aiAgent.template, false),
+        inArray(sql`lower(${aiAgent.username})`, handles),
+      ),
+    );
+  const byAgent = actorUserId !== null && (await isAgentUser(actorUserId));
+  const actors = await triggerActors(actorUserId);
+  const refusal = (row: (typeof rows)[number]): MentionRefusal | null => {
+    if (!row.inProject) return 'not-in-project';
+    if (byAgent) return 'agent-author';
+    if (!isTriggerableByAny(row, actors)) return 'owner-only';
+    if (!row.triggerOnMention) return 'mentions-off';
+    if (row.pausedAt) return 'paused';
+    return null;
+  };
+  const order = new Map(handles.map((handle, index) => [handle, index]));
+  return rows
+    .map((row) => ({
+      id: row.id,
+      userId: row.userId,
+      username: row.username,
+      name: row.name,
+      refused: refusal(row),
+    }))
+    .sort(
+      (a, b) =>
+        (order.get(a.username.toLowerCase()) ?? 0) - (order.get(b.username.toLowerCase()) ?? 0),
+    );
+}
+
 // The agent working in the project whose bot user is userId and that reacts to being
 // delegated to, or null. Turns a new delegate into the agent that should run on
 // delegation. Null for a paused agent.

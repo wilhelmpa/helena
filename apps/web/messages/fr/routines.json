@@ -22,6 +22,18 @@
   "instructionsPlaceholder": "Passer en revue les tâches ouvertes et mettre à jour ce qui nécessite de l'attention.",
   "instructionsHintNew": "La description de chaque tâche créée par la planification.",
   "instructionsHintReopen": "Ajoutées en commentaire à chaque réouverture de la tâche.",
+  "mentionsHint": "Les agents mentionnés avec @ démarrent aussi sur la tâche à chaque exécution.",
+  "mentionsTitle": "Agents mentionnés",
+  "mentionStarts": "démarre à chaque exécution",
+  "mentionReason": {
+    "not-in-project": "ne travaille pas dans ce projet",
+    "agent-author": "enregistrée par un agent : ses mentions ne démarrent personne",
+    "owner-only": "n’accepte que les tâches de son propriétaire",
+    "mentions-off": "ne réagit pas aux mentions",
+    "paused": "en pause"
+  },
+  "mentionsStart": "Démarre aussi {names}",
+  "mentionsRefused": "{count, plural, one {# mention ne démarre personne} other {# mentions ne démarrent personne}}",
   "schedule": "Planification",
   "showPresets": "Afficher les planifications prédéfinies",
   "presetEvery15Minutes": "Toutes les 15 minutes",

@@ -22,6 +22,18 @@
   "instructionsPlaceholder": "Tinjau tugas yang terbuka dan perbarui apa pun yang perlu diperhatikan.",
   "instructionsHintNew": "Deskripsi setiap tugas yang dibuat oleh jadwal.",
   "instructionsHintReopen": "Ditambahkan sebagai komentar setiap kali tugas dibuka kembali.",
+  "mentionsHint": "Agen yang disebut dengan @ juga mulai mengerjakan tugas di setiap eksekusi.",
+  "mentionsTitle": "Agen yang disebut",
+  "mentionStarts": "mulai di setiap eksekusi",
+  "mentionReason": {
+    "not-in-project": "tidak bekerja di proyek ini",
+    "agent-author": "disimpan oleh agen: sebutannya tidak memulai siapa pun",
+    "owner-only": "hanya menerima tugas dari pemiliknya",
+    "mentions-off": "tidak merespons sebutan",
+    "paused": "dijeda"
+  },
+  "mentionsStart": "Juga memulai {names}",
+  "mentionsRefused": "{count, plural, other {# sebutan tidak memulai siapa pun}}",
   "schedule": "Jadwal",
   "showPresets": "Tampilkan preset jadwal",
   "presetEvery15Minutes": "Setiap 15 menit",
