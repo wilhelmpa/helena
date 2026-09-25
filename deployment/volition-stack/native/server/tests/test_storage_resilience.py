@@ -280,6 +280,21 @@ class BootEntryTests(ResilienceTest):
         self.assertEqual(result['roles'][0]['state'], 'loaderMissing')
         self.assertEqual(fake.log, [])
 
+    def test_another_boot_layout_gets_no_lines_and_no_repair(self):
+        for mount in ('/boot/efi', '/boot/efi2'):
+            shutil.rmtree(self.host.path(f'{mount}/EFI/helena-raid'))
+        fake = self.firmware('BootCurrent: 0001\nBootOrder: 0001\n'
+                             f'Boot0001* debian\tHD(1,GPT,{ESP_A},0x800,0x400000)/File(\\EFI\\debian\\shimx64.efi)\n')
+        self.assertEqual(boot.check(self.host, self.config.storage, storage.parse_efibootmgr(fake.text()),
+                                    self.devices), [])
+        result = boot.repair(self.host, self.config)
+        self.assertEqual((result['reason'], result['actions']), ('notInUse', []))
+        self.assertEqual(fake.log, [])
+        synced = esp.sync(self.host, self.config)
+        self.assertEqual((synced['state'], synced['reason']), ('skipped', 'notInUse'))
+        self.assertFalse(os.path.exists(os.path.join(self.config.state_dir, 'esp-sync.json')))
+        self.assertEqual(events.listing(self.config.state_dir)['events'], [])
+
     def test_a_machine_without_efi_is_not_supported(self):
         shutil.rmtree(self.host.path('/sys/firmware'))
         with self.assertRaises(HostError) as caught:

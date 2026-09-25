@@ -141,6 +141,8 @@ or an entry with the label pointing to another disk's partition that is not one 
 "Debian" is verified. `StorageStatus.bootEntries` reports each entry's state (`ok`, `missing`,
 `noPartuuid` = rewritten by the firmware, `wrongDisk`, `wrongLoader`, `inactive`, `duplicate`,
 `loaderMissing`, `unchecked`); the API shows amber lines until the next boot repairs them.
+Both the copy and the repair only act where the layout is in use (the loader's folder is on
+one of the ESPs), so an installation with another boot layout gets no lines from them.
 "Platte ersetzen" now uses the same repair instead of hand-built efibootmgr commands.
 
 **Found while building this (not changed):** Debian 13's `grub-efi-amd64.postinst` runs

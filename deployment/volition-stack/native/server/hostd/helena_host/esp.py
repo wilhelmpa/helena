@@ -19,7 +19,7 @@ import json
 import os
 
 from . import audit, events
-from .boot import loader_relative
+from .boot import layout_in_use, loader_relative
 from .common import Host, atomic_write_json, clip, file_lock, iso, json_load_file
 
 STATE_FILE = 'esp-sync.json'
@@ -85,6 +85,11 @@ def sync(host: Host, config, *, dry_run: bool = False, log=lambda message: None,
     loader = loader_relative(storage['bootLoader'])
     required = [loader, os.path.join(os.path.dirname(loader), 'grub.cfg')]
     state_dir = config.state_dir
+    if not layout_in_use(host, storage):
+        # Not this machine's layout (no EFI/helena-raid on either ESP): nothing to mirror, and
+        # nothing recorded, so Helena shows no line for it.
+        return {'state': 'skipped', 'reason': 'notInUse', 'at': iso(host.now()), 'mount': None,
+                'detail': None, 'trigger': trigger}
     with file_lock(os.path.join(state_dir, 'esp-sync.lock')):
         previous = json_load_file(state_path(state_dir), None)
         previous = previous if isinstance(previous, dict) else {}

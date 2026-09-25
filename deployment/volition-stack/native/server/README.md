@@ -67,6 +67,8 @@ alternatives: `docs/helena-decisions/server-admin.md` §3a.
   and so is an entry with the label that belongs to another install on another disk. The
   boot order becomes Debian, Debian (Reserve), then the rest, once "Debian" is verified.
   Every change goes to the audit log, the journal and the events.
+- The ESP copy and the boot entry repair stay silent on a machine whose ESPs do not hold the
+  loader's folder (`EFI/helena-raid`): another boot layout is not theirs to judge.
 
 ## Runbook: a disk falls off the bus
 

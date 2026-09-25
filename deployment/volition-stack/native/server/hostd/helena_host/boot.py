@@ -89,6 +89,16 @@ def esp_partition(host: Host, mount: str, devices: list[dict]) -> dict | None:
     return None
 
 
+def layout_in_use(host: Host, config_storage: dict) -> bool:
+    """Whether this machine boots the configured way at all: the loader's folder is on one of
+    the ESPs. A machine with another layout (one ESP with EFI/debian) gets no boot entry lines
+    and no repair."""
+    loader = config_storage.get('bootLoader') or '\\EFI\\helena-raid\\shimx64.efi'
+    folder = os.path.dirname(loader_relative(loader))
+    return any(os.path.isdir(os.path.join(host.path(mount), folder))
+               for mount in list(config_storage.get('espMounts') or [])[:2])
+
+
 def layout(host: Host, config_storage: dict, devices: list[dict]) -> list[dict]:
     """The roles of this machine: which label belongs to which mount, and where that mount's
     partition is now (None when it is not there)."""
@@ -206,7 +216,7 @@ def check(host: Host, config_storage: dict, boot: dict | None, devices: list[dic
     """The state of both entries for StorageStatus (bootEntries): ok, missing, noPartuuid
     (the firmware rewrote it), wrongDisk, wrongLoader, inactive, duplicate, loaderMissing, or
     unchecked (its ESP is not there to compare with)."""
-    if not boot or 'entries' not in boot:
+    if not boot or 'entries' not in boot or not layout_in_use(host, config_storage):
         return []
     roles = layout(host, config_storage, devices)
     loader = config_storage.get('bootLoader') or '\\EFI\\helena-raid\\shimx64.efi'
@@ -231,6 +241,9 @@ def repair(host: Host, config, *, dry_run: bool = False, log=lambda message: Non
         raise HostError('NotSupported', 'this machine has no EFI boot manager')
     config_storage = config.storage
     loader = config_storage['bootLoader']
+    if not layout_in_use(host, config_storage):
+        return {'dryRun': dry_run, 'roles': [], 'actions': [], 'changed': False, 'ok': True,
+                'reason': 'notInUse'}
     with file_lock(os.path.join(config.state_dir, 'boot.lock')):
         before = _read(host, efibootmgr)
         devices = storage.lsblk(host)
