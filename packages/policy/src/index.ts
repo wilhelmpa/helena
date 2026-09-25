@@ -5,6 +5,7 @@
 export * from './categories';
 export * from './levels';
 export * from './classify';
+export * from './trading';
 export * from './prices';
 export type {
   ExtraPolicy,
