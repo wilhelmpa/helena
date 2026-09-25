@@ -43,7 +43,8 @@ import { LEMONADE, LEMONADE_DEFAULT_BASE_URL } from './server-types';
 // class, what the runners and the pickers get, and the status the "Lokale KI" card shows.
 
 export const DEFAULT_SERVER_SLUG = 'local';
-export const DEFAULT_KEY_FILE = `${LOCAL_AI_KEY_DIR}/api-key`;
+// The file native/local-ai/install.sh writes (lemond loads it as its `api-key` credential).
+export const DEFAULT_KEY_FILE = `${LOCAL_AI_KEY_DIR}/local-ai.key`;
 // Hermes refuses a local endpoint that serves less than this (its providers docs).
 export const HERMES_MIN_CONTEXT = 65_536;
 const STATUS_TIMEOUT_MS = 5_000;

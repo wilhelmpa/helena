@@ -328,3 +328,16 @@ describe('the update check', () => {
     ).toBe('Qwen/Qwen4-60B-A6B');
   });
 });
+
+describe('the key file', () => {
+  it('is the one the installer writes', async () => {
+    const here = import.meta.dir;
+    const service = await Bun.file(`${here}/../../service.ts`).text();
+    const installer = await Bun.file(
+      `${here}/../../../../../../../deployment/volition-stack/native/local-ai/install.sh`,
+    ).text();
+    expect(installer).toContain('KEY=$ETC/local-ai.key');
+    expect(service).toContain('DEFAULT_KEY_FILE = `${LOCAL_AI_KEY_DIR}/local-ai.key`');
+    expect(allowedKeyFile('/etc/helena/local-ai.key')).toBe('/etc/helena/local-ai.key');
+  });
+});
