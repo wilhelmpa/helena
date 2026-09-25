@@ -11,7 +11,8 @@
     "system": "Machine",
     "storage": "Disques et RAID",
     "backup": "Sauvegarde",
-    "power": "Puissance et ventilateurs"
+    "power": "Puissance et ventilateurs",
+    "homeHttps": "HTTPS à la maison"
   },
   "refresh": "Relire",
   "refreshing": "Lecture…",
@@ -66,7 +67,10 @@
     "memoryOk": "Mémoire : {available} de libre.",
     "healthFailed": "L’état n’a pas pu être lu.",
     "localAiServerUp": "IA locale : {name} est joignable",
-    "localAiServerDown": "IA locale : {name} ne répond pas"
+    "localAiServerDown": "IA locale : {name} ne répond pas",
+    "homeHttpsOk": "HTTPS à la maison ({host}) : certificat valide encore {days, plural, one {# jour} other {# jours}}.",
+    "homeHttpsExpiring": "HTTPS à la maison ({host}) : le certificat expire dans {days, plural, one {# jour} other {# jours}} ; le renouvellement n’a pas fonctionné.",
+    "homeHttpsInvalid": "HTTPS à la maison ({host}) : {reason, select, expired {certificat expiré} name {le certificat n’est pas pour ce nom} untrusted {certificat non fiable} unreachable {injoignable} other {invalide}}."
   },
   "overview": {
     "machine": "Machine",

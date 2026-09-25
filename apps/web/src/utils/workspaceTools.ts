@@ -1,5 +1,5 @@
 import { hermesProjectCoordinatorUsername } from '@repo/agent-naming';
-import type { WorkspaceRuntimeEnv } from './runtimeEnv';
+import { onThisOrigin, type WorkspaceRuntimeEnv } from './runtimeEnv';
 import type { ProvisionedProjectResource } from '@/lib/api/endpoints/projects';
 
 // The built-in panel tools, whose frame addresses come from the deployment. Which tools
@@ -36,8 +36,11 @@ function frameUrl(value: string): string {
   }
 }
 
+// A provisioned resource's address may name another origin of this instance (the public
+// name when the page runs on the home network's, utils/appOrigins.ts): it moves to this one
+// before it is compared with the configured tool addresses, which already are on it.
 function trustedResourceUrl(value: string | undefined, trustedBases: string[]): string {
-  const candidate = frameUrl(value ?? '');
+  const candidate = frameUrl(onThisOrigin(value ?? ''));
   if (!candidate) return '';
   const candidateOrigin = new URL(candidate).origin;
   return trustedBases.some((base) => {

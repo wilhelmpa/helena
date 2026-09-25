@@ -11,7 +11,8 @@
     "system": "机器",
     "storage": "磁盘与 RAID",
     "backup": "备份",
-    "power": "功耗与风扇"
+    "power": "功耗与风扇",
+    "homeHttps": "家庭 HTTPS"
   },
   "refresh": "重新读取",
   "refreshing": "正在读取…",
@@ -66,7 +67,10 @@
     "memoryOk": "内存：{available} 可用。",
     "healthFailed": "无法读取健康状态。",
     "localAiServerUp": "本地 AI：{name} 可访问",
-    "localAiServerDown": "本地 AI：{name} 无响应"
+    "localAiServerDown": "本地 AI：{name} 无响应",
+    "homeHttpsOk": "家庭 HTTPS（{host}）：证书还有 {days} 天有效。",
+    "homeHttpsExpiring": "家庭 HTTPS（{host}）：证书将在 {days} 天后过期；续期没有成功。",
+    "homeHttpsInvalid": "家庭 HTTPS（{host}）：{reason, select, expired {证书已过期} name {证书不适用于此名称} untrusted {证书不受信任} unreachable {无法访问} other {无效}}。"
   },
   "overview": {
     "machine": "机器",

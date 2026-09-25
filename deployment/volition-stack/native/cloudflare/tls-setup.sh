@@ -1,35 +1,44 @@
 #!/usr/bin/env bash
-# Local HTTPS for the home network under the public name (helena.volition.one): a Let's
+# Local HTTPS for the home network under its own name (helena-home.volition.one): a Let's
 # Encrypt certificate through the DNS-01 challenge, so nothing has to be reachable from the
-# internet. lego (Debian package, MIT) with Cloudflare's DNS API. Dry run by default.
+# internet. certbot with its Cloudflare DNS plugin (Debian: certbot, python3-certbot-dns-cloudflare;
+# Apache-2.0). Debian's lego 4.9 has no Cloudflare provider. Dry run by default.
 # docs/helena-decisions/security-hardening.md §5.
 #
-# The DNS token: lego follows a CNAME on _acme-challenge, so the token can be scoped to a
-# separate, otherwise unused zone instead of volition.one (whose token could rewrite the
-# company's mail and web records). Recommended: in Cloudflare DNS for volition.one, one record
-#   _acme-challenge.helena  CNAME  helena.<acme-zone>        (DNS only)
-# and a token with Zone:DNS:Edit for <acme-zone> only. A token for volition.one works too.
+# The name resolves publicly to the LAN address (a DNS-only record, e.g.
+#   helena-home.volition.one  A  192.168.2.58
+# in Cloudflare DNS; the router needs a DNS-rebind exception for it). From outside it leads
+# nowhere; at home it is the direct way in, next to the tunnel's helena.volition.one.
 #
-#   sudo tls-setup.sh --apply token                          the OWNER pastes the DNS token
-#   sudo tls-setup.sh --apply issue --email ADDRESS --accept-letsencrypt-terms
-#   sudo tls-setup.sh --apply renew-timer                    daily renewal check, reloads nginx
-#   sudo tls-setup.sh check
+# The DNS token (Cloudflare → My Profile → API Tokens, Zone:DNS:Edit) is the owner's. It is
+# read without echo into /etc/helena/cloudflare/dns.token (0600 root); certbot gets it through
+# a credentials file it keeps for its renewals (/etc/helena/cloudflare/certbot-dns.ini, 0600
+# root). Neither is ever printed.
+#
+#   sudo tls-setup.sh check                                    what is there, expiry
+#   sudo tls-setup.sh --apply token                            the OWNER pastes the DNS token
+#   sudo tls-setup.sh [--apply] issue --email ADDRESS --accept-letsencrypt-terms
+#        [--host helena-home.volition.one] [--also NAME ...]  the certificate (DNS-01)
+#   sudo tls-setup.sh [--apply] renewal                        certbot.timer + the nginx deploy hook
+#   sudo tls-setup.sh [--apply] renew-now                      a renewal check now (certbot renew)
 set -uo pipefail
 export LC_ALL=C PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
-here=$(cd "$(dirname "$0")" && pwd)
-etc=/etc/helena/cloudflare
+etc=${HELENA_CLOUDFLARE_ETC:-/etc/helena/cloudflare}
 dns_token=$etc/dns.token
-tls=/etc/helena/tls
-host=${HELENA_PUBLIC_HOST:-helena.volition.one}
-apply=0 email= terms=0 cmd=
+credentials=$etc/certbot-dns.ini
+letsencrypt=${HELENA_LETSENCRYPT_DIR:-/etc/letsencrypt}
+hook=$letsencrypt/renewal-hooks/deploy/helena-nginx-reload
+host=${HELENA_HOME_HOST:-helena-home.volition.one}
+apply=0 email= terms=0 cmd= also=()
 while (($#)); do
   case "$1" in
     --apply) apply=1 ;;
     --email) email=${2:-}; shift ;;
     --accept-letsencrypt-terms) terms=1 ;;
     --host) host=${2:-}; shift ;;
-    -h|--help) sed -n '2,19p' "$0"; exit 0 ;;
+    --also) also+=("${2:-}"); shift ;;
+    -h|--help) sed -n '2,25p' "$0"; exit 0 ;;
     *) [[ -z $cmd ]] && cmd=$1 || { echo "tls-setup.sh: unexpected $1" >&2; exit 2; } ;;
   esac
   shift
@@ -37,35 +46,55 @@ done
 say() { echo "tls-setup.sh: $*"; }
 die() { echo "tls-setup.sh: $*" >&2; exit 1; }
 run() { if [[ $apply -eq 1 ]]; then "$@"; else printf 'tls-setup.sh: [dry-run] would run:'; printf ' %q' "$@"; printf '\n'; fi; }
-[[ $EUID -eq 0 ]] || die "run with sudo"
-[[ $host =~ ^[a-z0-9.-]+$ ]] || die "invalid host"
+name_ok() { [[ $1 =~ ^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$ ]]; }
+[[ ${HELENA_TLS_SETUP_TEST:-0} == 1 || $EUID -eq 0 ]] || die "run with sudo"
+name_ok "$host" || die "invalid host"
+for name in "${also[@]}"; do name_ok "$name" || die "invalid --also name"; done
 
-cert=$tls/lego/certificates/$host.crt
+# certbot names the lineage after --cert-name: the files are always here, whatever SANs it has.
+live=$letsencrypt/live/$host
 
-# lego reads the token from the file itself (the *_FILE form of its variables), in a
-# transient unit that gets the file as a credential: the token is never in a process
-# argument, an environment listing or a log line.
-lego_run() {
-  local name=helena-lego-$$
-  systemd-run --wait --pipe --collect --quiet --unit="$name" \
-    -p LoadCredential=cf-dns-token:"$dns_token" \
-    -p Environment=CF_DNS_API_TOKEN_FILE="/run/credentials/$name.service/cf-dns-token" \
-    -p Environment=CLOUDFLARE_PROPAGATION_TIMEOUT=180 \
-    -p UMask=0077 -p NoNewPrivileges=yes -p PrivateTmp=yes \
-    /usr/bin/lego --path "$tls/lego" --dns cloudflare --dns.resolvers 1.1.1.1:53 \
-      --domains "$host" --key-type ec256 "$@"
+# The credentials file certbot reads, written from the stored token without passing the
+# token through an argument, an environment listing or the terminal. Rewritten only when the
+# token changed (compared as files, never shown).
+write_credentials() {
+  local tmp
+  tmp=$(umask 077; mktemp "$etc/.certbot-dns.XXXXXX") || die "cannot write in $etc"
+  { printf '# Helena: the Cloudflare DNS token for certbot (tls-setup.sh). Secret; 0600 root.\n'
+    printf 'dns_cloudflare_api_token = '
+    cat "$dns_token"
+    printf '\n'; } >"$tmp"
+  chmod 0600 "$tmp"
+  if [[ -e $credentials ]] && cmp -s "$tmp" "$credentials"; then rm -f "$tmp"; return 0; fi
+  mv -f "$tmp" "$credentials"
+  say "credentials for certbot written ($credentials, 0600; the token was not printed)"
+}
+
+deploy_hook() {
+  cat <<'EOF'
+#!/bin/sh
+# Helena (cloudflare/tls-setup.sh): a renewed certificate reaches nginx. Only a config nginx
+# accepts is loaded; otherwise the old certificate keeps serving until the next renewal.
+nginx -t -q && systemctl reload nginx
+EOF
 }
 
 case "$cmd" in
   check)
-    printf '%-24s %s\n' "lego" "$(dpkg-query -W -f='${Version}' lego 2>/dev/null || echo 'missing (apt install lego, owner OK)')"
+    printf '%-24s %s\n' "certbot" "$(dpkg-query -W -f='${Version}' certbot 2>/dev/null || echo 'missing (apt install certbot python3-certbot-dns-cloudflare, owner OK)')"
+    printf '%-24s %s\n' "dns-cloudflare plugin" "$(dpkg-query -W -f='${Version}' python3-certbot-dns-cloudflare 2>/dev/null || echo missing)"
     printf '%-24s %s\n' "DNS token" "$( [[ -s $dns_token ]] && stat -c '%a %U:%G' "$dns_token" || echo missing)"
-    if [[ -e $cert ]]; then
-      printf '%-24s %s\n' "certificate" "$(openssl x509 -noout -enddate -in "$cert" | cut -d= -f2)"
+    printf '%-24s %s\n' "certbot credentials" "$( [[ -s $credentials ]] && stat -c '%a %U:%G' "$credentials" || echo 'missing (written by issue)')"
+    if [[ -e $live/fullchain.pem ]]; then
+      end=$(openssl x509 -noout -enddate -in "$live/fullchain.pem" | cut -d= -f2)
+      days=$(( ($(date -d "$end" +%s) - $(date +%s)) / 86400 ))
+      names=$(openssl x509 -noout -ext subjectAltName -in "$live/fullchain.pem" 2>/dev/null | grep -o 'DNS:[^,]*' | cut -d: -f2 | paste -sd, -)
+      printf '%-24s %s\n' "certificate" "$host: until $end ($days days), names $names"
     else
-      printf '%-24s %s\n' "certificate" "none"
+      printf '%-24s %s\n' "certificate" "none for $host"
     fi
-    printf '%-24s %s\n' "renewal timer" "$(systemctl is-active helena-tls-renew.timer 2>/dev/null)"
+    printf '%-24s %s\n' "renewal (certbot.timer)" "$(systemctl is-active certbot.timer 2>/dev/null)"
+    printf '%-24s %s\n' "nginx deploy hook" "$( [[ -x $hook ]] && echo present || echo 'missing (renewal)')"
     ;;
   token)
     run install -d -m 0700 -o root -g root /etc/helena "$etc"
@@ -76,38 +105,49 @@ case "$cmd" in
     (umask 077; printf '%s' "$value" >"$dns_token.new"); unset value
     chown root:root "$dns_token.new"; chmod 0600 "$dns_token.new"; mv -f "$dns_token.new" "$dns_token"
     say "DNS token stored in $dns_token (0600 root). It was not printed."
+    if [[ -e $credentials ]]; then write_credentials; fi
     ;;
   issue)
-    command -v lego >/dev/null || die "lego is not installed (apt install lego, with the owner's OK)"
-    [[ -s $dns_token ]] || die "no DNS token (tls-setup.sh token)"
+    command -v certbot >/dev/null || die "certbot is not installed (apt install certbot python3-certbot-dns-cloudflare, owner OK)"
+    [[ -s $dns_token ]] || die "no DNS token (tls-setup.sh --apply token)"
     [[ -n $email ]] || die "--email is the Let's Encrypt account address (expiry notices)"
     [[ $terms -eq 1 ]] || die "the owner accepts the Let's Encrypt subscriber agreement with --accept-letsencrypt-terms"
-    run install -d -m 0700 "$tls" "$tls/lego"
+    domains=(-d "$host")
+    for name in "${also[@]}"; do domains+=(-d "$name"); done
+    args=(certonly --non-interactive --agree-tos -m "$email" --no-eff-email
+      --dns-cloudflare --dns-cloudflare-credentials "$credentials" --dns-cloudflare-propagation-seconds 30
+      --cert-name "$host" --key-type ecdsa --elliptic-curve secp256r1 --keep-until-expiring --expand
+      "${domains[@]}")
     if [[ $apply -eq 1 ]]; then
-      lego_run --email "$email" --accept-tos run || die "issuing failed (see above; the token was not printed)"
-      chmod 0600 "$tls/lego/certificates/"*.key
-      say "certificate: $cert"
+      write_credentials
+      certbot "${args[@]}" || die "issuing failed (see above and /var/log/letsencrypt; the token was not printed)"
+      say "certificate: $live/fullchain.pem (key $live/privkey.pem)"
     else
-      say "[dry-run] would request a certificate for $host (DNS-01 via Cloudflare) into $tls/lego"
+      say "[dry-run] would write $credentials (0600) from the stored token"
+      printf 'tls-setup.sh: [dry-run] would run: certbot'; printf ' %q' "${args[@]}"; printf '\n'
     fi
     ;;
-  renew-timer)
-    run install -m 0644 "$here/helena-tls-renew.service" /etc/systemd/system/helena-tls-renew.service
-    run install -m 0644 "$here/helena-tls-renew.timer" /etc/systemd/system/helena-tls-renew.timer
-    run install -m 0755 "$here/tls-setup.sh" /usr/local/libexec/helena-tls-setup
-    run systemctl daemon-reload
-    run systemctl enable --now helena-tls-renew.timer
-    ;;
-  renew)
-    [[ -e $cert ]] || die "no certificate yet"
-    [[ $apply -eq 1 ]] || { say "[dry-run] would renew when fewer than 30 days are left"; exit 0; }
-    before=$(sha256sum "$cert" | cut -c1-16)
-    lego_run renew --days 30 || die "renewal failed"
-    after=$(sha256sum "$cert" | cut -c1-16)
-    if [[ $before != "$after" ]]; then
-      chmod 0600 "$tls/lego/certificates/"*.key
-      nginx -t && systemctl reload nginx && say "renewed and nginx reloaded"
+  renewal)
+    # Debian's certbot package brings certbot.timer (twice a day, renews under 30 days left);
+    # a renewed certificate reaches nginx through this deploy hook.
+    run install -d -m 0755 "$letsencrypt/renewal-hooks/deploy"
+    if [[ $apply -eq 1 ]]; then
+      deploy_hook >"$hook.new" && chmod 0755 "$hook.new" && mv -f "$hook.new" "$hook"
+      say "deploy hook $hook installed"
+    else
+      say "[dry-run] would install the deploy hook $hook:"; deploy_hook | sed 's/^/    /'
+    fi
+    run systemctl enable --now certbot.timer
+    # The lego-era units of this script (never enabled live) are removed if present.
+    if [[ -e /etc/systemd/system/helena-tls-renew.timer ]]; then
+      run systemctl disable --now helena-tls-renew.timer
+      run rm -f /etc/systemd/system/helena-tls-renew.timer /etc/systemd/system/helena-tls-renew.service
+      run systemctl daemon-reload
     fi
     ;;
-  *) sed -n '2,19p' "$0"; exit 2 ;;
+  renew-now)
+    command -v certbot >/dev/null || die "certbot is not installed"
+    run certbot renew --cert-name "$host" --non-interactive
+    ;;
+  *) sed -n '2,25p' "$0"; exit 2 ;;
 esac

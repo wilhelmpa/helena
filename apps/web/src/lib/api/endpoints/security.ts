@@ -39,6 +39,9 @@ export interface SecurityStatus {
     teamDomain: string;
     audiences: string[];
     allowedEmails: string[];
+    signIn: boolean;
+    homeAutoConnect: boolean;
+    homeUrl: string | null;
     updatedAt: string | null;
   };
   owner: {
@@ -54,13 +57,43 @@ export interface EdgeAccessSettings {
   teamDomain: string;
   audiences: string[];
   allowedEmails: string[];
+  // The Cloudflare sign-in: a valid Access login of an allowed identity is the Helena sign-in.
+  signIn: boolean;
+  // At home, the app on the public name switches to the home network's own origin.
+  homeAutoConnect: boolean;
+  homeUrl: string | null;
+  // Whether the API knows the tunnel entry's proof (cloudflare/install.sh entry-token).
+  entryProof: boolean;
   updatedAt: string | null;
   configured: boolean;
 }
 
 export type EdgeAccessPatch = Partial<
-  Pick<EdgeAccessSettings, 'provider' | 'teamDomain' | 'audiences' | 'allowedEmails'>
+  Pick<
+    EdgeAccessSettings,
+    'provider' | 'teamDomain' | 'audiences' | 'allowedEmails' | 'signIn' | 'homeAutoConnect'
+  >
 >;
+
+// A sign-in Helena opened without a password (or refused): the Cloudflare sign-in (`edge`)
+// or the LAN owner sign-in (`local_owner`).
+export interface SignInEvent {
+  id: number;
+  method: 'edge' | 'local_owner';
+  outcome: 'ok' | 'refused';
+  reason: string | null;
+  identity: string | null;
+  provider: string | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+  userName: string | null;
+  createdAt: string;
+}
+
+export interface EdgeHome {
+  homeUrl: string | null;
+  autoConnect: boolean;
+}
 
 export const getSecurityStatus = () => request<SecurityStatus>('/god/security/status');
 
@@ -71,3 +104,11 @@ export const updateEdgeAccess = (patch: EdgeAccessPatch) =>
     method: 'PUT',
     body: JSON.stringify(patch),
   });
+
+export const getSignInEvents = (method?: SignInEvent['method'], limit = 20) =>
+  request<SignInEvent[]>(
+    `/god/security/sign-ins?limit=${limit}${method ? `&method=${method}` : ''}`,
+  );
+
+// Public: whether the app switches to the home network's origin by itself.
+export const getEdgeHome = () => request<EdgeHome>('/edge/home');

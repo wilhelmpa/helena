@@ -106,7 +106,8 @@
       "fail": "SSH mengizinkan banyak percobaan atau penerusan."
     },
     "web_https": {
-      "warn": "Tidak ada HTTPS di jaringan rumah: browser kamu tidak punya konteks aman secara lokal."
+      "warn": "Tidak ada HTTPS di jaringan rumah: browser kamu tidak punya konteks aman secara lokal.",
+      "fail": "{host} tidak merespons di jaringan rumah dengan sertifikat yang valid."
     },
     "web_tunnel_entry": {
       "fail": "Pintu masuk tunnel tidak diamankan sebagaimana mestinya."
@@ -124,10 +125,10 @@
       "fail": "Tidak ada tim Cloudflare Access (domain/AUD) di Helena: pintu masuk tunnel menolak semuanya."
     },
     "tunnel_acl": {
-      "fail": "Setiap pengguna lokal menjangkau pintu masuk tunnel."
+      "fail": "{why, select, user {Pengguna tunnel {user} tidak dapat mencapai pintu masuk tunnel: cloudflared tidak mendapat koneksi dan Cloudflare menjawab 502 (hardening/apply.sh --apply firewall-uids).} other {Setiap pengguna lokal dapat mencapai pintu masuk tunnel.}}"
     },
     "tls_certificate": {
-      "fail": "Sertifikat kedaluwarsa dalam kurang dari 14 hari."
+      "fail": "Sertifikat untuk {host} kedaluwarsa dalam kurang dari 14 hari: perpanjangan otomatis tidak berhasil."
     },
     "tls_renewal": {
       "fail": "Pembaruan sertifikat otomatis tidak aktif."
@@ -207,6 +208,32 @@
     "audiencesHint": "Tag AUD aplikasi Access untuk helena.volition.one, 64 karakter. Satu per baris.",
     "allowedEmails": "Identitas yang diizinkan",
     "allowedEmailsHint": "Opsional: hanya alamat email ini, meskipun kebijakan Access mengizinkan lebih. Satu per baris.",
-    "saved": "Akses dari luar disimpan"
+    "saved": "Akses dari luar disimpan",
+    "signInTitle": "Masuk ke Helena dengan login Cloudflare",
+    "signInDescription": "Masuk ke Cloudflare Access sebagai identitas yang diizinkan langsung memasukkan Anda ke Helena tanpa kata sandi lain, paling lama 24 jam dan tidak pernah lebih lama dari sesi Access. Access lalu menjadi satu-satunya login: wajibkan faktor kedua di sana (passkey/Touch ID atau aplikasi autentikator). Terminal tetap meminta kodenya.",
+    "signInNeedsSetup": "Memerlukan domain tim, AUD, dan setidaknya satu identitas yang diizinkan.",
+    "signInNeedsProof": "Pintu masuk tunnel belum punya bukti untuk Helena: jalankan cloudflare/install.sh --apply entry-token di server, lalu mulai ulang API dan aplikasi web.",
+    "homeTitle": "Otomatis terhubung langsung saat di rumah",
+    "homeDescription": "Di alamat publik, Helena memeriksa apakah {home} merespons dari perangkat ini lalu beralih ke sana: langsung lewat jaringan rumah, tanpa memutar lewat Cloudflare. Login jaringan rumah memasukkan Anda di sana. Chrome sekali meminta akses ke jaringan lokal.",
+    "homeDescriptionGeneric": "Di alamat publik, Helena memeriksa apakah alamat jaringan rumah merespons dari perangkat ini lalu beralih ke sana: langsung lewat jaringan rumah, tanpa memutar lewat Cloudflare.",
+    "homeNotSetUp": "Belum ada alamat jaringan rumah (HELENA_HOME_URL, cloudflare/switch_origin.py --home-host)."
+  },
+  "signIns": {
+    "title": "Login tanpa kata sandi",
+    "description": "Lewat login Cloudflare dan login jaringan rumah, termasuk yang ditolak.",
+    "empty": "Belum ada.",
+    "methodEdge": "Cloudflare",
+    "methodLocalOwner": "Jaringan rumah",
+    "refused": "Ditolak",
+    "reason": {
+      "disabled": "login nonaktif",
+      "not_configured": "belum diatur",
+      "missing_assertion": "tanpa asersi Access",
+      "invalid_assertion": "asersi Access tidak valid",
+      "identity_not_allowed": "identitas tidak diizinkan",
+      "no_account": "tidak ada akun dengan alamat ini",
+      "not_eligible": "akun tidak boleh login dengan cara ini",
+      "deactivated": "akun dinonaktifkan"
+    }
   }
 }

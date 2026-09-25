@@ -1282,6 +1282,13 @@
       "when": 1790355291775,
       "tag": "0183_helena_push",
       "breakpoints": true
+    },
+    {
+      "idx": 185,
+      "version": "7",
+      "when": 1790363710243,
+      "tag": "0185_helena_sign_in_event",
+      "breakpoints": true
     }
   ]
 }

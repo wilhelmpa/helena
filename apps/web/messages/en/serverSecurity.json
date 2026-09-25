@@ -106,7 +106,8 @@
       "fail": "SSH allows many attempts or forwarding."
     },
     "web_https": {
-      "warn": "No HTTPS on the home network, so your browsers have no secure context locally."
+      "warn": "No HTTPS on the home network, so your browsers have no secure context locally.",
+      "fail": "{host} does not answer on the home network with a valid certificate."
     },
     "web_tunnel_entry": {
       "fail": "The tunnel entry is not locked down as intended."
@@ -124,10 +125,10 @@
       "fail": "No Cloudflare Access team (domain/AUD) is set in Helena, so the tunnel entry refuses everything."
     },
     "tunnel_acl": {
-      "fail": "Every local user reaches the tunnel entry."
+      "fail": "{why, select, user {The tunnel user {user} may not reach the tunnel entry: cloudflared gets no connection and Cloudflare answers 502 (hardening/apply.sh --apply firewall-uids).} other {Every local user reaches the tunnel entry.}}"
     },
     "tls_certificate": {
-      "fail": "The certificate expires within 14 days."
+      "fail": "The certificate for {host} expires within 14 days: the automatic renewal did not work."
     },
     "tls_renewal": {
       "fail": "Automatic certificate renewal is not active."
@@ -207,6 +208,32 @@
     "audiencesHint": "The AUD tag of the Access application for helena.volition.one, 64 characters. One per line.",
     "allowedEmails": "Allowed identities",
     "allowedEmailsHint": "Optional: only these email addresses, even if the Access policy admits more. One per line.",
-    "saved": "Access from outside saved"
+    "saved": "Access from outside saved",
+    "signInTitle": "Sign in to Helena with the Cloudflare sign-in",
+    "signInDescription": "Signing in to Cloudflare Access as an allowed identity signs you in to Helena without another password, for at most 24 hours and never longer than the Access session. Access is then the only sign-in: require a second factor there (passkey/Touch ID or an authenticator app). The terminal still asks for its code.",
+    "signInNeedsSetup": "Needs the team domain, the AUD and at least one allowed identity.",
+    "signInNeedsProof": "The tunnel entry has no proof for Helena yet: run cloudflare/install.sh --apply entry-token on the server, then restart the API and the web app.",
+    "homeTitle": "Connect directly at home automatically",
+    "homeDescription": "On the public address, Helena checks whether {home} answers from this device and then switches there: directly over the home network, without the detour through Cloudflare. The home network sign-in signs you in there. Chrome asks once for access to the local network.",
+    "homeDescriptionGeneric": "On the public address, Helena checks whether the home network address answers from this device and then switches there: directly over the home network, without the detour through Cloudflare.",
+    "homeNotSetUp": "No home network address set up (HELENA_HOME_URL, cloudflare/switch_origin.py --home-host)."
+  },
+  "signIns": {
+    "title": "Sign-ins without a password",
+    "description": "Through the Cloudflare sign-in and the home network sign-in, refused ones included.",
+    "empty": "None yet.",
+    "methodEdge": "Cloudflare",
+    "methodLocalOwner": "Home network",
+    "refused": "Refused",
+    "reason": {
+      "disabled": "sign-in off",
+      "not_configured": "not set up",
+      "missing_assertion": "no Access assertion",
+      "invalid_assertion": "invalid Access assertion",
+      "identity_not_allowed": "identity not allowed",
+      "no_account": "no account with this address",
+      "not_eligible": "account may not sign in this way",
+      "deactivated": "account deactivated"
+    }
   }
 }

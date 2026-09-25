@@ -11,7 +11,8 @@
     "system": "Машина",
     "storage": "Диски та RAID",
     "backup": "Резервні копії",
-    "power": "Живлення й вентилятори"
+    "power": "Живлення й вентилятори",
+    "homeHttps": "HTTPS удома"
   },
   "refresh": "Прочитати знову",
   "refreshing": "Читання…",
@@ -66,7 +67,10 @@
     "memoryOk": "Пам’ять: вільно {available}.",
     "healthFailed": "Не вдалося прочитати стан.",
     "localAiServerUp": "Локальний ШІ: {name} доступний",
-    "localAiServerDown": "Локальний ШІ: {name} не відповідає"
+    "localAiServerDown": "Локальний ШІ: {name} не відповідає",
+    "homeHttpsOk": "HTTPS удома ({host}): сертифікат дійсний ще {days, plural, one {# день} few {# дні} many {# днів} other {# дня}}.",
+    "homeHttpsExpiring": "HTTPS удома ({host}): сертифікат спливає через {days, plural, one {# день} few {# дні} many {# днів} other {# дня}}; поновлення не спрацювало.",
+    "homeHttpsInvalid": "HTTPS удома ({host}): {reason, select, expired {сертифікат сплив} name {сертифікат не для цього імені} untrusted {сертифікату не можна довіряти} unreachable {недоступний} other {недійсний}}."
   },
   "overview": {
     "machine": "Машина",

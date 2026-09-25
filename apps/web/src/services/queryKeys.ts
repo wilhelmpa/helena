@@ -417,6 +417,7 @@ export const qk = {
   // Administrator → Sicherheit: the host audit, the owner's factors and the edge sign-in.
   securityStatus: ['securityStatus'] as const,
   edgeAccess: ['edgeAccess'] as const,
+  signInEvents: (method?: string) => ['security', 'sign-ins', method ?? 'all'] as const,
   instanceProjectDefaults: ['instanceProjectDefaults'] as const,
   instanceStorageSettings: ['instanceStorageSettings'] as const,
   instanceRunResumeSettings: ['instanceRunResumeSettings'] as const,

@@ -46,6 +46,7 @@ import {
 } from '#modules/decisions/classes';
 import { DECISIONS_LOCAL_AI_CLASS } from '#modules/decisions/local-ai-class';
 import { PUSH_PERMISSIONS, PUSH_PLUGIN_ID, PUSH_PROVIDES, pushPlugin } from '#modules/push/plugin';
+import { EDGE_PLUGIN_ID, edgePlugin, homeHttpsCapability } from '#modules/edge-access/home-https';
 
 // Helena's own features as internal plugins: they register through the same host and
 // the same manifest checks as an external plugin (docs/helena-framework.md, §3a
@@ -167,6 +168,14 @@ export async function loadBuiltinPlugins(app: McpApp): Promise<void> {
     serverPlugin,
     builtinManifest(SERVER_PLUGIN_ID, 'server', {
       provides: { hostCapabilities: BUILTIN_HOST_CAPABILITIES.map((capability) => capability.id) },
+    }),
+  );
+  // The edge (docs/helena-decisions/security-hardening.md §5): the home network's HTTPS
+  // certificate as a health line of the host.
+  await host.load(
+    edgePlugin,
+    builtinManifest(EDGE_PLUGIN_ID, 'edge', {
+      provides: { hostCapabilities: [homeHttpsCapability.id] },
     }),
   );
   await host.load(

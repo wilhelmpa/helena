@@ -70,7 +70,8 @@
     "totpConfirmFailed": "Der Code wurde nicht akzeptiert.",
     "totpDisableFailed": "Authenticator-App konnte nicht ausgeschaltet werden.",
     "minLength": "Mindestens {count} Zeichen.",
-    "added": "Hinzugefügt am {date}"
+    "added": "Hinzugefügt am {date}",
+    "passkeysElsewhere": "Passkeys gehören zu {host}. Hier im Heimnetz meldet Helena dich automatisch an; neue Passkeys fügst du unter {host} hinzu."
   },
   "accounts": {
     "label": "Konten",

@@ -106,7 +106,8 @@
       "fail": "SSH permite muchos intentos o reenvíos."
     },
     "web_https": {
-      "warn": "Sin HTTPS en la red doméstica: tus navegadores no tienen un contexto seguro en local."
+      "warn": "Sin HTTPS en la red doméstica: tus navegadores no tienen un contexto seguro en local.",
+      "fail": "{host} no responde en la red de casa con un certificado válido."
     },
     "web_tunnel_entry": {
       "fail": "La entrada del túnel no está protegida como debería."
@@ -124,10 +125,10 @@
       "fail": "Helena no tiene ningún equipo de Cloudflare Access (dominio/AUD): la entrada del túnel lo rechaza todo."
     },
     "tunnel_acl": {
-      "fail": "Cualquier usuario local llega a la entrada del túnel."
+      "fail": "{why, select, user {El usuario del túnel {user} no puede llegar a la entrada del túnel: cloudflared no obtiene conexión y Cloudflare responde 502 (hardening/apply.sh --apply firewall-uids).} other {Cualquier usuario local llega a la entrada del túnel.}}"
     },
     "tls_certificate": {
-      "fail": "El certificado caduca en menos de 14 días."
+      "fail": "El certificado de {host} caduca en menos de 14 días: la renovación automática no funcionó."
     },
     "tls_renewal": {
       "fail": "La renovación automática del certificado no está activa."
@@ -207,6 +208,32 @@
     "audiencesHint": "La etiqueta AUD de la aplicación de Access para helena.volition.one, 64 caracteres. Una por línea.",
     "allowedEmails": "Identidades permitidas",
     "allowedEmailsHint": "Opcional: solo estas direcciones de correo, aunque la política de Access admita más. Una por línea.",
-    "saved": "Acceso desde fuera guardado"
+    "saved": "Acceso desde fuera guardado",
+    "signInTitle": "Iniciar sesión en Helena con el inicio de sesión de Cloudflare",
+    "signInDescription": "Quien inicia sesión en Cloudflare Access con una identidad permitida entra en Helena sin otra contraseña, durante 24 horas como máximo y nunca más que la sesión de Access. Access es entonces el único inicio de sesión: exige allí un segundo factor (passkey/Touch ID o una app de autenticación). El terminal sigue pidiendo su código.",
+    "signInNeedsSetup": "Necesita el dominio del equipo, el AUD y al menos una identidad permitida.",
+    "signInNeedsProof": "La entrada del túnel aún no tiene prueba para Helena: ejecuta cloudflare/install.sh --apply entry-token en el servidor y reinicia la API y la web.",
+    "homeTitle": "Conectar directamente en casa automáticamente",
+    "homeDescription": "En la dirección pública, Helena comprueba si {home} responde desde este dispositivo y cambia allí: directamente por la red de casa, sin pasar por Cloudflare. Allí te conecta el inicio de sesión de la red de casa. Chrome pide una vez acceso a la red local.",
+    "homeDescriptionGeneric": "En la dirección pública, Helena comprueba si la dirección de la red de casa responde desde este dispositivo y cambia allí: directamente por la red de casa, sin pasar por Cloudflare.",
+    "homeNotSetUp": "No hay dirección de red de casa configurada (HELENA_HOME_URL, cloudflare/switch_origin.py --home-host)."
+  },
+  "signIns": {
+    "title": "Inicios de sesión sin contraseña",
+    "description": "Mediante el inicio de sesión de Cloudflare y el de la red de casa, incluidos los rechazados.",
+    "empty": "Ninguno todavía.",
+    "methodEdge": "Cloudflare",
+    "methodLocalOwner": "Red de casa",
+    "refused": "Rechazado",
+    "reason": {
+      "disabled": "inicio de sesión desactivado",
+      "not_configured": "no configurado",
+      "missing_assertion": "sin aserción de Access",
+      "invalid_assertion": "aserción de Access no válida",
+      "identity_not_allowed": "identidad no permitida",
+      "no_account": "ninguna cuenta con esta dirección",
+      "not_eligible": "la cuenta no puede iniciar sesión así",
+      "deactivated": "cuenta desactivada"
+    }
   }
 }

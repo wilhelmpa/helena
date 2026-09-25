@@ -70,7 +70,8 @@
     "totpConfirmFailed": "O código não foi aceito.",
     "totpDisableFailed": "Não foi possível desativar o aplicativo autenticador.",
     "minLength": "Pelo menos {count} caracteres.",
-    "added": "Adicionada em {date}"
+    "added": "Adicionada em {date}",
+    "passkeysElsewhere": "As passkeys pertencem a {host}. Aqui na rede de casa o Helena faz seu login automaticamente; adicione passkeys novas em {host}."
   },
   "accounts": {
     "label": "Contas",

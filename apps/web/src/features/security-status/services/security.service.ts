@@ -5,8 +5,10 @@ import { qk } from '@/services/queryKeys';
 import {
   getEdgeAccess,
   getSecurityStatus,
+  getSignInEvents,
   updateEdgeAccess,
   type EdgeAccessPatch,
+  type SignInEvent,
 } from '@/lib/api/endpoints/security';
 
 // The audit runs hourly on the host; a minute is plenty for a page left open.
@@ -34,5 +36,14 @@ export function useUpdateEdgeAccess() {
       queryClient.setQueryData(qk.edgeAccess, data);
       void queryClient.invalidateQueries({ queryKey: qk.securityStatus });
     },
+  });
+}
+
+// The password-less sign-ins (Cloudflare, LAN owner), newest first.
+export function useSignInEventsQuery(method?: SignInEvent['method']) {
+  return useQuery({
+    queryKey: qk.signInEvents(method),
+    queryFn: () => getSignInEvents(method),
+    refetchInterval: STATUS_POLL_MS,
   });
 }
