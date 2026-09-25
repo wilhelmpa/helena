@@ -33,6 +33,8 @@ Without --home-host or --no-home a re-run keeps the home origin plan.env has.
 Restart volition-plan-api, volition-plan-web, volition-terminal and volition-owner-terminal
 afterwards (the runbook does it in the go-live window). docs/helena-decisions/security-hardening.md §6.
 """
+from __future__ import annotations
+
 import argparse
 import os
 import pathlib

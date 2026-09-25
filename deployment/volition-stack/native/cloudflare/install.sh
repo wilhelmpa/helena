@@ -137,7 +137,10 @@ entry_map_text() { # entry_map_text TOKEN
     "# Helena: the tunnel entry's proof for the web app (cloudflare/install.sh entry-token)." \
     "# Secret: 0600 root. Sent only by the tunnel entry (127.0.0.1:$port), only to the web" \
     "# app ($web_upstream); every other request and upstream gets an empty value (no header)." \
+    "# volatile: the auth subrequests (other upstream) share the request's variables; a cached" \
+    "# value from one of them must not decide the main request's header." \
     "map \"\$server_addr:\$server_port:\$proxy_host\" \$helena_edge_entry_token {" \
+    "    volatile;" \
     "    default \"\";" \
     "    \"127.0.0.1:$port:$web_upstream\" \"$1\";" \
     "}"
@@ -332,7 +335,7 @@ case "$cmd" in
   token) token ;;
   service) service ;;
   nginx) nginx_entry ;;
-  entry-token) entry_token || say "entry proof already in place" ;;
+  entry-token) if entry_token; then :; elif [[ $apply -eq 1 ]]; then say "entry proof already in place"; fi ;;
   remove) remove ;;
   *) sed -n '2,32p' "$0"; exit 2 ;;
 esac

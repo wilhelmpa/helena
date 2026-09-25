@@ -23,6 +23,8 @@ What changes on the LAN site:
 The LAN owner sign-in on the new name comes from local-owner/configure.py --https-host HOST
 (it holds the capability; this script never touches it).
 docs/helena-decisions/security-hardening.md §5 and §6.10."""
+from __future__ import annotations
+
 import argparse
 import difflib
 import pathlib
