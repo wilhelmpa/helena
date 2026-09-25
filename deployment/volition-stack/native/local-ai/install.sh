@@ -207,7 +207,7 @@ build_llama_hip() {
   src=/var/cache/helena-ai/build/llama.cpp-$LLAMA_TAG
   run rm -rf "$src"
   run install -d -m 0755 "$src"
-  run tar -xzf "$DOWNLOADS/$LLAMA_SRC" -C "$src" --strip-components=1
+  run tar --no-same-owner -xzf "$DOWNLOADS/$LLAMA_SRC" -C "$src" --strip-components=1
   root=$( [ "$DRY_RUN" = 1 ] && echo "$ROCM_VENV/lib/python3.13/site-packages/_rocm_sdk_devel" || rocm_root )
   command -v g++ >/dev/null || [ "$DRY_RUN" = 1 ] || die "g++ is missing (build-essential: ROCm's clang uses its C++ library)"
   # cmake and ninja come from the ROCm venv (hash-pinned); the compilers are ROCm's own clang,
@@ -310,7 +310,8 @@ install_all() {
   run install -d -m 0755 -o root -g root "$ETC"
   if [ ! -s "$KEY" ]; then
     if [ "$DRY_RUN" = 1 ]; then say "would create $KEY"; else
-      umask 077; head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n' > "$KEY.new"
+      # A subshell: umask 077 must not leak into the rest of the install (it left /opt/helena-ai 0700).
+      (umask 077; head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n' > "$KEY.new")
       chown "root:$API_GROUP" "$KEY.new"; chmod 0640 "$KEY.new"; mv "$KEY.new" "$KEY"
     fi
   fi
@@ -319,7 +320,7 @@ install_all() {
   run install -d -m 0755 "$OPT/llamacpp"
   if [ ! -x "$OPT/llamacpp/vulkan-$LLAMA_TAG/llama-server" ]; then
     run install -d -m 0755 "$OPT/llamacpp/vulkan-$LLAMA_TAG"
-    run tar -xzf "$DOWNLOADS/$VULKAN_TAR" -C "$OPT/llamacpp/vulkan-$LLAMA_TAG" --strip-components=1
+    run tar --no-same-owner -xzf "$DOWNLOADS/$VULKAN_TAR" -C "$OPT/llamacpp/vulkan-$LLAMA_TAG" --strip-components=1
   fi
   if [ "$ROCM" = 1 ]; then
     install_rocm
@@ -364,6 +365,9 @@ install_all() {
   if [ "$DRY_RUN" = 0 ]; then
     i=0; until api /health >/dev/null 2>&1; do i=$((i + 1)); [ $i -lt 30 ] || die "Lemonade did not answer on 127.0.0.1:$PORT"; sleep 1; done
   fi
+  say "== $OPT: root-owned, readable (no secrets there; the key lives in $ETC)"
+  run chown -R root:root "$OPT"
+  run chmod -R u=rwX,go=rX "$OPT"
   say "Installed. Next: add the server in Helena (Administrator → Server → Lokale KI, or"
   say "apps/api/src/scripts/local-ai-register.ts), then: $0 models pull <name>"
 }
