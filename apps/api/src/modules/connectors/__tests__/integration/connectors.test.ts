@@ -6,6 +6,7 @@ import {
   mailAccount,
   connectorAction,
   integrationCredential,
+  projectMember,
 } from '@repo/db';
 import { eq } from 'drizzle-orm';
 import {
@@ -21,10 +22,7 @@ import { processConnectorActions } from '../../tools';
 import { setGogBrokerForTests } from '../../google/engine';
 import { replaceDefaultPolicy } from '../../policy';
 import { cloneTarget } from '../../clone';
-import {
-  bootstrapHomeAgent,
-  bootstrapProjectCoordinator,
-} from '../../../../scripts/bootstrap-home-agent';
+import { bootstrapHomeAgent } from '../../../../scripts/bootstrap-home-agent';
 
 // The access center's connectors: a Google account signed in through a fake Google, its
 // grants to agents and projects (read vs write, per service), the policy and the owner's
@@ -616,11 +614,15 @@ describe('SSH keys', () => {
           ...(agentId !== undefined && { agentId }),
         });
 
-    // Without a coordinator: an agent of this one project, not the Home agent.
-    expect((await clone()).data).toMatchObject({ agentId: writer.id });
-    const lead = await bootstrapProjectCoordinator(mkt.id);
+    // The project's coordinator, which a new project gets.
     const started = (await clone()).data!;
-    expect(started).toMatchObject({ agentId: lead!.agent.id, name: 'homepage' });
+    expect(started).toMatchObject({ agentName: 'Hermes MKT Coordinator', name: 'homepage' });
+    // Without one: an agent of this one project, still not the Home agent.
+    const coordinatorUser = (await asOwner.teams({ teamId })['ai-agents'].get()).data!.find(
+      (agent) => agent.id === started.agentId,
+    )!.userId;
+    await db.delete(projectMember).where(eq(projectMember.userId, coordinatorUser));
+    expect((await clone()).data).toMatchObject({ agentId: writer.id });
     const [run] = await db.select().from(agentRun).where(eq(agentRun.id, started.runId));
     const workspace = path.join(
       path.resolve(process.env.PROJECT_WORKSPACE_ROOT?.trim() || '/srv/volition/workspaces/projects'),
