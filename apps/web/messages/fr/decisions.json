@@ -153,7 +153,34 @@
     "wasWrong": "Corrigé : {outcome}",
     "input": "Entrée",
     "empty": "Aucune décision pour l'instant",
-    "emptyHint": "Elles apparaissent ici dès qu'un type est activé."
+    "emptyHint": "Elles apparaissent ici dès qu'un type est activé.",
+    "yes": "oui",
+    "no": "non",
+    "noProject": "aucun projet",
+    "noTransaction": "aucun mouvement",
+    "transaction": "Mouvement n° {id}"
   },
-  "noTeamHint": "Les décisions s'appliquent par équipe."
+  "noTeamHint": "Les décisions s'appliquent par équipe.",
+  "tiers": {
+    "light": "léger",
+    "standard": "standard",
+    "strong": "fort",
+    "strongest": "le plus fort"
+  },
+  "questions": {
+    "router": {
+      "route": "Niveau",
+      "needs_context": "A besoin de l'historique"
+    },
+    "mail": {
+      "project": "Projet",
+      "category": "Type",
+      "priority": "Priorité",
+      "needs_reply": "Réponse nécessaire",
+      "create_task": "Tâche nécessaire"
+    },
+    "receipts": {
+      "match": "Mouvement"
+    }
+  }
 }

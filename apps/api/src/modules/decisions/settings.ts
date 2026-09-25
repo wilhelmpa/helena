@@ -291,12 +291,15 @@ export interface DecisionLogEntry {
   questionId: string;
   kind: string;
   options: string[];
+  question: string | null;
+  optionLabels: Record<string, string> | null;
   choice: string | null;
   probabilities: Record<string, number> | null;
   confidence: number | null;
   threshold: number;
   status: string;
   backend: string | null;
+  connection: string | null;
   model: string | null;
   latencyMs: number | null;
   inputTokens: number;
@@ -316,9 +319,14 @@ export async function listDecisions(
 ): Promise<{ items: DecisionLogEntry[]; nextBefore: number | null }> {
   const limit = Math.max(1, Math.min(200, query.limit ?? 50));
   const rows = await db
-    .select({ decision: helenaDecision, projectKey: project.key })
+    .select({
+      decision: helenaDecision,
+      projectKey: project.key,
+      connection: integrationCredential.label,
+    })
     .from(helenaDecision)
     .leftJoin(project, eq(project.id, helenaDecision.projectId))
+    .leftJoin(integrationCredential, eq(integrationCredential.id, helenaDecision.credentialId))
     .where(
       and(
         eq(helenaDecision.teamId, teamId),
@@ -332,19 +340,22 @@ export async function listDecisions(
     .limit(limit + 1);
   const page = rows.slice(0, limit);
   return {
-    items: page.map(({ decision: row, projectKey }) => ({
+    items: page.map(({ decision: row, projectKey, connection }) => ({
       id: row.id,
       classId: row.classId,
       subject: row.subject,
       questionId: row.questionId,
       kind: row.kind,
       options: row.options,
+      question: row.question,
+      optionLabels: row.optionLabels,
       choice: row.choice,
       probabilities: row.probabilities,
       confidence: row.confidence,
       threshold: row.threshold,
       status: row.status,
       backend: row.backend,
+      connection,
       model: row.model,
       latencyMs: row.latencyMs,
       inputTokens: row.inputTokens,

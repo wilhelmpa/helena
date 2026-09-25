@@ -153,7 +153,34 @@
     "wasWrong": "Dikoreksi: {outcome}",
     "input": "Masukan",
     "empty": "Belum ada keputusan",
-    "emptyHint": "Keputusan muncul di sini begitu suatu jenis diaktifkan."
+    "emptyHint": "Keputusan muncul di sini begitu suatu jenis diaktifkan.",
+    "yes": "ya",
+    "no": "tidak",
+    "noProject": "tanpa proyek",
+    "noTransaction": "tanpa mutasi",
+    "transaction": "Mutasi #{id}"
   },
-  "noTeamHint": "Keputusan berlaku per tim."
+  "noTeamHint": "Keputusan berlaku per tim.",
+  "tiers": {
+    "light": "ringan",
+    "standard": "standar",
+    "strong": "kuat",
+    "strongest": "terkuat"
+  },
+  "questions": {
+    "router": {
+      "route": "Tingkat",
+      "needs_context": "Perlu riwayat"
+    },
+    "mail": {
+      "project": "Proyek",
+      "category": "Jenis",
+      "priority": "Prioritas",
+      "needs_reply": "Perlu balasan",
+      "create_task": "Perlu tugas"
+    },
+    "receipts": {
+      "match": "Mutasi"
+    }
+  }
 }

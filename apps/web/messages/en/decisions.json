@@ -153,7 +153,34 @@
     "wasWrong": "Corrected: {outcome}",
     "input": "Input",
     "empty": "No decisions yet",
-    "emptyHint": "They appear here once a kind is switched on."
+    "emptyHint": "They appear here once a kind is switched on.",
+    "yes": "yes",
+    "no": "no",
+    "noProject": "no project",
+    "noTransaction": "no transaction",
+    "transaction": "Transaction #{id}"
   },
-  "noTeamHint": "Decisions are made per team."
+  "noTeamHint": "Decisions are made per team.",
+  "tiers": {
+    "light": "light",
+    "standard": "standard",
+    "strong": "strong",
+    "strongest": "strongest"
+  },
+  "questions": {
+    "router": {
+      "route": "Tier",
+      "needs_context": "Needs the history"
+    },
+    "mail": {
+      "project": "Project",
+      "category": "Kind",
+      "priority": "Priority",
+      "needs_reply": "Needs a reply",
+      "create_task": "Task needed"
+    },
+    "receipts": {
+      "match": "Transaction"
+    }
+  }
 }

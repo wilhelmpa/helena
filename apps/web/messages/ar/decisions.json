@@ -153,7 +153,34 @@
     "wasWrong": "صُحّح: {outcome}",
     "input": "المدخلات",
     "empty": "لا توجد قرارات بعد",
-    "emptyHint": "تظهر هنا حالما يُفعَّل أحد الأنواع."
+    "emptyHint": "تظهر هنا حالما يُفعَّل أحد الأنواع.",
+    "yes": "نعم",
+    "no": "لا",
+    "noProject": "بلا مشروع",
+    "noTransaction": "لا حركة",
+    "transaction": "الحركة رقم {id}"
   },
-  "noTeamHint": "تسري القرارات لكل فريق على حدة."
+  "noTeamHint": "تسري القرارات لكل فريق على حدة.",
+  "tiers": {
+    "light": "خفيف",
+    "standard": "قياسي",
+    "strong": "قوي",
+    "strongest": "الأقوى"
+  },
+  "questions": {
+    "router": {
+      "route": "المستوى",
+      "needs_context": "يحتاج إلى السجل"
+    },
+    "mail": {
+      "project": "المشروع",
+      "category": "النوع",
+      "priority": "الأولوية",
+      "needs_reply": "يحتاج إلى رد",
+      "create_task": "يحتاج إلى مهمة"
+    },
+    "receipts": {
+      "match": "الحركة"
+    }
+  }
 }

@@ -24,11 +24,52 @@ const STATUS: Record<string, Status> = {
   error: 'danger',
 };
 
+function shorten(text: string, max = 60): string {
+  return text.length > max ? `${text.slice(0, max - 1)}…` : text;
+}
+
+// How the log names a question and an option: Helena's own classes in the owner's language,
+// anything else (the decide tool, a workflow step, a plugin) as it was asked.
+function useWording() {
+  const t = useTranslations('decisions.log');
+  const tq = useTranslations('decisions.questions');
+  const tt = useTranslations('decisions.tiers');
+  const tm = useTranslations('mail.triage');
+  return {
+    question(entry: DecisionLogEntry): string {
+      const key = `${classKey(entry.classId)}.${entry.questionId}`;
+      if (tq.has(key as never)) return tq(key as never);
+      return entry.question ? shorten(entry.question, 120) : entry.questionId;
+    },
+    option(entry: DecisionLogEntry, id: string): string {
+      if (entry.kind === 'yesno' && (id === 'yes' || id === 'no')) return t(id);
+      const cls = classKey(entry.classId);
+      if (cls === 'mail') {
+        if (entry.questionId === 'project')
+          return id === 'none' ? t('noProject') : id.replace(/^p:/, '').toUpperCase();
+        if (entry.questionId === 'category' && tm.has(`categories.${id}` as never))
+          return tm(`categories.${id}` as never);
+        if (entry.questionId === 'priority' && tm.has(`priorities.${id}` as never))
+          return tm(`priorities.${id}` as never);
+      }
+      if (cls === 'router' && entry.questionId === 'route' && tt.has(id as never))
+        return tt(id as never);
+      if (cls === 'receipts' && entry.questionId === 'match')
+        return id === 'none' ? t('noTransaction') : t('transaction', { id: id.replace(/^t:/, '') });
+      return shorten(entry.optionLabels?.[id] ?? id);
+    },
+  };
+}
+
 function Row({ entry, teamId }: { entry: DecisionLogEntry; teamId: number }) {
   const t = useTranslations('decisions.log');
   const tc = useTranslations('decisions.classes');
   const locale = useLocale();
   const correct = useCorrectDecision(teamId);
+  const wording = useWording();
+  const classLabel = tc.has(`${classKey(entry.classId)}.label` as never)
+    ? tc(`${classKey(entry.classId)}.label` as never)
+    : entry.classId;
   const top = Object.entries(entry.probabilities ?? {})
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3);
@@ -39,8 +80,8 @@ function Row({ entry, teamId }: { entry: DecisionLogEntry; teamId: number }) {
           <StatusBadge status={STATUS[entry.status] ?? 'idle'}>
             {t(`status.${entry.status}` as never)}
           </StatusBadge>
-          <span className="font-medium">{tc(`${classKey(entry.classId)}.label` as never)}</span>
-          <span className="text-muted-foreground">· {entry.questionId}</span>
+          <span className="font-medium">{classLabel}</span>
+          <span className="text-muted-foreground">· {wording.question(entry)}</span>
           {entry.subject && (
             <span className="truncate text-xs text-muted-foreground">· {entry.subject}</span>
           )}
@@ -56,16 +97,16 @@ function Row({ entry, teamId }: { entry: DecisionLogEntry; teamId: number }) {
         <div className="text-xs text-muted-foreground">
           {entry.choice ? (
             <>
-              <span className="text-sm text-foreground">{entry.choice}</span>{' '}
+              <span className="text-sm text-foreground">{wording.option(entry, entry.choice)}</span>{' '}
               {t('confidence', { value: percent(entry.confidence) })}
               {top.length > 1 &&
-                ` · ${top.map(([option, p]) => `${option} ${percent(p)}`).join(', ')}`}
+                ` · ${top.map(([option, p]) => `${wording.option(entry, option)} ${percent(p)}`).join(', ')}`}
             </>
           ) : (
             (entry.error ?? t('noAnswer'))
           )}
           {' · '}
-          {entry.backend ?? '–'}
+          {entry.connection ?? entry.backend ?? '–'}
           {entry.model ? ` (${entry.model})` : ''} · {milliseconds(entry.latencyMs)}
           {entry.costEur ? ` · ${euros(entry.costEur, locale)}` : ''}
         </div>
@@ -80,7 +121,7 @@ function Row({ entry, teamId }: { entry: DecisionLogEntry; teamId: number }) {
             <SelectContent>
               {entry.options.map((option) => (
                 <SelectItem key={option} value={option}>
-                  {option}
+                  {wording.option(entry, option)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -88,7 +129,9 @@ function Row({ entry, teamId }: { entry: DecisionLogEntry; teamId: number }) {
         )}
       </div>
       {entry.outcome && entry.outcome !== entry.choice && (
-        <p className="text-xs text-status-danger">{t('wasWrong', { outcome: entry.outcome })}</p>
+        <p className="text-xs text-status-danger">
+          {t('wasWrong', { outcome: wording.option(entry, entry.outcome) })}
+        </p>
       )}
       {entry.inputText && (
         <details className="text-xs text-muted-foreground">

@@ -371,6 +371,7 @@ async function record(
           questionId: id,
           kind: question.kind,
           options: decisionOptionIds(question),
+          ...wordingOf(question),
           choice: answer.choice,
           probabilities: answer.probabilities,
           confidence: answer.confidence,
@@ -432,6 +433,22 @@ async function record(
   };
 }
 
+// The question and the option labels as the log keeps them.
+function wordingOf(question: DecisionQuestion): {
+  question: string;
+  optionLabels: Record<string, string> | null;
+} {
+  return {
+    question: question.question.slice(0, 1000),
+    optionLabels:
+      question.kind === 'choice'
+        ? Object.fromEntries(
+            (question.options ?? []).map((option) => [option.id, option.label.slice(0, 300)]),
+          )
+        : null,
+  };
+}
+
 async function logFailure(
   request: DecideRequest,
   cls: DecisionClass,
@@ -455,6 +472,7 @@ async function logFailure(
         questionId: id,
         kind: question.kind,
         options: decisionOptionIds(question),
+        ...wordingOf(question),
         threshold,
         status: outcome.status,
         credentialId: connection.credentialId,

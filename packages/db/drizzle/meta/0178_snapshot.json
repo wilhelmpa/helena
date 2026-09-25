@@ -1,5 +1,5 @@
 {
-  "id": "98a5f7e8-0bd7-41e9-8b1d-f106d8271bb9",
+  "id": "5745babb-6108-4639-985f-18f6b9452d72",
   "prevId": "d3f9a8d9-1863-49cf-b48f-39b51ef0b326",
   "version": "7",
   "dialect": "postgresql",
@@ -21523,6 +21523,18 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'[]'::jsonb"
+        },
+        "question": {
+          "name": "question",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "option_labels": {
+          "name": "option_labels",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
         },
         "choice": {
           "name": "choice",

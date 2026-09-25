@@ -10,6 +10,8 @@ CREATE TABLE "helena_decision" (
 	"question_id" text NOT NULL,
 	"kind" text NOT NULL,
 	"options" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"question" text,
+	"option_labels" jsonb,
 	"choice" text,
 	"probabilities" jsonb,
 	"confidence" double precision,

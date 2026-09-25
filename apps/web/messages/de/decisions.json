@@ -153,7 +153,34 @@
     "wasWrong": "Korrigiert: {outcome}",
     "input": "Eingabe",
     "empty": "Noch keine Entscheidungen",
-    "emptyHint": "Sie erscheinen hier, sobald eine Art eingeschaltet ist."
+    "emptyHint": "Sie erscheinen hier, sobald eine Art eingeschaltet ist.",
+    "yes": "ja",
+    "no": "nein",
+    "noProject": "kein Projekt",
+    "noTransaction": "keine Buchung",
+    "transaction": "Buchung #{id}"
   },
-  "noTeamHint": "Entscheidungen gelten je Team."
+  "noTeamHint": "Entscheidungen gelten je Team.",
+  "tiers": {
+    "light": "leicht",
+    "standard": "Standard",
+    "strong": "stark",
+    "strongest": "am stärksten"
+  },
+  "questions": {
+    "router": {
+      "route": "Stufe",
+      "needs_context": "Braucht den Verlauf"
+    },
+    "mail": {
+      "project": "Projekt",
+      "category": "Art",
+      "priority": "Priorität",
+      "needs_reply": "Braucht Antwort",
+      "create_task": "Aufgabe nötig"
+    },
+    "receipts": {
+      "match": "Buchung"
+    }
+  }
 }

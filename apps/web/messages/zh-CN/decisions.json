@@ -153,7 +153,34 @@
     "wasWrong": "已纠正：{outcome}",
     "input": "输入",
     "empty": "还没有决策",
-    "emptyHint": "启用某个类型后，决策会显示在这里。"
+    "emptyHint": "启用某个类型后，决策会显示在这里。",
+    "yes": "是",
+    "no": "否",
+    "noProject": "无项目",
+    "noTransaction": "无流水",
+    "transaction": "流水 #{id}"
   },
-  "noTeamHint": "决策按团队分别设置。"
+  "noTeamHint": "决策按团队分别设置。",
+  "tiers": {
+    "light": "轻量",
+    "standard": "标准",
+    "strong": "强",
+    "strongest": "最强"
+  },
+  "questions": {
+    "router": {
+      "route": "档位",
+      "needs_context": "需要上下文"
+    },
+    "mail": {
+      "project": "项目",
+      "category": "类型",
+      "priority": "优先级",
+      "needs_reply": "需要回复",
+      "create_task": "需要任务"
+    },
+    "receipts": {
+      "match": "流水"
+    }
+  }
 }

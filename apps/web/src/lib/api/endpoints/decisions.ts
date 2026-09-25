@@ -133,12 +133,15 @@ export interface DecisionLogEntry {
   questionId: string;
   kind: string;
   options: string[];
+  question: string | null;
+  optionLabels: Record<string, string> | null;
   choice: string | null;
   probabilities: Record<string, number> | null;
   confidence: number | null;
   threshold: number;
   status: string;
   backend: string | null;
+  connection: string | null;
   model: string | null;
   latencyMs: number | null;
   inputTokens: number;

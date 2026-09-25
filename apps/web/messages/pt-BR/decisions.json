@@ -153,7 +153,34 @@
     "wasWrong": "Corrigido: {outcome}",
     "input": "Entrada",
     "empty": "Nenhuma decisão ainda",
-    "emptyHint": "Elas aparecem aqui assim que um tipo é ativado."
+    "emptyHint": "Elas aparecem aqui assim que um tipo é ativado.",
+    "yes": "sim",
+    "no": "não",
+    "noProject": "nenhum projeto",
+    "noTransaction": "nenhuma transação",
+    "transaction": "Transação nº {id}"
   },
-  "noTeamHint": "As decisões valem por equipe."
+  "noTeamHint": "As decisões valem por equipe.",
+  "tiers": {
+    "light": "leve",
+    "standard": "padrão",
+    "strong": "forte",
+    "strongest": "o mais forte"
+  },
+  "questions": {
+    "router": {
+      "route": "Nível",
+      "needs_context": "Precisa do histórico"
+    },
+    "mail": {
+      "project": "Projeto",
+      "category": "Tipo",
+      "priority": "Prioridade",
+      "needs_reply": "Precisa de resposta",
+      "create_task": "Tarefa necessária"
+    },
+    "receipts": {
+      "match": "Transação"
+    }
+  }
 }

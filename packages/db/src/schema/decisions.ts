@@ -109,6 +109,10 @@ export const helenaDecision = pgTable(
     kind: text('kind').notNull(),
     // The option ids offered (`yes`/`no` for a yes/no question).
     options: jsonb('options').$type<string[]>().notNull().default([]),
+    // What was asked, so the log reads without the feature: the question and each option's
+    // label (Helena's own wording or the caller's; the context stays out, see input_text).
+    question: text('question'),
+    optionLabels: jsonb('option_labels').$type<Record<string, string>>(),
     choice: text('choice'),
     probabilities: jsonb('probabilities').$type<Record<string, number>>(),
     confidence: doublePrecision('confidence'),
