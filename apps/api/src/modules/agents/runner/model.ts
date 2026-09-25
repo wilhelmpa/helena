@@ -96,9 +96,6 @@ export const resultBody = t.Object({
   ),
   error: t.Optional(t.Nullable(t.String({ description: 'Why the run failed.' }))),
   usage: contextUsageBody,
-  // The last model call's counts: the size of the session a reflection resumes. Helena
-  // hands a small one's reflection to Lokale KI (docs/helena-decisions/local-ai-platform.md).
-  context: contextUsageBody,
   sessionId: t.Optional(
     t.String({
       minLength: 1,

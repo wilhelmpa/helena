@@ -12,12 +12,15 @@ export const COMPLEX_TOOL_CALLS = 10;
 
 export const REFLECTION_LIMITS = { maxTurns: 8, runBudgetSeconds: 120 };
 
-// A reflection on the local model (Lokale KI's class `reflection`): only for a session this
-// small, whose prefill on the workhorse takes under a minute (~1,100 tokens/s at 32k,
-// docs/helena-decisions/local-ai-platform.md §5); a longer one would spend the budget loading
-// or compressing the session, and the agent's runner waits for its reflection before the next
-// run. More time for the same turns, since a local model reads and writes slower.
-export const LOCAL_REFLECTION_MAX_CONTEXT = 48_000;
+// A reflection on the local model (Lokale KI's class `reflection`): only after a run that read
+// at most this much in all its model calls together. That bounds the session the reflection
+// resumes (Hermes reports no context size of its own), so its prefill on the workhorse stays
+// around a minute (~1,000 tokens/s at 32–64k, docs/helena-decisions/local-ai-platform.md §4.3);
+// a larger one would spend the budget loading or compressing the session while the agent's
+// runner waits for its reflection before the next run. In practice: short runs, a failure
+// after a few steps or a rework; a run of many tool calls reads far more and stays on its
+// model. More time for the same turns, since a local model reads and writes slower.
+export const LOCAL_REFLECTION_MAX_READ = 64_000;
 export const LOCAL_REFLECTION_LIMITS = { maxTurns: 8, runBudgetSeconds: 240 };
 
 // Why the run is worth a reflection, or null when it is not. A failed run with no tool

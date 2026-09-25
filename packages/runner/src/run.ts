@@ -203,14 +203,11 @@ export async function perform(
     sessionId,
     usage.model(),
   );
-  const context = usage.value();
   const result = {
     ...outcome,
     // The answer itself, where the command prints an event stream (Claude Code, Codex).
     output: answer.text() ?? outcome.output,
-    usage: outcome.usage ?? context,
-    // The last call's counts, the session's size (Hermes' totals above sum every call).
-    ...(context && { context }),
+    usage: outcome.usage ?? usage.value(),
     spend: spend.value({ model: run.model, provider: modelProvider(config, run.model) ?? null }),
     ...(sessionId && { sessionId }),
     ...(runtime && { runtime }),

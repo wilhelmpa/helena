@@ -308,9 +308,6 @@ export class Client {
       output?: string;
       error?: string;
       usage?: ContextUsage | null;
-      // The last model call's counts: how large the session is, which decides where Helena
-      // runs its reflection. An older server ignores it.
-      context?: ContextUsage | null;
       sessionId?: string;
       toolCalls?: number;
       // Every model call of the run summed, with the model that ran, for the token ledger.

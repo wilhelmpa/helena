@@ -37,7 +37,7 @@ import { recordUsage, type Spend } from '../usage/service';
 import { emergencyStopActive } from '#modules/emergency-stop/service';
 import {
   LOCAL_REFLECTION_LIMITS,
-  LOCAL_REFLECTION_MAX_CONTEXT,
+  LOCAL_REFLECTION_MAX_READ,
   REFLECTION_LIMITS,
   reflectionPrompt,
   reflectionReason,
@@ -685,7 +685,7 @@ async function requestReflection(
   agentId: number,
   runId: number,
   run: { status: 'success' | 'failed'; issueId: number | null; paused: boolean; digest?: boolean },
-  report: { sessionId?: string; toolCalls?: number; context?: ContextUsage | null },
+  report: { sessionId?: string; toolCalls?: number; usage?: ContextUsage | null },
 ): Promise<ReflectionRequest | null> {
   // A digest run is a summary, with nothing to learn from (and no memory tools).
   if (run.paused || run.digest || !report.sessionId) return null;
@@ -700,11 +700,12 @@ async function requestReflection(
     rework: await isRework(agentId, runId, run.issueId),
   });
   if (!reason) return null;
-  // Lokale KI's class `reflection`, for a session small enough (reflection.ts); a session of
-  // unknown size stays on the run's model.
-  const size = report.context?.inputTokens ?? null;
+  // Lokale KI's class `reflection`, for a session small enough (reflection.ts). Hermes reports
+  // what the whole run read, every call summed, which bounds the session from above; a run
+  // of unknown size stays on its own model.
+  const read = report.usage?.inputTokens ?? null;
   const local =
-    size !== null && size <= LOCAL_REFLECTION_MAX_CONTEXT
+    read !== null && read <= LOCAL_REFLECTION_MAX_READ
       ? (await classModelNow(WORK_CLASS.reflection)).model
       : null;
   const reflection: RunReflection = {
@@ -738,8 +739,6 @@ export async function finishRun(
     output?: string | null;
     error?: string | null;
     usage?: ContextUsage | null;
-    // The last model call's counts: the size of the session.
-    context?: ContextUsage | null;
     sessionId?: string;
     toolCalls?: number;
     spend?: Spend | null;

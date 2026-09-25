@@ -311,7 +311,10 @@ describe('routines', () => {
       description: 'Summarize the week.',
       delegateUserId: agent.userId,
     });
-    expect(await db.select().from(agentRun).where(eq(agentRun.issueId, task!.id))).toHaveLength(1);
+    const runs = await db.select().from(agentRun).where(eq(agentRun.issueId, task!.id));
+    expect(runs).toHaveLength(1);
+    // The run is the routine's work for Lokale KI (class `routines`).
+    expect(runs[0]!.workClass).toBe('routines');
     // The fire is on the event bus for the plugins: stored for the worker's delivery.
     const [fired] = await DBOS.listWorkflows({
       workflowIDs: [`worker-event:routine-fired:${ran.id}`],
@@ -368,7 +371,8 @@ describe('routines', () => {
     expect(comments).toContainEqual({
       body: 'Reopened by the schedule "Weekly report".\n\nSummarize the week.',
     });
-    expect(await db.select().from(agentRun).where(eq(agentRun.issueId, task.id))).toHaveLength(1);
+    const runs = await db.select().from(agentRun).where(eq(agentRun.issueId, task.id));
+    expect(runs.map((run) => run.workClass)).toEqual(['routines']);
     // The task is open now: the next fire leaves it alone.
     const again = (await routines(asOwner)({ routineId: created.id }).run.post()).data!;
     await waitForStatus(again.runId, 'skipped');
