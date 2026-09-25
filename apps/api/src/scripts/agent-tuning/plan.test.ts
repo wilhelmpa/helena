@@ -429,9 +429,20 @@ describe('organisation', () => {
   }
 
   function copied(overrides: Partial<CurrentAgent> = {}): CurrentState {
-    const current = withTemplate({ username: 'assistant', name: 'Assistent', instructions: 'Privat' });
+    const current = withTemplate({
+      username: 'assistant',
+      name: 'Assistent',
+      instructions: 'Privat',
+    });
     current.agents.push(
-      agent({ id: 1, copyOf: 'assistant', name: 'Assistent VOL', instructions: 'Privat', manager: null, ...overrides }),
+      agent({
+        id: 1,
+        copyOf: 'assistant',
+        name: 'Assistent VOL',
+        instructions: 'Privat',
+        manager: null,
+        ...overrides,
+      }),
       agent({ id: 2, username: 'master', role: null, manager: null }),
     );
     return current;
@@ -440,7 +451,12 @@ describe('organisation', () => {
   it('creates a missing department below its parent, and places the agent in it', () => {
     const plan = planTuning(copied(), orgTarget(), ['instructions', 'copies']);
     expect(plan.changes).toEqual([
-      { kind: 'department', name: 'Verve · Support', parent: 'Volition', description: 'Bereich support/' },
+      {
+        kind: 'department',
+        name: 'Verve · Support',
+        parent: 'Volition',
+        description: 'Bereich support/',
+      },
       {
         kind: 'instructions',
         agentId: 1,
@@ -463,7 +479,7 @@ describe('organisation', () => {
     expect(planTuning(done, orgTarget(), ['instructions', 'copies']).changes).toEqual([]);
   });
 
-  it("leaves what the owner chose: a renamed copy, its own text, department, role, manager", () => {
+  it('leaves what the owner chose: a renamed copy, its own text, department, role, manager', () => {
     const current = copied({
       name: 'Mein Support',
       instructions: 'Eigener Text',

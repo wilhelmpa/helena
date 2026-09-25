@@ -235,10 +235,7 @@ export async function loadTuningState(teamId: number): Promise<CurrentState> {
         ),
     ]);
   const [projects, departments] = await Promise.all([
-    db
-      .select({ id: project.id, key: project.key })
-      .from(project)
-      .where(eq(project.teamId, teamId)),
+    db.select({ id: project.id, key: project.key }).from(project).where(eq(project.teamId, teamId)),
     db
       .select({
         id: organizationDepartment.id,
@@ -399,10 +396,7 @@ async function applyOrg(
             .select({ id: organizationDepartment.id })
             .from(organizationDepartment)
             .where(
-              and(
-                eq(organizationDepartment.teamId, teamId),
-                eq(organizationDepartment.name, name),
-              ),
+              and(eq(organizationDepartment.teamId, teamId), eq(organizationDepartment.name, name)),
             )
         : await db
             .select({ id: aiAgent.id })

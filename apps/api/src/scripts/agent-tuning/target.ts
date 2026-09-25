@@ -257,14 +257,26 @@ const SPECIALISTS: Record<string, Specialist[]> = {
       area: 'dev',
     },
     { username: 'code-reviewer-verve', role: 'Reviews vor Merge und Deploy', area: 'dev' },
-    { username: 'content-verve', role: 'App-Store-Eintrag, Hilfe- und Marketing-Texte', area: 'marketing' },
-    { username: 'market-analyst-verve', role: 'Markt, Wettbewerb, Preise, Bewertungen', area: 'marketing' },
+    {
+      username: 'content-verve',
+      role: 'App-Store-Eintrag, Hilfe- und Marketing-Texte',
+      area: 'marketing',
+    },
+    {
+      username: 'market-analyst-verve',
+      role: 'Markt, Wettbewerb, Preise, Bewertungen',
+      area: 'marketing',
+    },
     {
       username: 'designer-verve',
       role: 'App-Store-Grafiken, Screenshots, Oberfläche der Admin-App',
       area: 'marketing',
     },
-    { username: 'assistant-verve', role: 'Händleranfragen innerhalb von 24 Stunden', area: 'support' },
+    {
+      username: 'assistant-verve',
+      role: 'Händleranfragen innerhalb von 24 Stunden',
+      area: 'support',
+    },
     { username: 'tech-writer-verve', role: 'Hilfeseiten, FAQ, Changelog', area: 'support' },
   ],
   PRIV: [
@@ -613,9 +625,10 @@ export const COPIES: AgentTarget[] = POOL_COPIES.map(({ template, projectKey, ar
 });
 
 // What every copy should have goes onto its template, so the copy keeps following it.
-export const TEMPLATES = [...new Set(POOL_COPIES.map((copy) => copy.template))].map(
-  (username) => ({ username, denyToolsets: DENIED_TOOLSETS }),
-);
+export const TEMPLATES = [...new Set(POOL_COPIES.map((copy) => copy.template))].map((username) => ({
+  username,
+  denyToolsets: DENIED_TOOLSETS,
+}));
 
 export const TARGET: TuningTarget = {
   projects: PROJECTS,
