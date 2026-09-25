@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import CopyableCommand from '@/components/common/page/CopyableCommand';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Dialog,
   DialogContent,
@@ -14,12 +16,13 @@ import { Input } from '@/components/ui/input';
 import type { StorageStatus } from '@/lib/api/endpoints/server';
 import { cn } from '@/lib/utils';
 import { formatDiskSize } from '../utils/serverFormat';
-import { replacementPlan } from '../utils/replaceDisk';
+import { recoveryPlan, replacementPlan } from '../utils/replaceDisk';
 
 // "Platte ersetzen": the guided replacement of a mirror disk, with the commands filled in
 // from this machine (the array, the healthy disk, its partitions, the EFI mounts and boot
 // entries). Helena runs none of them: the owner runs them as root in the owner terminal,
-// step by step, and watches the rebuild on this page.
+// step by step, and watches the rebuild on this page. First, folded open while a disk is
+// away: the check whether it only fell off the bus (a cold start brings it back).
 export default function ReplaceDiskDialog({
   storage,
   onClose,
@@ -45,6 +48,7 @@ export default function ReplaceDiskDialog({
   const [selected, setSelected] = useState(suggested?.kname ?? '');
   const [newDevice, setNewDevice] = useState('');
   const plan = replacementPlan(storage, selected, newDevice);
+  const recovery = recoveryPlan(storage, selected);
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -53,6 +57,8 @@ export default function ReplaceDiskDialog({
           <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription>{t('intro')}</DialogDescription>
         </DialogHeader>
+
+        <RecoverySection plan={recovery} />
 
         <fieldset className="space-y-2">
           <legend className="text-xs font-medium text-muted-foreground">{t('which')}</legend>
@@ -163,6 +169,55 @@ export default function ReplaceDiskDialog({
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function RecoverySection({ plan }: { plan: ReturnType<typeof recoveryPlan> }) {
+  const t = useTranslations('server.disks.recover');
+  const tCopy = useTranslations('common');
+  const command = (value: string) => (
+    <CopyableCommand command={value} copyLabel={tCopy('copy')} copiedLabel={tCopy('copied')} />
+  );
+  return (
+    <Collapsible
+      defaultOpen={plan.missing}
+      className="rounded-lg border border-sidebar-border bg-card"
+    >
+      <CollapsibleTrigger className="group flex min-h-8 w-full items-center gap-2 px-3 py-1.5 text-start text-sm font-medium hover:bg-sidebar-accent">
+        <ChevronRight className="size-4 shrink-0 transition-transform duration-150 group-data-[state=open]:rotate-90 rtl:group-data-[state=closed]:rotate-180" />
+        {t('open', { letter: plan.letter })}
+      </CollapsibleTrigger>
+      <CollapsibleContent className="space-y-4 px-3 pt-1 pb-3">
+        <p className="text-sm text-muted-foreground">{t('intro')}</p>
+        <ol className="space-y-4">
+          <Step n={1} title={t('step.poweroff')}>
+            <p className="text-sm text-muted-foreground">{t('step.poweroffBody')}</p>
+            {command(plan.commands.poweroff)}
+          </Step>
+          <Step n={2} title={t('step.powerOn')}>
+            <p className="text-sm text-muted-foreground">{t('step.powerOnBody')}</p>
+          </Step>
+          <Step n={3} title={t('step.smart')}>
+            <p className="text-sm text-muted-foreground">{t('step.smartBody')}</p>
+            {command(plan.commands.smart)}
+          </Step>
+          <Step n={4} title={t('step.readd')}>
+            <p className="text-sm text-muted-foreground">{t('step.readdBody')}</p>
+            {command(plan.commands.readd)}
+          </Step>
+          <Step n={5} title={t('step.esp')}>
+            <p className="text-sm text-muted-foreground">
+              {t('step.espBody', { mount: plan.espMount })}
+            </p>
+            {command(plan.commands.esp)}
+            {command(plan.commands.bootCheck)}
+            {command(plan.commands.bootRepair)}
+            {command(plan.commands.espCopy)}
+          </Step>
+        </ol>
+        <p className="text-sm">{t('replaceWhen')}</p>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 

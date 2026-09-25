@@ -300,6 +300,10 @@ function BootCard({ storage }: { storage: StorageStatus }) {
   const reserve = useBootReserveOnce();
   const cancel = useCancelBootReserve();
   const [confirm, setConfirm] = useState(false);
+  // What is wrong with the ESP copy or a firmware entry (the helper repairs entries at boot).
+  const problems = useAreaHealth('disks').filter(
+    (item) => item.state !== 'ok' && (item.id === 'esp:sync' || item.id.startsWith('boot:')),
+  );
   const boot = storage.boot;
   const esp = storage.esp;
   const nextIsReserve = !!boot?.next && boot.next === storage.reserveEntry?.number;
@@ -358,6 +362,9 @@ function BootCard({ storage }: { storage: StorageStatus }) {
             {esp.differences.join(', ')}
           </li>
         )}
+        {problems.map((item) => (
+          <HealthLine key={item.id} item={item} className="min-h-0 px-0 py-0" />
+        ))}
       </ul>
       {boot && !boot.error ? (
         <ul className="space-y-1">

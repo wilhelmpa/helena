@@ -38,6 +38,13 @@
     "espNotMounted": "La partition EFI {mount} n’est pas montée.",
     "espOutOfSync": "Les deux partitions EFI diffèrent ({count, plural, one {# fichier} other {# fichiers}}).",
     "espInSync": "Les deux partitions EFI sont identiques.",
+    "espSyncSkipped": "La seconde partition EFI n’a pas été mise à jour il y a {at} : {reason, select, notMounted {{mount} n’était pas monté} notVfat {{mount} n’est pas une partition FAT} sameDevice {les deux points de montage sont la même partition} other {ignorée}}. Le disque de réserve risque de démarrer une ancienne version.",
+    "espSyncFailed": "La copie vers la seconde partition EFI a échoué il y a {at} : {reason, select, sourceIncomplete {le chargeur d’amorçage manque sur la première} readFailed {la première n’a pas pu être lue entièrement} noRsync {rsync est absent} rsyncFailed {erreur d’écriture} verifyFailed {la copie diffère de l’original} other {erreur inconnue}}. Le démarrage sur le disque de réserve n’est de nouveau sûr qu’après une copie réussie.",
+    "bootEntryMissing": "L’entrée de démarrage « {label} » manque. {repair, select, nextBoot {Helena la crée au prochain démarrage.} diskMissing {Helena la crée dès que le disque est de retour.} other {}}",
+    "bootEntryBroken": "L’entrée de démarrage « {label} » n’est pas valide : {problem, select, noPartuuid {le firmware l’a réécrite} wrongDisk {elle pointe vers un autre disque} wrongLoader {elle lance un autre fichier} inactive {elle est désactivée} other {elle ne correspond pas}}. {repair, select, nextBoot {Helena la répare au prochain démarrage.} diskMissing {Helena la répare dès que le disque est de retour.} other {}}",
+    "bootEntryDuplicate": "L’entrée de démarrage « {label} » existe plusieurs fois. {repair, select, nextBoot {Helena fait le ménage au prochain démarrage.} diskMissing {Helena fait le ménage dès que le disque est de retour.} other {}}",
+    "bootLoaderMissing": "Le chargeur d’amorçage manque sur {mount} ; l’entrée « {label} » ne peut pas démarrer.",
+    "bootEntriesOk": "{count, plural, one {L’entrée de démarrage est correcte.} other {Les # entrées de démarrage sont correctes.}}",
     "eventsCritical": "{count, plural, one {Un signalement grave de mdadm ou smartd, pas encore consulté} other {# signalements graves de mdadm ou smartd, pas encore consultés}}.",
     "backupNotInitialized": "La sauvegarde est installée, mais pas encore configurée.",
     "backupRunning": "La première sauvegarde est en cours.",
@@ -147,6 +154,23 @@
       "confirmTitle": "Démarrer une fois sur le disque de réserve ?",
       "confirmBody": "Au prochain redémarrage, la machine démarre une fois via l’entrée « Debian (Reserve) » depuis le second disque. Cela prouve qu’elle démarre aussi sans le premier disque. Vous la redémarrez vous-même ; ensuite, l’ordre normal s’applique à nouveau."
     },
+    "recover": {
+      "open": "D’abord vérifier : le disque {letter} a-t-il seulement disparu ?",
+      "intro": "Quand un disque tombe du bus en marche (« controller is down » dans le journal, le miroir tourne sans lui, lsblk ne l’affiche plus), il n’est souvent pas défectueux. Un redémarrage ne le ramène généralement pas, un démarrage à froid si. D’ici là, aucune mise à jour du noyau ni de GRUB.",
+      "step": {
+        "poweroff": "Éteindre proprement",
+        "poweroffBody": "Helena et les agents s’arrêtent ; le miroir est complet sur l’autre disque.",
+        "powerOn": "Rallumer",
+        "powerOnBody": "Avec le bouton d’alimentation ou par Wake-on-LAN depuis un autre ordinateur du réseau domestique.",
+        "smart": "Vérifier SMART",
+        "smartBody": "Aucune erreur de support et un journal d’erreurs vide : le disque est en bon état.",
+        "readd": "Retour dans le miroir",
+        "readdBody": "En général, mdadm le reprend lui-même au démarrage et rattrape en quelques minutes (bitmap), sinon avec cette commande. Avant le prochain redémarrage, attendez que le miroir affiche « synchronisé » : jusque-là, GRUB peut lire l’ancien état du disque revenu.",
+        "esp": "Partition EFI et entrée de démarrage",
+        "espBody": "Vérifiez et montez {mount}, examinez d’abord la réparation de l’entrée de démarrage puis exécutez-la, et rattrapez la copie EFI."
+      },
+      "replaceWhen": "Remplacez le disque si SMART montre des erreurs de support ou des entrées dans le journal d’erreurs, ou s’il disparaît de nouveau."
+    },
     "replace": {
       "open": "Remplacer un disque",
       "title": "Remplacer un disque du miroir",
@@ -182,7 +206,9 @@
       "mdadm": "RAID",
       "smartd": "SMART",
       "guard": "Protection des ventilateurs",
-      "backup": "Sauvegarde"
+      "backup": "Sauvegarde",
+      "esp": "Copie EFI",
+      "boot": "Entrées de démarrage"
     },
     "codes": {
       "Fail": "Disque en panne",
@@ -212,7 +238,12 @@
       "FansRestored": "Ventilateurs revenus au niveau choisi",
       "BackupFailed": "Échec de la sauvegarde",
       "CheckFailed": "Échec de la vérification de la sauvegarde",
-      "RestoreTestFailed": "Échec du test de restauration"
+      "RestoreTestFailed": "Échec du test de restauration",
+      "EspSyncSkipped": "Copie EFI ignorée",
+      "EspSyncFailed": "Copie EFI échouée",
+      "EspSyncRecovered": "Copie EFI de nouveau en ordre",
+      "BootEntryRepaired": "Entrée de démarrage réparée",
+      "BootEntryRepairFailed": "Entrée de démarrage non réparée"
     }
   },
   "backup": {

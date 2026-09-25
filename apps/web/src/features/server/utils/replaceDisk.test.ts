@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { StorageStatus } from '@/lib/api/endpoints/server';
-import { isDiskDevice, partitionOf, replacementPlan } from './replaceDisk';
+import { isDiskDevice, partitionOf, recoveryPlan, replacementPlan } from './replaceDisk';
 
 const part = (kname: string, partlabel: string, mountpoints: string[] = []) => ({
   kname,
@@ -113,13 +113,8 @@ describe('replacing a mirror disk', () => {
     assert.match(plan.commands.esp, /mkfs\.vfat -F 32 -n HELENAEFIB \/dev\/nvme2n1p1/);
     assert.match(plan.commands.esp, /rsync -a --delete \/boot\/efi\/ \/boot\/efi2\//);
     assert.equal(plan.commands.add, 'sudo mdadm --manage /dev/md/helena-root --add /dev/nvme2n1p2');
-    // The orphaned reserve entry goes, the new one stays out of the order until placed after Debian.
-    assert.match(plan.commands.boot, /--bootnum 001A --delete-bootnum/);
-    assert.match(
-      plan.commands.boot,
-      /--create-only --disk \/dev\/nvme2n1 --part 1 --label "Debian \(Reserve\)"/,
-    );
-    assert.match(plan.commands.boot, /--bootorder 000F,<neu>/);
+    // The host helper makes the entry on the new ESP and removes the orphaned one.
+    assert.equal(plan.commands.boot, 'sudo /usr/local/lib/helena/hostd/helena-hostd boot-repair');
   });
 
   it('writes a placeholder until the new device is named, and refuses partitions', () => {
@@ -136,5 +131,37 @@ describe('replacing a mirror disk', () => {
     const broken = storage();
     broken.arrays[0]!.members = [{ device: 'nvme0n1p2', states: ['faulty'], slot: 1 }];
     assert.equal(replacementPlan(broken, 'nvme0n1', '/dev/nvme2n1'), null);
+  });
+});
+
+describe('a disk that is only gone', () => {
+  it('names the partitions by their labels, for the disk that is away', () => {
+    const away = storage();
+    away.disks = away.disks.filter((disk) => disk.letter !== 'A');
+    const plan = recoveryPlan(away, 'nvme0n1');
+    assert.equal(plan.letter, 'A');
+    assert.equal(plan.missing, true);
+    assert.equal(plan.espMount, '/boot/efi');
+    assert.equal(
+      plan.commands.readd,
+      'sudo mdadm --manage /dev/md/helena-root --re-add /dev/disk/by-partlabel/HELENA-RAID-A',
+    );
+    assert.equal(
+      plan.commands.esp,
+      'mountpoint -q /boot/efi || { sudo fsck.vfat -a /dev/disk/by-partlabel/HELENA-EFI-A && sudo mount /boot/efi; }',
+    );
+    assert.equal(
+      plan.commands.smart,
+      'sudo smartctl -a /dev/$(lsblk -dno PKNAME /dev/disk/by-partlabel/HELENA-EFI-A)',
+    );
+    assert.match(plan.commands.bootCheck, /helena-hostd boot-repair --dry-run$/);
+  });
+
+  it('takes the chosen disk when all are on the bus', () => {
+    const plan = recoveryPlan(storage(), 'nvme0n1');
+    assert.equal(plan.letter, 'B');
+    assert.equal(plan.missing, false);
+    assert.equal(plan.espMount, '/boot/efi2');
+    assert.match(plan.commands.readd, /HELENA-RAID-B$/);
   });
 });

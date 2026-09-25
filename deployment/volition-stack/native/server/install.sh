@@ -111,7 +111,7 @@ install)
   run install -m 0644 -o root -g root "$here/hooks/60-helena-nvme.rules" "$UDEV_RULE"
   if command -v udevadm >/dev/null; then
     run udevadm control --reload
-    run udevadm trigger --action=change --subsystem-match=module --sysname-match=nvme_core
+    run udevadm trigger --type=subsystems --action=change --subsystem-match=module --sysname-match=nvme_core
     run udevadm trigger --action=change --subsystem-match=nvme
     run udevadm trigger --action=change --subsystem-match=pci --attr-match=class=0x010802
     run udevadm settle --timeout=15 || true

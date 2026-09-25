@@ -525,7 +525,9 @@ class InstallerTests(unittest.TestCase):
         install, uninstall = script.split('\nuninstall)', 1)
         for piece in ('60-helena-nvme.rules', '99helena-esp-sync', 'helena-esp-sync', 'helena-nvme-pm',
                       'helena-boot-entries.service', 'udevadm control --reload',
-                      '--subsystem-match=pci --attr-match=class=0x010802'):
+                      '--subsystem-match=pci --attr-match=class=0x010802',
+                      # a module is a "subsystem" to udevadm trigger, not a device
+                      '--type=subsystems --action=change --subsystem-match=module --sysname-match=nvme_core'):
             self.assertIn(piece, install)
         self.assertIn('/etc/apt/apt.conf.d/99helena-esp-sync', install)
         for piece in ('$UDEV_RULE', '$APT_HOOK', 'helena-boot-entries.service'):
