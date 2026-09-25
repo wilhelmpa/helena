@@ -22,6 +22,18 @@
   "instructionsPlaceholder": "Review open tasks and update anything that needs attention.",
   "instructionsHintNew": "The description of every task the schedule creates.",
   "instructionsHintReopen": "Added as a comment each time the task is reopened.",
+  "mentionsHint": "Agents you @mention start on the task on every run as well.",
+  "mentionsTitle": "Mentioned agents",
+  "mentionStarts": "starts on every run",
+  "mentionReason": {
+    "not-in-project": "does not work in this project",
+    "agent-author": "saved by an agent: its mentions start nobody",
+    "owner-only": "takes tasks only from its owner",
+    "mentions-off": "does not react to mentions",
+    "paused": "paused"
+  },
+  "mentionsStart": "Also starts {names}",
+  "mentionsRefused": "{count, plural, one {# mention starts nobody} other {# mentions start nobody}}",
   "schedule": "Schedule",
   "showPresets": "Show preset schedules",
   "presetEvery15Minutes": "Every 15 minutes",

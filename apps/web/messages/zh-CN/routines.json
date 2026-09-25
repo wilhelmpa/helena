@@ -22,6 +22,18 @@
   "instructionsPlaceholder": "检查未关闭的工作项并更新需要处理的内容。",
   "instructionsHintNew": "定时任务创建的每个工作项的描述。",
   "instructionsHintReopen": "每次重新打开工作项时作为评论添加。",
+  "mentionsHint": "用 @ 提及的代理也会在每次运行时开始处理该工作项。",
+  "mentionsTitle": "提及的代理",
+  "mentionStarts": "每次运行时启动",
+  "mentionReason": {
+    "not-in-project": "不在此项目中工作",
+    "agent-author": "由代理保存：其提及不会启动任何代理",
+    "owner-only": "只接受其所有者的任务",
+    "mentions-off": "不响应提及",
+    "paused": "已暂停"
+  },
+  "mentionsStart": "同时启动 {names}",
+  "mentionsRefused": "{count, plural, other {# 个提及不会启动任何代理}}",
   "schedule": "运行时间",
   "showPresets": "显示预设时间",
   "presetEvery15Minutes": "每 15 分钟",

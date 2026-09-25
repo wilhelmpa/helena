@@ -46,6 +46,7 @@ export default function MarkdownEditor({
   editable = true,
   uploadFile,
   imageAttachments,
+  ariaLabel,
 }: {
   defaultValue: string;
   onChange?: (markdown: string) => void;
@@ -64,6 +65,8 @@ export default function MarkdownEditor({
   // Offered in a picker, to embed an upload again. Omitted where there is nothing
   // stored to read them from yet (a create dialog), which drops the picker.
   imageAttachments?: Embeddable[];
+  // The name of the text box, where no visible label points at it (a form field).
+  ariaLabel?: string;
 }) {
   const t = useTranslations('common.editor');
   const editorRef = useRef<Editor | null>(null);
@@ -141,6 +144,7 @@ export default function MarkdownEditor({
       attributes: {
         // flex-1 so the typing area covers a container taller than the text.
         class: 'md-content flex-1 focus:outline-none',
+        ...(ariaLabel ? { 'aria-label': ariaLabel, role: 'textbox', 'aria-multiline': 'true' } : {}),
       },
       handleClick(view, _pos, event) {
         return openLinkOnModifierClick(event, view.dom);

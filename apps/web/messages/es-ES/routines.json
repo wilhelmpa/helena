@@ -22,6 +22,18 @@
   "instructionsPlaceholder": "Revisa las tareas abiertas y actualiza todo lo que necesite atención.",
   "instructionsHintNew": "La descripción de cada tarea que crea la programación.",
   "instructionsHintReopen": "Se añade como comentario cada vez que se reabre la tarea.",
+  "mentionsHint": "Los agentes que menciones con @ también empiezan con la tarea en cada ejecución.",
+  "mentionsTitle": "Agentes mencionados",
+  "mentionStarts": "empieza en cada ejecución",
+  "mentionReason": {
+    "not-in-project": "no trabaja en este proyecto",
+    "agent-author": "guardada por un agente: sus menciones no inician a nadie",
+    "owner-only": "solo acepta tareas de su propietario",
+    "mentions-off": "no reacciona a menciones",
+    "paused": "en pausa"
+  },
+  "mentionsStart": "También inicia a {names}",
+  "mentionsRefused": "{count, plural, one {# mención no inicia a nadie} other {# menciones no inician a nadie}}",
   "schedule": "Programación",
   "showPresets": "Mostrar programaciones predefinidas",
   "presetEvery15Minutes": "Cada 15 minutos",

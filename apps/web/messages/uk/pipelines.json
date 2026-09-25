@@ -435,7 +435,13 @@
       "reopened": "Задачу відкрито знову",
       "skipped": "Пропущено",
       "review": "Переміщено в «Перевірку»",
-      "done": "Переміщено в «Готово»"
+      "done": "Переміщено в «Готово»",
+      "mention-started": "Запущено",
+      "mention-not-in-project": "Не працює в цьому проєкті",
+      "mention-agent-author": "Збережено агентом: нікого не запускає",
+      "mention-owner-only": "Приймає задачі лише від свого власника",
+      "mention-mentions-off": "Не реагує на згадки",
+      "mention-paused": "На паузі"
     },
     "agentRunStatus": {
       "pending": "У черзі",
@@ -497,7 +503,8 @@
       "specialize": "Спеціаліст працює: {assignment}",
       "review": "Координатор перевіряє",
       "sync": "Результат у задачу"
-    }
+    },
+    "routineMention": "Згадано в інструкціях"
   },
   "versions": {
     "empty": "Версій немає.",

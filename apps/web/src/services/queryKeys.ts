@@ -190,6 +190,9 @@ export const qk = {
   routinePage: (projectKey: string, params: unknown) =>
     ['routines', 'project', projectKey, params] as const,
   memberRoutinePage: (params: unknown) => ['routines', 'member', params] as const,
+  // The agents a routine's instructions would start, while they are written.
+  routineMentions: (projectKey: string, instructions: string, agentId: number | null) =>
+    ['routines', 'mentions', projectKey, agentId, instructions] as const,
   // Under anyPipelineRuns, which a cancel or retry of a run refreshes.
   routineRuns: (projectKey: string, routineId: string, params: unknown) =>
     ['pipelineRuns', 'routine', projectKey, routineId, params] as const,

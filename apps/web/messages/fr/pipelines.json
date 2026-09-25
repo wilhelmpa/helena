@@ -435,7 +435,13 @@
       "reopened": "Tâche rouverte",
       "skipped": "Ignoré",
       "review": "Passée en Revue",
-      "done": "Passée en Terminé"
+      "done": "Passée en Terminé",
+      "mention-started": "Démarré",
+      "mention-not-in-project": "Ne travaille pas dans ce projet",
+      "mention-agent-author": "Enregistrée par un agent : ne démarre personne",
+      "mention-owner-only": "N’accepte que les tâches de son propriétaire",
+      "mention-mentions-off": "Ne réagit pas aux mentions",
+      "mention-paused": "En pause"
     },
     "agentRunStatus": {
       "pending": "En file",
@@ -497,7 +503,8 @@
       "specialize": "Le spécialiste travaille : {assignment}",
       "review": "Le coordinateur vérifie",
       "sync": "Résultat vers la tâche"
-    }
+    },
+    "routineMention": "Mentionné dans les instructions"
   },
   "versions": {
     "empty": "Aucune version.",

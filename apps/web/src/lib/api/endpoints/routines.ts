@@ -8,6 +8,24 @@ export type RoutineMode = 'new' | 'reopen';
 // missed, 'once' runs the newest missed time once.
 export type RoutineCatchUp = 'skip' | 'once';
 
+// Why a routine's @mention of an agent starts no run of it: the agent works outside the
+// project, an agent saved the routine (an agent's mentions start nobody), the agent takes
+// work from its owner only, does not react to mentions, or is paused.
+export type RoutineMentionReason =
+  | 'not-in-project'
+  | 'agent-author'
+  | 'owner-only'
+  | 'mentions-off'
+  | 'paused';
+
+// An agent the instructions @mention besides the routine's own, which every run starts on
+// the routine's task too — unless `reason` says why not.
+export interface RoutineMention {
+  agent: { id: number; name: string; username: string };
+  starts: boolean;
+  reason: RoutineMentionReason | null;
+}
+
 // A routine: a schedule the Helena engine fires, which creates a task for an agent, or
 // reopens one, on its cron. The API answers it with its project so Home can list several
 // projects.
@@ -19,6 +37,8 @@ export interface Routine {
   agent: { id: number; name: string } | null;
   title: string;
   instructions: string;
+  // For the member the routine acts for.
+  mentions: RoutineMention[];
   mode: RoutineMode;
   // The task a 'reopen' routine reopens.
   task: { id: number; number: number; title: string } | null;
@@ -86,4 +106,14 @@ export const listRoutineRuns = (projectKey: string, routineId: string, params: P
 export const runRoutine = (projectKey: string, routineId: string) =>
   request<{ runId: string }>(`/projects/${projectKey}/routines/${routineId}/run`, {
     method: 'POST',
+  });
+
+// The agents instructions being written would start, for the member writing them.
+export const previewRoutineMentions = (
+  projectKey: string,
+  body: { instructions: string; agentId: number | null },
+) =>
+  request<RoutineMention[]>(`/projects/${projectKey}/routines/mentions`, {
+    method: 'POST',
+    body: JSON.stringify(body),
   });

@@ -435,7 +435,13 @@
       "reopened": "Task reopened",
       "skipped": "Skipped",
       "review": "Moved to Review",
-      "done": "Moved to Done"
+      "done": "Moved to Done",
+      "mention-started": "Started",
+      "mention-not-in-project": "Does not work in this project",
+      "mention-agent-author": "Saved by an agent: starts nobody",
+      "mention-owner-only": "Takes tasks only from its owner",
+      "mention-mentions-off": "Does not react to mentions",
+      "mention-paused": "Paused"
     },
     "agentRunStatus": {
       "pending": "Queued",
@@ -497,7 +503,8 @@
       "specialize": "Specialist works: {assignment}",
       "review": "Coordinator reviews",
       "sync": "Result to the task"
-    }
+    },
+    "routineMention": "Mentioned in the instructions"
   },
   "versions": {
     "empty": "No versions.",

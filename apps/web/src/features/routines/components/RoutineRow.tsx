@@ -11,6 +11,7 @@ import { useCronDescription } from '../hooks/useCronDescription';
 import { formatInZone } from '../utils/schedulePreview';
 import { RoutineActionsMenu, type RoutineActions } from './RoutineActionsMenu';
 import { RoutineLastRun } from './RoutineLastRun';
+import { RoutineMentionsLine } from './RoutineMentions';
 
 // One routine. Without `actions` the row only reads, the way Home lists the routines of
 // every project.
@@ -51,6 +52,7 @@ export function RoutineRow({
           <Bot className="size-3.5 shrink-0" />
           <span className="truncate">{routine.agent?.name ?? t('agentLeft')}</span>
         </p>
+        <RoutineMentionsLine mentions={routine.mentions} />
         <p className="mt-0.5 flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
           {routine.mode === 'reopen' ? (
             <RotateCcw className="size-3.5 shrink-0" />
