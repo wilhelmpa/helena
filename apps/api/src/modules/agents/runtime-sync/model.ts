@@ -70,7 +70,9 @@ export const runtimeAccount = t.Object(
       }),
     ),
     email: t.Nullable(t.String({ maxLength: 255 })),
-    plan: t.Nullable(t.String({ maxLength: 80, description: "The account's plan ('pro', 'max')." })),
+    plan: t.Nullable(
+      t.String({ maxLength: 80, description: "The account's plan ('pro', 'max')." }),
+    ),
     organization: t.Nullable(t.String({ maxLength: 80 })),
     refreshedAt: t.Nullable(
       t.String({

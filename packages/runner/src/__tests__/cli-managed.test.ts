@@ -896,7 +896,8 @@ describe("the runtime's own login (Zugänge)", () => {
 
     await adapter.signOut();
     const logout = requests.find(
-      (entry) => entry.request.runtime === 'codex' && (entry.request.args as string[])[0] === 'logout',
+      (entry) =>
+        entry.request.runtime === 'codex' && (entry.request.args as string[])[0] === 'logout',
     )!;
     expect(logout.request).toMatchObject({
       slug: 'vol',

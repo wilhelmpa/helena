@@ -51,8 +51,6 @@ export function orderedSharedLogins(logins: SharedLogin[]): SharedLogin[] {
     sharedNeedsOwner(login) ? 0 : login.condition === 'renewFailing' ? 1 : login.managed ? 2 : 3;
   return [...logins].sort(
     (a, b) =>
-      rank(a) - rank(b) ||
-      a.provider.localeCompare(b.provider) ||
-      a.store.localeCompare(b.store),
+      rank(a) - rank(b) || a.provider.localeCompare(b.provider) || a.store.localeCompare(b.store),
   );
 }

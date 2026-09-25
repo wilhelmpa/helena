@@ -57,7 +57,13 @@ export function runtimeDirIn(
 
 type Facts = Pick<RuntimeAccount, 'signedIn' | 'method' | 'email' | 'plan' | 'organization'>;
 
-const UNKNOWN: Facts = { signedIn: null, method: null, email: null, plan: null, organization: null };
+const UNKNOWN: Facts = {
+  signedIn: null,
+  method: null,
+  email: null,
+  plan: null,
+  organization: null,
+};
 
 function text(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value.trim() : null;

@@ -139,7 +139,8 @@ async function sharedPlans(): Promise<Map<string, string>> {
     .where(eq(helenaProviderLimit.login, 'hermes'))
     .orderBy(desc(helenaProviderLimit.observedAt));
   const plans = new Map<string, string>();
-  for (const row of rows) if (row.plan && !plans.has(row.provider)) plans.set(row.provider, row.plan);
+  for (const row of rows)
+    if (row.plan && !plans.has(row.provider)) plans.set(row.provider, row.plan);
   return plans;
 }
 
@@ -223,10 +224,14 @@ export async function checkAgentLogin(
     throw new HttpError(409, "The agent's runner cannot read its login yet");
   }
   // The runner reports the new look with the agent's state before it answers.
-  await askRuntime(agentId, { op: 'login.read' }, {
-    userId: viewer.userId,
-    timeoutMs: CHECK_TIMEOUT_MS,
-  });
+  await askRuntime(
+    agentId,
+    { op: 'login.read' },
+    {
+      userId: viewer.userId,
+      timeoutMs: CHECK_TIMEOUT_MS,
+    },
+  );
   return rowOf(teamId, agentId, viewer);
 }
 
@@ -242,10 +247,14 @@ export async function signOutAgentLogin(
   if (!agent.runtimeState.capabilities.includes('logout')) {
     throw new HttpError(409, "The agent's runner cannot sign its runtime out");
   }
-  await askRuntime(agentId, { op: 'login.logout' }, {
-    userId: viewer.userId,
-    timeoutMs: SIGN_OUT_TIMEOUT_MS,
-  });
+  await askRuntime(
+    agentId,
+    { op: 'login.logout' },
+    {
+      userId: viewer.userId,
+      timeoutMs: SIGN_OUT_TIMEOUT_MS,
+    },
+  );
   await db.insert(integrationCredentialUse).values({
     teamId,
     credentialId: null,
@@ -257,4 +266,3 @@ export async function signOutAgentLogin(
   });
   return rowOf(teamId, agentId, viewer);
 }
-

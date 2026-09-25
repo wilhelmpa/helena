@@ -146,9 +146,7 @@ describe('logins in Zugänge', () => {
       canSignOut: true,
     });
     // The client reads a time as a Date.
-    expect(new Date(data!.agents[0]!.refreshedAt!).toISOString()).toBe(
-      '2026-09-25T08:00:00.000Z',
-    );
+    expect(new Date(data!.agents[0]!.refreshedAt!).toISOString()).toBe('2026-09-25T08:00:00.000Z');
     expect(data!.shared).toEqual([]);
     assertNoTokens(data);
 
@@ -295,9 +293,10 @@ describe('logins in Zugänge', () => {
 
     // Not from outside the signed-in interface.
     const plain = authedApi(owner.cookie);
-    const refused = await plain.teams({ teamId }).access.logins.agents({ agentId: codex.id })[
-      'sign-out'
-    ].post();
+    const refused = await plain
+      .teams({ teamId })
+      .access.logins.agents({ agentId: codex.id })
+      ['sign-out'].post();
     expect(refused.status).toBe(403);
 
     const [res] = await Promise.all([

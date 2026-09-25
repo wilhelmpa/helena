@@ -2,12 +2,7 @@ import { t } from 'elysia';
 
 import { runtimeConflict, runtimeInventory, runtimePolicy, runtimeState } from '../core/model';
 import { learnedSkill, runtimeActionResult, runtimeActionSnapshot } from '../learning/model';
-import {
-  profileReport,
-  runtimeAccount,
-  runtimeIssue,
-  runtimeSandbox,
-} from '../runtime-sync/model';
+import { profileReport, runtimeAccount, runtimeIssue, runtimeSandbox } from '../runtime-sync/model';
 
 // A literal, or the id of a secret whose value GET /agent-runtime/mcp-secrets returns.
 const runtimeMcpValue = t.Union([

@@ -150,10 +150,13 @@ describe('login.read in the profile helper', () => {
   it("answers with the account, in the runtime's own directory of the home", async () => {
     const home = await dir();
     const seen: Record<string, string>[] = [];
-    const answer = await answerLoginRead({ runtime: 'claude', home, env: {} }, async (_, __, env) => {
-      seen.push(env);
-      return { code: 0, stdout: JSON.stringify({ loggedIn: false }), missing: false };
-    });
+    const answer = await answerLoginRead(
+      { runtime: 'claude', home, env: {} },
+      async (_, __, env) => {
+        seen.push(env);
+        return { code: 0, stdout: JSON.stringify({ loggedIn: false }), missing: false };
+      },
+    );
     expect(answer.account).toMatchObject({ signedIn: false });
     expect(seen[0]).toMatchObject({
       CLAUDE_CONFIG_DIR: join(home, '.claude'),
