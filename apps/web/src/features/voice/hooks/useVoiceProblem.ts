@@ -56,6 +56,9 @@ export function useVoiceProblem(): (problem: VoiceProblem, detail?: { seconds?: 
         case 'transcribe-failed':
           toast.error(t('transcribeFailed'));
           return;
+        case 'recognition-failed':
+          toast.error(t('recognitionFailed'), { duration: 10_000 });
+          return;
         case 'voice-failed':
           toast.info(t('voiceFailed'));
           return;

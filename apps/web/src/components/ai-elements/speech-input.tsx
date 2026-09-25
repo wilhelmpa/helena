@@ -39,7 +39,8 @@ export interface SpeechRecorder {
 
 export type SpeechInputEngine = 'recognition' | 'recorder' | 'none';
 
-export type SpeechInputError = 'blocked' | 'failed' | 'nothing-heard' | 'limit';
+// `network`: the browser's recognition service did not answer.
+export type SpeechInputError = 'blocked' | 'failed' | 'network' | 'nothing-heard' | 'limit';
 
 export type SpeechInputProps = Omit<
   ComponentProps<typeof InputGroupButton>,
@@ -127,7 +128,9 @@ export function SpeechInput({
       latest.current.onError?.(
         event.error === 'not-allowed' || event.error === 'service-not-allowed'
           ? 'blocked'
-          : 'failed',
+          : event.error === 'network'
+            ? 'network'
+            : 'failed',
       );
     };
     next.onend = () => {

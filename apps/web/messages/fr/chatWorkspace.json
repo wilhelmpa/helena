@@ -250,6 +250,7 @@
       "missing": "Aucun micro trouvé.",
       "failed": "Le micro n'a pas pu démarrer.",
       "transcribeFailed": "La transcription a échoué. Réessayez.",
+      "recognitionFailed": "La reconnaissance vocale du navigateur ne répond pas (Chrome envoie l'enregistrement à Google pour cela). Avec Administrateur → IA locale → « Transcription », Whisper prend note sur cette machine.",
       "voiceFailed": "La voix locale est tombée en panne. La réponse est dans le chat ; là où c'est permis, le navigateur continue la lecture.",
       "nothingHeard": "Rien compris – le micro était-il allumé ?",
       "limit": "Arrêté après {seconds} secondes – la durée maximale d'une dictée.",

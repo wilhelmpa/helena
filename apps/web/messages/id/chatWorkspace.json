@@ -250,6 +250,7 @@
       "missing": "Mikrofon tidak ditemukan.",
       "failed": "Mikrofon tidak dapat dinyalakan.",
       "transcribeFailed": "Transkripsi gagal. Silakan coba lagi.",
+      "recognitionFailed": "Pengenalan suara browser tidak merespons (Chrome mengirim rekaman ke Google untuk itu). Dengan Administrator → AI lokal → “Transkripsi”, Whisper mencatat di mesin ini.",
       "voiceFailed": "Suara lokal gagal. Jawaban ada di chat; bila diizinkan, browser melanjutkan membaca.",
       "nothingHeard": "Tidak ada yang dipahami – apakah mikrofon menyala?",
       "limit": "Dihentikan setelah {seconds} detik – batas terpanjang sebuah dikte.",

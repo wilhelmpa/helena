@@ -250,6 +250,7 @@
       "missing": "Kein Mikrofon gefunden.",
       "failed": "Das Mikrofon konnte nicht gestartet werden.",
       "transcribeFailed": "Die Transkription ist fehlgeschlagen. Versuch es noch einmal.",
+      "recognitionFailed": "Die Spracherkennung des Browsers antwortet nicht (Chrome schickt die Aufnahme dafür an Google). Mit Administrator → Lokale KI → „Transkription“ schreibt Whisper auf diesem Rechner mit.",
       "voiceFailed": "Die lokale Stimme ist ausgefallen. Die Antwort steht im Chat; wo erlaubt, liest der Browser weiter.",
       "nothingHeard": "Nichts verstanden – war das Mikrofon an?",
       "limit": "Nach {seconds} Sekunden beendet – so lang darf ein Diktat höchstens sein.",

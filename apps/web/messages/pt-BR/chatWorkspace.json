@@ -250,6 +250,7 @@
       "missing": "Nenhum microfone encontrado.",
       "failed": "Não foi possível iniciar o microfone.",
       "transcribeFailed": "A transcrição falhou. Tente novamente.",
+      "recognitionFailed": "O reconhecimento de fala do navegador não responde (o Chrome envia a gravação ao Google para isso). Com Administrador → IA local → “Transcrição”, o Whisper anota nesta máquina.",
       "voiceFailed": "A voz local falhou. A resposta está no chat; onde permitido, o navegador continua lendo.",
       "nothingHeard": "Nada entendido – o microfone estava ligado?",
       "limit": "Encerrado após {seconds} segundos – a duração máxima de um ditado.",

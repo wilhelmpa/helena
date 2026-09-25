@@ -29,6 +29,7 @@ export type ConversationProblem =
   | 'missing'
   | 'failed'
   | 'transcribe-failed'
+  | 'recognition-failed'
   | 'voice-failed';
 
 // The parts of a chat message the conversation reads.
@@ -219,7 +220,7 @@ export class ConversationController {
       onLevel: (level) => this.deps.onLevel(level),
       onError: (reason) => {
         if (generation !== this.generation) return;
-        this.deps.onProblem(reason);
+        this.deps.onProblem(reason === 'network' ? 'recognition-failed' : reason);
         this.stop();
       },
     };

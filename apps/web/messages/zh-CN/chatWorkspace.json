@@ -250,6 +250,7 @@
       "missing": "未找到麦克风。",
       "failed": "无法启动麦克风。",
       "transcribeFailed": "转写失败，请重试。",
+      "recognitionFailed": "浏览器的语音识别没有响应（Chrome 会为此把录音发送给 Google）。在 管理员 → 本地 AI → “转写”中开启后，由本机上的 Whisper 记录。",
       "voiceFailed": "本地语音出现故障。回答已在聊天中；在允许的情况下，浏览器会继续朗读。",
       "nothingHeard": "没有听清——麦克风打开了吗？",
       "limit": "{seconds} 秒后已停止——这是听写的最长时长。",

@@ -67,6 +67,7 @@ export function useDictation(): {
       if (error === 'limit') return problem('limit', { seconds: maxSeconds });
       if (error === 'nothing-heard') return problem('nothing-heard');
       if (error === 'blocked') return problem('blocked');
+      if (error === 'network') return problem('recognition-failed');
       if (cause instanceof ApiError) return problem('transcribe-failed');
       if (cause instanceof MicrophoneError) return problem(cause.reason);
       problem('failed');

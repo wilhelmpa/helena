@@ -62,7 +62,7 @@ export function startRecognitionEar(events: EarEvents): ConversationEar {
         events.onError?.('missing');
       } else if (event.error === 'network') {
         active = false;
-        events.onError?.('failed');
+        events.onError?.('network');
       }
     };
     // Recognition ends on its own after a silence or a minute; while the conversation runs it

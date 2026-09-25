@@ -250,6 +250,7 @@
       "missing": "No microphone found.",
       "failed": "The microphone could not be started.",
       "transcribeFailed": "Transcription failed. Please try again.",
+      "recognitionFailed": "The browser's speech recognition does not answer (Chrome sends the recording to Google for it). With Administrator → Local AI → “Transcription”, Whisper on this machine writes along.",
       "voiceFailed": "The local voice failed. The answer is in the chat; where allowed, the browser reads on.",
       "nothingHeard": "Nothing understood – was the microphone on?",
       "limit": "Stopped after {seconds} seconds – the longest a dictation can be.",

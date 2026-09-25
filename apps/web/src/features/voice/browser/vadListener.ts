@@ -23,7 +23,8 @@ export interface EarEvents {
   onUtterance(samples: Float32Array | null, text: string | null): void;
   // The input level (0…1), a few dozen times a second, for the meter.
   onLevel?(level: number): void;
-  onError?(reason: 'blocked' | 'missing' | 'failed'): void;
+  // `network`: the browser's recognition service (Google's for Chrome) did not answer.
+  onError?(reason: 'blocked' | 'missing' | 'failed' | 'network'): void;
 }
 
 // How the detector decides (vad-web's FrameProcessor, frames of 32 ms). A pause of 0.8 s ends
