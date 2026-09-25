@@ -6,7 +6,6 @@ import {
   mailAccount,
   connectorAction,
   integrationCredential,
-  organizationAgentAssignment,
 } from '@repo/db';
 import { eq } from 'drizzle-orm';
 import {
@@ -22,6 +21,10 @@ import { processConnectorActions } from '../../tools';
 import { setGogBrokerForTests } from '../../google/engine';
 import { replaceDefaultPolicy } from '../../policy';
 import { cloneTarget } from '../../clone';
+import {
+  bootstrapHomeAgent,
+  bootstrapProjectCoordinator,
+} from '../../../../scripts/bootstrap-home-agent';
 
 // The access center's connectors: a Google account signed in through a fake Google, its
 // grants to agents and projects (read vs write, per service), the policy and the owner's
@@ -590,9 +593,13 @@ describe('SSH keys', () => {
     const { asOwner, teamId, mkt } = await setup();
     // The Home agent works in every project and has the lowest id; runs 90/91 on 2026-09-25
     // went to it and landed in Home's workspace.
-    const home = await externalAgent(asOwner, 'master');
+    const home = await bootstrapHomeAgent();
+    if (home.status !== 'ready') throw new Error('Home agent was not provisioned');
+    const homeProjects = (await asOwner.teams({ teamId })['ai-agents'].get()).data!.find(
+      (agent) => agent.id === home.agentId,
+    )!.projects;
+    expect(homeProjects.map((project) => project.key)).toContain('MKT');
     const writer = await externalAgent(asOwner, 'writer');
-    const lead = await externalAgent(asOwner, 'lead');
     const key = (
       await asOwner.teams({ teamId }).credentials.post({ kind: 'ssh_key', label: 'Deploy' })
     ).data!;
@@ -608,13 +615,9 @@ describe('SSH keys', () => {
 
     // Without a coordinator: an agent of this one project, not the Home agent.
     expect((await clone()).data).toMatchObject({ agentId: writer.id });
-    await db.insert(organizationAgentAssignment).values({
-      teamId,
-      agentId: lead.id,
-      role: 'coordinator',
-    });
+    const lead = await bootstrapProjectCoordinator(mkt.id);
     const started = (await clone()).data!;
-    expect(started).toMatchObject({ agentId: lead.id, name: 'homepage' });
+    expect(started).toMatchObject({ agentId: lead!.agent.id, name: 'homepage' });
     const [run] = await db.select().from(agentRun).where(eq(agentRun.id, started.runId));
     const workspace = path.join(
       path.resolve(process.env.PROJECT_WORKSPACE_ROOT?.trim() || '/srv/volition/workspaces/projects'),
@@ -630,7 +633,7 @@ describe('SSH keys', () => {
       workspace,
     });
     // The owner may still name the agent.
-    expect((await clone(home.id)).data).toMatchObject({ agentId: home.id });
+    expect((await clone(home.agentId)).data).toMatchObject({ agentId: home.agentId });
   });
 
   it('checks the repository address of a clone', () => {
