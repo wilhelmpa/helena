@@ -4,6 +4,7 @@
   "spool": "/var/lib/volition/hermes/run/helena-update",
   "remote": "origin",
   "branch": "main",
+  "track": "releases",
   "localBranch": "volition/main",
   "install": ["/usr/local/bin/uv", "pip", "install", "--quiet", "--python", "{venv}/bin/python", "-e", "{source}"],
   "smoke": ["{venv}/bin/hermes", "--version"]

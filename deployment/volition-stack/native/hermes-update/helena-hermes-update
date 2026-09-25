@@ -53,6 +53,9 @@ def load_config(path: Path) -> dict:
     config.setdefault("remote", "origin")
     config.setdefault("branch", "main")
     config.setdefault("localBranch", None)
+    config.setdefault("track", "releases")
+    if config["track"] not in ("releases", "branch"):
+        raise UpdateError("config: track must be releases or branch")
     config.setdefault("rollbackDir", "/var/lib/helena/hermes-update")
     config.setdefault(
         "install", ["{venv}/bin/python", "-m", "pip", "install", "--quiet", "-e", "{source}"]
@@ -194,6 +197,22 @@ def upstream(config: dict) -> str:
     return f"{config['remote']}/{config['branch']}"
 
 
+RELEASE_TAG = re.compile(r"^v?\d+(\.\d+){1,3}$")
+
+
+# What "the newest version" is. Hermes' main moves by hundreds of commits a day, so by default
+# (`"track": "releases"`) it is the newest release tag on the upstream branch; `"track": "branch"`
+# follows the branch head as before. Without any release tag the branch head is used.
+def latest_ref(runner: Runner, config: dict) -> str:
+    if config.get("track", "releases") == "branch":
+        return upstream(config)
+    tags = git(runner, config, "tag", "--merged", upstream(config), "--sort=-v:refname", check=False)
+    for tag in tags.splitlines():
+        if RELEASE_TAG.fullmatch(tag.strip()):
+            return tag.strip()
+    return upstream(config)
+
+
 def log_lines(runner: Runner, config: dict, spec: str, limit: int = 200) -> list[dict]:
     out = git(runner, config, "log", "--no-merges", f"--max-count={limit}",
               "--format=%H%x09%cs%x09%s", spec, check=False)
@@ -207,12 +226,14 @@ def log_lines(runner: Runner, config: dict, spec: str, limit: int = 200) -> list
 
 def check(config: dict, runner: Runner) -> dict:
     git(runner, config, "fetch", "--tags", "--prune", config["remote"])
-    base = git(runner, config, "merge-base", "HEAD", upstream(config)).splitlines()[-1]
+    latest = latest_ref(runner, config)
+    base = git(runner, config, "merge-base", "HEAD", latest).splitlines()[-1]
     return {
         "current": describe(runner, config, "HEAD"),
-        "latest": describe(runner, config, upstream(config)),
-        # What updating to the newest version brings, newest first.
-        "commits": log_lines(runner, config, f"{base}..{upstream(config)}"),
+        "latest": describe(runner, config, latest),
+        # What updating to the newest version brings, newest first. Empty when the checkout
+        # already contains it (also when it runs ahead of the newest release).
+        "commits": log_lines(runner, config, f"{base}..{latest}"),
         # The commits carried on top of upstream, which an update carries over.
         "localPatches": log_lines(runner, config, f"{upstream(config)}..HEAD", 50),
     }
@@ -221,7 +242,7 @@ def check(config: dict, runner: Runner) -> dict:
 def resolve_target(runner: Runner, config: dict, target: str) -> str:
     if not TARGET.fullmatch(target):
         raise UpdateError("the target is not a commit, a version tag or latest")
-    ref = upstream(config) if target == "latest" else target
+    ref = latest_ref(runner, config) if target == "latest" else target
     commit = git(runner, config, "rev-parse", "--verify", f"{ref}^{{commit}}", check=False).splitlines()
     if not commit or not re.fullmatch(r"[0-9a-f]{40}", commit[-1]):
         raise UpdateError(f"{target} is not known upstream")

@@ -88,6 +88,24 @@ class HelperTest(unittest.TestCase):
         self.assertEqual([c["subject"] for c in result["localPatches"]],
                          ["feat(stream-json): local patch"])
 
+    def test_latest_is_the_newest_release_not_the_branch_head(self):
+        commit(self.upstream, "app.py", "print('b')\n", "feat: unreleased work on main")
+        answer = helper.run(self.config_with(), "check", None)
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual(answer["result"]["latest"]["describe"], "v2026.9.28")
+        self.assertNotIn("feat: unreleased work on main",
+                         [c["subject"] for c in answer["result"]["commits"]])
+        branch = helper.run(self.config_with(track="branch"), "check", None)
+        self.assertEqual(branch["result"]["commits"][0]["subject"], "feat: unreleased work on main")
+
+    def test_a_checkout_ahead_of_the_newest_release_is_offered_nothing(self):
+        sh("git", "fetch", "-q", "--tags", "origin", cwd=self.source)
+        sh("git", "reset", "-q", "--hard", "origin/main", cwd=self.source)
+        commit(self.upstream, "app.py", "print('c')\n", "feat: after the checkout, no release yet")
+        answer = helper.run(self.config_with(), "check", None)
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual(answer["result"]["commits"], [])
+
     def test_apply_carries_the_local_commit_and_reinstalls(self):
         answer = helper.run(self.config_with(), "apply", "latest")
         self.assertTrue(answer["ok"], answer)
@@ -152,7 +170,7 @@ class HelperTest(unittest.TestCase):
     def test_a_local_commit_that_no_longer_applies_puts_everything_back(self):
         commit(self.upstream, "local.py", "patch = 2\n", "upstream takes the same file")
         before = self.head()
-        answer = helper.run(self.config_with(), "apply", "latest")
+        answer = helper.run(self.config_with(track="branch"), "apply", "latest")
         self.assertFalse(answer["ok"])
         self.assertIn("does not apply", answer["error"])
         self.assertEqual(self.head(), before)
