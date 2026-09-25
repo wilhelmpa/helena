@@ -590,11 +590,14 @@ describe('SSH keys', () => {
   });
 
   it("sends a clone to the project's own agent and names the project's workspace", async () => {
-    const { asOwner, teamId, mkt } = await setup();
     // The Home agent works in every project and has the lowest id; runs 90/91 on 2026-09-25
     // went to it and landed in Home's workspace.
+    const owner = await signUpTestUser({ name: 'Owner' });
+    const asOwner = authedApi(owner.cookie);
     const home = await bootstrapHomeAgent();
     if (home.status !== 'ready') throw new Error('Home agent was not provisioned');
+    const mkt = (await asOwner.projects.post({ key: 'MKT', name: 'Marketing' })).data!;
+    const teamId = mkt.teamId;
     const homeProjects = (await asOwner.teams({ teamId })['ai-agents'].get()).data!.find(
       (agent) => agent.id === home.agentId,
     )!.projects;
