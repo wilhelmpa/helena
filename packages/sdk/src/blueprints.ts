@@ -160,11 +160,13 @@ export function isBlueprintFilePath(path: string): boolean {
 function checkFiles(where: string, files: BlueprintFile[], problems: string[]): void {
   const seen = new Set<string>();
   for (const file of files) {
-    if (!isBlueprintFilePath(file.path)) problems.push(`${where} ${file.path}: not a plain .md path`);
+    if (!isBlueprintFilePath(file.path))
+      problems.push(`${where} ${file.path}: not a plain .md path`);
     if (seen.has(file.path.toLowerCase())) problems.push(`${where} ${file.path}: listed twice`);
     seen.add(file.path.toLowerCase());
     if (!file.content.trim()) problems.push(`${where} ${file.path}: empty`);
-    if (file.content.length > BLUEPRINT_LIMITS.file) problems.push(`${where} ${file.path}: too large`);
+    if (file.content.length > BLUEPRINT_LIMITS.file)
+      problems.push(`${where} ${file.path}: too large`);
   }
 }
 
@@ -236,7 +238,8 @@ export function validateBlueprint(blueprint: ProjectBlueprint): string[] {
     if (boards.has(board.name)) problems.push(`board ${board.name}: listed twice`);
     boards.add(board.name);
     const ids = new Set(board.stickers.map((sticker) => sticker.id));
-    if (ids.size !== board.stickers.length) problems.push(`board ${board.name}: sticker ids repeat`);
+    if (ids.size !== board.stickers.length)
+      problems.push(`board ${board.name}: sticker ids repeat`);
     for (const edge of board.edges) {
       if (!ids.has(edge.from) || !ids.has(edge.to))
         problems.push(`board ${board.name}: an arrow ${edge.from} → ${edge.to} has no sticker`);
@@ -264,7 +267,10 @@ export function validateBlueprint(blueprint: ProjectBlueprint): string[] {
     routines.add(routine.key);
     if (!routine.title?.trim() || routine.title.length > BLUEPRINT_LIMITS.routineTitle)
       problems.push(`${where}: title`);
-    if (!routine.instructions?.trim() || routine.instructions.length > BLUEPRINT_LIMITS.routineInstructions)
+    if (
+      !routine.instructions?.trim() ||
+      routine.instructions.length > BLUEPRINT_LIMITS.routineInstructions
+    )
       problems.push(`${where}: instructions`);
     if (!CRON.test(routine.cron.trim())) problems.push(`${where}: cron is not five fields`);
     if (!routine.timezone?.trim()) problems.push(`${where}: no time zone`);

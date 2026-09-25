@@ -99,7 +99,9 @@ export async function applyBlueprintPlan(ctx: ApplyContext, plan: BlueprintPlan)
         stale();
         break;
       case 'projectDepartment':
-        await setProjectAssignment(teamId, await projectId(), { departmentId: change.departmentId });
+        await setProjectAssignment(teamId, await projectId(), {
+          departmentId: change.departmentId,
+        });
         break;
       case 'projectInstructions':
         await setProjectAssignment(teamId, await projectId(), { instructions: change.to });
@@ -193,7 +195,9 @@ export async function applyBlueprintPlan(ctx: ApplyContext, plan: BlueprintPlan)
       case 'board': {
         const id = await projectId();
         const stickers = toStickers(change);
-        const file = await createBoardFile(key, change.name, stickers, { ref: `user:${ownerUserId}` });
+        const file = await createBoardFile(key, change.name, stickers, {
+          ref: `user:${ownerUserId}`,
+        });
         await createNoteBoard({
           projectId: id,
           ownerUserId: null,

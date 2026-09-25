@@ -46,9 +46,14 @@ describe('the trading blueprint', () => {
       for (const binding of agent.tools ?? []) {
         expect(binding.connector).toBe('alpaca_paper');
         const all = binding.names === undefined;
-        const writes = all ? WRITE_TOOLS : binding.names!.filter((name) => WRITE_TOOLS.includes(name));
+        const writes = all
+          ? WRITE_TOOLS
+          : binding.names!.filter((name) => WRITE_TOOLS.includes(name));
         if (agent.template === 'paper-trader') continue;
-        expect({ template: agent.template, writes }).toEqual({ template: agent.template, writes: [] });
+        expect({ template: agent.template, writes }).toEqual({
+          template: agent.template,
+          writes: [],
+        });
       }
     }
     const trader = blueprint.agents.find((agent) => agent.template === 'paper-trader')!;
@@ -61,7 +66,8 @@ describe('the trading blueprint', () => {
 
   it('denies every live trading host and no paper host', () => {
     const deny = new Set(blueprint.network?.deny ?? []);
-    for (const host of LIVE_TRADING_HOSTS) expect({ host, denied: deny.has(host) }).toEqual({ host, denied: true });
+    for (const host of LIVE_TRADING_HOSTS)
+      expect({ host, denied: deny.has(host) }).toEqual({ host, denied: true });
     for (const host of PAPER_HOSTS) expect(deny.has(host)).toBe(false);
   });
 
@@ -75,8 +81,12 @@ describe('the trading blueprint', () => {
 
   it('has goals the owner asked for', () => {
     const titles = blueprint.goals.map((goal) => goal.title);
-    expect(titles).toContain('Strategie-Labor: erste Strategie durch Backtest und 4 Wochen Paper-Trading');
-    expect(titles).toContain('Trading-Regelwerk schriftlich festlegen (Risiko pro Trade, Tagesverlustgrenze)');
+    expect(titles).toContain(
+      'Strategie-Labor: erste Strategie durch Backtest und 4 Wochen Paper-Trading',
+    );
+    expect(titles).toContain(
+      'Trading-Regelwerk schriftlich festlegen (Risiko pro Trade, Tagesverlustgrenze)',
+    );
   });
 });
 
@@ -96,12 +106,18 @@ describe('its knowledge', () => {
       ...blueprint.boards.flatMap((board) =>
         board.stickers.map((sticker) => [`board ${sticker.id}`, sticker.body] as const),
       ),
-      ...blueprint.routines.map((routine) => [`routine ${routine.key}`, routine.instructions] as const),
+      ...blueprint.routines.map(
+        (routine) => [`routine ${routine.key}`, routine.instructions] as const,
+      ),
     ];
     for (const [where, text] of sources) {
       for (const target of links(text)) {
         if (placeholder(target)) continue;
-        expect({ where, target, exists: notes.has(target) }).toEqual({ where, target, exists: true });
+        expect({ where, target, exists: notes.has(target) }).toEqual({
+          where,
+          target,
+          exists: true,
+        });
       }
     }
   });
@@ -137,7 +153,10 @@ describe('its knowledge', () => {
 
   it('gives every note and template front matter with a type', () => {
     for (const file of [...blueprint.knowledge.project, ...blueprint.knowledge.templates]) {
-      expect({ path: file.path, typed: /^---\n(?:.*\n)*?typ: .+\n(?:.*\n)*?---\n/.test(file.content) }).toEqual({
+      expect({
+        path: file.path,
+        typed: /^---\n(?:.*\n)*?typ: .+\n(?:.*\n)*?---\n/.test(file.content),
+      }).toEqual({
         path: file.path,
         typed: true,
       });

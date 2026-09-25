@@ -174,7 +174,9 @@ describe('a first run', () => {
     // Every copy and the coordinator get their assignment and the department.
     expect(count.assignment).toBe(TRADING.agents.length + 1);
     expect(count.department).toBe(TRADING.agents.length + 1);
-    expect(count.projectBrowser).toBe(TRADING.agents.filter((entry) => entry.projectBrowser).length);
+    expect(count.projectBrowser).toBe(
+      TRADING.agents.filter((entry) => entry.projectBrowser).length,
+    );
     expect(count.network).toBe(1);
     expect(count.file).toBe(TRADING.knowledge.project.length + TRADING.knowledge.templates.length);
     expect(count.board).toBe(TRADING.boards.length);
@@ -206,7 +208,9 @@ describe('a first run', () => {
     const paths = plan.changes.flatMap((change) => (change.kind === 'file' ? [change.path] : []));
     expect(paths).toContain('Projects/TRADE/Docs/Regelwerk.md');
     expect(paths).toContain('Templates/Trading/Trade.md');
-    expect(paths.every((path) => path.startsWith('Projects/TRADE/') || path.startsWith('Templates/'))).toBe(true);
+    expect(
+      paths.every((path) => path.startsWith('Projects/TRADE/') || path.startsWith('Templates/')),
+    ).toBe(true);
   });
 
   it('proposes every routine with a stable idempotency key', () => {
@@ -226,9 +230,9 @@ describe('a first run', () => {
   it('reads as lines', () => {
     const lines = formatPlan(plan);
     expect(lines[0]).toBe('[PROJECT] create TRADE "Trading"');
-    expect(lines.some((line) => line.startsWith('[ROUTINE]') && line.endsWith('switched off'))).toBe(
-      true,
-    );
+    expect(
+      lines.some((line) => line.startsWith('[ROUTINE]') && line.endsWith('switched off')),
+    ).toBe(true);
   });
 });
 
@@ -241,7 +245,11 @@ describe('a second run', () => {
     expect(plan.skipped.map((entry) => entry.what)).toEqual(
       TRADING.agents
         .filter((entry) => entry.tools?.length)
-        .flatMap((entry) => entry.tools!.map(() => `alpaca_paper tools of @${blueprintCopyHandle(entry.template, KEY)}`)),
+        .flatMap((entry) =>
+          entry.tools!.map(
+            () => `alpaca_paper tools of @${blueprintCopyHandle(entry.template, KEY)}`,
+          ),
+        ),
     );
   });
 });
@@ -292,14 +300,20 @@ describe('what it leaves to the owner', () => {
     const plan = planBlueprint(TRADING, state, ['agents']);
     expect(plan.blockers).toHaveLength(1);
     expect(plan.blockers[0]).toContain('@paper-trader');
-    expect(plan.changes.some((change) => change.kind === 'copy' && change.handle === 'paper-trader-trade')).toBe(false);
+    expect(
+      plan.changes.some(
+        (change) => change.kind === 'copy' && change.handle === 'paper-trader-trade',
+      ),
+    ).toBe(false);
   });
 
   it('reports memory approval switched off', () => {
     const state = appliedState();
     state.agents.find((entry) => entry.username === 'risk-journal-trade')!.memoryApproval = false;
     const plan = planBlueprint(TRADING, state, ['agents']);
-    expect(plan.skipped.map((entry) => entry.what)).toEqual(['memory approval of @risk-journal-trade']);
+    expect(plan.skipped.map((entry) => entry.what)).toEqual([
+      'memory approval of @risk-journal-trade',
+    ]);
   });
 
   it('reports a missing department instead of creating it', () => {
@@ -319,7 +333,9 @@ describe('tool bindings', () => {
     state.credentials = [{ id: 44, kind: 'alpaca_paper', label: 'Alpaca Paper' }];
     const plan = planBlueprint(TRADING, state, ['tools']);
     const byHandle = Object.fromEntries(
-      plan.changes.flatMap((change) => (change.kind === 'tools' ? [[change.handle, change.toolKeys]] : [])),
+      plan.changes.flatMap((change) =>
+        change.kind === 'tools' ? [[change.handle, change.toolKeys]] : [],
+      ),
     );
     expect(byHandle['paper-trader-trade']).toEqual(PAPER_TOOLS);
     for (const [handle, tools] of Object.entries(byHandle)) {
@@ -342,7 +358,9 @@ describe('tool bindings', () => {
     ];
     const plan = planBlueprint(TRADING, state, ['tools']);
     expect(plan.changes).toEqual([]);
-    expect(plan.skipped.every((entry) => entry.why.includes('2 alpaca_paper credentials'))).toBe(true);
+    expect(plan.skipped.every((entry) => entry.why.includes('2 alpaca_paper credentials'))).toBe(
+      true,
+    );
   });
 
   it('bind only what is missing', () => {

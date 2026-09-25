@@ -276,7 +276,8 @@ export function planBlueprint(
       }
     }
     addSkills(plan, state, coordinator, current?.skills ?? [], wanted?.skills ?? []);
-    if (wanted?.assignment) assign(plan, coordinator, current?.assignment ?? null, wanted.assignment, !current);
+    if (wanted?.assignment)
+      assign(plan, coordinator, current?.assignment ?? null, wanted.assignment, !current);
     if (department) setDepartment(plan, coordinator, current, department);
 
     for (const agent of blueprint.agents) {

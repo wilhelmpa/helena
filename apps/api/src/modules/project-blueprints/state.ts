@@ -29,12 +29,7 @@ import { BROWSER_GATEWAY_MCP_SERVER_NAME } from '#modules/agents/mcp-servers/ser
 import { getAgentNetwork } from '#modules/agent-egress/service';
 import { listViewFolders } from '#modules/views/service';
 import { hermesProjectCoordinatorInstructions } from '#modules/projects/service';
-import {
-  projectFilePath,
-  templateFilePath,
-  type BlueprintState,
-  type StateAgent,
-} from './plan';
+import { projectFilePath, templateFilePath, type BlueprintState, type StateAgent } from './plan';
 
 // What a project blueprint is planned against: the team's rows, read only.
 
@@ -194,7 +189,11 @@ export async function loadBlueprintState(
             ),
           ),
     db
-      .select({ id: agentTool.id, toolKey: agentTool.toolKey, credentialId: agentTool.credentialId })
+      .select({
+        id: agentTool.id,
+        toolKey: agentTool.toolKey,
+        credentialId: agentTool.credentialId,
+      })
       .from(agentTool)
       .where(eq(agentTool.teamId, teamId)),
     projectId === null
