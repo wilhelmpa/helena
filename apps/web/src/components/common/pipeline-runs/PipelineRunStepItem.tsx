@@ -12,16 +12,18 @@ import ModelFailureNote from '@/features/model-availability/components/ModelFail
 import { knownFailure } from '@/features/model-availability/utils/modelFailure';
 import PipelineRunStepSummary from './PipelineRunStepSummary';
 
-// The name of a step the engine built itself (an agent team and its stages), to show in
-// the reader's language; null for a step a person named, which keeps its name.
+// The name of a step the engine built itself (an agent team and its stages, an agent a
+// routine's instructions mention), to show in the reader's language; null for a step a
+// person named, which keeps its name.
 function builtName(step: PipelineRunStep): {
-  key: 'agentTeam' | 'coordinate' | 'specialize' | 'review' | 'sync';
+  key: 'agentTeam' | 'coordinate' | 'specialize' | 'review' | 'sync' | 'mention';
   assignment?: string;
 } | null {
   if (step.kind === 'agent_team') return { key: 'agentTeam' };
   if (!step.parentStepId) return null;
   const part = step.stepId.slice(step.parentStepId.length + 1);
   if (part === 'coordinate' || part === 'review' || part === 'sync') return { key: part };
+  if (step.kind === 'delegate' && /^m\d+$/.test(part)) return { key: 'mention' };
   if (/^s\d+$/.test(part))
     return { key: 'specialize', assignment: step.name.split(': ').slice(1).join(': ') };
   return null;
@@ -54,9 +56,13 @@ export default function PipelineRunStepItem({
     ? step.name
     : built.key === 'agentTeam'
       ? t('kinds.agent_team')
-      : built.key === 'specialize'
-        ? t('teamStages.specialize', { assignment: built.assignment ?? '' })
-        : t(`teamStages.${built.key}`);
+      : built.key === 'mention'
+        ? t('routineMention')
+        : built.key === 'specialize'
+          ? t('teamStages.specialize', { assignment: built.assignment ?? '' })
+          : t(`teamStages.${built.key}`);
+  // A mentioned agent the routine started shows the state of its run, not of the part.
+  const showStatus = !(built?.key === 'mention' && step.status === 'succeeded');
 
   return (
     <li className="flex gap-2 text-xs">
@@ -71,11 +77,21 @@ export default function PipelineRunStepItem({
               {t('iteration', { iteration: step.iteration })}
             </span>
           )}
-          <Badge variant={step.status === 'failed' ? 'destructive' : 'outline'}>
-            {known('stepStatus', step.status)}
-          </Badge>
+          {showStatus && (
+            <Badge variant={step.status === 'failed' ? 'destructive' : 'outline'}>
+              {known('stepStatus', step.status)}
+            </Badge>
+          )}
           {step.outcome && (
-            <span className="text-muted-foreground">{known('outcomes', step.outcome)}</span>
+            <span
+              className={
+                built?.key === 'mention' && step.status === 'skipped'
+                  ? 'text-destructive'
+                  : 'text-muted-foreground'
+              }
+            >
+              {known('outcomes', step.outcome)}
+            </span>
           )}
           {step.attempt > 1 && (
             <span className="text-muted-foreground">{t('attempt', { attempt: step.attempt })}</span>

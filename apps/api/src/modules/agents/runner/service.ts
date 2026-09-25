@@ -53,6 +53,7 @@ import {
 } from '../core/prompt/framing';
 import { chooseModelNow, classModelNow, type LocalFallback } from '#modules/local-ai/service';
 import { WORK_CLASS } from '#modules/local-ai/work-classes';
+import { routinePromptContext } from '#modules/routines/agent-runs';
 
 // The queue an agent's runner drains. The runner is a process the operator starts on
 // their own machine; it authenticates with the agent's API key, claims one run at a
@@ -415,11 +416,15 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
   const autopilot = await resolveLevel(agent.id, next.projectId);
   await noteRunLevel(row.id, autopilot.level);
   const threadContext = await loadThreadContext(row.sourceActivityId);
+  // The routine whose work the run is, when it is one: its framing keeps the run quiet and
+  // names the agents the fire started beside it (docs/helena-decisions/routine-mentions.md).
+  const routine = await routinePromptContext(row);
   const forPrompt = {
     ...row,
     agentUserId: agent.userId,
     agentUsername: agent.username,
     threadContext,
+    routine,
   };
   await recordAgentRunStarted({ ...forPrompt, agentId: agent.id, autopilotLevel: autopilot.level });
   // A digest run is text only: its prompt is the whole task and its system prompt says the

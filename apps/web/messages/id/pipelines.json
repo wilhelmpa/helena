@@ -435,7 +435,13 @@
       "reopened": "Tugas dibuka kembali",
       "skipped": "Dilewati",
       "review": "Dipindahkan ke Tinjauan",
-      "done": "Dipindahkan ke Selesai"
+      "done": "Dipindahkan ke Selesai",
+      "mention-started": "Dimulai",
+      "mention-not-in-project": "Tidak bekerja di proyek ini",
+      "mention-agent-author": "Disimpan oleh agen: tidak memulai siapa pun",
+      "mention-owner-only": "Hanya menerima tugas dari pemiliknya",
+      "mention-mentions-off": "Tidak merespons sebutan",
+      "mention-paused": "Dijeda"
     },
     "agentRunStatus": {
       "pending": "Dalam antrean",
@@ -497,7 +503,8 @@
       "specialize": "Spesialis bekerja: {assignment}",
       "review": "Koordinator meninjau",
       "sync": "Hasil ke tugas"
-    }
+    },
+    "routineMention": "Disebut dalam instruksi"
   },
   "versions": {
     "empty": "Tidak ada versi.",

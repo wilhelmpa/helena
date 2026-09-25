@@ -14,6 +14,7 @@ import {
   type WorkflowStepType,
 } from '../../sdk';
 import { engineWaitSeconds } from '../../dbos';
+import { routineMentionedOnTask } from '#modules/routines/agent-runs';
 import { WORK_CLASS } from '#modules/local-ai/work-classes';
 import { findState } from '@helena/locales/defaults';
 import {
@@ -179,13 +180,18 @@ async function queueStage(
   const agent = await resolveAgent(projectId, state.input.agent.agentRef);
   if (!agent) throw new StepFailure(`${state.input.agent.agentRef} does not work in this project`);
   const context = await loadRun(runId);
+  // The agents a routine's fire started on the task by a mention do their parts already.
+  const startedByRoutine =
+    state.phase === 'coordinate' && context.task
+      ? await routineMentionedOnTask(context.task.id)
+      : [];
   let agentRunId: number;
   try {
     agentRunId = await queueStepRun({
       agentId: agent.id,
       projectId,
       issueId: context.task?.id ?? null,
-      prompt: stagePrompt(state.input, `project:${context.project.key}`),
+      prompt: stagePrompt(state.input, `project:${context.project.key}`, startedByRoutine),
       maxTurns: team.policy.maxTurns ?? null,
       runBudgetSeconds: team.policy.runBudgetSeconds ?? null,
       expect: { model: team.execution.model, reasoning: team.execution.reasoning },

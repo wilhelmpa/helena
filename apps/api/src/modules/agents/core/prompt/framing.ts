@@ -1,6 +1,7 @@
 import { peoplePreamble, type Person } from './run-context';
 import { parseMentionHandles } from '#shared/mentions';
 import { PROJECT_DESCRIPTION_LIMIT } from '#modules/projects/model';
+import type { RoutinePromptContext } from '#modules/routines/agent-runs';
 import type { AgentRunTrigger } from '../../model';
 
 // Frames a triggered run into the text an agent receives: the framed user
@@ -33,6 +34,9 @@ export interface RunForPrompt {
   threadContext: string | null;
   // The comment that mentioned the agent, so it can answer in the same thread.
   sourceActivityId: number | null;
+  // The routine whose work the run is, when it is one: the delegation of a routine's task,
+  // or the run of an agent the routine's instructions mention. Absent or null otherwise.
+  routine?: RoutinePromptContext | null;
 }
 
 // System-instruction block describing how this run was started, so the agent knows
@@ -78,7 +82,91 @@ function areaLine(run: RunForPrompt): string[] {
   return run.issueArea ? [`Area: ${run.issueArea} (folder ${run.issueAreaFolder})`] : [];
 }
 
+// A routine's work is read in its task, not announced (docs/helena-decisions/
+// routine-mentions.md): before, a delegation with no assignee told the agent to tag a
+// project owner, so every run of a frequent routine pinged the owner.
+const ROUTINE_QUIET = [
+  "A routine's result is read in its task, not announced: tag nobody in your comments.",
+  "Only when you cannot go on without a person's answer, call the mark_issue_blocked tool",
+  'with your question; it tells the person responsible.',
+];
+
+function frameRoutineDelegation(
+  run: RunForPrompt,
+  titled: string,
+  routine: RoutinePromptContext,
+): string {
+  const lines = [
+    `Issue ${titled} of your project comes from the routine "${routine.title}", which runs on a`,
+    'schedule, and has been delegated to you. Carry it out.',
+    ...areaLine(run),
+    'Read the issue for context, then do the work it needs with your tools.',
+  ];
+  if (routine.startedUsernames.length > 0) {
+    lines.push(
+      '',
+      `The routine also started ${routine.startedUsernames.map((handle) => '@' + handle).join(', ')} on this issue`,
+      'for the parts its instructions name them for; each reports its own part here. Do only',
+      'the rest, and do not hand their parts to them again.',
+    );
+  }
+  lines.push(
+    '',
+    ...ROUTINE_QUIET,
+    '',
+    'When you are done, add one comment to the issue with the add_comment tool',
+    `(issueId ${run.issueId}) describing what you did, and set the issue's status with`,
+    'the update_issue tool. Do not mention yourself.',
+  );
+  return lines.join('\n');
+}
+
+// An agent the routine's instructions name: the instructions are the prompt, and the task
+// belongs to the agent it is delegated to.
+function frameRoutineMention(
+  run: RunForPrompt,
+  titled: string,
+  routine: RoutinePromptContext,
+): string {
+  const own = run.agentUsername?.toLowerCase();
+  const others = routine.startedUsernames.filter((handle) => handle.toLowerCase() !== own);
+  const delegate =
+    routine.delegateUsername && routine.delegateUsername.toLowerCase() !== own
+      ? routine.delegateUsername
+      : null;
+  const lines = [
+    `The routine "${routine.title}" of your project names you in its instructions. It runs on a`,
+    `schedule and gave them to issue ${titled} for this run.`,
+    ...areaLine(run),
+    'Work out what the instructions ask of you and do that part with your tools. Where they',
+    'ask another agent to act, leave that to them: each agent the routine names runs on its',
+    'own part.',
+  ];
+  if (delegate || others.length > 0) {
+    const named = [
+      ...(delegate ? [`@${delegate}, to whom the issue is delegated`] : []),
+      ...(others.length > 0 ? [others.map((handle) => '@' + handle).join(', ')] : []),
+    ];
+    lines.push(`Working on it besides you: ${named.join('; ')}.`);
+  }
+  lines.push(
+    "Leave the issue's status to the agent it is delegated to. If nothing is asked of you,",
+    'reply with one short line saying so.',
+    '',
+    ...ROUTINE_QUIET,
+    '',
+    'When you are done, add one comment to the issue with the add_comment tool',
+    `(issueId ${run.issueId}) with your result. Keep it short. Do not mention yourself.`,
+    '',
+    "The routine's instructions:",
+    '',
+    run.prompt,
+  );
+  return lines.join('\n');
+}
+
 function frameDelegation(run: RunForPrompt, titled: string): string {
+  if (run.routine) return frameRoutineDelegation(run, titled, run.routine);
   const lines = [
     `Issue ${titled} of your project has been delegated to you. Carry it out.`,
     ...areaLine(run),
@@ -135,6 +223,8 @@ function frameApproval(run: RunForPrompt, titled: string): string {
 }
 
 function frameMention(run: RunForPrompt, titled: string): string {
+  if (run.routine && run.sourceActivityId == null)
+    return frameRoutineMention(run, titled, run.routine);
   // Answering with replyToId set keeps the agent's comment in the thread it was
   // asked in, instead of at the end of the issue.
   const args = run.sourceActivityId
@@ -293,5 +383,5 @@ export function peopleContext(run: RunForPrompt): string {
     : null;
   const own = run.agentUsername?.toLowerCase();
   const mentioned = parseMentionHandles(run.prompt).filter((handle) => handle !== own);
-  return peoplePreamble({ requester, assignee, mentioned });
+  return peoplePreamble({ requester, assignee, mentioned, quiet: !!run.routine });
 }

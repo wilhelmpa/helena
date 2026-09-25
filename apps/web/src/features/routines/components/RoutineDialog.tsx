@@ -17,13 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
+import MarkdownEditor from '@/components/common/editor/MarkdownEditor';
 import { useEngineSettings } from '@/services/engine.service';
 import { parseScheduleInput } from '../utils/cronSchedule';
 import { DEFAULT_TIMEZONE, isTimeZone } from '../utils/schedulePreview';
 import { RoutineAgentField } from './RoutineAgentField';
 import { RoutineCronInput } from './RoutineCronInput';
 import { RoutineField } from './RoutineField';
+import { RoutineMentionsPreview } from './RoutineMentions';
 import { RoutineModeField } from './RoutineModeField';
 import { RoutineNextRuns } from './RoutineNextRuns';
 import type { RoutineTask } from './RoutineTaskField';
@@ -131,19 +132,27 @@ export function RoutineDialog({
           onTaskChange={setTask}
         />
 
-        <RoutineField htmlFor="routine-instructions" label={t('instructions')}>
-          <Textarea
-            id="routine-instructions"
-            required
-            maxLength={20_000}
-            value={instructions}
-            onChange={(event) => setInstructions(event.target.value)}
-            placeholder={t('instructionsPlaceholder')}
-            className="min-h-32 resize-y"
-          />
+        {/* Markdown like the task it becomes, and "@" offers the project's agents: each
+            agent it mentions starts on the task too, on every run. */}
+        <RoutineField label={t('instructions')}>
+          <div className="max-h-72 min-h-32 overflow-y-auto rounded-md border border-input bg-transparent px-2.5 py-1.5 text-sm transition-[color,box-shadow] focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/40 dark:bg-input/30">
+            <MarkdownEditor
+              className="flex min-h-28 flex-col"
+              defaultValue={initial?.instructions ?? ''}
+              onChange={setInstructions}
+              placeholder={t('instructionsPlaceholder')}
+              ariaLabel={t('instructions')}
+            />
+          </div>
           <p className="text-xs text-muted-foreground">
-            {mode === 'new' ? t('instructionsHintNew') : t('instructionsHintReopen')}
+            {mode === 'new' ? t('instructionsHintNew') : t('instructionsHintReopen')}{' '}
+            {t('mentionsHint')}
           </p>
+          <RoutineMentionsPreview
+            projectKey={projectKey}
+            instructions={instructions}
+            agentId={agent?.id ?? null}
+          />
         </RoutineField>
 
         <div className="grid gap-4 border-t border-border/50 pt-4 sm:grid-cols-[2fr_1fr]">

@@ -435,7 +435,13 @@
       "reopened": "Aufgabe erneut geöffnet",
       "skipped": "Übersprungen",
       "review": "In Review verschoben",
-      "done": "In Erledigt verschoben"
+      "done": "In Erledigt verschoben",
+      "mention-started": "Gestartet",
+      "mention-not-in-project": "Arbeitet nicht in diesem Projekt",
+      "mention-agent-author": "Von einem Agenten gespeichert: startet niemanden",
+      "mention-owner-only": "Nimmt nur Aufgaben von seinem Besitzer an",
+      "mention-mentions-off": "Reagiert nicht auf Erwähnungen",
+      "mention-paused": "Pausiert"
     },
     "agentRunStatus": {
       "pending": "In der Warteschlange",
@@ -497,7 +503,8 @@
       "specialize": "Spezialist arbeitet: {assignment}",
       "review": "Koordinator prüft",
       "sync": "Ergebnis an die Aufgabe"
-    }
+    },
+    "routineMention": "Erwähnt in den Anweisungen"
   },
   "versions": {
     "empty": "Keine Versionen.",

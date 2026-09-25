@@ -242,7 +242,8 @@ async function stepDtos(runs: RunRow[]) {
         runs.map((run) => run.id),
       ),
     )
-    .orderBy(asc(pipelineRunStep.seq), asc(pipelineRunStep.startedAt));
+    // A step and the parts it writes in one transaction share their start: the step first.
+    .orderBy(asc(pipelineRunStep.seq), asc(pipelineRunStep.startedAt), asc(pipelineRunStep.stepId));
   const byRun = new Map<string, ReturnType<typeof stepDto>[]>();
   for (const row of rows) {
     const list = byRun.get(row.step.runId) ?? [];

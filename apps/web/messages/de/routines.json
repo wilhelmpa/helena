@@ -22,6 +22,18 @@
   "instructionsPlaceholder": "Prüfe offene Aufgaben und aktualisiere alles, was Aufmerksamkeit braucht.",
   "instructionsHintNew": "Die Beschreibung jeder Aufgabe, die der Zeitplan erstellt.",
   "instructionsHintReopen": "Wird bei jedem erneuten Öffnen der Aufgabe als Kommentar hinzugefügt.",
+  "mentionsHint": "Mit @ erwähnte Agenten starten bei jedem Lauf ebenfalls an der Aufgabe.",
+  "mentionsTitle": "Erwähnte Agenten",
+  "mentionStarts": "startet bei jedem Lauf mit",
+  "mentionReason": {
+    "not-in-project": "arbeitet nicht in diesem Projekt",
+    "agent-author": "von einem Agenten gespeichert: seine Erwähnungen starten niemanden",
+    "owner-only": "nimmt nur Aufgaben von seinem Besitzer an",
+    "mentions-off": "reagiert nicht auf Erwähnungen",
+    "paused": "pausiert"
+  },
+  "mentionsStart": "Startet auch {names}",
+  "mentionsRefused": "{count, plural, one {# Erwähnung startet niemanden} other {# Erwähnungen starten niemanden}}",
   "schedule": "Zeitplan",
   "showPresets": "Vordefinierte Zeitpläne anzeigen",
   "presetEvery15Minutes": "Alle 15 Minuten",
