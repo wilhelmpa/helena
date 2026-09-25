@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "integration_credential_env_name_uq" ON "integration_credential" USING btree ("team_id",coalesce("project_id", 0),("redacted"->>'envName')) WHERE ("integration_credential"."redacted"->>'envName') IS NOT NULL;

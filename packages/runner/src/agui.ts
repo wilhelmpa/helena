@@ -1,4 +1,9 @@
-import type { RuntimeStreamEvent, RuntimeStreamParser } from '@helena/sdk';
+import {
+  SecretMask,
+  type RuntimeStreamEvent,
+  type RuntimeStreamParser,
+  type SecretStream,
+} from '@helena/sdk';
 import type { OutputFormat } from './config';
 import { streamParserFor } from './runtimes';
 
@@ -91,13 +96,21 @@ export class AnswerStream {
   private readonly usage: UsageReader;
   // A plugin runtime's own format, read by the parser it registered.
   private readonly parser: RuntimeStreamParser | undefined;
+  // The secret values handed to the command (its key, the variables delivered for the work)
+  // are masked in every event. Answer and reasoning text arrive in pieces, so what could
+  // still be the start of one is held back until the next piece or the end of the text.
+  private readonly textMask: SecretStream;
+  private readonly thinkingMask: SecretStream;
 
   constructor(
     private readonly format: OutputFormat,
     private readonly threadId: string,
     private readonly runId: string,
     private readonly send: (events: AgUiEvent[]) => Promise<void>,
+    private readonly mask: SecretMask = new SecretMask(),
   ) {
+    this.textMask = mask.stream();
+    this.thinkingMask = mask.stream();
     this.usage = new UsageReader(format);
     this.parser = streamParserFor(format);
     this.messageId = `msg-${runId}`;
@@ -168,7 +181,7 @@ export class AnswerStream {
   // `code` names a failure the reader's chat words itself (model-unavailable).
   async fail(message: string, fallback = '', code?: string): Promise<void> {
     this.closeText(fallback);
-    this.queued.push({ type: 'RUN_ERROR', message, ...(code && { code }) });
+    this.queued.push({ type: 'RUN_ERROR', message: this.mask.text(message), ...(code && { code }) });
     await this.flush();
   }
 
@@ -178,7 +191,7 @@ export class AnswerStream {
       this.line = '';
     }
     if (!this.sawAnyText && fallback) this.appendText(fallback);
-    this.drainText();
+    this.drainText(true);
     this.closeReasoning();
     if (this.started) this.queued.push({ type: 'TEXT_MESSAGE_END', messageId: this.messageId });
     this.started = false;
@@ -186,7 +199,7 @@ export class AnswerStream {
 
   private appendText(text: string): void {
     if (!text) return;
-    this.drainThinking();
+    this.drainThinking(true);
     this.closeReasoning();
     this.sawAnyText = true;
     this.text += text;
@@ -195,12 +208,18 @@ export class AnswerStream {
 
   private appendThinking(text: string): void {
     if (!text) return;
-    this.drainAnswerText();
+    this.drainAnswerText(true);
     this.thinking += text;
     if (this.thinking.length >= FLUSH_CHARS) this.drainThinking();
   }
 
-  private drainThinking(): void {
+  // `final` ends the piece of reasoning or text (a tool call, the other kind of text or the
+  // end follows), which releases what the mask held back.
+  private drainThinking(final = false): void {
+    const pending = this.thinking;
+    this.thinking = final
+      ? this.thinkingMask.push(pending) + this.thinkingMask.end()
+      : this.thinkingMask.push(pending);
     if (this.thinking.length > 0 && !this.reasoningId) {
       const messageId = `reasoning-${this.runId}-${++this.reasoningCount}`;
       this.reasoningId = messageId;
@@ -229,12 +248,16 @@ export class AnswerStream {
 
   // Reasoning and answer text alternate, and each drains the other's buffer before it
   // grows its own, so at most one of them holds anything and the order is kept.
-  private drainText(): void {
-    this.drainThinking();
-    this.drainAnswerText();
+  private drainText(final = false): void {
+    this.drainThinking(final);
+    this.drainAnswerText(final);
   }
 
-  private drainAnswerText(): void {
+  private drainAnswerText(final = false): void {
+    const pending = this.text;
+    this.text = final
+      ? this.textMask.push(pending) + this.textMask.end()
+      : this.textMask.push(pending);
     if (this.text.length === 0) return;
     if (!this.started) {
       this.started = true;
@@ -531,23 +554,23 @@ export class AnswerStream {
   // The text so far is drained first, so a tool call lands between the words said before
   // it and the words said after it.
   private pushToolCall(toolCallId: string, toolCallName: string, args: string): void {
-    this.drainText();
+    this.drainText(true);
     this.closeReasoning();
     this.queued.push(
       { type: 'TOOL_CALL_START', toolCallId, toolCallName, parentMessageId: this.messageId },
-      { type: 'TOOL_CALL_ARGS', toolCallId, delta: tail(args, TOOL_TEXT_LIMIT) },
+      { type: 'TOOL_CALL_ARGS', toolCallId, delta: tail(this.mask.text(args), TOOL_TEXT_LIMIT) },
       { type: 'TOOL_CALL_END', toolCallId },
     );
   }
 
   private pushToolResult(toolCallId: string, content: string, isError = false): void {
-    this.drainText();
+    this.drainText(true);
     this.closeReasoning();
     this.queued.push({
       type: 'TOOL_CALL_RESULT',
       messageId: this.messageId,
       toolCallId,
-      content: tail(content, TOOL_TEXT_LIMIT),
+      content: tail(this.mask.text(content), TOOL_TEXT_LIMIT),
       ...(isError && { metadata: { isError: true as const } }),
     });
   }

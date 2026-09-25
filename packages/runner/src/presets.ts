@@ -34,6 +34,26 @@ function claudeAutopilotArgs({ autopilotLevel, policyHook }: PresetTaskSettings)
   ];
 }
 
+// Codex filters what its shell commands inherit (shell_environment_policy): by default it
+// drops every variable whose name contains KEY, SECRET or TOKEN. The variables Helena
+// delivered for the work are meant for those commands (wrangler reads CLOUDFLARE_API_TOKEN),
+// so they go through; every other such name in the command's environment stays out, as
+// before. Names only: the values never reach a command line.
+const CODEX_DEFAULT_EXCLUDES = /KEY|SECRET|TOKEN/i;
+
+export function codexToolEnvArgs(toolEnv: PresetTaskSettings['toolEnv']): string[] {
+  if (!toolEnv || toolEnv.delivered.length === 0) return [];
+  const delivered = new Set(toolEnv.delivered);
+  const hidden = [...new Set(toolEnv.present)]
+    .filter((name) => CODEX_DEFAULT_EXCLUDES.test(name) && !delivered.has(name))
+    .sort();
+  return [
+    '-c',
+    'shell_environment_policy.ignore_default_excludes=true',
+    ...(hidden.length > 0 ? ['-c', `shell_environment_policy.exclude=${JSON.stringify(hidden)}`] : []),
+  ];
+}
+
 // A preset is the command line of a runtime the runner starts as a one-shot CLI: the
 // @helena/sdk CliCommand of a built-in runtime (see runtimes.ts), with one of the output
 // formats agui.ts reads.
@@ -84,9 +104,10 @@ export const PRESETS: Record<PresetName, Preset> = {
     head: (sessionId) => [...(sessionId ? ['exec', 'resume', sessionId] : ['exec']), '--json'],
     // Both `exec` and `exec resume` take -m and -c. Codex has no hook to ask Helena before a
     // tool call; at Autopilot level 0 its sandbox is read-only, so it can only propose.
-    taskArgs: ({ model, thinkingLevel, sandbox, autopilotLevel }) => [
+    taskArgs: ({ model, thinkingLevel, sandbox, autopilotLevel, toolEnv }) => [
       ...(model ? ['-m', model] : []),
       ...(thinkingLevel ? ['-c', `model_reasoning_effort=${JSON.stringify(thinkingLevel)}`] : []),
+      ...codexToolEnvArgs(toolEnv),
       '-c',
       `sandbox_mode=${JSON.stringify(autopilotLevel === 0 ? 'read-only' : (sandbox ?? 'workspace-write'))}`,
     ],
@@ -169,6 +190,10 @@ export const PRESETS: Record<PresetName, Preset> = {
     ],
     tail: [],
     sessionLost: (error) => error.includes('Session not found'),
+    // Hermes' terminal keeps a snapshot of the shell's exported variables there
+    // (tools/environments/base.py, hermes-snap-*.sh): the delivered ones would otherwise sit
+    // in the profile's cache/terminal.
+    scratchDirEnv: 'TERMINAL_TEMP_DIR',
   },
 };
 

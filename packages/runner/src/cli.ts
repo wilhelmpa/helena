@@ -28,7 +28,15 @@ import { perform, reportUntilTaken, type Performed } from './run';
 import { runPolicyHook } from './policy-hook';
 import type { RunSettings, RuntimeAdapter } from './runtime';
 import { applySshKeys, sshDir, type SshKey } from './ssh';
-import { parseWorkspaceJob, runWorkspaceJob } from './workspace-job';
+import {
+  cloneSshEnv,
+  jobWorkspace,
+  parseWorkspaceJob,
+  runWorkspaceJob,
+  runWorkspaceJobLocally,
+  type CloneJob,
+} from './workspace-job';
+import { deliveredEnv, NO_DELIVERED_ENV, withEnv, type DeliveredEnv } from './agent-env';
 import { digestRuntimeError, digestSettings, isDigestRun } from './digest';
 import type { Outcome } from './execute';
 import type { WorkRef } from './logins';
@@ -120,13 +128,38 @@ async function sshEnv(
   }
 }
 
-function withEnv(settings: RunSettings | null, env: Record<string, string>): RunSettings | null {
-  if (Object.keys(env).length === 0) return settings;
-  return {
-    toolsets: settings?.toolsets ?? null,
-    ...settings,
-    env: { ...settings?.env, ...env },
-  };
+// The environment variables granted to the agent for this piece of work (agent-env.ts). A
+// failure leaves the command without them rather than failing the work, as for SSH keys.
+async function envDelivery(client: Client, log: Log, work: WorkRef): Promise<DeliveredEnv> {
+  try {
+    return deliveredEnv(await client.envVariables(work));
+  } catch (err) {
+    log(`environment variables not delivered — ${err instanceof Error ? err.message : String(err)}`);
+    return NO_DELIVERED_ENV;
+  }
+}
+
+// How long a clone may take in the project's unit.
+const WORKSPACE_JOB_MAX_SEC = 1800;
+
+// The job where it belongs: in the project's own unit when agents are isolated (as the
+// project's user, through its egress), else in the runner.
+async function workspaceJob(
+  config: RunnerConfig,
+  job: CloneJob,
+  signal: AbortSignal,
+): Promise<Outcome> {
+  const keys = sshDir(config);
+  if (!(isolationEnabled() && config.isolation && config.cwd)) {
+    return runWorkspaceJobLocally(config, job, keys, signal);
+  }
+  const base = jobWorkspace(config, job, true);
+  return runProfileHelper<Outcome>(
+    config.isolation,
+    config.cwd,
+    { op: 'workspace-job', job, base, dir: keys },
+    { runtimeMaxSec: WORKSPACE_JOB_MAX_SEC },
+  );
 }
 
 // Runs a workspace job (a clone) and reports it like a run's result.
@@ -135,12 +168,11 @@ async function performWorkspaceJob(
   client: Client,
   run: Run,
   stop: AbortController,
-  env: Record<string, string>,
   lost: AbortSignal,
 ): Promise<Performed | null> {
   let outcome: Outcome;
   try {
-    outcome = await runWorkspaceJob(config, parseWorkspaceJob(run.prompt), env, stop.signal);
+    outcome = await workspaceJob(config, parseWorkspaceJob(run.prompt), stop.signal);
   } catch (err) {
     outcome = {
       status: 'failed',
@@ -179,7 +211,9 @@ async function handle(
     const digest = isDigestRun(run);
     const refused = digest ? digestRuntimeError(config) : null;
     if (refused) throw new Error(refused);
-    // A digest run is text only (digest.ts): no SSH keys, no tools, no rules.
+    // A digest run is text only (digest.ts): no SSH keys, no variables, no tools, no rules.
+    // A workspace job (a clone) needs the SSH keys only.
+    const workspace = run.trigger === 'workspace';
     const hermes = stop.signal.aborted
       ? null
       : digest
@@ -187,11 +221,11 @@ async function handle(
         : withEnv(
             (await policy?.runSettings({ runId: run.id })) ?? null,
             await sshEnv(config, client, log, { runId: run.id }),
+            workspace ? NO_DELIVERED_ENV : await envDelivery(client, log, { runId: run.id }),
           );
-    const work =
-      run.trigger === 'workspace'
-        ? performWorkspaceJob(config, client, run, stop, hermes?.env ?? {}, lost.signal)
-        : perform(config, client, run, stop, hermes, { lost: lost.signal, runtime: policy });
+    const work = workspace
+      ? performWorkspaceJob(config, client, run, stop, lost.signal)
+      : perform(config, client, run, stop, hermes, { lost: lost.signal, runtime: policy });
     const performed = stop.signal.aborted
       ? null
       : await withHeartbeat(
@@ -256,6 +290,7 @@ async function handleChat(
     const hermes = withEnv(
       (await policy?.runSettings({ messageId: message.id })) ?? null,
       await sshEnv(config, client, log, { messageId: message.id }),
+      await envDelivery(client, log, { messageId: message.id }),
     );
     await withHeartbeat(
       log,
@@ -559,6 +594,8 @@ async function profileHelper(): Promise<void> {
       known?: unknown;
       keys?: unknown;
       dir?: unknown;
+      job?: unknown;
+      base?: unknown;
       sessionId?: unknown;
       files?: unknown;
     };
@@ -585,6 +622,25 @@ async function profileHelper(): Promise<void> {
       const dir = typeof request.dir === 'string' ? resolve(request.dir) : '';
       if (!dir.startsWith(`${resolve(home)}/`)) throw new Error('dir must be inside the profile');
       result = await applySshKeys(dir, request.keys as SshKey[]);
+    } else if (request.op === 'workspace-job') {
+      // A clone into the project's workspace, as the project user, with the keys the
+      // ssh-keys operation just wrote into the profile and the project's egress.
+      const job = parseWorkspaceJob(JSON.stringify(request.job ?? null));
+      const base = typeof request.base === 'string' ? resolve(request.base) : '';
+      if (!base || base !== job.workspace) throw new Error('base must be the job workspace');
+      const dir = typeof request.dir === 'string' ? resolve(request.dir) : '';
+      if (!dir.startsWith(`${resolve(home)}/`)) throw new Error('dir must be inside the profile');
+      const ssh = await cloneSshEnv(dir);
+      try {
+        result = await runWorkspaceJob(
+          base,
+          job,
+          { ...(process.env as Record<string, string>), ...ssh.env },
+          new AbortController().signal,
+        );
+      } finally {
+        await ssh.cleanup();
+      }
     } else if (request.op === 'actions') {
       if (!Array.isArray(request.actions)) throw new Error('actions must be a list');
       result = await materializer.runActions(request.actions as never);
