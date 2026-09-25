@@ -874,6 +874,13 @@ class IsolationScriptTest(unittest.TestCase):
             self.assertTrue((directory / 'lib/runtime_modes.py').is_file())
             self.assertIn('opened 1 of 1 unreadable entries', done.stdout)
             self.assertEqual(stat.S_IMODE(closed.stat().st_mode), 0o644)
+            # Every deploy opens it again, whatever installed into it since; nothing restarts.
+            closed.chmod(0o600)
+            before = log.read_text() if log.exists() else ''
+            opened = subprocess.run(['bash', str(script), 'open-code'], env=env, capture_output=True, text=True)
+            self.assertEqual(opened.returncode, 0, opened.stderr)
+            self.assertEqual(stat.S_IMODE(closed.stat().st_mode), 0o644)
+            self.assertEqual(log.read_text() if log.exists() else '', before)
             self.assertTrue((directory / 'lib/launcher.py').is_file())
             self.assertTrue((directory / 'units/volition-egress.socket').is_file())
             self.assertEqual(stat.S_IMODE((directory / 'token').stat().st_mode), 0o600)

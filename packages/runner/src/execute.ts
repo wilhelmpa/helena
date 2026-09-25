@@ -159,7 +159,6 @@ class HermesResultReader {
   }
 }
 
-
 // Applied as the output arrives, so a command that prints for half an hour does not buffer
 // all of it to have everything but the last few kilobytes thrown away.
 function tail(text: string, limit: number): string {
@@ -631,7 +630,8 @@ function settle(
       status: 'failed',
       output,
       error:
-        hermesError(result, stderr, false, printed) ?? `Hermes reported exit code ${result.exitCode}`,
+        hermesError(result, stderr, false, printed) ??
+        `Hermes reported exit code ${result.exitCode}`,
     };
   if (code === 0) return { status: 'success', output };
   // The timeout says more about the failure than whatever the command printed.

@@ -7,6 +7,7 @@
 #   sudo deployment/volition-stack/native/isolation.sh apply [--dry-run]     install, migrate, enable
 #   sudo deployment/volition-stack/native/isolation.sh install [--dry-run]   code, units, users, token only
 #   sudo deployment/volition-stack/native/isolation.sh sync                  reinstall changed code (deploy)
+#   sudo deployment/volition-stack/native/isolation.sh open-code [--dry-run] the agents' runtime code readable (deploy)
 #   sudo deployment/volition-stack/native/isolation.sh rollback [--dry-run]  back to one runner user
 #   sudo deployment/volition-stack/native/isolation.sh status
 #
@@ -273,6 +274,12 @@ case $command in
     install_units
     run systemctl try-restart volition-agent-launcher.service volition-egress.service volition-agent-plan.service
     ;;
+  open-code)
+    # Every deploy: the runtimes' code readable for every agent again (launcher.json sharedCode).
+    # Nothing is installed or restarted; where isolation is not installed there is nothing to do.
+    [[ -f $lib/launcher.py ]] || exit 0
+    open_shared_code
+    ;;
   apply)
     ensure_accounts
     install_code
@@ -322,7 +329,7 @@ case $command in
     fi
     ;;
   *)
-    sed -n '2,15p' "$0" >&2
+    sed -n '2,16p' "$0" >&2
     exit 64
     ;;
 esac

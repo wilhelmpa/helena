@@ -258,7 +258,12 @@ describe('Hermes subprocess adapter', () => {
   }
 
   const INIT_FAILED = [
-    JSON.stringify({ type: 'system', subtype: 'init', model: 'claude-sonnet-5', session_id: 's-1' }),
+    JSON.stringify({
+      type: 'system',
+      subtype: 'init',
+      model: 'claude-sonnet-5',
+      session_id: 's-1',
+    }),
     "Hermes couldn't start the model connection: [Errno 13] Permission denied: ",
     "'/srv/volition/source/hermes/.venv/lib/python3.13/site-packages/docstring_parser",
     '/__init__…. Your message was not sent. Run `hermes doctor` to check the setup, ',
