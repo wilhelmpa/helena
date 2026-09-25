@@ -54,34 +54,81 @@ function oneLine(value) {
   return value.replace(/[\s\p{Cc}]+/gu, " ").trim();
 }
 
-function instructions(project, area) {
+export const AREA_BEGIN = "<!-- helena:area-context -->";
+export const AREA_END = "<!-- /helena:area-context -->";
+
+// What an area folder's AGENTS.md says, between markers that make it Helena's: Hermes reads
+// it into every run that starts in the area (docs/helena-decisions/agent-context.md §1).
+export function areaBlock(project, area) {
   const name = oneLine(area.name);
   return [
+    AREA_BEGIN,
     `# Area: ${name}`,
     "",
-    `This folder belongs to the area "${name}" of the project "${oneLine(project.name)}" (${project.key}) in Plan.`,
-    "Agent runs for the tasks of this area start here. Keep the files of this area's work in this folder.",
-    "The project-wide instructions and links are in ../AGENTS.md and ../PROJECT.json.",
-    `The project's vault folder (the Files page in Plan) has a folder ${area.folder}/ for this area as well.`,
-    "",
+    `This folder belongs to the area "${name}" of the Helena project "${oneLine(project.name)}" (${project.key}).`,
+    "Runs for the tasks of this area start here. Keep the files of this area's work in this folder.",
+    "The project-wide context and links are in ../AGENTS.md and ../PROJECT.json.",
+    `The project's vault (its Files page in Helena) has a folder ${area.folder}/ for this area as well.`,
+    "A repository cloned into this folder has its own AGENTS.md, CLAUDE.md or README: read it before you work in it.",
+    AREA_END,
   ].join("\n");
 }
 
-// Written once: a file an agent or a person changed afterwards is theirs.
+// The text the provisioning wrote before the markers, for any names: a file that is exactly
+// that is still Helena's and is replaced; one that differs is the owner's.
+const LEGACY_AREA = new RegExp(
+  [
+    "^# Area: [^\\n]*\\n",
+    "\\n",
+    'This folder belongs to the area "[^\\n]*" of the project "[^\\n]*" \\([A-Z][A-Z0-9]*\\) in Plan\\.\\n',
+    "Agent runs for the tasks of this area start here\\. Keep the files of this area's work in this folder\\.\\n",
+    "The project-wide instructions and links are in \\.\\./AGENTS\\.md and \\.\\./PROJECT\\.json\\.\\n",
+    "The project's vault folder \\(the Files page in Plan\\) has a folder [a-z0-9-]+/ for this area as well\\.\\n$",
+  ].join(""),
+);
+
+// The file's text with the block as Helena writes it now, or null when nothing changes: an
+// empty file gets the block, a file with the block gets it renewed, the old generated text
+// is replaced whole, and anything else is left as it is.
+export function withAreaBlock(current, block) {
+  const begin = current.indexOf(AREA_BEGIN);
+  const end = begin === -1 ? -1 : current.indexOf(AREA_END, begin);
+  let next;
+  if (begin !== -1 && end !== -1) {
+    next = current.slice(0, begin) + block + current.slice(end + AREA_END.length);
+  } else if (current.trim() === "" || LEGACY_AREA.test(current)) {
+    next = `${block}\n`;
+  } else {
+    return null;
+  }
+  if (!next.endsWith("\n")) next += "\n";
+  return next === current ? null : next;
+}
+
+// Written when the folder is new, renewed where it still carries Helena's block or its old
+// text; a file an agent or a person wrote is theirs and stays. Changed in place, so it keeps
+// the owner and ACL agent isolation gave it.
 async function writeInstructions(directory, project, area) {
   let handle;
   try {
     handle = await fs.open(
       path.join(directory, "AGENTS.md"),
-      constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW,
+      constants.O_RDWR | constants.O_CREAT | constants.O_NOFOLLOW,
       0o640,
     );
   } catch (error) {
-    if (error?.code === "EEXIST") return;
+    // A link in its place leads somewhere that is not the area's.
+    if (error?.code === "ELOOP") return;
     throw error;
   }
   try {
-    await handle.writeFile(instructions(project, area), "utf8");
+    const stat = await handle.stat();
+    if (!stat.isFile() || stat.size > 128 * 1024) return;
+    const current = await handle.readFile("utf8");
+    const updated = withAreaBlock(current, areaBlock(project, area));
+    if (updated === null) return;
+    await handle.truncate(0);
+    await handle.write(updated, 0, "utf8");
   } finally {
     await handle.close();
   }

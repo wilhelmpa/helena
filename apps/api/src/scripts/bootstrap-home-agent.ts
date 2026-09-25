@@ -3,6 +3,7 @@ import {
   aiAgent,
   db,
   organizationAgentAssignment,
+  organizationProjectAssignment,
   project,
   projectMember,
   teamMember,
@@ -131,6 +132,18 @@ export async function bootstrapProjectCoordinator(
     .from(aiAgent)
     .where(eq(aiAgent.id, agent.id))
     .limit(1);
+  // The project-wide instructions (Organisation → project), which the provisioning writes
+  // into the workspace's PROJECT.json for every agent of the project.
+  const [assignment] = await db
+    .select({ instructions: organizationProjectAssignment.instructions })
+    .from(organizationProjectAssignment)
+    .where(
+      and(
+        eq(organizationProjectAssignment.projectId, target.id),
+        eq(organizationProjectAssignment.teamId, target.teamId),
+      ),
+    )
+    .limit(1);
   return {
     project: {
       id: target.id,
@@ -141,7 +154,7 @@ export async function bootstrapProjectCoordinator(
     },
     agent,
     apiKey,
-    projectInstructions: '',
+    projectInstructions: assignment?.instructions ?? '',
     agentInstructions: full?.instructions ?? '',
   };
 }

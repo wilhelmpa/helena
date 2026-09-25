@@ -1,3 +1,4 @@
+import { requeueProjectProvisioning } from '#modules/projects/provisioning-queue';
 import { goalProgress, pendingProposals } from '#modules/goals/service';
 import {
   aiAgent,
@@ -623,6 +624,9 @@ export async function setProjectAssignment(
         },
       })
       .returning();
+    // The project-wide instructions are also in the workspace's PROJECT.json, which the
+    // provisioning writes: a change queues it again.
+    if (input.instructions !== undefined) await requeueProjectProvisioning([projectId], tx);
     return row!;
   });
 }

@@ -3,6 +3,7 @@
 // a sane default, so the worker runs with only DATABASE_URL set (validated by
 // @repo/db's client).
 
+import { primaryOrigin } from '@repo/net';
 import { intEnv } from './env';
 import { readFileSync, lstatSync } from 'node:fs';
 
@@ -52,6 +53,9 @@ export interface WorkerConfig {
   projectProvisioningTimeoutMs: number;
   // How often the provisioned state is compared with the projects in the database.
   projectReconcileIntervalMs: number;
+  // Helena's public origin (the first APP_URL), which the provisioning writes into the links
+  // it makes for the agents. Null without APP_URL.
+  publicOrigin: string | null;
 }
 
 let cached: WorkerConfig | null = null;
@@ -73,6 +77,7 @@ export function workerConfig(): WorkerConfig {
       (process.env.PROJECT_PROVISIONING_TOKEN?.trim() || null),
     projectProvisioningTimeoutMs: intEnv('PROJECT_PROVISIONING_TIMEOUT_MS', 120_000),
     projectReconcileIntervalMs: intEnv('PROJECT_RECONCILE_INTERVAL_MS', 600_000),
+    publicOrigin: primaryOrigin(),
   };
   return cached;
 }

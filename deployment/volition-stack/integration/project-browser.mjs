@@ -146,7 +146,10 @@ export async function waitForProjectBrowserCdp(
   return false;
 }
 
-function publicBrowserUrl(base, slug) {
+// The live view's address for a project; undefined while the base is a path that no
+// request resolved yet (config.mjs withPublicOrigin).
+export function publicBrowserUrl(base, slug) {
+  if (!base || base.startsWith("/")) return undefined;
   const url = new URL(base);
   url.pathname = `${url.pathname.replace(/\/$/, "")}/projects/${slug}/vnc.html`;
   url.search = "";

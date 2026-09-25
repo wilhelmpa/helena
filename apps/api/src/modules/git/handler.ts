@@ -1,3 +1,4 @@
+import { primaryOrigin } from '@repo/net';
 import { getIssueBySequence, updateIssue } from '#modules/issues/service';
 import { recordActivity, textSide, type ActivityActor } from '#modules/issues/activity';
 import {
@@ -127,7 +128,8 @@ export async function handleGitEvent(
   );
   const newIssueIds = [...new Set([...promotedIssueIds, ...insertedIssueIds])];
   if (settings.linkbackComments && newIssueIds.length > 0) {
-    const appUrl = process.env.APP_URL?.replace(/\/$/, '');
+    // The public origin (the first APP_URL); the whole list as a base made broken links.
+    const appUrl = primaryOrigin();
     const items = uniqueIssues
       .filter((item) => newIssueIds.includes(item.id))
       .map((item) => {

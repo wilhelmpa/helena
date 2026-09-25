@@ -335,3 +335,19 @@ export async function pinnedFetch(raw: string, init: PinnedRequestInit = {}): Pr
     req.end(init.body);
   });
 }
+
+// Helena's public origin: the first entry of APP_URL, which lists the web app's origins,
+// the public one first (docs/helena-decisions/security-hardening.md). "https://host", or
+// null when APP_URL is empty or its first entry is not an http(s) URL. Links that leave the
+// app (mails, pushes, the agents' workspace files, git link-backs) are built on it; a
+// comma-separated APP_URL used as a base whole produced broken links.
+export function primaryOrigin(appUrl: string | undefined = process.env.APP_URL): string | null {
+  const first = appUrl?.split(',')[0]?.trim();
+  if (!first) return null;
+  try {
+    const url = new URL(first);
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.origin : null;
+  } catch {
+    return null;
+  }
+}
