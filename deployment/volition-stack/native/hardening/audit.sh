@@ -490,8 +490,10 @@ if [[ $is_root -eq 1 ]]; then
   wide=()
   for dir in $SECRET_DIRS; do
     [[ -d $dir ]] || continue
+    # local-ai-preload only names the models to load at start (the preload unit's dynamic
+    # user reads it); it holds nothing secret.
     while IFS= read -r f; do wide+=("$f"); done < <(find "$dir" -type f -perm /004 \
-      ! -name '*.json' ! -name 'README*' ! -name '*.pem.pub' 2>/dev/null)
+      ! -name '*.json' ! -name 'README*' ! -name '*.pem.pub' ! -name 'local-ai-preload' 2>/dev/null)
   done
   key=/etc/volition/owner-terminal.key
   if [[ -e $key ]] && [[ $(stat -c %G "$key") == volition ]]; then
