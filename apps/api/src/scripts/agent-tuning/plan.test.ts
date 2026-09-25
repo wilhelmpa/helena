@@ -13,6 +13,7 @@ import {
   type CurrentAgent,
   type CurrentState,
   type Plan,
+  type PolicyLike,
   type TuningTarget,
 } from './plan';
 import { DISABLED_BUNDLED_SKILLS, TARGET } from './target';
@@ -151,7 +152,9 @@ describe('planTuning', () => {
   it('leaves instructions the owner changed since the audit, and says so', () => {
     const plan = planTuning(state([agent({ instructions: 'mein eigener Text' })]), target());
     expect(plan.changes.some((c) => c.kind === 'instructions')).toBe(false);
-    expect(plan.skipped).toContain('@coder-vol: instructions changed since the audit; left as it is');
+    expect(plan.skipped).toContain(
+      '@coder-vol: instructions changed since the audit; left as it is',
+    );
   });
 
   it('leaves project instructions the owner wrote', () => {
@@ -231,7 +234,10 @@ describe('planTuning', () => {
   });
 
   it('writes an assignment only in a project the agent works in', () => {
-    const assignments = { VOL: { text: 'Deine Rolle', replaces: [] }, FAM: { text: 'x', replaces: [] } };
+    const assignments = {
+      VOL: { text: 'Deine Rolle', replaces: [] },
+      FAM: { text: 'x', replaces: [] },
+    };
     const plan = planTuning(state([agent()]), target({ assignments }, false), ['projects']);
     expect(plan.changes).toEqual([
       {
@@ -260,7 +266,7 @@ describe('planTuning', () => {
 });
 
 describe('nextPolicy', () => {
-  const policy = {
+  const policy: PolicyLike & { toolAllow: string[]; mcpGrants: string[]; maxTurns: number } = {
     reasoningEffort: null,
     toolAllow: [],
     toolDeny: ['browser'],
@@ -292,9 +298,7 @@ describe('nextPolicy', () => {
 
   it('is null when nothing in the policy changes', () => {
     expect(
-      nextPolicy(policy, [
-        { kind: 'instructions', agentId: 1, username: 'a', from: '', to: 'x' },
-      ]),
+      nextPolicy(policy, [{ kind: 'instructions', agentId: 1, username: 'a', from: '', to: 'x' }]),
     ).toBeNull();
   });
 });
@@ -323,7 +327,9 @@ describe('auditState', () => {
     );
     expect(lines[0]).toContain('drift mcp_servers.x: mcp-missing');
     expect(lines[0]).toContain('linked but not in the profile: writing-plans');
-    expect(lines[0]).toContain('same name as a Hermes skill (skill_view refuses both): systematic-debugging');
+    expect(lines[0]).toContain(
+      'same name as a Hermes skill (skill_view refuses both): systematic-debugging',
+    );
     expect(lines[0]).toContain('MEMORY.md 2000/2200 chars (91 %)');
     expect(lines[0]).toContain('MEMORY.md is nearly full');
     expect(lines[0]).toContain('2 memory write(s) wait for the owner');

@@ -37,16 +37,9 @@ import {
   teamMember,
 } from '@repo/db';
 import { and, count, eq, gt, isNotNull, sql } from 'drizzle-orm';
-import {
-  getAgentById,
-  normalizeRuntimePolicy,
-  updateAgent,
-} from '#modules/agents/core/service';
+import { getAgentById, normalizeRuntimePolicy, updateAgent } from '#modules/agents/core/service';
 import { setAgentSkills } from '#modules/agents/skills/service';
-import {
-  setAgentProjectInstructions,
-  setProjectAssignment,
-} from '#modules/organization/service';
+import { setAgentProjectInstructions, setProjectAssignment } from '#modules/organization/service';
 import {
   auditState,
   DEFAULT_SECTIONS,
@@ -232,8 +225,7 @@ export async function loadTuningState(teamId: number): Promise<CurrentState> {
         reflections: {
           total: reflections.length,
           saved: reflections.filter((r) => Array.isArray(r?.saved) && r.saved.length > 0).length,
-          failed: reflections.filter((r) => r?.status === 'failed' || r?.status === 'lost')
-            .length,
+          failed: reflections.filter((r) => r?.status === 'failed' || r?.status === 'lost').length,
         },
       };
     }),
@@ -349,7 +341,10 @@ function args(argv: string[]): TuningOptions {
     if (arg === '--apply') options.apply = true;
     else if (arg === '--dry-run') options.apply = false;
     else if (arg.startsWith('--sections=')) {
-      const names = arg.slice('--sections='.length).split(',').map((s) => s.trim());
+      const names = arg
+        .slice('--sections='.length)
+        .split(',')
+        .map((s) => s.trim());
       for (const name of names) {
         if (!SECTIONS.includes(name as Section)) throw new Error(`Unknown section ${name}`);
       }

@@ -127,7 +127,9 @@ describe('agent tuning', () => {
       ['ai-agents']({ agentId: agent.id })
       .patch({ instructions: 'Vom Owner' });
     const plan = await runAgentTuning({ teamId, target, apply: true, log: quiet });
-    expect(plan.skipped).toContain('@coder-vol: instructions changed since the audit; left as it is');
+    expect(plan.skipped).toContain(
+      '@coder-vol: instructions changed since the audit; left as it is',
+    );
     const [row] = await db.select().from(aiAgent).where(eq(aiAgent.id, agent.id));
     expect(row!.instructions).toBe('Vom Owner');
   });

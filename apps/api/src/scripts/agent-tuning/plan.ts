@@ -60,7 +60,13 @@ export const SECTIONS = [
 ] as const;
 export type Section = (typeof SECTIONS)[number];
 // Reasoning costs subscription time and is the owner's call: only on request.
-export const DEFAULT_SECTIONS: Section[] = ['skills', 'tools', 'instructions', 'projects', 'report'];
+export const DEFAULT_SECTIONS: Section[] = [
+  'skills',
+  'tools',
+  'instructions',
+  'projects',
+  'report',
+];
 
 // The API's own bounds (organization/model.ts), which a text written here keeps as well, so
 // the owner can still save it from Helena.
@@ -153,7 +159,13 @@ export type Change =
       from: string;
       to: string;
     }
-  | { kind: 'projectInstructions'; projectId: number; projectKey: string; from: string; to: string };
+  | {
+      kind: 'projectInstructions';
+      projectId: number;
+      projectKey: string;
+      from: string;
+      to: string;
+    };
 
 export interface Plan {
   changes: Change[];
@@ -189,7 +201,8 @@ export function validateTarget(target: TuningTarget): string[] {
     seen.add(agent.username);
     const disabled = new Set(agent.disableSkills);
     for (const name of [...agent.addSkills, ...agent.disableSkills, ...agent.denyToolsets]) {
-      if (!name.trim() || name.length > NAME_MAX) problems.push(`@${agent.username}: name "${name}"`);
+      if (!name.trim() || name.length > NAME_MAX)
+        problems.push(`@${agent.username}: name "${name}"`);
     }
     for (const name of agent.addSkills) {
       if (disabled.has(name)) problems.push(`@${agent.username}: ${name} is added and disabled`);
@@ -225,7 +238,9 @@ function planAgent(
     for (const name of unique(target.addSkills)) {
       if (!library.has(name)) plan.skipped.push(`${who}: skill ${name} is not in the library`);
       else if (bundled.has(name))
-        plan.skipped.push(`${who}: skill ${name} ships with Hermes in this profile; that one serves`);
+        plan.skipped.push(
+          `${who}: skill ${name} ships with Hermes in this profile; that one serves`,
+        );
       else if (!linked.has(name)) add.push(name);
     }
     for (const name of agent.skills) {
@@ -291,7 +306,9 @@ function planAgent(
     if (agent.reasoningEffort === null) {
       plan.changes.push({ kind: 'reasoning', ...ref, from: null, to: target.reasoning });
     } else if (agent.reasoningEffort !== target.reasoning) {
-      plan.skipped.push(`${who}: reasoning ${agent.reasoningEffort} was set by hand; left as it is`);
+      plan.skipped.push(
+        `${who}: reasoning ${agent.reasoningEffort} was set by hand; left as it is`,
+      );
     }
   }
 }
@@ -339,7 +356,9 @@ export function planTuning(
           to: entry.instructions.text.trim(),
         });
       } else if (decision === 'owned') {
-        plan.skipped.push(`${entry.key}: project instructions changed since the audit; left as they are`);
+        plan.skipped.push(
+          `${entry.key}: project instructions changed since the audit; left as they are`,
+        );
       }
     }
   }
@@ -348,12 +367,12 @@ export function planTuning(
 
 // ── The policy an agent ends up with ───────────────────────────────────────────────────
 
+// The fields of a runtime policy (agents/core/service.ts AgentRuntimePolicy) the plan changes.
 export interface PolicyLike {
   toolDeny: string[];
   skillsDisabled?: string[];
   reasoningEffort: string | null;
   files: { kind: 'instructions'; path: string; content: string }[];
-  [key: string]: unknown;
 }
 
 // The agent's runtime policy with the plan's changes for it applied; every other field is
