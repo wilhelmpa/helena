@@ -19,9 +19,7 @@ interface ServerMessages {
 }
 
 const messages = (locale: string) =>
-  JSON.parse(
-    readFileSync(join(WEB, 'messages', locale, 'server.json'), 'utf8'),
-  ) as ServerMessages;
+  JSON.parse(readFileSync(join(WEB, 'messages', locale, 'server.json'), 'utf8')) as ServerMessages;
 
 // `code: 'raidOk'`, `code: x ? 'backupLate' : 'backupOk'` — not the values compared with.
 function healthCodes(): string[] {
@@ -42,7 +40,8 @@ function hostdSources(): { sources: string[]; codes: string[] } {
   const codes = new Set<string>();
   for (const file of readdirSync(HOSTD).filter((name) => name.endsWith('.py'))) {
     const source = readFileSync(join(HOSTD, file), 'utf8');
-    for (const match of source.matchAll(/(?:source=|'source': )'([a-z]+)'/g)) sources.add(match[1]!);
+    for (const match of source.matchAll(/(?:source=|'source': )'([a-z]+)'/g))
+      sources.add(match[1]!);
     for (const match of source.matchAll(/\bcode='([A-Za-z]+)'/g)) codes.add(match[1]!);
   }
   return { sources: [...sources].sort(), codes: [...codes].sort() };
@@ -65,7 +64,10 @@ describe('Server messages', () => {
   it('names every event source and words every event the host helper records', () => {
     const { sources, codes } = hostdSources();
     assert.deepEqual(sources, ['backup', 'boot', 'esp', 'guard', 'mdadm', 'smartd']);
-    assert.ok(codes.includes('EspSyncSkipped') && codes.includes('BootEntryRepaired'), codes.join());
+    assert.ok(
+      codes.includes('EspSyncSkipped') && codes.includes('BootEntryRepaired'),
+      codes.join(),
+    );
     for (const locale of LOCALES) {
       const events = messages(locale).events;
       assert.deepEqual(
