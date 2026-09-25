@@ -384,6 +384,8 @@ export const qk = {
   issueMailThreads: (issueId: number) => ['mail', 'issue', issueId] as const,
   // The signed-in user's WebAuthn passkeys (account security page).
   passkeys: ['passkeys'] as const,
+  // Web Push: the key, the categories and the signed-in person's devices.
+  push: ['push'] as const,
   // The signed-in user's connected external accounts (accounts page): the linked
   // Telegram account, and the auth providers better-auth reports.
   telegramAccount: ['telegramAccount'] as const,

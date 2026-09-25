@@ -26,6 +26,10 @@ afterEach(() => {
 });
 
 describe('contentSecurityPolicy', () => {
+  it('lets this origin run the service worker that shows push notifications', () => {
+    assert.match(contentSecurityPolicy('abc'), /worker-src 'self';/);
+  });
+
   it('allows requests to the api origin only, without its path', () => {
     process.env.API_URL = 'https://api.example.com/base/';
     assert.match(contentSecurityPolicy(), /connect-src 'self' https:\/\/api\.example\.com;/);

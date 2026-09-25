@@ -447,7 +447,8 @@
       "updates": "Mises à jour",
       "browserTask": "Tâches du navigateur",
       "decisions": "Décisions",
-      "localAi": "IA locale"
+      "localAi": "IA locale",
+      "push": "Notifications push"
     },
     "problems": {
       "external-off": "Se charge une fois les plugins externes activés.",

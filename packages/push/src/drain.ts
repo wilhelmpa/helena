@@ -139,6 +139,8 @@ async function handle(row: Claimed): Promise<void> {
     return;
   }
   if (result.gone) {
+    // Said in the log, without the endpoint: the owner finds out why a device left the list.
+    console.warn(`[push] device ${subscriptionId} removed: ${result.error ?? 'gone'}`);
     await forgetDevice(subscriptionId);
     return;
   }
