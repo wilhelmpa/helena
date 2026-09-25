@@ -3,7 +3,10 @@
 import { Building2, LayoutTemplate, TriangleAlert, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
-import type { OrganizationDepartmentNode as DepartmentNode } from '../organizationTree';
+import {
+  countAgents,
+  type OrganizationDepartmentNode as DepartmentNode,
+} from '../organizationTree';
 import OrganizationAgentNode from './OrganizationAgentNode';
 import OrganizationGoalNode from './OrganizationGoalNode';
 
@@ -11,6 +14,7 @@ import OrganizationGoalNode from './OrganizationGoalNode';
 // no template flag): it gets the red treatment. 'none' (no department, but placed in
 // the reporting chain) and 'templates' (pool templates) are normal states.
 const KIND_ICON = {
+  home: Users,
   department: Building2,
   none: Users,
   templates: LayoutTemplate,
@@ -19,6 +23,7 @@ const KIND_ICON = {
 
 export default function OrganizationDepartmentNode({ node }: { node: DepartmentNode }) {
   const t = useTranslations('organization');
+  if (node.kind === 'home') return <HomeRoot node={node} />;
   const Icon = KIND_ICON[node.kind];
   const label =
     node.department?.name ??
@@ -40,7 +45,7 @@ export default function OrganizationDepartmentNode({ node }: { node: DepartmentN
           />
           <h3 className={cn('text-sm font-medium', isWarning && 'text-status-danger')}>{label}</h3>
           <span className="font-mono text-xs text-muted-foreground tabular-nums">
-            {node.agents.length}
+            {countAgents(node)}
           </span>
           {(node.kind === 'unassigned' || node.department?.description) && (
             <span
@@ -86,5 +91,30 @@ export default function OrganizationDepartmentNode({ node }: { node: DepartmentN
         </ul>
       )}
     </li>
+  );
+}
+
+// The Home master as the root of the chart: no group header above it (it is not "without
+// a department", it is above them); the departments and its other reports hang under it.
+function HomeRoot({ node }: { node: DepartmentNode }) {
+  const t = useTranslations('organization');
+  return (
+    <>
+      {node.agents.map((agent) => (
+        <OrganizationAgentNode key={agent.agent.id} node={agent} />
+      ))}
+      {node.goals.length > 0 && (
+        <li className="ms-4 mt-1 border-s border-sidebar-border ps-4">
+          <p className="flex h-8 items-center text-xs font-medium text-muted-foreground">
+            {t('tabs.goals')}
+          </p>
+          <ul className="space-y-1">
+            {node.goals.map((goal) => (
+              <OrganizationGoalNode key={goal.goal.id} node={goal} />
+            ))}
+          </ul>
+        </li>
+      )}
+    </>
   );
 }

@@ -11,6 +11,7 @@ import {
   organizationAgentRole,
   type OrganizationAgentNode as AgentNode,
 } from '../organizationTree';
+import OrganizationDepartmentNode from './OrganizationDepartmentNode';
 
 const RUNTIME_STATUS: Record<'online' | 'degraded' | 'offline', Status> = {
   online: 'success',
@@ -68,8 +69,15 @@ export default function OrganizationAgentNode({ node }: { node: AgentNode }) {
       {agent.runtimeState.detail && (
         <p className="ps-8 text-xs text-status-waiting">{agent.runtimeState.detail}</p>
       )}
-      {node.reports.length > 0 && (
+      {(node.reports.length > 0 || (node.departments?.length ?? 0) > 0) && (
         <ul className="ms-4 border-s border-sidebar-border">
+          {/* Home only: its departments first, then the reports that belong to none. */}
+          {node.departments?.map((department) => (
+            <OrganizationDepartmentNode
+              key={department.department?.id ?? department.kind}
+              node={department}
+            />
+          ))}
           {node.reports.map((report) => (
             <OrganizationAgentNode key={report.agent.id} node={report} />
           ))}
