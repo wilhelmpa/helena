@@ -8,6 +8,7 @@ import { deviceSyncRoutes } from './modules/device-sync';
 import { ownerTerminalRoutes } from './modules/owner-terminal';
 import { projectFileRoutes } from './modules/project-files';
 import { organizationRoutes } from './modules/organization';
+import { goalRoutes } from './modules/goals';
 import { Elysia } from 'elysia';
 import { HttpError, pgErrorCode } from './shared/lib';
 import { authContext } from './shared/auth-context';
@@ -115,6 +116,7 @@ const plannerOperations = new Elysia({ name: 'planner-operations' })
   .use(mailTriageRoutes)
   .use(receiptRoutes)
   .use(organizationRoutes)
+  .use(goalRoutes)
   .use(connectionsRoutes)
   .use(deviceSyncRoutes)
   .use(ownerTerminalRoutes)

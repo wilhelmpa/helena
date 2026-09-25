@@ -40,6 +40,7 @@ import { getAgentRuntimeDefaults } from '#modules/runtime-admin/settings';
 import { areasSection } from './areas';
 import { agentVaultAccess, knowledgeSection } from './knowledge';
 import { structureSection } from './structure';
+import { agentGoalsSection } from './goals';
 import type { AutopilotLevel } from '@helena/policy';
 import { resolveLevel } from '#modules/autopilot/levels';
 import { autopilotSoulSection } from '#modules/autopilot/prompt';
@@ -55,11 +56,12 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
     memoryBaseline(agent.id),
     runtimeLocalAiNow(),
   ]);
-  const [skills, tools, structure, areas, mcpServers, webLogins, vaultAccess, actions] =
+  const [skills, tools, structure, goals, areas, mcpServers, webLogins, vaultAccess, actions] =
     await Promise.all([
       listAgentRuntimeSkills(agent.id),
       listAgentToolLinks(agent.id),
       structureSection(agent),
+      agentGoalsSection(agent),
       areasSection(agent),
       agentRuntimeMcpServers(agent.id),
       hasWebLoginGrant(agent.id),
@@ -98,6 +100,7 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
           path: 'SOUL.md',
           content: soul(agentRef, agent, {
             structure,
+            goals,
             areas,
             knowledge: knowledgeSection(vaultAccess, agent.runtimePolicy.runtime ?? 'hermes'),
             webLogins,
@@ -164,6 +167,7 @@ function soul(
   config: { name: string; runtimePolicy: AgentRuntimePolicy },
   sections: {
     structure: string;
+    goals?: string;
     areas: string;
     knowledge: string;
     webLogins: boolean;
@@ -171,7 +175,15 @@ function soul(
     browserTask?: string[];
   },
 ): string {
-  const { structure, areas, knowledge, webLogins, autopilot, browserTask = [] } = sections;
+  const {
+    structure,
+    goals = '',
+    areas,
+    knowledge,
+    webLogins,
+    autopilot,
+    browserTask = [],
+  } = sections;
   const files = [...config.runtimePolicy.files].sort((a, b) => a.path.localeCompare(b.path));
   const own = files.find((file) => file.path === 'SOUL.md')?.content.trim();
   const instructions = agent.instructions?.trim();
@@ -190,6 +202,7 @@ function soul(
     areas,
     knowledge,
     structure,
+    goals,
     chatPreamble().trim(),
     blockedPreamble(),
     autopilotSoulSection(autopilot),

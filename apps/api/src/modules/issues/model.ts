@@ -463,6 +463,15 @@ export const createIssueBody = t.Object({
   labelIds: t.Optional(
     t.Array(t.Integer(), { description: 'Label ids to attach. From get_project.labels.' }),
   ),
+  goalId: t.Optional(
+    t.Nullable(
+      t.Integer({
+        description:
+          'The goal this issue serves, or null. From list_goals; it counts the issue in the ' +
+          "goal's progress.",
+      }),
+    ),
+  ),
 });
 
 export const bulkUpdateIssuesBody = t.Object({
