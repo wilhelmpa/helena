@@ -10,8 +10,10 @@ import {
   FieldDescription,
   FieldError,
   FieldGroup,
+  FieldLabel,
   FieldSeparator,
 } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 import AuthFormHeader from '../AuthFormHeader';
 import AuthLoginAlternatives from './AuthLoginAlternatives';
 import AuthLoginPasswordFields from './AuthLoginPasswordFields';
@@ -26,6 +28,7 @@ import {
   signInWithGoogle,
   signInWithOidc,
   signInWithPasskey,
+  verifySignInCode,
 } from '../../services/auth.service';
 import { useAuthAction } from '../../hooks/useAuthAction';
 import { useAuthConfig } from '@/services/authConfig.service';
@@ -44,6 +47,10 @@ export default function AuthLoginForm() {
   // go to an address.
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+  // The password was right and the account has an authenticator app: the screen now
+  // asks for its code instead.
+  const [codeStep, setCodeStep] = useState(false);
+  const [code, setCode] = useState('');
   // The address a sign-in link went to. Set on success, and it replaces the form:
   // there is nothing left to do on this screen until the inbox is opened.
   const [linkSentTo, setLinkSentTo] = useState<string | null>(null);
@@ -108,9 +115,17 @@ export default function AuthLoginForm() {
       );
       return;
     }
+    if (codeStep) {
+      run(() => verifySignInCode(code));
+      return;
+    }
     run(async () => {
       try {
-        await signInWithPassword({ identifier, password });
+        const outcome = await signInWithPassword({ identifier, password });
+        if (outcome === 'code-needed') {
+          setCodeStep(true);
+          return 'stay';
+        }
       } catch (err) {
         if (err instanceof EmailNotConfirmedError) setUnconfirmed(true);
         throw err;
@@ -142,6 +157,7 @@ export default function AuthLoginForm() {
   const signingInWithLink = method === 'link';
 
   function subtitle() {
+    if (codeStep) return t('login.subtitleCode');
     if (sessionExpired) return t('login.subtitleExpired');
     if (justVerified) return t('login.subtitleVerified');
     if (justReset) return t('login.subtitleReset');
@@ -151,6 +167,7 @@ export default function AuthLoginForm() {
   }
 
   function submitLabel() {
+    if (codeStep) return pending ? t('login.verifyCodePending') : t('login.verifyCode');
     if (signingInWithLink) return pending ? t('login.sendLinkPending') : t('login.sendLink');
     return pending ? t('login.submitPending') : t('login.submit');
   }
@@ -160,7 +177,22 @@ export default function AuthLoginForm() {
       <FieldGroup>
         <AuthFormHeader title={t('login.title')} description={subtitle()} />
 
-        {passwordEnabled && (
+        {codeStep && (
+          <Field>
+            <FieldLabel htmlFor="code">{t('login.codeLabel')}</FieldLabel>
+            <Input
+              id="code"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              required
+              value={code}
+              disabled={pending}
+              onChange={(event) => setCode(event.target.value)}
+            />
+          </Field>
+        )}
+
+        {passwordEnabled && !codeStep && (
           <AuthLoginPasswordFields
             signingInWithLink={signingInWithLink}
             identifier={identifier}
@@ -198,23 +230,41 @@ export default function AuthLoginForm() {
               </Button>
             </Field>
 
-            <FieldSeparator>{t('login.or')}</FieldSeparator>
+            {!codeStep && <FieldSeparator>{t('login.or')}</FieldSeparator>}
           </>
         )}
 
-        <AuthLoginAlternatives
-          signingInWithLink={signingInWithLink}
-          pending={pending}
-          onToggleMethod={() => switchTo(signingInWithLink ? 'password' : 'link')}
-          onOidc={() => run(() => signInWithOidc(callbackPath), { redirect: false })}
-          onGoogle={() => run(signInWithGoogle, { redirect: false })}
-          onPasskey={() => run(signInWithPasskey, { fallback: t('errors.passkey') })}
-        />
+        {codeStep && (
+          <FieldDescription className="text-center">
+            <button
+              type="button"
+              className="underline underline-offset-4"
+              onClick={() => {
+                setCodeStep(false);
+                setCode('');
+                setError(null);
+              }}
+            >
+              {t('login.backToSignIn')}
+            </button>
+          </FieldDescription>
+        )}
+
+        {!codeStep && (
+          <AuthLoginAlternatives
+            signingInWithLink={signingInWithLink}
+            pending={pending}
+            onToggleMethod={() => switchTo(signingInWithLink ? 'password' : 'link')}
+            onOidc={() => run(() => signInWithOidc(callbackPath), { redirect: false })}
+            onGoogle={() => run(signInWithGoogle, { redirect: false })}
+            onPasskey={() => run(signInWithPasskey, { fallback: t('errors.passkey') })}
+          />
+        )}
 
         {/* Only when anyone can register with a password. An invite-only instance
             hands out links directly, a closed one has nowhere to send the visitor,
             and with single sign-on the identity provider makes the account. */}
-        {authConfig?.registration === 'open' && passwordEnabled && (
+        {authConfig?.registration === 'open' && passwordEnabled && !codeStep && (
           <FieldDescription className="text-center">
             {t('login.noAccount')}{' '}
             <Link href="/register" className="underline underline-offset-4">

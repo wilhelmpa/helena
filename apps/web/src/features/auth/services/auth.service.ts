@@ -4,6 +4,7 @@ import {
   requestPasswordReset,
   resetPassword,
   sendVerificationEmail,
+  twoFactor,
 } from '@/lib/auth-client';
 import { authCallbackPath } from '../utils/authCallbackPath';
 
@@ -29,18 +30,37 @@ export function isEmailAddress(identifier: string): boolean {
   return identifier.includes('@');
 }
 
+// With an authenticator app set up (Konto → Sicherheit) the password alone opens no
+// session: better-auth answers with twoFactorRedirect, and the code from the app
+// (verifySignInCode) finishes the sign-in.
+export type PasswordSignIn = 'signed-in' | 'code-needed';
+
 export async function signInWithPassword(input: {
   identifier: string;
   password: string;
-}): Promise<void> {
+}): Promise<PasswordSignIn> {
   const identifier = input.identifier.trim();
   const result = isEmailAddress(identifier)
     ? await signIn.email({ email: identifier, password: input.password })
     : await signIn.username({ username: identifier, password: input.password });
-  if (!result.error) return;
+  if (!result.error) {
+    const data = result.data as { twoFactorRedirect?: boolean } | null;
+    return data?.twoFactorRedirect ? 'code-needed' : 'signed-in';
+  }
   const message = result.error.message ?? '';
   if (result.error.status === 403) throw new EmailNotConfirmedError(message);
   throw new Error(message);
+}
+
+// The second step of a password sign-in: the six digits from the authenticator app.
+// This browser is trusted afterwards (better-auth's trust-device cookie, 30 days), so
+// the code is asked again on a new device or after that time.
+export async function verifySignInCode(code: string): Promise<void> {
+  const { error } = await twoFactor.verifyTotp({
+    code: code.replace(/\s+/g, ''),
+    trustDevice: true,
+  });
+  if (error) throw new Error(error.message ?? '');
 }
 
 // autoSignIn (set in @repo/auth) signs the user in right after sign-up, unless the

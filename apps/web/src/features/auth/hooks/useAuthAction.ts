@@ -20,15 +20,17 @@ export function useAuthAction() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
+  // An action that resolves to 'stay' keeps the visitor on the screen (a sign-in that
+  // needs one more step), like `redirect: false` does for every outcome.
   async function run(
-    action: () => Promise<void>,
+    action: () => Promise<void | 'stay'>,
     options?: { redirect?: boolean; fallback?: string },
   ) {
     setError(null);
     setPending(true);
     try {
-      await action();
-      if (options?.redirect === false) {
+      const outcome = await action();
+      if (outcome === 'stay' || options?.redirect === false) {
         setPending(false);
         return;
       }
