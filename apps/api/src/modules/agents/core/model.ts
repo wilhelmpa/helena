@@ -390,6 +390,13 @@ export const AgentRunResponse = t.Object({
           t.Literal('lost'),
         ]),
         reason: t.Union([t.Literal('failure'), t.Literal('rework'), t.Literal('complex')]),
+        model: t.Optional(
+          t.Nullable(
+            t.String({
+              description: "The local model it ran on when Lokale KI took it; absent: the run's",
+            }),
+          ),
+        ),
         saved: t.Array(
           t.Object({
             tool: t.Union([t.Literal('memory'), t.Literal('skill')]),

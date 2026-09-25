@@ -78,7 +78,11 @@ export interface LocalAiClass {
   experimental: boolean;
   inMasterDefault: boolean;
   wired: boolean;
+  // The modes the class offers: work that runs as an agent's turn offers no `only`.
+  modes: LocalAiMode[];
   hasEval: boolean;
+  // The version of its eval: an eval of an older one no longer counts.
+  evalVersion: number;
   threshold: number;
   mode: LocalAiMode;
   model: string | null;
@@ -98,6 +102,7 @@ export interface LocalAiEval {
   latencyMsP50: number | null;
   tokensPerSecond: number | null;
   error: string | null;
+  evalVersion: number;
   ranAt: string;
 }
 

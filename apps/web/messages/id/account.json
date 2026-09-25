@@ -179,5 +179,84 @@
   },
   "shell": {
     "title": "Akun"
+  },
+  "notifications": {
+    "title": "Notifikasi",
+    "thisDevice": {
+      "title": "Push di perangkat ini",
+      "description": "Pesan dari Helena di ponsel atau komputer ini, bahkan saat Helena tidak dibuka.",
+      "switch": "Pesan push",
+      "off": "Mati",
+      "never": "Nyala, belum ada yang terkirim",
+      "lastDelivered": "Nyala, terakhir terkirim {when}",
+      "enabled": "Push menyala di perangkat ini",
+      "disabled": "Push mati di perangkat ini",
+      "enableFailed": "Push tidak bisa dinyalakan: {error}",
+      "test": "Kirim tes",
+      "testSent": "Tes terkirim, sebentar lagi akan muncul.",
+      "testFailed": "Tes tidak sampai: {error}"
+    },
+    "hints": {
+      "insecure": {
+        "title": "Push memerlukan koneksi aman",
+        "body": "Browser hanya mengizinkan push melalui HTTPS atau di localhost. Buka Helena lewat alamat https-nya setelah disiapkan."
+      },
+      "iosInstall": {
+        "title": "Di iPhone dan iPad, tambahkan Helena ke Layar Utama dulu",
+        "body": "Di Safari: Bagikan → “Tambah ke Layar Utama”. Lalu buka Helena dari Layar Utama dan nyalakan push di sini (iOS 16.4 atau lebih baru)."
+      },
+      "unsupported": {
+        "title": "Browser ini tidak mendukung push",
+        "body": "Gunakan Chrome, Edge, Firefox, atau Safari versi terbaru."
+      },
+      "denied": {
+        "title": "Notifikasi diblokir",
+        "body": "Izinkan notifikasi untuk situs ini di pengaturan situs browser, lalu muat ulang halaman."
+      },
+      "noKey": {
+        "title": "Push belum disiapkan di server ini",
+        "body": "Server tidak memiliki kunci enkripsi (APP_ENCRYPTION_KEY)."
+      }
+    },
+    "devices": {
+      "title": "Perangkat Anda",
+      "description": "Setiap perangkat hanya menerima yang dinyalakan di sana.",
+      "empty": "Belum ada perangkat. Nyalakan push di atas pada setiap perangkat yang harus menerima pesan.",
+      "unnamed": "Perangkat",
+      "thisDevice": "Perangkat ini",
+      "noneOn": "semua mati",
+      "lastDelivered": "terakhir terkirim {when}",
+      "failing": "Pengiriman gagal: {error}",
+      "resubscribe": "Harus dinyalakan lagi di perangkat.",
+      "gone": "Layanan push tidak lagi mengenal perangkat ini; perangkat dihapus.",
+      "menu": "Pengaturan untuk {name}",
+      "receives": "Menerima",
+      "test": "Kirim tes",
+      "remove": "Hapus"
+    },
+    "services": {
+      "apple": "Apple",
+      "google": "Google",
+      "mozilla": "Mozilla",
+      "microsoft": "Microsoft"
+    },
+    "categories": {
+      "emergencies": {
+        "label": "Darurat",
+        "description": "Disk atau RAID rusak, cadangan gagal, terlalu panas, layanan berhenti. Sekali saat terjadi, sekali saat sudah beres."
+      },
+      "approvals": {
+        "label": "Persetujuan",
+        "description": "Agen meminta persetujuan Anda."
+      },
+      "needs-you": {
+        "label": "Butuh Anda",
+        "description": "Masuk lagi, pemeriksaan keamanan, proses, dan jawaban yang gagal."
+      },
+      "agent-replies": {
+        "label": "Jawaban agen",
+        "description": "Jawaban di chat sudah siap saat Helena tidak Anda buka."
+      }
+    }
   }
 }

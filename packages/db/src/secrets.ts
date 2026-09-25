@@ -43,3 +43,29 @@ export async function writeSecret(key: string, value: unknown, redacted: object)
       },
     });
 }
+
+// Stores a secret only when the key has none yet; returns whether this call stored it. For
+// a value generated once (a key pair two processes might create at the same moment): the
+// loser of the race reads the winner's value back.
+export async function insertSecretIfAbsent(
+  key: string,
+  value: unknown,
+  redacted: object,
+): Promise<boolean> {
+  const enc = encryptSecret(JSON.stringify(value), secretContext('app_secret', key, 'value'));
+  const rows = await db
+    .insert(appSecret)
+    .values({ key, ciphertext: enc.ciphertext, iv: enc.iv, authTag: enc.authTag, redacted })
+    .onConflictDoNothing({ target: appSecret.key })
+    .returning({ key: appSecret.key });
+  return rows.length > 0;
+}
+
+// The redacted mirror of a secret, read without decrypting (null when there is none).
+export async function readRedactedSecret<T extends object>(key: string): Promise<T | null> {
+  const rows = await db
+    .select({ redacted: appSecret.redacted })
+    .from(appSecret)
+    .where(eq(appSecret.key, key));
+  return (rows[0]?.redacted as T | undefined) ?? null;
+}

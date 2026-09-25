@@ -114,11 +114,11 @@
     },
     "summaries": {
       "label": "Ringkasan dan digest",
-      "description": "Digest pembaruan, ringkasan run, aktivitas dan email, briefing."
+      "description": "Digest pembaruan (apa yang diubah versi baru) ditulis oleh model lokal; bila server tidak menjawab, oleh model yang dikonfigurasi."
     },
     "triage": {
       "label": "Triase dan penugasan",
-      "description": "Memilah pekerjaan masuk: kategori, prioritas, agen mana."
+      "description": "Ditangani oleh “Keputusan” (mengelompokkan email, memilih model, langkah workflow “Keputusan”); tidak ada lagi yang tersambung di sini."
     },
     "transcription": {
       "label": "Transkripsi (dikte)",
@@ -129,16 +129,16 @@
       "description": "Teks ke ucapan untuk mode percakapan: jawaban dibacakan oleh suara lokal. Aktifkan setelah suaranya berbicara dalam bahasa Anda (Kokoro tidak berbahasa Jerman)."
     },
     "routines": {
-      "label": "Agen rutin",
-      "description": "Rutin terjadwal mencoba model lokal utama lebih dulu, dengan model agen yang dikonfigurasi sebagai cadangan."
+      "label": "Agen rutinitas",
+      "description": "Eksekusi yang dimulai rutinitas mencoba model lokal lebih dulu, dengan model agen yang dikonfigurasi sebagai cadangan. Agen bertindak dengan semua alatnya."
     },
     "reflection": {
-      "label": "Refleksi malam",
-      "description": "Apa yang dipelajari dari sebuah run, perawatan skill: kerja batch di malam hari pada model lokal besar."
+      "label": "Refleksi setelah eksekusi",
+      "description": "Tinjauan setelah eksekusi (memori dan skill) di model lokal bila sesinya cukup kecil; selain itu di model eksekusi."
     },
     "coordinator-triage": {
-      "label": "Pandangan pertama koordinator",
-      "description": "Tinjauan pertama tugas baru; semua pekerjaan nyata diteruskan ke model koordinator yang dikonfigurasi."
+      "label": "Rencana pertama koordinator",
+      "description": "Rencana pertama tim agen (siapa mengerjakan apa); bila tidak bisa dipakai, model koordinator yang dikonfigurasi merencanakan ulang."
     },
     "decisions": {
       "label": "Keputusan",

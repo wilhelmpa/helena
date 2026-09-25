@@ -1,0 +1,85 @@
+{
+  "alert": {
+    "emergencies": {
+      "open": "Darurat: {subject}",
+      "reminder": "Masih terbuka: {subject}",
+      "resolved": "Normal lagi: {subject}"
+    },
+    "needs-you": {
+      "open": "Butuh Anda: {subject}",
+      "reminder": "Masih terbuka: {subject}",
+      "resolved": "Selesai: {subject}"
+    },
+    "other": {
+      "open": "{subject}",
+      "reminder": "Masih terbuka: {subject}",
+      "resolved": "Selesai: {subject}"
+    },
+    "reminderBody": "{text} Sudah {duration}.",
+    "resolvedBody": "Teratasi setelah {duration}."
+  },
+  "duration": {
+    "minutes": "{count, plural, other {# menit}}",
+    "hours": "{count, plural, other {# jam}}",
+    "days": "{count, plural, other {# hari}}"
+  },
+  "approval": {
+    "title": "Persetujuan: {agent}",
+    "body": "{action}",
+    "bodyWhere": "{action} · {where}"
+  },
+  "reply": {
+    "title": "{agent} menjawab",
+    "empty": "Jawabannya sudah siap."
+  },
+  "chatFailed": {
+    "title": "Jawaban gagal: {agent}",
+    "body": "Jawaban di chat gagal."
+  },
+  "runFailed": {
+    "title": "Proses gagal: {agent}",
+    "noTask": "Sebuah proses gagal."
+  },
+  "test": {
+    "title": "Helena",
+    "body": "Notifikasi push berfungsi di perangkat ini."
+  },
+  "subjects": {
+    "raid": "Cermin {name}",
+    "disk": "Disk {disk}",
+    "backup": "Cadangan",
+    "esp": "Partisi EFI",
+    "cpu": "CPU",
+    "fans": "Kipas",
+    "events": "Laporan penyimpanan",
+    "server": "Server",
+    "hostd": "Pembantu sistem",
+    "service": "Layanan {service}",
+    "login": "Login {provider}",
+    "security": "Keamanan",
+    "localAi": "AI lokal {name}"
+  },
+  "health": {
+    "raidDegraded": "Cermin {name} tidak lengkap: {missing, plural, other {# disk hilang}}. Data hanya tersisa satu salinan.",
+    "raidRebuilding": "Cermin {name} sedang dibangun ulang: {percent} %. Sampai selesai hanya ada satu salinan.",
+    "diskFailing": "Disk {disk} melaporkan kerusakan. Ganti.",
+    "diskSpareLow": "Disk {disk}: cadangan hampir habis ({spare} %). Ganti.",
+    "eventsCritical": "{count, plural, other {# laporan serius}} dari mdadm atau smartd.",
+    "backupFailed": "Cadangan terakhir gagal.",
+    "backupCheckFailed": "Pemeriksaan cadangan gagal.",
+    "restoreTestFailed": "Uji pemulihan gagal.",
+    "cpuHot": "CPU panas: {temperature} °C.",
+    "fansRaised": "Pelindung panas menaikkan kipas ke tingkat 5: CPU pada {temperature} °C.",
+    "espOutOfSync": "Kedua partisi EFI berbeda ({count, plural, other {# berkas}}). Disk cadangan mungkin tidak bisa menyala.",
+    "espNotMounted": "Partisi EFI {mount} tidak terpasang.",
+    "healthFailed": "Keadaannya tidak dapat dibaca."
+  },
+  "problems": {
+    "serviceDown": "Tidak berjalan atau tidak melapor lagi.",
+    "loginRejected": "Penyedia menolak login. Masuk lagi.",
+    "loginRanOut": "Login kedaluwarsa dan tidak diperbarui. Masuk lagi.",
+    "securityChecks": "{count, plural, other {# pemeriksaan penting gagal.}}",
+    "localAiDown": "Server model tidak menjawab.",
+    "hostdDown": "helena-hostd tidak menjawab, jadi disk, cadangan, dan suhu tidak dipantau."
+  }
+}

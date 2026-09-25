@@ -14,6 +14,7 @@ import { RelativeTimeProvider } from '@/context/relativeTimeContext';
 import { Toaster } from '@/components/ui/sonner';
 import PreferencesSync from '@/components/preferences-sync';
 import SessionScope from '@/components/session-scope';
+import PushSync from '@/features/push/components/PushSync';
 import { SessionProvider } from '@/lib/auth-client';
 
 // The message shown for a failed mutation: the API's error worded in the reader's
@@ -90,6 +91,7 @@ export function Providers({ children }: { children: ReactNode }) {
         <SessionProvider>
           <SessionScope />
           <PreferencesSync />
+          <PushSync />
           <SyncProvider>
             <RelativeTimeProvider>
               <HotkeysProvider>{children}</HotkeysProvider>

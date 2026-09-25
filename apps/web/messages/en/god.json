@@ -447,7 +447,8 @@
       "updates": "Updates",
       "browserTask": "Browser tasks",
       "decisions": "Decisions",
-      "localAi": "Local AI"
+      "localAi": "Local AI",
+      "push": "Push notifications"
     },
     "problems": {
       "external-off": "Loads once external plugins are switched on.",

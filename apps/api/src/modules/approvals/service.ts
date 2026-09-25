@@ -195,7 +195,7 @@ async function askingRun(agentId: number, projectId: number, issueId: number | u
 }
 
 // The people who may decide the project's requests, agents left out.
-async function deciders(projectId: number): Promise<string[]> {
+export async function deciders(projectId: number): Promise<string[]> {
   const contexts = await listMemberContexts(projectId);
   const ids = [...contexts]
     .filter(([, context]) => hasPermission(context.permissions, ...DECIDE_PERMISSION))

@@ -76,6 +76,8 @@ export const pluginManifestSchema = z
         updateSources: ids.optional(),
         decisionBackends: ids.optional(),
         decisionClasses: ids.optional(),
+        notificationCategories: ids.optional(),
+        alertSources: ids.optional(),
         events: ids.optional(),
         mcpServers: z.array(mcpServer).max(50).optional(),
       })

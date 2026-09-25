@@ -1041,6 +1041,8 @@ export async function createIssue(
     ) => Promise<void>;
     // A task a workflow creates starts no workflow.
     fromWorkflow?: boolean;
+    // What the delegate's run is, when the issue is created delegated (a routine's task).
+    delegation?: DelegationOptions;
   },
 ): Promise<IssueRow> {
   await assertAssignments(project.id, input);
@@ -1118,7 +1120,7 @@ export async function createIssue(
   );
   // An issue created already delegated to an agent enqueues a run, the same as
   // delegating one later does.
-  await enqueueDelegateRun(created, actorUserId);
+  await enqueueDelegateRun(created, actorUserId, opts?.delegation);
   // An issue created already assigned to a member notifies them, the same as
   // assigning one later does.
   if (created.assigneeUserId) {
@@ -1224,6 +1226,8 @@ export async function updateIssue(
     onlyIfColumnId?: number;
     skipIfColumnFull?: boolean;
     actionChain?: ActionChain;
+    // What the new delegate's run is, when the patch delegates (a routine's task).
+    delegation?: DelegationOptions;
   },
 ): Promise<IssueRow | null> {
   const before = await loadSnapshot(id);
@@ -1340,7 +1344,7 @@ export async function updateIssue(
           },
           by,
         );
-        await enqueueDelegateRun(after, actor);
+        await enqueueDelegateRun(after, actor, opts?.delegation);
       }
       if (before.columnId !== after.columnId) {
         await emitWebhookEvent(
@@ -1363,7 +1367,11 @@ export async function updateIssue(
 // blocked on it. A coordinator of a project that runs the
 // agent-team workflow gets the issue through the engine instead, as the lead of its team.
 // A routine that reopens a task already delegated to its agent calls it directly.
-export async function enqueueDelegateRun(after: IssueRow, actor?: ActivityActor): Promise<void> {
+export async function enqueueDelegateRun(
+  after: IssueRow,
+  actor?: ActivityActor,
+  delegation?: DelegationOptions,
+): Promise<void> {
   const delegate = after.delegateUserId;
   if (!delegate || delegate === actorId(actor)) return;
   const agent = await getAssignTriggerAgent(after.projectId, delegate, actorId(actor));
@@ -1376,7 +1384,15 @@ export async function enqueueDelegateRun(after: IssueRow, actor?: ActivityActor)
     sourceActivityId: null,
     prompt: delegationPrompt(after.identifier, after.title),
     delaySeconds: agent.delegationDelaySec,
+    workClass: delegation?.workClass ?? null,
   });
+}
+
+// What a delegation's run is: the kind of work it is for Lokale KI (a routine's task is
+// `routines`, docs/helena-decisions/local-ai-platform.md §7.1). A delegation that starts the
+// project's agent team carries none: its stages name their own.
+export interface DelegationOptions {
+  workClass?: string | null;
 }
 
 // Deletes an issue and everything attached to it. Field options/values, labels,

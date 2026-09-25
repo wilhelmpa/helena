@@ -367,9 +367,18 @@ function PresetSection({ settings }: { settings: LocalAiSettings }) {
   );
 }
 
+// The newest eval of the class's model in the class's current eval version: an older one
+// measured something the class no longer does, and the class needs a new one.
 function latestEval(settings: LocalAiSettings, entry: LocalAiClass): LocalAiEval | null {
   const model = entry.resolvedModel;
-  return settings.evals.find((item) => item.classId === entry.id && item.modelId === model) ?? null;
+  return (
+    settings.evals.find(
+      (item) =>
+        item.classId === entry.id &&
+        item.modelId === model &&
+        item.evalVersion >= entry.evalVersion,
+    ) ?? null
+  );
 }
 
 function ClassRow({ entry, settings }: { entry: LocalAiClass; settings: LocalAiSettings }) {
@@ -480,7 +489,7 @@ function ClassRow({ entry, settings }: { entry: LocalAiClass; settings: LocalAiS
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {MODES.map((mode) => (
+            {MODES.filter((mode) => entry.modes.includes(mode)).map((mode) => (
               <SelectItem
                 key={mode}
                 value={mode}

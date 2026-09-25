@@ -660,6 +660,7 @@
       "reasonFailure": "因为运行失败了",
       "reasonRework": "因为这是一次返工",
       "reasonComplex": "因为运行经历了很多步骤",
+      "local": "本地：{model}",
       "nothingSaved": "未保存任何内容",
       "toolMemory": "记忆",
       "toolSkill": "技能",
@@ -748,7 +749,8 @@
       "source": {
         "run": "来自工作流步骤",
         "agent": "来自代理",
-        "default": "代理默认"
+        "default": "代理默认",
+        "local": "由本地 AI 选择"
       },
       "part": {
         "model": "模型",

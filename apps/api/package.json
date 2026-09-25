@@ -29,6 +29,7 @@
     "@helena/locales": "workspace:*",
     "@helena/loop": "workspace:*",
     "@helena/policy": "workspace:*",
+    "@helena/push": "workspace:*",
     "@helena/sdk": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "@repo/agent-naming": "workspace:*",

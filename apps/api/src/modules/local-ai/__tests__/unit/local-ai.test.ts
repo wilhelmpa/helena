@@ -8,6 +8,8 @@ import {
   type ModelServerRow,
 } from '@repo/db';
 import {
+  classEvalVersion,
+  classModes,
   isLocalProvider,
   localModelId,
   localThinkingFields,
@@ -24,13 +26,18 @@ import {
   unitOf,
 } from '../../server-types';
 import {
+  COORDINATOR_CASES,
+  REFLECTION_CASES,
   ROUTINE_CASES,
   TRIAGE_CASES,
+  evaluateCoordinatorTriage,
+  evaluateReflection,
   evaluateRoutines,
   evaluateTriage,
   firstJson,
   withoutThinking,
 } from '../../evals';
+import { classBlocker, type EvalView } from '../../service';
 import { MODEL_WATCH, atomTags, familyOf, newerInFamily, newestWatched } from '../../integrations';
 import { BUILTIN_TASK_CLASSES } from '../../task-classes';
 import { openAiEvalContext } from '../../eval-context';
@@ -224,14 +231,21 @@ describe('the policy and its routes', () => {
 });
 
 // A fake model: answers each case from a table, so the checking itself is what is tested.
-function fakeContext(answer: (prompt: string) => { text?: string; tool?: [string, object] }) {
+function fakeContext(
+  answer: (prompt: string) => {
+    text?: string;
+    tool?: [string, object];
+    tools?: [string, object][];
+  },
+) {
   return {
     model: 'fake',
     async chat(request) {
       const out = answer(request.prompt);
+      const calls = [...(out.tool ? [out.tool] : []), ...(out.tools ?? [])];
       return {
         text: out.text ?? '',
-        toolCalls: out.tool ? [{ name: out.tool[0], arguments: JSON.stringify(out.tool[1]) }] : [],
+        toolCalls: calls.map(([name, args]) => ({ name, arguments: JSON.stringify(args) })),
         inputTokens: 10,
         outputTokens: 20,
         latencyMs: 50,
@@ -287,6 +301,215 @@ describe('the evals', () => {
     expect(talking.score).toBe(0);
     expect(talking.cases[0]?.detail).toContain('no tool call');
   });
+
+  it("offers the routines a toolset of an agent's size, not only the four it needs", async () => {
+    const offered: number[] = [];
+    await evaluateRoutines({
+      ...fakeContext(() => ({ text: '' })),
+      async chat(request) {
+        offered.push(request.tools?.length ?? 0);
+        return { text: '', toolCalls: [], inputTokens: 1, outputTokens: 1, latencyMs: 1 };
+      },
+    });
+    expect(offered.every((count) => count === 22)).toBe(true);
+  });
+
+  it('keeps the right fact in a reflection, nothing of a trivial task, and never a secret', async () => {
+    const byCase = (prompt: string) => REFLECTION_CASES.find((c) => prompt.includes(c.session))!;
+    const keep: Record<string, [string, object][]> = {
+      f1: [
+        ['memory', { action: 'add', target: 'user', content: 'Berichte auf Deutsch, Stichpunkte' }],
+      ],
+      f2: [
+        [
+          'memory',
+          {
+            action: 'add',
+            target: 'memory',
+            content: 'Staging: bun run deploy:staging in apps/shop',
+          },
+        ],
+      ],
+      f3: [
+        [
+          'skill_manage',
+          { action: 'create', name: 'shopify-bulk-prices', content: 'Use a bulk operation' },
+        ],
+      ],
+      f4: [
+        [
+          'skill_manage',
+          {
+            action: 'create',
+            name: 'restic-cleanup',
+            content: 'restic forget …, then restic prune, then check',
+          },
+        ],
+      ],
+      f5: [],
+      f6: [
+        [
+          'memory',
+          {
+            action: 'add',
+            target: 'memory',
+            content: 'Newsletter API: key in the X-Api-Key header',
+          },
+        ],
+      ],
+    };
+    const right = await evaluateReflection(
+      fakeContext((prompt) => {
+        const tools = keep[byCase(prompt).id]!;
+        return tools.length ? { tools } : { text: 'Nothing to save.' };
+      }),
+    );
+    expect(right.score).toBe(1);
+    // The same, but keeping the key itself and a note of the trivial task.
+    const careless = await evaluateReflection(
+      fakeContext((prompt) => {
+        const item = byCase(prompt);
+        if (item.id === 'f5')
+          return {
+            tool: ['memory', { action: 'add', target: 'memory', content: 'FAM-11 renamed' }],
+          };
+        if (item.id === 'f6')
+          return {
+            tool: [
+              'memory',
+              { action: 'add', target: 'memory', content: 'X-Api-Key sk-live-4f9a2b7c1d' },
+            ],
+          };
+        return { tools: keep[item.id]! };
+      }),
+    );
+    expect(careless.cases.filter((c) => !c.passed).map((c) => [c.id, c.detail])).toEqual([
+      ['f5', 'kept 1 entries of a trivial task'],
+      ['f6', 'kept a secret'],
+    ]);
+  });
+
+  it("reads a coordinator's plan with the stage's own parser", async () => {
+    const plans: Record<string, object> = {
+      k1: {
+        summary: 'Fix',
+        delegations: [
+          assignment('fix', 'agent:coder-verve'),
+          assignment('test', 'agent:qa-verve', ['fix']),
+        ],
+      },
+      k2: { summary: 'Texts', delegations: [assignment('texts', 'agent:content-verve')] },
+      k3: {
+        summary: 'Texts, then page',
+        delegations: [
+          assignment('texts', 'agent:content-verve'),
+          assignment('page', 'agent:coder-verve', ['texts']),
+        ],
+      },
+      k4: {
+        summary: 'Export and article',
+        delegations: [
+          assignment('export', 'agent:coder-verve'),
+          assignment('article', 'agent:content-verve', ['export']),
+        ],
+      },
+      k5: { summary: 'Check', delegations: [assignment('check', 'agent:qa-verve')] },
+    };
+    const title = (prompt: string) =>
+      COORDINATOR_CASES.find((c) => prompt.includes(`Task title: ${c.title}`))!;
+    const right = await evaluateCoordinatorTriage(
+      fakeContext((prompt) => ({
+        text: '```json\n' + JSON.stringify(plans[title(prompt).id]) + '\n```',
+      })),
+    );
+    expect(right.score).toBe(1);
+    const wrong = await evaluateCoordinatorTriage(
+      fakeContext((prompt) => {
+        const item = title(prompt);
+        // k3 in parallel, k2 to the coder, k5 as prose.
+        if (item.id === 'k3')
+          return {
+            text: JSON.stringify({
+              summary: 'x',
+              delegations: [
+                assignment('a', 'agent:content-verve'),
+                assignment('b', 'agent:coder-verve'),
+              ],
+            }),
+          };
+        if (item.id === 'k2')
+          return {
+            text: JSON.stringify({
+              summary: 'x',
+              delegations: [assignment('a', 'agent:coder-verve')],
+            }),
+          };
+        if (item.id === 'k5') return { text: 'QA should check the iPhone.' };
+        return { text: JSON.stringify(plans[item.id]) };
+      }),
+    );
+    expect(wrong.score).toBeCloseTo(0.4);
+    expect(wrong.cases.find((c) => c.id === 'k3')?.detail).toContain('does not wait');
+    expect(wrong.cases.find((c) => c.id === 'k2')?.detail).toContain('assigned agent:coder-verve');
+  });
+});
+
+function assignment(id: string, agentRef: string, dependsOn: string[] = []) {
+  return {
+    assignmentId: id,
+    agentRef,
+    objective: `Do ${id}.`,
+    acceptanceCriteria: ['Done'],
+    dependsOn,
+  };
+}
+
+describe('kinds of work that run as an agent turn', () => {
+  const of = (id: string) => BUILTIN_TASK_CLASSES.find((entry) => entry.id === id)!;
+
+  it('offer off and prefer only, since the agent keeps its configured model as fallback', () => {
+    for (const id of [
+      'hermes-helpers',
+      'summaries',
+      'routines',
+      'reflection',
+      'coordinator-triage',
+    ]) {
+      expect(classModes(of(id))).toEqual(['off', 'prefer']);
+    }
+    expect(classModes(of('embeddings'))).toEqual(['off', 'prefer', 'only']);
+    // `off` is always offered, whatever a plugin's class lists.
+    expect(classModes({ modes: ['only'] })).toEqual(['off', 'only']);
+  });
+
+  it('are wired except triage, which the decisions service covers', () => {
+    const wired = BUILTIN_TASK_CLASSES.filter((entry) => !entry.wired).map((entry) => entry.id);
+    expect(wired).toEqual(['triage']);
+  });
+
+  it('need an eval of their current version', () => {
+    const entry = of('summaries');
+    expect(classEvalVersion(entry)).toBe(2);
+    expect(classEvalVersion(of('embeddings'))).toBe(1);
+    const view = (evalVersion: number, passed = true): EvalView => ({
+      id: 1,
+      classId: 'summaries',
+      modelId: 'helena-local/Q',
+      score: passed ? 1 : 0,
+      threshold: 0.75,
+      passed,
+      cases: 4,
+      details: [],
+      latencyMsP50: null,
+      tokensPerSecond: null,
+      error: null,
+      evalVersion,
+      ranAt: new Date().toISOString(),
+    });
+    expect(classBlocker(entry, 'helena-local/Q', [view(1)])).toBe('eval-missing');
+    expect(classBlocker(entry, 'helena-local/Q', [view(2)])).toBeNull();
+    expect(classBlocker(entry, 'helena-local/Q', [view(2, false)])).toBe('eval-failed');
+  });
 });
 
 describe('thinking', () => {
@@ -299,11 +522,14 @@ describe('thinking', () => {
     });
   });
 
-  it('keeps the helpers, summaries and reflection off, and every chat class declares it', () => {
+  it('keeps the helpers off, lets the agent turns think, and every chat class declares it', () => {
     const of = (id: string) => BUILTIN_TASK_CLASSES.find((entry) => entry.id === id)?.thinking;
     expect(of('hermes-helpers')).toBe('off');
-    expect(of('summaries')).toBe('off');
-    expect(of('reflection')).toBe('off');
+    // They run as an agent's turn on the local model, which thinks (runner local-ai.ts).
+    expect(of('summaries')).toBe('low');
+    expect(of('reflection')).toBe('low');
+    expect(of('routines')).toBe('low');
+    expect(of('coordinator-triage')).toBe('low');
     for (const entry of BUILTIN_TASK_CLASSES) {
       if (entry.capability === 'chat' || entry.capability === 'tools') {
         expect(entry.thinking).toBeDefined();
@@ -388,7 +614,8 @@ describe('the key file', () => {
     const installer = await Bun.file(
       `${here}/../../../../../../../deployment/volition-stack/native/local-ai/install.sh`,
     ).text();
-    expect(installer).toContain('KEY=$ETC/local-ai.key');
+    // The preload unit hands the same file over as a credential (HELENA_AI_KEY_FILE).
+    expect(installer).toContain('KEY=${HELENA_AI_KEY_FILE:-$ETC/local-ai.key}');
     expect(service).toContain('DEFAULT_KEY_FILE = `${LOCAL_AI_KEY_DIR}/local-ai.key`');
     expect(allowedKeyFile('/etc/helena/local-ai.key')).toBe('/etc/helena/local-ai.key');
   });

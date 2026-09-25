@@ -114,11 +114,11 @@
     },
     "summaries": {
       "label": "Resumos e digests",
-      "description": "Digests de atualizações, resumos de execuções, atividade e e-mails, briefings."
+      "description": "Os digests de atualizações (o que uma nova versão muda) são escritos pelo modelo local; se o servidor não responder, pelo modelo configurado."
     },
     "triage": {
-      "label": "Triagem e encaminhamento",
-      "description": "Organizar o trabalho que chega: categoria, prioridade, qual agente."
+      "label": "Triagem e atribuição",
+      "description": "Coberto por “Decisões” (classificar e-mails, escolher o modelo, a etapa de workflow “Decisão”); nada mais está conectado aqui."
     },
     "transcription": {
       "label": "Transcrição (ditado)",
@@ -130,15 +130,15 @@
     },
     "routines": {
       "label": "Agentes de rotina",
-      "description": "Rotinas agendadas tentam primeiro o modelo local principal, com o modelo configurado do agente como reserva."
+      "description": "A execução que uma rotina inicia tenta primeiro o modelo local, com o modelo configurado do agente como alternativa. O agente age com todas as suas ferramentas."
     },
     "reflection": {
-      "label": "Reflexão noturna",
-      "description": "O que uma execução ensinou, cuidado de skills: trabalho em lote à noite no modelo local grande."
+      "label": "Reflexão após execuções",
+      "description": "A revisão após uma execução (memória e skills) no modelo local quando a sessão é pequena o bastante; caso contrário, no modelo da execução."
     },
     "coordinator-triage": {
-      "label": "Primeira olhada do coordenador",
-      "description": "A primeira análise de uma tarefa nova; tudo o que é real vai para o modelo configurado do coordenador."
+      "label": "Primeiro plano do coordenador",
+      "description": "O primeiro plano de uma equipe de agentes (quem faz o quê); se não servir, o modelo configurado do coordenador planeja de novo."
     },
     "decisions": {
       "label": "Decisões",
