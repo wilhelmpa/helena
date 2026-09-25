@@ -10,6 +10,7 @@ import type { DecisionBackendType } from './decision-backends';
 import type { DecisionClass } from './decisions';
 import type { ProfileContribution } from './runtime-policy';
 import type { HostCapability } from './host';
+import type { AlertSource, NotificationCategory } from './notifications';
 import type { BundleOffer } from './templates';
 import type { AnyAgentTool } from './tools';
 import { uiSlotKey, type UiSlot } from './ui';
@@ -41,6 +42,8 @@ export interface HelenaRegistries {
   updateSources: Registry<UpdateSource>;
   decisionBackends: Registry<DecisionBackendType>;
   decisionClasses: Registry<DecisionClass>;
+  notificationCategories: Registry<NotificationCategory>;
+  alertSources: Registry<AlertSource>;
 }
 
 export function createRegistries(given: Partial<HelenaRegistries> = {}): HelenaRegistries {
@@ -72,5 +75,8 @@ export function createRegistries(given: Partial<HelenaRegistries> = {}): HelenaR
     decisionBackends:
       given.decisionBackends ?? createRegistry<DecisionBackendType>('decision backend'),
     decisionClasses: given.decisionClasses ?? createRegistry<DecisionClass>('decision class'),
+    notificationCategories:
+      given.notificationCategories ?? createRegistry<NotificationCategory>('notification category'),
+    alertSources: given.alertSources ?? createRegistry<AlertSource>('alert source'),
   };
 }

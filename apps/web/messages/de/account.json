@@ -179,5 +179,84 @@
   },
   "shell": {
     "title": "Konto"
+  },
+  "notifications": {
+    "title": "Benachrichtigungen",
+    "thisDevice": {
+      "title": "Push auf diesem Gerät",
+      "description": "Meldungen von Helena auf diesem Telefon oder Computer, auch wenn Helena nicht offen ist.",
+      "switch": "Push-Nachrichten",
+      "off": "Aus",
+      "never": "An, noch nichts zugestellt",
+      "lastDelivered": "An, zuletzt zugestellt {when}",
+      "enabled": "Push ist auf diesem Gerät an",
+      "disabled": "Push ist auf diesem Gerät aus",
+      "enableFailed": "Push ließ sich nicht einschalten: {error}",
+      "test": "Test senden",
+      "testSent": "Test gesendet, er sollte gleich erscheinen.",
+      "testFailed": "Der Test kam nicht an: {error}"
+    },
+    "hints": {
+      "insecure": {
+        "title": "Push braucht eine sichere Verbindung",
+        "body": "Browser erlauben Push nur über HTTPS oder auf localhost. Öffne Helena über ihre https-Adresse, sobald sie eingerichtet ist."
+      },
+      "iosInstall": {
+        "title": "Auf iPhone und iPad erst zum Home-Bildschirm hinzufügen",
+        "body": "In Safari: Teilen → „Zum Home-Bildschirm“. Dann Helena vom Home-Bildschirm öffnen und hier Push einschalten (ab iOS 16.4)."
+      },
+      "unsupported": {
+        "title": "Dieser Browser kann kein Push",
+        "body": "Nutze einen aktuellen Chrome, Edge, Firefox oder Safari."
+      },
+      "denied": {
+        "title": "Benachrichtigungen sind blockiert",
+        "body": "Erlaube Benachrichtigungen für diese Seite in den Website-Einstellungen des Browsers und lade die Seite neu."
+      },
+      "noKey": {
+        "title": "Push ist auf diesem Server nicht eingerichtet",
+        "body": "Dem Server fehlt der Schlüssel zum Verschlüsseln (APP_ENCRYPTION_KEY)."
+      }
+    },
+    "devices": {
+      "title": "Deine Geräte",
+      "description": "Jedes Gerät bekommt nur, was dort eingeschaltet ist.",
+      "empty": "Noch kein Gerät. Schalte Push oben auf jedem Gerät ein, das Meldungen bekommen soll.",
+      "unnamed": "Gerät",
+      "thisDevice": "Dieses Gerät",
+      "noneOn": "alles aus",
+      "lastDelivered": "zuletzt zugestellt {when}",
+      "failing": "Zustellung klappt nicht: {error}",
+      "resubscribe": "Muss auf dem Gerät neu eingeschaltet werden.",
+      "gone": "Das Gerät ist beim Push-Dienst nicht mehr bekannt und wurde entfernt.",
+      "menu": "Einstellungen für {name}",
+      "receives": "Bekommt",
+      "test": "Test senden",
+      "remove": "Entfernen"
+    },
+    "services": {
+      "apple": "Apple",
+      "google": "Google",
+      "mozilla": "Mozilla",
+      "microsoft": "Microsoft"
+    },
+    "categories": {
+      "emergencies": {
+        "label": "Notfälle",
+        "description": "Platte oder RAID defekt, Backup fehlgeschlagen, zu heiß, ein Dienst läuft nicht. Einmal beim Auftreten, einmal wenn es behoben ist."
+      },
+      "approvals": {
+        "label": "Freigaben",
+        "description": "Ein Agent bittet um deine Freigabe."
+      },
+      "needs-you": {
+        "label": "Braucht dich",
+        "description": "Neu anmelden, fehlgeschlagene Sicherheitsprüfungen, Läufe und Antworten."
+      },
+      "agent-replies": {
+        "label": "Agenten-Antworten",
+        "description": "Eine Antwort im Chat ist fertig, während du Helena nicht offen hast."
+      }
+    }
   }
 }

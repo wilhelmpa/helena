@@ -114,11 +114,11 @@
     },
     "summaries": {
       "label": "Resúmenes y digests",
-      "description": "Digests de actualizaciones, resúmenes de ejecuciones, actividad y correos, informes."
+      "description": "Los digests de actualizaciones (qué cambia una nueva versión) los escribe el modelo local; si el servidor no responde, el modelo configurado."
     },
     "triage": {
       "label": "Clasificación y asignación",
-      "description": "Ordenar el trabajo entrante: categoría, prioridad, qué agente."
+      "description": "Lo cubre «Decisiones» (clasificar correos, elegir el modelo, el paso de workflow «Decisión»); aquí no hay nada más conectado."
     },
     "transcription": {
       "label": "Transcripción (dictado)",
@@ -130,15 +130,15 @@
     },
     "routines": {
       "label": "Agentes de rutina",
-      "description": "Las rutinas programadas prueban primero el modelo local principal, con el modelo configurado del agente como respaldo."
+      "description": "La ejecución que inicia una rutina prueba primero el modelo local, con el modelo configurado del agente como respaldo. El agente actúa con todas sus herramientas."
     },
     "reflection": {
-      "label": "Reflexión nocturna",
-      "description": "Lo que una ejecución enseñó, cuidado de skills: trabajo por lotes de noche en el modelo local grande."
+      "label": "Reflexión tras las ejecuciones",
+      "description": "La revisión tras una ejecución (memoria y skills) en el modelo local cuando la sesión es lo bastante pequeña; si no, en el modelo de la ejecución."
     },
     "coordinator-triage": {
-      "label": "Primer vistazo del coordinador",
-      "description": "La primera revisión de una tarea nueva; todo lo real pasa al modelo configurado del coordinador."
+      "label": "Primer plan del coordinador",
+      "description": "El primer plan de un equipo de agentes (quién hace qué); si no sirve, el modelo configurado del coordinador vuelve a planificar."
     },
     "decisions": {
       "label": "Decisiones",

@@ -148,7 +148,11 @@ export function storageHealth(
   } else if (storage.esp.inSync) {
     items.push({ id: 'esp', state: 'ok', code: 'espInSync' });
   }
-  items.push(...espSyncHealth(storage.esp.sync), ...bootEntryHealth(storage.bootEntries));
+  items.push(
+    ...espSyncHealth(storage.esp.sync),
+    ...removableHealth(storage.esp.removable),
+    ...bootEntryHealth(storage.bootEntries),
+  );
   if (events && events.unseenCritical > 0) {
     items.push({
       id: 'events',
@@ -188,6 +192,20 @@ function espSyncHealth(sync: StorageStatus['esp']['sync']): HostHealthItem[] {
     ];
   }
   return [];
+}
+
+// The firmware's removable path (EFI/BOOT): amber when it would start other binaries than the
+// entries, a shim fallback, or a stub that does not find the root. The AXB35 firmware boots it
+// on its own ("UEFI OS") now and then.
+function removableHealth(states: StorageStatus['esp']['removable']): HostHealthItem[] {
+  return (states ?? [])
+    .filter((removable) => removable.state !== 'ok' && removable.state !== 'unknown')
+    .map((removable) => ({
+      id: `esp:removable:${removable.mount}`,
+      state: 'attention' as const,
+      code: 'espRemovableStale',
+      values: { mount: removable.mount, problem: removable.state },
+    }));
 }
 
 // The firmware entries of both ESPs. A wrong one is amber: helena-boot-entries.service repairs

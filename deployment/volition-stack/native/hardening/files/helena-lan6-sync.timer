@@ -1,5 +1,5 @@
 [Unit]
-Description=Helena: refresh the firewall's home IPv6 networks
+Description=Helena: refresh the home networks (firewall, owner sign-in)
 
 [Timer]
 OnBootSec=1min

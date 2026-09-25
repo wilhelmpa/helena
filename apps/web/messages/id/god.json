@@ -447,7 +447,8 @@
       "updates": "Pembaruan",
       "browserTask": "Tugas browser",
       "decisions": "Keputusan",
-      "localAi": "AI lokal"
+      "localAi": "AI lokal",
+      "push": "Notifikasi push"
     },
     "problems": {
       "external-off": "Dimuat setelah plugin eksternal diaktifkan.",

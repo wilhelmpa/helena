@@ -660,6 +660,7 @@
       "reasonFailure": "karena run gagal",
       "reasonRework": "karena ini pengerjaan ulang",
       "reasonComplex": "karena run mengambil banyak langkah",
+      "local": "lokal: {model}",
       "nothingSaved": "Tidak ada yang disimpan",
       "toolMemory": "Memori",
       "toolSkill": "Skill",
@@ -748,7 +749,8 @@
       "source": {
         "run": "dari langkah alur kerja",
         "agent": "dari agen",
-        "default": "bawaan agen"
+        "default": "bawaan agen",
+        "local": "oleh AI lokal"
       },
       "part": {
         "model": "model",

@@ -120,6 +120,31 @@ describe('ESP copy and boot entries (the 2026-09-25 disk that fell off the bus)'
     expect(byId(storageHealth(storage()), 'esp:sync')).toBeUndefined();
   });
 
+  it('the removable path is amber unless it starts the same binaries (or cannot be compared)', () => {
+    const base = storage();
+    const items = storageHealth({
+      ...base,
+      esp: {
+        ...base.esp,
+        removable: [
+          { mount: '/boot/efi', state: 'ok', detail: null },
+          { mount: '/boot/efi2', state: 'differs', detail: 'EFI/BOOT/grubx64.efi' },
+        ],
+      },
+    });
+    expect(byId(items, 'esp:removable:/boot/efi')).toBeUndefined();
+    expect(byId(items, 'esp:removable:/boot/efi2')).toMatchObject({
+      state: 'attention',
+      code: 'espRemovableStale',
+      values: { mount: '/boot/efi2', problem: 'differs' },
+    });
+    const unknown = storageHealth({
+      ...base,
+      esp: { ...base.esp, removable: [{ mount: '/boot/efi', state: 'unknown', detail: null }] },
+    });
+    expect(unknown.some((item) => item.id.startsWith('esp:removable'))).toBe(false);
+  });
+
   const entry = (over: Partial<BootEntryCheck>): BootEntryCheck => ({
     role: 'main',
     label: 'Debian',

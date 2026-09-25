@@ -41,6 +41,18 @@ hub/browser-task.
 - **Eine Art von Arbeit lässt sich erst einschalten, wenn ihre Auswertung bestanden ist.** Die
   Auswertungen sind feste Fälle mit prüfbaren Antworten (richtiges Werkzeug, Fakten behalten,
   richtige Kategorie, richtiges Dokument), meist auf Deutsch.
+- **Angebunden (2026-09-25, hub/local-ai-wiring):** Embeddings, Hermes-Hilfsaufrufe, Transkription,
+  Vorlesen, Entscheidungen und neu: **Zusammenfassungen** (die Update-Digests), **Routinen** (der
+  Lauf, den eine Routine startet), **Erster Plan des Koordinators** (die Planungsstufe eines
+  Agenten-Teams, nur der erste Versuch) und **Reflexion nach Läufen** (nur kurze Sitzungen). Jede
+  mit dem eingestellten Modell als Rückfall; der Lauf zeigt, ob lokal lief und warum nicht.
+  **Triage** hat keine eigene Arbeit mehr: Was Helena einordnet, macht „Entscheidungen“.
+  Routinen, Koordinator und Reflexion **handeln** (Werkzeuge, Aufgaben, Gedächtnis): Sie brauchen
+  eine neue Auswertung (Version 2) und sind nie Teil des Hauptschalters; vor dem Einschalten
+  §7.1 „Bevor der Owner einschaltet“ lesen.
+- **Nach einem Neustart** lädt `helena-ai-preload.service` die Modelle der eingeschalteten
+  Arten und hält sie im Speicher (`install.sh models preload set …`), statt dass die erste Anfrage
+  ~50 s auf das Laden wartet.
 
 ## 1. The machine (verified 2026-09-24)
 
@@ -447,6 +459,21 @@ starts `hermes --provider helena-local --model <model>`. The key reaches the age
     last when the session ran on a non-local provider although a local model was asked for), which
     is no mismatch; the chat answer and the run say "gpt-6-luna statt Qwen3.6-… · lokaler Server
     nicht erreichbar".
+- **Kinds of work that run as an agent's turn** (a digest, a routine's task, a coordinator's
+  first plan: `agent_run.work_class`, migration 0182; a reflection: asked for by the API when the
+  run ends): the claim asks `classModelNow(class)`. While the master switch and the class are on,
+  the class's unit allowed, its model's newest eval passed **in the class's current eval
+  version** and its server answering (the same 15 s / 2 s check as above), the run starts on the
+  class's local model with no reasoning level of its own (the provider's `extra_body` says how the
+  local model thinks, §6.7), and the model check says `source: 'local'` with the class. Otherwise
+  it runs on the model it runs on without local AI: the run's own (the digest's cheapest model,
+  a workflow step's) or the agent's, with its reasoning; a server that did not answer is named
+  (`fallback: down`). During the turn the profile's fallback chain starts with the agent's own
+  cloud model (above), so a local failure mid-turn lands there (`fallback: failed`), not on the
+  run's own model when that differs (the digest's) — accepted: one managed configuration per
+  profile; a per-run chain would need a second one. These classes offer `off` and `prefer` only
+  (`LocalAiTaskClass.modes`): the fallback chain is always there, so `only` could not be kept
+  (the same holds for `hermes-helpers`, whose helpers fall back to the main model).
 - **Which model answered** is on every run already (the model check: configured vs used, with
   the provider); a local provider reads "lokal".
 - Price: `price()` answers 0 for a local provider or id (`source: 'local'`), so budgets and the
@@ -493,10 +520,15 @@ ctx.localAiTaskClasses.register({
   wired: true,                      // false: listed as planned, cannot leave "Aus"
   evaluate: async (ctx) => …,       // LocalAiEvalContext → LocalAiEvalResult (fixed cases, 0–1)
   threshold: 0.85,                  // the score a model needs before the class may leave "Aus"
+  evalVersion: 1,                   // raise it when the eval changes: older passes stop counting
+  modes: ['off', 'prefer'],         // optional; all three when absent, `off` always
 });
 ```
 
-At call time, one question — where does this run now, or why not:
+Work that is an agent's turn does not call the server itself: its producer stores the class on
+the run (`agent_run.work_class`, `WORK_CLASS` in `modules/local-ai/work-classes.ts`) and the claim
+hands the local model (`classModelNow`, §6.3). Work Helena sends itself asks at call time — where
+does this run now, or why not:
 
 ```ts
 import { resolveLocalRoute, readModelServerKey } from '@repo/db';
@@ -593,38 +625,91 @@ runner bundle is rebuilt; the runner rewrites every profile whose snapshot chang
 
 ### 7.1 Task classes
 
-| Class | Default unit | Needs | Wired | Eval (threshold) | In the master's first set |
-|---|---|---|---|---|---|
-| `embeddings` | NPU/GPU | embeddings | **yes** | retrieval top-1, 10 DE/EN questions (0.8) | yes |
-| `hermes-helpers` | GPU | chat | **yes** | compression keeps every fact, 3 cases (0.75) | yes |
-| `summaries` (digests, run/activity/mail summaries, briefings) | GPU | chat | planned | German JSON summaries with every fact, 4 cases (0.75) | yes |
-| `triage` (classification, routing) | NPU | chat | planned | 16 labels DE/EN (0.85) | yes |
-| `transcription` (dictation, conversation mode) | NPU | transcription | **yes** (`voice.md`) | – | yes |
-| `speech` ("Vorlesen", the conversation mode's voice) | CPU | speech | **yes** (`voice.md`) | – (the voice must speak the owner's language: the owner listens) | no |
-| `routines` (routine agents, local-first) | GPU | tools | planned | right tool + arguments, 8 cases (0.9) | no |
-| `reflection` (nightly, heavy model) | GPU | chat | planned | as summaries (0.85) | no |
-| `coordinator-triage` (first pass, escalates) | GPU | tools | planned | as routines (0.9) | no |
+| Class | Default unit | Needs | Wired to (producer) | Modes | Eval (threshold), version | Thinking | In the master's first set |
+|---|---|---|---|---|---|---|---|
+| `embeddings` | NPU/GPU | embeddings | the knowledge index (`useEmbeddingRoute`, API + worker) | off/prefer/only | retrieval top-1, 10 DE/EN questions (0.8), v1 | – | yes |
+| `hermes-helpers` | GPU | chat | Hermes' `auxiliary.compression`/`vision` (runner `local-ai.ts`) | off/prefer | compression keeps every fact, 3 cases (0.75), v1 | off | yes |
+| `summaries` | GPU | chat | the update center's **digest runs** (`updates/digest.ts`: `work_class`) | off/prefer | German JSON summaries with every fact, 4 cases, room to think (0.75), **v2** | low | yes |
+| `triage` | NPU | chat | **none** — covered by `decisions` (below) | – | 16 labels DE/EN (0.85), v1 | low | yes (never on: unwired) |
+| `transcription` | NPU | transcription | the chat's dictation and conversation mode (`voice.md`) | off/prefer/only | – | – | yes |
+| `speech` | CPU | speech | the conversation mode's reading aloud (`voice.md`) | off/prefer/only | – (the owner listens) | – | no |
+| `routines` | GPU | tools | the run a **routine's fire** starts (engine `delegate` step → `createIssue`/`updateIssue` → `enqueueDelegateRun` with `work_class`) | off/prefer | right tool + arguments among **22 tools**, 8 cases (0.9), **v2** | low | no |
+| `reflection` | GPU | chat | the **turn after a run** (`requestReflection`: the answer to the run's result names the model; runner `reflect.ts`), only after a run that read ≤ 64k tokens in all | off/prefer | its own: the right fact kept with `memory`/`skill_manage`, nothing of a trivial task, never a secret, 6 cases (0.85), **v2** | low | no |
+| `coordinator-triage` | GPU | tools | an agent team's **coordinate stage, first attempt** (`agent-team.ts` `queueStage`); a retry runs on the coordinator's model | off/prefer | its own: the stage's real prompt and parser, the right specialists and order, 5 cases (0.8), **v2** | low | no |
+| `decisions` (hub/decisions) | GPU | chat | `decide()`: mail classifier, model router, receipts, engine step "Entscheidung" | off/prefer/only | 24 typed questions (0.85), v1 | off | no |
+
+**Class → producer, how it runs.** Work Helena sends itself (embeddings, voice, decisions) calls
+the local server from the API or worker (`resolveLocalRoute`). Work that is an **agent's turn**
+(summaries, routines, coordinator-triage, reflection) is a Hermes run: the producer only says what
+the work is (`WORK_CLASS`, `modules/local-ai/work-classes.ts`; stored as `agent_run.work_class`),
+and the **claim** decides local or configured (`classModelNow`, §6.3). Such a turn thinks on the
+local model (the provider's `extra_body`), so these classes declare `thinking: low` and their evals
+run that way.
+
+**What else was looked for and is not there (2026-09-25):** no run, chat, activity or mail
+summaries exist in Helena (chat titles are the owner's, Hermes' title generation is off); the only
+model-written summary is the update digest. "Nightly reflection" does not exist either: Helena
+reflects right after a run, in its session. The hub inbox's triage (`apps/worker/src/hub-inbox-*`)
+calls an external integration service from the Mastra era (`INBOX_INTEGRATION_URL`, unset: the
+worker does nothing) — dead code to remove with hub/oss-packaging's deletion list.
+
+**Triage: one home, `decisions`.** Everything Helena classifies runs through `decide()` (the mail
+classifier `helena.mail`, the model router, receipts, the engine step "Entscheidung"), which reaches
+local AI through the class `decisions` with a logit readout on a GPU model. A second class for the
+same work would be a second switch for one thing. **Proposal:** retire `triage` (remove it from
+`BUILTIN_TASK_CLASSES`, the presets and the messages; a stored `triage` setting is ignored), and
+let a new kind of classification register a decision class. Until the owner or orchestrator agrees,
+`triage` stays listed, unwired, with a description that says so.
+
+**Bevor der Owner einschaltet (routines, coordinator-triage, reflection):**
+- **Sie handeln.** Ein Routinen-Lauf arbeitet mit allen Werkzeugen des Agenten (Aufgaben, Mail,
+  Browser, Shell). Der Plan des Koordinators wird von Helena geprüft (erlaubte Spezialisten, gültige
+  Abhängigkeiten), aber der Lauf hätte Werkzeuge. Die Reflexion schreibt ins Gedächtnis und in
+  Skills, die jeder spätere Lauf liest. Die Autopilot-Stufe und die Freigaben gelten genauso wie
+  auf dem Cloud-Modell: Senden, Veröffentlichen, Löschen, Bezahlen brauchen weiter eine Freigabe.
+- **Die alten Auswertungen zählen nicht mehr (Version 2).** Die bestandenen Werte von heute früh
+  (routines 1.00, coordinator-triage 1.00 auf qwen3.5-2b-FLM; reflection 1.00 auf Qwen3.6 mit der
+  Zusammenfassungs-Auswertung) maßen etwas anderes: vier Werkzeuge statt 22, eine Werkzeugwahl statt
+  eines Team-Plans, eine Zusammenfassung statt Gedächtnis und Skills. Neu auswerten (Lokale KI →
+  „Auswerten“), bevor eingeschaltet wird.
+- **Auf der GPU, nicht auf der NPU.** Ein Agenten-Lauf braucht ≥ 64k Kontext (Hermes) und liest
+  15–40k Token Systemprompt und Werkzeuge, bevor er anfängt. `qwen3.5-2b-FLM` ist in `models.tsv`
+  mit 8k Kontext eingetragen (Lemonade meldet 65536, den Serverstandard) und ist ein 2B-Modell;
+  empfohlen ist Qwen3.6-35B-A3B für alle drei, als Modell der Klasse gewählt.
+- **Reflexion nur bei kurzen Läufen.** Hermes meldet keine Kontextgröße, nur was der ganze Lauf
+  gelesen hat (alle Aufrufe zusammen); das begrenzt die Sitzung nach oben. Lokal also nur nach
+  Läufen, die höchstens 64k gelesen haben: ein Fehler nach wenigen Schritten, Nacharbeit. Ein Lauf
+  mit vielen Werkzeugaufrufen liest weit mehr und reflektiert auf seinem eigenen Modell. Budget
+  lokal 240 s statt 120 s; der Runner des Agenten wartet so lange mit dem nächsten Lauf. Besser
+  würde es mit einem Hermes-Patch, der die Kontextgröße des letzten Aufrufs im `result` meldet
+  (`compressor.last_prompt_tokens`): dann könnte die Grenze die Sitzung selbst sein.
+- **Mitten im Lauf** fällt ein lokaler Fehler auf das Cloud-Modell des Agenten zurück (Hermes'
+  `fallback_providers`), der Lauf zeigt „… statt Qwen3.6 · lokal fehlgeschlagen“.
+- **Die GPU wird geteilt.** Lemonade bedient ein Modell mit `--parallel 1`: Ein langer lokaler
+  Lauf lässt eine Entscheidung (Modellwahl mit 5 s Budget) warten, die dann auf das eingestellte
+  Modell ausweicht. Nichts bricht, aber die Modellwahl stuft in der Zeit nicht herab.
 
 Modes: **Aus** · **Lokal bevorzugt** (local first, the configured model on failure) · **Nur lokal**
-(for work that must not leave the machine). A class leaves "Aus" only when it is wired and the
-newest eval of its model passed (the API answers 409 otherwise). Presets: **Sparsam** (everything
+(for work that must not leave the machine; not offered where the work is an agent's turn, whose
+fallback chain always holds the configured model: the API answers 400). A class leaves "Aus" only
+when it is wired and the newest eval of its model, in the class's eval version, passed (the API
+answers 409 otherwise). Presets: **Sparsam** (everything
 that passed), **Ausgewogen** (helpers, embeddings, summaries, triage, transcription), **Qualität**
 (embeddings and transcription only), **Eigene**. The master switch's first "on" applies the first
 set, as far as its evals passed. Units can be switched off one by one (a class whose model runs on
 a switched-off unit falls back).
 
 **Real work stays on Claude/Codex:** coding, long agent tasks, the Home master, interactive chats,
-anything with side effects outside Helena — unless the owner picks a local model for an agent.
+anything with side effects outside Helena — unless the owner picks a local model for an agent, or
+switches on `routines`/`coordinator-triage` (below), which are real work on purpose and therefore
+never part of the master switch.
 
-**Planned classes and their wiring** (next steps, one per branch merge, each only after its eval
-numbers): `summaries` → the update-center digest run (hub/update-center picks its "small model";
-a local id there with the digest's current model as fallback); `routines` and `coordinator-triage`
-→ per-run local-first: `agent_run.work_class` set by the engine, the claim hands a local model with
-`localFallback`, and the runner starts Hermes with a second managed directory that adds
-`fallback_providers: [configured model, …]` (the normal one stays untouched); `triage` → an
-engine step type "Einordnen" on the router model. (`transcription` and `speech` are wired since
-hub/voice: the chat's dictation and conversation mode post WAV to `/voice/transcriptions` and read
-answers through `/voice/speech`; see `voice.md`.)
+**Eval versions** (`LocalAiTaskClass.evalVersion`, `helena_local_ai_eval.eval_version`,
+migration 0182): a class whose eval changes raises its version; an eval of an older version is
+"Auswertung nötig" (the class cannot be switched on) and a class already on stops routing to that
+model (`failedEvalModels(class, version)`) until the new eval passed. Version 2 on 2026-09-25:
+summaries (thinks, 2,500 tokens), routines (22 tools), reflection and coordinator-triage (their
+own evals).
 
 ### 7.2 Evals (the harness)
 
@@ -654,6 +739,30 @@ reflection 0.25 failed because the model thought until `max_tokens` ran out (§6
 each class's `thinking` replaces these numbers.
 
 ### 7.4 Scheduling and priorities
+
+**Loaded at start (hub/local-ai-wiring).** Lemonade loads a model on its first request and
+unloads everything when it stops; after a reboot the first run or decision on the workhorse waited
+~50 s (a decision with a 5 s budget fell back). `helena-ai-preload.service` (a oneshot after
+`lemond`, `PartOf` it, `WantedBy` it; a throwaway user with the key as a credential, loopback
+only) runs the installer's copy `install.sh models preload run`: it loads and **pins** (Lemonade's
+LRU never evicts a pinned model) the GPU models listed in `/etc/helena/local-ai-preload`, with the
+same options as `models load` (context, backend, thinking off unless asked). `models preload set`
+checks the list: llama.cpp models of the catalog, pulled, and together within the VRAM budget (the
+GPU's memory minus 6 GiB; per model weights + 5 % + 2.5 GB of KV cache: Qwen3.6-35B-A3B ≈ 27 GB,
+Qwen3-Embedding ≈ 3 GB, gpt-oss-120b ≈ 69 GB — the workhorse, the embeddings and gpt-oss together
+do not fit, so gpt-oss stays on demand unless a class uses it). `run` loads what fits in list
+order and fails the unit for anything that did not load. NPU models (FastFlowLM) are not
+preloaded: they take system RAM (~31 GB for the OS) and load in seconds. The list is the models of
+the switched-on classes; it is set by the operator (Helena's API has no write access to `/etc`);
+Kingston on 2026-09-25: `Qwen3.6-35B-A3B-MTP-GGUF Qwen3-Embedding-0.6B-GGUF`.
+
+**A load is never read as "down".** The claim's 2 s check asks Lemonade's `/health` (and
+`/system-stats`, which may fail without effect). Lemonade 2026.39.1 releases its load mutex while a
+backend starts ("Release lock before slow backend startup", `router.cpp`), and `/health` only
+takes it briefly to list the loaded models, on a thread pool of ≥ 32; so `/health` answers during a
+50 s GPU load or an NPU model's first load. The request that needs the model waits for the load
+(Hermes' `stale_timeout_seconds` 240 s, the voice's 90 s), a request for another model waits
+behind it (Lemonade loads one model at a time).
 
 Interactive (a person waits) > browser steps > background > nightly batch. Today Lemonade runs each
 llama-server with `--parallel 1` (requests to one model queue); the workhorse gets

@@ -4,7 +4,9 @@ import { equalJitterBackoffMs } from './backoff';
 import { intEnv } from './env';
 import { deliverNotification, type SendResult } from './notification-send';
 
-// Drains the notification_delivery outbox: claims due rows and sends each one.
+// Drains the notification_delivery outbox: claims due rows and sends each one. Push rows
+// are @helena/push's (processPushDeliveries, run next to this in the worker's tick and in the
+// api), so they are left out here.
 // Follows the same claim/retry pattern as webhook delivery. A succeeded row is
 // deleted (no delivery history is kept); a permanently failed row is left as
 // 'failed' with its last error for debugging.
@@ -36,7 +38,7 @@ async function claimDueDeliveries(): Promise<ClaimedNotification[]> {
         next_attempt_at = now() + make_interval(secs => ${leaseSeconds})
     WHERE d.id IN (
       SELECT id FROM notification_delivery
-      WHERE status = 'pending' AND next_attempt_at <= now()
+      WHERE status = 'pending' AND next_attempt_at <= now() AND channel <> 'push'
       ORDER BY next_attempt_at, id
       FOR UPDATE SKIP LOCKED
       LIMIT ${batchSize}

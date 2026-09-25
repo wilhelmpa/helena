@@ -114,11 +114,11 @@
     },
     "summaries": {
       "label": "Summaries and digests",
-      "description": "Update digests, run, activity and mail summaries, briefings."
+      "description": "The update digests (what a new version changes) are written by the local model; when the server does not answer, by the configured model."
     },
     "triage": {
       "label": "Triage and routing",
-      "description": "Sorting incoming work: category, priority, which agent."
+      "description": "Covered by Decisions (classifying mail, choosing the model, the workflow step “Decision”); nothing else is wired here."
     },
     "transcription": {
       "label": "Transcription (dictation)",
@@ -130,15 +130,15 @@
     },
     "routines": {
       "label": "Routine agents",
-      "description": "Scheduled routines try the local workhorse model first, with the agent's configured model as fallback."
+      "description": "The run a routine starts tries the local model first, with the agent's configured model as the fallback. The agent acts with all of its tools."
     },
     "reflection": {
-      "label": "Nightly reflection",
-      "description": "What a run taught, skill curation: batch work at night on the heavy local model."
+      "label": "Reflection after runs",
+      "description": "The look back after a run (memory and skills) on the local model when the session is small enough; otherwise on the run's model."
     },
     "coordinator-triage": {
-      "label": "Coordinator first pass",
-      "description": "A coordinator's first look at a new task; anything real escalates to its configured model."
+      "label": "Coordinator's first plan",
+      "description": "An agent team's first plan (who does what); if it is unusable, the coordinator's configured model plans again."
     },
     "decisions": {
       "label": "Decisions",

@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import type { ReflectionView } from '@/lib/api/endpoints/agents';
+import { shortModel } from '@/features/local-ai/utils/localAi';
 
 // The follow-up turn in which the agent kept what the run taught it: why it happened,
 // how it went, and what it saved.
@@ -22,6 +23,12 @@ export default function ReflectionBlock({ reflection }: { reflection: Reflection
         <span>{t(reflection.status)}</span>
         <span>·</span>
         <span>{reason}</span>
+        {reflection.model && (
+          <>
+            <span>·</span>
+            <span>{t('local', { model: shortModel(reflection.model) })}</span>
+          </>
+        )}
         {reflection.tokens !== undefined && (
           <>
             <span>·</span>

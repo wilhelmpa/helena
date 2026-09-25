@@ -168,6 +168,11 @@ export interface StorageStatus {
     differences: string[];
     differenceCount: number;
     sync?: EspSyncState | null;
+    removable?: {
+      mount: string;
+      state: 'ok' | 'missing' | 'differs' | 'fallback' | 'stub' | 'unknown';
+      detail: string | null;
+    }[];
   };
   boot: {
     current: string | null;

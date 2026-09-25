@@ -1,0 +1,85 @@
+{
+  "alert": {
+    "emergencies": {
+      "open": "Emergência: {subject}",
+      "reminder": "Ainda em aberto: {subject}",
+      "resolved": "Normalizado: {subject}"
+    },
+    "needs-you": {
+      "open": "Precisa de você: {subject}",
+      "reminder": "Ainda em aberto: {subject}",
+      "resolved": "Resolvido: {subject}"
+    },
+    "other": {
+      "open": "{subject}",
+      "reminder": "Ainda em aberto: {subject}",
+      "resolved": "Resolvido: {subject}"
+    },
+    "reminderBody": "{text} Há {duration}.",
+    "resolvedBody": "Resolvido após {duration}."
+  },
+  "duration": {
+    "minutes": "{count, plural, one {# minuto} other {# minutos}}",
+    "hours": "{count, plural, one {# hora} other {# horas}}",
+    "days": "{count, plural, one {# dia} other {# dias}}"
+  },
+  "approval": {
+    "title": "Aprovação: {agent}",
+    "body": "{action}",
+    "bodyWhere": "{action} · {where}"
+  },
+  "reply": {
+    "title": "{agent} respondeu",
+    "empty": "A resposta está pronta."
+  },
+  "chatFailed": {
+    "title": "Resposta falhou: {agent}",
+    "body": "A resposta no chat falhou."
+  },
+  "runFailed": {
+    "title": "Execução falhou: {agent}",
+    "noTask": "Uma execução falhou."
+  },
+  "test": {
+    "title": "Helena",
+    "body": "As notificações push funcionam neste dispositivo."
+  },
+  "subjects": {
+    "raid": "Espelho {name}",
+    "disk": "Disco {disk}",
+    "backup": "Backup",
+    "esp": "Partições EFI",
+    "cpu": "CPU",
+    "fans": "Ventoinhas",
+    "events": "Avisos de armazenamento",
+    "server": "Servidor",
+    "hostd": "Assistente do sistema",
+    "service": "Serviço {service}",
+    "login": "Login de {provider}",
+    "security": "Segurança",
+    "localAi": "IA local {name}"
+  },
+  "health": {
+    "raidDegraded": "O espelho {name} está incompleto: {missing, plural, one {falta um disco} other {faltam # discos}}. Os dados existem em uma só cópia.",
+    "raidRebuilding": "O espelho {name} está sendo reconstruído: {percent} %. Até lá existe só uma cópia.",
+    "diskFailing": "O disco {disk} relata uma falha. Substitua-o.",
+    "diskSpareLow": "Disco {disk}: reserva quase esgotada ({spare} %). Substitua-o.",
+    "eventsCritical": "{count, plural, one {Um aviso grave} other {# avisos graves}} do mdadm ou smartd.",
+    "backupFailed": "O último backup falhou.",
+    "backupCheckFailed": "A verificação do backup falhou.",
+    "restoreTestFailed": "O teste de restauração falhou.",
+    "cpuHot": "A CPU está quente: {temperature} °C.",
+    "fansRaised": "A proteção térmica elevou as ventoinhas ao nível 5: CPU a {temperature} °C.",
+    "espOutOfSync": "As duas partições EFI diferem ({count, plural, one {# arquivo} other {# arquivos}}). O disco reserva pode não iniciar.",
+    "espNotMounted": "A partição EFI {mount} não está montada.",
+    "healthFailed": "Não foi possível ler o estado."
+  },
+  "problems": {
+    "serviceDown": "Não está rodando ou não dá mais sinal.",
+    "loginRejected": "O provedor recusou o login. Entre novamente.",
+    "loginRanOut": "O login expirou e não se renova. Entre novamente.",
+    "securityChecks": "{count, plural, one {Uma verificação importante falha.} other {# verificações importantes falham.}}",
+    "localAiDown": "O servidor de modelos não responde.",
+    "hostdDown": "helena-hostd não responde: discos, backup e temperaturas não são monitorados."
+  }
+}

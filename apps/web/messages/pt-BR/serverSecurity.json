@@ -55,7 +55,7 @@
     "auth_step_up": "O terminal pede um código ao abrir",
     "auth_registration": "Cadastro fechado",
     "auth_sessions": "Poucas sessões abertas",
-    "auth_sudo": "sudo não sem senha para tudo",
+    "auth_sudo": "sudo sem senha apenas para a conta de automação",
     "sys_time": "O relógio está sincronizado (NTP)",
     "sys_sysctl": "Configurações de proteção do kernel aplicadas",
     "sys_updates": "Atualizações de segurança instalam sozinhas",
@@ -145,7 +145,7 @@
       "warn": "{count} sessões do proprietário abertas: cada visita pela LAN sem cookie abre uma nova."
     },
     "auth_sudo": {
-      "warn": "sudo sem senha (NOPASSWD: ALL) para {value}: o terminal do navegador é root sem senha."
+      "warn": "{why, select, ops {A conta de automação {value} tem sudo sem senha, mas não está protegida: {problem, select, password {a senha dela não está bloqueada} ssh {o SSH não exige só a chave dela} other {a senha dela não está bloqueada e o SSH não exige só a chave dela}}.} other {sudo sem senha (NOPASSWD: ALL) para {value}: quem tem essa conta é root sem senha.}}"
     },
     "sys_time": {
       "fail": "O relógio não está sincronizado; TOTP, os tokens do Access e os certificados dependem dele."

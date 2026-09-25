@@ -40,6 +40,7 @@
     "espInSync": "两个 EFI 分区一致。",
     "espSyncSkipped": "{at}前第二个 EFI 分区未同步：{reason, select, notMounted {{mount} 未挂载} notVfat {{mount} 不是 FAT 分区} sameDevice {两个挂载点是同一个分区} other {已跳过}}。备用盘可能会启动旧版本。",
     "espSyncFailed": "{at}前复制到第二个 EFI 分区失败：{reason, select, sourceIncomplete {第一个分区缺少引导程序} readFailed {第一个分区无法完整读取} noRsync {缺少 rsync} rsyncFailed {写入错误} verifyFailed {副本与原件不一致} other {未知错误}}。复制成功之前，从备用盘启动并不安全。",
+    "espRemovableStale": "{mount} 上的应急启动路径 EFI/BOOT {problem, select, missing {不存在} differs {启动的文件与启动项不同} fallback {包含 fbx64.efi，它会自行创建固件启动项} stub {找不到系统分区} other {不正确}}。固件有时会自行从该路径启动。",
     "bootEntryMissing": "缺少启动项“{label}”。{repair, select, nextBoot {Helena 会在下次启动时创建它。} diskMissing {磁盘恢复后 Helena 会创建它。} other {}}",
     "bootEntryBroken": "启动项“{label}”无效：{problem, select, noPartuuid {固件改写了它} wrongDisk {它指向另一块磁盘} wrongLoader {它启动的是另一个文件} inactive {它已被停用} other {它不匹配}}。{repair, select, nextBoot {Helena 会在下次启动时修复它。} diskMissing {磁盘恢复后 Helena 会修复它。} other {}}",
     "bootEntryDuplicate": "启动项“{label}”存在多个。{repair, select, nextBoot {Helena 会在下次启动时清理。} diskMissing {磁盘恢复后 Helena 会清理。} other {}}",

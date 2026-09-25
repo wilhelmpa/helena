@@ -55,7 +55,7 @@
     "auth_step_up": "Terminal meminta kode saat dibuka",
     "auth_registration": "Pendaftaran ditutup",
     "auth_sessions": "Sedikit sesi terbuka",
-    "auth_sudo": "sudo tidak tanpa kata sandi untuk semuanya",
+    "auth_sudo": "sudo tanpa kata sandi hanya untuk akun otomatisasi",
     "sys_time": "Jam tersinkron (NTP)",
     "sys_sysctl": "Pengaturan perlindungan kernel diterapkan",
     "sys_updates": "Pembaruan keamanan terpasang otomatis",
@@ -145,7 +145,7 @@
       "warn": "{count} sesi pemilik terbuka: setiap kunjungan LAN tanpa cookie membuka sesi baru."
     },
     "auth_sudo": {
-      "warn": "sudo tanpa kata sandi (NOPASSWD: ALL) untuk {value}: terminal browser adalah root tanpa kata sandi."
+      "warn": "{why, select, ops {Akun otomatisasi {value} punya sudo tanpa kata sandi tetapi tidak terkunci: {problem, select, password {kata sandinya tidak dikunci} ssh {SSH tidak hanya menerima kuncinya} other {kata sandinya tidak dikunci dan SSH tidak hanya menerima kuncinya}}.} other {sudo tanpa kata sandi (NOPASSWD: ALL) untuk {value}: siapa pun yang memegang akun itu adalah root tanpa kata sandi.}}"
     },
     "sys_time": {
       "fail": "Jam tidak disinkronkan; TOTP, token Access, dan sertifikat bergantung padanya."

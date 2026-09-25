@@ -147,6 +147,16 @@ export interface BootEntryCheck {
   foreign: string[];
 }
 
+// EFI/BOOT on one ESP (helena_host/bootlayout.py removable_state). The firmware may boot it on
+// its own ("UEFI OS"), so it must start the same shim/GRUB as the entries: `differs` = older or
+// other binaries, `fallback` = fbx64.efi there (shim would write NVRAM entries), `stub` = its
+// grub.cfg would not find the root, `unknown` = no complete loader folder to compare with.
+export interface EspRemovableState {
+  mount: string;
+  state: 'ok' | 'missing' | 'differs' | 'fallback' | 'stub' | 'unknown';
+  detail: string | null;
+}
+
 // The last copy of the first ESP onto the second (apt hook, helena_host/esp.py). `pending`:
 // the mirror may lack what changed on the first ESP since the last verified copy.
 export interface EspSyncState {
@@ -186,6 +196,8 @@ export interface StorageStatus {
     differenceCount: number;
     // Absent from helpers older than the ESP copy guard.
     sync?: EspSyncState | null;
+    // The firmware's removable path (EFI/BOOT) per mounted ESP, against the loader folder.
+    removable?: EspRemovableState[];
   };
   boot: {
     current: string | null;

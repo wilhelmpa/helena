@@ -16,6 +16,8 @@ import { scheduleLimitProbes } from '#modules/provider-limits/service';
 import { prunePolicyDecisions } from '#modules/autopilot/engine';
 import { checkAllServers } from '#modules/local-ai/service';
 import { followActions } from '#modules/updates/service';
+import { processPushDeliveries } from '@helena/push';
+import { checkAlerts } from '#modules/push/alerts';
 
 const [RUN_JANITOR, RESUME_JANITOR, ENGINE_MAINTENANCE, RUNTIME_JANITOR] = JANITOR_JOBS;
 
@@ -54,6 +56,19 @@ export function startBackgroundJobs(): void {
     'update-actions',
     async () => void (await followActions()),
     () => intEnv('HELENA_UPDATE_FOLLOW_MS', 10_000),
+  );
+  // Push (docs/helena-decisions/push.md): the alert sources are watched from here, so an
+  // emergency reaches the owner's phone while nobody has Helena open; the push rows of the
+  // outbox are sent from here as well as from the worker, so they go out while either is down.
+  startLoop(
+    'push-alerts',
+    async () => void (await checkAlerts()),
+    () => intEnv('HELENA_PUSH_ALERT_INTERVAL_MS', 60_000),
+  );
+  startLoop(
+    'push-deliveries',
+    async () => void (await processPushDeliveries()),
+    () => intEnv('HELENA_PUSH_POLL_INTERVAL_MS', 2_000),
   );
   // The Autopilot's decision log keeps HELENA_POLICY_LOG_DAYS (90) days.
   startLoop(

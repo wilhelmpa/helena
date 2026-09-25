@@ -55,7 +55,7 @@
     "auth_step_up": "Terminal verlangt beim Öffnen einen Code",
     "auth_registration": "Registrierung geschlossen",
     "auth_sessions": "Wenige offene Sitzungen",
-    "auth_sudo": "sudo nicht pauschal ohne Passwort",
+    "auth_sudo": "sudo ohne Passwort nur für das Automationskonto",
     "sys_time": "Uhrzeit wird synchronisiert (NTP)",
     "sys_sysctl": "Kernel-Schutzeinstellungen gesetzt",
     "sys_updates": "Sicherheitsupdates kommen automatisch",
@@ -145,7 +145,7 @@
       "warn": "{count} offene Owner-Sitzungen – jeder LAN-Besuch ohne Cookie öffnet eine neue."
     },
     "auth_sudo": {
-      "warn": "sudo ohne Passwort (NOPASSWD: ALL) für {value} – das Browser-Terminal ist root ohne Passwort."
+      "warn": "{why, select, ops {Das Automationskonto {value} hat sudo ohne Passwort, ist aber nicht abgesichert: {problem, select, password {sein Passwort ist nicht gesperrt} ssh {SSH verlangt nicht nur seinen Schlüssel} other {sein Passwort ist nicht gesperrt, und SSH verlangt nicht nur seinen Schlüssel}}.} other {sudo ohne Passwort (NOPASSWD: ALL) für {value}: wer dieses Konto hat, ist root ohne Passwort.}}"
     },
     "sys_time": {
       "fail": "Die Uhr wird nicht synchronisiert – TOTP, Access-Tokens und Zertifikate hängen davon ab."

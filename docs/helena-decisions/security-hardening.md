@@ -43,7 +43,7 @@ Count: **4 critical, 10 high, 11 medium, 9 low, plus 6 notes.**
 
 | ID | Finding | Evidence | Fix |
 |---|---|---|---|
-| C-01 | **Any local process becomes the Helena owner, and from there root.** nginx gives the LAN owner capability to a request whose source is in 192.168.2.0/24 or fe80::/10 and whose source ≠ destination. A process on Kingston can bind 192.168.2.58 and connect to 127.0.0.1:80 (or bind its fe80:: address and connect to its global IPv6 address) with `Host: kingston-server.local`: nginx sees a LAN client. The session it gets opens the owner terminal without a code (step-up is off on the LAN), and the terminal is `wilhelmpa` with `NOPASSWD: ALL`. Affected: every non-isolated local user (API, web, worker, runner, provisioning, code-server, the terminal router, Syncthing, www-data, redis, postgres). Isolated agents are not (own network namespace). | Kernel accepts both socket shapes (tested with bind+connect only). Reproduced with a test nginx and a fake capability: `old=FAKE` for both shapes; a real LAN client (the Mac) also `FAKE`. | Two independent layers: firewall rule `helena:self-guard` (a local connection to nginx must come from loopback; proven in a private netns) and the nginx guard map `helena-local-owner-guard.conf` (the capability only on a LAN-facing listener and never from link-local; proven `new=` for both shapes, `new=FAKE` for the real LAN client). `apply.sh local-owner`, `apply.sh firewall`; `local-owner/configure.py` writes the guard from now on and drops `fe80::/10` and the stale `192.168.122.1`. **Do this early, not only in the last phase.** |
+| C-01 | **Any local process becomes the Helena owner, and from there root.** nginx gives the LAN owner capability to a request whose source is in 192.168.2.0/24 or fe80::/10 and whose source ≠ destination. A process on Kingston can bind 192.168.2.58 and connect to 127.0.0.1:80 (or bind its fe80:: address and connect to its global IPv6 address) with `Host: kingston-server.local`: nginx sees a LAN client. The session it gets opens the owner terminal without a code (step-up is off on the LAN), and the terminal is `wilhelmpa` with `NOPASSWD: ALL`. Affected: every non-isolated local user (API, web, worker, runner, provisioning, code-server, the terminal router, Syncthing, www-data, redis, postgres). Isolated agents are not (own network namespace). | Kernel accepts both socket shapes (tested with bind+connect only). Reproduced with a test nginx and a fake capability: `old=FAKE` for both shapes; a real LAN client (the Mac) also `FAKE`. | Two independent layers: firewall rule `helena:self-guard` (a local connection to nginx must come from loopback; proven in a private netns) and the nginx guard map `helena-local-owner-guard.conf` (the capability only on a LAN-facing listener and never from link-local; proven `new=` for both shapes, `new=FAKE` for the real LAN client). `apply.sh local-owner`, `apply.sh firewall`; `local-owner/configure.py` writes the guard from now on and drops `fe80::/10` and the stale `192.168.122.1`. **Do this early, not only in the last phase.** **IPv6 (2026-09-25):** the owner geo also includes `/etc/nginx/helena-owner-networks.conf`, kept by `helena-lan6-sync`: the /64s this machine has on its LAN interface (never link-local or loopback, a ULA only when the LAN interface has one) and **every address of the machine itself as `0`** (an IPv6 host has several — stable, privacy, DHCPv6 — so "source ≠ destination" alone would let one own address talk to another; the most specific geo entry wins). The firewall's `helena:self-guard6` refuses local IPv6 connections to nginx from a non-`::1` source. Proven in `tests/owner-lan6-selftest.sh` (with a control showing the hole without the own-address lines) and `tests/nft-selftest.sh`; `apply.sh owner-lan6`. |
 | C-02 | **No firewall.** nftables runs, but every chain has policy accept. Everything bound to 0.0.0.0/:: is reachable from the LAN, and over IPv6 from wherever the router lets it: sshd (22, also on the global IPv6 address), nginx 80, KasmVNC UDP 16080–16084 (five project browsers, `-SecurityTypes None`), Syncthing 22000/21027. Whether the internet reaches it depends on the router alone. | `nft list ruleset`; `ss -ltnup`. | `apply.sh firewall`: input default drop; from the home network only 22, 80, 443 (TCP), Syncthing 22000 (TCP/UDP) + 21027 and mDNS 5353 (UDP); ICMPv6 and DHCP answers; nothing from the internet. IPv6 home prefixes follow the provider through `helena-lan6-sync` (NetworkManager dispatcher + 5-min timer). Automatic rollback after 5 minutes unless confirmed from a new session. |
 | C-03 | **The owner has no second factor and the terminal asks for no code on the LAN.** `two_factor_enabled` false, 0 passkeys; `ownerTerminal.stepUpRequired=false`. Any device in the home network is the owner (auto sign-in) and gets a root shell in the browser. After go-live the tunnel path needs TOTP (loopback never counts as LAN), but the owner could not produce one. | DB flags (read-only). | Owner: enrol TOTP now (Konto → Sicherheit → Authenticator-App). Before go-live: "Code beim Öffnen verlangen" on; passkeys once HTTPS is up. Helena shows all three under Administrator → Sicherheit → Anmeldung des Owners. |
 | C-04 | **Nothing verified that a request from the internet passed Cloudflare Access** (design gap for the go-live, not live yet). A tunnel route or Access policy changed by mistake, or a second hostname on the same tunnel, would expose Helena's own login only. | Design review. | Three gates (§4.3): Access at the edge, cloudflared's "Protect with Access", and Helena's API verifying `Cf-Access-Jwt-Assertion` on every tunnel request (new `modules/edge-access`, fail closed while not configured). |
@@ -58,7 +58,7 @@ Count: **4 critical, 10 high, 11 medium, 9 low, plus 6 notes.**
 | H-04 | **The owner-terminal signing key is readable by group `volition`** (`/etc/volition/owner-terminal.key` 0640 root:volition). With it a token for the terminal router can be minted; only the socket's `www-data` group stands between that and a root shell. | `stat`. | `apply.sh terminal-key`: own group `helena-terminal-key`, only the API and the terminal router get it (unit drop-ins), both restarted. |
 | H-05 | **The clock is not synchronised**: no NTP client installed (`NTP=no`, `NTPSynchronized=no`). TOTP codes, Access JWT expiry, Let's Encrypt and certificate checks depend on it. | `timedatectl`. | Install `systemd-timesyncd` (Debian, owner's OK) and `timedatectl set-ntp true`. The JWT check tolerates 60 s. |
 | H-06 | **KasmVNC's UDP listeners face every address** (0.0.0.0:16080–16084). The repo README says the units restrict them; the installed units have no `IPAddressDeny`/`RestrictNetworkInterfaces`. | `ss`, `systemctl show`. | Firewall drops them (C-02); `apply.sh kasm-loopback` adds `IPAddressAllow=localhost`/`IPAddressDeny=any` (works natively now; restarts the browsers). |
-| H-07 | **The browser terminal is root without a password** (`wilhelmpa ALL=(ALL:ALL) NOPASSWD: ALL`), and Claude Code/Codex in the owner terminal run as that user. After go-live this is reachable from the internet behind Access + TOTP. | sudoers. | Owner decision §8.3: a separate automation account for SSH (`helena-ops`, NOPASSWD, key-only, LAN-only) and `wilhelmpa` with a password for sudo. The narrow policy drafted in `owner-terminal/90-wilhelmpa` is not a real boundary (`journalctl *`, `apt-get install *`, `git -c … *` and `cat /var/lib/volition/*` all lead to root); do not install it as is. |
+| H-07 | **The browser terminal is root without a password** (`wilhelmpa ALL=(ALL:ALL) NOPASSWD: ALL`), and Claude Code/Codex in the owner terminal run as that user. After go-live this is reachable from the internet behind Access + TOTP. | sudoers. | **Done 2026-09-25** (§8.3, `apply.sh sudo-model`): the automation account `helena-ops` has `NOPASSWD: ALL` (`/etc/sudoers.d/80-helena-ops`), its password is locked, SSH takes its key only (`/etc/ssh/sshd_config.d/60-helena-ops.conf`: `Match User helena-ops` → `AuthenticationMethods publickey`) and only from the home network (AllowUsers + firewall); the owner's blanket rule is moved aside, so `wilhelmpa` types his password for sudo. `audit.sh` `auth.sudo` passes only in that shape. The narrow policy drafted in `owner-terminal/90-wilhelmpa` is not a real boundary (`journalctl *`, `apt-get install *`, `git -c … *` and `cat /var/lib/volition/*` all lead to root); do not install it as is. |
 | H-08 | **SSH listens on the global IPv6 address** without `AllowUsers`, with agent and TCP forwarding, 6 tries. Key-only and no root login already hold. An authorized key named `codex-home-server` belongs to the wiped Ubuntu host. | `sshd -T`, key comments. | `apply.sh sshd` (+ firewall = home network only); owner reviews the `codex-home-server` key and removes it if unused. |
 | H-09 | **Tunnel traffic could be taken for the LAN** (design, go-live): the owner-terminal "no code on the LAN" rule reads `X-Real-IP`. | Code review. | Code: a request marked by the tunnel entry is never LAN (`lanBypass`), whatever address it names; the tunnel entry sets `X-Real-IP` from `CF-Connecting-IP`. Test in `edge-access.test.ts`. |
 | H-10 | **The session cookie would be shared with all of volition.one** on the public name: `packages/auth` derives `COOKIE_DOMAIN` from the first origin, `helena.volition.one` → `.volition.one`, so every other site of the company domain would receive the owner's session. | `packages/auth/src/index.ts parentDomain`. | Code: `packages/auth/src/cookie-domain.ts` derives a parent domain only when the app and the api are on different hosts (tests). `cloudflare/switch_origin.py` also sets `COOKIE_DOMAIN=host-only` explicitly (and one origin: `APP_URL=https://helena.volition.one`, `API_URL=…/backend`). |
@@ -301,6 +301,20 @@ the new path). Every `apply.sh` step without `--apply` is a dry run; run it firs
   Mac that the LAN auto sign-in still works (new private window on http://kingston-server.local).
 - `sudo $H/hardening/audit.sh` → baseline.
 
+- **Owner sign-in over IPv6** (the owner's Safari reaches Helena over the home /64):
+  `sudo $H/hardening/apply.sh owner-lan6` (dry run: the sync's files, the include it would write,
+  whether the geo still lacks the include), then `--apply owner-lan6`. It installs the new
+  `helena-lan6-sync` (also the firewall's sets) with its dispatcher and timer, writes
+  `/etc/nginx/helena-owner-networks.conf` (`nginx -t`, reload; the old file stays on a failed test)
+  and, once, re-runs `local-owner/configure.py` so the geo includes it (owner, capability and origin
+  kept; API and web not restarted). Check: from the Mac `curl -6 -g -s -o /dev/null -w '%{http_code}
+  %{redirect_url}\n' -H 'Host: kingston-server.local' 'http://[<Kingston's global IPv6>]/'` → a
+  303 with a session cookie (`-D -` shows `set-cookie`); on Kingston `curl -6 -g -H 'Host:
+  kingston-server.local' 'http://[<its own global IPv6>]/'` → refused (the firewall's self guard),
+  `curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' -H 'Host: kingston-server.local'
+  http://127.0.0.1/` → 307 to /login; `audit.sh` `net.local_owner` and `net.self_guard` pass.
+  Rollback (IPv6 prefixes off, own addresses stay excluded): `--apply rollback owner-lan6`.
+
 **6.1 Low-risk fixes** (each: dry run, then `--apply`):
 `leftovers`, `permissions`, `services`, `sysctl`, `journald`, `audit-timer`. Check after
 `services`: nothing in Helena used Redis (`audit.sh` `net.redis` pass).
@@ -315,7 +329,25 @@ the new path). Every `apply.sh` step without `--apply` is a dry run; run it firs
 4. `sudo nft list table inet helena_hardening | grep -c helena:` → 8 markers; `audit.sh` net.* pass.
 
 **6.3 SSH**: same as 6.2 with `sshd` (`--apply sshd`, new session, `--apply confirm sshd`).
-Owner first decides on the `codex-home-server` key.
+Owner first decides on the `codex-home-server` key. `AllowUsers` defaults to the owner plus
+`helena-ops` once that account exists (`HELENA_SSH_USERS` overrides), so a later `sshd` run never
+drops the automation account.
+
+**6.3a sudo model** (H-07, §8.3; done live on 2026-09-25 by the orchestrator, the step detects it):
+1. The owner has a usable password (`passwd`), is in group `sudo`, and `/etc/sudoers` has the
+   `%sudo ALL=(ALL:ALL) ALL` rule; `helena-ops` exists with the orchestrator's key in
+   `~helena-ops/.ssh/authorized_keys` (the step creates a missing account, never a key).
+2. `sudo $H/hardening/apply.sh sudo-model` (dry run: what it would change), then `--apply
+   sudo-model`: locks `helena-ops`' password (`passwd -l`), installs
+   `sshd_config.d/60-helena-ops.conf` (`sshd -t`, reload), installs `sudoers.d/80-helena-ops`
+   (`visudo -cf`, 0440; a live file with the same rule and other comments is left as it is), and
+   moves every other `NOPASSWD: ALL` rule in `/etc/sudoers.d` aside into the run's backup (a file
+   with other rules too keeps them; only the blanket line is commented out). It refuses before
+   changing anything when the owner would lose sudo, and never edits `/etc/sudoers` itself.
+3. Check: `ssh helena-ops@kingston-server.local sudo -n true` works with the key; `sudo -k; sudo
+   true` asks the owner for his password; `audit.sh` `auth.sudo` pass.
+4. Rollback (the owner's rule back; `helena-ops` stays): `sudo $H/hardening/apply.sh --apply
+   rollback sudo-model`.
 
 **6.4 Units** (a quiet moment, no chat answer or run in flight):
 `--apply units` (API, web, worker one by one with health checks), `--apply terminal-key`,
@@ -401,9 +433,12 @@ automatic rollbacks cover firewall and SSH; backups of every replaced file are u
    applies to the tunnel.
 2. **At home: tunnel (A) or split horizon (B)?** Recommendation: start with A (nothing to run),
    add B if the live view is too slow at home.
-3. **sudo model** (H-07): recommendation — a separate `helena-ops` account for the orchestrator's
-   SSH automation (NOPASSWD, key-only, LAN-only) and a sudo password for `wilhelmpa`, so the browser
-   terminal and the AI CLIs in it need the password for root.
+3. **sudo model** (H-07): **decided and live (2026-09-25)** — a separate `helena-ops` account for
+   the orchestrator's SSH automation (NOPASSWD, key-only, LAN-only, password locked) and a sudo
+   password for `wilhelmpa`, so the browser terminal and the AI CLIs in it need the password for
+   root. In the repo as `apply.sh sudo-model` (§6.3a); `audit.sh` `auth.sudo` passes only in that
+   shape and warns for any other account with `NOPASSWD: ALL` (`why=others`) or a `helena-ops` whose
+   password is not locked or whose SSH is not key-only (`why=ops`, `problem=password|ssh|both`).
 4. **Access identity**: Google (recommended) and/or One-time PIN; session 24 h (or 7 d for
    convenience; the owner terminal still asks for TOTP).
 5. **WARP device posture**: not now; possible later (only enrolled devices reach Helena).
@@ -480,6 +515,24 @@ automatic rollbacks cover firewall and SSH; backups of every replaced file are u
   LAN still gets it. All pass.
 - `tests/nginx-config-selftest.sh`: `nginx -t` of the live LAN site after `lan_https.py` + the guard,
   together with the tunnel entry. Passes.
+- `tests/owner-lan6-selftest.sh` (private network namespaces, a throw-away nginx with the owner map
+  exactly as `configure.py` writes it, the guard, and the include `helena-lan6-sync` renders from the
+  namespace's addresses; no firewall, so nginx's layer alone): LAN clients over IPv4, over IPv6 in
+  the home /64 and to the machine's second address get the capability; another Host, a client
+  outside the home /64 and a ULA the LAN interface does not have do not; the machine itself never
+  does — loopback, `::1`, own IPv4 to itself and to 127.0.0.1, own IPv6 to itself and to `::1`,
+  one own IPv6 address to another, link-local to its GUA, own ULA; a ULA the LAN interface has
+  counts; the control without the own-address lines gives the capability to one own address
+  talking to another (the hole those lines close). `tests/nft-selftest.sh` adds the IPv6 self
+  guard (own GUA → `::1` and → itself refused, `::1` open). `tests/test_lan6_sync.py`: the
+  rendering, the write/test/restore path, the owner map, and the audit's IPv6 check. All pass
+  (2026-09-25).
+- `tests/sudo-model-selftest.sh` (private user + mount namespace, scratch sudoers/sshd folders, fake
+  passwd/sshd/systemctl/useradd/id/getent, the real visudo): dry run changes nothing; `--apply`
+  locks the account, installs both files, moves the owner's rule aside, `visudo -c` passes and
+  `auth.sudo` passes; a second run is a no-op; a hand-made equal rule is kept; rollback restores the
+  owner's rule; a mixed file keeps its other rules; refusals (owner without password, no key)
+  change nothing; the audit's `why`/`problem` cases. All pass (2026-09-25).
 - Tunnel entry end to end (throw-away API of this branch + nginx from the template): page, API,
   forged assertion, a client-sent LAN capability, code, browser, both terminals and the sign-in
   endpoint all answer 403 without Access; the API says `edge_not_configured`.

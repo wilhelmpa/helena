@@ -20,7 +20,7 @@ import { agentRunConfig, loadThreadContext } from '../core/run-queue';
 import { recordAgentRunFinished, recordAgentRunStarted } from '../core/run-activity';
 import { isHomeAgent } from '../core/home-agent';
 import { normalizeRuntimePolicy } from '../core/service';
-import type { RuntimeFailure } from '@helena/sdk';
+import { parseLocalModelId, type RuntimeFailure } from '@helena/sdk';
 import { learnFromOutcome, routeOf, runtimeOfPolicy } from '#modules/model-availability/service';
 import { getRunResumeSettings } from '#modules/settings/service';
 import type { AgentRunTrigger } from '../model';
@@ -36,6 +36,8 @@ import { MAX_RUN_OUTPUT_BYTES, type reflectionBody } from './model';
 import { recordUsage, type Spend } from '../usage/service';
 import { emergencyStopActive } from '#modules/emergency-stop/service';
 import {
+  LOCAL_REFLECTION_LIMITS,
+  LOCAL_REFLECTION_MAX_READ,
   REFLECTION_LIMITS,
   reflectionPrompt,
   reflectionReason,
@@ -49,7 +51,8 @@ import {
   runModePreamble,
   type RunForPrompt,
 } from '../core/prompt/framing';
-import { chooseModelNow, type LocalFallback } from '#modules/local-ai/service';
+import { chooseModelNow, classModelNow, type LocalFallback } from '#modules/local-ai/service';
+import { WORK_CLASS } from '#modules/local-ai/work-classes';
 import { routinePromptContext } from '#modules/routines/agent-runs';
 
 // The queue an agent's runner drains. The runner is a process the operator starts on
@@ -181,6 +184,10 @@ type ClaimedRow = Omit<RunnerRun, 'systemPrompt' | 'autopilotLevel'> & {
   projectId: number;
   // The run's own reasoning effort, where it overrides the agent's (a digest run).
   reasoning: string | null;
+  // The kind of work the run is for Lokale KI (agent_run.work_class), or null.
+  workClass: string | null;
+  // What the last claim recorded about its model (agent_run.model_check), or null.
+  modelCheck: unknown;
   // Claimed before, by a claim that ended without a result: the runner stopped, handed
   // the run back, or lost its lease.
   interrupted: boolean;
@@ -370,6 +377,8 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
       r.run_budget_seconds AS "runBudgetSeconds",
       r.model,
       r.reasoning,
+      r.work_class AS "workClass",
+      r.model_check AS "modelCheck",
       r.session_id AS "sessionId",
       r.resumes,
       (r.continued_from_run_id IS NOT NULL AND r.resumes = 1) AS "continuation",
@@ -432,21 +441,39 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
     agent,
   );
   let { model, thinkingLevel } = configured;
-  if (configured.fallback) {
+  let fallback = configured.fallback;
+  // The kind of work the run is (a digest, a routine's task, a coordinator's first plan) may
+  // run on its local model while Lokale KI takes it (docs/helena-decisions/local-ai-platform.md
+  // §7.1); otherwise, and whenever the server does not answer, on the model above, exactly as
+  // without local AI. A run that names a local model of its own keeps it. A resumed run whose
+  // session began on the configured model stays there: it is not moved to a local model with
+  // the whole session to read again; one that began locally is asked again (its server may be
+  // gone since).
+  const resumedElsewhere =
+    row.sessionId !== null &&
+    (row.modelCheck as { configured?: { source?: string } } | null)?.configured?.source !== 'local';
+  const local =
+    row.workClass && !fallback && !parseLocalModelId(model) && !resumedElsewhere
+      ? await classModelNow(row.workClass)
+      : null;
+  if (local?.model) {
+    model = local.model;
+    // The local provider says how its turns think (runner local-ai.ts extra_body).
+    thinkingLevel = null;
+  } else if (local?.fallback) {
+    fallback = local.fallback;
+  }
+  const source = local?.model ? 'local' : row.model ? 'run' : model ? 'agent' : 'default';
+  if (fallback || local?.model) {
     // Shown with the run until its runner reports what really ran (which keeps it).
     await db
       .update(agentRun)
       .set({
-        modelCheck: claimedModelCheck(
-          model,
-          thinkingLevel,
-          row.model ? 'run' : model ? 'agent' : 'default',
-          configured.fallback,
-        ),
+        modelCheck: claimedModelCheck(model, thinkingLevel, source, fallback, row.workClass),
       })
       .where(eq(agentRun.id, row.id));
   }
-  if (!row.model && !row.sessionId && !digest && row.trigger !== 'workspace') {
+  if (!local?.model && !row.model && !row.sessionId && !digest && row.trigger !== 'workspace') {
     const routed = await routeRequest({
       teamId: agent.teamId,
       agentId: agent.id,
@@ -630,11 +657,15 @@ export interface ReflectionRequest {
   prompt: string;
   maxTurns: number;
   runBudgetSeconds: number;
+  // A local model Lokale KI hands the reflection; absent: the run's model.
+  model?: string | null;
 }
 
 export interface RunReflection {
   status: 'pending' | 'success' | 'failed';
   reason: ReflectionReason;
+  // The local model it runs on, when Lokale KI takes it.
+  model?: string | null;
   saved: (typeof reflectionBody.static)['saved'];
   summary: string | null;
   error: string | null;
@@ -667,7 +698,7 @@ async function requestReflection(
   agentId: number,
   runId: number,
   run: { status: 'success' | 'failed'; issueId: number | null; paused: boolean; digest?: boolean },
-  report: { sessionId?: string; toolCalls?: number },
+  report: { sessionId?: string; toolCalls?: number; usage?: ContextUsage | null },
 ): Promise<ReflectionRequest | null> {
   // A digest run is a summary, with nothing to learn from (and no memory tools).
   if (run.paused || run.digest || !report.sessionId) return null;
@@ -682,9 +713,18 @@ async function requestReflection(
     rework: await isRework(agentId, runId, run.issueId),
   });
   if (!reason) return null;
+  // Lokale KI's class `reflection`, for a session small enough (reflection.ts). Hermes reports
+  // what the whole run read, every call summed, which bounds the session from above; a run
+  // of unknown size stays on its own model.
+  const read = report.usage?.inputTokens ?? null;
+  const local =
+    read !== null && read <= LOCAL_REFLECTION_MAX_READ
+      ? (await classModelNow(WORK_CLASS.reflection)).model
+      : null;
   const reflection: RunReflection = {
     status: 'pending',
     reason,
+    ...(local && { model: local }),
     saved: [],
     summary: null,
     error: null,
@@ -692,7 +732,9 @@ async function requestReflection(
     outputTokens: null,
   };
   await db.update(agentRun).set({ reflection }).where(eq(agentRun.id, runId));
-  return { prompt: reflectionPrompt(reason), ...REFLECTION_LIMITS };
+  return local
+    ? { prompt: reflectionPrompt(reason), ...LOCAL_REFLECTION_LIMITS, model: local }
+    : { prompt: reflectionPrompt(reason), ...REFLECTION_LIMITS };
 }
 
 // Records the outcome the runner reports. A failure is terminal: the runner ran the

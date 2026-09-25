@@ -179,5 +179,84 @@
   },
   "shell": {
     "title": "Account"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "thisDevice": {
+      "title": "Push on this device",
+      "description": "Messages from Helena on this phone or computer, even while Helena is not open.",
+      "switch": "Push messages",
+      "off": "Off",
+      "never": "On, nothing delivered yet",
+      "lastDelivered": "On, last delivered {when}",
+      "enabled": "Push is on for this device",
+      "disabled": "Push is off for this device",
+      "enableFailed": "Push could not be switched on: {error}",
+      "test": "Send a test",
+      "testSent": "Test sent, it should appear in a moment.",
+      "testFailed": "The test did not arrive: {error}"
+    },
+    "hints": {
+      "insecure": {
+        "title": "Push needs a secure connection",
+        "body": "Browsers allow push only over HTTPS or on localhost. Open Helena at its https address once it is set up."
+      },
+      "iosInstall": {
+        "title": "On iPhone and iPad, add Helena to the home screen first",
+        "body": "In Safari: Share → “Add to Home Screen”. Then open Helena from the home screen and switch push on here (iOS 16.4 or later)."
+      },
+      "unsupported": {
+        "title": "This browser cannot receive push",
+        "body": "Use a current Chrome, Edge, Firefox or Safari."
+      },
+      "denied": {
+        "title": "Notifications are blocked",
+        "body": "Allow notifications for this site in the browser's site settings and reload the page."
+      },
+      "noKey": {
+        "title": "Push is not set up on this server",
+        "body": "The server lacks the key it encrypts with (APP_ENCRYPTION_KEY)."
+      }
+    },
+    "devices": {
+      "title": "Your devices",
+      "description": "Each device receives only what is switched on for it.",
+      "empty": "No device yet. Switch push on above on every device that should receive messages.",
+      "unnamed": "Device",
+      "thisDevice": "This device",
+      "noneOn": "everything off",
+      "lastDelivered": "last delivered {when}",
+      "failing": "Delivery fails: {error}",
+      "resubscribe": "Must be switched on again on the device.",
+      "gone": "The push service no longer knows the device; it was removed.",
+      "menu": "Settings for {name}",
+      "receives": "Receives",
+      "test": "Send a test",
+      "remove": "Remove"
+    },
+    "services": {
+      "apple": "Apple",
+      "google": "Google",
+      "mozilla": "Mozilla",
+      "microsoft": "Microsoft"
+    },
+    "categories": {
+      "emergencies": {
+        "label": "Emergencies",
+        "description": "A failing disk or RAID, a failed backup, overheating, a service that stopped. Once when it happens, once when it is fixed."
+      },
+      "approvals": {
+        "label": "Approvals",
+        "description": "An agent asks for your approval."
+      },
+      "needs-you": {
+        "label": "Needs you",
+        "description": "Sign in again, failed security checks, runs and answers."
+      },
+      "agent-replies": {
+        "label": "Agent answers",
+        "description": "An answer in the chat is ready while you do not have Helena open."
+      }
+    }
   }
 }

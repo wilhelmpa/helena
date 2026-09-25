@@ -10,6 +10,7 @@ import {
   type IssueRow,
 } from '#modules/issues/service';
 import { getMembership } from '#modules/members/service';
+import { WORK_CLASS } from '#modules/local-ai/work-classes';
 import { bumpControlPlaneRevision } from '#modules/sync/service';
 import { publishDomainEvent as publishBusEvent } from '#shared/helena';
 import type { DelegateStep } from '#modules/pipelines/definition';
@@ -27,12 +28,17 @@ import {
 // While the routine's task is open (the one it names, or the one its newest earlier fire
 // created) the fire changes nothing and is recorded as skipped. The delegation goes
 // through the normal delegation path, so a coordinator of a project that runs agent
-// teams gets the task through its team. The agents the instructions @mention start on the
-// task as well, as the routine's author's mentions (routines/mentions.ts). A routine's
+// teams gets the task through its team. The agent's run is the routine's work for Lokale KI
+// (class `routines`): while that is on, it starts on the local model, with the agent's own
+// model as its fallback (docs/helena-decisions/local-ai-platform.md §7.1). Later runs on the
+// task (a reply, a review) are ordinary work. The agents the instructions @mention start on
+// the task as well, as the routine's author's mentions (routines/mentions.ts). A routine's
 // work is quiet: its task subscribes nobody and its reopening tells no watcher
 // (docs/helena-decisions/routine-mentions.md).
 
 type Step = DelegateStep & { [field: string]: unknown };
+
+const ROUTINE_RUN = { workClass: WORK_CLASS.routines };
 
 export interface DelegateResult {
   outcome: 'created' | 'reopened' | 'skipped';
@@ -160,7 +166,7 @@ async function dispatch(
   // A task this fire created before a restart: only its delegation may be missing.
   if (stored.taskId && step.mode === 'new') {
     const created = await getIssue(stored.taskId);
-    if (created) await enqueueDelegateRun(created, actor);
+    if (created) await enqueueDelegateRun(created, actor, ROUTINE_RUN);
     return finish(runId, step, at, project.id, {
       outcome: 'created',
       skipReason: null,
@@ -207,6 +213,7 @@ async function dispatch(
         },
         actor,
         {
+          delegation: ROUTINE_RUN,
           // The routine files the task, not its author: nobody follows it by that.
           subscribeAuthor: false,
           afterInsert: async (tx, issueId) => {
@@ -260,9 +267,10 @@ async function dispatch(
     task.id,
     { columnId: unstarted.id, delegateUserId: agent.userId },
     actor,
-    { quiet: true },
+    { delegation: ROUTINE_RUN, quiet: true },
   );
-  if (after && task.delegateUserId === agent.userId) await enqueueDelegateRun(after, actor);
+  if (after && task.delegateUserId === agent.userId)
+    await enqueueDelegateRun(after, actor, ROUTINE_RUN);
   return finish(runId, step, at, project.id, {
     outcome: 'reopened',
     skipReason: null,

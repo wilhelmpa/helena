@@ -114,11 +114,11 @@
     },
     "summaries": {
       "label": "Résumés et digests",
-      "description": "Digests de mises à jour, résumés d'exécutions, d'activité et de mails, briefings."
+      "description": "Les digests de mises à jour (ce que change une nouvelle version) sont rédigés par le modèle local ; si le serveur ne répond pas, par le modèle configuré."
     },
     "triage": {
       "label": "Tri et affectation",
-      "description": "Trier le travail entrant : catégorie, priorité, quel agent."
+      "description": "Pris en charge par « Décisions » (classer les mails, choisir le modèle, l’étape de workflow « Décision ») ; rien d’autre n’est relié ici."
     },
     "transcription": {
       "label": "Transcription (dictée)",
@@ -130,15 +130,15 @@
     },
     "routines": {
       "label": "Agents de routine",
-      "description": "Les routines planifiées essaient d'abord le modèle local principal, avec le modèle configuré de l'agent en secours."
+      "description": "L'exécution qu'une routine lance essaie d'abord le modèle local, avec le modèle configuré de l'agent en secours. L'agent agit avec tous ses outils."
     },
     "reflection": {
-      "label": "Réflexion nocturne",
-      "description": "Ce qu'une exécution a appris, entretien des skills : travail par lots la nuit sur le grand modèle local."
+      "label": "Réflexion après les exécutions",
+      "description": "Le retour sur une exécution (mémoire et skills) sur le modèle local quand la session est assez petite ; sinon sur le modèle de l'exécution."
     },
     "coordinator-triage": {
-      "label": "Premier regard du coordinateur",
-      "description": "Le premier examen d'une nouvelle tâche ; tout ce qui est réel passe au modèle configuré du coordinateur."
+      "label": "Premier plan du coordinateur",
+      "description": "Le premier plan d'une équipe d'agents (qui fait quoi) ; s'il est inutilisable, le modèle configuré du coordinateur replanifie."
     },
     "decisions": {
       "label": "Décisions",

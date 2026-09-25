@@ -170,8 +170,20 @@ repaired back); **clean-up later** = remove `EFI/helena-raid` from both ESPs at 
 current `EFI/helena-raid` binaries were byte-identical to Debian's signed images on
 2026-09-25 (Secure Boot is off; Debian's `grub-install` installs the signed shim layout by
 default when the signed packages are present, as the 2026-09-24 setup did without a flag).
-Not changed: `grub2/force_efi_extra_removable` stays `false`, so the firmware's fallback path
-`EFI/BOOT` keeps the files of 2026-09-24 (it is copied to the second ESP like everything else).
+**The removable path `EFI/BOOT` (after the reboot test of 2026-09-25).** With BootOrder
+`0001,0002,001B,…` a normal reboot started `001B "UEFI OS"` (`\EFI\BOOT\BOOTX64.EFI` on the second
+ESP); the firmware rewrites BootOrder at every boot (and dropped its BBS entries 001C–001E), and
+helena-boot-entries puts Debian first again only afterwards. Our order is therefore not reliable:
+every path has to start current binaries.
+
+| Option | Decision |
+|---|---|
+| Delete the firmware's "UEFI OS" entry | Rejected: the firmware re-adds it for the removable path at every boot (seen with 001B/001C during the kernel test). |
+| Set BootNext to "Debian" at every shutdown | Rejected: an NVRAM write per boot to work around the firmware, and no help after a power loss. |
+| **Keep `EFI/BOOT` equal to `EFI/debian`, through apt** | **Chosen.** debconf `grub2/force_efi_extra_removable=true` (read by both `grub-efi-amd64` and `shim-signed` postinst) makes apt's `grub-install` refresh `EFI/BOOT` with every update. Per Debian's `grub-install-removable-shim.patch` that puts shim as `BOOTX64.EFI`, `grubx64.efi` and `mmx64.efi` there, `fbx64.efi` only when NVRAM is written (never with `update_nvram=false`), and no `grub.cfg`; `boot-layout` copies the stub from `EFI/debian` once and removes a leftover `fbx64.efi` (shim would run it and add NVRAM entries of its own). Health: `espRemovableStale` (amber) per ESP when `EFI/BOOT`'s shim/GRUB/MokManager differ from the loader folder's, `fbx64.efi` is there, or the stub does not find the root. The ESP copy guards `BOOTX64.EFI`, `grubx64.efi` and `grub.cfg` there like a loader folder. |
+
+**The order the firmware leaves** is logged by boot-repair at every boot (`firmware order was
+…; booted …`) and kept (last 100) in `/var/lib/helena/hostd/boot-history.json`, to see the pattern.
 
 **Out of band alerting** (mail, push) is not built: the owner chooses the channel. The events
 file and the red health lines are ready to be forwarded.

@@ -55,7 +55,7 @@
     "auth_step_up": "Terminal asks for a code when it opens",
     "auth_registration": "Registration closed",
     "auth_sessions": "Few open sessions",
-    "auth_sudo": "sudo not passwordless for everything",
+    "auth_sudo": "sudo without a password only for the automation account",
     "sys_time": "Clock is synchronised (NTP)",
     "sys_sysctl": "Kernel protection settings applied",
     "sys_updates": "Security updates install automatically",
@@ -145,7 +145,7 @@
       "warn": "{count} open owner sessions; every LAN visit without a cookie opens a new one."
     },
     "auth_sudo": {
-      "warn": "sudo without a password (NOPASSWD: ALL) for {value}: the browser terminal is root without a password."
+      "warn": "{why, select, ops {The automation account {value} has sudo without a password but is not locked down: {problem, select, password {its password is not locked} ssh {SSH does not require its key only} other {its password is not locked, and SSH does not require its key only}}.} other {sudo without a password (NOPASSWD: ALL) for {value}: whoever has that account is root without a password.}}"
     },
     "sys_time": {
       "fail": "The clock is not synchronised; TOTP, Access tokens and certificates depend on it."

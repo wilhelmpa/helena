@@ -53,6 +53,10 @@ export interface PluginProvides {
   decisionBackends?: string[];
   // Decision classes (kinds of typed decisions a feature asks).
   decisionClasses?: string[];
+  // Notification categories (kinds of push messages) and alert sources (problems pushed
+  // while they last).
+  notificationCategories?: string[];
+  alertSources?: string[];
   // Event types the plugin publishes; always under its own id.
   events?: string[];
   mcpServers?: McpServerContribution[];

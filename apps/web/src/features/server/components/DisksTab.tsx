@@ -300,9 +300,14 @@ function BootCard({ storage }: { storage: StorageStatus }) {
   const reserve = useBootReserveOnce();
   const cancel = useCancelBootReserve();
   const [confirm, setConfirm] = useState(false);
-  // What is wrong with the ESP copy or a firmware entry (the helper repairs entries at boot).
+  // What is wrong with the ESP copy, the removable path or a firmware entry (the helper
+  // repairs entries at boot).
   const problems = useAreaHealth('disks').filter(
-    (item) => item.state !== 'ok' && (item.id === 'esp:sync' || item.id.startsWith('boot:')),
+    (item) =>
+      item.state !== 'ok' &&
+      (item.id === 'esp:sync' ||
+        item.id.startsWith('esp:removable') ||
+        item.id.startsWith('boot:')),
   );
   const boot = storage.boot;
   const esp = storage.esp;

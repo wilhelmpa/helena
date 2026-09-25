@@ -1,4 +1,5 @@
 import {
+  Bell,
   KeyRound,
   Link2,
   ShieldCheck,
@@ -16,6 +17,7 @@ export type AccountSection = { slug: string; icon: LucideIcon };
 export const ACCOUNT_SECTIONS: AccountSection[] = [
   { slug: 'profile', icon: UserRound },
   { slug: 'preferences', icon: SlidersHorizontal },
+  { slug: 'notifications', icon: Bell },
   { slug: 'accounts', icon: Link2 },
   { slug: 'security', icon: ShieldCheck },
   { slug: 'api-keys', icon: KeyRound },

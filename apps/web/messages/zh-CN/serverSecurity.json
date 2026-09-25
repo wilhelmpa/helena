@@ -55,7 +55,7 @@
     "auth_step_up": "终端打开时要求输入验证码",
     "auth_registration": "注册已关闭",
     "auth_sessions": "打开的会话很少",
-    "auth_sudo": "sudo 并非全部免密码",
+    "auth_sudo": "仅自动化账户可免密码使用 sudo",
     "sys_time": "时钟已同步（NTP）",
     "sys_sysctl": "已应用内核保护设置",
     "sys_updates": "安全更新自动安装",
@@ -145,7 +145,7 @@
       "warn": "所有者有 {count} 个打开的会话；每次不带 Cookie 的局域网访问都会新开一个。"
     },
     "auth_sudo": {
-      "warn": "{value} 的 sudo 无需密码（NOPASSWD: ALL）：浏览器终端就是无需密码的 root。"
+      "warn": "{why, select, ops {自动化账户 {value} 可免密码使用 sudo，但未加固：{problem, select, password {其密码未锁定} ssh {SSH 并非只接受其密钥} other {其密码未锁定，且 SSH 并非只接受其密钥}}。} other {{value} 的 sudo 无需密码（NOPASSWD: ALL）：持有该账户的人就是无需密码的 root。}}"
     },
     "sys_time": {
       "fail": "时钟未同步；TOTP、Access 令牌和证书都依赖它。"

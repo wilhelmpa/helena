@@ -660,6 +660,7 @@
       "reasonFailure": "porque la ejecución falló",
       "reasonRework": "porque esto fue un retrabajo",
       "reasonComplex": "porque la ejecución tuvo muchos pasos",
+      "local": "local: {model}",
       "nothingSaved": "Nada guardado",
       "toolMemory": "Memoria",
       "toolSkill": "Habilidad",
@@ -748,7 +749,8 @@
       "source": {
         "run": "del paso del flujo",
         "agent": "del agente",
-        "default": "predeterminado del agente"
+        "default": "predeterminado del agente",
+        "local": "por IA local"
       },
       "part": {
         "model": "modelo",

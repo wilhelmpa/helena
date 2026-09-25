@@ -7,12 +7,16 @@ import { normalizeRuntimePolicy } from '#modules/agents/core/service';
 import { registerBuiltins } from '#modules/engine/builtin/index';
 import { policyDecider } from '#modules/engine/registry';
 import { price } from '#modules/model-prices/service';
+import { WORK_CLASS } from '#modules/local-ai/work-classes';
 import { bumpControlPlaneRevision } from '#modules/sync/service';
 import { refusedModels } from './settings';
 import type { UpdateSettings } from './settings';
 
 // The summary of what a new version changes, written by a small model (owner, 2026-09-24:
-// "ein ganz kleines Modell regelmäßig laufen lassen"). It is a digest run: an ordinary
+// "ein ganz kleines Modell regelmäßig laufen lassen"). While Lokale KI takes summaries
+// (class `summaries`, docs/helena-decisions/local-ai-platform.md §7.1) the run starts on the
+// local model and the model chosen here is its fallback; otherwise it runs on that model, as
+// without local AI. It is a digest run: an ordinary
 // queued run of a Hermes agent (its run history, its budgets, the usage ledger and the
 // model check apply), but text only: the runner starts Hermes without its rules, memory,
 // skills or MCP servers and with no tool that reaches outside the turn, and the API sends
@@ -292,8 +296,11 @@ export async function queueDigestRun(
       issueId: null,
       prompt,
       trigger: 'digest',
+      // The model the summary runs on without local AI; the claim hands the local one while
+      // Lokale KI takes summaries.
       model: choice.model,
       reasoning: choice.reasoning ?? own.reasoningEffort ?? null,
+      workClass: WORK_CLASS.summaries,
       // One answer, no tool loop: a turn or two is enough, and a short budget stops a model
       // that talks on.
       maxTurns: 3,
@@ -311,6 +318,8 @@ export interface DigestRunState {
   // The model the run was configured with and the one its session really ran on.
   model: string | null;
   usedModel: string | null;
+  // Lokale KI handed it a local model: a failure there says nothing about `model`.
+  local: boolean;
   // The runtime's own reading of a failure (hub/model-availability: `model-unavailable`).
   failureCode: string | null;
 }
@@ -334,15 +343,20 @@ export async function digestRunState(runId: number): Promise<DigestRunState> {
       error: 'The run is gone',
       model: null,
       usedModel: null,
+      local: false,
       failureCode: null,
     };
-  const check = row.modelCheck as { used?: { model?: string | null } | null } | null;
+  const check = row.modelCheck as {
+    configured?: { source?: string } | null;
+    used?: { model?: string | null } | null;
+  } | null;
   return {
     status: row.status as DigestRunState['status'],
     output: row.output,
     error: row.error,
     model: row.model,
     usedModel: check?.used?.model ?? null,
+    local: check?.configured?.source === 'local',
     failureCode: (row.failure as { code?: unknown } | null)?.code?.toString() ?? null,
   };
 }

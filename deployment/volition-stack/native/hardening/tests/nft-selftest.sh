@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Proves the rendered firewall in a private network namespace (no root, no change to the
 # host's rules): it loads, the self guard refuses a connection to "nginx" (port 80) from a
-# non-loopback source address while loopback still works, and a peer outside the home
+# non-loopback source address while loopback still works (IPv4 and IPv6: the machine's own
+# global IPv6 address to itself or to ::1), and a peer outside the home
 # network is dropped on port 22 while a home-network peer gets through (and is dropped on a
 # port that is not on the list).
 #
@@ -21,35 +22,46 @@ ip link set lo up
 # "eno1": this machine's LAN address, plus a peer namespace for inbound tests.
 ip link add eno1 type veth peer name peer0
 ip addr add 192.168.2.58/24 dev eno1
+ip -6 addr add 2001:db8:1:2::58/64 dev eno1 nodad
 ip link set eno1 up
 nft -f "$1"
 python3 - <<'PY'
 import socket, subprocess, sys, threading
-def serve(port):
-    s = socket.socket(); s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    s.bind(("0.0.0.0", port)); s.listen(8)
+def serve(port, family=socket.AF_INET, host="0.0.0.0"):
+    s = socket.socket(family); s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    if family == socket.AF_INET6:
+        s.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
+    s.bind((host, port)); s.listen(8)
     def loop():
         while True:
             c, _ = s.accept(); c.close()
     threading.Thread(target=loop, daemon=True).start()
 serve(80)
+serve(80, socket.AF_INET6, "::")
 def attempt(src, dst, port):
-    c = socket.socket(); c.settimeout(2)
+    c = socket.socket(socket.AF_INET6 if ":" in dst else socket.AF_INET); c.settimeout(2)
     try:
         if src: c.bind((src, 0))
         c.connect((dst, port)); return "open"
     except ConnectionRefusedError: return "refused"
     except OSError as e: return type(e).__name__
     finally: c.close()
+gua = "2001:db8:1:2::58"
 results = {
     "loopback -> 127.0.0.1:80": attempt("127.0.0.1", "127.0.0.1", 80),
     "LAN address -> 127.0.0.1:80 (self guard)": attempt("192.168.2.58", "127.0.0.1", 80),
     "LAN address -> 192.168.2.58:80 (self guard)": attempt("192.168.2.58", "192.168.2.58", 80),
+    "::1 -> [::1]:80": attempt("::1", "::1", 80),
+    "own IPv6 -> [::1]:80 (self guard 6)": attempt(gua, "::1", 80),
+    "own IPv6 -> own IPv6:80 (self guard 6)": attempt(gua, gua, 80),
 }
 expected = {
     "loopback -> 127.0.0.1:80": "open",
     "LAN address -> 127.0.0.1:80 (self guard)": "refused",
     "LAN address -> 192.168.2.58:80 (self guard)": "refused",
+    "::1 -> [::1]:80": "open",
+    "own IPv6 -> [::1]:80 (self guard 6)": "refused",
+    "own IPv6 -> own IPv6:80 (self guard 6)": "refused",
 }
 ok = True
 for name, got in results.items():
@@ -102,7 +114,7 @@ ip addr add 10.20.30.5/24 dev eno1
 ip addr del 192.168.2.58/24 dev eno1
 ip route add default via 10.20.30.1 dev eno1
 ip -6 addr add 2001:db8:1:2::5/64 dev eno1 nodad
-sh "$2"
+python3 -I "$2" --firewall-only
 lan4=$(nft list set inet helena_hardening lan4 | tr -d '\n\t ')
 lan6=$(nft list set inet helena_hardening lan6 | tr -d '\n\t ')
 case "$lan4" in *10.20.30.0/24*) echo "PASS network sync: lan4 follows the new network" ;; *) echo "FAIL network sync: $lan4"; exit 1 ;; esac

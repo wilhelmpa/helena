@@ -393,7 +393,8 @@ export async function collectDigests(): Promise<number> {
       continue;
     }
     const refused = run.failureCode === 'model-unavailable' || isModelRefusal(run.error);
-    if (settings.model === null && run.model && refused) {
+    // A refusal of the local model says nothing about the one chosen for the summary.
+    if (settings.model === null && run.model && refused && !run.local) {
       // The account does not serve the cheapest model: the next check takes the next one.
       await rememberRefusedModel(run.model);
     }

@@ -1,27 +1,218 @@
-#!/bin/sh
-# Keeps the firewall's home networks (inet helena_hardening: lan4, lan6) equal to the
-# networks this machine actually sits in: the IPv4 prefix of the default-route interface,
-# and link-local, unique-local plus the /64s it has global IPv6 addresses in. The provider
-# changes the IPv6 prefix, and a new router can change the IPv4 network; without this the
-# home network's clients (SSH included) would be dropped. Run by NetworkManager's dispatcher,
-# a 5-minute timer, and after the firewall is loaded.
-set -eu
-PATH=/usr/sbin:/usr/bin:/sbin:/bin
-nft list table inet helena_hardening >/dev/null 2>&1 || exit 0
-v6=$(ip -6 -o addr show scope global 2>/dev/null | awk '{print $4}' | grep '/64$' \
-  | python3 -c 'import ipaddress,sys; print(",".join(sorted({str(ipaddress.ip_interface(l.strip()).network) for l in sys.stdin if l.strip()})))')
-dev=$(ip -4 route show default 2>/dev/null | awk '{for(i=1;i<NF;i++) if ($i=="dev") {print $(i+1); exit}}')
-v4=
-if [ -n "$dev" ]; then
-  v4=$(ip -4 -o addr show dev "$dev" scope global | awk '{print $4}' \
-    | python3 -c 'import ipaddress,sys; print(",".join(sorted({str(ipaddress.ip_interface(l.strip()).network) for l in sys.stdin if l.strip()})))')
-fi
-{
-  echo "flush set inet helena_hardening lan6"
-  echo "add element inet helena_hardening lan6 { fe80::/10, fc00::/7${v6:+, $v6} }"
-  # IPv4: only replaced when the default route names one (never emptied on a link flap).
-  if [ -n "$v4" ]; then
-    echo "flush set inet helena_hardening lan4"
-    echo "add element inet helena_hardening lan4 { $v4 }"
-  fi
-} | nft -f -
+#!/usr/bin/python3 -I
+"""helena-lan6-sync: keeps two things equal to the networks this machine actually sits in.
+
+1. The firewall's home networks (nft sets inet helena_hardening lan4, lan6), when the
+   hardening firewall is loaded: the IPv4 prefix of the default-route interface; link-local,
+   unique-local plus the /64s it has global IPv6 addresses in. The provider changes the IPv6
+   prefix, and a new router can change the IPv4 network; without this the home network's
+   clients (SSH included) would be dropped.
+2. The owner sign-in's networks for nginx (/etc/nginx/helena-owner-networks.conf, included in
+   the geo of /etc/nginx/conf.d/volition-local-owner.conf by local-owner/configure.py):
+   - the home network's IPv6 prefixes = the /64s this machine has on its LAN interface
+     (never link-local, never loopback; a unique-local prefix only when the LAN interface has
+     one), so a phone or a Mac on the home network signs in over IPv6 as over IPv4;
+   - every address of this machine itself as NOT the owner: a local process can bind any of
+     them (IPv6 hosts have several: stable, privacy, DHCPv6), and "source == destination"
+     alone would not catch one address talking to another.
+   Replaced only when it changed; `nginx -t` first, then a reload; on a failed test the old
+   file comes back. (docs/helena-decisions/security-hardening.md C-01/H-01.)
+
+Run by NetworkManager's dispatcher (90-helena-lan6), a 5-minute timer and after the firewall
+is loaded; by local-owner/configure.py with --nginx-only --no-reload.
+
+  helena-lan6-sync [--dry-run] [--firewall-only | --nginx-only] [--no-reload] [--print-nginx]
+"""
+
+from __future__ import annotations
+
+import difflib
+import ipaddress
+import json
+import os
+import subprocess
+import sys
+import tempfile
+
+ENV = {'PATH': '/usr/sbin:/usr/bin:/sbin:/bin', 'LC_ALL': 'C'}
+NFT_TABLE = 'inet helena_hardening'
+NGINX_FILE = os.environ.get('HELENA_OWNER_NETWORKS', '/etc/nginx/helena-owner-networks.conf')
+# `apply.sh --apply rollback owner-lan6` switches the IPv6 prefixes off (the machine's own
+# addresses stay excluded).
+OFF_MARKER = os.environ.get('HELENA_OWNER_LAN6_OFF', '/etc/helena/owner-lan6.off')
+
+
+def run(argv: list[str], **kwargs) -> subprocess.CompletedProcess:
+    return subprocess.run(argv, capture_output=True, text=True, env=ENV, check=False, **kwargs)
+
+
+def log(message: str) -> None:
+    print(f'helena-lan6-sync: {message}', flush=True)
+
+
+# ── What the machine has ─────────────────────────────────────────────────────────────────
+
+def read_ip() -> tuple[list[dict], list[dict], list[dict]]:
+    def load(*args: str) -> list[dict]:
+        result = run(['ip', '-j', *args])
+        try:
+            return json.loads(result.stdout or '[]') if result.returncode == 0 else []
+        except ValueError:
+            return []
+    return load('addr', 'show'), load('-6', 'route', 'show', 'default'), load('-4', 'route', 'show', 'default')
+
+
+def _usable(address: dict) -> bool:
+    return not any(address.get(flag) for flag in ('tentative', 'dadfailed'))
+
+
+def lan_interface(routes6: list[dict], routes4: list[dict]) -> str | None:
+    """The interface the home network is on: the IPv6 default route's, else the IPv4 one's."""
+    for route in (*routes6, *routes4):
+        if route.get('dev'):
+            return route['dev']
+    return None
+
+
+def firewall_networks(links: list[dict], routes4: list[dict]) -> tuple[list[str], list[str]]:
+    """lan6: the /64s of every global IPv6 address; lan4: the IPv4 networks of the default
+    route's interface (empty when there is none: never emptied on a link flap)."""
+    v6, v4 = set(), set()
+    dev4 = lan_interface([], routes4)
+    for link in links:
+        for address in link.get('addr_info') or []:
+            if not _usable(address) or address.get('scope') != 'global':
+                continue
+            if address.get('family') == 'inet6' and address.get('prefixlen') == 64:
+                v6.add(str(ipaddress.ip_interface(f"{address['local']}/64").network))
+            elif address.get('family') == 'inet' and link.get('ifname') == dev4:
+                v4.add(str(ipaddress.ip_interface(f"{address['local']}/{address['prefixlen']}").network))
+    return sorted(v6), sorted(v4)
+
+
+def owner_networks(links: list[dict], lan_dev: str | None) -> tuple[list[str], list[str]]:
+    """(the home network's IPv6 prefixes, this machine's own addresses)."""
+    prefixes, own = set(), set()
+    for link in links:
+        for address in link.get('addr_info') or []:
+            if not _usable(address) or address.get('family') not in ('inet', 'inet6'):
+                continue
+            ip = ipaddress.ip_address(address['local'])
+            if ip.is_loopback or ip.is_link_local or ip.is_multicast or ip.is_unspecified:
+                continue
+            own.add(str(ipaddress.ip_network(f'{ip}/{ip.max_prefixlen}')))
+            if (ip.version == 6 and link.get('ifname') == lan_dev and address.get('prefixlen') == 64
+                    and address.get('scope') == 'global'):
+                # A unique-local prefix counts only because it is on the LAN interface.
+                prefixes.add(str(ipaddress.ip_interface(f'{ip}/64').network))
+    key = lambda network: (ipaddress.ip_network(network).version, ipaddress.ip_network(network))  # noqa: E731
+    return sorted(prefixes, key=key), sorted(own, key=key)
+
+
+def render_nginx(prefixes: list[str], own: list[str], lan_dev: str | None) -> str:
+    lines = [
+        '# Helena: written by helena-lan6-sync (hardening) - do not edit. Included in the owner',
+        '# geo of /etc/nginx/conf.d/volition-local-owner.conf (local-owner/configure.py).',
+        f"# The home network's IPv6 prefixes: this machine's /64s on its LAN interface ({lan_dev or 'none'}).",
+        *[f'{prefix} 1;' for prefix in prefixes],
+        '# This machine itself is never the owner, from any of its addresses (a local process',
+        '# can bind each of them).',
+        *[f'{address} 0;' for address in own],
+    ]
+    return '\n'.join(lines) + '\n'
+
+
+def nft_script(v6: list[str], v4: list[str]) -> str:
+    lines = ['flush set inet helena_hardening lan6',
+             'add element inet helena_hardening lan6 { fe80::/10, fc00::/7' + ''.join(f', {n}' for n in v6) + ' }']
+    if v4:
+        lines += ['flush set inet helena_hardening lan4',
+                  'add element inet helena_hardening lan4 { ' + ', '.join(v4) + ' }']
+    return '\n'.join(lines) + '\n'
+
+
+# ── Changing it ──────────────────────────────────────────────────────────────────────────
+
+def sync_firewall(v6: list[str], v4: list[str], *, dry_run: bool) -> int:
+    if run(['nft', 'list', 'table', *NFT_TABLE.split()]).returncode != 0:
+        return 0  # the hardening firewall is not loaded
+    script = nft_script(v6, v4)
+    if dry_run:
+        log('firewall (dry run):\n' + script.rstrip())
+        return 0
+    result = run(['nft', '-f', '-'], input=script)
+    if result.returncode != 0:
+        log(f'nft refused the sets: {result.stderr.strip()}')
+        return 1
+    return 0
+
+
+def sync_nginx(text: str, *, path: str = NGINX_FILE, dry_run: bool, reload: bool) -> int:
+    directory = os.path.dirname(path)
+    if not os.path.isdir(directory):
+        return 0  # no nginx here
+    try:
+        with open(path, encoding='utf-8') as handle:
+            old = handle.read()
+    except FileNotFoundError:
+        old = None
+    if old == text:
+        log(f'{path} unchanged')
+        return 0
+    if dry_run:
+        diff = difflib.unified_diff((old or '').splitlines(), text.splitlines(), path, path + ' (new)', lineterm='')
+        log(f'{path} would change:\n' + '\n'.join(diff))
+        return 0
+    fd, temp = tempfile.mkstemp(prefix='.helena-owner-networks.', dir=directory)
+    with os.fdopen(fd, 'w', encoding='utf-8') as handle:
+        handle.write(text)
+    os.chmod(temp, 0o644)
+    os.replace(temp, path)
+    if not reload:
+        log(f'{path} written')
+        return 0
+    tested = run(['nginx', '-t'])
+    if tested.returncode != 0:
+        # Back to what nginx accepted before.
+        if old is None:
+            os.unlink(path)
+        else:
+            with open(path, 'w', encoding='utf-8') as handle:
+                handle.write(old)
+        log(f'nginx -t failed, {path} left as it was: {tested.stderr.strip()[-300:]}')
+        return 1
+    if run(['systemctl', 'is-active', '--quiet', 'nginx']).returncode == 0:
+        reloaded = run(['systemctl', 'reload', 'nginx'])
+        if reloaded.returncode != 0:
+            log(f'nginx reload failed: {reloaded.stderr.strip()}')
+            return 1
+        log(f'{path} changed; nginx reloaded')
+    else:
+        log(f'{path} changed; nginx is not running')
+    return 0
+
+
+def main(argv: list[str]) -> int:
+    allowed = {'--dry-run', '--firewall-only', '--nginx-only', '--no-reload', '--print-nginx'}
+    if set(argv) - allowed or {'--firewall-only', '--nginx-only'} <= set(argv):
+        print(__doc__, file=sys.stderr)
+        return 2
+    links, routes6, routes4 = read_ip()
+    lan_dev = lan_interface(routes6, routes4)
+    prefixes, own = owner_networks(links, lan_dev)
+    if os.path.exists(OFF_MARKER):
+        prefixes = []
+    text = render_nginx(prefixes, own, lan_dev)
+    if '--print-nginx' in argv:
+        sys.stdout.write(text)
+        return 0
+    status = 0
+    dry_run = '--dry-run' in argv
+    if '--nginx-only' not in argv:
+        status |= sync_firewall(*firewall_networks(links, routes4), dry_run=dry_run)
+    if '--firewall-only' not in argv:
+        status |= sync_nginx(text, dry_run=dry_run, reload='--no-reload' not in argv)
+    return status
+
+
+if __name__ == '__main__':
+    raise SystemExit(main(sys.argv[1:]))

@@ -1,10 +1,10 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test';
-import { agentUsage, db, helenaModelServer } from '@repo/db';
-import { eq } from 'drizzle-orm';
+import { agentRun, agentUsage, db, helenaLocalAiEval, helenaModelServer } from '@repo/db';
+import { eq, sql } from 'drizzle-orm';
 import { apiKeyApi, authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
-import { createAgent } from '#tests/helpers/agents';
+import { createAgent, teamOf } from '#tests/helpers/agents';
 import { costOfUsage } from '#modules/model-prices/service';
 import { host } from '#shared/helena';
 import { LOCAL_AI_PLUGIN_ID, LOCAL_AI_PROVIDES, localAiPlugin } from '../../plugin';
@@ -154,7 +154,7 @@ describe('local AI', () => {
     const helpers = settings.classes.find((c) => c.id === 'hermes-helpers')!;
     expect(helpers.blocker).toBe('eval-missing');
     expect(helpers.resolvedModel).toBe('helena-local/Qwen3.6-35B-A3B-GGUF');
-    expect(settings.classes.find((c) => c.id === 'routines')?.blocker).toBe('not-wired');
+    expect(settings.classes.find((c) => c.id === 'triage')?.blocker).toBe('not-wired');
 
     // No class leaves "off" before its eval passed.
     const refused = await asOwner.god['local-ai'].policy.patch({
@@ -350,5 +350,292 @@ describe('local AI', () => {
     expect(outside.status).toBe(400);
     const twice = await asOwner.god['local-ai'].servers.post({ slug: 'local', keySource: 'none' });
     expect(twice.status).toBe(409);
+  });
+});
+
+// Kinds of work Helena hands to local AI as an agent's turn (local-ai-platform.md §7.1): a run
+// that names its kind (agent_run.work_class) starts on the class's local model while the class
+// runs locally and its server answers, and on its own model otherwise, with the reason shown.
+describe('local AI takes kinds of work', () => {
+  beforeEach(resetDb);
+
+  const LOCAL = 'helena-local/Qwen3.6-35B-A3B-GGUF';
+
+  // An eval of the class's model that passed, as "Auswerten" stores it.
+  async function passed(serverId: number, classId: string, evalVersion: number) {
+    await db.insert(helenaLocalAiEval).values({
+      classId,
+      serverId,
+      model: 'Qwen3.6-35B-A3B-GGUF',
+      score: 1,
+      threshold: 0.8,
+      passed: true,
+      cases: 4,
+      evalVersion,
+    });
+  }
+
+  async function queueWork(
+    agentId: number,
+    workClass: string | null,
+    values: Partial<typeof agentRun.$inferInsert> = {},
+  ) {
+    const [project] = await db.execute<{ id: number }>(
+      sql`SELECT id FROM project WHERE key = 'LAI'`,
+    );
+    const [row] = await db
+      .insert(agentRun)
+      .values({
+        agentId,
+        projectId: project!.id,
+        issueId: null,
+        prompt: 'Fasse die Versionshinweise zusammen.',
+        trigger: 'digest',
+        model: 'gpt-5.6-luna',
+        reasoning: 'low',
+        workClass,
+        ...values,
+      })
+      .returning({ id: agentRun.id });
+    return row!.id;
+  }
+
+  async function checkOf(runId: number) {
+    const [row] = await db
+      .select({ modelCheck: agentRun.modelCheck })
+      .from(agentRun)
+      .where(eq(agentRun.id, runId));
+    return row?.modelCheck as Record<string, unknown> | null;
+  }
+
+  it('offers these kinds of work off and prefer only, and gates them on the eval of their version', async () => {
+    const { asOwner, server } = await setup();
+    const settings = (await asOwner.god['local-ai'].get()).data!;
+    for (const id of ['summaries', 'routines', 'reflection', 'coordinator-triage']) {
+      const entry = settings.classes.find((c) => c.id === id)!;
+      expect(entry).toMatchObject({ wired: true, modes: ['off', 'prefer'], evalVersion: 2 });
+    }
+    expect(settings.classes.find((c) => c.id === 'embeddings')?.modes).toEqual([
+      'off',
+      'prefer',
+      'only',
+    ]);
+    await asOwner.god['local-ai'].policy.patch({ enabled: true });
+    // A pass of the eval's older version does not count: it measured something else.
+    await passed(server.id, 'summaries', 1);
+    const stale = await asOwner.god['local-ai'].policy.patch({
+      classes: { summaries: { mode: 'prefer' } },
+    });
+    expect(stale.status).toBe(409);
+    expect(
+      (await asOwner.god['local-ai'].get()).data!.classes.find((c) => c.id === 'summaries')
+        ?.blocker,
+    ).toBe('eval-missing');
+    await passed(server.id, 'summaries', 2);
+    const only = await asOwner.god['local-ai'].policy.patch({
+      classes: { summaries: { mode: 'only' } },
+    });
+    expect(only.status).toBe(400);
+    const on = await asOwner.god['local-ai'].policy.patch({
+      classes: { summaries: { mode: 'prefer' } },
+    });
+    expect(on.status).toBe(200);
+  });
+
+  it('starts a digest on the local model while summaries run locally, on its own model otherwise', async () => {
+    const { asOwner, asRunner, agent, server } = await setup();
+    await asOwner.god['local-ai'].policy.patch({ enabled: true });
+    await passed(server.id, 'summaries', 2);
+    await asOwner.god['local-ai'].policy.patch({ classes: { summaries: { mode: 'prefer' } } });
+
+    const localRun = await queueWork(agent.id, 'summaries');
+    const claimed = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    expect(claimed).toMatchObject({ id: localRun, model: LOCAL, thinkingLevel: null });
+    expect(await checkOf(localRun)).toMatchObject({
+      configured: { model: LOCAL, source: 'local', workClass: 'summaries' },
+    });
+    await asRunner['agent-runs']({ runId: localRun }).result.post({
+      status: 'success',
+      output: '{"zusammenfassung": "ok"}',
+      runtime: {
+        requested: { model: LOCAL, reasoning: null, provider: 'helena-local' },
+        defaults: null,
+        used: { model: 'Qwen3.6-35B-A3B-GGUF', reasoning: null, provider: 'helena-local' },
+      },
+    });
+    // What really ran is the local model: no mismatch, and it says why it ran there.
+    expect(await checkOf(localRun)).toMatchObject({
+      configured: { model: LOCAL, source: 'local', workClass: 'summaries' },
+      used: { model: 'Qwen3.6-35B-A3B-GGUF' },
+      mismatch: [],
+    });
+
+    // Work of another kind, or of none, keeps its model.
+    const other = await queueWork(agent.id, null);
+    expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({
+      id: other,
+      model: 'gpt-5.6-luna',
+      thinkingLevel: 'low',
+    });
+    await asRunner['agent-runs']({ runId: other }).result.post({ status: 'success' });
+
+    // The server stops: the digest runs on the model chosen for it, and says why.
+    serverDown = true;
+    try {
+      forgetServerAnswers();
+      await db
+        .update(helenaModelServer)
+        .set({ checkedAt: new Date(Date.now() - 60_000) })
+        .where(eq(helenaModelServer.id, server.id));
+      const down = await queueWork(agent.id, 'summaries');
+      expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({
+        id: down,
+        model: 'gpt-5.6-luna',
+        thinkingLevel: 'low',
+      });
+      expect(await checkOf(down)).toMatchObject({
+        configured: { model: 'gpt-5.6-luna', source: 'run', workClass: 'summaries' },
+        fallback: { from: LOCAL, reason: 'down' },
+      });
+      await asRunner['agent-runs']({ runId: down }).result.post({ status: 'success' });
+    } finally {
+      serverDown = false;
+      forgetServerAnswers();
+    }
+
+    // The master switch off: as without local AI, with nothing to explain.
+    await asOwner.god['local-ai'].policy.patch({ enabled: false });
+    const off = await queueWork(agent.id, 'summaries');
+    expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({
+      id: off,
+      model: 'gpt-5.6-luna',
+    });
+    expect(await checkOf(off)).toBeNull();
+  });
+
+  it('resumes a run on the model its session began with', async () => {
+    const { asOwner, asRunner, agent, server } = await setup();
+    await asOwner.god['local-ai'].policy.patch({ enabled: true });
+    await passed(server.id, 'summaries', 2);
+    const summaries = (mode: 'off' | 'prefer') =>
+      asOwner.god['local-ai'].policy.patch({ classes: { summaries: { mode } } });
+    // The runner that held it stopped, its lease ran out: the next claim resumes the session.
+    const interrupt = async (id: number, claim: number, sessionId: string) => {
+      await asRunner['agent-runs']({ runId: id }).session.post({ sessionId }, { query: { claim } });
+      await db
+        .update(agentRun)
+        .set({ nextAttemptAt: sql`now() - interval '1 second'` })
+        .where(eq(agentRun.id, id));
+    };
+
+    await summaries('prefer');
+    const local = await queueWork(agent.id, 'summaries');
+    const first = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    expect(first).toMatchObject({ id: local, model: LOCAL });
+    await interrupt(local, first.claim, 'sess-local');
+    expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({
+      id: local,
+      sessionId: 'sess-local',
+      model: LOCAL,
+    });
+    await asRunner['agent-runs']({ runId: local }).result.post({ status: 'success' });
+
+    await summaries('off');
+    const cloud = await queueWork(agent.id, 'summaries');
+    const began = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    expect(began).toMatchObject({ id: cloud, model: 'gpt-5.6-luna' });
+    await interrupt(cloud, began.claim, 'sess-cloud');
+    // Switched on meanwhile: the session that began on the cloud model is not moved.
+    await summaries('prefer');
+    expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({
+      id: cloud,
+      sessionId: 'sess-cloud',
+      model: 'gpt-5.6-luna',
+    });
+  });
+
+  it('keeps a run on its model while its eval failed, and a routine run follows its own class', async () => {
+    const { asOwner, asRunner, agent, server } = await setup();
+    await asOwner.god['local-ai'].policy.patch({ enabled: true });
+    await passed(server.id, 'routines', 2);
+    await asOwner.god['local-ai'].policy.patch({ classes: { routines: { mode: 'prefer' } } });
+    const routine = await queueWork(agent.id, 'routines', { trigger: 'delegation', model: null });
+    // A run without a model of its own runs on the agent's; now on the local one.
+    expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({
+      id: routine,
+      model: LOCAL,
+    });
+    await asRunner['agent-runs']({ runId: routine }).result.post({ status: 'success' });
+    // Summaries are off: a digest keeps its model.
+    const digest = await queueWork(agent.id, 'summaries');
+    expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({
+      id: digest,
+      model: 'gpt-5.6-luna',
+    });
+    await asRunner['agent-runs']({ runId: digest }).result.post({ status: 'success' });
+    // The model is updated and fails the routines eval: routines run on the agent's model.
+    await db.insert(helenaLocalAiEval).values({
+      classId: 'routines',
+      serverId: server.id,
+      model: 'Qwen3.6-35B-A3B-GGUF',
+      score: 0.5,
+      threshold: 0.9,
+      passed: false,
+      cases: 8,
+      evalVersion: 2,
+    });
+    const after = await queueWork(agent.id, 'routines', { trigger: 'delegation', model: null });
+    expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({
+      id: after,
+      model: 'gpt-5.6-luna',
+      thinkingLevel: 'low',
+    });
+  });
+
+  it('reflects on the local model after a small session, on the run model after a large one', async () => {
+    const { asOwner, asRunner, agent, server } = await setup();
+    await asOwner.god['local-ai'].policy.patch({ enabled: true });
+    await passed(server.id, 'reflection', 2);
+    await asOwner.god['local-ai'].policy.patch({ classes: { reflection: { mode: 'prefer' } } });
+    // A failed run after a tool call asks for a reflection; `read` is what it read in all.
+    const finish = async (read: number | null) => {
+      const id = await queueWork(agent.id, null, { trigger: 'manual', model: null });
+      expect((await asRunner['agent-runs'].claim.post()).data!.run!.id).toBe(id);
+      const res = await asRunner['agent-runs']({ runId: id }).result.post({
+        status: 'failed',
+        error: 'The page did not load',
+        sessionId: `sess-${id}`,
+        toolCalls: 2,
+        ...(read !== null && { usage: { inputTokens: read, outputTokens: 400 } }),
+      });
+      return { id, reflection: res.data!.reflection };
+    };
+    const small = await finish(41_000);
+    expect(small.reflection).toEqual({
+      prompt: expect.any(String),
+      maxTurns: 8,
+      runBudgetSeconds: 240,
+      model: LOCAL,
+    });
+    const teamId = await teamOf(asOwner, 'LAI');
+    const view = await asOwner
+      .teams({ teamId })
+      ['ai-agents']({ agentId: agent.id })
+      .runs.get({ query: {} });
+    expect(view.data!.items.find((item) => item.id === small.id)?.reflection).toMatchObject({
+      status: 'pending',
+      model: LOCAL,
+    });
+    // Too large to load quickly, or of unknown size: the run's own model, as before.
+    expect((await finish(90_000)).reflection).toEqual({
+      prompt: expect.any(String),
+      maxTurns: 8,
+      runBudgetSeconds: 120,
+    });
+    expect((await finish(null)).reflection).toEqual({
+      prompt: expect.any(String),
+      maxTurns: 8,
+      runBudgetSeconds: 120,
+    });
   });
 });

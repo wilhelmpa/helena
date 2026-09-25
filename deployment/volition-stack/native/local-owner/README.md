@@ -19,9 +19,16 @@ treats a connection from the machine itself as the owner. The kiosk on its own s
 nginx on `127.0.0.1:8088` instead, which nftables opens to the kiosk user alone
 (`kiosk/helena-kiosk.nft`, installed by `kiosk/install.sh`).
 
+The home network over IPv6 counts too: the geo includes `/etc/nginx/helena-owner-networks.conf`,
+which `helena-lan6-sync` (hardening; NetworkManager dispatcher + 5-minute timer) keeps current:
+the /64s this machine has on its LAN interface (never link-local or loopback; a ULA only when the
+LAN interface has one) and every address of this machine itself as never the owner. A re-run of
+this script keeps the include; it restarts the API and web only when their environment changed.
+`hardening/apply.sh owner-lan6` installs the sync and adds the include once.
+
 The desktop Caddy route must continue limiting this hostname to the home LAN.
 Debian Nginx injects a random capability only for the exact hostname and the home LAN
-(192.168.2.0/24), only on a LAN-facing listener and never from a link-local source
+(192.168.2.0/24 and the home IPv6 /64s), only on a LAN-facing listener and never from a link-local source
 (`/etc/nginx/conf.d/helena-local-owner-guard.conf`); never from loopback, where the
 Cloudflare tunnel arrives. With `--https-host helena.volition.one` the sign-in moves to
 https on port 443 under that name (see `cloudflare/lan_https.py`). Incoming capability headers are overwritten;

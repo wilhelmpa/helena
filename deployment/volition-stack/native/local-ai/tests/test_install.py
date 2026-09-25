@@ -144,6 +144,76 @@ class InstallScriptTest(unittest.TestCase):
         self.assertIn('ln -sfn ../../blobs/33bcc57074ec7b6eada5a90651ee546ec0c2b271002c22baf9f1b2dd1e8f75cb', out)
         self.assertNotIn('/pull', out)
 
+    def _pulled(self, *repos: str) -> None:
+        for repo in repos:
+            Path(ROOT, 'var/lib/helena-ai/models/hub', 'models--' + repo.replace('/', '--')).mkdir(
+                parents=True, exist_ok=True)
+
+    def test_the_models_in_use_load_when_lemonade_starts(self):
+        out = dry('install')
+        # The unit runs the installer's own copy with its catalog, never the checkout.
+        self.assertIn('/install.sh /usr/local/lib/helena-ai/install.sh', out)
+        self.assertIn('/models.tsv /usr/local/lib/helena-ai/models.tsv', out)
+        self.assertIn('would write /etc/systemd/system/helena-ai-preload.service', out)
+        self.assertIn('systemctl enable helena-ai-preload.service', out)
+        # Enabled before Lemonade (re)starts, which pulls it in.
+        self.assertLess(out.index('systemctl enable helena-ai-preload.service'),
+                        out.index('systemctl restart lemond.service'))
+        unit = (HERE.parent / 'systemd/helena-ai-preload.service').read_text()
+        for line in ('ExecStart=/usr/local/lib/helena-ai/install.sh models preload run',
+                     'After=lemond.service', 'PartOf=lemond.service', 'WantedBy=lemond.service',
+                     'LoadCredential=api-key:/etc/helena/local-ai.key',
+                     'Environment=HELENA_AI_KEY_FILE=%d/api-key', 'DynamicUser=yes',
+                     'IPAddressDeny=any', 'IPAddressAllow=localhost', 'Type=oneshot'):
+            self.assertIn(line, unit)
+
+    def test_preload_set_keeps_to_the_vram_budget_and_the_gpu(self):
+        self._pulled('unsloth/Qwen3.6-35B-A3B-MTP-GGUF', 'Qwen/Qwen3-Embedding-0.6B-GGUF',
+                     'ggml-org/gpt-oss-120b-GGUF', 'unsloth/Mistral-Small-4-119B-2603-GGUF')
+        out = dry('models', 'preload', 'set', 'Qwen3.6-35B-A3B-MTP-GGUF', 'Qwen3-Embedding-0.6B-GGUF')
+        self.assertIn(f'would write {ROOT}/etc/helena/local-ai-preload (0644 root:root)', out)
+        self.assertIn('    Qwen3.6-35B-A3B-MTP-GGUF\n    Qwen3-Embedding-0.6B-GGUF', out)
+        self.assertIn('30.6 GB of 96.6 GB', out)
+        # The workhorse and the heavy model do not both fit next to the embeddings.
+        over = run('--dry-run', 'models', 'preload', 'set', 'Qwen3.6-35B-A3B-MTP-GGUF',
+                   'gpt-oss-120b-mxfp-GGUF', 'Qwen3-Embedding-0.6B-GGUF')
+        self.assertEqual(over.returncode, 1)
+        self.assertIn('more than the 96.6 GB there is room for', over.stderr)
+        npu = run('--dry-run', 'models', 'preload', 'set', 'whisper-v3-turbo-FLM')
+        self.assertEqual(npu.returncode, 1)
+        self.assertIn('loads on demand', npu.stderr)
+        missing = run('--dry-run', 'models', 'preload', 'set', 'Qwen3-0.6B-GGUF')
+        self.assertEqual(missing.returncode, 1)
+        self.assertIn('is not pulled', missing.stderr)
+        self.assertEqual(run('--dry-run', 'models', 'preload', 'set', 'No-Such-Model').returncode, 1)
+
+    def test_preload_run_pins_what_fits_and_says_what_did_not(self):
+        etc = Path(ROOT, 'etc/helena')
+        etc.mkdir(parents=True, exist_ok=True)
+        listed = etc / 'local-ai-preload'
+        try:
+            listed.write_text('# comment\nQwen3.6-35B-A3B-MTP-GGUF\nuser.Mistral-Small-4-119B-GGUF\n'
+                              'Qwen3-Embedding-0.6B-GGUF\n')
+            result = run('--dry-run', 'models', 'preload', 'run')
+            out = result.stdout
+            self.assertIn('"model_name":"Qwen3.6-35B-A3B-MTP-GGUF","ctx_size":131072,"save_options":true,'
+                          '"pinned":true', out)
+            self.assertIn('"model_name":"Qwen3-Embedding-0.6B-GGUF"', out)
+            # 75 GB of Mistral does not fit next to the workhorse: skipped, and the unit fails.
+            self.assertIn('user.Mistral-Small-4-119B-GGUF does not fit in VRAM', out)
+            self.assertEqual(result.returncode, 1)
+            listed.write_text('# No models are loaded at start\n')
+            empty = run('--dry-run', 'models', 'preload', 'run')
+            self.assertEqual(empty.returncode, 0)
+            self.assertIn('no models to load at start', empty.stdout)
+        finally:
+            listed.unlink(missing_ok=True)
+
+    def test_a_manual_load_does_not_pin(self):
+        out = dry('models', 'load', 'Qwen3.6-35B-A3B-MTP-GGUF')
+        self.assertIn('"save_options":true', out)
+        self.assertNotIn('pinned', out)
+
     def test_the_catalog_is_complete_and_consistent(self):
         for line in CATALOG.read_text().splitlines():
             if line.startswith('#') or not line.strip():

@@ -73,6 +73,43 @@ record() {
 need_root() { # ID GROUP SEVERITY
   record "$1" "$2" "$3" skip "needs root"
 }
+
+# auth.sudo (H-07, §8.3). The automation account (helena-ops) is the only one allowed sudo
+# without a password, and only while its password is locked and SSH takes its key only
+# (sshd_config.d/60-helena-ops.conf, checked in sshd's effective config). Anyone else with
+# NOPASSWD: ALL is root without a password for whoever holds that account.
+OPS_USER=${HELENA_OPS_USER:-helena-ops}
+check_sudo() {
+  local blanket others status methods problem=
+  blanket=$(grep -Rhs -E '^[^#]*NOPASSWD:\s*ALL\s*$' /etc/sudoers /etc/sudoers.d/ | awk '{print $1}' | sort -u)
+  others=$(grep -vxF -- "$OPS_USER" <<<"$blanket" | grep . | paste -sd, -)
+  if [[ -n $others ]]; then
+    record auth.sudo auth medium warn "NOPASSWD: ALL for $others (root without a password for that account)" \
+      "why=others" "value=$others"
+    return
+  fi
+  if ! grep -qxF -- "$OPS_USER" <<<"$blanket"; then
+    record auth.sudo auth medium pass "no blanket NOPASSWD"
+    return
+  fi
+  status=$(passwd -S "$OPS_USER" 2>/dev/null | awk '{print $2}')
+  methods=$(sshd -T -C "user=$OPS_USER,host=localhost,addr=127.0.0.1" 2>/dev/null \
+    | awk '$1 == "authenticationmethods" {print $2}')
+  [[ $status == L ]] || problem=password
+  if [[ $methods != publickey ]]; then problem=${problem:+both}; problem=${problem:-ssh}; fi
+  if [[ -z $problem ]]; then
+    record auth.sudo auth medium pass "only $OPS_USER (the automation account: password locked, SSH key only)"
+  else
+    record auth.sudo auth medium warn "$OPS_USER has NOPASSWD: ALL; password ${status:-?}, SSH authenticationmethods ${methods:-?}" \
+      "why=ops" "value=$OPS_USER" "problem=$problem"
+  fi
+}
+# tests/sudo-model-selftest.sh runs this one check (in a private namespace with fakes).
+if [[ ${HELENA_AUDIT_ONLY:-} == auth.sudo ]]; then
+  [[ $is_root -eq 1 ]] && check_sudo || need_root auth.sudo auth medium
+  printf '%s\n' "${results[@]}"
+  exit 0
+fi
 have() { command -v "$1" >/dev/null 2>&1; }
 psql_ro() { # one value from Helena's database, read-only, as the postgres user
   runuser -u postgres -- psql -d "$HELENA_DB" -XAtq -v ON_ERROR_STOP=1 \
@@ -91,10 +128,12 @@ else
   else
     record net.firewall network critical fail "no input chain with policy drop (everything bound to 0.0.0.0/:: is reachable)"
   fi
-  if grep -q 'helena:self-guard' <<<"$nft_rules"; then
-    record net.self_guard network critical pass "local connections to nginx must come from loopback"
+  # Both families: the IPv4 rule and the IPv6 one (a local process binding the machine's own
+  # global IPv6 address is the same hole as binding its LAN IPv4 address).
+  if grep -q 'comment "helena:self-guard"' <<<"$nft_rules" && grep -q 'comment "helena:self-guard6"' <<<"$nft_rules"; then
+    record net.self_guard network critical pass "local connections to nginx must come from loopback (IPv4 and IPv6)"
   else
-    record net.self_guard network critical fail "a local process can connect to nginx from the LAN address and get the LAN owner sign-in"
+    record net.self_guard network critical fail "a local process can connect to nginx from the LAN address (IPv4 or IPv6) and get the LAN owner sign-in"
   fi
   if grep -q 'helena:acl-cdp' <<<"$nft_rules" && grep -q 'helena:acl-tools' <<<"$nft_rules"; then
     record net.loopback_acl network high pass "CDP, browser router, code and terminal limited to their users"
@@ -156,10 +195,58 @@ else
   if [[ -e $NGINX_TUNNEL_SITE ]] && grep -Eq 'volition_local_owner_token|helena_owner_capability' "$NGINX_TUNNEL_SITE"; then
     problems+=("the tunnel site references the owner token")
   fi
+  # IPv6 (helena-lan6-sync's include in the owner geo): the owner never from link-local,
+  # loopback or a unique-local prefix the LAN interface does not have, and this machine's own
+  # addresses listed as never the owner (privacy addresses may lag the 5-minute sync: skipped).
+  owner_include=$(grep -Eo '^[[:space:]]*include[[:space:]]+[^;]+' "$lo_conf" | awk '{print $2}' | head -n 1)
+  if [[ -n $owner_include ]]; then
+    if [[ ! -e $owner_include ]]; then
+      problems+=("the owner networks include $owner_include is missing")
+    else
+      while IFS= read -r problem; do [[ -n $problem ]] && problems+=("$problem"); done < <(python3 -I - "$owner_include" <<'PY'
+import ipaddress, json, subprocess, sys
+def ip(*args):
+    try:
+        return json.loads(subprocess.run(['ip', '-j', *args], capture_output=True, text=True).stdout or '[]')
+    except ValueError:
+        return []
+links = ip('addr', 'show')
+routes = ip('-6', 'route', 'show', 'default') + ip('-4', 'route', 'show', 'default')
+lan = next((r['dev'] for r in routes if r.get('dev')), None)
+entries = {}
+for line in open(sys.argv[1]):
+    parts = line.split('#', 1)[0].replace(';', ' ').split()
+    if len(parts) == 2:
+        try:
+            entries[ipaddress.ip_network(parts[0], strict=False)] = parts[1]
+        except ValueError:
+            print(f'unreadable owner networks entry {parts[0]}')
+lan_addresses = [ipaddress.ip_address(a['local']) for l in links if l.get('ifname') == lan
+                 for a in l.get('addr_info') or [] if a.get('family') == 'inet6']
+for network, value in entries.items():
+    if value != '1':
+        continue
+    if network.is_link_local or network.is_loopback or network.overlaps(ipaddress.ip_network('fe80::/10')):
+        print(f'the owner networks include gives the owner sign-in to {network}')
+    elif network.version == 6 and network.is_private and not any(a in network for a in lan_addresses):
+        print(f'the owner networks include gives the owner sign-in to {network}, not on the LAN interface')
+for link in links:
+    for a in link.get('addr_info') or []:
+        if a.get('family') not in ('inet', 'inet6') or a.get('temporary') or a.get('tentative'):
+            continue
+        address = ipaddress.ip_address(a['local'])
+        if address.is_loopback or address.is_link_local:
+            continue
+        if entries.get(ipaddress.ip_network(f'{address}/{address.max_prefixlen}')) != '0':
+            print(f'the machine address {address} is not excluded from the owner sign-in (helena-lan6-sync)')
+PY
+)
+    fi
+  fi
   if ((${#problems[@]})); then
     record net.local_owner network critical fail "$(IFS=';'; echo "${problems[*]}")"
   else
-    record net.local_owner network critical pass "LAN listener + non-self source only"
+    record net.local_owner network critical pass "LAN listener + non-self source only (IPv4 and IPv6)"
   fi
 fi
 
@@ -317,10 +404,7 @@ else
   for id in auth.second_factor auth.step_up auth.registration auth.sessions; do need_root "$id" auth high; done
 fi
 if [[ $is_root -eq 1 ]]; then
-  nopasswd=$(grep -Rhs -E '^[^#]*NOPASSWD:\s*ALL\s*$' /etc/sudoers /etc/sudoers.d/ | awk '{print $1}' | sort -u | paste -sd, -)
-  [[ -z $nopasswd ]] \
-    && record auth.sudo auth medium pass "no blanket NOPASSWD" \
-    || record auth.sudo auth medium warn "NOPASSWD: ALL for $nopasswd (the browser terminal is root without a password)" "value=$nopasswd"
+  check_sudo
 else
   need_root auth.sudo auth medium
 fi

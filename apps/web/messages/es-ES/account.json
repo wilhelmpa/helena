@@ -179,5 +179,84 @@
   },
   "shell": {
     "title": "Cuenta"
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "thisDevice": {
+      "title": "Push en este dispositivo",
+      "description": "Mensajes de Helena en este teléfono u ordenador, aunque Helena no esté abierta.",
+      "switch": "Mensajes push",
+      "off": "Desactivado",
+      "never": "Activado, aún no se ha entregado nada",
+      "lastDelivered": "Activado, última entrega {when}",
+      "enabled": "El push está activado en este dispositivo",
+      "disabled": "El push está desactivado en este dispositivo",
+      "enableFailed": "No se pudo activar el push: {error}",
+      "test": "Enviar prueba",
+      "testSent": "Prueba enviada, debería aparecer enseguida.",
+      "testFailed": "La prueba no ha llegado: {error}"
+    },
+    "hints": {
+      "insecure": {
+        "title": "El push necesita una conexión segura",
+        "body": "Los navegadores solo permiten push con HTTPS o en localhost. Abre Helena en su dirección https cuando esté configurada."
+      },
+      "iosInstall": {
+        "title": "En iPhone y iPad, primero añade Helena a la pantalla de inicio",
+        "body": "En Safari: Compartir → «Añadir a pantalla de inicio». Después abre Helena desde la pantalla de inicio y activa el push aquí (iOS 16.4 o posterior)."
+      },
+      "unsupported": {
+        "title": "Este navegador no admite push",
+        "body": "Usa una versión actual de Chrome, Edge, Firefox o Safari."
+      },
+      "denied": {
+        "title": "Las notificaciones están bloqueadas",
+        "body": "Permite las notificaciones de este sitio en los ajustes del navegador y recarga la página."
+      },
+      "noKey": {
+        "title": "El push no está configurado en este servidor",
+        "body": "Al servidor le falta la clave de cifrado (APP_ENCRYPTION_KEY)."
+      }
+    },
+    "devices": {
+      "title": "Tus dispositivos",
+      "description": "Cada dispositivo recibe solo lo que tiene activado.",
+      "empty": "Aún no hay dispositivos. Activa el push arriba en cada dispositivo que deba recibir mensajes.",
+      "unnamed": "Dispositivo",
+      "thisDevice": "Este dispositivo",
+      "noneOn": "todo desactivado",
+      "lastDelivered": "última entrega {when}",
+      "failing": "La entrega falla: {error}",
+      "resubscribe": "Hay que volver a activarlo en el dispositivo.",
+      "gone": "El servicio push ya no conoce el dispositivo; se ha eliminado.",
+      "menu": "Ajustes de {name}",
+      "receives": "Recibe",
+      "test": "Enviar prueba",
+      "remove": "Eliminar"
+    },
+    "services": {
+      "apple": "Apple",
+      "google": "Google",
+      "mozilla": "Mozilla",
+      "microsoft": "Microsoft"
+    },
+    "categories": {
+      "emergencies": {
+        "label": "Emergencias",
+        "description": "Disco o RAID averiado, copia de seguridad fallida, sobrecalentamiento, un servicio parado. Una vez cuando ocurre y otra cuando se resuelve."
+      },
+      "approvals": {
+        "label": "Aprobaciones",
+        "description": "Un agente pide tu aprobación."
+      },
+      "needs-you": {
+        "label": "Te necesita",
+        "description": "Volver a iniciar sesión, comprobaciones de seguridad, ejecuciones y respuestas fallidas."
+      },
+      "agent-replies": {
+        "label": "Respuestas de agentes",
+        "description": "Una respuesta del chat está lista mientras no tienes Helena abierta."
+      }
+    }
   }
 }
