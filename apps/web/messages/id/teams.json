@@ -424,7 +424,22 @@
         "codex": "Codex"
       },
       "runtimeHermesHint": "Server menyediakan Hermes sendiri dan menjaga profilnya tetap sinkron.",
-      "runtimeCliHint": "Berjalan sebagai layanan seperti agen Hermes, di direktori sendiri. Instruksi, skill, server MCP, alat, model, dan penalaran berasal dari Helena; login dari Akses."
+      "runtimeCliHint": "Berjalan sebagai layanan seperti agen Hermes, di direktori sendiri. Instruksi, skill, server MCP, alat, model, dan penalaran berasal dari Helena; login dari Akses.",
+      "compression": {
+        "title": "Pemadatan konteks",
+        "hint": "Obrolan atau run yang panjang mengirim seluruh riwayatnya di setiap panggilan. Mulai ambang batas, Hermes merangkum bagian lama: lebih sedikit token per panggilan, dengan satu panggilan rangkuman dan detail harfiah yang lebih sedikit. Kosong: bawaan instans.",
+        "threshold": "Padatkan mulai (token)",
+        "thresholdPlaceholder": "Bawaan",
+        "target": "Simpan setelahnya",
+        "targetDefault": "Bawaan (20%)",
+        "targetValue": "{percent}% dari ambang",
+        "idle": "Padatkan setelah jeda",
+        "idleOff": "Tidak pernah",
+        "idleMinutes": "Setelah {minutes} menit",
+        "idleHours": "{hours, plural, other {Setelah # jam}}",
+        "model": "Model perangkum",
+        "modelDefault": "Otomatis (model sendiri atau AI lokal)"
+      }
     },
     "runtimeConflicts": {
       "title": "Diubah di luar Helena",
@@ -573,7 +588,8 @@
       "origin": {
         "agent": "Dipelajari",
         "hub": "Dari Skills Hub",
-        "plan": "Dari Helena"
+        "plan": "Dari Helena",
+        "bundled": "Bawaan Hermes"
       },
       "memory": "Memori",
       "memoryHint": "Hermes menulis memori ini sendiri; ditampilkan seperti yang terakhir dilaporkan runner. Perubahan sampai ke agen pada sinkronisasi runner berikutnya.",
@@ -642,10 +658,28 @@
         "memoryClearTitle": "Kosongkan {file}?",
         "memoryClearBody": "Agen kehilangan catatan ini pada sinkronisasi runner berikutnya.",
         "memoryApproval": "Setujui perubahan memori",
-        "memoryApprovalHint": "Apa yang ditulis agen ke memorinya menunggu sebagai diff di halaman persetujuan; sampai disetujui, agen tetap memakai versi yang disetujui."
+        "memoryApprovalHint": "Apa yang ditulis agen ke memorinya menunggu sebagai diff di halaman persetujuan; sampai disetujui, agen tetap memakai versi yang disetujui.",
+        "chatReflection": "Belajar dari obrolan",
+        "chatReflectionHint": "Saat obrolan sepi beberapa saat, agen mencatat dalam satu giliran singkat apa yang ia pelajari tentangmu dan keinginanmu. Entri memori tetap menunggu persetujuanmu; tokennya dihitung ke pemakaiannya.",
+        "chatReflectionIdle": "setelah menit sepi",
+        "chatReflectionTurns": "paling lambat setelah pesan",
+        "chatReflections": "Baru dipelajari dari obrolan",
+        "chatUntitled": "Obrolan tanpa judul",
+        "chatReflectionStatus": {
+          "pending": "Terjadwal",
+          "running": "Berjalan",
+          "success": "Selesai",
+          "failed": "Gagal",
+          "canceled": "Dibatalkan"
+        },
+        "chatReflectionNothing": "Tidak ada yang disimpan",
+        "chatReflectionMemory": "Memori ({target})",
+        "chatReflectionSkill": "Skill {target}"
       },
       "skillEnabled": "{name} aktif",
-      "skillsDisabled": "{count} nonaktif"
+      "skillsDisabled": "{count} nonaktif",
+      "skillClashes": "{count, plural, other {# nama}} dimiliki lebih dari satu skill. Hermes lalu tidak memuat satu pun:",
+      "skillClashesFix": "Lepaskan skill Helena dari agen (skill yang disesuaikan untuk Hermes lalu dipakai) atau ganti namanya di pustaka skill."
     },
     "paused": "Dijeda",
     "pausedNoReason": "Dijeda. Tidak ada alasan yang diberikan.",

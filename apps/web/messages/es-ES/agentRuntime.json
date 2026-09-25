@@ -240,6 +240,13 @@
     "usageDescription": "Lo que consumieron los agentes de un equipo, según el registro de tokens de Helena, con el coste según la tabla de precios de los modelos.",
     "team": "Equipo",
     "noTeam": "Todavía no hay equipo.",
-    "openUpdates": "Abrir en Actualizaciones"
+    "openUpdates": "Abrir en Actualizaciones",
+    "profilesTitle": "Perfiles de Hermes",
+    "compressionThreshold": "Comprimir el contexto a partir de (tokens)",
+    "compressionThresholdHint": "Para cada agente sin valor propio. 100 000 mantiene los chats largos muy por debajo de las ventanas de los modelos actuales sin resumir las ejecuciones con demasiada frecuencia.",
+    "bundledSkills": "Habilidades incluidas con Hermes",
+    "bundledSkillsHint": "Helena las instala igual en cada perfil de Hermes (docx, pdf, xlsx, depuración…). Desactiva las que quieras en el agente. «Solo lo esencial» no instala nuevas; las existentes se quedan.",
+    "bundledSkillsAll": "Todas",
+    "bundledSkillsEssential": "Solo lo esencial"
   }
 }

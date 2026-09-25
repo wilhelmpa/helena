@@ -424,7 +424,22 @@
         "codex": "Codex"
       },
       "runtimeHermesHint": "Hermes 由服务器自行提供，并保持其配置同步。",
-      "runtimeCliHint": "像 Hermes 智能体一样作为服务运行，拥有自己的目录。指令、技能、MCP 服务器、工具、模型和推理都来自 Helena；登录来自“访问”。"
+      "runtimeCliHint": "像 Hermes 智能体一样作为服务运行，拥有自己的目录。指令、技能、MCP 服务器、工具、模型和推理都来自 Helena；登录来自“访问”。",
+      "compression": {
+        "title": "上下文压缩",
+        "hint": "较长的聊天或运行会在每次调用时发送全部历史。达到阈值后，Hermes 会汇总较早的部分：每次调用的令牌更少，代价是一次汇总调用和更少的原文细节。留空：使用实例默认值。",
+        "threshold": "压缩阈值（令牌）",
+        "thresholdPlaceholder": "默认",
+        "target": "压缩后保留",
+        "targetDefault": "默认（20%）",
+        "targetValue": "阈值的 {percent}%",
+        "idle": "暂停后压缩",
+        "idleOff": "从不",
+        "idleMinutes": "{minutes} 分钟后",
+        "idleHours": "{hours, plural, other {# 小时后}}",
+        "model": "用于汇总的模型",
+        "modelDefault": "自动（自身模型或本地 AI）"
+      }
     },
     "runtimeConflicts": {
       "title": "在 Helena 之外被更改",
@@ -573,7 +588,8 @@
       "origin": {
         "agent": "已学会",
         "hub": "来自 Skills Hub",
-        "plan": "来自 Helena"
+        "plan": "来自 Helena",
+        "bundled": "随 Hermes 提供"
       },
       "memory": "记忆",
       "memoryHint": "这份记忆由 Hermes 自行写入，这里显示的是运行器最近一次报告的内容。修改会在运行器下次同步时生效。",
@@ -642,10 +658,28 @@
         "memoryClearTitle": "清空 {file}？",
         "memoryClearBody": "运行器下次同步时，代理将失去这些笔记。",
         "memoryApproval": "审批记忆更改",
-        "memoryApprovalHint": "代理写入记忆的内容会以 diff 形式在审批页面等待；批准之前，它保留已批准的版本。"
+        "memoryApprovalHint": "代理写入记忆的内容会以 diff 形式在审批页面等待；批准之前，它保留已批准的版本。",
+        "chatReflection": "从聊天中学习",
+        "chatReflectionHint": "聊天安静一段时间后，代理会用一个简短的后续回合记下它对你和你的偏好的了解。记忆条目照常等待你批准；所用令牌计入其用量。",
+        "chatReflectionIdle": "安静分钟数后",
+        "chatReflectionTurns": "最迟在消息数后",
+        "chatReflections": "最近从聊天中学到",
+        "chatUntitled": "无标题聊天",
+        "chatReflectionStatus": {
+          "pending": "已计划",
+          "running": "进行中",
+          "success": "完成",
+          "failed": "失败",
+          "canceled": "已取消"
+        },
+        "chatReflectionNothing": "没有记录内容",
+        "chatReflectionMemory": "记忆（{target}）",
+        "chatReflectionSkill": "技能 {target}"
       },
       "skillEnabled": "启用 {name}",
-      "skillsDisabled": "已停用 {count} 个"
+      "skillsDisabled": "已停用 {count} 个",
+      "skillClashes": "{count, plural, other {# 个名称}}对应多个技能，Hermes 因此一个都不加载：",
+      "skillClashesFix": "从代理中移除 Helena 技能（改用为 Hermes 适配的版本），或在技能库中重命名。"
     },
     "paused": "已暂停",
     "pausedNoReason": "已暂停。未提供原因。",

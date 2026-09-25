@@ -186,6 +186,10 @@ function DefaultsSections({ defaults }: { defaults: RuntimeDefaults }) {
   const [retention, setRetention] = useState(
     defaults.sessionRetentionDays == null ? '' : String(defaults.sessionRetentionDays),
   );
+  const [threshold, setThreshold] = useState(String(defaults.compressionThresholdTokens));
+  const thresholdValue = Number(threshold);
+  const thresholdValid =
+    Number.isInteger(thresholdValue) && thresholdValue >= 16_000 && thresholdValue <= 1_000_000;
   const cleaned = cleanFallbackModels(fallback);
   const fallbackChanged = JSON.stringify(cleaned) !== JSON.stringify(defaults.fallbackModels);
   const retentionValue = retention.trim() === '' ? null : Number(retention);
@@ -254,6 +258,69 @@ function DefaultsSections({ defaults }: { defaults: RuntimeDefaults }) {
                   {tCommon('save')}
                 </Button>
               </div>
+            }
+          />
+        </SettingsCard>
+      </SettingsSection>
+
+      <SettingsSection title={t('profilesTitle')}>
+        <SettingsCard>
+          <SettingsRow
+            title={t('compressionThreshold')}
+            description={t('compressionThresholdHint')}
+            control={
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={16_000}
+                  max={1_000_000}
+                  step={1000}
+                  className="w-32"
+                  value={threshold}
+                  disabled={save.isPending}
+                  aria-invalid={!thresholdValid}
+                  aria-label={t('compressionThreshold')}
+                  onChange={(event) => setThreshold(event.target.value)}
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={
+                    !thresholdValid ||
+                    save.isPending ||
+                    thresholdValue === defaults.compressionThresholdTokens
+                  }
+                  onClick={() =>
+                    void saveDefaults({ compressionThresholdTokens: thresholdValue }, t('saved'))
+                  }
+                >
+                  {tCommon('save')}
+                </Button>
+              </div>
+            }
+          />
+          <SettingsRow
+            title={t('bundledSkills')}
+            description={t('bundledSkillsHint')}
+            control={
+              <Select
+                value={defaults.bundledSkills}
+                disabled={save.isPending}
+                onValueChange={(value) =>
+                  void saveDefaults(
+                    { bundledSkills: value as RuntimeDefaults['bundledSkills'] },
+                    t('saved'),
+                  )
+                }
+              >
+                <SelectTrigger className="h-8 w-48" aria-label={t('bundledSkills')}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('bundledSkillsAll')}</SelectItem>
+                  <SelectItem value="essential">{t('bundledSkillsEssential')}</SelectItem>
+                </SelectContent>
+              </Select>
             }
           />
         </SettingsCard>

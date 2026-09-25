@@ -96,6 +96,19 @@ export interface ReflectionReport {
   error?: string | null;
 }
 
+// A reflection on a chat that went quiet (docs/helena-decisions/agent-context.md §5): the
+// turn continues the chat's session. `claim` is named on the result.
+export interface ChatReflectionClaim extends ReflectionRequest {
+  id: number;
+  threadId: string;
+  claim: number;
+  sessionId: string;
+  // The chat's latest answer, which the work is named by (isolation's unit, egress log).
+  messageId: number;
+  model: string | null;
+  thinkingLevel: string | null;
+}
+
 // A question Helena asks the agent's runtime: a session, a transcript, the logs, its health.
 // The runner answers it with the adapter of the agent's runtime (readers/).
 export interface RuntimeRequestClaim {
@@ -345,6 +358,17 @@ export class Client {
 
   async answerRuntimeRequest(id: number, answer: RuntimeRequestAnswer): Promise<void> {
     await this.post(`/agent-runtime/requests/${id}/answer`, answer, ANSWER_TIMEOUT_MS);
+  }
+
+  // The agent's next due chat reflection, or null. An instance without them answers 404.
+  async claimChatReflection(): Promise<ChatReflectionClaim | null> {
+    const res = await this.post('/agent-chat-reflections/claim');
+    const body = (await res.json()) as { reflection: ChatReflectionClaim | null };
+    return body.reflection;
+  }
+
+  async reportChatReflection(id: number, claim: number, report: ReflectionReport): Promise<void> {
+    await this.post(`/agent-chat-reflections/${id}/result${claimQuery(claim)}`, report);
   }
 
   async claimChat(): Promise<ChatMessage | null> {

@@ -424,7 +424,22 @@
         "codex": "Codex"
       },
       "runtimeHermesHint": "يوفّر الخادم Hermes بنفسه ويُبقي ملفه متزامنًا.",
-      "runtimeCliHint": "يعمل كخدمة مثل وكيل Hermes، في مجلد خاص به. التعليمات والمهارات وخوادم MCP والأدوات والنموذج والاستدلال تأتي من Helena؛ وتسجيل الدخول من «الوصول»."
+      "runtimeCliHint": "يعمل كخدمة مثل وكيل Hermes، في مجلد خاص به. التعليمات والمهارات وخوادم MCP والأدوات والنموذج والاستدلال تأتي من Helena؛ وتسجيل الدخول من «الوصول».",
+      "compression": {
+        "title": "ضغط السياق",
+        "hint": "المحادثة أو التشغيل الطويل يرسل تاريخه كاملًا مع كل استدعاء. ابتداءً من الحد يلخّص Hermes الأجزاء الأقدم: رموز أقل لكل استدعاء مقابل استدعاء تلخيص وتفاصيل حرفية أقل. فارغ: قيمة المثيل الافتراضية.",
+        "threshold": "الضغط ابتداءً من (رموز)",
+        "thresholdPlaceholder": "افتراضي",
+        "target": "الإبقاء بعدها",
+        "targetDefault": "افتراضي (20٪)",
+        "targetValue": "{percent}٪ من الحد",
+        "idle": "الضغط بعد توقف",
+        "idleOff": "أبدًا",
+        "idleMinutes": "بعد {minutes} دقيقة",
+        "idleHours": "{hours, plural, zero {بعد # ساعة} one {بعد ساعة} two {بعد ساعتين} few {بعد # ساعات} many {بعد # ساعة} other {بعد # ساعة}}",
+        "model": "النموذج الذي يلخّص",
+        "modelDefault": "تلقائي (نموذجه أو الذكاء المحلي)"
+      }
     },
     "runtimeConflicts": {
       "title": "تم التغيير خارج Helena",
@@ -573,7 +588,8 @@
       "origin": {
         "agent": "مُتعلَّمة",
         "hub": "من Skills Hub",
-        "plan": "من Helena"
+        "plan": "من Helena",
+        "bundled": "مرفقة مع Hermes"
       },
       "memory": "الذاكرة",
       "memoryHint": "يكتب Hermes هذه الذاكرة بنفسه، وتظهر هنا كما أبلغ عنها المنفّذ آخر مرة. يصل التعديل إلى الوكيل مع المزامنة التالية للمنفّذ.",
@@ -642,10 +658,28 @@
         "memoryClearTitle": "مسح {file}؟",
         "memoryClearBody": "سيفقد الوكيل هذه الملاحظات مع المزامنة التالية للمنفّذ.",
         "memoryApproval": "الموافقة على تغييرات الذاكرة",
-        "memoryApprovalHint": "ما يكتبه الوكيل في ذاكرته ينتظر في صفحة الموافقات على شكل فروق (diff)؛ وحتى الموافقة يحتفظ بالإصدار المعتمد."
+        "memoryApprovalHint": "ما يكتبه الوكيل في ذاكرته ينتظر في صفحة الموافقات على شكل فروق (diff)؛ وحتى الموافقة يحتفظ بالإصدار المعتمد.",
+        "chatReflection": "التعلم من المحادثات",
+        "chatReflectionHint": "حين تهدأ محادثة لفترة، يحفظ الوكيل في دور قصير ما تعلّمه عنك وعن طريقتك. تنتظر مدخلات الذاكرة موافقتك كالعادة، وتُحتسب الرموز من استهلاكه.",
+        "chatReflectionIdle": "بعد دقائق هدوء",
+        "chatReflectionTurns": "على الأكثر بعد رسائل",
+        "chatReflections": "ما تعلّمه مؤخرًا من المحادثات",
+        "chatUntitled": "محادثة بلا عنوان",
+        "chatReflectionStatus": {
+          "pending": "مجدول",
+          "running": "قيد التشغيل",
+          "success": "تم",
+          "failed": "فشل",
+          "canceled": "أُلغي"
+        },
+        "chatReflectionNothing": "لم يُحفظ شيء",
+        "chatReflectionMemory": "الذاكرة ({target})",
+        "chatReflectionSkill": "مهارة {target}"
       },
       "skillEnabled": "{name} مفعّلة",
-      "skillsDisabled": "{count} معطّلة"
+      "skillsDisabled": "{count} معطّلة",
+      "skillClashes": "{count, plural, zero {لا اسم} one {اسم واحد} two {اسمان} few {# أسماء} many {# اسمًا} other {# اسم}} لأكثر من مهارة. لا يحمّل Hermes أيًا منها عندئذٍ:",
+      "skillClashesFix": "أزل مهارة Helena من الوكيل (فتعمل النسخة المهيأة لـ Hermes) أو أعد تسميتها في مكتبة المهارات."
     },
     "paused": "متوقف مؤقتًا",
     "pausedNoReason": "متوقف مؤقتًا. لم يُذكر سبب.",

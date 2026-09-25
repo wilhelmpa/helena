@@ -14,6 +14,14 @@ export default function OrganizationGoalNode({ node }: { node: GoalNode }) {
         <span className="shrink-0 text-xs text-muted-foreground">
           {t(`statuses.${node.goal.status}`)}
         </span>
+        {(node.goal.progress?.total ?? 0) > 0 && (
+          <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+            {t('goals.progressShort', {
+              done: node.goal.progress!.done,
+              total: node.goal.progress!.total,
+            })}
+          </span>
+        )}
       </div>
       {node.children.length > 0 && (
         <ul className="ms-2 space-y-2 border-s pt-2">

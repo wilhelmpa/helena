@@ -424,7 +424,22 @@
         "codex": "Codex"
       },
       "runtimeHermesHint": "El servidor aprovisiona Hermes y mantiene su perfil sincronizado.",
-      "runtimeCliHint": "Se ejecuta como servicio, como un agente de Hermes, en un directorio propio. Instrucciones, skills, servidores MCP, herramientas, modelo y razonamiento vienen de Helena; el inicio de sesión, de Accesos."
+      "runtimeCliHint": "Se ejecuta como servicio, como un agente de Hermes, en un directorio propio. Instrucciones, skills, servidores MCP, herramientas, modelo y razonamiento vienen de Helena; el inicio de sesión, de Accesos.",
+      "compression": {
+        "title": "Compresión del contexto",
+        "hint": "Un chat o una ejecución largos envían todo su historial en cada llamada. A partir del umbral, Hermes resume las partes antiguas: menos tokens por llamada, a cambio de una llamada de resumen y menos detalles literales. Vacío: el valor de la instancia.",
+        "threshold": "Comprimir a partir de (tokens)",
+        "thresholdPlaceholder": "Predeterminado",
+        "target": "Conservar después",
+        "targetDefault": "Predeterminado (20 %)",
+        "targetValue": "{percent} % del umbral",
+        "idle": "Comprimir tras una pausa",
+        "idleOff": "Nunca",
+        "idleMinutes": "Tras {minutes} minutos",
+        "idleHours": "{hours, plural, one {Tras # hora} other {Tras # horas}}",
+        "model": "Modelo que resume",
+        "modelDefault": "Automático (modelo propio o IA local)"
+      }
     },
     "runtimeConflicts": {
       "title": "Modificado fuera de Helena",
@@ -573,7 +588,8 @@
       "origin": {
         "agent": "Aprendida",
         "hub": "Del Skills Hub",
-        "plan": "De Helena"
+        "plan": "De Helena",
+        "bundled": "Incluida con Hermes"
       },
       "memory": "Memoria",
       "memoryHint": "Hermes escribe esta memoria por sí mismo; se muestra tal como la informó el ejecutor por última vez. Un cambio llega al agente con la siguiente sincronización del ejecutor.",
@@ -642,10 +658,28 @@
         "memoryClearTitle": "¿Vaciar {file}?",
         "memoryClearBody": "El agente pierde estas notas con la siguiente sincronización del ejecutor.",
         "memoryApproval": "Aprobar cambios de memoria",
-        "memoryApprovalHint": "Lo que el agente escribe en su memoria espera como diff en la página de aprobaciones; hasta que se aprueba, conserva la versión aprobada."
+        "memoryApprovalHint": "Lo que el agente escribe en su memoria espera como diff en la página de aprobaciones; hasta que se aprueba, conserva la versión aprobada.",
+        "chatReflection": "Aprender de los chats",
+        "chatReflectionHint": "Cuando un chat lleva un rato en calma, el agente guarda en un breve turno lo que aprendió sobre ti y cómo quieres las cosas. Las entradas de memoria esperan tu aprobación como siempre; los tokens cuentan en su consumo.",
+        "chatReflectionIdle": "tras minutos de calma",
+        "chatReflectionTurns": "como muy tarde tras mensajes",
+        "chatReflections": "Aprendido recientemente de los chats",
+        "chatUntitled": "Chat sin título",
+        "chatReflectionStatus": {
+          "pending": "Planificado",
+          "running": "En curso",
+          "success": "Hecho",
+          "failed": "Fallido",
+          "canceled": "Descartado"
+        },
+        "chatReflectionNothing": "Nada guardado",
+        "chatReflectionMemory": "Memoria ({target})",
+        "chatReflectionSkill": "Habilidad {target}"
       },
       "skillEnabled": "{name} activada",
-      "skillsDisabled": "desactivadas: {count}"
+      "skillsDisabled": "desactivadas: {count}",
+      "skillClashes": "{count, plural, one {Un nombre pertenece} other {# nombres pertenecen}} a más de una habilidad. Hermes no carga ninguna de ellas:",
+      "skillClashesFix": "Quita la habilidad de Helena del agente (entonces sirve la adaptada a Hermes) o cámbiale el nombre en la biblioteca de habilidades."
     },
     "paused": "En pausa",
     "pausedNoReason": "En pausa. No se indicó ningún motivo.",

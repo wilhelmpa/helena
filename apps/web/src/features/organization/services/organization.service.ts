@@ -9,8 +9,10 @@ import {
   clearProjectAssignment,
   createDepartment,
   createGoal,
+  decideGoalNote,
   deleteDepartment,
   deleteGoal,
+  getGoalDetail,
   getOrganization,
   pauseAgent,
   resumeAgent,
@@ -143,5 +145,22 @@ export function useSetProjectTokenCeiling(teamId: number) {
   return useOrganizationMutation<{ projectId: number; monthly: number | null }>(
     teamId,
     ({ projectId, monthly }) => setProjectTokenCeiling(teamId, projectId, monthly),
+  );
+}
+
+// A goal's linked tasks and notes, loaded when its card opens them.
+export function useGoalDetailQuery(teamId: number, goalId: number, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.goalDetail(teamId, goalId),
+    queryFn: () => getGoalDetail(teamId, goalId),
+    enabled,
+  });
+}
+
+// Accepts or rejects an agent's proposed status of a goal.
+export function useDecideGoalNote(teamId: number) {
+  return useOrganizationMutation<{ goalId: number; noteId: number; accept: boolean }>(
+    teamId,
+    ({ goalId, noteId, accept }) => decideGoalNote(teamId, goalId, noteId, accept),
   );
 }

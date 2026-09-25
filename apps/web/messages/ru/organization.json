@@ -46,7 +46,27 @@
   },
   "goals": {
     "newPlaceholder": "New goal",
-    "empty": "No organization goals have been created."
+    "empty": "No organization goals have been created.",
+    "noTasks": "К этой цели ещё не привязаны задачи.",
+    "progress": "Выполнено задач: {done} из {total}",
+    "progressShort": "{done}/{total}",
+    "progressLabel": "Прогресс",
+    "workingOn": "Работают: {agents}",
+    "proposal": "{author} предлагает: {status}",
+    "accept": "Принять",
+    "reject": "Отклонить",
+    "details": "Задачи и заметки",
+    "loading": "Загрузка…",
+    "tasks": "Задачи",
+    "tasksEmpty": "Нет привязанных задач.",
+    "running": "Агент работает",
+    "notes": "Заметки",
+    "notesEmpty": "Заметок пока нет.",
+    "proposed": "предлагает «{status}»",
+    "decision": {
+      "accepted": "принято",
+      "rejected": "отклонено"
+    }
   },
   "agents": {
     "empty": "This team has no agents.",

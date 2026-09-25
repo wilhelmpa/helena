@@ -424,7 +424,22 @@
         "codex": "Codex"
       },
       "runtimeHermesHint": "Hermes stellt der Server selbst bereit und hält das Profil synchron.",
-      "runtimeCliHint": "Läuft als Dienst wie ein Hermes-Agent, in einem eigenen Verzeichnis. Anweisungen, Skills, MCP-Server, Werkzeuge, Modell und Reasoning kommen von Helena; die Anmeldung aus Zugänge (Laufzeit-Anmeldung)."
+      "runtimeCliHint": "Läuft als Dienst wie ein Hermes-Agent, in einem eigenen Verzeichnis. Anweisungen, Skills, MCP-Server, Werkzeuge, Modell und Reasoning kommen von Helena; die Anmeldung aus Zugänge (Laufzeit-Anmeldung).",
+      "compression": {
+        "title": "Kontext verdichten",
+        "hint": "Ein langer Chat oder Lauf schickt seinen ganzen Verlauf bei jedem Aufruf mit. Ab der Schwelle fasst Hermes die älteren Teile zusammen: weniger Tokens pro Aufruf, dafür ein Zusammenfassungs-Aufruf und weniger wörtliche Details. Leer: Standard der Instanz.",
+        "threshold": "Verdichten ab (Tokens)",
+        "thresholdPlaceholder": "Standard",
+        "target": "Danach behalten",
+        "targetDefault": "Standard (20 %)",
+        "targetValue": "{percent} % der Schwelle",
+        "idle": "Nach einer Pause verdichten",
+        "idleOff": "Nie",
+        "idleMinutes": "Nach {minutes} Minuten",
+        "idleHours": "{hours, plural, one {Nach # Stunde} other {Nach # Stunden}}",
+        "model": "Modell für die Zusammenfassung",
+        "modelDefault": "Automatisch (eigenes Modell oder Lokale KI)"
+      }
     },
     "runtimeConflicts": {
       "title": "Außerhalb von Helena geändert",
@@ -572,7 +587,8 @@
       "origin": {
         "agent": "Gelernt",
         "hub": "Aus dem Skills Hub",
-        "plan": "Aus Helena"
+        "plan": "Aus Helena",
+        "bundled": "Mit Hermes ausgeliefert"
       },
       "memory": "Gedächtnis",
       "memoryHint": "Hermes schreibt dieses Gedächtnis selbst; angezeigt wird der Stand, den der Runner zuletzt gemeldet hat. Eine Änderung erreicht den Agenten mit dem nächsten Abgleich des Runners.",
@@ -641,10 +657,28 @@
         "memoryClearTitle": "{file} leeren?",
         "memoryClearBody": "Der Agent verliert diese Notizen mit dem nächsten Abgleich des Runners.",
         "memoryApproval": "Gedächtnis-Änderungen freigeben",
-        "memoryApprovalHint": "Was der Agent in sein Gedächtnis schreibt, wartet als Diff unter Freigaben; bis dahin behält er die freigegebene Fassung."
+        "memoryApprovalHint": "Was der Agent in sein Gedächtnis schreibt, wartet als Diff unter Freigaben; bis dahin behält er die freigegebene Fassung.",
+        "chatReflection": "Aus Chats lernen",
+        "chatReflectionHint": "Ruht ein Chat eine Weile, hält der Agent in einem kurzen Folge-Turn fest, was er über dich und deine Wünsche gelernt hat. Einträge ins Gedächtnis warten wie immer auf deine Freigabe; die Tokens zählen zu seinem Verbrauch.",
+        "chatReflectionIdle": "nach Minuten Ruhe",
+        "chatReflectionTurns": "spätestens nach Nachrichten",
+        "chatReflections": "Zuletzt aus Chats gelernt",
+        "chatUntitled": "Chat ohne Titel",
+        "chatReflectionStatus": {
+          "pending": "Geplant",
+          "running": "Läuft",
+          "success": "Fertig",
+          "failed": "Fehlgeschlagen",
+          "canceled": "Entfallen"
+        },
+        "chatReflectionNothing": "Nichts festgehalten",
+        "chatReflectionMemory": "Gedächtnis ({target})",
+        "chatReflectionSkill": "Skill {target}"
       },
       "skillEnabled": "{name} an",
-      "skillsDisabled": "{count} aus"
+      "skillsDisabled": "{count} aus",
+      "skillClashes": "{count, plural, one {Ein Name gehört} other {# Namen gehören}} zu mehreren Skills. Hermes lädt dann keinen davon:",
+      "skillClashesFix": "Nimm die Helena-Fähigkeit beim Agenten heraus (dann dient die an Hermes angepasste) oder benenne sie in der Skill-Bibliothek um."
     },
     "paused": "Pausiert",
     "pausedNoReason": "Pausiert. Es wurde kein Grund angegeben.",

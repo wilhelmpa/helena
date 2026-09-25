@@ -36,6 +36,7 @@ import { AgentFormSection } from './AgentFormSection';
 import AgentRuntimeConflicts from './AgentRuntimeConflicts';
 import { runtimeSelectionForModel } from './AgentRuntimePolicySection.logic';
 import FallbackModelsEditor from '@/features/agent-runtime/components/FallbackModelsEditor';
+import AgentCompressionSettings from './AgentCompressionSettings';
 
 const AGENT_DEFAULT = '__agent_default__';
 
@@ -294,6 +295,15 @@ export default function AgentRuntimePolicySection({
             />
           )}
         </div>
+      )}
+
+      {(policy.runtime ?? 'hermes') === 'hermes' && (
+        <AgentCompressionSettings
+          policy={policy}
+          models={models}
+          canEdit={canEdit}
+          onChange={(runtimePolicy) => onChange({ runtimePolicy })}
+        />
       )}
 
       <div className="space-y-1.5">

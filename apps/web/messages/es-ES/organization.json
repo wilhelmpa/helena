@@ -46,7 +46,27 @@
   },
   "goals": {
     "newPlaceholder": "New goal",
-    "empty": "No organization goals have been created."
+    "empty": "No organization goals have been created.",
+    "noTasks": "Aún no hay tareas vinculadas a este objetivo.",
+    "progress": "{done} de {total} tareas hechas",
+    "progressShort": "{done}/{total}",
+    "progressLabel": "Progreso",
+    "workingOn": "Trabajan en ello: {agents}",
+    "proposal": "{author} propone: {status}",
+    "accept": "Aceptar",
+    "reject": "Rechazar",
+    "details": "Tareas y notas",
+    "loading": "Cargando…",
+    "tasks": "Tareas",
+    "tasksEmpty": "No hay tareas vinculadas.",
+    "running": "Un agente trabaja en ello",
+    "notes": "Notas",
+    "notesEmpty": "Aún no hay notas.",
+    "proposed": "propone «{status}»",
+    "decision": {
+      "accepted": "aceptado",
+      "rejected": "rechazado"
+    }
   },
   "agents": {
     "empty": "This team has no agents.",

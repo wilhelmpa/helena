@@ -240,6 +240,13 @@
     "usageDescription": "Was die Agenten eines Teams verbraucht haben, aus Helenas Token-Buch, mit Kosten nach der Modell-Preistabelle.",
     "team": "Team",
     "noTeam": "Noch kein Team.",
-    "openUpdates": "In Updates öffnen"
+    "openUpdates": "In Updates öffnen",
+    "profilesTitle": "Hermes-Profile",
+    "compressionThreshold": "Kontext verdichten ab (Tokens)",
+    "compressionThresholdHint": "Für jeden Agenten ohne eigenen Wert. 100 000 hält lange Chats deutlich unter den Fenstern heutiger Modelle, ohne Läufe mitten in der Arbeit zu oft zusammenzufassen.",
+    "bundledSkills": "Mitgelieferte Hermes-Skills",
+    "bundledSkillsHint": "Helena legt sie in jedem Hermes-Profil gleich an (docx, pdf, xlsx, Debugging …). Einzelne schaltest du beim Agenten aus. „Nur die nötigsten“ legt keine neuen mehr an; vorhandene bleiben.",
+    "bundledSkillsAll": "Alle",
+    "bundledSkillsEssential": "Nur die nötigsten"
   }
 }

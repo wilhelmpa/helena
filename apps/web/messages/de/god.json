@@ -449,7 +449,8 @@
       "decisions": "Entscheidungen",
       "localAi": "Lokale KI",
       "push": "Push-Benachrichtigungen",
-      "edge": "Zugang von außen"
+      "edge": "Zugang von außen",
+      "chatLearning": "Lernen aus Chats"
     },
     "problems": {
       "external-off": "Lädt, sobald externe Plugins eingeschaltet sind.",

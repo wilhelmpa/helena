@@ -240,6 +240,13 @@
     "usageDescription": "ما استهلكه وكلاء فريق ما، من دفتر الرموز في Helena، مع التكلفة وفق جدول أسعار النماذج.",
     "team": "الفريق",
     "noTeam": "لا يوجد فريق بعد.",
-    "openUpdates": "فتح في التحديثات"
+    "openUpdates": "فتح في التحديثات",
+    "profilesTitle": "ملفات Hermes",
+    "compressionThreshold": "ضغط السياق ابتداءً من (رموز)",
+    "compressionThresholdHint": "لكل وكيل ليست له قيمة خاصة. تُبقي 100000 المحادثات الطويلة أدنى بكثير من نوافذ النماذج الحالية دون تلخيص التشغيلات كثيرًا أثناء العمل.",
+    "bundledSkills": "المهارات المرفقة مع Hermes",
+    "bundledSkillsHint": "تضعها Helena بالطريقة نفسها في كل ملف Hermes (docx وpdf وxlsx والتصحيح…). أوقف ما تشاء منها لدى الوكيل. «الأساسي فقط» لا يضيف جديدًا؛ وتبقى الموجودة.",
+    "bundledSkillsAll": "الكل",
+    "bundledSkillsEssential": "الأساسي فقط"
   }
 }

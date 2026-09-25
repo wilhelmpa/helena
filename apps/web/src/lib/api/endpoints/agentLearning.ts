@@ -52,3 +52,22 @@ export const promoteLearnedSkill = (teamId: number, agentId: number, path: strin
     method: 'POST',
     body: JSON.stringify({ path }),
   });
+
+// The agent's latest reflections on its chats (docs/helena-decisions/agent-context.md §5).
+export interface ChatReflection {
+  id: number;
+  threadId: string;
+  threadTitle: string | null;
+  reason: 'idle' | 'turns';
+  status: 'pending' | 'running' | 'success' | 'failed' | 'canceled';
+  turns: number;
+  saved: { tool: 'memory' | 'skill'; action: string; target: string }[];
+  summary: string | null;
+  error: string | null;
+  tokens: number | null;
+  dueAt: string;
+  finishedAt: string | null;
+}
+
+export const listChatReflections = (teamId: number, agentId: number) =>
+  request<ChatReflection[]>(`/teams/${teamId}/ai-agents/${agentId}/chat-reflections`);

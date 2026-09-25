@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl';
 import {
   type RuntimeActionInput,
   getLearnedSkill,
+  listChatReflections,
   listRuntimeActions,
   promoteLearnedSkill,
   queueRuntimeAction,
@@ -71,5 +72,14 @@ export function usePromoteLearnedSkill(teamId: number, agentId: number) {
       void qc.invalidateQueries({ queryKey: qk.agentSkillLinks(teamId, agentId) });
       void qc.invalidateQueries({ queryKey: qk.agentRuntimeActions(teamId, agentId) });
     },
+  });
+}
+
+// The agent's latest reflections on its chats, for its learning settings.
+export function useChatReflectionsQuery(teamId: number, agentId: number | null) {
+  return useQuery({
+    queryKey: qk.agentChatReflections(teamId, agentId ?? 0),
+    queryFn: () => listChatReflections(teamId, agentId!),
+    enabled: agentId != null,
   });
 }

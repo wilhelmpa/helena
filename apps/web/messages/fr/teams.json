@@ -424,7 +424,22 @@
         "codex": "Codex"
       },
       "runtimeHermesHint": "Le serveur fournit Hermes lui-même et garde son profil synchronisé.",
-      "runtimeCliHint": "Fonctionne comme service, comme un agent Hermes, dans son propre répertoire. Instructions, skills, serveurs MCP, outils, modèle et raisonnement viennent de Helena ; la connexion, d’Accès."
+      "runtimeCliHint": "Fonctionne comme service, comme un agent Hermes, dans son propre répertoire. Instructions, skills, serveurs MCP, outils, modèle et raisonnement viennent de Helena ; la connexion, d’Accès.",
+      "compression": {
+        "title": "Compression du contexte",
+        "hint": "Un long chat ou une longue exécution renvoie tout son historique à chaque appel. À partir du seuil, Hermes résume les parties anciennes : moins de jetons par appel, au prix d’un appel de résumé et de moins de détails mot à mot. Vide : la valeur de l’instance.",
+        "threshold": "Compresser à partir de (jetons)",
+        "thresholdPlaceholder": "Par défaut",
+        "target": "Conserver ensuite",
+        "targetDefault": "Par défaut (20 %)",
+        "targetValue": "{percent} % du seuil",
+        "idle": "Compresser après une pause",
+        "idleOff": "Jamais",
+        "idleMinutes": "Après {minutes} minutes",
+        "idleHours": "{hours, plural, one {Après # heure} other {Après # heures}}",
+        "model": "Modèle qui résume",
+        "modelDefault": "Automatique (son modèle ou l’IA locale)"
+      }
     },
     "runtimeConflicts": {
       "title": "Modifié hors de Helena",
@@ -573,7 +588,8 @@
       "origin": {
         "agent": "Apprise",
         "hub": "Du Skills Hub",
-        "plan": "D'Helena"
+        "plan": "D'Helena",
+        "bundled": "Fournie avec Hermes"
       },
       "memory": "Mémoire",
       "memoryHint": "Hermes écrit lui-même cette mémoire ; elle est affichée telle que le runner l'a transmise en dernier. Une modification atteint l'agent à la prochaine synchronisation du runner.",
@@ -642,10 +658,28 @@
         "memoryClearTitle": "Vider {file} ?",
         "memoryClearBody": "L'agent perd ces notes à la prochaine synchronisation du runner.",
         "memoryApproval": "Approuver les modifications de la mémoire",
-        "memoryApprovalHint": "Ce que l'agent écrit dans sa mémoire attend sous forme de diff sur la page Approbations ; en attendant, il garde la version approuvée."
+        "memoryApprovalHint": "Ce que l'agent écrit dans sa mémoire attend sous forme de diff sur la page Approbations ; en attendant, il garde la version approuvée.",
+        "chatReflection": "Apprendre des chats",
+        "chatReflectionHint": "Quand un chat est calme depuis un moment, l’agent retient dans un court tour ce qu’il a appris sur toi et ta façon de faire. Les entrées de mémoire attendent ton accord comme toujours ; les jetons comptent dans sa consommation.",
+        "chatReflectionIdle": "après minutes de calme",
+        "chatReflectionTurns": "au plus tard après messages",
+        "chatReflections": "Appris récemment des chats",
+        "chatUntitled": "Chat sans titre",
+        "chatReflectionStatus": {
+          "pending": "Prévu",
+          "running": "En cours",
+          "success": "Terminé",
+          "failed": "Échec",
+          "canceled": "Abandonné"
+        },
+        "chatReflectionNothing": "Rien retenu",
+        "chatReflectionMemory": "Mémoire ({target})",
+        "chatReflectionSkill": "Compétence {target}"
       },
       "skillEnabled": "{name} activée",
-      "skillsDisabled": "désactivées : {count}"
+      "skillsDisabled": "désactivées : {count}",
+      "skillClashes": "{count, plural, one {Un nom appartient} other {# noms appartiennent}} à plusieurs compétences. Hermes n’en charge alors aucune :",
+      "skillClashesFix": "Retirez la compétence Helena de l’agent (celle adaptée à Hermes prend alors le relais) ou renommez-la dans la bibliothèque."
     },
     "paused": "En pause",
     "pausedNoReason": "En pause. Aucune raison indiquée.",

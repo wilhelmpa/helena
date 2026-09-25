@@ -6,6 +6,8 @@ import { join } from 'node:path';
 import type { Client, ReflectionReport, Run } from '../client';
 import type { RunnerConfig } from '../config';
 import { ReflectionReader, reflect } from '../reflect';
+import { reflectOnChat } from '../chat-reflect';
+import type { RuntimeAdapter } from '../runtime';
 
 const dirs: string[] = [];
 
@@ -231,5 +233,88 @@ describe('reflection', () => {
       { tool: 'memory', action: 'add', target: 'user' },
       { tool: 'skill', action: 'create', target: 'web-scrape' },
     ]);
+  });
+});
+
+describe('chat reflection', () => {
+  it("continues the chat's session with only the memory and skill tools and reports under its claim", async () => {
+    const { dir, config } = await setup();
+    const reported: { id: number; claim: number; report: ReflectionReport }[] = [];
+    const client = {
+      reportChatReflection: async (id: number, claim: number, report: ReflectionReport) => {
+        reported.push({ id, claim, report });
+      },
+    } as unknown as Client;
+    const runtime = {
+      runSettings: async () => hermes,
+    } as unknown as RuntimeAdapter;
+
+    const report = await reflectOnChat(
+      config,
+      client,
+      {
+        id: 4,
+        threadId: 'chat:12:abc',
+        claim: 2,
+        sessionId: 'sess-chat',
+        messageId: 91,
+        prompt: 'Look back at the conversation.',
+        model: 'gpt-5.6-luna',
+        thinkingLevel: 'low',
+        maxTurns: 8,
+        runBudgetSeconds: 120,
+      },
+      runtime,
+    );
+
+    const argv = (await readFile(join(dir, 'argv'), 'utf8')).trim().split('\n');
+    const flag = (name: string) => argv[argv.indexOf(name) + 1];
+    expect(flag('--resume')).toBe('sess-chat');
+    expect(flag('--toolsets')).toBe('memory,skills');
+    expect(flag('--model')).toBe('gpt-5.6-luna');
+    expect(await readFile(join(dir, 'stdin'), 'utf8')).toBe('Look back at the conversation.');
+    // No run: Helena's MCP server gets no run id.
+    expect((await readFile(join(dir, 'env'), 'utf8')).trim()).toBe('/hermes/run/itsaplan-managed');
+    expect(report.status).toBe('success');
+    expect(report.saved).toHaveLength(2);
+    expect(reported).toEqual([{ id: 4, claim: 2, report }]);
+  });
+
+  it('reports a failure when the runtime cannot give its settings', async () => {
+    const { config } = await setup();
+    const reported: ReflectionReport[] = [];
+    const client = {
+      reportChatReflection: async (_id: number, _claim: number, report: ReflectionReport) => {
+        reported.push(report);
+      },
+    } as unknown as Client;
+    const runtime = {
+      runSettings: async () => {
+        throw new Error('the approval guard plugin is missing');
+      },
+    } as unknown as RuntimeAdapter;
+    const report = await reflectOnChat(
+      config,
+      client,
+      {
+        id: 5,
+        threadId: 't',
+        claim: 1,
+        sessionId: 's',
+        messageId: 1,
+        prompt: 'p',
+        model: null,
+        thinkingLevel: null,
+        maxTurns: 8,
+        runBudgetSeconds: 120,
+      },
+      runtime,
+    );
+    expect(report).toEqual({
+      status: 'failed',
+      saved: [],
+      error: 'the approval guard plugin is missing',
+    });
+    expect(reported).toEqual([report]);
   });
 });

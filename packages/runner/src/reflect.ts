@@ -74,6 +74,77 @@ export class ReflectionReader {
   }
 }
 
+// The reflection turn itself, for a run (reflect below) and a chat (chat-reflect.ts): the
+// session continued with the prompt Helena sent, with only the memory and skill tools. Never
+// throws for the turn: one that fails is returned as failed.
+export async function reflectTurn(
+  config: RunnerConfig,
+  input: {
+    sessionId: string;
+    request: ReflectionRequest;
+    hermes: HermesRunSettings;
+    // The model and reasoning of the work reflected on, taken when Helena names none.
+    model: string | null;
+    thinkingLevel: string | null;
+    cwd: string | undefined;
+    env: Record<string, string>;
+    work: { kind: 'run' | 'chat'; id: number };
+  },
+): Promise<ReflectionReport> {
+  const { request, hermes } = input;
+  const toolsets =
+    hermes.toolsets === null
+      ? REFLECTION_TOOLSETS
+      : REFLECTION_TOOLSETS.filter((name) => hermes.toolsets!.includes(name));
+  if (toolsets.length === 0) {
+    return { status: 'failed', saved: [], error: 'The agent has no memory or skill tools' };
+  }
+  const reader = new ReflectionReader();
+  // The model Helena named with the reasoning it named (`none`: the server's provider
+  // without thinking; null: the local provider's turns think), or the work's own.
+  const model = request.model ?? input.model;
+  const thinkingLevel = request.model ? (request.thinkingLevel ?? null) : input.thinkingLevel;
+  const spend = new SpendReader(
+    config.outputFormat,
+    config.command ? null : (config.agent ?? null),
+  );
+  const outcome = await execute(
+    {
+      ...config,
+      cwd: input.cwd,
+      timeoutMs: Math.min(config.timeoutMs, request.runBudgetSeconds * 1000 + GRACE_MS),
+    },
+    {
+      prompt: request.prompt,
+      systemPrompt: '',
+      sessionId: input.sessionId,
+      model,
+      thinkingLevel,
+      maxTurns: request.maxTurns,
+      runBudgetSeconds: request.runBudgetSeconds,
+      toolsets,
+      env: { ...input.env, ...hermes.env },
+      hooks: hermes.hooks,
+    },
+    {
+      onData: (chunk) => {
+        reader.write(chunk);
+        spend.write(chunk);
+      },
+      work: input.work,
+    },
+  );
+  reader.end();
+  return {
+    status: outcome.status,
+    usage: outcome.usage ?? null,
+    spend: spend.value({ model, provider: modelProvider(config, model, thinkingLevel) ?? null }),
+    saved: reader.saved,
+    summary: outcome.output.trim().slice(0, MAX_SUMMARY) || null,
+    ...(outcome.error && { error: outcome.error.slice(0, 500) }),
+  };
+}
+
 // Never throws for the reflection itself: a failed turn is reported as failed. Only the
 // report to Plan can throw.
 export async function reflect(
@@ -84,59 +155,16 @@ export async function reflect(
   request: ReflectionRequest,
   hermes: HermesRunSettings,
 ): Promise<ReflectionReport> {
-  const toolsets =
-    hermes.toolsets === null
-      ? REFLECTION_TOOLSETS
-      : REFLECTION_TOOLSETS.filter((name) => hermes.toolsets!.includes(name));
-  let report: ReflectionReport;
-  if (toolsets.length === 0) {
-    report = { status: 'failed', saved: [], error: 'The agent has no memory or skill tools' };
-  } else {
-    const reader = new ReflectionReader();
-    // The model Helena named with the reasoning it named (`none`: the server's provider
-    // without thinking; null: the local provider's turns think), or the run's own.
-    const model = request.model ?? run.model;
-    const thinkingLevel = request.model ? (request.thinkingLevel ?? null) : run.thinkingLevel;
-    const spend = new SpendReader(
-      config.outputFormat,
-      config.command ? null : (config.agent ?? null),
-    );
-    const outcome = await execute(
-      {
-        ...config,
-        cwd: runCwd(config.cwd, run.workdir),
-        timeoutMs: Math.min(config.timeoutMs, request.runBudgetSeconds * 1000 + GRACE_MS),
-      },
-      {
-        prompt: request.prompt,
-        systemPrompt: '',
-        sessionId,
-        model,
-        thinkingLevel,
-        maxTurns: request.maxTurns,
-        runBudgetSeconds: request.runBudgetSeconds,
-        toolsets,
-        env: { ...runEnv(run), ...hermes.env },
-        hooks: hermes.hooks,
-      },
-      {
-        onData: (chunk) => {
-          reader.write(chunk);
-          spend.write(chunk);
-        },
-        work: { kind: 'run', id: run.id },
-      },
-    );
-    reader.end();
-    report = {
-      status: outcome.status,
-      usage: outcome.usage ?? null,
-      spend: spend.value({ model, provider: modelProvider(config, model, thinkingLevel) ?? null }),
-      saved: reader.saved,
-      summary: outcome.output.trim().slice(0, MAX_SUMMARY) || null,
-      ...(outcome.error && { error: outcome.error.slice(0, 500) }),
-    };
-  }
+  const report = await reflectTurn(config, {
+    sessionId,
+    request,
+    hermes,
+    model: run.model,
+    thinkingLevel: run.thinkingLevel,
+    cwd: runCwd(config.cwd, run.workdir),
+    env: runEnv(run),
+    work: { kind: 'run', id: run.id },
+  });
   await client.reportReflection(run.id, report);
   return report;
 }

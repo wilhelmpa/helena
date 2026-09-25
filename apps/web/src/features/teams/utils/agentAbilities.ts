@@ -68,3 +68,28 @@ export function skillGroups(
     : skills;
   return groupInOrder(matches, (skill) => skill.category ?? '');
 }
+
+// Skills of the agent's profile that share a name (docs/helena-decisions/agent-context.md §3):
+// Hermes' skill_view refuses every one of them ("Ambiguous skill name"), so none of them
+// loads. Typically a Helena skill named like one that ships with Hermes. Each clash lists
+// where the skills of that name come from.
+export interface SkillClash {
+  name: string;
+  origins: AgentInventorySkill['origin'][];
+  paths: string[];
+}
+
+export function skillNameClashes(skills: AgentInventorySkill[]): SkillClash[] {
+  const byName = new Map<string, AgentInventorySkill[]>();
+  for (const skill of skills) {
+    byName.set(skill.name, [...(byName.get(skill.name) ?? []), skill]);
+  }
+  return [...byName]
+    .filter(([, found]) => found.length > 1 && new Set(found.map((skill) => skill.path)).size > 1)
+    .map(([name, found]) => ({
+      name,
+      origins: found.map((skill) => skill.origin),
+      paths: found.flatMap((skill) => (skill.path ? [skill.path] : [])),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
