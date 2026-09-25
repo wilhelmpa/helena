@@ -67,7 +67,13 @@ export function RoutineMentionsPreview({
 
 // One line of a routine in the list: the agents it starts besides its own, and how many
 // of its mentions start nobody.
-export function RoutineMentionsLine({ mentions }: { mentions: RoutineMention[] }) {
+export function RoutineMentionsLine({
+  mentions,
+  className = 'mt-0.5',
+}: {
+  mentions: RoutineMention[];
+  className?: string;
+}) {
   const t = useTranslations('routines');
   const reason = useMentionReason();
   if (mentions.length === 0) return null;
@@ -77,7 +83,7 @@ export function RoutineMentionsLine({ mentions }: { mentions: RoutineMention[] }
     <>
       {started.length > 0 && (
         <p
-          className="mt-0.5 flex min-w-0 items-center gap-1 text-xs text-muted-foreground"
+          className={cn('flex min-w-0 items-center gap-1 text-xs text-muted-foreground', className)}
           title={started.map((mention) => `@${mention.agent.username}`).join(', ')}
         >
           <AtSign className="size-3.5 shrink-0" />
@@ -90,7 +96,7 @@ export function RoutineMentionsLine({ mentions }: { mentions: RoutineMention[] }
       )}
       {refused.length > 0 && (
         <p
-          className="mt-0.5 flex min-w-0 items-center gap-1 text-xs text-destructive"
+          className={cn('flex min-w-0 items-center gap-1 text-xs text-destructive', className)}
           title={refused
             .map((mention) => `@${mention.agent.username}: ${reason(mention)}`)
             .join('\n')}
