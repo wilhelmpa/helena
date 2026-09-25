@@ -88,8 +88,9 @@ export function checkOrder(input: CheckInput): CheckResult {
   const violations: string[] = [];
   const symbol = order.symbol.toUpperCase();
   const assetClass = assetClassOf(symbol);
-  const held = input.positions.find((p) => p.symbol.toUpperCase() === symbol.replace('/', ''))
-    ?? input.positions.find((p) => p.symbol.toUpperCase() === symbol);
+  const held =
+    input.positions.find((p) => p.symbol.toUpperCase() === symbol.replace('/', '')) ??
+    input.positions.find((p) => p.symbol.toUpperCase() === symbol);
   const heldQty = held?.qty ?? 0;
   const heldValue = held?.marketValue ?? 0;
   const opening = order.side === 'buy';
@@ -100,7 +101,8 @@ export function checkOrder(input: CheckInput): CheckResult {
       : order.notional !== undefined && order.notional > 0 && unitPrice > 0
         ? order.notional / unitPrice
         : 0;
-  const notionalUsd = order.notional !== undefined && order.notional > 0 ? order.notional : qty * unitPrice;
+  const notionalUsd =
+    order.notional !== undefined && order.notional > 0 ? order.notional : qty * unitPrice;
   const dayPnlUsd = account.equity - account.lastEquity;
 
   // The account and the order itself.
@@ -116,7 +118,10 @@ export function checkOrder(input: CheckInput): CheckResult {
   if (order.type === 'limit' && !(order.limitPrice && order.limitPrice > 0)) {
     violations.push('A limit order needs limitPrice.');
   }
-  if ((order.type === 'stop' || order.type === 'stop_limit') && !(order.stopPrice && order.stopPrice > 0)) {
+  if (
+    (order.type === 'stop' || order.type === 'stop_limit') &&
+    !(order.stopPrice && order.stopPrice > 0)
+  ) {
     violations.push('A stop order needs stopPrice.');
   }
   if (order.type === 'stop_limit' && !(order.limitPrice && order.limitPrice > 0)) {
@@ -131,9 +136,12 @@ export function checkOrder(input: CheckInput): CheckResult {
 
   if (!opening) {
     // Reducing or closing: never more than is held.
-    if (heldQty <= 0) violations.push(`There is no long position in ${symbol} to sell (no short selling).`);
+    if (heldQty <= 0)
+      violations.push(`There is no long position in ${symbol} to sell (no short selling).`);
     else if (qty > heldQty + 1e-9) {
-      violations.push(`Selling ${round(qty, 6)} would exceed the ${round(heldQty, 6)} held (no short selling).`);
+      violations.push(
+        `Selling ${round(qty, 6)} would exceed the ${round(heldQty, 6)} held (no short selling).`,
+      );
     }
     if (order.stopLossPrice !== undefined || order.takeProfitPrice !== undefined) {
       violations.push('stopLossPrice and takeProfitPrice belong to an opening buy.');
@@ -160,7 +168,9 @@ export function checkOrder(input: CheckInput): CheckResult {
   }
   if (limits.halted) violations.push('New entries are halted by the owner (Handel angehalten).');
   if (order.type !== 'market' && order.type !== 'limit') {
-    violations.push('A position opens with a market or limit order; stop orders only protect or close one.');
+    violations.push(
+      'A position opens with a market or limit order; stop orders only protect or close one.',
+    );
   }
   if (dayPnlUsd <= -limits.dailyLossLimitUsd) {
     violations.push(
@@ -168,7 +178,9 @@ export function checkOrder(input: CheckInput): CheckResult {
     );
   }
   if (input.ordersToday >= limits.maxOrdersPerDay) {
-    violations.push(`${input.ordersToday} orders today: the limit is ${limits.maxOrdersPerDay} per day.`);
+    violations.push(
+      `${input.ordersToday} orders today: the limit is ${limits.maxOrdersPerDay} per day.`,
+    );
   }
   if (notionalUsd > limits.maxOrderValueUsd + 1e-9) {
     violations.push(
@@ -191,7 +203,9 @@ export function checkOrder(input: CheckInput): CheckResult {
   if (!(order.stopLossPrice && order.stopLossPrice > 0)) {
     violations.push('An opening order needs stopLossPrice: no position without a stop.');
   } else if (order.stopLossPrice >= unitPrice) {
-    violations.push(`The stop (${order.stopLossPrice}) has to lie below the entry (${round(unitPrice, 6)}).`);
+    violations.push(
+      `The stop (${order.stopLossPrice}) has to lie below the entry (${round(unitPrice, 6)}).`,
+    );
   } else {
     riskUsd = (unitPrice - order.stopLossPrice) * qty;
     if (riskUsd > limits.maxRiskPerTradeUsd + 1e-9) {
@@ -201,7 +215,9 @@ export function checkOrder(input: CheckInput): CheckResult {
     }
   }
   if (order.takeProfitPrice !== undefined && !(order.takeProfitPrice > unitPrice)) {
-    violations.push(`The target (${order.takeProfitPrice}) has to lie above the entry (${round(unitPrice, 6)}).`);
+    violations.push(
+      `The target (${order.takeProfitPrice}) has to lie above the entry (${round(unitPrice, 6)}).`,
+    );
   }
   return {
     ok: violations.length === 0,

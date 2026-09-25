@@ -109,12 +109,9 @@ export async function callConfiguredTool(
   if (!agent) return refusal(403, 'Only an agent uses configured tools.');
   const { tool } = configured;
   const audit = (action: 'called' | 'denied', category: ActionCategory, purpose: string) =>
-    recordAgentUses(
-      agent,
-      { runId: caller.runId, chatMessageId: null },
-      action,
-      [{ credentialId: configured.credentialId, label: configured.label, purpose, category }],
-    );
+    recordAgentUses(agent, { runId: caller.runId, chatMessageId: null }, action, [
+      { credentialId: configured.credentialId, label: configured.label, purpose, category },
+    ]);
 
   let input: unknown;
   try {
@@ -140,7 +137,13 @@ export async function callConfiguredTool(
       agent: agentRef,
       project: projectRef,
       action: category,
-      context: { tool: tool.name, connector: tool.connector, input, runId: caller.runId, scope: 'external' },
+      context: {
+        tool: tool.name,
+        connector: tool.connector,
+        input,
+        runId: caller.runId,
+        scope: 'external',
+      },
     });
     if (decision.effect === 'deny') {
       await audit('denied', category, `${tool.name}: ${decision.reason}`);

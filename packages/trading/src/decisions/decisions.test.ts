@@ -54,14 +54,19 @@ describe('trading decision classes', () => {
     const routing = TRADING_DECISION_CLASSES[2]!.eval!;
     const expected = new Set(routing.cases.flatMap((entry) => [entry.expected.role].flat()));
     const roles = decisionOptionIds(routing.cases[0]!.questions.role!);
-    for (const role of roles) expect({ role, seen: expected.has(role) }).toEqual({ role, seen: true });
+    for (const role of roles)
+      expect({ role, seen: expected.has(role) }).toEqual({ role, seen: true });
   });
 
   test('the questions for each kind', () => {
-    expect(Object.keys(tradingQuestions('news').questions)).toEqual(['relevance', 'direction', 'event']);
-    expect(tradingQuestions('rule', 'Jeder Trade hat einen Stop.').questions.meets!.question).toContain(
-      'Jeder Trade hat einen Stop.',
-    );
+    expect(Object.keys(tradingQuestions('news').questions)).toEqual([
+      'relevance',
+      'direction',
+      'event',
+    ]);
+    expect(
+      tradingQuestions('rule', 'Jeder Trade hat einen Stop.').questions.meets!.question,
+    ).toContain('Jeder Trade hat einen Stop.');
     expect(() => tradingQuestions('rule', ' ')).toThrow();
     expect(tradingQuestions('routing').classId).toBe('helena.trading.routing');
   });

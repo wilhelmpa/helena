@@ -56,9 +56,10 @@ export function symbolList(value: unknown): string[] {
 
 // The limits a stored connection holds, or the fields that are missing. A limit that is
 // missing, zero or not a number makes every opening order refused: no limit is no permission.
-export function readLimits(
-  credential: Record<string, unknown>,
-): { limits: PaperLimits; missing: string[] } {
+export function readLimits(credential: Record<string, unknown>): {
+  limits: PaperLimits;
+  missing: string[];
+} {
   const missing: string[] = [];
   const need = (key: keyof PaperLimits & string): number => {
     const value = positive(credential[key]);

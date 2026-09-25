@@ -9,7 +9,13 @@ import {
   type Fetch,
   type NewOrder,
 } from './client';
-import { assetClassOf, checkOrder, tradingDay, type CheckResult, type OrderRequest } from './checks';
+import {
+  assetClassOf,
+  checkOrder,
+  tradingDay,
+  type CheckResult,
+  type OrderRequest,
+} from './checks';
 import { readKeys, readLimits } from './limits';
 
 // The paper account as agent tools (connector `alpaca_paper`). Reading is `read`; placing,
@@ -47,7 +53,10 @@ const orderFields = {
   type: z.enum(['market', 'limit', 'stop', 'stop_limit']).default('market'),
   limitPrice: z.number().positive().optional(),
   stopPrice: z.number().positive().optional().describe('Trigger of a stop or stop-limit sell.'),
-  timeInForce: z.enum(['day', 'gtc', 'ioc']).optional().describe('Default: day for stocks, gtc for crypto.'),
+  timeInForce: z
+    .enum(['day', 'gtc', 'ioc'])
+    .optional()
+    .describe('Default: day for stocks, gtc for crypto.'),
   stopLossPrice: z
     .number()
     .positive()
@@ -66,7 +75,9 @@ const submitSchema = z.object({
     .string()
     .min(10)
     .max(600)
-    .describe('Why this order: the rule of the strategy version it follows, in one or two sentences.'),
+    .describe(
+      'Why this order: the rule of the strategy version it follows, in one or two sentences.',
+    ),
 });
 
 type CheckInput = z.infer<typeof checkSchema>;
@@ -163,7 +174,11 @@ const fixed = (value: number, digits: number) =>
 // The order as Alpaca takes it. A stock buy carries its stop (OTO) and target (bracket);
 // Alpaca offers no attached exits for crypto, so a crypto position gets its stop as a
 // separate stop-limit sell once the buy is filled.
-export function alpacaOrder(input: SubmitInput, check: CheckResult, clientOrderId: string): NewOrder {
+export function alpacaOrder(
+  input: SubmitInput,
+  check: CheckResult,
+  clientOrderId: string,
+): NewOrder {
   const crypto = check.assetClass === 'crypto';
   const order: NewOrder = {
     symbol: input.symbol,
@@ -189,7 +204,10 @@ export function alpacaOrder(input: SubmitInput, check: CheckResult, clientOrderI
 }
 
 export function clientOrderIdFor(input: SubmitInput, now: Date): string {
-  const stamp = now.toISOString().replace(/[-:TZ.]/g, '').slice(0, 14);
+  const stamp = now
+    .toISOString()
+    .replace(/[-:TZ.]/g, '')
+    .slice(0, 14);
   return `helena-${input.strategyId}-v${input.strategyVersion}-${stamp}`;
 }
 
@@ -265,7 +283,8 @@ export function alpacaPaperTools(deps: PaperToolDeps = {}): AgentTool<unknown>[]
     {
       name: 'alpaca_paper_positions',
       title: 'Paper positions',
-      description: 'The open positions of the Alpaca PAPER account with entry, price and unrealized P&L.',
+      description:
+        'The open positions of the Alpaca PAPER account with entry, price and unrealized P&L.',
       inputSchema: z.object({}),
       category: 'read',
       async handler(_input: unknown, ctx: ToolCallContext) {
@@ -288,17 +307,25 @@ export function alpacaPaperTools(deps: PaperToolDeps = {}): AgentTool<unknown>[]
       name: 'alpaca_paper_orders',
       title: 'Paper orders',
       description:
-        'Orders of the Alpaca PAPER account, newest first. Helena\'s orders have a clientOrderId ' +
+        "Orders of the Alpaca PAPER account, newest first. Helena's orders have a clientOrderId " +
         '"helena-<strategy>-v<version>-<time>", which links each to its strategy version.',
       inputSchema: z.object({
         status: z.enum(['open', 'closed', 'all']).default('open'),
         limit: z.number().int().min(1).max(200).default(50),
-        after: z.iso.datetime({ offset: true }).optional().describe('Only orders submitted after this time.'),
+        after: z.iso
+          .datetime({ offset: true })
+          .optional()
+          .describe('Only orders submitted after this time.'),
         symbols: z.array(symbolSchema).max(20).optional(),
       }),
       category: 'read',
       async handler(input: unknown, ctx: ToolCallContext) {
-        const query = input as { status: 'open' | 'closed' | 'all'; limit: number; after?: string; symbols?: string[] };
+        const query = input as {
+          status: 'open' | 'closed' | 'all';
+          limit: number;
+          after?: string;
+          symbols?: string[];
+        };
         const orders = await clientOf(ctx, deps).orders(query);
         return { orders: orders.map(orderView) };
       },
@@ -308,21 +335,24 @@ export function alpacaPaperTools(deps: PaperToolDeps = {}): AgentTool<unknown>[]
       title: 'Paper market prices',
       description:
         'Latest trade prices (stocks: IEX feed; crypto: Alpaca US feed) and whether the US ' +
-        'stock market is open, from the paper account\'s market data.',
+        "stock market is open, from the paper account's market data.",
       inputSchema: z.object({ symbols: z.array(symbolSchema).min(1).max(20) }),
       category: 'read',
       async handler(input: unknown, ctx: ToolCallContext) {
         const client = clientOf(ctx, deps);
         const { symbols } = input as { symbols: string[] };
         const [prices, clock] = await Promise.all([client.latestPrices(symbols), client.clock()]);
-        return { prices, market: { open: clock.is_open, nextOpen: clock.next_open, nextClose: clock.next_close } };
+        return {
+          prices,
+          market: { open: clock.is_open, nextOpen: clock.next_open, nextClose: clock.next_close },
+        };
       },
     },
     {
       name: 'alpaca_paper_bars',
       title: 'Paper market bars',
       description:
-        'Historical OHLCV bars for one symbol from the paper account\'s market data (stocks: ' +
+        "Historical OHLCV bars for one symbol from the paper account's market data (stocks: " +
         'IEX feed, split-adjusted; crypto: Alpaca US feed).',
       inputSchema: z.object({
         symbol: symbolSchema,
@@ -333,7 +363,13 @@ export function alpacaPaperTools(deps: PaperToolDeps = {}): AgentTool<unknown>[]
       }),
       category: 'read',
       async handler(input: unknown, ctx: ToolCallContext) {
-        const query = input as { symbol: string; timeframe: string; start: string; end?: string; limit: number };
+        const query = input as {
+          symbol: string;
+          timeframe: string;
+          start: string;
+          end?: string;
+          limit: number;
+        };
         const bars = await clientOf(ctx, deps).bars(query);
         return { symbol: query.symbol, timeframe: query.timeframe, bars };
       },

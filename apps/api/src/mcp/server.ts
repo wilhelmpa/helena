@@ -141,11 +141,15 @@ export async function buildMcpServer(
   server.setRequestHandler(CallToolRequestSchema, async (req) => {
     const bound = configured.get(req.params.name);
     if (bound) {
-      return callConfiguredTool(bound, { ...(req.params.arguments ?? {}) }, {
-        userId,
-        auth: credential,
-        runId: context.runId ?? null,
-      });
+      return callConfiguredTool(
+        bound,
+        { ...(req.params.arguments ?? {}) },
+        {
+          userId,
+          auth: credential,
+          runId: context.runId ?? null,
+        },
+      );
     }
     const tool = registries.tools.get(req.params.name);
     if (!tool || tool.connector) return refusal(404, `Unknown tool: ${req.params.name}`);

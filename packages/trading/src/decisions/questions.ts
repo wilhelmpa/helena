@@ -89,7 +89,8 @@ export const ROUTING: DecisionQuestion = {
     },
     {
       id: 'chart',
-      label: 'Chart analysis: trend, support and resistance, indicators, volatility, market regime.',
+      label:
+        'Chart analysis: trend, support and resistance, indicators, volatility, market regime.',
     },
     {
       id: 'crypto',
@@ -97,7 +98,8 @@ export const ROUTING: DecisionQuestion = {
     },
     {
       id: 'daytrading',
-      label: 'Day-trading preparation: pre-market brief, watchlist, levels and plan for the session.',
+      label:
+        'Day-trading preparation: pre-market brief, watchlist, levels and plan for the session.',
     },
     {
       id: 'risk',
@@ -115,7 +117,8 @@ export const ROUTING: DecisionQuestion = {
     },
     {
       id: 'paper',
-      label: 'Paper trading: placing or cancelling paper orders, the paper account and its positions.',
+      label:
+        'Paper trading: placing or cancelling paper orders, the paper account and its positions.',
     },
     {
       id: 'finance',

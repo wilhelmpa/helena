@@ -98,7 +98,10 @@ describe('order checks', () => {
 
   test('every limit stops an opening order', () => {
     const cases: [Partial<CheckInput>, RegExp][] = [
-      [{ order: { symbol: 'SPY', side: 'buy', type: 'market', qty: 2, stopLossPrice: 590 } }, /per order/],
+      [
+        { order: { symbol: 'SPY', side: 'buy', type: 'market', qty: 2, stopLossPrice: 590 } },
+        /per order/,
+      ],
       [
         {
           positions: [{ symbol: 'SPY', qty: 3, marketValue: 1800 }],
@@ -106,11 +109,25 @@ describe('order checks', () => {
         },
         /per position/,
       ],
-      [{ order: { symbol: 'SPY', side: 'buy', type: 'market', qty: 1, stopLossPrice: 540 } }, /per trade/],
-      [{ order: { symbol: 'SPY', side: 'buy', type: 'market', qty: 1 } }, /needs stopLossPrice/],
-      [{ order: { symbol: 'SPY', side: 'buy', type: 'market', qty: 1, stopLossPrice: 610 } }, /below the entry/],
       [
-        { account: { status: 'ACTIVE', tradingBlocked: false, accountBlocked: false, equity: 99_800, lastEquity: 100_000 } },
+        { order: { symbol: 'SPY', side: 'buy', type: 'market', qty: 1, stopLossPrice: 540 } },
+        /per trade/,
+      ],
+      [{ order: { symbol: 'SPY', side: 'buy', type: 'market', qty: 1 } }, /needs stopLossPrice/],
+      [
+        { order: { symbol: 'SPY', side: 'buy', type: 'market', qty: 1, stopLossPrice: 610 } },
+        /below the entry/,
+      ],
+      [
+        {
+          account: {
+            status: 'ACTIVE',
+            tradingBlocked: false,
+            accountBlocked: false,
+            equity: 99_800,
+            lastEquity: 100_000,
+          },
+        },
         /daily loss limit/,
       ],
       [{ ordersToday: 10 }, /per day/],
@@ -128,11 +145,28 @@ describe('order checks', () => {
       [{ limits: { ...LIMITS, allowedSymbols: ['QQQ'] } }, /allowed symbols/],
       [{ missingLimits: ['dailyLossLimitUsd'] }, /no limit for dailyLossLimitUsd/],
       [
-        { order: { symbol: 'SPY', side: 'buy', type: 'stop', qty: 1, stopPrice: 601, stopLossPrice: 590 } },
+        {
+          order: {
+            symbol: 'SPY',
+            side: 'buy',
+            type: 'stop',
+            qty: 1,
+            stopPrice: 601,
+            stopLossPrice: 590,
+          },
+        },
         /market or limit/,
       ],
       [
-        { account: { status: 'ACCOUNT_UPDATED', tradingBlocked: true, accountBlocked: false, equity: 1, lastEquity: 1 } },
+        {
+          account: {
+            status: 'ACCOUNT_UPDATED',
+            tradingBlocked: true,
+            accountBlocked: false,
+            equity: 1,
+            lastEquity: 1,
+          },
+        },
         /cannot trade/,
       ],
     ];
@@ -147,7 +181,13 @@ describe('order checks', () => {
     const result = checkOrder(
       input({
         limits: { ...LIMITS, allowCrypto: false },
-        order: { symbol: 'BTC/USD', side: 'buy', type: 'market', notional: 100, stopLossPrice: 60_000 },
+        order: {
+          symbol: 'BTC/USD',
+          side: 'buy',
+          type: 'market',
+          notional: 100,
+          stopLossPrice: 60_000,
+        },
         price: 65_000,
       }),
     );
@@ -156,7 +196,9 @@ describe('order checks', () => {
 
   test('long only: a sell never exceeds the position', () => {
     expect(
-      checkOrder(input({ order: { symbol: 'SPY', side: 'sell', type: 'market', qty: 1 } })).violations.join(' '),
+      checkOrder(
+        input({ order: { symbol: 'SPY', side: 'sell', type: 'market', qty: 1 } }),
+      ).violations.join(' '),
     ).toMatch(/no long position/);
     expect(
       checkOrder(
@@ -172,9 +214,22 @@ describe('order checks', () => {
     const result = checkOrder(
       input({
         limits: { ...LIMITS, halted: true },
-        account: { status: 'ACTIVE', tradingBlocked: false, accountBlocked: false, equity: 99_000, lastEquity: 100_000 },
+        account: {
+          status: 'ACTIVE',
+          tradingBlocked: false,
+          accountBlocked: false,
+          equity: 99_000,
+          lastEquity: 100_000,
+        },
         positions: [{ symbol: 'BTCUSD', qty: 0.02, marketValue: 1300 }],
-        order: { symbol: 'BTC/USD', side: 'sell', type: 'stop_limit', qty: 0.02, stopPrice: 60_000, limitPrice: 59_800 },
+        order: {
+          symbol: 'BTC/USD',
+          side: 'sell',
+          type: 'stop_limit',
+          qty: 0.02,
+          stopPrice: 60_000,
+          limitPrice: 59_800,
+        },
         price: 65_000,
       }),
     );
@@ -197,7 +252,10 @@ function fakeAlpaca(state: { equity?: string; lastEquity?: string; orders?: unkn
     requests.push({ method, url, body });
     const { pathname } = new URL(url);
     const json = (value: unknown, status = 200) =>
-      new Response(JSON.stringify(value), { status, headers: { 'content-type': 'application/json' } });
+      new Response(JSON.stringify(value), {
+        status,
+        headers: { 'content-type': 'application/json' },
+      });
     if (pathname === '/v2/account') {
       return json({
         status: 'ACTIVE',
@@ -251,7 +309,9 @@ const CREDENTIAL = {
   dailyLossLimitUsd: 150,
 };
 
-function context(credential: Record<string, string | number | boolean> = CREDENTIAL): ToolCallContext {
+function context(
+  credential: Record<string, string | number | boolean> = CREDENTIAL,
+): ToolCallContext {
   return {
     agent: null,
     project: null,
@@ -261,9 +321,10 @@ function context(credential: Record<string, string | number | boolean> = CREDENT
 }
 
 function tool(fetchImpl: Fetch, name: string) {
-  const found = alpacaPaperTools({ fetch: fetchImpl, now: () => new Date('2026-10-01T15:00:00Z') }).find(
-    (entry) => entry.name === name,
-  );
+  const found = alpacaPaperTools({
+    fetch: fetchImpl,
+    now: () => new Date('2026-10-01T15:00:00Z'),
+  }).find((entry) => entry.name === name);
   if (!found) throw new Error(`no tool ${name}`);
   return found;
 }
@@ -283,7 +344,10 @@ const ORDER = {
 describe('paper tools', () => {
   test('an order within the limits goes to the paper API as a bracket order', async () => {
     const { fetchImpl, requests } = fakeAlpaca();
-    const result = (await tool(fetchImpl, 'alpaca_paper_submit_order').handler(ORDER, context())) as {
+    const result = (await tool(fetchImpl, 'alpaca_paper_submit_order').handler(
+      ORDER,
+      context(),
+    )) as {
       order: { clientOrderId: string };
       journal: string;
     };
@@ -309,7 +373,10 @@ describe('paper tools', () => {
 
   test('an order over a limit is refused and nothing is sent', async () => {
     const { fetchImpl, requests } = fakeAlpaca({ equity: '99800', lastEquity: '100000' });
-    const result = (await tool(fetchImpl, 'alpaca_paper_submit_order').handler(ORDER, context())) as {
+    const result = (await tool(fetchImpl, 'alpaca_paper_submit_order').handler(
+      ORDER,
+      context(),
+    )) as {
       isError?: boolean;
       content: { text: string }[];
     };
@@ -321,17 +388,17 @@ describe('paper tools', () => {
   test('a live key never reaches Alpaca', async () => {
     const { fetchImpl, requests } = fakeAlpaca();
     await expect(
-      tool(fetchImpl, 'alpaca_paper_account').handler({}, context({ ...CREDENTIAL, keyId: 'AKLIVEKEY123456' })),
+      tool(fetchImpl, 'alpaca_paper_account').handler(
+        {},
+        context({ ...CREDENTIAL, keyId: 'AKLIVEKEY123456' }),
+      ),
     ).rejects.toThrow(NotPaperError);
     expect(requests).toEqual([]);
   });
 
   test('the account tool shows the limits and the orders of the day', async () => {
     const { fetchImpl } = fakeAlpaca({
-      orders: [
-        { submitted_at: '2026-10-01T14:00:00Z' },
-        { submitted_at: '2026-09-30T14:00:00Z' },
-      ],
+      orders: [{ submitted_at: '2026-10-01T14:00:00Z' }, { submitted_at: '2026-09-30T14:00:00Z' }],
     });
     const result = (await tool(fetchImpl, 'alpaca_paper_account').handler({}, context())) as {
       paper: boolean;
@@ -346,8 +413,12 @@ describe('paper tools', () => {
   test('the connector reports a live key and missing limits in its health', async () => {
     const { fetchImpl } = fakeAlpaca();
     const connector = alpacaPaperConnector({ fetch: fetchImpl });
-    expect((await connector.health!({ ...CREDENTIAL, keyId: 'AKLIVEKEY123456' })).status).toBe('error');
-    expect((await connector.health!({ keyId: 'PKTEST1234567890', secretKey: 's' })).status).toBe('degraded');
+    expect((await connector.health!({ ...CREDENTIAL, keyId: 'AKLIVEKEY123456' })).status).toBe(
+      'error',
+    );
+    expect((await connector.health!({ keyId: 'PKTEST1234567890', secretKey: 's' })).status).toBe(
+      'degraded',
+    );
     expect((await connector.health!(CREDENTIAL)).status).toBe('ok');
     expect(connector.tools?.every((entry) => entry.connector === 'alpaca_paper')).toBe(true);
     expect(

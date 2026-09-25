@@ -53,17 +53,17 @@ export const integrationRoutes = new Elysia({
         user ? await preferredLocale(user.id, browserLocale(request)) : browserLocale(request),
       ),
     {
-    params: teamParams,
-    teamMember: true,
-    response: { 200: IntegrationCatalogResponse, ...accessErrors },
-    detail: {
-      summary: 'List available integrations',
-      description:
-        "List the integration catalog: the tool integrations (kind 'tool') a credential can " +
-        'be stored for, each with its credential fields and its tools.',
-      ...mcpTool('list_integrations'),
+      params: teamParams,
+      teamMember: true,
+      response: { 200: IntegrationCatalogResponse, ...accessErrors },
+      detail: {
+        summary: 'List available integrations',
+        description:
+          "List the integration catalog: the tool integrations (kind 'tool') a credential can " +
+          'be stored for, each with its credential fields and its tools.',
+        ...mcpTool('list_integrations'),
+      },
     },
-  },
   )
 
   // Fills the credential selects in the tool and MCP server forms. Open to any team member,

@@ -56,7 +56,10 @@ export function alpacaPaperConnector(deps: { fetch?: Fetch } = {}): Connector {
       },
       {
         key: 'maxRiskPerTradeUsd',
-        label: { en: 'Max. risk per trade (down to the stop)', de: 'Max. Risiko je Trade (bis zum Stop)' },
+        label: {
+          en: 'Max. risk per trade (down to the stop)',
+          de: 'Max. Risiko je Trade (bis zum Stop)',
+        },
         type: 'number',
         required: true,
         placeholder: '50',

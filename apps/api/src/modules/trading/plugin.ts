@@ -25,6 +25,7 @@ export const TRADING_PERMISSIONS: PluginManifest['permissions'] = {
 export const tradingPlugin: HelenaPlugin = {
   register(ctx) {
     ctx.connectors.register(connector);
-    for (const decisionClass of TRADING_DECISION_CLASSES) ctx.decisionClasses.register(decisionClass);
+    for (const decisionClass of TRADING_DECISION_CLASSES)
+      ctx.decisionClasses.register(decisionClass);
   },
 };

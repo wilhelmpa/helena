@@ -1,4 +1,10 @@
-import { assertPaperUrl, isPaperKeyId, MARKET_DATA_URL, NotPaperError, PAPER_TRADING_URL } from './hosts';
+import {
+  assertPaperUrl,
+  isPaperKeyId,
+  MARKET_DATA_URL,
+  NotPaperError,
+  PAPER_TRADING_URL,
+} from './hosts';
 import type { PaperKeys } from './limits';
 import type { AccountState, PositionState } from './checks';
 
@@ -116,7 +122,9 @@ export class AlpacaPaperClient {
     path: string,
     init: { method?: string; body?: unknown; query?: Record<string, string | undefined> } = {},
   ): Promise<T> {
-    const url = assertPaperUrl(new URL(path, base === 'trading' ? PAPER_TRADING_URL : MARKET_DATA_URL));
+    const url = assertPaperUrl(
+      new URL(path, base === 'trading' ? PAPER_TRADING_URL : MARKET_DATA_URL),
+    );
     for (const [key, value] of Object.entries(init.query ?? {})) {
       if (value !== undefined && value !== '') url.searchParams.set(key, value);
     }
