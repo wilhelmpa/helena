@@ -519,7 +519,7 @@ describe('local AI takes kinds of work', () => {
     await passed(server.id, 'routines', 2);
     await asOwner.god['local-ai'].policy.patch({ classes: { routines: { mode: 'prefer' } } });
     const routine = await queueWork(agent.id, 'routines', { trigger: 'delegation', model: null });
-    // A run without a model of its own ran on the agent's; now on the local one.
+    // A run without a model of its own runs on the agent's; now on the local one.
     expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({
       id: routine,
       model: LOCAL,
@@ -546,7 +546,8 @@ describe('local AI takes kinds of work', () => {
     const after = await queueWork(agent.id, 'routines', { trigger: 'delegation', model: null });
     expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({
       id: after,
-      model: null,
+      model: 'gpt-5.6-luna',
+      thinkingLevel: 'low',
     });
   });
 
