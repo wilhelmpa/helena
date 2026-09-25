@@ -1051,7 +1051,13 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
   // branch, which that session does not hold.
   const history = await readBranch(row.threadId, row.id);
   const question = history.pop();
-  const sessionId = await resumableSession(row.threadId, history, agent.id);
+  // Answers Helena's voice reply gave (modules/voice/reply.ts) are no turn of the agent's
+  // session: the session resumes from the agent's own last answer, and what was said since is
+  // put in front of the question.
+  let lastOwn = history.length - 1;
+  while (lastOwn >= 0 && !(history[lastOwn]!.role === 'assistant' && history[lastOwn]!.via !== 'voice'))
+    lastOwn -= 1;
+  const sessionId = await resumableSession(row.threadId, history.slice(0, lastOwn + 1), agent.id);
   const attachments = (question?.attachments as ChatAttachment[] | null) ?? [];
   const spoken = question?.via === 'voice';
   const text = questionText(question?.content ?? '', attachments);
@@ -1109,7 +1115,9 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
       }),
     })
     .where(eq(agentChatMessage.id, row.id));
-  const earlier = sessionId ? [] : history.slice(-agentChatConfig.historyMessages());
+  const earlier = sessionId
+    ? history.slice(lastOwn + 1)
+    : history.slice(-agentChatConfig.historyMessages());
   const asked = spoken ? spokenQuestion(text) : text;
   return {
     id: row.id,
@@ -1308,8 +1316,15 @@ async function validateChatSettings(
 function frameChatPrompt(history: BranchTurn[], question: string, agentId: number): string {
   const lines = ['Earlier in this conversation:', ''];
   for (const turn of history) {
+    // An answer Helena's voice reply gave in the agent's name (modules/voice/reply.ts).
     const speaker =
-      turn.role === 'user' ? 'Person' : turn.agentId === agentId ? 'You' : turn.agentName;
+      turn.role === 'user'
+        ? 'Person'
+        : turn.via === 'voice'
+          ? 'Your quick voice reply'
+          : turn.agentId === agentId
+            ? 'You'
+            : turn.agentName;
     lines.push(
       `${speaker}: ${questionText(turn.content, turn.attachments as ChatAttachment[] | null)}`,
       '',

@@ -16,6 +16,11 @@
 //                 read aloud, then it listens again; the phases seen are printed.
 //   bargein       (on its own, with a WAV holding a second sentence ~7 s after the first, and an
 //                 agent that answers within that time) the second sentence interrupts the reading.
+//   timing        (hub/voice-2) runs --turns conversation turns (Chrome loops the WAV, so the
+//                 sentence comes again) and prints where each turn's time went: the pause, the
+//                 transcription, the answer's first words, the first sound — read from the
+//                 conversation line's `data-voice-timings`. `--max-total <ms>` fails the step
+//                 when the median turn is slower.
 //
 // The WAV should hold a short sentence after ~1.5 s of silence and then long silence (Chrome
 // loops the file): e.g. `say -v Anna "Hallo Home, wie spät ist es?"` padded. Exit code 0 when
@@ -228,7 +233,7 @@ if (STEPS.includes('insecure')) {
   });
 }
 
-if (['dictation', 'conversation', 'bargein'].some((name) => STEPS.includes(name))) {
+if (['dictation', 'conversation', 'bargein', 'timing'].some((name) => STEPS.includes(name))) {
   const page = await launch({ secure: true });
   try {
     await page.open();
@@ -326,6 +331,41 @@ if (['dictation', 'conversation', 'bargein'].some((name) => STEPS.includes(name)
         const story = timeline.map((entry) => `${entry.sent}:${entry.phase}`).join(' → ');
         if (!interrupted) throw new Error(`the reading was not interrupted: ${story}`);
         return story;
+      });
+    }
+    if (STEPS.includes('timing')) {
+      await step('conversation turns are timed', async () => {
+        const turns = Number(args.turns ?? 3);
+        const maxTotal = args['max-total'] ? Number(args['max-total']) : null;
+        if (!(await page.clickButton('Gespräch starten|Start a conversation')))
+          throw new Error('no conversation button');
+        const seen = [];
+        let last = '';
+        const until = Date.now() + Number(args['timing-ms'] ?? 120_000);
+        while (Date.now() < until && seen.length < turns) {
+          const value = await page
+            .evaluate(`document.querySelector('[data-voice-timings]')?.dataset.voiceTimings ?? ''`)
+            .catch(() => '');
+          if (value && value !== last) {
+            last = value;
+            seen.push(JSON.parse(value));
+            console.log('  turn', seen.length, value);
+          }
+          await sleep(100);
+        }
+        await page.shot('timing');
+        await page.clickButton('Gespräch beenden|End the conversation');
+        if (seen.length === 0) throw new Error('no turn was timed');
+        const median = (key) => {
+          const sorted = seen.map((turn) => turn[key]).sort((a, b) => a - b);
+          return sorted[Math.floor(sorted.length / 2)];
+        };
+        const summary = Object.fromEntries(
+          ['pauseMs', 'transcribeMs', 'answerMs', 'voiceMs', 'totalMs'].map((key) => [key, median(key)]),
+        );
+        if (maxTotal !== null && summary.totalMs > maxTotal)
+          throw new Error(`median turn ${summary.totalMs} ms > ${maxTotal} ms: ${JSON.stringify(summary)}`);
+        return `${seen.length} turns, median ${JSON.stringify(summary)}`;
       });
     }
   } finally {

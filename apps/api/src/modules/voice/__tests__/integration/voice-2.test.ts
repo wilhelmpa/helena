@@ -448,6 +448,43 @@ describe('the voice reply', () => {
     expect(claimed!.model).not.toBe('helena-local/Qwen3.6-35B-A3B-GGUF');
   });
 
+  it('keeps the agent’s session, and tells it what the voice reply said meanwhile', async () => {
+    const { asOwner, agent, asAgent } = await setup();
+    await switchOn(asOwner);
+    const typed = await chatOf(asOwner, agent.id).chat.post({ prompt: 'Guten Morgen' });
+    const threadId = typed.data!.threadId;
+    const first = (await asAgent['agent-chats'].claim.post()).data!.message!;
+    await asAgent['agent-chats']({ messageId: first.id }).events.post({
+      events: [{ type: 'TEXT_MESSAGE_CONTENT', messageId: 'm', delta: 'Guten Morgen!' }],
+      sessionId: 'session-1',
+    });
+    await asAgent['agent-chats']({ messageId: first.id }).result.post({ status: 'success' });
+
+    await chatOf(asOwner, agent.id).chat.post({
+      prompt: 'Hallo, hörst du mich?',
+      threadId,
+      via: 'voice',
+    });
+    const thread = chatOf(asOwner, agent.id).threads({ threadId });
+    await until(
+      async () => (await thread.messages.get()).data!.items,
+      (list) => list.filter((item) => item.via === 'voice' && item.role === 'assistant').length === 1,
+    );
+    await chatOf(asOwner, agent.id).chat.post({
+      prompt: 'Wie viele Aufgaben hat Verve?',
+      threadId,
+      via: 'voice',
+    });
+    const claimed = await until(
+      async () => (await asAgent['agent-chats'].claim.post()).data!.message,
+      (message) => message !== null,
+    );
+    expect(claimed!.sessionId).toBe('session-1');
+    expect(claimed!.prompt).toContain('Person: Hallo, hörst du mich?');
+    expect(claimed!.prompt).toContain('Ja, ich höre dich gut.');
+    expect(claimed!.prompt).toEndWith('Wie viele Aufgaben hat Verve?');
+  });
+
   it('leaves typed questions and switched-off classes alone', async () => {
     const { asOwner, agent, asAgent } = await setup();
     await chatOf(asOwner, agent.id).chat.post({ prompt: 'Hallo, hörst du mich?', via: 'voice' });

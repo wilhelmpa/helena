@@ -46,7 +46,7 @@ import {
 // every local class it can only be switched on once its eval (reply-eval.ts) passed.
 
 // The first words must come this soon, or the agent answers after all.
-const FIRST_TOKEN_MS = 3_000;
+const FIRST_TOKEN_MS = 2_000;
 const TOTAL_MS = 20_000;
 // Written to the chat in steps like a runner's (packages/runner chat.ts).
 const FLUSH_MS = 120;
