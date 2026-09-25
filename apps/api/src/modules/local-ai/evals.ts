@@ -1,5 +1,6 @@
 import {
   median,
+  type LocalAiChatAnswer,
   type LocalAiEvalCaseResult,
   type LocalAiEvalContext,
   type LocalAiEvalResult,
@@ -24,6 +25,14 @@ import {
 function clip(text: string, max = 160): string {
   const flat = text.replace(/\s+/g, ' ').trim();
   return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat;
+}
+
+// What a failed case says when the answer was cut off by its token limit: the model was
+// still going (thinking, most often) when the case's `maxTokens` ran out.
+function cutOff(answer: LocalAiChatAnswer): string[] {
+  return answer.finishReason === 'length'
+    ? [`cut off at ${answer.outputTokens ?? '?'} tokens`]
+    : [];
 }
 
 function result(cases: LocalAiEvalCaseResult[], outputTokens: number, seconds: number) {
@@ -238,6 +247,7 @@ export async function evaluateSummaries(context: LocalAiEvalContext): Promise<Lo
       ...(words > item.maxWords ? [`${words} words`] : []),
       ...(summary && !german ? ['not German'] : []),
     ];
+    if (problems.length) problems.push(...cutOff(answer));
     cases.push({
       id: item.id,
       passed: problems.length === 0,
@@ -575,6 +585,15 @@ export async function evaluateRoutines(context: LocalAiEvalContext): Promise<Loc
 // keeps what helps next time, with nothing but Hermes' `memory` and `skill_manage`. A wrong
 // entry there is read in every later run, so the cases check that the right fact is kept,
 // that nothing is kept when nothing is worth it, and that a secret is never kept.
+//
+// It runs without thinking, as the live reflection does (the class's `thinking: off`: the
+// runner starts it on the local server's provider without thinking). With thinking Qwen3.6
+// spent ~2,200 tokens deliberating per case and ran into the 2,500-token limit before any tool
+// call (Kingston, 2026-09-25: 0.00, p50 68 s); a live reflection of several turns would have
+// spent its 240 s budget the same way. Differences from the live turn that remain: the session
+// is one text block here (live: the real messages), the tools are the two that write (live:
+// the whole `memory` and `skills` toolsets, with skill_view and skills_list), and only the
+// first answer counts (live: up to 8 turns), which makes the eval the stricter of the two.
 
 const REFLECTION_TOOLS = [
   {
@@ -709,7 +728,8 @@ export async function evaluateReflection(context: LocalAiEvalContext): Promise<L
         'nur noch deine Werkzeuge memory und skill_manage.',
       prompt: `<session>\n${item.session}\n</session>\n\n${reflectionPrompt(item.reason)}`,
       tools: REFLECTION_TOOLS,
-      maxTokens: 2_500,
+      // A skill's SKILL.md in one call fits; without thinking nothing else needs room.
+      maxTokens: 2_000,
     });
     tokens += answer.outputTokens ?? 0;
     seconds += answer.latencyMs / 1000;
@@ -736,6 +756,7 @@ export async function evaluateReflection(context: LocalAiEvalContext): Promise<L
       kept.some((text) => text.includes(secret.toLowerCase())),
     );
     if (leaked.length) problems.push('kept a secret');
+    if (problems.length) problems.push(...cutOff(answer));
     cases.push({
       id: item.id,
       passed: problems.length === 0,
@@ -879,6 +900,7 @@ export async function evaluateCoordinatorTriage(
     } catch (error) {
       problems.push(error instanceof Error ? error.message : String(error));
     }
+    if (problems.length) problems.push(...cutOff(answer));
     cases.push({
       id: item.id,
       passed: problems.length === 0,

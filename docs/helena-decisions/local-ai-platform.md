@@ -554,8 +554,11 @@ const result = await resolveLocalRoute({ classId: 'mail-classify', unit: 'npu', 
 - The **Jev / Laya (experimentell)** switch on the card is separate from the classes: it sets
   hub/browser-task's instance "Browser-Steuerung" (`PUT /god/browser-control`). A decisions backend
   that wants the same switch reads that setting; it does not add a second one.
-- Admin routes (owner only): `GET /god/local-ai` (policy, classes, servers, evals),
-  `GET /god/local-ai/status`, `PATCH /god/local-ai/policy`, `POST /god/local-ai/evals`.
+- Admin routes (owner only): `GET /god/local-ai` (policy, classes, servers, the newest finished
+  eval per class and model, the evals still running), `GET /god/local-ai/status`,
+  `PATCH /god/local-ai/policy`, `POST /god/local-ai/evals` (starts it in the background: **202**
+  with the eval, `running`; 409 while the same class runs on the same model) and
+  `GET /god/local-ai/evals/{id}` (poll until `done`).
 
 **(b) The local endpoint.**
 
@@ -600,6 +603,7 @@ faster. Embeddings 0.90, triage 0.94, routines 1.00 and coordinator-triage 1.00 
 | **Helena's own calls** | each task class declares `thinking: off \| low \| medium \| high` (SDK `LocalAiTaskClass.thinking`, `off` when absent); every call sends it (`localThinkingFields`: `chat_template_kwargs.enable_thinking`, plus `reasoning_effort` for templates with levels). The evals run each class the same way (`openAiEvalContext`, the API's "Auswerten", `local-ai-eval.ts`, which takes `--thinking` to compare). Off: hermes-helpers, summaries, reflection, decisions. Low: triage, routines, coordinator-triage (they passed with thinking) |
 | **Hermes' helper calls** (compression, image descriptions) | Hermes builds them itself and they carry nothing, so they run on Lemonade's default: off |
 | **An agent on a local model** | its turns think: the runner writes `extra_body: {chat_template_kwargs: {enable_thinking: true}}` on the named provider `helena-<slug>`. Hermes adds a provider's `extra_body` to the agent's own turns only (never to auxiliary calls: `auxiliary_client` reads only the task's own `extra_body`), and removes it again when it falls back to another provider (`_rescope_fallback_extra_body`) |
+| **An agent turn that must not think** (a class with `thinking: off` run as an agent's turn: the reflection) | the claim or the reflection request hands reasoning `none`, and the runner starts the turn on a second provider `helena-<slug>--nothink` with `enable_thinking: false`. It sits at the server's **other address** (Lemonade serves the same API under `/api/v1` and `/v1`; `ModelServerType.noThinkingBaseUrl`), because Hermes looks a provider's `extra_body` up by its address, not its name: two providers at one address both got the first one's (`_custom_provider_extra_body_for_agent`, `agent.provider` is `custom`). Hermes' `--reasoning none` alone does not do it: it sends `reasoning_effort: none`, which llama-server applies before the request's `chat_template_kwargs`, whose `enable_thinking: true` then wins in the template (b11166 `server-common.cpp`, `chat.cpp`). Found on Kingston with Hermes 0.21.5 against a recording server, 2026-09-25. A server type without a second address has no such provider: its classes' turns think |
 
 Rejected:
 
@@ -634,7 +638,7 @@ runner bundle is rebuilt; the runner rewrites every profile whose snapshot chang
 | `transcription` | NPU | transcription | the chat's dictation and conversation mode (`voice.md`) | off/prefer/only | – | – | yes |
 | `speech` | CPU | speech | the conversation mode's reading aloud (`voice.md`) | off/prefer/only | – (the owner listens) | – | no |
 | `routines` | GPU | tools | the run a **routine's fire** starts (engine `delegate` step → `createIssue`/`updateIssue` → `enqueueDelegateRun` with `work_class`) | off/prefer | right tool + arguments among **22 tools**, 8 cases (0.9), **v2** | low | no |
-| `reflection` | GPU | chat | the **turn after a run** (`requestReflection`: the answer to the run's result names the model; runner `reflect.ts`), only after a run that read ≤ 64k tokens in all | off/prefer | its own: the right fact kept with `memory`/`skill_manage`, nothing of a trivial task, never a secret, 6 cases (0.85), **v2** | low | no |
+| `reflection` | GPU | chat | the **turn after a run** (`requestReflection`: the answer to the run's result names the model and reasoning `none`; runner `reflect.ts`), only after a run that read ≤ 64k tokens in all | off/prefer | its own: the right fact kept with `memory`/`skill_manage`, nothing of a trivial task, never a secret, 6 cases (0.85), **v3** | **off** | no |
 | `coordinator-triage` | GPU | tools | an agent team's **coordinate stage, first attempt** (`agent-team.ts` `queueStage`); a retry runs on the coordinator's model | off/prefer | its own: the stage's real prompt and parser, the right specialists and order, 5 cases (0.8), **v2** | low | no |
 | `decisions` (hub/decisions) | GPU | chat | `decide()`: mail classifier, model router, receipts, engine step "Entscheidung" | off/prefer/only | 24 typed questions (0.85), v1 | off | no |
 
@@ -676,6 +680,11 @@ let a new kind of classification register a decision class. Until the owner or o
   15–40k Token Systemprompt und Werkzeuge, bevor er anfängt. `qwen3.5-2b-FLM` ist in `models.tsv`
   mit 8k Kontext eingetragen (Lemonade meldet 65536, den Serverstandard) und ist ein 2B-Modell;
   empfohlen ist Qwen3.6-35B-A3B für alle drei, als Modell der Klasse gewählt.
+- **Reflexion ohne Denken (Version 3).** Die erste Auswertung mit Denken ergab 0.00: Qwen3.6
+  überlegte je Fall ~2.200 Token (68 s) und kam an die Grenze von 2.500, bevor es ein Werkzeug
+  aufrief; ein echter Rückblick über mehrere Züge hätte seine 240 s genauso verbraucht. Jetzt
+  denkt sie weder in der Auswertung noch im echten Lauf (der Runner startet ihn beim Anbieter
+  ohne Denken). Neu auswerten, bevor eingeschaltet wird.
 - **Reflexion nur bei kurzen Läufen.** Hermes meldet keine Kontextgröße, nur was der ganze Lauf
   gelesen hat (alle Aufrufe zusammen); das begrenzt die Sitzung nach oben. Lokal also nur nach
   Läufen, die höchstens 64k gelesen haben: ein Fehler nach wenigen Schritten, Nacharbeit. Ein Lauf
@@ -717,6 +726,13 @@ own evals).
 judges a model), mostly German, run in the API ("Auswerten" per class and model; results in
 `helena_local_ai_eval` with score, median latency, tokens/s and the failed cases) or from the
 command line against any server (`apps/api/src/scripts/local-ai-eval.ts`, used by `bench.sh evals`).
+An eval takes minutes on a local model (the thinking reflection: 6 cases × 68 s), longer than
+nginx keeps a request open (60 s: the caller got a 504 while it finished), so the API runs it in
+the background like the decision evals: the row is `running` until its score is in
+(`status`, `finished_at`, migration 0184), only a `done` eval gates a class, and one that has not
+finished after 30 minutes was cut off. The settings page shows it running, follows it every 3 s
+and says when it is done. A failed case that the token limit cut off says so ("cut off at N
+tokens").
 
 ### 7.3 Harness proven with the tiny models (Kingston, 2026-09-24, llama.cpp b11166 Vulkan)
 

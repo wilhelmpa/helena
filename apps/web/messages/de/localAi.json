@@ -54,6 +54,8 @@
     "speed": "{tps} Tok./s",
     "none": "Noch nicht ausgewertet",
     "run": "Auswerten",
+    "started": "Die Auswertung läuft im Hintergrund, das dauert einige Minuten; das Ergebnis erscheint hier.",
+    "running": "Auswertung läuft auf {model} …",
     "done": "Auswertung fertig: {score} %"
   },
   "servers": {

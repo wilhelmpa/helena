@@ -96,7 +96,7 @@ export async function answer(
   if (stop.signal.aborted) return;
   const spent = spend.value({
     model: message.model,
-    provider: modelProvider(config, message.model) ?? null,
+    provider: modelProvider(config, message.model, message.thinkingLevel) ?? null,
   });
   const uses = logins.uses();
   if (uses.length > 0) {
@@ -107,7 +107,7 @@ export async function answer(
     {
       model: message.model,
       reasoning: message.thinkingLevel,
-      provider: modelProvider(config, message.model) ?? null,
+      provider: modelProvider(config, message.model, message.thinkingLevel) ?? null,
     },
     outcome.sessionId ?? stream.startedSession() ?? message.sessionId ?? undefined,
     stream.model(),

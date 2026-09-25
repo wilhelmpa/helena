@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test';
 import { createServer, type Server } from 'node:http';
 import { authedApi, type Api } from '#tests/helpers/app';
+import { evaluateLocalAi } from '#tests/helpers/local-ai';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
@@ -735,11 +736,11 @@ describe('decisions through the local AI', () => {
     expect(asked).toHaveLength(0);
 
     // Lokale KI evaluates its class, then takes decisions.
-    const evaluated = await asOwner.god['local-ai'].evals.post({
+    const evaluated = await evaluateLocalAi(asOwner, {
       classId: DECISIONS_LOCAL_AI_CLASS.id,
       modelId: 'helena-local/Qwen3.6-35B-A3B-GGUF',
     });
-    expect(evaluated.data).toMatchObject({ passed: true, score: 1 });
+    expect(evaluated).toMatchObject({ passed: true, score: 1 });
     await asOwner.god['local-ai'].policy.patch({ enabled: true });
     const on = await asOwner.god['local-ai'].policy.patch({
       classes: { [DECISIONS_LOCAL_AI_CLASS.id]: { mode: 'prefer' } },

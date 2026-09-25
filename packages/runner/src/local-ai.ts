@@ -1,4 +1,5 @@
 import {
+  localProviderWithoutThinking,
   parseLocalModelId,
   type RuntimeDefaults,
   type RuntimeLocalAi,
@@ -90,15 +91,15 @@ export function hermesLocalAiConfig(localAi: RuntimeLocalAi | null | undefined) 
   if (!localAi || localAi.servers.length === 0) return {};
   const providers: Record<string, Record<string, unknown>> = {};
   for (const server of localAi.servers) {
-    providers[server.provider] = {
-      base_url: server.baseUrl,
+    const provider = (baseUrl: string, thinking: boolean) => ({
+      base_url: baseUrl,
       ...(server.keyEnv ? { key_env: server.keyEnv } : {}),
       transport: 'chat_completions',
       context_length: server.contextLength,
       // The list comes from Helena; Hermes need not ask the server at every start.
       discover_models: false,
-      // The agent's own turns think (see above); llama-server merges this over its default.
-      extra_body: { chat_template_kwargs: { enable_thinking: true } },
+      // Whether the turns think (see above); llama-server merges this over its default.
+      extra_body: { chat_template_kwargs: { enable_thinking: thinking } },
       ...LOCAL_TIMEOUTS,
       models: Object.fromEntries(
         server.models.map((model) => [
@@ -109,7 +110,20 @@ export function hermesLocalAiConfig(localAi: RuntimeLocalAi | null | undefined) 
           },
         ]),
       ),
-    };
+    });
+    // The agent's own turns think.
+    providers[server.provider] = provider(server.baseUrl, true);
+    // A run whose reasoning is `none` (a kind of work whose eval ran without thinking: the
+    // reflection) starts on this one. Hermes finds a provider's `extra_body` by its address, not
+    // its name (two providers at one address both get the first one's), so it has an address of
+    // its own: the same server under its other path (found on Kingston with Hermes 0.21.5
+    // against a recording server, 2026-09-25).
+    if (server.noThinkingBaseUrl && server.noThinkingBaseUrl !== server.baseUrl) {
+      providers[localProviderWithoutThinking(server.provider)] = provider(
+        server.noThinkingBaseUrl,
+        false,
+      );
+    }
   }
   const auxiliary: Record<string, Record<string, unknown>> = {};
   for (const helper of localAi.helpers) {
@@ -133,12 +147,19 @@ registerProfileContribution({
 });
 
 // Where a model id sends a run: a local model id names its provider and the model as its
-// server knows it; any other id is left to the catalog.
+// server knows it; any other id is left to the catalog. A run whose reasoning is `none` goes to
+// the server's provider without thinking (Helena hands `none` only where the server has one).
 export function localRoute(
   model: string | null | undefined,
+  thinkingLevel?: string | null,
 ): { provider: string; model: string } | null {
   const parsed = parseLocalModelId(model);
-  return parsed ? { provider: parsed.provider, model: parsed.model } : null;
+  if (!parsed) return null;
+  return {
+    provider:
+      thinkingLevel === 'none' ? localProviderWithoutThinking(parsed.provider) : parsed.provider,
+    model: parsed.model,
+  };
 }
 
 // The variables the local servers' keys reach Hermes in, for the servers the snapshot names.

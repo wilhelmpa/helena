@@ -198,7 +198,7 @@ export async function perform(
     {
       model: run.model,
       reasoning: run.thinkingLevel,
-      provider: modelProvider(config, run.model) ?? null,
+      provider: modelProvider(config, run.model, run.thinkingLevel) ?? null,
     },
     sessionId,
     usage.model(),
@@ -208,7 +208,10 @@ export async function perform(
     // The answer itself, where the command prints an event stream (Claude Code, Codex).
     output: answer.text() ?? outcome.output,
     usage: outcome.usage ?? usage.value(),
-    spend: spend.value({ model: run.model, provider: modelProvider(config, run.model) ?? null }),
+    spend: spend.value({
+      model: run.model,
+      provider: modelProvider(config, run.model, run.thinkingLevel) ?? null,
+    }),
     ...(sessionId && { sessionId }),
     ...(runtime && { runtime }),
   };

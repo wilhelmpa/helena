@@ -180,6 +180,31 @@ describe('reflection', () => {
     });
   });
 
+  it('runs without thinking where Helena says so: the provider without thinking', async () => {
+    const { dir, config, client } = await setup();
+
+    const report = await reflect(
+      config,
+      client,
+      { ...run, thinkingLevel: 'high' },
+      'sess-1',
+      {
+        ...request,
+        runBudgetSeconds: 240,
+        model: 'helena-local/Qwen3.6-35B-A3B-MTP-GGUF',
+        thinkingLevel: 'none',
+      },
+      hermes,
+    );
+
+    const argv = (await readFile(join(dir, 'argv'), 'utf8')).trim().split('\n');
+    const flag = (name: string) => argv[argv.indexOf(name) + 1];
+    expect(flag('--provider')).toBe('helena-local--nothink');
+    expect(flag('--model')).toBe('Qwen3.6-35B-A3B-MTP-GGUF');
+    expect(flag('--reasoning')).toBe('none');
+    expect(report.spend).toMatchObject({ provider: 'helena-local--nothink' });
+  });
+
   it('reports a failure without starting Hermes when the agent has neither tool', async () => {
     const { dir, config, client, reports } = await setup();
 

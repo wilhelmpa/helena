@@ -5,10 +5,11 @@ import { apiKeyApi, authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent, teamOf } from '#tests/helpers/agents';
+import { evaluateLocalAi } from '#tests/helpers/local-ai';
 import { costOfUsage } from '#modules/model-prices/service';
 import { host } from '#shared/helena';
 import { LOCAL_AI_PLUGIN_ID, LOCAL_AI_PROVIDES, localAiPlugin } from '../../plugin';
-import { checkAllServers, forgetServerAnswers, localAiStatus } from '../../service';
+import { checkAllServers, forgetServerAnswers, localAiStatus, settleEvals } from '../../service';
 import { COMPRESSION_CASES } from '../../evals';
 
 // Local AI end to end against a fake Lemonade (docs/helena-decisions/local-ai-platform.md): the
@@ -20,6 +21,8 @@ let fake: ReturnType<typeof Bun.serve>;
 const requests: { path: string; auth: string | null }[] = [];
 // Set while the fake Lemonade is "stopped": it answers nothing but 503.
 let serverDown = false;
+// Held while set: each chat answer waits for it (an eval that takes its time).
+let answerGate: Promise<void> | null = null;
 // The chat-completions bodies the evals sent.
 const chatBodies: Record<string, unknown>[] = [];
 
@@ -72,6 +75,7 @@ beforeAll(async () => {
         case '/api/v1/models':
           return Response.json({ object: 'list', data: MODELS });
         case '/api/v1/chat/completions': {
+          if (answerGate) await answerGate;
           const body = (await request.json()) as Parameters<typeof chatAnswer>[0];
           chatBodies.push(body as unknown as Record<string, unknown>);
           return Response.json(chatAnswer(body));
@@ -162,11 +166,12 @@ describe('local AI', () => {
     });
     expect(refused.status).toBe(409);
 
-    const evaluated = await asOwner.god['local-ai'].evals.post({
+    const evaluated = await evaluateLocalAi(asOwner, {
       classId: 'hermes-helpers',
       modelId: 'helena-local/Qwen3.6-35B-A3B-GGUF',
     });
-    expect(evaluated.data).toMatchObject({ passed: true, score: 1, cases: 3 });
+    expect(evaluated).toMatchObject({ status: 'done', passed: true, score: 1, cases: 3 });
+    expect(evaluated.finishedAt).not.toBeNull();
     // The helper class runs without thinking, and its eval asks the model for exactly that.
     expect(helpers.thinking).toBe('off');
     expect(chatBodies.length).toBeGreaterThan(0);
@@ -195,6 +200,8 @@ describe('local AI', () => {
       {
         provider: 'helena-local',
         baseUrl: `http://127.0.0.1:${fake.port}/api/v1`,
+        // Lemonade's other path: the provider of the turns without thinking.
+        noThinkingBaseUrl: `http://127.0.0.1:${fake.port}/v1`,
         keyEnv: 'HELENA_MODEL_SERVER_KEY_LOCAL',
         contextLength: 65536,
         models: [{ id: 'Qwen3.6-35B-A3B-GGUF', contextLength: null, vision: true }],
@@ -218,19 +225,19 @@ describe('local AI', () => {
     // The model changes (an update) and fails its eval again: the class stays switched on, but
     // Hermes' helpers go back to the agent's own model until a new eval passes.
     answerWrong = true;
-    const failed = await asOwner.god['local-ai'].evals.post({
+    const failed = await evaluateLocalAi(asOwner, {
       classId: 'hermes-helpers',
       modelId: 'helena-local/Qwen3.6-35B-A3B-GGUF',
     });
     answerWrong = false;
-    expect(failed.data).toMatchObject({ passed: false });
+    expect(failed).toMatchObject({ passed: false });
     const gated = (await asOwner.god['local-ai'].get()).data!;
     expect(gated.classes.find((c) => c.id === 'hermes-helpers')).toMatchObject({
       mode: 'prefer',
       blocker: 'eval-failed',
     });
     expect((await asRunner['agent-runtime'].policy.get()).data!.localAi?.helpers).toEqual([]);
-    await asOwner.god['local-ai'].evals.post({
+    await evaluateLocalAi(asOwner, {
       classId: 'hermes-helpers',
       modelId: 'helena-local/Qwen3.6-35B-A3B-GGUF',
     });
@@ -310,6 +317,40 @@ describe('local AI', () => {
     } finally {
       serverDown = false;
       forgetServerAnswers();
+    }
+  });
+
+  it('runs an eval in the background and answers at once, one per class and model', async () => {
+    const { asOwner } = await setup();
+    let release!: () => void;
+    answerGate = new Promise((resolve) => (release = resolve));
+    try {
+      const body = { classId: 'hermes-helpers', modelId: 'helena-local/Qwen3.6-35B-A3B-GGUF' };
+      const started = await asOwner.god['local-ai'].evals.post(body);
+      expect(started.status).toBe(202);
+      expect(started.data).toMatchObject({ status: 'running', score: 0, finishedAt: null });
+      const id = started.data!.id;
+      expect((await asOwner.god['local-ai'].evals({ id }).get()).data?.status).toBe('running');
+      const settings = (await asOwner.god['local-ai'].get()).data!;
+      expect(settings.runningEvals.map((e) => e.id)).toEqual([id]);
+      // A running eval gates nothing: the class still needs its eval.
+      expect(settings.evals).toEqual([]);
+      expect(settings.classes.find((c) => c.id === 'hermes-helpers')?.blocker).toBe('eval-missing');
+      expect((await asOwner.god['local-ai'].evals.post(body)).status).toBe(409);
+      release();
+      await settleEvals();
+      expect((await asOwner.god['local-ai'].evals({ id }).get()).data).toMatchObject({
+        status: 'done',
+        passed: true,
+        score: 1,
+      });
+      const after = (await asOwner.god['local-ai'].get()).data!;
+      expect(after.runningEvals).toEqual([]);
+      expect(after.evals.map((e) => e.id)).toEqual([id]);
+      expect((await asOwner.god['local-ai'].evals({ id: 999_999 }).get()).status).toBe(404);
+    } finally {
+      answerGate = null;
+      release?.();
     }
   });
 
@@ -595,7 +636,13 @@ describe('local AI takes kinds of work', () => {
   it('reflects on the local model after a small session, on the run model after a large one', async () => {
     const { asOwner, asRunner, agent, server } = await setup();
     await asOwner.god['local-ai'].policy.patch({ enabled: true });
+    // Version 2 thought, and failed live (every case ran out of tokens): it no longer counts.
     await passed(server.id, 'reflection', 2);
+    expect(
+      (await asOwner.god['local-ai'].policy.patch({ classes: { reflection: { mode: 'prefer' } } }))
+        .status,
+    ).toBe(409);
+    await passed(server.id, 'reflection', 3);
     await asOwner.god['local-ai'].policy.patch({ classes: { reflection: { mode: 'prefer' } } });
     // A failed run after a tool call asks for a reflection; `read` is what it read in all.
     const finish = async (read: number | null) => {
@@ -611,11 +658,13 @@ describe('local AI takes kinds of work', () => {
       return { id, reflection: res.data!.reflection };
     };
     const small = await finish(41_000);
+    // Without thinking, as its eval ran: on the server's provider without thinking.
     expect(small.reflection).toEqual({
       prompt: expect.any(String),
       maxTurns: 8,
       runBudgetSeconds: 240,
       model: LOCAL,
+      thinkingLevel: 'none',
     });
     const teamId = await teamOf(asOwner, 'LAI');
     const view = await asOwner

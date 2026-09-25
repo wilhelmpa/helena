@@ -453,8 +453,9 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
       : null;
   if (local?.model) {
     model = local.model;
-    // The local provider says how its turns think (runner local-ai.ts extra_body).
-    thinkingLevel = null;
+    // `none` for a class that does not think (the server's provider without thinking), else
+    // null: the local provider's turns think (runner local-ai.ts extra_body).
+    thinkingLevel = local.thinkingLevel;
   } else if (local?.fallback) {
     fallback = local.fallback;
   }
@@ -654,6 +655,8 @@ export interface ReflectionRequest {
   runBudgetSeconds: number;
   // A local model Lokale KI hands the reflection; absent: the run's model.
   model?: string | null;
+  // Its reasoning with that model: `none` runs it without thinking.
+  thinkingLevel?: string | null;
 }
 
 export interface RunReflection {
@@ -712,10 +715,11 @@ async function requestReflection(
   // what the whole run read, every call summed, which bounds the session from above; a run
   // of unknown size stays on its own model.
   const read = report.usage?.inputTokens ?? null;
-  const local =
+  const choice =
     read !== null && read <= LOCAL_REFLECTION_MAX_READ
-      ? (await classModelNow(WORK_CLASS.reflection)).model
+      ? await classModelNow(WORK_CLASS.reflection)
       : null;
+  const local = choice?.model ?? null;
   const reflection: RunReflection = {
     status: 'pending',
     reason,
@@ -728,7 +732,12 @@ async function requestReflection(
   };
   await db.update(agentRun).set({ reflection }).where(eq(agentRun.id, runId));
   return local
-    ? { prompt: reflectionPrompt(reason), ...LOCAL_REFLECTION_LIMITS, model: local }
+    ? {
+        prompt: reflectionPrompt(reason),
+        ...LOCAL_REFLECTION_LIMITS,
+        model: local,
+        thinkingLevel: choice?.thinkingLevel ?? null,
+      }
     : { prompt: reflectionPrompt(reason), ...REFLECTION_LIMITS };
 }
 

@@ -13,6 +13,7 @@ import {
   ModelServer,
   ServerKeysResponse,
   evalBody,
+  evalParams,
   policyBody,
   serverBody,
   serverParams,
@@ -20,11 +21,12 @@ import {
 import {
   createServer,
   deleteServer,
+  evalById,
   localAiSettings,
   localAiStatus,
   refreshServer,
-  runEval,
   runtimeServerKeys,
+  startEval,
   updatePolicy,
   updateServer,
 } from './service';
@@ -157,18 +159,40 @@ export const localAiRoutes = new Elysia({
 
   .post(
     '/god/local-ai/evals',
-    ({ user, body }) => {
+    ({ user, body, set }) => {
       const owner = requireGod(user);
-      return runEval({ ...body, userId: owner.id });
+      set.status = 202;
+      return startEval({ ...body, userId: owner.id });
     },
     {
       body: evalBody,
-      response: { 200: EvalResult, ...errors(400, 401, 403, 404) },
+      response: { 202: EvalResult, ...errors(400, 401, 403, 404, 409) },
       detail: {
-        summary: 'Run the eval of a task class on a local model',
+        summary: 'Start the eval of a task class on a local model',
         description:
           "A fixed set of cases with answers a program checks (the right tool and arguments, the text's " +
-          'facts kept, the right label, the right document found). Takes up to a few minutes.',
+          'facts kept, the right label, the right document found). It runs in the background ' +
+          '(minutes on a local model): the answer is the eval, `running`; read it again with ' +
+          'GET /god/local-ai/evals/{id} until it is `done`. 409 while the same class runs on the ' +
+          'same model.',
+      },
+    },
+  )
+
+  .get(
+    '/god/local-ai/evals/:id',
+    async ({ user, params }) => {
+      requireGod(user);
+      const found = await evalById(params.id);
+      if (!found) throw new HttpError(404, 'No such eval');
+      return found;
+    },
+    {
+      params: evalParams,
+      response: { 200: EvalResult, ...errors(401, 403, 404) },
+      detail: {
+        summary: 'Read an eval',
+        description: 'Its status, and once it is `done` its score, latency and failed cases.',
       },
     },
   )

@@ -160,4 +160,36 @@ describe('local AI in the runner', () => {
       model: 'Qwen/Qwen3-8B',
     });
   });
+
+  it('writes a provider without thinking at the other address, and sends `none` there', () => {
+    const quiet: RuntimeLocalAi = {
+      ...LOCAL,
+      servers: [{ ...LOCAL.servers[0]!, noThinkingBaseUrl: 'http://127.0.0.1:13305/v1' }],
+    };
+    const config = hermesLocalAiConfig(quiet) as {
+      providers: Record<string, { base_url: string; extra_body: unknown; key_env: string }>;
+    };
+    expect(Object.keys(config.providers)).toEqual(['helena-local', 'helena-local--nothink']);
+    // Hermes looks a provider's extra_body up by its address: each has its own.
+    expect(config.providers['helena-local']).toMatchObject({
+      base_url: 'http://127.0.0.1:13305/api/v1',
+      extra_body: { chat_template_kwargs: { enable_thinking: true } },
+    });
+    expect(config.providers['helena-local--nothink']).toMatchObject({
+      base_url: 'http://127.0.0.1:13305/v1',
+      key_env: 'HELENA_MODEL_SERVER_KEY_LOCAL',
+      extra_body: { chat_template_kwargs: { enable_thinking: false } },
+    });
+    // A server without a second address has one provider: its turns think.
+    expect(Object.keys((hermesLocalAiConfig(LOCAL) as { providers: object }).providers)).toEqual([
+      'helena-local',
+    ]);
+    const runner = { provider: 'openai-codex', models: [] } as unknown as RunnerConfig;
+    expect(modelProvider(runner, 'helena-local/Qwen3.6-35B-A3B-GGUF', 'none')).toBe(
+      'helena-local--nothink',
+    );
+    expect(modelProvider(runner, 'helena-local/Qwen3.6-35B-A3B-GGUF', 'low')).toBe('helena-local');
+    expect(modelProvider(runner, 'gpt-5.6-luna', 'none')).toBe('openai-codex');
+    expect(runtimeModel('helena-local/Qwen3.6-35B-A3B-GGUF')).toBe('Qwen3.6-35B-A3B-GGUF');
+  });
 });

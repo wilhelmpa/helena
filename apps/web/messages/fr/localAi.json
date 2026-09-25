@@ -54,6 +54,8 @@
     "speed": "{tps} jetons/s",
     "none": "Pas encore évalué",
     "run": "Évaluer",
+    "started": "L’évaluation tourne en arrière-plan et prend quelques minutes ; le résultat s’affichera ici.",
+    "running": "Évaluation en cours sur {model} …",
     "done": "Évaluation terminée : {score} %"
   },
   "servers": {

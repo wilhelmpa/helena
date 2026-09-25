@@ -209,10 +209,21 @@ export function lemonadeLoad(stats: unknown): ModelServerLoad | null {
   return Object.values(load).some((value) => value !== null) ? load : null;
 }
 
+// Lemonade serves its OpenAI-compatible API under /api/v1 and /v1 alike (its server registers
+// every route under both); the other one of the two is the address of the turns without
+// thinking (ModelServerType.noThinkingBaseUrl).
+export function lemonadeNoThinkingBaseUrl(baseUrl: string): string | null {
+  const base = baseUrl.replace(/\/+$/, '');
+  if (/\/api\/v1$/.test(base)) return base.replace(/\/api\/v1$/, '/v1');
+  if (/\/v1$/.test(base)) return base.replace(/\/v1$/, '/api/v1');
+  return null;
+}
+
 export const lemonadeServer: ModelServerType = {
   id: LEMONADE,
   label: { i18n: 'localAi.serverTypes.lemonade' },
   defaultBaseUrl: LEMONADE_DEFAULT_BASE_URL,
+  noThinkingBaseUrl: lemonadeNoThinkingBaseUrl,
   async models(context) {
     const [models, health] = await Promise.all([
       context.fetch('/models?show_all=true').then(json),

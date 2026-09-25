@@ -94,6 +94,9 @@ export interface LocalAiEval {
   id: number;
   classId: string;
   modelId: string;
+  // `running` while it asks its cases (minutes on a local model), `done` once its score is in,
+  // `stale` when it was cut off and never finished.
+  status: 'running' | 'done' | 'stale';
   score: number;
   threshold: number;
   passed: boolean;
@@ -103,7 +106,9 @@ export interface LocalAiEval {
   tokensPerSecond: number | null;
   error: string | null;
   evalVersion: number;
+  // When it started, and when its score came in.
   ranAt: string;
+  finishedAt: string | null;
 }
 
 export interface LocalAiSettings {
@@ -111,7 +116,10 @@ export interface LocalAiSettings {
   servers: ModelServer[];
   serverTypes: { id: string; label: LocalizedText; defaultBaseUrl: string | null }[];
   classes: LocalAiClass[];
+  // The newest finished eval of each class and model.
   evals: LocalAiEval[];
+  // The evals still running.
+  runningEvals: LocalAiEval[];
 }
 
 export interface LoadedModel {
@@ -199,8 +207,11 @@ export const deleteModelServer = (id: number) =>
 export const checkModelServer = (id: number) =>
   request<ModelServer>(`/god/local-ai/servers/${id}/check`, { method: 'POST' });
 
+// Starts the eval in the background: the answer is the eval, `running` (202).
 export const runLocalAiEval = (classId: string, modelId: string) =>
   request<LocalAiEval>('/god/local-ai/evals', {
     method: 'POST',
     body: JSON.stringify({ classId, modelId }),
   });
+
+export const getLocalAiEval = (id: number) => request<LocalAiEval>(`/god/local-ai/evals/${id}`);
