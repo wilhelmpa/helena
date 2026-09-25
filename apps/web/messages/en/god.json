@@ -448,7 +448,8 @@
       "browserTask": "Browser tasks",
       "decisions": "Decisions",
       "localAi": "Local AI",
-      "push": "Push notifications"
+      "push": "Push notifications",
+      "edge": "Access from outside"
     },
     "problems": {
       "external-off": "Loads once external plugins are switched on.",

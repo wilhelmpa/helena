@@ -70,7 +70,8 @@
     "totpConfirmFailed": "验证码未被接受。",
     "totpDisableFailed": "无法关闭身份验证器应用。",
     "minLength": "至少 {count} 个字符。",
-    "added": "添加于 {date}"
+    "added": "添加于 {date}",
+    "passkeysElsewhere": "通行密钥属于 {host}。在家庭网络中 Helena 会自动让你登录；请在 {host} 上添加新的通行密钥。"
   },
   "accounts": {
     "label": "关联账户",

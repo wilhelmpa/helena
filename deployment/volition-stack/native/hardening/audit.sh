@@ -45,6 +45,11 @@ fi
 # Settings that differ per installation (defaults are Kingston's).
 HELENA_DB=${HELENA_DB:-itsaplan}
 PUBLIC_HOST=${HELENA_PUBLIC_HOST:-helena.volition.one}
+# The home network's own name, served by nginx on the LAN (cloudflare/lan_https.py) with a
+# certificate from cloudflare/tls-setup.sh (certbot, lineage named after the host).
+HOME_HOST=${HELENA_HOME_HOST:-helena-home.volition.one}
+LETSENCRYPT=${HELENA_LETSENCRYPT_DIR:-/etc/letsencrypt}
+TUNNEL_USER=${HELENA_TUNNEL_USER:-helena-tunnel}
 TUNNEL_PORT=${HELENA_TUNNEL_PORT:-8090}
 PLAN_BACKUPS=${HELENA_PLAN_BACKUPS:-/var/lib/volition/plan/backups}
 SECRET_DIRS=${HELENA_SECRET_DIRS:-/etc/volition /etc/helena}
@@ -104,12 +109,33 @@ check_sudo() {
       "why=ops" "value=$OPS_USER" "problem=$problem"
   fi
 }
-# tests/sudo-model-selftest.sh runs this one check (in a private namespace with fakes).
-if [[ ${HELENA_AUDIT_ONLY:-} == auth.sudo ]]; then
-  [[ $is_root -eq 1 ]] && check_sudo || need_root auth.sudo auth medium
-  printf '%s\n' "${results[@]}"
-  exit 0
-fi
+# tunnel.acl (2026-09-25): the tunnel entry is for the tunnel user alone, and the ACL names
+# that user by uid. A firewall loaded before the user existed lets only root in: cloudflared
+# then gets "connection refused" and Cloudflare answers 502. hardening/apply.sh
+# firewall-uids adds the user (cloudflare/install.sh service runs it).
+check_tunnel_acl() { # check_tunnel_acl RULESET
+  local tunnel_uid
+  tunnel_uid=$(id -u "$TUNNEL_USER" 2>/dev/null || true)
+  if ! grep -q 'helena:acl-tunnel' <<<"$1"; then
+    record tunnel.acl tunnel high fail "every local user reaches the tunnel entry on $TUNNEL_PORT" "why=open"
+  elif [[ -n $tunnel_uid ]] && ! nft -j list set inet helena_hardening tunnel_uids 2>/dev/null \
+      | python3 -I -c 'import json,sys; u=int(sys.argv[1]); d=json.load(sys.stdin); sys.exit(0 if u in [e for i in d.get("nftables",[]) for e in i.get("set",{}).get("elem",[])] else 1)' "$tunnel_uid"; then
+    record tunnel.acl tunnel high fail "$TUNNEL_USER ($tunnel_uid) is not in tunnel_uids: cloudflared cannot reach the entry" "why=user" "user=$TUNNEL_USER"
+  else
+    record tunnel.acl tunnel high pass "port $TUNNEL_PORT only for the tunnel user ($TUNNEL_USER)"
+  fi
+}
+# The self-tests run one check each (in a private namespace with fakes).
+case "${HELENA_AUDIT_ONLY:-}" in
+  auth.sudo)
+    [[ $is_root -eq 1 ]] && check_sudo || need_root auth.sudo auth medium
+    printf '%s\n' "${results[@]}"
+    exit 0 ;;
+  tunnel.acl)
+    [[ $is_root -eq 1 ]] && check_tunnel_acl "$(nft list ruleset 2>/dev/null)" || need_root tunnel.acl tunnel high
+    printf '%s\n' "${results[@]}"
+    exit 0 ;;
+esac
 have() { command -v "$1" >/dev/null 2>&1; }
 psql_ro() { # one value from Helena's database, read-only, as the postgres user
   runuser -u postgres -- psql -d "$HELENA_DB" -XAtq -v ON_ERROR_STOP=1 \
@@ -298,8 +324,16 @@ else
 fi
 
 # ── Web (nginx, API) ───────────────────────────────────────────────────────────
+# HTTPS at home: nginx's LAN listener answers the home name with a certificate a browser
+# accepts (chain, name, dates), asked the way a browser at home asks (SNI = the home name).
 if have ss && ss -H -ltn 2>/dev/null | awk '{print $4}' | grep -Eq '(^|:)443$'; then
-  record web.https web high pass "nginx listens on 443"
+  if ! have curl; then
+    record web.https web high skip "curl not installed"
+  elif tls_err=$(curl -sS -o /dev/null -m 5 --resolve "$HOME_HOST:443:127.0.0.1" "https://$HOME_HOST/backend/edge/home/probe" 2>&1); then
+    record web.https web high pass "https://$HOME_HOST: valid certificate on the LAN listener" "host=$HOME_HOST"
+  else
+    record web.https web high fail "https://$HOME_HOST: ${tls_err:-no valid certificate}" "host=$HOME_HOST"
+  fi
 else
   record web.https web high warn "no HTTPS listener on the LAN (the owner's browsers have no secure context locally)"
 fi
@@ -358,9 +392,7 @@ if systemctl cat "$TUNNEL_UNIT" >/dev/null 2>&1; then
     else
       record tunnel.edge tunnel critical fail "no team domain/AUD in Helena: the tunnel entry refuses everything"
     fi
-    grep -q 'helena:acl-tunnel' <<<"$nft_rules" \
-      && record tunnel.acl tunnel high pass "port $TUNNEL_PORT only for the tunnel user" \
-      || record tunnel.acl tunnel high fail "every local user reaches the tunnel entry on $TUNNEL_PORT"
+    check_tunnel_acl "$nft_rules"
   else
     need_root tunnel.edge tunnel critical; need_root tunnel.acl tunnel high
   fi
@@ -369,20 +401,27 @@ else
 fi
 
 # ── TLS ────────────────────────────────────────────────────────────────────────
-cert=/etc/helena/tls/lego/certificates/$PUBLIC_HOST.crt
+# The home network's certificate (certbot renews it a month ahead; the web.https check
+# above asks nginx for it the way a browser does).
+cert=$LETSENCRYPT/live/$HOME_HOST/fullchain.pem
 if [[ $is_root -eq 0 ]]; then
   need_root tls.certificate tls high
 elif [[ -e $cert ]]; then
+  end=$(openssl x509 -enddate -noout -in "$cert" 2>/dev/null | cut -d= -f2)
+  days=$(( ($(date -d "$end" +%s 2>/dev/null || echo 0) - $(date +%s)) / 86400 ))
   if openssl x509 -checkend $((14 * 86400)) -noout -in "$cert" >/dev/null 2>&1; then
-    record tls.certificate tls high pass "$PUBLIC_HOST until $(openssl x509 -enddate -noout -in "$cert" | cut -d= -f2)"
+    record tls.certificate tls high pass "$HOME_HOST until $end ($days days)" "host=$HOME_HOST" "days=$days"
   else
-    record tls.certificate tls high fail "$PUBLIC_HOST expires within 14 days"
+    record tls.certificate tls high fail "$HOME_HOST expires within 14 days ($end)" "host=$HOME_HOST" "days=$days"
   fi
-  systemctl is-active --quiet helena-tls-renew.timer \
-    && record tls.renewal tls medium pass "helena-tls-renew.timer active" \
-    || record tls.renewal tls medium fail "helena-tls-renew.timer not active"
+  hook=$LETSENCRYPT/renewal-hooks/deploy/helena-nginx-reload
+  if systemctl is-active --quiet certbot.timer && [[ -x $hook ]]; then
+    record tls.renewal tls medium pass "certbot.timer active, nginx reloads on renewal"
+  else
+    record tls.renewal tls medium fail "certbot.timer $(systemctl is-active certbot.timer 2>/dev/null), deploy hook $([[ -x $hook ]] && echo present || echo missing)"
+  fi
 else
-  record tls.certificate tls high skip "no certificate for $PUBLIC_HOST yet"
+  record tls.certificate tls high skip "no certificate for $HOME_HOST yet"
 fi
 
 # ── Sign-in (Helena's database, read-only, counts and flags only) ──────────────

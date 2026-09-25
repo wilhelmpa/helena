@@ -1,6 +1,7 @@
 # Decision: server hardening and Cloudflare One for helena.volition.one
 
-Status: prepared, not executed · Branch: `hub/hardening` · 2026-09-24
+Status: live since 2026-09-25 (tunnel, Access, hardening steps) · Branch: `hub/hardening`, home
+network access and the Cloudflare sign-in: `hub/home-access` (§4.8, §5, §6.10) · 2026-09-24/25
 Owner request (2026-09-24 ~23:15): "Als Letztes musst du den gesamten Server absichern, also
 bulletproof machen, und dann schalten wir Cloudflare als Letztes davor, mit Cloudflare One und
 helena.volition.one."
@@ -37,7 +38,7 @@ a real weakening that one more mistake turns critical, or that becomes critical 
 the internet; **medium** = defence in depth missing; **low** = hygiene. "Fix" names the script step
 (`apply.sh <step>`, `cloudflare/…`) or the code on this branch.
 
-Count: **4 critical, 10 high, 11 medium, 9 low, plus 6 notes.**
+Count: **4 critical, 11 high, 11 medium, 9 low, plus 6 notes.** (H-11 found live on 2026-09-25.)
 
 ### Critical
 
@@ -62,6 +63,7 @@ Count: **4 critical, 10 high, 11 medium, 9 low, plus 6 notes.**
 | H-08 | **SSH listens on the global IPv6 address** without `AllowUsers`, with agent and TCP forwarding, 6 tries. Key-only and no root login already hold. An authorized key named `codex-home-server` belongs to the wiped Ubuntu host. | `sshd -T`, key comments. | `apply.sh sshd` (+ firewall = home network only); owner reviews the `codex-home-server` key and removes it if unused. |
 | H-09 | **Tunnel traffic could be taken for the LAN** (design, go-live): the owner-terminal "no code on the LAN" rule reads `X-Real-IP`. | Code review. | Code: a request marked by the tunnel entry is never LAN (`lanBypass`), whatever address it names; the tunnel entry sets `X-Real-IP` from `CF-Connecting-IP`. Test in `edge-access.test.ts`. |
 | H-10 | **The session cookie would be shared with all of volition.one** on the public name: `packages/auth` derives `COOKIE_DOMAIN` from the first origin, `helena.volition.one` → `.volition.one`, so every other site of the company domain would receive the owner's session. | `packages/auth/src/index.ts parentDomain`. | Code: `packages/auth/src/cookie-domain.ts` derives a parent domain only when the app and the api are on different hosts (tests). `cloudflare/switch_origin.py` also sets `COOKIE_DOMAIN=host-only` explicitly (and one origin: `APP_URL=https://helena.volition.one`, `API_URL=…/backend`). |
+| H-11 | **The tunnel ACL named the tunnel user by uid before the user existed** (live, 2026-09-25): the firewall step ran before `cloudflare/install.sh service` created `helena-tunnel`, so `tunnel_uids` held root alone; cloudflared got "connection refused" on 127.0.0.1:8090 and the owner Cloudflare's 502. The installer's own check ran as root, which the ACL always admits, and passed. | Live: the orchestrator added uid 978 by hand and re-confirmed the firewall. | `apply.sh firewall-uids` (adds every missing account of the uid sets, live and installed, `nft -c` checked); `install.sh service` runs it and checks the entry as `helena-tunnel`; `audit.sh tunnel.acl` fails (`why=user`) when the uid is missing. `tests/firewall-uids-selftest.sh`. |
 
 ### Medium
 
@@ -171,8 +173,13 @@ own audit trails are enough for one owner).
            Cf-Access-Jwt-Assertion (team domain + AUD, JWKS cached, RS256, 60 s skew,
            optional allowed e-mails); fail closed while not configured
                               ▼
-           Helena's own sign-in (password / passkey; TOTP for the terminal)
+           Helena's own sign-in (password + authenticator code / passkey), or, when the
+           owner turned it on, the Cloudflare sign-in: the Access login is the Helena
+           sign-in (§4.8). TOTP for the terminal either way.
 ```
+
+At home the same browser reaches Helena directly under a second name,
+`https://helena-home.volition.one`, served by nginx on the LAN (§5).
 
 ### 4.2 Tunnel
 
@@ -251,39 +258,145 @@ None of them is in the repo, an env file, Helena's database or a log. The owner 
 Dashboard: remove the public hostname (or pause the tunnel). Server: `cloudflare/install.sh --apply
 remove` (stops the connector, disables the entry), `switch_origin.py --apply --rollback`,
 `local-owner/configure.py --lan-http`, `lan_https.py --apply --rollback`; restart API/web/terminals.
-LAN access over `http://kingston-server.local` works throughout.
+The Cloudflare sign-in alone: its switch in Administrator → Sicherheit → Zugang von außen (off takes
+effect at once; open Helena sessions it made end within a day); a leaked entry proof:
+`install.sh --apply --rotate entry-token` and restart API and web.
+
+### 4.8 The Cloudflare sign-in (single sign-on)
+
+Owner (2026-09-25): "dann Single Sign-On sicher — kein extra Passwort mehr für Helena." The
+Access login (with its second factor) becomes the Helena sign-in on the public name. Off by
+default; the orchestrator switches it on after the checks in §6.10.
+
+**Flow.** A page load without a Helena session on `helena.volition.one`:
+
+1. Cloudflare's edge lets the request through only with a valid Access session (MFA required by
+   the Access application since 2026-09-25) and adds `Cf-Access-Jwt-Assertion`.
+2. cloudflared checks the assertion itself (Protect with Access) and connects to nginx's tunnel
+   entry; only the tunnel user may (nft `acl-tunnel`).
+3. nginx's tunnel entry marks the request (`X-Helena-Entry: tunnel`) and adds the **entry proof**
+   `X-Helena-Edge-Entry`: a random 64-hex value from `conf.d/helena-edge-entry.conf` (0600 root),
+   sent only on this server block and only to the web app's upstream (the map is keyed on
+   `$server_addr:$server_port:$proxy_host`; every other location, the API included, gets an
+   empty value, which drops a client-sent header of that name). The map is `volatile`: nginx
+   shares variables between a request and its auth subrequests, and a value cached while the
+   `/_helena_edge` subrequest ran (API upstream, empty) would otherwise stand for the main
+   request (found by `cloudflare/tests/lan-https-selftest.sh`).
+4. The web app's proxy (`apps/web/src/lib/edge-sign-in-session.ts`) sees no session, the proof
+   (compared in constant time with `HELENA_EDGE_ENTRY_TOKEN`) and an assertion, on one of the
+   instance's origins, for a same-origin GET navigation. It posts to the API's
+   `/api/auth/sign-in/edge` on loopback with the proof, the tunnel marker, the assertion and
+   the client's address and browser.
+5. The API's edge guard verifies the assertion (as on every tunnel request); the sign-in endpoint
+   (`packages/auth/src/edge-sign-in.ts`, a better-auth plugin) checks the proof again, then asks
+   the edge-access module (`apps/api/src/modules/edge-access/sign-in.ts`, registered as its
+   verifier): the switch is on, the assertion is valid (signature from the team's keys,
+   audience, issuer, expiry), the identity is on Helena's **explicit** allow list (the switch
+   cannot be turned on without one). Then the account: that address exists, has the owner role
+   (`EDGE_SIGN_IN_ROLES`, extendable), is active.
+6. It opens a session that lasts until the Access session ends, at most 24 hours, as a browser
+   session cookie that better-auth does not extend on use (`dontRememberMe`); the next day
+   Access decides again. It writes the sign-in to `helena_sign_in_event` (no session without its
+   record) and hands the cookie back; the web app redirects to the page asked for.
+
+Sign-out on the public name ends the Access session too (`SSO_LOGOUT_URL` =
+`/cdn-cgi/access/logout`), or the Cloudflare sign-in would sign the owner straight back in.
+The owner terminal keeps its own TOTP step-up; the tunnel is never "the LAN" (H-09).
+
+**Threat model.**
+
+| Threat | Stopped by |
+|---|---|
+| An Access assertion (or a copy of one) presented from the home network or by a local process | No entry proof: only nginx's tunnel server block sends it, and only to the web app; the LAN site blanks the header (lan_https.py); the API and the web app on loopback answer 404. The proof lives in root-only files and in the API/web process environment (root and `volition-plan` only). |
+| A forged or foreign assertion through the tunnel | Signature, audience, issuer and expiry checked by cloudflared and twice by the API. |
+| Access policy widened by mistake (another identity, "everyone") | Helena's own explicit allow list, and the owner role. |
+| A stolen assertion replayed through the internet within its lifetime | Needs to pass Access at the edge first (binding cookie on); the session it yields ends with the assertion (≤ 24 h), and the terminal still asks for its code. Keep the Access session short (24 h). |
+| Leaked entry proof | Still needs a valid assertion of an allowed identity; `install.sh --apply --rotate entry-token`. |
+| Access without a second factor | The UI says it (Access is then the only sign-in); the Access application requires MFA since 2026-09-25. |
+| Cross-site request, open redirect | Only same-origin GET navigations bootstrap; redirects stay on the origin (`session-bootstrap.ts`). |
+| Silent use | Every Cloudflare sign-in (and refusal that got past the proof: `disabled`, `no_account`, `not_eligible`, `deactivated`) is written with identity, address and browser; Administrator → Sicherheit → Anmeldungen ohne Passwort. Assertions the edge guard refuses are not rows (no verified identity; nginx and the API log them). The LAN owner sign-in is written to the same trail. Rate limit 30/min per client address. |
+
+**Rejected**: nginx passing a verified identity header from `auth_request` (a local process can
+send the same header to 127.0.0.1:3000/3001 — the API must verify the assertion itself and needs
+a secret only the tunnel entry has); the API trusting `X-Helena-Entry` alone (any LAN client can
+set it); a session as long as a password one (7 days, extended on use); better-auth's generic
+OAuth/OIDC plugin with Cloudflare Access as an OIDC provider (would need an Access "SaaS" OIDC
+application, a client secret and a second login round trip, and it would not bind the session to
+the tunnel entry).
 
 ## 5. Local HTTPS and the LAN
 
-- **One origin.** The web client calls one absolute `API_URL`, and cookies follow it; two origins
-  (http on the LAN, https outside) do not work together. After go-live the origin is
-  `https://helena.volition.one` everywhere (`switch_origin.py`).
-- **How the LAN reaches it**, two options (owner decision §8.2):
-  - **A. Through the tunnel also at home** (default, nothing else to run): simplest, Access login at
-    home too, traffic goes out and back (the live view costs upload bandwidth).
-  - **B. Split horizon**: at home the name resolves to 192.168.2.58 and nginx serves it directly on
-    443 with a Let's Encrypt certificate (`tls-setup.sh` + `lan_https.py`). Faster, works without
-    internet, keeps the LAN auto sign-in possible. Needs a local answer for the name:
-    - the **router** is a Telekom **Speedport** (DNS search domain `speedport.ip`, 192.168.2.0/24),
-      not a FRITZ!Box as assumed. Speedports offer no local DNS records; a FRITZ!Box would need a
-      local DNS server entry (it has no arbitrary host records either) or, for a public record with
-      a private address, the exception under Heimnetz → Netzwerk → Netzwerkeinstellungen →
-      DNS-Rebind-Schutz;
-    - so: a small resolver on Kingston (`unbound`, one `local-data` line, everything else forwarded)
-      announced by the router's DHCP where the router allows it, or per device (the Mac's
-      `/etc/hosts`; phones use the tunnel).
-- **Certificate**: Let's Encrypt DNS-01 with **lego** (Debian package, MIT). lego follows a CNAME on
-  `_acme-challenge.helena.volition.one`, so the Cloudflare token can be limited to a separate,
-  otherwise unused zone (M-09); certbot's Cloudflare plugin cannot. Renewal: `helena-tls-renew.timer`
-  (daily check, renews under 30 days, reloads nginx).
-- **LAN auto sign-in**: keep it for now on the LAN entry only (never on the tunnel entry, enforced
-  three times); turn it off once passkeys work on the owner's devices (§8.1). With HTTPS it moves to
-  port 443 under the public name (`configure.py --https-host`); the guard map covers 443.
-- **Dictation/voice** needs a secure context: given by either option.
-- **After the switch `http://kingston-server.local` no longer signs anyone in** (cookies are Secure,
-  the origin is the public name). Point it at the public name in the LAN block (a map on
-  `$host:$server_port` for `kingston-server.local:80` → `return 301 https://helena.volition.one$request_uri`;
-  the kiosk's 127.0.0.1:8088 stays untouched). Not scripted yet; a two-line edit in the window.
+Owner (2026-09-25): "Wenn ich über die Domain im lokalen Netzwerk reingehe, trotzdem direkt alles
+über das LAN wegen der Geschwindigkeit." Decided: **option B with a second name**
+(hub/home-access). Option A (the tunnel at home too) stays the fallback: nothing breaks when the
+home name is unreachable.
+
+- **Why a second name.** Split horizon under `helena.volition.one` needs a local DNS answer, and
+  the Telekom Speedport Smart 4 can neither hold local records nor hand out another DNS server.
+  It does allow DNS-rebind exceptions. So the home network gets its own public name,
+  **`helena-home.volition.one  A  192.168.2.58`** (Cloudflare DNS, *DNS only*, not proxied), with a
+  rebind exception for it on the Speedport. From anywhere else the name leads to a private
+  address and nowhere (or to another network's device without Helena's certificate). It reveals
+  the LAN address, nothing more.
+- **Certificate**: Let's Encrypt DNS-01 through Cloudflare's API with **certbot** and
+  `python3-certbot-dns-cloudflare` (Debian 13 packages, Apache-2.0). Debian's lego 4.9 has no
+  Cloudflare provider (tried live 2026-09-25), so certbot replaced it. `cloudflare/tls-setup.sh`:
+  `token` (the owner pastes it; stored `/etc/helena/cloudflare/dns.token` 0600), `issue` (writes
+  certbot's credentials file `/etc/helena/cloudflare/certbot-dns.ini` 0600 from it, lineage named
+  after the host, ECDSA P-256, `--also NAME` for extra SANs), `renewal` (Debian's `certbot.timer`
+  plus a deploy hook that reloads nginx after `nginx -t`), `check`. The token is never an argument,
+  an environment listing or output (selftest). **M-09**: the owner's token is scoped to the zone
+  `volition.one` with DNS:Edit, which could also rewrite the company's other records; accepted
+  for now, noted (certbot's Cloudflare plugin cannot follow a CNAME to a separate ACME zone; a
+  narrower token would need acme-dns or another client).
+- **nginx** (`cloudflare/lan_https.py`, dry run by default, backup and `nginx -t` rollback): the
+  LAN site listens on 443 (IPv4 and IPv6) with that certificate, HTTP/2 and Mozilla
+  "intermediate" TLS (`snippets/helena-tls.conf`); plain http that reached a LAN-facing address
+  answers 301 to `https://helena-home.volition.one` with path and query (map
+  `$helena_lan_https_redirect` in `conf.d/helena-lan-https.conf`: loopback and the kiosk's
+  127.0.0.1:8088 keep their http); HSTS on every https answer that does not bring its own
+  (`$helena_lan_hsts` looks at the upstream's header, so the web app's is not doubled); the home
+  origin is allowed for the tools and their websockets (`$volition_origin_ok`, CSP of the
+  terminal locations); the tunnel entry's proof header is blanked on `/` and `/backend/`. The
+  tunnel entry (127.0.0.1:8090) is untouched. The firewall already admits 443 from the home
+  network (C-02).
+- **LAN auto sign-in** on the home name: `local-owner/configure.py --https-host
+  helena-home.volition.one` (existing flag): the capability only for that Host on port 443, from a
+  LAN-facing listener, never from loopback, link-local or the machine itself (the guard, the
+  IPv6 include and the self map are unchanged; `tests/lan-https-selftest.sh` proves it with a real
+  nginx in private namespaces). The kiosk keeps its own http entry.
+- **Two origins in the app.** `APP_URL=https://helena.volition.one,https://helena-home.volition.one`
+  (the first is primary: links in mails, OAuth redirect URIs, MCP), `HELENA_HOME_URL` names the
+  home one; `switch_origin.py --home-host` writes both. Everything a browser uses follows the
+  origin the page was opened on: the web server hands out the API and tool addresses rebased onto
+  it (`utils/appOrigins.ts`, `serverRuntimeEnv(origin)`; a provisioned tool address on the other
+  origin too), the CSP names it, the API trusts both (CORS, better-auth, push), cookies are
+  host-only per origin (separate sessions), the terminal routers allow both hosts. nginx's
+  `$host` carries no port; a portless Host names the instance origin of that scheme and name.
+- **Passkeys** stay bound to `helena.volition.one` (`PASSKEY_RP_ID`): the home name is another site
+  for WebAuthn, and binding them to `volition.one` would let every site of the company domain ask
+  for them. On the home origin the login page offers no passkey and Konto → Sicherheit says where
+  they are added (`features/home-access/passkeys.ts`). (WebAuthn "related origins" would need
+  `/.well-known/webauthn` on the public name without Access; not now.)
+- **At home, automatically the fast way** (`features/home-access`): on any origin but the home
+  one, the app asks `GET /edge/home` (public: the home origin and the instance setting "Zu Hause
+  automatisch direkt verbinden", default on) and then probes
+  `https://helena-home.volition.one/backend/edge/home/probe` without credentials (1.5 s). Only
+  Helena's own answer for that host counts (`{home: true, host}`; through the tunnel the probe
+  says `home: false`). Then it continues on the same page there (`location.replace`), where the
+  LAN sign-in opens a session. Never a loop (the home origin never switches), a failure pauses
+  the check for 10 minutes, `?remote=1` keeps a tab on the public name. Chrome asks once for
+  "local network access" (a public page reaching a private address); Safari does not. An
+  installed PWA of the public name opens the home name in its in-app browser view.
+- **Health**: the audit's `web.https` makes a real TLS handshake with the home name against
+  nginx on this machine (chain, name, dates; `curl --resolve`), `tls.certificate` reads certbot's
+  lineage (fail under 14 days), `tls.renewal` wants `certbot.timer` and the deploy hook. The API
+  reports the certificate as a host health line (`helena.edge.home-https`, plugin `helena.edge`:
+  amber under 21 days, red under 7 or when it does not hold), so Start and Administrator → Server
+  show it.
+- **Dictation/voice** get their secure context at home too.
+- `http://kingston-server.local` now answers 301 to the home name (LAN listeners); on loopback
+  it stays http for local processes.
 
 ## 6. Runbook (the last phase; orchestrator)
 
@@ -353,19 +466,22 @@ drops the automation account.
 `--apply units` (API, web, worker one by one with health checks), `--apply terminal-key`,
 `--apply kasm-loopback` (restarts the five project browsers). `audit.sh` svc.exposure < 6.
 
-**6.5 Local HTTPS** (only for option B, §5): owner's OK for `lego`; owner creates the DNS token
-and CNAME (§7), runs `sudo $H/cloudflare/tls-setup.sh --apply token`, then
-`sudo $H/cloudflare/tls-setup.sh --apply issue --email <owner> --accept-letsencrypt-terms`;
-`sudo python3 $H/cloudflare/lan_https.py` (diff) → `--apply`; `tls-setup.sh --apply renew-timer`.
-The origin does not switch yet.
+**6.5 Local HTTPS**: superseded by §6.10 (the home network's own name, certbot instead of lego).
 
 **6.6 Tunnel** (owner + orchestrator together):
 1. Owner's OK for cloudflared; owner reads the key fingerprint from Cloudflare's package docs.
    `sudo $H/cloudflare/install.sh --apply package --fingerprint <FPR>`.
 2. Owner creates the tunnel (§7) and runs `sudo $H/cloudflare/install.sh --apply token`.
-3. `sudo $H/cloudflare/install.sh --apply service` → "connector ready".
-4. `sudo $H/cloudflare/install.sh --apply nginx` → the self-check must say 403 without Access.
-   Re-run `apply.sh --apply firewall` + confirm, so `acl-tunnel` knows the new user.
+3. `sudo $H/cloudflare/install.sh --apply service` → "connector ready". It creates the user
+   `helena-tunnel` and, since hub/home-access, adds it to the firewall's uid sets at once
+   (`hardening/apply.sh --apply firewall-uids`, live table and installed ruleset). On
+   2026-09-25 the firewall had been loaded before the user existed: `tunnel_uids` held root alone,
+   cloudflared got "connection refused" and the owner Cloudflare's 502, while the installer's own
+   check (as root) passed. The check now runs as `helena-tunnel`, and `audit.sh tunnel.acl` fails
+   when the user's uid is missing (`why=user`).
+4. `sudo $H/cloudflare/install.sh --apply nginx` → the self-check (as `helena-tunnel`) must say
+   403 without Access; `install.sh check` shows the connector's edge connections and origin
+   errors (cloudflared metrics).
 5. Owner creates the Access application and policy and enters team domain + AUD in Administrator →
    Sicherheit → Zugang von außen ("Eingerichtet").
 6. Owner adds the public hostname `helena.volition.one` → `http://127.0.0.1:8090` with
@@ -391,6 +507,75 @@ Access. Router: no port forwards (§7).
 
 **6.9 Final**: `sudo $H/hardening/audit.sh` → no fail (warnings only for owner decisions);
 Administrator → Sicherheit shows the same. Record the state in CLAUDE.md.
+
+**6.10 Home network access and the Cloudflare sign-in** (hub/home-access; §4.8, §5). Done by
+the orchestrator before: certbot 4.0 + python3-certbot-dns-cloudflare installed, the owner's DNS
+token in `/etc/helena/cloudflare/dns.token`, the record `helena-home.volition.one A 192.168.2.58`
+(DNS only) and the Speedport's rebind exception, the Let's Encrypt terms accepted for
+`wilhelmpa@gmail.com`, MFA required by the Access application. Every step without `--apply` is a
+dry run; run it first.
+
+1. Merge hub/home-access and run `deploy.sh` (migration **0185** `helena_sign_in_event`; API,
+   web, worker restart). Nothing changes for anyone yet: the sign-in switch is off, no home
+   origin is set. Then install the new audit: `sudo $H/hardening/audit.sh --install-timer`.
+2. Certificate:
+   ```sh
+   sudo $H/cloudflare/tls-setup.sh check
+   sudo $H/cloudflare/tls-setup.sh issue --email wilhelmpa@gmail.com --accept-letsencrypt-terms
+   sudo $H/cloudflare/tls-setup.sh --apply issue --email wilhelmpa@gmail.com --accept-letsencrypt-terms
+   sudo $H/cloudflare/tls-setup.sh --apply renewal
+   sudo certbot renew --dry-run --cert-name helena-home.volition.one
+   sudo $H/cloudflare/tls-setup.sh check     # until … (~89 days), certbot.timer active, hook present
+   ```
+3. HTTPS on the LAN:
+   ```sh
+   sudo python3 $H/cloudflare/lan_https.py            # the diff
+   sudo python3 $H/cloudflare/lan_https.py --apply    # nginx -t, reload; old files back on refusal
+   ```
+   From the Mac: `dig +short helena-home.volition.one` → 192.168.2.58;
+   `curl -sS -o /dev/null -w '%{http_code} %{http_version}\n' https://helena-home.volition.one/backend/edge/home/probe`
+   → `200 2`; `curl -sI http://helena-home.volition.one/x` → 301 to `https://helena-home.volition.one/x`.
+4. Origins and the tunnel entry's proof (no restart in this step):
+   ```sh
+   sudo python3 $H/cloudflare/switch_origin.py --home-host helena-home.volition.one
+   sudo python3 $H/cloudflare/switch_origin.py --apply --home-host helena-home.volition.one
+   sudo $H/cloudflare/install.sh entry-token
+   sudo $H/cloudflare/install.sh --apply entry-token
+   sudo $H/cloudflare/install.sh nginx                # diff: the headers snippet sends the proof
+   sudo $H/cloudflare/install.sh --apply nginx        # self-check as helena-tunnel: 403
+   ```
+5. The LAN sign-in on the home name, at a quiet moment (no chat answer or run in flight): it
+   restarts API and web itself, which then read the new origins and the proof.
+   ```sh
+   sudo python3 $H/local-owner/configure.py --https-host helena-home.volition.one
+   sudo systemctl restart volition-terminal
+   sudo systemctl restart volition-owner-terminal   # with the owner's OK if it ends his sessions
+   ```
+6. Checks:
+   ```sh
+   sudo $H/cloudflare/install.sh check    # entry proof present (0600); reachable as helena-tunnel (403); connector
+   sudo $H/hardening/audit.sh | grep -E 'web.https|tls\.|tunnel\.|local_owner'   # all pass
+   ```
+   Headless from the Mac: `https://helena-home.volition.one` opens signed in without a password
+   (a new private profile), no console errors; Administrator → Sicherheit shows the home name
+   under "Zu Hause automatisch direkt verbinden", Administrator → Server → Übersicht "HTTPS zu
+   Hause". In a normal browser at home: `https://helena.volition.one` → Access → the page
+   continues on `https://helena-home.volition.one/…` (Chrome asks once for local network access).
+   The password + authenticator code sign-in on either name (test user or the owner); then set
+   the owner's `two_factor_enabled` back to true.
+7. The Cloudflare sign-in: Administrator → Sicherheit → Zugang von außen → "Erlaubte
+   Identitäten" `wilhelmpa@gmail.com`, switch "Mit der Cloudflare-Anmeldung direkt bei Helena
+   anmelden" on → Speichern. From outside (phone on mobile data): `https://helena.volition.one` →
+   Access with its second factor → Helena opens without its own password; Sicherheit →
+   Anmeldungen ohne Passwort lists "Cloudflare · wilhelmpa@gmail.com"; Abmelden ends at Access's
+   logout page. (Without a browser: `sudo -u postgres psql -d itsaplan -c "update app_setting set
+   value = jsonb_set(value, '{signIn}', 'true') where key = 'edgeAccess'"`, read within 10 s.)
+
+Rollback: the switch off (UI, or the same `jsonb_set` with `false`); `switch_origin.py --apply
+--no-home`, `configure.py --lan-http` (or `--https-host helena.volition.one`), `lan_https.py
+--apply --rollback`, restart API, web and both terminals. A leaked proof: `install.sh --apply
+--rotate entry-token`, restart API and web. The certificate stays (certbot renews it harmlessly)
+or `certbot delete --cert-name helena-home.volition.one`.
 
 **Rollback per phase**: every step has `apply.sh --apply rollback <step>`; tunnel §4.7; the
 automatic rollbacks cover firewall and SSH; backups of every replaced file are under
@@ -431,8 +616,8 @@ automatic rollbacks cover firewall and SSH; backups of every replaced file are u
 1. **LAN auto sign-in**: recommendation — keep until passkeys work on HTTPS, then off (every device
    in the home network, including IoT and visitors on the main Wi-Fi, is the owner today). It never
    applies to the tunnel.
-2. **At home: tunnel (A) or split horizon (B)?** Recommendation: start with A (nothing to run),
-   add B if the live view is too slow at home.
+2. **At home: tunnel (A) or split horizon (B)?** Decided 2026-09-25 (owner): B, with its own name
+   `helena-home.volition.one` (the Speedport has no local DNS; §5). A stays the fallback.
 3. **sudo model** (H-07): **decided and live (2026-09-25)** — a separate `helena-ops` account for
    the orchestrator's SSH automation (NOPASSWD, key-only, LAN-only, password locked) and a sudo
    password for `wilhelmpa`, so the browser terminal and the AI CLIs in it need the password for
@@ -474,7 +659,8 @@ automatic rollbacks cover firewall and SSH; backups of every replaced file are u
 |---|---|---|
 | JWT/JWKS | `jose` 6.2 (MIT; already in the tree through better-auth; `createRemoteJWKSet`, `jwtVerify`) | Hand-written WebCrypto verification; Cloudflare's example Workers code |
 | Firewall | nftables directly (`meta skuid` ACLs, atomic table replace) | ufw/firewalld (no uid ACLs, own the ruleset), iptables-nft |
-| ACME | lego (Debian, MIT; follows CNAME on the challenge record, `*_FILE` secrets) | certbot + dns-cloudflare (no CNAME following → token for the whole zone), acme.sh (shell, no Debian package) |
+| ACME | certbot + python3-certbot-dns-cloudflare (Debian 13, Apache-2.0; renewal by Debian's certbot.timer, deploy hook) | lego (Debian's 4.9 has no Cloudflare provider; its CNAME following would allow a narrower token — revisit with a newer lego), acme.sh (shell, no Debian package) |
+| Edge single sign-on | A better-auth plugin endpoint (`/sign-in/edge`) that turns the verified Access assertion into a session, gated by a tunnel-entry secret | better-auth genericOAuth with Access as an OIDC "SaaS" app (extra client secret and round trip, not bound to the tunnel entry); trusting an nginx identity header (forgeable locally) |
 | Tunnel | cloudflared from Cloudflare's apt repo, remote-managed tunnel with a token | Locally-managed tunnel with `cert.pem` (keeps an account-wide certificate on the server), the old Ubuntu credentials |
 | Edge identity | Cloudflare Access (owner's request) behind an `EdgeProvider` interface | oauth2-proxy/Authelia/Pomerium as extra services (the interface keeps them possible) |
 
@@ -544,6 +730,32 @@ automatic rollbacks cover firewall and SSH; backups of every replaced file are u
   ("Eingerichtet"), no console errors besides the deliberate 400.
 - Every `apply.sh` step as a dry run on Kingston (writes nothing; renders go to a scratch folder).
 
+### hub/home-access (2026-09-25)
+
+- **Home network name**: `cloudflare/tls-setup.sh` on certbot (lego units removed),
+  `lan_https.py` (443, HTTP/2, redirect map, HSTS map, proof blanked; `conf.d/helena-lan-https.conf`),
+  `switch_origin.py --home-host/--no-home` (+ `SSO_LOGOUT_URL`), tests
+  `cloudflare/tests/test_cloudflare_scripts.py`, `lan-https-selftest.sh` (private namespaces,
+  real nginx, throw-away CA), `scripts-selftest.sh` (install.sh entry-token and tls-setup.sh with
+  fakes), fixture `tests/fixtures/lan-site.conf` (the live LAN site, no secret in it).
+- **Tunnel entry proof**: `install.sh entry-token [--rotate]` (env file, volatile nginx map to the
+  web upstream only, drop-ins), `helena-tunnel-headers.conf`; `install.sh service` adds the tunnel
+  user to the firewall and checks the entry as that user; `check` reports proof and connector.
+- **Hardening**: `apply.sh firewall-uids`; `audit.sh` `web.https` (TLS handshake with the home
+  name), `tls.*` on certbot, `tunnel.acl` with the uid check (`HELENA_AUDIT_ONLY=tunnel.acl`);
+  `tests/firewall-uids-selftest.sh`; `nginx-config-selftest.sh` for the new site.
+- **Auth**: `packages/auth` `edge-sign-in.ts` (endpoint, verifier seam, session ≤ 24 h, not
+  extended), `sign-in-events.ts` (trail, pruned after half a year), the LAN sign-in written too;
+  migration 0185 `helena_sign_in_event`.
+- **API**: edge settings `signIn`, `homeAutoConnect`; `GET /edge/home`, `GET /edge/home/probe`,
+  `GET /god/security/sign-ins`; the verifier (`edge-access/sign-in.ts`); host capability
+  `helena.edge.home-https` (internal plugin `helena.edge`).
+- **Web**: `utils/appOrigins.ts` (origins, request origin, rebasing), origin-aware runtime env and
+  CSP, `lib/edge-sign-in-session.ts` and `session-bootstrap.ts` (shared with the LAN sign-in),
+  `features/home-access` (auto switch, passkeys on the home origin), Administrator → Sicherheit
+  (two switches, the trail), 10 locales; `AuthLoginForm.test.tsx` covers password + authenticator
+  code (the owner lock-out of 2026-09-25).
+
 ## 12. Open points
 
 - hub/server-admin: register `securityHealth()` (status.ts, shaped like `HostHealthItem`) as a host
@@ -554,7 +766,14 @@ automatic rollbacks cover firewall and SSH; backups of every replaced file are u
   (`HELENA_API_UNITS`, paths). The guard map is rename-safe: its output is
   `$helena_owner_capability`, and the kit's rule `volition_local_owner_token` →
   `helena_local_owner_token` rewrites its input consistently (checked against `rename-map.json`).
-- The kiosk under the HTTPS origin needs its own TLS listener (it is off now).
+- The kiosk under the HTTPS origin needs its own TLS listener (it is off now): with the home name
+  its 127.0.0.1:8088 http entry keeps the capability, but the web app's LAN sign-in answers only
+  on the configured origin (`https://helena-home.volition.one`).
+- A narrower DNS token (M-09) needs a client that follows a CNAME on `_acme-challenge`.
+- Passkeys on the home name: WebAuthn related origins (`/.well-known/webauthn` on the public name,
+  outside Access) if the owner wants passkeys there too.
+- The auto switch uses Chrome's local network access permission; a PWA installed from the public
+  name leaves its scope for the home name (in-app browser bar on iOS).
 - Browser egress restriction (M-05) as an nft rule once the owner decides.
 - `code-server` could listen on a Unix socket instead of 127.0.0.1:8443 (removes H-02 for it
   without the ACL).

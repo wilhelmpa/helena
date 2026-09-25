@@ -70,7 +70,8 @@
     "totpConfirmFailed": "Код не принят.",
     "totpDisableFailed": "Не удалось отключить приложение-аутентификатор.",
     "minLength": "Не менее {count} символов.",
-    "added": "Добавлен {date}"
+    "added": "Добавлен {date}",
+    "passkeysElsewhere": "Passkeys привязаны к {host}. Здесь, в домашней сети, Helena впускает вас автоматически; новые passkeys добавляйте на {host}."
   },
   "accounts": {
     "label": "Аккаунты",

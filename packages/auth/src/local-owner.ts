@@ -1,6 +1,12 @@
 import { timingSafeEqual } from 'node:crypto';
 import { APIError, createAuthEndpoint } from 'better-auth/api';
 import { setSessionCookie } from 'better-auth/cookies';
+import type { SignInEvent } from './sign-in-events';
+
+// The trail is written through the database; loaded on use, so the checks here stay
+// testable without one.
+const recordSignIn = async (event: SignInEvent) =>
+  (await import('./sign-in-events')).recordSignIn(event);
 
 export function localOwnerAuthorized(headers: Headers, env = process.env): boolean {
   const token = env.LOCAL_SINGLE_USER_TOKEN;
@@ -37,6 +43,16 @@ export function localOwner() {
           const session = await ctx.context.internalAdapter.createSession(account.user.id);
           if (!session) throw new APIError('FORBIDDEN', { message: 'Local session unavailable' });
           await setSessionCookie(ctx, { session, user: account.user });
+          // The trail of password-less sign-ins (Administrator → Sicherheit). The web app
+          // passes the client's address and browser on; a failed write does not stop the
+          // sign-in at home.
+          await recordSignIn({
+            method: 'local_owner',
+            outcome: 'ok',
+            userId: account.user.id,
+            ipAddress: ctx.headers?.get('x-real-ip'),
+            userAgent: ctx.headers?.get('user-agent'),
+          });
           ctx.setHeader('Cache-Control', 'no-store');
           return ctx.json({ success: true });
         },

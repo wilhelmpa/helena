@@ -15,6 +15,7 @@ import { Toaster } from '@/components/ui/sonner';
 import PreferencesSync from '@/components/preferences-sync';
 import SessionScope from '@/components/session-scope';
 import PushSync from '@/features/push/components/PushSync';
+import HomeAutoConnect from '@/features/home-access/HomeAutoConnect';
 import { SessionProvider } from '@/lib/auth-client';
 
 // The message shown for a failed mutation: the API's error worded in the reader's
@@ -92,6 +93,7 @@ export function Providers({ children }: { children: ReactNode }) {
           <SessionScope />
           <PreferencesSync />
           <PushSync />
+          <HomeAutoConnect />
           <SyncProvider>
             <RelativeTimeProvider>
               <HotkeysProvider>{children}</HotkeysProvider>

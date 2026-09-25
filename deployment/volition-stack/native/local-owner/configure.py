@@ -74,8 +74,9 @@ def main(args: list[str]) -> None:
     # --rotate replaces the capability with a new one (e.g. after it was shown somewhere).
     rotate = '--rotate' in args
     args = [arg for arg in args if arg != '--rotate']
-    # --https-host: the public name the LAN also reaches over HTTPS (cloudflare/lan_https.py);
-    # the sign-in then happens there, on port 443, and the origin becomes https://HOST.
+    # --https-host: the name the LAN reaches Helena on over HTTPS (cloudflare/lan_https.py; the
+    # home network's own, helena-home.volition.one); the sign-in then happens there, on port
+    # 443, and the origin becomes https://HOST.
     https_host = ''
     # --lan-http: back to http://kingston-server.local (the rollback of --https-host).
     lan_http = '--lan-http' in args

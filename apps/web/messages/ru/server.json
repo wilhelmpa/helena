@@ -11,7 +11,8 @@
     "system": "Машина",
     "storage": "Диски и RAID",
     "backup": "Резервные копии",
-    "power": "Питание и вентиляторы"
+    "power": "Питание и вентиляторы",
+    "homeHttps": "HTTPS дома"
   },
   "refresh": "Прочитать снова",
   "refreshing": "Чтение…",
@@ -66,7 +67,10 @@
     "memoryOk": "Память: свободно {available}.",
     "healthFailed": "Не удалось прочитать состояние.",
     "localAiServerUp": "Локальный ИИ: {name} доступен",
-    "localAiServerDown": "Локальный ИИ: {name} не отвечает"
+    "localAiServerDown": "Локальный ИИ: {name} не отвечает",
+    "homeHttpsOk": "HTTPS дома ({host}): сертификат действителен ещё {days, plural, one {# день} few {# дня} many {# дней} other {# дня}}.",
+    "homeHttpsExpiring": "HTTPS дома ({host}): сертификат истекает через {days, plural, one {# день} few {# дня} many {# дней} other {# дня}}; продление не сработало.",
+    "homeHttpsInvalid": "HTTPS дома ({host}): {reason, select, expired {сертификат истёк} name {сертификат не для этого имени} untrusted {сертификату нельзя доверять} unreachable {недоступен} other {недействителен}}."
   },
   "overview": {
     "machine": "Машина",

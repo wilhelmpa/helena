@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import GoogleIcon from '@/components/common/GoogleIcon';
 import { useAuthConfig } from '@/services/authConfig.service';
+import { usePasskeyHome } from '@/features/home-access/passkeys';
 
 // The sign-in methods that are not the email + password form: the magic link toggle,
 // the instance's own OIDC provider, Google, and passkeys. Which of the first three
@@ -30,6 +31,9 @@ export default function AuthLoginAlternatives({
   // With the password form off there is no method to toggle away from, so the magic
   // link button would offer a screen the API refuses.
   const passwordEnabled = authConfig?.emailPassword !== false;
+  // On the home network's own origin passkeys cannot work (they belong to the public name);
+  // there the LAN sign-in takes over.
+  const passkeyElsewhere = usePasskeyHome();
 
   // One Field for all of them so they sit together as a group — a Field each would
   // space them like separate form questions. Tighter than the default field gap:
@@ -56,10 +60,12 @@ export default function AuthLoginAlternatives({
           {t('withGoogle')}
         </Button>
       )}
-      <Button type="button" variant="outline" onClick={onPasskey} disabled={pending}>
-        <KeyRound />
-        {t('withPasskey')}
-      </Button>
+      {!passkeyElsewhere && (
+        <Button type="button" variant="outline" onClick={onPasskey} disabled={pending}>
+          <KeyRound />
+          {t('withPasskey')}
+        </Button>
+      )}
     </Field>
   );
 }

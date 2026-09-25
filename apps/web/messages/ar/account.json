@@ -70,7 +70,8 @@
     "totpConfirmFailed": "لم يُقبل الرمز.",
     "totpDisableFailed": "تعذّر إيقاف تطبيق المصادقة.",
     "minLength": "{count} أحرف على الأقل.",
-    "added": "أُضيف في {date}"
+    "added": "أُضيف في {date}",
+    "passkeysElsewhere": "مفاتيح المرور تابعة لـ {host}. هنا في الشبكة المنزلية تسجّلك Helena تلقائياً؛ أضف مفاتيح مرور جديدة على {host}."
   },
   "accounts": {
     "label": "الحسابات",

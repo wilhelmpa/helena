@@ -448,7 +448,8 @@
       "browserTask": "Tugas browser",
       "decisions": "Keputusan",
       "localAi": "AI lokal",
-      "push": "Notifikasi push"
+      "push": "Notifikasi push",
+      "edge": "Akses dari luar"
     },
     "problems": {
       "external-off": "Dimuat setelah plugin eksternal diaktifkan.",

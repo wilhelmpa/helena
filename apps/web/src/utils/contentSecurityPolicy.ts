@@ -5,9 +5,9 @@ import { workspaceFrameOrigins } from '@/utils/workspaceTools';
 // request (src/proxy.ts) rather than frozen into the build with the other headers
 // in next.config.ts. A value that is not an absolute URL contributes nothing: the
 // policy then only allows same-origin requests.
-function apiOrigin(): string {
+function originOf(value: string | undefined): string {
   try {
-    return new URL(serverRuntimeEnv().apiUrl).origin;
+    return value ? new URL(value).origin : '';
   } catch {
     return '';
   }
@@ -27,8 +27,15 @@ function apiOrigin(): string {
 // to rebuild server error stacks in the browser. Frames come from this origin, where
 // the file viewer opens a PDF, from the configured workspace tools, and from the api,
 // which serves plugins' panel pages.
-export function contentSecurityPolicy(nonce?: string): string {
-  const frameOrigins = workspaceFrameOrigins(serverRuntimeEnv().workspace);
+// `origin`: the origin the page is served on (an instance may have more than one, see
+// utils/appOrigins.ts); the api and the tools are on it. On any other origin than the home
+// network's own, the page may also ask that one whether it answers (features/home-access).
+export function contentSecurityPolicy(nonce?: string, origin: string | null = null): string {
+  const env = serverRuntimeEnv(origin);
+  const frameOrigins = workspaceFrameOrigins(env.workspace);
+  const apiOrigin = originOf(env.apiUrl);
+  const home = originOf(env.homeUrl);
+  const probe = home && home !== origin ? home : '';
   const scriptSources = [
     ...(nonce
       ? [`'nonce-${nonce}'`, "'strict-dynamic'", 'https:', 'http:', "'unsafe-inline'"]
@@ -45,12 +52,12 @@ export function contentSecurityPolicy(nonce?: string): string {
     "img-src 'self' data: blob: https: http:",
     "media-src 'self' data: blob: https: http:",
     "font-src 'self' data:",
-    `connect-src 'self' ${apiOrigin()}`.trimEnd(),
+    ["connect-src 'self'", apiOrigin, probe].filter(Boolean).join(' '),
     // The service worker (public/sw.js) that shows push notifications. Named on its own:
     // workers fall back to script-src, whose nonce no worker script can carry.
     "worker-src 'self'",
     // Plugins' panel pages come from the api (/plugins/<id>/ui/…), sandboxed.
-    ["frame-src 'self'", ...frameOrigins, apiOrigin()].filter(Boolean).join(' '),
+    [...new Set(["frame-src 'self'", ...frameOrigins, apiOrigin])].filter(Boolean).join(' '),
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

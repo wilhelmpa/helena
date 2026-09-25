@@ -70,7 +70,8 @@
     "totpConfirmFailed": "Kode tidak diterima.",
     "totpDisableFailed": "Tidak dapat mematikan aplikasi autentikator.",
     "minLength": "Minimal {count} karakter.",
-    "added": "Ditambahkan {date}"
+    "added": "Ditambahkan {date}",
+    "passkeysElsewhere": "Passkey milik {host}. Di jaringan rumah ini Helena memasukkan Anda secara otomatis; tambahkan passkey baru di {host}."
   },
   "accounts": {
     "label": "Akun",

@@ -28,6 +28,13 @@ export function edgeEntry(headers: Headers): EdgeEntry | null {
 const SETTINGS_KEY = 'edgeAccess';
 
 export interface EdgeAccessSettings extends EdgeAccessConfig {
+  // The Cloudflare sign-in: a valid Access assertion of an allowed identity opens a Helena
+  // session for that account, without a second password (sign-in.ts). Off by default; it
+  // needs the provider configured and an explicit list of allowed identities.
+  signIn: boolean;
+  // At home, the web app on the public name switches to the home network's own origin
+  // (HELENA_HOME_URL) when that answers, so the LAN is used directly.
+  homeAutoConnect: boolean;
   updatedAt: string | null;
 }
 
@@ -37,6 +44,8 @@ function defaultSettings(): EdgeAccessSettings {
     teamDomain: '',
     audiences: [],
     allowedEmails: [],
+    signIn: false,
+    homeAutoConnect: true,
     updatedAt: null,
   };
 }
@@ -66,6 +75,8 @@ export interface EdgeAccessPatch {
   teamDomain?: string;
   audiences?: string[];
   allowedEmails?: string[];
+  signIn?: boolean;
+  homeAutoConnect?: boolean;
 }
 
 // Saves the settings after the provider accepted them. Clearing the team domain and the
@@ -79,6 +90,8 @@ export async function setEdgeAccessSettings(patch: EdgeAccessPatch): Promise<Edg
       value.trim().toLowerCase(),
     ),
     allowedEmails: uniqueList(patch.allowedEmails ?? current.allowedEmails, normalizeEmail),
+    signIn: patch.signIn ?? current.signIn,
+    homeAutoConnect: patch.homeAutoConnect ?? current.homeAutoConnect,
     updatedAt: new Date().toISOString(),
   };
   const provider = edgeProvider(next.provider);
@@ -90,6 +103,14 @@ export async function setEdgeAccessSettings(patch: EdgeAccessPatch): Promise<Edg
   }
   if (next.allowedEmails.some((email) => !/^[^\s@]+@[^\s@]+$/.test(email))) {
     throw new HttpError(400, 'An allowed identity must be an email address');
+  }
+  // The Cloudflare sign-in turns an Access login into the owner's session: only with the
+  // provider set up and the identities named here, never "whoever Access lets in".
+  if (next.signIn && (cleared || next.allowedEmails.length === 0)) {
+    throw new HttpError(
+      400,
+      'The Cloudflare sign-in needs the team domain, the audience and at least one allowed identity',
+    );
   }
   await setSetting(SETTINGS_KEY, next);
   cached = { at: Date.now(), value: next };

@@ -4,6 +4,7 @@ import { db } from '@repo/db';
 import { passkey, session, user } from '@repo/db/schema';
 import { getOwnerTerminalSettings } from '#modules/owner-terminal/service';
 import { edgeAccessConfigured, getEdgeAccessSettings } from './service';
+import { homeUrl } from './sign-in';
 
 // The server's security state for Administrator → Sicherheit (and, once hub/server-admin is
 // merged, its Server → Sicherheit tab): the result of the host audit
@@ -173,6 +174,9 @@ export async function securityStatus() {
       teamDomain: edge.teamDomain,
       audiences: edge.audiences,
       allowedEmails: edge.allowedEmails,
+      signIn: edge.signIn,
+      homeAutoConnect: edge.homeAutoConnect,
+      homeUrl: homeUrl(),
       updatedAt: edge.updatedAt,
     },
     owner: {

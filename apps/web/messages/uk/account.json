@@ -70,7 +70,8 @@
     "totpConfirmFailed": "Код не прийнято.",
     "totpDisableFailed": "Не вдалося вимкнути застосунок-автентифікатор.",
     "minLength": "Щонайменше {count} символів.",
-    "added": "Додано {date}"
+    "added": "Додано {date}",
+    "passkeysElsewhere": "Passkeys належать до {host}. Тут, у домашній мережі, Helena впускає вас автоматично; нові passkeys додавайте на {host}."
   },
   "accounts": {
     "label": "Акаунти",

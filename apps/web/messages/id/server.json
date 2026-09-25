@@ -11,7 +11,8 @@
     "system": "Mesin",
     "storage": "Disk dan RAID",
     "backup": "Cadangan",
-    "power": "Daya dan kipas"
+    "power": "Daya dan kipas",
+    "homeHttps": "HTTPS di rumah"
   },
   "refresh": "Baca ulang",
   "refreshing": "Membaca…",
@@ -66,7 +67,10 @@
     "memoryOk": "Memori: {available} bebas.",
     "healthFailed": "Kondisi tidak dapat dibaca.",
     "localAiServerUp": "AI lokal: {name} terjangkau",
-    "localAiServerDown": "AI lokal: {name} tidak menjawab"
+    "localAiServerDown": "AI lokal: {name} tidak menjawab",
+    "homeHttpsOk": "HTTPS di rumah ({host}): sertifikat masih berlaku {days} hari.",
+    "homeHttpsExpiring": "HTTPS di rumah ({host}): sertifikat kedaluwarsa dalam {days} hari; perpanjangan tidak berhasil.",
+    "homeHttpsInvalid": "HTTPS di rumah ({host}): {reason, select, expired {sertifikat kedaluwarsa} name {sertifikat bukan untuk nama ini} untrusted {sertifikat tidak tepercaya} unreachable {tidak dapat dijangkau} other {tidak valid}}."
   },
   "overview": {
     "machine": "Mesin",

@@ -30,8 +30,9 @@ The desktop Caddy route must continue limiting this hostname to the home LAN.
 Debian Nginx injects a random capability only for the exact hostname and the home LAN
 (192.168.2.0/24 and the home IPv6 /64s), only on a LAN-facing listener and never from a link-local source
 (`/etc/nginx/conf.d/helena-local-owner-guard.conf`); never from loopback, where the
-Cloudflare tunnel arrives. With `--https-host helena.volition.one` the sign-in moves to
-https on port 443 under that name (see `cloudflare/lan_https.py`). Incoming capability headers are overwritten;
+Cloudflare tunnel arrives. With `--https-host helena-home.volition.one` the sign-in moves to
+https on port 443 under the home network's own name (see `cloudflare/lan_https.py` and
+docs/helena-decisions/security-hardening.md §5); the public name stays behind Cloudflare Access. Incoming capability headers are overwritten;
 external backend requests have the header stripped. The Next server and auth API
 both verify it. Neither the capability nor a password is sent to the browser.
 The API still validates normal sessions, including account deactivation.
