@@ -178,7 +178,7 @@ These are code or unit changes for the orchestrator, not configuration:
 
 ## 6. Running it (orchestrator)
 
-1. Merge `hub/agent-tuning` into the live checkout. It only adds files under `apps/api/src/scripts/`; no migration, no restart. A deploy is not needed to run the script.
+1. Merge `hub/agent-tuning` into the live checkout. It only changes files under `apps/api/src/scripts/` and `deployment/volition-stack/scripts/`; no migration, no restart. A deploy is not needed to run the script.
 2. In-flight check first: `agent_run` pending with `started_at` = 0, streaming `agent_chat_message` = 0. A new revision makes each runner rewrite its profile before the next run.
 3. Dry run (writes nothing; prints the plan with every text in full, then the report):
 
@@ -188,16 +188,95 @@ These are code or unit changes for the orchestrator, not configuration:
      /usr/local/bin/bun src/scripts/agent-tuning.ts'
    ```
 
-4. Apply the default sections (skills, tools, instructions, projects), with the same command and `--apply` added. Reasoning comes only with `--sections=reasoning --apply`, after the owner's OK. `--agent <username>` (repeatable) limits the run to some agents and leaves the project instructions alone.
+4. Apply the default sections (skills, tools, instructions, projects), with the same command and `--apply` added.
+   - `--sections=…` picks sections; the ones outside the default set are `copies`, `browser` and `reasoning` (§8).
+   - `--agent <username>` (repeatable) limits the run to some agents and leaves the project instructions alone.
 5. Check the result:
    - Run it again; it must say "Would apply 0 change(s)".
    - Each agent's runtime status shows the new revision applied, with no drift.
    - Start a new chat with `@hermes-vol-coordinator` and ask where the website repo is and how it is deployed. Open chat threads keep their old system prompt.
 
-**Safety.** It writes only through `updateAgent`, `setAgentSkills`, `setAgentProjectInstructions` and `setProjectAssignment`, the same services the editor uses. It never touches a file of a Hermes home (the `config.yaml` there is a symlink). Texts replace only an empty field or the exact audited text (SHA-256 in `target.ts`); anything else is reported as "left as it is". Only running Hermes agents are touched: no templates, no Claude Code or Codex agents.
+**Safety.** It writes only through Helena's own services, the ones the editor uses: `updateAgent`, `setAgentSkills`, `setAgentMcpServers`, `copyTemplateIntoProject`, `createDepartment`, `setAgentAssignment`, `setAgentProjectInstructions` and `setProjectAssignment`. It never touches a file of a Hermes home (the `config.yaml` there is a symlink). A text replaces only an empty field or a text the audit saw or this tuning wrote (SHA-256 in `target.ts`); anything else is reported as "left as it is". Only running Hermes agents are tuned, plus the pool templates their copies come from; no Claude Code or Codex agent is touched.
 
 ## 7. Not verified here
 - **What Hermes loads live** (inventory, drift, memory sizes, pending memory proposals, reflections): the snapshot had no `runtime_state`. The script's report prints it.
 - **Whether `npx @shopify/dev-mcp` starts under isolation,** and whether Hermes' own `browser` toolset (agent-browser via npx) works for the specialists that have no project browser.
 - **The GitHub versions of the two repos:** the texts rely on the task's facts and on a May/August 2026 local copy. Once hub/agent-env has cloned them, compare their `AGENTS.md`/`CLAUDE.md` with the project instructions.
 - **The agents' current project assignments** (`project_member.description`): not in the snapshot. The script only fills empty ones and reports the rest.
+
+## 8. Second pass (owner, 2026-09-25 23:25–23:45): copies, VERVE organisation, browser, models
+
+**Owner's decisions:**
+- Create the approved pool copies. VOL/FAM/PRIV: QA→VOL, assistant→FAM and PRIV, finance→PRIV and VOL, researcher→VOL.
+- VERVE gets a whole organisation by area ("Leg für Verve eine ganze Orga gemäß der Area-Bereiche an"). This replaces the earlier VERVE copies.
+- The project browser for the specialists.
+- `@coder-vol` and `@coder-verve` get reasoning `medium`; `@coder-verve` also gets model `gpt-6-sol`.
+- Memory approval stays on. The test agents stay (the owner deletes them himself).
+
+**Where the decisions live.** The approved copy list is now in one place, `deployment/volition-stack/scripts/setup-agent-pool.copies.ts` (`POOL_COPIES`, plus `POOL_COORDINATOR_SKILLS`). Both `setup-agent-pool.ops.ts` (HTTP) and the tuning (services) use it.
+
+### Sections (none of them in the default set)
+- **`copies`:**
+  - **Departments:** creates the missing departments below their parent: "Verve · Entwicklung", "Verve · Marketing" and "Verve · Support" under "Volition".
+  - **Templates first:** before any copy is made, the tools section gives each copied template the three denied toolsets, so a copy starts with them and keeps following its template. Otherwise a direct change would mark the copy's `approvals` group as overridden.
+  - **Copies:** each missing copy is created with `copyTemplateIntoProject`, exactly what Agent → "In Projekt kopieren" does.
+    - It gets the template's skills, MCP servers, model (the runtime default if the provider refused it), reasoning, triggers, Autopilot level and budgets.
+    - It becomes a specialist reporting to the project's coordinator.
+    - Provisioning issues its key and runtime by itself.
+  - **After the copies,** the rest is planned again with their real ids. The dry run already plans a copy as if it existed (`projectState`), so it shows everything the copy will get.
+  - **What else the section sets:**
+    - Both triggers on, where they are off.
+    - A copy's display name, while it is still "<template name> <KEY>".
+    - Department, agent-team role and manager. Each is set only where it is empty, or the role is still the default `specialist`.
+- **`browser`:** links "Projekt-Browser" through `setAgentMcpServers`, as Agent → Tools does, for `@coder-vol`, `@coder-verve`, `@content-vol` and every copy.
+  - For a copy this marks the `mcpServers` group as its own; nothing else of it stops following the template.
+  - An agent with "Hermes-eigener Browser (alt)" is left alone.
+  - Form fills and submits on other sites stay approval-gated by the policy engine.
+- **`reasoning`:** the model and the reasoning effort, set only where the agent has none of its own. A model the provider refused (`helena_model_availability`) is skipped.
+  - The model id is the catalog id `gpt-6-sol`, as the pool templates and the Hermes catalog write it (`volition-hermes-catalog.py`).
+  - The runner routes it to the provider from its catalog (`packages/runner/src/execute.ts` `modelProvider`). `model_check` compares without the provider prefix (`runtime-sync/model-check.ts` `sameModel`).
+
+### Coordinator instructions follow the team
+Each coordinator's instructions are a team text:
+- **Rendering:** it is rendered from those of the project's known specialists that exist, counting a copy the same run creates. For VERVE the list is grouped by area, with the area's folder.
+- **Replacing:** any text it could have rendered for another set of them may be replaced, and so may the audited text and the first tuning's text. A coordinator whose instructions the owner edited is left alone.
+
+### The VERVE team (all report to `@hermes-verve-coordinator`)
+
+| Area / department | Agent | Template | Model (template) | Notes |
+|---|---|---|---|---|
+| Entwicklung (`dev/`) | `@coder-verve` | — (exists) | gpt-6-sol · medium | department set |
+| | `@shopify-dev-verve` "Shopify-Entwickler VERVE" | shopify-dev | gpt-6-sol · medium | Shopify Dev MCP from the template |
+| | `@qa-verve` | qa | gpt-5.6-terra · medium | |
+| | `@devops-verve` | devops | gpt-6-sol · high | deploys and remote D1 only as an approved change plan |
+| | `@code-reviewer-verve` | code-reviewer | claude-opus-5 · high | agent-team role `reviewer` |
+| Marketing (`marketing/`) | `@content-verve` | content | default | the assignment says: app texts, not the Astro site |
+| | `@market-analyst-verve` | market-analyst | claude-sonnet-5 · medium | the template is about securities; the assignment narrows it to the app's market |
+| | `@designer-verve` | designer | claude-sonnet-5 · high | |
+| Support (`support/`) | `@assistant-verve` "Support VERVE" | assistant | claude-sonnet-5 · low | own merchant-support instructions (24 h, drafts with approval, bugs → Dev) |
+| | `@tech-writer-verve` | tech-writer | claude-sonnet-5 · medium | |
+
+Each assignment names:
+- the area and the folder its runs start in (`/srv/volition/workspaces/projects/verve/<area>/`);
+- the repo `dev/v1-cart-suite` where relevant;
+- the coordinator;
+- the VERVE goals it serves: #5 Phase 0, #6 D1 migration, #7 post-purchase launch, #8 support within 24 h.
+
+Things to know:
+- Ten of the fifteen copies run on Claude models through Hermes' Anthropic login: researcher-vol, the three assistants, both finance copies, code-reviewer, market-analyst, designer and tech-writer. If that login is dead, their first runs fail and the model is recorded as refused.
+- The market-analyst and content templates were written for other jobs (securities, the Astro website). Their skills come along (trading, Astro/SEO). A VERVE-specific template or a skills override is a later cleanup.
+
+### Commands (orchestrator)
+Same command as §6, with the sections added:
+
+```sh
+# dry run of everything, including copies, departments, browser and models
+… /usr/local/bin/bun src/scripts/agent-tuning.ts --sections=skills,tools,instructions,projects,copies,browser,reasoning,report
+# apply
+… /usr/local/bin/bun src/scripts/agent-tuning.ts --sections=skills,tools,instructions,projects,copies,browser,reasoning,report --apply
+```
+
+Checking afterwards:
+- A second dry run must show 0 changes. The exception: once the new copies' runners have reported their inventory, a copy whose profile has bundled Hermes skills with the same names as its Helena skills gets those links removed (the clash rule). Run the apply once more in that case.
+- The 15 new agents come online by themselves through provisioning. Check them in the report's `runner` status after a few minutes.
+
