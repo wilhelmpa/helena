@@ -243,8 +243,9 @@ describe('voice settings', () => {
 
     const first = (await asOwner.god.voice.settings.get()).data!;
     expect(first).toMatchObject({ pauseMs: 600, vocabulary: [], voice: null, speed: 1 });
-    // Helena knows its own names, the agents' and the projects'.
-    expect(first.helenaWords).toEqual(expect.arrayContaining(['Helena', 'Vera', 'Verve', 'VERVE']));
+    // Helena knows its own names, the agents' and the projects' (a key that only differs in
+    // case from the name is the same word).
+    expect(first.helenaWords).toEqual(expect.arrayContaining(['Helena', 'Vera', 'Verve']));
     expect(first.voices).toEqual([]);
 
     const changed = await asOwner.god.voice.settings.patch({
