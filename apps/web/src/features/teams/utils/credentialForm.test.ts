@@ -7,6 +7,7 @@ import {
   credentialValue,
   domainsOf,
   emptyCredentialValue,
+  envNameOf,
   grantableAgentGroups,
   isCredentialFormValid,
   toCredentialPatch,
@@ -38,6 +39,8 @@ const login: CredentialEntry = {
   model: null,
   allowPrivateAddress: false,
   keySource: null,
+  envName: null,
+  value: null,
   createdAt: '2026-09-23T10:00:00.000Z',
   updatedAt: '2026-09-23T10:00:00.000Z',
 };
@@ -90,6 +93,7 @@ describe('credential form', () => {
       projectId: null,
       notes: '',
       value: 'x',
+      envName: null,
     });
     const key = { ...emptyCredentialValue('ssh_key'), label: 'Deploy', projectId: 3 };
     assert.equal(isCredentialFormValid(key, null), true);
@@ -180,6 +184,63 @@ describe('credential form', () => {
       true,
     );
     assert.equal(isCredentialFormValid({ ...login, value: '' }, null), false);
+  });
+
+  it('gives an API key to the agents as an environment variable only when asked to', () => {
+    const key = {
+      ...emptyCredentialValue('api_key'),
+      label: 'Cloudflare VERVE',
+      value: 'token',
+      envEnabled: true,
+      envName: envNameOf('cloudflare-api token'),
+    };
+    assert.equal(key.envName, 'CLOUDFLARE_API_TOKEN');
+    assert.equal(isCredentialFormValid(key, null), true);
+    assert.deepEqual(toNewCredential(key), {
+      kind: 'api_key',
+      label: 'Cloudflare VERVE',
+      projectId: null,
+      notes: '',
+      value: 'token',
+      envName: 'CLOUDFLARE_API_TOKEN',
+    });
+    // Turned off, the name is taken away; a name that is not one is refused.
+    assert.equal(toCredentialPatch({ ...key, envEnabled: false }).envName, null);
+    assert.equal(isCredentialFormValid({ ...key, envName: '1TOKEN' }, null), false);
+    assert.equal(isCredentialFormValid({ ...key, envName: '' }, null), false);
+  });
+
+  it('sends a plain variable with its name and value, and reads one back', () => {
+    const variable = {
+      ...emptyCredentialValue('variable'),
+      label: 'Cloudflare account',
+      envName: 'CLOUDFLARE_ACCOUNT_ID',
+      value: '42a48d019d819276f79d3cf42750689b',
+    };
+    assert.equal(emptyCredentialValue('variable').envEnabled, true);
+    assert.equal(isCredentialFormValid(variable, null), true);
+    assert.deepEqual(toNewCredential(variable), {
+      kind: 'variable',
+      label: 'Cloudflare account',
+      projectId: null,
+      notes: '',
+      value: '42a48d019d819276f79d3cf42750689b',
+      envName: 'CLOUDFLARE_ACCOUNT_ID',
+    });
+    assert.equal(isCredentialFormValid({ ...variable, envName: '' }, null), false);
+    const entry: CredentialEntry = {
+      ...login,
+      kind: 'variable',
+      secrets: [],
+      envName: 'CLOUDFLARE_ACCOUNT_ID',
+      value: '42a48d019d819276f79d3cf42750689b',
+    };
+    assert.deepEqual(
+      { envName: credentialValue(entry).envName, value: credentialValue(entry).value },
+      { envName: 'CLOUDFLARE_ACCOUNT_ID', value: '42a48d019d819276f79d3cf42750689b' },
+    );
+    assert.equal(credentialValue({ ...login, kind: 'api_key', envName: 'X_KEY' }).envEnabled, true);
+    assert.equal(credentialValue({ ...login, kind: 'api_key' }).envEnabled, false);
   });
 
   it('splits domains on lines, commas and spaces', () => {
