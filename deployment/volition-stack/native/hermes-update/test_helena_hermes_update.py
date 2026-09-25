@@ -121,6 +121,34 @@ class HelperTest(unittest.TestCase):
         self.assertEqual((self.venv / "marker").read_text(), "old")
         self.assertFalse((Path(self.tmp.name) / "keep" / "venv").exists())
 
+    # 2026-09-25: a file of the venv only its owner could read stopped every isolated agent that
+    # imported it (the anthropic SDK's docstring_parser, root 0600).
+    def test_an_install_leaves_the_venv_readable_for_every_agent(self):
+        install = ("echo new > {venv}/marker; mkdir -p {venv}/pkg/__pycache__; echo x > {venv}/pkg/mod.py; "
+                   "echo y > {venv}/pkg/__pycache__/mod.pyc; chmod 600 {venv}/pkg/mod.py "
+                   "{venv}/pkg/__pycache__/mod.pyc; chmod 700 {venv}/pkg {venv}/pkg/__pycache__; "
+                   "ln -s {secret} {venv}/pkg/link")
+        secret = Path(self.tmp.name) / "secret"
+        secret.write_text("s")
+        secret.chmod(0o600)
+        answer = helper.run(self.config_with(install=["sh", "-c", install.replace("{secret}", str(secret))]),
+                            "apply", "latest")
+        self.assertTrue(answer["ok"], answer)
+        mode = lambda path: path.stat().st_mode & 0o7777  # noqa: E731
+        self.assertEqual(mode(self.venv / "pkg"), 0o755)
+        self.assertEqual(mode(self.venv / "pkg" / "mod.py"), 0o644)
+        self.assertEqual(mode(self.venv / "pkg" / "__pycache__" / "mod.pyc"), 0o644)
+        self.assertEqual(mode(secret), 0o600)  # the link was not followed
+        self.assertIn("opened 4 entries of the venv to every reader", answer["log"])
+
+    def test_a_rollback_leaves_the_venv_readable_for_every_agent(self):
+        closed = self.venv / "closed.py"
+        closed.write_text("x")
+        closed.chmod(0o600)
+        answer = helper.run(self.config_with(smoke=["sh", "-c", "exit 3"]), "apply", "v2026.9.28")
+        self.assertFalse(answer["ok"])
+        self.assertEqual(closed.stat().st_mode & 0o777, 0o644)
+
     def test_a_local_commit_that_no_longer_applies_puts_everything_back(self):
         commit(self.upstream, "local.py", "patch = 2\n", "upstream takes the same file")
         before = self.head()

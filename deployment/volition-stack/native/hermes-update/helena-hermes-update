@@ -29,6 +29,7 @@ import os
 import pwd
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -94,6 +95,73 @@ class Runner:
         if check and result.returncode != 0:
             raise UpdateError(f"{args[0]} exited with {result.returncode}")
         return output
+
+
+# Isolated agents run Hermes from this venv as their project users (a read-only bind keeps
+# the modes), so every file must be readable by them: on 2026-09-25 docstring_parser (root
+# 0600, linked by uv from a cache written under umask 077) failed every agent on a Claude
+# model, since the anthropic SDK imports it. After each install and each rollback the venv is
+# opened to every reader: go+rX, go-w (chmod's semantics). The same rules as the isolation's
+# runtime_modes.py, which also checks and repairs the venv on every deploy: by file
+# descriptor, no link followed, a file with a second name only when root owns it, nothing of
+# another owner.
+_O_DIR = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
+_O_FILE = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_NOCTTY | os.O_CLOEXEC
+
+
+def open_to_readers(tree: Path) -> int:
+    """Opens every file and folder of `tree` to group and others; returns how many changed."""
+    top = os.open(tree, _O_DIR)
+    owners = {0, os.fstat(top).st_uid}
+    changed = 0
+
+    def open_up(fd: int, info: os.stat_result) -> None:
+        nonlocal changed
+        mode = stat.S_IMODE(info.st_mode)
+        wanted = (mode | 0o044) & ~0o022
+        if stat.S_ISDIR(info.st_mode) or mode & 0o111:
+            wanted |= 0o011
+        # Only what others cannot read yet: a readable tree stays exactly as uv left it.
+        readable = mode & 0o005 == 0o005 if stat.S_ISDIR(info.st_mode) else (
+            mode & 0o004 and not (mode & 0o100 and not mode & 0o001))
+        if readable or info.st_uid not in owners:
+            return
+        if stat.S_ISREG(info.st_mode) and info.st_nlink > 1 and info.st_uid != 0:
+            return
+        os.fchmod(fd, wanted)
+        changed += 1
+
+    def visit(dir_fd: int, depth: int) -> None:
+        if depth > 64:
+            return
+        for name in os.listdir(dir_fd):
+            info = os.stat(name, dir_fd=dir_fd, follow_symlinks=False)
+            if stat.S_ISDIR(info.st_mode):
+                flags = _O_DIR
+            elif stat.S_ISREG(info.st_mode):
+                flags = _O_FILE
+            else:
+                continue
+            try:
+                child = os.open(name, flags, dir_fd=dir_fd)
+            except OSError:
+                continue
+            try:
+                opened = os.fstat(child)
+                if (opened.st_dev, opened.st_ino) != (info.st_dev, info.st_ino):
+                    continue
+                open_up(child, opened)
+                if stat.S_ISDIR(opened.st_mode):
+                    visit(child, depth + 1)
+            finally:
+                os.close(child)
+
+    try:
+        open_up(top, os.fstat(top))
+        visit(top, 0)
+    finally:
+        os.close(top)
+    return changed
 
 
 # The committer of the local commits carried over; their author stays.
@@ -213,6 +281,9 @@ def apply(config: dict, runner: Runner, target: str) -> dict:
             if runner.returncode != 0:
                 raise UpdateError(f"the local commit {patch[:10]} does not apply to {target}")
         runner.run(fill(config["install"], config), owner_of=str(venv), cwd=config["source"])
+        opened = open_to_readers(venv)
+        if opened:
+            runner.note(f"opened {opened} entries of the venv to every reader")
         with tempfile.TemporaryDirectory() as home:
             os.chmod(home, 0o777)
             smoke = runner.run(fill(config["smoke"], config), owner_of=str(venv),
@@ -237,6 +308,10 @@ def apply(config: dict, runner: Runner, target: str) -> dict:
         git(runner, config, "branch", "-q", "-D", work, check=False)
         shutil.rmtree(venv, ignore_errors=True)
         shutil.move(str(rollback), str(venv))
+        try:
+            open_to_readers(venv)
+        except OSError as problem:
+            runner.note(f"the restored venv could not be opened to every reader: {problem}")
         raise
 
 
