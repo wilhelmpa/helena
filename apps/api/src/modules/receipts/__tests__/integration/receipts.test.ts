@@ -392,6 +392,11 @@ describe('receipts', () => {
       status: 'ignored',
     });
     expect(ignored.data.status).toBe('ignored');
+    // A note leaves the status alone.
+    const noted = await http.call<TransactionView>('PATCH', `/transactions/${kiosk}`, {
+      note: 'Kaffee für das Team',
+    });
+    expect(noted.data).toMatchObject({ status: 'ignored', note: 'Kaffee für das Team' });
 
     const summary = await http.call<{
       transactions: Record<string, number>;

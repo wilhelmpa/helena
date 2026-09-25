@@ -177,6 +177,12 @@ export const accountBody = t.Object({
 
 export const accountPatch = t.Partial(accountBody);
 
+// Optional choices are unions of literals, never t.UnionEnum: Elysia gives a UnionEnum its first
+// value as the default, so a patch without the field would reset it (a note on an ignored
+// transaction would open it again) and a list without a filter would show only the first status.
+const direction = t.Union([t.Literal('incoming'), t.Literal('outgoing')]);
+const openOrIgnored = t.Union([t.Literal('open'), t.Literal('ignored')]);
+
 export const receiptPatch = t.Object({
   issuer: t.Optional(t.Nullable(t.String({ maxLength: 300 }))),
   invoiceNumber: t.Optional(t.Nullable(t.String({ maxLength: 100 }))),
@@ -186,17 +192,17 @@ export const receiptPatch = t.Object({
   vatCents: t.Optional(t.Nullable(t.Integer())),
   currency: t.Optional(t.String({ minLength: 3, maxLength: 3 })),
   iban: t.Optional(t.Nullable(t.String({ maxLength: 60 }))),
-  direction: t.Optional(t.UnionEnum(['incoming', 'outgoing'])),
-  status: t.Optional(t.UnionEnum(['open', 'ignored'])),
+  direction: t.Optional(direction),
+  status: t.Optional(openOrIgnored),
 });
 
 export const transactionPatch = t.Object({
-  status: t.Optional(t.UnionEnum(['open', 'ignored'])),
+  status: t.Optional(openOrIgnored),
   note: t.Optional(t.Nullable(t.String({ maxLength: 1000 }))),
 });
 
 export const listQuery = t.Object({
-  status: t.Optional(t.UnionEnum(['open', 'matched', 'ignored'])),
+  status: t.Optional(t.Union([t.Literal('open'), t.Literal('matched'), t.Literal('ignored')])),
   month: t.Optional(monthPattern),
   q: t.Optional(t.String({ maxLength: 200 })),
   accountId: t.Optional(t.Numeric()),
