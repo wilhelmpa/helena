@@ -5,7 +5,7 @@ import { FigureTile } from '@/features/home/dashboard/DashboardParts';
 import { useUpdateCenter } from '../services/updateCenter.service';
 import { headlineUpdate } from '../utils/updateFormat';
 
-export const UPDATES_ADMIN_HREF = '/god/updates';
+export const UPDATES_ADMIN_HREF = '/god/server/updates';
 
 // Start → the "Updates" tile (owner, 2026-09-24: "den Status auch im Dashboard anzeigen"):
 // shown only while there are updates. How many, how many fix a vulnerability (red, first),

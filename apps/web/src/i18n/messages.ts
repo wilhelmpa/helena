@@ -37,6 +37,7 @@ import nav from '../../messages/en/nav.json';
 import newProject from '../../messages/en/newProject.json';
 import notes from '../../messages/en/notes.json';
 import ownerTerminal from '../../messages/en/ownerTerminal.json';
+import serverSecurity from '../../messages/en/serverSecurity.json';
 import palette from '../../messages/en/palette.json';
 import permissions from '../../messages/en/permissions.json';
 import pipelines from '../../messages/en/pipelines.json';
@@ -45,6 +46,7 @@ import providerLimits from '../../messages/en/providerLimits.json';
 import modelAvailability from '../../messages/en/modelAvailability.json';
 import routines from '../../messages/en/routines.json';
 import sections from '../../messages/en/sections.json';
+import server from '../../messages/en/server.json';
 import settings from '../../messages/en/settings.json';
 import shell from '../../messages/en/shell.json';
 import teams from '../../messages/en/teams.json';
@@ -89,6 +91,7 @@ const defaultMessages = {
   initiatives,
   notes,
   ownerTerminal,
+  serverSecurity,
   account,
   settings,
   god,
@@ -109,6 +112,7 @@ const defaultMessages = {
   providerLimits,
   modelAvailability,
   knowledge,
+  server,
 };
 
 export type Messages = typeof defaultMessages;

@@ -19,6 +19,7 @@ import { loadRepositoryBundles } from '#modules/template-bundles/service';
 import { SPOOL_SOURCE_ID, spoolLimitSource } from '#modules/provider-limits/spool';
 import { LOGIN_STATUS_SOURCE_ID, loginStatusSource } from '#modules/runtime-logins/spool';
 import { AUTOPILOT_EVALUATOR_ID, autopilotPolicyEvaluator } from '#modules/autopilot/evaluator';
+import { BUILTIN_HOST_CAPABILITIES, SERVER_PLUGIN_ID, serverPlugin } from '#modules/server/service';
 import {
   BUILTIN_UPDATE_SOURCES,
   UPDATES_PLUGIN_ID,
@@ -142,6 +143,14 @@ export async function loadBuiltinPlugins(app: McpApp): Promise<void> {
     autopilot,
     builtinManifest(AUTOPILOT_PLUGIN_ID, 'autopilot', {
       provides: { policies: [AUTOPILOT_EVALUATOR_ID] },
+    }),
+  );
+  // Administrator → Server (docs/helena-decisions/server-admin.md): the host's disks and RAID,
+  // backups, power and fans, through the root helper helena-hostd.
+  await host.load(
+    serverPlugin,
+    builtinManifest(SERVER_PLUGIN_ID, 'server', {
+      provides: { hostCapabilities: BUILTIN_HOST_CAPABILITIES.map((capability) => capability.id) },
     }),
   );
   await host.load(

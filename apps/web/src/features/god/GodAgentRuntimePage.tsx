@@ -104,7 +104,7 @@ function HermesSection() {
           {/* Checking and updating Hermes happen in the update center, with everything else
               Helena runs on (Administrator → Updates). */}
           <Button variant="outline" size="sm" asChild>
-            <Link href="/god/updates">
+            <Link href="/god/server/updates">
               <PackageCheck />
               {t('openUpdates')}
             </Link>

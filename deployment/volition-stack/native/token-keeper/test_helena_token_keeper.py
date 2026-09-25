@@ -180,6 +180,24 @@ class KeeperLogic(unittest.TestCase):
         record['attemptAt'] = now - 2400
         self.assertEqual(keeper.due('anthropic', Row('a', 'at', 'rt', ms(3600)), now), 'force')
 
+    def test_only_agent_runs_and_chats_count_as_agent_units(self):
+        listing = (
+            'volition-agent-launcher.service loaded active running Volition agent launcher\n'
+            'volition-agent-plan.service loaded active running Volition Plan API for isolated agents\n'
+            'volition-agent-verve--a0-t0-9ac493ee15ba.service loaded active running terminal\n'
+            'volition-agent-browser-state-0a1b2c3d4e5f.service loaded active running browser state\n'
+            'volition-agent-vol--a6-r24-518c7d7d0bdb.service loaded active running run\n'
+            'volition-agent-priv--a4-c109-3a9cbd2cc6ef.service loaded activating start chat\n'
+        )
+
+        def runner(*args, **kwargs):
+            return subprocess.CompletedProcess(args, 0, stdout=listing, stderr='')
+
+        self.assertEqual(KEEPER.running_agent_units('volition-agent-', runner=runner), 2)
+        quiet = 'volition-agent-launcher.service loaded active running x\nvolition-agent-plan.service loaded active running x\n'
+        self.assertEqual(KEEPER.running_agent_units(
+            'volition-agent-', runner=lambda *a, **k: subprocess.CompletedProcess(a, 0, stdout=quiet, stderr='')), 0)
+
     def test_a_preferred_refresh_waits_for_no_agent_unit_a_forced_one_does_not(self):
         self.hermes.add('anthropic', Row('a', 'at', 'rt', ms(5 * 3600)))
         self.units = 1

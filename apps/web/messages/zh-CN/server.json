@@ -1,0 +1,427 @@
+{
+  "title": "服务器",
+  "areas": {
+    "overview": "概览",
+    "disks": "磁盘与 RAID",
+    "backup": "备份",
+    "power": "功耗与风扇",
+    "updates": "更新"
+  },
+  "capabilities": {
+    "system": "机器",
+    "storage": "磁盘与 RAID",
+    "backup": "备份",
+    "power": "功耗与风扇"
+  },
+  "refresh": "重新读取",
+  "refreshing": "正在读取…",
+  "readFailed": "主机助手没有响应，可能当前未在运行。",
+  "unavailable": {
+    "title": "这里没有可管理的内容",
+    "noHelper": "Helena 在没有主机助手的环境中运行（例如在容器中）。磁盘、备份和风扇需在 Helena 之外管理。",
+    "failed": "主机助手没有响应。"
+  },
+  "health": {
+    "raidRebuilding": "镜像 {name} 正在重建：{percent}，大约还需 {remaining}。在此之前只有一份副本。",
+    "raidDegraded": "镜像 {name} 不完整：{missing, plural, other {缺少 # 块磁盘}}。",
+    "raidChecking": "镜像 {name} 正在检查：{percent}，大约还需 {remaining}。",
+    "raidResyncing": "镜像 {name} 正在重新同步：{percent}。",
+    "raidMismatches": "镜像 {name}：上次检查发现 {count, plural, other {# 处不一致}}。",
+    "raidOk": "镜像 {name}：{disks, plural, other {# 块磁盘}}，已同步。",
+    "diskUnknown": "磁盘 {disk}：无法读取健康状态。",
+    "diskFailing": "磁盘 {disk} 报告故障，请更换。",
+    "diskSpareLow": "磁盘 {disk}：备用空间即将耗尽（{spare}%），请更换。",
+    "diskErrors": "磁盘 {disk}：报告了 {count, plural, other {# 个读取错误}}。",
+    "diskWorn": "磁盘 {disk} 已磨损 {wear}%。",
+    "diskHot": "磁盘 {disk} 温度过高（{temperature}）。",
+    "diskOk": "磁盘 {disk}：健康，{temperature}，已磨损 {wear}%。",
+    "espNotMounted": "EFI 分区 {mount} 未挂载。",
+    "espOutOfSync": "两个 EFI 分区不一致（{count, plural, other {# 个文件}}）。",
+    "espInSync": "两个 EFI 分区一致。",
+    "eventsCritical": "来自 mdadm 或 smartd 的 {count, plural, other {# 条严重报告}}尚未查看。",
+    "backupNotInitialized": "备份已安装，但尚未设置。",
+    "backupRunning": "首次备份正在运行。",
+    "backupNever": "还没有任何备份。",
+    "backupFailed": "上次备份失败（{at}前）。",
+    "backupLate": "上次备份在 {at}前，晚于计划。",
+    "backupOk": "上次备份于 {at}前。",
+    "backupPasswordPending": "备份密码尚未记下。",
+    "backupCheckFailed": "备份检查失败。",
+    "restoreTestFailed": "恢复测试失败。",
+    "backupTargetFailed": "复制到 {target} 失败。",
+    "fansRaised": "风扇已提升至 5 档：CPU 为 {temperature}。",
+    "cpuHot": "CPU 温度过高：{temperature}。",
+    "cpuTemperature": "CPU {temperature}。",
+    "fansFixed": "风扇处于 {level} 档。",
+    "fansAuto": "风扇自动调节。",
+    "memoryPressure": "内存紧张：仅剩 {available} 可用。",
+    "memoryOk": "内存：{available} 可用。",
+    "healthFailed": "无法读取健康状态。"
+  },
+  "overview": {
+    "machine": "机器",
+    "board": "主板",
+    "cpu": "处理器",
+    "threads": "{count} 线程",
+    "hostname": "名称",
+    "kernel": "内核",
+    "uptime": "已运行",
+    "load": "负载（1 · 5 · 15 分钟）",
+    "memory": "内存",
+    "memorySystem": "系统内存",
+    "memoryAvailable": "其中可用",
+    "memoryGpu": "为 GPU 预留",
+    "memoryGpuUsed": "GPU 已用",
+    "swap": "交换空间",
+    "swapUsed": "{used} / {total}",
+    "health": "健康状态",
+    "helper": "主机助手 {version}"
+  },
+  "disks": {
+    "arrays": "镜像",
+    "noArrays": "这台机器上没有 RAID。",
+    "arrayTitle": "镜像 {name}（{level}）",
+    "diskLetter": "磁盘 {letter}",
+    "serial": "序列号 {serial}",
+    "checkStart": "开始检查",
+    "checkStop": "停止检查",
+    "checkStarted": "检查正在运行。",
+    "checkStopped": "检查已停止。",
+    "checkConfirmTitle": "检查镜像？",
+    "checkConfirmBody": "完整读取两块磁盘并进行比较（与每月自动检查相同）。需要几个小时，磁盘会稍微变慢；Helena 继续运行。",
+    "syncAction": {
+      "idle": "空闲",
+      "resync": "重新同步",
+      "recover": "重建",
+      "check": "检查",
+      "repair": "修复",
+      "reshape": "重塑",
+      "frozen": "已冻结"
+    },
+    "syncProgress": "{action}：{percent} · 大约还需 {remaining} · {speed}/秒",
+    "member": {
+      "inSync": "已同步",
+      "rebuilding": "正在重建",
+      "faulty": "故障",
+      "missing": "磁盘缺失"
+    },
+    "mismatches": "{count, plural, =0 {上次检查未发现不一致。} other {上次检查发现 # 处不一致。}}",
+    "selfTest": "自检",
+    "selfTestRunning": "自检进行中",
+    "selfTestStarted": "自检正在运行（几分钟）。",
+    "memberOf": "属于 {arrays}",
+    "smart": {
+      "state": "SMART",
+      "passed": "正常",
+      "failing": "故障",
+      "unknown": "未知",
+      "temperature": "温度",
+      "wear": "磨损",
+      "spare": "备用空间",
+      "spareValue": "{spare}（阈值 {threshold}）",
+      "powerOn": "通电时间",
+      "hours": "{hours, number} 小时",
+      "written": "已写入",
+      "mediaErrors": "读取错误",
+      "unsafeShutdowns": "异常关机",
+      "firmware": "固件",
+      "none": "此磁盘不提供 SMART 数据。"
+    },
+    "boot": {
+      "title": "启动",
+      "espInSync": "EFI 分区一致：{mounts}",
+      "espDiffer": "EFI 分区不一致（{count, plural, other {# 个文件}}）。每次软件包更新后都会重新同步。",
+      "espMissing": "未挂载：{mounts}",
+      "espUnknown": "EFI 分区状态未知。",
+      "current": "当前启动",
+      "next": "下次启动",
+      "first": "首位",
+      "none": "无法读取 EFI 启动项。",
+      "reserveOnce": "从备用盘启动一次",
+      "cancel": "取消备用盘启动",
+      "canceled": "下次启动恢复正常顺序。",
+      "set": "下次重启将从备用盘启动。",
+      "pending": "下次重启将从备用盘启动一次，之后恢复正常。",
+      "confirmTitle": "从备用盘启动一次？",
+      "confirmBody": "下次重启时，机器将通过启动项“Debian (Reserve)”从第二块磁盘启动一次，以证明没有第一块磁盘也能启动。需要你自己重启；之后恢复正常顺序。"
+    },
+    "replace": {
+      "open": "更换磁盘",
+      "title": "更换镜像中的一块磁盘",
+      "intro": "逐步操作，附带适用于这台机器的命令。Helena 不会执行这些命令：由你在所有者终端中输入。期间服务器继续在另一块磁盘上运行。",
+      "which": "要取出哪块磁盘？",
+      "disk": "磁盘 {letter}",
+      "noPlan": "此磁盘没有更换方案：它不属于任何镜像，或者缺少一块健康的第二块磁盘。",
+      "step": {
+        "remove": "从镜像中移除",
+        "removeBody": "将磁盘 {disk}（分区 {partition}）标记为故障并移除。如果它已不在，跳过此步。",
+        "swap": "关机并更换",
+        "swapBody": "关闭机器并更换磁盘。新磁盘至少需要 {size}。机器将从磁盘 {other} 启动（大约 20 秒后，因为镜像不完整）。",
+        "find": "找到新磁盘",
+        "newDevice": "新磁盘的设备（没有分区的那个）",
+        "newDeviceInvalid": "请填写整个设备，例如 /dev/nvme0n1。",
+        "partition": "复制分区",
+        "esp": "创建 EFI 分区",
+        "espBody": "格式化 EFI 分区，以 {mount} 写入 /etc/fstab，并复制 {other} 的内容。",
+        "add": "加入镜像",
+        "addBody": "随后镜像开始重建；进度显示在此页面上（需要几个小时）。",
+        "boot": "更新启动项",
+        "bootBody": "为新磁盘创建固件启动项“{label}”，并删除失效的旧项。新编号显示在输出中。",
+        "test": "检查",
+        "testBody": "当镜像显示“已同步”时：在此页面上设置从备用盘启动一次，然后重启。"
+      }
+    }
+  },
+  "events": {
+    "title": "报告",
+    "none": "没有报告。",
+    "markSeen": "{count, plural, =1 {标记为已查看} other {将 # 条标记为已查看}}",
+    "source": {
+      "mdadm": "RAID",
+      "smartd": "SMART",
+      "guard": "风扇保护",
+      "backup": "备份"
+    },
+    "codes": {
+      "Fail": "磁盘故障",
+      "FailSpare": "热备盘故障",
+      "DegradedArray": "镜像不完整",
+      "DeviceDisappeared": "镜像消失",
+      "SparesMissing": "缺少热备盘",
+      "MoveSpare": "热备盘已移动",
+      "SpareActive": "磁盘已重新加入镜像",
+      "NewArray": "新镜像",
+      "RebuildStarted": "重建已开始",
+      "RebuildProgress": "重建进度 {percent}%",
+      "RebuildFinished": "重建已完成",
+      "TestMessage": "测试报告",
+      "Health": "SMART 报告故障",
+      "FailedHealthCheck": "SMART 检查失败",
+      "Usage": "SMART 值超过阈值",
+      "SelfTest": "自检失败",
+      "ErrorCount": "日志中有新错误",
+      "CurrentPendingSector": "不可读扇区",
+      "OfflineUncorrectableSector": "不可纠正扇区",
+      "Temperature": "磁盘过热",
+      "FailedReadSmartData": "无法读取 SMART 数据",
+      "FailedOpenDevice": "无法访问磁盘",
+      "EmailTest": "测试报告",
+      "FansRaised": "风扇已提速",
+      "FansRestored": "风扇已恢复到所选档位",
+      "BackupFailed": "备份失败",
+      "CheckFailed": "备份检查失败",
+      "RestoreTestFailed": "恢复测试失败"
+    }
+  },
+  "backup": {
+    "runNow": "立即备份",
+    "running": "运行中…",
+    "runMaintenance": "清理并检查",
+    "runRestoreTest": "测试恢复",
+    "started": {
+      "backup": "备份正在运行。",
+      "maintenance": "清理和检查正在运行。",
+      "restore-test": "恢复测试正在运行。"
+    },
+    "notSetUp": {
+      "title": "备份尚未设置",
+      "description": "在服务器上运行一次：它会在 RAID 上创建密码和存储库，并安排备份计划。"
+    },
+    "status": "状态",
+    "runningNow": "当前正在备份。",
+    "lastSnapshot": "最新快照",
+    "added": "新增",
+    "processed": "已备份",
+    "filesAndSize": "{files, number} 个文件，{size}",
+    "repositorySize": "备份大小",
+    "nextRun": "下次备份",
+    "noNextRun": "未安排",
+    "repository": "存储库",
+    "unreadable": "{count, plural, other {# 个文件无法读取}}，最新快照中缺少这些文件。",
+    "saved": "已保存。",
+    "checkWeekly": "每周清理并抽样检查",
+    "restoreTestMonthly": "每月测试一次恢复",
+    "schedule": {
+      "title": "计划与保留",
+      "frequency": "频率",
+      "hourly": "每小时",
+      "every6h": "每 6 小时",
+      "daily": "每天",
+      "off": "关闭",
+      "time": "时间",
+      "minute": "分钟（时间）",
+      "explain": {
+        "hourly": "每小时的第 {minute} 分钟。",
+        "every6h": "每六小时一次，从 {time} 开始。",
+        "daily": "每天 {time}。",
+        "off": "没有计划备份；“立即备份”仍然可用。"
+      }
+    },
+    "retention": {
+      "hourly": "每小时",
+      "daily": "每天",
+      "weekly": "每周",
+      "monthly": "每月",
+      "keepSomething": "至少要保留一个快照。"
+    },
+    "never": "从未",
+    "okAt": "正常，{time}前",
+    "failedAt": "失败，{time}前",
+    "checks": {
+      "title": "检查",
+      "maintenance": "清理和检查",
+      "restoreTest": "恢复测试",
+      "restoreTestDetail": "{files} 个抽样文件和数据库 {database}（{tables} 张表）均可恢复。",
+      "next": "下次：检查 {maintenance}，恢复测试 {restoreTest}。"
+    },
+    "snapshots": {
+      "title": "快照",
+      "count": "{count, plural, other {# 个快照}}",
+      "none": "还没有快照。",
+      "added": "+{size}",
+      "browse": "浏览"
+    },
+    "restores": {
+      "title": "恢复记录",
+      "location": "位于",
+      "movedAside": "旧版本已移至"
+    },
+    "paths": {
+      "title": "备份内容",
+      "explain": "另外还有数据库（pg_dump）和代理的 SQLite 文件。缓存、node_modules 和代理的测试环境不包含在内。"
+    },
+    "password": {
+      "title": "记下备份密码",
+      "explain": "没有此密码就无法读取备份，重新安装后的 Helena 也不行。请把它写在纸上或存入密码管理器。确认后，Helena 将不再显示它。",
+      "show": "显示密码",
+      "written": "我已妥善记下密码。",
+      "confirm": "确认",
+      "confirmed": "已确认。Helena 不再显示该密码。"
+    },
+    "targets": {
+      "title": "异地备份",
+      "explain": "每次备份还会复制到 S3 存储（例如 Backblaze B2、Hetzner、Cloudflare R2）。密钥只保存在主机助手处。",
+      "repository": "S3 地址",
+      "accessKeyId": "Access Key ID",
+      "secretAccessKey": "Secret Access Key",
+      "add": "添加目标",
+      "saved": "目标已保存；下次备份会复制到那里。",
+      "enabled": "启用",
+      "remove": "删除目标",
+      "neverCopied": "尚未复制"
+    },
+    "browse": {
+      "title": "快照 {snapshot}",
+      "explain": "打开文件夹，然后恢复文件或文件夹。",
+      "path": "路径",
+      "up": "上一级",
+      "empty": "此文件夹为空。",
+      "notFound": "此快照中没有这个文件夹。",
+      "truncated": "仅显示前 2000 项。",
+      "restore": "恢复",
+      "restoreWhat": "恢复：",
+      "mode": {
+        "copy": "作为副本",
+        "copyHome": "恢复到新文件夹 ~/Wiederhergestellt/…。不会覆盖任何内容。",
+        "copyRoot": "恢复到 /var/backups/helena/restores 下的新文件夹（仅限 root）。不会覆盖任何内容。",
+        "original": "恢复到原位置",
+        "originalExplain": "该位置现有的内容会先移动到 ….vor-wiederherstellung-…。"
+      },
+      "confirmPath": "输入路径以确认",
+      "startCopy": "恢复为副本",
+      "startOriginal": "原位恢复",
+      "back": "返回",
+      "job": {
+        "queued": "等待中…",
+        "running": "正在恢复…",
+        "done": "完成。",
+        "failed": "失败。",
+        "location": "位于",
+        "movedAside": "旧版本已移至"
+      }
+    }
+  },
+  "power": {
+    "notInstalled": {
+      "title": "风扇与功耗控制尚未安装",
+      "description": "主板 {board}。控制需要 EC 驱动、ryzen_smu、ryzenadj 和 power-profiles-daemon；安装脚本会配置它们，并先将风扇设为 5 档。"
+    },
+    "profile": {
+      "title": "模式",
+      "saver": "节能",
+      "balanced": "均衡",
+      "performance": "性能",
+      "mixed": "各层设置不一致",
+      "set": "“{profile}”模式已启用。",
+      "partly": "并非所有层都应用了该模式：{layers}。",
+      "explain": {
+        "saver": "BIOS 静音（持续 {stapm} W，短时 {fast} W），操作系统节能。",
+        "balanced": "BIOS 均衡（持续 {stapm} W，短时 {fast} W），操作系统均衡。",
+        "performance": "BIOS 性能（持续 {stapm} W，短时 {fast} W），操作系统性能。"
+      }
+    },
+    "layer": {
+      "ec": "BIOS (EC)",
+      "os": "操作系统",
+      "ryzenadj": "功耗上限（ryzenadj）",
+      "unavailable": "不可用",
+      "ecLimits": "持续 {stapm} W · 短时 {fast} W · 平均 {slow} W",
+      "epp": "EPP {epp} · {driver}",
+      "limits": "{stapm} · {fast} · {slow}",
+      "now": "当前 {power} · CPU {tctl}（上限 {limit}）",
+      "noSmu": "ryzen_smu 未加载",
+      "notInstalled": "未安装"
+    },
+    "ecMode": {
+      "quiet": "静音",
+      "balanced": "均衡",
+      "performance": "性能"
+    },
+    "osProfile": {
+      "power-saver": "节能",
+      "balanced": "均衡",
+      "performance": "性能"
+    },
+    "fans": {
+      "title": "风扇",
+      "auto": "自动",
+      "level": "{level} 档",
+      "autoExplain": "EC 按自己的曲线控制风扇。",
+      "fixedExplain": "三个风扇均固定在 {percent}%。",
+      "unknown": "尚未选择。",
+      "heldByGuard": "已保存。风扇将保持在 5 档，直到 CPU 降温。",
+      "guardActive": "风扇保护正将风扇保持在 5 档（CPU {temperature}，已持续 {since}）。",
+      "rpm": "{rpm, number} 转/分",
+      "name": {
+        "fan1": "CPU 风扇 1",
+        "fan2": "CPU 风扇 2",
+        "fan3": "机箱风扇"
+      }
+    },
+    "temperatures": {
+      "title": "温度",
+      "max": "最高 {max}"
+    },
+    "sensor": {
+      "ec": "CPU (EC)",
+      "cpu": "CPU (Tctl)",
+      "gpu": "GPU",
+      "gpuPower": "APU 功耗",
+      "nvme": "SSD {id}",
+      "board": "主板"
+    },
+    "guard": {
+      "title": "风扇保护",
+      "explain": "当风扇固定在 5 档以下、且 CPU 持续数秒达到 {limit} 或更高时，Helena 会将风扇调到 5 档。低于 {release} 持续两分钟后，恢复你选择的档位。",
+      "limit": "上限",
+      "saved": "已保存。",
+      "active": "正将风扇保持在 5 档。",
+      "watching": "监视中。",
+      "waitingForDriver": "正在等待 EC 驱动。"
+    }
+  },
+  "home": {
+    "title": "服务器",
+    "allGood": "一切正常。"
+  }
+}

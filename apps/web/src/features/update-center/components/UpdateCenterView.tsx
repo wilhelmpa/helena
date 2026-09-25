@@ -27,10 +27,10 @@ import { groupItems, justNow, runningAction, splitItems, versionStep } from '../
 // Updates suchen … den Status auch im Dashboard anzeigen"): every component Helena runs on
 // with its installed and newest version, what a new version changes and how risky it looks
 // (a small model's summary), "Aktualisieren" where Helena can do it, the history, and the
-// settings. Mountable: Administrator → Updates shows it on its own
-// (features/god/GodUpdatesPage.tsx), a host area (Administrator → Server) as one of its tabs.
-// The host puts <UpdateCheckAction /> into its one toolbar row (docs/volition/ui-standard.md)
-// and <UpdateCenterView /> into its body.
+// settings. Mounted as the Updates tab of Administrator → Server
+// (features/server/updatesTab.tsx; /god/updates redirects there): the host puts
+// <UpdateCheckAction /> into its one toolbar row (docs/volition/ui-standard.md) and
+// <UpdateCenterView /> into its body.
 
 // "Jetzt prüfen", for the page's toolbar (inside a <PageToolbar>).
 export function UpdateCheckAction() {

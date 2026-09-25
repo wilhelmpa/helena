@@ -9,6 +9,7 @@ import {
   type EventBus,
   type EventInit,
 } from '../events';
+import type { HostCapability } from '../host';
 import type { CaptureTarget, KnowledgeSource } from '../knowledge';
 import type { McpServerContribution, PluginManifest } from '../manifest-types';
 import type { HelenaPlugin, HostProcess, PluginContext, Registrar } from '../plugin';
@@ -83,6 +84,7 @@ export class PluginHost {
   readonly knowledgeSources: Registry<KnowledgeSource>;
   readonly captureTargets: Registry<CaptureTarget>;
   readonly bundles: Registry<BundleOffer>;
+  readonly hostCapabilities: Registry<HostCapability>;
   readonly mcpServers: Registry<McpServerContribution>;
   readonly profileContributions: Registry<ProfileContribution>;
   readonly usageLimitSources: Registry<UsageLimitSource>;
@@ -110,6 +112,7 @@ export class PluginHost {
     this.knowledgeSources = registries.knowledgeSources;
     this.captureTargets = registries.captureTargets;
     this.bundles = registries.bundles;
+    this.hostCapabilities = registries.hostCapabilities;
     this.mcpServers = registries.mcpServers;
     this.profileContributions = registries.profileContributions;
     this.usageLimitSources = registries.usageLimitSources;
@@ -229,6 +232,7 @@ export class PluginHost {
       this.knowledgeSources,
       this.captureTargets,
       this.bundles,
+      this.hostCapabilities,
       this.mcpServers,
       this.profileContributions,
       this.usageLimitSources,
@@ -350,6 +354,11 @@ export class PluginHost {
         const problems = validateBundle(offer.bundle);
         if (problems.length) fail(`bundle ${offer.id} is invalid: ${problems.join('; ')}`);
       }),
+      hostCapabilities: registrar(
+        this.hostCapabilities,
+        provides.hostCapabilities,
+        'hostCapabilities',
+      ),
       mcpServers: registrar(
         this.mcpServers,
         (provides.mcpServers ?? []).map((server) => server.name),

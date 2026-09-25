@@ -24,6 +24,7 @@ import SidebarNavItem from '@/components/layout/SidebarNavItem';
 import SidebarNavSubmenu from '@/components/layout/SidebarNavSubmenu';
 import SidebarAccountRow from '@/components/brand/SidebarAccountRow';
 import SidebarBrand from '@/components/brand/SidebarBrand';
+import { useServerAreaVisible } from '@/features/server/services/server.service';
 
 // The sidebar of the Administrator. It is the main sidebar's twin — the Helena brand
 // row, then a way back and the instance sections in groups, the integration sections
@@ -35,6 +36,9 @@ export default function GodSidebar() {
   const pathname = usePathname();
   const side = useSidebarSide();
   const { headerLayout } = useAccountPreferences();
+  // Administrator → Server only where the host offers something (not in a container
+  // without the host helper and the update center).
+  const serverVisible = useServerAreaVisible();
 
   return (
     <Sidebar collapsible="icon" side={side}>
@@ -72,16 +76,18 @@ export default function GodSidebar() {
               <SidebarGroupLabel>{god.group(group)}</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {godSectionsIn(group).map((section) => (
-                    <SidebarNavItem
-                      key={section.slug}
-                      href={godPath(section.slug)}
-                      icon={section.icon}
-                      label={god.section(section.slug).label}
-                      active={pathname.startsWith(`/god/${section.slug}`)}
-                      disabled={false}
-                    />
-                  ))}
+                  {godSectionsIn(group)
+                    .filter((section) => !section.host || serverVisible)
+                    .map((section) => (
+                      <SidebarNavItem
+                        key={section.slug}
+                        href={godPath(section.slug)}
+                        icon={section.icon}
+                        label={god.section(section.slug).label}
+                        active={pathname.startsWith(`/god/${section.slug}`)}
+                        disabled={false}
+                      />
+                    ))}
                   {integrations.length > 0 && (
                     <SidebarNavSubmenu icon={Plug} label={t('integrations')} items={integrations} />
                   )}

@@ -443,6 +443,7 @@
       "limits": "Batas",
       "autopilot": "Autopilot",
       "logins": "Login",
+      "server": "Server",
       "updates": "Pembaruan",
       "browserTask": "Tugas browser"
     },

@@ -1,0 +1,25 @@
+[Unit]
+Description=Helena backup (the databases and the configured folders into the restic repository)
+Documentation=file:/usr/local/lib/helena/hostd/README.md
+After=postgresql.service network-online.target
+Wants=network-online.target
+ConditionPathExists=/etc/helena/backup/restic.password
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 -I /usr/local/lib/helena/hostd/helena-hostd backup run
+Environment=HELENA_HOSTD_CONFIG=/etc/helena/hostd.json
+TimeoutStartSec=12h
+Nice=10
+IOSchedulingClass=idle
+CPUSchedulingPolicy=batch
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=read-only
+# /usr, /boot and /etc read-only; the repository, cache and state live under /var.
+ProtectSystem=full
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+LockPersonality=yes

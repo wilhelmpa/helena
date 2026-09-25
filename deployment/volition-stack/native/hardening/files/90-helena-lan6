@@ -1,0 +1,5 @@
+#!/bin/sh
+# NetworkManager dispatcher: refresh the firewall's home IPv6 networks when addresses change.
+case "$2" in
+  up|dhcp6-change|connectivity-change|reapply) /usr/local/libexec/helena-lan6-sync || true ;;
+esac

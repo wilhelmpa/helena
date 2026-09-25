@@ -15,6 +15,7 @@ import HomeLogins from './HomeLogins';
 import HomeServiceState from './HomeServiceState';
 import LimitsHealthLines from '@/features/provider-limits/components/LimitsHealthLines';
 import ModelAvailabilityHealthLines from '@/features/model-availability/components/ModelAvailabilityHealthLines';
+import ServerHealthLines from '@/features/server/components/ServerHealthLines';
 
 // The instance owner's view of the services around Helena (Start → System, in a dialog) — the Hermes runner, the
 // Helena engine (workflows, agent teams, routines), the provisioning service and the
@@ -59,6 +60,7 @@ export default function HomeSystemHealth() {
               ))}
             </ul>
           )}
+          <ServerHealthLines />
           <LimitsHealthLines />
           <ModelAvailabilityHealthLines models={data.models} />
           <HomeLogins health={data.logins} />

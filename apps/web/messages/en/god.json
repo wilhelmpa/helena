@@ -443,6 +443,7 @@
       "limits": "Limits",
       "autopilot": "Autopilot",
       "logins": "Logins",
+      "server": "Server",
       "updates": "Updates",
       "browserTask": "Browser tasks"
     },
