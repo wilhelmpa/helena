@@ -147,6 +147,13 @@ lemonade_config() {
   # it only adds the binary's folder to LD_LIBRARY_PATH. `--load-mode none`: the weights are
   # read into VRAM, not memory-mapped (llama.cpp's former --no-mmap; with mmap the page cache
   # of a 60 GB model competes with the 31 GB the OS has).
+  # `--chat-template-kwargs {"enable_thinking":false}`: a reasoning model (Qwen3.x) answers
+  # without thinking unless a request asks for it (`chat_template_kwargs.enable_thinking`,
+  # merged over this default by llama-server). Helena's own calls always say how much each
+  # kind of work may think; Hermes' helper calls (context compression, image descriptions)
+  # carry nothing and so run without, and an agent that runs on a local model thinks because
+  # its Hermes provider asks for it (decision doc §6.7). Found live: with thinking on, a summary
+  # spent its max_tokens on reasoning and returned no answer.
   # Lemonade runs *_bin as the llama-server executable itself (found live: with the folder it
   # logs "Failed to execute: …/rocm-b11166" and every load fails with HTTP 500).
   backend=rocm rocm_bin=$OPT/llamacpp/rocm-$LLAMA_TAG/llama-server
@@ -170,7 +177,7 @@ lemonade_config() {
     "prefer_system": false,
     "vulkan_bin": "$OPT/llamacpp/vulkan-$LLAMA_TAG/llama-server",
     "rocm_bin": "$rocm_bin",
-    "args": "--load-mode none"
+    "args": "--load-mode none --chat-template-kwargs '{\"enable_thinking\":false}'"
   },
   "flm": { "prefer_system": true, "args": "" }
 }
@@ -516,6 +523,15 @@ status() {
   else
     say "health:        (run as root to use the key)"
   fi
+  # The llama-servers Lemonade started, and whether they answer without thinking by default.
+  ps -eo args= 2>/dev/null | grep '/llama-server ' | grep -v grep | while read -r line; do
+    model=$(printf '%s\n' "$line" | sed -n 's/.* -m \([^ ]*\).*/\1/p' | sed 's#.*/##')
+    case "$line" in
+      *'"enable_thinking":false'*) thinking="off unless asked" ;;
+      *) thinking="the model's default (no --chat-template-kwargs: re-run install)" ;;
+    esac
+    say "llama-server:  ${model:-?} · thinking $thinking"
+  done
   if [ -r /sys/class/drm/card0/device/mem_info_vram_used ]; then
     say "VRAM:          $(($(cat /sys/class/drm/card0/device/mem_info_vram_used) / 1048576)) MiB of $(($(cat /sys/class/drm/card0/device/mem_info_vram_total) / 1048576)) MiB, GPU busy $(cat /sys/class/drm/card0/device/gpu_busy_percent)%"
   fi

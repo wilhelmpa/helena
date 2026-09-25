@@ -4,9 +4,17 @@ import { registerProfileContribution } from './contributions';
 // Helena's local AI in an agent's Hermes profile (docs/helena-decisions/local-ai-platform.md):
 // while the owner has it on, each local model server becomes a named Hermes provider
 // (`providers.helena-<slug>`, its key from the environment), and the helper calls the policy
-// sends there first (context compression, session titles, vision) point at it, each with the
-// main model as its fallback. While it is off the snapshot carries none of it, so nothing of
-// it stays in any profile: the agent runs exactly as without local AI.
+// sends there first (context compression, image descriptions) point at it, each with the main
+// model as its fallback. While it is off the snapshot carries none of it, so nothing of it
+// stays in any profile: the agent runs exactly as without local AI.
+//
+// Thinking (decision doc §6.7): Lemonade starts its models answering without thinking. The
+// helper calls carry nothing, so they run without (a compression needs no reasoning, and with
+// it a reasoning model spends its tokens before it answers). An agent the owner put on a local
+// model asks for thinking through the provider's `extra_body`, which Hermes adds to the
+// agent's own turns only and drops when it falls back to another provider. The helpers'
+// per-task `extra_body` is no way to switch thinking off: Hermes sends it to the fallback
+// (the main model) too, and a Codex or Claude endpoint refuses `chat_template_kwargs`.
 //
 // A local model never becomes the agent's configured model here. An agent runs one only when
 // the owner picked it (the model id `helena-<slug>/<model>` then names the provider, see
@@ -23,6 +31,8 @@ export function hermesLocalAiConfig(localAi: RuntimeLocalAi | null | undefined) 
       context_length: server.contextLength,
       // The list comes from Helena; Hermes need not ask the server at every start.
       discover_models: false,
+      // The agent's own turns think (see above); llama-server merges this over its default.
+      extra_body: { chat_template_kwargs: { enable_thinking: true } },
       models: Object.fromEntries(
         server.models.map((model) => [
           model.id,

@@ -327,7 +327,12 @@ export async function runEval(input: { classId: string; modelId: string; userId:
   let values: typeof helenaLocalAiEval.$inferInsert;
   try {
     const result = await entry.evaluate(
-      openAiEvalContext({ baseUrl: server.baseUrl, key, model: model.id }),
+      openAiEvalContext({
+        baseUrl: server.baseUrl,
+        key,
+        model: model.id,
+        thinking: entry.thinking ?? 'off',
+      }),
     );
     values = {
       classId: entry.id,
@@ -876,6 +881,7 @@ export async function localAiSettings() {
         unit: entry.unit,
         capability: entry.capability,
         priority: entry.priority,
+        thinking: entry.thinking ?? 'off',
         experimental: entry.experimental === true,
         inMasterDefault: entry.inMasterDefault,
         wired: entry.wired,

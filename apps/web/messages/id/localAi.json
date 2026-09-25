@@ -153,5 +153,11 @@
     "serverDown": "AI lokal: {name} tidak menjawab",
     "evalFailed": "AI lokal: “{class}” gagal dalam evaluasi",
     "evalFailedDetail": "{model} – model yang diatur menjawab sampai evaluasi lulus"
+  },
+  "thinking": {
+    "off": "tanpa berpikir",
+    "low": "berpikir singkat",
+    "medium": "berpikir",
+    "high": "berpikir mendalam"
   }
 }

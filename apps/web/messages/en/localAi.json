@@ -153,5 +153,11 @@
     "serverDown": "Local AI: {name} does not answer",
     "evalFailed": "Local AI: “{class}” failed its eval",
     "evalFailedDetail": "{model} – the configured model answers until an eval passes"
+  },
+  "thinking": {
+    "off": "no thinking",
+    "low": "thinks briefly",
+    "medium": "thinks",
+    "high": "thinks thoroughly"
   }
 }

@@ -73,6 +73,8 @@ export interface LocalAiClass {
   unit: LocalAiUnit;
   capability: string;
   priority: string;
+  // How much a reasoning model may think for this work.
+  thinking: 'off' | 'low' | 'medium' | 'high';
   experimental: boolean;
   inMasterDefault: boolean;
   wired: boolean;

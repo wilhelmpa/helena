@@ -80,6 +80,9 @@ export const DECISIONS_LOCAL_AI_CLASS: LocalAiTaskClass = {
   capability: 'chat',
   // They block the start of a run or a chat answer (the model router), so they go first.
   priority: 'interactive',
+  // One option id as the answer, like the production calls (packages/decisions sends
+  // enable_thinking false too).
+  thinking: 'off',
   inMasterDefault: false,
   wired: true,
   evaluate: evaluateDecisions,

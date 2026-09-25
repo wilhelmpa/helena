@@ -51,6 +51,7 @@ describe('local AI in the runner', () => {
           transport: 'chat_completions',
           context_length: 65536,
           discover_models: false,
+          extra_body: { chat_template_kwargs: { enable_thinking: true } },
           models: {
             'Qwen3.6-35B-A3B-GGUF': { context_length: 131072, supports_vision: true },
             'Tiny-GGUF': {},
@@ -71,6 +72,10 @@ describe('local AI in the runner', () => {
       },
     });
     expect(localKeyVariables(LOCAL)).toEqual(['HELENA_MODEL_SERVER_KEY_LOCAL']);
+    // The helpers carry no request fields of their own: Hermes would send them to the
+    // fallback (the main model) as well.
+    const helpers = (hermesLocalAiConfig(LOCAL) as { auxiliary: Record<string, object> }).auxiliary;
+    for (const helper of Object.values(helpers)) expect(helper).not.toHaveProperty('extra_body');
   });
 
   it('leaves nothing in the profile while local AI is off, and nothing for other runtimes', () => {

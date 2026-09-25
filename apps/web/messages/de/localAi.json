@@ -153,5 +153,11 @@
     "serverDown": "Lokale KI: {name} antwortet nicht",
     "evalFailed": "Lokale KI: „{class}“ hat die Auswertung nicht bestanden",
     "evalFailedDetail": "{model} – bis eine Auswertung besteht, antwortet das eingestellte Modell"
+  },
+  "thinking": {
+    "off": "ohne Nachdenken",
+    "low": "denkt kurz nach",
+    "medium": "denkt nach",
+    "high": "denkt gründlich nach"
   }
 }

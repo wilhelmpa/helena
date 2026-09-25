@@ -303,6 +303,7 @@ export {
 export {
   LOCAL_AI_MODES,
   LOCAL_AI_PRIORITIES,
+  LOCAL_AI_THINKING,
   LOCAL_AI_UNITS,
   LOCAL_MODEL_CAPABILITIES,
   LOCAL_PROVIDER_PREFIX,
@@ -310,6 +311,7 @@ export {
   isModelServerSlug,
   localModelId,
   localProviderName,
+  localThinkingFields,
   median,
   normalizeLocalModel,
   parseLocalModelId,
@@ -321,6 +323,7 @@ export {
   type LocalAiMode,
   type LocalAiPriority,
   type LocalAiTaskClass,
+  type LocalAiThinking,
   type LocalAiUnit,
   type LocalModel,
   type LocalModelCapability,
