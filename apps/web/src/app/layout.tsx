@@ -52,6 +52,8 @@ export default async function RootLayout({
   return (
     <html lang={locale} dir={localeDirection(locale as Locale)} suppressHydrationWarning>
       <body className="antialiased">
+        {/* React hoists it into <head>. use-credentials: see app/manifest.webmanifest. */}
+        <link rel="manifest" href="/manifest.webmanifest" crossOrigin="use-credentials" />
         <RuntimeEnvScript />
         <ThemeProvider
           attribute="class"

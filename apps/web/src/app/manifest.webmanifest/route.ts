@@ -1,0 +1,44 @@
+import { BRAND_ASSETS } from '@/components/brand/assets';
+import { APP_NAME, THEME_COLOR_LIGHT } from '@/utils/app';
+
+// The install manifest. The icons are the Helena mark (packages/brand, public/brand):
+// the SVG for any size, PNGs for launchers that want a raster, and a maskable one whose
+// art sits inside the 80% safe zone so a round or squircle mask never cuts it.
+//
+// A route rather than the app/manifest.ts convention, so the root layout can link it with
+// crossorigin="use-credentials": behind Cloudflare Access a manifest requested without the
+// Access cookie is sent to Access's login page, the browser refuses that (CSP) and the app
+// cannot be installed from the public name.
+//
+// display_override: an installed Helena may hide its title bar (the browser offers a
+// toggle); the window buttons then sit in Helena's header row (globals.css,
+// "display-mode: window-controls-overlay"). Otherwise a normal app window.
+export const dynamic = 'force-static';
+
+export function GET() {
+  return Response.json(
+    {
+      id: '/',
+      name: APP_NAME,
+      short_name: APP_NAME,
+      start_url: '/',
+      scope: '/',
+      display: 'standalone',
+      display_override: ['window-controls-overlay', 'standalone'],
+      background_color: THEME_COLOR_LIGHT,
+      theme_color: THEME_COLOR_LIGHT,
+      icons: [
+        { src: BRAND_ASSETS.favicon, sizes: 'any', type: 'image/svg+xml' },
+        { src: BRAND_ASSETS.icon192, sizes: '192x192', type: 'image/png' },
+        { src: BRAND_ASSETS.icon512, sizes: '512x512', type: 'image/png' },
+        {
+          src: BRAND_ASSETS.iconMaskable,
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'maskable',
+        },
+      ],
+    },
+    { headers: { 'Content-Type': 'application/manifest+json; charset=utf-8' } },
+  );
+}

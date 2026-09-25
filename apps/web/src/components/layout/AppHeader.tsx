@@ -70,7 +70,10 @@ export default function AppHeader({
     // filters, or its actions through the page slot), and the app's own tools on the
     // right (search, new task, the tool panels) — every control a 32px button with the
     // sidebar's hover fill and a 16px icon, a hairline between the groups.
-    <header className="relative flex h-12 shrink-0 items-center gap-2 border-b border-sidebar-border px-2 sm:px-3">
+    <header
+      data-app-header=""
+      className="relative flex h-12 shrink-0 items-center gap-2 border-b border-sidebar-border px-2 sm:px-3"
+    >
       <SidebarTrigger />
       <Separator orientation="vertical" className="h-4" />
       <div
