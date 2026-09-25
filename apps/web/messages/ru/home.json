@@ -1,0 +1,93 @@
+{
+  "in": "через {time}",
+  "widgetFailed": "Сейчас недоступно",
+  "customize": {
+    "title": "Настроить",
+    "description": "Что показывает главная и в каком порядке. Сохраняется в вашей учётной записи.",
+    "figures": "Показатели",
+    "sections": "Разделы",
+    "drag": "Переместить {name}",
+    "up": "{name} выше",
+    "down": "{name} ниже",
+    "show": "Показывать {name}",
+    "reset": "Восстановить по умолчанию",
+    "done": "Готово"
+  },
+  "widgets": {
+    "waiting": "Ждут вас",
+    "agents": "Агенты работают",
+    "tasks": "Мои задачи",
+    "limits": "Лимиты тарифов",
+    "system": "Система",
+    "updates": "Обновления",
+    "needs-you": "Нужны вы",
+    "my-tasks": "Мои задачи",
+    "running": "Сейчас выполняется",
+    "schedules": "Далее",
+    "projects": "Проекты"
+  },
+  "figures": {
+    "problems": "{count, plural, one {# проблема} few {# проблемы} many {# проблем} other {# проблемы}}",
+    "failed": "сбоев: {count}",
+    "nothingWaits": "Ничего не ждёт",
+    "lastFinished": "последнее завершено {time} назад",
+    "nobodyWorks": "Никто не работает",
+    "overdue": "просрочено: {count}",
+    "nextDue": "следующий срок {date}"
+  },
+  "links": {
+    "all": "Все",
+    "activity": "Активность",
+    "schedules": "Расписания"
+  },
+  "needsYou": {
+    "empty": "Сейчас вы нигде не нужны.",
+    "proposals": "{count, plural, one {# предложение ждёт} few {# предложения ждут} many {# предложений ждут} other {# предложения ждут}}",
+    "chatFailed": "Ответ в чате не удался",
+    "hide": "Скрыть",
+    "more": "ещё {count}",
+    "aged": "{count, plural, one {# более старый сбой} few {# более старых сбоя} many {# более старых сбоев} other {# более старого сбоя}}",
+    "hidden": "скрыто: {count}"
+  },
+  "problems": {
+    "serviceDown": "{service} недоступен",
+    "relogin": "Снова войти в {provider}",
+    "rejected": "отклонён провайдером",
+    "ranOut": "истёк, никто его не обновляет",
+    "securityCheck": "Проверка безопасности не пройдена",
+    "securityChecks": "Не пройдено проверок безопасности: {count}"
+  },
+  "agents": {
+    "empty": "Сейчас ни один агент не работает.",
+    "waiting": "ждёт",
+    "finished": "Недавно завершено"
+  },
+  "tasks": {
+    "empty": "Вам не назначено открытых задач."
+  },
+  "schedules": {
+    "empty": "Ничего не запланировано."
+  },
+  "projects": {
+    "empty": "Проектов пока нет."
+  },
+  "system": {
+    "title": "Система",
+    "ok": "Всё работает",
+    "problems": "{count, plural, one {# проблема} few {# проблемы} many {# проблем} other {# проблемы}}",
+    "counts": "Службы: {services} · агенты: {agents}",
+    "areas": {
+      "services": "Службы",
+      "logins": "Входы",
+      "janitors": "Обслуживание",
+      "agents": "Агенты",
+      "runs": "Запуски",
+      "server": "Сервер"
+    },
+    "glance": {
+      "raidOk": "RAID в норме",
+      "backup": "бэкап {at} назад",
+      "cpu": "ЦП {temperature}"
+    }
+  }
+}

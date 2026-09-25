@@ -144,9 +144,6 @@
     },
     "empty": "Aucun ticket",
     "emptyHint": "Aucun ticket ne correspond à ces filtres.",
-    "myOpenTasks": "Mes tickets ouverts",
-    "viewAll": "Tous les tickets",
-    "noOpenTasks": "Aucun ticket ouvert ne vous est assigné.",
     "filter": {
       "project": "Projet",
       "state": "État",

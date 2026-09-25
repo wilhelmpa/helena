@@ -144,9 +144,6 @@
     },
     "empty": "No tasks",
     "emptyHint": "No task matches these filters.",
-    "myOpenTasks": "My open tasks",
-    "viewAll": "All tasks",
-    "noOpenTasks": "No open task is assigned to you.",
     "filter": {
       "project": "Project",
       "state": "State",

@@ -1,0 +1,59 @@
+# Helena: Cloudflare Tunnel connector (outbound only). Installed by
+# deployment/volition-stack/native/cloudflare/install.sh; docs/helena-decisions/security-hardening.md §4.
+# The tunnel token comes from a root-only file as a systemd credential and never sits in an
+# environment variable of the unit or on a command line.
+[Unit]
+Description=Helena: Cloudflare Tunnel (helena.volition.one)
+Documentation=https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/
+After=network-online.target nginx.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=helena-tunnel
+Group=helena-tunnel
+LoadCredential=tunnel-token:/etc/helena/cloudflare/tunnel.token
+ExecStart=/usr/local/libexec/helena-cloudflared
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+# cloudflared resolves Cloudflare's edge itself; the unit gets public resolvers of its own,
+# so the private-address block below does not cut off DNS (the router is 192.168.2.1).
+BindReadOnlyPaths=/etc/helena/cloudflare/resolv.conf:/etc/resolv.conf
+# It may reach the internet and this machine's loopback (nginx's tunnel entry), never the
+# home network: a hostname route added in the Cloudflare dashboard cannot turn the tunnel
+# into a way to the router or other devices. IPAddressAllow wins over IPAddressDeny.
+IPAddressDeny=10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 169.254.0.0/16 100.64.0.0/10 fc00::/7 fe80::/10
+IPAddressAllow=localhost
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+ProcSubset=pid
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RemoveIPC=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+# A call outside the list fails with EPERM instead of killing the connector.
+SystemCallErrorNumber=EPERM
+UMask=0077
+MemoryMax=512M
+TasksMax=256
+
+[Install]
+WantedBy=multi-user.target

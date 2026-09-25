@@ -104,7 +104,7 @@ There is no event bus. Instead there are polling outboxes (`webhook_delivery`, `
 - **Project nav.** JSX.
 - **Administrator.** `GOD_SECTIONS` plus 12 static routes.
 - **Target.** A `UiSlot` registry with the slots `panel-tool`, `project-settings`, `agent-section`, `dashboard-widget`, `header-action`, `home-nav`, `admin-section`, `capture-action` and `workspace-layout`.
-- **Done:** panel tools, workspace layouts (hub/layout, `docs/helena-decisions/layout.md`). **Open:** the other slots, one at a time, each by the agent working on that screen.
+- **Done:** panel tools, workspace layouts (hub/layout, `docs/helena-decisions/layout.md`), dashboard widgets on Start with the "Braucht dich" sources (hub/dashboard, `docs/helena-decisions/dashboard.md`). **Open:** the other slots, one at a time, each by the agent working on that screen.
 
 ### Templates and packs
 
@@ -273,7 +273,7 @@ ctx.uiSlots.register({
 });
 ```
 
-The web app wires the panel (`extensions/panelTools.tsx`) and the layouts (`extensions/workspaceLayouts.ts`). The other slots are typed and served by `/plugins/ui-slots`. Each gets wired when its screen is next reworked (§8).
+The web app wires the panel (`extensions/panelTools.tsx`), the layouts (`extensions/workspaceLayouts.ts`) and Start's widgets (`extensions/dashboardWidgets.ts`, built-ins in `extensions/homeWidgets.tsx`; figure tiles and sections, `docs/helena-decisions/dashboard.md`). The other slots are typed and served by `/plugins/ui-slots`. Each gets wired when its screen is next reworked (§8).
 
 ### 3.7 Runtimes
 
@@ -356,6 +356,24 @@ ctx.updateSources.register({
 - Built-ins (internal plugin `helena.updates`, `apps/api/src/modules/updates/sources`): `hermes`, `cli-runtimes`, `apt`, `host-tools`, `helena`.
 - The state is read with `GET /god/update-center`; an update starts only with the owner's `POST /god/update-center/items/:id/apply`.
 - Instance-level scheduled work goes through the engine's system jobs (`registerSystemJob`, `apps/api/src/modules/engine/system-jobs.ts`): croner times, exactly once per time (`job:<id>:<time>`), durable steps.
+
+### 3.12 Host capabilities (Administrator → Server)
+
+A `HostCapability` is a part of the machine Helena runs on that the Administrator sees and manages: the disks and the RAID, the backup, power and fans, or a plugin's own (a UPS, a ZFS pool). It says whether this host has it (`probe` → available, or `no_helper` / `not_installed` / `unsupported` / `failed`) and reports health lines for Start and the Server area (`ok` / `attention` / `critical` / `unknown`, a message code of Helena's translations with values, or a plugin's own text). Decision: [helena-decisions/server-admin.md](helena-decisions/server-admin.md).
+
+```ts
+ctx.hostCapabilities.register({
+  id: 'acme.ups',
+  label: { en: 'UPS', de: 'USV' },
+  area: 'overview', // overview | disks | backup | power | updates, or the plugin's own
+  probe: async () => ({ available: await nutReachable() }),
+  health: async () => [{ id: 'ups:battery', state: 'ok', text: { en: 'Battery 100 %', de: 'Akku 100 %' } }],
+});
+```
+
+- The built-ins are the internal plugin `helena.server` (`apps/api/src/modules/server`); they read the machine through the root helper `helena-hostd` (Varlink over `/run/helena-hostd/hostd.sock`, `deployment/volition-stack/native/server`). Without it (a container) they answer `no_helper` and their tabs disappear.
+- `GET /god/server` lists every capability with its availability and health; every health line passes `normalizeHostHealthItem`.
+- The UI of a capability comes from the web app for the built-ins and from the `server-section` UI slot (`ServerSectionSlot`: `area` + render; web registry `apps/web/src/extensions/serverSections.tsx`) for the rest; local AI's GPU/NPU status is meant to be the first.
 
 ## 4. Plugin schreiben
 
@@ -446,6 +464,7 @@ ctx.updateSources.register({
 | hub/agent-browser-mcp | `AgentTool` | Register the 24 `browser_*` tools with `category` + `classify(input)` (click may send/pay/publish); import categories from the SDK; a real `handover` approval kind instead of the text prefix. |
 | hub/second-brain | `KnowledgeSource`, `CaptureTarget`, `capture-action` slot | The API and worker hosts exist: `host` in `apps/api/src/shared/helena.ts`, `startEventDelivery().host` in `apps/worker/src/events.ts`. Load `knowledgePlugin` there with `host.load(knowledgePlugin, manifest)`; the host's `knowledgeSources`/`captureTargets` are the registries. |
 | hub/provider-limits | `UsageLimitSource` | The registry and its built-ins (`hermes`, `codex`, `claude-code` in the runner, `spool` in the API). hub/autopilot: an evaluator may read `agentLimitState(agentId)` (`#modules/provider-limits/service`) to hold non-urgent runs back while the agent's account is at its limit (optional, proposed in provider-limits.md). |
+| hub/server-admin | `HostCapability`, `server-section` slot | The registry and its built-ins (`helena.server`: system, storage, backup, power) over the root helper `helena-hostd`; the update center is the Server area's Updates tab. hub/local-ai: register the GPU/NPU/model status as a `serverSections` entry (area `overview`) and, where it has health lines, a `HostCapability`. hub/dashboard: the Start card becomes a `DashboardWidget` over `GET /god/server`. |
 | hub/update-center | `UpdateSource`, engine system jobs | The registry and its built-ins; the digest run (`agent_run.trigger = 'digest'`, `agent_run.reasoning`). Package G: the Docker image carries its own inventory (the helper's `inventory` answer shape) and the CLI runtimes' installer. |
 | hub/oss-packaging | plugins dir, logger | `HELENA_PLUGINS_DIR` in the units/compose; OPS-01 pino logger behind `ctx.log`. |
 | web owners | UI slots | Settings sections, agent sections, dashboard widgets, header actions, home nav and admin sections move onto the slot registry one at a time, the way the panel did. |

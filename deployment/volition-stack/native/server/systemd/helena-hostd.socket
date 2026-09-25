@@ -1,0 +1,14 @@
+[Unit]
+Description=Helena host helper socket (the API reads and changes the machine through it)
+Documentation=file:/usr/local/lib/helena/hostd/README.md
+
+[Socket]
+ListenStream=/run/helena-hostd/hostd.sock
+SocketUser=root
+SocketGroup=helena-hostd
+SocketMode=0660
+DirectoryMode=0755
+RemoveOnStop=yes
+
+[Install]
+WantedBy=sockets.target

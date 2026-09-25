@@ -4,6 +4,7 @@ import type { Logger } from './common';
 import type { EventHandler, EventInit, HelenaEvent } from './events';
 import type { LocalAiTaskClass, ModelServerType } from './local-ai';
 import type { CaptureTarget, KnowledgeSource } from './knowledge';
+import type { HostCapability } from './host';
 import type { PluginManifest, McpServerContribution } from './manifest-types';
 import type { PolicyEvaluator } from './policy';
 import type { RuntimeType } from './runtime';
@@ -58,6 +59,8 @@ export interface PluginContext {
   captureTargets: Registrar<CaptureTarget>;
   // Template bundles (agent templates, skills, MCP servers) offered for import.
   bundles: Registrar<BundleOffer>;
+  // What the machine Helena runs on offers the Administrator (disks, backups, power, …).
+  hostCapabilities: Registrar<HostCapability>;
   mcpServers: Registrar<McpServerContribution>;
   // What a runner writes into every agent's runtime profile (MCP servers, Hermes settings).
   profileContributions: Registrar<ProfileContribution>;

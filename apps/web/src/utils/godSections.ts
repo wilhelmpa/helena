@@ -9,10 +9,10 @@ import {
   Keyboard,
   KeyRound,
   Mail,
-  PackageCheck,
   Puzzle,
   Send,
   Shield,
+  Server,
   SlidersHorizontal,
   Users,
   UsersRound,
@@ -35,6 +35,9 @@ export interface GodSection {
   group: GodGroup;
   icon: LucideIcon;
   integration?: true;
+  // Shown only where the host offers it (Administrator → Server needs the host helper or
+  // the update center; a container without them has no such section).
+  host?: true;
 }
 
 export const GOD_SECTIONS: GodSection[] = [
@@ -64,9 +67,10 @@ export const GOD_SECTIONS: GodSection[] = [
     icon: Bot,
   },
   {
-    slug: 'updates',
+    slug: 'server',
     group: 'instance',
-    icon: PackageCheck,
+    icon: Server,
+    host: true,
   },
   {
     slug: 'authentication',

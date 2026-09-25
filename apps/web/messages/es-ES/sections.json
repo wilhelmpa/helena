@@ -27,6 +27,10 @@
       "label": "General",
       "description": "Valores por defecto para los proyectos nuevos."
     },
+    "server": {
+      "label": "Servidor",
+      "description": "La máquina en la que funciona Helena: discos y RAID, copias de seguridad, potencia y ventiladores."
+    },
     "authentication": {
       "label": "Autenticación",
       "description": "Quién se puede registrar en esta instancia, cómo se confirman las cuentas, y los proveedores con los que la gente inicia sesión."

@@ -391,18 +391,16 @@
     },
     "logins": {
       "title": "Anmeldungen",
-      "summaryOk": "alle gültig",
+      "summaryOk": "alle aktiv",
       "summaryProblems": "{count, plural, one {# braucht dich} other {# brauchen dich}}",
       "state": {
-        "ok": "gültig",
-        "okFor": "gültig, noch {time}",
-        "expiring": "wird bald erneuert",
-        "expired": "abgelaufen",
-        "error": "Erneuern klappt gerade nicht",
-        "invalid": "ungültig",
+        "active": "aktiv · erneuert sich automatisch",
+        "valid": "gültig, wird nicht erneuert",
+        "renewFailing": "Erneuerung klappt gerade nicht · nächster Versuch automatisch",
+        "relogin": "Neu anmelden",
         "unknown": "unbekannt"
       },
-      "separate": "eigene Anmeldung, nur angezeigt",
+      "separate": "eigene Anmeldung, erneuert sich selbst",
       "codexCli": "Codex-CLI",
       "relogin": "{provider} in Hermes neu anmelden – im Owner-Terminal ausführen:",
       "stale": "Der Token-Keeper hat sich seit {time} nicht gemeldet; die Anmeldungen werden nicht erneuert.",
@@ -410,7 +408,11 @@
       "copied": "Kopiert",
       "sources": {
         "keeper": "Token-Keeper"
-      }
+      },
+      "summaryRenewing": "{count, plural, one {# Erneuerung hakt} other {# Erneuerungen haken}}",
+      "keeperSilent": "Token-Keeper meldet sich nicht",
+      "tokenUntil": "Zugangsschlüssel bis {time}, wird vorher erneuert",
+      "refreshedAt": "zuletzt erneuert {time}"
     }
   },
   "plugins": {
@@ -441,6 +443,7 @@
       "limits": "Limits",
       "autopilot": "Autopilot",
       "logins": "Anmeldungen",
+      "server": "Server",
       "updates": "Updates",
       "browserTask": "Browser-Aufgaben",
       "localAi": "Lokale KI"

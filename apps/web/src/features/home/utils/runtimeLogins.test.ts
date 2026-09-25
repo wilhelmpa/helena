@@ -38,7 +38,8 @@ function health(logins: RuntimeLogin[], stale = false): RuntimeLoginsHealth {
 }
 
 describe('runtime logins', () => {
-  test('a rejected login is the owners, first', () => {
+  // By what the owner has to do, not the access token's countdown (owner, 2026-09-24).
+  test('a login to sign in again comes first, a renewed one is simply active', () => {
     const rows = loginRows(
       health([
         login({}),
@@ -46,25 +47,45 @@ describe('runtime logins', () => {
       ]),
     );
     assert.deepEqual(
-      rows.map((row) => [row.login.provider, row.needsOwner, row.status]),
+      rows.map((row) => [row.login.provider, row.condition, row.needsOwner, row.status]),
       [
-        ['anthropic', true, 'danger'],
-        ['openai-codex', false, 'success'],
+        ['anthropic', 'relogin', true, 'danger'],
+        ['openai-codex', 'active', false, 'success'],
       ],
     );
   });
 
+  test('a renewal that fails for now is amber and needs nobody', () => {
+    for (const state of ['error', 'expired'] as const) {
+      const [row] = loginRows(health([login({ state })]));
+      assert.equal(row?.condition, 'renewFailing', state);
+      assert.equal(row?.needsOwner, false, state);
+      assert.equal(row?.status, 'waiting', state);
+    }
+    const [soon] = loginRows(health([login({ state: 'expiring' })]));
+    assert.equal(soon?.status, 'success');
+  });
+
+  test('a login nothing renews needs the owner once it runs out; a separate one never', () => {
+    const [ranOut] = loginRows(health([login({ managed: false, state: 'expired' })]));
+    assert.equal(ranOut?.needsOwner, true);
+    const [cli] = loginRows(
+      health([login({ store: 'codex-cli', managed: false, state: 'expired', note: 'separate' })]),
+    );
+    assert.equal(cli?.condition, 'separate');
+    assert.equal(cli?.needsOwner, false);
+    assert.equal(cli?.status, 'idle');
+  });
+
   test('states read in the shared vocabulary', () => {
-    assert.equal(loginStatus({ state: 'expiring', managed: true }, false), 'waiting');
-    assert.equal(loginStatus({ state: 'error', managed: true }, false), 'danger');
-    assert.equal(loginStatus({ state: 'expired', managed: true }, false), 'danger');
-    // A login only reported (the Codex CLI's own) is no problem when it runs out.
-    assert.equal(loginStatus({ state: 'expired', managed: false }, false), 'idle');
-    assert.equal(loginStatus({ state: 'ok', managed: true }, true), 'idle');
+    assert.equal(loginStatus('active', false), 'success');
+    assert.equal(loginStatus('renewFailing', false), 'waiting');
+    assert.equal(loginStatus('relogin', false), 'danger');
+    assert.equal(loginStatus('active', true), 'idle');
   });
 
   test('a stale report names nothing to act on but says since when', () => {
-    const stale = health([login({ state: 'expired' })], true);
+    const stale = health([login({ state: 'invalid' })], true);
     const rows = loginRows(stale);
     assert.equal(rows[0]?.needsOwner, false);
     assert.equal(rows[0]?.status, 'idle');

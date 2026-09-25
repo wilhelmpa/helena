@@ -144,9 +144,6 @@
     },
     "empty": "Ningún elemento de trabajo",
     "emptyHint": "Ningún elemento de trabajo coincide con estos filtros.",
-    "myOpenTasks": "Mis elementos abiertos",
-    "viewAll": "Todos los elementos de trabajo",
-    "noOpenTasks": "No tienes ningún elemento de trabajo abierto asignado.",
     "filter": {
       "project": "Proyecto",
       "state": "Estado",

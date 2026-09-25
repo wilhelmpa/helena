@@ -1,0 +1,93 @@
+{
+  "in": "خلال {time}",
+  "widgetFailed": "غير متاح حاليًا",
+  "customize": {
+    "title": "تخصيص",
+    "description": "ما تعرضه البداية وبأي ترتيب. يُحفظ في حسابك.",
+    "figures": "المؤشرات",
+    "sections": "الأقسام",
+    "drag": "نقل {name}",
+    "up": "رفع {name}",
+    "down": "خفض {name}",
+    "show": "إظهار {name}",
+    "reset": "استعادة الافتراضي",
+    "done": "تم"
+  },
+  "widgets": {
+    "waiting": "بانتظارك",
+    "agents": "وكلاء يعملون",
+    "tasks": "مهامي",
+    "limits": "حدود الخطط",
+    "system": "النظام",
+    "updates": "التحديثات",
+    "needs-you": "يحتاجك",
+    "my-tasks": "مهامي",
+    "running": "قيد التشغيل الآن",
+    "schedules": "التالي",
+    "projects": "المشاريع"
+  },
+  "figures": {
+    "problems": "{count, plural, zero {لا مشكلات} one {مشكلة واحدة} two {مشكلتان} few {# مشكلات} many {# مشكلة} other {# مشكلة}}",
+    "failed": "فشل: {count}",
+    "nothingWaits": "لا شيء بالانتظار",
+    "lastFinished": "آخر إنجاز قبل {time}",
+    "nobodyWorks": "لا أحد يعمل الآن",
+    "overdue": "متأخرة: {count}",
+    "nextDue": "الاستحقاق التالي {date}"
+  },
+  "links": {
+    "all": "الكل",
+    "activity": "النشاط",
+    "schedules": "الجدولات"
+  },
+  "needsYou": {
+    "empty": "لا شيء يحتاجك الآن.",
+    "proposals": "مقترحات بالانتظار: {count}",
+    "chatFailed": "فشل رد المحادثة",
+    "hide": "إخفاء",
+    "more": "{count} أخرى",
+    "aged": "إخفاقات أقدم: {count}",
+    "hidden": "مخفية: {count}"
+  },
+  "problems": {
+    "serviceDown": "تعذّر الوصول إلى {service}",
+    "relogin": "سجّل الدخول مجددًا إلى {provider}",
+    "rejected": "رفضه المزوّد",
+    "ranOut": "انتهى ولا شيء يجدده",
+    "securityCheck": "فشل فحص الأمان",
+    "securityChecks": "فحوص أمان فاشلة: {count}"
+  },
+  "agents": {
+    "empty": "لا يعمل أي وكيل الآن.",
+    "waiting": "بانتظار",
+    "finished": "أُنجز مؤخرًا"
+  },
+  "tasks": {
+    "empty": "لا توجد مهام مفتوحة مُسندة إليك."
+  },
+  "schedules": {
+    "empty": "لا شيء مجدول."
+  },
+  "projects": {
+    "empty": "لا مشاريع بعد."
+  },
+  "system": {
+    "title": "النظام",
+    "ok": "كل شيء يعمل",
+    "problems": "{count, plural, zero {لا مشكلات} one {مشكلة واحدة} two {مشكلتان} few {# مشكلات} many {# مشكلة} other {# مشكلة}}",
+    "counts": "الخدمات: {services} · الوكلاء: {agents}",
+    "areas": {
+      "services": "الخدمات",
+      "logins": "تسجيلات الدخول",
+      "janitors": "الصيانة",
+      "agents": "الوكلاء",
+      "runs": "عمليات التشغيل",
+      "server": "الخادم"
+    },
+    "glance": {
+      "raidOk": "RAID سليم",
+      "backup": "نسخة احتياطية قبل {at}",
+      "cpu": "المعالج {temperature}"
+    }
+  }
+}

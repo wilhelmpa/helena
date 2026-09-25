@@ -394,15 +394,13 @@
       "summaryOk": "全部有效",
       "summaryProblems": "{count, plural, other {# 个需要你处理}}",
       "state": {
-        "ok": "有效",
-        "okFor": "还可用 {time}",
-        "expiring": "即将续期",
-        "expired": "已过期",
-        "error": "续期暂时失败",
-        "invalid": "无效",
+        "active": "有效 · 自动续期",
+        "valid": "有效，不会续期",
+        "renewFailing": "暂时续期失败 · 将自动重试",
+        "relogin": "重新登录",
         "unknown": "未知"
       },
-      "separate": "独立登录，仅作显示",
+      "separate": "独立登录，自行续期",
       "codexCli": "Codex CLI",
       "relogin": "在 Hermes 中重新登录 {provider}——在所有者终端中运行：",
       "stale": "令牌守护程序已有 {time} 未报告；登录不会续期。",
@@ -410,7 +408,11 @@
       "copied": "已复制",
       "sources": {
         "keeper": "令牌守护程序"
-      }
+      },
+      "summaryRenewing": "{count} 个续期失败",
+      "keeperSilent": "令牌守护程序无响应",
+      "tokenUntil": "访问令牌有效至 {time}，到期前会续期",
+      "refreshedAt": "上次续期 {time}"
     }
   },
   "plugins": {
@@ -441,6 +443,7 @@
       "limits": "限额",
       "autopilot": "Autopilot",
       "logins": "登录",
+      "server": "服务器",
       "updates": "更新",
       "browserTask": "浏览器任务",
       "localAi": "本地 AI"

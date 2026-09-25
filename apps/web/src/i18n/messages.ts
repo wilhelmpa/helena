@@ -23,6 +23,7 @@ import documents from '../../messages/en/documents.json';
 import files from '../../messages/en/files.json';
 import filters from '../../messages/en/filters.json';
 import god from '../../messages/en/god.json';
+import home from '../../messages/en/home.json';
 import inbox from '../../messages/en/inbox.json';
 import initiatives from '../../messages/en/initiatives.json';
 import invite from '../../messages/en/invite.json';
@@ -36,6 +37,7 @@ import nav from '../../messages/en/nav.json';
 import newProject from '../../messages/en/newProject.json';
 import notes from '../../messages/en/notes.json';
 import ownerTerminal from '../../messages/en/ownerTerminal.json';
+import serverSecurity from '../../messages/en/serverSecurity.json';
 import palette from '../../messages/en/palette.json';
 import permissions from '../../messages/en/permissions.json';
 import pipelines from '../../messages/en/pipelines.json';
@@ -45,6 +47,7 @@ import modelAvailability from '../../messages/en/modelAvailability.json';
 import localAi from '../../messages/en/localAi.json';
 import routines from '../../messages/en/routines.json';
 import sections from '../../messages/en/sections.json';
+import server from '../../messages/en/server.json';
 import settings from '../../messages/en/settings.json';
 import shell from '../../messages/en/shell.json';
 import teams from '../../messages/en/teams.json';
@@ -60,6 +63,7 @@ const defaultMessages = {
   auth,
   common,
   nav,
+  home,
   palette,
   views,
   shell,
@@ -88,6 +92,7 @@ const defaultMessages = {
   initiatives,
   notes,
   ownerTerminal,
+  serverSecurity,
   account,
   settings,
   god,
@@ -109,6 +114,7 @@ const defaultMessages = {
   modelAvailability,
   localAi,
   knowledge,
+  server,
 };
 
 export type Messages = typeof defaultMessages;

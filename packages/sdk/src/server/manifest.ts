@@ -67,6 +67,7 @@ export const pluginManifestSchema = z
         knowledgeSources: ids.optional(),
         captureTargets: ids.optional(),
         bundles: ids.optional(),
+        hostCapabilities: ids.optional(),
         profileContributions: ids.optional(),
         usageLimitSources: ids.optional(),
         runtimeLoginSources: ids.optional(),

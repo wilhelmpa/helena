@@ -1,0 +1,93 @@
+{
+  "in": "em {time}",
+  "widgetFailed": "Indisponível no momento",
+  "customize": {
+    "title": "Personalizar",
+    "description": "O que o Início mostra e em que ordem. Salvo na sua conta.",
+    "figures": "Indicadores",
+    "sections": "Seções",
+    "drag": "Mover {name}",
+    "up": "Mover {name} para cima",
+    "down": "Mover {name} para baixo",
+    "show": "Mostrar {name}",
+    "reset": "Restaurar padrão",
+    "done": "Concluir"
+  },
+  "widgets": {
+    "waiting": "Aguardando você",
+    "agents": "Agentes trabalhando",
+    "tasks": "Minhas tarefas",
+    "limits": "Limites do plano",
+    "system": "Sistema",
+    "updates": "Atualizações",
+    "needs-you": "Precisa de você",
+    "my-tasks": "Minhas tarefas",
+    "running": "Em andamento",
+    "schedules": "A seguir",
+    "projects": "Projetos"
+  },
+  "figures": {
+    "problems": "{count, plural, one {# problema} other {# problemas}}",
+    "failed": "{count} com falha",
+    "nothingWaits": "Nada aguardando",
+    "lastFinished": "último concluído há {time}",
+    "nobodyWorks": "Ninguém está trabalhando",
+    "overdue": "{count} atrasadas",
+    "nextDue": "próxima vence {date}"
+  },
+  "links": {
+    "all": "Todas",
+    "activity": "Atividade",
+    "schedules": "Agendamentos"
+  },
+  "needsYou": {
+    "empty": "Nada precisa de você agora.",
+    "proposals": "{count, plural, one {# proposta aguardando} other {# propostas aguardando}}",
+    "chatFailed": "Resposta do chat falhou",
+    "hide": "Ocultar",
+    "more": "mais {count}",
+    "aged": "{count, plural, one {# falha mais antiga} other {# falhas mais antigas}}",
+    "hidden": "{count} ocultas"
+  },
+  "problems": {
+    "serviceDown": "{service} inacessível",
+    "relogin": "Entrar novamente em {provider}",
+    "rejected": "recusado pelo provedor",
+    "ranOut": "expirou, nada o renova",
+    "securityCheck": "Verificação de segurança falhou",
+    "securityChecks": "{count} verificações de segurança falharam"
+  },
+  "agents": {
+    "empty": "Nenhum agente trabalhando agora.",
+    "waiting": "aguardando",
+    "finished": "Concluídos recentemente"
+  },
+  "tasks": {
+    "empty": "Nenhuma tarefa aberta atribuída a você."
+  },
+  "schedules": {
+    "empty": "Nada agendado."
+  },
+  "projects": {
+    "empty": "Ainda não há projetos."
+  },
+  "system": {
+    "title": "Sistema",
+    "ok": "Tudo funcionando",
+    "problems": "{count, plural, one {# problema} other {# problemas}}",
+    "counts": "{services} serviços · {agents} agentes",
+    "areas": {
+      "services": "Serviços",
+      "logins": "Logins",
+      "janitors": "Manutenção",
+      "agents": "Agentes",
+      "runs": "Execuções",
+      "server": "Servidor"
+    },
+    "glance": {
+      "raidOk": "RAID ok",
+      "backup": "backup há {at}",
+      "cpu": "CPU {temperature}"
+    }
+  }
+}

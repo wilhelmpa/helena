@@ -409,6 +409,9 @@ export const qk = {
   ownerTerminalGrant: ['ownerTerminalGrant'] as const,
   ownerTerminalSettings: ['ownerTerminalSettings'] as const,
   ownerTerminalAudit: ['ownerTerminalAudit'] as const,
+  // Administrator → Sicherheit: the host audit, the owner's factors and the edge sign-in.
+  securityStatus: ['securityStatus'] as const,
+  edgeAccess: ['edgeAccess'] as const,
   instanceProjectDefaults: ['instanceProjectDefaults'] as const,
   instanceStorageSettings: ['instanceStorageSettings'] as const,
   instanceRunResumeSettings: ['instanceRunResumeSettings'] as const,

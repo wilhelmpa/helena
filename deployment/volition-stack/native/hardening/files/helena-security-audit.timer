@@ -1,0 +1,10 @@
+[Unit]
+Description=Helena: hourly host security audit
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=1h
+RandomizedDelaySec=2min
+
+[Install]
+WantedBy=timers.target

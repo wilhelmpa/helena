@@ -1,0 +1,427 @@
+{
+  "title": "Servidor",
+  "areas": {
+    "overview": "Visão geral",
+    "disks": "Discos e RAID",
+    "backup": "Backup",
+    "power": "Energia e ventoinhas",
+    "updates": "Atualizações"
+  },
+  "capabilities": {
+    "system": "Máquina",
+    "storage": "Discos e RAID",
+    "backup": "Backup",
+    "power": "Energia e ventoinhas"
+  },
+  "refresh": "Ler de novo",
+  "refreshing": "Lendo…",
+  "readFailed": "O auxiliar do host não respondeu. Talvez ele não esteja em execução agora.",
+  "unavailable": {
+    "title": "Nada para gerenciar aqui",
+    "noHelper": "A Helena roda sem o auxiliar do host (em um contêiner, por exemplo). Discos, backups e ventoinhas são então gerenciados fora da Helena.",
+    "failed": "O auxiliar do host não respondeu."
+  },
+  "health": {
+    "raidRebuilding": "O espelho {name} está sendo reconstruído: {percent}, faltam cerca de {remaining}. Até lá, existe só uma cópia.",
+    "raidDegraded": "O espelho {name} está incompleto: {missing, plural, one {falta um disco} other {faltam # discos}}.",
+    "raidChecking": "O espelho {name} está sendo verificado: {percent}, faltam cerca de {remaining}.",
+    "raidResyncing": "O espelho {name} está ressincronizando: {percent}.",
+    "raidMismatches": "Espelho {name}: {count, plural, one {# divergência} other {# divergências}} na última verificação.",
+    "raidOk": "Espelho {name}: {disks, plural, one {um disco} other {# discos}}, sincronizado.",
+    "diskUnknown": "Disco {disk}: estado ilegível.",
+    "diskFailing": "O disco {disk} informa uma falha. Substitua-o.",
+    "diskSpareLow": "Disco {disk}: reserva quase esgotada ({spare} %). Substitua-o.",
+    "diskErrors": "Disco {disk}: {count, plural, one {# erro de leitura informado} other {# erros de leitura informados}}.",
+    "diskWorn": "O disco {disk} está {wear} % desgastado.",
+    "diskHot": "O disco {disk} está quente ({temperature}).",
+    "diskOk": "Disco {disk}: saudável, {temperature}, {wear} % desgastado.",
+    "espNotMounted": "A partição EFI {mount} não está montada.",
+    "espOutOfSync": "As duas partições EFI são diferentes ({count, plural, one {# arquivo} other {# arquivos}}).",
+    "espInSync": "As duas partições EFI são iguais.",
+    "eventsCritical": "{count, plural, one {Um aviso grave do mdadm ou smartd, ainda não visto} other {# avisos graves do mdadm ou smartd, ainda não vistos}}.",
+    "backupNotInitialized": "O backup está instalado, mas ainda não configurado.",
+    "backupRunning": "O primeiro backup está em execução.",
+    "backupNever": "Ainda não há backup.",
+    "backupFailed": "O último backup falhou (há {at}).",
+    "backupLate": "O último backup foi há {at}, mais tempo do que o previsto.",
+    "backupOk": "Último backup há {at}.",
+    "backupPasswordPending": "A senha do backup ainda não foi anotada.",
+    "backupCheckFailed": "A verificação do backup falhou.",
+    "restoreTestFailed": "O teste de restauração falhou.",
+    "backupTargetFailed": "A cópia para {target} falhou.",
+    "fansRaised": "Ventoinhas elevadas ao nível 5: CPU a {temperature}.",
+    "cpuHot": "A CPU está quente: {temperature}.",
+    "cpuTemperature": "CPU {temperature}.",
+    "fansFixed": "Ventoinhas no nível {level}.",
+    "fansAuto": "Ventoinhas no automático.",
+    "memoryPressure": "Memória apertada: só {available} livres.",
+    "memoryOk": "Memória: {available} livres.",
+    "healthFailed": "Não foi possível ler o estado."
+  },
+  "overview": {
+    "machine": "Máquina",
+    "board": "Placa-mãe",
+    "cpu": "Processador",
+    "threads": "{count} threads",
+    "hostname": "Nome",
+    "kernel": "Kernel",
+    "uptime": "Ligado há",
+    "load": "Carga (1 · 5 · 15 min)",
+    "memory": "Memória",
+    "memorySystem": "RAM para o sistema",
+    "memoryAvailable": "Dela, livre",
+    "memoryGpu": "Reservada para a GPU",
+    "memoryGpuUsed": "Usada pela GPU",
+    "swap": "Swap",
+    "swapUsed": "{used} de {total}",
+    "health": "Estado",
+    "helper": "Auxiliar do host {version}"
+  },
+  "disks": {
+    "arrays": "Espelhos",
+    "noArrays": "Nenhum RAID nesta máquina.",
+    "arrayTitle": "Espelho {name} ({level})",
+    "diskLetter": "Disco {letter}",
+    "serial": "Nº de série {serial}",
+    "checkStart": "Iniciar verificação",
+    "checkStop": "Parar verificação",
+    "checkStarted": "A verificação está em execução.",
+    "checkStopped": "A verificação foi parada.",
+    "checkConfirmTitle": "Verificar o espelho?",
+    "checkConfirmBody": "Lê os dois discos por completo e os compara (o mesmo que a verificação mensal automática). Leva algumas horas e deixa os discos um pouco mais lentos; a Helena continua rodando.",
+    "syncAction": {
+      "idle": "Ocioso",
+      "resync": "Ressincronização",
+      "recover": "Reconstrução",
+      "check": "Verificação",
+      "repair": "Reparo",
+      "reshape": "Remodelagem",
+      "frozen": "Congelado"
+    },
+    "syncProgress": "{action}: {percent} · faltam cerca de {remaining} · {speed}/s",
+    "member": {
+      "inSync": "sincronizado",
+      "rebuilding": "reconstruindo",
+      "faulty": "com defeito",
+      "missing": "disco ausente"
+    },
+    "mismatches": "{count, plural, =0 {Nenhuma divergência na última verificação.} one {# divergência na última verificação.} other {# divergências na última verificação.}}",
+    "selfTest": "Autoteste",
+    "selfTestRunning": "Autoteste em execução",
+    "selfTestStarted": "O autoteste está em execução (alguns minutos).",
+    "memberOf": "Parte de {arrays}",
+    "smart": {
+      "state": "SMART",
+      "passed": "OK",
+      "failing": "com falha",
+      "unknown": "desconhecido",
+      "temperature": "Temperatura",
+      "wear": "Desgaste",
+      "spare": "Reserva",
+      "spareValue": "{spare} (limite {threshold})",
+      "powerOn": "Horas ligado",
+      "hours": "{hours, number} h",
+      "written": "Gravado",
+      "mediaErrors": "Erros de leitura",
+      "unsafeShutdowns": "Desligamentos inseguros",
+      "firmware": "Firmware",
+      "none": "Este disco não fornece dados SMART."
+    },
+    "boot": {
+      "title": "Inicialização",
+      "espInSync": "Partições EFI iguais: {mounts}",
+      "espDiffer": "As partições EFI são diferentes ({count, plural, one {# arquivo} other {# arquivos}}). Elas são igualadas após cada atualização de pacotes.",
+      "espMissing": "Não montadas: {mounts}",
+      "espUnknown": "O estado das partições EFI é desconhecido.",
+      "current": "inicialização atual",
+      "next": "próxima inicialização",
+      "first": "primeiro",
+      "none": "Nenhuma entrada de inicialização EFI legível.",
+      "reserveOnce": "Iniciar uma vez pela reserva",
+      "cancel": "Cancelar início pela reserva",
+      "canceled": "A próxima inicialização volta a usar a ordem normal.",
+      "set": "A próxima reinicialização inicia pelo disco de reserva.",
+      "pending": "A próxima reinicialização inicia uma vez pelo disco de reserva; depois, volta ao normal.",
+      "confirmTitle": "Iniciar uma vez pelo disco de reserva?",
+      "confirmBody": "Na próxima reinicialização, a máquina inicia uma vez pela entrada “Debian (Reserve)” a partir do segundo disco. Isso prova que ela também sobe sem o primeiro disco. Você mesmo reinicia; depois, a ordem normal volta a valer."
+    },
+    "replace": {
+      "open": "Substituir um disco",
+      "title": "Substituir um disco do espelho",
+      "intro": "Passo a passo, com os comandos para esta máquina. A Helena não os executa: você os digita no terminal do proprietário. Enquanto isso, o servidor continua rodando no outro disco.",
+      "which": "Qual disco sai?",
+      "disk": "Disco {letter}",
+      "noPlan": "Não há plano para este disco: ele não faz parte de um espelho ou falta um segundo disco saudável.",
+      "step": {
+        "remove": "Tirar do espelho",
+        "removeBody": "Marque o disco {disk} (partição {partition}) como com falha e remova-o. Se ele já não estiver lá, pule esta etapa.",
+        "swap": "Desligar e trocar",
+        "swapBody": "Desligue a máquina e troque o disco. O novo precisa ter pelo menos {size}. A máquina inicia pelo disco {other} (após cerca de 20 segundos, porque o espelho está incompleto).",
+        "find": "Encontrar o disco novo",
+        "newDevice": "Dispositivo do disco novo (o que não tem partições)",
+        "newDeviceInvalid": "Informe um dispositivo inteiro, por exemplo /dev/nvme0n1.",
+        "partition": "Copiar as partições",
+        "esp": "Criar a partição EFI",
+        "espBody": "Formata a partição EFI, registra-a no /etc/fstab como {mount} e copia o conteúdo de {other}.",
+        "add": "Adicionar ao espelho",
+        "addBody": "Em seguida, o espelho é reconstruído; o progresso aparece nesta página (algumas horas).",
+        "boot": "Renovar a entrada de inicialização",
+        "bootBody": "Cria a entrada de firmware “{label}” para o disco novo e remove a órfã. O novo número aparece na saída.",
+        "test": "Verificar",
+        "testBody": "Quando o espelho mostrar “sincronizado”: inicie uma vez pelo disco de reserva nesta página e reinicie."
+      }
+    }
+  },
+  "events": {
+    "title": "Avisos",
+    "none": "Nenhum aviso.",
+    "markSeen": "{count, plural, one {Marcar como visto} other {Marcar # como vistos}}",
+    "source": {
+      "mdadm": "RAID",
+      "smartd": "SMART",
+      "guard": "Proteção das ventoinhas",
+      "backup": "Backup"
+    },
+    "codes": {
+      "Fail": "Disco falhou",
+      "FailSpare": "Disco sobressalente falhou",
+      "DegradedArray": "Espelho incompleto",
+      "DeviceDisappeared": "Espelho desapareceu",
+      "SparesMissing": "Disco sobressalente ausente",
+      "MoveSpare": "Disco sobressalente movido",
+      "SpareActive": "Disco de volta ao espelho",
+      "NewArray": "Novo espelho",
+      "RebuildStarted": "Reconstrução iniciada",
+      "RebuildProgress": "Reconstrução em {percent} %",
+      "RebuildFinished": "Reconstrução concluída",
+      "TestMessage": "Aviso de teste",
+      "Health": "SMART informa uma falha",
+      "FailedHealthCheck": "Verificação SMART falhou",
+      "Usage": "Valor SMART além do limite",
+      "SelfTest": "Autoteste falhou",
+      "ErrorCount": "Novos erros no registro",
+      "CurrentPendingSector": "Setores ilegíveis",
+      "OfflineUncorrectableSector": "Setores não corrigíveis",
+      "Temperature": "Disco quente demais",
+      "FailedReadSmartData": "Dados SMART ilegíveis",
+      "FailedOpenDevice": "Disco inacessível",
+      "EmailTest": "Aviso de teste",
+      "FansRaised": "Ventoinhas elevadas",
+      "FansRestored": "Ventoinhas de volta ao nível escolhido",
+      "BackupFailed": "Backup falhou",
+      "CheckFailed": "Verificação do backup falhou",
+      "RestoreTestFailed": "Teste de restauração falhou"
+    }
+  },
+  "backup": {
+    "runNow": "Fazer backup agora",
+    "running": "Em execução…",
+    "runMaintenance": "Limpar e verificar",
+    "runRestoreTest": "Testar uma restauração",
+    "started": {
+      "backup": "O backup está em execução.",
+      "maintenance": "A limpeza e a verificação estão em execução.",
+      "restore-test": "O teste de restauração está em execução."
+    },
+    "notSetUp": {
+      "title": "O backup ainda não está configurado",
+      "description": "Execute isto uma vez no servidor: cria a senha e o repositório no RAID e agenda os backups."
+    },
+    "status": "Estado",
+    "runningNow": "Um backup está em execução agora.",
+    "lastSnapshot": "Último snapshot",
+    "added": "Adicionado",
+    "processed": "Salvo",
+    "filesAndSize": "{files, number} arquivos, {size}",
+    "repositorySize": "Tamanho do backup",
+    "nextRun": "Próximo backup",
+    "noNextRun": "nenhum agendado",
+    "repository": "Repositório",
+    "unreadable": "{count, plural, one {Um arquivo não pôde ser lido e está faltando} other {# arquivos não puderam ser lidos e estão faltando}} no último snapshot.",
+    "saved": "Salvo.",
+    "checkWeekly": "Limpar semanalmente e verificar uma amostra",
+    "restoreTestMonthly": "Testar uma restauração todo mês",
+    "schedule": {
+      "title": "Agendamento e retenção",
+      "frequency": "Com que frequência",
+      "hourly": "De hora em hora",
+      "every6h": "A cada 6 horas",
+      "daily": "Diariamente",
+      "off": "Desligado",
+      "time": "Horário",
+      "minute": "Minuto (da hora)",
+      "explain": {
+        "hourly": "Toda hora no minuto {minute}.",
+        "every6h": "A cada seis horas, a partir das {time}.",
+        "daily": "Todo dia às {time}.",
+        "off": "Nenhum backup agendado; “Fazer backup agora” continua funcionando."
+      }
+    },
+    "retention": {
+      "hourly": "Por hora",
+      "daily": "Por dia",
+      "weekly": "Por semana",
+      "monthly": "Por mês",
+      "keepSomething": "Pelo menos um snapshot precisa ser mantido."
+    },
+    "never": "nunca",
+    "okAt": "OK, há {time}",
+    "failedAt": "falhou, há {time}",
+    "checks": {
+      "title": "Verificações",
+      "maintenance": "Limpeza e verificação",
+      "restoreTest": "Teste de restauração",
+      "restoreTestDetail": "{files} arquivos de amostra e o banco de dados {database} ({tables} tabelas) puderam ser restaurados.",
+      "next": "Próximas: verificação {maintenance}, teste de restauração {restoreTest}."
+    },
+    "snapshots": {
+      "title": "Snapshots",
+      "count": "{count, plural, one {# snapshot} other {# snapshots}}",
+      "none": "Nenhum snapshot ainda.",
+      "added": "+{size}",
+      "browse": "Navegar"
+    },
+    "restores": {
+      "title": "Restaurações",
+      "location": "Está em",
+      "movedAside": "Versão anterior movida para"
+    },
+    "paths": {
+      "title": "O que entra no backup",
+      "explain": "Além disso, os bancos de dados (pg_dump) e os arquivos SQLite dos agentes. Caches, node_modules e os ambientes de teste dos agentes ficam de fora."
+    },
+    "password": {
+      "title": "Anotar a senha do backup",
+      "explain": "Sem esta senha, o backup não pode ser lido, nem pela Helena após uma reinstalação. Anote-a em papel ou no seu gerenciador de senhas. Depois da confirmação, a Helena nunca mais a mostra.",
+      "show": "Mostrar senha",
+      "written": "Anotei a senha em um lugar seguro.",
+      "confirm": "Confirmar",
+      "confirmed": "Confirmado. A Helena não mostra mais a senha."
+    },
+    "targets": {
+      "title": "Cópia externa",
+      "explain": "Cada backup também é copiado para um armazenamento S3 (Backblaze B2, Hetzner, Cloudflare R2, por exemplo). A chave fica com o auxiliar do host.",
+      "repository": "Endereço S3",
+      "accessKeyId": "Access Key ID",
+      "secretAccessKey": "Secret Access Key",
+      "add": "Adicionar destino",
+      "saved": "O destino foi salvo; o próximo backup será copiado para lá.",
+      "enabled": "Ativo",
+      "remove": "Remover destino",
+      "neverCopied": "ainda não copiado"
+    },
+    "browse": {
+      "title": "Snapshot {snapshot}",
+      "explain": "Abra pastas e depois restaure um arquivo ou uma pasta.",
+      "path": "Caminho",
+      "up": "Subir um nível",
+      "empty": "Esta pasta está vazia.",
+      "notFound": "Esta pasta não existe neste snapshot.",
+      "truncated": "Somente as primeiras 2000 entradas.",
+      "restore": "Restaurar",
+      "restoreWhat": "Restaurar:",
+      "mode": {
+        "copy": "Como cópia",
+        "copyHome": "Em uma pasta nova ~/Wiederhergestellt/…. Nada é sobrescrito.",
+        "copyRoot": "Em uma pasta nova em /var/backups/helena/restores (somente root). Nada é sobrescrito.",
+        "original": "No local original",
+        "originalExplain": "O que está lá agora é antes movido para ….vor-wiederherstellung-…."
+      },
+      "confirmPath": "Digite o caminho para confirmar",
+      "startCopy": "Restaurar uma cópia",
+      "startOriginal": "Restaurar no local",
+      "back": "Voltar",
+      "job": {
+        "queued": "Aguardando…",
+        "running": "Restaurando…",
+        "done": "Pronto.",
+        "failed": "Falhou.",
+        "location": "Está em",
+        "movedAside": "Versão anterior movida para"
+      }
+    }
+  },
+  "power": {
+    "notInstalled": {
+      "title": "O controle de ventoinhas e energia não está instalado",
+      "description": "Placa-mãe {board}. O controle precisa do driver do EC, ryzen_smu, ryzenadj e power-profiles-daemon; o script de instalação os configura e primeiro coloca as ventoinhas no nível 5."
+    },
+    "profile": {
+      "title": "Perfil",
+      "saver": "Economia de energia",
+      "balanced": "Equilibrado",
+      "performance": "Desempenho",
+      "mixed": "As camadas não coincidem",
+      "set": "O perfil “{profile}” está ativo.",
+      "partly": "Nem todas as camadas aplicaram o perfil: {layers}.",
+      "explain": {
+        "saver": "BIOS silencioso ({stapm} W contínuos, {fast} W em picos), sistema operacional em economia de energia.",
+        "balanced": "BIOS equilibrado ({stapm} W contínuos, {fast} W em picos), sistema operacional equilibrado.",
+        "performance": "BIOS desempenho ({stapm} W contínuos, {fast} W em picos), sistema operacional em desempenho."
+      }
+    },
+    "layer": {
+      "ec": "BIOS (EC)",
+      "os": "Sistema operacional",
+      "ryzenadj": "Limites de energia (ryzenadj)",
+      "unavailable": "indisponível",
+      "ecLimits": "{stapm} W contínuos · {fast} W em picos · {slow} W em média",
+      "epp": "EPP {epp} · {driver}",
+      "limits": "{stapm} · {fast} · {slow}",
+      "now": "agora {power} · CPU {tctl} (limite {limit})",
+      "noSmu": "ryzen_smu não carregado",
+      "notInstalled": "não instalado"
+    },
+    "ecMode": {
+      "quiet": "Silencioso",
+      "balanced": "Equilibrado",
+      "performance": "Desempenho"
+    },
+    "osProfile": {
+      "power-saver": "Economia de energia",
+      "balanced": "Equilibrado",
+      "performance": "Desempenho"
+    },
+    "fans": {
+      "title": "Ventoinhas",
+      "auto": "Automático",
+      "level": "Nível {level}",
+      "autoExplain": "O EC controla as ventoinhas pela própria curva.",
+      "fixedExplain": "As três ventoinhas fixas em {percent} %.",
+      "unknown": "Nenhuma escolha feita ainda.",
+      "heldByGuard": "Salvo. As ventoinhas ficam no nível 5 até a CPU esfriar.",
+      "guardActive": "A proteção das ventoinhas as mantém no nível 5 (CPU a {temperature}, há {since}).",
+      "rpm": "{rpm, number} rpm",
+      "name": {
+        "fan1": "Ventoinha da CPU 1",
+        "fan2": "Ventoinha da CPU 2",
+        "fan3": "Ventoinha do gabinete"
+      }
+    },
+    "temperatures": {
+      "title": "Temperaturas",
+      "max": "no máximo {max}"
+    },
+    "sensor": {
+      "ec": "CPU (EC)",
+      "cpu": "CPU (Tctl)",
+      "gpu": "GPU",
+      "gpuPower": "Potência da APU",
+      "nvme": "SSD {id}",
+      "board": "Placa-mãe"
+    },
+    "guard": {
+      "title": "Proteção das ventoinhas",
+      "explain": "Quando as ventoinhas estão fixas abaixo do nível 5 e a CPU fica em {limit} ou mais por alguns segundos, a Helena as coloca no nível 5. Depois de dois minutos abaixo de {release}, o seu nível volta.",
+      "limit": "Limite",
+      "saved": "Salvo.",
+      "active": "Mantendo as ventoinhas no nível 5 agora.",
+      "watching": "Vigiando.",
+      "waitingForDriver": "Aguardando o driver do EC."
+    }
+  },
+  "home": {
+    "title": "Servidor",
+    "allGood": "Tudo certo."
+  }
+}

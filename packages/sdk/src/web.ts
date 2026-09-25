@@ -49,6 +49,12 @@ export function registerSlots(
     for (const off of offs) off();
   };
 }
+// What a model login asks of the owner (the health overview, Start).
+export {
+  runtimeLoginCondition,
+  runtimeLoginNeedsOwner,
+  type RuntimeLoginCondition,
+} from './runtime-logins';
 // The template bundle format, for upload and download in the browser (types only).
 export type {
   BundleAgent,

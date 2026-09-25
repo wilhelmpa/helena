@@ -53,9 +53,42 @@ export interface UserPreferenceDto {
   // changed ones are stored; the rest come from the instance settings and then the
   // web app's built-in bindings.
   hotkeys: Record<string, string>;
+  homeDashboard: HomeDashboardPreference;
 }
 
 export type UserPreferencePatch = Partial<UserPreferenceDto>;
+
+// Start as the user arranged it (docs/helena-decisions/dashboard.md): the widgets' order,
+// the ones hidden, the ones shown although off by default, and the hidden failures.
+export interface HomeDashboardPreference {
+  order: string[];
+  hidden: string[];
+  shown: string[];
+  dismissed: string[];
+}
+
+export const EMPTY_HOME_DASHBOARD: HomeDashboardPreference = {
+  order: [],
+  hidden: [],
+  shown: [],
+  dismissed: [],
+};
+
+// A stored value read back safely: lists of strings only, no duplicates.
+export function normalizeHomeDashboard(value: unknown): HomeDashboardPreference {
+  if (!value || typeof value !== 'object') return { ...EMPTY_HOME_DASHBOARD };
+  const raw = value as Record<string, unknown>;
+  const list = (key: keyof HomeDashboardPreference) =>
+    Array.isArray(raw[key])
+      ? [...new Set((raw[key] as unknown[]).filter((v): v is string => typeof v === 'string'))]
+      : [];
+  return {
+    order: list('order'),
+    hidden: list('hidden'),
+    shown: list('shown'),
+    dismissed: list('dismissed'),
+  };
+}
 
 export function defaults(locale: Locale = DEFAULT_LOCALE): UserPreferenceDto {
   return {
@@ -72,6 +105,7 @@ export function defaults(locale: Locale = DEFAULT_LOCALE): UserPreferenceDto {
     autoWatch: true,
     lastProjectId: null,
     hotkeys: {},
+    homeDashboard: { ...EMPTY_HOME_DASHBOARD },
   };
 }
 
@@ -100,6 +134,7 @@ function toDto(row: {
   autoWatch: boolean;
   lastProjectId: number | null;
   hotkeys: Record<string, string> | null;
+  homeDashboard: unknown;
 }): UserPreferenceDto {
   return {
     timezone: row.timezone,
@@ -115,6 +150,7 @@ function toDto(row: {
     autoWatch: row.autoWatch,
     lastProjectId: row.lastProjectId,
     hotkeys: row.hotkeys ?? {},
+    homeDashboard: normalizeHomeDashboard(row.homeDashboard),
   };
 }
 
@@ -138,6 +174,7 @@ export async function getPreferences(
       autoWatch: userPreference.autoWatch,
       lastProjectId: userPreference.lastProjectId,
       hotkeys: userPreference.hotkeys,
+      homeDashboard: userPreference.homeDashboard,
     })
     .from(userPreference)
     .where(eq(userPreference.userId, userId));
@@ -152,6 +189,7 @@ export async function updatePreferences(
   defaultLocale: Locale = DEFAULT_LOCALE,
 ): Promise<UserPreferenceDto> {
   const next = { ...(await getPreferences(userId, defaultLocale)), ...patch };
+  if (patch.homeDashboard) next.homeDashboard = normalizeHomeDashboard(patch.homeDashboard);
   await db
     .insert(userPreference)
     .values({ userId, ...next })

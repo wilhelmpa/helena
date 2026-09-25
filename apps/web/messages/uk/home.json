@@ -1,0 +1,93 @@
+{
+  "in": "через {time}",
+  "widgetFailed": "Зараз недоступно",
+  "customize": {
+    "title": "Налаштувати",
+    "description": "Що показує головна і в якому порядку. Зберігається у вашому обліковому записі.",
+    "figures": "Показники",
+    "sections": "Розділи",
+    "drag": "Перемістити {name}",
+    "up": "{name} вище",
+    "down": "{name} нижче",
+    "show": "Показувати {name}",
+    "reset": "Відновити типові",
+    "done": "Готово"
+  },
+  "widgets": {
+    "waiting": "Чекають на вас",
+    "agents": "Агенти працюють",
+    "tasks": "Мої завдання",
+    "limits": "Ліміти тарифів",
+    "system": "Система",
+    "updates": "Оновлення",
+    "needs-you": "Потрібні ви",
+    "my-tasks": "Мої завдання",
+    "running": "Зараз виконується",
+    "schedules": "Далі",
+    "projects": "Проєкти"
+  },
+  "figures": {
+    "problems": "{count, plural, one {# проблема} few {# проблеми} many {# проблем} other {# проблеми}}",
+    "failed": "збоїв: {count}",
+    "nothingWaits": "Нічого не чекає",
+    "lastFinished": "останнє завершено {time} тому",
+    "nobodyWorks": "Ніхто не працює",
+    "overdue": "прострочено: {count}",
+    "nextDue": "наступний термін {date}"
+  },
+  "links": {
+    "all": "Усі",
+    "activity": "Активність",
+    "schedules": "Розклади"
+  },
+  "needsYou": {
+    "empty": "Зараз ви ніде не потрібні.",
+    "proposals": "{count, plural, one {# пропозиція чекає} few {# пропозиції чекають} many {# пропозицій чекають} other {# пропозиції чекають}}",
+    "chatFailed": "Відповідь у чаті не вдалася",
+    "hide": "Приховати",
+    "more": "ще {count}",
+    "aged": "{count, plural, one {# старіший збій} few {# старіші збої} many {# старіших збоїв} other {# старішого збою}}",
+    "hidden": "приховано: {count}"
+  },
+  "problems": {
+    "serviceDown": "{service} недоступний",
+    "relogin": "Знову увійти в {provider}",
+    "rejected": "відхилено провайдером",
+    "ranOut": "закінчився, ніхто його не оновлює",
+    "securityCheck": "Перевірку безпеки не пройдено",
+    "securityChecks": "Не пройдено перевірок безпеки: {count}"
+  },
+  "agents": {
+    "empty": "Зараз жоден агент не працює.",
+    "waiting": "чекає",
+    "finished": "Нещодавно завершено"
+  },
+  "tasks": {
+    "empty": "Вам не призначено відкритих завдань."
+  },
+  "schedules": {
+    "empty": "Нічого не заплановано."
+  },
+  "projects": {
+    "empty": "Проєктів ще немає."
+  },
+  "system": {
+    "title": "Система",
+    "ok": "Усе працює",
+    "problems": "{count, plural, one {# проблема} few {# проблеми} many {# проблем} other {# проблеми}}",
+    "counts": "Служби: {services} · агенти: {agents}",
+    "areas": {
+      "services": "Служби",
+      "logins": "Входи",
+      "janitors": "Обслуговування",
+      "agents": "Агенти",
+      "runs": "Запуски",
+      "server": "Сервер"
+    },
+    "glance": {
+      "raidOk": "RAID у нормі",
+      "backup": "бекап {at} тому",
+      "cpu": "ЦП {temperature}"
+    }
+  }
+}
