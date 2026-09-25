@@ -46,7 +46,7 @@ Es gibt keine Lizenzkosten pro Nutzer und keinen Lock-in.
 | **Autopilot-Regler** | Eine Stufe pro Projekt und Agent: *vorschlagen* · *handeln mit Freigabe* · *handeln und berichten* · *autonom im Budget*. Budgets in Tokens, Euro und Zeit. |
 | **Übernehmen überall** | In Browser, Terminal und Chat übernimmst du und gibst zurück; der Agent macht weiter. |
 | **Lernen mit Aufsicht** | Was ein Agent an Skills und Memory lernt, kommt als Vorschlag mit Diff. Angenommen gilt es für alle Kopien einer Vorlage. |
-| **Wissen gehört dir** | Ein Obsidian-kompatibler Vault, mit Git versioniert und über Syncthing synchronisiert. |
+| **Wissen gehört dir** | Ein Ordner aus Markdown-Dateien, mit Git versioniert, in den Notizen (SilverBullet) bearbeitet und über Syncthing auf deine Geräte gespiegelt. |
 | **Bring your runtime** | Hermes Agent macht die KI-Arbeit (Gedächtnis, Skills, Werkzeuge). Claude Code und Codex laufen mit denselben Anweisungen, Werkzeugen und Regeln. |
 | **Keine Geheimnisse im Prompt** | Logins und Schlüssel landen nie im Prompt. Das Browser-Gateway füllt sie ein, TOTP läuft über Helena, und ein Zugänge-Center hält alle Verbindungen. |
 | **Routinen in Klartext** | Aus „jeden Montag um 9“ wird ein Zeitplan. Den Rest erledigt ein Workflow-Builder mit Agenten-Schritten, Freigaben, Bedingungen, Wartezeiten und Aktionen. |
