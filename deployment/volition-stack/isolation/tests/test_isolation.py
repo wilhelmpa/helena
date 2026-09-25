@@ -492,6 +492,151 @@ class LauncherRequestTest(unittest.TestCase):
         keys = self.launcher_module.REQUEST_KEYS['run']
         self.assertNotIn('properties', keys)
         self.assertNotIn('user', keys)
+        self.assertIn('agentRuntime', keys)
+
+
+class CredentialTargetTest(LauncherRequestTest):
+    """The credential-bind targets in a profile ({home}/.codex): made or given back to the
+    agent before a unit starts, so systemd never creates them as root (2026-09-25: a Codex
+    agent could not store its own login in its CODEX_HOME)."""
+
+    def setUp(self):
+        super().setUp()
+        self.home = self.dir / 'profiles/alpha'
+        self.me = self.worker.project_account('alpha')
+        self.logs: list[str] = []
+        self.chowns: list[tuple] = []
+        self._log = self.launcher_module.log
+        self.launcher_module.log = self.logs.append
+        self.addCleanup(setattr, self.launcher_module, 'log', self._log)
+
+    def pretend_root_owns(self, path: Path) -> None:
+        """What systemd left: the target owned by root. (The test runs unprivileged, so the
+        owner is reported, and the launcher's chown recorded instead of done.)"""
+        inode = path.stat().st_ino
+        real_fstat = os.fstat
+
+        def fstat(fd):
+            info = real_fstat(fd)
+            if info.st_ino != inode:
+                return info
+            values = list(info)
+            values[stat.ST_UID] = 0
+            return os.stat_result(values)
+        self.worker._stat_fd = fstat
+        real_fchown = self.launcher_module.os.fchown
+        self.chowns = []
+
+        def fchown(fd, uid, gid):
+            if real_fstat(fd).st_ino == inode:
+                self.chowns.append((uid, gid))
+            else:
+                real_fchown(fd, uid, gid)
+        patcher = __import__('unittest.mock', fromlist=['patch']).patch.object(self.launcher_module.os, 'fchown', fchown)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_the_targets_are_the_profiles_codex_folder(self):
+        self.assertEqual(self.worker.home_targets(), [('.codex', True)])
+
+    def test_a_missing_target_is_made_for_the_agent(self):
+        self.worker.prepare_home_targets(str(self.home), self.me)
+        info = (self.home / '.codex').stat()
+        self.assertTrue(stat.S_ISDIR(info.st_mode))
+        self.assertEqual((info.st_uid, stat.S_IMODE(info.st_mode)), (self.me.pw_uid, 0o700))
+        self.assertTrue(any('created for vp-alpha' in line for line in self.logs))
+        # Once there and the agent's, nothing more happens.
+        self.logs.clear()
+        self.worker.prepare_home_targets(str(self.home), self.me)
+        self.assertEqual(self.logs, [])
+
+    def test_an_empty_root_owned_target_is_given_back(self):
+        target = self.home / '.codex'
+        target.mkdir(mode=0o755)
+        self.pretend_root_owns(target)
+        self.worker.prepare_home_targets(str(self.home), self.me)
+        self.assertEqual(self.chowns, [(self.me.pw_uid, self.me.pw_gid)])
+        self.assertEqual(stat.S_IMODE(target.stat().st_mode), 0o700)
+        self.assertTrue(any('empty and root-owned, given to vp-alpha' in line for line in self.logs))
+
+    def test_a_root_owned_target_with_files_is_left_alone(self):
+        target = self.home / '.codex'
+        target.mkdir(mode=0o755)
+        (target / 'auth.json').write_text('{}')
+        self.pretend_root_owns(target)
+        self.worker.prepare_home_targets(str(self.home), self.me)
+        self.assertEqual(self.chowns, [])
+        self.assertEqual(stat.S_IMODE(target.stat().st_mode), 0o755)
+        self.assertTrue(any('owned by uid 0 and not empty; left as it is' in line for line in self.logs))
+
+    def test_a_target_of_someone_else_is_left_alone(self):
+        target = self.home / '.codex'
+        target.mkdir(mode=0o750)
+        other = types.SimpleNamespace(pw_name='vp-beta', pw_uid=os.getuid() + 1, pw_gid=os.getgid())
+        self.worker.prepare_home_targets(str(self.home), other)
+        self.assertEqual(stat.S_IMODE(target.stat().st_mode), 0o750)
+        self.assertTrue(any(f'owned by uid {os.getuid()}; left as it is' in line for line in self.logs))
+
+    def test_a_link_or_a_file_stops_the_unit(self):
+        (self.home / '.codex').symlink_to(self.dir / 'workspaces/beta')
+        with self.assertRaises(common.IsolationError) as caught:
+            self.worker.prepare_home_targets(str(self.home), self.me)
+        self.assertEqual(caught.exception.code, 'credentials')
+        (self.home / '.codex').unlink()
+        (self.home / '.codex').write_text('x')
+        with self.assertRaises(common.IsolationError):
+            self.worker.prepare_home_targets(str(self.home), self.me)
+
+    def helper_runtime(self):
+        view = self.dir / 'keeper/view'
+        (view / 'codex').mkdir(parents=True, exist_ok=True)
+        (view / 'hermes').mkdir(exist_ok=True)
+        (view / 'hermes/auth.json').write_text('{}')
+        helper = self.worker.config.runtimes['profile-helper']
+        return common.Runtime(**{**helper.__dict__, 'credential_binds': (
+            (str(view / 'hermes/auth.json'), '/var/lib/volition/hermes/auth.json'),
+            (str(view / 'codex'), '{home}/.codex'))})
+
+    def test_the_helper_of_a_codex_or_claude_agent_gets_no_login_view(self):
+        helper = self.helper_runtime()
+        for agent_runtime in (None, 'hermes'):
+            _ro, props = self.worker.runtime_binds(helper, str(self.home), agent_runtime)
+            self.assertEqual(len(props), 2, agent_runtime)
+            self.assertTrue(any(p.endswith(f'{self.home}/.codex') for p in props))
+        for agent_runtime in ('codex', 'claude'):
+            _ro, props = self.worker.runtime_binds(helper, str(self.home), agent_runtime)
+            self.assertEqual(props, [], agent_runtime)
+        # The agent's own runtime units keep theirs (Codex has none; Hermes both).
+        hermes = self.worker.config.runtimes['hermes']
+        self.assertEqual(hermes.credential_binds, self.worker.config.runtimes['hermes'].credential_binds)
+        self.assertEqual(self.worker.config.runtimes['codex'].credential_binds, ())
+
+    def test_agent_runtime_is_checked(self):
+        checked = self.worker.check_run({**self.base, 'runtime': 'profile-helper', 'args': [], 'agentRuntime': 'codex'})
+        self.assertEqual(checked['agent_runtime'], 'codex')
+        self.assertIsNone(self.worker.check_run(self.base)['agent_runtime'])
+        for bad in ('Codex', '../x', 7, ''):
+            self.assertIn('agentRuntime is invalid', self.refused(agentRuntime=bad))
+
+    def test_a_run_prepares_the_target_before_the_unit_starts(self):
+        started: list[list[str]] = []
+        helper = self.helper_runtime()
+        self.worker.config.runtimes['profile-helper'] = helper
+
+        async def stream(command, unit, env, reader, writer):
+            self.assertTrue((self.home / '.codex').is_dir())  # there before systemd-run
+            started.append(command)
+        self.worker.stream = stream
+        self.worker.lock = asyncio.Lock()
+        self.worker.active, self.worker.total = {}, 0
+        request = {**self.base, 'runtime': 'profile-helper', 'args': [], 'agentRuntime': 'codex',
+                   'work': {'kind': 'helper', 'id': None}}
+        asyncio.run(self.worker.run(request, None, None, 'test'))
+        [command] = started
+        self.assertFalse(any('keeper/view' in part for part in command))
+        self.assertEqual(stat.S_IMODE((self.home / '.codex').stat().st_mode), 0o700)
+        asyncio.run(self.worker.run({**request, 'agentRuntime': 'hermes'}, None, None, 'test'))
+        self.assertTrue(any(f'keeper/view/codex:{self.home}/.codex' in part for part in started[1]))
 
 
 class MigrateTest(unittest.TestCase):

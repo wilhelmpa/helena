@@ -22,6 +22,10 @@ export interface AgentIsolation {
   slug: string;
   profile: string;
   agentId: number | null;
+  // The agent's own runtime (config `agent`: hermes, claude, codex). The launcher gives the
+  // profile helper of a Claude Code or Codex agent no Hermes login views, which would cover
+  // the agent's own login in its profile (.codex is a Codex agent's CODEX_HOME).
+  runtime?: string;
 }
 
 export type WorkKind = 'run' | 'chat' | 'helper';
@@ -36,6 +40,7 @@ export interface LaunchRequest {
   agentId: number | null;
   work: { kind: WorkKind; id: number | null };
   limits?: { runtimeMaxSec?: number };
+  agentRuntime?: string;
 }
 
 export interface LaunchIo {
@@ -204,29 +209,44 @@ export async function profileHelper<T>(
 ): Promise<T> {
   let stdout = '';
   let stderr = '';
-  const result = await launch(
-    {
-      slug: isolation.slug,
-      profile: isolation.profile,
-      runtime: 'profile-helper',
-      args: [],
-      env: {},
-      cwd,
-      agentId: isolation.agentId,
-      work: { kind: 'helper', id: null },
-      limits: { runtimeMaxSec: 300 },
-    },
-    {
-      stdin: JSON.stringify(operation),
-      onStdout: (chunk) => {
-        if (stdout.length < 16 * 1024 * 1024) stdout += chunk.toString('utf8');
+  const attempt = (agentRuntime: string | undefined) => {
+    stdout = '';
+    stderr = '';
+    return launch(
+      {
+        slug: isolation.slug,
+        profile: isolation.profile,
+        runtime: 'profile-helper',
+        args: [],
+        env: {},
+        cwd,
+        agentId: isolation.agentId,
+        work: { kind: 'helper', id: null },
+        limits: { runtimeMaxSec: 300 },
+        ...(agentRuntime ? { agentRuntime } : {}),
       },
-      onStderr: (chunk) => {
-        stderr = `${stderr}${chunk.toString('utf8')}`.slice(-2000);
+      {
+        stdin: JSON.stringify(operation),
+        onStdout: (chunk) => {
+          if (stdout.length < 16 * 1024 * 1024) stdout += chunk.toString('utf8');
+        },
+        onStderr: (chunk) => {
+          stderr = `${stderr}${chunk.toString('utf8')}`.slice(-2000);
+        },
       },
-    },
-    socketPath,
-  );
+      socketPath,
+    );
+  };
+  let result: LaunchResult;
+  try {
+    result = await attempt(isolation.runtime);
+  } catch (error) {
+    // A launcher from before agentRuntime refuses the field; the helper then runs as it did.
+    if (!(error instanceof LaunchError && error.code === 'request' && error.message.includes('agentRuntime'))) {
+      throw error;
+    }
+    result = await attempt(undefined);
+  }
   const line = stdout.trim().split('\n').pop() ?? '';
   let answer: { ok?: boolean; result?: T; error?: string };
   try {

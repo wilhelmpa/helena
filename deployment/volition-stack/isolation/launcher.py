@@ -86,7 +86,8 @@ PROXY_ENV = {'http_proxy', 'https_proxy', 'all_proxy', 'no_proxy', 'ftp_proxy'}
 WORK_KINDS = {'run': 'r', 'chat': 'c', 'helper': 'h'}
 REQUEST_KEYS = {
     'ping': {'v', 'op'},
-    'run': {'v', 'op', 'slug', 'profile', 'runtime', 'args', 'env', 'cwd', 'agentId', 'work', 'limits'},
+    'run': {'v', 'op', 'slug', 'profile', 'runtime', 'args', 'env', 'cwd', 'agentId', 'work', 'limits',
+            'agentRuntime'},
     'terminal': {'v', 'op', 'slug', 'rows', 'cols'},
     'terminal-stop': {'v', 'op', 'slug'},
     'ensure-project-user': {'v', 'op', 'slug', 'profiles'},
@@ -105,6 +106,8 @@ REQUIRED_KEYS = {
     'browser-state': {'v', 'op', 'action', 'slug', 'projectId'},
 }
 EVENT_ID = __import__('re').compile(r'^[A-Za-z0-9-]{1,64}$')
+AGENT_RUNTIME = __import__('re').compile(r'^[a-z][a-z0-9-]{0,31}$')
+HOME_TARGET = __import__('re').compile(r'^[A-Za-z0-9._-]{1,64}(?:/[A-Za-z0-9._-]{1,64}){0,2}$')
 
 
 def log(message: str) -> None:
@@ -381,12 +384,20 @@ class Launcher:
             props.append(f'BindReadOnlyPaths={_safe_path(path, "bind")}')
         return props
 
-    def runtime_binds(self, runtime, home: str | None) -> tuple[list[str], list[str]]:
+    def runtime_binds(self, runtime, home: str | None,
+                      agent_runtime: str | None = None) -> tuple[list[str], list[str]]:
         ro = list(runtime.read_only)
         ro += [path for path in runtime.optional_read_only if os.path.lexists(path)]
         ro.append(os.path.dirname(self.config.sandbox))
         extra = []
-        for source, target in runtime.credential_binds:
+        binds = runtime.credential_binds
+        if runtime.name == 'profile-helper' and agent_runtime not in (None, 'hermes'):
+            # A Claude Code or Codex agent keeps its own login in its profile (.codex is its
+            # CODEX_HOME). Its helper reads and writes that profile (cli-files, the limits of
+            # its runtime-requests); the Hermes login views over it would hide the agent's own
+            # files and answer with the shared ChatGPT login instead. It needs none of them.
+            binds = ()
+        for source, target in binds:
             if not os.path.exists(source):
                 if source in runtime.required_credentials:
                     # The token keeper writes the agents' login views; without one the agent
@@ -397,6 +408,85 @@ class Launcher:
             destination = target.replace('{home}', home or '/nonexistent')
             extra.append(f'BindReadOnlyPaths={_safe_path(source, "credential")}:{_safe_path(destination, "credential target")}')
         return ro, extra
+
+    # ── Credential-bind targets in a profile ────────────────────────────────────────────
+
+    def home_targets(self) -> list[tuple[str, bool]]:
+        """The credential-bind targets of every runtime that lie in the profile ({home}/…),
+        as (relative path, is a directory). A directory unless its source is a file."""
+        found: dict[str, bool] = {}
+        for runtime in self.config.runtimes.values():
+            for source, target in runtime.credential_binds:
+                if not target.startswith('{home}/'):
+                    continue
+                relative = target[len('{home}/'):]
+                if not HOME_TARGET.match(relative) or any(p in ('.', '..') for p in relative.split('/')):
+                    raise IsolationError('config', f'credential target {target} is invalid')
+                found[relative] = not os.path.isfile(source)
+        return sorted(found.items())
+
+    def _stat_fd(self, fd: int) -> os.stat_result:  # a seam for the tests
+        return os.fstat(fd)
+
+    def prepare_home_targets(self, home: str, account: pwd.struct_passwd) -> None:
+        """Before a unit starts: every credential-bind target in the profile exists and
+        belongs to the agent. systemd creates a missing bind target as root:root 0755 in the
+        agent's own profile, and .codex is also a Codex agent's CODEX_HOME, which it then could
+        not write (2026-09-25: `codex login --device-auth` → EACCES). So the launcher creates a
+        missing one as the agent (0700), gives an EMPTY root-owned one back to the agent, and
+        leaves a non-empty one or one owned by someone else as it is (logged). A link or a
+        non-directory there stops the unit."""
+        for relative, is_dir in self.home_targets():
+            self._prepare_target(home, relative, is_dir, account)
+
+    def _prepare_target(self, home: str, relative: str, is_dir: bool, account: pwd.struct_passwd) -> None:
+        parts = relative.split('/')
+        fd = open_path_nofollow(home)
+        try:
+            for index, part in enumerate(parts):
+                last = index == len(parts) - 1
+                want_dir = is_dir or not last
+                created = False
+                try:
+                    if want_dir:
+                        os.mkdir(part, 0o700, dir_fd=fd)
+                        created = True
+                    else:
+                        os.close(os.open(part, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_CLOEXEC,
+                                         0o600, dir_fd=fd))
+                        created = True
+                except FileExistsError:
+                    pass
+                try:
+                    next_fd = os.open(part, (O_DIR if want_dir else os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC),
+                                      dir_fd=fd)
+                except OSError as error:
+                    if error.errno in (errno.ELOOP, errno.ENOTDIR):
+                        raise IsolationError('credentials', f'{relative} in the profile is a link or not a '
+                                             f'{"directory" if want_dir else "file"}') from None
+                    raise
+                os.close(fd)
+                fd = next_fd
+                info = self._stat_fd(fd)
+                if not want_dir and not stat.S_ISREG(info.st_mode):
+                    raise IsolationError('credentials', f'{relative} in the profile is not a file')
+                if created:
+                    os.fchown(fd, account.pw_uid, account.pw_gid)
+                    os.fchmod(fd, 0o700 if want_dir else 0o600)
+                    log(f'{home}/{"/".join(parts[:index + 1])}: created for {account.pw_name}')
+                elif info.st_uid != account.pw_uid:
+                    empty = want_dir and not os.listdir(fd)
+                    if info.st_uid == 0 and empty:
+                        # A mount point systemd left behind; nothing in it to protect.
+                        os.fchown(fd, account.pw_uid, account.pw_gid)
+                        os.fchmod(fd, 0o700)
+                        log(f'{home}/{"/".join(parts[:index + 1])}: empty and root-owned, given to '
+                            f'{account.pw_name} (0700)')
+                    else:
+                        log(f'{home}/{"/".join(parts[:index + 1])}: owned by uid {info.st_uid}'
+                            f'{"" if empty or not want_dir else " and not empty"}; left as it is')
+        finally:
+            os.close(fd)
 
     def base_env(self, account: pwd.struct_passwd, home: str, runtime) -> list[str]:
         env = {
@@ -486,6 +576,10 @@ class Launcher:
         if match and match.group('agent') and agent_id is not None and int(match.group('agent')) != agent_id:
             raise IsolationError('profile', 'the profile belongs to another agent')
 
+        agent_runtime = request.get('agentRuntime')
+        if agent_runtime is not None and (not isinstance(agent_runtime, str) or not AGENT_RUNTIME.match(agent_runtime)):
+            raise IsolationError('request', 'agentRuntime is invalid')
+
         work = request.get('work') or {'kind': 'run', 'id': None}
         if not isinstance(work, dict) or set(work) - {'kind', 'id'} or work.get('kind') not in WORK_KINDS:
             raise IsolationError('request', 'work is invalid')
@@ -531,6 +625,7 @@ class Launcher:
             'runtime': runtime,
             'home': home_dir,
             'agent_id': agent_id,
+            'agent_runtime': agent_runtime,
             'work_kind': WORK_KINDS[work['kind']],
             'work_id': work_id,
             'args': args,
@@ -547,7 +642,9 @@ class Launcher:
         slug, account, runtime = checked['slug'], checked['account'], checked['runtime']
         unit = unit_name(self.config.unit_prefix, slug, checked['agent_id'], checked['work_kind'],
                          checked['work_id'], secrets.token_hex(6))
-        runtime_ro, credential_props = self.runtime_binds(runtime, checked['home'])
+        if checked['home']:
+            self.prepare_home_targets(checked['home'], account)
+        runtime_ro, credential_props = self.runtime_binds(runtime, checked['home'], checked['agent_runtime'])
         rw = [checked['workspace'], *checked['vault_rw']] + ([checked['home']] if checked['home'] else [])
         props = self.sandbox_properties(slug, account, rw, [*checked['vault_ro'], *runtime_ro], checked['limits'])
         props += credential_props

@@ -353,8 +353,16 @@ function configFrom(fields: Fields, name: string, extraArgs: string[]): RunnerCo
     outputFormat: outputFormatFrom(fields.outputFormat, presetOf({ agent, command })),
     models: modelsFrom(fields.models),
     hermes: hermesFrom(fields.hermes),
-    isolation: isolationFrom(fields.isolation),
+    isolation: withRuntime(isolationFrom(fields.isolation), agent),
   };
+}
+
+// The launcher needs to know whose profile its helper works in (isolation.ts AgentIsolation).
+function withRuntime(
+  isolation: AgentIsolation | undefined,
+  agent: string | undefined,
+): AgentIsolation | undefined {
+  return isolation && agent ? { ...isolation, runtime: agent } : isolation;
 }
 
 // Whatever the environment and the command line said, which is what the file's shared

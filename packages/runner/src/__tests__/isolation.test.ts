@@ -170,7 +170,85 @@ describe('launcher client', () => {
     );
     expect(answer).toEqual({ skills: [] });
     expect(seen.request).toMatchObject({ runtime: 'profile-helper', args: [], env: {} });
+    expect(seen.request).not.toHaveProperty('agentRuntime');
     expect(JSON.parse(seen.stdin)).toEqual({ op: 'inventory' });
+  });
+
+  it("tells the launcher the agent's runtime, so a Codex agent's helper keeps its own .codex", async () => {
+    const { path, seen } = await fakeLauncher((socket) => {
+      socket.write(frame(0x11, `${JSON.stringify({ ok: true, result: { written: 1 } })}\n`));
+      socket.end(frame(0x13, JSON.stringify({ code: 0 })));
+    });
+    await profileHelper(
+      { slug: 'alpha', profile: 'alpha_7', agentId: 7, runtime: 'codex' },
+      '/srv/volition/workspaces/projects/alpha',
+      { op: 'cli-files', runtime: 'codex', files: [] },
+      path,
+    );
+    expect(seen.request).toMatchObject({ runtime: 'profile-helper', agentRuntime: 'codex' });
+  });
+
+  it('asks an older launcher again without the field it does not know', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'itsaplan-launcher-'));
+    dirs.push(dir);
+    const path = join(dir, 'launch.sock');
+    const requests: Record<string, unknown>[] = [];
+    const server = createServer((socket) => {
+      let buffered = Buffer.alloc(0);
+      let accepted = false;
+      socket.on('data', (chunk: Buffer) => {
+        buffered = Buffer.concat([buffered, chunk]);
+        if (!accepted) {
+          const end = buffered.indexOf(10);
+          if (end < 0) return;
+          const request = JSON.parse(buffered.subarray(0, end).toString()) as Record<string, unknown>;
+          requests.push(request);
+          buffered = buffered.subarray(end + 1);
+          if ('agentRuntime' in request) {
+            socket.end(
+              frame(0x14, JSON.stringify({ error: 'request', message: "unexpected fields: ['agentRuntime']" })),
+            );
+            return;
+          }
+          accepted = true;
+          socket.write(frame(0x10, JSON.stringify({ unit: 'volition-agent-alpha--a7-h-0.service' })));
+        }
+        if (buffered.includes(Buffer.from([0x02, 0, 0, 0, 0]))) {
+          socket.write(frame(0x11, `${JSON.stringify({ ok: true, result: 'fine' })}\n`));
+          socket.end(frame(0x13, JSON.stringify({ code: 0 })));
+        }
+      });
+    });
+    servers.push(server);
+    await new Promise<void>((resolve) => server.listen(path, resolve));
+    const answer = await profileHelper(
+      { slug: 'alpha', profile: 'alpha_7', agentId: 7, runtime: 'codex' },
+      '/srv/volition/workspaces/projects/alpha',
+      { op: 'inventory' },
+      path,
+    );
+    expect(answer).toBe('fine');
+    expect(requests.map((request) => request.agentRuntime ?? null)).toEqual(['codex', null]);
+  });
+
+  it('passes on any other refusal', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'itsaplan-launcher-'));
+    dirs.push(dir);
+    const path = join(dir, 'launch.sock');
+    const server = createServer((socket) => {
+      socket.once('data', () =>
+        socket.end(frame(0x14, JSON.stringify({ error: 'credentials', message: 'the profile is odd' }))),
+      );
+    });
+    servers.push(server);
+    await new Promise<void>((resolve) => server.listen(path, resolve));
+    const failure = await profileHelper(
+      { slug: 'alpha', profile: 'alpha_7', agentId: 7, runtime: 'codex' },
+      '/srv/volition/workspaces/projects/alpha',
+      { op: 'inventory' },
+      path,
+    ).catch((error: unknown) => error);
+    expect((failure as LaunchError).code).toBe('credentials');
   });
 });
 
@@ -315,8 +393,14 @@ describe('isolation in the config', () => {
       }),
     );
     const [first, second] = await loadConfig(file);
-    expect(first.isolation).toEqual({ slug: 'alpha', profile: 'alpha_7', agentId: 7 });
-    expect(second.isolation).toEqual({ slug: 'home', profile: 'home', agentId: null });
+    // With the agent's runtime, which the launcher needs for the profile helper.
+    expect(first.isolation).toEqual({ slug: 'alpha', profile: 'alpha_7', agentId: 7, runtime: 'hermes' });
+    expect(second.isolation).toEqual({
+      slug: 'home',
+      profile: 'home',
+      agentId: null,
+      runtime: 'hermes',
+    });
   });
 
   it('refuses a malformed one', async () => {

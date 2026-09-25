@@ -63,6 +63,15 @@ launcher's and egress's state), `InaccessiblePaths=` for `/etc/volition`, `/var/
   (`/var/lib/volition/hermes/auth.json`, `{home}/.codex`); a Hermes run without them is refused.
   An agent can still read the access tokens it uses (design §3, phase 1; phase 2 moves them
   into the egress proxy), never spend a refresh token.
+- A bind target in the profile (`{home}/.codex`) is prepared by the launcher before every unit:
+  created as the agent (0700) when missing — systemd would create it as `root:root 0755`, and it
+  is also a Codex agent's own `CODEX_HOME`, which the agent then could not write (2026-09-25:
+  `codex login --device-auth` → EACCES) —, and an empty root-owned one is given back to the agent
+  (0700). A non-empty one or one owned by someone else is left as it is and logged; a link or a
+  non-directory there stops the unit. The profile helper of a Claude Code or Codex agent (the
+  runner sends `agentRuntime`) gets no login views at all: it works in the agent's own profile,
+  and the Hermes views over `.codex` would hide the agent's own login and answer with the shared
+  ChatGPT one (`cli-files`, the limits of a `runtime-request`). Nothing binds over `.claude`.
 - Home gets `profiles/home` (a copy of the Home agent's state in the global home, databases
   through SQLite's backup) and `/srv/volition/workspaces/home`.
 - Browser state (`/var/lib/volition/project-browser`) belongs to `volition-browser`; Chromium and
