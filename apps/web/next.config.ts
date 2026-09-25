@@ -39,7 +39,15 @@ const nextConfig: NextConfig = {
   // Set by web-release.sh to the commit being built: Next then notices when an open page
   // belongs to an older release and loads the new one in full on its next navigation.
   ...(process.env.NEXT_DEPLOYMENT_ID ? { deploymentId: process.env.NEXT_DEPLOYMENT_ID } : {}),
-  headers: async () => [{ source: '/(.*)', headers: SECURITY_HEADERS }],
+  headers: async () => [
+    { source: '/(.*)', headers: SECURITY_HEADERS },
+    // Files open in Helena's own viewer, an iframe on the same origin (PDFs): these may be
+    // framed by Helena itself, never by another site. A later match overrides the header.
+    {
+      source: '/protected-media/:path*',
+      headers: [{ key: 'X-Frame-Options', value: 'SAMEORIGIN' }],
+    },
+  ],
   // Monorepo: include the repo root in file tracing for standalone.
   outputFileTracingRoot: tracingRoot,
   // isomorphic-dompurify loads jsdom on the server, and jsdom reads its own data
