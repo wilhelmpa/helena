@@ -28,7 +28,7 @@
     "allowPrivate": "Diese lokale Adresse erlauben",
     "allowPrivateHint": "Helena ruft Adressen in deinem Netz sonst nie auf. Das erlaubt genau diese Adresse, nichts anderes.",
     "localKey": "Den Schlüssel des lokalen Laya-Dienstes liest Helena vom Server, hier ist nichts einzutragen.",
-    "localAiKey": "Adresse und Schlüssel kommen aus Helenas lokaler KI (Administrator → Lokale KI), hier ist nichts einzutragen.",
+    "localAiKey": "Adresse, Schlüssel und Modell kommen aus Helenas lokaler KI (Administrator → Lokale KI, dort „Entscheidungen“ einschalten); hier ist nichts einzutragen.",
     "key": "Schlüssel",
     "keyHintTypesafe": "Aus console.typesafe.ai → Keys.",
     "keyHintVercel": "Ein AI-Gateway-Schlüssel deines Vercel-Teams.",

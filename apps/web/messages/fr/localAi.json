@@ -135,6 +135,10 @@
     "coordinator-triage": {
       "label": "Premier regard du coordinateur",
       "description": "Le premier examen d'une nouvelle tâche ; tout ce qui est réel passe au modèle configuré du coordinateur."
+    },
+    "decisions": {
+      "label": "Décisions",
+      "description": "Décisions typées par lecture des logits : tri des e-mails, choix du modèle, justificatifs, étape de workflow. Les types s’activent sous Décisions."
     }
   },
   "updates": {

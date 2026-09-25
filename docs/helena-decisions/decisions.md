@@ -417,31 +417,16 @@ What this means:
 
 | Branch | What connects | Done here | To do at merge |
 |---|---|---|---|
-| hub/local-ai | Lemonade + model servers; the "Lokale KI" policy | `useModelServerResolver` (connection.ts) and `useDecisionGate` (decisions/service.ts) as hooks; `local-logit`/`llm-json` presets point at `http://127.0.0.1:13305/api/v1` (local-ai's convention; a doubled `/v1` is avoided) with `keySource: 'local-ai'` | register the resolver in `helena.local-ai` (below), the gate only if the owner wants the master switch to cover decisions (§11.7) |
+| hub/local-ai (merged) | Lemonade + model servers; the "Lokale KI" policy (§6.6 of its doc) | a local-AI task class `decisions` ("Entscheidungen": GPU, capability chat, priority interactive, eval = the general set as JSON answers, threshold 0.85, not in the master's first set); a connection with `keySource: 'local-ai'` asks the model `resolveLocalRoute({classId: 'decisions', unit: 'gpu'})` names, on that server, with `readModelServerKey` (`decisions/local-ai.ts`); a refusal (master or class off, unit off, server down, eval failed) is that connection's error, so the fallback connection or the caller's default takes over; "Nur lokal" refuses every cloud connection for all decision classes; the runner and chat claims apply local AI's `runSettingsOf`/`effectiveModelNow` before and after the model router | – |
 | hub/browser-task (merged) | decision backends, System One client, Laya | `protocol` dispatch in `askSystemOne`; Laya serves several checkpoints (`HELENA_LAYA_MODELS`) | – |
 | hub/native-engine (merged) | step registry, system jobs | step `decision`, job `helena.mail-triage` | – |
 | hub/mail (merged) | mail model | classification table, list badges, `createTaskFromThread(…, {assigneeUserId})` | – |
 | hub/autopilot, hub/model-availability | price table, refused models | read by the router's tiers | – |
 
-Local AI registration (to add in hub/local-ai's plugin once both are merged; names as on
-hub/local-ai be4bbf69):
-
-```ts
-import { modelServerBySlug, readLocalAiPolicy, readModelServerKey } from '@repo/db';
-import { useModelServerResolver } from '#modules/browser-task/connection';
-import { useDecisionGate } from '#modules/decisions/service';
-
-useModelServerResolver(async (slug) => {
-  const server = await modelServerBySlug(slug);
-  return server ? { baseUrl: server.baseUrl, key: await readModelServerKey(server) } : null;
-});
-// Only if the owner wants the "Lokale KI" master switch to cover decisions too (§11): a class
-// the owner pointed at a local connection is otherwise his explicit choice, not local AI acting
-// on its own.
-useDecisionGate(async ({ local }) =>
-  local && !(await readLocalAiPolicy()).enabled ? 'Lokale KI ist ausgeschaltet' : null,
-);
-```
+So a local decision needs three switches, each with its eval: Lokale KI's master switch and its
+class "Entscheidungen" (Administrator → Lokale KI), and the decision class itself with its
+connection "Lokale KI auf diesem Server" (Home → Entscheidungen). The model is the one Lokale KI
+picks for the class (Qwen3.6-35B-A3B by default, the first loaded GPU model with chat).
 
 ## 11. Open owner decisions
 
@@ -457,8 +442,9 @@ useDecisionGate(async ({ local }) =>
    (§8); the local AI answers every class better.
 5. Mail: which actions to allow automatically; receipts from invoice mail automatically.
 6. Receipts: which projects get bank accounts; later ERPNext pull or Enable Banking (§7.4).
-7. Whether the local AI master switch also covers decision classes pointed at a local connection
-   (§10; recommendation: no, the class switch is already the owner's explicit choice).
+7. Lokale KI → "Entscheidungen": **Lokal bevorzugt** (a cloud fallback may answer when the local
+   model cannot) or **Nur lokal** (nothing of a decision leaves the machine; recommended for
+   mail and receipts).
 
 ## 12. Sources
 

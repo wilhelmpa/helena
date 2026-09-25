@@ -666,9 +666,12 @@ describe('decisions through the local AI', () => {
           });
         }
         // Lokale KI's eval of the class: the right JSON answer for every case.
-        const asking = JSON.parse(user) as { text: string };
+        const asking = JSON.parse(user) as { text: string; question: string };
         const item = GENERIC_EVAL_CASES.find((entry) => entry.context === asking.text)!;
-        const expected = [Object.values(item.expected)[0]!].flat()[0];
+        const [id] = Object.entries(item.questions).find(
+          ([, entry]) => entry.question === asking.question,
+        )!;
+        const expected = [item.expected[id]!].flat()[0];
         return Response.json({
           choices: [
             { message: { role: 'assistant', content: JSON.stringify({ choice: expected }) } },
@@ -744,7 +747,11 @@ describe('decisions through the local AI', () => {
     expect(on.status).toBe(200);
     asked.length = 0;
     const answered = await decide(question);
-    expect(answered).toMatchObject({ status: 'decided', choice: 'support' });
+    expect(answered).toMatchObject({
+      status: 'decided',
+      model: 'Qwen3.6-35B-A3B-GGUF',
+      answers: { q: { choice: 'support', decided: true } },
+    });
     // The route's model on the registered server, with its key.
     expect(asked).toEqual([
       { model: 'Qwen3.6-35B-A3B-GGUF', logprobs: true, auth: `Bearer ${LOCAL_KEY}` },

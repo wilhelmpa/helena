@@ -28,7 +28,7 @@
     "allowPrivate": "Permitir este endereço local",
     "allowPrivateHint": "A Helena nunca chama endereços da sua rede. Isto permite exatamente este endereço, nada mais.",
     "localKey": "A chave do serviço Laya local é lida do servidor; nada a preencher.",
-    "localAiKey": "O endereço e a chave vêm da IA local da Helena (Administrador → IA local); nada a preencher.",
+    "localAiKey": "Endereço, chave e modelo vêm da IA local da Helena (Administrador → IA local, ative lá “Decisões”); nada para preencher aqui.",
     "key": "Chave",
     "keyHintTypesafe": "Em console.typesafe.ai → Keys.",
     "keyHintVercel": "Uma chave do AI Gateway da sua equipe na Vercel.",

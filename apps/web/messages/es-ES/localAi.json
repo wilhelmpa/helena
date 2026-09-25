@@ -135,6 +135,10 @@
     "coordinator-triage": {
       "label": "Primer vistazo del coordinador",
       "description": "La primera revisión de una tarea nueva; todo lo real pasa al modelo configurado del coordinador."
+    },
+    "decisions": {
+      "label": "Decisiones",
+      "description": "Decisiones tipadas por lectura de logits: clasificar correo, elección de modelo, justificantes, paso de workflow. Los tipos se activan en Decisiones."
     }
   },
   "updates": {

@@ -28,7 +28,7 @@
     "allowPrivate": "Autoriser cette adresse locale",
     "allowPrivateHint": "Helena n'appelle jamais les adresses de votre réseau. Ceci autorise exactement cette adresse, rien d'autre.",
     "localKey": "La clé du service Laya local est lue sur le serveur ; rien à saisir.",
-    "localAiKey": "L'adresse et la clé viennent de l'IA locale de Helena (Administrateur → IA locale) ; rien à saisir.",
+    "localAiKey": "L’adresse, la clé et le modèle viennent de l’IA locale de Helena (Administrateur → IA locale, y activer « Décisions ») ; rien à saisir ici.",
     "key": "Clé",
     "keyHintTypesafe": "Depuis console.typesafe.ai → Keys.",
     "keyHintVercel": "Une clé AI Gateway de votre équipe Vercel.",
