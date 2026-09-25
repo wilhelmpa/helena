@@ -305,10 +305,15 @@ needs Kontierung and is not v1; DATEV's XML document package is the v2 target.
 
 ### 7.4 Later feeds (researched, not built)
 
-- **The owner's ERPNext** (only if it already receives bank data): `GET /api/resource/Bank
-  Transaction` with a token from Zugänge, dedupe on `transaction_id`. ERPNext's own German bank
-  sync (alyf-de/banking) needs a paid subscription. *The owner's `m5-control` project README has
-  not been read yet (Kingston was being rebooted); to be added.*
+- **The owner's ERPNext** ("M5 Control", `~/Projekte/m5-control`, README read 2026-09-25): ERPNext/
+  Frappe 16 with n8n, in Docker on the old Ubuntu host (`127.0.0.1:8080`), as the system of record
+  for projects, inbox, approvals, decisions, time tracking and career — no bank, accounting or
+  receipt module is mentioned, and nothing listens on 8080 on Kingston. So there is no bank feed
+  to pull today. An ERPNext pull (`GET /api/resource/Bank Transaction`, token from Zugänge, dedupe
+  on `transaction_id`) only makes sense if the owner starts using ERPNext's accounting; much of
+  M5 Control (inbox triage, approvals, decisions, skills, daily briefing) overlaps with Helena
+  and is a candidate for moving into Helena rather than for an integration. ERPNext's own German
+  bank sync (alyf-de/banking) needs a paid subscription.
 - **Enable Banking** (restricted production mode: the owner links his own accounts, no contract,
   consent up to 180 days; each installation registers its own app). Best PSD2 option for a
   self-hoster. GoCardless Bank Account Data closed new sign-ups in July 2025; finAPI, Tink, Yapily,
