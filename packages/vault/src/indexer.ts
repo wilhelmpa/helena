@@ -15,6 +15,7 @@ import {
   joinVaultPath,
 } from './paths';
 import { isExtractable } from './extract';
+import { writtenByNotes } from './writers';
 import {
   allIndexedFiles,
   entriesWithSha,
@@ -113,6 +114,9 @@ export interface VaultWriteProvenance {
 }
 
 export const EXTERNAL_PROVENANCE: VaultWriteProvenance = { author: 'extern' };
+
+// A change the notes made (SilverBullet: writers.ts), found on disk like any outside change.
+export const NOTES_PROVENANCE: VaultWriteProvenance = { author: 'notes' };
 
 async function saveFile(
   relative: string,
@@ -279,7 +283,10 @@ export async function indexVaultPaths(
   const ordered = [...present.keys()].sort();
   for (const relative of ordered) {
     try {
-      await indexExisting(relative, present.get(relative)!, gone, provenance);
+      const stats = present.get(relative)!;
+      const author =
+        provenance === EXTERNAL_PROVENANCE && writtenByNotes(stats) ? NOTES_PROVENANCE : provenance;
+      await indexExisting(relative, stats, gone, author);
     } catch (error) {
       if (isMissing(error)) gone.add(relative);
       else if (!isUnreadable(error)) console.error(`[vault] indexing ${relative} failed:`, error);

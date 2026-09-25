@@ -70,45 +70,33 @@ test('a dry run lists every change and makes none', async () => {
   assert.deepEqual(await readdir(vault), []);
 });
 
-test('writes the ignore patterns and the Obsidian defaults once', async () => {
+test('writes the ignore patterns once and no editor settings', async () => {
   const { vault } = await scratch();
   const script = join(directory, 'vault-defaults.sh');
   await run(script, [vault]);
   const ignore = await readFile(join(vault, '.stignore'), 'utf8');
-  for (const pattern of ['.git', '/.trash', '/.obsidian/workspace*.json', '(?d).DS_Store']) {
+  for (const pattern of [
+    '.git',
+    '/.trash',
+    '/.obsidian',
+    '.*.sb-write-*',
+    '.sb-case-probe-*',
+    '(?d).DS_Store',
+  ]) {
     assert.ok(ignore.split('\n').includes(pattern), `missing pattern: ${pattern}`);
   }
-  const app = JSON.parse(await readFile(join(vault, '.obsidian/app.json'), 'utf8'));
-  assert.deepEqual(app, {
-    useMarkdownLinks: false,
-    newLinkFormat: 'shortest',
-    trashOption: 'local',
-    attachmentFolderPath: './Assets',
-  });
-  const plugins = JSON.parse(await readFile(join(vault, '.obsidian/core-plugins.json'), 'utf8'));
-  assert.deepEqual(plugins, { backlink: true, graph: true, templates: true, 'daily-notes': true });
-  assert.deepEqual(JSON.parse(await readFile(join(vault, '.obsidian/templates.json'), 'utf8')), {
-    folder: 'Templates',
-  });
-  assert.deepEqual(JSON.parse(await readFile(join(vault, '.obsidian/daily-notes.json'), 'utf8')), {
-    folder: 'Home/Journal',
-  });
-  assert.ok(existsSync(join(vault, 'Home/Journal')));
+  assert.equal(existsSync(join(vault, '.obsidian')), false);
+  assert.ok(existsSync(join(vault, 'Home/Docs/Journal')));
+  assert.ok(existsSync(join(vault, 'Templates')));
 
   await run(script, [vault]);
   assert.equal(await readFile(join(vault, '.stignore'), 'utf8'), ignore);
 });
 
-test('keeps the owner settings and ignore patterns', async () => {
+test('keeps the owner’s ignore patterns', async () => {
   const { vault } = await scratch();
-  await mkdir(join(vault, '.obsidian'));
-  await writeFile(join(vault, '.obsidian/app.json'), '{"useMarkdownLinks":true}\n');
   await writeFile(join(vault, '.stignore'), 'Files/Mail\n.git\n');
   await run(join(directory, 'vault-defaults.sh'), [vault]);
-  assert.equal(
-    await readFile(join(vault, '.obsidian/app.json'), 'utf8'),
-    '{"useMarkdownLinks":true}\n',
-  );
   const lines = (await readFile(join(vault, '.stignore'), 'utf8')).split('\n');
   assert.equal(lines[0], 'Files/Mail');
   assert.equal(lines.filter((line) => line === '.git').length, 1);

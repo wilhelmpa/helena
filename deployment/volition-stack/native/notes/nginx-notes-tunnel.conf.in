@@ -1,0 +1,26 @@
+# Helena Notizen through the internet tunnel: https://@NOTES_HOST@, a name of its own in
+# Cloudflare (a public hostname of the tunnel, and a destination of Helena's Access
+# application). Rendered by notes/install.sh (step nginx-tunnel) into
+# /etc/nginx/sites-available/helena-tunnel.notes.conf: the name sorts after
+# helena-tunnel.conf, so helena.volition.one stays the default server of the entry.
+#
+# No Helena cookie arrives on this name. The owner check is Cloudflare Access: the API
+# verifies the assertion (signature, audience, issuer, allow list) and that its e-mail is the
+# owner's Helena account (/auth/verify/notes). nftables lets only cloudflared reach the port.
+server {
+    listen 127.0.0.1:@TUNNEL_PORT@;
+    server_name @NOTES_HOST@;
+    set $helena_notes_helena https://@PUBLIC_HOST@;
+
+    location = /_helena_notes_auth {
+        internal;
+        auth_request off;
+        include /etc/nginx/snippets/helena-tunnel-headers.conf;
+        proxy_pass http://127.0.0.1:3000/auth/verify/notes;
+        proxy_pass_request_body off;
+        proxy_set_header Content-Length "";
+        proxy_set_header Cookie "";
+    }
+
+    include /etc/nginx/snippets/helena-notes-common.conf;
+}

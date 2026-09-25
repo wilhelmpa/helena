@@ -43,6 +43,7 @@ export const CHECK_KEYS = [
   'files_agent_code',
   'svc_exposure',
   'svc_tools_loopback',
+  'svc_notes',
 ] as const;
 export type CheckKey = (typeof CHECK_KEYS)[number];
 

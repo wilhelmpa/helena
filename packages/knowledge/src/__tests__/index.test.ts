@@ -29,7 +29,13 @@ import { runSources, reindexItems } from '../indexer';
 import { linkingItems, readIndexedItem, searchKnowledgeIndex } from '../search';
 import { issueSource } from '../sources/issues';
 import { captureToInbox, captureToJournal, appendUnderInbox } from '../capture';
-import { expandTemplate, formatDate, listTemplates, seedTemplates } from '../templates';
+import {
+  dailyNotesConfig,
+  expandTemplate,
+  formatDate,
+  listTemplates,
+  seedTemplates,
+} from '../templates';
 
 let root = '';
 let suffix = '';
@@ -384,13 +390,12 @@ describe('knowledge index', () => {
 });
 
 describe('capture, templates and daily notes', () => {
-  it('seeds the templates and Obsidian settings once', async () => {
+  it('seeds the templates once, and no editor settings', async () => {
     await rm(path.join(root, 'Templates'), { recursive: true, force: true });
     const written = await seedTemplates('de');
     expect(written).toContain('Templates/Tagesnotiz.md');
-    expect(written).toContain('.obsidian/daily-notes.json');
-    const daily = JSON.parse(await readFile(path.join(root, '.obsidian/daily-notes.json'), 'utf8'));
-    expect(daily).toEqual({
+    expect(written.some((relative) => relative.startsWith('.'))).toBe(false);
+    expect(await dailyNotesConfig()).toEqual({
       folder: 'Home/Docs/Journal',
       format: 'YYYY-MM-DD',
       template: 'Templates/Tagesnotiz',
@@ -398,9 +403,12 @@ describe('capture, templates and daily notes', () => {
     expect((await listTemplates()).map((template) => template.name)).toContain('Projektbrief');
     await rm(path.join(root, 'Templates/Meeting.md'));
     expect(await seedTemplates('de')).toEqual([]);
+    // Without the daily template the day's note is made without one.
+    await rm(path.join(root, 'Templates/Tagesnotiz.md'));
+    expect((await dailyNotesConfig()).template).toBe('');
   });
 
-  it('expands Obsidian template variables', () => {
+  it('expands the template variables', () => {
     const date = new Date('2026-09-24T08:05:00Z');
     expect(formatDate(date, 'dddd, D. MMMM YYYY', 'de', 'Europe/Berlin')).toBe(
       'Donnerstag, 24. September 2026',

@@ -50,7 +50,7 @@ export interface NoteBoard {
   memberIds: string[];
   name: string;
   canvas: NoteCanvas;
-  // A public board is a JSON Canvas file in the project knowledge (Obsidian opens it);
+  // A public board is a JSON Canvas file in the project knowledge (agents read it);
   // null for a private board, which is kept in the database.
   vaultPath: string | null;
   vaultSha256?: string | null;

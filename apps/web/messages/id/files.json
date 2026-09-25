@@ -53,7 +53,7 @@
     "rename": "Ganti nama",
     "move": "Pindahkan",
     "copyPath": "Salin jalur",
-    "openInObsidian": "Buka di Obsidian",
+    "openInNotes": "Buka di Catatan",
     "openInCode": "Buka di VS Code",
     "openInDocs": "Buka di Docs",
     "linkToTask": "Tautkan ke tugas",

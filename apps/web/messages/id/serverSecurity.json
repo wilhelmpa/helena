@@ -69,7 +69,8 @@
     "files_secrets": "Rahasia dan kunci tidak terbaca oleh pihak lain",
     "files_agent_code": "Agen dapat membaca kode runtime mereka",
     "svc_exposure": "Layanan Helena diisolasi oleh systemd",
-    "svc_tools_loopback": "Alat hanya terjangkau lewat loopback"
+    "svc_tools_loopback": "Alat hanya terjangkau lewat loopback",
+    "svc_notes": "Catatan terlindungi"
   },
   "finding": {
     "net_firewall": {
@@ -190,6 +191,9 @@
     },
     "svc_tools_loopback": {
       "fail": "Alat dapat dijangkau di luar loopback."
+    },
+    "svc_notes": {
+      "fail": "Catatan tidak terlindungi seperti seharusnya: {problems}"
     },
     "skipped": "Tidak diperiksa"
   },

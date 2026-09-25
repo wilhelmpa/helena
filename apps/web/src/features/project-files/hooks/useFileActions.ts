@@ -10,7 +10,7 @@ import {
 import { copyText } from '@/utils/clipboard';
 import { runtimeEnv } from '@/utils/runtimeEnv';
 import { fileViewKind } from '@/utils/fileKinds';
-import { childPath, docsFileUrl, obsidianUrl } from '@/utils/vaultLinks';
+import { childPath, docsFileUrl, notesFileUrl } from '@/utils/vaultLinks';
 import { codeFolderUrl } from '@/utils/workspaceTools';
 
 // What can be done with one entry of the listed folder, and where each of its links
@@ -53,9 +53,10 @@ export function useFileActions({
       onSelect(item.path);
     },
     downloadUrl: (item: FileItem) => fileRawUrl(scope, item.path, true),
-    obsidianUrl(item: FileItem) {
+    // The file in the notes (a new tab on their own origin), where this origin has them.
+    notesUrl(item: FileItem) {
       const path = vaultPath(item);
-      return path ? obsidianUrl(workspace.obsidianVault, path) : '';
+      return path ? notesFileUrl(workspace.notesUrl, path) : '';
     },
     codeUrl(item: FileItem) {
       const folder = item.kind === 'folder' ? absolutePath(item) : listing?.absolutePath;

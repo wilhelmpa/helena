@@ -1,0 +1,91 @@
+# Helena Notizen: SilverBullet on the knowledge vault. Rendered by notes/install.sh (step
+# "service") from helena-notes.service.in; do not edit the installed copy by hand.
+# docs/helena-decisions/notes-silverbullet.md.
+#
+# Who reaches it: nobody but nginx. It listens on a Unix socket in a folder only its own
+# user and www-data can enter; nginx asks Helena (auth_request /auth/verify/notes) before
+# every request. It has no network at all (PrivateNetwork), so SilverBullet's server-side
+# fetch (/.proxy) and anything a note's script asks of the server stay on this machine.
+#
+# What it may touch: the vault, read and write, except the owner's Private/ folder and the
+# vault's git history, which it cannot see at all.
+[Unit]
+Description=Helena Notizen (SilverBullet on the knowledge vault)
+Documentation=https://silverbullet.md
+After=local-fs.target
+ConditionPathIsDirectory=@VAULT@
+
+[Service]
+Type=simple
+User=helena-notes
+Group=helena-notes
+# The vault's group: its files are root:volition 2770 with default ACLs, so what this
+# service writes keeps the vault's group and modes (and every agent ACL) like any other file.
+SupplementaryGroups=volition
+RuntimeDirectory=helena-notes
+RuntimeDirectoryMode=0750
+# nginx (www-data) connects to the socket: the folder becomes www-data's group, setgid, so
+# the socket SilverBullet binds there is www-data's too (0770 by the UMask). No one else
+# can enter the folder.
+ExecStartPre=+/usr/bin/install -d -m 2750 -o helena-notes -g www-data /run/helena-notes
+ExecStart=@BINARY@ --single @VAULT@
+UMask=0007
+Environment=SB_UNIX_SOCKET=/run/helena-notes/notes.sock
+Environment=SB_NAME=Notizen
+Environment="SB_DESCRIPTION=Helenas Notizen"
+Environment=SB_INDEX_PAGE=@INDEX_PAGE@
+# No shell commands, no headless browser, no git of its own: Helena versions the vault.
+Environment=SB_SHELL_BACKEND=off
+Environment=SB_RUNTIME_API=0
+Environment=SB_REVISIONS=disabled
+# The native watcher stops at the first folder it cannot read (Private/), so SilverBullet
+# scans for outside changes instead: every 5 seconds, a stat per file.
+Environment=SB_FS_WATCH=poll
+Environment=SB_FS_POLL_INTERVAL=5
+# Hidden from the notes: the private folder (it cannot read it anyway), Helena's boards
+# (JSON Canvas files, edited in Helena's own board view) and Syncthing's conflict copies.
+Environment="SB_SPACE_IGNORE=/Private/\n*.canvas\n*.sync-conflict-*"
+# The poll scan warns about the folders it may not read on every pass; keep the journal quiet.
+Environment=RUST_LOG=info,notify=error,chromiumoxide=error
+Restart=on-failure
+RestartSec=3
+
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+PrivateNetwork=yes
+RestrictAddressFamilies=AF_UNIX
+IPAddressDeny=any
+PrivateTmp=yes
+PrivateDevices=yes
+DevicePolicy=closed
+ProtectSystem=strict
+ProtectHome=yes
+# Only the vault is visible under /srv; the rest of the machine's data is read-only at most.
+TemporaryFileSystem=/srv:ro
+BindPaths=@VAULT@
+InaccessiblePaths=-@VAULT@/.git -@VAULT@/Private -@VAULT@/.trash -@VAULT@/.stversions
+ReadOnlyPaths=-@VAULT@/.gitignore -@VAULT@/.stignore -@VAULT@/.stfolder
+InaccessiblePaths=-/etc/volition -/etc/helena -/var/lib/volition -/var/lib/helena -/var/backups
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+ProcSubset=pid
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+SystemCallErrorNumber=EPERM
+MemoryMax=512M
+TasksMax=128
+
+[Install]
+WantedBy=multi-user.target

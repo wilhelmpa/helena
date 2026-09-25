@@ -19,8 +19,7 @@ import { startPollLoop, type WorkerHandle } from './poll-loop';
 
 // The second brain's index in the worker: every few seconds each registered knowledge
 // source is asked what changed (@helena/knowledge indexer), and while semantic search is
-// on, new passages are embedded. On start it seeds the note templates and Obsidian's
-// daily-note settings into the vault once.
+// on, new passages are embedded. On start it seeds the note templates into the vault once.
 
 const INDEX_INTERVAL_MS = Number(process.env.KNOWLEDGE_INDEX_INTERVAL_MS) || 5_000;
 const EMBED_INTERVAL_MS = 10_000;

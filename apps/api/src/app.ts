@@ -33,6 +33,8 @@ import {
 } from './shared/agent-socket';
 import { HttpError } from './shared/lib';
 import { edgeGuard, edgeVerifyRoutes, mountSecurityRoutes } from './modules/edge-access';
+import { notesVerifyRoutes } from './modules/notes/verify';
+import { crossSiteRefusal } from './shared/cross-site';
 import { engineHookRoutes } from './modules/engine';
 import { issueProxyToken } from './modules/owner-terminal/service';
 import { OwnerTerminalKindParam, type OwnerTerminalKind } from './modules/owner-terminal/model';
@@ -76,6 +78,10 @@ export const app = new Elysia()
     // modules/edge-access and docs/helena-decisions/security-hardening.md.
     const edgeRefusal = await edgeGuard(request);
     if (edgeRefusal) return edgeRefusal;
+    // A page of another origin (the notes on the home name's second port, another name of
+    // the same domain) may not change anything with the owner's cookie (shared/cross-site.ts).
+    const crossSite = crossSiteRefusal(request);
+    if (crossSite) return crossSite;
     try {
       if (!agentSocketRequestAllowed(request, new URL(request.url).pathname)) {
         return Response.json({ error: 'Not available to agents' }, { status: 403 });
@@ -442,6 +448,8 @@ export const app = new Elysia()
     },
   )
   .use(edgeVerifyRoutes)
+  // The notes proxy's auth_request target (modules/notes/verify.ts).
+  .use(notesVerifyRoutes)
   // The owner-terminal proxy's auth_request target (see
   // deployment/volition-stack/native/owner-terminal/nginx-owner-terminal.conf).
   // Session, owner role and a live 12h grant are all checked here, on every request

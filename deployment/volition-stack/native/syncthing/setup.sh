@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Sets up the Syncthing service that syncs the vault with the owner's devices: the user
-# volition-sync, the API key Plan uses, the unit, the vault files Syncthing and Obsidian
-# read, and the folder "Helena". Safe to run again; deploy.sh runs it when this
+# volition-sync, the API key Plan uses, the unit, the vault's .stignore and folders, and
+# the folder "Helena". Safe to run again; deploy.sh runs it when this
 # directory or the unit changes.
 #
 #   sudo deployment/volition-stack/native/syncthing/setup.sh [--dry-run]

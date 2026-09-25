@@ -1,0 +1,67 @@
+---
+tags: meta
+---
+# Notizen: Einstellungen
+
+Helena hat diese Seite angelegt (notes/install.sh). Sie stellt die Notizen auf Helenas Wissensordner ein: das Tagebuch liegt dort, wo Helena die Tagesnotizen führt, Links werden kurz geschrieben wie in Helena, und `ordner:<Pfad>` zeigt die Notizen eines Ordners. Änderungen hier gelten nach dem nächsten Neuladen.
+
+```space-lua
+-- priority: 50
+config.set("journal.prefix", "@JOURNAL_FOLDER@/")
+config.set("linkWriteFormat", "shortest")
+config.set("view.defaults", {
+  ["std.spaceTree"] = { dock = "lhs", open = true, width = 260 },
+})
+
+-- Helena's address for each address of the notes (a task link opens there).
+local helenaOrigins = {
+@HELENA_ORIGINS@
+}
+
+local function helenaOrigin()
+  return helenaOrigins[js.window.location.host] or ""
+end
+
+-- "ordner:Projects/VOL" lists the notes of a folder, the newest first. Helena opens a
+-- project's notes here.
+virtualPage.define {
+  pattern = "ordner:(.+)",
+  run = function(folder)
+    local prefix = folder .. "/"
+    local pages = query[[
+      from p = index.pages()
+      where p.name:startsWith(prefix)
+      order by p.lastModified desc
+      limit 300
+    ]]
+    local lines = {
+      "# " .. folder,
+      "",
+      "Neue Notiz hier: Strg/⌘-K, `" .. prefix .. "Name` eingeben, Umschalt-Enter.",
+      "",
+    }
+    if #pages == 0 then
+      table.insert(lines, "Noch keine Notizen in diesem Ordner.")
+    end
+    for _, p in ipairs(pages) do
+      table.insert(lines, "* [[" .. p.name .. "]] · " .. string.sub(p.lastModified or "", 1, 10))
+    end
+    return table.concat(lines, "\n")
+  end
+}
+
+-- [[VOL-12]] is a task in Helena: its page links there.
+virtualPage.define {
+  pattern = "^(%u[%u%d_]*)-(%d+)$",
+  run = function(key, number)
+    local origin = helenaOrigin()
+    local lines = { "# " .. key .. "-" .. number, "" }
+    if origin ~= "" then
+      table.insert(lines, "[Aufgabe in Helena öffnen](" .. origin .. "/project/" .. key .. "/issue/" .. number .. ")")
+    else
+      table.insert(lines, "Eine Aufgabe in Helena.")
+    end
+    return table.concat(lines, "\n")
+  end
+}
+```

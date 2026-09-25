@@ -11,11 +11,11 @@ describe('panel tools', () => {
     const tools = panelTools.list().sort((a, b) => a.order - b.order);
     assert.deepEqual(
       tools.map((tool) => tool.id),
-      ['chat', 'terminal', 'code', 'browser', 'mail', 'inbox', 'connections'],
+      ['chat', 'terminal', 'code', 'notes', 'browser', 'mail', 'inbox', 'connections'],
     );
     assert.deepEqual(
       tools.filter((tool) => tool.inHeader).map((tool) => tool.id),
-      ['chat', 'terminal', 'code', 'browser', 'mail'],
+      ['chat', 'terminal', 'code', 'notes', 'browser', 'mail'],
     );
     assert.deepEqual(
       tools.filter((tool) => tool.phonePinned).map((tool) => tool.id),
@@ -23,7 +23,12 @@ describe('panel tools', () => {
     );
     assert.deepEqual(
       tools.filter((tool) => tool.projectScoped).map((tool) => tool.id),
-      ['terminal', 'code'],
+      ['terminal', 'code', 'notes'],
+    );
+    // Only the notes ask whether this origin has them.
+    assert.deepEqual(
+      tools.filter((tool) => tool.available).map((tool) => tool.id),
+      ['notes'],
     );
     assert.deepEqual(panelTools.get('code')?.view, { kind: 'workspace' });
     assert.equal(panelTools.get('chat')?.view.kind, 'component');

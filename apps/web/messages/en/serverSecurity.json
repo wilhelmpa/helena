@@ -69,7 +69,8 @@
     "files_secrets": "Secrets and keys not readable by others",
     "files_agent_code": "Agents can read their runtime code",
     "svc_exposure": "Helena services sandboxed by systemd",
-    "svc_tools_loopback": "Tools reachable over loopback only"
+    "svc_tools_loopback": "Tools reachable over loopback only",
+    "svc_notes": "Notes shielded"
   },
   "finding": {
     "net_firewall": {
@@ -190,6 +191,9 @@
     },
     "svc_tools_loopback": {
       "fail": "Tools can be reached beyond loopback."
+    },
+    "svc_notes": {
+      "fail": "The notes are not shielded as intended: {problems}"
     },
     "skipped": "Not checked"
   },

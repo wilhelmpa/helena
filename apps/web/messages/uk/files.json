@@ -53,7 +53,7 @@
     "rename": "Перейменувати",
     "move": "Перемістити",
     "copyPath": "Копіювати шлях",
-    "openInObsidian": "Відкрити в Obsidian",
+    "openInNotes": "Відкрити в нотатках",
     "openInCode": "Відкрити у VS Code",
     "openInDocs": "Відкрити в Docs",
     "linkToTask": "Пов'язати із завданням",

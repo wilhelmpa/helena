@@ -1,6 +1,6 @@
 {
-  "title": "Devices & Obsidian",
-  "description": "Syncthing keeps the notes and files of Home, the projects and Private/ in sync with Obsidian on your Mac and phone: directly at home, through encrypted relays on the road.",
+  "title": "Devices",
+  "description": "Syncthing keeps the notes and files of Home, the projects and Private/ up to date as a plain folder on your Mac and phone: directly at home, through encrypted relays on the road.",
   "loadError": "The sync status could not be read.",
   "ownerOnly": "Only the instance owner manages the devices.",
   "unavailable": {
@@ -58,7 +58,7 @@
   },
   "conflicts": {
     "title": "Conflicts",
-    "hint": "Syncthing keeps a conflict copy when a file was changed on two devices before they synced. Open both files in Obsidian, carry what you want to keep into the original and delete the conflict copy; the deletion reaches every device.",
+    "hint": "Syncthing keeps a conflict copy when a file was changed on two devices before they synced. Open both files, carry what you want to keep into the original and delete the conflict copy; the deletion reaches every device.",
     "empty": "No conflicts.",
     "loadError": "The conflicts could not be read.",
     "original": "Original: {path}",
@@ -66,14 +66,14 @@
   },
   "guide": {
     "title": "Set up a device",
-    "step1": "Install Syncthing and Obsidian on the device. Mac: the app Syncthing from syncthing.net. iPhone: Möbius Sync from the App Store. Android: Syncthing-Fork from F-Droid or Google Play.",
+    "step1": "Install Syncthing on the device. Mac: the app Syncthing from syncthing.net. iPhone: Möbius Sync from the App Store. Android: Syncthing-Fork from F-Droid or Google Play.",
     "step2": "In Syncthing, add a device and enter this server's device ID, or scan the QR code.",
     "step2Lan": "For direct syncing at home, enter <code>{address}, dynamic</code> as the device's addresses.",
     "step3": "The device then appears above under “Devices asking to connect”. Choose Accept.",
-    "step4": "On the device, accept the folder Helena into a folder named Helena: <code>~/Helena</code> on the Mac, <code>Helena</code> in the internal storage on Android, the Obsidian vault Helena on the iPhone.",
-    "step5": "Wait until the folder shows “Up to date” on the device, then open the folder Helena in Obsidian as a vault. Links from Helena open the vault Helena.",
+    "step4": "On the device, accept the folder Helena into a folder named Helena: <code>~/Helena</code> on the Mac, <code>Helena</code> in the internal storage on Android, under “On My iPhone” in Möbius Sync on the iPhone.",
+    "step5": "Wait until the folder shows “Up to date” on the device. The notes and files are then plain files on the device; the notes are best written in Helena under Notes.",
     "iphoneTitle": "iPhone",
-    "iphone": "Obsidian on the iPhone only opens its own folders. First create the vault Helena in Obsidian (on the iPhone, not in iCloud) and close Obsidian. Then, in Möbius Sync, put the folder Helena into On My iPhone › Obsidian › Helena. Obsidian writes its own settings when it creates a vault, so conflicts in <code>.obsidian</code> can appear after the first sync; their conflict copies hold this server's defaults. Möbius Sync syncs while the app is open or iOS lets it run in the background.",
+    "iphone": "Möbius Sync puts the folder Helena under “On My iPhone”, where the Files app shows it. Möbius Sync syncs while the app is open or iOS lets it run in the background.",
     "spaceTitle": "Save space on the phone (optional)",
     "space": "Ignore patterns apply only on the device where they are entered. To keep the mail files off the phone, open the folder Helena in Möbius Sync or Syncthing-Fork, add the line <code>Files/Mail</code> under Ignore Patterns and save, best right after accepting the folder. The files stay on this server and the other devices."
   }

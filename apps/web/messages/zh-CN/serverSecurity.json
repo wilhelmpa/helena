@@ -69,7 +69,8 @@
     "files_secrets": "机密和密钥对他人不可读",
     "files_agent_code": "智能体可以读取其运行时代码",
     "svc_exposure": "Helena 服务由 systemd 隔离",
-    "svc_tools_loopback": "工具只能通过回环地址访问"
+    "svc_tools_loopback": "工具只能通过回环地址访问",
+    "svc_notes": "笔记已隔离"
   },
   "finding": {
     "net_firewall": {
@@ -190,6 +191,9 @@
     },
     "svc_tools_loopback": {
       "fail": "工具可在回环地址之外访问。"
+    },
+    "svc_notes": {
+      "fail": "笔记未按预期隔离：{problems}"
     },
     "skipped": "未检查"
   },

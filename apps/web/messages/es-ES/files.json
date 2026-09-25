@@ -53,7 +53,7 @@
     "rename": "Renombrar",
     "move": "Mover",
     "copyPath": "Copiar ruta",
-    "openInObsidian": "Abrir en Obsidian",
+    "openInNotes": "Abrir en Notas",
     "openInCode": "Abrir en VS Code",
     "openInDocs": "Abrir en Docs",
     "linkToTask": "Vincular a una tarea",

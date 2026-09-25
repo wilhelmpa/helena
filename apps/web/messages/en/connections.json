@@ -15,7 +15,7 @@
     "hintAccess": "This server runs no service that checks connections. Google, mail and credentials are in the tabs next to this one; devices have their own page.",
     "mail": "Mail accounts",
     "credentials": "Credentials",
-    "devices": "Devices & Obsidian"
+    "devices": "Devices"
   },
   "status": {
     "connected": "Connected",

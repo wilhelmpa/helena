@@ -172,7 +172,7 @@ Legend:
 | `native/terminal/*router.mjs`, `native/owner-terminal/*router.mjs` | allowed hosts `kingston-server.local,kingston-server` | Derived from `APP_URL` |
 | `apps/web/next.config.ts` | `allowedDevOrigins: ['kingston-server.local', …]` | From an env var |
 | `integration/hermes-runner/hermes-config.fragment.yaml` | `tirith_path: /home/pw/…` | Relative to `HERMES_HOME` |
-| `apps/api/src/modules/knowledge/service.ts` | `OBSIDIAN_VAULT = 'Volition'` | `OBSIDIAN_VAULT_NAME`, default `Helena` (the web already reads it) |
+| `apps/api/src/modules/knowledge/service.ts` | `OBSIDIAN_VAULT = 'Volition'` | removed with the notes (2026-09-26, `docs/helena-decisions/notes-silverbullet.md`) |
 | `packages/auth/src/index.ts` | TOTP issuer `'Volition'` | `Helena` (new enrolments only; existing authenticator entries keep their label) |
 | `apps/api/src/scripts/bootstrap-home-agent.ts`, coordinator instructions | "keep tasks traceable in Plan" | "in Helena" |
 | OpenAPI tags and descriptions | "Plan", "Mastra" | Helena wording; Mastra tags go with D |
@@ -252,7 +252,7 @@ show the network split and the hardening of the old setup.
 | Packages | root `itsaplan`, `@itsaplan/runner`, `@repo/*` | `helena`, `@helena/runner`, `@helena/*` (one scope with `@helena/sdk`) |
 | Browser globals | `window.__ITSAPLAN_ENV__`, `__itsaplanScrollRestoration`, localStorage `itsaplan-theme` | `__HELENA_ENV__`, `__helenaScrollRestoration`, `helena-theme` (read the old key once) |
 | Files and dirs | `deployment/volition-stack`, `charts/itsaplan`, `docs/volition/`, backup dumps `itsaplan-<stamp>.dump` | `deployment/helena`, removed, `docs/dev/`, `helena-<stamp>.dump` |
-| Visible strings | TOTP issuer, Obsidian vault, "Plan" in agent instructions and OpenAPI, vault git authors `*@volition.local` | Helena / `*@helena.local` |
+| Visible strings | TOTP issuer, (Obsidian vault: removed), "Plan" in agent instructions and OpenAPI, vault git authors `*@volition.local` | Helena / `*@helena.local` |
 | Kept | Syncthing folder ID `volition` (paired devices know it), branch names until the cut, `itp_` API key prefix (old keys keep working) | |
 
 ### 3.3 The repository side: the rename commit

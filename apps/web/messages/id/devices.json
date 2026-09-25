@@ -1,6 +1,6 @@
 {
-  "title": "Perangkat & Obsidian",
-  "description": "Syncthing menyinkronkan catatan dan berkas Home, proyek, dan Private/ dengan Obsidian di Mac dan ponsel Anda: langsung saat di rumah, lewat relay terenkripsi saat bepergian.",
+  "title": "Perangkat",
+  "description": "Syncthing menjaga catatan dan berkas Home, proyek, dan Private/ tetap terbaru sebagai folder biasa di Mac dan ponsel Anda: langsung saat di rumah, lewat relay terenkripsi saat bepergian.",
   "loadError": "Status sinkronisasi tidak dapat dibaca.",
   "ownerOnly": "Hanya pemilik instans yang mengelola perangkat.",
   "unavailable": {
@@ -58,7 +58,7 @@
   },
   "conflicts": {
     "title": "Konflik",
-    "hint": "Syncthing menyimpan salinan konflik bila sebuah berkas diubah di dua perangkat sebelum keduanya tersinkron. Buka kedua berkas di Obsidian, pindahkan yang ingin dipertahankan ke berkas asli, lalu hapus salinan konflik; penghapusan itu sampai ke setiap perangkat.",
+    "hint": "Syncthing menyimpan salinan konflik bila sebuah berkas diubah di dua perangkat sebelum keduanya tersinkron. Buka kedua berkas, pindahkan yang ingin dipertahankan ke berkas asli, lalu hapus salinan konflik; penghapusan itu sampai ke setiap perangkat.",
     "empty": "Tidak ada konflik.",
     "loadError": "Konflik tidak dapat dibaca.",
     "original": "Asli: {path}",
@@ -66,14 +66,14 @@
   },
   "guide": {
     "title": "Menyiapkan perangkat",
-    "step1": "Pasang Syncthing dan Obsidian di perangkat. Mac: aplikasi Syncthing dari syncthing.net. iPhone: Möbius Sync dari App Store. Android: Syncthing-Fork dari F-Droid atau Google Play.",
+    "step1": "Pasang Syncthing di perangkat. Mac: aplikasi Syncthing dari syncthing.net. iPhone: Möbius Sync dari App Store. Android: Syncthing-Fork dari F-Droid atau Google Play.",
     "step2": "Di Syncthing, tambahkan perangkat dan masukkan ID perangkat server ini, atau pindai kode QR-nya.",
     "step2Lan": "Untuk sinkronisasi langsung di rumah, masukkan <code>{address}, dynamic</code> sebagai alamat perangkat.",
     "step3": "Perangkat lalu muncul di atas pada “Perangkat yang meminta terhubung”. Pilih Terima.",
-    "step4": "Di perangkat, terima folder Helena ke folder bernama Helena: <code>~/Helena</code> di Mac, <code>Helena</code> di penyimpanan internal Android, vault Obsidian Helena di iPhone.",
-    "step5": "Tunggu sampai folder di perangkat menampilkan “Terbaru”, lalu buka folder Helena sebagai vault di Obsidian. Tautan dari Helena membuka vault Helena.",
+    "step4": "Di perangkat, terima folder Helena ke folder bernama Helena: <code>~/Helena</code> di Mac, <code>Helena</code> di penyimpanan internal Android, di bawah “Di iPhone Saya” dalam Möbius Sync di iPhone.",
+    "step5": "Tunggu sampai folder di perangkat menampilkan “Terbaru”. Catatan dan berkas lalu menjadi berkas biasa di perangkat; catatan paling baik ditulis di Helena, di Catatan.",
     "iphoneTitle": "iPhone",
-    "iphone": "Di iPhone, Obsidian hanya membuka foldernya sendiri. Buat dulu vault Helena di Obsidian (di iPhone, bukan di iCloud) lalu tutup Obsidian. Kemudian di Möbius Sync, taruh folder Helena di Di iPhone Saya › Obsidian › Helena. Obsidian menulis pengaturannya sendiri saat membuat vault, jadi konflik di <code>.obsidian</code> bisa muncul setelah sinkronisasi pertama; salinan konfliknya berisi pengaturan bawaan server ini. Möbius Sync menyinkronkan selama aplikasi terbuka atau iOS membiarkannya berjalan di latar belakang.",
+    "iphone": "Möbius Sync menaruh folder Helena di “Di iPhone Saya”, tempat aplikasi File menampilkannya. Möbius Sync menyinkronkan selama aplikasi terbuka atau iOS membiarkannya berjalan di latar belakang.",
     "spaceTitle": "Hemat ruang di ponsel (opsional)",
     "space": "Pola abaikan hanya berlaku di perangkat tempat pola itu dimasukkan. Agar berkas surel tidak dimuat ke ponsel, buka folder Helena di Möbius Sync atau Syncthing-Fork, tambahkan baris <code>Files/Mail</code> di pola abaikan lalu simpan, sebaiknya tepat setelah menerima folder. Berkasnya tetap ada di server ini dan di perangkat lain."
   }

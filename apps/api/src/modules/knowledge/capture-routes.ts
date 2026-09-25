@@ -273,7 +273,7 @@ export const captureRoutes = new Elysia({
       detail: {
         summary: 'Open the daily note',
         description:
-          "The path of the day's note in the journal, made from the daily note template when the day has none yet (Obsidian's daily notes settings decide folder, name and template).",
+          "The path of the day's note in the journal (Home/Docs/Journal/YYYY-MM-DD.md, the same note the notes open as today's journal page), made from the daily note template when the day has none yet.",
       },
     },
   )

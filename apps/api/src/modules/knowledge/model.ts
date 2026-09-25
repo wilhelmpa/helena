@@ -159,7 +159,6 @@ export const DocumentResponse = t.Object({
   absolutePath: t.String({
     description: 'Where the file is on the server, for tools that open files (e.g. vision).',
   }),
-  obsidianUrl: t.String(),
 });
 
 export const WriteNoteResponse = t.Object({

@@ -3,9 +3,9 @@ import {
   Code2,
   Download,
   FolderInput,
-  Gem,
   Link2,
   MoreHorizontal,
+  NotebookPen,
   Pencil,
   Trash2,
 } from 'lucide-react';
@@ -34,7 +34,7 @@ export default function FileItemMenu({
 }) {
   const t = useTranslations('files.actions');
   const file = item.kind === 'file';
-  const obsidian = file ? actions.obsidianUrl(item) : '';
+  const notes = file ? actions.notesUrl(item) : '';
   const code = actions.codeUrl(item);
 
   return (
@@ -58,11 +58,11 @@ export default function FileItemMenu({
             </a>
           </DropdownMenuItem>
         )}
-        {obsidian && (
+        {notes && (
           <DropdownMenuItem asChild>
-            <a href={obsidian}>
-              <Gem />
-              {t('openInObsidian')}
+            <a href={notes} target="_blank" rel="noopener noreferrer">
+              <NotebookPen />
+              {t('openInNotes')}
             </a>
           </DropdownMenuItem>
         )}

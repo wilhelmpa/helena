@@ -1,0 +1,35 @@
+# Helena Notizen on the home network: https://@HOME_HOST@:@PORT@, the home name's second
+# port and so an origin of its own next to Helena's https://@HOME_HOST@. Rendered by
+# notes/install.sh (step nginx-home) into /etc/nginx/sites-available/helena-notes-home.conf.
+#
+# Browsers send Helena's host-only session cookie to every port of the name: the owner check
+# is his Helena session, as for the tools under Helena's origin. The cookie itself never
+# reaches SilverBullet (helena-notes-proxy.conf), and the notes' Content-Security-Policy keeps
+# a note's script from talking to Helena's port.
+server {
+    listen @PORT@ ssl;
+    listen [::]:@PORT@ ssl;
+    http2 on;
+    server_name @HOME_HOST@;
+    ssl_certificate @CERT_DIR@/fullchain.pem;
+    ssl_certificate_key @CERT_DIR@/privkey.pem;
+    include /etc/nginx/snippets/helena-tls.conf;
+    set $helena_notes_helena https://@HOME_HOST@;
+
+    location = /_helena_notes_auth {
+        internal;
+        auth_request off;
+        proxy_pass http://127.0.0.1:3000/auth/verify/notes;
+        proxy_pass_request_body off;
+        proxy_set_header Content-Length "";
+        proxy_set_header Cookie $http_cookie;
+        # Never a tunnel request here, and never the LAN owner capability.
+        proxy_set_header X-Helena-Entry "";
+        proxy_set_header X-Helena-Edge-Entry "";
+        proxy_set_header X-Volition-Local-Access "";
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+    }
+
+    include /etc/nginx/snippets/helena-notes-common.conf;
+}

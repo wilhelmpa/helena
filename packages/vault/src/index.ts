@@ -6,6 +6,7 @@ export {
   commitExternalChanges,
   commitVaultPaths,
   EXTERNAL_AUTHOR,
+  NOTES_AUTHOR,
   PLAN_AUTHOR,
   fileAtRevision,
   fileHistory,
@@ -17,6 +18,7 @@ export { hasProgram, runProgram, type ProgramResult } from './process';
 export { extractPending, requeueInstalledExtractions } from './extraction-queue';
 export {
   EXTERNAL_PROVENANCE,
+  NOTES_PROVENANCE,
   indexVaultPaths,
   rescanVault,
   sha256Of,
@@ -46,6 +48,7 @@ export {
   type SyncConflict,
   type TrashedItem,
 } from './files';
+export { NOTES_ACCOUNT, notesUid, resetNotesUidForTests, writtenByNotes } from './writers';
 export { startVaultWatcher, DEFAULT_WATCHER_OPTIONS, type VaultWatcher } from './watcher';
 export {
   canvasText,

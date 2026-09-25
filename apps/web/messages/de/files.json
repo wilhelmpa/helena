@@ -53,7 +53,7 @@
     "rename": "Umbenennen",
     "move": "Verschieben",
     "copyPath": "Pfad kopieren",
-    "openInObsidian": "In Obsidian öffnen",
+    "openInNotes": "In Notizen öffnen",
     "openInCode": "In VS Code öffnen",
     "openInDocs": "In Docs öffnen",
     "linkToTask": "Mit Aufgabe verknüpfen",

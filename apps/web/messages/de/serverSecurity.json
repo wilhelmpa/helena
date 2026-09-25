@@ -69,7 +69,8 @@
     "files_secrets": "Geheimnisse und Schlüssel für andere nicht lesbar",
     "files_agent_code": "Agenten können ihren Laufzeit-Code lesen",
     "svc_exposure": "Helena-Dienste von systemd abgeschottet",
-    "svc_tools_loopback": "Werkzeuge nur über Loopback erreichbar"
+    "svc_tools_loopback": "Werkzeuge nur über Loopback erreichbar",
+    "svc_notes": "Notizen abgeschirmt"
   },
   "finding": {
     "net_firewall": {
@@ -190,6 +191,9 @@
     },
     "svc_tools_loopback": {
       "fail": "Werkzeuge sind über Loopback hinaus erreichbar."
+    },
+    "svc_notes": {
+      "fail": "Die Notizen sind nicht wie vorgesehen abgeschirmt: {problems}"
     },
     "skipped": "Nicht geprüft"
   },

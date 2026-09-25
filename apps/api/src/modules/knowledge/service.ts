@@ -45,7 +45,6 @@ import { HttpError, iso } from '#shared/lib';
 import { attachmentResponseHeaders, safeAttachmentFilename } from '#modules/attachments/storage';
 import { canAccess, readableEntries, type VaultScope } from './scope';
 
-const OBSIDIAN_VAULT = 'Volition';
 const MAX_TREE_ITEMS = 5000;
 const MAX_FOLDER_ITEMS = 1000;
 const DEFAULT_MAX_CHARS = 200_000;
@@ -60,10 +59,6 @@ export async function vaultCall<T>(operation: () => Promise<T>): Promise<T> {
     if (error instanceof VaultError) throw new HttpError(error.status, error.message, error.code);
     throw error;
   }
-}
-
-export function obsidianUrl(relative: string): string {
-  return `obsidian://open?vault=${OBSIDIAN_VAULT}&file=${encodeURIComponent(relative)}`;
 }
 
 function projectKeyOf(relative: string): string | null {
@@ -98,7 +93,6 @@ export async function readDocument(relative: string, maxChars = DEFAULT_MAX_CHAR
       truncated: whole.truncated,
       extractionStatus: 'none',
       absolutePath: absoluteVaultPath(relative),
-      obsidianUrl: obsidianUrl(relative),
     };
   }
   await assertNoSymlink(relative);
@@ -131,7 +125,6 @@ export async function readDocument(relative: string, maxChars = DEFAULT_MAX_CHAR
     truncated: text.truncated,
     extractionStatus: entry.extractionStatus,
     absolutePath: absoluteVaultPath(relative),
-    obsidianUrl: obsidianUrl(relative),
   };
 }
 
@@ -416,9 +409,9 @@ export function backlinksToTask(scope: VaultScope, identifier: string) {
   return linkingNotes(scope, and(eq(vaultLink.kind, 'task'), eq(vaultLink.target, identifier)));
 }
 
-// The file a wikilink in a note points to, the way Obsidian picks it: the entry whose
-// name matches, preferring one in the note's own folder, then in its project, then the
-// shortest path.
+// The file a wikilink in a note points to, the way the notes and other Markdown editors
+// pick it: the entry whose name matches, preferring one in the note's own folder, then in
+// its project, then the shortest path.
 export async function resolveWikilink(scope: VaultScope, from: string, target: string) {
   const name = target.split('|')[0].split('#')[0].trim().replace(/\.md$/i, '');
   if (!name || TASK_IDENTIFIER.test(name)) return { path: null };

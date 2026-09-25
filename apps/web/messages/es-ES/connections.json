@@ -15,7 +15,7 @@
     "hintAccess": "Este servidor no ejecuta ningún servicio que compruebe conexiones. Google, el correo y las credenciales están en las pestañas de al lado; los dispositivos tienen su propia página.",
     "mail": "Cuentas de correo",
     "credentials": "Credenciales",
-    "devices": "Dispositivos y Obsidian"
+    "devices": "Dispositivos"
   },
   "status": {
     "connected": "Conectado",

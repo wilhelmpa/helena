@@ -3,6 +3,7 @@ import path from 'node:path';
 import { isTextFile } from './mime';
 import { isSyncConflict, isWithin, PRIVATE_DIR, vaultRoot } from './paths';
 import { runProgram, type ProgramResult } from './process';
+import { writtenByNotes } from './writers';
 
 // The vault is one git repository that tracks text files only; Private/ is a second
 // repository inside it, so its history is readable by the private group alone. Both
@@ -17,6 +18,9 @@ export interface GitAuthor {
 export const EXTERNAL_AUTHOR: GitAuthor = { name: 'extern', email: 'extern@volition.local' };
 
 export const PLAN_AUTHOR: GitAuthor = { name: 'Helena', email: 'helena@volition.local' };
+
+// Changes the notes made (writers.ts): the owner, writing in the notes.
+export const NOTES_AUTHOR: GitAuthor = { name: 'Notizen', email: 'notizen@helena.local' };
 
 const LOCK_RETRIES = 50;
 const LOCK_RETRY_MS = 100;
@@ -213,8 +217,21 @@ export async function commitExternalChanges(): Promise<void> {
         .filter(
           (relative) => isVersioned(relative) && (dir !== root || !isWithin(relative, PRIVATE_DIR)),
         );
-      if (paths.length > 0) {
-        await commitRepository({ dir, paths }, 'External changes', EXTERNAL_AUTHOR);
+      // What the notes wrote gets their own commit, the rest stays "extern".
+      const fromNotes = paths.filter((relative) => {
+        const stats = statSync(path.join(dir, relative), { throwIfNoEntry: false });
+        return stats?.isFile() === true && writtenByNotes(stats);
+      });
+      const others = paths.filter((relative) => !fromNotes.includes(relative));
+      if (fromNotes.length > 0) {
+        await commitRepository(
+          { dir, paths: fromNotes },
+          'Changes in the notes\n\nHelena-Actor: notes',
+          NOTES_AUTHOR,
+        );
+      }
+      if (others.length > 0) {
+        await commitRepository({ dir, paths: others }, 'External changes', EXTERNAL_AUTHOR);
       }
     } catch (error) {
       console.error('[vault] git commit of external changes failed:', error);

@@ -15,7 +15,7 @@
     "hintAccess": "Auf diesem Server läuft kein Dienst, der Verbindungen prüft. Google, E-Mail und Zugänge liegen in den Tabs daneben, Geräte auf einer eigenen Seite.",
     "mail": "E-Mail-Konten",
     "credentials": "Zugänge",
-    "devices": "Geräte & Obsidian"
+    "devices": "Geräte"
   },
   "status": {
     "connected": "Verbunden",
