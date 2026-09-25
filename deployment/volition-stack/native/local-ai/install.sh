@@ -407,6 +407,8 @@ install_all() {
 # helena-ai-preload.service runs the installer's own copy (never the checkout, which a deploy
 # changes), with the catalog next to it.
 install_preload_unit() {
+  # Run from the copy itself, there is nothing to copy (and no systemd folder next to it).
+  [ "$here" != "$LIB" ] || return 0
   run install -d -m 0755 "$LIB"
   run install -m 0755 "$here/install.sh" "$LIB/install.sh"
   run install -m 0644 "$CATALOG" "$LIB/models.tsv"
