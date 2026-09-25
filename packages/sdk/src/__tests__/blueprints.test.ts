@@ -94,7 +94,7 @@ describe('project blueprints', () => {
       'routine Bad Key: key is not kebab-case',
       'routine Bad Key: cron is not five fields',
       'routine Bad Key: no time zone',
-      'routine Bad Key: agent nobody is not one of the blueprint\'s agents',
+      "routine Bad Key: agent nobody is not one of the blueprint's agents",
     ]) {
       expect(problems).toContain(expected);
     }
