@@ -225,16 +225,18 @@ describe('ssh through the egress', () => {
   it('the proxy command tunnels through an HTTP CONNECT proxy, or goes straight', async () => {
     const { createServer, connect } = await import('node:net');
     const { spawn } = await import('node:child_process');
-    const echo = createServer((socket) => socket.pipe(socket));
+    // Both keep the other direction open after one side is done sending (a half-close),
+    // as the egress proxy does.
+    const echo = createServer({ allowHalfOpen: true }, (socket) => socket.pipe(socket));
     await new Promise<void>((done) => echo.listen(0, '127.0.0.1', done));
     const echoPort = (echo.address() as { port: number }).port;
     const connects: string[] = [];
-    const proxy = createServer((client) => {
+    const proxy = createServer({ allowHalfOpen: true }, (client) => {
       client.once('data', (head: Buffer) => {
         const line = head.toString('latin1').split('\r\n')[0]!;
         connects.push(line);
         const [host, port] = line.split(' ')[1]!.split(':');
-        const upstream = connect(Number(port), host, () => {
+        const upstream = connect({ port: Number(port), host, allowHalfOpen: true }, () => {
           client.write('HTTP/1.1 200 Connection established\r\n\r\n');
           client.pipe(upstream).pipe(client);
         });

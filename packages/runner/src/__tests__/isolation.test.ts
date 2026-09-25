@@ -355,6 +355,8 @@ describe('isolated execution', () => {
       ITSAPLAN_URL: 'http://127.0.0.1:3000',
       ITSAPLAN_API_KEY: 'agent-key',
       ITSAPLAN_RUN_ID: '12',
+      // Hermes' terminal scratch files (its shell snapshot) in the unit's own /tmp.
+      TERMINAL_TEMP_DIR: '/tmp',
     });
     expect(seen.stdin).toBe('the task');
   });
