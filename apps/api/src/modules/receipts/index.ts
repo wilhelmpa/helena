@@ -207,19 +207,15 @@ export const receiptRoutes = new Elysia({
 
   // ── The month: counts, review list, export ──────────────────────────────────────────
 
-  .get(
-    `${base}/summary`,
-    ({ project, query }) => receiptSummary(project.id, query.month ?? null),
-    {
-      projectAdmin: true,
-      query: monthQuery,
-      response: { 200: Summary, ...commonErrors },
-      detail: {
-        summary: 'Count transactions, receipts and proposals',
-        description: 'For one month or all; with the months that have any.',
-      },
+  .get(`${base}/summary`, ({ project, query }) => receiptSummary(project.id, query.month ?? null), {
+    projectAdmin: true,
+    query: monthQuery,
+    response: { 200: Summary, ...commonErrors },
+    detail: {
+      summary: 'Count transactions, receipts and proposals',
+      description: 'For one month or all; with the months that have any.',
     },
-  )
+  })
   .get(
     `${base}/review`,
     async ({ project, query }) => ({ items: await reviewList(project.id, query.month ?? null) }),
@@ -341,16 +337,12 @@ export const receiptRoutes = new Elysia({
       },
     },
   )
-  .get(
-    `${base}/:receiptId`,
-    ({ project, params }) => getReceipt(project.id, params.receiptId),
-    {
-      projectAdmin: true,
-      params: receiptParams,
-      response: { 200: ReceiptDetail, ...commonErrors },
-      detail: { summary: 'Read a receipt', description: 'With the text read from it.' },
-    },
-  )
+  .get(`${base}/:receiptId`, ({ project, params }) => getReceipt(project.id, params.receiptId), {
+    projectAdmin: true,
+    params: receiptParams,
+    response: { 200: ReceiptDetail, ...commonErrors },
+    detail: { summary: 'Read a receipt', description: 'With the text read from it.' },
+  })
   .patch(
     `${base}/:receiptId`,
     ({ project, params, body }) => updateReceipt(project.id, params.receiptId, body),

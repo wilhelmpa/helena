@@ -239,7 +239,12 @@ function AccountEditor({
         placeholder={t('ibanPlaceholder')}
         onChange={(event) => setIban(event.target.value)}
       />
-      <Button size="sm" variant="outline" disabled={!name.trim() || update.isPending} onClick={save}>
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={!name.trim() || update.isPending}
+        onClick={save}
+      >
         {tCommon('save')}
       </Button>
       <Button size="sm" variant="ghost" onClick={onDone}>

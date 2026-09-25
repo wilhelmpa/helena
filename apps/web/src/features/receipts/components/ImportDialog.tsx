@@ -47,7 +47,9 @@ export function ImportDialog({
 
   async function submit() {
     if (!file) return;
-    const target = creating ? (await create.mutateAsync({ name: name.trim() })).id : Number(accountId);
+    const target = creating
+      ? (await create.mutateAsync({ name: name.trim() })).id
+      : Number(accountId);
     setResult(await run.mutateAsync({ accountId: target, file }));
   }
 

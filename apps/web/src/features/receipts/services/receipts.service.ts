@@ -241,8 +241,13 @@ export function useCreateBankAccount(projectKey: string) {
 export function useUpdateBankAccount(projectKey: string) {
   const refresh = useRefresh(projectKey);
   return useMutation({
-    mutationFn: ({ accountId, body }: { accountId: number; body: { name?: string; iban?: string | null } }) =>
-      updateBankAccount(projectKey, accountId, body),
+    mutationFn: ({
+      accountId,
+      body,
+    }: {
+      accountId: number;
+      body: { name?: string; iban?: string | null };
+    }) => updateBankAccount(projectKey, accountId, body),
     onSuccess: refresh,
   });
 }

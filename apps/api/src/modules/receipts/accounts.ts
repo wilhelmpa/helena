@@ -301,65 +301,67 @@ export async function importStatement(
   const keyed = dedupeEntries(`account:${account.id}`, booked);
   const dates = booked.map((entry) => entry.bookingDate).sort();
 
-  return db.transaction(async (tx) => {
-    const [record] = await tx
-      .insert(helenaBankImport)
-      .values({
-        teamId: project.teamId,
-        projectId: project.id,
-        bankAccountId: account.id,
-        filename: file.name.slice(0, 255),
-        format: fileFormat(file.name, accepted),
-        sha256: createHash('sha256').update(bytes).digest('hex'),
-        entries: keyed.length,
-        fromDate: dates[0] ?? null,
-        toDate: dates.at(-1) ?? null,
-        warnings: warnings.slice(0, 50),
-        createdByUserId: userId,
-      })
-      .returning();
-    let added = 0;
-    for (let start = 0; start < keyed.length; start += 500) {
-      const inserted = await tx
-        .insert(helenaBankTransaction)
-        .values(
-          keyed.slice(start, start + 500).map((entry) => ({
-            teamId: project.teamId,
-            projectId: project.id,
-            bankAccountId: account.id,
-            importId: record!.id,
-            bookingDate: entry.bookingDate,
-            valueDate: entry.valueDate,
-            amount: centsToNumeric(entry.amountCents),
-            currency: entry.currency || account.currency,
-            counterpartyName: entry.counterpartyName,
-            counterpartyIban: entry.counterpartyIban,
-            purpose: entry.purpose,
-            endToEndId: entry.endToEndId,
-            mandateId: entry.mandateId,
-            creditorId: entry.creditorId,
-            bankReference: entry.bankReference,
-            bankCode: entry.bankCode,
-            dedupeKey: entry.dedupeKey,
-          })),
-        )
-        .onConflictDoNothing({
-          target: [helenaBankTransaction.bankAccountId, helenaBankTransaction.dedupeKey],
+  return db
+    .transaction(async (tx) => {
+      const [record] = await tx
+        .insert(helenaBankImport)
+        .values({
+          teamId: project.teamId,
+          projectId: project.id,
+          bankAccountId: account.id,
+          filename: file.name.slice(0, 255),
+          format: fileFormat(file.name, accepted),
+          sha256: createHash('sha256').update(bytes).digest('hex'),
+          entries: keyed.length,
+          fromDate: dates[0] ?? null,
+          toDate: dates.at(-1) ?? null,
+          warnings: warnings.slice(0, 50),
+          createdByUserId: userId,
         })
-        .returning({ id: helenaBankTransaction.id });
-      added += inserted.length;
-    }
-    const [row] = await tx
-      .update(helenaBankImport)
-      .set({ added, duplicates: keyed.length - added })
-      .where(eq(helenaBankImport.id, record!.id))
-      .returning();
-    return { ...importView(row!), pending, skipped: parsed.skipped, matched: 0 };
-  }).then(async (result) => {
-    // New transactions can pay receipts that waited for them.
-    if (result.added > 0) result.matched = await rematchOpenReceipts(project.id);
-    return result;
-  });
+        .returning();
+      let added = 0;
+      for (let start = 0; start < keyed.length; start += 500) {
+        const inserted = await tx
+          .insert(helenaBankTransaction)
+          .values(
+            keyed.slice(start, start + 500).map((entry) => ({
+              teamId: project.teamId,
+              projectId: project.id,
+              bankAccountId: account.id,
+              importId: record!.id,
+              bookingDate: entry.bookingDate,
+              valueDate: entry.valueDate,
+              amount: centsToNumeric(entry.amountCents),
+              currency: entry.currency || account.currency,
+              counterpartyName: entry.counterpartyName,
+              counterpartyIban: entry.counterpartyIban,
+              purpose: entry.purpose,
+              endToEndId: entry.endToEndId,
+              mandateId: entry.mandateId,
+              creditorId: entry.creditorId,
+              bankReference: entry.bankReference,
+              bankCode: entry.bankCode,
+              dedupeKey: entry.dedupeKey,
+            })),
+          )
+          .onConflictDoNothing({
+            target: [helenaBankTransaction.bankAccountId, helenaBankTransaction.dedupeKey],
+          })
+          .returning({ id: helenaBankTransaction.id });
+        added += inserted.length;
+      }
+      const [row] = await tx
+        .update(helenaBankImport)
+        .set({ added, duplicates: keyed.length - added })
+        .where(eq(helenaBankImport.id, record!.id))
+        .returning();
+      return { ...importView(row!), pending, skipped: parsed.skipped, matched: 0 };
+    })
+    .then(async (result) => {
+      // New transactions can pay receipts that waited for them.
+      if (result.added > 0) result.matched = await rematchOpenReceipts(project.id);
+      return result;
+    });
 }
 
 export async function listTransactions(

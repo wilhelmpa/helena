@@ -23,9 +23,11 @@ export function formatDay(iso: string | null, locale: string): string {
 export function formatMonth(month: string, locale: string): string {
   const [year, mon] = month.split('-').map(Number);
   if (!year || !mon) return month;
-  return new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(
-    new Date(Date.UTC(year, mon - 1, 1)),
-  );
+  return new Intl.DateTimeFormat(locale, {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(Date.UTC(year, mon - 1, 1)));
 }
 
 // The amount field: "172,50", "1.234,56", "-49,95", "12.50" (a single point with one or two

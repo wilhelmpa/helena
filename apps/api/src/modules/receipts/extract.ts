@@ -20,7 +20,8 @@ export type ExtractionMethod = 'zugferd' | 'xrechnung' | 'text' | 'ocr' | 'manua
 export type EInvoiceSource = { kind: 'embedded'; name: string } | { kind: 'file' };
 
 // The part of the facts the table has no column for; kept in helena_receipt.details.
-export interface ReceiptDetails {
+// A type, not an interface: it must fit the route schema's record of unknown values.
+export type ReceiptDetails = {
   profile?: string | null;
   typeCode?: string | null;
   creditNote?: boolean;
@@ -36,7 +37,7 @@ export interface ReceiptDetails {
   buyerName?: string | null;
   vatRates?: number[];
   einvoice?: EInvoiceSource | null;
-}
+};
 
 export interface ExtractedReceipt {
   issuer: string | null;
@@ -134,7 +135,9 @@ function fromInvoice(facts: InvoiceFacts, source: EInvoiceSource, ownIbans: Set<
     iban: facts.sellerIban,
     // An invoice that asks to be paid into one of the project's own accounts was written by it.
     direction:
-      facts.sellerIban && ownIbans.has(facts.sellerIban) ? ('outgoing' as const) : ('incoming' as const),
+      facts.sellerIban && ownIbans.has(facts.sellerIban)
+        ? ('outgoing' as const)
+        : ('incoming' as const),
     details: {
       profile: facts.profile,
       typeCode: facts.typeCode,
@@ -210,8 +213,7 @@ export async function extractReceiptFile(
     einvoice: null,
   };
   const noFacts = !invoice && !fromText?.grossCents && !fromText?.invoiceNumber;
-  if (noFacts && method !== 'none' && !problems.length)
-    problems.push('no_facts');
+  if (noFacts && method !== 'none' && !problems.length) problems.push('no_facts');
   return {
     issuer: invoice?.issuer ?? fromText?.issuer ?? null,
     invoiceNumber: invoice?.invoiceNumber ?? fromText?.invoiceNumber ?? null,

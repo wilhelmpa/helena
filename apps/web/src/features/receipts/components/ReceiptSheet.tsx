@@ -18,7 +18,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { receiptFileBlob, type ReceiptDetail, type ReceiptPatch } from '@/lib/api/endpoints/receipts';
+import {
+  receiptFileBlob,
+  type ReceiptDetail,
+  type ReceiptPatch,
+} from '@/lib/api/endpoints/receipts';
 import { filesPath } from '@/utils/paths';
 import {
   useDeleteReceipt,

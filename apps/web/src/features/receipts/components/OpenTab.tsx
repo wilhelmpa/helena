@@ -37,9 +37,7 @@ export function OpenTab({
   return (
     <div className="space-y-6 pb-8">
       <section>
-        <SectionLabel
-          trailing={<span className="tabular-nums">{receipts.length}</span>}
-        >
+        <SectionLabel trailing={<span className="tabular-nums">{receipts.length}</span>}>
           {t('open.receipts')}
         </SectionLabel>
         <RowList className="bg-card">
@@ -58,9 +56,7 @@ export function OpenTab({
       </section>
 
       <section>
-        <SectionLabel
-          trailing={<span className="tabular-nums">{transactions.length}</span>}
-        >
+        <SectionLabel trailing={<span className="tabular-nums">{transactions.length}</span>}>
           {t('open.transactions')}
         </SectionLabel>
         <RowList className="bg-card">

@@ -10,11 +10,7 @@ import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import type { MatchCandidate, ReviewItem } from '@/lib/api/endpoints/receipts';
-import {
-  useConfirmMatch,
-  useMatchManually,
-  useRejectMatch,
-} from '../services/receipts.service';
+import { useConfirmMatch, useMatchManually, useRejectMatch } from '../services/receipts.service';
 import { MethodBadge, Percent, ReceiptLine, TransactionLine } from './ReceiptRows';
 
 // "Prüfen": the matches Helena proposes but did not make on its own — the rules were not

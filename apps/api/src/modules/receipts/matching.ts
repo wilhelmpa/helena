@@ -6,13 +6,21 @@ import {
   type MatchReceipt,
   type MatchTransaction,
 } from '@helena/finance';
+import { db, helenaBankTransaction, helenaReceipt, helenaReceiptMatch } from '@repo/db';
 import {
-  db,
-  helenaBankTransaction,
-  helenaReceipt,
-  helenaReceiptMatch,
-} from '@repo/db';
-import { and, asc, count, desc, eq, gte, inArray, isNotNull, lte, ne, notInArray, sql } from 'drizzle-orm';
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gte,
+  inArray,
+  isNotNull,
+  lte,
+  ne,
+  notInArray,
+  sql,
+} from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
 import { RECEIPTS_CLASS } from '#modules/decisions/classes';
 import {
@@ -21,7 +29,12 @@ import {
   receiptQuestions,
   transactionOptionId,
 } from '#modules/decisions/questions';
-import { decide, recordOutcome, type DecideOutcome, type DecideRequest } from '#modules/decisions/service';
+import {
+  decide,
+  recordOutcome,
+  type DecideOutcome,
+  type DecideRequest,
+} from '#modules/decisions/service';
 import { centsToNumeric, monthRange, numericToCents } from './amounts';
 import {
   detailsOf,
@@ -129,7 +142,9 @@ async function candidatesFor(row: ReceiptRow, include: number[] = []) {
   const rejected = await db
     .select({ id: helenaReceiptMatch.transactionId })
     .from(helenaReceiptMatch)
-    .where(and(eq(helenaReceiptMatch.receiptId, row.id), eq(helenaReceiptMatch.status, 'rejected')));
+    .where(
+      and(eq(helenaReceiptMatch.receiptId, row.id), eq(helenaReceiptMatch.status, 'rejected')),
+    );
   const anchor = row.invoiceDate ?? row.dueDate;
   const transactions = await db
     .select()
@@ -313,7 +328,9 @@ export async function matchReceipt(receiptId: number): Promise<MatchOutcome> {
   if (!row || row.status !== 'open') return none;
   await db
     .delete(helenaReceiptMatch)
-    .where(and(eq(helenaReceiptMatch.receiptId, row.id), eq(helenaReceiptMatch.status, 'proposed')));
+    .where(
+      and(eq(helenaReceiptMatch.receiptId, row.id), eq(helenaReceiptMatch.status, 'proposed')),
+    );
   const { candidates, byId } = await candidatesFor(row);
   const top = candidates[0];
   if (!top) return { ...none, status: 'no_candidates' };
@@ -329,18 +346,29 @@ export async function matchReceipt(receiptId: number): Promise<MatchOutcome> {
         userId: null,
       }),
     );
-    return { ...none, status: 'confirmed', matchId, transactionId: sure.transactionId, method: 'rule' };
+    return {
+      ...none,
+      status: 'confirmed',
+      matchId,
+      transactionId: sure.transactionId,
+      method: 'rule',
+    };
   }
 
   const outcome = await askModel(row, candidates.slice(0, DECISION_OPTIONS), byId);
   const answer = outcome?.answers.match ?? null;
   const decision = outcome
-    ? { status: outcome.status, choice: answer?.choice ?? null, confidence: answer?.confidence ?? null }
+    ? {
+        status: outcome.status,
+        choice: answer?.choice ?? null,
+        confidence: answer?.confidence ?? null,
+      }
     : null;
   const decisionId = answer?.decisionId ?? null;
   const chosenId =
     answer?.choice && answer.choice !== NO_TRANSACTION ? Number(answer.choice.slice(2)) : null;
-  const chosen = chosenId === null ? undefined : candidates.find((c) => c.transactionId === chosenId);
+  const chosen =
+    chosenId === null ? undefined : candidates.find((c) => c.transactionId === chosenId);
 
   if (answer?.decided && answer.choice === NO_TRANSACTION)
     return { ...none, status: 'none', decision };
@@ -459,7 +487,10 @@ async function reopenTransaction(tx: Tx, transactionId: number) {
       .update(helenaBankTransaction)
       .set({ status: 'open' })
       .where(
-        and(eq(helenaBankTransaction.id, transactionId), eq(helenaBankTransaction.status, 'matched')),
+        and(
+          eq(helenaBankTransaction.id, transactionId),
+          eq(helenaBankTransaction.status, 'matched'),
+        ),
       );
 }
 
@@ -468,7 +499,10 @@ export async function unlinkReceipt(tx: Tx, receiptId: number): Promise<void> {
   const matches = await tx
     .delete(helenaReceiptMatch)
     .where(eq(helenaReceiptMatch.receiptId, receiptId))
-    .returning({ transactionId: helenaReceiptMatch.transactionId, status: helenaReceiptMatch.status });
+    .returning({
+      transactionId: helenaReceiptMatch.transactionId,
+      status: helenaReceiptMatch.status,
+    });
   for (const match of matches)
     if (match.status === 'confirmed') await reopenTransaction(tx, match.transactionId);
 }
@@ -607,9 +641,9 @@ export async function reviewList(projectId: number, month: string | null): Promi
   for (const [index, { match, receipt }] of proposals.entries()) {
     const { candidates, byId } = await candidatesFor(receipt, [match.transactionId]);
     const shown = candidates.slice(0, DECISION_OPTIONS);
-    const rows = [
-      ...new Set([match.transactionId, ...shown.map((c) => c.transactionId)]),
-    ].flatMap((id) => (byId.has(id) ? [byId.get(id)!] : []));
+    const rows = [...new Set([match.transactionId, ...shown.map((c) => c.transactionId)])].flatMap(
+      (id) => (byId.has(id) ? [byId.get(id)!] : []),
+    );
     const views = new Map((await transactionViews(rows)).map((view) => [view.id, view]));
     const proposed = views.get(match.transactionId);
     if (!proposed) continue;

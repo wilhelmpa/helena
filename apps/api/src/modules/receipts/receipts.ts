@@ -341,7 +341,8 @@ export async function updateReceipt(
   if (body.vatCents !== undefined)
     patch.vatAmount = body.vatCents === null ? null : centsToNumeric(body.vatCents);
   if (body.currency !== undefined) patch.currency = body.currency.toUpperCase();
-  if (body.iban !== undefined) patch.iban = text(body.iban)?.replace(/\s+/g, '').toUpperCase() ?? null;
+  if (body.iban !== undefined)
+    patch.iban = text(body.iban)?.replace(/\s+/g, '').toUpperCase() ?? null;
   if (body.direction !== undefined) patch.direction = body.direction;
   if (body.status !== undefined && body.status !== row.status) {
     if (row.status === 'matched')
@@ -460,4 +461,3 @@ export async function receiptSummary(
     months: (months as unknown as { month: string }[]).map((row) => row.month),
   };
 }
-

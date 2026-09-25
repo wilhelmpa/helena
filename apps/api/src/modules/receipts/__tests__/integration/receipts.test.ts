@@ -27,7 +27,10 @@ const SOFTWARE = 'DE42500105175407324385';
 const HOSTING = 'DE65200411330987654321';
 
 const facturX = readFileSync(
-  new URL('../../../../../../../packages/finance/src/__fixtures__/factur-x-en16931.xml', import.meta.url),
+  new URL(
+    '../../../../../../../packages/finance/src/__fixtures__/factur-x-en16931.xml',
+    import.meta.url,
+  ),
   'utf8',
 );
 
@@ -262,7 +265,12 @@ describe('receipts', () => {
       ['Muster Software GmbH', 'Rechnung MS-10023', 'Gesamtbetrag 172,50 EUR'],
       [{ name: 'factur-x.xml', content: facturX }],
     );
-    const software = await http.upload<ReceiptDetailView>('', 'MS-10023.pdf', pdf, 'application/pdf');
+    const software = await http.upload<ReceiptDetailView>(
+      '',
+      'MS-10023.pdf',
+      pdf,
+      'application/pdf',
+    );
     expect(software.status).toBe(201);
     expect(software.data).toMatchObject({
       source: 'upload',
@@ -293,11 +301,21 @@ describe('receipts', () => {
     const hosting = await http.upload<ReceiptDetailView>(
       '',
       'H-2026-09.xml',
-      ublInvoice({ id: 'H-2026-09', issue: '2026-09-01', due: '2026-09-15', gross: '59.00', net: '49.58' }),
+      ublInvoice({
+        id: 'H-2026-09',
+        issue: '2026-09-01',
+        due: '2026-09-15',
+        gross: '59.00',
+        net: '49.58',
+      }),
       'application/xml',
     );
     expect(hosting.data).toMatchObject({ extraction: 'xrechnung', status: 'matched' });
-    expect(hosting.data.match).toMatchObject({ method: 'decision', transactionId: b1, confidence: 0.95 });
+    expect(hosting.data.match).toMatchObject({
+      method: 'decision',
+      transactionId: b1,
+      confidence: 0.95,
+    });
 
     // 60 € against the other 59 € payment: close, not exact. The model is unsure, so the
     // rules' candidate waits in the review list.
@@ -305,7 +323,13 @@ describe('receipts', () => {
     const extra = await http.upload<ReceiptDetailView>(
       '',
       'H-2026-10.xml',
-      ublInvoice({ id: 'H-2026-10', issue: '2026-09-10', due: '2026-09-20', gross: '60.00', net: '50.42' }),
+      ublInvoice({
+        id: 'H-2026-10',
+        issue: '2026-09-10',
+        due: '2026-09-20',
+        gross: '60.00',
+        net: '50.42',
+      }),
       'application/xml',
     );
     expect(extra.data).toMatchObject({ status: 'open', proposals: 1 });
@@ -389,8 +413,12 @@ describe('receipts', () => {
     const files = readExportZip(new Uint8Array(await exported.arrayBuffer()));
     const names = Object.keys(files).sort();
     expect(names).toContain('2026-09/Buchungen_2026-09.csv');
-    expect(names).toContain('2026-09/Ausgaben/2026-09-20_Muster-Software-GmbH_172,50EUR_MS-10023.pdf');
-    expect(names).toContain('2026-09/Ausgaben/2026-09-20_Muster-Software-GmbH_172,50EUR_MS-10023.xml');
+    expect(names).toContain(
+      '2026-09/Ausgaben/2026-09-20_Muster-Software-GmbH_172,50EUR_MS-10023.pdf',
+    );
+    expect(names).toContain(
+      '2026-09/Ausgaben/2026-09-20_Muster-Software-GmbH_172,50EUR_MS-10023.xml',
+    );
     expect(names.filter((name) => name.startsWith('2026-09/Ausgaben/')).length).toBe(4);
     const bookings = new TextDecoder().decode(files['2026-09/Buchungen_2026-09.csv']);
     expect(bookings).toContain('kein Beleg nötig');

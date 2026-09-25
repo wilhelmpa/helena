@@ -77,14 +77,22 @@ beforeAll(async () => {
         out[id] = {
           type: 'choice',
           choice,
-          probabilities: Object.fromEntries(keys.map((key) => [key, key === choice ? 0.94 : 0.06 / (keys.length - 1)])),
+          probabilities: Object.fromEntries(
+            keys.map((key) => [key, key === choice ? 0.94 : 0.06 / (keys.length - 1)]),
+          ),
           confidence: 0.9,
         };
       }
     }
     setTimeout(() => {
       response.writeHead(200, { 'content-type': 'application/json' });
-      response.end(JSON.stringify({ model: 'laya-test', answers: out, usage: { input_tokens: 50, output_tokens: 0 } }));
+      response.end(
+        JSON.stringify({
+          model: 'laya-test',
+          answers: out,
+          usage: { input_tokens: 50, output_tokens: 0 },
+        }),
+      );
     }, delayMs);
   });
   logit = createServer(async (request, response) => {
@@ -93,9 +101,12 @@ beforeAll(async () => {
       logit_bias: Record<string, number>;
     };
     seen.push({ path: request.url ?? '', body });
-    const user = JSON.parse(body.messages[1]!.content) as { options: { letter: string; option: string }[] };
+    const user = JSON.parse(body.messages[1]!.content) as {
+      options: { letter: string; option: string }[];
+    };
     // The option whose text starts with the wanted id gets most of the probability.
-    const wanted = Object.values(answers).find((value) => typeof value === 'string') as string | undefined;
+    const wanted = Object.values(answers).find((value) => typeof value === 'string') as
+      string | undefined;
     const top = user.options.map((option) => ({
       token: option.letter,
       prob: wanted && option.option.startsWith(`${wanted}:`) ? 0.9 : 0.1 / user.options.length,
@@ -169,7 +180,13 @@ async function passedEval(teamId: number, classId: string, credentialId: number,
   });
 }
 
-async function switchOn(asOwner: Api, teamId: number, classId: string, credentialId: number, extra: Record<string, unknown> = {}) {
+async function switchOn(
+  asOwner: Api,
+  teamId: number,
+  classId: string,
+  credentialId: number,
+  extra: Record<string, unknown> = {},
+) {
   await passedEval(teamId, classId, credentialId);
   const res = await asOwner
     .teams({ teamId })
@@ -218,7 +235,9 @@ describe('decision classes', () => {
     let latest = started.data!;
     for (let i = 0; i < 50 && latest.status === 'running'; i++) {
       await Bun.sleep(100);
-      latest = (await asOwner.teams({ teamId }).decisions.evals.get({ query: { classId: GENERAL_CLASS } })).data!.evals[0]!;
+      latest = (
+        await asOwner.teams({ teamId }).decisions.evals.get({ query: { classId: GENERAL_CLASS } })
+      ).data!.evals[0]!;
     }
     expect(latest.status).toBe('done');
     expect(latest.questions).toBeGreaterThan(20);
@@ -246,11 +265,21 @@ describe('decide', () => {
       context: 'Ich kann mich nach dem Passwort-Reset nicht mehr einloggen.',
       teamId,
     });
-    expect(res.data).toMatchObject({ status: 'decided', choice: '1', label: 'Support', backend: 'compatible' });
+    expect(res.data).toMatchObject({
+      status: 'decided',
+      choice: '1',
+      label: 'Support',
+      backend: 'compatible',
+    });
     expect(res.data!.probabilities!['1']).toBeCloseTo(0.94, 5);
     const rows = await db.select().from(helenaDecision).where(eq(helenaDecision.teamId, teamId));
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ classId: GENERAL_CLASS, choice: '1', status: 'decided', inputText: null });
+    expect(rows[0]).toMatchObject({
+      classId: GENERAL_CLASS,
+      choice: '1',
+      status: 'decided',
+      inputText: null,
+    });
     expect(rows[0]!.inputHash).toHaveLength(64);
     // The owner corrects it; the log shows the correction.
     const corrected = await asOwner
@@ -261,9 +290,15 @@ describe('decide', () => {
     const log = (await asOwner.teams({ teamId }).decisions.log.get({ query: {} })).data!;
     expect(log.items[0]).toMatchObject({ outcome: '2', outcomeSource: 'owner' });
     // Below the threshold: answered, but not decided.
-    await asOwner.teams({ teamId }).decisions.classes({ classId: GENERAL_CLASS }).patch({ threshold: 0.99 });
+    await asOwner
+      .teams({ teamId })
+      .decisions.classes({ classId: GENERAL_CLASS })
+      .patch({ threshold: 0.99 });
     await passedEval(teamId, GENERAL_CLASS, credentialId, 0.99);
-    await asOwner.teams({ teamId }).decisions.classes({ classId: GENERAL_CLASS }).patch({ enabled: true });
+    await asOwner
+      .teams({ teamId })
+      .decisions.classes({ classId: GENERAL_CLASS })
+      .patch({ enabled: true });
     const unsure = await asOwner.decisions.decide.post({
       question: 'Which team handles this?',
       options: ['Billing', 'Support'],
@@ -277,7 +312,11 @@ describe('decide', () => {
     const { asOwner, teamId } = await setup();
     const credentialId = await connection(asOwner, teamId);
     await switchOn(asOwner, teamId, GENERAL_CLASS, credentialId, { storeInput: true });
-    await asOwner.decisions.decide.post({ question: 'Is it urgent?', context: 'Frist ist morgen.', teamId });
+    await asOwner.decisions.decide.post({
+      question: 'Is it urgent?',
+      context: 'Frist ist morgen.',
+      teamId,
+    });
     const [row] = await db.select().from(helenaDecision).where(eq(helenaDecision.teamId, teamId));
     expect(row!.inputText).toContain('Frist ist morgen.');
   });
@@ -300,7 +339,10 @@ describe('decide', () => {
       questions: { q: { kind: 'yesno', question: 'Yes?' } },
     });
     expect(alone.status).toBe('timeout');
-    await asOwner.teams({ teamId }).decisions.classes({ classId: GENERAL_CLASS }).patch({ timeoutMs: 3000, fallbackCredentialId: fast });
+    await asOwner
+      .teams({ teamId })
+      .decisions.classes({ classId: GENERAL_CLASS })
+      .patch({ timeoutMs: 3000, fallbackCredentialId: fast });
     delayMs = 5000;
     answers = { q: 'yes' };
     const started = Date.now();
@@ -339,7 +381,9 @@ describe('decide', () => {
       model: 'qwen',
     });
     await switchOn(asOwner, teamId, GENERAL_CLASS, credentialId);
-    const agent = (await createAgent(asOwner, 'PRIV', { name: 'Sorter', username: 'sorter', kind: 'external' })).data!;
+    const agent = (
+      await createAgent(asOwner, 'PRIV', { name: 'Sorter', username: 'sorter', kind: 'external' })
+    ).data!;
     answers = { q: 'rechnung' };
     const outcome = await decide({
       teamId,
@@ -358,13 +402,29 @@ describe('decide', () => {
       projectId: project.id,
       agentId: agent.agent.id,
     });
-    expect(outcome).toMatchObject({ status: 'decided', backend: 'local-logit', model: 'qwen-test' });
+    expect(outcome).toMatchObject({
+      status: 'decided',
+      backend: 'local-logit',
+      model: 'qwen-test',
+    });
     expect(outcome.answers.q!.choice).toBe('rechnung');
-    const request = seen.find((entry) => entry.path === '/v1/chat/completions')!.body as Record<string, unknown>;
-    expect(request).toMatchObject({ max_tokens: 1, post_sampling_probs: true, chat_template_kwargs: { enable_thinking: false } });
+    const request = seen.find((entry) => entry.path === '/v1/chat/completions')!.body as Record<
+      string,
+      unknown
+    >;
+    expect(request).toMatchObject({
+      max_tokens: 1,
+      post_sampling_probs: true,
+      chat_template_kwargs: { enable_thinking: false },
+    });
     // An agent's decision is in its usage, priced as local.
     const usage = await db.select().from(agentUsage).where(eq(agentUsage.agentId, agent.agent.id));
-    expect(usage[0]).toMatchObject({ kind: 'tool', runtime: 'decisions', provider: 'local', inputTokens: 30 });
+    expect(usage[0]).toMatchObject({
+      kind: 'tool',
+      runtime: 'decisions',
+      provider: 'local',
+      inputTokens: 30,
+    });
   });
 });
 
@@ -373,14 +433,50 @@ describe('the model router', () => {
     const ctx = await setup();
     const credentialId = await connection(ctx.asOwner, ctx.teamId);
     await switchOn(ctx.asOwner, ctx.teamId, ROUTER_CLASS, credentialId);
-    const created = (await createAgent(ctx.asOwner, 'PRIV', { name: 'Coder', username: 'coder', kind: 'external', model: 'claude-opus-test' } as never)).data!;
+    const created = (
+      await createAgent(ctx.asOwner, 'PRIV', {
+        name: 'Coder',
+        username: 'coder',
+        kind: 'external',
+        model: 'claude-opus-test',
+      } as never)
+    ).data!;
     await publishChatCatalog(created.agent.id, [
-      { id: 'claude-opus-test', name: 'Opus', reasoning: false, thinkingLevels: [], thinkingDefault: null, provider: 'anthropic' },
-      { id: 'claude-sonnet-test', name: 'Sonnet', reasoning: false, thinkingLevels: [], thinkingDefault: null, provider: 'anthropic' },
-      { id: 'claude-haiku-test', name: 'Haiku', reasoning: false, thinkingLevels: [], thinkingDefault: null, provider: 'anthropic' },
+      {
+        id: 'claude-opus-test',
+        name: 'Opus',
+        reasoning: false,
+        thinkingLevels: [],
+        thinkingDefault: null,
+        provider: 'anthropic',
+      },
+      {
+        id: 'claude-sonnet-test',
+        name: 'Sonnet',
+        reasoning: false,
+        thinkingLevels: [],
+        thinkingDefault: null,
+        provider: 'anthropic',
+      },
+      {
+        id: 'claude-haiku-test',
+        name: 'Haiku',
+        reasoning: false,
+        thinkingLevels: [],
+        thinkingDefault: null,
+        provider: 'anthropic',
+      },
     ]);
-    for (const [model, price] of [['claude-opus-test', 14], ['claude-sonnet-test', 3], ['claude-haiku-test', 1]] as const)
-      await setManualPrice(model, { provider: 'anthropic', inputPerMTok: price, outputPerMTok: price * 5 }, ctx.owner.userId);
+    for (const [model, price] of [
+      ['claude-opus-test', 14],
+      ['claude-sonnet-test', 3],
+      ['claude-haiku-test', 1],
+    ] as const)
+      await setManualPrice(
+        model,
+        { provider: 'anthropic', inputPerMTok: price, outputPerMTok: price * 5 },
+        ctx.owner.userId,
+      );
     return { ...ctx, agentId: created.agent.id as number };
   }
 
@@ -398,24 +494,51 @@ describe('the model router', () => {
     await setAgentRouter(teamId, agentId, { enabled: true }, null);
     answers = { route: 'light', needs_context: 0.05 };
     const light = await routeRequest(request);
-    expect(light).toMatchObject({ model: 'claude-haiku-test', route: { routed: true, reason: 'cheaper_tier', tier: 'light' } });
+    expect(light).toMatchObject({
+      model: 'claude-haiku-test',
+      route: { routed: true, reason: 'cheaper_tier', tier: 'light' },
+    });
     answers = { route: 'light', needs_context: 0.8 };
-    expect((await routeRequest(request)).route).toMatchObject({ routed: false, reason: 'needs_context' });
+    expect((await routeRequest(request)).route).toMatchObject({
+      routed: false,
+      reason: 'needs_context',
+    });
     answers = { route: 'strongest', needs_context: 0.05 };
-    expect((await routeRequest(request)).route).toMatchObject({ routed: false, reason: 'same_tier', toModel: 'claude-opus-test' });
-    const rows = await db.select().from(helenaModelRoute).where(eq(helenaModelRoute.agentId, agentId));
+    expect((await routeRequest(request)).route).toMatchObject({
+      routed: false,
+      reason: 'same_tier',
+      toModel: 'claude-opus-test',
+    });
+    const rows = await db
+      .select()
+      .from(helenaModelRoute)
+      .where(eq(helenaModelRoute.agentId, agentId));
     expect(rows).toHaveLength(3);
   });
 
   it("advises the owner's Claude Code: delegate light, self-contained prompts only", async () => {
     const { teamId } = await routed();
     answers = { route: 'light', needs_context: 0.05 };
-    const delegate = await routePrompt({ teamId, prompt: 'Finde die Datei mit der Login-Route', sessionModel: 'opus' });
+    const delegate = await routePrompt({
+      teamId,
+      prompt: 'Finde die Datei mit der Login-Route',
+      sessionModel: 'opus',
+    });
     expect(delegate).toMatchObject({ decision: 'delegate', model: 'haiku', tier: 'light' });
     expect(delegate.note).toContain('haiku');
     answers = { route: 'strong', needs_context: 0.05 };
-    expect((await routePrompt({ teamId, prompt: 'Entwirf das Datenmodell der Abrechnung', sessionModel: 'opus' })).decision).toBe('handle');
-    expect((await routePrompt({ teamId, prompt: '/router status', sessionModel: 'opus' })).decision).toBe('none');
+    expect(
+      (
+        await routePrompt({
+          teamId,
+          prompt: 'Entwirf das Datenmodell der Abrechnung',
+          sessionModel: 'opus',
+        })
+      ).decision,
+    ).toBe('handle');
+    expect(
+      (await routePrompt({ teamId, prompt: '/router status', sessionModel: 'opus' })).decision,
+    ).toBe('none');
   });
 });
 
@@ -441,20 +564,39 @@ describe('the mail classifier', () => {
     };
     const config = mailTriageConfig({ project: 'suggest', task: 'suggest' });
     const view = (await classifyMessage(teamId, config, message.messageRowId, owner.userId))!;
-    expect(view).toMatchObject({ status: 'classified', category: 'invoice', priority: 'normal', needsReply: false, createTask: true, projectId: project.id });
+    expect(view).toMatchObject({
+      status: 'classified',
+      category: 'invoice',
+      priority: 'normal',
+      needsReply: false,
+      createTask: true,
+      projectId: project.id,
+    });
     const [thread] = await db.select().from(mailThread).where(eq(mailThread.id, view.threadId));
     expect(thread!.suggestedProjectId).toBe(project.id);
-    expect(view.actions.map((action) => action.kind)).toEqual(expect.arrayContaining(['suggested', 'task']));
+    expect(view.actions.map((action) => action.kind)).toEqual(
+      expect.arrayContaining(['suggested', 'task']),
+    );
     // The owner corrects the kind; the decision of that question gets the outcome.
-    const corrected = await asOwner.mail.threads({ threadId: view.threadId }).classification.patch({ category: 'notification' });
+    const corrected = await asOwner.mail
+      .threads({ threadId: view.threadId })
+      .classification.patch({ category: 'notification' });
     expect(corrected.data!.category).toBe('notification');
-    const decisions = await db.select().from(helenaDecision).where(eq(helenaDecision.subject, `mail:${message.messageRowId}`));
+    const decisions = await db
+      .select()
+      .from(helenaDecision)
+      .where(eq(helenaDecision.subject, `mail:${message.messageRowId}`));
     expect(decisions.find((row) => row.questionId === 'category')!.outcome).toBe('notification');
     // The suggested task, accepted.
     await asOwner.mail.threads({ threadId: view.threadId }).patch({ projectId: project.id });
-    const accepted = await asOwner.mail.threads({ threadId: view.threadId }).classification.accept.post({ kind: 'task' });
+    const accepted = await asOwner.mail
+      .threads({ threadId: view.threadId })
+      .classification.accept.post({ kind: 'task' });
     expect(accepted.data!.issueId).toBeGreaterThan(0);
-    const [stored] = await db.select().from(helenaMailClassification).where(eq(helenaMailClassification.threadId, view.threadId));
+    const [stored] = await db
+      .select()
+      .from(helenaMailClassification)
+      .where(eq(helenaMailClassification.threadId, view.threadId));
     expect(stored!.issueId).toBe(accepted.data!.issueId);
   });
 });

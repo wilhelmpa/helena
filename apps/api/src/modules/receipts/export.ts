@@ -115,11 +115,7 @@ export async function monthExport(
       accountIban: account.iban,
       accountLabel: account.name,
       status:
-        transaction.status === 'ignored'
-          ? 'no-receipt-needed'
-          : own.length
-            ? 'matched'
-            : 'open',
+        transaction.status === 'ignored' ? 'no-receipt-needed' : own.length ? 'matched' : 'open',
       assignment: first ? (ASSIGNMENT[first.method] ?? null) : null,
       confidence: first ? (first.confidence ?? first.score ?? null) : null,
       note: transaction.note,

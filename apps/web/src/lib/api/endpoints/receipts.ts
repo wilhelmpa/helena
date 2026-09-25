@@ -216,7 +216,11 @@ export const matchReceipt = (projectKey: string, receiptId: number) =>
     method: 'POST',
   });
 
-export const matchReceiptManually = (projectKey: string, receiptId: number, transactionId: number) =>
+export const matchReceiptManually = (
+  projectKey: string,
+  receiptId: number,
+  transactionId: number,
+) =>
   request<{ receipt: Receipt }>(`${base(projectKey)}/${receiptId}/match-manual`, {
     method: 'POST',
     body: json({ transactionId }),
@@ -242,7 +246,9 @@ export const removeMatch = (projectKey: string, matchId: number) =>
   request<void>(`${base(projectKey)}/matches/${matchId}`, { method: 'DELETE' });
 
 export const listTransactions = (projectKey: string, filter: ReceiptFilter) =>
-  request<{ transactions: Transaction[] }>(`${base(projectKey)}/transactions${query({ ...filter })}`);
+  request<{ transactions: Transaction[] }>(
+    `${base(projectKey)}/transactions${query({ ...filter })}`,
+  );
 
 export const updateTransaction = (
   projectKey: string,
@@ -260,8 +266,7 @@ export const listBankAccounts = (projectKey: string) =>
 export const createBankAccount = (
   projectKey: string,
   body: { name: string; iban?: string | null; currency?: string },
-) =>
-  request<BankAccount>(`${base(projectKey)}/accounts`, { method: 'POST', body: json(body) });
+) => request<BankAccount>(`${base(projectKey)}/accounts`, { method: 'POST', body: json(body) });
 
 export const updateBankAccount = (
   projectKey: string,

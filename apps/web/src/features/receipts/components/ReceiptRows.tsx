@@ -1,7 +1,14 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { ArrowDownLeft, ArrowUpRight, FileCode2, FileText, Image as ImageIcon, Mail } from 'lucide-react';
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  FileCode2,
+  FileText,
+  Image as ImageIcon,
+  Mail,
+} from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { ROW_CLASS, ROW_INTERACTIVE_CLASS } from '@/components/common/page/RowList';
