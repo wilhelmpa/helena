@@ -36,6 +36,9 @@ import tempfile
 ENV = {'PATH': '/usr/sbin:/usr/bin:/sbin:/bin', 'LC_ALL': 'C'}
 NFT_TABLE = 'inet helena_hardening'
 NGINX_FILE = os.environ.get('HELENA_OWNER_NETWORKS', '/etc/nginx/helena-owner-networks.conf')
+# `apply.sh --apply rollback owner-lan6` switches the IPv6 prefixes off (the machine's own
+# addresses stay excluded).
+OFF_MARKER = os.environ.get('HELENA_OWNER_LAN6_OFF', '/etc/helena/owner-lan6.off')
 
 
 def run(argv: list[str], **kwargs) -> subprocess.CompletedProcess:
@@ -196,6 +199,8 @@ def main(argv: list[str]) -> int:
     links, routes6, routes4 = read_ip()
     lan_dev = lan_interface(routes6, routes4)
     prefixes, own = owner_networks(links, lan_dev)
+    if os.path.exists(OFF_MARKER):
+        prefixes = []
     text = render_nginx(prefixes, own, lan_dev)
     if '--print-nginx' in argv:
         sys.stdout.write(text)

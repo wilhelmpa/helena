@@ -22,6 +22,9 @@
 #                 5-minute automatic rollback; "confirm firewall" keeps it.
 #   sshd          keys only, AllowUsers, no agent forwarding. Arms a 5-minute rollback;
 #                 "confirm sshd" keeps it.
+#   owner-lan6    the LAN owner sign-in over IPv6 too (C-01/H-01): helena-lan6-sync keeps the
+#                 home /64s and every address of this machine (never the owner) in an nginx
+#                 include; the owner geo (local-owner/configure.py) includes it
 #   sudo-model    H-07/§8.3: helena-ops is the automation account (sudo without a password,
 #                 SSH key only, password locked); any other blanket NOPASSWD rule (the
 #                 owner's) is moved aside, so the owner types his password for sudo
@@ -366,6 +369,56 @@ rollback_sshd() {
   disarm_rollback sshd
   run rm -f /etc/ssh/sshd_config.d/50-helena-sshd.conf
   run systemctl reload ssh
+}
+
+# ── The owner sign-in over IPv6 (C-01/H-01) ─────────────────────────────────────
+owner_networks=/etc/nginx/helena-owner-networks.conf
+owner_map=/etc/nginx/conf.d/volition-local-owner.conf
+step_owner_lan6() {
+  local pair src dst mode changed=0
+  # 1. The sync (it also keeps the firewall's home networks) and its triggers.
+  for pair in "helena-lan6-sync:/usr/local/libexec/helena-lan6-sync:0755" \
+              "helena-lan6-sync.service:/etc/systemd/system/helena-lan6-sync.service:0644" \
+              "helena-lan6-sync.timer:/etc/systemd/system/helena-lan6-sync.timer:0644" \
+              "90-helena-lan6:/etc/NetworkManager/dispatcher.d/90-helena-lan6:0755"; do
+    IFS=: read -r src dst mode <<<"$pair"
+    if cmp -s "$files/$src" "$dst"; then say "owner-lan6: $dst unchanged"; continue; fi
+    show_diff "$dst" "$files/$src"
+    changed=1
+    [[ $apply -eq 1 ]] || continue
+    keep "$dst"
+    install -d -m 0755 "$(dirname "$dst")"
+    install -m "$mode" -o root -g root "$files/$src" "$dst"
+  done
+  if [[ $apply -eq 1 ]]; then
+    [[ $changed -eq 1 ]] && systemctl daemon-reload
+    systemctl enable --now helena-lan6-sync.timer >/dev/null
+    rm -f /etc/helena/owner-lan6.off
+  fi
+  # 2. The include: the home /64s on the LAN interface and this machine's own addresses.
+  if [[ $apply -eq 1 ]]; then
+    /usr/local/libexec/helena-lan6-sync --nginx-only || die "owner-lan6: the sync failed (nginx -t?); $owner_networks left as it was"
+  else
+    HELENA_OWNER_LAN6_OFF=/nonexistent python3 -I "$files/helena-lan6-sync" --nginx-only --dry-run
+  fi
+  # 3. The owner geo includes it (configure.py keeps owner, capability and origin; it restarts
+  #    the API and web only when their environment changed, which a re-run does not).
+  if [[ ! -e $owner_map ]]; then
+    say "owner-lan6: the LAN owner sign-in is not configured here; nothing to include"
+  elif grep -q "include $owner_networks;" "$owner_map"; then
+    say "owner-lan6: the owner geo includes $owner_networks (already)"
+  else
+    say "owner-lan6: the owner geo does not include $owner_networks yet: re-writing it with configure.py"
+    run python3 "$here/../local-owner/configure.py"
+  fi
+  [[ $apply -eq 1 ]] && log "owner-lan6: applied"
+  true
+}
+rollback_owner_lan6() {
+  # IPv6 prefixes off (own addresses stay excluded); the geo keeps its include.
+  run install -d -m 0755 /etc/helena
+  run touch /etc/helena/owner-lan6.off
+  run /usr/local/libexec/helena-lan6-sync --nginx-only
 }
 
 # ── sudo model (H-07, docs/helena-decisions/security-hardening.md §8.3) ─────────
