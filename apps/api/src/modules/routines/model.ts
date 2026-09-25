@@ -29,7 +29,7 @@ const routineFields = {
     description:
       'Description of a created task, or the comment on a reopened one. An @mention of an ' +
       'agent of the project starts that agent on the task as well, on every run, the way a ' +
-      "mention in a comment does; the mentions count as yours.",
+      'mention in a comment does; the mentions count as yours.',
   }),
   mode: routineMode,
   taskId: t.Optional(

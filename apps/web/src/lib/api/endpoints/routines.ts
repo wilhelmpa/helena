@@ -12,11 +12,7 @@ export type RoutineCatchUp = 'skip' | 'once';
 // project, an agent saved the routine (an agent's mentions start nobody), the agent takes
 // work from its owner only, does not react to mentions, or is paused.
 export type RoutineMentionReason =
-  | 'not-in-project'
-  | 'agent-author'
-  | 'owner-only'
-  | 'mentions-off'
-  | 'paused';
+  'not-in-project' | 'agent-author' | 'owner-only' | 'mentions-off' | 'paused';
 
 // An agent the instructions @mention besides the routine's own, which every run starts on
 // the routine's task too — unless `reason` says why not.

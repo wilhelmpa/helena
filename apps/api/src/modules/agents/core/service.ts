@@ -676,11 +676,7 @@ export async function listMentionTriggerAgents(
 // work to another), the agent takes work only from its owner, it does not react to
 // mentions, or it is paused.
 export type MentionRefusal =
-  | 'not-in-project'
-  | 'agent-author'
-  | 'owner-only'
-  | 'mentions-off'
-  | 'paused';
+  'not-in-project' | 'agent-author' | 'owner-only' | 'mentions-off' | 'paused';
 
 export interface MentionedAgent {
   id: number;

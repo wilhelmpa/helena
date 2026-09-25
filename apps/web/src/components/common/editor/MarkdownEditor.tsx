@@ -144,7 +144,9 @@ export default function MarkdownEditor({
       attributes: {
         // flex-1 so the typing area covers a container taller than the text.
         class: 'md-content flex-1 focus:outline-none',
-        ...(ariaLabel ? { 'aria-label': ariaLabel, role: 'textbox', 'aria-multiline': 'true' } : {}),
+        ...(ariaLabel
+          ? { 'aria-label': ariaLabel, role: 'textbox', 'aria-multiline': 'true' }
+          : {}),
       },
       handleClick(view, _pos, event) {
         return openLinkOnModifierClick(event, view.dom);

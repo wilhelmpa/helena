@@ -14,7 +14,13 @@ import { apiKeyApi, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
-import { runSteps, startEngine, stopEngineRuns, stopTestEngine, waitForStatus } from '#tests/helpers/engine';
+import {
+  runSteps,
+  startEngine,
+  stopEngineRuns,
+  stopTestEngine,
+  waitForStatus,
+} from '#tests/helpers/engine';
 import { createRole } from '#tests/helpers/roles';
 import { planFire } from '#modules/engine/schedules';
 
@@ -88,11 +94,7 @@ async function mentionParts(runId: string) {
 }
 
 async function runsOn(issueId: number) {
-  return db
-    .select()
-    .from(agentRun)
-    .where(eq(agentRun.issueId, issueId))
-    .orderBy(asc(agentRun.id));
+  return db.select().from(agentRun).where(eq(agentRun.issueId, issueId)).orderBy(asc(agentRun.id));
 }
 
 // A member of the project with the agent permissions, by id and handle.
@@ -180,8 +182,9 @@ describe('routine mentions', () => {
       [`dispatch.m${coder.id}`, 'succeeded', 'mention-started', coder.id, runs[0]!.id],
       [`dispatch.m${seo.id}`, 'succeeded', 'mention-started', seo.id, runs[1]!.id],
     ]);
-    const history = (await routines(asOwner)({ routineId: created.data!.id }).runs.get({ query: {} }))
-      .data!;
+    const history = (
+      await routines(asOwner)({ routineId: created.data!.id }).runs.get({ query: {} })
+    ).data!;
     expect(history.items[0]!.steps.map((step) => step.parentStepId)).toEqual([
       null,
       'dispatch',
@@ -303,9 +306,9 @@ describe('routine mentions', () => {
     const fired = await waitForStatus(run.runId, 'succeeded');
     const taskId = fired.issueId!;
     // The routine filed the task: its author does not follow it.
-    expect(
-      await db.select().from(issueWatcher).where(eq(issueWatcher.issueId, taskId)),
-    ).toEqual([]);
+    expect(await db.select().from(issueWatcher).where(eq(issueWatcher.issueId, taskId))).toEqual(
+      [],
+    );
     // A member follows it by hand.
     await member.api.issues({ issueId: taskId }).watch.post();
     expect(

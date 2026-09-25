@@ -165,7 +165,9 @@ describe('a routine run', () => {
   it('frames a mentioned agent with the instructions, its delegate and the others', () => {
     const text = framePrompt(mention);
     expect(text).toContain('The routine "Weekly check" of your project names you');
-    expect(text).toContain('Working on it besides you: @writer, to whom the issue is delegated; @seo.');
+    expect(text).toContain(
+      'Working on it besides you: @writer, to whom the issue is delegated; @seo.',
+    );
     expect(text).toContain("Leave the issue's status to the agent it is delegated to.");
     expect(text).toContain('tag nobody in your comments');
     expect(text).toContain(`The routine's instructions:\n\n${instructions}`);
