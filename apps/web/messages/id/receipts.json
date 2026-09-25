@@ -1,163 +1,163 @@
 {
   "tabs": {
-    "open": "Open",
-    "review": "Review",
-    "matched": "Matched",
-    "accounts": "Accounts"
+    "open": "Terbuka",
+    "review": "Tinjau",
+    "matched": "Cocok",
+    "accounts": "Rekening"
   },
-  "month": "Month",
-  "allMonths": "All months",
-  "search": "Search receipts and transactions",
+  "month": "Bulan",
+  "allMonths": "Semua bulan",
+  "search": "Cari bukti dan mutasi",
   "actions": {
-    "upload": "Upload receipt",
-    "import": "Import bank statement",
-    "export": "Export month",
-    "exportPickMonth": "Pick a month to export"
+    "upload": "Unggah bukti",
+    "import": "Impor rekening koran",
+    "export": "Ekspor bulan",
+    "exportPickMonth": "Pilih bulan untuk diekspor"
   },
   "upload": {
-    "done": "{count, plural, one {# receipt uploaded} other {# receipts uploaded}}",
-    "doneMatched": "{count, plural, one {# receipt uploaded} other {# receipts uploaded}}, {matched} matched right away",
-    "duplicate": "{name} is already here."
+    "done": "{count, plural, other {# bukti diunggah}}",
+    "doneMatched": "{count, plural, other {# bukti diunggah}}, {matched} langsung dicocokkan",
+    "duplicate": "{name} sudah ada."
   },
-  "noAccessTitle": "For project administrators only",
-  "noAccessHint": "Receipts and bank transactions are visible to the project's owners and the team's owners and managers.",
-  "noName": "(no name)",
-  "creditNote": "Credit note",
-  "directDebit": "Direct debit",
+  "noAccessTitle": "Khusus pengelola proyek",
+  "noAccessHint": "Bukti dan mutasi rekening hanya terlihat oleh pemilik proyek serta pemilik dan manajer tim.",
+  "noName": "(tanpa nama)",
+  "creditNote": "Nota kredit",
+  "directDebit": "Debit langsung",
   "method": {
-    "rule": "Rule",
+    "rule": "Aturan",
     "decision": "AI",
-    "manual": "By hand"
+    "manual": "Manual"
   },
   "open": {
-    "receipts": "Receipts without a transaction",
-    "noReceipts": "Every receipt has its transaction.",
-    "transactions": "Transactions without a receipt",
-    "noTransactions": "Every transaction has its receipt.",
-    "noReceiptNeeded": "No receipt needed",
-    "ignored": "No receipt needed",
-    "undoIgnore": "Needs a receipt after all"
+    "receipts": "Bukti tanpa mutasi",
+    "noReceipts": "Setiap bukti sudah punya mutasinya.",
+    "transactions": "Mutasi tanpa bukti",
+    "noTransactions": "Setiap mutasi sudah punya buktinya.",
+    "noReceiptNeeded": "Tidak perlu bukti",
+    "ignored": "Tidak perlu bukti",
+    "undoIgnore": "Ternyata perlu bukti"
   },
   "review": {
-    "emptyTitle": "Nothing to review",
-    "emptyHint": "Matches Helena was not sure enough about wait here.",
-    "score": "Rules",
+    "emptyTitle": "Tidak ada yang perlu ditinjau",
+    "emptyHint": "Pencocokan yang kurang diyakini Helena menunggu di sini.",
+    "score": "Aturan",
     "confidence": "AI",
-    "confirm": "Match",
-    "reject": "Reject",
-    "others": "{count, plural, one {# other transaction} other {# other transactions}}",
-    "pickOther": "Match this one instead",
-    "useThis": "Match this"
+    "confirm": "Cocokkan",
+    "reject": "Tolak",
+    "others": "{count, plural, other {# mutasi lain}}",
+    "pickOther": "Cocokkan yang ini saja",
+    "useThis": "Cocokkan ini"
   },
   "reasons": {
     "amount": {
-      "exact": "amount fits",
-      "near": "amount close",
-      "skonto": "amount with early-payment discount",
-      "fee": "amount minus a fee",
-      "none": "amount unknown"
+      "exact": "jumlah pas",
+      "near": "jumlah mirip",
+      "skonto": "jumlah dengan diskon bayar cepat",
+      "fee": "jumlah dikurangi biaya",
+      "none": "jumlah tidak diketahui"
     },
-    "reference": "invoice number in the purpose",
+    "reference": "nomor faktur di keterangan",
     "identity": {
-      "iban": "IBAN fits",
-      "creditor": "creditor ID fits",
-      "name": "name fits",
-      "weak-name": "name similar"
+      "iban": "IBAN cocok",
+      "creditor": "ID kreditur cocok",
+      "name": "nama cocok",
+      "weak-name": "nama mirip"
     },
     "date": {
-      "primary": "date fits",
-      "extended": "date late",
-      "outside": "date far off"
+      "primary": "tanggal pas",
+      "extended": "tanggal terlambat",
+      "outside": "tanggal jauh"
     }
   },
   "matched": {
-    "emptyTitle": "Nothing matched yet",
-    "emptyHint": "Upload receipts and import a bank statement, and Helena matches them.",
-    "unmatch": "Remove the match"
+    "emptyTitle": "Belum ada yang dicocokkan",
+    "emptyHint": "Unggah bukti dan impor rekening koran, lalu Helena mencocokkannya.",
+    "unmatch": "Hapus pencocokan"
   },
   "accounts": {
-    "title": "Bank accounts",
-    "none": "No account yet. Add one, or simply import a bank statement.",
-    "noIban": "no IBAN",
-    "counts": "{open} open · {matched} matched · {ignored} without receipt",
-    "import": "Import bank statement",
+    "title": "Rekening bank",
+    "none": "Belum ada rekening. Tambahkan satu, atau cukup impor rekening koran.",
+    "noIban": "tanpa IBAN",
+    "counts": "{open} terbuka · {matched} cocok · {ignored} tanpa bukti",
+    "import": "Impor rekening koran",
     "edit": "Edit",
-    "delete": "Delete account",
-    "name": "Account name",
-    "namePlaceholder": "e.g. Business account",
+    "delete": "Hapus rekening",
+    "name": "Nama rekening",
+    "namePlaceholder": "mis. Rekening usaha",
     "iban": "IBAN",
-    "ibanPlaceholder": "DE.. (optional)",
-    "add": "Add account",
-    "imports": "Imports",
-    "noImports": "No bank statement imported yet.",
-    "importResult": "{added} new · {duplicates} already there",
-    "deleteTitle": "Delete {name}?",
-    "deleteHint": "{count, plural, one {Its # transaction and its match are deleted.} other {Its # transactions and their matches are deleted.}} The receipts stay and are open again."
+    "ibanPlaceholder": "DE.. (opsional)",
+    "add": "Tambah rekening",
+    "imports": "Riwayat impor",
+    "noImports": "Belum ada rekening koran yang diimpor.",
+    "importResult": "{added} baru · {duplicates} sudah ada",
+    "deleteTitle": "Hapus {name}?",
+    "deleteHint": "{count, plural, other {# mutasinya beserta pencocokannya akan dihapus.}} Bukti tetap ada dan kembali terbuka."
   },
   "import": {
-    "title": "Import bank statement",
-    "account": "Account",
-    "newAccount": "New account …",
-    "accountName": "Name of the new account",
-    "accountNamePlaceholder": "e.g. Business account",
-    "ibanFromFile": "The IBAN comes from the file.",
-    "file": "File",
-    "fileHint": "A CAMT statement (XML), a ZIP of statements, or your bank's CSV export, at most 20 MB.",
-    "submit": "Import",
-    "importing": "Importing …",
-    "doneTitle": "Bank statement imported",
-    "result": "{added, plural, one {# new transaction} other {# new transactions}}, {duplicates} already there.",
-    "pending": "{count, plural, one {# pending entry} other {# pending entries}} skipped – they come with the next statement.",
-    "matched": "{count, plural, one {# receipt} other {# receipts}} matched right away.",
-    "warnings": "Notes"
+    "title": "Impor rekening koran",
+    "account": "Rekening",
+    "newAccount": "Rekening baru …",
+    "accountName": "Nama rekening baru",
+    "accountNamePlaceholder": "mis. Rekening usaha",
+    "ibanFromFile": "IBAN diambil dari berkas.",
+    "file": "Berkas",
+    "fileHint": "Rekening koran CAMT (XML), ZIP berisi beberapa rekening koran, atau ekspor CSV dari bank Anda, maksimal 20 MB.",
+    "submit": "Impor",
+    "importing": "Mengimpor …",
+    "doneTitle": "Rekening koran diimpor",
+    "result": "{added, plural, other {# mutasi baru}}, {duplicates} sudah ada.",
+    "pending": "{count, plural, other {# transaksi tertunda}} dilewati – akan masuk bersama rekening koran berikutnya.",
+    "matched": "{count, plural, other {# bukti}} langsung dicocokkan.",
+    "warnings": "Catatan"
   },
   "detail": {
-    "title": "Receipt",
-    "loading": "Loading …",
-    "openFile": "Open file",
-    "inFiles": "Show in Files",
-    "extract": "Read again",
-    "match": "Transaction",
-    "matchAgain": "Match again",
-    "noCandidates": "No fitting transaction found.",
-    "text": "Text read",
-    "delete": "Remove receipt",
-    "deleteTitle": "Remove the receipt?",
-    "deleteHint": "The receipt leaves the list; its file stays in the project's files.",
-    "saved": "Saved.",
-    "badAmount": "That amount is not readable. Write it like this: 172.50"
+    "title": "Bukti",
+    "loading": "Memuat …",
+    "openFile": "Buka berkas",
+    "inFiles": "Tampilkan di Berkas",
+    "extract": "Baca ulang",
+    "match": "Mutasi",
+    "matchAgain": "Cocokkan ulang",
+    "noCandidates": "Tidak ada mutasi yang cocok.",
+    "text": "Teks terbaca",
+    "delete": "Hapus bukti",
+    "deleteTitle": "Hapus bukti?",
+    "deleteHint": "Bukti hilang dari daftar; berkasnya tetap ada di berkas proyek.",
+    "saved": "Tersimpan.",
+    "badAmount": "Jumlah itu tidak terbaca. Tulis seperti ini: 172,50"
   },
   "fields": {
-    "issuer": "Issuer",
-    "invoiceNumber": "Invoice number",
-    "invoiceDate": "Invoice date",
-    "dueDate": "Due",
-    "gross": "Gross amount",
-    "vat": "VAT",
-    "currency": "Currency",
-    "iban": "Payee IBAN",
-    "direction": "Kind"
+    "issuer": "Penerbit",
+    "invoiceNumber": "Nomor faktur",
+    "invoiceDate": "Tanggal faktur",
+    "dueDate": "Jatuh tempo",
+    "gross": "Jumlah bruto",
+    "vat": "PPN",
+    "currency": "Mata uang",
+    "iban": "IBAN penerima",
+    "direction": "Jenis"
   },
   "direction": {
-    "incoming": "Bill (we pay)",
-    "outgoing": "Our invoice (we get paid)"
+    "incoming": "Tagihan masuk (kita bayar)",
+    "outgoing": "Faktur kita (kita dibayar)"
   },
   "source": {
-    "mail": "From a mail",
-    "upload": "Uploaded",
-    "vault": "From the files"
+    "mail": "Dari email",
+    "upload": "Diunggah",
+    "vault": "Dari berkas"
   },
   "extraction": {
-    "zugferd": "E-invoice (ZUGFeRD/Factur-X) read",
-    "xrechnung": "E-invoice (XRechnung) read",
-    "text": "PDF text read",
-    "ocr": "Scan read by OCR",
-    "manual": "Entered by hand",
-    "none": "Nothing read"
+    "zugferd": "Faktur elektronik (ZUGFeRD/Factur-X) terbaca",
+    "xrechnung": "Faktur elektronik (XRechnung) terbaca",
+    "text": "Teks PDF terbaca",
+    "ocr": "Pindaian dibaca dengan OCR",
+    "manual": "Diisi manual",
+    "none": "Tidak ada yang terbaca"
   },
   "problems": {
-    "missingPrograms": "Reading it needs a program the server lacks: {programs}",
-    "notEinvoice": "The XML file is not an e-invoice.",
-    "noFacts": "The text had no invoice data. Enter it below."
+    "missingPrograms": "Server tidak punya program yang diperlukan untuk membacanya: {programs}",
+    "notEinvoice": "Berkas XML ini bukan faktur elektronik.",
+    "noFacts": "Teks tidak berisi data faktur. Isi di bawah."
   }
 }

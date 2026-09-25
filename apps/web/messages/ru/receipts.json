@@ -1,163 +1,163 @@
 {
   "tabs": {
-    "open": "Open",
-    "review": "Review",
-    "matched": "Matched",
-    "accounts": "Accounts"
+    "open": "Открытые",
+    "review": "Проверить",
+    "matched": "Сопоставлено",
+    "accounts": "Банковские счета"
   },
-  "month": "Month",
-  "allMonths": "All months",
-  "search": "Search receipts and transactions",
+  "month": "Месяц",
+  "allMonths": "Все месяцы",
+  "search": "Поиск по чекам и операциям",
   "actions": {
-    "upload": "Upload receipt",
-    "import": "Import bank statement",
-    "export": "Export month",
-    "exportPickMonth": "Pick a month to export"
+    "upload": "Загрузить чек",
+    "import": "Импортировать выписку",
+    "export": "Экспортировать месяц",
+    "exportPickMonth": "Выберите месяц для экспорта"
   },
   "upload": {
-    "done": "{count, plural, one {# receipt uploaded} other {# receipts uploaded}}",
-    "doneMatched": "{count, plural, one {# receipt uploaded} other {# receipts uploaded}}, {matched} matched right away",
-    "duplicate": "{name} is already here."
+    "done": "{count, plural, one {Загружен # чек} few {Загружено # чека} many {Загружено # чеков} other {Загружено # чека}}",
+    "doneMatched": "{count, plural, one {Загружен # чек} few {Загружено # чека} many {Загружено # чеков} other {Загружено # чека}}, сразу сопоставлено: {matched}",
+    "duplicate": "{name} уже есть."
   },
-  "noAccessTitle": "For project administrators only",
-  "noAccessHint": "Receipts and bank transactions are visible to the project's owners and the team's owners and managers.",
-  "noName": "(no name)",
-  "creditNote": "Credit note",
-  "directDebit": "Direct debit",
+  "noAccessTitle": "Только для администраторов проекта",
+  "noAccessHint": "Чеки и банковские операции видят только владельцы проекта, а также владельцы и менеджеры команды.",
+  "noName": "(без названия)",
+  "creditNote": "Кредит-нота",
+  "directDebit": "Прямое дебетование",
   "method": {
-    "rule": "Rule",
-    "decision": "AI",
-    "manual": "By hand"
+    "rule": "Правило",
+    "decision": "ИИ",
+    "manual": "Вручную"
   },
   "open": {
-    "receipts": "Receipts without a transaction",
-    "noReceipts": "Every receipt has its transaction.",
-    "transactions": "Transactions without a receipt",
-    "noTransactions": "Every transaction has its receipt.",
-    "noReceiptNeeded": "No receipt needed",
-    "ignored": "No receipt needed",
-    "undoIgnore": "Needs a receipt after all"
+    "receipts": "Чеки без операции",
+    "noReceipts": "У каждого чека есть своя операция.",
+    "transactions": "Операции без чека",
+    "noTransactions": "У каждой операции есть свой чек.",
+    "noReceiptNeeded": "Чек не нужен",
+    "ignored": "Чек не нужен",
+    "undoIgnore": "Всё же нужен чек"
   },
   "review": {
-    "emptyTitle": "Nothing to review",
-    "emptyHint": "Matches Helena was not sure enough about wait here.",
-    "score": "Rules",
-    "confidence": "AI",
-    "confirm": "Match",
-    "reject": "Reject",
-    "others": "{count, plural, one {# other transaction} other {# other transactions}}",
-    "pickOther": "Match this one instead",
-    "useThis": "Match this"
+    "emptyTitle": "Нечего проверять",
+    "emptyHint": "Здесь ждут сопоставления, в которых Helena была недостаточно уверена.",
+    "score": "Правила",
+    "confidence": "ИИ",
+    "confirm": "Сопоставить",
+    "reject": "Отклонить",
+    "others": "{count, plural, one {Ещё # операция} few {Ещё # операции} many {Ещё # операций} other {Ещё # операции}}",
+    "pickOther": "Сопоставить эту вместо",
+    "useThis": "Сопоставить эту"
   },
   "reasons": {
     "amount": {
-      "exact": "amount fits",
-      "near": "amount close",
-      "skonto": "amount with early-payment discount",
-      "fee": "amount minus a fee",
-      "none": "amount unknown"
+      "exact": "сумма совпадает",
+      "near": "сумма близка",
+      "skonto": "сумма со скидкой за раннюю оплату",
+      "fee": "сумма за вычетом комиссии",
+      "none": "сумма неизвестна"
     },
-    "reference": "invoice number in the purpose",
+    "reference": "номер счёта в назначении платежа",
     "identity": {
-      "iban": "IBAN fits",
-      "creditor": "creditor ID fits",
-      "name": "name fits",
-      "weak-name": "name similar"
+      "iban": "IBAN совпадает",
+      "creditor": "ID кредитора совпадает",
+      "name": "имя совпадает",
+      "weak-name": "имя похоже"
     },
     "date": {
-      "primary": "date fits",
-      "extended": "date late",
-      "outside": "date far off"
+      "primary": "дата подходит",
+      "extended": "дата поздняя",
+      "outside": "дата слишком далеко"
     }
   },
   "matched": {
-    "emptyTitle": "Nothing matched yet",
-    "emptyHint": "Upload receipts and import a bank statement, and Helena matches them.",
-    "unmatch": "Remove the match"
+    "emptyTitle": "Пока ничего не сопоставлено",
+    "emptyHint": "Загрузите чеки и импортируйте выписку, и Helena сопоставит их.",
+    "unmatch": "Отменить сопоставление"
   },
   "accounts": {
-    "title": "Bank accounts",
-    "none": "No account yet. Add one, or simply import a bank statement.",
-    "noIban": "no IBAN",
-    "counts": "{open} open · {matched} matched · {ignored} without receipt",
-    "import": "Import bank statement",
-    "edit": "Edit",
-    "delete": "Delete account",
-    "name": "Account name",
-    "namePlaceholder": "e.g. Business account",
+    "title": "Банковские счета",
+    "none": "Счетов пока нет. Добавьте счёт или просто импортируйте выписку.",
+    "noIban": "без IBAN",
+    "counts": "открыто: {open} · сопоставлено: {matched} · без чека: {ignored}",
+    "import": "Импортировать выписку",
+    "edit": "Изменить",
+    "delete": "Удалить счёт",
+    "name": "Название счёта",
+    "namePlaceholder": "например, Бизнес-счёт",
     "iban": "IBAN",
-    "ibanPlaceholder": "DE.. (optional)",
-    "add": "Add account",
-    "imports": "Imports",
-    "noImports": "No bank statement imported yet.",
-    "importResult": "{added} new · {duplicates} already there",
-    "deleteTitle": "Delete {name}?",
-    "deleteHint": "{count, plural, one {Its # transaction and its match are deleted.} other {Its # transactions and their matches are deleted.}} The receipts stay and are open again."
+    "ibanPlaceholder": "DE.. (необязательно)",
+    "add": "Добавить счёт",
+    "imports": "Импорты",
+    "noImports": "Выписки ещё не импортировались.",
+    "importResult": "новых: {added} · уже было: {duplicates}",
+    "deleteTitle": "Удалить {name}?",
+    "deleteHint": "{count, plural, one {Будет удалена # операция и её сопоставление.} few {Будут удалены # операции и их сопоставления.} many {Будут удалены # операций и их сопоставления.} other {Будут удалены # операции и их сопоставления.}} Чеки останутся и снова станут открытыми."
   },
   "import": {
-    "title": "Import bank statement",
-    "account": "Account",
-    "newAccount": "New account …",
-    "accountName": "Name of the new account",
-    "accountNamePlaceholder": "e.g. Business account",
-    "ibanFromFile": "The IBAN comes from the file.",
-    "file": "File",
-    "fileHint": "A CAMT statement (XML), a ZIP of statements, or your bank's CSV export, at most 20 MB.",
-    "submit": "Import",
-    "importing": "Importing …",
-    "doneTitle": "Bank statement imported",
-    "result": "{added, plural, one {# new transaction} other {# new transactions}}, {duplicates} already there.",
-    "pending": "{count, plural, one {# pending entry} other {# pending entries}} skipped – they come with the next statement.",
-    "matched": "{count, plural, one {# receipt} other {# receipts}} matched right away.",
-    "warnings": "Notes"
+    "title": "Импорт выписки",
+    "account": "Счёт",
+    "newAccount": "Новый счёт …",
+    "accountName": "Название нового счёта",
+    "accountNamePlaceholder": "например, Бизнес-счёт",
+    "ibanFromFile": "IBAN берётся из файла.",
+    "file": "Файл",
+    "fileHint": "Выписка CAMT (XML), ZIP с несколькими выписками или CSV-экспорт вашего банка, не больше 20 МБ.",
+    "submit": "Импортировать",
+    "importing": "Идёт импорт …",
+    "doneTitle": "Выписка импортирована",
+    "result": "{added, plural, one {# новая операция} few {# новые операции} many {# новых операций} other {# новой операции}}, уже было: {duplicates}.",
+    "pending": "{count, plural, one {Пропущена # незавершённая операция – она придёт со следующей выпиской.} few {Пропущены # незавершённые операции – они придут со следующей выпиской.} many {Пропущено # незавершённых операций – они придут со следующей выпиской.} other {Пропущено # незавершённой операции – они придут со следующей выпиской.}}",
+    "matched": "{count, plural, one {# чек сразу сопоставлен.} few {# чека сразу сопоставлены.} many {# чеков сразу сопоставлено.} other {# чека сразу сопоставлено.}}",
+    "warnings": "Примечания"
   },
   "detail": {
-    "title": "Receipt",
-    "loading": "Loading …",
-    "openFile": "Open file",
-    "inFiles": "Show in Files",
-    "extract": "Read again",
-    "match": "Transaction",
-    "matchAgain": "Match again",
-    "noCandidates": "No fitting transaction found.",
-    "text": "Text read",
-    "delete": "Remove receipt",
-    "deleteTitle": "Remove the receipt?",
-    "deleteHint": "The receipt leaves the list; its file stays in the project's files.",
-    "saved": "Saved.",
-    "badAmount": "That amount is not readable. Write it like this: 172.50"
+    "title": "Чек",
+    "loading": "Загрузка …",
+    "openFile": "Открыть файл",
+    "inFiles": "Показать в «Файлах»",
+    "extract": "Прочитать заново",
+    "match": "Операция",
+    "matchAgain": "Сопоставить заново",
+    "noCandidates": "Подходящая операция не найдена.",
+    "text": "Распознанный текст",
+    "delete": "Удалить чек",
+    "deleteTitle": "Удалить чек?",
+    "deleteHint": "Чек исчезнет из списка, а его файл останется в файлах проекта.",
+    "saved": "Сохранено.",
+    "badAmount": "Эту сумму не удаётся прочитать. Напишите, например, так: 172,50"
   },
   "fields": {
-    "issuer": "Issuer",
-    "invoiceNumber": "Invoice number",
-    "invoiceDate": "Invoice date",
-    "dueDate": "Due",
-    "gross": "Gross amount",
-    "vat": "VAT",
-    "currency": "Currency",
-    "iban": "Payee IBAN",
-    "direction": "Kind"
+    "issuer": "Отправитель",
+    "invoiceNumber": "Номер счёта",
+    "invoiceDate": "Дата счёта",
+    "dueDate": "Срок оплаты",
+    "gross": "Сумма брутто",
+    "vat": "НДС",
+    "currency": "Валюта",
+    "iban": "IBAN получателя",
+    "direction": "Вид"
   },
   "direction": {
-    "incoming": "Bill (we pay)",
-    "outgoing": "Our invoice (we get paid)"
+    "incoming": "Входящий счёт (платим мы)",
+    "outgoing": "Наш счёт (платят нам)"
   },
   "source": {
-    "mail": "From a mail",
-    "upload": "Uploaded",
-    "vault": "From the files"
+    "mail": "Из письма",
+    "upload": "Загружен",
+    "vault": "Из файлов"
   },
   "extraction": {
-    "zugferd": "E-invoice (ZUGFeRD/Factur-X) read",
-    "xrechnung": "E-invoice (XRechnung) read",
-    "text": "PDF text read",
-    "ocr": "Scan read by OCR",
-    "manual": "Entered by hand",
-    "none": "Nothing read"
+    "zugferd": "Электронный счёт (ZUGFeRD/Factur-X) прочитан",
+    "xrechnung": "Электронный счёт (XRechnung) прочитан",
+    "text": "Текст PDF прочитан",
+    "ocr": "Скан распознан через OCR",
+    "manual": "Введено вручную",
+    "none": "Ничего не прочитано"
   },
   "problems": {
-    "missingPrograms": "Reading it needs a program the server lacks: {programs}",
-    "notEinvoice": "The XML file is not an e-invoice.",
-    "noFacts": "The text had no invoice data. Enter it below."
+    "missingPrograms": "Для чтения на сервере не хватает программы: {programs}",
+    "notEinvoice": "XML-файл не является электронным счётом.",
+    "noFacts": "В тексте нет данных счёта. Введите их ниже."
   }
 }

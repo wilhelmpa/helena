@@ -1,163 +1,163 @@
 {
   "tabs": {
-    "open": "Open",
-    "review": "Review",
-    "matched": "Matched",
-    "accounts": "Accounts"
+    "open": "Ouverts",
+    "review": "À vérifier",
+    "matched": "Associés",
+    "accounts": "Comptes"
   },
-  "month": "Month",
-  "allMonths": "All months",
-  "search": "Search receipts and transactions",
+  "month": "Mois",
+  "allMonths": "Tous les mois",
+  "search": "Rechercher justificatifs et mouvements",
   "actions": {
-    "upload": "Upload receipt",
-    "import": "Import bank statement",
-    "export": "Export month",
-    "exportPickMonth": "Pick a month to export"
+    "upload": "Téléverser un justificatif",
+    "import": "Importer un relevé bancaire",
+    "export": "Exporter le mois",
+    "exportPickMonth": "Choisissez un mois à exporter"
   },
   "upload": {
-    "done": "{count, plural, one {# receipt uploaded} other {# receipts uploaded}}",
-    "doneMatched": "{count, plural, one {# receipt uploaded} other {# receipts uploaded}}, {matched} matched right away",
-    "duplicate": "{name} is already here."
+    "done": "{count, plural, one {# justificatif téléversé} other {# justificatifs téléversés}}",
+    "doneMatched": "{count, plural, one {# justificatif téléversé} other {# justificatifs téléversés}}, dont {matched} associés tout de suite",
+    "duplicate": "{name} est déjà là."
   },
-  "noAccessTitle": "For project administrators only",
-  "noAccessHint": "Receipts and bank transactions are visible to the project's owners and the team's owners and managers.",
-  "noName": "(no name)",
-  "creditNote": "Credit note",
-  "directDebit": "Direct debit",
+  "noAccessTitle": "Réservé aux administrateurs du projet",
+  "noAccessHint": "Seuls les propriétaires du projet et les propriétaires et responsables de l'équipe voient les justificatifs et les mouvements bancaires.",
+  "noName": "(sans nom)",
+  "creditNote": "Avoir",
+  "directDebit": "Prélèvement",
   "method": {
-    "rule": "Rule",
-    "decision": "AI",
-    "manual": "By hand"
+    "rule": "Règle",
+    "decision": "IA",
+    "manual": "Manuel"
   },
   "open": {
-    "receipts": "Receipts without a transaction",
-    "noReceipts": "Every receipt has its transaction.",
-    "transactions": "Transactions without a receipt",
-    "noTransactions": "Every transaction has its receipt.",
-    "noReceiptNeeded": "No receipt needed",
-    "ignored": "No receipt needed",
-    "undoIgnore": "Needs a receipt after all"
+    "receipts": "Justificatifs sans mouvement",
+    "noReceipts": "Chaque justificatif a son mouvement.",
+    "transactions": "Mouvements sans justificatif",
+    "noTransactions": "Chaque mouvement a son justificatif.",
+    "noReceiptNeeded": "Pas de justificatif nécessaire",
+    "ignored": "Pas de justificatif nécessaire",
+    "undoIgnore": "Justificatif nécessaire finalement"
   },
   "review": {
-    "emptyTitle": "Nothing to review",
-    "emptyHint": "Matches Helena was not sure enough about wait here.",
-    "score": "Rules",
-    "confidence": "AI",
-    "confirm": "Match",
-    "reject": "Reject",
-    "others": "{count, plural, one {# other transaction} other {# other transactions}}",
-    "pickOther": "Match this one instead",
-    "useThis": "Match this"
+    "emptyTitle": "Rien à vérifier",
+    "emptyHint": "Les associations dont Helena n'était pas assez sûre attendent ici.",
+    "score": "Règles",
+    "confidence": "IA",
+    "confirm": "Associer",
+    "reject": "Refuser",
+    "others": "{count, plural, one {# autre mouvement} other {# autres mouvements}}",
+    "pickOther": "Associer celui-ci à la place",
+    "useThis": "Associer celui-ci"
   },
   "reasons": {
     "amount": {
-      "exact": "amount fits",
-      "near": "amount close",
-      "skonto": "amount with early-payment discount",
-      "fee": "amount minus a fee",
-      "none": "amount unknown"
+      "exact": "montant exact",
+      "near": "montant proche",
+      "skonto": "montant avec escompte",
+      "fee": "montant moins des frais",
+      "none": "montant inconnu"
     },
-    "reference": "invoice number in the purpose",
+    "reference": "numéro de facture dans le libellé",
     "identity": {
-      "iban": "IBAN fits",
-      "creditor": "creditor ID fits",
-      "name": "name fits",
-      "weak-name": "name similar"
+      "iban": "IBAN identique",
+      "creditor": "identifiant créancier identique",
+      "name": "nom identique",
+      "weak-name": "nom proche"
     },
     "date": {
-      "primary": "date fits",
-      "extended": "date late",
-      "outside": "date far off"
+      "primary": "date cohérente",
+      "extended": "date tardive",
+      "outside": "date très éloignée"
     }
   },
   "matched": {
-    "emptyTitle": "Nothing matched yet",
-    "emptyHint": "Upload receipts and import a bank statement, and Helena matches them.",
-    "unmatch": "Remove the match"
+    "emptyTitle": "Rien d'associé pour l'instant",
+    "emptyHint": "Téléversez des justificatifs et importez un relevé bancaire, et Helena les associe.",
+    "unmatch": "Supprimer l'association"
   },
   "accounts": {
-    "title": "Bank accounts",
-    "none": "No account yet. Add one, or simply import a bank statement.",
-    "noIban": "no IBAN",
-    "counts": "{open} open · {matched} matched · {ignored} without receipt",
-    "import": "Import bank statement",
-    "edit": "Edit",
-    "delete": "Delete account",
-    "name": "Account name",
-    "namePlaceholder": "e.g. Business account",
+    "title": "Comptes bancaires",
+    "none": "Aucun compte pour l'instant. Ajoutez-en un, ou importez simplement un relevé bancaire.",
+    "noIban": "sans IBAN",
+    "counts": "{open} ouverts · {matched} associés · {ignored} sans justificatif",
+    "import": "Importer un relevé bancaire",
+    "edit": "Modifier",
+    "delete": "Supprimer le compte",
+    "name": "Nom du compte",
+    "namePlaceholder": "p. ex. Compte professionnel",
     "iban": "IBAN",
-    "ibanPlaceholder": "DE.. (optional)",
-    "add": "Add account",
+    "ibanPlaceholder": "DE.. (facultatif)",
+    "add": "Ajouter un compte",
     "imports": "Imports",
-    "noImports": "No bank statement imported yet.",
-    "importResult": "{added} new · {duplicates} already there",
-    "deleteTitle": "Delete {name}?",
-    "deleteHint": "{count, plural, one {Its # transaction and its match are deleted.} other {Its # transactions and their matches are deleted.}} The receipts stay and are open again."
+    "noImports": "Aucun relevé bancaire importé pour l'instant.",
+    "importResult": "{added} nouveaux · {duplicates} déjà présents",
+    "deleteTitle": "Supprimer {name} ?",
+    "deleteHint": "{count, plural, one {# mouvement et son association sont supprimés.} other {# mouvements et leurs associations sont supprimés.}} Les justificatifs restent et redeviennent ouverts."
   },
   "import": {
-    "title": "Import bank statement",
-    "account": "Account",
-    "newAccount": "New account …",
-    "accountName": "Name of the new account",
-    "accountNamePlaceholder": "e.g. Business account",
-    "ibanFromFile": "The IBAN comes from the file.",
-    "file": "File",
-    "fileHint": "A CAMT statement (XML), a ZIP of statements, or your bank's CSV export, at most 20 MB.",
-    "submit": "Import",
-    "importing": "Importing …",
-    "doneTitle": "Bank statement imported",
-    "result": "{added, plural, one {# new transaction} other {# new transactions}}, {duplicates} already there.",
-    "pending": "{count, plural, one {# pending entry} other {# pending entries}} skipped – they come with the next statement.",
-    "matched": "{count, plural, one {# receipt} other {# receipts}} matched right away.",
-    "warnings": "Notes"
+    "title": "Importer un relevé bancaire",
+    "account": "Compte",
+    "newAccount": "Nouveau compte …",
+    "accountName": "Nom du nouveau compte",
+    "accountNamePlaceholder": "p. ex. Compte professionnel",
+    "ibanFromFile": "L'IBAN provient du fichier.",
+    "file": "Fichier",
+    "fileHint": "Un relevé CAMT (XML), un ZIP de relevés ou l'export CSV de votre banque, 20 Mo au maximum.",
+    "submit": "Importer",
+    "importing": "Import en cours …",
+    "doneTitle": "Relevé bancaire importé",
+    "result": "{added, plural, one {# nouveau mouvement} other {# nouveaux mouvements}}, {duplicates} déjà présents.",
+    "pending": "{count, plural, one {# opération en attente ignorée – elle arrivera avec le prochain relevé.} other {# opérations en attente ignorées – elles arriveront avec le prochain relevé.}}",
+    "matched": "{count, plural, one {# justificatif associé} other {# justificatifs associés}} tout de suite.",
+    "warnings": "Remarques"
   },
   "detail": {
-    "title": "Receipt",
-    "loading": "Loading …",
-    "openFile": "Open file",
-    "inFiles": "Show in Files",
-    "extract": "Read again",
-    "match": "Transaction",
-    "matchAgain": "Match again",
-    "noCandidates": "No fitting transaction found.",
-    "text": "Text read",
-    "delete": "Remove receipt",
-    "deleteTitle": "Remove the receipt?",
-    "deleteHint": "The receipt leaves the list; its file stays in the project's files.",
-    "saved": "Saved.",
-    "badAmount": "That amount is not readable. Write it like this: 172.50"
+    "title": "Justificatif",
+    "loading": "Chargement …",
+    "openFile": "Ouvrir le fichier",
+    "inFiles": "Afficher dans Fichiers",
+    "extract": "Relire",
+    "match": "Mouvement",
+    "matchAgain": "Associer à nouveau",
+    "noCandidates": "Aucun mouvement correspondant trouvé.",
+    "text": "Texte lu",
+    "delete": "Retirer le justificatif",
+    "deleteTitle": "Retirer le justificatif ?",
+    "deleteHint": "Le justificatif quitte la liste ; son fichier reste dans les fichiers du projet.",
+    "saved": "Enregistré.",
+    "badAmount": "Ce montant est illisible. Écrivez-le ainsi : 172,50"
   },
   "fields": {
-    "issuer": "Issuer",
-    "invoiceNumber": "Invoice number",
-    "invoiceDate": "Invoice date",
-    "dueDate": "Due",
-    "gross": "Gross amount",
-    "vat": "VAT",
-    "currency": "Currency",
-    "iban": "Payee IBAN",
-    "direction": "Kind"
+    "issuer": "Émetteur",
+    "invoiceNumber": "Numéro de facture",
+    "invoiceDate": "Date de facture",
+    "dueDate": "Échéance",
+    "gross": "Montant TTC",
+    "vat": "TVA",
+    "currency": "Devise",
+    "iban": "IBAN du bénéficiaire",
+    "direction": "Type"
   },
   "direction": {
-    "incoming": "Bill (we pay)",
-    "outgoing": "Our invoice (we get paid)"
+    "incoming": "Facture fournisseur (nous payons)",
+    "outgoing": "Notre facture (nous sommes payés)"
   },
   "source": {
-    "mail": "From a mail",
-    "upload": "Uploaded",
-    "vault": "From the files"
+    "mail": "D'un e-mail",
+    "upload": "Téléversé",
+    "vault": "Depuis les fichiers"
   },
   "extraction": {
-    "zugferd": "E-invoice (ZUGFeRD/Factur-X) read",
-    "xrechnung": "E-invoice (XRechnung) read",
-    "text": "PDF text read",
-    "ocr": "Scan read by OCR",
-    "manual": "Entered by hand",
-    "none": "Nothing read"
+    "zugferd": "Facture électronique (ZUGFeRD/Factur-X) lue",
+    "xrechnung": "Facture électronique (XRechnung) lue",
+    "text": "Texte du PDF lu",
+    "ocr": "Scan lu par OCR",
+    "manual": "Saisi à la main",
+    "none": "Rien de lu"
   },
   "problems": {
-    "missingPrograms": "Reading it needs a program the server lacks: {programs}",
-    "notEinvoice": "The XML file is not an e-invoice.",
-    "noFacts": "The text had no invoice data. Enter it below."
+    "missingPrograms": "La lecture nécessite un programme absent du serveur : {programs}",
+    "notEinvoice": "Le fichier XML n'est pas une facture électronique.",
+    "noFacts": "Le texte ne contenait aucune donnée de facture. Saisissez-les ci-dessous."
   }
 }

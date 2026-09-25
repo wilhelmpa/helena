@@ -1,163 +1,163 @@
 {
   "tabs": {
-    "open": "Open",
-    "review": "Review",
-    "matched": "Matched",
-    "accounts": "Accounts"
+    "open": "المفتوحة",
+    "review": "للمراجعة",
+    "matched": "المطابَقة",
+    "accounts": "الحسابات"
   },
-  "month": "Month",
-  "allMonths": "All months",
-  "search": "Search receipts and transactions",
+  "month": "الشهر",
+  "allMonths": "كل الأشهر",
+  "search": "البحث في الإيصالات والحركات",
   "actions": {
-    "upload": "Upload receipt",
-    "import": "Import bank statement",
-    "export": "Export month",
-    "exportPickMonth": "Pick a month to export"
+    "upload": "رفع إيصال",
+    "import": "استيراد كشف حساب",
+    "export": "تصدير الشهر",
+    "exportPickMonth": "اختر شهرًا للتصدير"
   },
   "upload": {
-    "done": "{count, plural, one {# receipt uploaded} other {# receipts uploaded}}",
-    "doneMatched": "{count, plural, one {# receipt uploaded} other {# receipts uploaded}}, {matched} matched right away",
-    "duplicate": "{name} is already here."
+    "done": "{count, plural, zero {لم يُرفع أي إيصال} one {تم رفع إيصال واحد} two {تم رفع إيصالين} few {تم رفع # إيصالات} many {تم رفع # إيصالًا} other {تم رفع # إيصال}}",
+    "doneMatched": "{count, plural, zero {لم يُرفع أي إيصال} one {تم رفع إيصال واحد} two {تم رفع إيصالين} few {تم رفع # إيصالات} many {تم رفع # إيصالًا} other {تم رفع # إيصال}}، وطوبق منها {matched} فورًا",
+    "duplicate": "{name} موجود بالفعل."
   },
-  "noAccessTitle": "For project administrators only",
-  "noAccessHint": "Receipts and bank transactions are visible to the project's owners and the team's owners and managers.",
-  "noName": "(no name)",
-  "creditNote": "Credit note",
-  "directDebit": "Direct debit",
+  "noAccessTitle": "لمسؤولي المشروع فقط",
+  "noAccessHint": "لا يرى الإيصالات والحركات المصرفية إلا مالكو المشروع ومالكو الفريق ومديروه.",
+  "noName": "(بلا اسم)",
+  "creditNote": "إشعار دائن",
+  "directDebit": "خصم مباشر",
   "method": {
-    "rule": "Rule",
-    "decision": "AI",
-    "manual": "By hand"
+    "rule": "قاعدة",
+    "decision": "ذكاء اصطناعي",
+    "manual": "يدويًا"
   },
   "open": {
-    "receipts": "Receipts without a transaction",
-    "noReceipts": "Every receipt has its transaction.",
-    "transactions": "Transactions without a receipt",
-    "noTransactions": "Every transaction has its receipt.",
-    "noReceiptNeeded": "No receipt needed",
-    "ignored": "No receipt needed",
-    "undoIgnore": "Needs a receipt after all"
+    "receipts": "إيصالات بلا حركة",
+    "noReceipts": "لكل إيصال حركته.",
+    "transactions": "حركات بلا إيصال",
+    "noTransactions": "لكل حركة إيصالها.",
+    "noReceiptNeeded": "لا حاجة إلى إيصال",
+    "ignored": "لا حاجة إلى إيصال",
+    "undoIgnore": "يلزمه إيصال في النهاية"
   },
   "review": {
-    "emptyTitle": "Nothing to review",
-    "emptyHint": "Matches Helena was not sure enough about wait here.",
-    "score": "Rules",
-    "confidence": "AI",
-    "confirm": "Match",
-    "reject": "Reject",
-    "others": "{count, plural, one {# other transaction} other {# other transactions}}",
-    "pickOther": "Match this one instead",
-    "useThis": "Match this"
+    "emptyTitle": "لا شيء للمراجعة",
+    "emptyHint": "تنتظر هنا المطابقات التي لم تكن Helena متأكدة منها بما يكفي.",
+    "score": "القواعد",
+    "confidence": "ذكاء اصطناعي",
+    "confirm": "مطابقة",
+    "reject": "رفض",
+    "others": "{count, plural, zero {لا حركات أخرى} one {حركة أخرى واحدة} two {حركتان أخريان} few {# حركات أخرى} many {# حركة أخرى} other {# حركة أخرى}}",
+    "pickOther": "مطابقة هذه بدلًا منها",
+    "useThis": "مطابقة هذه"
   },
   "reasons": {
     "amount": {
-      "exact": "amount fits",
-      "near": "amount close",
-      "skonto": "amount with early-payment discount",
-      "fee": "amount minus a fee",
-      "none": "amount unknown"
+      "exact": "المبلغ مطابق",
+      "near": "المبلغ قريب",
+      "skonto": "المبلغ مع خصم السداد المبكر",
+      "fee": "المبلغ ناقص رسوم",
+      "none": "المبلغ غير معروف"
     },
-    "reference": "invoice number in the purpose",
+    "reference": "رقم الفاتورة في بيان الدفع",
     "identity": {
-      "iban": "IBAN fits",
-      "creditor": "creditor ID fits",
-      "name": "name fits",
-      "weak-name": "name similar"
+      "iban": "IBAN مطابق",
+      "creditor": "معرّف الدائن مطابق",
+      "name": "الاسم مطابق",
+      "weak-name": "الاسم مشابه"
     },
     "date": {
-      "primary": "date fits",
-      "extended": "date late",
-      "outside": "date far off"
+      "primary": "التاريخ مناسب",
+      "extended": "التاريخ متأخر",
+      "outside": "التاريخ بعيد جدًا"
     }
   },
   "matched": {
-    "emptyTitle": "Nothing matched yet",
-    "emptyHint": "Upload receipts and import a bank statement, and Helena matches them.",
-    "unmatch": "Remove the match"
+    "emptyTitle": "لم تتم أي مطابقة بعد",
+    "emptyHint": "ارفع الإيصالات واستورد كشف حساب، وستطابقها Helena.",
+    "unmatch": "إلغاء المطابقة"
   },
   "accounts": {
-    "title": "Bank accounts",
-    "none": "No account yet. Add one, or simply import a bank statement.",
-    "noIban": "no IBAN",
-    "counts": "{open} open · {matched} matched · {ignored} without receipt",
-    "import": "Import bank statement",
-    "edit": "Edit",
-    "delete": "Delete account",
-    "name": "Account name",
-    "namePlaceholder": "e.g. Business account",
+    "title": "الحسابات المصرفية",
+    "none": "لا يوجد حساب بعد. أضف حسابًا، أو استورد كشف حساب ببساطة.",
+    "noIban": "بلا IBAN",
+    "counts": "مفتوحة: {open} · مطابَقة: {matched} · بلا إيصال: {ignored}",
+    "import": "استيراد كشف حساب",
+    "edit": "تعديل",
+    "delete": "حذف الحساب",
+    "name": "اسم الحساب",
+    "namePlaceholder": "مثلًا: حساب الأعمال",
     "iban": "IBAN",
-    "ibanPlaceholder": "DE.. (optional)",
-    "add": "Add account",
-    "imports": "Imports",
-    "noImports": "No bank statement imported yet.",
-    "importResult": "{added} new · {duplicates} already there",
-    "deleteTitle": "Delete {name}?",
-    "deleteHint": "{count, plural, one {Its # transaction and its match are deleted.} other {Its # transactions and their matches are deleted.}} The receipts stay and are open again."
+    "ibanPlaceholder": "DE.. (اختياري)",
+    "add": "إضافة حساب",
+    "imports": "عمليات الاستيراد",
+    "noImports": "لم يُستورد أي كشف حساب بعد.",
+    "importResult": "جديدة: {added} · موجودة: {duplicates}",
+    "deleteTitle": "حذف {name}؟",
+    "deleteHint": "{count, plural, zero {لن تُحذف أي حركة.} one {ستُحذف حركته الوحيدة ومطابقتها.} two {ستُحذف حركتاه ومطابقتاهما.} few {ستُحذف حركاته (#) ومطابقاتها.} many {ستُحذف حركاته (#) ومطابقاتها.} other {ستُحذف حركاته (#) ومطابقاتها.}} تبقى الإيصالات وتعود مفتوحة."
   },
   "import": {
-    "title": "Import bank statement",
-    "account": "Account",
-    "newAccount": "New account …",
-    "accountName": "Name of the new account",
-    "accountNamePlaceholder": "e.g. Business account",
-    "ibanFromFile": "The IBAN comes from the file.",
-    "file": "File",
-    "fileHint": "A CAMT statement (XML), a ZIP of statements, or your bank's CSV export, at most 20 MB.",
-    "submit": "Import",
-    "importing": "Importing …",
-    "doneTitle": "Bank statement imported",
-    "result": "{added, plural, one {# new transaction} other {# new transactions}}, {duplicates} already there.",
-    "pending": "{count, plural, one {# pending entry} other {# pending entries}} skipped – they come with the next statement.",
-    "matched": "{count, plural, one {# receipt} other {# receipts}} matched right away.",
-    "warnings": "Notes"
+    "title": "استيراد كشف حساب",
+    "account": "الحساب",
+    "newAccount": "حساب جديد …",
+    "accountName": "اسم الحساب الجديد",
+    "accountNamePlaceholder": "مثلًا: حساب الأعمال",
+    "ibanFromFile": "يؤخذ IBAN من الملف.",
+    "file": "الملف",
+    "fileHint": "كشف CAMT (XML)، أو ملف ZIP يضم عدة كشوف، أو تصدير CSV من مصرفك، بحد أقصى 20 ميغابايت.",
+    "submit": "استيراد",
+    "importing": "جارٍ الاستيراد …",
+    "doneTitle": "تم استيراد كشف الحساب",
+    "result": "{added, plural, zero {لا حركات جديدة} one {حركة جديدة واحدة} two {حركتان جديدتان} few {# حركات جديدة} many {# حركة جديدة} other {# حركة جديدة}}، و{duplicates} موجودة بالفعل.",
+    "pending": "{count, plural, zero {لم يُتخطَّ أي قيد معلّق} one {تم تخطي قيد معلّق واحد} two {تم تخطي قيدين معلّقين} few {تم تخطي # قيود معلّقة} many {تم تخطي # قيدًا معلّقًا} other {تم تخطي # قيد معلّق}} – ستأتي مع الكشف التالي.",
+    "matched": "{count, plural, zero {لم يُطابَق أي إيصال} one {طوبق إيصال واحد} two {طوبق إيصالان} few {طوبقت # إيصالات} many {طوبق # إيصالًا} other {طوبق # إيصال}} فورًا.",
+    "warnings": "ملاحظات"
   },
   "detail": {
-    "title": "Receipt",
-    "loading": "Loading …",
-    "openFile": "Open file",
-    "inFiles": "Show in Files",
-    "extract": "Read again",
-    "match": "Transaction",
-    "matchAgain": "Match again",
-    "noCandidates": "No fitting transaction found.",
-    "text": "Text read",
-    "delete": "Remove receipt",
-    "deleteTitle": "Remove the receipt?",
-    "deleteHint": "The receipt leaves the list; its file stays in the project's files.",
-    "saved": "Saved.",
-    "badAmount": "That amount is not readable. Write it like this: 172.50"
+    "title": "الإيصال",
+    "loading": "جارٍ التحميل …",
+    "openFile": "فتح الملف",
+    "inFiles": "العرض في الملفات",
+    "extract": "إعادة القراءة",
+    "match": "الحركة",
+    "matchAgain": "إعادة المطابقة",
+    "noCandidates": "لم يُعثر على حركة مناسبة.",
+    "text": "النص المقروء",
+    "delete": "إزالة الإيصال",
+    "deleteTitle": "إزالة الإيصال؟",
+    "deleteHint": "يختفي الإيصال من القائمة، ويبقى ملفه في ملفات المشروع.",
+    "saved": "تم الحفظ.",
+    "badAmount": "تعذّرت قراءة هذا المبلغ. اكتبه هكذا: 172.50"
   },
   "fields": {
-    "issuer": "Issuer",
-    "invoiceNumber": "Invoice number",
-    "invoiceDate": "Invoice date",
-    "dueDate": "Due",
-    "gross": "Gross amount",
-    "vat": "VAT",
-    "currency": "Currency",
-    "iban": "Payee IBAN",
-    "direction": "Kind"
+    "issuer": "الجهة المصدِرة",
+    "invoiceNumber": "رقم الفاتورة",
+    "invoiceDate": "تاريخ الفاتورة",
+    "dueDate": "تاريخ الاستحقاق",
+    "gross": "المبلغ الإجمالي",
+    "vat": "ضريبة القيمة المضافة",
+    "currency": "العملة",
+    "iban": "IBAN المستفيد",
+    "direction": "النوع"
   },
   "direction": {
-    "incoming": "Bill (we pay)",
-    "outgoing": "Our invoice (we get paid)"
+    "incoming": "فاتورة واردة (ندفع نحن)",
+    "outgoing": "فاتورتنا (نتقاضى المبلغ)"
   },
   "source": {
-    "mail": "From a mail",
-    "upload": "Uploaded",
-    "vault": "From the files"
+    "mail": "من بريد",
+    "upload": "مرفوع",
+    "vault": "من الملفات"
   },
   "extraction": {
-    "zugferd": "E-invoice (ZUGFeRD/Factur-X) read",
-    "xrechnung": "E-invoice (XRechnung) read",
-    "text": "PDF text read",
-    "ocr": "Scan read by OCR",
-    "manual": "Entered by hand",
-    "none": "Nothing read"
+    "zugferd": "قُرئت الفاتورة الإلكترونية (ZUGFeRD/Factur-X)",
+    "xrechnung": "قُرئت الفاتورة الإلكترونية (XRechnung)",
+    "text": "قُرئ نص ملف PDF",
+    "ocr": "قُرئ المسح الضوئي عبر OCR",
+    "manual": "أُدخل يدويًا",
+    "none": "لم يُقرأ شيء"
   },
   "problems": {
-    "missingPrograms": "Reading it needs a program the server lacks: {programs}",
-    "notEinvoice": "The XML file is not an e-invoice.",
-    "noFacts": "The text had no invoice data. Enter it below."
+    "missingPrograms": "تتطلب القراءة برنامجًا غير موجود على الخادم: {programs}",
+    "notEinvoice": "ملف XML ليس فاتورة إلكترونية.",
+    "noFacts": "لم يتضمن النص بيانات فاتورة. أدخلها أدناه."
   }
 }
