@@ -170,6 +170,7 @@ The organigram shows "done/total" next to a goal. A card opens anew with the ser
 | Suite | Result |
 |---|---|
 | API | goals (unit 8, integration 4); chat reflection (unit 7, integration 5); structure (unit 10); bootstrap (12, incl. project instructions + requeue); agents, runtime-admin, scripts, MCP, organization, goals and issues together **865 pass / 6 fail** before my two test updates — the 4 "ai agents" failures are the known baseline, and the other 2 were tests that pinned the old behaviour (specialist gets no team section, exact Hermes settings), updated. Then **339/0** for goals + issues. |
+| API, whole suite | **2757 pass / 16 fail**, exactly the known baseline set (analytics 5, teams 4, ai agents 4, columns 1, god teams 1, projects copy 1) |
 | Worker | project-provisioning **9/0** (incl. the public origin, first APP_URL entry) |
 | Provisioning integration (`node --test`) | **95/0**: new block renewal, legacy migration, owner text kept, symlink refusal, area block/legacy rules, public-origin resolution, envelope validation |
 | Runner | full suite **336/0** (was 304): compression keys, local-AI helper skip, seeding only when asked, failure tolerance, once per revision, chat reflection turn and report |
