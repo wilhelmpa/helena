@@ -10,7 +10,7 @@ here=$(cd "$(dirname "$0")/.." && pwd)
 work=$(mktemp -d "${TMPDIR:-/tmp}/helena-sudo-test.XXXXXX")
 trap 'rm -rf "$work"' EXIT
 mkdir -p "$work"/{sudoers.d,sshd.d,state,bin,pw,home/helena-ops/.ssh}
-: >"$work/sudoers"; : >"$work/sudo.conf"
+: >"$work/sudoers"; : >"$work/sudo.conf"; chmod 0644 "$work/sudo.conf"
 
 cat >"$work/bin/passwd" <<'SH'
 #!/bin/sh
