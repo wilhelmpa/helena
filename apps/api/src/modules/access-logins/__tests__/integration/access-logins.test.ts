@@ -99,7 +99,7 @@ const logins = (api: Api, teamId: number) => api.teams({ teamId }).access.logins
 // The runner's side of one runtime request: claims it and answers.
 async function answerRequest(
   asRunner: Api,
-  op: string,
+  op: 'login.read' | 'login.logout',
   answer: () => Promise<Record<string, unknown>>,
 ) {
   for (let i = 0; i < 200; i++) {
