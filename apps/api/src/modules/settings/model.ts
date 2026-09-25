@@ -1,4 +1,5 @@
 import { t } from 'elysia';
+import { oneOf } from '#shared/schemas';
 
 export const StorageSettingsSchema = t.Object({
   maxAttachmentMb: t.Number(),
@@ -36,7 +37,7 @@ const ReleaseSchema = t.Object({
   publishedAt: t.String(),
   url: t.Nullable(t.String()),
   notes: t.String(),
-  notesFormat: t.UnionEnum(['html', 'markdown']),
+  notesFormat: oneOf(['html', 'markdown']),
 });
 
 export const UpdateStatusSchema = t.Object({

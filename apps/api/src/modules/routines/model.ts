@@ -1,5 +1,6 @@
 import { t } from 'elysia';
 import { pageQueryFields, pageResponse } from '#shared/pagination';
+import { oneOf } from '#shared/schemas';
 
 export const routineParams = t.Object({
   projectKey: t.String(),
@@ -108,9 +109,9 @@ export const RoutineResponse = t.Object({
         description:
           "The run: 'pending', 'running', 'succeeded', 'skipped', 'failed' or 'canceled'.",
       }),
-      outcome: t.Nullable(t.UnionEnum(['created', 'reopened', 'skipped'])),
+      outcome: t.Nullable(oneOf(['created', 'reopened', 'skipped'])),
       skipReason: t.Nullable(
-        t.UnionEnum(['task-open', 'missed'], {
+        oneOf(['task-open', 'missed'], {
           description:
             "'task-open': the routine's task was still open; 'missed': the run started too late.",
         }),

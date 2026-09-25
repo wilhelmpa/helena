@@ -35,7 +35,7 @@ export const deleteUserQuery = t.Object({
 });
 
 export const AuthSettingsResponse = t.Object({
-  registration: t.UnionEnum([...REGISTRATION_MODES]),
+  registration: oneOf(REGISTRATION_MODES),
   requireEmailVerification: t.Boolean(),
   magicLink: t.Boolean(),
   emailPassword: t.Boolean(),
@@ -215,7 +215,7 @@ export const InstanceUserDetailResponse = t.Composite([
         projectId: t.Number(),
         projectKey: t.String(),
         projectName: t.String(),
-        role: t.UnionEnum(['owner', 'member']),
+        role: oneOf(['owner', 'member']),
         roleId: t.Nullable(t.Number()),
         roleName: t.Nullable(t.String()),
         permissions: PermissionMatrixSchema,
@@ -258,7 +258,7 @@ export const InstanceProjectDetailResponse = t.Composite([
         username: t.Nullable(t.String()),
         image: t.Nullable(t.String()),
         isAgent: t.Boolean(),
-        role: t.UnionEnum(['owner', 'member']),
+        role: oneOf(['owner', 'member']),
         roleId: t.Nullable(t.Number()),
         roleName: t.Nullable(t.String()),
         permissions: PermissionMatrixSchema,
@@ -314,7 +314,7 @@ export const InstanceTeamMemberPageResponse = pageResponse(
     email: t.String(),
     image: t.Nullable(t.String()),
     isAgent: t.Boolean(),
-    role: t.UnionEnum(['owner', 'manager', 'member', 'agent']),
+    role: oneOf(['owner', 'manager', 'member', 'agent']),
     joinedAt: t.String(),
   }),
 );

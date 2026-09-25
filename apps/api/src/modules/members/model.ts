@@ -21,7 +21,7 @@ const MemberResponse = t.Object({
   isAgent: t.Boolean(),
   // 'scim' when an identity provider's group granted this membership. Such a row is
   // rewritten on every sync, so the role and remove actions are refused.
-  source: t.UnionEnum(['invite', 'scim']),
+  source: oneOf(['invite', 'scim']),
   createdAt: t.String(),
 });
 

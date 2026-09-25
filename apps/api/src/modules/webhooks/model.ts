@@ -1,9 +1,10 @@
 import { t } from 'elysia';
+import { oneOf } from '#shared/schemas';
 import { WEBHOOK_EVENT_TYPES } from './service';
 
 export const webhookParams = t.Object({ webhookId: t.Numeric() });
 
-const eventType = t.UnionEnum([...WEBHOOK_EVENT_TYPES]);
+const eventType = oneOf(WEBHOOK_EVENT_TYPES);
 
 export const createWebhookBody = t.Object({
   url: t.String({ minLength: 1 }),

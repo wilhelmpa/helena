@@ -132,7 +132,7 @@ export const ProjectResponse = t.Object({
   pointsEstimateEnabled: t.Boolean(),
   timeEstimateEnabled: t.Boolean(),
   timeLoggingEnabled: t.Boolean(),
-  availableFeatures: t.Array(t.UnionEnum([...PROJECT_FEATURES])),
+  availableFeatures: t.Array(oneOf(PROJECT_FEATURES)),
   createdAt: t.String(),
 });
 

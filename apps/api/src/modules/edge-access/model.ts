@@ -1,7 +1,8 @@
 import { t } from 'elysia';
+import { oneOf } from '#shared/schemas';
 
-const State = t.UnionEnum(['pass', 'fail', 'warn', 'skip']);
-const Severity = t.UnionEnum(['critical', 'high', 'medium', 'low']);
+const State = oneOf(['pass', 'fail', 'warn', 'skip']);
+const Severity = oneOf(['critical', 'high', 'medium', 'low']);
 
 export const AuditCheckDto = t.Object({
   id: t.String(),
@@ -42,7 +43,7 @@ export const SecurityStatusDto = t.Object({
   ]),
   health: t.Object({
     id: t.String(),
-    state: t.UnionEnum(['ok', 'attention', 'critical', 'unknown']),
+    state: oneOf(['ok', 'attention', 'critical', 'unknown']),
     code: t.String(),
     values: t.Record(t.String(), t.Number()),
   }),

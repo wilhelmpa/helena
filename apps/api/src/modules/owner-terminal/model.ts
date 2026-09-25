@@ -17,7 +17,7 @@ export type OwnerTerminalKind = (typeof OWNER_TERMINAL_KINDS)[number];
 // project slug elsewhere in the app.
 export const SESSION_NAME_PATTERN = '^[a-z0-9][a-z0-9-]{0,31}$';
 
-export const OwnerTerminalKindParam = t.Object({ kind: t.UnionEnum([...OWNER_TERMINAL_KINDS]) });
+export const OwnerTerminalKindParam = t.Object({ kind: oneOf(OWNER_TERMINAL_KINDS) });
 
 export const StepUpTotpBody = t.Object({
   code: t.String({ pattern: '^[0-9]{6}$', description: 'The 6-digit TOTP code' }),
