@@ -68,7 +68,8 @@
     "files_backups": "Cadangan basis data hanya terbaca oleh layanannya",
     "files_secrets": "Rahasia dan kunci tidak terbaca oleh pihak lain",
     "svc_exposure": "Layanan Helena diisolasi oleh systemd",
-    "svc_tools_loopback": "Alat hanya terjangkau lewat loopback"
+    "svc_tools_loopback": "Alat hanya terjangkau lewat loopback",
+    "net_voice_acl": "Server suara hanya dapat dijangkau Helena"
   },
   "finding": {
     "net_firewall": {
@@ -187,7 +188,10 @@
     "svc_tools_loopback": {
       "fail": "Alat dapat dijangkau di luar loopback."
     },
-    "skipped": "Tidak diperiksa"
+    "skipped": "Tidak diperiksa",
+    "net_voice_acl": {
+      "fail": "Setiap pengguna lokal dapat menjangkau server suara (13306, 13307): jalankan apply.sh firewall."
+    }
   },
   "owner": {
     "totpOn": "Aplikasi autentikator (TOTP) sudah diatur",

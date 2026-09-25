@@ -14,7 +14,8 @@ let active: { speaker: VoiceSpeaker; onEnd?: () => void } | null = null;
 // replaced by another. Returns false when there is nothing to say.
 export function speak(markdown: string, onEnd?: () => void): boolean {
   if (!canSpeak()) return false;
-  const { chunks } = nextSpeechChunks(markdown, 0, true);
+  const lang = (document.documentElement.lang || 'de').slice(0, 2).toLowerCase();
+  const { chunks } = nextSpeechChunks(markdown, 0, true, lang);
   if (chunks.length === 0) return false;
   stopSpeaking();
   const mine: { speaker: VoiceSpeaker; onEnd?: () => void } = {

@@ -208,6 +208,11 @@
       "default": "Wie beim Tippen (Modell des Agenten)",
       "thinking": "Nachdenken",
       "thinkingDefault": "Standard des Modells"
+    },
+    "speed": {
+      "title": "Sprechtempo",
+      "hint": "Wie schnell die Stimme liest. Die lokale Stimme spricht in ihrem eigenen Tempo; das gilt für die Browserstimme.",
+      "option": "{speed} %"
     }
   }
 }

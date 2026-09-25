@@ -208,6 +208,11 @@
       "default": "Seperti saat mengetik (model agen)",
       "thinking": "Berpikir",
       "thinkingDefault": "Bawaan model"
+    },
+    "speed": {
+      "title": "Kecepatan bicara",
+      "hint": "Seberapa cepat suara membaca. Suara lokal berbicara dengan temponya sendiri; ini berlaku untuk suara browser.",
+      "option": "{speed} %"
     }
   }
 }

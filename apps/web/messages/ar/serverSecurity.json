@@ -68,7 +68,8 @@
     "files_backups": "نسخ قاعدة البيانات مقروءة لخدمتها فقط",
     "files_secrets": "الأسرار والمفاتيح غير مقروءة للآخرين",
     "svc_exposure": "خدمات Helena معزولة بواسطة systemd",
-    "svc_tools_loopback": "الأدوات متاحة عبر loopback فقط"
+    "svc_tools_loopback": "الأدوات متاحة عبر loopback فقط",
+    "net_voice_acl": "خوادم الصوت متاحة لـ Helena فقط"
   },
   "finding": {
     "net_firewall": {
@@ -187,7 +188,10 @@
     "svc_tools_loopback": {
       "fail": "يمكن الوصول إلى الأدوات خارج الاسترجاع المحلي."
     },
-    "skipped": "لم يُفحص"
+    "skipped": "لم يُفحص",
+    "net_voice_acl": {
+      "fail": "يصل أي مستخدم محلي إلى خوادم الصوت (13306، 13307): شغّل apply.sh firewall."
+    }
   },
   "owner": {
     "totpOn": "تم إعداد تطبيق المصادقة (TOTP)",

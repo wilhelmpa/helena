@@ -208,6 +208,11 @@
       "default": "Como ao digitar (modelo do agente)",
       "thinking": "Raciocínio",
       "thinkingDefault": "Padrão do modelo"
+    },
+    "speed": {
+      "title": "Velocidade da fala",
+      "hint": "A rapidez com que a voz lê. A voz local fala no próprio ritmo; isto vale para a voz do navegador.",
+      "option": "{speed} %"
     }
   }
 }

@@ -12,7 +12,7 @@ here=$(cd "$(dirname "$0")/.." && pwd)
 work=$(mktemp -d "${TMPDIR:-/tmp}/helena-nft-test.XXXXXX")
 trap 'rm -rf "$work"' EXIT
 sed -e 's|@LAN4@|192.168.2.0/24|' -e 's|@UIDS_CDP@|0|' -e 's|@UIDS_ROUTER@|0|' \
-  -e 's|@UIDS_TOOLS@|0|' -e 's|@UIDS_SYNCTHING@|0|' -e 's|@UIDS_TUNNEL@|0|' \
+  -e 's|@UIDS_TOOLS@|0|' -e 's|@UIDS_SYNCTHING@|0|' -e 's|@UIDS_TUNNEL@|0|' -e 's|@UIDS_VOICE@|0|' \
   -e 's|@TUNNEL_PORT@|8090|' "$here/files/helena-hardening.nft.in" >"$work/rules.nft"
 
 cat >"$work/inside.sh" <<'INNER'

@@ -1,0 +1,15 @@
+# Helena's voice (voice.sh): the models its two servers load, each pinned to a repository commit
+# and the SHA-256 of the file. A download over 1 GB needs the owner's OK first.
+# Tab-separated: name role repo commit file bytes sha256 license remote-file
+# - whisper-large-v3-turbo-german: primeline/whisper-large-v3-turbo-german (Apache-2.0), German
+#   fine-tune of OpenAI's Whisper large-v3-turbo, converted to ggml by cstr (same licence).
+#   f16: what the GPU runs; the q5_0 file is the CPU/low-memory alternative.
+# - qwen3-tts-*: Qwen3-TTS 12 Hz (Qwen team, Apache-2.0) as GGUF for qwentts.cpp (Serveurperso).
+#   The 0.6B Base speaks with a registered (designed or cloned) voice; the 1.7B VoiceDesign
+#   only designs voices (voice.sh voice design) and is not loaded by the server.
+whisper-large-v3-turbo-german	stt	cstr/whisper-large-v3-turbo-german-ggml	d9431a78952938533dc46e75395a9b0b7237fa69	whisper-large-v3-turbo-german-f16.bin	1624555275	6eb2e025198a6cbac7bdb1e86e278f5de002e583aae7bdfcf5183ef8da16decd	Apache-2.0	ggml-model.bin
+whisper-large-v3-turbo-german-q5	stt	cstr/whisper-large-v3-turbo-german-ggml	d9431a78952938533dc46e75395a9b0b7237fa69	whisper-large-v3-turbo-german-q5_0.bin	574041195	15e92e3db0993c52fffa781513eec9253475331c1be808f8fb409285c9d9d030	Apache-2.0	ggml-model-q5_0.bin
+qwen3-tts-0.6b-base	tts	Serveurperso/Qwen3-TTS-GGUF	b7ee2e8c7459c3bea99da23e3d178125a7d1713c	qwen-talker-0.6b-base-Q8_0.gguf	992615488	d54dbaf10591421fa764ed630d764efa717ae40cd959bd48c66d4eb1af226426	Apache-2.0	qwen-talker-0.6b-base-Q8_0.gguf
+qwen3-tts-tokenizer	tts	Serveurperso/Qwen3-TTS-GGUF	b7ee2e8c7459c3bea99da23e3d178125a7d1713c	qwen-tokenizer-12hz-Q8_0.gguf	291150624	1883beeed99348fc35e23dd225e9082f93f6f8c109330a33d935baa8acdbfd94	Apache-2.0	qwen-tokenizer-12hz-Q8_0.gguf
+qwen3-tts-1.7b-voicedesign	design	Serveurperso/Qwen3-TTS-GGUF	b7ee2e8c7459c3bea99da23e3d178125a7d1713c	qwen-talker-1.7b-voicedesign-Q4_K_M.gguf	1182630816	7605ed0cc5e72059f27468c27f70c070e05d1cc0c7b1c76bfb9cba717a59eee3	Apache-2.0	qwen-talker-1.7b-voicedesign-Q4_K_M.gguf
+qwen3-tts-1.7b-base	tts	Serveurperso/Qwen3-TTS-GGUF	b7ee2e8c7459c3bea99da23e3d178125a7d1713c	qwen-talker-1.7b-base-Q8_0.gguf	2079448256	4b9a33a236908dd9435a42f7a396e38038329d053b704342a6413c08544c4fda	Apache-2.0	qwen-talker-1.7b-base-Q8_0.gguf

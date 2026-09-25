@@ -1,3 +1,4 @@
+import { speakable } from './speakable';
 import { speechText } from './speechText';
 
 // Reading an answer aloud while it streams: the text that has arrived is cut into pieces a
@@ -129,14 +130,20 @@ export function settledTail(markdown: string, offset: number): boolean {
 
 // The next pieces of `markdown` to read aloud from `offset`, and where reading stands after
 // them. With `final` (the answer is complete) the rest goes too.
-export function nextSpeechChunks(markdown: string, offset: number, final: boolean): SpeechChunks {
+export function nextSpeechChunks(
+  markdown: string,
+  offset: number,
+  final: boolean,
+  // The language pieces are spelled out for (utils/speakable.ts).
+  lang = 'de',
+): SpeechChunks {
   const ends = boundaries(markdown, offset, final);
   const chunks: string[] = [];
   let start = offset;
   let consumed = offset;
   let pending = '';
   for (const end of ends) {
-    const spoken = speechText(markdown.slice(start, end)).replace(/\s+/g, ' ').trim();
+    const spoken = speakable(speechText(markdown.slice(start, end)), lang);
     start = end;
     // Pieces joined because each was short (a heading, list items) keep a pause between them.
     const joined = !pending

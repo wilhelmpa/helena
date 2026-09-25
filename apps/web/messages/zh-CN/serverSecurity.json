@@ -68,7 +68,8 @@
     "files_backups": "数据库备份只有其服务可读",
     "files_secrets": "机密和密钥对他人不可读",
     "svc_exposure": "Helena 服务由 systemd 隔离",
-    "svc_tools_loopback": "工具只能通过回环地址访问"
+    "svc_tools_loopback": "工具只能通过回环地址访问",
+    "net_voice_acl": "语音服务器仅供 Helena 访问"
   },
   "finding": {
     "net_firewall": {
@@ -187,7 +188,10 @@
     "svc_tools_loopback": {
       "fail": "工具可在回环地址之外访问。"
     },
-    "skipped": "未检查"
+    "skipped": "未检查",
+    "net_voice_acl": {
+      "fail": "任何本地用户都能访问语音服务器（13306、13307）：请运行 apply.sh firewall。"
+    }
   },
   "owner": {
     "totpOn": "已设置身份验证器应用（TOTP）",

@@ -68,7 +68,8 @@
     "files_backups": "Резервні копії бази доступні лише своїй службі",
     "files_secrets": "Секрети й ключі недоступні іншим для читання",
     "svc_exposure": "Служби Helena ізольовані systemd",
-    "svc_tools_loopback": "Інструменти доступні лише через loopback"
+    "svc_tools_loopback": "Інструменти доступні лише через loopback",
+    "net_voice_acl": "Голосові сервери доступні лише Helena"
   },
   "finding": {
     "net_firewall": {
@@ -187,7 +188,10 @@
     "svc_tools_loopback": {
       "fail": "Інструменти доступні не лише через loopback."
     },
-    "skipped": "Не перевірено"
+    "skipped": "Не перевірено",
+    "net_voice_acl": {
+      "fail": "Будь-який локальний користувач досягає голосових серверів (13306, 13307): виконай apply.sh firewall."
+    }
   },
   "owner": {
     "totpOn": "Застосунок-автентифікатор (TOTP) налаштовано",

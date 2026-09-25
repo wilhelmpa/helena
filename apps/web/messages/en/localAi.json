@@ -208,6 +208,11 @@
       "default": "As when typing (the agent's model)",
       "thinking": "Thinking",
       "thinkingDefault": "The model's default"
+    },
+    "speed": {
+      "title": "Speaking rate",
+      "hint": "How fast the voice reads. The local voice speaks at its own pace; this applies to the browser voice.",
+      "option": "{speed} %"
     }
   }
 }

@@ -65,6 +65,16 @@ table inet helena_hardening {
 		typeof meta skuid
 		elements = { @UIDS_SYNCTHING@ }
 	}
+	# Helena's voice on the GPU (native/local-ai/voice.sh): whisper.cpp and qwentts.cpp have no
+	# key of their own; only Helena's API (and root) may reach them.
+	set voice_ports {
+		type inet_service
+		elements = { 13306, 13307 }
+	}
+	set voice_uids {
+		typeof meta skuid
+		elements = { @UIDS_VOICE@ }
+	}
 	set tunnel_ports {
 		type inet_service
 		elements = { @TUNNEL_PORT@ }
@@ -105,5 +115,6 @@ table inet helena_hardening {
 		oif "lo" tcp dport @tool_ports meta skuid != @tool_uids counter reject with tcp reset comment "helena:acl-tools"
 		oif "lo" tcp dport @syncthing_gui_ports meta skuid != @syncthing_gui_uids counter reject with tcp reset comment "helena:acl-syncthing"
 		oif "lo" tcp dport @tunnel_ports meta skuid != @tunnel_uids counter reject with tcp reset comment "helena:acl-tunnel"
+		oif "lo" tcp dport @voice_ports meta skuid != @voice_uids counter reject with tcp reset comment "helena:acl-voice"
 	}
 }

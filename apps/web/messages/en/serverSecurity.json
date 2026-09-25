@@ -68,7 +68,8 @@
     "files_backups": "Database dumps readable only by their service",
     "files_secrets": "Secrets and keys not readable by others",
     "svc_exposure": "Helena services sandboxed by systemd",
-    "svc_tools_loopback": "Tools reachable over loopback only"
+    "svc_tools_loopback": "Tools reachable over loopback only",
+    "net_voice_acl": "Voice servers reachable only for Helena"
   },
   "finding": {
     "net_firewall": {
@@ -187,7 +188,10 @@
     "svc_tools_loopback": {
       "fail": "Tools can be reached beyond loopback."
     },
-    "skipped": "Not checked"
+    "skipped": "Not checked",
+    "net_voice_acl": {
+      "fail": "Every local user reaches the voice servers (13306, 13307): run apply.sh firewall."
+    }
   },
   "owner": {
     "totpOn": "Authenticator app (TOTP) set up",

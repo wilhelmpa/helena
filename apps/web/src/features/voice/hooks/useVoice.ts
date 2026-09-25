@@ -49,8 +49,9 @@ export function useVoice(): {
   listener: Listener;
   speaker: Speaker;
   maxSeconds: number;
-  // How long a pause ends a conversation turn (Sprache settings).
+  // How long a pause ends a conversation turn, and how fast the voice reads (Sprache settings).
   pauseMs: number;
+  speed: number;
   refresh: () => void;
 } {
   const status = useVoiceStatus();
@@ -66,6 +67,7 @@ export function useVoice(): {
       speaker: pickSpeaker(known, browser ?? NOTHING),
       maxSeconds: known?.limits.maxSeconds ?? 120,
       pauseMs: clampPause(known?.settings?.pauseMs),
+      speed: known?.settings?.speed ?? 1,
       refresh: () => void refetch(),
     }),
     [browser, known, settled, refetch],

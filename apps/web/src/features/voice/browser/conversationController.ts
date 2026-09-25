@@ -99,8 +99,9 @@ export class ConversationController {
   // A new conversation (or its end) makes everything still on its way from the last one stale.
   private generation = 0;
   private tailTimer = 0;
-  // How long a pause ends a turn (the owner's voice setting).
+  // How long a pause ends a turn, and how fast the browser's voice reads (the owner's settings).
   private pauseMs = DEFAULT_PAUSE_MS;
+  private speed = 1;
   // The turn being timed: from the end of the owner's speech to the first sound of the answer.
   private marks: TurnMarks | null = null;
 
@@ -121,8 +122,9 @@ export class ConversationController {
   }
 
   // The owner's voice settings; a changed pause applies from the next conversation.
-  configure(options: { pauseMs?: number }): void {
+  configure(options: { pauseMs?: number; speed?: number }): void {
     if (options.pauseMs) this.pauseMs = options.pauseMs;
+    if (options.speed) this.speed = options.speed;
   }
 
   // Starts from a click: the voice is unlocked before anything waits.
@@ -291,7 +293,7 @@ export class ConversationController {
       onError: (text: string) => this.voiceFailed(text),
     };
     if (speaker.engine === 'local') return createLocalSpeaker(events);
-    if (speaker.engine === 'browser') return createBrowserSpeaker(events);
+    if (speaker.engine === 'browser') return createBrowserSpeaker(events, { rate: this.speed });
     return null;
   }
 
@@ -371,7 +373,7 @@ export class ConversationController {
 
   private handOver(text: string, final: boolean): void {
     if (!this.reading || !this.voice) return;
-    const next = nextSpeechChunks(text, this.reading.offset, final);
+    const next = nextSpeechChunks(text, this.reading.offset, final, pageLanguage() ?? 'de');
     this.reading.offset = next.offset;
     for (const chunk of next.chunks) this.voice.enqueue(chunk);
   }

@@ -208,6 +208,11 @@
       "default": "Comme à l’écrit (modèle de l’agent)",
       "thinking": "Réflexion",
       "thinkingDefault": "Par défaut du modèle"
+    },
+    "speed": {
+      "title": "Débit",
+      "hint": "La vitesse de lecture de la voix. La voix locale parle à son propre rythme ; ceci s’applique à la voix du navigateur.",
+      "option": "{speed} %"
     }
   }
 }

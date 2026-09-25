@@ -97,8 +97,8 @@ export function useConversation(options: ConversationOptions): Conversation {
   }, [controller, voice.listener, voice.speaker]);
 
   useEffect(() => {
-    controller().configure({ pauseMs: voice.pauseMs });
-  }, [controller, voice.pauseMs]);
+    controller().configure({ pauseMs: voice.pauseMs, speed: voice.speed });
+  }, [controller, voice.pauseMs, voice.speed]);
 
   useEffect(() => {
     controller().update(options.messages, options.busy, options.queued);

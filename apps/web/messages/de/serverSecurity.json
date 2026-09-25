@@ -68,7 +68,8 @@
     "files_backups": "Datenbank-Sicherungen nur für ihren Dienst lesbar",
     "files_secrets": "Geheimnisse und Schlüssel für andere nicht lesbar",
     "svc_exposure": "Helena-Dienste von systemd abgeschottet",
-    "svc_tools_loopback": "Werkzeuge nur über Loopback erreichbar"
+    "svc_tools_loopback": "Werkzeuge nur über Loopback erreichbar",
+    "net_voice_acl": "Sprachserver nur für Helena erreichbar"
   },
   "finding": {
     "net_firewall": {
@@ -187,7 +188,10 @@
     "svc_tools_loopback": {
       "fail": "Werkzeuge sind über Loopback hinaus erreichbar."
     },
-    "skipped": "Nicht geprüft"
+    "skipped": "Nicht geprüft",
+    "net_voice_acl": {
+      "fail": "Jeder lokale Benutzer erreicht die Sprachserver (13306, 13307): apply.sh firewall ausführen."
+    }
   },
   "owner": {
     "totpOn": "Authenticator-App (TOTP) eingerichtet",

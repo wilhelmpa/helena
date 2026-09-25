@@ -43,7 +43,7 @@ describe('nextSpeechChunks', () => {
   it('does not end a sentence after an abbreviation, an ordinal or an initial', () => {
     assert.deepEqual(
       nextSpeechChunks('Das ist z. B. am 3. Oktober bei Dr. Weber fällig. Danach', 0, false).chunks,
-      ['Das ist z. B. am 3. Oktober bei Dr. Weber fällig.'],
+      ['Das ist zum Beispiel am 3. Oktober bei Doktor Weber fällig.'],
     );
   });
 
@@ -68,7 +68,7 @@ describe('nextSpeechChunks', () => {
     assert.deepEqual(nextSpeechChunks(answer, 0, true).chunks, [
       'Plan, Landingpage fertig',
       'Checkout im Test',
-      'Mehr unter DEV-12.',
+      'Mehr unter DEV 12.',
     ]);
   });
 

@@ -23,6 +23,7 @@ import { useUpdateVoiceSettings, useVoiceSettings } from '../hooks/useVoiceSetti
 // button) and applies from the next turn.
 
 const PAUSES = [400, 600, 900, 1300] as const;
+const SPEEDS = [0.85, 1, 1.1, 1.2] as const;
 const DEFAULT = '__default__';
 
 function Row({ title, hint, children }: { title: string; hint: string; children: ReactNode }) {
@@ -159,6 +160,23 @@ function VoiceSettingsRows({ settings }: { settings: VoiceSettings }) {
         {settings.voices.length === 0 && (
           <p className="text-xs text-muted-foreground">{t('voice.none')}</p>
         )}
+      </Row>
+
+      <Row title={t('speed.title')} hint={t('speed.hint')}>
+        <Select value={String(settings.speed)} onValueChange={(value) => save({ speed: Number(value) })}>
+          <SelectTrigger className="w-full" aria-label={t('speed.title')}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {[...new Set([...SPEEDS, settings.speed])]
+              .sort((a, b) => a - b)
+              .map((speed) => (
+                <SelectItem key={speed} value={String(speed)}>
+                  {t('speed.option', { speed: Math.round(speed * 100) })}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
       </Row>
 
       <Row title={t('model.title')} hint={t('model.hint')}>

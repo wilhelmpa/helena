@@ -80,7 +80,11 @@ export function voiceReplyRequest(input: VoiceReplyInput): LocalAiChatRequest {
   };
 }
 
-export function voiceReplyNow(language: string, date = new Date()): string {
+export function voiceReplyNow(
+  language: string,
+  date = new Date(),
+  timeZone = 'Europe/Berlin',
+): string {
   const locale = language === 'de' ? 'de-DE' : language;
   try {
     return new Intl.DateTimeFormat(locale, {
@@ -90,7 +94,7 @@ export function voiceReplyNow(language: string, date = new Date()): string {
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      timeZone: process.env.TZ || 'Europe/Berlin',
+      timeZone,
     }).format(date);
   } catch {
     return date.toISOString();

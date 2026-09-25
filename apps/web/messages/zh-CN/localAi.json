@@ -208,6 +208,11 @@
       "default": "与打字时相同（智能体的模型）",
       "thinking": "思考",
       "thinkingDefault": "模型默认"
+    },
+    "speed": {
+      "title": "语速",
+      "hint": "朗读的速度。本地声音按自己的节奏说话；此设置作用于浏览器声音。",
+      "option": "{speed}%"
     }
   }
 }

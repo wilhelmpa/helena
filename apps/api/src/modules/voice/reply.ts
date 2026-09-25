@@ -1,5 +1,12 @@
 import { eq } from 'drizzle-orm';
-import { db, readModelServerKey, resolveLocalRoute, user, type LocalRoute } from '@repo/db';
+import {
+  db,
+  readModelServerKey,
+  resolveLocalRoute,
+  user,
+  userPreference,
+  type LocalRoute,
+} from '@repo/db';
 import { classEvalVersion, localThinkingFields, type LocalAiChatRequest } from '@helena/sdk';
 import { joinUrl } from '#modules/local-ai/eval-context';
 import { taskClass } from '#modules/local-ai/service';
@@ -36,7 +43,7 @@ import {
 //
 // It never acts and never sees anything but the conversation: no tools but the hand-over, no
 // Helena data. Its answer is marked (`via = 'voice'`) and names its model. Off by default; like
-// every local class it can only be switched on once its eval (evals.ts) passed.
+// every local class it can only be switched on once its eval (reply-eval.ts) passed.
 
 // The first words must come this soon, or the agent answers after all.
 const FIRST_TOKEN_MS = 3_000;
@@ -197,20 +204,30 @@ async function streamAnswer(
   }
 }
 
-async function personName(userId: string): Promise<string | null> {
-  const [row] = await db.select({ name: user.name }).from(user).where(eq(user.id, userId));
-  return row?.name?.split(/\s+/)[0] ?? null;
+// Who is speaking: the first name, the language the answer is in and the time zone "now" is
+// told in (the person's preferences; German and Berlin where there are none).
+async function person(
+  userId: string,
+): Promise<{ name: string | null; language: string; timeZone: string }> {
+  const [row] = await db
+    .select({ name: user.name, locale: userPreference.locale, timezone: userPreference.timezone })
+    .from(user)
+    .leftJoin(userPreference, eq(userPreference.userId, user.id))
+    .where(eq(user.id, userId));
+  const language = (row?.locale ?? 'de').slice(0, 2).toLowerCase();
+  const timeZone = row?.timezone && row.timezone !== 'UTC' ? row.timezone : 'Europe/Berlin';
+  return { name: row?.name?.split(/\s+/)[0] ?? null, language, timeZone };
 }
 
-export async function answerSpokenQuestion(job: SpokenAnswerJob, language = 'de'): Promise<void> {
+export async function answerSpokenQuestion(job: SpokenAnswerJob): Promise<void> {
   const local = await route();
   if (!local || !(await takeHeldAnswer(job.agentId, job.messageId))) {
     await releaseHeldAnswer(job.agentId, job.messageId);
     return;
   }
-  const [conversation, person] = await Promise.all([
+  const [conversation, speaker] = await Promise.all([
     spokenConversation(job.threadId, job.messageId),
-    personName(job.userId),
+    person(job.userId),
   ]);
   const question = conversation.turns.at(-1);
   if (!question || question.role !== 'user') {
@@ -219,9 +236,9 @@ export async function answerSpokenQuestion(job: SpokenAnswerJob, language = 'de'
   }
   const request = voiceReplyRequest({
     agentName: conversation.agentName ?? 'Helena',
-    personName: person,
-    now: voiceReplyNow(language),
-    language,
+    personName: speaker.name,
+    now: voiceReplyNow(speaker.language, new Date(), speaker.timeZone),
+    language: speaker.language,
     turns: conversation.turns.slice(0, -1),
     question: question.text,
   });

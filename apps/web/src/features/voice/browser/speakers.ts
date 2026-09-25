@@ -1,5 +1,6 @@
 import { speakText } from '@/lib/api/endpoints/voice';
 import { Pcm16Decoder, SampleBatcher } from '../utils/pcm';
+import { bestVoice } from '../utils/voicePick';
 
 // The conversation mode's voice: pieces of an answer (whole sentences, see speechChunks) are
 // queued as they arrive and read one after the other. Two engines behind one interface:
@@ -46,26 +47,20 @@ export const canSpeak = () =>
   'speechSynthesis' in window &&
   'SpeechSynthesisUtterance' in window;
 
-// The best voice of the device for a language: exact locale before language, local before
-// online (Chrome's "Google Deutsch" reads the text out on Google's servers).
+// The best voice of the device for a language (utils/voicePick.ts): local before online, the
+// natural ones before the robotic ones.
 export function pickVoice(lang: string): SpeechSynthesisVoice | undefined {
-  const voices = window.speechSynthesis.getVoices();
-  const short = lang.slice(0, 2).toLowerCase();
-  const exact = voices.filter((voice) => voice.lang.toLowerCase() === lang.toLowerCase());
-  const same = voices.filter((voice) => voice.lang.toLowerCase().startsWith(short));
-  return (
-    exact.find((voice) => voice.localService) ??
-    same.find((voice) => voice.localService) ??
-    exact[0] ??
-    same[0]
-  );
+  return bestVoice(window.speechSynthesis.getVoices(), lang);
 }
 
 export function speechLanguage(): string {
   return document.documentElement.lang || navigator.language || 'de-DE';
 }
 
-export function createBrowserSpeaker(events: SpeakerEvents): VoiceSpeaker {
+export function createBrowserSpeaker(
+  events: SpeakerEvents,
+  options: { rate?: number } = {},
+): VoiceSpeaker {
   const queue: string[] = [];
   let paused = false;
   let current: SpeechSynthesisUtterance | null = null;
@@ -91,6 +86,7 @@ export function createBrowserSpeaker(events: SpeakerEvents): VoiceSpeaker {
     const lang = speechLanguage();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = lang;
+    if (options.rate) utterance.rate = options.rate;
     const voice = pickVoice(lang);
     if (voice) utterance.voice = voice;
     const done = () => {
