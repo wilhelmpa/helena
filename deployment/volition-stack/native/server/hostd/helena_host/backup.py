@@ -108,9 +108,24 @@ def unit_active(host: Host, unit: str) -> bool:
 
 
 def timer_next(host: Host, timer: str) -> str | None:
+    """When the timer fires next. `systemctl list-timers --output=json` gives it in
+    microseconds on every systemd with JSON output; `show --timestamp=unix` is only a
+    fallback: systemd 257 (Debian 13) prints NextElapseUSecRealtime as a local date there,
+    which left every "next" empty."""
     systemctl = host.which('systemctl')
     if not systemctl:
         return None
+    result = host.run([systemctl, 'list-timers', '--all', '--output=json', '--no-pager', timer], timeout=10)
+    try:
+        rows = json.loads(result.stdout) if result.returncode == 0 and result.stdout.strip() else []
+    except ValueError:
+        rows = []
+    for row in rows if isinstance(rows, list) else []:
+        if isinstance(row, dict) and row.get('unit') == timer:
+            usec = row.get('next')
+            if isinstance(usec, (int, float)) and usec > 0:
+                return iso(int(usec) // 1_000_000)
+            return None
     result = host.run([systemctl, 'show', timer, '-p', 'NextElapseUSecRealtime', '--timestamp=unix'], timeout=10)
     match = re.search(r'=@(\d+)', result.stdout)
     return iso(int(match.group(1))) if match else None

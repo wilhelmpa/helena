@@ -477,6 +477,23 @@ class BackupTests(HostTest):
             with self.assertRaises(HostError):
                 validate_retention(bad)
 
+    def test_timer_next_reads_list_timers_json_and_falls_back_to_show(self):
+        # systemd 257: list-timers JSON has the time in microseconds; `show` prints a date.
+        self.runner.on('/usr/bin/systemctl', 'list-timers', out=json.dumps([
+            {'next': 1790302563789264, 'left': 1790302563789264, 'last': 1790300223052686,
+             'passed': 0, 'unit': 'helena-backup.timer', 'activates': 'helena-backup.service'}]))
+        self.runner.on('/usr/bin/systemctl', 'show', out='NextElapseUSecRealtime=Fri 2026-09-25 04:16:03 CEST\n')
+        self.assertEqual(backup.timer_next(self.host, 'helena-backup.timer'), '2026-09-25T02:16:03Z')
+        # A timer that is off: no next time.
+        self.runner.on('/usr/bin/systemctl', 'list-timers', out=json.dumps([
+            {'next': None, 'left': None, 'last': None, 'passed': None,
+             'unit': 'helena-backup.timer', 'activates': 'helena-backup.service'}]))
+        self.assertIsNone(backup.timer_next(self.host, 'helena-backup.timer'))
+        # An older systemd without JSON output: the unix timestamp of `show`.
+        self.runner.on('/usr/bin/systemctl', 'list-timers', rc=1, err='unknown option --output')
+        self.runner.on('/usr/bin/systemctl', 'show', out='NextElapseUSecRealtime=@1790302563\n')
+        self.assertEqual(backup.timer_next(self.host, 'helena-backup.timer'), '2026-09-25T02:16:03Z')
+
     def test_settings_write_the_timer_and_switch_it(self):
         self.install()
         result = backup.set_settings(self.host, self.config, {'schedule': {'frequency': 'daily', 'time': '02:30'},
