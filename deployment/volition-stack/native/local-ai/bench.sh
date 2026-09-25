@@ -5,8 +5,10 @@
 #   sudo ./bench.sh speed <name>              llama-bench of a models.tsv model on every installed
 #                                             backend: ROCm (hipBLASLt off and on) and Vulkan;
 #                                             pp512/pp8192/pp32768, tg128 empty and at 32k depth
-#   sudo ./bench.sh evals <chat> [<embed>]    the task-class evals through Lemonade (as the API
-#                                             runs them), JSON next to the CSVs
+#   sudo ./bench.sh evals <chat> [<embed>] [<thinking>]
+#                                             the task-class evals through Lemonade (as the API
+#                                             runs them, each class with its own thinking, or
+#                                             off|low|… for all), JSON next to the CSVs
 #   sudo ./bench.sh parallel <gpu> <npu>      GPU and NPU generating at once: what each loses to
 #                                             the shared memory bus
 #
@@ -82,14 +84,17 @@ speed() {
 }
 
 evals() {
-  chat=$1 embed=${2:-}
+  chat=$1 embed=${2:-} thinking=${3:-}
   json="$OUT/evals-$chat-$stamp.json"
-  say "== evals of $chat${embed:+ and $embed} through Lemonade → $json"
-  # As the API's user: it reads the key (group volition-plan), and Bun runs the repository's
-  # own eval code.
-  set -- --base "http://127.0.0.1:$PORT/api/v1" --key-file "$KEY" --model "$chat" --json "$json"
+  say "== evals of $chat${embed:+ and $embed} through Lemonade${thinking:+ (thinking $thinking for all)} → $json"
+  # As the API's user: it reads the key (the API's secrets group), and Bun runs the
+  # repository's own eval code. It writes the JSON to stdout and root puts it into $OUT, which
+  # the API's user may not write (the lines of the run go to stderr, onto the terminal).
+  set -- --base "http://127.0.0.1:$PORT/api/v1" --key-file "$KEY" --model "$chat" --json -
   [ -z "$embed" ] || set -- "$@" --embed-model "$embed"
-  (cd "$CHECKOUT" && sudo -u volition-plan -H /usr/local/bin/bun apps/api/src/scripts/local-ai-eval.ts "$@")
+  [ -z "$thinking" ] || set -- "$@" --thinking "$thinking"
+  (cd "$CHECKOUT" && sudo -u volition-plan -H /usr/local/bin/bun apps/api/src/scripts/local-ai-eval.ts "$@") > "$json.part"
+  mv "$json.part" "$json"
 }
 
 generate() {
@@ -115,7 +120,7 @@ parallel() {
 
 case "${1:-}" in
   speed) [ -n "${2:-}" ] || die "speed <name>"; speed "$2" ;;
-  evals) [ -n "${2:-}" ] || die "evals <chat> [<embed>]"; evals "$2" "${3:-}" ;;
+  evals) [ -n "${2:-}" ] || die "evals <chat> [<embed>] [<thinking>]"; evals "$2" "${3:-}" "${4:-}" ;;
   parallel) [ -n "${3:-}" ] || die "parallel <gpu model> <npu model>"; parallel "$2" "$3" ;;
-  *) sed -n '2,15p' "$0"; exit 2 ;;
+  *) sed -n '2,16p' "$0"; exit 2 ;;
 esac

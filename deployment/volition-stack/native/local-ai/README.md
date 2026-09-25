@@ -69,7 +69,8 @@ Check that no agent run or chat answer is in flight before every reboot or servi
 8. **Measure and choose**: for every candidate
    `sudo ./bench.sh speed <name>` (ROCm and Vulkan; the faster backend per model goes into
    `models.tsv`'s last column, then `models load` again) and
-   `sudo ./bench.sh evals <name> Qwen3-Embedding-0.6B-GGUF`;
+   `sudo ./bench.sh evals <name> Qwen3-Embedding-0.6B-GGUF` (each class with its own thinking;
+   a fourth argument `off`/`low` runs all classes with that level, to compare);
    `sudo ./bench.sh parallel Qwen3.6-35B-A3B-MTP-GGUF qwen3.5-2b-FLM`. Numbers go into the
    decision doc §5; losers are removed (`rm -rf /var/lib/helena-ai/models/hub/models--<repo>`).
    In Helena, run the evals of each class on the chosen model (Lokale KI → "Auswerten"), then

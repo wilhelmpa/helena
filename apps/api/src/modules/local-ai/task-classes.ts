@@ -14,7 +14,9 @@ import {
 // local model to an agent in the model picker.
 //
 // `wired` says whether Helena already sends the work to local AI. The others are the plan:
-// listed with their eval, so the owner sees the numbers before they are built.
+// listed with their eval, so the owner sees the numbers before they are built. `thinking`
+// is how much a reasoning model may think for the class (its eval runs the same way): off
+// for work that only summarises or compresses, on where the evals passed with it.
 
 const label = (id: string) => ({ i18n: `localAi.classes.${id}.label` });
 const description = (id: string) => ({ i18n: `localAi.classes.${id}.description` });
@@ -39,6 +41,9 @@ export const BUILTIN_TASK_CLASSES: LocalAiTaskClass[] = [
     unit: 'gpu',
     capability: 'chat',
     priority: 'background',
+    // Compression and image descriptions keep facts, they need no reasoning. Hermes builds
+    // these calls itself: off there is Lemonade's default (local-ai-platform.md §6.7).
+    thinking: 'off',
     inMasterDefault: true,
     wired: true,
     evaluate: evaluateHermesHelpers,
@@ -51,6 +56,8 @@ export const BUILTIN_TASK_CLASSES: LocalAiTaskClass[] = [
     unit: 'gpu',
     capability: 'chat',
     priority: 'background',
+    // a JSON summary; thinking used up max_tokens before any answer (eval 0.25 with it)
+    thinking: 'off',
     inMasterDefault: true,
     wired: false,
     evaluate: evaluateSummaries,
@@ -63,6 +70,8 @@ export const BUILTIN_TASK_CLASSES: LocalAiTaskClass[] = [
     unit: 'npu',
     capability: 'chat',
     priority: 'background',
+    // passed (0.94) with thinking on
+    thinking: 'low',
     inMasterDefault: true,
     wired: false,
     evaluate: evaluateTriage,
@@ -85,6 +94,8 @@ export const BUILTIN_TASK_CLASSES: LocalAiTaskClass[] = [
     unit: 'gpu',
     capability: 'tools',
     priority: 'background',
+    // tool choice with arguments; passed (1.00) with thinking on
+    thinking: 'low',
     inMasterDefault: false,
     wired: false,
     evaluate: evaluateRoutines,
@@ -97,6 +108,8 @@ export const BUILTIN_TASK_CLASSES: LocalAiTaskClass[] = [
     unit: 'gpu',
     capability: 'chat',
     priority: 'batch',
+    // long summaries of the day; thinking used up max_tokens (eval 0.25 with it)
+    thinking: 'off',
     inMasterDefault: false,
     wired: false,
     evaluate: evaluateSummaries,
@@ -109,6 +122,8 @@ export const BUILTIN_TASK_CLASSES: LocalAiTaskClass[] = [
     unit: 'gpu',
     capability: 'tools',
     priority: 'background',
+    // passed (1.00) with thinking on
+    thinking: 'low',
     inMasterDefault: false,
     wired: false,
     evaluate: evaluateRoutines,

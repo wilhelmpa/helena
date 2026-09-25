@@ -116,6 +116,9 @@ class InstallScriptTest(unittest.TestCase):
         self.assertEqual(config['llamacpp']['rocm_bin'], f'{OPT}/llamacpp/rocm-b11166/llama-server')
         self.assertEqual(config['llamacpp']['vulkan_bin'], f'{OPT}/llamacpp/vulkan-b11166/llama-server')
         self.assertIn('--load-mode none', config['llamacpp']['args'])
+        # Models answer without thinking unless a request asks (Lemonade keeps the single
+        # quotes' content as one argument: valid JSON for llama-server).
+        self.assertIn("--chat-template-kwargs '{\"enable_thinking\":false}'", config['llamacpp']['args'])
         self.assertTrue(config['flm']['prefer_system'])
 
     def test_no_npu_leaves_fastflowlm_and_xrt_out(self):

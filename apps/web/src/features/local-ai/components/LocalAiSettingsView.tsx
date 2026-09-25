@@ -395,6 +395,11 @@ function ClassRow({ entry, settings }: { entry: LocalAiClass; settings: LocalAiS
           <span className="text-xs font-normal text-muted-foreground uppercase">
             {t(`units.${entry.unit}`)}
           </span>
+          {(entry.capability === 'chat' || entry.capability === 'tools') && (
+            <span className="text-xs font-normal text-muted-foreground">
+              {t(`thinking.${entry.thinking}`)}
+            </span>
+          )}
           {entry.experimental && (
             <Badge variant="outline" className="text-xs">
               {t('jev.experimental')}

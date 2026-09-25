@@ -513,6 +513,7 @@ const result = await resolveLocalRoute({ classId: 'mail-classify', unit: 'npu', 
 | Key | `Authorization: Bearer <key>`; in the API `readModelServerKey(route.server)` (never logged, never in a response); in an agent's run `HELENA_MODEL_SERVER_KEY_<SLUG>` |
 | Model | the server's own id (`route.model`, e.g. `Qwen3.6-35B-A3B-GGUF`); Helena's id is `helena-<slug>/<model>` (`parseLocalModelId`) |
 | Routes | `/chat/completions`, `/completions`, `/embeddings`, `/audio/transcriptions` (NPU Whisper), `/responses`, `/models`, `/health` |
+| Thinking | off by default on Lemonade's models (§6.7); a call that wants it sends `chat_template_kwargs.enable_thinking: true` (`localThinkingFields` in the SDK) |
 | Body | forwarded to llama-server unchanged (Lemonade 2026.39.1 only adds the `max_tokens` alias and trims oversized JSON-schema bounds of tools), so llama.cpp's own fields pass: `chat_template_kwargs`, `n_probs`, `grammar`, `json_schema` |
 
 **Logprobs: available on the GPU models.** Verified 2026-09-25 on llama-server b11166 — our ROCm
@@ -532,6 +533,41 @@ build and the Vulkan build alike — with Qwen3-0.6B, asking "A = ja, B = nein":
 - Through Lemonade: passes by its source (`chat_completion` → `forward_request`, body intact);
   checked live in the maintenance window with the real models. **NPU models (FastFlowLM) are not
   verified to return logprobs**: route logit readouts to GPU models (`unit: 'gpu'`).
+
+### 6.7 Thinking (reasoning models)
+
+**Found live (2026-09-25, Qwen3.6-35B-A3B-MTP through Lemonade):** summaries 0.25, reflection 0.25
+and hermes-helpers 0.00 failed with "no JSON summary" / lost facts. Qwen3.6 reasons by default and
+spent the eval's `max_tokens` (800/900) on `reasoning_content`: the same summary prompt took 430
+tokens with thinking (1,129 characters of reasoning) and 48 without, with the JSON right, about 9×
+faster. Embeddings 0.90, triage 0.94, routines 1.00 and coordinator-triage 1.00 passed as they were.
+
+| Where | How thinking is set |
+|---|---|
+| **Lemonade's default** | every llama.cpp model starts with `--chat-template-kwargs '{"enable_thinking":false}'` (`install.sh`, `llamacpp.args`): no thinking unless a request asks. llama-server merges a request's `chat_template_kwargs` over this default (b11166 `server-common.cpp`), and a request's `reasoning_effort: "none"` also switches it off |
+| **Helena's own calls** | each task class declares `thinking: off \| low \| medium \| high` (SDK `LocalAiTaskClass.thinking`, `off` when absent); every call sends it (`localThinkingFields`: `chat_template_kwargs.enable_thinking`, plus `reasoning_effort` for templates with levels). The evals run each class the same way (`openAiEvalContext`, the API's "Auswerten", `local-ai-eval.ts`, which takes `--thinking` to compare). Off: hermes-helpers, summaries, reflection, decisions. Low: triage, routines, coordinator-triage (they passed with thinking) |
+| **Hermes' helper calls** (compression, image descriptions) | Hermes builds them itself and they carry nothing, so they run on Lemonade's default: off |
+| **An agent on a local model** | its turns think: the runner writes `extra_body: {chat_template_kwargs: {enable_thinking: true}}` on the named provider `helena-<slug>`. Hermes adds a provider's `extra_body` to the agent's own turns only (never to auxiliary calls: `auxiliary_client` reads only the task's own `extra_body`), and removes it again when it falls back to another provider (`_rescope_fallback_extra_body`) |
+
+Rejected:
+
+- **The helper task's own `auxiliary.<task>.extra_body`** (or `reasoning_effort: none`): Hermes sends
+  the task's `extra_body` to every fallback in its chain (`_fallback_request_kwargs`), i.e. to the
+  agent's main model. A Codex or Claude endpoint refuses `chat_template_kwargs` and would fail the
+  very fallback that protects the helpers.
+- **A Lemonade model variant** (`Qwen3.6-35B-A3B-MTP-GGUF-nothink` with `--reasoning-budget 0`):
+  Lemonade runs one llama-server per model id, so two ids on one checkpoint load the weights twice
+  (2 × 23.8 GB of VRAM, a second KV cache) and compete in its LRU of four.
+- **A top-level `enable_thinking`**: Lemonade turns it into a `/no_think` prompt prefix
+  (hub/decisions' finding); the chat template's own switch is the reliable one.
+
+gpt-oss (harmony) always reasons; its level comes through `reasoning_effort` (`low` for classes on
+`low`). Mistral Small 4 is measured as it comes.
+
+Live: after `install.sh install` (it rewrites `lemonade-defaults.json` and restarts `lemond`,
+which unloads the models), `install.sh status` names each running llama-server with "thinking off
+unless asked". The provider's `extra_body` reaches the agents' profiles with the deploy (the
+runner bundle is rebuilt; the runner rewrites every profile whose snapshot changed).
 
 ## 7. The policy ("Lokale KI")
 
@@ -588,6 +624,12 @@ command line against any server (`apps/api/src/scripts/local-ai-eval.ts`, used b
 As intended, a 0.6B model fails the real work and the harness says where. The full evals on the
 candidates of §5 run in the maintenance window (`bench.sh evals`), and their numbers replace this
 table.
+
+**First live run (2026-09-25, Kingston, kernel 7.1.8, ROCm; `bench.sh evals
+Qwen3.6-35B-A3B-MTP-GGUF Qwen3-Embedding-0.6B-GGUF`, run by the orchestrator):** embeddings 0.90,
+triage 0.94, routines 1.00, coordinator-triage 1.00 passed; hermes-helpers 0.00, summaries 0.25 and
+reflection 0.25 failed because the model thought until `max_tokens` ran out (§6.7). The rerun with
+each class's `thinking` replaces these numbers.
 
 ### 7.4 Scheduling and priorities
 

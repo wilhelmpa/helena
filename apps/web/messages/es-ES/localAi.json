@@ -153,5 +153,11 @@
     "serverDown": "IA local: {name} no responde",
     "evalFailed": "IA local: «{class}» no superó la evaluación",
     "evalFailedDetail": "{model}: responde el modelo configurado hasta que una evaluación se supere"
+  },
+  "thinking": {
+    "off": "sin razonar",
+    "low": "razona brevemente",
+    "medium": "razona",
+    "high": "razona a fondo"
   }
 }

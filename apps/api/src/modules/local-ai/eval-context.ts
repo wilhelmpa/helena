@@ -1,8 +1,15 @@
-import type { LocalAiChatAnswer, LocalAiChatRequest, LocalAiEvalContext } from '@helena/sdk';
+import {
+  localThinkingFields,
+  type LocalAiChatAnswer,
+  type LocalAiChatRequest,
+  type LocalAiEvalContext,
+  type LocalAiThinking,
+} from '@helena/sdk';
 
 // The two calls an eval makes, over a server's OpenAI-compatible API (chat completions with
 // tools, embeddings). No database: the API's evals and the command-line bench
-// (scripts/local-ai-eval.ts) use the same.
+// (scripts/local-ai-eval.ts) use the same. Every chat call says how much the model may think
+// (the class's `thinking`, `off` by default), so the eval measures what the class will run.
 
 const EVAL_TIMEOUT_MS = 180_000;
 
@@ -24,6 +31,8 @@ export function openAiEvalContext(options: {
   baseUrl: string;
   key: string | null;
   model: string;
+  // The class's level of thinking; a request may name another.
+  thinking?: LocalAiThinking;
   signal?: AbortSignal;
   timeoutMs?: number;
 }): LocalAiEvalContext {
@@ -57,6 +66,7 @@ export function openAiEvalContext(options: {
         ...(request.tools && {
           tools: request.tools.map((tool) => ({ type: 'function', function: tool })),
         }),
+        ...localThinkingFields(request.thinking ?? options.thinking ?? 'off'),
         temperature: 0,
         stream: false,
       })) as ChatCompletion;

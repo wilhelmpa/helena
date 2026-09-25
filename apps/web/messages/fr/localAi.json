@@ -153,5 +153,11 @@
     "serverDown": "IA locale : {name} ne répond pas",
     "evalFailed": "IA locale : « {class} » a échoué à l’évaluation",
     "evalFailedDetail": "{model} – le modèle configuré répond jusqu’à ce qu’une évaluation réussisse"
+  },
+  "thinking": {
+    "off": "sans réflexion",
+    "low": "réfléchit brièvement",
+    "medium": "réfléchit",
+    "high": "réfléchit en profondeur"
   }
 }

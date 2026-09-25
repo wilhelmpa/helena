@@ -123,6 +123,29 @@ export const LOCAL_AI_PRIORITIES: readonly LocalAiPriority[] = [
   'batch',
 ];
 
+// How much a local model may think before it answers, per kind of work. A reasoning model
+// (Qwen3.x) spends a small `max_tokens` on its reasoning and then answers nothing: background
+// work that only summarises, compresses or picks an option does better without (measured on
+// Kingston: the same summary 48 instead of 430 tokens, the JSON right, ~9× faster).
+// `off`: `chat_template_kwargs.enable_thinking = false`; a level switches thinking on and gives
+// the template the level (templates with effort levels read `reasoning_effort`; Qwen3 has
+// none). llama-server merges the request's kwargs over its own defaults, and Lemonade passes
+// them through; a top-level `enable_thinking` is not used (Lemonade turns it into a prompt
+// prefix).
+export type LocalAiThinking = 'off' | 'low' | 'medium' | 'high';
+
+export const LOCAL_AI_THINKING: readonly LocalAiThinking[] = ['off', 'low', 'medium', 'high'];
+
+// The request fields for a level of thinking, for any chat-completions call Helena makes to a
+// local server (the evals, a feature's own calls).
+export function localThinkingFields(thinking: LocalAiThinking): {
+  chat_template_kwargs: { enable_thinking: boolean; reasoning_effort?: string };
+} {
+  return thinking === 'off'
+    ? { chat_template_kwargs: { enable_thinking: false } }
+    : { chat_template_kwargs: { enable_thinking: true, reasoning_effort: thinking } };
+}
+
 // One chat-completions call of an eval. The answer's text and tool calls, as the server
 // returned them.
 export interface LocalAiChatRequest {
@@ -136,6 +159,8 @@ export interface LocalAiChatRequest {
   maxTokens?: number;
   // Ask for a JSON object (response_format json_object).
   json?: boolean;
+  // Another level of thinking than the class's, for this call.
+  thinking?: LocalAiThinking;
 }
 
 export interface LocalAiChatAnswer {
@@ -181,6 +206,9 @@ export interface LocalAiTaskClass {
   unit: LocalAiUnit;
   capability: LocalModelCapability;
   priority: LocalAiPriority;
+  // How much its model may think (chat classes). Absent: `off`, the right choice for work
+  // that only summarises, compresses or classifies; its eval runs with the same setting.
+  thinking?: LocalAiThinking;
   // Shown as "Experimentell"; never part of the master switch's default set.
   experimental?: boolean;
   // On when the owner first turns the master switch on.

@@ -17,6 +17,8 @@ import { COMPRESSION_CASES } from '../../evals';
 const KEY = 'test-local-key';
 let fake: ReturnType<typeof Bun.serve>;
 const requests: { path: string; auth: string | null }[] = [];
+// The chat-completions bodies the evals sent.
+const chatBodies: Record<string, unknown>[] = [];
 
 const MODELS = [
   {
@@ -65,10 +67,11 @@ beforeAll(async () => {
           return Response.json({ gpu_percent: 12, npu_percent: 0, vram_gb: 22.4 });
         case '/api/v1/models':
           return Response.json({ object: 'list', data: MODELS });
-        case '/api/v1/chat/completions':
-          return Response.json(
-            chatAnswer((await request.json()) as Parameters<typeof chatAnswer>[0]),
-          );
+        case '/api/v1/chat/completions': {
+          const body = (await request.json()) as Parameters<typeof chatAnswer>[0];
+          chatBodies.push(body as unknown as Record<string, unknown>);
+          return Response.json(chatAnswer(body));
+        }
         default:
           return new Response('not found', { status: 404 });
       }
@@ -160,6 +163,12 @@ describe('local AI', () => {
       modelId: 'helena-local/Qwen3.6-35B-A3B-GGUF',
     });
     expect(evaluated.data).toMatchObject({ passed: true, score: 1, cases: 3 });
+    // The helper class runs without thinking, and its eval asks the model for exactly that.
+    expect(helpers.thinking).toBe('off');
+    expect(chatBodies.length).toBeGreaterThan(0);
+    for (const body of chatBodies) {
+      expect(body.chat_template_kwargs).toEqual({ enable_thinking: false });
+    }
 
     // Off: nothing local anywhere.
     const catalogOff = (

@@ -10,6 +10,7 @@ import {
 import {
   isLocalProvider,
   localModelId,
+  localThinkingFields,
   normalizeLocalModel,
   parseLocalModelId,
   type LocalAiEvalContext,
@@ -31,6 +32,8 @@ import {
   withoutThinking,
 } from '../../evals';
 import { MODEL_WATCH, atomTags, familyOf, newerInFamily, newestWatched } from '../../integrations';
+import { BUILTIN_TASK_CLASSES } from '../../task-classes';
+import { openAiEvalContext } from '../../eval-context';
 
 // Local AI's pure parts (docs/helena-decisions/local-ai-platform.md): model ids, what
 // Lemonade answers, the policy and its routes, the evals' checking, the update check's
@@ -283,6 +286,55 @@ describe('the evals', () => {
     const talking = await evaluateRoutines(fakeContext(() => ({ text: 'I would create a task.' })));
     expect(talking.score).toBe(0);
     expect(talking.cases[0]?.detail).toContain('no tool call');
+  });
+});
+
+describe('thinking', () => {
+  it('switches a reasoning model off through the chat template, or on with a level', () => {
+    expect(localThinkingFields('off')).toEqual({
+      chat_template_kwargs: { enable_thinking: false },
+    });
+    expect(localThinkingFields('low')).toEqual({
+      chat_template_kwargs: { enable_thinking: true, reasoning_effort: 'low' },
+    });
+  });
+
+  it('keeps the helpers, summaries and reflection off, and every chat class declares it', () => {
+    const of = (id: string) => BUILTIN_TASK_CLASSES.find((entry) => entry.id === id)?.thinking;
+    expect(of('hermes-helpers')).toBe('off');
+    expect(of('summaries')).toBe('off');
+    expect(of('reflection')).toBe('off');
+    for (const entry of BUILTIN_TASK_CLASSES) {
+      if (entry.capability === 'chat' || entry.capability === 'tools') {
+        expect(entry.thinking).toBeDefined();
+      }
+    }
+  });
+
+  it("sends the class's level with every eval call, and a call's own level over it", async () => {
+    const bodies: Record<string, unknown>[] = [];
+    const original = globalThis.fetch;
+    globalThis.fetch = (async (_url: string, init?: RequestInit) => {
+      bodies.push(JSON.parse(String(init?.body)));
+      return Response.json({ choices: [{ message: { content: '{}' } }] });
+    }) as typeof fetch;
+    try {
+      const context = openAiEvalContext({
+        baseUrl: 'http://127.0.0.1:1/v1',
+        key: null,
+        model: 'm',
+        thinking: 'off',
+      });
+      await context.chat({ prompt: 'a' });
+      await context.chat({ prompt: 'b', thinking: 'high' });
+    } finally {
+      globalThis.fetch = original;
+    }
+    expect(bodies[0]?.chat_template_kwargs).toEqual({ enable_thinking: false });
+    expect(bodies[1]?.chat_template_kwargs).toEqual({
+      enable_thinking: true,
+      reasoning_effort: 'high',
+    });
   });
 });
 

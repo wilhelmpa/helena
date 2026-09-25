@@ -107,6 +107,13 @@ export const LocalAiSettings = t.Object({
       unit,
       capability: t.String(),
       priority: t.String(),
+      thinking: t.Union(
+        [t.Literal('off'), t.Literal('low'), t.Literal('medium'), t.Literal('high')],
+        {
+          description:
+            'How much a reasoning model may think for this work (its eval runs the same)',
+        },
+      ),
       experimental: t.Boolean(),
       inMasterDefault: t.Boolean(),
       wired: t.Boolean({ description: 'Helena already sends this work to local AI' }),
