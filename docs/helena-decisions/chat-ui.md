@@ -175,18 +175,12 @@ Facts that decide it:
 - Hermes has speech built in: STT with faster-whisper (local), Groq, OpenAI or Mistral
   Voxtral, TTS with Edge TTS, Piper, NeuTTS, KittenTTS, ElevenLabs or OpenAI.
 
-**Chosen now:** dictation with the Web Speech API through AI Elements' `SpeechInput`
-(adapted: live interim text, the page's language, a clear hint on an insecure origin);
-read-aloud and voice mode with `speechSynthesis`. On plain http the fix is HTTPS (the planned
-Cloudflare tunnel; until then Chrome's "Insecure origins treated as secure" flag, which the
-kiosk already sets).
-
-**Proposed (needs the owner's OK, not built):** a runner capability `transcribe` (and later
-`speak`) that runs Hermes' STT on an uploaded audio file. `SpeechInput` already has the hook
-for it (`onAudioRecorded`), which gives Firefox (no Web Speech API) dictation on a secure
-origin, and phones a "record with the OS" fallback on plain http. Local STT needs a
-faster-whisper model download (about 150 MB for `base`, 1.5 GB for `large-v3-turbo`) or a
-cloud key.
+**Superseded (2026-09-25) by `voice.md`:** dictation and a hands-free conversation mode run on
+Lokale KI (Whisper on the NPU for speech to text, class `speech` for a local voice), with the Web
+Speech API and `speechSynthesis` as the path while those classes are off. The Hermes-runner
+proposal that stood here was dropped: Lokale KI already serves Whisper behind the API with its key
+and policy. On plain http the fix stays HTTPS (until then Chrome's "Insecure origins treated as
+secure" flag, which the kiosk already sets).
 
 ## 6. Keyboard, scrolling and accessibility
 

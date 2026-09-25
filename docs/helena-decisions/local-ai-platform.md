@@ -579,7 +579,8 @@ runner bundle is rebuilt; the runner rewrites every profile whose snapshot chang
 | `hermes-helpers` | GPU | chat | **yes** | compression keeps every fact, 3 cases (0.75) | yes |
 | `summaries` (digests, run/activity/mail summaries, briefings) | GPU | chat | planned | German JSON summaries with every fact, 4 cases (0.75) | yes |
 | `triage` (classification, routing) | NPU | chat | planned | 16 labels DE/EN (0.85) | yes |
-| `transcription` (dictation, voice mode) | NPU | transcription | planned | – | yes |
+| `transcription` (dictation, conversation mode) | NPU | transcription | **yes** (`voice.md`) | – | yes |
+| `speech` ("Vorlesen", the conversation mode's voice) | CPU | speech | **yes** (`voice.md`) | – (the voice must speak the owner's language: the owner listens) | no |
 | `routines` (routine agents, local-first) | GPU | tools | planned | right tool + arguments, 8 cases (0.9) | no |
 | `reflection` (nightly, heavy model) | GPU | chat | planned | as summaries (0.85) | no |
 | `coordinator-triage` (first pass, escalates) | GPU | tools | planned | as routines (0.9) | no |
@@ -600,9 +601,10 @@ numbers): `summaries` → the update-center digest run (hub/update-center picks 
 a local id there with the digest's current model as fallback); `routines` and `coordinator-triage`
 → per-run local-first: `agent_run.work_class` set by the engine, the claim hands a local model with
 `localFallback`, and the runner starts Hermes with a second managed directory that adds
-`fallback_providers: [configured model, …]` (the normal one stays untouched); `transcription` →
-the chat's dictation posts audio to `/audio/transcriptions` instead of the browser's speech API
-(which needs HTTPS); `triage` → an engine step type "Einordnen" on the router model.
+`fallback_providers: [configured model, …]` (the normal one stays untouched); `triage` → an
+engine step type "Einordnen" on the router model. (`transcription` and `speech` are wired since
+hub/voice: the chat's dictation and conversation mode post WAV to `/voice/transcriptions` and read
+answers through `/voice/speech`; see `voice.md`.)
 
 ### 7.2 Evals (the harness)
 

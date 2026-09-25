@@ -39,7 +39,12 @@ const NORMAL = {
 const GUARDED = { ...NORMAL, positiveSpeechThreshold: 0.8, minSpeechMs: 500 };
 
 export async function startVadEar(events: EarEvents): Promise<ConversationEar> {
-  const { MicVAD } = await import('@ricky0123/vad-web');
+  const [{ MicVAD }, { log }] = await Promise.all([
+    import('@ricky0123/vad-web'),
+    import('@ricky0123/vad-web/dist/logging'),
+  ]);
+  // vad-web writes every step to the console; its errors and warnings stay.
+  log.debug = () => {};
   const options = (processorType: 'AudioWorklet' | 'ScriptProcessor') => ({
     model: 'v5' as const,
     baseAssetPath: VOICE_ASSET_PATH,
