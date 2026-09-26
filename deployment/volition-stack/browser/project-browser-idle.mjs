@@ -22,7 +22,7 @@ export async function setPageLifecycle(port, state) {
     }),
   );
   const changed = results.filter((result) => result.status === "fulfilled").length;
-  if (pages.length && !changed) throw new Error("Could not change project browser page state");
+  if (changed !== pages.length) throw new Error("Could not change every project browser page state");
   return changed;
 }
 
@@ -52,7 +52,7 @@ export class BrowserIdle {
 
   transition(browser) {
     browser.queue = browser.queue.then(async () => {
-      if (browser.port === null) return;
+      if (browser.port === null) return true;
       const idle = browser.viewers === 0 && !browser.locked && this.now() - browser.lastActive >= this.idleMs;
       if (idle && (!browser.frozen || this.now() - browser.lastFreeze >= 60_000)) {
         const count = await this.lifecycle(browser.port, "frozen");
@@ -62,7 +62,11 @@ export class BrowserIdle {
         await this.lifecycle(browser.port, "active");
         browser.frozen = false;
       }
-    }).catch((error) => this.log(`browser idle: ${error.message}`));
+      return true;
+    }).catch((error) => {
+      this.log(`browser idle: ${error.message}`);
+      return false;
+    });
     return browser.queue;
   }
 
@@ -80,11 +84,11 @@ export class BrowserIdle {
     }, CHECK_MS);
   }
 
-  wake(slug) {
+  wake(slug, { force = false } = {}) {
     const browser = this.record(slug);
     // A restarted router cannot know whether Chromium is still frozen. A first
     // wake must send "active" even when this process has never frozen it.
-    if (browser.frozen === null) browser.frozen = true;
+    if (force || browser.frozen === null) browser.frozen = true;
     browser.lastActive = this.now();
     return this.transition(browser);
   }

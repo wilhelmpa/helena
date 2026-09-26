@@ -466,3 +466,87 @@ describe("control lock state (browser gateway)", () => {
     assert.equal(controlStateOf(40003).handover, null);
   });
 });
+
+describe("existing-tab screencast recovery", () => {
+  function streamWith(send) {
+    const stream = new ScreencastStream(41000, null, () => {});
+    stream.session = "existing-session";
+    stream.targetId = "existing-target";
+    stream.connection = { send, close() {} };
+    return stream;
+  }
+
+  it("a refused screencast start does not remain marked running", async () => {
+    let refuse = true;
+    const stream = streamWith(async () => { if (refuse) throw new Error("page temporarily unavailable"); });
+    await assert.rejects(stream.startScreencast(stream.session));
+    assert.equal(stream.screencasting, false);
+    assert.equal(stream.targetId, "existing-target");
+    refuse = false;
+    await stream.startScreencast(stream.session);
+    assert.equal(stream.screencasting, true);
+    stream.end();
+  });
+
+  it("an acknowledged start without a frame wakes and restarts the same page once", async () => {
+    const commands = [];
+    const stream = streamWith(async (method, params, session) => { commands.push({ method, params, session }); });
+    await stream.startScreencast(stream.session);
+    await stream.recoverScreencast(stream.session);
+    assert.deepEqual(commands.map(({ method }) => method), [
+      "Page.startScreencast", "Page.setWebLifecycleState", "Page.stopScreencast", "Page.startScreencast",
+    ]);
+    assert.ok(commands.every(({ session }) => session === "existing-session"));
+    assert.equal(stream.targetId, "existing-target");
+    assert.equal(stream.streamRecoveries, 1);
+    await stream.recoverScreencast(stream.session);
+    assert.equal(stream.ended, true);
+    assert.equal(commands.length, 4);
+  });
+
+  it("stopping or changing tabs invalidates pending first-frame recovery", async () => {
+    const commands = [];
+    const stream = streamWith(async (method) => { commands.push(method); });
+    await stream.startScreencast(stream.session);
+    await stream.stopScreencast();
+    await stream.recoverScreencast(stream.session);
+    assert.deepEqual(commands, ["Page.startScreencast", "Page.stopScreencast"]);
+    stream.screencasting = true;
+    stream.session = "another-session";
+    await stream.recoverScreencast("existing-session");
+    assert.equal(commands.length, 2);
+    stream.end();
+  });
+
+  it("two refused starts end the broken transport instead of suppressing future starts", async () => {
+    const stream = streamWith(async () => { throw new Error("session is unavailable"); });
+    await assert.rejects(stream.startScreencast(stream.session));
+    await assert.rejects(stream.startScreencast(stream.session));
+    assert.equal(stream.ended, true);
+    assert.equal(stream.screencasting, false);
+  });
+
+  it("an old tab's pending wake does not block recovery of the newly selected tab", async () => {
+    let releaseOld;
+    const commands = [];
+    const stream = streamWith(async (method, _params, session) => {
+      commands.push({ method, session });
+      if (method === "Page.setWebLifecycleState" && session === "existing-session") {
+        await new Promise((resolve) => { releaseOld = resolve; });
+      }
+    });
+    stream.screencasting = true;
+    const oldRecovery = stream.recoverScreencast(stream.session);
+    stream.session = "selected-session";
+    stream.streamRecoveries = 0;
+    await stream.recoverScreencast(stream.session);
+    releaseOld();
+    await oldRecovery;
+    assert.deepEqual(commands.filter(({ session }) => session === "existing-session").map(({ method }) => method),
+      ["Page.setWebLifecycleState"]);
+    assert.equal(commands.at(-1).session, "selected-session");
+    assert.equal(commands.at(-1).method, "Page.startScreencast");
+    assert.equal(stream.ended, false);
+    stream.end();
+  });
+});

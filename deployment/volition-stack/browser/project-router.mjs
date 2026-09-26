@@ -12,6 +12,7 @@ import {
 import { BrowserIdle } from "./project-browser-idle.mjs";
 import {
   joinScreencast,
+  stopAllScreencasts,
   noteViewerAction,
   setViewportAuthority,
   viewportAuthority,
@@ -291,7 +292,7 @@ function refuse(socket, status) {
 }
 
 // api/screencast is the live view's WebSocket; every other WebSocket is the display's.
-async function handleUpgrade(root, request, socket, head, idle) {
+async function handleUpgrade(root, request, socket, head, idle, trackOutbound, isStopping) {
   // Node leaves an upgraded socket without an error listener, and an unhandled error ends
   // the process.
   socket.on("error", () => socket.destroy());
@@ -301,6 +302,7 @@ async function handleUpgrade(root, request, socket, head, idle) {
   } catch {
     return refuse(socket, "404 Not Found");
   }
+  if (isStopping()) return socket.destroy();
   if (target.api !== null) {
     if (target.api !== "screencast") return refuse(socket, "404 Not Found");
     if (!isSameOrigin(request)) return refuse(socket, "403 Forbidden");
@@ -308,9 +310,9 @@ async function handleUpgrade(root, request, socket, head, idle) {
     // as the socket opens, and the stream must already be listening for it.
     if (idle) {
       idle.record(target.slug, target.cdpPort);
-      await idle.wake(target.slug);
+      if (await idle.wake(target.slug, { force: true }) === false) return refuse(socket, "503 Service Unavailable");
     }
-    if (socket.destroyed) return;
+    if (socket.destroyed || isStopping()) return socket.destroy();
     acceptWebSocket(request, socket, head, (connection) => {
       idle?.view(target.slug, target.cdpPort, connection);
       joinScreencast(target.cdpPort, target.display, connection);
@@ -319,9 +321,9 @@ async function handleUpgrade(root, request, socket, head, idle) {
   }
   if (idle) {
     idle.record(target.slug, target.cdpPort);
-    await idle.wake(target.slug);
+    if (await idle.wake(target.slug, { force: true }) === false) return refuse(socket, "503 Service Unavailable");
   }
-  if (socket.destroyed) return;
+  if (socket.destroyed || isStopping()) return socket.destroy();
   watchDesktop(target.cdpPort, socket);
   idle?.view(target.slug, target.cdpPort, socket);
   const upstream = net.connect({ host: "127.0.0.1", port: target.port }, () => {
@@ -336,12 +338,21 @@ async function handleUpgrade(root, request, socket, head, idle) {
     if (head.length) upstream.write(head);
     socket.pipe(upstream).pipe(socket);
   });
+  trackOutbound(upstream);
   upstream.on("error", () => socket.destroy());
   socket.on("error", () => upstream.destroy());
+  socket.on("close", () => upstream.destroy());
 }
+
+const routerResources = new WeakMap();
 
 export function createProjectBrowserRouter(options = {}) {
   const root = options.root ?? "/var/lib/volition/project-browser/projects";
+  const resources = { sockets: new Set(), outbound: new Set(), stopping: false, shutdown: null };
+  const trackOutbound = (connection) => {
+    resources.outbound.add(connection);
+    connection.once("close", () => resources.outbound.delete(connection));
+  };
   const server = http.createServer(async (request, response) => {
     try {
       const pathname = new URL(request.url || "/", "http://127.0.0.1").pathname;
@@ -351,10 +362,12 @@ export function createProjectBrowserRouter(options = {}) {
         return sendJson(response, 200, { browsers: await browserOverview(await listProjectBrowsers(root)) });
       }
       const target = await resolveProjectBrowser(root, request.url || "/");
+      if (resources.stopping) return response.destroy();
       if (target.api !== null) {
         if (request.method === "POST" && target.api !== "bookmarks" && target.api !== "viewport") {
           await options.idle?.wake(target.slug);
         }
+        if (resources.stopping) return response.destroy();
         return await handleControl(request, response, target);
       }
       if (request.method !== "GET" && request.method !== "HEAD") throw new Error("Method denied");
@@ -375,6 +388,7 @@ export function createProjectBrowserRouter(options = {}) {
           upstreamResponse.pipe(response);
         },
       );
+      trackOutbound(upstream);
       upstream.on("timeout", () => upstream.destroy(new Error("Browser unavailable")));
       upstream.on("error", () => {
         if (!response.headersSent) response.writeHead(502, { "cache-control": "no-store" });
@@ -386,8 +400,53 @@ export function createProjectBrowserRouter(options = {}) {
       response.end("Browser unavailable");
     }
   });
-  server.on("upgrade", (request, socket, head) => void handleUpgrade(root, request, socket, head, options.idle));
+  server.on("connection", (socket) => {
+    if (resources.stopping) return socket.destroy();
+    resources.sockets.add(socket);
+    socket.once("close", () => resources.sockets.delete(socket));
+  });
+  server.on("upgrade", (request, socket, head) => void handleUpgrade(root, request, socket, head, options.idle, trackOutbound, () => resources.stopping));
+  routerResources.set(server, resources);
   return server;
+}
+
+// Node's server.close() leaves upgraded WebSocket/VNC connections open. Stop accepting
+// requests, close every accepted and upstream socket, and end the live streams (including
+// ffmpeg) before waiting for idle-page wakeups. A stalled CDP call cannot hold systemd for
+// its 90-second stop timeout. Repeated signals share the same shutdown.
+export function shutdownProjectBrowserRouter(server, { idle, stopKeeper, gateway, timeoutMs = 10_000 } = {}) {
+  const resources = routerResources.get(server);
+  if (resources?.shutdown) return resources.shutdown;
+  const shutdown = (async () => {
+    if (resources) resources.stopping = true;
+    let clean = true;
+    for (const stop of [stopKeeper, () => gateway?.stop(), stopAllScreencasts]) {
+      try {
+        stop?.();
+      } catch (error) {
+        clean = false;
+        console.error("project browser router shutdown:", error);
+      }
+    }
+    const closed = new Promise((resolve) => server.close((error) => resolve(!error)));
+    for (const outbound of resources?.outbound ?? []) outbound.destroy();
+    for (const socket of resources?.sockets ?? []) socket.destroy();
+    server.closeAllConnections();
+    let timer;
+    try {
+      const finished = await Promise.race([
+        Promise.allSettled([closed, Promise.resolve().then(() => idle?.stop())]).then(
+          ([listener, idleStop]) => listener.status === "fulfilled" && listener.value && idleStop.status === "fulfilled",
+        ),
+        new Promise((resolve) => { timer = setTimeout(() => resolve(false), timeoutMs); }),
+      ]);
+      return Boolean(clean && finished);
+    } finally {
+      clearTimeout(timer);
+    }
+  })();
+  if (resources) resources.shutdown = shutdown;
+  return shutdown;
 }
 
 if (import.meta.main) {
@@ -429,9 +488,12 @@ if (import.meta.main) {
     console.log("browser gateway: BROWSER_GATEWAY_TOKEN_FILE not set, not starting");
   }
   server.listen(port, "127.0.0.1", () => console.log("Project browser router ready on loopback"));
-  process.on("SIGTERM", () => {
-    stopKeeper();
-    gateway?.stop();
-    void idle.stop().finally(() => server.close(() => process.exit(0)));
-  });
+  const shutdown = () => {
+    void shutdownProjectBrowserRouter(server, { idle, stopKeeper, gateway }).then((clean) => {
+      if (!clean) console.error("project browser router shutdown timed out");
+      process.exit(clean ? 0 : 1);
+    });
+  };
+  process.once("SIGTERM", shutdown);
+  process.once("SIGINT", shutdown);
 }

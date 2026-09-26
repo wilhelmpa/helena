@@ -84,6 +84,7 @@ const KEYFRAMES_KEPT = 3;
 // see useBrowserScreencast.ts) to have had time to arrive even over a slow connection.
 const ACK_GRACE_MS = 1_000;
 const FOLLOW_INTERVAL_MS = 1_000;
+const FIRST_FRAME_TIMEOUT_MS = 7_000;
 // How often a connected viewer's tier is reassessed from its last reported RTT and downlink
 // and the socket's backlog, besides whenever a fresh measurement or a shown/hidden change
 // arrives. A viewer without one yet (a fresh join, or one waiting out an area change) picks a
@@ -370,6 +371,11 @@ export class ScreencastStream {
     this.frame = null;
     this.screencastFrame = null;
     this.screencasting = false;
+    this.firstFrameTimer = null;
+    this.screencastGeneration = 0;
+    this.screencastFailures = 0;
+    this.streamRecoveries = 0;
+    this.recoveringScreencast = null;
     this.pendingAck = null;
     this.nextAck = 0;
     // One AreaEncoder per quality tier in use, keyed by tier name, shared by every viewer on
@@ -971,6 +977,7 @@ export class ScreencastStream {
   }
 
   async stopScreencast() {
+    clearTimeout(this.firstFrameTimer);
     this.screencasting = false;
     this.pendingAck = null;
     this.frame = null;
@@ -992,24 +999,56 @@ export class ScreencastStream {
       .catch(() => {});
   }
 
-  startScreencast(session) {
+  async startScreencast(session) {
+    const generation = ++this.screencastGeneration;
     this.screencasting = true;
-    return this.connection.send(
-      "Page.startScreencast",
-      {
-        format: "jpeg",
-        quality: this.stream.quality,
-        // Frames at the page's ratio for the viewers: a browser drawing at factor 2 sends
-        // ratio 1 frames scaled down. The frame is the window's width, which is wider than a
-        // page pinned narrower than a window can be (frameMessage).
-        maxWidth: Math.min(
-          MAX_FRAME_SIDE,
-          Math.round(Math.max(this.size?.width ?? MAX_FRAME_SIDE, MIN_WINDOW_WIDTH) * (this.size?.ratio ?? 1)),
-        ),
-        maxHeight: Math.min(MAX_FRAME_SIDE, Math.round((this.size?.height ?? MAX_FRAME_SIDE) * (this.size?.ratio ?? 1))),
-      },
-      session,
-    );
+    clearTimeout(this.firstFrameTimer);
+    this.firstFrameTimer = setTimeout(() => {
+      if (this.screencastGeneration === generation) void this.recoverScreencast(session);
+    }, FIRST_FRAME_TIMEOUT_MS);
+    try {
+      await this.connection.send(
+        "Page.startScreencast",
+        {
+          format: "jpeg",
+          quality: this.stream.quality,
+          // Frames at the page's ratio for the viewers: a browser drawing at factor 2 sends
+          // ratio 1 frames scaled down. The frame is the window's width, which is wider than a
+          // page pinned narrower than a window can be (frameMessage).
+          maxWidth: Math.min(
+            MAX_FRAME_SIDE,
+            Math.round(Math.max(this.size?.width ?? MAX_FRAME_SIDE, MIN_WINDOW_WIDTH) * (this.size?.ratio ?? 1)),
+          ),
+          maxHeight: Math.min(MAX_FRAME_SIDE, Math.round((this.size?.height ?? MAX_FRAME_SIDE) * (this.size?.ratio ?? 1))),
+        },
+        session,
+      );
+    } catch (error) {
+      if (this.screencastGeneration === generation && this.session === session) {
+        clearTimeout(this.firstFrameTimer);
+        this.screencasting = false;
+        this.screencastFailures++;
+        if (this.screencastFailures >= 2) this.end();
+      }
+      throw error;
+    }
+  }
+
+  async recoverScreencast(session) {
+    if (this.ended || session !== this.session || !this.screencasting || this.recoveringScreencast === session) return;
+    if (this.streamRecoveries >= 1) return this.end();
+    this.streamRecoveries++;
+    this.recoveringScreencast = session;
+    try {
+      await this.connection.send("Page.setWebLifecycleState", { state: "active" }, session);
+      if (this.session !== session || this.ended) return;
+      await this.connection.send("Page.stopScreencast", {}, session);
+      if (this.session === session && !this.ended) await this.startScreencast(session);
+    } catch {
+      this.end();
+    } finally {
+      if (this.recoveringScreencast === session) this.recoveringScreencast = null;
+    }
   }
 
   broadcast(message) {
@@ -1049,10 +1088,13 @@ export class ScreencastStream {
   // Page calls are answered by the browser, so a tab whose page waits on a dialog is attached
   // all the same; the calls its page answers come on the next passes.
   async attach(targetId) {
+    clearTimeout(this.firstFrameTimer);
     const previous = this.session;
     this.session = null;
     this.targetId = targetId;
     this.screencasting = false;
+    this.screencastFailures = 0;
+    this.streamRecoveries = 0;
     this.pendingAck = null;
     this.activityContext = null;
     this.setDialog(null);
@@ -1226,6 +1268,8 @@ export class ScreencastStream {
 
   receiveFrame({ data, metadata, sessionId: frameId }, session) {
     if (!this.screencasting) return;
+    clearTimeout(this.firstFrameTimer);
+    this.screencastFailures = 0;
     this.showFrame({ jpeg: Buffer.from(data, "base64"), metadata });
     this.pendingAck = { frameId, session };
     this.acknowledgeWhenWanted();
@@ -1258,6 +1302,7 @@ export class ScreencastStream {
     clearInterval(this.timer);
     clearInterval(this.tierTimer);
     clearTimeout(this.resizeTimer);
+    clearTimeout(this.firstFrameTimer);
     this.stopAllTiers();
     this.onEnd();
     for (const viewer of this.viewers) viewer.socket.close(1011, "Browser unavailable");
@@ -1321,6 +1366,12 @@ export function joinScreencast(port, display, socket) {
     void stream.start();
   }
   stream.add(socket);
+}
+
+// Router shutdown: close every live view and its DevTools connection, and stop the
+// ffmpeg encoder of every quality tier before the process exits.
+export function stopAllScreencasts() {
+  for (const stream of [...streams.values()]) stream.end();
 }
 
 // The browser gateway's hooks (browser-gateway-server.mjs). setControlState: the control

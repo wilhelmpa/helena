@@ -190,6 +190,15 @@ export function handleConnection(socket, dispatcher) {
   socket.on("error", () => socket.destroy());
 }
 
+// Closing a net.Server alone waits for an agent's open Unix connection. Keep the accepted
+// sockets so router shutdown can terminate them without waiting for a stalled tool call.
+const gatewaySockets = new WeakMap();
+
+function closeGatewayServer(server) {
+  server.close();
+  for (const socket of gatewaySockets.get(server) ?? []) socket.destroy();
+}
+
 async function bindSocket(slug, dispatcher, gid) {
   const directory = socketDirectory(slug);
   await fs.mkdir(directory, { recursive: true, mode: 0o750 });
@@ -199,7 +208,13 @@ async function bindSocket(slug, dispatcher, gid) {
   if (gid !== null) await fs.chown(directory, -1, gid);
   const socketPath = path.join(directory, "gateway.sock");
   await fs.rm(socketPath, { force: true });
-  const server = net.createServer((socket) => handleConnection(socket, dispatcher));
+  const clients = new Set();
+  const server = net.createServer((socket) => {
+    clients.add(socket);
+    socket.once("close", () => clients.delete(socket));
+    handleConnection(socket, dispatcher);
+  });
+  gatewaySockets.set(server, clients);
   await new Promise((resolve, reject) => {
     server.once("error", reject);
     server.listen(socketPath, () => {
@@ -307,7 +322,7 @@ export async function startBrowserGateway({ listBrowsers, log = () => {} }) {
     }
     for (const [slug, server] of servers) {
       if (wanted.has(slug)) continue;
-      server.close();
+      closeGatewayServer(server);
       servers.delete(slug);
       dispatchers.delete(slug);
       sessions.drop(slug);
@@ -442,7 +457,7 @@ export async function startBrowserGateway({ listBrowsers, log = () => {} }) {
     home: HOME_SLUG,
     stop() {
       clearInterval(timer);
-      for (const server of servers.values()) server.close();
+      for (const server of servers.values()) closeGatewayServer(server);
     },
   };
 }

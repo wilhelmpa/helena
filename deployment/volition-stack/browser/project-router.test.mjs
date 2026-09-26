@@ -11,6 +11,7 @@ import {
   listProjectBrowsers,
   resolveProjectBrowser,
   setGatewayTasks,
+  shutdownProjectBrowserRouter,
 } from "./project-router.mjs";
 import {
   BrowserLink,
@@ -83,7 +84,7 @@ const BEHIND = "B".repeat(32);
 // cleared after the window changed size meanwhile leaves the page at the size it had when the
 // emulation began, until the window changes size again.
 const CHROME_HEIGHT = 87;
-function fakeBrowser(tabs = [{ id: PAGE, visible: true }], { scale = 2 } = {}) {
+function fakeBrowser(tabs = [{ id: PAGE, visible: true }], { scale = 2, rejectFirstScreencast = false } = {}) {
   const commands = [];
   const connections = new Set();
   let bounds = { left: 0, top: 0, width: 1920, height: 1080, windowState: "normal" };
@@ -172,6 +173,10 @@ function fakeBrowser(tabs = [{ id: PAGE, visible: true }], { scale = 2 } = {}) {
             return reply({ result: { value: visibilityOnly ? visibility : sizes } });
           }
           case "Page.startScreencast":
+            if (rejectFirstScreencast) {
+              rejectFirstScreencast = false;
+              return connection.send(JSON.stringify({ id: message.id, error: { code: -32000, message: "Page is waking" } }));
+            }
             reply();
             return connection.send(
               JSON.stringify({
@@ -439,6 +444,23 @@ describe("project browser router", () => {
     });
     assert.deepEqual(browser.page(), { width: 1920, height: 993, ratio: 2 });
     assert.equal(browser.sent("Emulation.setDeviceMetricsOverride").length, 0);
+  });
+
+  it("recovers a refused first stream on the existing tab without creating another tab", async () => {
+    const browser = fakeBrowser(undefined, { rejectFirstScreencast: true });
+    upstream = browser.server;
+    await state("demo", 16000, await listen(upstream));
+    router = createProjectBrowserRouter({ root });
+    const viewer = new WebSocket(`ws://127.0.0.1:${await listen(router)}/projects/demo/api/screencast`);
+    viewer.binaryType = "arraybuffer";
+    const received = [];
+    viewer.addEventListener("message", (event) => received.push(event.data));
+    viewer.addEventListener("open", () => viewer.send(JSON.stringify({ type: "viewport", width: 800, height: 600, dpr: 1 })));
+    await until(() => received.some((message) => message instanceof ArrayBuffer));
+    assert.ok(browser.sent("Page.startScreencast").length >= 2);
+    assert.equal(browser.sent("Target.createTarget").length, 0);
+    assert.ok(browser.sent("Page.startScreencast").every(({ sessionId }) => sessionId === `S-${PAGE}`));
+    viewer.close();
   });
 
   it("draws a small page sharp until an agent takes hold of a tab, then at a ratio it can click from", async () => {
@@ -711,6 +733,49 @@ describe("project browser router", () => {
     assert.equal(browser.sent("Emulation.clearDeviceMetricsOverride").length, 1);
   });
 
+  it("closes live and desktop WebSockets and their streams on shutdown", async () => {
+    const browser = fakeBrowser();
+    upstream = browser.server;
+    const browserPort = await listen(upstream);
+    await state("demo", browserPort, browserPort);
+    router = createProjectBrowserRouter({ root });
+    const port = await listen(router);
+    const live = new WebSocket(`ws://127.0.0.1:${port}/projects/demo/api/screencast`);
+    const desktop = new WebSocket(`ws://127.0.0.1:${port}/projects/demo/vnc.html`);
+    await Promise.all([live, desktop].map((socket, index) => new Promise((resolve, reject) => {
+      socket.addEventListener("open", resolve, { once: true });
+      socket.addEventListener("error", () => reject(new Error(index === 0 ? "live failed" : "desktop failed")), { once: true });
+    })));
+    live.send(JSON.stringify({ type: "viewport", width: 800, height: 600, dpr: 1 }));
+    await until(() => browser.sent("Page.startScreencast").length > 0);
+    const closed = [live, desktop].map((socket) => new Promise((resolve) => socket.addEventListener("close", resolve, { once: true })));
+    const started = Date.now();
+    assert.equal(await shutdownProjectBrowserRouter(router, { idle: { stop: async () => {} }, timeoutMs: 500 }), true);
+    await Promise.all(closed);
+    assert.ok(Date.now() - started < 500);
+    assert.equal(live.readyState, WebSocket.CLOSED);
+    assert.equal(desktop.readyState, WebSocket.CLOSED);
+    // A second stop is harmless and shares the completed shutdown.
+    assert.equal(await shutdownProjectBrowserRouter(router), true);
+  });
+
+  it("bounds shutdown even when idle wakeup cannot finish and a proxy response hangs", async () => {
+    let pendingRequest = false;
+    upstream = http.createServer(() => { pendingRequest = true; });
+    await state("demo", await listen(upstream));
+    router = createProjectBrowserRouter({ root });
+    const port = await listen(router);
+    const pending = fetch(`http://127.0.0.1:${port}/projects/demo/vnc.html`).catch(() => null);
+    await until(() => pendingRequest);
+    const started = Date.now();
+    assert.equal(await shutdownProjectBrowserRouter(router, {
+      idle: { stop: () => new Promise(() => {}) },
+      timeoutMs: 75,
+    }), false);
+    assert.ok(Date.now() - started < 500);
+    assert.equal(await pending, null);
+  });
+
   it("accepts the live view's WebSocket from the Plan origin only", async () => {
     await state("demo", 16000, 19201);
     router = createProjectBrowserRouter({ root });
@@ -748,6 +813,14 @@ describe("project browser router", () => {
     assert.equal(accepted, false);
     releaseWake();
     assert.equal(await status, 101);
+  });
+
+  it("rejects a stream handshake when an existing page could not be awakened", async () => {
+    await state("demo", 16000, 19201);
+    router = createProjectBrowserRouter({ root, idle: { record() {}, wake: async () => false } });
+    assert.equal(await upgradeStatus(await listen(router), "/projects/demo/api/screencast", {
+      host: "plan.test", origin: "http://plan.test",
+    }), 503);
   });
 
   it("lists the project browsers with a valid state for the window keeper", async () => {
