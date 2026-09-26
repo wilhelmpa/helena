@@ -60,6 +60,7 @@ from isolation_common import (  # noqa: E402
     valid_slug,
     within,
 )
+from helena_previews import OPS as PREVIEW_OPS, Previews, RUNTIME_ROOT, ports  # noqa: E402
 
 FRAME = struct.Struct('>BI')
 # Client → launcher
@@ -94,6 +95,7 @@ REQUEST_KEYS = {
     'remove-project-user': {'v', 'op', 'slug'},
     'release-project-paths': {'v', 'op', 'slug', 'profiles', 'workspace'},
     'browser-state': {'v', 'op', 'action', 'slug', 'projectId', 'eventId'},
+    **PREVIEW_OPS,
 }
 REQUIRED_KEYS = {
     'ping': {'v', 'op'},
@@ -104,6 +106,7 @@ REQUIRED_KEYS = {
     'remove-project-user': {'v', 'op', 'slug'},
     'release-project-paths': {'v', 'op', 'slug'},
     'browser-state': {'v', 'op', 'action', 'slug', 'projectId'},
+    **{op: {'v', 'op', 'slug'} for op in PREVIEW_OPS},
 }
 EVENT_ID = __import__('re').compile(r'^[A-Za-z0-9-]{1,64}$')
 AGENT_RUNTIME = __import__('re').compile(r'^[a-z][a-z0-9-]{0,31}$')
@@ -158,6 +161,7 @@ class Launcher:
         self.lock = asyncio.Lock()
         self.user_lock = asyncio.Lock()
         self.agents_gid = grp.getgrnam(config.agents_group).gr_gid
+        self.previews = Previews(self)
 
     # ── Identity ───────────────────────────────────────────────────────────────────────
 
@@ -229,7 +233,7 @@ class Launcher:
                 caller = pwd.getpwuid(uid).pw_name
             except KeyError:
                 caller = str(uid)
-            if uid != 0 and caller not in self.config.callers:
+            if uid != 0 and caller not in self.config.callers and caller != 'volition-plan':
                 log(f'refused a request from {caller}')
                 raise IsolationError('caller', 'this user may not start agents')
             try:
@@ -243,11 +247,15 @@ class Launcher:
             op = request.get('op') if isinstance(request, dict) else None
             if op not in REQUEST_KEYS or request.get('v') != 1:
                 raise IsolationError('request', 'unknown operation')
+            if caller == 'volition-plan' and op not in PREVIEW_OPS:
+                raise IsolationError('caller', 'The API may only manage project previews')
             keys = set(request)
             if not keys <= REQUEST_KEYS[op] or not REQUIRED_KEYS[op] <= keys:
                 # A property, a user or any other field the protocol does not have.
                 raise IsolationError('request', f'unexpected fields: {sorted(keys - REQUEST_KEYS[op])}')
-            if op == 'ping':
+            if op in PREVIEW_OPS:
+                writer.write(json_frame(T_RESULT, await self.previews.request(request)))
+            elif op == 'ping':
                 writer.write(json_frame(T_RESULT, {'ok': True}))
             elif op == 'run':
                 await self.run(request, reader, writer, caller)
@@ -320,6 +328,10 @@ class Launcher:
             f':{_safe_path(target, "browser gateway target")}'
         )
 
+    def preview_directory(self, slug: str) -> None:
+        os.makedirs(RUNTIME_ROOT, mode=0o755, exist_ok=True)
+        os.makedirs(os.path.join(RUNTIME_ROOT, slug), mode=0o711, exist_ok=True)
+
     def sandbox_properties(
         self,
         slug: str,
@@ -378,6 +390,7 @@ class Launcher:
         gateway_bind = self.browser_gateway_bind(slug)
         if gateway_bind:
             props.append(gateway_bind)
+        props.append(f'BindReadOnlyPaths=-{RUNTIME_ROOT}/{slug}:{RUNTIME_ROOT}')
         for path in rw:
             props.append(f'BindPaths={_safe_path(path, "bind")}')
         for path in ro:
@@ -502,10 +515,14 @@ class Launcher:
         env.update(runtime.env)
         return [f'--setenv={key}={value}' for key, value in env.items()]
 
-    def sandbox_args(self, mode: str, runtime, home: str | None, extra: list[str]) -> list[str]:
+    def sandbox_args(self, mode: str, runtime, home: str | None, extra: list[str], slug: str | None = None) -> list[str]:
         args = [self.config.python, '-I', self.config.sandbox, mode]
         for name, port in self.config.forwards.items():
             args += ['--forward', f'{int(port)}={self.config.sockets[name]}']
+        if slug:
+            account = self.project_account(slug)
+            for port in ports(account.pw_uid, self.config.uid_range[0]):
+                args += ['--forward', f'{port}={RUNTIME_ROOT}/{port}/http.sock']
         if home and runtime is not None:
             for link, target in runtime.profile_links.items():
                 if os.path.lexists(target):
@@ -640,6 +657,7 @@ class Launcher:
     async def run(self, request: dict, reader, writer, caller: str) -> None:
         checked = self.check_run(request)
         slug, account, runtime = checked['slug'], checked['account'], checked['runtime']
+        self.preview_directory(slug)
         unit = unit_name(self.config.unit_prefix, slug, checked['agent_id'], checked['work_kind'],
                          checked['work_id'], secrets.token_hex(6))
         if checked['home']:
@@ -657,7 +675,7 @@ class Launcher:
             *self.base_env(account, home, runtime),
             '--',
             *self.sandbox_args('run', runtime, checked['home'], ['--env-header', '--', runtime.exec,
-                                                                *runtime.fixed_args, *checked['args']]),
+                                                                *runtime.fixed_args, *checked['args']], slug),
         ]
         await self.reserve(slug)
         try:
@@ -786,6 +804,7 @@ class Launcher:
         if not self.owned_directory(workspace, account.pw_uid):
             raise IsolationError('workspace', 'the workspace is missing or not owned by the project')
         directory = self.terminal_runtime_dir(slug, account)
+        self.preview_directory(slug)
         socket_path = os.path.join(directory, 'tmux.sock')
         unit = f'{self.config.terminal_prefix}{slug}.service'
         if await self.systemctl('is-active', '--quiet', unit, timeout=15) == 0:
@@ -806,7 +825,7 @@ class Launcher:
             '--setenv=LANG=C.UTF-8', '--setenv=TERM=xterm-256color', '--setenv=VOLITION_AGENT_SANDBOX=1',
             '--',
             *self.sandbox_args('terminal-server', None, None,
-                               ['--socket', socket_path, '--conf', self.config.tmux_conf]),
+                               ['--socket', socket_path, '--conf', self.config.tmux_conf], slug),
         ]
         process = await asyncio.create_subprocess_exec(
             *command, stdin=asyncio.subprocess.DEVNULL, stdout=asyncio.subprocess.DEVNULL,
@@ -1177,8 +1196,9 @@ class Launcher:
         return {'user': name, 'uid': account.pw_uid, 'created': created, 'granted': done}
 
     async def stop_project_units(self, slug: str) -> None:
-        """Stops a project's terminal and every agent unit it has running."""
+        """Stops a project's previews, terminal and agent units before provisioning releases it."""
         config = self.config
+        await self.previews.stop_project(slug)
         await self.systemctl('stop', f'{config.terminal_prefix}{slug}.service', timeout=60)
         units = await asyncio.create_subprocess_exec(
             config.systemctl, 'list-units', '--plain', '--no-legend', '--all',
@@ -1357,6 +1377,7 @@ class Launcher:
 async def serve(config: Config) -> None:
     launcher = Launcher(config)
     await launcher.stop_orphans()
+    preview_task = asyncio.create_task(launcher.previews.reconcile())
     listen_fds = int(os.environ.get('LISTEN_FDS', '0') or 0)
     if listen_fds >= 1 and os.environ.get('LISTEN_PID') == str(os.getpid()):
         sock = socket.socket(fileno=3)
@@ -1380,6 +1401,10 @@ async def serve(config: Config) -> None:
         loop.add_signal_handler(signum, stop.set)
     async with server:
         await stop.wait()
+    preview_task.cancel()
+    await asyncio.gather(preview_task, return_exceptions=True)
+    for port in list(launcher.previews.servers):
+        await launcher.previews.close_listener(port)
 
 
 def main() -> int:

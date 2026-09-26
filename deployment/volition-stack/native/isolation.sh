@@ -56,6 +56,10 @@ ensure_accounts() {
     say "add volition-hermes to volition-launcher (it may start agents through the launcher)"
     run usermod -aG volition-launcher volition-hermes
   fi
+  if ! id -nG volition-plan | tr ' ' '\n' | grep -qx volition-launcher; then
+    say "allow the API to manage previews through the launcher"
+    run usermod -aG volition-launcher volition-plan
+  fi
   if ! getent passwd volition-egress >/dev/null; then
     say "create system user volition-egress"
     run useradd --system --user-group --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin \
@@ -74,7 +78,7 @@ install_file() { # mode source target
 install_code() {
   ((dry_run)) || install -d -m 0755 "$lib" "$lib/browser"
   for file in isolation_common.py launcher.py sandbox.py egress.py plan_proxy.py launch_client.py migrate.py \
-    runtime_modes.py; do
+    runtime_modes.py helena_previews.py helena_preview_worker.py helena_preview_firewall.py; do
     install_file 0644 "$source_dir/$file" "$lib/$file"
   done
   install_file 0644 "$source_dir/launcher.json" "$lib/launcher.json"
@@ -265,10 +269,10 @@ case $command in
     install_units
     ;;
   sync)
-    # What deploy.sh runs: keeps an installed isolation's code and units current and the
-    # agents' runtime code readable for them. It installs nothing new, migrates nothing and
-    # restarts no agent; `apply` does that.
+    # Deploy refreshes isolation code and grants the API preview-only launcher access.
+    # Running agent units are left to the deploy's in-flight gate.
     [[ -f $lib/launcher.py ]] || exit 0
+    ensure_accounts
     install_code
     open_shared_code
     install_units

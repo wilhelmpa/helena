@@ -657,6 +657,7 @@ class CredentialTargetTest(LauncherRequestTest):
             self.assertTrue((self.home / '.codex').is_dir())  # there before systemd-run
             started.append(command)
         self.worker.stream = stream
+        self.worker.preview_directory = lambda slug: None
         self.worker.lock = asyncio.Lock()
         self.worker.active, self.worker.total = {}, 0
         request = {**self.base, 'runtime': 'profile-helper', 'args': [], 'agentRuntime': 'codex',
