@@ -123,7 +123,7 @@ server {
         proxy_send_timeout 3600s;
         proxy_buffering off;
     }
-    location ~ ^/focus/owner-terminal/(shell|claude|codex|helena-dev-claude|helena-dev-codex)/ {
+    location ~ ^/focus/owner-terminal/(shell|claude|codex|helena-dev-claude|helena-dev-codex|local-qwen36|local-qwen38)/ {
         if ($helena_tunnel_origin_ok = 0) { return 403; }
         set $owner_terminal_kind $1;
         auth_request /_owner_terminal_auth;
@@ -135,6 +135,10 @@ server {
         proxy_read_timeout 3600s;
         proxy_send_timeout 3600s;
         proxy_buffering off;
+    }
+    # Local Codex capabilities are reachable only through the loopback API.
+    location ~ ^/(backend/|api/)?owner-terminal/local/ {
+        return 404;
     }
     location /backend/ {
         include /etc/nginx/snippets/helena-tunnel-headers.conf;
