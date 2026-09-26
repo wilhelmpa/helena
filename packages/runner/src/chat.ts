@@ -6,7 +6,7 @@ import { LoginUseReader } from './logins';
 import type { HermesRunSettings } from './policy';
 import { SpendReader } from './spend';
 import { observeLimits } from './limits/context';
-import { runRedactor, withInstructions } from './run';
+import { reportUntilTaken, runRedactor, withInstructions } from './run';
 import { runModelReport, type RuntimeAdapter } from './runtime';
 import { SecretMask } from '@helena/sdk';
 
@@ -39,6 +39,7 @@ export async function answer(
 ): Promise<void> {
   // Reported once: repeating it on every batch is a field the server has to ignore.
   let reported = message.sessionId !== null;
+  let offset = 0;
   // The values handed to the command (the agent's key, its MCP secrets, the variables
   // delivered for this answer) never reach the chat.
   const mask = new SecretMask(
@@ -50,12 +51,26 @@ export async function answer(
     String(message.id),
     async (events) => {
       const started = reported ? undefined : (stream.startedSession() ?? undefined);
+      await reportUntilTaken(async () => {
+        stop.signal.throwIfAborted();
+        if (
+          await client.chatEvents(
+            message.id,
+            events,
+            started,
+            message.attempts === undefined ? undefined : { claim: message.attempts, offset },
+          )
+        )
+          stop.abort();
+      }, stop.signal);
+      if (stop.signal.aborted) return;
       if (started) reported = true;
-      if (await client.chatEvents(message.id, events, started)) stop.abort();
+      offset += events.length;
     },
     mask,
+    200,
   );
-  // A flush that fails is not fatal: the next one carries what it left behind.
+  // Reporting waits through a short API outage while the command keeps running.
   const flushing = setInterval(() => {
     void stream.flush().catch(() => {});
   }, FLUSH_MS);
@@ -120,12 +135,17 @@ export async function answer(
     outcome.sessionId ?? stream.startedSession() ?? message.sessionId ?? undefined,
     stream.model(),
   );
+  const report = (result: Parameters<Client['chatResult']>[1]) =>
+    reportUntilTaken(async () => {
+      stop.signal.throwIfAborted();
+      await client.chatResult(message.id, result, message.attempts);
+    }, stop.signal);
   // The context size is read after the stream is closed, which is where the last line of
   // the output is parsed. An answer that failed reports it too: what the command read
   // before it broke is still the size of its session's context.
   if (outcome.status === 'success') {
     await stream.finish(outcome.output);
-    await client.chatResult(message.id, {
+    await report({
       status: 'success',
       usage: stream.contextUsage(),
       spend: spent,
@@ -138,7 +158,7 @@ export async function answer(
   // The server unbinds the session and queues the answer again, with the conversation
   // framed into its prompt, so the person sees no failure for it.
   if (message.sessionId !== null && presetOf(config)?.sessionLost?.(error)) {
-    await client.chatResult(message.id, {
+    await report({
       status: 'failed',
       error,
       sessionLost: true,
@@ -148,7 +168,7 @@ export async function answer(
   }
   // The code lets the chat word a known failure in the reader's language.
   await stream.fail(error, outcome.output, outcome.failure?.code);
-  await client.chatResult(message.id, {
+  await report({
     status: 'failed',
     error,
     usage: stream.contextUsage(),

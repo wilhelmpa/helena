@@ -8,7 +8,20 @@ import {
   aiAgent,
   user,
 } from '@repo/db';
-import { and, asc, desc, eq, gt, inArray, isNotNull, isNull, notExists, sql } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gt,
+  inArray,
+  isNotNull,
+  isNull,
+  notExists,
+  sql,
+} from 'drizzle-orm';
+import { isDeepStrictEqual } from 'node:util';
 import type { AutopilotLevel } from '@helena/policy';
 import { resolveLevel } from '#modules/autopilot/levels';
 import { assertProjectNotHeld } from '#modules/autopilot/service';
@@ -1352,11 +1365,12 @@ function leaseUntil() {
 }
 
 // The answer a runner call addresses: this agent's, and not finished yet.
-function liveAnswer(agentId: number, messageId: number) {
+function liveAnswer(agentId: number, messageId: number, claim?: number) {
   return and(
     eq(agentChatMessage.id, messageId),
     eq(agentChatMessage.agentId, agentId),
     inArray(agentChatMessage.status, LIVE_STATUSES),
+    claim === undefined ? undefined : eq(agentChatMessage.attempts, claim),
   );
 }
 
@@ -1378,8 +1392,46 @@ export async function appendEvents(
   messageId: number,
   events: AgUiEventBody[],
   sessionId?: string,
+  delivery?: { claim: number; offset: number },
 ): Promise<ChatAck | null> {
   const stored = await db.transaction(async (tx) => {
+    if (delivery) {
+      const [held] = await tx
+        .select({ sessionId: agentChatMessage.sessionId })
+        .from(agentChatMessage)
+        .where(liveAnswer(agentId, messageId, delivery.claim))
+        .for('update');
+      if (!held) return false;
+      if (sessionId && held.sessionId && sessionId !== held.sessionId)
+        throw new HttpError(409, 'Chat session does not match the claim');
+      const [size] = await tx
+        .select({ value: count() })
+        .from(agentChatEvent)
+        .where(eq(agentChatEvent.messageId, messageId));
+      if (delivery.offset !== size!.value) {
+        if (delivery.offset + events.length > size!.value)
+          throw new HttpError(409, 'Chat event offset does not match');
+        const previous = await tx
+          .select({ payload: agentChatEvent.payload })
+          .from(agentChatEvent)
+          .where(eq(agentChatEvent.messageId, messageId))
+          .orderBy(asc(agentChatEvent.id))
+          .offset(delivery.offset)
+          .limit(events.length);
+        if (
+          !isDeepStrictEqual(
+            previous.map((row) => row.payload),
+            events,
+          )
+        )
+          throw new HttpError(409, 'Chat event replay does not match');
+        await tx
+          .update(agentChatMessage)
+          .set({ nextAttemptAt: leaseUntil() })
+          .where(liveAnswer(agentId, messageId, delivery.claim));
+        return true;
+      }
+    }
     const claimed = await tx
       .update(agentChatMessage)
       .set({
@@ -1387,7 +1439,7 @@ export async function appendEvents(
         nextAttemptAt: leaseUntil(),
         ...(sessionId && { sessionId: sql`coalesce(${agentChatMessage.sessionId}, ${sessionId})` }),
       })
-      .where(liveAnswer(agentId, messageId))
+      .where(liveAnswer(agentId, messageId, delivery?.claim))
       .returning({ threadId: agentChatMessage.threadId });
     if (!claimed[0]) return false;
 
@@ -1420,12 +1472,13 @@ function textOf(events: AgUiEventBody[]): string {
 export async function heartbeatMessage(
   agentId: number,
   messageId: number,
+  claim?: number,
 ): Promise<ChatAck | null> {
   await touchRunner(agentId);
   const rows = await db
     .update(agentChatMessage)
     .set({ nextAttemptAt: leaseUntil() })
-    .where(liveAnswer(agentId, messageId))
+    .where(liveAnswer(agentId, messageId, claim))
     .returning({ id: agentChatMessage.id });
   if (rows.length > 0) return { canceled: false };
   return (await wasCanceled(agentId, messageId)) ? { canceled: true } : null;
@@ -1479,6 +1532,7 @@ export async function finishMessage(
   },
   // The runtime the agent runs on, which a finding about its model is recorded under.
   runtime = 'hermes',
+  claim?: number,
 ): Promise<boolean> {
   await touchRunner(agentId);
   // A fallback the claim recorded (local AI off, its server not answering) is kept.
@@ -1492,7 +1546,7 @@ export async function finishMessage(
   // What the session really ran on wins over what the command named on its first line.
   const model = result.runtime?.used?.model ?? result.model;
   if (result.status === 'failed' && result.sessionLost)
-    return requeueWithoutSession(agentId, messageId);
+    return requeueWithoutSession(agentId, messageId, claim);
   const rows = await db
     .update(agentChatMessage)
     .set({
@@ -1508,7 +1562,7 @@ export async function finishMessage(
         outputTokens: result.usage.outputTokens,
       }),
     })
-    .where(liveAnswer(agentId, messageId))
+    .where(liveAnswer(agentId, messageId, claim))
     .returning({
       id: agentChatMessage.id,
       threadId: agentChatMessage.threadId,
@@ -1563,6 +1617,20 @@ export async function finishMessage(
     await enforceBudgets(agentId, thread?.projectId ?? null, null);
     return true;
   }
+  if (claim !== undefined) {
+    const [finished] = await db
+      .select({ id: agentChatMessage.id })
+      .from(agentChatMessage)
+      .where(
+        and(
+          eq(agentChatMessage.id, messageId),
+          eq(agentChatMessage.agentId, agentId),
+          eq(agentChatMessage.attempts, claim),
+          eq(agentChatMessage.status, result.status),
+        ),
+      );
+    if (finished) return true;
+  }
   // Stopped from the chat while the command was ending: the answer is already closed,
   // so there is nothing to record and nothing wrong.
   return wasCanceled(agentId, messageId);
@@ -1572,16 +1640,21 @@ export async function finishMessage(
 // is unbound and the answer handed out again at once, so the next claim sends the
 // conversation to a fresh session. The attempts it already used still count, which ends
 // a thread whose runner keeps failing.
-async function requeueWithoutSession(agentId: number, messageId: number): Promise<boolean> {
+async function requeueWithoutSession(
+  agentId: number,
+  messageId: number,
+  claim?: number,
+): Promise<boolean> {
   return db.transaction(async (tx) => {
     const [lost] = await tx
       .select({ sessionId: agentChatMessage.sessionId })
       .from(agentChatMessage)
-      .where(liveAnswer(agentId, messageId));
+      .where(liveAnswer(agentId, messageId, claim))
+      .for('update');
     const rows = await tx
       .update(agentChatMessage)
       .set({ status: 'pending', nextAttemptAt: new Date() })
-      .where(liveAnswer(agentId, messageId))
+      .where(liveAnswer(agentId, messageId, claim))
       .returning({ threadId: agentChatMessage.threadId });
     if (rows.length === 0) return wasCanceled(agentId, messageId);
     const threadId = rows[0].threadId;

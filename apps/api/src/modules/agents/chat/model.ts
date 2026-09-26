@@ -342,6 +342,9 @@ export const ClaimChatResponse = t.Object({
 
 export const chatEventsBody = t.Object({
   events: t.Array(AgUiEvent, { minItems: 1, maxItems: 200 }),
+  delivery: t.Optional(
+    t.Object({ claim: t.Integer({ minimum: 1 }), offset: t.Integer({ minimum: 0 }) }),
+  ),
   sessionId: t.Optional(
     t.String({
       maxLength: 200,
@@ -351,6 +354,8 @@ export const chatEventsBody = t.Object({
     }),
   ),
 });
+
+export const chatClaimQuery = t.Object({ claim: t.Optional(t.Numeric({ minimum: 1 })) });
 
 // `usage` is the size of the context this answer left behind. A null one is shown as a
 // dash in the chat.

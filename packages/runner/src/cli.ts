@@ -301,7 +301,7 @@ async function handleChat(
     await withHeartbeat(
       log,
       async () => {
-        if (await client.chatHeartbeat(message.id)) stop.abort();
+        if (await client.chatHeartbeat(message.id, message.attempts)) stop.abort();
       },
       answer(config, client, message, stop, hermes, policy),
     );
@@ -311,7 +311,9 @@ async function handleChat(
     if (!stop.signal.aborted) {
       const text = err instanceof Error ? err.message : String(err);
       log(`chat ${message.id}: runner error — ${text}`);
-      await client.chatResult(message.id, { status: 'failed', error: text }).catch(() => {});
+      await client
+        .chatResult(message.id, { status: 'failed', error: text }, message.attempts)
+        .catch(() => {});
       return;
     }
   }

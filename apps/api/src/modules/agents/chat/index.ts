@@ -29,6 +29,7 @@ import {
   agentParams,
   projectAgentParams,
   chatEventsBody,
+  chatClaimQuery,
   chatCatalogBody,
   chatEventsQuery,
   chatMessageParams,
@@ -676,7 +677,13 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
     '/agent-chats/:messageId/events',
     async ({ agent, params, body }) => {
       const events = await maskForTeam(agent.teamId, body.events);
-      const ack = await appendEvents(agent.id, params.messageId, events, body.sessionId);
+      const ack = await appendEvents(
+        agent.id,
+        params.messageId,
+        events,
+        body.sessionId,
+        body.delivery,
+      );
       if (!ack) throw new HttpError(404, 'Message not found');
       return ack;
     },
@@ -684,7 +691,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
       runnerAgent: true,
       params: runnerMessageParams,
       body: chatEventsBody,
-      response: { 200: ChatAckResponse, ...commonErrors },
+      response: { 200: ChatAckResponse, ...commonErrors, ...errors(409) },
       detail: {
         summary: 'Report answer events',
         description:
@@ -698,14 +705,15 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
 
   .post(
     '/agent-chats/:messageId/heartbeat',
-    async ({ agent, params }) => {
-      const ack = await heartbeatMessage(agent.id, params.messageId);
+    async ({ agent, params, query }) => {
+      const ack = await heartbeatMessage(agent.id, params.messageId, query.claim);
       if (!ack) throw new HttpError(404, 'Message not found');
       return ack;
     },
     {
       runnerAgent: true,
       params: runnerMessageParams,
+      query: chatClaimQuery,
       response: { 200: ChatAckResponse, ...commonErrors },
       detail: {
         summary: 'Extend an answer lease',
@@ -719,9 +727,15 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
 
   .post(
     '/agent-chats/:messageId/result',
-    async ({ agent, params, body }) => {
+    async ({ agent, params, body, query }) => {
       const result = await maskForTeam(agent.teamId, body);
-      const ok = await finishMessage(agent.id, params.messageId, result, agent.runtime);
+      const ok = await finishMessage(
+        agent.id,
+        params.messageId,
+        result,
+        agent.runtime,
+        query.claim,
+      );
       if (!ok) throw new HttpError(404, 'Message not found');
       return noContent();
     },
@@ -729,6 +743,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
       runnerAgent: true,
       params: runnerMessageParams,
       body: chatResultBody,
+      query: chatClaimQuery,
       response: { 204: t.Void(), ...commonErrors },
       detail: {
         summary: 'Finish an answer',

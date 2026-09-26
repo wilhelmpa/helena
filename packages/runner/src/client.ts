@@ -55,6 +55,7 @@ export interface Run {
 // there means no session yet: start one and report the id it got.
 export interface ChatMessage {
   id: number;
+  attempts?: number;
   threadId: string;
   prompt: string;
   systemPrompt: string;
@@ -400,18 +401,25 @@ export class Client {
   // `sessionId` binds the thread to that session for every later message in it. True
   // when the member stopped the answer: the server has no connection to this machine, so
   // the stop is returned on the calls the runner already makes.
-  async chatEvents(messageId: number, events: AgUiEvent[], sessionId?: string): Promise<boolean> {
-    const res = await this.post(`/agent-chats/${messageId}/events`, {
-      events,
-      ...(sessionId && { sessionId }),
-    });
-    return canceled(res);
+  async chatEvents(
+    messageId: number,
+    events: AgUiEvent[],
+    sessionId?: string,
+    delivery?: { claim: number; offset: number },
+  ): Promise<boolean> {
+    return gone(() =>
+      this.post(`/agent-chats/${messageId}/events`, {
+        events,
+        ...(sessionId && { sessionId }),
+        ...(delivery && { delivery }),
+      }),
+    );
   }
 
   // True when the member stopped the answer. This is how a command that is writing
   // nothing learns of the stop.
-  async chatHeartbeat(messageId: number): Promise<boolean> {
-    return gone(() => this.post(`/agent-chats/${messageId}/heartbeat`));
+  async chatHeartbeat(messageId: number, claim?: number): Promise<boolean> {
+    return gone(() => this.post(`/agent-chats/${messageId}/heartbeat${claimQuery(claim)}`));
   }
 
   // `usage` is the size of the context the answer left behind. Left out where the
@@ -428,8 +436,9 @@ export class Client {
       runtime?: RunModelReport;
       failure?: RuntimeFailure;
     },
+    claim?: number,
   ): Promise<void> {
-    await this.post(`/agent-chats/${messageId}/result`, result);
+    await this.post(`/agent-chats/${messageId}/result${claimQuery(claim)}`, result);
   }
 }
 

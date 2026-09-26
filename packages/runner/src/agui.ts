@@ -108,6 +108,7 @@ export class AnswerStream {
     private readonly runId: string,
     private readonly send: (events: AgUiEvent[]) => Promise<void>,
     private readonly mask: SecretMask = new SecretMask(),
+    private readonly batchSize = Infinity,
   ) {
     this.textMask = mask.stream();
     this.thinkingMask = mask.stream();
@@ -158,14 +159,14 @@ export class AnswerStream {
 
   private async sendQueued(): Promise<void> {
     this.drainText();
-    if (this.queued.length === 0) return;
-    const batch = this.queued;
-    this.queued = [];
-    try {
-      await this.send(batch);
-    } catch (err) {
-      this.queued.unshift(...batch);
-      throw err;
+    while (this.queued.length > 0) {
+      const batch = this.queued.splice(0, this.batchSize);
+      try {
+        await this.send(batch);
+      } catch (err) {
+        this.queued.unshift(...batch);
+        throw err;
+      }
     }
   }
 
