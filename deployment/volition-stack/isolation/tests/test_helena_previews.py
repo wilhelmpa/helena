@@ -280,6 +280,99 @@ class PreviewIOTest(unittest.IsolatedAsyncioTestCase):
             for signum in (signal.SIGINT, signal.SIGTERM):
                 asyncio.get_running_loop().remove_signal_handler(signum)
 
+    async def test_stop_closes_open_websocket_before_waiting_for_server_shutdown(self):
+        with socket.socket() as probe:
+            probe.bind(('127.0.0.1', 0))
+            port = probe.getsockname()[1]
+        script = '''
+import asyncio, sys
+async def connection(reader, writer):
+    request = await reader.readuntil(b'\\r\\n\\r\\n')
+    if b'Upgrade: websocket' in request:
+        writer.write(b'HTTP/1.1 101 Switching Protocols\\r\\n\\r\\n')
+        await writer.drain()
+        await reader.read()
+    else:
+        writer.write(b'HTTP/1.1 200 OK\\r\\nContent-Length: 0\\r\\n\\r\\n')
+        await writer.drain()
+    writer.close()
+async def main():
+    server = await asyncio.start_server(connection, '127.0.0.1', int(sys.argv[1]))
+    await server.serve_forever()
+asyncio.run(main())
+'''
+        supervisor = worker.Supervisor(str(self.root), port, 60, [sys.executable, '-c', script, str(port)])
+        task = asyncio.create_task(supervisor.run())
+        writer = None
+        try:
+            for _ in range(100):
+                if supervisor.state['status'] == 'running':
+                    break
+                await asyncio.sleep(.05)
+            self.assertEqual(supervisor.state['status'], 'running')
+            reader, writer = await asyncio.open_unix_connection(str(self.root / 'http.sock'))
+            writer.write(b'GET / HTTP/1.1\r\nUpgrade: websocket\r\n\r\n')
+            await writer.drain()
+            self.assertIn(b'101', await asyncio.wait_for(reader.readuntil(b'\r\n\r\n'), 2))
+            supervisor.stop.set()
+            self.assertEqual(await asyncio.wait_for(asyncio.shield(task), 2), 0)
+            self.assertEqual(await asyncio.wait_for(reader.read(), 1), b'')
+            self.assertEqual(supervisor.state['status'], 'stopped')
+            self.assertFalse(supervisor.connections)
+            self.assertFalse((self.root / 'http.sock').exists())
+        finally:
+            if writer:
+                writer.close()
+                await writer.wait_closed()
+            supervisor.stop.set()
+            await asyncio.wait_for(task, 10)
+            for signum in (signal.SIGINT, signal.SIGTERM):
+                asyncio.get_running_loop().remove_signal_handler(signum)
+
+    @unittest.skipUnless(hasattr(socket, 'SO_PEERCRED'), 'Linux peer credentials')
+    async def test_listener_stop_closes_only_its_own_open_connections(self):
+        async def echo(reader, writer):
+            try:
+                while data := await reader.read(4096):
+                    writer.write(data)
+                    await writer.drain()
+            finally:
+                writer.close()
+        manager = previews.Previews(types.SimpleNamespace(
+            config=types.SimpleNamespace(),
+            project_account=lambda _slug: types.SimpleNamespace(pw_uid=os.getuid())))
+        manager.runtime = self.root
+        clients, upstreams = [], []
+        try:
+            for port in (24000, 24008):
+                directory = self.root / 'vol' / str(port)
+                directory.mkdir(parents=True)
+                upstreams.append(await asyncio.start_unix_server(echo, str(directory / 'http.sock')))
+                preview = {'slug': 'vol', 'port': port}
+                server = await asyncio.start_server(
+                    lambda r, w, value=preview: manager.connection(value, r, w), '127.0.0.1', 0)
+                manager.servers[port] = server
+                reader, writer = await asyncio.open_connection('127.0.0.1', server.sockets[0].getsockname()[1])
+                clients.append((reader, writer))
+                writer.write(b'open')
+                await writer.drain()
+                self.assertEqual(await asyncio.wait_for(reader.readexactly(4), 1), b'open')
+            await asyncio.wait_for(manager.close_listener(24000), 1)
+            self.assertEqual(await asyncio.wait_for(clients[0][0].read(), 1), b'')
+            self.assertEqual(manager.connections, 1)
+            clients[1][1].write(b'alive')
+            await clients[1][1].drain()
+            self.assertEqual(await asyncio.wait_for(clients[1][0].readexactly(5), 1), b'alive')
+        finally:
+            for _, writer in clients:
+                writer.close()
+                await writer.wait_closed()
+            for port in tuple(manager.servers):
+                await manager.close_listener(port)
+            for server in upstreams:
+                server.close()
+                await server.wait_closed()
+
     async def test_second_start_waits_for_the_first_start_readiness(self):
         launcher = types.SimpleNamespace(config=types.SimpleNamespace())
         manager = previews.Previews(launcher)

@@ -161,6 +161,8 @@ class Previews:
         self.locks: dict[str, asyncio.Lock] = {}
         self.firewall_signature = None
         self.connections = 0
+        self.connection_tasks: dict[int, set[asyncio.Task]] = {}
+        self.closing_ports: set[int] = set()
         self.listener_lock = asyncio.Lock()
 
     def metadata(self, slug: str) -> list[dict]:
@@ -324,10 +326,13 @@ class Previews:
         os.chown(directory, account.pw_uid, account.pw_gid)
 
     async def connection(self, preview, reader, writer) -> None:
-        if self.connections >= 256:
+        if self.connections >= 256 or preview['port'] in self.closing_ports:
             writer.close()
             return
         self.connections += 1
+        task = asyncio.current_task()
+        active = self.connection_tasks.setdefault(preview['port'], set())
+        active.add(task)
         upstream = None
         try:
             remote, upstream = await asyncio.wait_for(
@@ -343,6 +348,7 @@ class Previews:
             pass
         finally:
             self.connections -= 1
+            active.discard(task)
             writer.close()
             if upstream:
                 upstream.close()
@@ -352,14 +358,21 @@ class Previews:
             if preview['port'] in self.servers:
                 return
             await self.firewall()
+            self.closing_ports.discard(preview['port'])
             self.servers[preview['port']] = await asyncio.start_server(
                 lambda r, w: self.connection(preview, r, w), '127.0.0.1', preview['port'])
 
     async def close_listener(self, port: int) -> None:
         async with self.listener_lock:
+            self.closing_ports.add(port)
             server = self.servers.pop(port, None)
             if server:
                 server.close()
+            connections = tuple(self.connection_tasks.pop(port, ()))
+            for task in connections:
+                task.cancel()
+            await asyncio.gather(*connections, return_exceptions=True)
+            if server:
                 await server.wait_closed()
 
     async def firewall(self) -> None:

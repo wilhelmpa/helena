@@ -62,6 +62,7 @@ class Supervisor:
         self.lines: deque[str] = deque(maxlen=200)
         self.state = {'status': 'starting', 'startedAt': now(), 'lastActivityAt': now()}
         self.stop = asyncio.Event()
+        self.connections: set[asyncio.Task] = set()
 
     def touch(self) -> None:
         self.state['lastActivityAt'] = now()
@@ -94,6 +95,11 @@ class Supervisor:
             self.lines.append(clean_line(pending.decode(errors='replace')))
 
     async def connection(self, reader, writer) -> None:
+        if self.stop.is_set():
+            writer.close()
+            return
+        task = asyncio.current_task()
+        self.connections.add(task)
         upstream = None
         try:
             remote, upstream = await asyncio.open_connection('127.0.0.1', self.port)
@@ -102,6 +108,7 @@ class Supervisor:
         except (OSError, ConnectionError):
             pass
         finally:
+            self.connections.discard(task)
             writer.close()
             if upstream:
                 upstream.close()
@@ -147,7 +154,12 @@ class Supervisor:
                 except asyncio.TimeoutError:
                     pass
         finally:
+            self.stop.set()
             server.close()
+            connections = tuple(self.connections)
+            for task in connections:
+                task.cancel()
+            await asyncio.gather(*connections, return_exceptions=True)
             await server.wait_closed()
             if process.returncode is None:
                 os.killpg(process.pid, signal.SIGTERM)
