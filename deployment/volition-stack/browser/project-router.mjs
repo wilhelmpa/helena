@@ -9,6 +9,7 @@ import {
   readJsonBody,
   startWindowKeeper,
 } from "./project-browser-control.mjs";
+import { BrowserIdle } from "./project-browser-idle.mjs";
 import {
   joinScreencast,
   noteViewerAction,
@@ -290,7 +291,7 @@ function refuse(socket, status) {
 }
 
 // api/screencast is the live view's WebSocket; every other WebSocket is the display's.
-async function handleUpgrade(root, request, socket, head) {
+async function handleUpgrade(root, request, socket, head, idle) {
   // Node leaves an upgraded socket without an error listener, and an unhandled error ends
   // the process.
   socket.on("error", () => socket.destroy());
@@ -303,10 +304,14 @@ async function handleUpgrade(root, request, socket, head) {
   if (target.api !== null) {
     if (target.api !== "screencast") return refuse(socket, "404 Not Found");
     if (!isSameOrigin(request)) return refuse(socket, "403 Forbidden");
-    acceptWebSocket(request, socket, head, (connection) => joinScreencast(target.cdpPort, target.display, connection));
+    acceptWebSocket(request, socket, head, (connection) => {
+      idle?.view(target.slug, target.cdpPort, connection);
+      joinScreencast(target.cdpPort, target.display, connection);
+    });
     return;
   }
   watchDesktop(target.cdpPort, socket);
+  idle?.view(target.slug, target.cdpPort, socket);
   const upstream = net.connect({ host: "127.0.0.1", port: target.port }, () => {
     const headers = Object.entries(request.headers)
       .filter(
@@ -334,7 +339,12 @@ export function createProjectBrowserRouter(options = {}) {
         return sendJson(response, 200, { browsers: await browserOverview(await listProjectBrowsers(root)) });
       }
       const target = await resolveProjectBrowser(root, request.url || "/");
-      if (target.api !== null) return await handleControl(request, response, target);
+      if (target.api !== null) {
+        if (request.method === "POST" && target.api !== "bookmarks" && target.api !== "viewport") {
+          await options.idle?.wake(target.slug);
+        }
+        return await handleControl(request, response, target);
+      }
       if (request.method !== "GET" && request.method !== "HEAD") throw new Error("Method denied");
       const upstream = http.request(
         {
@@ -364,7 +374,7 @@ export function createProjectBrowserRouter(options = {}) {
       response.end("Browser unavailable");
     }
   });
-  server.on("upgrade", (request, socket, head) => void handleUpgrade(root, request, socket, head));
+  server.on("upgrade", (request, socket, head) => void handleUpgrade(root, request, socket, head, options.idle));
   return server;
 }
 
@@ -372,7 +382,12 @@ if (import.meta.main) {
   const port = Number(process.env.PROJECT_BROWSER_ROUTER_PORT || 6082);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("Invalid router port");
   const root = process.env.PROJECT_BROWSER_ROOT || "/var/lib/volition/project-browser/projects";
-  const server = createProjectBrowserRouter({ root });
+  const idle = new BrowserIdle({
+    listBrowsers: () => listProjectBrowsers(root),
+    log: (message) => console.error(message),
+  });
+  idle.start();
+  const server = createProjectBrowserRouter({ root, idle });
   const stopKeeper = startWindowKeeper({
     listBrowsers: () => listProjectBrowsers(root),
     log: (message) => console.log(message),
@@ -394,6 +409,7 @@ if (import.meta.main) {
         gateway = started;
         setGatewayLocks(started.locks);
         setGatewayTasks(started.tasks);
+        started.locks.onChange((slug, state) => idle.lock(slug, state.holder));
         console.log("browser gateway: started");
       })
       .catch((error) => console.error("browser gateway did not start:", error));
@@ -404,6 +420,6 @@ if (import.meta.main) {
   process.on("SIGTERM", () => {
     stopKeeper();
     gateway?.stop();
-    server.close(() => process.exit(0));
+    void idle.stop().finally(() => server.close(() => process.exit(0)));
   });
 }
