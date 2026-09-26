@@ -7,6 +7,7 @@ import { getSessionFromHeaders } from '@repo/auth';
 import { HttpError } from '#shared/lib';
 import { HOME_SLUG } from '#shared/agent-socket';
 import { isHomeAgent } from '#modules/agents/core/home-agent';
+import { getProjectPreviewOrigins } from '#modules/project-previews/service';
 import { getRunnerAgent, type RunnerAgent } from '../agents/runner/service';
 import { loginCode, loginForOrigin } from './credentials';
 import {
@@ -226,10 +227,11 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
     route(async (body) => {
       const agent = await requireAgent(body);
       const { project } = await authorizeTarget(agent, body.projectSlug, body.via);
-      const [enabled, settings, control] = await Promise.all([
+      const [enabled, settings, control, previewOrigins] = await Promise.all([
         browserGatewayEnabledForAgent(agent.id, agent.teamId),
         project ? getBrowserGatewaySettings(project.id) : { ...DEFAULT_BROWSER_GATEWAY_SETTINGS },
         effectiveBrowserControl({ teamId: agent.teamId, projectId: project?.id ?? null }),
+        project ? getProjectPreviewOrigins(project.key) : [],
       ]);
       const lab =
         typeof body.agentKey === 'string' && body.agentKey.startsWith('lab:')
@@ -242,7 +244,7 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
         projectId: project?.id ?? null,
         projectKey: project?.key ?? null,
         browserGatewayEnabled: enabled,
-        settings,
+        settings: { ...settings, previewOrigins },
         // A Browser 2.0 run tests the connection the owner picked, whatever the project's
         // own setting says.
         browserTask: lab

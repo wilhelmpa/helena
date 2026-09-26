@@ -6,6 +6,7 @@ import { HttpError } from '#shared/lib';
 import { getProjectSetting, setProjectSetting } from '#shared/project-settings';
 import { HOME_SLUG, projectSlug } from '#shared/agent-socket';
 import { listProjects } from '#modules/projects/service';
+import { getProjectPreviewOrigins } from '#modules/project-previews/service';
 import {
   BROWSER_GATEWAY_MCP_SERVER_NAME,
   agentMcpServerIds,
@@ -132,6 +133,7 @@ export function hostAllowed(settings: BrowserGatewaySettings, host: string): boo
 
 export interface BrowserGatewayPolicyEntry extends BrowserGatewaySettings {
   projectId: number;
+  previewOrigins: string[];
 }
 
 // Every project's settings, by SLUG (the browser gateway process knows only slugs — see
@@ -149,11 +151,17 @@ export async function browserGatewayPolicies(): Promise<Record<string, BrowserGa
       and(eq(projectSetting.projectId, project.id), eq(projectSetting.key, SETTING_KEY)),
     );
   const policies: Record<string, BrowserGatewayPolicyEntry> = {};
-  for (const row of rows) {
-    const slug = projectSlug(row.key);
-    if (slug === HOME_SLUG) continue; // Home has no project row; the gateway defaults it itself
-    policies[slug] = { projectId: row.id, ...sanitize(row.value) };
-  }
+  await Promise.all(
+    rows.map(async (row) => {
+      const slug = projectSlug(row.key);
+      if (slug === HOME_SLUG) return;
+      policies[slug] = {
+        projectId: row.id,
+        ...sanitize(row.value),
+        previewOrigins: await getProjectPreviewOrigins(row.key),
+      };
+    }),
+  );
   return policies;
 }
 

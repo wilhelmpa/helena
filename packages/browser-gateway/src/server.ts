@@ -14,7 +14,7 @@ import { runCheckTool, runChooseTool, runTaskTool, type TaskContext } from './ta
 import type { ActionCategory } from './agent-tool.ts';
 import { contractActionCategory } from './contract-action.ts';
 import { HOME_SLUG, projectSlug } from './project-slug.ts';
-import { hostAllowed, resolvesLocally, type HostLookup } from './domain.ts';
+import { originAllowed, previewOriginAllowed, resolvesLocally, type HostLookup } from './domain.ts';
 import type { HelenaClient, ResolveResult } from './helena-client.ts';
 import { HelenaApiError } from './helena-client.ts';
 import type {
@@ -295,6 +295,7 @@ export class GatewayDispatcher {
       if (
         host &&
         !resolved.settings.allowLocalAddresses &&
+        !previewOriginAllowed(resolved.settings, url ?? '') &&
         (await resolvesLocally(host, this.#lookupHost))
       ) {
         return {
@@ -302,7 +303,7 @@ export class GatewayDispatcher {
           error: `${host} is a local or private address, which this project's browser settings keep closed to agents.`,
         };
       }
-      if (!host || !hostAllowed(resolved.settings, host)) {
+      if (!host || !originAllowed(resolved.settings, url ?? '')) {
         return {
           ok: false,
           error: `Navigation to ${url?.slice(0, 200) ?? '(no url)'} is blocked by this project's browser settings or is not an http(s) address.`,

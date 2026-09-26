@@ -225,11 +225,21 @@ export async function startBrowserGateway({ listBrowsers, log = () => {} }) {
   // filed as that agent's. And each project's working size for its agents.
   const actors = new Map();
   const viewports = new Map();
+  let previewPolicies;
+  let previewPoliciesUntil = 0;
+  function previewOrigins(slug) {
+    if (!previewPolicies || Date.now() >= previewPoliciesUntil) {
+      previewPoliciesUntil = Date.now() + 1000;
+      previewPolicies = helena.policy().catch(() => ({}));
+    }
+    return previewPolicies.then((policies) => policies[slug]?.previewOrigins ?? []);
+  }
   const sessions = new LiveSessions(
     async (slug) => cdpPorts.get(slug),
     (slug, cdpPort) =>
       PatchrightGatewaySession.connect(`http://127.0.0.1:${cdpPort}`, {
         humanInput: true,
+        getPreviewOrigins: () => previewOrigins(slug),
         onDownload: async (fileName, bytes) => {
           const { path: saved } = await helena.download({
             projectSlug: slug,

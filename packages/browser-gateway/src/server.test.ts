@@ -675,6 +675,46 @@ describe('GatewayDispatcher: domain policy (design §8)', () => {
     }
   });
 
+  it('opens a runtime-owned preview through navigation and a new tab', async () => {
+    const session = fakeSession();
+    const gateway = dispatcher({
+      helena: fakeHelenaClient({
+        resolve: mock(async () =>
+          resolved({
+            settings: {
+              ...DEFAULT_SETTINGS,
+              domainAllowlist: ['example.com'],
+              previewOrigins: ['http://127.0.0.1:24032'],
+            },
+          }),
+        ),
+      }),
+      sessions: fakeSessions(session),
+    });
+    const navigate = await gateway.handle({
+      tool: 'browser_navigate',
+      agentKey: 'k',
+      args: { url: 'http://127.0.0.1:24032/' },
+    });
+    const tab = await gateway.handle({
+      tool: 'browser_tabs',
+      agentKey: 'k',
+      args: { action: 'new', url: 'http://127.0.0.1:24032/' },
+    });
+    expect(navigate.ok).toBe(true);
+    expect(tab.ok).toBe(true);
+    expect(session.navigate).toHaveBeenCalledTimes(1);
+    expect(session.tabs).toHaveBeenCalledTimes(1);
+    for (const url of ['http://127.0.0.1:24024/', 'http://127.0.0.1:3000/']) {
+      const result = await gateway.handle({
+        tool: 'browser_navigate',
+        agentKey: 'k',
+        args: { url },
+      });
+      expect(result.ok).toBe(false);
+    }
+  });
+
   it('allows a domain the list does not name, and applies the policy before every tool', async () => {
     const session = fakeSession();
     const gateway = dispatcher({ helena: blocking(), sessions: fakeSessions(session) });

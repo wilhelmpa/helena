@@ -12,6 +12,8 @@ await loadExternalServerPlugins();
 app.listen({
   hostname: process.env.API_HOST ?? '127.0.0.1',
   port: Number(process.env.API_PORT ?? 3000),
+  // Preview startup waits for readiness before responding (up to 90 seconds).
+  idleTimeout: 120,
 });
 
 startBackgroundJobs();

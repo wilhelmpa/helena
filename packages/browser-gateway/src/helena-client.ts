@@ -13,6 +13,7 @@ export interface BrowserGatewaySettingsWire {
   agentViewport?: { width: number; height: number };
   // Absent from an older Helena: local addresses stay closed.
   allowLocalAddresses?: boolean;
+  previewOrigins?: string[];
 }
 
 export interface ResolveResult {
@@ -279,6 +280,7 @@ export class HelenaClient {
   async policy(): Promise<Record<string, BrowserGatewaySettingsWire & { projectId: number }>> {
     const res = await this.#fetch(`${this.#baseUrl}/internal/browser-gateway/policy`, {
       headers: { authorization: `Bearer ${this.#token}` },
+      signal: AbortSignal.timeout(3000),
     });
     if (!res.ok) throw new HelenaApiError(res.status, await res.text());
     const body = (await res.json()) as {

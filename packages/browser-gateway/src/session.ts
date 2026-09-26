@@ -29,7 +29,7 @@ import {
   truncateSnapshot,
 } from './snapshot.ts';
 import { mouseCurve, preClickPauseMs, stepsFor, typingDelayMs } from './human.ts';
-import { hostAllowed, type DomainPolicy } from './domain.ts';
+import { requestAllowed, type DomainPolicy } from './domain.ts';
 import { maskPng, type Rect } from './png.ts';
 import {
   GUARD,
@@ -130,6 +130,7 @@ export interface SessionOptions {
   // Stores a finished download (the vault Inbox of the project, through Helena) and returns
   // where it went. Without it, downloads are listed but not kept.
   onDownload?: (fileName: string, bytes: Buffer) => Promise<string>;
+  getPreviewOrigins?: () => Promise<readonly string[]>;
 }
 
 export class PatchrightGatewaySession implements GatewaySession {
@@ -159,6 +160,7 @@ export class PatchrightGatewaySession implements GatewaySession {
   #humanInput: boolean;
   #random: () => number;
   #onDownload: SessionOptions['onDownload'];
+  #getPreviewOrigins: SessionOptions['getPreviewOrigins'];
   #policyJson: string | null = null;
   #routeHandler: ((route: Route) => Promise<void>) | null = null;
   // Told when a page opens a dialog, so an action it blocks can return (see #orDialog).
@@ -177,6 +179,7 @@ export class PatchrightGatewaySession implements GatewaySession {
     this.#humanInput = options.humanInput;
     this.#random = options.random ?? Math.random;
     this.#onDownload = options.onDownload;
+    this.#getPreviewOrigins = options.getPreviewOrigins;
     browser.on('disconnected', () => {
       this.#connected = false;
     });
@@ -390,31 +393,41 @@ export class PatchrightGatewaySession implements GatewaySession {
     };
   }
 
-  // Design §8: the project's domain block/allowlist, for every request of every tab —
-  // a link click, a redirect, an iframe, a tab the page opens. Installed only while a list
-  // is set: intercepting every request of every page costs time for nothing otherwise.
   async applyDomainPolicy(policy: DomainPolicy): Promise<void> {
     const json = JSON.stringify(policy);
     if (json === this.#policyJson) return;
-    this.#policyJson = json;
+    this.#policyJson = null;
     if (this.#routeHandler) {
-      await this.#context.unroute('**/*', this.#routeHandler).catch(() => {});
+      await this.#context.unroute('**/*', this.#routeHandler);
       this.#routeHandler = null;
     }
-    if (policy.domainBlocklist.length === 0 && policy.domainAllowlist.length === 0) return;
+    if (
+      policy.allowLocalAddresses &&
+      policy.domainBlocklist.length === 0 &&
+      policy.domainAllowlist.length === 0
+    ) {
+      this.#policyJson = json;
+      return;
+    }
     this.#routeHandler = async (route) => {
-      let host: string;
+      let url: URL;
       try {
-        const url = new URL(route.request().url());
+        url = new URL(route.request().url());
         if (url.protocol !== 'http:' && url.protocol !== 'https:') return route.continue();
-        host = url.hostname;
       } catch {
-        return route.continue();
+        return route.abort('blockedbyclient');
       }
-      if (hostAllowed(policy, host)) return route.continue();
+      let current = policy;
+      if (url.hostname === '127.0.0.1' && this.#getPreviewOrigins) {
+        // The owner may have started a preview since the last agent action.
+        const previewOrigins = await this.#getPreviewOrigins().catch(() => []);
+        current = { ...policy, previewOrigins };
+      }
+      if (await requestAllowed(current, url.href)) return route.continue();
       return route.abort('blockedbyclient');
     };
     await this.#context.route('**/*', this.#routeHandler);
+    this.#policyJson = json;
   }
 
   #openPages(): Page[] {

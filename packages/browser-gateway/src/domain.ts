@@ -24,6 +24,8 @@ export interface DomainPolicy {
   // Local and private addresses (the project setting "Lokale Adressen erlauben"): closed
   // unless the owner opened them.
   allowLocalAddresses?: boolean;
+  // Supplied by the preview runtime, never by project settings or a tool argument.
+  previewOrigins?: readonly string[];
 }
 
 // A host that is local by its name or its literal address: localhost, the names a LAN
@@ -83,8 +85,36 @@ export function hostAllowed(policy: DomainPolicy, host: string): boolean {
 
 export function originAllowed(policy: DomainPolicy, urlString: string): boolean {
   try {
-    return hostAllowed(policy, new URL(urlString).hostname);
+    const url = new URL(urlString);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
+    return previewOriginAllowed(policy, urlString) || hostAllowed(policy, url.hostname);
   } catch {
     return false;
   }
+}
+
+export function previewOriginAllowed(policy: DomainPolicy, urlString: string): boolean {
+  try {
+    const url = new URL(urlString);
+    return (
+      url.protocol === 'http:' &&
+      url.hostname === '127.0.0.1' &&
+      url.username === '' &&
+      url.password === '' &&
+      policy.previewOrigins?.includes(url.origin) === true &&
+      !policy.domainBlocklist.some((host) => normalizeHost(host) === url.hostname)
+    );
+  } catch {
+    return false;
+  }
+}
+
+export async function requestAllowed(
+  policy: DomainPolicy,
+  urlString: string,
+  resolve: HostLookup = systemLookup,
+): Promise<boolean> {
+  if (!originAllowed(policy, urlString)) return false;
+  if (previewOriginAllowed(policy, urlString) || policy.allowLocalAddresses) return true;
+  return !(await resolvesLocally(new URL(urlString).hostname, resolve));
 }
