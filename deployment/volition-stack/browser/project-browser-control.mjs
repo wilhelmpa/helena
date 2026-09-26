@@ -617,8 +617,11 @@ async function calibrateChrome(link, tab, windowId, bounds, valid) {
       restoredBounds = true;
     }
   }
-  if (!restoredBounds || !valid() || !calibrationAllowed.has(link.port)) return null;
-  const restored = await sizesOnceSettled(link, tab, (sizes) => hasSize(sizes, bounds) && sizes.consistent);
+  if (!during?.consistent || !restoredBounds || !valid() || !calibrationAllowed.has(link.port)) return null;
+  // Native bounds settle before the page reflows; wait for its measured toolbar too.
+  const restored = await sizesOnceSettled(link, tab, (sizes) => hasSize(sizes, bounds) && sizes.consistent &&
+    sizes.scale === during.scale &&
+    ["width", "height"].every((key) => Math.abs(sizes.chrome[key] - during.chrome[key]) <= FIT_TOLERANCE));
   if (!during?.consistent || !restored?.consistent || during.scale !== restored.scale) return null;
   for (const dimension of ["width", "height"]) {
     const pageChange = (restored.inner[dimension] * restored.ratio - during.inner[dimension] * during.ratio) / restored.scale;
