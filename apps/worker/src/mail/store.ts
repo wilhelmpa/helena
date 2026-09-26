@@ -97,12 +97,17 @@ export async function accountWithCredential(accountId: number) {
 }
 
 // The accounts the worker keeps a connection to: enabled and with a password.
-export async function loadSyncAccounts(): Promise<SyncAccount[]> {
+export async function loadSyncAccounts(accountId?: number): Promise<SyncAccount[]> {
   const rows = await db
     .select({ account: mailAccount, credential: credentialColumns })
     .from(mailAccount)
     .innerJoin(integrationCredential, eq(integrationCredential.id, mailAccount.credentialId))
-    .where(eq(mailAccount.enabled, true));
+    .where(
+      and(
+        eq(mailAccount.enabled, true),
+        accountId === undefined ? undefined : eq(mailAccount.id, accountId),
+      ),
+    );
   return rows.flatMap(({ account, credential }) => {
     try {
       return [

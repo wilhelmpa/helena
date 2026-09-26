@@ -40,6 +40,7 @@ export interface ImportTarget {
   internalDate?: Date;
   // A message that arrived in the inbox after its first complete import.
   newInboxMail: boolean;
+  requiredProjectId?: number;
   // The server's own thread id (Gmail's X-GM-THRID, or THREADID of RFC 8474), when it
   // reports one.
   serverThreadId?: string | null;
@@ -55,6 +56,15 @@ export async function importRawMessage(
   const parsed = await parseMessage(raw, target.internalDate ?? new Date());
   const known = (await messageIdsOf(account.id, [parsed.messageId])).get(parsed.messageId);
   const messageRowId = known ?? (await storeMessage(account, parsed, raw, target));
+  if (target.requiredProjectId !== undefined) {
+    const [scope] = await db
+      .select({ projectId: mailThread.projectId })
+      .from(mailMessage)
+      .innerJoin(mailThread, eq(mailThread.id, mailMessage.threadId))
+      .where(eq(mailMessage.id, messageRowId));
+    if (scope?.projectId !== target.requiredProjectId)
+      throw new Error('Imported mail is outside the required project.');
+  }
   if (target.folderId != null && target.uid != null) {
     await addLocation(target.folderId, target.uid, messageRowId, target.flags);
   }
@@ -68,8 +78,13 @@ async function storeMessage(
   target: ImportTarget,
 ): Promise<number> {
   const rawKey = `mail/${account.id}/${sha256(raw)}.eml`;
+  const thread = await resolveThread(
+    account,
+    parsed,
+    target.serverThreadId ?? null,
+    target.requiredProjectId,
+  );
   await putObject(rawKey, raw, 'message/rfc822');
-  const thread = await resolveThread(account, parsed, target.serverThreadId ?? null);
   const files = await writeAttachments(await projectKeyOf(thread.projectId), parsed);
   let known: number | null = null;
   const messageRowId = await db.transaction(async (tx) => {
@@ -166,7 +181,13 @@ async function resolveThread(
   account: Pick<SyncAccount, 'id' | 'teamId' | 'projectId' | 'address'>,
   parsed: ParsedMessage,
   serverThreadId: string | null,
+  requiredProjectId?: number,
 ): Promise<{ id: number; projectId: number | null }> {
+  const scoped = (value: { id: number; projectId: number | null }) => {
+    if (requiredProjectId !== undefined && value.projectId !== requiredProjectId)
+      throw new Error('Mail thread is outside the required project.');
+    return value;
+  };
   const columns = { id: mailThread.id, projectId: mailThread.projectId };
   if (!serverThreadId) {
     const ancestors = [
@@ -186,7 +207,7 @@ async function resolveThread(
         );
       for (const ancestor of ancestors) {
         const found = stored.find((row) => row.messageId === ancestor);
-        if (found) return { id: found.id, projectId: found.projectId };
+        if (found) return scoped({ id: found.id, projectId: found.projectId });
       }
     }
   }
@@ -197,13 +218,16 @@ async function resolveThread(
       .from(mailThread)
       .where(and(eq(mailThread.accountId, account.id), eq(mailThread.threadKey, threadKey)));
   const [existing] = await byKey();
-  if (existing) return existing;
+  if (existing) return scoped(existing);
+  const destination = (await routedProject(account, parsed)) ?? account.projectId;
+  if (requiredProjectId !== undefined && destination !== requiredProjectId)
+    throw new Error('Mail rule routes outside the required project.');
   const [created] = await db
     .insert(mailThread)
     .values({
       teamId: account.teamId,
       accountId: account.id,
-      projectId: (await routedProject(account, parsed)) ?? account.projectId,
+      projectId: destination,
       threadKey,
       subject: parsed.subject,
       lastMessageAt: parsed.date,
@@ -213,7 +237,7 @@ async function resolveThread(
     })
     .onConflictDoNothing()
     .returning(columns);
-  return created ?? (await byKey())[0]!;
+  return scoped(created ?? (await byKey())[0]!);
 }
 
 async function routedProject(

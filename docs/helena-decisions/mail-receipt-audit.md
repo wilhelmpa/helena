@@ -81,3 +81,50 @@ Historical provider retrieval must use a bounded, receipt-specific search/import
 adding Inbox locations or emitting `newInboxMail` events. Keep the existing 30-day account
 setting and classifier cutoff; changing those globally would import and triage unrelated
 history. A provider search/import is separate from this reviewed 30-day manifest.
+
+## Provider history
+
+`apps/api/src/scripts/mail-receipt-history.ts` uses the existing mailbox connection. The root
+orchestrator runs it after integration in the API service environment. No new login or
+software installation is needed. Its inspection phase opens IMAP read-only and retrieves at
+most 50 messages, 25 MiB per message and 100 MiB per batch. Each date window is at most 366
+days. Search includes financial subject words and explicit invoice/payment body labels.
+It does not change provider flags, local Inbox locations, routines, account retention or
+classification settings. Inspection writes only a private review manifest with mode 0600.
+The manifest contains subjects and attachment names; keep it out of broad reports.
+
+The verified provider folders are `[Google Mail]/Alle Nachrichten` for account 4/PRIV and
+`[Gmail]/Alle Nachrichten` for accounts 5/FAM and 6/VOL. Example, from `apps/api`:
+
+```sh
+bun src/scripts/mail-receipt-history.ts --account=4 --project=PRIV \
+  '--folder=[Google Mail]/Alle Nachrichten' --since=2026-01-01 --before=2026-08-27 \
+  --limit=20 --output=/tmp/helena-receipts-priv-history-001.json
+```
+
+Review every candidate, including those with `selected:false`. Attachment names and body
+facts give conservative initial selections; they are not proof that all financial mail is
+recognizable by keywords. Quoted reply discussions are not selected as body receipts.
+Set `selected`, `attachmentSha256` and `includeBody` to match the actual document. Keep the
+provider UID, UID validity and raw SHA unchanged. Retrieve an ambiguous attachment for
+inspection before selecting it. Oversized UIDs are reported separately and remain open.
+
+Apply the reviewed batch:
+
+```sh
+bun src/scripts/mail-receipt-history.ts --account=4 --project=PRIV \
+  --apply=/tmp/helena-receipts-priv-history-001.json
+```
+
+Apply reopens IMAP read-only, verifies each original's raw SHA and UID validity, imports only
+selected originals with `newInboxMail:false` and no Inbox locations, then files receipts in
+the verified project. Existing messages, ancestor threads and routing rules outside that
+project fail closed. Repeating apply returns the same receipt IDs. Source mail can later
+leave the normal retention window; the receipt originals survive.
+
+Continue the same window with `--before-uid=<nextBeforeUid>` while `remaining > 0`. Inspect
+earlier yearly windows while `earlierCandidates > 0`, including empty intervening years.
+Repeat for accounts 5 and 6. Record reviewed/excluded/oversized sources and actual receipt
+counts per mailbox. A zero matching count proves this search is exhausted, not that an
+unusually worded document cannot exist; combine it with the mailbox review before claiming
+the complete owner request fulfilled. Live provider inspection and apply remain root work.

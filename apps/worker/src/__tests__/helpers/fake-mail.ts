@@ -189,18 +189,34 @@ export class FakeImapClient extends EventEmitter {
   searches: Record<string, unknown>[] = [];
 
   // SINCE compares the internal date by day, as IMAP does.
-  async search(query: { all?: boolean; uid?: string; since?: Date }) {
+  async search(query: {
+    all?: boolean;
+    uid?: string;
+    since?: Date;
+    before?: Date;
+    or?: { subject?: string; body?: string }[];
+  }) {
     this.searches.push(query);
     const box = this.current();
     if (query.uid) return parseRange(query.uid, box);
-    if (query.since) {
-      const day = new Date(query.since);
-      day.setUTCHours(0, 0, 0, 0);
-      return box.messages
-        .filter((message) => message.internalDate >= day)
-        .map((message) => message.uid);
-    }
-    return box.messages.map((message) => message.uid);
+    return box.messages
+      .filter((message) => {
+        const subject = /^Subject:\s*(.*)$/im.exec(message.raw.toString('utf8'))?.[1] ?? '';
+        return (
+          (!query.since || message.internalDate >= query.since) &&
+          (!query.before || message.internalDate < query.before) &&
+          (!query.or ||
+            query.or.some((term) =>
+              term.subject
+                ? subject.toLowerCase().includes(term.subject.toLowerCase())
+                : message.raw
+                    .toString('utf8')
+                    .toLowerCase()
+                    .includes((term.body ?? '').toLowerCase()),
+            ))
+        );
+      })
+      .map((message) => message.uid);
   }
 
   async fetchAll(
