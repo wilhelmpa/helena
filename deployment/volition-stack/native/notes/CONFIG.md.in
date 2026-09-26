@@ -3,7 +3,7 @@ tags: meta
 ---
 # Notizen: Einstellungen
 
-Helena hat diese Seite angelegt (notes/install.sh). Sie stellt die Notizen auf Helenas Wissensordner ein: das Tagebuch liegt dort, wo Helena die Tagesnotizen führt, Links werden kurz geschrieben wie in Helena, und `ordner:<Pfad>` zeigt die Notizen eines Ordners. Änderungen hier gelten nach dem nächsten Neuladen.
+Helena hat diese Seite angelegt (notes/install.sh). Sie stellt die Notizen auf Helenas Wissensordner ein: das Tagebuch liegt dort, wo Helena die Tagesnotizen führt, Links werden kurz geschrieben wie in Helena, und `ordner:<Pfad>` zeigt Notizen und Dateien eines Ordners. Änderungen hier gelten nach dem nächsten Neuladen.
 
 ```space-lua
 -- priority: 50
@@ -22,8 +22,8 @@ local function helenaOrigin()
   return helenaOrigins[js.window.location.host] or ""
 end
 
--- "ordner:Projects/VOL" lists the notes of a folder, the newest first. Helena opens a
--- project's notes here.
+-- "ordner:Projects/VOL" lists notes and files in a folder, newest first. Helena
+-- opens a project or the current Files folder here.
 virtualPage.define {
   pattern = "ordner:(.+)",
   run = function(folder)
@@ -34,17 +34,37 @@ virtualPage.define {
       order by p.lastModified desc
       limit 300
     ]]
+    local documents = query[[
+      from d = index.documents()
+      where d.name:startsWith(prefix)
+      order by d.lastModified desc
+      limit 300
+    ]]
     local lines = {
       "# " .. folder,
       "",
       "Neue Notiz hier: Strg/⌘-K, `" .. prefix .. "Name` eingeben, Umschalt-Enter.",
       "",
     }
-    if #pages == 0 then
-      table.insert(lines, "Noch keine Notizen in diesem Ordner.")
+    if #pages == 0 and #documents == 0 then
+      table.insert(lines, "Noch keine Notizen oder Dateien in diesem Ordner.")
     end
-    for _, p in ipairs(pages) do
-      table.insert(lines, "* [[" .. p.name .. "]] · " .. string.sub(p.lastModified or "", 1, 10))
+    if #pages > 0 then
+      table.insert(lines, "## Notizen")
+      for _, p in ipairs(pages) do
+        table.insert(lines, "* [[" .. p.name .. "]] · " .. string.sub(p.lastModified or "", 1, 10))
+      end
+      table.insert(lines, "")
+    end
+    if #documents > 0 then
+      table.insert(lines, "## Dateien")
+      for _, d in ipairs(documents) do
+        local label = string.sub(d.name, #prefix + 1):gsub("[\r\n]", " ")
+        label = string.gsub(label, "\\", "\\\\")
+        label = string.gsub(label, "%[", "(")
+        label = string.gsub(label, "%]", ")")
+        table.insert(lines, "* [" .. label .. "](<" .. "/" .. d.name .. ">) · " .. string.sub(d.lastModified or "", 1, 10))
+      end
     end
     return table.concat(lines, "\n")
   end

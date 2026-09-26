@@ -32,6 +32,20 @@ export function notesFileUrl(notesBase: string, vaultPath: string): string {
 export const notesFolderUrl = (notesBase: string, projectKey: string | null) =>
   notesPageUrl(notesBase, `ordner:${projectKey ? `Projects/${projectKey}` : 'Home'}`);
 
+// The Files page opens its current vault folder in SilverBullet. Its virtual folder page
+// uses the same vault, but SilverBullet cannot see Private/ or hidden paths.
+export function notesVaultFolderUrl(notesBase: string, vaultFolder: string): string {
+  const parts = vaultFolder.split('/');
+  if (
+    !vaultFolder ||
+    parts[0] === 'Private' ||
+    parts.some((part) => !part || part.startsWith('.')) ||
+    /[|@#]|\[\[|\]\]/.test(vaultFolder)
+  )
+    return '';
+  return notesPageUrl(notesBase, `ordner:${vaultFolder}`);
+}
+
 // The Docs page opens a note of the vault by its vault-relative path.
 export const docsFileUrl = (projectKey: string, vaultPath: string) =>
   `${documentsPath(projectKey)}?${new URLSearchParams({ path: vaultPath })}`;

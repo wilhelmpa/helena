@@ -3,7 +3,7 @@ import FileViewer from '@/components/common/files/FileViewer';
 import { fileRawUrl, type FileScope } from '@/lib/api/endpoints/projectFiles';
 import { useFilesQuery } from '@/services/files.service';
 import { runtimeEnv } from '@/utils/runtimeEnv';
-import { baseName } from '@/utils/vaultLinks';
+import { baseName, notesVaultFolderUrl } from '@/utils/vaultLinks';
 import { codeFolderUrl } from '@/utils/workspaceTools';
 import { useFileActions } from '../hooks/useFileActions';
 import { useFileBrowserView } from '../hooks/useFileBrowserView';
@@ -70,6 +70,7 @@ export default function FileBrowser({
   });
   const workspace = runtimeEnv().workspace;
   const folderCodeUrl = listing.data ? codeFolderUrl(workspace, listing.data.absolutePath) : '';
+  const folderNotesUrl = notesVaultFolderUrl(workspace.notesUrl, listing.data?.vaultPath ?? '');
   const items = visibleItems(listing.data?.items ?? [], view.filter, view.sort);
   const viewing = selected ? listing.data?.items.find((item) => item.path === selected) : undefined;
 
@@ -80,6 +81,7 @@ export default function FileBrowser({
         view={view}
         canCreate={can.create}
         codeUrl={folderCodeUrl}
+        notesUrl={folderNotesUrl}
         uploading={transfers.uploading}
         onUpload={transfers.sendFiles}
         onNewFolder={() => setDialog({ kind: 'newFolder' })}

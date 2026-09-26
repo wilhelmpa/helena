@@ -51,7 +51,7 @@ has "unit: no network" "$u" '^PrivateNetwork=yes$'
 has "unit: AF_UNIX only" "$u" '^RestrictAddressFamilies=AF_UNIX$'
 has "unit: Private/ and .git unreachable" "$u" '^InaccessiblePaths=-/srv/volition/vault/\.git -/srv/volition/vault/Private '
 has "unit: only the vault under /srv" "$u" '^TemporaryFileSystem=/srv:ro$'
-has "unit: socket folder for nginx only" "$u" 'install -d -m 2750 -o helena-notes -g www-data /run/helena-notes'
+has "unit: socket folder for nginx only" "$u" 'chown helena-notes:www-data /run/helena-notes /run/helena-notes/notes.sock'
 has "unit: vault group" "$u" '^SupplementaryGroups=volition$'
 hasnt "unit: no capabilities" "$u" '^AmbientCapabilities=.+'
 
@@ -80,6 +80,8 @@ has "tunnel: tunnel headers on the check" "$work/tunnel.conf" 'include /etc/ngin
 has "tunnel: loopback only" "$work/tunnel.conf" '^    listen 127\.0\.0\.1:8090;$'
 has "config: journal where Helena keeps it" "$work/CONFIG.md" 'config\.set\("journal\.prefix", "Home/Docs/Journal/"\)'
 has "config: task links to Helena" "$work/CONFIG.md" '\["helena-home\.volition\.one:8446"\] = "https://helena-home\.volition\.one"'
+has "config: folder includes documents" "$work/CONFIG.md" 'from d = index\.documents\(\)'
+has "config: document links use root paths" "$work/CONFIG.md" 'd\.name \.\. ">\)'
 if python3 -c 'import json,sys,re; t=open(sys.argv[1]).read(); m=re.search(r"HELENA_NOTES_URLS=(.*)'"'"'", t); d=json.loads(m.group(1)); assert d=={"https://helena-home.volition.one":"https://helena-home.volition.one:8446","https://helena.volition.one":"https://helena-notes.volition.one"}, d' "$work/web.conf"; then
   pass "web: HELENA_NOTES_URLS maps each Helena origin to its notes origin"
 else fail "web: HELENA_NOTES_URLS"; fi
