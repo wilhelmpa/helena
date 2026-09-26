@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@repo/db": "workspace:*",
+    "@repo/mail": "workspace:*",
     "@repo/storage": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "jszip": "^3.10.1",

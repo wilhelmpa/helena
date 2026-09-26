@@ -10,9 +10,11 @@ import {
   helenaReceiptMatch,
   mailAttachment,
   mailMessage,
+  mailThread,
   project as projectTable,
 } from '@repo/db';
-import { absoluteVaultPath } from '@repo/vault';
+import { getObject } from '@repo/storage';
+import { absoluteVaultPath, indexVaultPaths } from '@repo/vault';
 import { and, count, desc, eq, ilike, isNotNull, or, sql } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
 import { joinPath, relativePath, safeFileName } from '#modules/project-files/paths';
@@ -21,6 +23,12 @@ import { contentTypeOf } from '#modules/project-files/serve';
 import { describeVaultFile, writeUniqueFile } from '#modules/project-files/service';
 import { centsToNumeric, monthRange } from './amounts';
 import { extractReceiptFile, isReceiptFile, type ExtractedReceipt } from './extract';
+import {
+  hasMailReceiptEvidence,
+  mailReceiptFacts,
+  receiptFilename,
+  unrelatedFilename,
+} from './mail-facts';
 import { matchReceipt, unlinkReceipt } from './matching';
 import {
   inMonth,
@@ -199,66 +207,185 @@ export async function receiptFromVault(
   return viewOf(row!.id);
 }
 
-/**
- * The attachments of an invoice mail as receipts of a project (registered with the mail
- * classifier). Returns the receipts of those attachments, new or already known.
- */
-export async function intakeMailReceipts(input: {
+export interface MailReceiptInput {
   teamId: number;
   projectId: number;
   messageId: number;
   actorUserId: string | null;
-}): Promise<number[]> {
-  const [target] = await db
-    .select({ id: projectTable.id, teamId: projectTable.teamId, key: projectTable.key })
-    .from(projectTable)
-    .where(eq(projectTable.id, input.projectId));
-  const [message] = await db
-    .select({ teamId: mailMessage.teamId })
+  attachmentIds?: number[];
+  includeBody?: boolean;
+}
+
+export interface MailReceiptPlan {
+  attachmentId: number | null;
+  filename: string;
+  contentType: string;
+  size: number;
+  sha256: string;
+  vaultPath: string | null;
+  bytes?: Uint8Array;
+  facts: ExtractedReceipt;
+  existingId: number | null;
+}
+
+/** Reads and validates originals without creating files, receipts or model decisions. */
+export async function prepareMailReceipts(input: MailReceiptInput): Promise<MailReceiptPlan[]> {
+  const [target] = await db.select().from(projectTable).where(eq(projectTable.id, input.projectId));
+  const [source] = await db
+    .select({ message: mailMessage, projectId: mailThread.projectId })
     .from(mailMessage)
+    .innerJoin(mailThread, eq(mailThread.id, mailMessage.threadId))
     .where(eq(mailMessage.id, input.messageId));
-  if (!target || !message || target.teamId !== input.teamId || message.teamId !== input.teamId)
-    return [];
+  if (
+    !target ||
+    !source ||
+    target.teamId !== input.teamId ||
+    source.message.teamId !== input.teamId
+  )
+    throw new HttpError(404, 'Mail or project not found');
+  if (source.projectId !== input.projectId)
+    throw new HttpError(409, 'Move the mail to this project before filing receipts.');
   const attachments = await db
     .select()
     .from(mailAttachment)
     .where(eq(mailAttachment.messageId, input.messageId));
+  if (input.attachmentIds?.some((id) => !attachments.some((attachment) => attachment.id === id)))
+    throw new HttpError(400, 'Attachment does not belong to this message.');
   const documents = attachments.filter((a) => /\.(pdf|xml)$/i.test(a.filename));
-  const chosen = documents.length
-    ? documents
-    : attachments.filter(
-        (a) => /\.(png|jpe?g)$/i.test(a.filename) && a.size >= MIN_MAIL_IMAGE_BYTES,
-      );
-  // A suggested project alone does not file the mail there. Keep every receipt's file
-  // inside the project that owns the receipt, including when intake is called directly.
-  if (
-    chosen.some(
-      (attachment) => !attachment.vaultPath.startsWith(`Projects/${target.key}/Files/Mail/`),
-    )
-  )
-    throw new HttpError(
-      409,
-      'Move the mail to this project before taking its attachments as receipts.',
-    );
+  const chosen = input.attachmentIds
+    ? attachments.filter((a) => input.attachmentIds!.includes(a.id))
+    : (documents.length
+        ? documents
+        : attachments.filter(
+            (a) => /\.(png|jpe?g)$/i.test(a.filename) && a.size >= MIN_MAIL_IMAGE_BYTES,
+          )
+      ).filter((a) => !unrelatedFilename(a.filename) || receiptFilename(a.filename));
   const ibans = await ownIbans(input.projectId);
-  const ids: number[] = [];
-  const created: number[] = [];
+  const plans: MailReceiptPlan[] = [];
   for (const attachment of chosen) {
-    const existing = await existingBySha(input.projectId, attachment.sha256);
+    if (!attachment.vaultPath.startsWith(`Projects/${target.key}/Files/Mail/`))
+      throw new HttpError(409, 'The original attachment is outside this project.');
+    assertReceiptFile(attachment.filename);
+    const file = await describeVaultFile(
+      projectRoot(target.key),
+      projectRelative(target.key, attachment.vaultPath),
+    );
+    if (file.sizeBytes > MAX_RECEIPT_BYTES)
+      throw new HttpError(413, 'A receipt may have at most 25 MB.');
+    if (file.sha256 !== attachment.sha256 || file.sizeBytes !== attachment.size)
+      throw new HttpError(409, 'The original attachment changed after import.');
+    const existingId = await existingBySha(input.projectId, attachment.sha256);
+    const facts = await extractReceiptFile(
+      absoluteVaultPath(attachment.vaultPath),
+      attachment.filename,
+      ibans,
+    );
+    if (
+      !input.attachmentIds &&
+      !existingId &&
+      !receiptFilename(attachment.filename) &&
+      !(facts.grossCents !== null && facts.invoiceNumber)
+    )
+      continue;
+    if (facts.extraction === 'none' && facts.extractionError)
+      throw new HttpError(503, `Receipt attachment ${attachment.id} could not be extracted.`);
+    facts.details.mailSource = {
+      messageId: input.messageId,
+      threadId: source.message.threadId,
+      kind: 'attachment',
+    };
+    plans.push({
+      attachmentId: attachment.id,
+      filename: attachment.filename,
+      contentType: attachment.contentType,
+      size: attachment.size,
+      sha256: attachment.sha256,
+      vaultPath: attachment.vaultPath,
+      facts,
+      existingId,
+    });
+  }
+  if (!plans.length && input.includeBody !== false) {
+    const facts = mailReceiptFacts(source.message, ibans);
+    if (input.includeBody === true || hasMailReceiptEvidence(source.message.subject, facts)) {
+      if (source.message.size > MAX_RECEIPT_BYTES)
+        throw new HttpError(413, 'A receipt may have at most 25 MB.');
+      const raw = await getObject(source.message.rawKey);
+      const reader = raw.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let size = 0;
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          size += value.length;
+          if (size > MAX_RECEIPT_BYTES)
+            throw new HttpError(413, 'A receipt may have at most 25 MB.');
+          chunks.push(value);
+        }
+      } finally {
+        await reader.cancel();
+      }
+      const bytes = Buffer.concat(chunks);
+      const sha256 = createHash('sha256').update(bytes).digest('hex');
+      facts.details.mailSource = {
+        messageId: input.messageId,
+        threadId: source.message.threadId,
+        kind: 'body',
+      };
+      plans.push({
+        attachmentId: null,
+        filename: `mail-${sha256.slice(0, 24)}.eml`,
+        contentType: 'message/rfc822',
+        size,
+        sha256,
+        vaultPath: null,
+        bytes,
+        facts,
+        existingId: await existingBySha(input.projectId, sha256),
+      });
+    }
+  }
+  return plans;
+}
+
+/** Original attachments stay in Mail; a body receipt preserves the original RFC822 message. */
+export async function intakeMailReceipts(input: MailReceiptInput): Promise<number[]> {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(748220, ${input.projectId})`);
+    return storeMailReceipts(input);
+  });
+}
+
+async function storeMailReceipts(input: MailReceiptInput): Promise<number[]> {
+  const plans = await prepareMailReceipts(input);
+  const [target] = await db.select().from(projectTable).where(eq(projectTable.id, input.projectId));
+  if (!target) throw new HttpError(404, 'Project not found');
+  const ids = new Set<number>();
+  for (const plan of plans) {
+    const existing = await existingBySha(input.projectId, plan.sha256);
     if (existing) {
-      ids.push(existing);
+      ids.add(existing);
       continue;
     }
-    let facts: ExtractedReceipt;
-    try {
-      facts = await extractReceiptFile(
-        absoluteVaultPath(attachment.vaultPath),
-        attachment.filename,
-        ibans,
-      );
-    } catch (error) {
-      console.error(`[receipts] attachment ${attachment.id} not read`, error);
-      continue;
+    let vaultPath = plan.vaultPath;
+    if (!vaultPath) {
+      const root = projectRoot(target.key);
+      const folder = `Files/Belege/${plan.facts.invoiceDate!.slice(0, 7)}`;
+      const canonical = `${folder}/${plan.filename}`;
+      const previous = await describeVaultFile(root, canonical).catch((error: unknown) => {
+        if (error instanceof HttpError && error.status === 404) return null;
+        throw error;
+      });
+      if (previous && previous.sha256 !== plan.sha256)
+        throw new HttpError(409, 'The archived original changed.');
+      const relative = previous
+        ? canonical
+        : await writeUniqueFile(root, folder, plan.filename, plan.bytes!);
+      vaultPath = joinPath(root.vaultPath!, relative);
+      await indexVaultPaths([vaultPath], {
+        author: input.actorUserId ? `user:${input.actorUserId}` : 'mail-receipts',
+      });
     }
     const [row] = await db
       .insert(helenaReceipt)
@@ -266,24 +393,22 @@ export async function intakeMailReceipts(input: {
         teamId: input.teamId,
         projectId: input.projectId,
         source: 'mail',
-        mailAttachmentId: attachment.id,
-        vaultPath: attachment.vaultPath,
-        filename: attachment.filename,
-        contentType: attachment.contentType,
-        size: attachment.size,
-        sha256: attachment.sha256,
+        mailAttachmentId: plan.attachmentId,
+        vaultPath,
+        filename: plan.filename,
+        contentType: plan.contentType,
+        size: plan.size,
+        sha256: plan.sha256,
         createdByUserId: input.actorUserId,
-        ...extractedColumns(facts),
+        ...extractedColumns(plan.facts),
       })
       .onConflictDoNothing()
       .returning({ id: helenaReceipt.id });
-    if (row) {
-      ids.push(row.id);
-      created.push(row.id);
-    }
+    const id = row?.id ?? (await existingBySha(input.projectId, plan.sha256));
+    if (id) ids.add(id);
+    if (row) await matchQuietly(row.id);
   }
-  for (const id of created) await matchQuietly(id);
-  return ids;
+  return [...ids];
 }
 
 // The day a receipt belongs to: its invoice date, or the day it arrived.
@@ -387,6 +512,10 @@ export async function extractAgain(
       `The receipt's file cannot be read: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
+  facts.details = {
+    ...facts.details,
+    mailSource: (row.details as ExtractedReceipt['details'])?.mailSource,
+  };
   await db.update(helenaReceipt).set(extractedColumns(facts)).where(eq(helenaReceipt.id, row.id));
   if (row.status === 'open') await matchQuietly(row.id);
   return viewOf(row.id);

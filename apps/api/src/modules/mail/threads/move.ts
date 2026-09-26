@@ -36,7 +36,8 @@ export async function moveThread(threadId: number, projectId: number | null): Pr
       LEFT JOIN ${mailAttachment} a ON a.message_id = m.id
       WHERE m.thread_id = ${threadId}
         AND (
-          ${helenaReceipt.mailAttachmentId} = a.id
+          ${helenaReceipt.details}->'mailSource'->>'threadId' = ${String(threadId)}
+          OR ${helenaReceipt.mailAttachmentId} = a.id
           OR (m.attachment_folder IS NOT NULL AND
               left(${helenaReceipt.vaultPath}, length(m.attachment_folder) + 1) =
                 m.attachment_folder || '/')

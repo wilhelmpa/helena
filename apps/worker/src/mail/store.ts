@@ -1,5 +1,6 @@
 import {
   db,
+  helenaReceipt,
   integrationCredential,
   mailAccount,
   mailAction,
@@ -469,7 +470,21 @@ async function deleteMessages(ids: number[]): Promise<number> {
     await db.delete(mailMessage).where(inArray(mailMessage.id, batch));
     deleted += batch.length;
     for (const file of files) await deleteObject(file.rawKey).catch(() => undefined);
-    for (const attachment of attachments) await removeVaultFile(attachment.path);
+    const retained = attachments.length
+      ? await db
+          .select({ path: helenaReceipt.vaultPath })
+          .from(helenaReceipt)
+          .where(
+            inArray(
+              helenaReceipt.vaultPath,
+              attachments.map((a) => a.path),
+            ),
+          )
+      : [];
+    const receiptPaths = new Set(retained.map((r) => r.path));
+    for (const attachment of attachments) {
+      if (!receiptPaths.has(attachment.path)) await removeVaultFile(attachment.path);
+    }
     for (const folder of new Set(files.flatMap((file) => (file.folder ? [file.folder] : [])))) {
       await removeEmptyVaultFolder(folder);
     }

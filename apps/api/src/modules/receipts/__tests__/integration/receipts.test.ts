@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
+import { readdir, writeFile } from 'node:fs/promises';
+import { absoluteVaultPath } from '@repo/vault';
 import { readExportZip } from '@helena/finance';
 import { db, helenaBankTransaction, helenaDecision } from '@repo/db';
 import { eq } from 'drizzle-orm';
@@ -12,7 +14,8 @@ import type { DecideOutcome, DecideRequest } from '#modules/decisions/service';
 import { getProjectByKey } from '#modules/projects/service';
 import type { AccountView, ImportResult } from '../../accounts';
 import { useReceiptDecider, type MatchOutcome, type ReviewItem } from '../../matching';
-import { intakeMailReceipts } from '../../receipts';
+import { intakeMailReceipts, prepareMailReceipts } from '../../receipts';
+import { backfillMailReceipts } from '../../../../scripts/mail-receipt-backfill';
 import type { ReceiptDetailView, ReceiptView, TransactionView } from '../../views';
 import { makePdf } from '../pdf';
 
@@ -509,6 +512,130 @@ describe('receipts', () => {
       }),
     ).toEqual(ids);
   }, 30_000);
+
+  it('archives a text receipt as the exact original email once, including concurrent retries and export', async () => {
+    const project = (await getProjectByKey('FIN'))!;
+    const { accountId, inboxId } = await insertMailAccount(project.teamId, project.id);
+    const raw =
+      'From: Supplier <invoice@example.com>\r\nSubject: Payment receipt\r\nDate: Sat, 5 Sep 2026 12:00:00 +0000\r\n\r\nInvoice number: R-42\r\nAmount paid: 12.00 EUR\r\n';
+    const mail = await insertMessage({
+      teamId: project.teamId,
+      accountId,
+      folderId: inboxId,
+      projectId: project.id,
+      projectKey: 'FIN',
+      subject: 'Payment receipt',
+      fromName: 'Supplier',
+      sentAt: new Date('2026-09-05'),
+      text: 'Invoice number: R-42\nAmount paid: 12.00 EUR',
+      raw,
+    });
+    const input = {
+      teamId: project.teamId,
+      projectId: project.id,
+      messageId: mail.messageRowId,
+      actorUserId: owner.userId,
+    };
+    const manifest = [
+      {
+        messageId: mail.messageRowId,
+        accountId,
+        projectKey: 'FIN',
+        attachmentIds: [],
+        includeBody: true,
+      },
+    ];
+    expect(await backfillMailReceipts(manifest)).toMatchObject({
+      mode: 'dry-run',
+      new: 1,
+      originals: 1,
+    });
+    expect((await http.call<{ receipts: ReceiptView[] }>('GET', '')).data.receipts).toHaveLength(0);
+    const [first, second] = await Promise.all([
+      intakeMailReceipts(input),
+      intakeMailReceipts(input),
+    ]);
+    expect(second).toEqual(first);
+    const receipt = (await http.call<ReceiptDetailView>('GET', `/${first[0]}`)).data;
+    expect(receipt).toMatchObject({
+      source: 'mail',
+      mailAttachmentId: null,
+      totalGrossCents: 1200,
+      invoiceNumber: 'R-42',
+      details: { mailSource: { messageId: mail.messageRowId, kind: 'body' } },
+    });
+    expect(readFileSync(absoluteVaultPath(receipt.vaultPath), 'utf8')).toBe(raw);
+    expect(
+      (await readdir(absoluteVaultPath('Projects/FIN/Files/Belege/2026-09'))).filter((name) =>
+        name.endsWith('.eml'),
+      ),
+    ).toHaveLength(1);
+    expect(await backfillMailReceipts(manifest, true)).toMatchObject({ new: 0, existing: 1 });
+    expect((await http.call<ReceiptDetailView>('POST', `/${first[0]}/extract`)).data).toMatchObject(
+      { totalGrossCents: 1200 },
+    );
+    expect(
+      (
+        await authedApi(owner.cookie)
+          .mail.threads({ threadId: mail.threadId })
+          .patch({ projectId: null })
+      ).status,
+    ).toBe(409);
+    const exported = await http.send('GET', '/export?month=2026-09');
+    const files = readExportZip(new Uint8Array(await exported.arrayBuffer()));
+    expect(
+      Object.entries(files).some(
+        ([name, bytes]) => name.endsWith('.eml') && new TextDecoder().decode(bytes) === raw,
+      ),
+    ).toBe(true);
+  }, 30_000);
+
+  it('selects receipt originals, rejects changed files and prevents cross-project backfills', async () => {
+    const project = (await getProjectByKey('FIN'))!;
+    const { accountId, inboxId } = await insertMailAccount(project.teamId, project.id);
+    const invoice = makePdf(['Supplier GmbH', 'Invoice number: INV-42', 'Amount due 20.00 EUR']);
+    const mail = await insertMessage({
+      teamId: project.teamId,
+      accountId,
+      folderId: inboxId,
+      projectId: project.id,
+      projectKey: 'FIN',
+      subject: 'Invoice with contract',
+      attachments: [
+        { filename: 'invoice.pdf', content: invoice },
+        { filename: 'contract.pdf', content: makePdf(['A contract']) },
+      ],
+    });
+    const input = {
+      teamId: project.teamId,
+      projectId: project.id,
+      messageId: mail.messageRowId,
+      actorUserId: owner.userId,
+    };
+    const plans = await prepareMailReceipts(input);
+    expect(plans).toHaveLength(1);
+    expect(plans[0]!.filename).toBe('invoice.pdf');
+    await expect(prepareMailReceipts({ ...input, attachmentIds: [999999] })).rejects.toThrow(
+      'does not belong',
+    );
+    await expect(
+      backfillMailReceipts(
+        [
+          {
+            messageId: mail.messageRowId,
+            accountId,
+            projectKey: 'OTHER',
+            attachmentIds: [],
+            includeBody: true,
+          },
+        ],
+        true,
+      ),
+    ).rejects.toThrow('Source scope changed');
+    await writeFile(absoluteVaultPath(plans[0]!.vaultPath!), 'changed');
+    await expect(intakeMailReceipts(input)).rejects.toThrow('changed after import');
+    expect((await http.call<{ receipts: ReceiptView[] }>('GET', '')).data.receipts).toHaveLength(0);
+  });
 
   it('is for the project administrators only and offers no MCP tools', async () => {
     const stranger = await signUpTestUser();

@@ -7,6 +7,7 @@ export const triageBatchBody = t.Object({
 export const TriageBatchResponse = t.Object({
   accounts: t.Array(t.Object({ id: t.Number(), address: t.String() })),
   processed: t.Number(),
+  receiptRetries: t.Number(),
   hasMore: t.Boolean(),
   failed: t.Number(),
   results: t.Array(

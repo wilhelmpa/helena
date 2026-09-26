@@ -19,6 +19,15 @@ function expectText(result: Awaited<ReturnType<typeof extractText>>, ...words: s
 }
 
 describe('text extraction', () => {
+  it('extracts original RFC822 mail locally without requesting remote content', async () => {
+    const file = path.join(tempDir('vault-extract-'), 'receipt.eml');
+    await writeFile(
+      file,
+      'From: Supplier <invoice@example.com>\r\nSubject: Receipt INV-42\r\nMIME-Version: 1.0\r\nContent-Type: text/html; charset=utf-8\r\n\r\n<p>Amount paid 12.00 EUR</p><img src="https://example.invalid/track">',
+    );
+    expectText(await extractText(file), 'Supplier', 'INV-42', '12.00 EUR');
+  });
+
   it.skipIf(!has('pdftotext'))('reads the text layer of a PDF', async () => {
     const file = path.join(tempDir('vault-extract-'), 'invoice.pdf');
     await writeFile(file, textPdf(LINES));

@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import readXlsxFile, { type CellValue, type Sheet } from 'read-excel-file/node';
 import JSZip from 'jszip';
+import { parseMessage } from '@repo/mail';
 import { hasProgram, runProgram } from './process';
 
 // Text extraction for files that are not text themselves. It shells out to poppler
@@ -25,10 +26,11 @@ export type Extraction =
   | { status: 'failed'; error: string }
   | { status: 'skipped'; reason: string };
 
-type Extractor = 'pdf' | 'image' | 'pandoc' | 'xlsx' | 'pptx';
+type Extractor = 'pdf' | 'image' | 'pandoc' | 'xlsx' | 'pptx' | 'eml';
 
 const EXTRACTOR_BY_EXTENSION: Record<string, Extractor> = {
   '.pdf': 'pdf',
+  '.eml': 'eml',
   '.png': 'image',
   '.jpg': 'image',
   '.jpeg': 'image',
@@ -46,6 +48,7 @@ const EXTRACTOR_BY_EXTENSION: Record<string, Extractor> = {
 };
 
 const PROGRAMS: Record<Extractor, string[]> = {
+  eml: [],
   pdf: ['pdftotext'],
   image: ['tesseract'],
   pandoc: ['pandoc'],
@@ -234,6 +237,13 @@ export async function extractText(file: string): Promise<Extraction> {
     extractor === 'image' ? EXTRACTION_LIMITS.maxImageBytes : EXTRACTION_LIMITS.maxFileBytes;
   if (size > limit) return { status: 'skipped', reason: 'too large' };
   switch (extractor) {
+    case 'eml': {
+      const mail = await parseMessage(await readFile(file));
+      return {
+        status: 'done',
+        text: bounded([mail.from?.name, mail.subject, mail.text].filter(Boolean).join('\n\n')),
+      };
+    }
     case 'pdf':
       return extractPdf(file);
     case 'image':

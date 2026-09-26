@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {
   db,
+  helenaReceipt,
   integrationCredential,
   issue,
   mailAccount,
@@ -256,6 +257,35 @@ describe('fetch window', () => {
     server.add('INBOX', mail('<recent@x>', daysAgo(3)), [], daysAgo(3));
     await sync();
     expect(await storedIds()).toEqual(['<old@x>', '<recent@x>']);
+  });
+
+  it('retains receipt originals when mail leaves the window or the account is reset', async () => {
+    const { mailbox, teamId, projectId } = await googleMailbox({ fetchDays: 365 });
+    server.add('INBOX', mail('<receipt@x>', daysAgo(200), true), [], daysAgo(200));
+    await sync();
+    const [attachment] = await db.select().from(mailAttachment);
+    await db
+      .insert(helenaReceipt)
+      .values({
+        teamId,
+        projectId,
+        source: 'mail',
+        mailAttachmentId: attachment!.id,
+        vaultPath: attachment!.vaultPath,
+        filename: attachment!.filename,
+        contentType: attachment!.contentType,
+        size: attachment!.size,
+        sha256: attachment!.sha256,
+      });
+    const original = await Bun.file(path.join(vault, attachment!.vaultPath)).arrayBuffer();
+    expect(await pruneAccount(mailbox.id, 30)).toBe(1);
+    expect(await storedIds()).toEqual([]);
+    expect(await Bun.file(path.join(vault, attachment!.vaultPath)).arrayBuffer()).toEqual(original);
+    const [receipt] = await db.select().from(helenaReceipt);
+    expect(receipt!.mailAttachmentId).toBeNull();
+    await sync();
+    await wipeAccount(mailbox.id);
+    expect(await Bun.file(path.join(vault, attachment!.vaultPath)).arrayBuffer()).toEqual(original);
   });
 
   it('prunes copies that left the window with their files, but keeps mail a task links to', async () => {

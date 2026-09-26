@@ -345,6 +345,7 @@ async function act(
           priority: row.priority,
         });
         issueId = created.issueId;
+        threadProject = target;
         actions.push({
           kind: handTo ? 'agent' : 'task',
           issueId,
@@ -363,25 +364,98 @@ async function act(
           });
       }
     }
-    if (row.category === 'invoice' && config.receipts === 'auto' && target && receiptIntake) {
-      const receiptIds = await receiptIntake({
-        teamId: row.teamId,
-        projectId: target,
-        messageId: row.messageId,
-        actorUserId,
-      });
-      if (receiptIds.length) actions.push({ kind: 'receipt', projectId: target, receiptIds });
-    }
   } catch (error) {
     actions.push({
       kind: 'skipped',
       note: (error instanceof Error ? error.message : String(error)).slice(0, 200),
     });
   }
+  const receiptAction = await fileReceipts(row, threadProject, config, actorUserId);
+  if (receiptAction) actions.push(receiptAction);
   await db
     .update(helenaMailClassification)
     .set({ actions, issueId })
     .where(eq(helenaMailClassification.id, row.id));
+}
+
+async function fileReceipts(
+  row: typeof helenaMailClassification.$inferSelect,
+  projectId: number | null,
+  config: MailTriageConfig,
+  actorUserId: string | null,
+): Promise<MailClassificationAction | null> {
+  if (row.category !== 'invoice' || config.receipts !== 'auto' || !projectId || !receiptIntake)
+    return null;
+  try {
+    const receiptIds = await receiptIntake({
+      teamId: row.teamId,
+      projectId,
+      messageId: row.messageId,
+      actorUserId,
+    });
+    return {
+      kind: 'receipt',
+      projectId,
+      receiptIds,
+      note: receiptIds.length ? null : 'No supported receipt original found.',
+    };
+  } catch {
+    return {
+      kind: 'skipped',
+      projectId,
+      note: 'Receipt filing failed; retry on the next triage run.',
+    };
+  }
+}
+
+export async function retryReceiptFiling(
+  teamId: number,
+  config: MailTriageConfig,
+  actorUserId: string | null,
+  projectId?: number,
+) {
+  if (config.receipts !== 'auto' || !receiptIntake) return { completed: 0, failed: 0 };
+  const pending = await db
+    .select({ row: helenaMailClassification, projectId: mailThread.projectId })
+    .from(helenaMailClassification)
+    .innerJoin(mailMessage, eq(mailMessage.id, helenaMailClassification.messageId))
+    .innerJoin(mailThread, eq(mailThread.id, mailMessage.threadId))
+    .innerJoin(mailAccount, eq(mailAccount.id, mailMessage.accountId))
+    .where(
+      and(
+        eq(helenaMailClassification.teamId, teamId),
+        eq(helenaMailClassification.category, 'invoice'),
+        eq(helenaMailClassification.status, 'classified'),
+        isNull(mailMessage.deletedAt),
+        eq(mailAccount.enabled, true),
+        sql`${mailAccount.credentialId} IS NOT NULL`,
+        projectId === undefined ? undefined : eq(mailThread.projectId, projectId),
+        config.accountIds.length ? inArray(mailAccount.id, config.accountIds) : undefined,
+        sql`NOT EXISTS (SELECT 1 FROM jsonb_array_elements(${helenaMailClassification.actions}) action WHERE action->>'kind' = 'receipt')`,
+      ),
+    )
+    .orderBy(asc(helenaMailClassification.id))
+    .limit(BATCH);
+  let done = 0;
+  let failed = 0;
+  for (const { row, projectId: target } of pending) {
+    const action = await fileReceipts(row, target, config, actorUserId);
+    if (!action) continue;
+    await db
+      .update(helenaMailClassification)
+      .set({
+        actions: [
+          ...row.actions.filter(
+            (a) => a.note !== 'Receipt filing failed; retry on the next triage run.',
+          ),
+          action,
+        ],
+      })
+      .where(eq(helenaMailClassification.id, row.id));
+    if (action.kind === 'receipt') done++;
+    else failed++;
+  }
+  return { completed: done, failed };
 }
 
 // The scheduled job classifies the next unhandled inbox mail at each check.
@@ -389,6 +463,7 @@ export async function classifyPending(): Promise<number> {
   let done = 0;
   for (const team of await activeTeams()) {
     const config = mailTriageConfig((team.config as Record<string, unknown>) ?? {});
+    await retryReceiptFiling(team.teamId, config, team.actorUserId);
     const attempted: number[] = [];
     while (attempted.length < MAX_PER_RUN) {
       const batch = await pendingMessages(
@@ -450,6 +525,12 @@ export async function runProjectTriage(
     );
     if (!lock[0]?.acquired)
       throw new HttpError(409, 'Mail triage is already running for this project.');
+    const receiptRetries = await retryReceiptFiling(
+      project.teamId,
+      scoped,
+      team.actorUserId,
+      project.id,
+    );
     const batch = await pendingMessages(project.teamId, scoped, maxMessages, [], project.id);
     const results: {
       messageId: number;
@@ -491,8 +572,11 @@ export async function runProjectTriage(
     return {
       accounts,
       processed: results.length,
+      receiptRetries: receiptRetries.completed,
       hasMore: remaining.length > 0,
-      failed: results.filter((item) => item.status === 'failed' || item.actionFailed).length,
+      failed:
+        receiptRetries.failed +
+        results.filter((item) => item.status === 'failed' || item.actionFailed).length,
       results,
     };
   });
