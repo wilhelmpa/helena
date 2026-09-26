@@ -690,6 +690,7 @@ export class ScreencastStream {
   }
 
   noteAgentActivity() {
+    if (controlStates.has(this.port) && controlStates.get(this.port).holder?.kind !== "agent") return;
     const wasQuiet = Date.now() - this.agentActiveAt >= AGENT_QUIET_MS;
     this.agentActiveAt = Date.now();
     if (wasQuiet) this.resize();
@@ -1380,7 +1381,13 @@ export function stopAllScreencasts() {
 // waiting. Both are kept for viewers who join later and told to those watching now.
 export function setControlState(port, state) {
   controlStates.set(port, { holder: state?.holder ?? null, since: state?.since ?? null });
-  streams.get(port)?.broadcast(controlMessageFor(port));
+  const stream = streams.get(port);
+  if (!stream) return;
+  stream.broadcast(controlMessageFor(port));
+  if (state?.holder?.kind !== "agent" && stream.agentActiveAt) {
+    stream.agentActiveAt = 0;
+    stream.resize();
+  }
 }
 
 export function setHandover(port, notice) {
