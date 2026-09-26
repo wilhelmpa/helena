@@ -103,7 +103,9 @@
   },
   "serverTypes": {
     "lemonade": "Lemonade Server (GPU + NPU)",
-    "openaiCompatible": "OpenAI-kompatibler Server"
+    "openaiCompatible": "OpenAI-kompatibler Server",
+    "whisperCpp": "whisper.cpp (Spracherkennung, GPU)",
+    "qwenTts": "Qwen3-TTS (Stimme, GPU)"
   },
   "classes": {
     "embeddings": {
@@ -124,7 +126,7 @@
     },
     "transcription": {
       "label": "Transkription (Diktat)",
-      "description": "Sprache zu Text für Diktat und Gesprächsmodus (Whisper auf der NPU)."
+      "description": "Sprache zu Text für Diktat und Gesprächsmodus (Whisper auf diesem Rechner)."
     },
     "speech": {
       "label": "Vorlesen (Stimme)",
@@ -145,6 +147,10 @@
     "decisions": {
       "label": "Entscheidungen",
       "description": "Getypte Entscheidungen per Logit-Auswertung: Mail einordnen, Modellwahl, Belege, Workflow-Schritt. Die Arten schaltest du unter Entscheidungen ein."
+    },
+    "voice-reply": {
+      "label": "Sprachantwort (schnell)",
+      "description": "Im Gespräch beantwortet ein schnelles lokales Modell, was das Gespräch selbst beantwortet (Gruß, „hörst du mich?“, Uhrzeit, „sag das kürzer“) in Sekundenbruchteilen; alles, was deine Daten oder eine Aktion braucht, gibt es sofort an den Agenten weiter. Es handelt nie selbst."
     }
   },
   "updates": {
@@ -173,6 +179,43 @@
       "off": "Lokale KI aus",
       "down": "lokaler Server nicht erreichbar",
       "failed": "lokaler Server fiel aus"
+    }
+  },
+  "voice": {
+    "title": "Sprache im Chat",
+    "loading": "Lädt …",
+    "failed": "Die Spracheinstellungen konnten nicht geladen werden.",
+    "pause": {
+      "title": "Pause bis zur Antwort",
+      "hint": "So lange musst du schweigen, bis Helena deinen Satz abschickt. Kürzer antwortet schneller, länger unterbricht dich seltener.",
+      "option": "{seconds} s"
+    },
+    "words": {
+      "title": "Wörter, die Helena kennen soll",
+      "hint": "Namen, Produkte und Fachwörter, damit die Spracherkennung sie richtig schreibt. Von selbst kennt sie: {words}.",
+      "placeholder": "z. B. Steuerberater Müller, Shopify, Kubernetes",
+      "save": "Wörter speichern"
+    },
+    "voice": {
+      "title": "Stimme",
+      "hint": "Die lokale Stimme, mit der Helena im Gespräch antwortet (Lokale KI → „Vorlesen“).",
+      "default": "Standardstimme des Servers",
+      "none": "Noch keine lokale Stimme eingerichtet – bis dahin liest der Browser vor.",
+      "preview": "Probehören",
+      "sample": "Hallo, ich bin Helena. So klinge ich im Gespräch – sag einfach, was du brauchst.",
+      "previewFailed": "Die Stimme konnte nicht abgespielt werden."
+    },
+    "model": {
+      "title": "Modell für Gespräche",
+      "hint": "Womit deine Agenten auf Gesprochenes antworten. Ein schnelles Modell mit wenig Nachdenken hält das Gespräch flüssig; Agenten, die es nicht anbieten, antworten wie sonst.",
+      "default": "Wie beim Tippen (Modell des Agenten)",
+      "thinking": "Nachdenken",
+      "thinkingDefault": "Standard des Modells"
+    },
+    "speed": {
+      "title": "Sprechtempo",
+      "hint": "Wie schnell die Stimme liest. Die lokale Stimme spricht in ihrem eigenen Tempo; das gilt für die Browserstimme.",
+      "option": "{speed} %"
     }
   }
 }

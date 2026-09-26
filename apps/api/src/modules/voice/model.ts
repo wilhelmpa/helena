@@ -22,6 +22,10 @@ const path = t.Object({
 export const VoiceStatusResponse = t.Object({
   transcription: path,
   speech: path,
+  settings: t.Object({
+    pauseMs: t.Number({ description: 'How long a pause ends a conversation turn (ms)' }),
+    speed: t.Number({ description: 'How fast the local voice speaks (1 = normal)' }),
+  }),
   limits: t.Object({
     maxSeconds: t.Number({ description: 'The longest recording one request may carry' }),
     maxBytes: t.Number(),
@@ -38,6 +42,13 @@ export const transcriptionBody = t.Object({
 
 export const TranscriptionResponse = t.Object({
   text: t.String({ description: 'What was said; empty when nothing was understood' }),
+  dropped: t.Nullable(
+    t.Union([t.Literal('no-speech'), t.Literal('hallucination'), t.Literal('other-language')], {
+      description:
+        'Why the text is empty although something was heard: only noise, a line Whisper ' +
+        'invents on silence, or another language than the one asked for',
+    }),
+  ),
   model: t.String(),
   durationMs: t.Number(),
   latencyMs: t.Number(),
@@ -45,4 +56,40 @@ export const TranscriptionResponse = t.Object({
 
 export const speechBody = t.Object({
   text: t.String({ minLength: 1, maxLength: 4000 }),
+  language: t.Optional(
+    t.String({ pattern: '^[a-z]{2}$', description: 'ISO 639-1 of the text, e.g. `de`' }),
+  ),
 });
+
+const settingsFields = {
+  pauseMs: t.Number({ minimum: 300, maximum: 2000, description: 'Pause that ends a turn (ms)' }),
+  vocabulary: t.Array(t.String({ minLength: 1, maxLength: 60 }), {
+    maxItems: 60,
+    description: 'Words the transcription should know (names, products, terms)',
+  }),
+  voice: t.Nullable(
+    t.String({ maxLength: 120, description: "The local voice; null: the server's" }),
+  ),
+  speed: t.Number({ minimum: 0.7, maximum: 1.4 }),
+  replyModel: t.Nullable(
+    t.String({
+      maxLength: 200,
+      description: 'The model an agent answers spoken turns with; null: its usual one',
+    }),
+  ),
+  replyThinkingLevel: t.Nullable(t.String({ maxLength: 40 })),
+};
+
+export const VoiceSettingsResponse = t.Object({
+  ...settingsFields,
+  helenaWords: t.Array(t.String(), {
+    description: 'The names Helena adds to the vocabulary itself (agents, projects)',
+  }),
+  voices: t.Array(t.String(), { description: 'The voices the local speech server offers' }),
+  replyModels: t.Array(
+    t.Object({ id: t.String(), name: t.String(), thinkingLevels: t.Array(t.String()) }),
+    { description: 'The models the agents offer, for spoken turns' },
+  ),
+});
+
+export const voiceSettingsBody = t.Partial(t.Object(settingsFields));

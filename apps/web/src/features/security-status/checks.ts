@@ -7,6 +7,7 @@ export const CHECK_KEYS = [
   'net_firewall',
   'net_self_guard',
   'net_loopback_acl',
+  'net_voice_acl',
   'net_listeners',
   'net_local_owner',
   'net_redis',

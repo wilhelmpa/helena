@@ -171,6 +171,14 @@ else
   else
     record net.loopback_acl network high fail "every local user reaches CDP (19201+, 9222), the browser router (6082), code-server (8443) and the terminal router (8444)"
   fi
+  # Helena's voice servers (native/local-ai/voice.sh) have no key: installed, they need the ACL.
+  if [[ -e /etc/systemd/system/helena-voice-stt.service || -e /etc/systemd/system/helena-voice-tts.service ]]; then
+    if grep -q 'helena:acl-voice' <<<"$nft_rules"; then
+      record net.voice_acl network high pass "the voice servers (13306, 13307) answer only Helena's API"
+    else
+      record net.voice_acl network high fail "every local user reaches the voice servers (13306, 13307): apply.sh firewall"
+    fi
+  fi
 fi
 
 # Listeners on a wildcard or LAN address. Allowed from the network: SSH, HTTP(S), the notes'

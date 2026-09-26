@@ -142,6 +142,7 @@ export default function ChatThreadView({
         agentId: agent.id,
         model: model.model,
         thinkingLevel: model.thinkingLevel,
+        via: 'voice',
       };
       setQueuePaused(false);
       if (plan.busy || queue.length > 0) {

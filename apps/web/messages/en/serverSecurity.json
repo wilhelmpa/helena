@@ -70,7 +70,8 @@
     "files_agent_code": "Agents can read their runtime code",
     "svc_exposure": "Helena services sandboxed by systemd",
     "svc_tools_loopback": "Tools reachable over loopback only",
-    "svc_notes": "Notes shielded"
+    "svc_notes": "Notes shielded",
+    "net_voice_acl": "Voice servers reachable only for Helena"
   },
   "finding": {
     "net_firewall": {
@@ -195,7 +196,10 @@
     "svc_notes": {
       "fail": "The notes are not shielded as intended: {problems}"
     },
-    "skipped": "Not checked"
+    "skipped": "Not checked",
+    "net_voice_acl": {
+      "fail": "Every local user reaches the voice servers (13306, 13307): run apply.sh firewall."
+    }
   },
   "owner": {
     "totpOn": "Authenticator app (TOTP) set up",

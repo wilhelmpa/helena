@@ -103,7 +103,9 @@
   },
   "serverTypes": {
     "lemonade": "Lemonade Server (GPU + NPU)",
-    "openaiCompatible": "Serveur compatible OpenAI"
+    "openaiCompatible": "Serveur compatible OpenAI",
+    "whisperCpp": "whisper.cpp (reconnaissance vocale, GPU)",
+    "qwenTts": "Qwen3-TTS (voix, GPU)"
   },
   "classes": {
     "embeddings": {
@@ -124,7 +126,7 @@
     },
     "transcription": {
       "label": "Transcription (dictée)",
-      "description": "Parole vers texte pour la dictée et le mode conversation (Whisper sur le NPU)."
+      "description": "Parole vers texte pour la dictée et le mode conversation (Whisper sur cette machine)."
     },
     "speech": {
       "label": "Lecture à voix haute (voix)",
@@ -145,6 +147,10 @@
     "decisions": {
       "label": "Décisions",
       "description": "Décisions typées par lecture des logits : tri des e-mails, choix du modèle, justificatifs, étape de workflow. Les types s’activent sous Décisions."
+    },
+    "voice-reply": {
+      "label": "Réponse vocale (rapide)",
+      "description": "En conversation, un modèle local rapide répond à ce que la conversation elle-même permet de répondre (un bonjour, « tu m’entends ? », l’heure, « dis-le plus court ») en une fraction de seconde ; tout ce qui demande tes données ou une action passe aussitôt à l’agent. Il n’agit jamais lui-même."
     }
   },
   "updates": {
@@ -173,6 +179,43 @@
       "off": "IA locale désactivée",
       "down": "serveur local injoignable",
       "failed": "le serveur local a échoué"
+    }
+  },
+  "voice": {
+    "title": "La voix dans le chat",
+    "loading": "Chargement …",
+    "failed": "Impossible de charger les réglages de la voix.",
+    "pause": {
+      "title": "Pause avant la réponse",
+      "hint": "Le silence qu’il faut avant qu’Helena envoie ta phrase. Plus court répond plus vite, plus long t’interrompt moins souvent.",
+      "option": "{seconds} s"
+    },
+    "words": {
+      "title": "Mots qu’Helena doit connaître",
+      "hint": "Noms, produits et termes, pour que la reconnaissance vocale les écrive correctement. Elle connaît déjà : {words}.",
+      "placeholder": "p. ex. comptable Müller, Shopify, Kubernetes",
+      "save": "Enregistrer les mots"
+    },
+    "voice": {
+      "title": "Voix",
+      "hint": "La voix locale avec laquelle Helena répond en conversation (IA locale → « Lecture à voix haute »).",
+      "default": "Voix par défaut du serveur",
+      "none": "Pas encore de voix locale – en attendant, le navigateur lit.",
+      "preview": "Écouter",
+      "sample": "Bonjour, je suis Helena. Voici ma voix en conversation – dis-moi simplement ce dont tu as besoin.",
+      "previewFailed": "La voix n’a pas pu être lue."
+    },
+    "model": {
+      "title": "Modèle pour les conversations",
+      "hint": "Ce avec quoi tes agents répondent à l’oral. Un modèle rapide avec peu de réflexion garde la conversation fluide ; les agents qui ne le proposent pas répondent comme d’habitude.",
+      "default": "Comme à l’écrit (modèle de l’agent)",
+      "thinking": "Réflexion",
+      "thinkingDefault": "Par défaut du modèle"
+    },
+    "speed": {
+      "title": "Débit",
+      "hint": "La vitesse de lecture de la voix. La voix locale parle à son propre rythme ; ceci s’applique à la voix du navigateur.",
+      "option": "{speed} %"
     }
   }
 }

@@ -7,9 +7,15 @@ import {
 import type { LocalAiMode } from '@helena/sdk';
 import { HttpError } from '#shared/lib';
 import { joinUrl } from '#modules/local-ai/eval-context';
-import { taskClass } from '#modules/local-ai/service';
+import { serverContext, serverType, taskClass } from '#modules/local-ai/service';
 import { isAgentUser } from '#modules/agents/core/service';
-import { cleanTranscript } from './transcript';
+import { helenaWords, readVoiceSettings, vocabularyPrompt, type VoiceSettings } from './settings';
+import {
+  confidentText,
+  judgeTranscript,
+  type DropReason,
+  type TranscriptSegment,
+} from './transcript';
 import { canonicalWav, readWav } from './wav';
 
 // Voice in the chat (docs/helena-decisions/voice.md): dictation and the conversation mode send
@@ -81,13 +87,16 @@ function pathOf(routed: Routed): VoicePath {
 }
 
 export async function voiceStatus() {
-  const [transcription, speech] = await Promise.all([
+  const [transcription, speech, settings] = await Promise.all([
     routeOf(TRANSCRIPTION_CLASS),
     routeOf(SPEECH_CLASS),
+    readVoiceSettings(),
   ]);
   return {
     transcription: pathOf(transcription),
     speech: pathOf(speech),
+    // What the browser applies itself.
+    settings: { pauseMs: settings.pauseMs, speed: settings.speed },
     limits: {
       maxSeconds: VOICE_LIMITS.maxSeconds,
       maxBytes: VOICE_LIMITS.maxBytes,
@@ -120,9 +129,58 @@ function authorization(key: string | null): Record<string, string> {
 
 export interface Transcription {
   text: string;
+  // Why the text is empty although something was heard: nothing but noise, a line Whisper
+  // invents on silence, or another language than the one asked for (transcript.ts).
+  dropped: DropReason | null;
   model: string;
   durationMs: number;
   latencyMs: number;
+}
+
+// The words of one transcription's context: the owner's own and Helena's names, read once a
+// minute (a new agent or project is known a minute later).
+let vocabularyCache: { at: number; prompt: string | null; settings: VoiceSettings } | null = null;
+const VOCABULARY_TTL_MS = 60_000;
+
+async function transcriptionContext(): Promise<{ prompt: string | null }> {
+  const now = Date.now();
+  if (!vocabularyCache || now - vocabularyCache.at > VOCABULARY_TTL_MS) {
+    const [settings, words] = await Promise.all([
+      readVoiceSettings(),
+      helenaWords().catch(() => ['Helena']),
+    ]);
+    vocabularyCache = { at: now, settings, prompt: vocabularyPrompt(settings.vocabulary, words) };
+  }
+  return { prompt: vocabularyCache.prompt };
+}
+
+export function forgetVoiceVocabulary(): void {
+  vocabularyCache = null;
+}
+
+// The answer of `/audio/transcriptions`: `{ text }`, and with verbose_json (whisper.cpp) the
+// segments with Whisper's own confidence.
+function transcriptOf(body: unknown): { text: string; segments: TranscriptSegment[] } | null {
+  if (!body || typeof body !== 'object') return null;
+  const value = body as { text?: unknown; segments?: unknown };
+  if (typeof value.text !== 'string') return null;
+  const segments = Array.isArray(value.segments)
+    ? value.segments.flatMap((segment): TranscriptSegment[] => {
+        if (!segment || typeof segment !== 'object') return [];
+        const entry = segment as Record<string, unknown>;
+        if (typeof entry.text !== 'string') return [];
+        const number = (field: unknown) =>
+          typeof field === 'number' && Number.isFinite(field) ? field : null;
+        return [
+          {
+            text: entry.text,
+            noSpeechProb: number(entry.no_speech_prob),
+            avgLogprob: number(entry.avg_logprob),
+          },
+        ];
+      })
+    : [];
+  return { text: value.text, segments };
 }
 
 export async function transcribe(input: {
@@ -143,7 +201,10 @@ export async function transcribe(input: {
       'voice-too-long',
     );
   const route = await requireRoute(TRANSCRIPTION_CLASS);
-  const key = await readModelServerKey(route.server);
+  const [key, context] = await Promise.all([
+    readModelServerKey(route.server),
+    transcriptionContext(),
+  ]);
   const form = new FormData();
   form.append(
     'file',
@@ -151,7 +212,18 @@ export async function transcribe(input: {
     'recording.wav',
   );
   form.append('model', route.model);
-  form.append('response_format', 'json');
+  // A server that takes the whole OpenAI shape (whisper.cpp) gets the vocabulary as the
+  // recording's context (Whisper's `prompt`), greedy decoding at temperature 0 (the steadiest
+  // text, and the fastest) and verbose_json with each segment's own confidence. Lemonade
+  // documents none of that; it gets what it did before.
+  const full = serverType(route.server.kind)?.audio?.transcriptionContext ?? true;
+  if (full) {
+    form.append('response_format', 'verbose_json');
+    form.append('temperature', '0');
+    if (context.prompt) form.append('prompt', context.prompt);
+  } else {
+    form.append('response_format', 'json');
+  }
   if (input.language) form.append('language', input.language);
   const started = Date.now();
   let response: Response;
@@ -173,11 +245,14 @@ export async function transcribe(input: {
       'voice-local-failed',
     );
   }
-  const body = (await response.json().catch(() => null)) as { text?: unknown } | null;
-  if (typeof body?.text !== 'string')
+  const transcript = transcriptOf(await response.json().catch(() => null));
+  if (!transcript)
     throw new HttpError(502, 'The local transcription answered no text', 'voice-local-failed');
+  const heard = transcript.segments.length ? confidentText(transcript.segments) : transcript.text;
+  const judged = judgeTranscript(heard, { language: input.language });
   return {
-    text: cleanTranscript(body.text),
+    text: judged.text,
+    dropped: judged.dropped,
     model: route.modelId,
     durationMs: info.durationMs,
     latencyMs: Date.now() - started,
@@ -187,8 +262,11 @@ export async function transcribe(input: {
 // ── Text to speech ───────────────────────────────────────────────────────────────────────
 
 export interface SpeechAudio {
-  audio: ArrayBuffer;
+  // A whole file, or raw 16-bit mono PCM streamed as the server generates it.
+  audio: ArrayBuffer | ReadableStream<Uint8Array>;
   contentType: string;
+  // The PCM's sample rate while streaming; null for a file.
+  sampleRate: number | null;
   model: string;
 }
 
@@ -218,7 +296,62 @@ async function readLimited(response: Response, limit: number): Promise<ArrayBuff
   return out.buffer;
 }
 
-export async function synthesize(input: { text: string }): Promise<SpeechAudio> {
+// The server's stream passed on as it comes, cut off (an error) past `limit` bytes, and with an
+// even number of bytes per chunk carried over (a sample is two bytes; a chunk may split one).
+export function limitedPcm(
+  body: ReadableStream<Uint8Array>,
+  limit: number,
+): ReadableStream<Uint8Array> {
+  let size = 0;
+  let odd: number | null = null;
+  return body.pipeThrough(
+    new TransformStream<Uint8Array, Uint8Array>({
+      transform(chunk, controller) {
+        size += chunk.byteLength;
+        if (size > limit) {
+          controller.error(new Error('too large'));
+          return;
+        }
+        let bytes = chunk;
+        if (odd !== null) {
+          const joined = new Uint8Array(chunk.byteLength + 1);
+          joined[0] = odd;
+          joined.set(chunk, 1);
+          bytes = joined;
+          odd = null;
+        }
+        if (bytes.byteLength % 2 === 1) {
+          odd = bytes[bytes.byteLength - 1]!;
+          bytes = bytes.subarray(0, bytes.byteLength - 1);
+        }
+        if (bytes.byteLength > 0) controller.enqueue(bytes);
+      },
+    }),
+  );
+}
+
+// The language names speech models take (Qwen3-TTS: "German"), from the page's ISO code.
+const LANGUAGE_NAMES: Record<string, string> = {
+  de: 'German',
+  en: 'English',
+  fr: 'French',
+  es: 'Spanish',
+  it: 'Italian',
+  pt: 'Portuguese',
+  ru: 'Russian',
+  ja: 'Japanese',
+  ko: 'Korean',
+  zh: 'Chinese',
+};
+
+// One seed for every sentence: a sampling TTS draws its voice anew per request, and the same
+// seed keeps one answer (and the next) in one voice.
+const SPEECH_SEED = 7;
+
+export async function synthesize(input: {
+  text: string;
+  language?: string | null;
+}): Promise<SpeechAudio> {
   const text = input.text.replace(/\s+/g, ' ').trim();
   if (!text) throw new HttpError(400, 'Nothing to say', 'voice-empty');
   if (text.length > VOICE_LIMITS.maxSpeechChars)
@@ -228,15 +361,31 @@ export async function synthesize(input: { text: string }): Promise<SpeechAudio> 
       'voice-too-long',
     );
   const route = await requireRoute(SPEECH_CLASS);
-  const key = await readModelServerKey(route.server);
+  const [key, settings] = await Promise.all([
+    readModelServerKey(route.server),
+    readVoiceSettings(),
+  ]);
+  const audioCaps = serverType(route.server.kind)?.audio;
+  const pcmRate = audioCaps?.speechPcmRate ?? null;
+  const language = input.language ? LANGUAGE_NAMES[input.language] : undefined;
+  // PCM where the server streams it: the first words play while the rest is generated. WAV
+  // otherwise — the one container every Lemonade speech backend encodes and every browser
+  // decodes.
+  const body = {
+    model: route.model,
+    input: text,
+    response_format: pcmRate ? 'pcm' : 'wav',
+    ...(settings.voice && { voice: settings.voice }),
+    ...(settings.speed !== 1 && { speed: settings.speed }),
+    ...(audioCaps?.speechLanguage && language && { language }),
+    ...(pcmRate && { seed: SPEECH_SEED }),
+  };
   let response: Response;
   try {
     response = await fetch(joinUrl(route.server.baseUrl, '/audio/speech'), {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...authorization(key) },
-      // WAV: the one container every speech backend of Lemonade 2026.39.1 encodes (Kokoro also
-      // mp3/opus, OpenMOSS only wav/pcm) and every browser decodes.
-      body: JSON.stringify({ model: route.model, input: text, response_format: 'wav' }),
+      body: JSON.stringify(body),
       redirect: 'error',
       signal: AbortSignal.timeout(SPEECH_TIMEOUT_MS),
     });
@@ -249,6 +398,16 @@ export async function synthesize(input: { text: string }): Promise<SpeechAudio> 
       `The local voice failed (HTTP ${response.status})`,
       'voice-local-failed',
     );
+  if (pcmRate) {
+    if (!response.body)
+      throw new HttpError(502, 'The local voice answered no audio', 'voice-local-failed');
+    return {
+      audio: limitedPcm(response.body, MAX_SPEECH_BYTES),
+      contentType: 'audio/pcm',
+      sampleRate: pcmRate,
+      model: route.modelId,
+    };
+  }
   const contentType = (response.headers.get('content-type') ?? 'audio/wav').split(';')[0]!.trim();
   if (!/^audio\/[\w.+-]+$/.test(contentType))
     throw new HttpError(502, 'The local voice answered no audio', 'voice-local-failed');
@@ -260,7 +419,22 @@ export async function synthesize(input: { text: string }): Promise<SpeechAudio> 
   }
   if (audio.byteLength === 0)
     throw new HttpError(502, 'The local voice answered no audio', 'voice-local-failed');
-  return { audio, contentType, model: route.modelId };
+  return { audio, contentType, sampleRate: null, model: route.modelId };
+}
+
+// The voices the speech server of "Vorlesen" offers, for the owner to pick one; empty when the
+// class has no local server or the server lists none.
+export async function speechVoices(): Promise<string[]> {
+  const routed = await routeOf(SPEECH_CLASS);
+  if (!('route' in routed)) return [];
+  const type = serverType(routed.route.server.kind);
+  if (!type?.voices) return [];
+  const key = await readModelServerKey(routed.route.server);
+  try {
+    return await type.voices(serverContext(routed.route.server, key, 5_000));
+  } catch {
+    return [];
+  }
 }
 
 // ── How much one person may ask for ──────────────────────────────────────────────────────

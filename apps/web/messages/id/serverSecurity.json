@@ -70,7 +70,8 @@
     "files_agent_code": "Agen dapat membaca kode runtime mereka",
     "svc_exposure": "Layanan Helena diisolasi oleh systemd",
     "svc_tools_loopback": "Alat hanya terjangkau lewat loopback",
-    "svc_notes": "Catatan terlindungi"
+    "svc_notes": "Catatan terlindungi",
+    "net_voice_acl": "Server suara hanya dapat dijangkau Helena"
   },
   "finding": {
     "net_firewall": {
@@ -195,7 +196,10 @@
     "svc_notes": {
       "fail": "Catatan tidak terlindungi seperti seharusnya: {problems}"
     },
-    "skipped": "Tidak diperiksa"
+    "skipped": "Tidak diperiksa",
+    "net_voice_acl": {
+      "fail": "Setiap pengguna lokal dapat menjangkau server suara (13306, 13307): jalankan apply.sh firewall."
+    }
   },
   "owner": {
     "totpOn": "Aplikasi autentikator (TOTP) sudah diatur",

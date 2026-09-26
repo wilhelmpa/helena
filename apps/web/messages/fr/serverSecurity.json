@@ -70,7 +70,8 @@
     "files_agent_code": "Les agents peuvent lire leur code d'exécution",
     "svc_exposure": "Services Helena isolés par systemd",
     "svc_tools_loopback": "Outils accessibles seulement via loopback",
-    "svc_notes": "Notes protégées"
+    "svc_notes": "Notes protégées",
+    "net_voice_acl": "Serveurs vocaux accessibles uniquement à Helena"
   },
   "finding": {
     "net_firewall": {
@@ -195,7 +196,10 @@
     "svc_notes": {
       "fail": "Les notes ne sont pas protégées comme prévu : {problems}"
     },
-    "skipped": "Non vérifié"
+    "skipped": "Non vérifié",
+    "net_voice_acl": {
+      "fail": "Tout utilisateur local atteint les serveurs vocaux (13306, 13307) : lance apply.sh firewall."
+    }
   },
   "owner": {
     "totpOn": "Application d’authentification (TOTP) configurée",

@@ -13,6 +13,7 @@ import {
   type ConversationPhase,
   type ConversationState,
 } from '../utils/conversation';
+import type { TurnTimings } from '../utils/turnTimings';
 import { useVoice } from './useVoice';
 
 // The chat's conversation mode (hands-free): see browser/conversationController.ts. The chat
@@ -34,6 +35,10 @@ export interface Conversation {
   // What was understood last, for a moment.
   heard: string | null;
   listenerEngine: 'local' | 'browser' | 'none';
+  // Where the time of the last answered turn went (null before the first).
+  timings: TurnTimings | null;
+  // Speech was heard a moment ago but not understood.
+  misheard: boolean;
   speakerEngine: 'local' | 'browser' | 'none';
   start: () => void;
   stop: () => void;
@@ -49,6 +54,8 @@ export function useConversation(options: ConversationOptions): Conversation {
   const voice = useVoice();
   const [state, setState] = useState<ConversationState>(initialConversation);
   const [heard, setHeard] = useState<string | null>(null);
+  const [timings, setTimings] = useState<TurnTimings | null>(null);
+  const [misheard, setMisheard] = useState(false);
   const painter = useRef<((level: number) => void) | null>(null);
   const latest = useRef(options);
   const refresh = useRef(voice.refresh);
@@ -64,6 +71,7 @@ export function useConversation(options: ConversationOptions): Conversation {
     made.current ??= new ConversationController({
       onState: setState,
       onHeard: (text) => {
+        setMisheard(false);
         setHeard(text);
         window.clearTimeout(heardTimer.current);
         heardTimer.current = window.setTimeout(() => setHeard(null), HEARD_MS);
@@ -71,8 +79,15 @@ export function useConversation(options: ConversationOptions): Conversation {
       onLevel: (level) => painter.current?.(level),
       onProblem: (problem) => latest.current.onProblem(problem),
       send: (text) => latest.current.send(text),
-      transcribe: async (wav, language) => (await transcribeRecording(wav, language)).text,
+      transcribe: (wav, language) => transcribeRecording(wav, language),
+      onMisheard: () => {
+        setHeard(null);
+        setMisheard(true);
+        window.clearTimeout(heardTimer.current);
+        heardTimer.current = window.setTimeout(() => setMisheard(false), HEARD_MS);
+      },
       refreshStatus: () => refresh.current(),
+      onTimings: setTimings,
     });
     return made.current;
   }, []);
@@ -80,6 +95,10 @@ export function useConversation(options: ConversationOptions): Conversation {
   useEffect(() => {
     controller().setEngines(voice.listener, voice.speaker);
   }, [controller, voice.listener, voice.speaker]);
+
+  useEffect(() => {
+    controller().configure({ pauseMs: voice.pauseMs, speed: voice.speed });
+  }, [controller, voice.pauseMs, voice.speed]);
 
   useEffect(() => {
     controller().update(options.messages, options.busy, options.queued);
@@ -104,6 +123,8 @@ export function useConversation(options: ConversationOptions): Conversation {
       phase: conversationPhase(state),
       state,
       heard,
+      timings,
+      misheard,
       listenerEngine: voice.listener.engine,
       speakerEngine: voice.speaker.engine,
       start,
@@ -114,6 +135,16 @@ export function useConversation(options: ConversationOptions): Conversation {
         painter.current = paint;
       },
     }),
-    [voice.ready, voice.listener.engine, voice.speaker.engine, state, heard, start, controller],
+    [
+      voice.ready,
+      voice.listener.engine,
+      voice.speaker.engine,
+      state,
+      heard,
+      timings,
+      misheard,
+      start,
+      controller,
+    ],
   );
 }

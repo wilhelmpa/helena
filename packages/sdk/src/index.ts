@@ -368,6 +368,7 @@ export {
   type LocalAiUnit,
   type LocalModel,
   type LocalModelCapability,
+  type ModelServerAudio,
   type ModelServerContext,
   type ModelServerLoad,
   type ModelServerStatus,

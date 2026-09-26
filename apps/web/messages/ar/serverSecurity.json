@@ -70,7 +70,8 @@
     "files_agent_code": "يمكن للوكلاء قراءة شيفرة بيئة التشغيل الخاصة بهم",
     "svc_exposure": "خدمات Helena معزولة بواسطة systemd",
     "svc_tools_loopback": "الأدوات متاحة عبر loopback فقط",
-    "svc_notes": "الملاحظات معزولة"
+    "svc_notes": "الملاحظات معزولة",
+    "net_voice_acl": "خوادم الصوت متاحة لـ Helena فقط"
   },
   "finding": {
     "net_firewall": {
@@ -195,7 +196,10 @@
     "svc_notes": {
       "fail": "الملاحظات ليست معزولة كما هو مقصود: {problems}"
     },
-    "skipped": "لم يُفحص"
+    "skipped": "لم يُفحص",
+    "net_voice_acl": {
+      "fail": "يصل أي مستخدم محلي إلى خوادم الصوت (13306، 13307): شغّل apply.sh firewall."
+    }
   },
   "owner": {
     "totpOn": "تم إعداد تطبيق المصادقة (TOTP)",

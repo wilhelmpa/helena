@@ -17,11 +17,15 @@ export interface VoicePath {
 export interface VoiceStatus {
   transcription: VoicePath;
   speech: VoicePath;
+  // What the browser applies itself (absent from an older API).
+  settings?: { pauseMs: number; speed: number };
   limits: { maxSeconds: number; maxBytes: number; maxSpeechChars: number };
 }
 
 export interface Transcription {
   text: string;
+  // Why the text is empty although something was heard.
+  dropped?: 'no-speech' | 'hallucination' | 'other-language' | null;
   model: string;
   durationMs: number;
   latencyMs: number;
@@ -49,15 +53,52 @@ export async function transcribeRecording(
   return res.json();
 }
 
-// A sentence as audio from Helena's local voice.
-export async function speakText(text: string, signal?: AbortSignal): Promise<Blob> {
+// A sentence as audio from Helena's local voice: a WAV file, or raw 16-bit mono PCM
+// (`audio/pcm`, its rate in `x-helena-sample-rate`) streamed as the server generates it. The
+// response is handed over unread, so a stream can be played as it comes.
+export async function speakText(
+  text: string,
+  language: string | null,
+  signal?: AbortSignal,
+): Promise<Response> {
   const res = await fetch(`${API_URL}/voice/speech`, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({ text, ...(language && /^[a-z]{2}$/.test(language) && { language }) }),
     signal,
   });
   if (!res.ok) throw await apiFailure(res);
-  return res.blob();
+  return res;
 }
+
+// The owner's voice settings (Lokale KI → Sprache; Administrator).
+export interface VoiceSettings {
+  // How long a pause ends a conversation turn (ms).
+  pauseMs: number;
+  // Words the transcription should know, beyond Helena's own names.
+  vocabulary: string[];
+  // The local voice; null: the speech server's default.
+  voice: string | null;
+  speed: number;
+  // The model agents answer spoken turns with; null: their usual one.
+  replyModel: string | null;
+  replyThinkingLevel: string | null;
+  // Read only: the names Helena adds itself, the voices the speech server offers, the models
+  // the agents offer.
+  helenaWords: string[];
+  voices: string[];
+  replyModels: { id: string; name: string; thinkingLevels: string[] }[];
+}
+
+export type VoiceSettingsPatch = Partial<
+  Pick<
+    VoiceSettings,
+    'pauseMs' | 'vocabulary' | 'voice' | 'speed' | 'replyModel' | 'replyThinkingLevel'
+  >
+>;
+
+export const getVoiceSettings = () => request<VoiceSettings>('/god/voice/settings');
+
+export const updateVoiceSettings = (patch: VoiceSettingsPatch) =>
+  request<VoiceSettings>('/god/voice/settings', { method: 'PATCH', body: JSON.stringify(patch) });

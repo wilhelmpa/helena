@@ -8,6 +8,7 @@ import {
   evaluateSummaries,
   evaluateTriage,
 } from './evals';
+import { VOICE_REPLY_THRESHOLD, evaluateVoiceReply } from '#modules/voice/reply-eval';
 
 // The kinds of work local AI may take (docs/helena-decisions/local-ai-platform.md §6), as
 // the built-in plugin `helena.local-ai` registers them. Background work and automation only:
@@ -125,6 +126,23 @@ export const BUILTIN_TASK_CLASSES: LocalAiTaskClass[] = [
     inMasterDefault: false,
     // The conversation mode reads answers aloud through it (modules/voice).
     wired: true,
+  },
+  {
+    id: 'voice-reply',
+    label: label('voice-reply'),
+    description: description('voice-reply'),
+    unit: 'gpu',
+    capability: 'tools',
+    priority: 'interactive',
+    // A spoken question is answered by a small fast model where the conversation answers it,
+    // and handed to the agent otherwise (modules/voice/reply.ts, voice-2.md §4). It only talks:
+    // no tools but the hand-over, no data. Its eval requires every hand-over case.
+    thinking: 'off',
+    inMasterDefault: false,
+    wired: true,
+    modes: PREFER_ONLY,
+    evaluate: evaluateVoiceReply,
+    threshold: VOICE_REPLY_THRESHOLD,
   },
   {
     id: 'routines',

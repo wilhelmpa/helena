@@ -23,7 +23,8 @@ export default function ConversationBar({
 }) {
   const t = useTranslations('chatWorkspace.voice');
   const dot = useRef<HTMLSpanElement>(null);
-  const { phase, heard, state, onLevel } = conversation;
+  const { phase, heard, misheard, timings, state, onLevel } = conversation;
+  const seconds = (ms: number) => (ms / 1000).toFixed(1);
 
   useEffect(() => {
     onLevel((level) => {
@@ -53,11 +54,25 @@ export default function ConversationBar({
         ? t('where.speakBrowser')
         : t('where.speakNone'),
   ].join(' · ');
+  // Where the time of the last turn went, for the owner (the dot's tooltip) and the voice E2E.
+  const timing = timings
+    ? t('timings', {
+        total: seconds(timings.totalMs),
+        pause: seconds(timings.pauseMs),
+        transcribe: seconds(timings.transcribeMs),
+        answer: seconds(timings.answerMs),
+        voice: seconds(timings.voiceMs),
+      })
+    : null;
 
   const live = phase === 'listening' || phase === 'hearing';
 
   return (
-    <Marker role="status" className="min-h-7 gap-x-2 px-1 text-xs">
+    <Marker
+      role="status"
+      className="min-h-7 gap-x-2 px-1 text-xs"
+      data-voice-timings={timings ? JSON.stringify(timings) : undefined}
+    >
       <Tooltip>
         <TooltipTrigger asChild>
           <span
@@ -88,7 +103,10 @@ export default function ConversationBar({
             )}
           </span>
         </TooltipTrigger>
-        <TooltipContent side="top">{where}</TooltipContent>
+        <TooltipContent side="top">
+          {where}
+          {timing && <span className="block">{timing}</span>}
+        </TooltipContent>
       </Tooltip>
       <MarkerContent
         className={cn(
@@ -99,7 +117,9 @@ export default function ConversationBar({
         <span className="min-w-0 truncate">{label}</span>
         {/* What was understood, where the composer is wide enough (the text is also the
             message in the transcript). */}
-        {heard && phase !== 'hearing' ? (
+        {misheard && phase !== 'hearing' ? (
+          <span className="min-w-0 flex-1 truncate text-muted-foreground">{t('misheard')}</span>
+        ) : heard && phase !== 'hearing' ? (
           <span
             dir="auto"
             className="hidden min-w-0 flex-1 truncate text-muted-foreground @md/composer:inline"

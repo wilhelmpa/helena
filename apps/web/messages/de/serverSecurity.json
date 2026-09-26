@@ -70,7 +70,8 @@
     "files_agent_code": "Agenten können ihren Laufzeit-Code lesen",
     "svc_exposure": "Helena-Dienste von systemd abgeschottet",
     "svc_tools_loopback": "Werkzeuge nur über Loopback erreichbar",
-    "svc_notes": "Notizen abgeschirmt"
+    "svc_notes": "Notizen abgeschirmt",
+    "net_voice_acl": "Sprachserver nur für Helena erreichbar"
   },
   "finding": {
     "net_firewall": {
@@ -195,7 +196,10 @@
     "svc_notes": {
       "fail": "Die Notizen sind nicht wie vorgesehen abgeschirmt: {problems}"
     },
-    "skipped": "Nicht geprüft"
+    "skipped": "Nicht geprüft",
+    "net_voice_acl": {
+      "fail": "Jeder lokale Benutzer erreicht die Sprachserver (13306, 13307): apply.sh firewall ausführen."
+    }
   },
   "owner": {
     "totpOn": "Authenticator-App (TOTP) eingerichtet",

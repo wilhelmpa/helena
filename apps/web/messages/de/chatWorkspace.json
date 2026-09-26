@@ -256,6 +256,9 @@
       "limit": "Nach {seconds} Sekunden beendet – so lang darf ein Diktat höchstens sein.",
       "echoTitle": "Ich habe mich selbst gehört",
       "echo": "Über Lautsprecher unterbrichst du mich ab jetzt mit „Unterbrechen“. Mit Kopfhörern oder der lokalen Stimme geht es auch per Stimme."
-    }
+    },
+    "misheard": "Nicht verstanden – sag es bitte noch einmal.",
+    "timings": "Letzte Antwort nach {total} s: Pause {pause} s · Mitschrift {transcribe} s · Antwort {answer} s · Stimme {voice} s",
+    "replyLine": "Schnelle Sprachantwort ({model}) – nicht der Agent"
   }
 }

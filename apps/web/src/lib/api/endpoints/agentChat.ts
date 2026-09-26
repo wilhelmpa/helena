@@ -272,6 +272,8 @@ export interface AiChatMessage {
   modelRoute?: ModelRoute | null;
   // A local model was asked for and the configured one answered.
   localFallback?: LocalFallback;
+  // Said in the conversation mode, or answered by Helena's voice reply.
+  via?: 'voice';
 }
 
 export interface AiChatThreadPage {
@@ -406,6 +408,8 @@ export const sendAiAgentChat = (
     attachments?: { files?: string[]; issueIds?: number[] };
     model?: string | null;
     thinkingLevel?: string | null;
+    // Said in the conversation mode: the agent answers short and speakable.
+    via?: 'voice';
   },
 ) =>
   request<{ threadId: string; messageId: number; userMessageId: number }>(

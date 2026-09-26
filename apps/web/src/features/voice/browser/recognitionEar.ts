@@ -82,6 +82,7 @@ export function startRecognitionEar(events: EarEvents): ConversationEar {
   begin();
 
   return {
+    pauseMs: TURN_END_MS,
     setGuarded() {
       // The browser decides what speech is; nothing to tune.
     },

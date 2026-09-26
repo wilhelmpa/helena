@@ -1,6 +1,7 @@
 'use client';
 
 import { ModelRouteLine } from '@/features/decisions/components/ModelRouteLine';
+import VoiceReplyLine from '@/features/voice/components/VoiceReplyLine';
 import { LocalFallbackLine } from '@/features/local-ai/components/LocalFallbackLine';
 import { useMemo } from 'react';
 import { AgentMessageParts } from '@/components/agent-message/AgentMessageParts';
@@ -67,6 +68,9 @@ export default function ChatMessageBubbleAssistant({
         {sources.length > 0 && <ChatSources sources={sources} projectKey={projectKey} />}
         {!streaming && message.metadata?.modelRoute?.routed && (
           <ModelRouteLine route={message.metadata.modelRoute} />
+        )}
+        {!streaming && message.metadata?.via === 'voice' && (
+          <VoiceReplyLine model={message.metadata.model} />
         )}
         {!streaming && message.metadata?.localFallback && (
           <LocalFallbackLine

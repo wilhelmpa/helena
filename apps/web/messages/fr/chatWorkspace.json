@@ -256,6 +256,9 @@
       "limit": "Arrêté après {seconds} secondes – la durée maximale d'une dictée.",
       "echoTitle": "Je me suis entendue",
       "echo": "Sur haut-parleurs, interrompez-moi désormais avec « Interrompre ». Avec un casque ou la voix locale, la parole fonctionne aussi."
-    }
+    },
+    "misheard": "Je n’ai pas compris – répète, s’il te plaît.",
+    "timings": "Dernière réponse après {total} s : pause {pause} s · transcription {transcribe} s · réponse {answer} s · voix {voice} s",
+    "replyLine": "Réponse vocale rapide ({model}) – pas l’agent"
   }
 }

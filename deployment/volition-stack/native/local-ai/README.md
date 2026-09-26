@@ -11,6 +11,8 @@ each step in a maintenance window, after the RAID resync (`cat /proc/mdstat` sho
 | `rocm-requirements.txt` | the ROCm/PyTorch wheels with their SHA-256 (`--require-hashes`) |
 | `bench.sh` | llama-bench ROCm (hipBLASLt off/on) vs Vulkan: pp512/pp8192/pp32768, tg128 empty and at 32k; the task-class evals; GPU+NPU in parallel |
 | `models.tsv` | every model with repository commit and SHA-256 of each file |
+| `voice.sh` | Helena's voice on the GPU (hub/voice-2, `docs/helena-decisions/voice-2.md`): whisper.cpp (German Whisper) on `127.0.0.1:13306` and qwentts.cpp (Qwen3-TTS) on `127.0.0.1:13307`, built for gfx1151 on the ROCm tree above; voices designed or cloned; see "Voice" |
+| `voice-models.tsv`, `voice-register-voices` | the voice models (commit + SHA-256) and the start hook that registers the voices |
 | `tests/` | `python3 -m unittest discover -s deployment/volition-stack/native/local-ai/tests` |
 
 ## Order
@@ -100,6 +102,34 @@ Check that no agent run or chat answer is in flight before every reboot or servi
    `sudo native/laya/install.sh install --rocm` (decision doc §4.6): Laya's venv uses
    the ROCm tree of step 6 through a `.pth` line, no second PyTorch.
 
+## Voice (hub/voice-2)
+
+After step 6 (ROCm is there), in a quiet moment (no deploy, no full test: the two HIP builds take
+~10 min with 4 jobs), once the owner approved the downloads (`docs/helena-decisions/voice-2.md`
+§6, ≈ 3.1 GB with the voice-design model):
+
+```sh
+sudo ./voice.sh --dry-run install && sudo ./voice.sh install     # models, builds, units, start
+sudo ../hardening/apply.sh firewall                               # the new `voice` loopback ACL
+sudo ../hardening/apply.sh --apply firewall && sudo ../hardening/apply.sh --apply confirm firewall
+sudo ./voice.sh models pull qwen3-tts-1.7b-voicedesign            # 1.18 GB, only to design voices
+sudo ./voice.sh voice design helena "A warm, friendly female voice in her early thirties with clear, natural standard German pronunciation. Calm, relaxed conversational pace, pleasant and slightly smiling."
+sudo systemctl restart helena-voice-tts && sudo ./voice.sh status   # "voices: … helena …"
+sudo systemd-run --wait --pipe --collect --uid=volition-plan \
+  -p EnvironmentFile=/etc/volition/plan.env -p WorkingDirectory=/srv/volition/source/plan \
+  /usr/local/bin/bun apps/api/src/scripts/voice-register.ts           # helena-stt, helena-tts
+```
+
+Then in Helena (Administrator → Lokale KI): Transkription → `helena-stt/whisper`, Vorlesen →
+`helena-tts/qwen3-tts` (both "Lokal bevorzugt"), Sprache → Stimme `helena`. The voice reply:
+run the eval of "Sprachantwort (schnell)" on `helena-local/Qwen3.6-35B-A3B-MTP-GGUF`, then switch
+it to "Lokal bevorzugt". Check: `node scripts/voice-live-check.mjs <recording.wav> VOL` through
+the headless driver (transcription and speech timings), then a spoken turn in the chat — the
+dot's tooltip shows where the time went.
+
+Rollback: Lokale KI → Transkription/Vorlesen back to their previous model or "Aus" (instant);
+`sudo ./voice.sh uninstall` (`--purge` also removes the models, the voices and the user).
+
 ## Rollback
 
 - Kernel, before promote: nothing to do; the next reboot is 6.12. After promote:
@@ -126,3 +156,6 @@ Check that no agent run or chat answer is in flight before every reboot or servi
 | `/etc/systemd/system/lemond.service.d/helena.conf` | root | loopback, key, limits, no network |
 | `/etc/systemd/system/helena-ai-proxy.{socket,service}` | root | the forwarder for isolated agents |
 | `/etc/apt/sources.list.d/helena-backports.sources`, `/etc/apt/preferences.d/helena-{backports,ai}` | root | backports at priority 1, Helena's packages at exact versions |
+| `/opt/helena-ai/voice/{whisper-1.8.4,qwentts-6a3e91283}/` | root | the voice servers (voice.sh) |
+| `/var/lib/helena-voice/{models,voices}/` | root:helena-voice / helena-voice | the voice models, the designed or cloned voices (`.spk`, `.rvq`, `.txt`, `.wav`) |
+| `/etc/systemd/system/helena-voice-{stt,tts}.service` | root | the two servers, loopback only, sandboxed |

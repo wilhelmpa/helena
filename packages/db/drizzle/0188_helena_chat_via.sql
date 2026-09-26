@@ -1,0 +1,2 @@
+ALTER TABLE "agent_chat_message" ADD COLUMN "via" text;--> statement-breakpoint
+ALTER TABLE "agent_chat_message" ADD CONSTRAINT "agent_chat_message_via_check" CHECK ("agent_chat_message"."via" IS NULL OR "agent_chat_message"."via" IN ('voice'));

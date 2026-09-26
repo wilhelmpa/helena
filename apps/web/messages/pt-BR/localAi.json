@@ -103,7 +103,9 @@
   },
   "serverTypes": {
     "lemonade": "Lemonade Server (GPU + NPU)",
-    "openaiCompatible": "Servidor compatível com OpenAI"
+    "openaiCompatible": "Servidor compatível com OpenAI",
+    "whisperCpp": "whisper.cpp (reconhecimento de fala, GPU)",
+    "qwenTts": "Qwen3-TTS (voz, GPU)"
   },
   "classes": {
     "embeddings": {
@@ -124,7 +126,7 @@
     },
     "transcription": {
       "label": "Transcrição (ditado)",
-      "description": "Fala para texto no ditado e no modo conversa (Whisper na NPU)."
+      "description": "Fala para texto no ditado e no modo conversa (Whisper nesta máquina)."
     },
     "speech": {
       "label": "Leitura em voz alta (voz)",
@@ -145,6 +147,10 @@
     "decisions": {
       "label": "Decisões",
       "description": "Decisões tipadas por leitura de logits: classificar e-mails, escolha de modelo, comprovantes, etapa de workflow. Os tipos são ativados em Decisões."
+    },
+    "voice-reply": {
+      "label": "Resposta por voz (rápida)",
+      "description": "Numa conversa, um modelo local rápido responde o que a própria conversa responde (um cumprimento, “você me ouve?”, a hora, “diga isso mais curto”) numa fração de segundo; tudo o que precisa dos seus dados ou de uma ação vai na hora para o agente. Ele nunca age por conta própria."
     }
   },
   "updates": {
@@ -173,6 +179,43 @@
       "off": "IA local desligada",
       "down": "servidor local inacessível",
       "failed": "o servidor local falhou"
+    }
+  },
+  "voice": {
+    "title": "Voz no chat",
+    "loading": "Carregando …",
+    "failed": "Não foi possível carregar as configurações de voz.",
+    "pause": {
+      "title": "Pausa antes da resposta",
+      "hint": "Quanto tempo você precisa ficar em silêncio até a Helena enviar sua frase. Mais curta responde mais rápido, mais longa interrompe você menos.",
+      "option": "{seconds} s"
+    },
+    "words": {
+      "title": "Palavras que a Helena deve conhecer",
+      "hint": "Nomes, produtos e termos, para o reconhecimento de fala escrevê-los certo. Ela já conhece: {words}.",
+      "placeholder": "ex.: contador Müller, Shopify, Kubernetes",
+      "save": "Salvar palavras"
+    },
+    "voice": {
+      "title": "Voz",
+      "hint": "A voz local com que a Helena responde numa conversa (IA local → “Ler em voz alta”).",
+      "default": "Voz padrão do servidor",
+      "none": "Ainda não há voz local – até lá o navegador lê.",
+      "preview": "Ouvir",
+      "sample": "Oi, eu sou a Helena. É assim que eu soo numa conversa – é só dizer o que você precisa.",
+      "previewFailed": "Não foi possível tocar a voz."
+    },
+    "model": {
+      "title": "Modelo para conversas",
+      "hint": "Com o que seus agentes respondem ao que é falado. Um modelo rápido com pouco raciocínio mantém a conversa fluida; agentes que não o oferecem respondem como sempre.",
+      "default": "Como ao digitar (modelo do agente)",
+      "thinking": "Raciocínio",
+      "thinkingDefault": "Padrão do modelo"
+    },
+    "speed": {
+      "title": "Velocidade da fala",
+      "hint": "A rapidez com que a voz lê. A voz local fala no próprio ritmo; isto vale para a voz do navegador.",
+      "option": "{speed} %"
     }
   }
 }

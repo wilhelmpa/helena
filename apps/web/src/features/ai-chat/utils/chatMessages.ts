@@ -30,6 +30,8 @@ export interface PlanChatMetadata {
   modelRoute?: ModelRoute | null;
   // A local model was asked for and the configured one answered (local-ai-platform.md §6.3).
   localFallback?: LocalFallback;
+  // Said in the conversation mode, or answered by Helena's voice reply (voice-2.md §4).
+  via?: 'voice';
   // The browser lost the answer's stream before it ended (see AgUiChunkMapper.end); the
   // answer itself may still have finished on the operator's machine.
   interrupted?: boolean;
@@ -93,6 +95,7 @@ export function toUIMessage(message: AiChatMessage): PlanUIMessage {
       ...(message.errorModel !== undefined && { errorModel: message.errorModel }),
       ...(message.modelRoute ? { modelRoute: message.modelRoute } : {}),
       ...(message.localFallback ? { localFallback: message.localFallback } : {}),
+      ...(message.via ? { via: message.via } : {}),
     },
   };
 }

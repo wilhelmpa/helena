@@ -1,0 +1,39 @@
+#!/bin/sh
+# Registers Helena's voices with qwentts.cpp's tts-server once it answers (voice.sh; the
+# server keeps registered voices in memory only, so this runs after every start). Each voice is
+# <name>.spk + <name>.rvq (the Base talker's speaker embedding and reference codes, made by
+# qwen-codec) and <name>.txt (what the reference says).
+#
+#   voice-register-voices <port> <voices dir>
+set -eu
+port=$1 dir=$2
+i=0
+until curl -sf -m 2 "http://127.0.0.1:$port/health" >/dev/null; do
+  i=$((i + 1))
+  [ $i -lt 240 ] || { echo "tts-server did not answer" >&2; exit 1; }
+  sleep 1
+done
+for spk in "$dir"/*.spk; do
+  [ -f "$spk" ] || continue
+  name=$(basename "$spk" .spk)
+  [ -f "$dir/$name.rvq" ] && [ -f "$dir/$name.txt" ] || continue
+  body=$(mktemp)
+  python3 - "$name" "$dir" > "$body" <<'PY'
+import base64, json, sys
+name, folder = sys.argv[1], sys.argv[2]
+read = lambda ext: open(f"{folder}/{name}.{ext}", "rb").read()
+print(json.dumps({
+    "name": name,
+    "ref_text": read("txt").decode("utf-8"),
+    "spk_b64": base64.b64encode(read("spk")).decode(),
+    "rvq_b64": base64.b64encode(read("rvq")).decode(),
+}))
+PY
+  if curl -sf -m 30 -X POST -H 'Content-Type: application/json' --data @"$body" \
+    "http://127.0.0.1:$port/v1/audio/voices" >/dev/null; then
+    echo "registered voice $name"
+  else
+    echo "could not register voice $name" >&2
+  fi
+  rm -f "$body"
+done

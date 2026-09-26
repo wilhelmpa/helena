@@ -1,3 +1,4 @@
+import { speakable } from './speakable';
 import { speechText } from './speechText';
 
 // Reading an answer aloud while it streams: the text that has arrived is cut into pieces a
@@ -106,16 +107,43 @@ function splitLong(piece: string): string[] {
   return parts;
 }
 
+// Whether what is left after `offset` already ends like a finished sentence ("…hören." with
+// nothing after it), outside a code block. While an answer streams, such a tail is only held
+// back because nothing has followed it yet; the conversation reads it once the text has been
+// quiet for a moment, instead of waiting for the answer to be closed. Agents write their
+// answer in one piece and close it a second or two later (Hermes saves its session first), so
+// a short answer — one sentence — used to wait all of that time.
+export function settledTail(markdown: string, offset: number): boolean {
+  const tail = markdown.slice(offset);
+  if (!tail.trim()) return false;
+  // An open fence: the code block is still coming.
+  const fences = tail.split('\n').filter(isFenceLine).length;
+  if (fences % 2 === 1) return false;
+  const trimmed = tail.replace(/[\s"“”'’)»«\]]+$/u, '');
+  const last = trimmed.length - 1;
+  if (last < 0) return false;
+  const mark = trimmed[last]!;
+  if (mark !== '.' && mark !== '!' && mark !== '?' && mark !== '…') return false;
+  // "z. B." or "3." at the very end is not the end of a sentence yet.
+  return endsSentence(markdown, offset + last);
+}
+
 // The next pieces of `markdown` to read aloud from `offset`, and where reading stands after
 // them. With `final` (the answer is complete) the rest goes too.
-export function nextSpeechChunks(markdown: string, offset: number, final: boolean): SpeechChunks {
+export function nextSpeechChunks(
+  markdown: string,
+  offset: number,
+  final: boolean,
+  // The language pieces are spelled out for (utils/speakable.ts).
+  lang = 'de',
+): SpeechChunks {
   const ends = boundaries(markdown, offset, final);
   const chunks: string[] = [];
   let start = offset;
   let consumed = offset;
   let pending = '';
   for (const end of ends) {
-    const spoken = speechText(markdown.slice(start, end)).replace(/\s+/g, ' ').trim();
+    const spoken = speakable(speechText(markdown.slice(start, end)), lang);
     start = end;
     // Pieces joined because each was short (a heading, list items) keep a pause between them.
     const joined = !pending
