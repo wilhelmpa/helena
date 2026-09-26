@@ -1,6 +1,9 @@
 'use client';
 
-import { useRef, useState, type ReactNode } from 'react';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
+import { WebLinksContext } from '@/context/webLinks';
+import { useWebLinkNavigation } from '@/hooks/useWebLinkNavigation';
 import { useAccountPreferences } from '@/services/preferences.service';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
@@ -33,6 +36,9 @@ export default function StandaloneShell({
   title: ReactNode;
   children: ReactNode;
 }) {
+  const router = useRouter();
+  const showBrowser = useCallback(() => router.push('/?tool=browser'), [router]);
+  const webLinks = useWebLinkNavigation(null, showBrowser);
   const { headerLayout } = useAccountPreferences();
   const single = headerLayout === 'single';
   const narrow = useMediaQuery('(max-width: 1023px)');
@@ -45,48 +51,50 @@ export default function StandaloneShell({
   useDocumentTitle(titleRef);
 
   return (
-    <ShellHeaderSlotCtx.Provider value={pageSlot}>
-      <SidebarProvider defaultOpen={defaultSidebarOpen} className="h-svh overflow-hidden">
-        {sidebar}
-        <SidebarInset className="min-w-0">
-          <header className="relative flex h-12 shrink-0 items-center gap-2 border-b border-sidebar-border px-2 sm:px-3">
-            <SidebarTrigger />
-            <Separator orientation="vertical" className="h-4" />
-            <div
-              ref={titleRef}
-              className={cn(
-                'min-w-0 truncate text-sm font-medium',
-                single && !narrow ? 'max-w-[min(26rem,45vw)] shrink' : 'flex-1',
-              )}
-            >
-              {title}
-            </div>
-            {single && !narrow && (
+    <WebLinksContext.Provider value={webLinks}>
+      <ShellHeaderSlotCtx.Provider value={pageSlot}>
+        <SidebarProvider defaultOpen={defaultSidebarOpen} className="h-svh overflow-hidden">
+          {sidebar}
+          <SidebarInset className="min-w-0">
+            <header className="relative flex h-12 shrink-0 items-center gap-2 border-b border-sidebar-border px-2 sm:px-3">
+              <SidebarTrigger />
+              <Separator orientation="vertical" className="h-4" />
               <div
-                ref={setHeaderSlot}
-                data-slot="app-header-page"
-                className="flex min-w-0 flex-1 items-center justify-end gap-2 empty:hidden"
+                ref={titleRef}
+                className={cn(
+                  'min-w-0 truncate text-sm font-medium',
+                  single && !narrow ? 'max-w-[min(26rem,45vw)] shrink' : 'flex-1',
+                )}
+              >
+                {title}
+              </div>
+              {single && !narrow && (
+                <div
+                  ref={setHeaderSlot}
+                  data-slot="app-header-page"
+                  className="flex min-w-0 flex-1 items-center justify-end gap-2 empty:hidden"
+                />
+              )}
+              {!single && (
+                <div className="ms-auto flex shrink-0 items-center gap-2">
+                  <LocaleToggle />
+                  <ThemeToggle />
+                  <UserMenu />
+                </div>
+              )}
+            </header>
+            {single && narrow && (
+              <div
+                ref={setPageBarSlot}
+                data-slot="app-page-bar"
+                className="relative flex h-11 shrink-0 items-center gap-1 border-b border-sidebar-border px-2 empty:hidden"
               />
             )}
-            {!single && (
-              <div className="ms-auto flex shrink-0 items-center gap-2">
-                <LocaleToggle />
-                <ThemeToggle />
-                <UserMenu />
-              </div>
-            )}
-          </header>
-          {single && narrow && (
-            <div
-              ref={setPageBarSlot}
-              data-slot="app-page-bar"
-              className="relative flex h-11 shrink-0 items-center gap-1 border-b border-sidebar-border px-2 empty:hidden"
-            />
-          )}
-          <EmergencyStopBanner />
-          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
-        </SidebarInset>
-      </SidebarProvider>
-    </ShellHeaderSlotCtx.Provider>
+            <EmergencyStopBanner />
+            <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
+          </SidebarInset>
+        </SidebarProvider>
+      </ShellHeaderSlotCtx.Provider>
+    </WebLinksContext.Provider>
   );
 }
