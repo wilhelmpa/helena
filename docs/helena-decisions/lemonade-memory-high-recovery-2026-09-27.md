@@ -22,16 +22,16 @@ The thread sample showed 128 sleeping threads in two futex groups, an idle accep
 two hot threads. The service cgroup consumed approximately one CPU second per
 second in system time, with no user-time increase in the sampled interval.
 
-| Measurement | Before the runtime change | After the runtime change |
-| --- | --- | --- |
-| `MemoryHigh` | 10,737,418,240 bytes | 11,811,160,064 bytes |
-| `MemoryMax` | 12,884,901,888 bytes | 12,884,901,888 bytes |
-| `memory.current` | 10,824,290,304 bytes | approximately 10.824 GB |
-| `memory.events:high` increase | 564 in one second | 1 in twelve seconds |
-| Service CPU time increase | 0.991 seconds in one second | 0.60 seconds in twelve seconds |
-| Memory PSI `full avg10` | 12.38% | 5.53% |
-| `HEAD /live` | HTTP 000 / timeout | HTTP 200 |
-| Unauthenticated `HEAD /api/v1/health` | HTTP 000 / timeout | HTTP 401 |
+| Measurement                           | Before the runtime change   | After the runtime change       |
+| ------------------------------------- | --------------------------- | ------------------------------ |
+| `MemoryHigh`                          | 10,737,418,240 bytes        | 11,811,160,064 bytes           |
+| `MemoryMax`                           | 12,884,901,888 bytes        | 12,884,901,888 bytes           |
+| `memory.current`                      | 10,824,290,304 bytes        | approximately 10.824 GB        |
+| `memory.events:high` increase         | 564 in one second           | 1 in twelve seconds            |
+| Service CPU time increase             | 0.991 seconds in one second | 0.60 seconds in twelve seconds |
+| Memory PSI `full avg10`               | 12.38%                      | 5.53%                          |
+| `HEAD /live`                          | HTTP 000 / timeout          | HTTP 200                       |
+| Unauthenticated `HEAD /api/v1/health` | HTTP 000 / timeout          | HTTP 401                       |
 
 The earlier memory-pressure sample also recorded `full avg60=22.44%` and
 152,261 microseconds of full-stall time in one second. These are different
