@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test';
-import { agentRun, agentUsage, db, helenaLocalAiEval, helenaModelServer } from '@repo/db';
+import { aiAgent, agentRun, agentUsage, db, helenaLocalAiEval, helenaModelServer } from '@repo/db';
 import { eq, sql } from 'drizzle-orm';
 import { apiKeyApi, authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
@@ -9,7 +9,13 @@ import { evaluateLocalAi } from '#tests/helpers/local-ai';
 import { costOfUsage } from '#modules/model-prices/service';
 import { host } from '#shared/helena';
 import { LOCAL_AI_PLUGIN_ID, LOCAL_AI_PROVIDES, localAiPlugin } from '../../plugin';
-import { checkAllServers, forgetServerAnswers, localAiStatus, settleEvals } from '../../service';
+import {
+  checkAllServers,
+  forgetServerAnswers,
+  localAiStatus,
+  runtimeLocalAi,
+  settleEvals,
+} from '../../service';
 import { COMPRESSION_CASES } from '../../evals';
 
 // Local AI end to end against a fake Lemonade (docs/helena-decisions/local-ai-platform.md): the
@@ -25,6 +31,11 @@ let serverDown = false;
 let answerGate: Promise<void> | null = null;
 // The chat-completions bodies the evals sent.
 const chatBodies: Record<string, unknown>[] = [];
+
+let extraModels: Record<string, unknown>[] = [];
+beforeEach(() => {
+  extraModels = [];
+});
 
 const MODELS = [
   {
@@ -73,7 +84,7 @@ beforeAll(async () => {
         case '/api/v1/system-stats':
           return Response.json({ gpu_percent: 12, npu_percent: 0, vram_gb: 22.4 });
         case '/api/v1/models':
-          return Response.json({ object: 'list', data: MODELS });
+          return Response.json({ object: 'list', data: [...MODELS, ...extraModels] });
         case '/api/v1/chat/completions': {
           if (answerGate) await answerGate;
           const body = (await request.json()) as Parameters<typeof chatAnswer>[0];
@@ -250,6 +261,99 @@ describe('local AI', () => {
     const after = (await asRunner['agent-runtime'].policy.get()).data!;
     expect(after.localAi).toBeNull();
     expect(after.revision).not.toBe(snapshot.revision);
+  });
+
+  it('removes a disabled device from the picker and runtime, and falls back for an already queued explicit chat', async () => {
+    extraModels = [
+      { id: 'Qwen-fixture-FLM', recipe: 'flm', labels: ['tool-calling'], downloaded: true },
+    ];
+    const { asOwner, asRunner, agent } = await setup();
+    const local = 'helena-local/Qwen-fixture-FLM';
+    await asOwner.god['local-ai'].policy.patch({ enabled: true });
+    const chat = asOwner.projects({ projectKey: 'LAI' })['ai-agents']({ agentId: agent.id });
+    expect((await chat.chat.catalog.get()).data?.models.map((item) => item.id)).toContain(local);
+    const before = (await asRunner['agent-runtime'].policy.get()).data!;
+    expect(before.localAi?.servers[0]?.models.map((item) => item.id)).toContain('Qwen-fixture-FLM');
+    expect((await chat.chat.post({ prompt: 'synthetic fixture', model: local })).status).toBe(200);
+    const switched = await asOwner.god['local-ai'].policy.patch({ units: { npu: false } });
+    expect(switched.status).toBe(200);
+    const policyBeforeClaim = (await asOwner.god['local-ai'].get()).data!.policy;
+    expect((await chat.chat.catalog.get()).data?.models.map((item) => item.id)).not.toContain(
+      local,
+    );
+    const after = (await asRunner['agent-runtime'].policy.get()).data!;
+    expect(after.revision).not.toBe(before.revision);
+    expect(after.localAi?.servers[0]?.models.map((item) => item.id)).toEqual([
+      'Qwen3.6-35B-A3B-GGUF',
+    ]);
+    const beforeRequests = requests.length;
+    const claimed = (await asRunner['agent-chats'].claim.post()).data!.message!;
+    expect(claimed.model).toBe('gpt-5.6-luna');
+    expect(requests.length).toBe(beforeRequests);
+    expect(
+      (await db.select({ model: aiAgent.model }).from(aiAgent).where(eq(aiAgent.id, agent.id)))[0]
+        ?.model,
+    ).toBe('gpt-5.6-luna');
+    expect((await asOwner.god['local-ai'].get()).data!.policy).toEqual(policyBeforeClaim);
+  });
+
+  it('keeps an explicit agent assignment but uses the runtime default when its device is disabled', async () => {
+    extraModels = [{ id: 'Qwen-fixture-FLM', recipe: 'flm', labels: [], downloaded: true }];
+    const { asOwner, asRunner, agent } = await setup();
+    const local = 'helena-local/Qwen-fixture-FLM';
+    await asOwner.god['local-ai'].policy.patch({ enabled: true });
+    const view = (await asOwner.projects({ projectKey: 'LAI' }).get()).data!;
+    expect(
+      (
+        await asOwner
+          .teams({ teamId: view.project.teamId })
+          ['ai-agents']({ agentId: agent.id })
+          .patch({ model: local })
+      ).status,
+    ).toBe(200);
+    await asOwner.god['local-ai'].policy.patch({ units: { npu: false } });
+    const issue = (
+      await asOwner
+        .projects({ projectKey: 'LAI' })
+        .issues.post({ columnId: view.columns[0]!.id, title: 'Synthetic device check' })
+    ).data!;
+    await asOwner.issues({ issueId: issue.id }).comments.post({ body: 'please @routine' });
+    const claimed = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    expect(claimed.model).toBeNull();
+    expect(claimed.thinkingLevel).toBeNull();
+    const [saved] = await db
+      .select({ model: aiAgent.model })
+      .from(aiAgent)
+      .where(eq(aiAgent.id, agent.id));
+    expect(saved?.model).toBe(local);
+  });
+
+  it('does not select a vision helper on a disabled device alongside an allowed compression model', async () => {
+    const { asOwner, server } = await setup();
+    await asOwner.god['local-ai'].policy.patch({ enabled: true });
+    const [row] = await db
+      .select()
+      .from(helenaModelServer)
+      .where(eq(helenaModelServer.id, server.id));
+    const gpu = { ...row!.models[0]!, capabilities: ['chat' as const] };
+    const npu = {
+      ...gpu,
+      id: 'NPU-vision-fixture',
+      unit: 'npu' as const,
+      capabilities: ['chat' as const, 'vision' as const],
+      loaded: true,
+    };
+    const policy = (await asOwner.god['local-ai'].get()).data!.policy;
+    policy.units.npu = false;
+    policy.classes['hermes-helpers'] = {
+      mode: 'prefer',
+      model: 'helena-local/Qwen3.6-35B-A3B-GGUF',
+    };
+    const runtime = runtimeLocalAi(policy, [{ ...row!, models: [npu, gpu] }]);
+    expect(runtime?.helpers).toEqual([
+      { task: 'compression', provider: 'helena-local', model: 'Qwen3.6-35B-A3B-GGUF' },
+    ]);
+    expect(runtime?.servers[0]?.models.map((model) => model.id)).toEqual(['Qwen3.6-35B-A3B-GGUF']);
   });
 
   it('runs an agent set to a local model on its default while local AI is off', async () => {

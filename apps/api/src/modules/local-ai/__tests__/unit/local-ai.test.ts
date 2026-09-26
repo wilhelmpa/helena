@@ -40,7 +40,13 @@ import {
   firstJson,
   withoutThinking,
 } from '../../evals';
-import { classBlocker, type EvalView } from '../../service';
+import {
+  classBlocker,
+  effectiveModel,
+  localCatalogModels,
+  runtimeLocalAi,
+  type EvalView,
+} from '../../service';
 import { MODEL_WATCH, atomTags, familyOf, newerInFamily, newestWatched } from '../../integrations';
 import { BUILTIN_TASK_CLASSES } from '../../task-classes';
 import { openAiEvalContext } from '../../eval-context';
@@ -86,6 +92,74 @@ function server(fields: Partial<ModelServerRow> = {}): ModelServerRow {
     ...fields,
   };
 }
+
+describe('device policy for explicitly selected local models', () => {
+  const models = [
+    model('GPU-model'),
+    model('NPU-model', { unit: 'npu', backend: 'flm' }),
+    model('CPU-model', { unit: 'cpu', backend: 'cpu' }),
+    model('Missing-model', { downloaded: false }),
+    model('Embedding-model', { capabilities: ['embeddings'] }),
+  ];
+
+  it('keeps enabled devices in the picker, runtime and direct route without mutating policy', () => {
+    for (const disabled of ['gpu', 'npu', 'cpu'] as const) {
+      const policy = { ...defaultLocalAiPolicy(), enabled: true };
+      policy.units[disabled] = false;
+      const servers = [server({ models })];
+      const before = JSON.stringify({ policy, servers });
+      const expected = models.filter(
+        (entry) =>
+          entry.unit !== disabled &&
+          entry.downloaded !== false &&
+          entry.capabilities.includes('chat'),
+      );
+      expect(localCatalogModels(policy, servers).map((entry) => entry.id)).toEqual(
+        expected.map((entry) => localModelId('local', entry.id)),
+      );
+      expect(runtimeLocalAi(policy, servers)?.servers[0]?.models.map((entry) => entry.id)).toEqual(
+        expected.map((entry) => entry.id),
+      );
+      for (const entry of models) {
+        const id = localModelId('local', entry.id);
+        expect(effectiveModel(id, policy, servers)).toBe(expected.includes(entry) ? id : null);
+      }
+      expect(effectiveModel('gpt-6-luna', policy, servers)).toBe('gpt-6-luna');
+      expect(JSON.stringify({ policy, servers })).toBe(before);
+    }
+  });
+
+  it('preserves all enabled devices and compatible servers with unknown hardware', () => {
+    const policy = { ...defaultLocalAiPolicy(), enabled: true };
+    const servers = [server({ models: [...models, model('Remote-compatible', { unit: null })] })];
+    expect(localCatalogModels(policy, servers).map((entry) => entry.id)).toEqual(
+      ['GPU-model', 'NPU-model', 'CPU-model', 'Remote-compatible'].map((id) =>
+        localModelId('local', id),
+      ),
+    );
+    const allOff = { ...policy, units: { gpu: false, npu: false, cpu: false } };
+    expect(runtimeLocalAi(allOff, servers)).toBeNull();
+    expect(localCatalogModels(allOff, servers)).toEqual([]);
+    expect(effectiveModel('helena-local/Remote-compatible', allOff, servers)).toBeNull();
+  });
+
+  it('does not replace existing model or class choices when an additional model appears', () => {
+    const policy: LocalAiPolicy = {
+      ...defaultLocalAiPolicy(),
+      enabled: true,
+      classes: { summaries: { mode: 'prefer', model: 'helena-local/GPU-model' } },
+    };
+    const before = JSON.stringify(policy);
+    const servers = [server({ models: [...models, model('Qwen3.8-27B-GGUF')] })];
+    expect(localCatalogModels(policy, servers).map((entry) => entry.id)).toContain(
+      'helena-local/Qwen3.8-27B-GGUF',
+    );
+    expect(effectiveModel('helena-local/GPU-model', policy, servers)).toBe(
+      'helena-local/GPU-model',
+    );
+    expect(JSON.stringify(policy)).toBe(before);
+  });
+});
 
 describe('local model ids', () => {
   it('names a local model by its provider and keeps others apart', () => {

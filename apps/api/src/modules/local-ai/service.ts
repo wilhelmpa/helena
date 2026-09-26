@@ -635,9 +635,14 @@ export function keyVariable(slug: string): string {
   return `HELENA_MODEL_SERVER_KEY_${slug.toUpperCase().replace(/-/g, '_')}`;
 }
 
-function chatModels(server: ModelServerRow): LocalModel[] {
+function chatModels(server: ModelServerRow, policy: LocalAiPolicy): LocalModel[] {
   return server.models.filter(
-    (model) => model.capabilities.includes('chat') && model.downloaded !== false,
+    (model) =>
+      model.capabilities.includes('chat') &&
+      model.downloaded !== false &&
+      // Plain compatible servers may not identify their hardware. Keep those usable while
+      // any device is enabled; never guess a GPU/NPU assignment from the model's name.
+      (model.unit === null ? Object.values(policy.units).some(Boolean) : policy.units[model.unit]),
   );
 }
 
@@ -656,7 +661,9 @@ export function runtimeLocalAi(
   failedHelpers?: ReadonlySet<string>,
 ): RuntimeLocalAi | null {
   if (!policy.enabled) return null;
-  const enabled = servers.filter((server) => server.enabled && chatModels(server).length > 0);
+  const enabled = servers.filter(
+    (server) => server.enabled && chatModels(server, policy).length > 0,
+  );
   if (enabled.length === 0) return null;
   const helpers: RuntimeLocalAi['helpers'] = [];
   const helperClass = taskClass('hermes-helpers');
@@ -676,7 +683,7 @@ export function runtimeLocalAi(
       // Session titles stay off (learning.ts: Helena never shows them); compression and, with
       // a vision model, image descriptions go local first.
       helpers.push({ task: 'compression', provider, model: result.route.model });
-      const vision = pickModel(result.route.server.models, 'vision', null);
+      const vision = pickModel(chatModels(result.route.server, policy), 'vision', null);
       if (vision) helpers.push({ task: 'vision', provider, model: vision.id });
     }
   }
@@ -687,7 +694,7 @@ export function runtimeLocalAi(
       noThinkingBaseUrl: noThinkingBaseUrl(server),
       keyEnv: server.keySource === 'none' ? null : keyVariable(server.slug),
       contextLength: Math.max(server.contextLength, HERMES_MIN_CONTEXT),
-      models: chatModels(server).map((model) => ({
+      models: chatModels(server, policy).map((model) => ({
         id: model.id,
         contextLength: model.contextLength,
         vision: model.capabilities.includes('vision'),
@@ -740,7 +747,7 @@ export function localCatalogModels(
   if (!local) return [];
   return servers.flatMap((server) =>
     local.servers.some((entry) => entry.provider === localProviderName(server.slug))
-      ? chatModels(server).map((model) => {
+      ? chatModels(server, policy).map((model) => {
           const reasoning = model.capabilities.includes('reasoning');
           return {
             id: localModelId(server.slug, model.id),
@@ -764,7 +771,8 @@ export async function localCatalogModelsNow(): Promise<LocalCatalogModel[]> {
 }
 
 // The model a run or chat answer is handed: a local model only while local AI is on and its
-// server is enabled; otherwise the agent's default runs, exactly as without local AI.
+// server and model's device are enabled and the chat model is downloaded; otherwise the
+// agent's default runs, exactly as without local AI.
 export function effectiveModel(
   model: string | null,
   policy: LocalAiPolicy,
@@ -775,7 +783,7 @@ export function effectiveModel(
   if (!policy.enabled) return null;
   const server = servers.find((item) => item.slug === parsed.slug);
   if (!server?.enabled) return null;
-  return server.models.some((item) => item.id === parsed.model) ? model : null;
+  return chatModels(server, policy).some((item) => item.id === parsed.model) ? model : null;
 }
 
 // ── Falling back to the configured model ───────────────────────────────────────────────
