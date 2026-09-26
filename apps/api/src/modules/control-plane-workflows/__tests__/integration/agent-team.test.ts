@@ -290,6 +290,52 @@ describe('agent team runs', () => {
     ]);
   });
 
+  it('lets the coordinator complete a task when its plan needs no specialists', async () => {
+    const { asOwner, teamId, columnId, coordinator, column } = await setup();
+    await specialist(asOwner, teamId, 'designer', ['frontend']);
+    await specialist(asOwner, teamId, 'writer', ['docs']);
+    await enableAgentTeam(asOwner, { autonomy: 'done' });
+    const task = await createIssue(asOwner, columnId, {
+      description: 'Finish the owner response.\n\n- [ ] A useful answer is recorded',
+    });
+    const started = (await asOwner.issues({ issueId: task.id })['agent-team'].post({})).data!;
+
+    const plan = await answerStep(started.runId, 'team.coordinate', {
+      output: json({ summary: 'I can answer this directly.', delegations: [] }),
+    });
+    expect(plan.agentId).toBe(coordinator.id);
+    const work = await waitForAgentRun(started.runId, 'team.s1');
+    expect(work.agentId).toBe(coordinator.id);
+    expect(work.prompt).toContain('Phase: specialize');
+    expect(work.prompt).toContain('"assignmentId":"coordinator-work"');
+    expect(work.prompt).toContain('A useful answer is recorded');
+    await finishAgentRun(work.id, {
+      output: json({
+        summary: 'The answer is recorded.',
+        evidence: [{ kind: 'comment', ref: 'task:MKT', label: 'Answer' }],
+      }),
+    });
+    const review = await waitForAgentRun(started.runId, 'team.review');
+    expect(review.agentId).toBe(coordinator.id);
+    await finishAgentRun(review.id, {
+      output: json({
+        summary: 'Complete.',
+        review: { accepted: true, notes: 'The answer meets the criterion.' },
+      }),
+    });
+    const done = await waitForStatus(started.runId, 'succeeded');
+    expect(done.result).toMatchObject({
+      status: 'done',
+      summary: 'The answer meets the criterion.',
+      evidence: [{ kind: 'comment', ref: 'task:MKT', label: 'Answer' }],
+    });
+    expect(
+      (done.result as { history: { phase: string }[] }).history.map((step) => step.phase),
+    ).toEqual(['coordinate', 'specialize', 'review']);
+    const [after] = await db.select().from(issueTable).where(eq(issueTable.id, task.id));
+    expect(after!.columnId).toBe(column('Done'));
+  });
+
   it('routes to the only specialist or the one the labels name without a coordinator stage', async () => {
     const { asOwner, teamId, columnId } = await setup();
     const designer = await specialist(asOwner, teamId, 'designer', ['frontend']);

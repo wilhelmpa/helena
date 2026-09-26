@@ -544,7 +544,10 @@ async function synchronize(
 // ---- the step ----------------------------------------------------------------------
 
 function member(team: TeamPayload, agentRef: string): TeamMember {
-  const found = team.specialists.find((item) => item.agentRef === agentRef);
+  const found =
+    team.coordinator.agentRef === agentRef
+      ? team.coordinator
+      : team.specialists.find((item) => item.agentRef === agentRef);
   if (!found) throw new StepFailure('A specialist assignment has no project team member');
   return found;
 }
@@ -609,7 +612,18 @@ export const agentTeamStep: WorkflowStepType<Step> = {
         ]),
       );
       const [plan] = await awaitStages(context, 'coordinate', [stageId('coordinate')]);
-      delegations = plan!.delegations;
+      delegations =
+        plan!.delegations.length > 0
+          ? plan!.delegations
+          : [
+              {
+                assignmentId: 'coordinator-work',
+                agentRef: payload.coordinator.agentRef,
+                objective: payload.task.objective,
+                acceptanceCriteria: payload.task.acceptanceCriteria,
+                dependsOn: [],
+              },
+            ];
       dependencyWaves(delegations);
       entries.push(history(plan!));
     }
