@@ -53,6 +53,65 @@ async function claimedRun(asOwner: Api, agent: { username: string; asRunner: Api
 const runtimeLogin = (agent: { asRunner: Api }, query: { runId?: number } = {}) =>
   agent.asRunner['agent-runtime']['runtime-login'].get({ query });
 
+async function enableProjectBrowser(asOwner: Api, teamId: number, agentId: number) {
+  const server = (await asOwner.teams({ teamId })['mcp-servers'].get()).data!.find(
+    (row) => row.name === 'projekt-browser',
+  )!;
+  await asOwner
+    .teams({ teamId })
+    ['ai-agents']({ agentId })
+    ['mcp-servers'].put({ mcpServerIds: [server.id] });
+}
+
+async function soulOf(agent: { asRunner: Api }) {
+  const policy = (await agent.asRunner['agent-runtime'].policy.get()).data!;
+  return policy.runtimePolicy.files.find((file) => file.path === 'SOUL.md')!.content;
+}
+
+describe('project browser login guidance', () => {
+  beforeEach(resetDb);
+
+  it('hands an ungranted sign-in page to the owner in the persistent browser', async () => {
+    const { asOwner, teamId } = await setup();
+    const agent = await agentOn(asOwner, teamId, 'writer', 'hermes');
+    await enableProjectBrowser(asOwner, teamId, agent.id);
+    const soul = await soulOf(agent);
+    expect(soul).toContain('browser_handover');
+    expect(soul).toContain('After control is returned, call browser_snapshot again');
+    expect(soul).toContain('No website login is granted to you');
+    expect(soul).not.toContain('browser_login with');
+    expect(soul).not.toContain('browser_vault_fill');
+    expect(soul).not.toContain('request_approval with kind');
+  });
+
+  it('names gateway login tools only after a web login grant, for Hermes and Claude', async () => {
+    const { asOwner, teamId } = await setup();
+    for (const runtime of ['hermes', 'claude'] as const) {
+      const agent = await agentOn(asOwner, teamId, runtime + '-writer', runtime);
+      await enableProjectBrowser(asOwner, teamId, agent.id);
+      const id = (
+        await credentials(asOwner, teamId).post({
+          kind: 'web_login',
+          label: 'Example',
+          loginUrl: 'https://example.com/login',
+          username: 'owner@example.com',
+          password: 'test-password',
+        })
+      ).data!.id;
+      await asOwner
+        .teams({ teamId })
+        .credentials({ credentialId: id })
+        .grants.put({ agentIds: [agent.id] });
+      const soul = await soulOf(agent);
+      expect(soul).toContain('browser_login with the');
+      expect(soul).toContain('browser_login_code');
+      expect(soul).toContain('browser_handover');
+      expect(soul).not.toContain('browser_vault_fill');
+      expect(soul).not.toContain('request_approval with kind');
+    }
+  });
+});
+
 describe('runtime logins', () => {
   beforeEach(resetDb);
 

@@ -163,12 +163,42 @@ function terminalUrl(
   return trustedResourceUrl(terminal?.url, [config.terminalUrl]) || base;
 }
 
+// A provisioner's saved browser URL may still name the old HTTP origin after HTTPS
+// migration. The configured browser URL is on the current origin and names Home's
+// persistent browser; replace only its project slug, including the VNC socket path.
+function browserUrl(
+  config: WorkspaceRuntimeEnv,
+  projectKey: string | null,
+  resources: ProvisionedProjectResource[],
+): string {
+  const configured = frameUrl(config.browserUrl);
+  if (!configured) return '';
+  const slug =
+    projectKey === null
+      ? 'home'
+      : projectKey.trim().toUpperCase() === 'VERV'
+        ? 'verve'
+        : projectKey.trim().toLowerCase();
+  if (!/^[a-z0-9][a-z0-9-]{0,31}$/.test(slug)) return '';
+  const url = new URL(configured);
+  if (/^\/browser\/projects\/[a-z0-9][a-z0-9-]*\/vnc\.html$/.test(url.pathname)) {
+    url.pathname = `/browser/projects/${slug}/vnc.html`;
+    url.searchParams.set('path', `browser/projects/${slug}/websockify`);
+    return url.toString();
+  }
+  const browser = provisionedResource(resources, 'browser');
+  if (browser?.id.startsWith('project-browser:') && browser.id !== `project-browser:${slug}`)
+    return '';
+  const provisionedUrl = trustedResourceUrl(browser?.url, [configured]);
+  // A generic configured URL cannot select a project on its own.
+  return provisionedUrl || (projectKey === null ? configured : '');
+}
+
 export function workspaceTools(
   config: WorkspaceRuntimeEnv,
   projectKey: string | null,
   resources: ProvisionedProjectResource[] = [],
 ): Record<BuiltinWorkspaceToolId, WorkspaceTool> {
-  const browser = provisionedResource(resources, 'browser');
   const tools = {
     chat: { id: 'chat', url: '', advancedUrl: '' },
     terminal: {
@@ -181,7 +211,7 @@ export function workspaceTools(
     notes: { id: 'notes', url: notesFolderUrl(config.notesUrl, projectKey), advancedUrl: '' },
     browser: {
       id: 'browser',
-      url: trustedResourceUrl(browser?.url, [config.browserUrl]) || frameUrl(config.browserUrl),
+      url: browserUrl(config, projectKey, resources),
       advancedUrl: '',
     },
     mail: { id: 'mail', url: '', advancedUrl: '' },
