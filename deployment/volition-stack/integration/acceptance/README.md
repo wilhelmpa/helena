@@ -163,3 +163,43 @@ Codegrundlage: `project-blueprints/{apply,provisioning,plan}.ts`,
 `scripts/project-blueprint.ts`, `projects/{service,index,model}.ts`,
 `integration/{provisioner,plan-coordinator}.mjs`, `isolation/{launcher,helena_previews}.py`
 und `NewProjectModal.tsx`/`SettingsSetup.tsx`. Nur Fixture/Runbook, keine Produktänderung.
+
+## 6. Minimal Root evidence record (source audit 2026-09-26)
+
+The prepared `4ac4367a` contains release `20cf76be` and this fixture. The current
+job is checked before **both** note and board writes; the final barrier also
+covers agent-only changes. No additional operator or fixture is required.
+
+Record these fields for the first apply and the repeat, without descriptor contents:
+
+| Field | First apply | Repeat apply |
+| --- | --- | --- |
+| Deployed SHA / blueprint file SHA-256 | NOT RUN | NOT RUN |
+| Project id / key / owning team / responsible human | NOT RUN | same |
+| Current provisioning job id / status | NOT RUN | succeeded |
+| Workspace UID / vault-root owner / effective project ACL | NOT RUN | unchanged |
+| Agent ids / project bindings / descriptor hashes | NOT RUN | same |
+| Runner PID / both agent heartbeats | NOT RUN | stable / fresh |
+| Note bytes / board id / blueprint changes | NOT RUN | unchanged / zero |
+
+Before staging, hash the fixture files in the reviewed source with
+`find deployment/volition-stack/integration/acceptance/blueprint -type f -exec sha256sum {} +`.
+After staging only these files, compare their hashes at the fixed proof path.
+Use the existing authenticated project routes to confirm project/team ownership;
+filesystem ownership alone does not prove application scope.
+
+From the private API test environment only:
+
+```sh
+bun test src/modules/project-blueprints/__tests__/integration/provisioning.test.ts
+```
+
+The existing integration tests include failed, missing, pending, stale-success,
+missing-root and symlink-root cases. The native provisioner regression is:
+
+```sh
+node --test deployment/volition-stack/integration/test/provisioner.test.mjs
+```
+
+Private tests do not establish live setup, ACLs or runner adoption. Leave each
+live field NOT RUN until Root observes it on the installed release.
