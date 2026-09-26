@@ -102,7 +102,11 @@ def run_clone_proofs(report, probe, client, sh, root: str) -> None:
     beta = f'{root}/workspaces/projects/beta'
     source = f'{alpha}/.proof-source.git'
     # The repository to clone, inside the project's own workspace (file://: no network needed).
-    sh('/usr/sbin/runuser', '-u', 'vpt-alpha', '--', 'git', 'init', '-q', '--bare', source, check=False)
+    spec = f'exec:git,init,-q,--bare,{source}'
+    made = probe('alpha', 'alpha', [spec]).get(spec, {})
+    report.add(TEST, 'clone source initialized inside the project sandbox', made.get('ok') is True, made.get('detail', 'missing result'))
+    if made.get('ok') is not True:
+        return
     job = {'op': 'git_clone', 'url': f'file://{source}', 'folder': 'dev', 'name': 'proof-repo',
            'slug': 'alpha', 'workspace': alpha}
     profile = f'{root}/hermes/profiles/alpha'
