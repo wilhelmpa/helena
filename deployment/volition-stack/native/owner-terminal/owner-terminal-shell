@@ -31,6 +31,10 @@ case "$kind" in
     command=("$HOME/.local/bin/codex")
     workdir=$HOME
     ;;
+  local-qwen36 | local-qwen38)
+    command=(/usr/local/bin/node "$(dirname -- "$(realpath -- "$0")")/owner-local-codex.mjs" "$kind" "$name")
+    workdir=$HOME
+    ;;
   helena-dev-claude)
     # --add-dir also makes Claude Code read that directory's CLAUDE.md as extra
     # project context, which is the handoff (~/volition/CLAUDE.md) the design

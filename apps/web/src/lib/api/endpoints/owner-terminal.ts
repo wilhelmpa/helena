@@ -7,6 +7,8 @@ export const OWNER_TERMINAL_KINDS = [
   'shell',
   'claude',
   'codex',
+  'local-qwen36',
+  'local-qwen38',
   'helena-dev-claude',
   'helena-dev-codex',
 ] as const;
@@ -75,3 +77,8 @@ export const updateOwnerTerminalSettings = (patch: OwnerTerminalSettingsPatch) =
     method: 'PATCH',
     body: JSON.stringify(patch),
   });
+
+export const getOwnerTerminalLocalModels = () =>
+  request<{ kind: 'local-qwen36' | 'local-qwen38'; ready: boolean }[]>(
+    '/owner-terminal/local-models',
+  );

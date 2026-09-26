@@ -25,6 +25,7 @@
 //    at the wrong auth_request target -- or dropped entirely -- opens nothing here.
 //    Keep the wire format (payload fields, base64url + '.' + HMAC-SHA256) in sync
 //    with that token.ts if either side changes.
+import { LOCAL_MODELS, prepareLocalModel, removeLocalState } from './owner-local-model.mjs';
 import { execFile, spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { createHmac, timingSafeEqual } from 'node:crypto';
@@ -56,9 +57,10 @@ const allowedHosts = new Set(
 );
 
 // Keep in sync with apps/api/src/modules/owner-terminal/model.ts OWNER_TERMINAL_KINDS.
-const KINDS = new Set(['shell', 'claude', 'codex', 'helena-dev-claude', 'helena-dev-codex']);
+const KINDS = new Set(['shell', 'claude', 'codex', 'helena-dev-claude', 'helena-dev-codex', 'local-qwen36', 'local-qwen38']);
 const NAME_RE = /^[a-z0-9][a-z0-9-]{0,31}$/;
 
+const localStateRoot = path.join(path.dirname(runtimeRoot), 'local-models');
 const sessions = new Map();
 let cachedKey;
 
@@ -261,6 +263,7 @@ async function closeSession(kind, name) {
   const key = `${kind}:${name}`;
   const current = sessions.get(key);
   sessions.delete(key);
+  if (Object.hasOwn(LOCAL_MODELS, kind)) await removeLocalState(localStateRoot, kind, name);
   await run(tmux, tmuxArgs(['kill-session', '-t', `=owner-${kind}-${name}`])).catch(() => {});
   if (current) {
     await Promise.resolve(current)
@@ -305,6 +308,7 @@ async function resolveSession(target) {
   if (!payload) return { status: 403 };
   const record = Boolean(payload.record);
   try {
+    if (Object.hasOwn(LOCAL_MODELS, target.kind)) await prepareLocalModel(localStateRoot, target.kind, target.name, target.token, payload.sessionId);
     const terminal = await session(target.kind, target.name, record);
     return { ...target, terminal };
   } catch {

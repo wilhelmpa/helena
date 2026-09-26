@@ -2,9 +2,8 @@
 
 import { closestCenter, type DragEndEvent } from '@dnd-kit/core';
 import DndContext from '@/components/common/dnd/DndContext';
-import { horizontalListSortingStrategy, SortableContext, useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { Plus, X } from 'lucide-react';
+import { horizontalListSortingStrategy, SortableContext } from '@dnd-kit/sortable';
+import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,14 +13,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useStripSortSensors } from '@/lib/dnd';
-import { cn } from '@/lib/utils';
 import { OWNER_TERMINAL_KINDS, type OwnerTerminalKind } from '@/lib/api/endpoints/owner-terminal';
+import TerminalTab from './TerminalTab';
+import { useOwnerTerminalLocalModels } from '../services/owner-terminal.service';
 import type { OpenTerminalTab } from '../OwnerTerminalPanel';
 
-// Fixed startable kinds, in the order the "+" menu offers them (design's
-// Nachtrag: "Shell, Claude Code, Codex, Helena weiterentwickeln"). Helena
-// weiterentwickeln covers both agents in the dev clone, listed as two rows here
-// rather than a submenu -- there is no third choice to hide behind one.
 const ADD_ORDER: OwnerTerminalKind[] = [...OWNER_TERMINAL_KINDS];
 
 const tabKey = (tab: OpenTerminalTab) => `${tab.kind}:${tab.name}`;
@@ -45,6 +41,12 @@ export default function TerminalTabBar({
 }) {
   const t = useTranslations('ownerTerminal.kinds');
   const sensors = useStripSortSensors();
+  const localModels = useOwnerTerminalLocalModels();
+  const available = ADD_ORDER.filter(
+    (kind) =>
+      !kind.startsWith('local-') ||
+      localModels.data?.some((model) => model.kind === kind && model.ready),
+  );
 
   function handleDragEnd({ active, over }: DragEndEvent) {
     if (over && active.id !== over.id) onReorder(String(active.id), String(over.id));
@@ -74,66 +76,13 @@ export default function TerminalTabBar({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
-          {ADD_ORDER.map((kind) => (
+          {available.map((kind) => (
             <DropdownMenuItem key={kind} onClick={() => onAdd(kind)}>
               {t(kind)}
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
-    </div>
-  );
-}
-
-function TerminalTab({
-  tab,
-  active,
-  label,
-  closeLabel,
-  onSelect,
-  onClose,
-}: {
-  tab: OpenTerminalTab;
-  active: boolean;
-  label: string;
-  closeLabel: string;
-  onSelect: () => void;
-  onClose: () => void;
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: tabKey(tab),
-  });
-  return (
-    <div
-      ref={setNodeRef}
-      style={{ transform: CSS.Translate.toString(transform), transition }}
-      className={cn(
-        'group flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-xs',
-        active ? 'bg-sidebar-accent font-medium' : 'text-muted-foreground hover:bg-sidebar-accent',
-        isDragging && 'z-10 opacity-80',
-      )}
-    >
-      <button
-        type="button"
-        className="max-w-32 cursor-pointer truncate"
-        onClick={onSelect}
-        {...attributes}
-        {...listeners}
-      >
-        {label}
-        {tab.name !== 'main' && (
-          <span className="ms-1 font-mono text-xs opacity-70">{tab.name}</span>
-        )}
-      </button>
-      <button
-        type="button"
-        aria-label={closeLabel}
-        title={closeLabel}
-        className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
-        onClick={onClose}
-      >
-        <X className="size-3" />
-      </button>
     </div>
   );
 }

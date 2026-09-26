@@ -1,3 +1,4 @@
+import { localTerminalOptions } from './local-model';
 import { Elysia, t } from 'elysia';
 import { authContext } from '#shared/auth-context';
 import { requireGod } from '#shared/access';
@@ -5,6 +6,7 @@ import { noContent } from '#shared/http';
 import { commonErrors, errors } from '#shared/responses';
 import { requireInteractiveOwner } from '#modules/connections/interactive';
 import {
+  LocalTerminalOptionsResponse,
   StepUpTotpBody,
   StepUpResponse,
   OwnerTerminalGrantResponse,
@@ -37,6 +39,10 @@ export const ownerTerminalRoutes = new Elysia({
   .onBeforeHandle(async ({ user, request }) => {
     const owner = requireGod(user);
     await requireInteractiveOwner(request, owner.id);
+  })
+  .get('/owner-terminal/local-models', () => localTerminalOptions(), {
+    response: { 200: LocalTerminalOptionsResponse, ...errors(401, 403) },
+    detail: { summary: 'Read loaded local owner-terminal model options' },
   })
   .post(
     '/owner-terminal/step-up/totp',

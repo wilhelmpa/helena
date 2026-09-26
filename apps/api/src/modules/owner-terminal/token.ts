@@ -1,13 +1,8 @@
-import { createHmac } from 'node:crypto';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
-// The key file setup.sh generates once (see
-// deployment/volition-stack/native/owner-terminal/setup.sh), root:volition,
-// mode 0640. This process reads it as User=volition-plan; the owner-terminal
-// service reads the same file as User=wilhelmpa -- both are members of the
-// `volition` group already (see deployment/.../90-wilhelmpa and the group check
-// in the setup script), so no new group is needed for this alone.
-// Read when the first token is minted, not at import, so a test can point it at its own key.
+// Native hardening limits this key to the API and owner-terminal systemd units.
+// CLI processes receive only an inference-scoped capability, never this key.
 const keyPath = () => process.env.OWNER_TERMINAL_KEY_PATH ?? '/etc/volition/owner-terminal.key';
 
 // Matches the router: a 60-second window is long enough for one request/reconnect
@@ -34,6 +29,7 @@ export interface OwnerTerminalTokenPayload {
   kind: string;
   exp: number;
   purpose: 'owner-terminal';
+  access?: OwnerTerminalAccess;
 }
 
 // Minted by GET /auth/verify/owner-terminal/:kind (apps/api/src/app.ts), which nginx
@@ -41,14 +37,49 @@ export interface OwnerTerminalTokenPayload {
 // Session validity, the owner role and the 12h grant are all checked before this is
 // called -- the token only has to prove to the completely separate owner-terminal
 // process that Plan already did that check, for the specific kind being requested.
-export function mintOwnerTerminalToken(sessionId: string, kind: string): string {
+export interface OwnerTerminalAccess {
+  grantId: number | null;
+  grantCreatedAt: string | null;
+  grantExpiresAt: string | null;
+  lanIp: string | null;
+  expiresAt: number;
+}
+
+export function signTerminalPayload(payload: object): string {
+  const body = base64url(JSON.stringify(payload));
+  const mac = base64url(createHmac('sha256', key()).update(body).digest());
+  return `${body}.${mac}`;
+}
+
+export function verifyTerminalPayload(token: string): Record<string, unknown> | null {
+  try {
+    if (token.length > 4096) return null;
+    const parts = token.split('.');
+    if (parts.length !== 2) return null;
+    const [body, mac] = parts as [string, string];
+    const expected = createHmac('sha256', key()).update(body).digest();
+    const given = Buffer.from(mac, 'base64url');
+    if (given.length !== expected.length || !timingSafeEqual(given, expected)) return null;
+    const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
+    if (typeof payload.exp !== 'number' || payload.exp <= Date.now() / 1000) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+export function mintOwnerTerminalToken(
+  sessionId: string,
+  kind: string,
+  access?: OwnerTerminalAccess,
+): string {
   const payload: OwnerTerminalTokenPayload = {
     sessionId,
     kind,
     exp: Math.floor(Date.now() / 1000) + TOKEN_TTL_SEC,
     purpose: 'owner-terminal',
+    ...(access ? { access } : {}),
   };
-  const body = base64url(JSON.stringify(payload));
-  const mac = base64url(createHmac('sha256', key()).update(body).digest());
-  return `${body}.${mac}`;
+  return signTerminalPayload(payload);
 }

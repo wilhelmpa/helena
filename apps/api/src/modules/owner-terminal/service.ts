@@ -6,6 +6,7 @@ import {
   setSetting,
   ownerTerminalGrant,
   ownerTerminalAudit,
+  session,
   user,
   twoFactor,
 } from '@repo/db';
@@ -13,7 +14,7 @@ import { HttpError } from '#shared/lib';
 import { isLanAddress } from './lan';
 import { edgeEntry } from '#modules/edge-access/service';
 import { totpFailure } from './totp-errors';
-import { mintOwnerTerminalToken } from './token';
+import { mintOwnerTerminalToken, type OwnerTerminalAccess } from './token';
 import type { OwnerTerminalKind } from './model';
 
 const GRANT_HOURS = 12;
@@ -354,5 +355,57 @@ export async function issueProxyToken(request: Request, kind: OwnerTerminalKind)
   const { userId, sessionId } = await requireSession(request);
   const grant = await currentGrantRow(userId, sessionId);
   if (!grant && !(await lanBypass(request))) throw new HttpError(403, 'No active terminal grant');
-  return mintOwnerTerminalToken(sessionId, kind);
+  const access = kind.startsWith('local-')
+    ? {
+        grantId: grant?.id ?? null,
+        grantCreatedAt: grant ? iso(grant.createdAt) : null,
+        grantExpiresAt: grant ? iso(grant.expiresAt) : null,
+        lanIp: grant ? null : clientIp(request),
+        expiresAt: Math.floor(
+          Math.min(
+            grant?.expiresAt.getTime() ?? Date.now() + GRANT_HOURS * 3600_000,
+            Date.now() + GRANT_HOURS * 3600_000,
+          ) / 1000,
+        ),
+      }
+    : undefined;
+  return mintOwnerTerminalToken(sessionId, kind, access);
+}
+
+// Reuses the terminal's live grant and LAN policy; a capability cannot keep a
+// disabled owner or deleted/revoked browser session alive.
+export async function authorizeLocalTerminal(
+  sessionId: string,
+  access: OwnerTerminalAccess,
+): Promise<void> {
+  const [owner] = await db
+    .select({ userId: user.id })
+    .from(session)
+    .innerJoin(user, eq(user.id, session.userId))
+    .where(
+      and(
+        eq(session.id, sessionId),
+        gt(session.expiresAt, sql`now()`),
+        eq(user.role, 'god'),
+        eq(user.active, true),
+      ),
+    );
+  if (!owner || access.expiresAt <= Date.now() / 1000)
+    throw new HttpError(403, 'local_terminal_access_expired');
+  if (access.grantId !== null) {
+    const grant = await currentGrantRow(owner.userId, sessionId);
+    if (
+      !grant ||
+      grant.id !== access.grantId ||
+      iso(grant.createdAt) !== access.grantCreatedAt ||
+      iso(grant.expiresAt) !== access.grantExpiresAt
+    )
+      throw new HttpError(403, 'local_terminal_access_expired');
+  } else if (
+    !access.lanIp ||
+    !isLanAddress(access.lanIp) ||
+    (await getOwnerTerminalSettings()).stepUpRequired
+  ) {
+    throw new HttpError(403, 'local_terminal_access_expired');
+  }
 }

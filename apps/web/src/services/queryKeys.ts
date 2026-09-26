@@ -426,6 +426,7 @@ export const qk = {
   ownerTerminalGrant: ['ownerTerminalGrant'] as const,
   ownerTerminalSettings: ['ownerTerminalSettings'] as const,
   ownerTerminalAudit: ['ownerTerminalAudit'] as const,
+  ownerTerminalLocalModels: ['ownerTerminalLocalModels'] as const,
   // Administrator → Sicherheit: the host audit, the owner's factors and the edge sign-in.
   securityStatus: ['securityStatus'] as const,
   edgeAccess: ['edgeAccess'] as const,

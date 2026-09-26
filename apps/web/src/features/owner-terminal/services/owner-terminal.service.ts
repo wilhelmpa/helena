@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { qk } from '@/services/queryKeys';
 import {
+  getOwnerTerminalLocalModels,
   endOwnerTerminalSession,
   getOwnerTerminalAudit,
   getOwnerTerminalGrant,
@@ -81,5 +82,13 @@ export function useUpdateOwnerTerminalSettings() {
   return useMutation({
     mutationFn: (patch: OwnerTerminalSettingsPatch) => updateOwnerTerminalSettings(patch),
     onSuccess: (settings) => queryClient.setQueryData(qk.ownerTerminalSettings, settings),
+  });
+}
+
+export function useOwnerTerminalLocalModels() {
+  return useQuery({
+    queryKey: qk.ownerTerminalLocalModels,
+    queryFn: getOwnerTerminalLocalModels,
+    refetchInterval: GRANT_POLL_MS,
   });
 }

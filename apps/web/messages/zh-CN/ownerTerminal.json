@@ -24,7 +24,9 @@
     "codex": "Codex",
     "helena-dev-claude": "开发 Helena(Claude Code)",
     "helena-dev-codex": "开发 Helena(Codex)",
-    "close": "结束会话"
+    "close": "结束会话",
+    "local-qwen36": "Qwen 3.6 local (Codex)",
+    "local-qwen38": "Qwen 3.8 local (Codex)"
   },
   "keys": {
     "esc": "Esc",

@@ -24,7 +24,9 @@
     "codex": "Codex",
     "helena-dev-claude": "Desenvolver a Helena (Claude Code)",
     "helena-dev-codex": "Desenvolver a Helena (Codex)",
-    "close": "Encerrar sessão"
+    "close": "Encerrar sessão",
+    "local-qwen36": "Qwen 3.6 local (Codex)",
+    "local-qwen38": "Qwen 3.8 local (Codex)"
   },
   "keys": {
     "esc": "Esc",

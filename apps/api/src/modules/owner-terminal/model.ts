@@ -8,6 +8,8 @@ export const OWNER_TERMINAL_KINDS = [
   'shell',
   'claude',
   'codex',
+  'local-qwen36',
+  'local-qwen38',
   'helena-dev-claude',
   'helena-dev-codex',
 ] as const;
@@ -66,3 +68,10 @@ export const OwnerTerminalSettingsPatch = t.Partial(OwnerTerminalSettingsRespons
 export const TokenResponse = t.Object({ token: t.String() });
 
 export const StepUpResponse = t.Object({ expiresAt: t.String() });
+
+export const LocalTerminalKindParam = t.Object({
+  kind: oneOf(['local-qwen36', 'local-qwen38'] as const),
+});
+export const LocalTerminalOptionsResponse = t.Array(
+  t.Object({ kind: oneOf(['local-qwen36', 'local-qwen38'] as const), ready: t.Boolean() }),
+);
