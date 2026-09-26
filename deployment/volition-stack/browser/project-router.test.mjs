@@ -20,6 +20,7 @@ import {
   navigableUrl,
   readWindowSizes,
   setLiveViewport,
+  setWindowCalibrationAllowed,
   targetId,
   windowChrome,
   windowSize,
@@ -88,17 +89,13 @@ function fakeBrowser(tabs = [{ id: PAGE, visible: true }], { scale = 2, rejectFi
   const commands = [];
   const connections = new Set();
   let bounds = { left: 0, top: 0, width: 1920, height: 1080, windowState: "normal" };
-  // The page's emulation: null, or { width, height, ratio } with width 0 following the window.
-  let emulation = null;
-  // The page size an emulation began at, whether the window changed size since, and the old
-  // size a clear left the page at.
-  let emulatedFrom = null;
-  let resizedWhileEmulated = false;
-  let stale = null;
+  let zoom = 1;
+  const pageStates = new Map(tabs.map(({ id }) => [id, { emulation: null, emulatedFrom: null, resizedWhileEmulated: false, stale: null }]));
   const windowPage = () => ({ width: bounds.width, height: bounds.height - CHROME_HEIGHT });
-  const pageSizes = () => {
-    if (emulation) return { ...emulation };
-    return { ...(stale ?? windowPage()), ratio: scale };
+  const pageSizes = (id = PAGE) => {
+    const state = pageStates.get(id);
+    const size = state.emulation ?? { ...(state.stale ?? windowPage()), ratio: scale };
+    return { width: size.width / zoom, height: size.height / zoom, ratio: size.ratio * zoom };
   };
   const server = http.createServer((request, response) => {
     response.writeHead(200, { "content-type": "application/json" });
@@ -116,47 +113,72 @@ function fakeBrowser(tabs = [{ id: PAGE, visible: true }], { scale = 2, rejectFi
   const browser = { server, commands, connections: 0, lastInput: 0 };
   // Leaves the page at an old size, as a clear after a resize does.
   browser.makeStale = (size) => {
-    stale = size;
+    pageStates.get(PAGE).stale = size;
   };
   browser.page = pageSizes;
+  browser.setZoom = (value) => { zoom = value; };
+  browser.bounds = () => bounds;
+  server.once("listening", () => setWindowCalibrationAllowed(server.address().port, true));
   server.on("upgrade", (request, socket, head) => {
     upgraded.add(socket);
     browser.connections++;
     acceptWebSocket(request, socket, head, (connection) => {
       connections.add(connection);
+      const owned = new Map();
+      connection.on("close", () => {
+        connections.delete(connection);
+        for (const [id] of owned) {
+          const state = pageStates.get(id);
+          state.emulation = null;
+          state.stale = null;
+        }
+      });
       connection.on("message", (data) => {
         const message = JSON.parse(data.toString());
         commands.push(message);
         const reply = (result = {}) => connection.send(JSON.stringify({ id: message.id, result }));
+        const pageId = message.sessionId?.slice(2);
+        const state = pageStates.get(pageId);
         switch (message.method) {
           case "Target.getTargets":
             return reply({ targetInfos: tabs.map(({ id }) => ({ targetId: id, type: "page" })) });
           case "Target.attachToTarget":
+            browser.onAttach?.(message.params.targetId);
             return reply({ sessionId: `S-${message.params.targetId}` });
+          case "Browser.getWindowBounds":
           case "Browser.getWindowForTarget":
             return reply({ windowId: 1, bounds });
           case "Browser.setWindowBounds": {
             const before = bounds;
             bounds = { ...bounds, ...message.params.bounds };
             if (before.width !== bounds.width || before.height !== bounds.height) {
-              if (emulation) resizedWhileEmulated = true;
-              else stale = null;
+              for (const state of pageStates.values()) {
+                if (state.emulation) state.resizedWhileEmulated = true;
+                else state.stale = null;
+              }
             }
+            if (browser.afterBounds) bounds = { ...bounds, ...browser.afterBounds(bounds) };
             return reply();
           }
           case "Emulation.setDeviceMetricsOverride": {
-            if (!emulation) {
-              emulatedFrom = stale ?? windowPage();
-              resizedWhileEmulated = false;
+            const parameters = JSON.stringify(message.params);
+            if (owned.get(pageId) === parameters) return reply();
+            if (!owned.has(pageId)) {
+              state.emulatedFrom = state.stale ?? windowPage();
+              state.resizedWhileEmulated = false;
             }
+            owned.set(pageId, parameters);
             const { width, height, deviceScaleFactor } = message.params;
-            emulation = { width, height, ratio: deviceScaleFactor };
+            state.emulation = { width, height, ratio: deviceScaleFactor };
             return reply();
           }
           case "Emulation.clearDeviceMetricsOverride":
-            if (emulation && resizedWhileEmulated) stale = emulatedFrom;
-            emulation = null;
+            if (!owned.delete(pageId)) return reply();
+            if (state.emulation && state.resizedWhileEmulated) state.stale = state.emulatedFrom;
+            state.emulation = null;
             return reply();
+          case "Page.getLayoutMetrics":
+            return reply(browser.metrics ?? { cssVisualViewport: { zoom } });
           case "Page.getFrameTree":
             return reply({ frameTree: { frame: { id: PAGE } } });
           case "Page.createIsolatedWorld":
@@ -165,7 +187,7 @@ function fakeBrowser(tabs = [{ id: PAGE, visible: true }], { scale = 2, rejectFi
             if (message.params.contextId) return reply({ result: { value: browser.lastInput } });
             if (message.params.awaitPromise) return reply({ result: { value: true } });
             const tab = tabs.find(({ id }) => message.sessionId === `S-${id}`);
-            const page = pageSizes();
+            const page = pageSizes(tab.id);
             const visibility = tab.visible ? "visible" : "hidden";
             const sizes = [visibility, 1920, 1080, bounds.width, bounds.height, page.width, page.height, page.ratio];
             if (message.params.expression.includes("__clicks")) return reply({ result: { value: [] } });
@@ -578,6 +600,150 @@ describe("project browser router", () => {
     kiosk.close();
   });
 
+  it("rejects plausible foreign geometry until that owning session detaches", async () => {
+    const browser = fakeBrowser();
+    upstream = browser.server;
+    const port = await listen(upstream);
+    const foreign = new BrowserLink(port);
+    try {
+      await foreign.pin(PAGE, { width: 1920, height: 1080, ratio: 1 });
+      await setLiveViewport(port, { width: 800, height: 513, ratio: 2 });
+      assert.equal(windowChrome(port), null);
+      assert.deepEqual(browser.page(), { width: 1920, height: 1080, ratio: 1 });
+      const attempts = browser.sent("Browser.setWindowBounds").length;
+      await setLiveViewport(port, { width: 800, height: 513, ratio: 2 });
+      assert.equal(browser.sent("Browser.setWindowBounds").length, attempts);
+      foreign.close();
+      await until(() => browser.page().ratio === 2);
+      await setLiveViewport(port, { width: 800, height: 513, ratio: 2 });
+      assert.deepEqual(windowChrome(port), { width: 0, height: 87, scale: 2 });
+      assert.deepEqual(browser.page(), { width: 800, height: 513, ratio: 2 });
+    } finally { foreign.close(); }
+  });
+
+  it("invalidates an earlier trusted crop when a foreign override changes geometry", async () => {
+    const browser = fakeBrowser();
+    upstream = browser.server;
+    const port = await listen(upstream);
+    await setLiveViewport(port, { width: 800, height: 513, ratio: 2 });
+    assert.ok(windowChrome(port));
+    const foreign = new BrowserLink(port);
+    try {
+      await foreign.pin(PAGE, { width: 800, height: 600, ratio: 1 });
+      await setLiveViewport(port, { width: 800, height: 513, ratio: 2 });
+      assert.equal(windowChrome(port), null);
+    } finally { foreign.close(); }
+  });
+
+  it("remeasures after a foreign detach resets the router's later pin", async () => {
+    const browser = fakeBrowser();
+    upstream = browser.server;
+    const port = await listen(upstream);
+    const foreign = new BrowserLink(port);
+    try {
+      await foreign.pin(PAGE, { width: 1920, height: 1080, ratio: 1 });
+      await setLiveViewport(port, { width: 620, height: 612, ratio: 1, pin1: true });
+      assert.equal(windowChrome(port), null);
+      assert.deepEqual(browser.page(), { width: 620, height: 612, ratio: 1 });
+      foreign.close();
+      await until(() => browser.page().ratio === 2);
+      await setLiveViewport(port, { width: 620, height: 612, ratio: 1, pin1: true });
+      assert.deepEqual(windowChrome(port), { width: 0, height: 87, scale: 2 });
+      assert.deepEqual(browser.page(), { width: 620, height: 612, ratio: 1 });
+    } finally { foreign.close(); }
+  });
+
+  it("does not calibrate unknown or agent-held geometry, and clears crop on connection loss", async () => {
+    const browser = fakeBrowser();
+    upstream = browser.server;
+    const port = await listen(upstream);
+    setWindowCalibrationAllowed(port, false);
+    await setLiveViewport(port, { width: 800, height: 513, ratio: 2 });
+    assert.equal(windowChrome(port), null);
+    assert.equal(browser.sent("Browser.setWindowBounds").length, 0);
+    const link = new BrowserLink(port);
+    link.chrome = { width: 0, height: 87 };
+    link.close();
+    assert.equal(link.chrome, null);
+    link.chrome = { width: 0, height: 87 };
+    await link.open();
+    assert.equal(link.chrome, null);
+    link.close();
+  });
+
+  it("distinguishes equal pixel extents with different CSS size and DPR after detach", async () => {
+    const browser = fakeBrowser();
+    upstream = browser.server;
+    const port = await listen(upstream);
+    await setLiveViewport(port, { width: 1440, height: 900, ratio: 1, pin1: true });
+    const foreign = new BrowserLink(port);
+    try {
+      await foreign.pin(PAGE, { width: 1440, height: 900, ratio: 1 });
+      await (await foreign.open()).send("Browser.setWindowBounds", { windowId: 1, bounds: { width: 720, height: 537 } });
+      foreign.close();
+      await until(() => browser.page().ratio === 2);
+      assert.deepEqual(browser.page(), { width: 720, height: 450, ratio: 2 });
+      await setLiveViewport(port, { width: 1440, height: 900, ratio: 1, pin1: true });
+      assert.deepEqual(browser.page(), { width: 1440, height: 900, ratio: 1 });
+    } finally { foreign.close(); }
+  });
+
+  it("preserves a real page zoom when validating the router's existing pin", async () => {
+    const browser = fakeBrowser();
+    upstream = browser.server;
+    const port = await listen(upstream);
+    await setLiveViewport(port, { width: 420, height: 300, ratio: 1, pin1: true });
+    browser.setZoom(1.25);
+    const clears = browser.sent("Emulation.clearDeviceMetricsOverride").length;
+    await setLiveViewport(port, { width: 420, height: 300, ratio: 1, pin1: true });
+    assert.equal(browser.sent("Emulation.clearDeviceMetricsOverride").length, clears);
+    assert.deepEqual(browser.page(), { width: 336, height: 240, ratio: 1.25 });
+    assert.ok(windowChrome(port));
+  });
+
+  it("abandons a calibration and old owner fit after agent authority or window state changes", async () => {
+    const browser = fakeBrowser();
+    upstream = browser.server;
+    const port = await listen(upstream);
+    browser.afterBounds = () => {
+      setWindowCalibrationAllowed(port, false);
+      browser.afterBounds = null;
+      return { width: 1111, height: 777, windowState: "maximized" };
+    };
+    await setLiveViewport(port, { width: 420, height: 300, ratio: 1, pin1: true });
+    assert.equal(browser.sent("Browser.setWindowBounds").length, 1);
+    assert.equal(browser.sent("Emulation.setDeviceMetricsOverride").length, 0);
+    assert.deepEqual(browser.bounds(), { left: 0, top: 0, width: 1111, height: 777, windowState: "maximized" });
+    assert.equal(windowChrome(port), null);
+  });
+
+  it("does not dispatch or cache a pin when authority changes while attaching", async () => {
+    const browser = fakeBrowser();
+    upstream = browser.server;
+    const port = await listen(upstream);
+    const link = new BrowserLink(port);
+    let allowed = true;
+    browser.onAttach = () => { allowed = false; };
+    try {
+      await link.pin(PAGE, { width: 620, height: 300, ratio: 1 }, () => allowed);
+      assert.equal(browser.sent("Emulation.setDeviceMetricsOverride").length, 0);
+      assert.equal(link.pins.has(PAGE), false);
+    } finally { link.close(); }
+  });
+
+  it("uses JPEG without changing a pin when page zoom cannot be measured", async () => {
+    const browser = fakeBrowser();
+    upstream = browser.server;
+    const port = await listen(upstream);
+    await setLiveViewport(port, { width: 420, height: 300, ratio: 1, pin1: true });
+    const clears = browser.sent("Emulation.clearDeviceMetricsOverride").length;
+    browser.metrics = {};
+    await setLiveViewport(port, { width: 420, height: 300, ratio: 1, pin1: true });
+    assert.equal(browser.sent("Emulation.clearDeviceMetricsOverride").length, clears);
+    assert.deepEqual(browser.page(), { width: 420, height: 300, ratio: 1 });
+    assert.equal(windowChrome(port), null);
+  });
+
   it("sizes a window from its visible tab", async () => {
     const browser = fakeBrowser([
       { id: BEHIND, visible: false },
@@ -591,7 +757,7 @@ describe("project browser router", () => {
       setLiveViewport(port, { width: 800, height: 513, ratio: 2 }),
     ]);
     assert.equal(browser.connections, 1);
-    assert.deepEqual(browser.sent("Browser.setWindowBounds")[0].params.bounds, {
+    assert.deepEqual(browser.sent("Browser.setWindowBounds").at(-1).params.bounds, {
       left: 0,
       top: 0,
       width: 800,
@@ -606,14 +772,13 @@ describe("project browser router", () => {
     });
   });
 
-  it("ends another client's emulation the first time it touches a page, and pins only on request", async () => {
-    // A fresh BrowserLink, as the router starts with after a restart, does not know whether a
-    // page is emulated: asking for none still runs the CDP call once.
+  it("clears only its own session emulation, and pins only on request", async () => {
+    // A fresh session may issue clear, but it does not own another session's override.
     const browser = fakeBrowser();
     upstream = browser.server;
     const port = await listen(upstream);
     const link = new BrowserLink(port);
-    assert.equal(await link.pin(PAGE, null), true);
+    assert.equal(await link.pin(PAGE, null), false);
     assert.equal(browser.sent("Emulation.clearDeviceMetricsOverride").length, 1);
     assert.equal(await link.pin(PAGE, null), false);
     assert.equal(browser.sent("Emulation.clearDeviceMetricsOverride").length, 1);
@@ -640,9 +805,9 @@ describe("project browser router", () => {
     browser.makeStale({ width: 3839, height: 2312 });
     await setLiveViewport(port, { width: 1280, height: 800, ratio: 2 });
     const bounds = browser.sent("Browser.setWindowBounds").map((command) => command.params.bounds);
-    // One pixel taller and back, then the window for the live view.
+    // Measure during a native size change and after restoration, then fit the live view.
     assert.deepEqual(bounds.slice(0, 2), [
-      { left: 0, top: 0, width: 1920, height: 1081 },
+      { left: 0, top: 0, width: 1912, height: 1072 },
       { left: 0, top: 0, width: 1920, height: 1080 },
     ]);
     assert.deepEqual(bounds.at(-1), { left: 0, top: 0, width: 1280, height: 887 });
@@ -691,7 +856,6 @@ describe("project browser router", () => {
     const browser = fakeBrowser();
     upstream = browser.server;
     const port = await listen(upstream);
-    await setLiveViewport(port, { width: 1000, height: 700, ratio: 2 });
     await setLiveViewport(port, { width: 390, height: 700, ratio: 2 });
     assert.deepEqual(browser.sent("Browser.setWindowBounds").at(-1).params.bounds, {
       left: 0,
@@ -725,10 +889,12 @@ describe("project browser router", () => {
     const browser = fakeBrowser();
     upstream = browser.server;
     const port = await listen(upstream);
-    await fitWindows(new BrowserLink(port));
+    const link = new BrowserLink(port);
+    await fitWindows(link);
+    assert.equal(link.chrome, null);
     assert.equal(browser.sent("Browser.setWindowBounds").length, 0);
     assert.equal(browser.sent("Emulation.clearDeviceMetricsOverride").length, 0);
-    // Asked to fill the screen, the keeper ends any emulation another client left.
+    // An explicit screen request permits owner calibration and clearing our own emulation.
     await setLiveViewport(port, null);
     assert.equal(browser.sent("Emulation.clearDeviceMetricsOverride").length, 1);
   });
@@ -873,6 +1039,7 @@ describe("project browser control", () => {
       visible: true,
       screen: { width: 1920, height: 1200 },
       outer: { width: 1280, height: 887 },
+      inner: { width: 1280, height: 800 },
       chrome: { width: 0, height: 87 },
       scale: 2,
       ratio: 2,

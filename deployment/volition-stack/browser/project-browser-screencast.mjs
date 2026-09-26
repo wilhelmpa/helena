@@ -47,6 +47,7 @@ import {
   MIN_WINDOW_WIDTH,
   openBrowser,
   setLiveViewport,
+  setWindowCalibrationAllowed,
   windowChrome,
 } from "./project-browser-control.mjs";
 import { InputSender, viewerMessage } from "./project-browser-input.mjs";
@@ -1342,6 +1343,7 @@ export function setViewportAuthority(port, mode, size, holder) {
     if (!valid(fixed.width, 8192) || !valid(fixed.height, 8192)) throw new Error("Invalid viewport size");
     viewportAuthorities.set(port, { mode, size: { width: fixed.width, height: fixed.height }, holder: holder || null });
   }
+  updateWindowCalibration(port);
   const stream = streams.get(port);
   if (stream) return stream.resize();
   if (mode === "fixed") {
@@ -1379,8 +1381,14 @@ export function stopAllScreencasts() {
 // lock of one project browser changed ({holder, since}; holder null for free). setHandover:
 // an agent asks the owner to take over ({reason, agentName, since}), or null once it stopped
 // waiting. Both are kept for viewers who join later and told to those watching now.
+function updateWindowCalibration(port) {
+  const state = controlStates.get(port);
+  setWindowCalibrationAllowed(port, Boolean(state) && state.holder?.kind !== "agent" && viewportAuthorities.get(port)?.mode !== "fixed");
+}
+
 export function setControlState(port, state) {
   controlStates.set(port, { holder: state?.holder ?? null, since: state?.since ?? null });
+  updateWindowCalibration(port);
   const stream = streams.get(port);
   if (!stream) return;
   stream.broadcast(controlMessageFor(port));

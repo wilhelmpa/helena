@@ -194,13 +194,15 @@ export async function openBrowser(port) {
 // One DevTools connection per project browser, kept open and shared by the window keeper
 // and the tab list, with a session attached to each page it has asked something.
 //
-// An emulation belongs to the session that set it: a clear from any session ends it, and so
-// does the setting session's end. So only this connection emulates, and it is the last one to
-// close. Chromium 153 keeps the size a page's window had when an emulation began, and a clear
+// An emulation belongs to its CDP session. A fresh session cannot clear another client's
+// active override; detaching that other client can also reset a later override. Only this
+// connection sets the router's emulation. Chromium 153 keeps the size a page's window had when an emulation began, and a clear
 // after the window changed size meanwhile gives the page that old size back, wider or taller
 // than its window (a 3839 pixel wide page in a 1280 pixel window on the bench), until the
 // window changes size again; a session that ends does not do this. So every clear is followed
 // by a nudge of the window (fitWindows).
+const SKIPPED_COMMAND = Symbol("stale browser authority");
+
 export class BrowserLink {
   constructor(port) {
     this.port = port;
@@ -217,6 +219,7 @@ export class BrowserLink {
     // per DIP the browser draws at.
     this.chrome = null;
     this.scale = 1;
+    this.failedCalibration = new Map();
     // fitWindows runs one at a time per browser: the keeper's pass and a live view's resize
     // would otherwise pin and resize the same pages in between each other.
     this.queue = Promise.resolve();
@@ -231,6 +234,9 @@ export class BrowserLink {
         this.sessions.clear();
         this.pins.clear();
         this.captureTarget = null;
+        this.chrome = null;
+        this.scale = 1;
+        this.failedCalibration.clear();
         return connection;
       })
       .finally(() => {
@@ -246,13 +252,15 @@ export class BrowserLink {
     return run;
   }
 
-  async send(targetId, method, params) {
+  async send(targetId, method, params, valid = () => true) {
     const connection = await this.open();
+    if (!valid()) return SKIPPED_COMMAND;
     let sessionId = this.sessions.get(targetId);
     if (!sessionId) {
       ({ sessionId } = await connection.send("Target.attachToTarget", { targetId, flatten: true }));
       this.sessions.set(targetId, sessionId);
     }
+    if (!valid()) return SKIPPED_COMMAND;
     return connection.send(method, params, sessionId);
   }
 
@@ -290,20 +298,24 @@ export class BrowserLink {
   // another client left it emulated. Returns whether it ended an emulation, after which the
   // window has to change size once for the page to take the window's size again (see the
   // class).
-  async pin(targetId, size) {
+  async pin(targetId, size, valid = () => true) {
+    if (!valid()) return false;
     const key = size ? `${size.width}x${size.height}@${size.ratio}` : null;
-    if (this.pins.get(targetId) === key) return false;
-    if (!size) await this.send(targetId, "Emulation.clearDeviceMetricsOverride", {});
+    const previous = this.pins.get(targetId);
+    if (previous === key) return false;
+    let result;
+    if (!size) result = await this.send(targetId, "Emulation.clearDeviceMetricsOverride", {}, valid);
     else {
-      await this.send(targetId, "Emulation.setDeviceMetricsOverride", {
+      result = await this.send(targetId, "Emulation.setDeviceMetricsOverride", {
         width: size.width,
         height: size.height,
         deviceScaleFactor: size.ratio,
         mobile: false,
-      });
+      }, valid);
     }
+    if (result === SKIPPED_COMMAND) return false;
     this.pins.set(targetId, key);
-    return !size;
+    return !size && typeof previous === "string";
   }
 
   pinned(targetId) {
@@ -320,6 +332,7 @@ export class BrowserLink {
     this.connection?.close();
     this.connection = null;
     this.captureTarget = null;
+    this.chrome = null;
   }
 }
 
@@ -327,6 +340,16 @@ const links = new Map();
 // The page size each browser's live view asked for, by DevTools port: CSS pixels and the
 // window pixels per CSS pixel.
 const liveViewports = new Map();
+const calibrationAllowed = new Set();
+const calibrationVersions = new Map();
+
+export function setWindowCalibrationAllowed(port, allowed) {
+  if (calibrationAllowed.has(port) !== Boolean(allowed)) {
+    calibrationVersions.set(port, (calibrationVersions.get(port) ?? 0) + 1);
+  }
+  if (allowed) calibrationAllowed.add(port);
+  else calibrationAllowed.delete(port);
+}
 // Browsers whose windows were asked to fill the screen (a desktop viewer, or the last live
 // viewer gone), by DevTools port. Until a browser is in either map, the keeper leaves its
 // windows' size alone for STARTUP_GRACE_MS after the router starts: a live view open when the
@@ -536,6 +559,7 @@ export function readWindowSizes(value) {
     visible: visibility === "visible",
     screen: { width: screenWidth, height: screenHeight },
     outer: { width: outerWidth, height: outerHeight },
+    inner: { width: innerWidth, height: innerHeight },
     chrome: toolbar(scale ?? 1),
     scale: scale ?? 1,
     ratio,
@@ -545,10 +569,15 @@ export function readWindowSizes(value) {
 
 // Changes a window's height by one pixel and back, which gives its pages their window's size
 // again after a cleared emulation left them at an old one.
-async function nudge(connection, windowId, bounds) {
+async function nudge(connection, windowId, bounds, valid = () => true) {
+  if (!valid()) return;
   const { left, top, width, height } = bounds;
   await connection.send("Browser.setWindowBounds", { windowId, bounds: { left, top, width, height: height + 1 } });
-  await connection.send("Browser.setWindowBounds", { windowId, bounds: { left, top, width, height } });
+  const { bounds: current } = await connection.send("Browser.getWindowBounds", { windowId });
+  if (valid() && current.windowState === "normal" && current.left === left && current.top === top &&
+      current.width === width && current.height === height + 1) {
+    await connection.send("Browser.setWindowBounds", { windowId, bounds: { left, top, width, height } });
+  }
 }
 
 // A window's visible tab's sizes once they pass a check, which a new window size or a nudge
@@ -566,6 +595,45 @@ async function sizesOnceSettled(link, tab, settled) {
 function hasSize(sizes, bounds) {
   const { width, height } = sizes.outer;
   return Math.abs(width - bounds.width) <= FIT_TOLERANCE && Math.abs(height - bounds.height) <= FIT_TOLERANCE;
+}
+
+async function calibrateChrome(link, tab, windowId, bounds, valid) {
+  const connection = await link.open();
+  if (!valid() || !calibrationAllowed.has(link.port)) return null;
+  const probe = { left: bounds.left, top: bounds.top,
+    width: bounds.width + (bounds.width > MIN_WINDOW_WIDTH + 8 ? -8 : 8),
+    height: bounds.height + (bounds.height > 258 ? -8 : 8) };
+  let during;
+  let restoredBounds = false;
+  try {
+    await connection.send("Browser.setWindowBounds", { windowId, bounds: probe });
+    during = await sizesOnceSettled(link, tab, (sizes) => hasSize(sizes, probe) && sizes.consistent);
+  } finally {
+    const { bounds: current } = await connection.send("Browser.getWindowForTarget", { targetId: tab });
+    if (valid() && current.windowState === bounds.windowState &&
+        ["left", "top", "width", "height"].every((key) => current[key] === probe[key])) {
+      const { left, top, width, height } = bounds;
+      await connection.send("Browser.setWindowBounds", { windowId, bounds: { left, top, width, height } });
+      restoredBounds = true;
+    }
+  }
+  if (!restoredBounds || !valid() || !calibrationAllowed.has(link.port)) return null;
+  const restored = await sizesOnceSettled(link, tab, (sizes) => hasSize(sizes, bounds) && sizes.consistent);
+  if (!during?.consistent || !restored?.consistent || during.scale !== restored.scale) return null;
+  for (const dimension of ["width", "height"]) {
+    const pageChange = (restored.inner[dimension] * restored.ratio - during.inner[dimension] * during.ratio) / restored.scale;
+    if (Math.abs(pageChange - (bounds[dimension] - probe[dimension])) > FIT_TOLERANCE ||
+        Math.abs(restored.chrome[dimension] - during.chrome[dimension]) > FIT_TOLERANCE) return null;
+  }
+  return valid() && calibrationAllowed.has(link.port) ? restored : null;
+}
+
+function matchesPin(sizes, key, zoom) {
+  if (!sizes || typeof key !== "string") return false;
+  const [width, height, ratio] = key.split(/[x@]/).map(Number);
+  return Math.abs(sizes.inner.width * zoom - width) <= FIT_TOLERANCE &&
+    Math.abs(sizes.inner.height * zoom - height) <= FIT_TOLERANCE &&
+    Math.abs(sizes.ratio / zoom - ratio) < 0.01;
 }
 
 // Fits every window of one browser to its live view or its screen. The visible tab of a
@@ -587,9 +655,10 @@ async function fitWindowsNow(link) {
   const pages = targetInfos.filter((target) => target.type === "page");
   link.keep(new Set(pages.map((target) => target.targetId)));
   const live = liveViewports.get(link.port);
+  const authority = calibrationVersions.get(link.port) ?? 0;
+  const valid = () => liveViewports.get(link.port) === live && (calibrationVersions.get(link.port) ?? 0) === authority;
   // A page drawn at ratio 1 for the agent, or narrower than a window can be, is pinned.
   const pinned = live && (live.pin1 || live.width < MIN_WINDOW_WIDTH);
-  const pin = pinned ? { width: live.width, height: live.height, ratio: live.pin1 ? 1 : link.scale } : null;
   const waiting = !live && !screenRequested.has(link.port) && Date.now() - startedAt < STARTUP_GRACE_MS;
   const windows = new Map();
   for (const target of pages) {
@@ -608,43 +677,68 @@ async function fitWindowsNow(link) {
   }
   for (const [windowId, { bounds, shown, tabs, sizes: measured }] of windows) {
     let sizes = measured;
+    if (!valid()) return;
+    if (waiting) continue;
     if (bounds.windowState !== "normal") {
       await connection.send("Browser.setWindowBounds", {
         windowId,
         bounds: { windowState: "normal" },
       });
     }
-    if (sizes && !link.pinned(shown)) {
-      if (!sizes.consistent) {
-        await nudge(connection, windowId, bounds);
-        sizes = await sizesOnceSettled(link, shown, (next) => next.consistent);
-      }
-      if (sizes?.consistent) {
-        link.chrome = sizes.chrome;
-        link.scale = sizes.scale;
+    if (!sizes) link.chrome = null;
+    if (link.pinned(shown)) {
+      const metrics = await link.send(shown, "Page.getLayoutMetrics", {}).catch(() => null);
+      const measuredZoom = metrics?.cssVisualViewport?.zoom;
+      const zoom = Number.isFinite(measuredZoom) && measuredZoom > 0 ? measuredZoom : null;
+      if (!valid()) return;
+      if (!zoom || !matchesPin(sizes, link.pins.get(shown), zoom)) {
+        link.chrome = null;
+        if (zoom && calibrationAllowed.has(link.port)) await link.pin(shown, null, valid);
       }
     }
-    // Just after a router restart, a window keeps its size for the live view to come back.
-    if (waiting) continue;
+    if (!valid()) return;
+    if (sizes && !link.pinned(shown)) {
+      const known = link.chrome && sizes.consistent && sizes.scale === link.scale &&
+        ["width", "height"].every((key) => Math.abs(sizes.chrome[key] - link.chrome[key]) <= FIT_TOLERANCE);
+      if (!known) {
+        link.chrome = null;
+        const signature = JSON.stringify([bounds, sizes]);
+        if (bounds.windowState === "normal" && calibrationAllowed.has(link.port) &&
+            link.failedCalibration.get(shown) !== signature) {
+          const verified = await calibrateChrome(link, shown, windowId, bounds, valid);
+          if (verified) {
+            sizes = verified;
+            link.chrome = verified.chrome;
+            link.scale = verified.scale;
+            link.failedCalibration.delete(shown);
+          } else link.failedCalibration.set(shown, signature);
+        }
+      }
+    }
+    if (!valid()) return;
     const chrome = link.chrome;
+    const pin = pinned ? { width: live.width, height: live.height, ratio: live.pin1 ? 1 : (chrome ? link.scale : live.ratio) } : null;
     const fitted = sizes && chrome ? fittedBounds(bounds, windowSize(sizes.screen, chrome, live)) : null;
     let changed = false;
     let cleared = false;
     const applyPins = async () => {
       for (const tab of tabs) {
+        if (!valid()) return;
         const before = link.pins.get(tab);
-        if (await link.pin(tab, pin)) cleared = true;
+        if (await link.pin(tab, pin, valid)) cleared = true;
         if (link.pins.get(tab) !== before) changed = true;
       }
     };
     // A page pinned for ratio 1 takes its new CSS size before its window changes.
     if (fitted && pin) await applyPins();
+    if (!valid()) return;
     if (fitted) {
       await connection.send("Browser.setWindowBounds", { windowId, bounds: fitted });
       if (live && shown) await sizesOnceSettled(link, shown, (next) => hasSize(next, fitted));
     }
     await applyPins();
-    if (cleared) await nudge(connection, windowId, fitted ?? bounds);
+    if (!valid()) return;
+    if (cleared) await nudge(connection, windowId, fitted ?? bounds, valid);
     if (live && shown && (fitted || changed)) await link.evaluate(shown, DRAWN, true).catch(() => {});
   }
 }
@@ -668,6 +762,8 @@ export function startWindowKeeper({ listBrowsers, intervalMs = 1_000, log = () =
           links.delete(port);
           liveViewports.delete(port);
           screenRequested.delete(port);
+          calibrationAllowed.delete(port);
+          calibrationVersions.delete(port);
         }
       }
       for (const { cdpPort } of current) {

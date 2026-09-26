@@ -61,8 +61,32 @@ re-freezing, and releasing visibility on CDP disconnect. A separate synthetic X1
 confirmed native window repainting as well as JPEG frames. No production page was inspected
 or changed by these proofs.
 
-The Chrome-toolbar crop/foreign-emulation defect remains separately open. This lifecycle change
-has no production acceptance claim until the owner-view idle/restart checks below pass.
+These lifecycle and crop changes have no production acceptance claim until the owner-view
+idle/restart checks below pass.
+
+## Native crop measurement
+
+Video uses only a verified native toolbar measurement. Unknown or changed geometry invalidates
+the previous crop and selects the existing JPEG path. A fresh CDP connection also invalidates
+the cache. With authoritative owner/free control and no fixed working viewport, the window
+keeper measures the page during a small native bounds change and after restoration. Both
+physical page dimensions must follow that change with the same toolbar and display scale.
+Startup grace, unknown control and agent/fixed control do not perform this calibration. A
+failed identical probe is not repeated; restoration does not overwrite independently changed
+window bounds, and a changed live viewport supersedes the pending fit.
+
+Device-metrics overrides belong to CDP sessions. Clearing a fresh session cannot remove an
+active foreign override. Detaching a foreign session can reset the effective metrics after the
+router set its own pin; Chromium may then skip an identical repeated set. For a known router
+pin, owner authority permits clearing that own session before calibrating and applying the
+requested pin again. Unproven foreign geometry never becomes a zero-height video crop.
+
+The mock models per-session overrides, identical-set suppression and foreign detach. The
+explicit `project-browser-crop-x11-proof.mjs` native proof uses a private GPU-off Chromium
+instance. It verifies rejection of an active foreign zero-toolbar tuple, recalibration after
+foreign detach, the requested CSS viewport, fresh frames, a real click at CSS coordinates and
+restoration to desktop size without changing tab count. Live acceptance must additionally
+check panel resizing, maximize/restore and correct toolbar exclusion in Helena.
 
 ## Live acceptance
 
