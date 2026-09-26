@@ -155,16 +155,24 @@ describe('teams', () => {
       const teamId = (await api.teams.get()).data![0].id;
 
       const members = await api.teams({ teamId }).members.get();
-      expect(members.data?.items).toMatchObject([{ email: user.email, role: 'owner' }]);
+      expect(members.data?.items).toHaveLength(2);
+      expect(members.data?.items.find((member) => member.email === user.email)).toMatchObject({
+        role: 'owner',
+        agentId: null,
+      });
+      expect(
+        members.data?.items.find((member) => member.username === 'hermes-mkt-coordinator'),
+      ).toMatchObject({ role: 'agent' });
 
       const projects = await api.teams({ teamId }).projects.get();
       expect(projects.data?.items).toMatchObject([
-        { key: 'MKT', name: 'Marketing', memberCount: 1, isMember: true },
+        { key: 'MKT', name: 'Marketing', memberCount: 2, isMember: true },
       ]);
     });
 
     it('windows the member list, searches it and narrows it to the people', async () => {
       const { user, api } = await signUpClient();
+      await api.projects.post({ key: 'MKT', name: 'Marketing' });
       const teamId = (await api.teams.get()).data![0].id;
       await addTeamMember({ api }, teamId);
       await addTeamMember({ api }, teamId);
@@ -175,7 +183,10 @@ describe('teams', () => {
       expect(first.data?.total).toBe(4);
 
       const second = await members.get({ query: { page: 2, pageSize: 2 } });
-      expect(second.data?.items).toHaveLength(1);
+      expect(second.data?.items).toHaveLength(2);
+      expect(
+        new Set([...first.data!.items, ...second.data!.items].map((member) => member.userId)).size,
+      ).toBe(4);
 
       const found = await members.get({ query: { search: user.email } });
       expect(found.data?.items).toMatchObject([{ email: user.email }]);
@@ -374,7 +385,7 @@ describe('teams', () => {
       const promoted = await addProjectMember(api, 'MKT');
       const promotedUserId = (
         await api.projects({ projectKey: 'MKT' }).members.get()
-      ).data!.items.find((m) => m.email !== user.email)!.userId;
+      ).data!.items.find((m) => m.email !== user.email && !m.isAgent)!.userId;
       await api
         .projects({ projectKey: 'MKT' })
         .members({ userId: promotedUserId })
@@ -392,8 +403,9 @@ describe('teams', () => {
         .projects({ projectId: project.data!.id })
         .members.get();
       expect(page.status).toBe(200);
-      expect(page.data?.total).toBe(2);
-      expect(page.data?.items.map((m) => m.role)).toEqual(['owner', 'member']);
+      expect(page.data?.total).toBe(3);
+      expect(page.data?.items.map((m) => m.role)).toEqual(['owner', 'member', 'member']);
+      expect(page.data?.items.filter((m) => m.isAgent)).toHaveLength(1);
       expect(page.data?.items[0]).toMatchObject({ userId: promotedUserId, isAgent: false });
     });
 
@@ -476,7 +488,8 @@ describe('teams', () => {
         .projects({ projectId: project.data!.id })
         .members.get();
       expect(page.status).toBe(200);
-      expect(page.data?.total).toBe(1);
+      expect(page.data?.total).toBe(2);
+      expect(page.data?.items.filter((m) => m.isAgent)).toHaveLength(1);
     });
   });
 

@@ -417,7 +417,10 @@ describe('ai agents', () => {
     const list = await agents(asOwner, teamId).get();
     expect(list.data).toHaveLength(1);
     const project = await asOwner.projects({ projectKey: 'MKT' }).get();
-    expect(project.data?.assignees.some((a) => a.kind === 'agent')).toBe(false);
+    expect(project.data?.assignees.some((a) => a.userId === created.data!.agent.userId)).toBe(
+      false,
+    );
+    expect(project.data?.assignees.filter((a) => a.kind === 'agent')).toHaveLength(1);
     const note = await asOwner.knowledge.documents.get({ query: { path: handbook } });
     expect(note.data).toMatchObject({ path: handbook, content: '# Handbook\n' });
   });
@@ -565,11 +568,19 @@ describe('ai agents', () => {
     await createAgent(asOwner, 'ENG', { name: 'Eng Bot', username: 'eng-bot', kind: 'external' });
 
     const all = await agents(asOwner, teamId).get();
-    expect(all.data).toHaveLength(2);
+    expect(all.data?.map((a) => a.username).sort()).toEqual([
+      'eng-bot',
+      'hermes-eng-coordinator',
+      'hermes-mkt-coordinator',
+      'mkt-bot',
+    ]);
     const filtered = await agents(asOwner, teamId).get({
       query: { projectId: await projectIdOf(asOwner, 'ENG') },
     });
-    expect(filtered.data?.map((a) => a.username)).toEqual(['eng-bot']);
+    expect(filtered.data?.map((a) => a.username).sort()).toEqual([
+      'eng-bot',
+      'hermes-eng-coordinator',
+    ]);
   });
 
   it('attaches an agent to a second project and detaches it again', async () => {
@@ -664,7 +675,10 @@ describe('ai agents', () => {
       const asMember = await addProjectMember(asOwner, 'MKT', role.data!.id);
 
       const list = await agents(asMember, teamId).get();
-      expect(list.data?.map((a) => a.username)).toEqual(['mkt-bot']);
+      expect(list.data?.map((a) => a.username).sort()).toEqual([
+        'hermes-mkt-coordinator',
+        'mkt-bot',
+      ]);
 
       const hidden = agents(asMember, teamId)({ agentId: theirs.data!.agent.id });
       expect((await hidden.get()).status).toBe(404);
@@ -676,9 +690,14 @@ describe('ai agents', () => {
       expect((await own.get()).status).toBe(200);
       expect((await own.patch({ name: 'Renamed' })).status).toBe(200);
 
-      // The owner runs the team, so both agents stay theirs.
+      // The owner sees both specialists and both automatic project coordinators.
       const all = await agents(asOwner, teamId).get();
-      expect(all.data?.map((a) => a.username).sort()).toEqual(['mkt-bot', 'ops-bot']);
+      expect(all.data?.map((a) => a.username).sort()).toEqual([
+        'hermes-mkt-coordinator',
+        'hermes-ops-coordinator',
+        'mkt-bot',
+        'ops-bot',
+      ]);
     });
   });
 
@@ -820,8 +839,16 @@ describe('ai agents', () => {
   // and its MCP servers, which start commands on the agents' machine.
   it('exposes agent management to MCP', () => {
     const untagged = untaggedRoutes((route) => route.includes('/ai-agents'));
+    // These owner UI/history/runtime routes intentionally stay out of agent tools.
+    // Keep the exact list so accidental exposure or loss of an MCP tag fails this test.
     expect(untagged).toEqual([
       'GET /teams/:teamId/ai-agents/:agentId/runs',
+      'GET /teams/:teamId/ai-agents/:agentId/threads',
+      'PUT /teams/:teamId/ai-agents/:agentId/threads/:threadId/favorite',
+      'DELETE /teams/:teamId/ai-agents/:agentId/threads/:threadId/favorite',
+      'GET /teams/:teamId/ai-agents/:agentId/threads/:threadId/messages',
+      'PATCH /teams/:teamId/ai-agents/:agentId/threads/:threadId',
+      'DELETE /teams/:teamId/ai-agents/:agentId/threads/:threadId',
       'GET /projects/:projectKey/ai-agents/:agentId/threads',
       'PUT /projects/:projectKey/ai-agents/:agentId/threads/:threadId/favorite',
       'DELETE /projects/:projectKey/ai-agents/:agentId/threads/:threadId/favorite',
@@ -834,15 +861,37 @@ describe('ai agents', () => {
       'POST /teams/:teamId/ai-agents/:agentId/learned-skills/promote',
       'GET /teams/:teamId/ai-agents/:agentId/runtime-actions',
       'POST /teams/:teamId/ai-agents/:agentId/runtime-actions',
+      'GET /teams/:teamId/ai-agents/:agentId/runs/:runId',
+      'GET /teams/:teamId/ai-agents/:agentId/runs/:runId/events',
+      'POST /teams/:teamId/ai-agents/:agentId/runs/:runId/continue',
+      'GET /teams/:teamId/ai-agents/:agentId/runtime/sessions',
+      'GET /teams/:teamId/ai-agents/:agentId/runtime/sessions/:sessionId',
+      'GET /teams/:teamId/ai-agents/:agentId/runtime/logs',
+      'GET /teams/:teamId/ai-agents/:agentId/runtime/health',
+      'GET /teams/:teamId/ai-agents/:agentId/runtime/version',
+      'GET /teams/:teamId/ai-agents/:agentId/runtime/curator',
+      'POST /teams/:teamId/ai-agents/:agentId/runtime/curator/run',
+      'POST /teams/:teamId/ai-agents/:agentId/runtime/curator',
+      'GET /teams/:teamId/ai-agents/:agentId/runtime/requests/:requestId',
+      'GET /teams/:teamId/ai-agents/:agentId/memory/revisions',
+      'POST /teams/:teamId/ai-agents/:agentId/chat',
+      'POST /teams/:teamId/ai-agents/:agentId/chat/retry',
+      'GET /teams/:teamId/ai-agents/:agentId/chat/catalog',
+      'GET /teams/:teamId/ai-agents/:agentId/chat/:messageId/events',
+      'GET /teams/:teamId/ai-agents/:agentId/chat/:messageId/stream',
+      'POST /teams/:teamId/ai-agents/:agentId/chat/:messageId/cancel',
       'POST /projects/:projectKey/ai-agents/:agentId/chat',
+      'POST /projects/:projectKey/ai-agents/:agentId/chat/retry',
       'GET /projects/:projectKey/ai-agents/:agentId/chat/catalog',
       'GET /projects/:projectKey/ai-agents/:agentId/chat/:messageId/events',
       'GET /projects/:projectKey/ai-agents/:agentId/chat/:messageId/stream',
       'POST /projects/:projectKey/ai-agents/:agentId/chat/:messageId/cancel',
-      // The Autopilot of an agent is set by people only; an agent key is refused.
+      'GET /teams/:teamId/ai-agents/:agentId/runtime-sync',
+      'POST /teams/:teamId/ai-agents/:agentId/runtime-sync/rewrite',
       'GET /teams/:teamId/ai-agents/:agentId/autopilot',
       'PUT /teams/:teamId/ai-agents/:agentId/autopilot',
       'PUT /teams/:teamId/ai-agents/:agentId/autopilot/budgets',
+      'GET /teams/:teamId/ai-agents/:agentId/chat-reflections',
     ]);
   });
 });

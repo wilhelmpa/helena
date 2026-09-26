@@ -751,7 +751,10 @@ describe('projects', () => {
         include: { views: true },
       });
 
-      const dstReview = (await viewOf(api, 'DST')).data!.columns.find((c) => c.name === 'Review')!;
+      // The default Review and this custom same-name state are distinct identities.
+      const copied = (await viewOf(api, 'DST')).data!.columns;
+      expect(copied.filter((c) => c.name === 'Review')).toHaveLength(2);
+      const dstReview = copied.find((c) => c.name === 'Review' && c.color === '#123456')!;
       expect(dstReview).toBeDefined();
       expect(dstReview.id).not.toBe(review.id);
       const dstViews = await api.projects({ projectKey: 'DST' }).views.get();

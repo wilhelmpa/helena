@@ -86,21 +86,21 @@ describe('columns', () => {
     it('reorders columns within a state type', async () => {
       const { asOwner } = await setupProject();
       const inProgress = await columnByName(asOwner, 'In Progress');
-      const review = (
+      const review = await columnByName(asOwner, 'Review');
+      const quality = (
         await asOwner
           .projects({ projectKey: 'MKT' })
-          .columns.post({ name: 'Review', stateType: 'started' })
+          .columns.post({ name: 'Quality check', stateType: 'started' })
       ).data!;
 
-      // Before: the two started columns list as [In Progress, Review] (by
-      // position). Reorder to put Review first.
+      // Keep the unlisted column while placing Review before In Progress.
       const reordered = await asOwner
         .projects({ projectKey: 'MKT' })
         .columns.reorder.put({ orderedIds: [review.id, inProgress.id] });
       expect(reordered.status).toBe(200);
 
       const started = reordered.data!.filter((c) => c.stateType === 'started');
-      expect(started.map((c) => c.name)).toEqual(['Review', 'In Progress']);
+      expect(started.map((c) => c.id)).toEqual([review.id, inProgress.id, quality.id]);
     });
 
     it('ignores ids that belong to another project', async () => {

@@ -208,7 +208,8 @@ describe('god teams', () => {
       const res = await god.api.god.teams({ teamId }).members.get({ query: PAGE });
 
       expect(res.status).toBe(200);
-      expect(res.data?.total).toBe(2);
+      expect(res.data?.total).toBe(3);
+      expect(res.data?.items.filter((member) => member.isAgent)).toHaveLength(2);
       expect(res.data!.items.find((m) => m.userId === god.id)).toMatchObject({
         role: 'owner',
         isAgent: false,

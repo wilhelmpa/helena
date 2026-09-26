@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
+import { db, agentRun, issue } from '@repo/db';
+import { eq, inArray } from 'drizzle-orm';
 import { authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser, type TestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
@@ -9,7 +11,7 @@ import { createAgent } from '#tests/helpers/agents';
 // project_column / issue_activity / issue_status tables, so the tests build state
 // through the real create/move API (which seeds the "created" activity and the
 // status history the metrics read) rather than inserting rows. createProject seeds
-// five default columns, one per state type.
+// six default columns, including In Progress and Review in the started state.
 
 // Owner + project MKT with the seeded default columns. `col` maps a state type to
 // its column id so a test can place an issue in a known state without hardcoding
@@ -17,12 +19,12 @@ import { createAgent } from '#tests/helpers/agents';
 async function setupProject() {
   const owner: TestUser = await signUpTestUser({ name: 'Owner' });
   const asOwner = authedApi(owner.cookie);
-  await asOwner.projects.post({ key: 'MKT', name: 'Marketing' });
+  const project = (await asOwner.projects.post({ key: 'MKT', name: 'Marketing' })).data!;
   const view = await asOwner.projects({ projectKey: 'MKT' }).get();
   const columns = view.data!.columns;
   const col: Record<string, number> = {};
-  for (const c of columns) col[c.stateType] = c.id;
-  return { asOwner, owner, columns, col };
+  for (const c of columns) col[c.stateType] ??= c.id;
+  return { asOwner, owner, project, columns, col };
 }
 
 async function createIssue(
@@ -94,11 +96,16 @@ describe('analytics', () => {
       expect(res.data?.overdue).toBe(1);
     });
 
-    it('counts only open issues without an assignee as unassigned', async () => {
+    it('counts only legacy open issues without an assignee as unassigned', async () => {
       const { asOwner, owner, col } = await setupProject();
       await createIssue(asOwner, col.started, { assigneeUserId: owner.userId });
-      await createIssue(asOwner, col.started);
-      await createIssue(asOwner, col.completed);
+      const legacyOpen = await createIssue(asOwner, col.started);
+      const legacyClosed = await createIssue(asOwner, col.completed);
+      // New issues have a responsible person. Analytics must still describe old rows.
+      await db
+        .update(issue)
+        .set({ assigneeUserId: null })
+        .where(inArray(issue.id, [legacyOpen.id, legacyClosed.id]));
 
       const res = await asOwner.projects({ projectKey: 'MKT' }).analytics.stats.get();
       expect(res.data?.unassigned).toBe(1);
@@ -191,6 +198,7 @@ describe('analytics', () => {
         'Backlog',
         'Todo',
         'In Progress',
+        'Review',
         'Done',
         'Canceled',
       ]);
@@ -240,10 +248,11 @@ describe('analytics', () => {
       expect(res.data?.find((i) => i.key === 'none')).toMatchObject({ label: 'No type', count: 1 });
     });
 
-    it('groups by assignee with an Unassigned bucket', async () => {
+    it('groups by assignee with an Unassigned bucket for legacy rows', async () => {
       const { asOwner, owner, col } = await setupProject();
       await createIssue(asOwner, col.started, { assigneeUserId: owner.userId });
-      await createIssue(asOwner, col.started);
+      const legacy = await createIssue(asOwner, col.started);
+      await db.update(issue).set({ assigneeUserId: null }).where(eq(issue.id, legacy.id));
 
       const res = await asOwner
         .projects({ projectKey: 'MKT' })
@@ -350,12 +359,7 @@ describe('analytics', () => {
       const { asOwner } = await setupProject();
       const res = await asOwner.projects({ projectKey: 'MKT' }).analytics.throughput.get();
       expect(res.status).toBe(200);
-      expect(res.data).toHaveLength(1);
-      expect(res.data?.[0]).toMatchObject({
-        agentName: expect.stringContaining('Coordinator'),
-        delegatedOpen: 0,
-        runsTotal: 0,
-      });
+      expect(res.data).toEqual([]);
     });
 
     it('counts created and closed issues in the current week', async () => {
@@ -506,25 +510,42 @@ describe('analytics', () => {
       const { asOwner } = await setupProject();
       const res = await asOwner.projects({ projectKey: 'MKT' })['analytics']['agent-runs'].get();
       expect(res.status).toBe(200);
-      expect(res.data).toHaveLength(1);
-      expect(res.data?.[0]).toMatchObject({
-        agentName: expect.stringContaining('Coordinator'),
-        delegatedOpen: 0,
-        runsTotal: 0,
-      });
+      expect(res.data).toEqual([]);
     });
 
-    it('accepts a status filter', async () => {
-      const { asOwner } = await setupProject();
+    it('filters actual run statuses within the project and shows the agent display name', async () => {
+      const { asOwner, project } = await setupProject();
+      const projectId = project.id;
+      const foreignId = (await asOwner.projects.post({ key: 'OTHER', name: 'Other' })).data!.id;
+      const agent = (
+        await createAgent(asOwner, 'MKT', { name: 'Helpful analyst', username: 'analyst-handle' })
+      ).data!.agent;
+      const [failed] = await db
+        .insert(agentRun)
+        .values([
+          { agentId: agent.id, projectId, prompt: 'Fixture', status: 'failed' },
+          { agentId: agent.id, projectId, prompt: 'Fixture', status: 'success' },
+          { agentId: agent.id, projectId: foreignId, prompt: 'Other project', status: 'failed' },
+        ])
+        .returning();
       const res = await asOwner
         .projects({ projectKey: 'MKT' })
         ['analytics']['agent-runs'].get({ query: { status: 'failed' } });
       expect(res.status).toBe(200);
-      expect(res.data).toHaveLength(1);
+      expect(res.data?.map((run) => run.id)).toEqual([failed!.id]);
       expect(res.data?.[0]).toMatchObject({
-        agentName: expect.stringContaining('Coordinator'),
-        delegatedOpen: 0,
-        runsTotal: 0,
+        agentId: agent.id,
+        agentName: 'Helpful analyst',
+        status: 'failed',
+      });
+      const workload = await asOwner
+        .projects({ projectKey: 'MKT' })
+        ['analytics']['agent-workload'].get();
+      expect(workload.data?.find((row) => row.agentId === agent.id)).toMatchObject({
+        agentName: 'Helpful analyst',
+        runsTotal: 2,
+        runsFailed: 1,
+        runsSuccess: 1,
       });
     });
 
@@ -581,7 +602,7 @@ describe('analytics', () => {
   });
 
   describe('agent workload', () => {
-    it('returns an empty roster for a project with no agents', async () => {
+    it('returns the automatic coordinator with zero workload in a new project', async () => {
       const { asOwner } = await setupProject();
       const res = await asOwner
         .projects({ projectKey: 'MKT' })

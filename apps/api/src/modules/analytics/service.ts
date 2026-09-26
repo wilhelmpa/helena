@@ -464,7 +464,7 @@ export async function listAgentRunFeed(
       status: agentRun.status,
       trigger: agentRun.trigger,
       agentId: agentRun.agentId,
-      agentName: aiAgent.username,
+      agentName: user.name,
       issueId: agentRun.issueId,
       issueSequence: issue.sequenceNumber,
       lastError: agentRun.lastError,
@@ -472,6 +472,7 @@ export async function listAgentRunFeed(
     })
     .from(agentRun)
     .innerJoin(aiAgent, eq(aiAgent.id, agentRun.agentId))
+    .innerJoin(user, eq(user.id, aiAgent.userId))
     .leftJoin(issue, eq(issue.id, agentRun.issueId))
     .where(and(...conds))
     .orderBy(desc(agentRun.id))
@@ -593,8 +594,9 @@ export interface AgentWorkloadItem {
 // memory (one per source), keyed by the agent's bot user id and agent id.
 export async function getAgentWorkload(projectId: number): Promise<AgentWorkloadItem[]> {
   const agents = await db
-    .select({ id: aiAgent.id, userId: aiAgent.userId, name: aiAgent.username })
+    .select({ id: aiAgent.id, userId: aiAgent.userId, name: user.name })
     .from(aiAgent)
+    .innerJoin(user, eq(user.id, aiAgent.userId))
     .innerJoin(
       projectMember,
       and(eq(projectMember.userId, aiAgent.userId), eq(projectMember.projectId, projectId)),
