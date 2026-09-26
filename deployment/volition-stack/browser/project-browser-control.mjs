@@ -33,15 +33,28 @@ export function navigableUrl(input) {
   const text = typeof input === "string" ? input.trim() : "";
   if (!text || text.length > 4096) throw new BrowserControlError(400, "Enter an address");
   if (text === "about:blank") return text;
-  const candidate = /^[a-z][a-z0-9+.-]*:/i.test(text) ? text : `https://${text}`;
+  let candidate = /^[a-z][a-z0-9+.-]*:/i.test(text) ? text : `https://${text}`;
   let url;
   try {
+    if (/^(?:localhost|127(?:\.\d{1,3}){3}|\[[\da-f:.]+\]):\d+(?:[/?#]|$)/i.test(text)) {
+      const address = new URL(`http://${text}`);
+      if (
+        address.hostname === "localhost" ||
+        address.hostname.startsWith("127.") ||
+        address.hostname === "[::1]"
+      ) {
+        candidate = address.href;
+      }
+    }
     url = new URL(candidate);
   } catch {
     throw new BrowserControlError(400, "Enter an address");
   }
   if (url.protocol !== "http:" && url.protocol !== "https:") {
     throw new BrowserControlError(400, "Only http and https addresses can be opened");
+  }
+  if (url.username || url.password) {
+    throw new BrowserControlError(400, "Addresses containing credentials cannot be opened");
   }
   return url.toString();
 }
@@ -364,7 +377,10 @@ export async function controlBrowser(port, action, body) {
   switch (action) {
     case "navigate": {
       const url = navigableUrl(body.url);
-      await onPage(port, targetId(body.id), (page) => page.send("Page.navigate", { url }));
+      const result = await onPage(port, targetId(body.id), (page) => page.send("Page.navigate", { url }));
+      if (result?.errorText) {
+        throw new BrowserControlError(502, `Navigation failed: ${String(result.errorText).slice(0, 200)}`);
+      }
       return { ok: true };
     }
     case "back":
