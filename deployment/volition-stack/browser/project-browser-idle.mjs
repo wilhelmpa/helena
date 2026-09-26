@@ -40,11 +40,11 @@ export class BrowserIdle {
   record(slug, port = null) {
     let browser = this.browsers.get(slug);
     if (!browser) {
-      browser = { port, viewers: 0, locked: false, lastActive: this.now(), lastFreeze: 0, frozen: false, queue: Promise.resolve() };
+      browser = { port, viewers: 0, locked: false, lastActive: this.now(), lastFreeze: 0, frozen: null, queue: Promise.resolve() };
       this.browsers.set(slug, browser);
     } else if (port !== null && port !== browser.port) {
       browser.port = port;
-      browser.frozen = false;
+      browser.frozen = null;
       browser.lastActive = this.now();
     }
     return browser;
@@ -82,6 +82,9 @@ export class BrowserIdle {
 
   wake(slug) {
     const browser = this.record(slug);
+    // A restarted router cannot know whether Chromium is still frozen. A first
+    // wake must send "active" even when this process has never frozen it.
+    if (browser.frozen === null) browser.frozen = true;
     browser.lastActive = this.now();
     return this.transition(browser);
   }
@@ -93,6 +96,7 @@ export class BrowserIdle {
       browser.viewers = Math.max(0, browser.viewers - 1);
       browser.lastActive = this.now();
     });
+    // After a router restart the page state is unknown; transition() activates it.
     // The stream must attach only after the page is active. Chromium can accept a
     // screencast started while frozen without ever sending its first frame.
     return this.wake(slug);

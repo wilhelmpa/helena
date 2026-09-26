@@ -79,3 +79,16 @@ test("a viewer arriving during a pause leaves the page active", async () => {
   await waking;
   assert.deepEqual(states, ["frozen", "active"]);
 });
+
+
+test("first viewer wakes a page frozen by a previous router process", async () => {
+  const states = [];
+  const idle = new BrowserIdle({
+    listBrowsers: async () => [{ slug: "verve", cdpPort: 19204 }],
+    lifecycle: async (_port, state) => { states.push(state); return 1; },
+  });
+  await idle.poll();
+  assert.deepEqual(states, []);
+  await idle.view("verve", 19204, new EventEmitter());
+  assert.deepEqual(states, ["active"]);
+});
