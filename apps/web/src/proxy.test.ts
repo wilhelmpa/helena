@@ -120,3 +120,35 @@ describe('proxy security headers', () => {
     assert.equal((await run(document, COOKIE)).headers.get('content-security-policy'), null);
   });
 });
+
+it('switching person clears old cookies and never bootstraps an owner or edge session', async () => {
+  const old = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = (async () => {
+    calls++;
+    throw new Error('must not authenticate');
+  }) as typeof fetch;
+  try {
+    const response = await proxy(
+      new NextRequest('http://localhost:3001/login?switch=1', {
+        headers: { cookie: 'better-auth.session_token=old.signature' },
+      }),
+    );
+    assert.equal(response.headers.get('location'), null);
+    assert.ok(
+      response.headers
+        .getSetCookie()
+        .some((cookie) => cookie.includes('better-auth.session_token=;')),
+    );
+    assert.equal(calls, 0);
+    const own = await proxy(
+      new NextRequest('http://localhost:3001/', {
+        headers: { cookie: 'better-auth.session_token=personal.signature' },
+      }),
+    );
+    assert.equal(own.headers.get('location'), null);
+    assert.equal(calls, 0);
+  } finally {
+    globalThis.fetch = old;
+  }
+});

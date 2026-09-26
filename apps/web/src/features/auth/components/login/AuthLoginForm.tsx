@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import AuthFormHeader from '../AuthFormHeader';
+import AuthPersonPicker from './AuthPersonPicker';
 import AuthLoginAlternatives from './AuthLoginAlternatives';
 import AuthLoginPasswordFields from './AuthLoginPasswordFields';
 import AuthMessagePanel from '../AuthMessagePanel';
@@ -40,7 +41,11 @@ import { authCallbackPath } from '../../utils/authCallbackPath';
 // since they need neither field.
 type Method = 'password' | 'link';
 
-export default function AuthLoginForm() {
+export default function AuthLoginForm({
+  edgeSignInAvailable = false,
+}: {
+  edgeSignInAvailable?: boolean;
+}) {
   const t = useTranslations('auth');
   const [method, setMethod] = useState<Method>('password');
   // With a password this is either an address or a username; a sign-in link can only
@@ -66,6 +71,7 @@ export default function AuthLoginForm() {
   const passwordEnabled = authConfig?.emailPassword !== false;
   const params = useSearchParams();
   const justReset = params.get('reset') === '1';
+  const switching = params.get('switch') === '1';
   // `apiFailure` in lib/api/core/client.ts sends the browser here with ?expired=1 after the API
   // refused the session, so the screen can say why the user is back on it.
   const sessionExpired = params.get('expired') === '1';
@@ -85,6 +91,7 @@ export default function AuthLoginForm() {
   useEffect(() => {
     if (
       !oidcOnly ||
+      switching ||
       autoOidcStarted.current ||
       params.has('error') ||
       params.has('error_description')
@@ -93,7 +100,7 @@ export default function AuthLoginForm() {
     }
     autoOidcStarted.current = true;
     void run(() => signInWithOidc(callbackPath), { redirect: false });
-  }, [callbackPath, oidcOnly, params, run]);
+  }, [callbackPath, oidcOnly, params, run, switching]);
 
   function switchTo(next: Method) {
     setMethod(next);
@@ -176,6 +183,22 @@ export default function AuthLoginForm() {
     <form onSubmit={onSubmit} className="p-6 md:p-8">
       <FieldGroup>
         <AuthFormHeader title={t('login.title')} description={subtitle()} />
+        {!codeStep && (
+          <AuthPersonPicker
+            onSelect={(value) => {
+              setIdentifier(value);
+              setPassword('');
+              setError(null);
+            }}
+          />
+        )}
+        {!codeStep && edgeSignInAvailable && (
+          <Button type="button" variant="outline" asChild>
+            <Link href={`/login?continue=1&callbackURL=${encodeURIComponent(callbackPath)}`}>
+              {t('login.continueAccess')}
+            </Link>
+          </Button>
+        )}
 
         {codeStep && (
           <Field>

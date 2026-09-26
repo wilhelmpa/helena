@@ -1125,7 +1125,7 @@ describe('external agent chat', () => {
       .patch({ runnerScope: 'owner' });
     const asMember = await addProjectMember(asOwner, 'MKT');
 
-    expect((await send(asMember, agent.id, 'Hello')).status).toBe(403);
+    expect((await send(asMember, agent.id, 'Hello')).status).toBe(404);
     expect((await send(asOwner, agent.id, 'Hello')).status).toBe(200);
   });
 });

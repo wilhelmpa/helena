@@ -289,5 +289,6 @@
     "throttled": "Gedrosselt",
     "offline": "Aus",
     "done": "Fertig"
-  }
+  },
+  "switchPerson": "Person wechseln"
 }

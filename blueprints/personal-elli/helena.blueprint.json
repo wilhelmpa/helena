@@ -1,0 +1,71 @@
+{
+  "format": "helena.project-blueprint",
+  "formatVersion": 1,
+  "version": "1.0.0",
+  "license": "AGPL-3.0-only",
+  "author": {
+    "name": "Helena"
+  },
+  "requires": {
+    "bundles": ["helena-agent-pool"]
+  },
+  "areas": [
+    {
+      "name": "Ablage",
+      "folder": "ablage"
+    },
+    {
+      "name": "Termine",
+      "folder": "termine"
+    }
+  ],
+  "network": {
+    "mode": "open"
+  },
+  "routines": [],
+  "name": "personal-elli",
+  "displayName": {
+    "de": "Elli",
+    "en": "Elli"
+  },
+  "description": "Persönliche Assistenz mit getrennten Projektzugängen.",
+  "project": {
+    "key": "ELLI",
+    "name": "Elli",
+    "description": "Persönliches Projekt",
+    "department": "Familie & Privat"
+  },
+  "coordinator": {
+    "model": "gpt-6-luna",
+    "runnerScope": "team",
+    "assignment": "Koordiniert ELLI für dessen berechtigte Mitglieder. Verwendet ausschließlich dessen Projektzugänge; Home wird nur vom Owner bedient."
+  },
+  "agents": [
+    {
+      "template": "assistant",
+      "model": "gpt-6-luna",
+      "runnerScope": "team",
+      "assignment": "Assistenz für ELLI; arbeitet nur mit dessen Dateien und freigegebenen Verbindungen. Gemeinsame Familienthemen gehören nach FAM.",
+      "projectBrowser": true
+    },
+    {
+      "template": "finance",
+      "model": "gpt-6-luna",
+      "runnerScope": "team",
+      "assignment": "Belege und persönliche Finanzen für ELLI; arbeitet nur mit dessen Dateien und freigegebenen Verbindungen. Gemeinsame Familienthemen gehören nach FAM.",
+      "projectBrowser": true
+    }
+  ],
+  "goals": [
+    {
+      "title": "Ablage und Belege vollständig verknüpfen",
+      "description": "Originaldateien im gemeinsamen Dateienbereich, Belege und Aufgaben verweisen auf dieselben Quellen.",
+      "status": "active"
+    },
+    {
+      "title": "Mail-Triage mit projektgebundenem Postfach",
+      "description": "Erst nach Verbindung des eigenen Postfachs aktivieren. Native Routinen und Zeiten erhalten; wichtige Mails zu Aufgaben, Originalanhänge zu Belegen, Loginwarnungen und gespeicherte Ausschlüsse berücksichtigen.",
+      "status": "paused"
+    }
+  ]
+}

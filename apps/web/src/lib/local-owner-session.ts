@@ -5,6 +5,7 @@ import { clientHeaders, ownNavigation, sameSecret, signInRedirect } from './sess
 // from the home network the capability, and a page load without a session gets one for the
 // configured owner, on the LAN origin only.
 export async function localOwnerSession(request: NextRequest): Promise<NextResponse | null> {
+  if (process.env.HELENA_LOCAL_SIGN_IN_MODE !== 'single-user') return null;
   const token = process.env.LOCAL_SINGLE_USER_TOKEN;
   const origin = process.env.LOCAL_SINGLE_USER_ORIGIN;
   const endpoint = process.env.LOCAL_SINGLE_USER_API_URL;

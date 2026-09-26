@@ -1,3 +1,4 @@
+import type { AgentScope } from '#modules/agents/core/service';
 import { db, helenaProviderLimit, integrationCredential, integrationCredentialUse } from '@repo/db';
 import { runtimeLoginCondition, type RuntimeLoginCondition } from '@helena/sdk';
 import { desc, eq, inArray } from 'drizzle-orm';
@@ -172,7 +173,7 @@ export async function sharedLoginRows(): Promise<SharedLoginRow[]> {
 
 export async function listAccessLogins(
   teamId: number,
-  viewer: { owner: boolean; visibleTo: string | undefined },
+  viewer: { owner: boolean; visibleTo: AgentScope | undefined },
 ): Promise<AccessLoginsResponse> {
   const agents = (await listAgents(teamId, undefined, viewer.visibleTo))
     .filter((agent) => agent.kind === 'external' && !agent.template)
@@ -195,7 +196,7 @@ export async function listAccessLogins(
 async function cliAgent(
   teamId: number,
   agentId: number,
-  visibleTo: string | undefined,
+  visibleTo: AgentScope | undefined,
 ): Promise<{ agent: AiAgentRow; runtime: CliRuntime }> {
   const agent = await getAgentById(agentId, teamId, visibleTo);
   const runtime = agent && !agent.template ? cliRuntimeOf(agent) : null;
@@ -206,7 +207,7 @@ async function cliAgent(
 async function rowOf(
   teamId: number,
   agentId: number,
-  viewer: { owner: boolean; visibleTo: string | undefined },
+  viewer: { owner: boolean; visibleTo: AgentScope | undefined },
 ): Promise<AgentLoginRow> {
   const { agent, runtime } = await cliAgent(teamId, agentId, viewer.visibleTo);
   const granted = await grantedLogins([{ agent, runtime }]);
@@ -217,7 +218,7 @@ async function rowOf(
 export async function checkAgentLogin(
   teamId: number,
   agentId: number,
-  viewer: { owner: boolean; visibleTo: string | undefined; userId: string },
+  viewer: { owner: boolean; visibleTo: AgentScope | undefined; userId: string },
 ): Promise<AgentLoginRow> {
   const { agent } = await cliAgent(teamId, agentId, viewer.visibleTo);
   if (!agent.runtimeState.capabilities.includes('login')) {
@@ -240,7 +241,7 @@ export async function checkAgentLogin(
 export async function signOutAgentLogin(
   teamId: number,
   agentId: number,
-  viewer: { owner: boolean; visibleTo: string | undefined; userId: string },
+  viewer: { owner: boolean; visibleTo: AgentScope | undefined; userId: string },
   person: { name?: string | null; email?: string | null },
 ): Promise<AgentLoginRow> {
   const { agent, runtime } = await cliAgent(teamId, agentId, viewer.visibleTo);

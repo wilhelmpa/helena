@@ -246,3 +246,26 @@ describe('password sign-in with an authenticator app', () => {
     assert.equal(view.querySelector('#code'), null);
   });
 });
+
+it('selecting a remembered name fills the identifier but cannot authenticate or retain another password', async () => {
+  dom.window.localStorage.setItem(
+    'helena.remembered-people',
+    JSON.stringify([
+      { name: 'Elli fixture', email: 'elli@example.test', role: 'god', token: 'forged' },
+    ]),
+  );
+  await render();
+  await type('#password', 'previous-person-password');
+  const choice = [...document.querySelectorAll('button')].find(
+    (button) => button.textContent === 'Elli fixture',
+  );
+  assert.ok(choice);
+  await act(async () => choice.click());
+  assert.equal(document.querySelector<HTMLInputElement>('#identifier')!.value, 'elli@example.test');
+  assert.equal(document.querySelector<HTMLInputElement>('#password')!.value, '');
+  assert.deepEqual(pushed, []);
+  assert.equal(
+    calls.some((call) => call.path.includes('/sign-in/')),
+    false,
+  );
+});

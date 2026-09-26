@@ -489,7 +489,7 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
     '/projects/:projectKey/ai-agents/:agentId/threads',
     async ({ params, project, query, user }) => {
       const caller = requireUser(user);
-      if (!(await getAgentInProject(params.agentId, project.id))) {
+      if (!(await getAgentInProject(params.agentId, project.id, caller.id))) {
         throw new HttpError(404, 'Agent not found');
       }
       return listThreads(caller.id, params.agentId, query);
@@ -510,7 +510,7 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
     '/projects/:projectKey/ai-agents/:agentId/threads/:threadId/favorite',
     async ({ params, project, user }) => {
       const caller = requireUser(user);
-      if (!(await getAgentInProject(params.agentId, project.id))) {
+      if (!(await getAgentInProject(params.agentId, project.id, caller.id))) {
         throw new HttpError(404, 'Agent not found');
       }
       if (!(await ownsThread(params.threadId, caller.id, params.agentId)))
@@ -530,7 +530,7 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
     '/projects/:projectKey/ai-agents/:agentId/threads/:threadId/favorite',
     async ({ params, project, user }) => {
       const caller = requireUser(user);
-      if (!(await getAgentInProject(params.agentId, project.id))) {
+      if (!(await getAgentInProject(params.agentId, project.id, caller.id))) {
         throw new HttpError(404, 'Agent not found');
       }
       if (!(await ownsThread(params.threadId, caller.id, params.agentId)))
@@ -552,7 +552,7 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
     '/projects/:projectKey/ai-agents/:agentId/threads/:threadId/messages',
     async ({ params, project, query, user }) => {
       const caller = requireUser(user);
-      if (!(await getAgentInProject(params.agentId, project.id))) {
+      if (!(await getAgentInProject(params.agentId, project.id, caller.id))) {
         throw new HttpError(404, 'Agent not found');
       }
       const messages = await getThreadMessages(params.threadId, caller.id, query.page);
@@ -574,7 +574,7 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
     '/projects/:projectKey/ai-agents/:agentId/threads/:threadId',
     async ({ params, project, body, user }) => {
       const caller = requireUser(user);
-      if (!(await getAgentInProject(params.agentId, project.id))) {
+      if (!(await getAgentInProject(params.agentId, project.id, caller.id))) {
         throw new HttpError(404, 'Agent not found');
       }
       const renamed = await renameThread(params.threadId, caller.id, body.title);
@@ -596,7 +596,7 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
     '/projects/:projectKey/ai-agents/:agentId/threads/:threadId',
     async ({ params, project, user }) => {
       const caller = requireUser(user);
-      if (!(await getAgentInProject(params.agentId, project.id))) {
+      if (!(await getAgentInProject(params.agentId, project.id, caller.id))) {
         throw new HttpError(404, 'Agent not found');
       }
       const deleted = await deleteThread(params.threadId, caller.id);

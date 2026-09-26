@@ -289,5 +289,6 @@
     "throttled": "Throttled",
     "offline": "Offline",
     "done": "Done"
-  }
+  },
+  "switchPerson": "Switch person"
 }

@@ -90,7 +90,7 @@ describe('edge access (the internet tunnel entry)', () => {
     const signed = await call('/me', {
       ...TUNNEL,
       cookie: owner.cookie,
-      'cf-access-jwt-assertion': await sign(),
+      'cf-access-jwt-assertion': await sign({ email: owner.email }),
     });
     expect(signed.status).toBe(200);
     expect(((await signed.json()) as { authenticated: boolean }).authenticated).toBe(true);
@@ -150,7 +150,7 @@ describe('edge access (the internet tunnel entry)', () => {
     const viaTunnel = await call('/auth/verify/owner-terminal/shell', {
       ...lan,
       ...TUNNEL,
-      'cf-access-jwt-assertion': await sign(),
+      'cf-access-jwt-assertion': await sign({ email: owner.email }),
     });
     expect(viaTunnel.status).toBe(403);
   });

@@ -301,7 +301,7 @@ class KioskGuard(unittest.TestCase):
     def test_missing_guard_aborts_before_configuration_is_read_or_written(self):
         with patch.object(configure.os, 'geteuid', return_value=0), patch.object(configure.pwd, 'getpwnam', return_value=type('User', (), {'pw_uid': 1001})()), patch.object(configure.subprocess, 'run', return_value=type('Done', (), {'stdout': '{"nftables": []}'})()), patch.object(pathlib.Path, 'read_text', side_effect=AssertionError('must not read config')):
             with self.assertRaisesRegex(SystemExit, 'listener refused'):
-                configure.main(['owner@example.test'])
+                configure.main(['--single-user', 'owner@example.test'])
 
 
 class TunnelAllowlist(unittest.TestCase):

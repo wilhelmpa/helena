@@ -29,6 +29,8 @@ export type BlueprintNetworkMode = 'open' | 'allowlist' | 'blocked';
 export type BlueprintGoalStatus = 'planned' | 'active' | 'achieved' | 'paused';
 
 export interface BlueprintAgent {
+  model?: string;
+  runnerScope?: 'owner' | 'team';
   // The agent template the project's agent is a copy of, by handle (a template of the team,
   // usually from the bundle named in `requires`). The copy is "<template>-<project key>".
   template: string;
@@ -46,6 +48,8 @@ export interface BlueprintAgent {
 }
 
 export interface BlueprintCoordinator {
+  model?: string;
+  runnerScope?: 'owner' | 'team';
   // Replaces the coordinator's generated default instructions (never an owner's own text).
   instructions?: string;
   skills?: string[];
@@ -201,6 +205,15 @@ export function validateBlueprint(blueprint: ProjectBlueprint): string[] {
     }
   }
 
+  for (const profile of [
+    ...blueprint.agents,
+    ...(blueprint.coordinator ? [blueprint.coordinator] : []),
+  ]) {
+    if (profile.runnerScope !== undefined && !['owner', 'team'].includes(profile.runnerScope))
+      problems.push('Invalid agent runnerScope');
+    if (profile.model !== undefined && (!profile.model.trim() || profile.model.length > 200))
+      problems.push('Invalid agent model');
+  }
   const templates = new Set<string>();
   for (const agent of blueprint.agents) {
     const where = `agent ${agent.template}`;

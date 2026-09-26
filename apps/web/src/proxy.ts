@@ -71,6 +71,8 @@ export async function proxy(request: NextRequest) {
 // `/login?expired=1`, where the cookie is cleared for good.
 async function gate(request: NextRequest, next: () => NextResponse): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
+  const switching = pathname === '/login' && request.nextUrl.searchParams.get('switch') === '1';
+  if (switching) return clearSession(request, next);
   const hasSession = getSessionCookie(request) != null;
   const matches = matcher(pathname);
 
