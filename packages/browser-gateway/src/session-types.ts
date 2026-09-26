@@ -109,9 +109,11 @@ export interface GatewaySession {
     target?: string;
     key?: string;
     submit?: boolean;
-  }): Promise<{ submits: boolean; formAction: string | null }>;
+  }): Promise<{ submits: boolean; formAction: string | null; groundedElement: string | null }>;
   // The origin of the tab in front, for the policy's context.
   pageOrigin(): string | null;
+  // The current URL path, without query or fragment, for an exact contract target.
+  pagePath?(): string | null;
   // The origin of the frame the element is in (design §6: a login is offered for the
   // frame's origin, not the tab's).
   frameOrigin(target: string): Promise<string>;

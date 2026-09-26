@@ -8,7 +8,7 @@ import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
 import { ensureBuiltinMcpServers } from '../../../agents/mcp-servers/service';
 import { bootstrapHomeAgent } from '../../../../scripts/bootstrap-home-agent';
-import { agentMcpServerLink, db } from '@repo/db';
+import { agentMcpServerLink, agentRun, approvalRequest, db } from '@repo/db';
 import { eq } from 'drizzle-orm';
 
 // The browser gateway's Plan-side surface (design: docs/volition-design-browser-gateway.md):
@@ -380,6 +380,67 @@ describe('browser gateway', () => {
     expect((await call({ category: 'launch-missiles' })).status).toBe(400);
     expect((await call({ projectSlug: 'ops', via: 'ops' })).status).toBe(403);
     expect((await call({ agentKey: 'not-a-key' })).status).toBe(403);
+  });
+
+  it('reuses an approved domain cancellation only for the same issue and domain', async () => {
+    const { asOwner, mkt } = await setup();
+    const { agent, apiKey } = await agentWithGateway(asOwner, mkt.teamId, 'MKT', 'domain-owner');
+    const view = (await asOwner.projects({ projectKey: 'MKT' }).get()).data!;
+    const issue = (
+      await asOwner.projects({ projectKey: 'MKT' }).issues.post({
+        columnId: view.columns[0]!.id,
+        title: 'Cancel one domain renewal',
+      })
+    ).data!;
+    const [run] = await db
+      .insert(agentRun)
+      .values({
+        agentId: agent.id,
+        projectId: mkt.id,
+        issueId: issue.id,
+        prompt: 'Cancel this domain renewal',
+      })
+      .returning({ id: agentRun.id });
+    await db.insert(approvalRequest).values({
+      projectId: mkt.id,
+      agentId: agent.id,
+      issueId: issue.id,
+      runId: run!.id,
+      kind: 'delete',
+      action: 'Squarespace-Kündigung für bumbleandthebees.com ausführen',
+      status: 'approved',
+      decidedAt: new Date(),
+    });
+    const call = (path: string, label: string) =>
+      internal('/internal/browser-gateway/decide', {
+        agentKey: apiKey,
+        projectSlug: 'mkt',
+        via: 'mkt',
+        runId: run!.id,
+        tool: 'browser_click',
+        category: 'delete',
+        context: {
+          origin: 'https://account.squarespace.com',
+          pagePath: path,
+          groundedElement: label,
+          element: label,
+          target: 'ref test',
+          formAction: null,
+        },
+      });
+    expect(
+      await (
+        await call('/domains/bumbleandthebees.com/settings', 'Disable automatic renewal')
+      ).json(),
+    ).toMatchObject({ effect: 'allow' });
+    expect(
+      await (await call('/domains/other.com/settings', 'Disable automatic renewal')).json(),
+    ).toMatchObject({ effect: 'needs-approval' });
+    expect(
+      await (
+        await call('/domains/bumbleandthebees.com/settings', 'Enable automatic renewal')
+      ).json(),
+    ).toMatchObject({ effect: 'needs-approval' });
   });
 
   it('lists the projects a user works in for the Home "Browser" overview', async () => {

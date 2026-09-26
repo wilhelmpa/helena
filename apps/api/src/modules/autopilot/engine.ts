@@ -1,4 +1,4 @@
-import { db, agentRun, approvalRequest, helenaPolicyDecision } from '@repo/db';
+import { db, agentRun, approvalRequest, helenaPolicyDecision, issue, project } from '@repo/db';
 import { and, eq, lt } from 'drizzle-orm';
 import { intEnv } from '#shared/lib';
 import {
@@ -51,6 +51,8 @@ export interface DecideInput {
   // The exact command or code: when a person approved exactly this in a request whose
   // decision started this run, it may run.
   command?: string | null;
+  // Set only after a trusted adapter matches an approved request to the exact task target.
+  approvedByTask?: boolean;
   // Whether the decision is logged. A plain read is not, unless denied.
   audit?: boolean;
 }
@@ -66,23 +68,25 @@ export interface EngineDecision extends PolicyDecision {
   message: string;
 }
 
-// Whether a person approved this action in a request whose decision started the run. A
-// request that names a command approves exactly that command (the rule Hermes' approval
-// guard followed before the engine); one without a command (a Helena or browser tool such as
-// delete_issue has none) approves its category in that run. Before, only commands were
-// matched, so an approved tool action stayed blocked however often it was approved.
+// A command approval names exactly one command. A tool approval without a command is
+// reusable only for delete_issue when the approved issue key matches the actual input.
 export async function actionApproved(
   agentId: number,
   runId: number | null | undefined,
   category: ActionCategory,
   command: string | null | undefined,
+  tool?: string | null,
+  summary?: string | null,
+  projectId?: number | null,
 ): Promise<boolean> {
   if (runId == null) return false;
   const rows = await db
     .select({
       command: approvalRequest.command,
-      category: approvalRequest.category,
       kind: approvalRequest.kind,
+      category: approvalRequest.category,
+      action: approvalRequest.action,
+      projectId: approvalRequest.projectId,
     })
     .from(approvalRequest)
     .where(
@@ -93,11 +97,33 @@ export async function actionApproved(
       ),
     );
   const text = command?.trim() || null;
+  if (text)
+    return rows.some(
+      (row) =>
+        row.command?.trim() === text &&
+        row.projectId === projectId &&
+        (row.category ?? categoryOfApprovalKind(row.kind as ApprovalKind)) === category,
+    );
+  if (category !== 'delete' || tool !== 'delete_issue' || !summary || projectId == null)
+    return false;
+  const target = /"issueId"\s*:\s*(\d+)/.exec(summary);
+  if (!target) return false;
+  const [item] = await db
+    .select({ key: project.key, sequence: issue.sequenceNumber })
+    .from(issue)
+    .innerJoin(project, eq(project.id, issue.projectId))
+    .where(and(eq(issue.id, Number(target[1])), eq(issue.projectId, projectId)));
+  if (!item) return false;
+  const issueKey = item.key + '-' + item.sequence;
   return rows.some((row) => {
-    const approvedCommand = row.command?.trim() || null;
-    if (approvedCommand) return text !== null && approvedCommand === text;
-    const approvedCategory = row.category ?? categoryOfApprovalKind(row.kind as ApprovalKind);
-    return approvedCategory === category;
+    const keys = row.action.toUpperCase().match(/\b[A-Z][A-Z0-9]*-\d+\b/g) ?? [];
+    return (
+      row.projectId === projectId &&
+      row.command == null &&
+      row.kind === 'delete' &&
+      keys.length === 1 &&
+      keys[0] === issueKey.toUpperCase()
+    );
   });
 }
 
@@ -157,7 +183,15 @@ export async function decide(input: DecideInput): Promise<EngineDecision> {
       : budgetExhausted(input.agentId, input.projectId, input.runId),
     input.agentId == null
       ? Promise.resolve(false)
-      : actionApproved(input.agentId, input.runId, input.category, input.command),
+      : actionApproved(
+          input.agentId,
+          input.runId,
+          input.category,
+          input.command,
+          input.tool,
+          input.summary,
+          input.projectId,
+        ),
   ]);
   const decision = policyEvaluator().evaluate({
     agentId: input.agentId,
@@ -165,7 +199,7 @@ export async function decide(input: DecideInput): Promise<EngineDecision> {
     category: input.category,
     scope,
     level: resolved.level,
-    approved,
+    approved: approved || input.approvedByTask === true,
     budgetExhausted: exhausted !== null,
   });
   const plainRead =

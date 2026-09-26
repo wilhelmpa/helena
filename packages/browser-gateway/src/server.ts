@@ -12,6 +12,7 @@ import {
 } from './tools.ts';
 import { runCheckTool, runChooseTool, runTaskTool, type TaskContext } from './task/run.ts';
 import type { ActionCategory } from './agent-tool.ts';
+import { contractActionCategory } from './contract-action.ts';
 import { HOME_SLUG, projectSlug } from './project-slug.ts';
 import { hostAllowed, resolvesLocally, type HostLookup } from './domain.ts';
 import type { HelenaClient, ResolveResult } from './helena-client.ts';
@@ -435,6 +436,7 @@ export class GatewayDispatcher {
   ): Promise<{ category: ActionCategory } | { refusal: GatewayResponse }> {
     let category = tool.category;
     let formAction: string | null = null;
+    let groundedElement: string | null = null;
     if (FORM_TOOLS.has(tool.name)) {
       const form = await session.submitsForm({
         tool: tool.name,
@@ -444,6 +446,9 @@ export class GatewayDispatcher {
       });
       category = categoryOf(tool, form.submits);
       formAction = form.formAction;
+      groundedElement = form.groundedElement ?? null;
+      if (tool.name === 'browser_click')
+        category = contractActionCategory(groundedElement) ?? category;
     }
     if (category === 'read') return { category };
     let answer;
@@ -459,6 +464,8 @@ export class GatewayDispatcher {
           target: this.#targetLabel(request) ?? null,
           element: this.#elementLabel(request),
           formAction: formAction ? safeLabel(formAction) : null,
+          groundedElement,
+          pagePath: session.pagePath?.() ?? null,
         },
         runId: request.runId,
         messageId: request.messageId,

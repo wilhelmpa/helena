@@ -1087,8 +1087,8 @@ export class PatchrightGatewaySession implements GatewaySession {
     target?: string;
     key?: string;
     submit?: boolean;
-  }): Promise<{ submits: boolean; formAction: string | null }> {
-    const none = { submits: false, formAction: null };
+  }): Promise<{ submits: boolean; formAction: string | null; groundedElement: string | null }> {
+    const none = { submits: false, formAction: null, groundedElement: null };
     try {
       if (call.tool === 'browser_press_key') {
         if (call.key !== 'Enter') return none;
@@ -1096,7 +1096,11 @@ export class PatchrightGatewaySession implements GatewaySession {
           const element = document.activeElement as HTMLInputElement | null;
           const form = element?.form ?? null;
           const field = element?.tagName === 'INPUT';
-          return { submits: !!form && field, formAction: form ? form.action : null };
+          return {
+            submits: !!form && field,
+            formAction: form ? form.action : null,
+            groundedElement: null,
+          };
         });
       }
       if (!call.target || !isValidRef(call.target)) return none;
@@ -1106,16 +1110,42 @@ export class PatchrightGatewaySession implements GatewaySession {
       return await locator.evaluate((element, typing) => {
         const control = element as HTMLButtonElement | HTMLInputElement;
         const form = control.form ?? element.closest('form');
-        if (!form) return { submits: false, formAction: null };
-        if (typing) return { submits: element.tagName === 'INPUT', formAction: form.action };
         const type = (control.getAttribute('type') ?? '').toLowerCase();
+        const buttonValue =
+          element.tagName === 'INPUT' && ['button', 'submit', 'reset', 'image'].includes(type)
+            ? control.value
+            : null;
+        const groundedElement = typing
+          ? null
+          : [
+              element.textContent,
+              element.getAttribute('aria-label'),
+              element.getAttribute('title'),
+              buttonValue,
+            ]
+              .filter(Boolean)
+              .join(' ')
+              .replace(/\s+/g, ' ')
+              .trim()
+              .slice(0, 300) || null;
+        if (!form) return { submits: false, formAction: null, groundedElement };
+        if (typing)
+          return { submits: element.tagName === 'INPUT', formAction: form.action, groundedElement };
         const submits =
           (element.tagName === 'BUTTON' && (type === '' || type === 'submit')) ||
           (element.tagName === 'INPUT' && (type === 'submit' || type === 'image'));
-        return { submits, formAction: submits ? form.action : null };
+        return { submits, formAction: submits ? form.action : null, groundedElement };
       }, call.tool === 'browser_type');
     } catch {
       return none;
+    }
+  }
+
+  pagePath(): string | null {
+    try {
+      return new URL(this.#page.url()).pathname;
+    } catch {
+      return null;
     }
   }
 

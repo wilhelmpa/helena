@@ -341,6 +341,8 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
         target: text(raw.target),
         element: text(raw.element, 120),
         formAction: text(raw.formAction),
+        groundedElement: text(raw.groundedElement),
+        pagePath: text(raw.pagePath, 600),
       };
       const decided = await decideBrowserAction(agent, project, body.category, context, {
         runId: optionalId(body.runId) ?? null,

@@ -266,7 +266,7 @@ describe('Autopilot levels', () => {
     // PRIV-9, 2026-09-26: delete_issue was approved five times and stayed blocked, because
     // only approvals that name a command were matched.
     const s = await setup();
-    const { run } = await startRun(s);
+    const { run, issue } = await startRun(s);
     const request = await s.asRunner.projects({ projectKey: 'MKT' }).approvals.post({
       kind: 'delete',
       action: 'Delete MKT-1 for good',
@@ -287,10 +287,34 @@ describe('Autopilot levels', () => {
         category,
         scope: 'workspace',
         tool: category === 'delete' ? 'delete_issue' : 'send_mail',
+        summary: category === 'delete' ? 'delete_issue {"issueId":' + issue.id + '}' : null,
       });
     expect(await toolCall('delete')).toMatchObject({ outcome: 'allow', reason: 'approved' });
     // The approval covers what it was asked for, not other kinds of action.
     expect((await toolCall('send')).outcome).toBe('needs-approval');
+    expect(
+      await actionApproved(
+        s.agent.id,
+        followUp.id,
+        'delete',
+        null,
+        'delete_issue',
+        'delete_issue {"issueId":999999}',
+        s.projectId,
+      ),
+    ).toBe(false);
+    // A different tool cannot reuse the issue deletion approval.
+    expect(
+      await actionApproved(
+        s.agent.id,
+        followUp.id,
+        'delete',
+        null,
+        'delete_other',
+        'delete_issue {"issueId":' + issue.id + '}',
+        s.projectId,
+      ),
+    ).toBe(false);
     // And nothing outside the run the decision started.
     expect(await actionApproved(s.agent.id, run.id, 'delete', null)).toBe(false);
   });

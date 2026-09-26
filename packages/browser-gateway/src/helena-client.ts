@@ -210,6 +210,8 @@ export class HelenaClient {
       target: string | null;
       element: string | null;
       formAction: string | null;
+      groundedElement?: string | null;
+      pagePath?: string | null;
     };
     runId?: number;
     messageId?: number;

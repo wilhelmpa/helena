@@ -87,6 +87,7 @@ export interface TaskDeps {
     element: PageElement | null;
     category: ActionCategory;
     origin: string;
+    pagePath: string | null;
   }): Promise<Authorization>;
   // False once someone else (the owner's "Übernehmen") holds the browser.
   holdsControl(): boolean;
@@ -575,6 +576,13 @@ export async function runTask(input: TaskInput, deps: TaskDeps): Promise<TaskRes
         element,
         category,
         origin: originOf(observation.url),
+        pagePath: (() => {
+          try {
+            return new URL(observation.url).pathname;
+          } catch {
+            return null;
+          }
+        })(),
       });
       if (decision.effect === 'needs-approval') {
         return finish(

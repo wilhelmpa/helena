@@ -38,7 +38,7 @@ const status = {
   detail: null,
 };
 
-async function setup() {
+async function setup(memoryApproval = true) {
   const owner = await signUpTestUser({ name: 'Owner' });
   const asOwner = authedApi(owner.cookie);
   const project = await asOwner.projects.post({ key: 'MKT', name: 'Marketing' });
@@ -53,7 +53,7 @@ async function setup() {
       toolDeny: [],
       mcpGrants: [],
       files: [],
-      memoryApproval: true,
+      memoryApproval,
     },
   });
   return {
@@ -75,13 +75,13 @@ describe('memory proposals', () => {
   });
 
   it('keeps memory writes without approval unless it is switched on', async () => {
-    const { asRunner } = await setup();
+    const { asRunner } = await setup(false);
     await report(asRunner, { inventory: inventory('Uses bun.') });
     expect((await asRunner['agent-runtime'].policy.get()).data!.memoryWrites.approval).toBe(false);
   });
 
   it('holds a memory write for the owner and writes it once approved', async () => {
-    const { asOwner, asRunner, teamId, agentId } = await setup();
+    const { asOwner, asRunner, teamId, agentId } = await setup(false);
     // Approval is off by default (owner, 2026-09-26); switched on, it must hold every write.
     const current = (await asOwner.teams({ teamId })['ai-agents']({ agentId }).get()).data!;
     const switched = await asOwner

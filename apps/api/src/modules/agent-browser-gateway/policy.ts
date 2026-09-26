@@ -1,3 +1,10 @@
+import {
+  renewalDomainApproved,
+  renewalDomainInPath,
+  browserApprovalCommand,
+} from './contract-approval';
+import { db, agentRun, approvalRequest } from '@repo/db';
+import { and, desc, eq, gt } from 'drizzle-orm';
 import type { ActionCategory, PolicyDecision } from '@helena/sdk';
 import type { RequestKind } from '#modules/approvals/service';
 import { createApprovalRequest } from '#modules/approvals/service';
@@ -20,6 +27,58 @@ export interface BrowserActionContext {
   target: string | null;
   element: string | null;
   formAction: string | null;
+  // Observed by the browser process, not supplied by the agent's element description.
+  groundedElement: string | null;
+  pagePath: string | null;
+}
+
+// A legacy free-text approval can authorize the exact domain cancellation only when the
+// same agent is still working on the same issue, within a day, on Squarespace. An approval
+// for one domain never authorizes another domain or a different operation.
+
+async function approvedRenewalRequest(
+  agentId: number,
+  projectId: number | null,
+  runId: number | null | undefined,
+  context: BrowserActionContext,
+): Promise<number | null> {
+  if (projectId == null || runId == null || !context.pagePath || !context.groundedElement)
+    return null;
+  try {
+    const hostname = new URL(context.origin ?? '').hostname.toLowerCase();
+    if (hostname !== 'squarespace.com' && !hostname.endsWith('.squarespace.com')) return null;
+  } catch {
+    return null;
+  }
+  const [run] = await db
+    .select({ issueId: agentRun.issueId })
+    .from(agentRun)
+    .where(
+      and(eq(agentRun.id, runId), eq(agentRun.agentId, agentId), eq(agentRun.projectId, projectId)),
+    );
+  if (!run?.issueId) return null;
+  const rows = await db
+    .select({
+      id: approvalRequest.id,
+      action: approvalRequest.action,
+      status: approvalRequest.status,
+    })
+    .from(approvalRequest)
+    .where(
+      and(
+        eq(approvalRequest.agentId, agentId),
+        eq(approvalRequest.projectId, projectId),
+        eq(approvalRequest.issueId, run.issueId),
+        eq(approvalRequest.kind, 'delete'),
+        gt(approvalRequest.decidedAt, new Date(Date.now() - 24 * 60 * 60 * 1000)),
+      ),
+    )
+    .orderBy(desc(approvalRequest.id))
+    .limit(30);
+  const latest = rows.find((row) =>
+    renewalDomainApproved(row.action, context.pagePath, context.groundedElement),
+  );
+  return latest?.status === 'approved' ? latest.id : null;
 }
 
 // Asks Helena's policy engine (hub/autopilot): the Autopilot level of the project and the
@@ -33,6 +92,10 @@ export async function decideBrowserAction(
   work: { runId?: number | null; messageId?: number | null } = {},
 ): Promise<PolicyDecision> {
   const where = context.formAction ?? context.origin;
+  const approvedRequestId =
+    category === 'delete' && context.tool.startsWith('browser_')
+      ? await approvedRenewalRequest(agent.id, project?.id ?? null, work.runId, context)
+      : null;
   const decision = await decide({
     adapter: 'gateway',
     agentId: agent.id,
@@ -43,7 +106,16 @@ export async function decideBrowserAction(
     category,
     scope: 'external',
     tool: context.tool,
-    summary: [context.tool, context.element ?? context.target, where].filter(Boolean).join(' '),
+    summary: [
+      context.tool,
+      context.element ?? context.target,
+      where,
+      approvedRequestId ? 'approved #' + approvedRequestId : null,
+    ]
+      .filter(Boolean)
+      .join(' '),
+    approvedByTask: approvedRequestId !== null,
+    command: browserApprovalCommand(category, context),
   });
   return {
     effect: decision.outcome,
@@ -65,11 +137,25 @@ export async function fileBrowserApproval(
 ): Promise<number> {
   const what = context.element ? ` „${context.element}“` : '';
   const where = context.formAction ?? context.origin ?? '';
+  const domain =
+    category === 'delete' &&
+    context.groundedElement &&
+    renewalDomainApproved(
+      'Automatische Verlängerung für ' + renewalDomainInPath(context.pagePath) + ' deaktivieren',
+      context.pagePath,
+      context.groundedElement,
+    )
+      ? renewalDomainInPath(context.pagePath)
+      : null;
+  const action = domain
+    ? 'Automatische Verlängerung für ' + domain + ' deaktivieren'
+    : 'Projekt-Browser: ' + context.tool + what + (where ? ' – ' + where : '');
   const { approval } = await createApprovalRequest({
     projectId: project.id,
     agent: { id: agent.id, userId: agent.userId },
     kind: approvalKindOf(category) as RequestKind,
-    action: `Projekt-Browser: ${context.tool}${what}${where ? ` – ${where}` : ''}`.slice(0, 500),
+    action: action.slice(0, 500),
+    command: browserApprovalCommand(category, context) ?? undefined,
     details: [
       reason,
       context.origin ? `Seite: ${context.origin}` : '',

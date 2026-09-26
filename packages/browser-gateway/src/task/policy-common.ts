@@ -5,6 +5,7 @@
 // (cklxx/laya-browser, "v3" format); see NOTICE.
 
 import type { ActionCategory } from '../agent-tool.ts';
+import { contractActionCategory } from '../contract-action.ts';
 import type { Operation, PageElement, PageObservation, TaskMode } from './types.ts';
 
 export const NEXT_ACTION = `Advance the user's entire goal from the CURRENT page using one operation.
@@ -134,6 +135,10 @@ export function describe(element: PageElement): Record<string, unknown> {
 export function categoryOfStep(operation: Operation, element: PageElement | null): ActionCategory {
   switch (operation) {
     case 'CLICK':
+      const contract = contractActionCategory(
+        [element?.label, element?.text].filter(Boolean).join(' '),
+      );
+      if (contract) return contract;
       return element?.submits ? 'send' : 'write';
     case 'PRESS_ENTER':
       return element?.enterSubmits ? 'send' : 'write';

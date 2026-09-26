@@ -137,6 +137,7 @@ function authorizer(ctx: TaskContext) {
     element: PageElement | null;
     category: ActionCategory;
     origin: string;
+    pagePath: string | null;
   }): Promise<Authorization> => {
     const target = `${step.operation}${step.element ? ` ${brief(step.element)}` : ''}`.slice(
       0,
@@ -154,6 +155,9 @@ function authorizer(ctx: TaskContext) {
           target,
           element: step.element ? brief(step.element) : null,
           formAction: null,
+          groundedElement:
+            [step.element?.label, step.element?.text].filter(Boolean).join(' ') || null,
+          pagePath: step.pagePath,
         },
         runId: ctx.request.runId,
         messageId: ctx.request.messageId,
