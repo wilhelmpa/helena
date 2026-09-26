@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { WorkspaceRuntimeEnv } from './runtimeEnv';
+import { browserControlBase, browserTabsQueryKey } from './browserControl';
 import {
   codeFolderUrl,
   nativeChatProjectKey,
@@ -140,7 +141,61 @@ describe('workspaceTools', () => {
         url: 'https://attacker.example/focus/dashboard/demo-coordinator',
       },
     ]);
-    assert.equal(tools.browser.url, 'https://browser.example.com/');
+    assert.equal(tools.browser.url, '');
+  });
+
+  it('keeps each project on its own browser when provisioning has an old HTTP origin', () => {
+    const liveConfig = {
+      ...config,
+      browserUrl:
+        'https://helena-home.volition.one/browser/projects/home/vnc.html?autoconnect=1&resize=remote&path=browser%2Fprojects%2Fhome%2Fwebsockify',
+    };
+    for (const [key, slug] of [
+      ['VOL', 'vol'],
+      ['PRIV', 'priv'],
+      ['FAM', 'fam'],
+      ['ELLI', 'elli'],
+      ['TRADE', 'trade'],
+      ['VERVE', 'verve'],
+      ['VERV', 'verve'],
+    ]) {
+      const tools = workspaceTools(liveConfig, key, [
+        {
+          kind: 'browser',
+          id: `project-browser:${slug}`,
+          url: `http://kingston-server.local/browser/projects/${slug}/vnc.html`,
+        },
+      ]);
+      const url = new URL(tools.browser.url);
+      assert.equal(url.origin, 'https://helena-home.volition.one');
+      assert.equal(url.pathname, `/browser/projects/${slug}/vnc.html`);
+      assert.equal(url.searchParams.get('path'), `browser/projects/${slug}/websockify`);
+    }
+    assert.equal(
+      new URL(workspaceTools(liveConfig, null).browser.url).pathname,
+      '/browser/projects/home/vnc.html',
+    );
+  });
+
+  it('routes tab controls and stream state to the current project browser', () => {
+    const liveConfig = {
+      ...config,
+      browserUrl: 'https://helena-home.volition.one/browser/projects/home/vnc.html?autoconnect=1',
+    };
+    const home = browserControlBase(workspaceTools(liveConfig, null).browser.url);
+    const vol = browserControlBase(workspaceTools(liveConfig, 'VOL').browser.url);
+    assert.equal(home, 'https://helena-home.volition.one/browser/projects/home/api');
+    assert.equal(vol, 'https://helena-home.volition.one/browser/projects/vol/api');
+    assert.notDeepEqual(browserTabsQueryKey(home!), browserTabsQueryKey(vol!));
+  });
+
+  it('does not fall back to Home for a malformed project key or unscoped browser URL', () => {
+    const liveConfig = {
+      ...config,
+      browserUrl: 'https://helena-home.volition.one/browser/projects/home/vnc.html?autoconnect=1',
+    };
+    assert.equal(workspaceTools(liveConfig, '../home').browser.url, '');
+    assert.equal(workspaceTools(config, 'VOL').browser.url, '');
   });
 
   it('returns unique valid frame origins only', () => {

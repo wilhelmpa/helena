@@ -47,7 +47,10 @@ import { resolveLevel } from '#modules/autopilot/levels';
 import { autopilotSoulSection } from '#modules/autopilot/prompt';
 import { runtimeLocalAiNow } from '#modules/local-ai/service';
 import { effectiveBrowserControl } from '#modules/browser-task/settings';
-import { BROWSER_GATEWAY_MCP_SERVER_NAME } from '../mcp-servers/service';
+import {
+  BROWSER_GATEWAY_LEGACY_MCP_SERVER_NAME,
+  BROWSER_GATEWAY_MCP_SERVER_NAME,
+} from '../mcp-servers/service';
 
 export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
   const agent = await getAgentById(agentRef.id, agentRef.teamId);
@@ -69,9 +72,13 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
       agentVaultAccess(agentRef.userId),
       pendingRuntimeActions(agent.id),
     ]);
+  // The gateway is the agent's browser only when the legacy fallback is off.
+  const browserGateway =
+    mcpServers.some((server) => server.name === BROWSER_GATEWAY_MCP_SERVER_NAME) &&
+    !mcpServers.some((server) => server.name === BROWSER_GATEWAY_LEGACY_MCP_SERVER_NAME);
   // The projects whose browser has a decision model (browser_task), when the agent has the
   // project browser at all (docs/helena-decisions/browser-task.md §3.2).
-  const browserTask = mcpServers.some((server) => server.name === BROWSER_GATEWAY_MCP_SERVER_NAME)
+  const browserTask = browserGateway
     ? (
         await Promise.all(
           agent.projects.map(async (project) =>
@@ -105,6 +112,7 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
             areas,
             knowledge: knowledgeSection(vaultAccess, agent.runtimePolicy.runtime ?? 'hermes'),
             webLogins,
+            browserGateway,
             autopilot,
             browserTask,
           }),
@@ -193,6 +201,7 @@ function soul(
     areas: string;
     knowledge: string;
     webLogins: boolean;
+    browserGateway: boolean;
     autopilot: { key: string; level: AutopilotLevel }[];
     browserTask?: string[];
   },
@@ -203,6 +212,7 @@ function soul(
     areas,
     knowledge,
     webLogins,
+    browserGateway,
     autopilot,
     browserTask = [],
   } = sections;
@@ -229,10 +239,13 @@ function soul(
     blockedPreamble(),
     autopilotSoulSection(autopilot),
     ...((config.runtimePolicy.runtime ?? 'hermes') === 'hermes' ? [hermesPreamble()] : []),
-    // Only Hermes fills website logins from its vault; the other runtimes get none.
-    ...(webLogins && (config.runtimePolicy.runtime ?? 'hermes') === 'hermes'
-      ? [webLoginPreamble()]
-      : []),
+    // The shared project browser can use a granted login for every runtime. Agents on
+    // Hermes' legacy browser keep its separate vault instructions.
+    ...(browserGateway
+      ? [projectBrowserLoginPreamble(webLogins)]
+      : webLogins && (config.runtimePolicy.runtime ?? 'hermes') === 'hermes'
+        ? [webLoginPreamble()]
+        : []),
     ...(browserTask.length ? [browserTaskPreamble(browserTask)] : []),
     chartPreamble().trim(),
     attachmentPreamble().trim(),
@@ -295,8 +308,33 @@ function browserTaskPreamble(projects: string[]): string {
     'and typing itself in one call — far fewer tokens than browser_snapshot/browser_click rounds.',
     'Use it for multi-step navigation and forms with known values; check the outcome with',
     'browser_check. When it hands back (needs_agent, needs_login, stuck, …) continue with the step',
-    'tools on the snapshot it returns. Logins stay browser_login; never put a password or code',
-    'into values. Actions that send a form need the same approvals as browser_click.',
+    'tools on the snapshot it returns. Sign-ins use the project browser login flow; never put',
+    'a password or code into values. Actions that send a form need the same approvals as',
+    'browser_click.',
+  ].join('\n');
+}
+
+// The persistent project browser uses the gateway's own tools. A login is offered only
+// when the owner granted one to the agent or its project; otherwise the owner takes over
+// the browser and signs in personally. The session stays in that project's browser.
+function projectBrowserLoginPreamble(webLogins: boolean): string {
+  return [
+    '## Website logins in the project browser',
+    'When a site asks for sign-in, call browser_snapshot to inspect the page.',
+    ...(webLogins
+      ? [
+          'For a website login granted in Zugänge for this site, call browser_login with the',
+          'usernameTarget and passwordTarget refs from the snapshot. It fills both fields',
+          'without showing the password. If no matching login is granted, use browser_handover.',
+          'If that login has a stored TOTP code, call browser_login_code with the credentialId',
+          'returned by browser_login and the code field ref.',
+        ]
+      : ['No website login is granted to you; hand the sign-in page to the owner.']),
+    'For a passkey, CAPTCHA, code sent by mail/SMS, app confirmation, or another owner-only',
+    'step, call browser_handover with a short reason. It waits while the owner uses this',
+    'persistent project browser. After control is returned, call browser_snapshot again',
+    'and continue the task. If the handover times out, report what remains blocked.',
+    'Never ask for a password or code in chat, enter one yourself, or create an account.',
   ].join('\n');
 }
 
