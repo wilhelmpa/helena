@@ -207,6 +207,8 @@ export class BrowserLink {
     this.connection = null;
     this.opening = null;
     this.sessions = new Map();
+    this.captureTarget = null;
+    this.captureQueue = Promise.resolve();
     // The emulation this link set on each page: null for none, or the CSS size it is pinned
     // to. A page this link has never touched may still be emulated by another DevTools client,
     // so only an explicit entry here, not its absence, says what the page is at.
@@ -228,6 +230,7 @@ export class BrowserLink {
         this.connection = connection;
         this.sessions.clear();
         this.pins.clear();
+        this.captureTarget = null;
         return connection;
       })
       .finally(() => {
@@ -256,6 +259,25 @@ export class BrowserLink {
   async evaluate(targetId, expression, awaitPromise = false) {
     const { result } = await this.send(targetId, "Runtime.evaluate", { expression, returnByValue: true, awaitPromise });
     return result?.value;
+  }
+
+  capture(targetId, expected = this.captureTarget) {
+    const work = async () => {
+      if (!targetId && this.captureTarget !== expected) return;
+      if (this.captureTarget === targetId) return;
+      const previous = this.captureTarget;
+      this.captureTarget = null;
+      if (previous) {
+        try { await this.send(previous, "Emulation.setFocusEmulationEnabled", { enabled: false }); }
+        catch { this.close(); }
+      }
+      if (!targetId) return;
+      await this.send(targetId, "Emulation.setFocusEmulationEnabled", { enabled: true });
+      this.captureTarget = targetId;
+    };
+    const run = this.captureQueue.then(work, work);
+    this.captureQueue = run.catch(() => {});
+    return run;
   }
 
   // Holds a page at a CSS size and pixel ratio ({ width, height, ratio }), drawn from its
@@ -297,6 +319,7 @@ export class BrowserLink {
   close() {
     this.connection?.close();
     this.connection = null;
+    this.captureTarget = null;
   }
 }
 
@@ -339,7 +362,10 @@ export async function listTabs(port) {
   const visibility = await Promise.all(
     pages.map((page) => link.evaluate(page.id, "document.visibilityState").catch(() => null)),
   );
-  const front = Math.max(0, visibility.indexOf("visible"));
+  const captured = link.captureTarget;
+  const nativeFront = visibility.findIndex((state, index) => state === "visible" && pages[index].id !== captured);
+  if (captured && nativeFront >= 0) await link.capture(null, captured);
+  const front = nativeFront >= 0 ? nativeFront : Math.max(0, visibility.indexOf("visible"));
   return pages.map((page, index) => ({
     id: page.id,
     title: page.title || page.url,
@@ -347,6 +373,19 @@ export async function listTabs(port) {
     active: index === front,
     agent: isAgentTitle(page.title),
   }));
+}
+
+// A CDP freeze hides WebContents; "active" unfreezes it without restoring its visibility.
+// Keep only the viewed tab painting until actual native selection or idle releases it.
+export async function restorePageVisibility(port) {
+  const tab = (await listTabs(port)).find((page) => page.active);
+  if (!tab) return;
+  const link = linkFor(port);
+  if (await link.evaluate(tab.id, "document.visibilityState") === "hidden") await link.capture(tab.id);
+}
+
+export async function releasePageVisibility(port) {
+  await links.get(port)?.capture(null);
 }
 
 // Brings a tab to the front of its window.

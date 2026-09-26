@@ -1,9 +1,10 @@
-import { CdpConnection } from "./project-browser-control.mjs";
+import { CdpConnection, releasePageVisibility, restorePageVisibility } from "./project-browser-control.mjs";
 
 const IDLE_MS = 120_000;
 const CHECK_MS = 10_000;
 
 export async function setPageLifecycle(port, state) {
+  if (state === "frozen") await releasePageVisibility(port);
   const response = await fetch(`http://127.0.0.1:${port}/json/list`, {
     signal: AbortSignal.timeout(5_000),
   });
@@ -23,13 +24,15 @@ export async function setPageLifecycle(port, state) {
   );
   const changed = results.filter((result) => result.status === "fulfilled").length;
   if (changed !== pages.length) throw new Error("Could not change every project browser page state");
+  if (state === "active") await restorePageVisibility(port);
   return changed;
 }
 
 export class BrowserIdle {
-  constructor({ listBrowsers, lifecycle = setPageLifecycle, now = Date.now, idleMs = IDLE_MS, log = () => {} }) {
+  constructor({ listBrowsers, lifecycle = setPageLifecycle, releaseVisibility = releasePageVisibility, now = Date.now, idleMs = IDLE_MS, log = () => {} }) {
     this.listBrowsers = listBrowsers;
     this.lifecycle = lifecycle;
+    this.releaseVisibility = releaseVisibility;
     this.now = now;
     this.idleMs = idleMs;
     this.log = log;
@@ -99,6 +102,7 @@ export class BrowserIdle {
     socket.once("close", () => {
       browser.viewers = Math.max(0, browser.viewers - 1);
       browser.lastActive = this.now();
+      this.releaseWhenUnused(browser);
     });
     // After a router restart the page state is unknown; transition() activates it.
     // The stream must attach only after the page is active. Chromium can accept a
@@ -106,11 +110,23 @@ export class BrowserIdle {
     return this.wake(slug);
   }
 
+  releaseWhenUnused(browser) {
+    browser.queue = browser.queue.then(async () => {
+      if (!browser.viewers && !browser.locked) {
+        browser.frozen = null;
+        await this.releaseVisibility(browser.port);
+      }
+    }).catch((error) => this.log(`browser visibility: ${error.message}`));
+  }
+
   lock(slug, holder) {
     const browser = this.record(slug);
     browser.locked = Boolean(holder);
     if (holder) void this.wake(slug);
-    else browser.lastActive = this.now();
+    else {
+      browser.lastActive = this.now();
+      this.releaseWhenUnused(browser);
+    }
   }
 
   async stop() {
@@ -118,7 +134,7 @@ export class BrowserIdle {
     const waking = [];
     for (const [slug, browser] of this.browsers) {
       browser.locked = true;
-      waking.push(this.wake(slug));
+      waking.push(this.wake(slug).finally(() => this.releaseVisibility(browser.port)));
     }
     await Promise.all(waking);
   }
