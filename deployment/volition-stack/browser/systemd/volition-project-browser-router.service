@@ -1,0 +1,45 @@
+[Unit]
+Description=Volition project browser loopback router
+After=network.target
+Wants=network.target
+
+[Service]
+# Network: Chromium's CDP and KasmVNC listen on 127.0.0.1 only. Isolated agents cannot reach
+# them: each agent unit has a network namespace of its own (PrivateNetwork=yes), so its
+# loopback is not this one. IPAddressDeny=, RestrictNetworkInterfaces= and SocketBindDeny=
+# are not used here: they need cgroup BPF, which this nspawn container does not offer, and
+# were measured to have no effect (see isolation/README.md).
+Type=simple
+# With agent isolation the browser user alone owns the project profiles (0700): isolation.sh
+# switches this unit to volition-browser (drop-in browser-user.conf) in the same step that
+# hands it the state; a deploy alone must not, or the unit could not read its own state.
+User=volition-hermes
+Group=volition
+Environment=PROJECT_BROWSER_ROOT=/var/lib/volition/project-browser/projects
+Environment=PROJECT_BROWSER_ROUTER_PORT=6082
+ExecStart=/usr/local/bin/node /usr/local/libexec/volition-project-browser-router.mjs
+Restart=on-failure
+RestartSec=2
+UMask=0077
+NoNewPrivileges=yes
+PrivateDevices=yes
+PrivateTmp=yes
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectHostname=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectProc=invisible
+ProtectSystem=strict
+ReadOnlyPaths=/var/lib/volition/project-browser/projects
+RestrictAddressFamilies=AF_UNIX AF_INET
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+CapabilityBoundingSet=
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

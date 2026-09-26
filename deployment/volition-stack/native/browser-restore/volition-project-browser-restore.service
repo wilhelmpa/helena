@@ -1,0 +1,21 @@
+[Unit]
+Description=Restore provisioned Helena project browsers
+After=volition-project-browser-router.service
+Requires=volition-project-browser-router.service
+
+# Root, to start the browser targets without a polkit rule and to read the state whichever
+# user owns it (volition-hermes, or volition-browser under agent isolation); with no
+# capability but reading past the directory permissions, and a read-only view of the state.
+[Service]
+Type=oneshot
+ExecStart=/usr/local/libexec/volition-browser-restore
+NoNewPrivileges=yes
+PrivateDevices=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadOnlyPaths=/var/lib/volition/project-browser/projects
+CapabilityBoundingSet=CAP_DAC_READ_SEARCH
+
+[Install]
+WantedBy=multi-user.target
