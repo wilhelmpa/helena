@@ -63,7 +63,21 @@ virtualPage.define {
         label = string.gsub(label, "\\", "\\\\")
         label = string.gsub(label, "%[", "(")
         label = string.gsub(label, "%]", ")")
-        table.insert(lines, "* [" .. label .. "](<" .. "/" .. d.name .. ">) · " .. string.sub(d.lastModified or "", 1, 10))
+        label = string.gsub(label, "<", "(")
+        label = string.gsub(label, ">", ")")
+        local date = string.sub(d.lastModified or "", 1, 10)
+        -- SilverBullet decodes destinations while rendering and again on navigation.
+        -- A reserved character can therefore turn into a fragment, query or malformed
+        -- escape. Show such files safely; Helena's Files view can open them by path.
+        if string.find(d.name, "[#?%%<>]") then
+          table.insert(lines, "* " .. label .. " · " .. date .. " (in Helena-Dateien öffnen)")
+        else
+          -- Encode spaces, UTF-8 and brackets before the Markdown parser sees them.
+          local href = "/" .. string.gsub(d.name, "([^%w%-%._~/])", function(char)
+            return string.format("%%%02X", string.byte(char))
+          end)
+          table.insert(lines, "* [" .. label .. "](<" .. href .. ">) · " .. date)
+        end
       end
     end
     return table.concat(lines, "\n")
