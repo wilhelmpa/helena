@@ -475,6 +475,30 @@ describe('receipts', () => {
       status: 'open',
     });
     expect(receipt.data.vaultPath).toEndWith('/rechnung.pdf');
+    // A receipt points at the mail file. Moving the mail must not break that reference.
+    const move = await authedApi(owner.cookie).mail.threads({ threadId: mail.threadId }).patch({
+      projectId: null,
+    });
+    expect(move.status).toBe(409);
+    expect((await http.call<ReceiptDetailView>('GET', `/${ids[0]}`)).data.vaultPath).toBe(
+      receipt.data.vaultPath,
+    );
+    // A suggested project cannot take a receipt while the file still lives in Home.
+    const unfiled = await insertMessage({
+      teamId: project.teamId,
+      accountId,
+      folderId: inboxId,
+      subject: 'Unfiled invoice',
+      attachments: [{ filename: 'unfiled.pdf', content: text }],
+    });
+    expect(
+      intakeMailReceipts({
+        teamId: project.teamId,
+        projectId: project.id,
+        messageId: unfiled.messageRowId,
+        actorUserId: owner.userId,
+      }),
+    ).rejects.toThrow('Move the mail to this project');
     // The same mail again adds nothing.
     expect(
       await intakeMailReceipts({
