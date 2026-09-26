@@ -32,10 +32,10 @@ export default function AgentLearningSettings({
   const rows = [
     { key: 'learning', on: current.learning, label: t('enabled'), hint: t('enabledHint') },
     { key: 'curator', on: current.curator, label: t('curator'), hint: t('curatorHint') },
-    // The agent's own memory writes wait on the approvals page (a diff per file) unless off.
+    // The agent's memory writes wait on the approvals page only when enabled.
     {
       key: 'memoryApproval',
-      on: policy.memoryApproval ?? false,
+      on: policy.memoryApproval === true,
       label: t('memoryApproval'),
       hint: t('memoryApprovalHint'),
     },

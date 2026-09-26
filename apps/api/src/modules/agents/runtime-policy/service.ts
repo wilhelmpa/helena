@@ -138,10 +138,10 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
       enabled: agent.runtimePolicy.learning ?? true,
       curator: agent.runtimePolicy.curator ?? false,
     },
-    // Memory writes wait for the owner only when turned on; the runner keeps each file at its
+    // Memory writes wait for the owner only when explicitly enabled; the runner keeps each file at its
     // latest version meanwhile. Before a version was ever seen there is nothing to keep.
     memoryWrites: {
-      approval: (agent.runtimePolicy.memoryApproval ?? false) && baseline.length > 0,
+      approval: agent.runtimePolicy.memoryApproval === true && baseline.length > 0,
       baseline,
     },
     hermes: {

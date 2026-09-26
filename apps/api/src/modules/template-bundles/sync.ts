@@ -502,6 +502,8 @@ function policyFor(agent: BundleAgent, current?: RuntimePolicy): RuntimePolicy {
     ...(current ?? { toolAllow: [], mcpGrants: [], files: [] }),
     reasoningEffort: agent.effort,
     toolDeny: [...agent.disallowedTools],
+    // A newly imported template writes memory directly; preserve an existing opt-in.
+    memoryApproval: current?.memoryApproval === true,
   };
   if (agent.maxTurns != null) next.maxTurns = agent.maxTurns;
   else delete next.maxTurns;

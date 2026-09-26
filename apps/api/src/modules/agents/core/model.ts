@@ -95,7 +95,7 @@ export const runtimePolicy = t.Object({
     t.Boolean({
       description:
         "Whether the agent's own memory writes wait for the owner's approval as a proposal " +
-        'with a diff. Unset, they do not: the agent keeps what it learns at once (owner, 2026-09-26).',
+        'with a diff. Unset, they take effect without approval.',
     }),
   ),
   skillsDisabled: t.Optional(

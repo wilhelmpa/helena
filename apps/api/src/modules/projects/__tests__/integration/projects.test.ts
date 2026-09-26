@@ -116,6 +116,7 @@ describe('projects', () => {
             toolDeny: [],
             mcpGrants: ['itsaplan'],
             files: [],
+            memoryApproval: false,
           },
         }),
       ]);

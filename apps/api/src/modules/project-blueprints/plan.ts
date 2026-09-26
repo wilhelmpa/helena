@@ -97,6 +97,7 @@ export type Change =
   | { kind: 'assignment'; handle: string; to: string }
   | { kind: 'department'; handle: string; department: string; departmentId: number }
   | { kind: 'projectBrowser'; handle: string }
+  | { kind: 'memoryApprovalOff'; handle: string }
   | {
       kind: 'network';
       mode: BlueprintNetworkMode | null;
@@ -278,6 +279,8 @@ export function planBlueprint(
     if (wanted?.assignment)
       assign(plan, coordinator, current?.assignment ?? null, wanted.assignment, !current);
     if (department) setDepartment(plan, coordinator, current, department);
+    if (current?.memoryApproval)
+      plan.changes.push({ kind: 'memoryApprovalOff', handle: coordinator });
 
     for (const agent of blueprint.agents) {
       const handle = handleOf(agent.template);
@@ -305,6 +308,11 @@ export function planBlueprint(
       if (department) setDepartment(plan, handle, copy, department);
       if (agent.projectBrowser && !copy?.projectBrowser) {
         plan.changes.push({ kind: 'projectBrowser', handle });
+      }
+      // Blueprint agents write memory directly. A template that explicitly opted in
+      // can still be copied, but the new project copy is switched back to this default.
+      if ((copy ?? template)?.memoryApproval) {
+        plan.changes.push({ kind: 'memoryApprovalOff', handle });
       }
     }
   }
@@ -528,6 +536,8 @@ export function describeChange(change: Change): string {
       return `[AGENT] @${change.handle}: department "${change.department}"`;
     case 'projectBrowser':
       return `[AGENT] @${change.handle}: project browser`;
+    case 'memoryApprovalOff':
+      return `[AGENT] @${change.handle}: memory writes without approval`;
     case 'network': {
       const parts = [
         ...(change.mode ? [`mode ${change.mode}`] : []),

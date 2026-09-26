@@ -50,7 +50,7 @@ function agent(overrides: Partial<StateAgent> = {}): StateAgent {
     assignment: null,
     departmentId: null,
     projectBrowser: false,
-    memoryApproval: true,
+    memoryApproval: false,
     tools: [],
     ...overrides,
   };
@@ -307,11 +307,29 @@ describe('what it leaves to the owner', () => {
     ).toBe(false);
   });
 
-  it('leaves an agent without memory approval alone (the default since 2026-09-26)', () => {
+  it('turns off approval on a blueprint copy or coordinator that opted in', () => {
     const state = appliedState();
-    state.agents.find((entry) => entry.username === 'risk-journal-trade')!.memoryApproval = false;
+    state.agents.find((entry) => entry.username === 'risk-journal-trade')!.memoryApproval = true;
+    state.agents.find((entry) => entry.username === COORDINATOR)!.memoryApproval = true;
     const plan = planBlueprint(TRADING, state, ['agents']);
-    expect(plan.skipped).toEqual([]);
+    expect(plan.changes.filter((change) => change.kind === 'memoryApprovalOff')).toEqual([
+      { kind: 'memoryApprovalOff', handle: COORDINATOR },
+      { kind: 'memoryApprovalOff', handle: 'risk-journal-trade' },
+    ]);
+  });
+
+  it('turns off inherited approval after copying a template into a blueprint project', () => {
+    const state = emptyState();
+    state.agents.find((entry) => entry.username === 'risk-journal')!.memoryApproval = true;
+    const plan = planBlueprint(TRADING, state, ['agents']);
+    const copyIndex = plan.changes.findIndex(
+      (change) => change.kind === 'copy' && change.handle === 'risk-journal-trade',
+    );
+    const offIndex = plan.changes.findIndex(
+      (change) => change.kind === 'memoryApprovalOff' && change.handle === 'risk-journal-trade',
+    );
+    expect(copyIndex).toBeGreaterThanOrEqual(0);
+    expect(offIndex).toBeGreaterThan(copyIndex);
   });
 
   it('reports a missing department instead of creating it', () => {

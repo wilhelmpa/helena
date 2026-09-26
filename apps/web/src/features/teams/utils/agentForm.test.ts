@@ -4,6 +4,14 @@ import { describe, it } from 'node:test';
 import { initialAgentValue, toCreateInput, toUpdatePatch } from './agentForm';
 
 describe('agent runtime policy form', () => {
+  it('starts a new agent with memory approval off in the submitted policy', () => {
+    const value = initialAgentValue();
+    value.name = 'Agent';
+    value.username = 'agent';
+    assert.equal(value.runtimePolicy.memoryApproval, false);
+    assert.equal(toCreateInput(value).runtimePolicy?.memoryApproval, false);
+  });
+
   it('keeps runtime policy when an agent is opened', () => {
     const value = initialAgentValue({
       kind: 'external',

@@ -49,6 +49,25 @@ describe('ai agents', () => {
     expect(res.data?.apiKey?.length ?? 0).toBeGreaterThan(10);
     // The key start is kept for display; the secret itself is not on the row.
     expect(res.data?.agent.apiKeyStart).toBeTruthy();
+    expect(res.data?.agent.runtimePolicy.memoryApproval).toBe(false);
+  });
+
+  it('keeps explicit memory approval opt-in on a new agent', async () => {
+    const { asOwner } = await setup();
+    const res = await createAgent(asOwner, 'MKT', {
+      name: 'Review Bot',
+      username: 'review-bot',
+      runtimePolicy: {
+        reasoningEffort: null,
+        toolAllow: [],
+        toolDeny: [],
+        mcpGrants: [],
+        files: [],
+        memoryApproval: true,
+      },
+    });
+    expect(res.status).toBe(201);
+    expect(res.data?.agent.runtimePolicy.memoryApproval).toBe(true);
   });
 
   it('creates an agent without naming a kind, and refuses the removed internal kind', async () => {

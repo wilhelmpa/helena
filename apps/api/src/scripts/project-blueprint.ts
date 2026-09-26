@@ -68,7 +68,7 @@ function report(blueprint: ProjectBlueprint, state: BlueprintState): string[] {
       `  @${handle}: ${agent.skills.length} skills, network ${network}` +
         `${agent.projectBrowser ? ', project browser' : ''}` +
         `${agent.tools.length ? `, ${agent.tools.length} configured tools` : ''}` +
-        `${agent.memoryApproval ? '' : ', MEMORY APPROVAL OFF'}`,
+        `${agent.memoryApproval ? ', MEMORY APPROVAL ON' : ''}`,
     );
   }
   lines.push(

@@ -456,6 +456,7 @@ export async function createHermesProjectCoordinator(
         toolDeny: [],
         mcpGrants: ['itsaplan'],
         files: [],
+        memoryApproval: false,
       },
       ownerUserId: input.ownerUserId,
       runnerScope: 'owner',

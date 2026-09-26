@@ -74,7 +74,7 @@ export interface AgentRuntimePolicy {
   learning?: boolean;
   curator?: boolean;
   reflection?: ReflectionMode;
-  // Unset: memory writes are kept at once; only `true` makes them wait for approval.
+  // Unset: memory writes take effect without approval.
   memoryApproval?: boolean;
   skillsDisabled?: string[];
   // Unset or null: the instance's default list. Empty: no fallback.
@@ -183,6 +183,7 @@ const EMPTY_RUNTIME_POLICY: AgentRuntimePolicy = {
   toolDeny: [],
   mcpGrants: [],
   files: [],
+  memoryApproval: false,
 };
 
 // The value when it is a whole number inside the limit, otherwise null.
@@ -307,7 +308,7 @@ export function normalizeRuntimePolicy(value: unknown): AgentRuntimePolicy {
     ...(REFLECTION_MODES.includes(policy.reflection as ReflectionMode) && {
       reflection: policy.reflection,
     }),
-    ...(typeof policy.memoryApproval === 'boolean' && { memoryApproval: policy.memoryApproval }),
+    memoryApproval: policy.memoryApproval === true,
     ...(Array.isArray(policy.skillsDisabled) && { skillsDisabled: strings(policy.skillsDisabled) }),
     ...(Array.isArray(policy.fallbackModels) && {
       fallbackModels: policy.fallbackModels

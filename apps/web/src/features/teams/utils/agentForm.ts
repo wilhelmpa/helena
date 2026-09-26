@@ -75,6 +75,7 @@ export function initialAgentValue(agent?: AiAgent, projectId?: number): AgentFor
       toolDeny: [],
       mcpGrants: [],
       files: [],
+      memoryApproval: false,
     },
     triggerOnMention: agent?.triggerOnMention ?? true,
     triggerOnAssign: agent?.triggerOnAssign ?? false,

@@ -166,6 +166,19 @@ export async function applyBlueprintPlan(ctx: ApplyContext, plan: BlueprintPlan)
       case 'projectBrowser':
         await enableProjectBrowser(teamId, (await agent(change.handle)).id);
         break;
+      case 'memoryApprovalOff': {
+        const found = await agent(change.handle);
+        const full = await getAgentById(found.id, teamId);
+        if (!full) throw new Error(`@${change.handle} disappeared.`);
+        await updateAgent(
+          found.id,
+          teamId,
+          { runtimePolicy: { ...full.runtimePolicy, memoryApproval: false } },
+          ownerUserId,
+        );
+        stale();
+        break;
+      }
       case 'network': {
         const current = await fresh();
         const id = await projectId();

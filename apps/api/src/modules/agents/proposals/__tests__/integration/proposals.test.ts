@@ -46,6 +46,15 @@ async function setup() {
     name: 'Researcher',
     username: 'researcher',
     kind: 'external',
+    // This suite exercises the explicit opt-in; new agents default to direct writes.
+    runtimePolicy: {
+      reasoningEffort: null,
+      toolAllow: [],
+      toolDeny: [],
+      mcpGrants: [],
+      files: [],
+      memoryApproval: true,
+    },
   });
   return {
     asOwner,
