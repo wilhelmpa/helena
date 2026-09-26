@@ -174,6 +174,22 @@ describe('launcher client', () => {
     expect(JSON.parse(seen.stdin)).toEqual({ op: 'inventory' });
   });
 
+  it('decodes UTF-8 helper output across launcher frames', async () => {
+    const { path } = await fakeLauncher((socket) => {
+      const output = Buffer.from(JSON.stringify({ ok: true, result: 'ä😀' }));
+      for (const byte of output) socket.write(frame(0x11, Buffer.from([byte])));
+      socket.end(frame(0x13, JSON.stringify({ code: 0 })));
+    });
+    expect(
+      await profileHelper<string>(
+        { slug: 'alpha', profile: 'alpha_7', agentId: 7 },
+        '/srv/volition/workspaces/projects/alpha',
+        { op: 'inventory' },
+        path,
+      ),
+    ).toBe('ä😀');
+  });
+
   it("tells the launcher the agent's runtime, so a Codex agent's helper keeps its own .codex", async () => {
     const { path, seen } = await fakeLauncher((socket) => {
       socket.write(frame(0x11, `${JSON.stringify({ ok: true, result: { written: 1 } })}\n`));

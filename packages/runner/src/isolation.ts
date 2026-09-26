@@ -1,3 +1,4 @@
+import { StringDecoder } from 'node:string_decoder';
 import { createConnection } from 'node:net';
 
 // With AGENT_ISOLATION=on the runner starts nothing itself. Every run, chat answer and
@@ -217,10 +218,12 @@ export async function profileHelper<T>(
     typeof options === 'string' ? { socketPath: options } : options;
   let stdout = '';
   let stderr = '';
-  const attempt = (agentRuntime: string | undefined) => {
+  const attempt = async (agentRuntime: string | undefined) => {
+    const outDecoder = new StringDecoder('utf8');
+    const errDecoder = new StringDecoder('utf8');
     stdout = '';
     stderr = '';
-    return launch(
+    const result = await launch(
       {
         slug: isolation.slug,
         profile: isolation.profile,
@@ -236,14 +239,17 @@ export async function profileHelper<T>(
       {
         stdin: JSON.stringify(operation),
         onStdout: (chunk) => {
-          if (stdout.length < 16 * 1024 * 1024) stdout += chunk.toString('utf8');
+          if (stdout.length < 16 * 1024 * 1024) stdout += outDecoder.write(chunk);
         },
         onStderr: (chunk) => {
-          stderr = `${stderr}${chunk.toString('utf8')}`.slice(-2000);
+          stderr = `${stderr}${errDecoder.write(chunk)}`.slice(-2000);
         },
       },
       socketPath,
     );
+    stdout += outDecoder.end();
+    stderr = `${stderr}${errDecoder.end()}`.slice(-2000);
+    return result;
   };
   let result: LaunchResult;
   try {

@@ -12,6 +12,30 @@ afterEach(async () => {
 });
 
 describe('Hermes subprocess adapter', () => {
+  it('reports a timeout when the stopped process exits zero', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'helena-timeout-'));
+    dirs.push(dir);
+    const outcome = await execute(
+      {
+        name: '',
+        url: 'http://plan.test',
+        apiKey: 'test-key',
+        command: "trap 'exit 0' INT TERM; while :; do sleep 0.01; done",
+        args: [],
+        cwd: dir,
+        env: {},
+        concurrency: 1,
+        pollIntervalMs: 1000,
+        timeoutMs: 150,
+        outputFormat: 'text',
+        models: [],
+      },
+      { prompt: '', systemPrompt: '', env: {} },
+    );
+    expect(outcome.status).toBe('failed');
+    expect(outcome.error).toBe('Timed out after 150ms');
+  });
+
   async function streamOutcome(stream: string) {
     const dir = await mkdtemp(join(tmpdir(), 'itsaplan-hermes-result-'));
     dirs.push(dir);

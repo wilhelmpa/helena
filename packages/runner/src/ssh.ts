@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { createHash } from 'node:crypto';
 import { chmod, lstat, mkdir, readdir, rm, writeFile, rename } from 'node:fs/promises';
 import { homedir } from 'node:os';
@@ -167,11 +168,13 @@ async function ensureDir(dir: string): Promise<void> {
 // Replaces a file in one step, 0600, never through a link someone left in its place.
 async function writePrivate(dir: string, name: string, content: string): Promise<string> {
   const target = join(dir, name);
-  const temporary = join(dir, `.${name}.tmp`);
-  await rm(temporary, { force: true });
-  await writeFile(temporary, content, { mode: 0o600, flag: 'wx' });
-  await chmod(temporary, 0o600);
-  await rename(temporary, target);
+  const temporary = join(dir, `.${name}.${randomUUID()}.tmp`);
+  try {
+    await writeFile(temporary, content, { mode: 0o600, flag: 'wx' });
+    await rename(temporary, target);
+  } finally {
+    await rm(temporary, { force: true });
+  }
   return target;
 }
 

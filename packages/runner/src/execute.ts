@@ -298,14 +298,21 @@ const CODEX_BYPASS = new Set([
 ]);
 
 export function codexWithoutSandbox(argv: string[]): boolean {
+  const unquote = (value: string) => value.trim().replace(/^(['"])(.*)\1$/, '$2');
   return argv.some((arg, index) => {
     if (CODEX_BYPASS.has(arg)) return true;
-    const next = argv[index + 1];
-    if ((arg === '-s' || arg === '--sandbox') && next === 'danger-full-access') return true;
-    if ((arg === '-c' || arg === '--config') && next !== undefined) {
-      return /^\s*sandbox_mode\s*=\s*"?danger-full-access"?\s*$/.test(next);
-    }
-    return /^--config=\s*sandbox_mode\s*=\s*"?danger-full-access"?\s*$/.test(arg);
+    const sandbox =
+      arg === '-s' || arg === '--sandbox'
+        ? argv[index + 1]
+        : /^(?:--sandbox=|-s=?)(.+)$/.exec(arg)?.[1];
+    if (sandbox && unquote(sandbox) === 'danger-full-access') return true;
+    const config =
+      arg === '-c' || arg === '--config'
+        ? argv[index + 1]
+        : /^(?:--config=|-c=?)(.+)$/.exec(arg)?.[1];
+    if (!config) return false;
+    const value = /^\s*sandbox_mode\s*=\s*(.+)$/.exec(config)?.[1];
+    return value != null && unquote(value) === 'danger-full-access';
   });
 }
 
@@ -621,6 +628,7 @@ function settle(
   const output = hermesResult?.result?.text ?? stdout.trim();
   if (hermesResult?.result && Buffer.byteLength(output, 'utf8') > HERMES_RESULT_LIMIT_BYTES)
     return { status: 'failed', output: '', error: 'Hermes final result exceeds 128 KiB' };
+  if (timedOut) return { status: 'failed', output, error: `Timed out after ${config.timeoutMs}ms` };
   if (code === 0 && hermesResult && !hermesResult.result)
     return { status: 'failed', output: '', error: 'Hermes stream ended without a final result' };
   const result = hermesResult?.result;
@@ -634,8 +642,6 @@ function settle(
         `Hermes reported exit code ${result.exitCode}`,
     };
   if (code === 0) return { status: 'success', output };
-  // The timeout says more about the failure than whatever the command printed.
-  if (timedOut) return { status: 'failed', output, error: `Timed out after ${config.timeoutMs}ms` };
   return {
     status: 'failed',
     output,

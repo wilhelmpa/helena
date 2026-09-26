@@ -11,7 +11,14 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { applySshKeys, gitSshCommand, sshConfig, sshDir, PINNED_KNOWN_HOSTS } from '../ssh';
+import {
+  applySshKeys,
+  gitSshCommand,
+  sshConfig,
+  sshDir,
+  PINNED_KNOWN_HOSTS,
+  writeSshSupport,
+} from '../ssh';
 import {
   cloneSshEnv,
   excludeNested,
@@ -37,6 +44,21 @@ function mode(path: string): number {
 }
 
 describe('SSH keys for git', () => {
+  it('writes complete private files during concurrent support and key deliveries', async () => {
+    const dir = join(root, 'concurrent');
+    await Promise.all(
+      Array.from({ length: 12 }, (_, i) =>
+        i % 2
+          ? writeSshSupport(dir)
+          : applySshKeys(dir, [{ id: 7, label: 'GitHub', updatedAt: 'a', privateKey: KEY(7) }]),
+      ),
+    );
+    expect(readFileSync(join(dir, 'id_7'), 'utf8')).toBe(`${KEY(7)}\n`);
+    expect(readFileSync(join(dir, 'ssh_config'), 'utf8')).toBe(sshConfig(dir));
+    expect(readdirSync(dir).some((name) => name.endsWith('.tmp'))).toBe(false);
+    for (const name of readdirSync(dir)) expect(mode(join(dir, name))).toBe(0o600);
+  });
+
   it('writes exactly the granted keys, 0600 in a 0700 directory, and points git at them', async () => {
     const dir = join(root, 'helena-ssh');
     const env = await applySshKeys(dir, [

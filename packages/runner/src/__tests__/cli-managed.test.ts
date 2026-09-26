@@ -524,6 +524,18 @@ describe("Codex' sandbox", () => {
     expect(codexWithoutSandbox(['exec', '--sandbox', 'danger-full-access'])).toBe(true);
     expect(codexWithoutSandbox(['exec', '-s', 'danger-full-access'])).toBe(true);
     expect(codexWithoutSandbox(['exec', '--config=sandbox_mode="danger-full-access"'])).toBe(true);
+    for (const args of [
+      ['-c', "sandbox_mode='danger-full-access'"],
+      ['-sdanger-full-access'],
+      ['-csandbox_mode=danger-full-access'],
+      ['-csandbox_mode="danger-full-access"'],
+      ["--config=sandbox_mode='danger-full-access'"],
+    ]) {
+      expect(codexWithoutSandbox(['exec', ...args])).toBe(true);
+      expect(() => assertCodexSandbox({}, PRESETS.codex, ['exec', ...args])).toThrow(
+        /agent isolation/,
+      );
+    }
     expect(codexWithoutSandbox(['exec', '-c', 'sandbox_mode="read-only"'])).toBe(false);
     expect(codexWithoutSandbox(['exec', '-c', 'model="danger-full-access"'])).toBe(false);
   });
