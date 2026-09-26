@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
 import { test } from 'node:test';
-import { mock } from 'bun:test';
 import { act, useCallback, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { NextIntlClientProvider } from 'next-intl';
@@ -12,6 +12,11 @@ import type { WebLinkScope as Scope } from '@/utils/webLinkScope';
 import WebLinkScope from '../WebLinkScope';
 import Markdown from '../Markdown';
 import common from '../../../../messages/en/common.json';
+
+// The web suite runs in Bun, but the browser project's ambient types stay Node/DOM.
+const { mock } = createRequire(import.meta.url)('bun:test') as {
+  mock: { module(specifier: string, factory: () => Record<string, unknown>): void };
+};
 
 const opened: [string, Scope][] = [];
 const mountedScopes: (string | null)[] = [];
@@ -72,12 +77,16 @@ for (const route of ['/god/about', '/account/profile']) {
             ? true
             : (dom.window as unknown as Record<string, unknown>)[key],
       });
-    dom.window.matchMedia = ((media: string) => ({
+    dom.window.matchMedia = (media: string): MediaQueryList => ({
       media,
       matches: false,
+      onchange: null,
+      addListener() {},
+      removeListener() {},
       addEventListener() {},
       removeEventListener() {},
-    })) as typeof window.matchMedia;
+      dispatchEvent: () => true,
+    });
     const { default: StandaloneShell } = await import('./StandaloneShell');
     const pushed: string[] = [];
     const root = createRoot(document.getElementById('root')!);
