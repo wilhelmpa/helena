@@ -157,6 +157,18 @@ class BootstrapTest(unittest.TestCase):
         self.assertEqual(len(self.stops()), 1)
         self.assertFalse(self.dropin.exists())
 
+    def test_bootstrap_trigger_cannot_be_left_running_at_plan_or_release(self):
+        self.system.start_sources_held = False
+        with self.assertRaisesRegex(legacy.base.Refuse, 'bootstrap timer'):
+            self.plan()
+        self.system.start_sources_held = True
+        self.plan()
+        self.controller.drain_legacy(0)
+        self.system.start_sources_held = False
+        with self.assertRaisesRegex(legacy.base.Refuse, 'bootstrap timer'):
+            self.controller.release()
+        self.assertTrue(self.dropin.exists())
+
     def test_no_matching_journal_entries_is_valid_but_journal_errors_are_not(self):
         system = legacy.LegacySystem()
         with patch.object(legacy.subprocess, 'run', return_value=subprocess.CompletedProcess([], 1, '', '')):

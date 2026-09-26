@@ -18,6 +18,7 @@ class FakeSystem:
         self.root, self.calls = root, []
         self.head = TARGET
         self.alive = True
+        self.start_sources_held = True
         self.leftovers = False
         self.finish_on_stop = True
         self.fail_stop = False
@@ -37,6 +38,9 @@ class FakeSystem:
                      TimeoutStopUSec='infinity' if self.dropin.exists() else '45s',
                      SendSIGKILL='no' if self.dropin.exists() else 'yes', SendSIGHUP='no', KillMode='mixed')
         return value
+
+    def start_sources_idle(self):
+        return self.start_sources_held
 
     def identity(self, pid):
         return '456'
@@ -267,6 +271,21 @@ class DrainTest(unittest.TestCase):
         with self.assertRaisesRegex(module.Refuse, 'Checkout or bundle changed'):
             self.new_controller().drain(TARGET, 0, before=TARGET)
         self.assertEqual(len(self.stops()), 1)
+
+    def test_competing_bootstrap_start_is_refused_before_signal_and_keeps_pending_stop(self):
+        self.system.start_sources_held = False
+        with self.assertRaisesRegex(module.Refuse, 'bootstrap timer'):
+            self.controller.drain(TARGET, 0)
+        self.assertEqual(self.stops(), [])
+        self.system.start_sources_held = True
+        self.system.finish_on_stop = False
+        with self.assertRaisesRegex(module.Refuse, 'Drain still running'):
+            self.controller.drain(TARGET, 0)
+        self.system.start_sources_held = False
+        with self.assertRaisesRegex(module.Refuse, 'bootstrap timer'):
+            self.new_controller().drain(TARGET, 0)
+        self.assertEqual(len(self.stops()), 1)
+        self.assertTrue(self.dropin.exists())
 
     def test_symlinks_and_open_state_files_are_rejected(self):
         self.controller.file.symlink_to(self.capability)

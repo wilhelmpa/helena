@@ -107,6 +107,16 @@ class System:
             raise Refuse('Runner unit metadata unavailable')
         return result
 
+    def start_sources_idle(self):
+        for unit in ('volition-hermes-bootstrap.timer', 'volition-hermes-bootstrap.service'):
+            output = self.run('systemctl', 'show', unit, '--all', '--no-pager',
+                              '--property=LoadState,ActiveState,Job')
+            value = dict(line.split('=', 1) for line in output.splitlines() if '=' in line)
+            if (value.get('LoadState') not in ('loaded', 'not-found')
+                    or value.get('ActiveState') != 'inactive' or value.get('Job') not in ('', '0')):
+                return False
+        return True
+
     def identity(self, pid):
         text = Path(f'/proc/{pid}/stat').read_text()
         return text[text.rfind(') ') + 2:].split()[19]
@@ -183,7 +193,12 @@ class Drain:
                 and snapshot['ExecMainStatus'] == '0'
                 and self.system.empty_group(self.state['group']))
 
+    def quiet_start_sources(self):
+        if not self.system.start_sources_idle():
+            raise Refuse('Runner bootstrap timer/service is active or unknown; Root must hold its start triggers')
+
     def drain(self, target, seconds, before=None):
+        self.quiet_start_sources()
         if not re.fullmatch(r'[0-9a-f]{40}', target):
             raise Refuse('A full tested target commit is required')
         current = self.system.show()
@@ -264,11 +279,13 @@ class Drain:
                     or current['SendSIGHUP'] != 'no' or current['KillMode'] != 'mixed'
                     or current['ExecStop'] or current['ExecStopPost']):
                 raise Refuse('Effective runner identity or drain policy changed; no stop sent')
+            self.quiet_start_sources()
             self.save('stop-requested')
             self.system.run('systemctl', 'stop', '--no-block', UNIT)
             self.save('waiting')
         deadline = time.monotonic() + seconds
         while True:
+            self.quiet_start_sources()
             self.own_override()
             current = self.system.show()
             if self.unit_hashes(current) != self.state['unitHashes']:
@@ -288,6 +305,7 @@ class Drain:
             time.sleep(0.2)
 
     def ready(self, target):
+        self.quiet_start_sources()
         self.load()
         if not self.state or self.state['target'] != target or self.state['phase'] not in ('drained', 'ready'):
             raise Refuse('This target has not drained')
@@ -313,6 +331,7 @@ class Drain:
         self.save('ready')
 
     def activate(self, target):
+        self.quiet_start_sources()
         self.load()
         if not self.state or self.state['target'] != target or self.state['phase'] not in ('ready', 'released', 'complete'):
             raise Refuse('Target must be explicitly marked ready after deployment')

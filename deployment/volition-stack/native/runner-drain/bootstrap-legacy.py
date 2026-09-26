@@ -75,6 +75,7 @@ class Bootstrap(base.Drain):
         return counts
 
     def plan(self, target, old_bundle):
+        self.quiet_start_sources()
         if not re.fullmatch(r'[0-9a-f]{40}', target or '') or not re.fullmatch(r'[0-9a-f]{64}', old_bundle or ''):
             raise base.Refuse('Full tested target and independently reviewed old bundle SHA256 are required')
         if self.file.exists() or self.dropin.exists() or self.dropin.is_symlink():
@@ -127,6 +128,7 @@ class Bootstrap(base.Drain):
         self.no_inflight()
 
     def release(self):
+        self.quiet_start_sources()
         plan = self.read_plan()
         self.load()
         if not self.state or self.state['phase'] not in ('drained', 'released'):

@@ -11,6 +11,12 @@ this drain. A browser-only release follows its independent service path. The API
 checkout, bundle and database remain available in their previous state until drain
 finishes. Deployments are serialized; running jobs are not globally blocked.
 
+The dedicated `volition-hermes-bootstrap.timer` and bootstrap service must be
+held inactive by Root throughout drain/deployment/activation; record their original
+state and restore only the previously active timer after success. These start
+sources otherwise conflict with a pending stop job. The helper checks them and
+refuses; it does not stop unrelated units or change timer enablement.
+
 Root must run the reviewed deployment script from a stable staged source that is
 not changed during that deployment. Do not fast-forward live before invoking it.
 The script checks the old deployed commit, drains, fast-forwards, builds/installs,

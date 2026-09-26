@@ -27,12 +27,26 @@ peer access as `postgres`. It reads only fixed aggregate counts, process/unit
 metadata, source/bundle bytes and matching stop-history lines. It reads no keys,
 configuration profiles, prompts, task bodies or document content.
 
-1. Verify the full tested target commit includes the separately reviewed capability
+1. Record `Id,LoadState,ActiveState,SubState,UnitFileState,Job` for the dedicated
+   `volition-hermes-bootstrap.timer` and `volition-hermes-bootstrap.service` in the
+   private Root review directory. Preserve that record across retries. Root then
+   stops only those two automatic start sources before planning the runner drain:
+
+   ```sh
+   sudo systemctl stop volition-hermes-bootstrap.timer volition-hermes-bootstrap.service
+   ```
+
+   The existing timer can otherwise issue `start` while the runner is draining and
+   cancel its stop job. The operator refuses an active/unknown timer or bootstrap
+   service before planning, before stop dispatch, while waiting and before release.
+   It never stops or re-enables these units itself. Keep them stopped until the new
+   runner is verified; do not change their enabled/disabled configuration.
+2. Verify the full tested target commit includes the separately reviewed capability
    core. Record the old live HEAD and an independently checked SHA256 of the actual
    root-owned `packages/runner/dist/cli.js`. Source and bundle must still be the
    versions used by the current process; the operator also rejects a bundle whose
    mtime is newer than its Linux process start. Keep the old deployed marker.
-2. Prepare a durable plan, substituting the exact full tested target and old bundle
+3. Prepare a durable plan, substituting the exact full tested target and old bundle
    digest. Review its IDs, hashes and counts before the next command:
 
    ```sh
@@ -40,7 +54,7 @@ configuration profiles, prompts, task bodies or document content.
      --target <full-tested-target-sha> --old-bundle-sha256 <reviewed-old-bundle-sha256>
    ```
 
-3. Drain once. The operator verifies the pinned source, bundle, PID/start ticks,
+4. Drain once. The operator verifies the pinned source, bundle, PID/start ticks,
    InvocationID and unit files again, installs its own reserved runtime override,
    and verifies effective SIGINT, infinite stop timeout, no SIGKILL/SIGHUP,
    `KillMode=mixed` and no ExecStop hooks. The stop intent is durably written before
@@ -54,13 +68,13 @@ configuration profiles, prompts, task bodies or document content.
    infinite timeout intact. Repeat the same command to observe completion: it
    cannot dispatch another stop. `stop-requested` without a stop job is ambiguous;
    inspect it without resending a signal, canceling the job or deleting state.
-4. Verify `status` is `drained`. Successful completion requires `inactive/dead`,
+5. Verify `status` is `drained`. Successful completion requires `inactive/dead`,
    the original nonempty InvocationID, MainPID/ControlPID zero, no systemd job,
    successful exit code zero and no processes anywhere in the captured cgroup.
    Claimed runs, streaming/previously claimed pending chats, claimed runtime
    requests and claimed reflections must all be zero. Fresh unclaimed queued work
    is counted separately and stays queued for the new runner.
-5. Explicitly release only the exact owned runtime override while the old source
+6. Explicitly release only the exact owned runtime override while the old source
    and bundle are still unchanged:
 
    ```sh
@@ -70,12 +84,17 @@ configuration profiles, prompts, task bodies or document content.
    This command starts nothing. It rechecks process/cgroup and database state,
    records `released` durably, removes only its byte-identical file and reloads
    systemd. A crash after intent or unlink is safe to retry before source changes.
-6. Root may now fast-forward/build/deploy the exact tested capability release via
+7. Root may now fast-forward/build/deploy the exact tested capability release via
    the established deploy path. The old runner is already inactive, so its ordinary
    restart must only start the new bundle. Verify the new live HEAD/deployed marker,
    API readiness, fresh runner InvocationID and its real capability JSON containing
    `version:1`, current PID/startTicks and `phase:running`. Confirm queued work resumes.
    Enable the separate normal graceful deploy hook only after this bootstrap.
+8. Restore the dedicated timer only if the recorded prior state was active, after
+   the new runner and final deployment have passed verification. Leave a previously
+   inactive timer inactive. Do not replay the one-shot bootstrap service yourself.
+   On failure retain the trigger hold and report it explicitly; it must not be
+   silently forgotten or restored while the runner stop is still pending.
 
 Never remove the override during `prepared`, `stop-requested` or `waiting` to make
 an error disappear. Never invoke the new normal helper against an incapable old
