@@ -28,7 +28,7 @@ case "$kind" in
     workdir=$HOME
     ;;
   codex)
-    command=("$HOME/.local/bin/codex")
+    command=(/usr/local/bin/codex)
     workdir=$HOME
     ;;
   local-qwen36 | local-qwen38)
@@ -47,7 +47,7 @@ case "$kind" in
     # Codex's own AGENTS.md discovery walks up from the working directory; no
     # flag equivalent to Claude Code's --add-dir was found for also handing it
     # ~/volition/CLAUDE.md specifically (see the branch report's open items).
-    command=("$HOME/.local/bin/codex")
+    command=(/usr/local/bin/codex)
     workdir=$dev_clone
     ;;
   *)

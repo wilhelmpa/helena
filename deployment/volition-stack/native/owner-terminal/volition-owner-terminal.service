@@ -50,7 +50,7 @@ UMask=0077
 #    setuid-root exec (sudo) can gain even without NoNewPrivileges, which would
 #    have the same effect.
 #  - ProtectHome is left unset: this *is* wilhelmpa's home directory service --
-#    ~/.local/bin/claude, ~/.local/bin/codex, ~/volition/plan and the stored
+#    ~/.local/bin/claude, ~/volition/plan and the stored
 #    Claude/Codex login state all live under it, and ProtectHome=yes hides /home
 #    even from its own owner.
 # What is still worth restricting -- resource limits, the socket's own

@@ -53,22 +53,21 @@ test('native state rejects unknown kinds, traversal, symlinks and accessible fil
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
-test('launcher executes installed tool-capable Codex with per-tab state and environment-only capability', async () => {
+for (const kind of Object.keys(LOCAL_MODELS)) test(`${kind} launches managed Codex with per-tab state and environment-only capability`, async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'local-terminal-launch-'));
-  const kind = 'local-qwen36';
   try {
     await prepareLocalModel(root, kind, 'main', 'synthetic-proof', 'session-a', async () => Response.json({ token: 'synthetic-capability', model: LOCAL_MODELS[kind], expiresAt: Date.now() / 1000 + 300 }));
     const launches = [];
     const spawnImpl = (...args) => { launches.push(args); return {}; };
     await launchLocalCodex(kind, 'main', { runtimeRoot: root, ownerHome: root, spawnImpl });
     const [binary, args, options] = launches[0];
-    assert.equal(binary, path.join(root, '.local/bin/codex'));
+    assert.equal(binary, '/usr/local/bin/codex');
     assert.ok(args.includes('--no-daemon'));
     assert.ok(!args.includes('resume'));
     assert.ok(args.join(' ').includes('wire_api="responses"'));
     assert.ok(!args.join(' ').includes('synthetic-capability'));
     assert.equal(options.env.HELENA_OWNER_LOCAL_TOKEN, 'synthetic-capability');
-    assert.equal(options.env.CODEX_HOME, path.join(root, '.local/state/helena-owner-terminal/local-qwen36-main/codex'));
+    assert.equal(options.env.CODEX_HOME, path.join(root, `.local/state/helena-owner-terminal/${kind}-main/codex`));
     await mkdir(path.join(options.env.CODEX_HOME, 'sessions/2026'), { recursive: true });
     await launchLocalCodex(kind, 'main', { runtimeRoot: root, ownerHome: root, spawnImpl });
     assert.deepEqual(launches[1][1].slice(-2), ['resume', '--last']);

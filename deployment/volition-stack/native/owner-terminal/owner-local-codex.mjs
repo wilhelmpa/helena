@@ -18,7 +18,7 @@ export async function launchLocalCodex(kind, name, {
   const history = await readdir(path.join(codexHome, 'sessions')).catch(() => []);
   const args = localCodexArguments(kind);
   if (history.length) args.push('resume', '--last');
-  const child = spawnImpl(path.join(ownerHome, '.local/bin/codex'), args, {
+  const child = spawnImpl('/usr/local/bin/codex', args, {
     stdio: 'inherit',
     env: { ...process.env, CODEX_HOME: codexHome, HELENA_OWNER_LOCAL_TOKEN: state.token },
   });
