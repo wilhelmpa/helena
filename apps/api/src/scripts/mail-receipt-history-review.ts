@@ -15,6 +15,7 @@ import {
   internalDateOf,
   MAX_BATCH_BYTES,
 } from './mail-receipt-history';
+import { assertHistoryMailbox, fetchReceiptHistorySource } from './mail-receipt-source';
 
 const DIRECTORY_FLAGS = constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW;
 const FILE_FLAGS = constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW;
@@ -123,9 +124,6 @@ async function checkedInput(account: SyncAccount, value: unknown, input: ReviewI
   const checked = await checkedReceiptHistoryManifest(account, value);
   if (checked.manifest.projectKey !== input.projectKey || checked.manifest.folder !== input.folder)
     throw new HistoryError('Review project or folder does not match the inspected manifest.');
-  const uids = checked.manifest.candidates.map((candidate) => candidate.uid);
-  if (new Set(uids).size !== uids.length)
-    throw new HistoryError('The inspected manifest contains duplicate UIDs.');
   return checked.manifest;
 }
 
@@ -143,14 +141,7 @@ export async function exportReceiptHistoryReview(
   const messages: { uid: number; sha256: string; dateStatus: string }[] = [];
   let fetchedBytes = 0;
   let writtenBytes = 0;
-  const checkMailbox = () => {
-    if (
-      !client.mailbox ||
-      client.mailbox.path !== manifest.folder ||
-      String(client.mailbox.uidValidity) !== manifest.uidValidity
-    )
-      throw new HistoryError('Provider folder or UID validity changed; inspect again.');
-  };
+  const checkMailbox = () => assertHistoryMailbox(client, manifest);
   const checkOutputDirectory = async () => {
     const current = await openDirectory(input.outputDir).catch(() => {
       throw new HistoryError('Review output directory changed during export.');
@@ -191,40 +182,15 @@ export async function exportReceiptHistoryReview(
     directory = await privateOutputDirectory(input.outputDir);
     await write('inspected-manifest.json', JSON.stringify(manifest, null, 2) + '\n');
     for (const candidate of manifest.candidates) {
-      const headers = await client.fetchAll(
-        String(candidate.uid),
-        { uid: true, size: true },
-        { uid: true },
+      const source = await fetchReceiptHistorySource(
+        client,
+        manifest,
+        candidate.uid,
+        MAX_BATCH_BYTES - fetchedBytes,
+        MAX_RECEIPT_BYTES,
       );
-      const header = headers[0];
-      if (
-        headers.length !== 1 ||
-        header?.uid !== candidate.uid ||
-        !header.size ||
-        header.size > MAX_RECEIPT_BYTES ||
-        fetchedBytes + header.size > MAX_BATCH_BYTES
-      )
+      if (!source)
         throw new HistoryError(`Original unavailable or exceeds limits for UID ${candidate.uid}.`);
-      const sources = await client.fetchAll(
-        String(candidate.uid),
-        {
-          uid: true,
-          source: { maxLength: Math.min(MAX_RECEIPT_BYTES, MAX_BATCH_BYTES - fetchedBytes) + 1 },
-          internalDate: true,
-        },
-        { uid: true },
-      );
-      const source = sources[0];
-      if (
-        sources.length !== 1 ||
-        source?.uid !== candidate.uid ||
-        !source.source ||
-        source.source.length > MAX_RECEIPT_BYTES ||
-        fetchedBytes + source.source.length > MAX_BATCH_BYTES
-      )
-        throw new HistoryError(
-          `Provider source unavailable or exceeds limits for UID ${candidate.uid}.`,
-        );
       fetchedBytes += source.source.length;
       if (sha256(source.source) !== candidate.sha256)
         throw new HistoryError(`Original changed for UID ${candidate.uid}.`);

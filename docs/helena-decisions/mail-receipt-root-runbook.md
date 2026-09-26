@@ -1,7 +1,7 @@
 # Mail receipts: root execution checklist
 
-Source review: prepared queue `5e667436`, September 26, 2026, plus the accompanying history
-integrity fix and private review exporter. This checklist is preparation, not live evidence. Only the root orchestrator
+Source review: prepared queue `072fb36f`, September 26, 2026, plus the accompanying
+dry-run binding and bounded historical-source validation. This checklist is preparation, not live evidence. Only the root orchestrator
 runs the live commands after the ordered integration, full gate and deployment. It must not
 deploy the entire prepared queue to obtain these scripts.
 
@@ -82,25 +82,36 @@ Review before apply:
   `extractionWarning` and `missingFacts`. `missingFacts` counts missing amounts only; zero
   does not prove issuer, invoice date, tax or invoice number. Message 7206 retains the warning
   that its linked invoice PDF has not been retrieved. Message 7207 is a separate payment.
-- Dry-run makes no receipt/mail writes or model calls. The ID manifest does not pin raw
-  hashes; retain the report as the reviewed SHA inventory and compare a fresh dry-run if
-  time or source activity intervenes. A source, scope, hash or extraction failure stops apply.
+- Dry-run makes no receipt/mail writes or model calls. Retain the dry-run as the reviewed
+  inventory. Apply requires `--reviewed=<dry-run.json>`
+  and checks its complete account/project/message/thread/attachment/size/SHA inventory before
+  the first receipt write, then checks each source again inside receipt intake. Existing
+  receipt IDs and counts may change through native filing; source changes require a new
+  dry-run and review. Existing receipt reuse also verifies the actual canonical vault file,
+  its project, size and SHA. A source, scope, hash or extraction failure stops apply.
 
-After review and a fresh in-flight check:
+After review, pin the dry-run report as well. Use that same reviewed report for apply and
+rerun. A pre-existing report without `threadId` and file `size` is insufficient; regenerate
+it using the deployed reviewed script. After a fresh in-flight check:
 
 ```bash
+sha256sum "$receipt_review/imported-dry-run.json" > "$receipt_review/imported-review.sha256"
 sha256sum --check "$receipt_review/imported-manifest.sha256"
-run_receipts src/scripts/mail-receipt-backfill.ts \
-  --manifest="$receipt_review/imported-reviewed.json" --apply \
-  > "$receipt_review/imported-apply.json" 2> "$receipt_review/imported-apply.stderr"
+sha256sum --check "$receipt_review/imported-review.sha256"
 run_receipts src/scripts/mail-receipt-backfill.ts \
   --manifest="$receipt_review/imported-reviewed.json" \
+  --reviewed="$receipt_review/imported-dry-run.json" --apply \
+  > "$receipt_review/imported-apply.json" 2> "$receipt_review/imported-apply.stderr"
+sha256sum --check "$receipt_review/imported-review.sha256"
+run_receipts src/scripts/mail-receipt-backfill.ts \
+  --manifest="$receipt_review/imported-reviewed.json" \
+  --reviewed="$receipt_review/imported-dry-run.json" \
   > "$receipt_review/imported-rerun.json" 2> "$receipt_review/imported-rerun.stderr"
 ```
 
 Require `new=0`, `duplicates=0`, and every rerun file to have `status=existing` and a receipt
-ID. Compare `(projectKey, messageId, attachmentId, sha256)` with the reviewed dry-run; compare
-apply receipt IDs with those final mappings. Reconcile distinct new IDs against project
+ID. Compare `(accountId, projectKey, messageId, threadId, attachmentId, size, sha256)`
+with the reviewed dry-run; compare apply receipt IDs with those final mappings. Reconcile distinct new IDs against project
 count deltas. `new` in an apply report is its preflight count, not an atomic insertion count.
 
 Both scripts can complete part of a batch before an error. Preserve the successful rows and
@@ -213,7 +224,9 @@ cmp "$receipt_review/priv-2026-001.apply.json" "$receipt_review/priv-2026-001.re
 ```
 
 Require identical UID/message/receipt mappings and no additional receipt count on rerun.
-The reread verifies provider SHA and UIDVALIDITY, actual stored source SHA after Message-ID
+Inspection, review export and apply bound every provider fetch, require a single matching
+UID and exact declared size, and recheck folder/UIDVALIDITY before and after each read.
+Apply rejects duplicate UIDs. The reread verifies provider SHA and UIDVALIDITY, actual stored source SHA after Message-ID
 deduplication, all selected attachment rows, and actual project scope. Any conflict remains
 an unresolved source; never substitute the old local mail or edit the hash to bypass it.
 Missing Date headers use IMAP INTERNALDATE. Malformed Date headers can still be normalized
@@ -245,3 +258,66 @@ Do not test retention by resetting live mail or shortening the window; private r
 cover preservation. A zero keyword match count proves only that the selected search/window
 is exhausted. Unverified originals, linked PDFs, oversized sources or unusual non-matching
 documents remain explicit gaps; they prevent a claim that all historical receipts are done.
+
+
+## 6. Correct the four reviewed automatic tasks after the mail wave
+
+These are source **message** IDs, not assumed thread or ticket IDs. Root must resolve the
+current mapping from `mail_message.id` through `mail_thread`, `helena_mail_classification`
+and `mail_thread_issue` and retain only IDs, project/account keys and status in the public
+record. Require account 4, project PRIV and exactly the reviewed generated ticket for each
+source. Read the existing classification and ticket metadata before changing it. Stop on
+missing, ambiguous or changed mappings or substantive owner work added since review.
+
+| Source message | Classification correction | Cancellation reason |
+| --- | --- | --- |
+| 7258 | `category: notification`, `needsReply: false` | Generic Dropbox terms/privacy update; no individualized action request. |
+| 7261 | `category: newsletter`, `needsReply: false` | Dify product tutorial/newsletter, excluded from automatic tasks. |
+| 7260 | `category: notification`, `needsReply: false` | TypeSafe sign-in notice, excluded from automatic tasks. |
+| 7262 | `category: notification`, `needsReply: false` | Discord sign-in/new-location notice, excluded from automatic tasks. |
+
+Use the already authenticated owner API or owner UI, one verified mapping at a time:
+
+1. `GET /backend/mail/threads/<resolved-thread-id>/classification` and
+   `GET /backend/issues/<resolved-issue-id>`; check the latest classification still refers
+   to the exact source and ticket, and the ticket still belongs to PRIV.
+2. `GET /backend/projects/PRIV/columns`; select the existing column with
+   `stateType: canceled`. Check its `autoAssignUserId` preserves the current human owner;
+   do not change a column or create a new one for this correction.
+3. `PATCH /backend/mail/threads/<resolved-thread-id>/classification` with the two fields
+   from the table. This writes the existing correction/outcome path. It does not clear the
+   historical `createTask` decision, remove the original action or cancel the ticket.
+4. Before adding a comment, inspect `GET /backend/issues/<resolved-issue-id>/feed` for
+   `mail-review-20260926:<source-message-id>`. If absent, add one plain-text comment through
+   `POST /backend/issues/<resolved-issue-id>/comments`, body
+   `{"body":"mail-review-20260926:<source-message-id>: <reason>. Automatic task canceled after source review; original mail and source links retained."}`.
+   Use no mentions, login URLs, codes or quoted message text.
+5. If the ticket is still open, `PATCH /backend/issues/<resolved-issue-id>` with only
+   `{"columnId":<existing-canceled-column-id>}`. Re-read classification, ticket and source
+   link; require canceled state, preserved human assignee, archive state and description,
+   unchanged source link and one review comment. Already canceled means no status write;
+   completed or independently changed means record the state for individual review.
+
+Do not call the classification POST, classification accept, mailbox reset, deletion or
+bulk replay routes. Native schedules remain intact. Do not reopen sign-in URLs, accept
+terms, or transmit any mail content to TypeSafe or another provider for this correction.
+Keep the historical decision and task action as evidence of the original error; the
+correction and cancellation must remain visible without rewriting that history.
+
+
+## Prepared validation, not live evidence
+
+The isolated source based on `072fb36f` passed 33 targeted API/script tests with 240
+assertions on private PostgreSQL port 65501, including receipt export, original
+EML preservation, concurrent intake, repeat apply, complete-batch preflight rejection,
+source/thread changes, corrupted archived originals, project denial and historical review.
+API typecheck, scoped lint and repository formatting checks passed. Two offline mutations
+removed the review guard and source-fetch bound separately; each made its regression fail.
+The private database is stopped and port 65501 is free. No live inventory, provider read,
+backfill, task correction, deployment or shared full gate was performed by this work.
+
+Private root-readable test logs on Kingston:
+`~/agent-work/mail-receipts-acceptance-tests-final.log` (33/0; then a test-fixture type
+annotation was corrected) and `~/agent-work/mail-receipts-acceptance-checks.log` (final
+API typecheck, lint and formatting, exit 0). The annotation has no runtime effect; the
+7 offline source/review tests also passed again afterward (48 assertions).

@@ -69,7 +69,9 @@ are checked before apply starts. Missing/changed originals or a changed project 
 preflight. Review `missingFacts` and the linked-original warning; unknown values must not
 be presented as verified accounting facts.
 
-With in-flight mail activity checked, run the same command with `--apply`. An interrupted
+With in-flight mail activity checked, retain and hash the reviewed dry-run output, then run
+the same command with `--reviewed=<dry-run.json> --apply`. Apply requires that exact source
+inventory and checks it again at receipt intake. An interrupted
 apply can be repeated. Immediately repeat dry-run: `new` must be zero, and all selected
 originals must map to existing receipt IDs. Record actual counts instead of assuming the
 audit's expected count if a schedule filed mail in the meantime.

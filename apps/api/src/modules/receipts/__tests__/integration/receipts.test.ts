@@ -545,7 +545,8 @@ describe('receipts', () => {
         includeBody: true,
       },
     ];
-    expect(await backfillMailReceipts(manifest)).toMatchObject({
+    const reviewed = await backfillMailReceipts(manifest);
+    expect(reviewed).toMatchObject({
       mode: 'dry-run',
       new: 1,
       originals: 1,
@@ -570,7 +571,10 @@ describe('receipts', () => {
         name.endsWith('.eml'),
       ),
     ).toHaveLength(1);
-    expect(await backfillMailReceipts(manifest, true)).toMatchObject({ new: 0, existing: 1 });
+    expect(await backfillMailReceipts(manifest, true, reviewed)).toMatchObject({
+      new: 0,
+      existing: 1,
+    });
     expect((await http.call<ReceiptDetailView>('POST', `/${first[0]}/extract`)).data).toMatchObject(
       { totalGrossCents: 1200 },
     );
@@ -619,18 +623,15 @@ describe('receipts', () => {
       'does not belong',
     );
     await expect(
-      backfillMailReceipts(
-        [
-          {
-            messageId: mail.messageRowId,
-            accountId,
-            projectKey: 'OTHER',
-            attachmentIds: [],
-            includeBody: true,
-          },
-        ],
-        true,
-      ),
+      backfillMailReceipts([
+        {
+          messageId: mail.messageRowId,
+          accountId,
+          projectKey: 'OTHER',
+          attachmentIds: [],
+          includeBody: true,
+        },
+      ]),
     ).rejects.toThrow('Source scope changed');
     await writeFile(absoluteVaultPath(plans[0]!.vaultPath!), 'changed');
     await expect(intakeMailReceipts(input)).rejects.toThrow('changed after import');

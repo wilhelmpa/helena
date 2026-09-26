@@ -30,6 +30,7 @@ import {
   unrelatedFilename,
 } from './mail-facts';
 import { matchReceipt, unlinkReceipt } from './matching';
+import { assertReviewedMailSource, type ReviewedMailSource } from './mail-review';
 import {
   inMonth,
   receiptDetailView,
@@ -214,6 +215,7 @@ export interface MailReceiptInput {
   actorUserId: string | null;
   attachmentIds?: number[];
   includeBody?: boolean;
+  reviewedSource?: ReviewedMailSource;
 }
 
 export interface MailReceiptPlan {
@@ -226,6 +228,26 @@ export interface MailReceiptPlan {
   bytes?: Uint8Array;
   facts: ExtractedReceipt;
   existingId: number | null;
+}
+
+async function verifiedExistingMailReceipt(
+  target: Project,
+  sha256: string,
+): Promise<number | null> {
+  const [receipt] = await db
+    .select()
+    .from(helenaReceipt)
+    .where(and(eq(helenaReceipt.projectId, target.id), eq(helenaReceipt.sha256, sha256)));
+  if (!receipt) return null;
+  if (!receipt.vaultPath.startsWith(`${projectVaultPath(target.key)}/`))
+    throw new HttpError(409, 'The existing receipt original is outside this project.');
+  const file = await describeVaultFile(
+    projectRoot(target.key),
+    projectRelative(target.key, receipt.vaultPath),
+  );
+  if (file.sha256 !== sha256 || file.sizeBytes !== receipt.size)
+    throw new HttpError(409, 'The existing receipt original changed.');
+  return receipt.id;
 }
 
 /** Reads and validates originals without creating files, receipts or model decisions. */
@@ -274,7 +296,7 @@ export async function prepareMailReceipts(input: MailReceiptInput): Promise<Mail
       throw new HttpError(413, 'A receipt may have at most 25 MB.');
     if (file.sha256 !== attachment.sha256 || file.sizeBytes !== attachment.size)
       throw new HttpError(409, 'The original attachment changed after import.');
-    const existingId = await existingBySha(input.projectId, attachment.sha256);
+    const existingId = await verifiedExistingMailReceipt(target, attachment.sha256);
     const facts = await extractReceiptFile(
       absoluteVaultPath(attachment.vaultPath),
       attachment.filename,
@@ -342,10 +364,16 @@ export async function prepareMailReceipts(input: MailReceiptInput): Promise<Mail
         vaultPath: null,
         bytes,
         facts,
-        existingId: await existingBySha(input.projectId, sha256),
+        existingId: await verifiedExistingMailReceipt(target, sha256),
       });
     }
   }
+  if (input.reviewedSource)
+    assertReviewedMailSource(input.reviewedSource, {
+      accountId: source.message.accountId,
+      threadId: source.message.threadId,
+      originals: plans,
+    });
   return plans;
 }
 
@@ -363,7 +391,7 @@ async function storeMailReceipts(input: MailReceiptInput): Promise<number[]> {
   if (!target) throw new HttpError(404, 'Project not found');
   const ids = new Set<number>();
   for (const plan of plans) {
-    const existing = await existingBySha(input.projectId, plan.sha256);
+    const existing = await verifiedExistingMailReceipt(target, plan.sha256);
     if (existing) {
       ids.add(existing);
       continue;

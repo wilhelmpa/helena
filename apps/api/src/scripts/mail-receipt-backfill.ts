@@ -2,6 +2,7 @@ import { db, mailMessage, mailThread, project } from '@repo/db';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { intakeMailReceipts, prepareMailReceipts } from '#modules/receipts/receipts';
+import { assertReviewedMailSource } from '#modules/receipts/mail-review';
 
 const Entry = z
   .object({
@@ -13,8 +14,50 @@ const Entry = z
   })
   .strict();
 
-export async function backfillMailReceipts(manifest: unknown, apply = false) {
+const Review = z.object({
+  mode: z.literal('dry-run'),
+  reports: z
+    .array(
+      z.object({
+        messageId: z.number().int().positive(),
+        accountId: z.number().int().positive(),
+        projectKey: z.string(),
+        threadId: z.number().int().positive(),
+        files: z
+          .array(
+            z.object({
+              attachmentId: z.number().int().positive().nullable(),
+              sha256: z.string().regex(/^[a-f0-9]{64}$/),
+              size: z.number().int().positive(),
+            }),
+          )
+          .min(1),
+      }),
+    )
+    .min(1),
+});
+
+export async function backfillMailReceipts(manifest: unknown, apply = false, reviewed?: unknown) {
   const entries = z.array(Entry).min(1).parse(manifest);
+  const review = reviewed === undefined ? null : Review.parse(reviewed);
+  if (apply && !review) throw new Error('Apply requires a reviewed dry-run report.');
+  if (new Set(entries.map((entry) => entry.messageId)).size !== entries.length)
+    throw new Error('The manifest contains duplicate message IDs.');
+  if (
+    review &&
+    (review.reports.length !== entries.length ||
+      new Set(review.reports.map((report) => report.messageId)).size !== entries.length ||
+      entries.some(
+        (entry) =>
+          !review.reports.some(
+            (report) =>
+              report.messageId === entry.messageId &&
+              report.accountId === entry.accountId &&
+              report.projectKey === entry.projectKey,
+          ),
+      ))
+  )
+    throw new Error('The reviewed dry-run does not match this manifest scope.');
   const seen = new Set<string>();
   const prepared = [];
   let existing = 0;
@@ -24,6 +67,7 @@ export async function backfillMailReceipts(manifest: unknown, apply = false) {
     const [source] = await db
       .select({
         teamId: mailMessage.teamId,
+        threadId: mailMessage.threadId,
         accountId: mailMessage.accountId,
         projectId: project.id,
         projectKey: project.key,
@@ -34,6 +78,14 @@ export async function backfillMailReceipts(manifest: unknown, apply = false) {
       .where(eq(mailMessage.id, entry.messageId));
     if (!source || source.accountId !== entry.accountId || source.projectKey !== entry.projectKey)
       throw new Error(`Source scope changed for message ${entry.messageId}.`);
+    const expected = review?.reports.find((report) => report.messageId === entry.messageId);
+    const reviewedSource = expected
+      ? {
+          accountId: expected.accountId,
+          threadId: expected.threadId,
+          originals: expected.files,
+        }
+      : undefined;
     const input = {
       teamId: source.teamId,
       projectId: source.projectId,
@@ -41,9 +93,17 @@ export async function backfillMailReceipts(manifest: unknown, apply = false) {
       actorUserId: null,
       attachmentIds: entry.attachmentIds,
       includeBody: entry.includeBody,
+      reviewedSource,
     };
     const plans = await prepareMailReceipts(input);
     if (!plans.length) throw new Error(`No original found for message ${entry.messageId}.`);
+    const checkedSource = {
+      accountId: source.accountId,
+      threadId: source.threadId,
+      originals: plans,
+    };
+    if (reviewedSource) assertReviewedMailSource(reviewedSource, checkedSource);
+    input.reviewedSource = checkedSource;
     const files = plans.map((plan) => {
       const key = `${source.projectId}:${plan.sha256}`;
       const status = plan.existingId ? 'existing' : seen.has(key) ? 'duplicate' : 'new';
@@ -54,13 +114,14 @@ export async function backfillMailReceipts(manifest: unknown, apply = false) {
       return {
         attachmentId: plan.attachmentId,
         sha256: plan.sha256,
+        size: plan.size,
         status,
         receiptId: plan.existingId,
         amountFound: plan.facts.grossCents !== null,
         extractionWarning: plan.facts.extractionError,
       };
     });
-    prepared.push({ entry, input, files });
+    prepared.push({ entry, input, files, threadId: source.threadId });
   }
   const reports = [];
   for (const item of prepared) {
@@ -69,6 +130,7 @@ export async function backfillMailReceipts(manifest: unknown, apply = false) {
       messageId: item.entry.messageId,
       accountId: item.entry.accountId,
       projectKey: item.entry.projectKey,
+      threadId: item.threadId,
       files: item.files,
       receiptIds,
     });
@@ -88,13 +150,24 @@ export async function backfillMailReceipts(manifest: unknown, apply = false) {
 if (import.meta.main) {
   const args = process.argv.slice(2);
   const manifest = args.find((arg) => arg.startsWith('--manifest='))?.slice('--manifest='.length);
-  if (!manifest || args.some((arg) => arg !== '--apply' && !arg.startsWith('--manifest=')))
+  const reviewed = args.find((arg) => arg.startsWith('--reviewed='))?.slice('--reviewed='.length);
+  if (
+    !manifest ||
+    args.some(
+      (arg) =>
+        arg !== '--apply' && !arg.startsWith('--manifest=') && !arg.startsWith('--reviewed='),
+    )
+  )
     throw new Error(
-      'Usage: bun src/scripts/mail-receipt-backfill.ts --manifest=<reviewed.json> [--apply]',
+      'Usage: bun src/scripts/mail-receipt-backfill.ts --manifest=<reviewed.json> [--reviewed=<dry-run.json>] [--apply]',
     );
   console.log(
     JSON.stringify(
-      await backfillMailReceipts(await Bun.file(manifest).json(), args.includes('--apply')),
+      await backfillMailReceipts(
+        await Bun.file(manifest).json(),
+        args.includes('--apply'),
+        reviewed ? await Bun.file(reviewed).json() : undefined,
+      ),
       null,
       2,
     ),
