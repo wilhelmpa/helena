@@ -31,14 +31,10 @@ import { createTaskFromThread } from '#modules/mail/threads/filing';
 import { moveThread } from '#modules/mail/threads/move';
 import { mailTriageConfig, type MailTriageConfig } from './config';
 import { isTkSender } from './tk';
+import { taskEligibility } from './task-policy';
 
-// The mail classifier (docs/helena-decisions/decisions.md §5): for every new inbox mail of a
-// team whose class "Mail einordnen" is on, one request to the decision model with five
-// questions — the project, the kind of mail, the priority, whether it needs a reply, whether
-// it asks for something to be done — and then what the owner configured: a project
-// suggestion or move, a task (suggested or created), a hand-over to an agent, the invoice's
-// attachments as receipts. Below the threshold nothing is acted on; the answers stay visible
-// as "unsicher", and the owner's corrections go back to the decision log.
+// Task eligibility follows the application policy; invoice filing is independent of it.
+// Uncertain task decisions stay visible for review in the project's inbox.
 
 const BATCH = 20;
 const MAX_PER_RUN = 200;
@@ -220,28 +216,31 @@ export async function classifyMessage(
       text: message.message.textBody,
       attachments: attachments.map((a) => a.filename),
     }),
-    questions: mailQuestions(projects),
+    questions: mailQuestions(projects, message.thread.projectId),
     subject: `mail:${messageId}`,
     projectId: message.thread.projectId,
   });
   if (outcome.status === 'off') return null;
   const answers = Object.fromEntries(
-    ['project', 'category', 'priority', 'needs_reply', 'create_task'].map((id) => [
-      id,
-      answerOf(outcome, id),
-    ]),
+    ['project', 'category', 'priority', 'needs_reply', 'create_task', 'task_eligibility'].map(
+      (id) => [id, answerOf(outcome, id)],
+    ),
   ) as Record<string, MailClassificationAnswer>;
   const tkSender = isTkSender(message.message.fromAddress);
   if (tkSender) {
     answers.priority = { choice: 'high', confidence: 1, decided: true };
-    answers.create_task = { choice: 'yes', confidence: 1, decided: true };
-  } else if (answers.category.decided && answers.category.choice === 'advertising') {
+  }
+  if (
+    answers.category.decided &&
+    ['advertising', 'newsletter'].includes(answers.category.choice ?? '')
+  ) {
     // A model can mark spam/phishing as urgent and actionable. Never create an
-    // automatic task or reply suggestion for a confidently identified advertisement.
-    answers.priority = { choice: 'low', confidence: 1, decided: true };
+    // automatic task or reply suggestion for a confidently identified advertisement/newsletter.
+    if (!tkSender) answers.priority = { choice: 'low', confidence: 1, decided: true };
     answers.create_task = { choice: 'no', confidence: 1, decided: true };
     answers.needs_reply = { choice: 'no', confidence: 1, decided: true };
   }
+  const eligibleTask = taskEligibility(answers, tkSender);
   const decided = (id: string) => (answers[id]!.decided ? answers[id]!.choice : null);
   const projectChoice = decided('project');
   const projectId =
@@ -251,13 +250,11 @@ export async function classifyMessage(
   const category = decided('category');
   const priority = decided('priority');
   const needsReply = decided('needs_reply');
-  const createTask = decided('create_task');
   const anyDecided = Object.values(answers).some((answer) => answer.decided);
-  const status = tkSender
-    ? 'classified'
-    : outcome.answers.project?.choice == null
+  const status =
+    outcome.answers.project?.choice == null
       ? 'failed'
-      : anyDecided
+      : eligibleTask !== null && anyDecided
         ? 'classified'
         : 'unsure';
   const values = {
@@ -271,7 +268,7 @@ export async function classifyMessage(
     priority:
       priority && (MAIL_PRIORITIES as readonly string[]).includes(priority) ? priority : null,
     needsReply: needsReply === null ? null : needsReply === 'yes',
-    createTask: createTask === null ? null : createTask === 'yes',
+    createTask: eligibleTask,
     answers,
     error: status === 'failed' ? (outcome.error ?? outcome.status) : null,
   };
@@ -300,6 +297,14 @@ export async function classifyMessage(
     .returning();
   if (!row) return null;
   if (status === 'classified') await act(row, message.thread, config, actorUserId);
+  else if (status === 'unsure') {
+    const receiptAction = await fileReceipts(row, message.thread.projectId, config, actorUserId);
+    if (receiptAction)
+      await db
+        .update(helenaMailClassification)
+        .set({ actions: [receiptAction] })
+        .where(eq(helenaMailClassification.id, row.id));
+  }
   return classificationView(row.id);
 }
 
@@ -425,7 +430,7 @@ export async function retryReceiptFiling(
       and(
         eq(helenaMailClassification.teamId, teamId),
         eq(helenaMailClassification.category, 'invoice'),
-        eq(helenaMailClassification.status, 'classified'),
+        inArray(helenaMailClassification.status, ['classified', 'unsure']),
         isNull(mailMessage.deletedAt),
         eq(mailAccount.enabled, true),
         sql`${mailAccount.credentialId} IS NOT NULL`,
@@ -577,6 +582,7 @@ export async function runProjectTriage(
       failed:
         receiptRetries.failed +
         results.filter((item) => item.status === 'failed' || item.actionFailed).length,
+      reviewRequired: results.filter((item) => item.status === 'unsure').length,
       results,
     };
   });

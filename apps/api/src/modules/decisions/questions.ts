@@ -1,4 +1,5 @@
 import type { DecisionOption, DecisionQuestion } from '@helena/sdk';
+import { taskEligibilityQuestion } from '#modules/mail-triage/task-policy';
 
 // The questions Helena's own decision classes ask (docs/helena-decisions/decisions.md §4–§7).
 // The live features and the evals build them here, so an eval measures exactly what the
@@ -101,7 +102,7 @@ export function projectOptionId(key: string): string {
   return `p:${key.toLowerCase()}`;
 }
 
-export function mailQuestions(projects: MailProjectOption[]) {
+export function mailQuestions(projects: MailProjectOption[], taskProjectId: number | null = null) {
   const projectOptions: DecisionOption[] = [
     ...projects.map((project) => ({
       id: projectOptionId(project.key),
@@ -135,6 +136,7 @@ export function mailQuestions(projects: MailProjectOption[]) {
         'Does this mail ask its recipient to do something beyond replying (pay, deliver, ' +
         'prepare, check, sign, book, fix)?',
     },
+    task_eligibility: taskEligibilityQuestion(taskProjectId),
   } satisfies Record<string, DecisionQuestion>;
 }
 

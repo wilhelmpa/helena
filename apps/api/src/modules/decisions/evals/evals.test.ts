@@ -12,7 +12,7 @@ import { ROUTER_EVAL } from './router';
 
 const SETS: [name: string, set: DecisionEvalSet, size: number][] = [
   ['router', ROUTER_EVAL, 40],
-  ['mail', MAIL_EVAL, 40],
+  ['mail', MAIL_EVAL, 46],
   ['receipts', RECEIPT_EVAL, 25],
   ['generic', GENERIC_EVAL, 24],
 ];

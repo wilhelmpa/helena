@@ -10,6 +10,7 @@ export const TriageBatchResponse = t.Object({
   receiptRetries: t.Number(),
   hasMore: t.Boolean(),
   failed: t.Number(),
+  reviewRequired: t.Number(),
   results: t.Array(
     t.Object({
       messageId: t.Number(),
