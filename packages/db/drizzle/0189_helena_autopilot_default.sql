@@ -1,0 +1,1 @@
+ALTER TABLE "project" ALTER COLUMN "autopilot_level" SET DEFAULT 3;

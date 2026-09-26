@@ -1317,6 +1317,13 @@
       "when": 1790382651557,
       "tag": "0188_helena_chat_via",
       "breakpoints": true
+    },
+    {
+      "idx": 189,
+      "version": "7",
+      "when": 1790430258721,
+      "tag": "0189_helena_autopilot_default",
+      "breakpoints": true
     }
   ]
 }

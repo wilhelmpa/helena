@@ -13,7 +13,7 @@ export const AUTOPILOT_LEVELS = [0, 1, 2, 3] as const;
 
 export type AutopilotLevel = (typeof AUTOPILOT_LEVELS)[number];
 
-export const DEFAULT_AUTOPILOT_LEVEL: AutopilotLevel = 1;
+export const DEFAULT_AUTOPILOT_LEVEL: AutopilotLevel = 3;
 
 export const AUTOPILOT_LEVEL_KEYS: Record<AutopilotLevel, string> = {
   0: 'propose',
@@ -46,12 +46,18 @@ export function effectiveLevel(input: {
   projectLevel: number | null;
   agentLevel: number | null;
   agentRaise?: boolean;
+  defaultLevel?: number;
 }): EffectiveLevel {
   const project = isAutopilotLevel(input.projectLevel) ? input.projectLevel : null;
   const agent = isAutopilotLevel(input.agentLevel) ? input.agentLevel : null;
   if (project === null) {
     return agent === null
-      ? { level: DEFAULT_AUTOPILOT_LEVEL, source: 'default' }
+      ? {
+          level: isAutopilotLevel(input.defaultLevel)
+            ? input.defaultLevel
+            : DEFAULT_AUTOPILOT_LEVEL,
+          source: 'default',
+        }
       : { level: agent, source: 'agent' };
   }
   if (agent === null || agent === project) return { level: project, source: 'project' };

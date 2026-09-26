@@ -169,7 +169,9 @@
     "timezone": "Zona horaria",
     "timezoneHint": "La usan las rutinas, las programaciones de flujos y los pasos de espera que no indican ninguna. La del servidor es {server}.",
     "timezoneServer": "Usar la del servidor",
-    "savedTimezone": "Zona horaria guardada."
+    "savedTimezone": "Zona horaria guardada.",
+    "autopilotDefault": "Nivel predeterminado de Autopilot",
+    "autopilotDefaultHint": "Se aplica a los proyectos nuevos y a los agentes de Inicio sin nivel propio. Los niveles existentes de proyectos y agentes se conservan."
   },
   "authentication": {
     "saved": "Los ajustes de autenticación se han guardado",

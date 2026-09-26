@@ -139,7 +139,7 @@ export const project = pgTable('project', {
   // propose, 1 consequential actions need approval, 2 they act and report and only
   // outward or risky actions need approval, 3 autonomous within the budget. An agent may
   // carry a stricter level of its own (ai_agent.autopilot_level).
-  autopilotLevel: smallint('autopilot_level').notNull().default(1),
+  autopilotLevel: smallint('autopilot_level').notNull().default(3),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 

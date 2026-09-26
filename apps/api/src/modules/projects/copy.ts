@@ -282,6 +282,7 @@ export async function copyProject(
         name: input.name,
         description: input.description ?? '',
         mcpEnabled: defaults.mcpEnabled,
+        autopilotLevel: defaults.autopilotLevel,
         ...sourceFeatures,
       })
       .returning();

@@ -169,7 +169,9 @@
     "timezone": "Zeitzone",
     "timezoneHint": "Gilt für Zeitpläne, Workflow-Zeitpläne und Warte-Schritte, die keine eigene nennen. Die des Servers ist {server}.",
     "timezoneServer": "Die des Servers verwenden",
-    "savedTimezone": "Zeitzone gespeichert."
+    "savedTimezone": "Zeitzone gespeichert.",
+    "autopilotDefault": "Standard-Autopilot-Stufe",
+    "autopilotDefaultHint": "Gilt für neue Projekte und Home-Agenten ohne eigene Stufe. Bestehende Projekt- und Agenteneinstellungen bleiben erhalten."
   },
   "authentication": {
     "saved": "Authentifizierungseinstellungen gespeichert",

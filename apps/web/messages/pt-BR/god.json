@@ -169,7 +169,9 @@
     "timezone": "Fuso horário",
     "timezoneHint": "Usado por rotinas, agendamentos de fluxos e etapas de espera que não indicam nenhum. O do servidor é {server}.",
     "timezoneServer": "Usar o do servidor",
-    "savedTimezone": "Fuso horário salvo."
+    "savedTimezone": "Fuso horário salvo.",
+    "autopilotDefault": "Nível padrão do Autopilot",
+    "autopilotDefaultHint": "Usado em novos projetos e agentes da página inicial sem nível próprio. Os níveis existentes de projetos e agentes são mantidos."
   },
   "authentication": {
     "saved": "Configurações de autenticação salvas",

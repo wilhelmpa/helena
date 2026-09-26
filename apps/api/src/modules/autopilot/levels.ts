@@ -9,6 +9,7 @@ import {
 import { HttpError } from '#shared/lib';
 import { isAgentUser } from '#modules/agents/core/service';
 import { onTemplateRelevantChange } from '#modules/agents/core/template-sync';
+import { getProjectDefaults } from '#modules/settings/service';
 
 // Which Autopilot level applies: the project's, an agent's own stricter one, or an agent's
 // own higher one the owner allowed (see @helena/policy levels.ts).
@@ -40,8 +41,12 @@ export async function resolveLevel(
   const projectLevel = isAutopilotLevel(projectRow?.level) ? projectRow.level : null;
   const agentLevel = isAutopilotLevel(agentRow?.level) ? agentRow.level : null;
   const agentRaise = agentRow?.raise === true;
+  const defaultLevel =
+    projectLevel === null && agentLevel === null
+      ? (await getProjectDefaults()).autopilotLevel
+      : undefined;
   return {
-    ...effectiveLevel({ projectLevel, agentLevel, agentRaise }),
+    ...effectiveLevel({ projectLevel, agentLevel, agentRaise, defaultLevel }),
     projectLevel,
     agentLevel,
     agentRaise,

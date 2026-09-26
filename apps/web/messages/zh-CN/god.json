@@ -169,7 +169,9 @@
     "timezone": "时区",
     "timezoneHint": "例行任务、工作流计划和等待步骤未指定时区时使用。服务器时区为 {server}。",
     "timezoneServer": "使用服务器时区",
-    "savedTimezone": "时区已保存。"
+    "savedTimezone": "时区已保存。",
+    "autopilotDefault": "默认自动驾驶级别",
+    "autopilotDefaultHint": "适用于新项目和未设置自身级别的主页智能体。现有项目和智能体的级别保持不变。"
   },
   "authentication": {
     "saved": "身份验证设置已保存",

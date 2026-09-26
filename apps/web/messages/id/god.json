@@ -169,7 +169,9 @@
     "timezone": "Zona waktu",
     "timezoneHint": "Dipakai rutinitas, jadwal alur kerja, dan langkah tunggu yang tidak menyebutkan zona. Zona server adalah {server}.",
     "timezoneServer": "Pakai zona server",
-    "savedTimezone": "Zona waktu disimpan."
+    "savedTimezone": "Zona waktu disimpan.",
+    "autopilotDefault": "Tingkat Autopilot bawaan",
+    "autopilotDefaultHint": "Digunakan untuk proyek baru dan agen Beranda tanpa tingkat sendiri. Tingkat proyek dan agen yang sudah ada tetap dipertahankan."
   },
   "authentication": {
     "saved": "Pengaturan autentikasi disimpan",

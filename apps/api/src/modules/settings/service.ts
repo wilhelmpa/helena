@@ -1,4 +1,5 @@
 import { getSetting, setSetting } from '@repo/db';
+import { DEFAULT_AUTOPILOT_LEVEL, isAutopilotLevel, type AutopilotLevel } from '@helena/policy';
 
 // The instance settings kept in app_setting: the upload limits and the keyboard
 // shortcuts.
@@ -88,13 +89,13 @@ export function mimeAllowed(contentType: string, allowed: string[]): boolean {
 }
 
 // Instance-wide project defaults (app_setting key 'projects'): what a newly
-// created project starts with. Only the defaults live here — every one of them
-// stays editable per project afterwards, so this decides the starting value and
-// nothing else.
+// created project starts with. Existing project and agent values remain unchanged.
+// Autopilot also uses this default outside projects when an agent has no own level.
 
 const PROJECT_DEFAULTS_SETTING_KEY = 'projects';
 
 export interface ProjectDefaults {
+  autopilotLevel: AutopilotLevel;
   // Whether a new project starts reachable over MCP. On: an instance driven
   // through MCP does not have to remember the per-project toggle. This is a
   // visibility default, not an access grant — a project still only appears to a
@@ -103,13 +104,19 @@ export interface ProjectDefaults {
 }
 
 function defaultProjectDefaults(): ProjectDefaults {
-  return { mcpEnabled: true };
+  return { mcpEnabled: true, autopilotLevel: DEFAULT_AUTOPILOT_LEVEL };
 }
 
 export async function getProjectDefaults(): Promise<ProjectDefaults> {
   const stored = await getSetting<Partial<ProjectDefaults>>(PROJECT_DEFAULTS_SETTING_KEY);
   // Merge over the default so a value written before a field was added stays valid.
-  return { ...defaultProjectDefaults(), ...(stored ?? {}) };
+  return {
+    ...defaultProjectDefaults(),
+    ...(stored ?? {}),
+    autopilotLevel: isAutopilotLevel(stored?.autopilotLevel)
+      ? stored.autopilotLevel
+      : DEFAULT_AUTOPILOT_LEVEL,
+  };
 }
 
 export async function setProjectDefaults(

@@ -169,7 +169,9 @@
     "timezone": "Time zone",
     "timezoneHint": "Routines, workflow schedules and wait steps use it when they name none. The server's is {server}.",
     "timezoneServer": "Use the server's",
-    "savedTimezone": "Time zone saved."
+    "savedTimezone": "Time zone saved.",
+    "autopilotDefault": "Default Autopilot level",
+    "autopilotDefaultHint": "Used for new projects and Home agents without their own level. Existing project and agent levels stay unchanged."
   },
   "authentication": {
     "saved": "Authentication settings saved",

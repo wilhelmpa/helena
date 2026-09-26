@@ -10,7 +10,10 @@ export const StorageSettingsSchema = t.Object({
 
 export const ProjectDefaultsSchema = t.Object({
   mcpEnabled: t.Boolean(),
+  autopilotLevel: t.Union([t.Literal(0), t.Literal(1), t.Literal(2), t.Literal(3)]),
 });
+
+export const ProjectDefaultsPatchSchema = t.Partial(ProjectDefaultsSchema);
 
 export const RunResumeSettingsSchema = t.Object({
   maxResumes: t.Number({

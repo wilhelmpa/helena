@@ -352,7 +352,8 @@ describe('browser gateway', () => {
         context: { origin: 'https://shop.example', target: 'f1e5', formAction: null },
         ...body,
       });
-    // Helena's Autopilot decides: at the project's default level 1 a click that writes goes
+    await asOwner.projects({ projectKey: 'MKT' }).autopilot.put({ level: 1 });
+    // Helena's Autopilot decides: at the explicitly selected level 1 a click that writes goes
     // ahead, one that sends needs the owner, who gets a card in Freigaben.
     const write = await call({ category: 'write' });
     expect(write.status).toBe(200);

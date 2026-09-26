@@ -27,10 +27,12 @@ import { autopilotPolicyEvaluator } from '#modules/autopilot/evaluator';
 
 const WS = '/srv/work/mkt';
 
-async function setup() {
+async function setup(initialLevel: number | null = 1) {
   const owner = await signUpTestUser({ name: 'Owner' });
   const asOwner = authedApi(owner.cookie);
   await asOwner.projects.post({ key: 'MKT', name: 'Marketing' });
+  if (initialLevel !== null)
+    await asOwner.projects({ projectKey: 'MKT' }).autopilot.put({ level: initialLevel });
   const view = (await asOwner.projects({ projectKey: 'MKT' }).get()).data!;
   const created = await createAgent(asOwner, 'MKT', {
     name: 'Ext Bot',
@@ -92,10 +94,10 @@ async function comments(asOwner: Api, issueId: number) {
 describe('Autopilot levels', () => {
   beforeEach(resetDb);
 
-  it('starts every project at level 1 and says what each level allows', async () => {
-    const { asOwner } = await setup();
+  it('starts every project at level 3 and says what each level allows', async () => {
+    const { asOwner } = await setup(null);
     const view = (await asOwner.projects({ projectKey: 'MKT' }).autopilot.get()).data!;
-    expect(view.level).toBe(1);
+    expect(view.level).toBe(3);
     const level1 = view.levels.find((entry) => entry.level === 1)!.rules;
     expect(level1.find((rule) => rule.category === 'write')!.outcome).toBe('allow');
     expect(level1.find((rule) => rule.category === 'send')!.outcome).toBe('needs-approval');

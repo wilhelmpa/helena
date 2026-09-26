@@ -117,6 +117,7 @@ export type ProjectDetail = ProjectScaffold &
 // states them before a file is picked; only god mode can change them.
 export interface ProjectDefaults {
   mcpEnabled: boolean;
+  autopilotLevel: 0 | 1 | 2 | 3;
 }
 
 export interface ProvisionedProjectResource {

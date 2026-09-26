@@ -671,6 +671,7 @@ export async function createProject(
         name: input.name,
         description: input.description ?? '',
         mcpEnabled: defaults.mcpEnabled,
+        autopilotLevel: defaults.autopilotLevel,
       })
       .returning();
     await tx.insert(projectMember).values({ projectId: row.id, userId: ownerId, role: 'owner' });

@@ -97,6 +97,7 @@ import { getUpdateStatus } from '#modules/settings/updates';
 import {
   HotkeyCombosSchema,
   ProjectDefaultsSchema,
+  ProjectDefaultsPatchSchema,
   RunResumeSettingsSchema,
   StorageSettingsSchema,
   UpdateStatusSchema,
@@ -456,7 +457,7 @@ export const godRoutes = new Elysia({ name: 'god', detail: { tags: ['God'] } })
   })
 
   .put('/god/project-defaults', ({ body }) => setProjectDefaults(body), {
-    body: ProjectDefaultsSchema,
+    body: ProjectDefaultsPatchSchema,
     response: { 200: ProjectDefaultsSchema, ...errors(400, 401, 403) },
     detail: {
       summary: 'Update project defaults',

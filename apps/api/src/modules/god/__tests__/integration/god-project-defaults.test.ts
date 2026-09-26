@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
 import { resetDb } from '#tests/helpers/db';
 import { addUser, setup } from '../helpers';
+import { createAgent } from '#tests/helpers/agents';
+import { resolveLevel } from '#modules/autopilot/levels';
 
 // The instance-wide project defaults under god mode: what a project starts with
 // when it is created. Only the instance owner may read or change them, and a
@@ -32,6 +34,8 @@ describe('god project defaults', () => {
 
       expect(res.status).toBe(200);
       expect(res.data?.mcpEnabled).toBe(true);
+      expect(res.data?.autopilotLevel).toBe(3);
+      expect(await resolveLevel(null, null)).toMatchObject({ level: 3, source: 'default' });
     });
 
     it('stores a change and reads it back', async () => {
@@ -43,6 +47,54 @@ describe('god project defaults', () => {
       expect(put.status).toBe(200);
       expect(put.data?.mcpEnabled).toBe(false);
       expect(get.data?.mcpEnabled).toBe(false);
+    });
+
+    it('validates all four levels and preserves the configured level on a partial update', async () => {
+      const { god } = await setup();
+      for (const autopilotLevel of [0, 1, 2, 3] as const) {
+        const updated = await god.api.god['project-defaults'].put({ autopilotLevel });
+        expect(updated.status).toBe(200);
+        expect(updated.data?.autopilotLevel).toBe(autopilotLevel);
+      }
+      await god.api.god['project-defaults'].put({ autopilotLevel: 0 });
+      expect(
+        (await god.api.god['project-defaults'].put({ mcpEnabled: false })).data?.autopilotLevel,
+      ).toBe(0);
+      for (const autopilotLevel of [-1, 4, 1.5, '3'])
+        expect(
+          (await god.api.god['project-defaults'].put({ autopilotLevel } as never)).status,
+        ).toBe(400);
+    });
+
+    it('uses the instance level for new projects, copies and Home without changing existing levels', async () => {
+      const { god } = await setup();
+      await god.api.projects.post({ key: 'OLD', name: 'Existing project' });
+      expect((await god.api.projects({ projectKey: 'OLD' }).autopilot.get()).data?.level).toBe(3);
+      await god.api.projects({ projectKey: 'OLD' }).autopilot.put({ level: 1 });
+      await god.api.god['project-defaults'].put({ autopilotLevel: 2 });
+      await god.api.projects.post({ key: 'NEW', name: 'New project' });
+      await god.api
+        .projects({ projectKey: 'OLD' })
+        .copy.post({ key: 'COPY', name: 'Copied project' });
+      expect((await god.api.projects({ projectKey: 'OLD' }).autopilot.get()).data?.level).toBe(1);
+      expect((await god.api.projects({ projectKey: 'NEW' }).autopilot.get()).data?.level).toBe(2);
+      expect((await god.api.projects({ projectKey: 'COPY' }).autopilot.get()).data?.level).toBe(2);
+      expect(await resolveLevel(null, null)).toMatchObject({ level: 2, source: 'default' });
+    });
+
+    it('retains an explicit Home agent level and follows the default only when unset', async () => {
+      const { god } = await setup();
+      await god.api.projects.post({ key: 'HMT', name: 'Home agent test' });
+      const { agent } = (await createAgent(god.api, 'HMT', { name: 'Home', username: 'home' }))
+        .data!;
+      const route = god.api
+        .teams({ teamId: agent.teamId })
+        ['ai-agents']({ agentId: agent.id }).autopilot;
+      await route.put({ level: 1 });
+      await god.api.god['project-defaults'].put({ autopilotLevel: 0 });
+      expect(await resolveLevel(agent.id, null)).toMatchObject({ level: 1, source: 'agent' });
+      await route.put({ level: null });
+      expect(await resolveLevel(agent.id, null)).toMatchObject({ level: 0, source: 'default' });
     });
   });
 

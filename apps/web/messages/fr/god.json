@@ -169,7 +169,9 @@
     "timezone": "Fuseau horaire",
     "timezoneHint": "Utilisé par les routines, les planifications de workflows et les étapes d’attente qui n’en indiquent pas. Celui du serveur est {server}.",
     "timezoneServer": "Utiliser celui du serveur",
-    "savedTimezone": "Fuseau horaire enregistré."
+    "savedTimezone": "Fuseau horaire enregistré.",
+    "autopilotDefault": "Niveau Autopilot par défaut",
+    "autopilotDefaultHint": "Utilisé pour les nouveaux projets et les agents Accueil sans niveau propre. Les niveaux existants des projets et des agents restent inchangés."
   },
   "authentication": {
     "saved": "Paramètres d'authentification enregistrés",
