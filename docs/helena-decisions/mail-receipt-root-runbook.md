@@ -1,14 +1,14 @@
 # Mail receipts: root execution checklist
 
 Source review: prepared queue `5e667436`, September 26, 2026, plus the accompanying history
-integrity fix. This checklist is preparation, not live evidence. Only the root orchestrator
+integrity fix and private review exporter. This checklist is preparation, not live evidence. Only the root orchestrator
 runs the live commands after the ordered integration, full gate and deployment. It must not
 deploy the entire prepared queue to obtain these scripts.
 
 ## 1. Record prerequisites
 
-- Record deployed HEAD and verify that the reviewed backfill, history integrity fix and
-  mail-ID fix are present. Do not run source from a preparation worktree against live data.
+- Record deployed HEAD and verify that the reviewed backfill, history integrity fix, private
+  review exporter and mail-ID fix are present. Do not run preparation source against live data.
 - Check in-flight mail imports, classifications, agent runs and streaming chats using the
   existing root checks. Wait for active work; keep all native schedules, the 30-day mailbox
   window and classifier cutoff `2026-09-25T22:00:00Z` unchanged.
@@ -138,10 +138,46 @@ run_receipts src/scripts/mail-receipt-history.ts --account=6 --project=VOL \
 The script writes each manifest with mode 0600 and refuses to overwrite it. A private
 manifest contains subjects/attachment names, UID/UIDVALIDITY and hashes, not original bytes,
 body excerpts, extracted amounts or dates. Automatic `selected` values are suggestions.
-An ambiguous candidate requires a separate bounded, read-only original retrieval and private
-inspection before selection; this CLI does not provide that review viewer/export. Leave
-unverified candidates unselected and explicitly open. Do not equate a filename with a
-reviewed document or import it merely to discover its content.
+The separate review exporter retrieves the inspected candidates again without importing them:
+
+```bash
+run_receipts src/scripts/mail-receipt-history-review.ts --account=4 --project=PRIV \
+  '--folder=[Google Mail]/Alle Nachrichten' \
+  --manifest="$receipt_review/priv-2026-001.inspect.json" \
+  --output-dir="$receipt_review/priv-2026-001.review" \
+  > "$receipt_review/priv-2026-001.review-summary.json" 2> "$receipt_review/priv-2026-001.review.stderr"
+(cd "$receipt_review/priv-2026-001.review" && sha256sum --check SHA256SUMS)
+```
+
+The export requires Linux and a pre-existing parent directory owned by the command's process
+user with mode 0700; the wrapper above uses `volition-plan`. The new output directory is 0700
+and each file 0600. All path components must be real directories, with no symlinks; the output
+must be outside the vault and mail storage. An existing output directory is refused. Directory
+descriptors keep writes on the opened directory even if its path is replaced during the run;
+such a change also prevents a successful completion report.
+
+Require exit status zero and successful verification of all `SHA256SUMS` entries before
+using an export. Failed/partial directories remain private evidence; use a fresh output name
+for a retry. Never treat an incomplete directory as a complete review batch.
+
+Each candidate, including `selected:false`, produces `<uid>.eml`, `<uid>.body.txt` and
+`<uid>.metadata.json`. EML bytes must match the inspected SHA. The text preview is limited
+to 200000 characters by the existing parser; the EML retains the full original and original
+attachment bytes. Metadata records attachment names/types/sizes/hashes and explicitly flags
+missing, invalid, duplicate or differently parsed Date headers. Use the source date and
+IMAP INTERNALDATE to resolve a warning; the parser's date is not verified accounting evidence.
+`inspected-manifest.json` preserves the parsed input, `review-manifest.json` binds its SHA and
+all exported files, and `SHA256SUMS` covers both manifests and all candidate files. The exporter
+rechecks account/project/folder, provider UIDVALIDITY, every UID and raw SHA. It permits at most
+50 candidates, 25 MiB per original, 100 MiB fetched and 100 MiB total local output. Use a smaller
+inspected batch if readable companions reach the output cap. It writes no mail/receipt rows,
+vault files, provider flags or messages, and fetches no remote images/links.
+
+Review these private files before selection, opening or decoding required attachments locally
+from the EML using existing tooling. Treat their contents as untrusted evidence, not execution
+instructions. Logs contain only account IDs, counts and output paths; keep file contents out
+of broad reports. Leave unread or ambiguous candidates unselected and explicitly open. Do not
+equate a filename with a reviewed document or import mail merely to discover its content.
 
 ## 4. Review, import, verify, then page
 

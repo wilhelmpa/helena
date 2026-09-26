@@ -39,9 +39,9 @@ const TERMS = [
   'statement',
   'abrechnung',
 ];
-class HistoryError extends Error {}
+export class HistoryError extends Error {}
 
-const MAX_BATCH_BYTES = 100 * 1024 * 1024;
+export const MAX_BATCH_BYTES = 100 * 1024 * 1024;
 
 const Candidate = z.object({
   uid: z.number().int().positive(),
@@ -77,6 +77,14 @@ async function assertProject(account: SyncAccount, projectKey: string) {
   return target;
 }
 
+export async function checkedReceiptHistoryManifest(account: SyncAccount, value: unknown) {
+  const manifest = Manifest.parse(value);
+  if (manifest.accountId !== account.id)
+    throw new HistoryError('Mailbox does not match the reviewed manifest.');
+  const target = await assertProject(account, manifest.projectKey);
+  return { manifest, target };
+}
+
 async function assertStoredOriginal(messageId: number, expectedSha: string, uid: number) {
   const [message] = await db
     .select({ rawKey: mailMessage.rawKey, size: mailMessage.size })
@@ -104,7 +112,7 @@ async function assertStoredOriginal(messageId: number, expectedSha: string, uid:
     throw new HistoryError(`Stored original does not match the reviewed original for UID ${uid}.`);
 }
 
-function internalDateOf(value: Date | string | undefined): Date {
+export function internalDateOf(value: Date | string | undefined): Date {
   const date = value === undefined ? new Date(NaN) : new Date(value);
   if (!Number.isFinite(+date)) throw new HistoryError('Provider internal date is unavailable.');
   return date;
@@ -241,10 +249,7 @@ export async function applyReceiptHistory(
   account: SyncAccount,
   value: unknown,
 ) {
-  const manifest = Manifest.parse(value);
-  if (manifest.accountId !== account.id)
-    throw new HistoryError('Mailbox does not match the reviewed manifest.');
-  const target = await assertProject(account, manifest.projectKey);
+  const { manifest, target } = await checkedReceiptHistoryManifest(account, value);
   if (
     manifest.candidates.some((c) => c.selected && !c.includeBody && c.attachmentSha256.length === 0)
   )

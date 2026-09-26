@@ -111,7 +111,10 @@ attachment metadata and hashes, not body facts or original bytes. These are not 
 recognizable by keywords. Quoted reply discussions are not selected as body receipts.
 Set `selected`, `attachmentSha256` and `includeBody` to match the actual document. Keep the
 provider UID, UID validity and raw SHA unchanged. Retrieve an ambiguous attachment for
-inspection before selecting it. Oversized UIDs are reported separately and remain open.
+inspection before selecting it. The separate `mail-receipt-history-review.ts` exporter in
+the root checklist produces private original EML, body text, attachment metadata, date
+warnings and SHA manifests from inspected candidates without any mail or vault import.
+Oversized UIDs are reported separately and remain open.
 
 Apply the reviewed batch:
 
