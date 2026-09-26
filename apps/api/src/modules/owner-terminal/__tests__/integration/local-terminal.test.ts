@@ -289,7 +289,19 @@ describe('local owner terminal inference', () => {
     for (const patch of [
       { model: 'cloud-model' },
       { tools: [{ type: 'web_search' }] },
+      { tools: [{ type: 'web_search_preview' }] },
+      { tools: [{ type: 'file_search', vector_store_ids: ['outside'] }] },
+      { tools: [{ type: 'code_interpreter', container: { type: 'auto' } }] },
       { tools: [{ type: 'mcp', server_url: 'https://outside.test' }] },
+      {
+        tools: [
+          {
+            type: 'namespace',
+            name: 'multi_agent_v1',
+            tools: [{ type: 'function', name: 'spawn_agent' }],
+          },
+        ],
+      },
       { background: true },
       { previous_response_id: 'outside' },
       { input: [{ type: 'input_image', image_url: 'https://outside.test/image.png' }] },

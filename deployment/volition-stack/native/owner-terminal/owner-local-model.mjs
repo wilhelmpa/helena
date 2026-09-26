@@ -67,6 +67,8 @@ export function localCodexArguments(kind) {
     '--no-daemon', '-m', LOCAL_MODELS[kind],
     '-c', 'model_provider="helena_local"',
     '-c', `model_providers.helena_local={name="Helena local",base_url="${LOCAL_API}/${kind}/v1",wire_api="responses",env_key="HELENA_OWNER_LOCAL_TOKEN",requires_openai_auth=false,supports_websockets=false,request_max_retries=0,stream_max_retries=0,stream_idle_timeout_ms=120000}`,
+    // Local Responses accepts client function/custom tools, not agent namespaces.
+    '-c', 'features.multi_agent=false',
     '-c', 'web_search="disabled"', '-c', 'analytics.enabled=false', '-c', 'feedback.enabled=false',
   ];
 }

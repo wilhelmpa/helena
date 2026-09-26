@@ -41,6 +41,11 @@ if [[ $before == "$after" ]]; then
   exit 0
 fi
 changed() { ! as_owner git -C "$live" diff --quiet "$before" "$after" -- "$@"; }
+api_runtime_changed() {
+  changed apps/api \
+    ':(exclude,glob)apps/api/src/**/__tests__/**' \
+    ':(exclude,glob)apps/api/src/**/*.test.ts'
+}
 restart=()
 
 if changed bun.lock; then
@@ -114,7 +119,7 @@ if changed "${plan_units[@]/#/deployment/volition-stack/native/systemd/}"; then
   systemctl daemon-reload
   restart+=("${plan_units[@]}")
 fi
-if changed apps/api apps/worker packages bun.lock; then
+if changed apps/worker packages bun.lock || api_runtime_changed; then
   restart+=(volition-plan-api.service volition-plan-worker.service)
 fi
 if changed apps/web bun.lock; then
@@ -172,6 +177,12 @@ fi
 if [[ -x /usr/local/libexec/helena-update ]] &&
   changed deployment/volition-stack/native/updates deployment/volition-stack/native/runtimes; then
   "$live/deployment/volition-stack/native/updates/install.sh" --refresh
+fi
+
+# Refresh the installed audit without installing/enabling its timer or applying hardening.
+audit_script=deployment/volition-stack/native/hardening/audit.sh
+if [[ -f /usr/local/libexec/helena-security-audit ]] && changed "$audit_script"; then
+  install -m 0755 -o root -g root "$live/$audit_script" /usr/local/libexec/helena-security-audit
 fi
 
 # A restart ends every open terminal session. The shell script and tmux.conf are read

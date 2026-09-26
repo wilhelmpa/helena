@@ -65,6 +65,7 @@ for (const kind of Object.keys(LOCAL_MODELS)) test(`${kind} launches managed Cod
     assert.ok(args.includes('--no-daemon'));
     assert.ok(!args.includes('resume'));
     assert.ok(args.join(' ').includes('wire_api="responses"'));
+    assert.ok(args.includes('features.multi_agent=false'));
     assert.ok(!args.join(' ').includes('synthetic-capability'));
     assert.equal(options.env.HELENA_OWNER_LOCAL_TOKEN, 'synthetic-capability');
     assert.equal(options.env.CODEX_HOME, path.join(root, `.local/state/helena-owner-terminal/${kind}-main/codex`));
