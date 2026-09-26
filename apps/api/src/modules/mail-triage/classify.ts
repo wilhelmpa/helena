@@ -115,15 +115,18 @@ async function pendingMessages(
   config: MailTriageConfig,
   limit: number,
   attempted: number[],
+  projectId?: number,
 ) {
   const since = config.since ? new Date(config.since) : new Date();
   return db
     .select({ id: mailMessage.id })
     .from(mailMessage)
     .innerJoin(mailAccount, eq(mailAccount.id, mailMessage.accountId))
+    .innerJoin(mailThread, eq(mailThread.id, mailMessage.threadId))
     .where(
       and(
         eq(mailMessage.teamId, teamId),
+        projectId === undefined ? undefined : eq(mailThread.projectId, projectId),
         isNull(mailMessage.deletedAt),
         gte(mailMessage.createdAt, since),
         attempted.length ? notInArray(mailMessage.id, attempted) : undefined,
@@ -184,15 +187,24 @@ export async function classifyMessage(
   config: MailTriageConfig,
   messageId: number,
   actorUserId: string | null,
+  scopeProjectId?: number,
 ): Promise<ClassificationView | null> {
   const [message] = await db
     .select({ message: mailMessage, thread: mailThread, account: mailAccount })
     .from(mailMessage)
     .innerJoin(mailThread, eq(mailThread.id, mailMessage.threadId))
     .innerJoin(mailAccount, eq(mailAccount.id, mailMessage.accountId))
-    .where(and(eq(mailMessage.id, messageId), eq(mailMessage.teamId, teamId)));
+    .where(
+      and(
+        eq(mailMessage.id, messageId),
+        eq(mailMessage.teamId, teamId),
+        scopeProjectId === undefined ? undefined : eq(mailThread.projectId, scopeProjectId),
+      ),
+    );
   if (!message) throw new HttpError(404, 'Mail not found');
-  const projects = await teamProjects(teamId);
+  const projects = (await teamProjects(teamId)).filter(
+    (item) => scopeProjectId === undefined || item.id === scopeProjectId,
+  );
   const attachments = await db
     .select({ filename: mailAttachment.filename })
     .from(mailAttachment)
@@ -330,6 +342,7 @@ async function act(
       if (create && actorUserId) {
         const created = await createTaskFromThread(thread.id, target, actorUserId, {
           assigneeUserId: handTo ? agentUser : undefined,
+          priority: row.priority,
         });
         issueId = created.issueId;
         actions.push({
@@ -400,8 +413,89 @@ export async function classifyPending(): Promise<number> {
   return done;
 }
 
-export async function anyTeamClassifies(): Promise<boolean> {
-  return (await activeTeams()).length > 0;
+export async function runProjectTriage(
+  project: { id: number; teamId: number },
+  maxMessages: number,
+) {
+  const team = (await activeTeams()).find((item) => item.teamId === project.teamId);
+  if (!team) throw new HttpError(409, 'Enable the Mail classification decision class first.');
+  const config = mailTriageConfig((team.config as Record<string, unknown>) ?? {});
+  const accounts = await db
+    .select({ id: mailAccount.id, address: mailAccount.address })
+    .from(mailAccount)
+    .where(
+      and(
+        eq(mailAccount.teamId, project.teamId),
+        eq(mailAccount.projectId, project.id),
+        eq(mailAccount.enabled, true),
+        sql`${mailAccount.credentialId} IS NOT NULL`,
+        config.accountIds.length ? inArray(mailAccount.id, config.accountIds) : undefined,
+      ),
+    );
+  if (!accounts.length)
+    throw new HttpError(409, 'No enabled, connected mailbox selected for this project.');
+  if (!team.actorUserId)
+    throw new HttpError(409, 'Save the Mail classification settings as an owner first.');
+  const scoped = {
+    ...config,
+    accountIds: accounts.map((item) => item.id),
+    project: 'off' as const,
+    agent: 'off' as const,
+    agentId: null,
+  };
+  // The transaction holds only the cross-replica batch lock; classification commits each mail.
+  return db.transaction(async (tx) => {
+    const lock = await tx.execute(
+      sql`select pg_try_advisory_xact_lock(748219, ${project.id}) as acquired`,
+    );
+    if (!lock[0]?.acquired)
+      throw new HttpError(409, 'Mail triage is already running for this project.');
+    const batch = await pendingMessages(project.teamId, scoped, maxMessages, [], project.id);
+    const results: {
+      messageId: number;
+      status: string;
+      issueId: number | null;
+      actionFailed: boolean;
+    }[] = [];
+    for (const message of batch) {
+      try {
+        const result = await classifyMessage(
+          project.teamId,
+          scoped,
+          message.id,
+          team.actorUserId,
+          project.id,
+        );
+        results.push({
+          messageId: message.id,
+          status: result?.status ?? 'skipped',
+          issueId: result?.issueId ?? null,
+          actionFailed: result?.actions.some((action) => action.kind === 'skipped') ?? false,
+        });
+      } catch {
+        results.push({
+          messageId: message.id,
+          status: 'failed',
+          issueId: null,
+          actionFailed: true,
+        });
+      }
+    }
+    const remaining = await pendingMessages(
+      project.teamId,
+      scoped,
+      1,
+      batch.map((item) => item.id),
+      project.id,
+    );
+    return {
+      accounts,
+      processed: results.length,
+      hasMore: remaining.length > 0,
+      failed: results.filter((item) => item.status === 'failed' || item.actionFailed).length,
+      results,
+    };
+  });
 }
 
 export async function classificationView(id: number): Promise<ClassificationView | null> {

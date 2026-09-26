@@ -14,6 +14,7 @@ import {
   helenaMailClassification,
   helenaModelRoute,
   mailThread,
+  mailAccount,
 } from '@repo/db';
 import { eq } from 'drizzle-orm';
 import { publishChatCatalog } from '#modules/agents/chat/service';
@@ -548,6 +549,71 @@ describe('the model router', () => {
 });
 
 describe('the mail classifier', () => {
+  it('runs a native schedule only in its project and excludes disconnected or disabled accounts', async () => {
+    const { asOwner, project, teamId } = await setup();
+    const other = (await asOwner.projects.post({ key: 'FAM', name: 'Family' })).data!;
+    const credentialId = await connection(asOwner, teamId);
+    await switchOn(asOwner, teamId, MAIL_CLASS, credentialId, {
+      config: {
+        task: 'auto',
+        receipts: 'off',
+        since: '2026-01-01T00:00:00Z',
+      },
+    });
+    const mailboxes = await Promise.all([
+      insertMailAccount(teamId, project.id, 'private@example.com'),
+      insertMailAccount(teamId, other.id, 'family@example.com'),
+      insertMailAccount(teamId, project.id, 'disabled@example.com'),
+      insertMailAccount(teamId, project.id, 'disconnected@example.com'),
+    ]);
+    await db
+      .update(mailAccount)
+      .set({ enabled: false })
+      .where(eq(mailAccount.id, mailboxes[2]!.accountId));
+    await db
+      .update(mailAccount)
+      .set({ credentialId: null })
+      .where(eq(mailAccount.id, mailboxes[3]!.accountId));
+    const messages = [];
+    for (const [index, box] of mailboxes.entries()) {
+      messages.push(
+        await insertMessage({
+          teamId,
+          accountId: box.accountId,
+          folderId: box.inboxId,
+          projectId: index === 1 ? other.id : project.id,
+          fromAddress: 'service@tk.de',
+        }),
+      );
+    }
+    // A thread moved away from this mailbox must remain outside this run's reach.
+    await insertMessage({
+      teamId,
+      accountId: mailboxes[0]!.accountId,
+      folderId: mailboxes[0]!.inboxId,
+      projectId: other.id,
+      fromAddress: 'service@tk.de',
+    });
+    const route = asOwner.projects({ projectKey: 'PRIV' })['mail-triage'].run;
+    const run = await route.post({ maxMessages: 5 });
+    expect(run.status).toBe(200);
+    expect(run.data).toMatchObject({
+      processed: 1,
+      failed: 0,
+      hasMore: false,
+      accounts: [{ id: mailboxes[0]!.accountId }],
+      results: [{ messageId: messages[0]!.messageRowId, status: 'classified' }],
+    });
+    expect(run.data!.results[0]!.issueId).toBeGreaterThan(0);
+    const task = await asOwner.issues({ issueId: run.data!.results[0]!.issueId! }).get();
+    expect(task.data).toMatchObject({ priority: 'high' });
+    expect((await route.post({})).data!.processed).toBe(0);
+    const outsider = authedApi((await signUpTestUser()).cookie);
+    expect(
+      (await outsider.projects({ projectKey: 'PRIV' })['mail-triage'].run.post({})).status,
+    ).toBe(403);
+  });
+
   it('classifies new mail, suggests the project and a task, and learns from corrections', async () => {
     const { asOwner, teamId, project, owner } = await setup();
     const credentialId = await connection(asOwner, teamId);

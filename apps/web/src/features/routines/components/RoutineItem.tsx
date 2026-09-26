@@ -29,7 +29,16 @@ export function RoutineItem({
     <li className="flex flex-col gap-1.5 px-3 py-2.5 text-sm">
       <div className="flex items-center gap-2">
         <p dir="auto" className="min-w-0 flex-1 truncate font-medium" title={routine.instructions}>
-          {routine.title}
+          {showProject ? (
+            <Link
+              href={aiTeamPath(routine.projectKey, 'schedules')}
+              className="underline-offset-2 hover:underline"
+            >
+              {routine.title}
+            </Link>
+          ) : (
+            routine.title
+          )}
         </p>
         {actions?.canEdit ? (
           <Switch

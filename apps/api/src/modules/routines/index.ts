@@ -6,8 +6,10 @@ import { noContent } from '#shared/http';
 import { paginate } from '#shared/pagination';
 import { accessErrors, commonErrors, errors } from '#shared/responses';
 import { mcpTool } from '#mcp/generate';
+import { automationHealth } from './health';
 import {
   createRoutineBody,
+  AutomationHealthResponse,
   mentionPreviewBody,
   RoutineMentionResponse,
   RoutinePageResponse,
@@ -34,6 +36,16 @@ export const routineRoutes = new Elysia({
 })
   .use(authContext)
   .use(guards)
+  .get('/projects/:projectKey/automation-health', ({ project }) => automationHealth(project.id), {
+    permission: ['ai_agents', 'read'],
+    response: { 200: AutomationHealthResponse, ...accessErrors },
+    detail: {
+      summary: 'Check agent and run health in this project',
+      description:
+        'Candidates for investigation: unpaused agents unseen for ten minutes, pending runs older than two hours, and unresolved failed runs from the last day. Excludes completed tasks and failures followed by success or a retry. Verify against task activity before creating a deduplicated incident ticket. No run transcripts or secrets are returned.',
+      ...mcpTool('get_automation_health'),
+    },
+  })
   .get(
     '/routines',
     ({ user, query }) =>

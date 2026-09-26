@@ -1,16 +1,19 @@
 import { Elysia, t } from 'elysia';
 import { authContext } from '#shared/auth-context';
 import { requireUser } from '#shared/access';
-import { commonErrors } from '#shared/responses';
+import { commonErrors, errors } from '#shared/responses';
+import { guards } from '#shared/guards';
+import { mcpTool } from '#mcp/generate';
+import { triageBatchBody, TriageBatchResponse } from './model';
 import { threadAccess } from '#modules/mail/access';
 import {
   acceptSuggestion,
   classificationsOfThreads,
   classifyThreadNow,
   correctClassification,
+  runProjectTriage,
 } from './classify';
 import './config';
-import './job';
 
 // The mail classifier in the inbox (docs/helena-decisions/decisions.md §5): what it decided
 // for a thread, the owner's corrections, the suggestions the owner accepts, and "Einordnen"
@@ -58,6 +61,22 @@ export const mailTriageRoutes = new Elysia({
   detail: { tags: ['Mail'] },
 })
   .use(authContext)
+  .use(guards)
+  .post(
+    '/projects/:projectKey/mail-triage/run',
+    ({ project, body }) => runProjectTriage(project, body.maxMessages ?? 5),
+    {
+      permission: ['mail', 'edit'],
+      body: triageBatchBody,
+      response: { 200: TriageBatchResponse, ...commonErrors, ...errors(409) },
+      detail: {
+        summary: 'Triage a batch of new inbox mail in this project',
+        description:
+          'For native Helena schedules. Uses the enabled Mail decision class and its saved task/receipt preferences. Only connected, enabled accounts and threads in this project. Never sends mail or delegates tasks. Repeat while hasMore and failed is zero; stop and report failures. Previously classified mail is skipped.',
+        ...mcpTool('run_mail_triage', undefined, 'execute'),
+      },
+    },
+  )
 
   .get(
     '/mail/threads/:threadId/classification',

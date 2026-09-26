@@ -41,7 +41,16 @@ export function RoutineRow({
       )}
       <TableCell className="px-3 py-2.5 align-top whitespace-normal">
         <p dir="auto" className="truncate text-sm font-medium" title={routine.instructions}>
-          {routine.title}
+          {showProject ? (
+            <Link
+              href={aiTeamPath(routine.projectKey, 'schedules')}
+              className="underline-offset-2 hover:underline"
+            >
+              {routine.title}
+            </Link>
+          ) : (
+            routine.title
+          )}
         </p>
         <p
           className={cn(

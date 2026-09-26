@@ -2,6 +2,25 @@ import { t } from 'elysia';
 import { pageQueryFields, pageResponse } from '#shared/pagination';
 import { oneOf } from '#shared/schemas';
 
+export const AutomationHealthResponse = t.Object({
+  checkedAt: t.String(),
+  offlineAgents: t.Array(
+    t.Object({ id: t.Number(), name: t.String(), lastSeenAt: t.Nullable(t.String()) }),
+  ),
+  runs: t.Array(
+    t.Object({
+      id: t.Number(),
+      agentId: t.Number(),
+      issueId: t.Nullable(t.Number()),
+      status: t.String(),
+      createdAt: t.String(),
+      finishedAt: t.Nullable(t.String()),
+      hasError: t.Boolean(),
+    }),
+  ),
+  truncated: t.Boolean(),
+});
+
 export const routineParams = t.Object({
   projectKey: t.String(),
   routineId: t.String({

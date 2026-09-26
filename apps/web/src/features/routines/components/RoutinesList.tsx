@@ -11,7 +11,7 @@ import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { useLiveRefresh } from '@/hooks/useLiveRefresh';
 import { usePaging } from '@/hooks/usePaging';
 import { usePermissions } from '@/hooks/usePermissions';
-import { useProjectAgents } from '@/hooks/useProjectAgents';
+import { useAiAgentsQuery } from '@/services/aiAgents.service';
 import { qk } from '@/services/queryKeys';
 import { aiAgentsPath } from '@/utils/paths';
 import { revScope } from '@/utils/revScopes';
@@ -41,8 +41,10 @@ export function RoutinesList({
   const { can } = usePermissions();
   const paging = usePaging();
   const routinesQuery = useRoutines(projectKey, paging.params);
-  const agentsQuery = useProjectAgents();
-  const agents = agentsQuery.data ?? [];
+  const agentsQuery = useAiAgentsQuery(project.project.teamId);
+  const agents = (agentsQuery.data ?? []).filter((agent) =>
+    agent.projects.some((item) => item.id === project.project.id),
+  );
   const routines = routinesQuery.data?.items ?? [];
   const createRoutine = useCreateRoutine(projectKey);
   const updateRoutine = useUpdateRoutine(projectKey);
