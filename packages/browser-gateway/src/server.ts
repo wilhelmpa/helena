@@ -300,7 +300,9 @@ export class GatewayDispatcher {
       ) {
         return {
           ok: false,
-          error: `${host} is a local or private address, which this project's browser settings keep closed to agents.`,
+          error:
+            `${host} is a local or private address, which this project's browser settings keep closed to agents. ` +
+            'For a project dev server, use preview_start and preview_url, then call browser_navigate with the exact returned managed URL. This refusal applies only to the requested address.',
         };
       }
       if (!host || !originAllowed(resolved.settings, url ?? '')) {

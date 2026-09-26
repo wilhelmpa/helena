@@ -45,6 +45,7 @@ export const PreviewSchema = t.Object({
 export const PreviewReply = t.Object({
   preview: PreviewSchema,
   lines: t.Optional(t.Array(t.String())),
+  browserInstruction: t.Optional(t.String()),
 });
 export const PreviewList = t.Object({
   previews: t.Array(PreviewSchema),
@@ -52,6 +53,10 @@ export const PreviewList = t.Object({
   canManage: t.Boolean(),
 });
 export const PreviewLogs = t.Object({ preview: PreviewSchema, lines: t.Array(t.String()) });
-export const PreviewUrl = t.Object({ name: t.String(), url: t.String() });
+export const PreviewUrl = t.Object({
+  name: t.String(),
+  url: t.String(),
+  browserInstruction: t.String(),
+});
 export type Preview = Static<typeof PreviewSchema>;
 export type PreviewStart = Static<typeof previewStartBody>;

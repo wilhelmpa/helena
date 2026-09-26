@@ -82,7 +82,7 @@ export const projectPreviewRoutes = new Elysia({
       detail: {
         summary: 'Start a project preview',
         description:
-          'Start a persistent project dev server and wait up to 60 seconds for HTTP readiness. Inspect preview.status: failed includes a log tail. cwd is relative to this project workspace. Existing dependencies only; never installs packages.',
+          'Start a persistent project dev server and wait up to 60 seconds for HTTP readiness. Inspect preview.status: failed includes a log tail. cwd is relative to this project workspace. Existing dependencies only; never installs packages. When running, follow browserInstruction to open the exact returned URL in this project browser and verify its content.',
         ...mcpTool(
           'preview_start',
           { idempotentHint: true, openWorldHint: false },

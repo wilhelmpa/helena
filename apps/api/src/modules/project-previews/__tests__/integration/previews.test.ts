@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
+import { CallToolResultSchema } from '@modelcontextprotocol/sdk/types.js';
 import { authedApi, app } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { createAgent } from '#tests/helpers/agents';
@@ -51,12 +52,38 @@ async function setup() {
   const project = (await api.projects.post({ name: 'Marketing', key: 'MKT' })).data!;
   return { api, project, routes: api.projects({ projectKey: 'MKT' }).previews };
 }
+async function callPreview(apiKey: string, name: string, projectKey = 'MKT') {
+  const response = await app.handle(
+    new Request('http://localhost/mcp', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        [AGENT_PROJECT_HEADER]: 'mkt',
+        'content-type': 'application/json',
+        accept: 'application/json, text/event-stream',
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: { name, arguments: { projectKey } },
+      }),
+    }),
+  );
+  expect(response.status).toBe(200);
+  const event = (await response.text()).split('\n').find((line) => line.startsWith('data: '));
+  expect(event).toBeDefined();
+  return CallToolResultSchema.parse(JSON.parse(event!.slice(6)).result);
+}
 describe('project previews', () => {
   it('waits for the launcher result and supplies only the authorized project slug', async () => {
     const { routes } = await setup();
     const result = await routes.start.post({ name: 'site', cwd: 'homepage/homepage' });
     expect(result.status).toBe(200);
     expect(result.data?.preview.status).toBe('running');
+    expect(result.data?.browserInstruction).toContain(ready.url);
+    expect(result.data?.browserInstruction).toContain('project MKT');
+    expect(result.data?.browserInstruction).toContain('browser_navigate');
     expect(calls).toEqual([
       { op: 'preview-start', slug: 'mkt', name: 'site', cwd: 'homepage/homepage' },
     ]);
@@ -67,9 +94,67 @@ describe('project previews', () => {
     startState = { ...ready, status: 'failed', error: 'Readiness timed out' };
     const result = await routes.start.post({});
     expect(result.data?.preview).toMatchObject({ status: 'failed', error: 'Readiness timed out' });
-    expect((await routes.url.get()).data?.url).toBe(ready.url);
+    expect(result.data).not.toHaveProperty('browserInstruction');
+    const url = await routes.url.get();
+    expect(url.data?.url).toBe(ready.url);
+    expect(url.data?.browserInstruction).toContain(ready.url);
+    expect(url.data?.browserInstruction).toContain('browser_snapshot');
     previews = [startState];
     expect((await routes.url.get()).status).toBe(409);
+  });
+  it('preserves ready browser guidance in both MCP JSON representations', async () => {
+    const { api } = await setup();
+    const agent = (
+      await createAgent(api, 'MKT', {
+        name: 'Preview coder',
+        username: 'previewcoder',
+        kind: 'external',
+      })
+    ).data!;
+    for (const name of ['preview_start', 'preview_url']) {
+      const result = await callPreview(agent.apiKey!, name);
+      expect(result.isError).toBe(false);
+      expect(result.structuredContent).toMatchObject({
+        ok: true,
+        status: 200,
+        data: { browserInstruction: expect.stringContaining(ready.url) },
+      });
+      const content = result.content.find((entry) => entry.type === 'text');
+      expect(content?.type).toBe('text');
+      if (content?.type !== 'text') throw new Error('Expected preview JSON text');
+      const data = JSON.parse(content.text);
+      expect(data).toEqual(result.structuredContent?.data);
+      expect(data.browserInstruction).toContain('project MKT');
+      expect(data.browserInstruction).toContain('browser_navigate');
+      expect(data.browserInstruction).toContain('browser_snapshot');
+      expect(content.text).not.toContain('private-value');
+    }
+  });
+  it('never offers ready browser guidance for non-running MCP previews', async () => {
+    const { api } = await setup();
+    const agent = (
+      await createAgent(api, 'MKT', {
+        name: 'Preview coder',
+        username: 'previewcoder',
+        kind: 'external',
+      })
+    ).data!;
+    for (const status of ['starting', 'failed', 'stopped'] as const) {
+      startState = { ...ready, status };
+      previews = [startState];
+      const started = await callPreview(agent.apiKey!, 'preview_start');
+      expect(started.structuredContent).toMatchObject({
+        ok: true,
+        status: 200,
+        data: { preview: { status } },
+      });
+      expect(JSON.stringify(started)).not.toContain('browserInstruction');
+      const url = await callPreview(agent.apiKey!, 'preview_url');
+      expect(url.isError).toBe(true);
+      expect(url.structuredContent).toMatchObject({ ok: false, status: 409 });
+      expect(JSON.stringify(url)).not.toContain(ready.url);
+      expect(JSON.stringify(url)).not.toContain('browserInstruction');
+    }
   });
   it('lists, stops and reads bounded redacted logs', async () => {
     const { routes, project } = await setup();
@@ -129,25 +214,17 @@ describe('project previews', () => {
       (await app.handle(new Request('http://localhost/projects/OPS/previews', { headers }))).status,
     ).toBe(403);
     expect(calls).toHaveLength(0);
-    const response = await app.handle(
-      new Request('http://localhost/mcp', {
-        method: 'POST',
-        headers: {
-          ...headers,
-          'content-type': 'application/json',
-          accept: 'application/json, text/event-stream',
-        },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 2,
-          method: 'tools/call',
-          params: { name: 'preview_status', arguments: { projectKey: 'OPS' } },
-        }),
-      }),
-    );
-    const body = await response.text();
-    expect(body).toContain('The preview belongs to another project');
-    expect(body).toContain('"isError":true');
+    for (const name of ['preview_status', 'preview_start', 'preview_url']) {
+      const result = await callPreview(agent.apiKey!, name, 'OPS');
+      expect(result.isError).toBe(true);
+      expect(result.structuredContent).toMatchObject({
+        ok: false,
+        status: 403,
+        error: { message: 'The preview belongs to another project' },
+      });
+      expect(JSON.stringify(result)).not.toContain(ready.url);
+      expect(JSON.stringify(result)).not.toContain('browserInstruction');
+    }
     expect(calls).toHaveLength(0);
   });
   it('allows a reader to inspect but not manage previews', async () => {

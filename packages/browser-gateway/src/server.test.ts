@@ -644,6 +644,8 @@ describe('GatewayDispatcher: domain policy (design §8)', () => {
       });
       expect(result.ok).toBe(false);
       expect(!result.ok && result.error).toContain('local or private address');
+      expect(!result.ok && result.error).toContain('preview_start and preview_url');
+      expect(!result.ok && result.error).toContain('only to the requested address');
     }
     expect(session.navigate).not.toHaveBeenCalled();
     const open = dispatcher({

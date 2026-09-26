@@ -29,6 +29,9 @@ function cleanPreview(preview: Preview): Preview {
     ...(preview.error ? { error: redactPreviewText(preview.error) } : {}),
   };
 }
+function browserInstruction(projectKey: string, url: string): string {
+  return `Open ${url} with browser_navigate in project ${projectKey}, then inspect browser_snapshot. A refusal for another localhost address does not describe this managed preview. Report only what these calls verify; this server-local URL is not a link for the owner's device.`;
+}
 async function request<T>(
   projectKey: string,
   op: string,
@@ -64,6 +67,9 @@ export async function startProjectPreview(projectKey: string, body: PreviewStart
   );
   return {
     preview: cleanPreview(result.preview),
+    ...(result.preview.status === 'running'
+      ? { browserInstruction: browserInstruction(projectKey, result.preview.url) }
+      : {}),
     ...(result.lines ? { lines: result.lines.map(redactPreviewText) } : {}),
   };
 }
@@ -87,7 +93,11 @@ export async function getProjectPreviewUrl(projectKey: string, name = 'main') {
   );
   if (!preview) throw new HttpError(404, 'Preview not found');
   if (preview.status !== 'running') throw new HttpError(409, 'The preview is not ready');
-  return { name: preview.name, url: preview.url };
+  return {
+    name: preview.name,
+    url: preview.url,
+    browserInstruction: browserInstruction(projectKey, preview.url),
+  };
 }
 export async function getProjectPreviewOrigins(projectKey: string): Promise<string[]> {
   try {
