@@ -30,6 +30,7 @@ import { decide, recordOutcome } from '#modules/decisions/service';
 import { createTaskFromThread } from '#modules/mail/threads/filing';
 import { moveThread } from '#modules/mail/threads/move';
 import { mailTriageConfig, type MailTriageConfig } from './config';
+import { isTkSender } from './tk';
 
 // The mail classifier (docs/helena-decisions/decisions.md §5): for every new inbox mail of a
 // team whose class "Mail einordnen" is on, one request to the decision model with five
@@ -131,7 +132,10 @@ async function pendingMessages(teamId: number, config: MailTriageConfig, limit: 
         ),
       ),
     )
-    .orderBy(asc(mailMessage.id))
+    .orderBy(
+      sql`case when lower(split_part(${mailMessage.fromAddress}, '@', 2)) = 'tk.de' then 0 else 1 end`,
+      asc(mailMessage.id),
+    )
     .limit(limit);
 }
 
@@ -201,6 +205,11 @@ export async function classifyMessage(
       answerOf(outcome, id),
     ]),
   ) as Record<string, MailClassificationAnswer>;
+  const tkSender = isTkSender(message.message.fromAddress);
+  if (tkSender) {
+    answers.priority = { choice: 'high', confidence: 1, decided: true };
+    answers.create_task = { choice: 'yes', confidence: 1, decided: true };
+  }
   const decided = (id: string) => (answers[id]!.decided ? answers[id]!.choice : null);
   const projectChoice = decided('project');
   const projectId =
@@ -212,8 +221,13 @@ export async function classifyMessage(
   const needsReply = decided('needs_reply');
   const createTask = decided('create_task');
   const anyDecided = Object.values(answers).some((answer) => answer.decided);
-  const status =
-    outcome.answers.project?.choice == null ? 'failed' : anyDecided ? 'classified' : 'unsure';
+  const status = tkSender
+    ? 'classified'
+    : outcome.answers.project?.choice == null
+      ? 'failed'
+      : anyDecided
+        ? 'classified'
+        : 'unsure';
   const [row] = await db
     .insert(helenaMailClassification)
     .values({
@@ -318,7 +332,7 @@ async function act(
     .where(eq(helenaMailClassification.id, row.id));
 }
 
-// The job (every minute, engine system job): classify what came in.
+// The scheduled job classifies the next unhandled inbox mail at each check.
 export async function classifyPending(): Promise<number> {
   let done = 0;
   for (const team of await activeTeams()) {

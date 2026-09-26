@@ -370,6 +370,11 @@ describe('mail tools of an agent', () => {
       subject: 'Kickoff',
       messages: [{ text: 'Agenda attached', from: 'Anna <anna@verve.example>' }],
     });
+    const readExternal = await asAgent
+      .projects({ projectKey: 'VOL' })
+      .mail.threads({ threadId: own.messageId })
+      .get();
+    expect(readExternal.data?.threadId).toBe(own.threadId);
     const file = read.data!.messages[0]!.attachments[0]!;
     expect(file.vaultPath).toStartWith('Projects/VOL/Files/Mail/');
     expect(file.filePath).toBe(path.join(process.env.PROJECT_VAULT_ROOT!, file.vaultPath));
@@ -379,6 +384,14 @@ describe('mail tools of an agent', () => {
         await asAgent
           .projects({ projectKey: 'VOL' })
           .mail.threads({ threadId: foreign.threadId })
+          .get()
+      ).status,
+    ).toBe(404);
+    expect(
+      (
+        await asAgent
+          .projects({ projectKey: 'VOL' })
+          .mail.threads({ threadId: foreign.messageId })
           .get()
       ).status,
     ).toBe(404);

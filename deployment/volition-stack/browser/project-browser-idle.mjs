@@ -89,11 +89,13 @@ export class BrowserIdle {
   view(slug, port, socket) {
     const browser = this.record(slug, port);
     browser.viewers += 1;
-    void this.wake(slug);
     socket.once("close", () => {
       browser.viewers = Math.max(0, browser.viewers - 1);
       browser.lastActive = this.now();
     });
+    // The stream must attach only after the page is active. Chromium can accept a
+    // screencast started while frozen without ever sending its first frame.
+    return this.wake(slug);
   }
 
   lock(slug, holder) {

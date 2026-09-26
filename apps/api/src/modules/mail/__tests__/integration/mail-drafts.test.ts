@@ -168,7 +168,7 @@ describe('mail drafts of an agent', () => {
 
     const draft = await asAgent
       .projects({ projectKey: 'VOL' })
-      .mail.threads({ threadId: message.threadId })
+      .mail.threads({ threadId: message.messageId })
       ['draft-reply'].post({ body: 'Dienstag passt.' });
     expect(draft.status).toBe(201);
     expect(draft.data).toMatchObject({

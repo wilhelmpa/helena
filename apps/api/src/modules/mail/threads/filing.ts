@@ -94,6 +94,7 @@ export async function createTaskFromThread(
     `**From:** ${sender(latest)}  `,
     `**Date:** ${stamp(latest.sentAt)} UTC  `,
     `**Mail:** [${thread.subject || 'Open'}](${threadHref(target.key, thread.id)})`,
+    `**Helena thread ID:** ${thread.id}`,
     '',
     quote(latest.textBody),
   ];

@@ -76,7 +76,10 @@ export const partParams = t.Object({
 });
 export const attachmentParams = t.Object({ attachmentId: t.Numeric() });
 export const issueParams = t.Object({ issueId: t.Numeric() });
-export const projectThreadParams = t.Object({ projectKey: t.String(), threadId: t.Numeric() });
+export const projectThreadParams = t.Object({
+  projectKey: t.String(),
+  threadId: t.Union([t.String({ minLength: 1, maxLength: 200 }), t.Numeric()]),
+});
 
 const LinkedIssue = t.Object({
   id: t.Number(),

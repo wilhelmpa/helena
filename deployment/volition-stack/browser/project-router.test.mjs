@@ -724,6 +724,32 @@ describe("project browser router", () => {
     assert.equal(isSameOrigin({ headers: { host: "plan.test", origin: "null" } }), false);
   });
 
+  it("wakes a paused page before accepting a live view", async () => {
+    await state("demo", 16000, 19201);
+    let releaseWake;
+    let waking = false;
+    const idle = {
+      record() {},
+      wake() {
+        waking = true;
+        return new Promise((resolve) => { releaseWake = resolve; });
+      },
+      view() {},
+    };
+    router = createProjectBrowserRouter({ root, idle });
+    const port = await listen(router);
+    let accepted = false;
+    const status = upgradeStatus(port, "/projects/demo/api/screencast", {
+      host: "plan.test",
+      origin: "http://plan.test",
+    }).then((code) => { accepted = true; return code; });
+    await until(() => waking);
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    assert.equal(accepted, false);
+    releaseWake();
+    assert.equal(await status, 101);
+  });
+
   it("lists the project browsers with a valid state for the window keeper", async () => {
     await state("demo", 16000, 19201);
     await fs.mkdir(path.join(root, "broken"), { mode: 0o700 });

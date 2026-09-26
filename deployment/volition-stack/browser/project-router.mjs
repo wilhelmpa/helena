@@ -304,12 +304,24 @@ async function handleUpgrade(root, request, socket, head, idle) {
   if (target.api !== null) {
     if (target.api !== "screencast") return refuse(socket, "404 Not Found");
     if (!isSameOrigin(request)) return refuse(socket, "403 Forbidden");
+    // Wake before completing the handshake: the client sends its viewport as soon
+    // as the socket opens, and the stream must already be listening for it.
+    if (idle) {
+      idle.record(target.slug, target.cdpPort);
+      await idle.wake(target.slug);
+    }
+    if (socket.destroyed) return;
     acceptWebSocket(request, socket, head, (connection) => {
       idle?.view(target.slug, target.cdpPort, connection);
       joinScreencast(target.cdpPort, target.display, connection);
     });
     return;
   }
+  if (idle) {
+    idle.record(target.slug, target.cdpPort);
+    await idle.wake(target.slug);
+  }
+  if (socket.destroyed) return;
   watchDesktop(target.cdpPort, socket);
   idle?.view(target.slug, target.cdpPort, socket);
   const upstream = net.connect({ host: "127.0.0.1", port: target.port }, () => {

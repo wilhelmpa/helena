@@ -25,8 +25,7 @@ test("project pages pause only when nobody uses the browser and resume on use", 
   assert.deepEqual(states, [[9222, "frozen"]]);
 
   const viewer = new EventEmitter();
-  idle.view("home", 9222, viewer);
-  await idle.wake("home");
+  await idle.view("home", 9222, viewer);
   assert.deepEqual(states.at(-1), [9222, "active"]);
 
   time = 500_000;
@@ -74,9 +73,9 @@ test("a viewer arriving during a pause leaves the page active", async () => {
   const pausing = idle.poll();
   await freezing;
   const viewer = new EventEmitter();
-  idle.view("verve", 19204, viewer);
+  const waking = idle.view("verve", 19204, viewer);
   releaseFreeze();
   await pausing;
-  await idle.wake("verve");
+  await waking;
   assert.deepEqual(states, ["frozen", "active"]);
 });

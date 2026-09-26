@@ -12,6 +12,7 @@ import { HttpError } from '#shared/lib';
 import { accessErrors, commonErrors, errors } from '#shared/responses';
 import { inScope, mailScope, threadAccess } from '../access';
 import { mailGuards } from '../guards';
+import { resolveProjectThreadId } from '../threads/resolve';
 import {
   DraftListResponse,
   DraftResponse,
@@ -231,7 +232,8 @@ export const mailDraftRoutes = new Elysia({
   .post(
     '/projects/:projectKey/mail/threads/:threadId/draft-reply',
     async ({ project, params, body, user, set }) => {
-      const message = await latestThreadMessage(params.threadId, project.id);
+      const threadId = await resolveProjectThreadId(String(params.threadId), project.id);
+      const message = await latestThreadMessage(threadId, project.id);
       set.status = 201;
       return createDraft({
         teamId: project.teamId,
@@ -251,7 +253,8 @@ export const mailDraftRoutes = new Elysia({
         summary: 'Draft an answer to a mail thread',
         description:
           'Write an answer to the last message of a thread of this project as a draft in ' +
-          'Helena. The quoted message is added below your text. Nothing is sent: a person ' +
+          'Helena. threadId accepts a Helena numeric ID or an external Gmail thread ID. ' +
+          'The quoted message is added below your text. Nothing is sent: a person ' +
           'reviews the draft, or you ask for approval with `request_mail_send`.',
         ...mcpTool('draft_reply'),
       },

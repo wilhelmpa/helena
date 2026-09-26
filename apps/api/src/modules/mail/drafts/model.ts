@@ -94,7 +94,10 @@ export const vaultAttachmentBody = t.Object({
   path: t.String({ minLength: 1, maxLength: 1024, description: 'Relative to the vault root.' }),
 });
 
-export const draftReplyParams = t.Object({ projectKey: t.String(), threadId: t.Numeric() });
+export const draftReplyParams = t.Object({
+  projectKey: t.String(),
+  threadId: t.Union([t.String({ minLength: 1, maxLength: 200 }), t.Numeric()]),
+});
 
 export const draftReplyBody = t.Object({
   body: t.String({
