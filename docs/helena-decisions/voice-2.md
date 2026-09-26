@@ -43,7 +43,13 @@ Was jetzt anders ist:
 5. **Messbar:** Die Gesprächszeile zeigt im Tooltip, wo die Zeit der letzten Antwort blieb
    (Pause · Mitschrift · Antwort · Stimme).
 
-Was du tun musst: den Downloads zustimmen (§6, zusammen ≈ 3 GB), dann spielt der Orchestrator
+Gemessen danach (§2.1, §3.1, §7): Erkennung auf der GPU 0,3–0,8 s statt 2,2 s bei 4,3 % statt
+21 % Fehlern auf echten deutschen Sätzen und ohne erfundene Sätze aus Rauschen; die Stimme beginnt
+nach ~40 ms und spricht 4× schneller als Echtzeit; **vom letzten Wort bis zum ersten Ton 1,6 s**
+mit Schnellantwort und **6,2 s** über den Agenten (vorher ≈ 11 s).
+
+Was du tun musst: die Stimmen probehören (https://claude.ai/artifact/EErbshsqvDpbMXors5M1Fb) und
+eine wählen, den Downloads zustimmen (§6, zusammen ≈ 3,1 GB), dann spielt der Orchestrator
 `voice.sh install` ein; danach unter Lokale KI → Sprache die Stimme wählen und probehören.
 
 ## 1. Measured before (2026-09-26, Kingston)
@@ -107,7 +113,37 @@ is what agents, tests and builds fight over.
 
 ### 2.1 Measured on the GPU
 
-(filled from `results/gpu-*` once the orchestrator's GPU run is back)
+Radeon 8060S (gfx1151), whisper.cpp 1.8.4 built on Helena's ROCm 10, Helena's request (§2.2),
+2026-09-26 01:45–02:05 (`~/agent-work/voice-2/results/gpu-*`, judged as the API judges):
+
+| Build / flash attention (sanity, 16 clips) | WER | p50 |
+|---|---|---|
+| with rocWMMA flash attention, `-fa` | **100 %** (garbage: "Pos.com.com.") | 440 ms |
+| same build, `-nfa` | 5.2 % | 449 ms |
+| **without rocWMMA, `-fa`** (ggml's own kernels) | 5.2 % | **340 ms** |
+| without rocWMMA, `-nfa` | 5.2 % | 446 ms |
+
+| Model (full sets, `-nfa`) | FLEURS | Anna | Anna + noise | robotic voices | no-speech clips hallucinated | p50 per turn |
+|---|---|---|---|---|---|---|
+| Whisper large-v3-turbo f16 + prompt | 4.6 % | 6.0 % | 5.2 % | 81–91 % | 2/12 | 0.75 s |
+| **German turbo (primeline) f16 + prompt** | **4.3 %** | 6.9 % | 6.4 % | 78–96 % | 1/12 | 0.76 s |
+| German turbo f16, no prompt | 4.5 % | 7.3 % | 6.9 % | 62–85 % | 11/12 ("Vielen Dank.") | 0.75 s |
+| German turbo q5_0 + prompt | 4.4 % | 7.3 % | 6.4 % | 77–96 % | 2/12 | 0.80 s |
+| German turbo q5_0 + whisper.cpp's Silero VAD (CPU check, 12 + 12 + 12 clips) | 4.3 % | 10.8 % (same clips without VAD: 12.7 %) | – | – | **0/12** | – |
+| *today: FastFlowLM on the NPU* | *21.2 %* | *8.2 %* | – | *97 %* | *12/12* | *2.2 s* |
+
+- **Chosen:** the German fine-tune, f16 (the best on real German speech; its authors report larger
+  gains on conversational sets), ggml's flash attention (no rocWMMA: `voice.sh`), whisper.cpp's
+  own Silero VAD (no decoding of noise), `language=de`, the vocabulary prompt.
+- The prompt helps natural speech a little and suppresses the silence hallucinations; on unclear
+  speech it can pull Whisper toward English — the judgement drops that as "nicht verstanden"
+  rather than sending it (measured: 0 real German sentences dropped).
+- The full runs used the `-nfa` build (the bench picked the first of the tied variants); the
+  installed `-fa` build without rocWMMA was 25 % faster in the sanity run, so a turn's
+  transcription should take **~0.3–0.6 s** instead of 2.2 s.
+- whisper.cpp 1.8.4's `no_speech_prob` is always 0 (not implemented), so Helena's segment rule
+  (§2.2) does nothing there; the VAD is what stops the hallucinations.
+- The robotic Eloquence voices stay bad for every engine; they are a stress test, not a person.
 
 ### 2.2 How Helena asks
 
@@ -143,8 +179,27 @@ is what agents, tests and builds fight over.
 
 ### 3.1 Measured on the GPU
 
-(filled from `results/gpu-*`: first audio, real-time factor, round-trip WER through the German
-Whisper, for two designed voices and three preset speakers)
+qwentts.cpp (HIP, gfx1151), 10 German answer sentences (names, numbers, English terms), streamed
+PCM; "round trip" = the German Whisper transcribing the voice back (a listener's understanding):
+
+| Voice | First audio p50 | Whole sentence p50 | Generation | Round-trip WER |
+|---|---|---|---|---|
+| **Helena** — designed ("warm, friendly, early thirties"), 0.6B Base, no flash attention | 38 ms | 0.87 s | 3.8× real time | 5.4 % |
+| Serena — preset speaker, 0.6B CustomVoice | 28 ms | 1.02 s | 4.3× | 4.3 % |
+| Vivian — preset | 29 ms | 0.99 s | 4.3× | 4.3 % |
+| Ryan — preset | 28 ms | 1.02 s | 4.2× | 4.3 % |
+| *today: the browser's voice (Mac: Anna)* | *instant* | – | – | – |
+
+The first audio arrives in ~30–40 ms (the first request after a start: ~250 ms), so the voice
+adds almost nothing to a turn; a sentence is generated ~4× faster than it is spoken. The misreads
+are names ("Verve" → "Werther"), which `speakable.ts` and the owner's words cannot fix in the
+voice; everything else came back word for word. **How they sound is the owner's call:** the
+listening page https://claude.ai/artifact/EErbshsqvDpbMXors5M1Fb has six sentences per voice,
+the two designed voices' reference recordings and today's browser voice. Installed by default:
+the 0.6B Base with the designed voice `helena`; the CustomVoice talker is in `voice-models.tsv`
+(`HELENA_VOICE_TTS_MODEL=qwen3-tts-0.6b-customvoice`) if a preset wins. (The run with flash
+attention on did not start: the bench's own port was still taken; the unit uses `--no-fa`,
+the measured setting.)
 
 ### 3.2 The voice
 
@@ -231,8 +286,8 @@ browser applies itself (pause, rate).
 
 | Part | What |
 |---|---|
-| `helena-voice-stt` | whisper.cpp v1.8.4 (commit 9386f239, tarball sha256-pinned) built for gfx1151 on Helena's ROCm 10 tree (same flags as llama.cpp), `127.0.0.1:13306`, `--request-path /v1 --inference-path /audio/transcriptions -l de -fa -sns -nt` |
-| `helena-voice-tts` | qwentts.cpp commit 6a3e9128 + its ggml fork 765bc96f (both archives sha256-pinned, commits checked), `127.0.0.1:13307`, `--lang German`; voices registered after every start |
+| `helena-voice-stt` | whisper.cpp v1.8.4 (commit 9386f239, tarball sha256-pinned) built for gfx1151 on Helena's ROCm 10 tree (llama.cpp's flags **without rocWMMA**, §2.1), `127.0.0.1:13306`, `--request-path /v1 --inference-path /audio/transcriptions -l de -fa -sns -nt --vad` |
+| `helena-voice-tts` | qwentts.cpp commit 6a3e9128 + its ggml fork 765bc96f (both archives sha256-pinned, commits checked), `127.0.0.1:13307`, `--lang German --no-fa`; voices registered after every start |
 | sandbox | user `helena-voice` (render, video), `ProtectSystem=strict`, `DevicePolicy=closed` + `/dev/kfd` + `char-drm`, `IPAddressAllow=localhost`, `MemoryHigh=3G`/`MemoryMax=6G` (the weights are in VRAM) |
 | firewall | `native/hardening`: new loopback ACL `voice` (13306, 13307: root and the API user only), `apply.sh firewall`; the audit checks it (`net.voice_acl`) |
 | Helena | server kinds `whisper-cpp` and `qwentts-cpp` (@helena/sdk `ModelServerType.audio`, `voices()`), registered by `apps/api/src/scripts/voice-register.ts` as `helena-stt` / `helena-tts` |
@@ -242,12 +297,27 @@ browser applies itself (pause, rate).
 | Model / source | Size | Licence |
 |---|---|---|
 | `cstr/whisper-large-v3-turbo-german-ggml` `ggml-model.bin` (f16) | 1.62 GB | Apache-2.0 |
+| `ggml-org/whisper-vad` `ggml-silero-v6.2.0.bin` (whisper.cpp's voice detector) | 0.9 MB | MIT |
 | `Serveurperso/Qwen3-TTS-GGUF` `qwen-talker-0.6b-base-Q8_0.gguf` | 0.99 GB | Apache-2.0 |
 | `Serveurperso/Qwen3-TTS-GGUF` `qwen-tokenizer-12hz-Q8_0.gguf` | 0.29 GB | Apache-2.0 |
 | `Serveurperso/Qwen3-TTS-GGUF` `qwen-talker-1.7b-voicedesign-Q4_K_M.gguf` (only to design voices) | 1.18 GB | Apache-2.0 |
+| optional, if a preset speaker wins: `qwen-talker-0.6b-customvoice-Q8_0.gguf` | 0.97 GB | Apache-2.0 |
 | whisper.cpp v1.8.4, qwentts.cpp + ggml fork sources | ~6 MB | MIT |
 
-## 7. Tests
+## 7. Measured after (E2E, dev stack, fakes with the latencies measured on the GPU)
+
+`scripts/voice-e2e.mjs --steps conversation,timing` in headless Chromium with a fake microphone
+(Anna: "Hallo Helena, kannst du mich gut hören?"), the conversation line's `data-voice-timings`:
+
+| Path | Pause | Transcription | First words of the answer | First sound | **Total** |
+|---|---|---|---|---|---|
+| Helena's voice reply (3 turns, median) | 0.60 s | 0.27 s | 0.45 s | 0.24 s | **1.55 s** |
+| the agent (a runner that answers like Hermes: text after 4.7 s, closed 1.5 s later) | 0.60 s | 0.27 s | 5.1 s | 0.20 s | **6.2 s** |
+| *before, same agent (§1)* | *0.8 s* | *2.2 s* | *~5–7 s* | *+1.8 s wait + 0.2 s* | *≈ 11 s* |
+
+The voice started 0.2 s after the agent's text arrived — no longer after the answer was closed.
+
+## 8. Tests
 
 - API: `modules/voice/__tests__/unit/voice-2.test.ts` (judgement, settings, PCM passthrough,
   the voice reply's request and stream parsing) and `integration/voice-2.test.ts` (settings,
@@ -255,18 +325,23 @@ browser applies itself (pause, rate).
   answering, handing over and keeping the agent's session, switched off). The older
   `voice.test.ts` stays green (Lemonade gets what it got).
 - Web (node:test via bun): `settledTail`, `turnTimings`, `pcm`, `voicePick`, `speakable`.
+- Installer: `native/local-ai/tests/test_voice.py` (pins, builds without rocWMMA, units on
+  loopback in a sandbox, catalog, voice design); firewall self-tests with the `voice` ACL.
 - E2E: `scripts/voice-e2e.mjs --steps conversation,timing` against the dev stack with
   `scripts/voice-e2e-fakes.ts` (the three servers, with the latencies of §2.1/§3.1) and
   `scripts/voice-e2e-runner.ts` (an agent that answers like Hermes: text after 4.7 s, closed
   1.5 s later).
 
-## 8. Live runbook
+## 9. Live runbook
 
-(§8 of the report; also in `native/local-ai/README.md` → "Voice")
+`native/local-ai/README.md` → "Voice" (install, firewall ACL, voice design, register, switch the
+classes, check).
 
-## 9. Later / not built
+## 10. Later / not built
 
 - Smart Turn v3.2 in the browser (§4.2).
+- Transcribing during the pause: start Whisper after ~250 ms of silence and keep the result if the
+  owner stays quiet (re-transcribe the whole turn if not) — saves ~0.3 s per turn.
 - Streaming partial transcripts (Voxtral Realtime or Lemonade `/realtime`): the transcription
   would be done when the owner stops.
 - The agent's own latency: a persistent Hermes per chat (ACP) instead of a process per message

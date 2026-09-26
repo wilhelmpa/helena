@@ -97,8 +97,25 @@ if (args.reply) {
   });
 }
 
+// The chat page opens the project's coordinator (created with the project): the fake runner
+// answers as that agent, with a key of its own.
+const agents = await call<{ id: number; name: string }[] | { items: { id: number; name: string }[] }>(
+  'GET',
+  `/teams/${project.teamId}/ai-agents`,
+);
+const list = Array.isArray(agents) ? agents : agents.items;
+const coordinator = list.find((agent) => /coordinator/i.test(agent.name)) ?? created.agent;
+const key =
+  coordinator.id === created.agent.id
+    ? created.apiKey
+    : (
+        await call<{ apiKey: string }>(
+          'POST',
+          `/teams/${project.teamId}/ai-agents/${coordinator.id}/regenerate-key`,
+        )
+      ).apiKey;
 writeFileSync(`${OUT}/cookie`, cookie);
-writeFileSync(`${OUT}/agent-key`, created.apiKey);
+writeFileSync(`${OUT}/agent-key`, key);
 console.log(
   JSON.stringify({
     project: 'VOX',

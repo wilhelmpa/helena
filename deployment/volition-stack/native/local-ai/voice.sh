@@ -293,6 +293,7 @@ WantedBy=multi-user.target
 EOF
   put "$UNITS/helena-voice-tts.service" 0644 root:root <<EOF
 # Helena's voice (native/local-ai/voice.sh): Qwen3-TTS on the GPU, streaming as it speaks.
+# Without flash attention: the setting measured on gfx1151 (first audio ~40 ms, 4x real time).
 # The voices in $VOICES are registered once it answers (they live in its memory only).
 [Unit]
 Description=Helena voice: speech (Qwen3-TTS, GPU)
@@ -300,7 +301,7 @@ After=network.target
 
 [Service]
 ExecStart=$(qwentts_bin)/tts-server --model $(model_path "$TTS_MODEL") --codec $(model_path "$TTS_CODEC") \\
-  --alias qwen3-tts --host 127.0.0.1 --port $TTS_PORT --lang German
+  --alias qwen3-tts --host 127.0.0.1 --port $TTS_PORT --lang German --no-fa
 ExecStartPost=$LIB/voice-register-voices $TTS_PORT $VOICES
 ReadOnlyPaths=$MODELS $VOICES
 MemoryHigh=3G
