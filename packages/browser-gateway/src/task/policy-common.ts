@@ -134,12 +134,13 @@ export function describe(element: PageElement): Record<string, unknown> {
 // field `send`, selecting `write`, scrolling and waiting `read` (tools.ts categoryOf).
 export function categoryOfStep(operation: Operation, element: PageElement | null): ActionCategory {
   switch (operation) {
-    case 'CLICK':
+    case 'CLICK': {
       const contract = contractActionCategory(
         [element?.label, element?.text].filter(Boolean).join(' '),
       );
       if (contract) return contract;
       return element?.submits ? 'send' : 'write';
+    }
     case 'PRESS_ENTER':
       return element?.enterSubmits ? 'send' : 'write';
     case 'TYPE_TEXT':
