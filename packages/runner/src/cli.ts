@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { readFile } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
+import { isAbsolute, join, resolve } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { answer } from './chat';
 import { deploymentDrainStatus } from './deployment-drain';
@@ -82,6 +82,52 @@ function prefixOf(name: string): string {
 
 function log(message: string): void {
   console.log(`${prefixOf('')} ${message}`);
+}
+
+// Provisioning replaces a private generation file whenever a descriptor changes. The
+// wrapper captures its value before catalog generation, so even an update during startup
+// is noticed. The generation is only an opaque id; descriptor contents never enter logs.
+function watchDescriptorReload(state: State): void {
+  const requestPath = process.env.HERMES_RUNNER_RESTART_REQUEST_PATH;
+  if (!requestPath) return;
+  if (!isAbsolute(requestPath)) throw new Error('runner restart request path must be absolute');
+  const baseline = process.env.HERMES_RUNNER_RESTART_BASELINE ?? '';
+  const configured = Number(process.env.HERMES_RUNNER_RESTART_MAX_DRAIN_MS);
+  const maxDrainMs =
+    Number.isFinite(configured) && configured >= 1_000
+      ? Math.min(configured, 24 * 60 * 60 * 1_000)
+      : 2 * 60 * 60 * 1_000;
+  let checking = false;
+  const interval = setInterval(async () => {
+    if (checking || state.stopping) return;
+    checking = true;
+    try {
+      const generation = await readFile(requestPath, 'utf8').catch((err: NodeJS.ErrnoException) => {
+        if (err.code === 'ENOENT') return '';
+        throw err;
+      });
+      if (generation.trim() === baseline.trim()) return;
+      clearInterval(interval);
+      state.stopping = true;
+      log('agent descriptors changed — finishing claimed work before reloading');
+      // A wedged task cannot hold a newly provisioned agent offline indefinitely.
+      // The normal path waits for every claim; only this long ceiling interrupts one.
+      const deadline = setTimeout(() => {
+        state.releasing = true;
+        log('descriptor reload drain deadline reached — releasing unfinished runs');
+        for (const stop of state.stops) stop.abort();
+        setTimeout(() => process.exit(1), 10_000).unref();
+      }, maxDrainMs);
+      deadline.unref();
+    } catch (err) {
+      // Continue serving the current catalog and retry the marker read. A transient
+      // filesystem error must not kill work in flight or silently lose the request.
+      log(`checking descriptor reload request failed: ${String(err)}`);
+    } finally {
+      checking = false;
+    }
+  }, 1_000);
+  interval.unref();
 }
 
 // A task can take much longer than the server's lease; without this it would be handed
@@ -787,6 +833,7 @@ async function main(): Promise<void> {
   await loadRunnerPlugins(configPath, log);
   const configs = await loadConfig(configPath, { agent: cli.agent, args: cli.args });
   const state: State = { stopping: false, releasing: false, stops: new Set() };
+  watchDescriptorReload(state);
   const publishDrain = deploymentDrainStatus();
 
   // Ctrl-C finishes what is in flight. SIGTERM, which a service manager sends, kills the

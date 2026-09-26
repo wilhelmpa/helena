@@ -24,6 +24,7 @@ import { createRoutine } from '#modules/routines/service';
 import { createViewFolder } from '#modules/views/service';
 import { describeChange, type BlueprintPlan, type BlueprintState, type Change } from './plan';
 import { loadBlueprintState } from './state';
+import { waitForBlueprintProvisioning } from './provisioning';
 
 // Carries a blueprint plan out through the services Helena's own routes use, in the plan's
 // order: the project first (its coordinator comes with it), then the areas, the agents,
@@ -35,6 +36,7 @@ export interface ApplyContext {
   ownerUserId: string;
   blueprint: ProjectBlueprint;
   log: (line: string) => void;
+  provisioningTimeoutMs?: number;
 }
 
 function toStickers(change: Extract<Change, { kind: 'board' }>): StickerCanvas {
@@ -84,7 +86,8 @@ export async function applyBlueprintPlan(ctx: ApplyContext, plan: BlueprintPlan)
         .where(eq(agentSkill.teamId, teamId))
     ).map((row) => [row.name, row.id]),
   );
-  const scope = await vaultScope({ id: ownerUserId }, false);
+  const provisioned = async () =>
+    waitForBlueprintProvisioning(await projectId(), key, log, ctx.provisioningTimeoutMs);
 
   let done = 0;
   for (const change of plan.changes) {
@@ -195,8 +198,12 @@ export async function applyBlueprintPlan(ctx: ApplyContext, plan: BlueprintPlan)
         break;
       }
       case 'file':
+        await provisioned();
         try {
-          await writeNote(scope, { path: change.path, content: change.content });
+          await writeNote(await vaultScope({ id: ownerUserId }, false), {
+            path: change.path,
+            content: change.content,
+          });
         } catch (error) {
           const exists =
             (error instanceof VaultError && error.code === 'exists') ||
@@ -206,6 +213,7 @@ export async function applyBlueprintPlan(ctx: ApplyContext, plan: BlueprintPlan)
         }
         break;
       case 'board': {
+        await provisioned();
         const id = await projectId();
         const stickers = toStickers(change);
         const file = await createBoardFile(key, change.name, stickers, {
@@ -270,5 +278,8 @@ export async function applyBlueprintPlan(ctx: ApplyContext, plan: BlueprintPlan)
     }
     done += 1;
   }
+  // Agent changes can queue another generation even when this plan has no knowledge
+  // files. Do not report success while the runner descriptors are still unprovisioned.
+  if (done > 0) await provisioned();
   return done;
 }

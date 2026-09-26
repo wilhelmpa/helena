@@ -144,13 +144,14 @@ export function createProvisioner(config, options = {}) {
     options.ensureBoardFiles ?? ensureLocalBoardFiles;
   let queue = Promise.resolve();
 
-  // The runner reads the descriptors only when it starts.
-  async function restartHermesRunner() {
-    await execute(
-      config.systemctlBin,
-      [...(config.systemctlUser !== false ? ["--user"] : []), "restart", config.hermesRunnerService],
-      { timeout: 60_000, maxBuffer: 64 * 1024, encoding: "utf8" },
-    );
+  // The runner reads descriptors only on startup. A durable generation change asks it to
+  // stop claiming new work, finish all current claims, and exit; systemd then starts it
+  // with the new catalog. A provisioning request must never SIGTERM another agent's run.
+  async function requestHermesRunnerReload() {
+    await writeJsonAtomic(path.resolve(config.hermesRunnerDescriptorRoot, "..", "restart-request.json"), {
+      id: crypto.randomUUID(),
+      requestedAt: new Date().toISOString(),
+    });
   }
 
   async function ensureProjectVault(_slug, project) {
@@ -485,83 +486,83 @@ export function createProvisioner(config, options = {}) {
 
     const quarantineRoot = path.join(config.projectTrashRoot, envelope.eventId);
     const runner = { changed: planCoordinator?.descriptorChanged === true };
-    let agentRuntimes;
     try {
-      agentRuntimes = await provisionAgentRuntimes(envelope, workspace, browser, quarantineRoot, runner);
-    } finally {
-      // A retry finds the descriptors this run already wrote unchanged, so a run that
-      // fails here still loads them.
-      if (runner.changed) await restartHermesRunner();
-    }
+      const agentRuntimes = await provisionAgentRuntimes(envelope, workspace, browser, quarantineRoot, runner);
 
-    const files = requested.has("files")
-      ? await ensureFiles(workspace.slug, envelope.project)
-      : null;
-    const terminal = requested.has("terminal")
-      ? resource(
-          "terminal",
-          `terminal-project:${workspace.slug}`,
-          terminalUrl(urls, workspace.slug),
-        )
-      : null;
-    const projectAreas = await provisionProjectAreas(envelope, workspace, quarantineRoot);
-    const quarantined = [
-      ...agentRuntimes.quarantined,
-      ...projectAreas.quarantined,
-      ...(await quarantineRemovedBoards(envelope, workspace)),
-    ];
-    if (quarantined.length) await writeTrashReceipt(quarantineRoot, envelope, quarantined);
-    const boardResources = await provisionBoards(urls, envelope, workspace, ensureBoardFiles);
-    const registryPath = await writeRegistry(
-      envelope,
-      workspace,
-      coordinator,
-      planCoordinator,
-      agentRuntimes.agents,
-      projectAreas.areas,
-      files,
-      terminal,
-      browser,
-    );
-    if (launcher.enabled && needsWorkspace) {
-      // Again with every folder there now: the profiles and the vault folder.
-      const profiles = [
-        ...(coordinator ? [workspace.slug] : []),
-        ...agentRuntimes.agents.map((agent) => agent.profile),
+      const files = requested.has("files")
+        ? await ensureFiles(workspace.slug, envelope.project)
+        : null;
+      const terminal = requested.has("terminal")
+        ? resource(
+            "terminal",
+            `terminal-project:${workspace.slug}`,
+            terminalUrl(urls, workspace.slug),
+          )
+        : null;
+      const projectAreas = await provisionProjectAreas(envelope, workspace, quarantineRoot);
+      const quarantined = [
+        ...agentRuntimes.quarantined,
+        ...projectAreas.quarantined,
+        ...(await quarantineRemovedBoards(envelope, workspace)),
       ];
-      await launcher.ensureProjectUser(workspace.slug, profiles);
-    }
-    const resources = [resource("registry", `project:${workspace.slug}`), ...boardResources];
-    if (needsWorkspace) {
-      resources.unshift(
-        resource(
-          "workspace",
-          workspace.containerPath,
-          workspaceUrl(urls, workspace.containerPath),
-        ),
+      if (quarantined.length) await writeTrashReceipt(quarantineRoot, envelope, quarantined);
+      const boardResources = await provisionBoards(urls, envelope, workspace, ensureBoardFiles);
+      const registryPath = await writeRegistry(
+        envelope,
+        workspace,
+        coordinator,
+        planCoordinator,
+        agentRuntimes.agents,
+        projectAreas.areas,
+        files,
+        terminal,
+        browser,
       );
-    }
-    if (coordinator) resources.push(resource("coordinator", coordinator.id));
-    if (files) resources.push(files);
-    if (terminal) resources.push(terminal);
-    if (browser) resources.push(resource("browser", browser.id, browser.url));
-
-    const warnings = [...projectAreas.warnings];
-    if (!config.planControlToken && envelope.agents?.length) {
-      warnings.push("Project agents get no Hermes runtime without the Plan control token.");
-    }
-    for (const kind of ["boards", "workflows"]) {
-      if (requested.has(kind)) {
-        warnings.push(
-          `${kind} are managed inside Helena and are not provisioned by this service.`,
+      if (launcher.enabled && needsWorkspace) {
+        // Again with every folder there now: the profiles and the vault folder.
+        const profiles = [
+          ...(coordinator ? [workspace.slug] : []),
+          ...agentRuntimes.agents.map((agent) => agent.profile),
+        ];
+        await launcher.ensureProjectUser(workspace.slug, profiles);
+      }
+      const resources = [resource("registry", `project:${workspace.slug}`), ...boardResources];
+      if (needsWorkspace) {
+        resources.unshift(
+          resource(
+            "workspace",
+            workspace.containerPath,
+            workspaceUrl(urls, workspace.containerPath),
+          ),
         );
       }
+      if (coordinator) resources.push(resource("coordinator", coordinator.id));
+      if (files) resources.push(files);
+      if (terminal) resources.push(terminal);
+      if (browser) resources.push(resource("browser", browser.id, browser.url));
+
+      const warnings = [...projectAreas.warnings];
+      if (!config.planControlToken && envelope.agents?.length) {
+        warnings.push("Project agents get no Hermes runtime without the Plan control token.");
+      }
+      for (const kind of ["boards", "workflows"]) {
+        if (requested.has(kind)) {
+          warnings.push(
+            `${kind} are managed inside Helena and are not provisioned by this service.`,
+          );
+        }
+      }
+      return {
+        resources,
+        ...(warnings.length ? { warnings } : {}),
+        registryPath,
+      };
+    } finally {
+      // Load a successful generation only after its vault/profile ACLs are in place.
+      // If a later step failed, retain the reload request: a retry may find those
+      // descriptors unchanged and must not lose the already-written generation.
+      if (runner.changed) await requestHermesRunnerReload();
     }
-    return {
-      resources,
-      ...(warnings.length ? { warnings } : {}),
-      registryPath,
-    };
   }
 
   async function quarantinePath({ source, allowedRoot, quarantineRoot, label }) {
@@ -651,7 +652,7 @@ export function createProvisioner(config, options = {}) {
     if (hermesProfile) quarantined.push(hermesProfile);
     const runner = { changed: descriptorRemoved || Boolean(hermesAgent || hermesProfile) };
     quarantined.push(...(await removeAgentRuntimes(envelope, slug, new Set(), quarantineRoot, runner)));
-    if (runner.changed) await restartHermesRunner();
+    if (runner.changed) await requestHermesRunnerReload();
 
     const workspaceManaged =
       registry?.resources?.workspace?.managed === true || envelope.project.key !== "VERV";

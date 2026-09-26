@@ -62,7 +62,7 @@ async function plan(claims: unknown[]) {
   return { url: `http://127.0.0.1:${address.port}`, requests };
 }
 
-async function startRunner(url: string, command: string) {
+async function startRunner(url: string, command: string, env: Record<string, string> = {}) {
   const dir = await mkdtemp(join(tmpdir(), 'itsaplan-cli-'));
   cleanup.push(() => rm(dir, { recursive: true, force: true }));
   const config = join(dir, 'runner.json');
@@ -83,6 +83,7 @@ async function startRunner(url: string, command: string) {
     [join(import.meta.dir, '../cli.ts'), config],
     {
       stdio: 'ignore',
+      env: { ...process.env, ...env },
     },
   );
   cleanup.push(async () => {
@@ -122,6 +123,53 @@ describe('runner process', () => {
     expect(requests.some((path) => path.includes('/result'))).toBe(false);
     await until(() => !alive(pid));
   }, 15_000);
+
+  it('drains a claimed run on descriptor change before restarting for a new agent', async () => {
+    const claims = [queuedRun(1)];
+    const { url, requests } = await plan(claims);
+    const dir = await mkdtemp(join(tmpdir(), 'itsaplan-reload-'));
+    cleanup.push(() => rm(dir, { recursive: true, force: true }));
+    const marker = join(dir, 'restart-request.json');
+    const { dir: runnerDir, exited } = await startRunner(
+      url,
+      'echo started > "$DIR/started"; sleep 3; echo done',
+      {
+        HERMES_RUNNER_RESTART_REQUEST_PATH: marker,
+        HERMES_RUNNER_RESTART_BASELINE: '',
+      },
+    );
+    // The first claim starts before provisioning requests a reload.
+    await until(() => existsSync(join(runnerDir, 'started')));
+    await writeFile(marker, '{"id":"new-generation"}');
+    await sleep(1_300);
+    claims.push({ ...queuedRun(1), id: 6 });
+    expect(await Promise.race([exited, sleep(8_000).then(() => 'timeout')])).toBe(0);
+    expect(requests).toContain('/agent-runs/5/result?claim=1');
+    expect(requests).not.toContain('/agent-runs/5/release?claim=1');
+    expect(claims).toHaveLength(1);
+    expect(requests).not.toContain('/agent-runs/6/result?claim=1');
+  }, 12_000);
+
+  it('bounds a wedged descriptor drain and hands its claim back', async () => {
+    const { url, requests } = await plan([queuedRun(1)]);
+    const dir = await mkdtemp(join(tmpdir(), 'itsaplan-reload-deadline-'));
+    cleanup.push(() => rm(dir, { recursive: true, force: true }));
+    const marker = join(dir, 'restart-request.json');
+    const { dir: runnerDir, exited } = await startRunner(
+      url,
+      'echo started > "$DIR/started"; exec sleep 30',
+      {
+        HERMES_RUNNER_RESTART_REQUEST_PATH: marker,
+        HERMES_RUNNER_RESTART_BASELINE: '',
+        HERMES_RUNNER_RESTART_MAX_DRAIN_MS: '1000',
+      },
+    );
+    await until(() => existsSync(join(runnerDir, 'started')));
+    await writeFile(marker, '{"id":"new-generation"}');
+    expect(await Promise.race([exited, sleep(6_000).then(() => 'timeout')])).toBe(0);
+    expect(requests).toContain('/agent-runs/5/release?claim=1');
+    expect(requests.some((path) => path.includes('/result'))).toBe(false);
+  }, 10_000);
 
   it('keeps one command for a run that comes back to it, and reports under the new claim', async () => {
     const { url, requests } = await plan([queuedRun(1), queuedRun(2)]);

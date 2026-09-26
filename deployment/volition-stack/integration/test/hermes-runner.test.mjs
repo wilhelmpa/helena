@@ -27,6 +27,8 @@ describe("Hermes runner deployment", () => {
     assert.ok(catalog.includes("'BROWSER_CDP_URL'"));
     assert.ok(catalog.includes("require_browser_toolset"));
     assert.ok(wrapper.includes("HERMES_RUNNER_DESCRIPTOR_ROOT"));
+    assert.ok(wrapper.includes("HERMES_RUNNER_RESTART_REQUEST_PATH"));
+    assert.ok(wrapper.includes("HERMES_RUNNER_RESTART_BASELINE"));
     assert.ok(wrapper.includes("HERMES_PROJECT_BROWSER_ROOT"));
     assert.ok(wrapper.includes("catalog_script=/usr/local/libexec/volition-hermes-catalog.py"));
     assert.ok(unit.includes("LoadCredential=itsaplan_api_key:/etc/volition/hermes-plan-key"));

@@ -6,6 +6,7 @@ template_file=/etc/volition/runner/itsaplan-runner.json
 runtime_file=/var/lib/volition/hermes/run/itsaplan-runner.json
 catalog_script=/usr/local/libexec/volition-hermes-catalog.py
 descriptor_root=/var/lib/volition/hermes/run/agents
+restart_request=/var/lib/volition/hermes/run/restart-request.json
 
 [ -s "$credential_file" ] || { echo "The Plan runner credential is unavailable." >&2; exit 1; }
 ITSAPLAN_API_KEY=$(cat "$credential_file")
@@ -13,6 +14,7 @@ ITSAPLAN_API_KEY=$(cat "$credential_file")
 
 export ITSAPLAN_API_KEY
 export HERMES_RUNNER_DESCRIPTOR_ROOT="$descriptor_root"
+export HERMES_RUNNER_RESTART_REQUEST_PATH="$restart_request"
 export HERMES_PROJECT_BROWSER_ROOT=/var/lib/volition/project-browser/projects
 export HERMES_HOME=/var/lib/volition/hermes
 export HOME=/var/lib/volition/hermes
@@ -37,6 +39,10 @@ urllib.request.urlopen(request, timeout=10).read()
 PY
 }
 
+# Capture the generation before building the catalog. If provisioning updates it while
+# the catalog is built, the runner will notice after startup and reload once more.
+HERMES_RUNNER_RESTART_BASELINE=$(cat "$restart_request" 2>/dev/null || true)
+export HERMES_RUNNER_RESTART_BASELINE
 catalog_errors=$(mktemp /var/lib/volition/hermes/run/.catalog-errors.XXXXXX)
 trap 'rm -f "$catalog_errors"' EXIT
 if ! /var/lib/volition/hermes/venv/bin/python "$catalog_script" "$template_file" "$runtime_file" 2>"$catalog_errors"; then

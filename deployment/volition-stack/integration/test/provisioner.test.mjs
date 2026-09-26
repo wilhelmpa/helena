@@ -32,6 +32,10 @@ function config() {
   };
 }
 
+async function reloadId() {
+  return JSON.parse(await fs.readFile(path.join(root, "hermes/run/restart-request.json"), "utf8")).id;
+}
+
 function envelope(overrides = {}) {
   return {
     eventId,
@@ -77,7 +81,20 @@ function fakeProjectAgent(calls, { changed = () => true, fail = () => false } = 
 }
 
 describe("createProvisioner", () => {
-  it("provisions a Hermes coordinator and reloads the common runner exactly once", async () => {
+  it("requests the catalog reload after the project's files are provisioned", async () => {
+    const provisioner = createProvisioner(config(), {
+      ensurePlanCoordinator: fakeCoordinator([]),
+      ensureFiles: async () => {
+        await assert.rejects(reloadId(), { code: "ENOENT" });
+        return { kind: "files", id: "/Projects/DEMO" };
+      },
+      execute: async () => ({ stdout: "", stderr: "" }),
+    });
+    await provisioner.provision(envelope());
+    assert.ok(await reloadId());
+  });
+
+  it("provisions a Hermes coordinator and requests one drained catalog reload", async () => {
     const coordinatorCalls = [];
     const commandCalls = [];
     const provisioner = createProvisioner(config(), {
@@ -96,7 +113,8 @@ describe("createProvisioner", () => {
       containerPath: "/projects/demo",
       managed: true,
     });
-    assert.deepEqual(commandCalls, [{ bin: "/usr/bin/systemctl", args: ["--user", "restart", "volition-hermes-runner.service"] }]);
+    assert.deepEqual(commandCalls, []);
+    assert.match(await reloadId(), /^[0-9a-f-]{36}$/);
     assert.deepEqual(first.resources.map((item) => item.kind), ["workspace", "registry", "coordinator", "files"]);
     assert.equal(first.resources[2].id, "hermes-demo-coordinator");
 
@@ -108,7 +126,7 @@ describe("createProvisioner", () => {
     assert.equal(context.coordinatorId, "hermes-demo-coordinator");
   });
 
-  it("restarts the runner only when a provisioning run changed the runner descriptor", async () => {
+  it("requests a runner reload only when a provisioning run changed the descriptor", async () => {
     const coordinatorCalls = [];
     const restarts = [];
     const provisioner = createProvisioner(config(), {
@@ -120,13 +138,15 @@ describe("createProvisioner", () => {
       },
     });
     await provisioner.provision(envelope());
+    const firstReload = await reloadId();
     await provisioner.provision({ ...envelope(), eventId: "323e4567-e89b-42d3-a456-426614174002" });
 
     assert.equal(coordinatorCalls.length, 2);
-    assert.equal(restarts.length, 1);
+    assert.equal(await reloadId(), firstReload);
+    assert.deepEqual(restarts, []);
   });
 
-  it("provisions the browser before reloading Hermes and exposes no CDP details", async () => {
+  it("provisions the browser before requesting a Hermes reload and exposes no CDP details", async () => {
     const order = [];
     const provisioner = createProvisioner(config(), {
       ensurePlanCoordinator: fakeCoordinator([]),
@@ -150,7 +170,8 @@ describe("createProvisioner", () => {
 
     const result = await provisioner.provision(request);
 
-    assert.deepEqual(order, ["browser", "runner-restart"]);
+    assert.deepEqual(order, ["browser"]);
+    assert.match(await reloadId(), /^[0-9a-f-]{36}$/);
     assert.deepEqual(result.resources.map((item) => item.kind), [
       "workspace",
       "registry",
@@ -234,7 +255,8 @@ describe("createProvisioner", () => {
     assert.ok(Date.parse(receipt.purgeAfter) > Date.now());
     assert.equal(await fs.stat(path.join(root, "vault/Home")).then((stat) => stat.isDirectory()), true);
     assert.equal(await fs.stat(path.join(root, "vault/Templates")).then((stat) => stat.isDirectory()), true);
-    assert.ok(commandCalls.some(({ args }) => args.includes("restart")));
+    assert.equal(commandCalls.some(({ args }) => args.includes("restart")), false);
+    assert.match(await reloadId(), /^[0-9a-f-]{36}$/);
   });
 
   it("deletes the runner descriptor on deprovision", async () => {
@@ -262,7 +284,8 @@ describe("createProvisioner", () => {
     await assert.rejects(fs.lstat(descriptor), { code: "ENOENT" });
     const quarantine = path.join(root, "trash/projects", deletion.eventId);
     assert.deepEqual((await fs.readdir(quarantine)).sort(), ["receipt.json", "registry.json", "workspace"]);
-    assert.equal(restarts.length, 1);
+    assert.deepEqual(restarts, []);
+    assert.match(await reloadId(), /^[0-9a-f-]{36}$/);
   });
 
   it("moves the folders of a deleted board to the trash and keeps the others", async () => {
@@ -698,7 +721,8 @@ describe("createProvisioner", () => {
       const stat = await fs.stat(path.join(root, "hermes/profiles", name));
       assert.equal(stat.mode & 0o777, 0o700);
     }
-    assert.equal(restarts.length, 1);
+    assert.deepEqual(restarts, []);
+    assert.match(await reloadId(), /^[0-9a-f-]{36}$/);
     const registry = JSON.parse(await fs.readFile(path.join(root, "state/projects/demo.json"), "utf8"));
     assert.deepEqual(registry.agents, [
       { id: 31, username: "agent-31", profile: "demo_31" },
@@ -724,7 +748,7 @@ describe("createProvisioner", () => {
     // Another project's agent with a similar name stays.
     await fs.mkdir(path.join(root, "hermes/profiles/demox_32"), { recursive: true });
 
-    const restartsBefore = restarts.length;
+    const reloadBefore = await reloadId();
     const later = { ...request, eventId: "b23e4567-e89b-42d3-a456-42661417400a", agents: [31] };
     await provisioner.provision(later);
 
@@ -735,7 +759,8 @@ describe("createProvisioner", () => {
     assert.equal(await fs.readFile(path.join(trash, "hermes-profile-demo_32/MEMORY.md"), "utf8"), "kept in the trash");
     assert.equal(await fs.stat(path.join(root, "hermes/profiles/demo_31")).then((stat) => stat.isDirectory()), true);
     assert.equal(await fs.stat(path.join(root, "hermes/profiles/demox_32")).then((stat) => stat.isDirectory()), true);
-    assert.equal(restarts.length, restartsBefore + 1);
+    assert.notEqual(await reloadId(), reloadBefore);
+    assert.deepEqual(restarts, []);
     const [state] = (await provisioner.state()).projects;
     assert.deepEqual(state.agents, [31]);
   });
@@ -754,7 +779,7 @@ describe("createProvisioner", () => {
     assert.deepEqual(result.warnings, ["Project agents get no Hermes runtime without the Plan control token."]);
   });
 
-  it("reloads the runner for the descriptors a failed run already wrote", async () => {
+  it("requests a reload for descriptors a failed run already wrote", async () => {
     const restarts = [];
     const provisioner = createProvisioner(config(), {
       ensurePlanCoordinator: fakeCoordinator([]),
@@ -766,7 +791,8 @@ describe("createProvisioner", () => {
     });
 
     await assert.rejects(provisioner.provision({ ...envelope(), agents: [31, 32] }), /HTTP 404/);
-    assert.equal(restarts.length, 1);
+    assert.deepEqual(restarts, []);
+    assert.match(await reloadId(), /^[0-9a-f-]{36}$/);
   });
 
   it("removes every agent runtime of a deleted project", async () => {
@@ -781,6 +807,7 @@ describe("createProvisioner", () => {
     });
     const request = { ...envelope(), agents: [31] };
     await provisioner.provision(request);
+    const reloadBefore = await reloadId();
 
     const deletion = {
       ...envelope(),
@@ -792,6 +819,7 @@ describe("createProvisioner", () => {
     assert.deepEqual(await fs.readdir(path.join(root, "hermes/run/agents")), []);
     const quarantine = path.join(root, "trash/projects", deletion.eventId);
     assert.ok((await fs.readdir(quarantine)).includes("hermes-profile-demo_31"));
-    assert.equal(restarts.length, 2);
+    assert.notEqual(await reloadId(), reloadBefore);
+    assert.deepEqual(restarts, []);
   });
 });
