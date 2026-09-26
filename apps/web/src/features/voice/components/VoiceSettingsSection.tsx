@@ -69,7 +69,6 @@ function WordsRow({
         rows={3}
         placeholder={t('words.placeholder')}
         aria-label={t('words.title')}
-        className="text-[13px]"
       />
       <Button
         variant="outline"
