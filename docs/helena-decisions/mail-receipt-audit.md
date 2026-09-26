@@ -48,6 +48,9 @@ is the separate payment confirmation. These limitations must remain visible in a
 
 ## Root integration and acceptance
 
+The exact execution order, private evidence paths and stop conditions are in
+[the root execution checklist](mail-receipt-root-runbook.md).
+
 Integrate with mail-ID fix `3048e20b` and the other reviewed changes. Run the serial full gate
 and deploy through the normal root workflow. No migration or mailbox settings change is
 needed. This branch has made no live writes, backfills or provider connections.
@@ -103,7 +106,8 @@ bun src/scripts/mail-receipt-history.ts --account=4 --project=PRIV \
 ```
 
 Review every candidate, including those with `selected:false`. Attachment names and body
-facts give conservative initial selections; they are not proof that all financial mail is
+facts determine conservative initial selections, but the manifest contains only subjects,
+attachment metadata and hashes, not body facts or original bytes. These are not proof that all financial mail is
 recognizable by keywords. Quoted reply discussions are not selected as body receipts.
 Set `selected`, `attachmentSha256` and `includeBody` to match the actual document. Keep the
 provider UID, UID validity and raw SHA unchanged. Retrieve an ambiguous attachment for
@@ -121,6 +125,12 @@ selected originals with `newInboxMail:false` and no Inbox locations, then files 
 the verified project. Existing messages, ancestor threads and routing rules outside that
 project fail closed. Repeating apply returns the same receipt IDs. Source mail can later
 leave the normal retention window; the receipt originals survive.
+
+After Message-ID deduplication, apply hashes the actual stored raw message and requires it
+to match the reviewed provider original. A different local original with the same Message-ID,
+changed stored bytes or a missing selected attachment stops filing. Resolve the source
+conflict separately; never weaken or replace the reviewed hashes to make a batch pass.
+IMAP INTERNALDATE supplies the historical fallback when a Date header is absent.
 
 Continue the same window with `--before-uid=<nextBeforeUid>` while `remaining > 0`. Inspect
 earlier yearly windows while `earlierCandidates > 0`, including empty intervening years.

@@ -3,11 +3,13 @@ import {
   db,
   helenaReceipt,
   hubInboxEvent,
+  mailAttachment,
   mailMessage,
   mailMessageFolder,
   mailThread,
 } from '@repo/db';
 import { eq } from 'drizzle-orm';
+import { putObject } from '@repo/storage';
 import { authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
@@ -17,7 +19,8 @@ import {
   FakeImapClient,
   FakeImapServer,
 } from '../../../../worker/src/__tests__/helpers/fake-mail';
-import { loadSyncAccounts } from '../../../../worker/src/mail/store';
+import { importRawMessage } from '../../../../worker/src/mail/import';
+import { flagsOf, loadSyncAccounts } from '../../../../worker/src/mail/store';
 import type { ImapClient } from '../../../../worker/src/mail/transport';
 import { applyReceiptHistory, inspectReceiptHistory } from '../mail-receipt-history';
 
@@ -90,6 +93,87 @@ it('rejects provider UID reuse, original drift and project mismatches before imp
   box.messages[0]!.raw = Buffer.from('changed');
   await expect(applyReceiptHistory(client, account, manifest)).rejects.toThrow('Original changed');
   expect(await db.select().from(mailMessage)).toHaveLength(0);
+});
+
+it('rejects a different provider original that reuses a locally imported Message-ID', async () => {
+  const { account, box, client, input } = await setup();
+  const manifest = await inspectReceiptHistory(client, account, input);
+  await applyReceiptHistory(client, account, manifest);
+  box.messages[0]!.raw = Buffer.from(
+    eml({
+      id: '<invoice@fixture.example>',
+      subject: 'Invoice INV-4242',
+      body: 'Invoice number: INV-4242\nAmount paid: 99.00 EUR',
+    }),
+  );
+  const reviewed = await inspectReceiptHistory(client, account, input);
+  expect(reviewed.candidates[0]!.sha256).not.toBe(manifest.candidates[0]!.sha256);
+  await expect(applyReceiptHistory(client, account, reviewed)).rejects.toThrow(
+    'Stored original does not match the reviewed original',
+  );
+  expect(await db.select().from(helenaReceipt)).toHaveLength(1);
+  expect(await db.select().from(mailMessage)).toHaveLength(1);
+});
+
+it('checks the actual stored bytes before reusing an imported message', async () => {
+  const { account, client, input } = await setup();
+  const manifest = await inspectReceiptHistory(client, account, input);
+  const first = await applyReceiptHistory(client, account, manifest);
+  const [message] = await db
+    .select()
+    .from(mailMessage)
+    .where(eq(mailMessage.id, first.reports[0]!.messageId));
+  await putObject(message!.rawKey, Buffer.from('changed stored original'), 'message/rfc822');
+  await expect(applyReceiptHistory(client, account, manifest)).rejects.toThrow(
+    'Stored original does not match the reviewed original',
+  );
+  expect(await db.select().from(helenaReceipt)).toHaveLength(1);
+});
+
+it('rejects a missing selected attachment instead of filing the body fallback', async () => {
+  const { account, box, client, input } = await setup();
+  const raw = Buffer.from(
+    eml({
+      id: '<invoice@fixture.example>',
+      subject: 'Invoice INV-4242',
+      body: 'Invoice number: INV-4242\nAmount paid: 12.00 EUR',
+      attachment: { name: 'invoice.pdf', content: 'fixture attachment' },
+    }),
+  );
+  box.messages[0]!.raw = raw;
+  const manifest = await inspectReceiptHistory(client, account, input);
+  manifest.candidates[0]!.includeBody = true;
+  expect(manifest.candidates[0]!.attachmentSha256).toHaveLength(1);
+  const messageId = await importRawMessage(account, raw, {
+    folderId: null,
+    uid: null,
+    flags: flagsOf(new Set()),
+    newInboxMail: false,
+  });
+  await db.delete(mailAttachment).where(eq(mailAttachment.messageId, messageId));
+  await expect(applyReceiptHistory(client, account, manifest)).rejects.toThrow(
+    'Selected stored attachment is missing',
+  );
+  expect(await db.select().from(helenaReceipt)).toHaveLength(0);
+});
+
+it('uses the historical IMAP date when the original has no Date header', async () => {
+  const { account, box, client, input } = await setup();
+  box.messages[0]!.raw = Buffer.from(
+    eml({
+      id: '<invoice@fixture.example>',
+      subject: 'Invoice INV-4242',
+      body: 'Invoice number: INV-4242\nAmount paid: 12.00 EUR',
+    }).replace(/^Date:.*\r\n/m, ''),
+  );
+  const manifest = await inspectReceiptHistory(client, account, input);
+  const result = await applyReceiptHistory(client, account, manifest);
+  const [receipt] = await db
+    .select()
+    .from(helenaReceipt)
+    .where(eq(helenaReceipt.id, result.reports[0]!.receiptIds[0]!));
+  expect(receipt!.invoiceDate).toBe('2026-03-10');
+  expect(receipt!.vaultPath).toContain('/Files/Belege/2026-03/');
 });
 
 it('rejects a known message moved to another project and bounds pagination', async () => {

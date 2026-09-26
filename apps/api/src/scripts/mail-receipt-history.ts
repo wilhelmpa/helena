@@ -1,6 +1,8 @@
+import { createHash } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
-import { db, project, mailAttachment } from '@repo/db';
+import { db, project, mailAttachment, mailMessage } from '@repo/db';
 import { parseMessage, sha256 } from '@repo/mail';
+import { getObject } from '@repo/storage';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { importRawMessage } from '../../../worker/src/mail/import';
@@ -75,6 +77,39 @@ async function assertProject(account: SyncAccount, projectKey: string) {
   return target;
 }
 
+async function assertStoredOriginal(messageId: number, expectedSha: string, uid: number) {
+  const [message] = await db
+    .select({ rawKey: mailMessage.rawKey, size: mailMessage.size })
+    .from(mailMessage)
+    .where(eq(mailMessage.id, messageId));
+  if (!message || message.size > MAX_RECEIPT_BYTES)
+    throw new HistoryError(`Stored original unavailable or too large for UID ${uid}.`);
+  const stored = await getObject(message.rawKey);
+  const reader = stored.body.getReader();
+  const hash = createHash('sha256');
+  let size = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.length;
+      if (size > MAX_RECEIPT_BYTES)
+        throw new HistoryError(`Stored original exceeds limits for UID ${uid}.`);
+      hash.update(value);
+    }
+  } finally {
+    await reader.cancel();
+  }
+  if (hash.digest('hex') !== expectedSha)
+    throw new HistoryError(`Stored original does not match the reviewed original for UID ${uid}.`);
+}
+
+function internalDateOf(value: Date | string | undefined): Date {
+  const date = value === undefined ? new Date(NaN) : new Date(value);
+  if (!Number.isFinite(+date)) throw new HistoryError('Provider internal date is unavailable.');
+  return date;
+}
+
 /** A bounded provider read: no mail locations, events, classifier or retention settings change. */
 export async function inspectReceiptHistory(
   client: ImapClient,
@@ -140,14 +175,14 @@ export async function inspectReceiptHistory(
       }
       const [source] = await client.fetchAll(
         String(uid),
-        { uid: true, source: true, flags: true },
+        { uid: true, source: true, flags: true, internalDate: true },
         { uid: true },
       );
       if (!source?.source) throw new HistoryError(`Original unavailable for UID ${uid}.`);
       bytes += source.source.length;
       if (source.source.length > MAX_RECEIPT_BYTES || bytes > MAX_BATCH_BYTES)
         throw new HistoryError('Provider source exceeded the batch limit.');
-      const mail = await parseMessage(source.source);
+      const mail = await parseMessage(source.source, internalDateOf(source.internalDate));
       const facts = mailReceiptFacts({
         subject: mail.subject,
         textBody: mail.text,
@@ -230,7 +265,7 @@ export async function applyReceiptHistory(
         throw new HistoryError(`Original exceeds limits for UID ${candidate.uid}.`);
       const [source] = await client.fetchAll(
         String(candidate.uid),
-        { uid: true, source: true, flags: true },
+        { uid: true, source: true, flags: true, internalDate: true },
         { uid: true },
       );
       if (!source?.source || sha256(source.source) !== candidate.sha256)
@@ -238,7 +273,8 @@ export async function applyReceiptHistory(
       bytes += source.source.length;
       if (source.source.length > MAX_RECEIPT_BYTES || bytes > MAX_BATCH_BYTES)
         throw new HistoryError('Provider source exceeded the batch limit.');
-      const parsed = await parseMessage(source.source);
+      const internalDate = internalDateOf(source.internalDate);
+      const parsed = await parseMessage(source.source, internalDate);
       if (
         candidate.attachmentSha256.some(
           (hash) => !parsed.attachments.some((a) => a.sha256 === hash),
@@ -252,14 +288,19 @@ export async function applyReceiptHistory(
           folderId: null,
           uid: null,
           flags: flagsOf(source.flags),
+          internalDate,
           newInboxMail: false,
           requiredProjectId: target.id,
         },
       );
+      // Message-ID deduplication may reuse a different original, including a concurrent import.
+      await assertStoredOriginal(messageId, candidate.sha256, candidate.uid);
       const attachments = await db
         .select({ id: mailAttachment.id, sha256: mailAttachment.sha256 })
         .from(mailAttachment)
         .where(eq(mailAttachment.messageId, messageId));
+      if (candidate.attachmentSha256.some((hash) => !attachments.some((a) => a.sha256 === hash)))
+        throw new HistoryError(`Selected stored attachment is missing for UID ${candidate.uid}.`);
       const receiptIds = await intakeMailReceipts({
         teamId: target.teamId,
         projectId: target.id,
