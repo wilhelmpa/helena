@@ -352,9 +352,11 @@ describe('routine mentions', () => {
     const { asOwner, writer, column } = await setup();
     const member = await agentAdmin(asOwner);
     const task = (
-      await member.api
-        .projects({ projectKey: 'MKT' })
-        .issues.post({ columnId: column('Done'), title: 'Backups' } as never)
+      await member.api.projects({ projectKey: 'MKT' }).issues.post({
+        columnId: column('Done'),
+        title: 'Backups',
+        assigneeUserId: member.userId,
+      } as never)
     ).data!;
     const created = (
       await routines(asOwner).post(

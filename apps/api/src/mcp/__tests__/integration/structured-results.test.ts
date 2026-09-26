@@ -71,6 +71,24 @@ describe('MCP structured results through the SDK client', () => {
     await Promise.all(clients.splice(0).map((client) => client.close()));
   });
 
+  it('assigns an MCP-created issue to its human owner when no assignee is given', async () => {
+    const owner = await signUpTestUser();
+    const api = authedApi(owner.cookie);
+    await api.projects.post({ key: 'OWNED', name: 'Owned tasks' });
+    const project = (await api.projects({ projectKey: 'OWNED' }).get()).data!;
+    const client = await connect(owner.userId);
+    const result = await callTool(client, {
+      name: 'create_issue',
+      arguments: { projectKey: 'OWNED', columnId: project.columns[0].id, title: 'MCP task' },
+    });
+    expect(result.isError).toBe(false);
+    expect(result.structuredContent).toMatchObject({
+      ok: true,
+      status: 201,
+      data: { assigneeUserId: owner.userId },
+    });
+  });
+
   it('compiles every advertised output schema and validates object, array, and empty results', async () => {
     const user = await signUpTestUser();
     const client = await connect(user.userId);

@@ -82,6 +82,7 @@ import { WORKFLOW_EVENT_ACTOR } from '#modules/engine/events';
 import { applySubtaskAutomation } from './automation';
 import { assertWipLimit, columnAutoAssignee, wipLimitBreach } from '#modules/columns/service';
 import { enqueueStateChangedActions, type ActionChain } from '#modules/actions/queue';
+import { canBeIssueAssignee, resolveIssueAssignee } from './responsibility';
 
 // Data access for issues and their per-issue data: labels, custom field values,
 // and selected options. The human identifier (e.g. "MKT-42") is the project key
@@ -890,16 +891,16 @@ export interface NewIssueInput {
   labelIds?: number[];
 }
 
-// Enforces that assignee holds a project member and delegate holds an agent of the
-// same project. Only checks the fields present in the patch, and only when set to a
-// non-null value (clearing a field is always allowed). Throws 400 otherwise.
 async function assertAssignments(
   projectId: number,
   patch: { assigneeUserId?: string | null; delegateUserId?: string | null },
 ): Promise<void> {
   if (patch.assigneeUserId) {
-    const role = await getMembership(projectId, patch.assigneeUserId);
-    if (!role) throw new HttpError(400, 'Assignee must be a project member');
+    if (!(await canBeIssueAssignee(projectId, patch.assigneeUserId)))
+      throw new HttpError(
+        400,
+        'Assignee must be a human project member who can read tasks; use delegate for an agent',
+      );
   }
   if (patch.delegateUserId) {
     if (!(await isProjectAgent(projectId, patch.delegateUserId)))
@@ -1043,8 +1044,7 @@ export async function createIssue(
     fromWorkflow?: boolean;
     // What the delegate's run is, when the issue is created delegated (a routine's task).
     delegation?: DelegationOptions;
-    // False when no person filed the task, though it acts for one: a routine's fire files
-    // the routine's task, and its author does not follow every task the routine makes.
+    // A routine's implicit human responsibility neither subscribes nor notifies its owner.
     subscribeAuthor?: boolean;
   },
 ): Promise<IssueRow> {
@@ -1059,15 +1059,22 @@ export async function createIssue(
   assertDateOrder(input.startDate, input.dueDate);
   // Also checked by setIssueLabels below, but here it fails before the issue exists.
   await assertIssueLabels(project.id, input.labelIds);
-  // An issue created in a column enters it the same way a moved one does, so the
-  // column's auto-assignee applies. An assignee sent with the create wins over it.
-  const assigneeUserId = input.assigneeUserId ?? (await columnAutoAssignee(input.columnId));
+  const columnAssigneeUserId = await columnAutoAssignee(input.columnId);
   const { id: issueId, createdAt } = await db.transaction(async (tx) => {
     const [seqRow] = await tx
       .update(projectTable)
       .set({ nextSequence: sql`next_sequence + 1` })
       .where(eq(projectTable.id, project.id))
       .returning({ seq: sql<number>`next_sequence - 1` });
+    const assigneeUserId = await resolveIssueAssignee(
+      project.id,
+      {
+        assigneeUserId: input.assigneeUserId,
+        parentId: input.parentId,
+        columnAssigneeUserId,
+      },
+      tx,
+    );
     const sequenceNumber = Number(seqRow.seq);
     const [posRow] = await tx
       .select({ pos: sql<number>`COALESCE(MAX(${issue.position}), 0) + 1000` })
@@ -1124,9 +1131,8 @@ export async function createIssue(
   // An issue created already delegated to an agent enqueues a run, the same as
   // delegating one later does.
   await enqueueDelegateRun(created, actorUserId, opts?.delegation);
-  // An issue created already assigned to a member notifies them, the same as
-  // assigning one later does.
-  if (created.assigneeUserId) {
+  // Routine defaults stay quiet; explicit assignments notify their responsible person.
+  if (created.assigneeUserId && (opts?.subscribeAuthor !== false || input.assigneeUserId != null)) {
     await notifyIssueChange({
       projectId: project.id,
       issueId,
@@ -1276,8 +1282,17 @@ export async function updateIssue(
   if (patch.initiativeId !== undefined) set.initiativeId = patch.initiativeId;
   if (patch.cycleId !== undefined) set.cycleId = patch.cycleId;
   if (patch.folderId !== undefined) set.folderId = patch.folderId;
-  if (patch.assigneeUserId !== undefined) set.assigneeUserId = patch.assigneeUserId;
-  else if (autoAssignee) set.assigneeUserId = autoAssignee;
+  if (
+    patch.assigneeUserId !== undefined ||
+    autoAssignee ||
+    !before.assigneeUserId ||
+    !(await canBeIssueAssignee(before.projectId, before.assigneeUserId))
+  )
+    set.assigneeUserId = await resolveIssueAssignee(before.projectId, {
+      assigneeUserId: patch.assigneeUserId,
+      parentId: patch.parentId === undefined ? before.parentId : patch.parentId,
+      columnAssigneeUserId: autoAssignee,
+    });
   if (patch.delegateUserId !== undefined) set.delegateUserId = patch.delegateUserId;
   if (patch.title !== undefined) set.title = patch.title;
   if (patch.description !== undefined) set.description = patch.description;
@@ -1296,6 +1311,29 @@ export async function updateIssue(
         ? eq(issue.id, id)
         : and(eq(issue.id, id), eq(issue.columnId, opts.onlyIfColumnId));
     const updated = await db.transaction(async (tx) => {
+      await tx
+        .select({ id: projectTable.id })
+        .from(projectTable)
+        .where(eq(projectTable.id, before.projectId))
+        .for('update');
+      if (set.assigneeUserId) {
+        await resolveIssueAssignee(before.projectId, { assigneeUserId: set.assigneeUserId }, tx);
+      } else {
+        const [current] = await tx
+          .select({ assigneeUserId: issue.assigneeUserId })
+          .from(issue)
+          .where(eq(issue.id, id));
+        if (
+          current &&
+          (!current.assigneeUserId ||
+            !(await canBeIssueAssignee(before.projectId, current.assigneeUserId, tx)))
+        )
+          set.assigneeUserId = await resolveIssueAssignee(
+            before.projectId,
+            { parentId: patch.parentId === undefined ? before.parentId : patch.parentId },
+            tx,
+          );
+      }
       const rows = await tx.update(issue).set(set).where(guard).returning({ id: issue.id });
       if (rows.length > 0 && movedToColumnId !== null) {
         await enqueueStateChangedActions({

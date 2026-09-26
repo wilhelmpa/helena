@@ -1,7 +1,7 @@
 import { db, projectColumn, issue, issueLabel, issueFieldValue, issueFieldOption } from '@repo/db';
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
-import { getMembership } from '#modules/members/service';
+import { canBeIssueAssignee } from '#modules/issues/responsibility';
 import { recordActivityForIssues, statusSide } from '#modules/issues/activity';
 import { recordStatusChange } from '#modules/issues/status-history';
 
@@ -33,8 +33,8 @@ function mapColumn(row: typeof projectColumn.$inferSelect): ColumnRow {
 
 async function assertAutoAssignee(projectId: number, userId?: string | null): Promise<void> {
   if (!userId) return;
-  if (!(await getMembership(projectId, userId)))
-    throw new HttpError(400, 'Auto-assignee must be a project member');
+  if (!(await canBeIssueAssignee(projectId, userId)))
+    throw new HttpError(400, 'Auto-assignee must be a human project member who can read tasks');
 }
 
 export async function columnAutoAssignee(columnId: number): Promise<string | null> {

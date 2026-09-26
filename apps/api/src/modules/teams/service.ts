@@ -1,3 +1,4 @@
+import { transferDepartingAssignee } from '#modules/issues/responsibility';
 import {
   agentMcpServer,
   agentSkill,
@@ -854,14 +855,18 @@ async function assertLeavesNoProjectOwnerless(
   );
 }
 
-// Ends a team membership: the member leaves the team and every project it owns. What
-// they already did in those projects stays — issues keep their assignee and their
-// author.
+// Ends a team membership and transfers its task responsibility in the same transaction.
 async function dropTeamMembership(tx: Transaction, teamId: number, userId: string): Promise<void> {
   const teamProjects = tx
     .select({ id: project.id })
     .from(project)
     .where(eq(project.teamId, teamId));
+  const lockedProjects = await teamProjects.orderBy(project.id).for('update');
+  await transferDepartingAssignee(
+    tx,
+    userId,
+    lockedProjects.map((row) => row.id),
+  );
   await tx
     .delete(projectMember)
     .where(and(eq(projectMember.userId, userId), inArray(projectMember.projectId, teamProjects)));

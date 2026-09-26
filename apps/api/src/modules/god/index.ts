@@ -647,7 +647,7 @@ export const godRoutes = new Elysia({ name: 'god', detail: { tags: ['God'] } })
     {
       params: userParams,
       query: deleteUserQuery,
-      response: { 204: t.Void(), ...commonErrors },
+      response: { 204: t.Void(), ...commonErrors, ...errors(409) },
       detail: {
         summary: 'Delete a user',
         description:

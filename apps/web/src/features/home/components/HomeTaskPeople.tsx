@@ -1,0 +1,28 @@
+import { Bot } from 'lucide-react';
+import type { CrossProjectIssue } from '@/lib/api/endpoints/issues';
+import Avatar from '@/components/common/Avatar';
+
+export default function HomeTaskPeople({ issue }: { issue: CrossProjectIssue }) {
+  return (
+    <span className="flex shrink-0 items-center gap-1.5">
+      {issue.delegate && (
+        <span
+          className="flex max-w-28 items-center gap-1 rounded border px-1 text-xs text-muted-foreground"
+          title={issue.delegate.name}
+        >
+          <Bot className="size-3.5 shrink-0" aria-hidden />
+          <span className="truncate" dir="auto">
+            {issue.delegate.name}
+          </span>
+        </span>
+      )}
+      {issue.assignee && (
+        <Avatar
+          name={issue.assignee.name}
+          image={issue.assignee.image}
+          title={issue.assignee.name}
+        />
+      )}
+    </span>
+  );
+}

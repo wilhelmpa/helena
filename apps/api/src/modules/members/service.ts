@@ -14,6 +14,7 @@ import { and, desc, eq, ilike, isNotNull, isNull, notExists, or, sql } from 'dri
 import { iso } from '#shared/lib';
 import { DEFAULT_TIMEZONE } from '#modules/user-preferences/service';
 import { notHomeAgent } from '#modules/agents/core/home-agent';
+import { transferDepartingAssignee } from '#modules/issues/responsibility';
 import {
   defaultMemberPermissions,
   emptyPermissions,
@@ -529,6 +530,12 @@ export async function setMembership(
 
 export async function removeMember(projectId: number, userId: string): Promise<void> {
   await db.transaction(async (tx) => {
+    await tx
+      .select({ id: project.id })
+      .from(project)
+      .where(eq(project.id, projectId))
+      .for('update');
+    await transferDepartingAssignee(tx, userId, [projectId]);
     await tx
       .delete(projectMember)
       .where(and(eq(projectMember.projectId, projectId), eq(projectMember.userId, userId)));

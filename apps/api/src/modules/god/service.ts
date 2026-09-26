@@ -290,10 +290,7 @@ async function countOwnersByProject(projectIds: number[]): Promise<Map<number, n
   return new Map(rows.map((r) => [r.projectId, r.count]));
 }
 
-// Removes the account. Every table that points at a user either cascades (its
-// sessions, accounts, memberships, notifications, preferences) or sets the
-// reference to null (assignee, activity actor, invites), so this is a single
-// delete.
+// Transfers task responsibility before removing the account and its memberships.
 export async function deleteInstanceUser(userId: string): Promise<void> {
   await deleteAccount(userId);
 }

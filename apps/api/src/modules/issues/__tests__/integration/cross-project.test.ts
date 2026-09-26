@@ -167,13 +167,13 @@ describe('GET /issues', () => {
     const nobody = (await createIssue(asOwner, 'MKT', mkt[0].id, { assigneeUserId: null })).data!
       .id;
 
-    expect((await list(asOwner, { assignee: 'me' })).data!.items.map((i) => i.id)).toEqual([mine]);
+    expect((await list(asOwner, { assignee: 'me' })).data!.items.map((i) => i.id).sort()).toEqual(
+      [mine, delegated, nobody].sort(),
+    );
     const agents = await list(asOwner, { assignee: 'agents' });
     expect(agents.data!.items.map((i) => i.id)).toEqual([delegated]);
     expect(agents.data!.items[0].delegate).toMatchObject({ userId: agent.userId, name: 'Bot' });
-    expect((await list(asOwner, { assignee: 'unassigned' })).data!.items.map((i) => i.id)).toEqual([
-      nobody,
-    ]);
+    expect((await list(asOwner, { assignee: 'unassigned' })).data!.items).toEqual([]);
     expect((await list(asOwner, { assignee: agent.userId })).data!.items.map((i) => i.id)).toEqual([
       delegated,
     ]);

@@ -108,15 +108,13 @@ describe('column auto-assignee', () => {
       });
     });
 
-    // An agent leaves a project through the agent's project list, not through the
-    // project's member list, so that path has to clear the column too.
-    it('is cleared when an agent is detached from the project', async () => {
+    it('rejects an agent as the automatic human assignee', async () => {
       const { asOwner } = await setupProject();
       const teamId = await teamOf(asOwner, 'MKT');
       const created = await createAgent(asOwner, 'MKT', { name: 'Triage Bot', username: 'triage' });
       const agent = created.data!.agent;
       const column = await columnByName(asOwner, 'In Progress');
-      await setAutoAssignee(asOwner, column.id, agent.userId);
+      expect((await setAutoAssignee(asOwner, column.id, agent.userId)).status).toBe(400);
 
       const detached = await asOwner
         .teams({ teamId })
@@ -227,7 +225,7 @@ describe('column auto-assignee', () => {
       const saved = await asOwner
         .issues({ issueId: created.data!.id })
         .patch({ columnId: progress.id, title: 'Renamed' });
-      expect(saved.data).toMatchObject({ title: 'Renamed', assigneeUserId: null });
+      expect(saved.data).toMatchObject({ title: 'Renamed', assigneeUserId: ownerId });
     });
 
     it('applies to a bulk move', async () => {

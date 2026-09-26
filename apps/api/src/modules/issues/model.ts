@@ -445,7 +445,7 @@ export const createIssueBody = t.Object({
     t.Nullable(
       t.String({
         description:
-          "Assignee user id (a project member), or null. From get_project.assignees where kind is 'member'.",
+          "Responsible human user id. From get_project.assignees where kind is 'member'. Omitted or null inherits the parent's human assignee, the column's human assignee, or a project/team owner. Agents belong in delegateUserId.",
       }),
     ),
   ),

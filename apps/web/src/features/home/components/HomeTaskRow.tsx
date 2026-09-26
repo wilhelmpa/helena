@@ -5,13 +5,12 @@ import { usePriorityLabel } from '@/hooks/usePriorityLabel';
 import { dayKey, formatDate } from '@/utils/dates';
 import { issuePath } from '@/utils/paths';
 import { cn } from '@/lib/utils';
-import Avatar from '@/components/common/Avatar';
 import { colorDot } from '@/components/common/fields/colorDot';
+import HomeTaskPeople from './HomeTaskPeople';
 
 // One task of the Home lists. It opens the task in its project, where it is edited.
 export default function HomeTaskRow({ issue }: { issue: CrossProjectIssue }) {
   const priorityLabel = usePriorityLabel();
-  const holder = issue.assignee ?? issue.delegate;
   const overdue = issue.dueDate != null && issue.dueDate < dayKey(new Date().toISOString());
 
   return (
@@ -48,9 +47,7 @@ export default function HomeTaskRow({ issue }: { issue: CrossProjectIssue }) {
       >
         {issue.dueDate ? formatDate(issue.dueDate) : ''}
       </span>
-      <span className="flex w-5 shrink-0 justify-end">
-        {holder && <Avatar name={holder.name} image={holder.image} title={holder.name} />}
-      </span>
+      <HomeTaskPeople issue={issue} />
     </Link>
   );
 }
