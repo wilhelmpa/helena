@@ -313,6 +313,7 @@ export async function applyReceiptHistory(
           .filter((a) => candidate.attachmentSha256.includes(a.sha256))
           .map((a) => a.id),
         includeBody: candidate.includeBody,
+        skipMatching: true,
       });
       if (!receiptIds.length)
         throw new HistoryError(

@@ -94,6 +94,7 @@ export async function backfillMailReceipts(manifest: unknown, apply = false, rev
       attachmentIds: entry.attachmentIds,
       includeBody: entry.includeBody,
       reviewedSource,
+      skipMatching: true,
     };
     const plans = await prepareMailReceipts(input);
     if (!plans.length) throw new Error(`No original found for message ${entry.messageId}.`);

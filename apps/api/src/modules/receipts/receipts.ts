@@ -216,6 +216,7 @@ export interface MailReceiptInput {
   attachmentIds?: number[];
   includeBody?: boolean;
   reviewedSource?: ReviewedMailSource;
+  skipMatching?: boolean;
 }
 
 export interface MailReceiptPlan {
@@ -434,7 +435,7 @@ async function storeMailReceipts(input: MailReceiptInput): Promise<number[]> {
       .returning({ id: helenaReceipt.id });
     const id = row?.id ?? (await existingBySha(input.projectId, plan.sha256));
     if (id) ids.add(id);
-    if (row) await matchQuietly(row.id);
+    if (row && !input.skipMatching) await matchQuietly(row.id);
   }
   return [...ids];
 }

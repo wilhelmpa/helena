@@ -46,6 +46,11 @@ is the separate payment confirmation. These limitations must remain visible in a
 - Mail content remains untrusted evidence. It never chooses a path, account, execution
   command or a project outside the server-provided project scope.
 
+Operator backfill and history apply set `skipMatching: true` per intake call. They file
+originals without starting deterministic or model-based receipt matching. Existing matches
+are retained. Matching runs separately under its configured provider and data permissions;
+normal intake and native routines keep their existing defaults.
+
 ## Root integration and acceptance
 
 The exact execution order, private evidence paths and stop conditions are in
