@@ -6,6 +6,7 @@ import {
   docsFileUrl,
   notesFileUrl,
   notesFolderUrl,
+  notesVaultFolderUrl,
   notesPageUrl,
   parentPath,
   projectRelativePath,
@@ -53,6 +54,18 @@ describe('vault links', () => {
       'https://notes.example.com/ordner%3AHome',
     );
     assert.equal(notesFolderUrl('', 'VOL'), '');
+  });
+
+  it('opens an allowed vault folder in SilverBullet, never Private or code', () => {
+    const base = 'https://notes.example.com';
+    assert.equal(
+      notesVaultFolderUrl(base, 'Projects/VOL/Files/Mail'),
+      `${base}/ordner%3AProjects/VOL/Files/Mail`,
+    );
+    assert.equal(notesVaultFolderUrl(base, 'Home/Docs'), `${base}/ordner%3AHome/Docs`);
+    for (const path of ['', 'Private', 'Private/Docs', '.git', 'Projects/VOL/.hidden']) {
+      assert.equal(notesVaultFolderUrl(base, path), '', path);
+    }
   });
 
   it('opens a note on the Docs page of its project', () => {
