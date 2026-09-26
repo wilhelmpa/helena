@@ -192,7 +192,7 @@ function fakeBrowser(tabs = [{ id: PAGE, visible: true }], { scale = 2, rejectFi
             const sizes = [visibility, 1920, 1080, bounds.width, bounds.height, page.width, page.height, page.ratio];
             if (message.params.expression.includes("__clicks")) return reply({ result: { value: [] } });
             const visibilityOnly = message.params.expression === "document.visibilityState";
-            return reply({ result: { value: visibilityOnly ? visibility : sizes } });
+            return reply({ result: { value: visibilityOnly ? visibility : (browser.readSizes?.(sizes) ?? sizes) } });
           }
           case "Page.startScreencast":
             if (rejectFirstScreencast) {
@@ -671,6 +671,50 @@ describe("project browser router", () => {
     link.close();
   });
 
+  it("waits for the restored page to reflow after its native bounds already match", async () => {
+    const browser = fakeBrowser();
+    upstream = browser.server;
+    const port = await listen(upstream);
+    let writes = 0;
+    let pendingReads = 0;
+    browser.afterBounds = (bounds) => {
+      if (++writes === 2) pendingReads = 2;
+      return bounds;
+    };
+    browser.readSizes = (sizes) => {
+      if (pendingReads > 0) {
+        pendingReads--;
+        return sizes.map((value, index) => index === 5 || index === 6 ? value - 8 : value);
+      }
+      return sizes;
+    };
+    await setLiveViewport(port, { width: 620, height: 632, ratio: 2 });
+    assert.deepEqual(windowChrome(port), { width: 0, height: 87, scale: 2 });
+    assert.deepEqual(browser.page(), { width: 620, height: 632, ratio: 2 });
+  });
+
+  for (const [change, requested] of [
+    ["size", { width: 1280, height: 680, ratio: 2 }],
+    ["pin", { width: 620, height: 632, ratio: 1, pin1: true }],
+  ]) it(`retries an unconfirmed native calibration for a new owner viewport ${change}`, async () => {
+    const browser = fakeBrowser();
+    upstream = browser.server;
+    const port = await listen(upstream);
+    const original = browser.bounds();
+    // The display temporarily ignores the probe, without changing the page's geometry.
+    browser.afterBounds = () => original;
+    await setLiveViewport(port, { width: 620, height: 632, ratio: 2 });
+    assert.equal(windowChrome(port), null);
+    assert.deepEqual(browser.bounds(), original);
+    const attempted = browser.sent("Browser.setWindowBounds").length;
+    browser.afterBounds = null;
+    await setLiveViewport(port, { width: 620, height: 632, ratio: 2 });
+    assert.equal(browser.sent("Browser.setWindowBounds").length, attempted);
+    await setLiveViewport(port, requested);
+    assert.deepEqual(windowChrome(port), { width: 0, height: 87, scale: 2 });
+    assert.deepEqual(browser.page(), { width: requested.width, height: requested.height, ratio: requested.ratio });
+  });
+
   it("distinguishes equal pixel extents with different CSS size and DPR after detach", async () => {
     const browser = fakeBrowser();
     upstream = browser.server;
@@ -889,11 +933,14 @@ describe("project browser router", () => {
     const browser = fakeBrowser();
     upstream = browser.server;
     const port = await listen(upstream);
-    const link = new BrowserLink(port);
-    await fitWindows(link);
-    assert.equal(link.chrome, null);
-    assert.equal(browser.sent("Browser.setWindowBounds").length, 0);
-    assert.equal(browser.sent("Emulation.clearDeviceMetricsOverride").length, 0);
+    const restarted = await import("./project-browser-control.mjs?startup-grace");
+    const link = new restarted.BrowserLink(port);
+    try {
+      await restarted.fitWindows(link);
+      assert.equal(link.chrome, null);
+      assert.equal(browser.sent("Browser.setWindowBounds").length, 0);
+      assert.equal(browser.sent("Emulation.clearDeviceMetricsOverride").length, 0);
+    } finally { link.close(); }
     // An explicit screen request permits owner calibration and clearing our own emulation.
     await setLiveViewport(port, null);
     assert.equal(browser.sent("Emulation.clearDeviceMetricsOverride").length, 1);

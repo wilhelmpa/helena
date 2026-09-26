@@ -617,8 +617,11 @@ async function calibrateChrome(link, tab, windowId, bounds, valid) {
       restoredBounds = true;
     }
   }
-  if (!restoredBounds || !valid() || !calibrationAllowed.has(link.port)) return null;
-  const restored = await sizesOnceSettled(link, tab, (sizes) => hasSize(sizes, bounds) && sizes.consistent);
+  if (!during?.consistent || !restoredBounds || !valid() || !calibrationAllowed.has(link.port)) return null;
+  // Native bounds settle before the page reflows; wait for its measured toolbar too.
+  const restored = await sizesOnceSettled(link, tab, (sizes) => hasSize(sizes, bounds) && sizes.consistent &&
+    sizes.scale === during.scale &&
+    ["width", "height"].every((key) => Math.abs(sizes.chrome[key] - during.chrome[key]) <= FIT_TOLERANCE));
   if (!during?.consistent || !restored?.consistent || during.scale !== restored.scale) return null;
   for (const dimension of ["width", "height"]) {
     const pageChange = (restored.inner[dimension] * restored.ratio - during.inner[dimension] * during.ratio) / restored.scale;
@@ -702,7 +705,9 @@ async function fitWindowsNow(link) {
         ["width", "height"].every((key) => Math.abs(sizes.chrome[key] - link.chrome[key]) <= FIT_TOLERANCE);
       if (!known) {
         link.chrome = null;
-        const signature = JSON.stringify([bounds, sizes]);
+        // A new requested layout may retry a failed probe; keeper passes for the same
+        // geometry and request must not repeatedly disturb an unverified page.
+        const signature = JSON.stringify([bounds, sizes, live?.width, live?.height, Boolean(live?.pin1)]);
         if (bounds.windowState === "normal" && calibrationAllowed.has(link.port) &&
             link.failedCalibration.get(shown) !== signature) {
           const verified = await calibrateChrome(link, shown, windowId, bounds, valid);
