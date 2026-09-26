@@ -72,7 +72,6 @@ const READ_PROGRAMS = new Set([
   'id',
   'uname',
   'hostname',
-  'env',
   'printenv',
   'basename',
   'dirname',
@@ -96,8 +95,6 @@ const READ_PROGRAMS = new Set([
   'free',
   'uptime',
   'man',
-  'awk',
-  'sed',
 ]);
 
 // git subcommands that only read.
@@ -134,6 +131,8 @@ const PUBLISH_COMMANDS: RegExp[] = [
 
 const SEND_COMMANDS: RegExp[] = [
   /^(mail|mailx|sendmail|mutt|msmtp|swaks)\b/,
+  /^(curl|wget)\b.*\s(--json(?:=|\s)|--method(?:=|\s)(POST|PUT|PATCH|DELETE)\b|--request=(POST|PUT|PATCH|DELETE)\b)/i,
+  /^(http|https|xh)\b.*\s(POST|PUT|PATCH|DELETE)\b/i,
   /^(scp|sftp|ftp)\b/,
   /^rsync\b.*\s[^\s/]+:/,
   /^(nc|ncat|netcat|telnet)\b/,
@@ -157,7 +156,7 @@ const DELETE_COMMANDS: RegExp[] = [
   /^git (checkout|restore)\b.*(\s--\s|\s\.$|--force|-f\b)/,
   /^git branch\b.*\s-(D|d|-delete)\b/,
   /^git stash (drop|clear)\b/,
-  /^find\b.*\s-delete\b/,
+  /^git reflog (expire|delete)\b/,
   /^(dropdb|dropuser)\b/,
   /^(psql|mysql|sqlite3)\b.*\b(drop|delete|truncate)\b/i,
   /^docker (rm|rmi|system prune|volume rm)\b/,
@@ -212,15 +211,7 @@ export function simpleCommands(command: string): string[] {
     current += char;
   }
   parts.push(current);
-  return parts
-    .map((part) => part.trim().replace(/^[({\s]+/, ''))
-    .map((part) =>
-      // Leading variable assignments and wrappers that only change how a command runs.
-      part
-        .replace(/^(\w+=("[^"]*"|'[^']*'|\S*)\s+)+/, '')
-        .replace(/^(env|nice|nohup|time|timeout \S+|xargs( -\S+)*|exec)\s+/, ''),
-    )
-    .filter(Boolean);
+  return parts.map((part) => part.trim().replace(/^[({\s]+/, '')).filter(Boolean);
 }
 
 function words(command: string): string[] {
@@ -238,11 +229,7 @@ function pathsOf(command: string): string[] {
     .filter((word) => !word.startsWith('-') || word.includes('='))
     .map((word) => word.replace(/^-[^=]*=/, ''))
     .filter(
-      (word) =>
-        word.startsWith('/') ||
-        word.startsWith('~') ||
-        word.startsWith('$HOME') ||
-        word.split('/').includes('..'),
+      (word) => word.startsWith('/') || word.startsWith('~') || word.split('/').includes('..'),
     );
 }
 
@@ -252,14 +239,15 @@ const SAFE_ROOTS = ['/tmp/', '/dev/null', '/dev/stdout', '/dev/stderr', '/var/tm
 // workspace (or a temporary directory), and it does not climb out with "..".
 function scopeOf(command: string, workspace: string | null | undefined): ActionScope {
   const root = workspace ? workspace.replace(/\/+$/, '') + '/' : null;
+  const args = words(command);
+  if (args[0]?.split('/').pop() === 'cd' && (!args[1] || args[1] === '-')) return 'external';
+  if (hasShellSyntax(command, ['$'])) return 'external';
   for (const path of pathsOf(command)) {
-    if (path.startsWith('~') || path.startsWith('$HOME')) return 'external';
-    if (path.split('/').includes('..')) {
-      if (!root || !path.startsWith('/')) return 'external';
-    }
+    if (path.startsWith('~') || path.split('/').includes('..')) return 'external';
     if (path.startsWith('/')) {
       const normal = path.endsWith('/') ? path : `${path}/`;
-      if (SAFE_ROOTS.some((safe) => normal.startsWith(safe) || path === safe)) continue;
+      if (SAFE_ROOTS.some((safe) => (safe.endsWith('/') ? normal.startsWith(safe) : path === safe)))
+        continue;
       if (root && normal.startsWith(root) && !path.split('/').includes('..')) continue;
       return 'external';
     }
@@ -290,12 +278,70 @@ function gitSubcommand(args: string[]): string {
   return '';
 }
 
+function unwrap(args: string[]): string[] {
+  while (args.length) {
+    const first = args[0]!.replace(/^\\+/, '');
+    const base = first.split('/').pop() ?? first;
+    if (
+      /^\w+=/.test(first) ||
+      ['if', 'then', 'else', 'elif', 'do', 'while', 'until', '!'].includes(base)
+    ) {
+      args.shift();
+      continue;
+    }
+    if (['env', 'nice', 'nohup', 'time', 'timeout', 'exec', 'command', 'builtin'].includes(base)) {
+      args.shift();
+      while (args[0]?.startsWith('-')) {
+        const option = args.shift()!;
+        if (option === '--') break;
+        if (base === 'env' && (option === '-S' || option === '--split-string')) {
+          args.unshift(...words(args.shift() ?? ''));
+          break;
+        }
+        if (
+          [
+            '-a',
+            '-o',
+            '--output',
+            '-f',
+            '--format',
+            '-u',
+            '--unset',
+            '-C',
+            '--chdir',
+            '-n',
+            '--adjustment',
+            '-s',
+            '--signal',
+            '-k',
+            '--kill-after',
+          ].includes(option)
+        )
+          args.shift();
+      }
+      if (base === 'timeout') args.shift();
+      continue;
+    }
+    args[0] = first;
+    break;
+  }
+  return args;
+}
+
 function classifyOne(command: string, workspace: string | null | undefined): Classified {
-  const scope = scopeOf(command, workspace);
-  const [program = ''] = words(command);
-  const sub = gitSubcommand(words(command).slice(1));
+  const original = words(command);
+  const args = unwrap([...original]);
+  const [program = '', ...rest] = args;
   const base = program.split('/').pop() ?? program;
-  const rest = words(command).slice(1);
+  const scope =
+    base === 'cd' && (!rest[0] || rest[0] === '-')
+      ? 'external'
+      : scopeOf(command, workspace) === 'external'
+        ? 'external'
+        : args.length !== original.length || args.some((arg, index) => arg !== original[index])
+          ? scopeOf(args.join(' '), workspace)
+          : 'workspace';
+  const sub = gitSubcommand(rest);
   const line =
     base === 'git' && sub
       ? ['git', ...rest.slice(rest.indexOf(sub))].join(' ')
@@ -307,16 +353,91 @@ function classifyOne(command: string, workspace: string | null | undefined): Cla
   if (DELETE_COMMANDS.some((re) => re.test(line))) return { category: 'delete', scope };
   if (EXECUTE_EXTERNAL_COMMANDS.some((re) => re.test(line)))
     return { category: 'execute', scope: 'external' };
-  if (/^(ba|z|da|k)?sh\s+-c\b/.test(line)) return { category: 'execute', scope };
-  if (writesByRedirect(command)) return { category: 'write', scope };
-  if (base === 'git' && GIT_READ.has(sub)) return { category: 'read', scope };
-  if (base === 'git' && sub === 'branch' && words(command).length === 2)
-    return { category: 'read', scope };
-  if (base === 'sed' && /\s-i\b|--in-place/.test(command)) return { category: 'write', scope };
-  if (base === 'find' && /\s-(exec|execdir|ok|delete|fprint)/.test(command))
-    return { category: 'write', scope };
-  if (READ_PROGRAMS.has(base)) return { category: 'read', scope };
-  return { category: 'write', scope };
+  if (/^(?:sh|bash|zsh|dash|ksh|ash|csh|tcsh|fish)$/.test(base)) {
+    const flag = rest.findIndex((arg) => /^-[^-]*c/.test(arg));
+    const inner = flag < 0 ? null : rest[flag + 1];
+    const classified = inner == null ? null : classifyShell(inner, { workspace });
+    return {
+      category:
+        classified && RANK[classified.category] > RANK.execute ? classified.category : 'execute',
+      scope: 'external',
+    };
+  }
+  if (base === 'find') {
+    let result: Classified = {
+      category: rest.includes('-delete')
+        ? 'delete'
+        : /\s-f(?:print|printf)/.test(line)
+          ? 'write'
+          : 'read',
+      scope,
+    };
+    for (let i = 0; i < rest.length; i++) {
+      if (!['-exec', '-execdir', '-ok', '-okdir'].includes(rest[i]!)) continue;
+      const start = ++i;
+      while (i < rest.length && !['+', ';', '\\;'].includes(rest[i]!)) i++;
+      const inner = classifyShell(
+        rest
+          .slice(start, i)
+          .map((arg) => JSON.stringify(arg))
+          .join(' '),
+        { workspace },
+      );
+      result = {
+        category: RANK[inner.category] > RANK[result.category] ? inner.category : result.category,
+        scope: 'external',
+      };
+    }
+    return result;
+  }
+  if (base === 'xargs') {
+    while (rest[0]?.startsWith('-')) {
+      const option = rest.shift()!;
+      if (option === '--') break;
+      if (
+        [
+          '-a',
+          '--arg-file',
+          '-E',
+          '-I',
+          '-L',
+          '-n',
+          '-P',
+          '-s',
+          '-d',
+          '--delimiter',
+          '--max-args',
+          '--max-lines',
+          '--max-procs',
+          '--max-chars',
+        ].includes(option)
+      )
+        rest.shift();
+    }
+    const inner = classifyShell(rest.map((arg) => JSON.stringify(arg)).join(' '), { workspace });
+    return { category: inner.category, scope: 'external' };
+  }
+  if (
+    (base === 'git' && (GIT_READ.has(sub) || (sub === 'branch' && args.length === 2))) ||
+    READ_PROGRAMS.has(base)
+  )
+    return { category: writesByRedirect(command) ? 'write' : 'read', scope };
+  return { category: 'execute', scope };
+}
+
+function hasShellSyntax(command: string, syntax: string[]): boolean {
+  let quote: string | null = null;
+  for (let i = 0; i < command.length; i++) {
+    const char = command[i]!;
+    if (quote === "'") {
+      if (char === "'") quote = null;
+      continue;
+    }
+    if (char === '"') quote = quote === '"' ? null : '"';
+    else if (char === "'" && !quote) quote = "'";
+    else if (syntax.some((token) => command.startsWith(token, i))) return true;
+  }
+  return false;
 }
 
 // The category of a shell command line: the weightiest of its simple commands, and outside
@@ -327,7 +448,9 @@ export function classifyShell(
   command: string,
   options: { workspace?: string | null; dangerous?: boolean } = {},
 ): Classified {
-  let result: Classified = { category: 'read', scope: 'workspace' };
+  let result: Classified = hasShellSyntax(command, ['\\', '`', '$(', '<(', '>('])
+    ? { category: 'execute', scope: 'external' }
+    : { category: 'read', scope: 'workspace' };
   // Code piped into a shell runs whatever it downloaded or generated.
   if (/\|\s*(sudo\s+)?(ba|z|da|k)?sh\b/.test(command)) {
     result = { category: 'execute', scope: 'external' };
