@@ -1,0 +1,25 @@
+{
+  "format": "helena.project-blueprint",
+  "formatVersion": 1,
+  "name": "provisioning-browser-proof",
+  "displayName": { "de": "Provisionierungs- und Browserabnahme", "en": "Provisioning and browser proof" },
+  "version": "1.0.0",
+  "description": "Nur synthetische Daten für die serielle Root-Abnahme; keine Routinen, Provideraufrufe oder Installationen.",
+  "license": "AGPL-3.0-only",
+  "author": { "name": "Helena" },
+  "requires": { "bundles": ["helena-agent-pool"] },
+  "project": {
+    "key": "P6BROW26",
+    "name": "Abnahme Provisionierung und Browser",
+    "description": "Eigenes synthetisches Abnahmeprojekt; bis zum Abschluss der Browserprüfung erhalten.",
+    "instructions": "Dieses Projekt enthält ausschließlich synthetische Abnahmedaten. Ohne konkreten Auftrag keine Agentenarbeit starten. Keine externen Seiten, Provideraufrufe, Logins, Downloads, Installationen oder Orders. Nur die eigene Fixture und den eigenen Arbeitsbereich verwenden. Bestehende Nutzerprojekte und Tabs bleiben unverändert."
+  },
+  "areas": [{ "name": "Abnahme", "folder": "acceptance" }],
+  "agents": [{
+    "template": "coder",
+    "assignment": "Nur beauftragte synthetische Provisionierungs-, Preview- und Browserprüfungen in diesem eigenen Abnahmeprojekt. Keine Installationen, externen Seiten oder fremden Projekte.",
+    "projectBrowser": true
+  }],
+  "goals": [],
+  "routines": []
+}
