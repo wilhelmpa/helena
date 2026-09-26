@@ -123,7 +123,7 @@ function evidenceOf(value: unknown): Evidence[] {
 }
 
 function delegationsOf(value: unknown, allowed: Set<string>): Delegation[] {
-  if (!Array.isArray(value) || value.length < 1 || value.length > 12)
+  if (!Array.isArray(value) || value.length > 12)
     throw new InvalidOutput('The coordinator returned no valid assignments');
   const ids = new Set<string>();
   return value.map((item) => {
@@ -201,7 +201,7 @@ export function stagePrompt(
       ? 'Only plan assignments. Helena executes each delegation after this stage. Do not call delegate_task, spawn agents, execute assignments, or mutate the task in this stage.'
       : 'Complete only this stage. Helena owns delegation and task synchronization; do not spawn additional agents or change the task status.',
     stage.phase === 'coordinate'
-      ? 'List in dependsOn the assignmentIds that must finish before an assignment can start. Assignments without dependencies run in parallel; a dependent assignment receives the summaries and evidence of the assignments it depends on.'
+      ? 'List in dependsOn the assignmentIds that must finish before an assignment can start. Assignments without dependencies run in parallel; a dependent assignment receives the summaries and evidence of the assignments it depends on. If no specialist is needed, return delegations: []; Helena will then run the task with you as the working agent.'
       : '',
     stage.phase === 'coordinate'
       ? `Allowed specialists: ${JSON.stringify(stage.team.specialists)}`

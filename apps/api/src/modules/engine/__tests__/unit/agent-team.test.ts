@@ -116,6 +116,19 @@ describe('agent team stage contract', () => {
     expect(fenced.delegations[0]?.assignmentId).toBe('copy');
   });
 
+  it('accepts a reasoned plan with no specialist assignments', () => {
+    expect(
+      parseStage(
+        coordinate,
+        JSON.stringify({ summary: 'The coordinator can complete this task.', delegations: [] }),
+      ),
+    ).toMatchObject({
+      summary: 'The coordinator can complete this task.',
+      delegations: [],
+      status: 'completed',
+    });
+  });
+
   it('refuses prose, a missing summary, a foreign specialist and bad evidence', () => {
     expect(() => parseStage(coordinate, 'Sure, here is the plan.')).toThrow(
       'The agent did not answer with one JSON object',
@@ -160,6 +173,7 @@ describe('agent team stage contract', () => {
     const prompt = stagePrompt(coordinate, 'project:MKT');
     expect(prompt).toContain('Phase: coordinate');
     expect(prompt).toContain('Only plan assignments. Helena executes each delegation');
+    expect(prompt).toContain('If no specialist is needed, return delegations: []');
     expect(prompt).toContain('"agentRef":"agent:writer"');
     expect(prompt).not.toContain('Mastra');
     expect(prompt).not.toContain('already started');
