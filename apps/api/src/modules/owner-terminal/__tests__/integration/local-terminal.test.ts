@@ -13,8 +13,9 @@ import {
   writeSecret,
 } from '@repo/db';
 import { normalizeLocalModel } from '@helena/sdk';
-import { app } from '#tests/helpers/app';
-import { signUpTestUser } from '#tests/helpers/auth';
+import { app, authedApi } from '#tests/helpers/app';
+import { signUpTestUser, type TestUser } from '#tests/helpers/auth';
+import { enrollTotp, totpCode } from '../helpers/totp';
 import { resetDb } from '#tests/helpers/db';
 import { setOwnerTerminalSettings } from '../../service';
 import { signTerminalPayload } from '../../token';
@@ -105,6 +106,11 @@ async function setup(withGrant = false) {
       ipAddress: '192.168.1.2',
       expiresAt: new Date(Date.now() + 600_000),
     });
+  const capability = await bootstrap(owner);
+  return { owner, sessionId: browserSession!.id, capability };
+}
+
+async function bootstrap(owner: TestUser) {
   const proxy = await app.handle(
     new Request(`http://localhost/auth/verify/owner-terminal/${kind}`, {
       headers: { cookie: owner.cookie, 'x-real-ip': '192.168.1.2' },
@@ -127,7 +133,7 @@ async function setup(withGrant = false) {
     expiresAt: number;
     model: string;
   };
-  return { owner, sessionId: browserSession!.id, capability };
+  return capability;
 }
 function respond(
   token: string,
@@ -230,6 +236,39 @@ describe('local owner terminal inference', () => {
       .where(eq(ownerTerminalGrant.userId, owner.userId));
     expect((await respond(capability.token)).status).toBe(403);
     expect(calls).toHaveLength(0);
+  });
+  it('uses the real MFA upsert to invalidate old inference capabilities and admits a freshly bootstrapped capability', async () => {
+    const owner = await signUpTestUser();
+    const enrolled = await enrollTotp(owner.cookie);
+    owner.cookie = enrolled.cookie;
+    const api = authedApi(owner.cookie, { origin: 'http://localhost:3001' });
+    await setOwnerTerminalSettings({ stepUpRequired: true });
+    const renew = () =>
+      api['owner-terminal']['step-up']['totp'].post({ code: totpCode(enrolled.secret) });
+    expect((await renew()).status).toBe(200);
+    const first = await bootstrap(owner);
+    const [originalGrant] = await db.select().from(ownerTerminalGrant);
+    expect(await (await respond(first.token)).text()).toContain('response.completed');
+
+    expect((await renew()).status).toBe(200);
+    calls = [];
+    expect((await respond(first.token)).status).toBe(403);
+    expect(calls).toHaveLength(0);
+    const fresh = await bootstrap(owner);
+    expect(await (await respond(fresh.token)).text()).toContain('response.completed');
+
+    expect((await api['owner-terminal'].grant.revoke.post()).status).toBe(204);
+    expect((await renew()).status).toBe(200);
+    calls = [];
+    expect((await respond(first.token)).status).toBe(403);
+    expect((await respond(fresh.token)).status).toBe(403);
+    expect(calls).toHaveLength(0);
+    const latest = await bootstrap(owner);
+    expect(await (await respond(latest.token)).text()).toContain('response.completed');
+    const grants = await db.select().from(ownerTerminalGrant);
+    expect(grants).toHaveLength(1);
+    expect(grants[0]!.id).toBe(originalGrant!.id);
+    expect(grants[0]!.createdAt.getTime()).toBeGreaterThan(originalGrant!.createdAt.getTime());
   });
   it('rechecks LAN policy, owner role/activity and session revocation', async () => {
     const { capability, owner, sessionId } = await setup();
