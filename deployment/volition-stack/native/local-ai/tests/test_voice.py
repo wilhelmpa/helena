@@ -61,6 +61,7 @@ class VoiceScriptTest(unittest.TestCase):
         for port in ('13306', '13307'):
             self.assertIn(f'--host 127.0.0.1 --port {port}', out)
         self.assertIn('--language de', out)
+        self.assertIn('--vad --vad-model', out)
         self.assertIn('--request-path /v1 --inference-path /audio/transcriptions', out)
         self.assertEqual(out.count('IPAddressAllow=localhost'), 2)
         self.assertEqual(out.count('ProtectSystem=strict'), 2)
@@ -75,7 +76,7 @@ class VoiceScriptTest(unittest.TestCase):
             name, role, repo, commit, file, size, sha, license_, remote = line.split('\t')
             self.assertRegex(commit, r'^[0-9a-f]{40}$', name)
             self.assertRegex(sha, r'^[0-9a-f]{64}$', name)
-            self.assertTrue(int(size) > 10_000_000, name)
+            self.assertTrue(int(size) > 500_000, name)
             self.assertIn(license_, ('Apache-2.0', 'MIT'), name)
 
     def test_voice_design_and_names(self):

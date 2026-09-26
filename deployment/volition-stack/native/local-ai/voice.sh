@@ -53,6 +53,7 @@ VOICE_USER=helena-voice
 # The model each server loads (a name of voice-models.tsv).
 STT_MODEL=${HELENA_VOICE_STT_MODEL:-whisper-large-v3-turbo-german}
 TTS_MODEL=${HELENA_VOICE_TTS_MODEL:-qwen3-tts-0.6b-base}
+VAD_MODEL=whisper-vad-silero
 TTS_CODEC=qwen3-tts-tokenizer
 
 R=${HELENA_AI_TEST_ROOT:-}
@@ -280,7 +281,7 @@ After=network.target
 [Service]
 ExecStart=$(whisper_bin)/whisper-server --model $(model_path "$STT_MODEL") --language de \\
   --host 127.0.0.1 --port $STT_PORT --request-path /v1 --inference-path /audio/transcriptions \\
-  --threads 4 --flash-attn --suppress-nst --no-timestamps
+  --threads 4 --flash-attn --suppress-nst --no-timestamps --vad --vad-model $(model_path "$VAD_MODEL")
 ReadOnlyPaths=$MODELS
 # ROCm's libraries are mapped into the process and count; the weights themselves are in VRAM.
 MemoryHigh=3G
@@ -387,6 +388,7 @@ install_all() {
   run install -d -o root -g "$VOICE_USER" -m 0750 "$MODELS"
   run install -d -o "$VOICE_USER" -g "$VOICE_USER" -m 0750 "$VOICES"
   models_pull "$STT_MODEL"
+  models_pull "$VAD_MODEL"
   models_pull "$TTS_MODEL"
   models_pull "$TTS_CODEC"
   build_whisper
