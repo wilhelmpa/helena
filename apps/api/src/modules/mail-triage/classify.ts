@@ -15,7 +15,7 @@ import {
   type MailClassificationAction,
   type MailClassificationAnswer,
 } from '@repo/db';
-import { and, asc, desc, eq, gte, inArray, isNull, notExists, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, isNull, notExists, notInArray, sql } from 'drizzle-orm';
 import { HttpError, iso } from '#shared/lib';
 import { MAIL_CLASS } from '#modules/decisions/classes';
 import {
@@ -41,6 +41,7 @@ import { isTkSender } from './tk';
 // as "unsicher", and the owner's corrections go back to the decision log.
 
 const BATCH = 20;
+const MAX_PER_RUN = 200;
 
 // Taking an invoice mail's attachments as receipts belongs to the receipts module, which
 // registers itself here so this one does not import it.
@@ -109,7 +110,12 @@ async function activeTeams() {
 
 // New inbox mail of a team not classified yet: in an inbox folder, not sent from the account's
 // own address, arrived after the class was switched on.
-async function pendingMessages(teamId: number, config: MailTriageConfig, limit: number) {
+async function pendingMessages(
+  teamId: number,
+  config: MailTriageConfig,
+  limit: number,
+  attempted: number[],
+) {
   const since = config.since ? new Date(config.since) : new Date();
   return db
     .select({ id: mailMessage.id })
@@ -120,6 +126,7 @@ async function pendingMessages(teamId: number, config: MailTriageConfig, limit: 
         eq(mailMessage.teamId, teamId),
         isNull(mailMessage.deletedAt),
         gte(mailMessage.createdAt, since),
+        attempted.length ? notInArray(mailMessage.id, attempted) : undefined,
         sql`lower(${mailMessage.fromAddress}) <> lower(${mailAccount.address})`,
         config.accountIds.length ? inArray(mailMessage.accountId, config.accountIds) : undefined,
         sql`EXISTS (SELECT 1 FROM ${mailMessageFolder} mf JOIN ${mailFolder} f ON f.id = mf.folder_id
@@ -209,6 +216,12 @@ export async function classifyMessage(
   if (tkSender) {
     answers.priority = { choice: 'high', confidence: 1, decided: true };
     answers.create_task = { choice: 'yes', confidence: 1, decided: true };
+  } else if (answers.category.decided && answers.category.choice === 'advertising') {
+    // A model can mark spam/phishing as urgent and actionable. Never create an
+    // automatic task or reply suggestion for a confidently identified advertisement.
+    answers.priority = { choice: 'low', confidence: 1, decided: true };
+    answers.create_task = { choice: 'no', confidence: 1, decided: true };
+    answers.needs_reply = { choice: 'no', confidence: 1, decided: true };
   }
   const decided = (id: string) => (answers[id]!.decided ? answers[id]!.choice : null);
   const projectChoice = decided('project');
@@ -337,11 +350,24 @@ export async function classifyPending(): Promise<number> {
   let done = 0;
   for (const team of await activeTeams()) {
     const config = mailTriageConfig((team.config as Record<string, unknown>) ?? {});
-    for (const message of await pendingMessages(team.teamId, config, BATCH)) {
-      try {
-        if (await classifyMessage(team.teamId, config, message.id, team.actorUserId)) done += 1;
-      } catch (error) {
-        console.error(`[mail-triage] mail ${message.id} not classified`, error);
+    const attempted: number[] = [];
+    while (attempted.length < MAX_PER_RUN) {
+      const batch = await pendingMessages(
+        team.teamId,
+        config,
+        Math.min(BATCH, MAX_PER_RUN - attempted.length),
+        attempted,
+      );
+      if (batch.length === 0) break;
+      for (const message of batch) {
+        // A temporary failure must not keep the oldest mail at the front of every
+        // batch and starve the rest of the mailbox during this run.
+        attempted.push(message.id);
+        try {
+          if (await classifyMessage(team.teamId, config, message.id, team.actorUserId)) done += 1;
+        } catch (error) {
+          console.error(`[mail-triage] mail ${message.id} not classified`, error);
+        }
       }
     }
   }
