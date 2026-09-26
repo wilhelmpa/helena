@@ -1,12 +1,14 @@
 import { db, agentRun, approvalRequest, helenaPolicyDecision } from '@repo/db';
-import { and, eq, isNotNull, lt } from 'drizzle-orm';
+import { and, eq, lt } from 'drizzle-orm';
 import { intEnv } from '#shared/lib';
 import {
   ACTION_CATEGORIES,
   AUTOPILOT_LEVEL_KEYS,
   AUTOPILOT_LEVELS,
   approvalKindOf,
+  categoryOfApprovalKind,
   type ActionCategory,
+  type ApprovalKind,
   type ActionScope,
   type AutopilotLevel,
   type LevelSource,
@@ -64,27 +66,39 @@ export interface EngineDecision extends PolicyDecision {
   message: string;
 }
 
-// Whether a person approved exactly this command in a request whose decision started the
-// run (the same rule Hermes' approval guard followed before the engine).
-async function commandApproved(
+// Whether a person approved this action in a request whose decision started the run. A
+// request that names a command approves exactly that command (the rule Hermes' approval
+// guard followed before the engine); one without a command (a Helena or browser tool such as
+// delete_issue has none) approves its category in that run. Before, only commands were
+// matched, so an approved tool action stayed blocked however often it was approved.
+export async function actionApproved(
   agentId: number,
   runId: number | null | undefined,
+  category: ActionCategory,
   command: string | null | undefined,
 ): Promise<boolean> {
-  const text = command?.trim();
-  if (!text || runId == null) return false;
+  if (runId == null) return false;
   const rows = await db
-    .select({ command: approvalRequest.command })
+    .select({
+      command: approvalRequest.command,
+      category: approvalRequest.category,
+      kind: approvalRequest.kind,
+    })
     .from(approvalRequest)
     .where(
       and(
         eq(approvalRequest.agentId, agentId),
         eq(approvalRequest.followUpRunId, runId),
         eq(approvalRequest.status, 'approved'),
-        isNotNull(approvalRequest.command),
       ),
     );
-  return rows.some((row) => row.command!.trim() === text);
+  const text = command?.trim() || null;
+  return rows.some((row) => {
+    const approvedCommand = row.command?.trim() || null;
+    if (approvedCommand) return text !== null && approvedCommand === text;
+    const approvedCategory = row.category ?? categoryOfApprovalKind(row.kind as ApprovalKind);
+    return approvedCategory === category;
+  });
 }
 
 const LEVEL_NAMES: Record<AutopilotLevel, string> = {
@@ -143,7 +157,7 @@ export async function decide(input: DecideInput): Promise<EngineDecision> {
       : budgetExhausted(input.agentId, input.projectId, input.runId),
     input.agentId == null
       ? Promise.resolve(false)
-      : commandApproved(input.agentId, input.runId, input.command),
+      : actionApproved(input.agentId, input.runId, input.category, input.command),
   ]);
   const decision = policyEvaluator().evaluate({
     agentId: input.agentId,

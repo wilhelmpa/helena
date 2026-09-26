@@ -6,6 +6,7 @@ import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
 import { autopilotPolicyDecider, decideBrowserTool } from '#modules/autopilot/adapters';
+import { actionApproved, decide } from '#modules/autopilot/engine';
 import type { ActionCategory } from '@helena/sdk';
 import { autopilotPolicyEvaluator } from '#modules/autopilot/evaluator';
 
@@ -259,6 +260,39 @@ describe('Autopilot levels', () => {
     expect(await outcome(s, followUp.id, { command: 'git push origin dev' })).toBe(
       'needs-approval',
     );
+  });
+
+  it('lets an approved tool action without a command go ahead in the follow-up run', async () => {
+    // PRIV-9, 2026-09-26: delete_issue was approved five times and stayed blocked, because
+    // only approvals that name a command were matched.
+    const s = await setup();
+    const { run } = await startRun(s);
+    const request = await s.asRunner.projects({ projectKey: 'MKT' }).approvals.post({
+      kind: 'delete',
+      action: 'Delete MKT-1 for good',
+    });
+    expect(request.status).toBe(201);
+    await s.asRunner['agent-runs']({ runId: run.id }).result.post({
+      status: 'success',
+      output: 'asked',
+    });
+    await s.asOwner.approvals({ approvalId: request.data!.id }).decision.post({ approved: true });
+    const followUp = (await s.asRunner['agent-runs'].claim.post()).data!.run!;
+    const toolCall = (category: 'delete' | 'send') =>
+      decide({
+        adapter: 'mcp',
+        agentId: s.agent.id,
+        projectId: s.projectId,
+        runId: followUp.id,
+        category,
+        scope: 'workspace',
+        tool: category === 'delete' ? 'delete_issue' : 'send_mail',
+      });
+    expect(await toolCall('delete')).toMatchObject({ outcome: 'allow', reason: 'approved' });
+    // The approval covers what it was asked for, not other kinds of action.
+    expect((await toolCall('send')).outcome).toBe('needs-approval');
+    // And nothing outside the run the decision started.
+    expect(await actionApproved(s.agent.id, run.id, 'delete', null)).toBe(false);
   });
 });
 
