@@ -1,6 +1,7 @@
 import { db, projectMember, teamMember, teamRole, revision } from '@repo/db';
 import { and, eq, inArray, sql } from 'drizzle-orm';
-import { toMemberContext, type MemberRole } from '#modules/members/service';
+import { projectPreviewRevision } from '#modules/project-previews/service';
+import { getMemberContext, toMemberContext, type MemberRole } from '#modules/members/service';
 import { hasPermission, type PermissionResource } from '#shared/permissions';
 
 // The revision engine's read side. The counters themselves are written by the
@@ -15,9 +16,15 @@ export interface ScopeKind {
   key: (id: number, userId: string) => string;
   resource: PermissionResource | null;
   teamScoped?: boolean;
+  read?: (projectId: number) => Promise<string>;
 }
 
 export const scopeKind: Record<string, ScopeKind> = {
+  projectPreviews: {
+    key: (id) => `project-previews:${id}`,
+    resource: 'documents',
+    read: projectPreviewRevision,
+  },
   board: { key: (projectId) => `board:${projectId}`, resource: 'work_items' },
   documents: { key: (projectId) => `documents:${projectId}`, resource: 'documents' },
   actionRuns: { key: (projectId) => `action-runs:${projectId}`, resource: 'actions' },
@@ -47,6 +54,8 @@ export const NO_REV = '0';
 
 // One scope to read: its key in the revision table and the resource it belongs to.
 export interface ScopeRead {
+  id?: number;
+  read?: (projectId: number) => Promise<string>;
   key: string;
   resource: PermissionResource | null;
   teamScoped?: boolean;
@@ -61,7 +70,7 @@ export async function readRevs(
   userId: string,
 ): Promise<Record<string, string>> {
   if (wanted.length === 0) return {};
-  const projectWanted = wanted.filter((row) => !row.teamScoped);
+  const projectWanted = wanted.filter((row) => !row.teamScoped && !row.read);
   const teamWanted = wanted.filter((row) => row.teamScoped);
   const rows =
     projectWanted.length === 0
@@ -112,5 +121,18 @@ export async function readRevs(
       );
     for (const row of teamRows) out[row.scope] = String(row.rev);
   }
+  await Promise.all(
+    wanted
+      .filter((entry) => entry.read && entry.id)
+      .map(async (entry) => {
+        const context = await getMemberContext(entry.id!, userId);
+        if (
+          !context ||
+          (entry.resource && !hasPermission(context.permissions, entry.resource, 'read'))
+        )
+          return;
+        out[entry.key] = await entry.read!(entry.id!);
+      }),
+  );
   return out;
 }

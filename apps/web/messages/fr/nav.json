@@ -119,6 +119,27 @@
       "bookmarkPage": "Ajouter cette page aux favoris",
       "removeBookmark": "Retirer le favori",
       "noBookmarks": "Aucun favori pour l’instant"
+    },
+    "browserPreviews": {
+      "title": "Aperçus",
+      "idleHint": "Les aperçus inutilisés s’arrêtent automatiquement.",
+      "refresh": "Actualiser",
+      "loading": "Chargement…",
+      "empty": "Aucun aperçu.",
+      "readOnly": "La modification des documents du projet est requise pour gérer les aperçus.",
+      "waiting": "Démarrage et vérification de disponibilité…",
+      "failed": "Échec",
+      "name": "Nom",
+      "directory": "Dossier du projet",
+      "detect": "Détection automatique",
+      "start": "Démarrer",
+      "running": "En cours",
+      "starting": "Démarrage",
+      "stopped": "Arrêté",
+      "stop": "Arrêter",
+      "open": "Ouvrir dans le navigateur",
+      "logs": "Journaux",
+      "noLogs": "Aucune sortie."
     }
   },
   "groups": {

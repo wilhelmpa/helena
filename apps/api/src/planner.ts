@@ -83,6 +83,7 @@ import { linkPreviewRoutes } from './modules/link-previews';
 import { hubInboxRoutes } from './modules/hub-inbox';
 import { agentActivityRoutes } from './modules/agent-activity';
 import { agentNetworkRoutes } from './modules/agent-egress';
+import { projectPreviewRoutes } from './modules/project-previews';
 import { agentBrowserGatewayRoutes } from './modules/agent-browser-gateway';
 import { browserTaskRoutes } from './modules/browser-task';
 import { decisionRoutes } from './modules/decisions';
@@ -105,6 +106,7 @@ const plannerOperations = new Elysia({ name: 'planner-operations' })
   .use(agentActivityRoutes)
   .use(agentNetworkRoutes)
   .use(agentBrowserGatewayRoutes)
+  .use(projectPreviewRoutes)
   .use(browserTaskRoutes)
   .use(decisionRoutes)
   .use(tradingRoutes)

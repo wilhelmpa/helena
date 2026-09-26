@@ -119,6 +119,27 @@
       "bookmarkPage": "Guardar esta página",
       "removeBookmark": "Quitar marcador",
       "noBookmarks": "Aún no hay marcadores"
+    },
+    "browserPreviews": {
+      "title": "Vistas previas",
+      "idleHint": "Las vistas previas sin uso se detienen automáticamente.",
+      "refresh": "Actualizar",
+      "loading": "Cargando…",
+      "empty": "Todavía no hay vistas previas.",
+      "readOnly": "Se necesita permiso para editar documentos del proyecto.",
+      "waiting": "Iniciando y comprobando disponibilidad…",
+      "failed": "Error",
+      "name": "Nombre",
+      "directory": "Carpeta del proyecto",
+      "detect": "Detectar automáticamente",
+      "start": "Iniciar",
+      "running": "En ejecución",
+      "starting": "Iniciando",
+      "stopped": "Detenida",
+      "stop": "Detener",
+      "open": "Abrir en el navegador",
+      "logs": "Registros",
+      "noLogs": "Sin registros."
     }
   },
   "groups": {

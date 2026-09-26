@@ -9,6 +9,7 @@ import { useBrowserControl } from '@/hooks/useBrowserControl';
 import { useCaptureWebPageMutation } from '@/services/everything.service';
 import type { BrowserView } from '@/hooks/useBrowserPreferences';
 import { Button } from '@/components/ui/button';
+import ProjectPreviewControl from '@/components/common/project-previews/ProjectPreviewControl';
 import WorkspaceBrowserBookmarks from './WorkspaceBrowserBookmarks';
 import WorkspaceBrowserStreamMenu from './WorkspaceBrowserStreamMenu';
 import WorkspaceBrowserTabs from './WorkspaceBrowserTabs';
@@ -124,6 +125,12 @@ export default function WorkspaceBrowserBar({
           }}
         />
       </form>
+      {projectKey && (
+        <ProjectPreviewControl
+          projectKey={projectKey}
+          onOpen={(url) => act({ action: 'new', url })}
+        />
+      )}
       <WorkspaceBrowserBookmarks
         base={base}
         current={active}

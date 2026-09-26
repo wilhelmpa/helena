@@ -119,6 +119,27 @@
       "bookmarkPage": "将此页加入书签",
       "removeBookmark": "移除书签",
       "noBookmarks": "还没有书签"
+    },
+    "browserPreviews": {
+      "title": "预览",
+      "idleHint": "未使用的预览会自动停止。",
+      "refresh": "刷新",
+      "loading": "加载中…",
+      "empty": "暂无预览。",
+      "readOnly": "管理预览需要项目文档编辑权限。",
+      "waiting": "正在启动并检查就绪状态…",
+      "failed": "失败",
+      "name": "名称",
+      "directory": "项目目录",
+      "detect": "自动检测",
+      "start": "启动",
+      "running": "运行中",
+      "starting": "启动中",
+      "stopped": "已停止",
+      "stop": "停止",
+      "open": "在浏览器中打开",
+      "logs": "日志",
+      "noLogs": "暂无日志。"
     }
   },
   "groups": {

@@ -120,6 +120,27 @@
       "bookmarkPage": "Diese Seite merken",
       "removeBookmark": "Lesezeichen entfernen",
       "noBookmarks": "Noch keine Lesezeichen"
+    },
+    "browserPreviews": {
+      "title": "Vorschau",
+      "idleHint": "Ungenutzte Vorschauen stoppen automatisch.",
+      "refresh": "Aktualisieren",
+      "loading": "Wird geladen…",
+      "empty": "Noch keine Vorschauen.",
+      "readOnly": "Zum Verwalten ist das Bearbeiten von Projektdokumenten erforderlich.",
+      "waiting": "Wird gestartet und auf Erreichbarkeit geprüft…",
+      "failed": "Fehlgeschlagen",
+      "name": "Name",
+      "directory": "Projektordner",
+      "detect": "Automatisch erkennen",
+      "start": "Starten",
+      "running": "Läuft",
+      "starting": "Startet",
+      "stopped": "Gestoppt",
+      "stop": "Stoppen",
+      "open": "Im Browser öffnen",
+      "logs": "Logs",
+      "noLogs": "Keine Log-Ausgabe."
     }
   },
   "groups": {

@@ -1,3 +1,4 @@
+import { AGENT_PROJECT_HEADER } from '#shared/agent-socket';
 import type { McpApp } from './types';
 import type { McpRouteTool } from './generate';
 import { MCP_LOOPBACK_HEADER, setMcpOAuthToken } from '../shared/mcp-request';
@@ -27,7 +28,7 @@ export async function dispatchTool(
   tool: McpRouteTool,
   args: Record<string, unknown>,
   credential: McpCredential,
-  opts: { viaMcpEndpoint: boolean },
+  opts: { viaMcpEndpoint: boolean; agentProject?: string | null },
 ): Promise<{ text: string; isError: boolean; structuredContent: StructuredResult }> {
   const rest: Record<string, unknown> = { ...args };
 
@@ -55,6 +56,7 @@ export async function dispatchTool(
     method: tool.method,
     headers: {
       'content-type': 'application/json',
+      ...(opts.agentProject ? { [AGENT_PROJECT_HEADER]: opts.agentProject } : {}),
       ...(credential.kind === 'api-key' ? { 'x-api-key': credential.apiKey } : {}),
       // Marks this as an MCP call so guards enforce the per-project MCP toggle.
       ...(opts.viaMcpEndpoint ? { [MCP_LOOPBACK_HEADER]: '1' } : {}),

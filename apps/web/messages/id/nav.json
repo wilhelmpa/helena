@@ -119,6 +119,27 @@
       "bookmarkPage": "Bookmark halaman ini",
       "removeBookmark": "Hapus bookmark",
       "noBookmarks": "Belum ada bookmark"
+    },
+    "browserPreviews": {
+      "title": "Pratinjau",
+      "idleHint": "Pratinjau yang tidak digunakan berhenti otomatis.",
+      "refresh": "Segarkan",
+      "loading": "Memuat…",
+      "empty": "Belum ada pratinjau.",
+      "readOnly": "Izin mengedit dokumen proyek diperlukan.",
+      "waiting": "Memulai dan memeriksa kesiapan…",
+      "failed": "Gagal",
+      "name": "Nama",
+      "directory": "Folder proyek",
+      "detect": "Deteksi otomatis",
+      "start": "Mulai",
+      "running": "Berjalan",
+      "starting": "Memulai",
+      "stopped": "Berhenti",
+      "stop": "Hentikan",
+      "open": "Buka di browser",
+      "logs": "Log",
+      "noLogs": "Belum ada log."
     }
   },
   "groups": {

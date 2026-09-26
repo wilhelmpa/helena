@@ -42,6 +42,8 @@ export const syncRoutes = new Elysia({ name: 'sync', detail: { tags: ['Sync'] } 
           key: spec.key(id, userId),
           resource: spec.resource,
           teamScoped: spec.teamScoped,
+          id,
+          read: spec.read,
         });
       }
 

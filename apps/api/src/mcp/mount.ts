@@ -64,7 +64,10 @@ export function mountMcp(app: any): void {
       const runHeader = Number(request.headers.get('x-helena-run'));
       const runId = Number.isInteger(runHeader) && runHeader > 0 ? runHeader : null;
       const serve = async (credential: McpCredential, userId: string) => {
-        const server = await buildMcpServer(mcpApp, credential, userId, { runId });
+        const server = await buildMcpServer(mcpApp, credential, userId, {
+          runId,
+          agentProject: agentSocketProject(request.headers),
+        });
         const transport = new WebStandardStreamableHTTPServerTransport({
           sessionIdGenerator: undefined,
         });

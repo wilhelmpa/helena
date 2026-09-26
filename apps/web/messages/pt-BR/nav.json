@@ -119,6 +119,27 @@
       "bookmarkPage": "Salvar esta página",
       "removeBookmark": "Remover favorito",
       "noBookmarks": "Nenhum favorito ainda"
+    },
+    "browserPreviews": {
+      "title": "Prévias",
+      "idleHint": "Prévias sem uso param automaticamente.",
+      "refresh": "Atualizar",
+      "loading": "Carregando…",
+      "empty": "Nenhuma prévia.",
+      "readOnly": "É necessário poder editar documentos do projeto.",
+      "waiting": "Iniciando e verificando disponibilidade…",
+      "failed": "Falhou",
+      "name": "Nome",
+      "directory": "Pasta do projeto",
+      "detect": "Detectar automaticamente",
+      "start": "Iniciar",
+      "running": "Em execução",
+      "starting": "Iniciando",
+      "stopped": "Parada",
+      "stop": "Parar",
+      "open": "Abrir no navegador",
+      "logs": "Logs",
+      "noLogs": "Sem saída de logs."
     }
   },
   "groups": {

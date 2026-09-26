@@ -122,6 +122,27 @@
       "bookmarkPage": "Bookmark this page",
       "removeBookmark": "Remove bookmark",
       "noBookmarks": "No bookmarks yet"
+    },
+    "browserPreviews": {
+      "title": "Previews",
+      "idleHint": "Unused previews stop automatically.",
+      "refresh": "Refresh",
+      "loading": "Loading…",
+      "empty": "No previews yet.",
+      "readOnly": "Editing project documents is required to manage previews.",
+      "waiting": "Starting and checking readiness…",
+      "failed": "Failed",
+      "name": "Name",
+      "directory": "Project directory",
+      "detect": "Detect automatically",
+      "start": "Start",
+      "running": "Running",
+      "starting": "Starting",
+      "stopped": "Stopped",
+      "stop": "Stop",
+      "open": "Open in browser",
+      "logs": "Logs",
+      "noLogs": "No log output."
     }
   },
   "groups": {

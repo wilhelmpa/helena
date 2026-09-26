@@ -87,7 +87,7 @@ export async function buildMcpServer(
   credential: McpCredential,
   userId: string,
   // The run an agent's runtime names on its requests (x-helena-run), for the policy log.
-  context: { runId?: number | null } = {},
+  context: { runId?: number | null; agentProject?: string | null } = {},
 ): Promise<Server> {
   const server = new Server(
     // `name` is the stable programmatic identifier; `title` is the human-readable
@@ -198,7 +198,7 @@ export async function buildMcpServer(
         route,
         args,
         credential,
-        { viaMcpEndpoint: true },
+        { viaMcpEndpoint: true, agentProject: context.agentProject },
       );
       return { content: [{ type: 'text', text }], isError, structuredContent };
     }
