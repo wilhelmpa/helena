@@ -99,10 +99,9 @@ if (args.reply) {
 
 // The chat page opens the project's coordinator (created with the project): the fake runner
 // answers as that agent, with a key of its own.
-const agents = await call<{ id: number; name: string }[] | { items: { id: number; name: string }[] }>(
-  'GET',
-  `/teams/${project.teamId}/ai-agents`,
-);
+const agents = await call<
+  { id: number; name: string }[] | { items: { id: number; name: string }[] }
+>('GET', `/teams/${project.teamId}/ai-agents`);
 const list = Array.isArray(agents) ? agents : agents.items;
 const coordinator = list.find((agent) => /coordinator/i.test(agent.name)) ?? created.agent;
 const key =
