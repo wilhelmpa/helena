@@ -10,10 +10,10 @@ import {
 } from 'bun:test';
 import { agentRun, db, issue as issueTable, issueActivity, notification } from '@repo/db';
 import { and, eq } from 'drizzle-orm';
-import { resetDb } from '#tests/helpers/db';
 import {
   answerStep,
   finishAgentRun,
+  resetEngineDb,
   runSteps,
   startEngine,
   stopEngineRuns,
@@ -63,7 +63,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await resetDb();
+  await resetEngineDb();
 });
 
 afterEach(async () => {

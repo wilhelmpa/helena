@@ -7,13 +7,21 @@ import {
   expect,
   it,
   setDefaultTimeout,
+  spyOn,
 } from 'bun:test';
+import { DBOS } from '@dbos-inc/dbos-sdk';
 import { db, helenaSchedule, issue as issueTable } from '@repo/db';
 import { eq } from 'drizzle-orm';
 import { authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
-import { resetDb } from '#tests/helpers/db';
-import { startEngine, stopEngineRuns, stopTestEngine, waitForStatus } from '#tests/helpers/engine';
+import {
+  resetEngineDb,
+  startEngine,
+  stopEngineRuns,
+  stopTestEngine,
+  testEngineExecutions,
+  waitForStatus,
+} from '#tests/helpers/engine';
 import { addProjectMember } from '#tests/helpers/members';
 import {
   agentStep,
@@ -76,7 +84,7 @@ async function waitForRuns(ctx: ProjectSetup, issueId: number, count: number) {
 }
 
 describe('workflow library', () => {
-  beforeEach(resetDb);
+  beforeEach(resetEngineDb);
 
   it('creates, versions and deletes a template', async () => {
     const ctx = await setupProject();
@@ -182,7 +190,7 @@ describe('workflow library', () => {
 });
 
 describe('workflows of a project', () => {
-  beforeEach(resetDb);
+  beforeEach(resetEngineDb);
 
   it('enables a template once an agent fills each of its roles', async () => {
     const ctx = await setupProject();
@@ -311,7 +319,7 @@ describe('workflows of a project', () => {
 });
 
 describe('workflow runs', () => {
-  beforeEach(resetDb);
+  beforeEach(resetEngineDb);
 
   it('starts a workflow on a task by hand, one active run at a time', async () => {
     const ctx = await setupProject();
@@ -423,13 +431,41 @@ describe('workflow runs', () => {
     });
     await enable(ctx, created.id, { coder: ctx.coder.id });
     const task = await issue(ctx, { dueDate: '2099-01-01' });
-    const run = await startRun(ctx, task.id, created.id);
-    const waiting = await waitForStatus(run.id, 'waiting');
-    expect(waiting.status).toBe('waiting');
-    const shown = (await ctx.asOwner['pipeline-runs']({ runId: run.id }).get()).data!;
-    expect(shown.steps[0]).toMatchObject({ stepId: 'due', status: 'waiting' });
-    expect(new Date(shown.steps[0]!.wakeAt!).toISOString()).toBe('2099-01-01T08:00:00.000Z');
-    await ctx.asOwner['pipeline-runs']({ runId: run.id }).cancel.post();
+    const enteredSleep = Promise.withResolvers<void>();
+    const releaseSleep = Promise.withResolvers<void>();
+    const originalSleep = DBOS.sleep.bind(DBOS);
+    // DBOS 5.0.2 checks cancellation only after its sleep expires. Keep the
+    // planned 2099 deadline, but let this fixture expire its timer explicitly.
+    // The original SDK sleep still observes the real cancellation when released.
+    const sleep = spyOn(DBOS, 'sleep').mockImplementation(async (durationMs) => {
+      expect(durationMs).toBeGreaterThan(24 * 60 * 60 * 1000);
+      enteredSleep.resolve();
+      await releaseSleep.promise;
+      await originalSleep(1);
+    });
+    let execution: Promise<unknown> | undefined;
+    try {
+      const run = await startRun(ctx, task.id, created.id);
+      const waiting = await waitForStatus(run.id, 'waiting');
+      expect(waiting.status).toBe('waiting');
+      await enteredSleep.promise;
+      execution = testEngineExecutions().get(run.id)!.promise;
+      const shown = (await ctx.asOwner['pipeline-runs']({ runId: run.id }).get()).data!;
+      expect(shown.steps[0]).toMatchObject({ stepId: 'due', status: 'waiting' });
+      expect(new Date(shown.steps[0]!.wakeAt!).toISOString()).toBe('2099-01-01T08:00:00.000Z');
+      expect((await ctx.asOwner['pipeline-runs']({ runId: run.id }).cancel.post()).status).toBe(
+        200,
+      );
+      releaseSleep.resolve();
+      await execution;
+      expect((await ctx.asOwner['pipeline-runs']({ runId: run.id }).get()).data!.status).toBe(
+        'canceled',
+      );
+    } finally {
+      releaseSleep.resolve();
+      await execution;
+      sleep.mockRestore();
+    }
 
     const test = await startRun(ctx, task.id, created.id, true);
     await waitForStatus(test.id, 'succeeded');
@@ -439,7 +475,7 @@ describe('workflow runs', () => {
 });
 
 describe('workflow run limit', () => {
-  beforeEach(resetDb);
+  beforeEach(resetEngineDb);
 
   it('reads the default and lets an editor change it, within bounds', async () => {
     const ctx = await setupProject();

@@ -12,10 +12,10 @@ import { agentRun, aiAgent, db, helenaSchedule, issueWatcher, notification } fro
 import { and, asc, eq } from 'drizzle-orm';
 import { apiKeyApi, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
-import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
 import {
   runSteps,
+  resetEngineDb,
   startEngine,
   stopEngineRuns,
   stopTestEngine,
@@ -141,7 +141,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await resetDb();
+  await resetEngineDb();
 });
 
 afterEach(async () => {

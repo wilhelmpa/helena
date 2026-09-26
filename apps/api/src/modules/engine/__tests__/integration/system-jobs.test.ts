@@ -1,8 +1,13 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, setDefaultTimeout } from 'bun:test';
 import { db, helenaSystemJob } from '@repo/db';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { resetDb } from '#tests/helpers/db';
-import { startEngine, stopEngineRuns, stopTestEngine } from '#tests/helpers/engine';
+import {
+  resetEngineDb,
+  startEngine,
+  stopTestEngine,
+  testEngineExecutions,
+} from '#tests/helpers/engine';
 import {
   fireDueSystemJobs,
   registerSystemJob,
@@ -58,14 +63,61 @@ beforeAll(startEngine);
 afterAll(stopTestEngine);
 
 beforeEach(async () => {
-  await stopEngineRuns();
-  await resetDb();
+  await resetEngineDb();
   ran.length = 0;
   fail = false;
   schedule = { enabled: true, cron: '* * * * *', timezone: 'Europe/Berlin' };
 });
 
 describe('system jobs', () => {
+  it('joins a cancelled job holding an application transaction before resetting tables', async () => {
+    const entered = Promise.withResolvers<void>();
+    const release = Promise.withResolvers<void>();
+    const joined = Promise.withResolvers<void>();
+    const id = 'helena.test-held-transaction';
+    let finished = false;
+    registerSystemJob({
+      id,
+      schedule: async () => ({ enabled: false, cron: '0 0 1 1 *', timezone: 'UTC' }),
+      async run(context) {
+        await context.step('held-transaction', async () => {
+          await db.transaction(async (tx) => {
+            await tx.execute(sql`select id from helena_system_job where id = ${id} for update`);
+            entered.resolve();
+            await release.promise;
+          });
+          finished = true;
+        });
+      },
+    });
+    await runSystemJobNow(id);
+    await entered.promise;
+    const entry = [...testEngineExecutions()].find(([key]) => key.startsWith(`job:${id}:`))![1];
+    const execution = entry.promise;
+    // Observe a join of the real held execution without guessing a delay. Merely
+    // cancelling its durable status or closing the SDK does not await this promise.
+    entry.promise = {
+      then(onfulfilled, onrejected) {
+        joined.resolve();
+        return execution.then(onfulfilled, onrejected);
+      },
+    } as Promise<unknown>;
+    const stopping = stopTestEngine();
+    try {
+      expect(
+        await Promise.race([joined.promise.then(() => 'joined'), stopping.then(() => 'stopped')]),
+      ).toBe('joined');
+      expect(finished).toBe(false);
+    } finally {
+      release.resolve();
+      await stopping;
+      await execution;
+    }
+    expect(finished).toBe(true);
+    await resetDb();
+    expect(await db.select().from(helenaSystemJob)).toEqual([]);
+  });
+
   it('start afresh when first seen, then fire each due time once', async () => {
     const now = new Date();
     // First seen: nothing is due yet. (Other registered jobs may be ticked too; only this

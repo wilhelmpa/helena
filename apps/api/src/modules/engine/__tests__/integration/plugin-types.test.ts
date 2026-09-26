@@ -15,8 +15,8 @@ import { db, pipelineRun } from '@repo/db';
 import { eq } from 'drizzle-orm';
 import { discoverPlugins, loadExternalPlugins } from '@helena/sdk/server';
 import { host, publishDomainEvent, registries } from '#shared/helena';
-import { resetDb } from '#tests/helpers/db';
 import {
+  resetEngineDb,
   runSteps,
   startEngine,
   stopEngineRuns,
@@ -130,9 +130,9 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
+  await resetEngineDb();
   policy = 'off';
   sent.length = 0;
-  await resetDb();
 });
 
 afterEach(async () => {

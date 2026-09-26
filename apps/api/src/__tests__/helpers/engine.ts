@@ -1,8 +1,27 @@
 import { DBOS } from '@dbos-inc/dbos-sdk';
+import { createRequire } from 'node:module';
+import { join, dirname } from 'node:path';
 import { agentRun, db, pipelineRun, pipelineRunStep } from '@repo/db';
 import { and, asc, eq } from 'drizzle-orm';
-import { engineClient, launchEngine, stopEngine } from '#modules/engine/dbos';
+import { engineClient, engineRunning, launchEngine, stopEngine } from '#modules/engine/dbos';
 import { signalFinishedAgentRuns } from '#modules/engine/runs';
+import { resetDb } from './db';
+
+// DBOS 5.0.2 cancelWorkflows only records cancellation; shutdown without a timeout
+// does not drain, and its optional timeout may silently abandon work. Tests need a
+// strict join before TRUNCATE. Keep this pinned-SDK internal access test-only.
+const require = createRequire(import.meta.url);
+const { getExecutor } = require(
+  join(dirname(require.resolve('@dbos-inc/dbos-sdk')), 'dbos.js'),
+) as {
+  getExecutor(): {
+    deactivateEventReceivers(): Promise<void>;
+    systemDatabase: { runningWorkflowMap: Map<string, { promise: Promise<unknown> }> };
+  };
+};
+
+export const testEngineExecutions = () => getExecutor().systemDatabase.runningWorkflowMap;
+let drainFailure: Error | null = null;
 
 // The Helena engine in the api tests: it runs in the test process against the test
 // database (its own schema `helena_engine`), and the test plays the Hermes runner by
@@ -19,6 +38,7 @@ process.env.HELENA_ENGINE_EXECUTOR_ID ??= 'api-tests';
 // without an engine taking them, so nothing works in the background while their
 // resetDb truncates the tables; what they left is canceled before the engine starts.
 export async function startEngine(): Promise<void> {
+  if (drainFailure) throw drainFailure;
   await cancelLeftovers();
   await launchEngine();
 }
@@ -30,13 +50,58 @@ export async function cancelLeftovers(): Promise<void> {
   if (left.length > 0) await client.cancelWorkflows(left.map((item) => item.workflowID));
 }
 
-export async function stopTestEngine(): Promise<void> {
-  await stopEngineRuns();
-  await stopEngine();
+async function drainTestEngine(): Promise<void> {
+  if (engineRunning()) {
+    const executor = getExecutor();
+    // Stop queue admission first, including a poll already dispatching workflows.
+    await executor.deactivateEventReceivers();
+    await stopEngineRuns();
+    // A cancelled workflow can still be inside a step's application transaction.
+    // Join its actual execution, including children it started while draining.
+    while (executor.systemDatabase.runningWorkflowMap.size > 0) {
+      const running = [...executor.systemDatabase.runningWorkflowMap.entries()];
+      await DBOS.cancelWorkflows(running.map(([id]) => id));
+      await Promise.all(running.map(([, entry]) => entry.promise));
+    }
+  }
+  // After a deadline failure, final suite cleanup owns shutdown. A late-finishing
+  // step must not race that cleanup into closing the SDK pools twice.
+  if (!drainFailure) await stopEngine();
 }
 
-// Stops what the previous test left running, so its workflows do not act on the rows
-// the next test's resetDb removes.
+export async function stopTestEngine(timeoutMs = 10_000): Promise<void> {
+  if (drainFailure) throw drainFailure;
+  let deadline: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      drainTestEngine(),
+      new Promise<never>((_, reject) => {
+        deadline = setTimeout(
+          () =>
+            reject(new Error(`Test engine did not drain within ${timeoutMs} ms; reset blocked`)),
+          timeoutMs,
+        );
+      }),
+    ]);
+  } catch (error) {
+    // A stuck step must fail the hook, never authorize TRUNCATE or a fresh engine.
+    // Keep the failure latched for later hooks; the test database's final drop
+    // remains responsible for closing any abandoned application connections.
+    drainFailure = error instanceof Error ? error : new Error(String(error));
+    throw drainFailure;
+  } finally {
+    clearTimeout(deadline);
+  }
+}
+
+export async function resetEngineDb(): Promise<void> {
+  await stopTestEngine();
+  await resetDb();
+  await startEngine();
+}
+
+// Requests cancellation. A reset must use resetEngineDb, which also joins the local
+// executions; a terminal database status alone does not mean their steps are done.
 export async function stopEngineRuns(): Promise<void> {
   const pending = await DBOS.listWorkflows({ status: ['PENDING', 'ENQUEUED'], limit: 1_000 });
   if (pending.length > 0) await DBOS.cancelWorkflows(pending.map((item) => item.workflowID));

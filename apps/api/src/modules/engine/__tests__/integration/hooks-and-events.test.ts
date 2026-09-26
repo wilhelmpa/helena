@@ -14,8 +14,8 @@ import { eq, sql } from 'drizzle-orm';
 import { publishDomainEvent as publishBusEvent } from '#shared/helena';
 import { domainEvent, publishDomainEvent } from '#modules/engine/events';
 import { app } from '#tests/helpers/app';
-import { resetDb } from '#tests/helpers/db';
 import {
+  resetEngineDb,
   runSteps,
   startEngine,
   stopEngineRuns,
@@ -46,7 +46,7 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  await resetDb();
+  await resetEngineDb();
 });
 
 afterEach(async () => {

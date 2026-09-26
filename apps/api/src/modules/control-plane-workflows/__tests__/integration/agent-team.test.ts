@@ -12,13 +12,13 @@ import { agentRun, db, issue as issueTable, issueActivity, pipelineRun } from '@
 import { and, asc, eq } from 'drizzle-orm';
 import { authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
-import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
 import { recordModelUnavailable } from '#modules/model-availability/service';
 import {
   answerStep,
   finishAgentRun,
   runSteps,
+  resetEngineDb,
   startEngine,
   stopEngineRuns,
   stopTestEngine,
@@ -111,7 +111,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await resetDb();
+  await resetEngineDb();
 });
 
 afterEach(async () => {

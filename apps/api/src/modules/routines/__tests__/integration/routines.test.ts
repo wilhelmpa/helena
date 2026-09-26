@@ -20,9 +20,14 @@ import {
 import { and, asc, eq } from 'drizzle-orm';
 import { api, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
-import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
-import { startEngine, stopEngineRuns, stopTestEngine, waitForStatus } from '#tests/helpers/engine';
+import {
+  resetEngineDb,
+  startEngine,
+  stopEngineRuns,
+  stopTestEngine,
+  waitForStatus,
+} from '#tests/helpers/engine';
 import { clearLimits, setLimits } from '#tests/helpers/limits';
 import { addProjectMember } from '#tests/helpers/members';
 import { createRole } from '#tests/helpers/roles';
@@ -123,7 +128,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await resetDb();
+  await resetEngineDb();
 });
 
 afterEach(async () => {
