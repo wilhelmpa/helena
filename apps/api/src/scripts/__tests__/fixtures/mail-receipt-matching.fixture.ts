@@ -2,7 +2,7 @@ import { mock } from 'bun:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 
-globalThis.fetch = (() => assert.fail('Network requests forbidden')) as typeof fetch;
+globalThis.fetch = (() => assert.fail('Network requests forbidden')) as unknown as typeof fetch;
 
 const mode = process.argv[2];
 const raw = Buffer.from('Subject: Payment receipt\r\n\r\nAmount paid: 12.00 EUR\r\n');
