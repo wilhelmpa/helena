@@ -225,7 +225,13 @@ export default function RunView({
           </div>
         )}
         {view === 'transcript' && (
-          <RunTranscript teamId={teamId} agentId={agentId} sessionId={run.sessionId} live={live} />
+          <RunTranscript
+            projectKey={run.projectKey}
+            teamId={teamId}
+            agentId={agentId}
+            sessionId={run.sessionId}
+            live={live}
+          />
         )}
         {view === 'logs' && <RunLogs teamId={teamId} agentId={agentId} sessionId={run.sessionId} />}
       </div>
@@ -247,11 +253,13 @@ export default function RunView({
 }
 
 function RunTranscript({
+  projectKey,
   teamId,
   agentId,
   sessionId,
   live,
 }: {
+  projectKey: string | null;
   teamId: number;
   agentId: number;
   sessionId: string | null;
@@ -271,7 +279,7 @@ function RunTranscript({
       {transcript.data?.truncated && (
         <p className="text-xs text-muted-foreground">{t('truncated')}</p>
       )}
-      <TranscriptMessages messages={messages} streaming={live} />
+      <TranscriptMessages projectKey={projectKey} messages={messages} streaming={live} />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { useWebLinkScopeRef } from '@/context/webLinks';
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import Color from '@tiptap/extension-color';
@@ -134,6 +135,7 @@ export default function DocumentMarkdownEditor({
   onPickImage?: () => void;
   onUploadImage?: (file: File) => Promise<{ url: string; filename: string }>;
 }) {
+  const scopeRef = useWebLinkScopeRef();
   const t = useTranslations('documents.toolbar');
   const editorRef = useRef<Editor | null>(null);
   const linkKeyboardHandlers = useMemo(createLinkKeyboardHandlers, []);
@@ -237,7 +239,7 @@ export default function DocumentMarkdownEditor({
   if (!editor) return null;
 
   return (
-    <div className={className} data-document-editor="">
+    <div ref={scopeRef} className={className} data-document-editor="">
       {editable && <EditorSelectionMenu editor={editor} />}
       {editable && <EditorTableMenu editor={editor} />}
       <EditorContent editor={editor} className="flex min-h-full flex-col" />

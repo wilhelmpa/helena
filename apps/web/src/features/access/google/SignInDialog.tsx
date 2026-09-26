@@ -1,5 +1,6 @@
 'use client';
 
+import { authenticationLinkRef } from '@/utils/webLinkScope';
 import { useState } from 'react';
 import { Copy, ExternalLink } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -135,7 +136,12 @@ export function SignInDialog({
           </p>
           <div className="flex flex-wrap gap-2">
             <Button asChild size="sm">
-              <a href={started.url} target="_blank" rel="noreferrer noopener">
+              <a
+                ref={authenticationLinkRef}
+                href={started.url}
+                target="_blank"
+                rel="noreferrer noopener"
+              >
                 <ExternalLink />
                 {t('open')}
               </a>

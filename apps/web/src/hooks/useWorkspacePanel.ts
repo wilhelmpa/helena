@@ -96,6 +96,20 @@ export function useWorkspacePanel({
   useEffect(() => {
     if (previousProjectKey.current === projectKey) return;
     previousProjectKey.current = projectKey;
+    // Cross-project web links open that source browser, even when Next keeps the
+    // Shell mounted. The URL contains only the tool, never the destination URL.
+    const url = new URL(window.location.href);
+    const linked = url.searchParams.get('tool');
+    if (isToolId(linked)) {
+      url.searchParams.delete('tool');
+      window.history.replaceState(window.history.state, '', url);
+      setActiveTool(linked);
+      setOpenState(true);
+      write(TOOL_KEY, linked);
+      write(OPEN_KEY, 'open');
+      if (projectScoped(linked)) write(PROJECT_KEY, projectKey ?? '');
+      return;
+    }
     if (open && projectScoped(activeTool)) {
       setOpenState(false);
       write(OPEN_KEY, 'closed');

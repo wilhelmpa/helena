@@ -1,5 +1,6 @@
 'use client';
 
+import WebLinkScope from '@/components/common/WebLinkScope';
 import { useFormatter } from 'next-intl';
 import { Bubble, BubbleContent } from '@/components/ui/bubble';
 import { Message, MessageContent } from '@/components/ui/message';
@@ -14,7 +15,7 @@ import ChatMessageBubbleAssistant from '@/features/ai-chat/components/workspace/
 export default function TranscriptMessages({
   messages,
   streaming = false,
-  projectKey = null,
+  projectKey,
 }: {
   messages: PlanUIMessage[];
   streaming?: boolean;
@@ -22,54 +23,56 @@ export default function TranscriptMessages({
 }) {
   const format = useFormatter();
   return (
-    <div className="flex flex-col gap-4">
-      {messages.map((message, index) => {
-        const time = message.metadata?.createdAt
-          ? format.dateTime(new Date(message.metadata.createdAt), {
-              hour: '2-digit',
-              minute: '2-digit',
-              second: '2-digit',
-            })
-          : null;
-        if (message.role !== 'assistant') {
+    <WebLinkScope projectKey={projectKey}>
+      <div className="flex flex-col gap-4">
+        {messages.map((message, index) => {
+          const time = message.metadata?.createdAt
+            ? format.dateTime(new Date(message.metadata.createdAt), {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+              })
+            : null;
+          if (message.role !== 'assistant') {
+            return (
+              <Message key={message.id} align="end">
+                <MessageContent className="gap-1">
+                  <Bubble variant="muted">
+                    <BubbleContent>
+                      <div className="text-sm">
+                        <Markdown>{messageText(message)}</Markdown>
+                      </div>
+                    </BubbleContent>
+                  </Bubble>
+                  {time && <span className="self-end text-xs text-muted-foreground">{time}</span>}
+                </MessageContent>
+              </Message>
+            );
+          }
           return (
-            <Message key={message.id} align="end">
+            <Message key={message.id} align="start">
               <MessageContent className="gap-1">
-                <Bubble variant="muted">
-                  <BubbleContent>
-                    <div className="text-sm">
-                      <Markdown>{messageText(message)}</Markdown>
-                    </div>
+                <Bubble variant="ghost" className="w-full">
+                  <BubbleContent className="w-full">
+                    <ChatMessageBubbleAssistant
+                      message={message}
+                      streaming={streaming && index === messages.length - 1}
+                      projectKey={projectKey ?? null}
+                      onShowArtifact={() => {}}
+                    />
                   </BubbleContent>
                 </Bubble>
-                {time && <span className="self-end text-xs text-muted-foreground">{time}</span>}
+                {time && (
+                  <span className="text-xs text-muted-foreground">
+                    {time}
+                    {message.metadata?.model ? ` · ${message.metadata.model}` : ''}
+                  </span>
+                )}
               </MessageContent>
             </Message>
           );
-        }
-        return (
-          <Message key={message.id} align="start">
-            <MessageContent className="gap-1">
-              <Bubble variant="ghost" className="w-full">
-                <BubbleContent className="w-full">
-                  <ChatMessageBubbleAssistant
-                    message={message}
-                    streaming={streaming && index === messages.length - 1}
-                    projectKey={projectKey}
-                    onShowArtifact={() => {}}
-                  />
-                </BubbleContent>
-              </Bubble>
-              {time && (
-                <span className="text-xs text-muted-foreground">
-                  {time}
-                  {message.metadata?.model ? ` · ${message.metadata.model}` : ''}
-                </span>
-              )}
-            </MessageContent>
-          </Message>
-        );
-      })}
-    </div>
+        })}
+      </div>
+    </WebLinkScope>
   );
 }

@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
+import { WebLinksContext } from '@/context/webLinks';
+import { useWebLinkNavigation } from '@/hooks/useWebLinkNavigation';
 import { useWorkspaceNavigation } from '@/hooks/useWorkspaceNavigation';
 import { usePathname, useRouter } from 'next/navigation';
 import { useInitiativeOptionsQuery } from '@/services/initiatives.service';
@@ -120,6 +122,7 @@ export default function Shell({
     defaultOpen: globalHome && autoOpenGlobalChat,
     routedTool,
   });
+  const webLinks = useWebLinkNavigation(projectKey, workspaceLayout.showTool);
   const workspacePanel = workspaceLayout.panel;
   const layoutChoice: WorkspaceLayoutChoice = {
     layouts: workspaceLayout.layouts,
@@ -239,111 +242,113 @@ export default function Shell({
   };
 
   return (
-    <ShellCtx.Provider value={context}>
-      <ShellHeaderSlotCtx.Provider value={pageSlot}>
-        <SidebarProvider
-          open={navigation.sidebarOpen}
-          onOpenChange={navigation.setSidebarOpen}
-          className="h-svh overflow-hidden"
-        >
-          <AppSidebar
-            projects={projects}
-            currentProjectKey={projectKey}
-            onSelectProject={(key) => router.push(navigation.projectDestination(key))}
-            onNewProject={() => overlays.setShowNewProject(true)}
-          />
-          <SidebarInset className="min-w-0">
-            <AppHeader
-              title={
-                globalHome ? (
-                  globalTitle ? (
-                    <HeaderCrumbs
-                      items={[{ label: t('home'), href: '/' }, { label: globalTitle }]}
-                    />
-                  ) : (
-                    t('home')
-                  )
-                ) : (
-                  <ShellHeaderTitle
-                    route={route}
-                    projectName={project?.project.name ?? t('project')}
-                    issueIdentifier={issueQuery.data?.identifier ?? null}
-                    issueParent={issueQuery.data?.parent ?? null}
-                  />
-                )
-              }
-              titleLead={
-                !globalHome && route.routeIssueSeq != null && issueQuery.data
-                  ? `${issueQuery.data.identifier} ${issueQuery.data.title}`
-                  : null
-              }
-              hasProject={!!project}
-              onOpenCommand={() => overlays.setShowCommand(true)}
-              onNewIssue={openNewIssue}
-              shownWorkspaceTools={workspaceLayout.resolved.shownTools}
-              onSelectWorkspaceTool={selectWorkspaceTool}
-              headerLayout={headerLayout}
-              headerExtra={narrow ? null : headerExtra}
-              pageSlotRef={setHeaderSlot}
-              pageHidden={!workspaceLayout.resolved.pageVisible}
+    <WebLinksContext.Provider value={webLinks}>
+      <ShellCtx.Provider value={context}>
+        <ShellHeaderSlotCtx.Provider value={pageSlot}>
+          <SidebarProvider
+            open={navigation.sidebarOpen}
+            onOpenChange={navigation.setSidebarOpen}
+            className="h-svh overflow-hidden"
+          >
+            <AppSidebar
+              projects={projects}
+              currentProjectKey={projectKey}
+              onSelectProject={(key) => router.push(navigation.projectDestination(key))}
+              onNewProject={() => overlays.setShowNewProject(true)}
             />
-            {headerLayout === 'single' && narrow && (
-              <div
-                ref={setPageBarSlot}
-                data-slot="app-page-bar"
-                className="relative flex h-11 shrink-0 items-center gap-1 border-b border-sidebar-border px-2 empty:hidden [&:not(:has(>:not(:empty)))]:hidden"
-              >
-                <ShellHeaderExtra store={headerExtra} bare />
-              </div>
-            )}
-
-            <EmergencyStopBanner />
-
-            {errorMsg && !forbidden && (
-              <div className="border-b border-destructive/50 bg-destructive/10 px-4 py-2 text-sm text-destructive">
-                {unreachable ? tShell('serverUnreachable') : errorMsg}
-              </div>
-            )}
-
-            <WorkspaceLayoutHost layout={workspaceLayout} projectKey={projectKey}>
-              <ShellBody
-                forbidden={forbidden}
+            <SidebarInset className="min-w-0">
+              <AppHeader
+                title={
+                  globalHome ? (
+                    globalTitle ? (
+                      <HeaderCrumbs
+                        items={[{ label: t('home'), href: '/' }, { label: globalTitle }]}
+                      />
+                    ) : (
+                      t('home')
+                    )
+                  ) : (
+                    <ShellHeaderTitle
+                      route={route}
+                      projectName={project?.project.name ?? t('project')}
+                      issueIdentifier={issueQuery.data?.identifier ?? null}
+                      issueParent={issueQuery.data?.parent ?? null}
+                    />
+                  )
+                }
+                titleLead={
+                  !globalHome && route.routeIssueSeq != null && issueQuery.data
+                    ? `${issueQuery.data.identifier} ${issueQuery.data.title}`
+                    : null
+                }
                 hasProject={!!project}
-                hasError={!!errorMsg}
-                unreachable={unreachable}
-                projectsLoaded={projectsLoaded}
-                projectCount={projects.length}
-                allowNoProject={globalHome}
-              >
-                {children}
-              </ShellBody>
-            </WorkspaceLayoutHost>
-          </SidebarInset>
+                onOpenCommand={() => overlays.setShowCommand(true)}
+                onNewIssue={openNewIssue}
+                shownWorkspaceTools={workspaceLayout.resolved.shownTools}
+                onSelectWorkspaceTool={selectWorkspaceTool}
+                headerLayout={headerLayout}
+                headerExtra={narrow ? null : headerExtra}
+                pageSlotRef={setHeaderSlot}
+                pageHidden={!workspaceLayout.resolved.pageVisible}
+              />
+              {headerLayout === 'single' && narrow && (
+                <div
+                  ref={setPageBarSlot}
+                  data-slot="app-page-bar"
+                  className="relative flex h-11 shrink-0 items-center gap-1 border-b border-sidebar-border px-2 empty:hidden [&:not(:has(>:not(:empty)))]:hidden"
+                >
+                  <ShellHeaderExtra store={headerExtra} bare />
+                </div>
+              )}
 
-          <CommandLayer
-            open={overlays.showCommand}
-            onOpenChange={overlays.setShowCommand}
-            projects={projects}
-            currentProjectKey={projectKey}
-            onBoard={route.onBoard}
-            view={editor.view}
-            currentIssueId={currentIssueId}
-            onViewChange={editor.changeView}
-            onNewIssue={openNewIssue}
-            // Handled by the kanban board's selection provider (mounted only on the
-            // board); the constant matches BOARD_SELECT_ALL_EVENT in useSelection.
-            onSelectAll={() => window.dispatchEvent(new Event('board:select-all'))}
-            onNewInitiative={() => overlays.setShowNewInitiative(true)}
-            onNewProject={() => overlays.setShowNewProject(true)}
-            onSelectProject={(key) => router.push(navigation.projectDestination(key))}
-            onOpenIssue={(seq) => projectKey && router.push(issuePath(projectKey, seq))}
-            onIssueDeleted={onIssueDeleted}
-            onToggleChat={toggleCoordinatorChat}
-          />
+              <EmergencyStopBanner />
 
-          <ShellOverlays project={project} projectKey={projectKey} overlays={overlays} />
-        </SidebarProvider>
-      </ShellHeaderSlotCtx.Provider>
-    </ShellCtx.Provider>
+              {errorMsg && !forbidden && (
+                <div className="border-b border-destructive/50 bg-destructive/10 px-4 py-2 text-sm text-destructive">
+                  {unreachable ? tShell('serverUnreachable') : errorMsg}
+                </div>
+              )}
+
+              <WorkspaceLayoutHost layout={workspaceLayout} projectKey={projectKey}>
+                <ShellBody
+                  forbidden={forbidden}
+                  hasProject={!!project}
+                  hasError={!!errorMsg}
+                  unreachable={unreachable}
+                  projectsLoaded={projectsLoaded}
+                  projectCount={projects.length}
+                  allowNoProject={globalHome}
+                >
+                  {children}
+                </ShellBody>
+              </WorkspaceLayoutHost>
+            </SidebarInset>
+
+            <CommandLayer
+              open={overlays.showCommand}
+              onOpenChange={overlays.setShowCommand}
+              projects={projects}
+              currentProjectKey={projectKey}
+              onBoard={route.onBoard}
+              view={editor.view}
+              currentIssueId={currentIssueId}
+              onViewChange={editor.changeView}
+              onNewIssue={openNewIssue}
+              // Handled by the kanban board's selection provider (mounted only on the
+              // board); the constant matches BOARD_SELECT_ALL_EVENT in useSelection.
+              onSelectAll={() => window.dispatchEvent(new Event('board:select-all'))}
+              onNewInitiative={() => overlays.setShowNewInitiative(true)}
+              onNewProject={() => overlays.setShowNewProject(true)}
+              onSelectProject={(key) => router.push(navigation.projectDestination(key))}
+              onOpenIssue={(seq) => projectKey && router.push(issuePath(projectKey, seq))}
+              onIssueDeleted={onIssueDeleted}
+              onToggleChat={toggleCoordinatorChat}
+            />
+
+            <ShellOverlays project={project} projectKey={projectKey} overlays={overlays} />
+          </SidebarProvider>
+        </ShellHeaderSlotCtx.Provider>
+      </ShellCtx.Provider>
+    </WebLinksContext.Provider>
   );
 }

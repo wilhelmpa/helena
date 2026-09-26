@@ -1,3 +1,5 @@
+import { requestWebLink } from '@/utils/webLinkNavigation';
+
 const OPENABLE_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:']);
 
 export function openLinkOnModifierClick(event: MouseEvent, root: HTMLElement): boolean {
@@ -39,6 +41,7 @@ function openLink(
   if (!OPENABLE_PROTOCOLS.has(url.protocol)) return false;
 
   event.preventDefault();
+  if (requestWebLink(link)) return true;
   window.open(url.href, link.target || '_blank', 'noopener,noreferrer');
   return true;
 }

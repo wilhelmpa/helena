@@ -20,5 +20,7 @@
     "badAddress": "Masukkan alamat http atau https.",
     "tooLarge": "Permintaan terlalu besar.",
     "failed": "Peramban tidak dapat melakukannya."
-  }
+  },
+  "linkScopeMissing": "Proyek asal tautan ini tidak diketahui. Buka proyek atau percakapannya terlebih dahulu.",
+  "linkBrowserUnavailable": "Browser internal untuk proyek ini belum dikonfigurasi."
 }

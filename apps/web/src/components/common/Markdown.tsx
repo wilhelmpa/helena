@@ -1,5 +1,6 @@
 'use client';
 
+import { useWebLinkScopeRef } from '@/context/webLinks';
 import { useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { markdownSegments } from '@/lib/markdown';
@@ -14,15 +15,16 @@ const AgentChatImportCard = dynamic(() => import('./agent-chat/AgentChatImportCa
 
 // Renders markdown text as formatted HTML with the shared `.md-content` styles
 // (headings, lists, code, blockquote, links), without the virtualized-table image
-// sizing the markdown table cell adds. Links open in a new tab so following one
-// does not replace the view the reader was on. A ```chart fence is drawn as a chart
+// sizing the markdown table cell adds. The authenticated Shell opens web links in the source
+// project browser; public views retain native link behavior. A ```chart fence is drawn as a chart
 // where it sits in the text (see markdownSegments).
 export default function Markdown({ children }: { children: string }) {
+  const scopeRef = useWebLinkScopeRef();
   const segments = useMemo(() => markdownSegments(children, { newTabLinks: true }), [children]);
   // `dir="auto"` reads the direction from the text itself, so an Arabic comment in
   // an English interface — and the reverse — is laid out the way it was written.
   return (
-    <div dir="auto">
+    <div ref={scopeRef} dir="auto">
       {segments.map((segment, index) => {
         if (segment.kind === 'chart') {
           return <ChartBlock key={index} spec={segment.spec} source={segment.source} />;

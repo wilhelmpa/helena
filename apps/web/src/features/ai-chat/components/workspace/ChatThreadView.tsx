@@ -1,5 +1,6 @@
 'use client';
 
+import WebLinkScope from '@/components/common/WebLinkScope';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
@@ -194,79 +195,81 @@ export default function ChatThreadView({
   }, [plan, queue, queuePaused]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <ChatHeader
-        scopeKey={scopeKey}
-        projectKey={projectKey}
-        agent={agent}
-        threadId={threadId}
-        messages={plan.messages}
-        onOpenList={onOpenList}
-        onNewChat={onNewChat}
-        onDeleted={onThreadDeleted}
-        compact={compact}
-        artifactOpen={artifactOpen}
-        onToggleArtifact={onToggleArtifact}
-        hasArtifact={hasArtifact}
-        inPage={inPage}
-      />
-      {plan.restoreFailed ? (
-        <ChatRestoreError onRetry={() => void plan.retryRestore()} />
-      ) : empty ? (
-        <ChatNewChatIntro agent={agent} />
-      ) : (
-        <ChatMessageList
-          plan={plan}
-          agent={agent}
+    <WebLinkScope projectKey={scopeKey.startsWith('team:') ? null : scopeKey}>
+      <div className="flex h-full min-h-0 flex-col">
+        <ChatHeader
+          scopeKey={scopeKey}
           projectKey={projectKey}
+          agent={agent}
           threadId={threadId}
-          editingId={editingId}
-          onEditingChange={setEditingId}
-          onShowArtifact={onArtifact}
+          messages={plan.messages}
+          onOpenList={onOpenList}
+          onNewChat={onNewChat}
+          onDeleted={onThreadDeleted}
+          compact={compact}
+          artifactOpen={artifactOpen}
+          onToggleArtifact={onToggleArtifact}
+          hasArtifact={hasArtifact}
+          inPage={inPage}
         />
-      )}
-      <ChatComposer
-        scopeKey={scopeKey}
-        agent={agent}
-        agents={agents}
-        states={states}
-        activity={activity}
-        tool={activeTool(plan.messages, plan.status)}
-        queue={queue}
-        queuePaused={queuePaused}
-        onQueue={(text, options, metadata) => {
-          setQueuePaused(false);
-          setQueue((current) => [...current, { id: uuid(), text, options, metadata }]);
-        }}
-        onRemoveQueued={(id) => setQueue((current) => current.filter((item) => item.id !== id))}
-        choices={activity === 'answered' ? pendingChoices(plan.messages) : null}
-        contextTokens={summary.data?.contextTokens}
-        autoSpeak={autoSpeak}
-        onAutoSpeakChange={setAutoSpeak}
-        conversation={conversation}
-        threadId={threadId}
-        projectKey={projectKey}
-        draft={threadId == null ? newChatDraft : undefined}
-        busy={plan.busy}
-        model={model.model}
-        thinkingLevel={model.thinkingLevel}
-        onModelChange={(next, thinkingLevel) =>
-          setModel({ model: next, thinkingLevel, chosen: true })
-        }
-        onSend={(text, options, metadata) => {
-          setQueuePaused(false);
-          void plan.send(text, options, metadata);
-        }}
-        onStop={() => void plan.stop()}
-        onNewChat={() => onNewChat(agent.id)}
-        onPickAgent={onNewChat}
-        onRetryLast={() => void plan.regenerate()}
-        onReconnect={() => void plan.reconnect()}
-        onContinue={() => void plan.send(t('interrupted.continuePrompt'), { agentId: agent.id })}
-        onResend={() => void plan.retrySend()}
-        onUndo={plan.undo}
-        onEditLast={lastOwnMessage ? () => setEditingId(lastOwnMessage.id) : undefined}
-      />
-    </div>
+        {plan.restoreFailed ? (
+          <ChatRestoreError onRetry={() => void plan.retryRestore()} />
+        ) : empty ? (
+          <ChatNewChatIntro agent={agent} />
+        ) : (
+          <ChatMessageList
+            plan={plan}
+            agent={agent}
+            projectKey={projectKey}
+            threadId={threadId}
+            editingId={editingId}
+            onEditingChange={setEditingId}
+            onShowArtifact={onArtifact}
+          />
+        )}
+        <ChatComposer
+          scopeKey={scopeKey}
+          agent={agent}
+          agents={agents}
+          states={states}
+          activity={activity}
+          tool={activeTool(plan.messages, plan.status)}
+          queue={queue}
+          queuePaused={queuePaused}
+          onQueue={(text, options, metadata) => {
+            setQueuePaused(false);
+            setQueue((current) => [...current, { id: uuid(), text, options, metadata }]);
+          }}
+          onRemoveQueued={(id) => setQueue((current) => current.filter((item) => item.id !== id))}
+          choices={activity === 'answered' ? pendingChoices(plan.messages) : null}
+          contextTokens={summary.data?.contextTokens}
+          autoSpeak={autoSpeak}
+          onAutoSpeakChange={setAutoSpeak}
+          conversation={conversation}
+          threadId={threadId}
+          projectKey={projectKey}
+          draft={threadId == null ? newChatDraft : undefined}
+          busy={plan.busy}
+          model={model.model}
+          thinkingLevel={model.thinkingLevel}
+          onModelChange={(next, thinkingLevel) =>
+            setModel({ model: next, thinkingLevel, chosen: true })
+          }
+          onSend={(text, options, metadata) => {
+            setQueuePaused(false);
+            void plan.send(text, options, metadata);
+          }}
+          onStop={() => void plan.stop()}
+          onNewChat={() => onNewChat(agent.id)}
+          onPickAgent={onNewChat}
+          onRetryLast={() => void plan.regenerate()}
+          onReconnect={() => void plan.reconnect()}
+          onContinue={() => void plan.send(t('interrupted.continuePrompt'), { agentId: agent.id })}
+          onResend={() => void plan.retrySend()}
+          onUndo={plan.undo}
+          onEditLast={lastOwnMessage ? () => setEditingId(lastOwnMessage.id) : undefined}
+        />
+      </div>
+    </WebLinkScope>
   );
 }

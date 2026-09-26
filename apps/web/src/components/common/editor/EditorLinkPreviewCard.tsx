@@ -1,3 +1,4 @@
+import { useWebLinkScopeRef } from '@/context/webLinks';
 import {
   ArrowUpRight,
   CircleDot,
@@ -31,12 +32,14 @@ export default function EditorLinkPreviewCard({
   loading: boolean;
 }) {
   const t = useTranslations('common.editor');
+  const scopeRef = useWebLinkScopeRef();
   const host = new URL(url).hostname.replace(/^www\./, '');
   const internal = typeof window !== 'undefined' && new URL(url).origin === window.location.origin;
   const Icon = preview?.kind ? previewIcons[preview.kind] : Globe;
   const fallbackTitle = internal ? t('internalPage') : host;
   return (
     <a
+      ref={scopeRef}
       href={url}
       target="_blank"
       rel="noopener noreferrer"

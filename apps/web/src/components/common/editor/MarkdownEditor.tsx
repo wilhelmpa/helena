@@ -1,3 +1,4 @@
+import { useWebLinkScopeRef } from '@/context/webLinks';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useEditor, EditorContent, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -68,6 +69,7 @@ export default function MarkdownEditor({
   // The name of the text box, where no visible label points at it (a form field).
   ariaLabel?: string;
 }) {
+  const scopeRef = useWebLinkScopeRef();
   const t = useTranslations('common.editor');
   const editorRef = useRef<Editor | null>(null);
   const linkKeyboardHandlers = useMemo(createLinkKeyboardHandlers, []);
@@ -206,7 +208,7 @@ export default function MarkdownEditor({
   if (!editor) return null;
 
   return (
-    <div className={className}>
+    <div ref={scopeRef} className={className}>
       {editable && <EditorSelectionMenu editor={editor} />}
       {editable && <EditorTableMenu editor={editor} />}
       {/* Grows with the text rather than being pinned to the container's height,

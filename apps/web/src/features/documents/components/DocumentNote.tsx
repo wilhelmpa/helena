@@ -1,5 +1,7 @@
 'use client';
 
+import WebLinkScope from '@/components/common/WebLinkScope';
+import { vaultProjectKey } from '@/utils/vaultLinks';
 import { useEffect, type ReactNode, type RefObject } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -81,14 +83,16 @@ export default function DocumentNote({
   }
 
   return (
-    <DocumentEditor
-      root={root}
-      document={note.data}
-      canEdit={canEdit}
-      focusTitle={focusTitle}
-      flushRef={flushRef}
-      toolbar={toolbar}
-      onClose={onClose}
-    />
+    <WebLinkScope projectKey={vaultProjectKey(note.data.path)}>
+      <DocumentEditor
+        root={root}
+        document={note.data}
+        canEdit={canEdit}
+        focusTitle={focusTitle}
+        flushRef={flushRef}
+        toolbar={toolbar}
+        onClose={onClose}
+      />
+    </WebLinkScope>
   );
 }

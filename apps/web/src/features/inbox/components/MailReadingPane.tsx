@@ -1,5 +1,6 @@
 'use client';
 
+import WebLinkScope from '@/components/common/WebLinkScope';
 import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import type { MailDraftMode } from '@/lib/api/endpoints/mail';
@@ -52,26 +53,28 @@ export default function MailReadingPane({
 
   const data = thread.data;
   return (
-    <div className="flex min-h-0 w-full flex-col">
-      <MailThreadToolbar
-        thread={data}
-        teamId={teamId}
-        onBack={onBack}
-        onDraft={onDraft}
-        onArchive={onArchive}
-        onMove={onMove}
-        onRemoved={onRemoved}
-      />
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-        <MailThreadHeader thread={data} onMove={onMove} />
-        <MailDraftChips drafts={data.drafts} />
-        <div className="mt-4 flex flex-col gap-3">
-          {data.messages.map((message) => (
-            <MailMessageCard key={message.id} message={message} threadId={data.id} />
-          ))}
+    <WebLinkScope projectKey={data.projectKey}>
+      <div className="flex min-h-0 w-full flex-col">
+        <MailThreadToolbar
+          thread={data}
+          teamId={teamId}
+          onBack={onBack}
+          onDraft={onDraft}
+          onArchive={onArchive}
+          onMove={onMove}
+          onRemoved={onRemoved}
+        />
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+          <MailThreadHeader thread={data} onMove={onMove} />
+          <MailDraftChips drafts={data.drafts} />
+          <div className="mt-4 flex flex-col gap-3">
+            {data.messages.map((message) => (
+              <MailMessageCard key={message.id} message={message} threadId={data.id} />
+            ))}
+          </div>
+          <div ref={endRef} />
         </div>
-        <div ref={endRef} />
       </div>
-    </div>
+    </WebLinkScope>
   );
 }

@@ -1,3 +1,4 @@
+import WebLinkScope from '@/components/common/WebLinkScope';
 import { useCallback } from 'react';
 import { useDndContext, useDraggable, useDroppable } from '@dnd-kit/core';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
@@ -81,57 +82,59 @@ export function TableRow({
     [dragRef, dropRef],
   );
   return (
-    <IssueContextMenu project={project} issue={issue}>
-      <div
-        ref={mergedRef}
-        {...attributes}
-        {...listeners}
-        onClick={(e) => {
-          e.preventDefault();
-          onClick();
-        }}
-        className={cn(
-          'relative grid cursor-grab gap-3 border-b py-2 pr-4 text-sm transition-colors sm:touch-none',
-          isBlocked(issue) ? 'row-blocked' : 'hover:bg-accent/40',
-          alignTop ? 'items-start' : 'items-center',
-          indented ? 'pl-9' : 'pl-4',
-          isDragging && 'opacity-40',
-        )}
-        style={{ gridTemplateColumns: gridTemplate }}
-      >
-        {showDropLine && <DropLine className="top-0" />}
-        <div className="flex min-w-0 items-center gap-2">
-          {showId && (
-            <IssueIdentifier
-              issue={issue}
-              className="text-xs text-muted-foreground tabular-nums"
-              onOpenParent={onOpenIssue}
-            />
+    <WebLinkScope projectKey={project.project.key}>
+      <IssueContextMenu project={project} issue={issue}>
+        <div
+          ref={mergedRef}
+          {...attributes}
+          {...listeners}
+          onClick={(e) => {
+            e.preventDefault();
+            onClick();
+          }}
+          className={cn(
+            'relative grid cursor-grab gap-3 border-b py-2 pr-4 text-sm transition-colors sm:touch-none',
+            isBlocked(issue) ? 'row-blocked' : 'hover:bg-accent/40',
+            alignTop ? 'items-start' : 'items-center',
+            indented ? 'pl-9' : 'pl-4',
+            isDragging && 'opacity-40',
           )}
-          <span dir="auto" className="truncate text-foreground">
-            {issue.title}
-          </span>
-          <SubtaskProgress
-            issueId={issue.id}
-            maps={maps}
-            open={subtasks.open}
-            onToggle={subtasks.toggle}
-          />
+          style={{ gridTemplateColumns: gridTemplate }}
+        >
+          {showDropLine && <DropLine className="top-0" />}
+          <div className="flex min-w-0 items-center gap-2">
+            {showId && (
+              <IssueIdentifier
+                issue={issue}
+                className="text-xs text-muted-foreground tabular-nums"
+                onOpenParent={onOpenIssue}
+              />
+            )}
+            <span dir="auto" className="truncate text-foreground">
+              {issue.title}
+            </span>
+            <SubtaskProgress
+              issueId={issue.id}
+              maps={maps}
+              open={subtasks.open}
+              onToggle={subtasks.toggle}
+            />
+          </div>
+
+          {orderedColumns.map((c) =>
+            c.kind === 'builtin' ? (
+              <TableBuiltinCell key={columnKey(c)} column={c.col} issue={issue} maps={maps} />
+            ) : (
+              <TableCustomCell key={columnKey(c)} field={c.field} issue={issue} maps={maps} />
+            ),
+          )}
+
+          {subtasks.open && (
+            <TableRowSubtasks issueId={issue.id} maps={maps} onOpenIssue={onOpenIssue} />
+          )}
+          <TableRowLinks links={issue.links} maps={maps} onOpenIssue={onOpenIssue} />
         </div>
-
-        {orderedColumns.map((c) =>
-          c.kind === 'builtin' ? (
-            <TableBuiltinCell key={columnKey(c)} column={c.col} issue={issue} maps={maps} />
-          ) : (
-            <TableCustomCell key={columnKey(c)} field={c.field} issue={issue} maps={maps} />
-          ),
-        )}
-
-        {subtasks.open && (
-          <TableRowSubtasks issueId={issue.id} maps={maps} onOpenIssue={onOpenIssue} />
-        )}
-        <TableRowLinks links={issue.links} maps={maps} onOpenIssue={onOpenIssue} />
-      </div>
-    </IssueContextMenu>
+      </IssueContextMenu>
+    </WebLinkScope>
   );
 }

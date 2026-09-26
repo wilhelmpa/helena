@@ -1,3 +1,4 @@
+import WebLinkScope from '@/components/common/WebLinkScope';
 import { type CSSProperties, useRef, useState } from 'react';
 import { Direction } from 'radix-ui';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
@@ -310,7 +311,7 @@ export default function IssueDetailContent({
     // content column instead, under the description. The actions are the page's
     // header row (IssueActionsBar variant 'toolbar').
     return (
-      <>
+      <WebLinkScope projectKey={project.project.key}>
         <IssueActionsBar project={project} issue={issue} variant="toolbar" onDeleted={onDeleted} />
         <div className="max-w-3xl xl:me-(--issue-properties-w)" style={propertiesWidthVar}>
           {heading}
@@ -327,7 +328,7 @@ export default function IssueDetailContent({
             {renderProperties('mt-0 border-t-0 pt-0')}
           </div>
         </aside>
-      </>
+      </WebLinkScope>
     );
   }
 
@@ -338,25 +339,27 @@ export default function IssueDetailContent({
     // The breakpoint is the pane's own width, not the viewport's. The container
     // wraps the flex row rather than being it — an element cannot query itself.
     return (
-      <div className="@container">
-        <div className="flex gap-6">
-          <div className="min-w-0 flex-1">
-            <div className="@3xl:hidden">{actions}</div>
-            {heading}
-            <div className="@3xl:hidden">{renderProperties()}</div>
-            {sections}
-            {activity}
+      <WebLinkScope projectKey={project.project.key}>
+        <div className="@container">
+          <div className="flex gap-6">
+            <div className="min-w-0 flex-1">
+              <div className="@3xl:hidden">{actions}</div>
+              {heading}
+              <div className="@3xl:hidden">{renderProperties()}</div>
+              {sections}
+              {activity}
+            </div>
+            <aside
+              className="relative hidden w-(--issue-properties-w) shrink-0 @3xl:block"
+              style={propertiesWidthVar}
+            >
+              {propertiesGrip}
+              {actions}
+              {sidebarProperties}
+            </aside>
           </div>
-          <aside
-            className="relative hidden w-(--issue-properties-w) shrink-0 @3xl:block"
-            style={propertiesWidthVar}
-          >
-            {propertiesGrip}
-            {actions}
-            {sidebarProperties}
-          </aside>
         </div>
-      </div>
+      </WebLinkScope>
     );
   }
 
@@ -365,11 +368,13 @@ export default function IssueDetailContent({
   // it the bubble's parent would be the panel's scroll container, which bounds a
   // sticky child to the first screen of the scroll.
   return (
-    <div>
-      {heading}
-      {renderProperties()}
-      {sections}
-      {activity}
-    </div>
+    <WebLinkScope projectKey={project.project.key}>
+      <div>
+        {heading}
+        {renderProperties()}
+        {sections}
+        {activity}
+      </div>
+    </WebLinkScope>
   );
 }

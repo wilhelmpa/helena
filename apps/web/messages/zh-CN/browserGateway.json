@@ -20,5 +20,7 @@
     "badAddress": "请输入 http 或 https 地址。",
     "tooLarge": "请求过大。",
     "failed": "浏览器无法执行该操作。"
-  }
+  },
+  "linkScopeMissing": "无法确定此链接的来源项目。请先打开相应项目或聊天。",
+  "linkBrowserUnavailable": "尚未配置此项目的内部浏览器。"
 }

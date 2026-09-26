@@ -1,12 +1,15 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useWebLinks } from '@/context/webLinks';
+import { installWebLinkNavigation } from '@/utils/webLinkNavigation';
+import { webLinkScope } from '@/utils/webLinkScope';
 import { mailApiBase } from '@/lib/api/endpoints/mail';
 import { mailFrameDocument } from '../utils/mailHtml';
 
 // The HTML of a message in a sandboxed frame: no scripts, no access to the app, and
-// as tall as its content. allow-same-origin only lets this page measure the height;
-// without allow-scripts nothing inside the frame can use it.
+// as tall as its content. The parent measures it and routes clicked web links;
+// without allow-scripts nothing inside the frame can execute code.
 export default function MailHtmlFrame({
   html,
   allowRemoteImages,
@@ -14,6 +17,7 @@ export default function MailHtmlFrame({
   html: string;
   allowRemoteImages: boolean;
 }) {
+  const links = useWebLinks();
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [height, setHeight] = useState(120);
 
@@ -21,9 +25,22 @@ export default function MailHtmlFrame({
     const frame = frameRef.current;
     if (!frame) return;
     let observer: ResizeObserver | null = null;
+    let unlink: (() => void) | undefined;
+    let linkedDocument: Document | null = null;
     const measure = () => {
       const body = frame.contentDocument?.body;
       if (!body) return;
+      const doc = frame.contentDocument!;
+      if (links && doc !== linkedDocument) {
+        unlink?.();
+        linkedDocument = doc;
+        unlink = installWebLinkNavigation(
+          doc,
+          links.open,
+          () => webLinkScope(frame, links.scope),
+          window.location.href,
+        );
+      }
       setHeight(
         Math.max(body.scrollHeight, frame.contentDocument!.documentElement.scrollHeight) + 4,
       );
@@ -37,8 +54,9 @@ export default function MailHtmlFrame({
     return () => {
       frame.removeEventListener('load', measure);
       observer?.disconnect();
+      unlink?.();
     };
-  }, [html, allowRemoteImages]);
+  }, [html, allowRemoteImages, links]);
 
   return (
     <iframe

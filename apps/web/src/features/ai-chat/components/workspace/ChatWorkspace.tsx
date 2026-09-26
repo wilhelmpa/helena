@@ -1,5 +1,6 @@
 'use client';
 
+import WebLinkScope from '@/components/common/WebLinkScope';
 import { useCallback, useRef, useState } from 'react';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { chatScopeKey } from '@/lib/api/endpoints/agentChat';
@@ -144,6 +145,8 @@ export default function ChatWorkspace({
       : scopeKey;
   const resolvingThread =
     threadId != null && threadId !== adoptedThreadId && !summary.data && summary.isLoading;
+  let linkProjectKey: string | null | undefined;
+  if (!resolvingThread) linkProjectKey = threadScopeKey.startsWith('team:') ? null : threadScopeKey;
   const resolvingAgent =
     (agentId != null && !agentInScope && fallbackAgent.isLoading) || resolvingThread;
 
@@ -198,13 +201,15 @@ export default function ChatWorkspace({
           />
         )}
       </div>
-      <ArtifactPanel
-        artifact={artifact}
-        open={artifactOpen}
-        onClose={() => setArtifactOpen(false)}
-        overlay={width > 0 && artifactPlacement(width) === 'overlay'}
-        scopeKey={threadScopeKey}
-      />
+      <WebLinkScope projectKey={linkProjectKey}>
+        <ArtifactPanel
+          artifact={artifact}
+          open={artifactOpen}
+          onClose={() => setArtifactOpen(false)}
+          overlay={width > 0 && artifactPlacement(width) === 'overlay'}
+          scopeKey={threadScopeKey}
+        />
+      </WebLinkScope>
     </div>
   );
 }

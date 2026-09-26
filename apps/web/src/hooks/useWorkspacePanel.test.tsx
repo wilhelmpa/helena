@@ -117,3 +117,23 @@ test('a user click cannot be overwritten by a later restore pass', () => {
     test.cleanup();
   }
 });
+
+test('a cross-project internal browser link opens its source panel in a preserved Shell and removes only the tool parameter', () => {
+  const t = setup();
+  try {
+    act(() => t.root().render(<Probe projectKey="VOL" />));
+    act(() => panel.openTool('terminal'));
+    t.dom.window.history.pushState({}, '', '/project/OTHER?tool=browser&keep=1');
+    act(() => t.root().render(<Probe projectKey="OTHER" />));
+    assert.equal(panel.activeTool, 'browser');
+    assert.equal(panel.open, true);
+    assert.equal(t.dom.window.location.search, '?keep=1');
+    t.dom.window.history.pushState({}, '', '/?tool=browser');
+    act(() => t.root().render(<Probe projectKey={null} />));
+    assert.equal(panel.open, true);
+    assert.equal(panel.activeTool, 'browser');
+    assert.equal(t.dom.window.location.search, '');
+  } finally {
+    t.cleanup();
+  }
+});

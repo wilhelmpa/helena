@@ -1,5 +1,6 @@
 'use client';
 
+import { useWebLinkScopeRef } from '@/context/webLinks';
 import { useEffect, useMemo, useReducer, type AnchorHTMLAttributes, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
@@ -39,7 +40,7 @@ const AgentChatImportCard = dynamic(
 // Elements' MessageResponse) with Shiki for code and Mermaid for diagrams — each loaded
 // the first time an answer needs it —, Helena's own fences drawn as what they stand for
 // (```chart, ```issue-import), links inside Helena opened in place and the rest in a new
-// tab, and the controls of code blocks, tables and diagrams in the reader's language.
+// Helena browser tab within the authenticated Shell, and the controls of code blocks, tables and diagrams in the reader's language.
 
 type Plugin = 'code' | 'mermaid';
 const loaded: Pick<PluginConfig, Plugin> = {};
@@ -153,6 +154,7 @@ function AgentLink({
   node: _node,
   ...props
 }: AnchorHTMLAttributes<HTMLAnchorElement> & ExtraProps) {
+  const scopeRef = useWebLinkScopeRef();
   if (!href || href === 'streamdown:incomplete-link') {
     return <span className={cn(LINK_CLASS, className)}>{children}</span>;
   }
@@ -167,6 +169,7 @@ function AgentLink({
   return (
     <a
       {...props}
+      ref={scopeRef}
       href={href}
       target="_blank"
       rel="noreferrer"

@@ -20,5 +20,7 @@
     "badAddress": "Bitte eine http- oder https-Adresse eingeben.",
     "tooLarge": "Die Anfrage ist zu groß.",
     "failed": "Der Browser konnte das nicht ausführen."
-  }
+  },
+  "linkScopeMissing": "Das Quellprojekt dieses Links ist nicht bekannt. Öffne zuerst das zugehörige Projekt oder den Chat.",
+  "linkBrowserUnavailable": "Der interne Browser für dieses Projekt ist nicht eingerichtet."
 }

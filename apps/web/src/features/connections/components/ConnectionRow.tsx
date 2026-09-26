@@ -1,3 +1,4 @@
+import { authenticationLinkRef } from '@/utils/webLinkScope';
 import { useTranslations } from 'next-intl';
 import StatusBadge, { type Status } from '@/components/common/page/StatusBadge';
 import { Button } from '@/components/ui/button';
@@ -62,7 +63,12 @@ export default function ConnectionRow({
         ) : null}
         {connection.canPair && connection.manageUrl ? (
           <Button size="sm" variant="ghost" asChild>
-            <a href={connection.manageUrl} target="_blank" rel="noopener noreferrer">
+            <a
+              ref={authenticationLinkRef}
+              href={connection.manageUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               {t('actions.openPairing')}
             </a>
           </Button>

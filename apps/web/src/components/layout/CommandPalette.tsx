@@ -1,4 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
+import { useWebLinks } from '@/context/webLinks';
+import { webLinkKind } from '@/utils/webLinkNavigation';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
@@ -51,6 +53,7 @@ export default function CommandPalette({
   const t = useTranslations('palette');
   const tSource = useTranslations('knowledge.source');
   const router = useRouter();
+  const webLinks = useWebLinks();
   const { data: session } = useSession();
   const [query, setQuery] = useState('');
   const [page, setPage] = useState<CommandPage | null>(null);
@@ -135,8 +138,9 @@ export default function CommandPalette({
 
   function openHit(hit: KnowledgeHit) {
     onOpenChange(false);
-    if (/^https?:\/\//i.test(hit.href)) window.open(hit.href, '_blank', 'noopener');
-    else router.push(hit.href);
+    const kind = webLinkKind(hit.href, window.location.href);
+    if (kind === 'web') webLinks?.open(hit.href, hit.projectKey);
+    else if (kind === 'native') router.push(hit.href);
   }
 
   function captureText(target: 'inbox' | 'journal') {

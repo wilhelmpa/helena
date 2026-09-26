@@ -20,5 +20,7 @@
     "badAddress": "Digite um endereço http ou https.",
     "tooLarge": "A solicitação é grande demais.",
     "failed": "O navegador não conseguiu fazer isso."
-  }
+  },
+  "linkScopeMissing": "O projeto de origem deste link é desconhecido. Abra primeiro o projeto ou a conversa.",
+  "linkBrowserUnavailable": "O navegador interno deste projeto não está configurado."
 }
