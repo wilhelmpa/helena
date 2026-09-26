@@ -56,6 +56,13 @@ subjects, filenames, mail text or raw object keys in chat, journals or broad rep
 The service umask preserves normal vault group access; review manifests have explicit 0600
 permissions in the private directory and the root shell creates its reports with umask 077.
 
+The two operator apply paths explicitly set `skipMatching: true` on each mail receipt
+intake. New originals are filed locally and remain open; neither deterministic nor
+model-based matching is started by these calls. Existing receipt matches, match rows and
+receipt states are preserved when an original is reused. Matching is a separate operation
+after review of its configured decision provider and data permissions. The default intake,
+upload behavior, native routine and existing schedules retain their normal matching behavior.
+
 ## 2. Imported-window dry-run and apply
 
 Copy the committed, reviewed ID manifest without changing its scope:
@@ -226,8 +233,8 @@ cmp "$receipt_review/priv-2026-001.apply.json" "$receipt_review/priv-2026-001.re
 Require identical UID/message/receipt mappings and no additional receipt count on rerun.
 Inspection, review export and apply bound every provider fetch, require a single matching
 UID and exact declared size, and recheck folder/UIDVALIDITY before and after each read.
-Apply rejects duplicate UIDs. The reread verifies provider SHA and UIDVALIDITY, actual stored source SHA after Message-ID
-deduplication, all selected attachment rows, and actual project scope. Any conflict remains
+Apply rejects duplicate UIDs. The reread verifies provider SHA and UIDVALIDITY, actual stored
+source SHA after Message-ID deduplication, all selected attachment rows, and actual project scope. Any conflict remains
 an unresolved source; never substitute the old local mail or edit the hash to bypass it.
 Missing Date headers use IMAP INTERNALDATE. Malformed Date headers can still be normalized
 unexpectedly by the shared MIME parser; verify dates against the original and mark uncertain
@@ -243,6 +250,85 @@ remain recorded and open. Changing UIDVALIDITY requires fresh inspection and rev
 
 Use the same review/apply/rerun commands with account/project/file prefix 5/FAM/fam and
 6/VOL/vol. No cross-project copying, sender-based reassignment or folder setting changes.
+
+
+### Historical execution matrix
+
+Apply this matrix serially to every reviewed page. Verify current account/project bindings
+and the exact existing folder name before starting; the table records the prepared scope,
+not a new provider inventory. Use a new private evidence prefix per account, year and page.
+
+| Account | Required project | Existing archive folder | First evidence prefix |
+| --- | --- | --- | --- |
+| 4 | PRIV | `[Google Mail]/Alle Nachrichten` | `priv-2026-001` |
+| 5 | FAM | `[Gmail]/Alle Nachrichten` | `fam-2026-001` |
+| 6 | VOL | `[Gmail]/Alle Nachrichten` | `vol-2026-001` |
+
+All three start with `--since=2026-01-01 --before=2026-08-28 --limit=20` using section 3.
+Each original is bounded to 25 MiB and each page to 100 MiB/at most 50 candidates. The
+20-candidate initial page can be reduced when its body companions exceed the review cap.
+For each account, finish its pages and earlier windows before proceeding to the next.
+
+| Stage | Exact operation and evidence | Required result before continuing |
+| --- | --- | --- |
+| Bounded inventory | Run history inspection with the table's account/project/folder and write `<prefix>.inspect.json` plus summary. | Scope unchanged; every UID listed once; record remaining, earlierCandidates and oversizedUids. No silent omissions. |
+| Private review | Export all candidates with history-review, verify its SHA256SUMS, read required originals locally, preserve inspection and create `<prefix>.reviewed.json`. | Every UID selected or explained in a private exclusion/open ledger. Selected attachment SHA values come from that UID; body fallback is explicit. Pin the reviewed manifest SHA. |
+| Bound apply | Check that pin, then history `--apply=<prefix>.reviewed.json` with the table's account/project. | Exit 0; UID/message/receipt mapping for every selected UID. No new match calls, Inbox locations or classification replay. Partial failure is incomplete evidence. |
+| Repeat and read-only zero check | Repeat the same history apply and compare mappings. Build the exact imported ID manifest described below; run the existing backfill **without** `--apply`. | Same receipt IDs; `new=0`, `duplicates=0`, every file existing. All hashes and source mappings agree with the privately reviewed provider originals. |
+| Download and source proof | In that project's Belege, download selected original files and the monthly export; compare SHA256. Follow the source thread and any existing ticket link. | Correct project, canonical file, exact original bytes, visible warning and preserved source/ticket association. Historical import creates no new task. If no ticket exists, record that explicitly. |
+| Checkpoint and continue | Record manifest/report hashes, UID boundary, counts and open exceptions. Advance the UID cursor or year only after the page is reconciled. | No unreviewed candidate or skipped UID is counted complete; native cutoff, retention and schedules unchanged. |
+
+For the read-only zero check after a historical apply, derive `<prefix>.imported-ids.json`
+from the successful apply report and its pinned reviewed manifest, using only current mail
+metadata. This file is an evidence manifest for the existing backfill script, not another
+receipt store:
+
+1. Require one apply-report row for every selected reviewed UID, without additions or
+   omissions. Read `mail_message` for each exact returned `messageId`, its joined thread and
+   project, and its `mail_attachment` rows. Require the matrix account/project and retain
+   the actual `threadId` for comparison; never treat provider UID as an internal message ID.
+2. For each row, write `{messageId, accountId, projectKey, attachmentIds, includeBody}`.
+   Resolve `attachmentIds` only from attachments of that message whose SHA occurs in the
+   corresponding candidate's reviewed `attachmentSha256`. Require every selected SHA to
+   resolve. Preserve that candidate's `includeBody` selection. With selected attachments,
+   it remains fallback-only; do not add a second body receipt.
+3. Keep each `messageId` at most once in a verification manifest. If distinct provider UIDs
+   reused one internal message, verify them in separate bounded manifests. Identical selections
+   can be coalesced only while retaining every UID-to-message/receipt mapping in the ledger;
+   never merge a body-only selection with an attachment selection, which would suppress the
+   body fallback. A page with zero selected UIDs records zero expected receipts and needs no
+   imported-ID manifest; it still needs complete review and exclusion/open reasons.
+4. Save each nonempty manifest privately with mode 0600, refuse overwrite, pin its SHA, then run:
+
+```bash
+run_receipts src/scripts/mail-receipt-backfill.ts \
+  --manifest="$receipt_review/priv-2026-001.imported-ids.json" \
+  > "$receipt_review/priv-2026-001.zero.json" 2> "$receipt_review/priv-2026-001.zero.stderr"
+```
+
+Use the matching `fam` or `vol` prefix for the other accounts. Compare every zero-report
+`accountId/projectKey/messageId/threadId/attachmentId` with the exact apply/source mapping.
+For a body receipt, its SHA must equal the reviewed candidate's original EML SHA; for an
+attachment, it must equal that candidate's selected attachment SHA. Require each resulting
+receipt ID to be present in that UID's apply report. This command reads the actual stored
+originals and canonical existing receipt files; it makes no new receipt or matching writes.
+Keep the zero report immutable and hash it. To repeat the same check, pass
+`--reviewed=<prefix>.zero.json` and write a fresh output filename. Any mismatch or nonzero
+`new` stops acceptance; do not apply an unreviewed repair manifest.
+
+Treat a linked-invoice warning as retained email evidence, not as a retrieved invoice.
+The reviewed Cloudflare source 7206 keeps its warning/EML; source 7207 is its separate
+payment document. Do not merge those records on issuer or amount. An unresolved linked PDF
+remains open even when every selected original in a page passes the zero check.
+
+After interruption, keep failed reports and private partial exports. Retry the exact same
+pinned selection with fresh report filenames; successful originals keep their IDs. If the
+source hash, folder, UIDVALIDITY or project changed, inspect and privately review again before
+any retry. A batch-limit skip can use a smaller page; permanently unavailable originals stay
+open. For `remaining > 0`, use the saved `nextBeforeUid` in the same date window. For
+`earlierCandidates > 0`, move to the preceding year with no cursor from the newer window.
+An empty year does not finish the account while earlier matches remain. Keyword exhaustion
+is not proof that documents with unusual subjects were found; record that coverage limit.
 
 ## 5. Root live acceptance
 
@@ -321,3 +407,12 @@ Private root-readable test logs on Kingston:
 annotation was corrected) and `~/agent-work/mail-receipts-acceptance-checks.log` (final
 API typecheck, lint and formatting, exit 0). The annotation has no runtime effect; the
 7 offline source/review tests also passed again afterward (48 assertions).
+
+
+Matching follow-up validation is separate from the 33-test database run above. Six offline
+mock cases execute the actual intake, imported backfill and historical apply in isolated
+processes: omitted/false keeps matching, true skips it, and an existing matched receipt is
+unchanged. No database or provider is used. Removing the intake guard makes three cases fail;
+removing either operator's skip option makes its corresponding case fail. Scoped lint and
+repository formatting also passed. The source change still requires the root's next
+combined typecheck and database/full-test gate before deployment.
