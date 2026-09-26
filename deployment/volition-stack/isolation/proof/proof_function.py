@@ -419,6 +419,7 @@ def run_terminal_proofs(report, sh, iso, socket, root) -> None:
     import re  # noqa: PLC0415
     import signal  # noqa: PLC0415
     import struct  # noqa: PLC0415
+    import select  # noqa: PLC0415
     import subprocess  # noqa: PLC0415
     import termios  # noqa: PLC0415
 
