@@ -152,7 +152,11 @@
   },
   "request": {
     "level": "Tingkat {level}",
-    "reason": "Mengapa perlu persetujuan"
+    "reason": "Mengapa perlu persetujuan",
+    "scope": {
+      "workspace": "Di dalam Helena / ruang kerja proyek",
+      "external": "Di luar Helena / ruang kerja proyek"
+    }
   },
   "prices": {
     "estimate": "Semua harga adalah perkiraan: dikonversi ke euro dari models.dev atau dimasukkan manual.",

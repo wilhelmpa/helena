@@ -151,6 +151,7 @@ export async function fileBrowserApproval(
     ? 'Automatische Verlängerung für ' + domain + ' deaktivieren'
     : 'Projekt-Browser: ' + context.tool + what + (where ? ' – ' + where : '');
   const { approval } = await createApprovalRequest({
+    scope: 'external',
     projectId: project.id,
     agent: { id: agent.id, userId: agent.userId },
     kind: approvalKindOf(category) as RequestKind,

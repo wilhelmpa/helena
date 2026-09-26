@@ -38,6 +38,7 @@ export interface ApprovalRequest {
   // What Helena's policy engine said about the action: its category, the Autopilot level
   // that applied and why a person decides (autopilot.reason.<code>).
   category?: string | null;
+  scope?: 'workspace' | 'external' | null;
   autopilotLevel?: number | null;
   policyReason?: string | null;
   // A budget card's budget ('budget' kind): metric, period, limit, use.

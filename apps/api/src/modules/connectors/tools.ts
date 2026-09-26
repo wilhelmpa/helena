@@ -213,6 +213,7 @@ async function requestApproval(
     'Helena carries this out exactly as shown once it is approved.',
   ].join('\n');
   const { approval } = await createApprovalRequest({
+    scope: 'external',
     projectId: caller.project.id,
     agent: caller.agent,
     kind: APPROVAL_KIND[category] ?? 'other',

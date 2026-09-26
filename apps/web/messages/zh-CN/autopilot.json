@@ -152,7 +152,11 @@
   },
   "request": {
     "level": "级别 {level}",
-    "reason": "为何需要批准"
+    "reason": "为何需要批准",
+    "scope": {
+      "workspace": "Helena / 项目工作区内",
+      "external": "Helena / 项目工作区外"
+    }
   },
   "prices": {
     "estimate": "所有价格均为估算：由 models.dev 换算为欧元或手动输入。",

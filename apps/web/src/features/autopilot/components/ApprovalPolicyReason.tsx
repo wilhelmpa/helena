@@ -26,6 +26,7 @@ export default function ApprovalPolicyReason({ request }: { request: ApprovalReq
   return (
     <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
       <AutopilotLevelBadge level={level} />
+      {request.scope && <span>{t(`request.scope.${request.scope}`)}</span>}
       <span>{t(`reason.${reason}`, { level, name })}</span>
     </p>
   );

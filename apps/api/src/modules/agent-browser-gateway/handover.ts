@@ -17,6 +17,7 @@ export async function fileHandoverCard(
   reason: string,
 ): Promise<number> {
   const { approval } = await createApprovalRequest({
+    scope: 'external',
     projectId: project.id,
     agent: { id: agent.id, userId: agent.userId },
     kind: 'other',

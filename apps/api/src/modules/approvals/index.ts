@@ -33,7 +33,7 @@ import {
   listApprovedCommands,
 } from './service';
 
-// Agents ask here before they act outside Helena; the people who may decide answer from
+// Agents ask here before an action that needs approval; the people who may decide answer from
 // one inbox. The approval steps of workflow runs are listed by the workflow builder
 // (/pipeline-approvals) and shown in the same inbox.
 export const approvalRoutes = new Elysia({
@@ -64,9 +64,9 @@ export const approvalRoutes = new Elysia({
       detail: {
         summary: 'Request an approval',
         description:
-          'Ask a person to approve an action outside Helena before you take it: sending a ' +
+          'Ask a person to approve an action before you take it: sending a ' +
           'message or email, publishing, paying, or deleting something. Describe the action ' +
-          'in one line and give every detail the person needs to decide. Then end your run ' +
+          'in one line, state its scope, and give every detail the person needs to decide. Then end your run ' +
           'without taking the action: Helena starts a new run of yours with the decision and ' +
           'its note once the request is approved or rejected. When a terminal command or ' +
           'execute_code call was blocked for approval, pass exactly what it was about to run ' +

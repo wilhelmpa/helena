@@ -60,6 +60,75 @@ describe('approval requests', () => {
     await resetDb();
   });
 
+  it('shows internal ticket deletion at its real scope instead of a hard block', async () => {
+    const { asOwner, asAgent, columnId } = await setup();
+    const { issue } = await startRun(asOwner, asAgent, columnId);
+    for (const action of [
+      `Delete MKT-${issue.sequenceNumber} for good`,
+      `Ticket MKT-${issue.sequenceNumber} endgültig löschen`,
+      `delete_issue {"issueId":${issue.id}}`,
+    ]) {
+      const request = await requestApproval(asAgent, { kind: 'delete', action });
+      expect(request.status).toBe(201);
+      expect(request.data).toMatchObject({ scope: 'workspace', policyReason: 'level-allows' });
+      expect((await asOwner.approvals({ approvalId: request.data!.id }).get()).data?.scope).toBe(
+        'workspace',
+      );
+    }
+  });
+
+  it('keeps external or ambiguous deletions external, even when they mention a ticket', async () => {
+    const { asOwner, asAgent, columnId } = await setup();
+    const { issue } = await startRun(asOwner, asAgent, columnId);
+    for (const action of [
+      `Delete the Drive folder for MKT-${issue.sequenceNumber}`,
+      'Delete MKT-999999 for good',
+      `Delete OPS-${issue.sequenceNumber} for good`,
+      'Delete an old backup',
+    ]) {
+      const request = await requestApproval(asAgent, { kind: 'delete', action });
+      expect(request.data).toMatchObject({ scope: 'external', policyReason: 'hard-block' });
+    }
+    const explicit = await requestApproval(asAgent, {
+      kind: 'delete',
+      action: `Delete MKT-${issue.sequenceNumber} for good`,
+      scope: 'external',
+    });
+    expect(explicit.data).toMatchObject({ scope: 'external', policyReason: 'hard-block' });
+  });
+
+  it('classifies command paths and accepts explicit scope for other internal actions', async () => {
+    const { asOwner, asAgent } = await setup();
+    for (const command of [
+      'rm generated.txt',
+      'rm /srv/volition/workspaces/projects/mkt/generated.txt',
+    ]) {
+      const request = await requestApproval(asAgent, { kind: 'delete', command });
+      expect(request.data).toMatchObject({ scope: 'workspace', policyReason: 'level-allows' });
+    }
+    const external = await requestApproval(asAgent, {
+      kind: 'delete',
+      command: 'rm /etc/example.conf',
+      scope: 'workspace',
+    });
+    expect(external.data).toMatchObject({ scope: 'external', policyReason: 'hard-block' });
+    const internal = await requestApproval(asAgent, {
+      kind: 'delete',
+      action: 'Delete obsolete project attachments',
+      scope: 'workspace',
+    });
+    expect(internal.data).toMatchObject({ scope: 'workspace', policyReason: 'level-allows' });
+    await asOwner.projects({ projectKey: 'MKT' }).autopilot.put({ level: 2 });
+    for (const [command, scope, policyReason] of [
+      ['python report.py', 'workspace', 'level-allows'],
+      ['python /etc/report.py', 'external', 'level-requires-approval'],
+    ]) {
+      const request = await requestApproval(asAgent, { kind: 'execute', command });
+      expect(request.data).toMatchObject({ scope, policyReason });
+    }
+    expect((await requestApproval(asAgent, { scope: 'somewhere' })).status).toBe(400);
+  });
+
   it('records the run and the issue the request came from', async () => {
     const { asOwner, asAgent, columnId, agent } = await setup();
     const { issue, run } = await startRun(asOwner, asAgent, columnId);

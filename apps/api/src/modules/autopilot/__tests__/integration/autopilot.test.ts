@@ -285,6 +285,10 @@ describe('Autopilot levels', () => {
       action: 'Delete MKT-1 for good',
     });
     expect(request.status).toBe(201);
+    expect(request.data).toMatchObject({
+      scope: 'workspace',
+      policyReason: 'level-requires-approval',
+    });
     await s.asRunner['agent-runs']({ runId: run.id }).result.post({
       status: 'success',
       output: 'asked',

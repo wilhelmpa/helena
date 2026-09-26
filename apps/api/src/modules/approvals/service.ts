@@ -13,7 +13,8 @@ import { alias } from 'drizzle-orm/pg-core';
 import { and, desc, eq, inArray, isNotNull, isNull, sql, type SQL } from 'drizzle-orm';
 import { enqueueAgentRun } from '#modules/agents/core/run-queue';
 import { decide } from '#modules/autopilot/engine';
-import { categoryOfApprovalKind } from '@helena/policy';
+import { categoryOfApprovalKind, type ActionScope } from '@helena/policy';
+import { approvalScope } from './scope';
 import { listMemberContexts, toMemberContext, type MemberRole } from '#modules/members/service';
 import { notifyApprovalRequested } from '#modules/notifications/service';
 import { HttpError, iso, pgErrorCode } from '#shared/lib';
@@ -43,6 +44,7 @@ export interface ApprovalDto {
   details: string;
   command: string | null;
   category: string | null;
+  scope: ActionScope | null;
   autopilotLevel: number | null;
   policyReason: string | null;
   payload: Record<string, unknown> | null;
@@ -102,12 +104,17 @@ function selectApprovals() {
 type ApprovalRow = Awaited<ReturnType<typeof selectApprovals>>[number];
 
 function toDto(row: ApprovalRow): ApprovalDto {
+  const payload = (row.payload as Record<string, unknown> | null) ?? null;
   return {
     ...row,
     issueIdentifier:
       row.issueSequenceNumber == null ? null : `${row.projectKey}-${row.issueSequenceNumber}`,
     kind: row.kind as ApprovalKind,
-    payload: (row.payload as Record<string, unknown> | null) ?? null,
+    scope:
+      payload?.actionScope === 'workspace' || payload?.actionScope === 'external'
+        ? payload.actionScope
+        : null,
+    payload,
     status: row.status as ApprovalStatus,
     decidedAt: row.decidedAt ? iso(row.decidedAt) : null,
     createdAt: iso(row.createdAt),
@@ -218,6 +225,7 @@ export async function createApprovalRequest(input: {
   action: string;
   details?: string;
   command?: string;
+  scope?: ActionScope;
   issueId?: number;
 }): Promise<{ approval: ApprovalDto; created: boolean }> {
   if (input.issueId != null) {
@@ -234,13 +242,14 @@ export async function createApprovalRequest(input: {
   // What the policy engine says about the action at this level, for the card. The request
   // is filed whatever it says: the agent chose to ask.
   const category = categoryOfApprovalKind(input.kind);
+  const scope = await approvalScope({ ...input, category, action, command });
   const view = await decide({
     adapter: 'approval',
     agentId: input.agent.id,
     projectId: input.projectId,
     runId: run?.id ?? null,
     category,
-    scope: category === 'delete' || category === 'execute' ? 'external' : 'workspace',
+    scope,
     tool: 'request_approval',
     summary: action,
   });
@@ -259,6 +268,7 @@ export async function createApprovalRequest(input: {
         details: input.details?.trim() ?? '',
         command,
         category,
+        payload: { actionScope: scope },
         autopilotLevel: view.level,
         policyReason: view.reason,
       })

@@ -152,7 +152,11 @@
   },
   "request": {
     "level": "Stufe {level}",
-    "reason": "Warum eine Freigabe"
+    "reason": "Warum eine Freigabe",
+    "scope": {
+      "workspace": "Innerhalb von Helena / Projektordner",
+      "external": "Außerhalb von Helena / Projektordner"
+    }
   },
   "prices": {
     "estimate": "Alle Preise sind Schätzungen: von models.dev in Euro umgerechnet oder von Hand eingetragen.",

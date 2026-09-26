@@ -26,6 +26,8 @@ export const RequestKind = t.Union(
 // is used up.
 export const ApprovalKind = t.Union([...RequestKind.anyOf, t.Literal('budget')]);
 
+export const ActionScope = t.Union([t.Literal('workspace'), t.Literal('external')]);
+
 export const ApprovalStatus = t.Union([
   t.Literal('pending'),
   t.Literal('approved'),
@@ -53,6 +55,7 @@ export const ApprovalResponse = t.Object({
   // a person decides (a reason code the app translates: level-requires-approval,
   // hard-block, budget-exhausted, policy, level-allows).
   category: t.Nullable(t.String()),
+  scope: t.Nullable(ActionScope),
   autopilotLevel: t.Nullable(t.Number()),
   policyReason: t.Nullable(t.String()),
   // A budget card's budget: its metric, period, limit and use.
@@ -96,6 +99,14 @@ export const createApprovalBody = t.Object({
       description:
         'The exact command or code a blocked terminal or execute_code call was about to run. ' +
         'Once approved, the run with the decision may run exactly this.',
+    }),
+  ),
+  scope: t.Optional(
+    t.Union(ActionScope.anyOf, {
+      description:
+        'Where the action takes effect: workspace for Helena data or the project workspace, ' +
+        'external for third-party services or files outside it. This describes the approval ' +
+        'card only; the actual tool still enforces its own policy.',
     }),
   ),
   issueId: t.Optional(

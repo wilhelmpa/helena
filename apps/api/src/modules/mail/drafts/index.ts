@@ -269,6 +269,7 @@ export const mailDraftRoutes = new Elysia({
       const issueInProject =
         row.issueId != null && (await getIssueProjectId(row.issueId)) === project.id;
       const { approval } = await createApprovalRequest({
+        scope: 'external',
         projectId: project.id,
         agent,
         kind: 'send',

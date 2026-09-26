@@ -152,7 +152,11 @@
   },
   "request": {
     "level": "Nivel {level}",
-    "reason": "Por qué necesita aprobación"
+    "reason": "Por qué necesita aprobación",
+    "scope": {
+      "workspace": "Dentro de Helena / espacio del proyecto",
+      "external": "Fuera de Helena / espacio del proyecto"
+    }
   },
   "prices": {
     "estimate": "Todos los precios son estimaciones: convertidos a euros desde models.dev o introducidos a mano.",
