@@ -11,7 +11,9 @@ export async function resolveProjectThreadId(
 ): Promise<number> {
   if (/^[1-9]\d*$/.test(reference)) {
     const id = Number(reference);
-    if (Number.isSafeInteger(id)) {
+    // mail_thread.id is a PostgreSQL int4. Numeric provider references can be
+    // valid JavaScript integers while overflowing that database column.
+    if (Number.isSafeInteger(id) && id <= 2_147_483_647) {
       const [local] = await db
         .select({ id: mailThread.id })
         .from(mailThread)
