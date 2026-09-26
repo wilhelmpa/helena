@@ -85,19 +85,32 @@ export async function assertNoSymlinks(root: string, relative: string, allowMiss
   }
 }
 
-// Creates the folders of `relative` below `root` one at a time, so every new one gets
-// the shared mode and no existing segment is a symbolic link.
+export async function createSharedDirectory(directory: string): Promise<void> {
+  // RestrictSUIDSGID forbids an explicit SGID mode; inherit it from the vault parent.
+  await mkdir(directory, { mode: DIRECTORY_MODE & 0o777 });
+  const entry = await lstat(directory);
+  if (entry.isSymbolicLink()) throw new HttpError(400, 'Symbolic links are not allowed');
+  if (!entry.isDirectory()) throw new HttpError(409, 'A file with this name already exists');
+  if ((entry.mode & 0o2777) !== DIRECTORY_MODE) await chmod(directory, DIRECTORY_MODE);
+}
+
+// Check existing segments without mkdir/chmod; the service may not recreate their parents.
 export async function ensureDirectory(root: string, relative: string): Promise<string> {
   let current = root;
   for (const segment of relative ? relative.split('/') : []) {
     current = path.join(current, segment);
-    try {
-      await mkdir(current, { mode: DIRECTORY_MODE });
-      await chmod(current, DIRECTORY_MODE);
-    } catch (error) {
-      if (errorCode(error) !== 'EEXIST') throw error;
+    let entry = await lstat(current).catch((error: unknown) => {
+      if (isMissing(error)) return null;
+      throw error;
+    });
+    if (!entry) {
+      try {
+        await createSharedDirectory(current);
+      } catch (error) {
+        if (errorCode(error) !== 'EEXIST') throw error;
+      }
+      entry = await lstat(current);
     }
-    const entry = await lstat(current);
     if (entry.isSymbolicLink()) throw new HttpError(400, 'Symbolic links are not allowed');
     if (!entry.isDirectory()) throw new HttpError(409, 'A file with this name already exists');
   }

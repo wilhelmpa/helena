@@ -1,11 +1,9 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { constants, type Dirent } from 'node:fs';
 import {
-  chmod,
   copyFile,
   link,
   lstat,
-  mkdir,
   open,
   readdir,
   readFile,
@@ -21,7 +19,7 @@ import { isSyncConflict } from '@repo/vault';
 import { HttpError } from '#shared/lib';
 import {
   assertNoSymlinks,
-  DIRECTORY_MODE,
+  createSharedDirectory,
   ensureDirectory,
   errorCode,
   FILE_MODE,
@@ -219,8 +217,7 @@ export async function createFolder(root: FileRoot, relative: string) {
   const parent = await folderDirectory(root, parentPath(safe));
   const target = path.join(parent, path.basename(safe));
   try {
-    await mkdir(target, { mode: DIRECTORY_MODE });
-    await chmod(target, DIRECTORY_MODE);
+    await createSharedDirectory(target);
   } catch (error) {
     if (errorCode(error) === 'EEXIST')
       throw new HttpError(409, 'A folder with this name already exists');
