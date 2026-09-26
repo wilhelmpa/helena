@@ -1,0 +1,14 @@
+#!/bin/sh
+# Starts cloudflared for Helena's tunnel with the token from the unit's credential.
+# cloudflared >= 2025.4 reads it from a file (--token-file); an older one gets it through
+# TUNNEL_TOKEN, which only this process (and root) can read in /proc.
+set -eu
+token="${CREDENTIALS_DIRECTORY:?no credentials directory}/tunnel-token"
+[ -s "$token" ] || { echo "helena-cloudflared: the tunnel token is empty" >&2; exit 1; }
+set -- --no-autoupdate tunnel --metrics 127.0.0.1:20241 --edge-ip-version auto --protocol auto run
+if /usr/bin/cloudflared tunnel run --help 2>/dev/null | grep -q -- '--token-file'; then
+  exec /usr/bin/cloudflared "$@" --token-file "$token"
+fi
+TUNNEL_TOKEN=$(cat "$token")
+export TUNNEL_TOKEN
+exec /usr/bin/cloudflared "$@"

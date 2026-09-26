@@ -6,9 +6,11 @@ import { createAuthMiddleware, APIError } from 'better-auth/api';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { passkey } from '@better-auth/passkey';
 import { apiKey } from '@better-auth/api-key';
-import { mcp, openAPI, magicLink, username, genericOAuth } from 'better-auth/plugins';
+import { mcp, openAPI, magicLink, username, genericOAuth, twoFactor } from 'better-auth/plugins';
 import type { GenericOAuthConfig } from 'better-auth/plugins/generic-oauth';
 import * as schema from '@repo/db/schema';
+import { localeFromAcceptLanguage } from '@helena/locales/accept-language';
+import { defaultRoleName } from '@helena/locales/defaults';
 import {
   getAuthSettings,
   hasPendingInvite,
@@ -19,6 +21,10 @@ import {
 } from './instance';
 import { sendAuthEmail } from './mail';
 import { oidcProfileLabel } from './oidc-profile';
+import { localOwner } from './local-owner';
+import { edgeSignIn } from './edge-sign-in';
+import { consumeKeyRequest, RateLimitedError } from './key-rate-limit';
+import { sessionCookieDomain } from './cookie-domain';
 
 // Frontend origins allowed to call the auth handler. Mandatory config: cookies, the
 // WebAuthn relying party and the cookie domain are all derived from it, so a deploy
@@ -31,30 +37,13 @@ if (trustedOrigins.length === 0) {
   throw new Error('APP_URL is not set: public origin(s) of the web app.');
 }
 
-// Parent domain for a cross-subdomain session cookie (".example.com" from
-// "app.example.com"). Returns undefined for localhost, IPs, or apex domains, where
-// no cross-subdomain sharing is needed. Used so the SSR web app on one subdomain can
-// read the session cookie set by the api on a sibling subdomain.
-function parentDomain(origin: string | undefined): string | undefined {
-  if (!origin) return undefined;
-  let host: string;
-  try {
-    host = new URL(origin).hostname;
-  } catch {
-    return undefined;
-  }
-  if (host === 'localhost' || /^[\d.]+$/.test(host)) return undefined;
-  const labels = host.split('.');
-  if (labels.length < 3) return undefined;
-  return '.' + labels.slice(1).join('.');
-}
-
-// Explicit COOKIE_DOMAIN wins (needed for multi-label TLDs or deep subdomains);
-// otherwise derive it from the frontend origin.
-const cookieDomain =
-  process.env.COOKIE_DOMAIN === 'host-only'
-    ? undefined
-    : process.env.COOKIE_DOMAIN || parentDomain(trustedOrigins[0]);
+// The session cookie's domain: host-only unless the app and the api are on different hosts
+// (./cookie-domain.ts; a single-origin install never shares its session with sibling sites).
+const cookieDomain = sessionCookieDomain(
+  trustedOrigins[0],
+  process.env.API_URL,
+  process.env.COOKIE_DOMAIN,
+);
 
 // WebAuthn relying-party id: the frontend domain the passkey is bound to (no port,
 // no scheme). The WebAuthn ceremony runs in the frontend JS, so the expected origin
@@ -66,6 +55,13 @@ const passkeyRpID = process.env.PASSKEY_RP_ID ?? new URL(trustedOrigins[0]).host
 // Backend origin where the better-auth handler is mounted (/api/auth/*). Mandatory:
 // every link in an authentication email and the Google redirect URI are built from it.
 const baseURL = process.env.API_URL;
+// A rate limit that counts only requests from the network (see rateLimit below).
+function fromNetwork(window: number, max: number) {
+  return (request: Request) => (request.headers.has('x-real-ip') ? { window, max } : false);
+}
+
+// Cookies carry Secure exactly when the API is served over https.
+const secureCookies = (baseURL ?? '').startsWith('https://');
 if (!baseURL) {
   throw new Error('API_URL is not set: public origin of the backend.');
 }
@@ -270,10 +266,28 @@ const DAY_SEC = 24 * 60 * 60;
 export const API_KEY_DEFAULT_EXPIRES_IN_SEC = 90 * DAY_SEC;
 export const API_KEY_MAX_EXPIRES_IN_DAYS = 365;
 
+// The longest name the plugin accepts on a key, in UTF-16 code units (it compares
+// `name.length`). A longer one is refused with INVALID_NAME_LENGTH. This is the
+// plugin's own default, held here so apps/api can fit an agent's key name to it.
+export const API_KEY_MAX_NAME_LENGTH = 32;
+
 export const auth = betterAuth({
   baseURL: `${baseURL.replace(/\/+$/, '')}/api/auth`,
   basePath: `${new URL(baseURL).pathname.replace(/\/+$/, '')}/api/auth`,
   secret: process.env.BETTER_AUTH_SECRET,
+
+  // Google sign-in stays registered without credentials, so the owner can add them in
+  // Administrator without a restart (see googleOptions); better-auth warns about the empty
+  // client id at every start and in every script. Everything else is printed as before.
+  logger: {
+    log(level, message, ...args) {
+      if (level === 'warn' && message.startsWith('Social provider google is missing')) return;
+      const line = `${new Date().toISOString()} ${level.toUpperCase()} [Better Auth]: ${message}`;
+      if (level === 'error') console.error(line, ...args);
+      else if (level === 'warn') console.warn(line, ...args);
+      else console.log(line, ...args);
+    },
+  },
 
   database: drizzleAdapter(db, {
     provider: 'pg',
@@ -284,6 +298,7 @@ export const auth = betterAuth({
       verification: schema.verification,
       passkey: schema.passkey,
       apikey: schema.apikey,
+      twoFactor: schema.twoFactor,
       oauthApplication: schema.oauthApplication,
       oauthAccessToken: schema.oauthAccessToken,
       oauthConsent: schema.oauthConsent,
@@ -522,8 +537,11 @@ export const auth = betterAuth({
         // created, named after the username the hook above settled on. The team is
         // also where the roles its projects assign live, so it starts with the
         // default one.
-        after: async (created) => {
+        // The default role is named in the language of the browser signing up; the
+        // account has no language of its own yet.
+        after: async (created, context) => {
           const handle = typeof created.username === 'string' ? created.username : created.name;
+          const locale = localeFromAcceptLanguage(context?.headers?.get('accept-language') ?? null);
           await db.transaction(async (tx) => {
             const [row] = await tx
               .insert(schema.team)
@@ -534,7 +552,7 @@ export const auth = betterAuth({
               .values({ teamId: row.id, userId: created.id, role: 'owner' });
             await tx.insert(schema.teamRole).values({
               teamId: row.id,
-              name: 'Member',
+              name: defaultRoleName(locale),
               isDefault: true,
               permissions: defaultMemberPermissions(),
             });
@@ -564,12 +582,16 @@ export const auth = betterAuth({
   },
 
   plugins: [
+    localOwner(),
+    // The Cloudflare sign-in: a Helena session from a valid Access assertion that came
+    // through the tunnel entry, when the owner turned it on (./edge-sign-in.ts).
+    edgeSignIn(),
     // WebAuthn passkeys, a second sign-in method alongside email + password. A
     // passkey is added to an already signed-in account (passkey.addPasskey) and
     // then used to sign in (signIn.passkey). Adds the `passkey` table.
     passkey({
       rpID: passkeyRpID,
-      rpName: process.env.PASSKEY_RP_NAME ?? "It's a Plan",
+      rpName: process.env.PASSKEY_RP_NAME ?? 'Helena',
       // Expected origin(s) of the WebAuthn ceremony — the frontend origins.
       origin: trustedOrigins,
     }),
@@ -587,6 +609,7 @@ export const auth = betterAuth({
       // Brand prefix so a leaked key is identifiable by secret scanners and in logs.
       // The trailing underscore separates it from the random part (itp_<64 chars>).
       defaultPrefix: 'itp_',
+      maximumNameLength: API_KEY_MAX_NAME_LENGTH,
       // A key is a full-account credential, so one that was forgotten stops working
       // on its own. The caller may pick a shorter or longer life up to the maximum;
       // an agent's key is the exception, cleared where it is issued in apps/api.
@@ -594,11 +617,9 @@ export const auth = betterAuth({
         defaultExpiresIn: API_KEY_DEFAULT_EXPIRES_IN_SEC,
         maxExpiresIn: API_KEY_MAX_EXPIRES_IN_DAYS,
       },
-      rateLimit: {
-        enabled: true,
-        timeWindow: 1000,
-        maxRequests: 100,
-      },
+      // Counted by getSessionFromHeaders below (key-rate-limit.ts): the plugin's own
+      // counter only starts a new window after a full quiet second.
+      rateLimit: { enabled: false },
     }),
     // Sign-in by emailed link, offered alongside the password. Whether it is
     // available is an instance setting, so the plugin is always mounted and the
@@ -645,6 +666,25 @@ export const auth = betterAuth({
         consentPage: `${trustedOrigins[0]}/oauth/consent`,
       },
     }),
+    // TOTP, the step-up factor for the owner terminal (Home -> Terminal): a code
+    // from an authenticator app, valid until Cloudflare Access puts the instance
+    // behind HTTPS and passkey step-up (which needs a secure context) can replace
+    // it. The owner enrolls at Account -> Security, which calls enableTwoFactor
+    // and getTotpUri directly -- nothing here mounts a sign-in-time 2FA challenge,
+    // since ordinary sign-in stays LAN auto-login / password as it is today.
+    // apps/api's owner-terminal step-up calls auth.api.verifyTOTP against the
+    // caller's own already-open session (see packages/auth/AGENTS.md and
+    // apps/api/src/modules/owner-terminal/service.ts), which is what makes this a
+    // re-authentication check rather than a second sign-in step. The plugin also
+    // mounts email/SMS OTP and backup-code endpoints; nothing in the app calls
+    // them (no sendOTP is configured, so a call to /two-factor/send-otp fails
+    // rather than silently doing nothing), and the account UI offers TOTP only.
+    // allowPasswordless: the owner may not have a password credential (LAN
+    // auto-login and the local-owner endpoint do not require setting one) --
+    // shouldRequirePassword then only asks for the password on an account that
+    // has one to check it against, rather than making TOTP enrollment
+    // unreachable for an account with none.
+    twoFactor({ issuer: 'Helena', totpOptions: { allowPasswordless: true } }),
     // OpenAPI reference for the better-auth handler. Serves a Scalar UI at
     // /api/auth/reference and the raw schema at /api/auth/open-api/generate-schema.
     // The schema is built from every active plugin, so the passkey and apiKey
@@ -680,9 +720,42 @@ export const auth = betterAuth({
       : {}),
     // For a single site (localhost / one domain) "lax" is enough. Subdomains of one
     // registrable domain are same-site, so "lax" cookies are still sent between them.
+    // Secure follows the scheme the API is reached over, not NODE_ENV: a LAN install on
+    // plain http needs its cookies, a https one must never send them in clear.
     defaultCookieAttributes: {
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      secure: secureCookies,
+    },
+    // The client's address, for the rate limits: nginx sets X-Real-IP to the address
+    // it saw, and the API listens on loopback only, so the header cannot be forged.
+    ipAddress: { ipAddressHeaders: ['x-real-ip'] },
+  },
+
+  // Limits on the sign-in endpoints, on in every environment (Better Auth turns them on
+  // by itself only in production). In memory: the API runs as one process. Only requests
+  // that came through nginx (it sets X-Real-IP) are counted: the API listens on loopback,
+  // so anything without the header is a local process (the web server, the worker, a
+  // test). The session read that every tab and the kiosk repeat is not counted, nor is
+  // the LAN owner sign-in; a password guess is.
+  rateLimit: {
+    enabled: true,
+    storage: 'memory',
+    window: 60,
+    max: 300,
+    customRules: {
+      '/get-session': false,
+      '/sign-in/local-owner': false,
+      // The web app asks once per page load without a session through the tunnel; the
+      // client's address is Cloudflare's view of it.
+      '/sign-in/edge': fromNetwork(60, 30),
+      '/sign-in/email': fromNetwork(60, 10),
+      '/sign-in/username': fromNetwork(60, 10),
+      '/sign-up/email': fromNetwork(60, 5),
+      '/sign-in/magic-link': fromNetwork(60, 5),
+      '/request-password-reset': fromNetwork(60, 5),
+      '/forget-password': fromNetwork(60, 5),
+      '/two-factor/*': fromNetwork(60, 10),
+      '/*': (request, current) => (request.headers.has('x-real-ip') ? current : false),
     },
   },
 });
@@ -699,15 +772,36 @@ export type Session = Auth['$Infer']['Session'];
 export async function getSessionFromHeaders(
   headers: Headers,
 ): Promise<Awaited<ReturnType<typeof auth.api.getSession>>> {
+  const apiKey = headers.get('x-api-key');
+  if (apiKey) await consumeKeyRequest(apiKey);
   try {
     return await auth.api.getSession({ headers });
   } catch (error) {
     if (error instanceof APIError && (error.statusCode === 401 || error.statusCode === 403)) {
       return null;
     }
+    // A key whose own quota (remaining uses) is spent is refused as too many requests.
+    if (error instanceof APIError && error.statusCode === 429) {
+      const tryAgainIn = (error.body as { details?: { tryAgainIn?: number } } | undefined)?.details
+        ?.tryAgainIn;
+      throw new RateLimitedError(Math.max(1, Math.ceil((tryAgainIn ?? 1000) / 1000)));
+    }
     throw error;
   }
 }
+
+export { RateLimitedError, resetKeyRateLimitForTests } from './key-rate-limit';
+
+// The Cloudflare sign-in's seam: apps/api registers the edge-access check as its verifier.
+export {
+  EDGE_SIGN_IN_ROLES,
+  EdgeSignInRefused,
+  setEdgeSignInVerifier,
+  type EdgeSignInIdentity,
+  type EdgeSignInReason,
+  type EdgeSignInVerifier,
+} from './edge-sign-in';
+export { recordSignIn, type SignInEvent } from './sign-in-events';
 
 // Instance-wide authentication settings (registration mode, mail provider, invite
 // links). Read here by the sign-up gate and the mail senders; managed over HTTP by
