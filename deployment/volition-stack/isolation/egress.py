@@ -342,6 +342,33 @@ async def checked_client_hello(reader, host: str) -> bytes:
     raise HttpError(403, 'TLS ClientHello too large')
 
 
+async def checked_connect_preamble(reader, host: str) -> bytes:
+    # GitHub documents this exact SSH endpoint on 443; TLS retains SNI checking everywhere else.
+    if host != 'ssh.github.com':
+        return await checked_client_hello(reader, host)
+    prefix = await reader.readexactly(8)
+    if prefix != b'SSH-2.0-':
+        raise HttpError(403, 'invalid GitHub SSH identification')
+    banner = bytearray(prefix)
+    while len(banner) < 255:
+        byte = await reader.readexactly(1)
+        banner += byte
+        if byte == b'\n':
+            if not banner.endswith(b'\r\n') or len(banner) <= 10:
+                break
+            return bytes(banner)
+        if byte != b'\r' and not 32 <= byte[0] <= 126:
+            break
+        if byte == b'\r' and (await reader.readexactly(1)) != b'\n':
+            break
+        if byte == b'\r':
+            banner += b'\n'
+            if 10 < len(banner) <= 255:
+                return bytes(banner)
+            break
+    raise HttpError(403, 'invalid GitHub SSH identification')
+
+
 class Egress:
     def __init__(self, plan: Plan, user_prefix: str, unit_prefix: str, agents_group: str,
                  limits: dict | None = None, model_hosts: tuple[str, ...] = ()):
@@ -499,10 +526,10 @@ class Egress:
                 await writer.drain()
                 if port == 443:
                     try:
-                        hello = await asyncio.wait_for(checked_client_hello(reader, host), self.limits['connectSec'])
+                        hello = await asyncio.wait_for(checked_connect_preamble(reader, host), self.limits['connectSec'])
                     except (HttpError, asyncio.IncompleteReadError, asyncio.TimeoutError):
                         entry['decision'] = 'blocked'
-                        entry['reason'] = 'tls-destination'
+                        entry['reason'] = 'ssh-identification' if host == 'ssh.github.com' else 'tls-destination'
                         return
                     upstream_writer.write(hello)
                     await upstream_writer.drain()

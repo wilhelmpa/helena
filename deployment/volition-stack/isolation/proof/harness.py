@@ -188,7 +188,7 @@ def test_config(source: str) -> dict:
             },
         },
         'claude': {'exec': f'{ROOT}/bin/claude', 'env': config['runtimes']['claude'].get('env', {})},
-        'codex': {'exec': '/usr/local/bin/node', 'fixedArgs': [f'{ROOT}/codex/bin/codex.js']},
+        'codex': {'exec': '/usr/local/bin/node', 'fixedArgs': [f'{ROOT}/codex/node_modules/@openai/codex/bin/codex.js']},
         'profile-helper': {
             **config['runtimes']['profile-helper'],
             'fixedArgs': [f'{ISO}/runner/cli.js', 'profile-helper'],
@@ -246,13 +246,38 @@ def write(path: str, content: str, owner: str, group: str, mode: int) -> None:
     os.chmod(path, mode)
 
 
+def copy_codex_runtime() -> None:
+    executable = os.path.realpath('/usr/local/bin/codex')
+    require_trusted_path(executable)
+    if not executable.endswith('/codex/bin/codex.js'):
+        raise SystemExit('proof expects the installed Codex JavaScript entry point')
+    package = os.path.dirname(os.path.dirname(executable))
+    packages = [package]
+    architecture = {'x86_64': 'x64', 'aarch64': 'arm64'}.get(os.uname().machine)
+    native = os.path.join(os.path.dirname(package), f'codex-linux-{architecture}')
+    if os.path.isdir(native):
+        packages.append(native)
+    elif not os.path.isdir(os.path.join(package, 'vendor')):
+        raise SystemExit('installed Codex native runtime is missing')
+    for source in packages:
+        require_trusted_path(source, tree=True)
+    for source in packages:
+        destination = f'{ROOT}/codex/node_modules/@openai/{os.path.basename(source)}'
+        shutil.copytree(source, destination)
+        for directory, _dirs, files in os.walk(destination):
+            os.chmod(directory, 0o755)
+            for name in files:
+                path = os.path.join(directory, name)
+                os.chmod(path, 0o755 if os.stat(path).st_mode & 0o100 else 0o644)
+
+
 def setup(args: argparse.Namespace) -> None:
     for name in USERS:
         uid(name)
     gid('vpt-agents')
     source = os.path.abspath(args.source)
     require_trusted_path(source, tree=True)
-    for relative in ('../native/terminal', '../integration', '../../../packages/runner/dist'):
+    for relative in ('../native/terminal', '../native/systemd', '../integration', '../../../packages/runner/dist'):
         require_trusted_path(os.path.normpath(os.path.join(source, relative)), tree=True)
     if os.path.lexists(ROOT):
         raise SystemExit('teardown the previous proof environment before setup')
@@ -273,17 +298,7 @@ def setup(args: argparse.Namespace) -> None:
         require_trusted_path(claude)
         shutil.copyfile(claude, f'{ROOT}/bin/claude')
         os.chmod(f'{ROOT}/bin/claude', 0o755)
-    codex = '/usr/local/lib/node_modules/@openai/codex'
-    if os.path.isdir(codex) and not os.path.isdir(f'{ROOT}/codex'):
-        require_trusted_path(codex, tree=True)
-        shutil.copytree(codex, f'{ROOT}/codex', symlinks=True)
-        for directory, _dirs, files in os.walk(f'{ROOT}/codex'):
-            os.chown(directory, 0, 0)
-            for name in files:
-                path = os.path.join(directory, name)
-                if not os.path.islink(path):
-                    os.chown(path, 0, 0)
-                    os.chmod(path, 0o755 if os.stat(path).st_mode & 0o100 else 0o644)
+    copy_codex_runtime()
     # Registry, as provisioning writes it.
     mkdir(f'{ROOT}/provisioning', 'vpt-hermes', 'vpt-hermes', 0o755)
     mkdir(f'{ROOT}/provisioning/projects', 'vpt-hermes', 'vpt-hermes', 0o700)
