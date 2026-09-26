@@ -345,6 +345,40 @@ class PreviewIOTest(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(writer.data[0], expected)
         self.assertEqual(instance.previews.request.await_count, 1)
 
+    @unittest.skipUnless(hasattr(socket, 'SO_PEERCRED'), 'Linux peer credentials')
+    async def test_replaced_socket_cannot_forward_to_another_identity(self):
+        received = []
+        async def endpoint(reader, writer):
+            data = await reader.read(100)
+            received.append(data)
+            if data:
+                writer.write(b'own-project-response')
+                await writer.drain()
+            writer.close()
+        server = await asyncio.start_unix_server(endpoint, str(self.root / 'actual.sock'))
+        manager = previews.Previews(types.SimpleNamespace(config=types.SimpleNamespace()))
+        manager.runtime = self.root
+        directory = self.root / 'vol/24032'
+        directory.mkdir(parents=True)
+        (directory / 'http.sock').symlink_to(self.root / 'actual.sock')
+        preview = {'slug': 'vol', 'port': 24032}
+        proxy = await asyncio.start_server(lambda r, w: manager.connection(preview, r, w), '127.0.0.1', 0)
+        try:
+            for expected_uid, expected_response in [(os.getuid() + 1, b''), (os.getuid(), b'own-project-response')]:
+                manager.launcher.project_account = lambda _slug: types.SimpleNamespace(pw_uid=expected_uid)
+                reader, writer = await asyncio.open_connection('127.0.0.1', proxy.sockets[0].getsockname()[1])
+                writer.write(b'project-request')
+                await writer.drain()
+                self.assertEqual(await asyncio.wait_for(reader.read(100), 2), expected_response)
+                writer.close()
+                await writer.wait_closed()
+            self.assertEqual(received, [b'', b'project-request'])
+        finally:
+            proxy.close()
+            server.close()
+            await proxy.wait_closed()
+            await server.wait_closed()
+
 
 if __name__ == '__main__':
     unittest.main()

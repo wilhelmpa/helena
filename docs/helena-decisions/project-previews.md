@@ -56,6 +56,9 @@ The application's loopback listener is exported through its own Unix socket. Age
 only their project socket directory and forward its eight assigned ports inside their private
 network. New previews are reachable in the same agent turn. A launcher proxy publishes only
 `127.0.0.1` on the host; it preserves WebSocket upgrades and frames for HMR.
+Before forwarding bytes, the host proxy checks the connected Unix peer's kernel-reported UID
+against the project account. Replacing a project-owned socket path or symlinking it to another
+service cannot make the privileged proxy forward to a different identity.
 
 The separate nftables table `inet helena_previews` rejects LAN traffic to the entire range and
 allows loopback traffic from root/nginx or the matching project's Chromium cgroup. It grants no

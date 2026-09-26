@@ -11,7 +11,7 @@ import shlex
 import stat
 import time
 
-from isolation_common import IsolationError, open_path_nofollow, valid_slug, within
+from isolation_common import IsolationError, open_path_nofollow, peer_credentials, valid_slug, within
 from helena_preview_worker import clean_line, pipe
 
 NAME = re.compile(r'^[a-z0-9][a-z0-9-]{0,39}$')
@@ -332,8 +332,14 @@ class Previews:
         try:
             remote, upstream = await asyncio.wait_for(
                 asyncio.open_unix_connection(str(self.directory(preview) / 'http.sock')), 3)
+            # The project owns this socket path and can replace it. Check the connected
+            # peer, not just the path, before forwarding a byte with the launcher's UID.
+            peer = upstream.get_extra_info('socket')
+            expected_uid = self.launcher.project_account(preview['slug']).pw_uid
+            if peer is None or peer_credentials(peer)[1] != expected_uid:
+                raise IsolationError('forbidden', 'The preview socket belongs to another identity')
             await asyncio.gather(pipe(reader, upstream, lambda: None), pipe(remote, writer, lambda: None))
-        except (OSError, ConnectionError, asyncio.TimeoutError):
+        except (OSError, ConnectionError, asyncio.TimeoutError, IsolationError):
             pass
         finally:
             self.connections -= 1
