@@ -51,6 +51,11 @@ export interface ReceiptDetail extends Receipt {
   textExcerpt: string | null;
   details: Record<string, unknown>;
   mailAttachmentId: number | null;
+  sourceLinks: {
+    messageId: number;
+    threadId: number;
+    issues: { id: number; projectKey: string; sequenceNumber: number; identifier: string }[];
+  } | null;
 }
 
 export interface Transaction {

@@ -53,6 +53,20 @@ export const ReceiptDetail = t.Composite([
     textExcerpt: nullableString,
     details: t.Record(t.String(), t.Unknown()),
     mailAttachmentId: nullableNumber,
+    sourceLinks: t.Nullable(
+      t.Object({
+        messageId: t.Number(),
+        threadId: t.Number(),
+        issues: t.Array(
+          t.Object({
+            id: t.Number(),
+            projectKey: t.String(),
+            sequenceNumber: t.Number(),
+            identifier: t.String(),
+          }),
+        ),
+      }),
+    ),
   }),
 ]);
 

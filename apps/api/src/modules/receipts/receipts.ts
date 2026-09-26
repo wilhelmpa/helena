@@ -17,6 +17,7 @@ import { getObject } from '@repo/storage';
 import { absoluteVaultPath, indexVaultPaths } from '@repo/vault';
 import { and, count, desc, eq, ilike, isNotNull, or, sql } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
+import type { AuthUser } from '#shared/access';
 import { joinPath, relativePath, safeFileName } from '#modules/project-files/paths';
 import { projectRoot, projectVaultPath } from '#modules/project-files/roots';
 import { contentTypeOf } from '#modules/project-files/serve';
@@ -31,6 +32,7 @@ import {
 } from './mail-facts';
 import { matchReceipt, unlinkReceipt } from './matching';
 import { assertReviewedMailSource, type ReviewedMailSource } from './mail-review';
+import { receiptSourceLinks } from './source';
 import {
   inMonth,
   receiptDetailView,
@@ -471,8 +473,18 @@ export async function listReceipts(
   return receiptViews(rows);
 }
 
-export async function getReceipt(projectId: number, receiptId: number) {
-  return receiptDetailView(await requireReceipt(projectId, receiptId));
+export async function getReceipt(
+  projectId: number,
+  receiptId: number,
+  user: AuthUser,
+  headers: Headers,
+) {
+  const row = await requireReceipt(projectId, receiptId);
+  const [detail, sourceLinks] = await Promise.all([
+    receiptDetailView(row),
+    receiptSourceLinks(row, user, headers),
+  ]);
+  return { ...detail, sourceLinks };
 }
 
 export interface ReceiptPatch {

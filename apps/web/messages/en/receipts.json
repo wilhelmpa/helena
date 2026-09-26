@@ -126,7 +126,10 @@
     "deleteTitle": "Remove the receipt?",
     "deleteHint": "The receipt leaves the list; its file stays in the project's files.",
     "saved": "Saved.",
-    "badAmount": "That amount is not readable. Write it like this: 172.50"
+    "badAmount": "That amount is not readable. Write it like this: 172.50",
+    "sourceMail": "Open source mail",
+    "sourceTask": "Task {identifier}",
+    "sourceUnavailable": "Source mail is unavailable or you do not have access."
   },
   "fields": {
     "issuer": "Issuer",

@@ -126,7 +126,10 @@
     "deleteTitle": "Beleg entfernen?",
     "deleteHint": "Der Beleg verschwindet aus der Liste, seine Datei bleibt in den Dateien des Projekts.",
     "saved": "Gespeichert.",
-    "badAmount": "Den Betrag verstehe ich nicht. Schreib ihn z. B. so: 172,50"
+    "badAmount": "Den Betrag verstehe ich nicht. Schreib ihn z. B. so: 172,50",
+    "sourceMail": "Quellmail öffnen",
+    "sourceTask": "Aufgabe {identifier}",
+    "sourceUnavailable": "Die Quellmail ist nicht mehr verfügbar oder du hast keinen Zugriff."
   },
   "fields": {
     "issuer": "Aussteller",

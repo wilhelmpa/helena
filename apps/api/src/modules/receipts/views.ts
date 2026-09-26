@@ -8,6 +8,7 @@ import {
 import { and, eq, inArray, sql, type SQL } from 'drizzle-orm';
 import { numericToCents } from './amounts';
 import type { ReceiptDetails } from './extract';
+import type { ReceiptSourceLinks } from './source';
 
 // What the receipts routes return: amounts in integer cents, dates as 'YYYY-MM-DD', and with
 // every receipt the transaction it is matched to (and the other way round).
@@ -60,6 +61,7 @@ export interface ReceiptDetailView extends ReceiptView {
   textExcerpt: string | null;
   details: ReceiptDetails;
   mailAttachmentId: number | null;
+  sourceLinks: ReceiptSourceLinks | null;
 }
 
 export interface MatchedReceipt {
@@ -189,11 +191,15 @@ export async function receiptViews(rows: ReceiptRow[]): Promise<ReceiptView[]> {
 
 export async function receiptDetailView(row: ReceiptRow): Promise<ReceiptDetailView> {
   const [view] = await receiptViews([row]);
+  const details = { ...detailsOf(row) };
+  // Source navigation is resolved separately under the current mail permissions.
+  delete details.mailSource;
   return {
     ...view!,
     textExcerpt: row.textExcerpt,
-    details: detailsOf(row),
+    details,
     mailAttachmentId: row.mailAttachmentId,
+    sourceLinks: null,
   };
 }
 

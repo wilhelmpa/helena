@@ -563,7 +563,7 @@ describe('receipts', () => {
       mailAttachmentId: null,
       totalGrossCents: 1200,
       invoiceNumber: 'R-42',
-      details: { mailSource: { messageId: mail.messageRowId, kind: 'body' } },
+      sourceLinks: { messageId: mail.messageRowId, threadId: mail.threadId, issues: [] },
     });
     expect(readFileSync(absoluteVaultPath(receipt.vaultPath), 'utf8')).toBe(raw);
     expect(

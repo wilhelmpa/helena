@@ -126,7 +126,10 @@
     "deleteTitle": "Retirer le justificatif ?",
     "deleteHint": "Le justificatif quitte la liste ; son fichier reste dans les fichiers du projet.",
     "saved": "Enregistré.",
-    "badAmount": "Ce montant est illisible. Écrivez-le ainsi : 172,50"
+    "badAmount": "Ce montant est illisible. Écrivez-le ainsi : 172,50",
+    "sourceMail": "Ouvrir le courriel source",
+    "sourceTask": "Tâche {identifier}",
+    "sourceUnavailable": "Le courriel source n’est plus disponible ou vous n’y avez pas accès."
   },
   "fields": {
     "issuer": "Émetteur",

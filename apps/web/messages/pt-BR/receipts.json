@@ -126,7 +126,10 @@
     "deleteTitle": "Remover o comprovante?",
     "deleteHint": "O comprovante sai da lista; o arquivo dele fica nos arquivos do projeto.",
     "saved": "Salvo.",
-    "badAmount": "Não entendi esse valor. Escreva assim: 172,50"
+    "badAmount": "Não entendi esse valor. Escreva assim: 172,50",
+    "sourceMail": "Abrir e-mail de origem",
+    "sourceTask": "Tarefa {identifier}",
+    "sourceUnavailable": "O e-mail de origem não está disponível ou você não tem acesso."
   },
   "fields": {
     "issuer": "Emissor",

@@ -337,12 +337,20 @@ export const receiptRoutes = new Elysia({
       },
     },
   )
-  .get(`${base}/:receiptId`, ({ project, params }) => getReceipt(project.id, params.receiptId), {
-    projectAdmin: true,
-    params: receiptParams,
-    response: { 200: ReceiptDetail, ...commonErrors },
-    detail: { summary: 'Read a receipt', description: 'With the text read from it.' },
-  })
+  .get(
+    `${base}/:receiptId`,
+    ({ project, params, user, request }) =>
+      getReceipt(project.id, params.receiptId, requireUser(user), request.headers),
+    {
+      projectAdmin: true,
+      params: receiptParams,
+      response: { 200: ReceiptDetail, ...commonErrors },
+      detail: {
+        summary: 'Read a receipt',
+        description: 'With the text read from it and accessible mail and task source links.',
+      },
+    },
+  )
   .patch(
     `${base}/:receiptId`,
     ({ project, params, body }) => updateReceipt(project.id, params.receiptId, body),

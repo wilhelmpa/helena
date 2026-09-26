@@ -126,7 +126,10 @@
     "deleteTitle": "Hapus bukti?",
     "deleteHint": "Bukti hilang dari daftar; berkasnya tetap ada di berkas proyek.",
     "saved": "Tersimpan.",
-    "badAmount": "Jumlah itu tidak terbaca. Tulis seperti ini: 172,50"
+    "badAmount": "Jumlah itu tidak terbaca. Tulis seperti ini: 172,50",
+    "sourceMail": "Buka email sumber",
+    "sourceTask": "Tugas {identifier}",
+    "sourceUnavailable": "Email sumber tidak tersedia atau Anda tidak memiliki akses."
   },
   "fields": {
     "issuer": "Penerbit",

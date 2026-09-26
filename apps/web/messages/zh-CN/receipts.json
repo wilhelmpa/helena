@@ -126,7 +126,10 @@
     "deleteTitle": "移除票据？",
     "deleteHint": "票据会从列表中移除，其文件仍保留在项目文件中。",
     "saved": "已保存。",
-    "badAmount": "无法识别该金额。请这样填写：172.50"
+    "badAmount": "无法识别该金额。请这样填写：172.50",
+    "sourceMail": "打开来源邮件",
+    "sourceTask": "任务 {identifier}",
+    "sourceUnavailable": "来源邮件已不可用，或你没有访问权限。"
   },
   "fields": {
     "issuer": "开具方",
