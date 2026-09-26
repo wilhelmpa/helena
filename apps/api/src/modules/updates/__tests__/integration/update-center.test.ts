@@ -29,7 +29,7 @@ import { getUpdateSettings, setUpdateSettings } from '../../settings';
 
 let spool = '';
 let backups = '';
-let helperTimer: ReturnType<typeof setInterval> | null = null;
+let fakeHelper: { stop: () => Promise<void> } | null = null;
 const helperRequests: Record<string, unknown>[] = [];
 
 const INVENTORY = {
@@ -139,21 +139,63 @@ function fakeVendors() {
 }
 
 // The root helper: answers every request in the spool the way helena-update does.
-function startFakeHelper(handle: (request: Record<string, unknown>) => Record<string, unknown>) {
-  helperTimer = setInterval(async () => {
-    const dir = join(spool, 'requests');
-    for (const name of await readdir(dir).catch(() => [] as string[])) {
+function startFakeHelper(
+  handle: (
+    request: Record<string, unknown>,
+  ) => Record<string, unknown> | Promise<Record<string, unknown>>,
+) {
+  if (fakeHelper) throw new Error('Stop and drain the previous fake helper first');
+  const helperSpool = spool;
+  let stopped = false;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let active = Promise.resolve();
+  const errors: unknown[] = [];
+  const poll = async () => {
+    const dir = join(helperSpool, 'requests');
+    for (const name of await readdir(dir)) {
+      if (stopped) break;
       const path = join(dir, name);
       const request = JSON.parse(await readFile(path, 'utf8')) as Record<string, unknown>;
       await unlink(path);
       helperRequests.push(request);
-      const answer = handle(request);
+      const answer = await handle(request);
       await writeFile(
-        join(spool, 'status', `${request.id as string}.json`),
+        join(helperSpool, 'status', `${request.id as string}.json`),
         JSON.stringify({ id: request.id, action: request.action, ...answer }),
       );
     }
-  }, 20);
+  };
+  const tick = () => {
+    timer = null;
+    // One poll owns the spool until all its writes finish. Capture asynchronous failures
+    // immediately and report them through stop(), never as an unhandled timer rejection.
+    active = poll()
+      .catch((error: unknown) => {
+        errors.push(error);
+        stopped = true;
+      })
+      .finally(() => {
+        if (!stopped) timer = setTimeout(tick, 20);
+      });
+  };
+  timer = setTimeout(tick, 20);
+  fakeHelper = {
+    async stop() {
+      stopped = true;
+      if (timer) clearTimeout(timer);
+      await active;
+      if (errors.length) throw new AggregateError(errors, 'Fake update helper failed');
+    },
+  };
+}
+
+async function stopFakeHelper() {
+  const helper = fakeHelper;
+  try {
+    await helper?.stop();
+  } finally {
+    if (fakeHelper === helper) fakeHelper = null;
+  }
 }
 
 function helperAnswers(request: Record<string, unknown>): Record<string, unknown> {
@@ -209,10 +251,113 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  if (helperTimer) clearInterval(helperTimer);
-  helperTimer = null;
-  setUpdateFetch(null);
-  await rm(spool, { recursive: true, force: true });
+  try {
+    await stopFakeHelper();
+  } finally {
+    setUpdateFetch(null);
+    await rm(spool, { recursive: true, force: true });
+  }
+});
+
+describe('fake update helper lifecycle', () => {
+  function deferred() {
+    let resolve!: () => void;
+    const promise = new Promise<void>((done) => {
+      resolve = done;
+    });
+    return { promise, resolve };
+  }
+
+  it('drains a suspended callback before teardown removes its status directory', async () => {
+    const entered = deferred();
+    const release = deferred();
+    startFakeHelper(async () => {
+      entered.resolve();
+      await release.promise;
+      return { state: 'done', ok: true };
+    });
+    await writeFile(
+      join(spool, 'requests', 'drain.json'),
+      JSON.stringify({ id: 'drain', action: 'inventory' }),
+    );
+    await entered.promise;
+    let removed = false;
+    let failure: unknown;
+    let answer: unknown;
+    const teardown = (async () => {
+      await stopFakeHelper();
+      answer = JSON.parse(await readFile(join(spool, 'status', 'drain.json'), 'utf8'));
+      await rm(spool, { recursive: true });
+      removed = true;
+    })().catch((error: unknown) => {
+      failure = error;
+    });
+    try {
+      await Bun.sleep(50);
+      expect(removed).toBe(false);
+      expect(failure).toBeUndefined();
+      expect(await readdir(join(spool, 'status'))).toEqual([]);
+    } finally {
+      release.resolve();
+      await teardown;
+    }
+    expect(failure).toBeUndefined();
+    expect(answer).toMatchObject({ id: 'drain', action: 'inventory', state: 'done', ok: true });
+    expect(removed).toBe(true);
+  });
+
+  it('never starts another request while a callback is suspended', async () => {
+    const entered = deferred();
+    const release = deferred();
+    startFakeHelper(async () => {
+      entered.resolve();
+      await release.promise;
+      return { state: 'done', ok: true };
+    });
+    await writeFile(
+      join(spool, 'requests', 'first.json'),
+      JSON.stringify({ id: 'first', action: 'inventory' }),
+    );
+    await entered.promise;
+    await writeFile(
+      join(spool, 'requests', 'second.json'),
+      JSON.stringify({ id: 'second', action: 'inventory' }),
+    );
+    try {
+      // Several old interval ticks would overlap the held callback during this wait.
+      await Bun.sleep(70);
+      expect(helperRequests.map((request) => request.id)).toEqual(['first']);
+    } finally {
+      release.resolve();
+      await stopFakeHelper();
+    }
+    expect(await readdir(join(spool, 'requests'))).toEqual(['second.json']);
+  });
+
+  it('reports callback and filesystem exceptions from the awaited stop', async () => {
+    const entered = deferred();
+    const failure = new Error('synthetic helper failure');
+    startFakeHelper(async () => {
+      entered.resolve();
+      await Bun.sleep(10);
+      throw failure;
+    });
+    await writeFile(
+      join(spool, 'requests', 'failure.json'),
+      JSON.stringify({ id: 'failure', action: 'inventory' }),
+    );
+    await entered.promise;
+    const callbackError = await stopFakeHelper().catch((error: unknown) => error);
+    expect(callbackError).toBeInstanceOf(AggregateError);
+    expect((callbackError as AggregateError).errors).toEqual([failure]);
+
+    await rm(join(spool, 'requests'), { recursive: true });
+    startFakeHelper(helperAnswers);
+    await Bun.sleep(50);
+    const filesystemError = await stopFakeHelper().catch((error: unknown) => error);
+    expect(filesystemError).toBeInstanceOf(AggregateError);
+    expect((filesystemError as AggregateError).errors[0]).toMatchObject({ code: 'ENOENT' });
+  });
 });
 
 async function owner() {
@@ -314,7 +459,7 @@ describe('update center: checking', () => {
     startFakeHelper(helperAnswers);
     await runUpdateCheck();
     // The helper stops answering: the Debian packages keep their rows and show the error.
-    if (helperTimer) clearInterval(helperTimer);
+    await stopFakeHelper();
     await rm(join(spool, 'status'), { recursive: true });
     await rm(join(spool, 'requests'), { recursive: true });
     const outcome = await runUpdateCheck();
@@ -570,7 +715,7 @@ describe('update center: applying', () => {
     const { api } = await owner();
     startFakeHelper(helperAnswers);
     await runUpdateCheck();
-    if (helperTimer) clearInterval(helperTimer);
+    await stopFakeHelper();
     // From now on the helper takes requests and never finishes them.
     startFakeHelper(() => ({ state: 'running' }));
     const all = await rows();
@@ -595,7 +740,7 @@ describe('update center: applying', () => {
     const { api } = await owner();
     startFakeHelper(helperAnswers);
     await runUpdateCheck();
-    if (helperTimer) clearInterval(helperTimer);
+    await stopFakeHelper();
     startFakeHelper((request) =>
       request.action === 'inventory'
         ? helperAnswers(request)

@@ -339,6 +339,14 @@ describe('workflow runs', () => {
 
   it('starts the workflows a task event triggers, not those a workflow change would', async () => {
     const ctx = await setupProject();
+    const responsible = await signUpTestUser();
+    const invite = await ctx.asOwner
+      .projects({ projectKey: 'MKT' })
+      .invites.post({ email: responsible.email, role: 'member' });
+    expect(
+      (await authedApi(responsible.cookie).invites({ token: invite.data!.token }).accept.post())
+        .status,
+    ).toBe(200);
     const triggered = async (trigger: Json) => {
       const created = await template(ctx, {
         name: String(trigger.type),
@@ -362,7 +370,13 @@ describe('workflow runs', () => {
     await ctx.asOwner.issues({ issueId: task.id }).patch({ columnId: ctx.columnId('In Progress') });
     await ctx.asOwner.issues({ issueId: task.id }).patch({ columnId: ctx.columnId('Review') });
     await ctx.asOwner.issues({ issueId: task.id }).patch({ labelIds: [urgent.id] });
+    expect(task.assigneeUserId).toBe(ctx.owner.userId);
+    // The default owner is already responsible: saving it again starts no workflow.
     await ctx.asOwner.issues({ issueId: task.id }).patch({ assigneeUserId: ctx.owner.userId });
+    expect(
+      (await ctx.asOwner.issues({ issueId: task.id }).patch({ assigneeUserId: responsible.userId }))
+        .status,
+    ).toBe(200);
     const runs = await waitForRuns(ctx, task.id, 4);
     expect(runs.map((run) => run.trigger).sort()).toEqual([
       'label_added',
@@ -370,6 +384,7 @@ describe('workflow runs', () => {
       'task_assigned',
       'task_created',
     ]);
+    await ctx.asOwner.issues({ issueId: task.id }).patch({ assigneeUserId: responsible.userId });
 
     // A move to Review made by a workflow starts nothing.
     await ctx.asOwner.issues({ issueId: task.id }).patch({ columnId: ctx.columnId('Todo') });
@@ -390,6 +405,7 @@ describe('workflow runs', () => {
     await Bun.sleep(1_500);
     const after = await runsOn(ctx, task.id);
     expect(after.filter((run) => run.trigger === 'status_changed')).toHaveLength(1);
+    expect(after.filter((run) => run.trigger === 'task_assigned')).toHaveLength(1);
   });
 
   it('holds a wait until its time and simulates everything in a test run', async () => {

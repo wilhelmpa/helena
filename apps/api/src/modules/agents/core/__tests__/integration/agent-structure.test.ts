@@ -75,7 +75,7 @@ describe('Home agent', () => {
     const workload = await asOwner
       .projects({ projectKey: 'MKT' })
       .analytics['agent-workload'].get();
-    expect(workload.data!.map((a) => a.agentName)).toEqual(['hermes-mkt-coordinator']);
+    expect(workload.data!.map((a) => a.agentName)).toEqual(['Hermes MKT Coordinator']);
 
     const scoped = await asOwner
       .teams({ teamId })
