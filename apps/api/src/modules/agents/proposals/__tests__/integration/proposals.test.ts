@@ -65,8 +65,21 @@ describe('memory proposals', () => {
     await resetDb();
   });
 
+  it('keeps memory writes without approval unless it is switched on', async () => {
+    const { asRunner } = await setup();
+    await report(asRunner, { inventory: inventory('Uses bun.') });
+    expect((await asRunner['agent-runtime'].policy.get()).data!.memoryWrites.approval).toBe(false);
+  });
+
   it('holds a memory write for the owner and writes it once approved', async () => {
     const { asOwner, asRunner, teamId, agentId } = await setup();
+    // Approval is off by default (owner, 2026-09-26); switched on, it must hold every write.
+    const current = (await asOwner.teams({ teamId })['ai-agents']({ agentId }).get()).data!;
+    const switched = await asOwner
+      .teams({ teamId })
+      ['ai-agents']({ agentId })
+      .patch({ runtimePolicy: { ...current.runtimePolicy, memoryApproval: true } } as never);
+    expect(switched.status).toBe(200);
 
     // Before any version is known there is nothing to hold writes to.
     expect((await asRunner['agent-runtime'].policy.get()).data!.memoryWrites.approval).toBe(false);
