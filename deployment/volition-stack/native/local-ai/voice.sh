@@ -302,7 +302,8 @@ After=network.target
 [Service]
 ExecStart=$(qwentts_bin)/tts-server --model $(model_path "$TTS_MODEL") --codec $(model_path "$TTS_CODEC") \\
   --alias qwen3-tts --host 127.0.0.1 --port $TTS_PORT --lang German --no-fa
-ExecStartPost=$LIB/voice-register-voices $TTS_PORT $VOICES
+# As root (+): the firewall voice ACL lets only root and the API user reach the port.
+ExecStartPost=+$LIB/voice-register-voices $TTS_PORT $VOICES
 ReadOnlyPaths=$MODELS $VOICES
 MemoryHigh=3G
 MemoryMax=6G
