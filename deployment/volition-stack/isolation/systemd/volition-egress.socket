@@ -1,0 +1,13 @@
+[Unit]
+Description=Volition agent egress proxy socket
+
+[Socket]
+ListenStream=/run/volition-agents/egress.sock
+SocketUser=root
+SocketGroup=volition-agents
+SocketMode=0660
+DirectoryMode=0755
+Backlog=256
+
+[Install]
+WantedBy=sockets.target
