@@ -671,6 +671,28 @@ describe("project browser router", () => {
     link.close();
   });
 
+  for (const [change, requested] of [
+    ["size", { width: 1280, height: 680, ratio: 2 }],
+    ["pin", { width: 620, height: 632, ratio: 1, pin1: true }],
+  ]) it(`retries an unconfirmed native calibration for a new owner viewport ${change}`, async () => {
+    const browser = fakeBrowser();
+    upstream = browser.server;
+    const port = await listen(upstream);
+    const original = browser.bounds();
+    // The display temporarily ignores the probe, without changing the page's geometry.
+    browser.afterBounds = () => original;
+    await setLiveViewport(port, { width: 620, height: 632, ratio: 2 });
+    assert.equal(windowChrome(port), null);
+    assert.deepEqual(browser.bounds(), original);
+    const attempted = browser.sent("Browser.setWindowBounds").length;
+    browser.afterBounds = null;
+    await setLiveViewport(port, { width: 620, height: 632, ratio: 2 });
+    assert.equal(browser.sent("Browser.setWindowBounds").length, attempted);
+    await setLiveViewport(port, requested);
+    assert.deepEqual(windowChrome(port), { width: 0, height: 87, scale: 2 });
+    assert.deepEqual(browser.page(), { width: requested.width, height: requested.height, ratio: requested.ratio });
+  });
+
   it("distinguishes equal pixel extents with different CSS size and DPR after detach", async () => {
     const browser = fakeBrowser();
     upstream = browser.server;
