@@ -136,12 +136,14 @@ def run_mode_proofs(report, probe, keys, state) -> None:
         expect(report, 'M', results, connect('smtp.gmail.com', 587), True, ' 200 ', 'mail role: port 587 open')
 
         # One agent blocked while the project stays open: the unit of that agent is refused,
-        # a unit of the same project without it is not.
+        # an unidentified unit uses the strictest policy; another identified agent inherits the project.
         configure({'mailPorts': False, 'agents': {str(alpha): 'blocked'}})
         results = probe('alpha', 'alpha', ['curl:https://example.com'], agent_id=alpha, work=('run', 1))
         expect(report, 'M', results, 'curl:https://example.com', False, '403', 'per agent: blocked agent')
         results = probe('alpha', 'alpha', ['curl:https://example.com'])
-        expect(report, 'M', results, 'curl:https://example.com', True, 'http=200', 'per agent: rest of the project')
+        expect(report, 'M', results, 'curl:https://example.com', False, '403', 'per agent: missing identity is restricted')
+        results = probe('alpha', 'alpha', ['curl:https://example.com'], agent_id=k['alphaOpenAgentId'])
+        expect(report, 'M', results, 'curl:https://example.com', True, 'http=200', 'per agent: identified agent without override')
         configure({'agents': {str(alpha): 'allowlist'}, 'allow': ['example.net']})
         results = probe('alpha', 'alpha', ['curl:https://example.net', 'curl:https://example.com'], agent_id=alpha)
         expect(report, 'M', results, 'curl:https://example.net', True, 'http=', 'per agent: allowlist agent, listed')
@@ -283,12 +285,53 @@ def run_hermes_end_to_end(report, keys, state) -> None:
     report.add('5', 'hermes: the egress log names the run', bool(tagged), json.dumps(tagged[:1])[:200])
 
 
+def bounded_cli_output(process, needles, timeout: float = 120, drain_timeout: float = 2) -> bytes:
+    """Keep output bounded and close the whole launch-client group, including runuser's child."""
+    import select
+    import signal
+    import subprocess
+
+    output = b''
+    deadline = time.monotonic() + timeout
+    try:
+        while time.monotonic() < deadline:
+            ready, _, _ = select.select([process.stdout], [], [], min(0.2, max(0, deadline - time.monotonic())))
+            if ready:
+                chunk = os.read(process.stdout.fileno(), 65536)
+                if not chunk:
+                    break
+                output = (output + chunk)[-1024 * 1024:]
+                if any(needle in output.decode(errors='replace').lower() for needle in needles):
+                    break
+            elif process.poll() is not None:
+                break
+    finally:
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            pass
+        deadline = time.monotonic() + drain_timeout
+        while time.monotonic() < deadline:
+            ready, _, _ = select.select([process.stdout], [], [], min(0.1, max(0, deadline - time.monotonic())))
+            if not ready:
+                continue
+            chunk = os.read(process.stdout.fileno(), 65536)
+            if not chunk:
+                break
+            output = (output + chunk)[-1024 * 1024:]
+        process.stdout.close()
+    return output
+
+
 def run_other_runtimes(report, client, keys=None, state=None) -> None:
     """Claude Code and Codex start as the project user and reach their API only through the
     egress proxy; without a login they are refused there, which is the end of what a test
     without the owner's credentials can show. The first refusal is enough: the command is
     then stopped (it would retry for minutes)."""
-    import select  # noqa: PLC0415
     import subprocess  # noqa: PLC0415
 
     workspace = f'{ROOT}/workspaces/projects/alpha'
@@ -307,22 +350,10 @@ def run_other_runtimes(report, client, keys=None, state=None) -> None:
         for key, value in extra.items():
             argv += ['--env', f'{key}={value}']
         process = subprocess.Popen(argv + ['--', *args], env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT)
+                                   stderr=subprocess.STDOUT, start_new_session=True)
         process.stdin.write(b'Say hi.')
         process.stdin.close()
-        output = b''
-        found = False
-        deadline = time.time() + 120
-        while time.time() < deadline and process.poll() is None and not found:
-            ready, _, _ = select.select([process.stdout], [], [], 1)
-            if ready:
-                chunk = os.read(process.stdout.fileno(), 65536)
-                output += chunk
-                found = any(needle in output.decode(errors='replace').lower() for needle in needles)
-        if process.poll() is None:
-            process.kill()
-        process.wait()
-        output += process.stdout.read() or b''
+        output = bounded_cli_output(process, needles)
         text = output.decode(errors='replace')
         report.add('5', f'{runtime}: starts in the sandbox and is refused by its API behind the proxy',
                    any(needle in text.lower() for needle in needles),
@@ -386,7 +417,6 @@ def run_terminal_proofs(report, sh, iso, socket, root) -> None:
     import fcntl  # noqa: PLC0415
     import pty  # noqa: PLC0415
     import re  # noqa: PLC0415
-    import select  # noqa: PLC0415
     import signal  # noqa: PLC0415
     import struct  # noqa: PLC0415
     import subprocess  # noqa: PLC0415
