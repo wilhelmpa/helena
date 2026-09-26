@@ -8,7 +8,9 @@
     "wrongCode": "The code was not accepted.",
     "rateLimited": "Too many attempts. Wait 15 minutes and try again.",
     "locked": "The terminal stays locked until you confirm it is you.",
-    "enterCode": "Enter code"
+    "enterCode": "Enter code",
+    "setupRequired": "Complete authenticator setup in Account → Security first.",
+    "unavailable": "Terminal access could not be verified or saved. Please try again."
   },
   "grant": {
     "active": "Terminal granted until {time}",

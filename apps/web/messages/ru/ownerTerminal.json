@@ -8,7 +8,9 @@
     "wrongCode": "Код не принят.",
     "rateLimited": "Слишком много попыток. Подождите 15 минут и попробуйте снова.",
     "locked": "Терминал заблокирован, пока вы не подтвердите, что это вы.",
-    "enterCode": "Ввести код"
+    "enterCode": "Ввести код",
+    "setupRequired": "Complete authenticator setup in Account → Security first.",
+    "unavailable": "Terminal access could not be verified or saved. Please try again."
   },
   "grant": {
     "active": "Терминал разрешён до {time}",

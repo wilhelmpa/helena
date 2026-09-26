@@ -8,7 +8,9 @@
     "wrongCode": "لم يُقبل الرمز.",
     "rateLimited": "محاولات كثيرة جدًا. انتظر 15 دقيقة وحاول مرة أخرى.",
     "locked": "تبقى الطرفية مقفلة حتى تؤكد أنك أنت.",
-    "enterCode": "إدخال الرمز"
+    "enterCode": "إدخال الرمز",
+    "setupRequired": "Complete authenticator setup in Account → Security first.",
+    "unavailable": "Terminal access could not be verified or saved. Please try again."
   },
   "grant": {
     "active": "الطرفية مصرَّحة حتى {time}",

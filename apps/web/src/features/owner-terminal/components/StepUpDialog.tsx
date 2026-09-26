@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ApiError } from '@/lib/api/core/client';
+import { stepUpFailure } from '../utils/stepUpFailure';
 import { useStepUpWithTotp } from '../services/owner-terminal.service';
 
 // The step-up the owner terminal requires before it opens, every time, even on
@@ -31,8 +31,7 @@ export default function StepUpDialog({ onSuccess }: { onSuccess: () => void }) {
       setCode('');
       onSuccess();
     } catch (err) {
-      if (err instanceof ApiError && err.status === 429) setError(t('rateLimited'));
-      else setError(t('wrongCode'));
+      setError(t(stepUpFailure(err)));
     }
   }
 

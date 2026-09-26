@@ -1,9 +1,18 @@
 import { and, desc, eq, gt, isNull, sql } from 'drizzle-orm';
 import { auth, getSessionFromHeaders } from '@repo/auth';
-import { db, getSetting, setSetting, ownerTerminalGrant, ownerTerminalAudit } from '@repo/db';
+import {
+  db,
+  getSetting,
+  setSetting,
+  ownerTerminalGrant,
+  ownerTerminalAudit,
+  user,
+  twoFactor,
+} from '@repo/db';
 import { HttpError } from '#shared/lib';
 import { isLanAddress } from './lan';
 import { edgeEntry } from '#modules/edge-access/service';
+import { totpFailure } from './totp-errors';
 import { mintOwnerTerminalToken } from './token';
 import type { OwnerTerminalKind } from './model';
 
@@ -173,16 +182,8 @@ async function currentGrantRow(userId: string, sessionId: string) {
   return rows[0] ?? null;
 }
 
-// Verifies a live TOTP code against the owner's *already signed-in* session,
-// through better-auth's own two-factor plugin (auth.api.verifyTOTP) rather than a
-// hand-rolled TOTP check -- see packages/auth/src/index.ts for why that call, made
-// with the request's normal session cookie, is a step-up check here and not a
-// sign-in: better-auth's verifyTwoFactor() resolves an existing session first and
-// only falls back to its sign-in cookie when there is none (verify-two-factor.mjs
-// in the installed package). A first successful call here also flips
-// `twoFactor.verified` to true, which is what turns "TOTP enrolled" into
-// "TOTP usable" -- so this same endpoint finishes the enrollment the owner starts
-// at Account -> Security.
+// Uses the already enrolled and confirmed factor. Initial enrollment belongs to
+// Account -> Security, where better-auth can rotate and return browser cookies.
 export async function stepUpWithTotp(
   request: Request,
   code: string,
@@ -196,30 +197,50 @@ export async function stepUpWithTotp(
     throw new HttpError(429, 'Too many attempts. Wait 15 minutes and try again.');
   }
 
+  const [factor] = await db
+    .select({ enabled: user.twoFactorEnabled, verified: twoFactor.verified })
+    .from(user)
+    .leftJoin(twoFactor, eq(twoFactor.userId, user.id))
+    .where(eq(user.id, userId))
+    .limit(1);
+  if (!factor?.enabled || factor.verified !== true)
+    throw new HttpError(
+      409,
+      'Complete authenticator setup in Account Security',
+      'TERMINAL_TOTP_NOT_ENABLED',
+    );
+
   try {
     await auth.api.verifyTOTP({ headers: request.headers, body: { code } });
-  } catch {
-    await writeAudit({ userId, event: 'step_up_fail', device, ipAddress });
-    // 400, not 401: the web client treats any 401 as "session gone" and signs the
-    // owner out, which is what a mistyped code did until 2026-09-24.
-    throw new HttpError(400, 'The code was not accepted');
+  } catch (error) {
+    const failure = totpFailure(error);
+    if (failure.code === 'TERMINAL_INVALID_CODE')
+      await writeAudit({ userId, event: 'step_up_fail', device, ipAddress });
+    throw failure;
   }
 
   const expiresAt = new Date(Date.now() + GRANT_HOURS * 60 * 60 * 1000);
   await db.transaction(async (tx) => {
-    // One active grant per owner: a new step-up replaces rather than stacks.
+    // Serialize replacements across this owner's browser sessions.
+    await tx.select({ id: user.id }).from(user).where(eq(user.id, userId)).for('update');
     await tx
       .update(ownerTerminalGrant)
       .set({ revokedAt: sql`now()` })
       .where(and(eq(ownerTerminalGrant.userId, userId), isNull(ownerTerminalGrant.revokedAt)));
-    await tx.insert(ownerTerminalGrant).values({
-      userId,
-      sessionId,
-      method: 'totp',
-      device,
-      ipAddress,
-      expiresAt,
-    });
+    await tx
+      .insert(ownerTerminalGrant)
+      .values({ userId, sessionId, method: 'totp', device, ipAddress, expiresAt })
+      .onConflictDoUpdate({
+        target: ownerTerminalGrant.sessionId,
+        set: {
+          method: 'totp',
+          device,
+          ipAddress,
+          expiresAt,
+          revokedAt: null,
+          createdAt: sql`clock_timestamp()`,
+        },
+      });
   });
   await writeAudit({ userId, event: 'step_up_ok', device, ipAddress });
   return { expiresAt: iso(expiresAt) };

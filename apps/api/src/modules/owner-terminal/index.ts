@@ -47,7 +47,7 @@ export const ownerTerminalRoutes = new Elysia({
     },
     {
       body: StepUpTotpBody,
-      response: { 200: StepUpResponse, ...commonErrors, ...errors(429) },
+      response: { 200: StepUpResponse, ...commonErrors, ...errors(409, 429, 503) },
       detail: {
         summary: 'Re-authenticate with a TOTP code and open a 12h terminal grant',
         description:

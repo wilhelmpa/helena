@@ -8,7 +8,9 @@
     "wrongCode": "Der Code wurde nicht akzeptiert.",
     "rateLimited": "Zu viele Versuche. Warte 15 Minuten und versuche es erneut.",
     "locked": "Das Terminal ist gesperrt, bis du bestätigst, dass du es bist.",
-    "enterCode": "Code eingeben"
+    "enterCode": "Code eingeben",
+    "setupRequired": "Schließe zuerst die Einrichtung der Authenticator-App unter Konto → Sicherheit ab.",
+    "unavailable": "Die Terminal-Freigabe konnte nicht geprüft oder gespeichert werden. Bitte versuche es erneut."
   },
   "grant": {
     "active": "Terminal freigegeben bis {time}",

@@ -8,7 +8,9 @@
     "wrongCode": "Kode tidak diterima.",
     "rateLimited": "Terlalu banyak percobaan. Tunggu 15 menit lalu coba lagi.",
     "locked": "Terminal tetap terkunci sampai Anda mengonfirmasi bahwa itu Anda.",
-    "enterCode": "Masukkan kode"
+    "enterCode": "Masukkan kode",
+    "setupRequired": "Complete authenticator setup in Account → Security first.",
+    "unavailable": "Terminal access could not be verified or saved. Please try again."
   },
   "grant": {
     "active": "Terminal diizinkan hingga {time}",

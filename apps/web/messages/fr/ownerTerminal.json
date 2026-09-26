@@ -8,7 +8,9 @@
     "wrongCode": "Le code n'a pas été accepté.",
     "rateLimited": "Trop de tentatives. Attendez 15 minutes et réessayez.",
     "locked": "Le terminal reste verrouillé tant que vous n’avez pas confirmé votre identité.",
-    "enterCode": "Saisir le code"
+    "enterCode": "Saisir le code",
+    "setupRequired": "Complete authenticator setup in Account → Security first.",
+    "unavailable": "Terminal access could not be verified or saved. Please try again."
   },
   "grant": {
     "active": "Terminal autorisé jusqu'à {time}",
