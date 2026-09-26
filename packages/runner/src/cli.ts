@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { answer } from './chat';
+import { deploymentDrainStatus } from './deployment-drain';
 import { reflectOnChat } from './chat-reflect';
 import {
   Client,
@@ -398,32 +399,42 @@ async function drain<T>(
 ): Promise<void> {
   const active = new Set<Promise<void>>();
   let done = false;
-  while (!state.stopping && !done) {
-    if (active.size >= concurrency) {
-      await Promise.race(active);
-      continue;
+  let failed: { error: unknown } | undefined;
+  try {
+    while (!state.stopping && !done) {
+      if (active.size >= concurrency) {
+        await Promise.race(active);
+        continue;
+      }
+      let item: T | null = null;
+      try {
+        item = await take();
+      } catch (err) {
+        // A key the server refuses will be refused just as much on the next poll, so
+        // stop instead of hiding it in a log line every few seconds.
+        if (err instanceof RequestError && (err.status === 401 || err.status === 403)) throw err;
+        log(`claim failed: ${String(err)}`);
+        // Backing off here and not in onEmpty: a claim that waits on the server returns
+        // instantly when it fails, and retrying it at that rate would hammer both sides.
+        await sleep(ERROR_BACKOFF_MS);
+        continue;
+      }
+      if (!item) {
+        done = !(await onEmpty());
+        continue;
+      }
+      const task = run(item)
+        .catch((error: unknown) => {
+          failed = { error };
+          done = true;
+        })
+        .finally(() => active.delete(task));
+      active.add(task);
     }
-    let item: T | null = null;
-    try {
-      item = await take();
-    } catch (err) {
-      // A key the server refuses will be refused just as much on the next poll, so
-      // stop instead of hiding it in a log line every few seconds.
-      if (err instanceof RequestError && (err.status === 401 || err.status === 403)) throw err;
-      log(`claim failed: ${String(err)}`);
-      // Backing off here and not in onEmpty: a claim that waits on the server returns
-      // instantly when it fails, and retrying it at that rate would hammer both sides.
-      await sleep(ERROR_BACKOFF_MS);
-      continue;
-    }
-    if (!item) {
-      done = !(await onEmpty());
-      continue;
-    }
-    const task = run(item).finally(() => active.delete(task));
-    active.add(task);
+  } finally {
+    await Promise.all(active);
   }
-  await Promise.all(active);
+  if (failed) throw failed.error;
 }
 
 function parseArgv(argv: string[]): { configPath?: string; agent?: string; args: string[] } {
@@ -472,7 +483,17 @@ async function publishCatalog(
 
 // Everything one agent needs: the two feeds, until the runner is stopped or the server
 // refuses its key.
-async function serve(state: State, config: RunnerConfig): Promise<void> {
+async function serve(shared: State, config: RunnerConfig): Promise<void> {
+  let feedFailed = false;
+  const state: State = {
+    get stopping() {
+      return shared.stopping || feedFailed;
+    },
+    get releasing() {
+      return shared.releasing;
+    },
+    stops: shared.stops,
+  };
   const client = new Client(config);
   const prefix = prefixOf(config.name);
   const log: Log = (message) => console.log(`${prefix} ${message}`);
@@ -487,7 +508,7 @@ async function serve(state: State, config: RunnerConfig): Promise<void> {
   let requestsSupported = true;
   let chatReflectionsSupported = true;
   const inFlight = new Map<number, Run>();
-  await Promise.all([
+  const feeds = [
     drain<Run>(
       state,
       log,
@@ -599,7 +620,17 @@ async function serve(state: State, config: RunnerConfig): Promise<void> {
       (claim) => handleRuntimeRequest(config, client, log, claim, policy),
       () => Promise.resolve(requestsSupported),
     ),
-  ]);
+  ];
+  const results = await Promise.allSettled(
+    feeds.map((feed) =>
+      feed.catch((error: unknown) => {
+        feedFailed = true;
+        throw error;
+      }),
+    ),
+  );
+  const failed = results.find((result) => result.status === 'rejected');
+  if (failed?.status === 'rejected') throw failed.reason;
 }
 
 async function readStdin(limit: number): Promise<string> {
@@ -756,12 +787,24 @@ async function main(): Promise<void> {
   await loadRunnerPlugins(configPath, log);
   const configs = await loadConfig(configPath, { agent: cli.agent, args: cli.args });
   const state: State = { stopping: false, releasing: false, stops: new Set() };
+  const publishDrain = deploymentDrainStatus();
 
   // Ctrl-C finishes what is in flight. SIGTERM, which a service manager sends, kills the
   // commands and hands their runs back: a restart must not wait for a run of half an
   // hour, nor leave it to a lease that counts it as a failed attempt.
   for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     process.on(signal, () => {
+      if (signal === 'SIGINT') {
+        if (state.releasing) return;
+        if (!state.stopping) log('stopping — finishing the tasks in flight');
+        state.stopping = true;
+        try {
+          publishDrain('draining');
+        } catch {
+          log('could not update drain status; continuing to finish claimed work');
+        }
+        return;
+      }
       // The commands run in their own process groups, so quitting now leaves them running
       // with nobody to report their result: the lease expires and the run is handed out
       // again.
@@ -770,15 +813,17 @@ async function main(): Promise<void> {
         process.exit(1);
       }
       state.stopping = true;
-      if (signal === 'SIGINT') {
-        log('stopping — finishing the tasks in flight, press again to quit now');
-        return;
-      }
       state.releasing = true;
+      try {
+        publishDrain('releasing');
+      } catch {
+        log('could not update drain status');
+      }
       log('stopping — handing the runs in flight back to the queue');
       for (const stop of state.stops) stop.abort();
     });
   }
+  publishDrain('running');
 
   // A start the service wrapper reported as failed is over now; what the deployment could
   // not give a runner (a broken descriptor, say) is named instead.

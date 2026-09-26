@@ -17,6 +17,7 @@ SupplementaryGroups=volition
 WorkingDirectory=/srv/volition/workspaces
 Environment=HOME=/var/lib/volition/hermes
 Environment=HERMES_HOME=/var/lib/volition/hermes
+Environment=HELENA_RUNNER_DRAIN_STATUS=/var/lib/volition/hermes/run/deploy-drain-status.json
 LoadCredential=itsaplan_api_key:/etc/volition/hermes-plan-key
 ExecStart=/usr/local/libexec/volition-hermes-runner
 Restart=always
