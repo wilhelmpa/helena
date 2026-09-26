@@ -210,7 +210,7 @@ export async function intakeMailReceipts(input: {
   actorUserId: string | null;
 }): Promise<number[]> {
   const [target] = await db
-    .select({ id: projectTable.id, teamId: projectTable.teamId })
+    .select({ id: projectTable.id, teamId: projectTable.teamId, key: projectTable.key })
     .from(projectTable)
     .where(eq(projectTable.id, input.projectId));
   const [message] = await db
@@ -229,6 +229,17 @@ export async function intakeMailReceipts(input: {
     : attachments.filter(
         (a) => /\.(png|jpe?g)$/i.test(a.filename) && a.size >= MIN_MAIL_IMAGE_BYTES,
       );
+  // A suggested project alone does not file the mail there. Keep every receipt's file
+  // inside the project that owns the receipt, including when intake is called directly.
+  if (
+    chosen.some(
+      (attachment) => !attachment.vaultPath.startsWith(`Projects/${target.key}/Files/Mail/`),
+    )
+  )
+    throw new HttpError(
+      409,
+      'Move the mail to this project before taking its attachments as receipts.',
+    );
   const ibans = await ownIbans(input.projectId);
   const ids: number[] = [];
   const created: number[] = [];

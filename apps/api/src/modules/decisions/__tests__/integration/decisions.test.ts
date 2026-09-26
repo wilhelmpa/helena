@@ -22,7 +22,7 @@ import { GENERAL_CLASS, MAIL_CLASS, ROUTER_CLASS } from '../../classes';
 import { decide } from '../../service';
 import { routeRequest, setAgentRouter } from '#modules/model-router/service';
 import { routePrompt } from '#modules/model-router/prompt';
-import { classifyMessage } from '#modules/mail-triage/classify';
+import { classifyMessage, classifyPending } from '#modules/mail-triage/classify';
 import { mailTriageConfig } from '#modules/mail-triage/config';
 import { projectOptionId } from '../../questions';
 import { host } from '#shared/helena';
@@ -603,6 +603,101 @@ describe('the mail classifier', () => {
       .from(helenaMailClassification)
       .where(eq(helenaMailClassification.threadId, view.threadId));
     expect(stored!.issueId).toBe(accepted.data!.issueId);
+  });
+  it('does not create tasks for advertising, while TK mail stays important', async () => {
+    const { asOwner, teamId, project, owner } = await setup();
+    const credentialId = await connection(asOwner, teamId);
+    await switchOn(asOwner, teamId, MAIL_CLASS, credentialId);
+    const { accountId, inboxId } = await insertMailAccount(teamId, project.id);
+    answers = {
+      project: projectOptionId('PRIV'),
+      category: 'advertising',
+      priority: 'high',
+      needs_reply: 0.9,
+      create_task: 0.9,
+    };
+    const config = mailTriageConfig({ task: 'auto' });
+    const ad = await insertMessage({
+      teamId,
+      accountId,
+      folderId: inboxId,
+      projectId: project.id,
+      projectKey: project.key,
+      subject: 'Sales offer',
+    });
+    const adResult = (await classifyMessage(teamId, config, ad.messageRowId, owner.userId))!;
+    expect(adResult).toMatchObject({
+      category: 'advertising',
+      priority: 'low',
+      needsReply: false,
+      createTask: false,
+      issueId: null,
+    });
+    const tk = await insertMessage({
+      teamId,
+      accountId,
+      folderId: inboxId,
+      projectId: project.id,
+      projectKey: project.key,
+      fromAddress: 'service@tk.de',
+      subject: 'TK message',
+    });
+    const tkResult = (await classifyMessage(teamId, config, tk.messageRowId, owner.userId))!;
+    expect(tkResult).toMatchObject({
+      priority: 'high',
+      createTask: true,
+    });
+    expect(tkResult.issueId).toBeGreaterThan(0);
+  });
+
+  it('works through more than one batch of new mail in one scheduled run', async () => {
+    const { asOwner, teamId, project } = await setup();
+    const credentialId = await connection(asOwner, teamId);
+    const { accountId, inboxId } = await insertMailAccount(teamId, project.id);
+    await switchOn(asOwner, teamId, MAIL_CLASS, credentialId, {
+      config: {
+        project: 'suggest',
+        task: 'off',
+        agent: 'off',
+        receipts: 'off',
+        accountIds: [accountId],
+        since: '2026-01-01T00:00:00Z',
+      },
+    });
+    answers = {
+      project: projectOptionId('PRIV'),
+      category: 'advertising',
+      priority: 'low',
+      needs_reply: 0.1,
+      create_task: 0.1,
+    };
+    let retryMessageId = 0;
+    for (let index = 0; index < 21; index += 1) {
+      const message = await insertMessage({
+        teamId,
+        accountId,
+        folderId: inboxId,
+        projectId: project.id,
+        projectKey: project.key,
+        subject: `Offer ${index}`,
+      });
+      if (index === 0) {
+        retryMessageId = message.messageRowId;
+        await db.insert(helenaMailClassification).values({
+          teamId,
+          threadId: message.threadId,
+          messageId: message.messageRowId,
+          status: 'failed',
+          error: 'temporary provider failure',
+        });
+      }
+    }
+    expect(await classifyPending()).toBe(21);
+    const [retried] = await db
+      .select()
+      .from(helenaMailClassification)
+      .where(eq(helenaMailClassification.messageId, retryMessageId));
+    expect(retried).toMatchObject({ status: 'classified', error: null });
   });
 });
 

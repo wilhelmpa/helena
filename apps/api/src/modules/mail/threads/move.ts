@@ -1,4 +1,4 @@
-import { db, mailAttachment, mailMessage, mailThread, project } from '@repo/db';
+import { db, helenaReceipt, mailAttachment, mailMessage, mailThread, project } from '@repo/db';
 import { moveMailPath, moveVaultFolder } from '@repo/mail';
 import { and, eq, isNotNull, sql } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
@@ -25,6 +25,31 @@ export async function moveThread(threadId: number, projectId: number | null): Pr
       .where(eq(mailThread.id, threadId));
     return;
   }
+  // A receipt may point directly at a mail file. Moving that file would leave the
+  // receipt in the old project with a broken (or cross-project) vault reference.
+  const [linkedReceipt] = await db
+    .select({ id: helenaReceipt.id })
+    .from(helenaReceipt)
+    .where(
+      sql`EXISTS (
+      SELECT 1 FROM ${mailMessage} m
+      LEFT JOIN ${mailAttachment} a ON a.message_id = m.id
+      WHERE m.thread_id = ${threadId}
+        AND (
+          ${helenaReceipt.mailAttachmentId} = a.id
+          OR (m.attachment_folder IS NOT NULL AND
+              left(${helenaReceipt.vaultPath}, length(m.attachment_folder) + 1) =
+                m.attachment_folder || '/')
+        )
+    )`,
+    )
+    .limit(1);
+  if (linkedReceipt)
+    throw new HttpError(
+      409,
+      'This mail has a receipt. Remove or refile the receipt before moving the mail.',
+    );
+
   const messages = await db
     .select({ id: mailMessage.id, folder: mailMessage.attachmentFolder })
     .from(mailMessage)

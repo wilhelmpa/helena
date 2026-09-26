@@ -277,6 +277,31 @@ describe('mail threads', () => {
     expect(again.data!.path).toContain('Angebot (2).md');
   });
 
+  it('keeps special attachment names clickable in tasks and mail notes', async () => {
+    const { asOwner, teamId, home, vol } = await setup();
+    const filename = 'Angebot #1 (final) [OK].pdf';
+    const { threadId } = await insertMessage({
+      teamId,
+      accountId: home.accountId,
+      folderId: home.inboxId,
+      projectId: vol.id,
+      projectKey: vol.key,
+      subject: 'Angebot [neu]',
+      attachments: [{ filename, content: 'pdf' }],
+    });
+    const task = await asOwner.mail.threads({ threadId }).task.post({});
+    expect(task.status).toBe(201);
+    const issue = await asOwner.issues({ issueId: task.data!.issueId }).get();
+    expect(issue.data!.description).toContain('Angebot #1 (final) \\[OK\\].pdf');
+    const note = await asOwner.mail.threads({ threadId }).note.post();
+    const text = await readFile(
+      path.join(process.env.PROJECT_VAULT_ROOT!, note.data!.path),
+      'utf8',
+    );
+    expect(text).toContain('Angebot #1 (final) \\[OK\\].pdf');
+    expect(text).toContain('Angebot%20%231%20%28final%29%20%5BOK%5D.pdf');
+  });
+
   it('downloads an attachment from the vault', async () => {
     const { owner, teamId, home } = await setup();
     const { threadId } = await insertMessage({

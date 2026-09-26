@@ -45,6 +45,22 @@ function stamp(date: Date): string {
   return date.toISOString().slice(0, 16).replace('T', ' ');
 }
 
+function markdownLabel(value: string): string {
+  return value.replace(/\\|\[|\]/g, (character) => `\\${character}`).replace(/[\r\n]+/g, ' ');
+}
+
+function markdownPath(value: string): string {
+  return value
+    .split('/')
+    .map((segment) =>
+      encodeURIComponent(segment).replace(
+        /[()]/g,
+        (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
+      ),
+    )
+    .join('/');
+}
+
 function quote(text: string): string {
   const cut = text.length > QUOTE_CHARS ? `${text.slice(0, QUOTE_CHARS)}…` : text;
   return cut
@@ -93,7 +109,7 @@ export async function createTaskFromThread(
   const lines = [
     `**From:** ${sender(latest)}  `,
     `**Date:** ${stamp(latest.sentAt)} UTC  `,
-    `**Mail:** [${thread.subject || 'Open'}](${threadHref(target.key, thread.id)})`,
+    `**Mail:** [${markdownLabel(thread.subject || 'Open')}](${threadHref(target.key, thread.id)})`,
     `**Helena thread ID:** ${thread.id}`,
     '',
     quote(latest.textBody),
@@ -102,7 +118,7 @@ export async function createTaskFromThread(
     lines.push('', '**Attachments:**');
     for (const attachment of attachments) {
       lines.push(
-        `- [${attachment.filename}](${filesHref(target.key, attachment.vaultPath)}) \`${attachment.vaultPath}\``,
+        `- [${markdownLabel(attachment.filename)}](${filesHref(target.key, attachment.vaultPath)}) \`${attachment.vaultPath}\``,
       );
     }
   }
@@ -170,7 +186,7 @@ export async function saveThreadNote(
           .split('/')
           .slice(projectKey ? 2 : 1)
           .join('/')}`;
-        body.push(`- [${file.filename}](${encodeURI(relative)})`);
+        body.push(`- [${markdownLabel(file.filename)}](${markdownPath(relative)})`);
       }
     }
   }
