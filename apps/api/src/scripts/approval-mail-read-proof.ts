@@ -49,9 +49,10 @@ try {
   );
   url.searchParams.set('options', '-c default_transaction_read_only=on');
   process.env.DATABASE_URL = url.toString();
-  globalThis.fetch = (() => {
+  const refuseNetwork = () => {
     throw new Error('No network');
-  }) as typeof fetch;
+  };
+  globalThis.fetch = Object.assign(refuseNetwork, { preconnect: refuseNetwork });
   const load = createRequire(`${root}/apps/api/package.json`);
   const { db, issue, mailThread, project } = await import(`${root}/packages/db/src/index.ts`);
   const { eq, and, sql } = await import(load.resolve('drizzle-orm'));
