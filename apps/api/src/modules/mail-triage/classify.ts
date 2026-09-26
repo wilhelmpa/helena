@@ -135,12 +135,19 @@ async function pendingMessages(
           db
             .select({ one: sql`1` })
             .from(helenaMailClassification)
-            .where(eq(helenaMailClassification.messageId, mailMessage.id)),
+            .where(
+              and(
+                eq(helenaMailClassification.messageId, mailMessage.id),
+                sql`(${helenaMailClassification.status} <> 'failed' OR ${helenaMailClassification.correctedAt} IS NOT NULL)`,
+              ),
+            ),
         ),
       ),
     )
     .orderBy(
       sql`case when lower(split_part(${mailMessage.fromAddress}, '@', 2)) = 'tk.de' then 0 else 1 end`,
+      // A retried provider failure must not hold up mail that has never been triaged.
+      sql`case when exists (select 1 from ${helenaMailClassification} c where c.message_id = ${mailMessage.id} and c.status = 'failed') then 1 else 0 end`,
       asc(mailMessage.id),
     )
     .limit(limit);
@@ -241,24 +248,43 @@ export async function classifyMessage(
       : anyDecided
         ? 'classified'
         : 'unsure';
+  const values = {
+    teamId,
+    threadId: message.thread.id,
+    messageId,
+    status,
+    projectId,
+    category:
+      category && (MAIL_CATEGORIES as readonly string[]).includes(category) ? category : null,
+    priority:
+      priority && (MAIL_PRIORITIES as readonly string[]).includes(priority) ? priority : null,
+    needsReply: needsReply === null ? null : needsReply === 'yes',
+    createTask: createTask === null ? null : createTask === 'yes',
+    answers,
+    error: status === 'failed' ? (outcome.error ?? outcome.status) : null,
+  };
   const [row] = await db
     .insert(helenaMailClassification)
-    .values({
-      teamId,
-      threadId: message.thread.id,
-      messageId,
-      status,
-      projectId,
-      category:
-        category && (MAIL_CATEGORIES as readonly string[]).includes(category) ? category : null,
-      priority:
-        priority && (MAIL_PRIORITIES as readonly string[]).includes(priority) ? priority : null,
-      needsReply: needsReply === null ? null : needsReply === 'yes',
-      createTask: createTask === null ? null : createTask === 'yes',
-      answers,
-      error: status === 'failed' ? (outcome.error ?? outcome.status) : null,
+    .values(values)
+    .onConflictDoUpdate({
+      target: helenaMailClassification.messageId,
+      set: {
+        status: values.status,
+        projectId: values.projectId,
+        category: values.category,
+        priority: values.priority,
+        needsReply: values.needsReply,
+        createTask: values.createTask,
+        answers: values.answers,
+        actions: [],
+        issueId: null,
+        error: values.error,
+      },
+      setWhere: and(
+        eq(helenaMailClassification.status, 'failed'),
+        isNull(helenaMailClassification.correctedAt),
+      ),
     })
-    .onConflictDoNothing()
     .returning();
   if (!row) return null;
   if (status === 'classified') await act(row, message.thread, config, actorUserId);

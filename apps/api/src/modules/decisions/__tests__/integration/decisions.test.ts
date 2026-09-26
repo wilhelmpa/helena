@@ -671,8 +671,9 @@ describe('the mail classifier', () => {
       needs_reply: 0.1,
       create_task: 0.1,
     };
+    let retryMessageId = 0;
     for (let index = 0; index < 21; index += 1) {
-      await insertMessage({
+      const message = await insertMessage({
         teamId,
         accountId,
         folderId: inboxId,
@@ -680,8 +681,23 @@ describe('the mail classifier', () => {
         projectKey: project.key,
         subject: `Offer ${index}`,
       });
+      if (index === 0) {
+        retryMessageId = message.messageRowId;
+        await db.insert(helenaMailClassification).values({
+          teamId,
+          threadId: message.threadId,
+          messageId: message.messageRowId,
+          status: 'failed',
+          error: 'temporary provider failure',
+        });
+      }
     }
     expect(await classifyPending()).toBe(21);
+    const [retried] = await db
+      .select()
+      .from(helenaMailClassification)
+      .where(eq(helenaMailClassification.messageId, retryMessageId));
+    expect(retried).toMatchObject({ status: 'classified', error: null });
   });
 });
 
