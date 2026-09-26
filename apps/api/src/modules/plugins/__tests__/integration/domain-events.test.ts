@@ -24,13 +24,25 @@ describe('domain events', () => {
     const owner = await signUpTestUser();
     const api = authedApi(owner.cookie);
     await api.projects.post({ key: 'EVT', name: 'Events' });
+    const member = await signUpTestUser();
+    const invite = await api
+      .projects({ projectKey: 'EVT' })
+      .invites.post({ email: member.email, role: 'member' });
+    expect(
+      (await authedApi(member.cookie).invites({ token: invite.data!.token }).accept.post()).status,
+    ).toBe(200);
     const view = await api.projects({ projectKey: 'EVT' }).get();
     const [first, second] = view.data!.columns;
     const created = await api
       .projects({ projectKey: 'EVT' })
       .issues.post({ columnId: first!.id, title: 'Write the report' });
     const issueId = created.data!.id;
-    await api.issues({ issueId }).patch({ columnId: second!.id, assigneeUserId: owner.userId });
+    expect(created.data!.assigneeUserId).toBe(owner.userId);
+    expect(seen.filter((event) => event.type === 'helena.issue.assigned')).toHaveLength(0);
+    expect(
+      (await api.issues({ issueId }).patch({ columnId: second!.id, assigneeUserId: member.userId }))
+        .status,
+    ).toBe(200);
 
     const types = seen.map((event) => event.type);
     expect(types).toContain('helena.issue.created');
@@ -52,12 +64,22 @@ describe('domain events', () => {
     // The resource as the API returns it, for consumers that forward it (webhooks).
     expect((createdEvent.data as { snapshot: { id: number } }).snapshot.id).toBe(issueId);
 
-    const assigned = seen.find((event) => event.type === 'helena.issue.assigned')!;
+    const assignmentEvents = seen.filter((event) => event.type === 'helena.issue.assigned');
+    expect(assignmentEvents).toHaveLength(1);
+    const assigned = assignmentEvents[0]!;
     expect(assigned.data).toMatchObject({
+      issueId,
       field: 'assignee',
-      assigneeId: owner.userId,
-      previousAssigneeId: null,
+      assigneeId: member.userId,
+      previousAssigneeId: owner.userId,
+      snapshot: { id: issueId, assigneeUserId: member.userId },
     });
+    // Re-saving the same human responsibility is a no-op for assignment subscribers.
+    expect((await api.issues({ issueId }).patch({ assigneeUserId: member.userId })).status).toBe(
+      200,
+    );
+    expect(seen.filter((event) => event.type === 'helena.issue.assigned')).toHaveLength(1);
+    expect((await api.issues({ issueId }).get()).data!.assigneeUserId).toBe(member.userId);
   });
 
   it('publishes comment.created with the comment', async () => {
