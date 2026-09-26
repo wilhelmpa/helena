@@ -13,7 +13,10 @@ Environment=VOLITION_UNIT_PREFIX=volition-agent-
 Environment=VOLITION_AGENTS_GROUP=volition-agents
 Restart=on-failure
 RestartSec=2
-LimitNOFILE=65536
+LimitNOFILE=2048
+MemoryHigh=192M
+MemoryMax=256M
+TasksMax=64
 UMask=0077
 NoNewPrivileges=yes
 PrivateTmp=yes

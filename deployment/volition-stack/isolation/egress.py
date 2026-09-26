@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import fcntl
+import http.client
 import ipaddress
 import json
 import grp
@@ -122,7 +123,7 @@ class AddressPolicy:
 
 # ── Policies from Plan ───────────────────────────────────────────────────────────────────
 
-DEFAULT_POLICY = {'mode': 'open', 'allow': [], 'deny': [], 'mailPorts': False, 'projectId': None, 'agents': {}}
+DEFAULT_POLICY = {'mode': 'blocked', 'allow': [], 'deny': [], 'mailPorts': False, 'projectId': None, 'agents': {}}
 
 
 def domain_matches(host: str, domains: list[str]) -> bool:
@@ -138,7 +139,11 @@ def effective_mode(policy: dict, agent_id: int | None) -> str:
     if own in MODES:
         return own
     mode = policy.get('mode')
-    return mode if mode in MODES else 'open'
+    mode = mode if mode in MODES else 'blocked'
+    if agent_id is None:
+        modes = [mode, *(v for v in (policy.get('agents') or {}).values() if v in MODES)]
+        return max(modes, key=MODES.index)
+    return mode
 
 
 def decide(policy: dict, host: str, port: int, agent_id: int | None = None,
@@ -202,7 +207,8 @@ class Plan:
         try:
             with opener.open(request, timeout=10) as response:
                 return json.loads(response.read(8 * 1024 * 1024))
-        except (urllib.error.URLError, OSError, ValueError):
+        except (urllib.error.URLError, OSError, ValueError, http.client.HTTPException) as error:
+            log(f'Plan request failed: {type(error).__name__}')
             return None
 
     def policy(self, slug: str) -> dict:
@@ -251,14 +257,89 @@ class Plan:
     async def loop(self, refresh_sec: float = 30, flush_sec: float = 10) -> None:
         last_refresh = 0.0
         while True:
-            if time.monotonic() - last_refresh > refresh_sec:
-                await self.refresh()
-                last_refresh = time.monotonic()
-            await self.flush()
+            try:
+                if time.monotonic() - last_refresh > refresh_sec:
+                    await self.refresh()
+                    last_refresh = time.monotonic()
+                await self.flush()
+            except (OSError, ValueError, http.client.HTTPException) as error:
+                log(f'Plan policy loop failed: {type(error).__name__}')
             await asyncio.sleep(flush_sec)
 
 
 # ── Connections ──────────────────────────────────────────────────────────────────────────
+
+
+async def checked_client_hello(reader, host: str) -> bytes:
+    """Return bounded TLS records only when the plaintext ClientHello names this destination."""
+    records = bytearray()
+    handshake = bytearray()
+    while len(records) < 65536:
+        header = await reader.readexactly(5)
+        size = int.from_bytes(header[3:5], 'big')
+        if header[0] != 22 or header[1] != 3 or not 0 < size <= 16384 or len(records) + size + 5 > 65536:
+            raise HttpError(403, 'invalid TLS ClientHello')
+        payload = await reader.readexactly(size)
+        records += header + payload
+        handshake += payload
+        if len(handshake) < 4:
+            continue
+        length = int.from_bytes(handshake[1:4], 'big')
+        if handshake[0] != 1 or length > 65532:
+            raise HttpError(403, 'invalid TLS ClientHello')
+        if len(handshake) < length + 4:
+            continue
+        hello = memoryview(handshake)[4:4 + length]
+        offset = 34
+
+        def take(size):
+            nonlocal offset
+            if size < 0 or offset + size > len(hello):
+                raise HttpError(403, 'truncated TLS ClientHello')
+            data = hello[offset:offset + size]
+            offset += size
+            return data
+
+        def integer(size):
+            return int.from_bytes(take(size), 'big')
+
+        take(integer(1))
+        take(integer(2))
+        take(integer(1))
+        extensions = take(integer(2))
+        if offset != len(hello):
+            raise HttpError(403, 'invalid TLS extensions')
+        names = []
+        seen = set()
+        while extensions:
+            if len(extensions) < 4:
+                raise HttpError(403, 'invalid TLS extension')
+            kind = int.from_bytes(extensions[:2], 'big')
+            size = int.from_bytes(extensions[2:4], 'big')
+            if kind in seen or size + 4 > len(extensions) or kind == 0xfe0d:
+                raise HttpError(403, 'unverifiable TLS destination')
+            seen.add(kind)
+            value, extensions = extensions[4:4 + size], extensions[4 + size:]
+            if kind != 0:
+                continue
+            if len(value) < 2 or int.from_bytes(value[:2], 'big') != len(value) - 2:
+                raise HttpError(403, 'invalid TLS server names')
+            value = value[2:]
+            while value:
+                if len(value) < 3:
+                    raise HttpError(403, 'invalid TLS server name')
+                size = int.from_bytes(value[1:3], 'big')
+                if value[0] != 0 or size + 3 > len(value):
+                    raise HttpError(403, 'invalid TLS server name')
+                try:
+                    names.append(bytes(value[3:3 + size]).decode('ascii').lower())
+                except UnicodeError:
+                    raise HttpError(403, 'invalid TLS server name') from None
+                value = value[3 + size:]
+        if names != [host]:
+            raise HttpError(403, 'TLS server name differs from CONNECT host')
+        return bytes(records)
+    raise HttpError(403, 'TLS ClientHello too large')
 
 
 class Egress:
@@ -416,6 +497,16 @@ class Egress:
             if forward_head is None:
                 writer.write(b'HTTP/1.1 200 Connection established\r\n\r\n')
                 await writer.drain()
+                if port == 443:
+                    try:
+                        hello = await asyncio.wait_for(checked_client_hello(reader, host), self.limits['connectSec'])
+                    except (HttpError, asyncio.IncompleteReadError, asyncio.TimeoutError):
+                        entry['decision'] = 'blocked'
+                        entry['reason'] = 'tls-destination'
+                        return
+                    upstream_writer.write(hello)
+                    await upstream_writer.drain()
+                    counts['out'] += len(hello)
             else:
                 upstream_writer.write(forward_head)
                 counts['out'] += len(forward_head)
@@ -487,6 +578,7 @@ async def serve() -> None:
         sock = socket.socket(fileno=3)
         activated = True
     else:
+        activated = False
         path = os.environ['VOLITION_EGRESS_SOCKET']
         try:
             os.unlink(path)

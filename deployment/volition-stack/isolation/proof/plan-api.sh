@@ -31,6 +31,17 @@ stop_api() {
 
 case "${1:-}" in
   start)
+    [ "$(id -u)" != 0 ] || { echo "the proof API runs as the ordinary user" >&2; exit 64; }
+    /usr/bin/python3 -I - "$proof/egress.token" <<'PYTOKEN'
+import os, secrets, sys
+try:
+    fd = os.open(sys.argv[1], os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+except FileExistsError:
+    pass
+else:
+    with os.fdopen(fd, 'w') as handle:
+        handle.write(secrets.token_hex(24))
+PYTOKEN
     /usr/lib/postgresql/17/bin/createdb -h 127.0.0.1 -p "$pg_port" -U wilhelmpa itsaplan_isolation_test 2>/dev/null || true
     BACKUP_DIR=$HOME/agent-work/tmp bun --env-file="$env_file" packages/db/src/migrate.ts 2>&1 | tail -1
     stop_api

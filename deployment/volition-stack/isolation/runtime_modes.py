@@ -42,6 +42,9 @@ MAX_DEPTH = 64
 MAX_ENTRIES = 1_000_000
 EXAMPLES = 5
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from isolation_common import IsolationError, open_path_nofollow  # noqa: E402
+
 
 @dataclass
 class TreeReport:
@@ -82,7 +85,9 @@ def readable_by_others(mode: int) -> bool:
 
 def opened_mode(mode: int) -> int:
     """go+rX, go-w (chmod's semantics): read for group and others, search on a directory or on
-    a file somebody may execute, and nobody but the owner may write. Special bits stay."""
+    a file somebody may execute. Privileged files are left unchanged."""
+    if not stat.S_ISDIR(mode) and mode & (stat.S_ISUID | stat.S_ISGID):
+        return stat.S_IMODE(mode)
     wanted = (stat.S_IMODE(mode) | 0o044) & ~0o022
     if stat.S_ISDIR(mode) or mode & 0o111:
         wanted |= 0o011
@@ -94,16 +99,21 @@ def walk(tree: str, *, repair: bool = False, dry_run: bool = False) -> TreeRepor
     optional runtimes (uv tools, bin) are not on every machine."""
     report = TreeReport(tree)
     try:
-        top = os.open(tree, O_DIR)
+        top = open_path_nofollow(tree)
     except FileNotFoundError:
         report.exists = False
         return report
-    except OSError as error:
-        raise SystemExit(f'runtime_modes: {tree}: {error.strerror}') from None
+    except (OSError, IsolationError) as error:
+        raise SystemExit(f'runtime_modes: {tree}: {error}') from None
     owners = {0, os.fstat(top).st_uid}
 
     def consider(fd: int, info: os.stat_result, relative: str) -> None:
         report.entries += 1
+        if not stat.S_ISDIR(info.st_mode) and info.st_mode & (stat.S_ISUID | stat.S_ISGID):
+            report.skipped += 1
+            if len(report.examples) < EXAMPLES:
+                report.examples.append(f'{relative}: privileged executable')
+            return
         if readable_by_others(info.st_mode):
             return
         report.unreadable += 1
@@ -129,7 +139,10 @@ def walk(tree: str, *, repair: bool = False, dry_run: bool = False) -> TreeRepor
                 report.truncated = True
                 return
             relative = f'{prefix}{name}'
-            info = os.stat(name, dir_fd=dir_fd, follow_symlinks=False)
+            try:
+                info = os.stat(name, dir_fd=dir_fd, follow_symlinks=False)
+            except FileNotFoundError:
+                continue
             if stat.S_ISDIR(info.st_mode):
                 flags = O_DIR
             elif stat.S_ISREG(info.st_mode):
@@ -200,14 +213,17 @@ def main(argv: list[str] | None = None) -> int:
                 verb = 'would open' if args.dry_run else 'opened'
                 print(f'{r.path}: {verb} {r.opened} of {r.unreadable} unreadable entries'
                       + (f', left {r.skipped} alone' if r.skipped else ''))
+            elif r.skipped or r.truncated:
+                print(f'{r.path}: {r.skipped} unsafe or changed entries, truncated={r.truncated}'
+                      + (f': {", ".join(r.examples)}' if r.examples else ''))
             elif r.unreadable:
                 print(f'{r.path}: {r.unreadable} of {r.entries} entries unreadable for the agents '
                       f'({r.sources} not bytecode' + (f': {", ".join(r.examples)}' if r.examples else '') + ')')
             else:
                 print(f'{r.path}: readable ({r.entries} entries)')
     if repair:
-        return 1 if any(r.skipped for r in reports) else 0
-    return 1 if any(r.sources for r in reports) else 0
+        return 1 if any(r.skipped or r.truncated for r in reports) else 0
+    return 1 if any(r.sources or r.skipped or r.truncated for r in reports) else 0
 
 
 if __name__ == '__main__':

@@ -8,11 +8,11 @@ that touches nothing of the live system:
 - transient units vpt-launcher, vpt-egress, vpt-plan and the agent units vpt-agent-*, built
   from the production unit files and launcher.json with the test paths put in.
 
-    sudo python3 harness.py setup --source <isolation dir> --plan-port 3900
-    sudo python3 harness.py start
-    sudo python3 harness.py prove [--only 1,2,…]
-    sudo python3 harness.py stop
-    sudo python3 harness.py teardown
+    sudo python3 -I /opt/helena-proof/deployment/volition-stack/isolation/proof/harness.py setup --source <isolation dir> --plan-port 3900
+    sudo python3 -I /opt/helena-proof/deployment/volition-stack/isolation/proof/harness.py start
+    sudo python3 -I /opt/helena-proof/deployment/volition-stack/isolation/proof/harness.py prove [--only 1,2,…]
+    sudo python3 -I /opt/helena-proof/deployment/volition-stack/isolation/proof/harness.py stop
+    sudo python3 -I /opt/helena-proof/deployment/volition-stack/isolation/proof/harness.py teardown
 
 The live paths (/srv/volition, /var/lib/volition, /etc/volition) are hidden in the test units
 exactly as in production, so the proofs about them hold for the real ones.
@@ -27,6 +27,7 @@ import json
 import os
 import pwd
 import shutil
+import stat
 import subprocess
 import sys
 import time
@@ -35,6 +36,12 @@ ROOT = '/srv/vpt-test'
 ISO = f'{ROOT}/isolation'
 PROOF = f'{ROOT}/proof'
 RUN_AGENTS = '/run/vpt-agents'
+RUN_PREVIEWS = '/run/vpt-previews'
+PROOF_LAUNCHER_OPTIONS = [
+    '--property=PrivateNetwork=yes',
+    f'--setenv=HELENA_PREVIEW_RUNTIME_ROOT={RUN_PREVIEWS}',
+    f'--setenv=HELENA_PREVIEW_STATE_ROOT={ROOT}/preview-state',
+]
 # The browser gateway's per-project socket directories (browser-gateway-server.mjs).
 RUN_GATEWAY = '/run/vpt-browser/gateway'
 RUN_LAUNCHER = '/run/vpt-launcher'
@@ -52,6 +59,44 @@ def sh(*argv: str, check: bool = True, capture: bool = True, input: bytes | None
         raise SystemExit(f'{" ".join(argv[:6])}… failed ({done.returncode}): '
                          f'{(done.stderr or b"").decode(errors="replace")[-600:]}')
     return done
+
+
+def require_trusted_path(path: str, *, tree: bool = False) -> None:
+    path = os.path.abspath(path)
+    current = '/'
+    for component in path.split('/'):
+        if not component:
+            continue
+        current = os.path.join(current, component)
+        info = os.lstat(current)
+        if stat.S_ISLNK(info.st_mode) or info.st_uid != 0 or info.st_mode & 0o022:
+            raise SystemExit(f'root proof requires a root-owned, non-writable path: {current}')
+    if tree and stat.S_ISDIR(info.st_mode):
+        for directory, dirs, files in os.walk(path, followlinks=False):
+            for name in dirs + files:
+                entry = os.path.join(directory, name)
+                entry_info = os.lstat(entry)
+                if stat.S_ISLNK(entry_info.st_mode) or entry_info.st_uid != 0 or entry_info.st_mode & 0o022:
+                    raise SystemExit(f'untrusted proof input: {entry}')
+
+
+def owner_file(name: str, content: bytes | None = None) -> bytes:
+    """The owner's paths are accessed with the owner's privileges, including every parent."""
+    if name not in ('egress.token', 'keys.json', 'report.json'):
+        raise ValueError('unsupported proof file')
+    program = (
+        'import os, pathlib, sys\n'
+        'path = pathlib.Path.home() / "agent-work/plan-isolation-proof" / sys.argv[1]\n'
+        'if sys.argv[2] == "write":\n'
+        '    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)\n'
+        '    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)\n'
+        '    with os.fdopen(fd, "wb") as f: f.write(sys.stdin.buffer.read())\n'
+        'else:\n'
+        '    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)\n'
+        '    with os.fdopen(fd, "rb") as f: sys.stdout.buffer.write(f.read(1048576))\n'
+    )
+    return sh('/usr/sbin/runuser', '-u', 'wilhelmpa', '--', '/usr/bin/python3', '-I', '-c', program,
+              name, 'read' if content is None else 'write', input=content).stdout
 
 
 def uid(name: str) -> int:
@@ -107,7 +152,7 @@ def test_config(source: str) -> dict:
         # The production list, and the test data besides.
         'hide': config['hide'] + [f'{ROOT}/{name}' for name in (
             'hermes', 'workspaces', 'vault', 'provisioning', 'secrets', 'project-browser',
-            'launcher-state', 'proof', 'hermes-global')],
+            'launcher-state', 'proof', 'hermes-global', 'preview-state')],
     })
     # Sockets the production config marks optional (local AI's forwarder) and the test does not
     # have: the launcher refuses an optional socket it has no path for (2026-09-25, the launcher
@@ -149,6 +194,9 @@ def test_config(source: str) -> dict:
             'fixedArgs': [f'{ISO}/runner/cli.js', 'profile-helper'],
             'readOnly': [f'{ISO}/runner', '/var/lib/volition/hermes/venv', '/var/lib/volition/hermes/python',
                          '/srv/volition/source/hermes'],
+            'optionalReadOnly': [],
+            'credentialBinds': [],
+            'profileLinks': {},
         },
     }
     return config
@@ -202,8 +250,13 @@ def setup(args: argparse.Namespace) -> None:
     for name in USERS:
         uid(name)
     gid('vpt-agents')
-    source = os.path.realpath(args.source)
-    mkdir(ROOT, 'root', 'root', 0o755)
+    source = os.path.abspath(args.source)
+    require_trusted_path(source, tree=True)
+    for relative in ('../native/terminal', '../integration', '../../../packages/runner/dist'):
+        require_trusted_path(os.path.normpath(os.path.join(source, relative)), tree=True)
+    if os.path.lexists(ROOT):
+        raise SystemExit('teardown the previous proof environment before setup')
+    mkdir(ROOT, 'root', 'root', 0o700)
     install_tree(source)
     config = test_config(source)
     with open(f'{ISO}/launcher.json', 'w', encoding='utf-8') as handle:
@@ -214,15 +267,15 @@ def setup(args: argparse.Namespace) -> None:
     mkdir(f'{ROOT}/launcher-state', 'root', 'root', 0o700)
     mkdir(f'{ROOT}/egress-state', 'vpt-egress', 'vpt-egress', 0o700)
     mkdir(f'{ROOT}/bin', 'root', 'root', 0o755)
-    # Claude Code and Codex as the developer installed them, copied where the test units see
-    # them (the live units would find them in /usr/local/bin).
-    home = os.path.expanduser('~wilhelmpa')
-    claude = os.path.realpath(f'{home}/.local/bin/claude')
+    # Only the root-owned installed runtimes can be copied with root privileges.
+    claude = os.path.realpath('/usr/local/bin/claude')
     if os.path.isfile(claude):
+        require_trusted_path(claude)
         shutil.copyfile(claude, f'{ROOT}/bin/claude')
         os.chmod(f'{ROOT}/bin/claude', 0o755)
-    codex = f'{home}/.local/lib/node_modules/@openai/codex'
+    codex = '/usr/local/lib/node_modules/@openai/codex'
     if os.path.isdir(codex) and not os.path.isdir(f'{ROOT}/codex'):
+        require_trusted_path(codex, tree=True)
         shutil.copytree(codex, f'{ROOT}/codex', symlinks=True)
         for directory, _dirs, files in os.walk(f'{ROOT}/codex'):
             os.chown(directory, 0, 0)
@@ -305,19 +358,12 @@ def setup(args: argparse.Namespace) -> None:
         os.unlink(link)
     os.symlink(f'{ROOT}/secrets/token', link)
     # The egress proxy's token, and the copy the test Plan API reads.
-    api_copy = os.path.expanduser('~wilhelmpa/agent-work/plan-isolation-proof/egress.token')
-    mkdir(os.path.dirname(api_copy), 'wilhelmpa', 'wilhelmpa', 0o700)
-    # Kept across runs: the test Plan API reads its copy once, when it starts.
-    try:
-        with open(api_copy, encoding='utf-8') as handle:
-            token = handle.read().strip()
-    except FileNotFoundError:
-        token = ''
+    token = owner_file('egress.token').decode('ascii').strip()
     if len(token) < 32:
-        token = os.urandom(24).hex()
-        write(api_copy, token, 'wilhelmpa', 'wilhelmpa', 0o600)
+        raise SystemExit('prepare must create the test egress token before root setup')
     write(f'{PROOF}/egress.token', token, 'root', 'root', 0o600)
     save_state({'planPort': args.plan_port, 'modelPort': args.model_port, 'source': source})
+    os.chmod(ROOT, 0o755)
     print('setup done')
 
 
@@ -399,7 +445,7 @@ def start(args: argparse.Namespace) -> None:
         'SocketGroup=volition-launcher': 'SocketGroup=vpt-hermes',
         'StateDirectory=volition-agent-launcher': 'UMask=0022',
         'StateDirectoryMode=0700': 'UMask=0022',
-    })
+    }, PROOF_LAUNCHER_OPTIONS)
     # A second socket for the same launcher code, open to everyone: it proves the launcher
     # itself refuses a caller that is not the runner, not only the socket's permissions.
     start_unit('vpt-launcher-open', 'volition-agent-launcher.service', 'volition-agent-launcher.socket', {
@@ -409,7 +455,7 @@ def start(args: argparse.Namespace) -> None:
         'SocketMode=0660': 'SocketMode=0666',
         'StateDirectory=volition-agent-launcher': 'UMask=0022',
         'StateDirectoryMode=0700': 'UMask=0022',
-    })
+    }, PROOF_LAUNCHER_OPTIONS)
     command = ('echo "written by hermes as $(id -un)" > proof-hermes.txt && '
                f'echo "vault note by hermes" > {ROOT}/vault/Projects/ALPHA/proof-hermes.md && '
                'curl -s -o /dev/null -w "%{http_code}" -H "x-api-key: $ITSAPLAN_API_KEY" '
@@ -474,6 +520,7 @@ def teardown(args: argparse.Namespace) -> None:
     stop(args)
     shutil.rmtree(ROOT, ignore_errors=True)
     shutil.rmtree(RUN_AGENTS, ignore_errors=True)
+    shutil.rmtree(RUN_PREVIEWS, ignore_errors=True)
     for leftover in ('/var/lib/vpt-egress', '/var/lib/vpt-launcher', '/var/lib/vpt-launcher-open',
                      '/var/lib/private/vpt-egress'):
         shutil.rmtree(leftover, ignore_errors=True)
@@ -524,9 +571,7 @@ def probe(slug: str, profile: str | None, checks: list[str], *, runtime: str = '
 
 
 def keys() -> dict:
-    path = os.path.expanduser('~wilhelmpa/agent-work/plan-isolation-proof/keys.json')
-    with open(path, encoding='utf-8') as handle:
-        return json.load(handle)
+    return json.loads(owner_file('keys.json'))
 
 
 def prove(args: argparse.Namespace) -> None:
@@ -551,9 +596,7 @@ def prove(args: argparse.Namespace) -> None:
     summary = {'passed': len(report.results) - len(failed), 'failed': len(failed), 'results': report.results}
     with open(f'{PROOF}/report.json', 'w', encoding='utf-8') as handle:
         json.dump(summary, handle, indent=2)
-    out = os.path.expanduser('~wilhelmpa/agent-work/plan-isolation-proof/report.json')
-    shutil.copyfile(f'{PROOF}/report.json', out)
-    os.chown(out, uid('wilhelmpa'), gid('wilhelmpa'))
+    owner_file('report.json', json.dumps(summary, indent=2).encode())
     print(f'== {summary["passed"]} passed, {summary["failed"]} failed')
     raise SystemExit(1 if failed else 0)
 
@@ -640,9 +683,10 @@ def prove_2_egress_blocks(report: Report) -> None:
                'http://[::1]/', 'http://localtest.me/', 'https://127.0.0.1/', 'http://192.168.2.220/',
                'http://kingston-server.local/', 'http://0.0.0.0/', 'http://[::ffff:127.0.0.1]/',
                'http://100.64.0.1/', 'http://2130706433/']
-    results = probe('alpha', 'alpha', [f'curl:{t}' for t in targets])
+    results = probe('alpha', 'alpha', [f'curl:--noproxy,,{t}' for t in targets])
     for target in targets:
-        expect(report, '2', results, f'curl:{target}', False)
+        status = 'connect=403' if target.startswith('https:') else 'http=403'
+        expect(report, '2', results, f'curl:--noproxy,,{target}', False, status)
 
 
 def prove_3_no_local_services(report: Report) -> None:
@@ -886,7 +930,8 @@ def prove_users(report: Report) -> None:
 def main() -> None:
     if os.geteuid() != 0:
         raise SystemExit('run as root')
-    sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+    require_trusted_path(os.path.dirname(os.path.abspath(__file__)), tree=True)
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     parser = argparse.ArgumentParser()
     commands = parser.add_subparsers(dest='command', required=True)
     s = commands.add_parser('setup')

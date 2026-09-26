@@ -78,11 +78,11 @@ launcher's and egress's state), `InaccessiblePaths=` for `/etc/volition`, `/var/
   read fails every agent that imports it (2026-09-25: the anthropic SDK's `docstring_parser`,
   root 0600, stopped every agent on a Claude model at "credentials or agent init failed").
   `runtime_modes.py` checks the trees and opens what is closed (go+rX, go-w; by file
-  descriptor, no link followed); `isolation.sh` runs it on install, sync, apply and
+  descriptor, no link followed). Setuid/setgid files are skipped and reported; `isolation.sh` runs it on install, sync, apply and
   `open-code` (every deploy), the Hermes update helper after each install, the hourly audit
   reports it (`files.agent_code`). `docs/helena-decisions/agent-runtime-code.md`.
 - Home gets `profiles/home` (a copy of the Home agent's state in the global home, databases
-  through SQLite's backup) and `/srv/volition/workspaces/home`.
+  through SQLite's backup, copied with the runner's privileges) and `/srv/volition/workspaces/home`.
 - Browser state (`/var/lib/volition/project-browser`) belongs to `volition-browser`; Chromium and
   KasmVNC run as that user through the drop-in `systemd/browser-user.conf`, the router through
   `systemd/browser-router.conf` (also in `volition-agents`, so it can hand its gateway sockets
@@ -95,7 +95,11 @@ launcher's and egress's state), `InaccessiblePaths=` for `/etc/volition`, `/var/
 `open` (internet, deny list applies), `allowlist` (only the listed domains, deny list still
 applies), `blocked` (no internet). One agent can have a mode of its own. Private, loopback,
 link-local, CGNAT, multicast, ULA, IPv4-mapped, NAT64, 6to4, Teredo and the host's own addresses
-are refused in every mode. The model endpoints in `egress.json` stay reachable in every mode.
+are refused in every mode. Unknown projects and invalid modes are blocked. A connection whose
+agent identity is unavailable receives the strictest configured project or agent mode. The model
+endpoints in `egress.json` stay reachable in every mode. Port 443 tunnels require a bounded TLS
+ClientHello with a server name matching the CONNECT hostname; missing, mismatched and encrypted
+server names are refused before TLS bytes reach the destination.
 
 ## Why not `IPAddressDeny=`
 
@@ -125,25 +129,30 @@ code and units; nothing is installed or switched on by a deploy. On every deploy
 group `vpt-agents`, data below `/srv/vpt-test`, sockets below `/run/vpt-*`, units `vpt-*`), built
 from these unit files and `launcher.json`; the live paths stay hidden in the test units as in
 production. `proof/plan-api.sh` runs a Plan API of the checkout against a test database, as the
-ordinary user.
+ordinary user. The proof launchers use a private network namespace and dedicated preview state
+paths; their nftables updates cannot touch the live preview firewall.
 
 Only the harness needs root. wilhelmpa's sudo asks for a password (since 2026-09-25), so root work
-goes through the `helena-ops` account from the Mac. `proof/reprove.sh` splits a run at that point:
+goes through the `helena-ops` account from the Mac. `proof/reprove.sh` splits a run at that point. The root part runs from an approved snapshot
+at `/opt/helena-proof`, with every ancestor and file owned by root and not writable by group or
+others. Stage the reviewed isolation, integration, native terminal and built runner files there
+through the operator account before invoking root. Never execute a script from a user-writable
+checkout as root. The harness validates its source tree and accesses owner files through `runuser`:
 
 ```sh
 R=/home/wilhelmpa/agent-work/plan-isolation/deployment/volition-stack/isolation/proof
 ssh wilhelmpa@kingston-server.local "$R/reprove.sh prepare"               # bundle, Postgres, API, seed
-ssh helena-ops@kingston-server.local "sudo $R/reprove.sh root --only E"   # teardown, setup, start, prove
+ssh helena-ops@kingston-server.local "sudo /opt/helena-proof/deployment/volition-stack/isolation/proof/reprove.sh root --only E"   # teardown, setup, start, prove
 ssh wilhelmpa@kingston-server.local "$R/reprove.sh finish"                # API and Postgres stopped
 ```
 
 The harness steps one by one, as root:
 
 ```sh
-sudo python3 proof/harness.py setup --source deployment/volition-stack/isolation
-sudo python3 proof/harness.py start
-sudo python3 proof/harness.py prove            # or --only 1,2,…  (E: delivered variables and the clone job)
-sudo python3 proof/harness.py teardown --users --all
+sudo python3 -I /opt/helena-proof/deployment/volition-stack/isolation/proof/harness.py setup --source /opt/helena-proof/deployment/volition-stack/isolation
+sudo python3 -I /opt/helena-proof/deployment/volition-stack/isolation/proof/harness.py start
+sudo python3 -I /opt/helena-proof/deployment/volition-stack/isolation/proof/harness.py prove            # or --only 1,2,…  (E: delivered variables and the clone job)
+sudo python3 -I /opt/helena-proof/deployment/volition-stack/isolation/proof/harness.py teardown --users --all
 ```
 
 The `launcher.json` the harness writes is the shipped one with the test paths put in;

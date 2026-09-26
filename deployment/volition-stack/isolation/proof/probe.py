@@ -95,11 +95,11 @@ def check(spec: str) -> dict:
                 return result(False, err(error))
         if kind == 'curl':
             # curl with the unit's environment: the proxy unless --noproxy is given.
-            command = ['curl', '-sS', '-o', '/dev/null', '-w', '%{http_code}', '--max-time', '15', *args]
+            command = ['curl', '-sS', '-o', '/dev/null', '-w', 'http=%{http_code} connect=%{http_connect}', '--max-time', '15', *args]
             done = subprocess.run(command, capture_output=True, text=True, timeout=30)
             code = done.stdout.strip()
-            return result(done.returncode == 0 and code.startswith(('2', '3')),
-                          f'rc={done.returncode} http={code} {done.stderr.strip()[:160]}')
+            return result(done.returncode == 0 and code.startswith(('http=2', 'http=3')),
+                          f'rc={done.returncode} {code} {done.stderr.strip()[:160]}')
         if kind == 'plan':
             # A request to the Plan API on the unit's loopback: method, path, header=value…
             method, path, *headers = args

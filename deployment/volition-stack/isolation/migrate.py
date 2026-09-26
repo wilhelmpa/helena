@@ -33,6 +33,7 @@ from isolation_common import (  # noqa: E402
     ACL_USER,
     DEFAULT,
     IsolationError,
+    PROJECT_KEY_RE,
     acl_decode,
     acl_encode,
     load_config,
@@ -69,63 +70,86 @@ class Changes:
         print(f'skipped {path}: {why}', file=sys.stderr, flush=True)
 
 
-def walk(root: str, visit) -> None:
-    """Calls visit(path, fd, info) for the root and everything below it, each opened without
-    following links (a link itself is passed with fd None)."""
+def walk(root: str, visit, on_error=None) -> None:
+    """Visit pinned descriptors, bounded by depth and entry count, without following links."""
+    def skipped(path, reason):
+        if on_error:
+            on_error(path, reason)
+        else:
+            print(f'skipped {path}: {reason}', file=sys.stderr)
+
     try:
         top = open_path_nofollow(root)
     except FileNotFoundError:
         return
     except IsolationError:
-        # A single file: opened from its folder, without following a link.
         try:
             parent = open_path_nofollow(os.path.dirname(root))
+            try:
+                fd = os.open(os.path.basename(root), os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_NOCTTY,
+                             dir_fd=parent)
+            finally:
+                os.close(parent)
+            try:
+                info = os.fstat(fd)
+                if stat.S_ISREG(info.st_mode):
+                    visit(root, fd, info)
+            finally:
+                os.close(fd)
         except FileNotFoundError:
-            return
-        try:
-            fd = os.open(os.path.basename(root), os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_NOCTTY,
-                         dir_fd=parent)
-        except FileNotFoundError:
-            return
-        finally:
-            os.close(parent)
-        try:
-            info = os.fstat(fd)
-            if stat.S_ISREG(info.st_mode):
-                visit(root, fd, info)
-        finally:
-            os.close(fd)
+            pass
+        except (OSError, IsolationError) as error:
+            skipped(root, str(error))
         return
-    try:
-        visit(root, top, os.fstat(top))
-        for directory, _dirs, files, dir_fd in os.fwalk(dir_fd=top, follow_symlinks=False):
-            path = os.path.normpath(os.path.join(root, directory))
-            names = list(files) + list(_dirs)
-            for name in names:
-                entry = os.path.join(path, name)
-                info = os.stat(name, dir_fd=dir_fd, follow_symlinks=False)
-                if stat.S_ISLNK(info.st_mode):
+    except OSError as error:
+        skipped(root, str(error))
+        return
+    count = 0
+
+    def descend(fd, path, depth):
+        nonlocal count
+        if depth >= 64:
+            skipped(path, 'depth limit')
+            return
+        try:
+            names = os.listdir(fd)
+        except OSError as error:
+            skipped(path, str(error))
+            return
+        for name in names:
+            count += 1
+            if count > 1_000_000:
+                skipped(root, 'entry limit')
+                return
+            entry = os.path.join(path, name)
+            try:
+                info = os.stat(name, dir_fd=fd, follow_symlinks=False)
+                if not stat.S_ISDIR(info.st_mode) and not stat.S_ISREG(info.st_mode):
                     visit(entry, None, info)
                     continue
+                flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_NOCTTY | os.O_CLOEXEC
                 if stat.S_ISDIR(info.st_mode):
-                    if name in _dirs and entry != root:
-                        fd = os.open(name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=dir_fd)
-                        try:
-                            visit(entry, fd, os.fstat(fd))
-                        finally:
-                            os.close(fd)
-                    continue
-                if not stat.S_ISREG(info.st_mode):
-                    visit(entry, None, info)
-                    continue
-                fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_NOCTTY, dir_fd=dir_fd)
+                    flags |= os.O_DIRECTORY
+                child = os.open(name, flags, dir_fd=fd)
                 try:
-                    opened = os.fstat(fd)
+                    opened = os.fstat(child)
                     if (opened.st_dev, opened.st_ino) != (info.st_dev, info.st_ino):
                         continue
-                    visit(entry, fd, opened)
+                    visit(entry, child, opened)
+                    if stat.S_ISDIR(opened.st_mode):
+                        descend(child, entry, depth + 1)
                 finally:
-                    os.close(fd)
+                    os.close(child)
+            except FileNotFoundError:
+                continue
+            except OSError as error:
+                skipped(entry, str(error))
+
+    try:
+        visit(root, top, os.fstat(top))
+        descend(top, root, 0)
+    except OSError as error:
+        skipped(root, str(error))
     finally:
         os.close(top)
 
@@ -145,7 +169,7 @@ def own_tree(root: str, uid: int, gid: int | None, changes: Changes, *, skip_lin
             changes.note(f'chown {path} {info.st_uid}:{info.st_gid} → {uid}:{wanted_gid}')
             if not changes.dry_run:
                 os.fchown(fd, uid, wanted_gid)
-    walk(root, visit)
+    walk(root, visit, changes.skip)
 
 
 def acl_tree(root: str, named: dict[tuple[int, int], int], changes: Changes, *,
@@ -164,7 +188,7 @@ def acl_tree(root: str, named: dict[tuple[int, int], int], changes: Changes, *,
             changes.note(f'setfacl {path} {describe(entries)}{" -" + describe({k: 0 for k in remove}) if remove else ""}')
             if not changes.dry_run:
                 set_acl(fd, entries, default=stat.S_ISDIR(info.st_mode), remove=remove)
-    walk(root, visit)
+    walk(root, visit, changes.skip)
 
 
 def strip_named(root: str, ids: set[tuple[int, int]], changes: Changes) -> None:
@@ -193,12 +217,19 @@ def registry_projects(config) -> list[tuple[str, str]]:
         for name in sorted(os.listdir(fd)):
             if not name.endswith('.json'):
                 continue
-            file_fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=fd)
-            with os.fdopen(file_fd, 'rb') as handle:
-                entry = json.loads(handle.read(1_048_576))
+            try:
+                file_fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=fd)
+                with os.fdopen(file_fd, 'rb') as handle:
+                    if not stat.S_ISREG(os.fstat(handle.fileno()).st_mode):
+                        continue
+                    entry = json.loads(handle.read(1_048_576))
+            except (OSError, ValueError):
+                continue
+            if not isinstance(entry, dict) or not isinstance(entry.get('project'), dict):
+                continue
             slug = entry.get('slug')
-            key = (entry.get('project') or {}).get('key')
-            if valid_slug(slug) and isinstance(key, str) and name == f'{slug}.json':
+            key = entry['project'].get('key')
+            if valid_slug(slug) and isinstance(key, str) and PROJECT_KEY_RE.fullmatch(key) and name == f'{slug}.json':
                 projects.append((slug, key))
     finally:
         os.close(fd)
@@ -227,8 +258,28 @@ def copy_home_profile(config, global_home: str, account, changes: Changes) -> No
     changes.note(f'create Home profile {target} from {global_home}')
     if changes.dry_run:
         return
+    runner = pwd.getpwnam(config.runner_user)
+    child = os.fork()
+    if child == 0:
+        try:
+            os.initgroups(runner.pw_name, runner.pw_gid)
+            os.setgid(runner.pw_gid)
+            os.setuid(runner.pw_uid)
+            _copy_home_contents(global_home, target)
+        except BaseException:
+            os._exit(1)
+        os._exit(0)
+    _pid, status = os.waitpid(child, 0)
+    if status != 0:
+        raise IsolationError('migration', 'copying the Home profile as the runner failed')
+    own_tree(target, account.pw_uid, account.pw_gid, changes)
+
+
+def _copy_home_contents(global_home: str, target: str) -> None:
+    """All path-based writes and SQLite opens run without root privileges."""
+    if os.geteuid() == 0:
+        raise IsolationError('migration', 'Home profile copying must run as the runner')
     os.mkdir(target, 0o700)
-    os.chown(target, account.pw_uid, account.pw_gid)
     for entry in HOME_PROFILE_ENTRIES:
         source = os.path.join(global_home, entry)
         if not os.path.lexists(source) or os.path.islink(source):
@@ -245,7 +296,6 @@ def copy_home_profile(config, global_home: str, account, changes: Changes) -> No
             with sqlite3.connect(f'file:{source}?mode=ro', uri=True) as origin, \
                     sqlite3.connect(os.path.join(target, name)) as copy:
                 origin.backup(copy)
-    own_tree(target, account.pw_uid, account.pw_gid, changes)
 
 
 def _copy_file(source: str, destination: str) -> None:

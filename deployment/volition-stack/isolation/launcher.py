@@ -297,13 +297,12 @@ class Launcher:
     def limits(self, requested: object) -> dict[str, str]:
         limits = self.config.limits
         runtime = int(limits.get('runtimeMaxSec', 7200))
-        ceiling = int(limits.get('runtimeMaxSecLimit', 14400))
         if requested is not None:
             if not isinstance(requested, dict) or set(requested) - {'runtimeMaxSec'}:
                 raise IsolationError('request', 'limits is invalid')
             asked = _int_or_none(requested.get('runtimeMaxSec'), 'runtimeMaxSec', 30, 86400)
             if asked is not None:
-                runtime = min(asked, ceiling)
+                runtime = min(asked, runtime)
         return {
             'MemoryMax': str(limits.get('memoryMax', '4G')),
             'CPUQuota': str(limits.get('cpuQuota', '200%')),
@@ -707,35 +706,53 @@ class Launcher:
                 writer.write(frame(kind, chunk))
                 await writer.drain()
 
-        async def feed():
+        inputs: asyncio.Queue = asyncio.Queue(maxsize=16)
+
+        async def receive():
             nonlocal stop_requested
             while True:
                 item = await read_frame(reader)
                 if item is None:
                     return
-                kind, payload = item
+                if item[0] == T_STOP:
+                    stop_requested = True
+                    return
+                try:
+                    inputs.put_nowait(item)
+                except asyncio.QueueFull:
+                    return
+
+        async def feed():
+            while True:
+                kind, payload = await inputs.get()
                 if kind == T_STDIN and process.stdin and not process.stdin.is_closing():
                     process.stdin.write(payload)
                     await process.stdin.drain()
                 elif kind == T_EOF and process.stdin:
                     process.stdin.close()
-                elif kind == T_STOP:
-                    stop_requested = True
-                    return
 
         pumps = asyncio.gather(pump(process.stdout, T_STDOUT), pump(process.stderr, T_STDERR))
-        feeder = asyncio.ensure_future(feed())
-        waiter = asyncio.ensure_future(process.wait())
+        receiver = asyncio.create_task(receive())
+        feeder = asyncio.create_task(feed())
+        waiter = asyncio.create_task(process.wait())
         try:
-            done, _ = await asyncio.wait({feeder, waiter}, return_when=asyncio.FIRST_COMPLETED)
+            watched = {receiver, feeder, waiter, pumps}
+            while True:
+                done, _ = await asyncio.wait(watched, return_when=asyncio.FIRST_COMPLETED)
+                if pumps in done and pumps.exception() is None:
+                    watched.discard(pumps)
+                    done.discard(pumps)
+                if done:
+                    break
             if waiter not in done:
-                # The caller hung up or asked to stop: the run is over for it.
                 await self.stop_unit(unit)
                 try:
                     await asyncio.wait_for(asyncio.shield(waiter), 30)
                 except asyncio.TimeoutError:
                     process.kill()
                     await waiter
+                    # StartTransientUnit can arrive after the first stop request.
+                    await self.stop_unit(unit)
                 if not stop_requested:
                     return
             code = await waiter
@@ -747,11 +764,14 @@ class Launcher:
         except (ConnectionError, BrokenPipeError):
             await self.stop_unit(unit)
         finally:
+            receiver.cancel()
             feeder.cancel()
             if process.returncode is None:
                 process.kill()
                 await process.wait()
+                await self.stop_unit(unit)
             pumps.cancel()
+            await asyncio.gather(receiver, feeder, pumps, return_exceptions=True)
 
     # ── terminal ───────────────────────────────────────────────────────────────────────
 
@@ -863,15 +883,16 @@ class Launcher:
             '--socket', os.path.join(directory, 'tmux.sock'), '--session', f'volition-{slug}',
             '--cwd', workspace,
         ]
-        master, slave = os.openpty()
-        fcntl.ioctl(master, termios.TIOCSWINSZ, struct.pack('HHHH', rows, cols, 0, 0))
 
         def controlling_terminal():
             os.setsid()
             fcntl.ioctl(0, termios.TIOCSCTTY, 0)
 
         await self.reserve(slug)
+        master = slave = -1
         try:
+            master, slave = os.openpty()
+            fcntl.ioctl(master, termios.TIOCSWINSZ, struct.pack('HHHH', rows, cols, 0, 0))
             process = await asyncio.create_subprocess_exec(
                 *command, stdin=slave, stdout=slave, stderr=slave, preexec_fn=controlling_terminal,
                 env={'PATH': '/usr/bin:/bin', 'TERM': 'xterm-256color', 'SYSTEMD_ADJUST_TERMINAL_TITLE': '0',
@@ -955,7 +976,8 @@ class Launcher:
         finally:
             if slave >= 0:
                 os.close(slave)
-            os.close(master)
+            if master >= 0:
+                os.close(master)
             await self.release(slug)
 
     async def terminal_stop(self, request: dict, writer) -> None:
@@ -1383,6 +1405,7 @@ async def serve(config: Config) -> None:
         sock = socket.socket(fileno=3)
         activated = True
     else:
+        activated = False
         path = os.environ.get('VOLITION_LAUNCHER_SOCKET', '/run/volition-agent-launcher/launch.sock')
         group = os.environ.get('VOLITION_LAUNCHER_GROUP', 'volition-launcher')
         try:

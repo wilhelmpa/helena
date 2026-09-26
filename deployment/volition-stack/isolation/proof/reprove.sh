@@ -9,9 +9,12 @@
 # wilhelmpa's sudo asks for a password (since 2026-09-25); root work goes through the helena-ops
 # account from the Mac, so a whole run is three commands there:
 #
+# The root command requires an approved snapshot under /opt/helena-proof, owned by root.
+# Never invoke sudo on a checkout writable by the ordinary user.
+#
 #   R=/home/wilhelmpa/agent-work/plan-isolation/deployment/volition-stack/isolation/proof
 #   ssh wilhelmpa@kingston-server.local "$R/reprove.sh prepare"
-#   ssh helena-ops@kingston-server.local "sudo $R/reprove.sh root --only E"
+#   ssh helena-ops@kingston-server.local "sudo /opt/helena-proof/deployment/volition-stack/isolation/proof/reprove.sh root --only E"
 #   ssh wilhelmpa@kingston-server.local "$R/reprove.sh finish"
 #
 #   PLAN_PROOF_PG_PORT   the private Postgres (default 55477, the orchestrator's)
@@ -31,7 +34,7 @@ case "${1:-}" in
     mkdir -p "$TMPDIR"
     cd "$repo"
     git log --oneline -1
-    bun install --frozen-lockfile >/dev/null
+    [ -d node_modules ] || { echo "reuse the prepared dependencies before running proofs" >&2; exit 64; }
     # The runner bundle the harness copies into the test tree (profile helper, clone job).
     (cd packages/runner && bun build src/cli.ts --target=node --outfile dist/cli.js >/dev/null)
     "$pg_ctl" -D "$pg_dir" status >/dev/null 2>&1 ||
@@ -46,7 +49,7 @@ case "${1:-}" in
   root)
     [ "$(id -u)" = 0 ] || { echo "root runs as root (ssh helena-ops@… 'sudo …')" >&2; exit 64; }
     shift
-    harness=(/usr/bin/python3 "$here/harness.py")
+    harness=(/usr/bin/python3 -I "$here/harness.py")
     "${harness[@]}" teardown >/dev/null
     "${harness[@]}" setup --source "$isolation" >/dev/null
     "${harness[@]}" start >/dev/null

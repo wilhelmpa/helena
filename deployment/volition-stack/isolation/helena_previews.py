@@ -17,8 +17,8 @@ from helena_preview_worker import clean_line, pipe
 NAME = re.compile(r'^[a-z0-9][a-z0-9-]{0,39}$')
 SLOTS = 8
 PORT_BASE = 24000
-RUNTIME_ROOT = '/run/helena-previews'
-STATE_ROOT = '/var/lib/helena-previews'
+RUNTIME_ROOT = os.environ.get('HELENA_PREVIEW_RUNTIME_ROOT', '/run/helena-previews')
+STATE_ROOT = os.environ.get('HELENA_PREVIEW_STATE_ROOT', '/var/lib/helena-previews')
 OPS = {
     'preview-start': {'v', 'op', 'slug', 'name', 'cwd', 'command', 'idleTimeoutSec'},
     'preview-status': {'v', 'op', 'slug', 'name'},

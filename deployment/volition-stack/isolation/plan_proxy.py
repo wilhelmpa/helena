@@ -56,6 +56,9 @@ class PlanProxy:
         self.user_prefix = user_prefix
         self.unit_prefix = unit_prefix
         self.agents_group = agents_group
+        self.connections: dict[str, int] = {}
+        self.per_project = 32
+        self.max_connections = 256
 
     def identify(self, writer) -> tuple[str, str] | None:
         pid, uid, _gid = peer_credentials(writer.get_extra_info('socket'))
@@ -89,11 +92,17 @@ class PlanProxy:
 
     async def handle(self, reader, writer) -> None:
         upstream_writer = None
+        reserved = None
         try:
             identity = self.identify(writer)
             if identity is None:
                 return
             slug, unit = identity
+            if self.connections.get(slug, 0) >= self.per_project or sum(self.connections.values()) >= self.max_connections:
+                await self.respond(writer, 503, 'too many connections')
+                return
+            self.connections[slug] = self.connections.get(slug, 0) + 1
+            reserved = slug
             try:
                 raw = await asyncio.wait_for(read_head(reader), 30)
                 head = parse_request_head(raw)
@@ -149,6 +158,10 @@ class PlanProxy:
         except (ConnectionError, OSError, asyncio.TimeoutError, asyncio.IncompleteReadError, HttpError):
             pass
         finally:
+            if reserved is not None:
+                self.connections[reserved] -= 1
+                if not self.connections[reserved]:
+                    del self.connections[reserved]
             for stream in (writer, upstream_writer):
                 if stream is not None:
                     try:
@@ -193,10 +206,15 @@ class PlanProxy:
                 upstream.write(b'\r\n')
                 await upstream.drain()
                 return
-            data = await reader.readexactly(size)
+            remaining = size
+            while remaining:
+                data = await reader.readexactly(min(remaining, 65536))
+                remaining -= len(data)
+                upstream.write(data)
+                await upstream.drain()
             if await reader.readexactly(2) != b'\r\n':
                 raise HttpError(400, 'invalid chunk')
-            upstream.write(data + b'\r\n')
+            upstream.write(b'\r\n')
             await upstream.drain()
 
     async def response(self, upstream_reader, writer) -> None:
@@ -233,6 +251,7 @@ async def serve() -> None:
         sock = socket.socket(fileno=3)
         activated = True
     else:
+        activated = False
         path = os.environ['VOLITION_PLAN_SOCKET']
         try:
             os.unlink(path)

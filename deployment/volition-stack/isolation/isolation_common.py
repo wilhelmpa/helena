@@ -20,11 +20,11 @@ from typing import Any
 
 # A project slug as provisioning derives it from the project key (provisioner.mjs). A Unix
 # user name has at most 32 characters, so a slug of an isolated project has at most 29.
-SLUG_RE = re.compile(r'^[a-z0-9][a-z0-9-]{0,28}$')
+SLUG_RE = re.compile(r'^[a-z0-9][a-z0-9-]{0,28}\Z')
 # The profile of a project's coordinator is the slug, every other agent's `<slug>_<agentId>`.
-PROFILE_RE = re.compile(r'^(?P<slug>[a-z0-9][a-z0-9-]{0,28})(?:_(?P<agent>[1-9][0-9]{0,9}))?$')
-ENV_NAME_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]{0,127}$')
-PROJECT_KEY_RE = re.compile(r'^[A-Z][A-Z0-9]{0,31}$')
+PROFILE_RE = re.compile(r'^(?P<slug>[a-z0-9][a-z0-9-]{0,28})(?:_(?P<agent>[1-9][0-9]{0,9}))?\Z')
+ENV_NAME_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]{0,127}\Z')
+PROJECT_KEY_RE = re.compile(r'^[A-Z][A-Z0-9]{0,31}\Z')
 # Names that are never a project's, so no project user can take them.
 RESERVED_SLUGS = frozenset({'root', 'admin', 'system', 'systemd', 'volition', 'plan', 'hermes',
                             'browser', 'egress', 'launcher', 'nobody', 'daemon', 'agents'})
@@ -458,13 +458,16 @@ def adopt_tree(fd: int, uid: int, gid: int | None, *, only_uid: int, limit: int 
             seen += 1
             if seen > limit:
                 return
-            info = os.stat(name, dir_fd=dir_fd, follow_symlinks=False)
-            if stat.S_ISDIR(info.st_mode):
-                child = os.open(name, O_DIR, dir_fd=dir_fd)
-            elif stat.S_ISREG(info.st_mode) and info.st_nlink == 1:
-                child = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_NOCTTY | os.O_CLOEXEC,
-                                dir_fd=dir_fd)
-            else:
+            try:
+                info = os.stat(name, dir_fd=dir_fd, follow_symlinks=False)
+                if stat.S_ISDIR(info.st_mode):
+                    child = os.open(name, O_DIR, dir_fd=dir_fd)
+                elif stat.S_ISREG(info.st_mode) and info.st_nlink == 1:
+                    child = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_NOCTTY | os.O_CLOEXEC,
+                                    dir_fd=dir_fd)
+                else:
+                    continue
+            except OSError:
                 continue
             try:
                 opened = os.fstat(child)

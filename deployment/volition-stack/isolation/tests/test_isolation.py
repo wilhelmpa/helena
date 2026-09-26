@@ -284,8 +284,8 @@ class EgressTest(unittest.TestCase):
         self.assertEqual(egress.decide(policy, 'example.com', 443, 8), 'not-allowlisted')
         self.assertIsNone(egress.decide(policy, 'example.net', 443, 8))
         self.assertIsNone(egress.decide(policy, 'example.com', 443, 9))
-        self.assertIsNone(egress.decide(policy, 'example.com', 443, None))
-        self.assertEqual(egress.effective_mode({'mode': 'weird'}, None), 'open')
+        self.assertEqual(egress.decide(policy, 'example.com', 443, None), 'blocked')
+        self.assertEqual(egress.effective_mode({'mode': 'weird'}, None), 'blocked')
 
     def test_the_model_endpoints_stay_reachable(self):
         blocked = {'mode': 'blocked', 'allow': [], 'deny': ['anthropic.com'], 'agents': {}}
@@ -450,6 +450,11 @@ class LauncherRequestTest(unittest.TestCase):
                          'User=vp-alpha', 'KillSignal=SIGINT'):
             self.assertIn(required, props)
         self.assertTrue(all('\n' not in p for p in props))
+
+    def test_runtime_limit_can_only_be_shortened(self):
+        self.assertEqual(self.worker.limits(None)['RuntimeMaxSec'], '7200')
+        self.assertEqual(self.worker.limits({'runtimeMaxSec': 86400})['RuntimeMaxSec'], '7200')
+        self.assertEqual(self.worker.limits({'runtimeMaxSec': 60})['RuntimeMaxSec'], '60')
 
     def test_binds_this_projects_own_browser_gateway_directory(self):
         # Per project, not shared (see isolation_common.Config.browser_gateway): the router
