@@ -74,7 +74,7 @@ export interface AgentRuntimePolicy {
   learning?: boolean;
   curator?: boolean;
   reflection?: ReflectionMode;
-  // Unset: memory writes wait for approval.
+  // Unset: memory writes are kept at once; only `true` makes them wait for approval.
   memoryApproval?: boolean;
   skillsDisabled?: string[];
   // Unset or null: the instance's default list. Empty: no fallback.

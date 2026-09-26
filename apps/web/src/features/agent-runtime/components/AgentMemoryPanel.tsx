@@ -33,7 +33,7 @@ export default function AgentMemoryPanel({
   const pending = useProposals('pending').data?.filter(
     (proposal) => proposal.kind === 'memory-write' && proposal.agentId === agent.id,
   );
-  const approval = agent.runtimePolicy.memoryApproval !== false;
+  const approval = agent.runtimePolicy.memoryApproval === true;
 
   return (
     <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-4">

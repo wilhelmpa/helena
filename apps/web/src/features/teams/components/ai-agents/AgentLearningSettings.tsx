@@ -35,7 +35,7 @@ export default function AgentLearningSettings({
     // The agent's own memory writes wait on the approvals page (a diff per file) unless off.
     {
       key: 'memoryApproval',
-      on: policy.memoryApproval ?? true,
+      on: policy.memoryApproval ?? false,
       label: t('memoryApproval'),
       hint: t('memoryApprovalHint'),
     },

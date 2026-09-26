@@ -274,5 +274,5 @@ export async function memoryApproval(agentId: number): Promise<boolean> {
     .select({ policy: aiAgent.runtimePolicy })
     .from(aiAgent)
     .where(eq(aiAgent.id, agentId));
-  return (row?.policy as { memoryApproval?: boolean } | undefined)?.memoryApproval !== false;
+  return (row?.policy as { memoryApproval?: boolean } | undefined)?.memoryApproval === true;
 }

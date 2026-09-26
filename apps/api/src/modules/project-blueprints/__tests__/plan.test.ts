@@ -307,13 +307,11 @@ describe('what it leaves to the owner', () => {
     ).toBe(false);
   });
 
-  it('reports memory approval switched off', () => {
+  it('leaves an agent without memory approval alone (the default since 2026-09-26)', () => {
     const state = appliedState();
     state.agents.find((entry) => entry.username === 'risk-journal-trade')!.memoryApproval = false;
     const plan = planBlueprint(TRADING, state, ['agents']);
-    expect(plan.skipped.map((entry) => entry.what)).toEqual([
-      'memory approval of @risk-journal-trade',
-    ]);
+    expect(plan.skipped).toEqual([]);
   });
 
   it('reports a missing department instead of creating it', () => {

@@ -306,12 +306,6 @@ export function planBlueprint(
       if (agent.projectBrowser && !copy?.projectBrowser) {
         plan.changes.push({ kind: 'projectBrowser', handle });
       }
-      if (copy && !copy.memoryApproval) {
-        plan.skipped.push({
-          what: `memory approval of @${handle}`,
-          why: 'switched off by hand; the blueprint wants it on — check the agent',
-        });
-      }
     }
   }
 

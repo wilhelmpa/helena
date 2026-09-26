@@ -222,7 +222,7 @@ export async function loadBlueprintState(
       assignment: here ? (here.description ?? '') : null,
       departmentId: assignments.find((a) => a.agentId === row.id)?.departmentId ?? null,
       projectBrowser: browserLinks.some((link) => link.agentId === row.id),
-      memoryApproval: policy.memoryApproval ?? true,
+      memoryApproval: policy.memoryApproval ?? false,
       tools: toolLinks
         .filter((link) => link.agentId === row.id)
         .map(({ agentToolId, toolKey, credentialId }) => ({ agentToolId, toolKey, credentialId })),
