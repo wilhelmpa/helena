@@ -1,5 +1,6 @@
 import { afterEach, expect, it } from 'bun:test';
 import { spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { createServer, type ServerResponse } from 'node:http';
@@ -20,7 +21,7 @@ async function until(check: () => boolean) {
   }
 }
 
-async function fixture(options: { heldClaim?: boolean; capability?: boolean } = {}) {
+async function fixture(options: { heldClaim?: boolean; capability?: boolean; cli?: string } = {}) {
   const dir = await mkdtemp(join(tmpdir(), 'helena-deploy-drain-'));
   cleanup.push(() => rm(dir, { recursive: true, force: true }));
   const requests: string[] = [];
@@ -108,13 +109,17 @@ async function fixture(options: { heldClaim?: boolean; capability?: boolean } = 
       pollIntervalMs: 1000,
     }),
   );
-  const child = spawn(process.execPath, [join(import.meta.dir, '../cli.ts'), config], {
-    stdio: 'ignore',
-    env: {
-      ...process.env,
-      ...(options.capability ? { HELENA_RUNNER_DRAIN_STATUS: join(dir, 'status.json') } : {}),
+  const child = spawn(
+    process.execPath,
+    [options.cli ?? join(import.meta.dir, '../cli.ts'), config],
+    {
+      stdio: 'ignore',
+      env: {
+        ...process.env,
+        ...(options.capability ? { HELENA_RUNNER_DRAIN_STATUS: join(dir, 'status.json') } : {}),
+      },
     },
-  });
+  );
   const exited = new Promise<number | null>((resolve) => child.once('exit', resolve));
   cleanup.push(async () => {
     held?.destroy();
@@ -196,3 +201,46 @@ it.skipIf(process.platform !== 'linux')(
   },
   12_000,
 );
+
+// The opt-in path is used only for the separately pinned legacy bootstrap proof.
+it('single SIGINT completes a claim returned after stopping without releasing or claiming again', async () => {
+  const cli = process.env.HELENA_TEST_LEGACY_CLI;
+  if (cli) {
+    expect(
+      createHash('sha256')
+        .update(await readFile(cli))
+        .digest('hex'),
+    ).toBe('ae24a1c10ce69f3038bbb563d40ac8ef6e0c2018385aea458f933a71ae55d0ef');
+  }
+  const f = await fixture({ heldClaim: true, cli });
+  await until(() => f.held() !== undefined);
+  f.child.kill('SIGINT');
+  await sleep(100);
+  f.held()!.end(
+    JSON.stringify({
+      message: {
+        id: 7,
+        attempts: 1,
+        threadId: 'synthetic',
+        prompt: 'Synthetic late claim',
+        systemPrompt: '',
+        sessionId: null,
+        model: null,
+        thinkingLevel: null,
+      },
+    }),
+  );
+  await until(() => existsSync(join(f.dir, 'started-chat')));
+  const claims = f.counts();
+  await sleep(250);
+  expect(f.child.exitCode).toBeNull();
+  expect(f.child.signalCode).toBeNull();
+  expect(f.counts()).toEqual(claims);
+  expect(f.requests.some((path) => path.includes('/release'))).toBe(false);
+  await f.finish();
+  expect(await f.exited).toBe(0);
+  expect(f.requests.filter((path) => path === '/agent-runs/5/result?claim=1')).toHaveLength(1);
+  expect(f.requests.filter((path) => path === '/agent-chats/7/result?claim=1')).toHaveLength(1);
+  expect(await readFile(join(f.dir, 'started-manual'), 'utf8')).toBe('once\n');
+  expect(await readFile(join(f.dir, 'started-chat'), 'utf8')).toBe('once\n');
+}, 12_000);
