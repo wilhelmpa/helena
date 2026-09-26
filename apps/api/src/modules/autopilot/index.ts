@@ -7,15 +7,16 @@ import { paginate } from '#shared/pagination';
 import { accessErrors, commonErrors, errors } from '#shared/responses';
 import { isAgentUser } from '#modules/agents/core/service';
 import { runnerAuth } from '#modules/agents/runner-auth';
-import { DECIDE_PERMISSION, getApproval, getApprovalAccess } from '#modules/approvals/service';
-import { assertPermission } from '#shared/access';
-import { ApprovalResponse } from '#modules/approvals/model';
+import { getApproval } from '#modules/approvals/service';
+import { approvalGuards } from '#modules/approvals/guards';
+import { ApprovalResponse, approvalParams } from '#modules/approvals/model';
 import type { AutopilotLevel } from '@helena/policy';
 import { onTemplateRelevantChange } from '#modules/agents/core/template-sync';
 import { setBudgets } from './budgets';
 import { setAgentLevel, setProjectLevel } from './levels';
 import {
   AgentAutopilotResponse,
+  agentAutopilotParams,
   DecideResponse,
   DecisionPageResponse,
   ProjectAutopilotResponse,
@@ -43,6 +44,7 @@ async function refuseAgentKey(userId: string): Promise<void> {
 export const autopilotRoutes = new Elysia({ name: 'autopilot', detail: { tags: ['Autopilot'] } })
   .use(authContext)
   .use(guards)
+  .use(approvalGuards)
   .use(runnerAuth)
   .get('/projects/:projectKey/autopilot', ({ project }) => projectAutopilot(project.id), {
     permission: ['ai_agents', 'read'],
@@ -111,9 +113,10 @@ export const autopilotRoutes = new Elysia({ name: 'autopilot', detail: { tags: [
   )
   .get(
     '/teams/:teamId/ai-agents/:agentId/autopilot',
-    ({ membership, params }) => agentAutopilot(membership.teamId, Number(params.agentId)),
+    ({ membership, params }) => agentAutopilot(membership.teamId, params.agentId),
     {
       teamPermission: ['ai_agents', 'read'],
+      params: agentAutopilotParams,
       response: { 200: AgentAutopilotResponse, ...accessErrors },
       detail: {
         summary: "Get an agent's Autopilot",
@@ -127,7 +130,7 @@ export const autopilotRoutes = new Elysia({ name: 'autopilot', detail: { tags: [
   .put(
     '/teams/:teamId/ai-agents/:agentId/autopilot',
     async ({ membership, params, body, user }) => {
-      const agentId = Number(params.agentId);
+      const agentId = params.agentId;
       const changed = await setAgentLevel(
         membership.teamId,
         agentId,
@@ -139,6 +142,7 @@ export const autopilotRoutes = new Elysia({ name: 'autopilot', detail: { tags: [
     },
     {
       teamPermission: ['ai_agents', 'edit'],
+      params: agentAutopilotParams,
       body: setAgentLevelBody,
       response: { 200: AgentAutopilotResponse, ...commonErrors },
       detail: {
@@ -155,38 +159,35 @@ export const autopilotRoutes = new Elysia({ name: 'autopilot', detail: { tags: [
     async ({ membership, params, body, user }) => {
       const userId = requireUser(user).id;
       await refuseAgentKey(userId);
-      const agentId = Number(params.agentId);
+      const agentId = params.agentId;
       await agentAutopilot(membership.teamId, agentId);
       await setBudgets(membership.teamId, { agentId }, body.budgets, userId);
       await onTemplateRelevantChange(agentId, ['budgets']);
       return agentAutopilot(membership.teamId, agentId);
     },
     {
-      teamPermission: ['ai_agents', 'edit'],
+      teamManager: true,
+      params: agentAutopilotParams,
       body: budgetsBody,
       response: { 200: AgentAutopilotResponse, ...commonErrors },
       detail: {
         summary: "Set an agent's budgets",
         description:
           'Tokens, euros (estimated) or seconds of work per UTC day or month for everything the ' +
-          'agent does, runs and chats. A null limit removes that budget. Agent keys are refused.',
+          'agent does, runs and chats. A null limit removes that budget. Only team owners and managers can change it.',
       },
     },
   )
   .post(
     '/approvals/:approvalId/budget',
-    async ({ params, body, user }) => {
-      const approvalId = Number(params.approvalId);
-      const access = await getApprovalAccess(approvalId);
-      if (!access) throw new HttpError(404, 'Approval request not found');
+    async ({ approvalId, body, user }) => {
       const userId = requireUser(user).id;
-      await assertPermission(access.projectId, user, ...DECIDE_PERMISSION);
-      if (await isAgentUser(userId))
-        throw new HttpError(403, 'Only a person can decide an approval request');
       await decideBudgetCard(approvalId, userId, body);
       return (await getApproval(approvalId))!;
     },
     {
+      approval: 'decide',
+      params: approvalParams,
       body: budgetDecisionBody,
       response: { 200: ApprovalResponse, ...commonErrors, ...errors(409) },
       detail: {

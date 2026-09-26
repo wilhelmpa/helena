@@ -412,8 +412,21 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
   `);
   const row = (rows as unknown as ClaimedRow[])[0];
   if (!row) return null;
-  await useGrace(agent.id, next.projectId, row.id);
-  const autopilot = await resolveLevel(agent.id, next.projectId);
+  if (!(await useGrace(agent.id, row.projectId, row.id))) {
+    await db
+      .update(agentRun)
+      .set({
+        attempts: sql`${agentRun.attempts} - 1`,
+        claims: sql`${agentRun.claims} - 1`,
+        claimedAt: null,
+        startedAt: row.interrupted ? sql`${agentRun.startedAt}` : null,
+        resumes: sql`CASE WHEN ${agentRun.sessionId} IS NOT NULL THEN ${agentRun.resumes} - 1 ELSE ${agentRun.resumes} END`,
+        nextAttemptAt: new Date(),
+      })
+      .where(and(eq(agentRun.id, row.id), eq(agentRun.claims, row.claim)));
+    return null;
+  }
+  const autopilot = await resolveLevel(agent.id, row.projectId);
   await noteRunLevel(row.id, autopilot.level);
   const threadContext = await loadThreadContext(row.sourceActivityId);
   // The routine whose work the run is, when it is one: its framing keeps the run quiet and

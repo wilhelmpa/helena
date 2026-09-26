@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
+import { db } from '@repo/db';
+import { sql } from 'drizzle-orm';
 import { apiKeyApi, app, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
@@ -82,6 +84,23 @@ describe('approval requests', () => {
       note: null,
       followUpRunId: null,
     });
+  });
+
+  it('returns a conflict when a duplicate disappears before it can be read', async () => {
+    const { asOwner, asAgent, columnId } = await setup();
+    await startRun(asOwner, asAgent, columnId);
+    await db.execute(
+      sql`CREATE FUNCTION helena_test_approval_conflict() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'Concurrent approval decision' USING ERRCODE = '23505'; END $$`,
+    );
+    await db.execute(
+      sql`CREATE TRIGGER helena_test_approval_conflict BEFORE INSERT ON approval_request FOR EACH ROW EXECUTE FUNCTION helena_test_approval_conflict()`,
+    );
+    try {
+      expect((await requestApproval(asAgent)).status).toBe(409);
+    } finally {
+      await db.execute(sql`DROP TRIGGER helena_test_approval_conflict ON approval_request`);
+      await db.execute(sql`DROP FUNCTION helena_test_approval_conflict()`);
+    }
   });
 
   it('answers a repeated request of the same run with the first one', async () => {

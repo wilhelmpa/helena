@@ -1,17 +1,11 @@
 import { Elysia } from 'elysia';
 import { mcpTool } from '#mcp/generate';
-import { isAgentUser } from '#modules/agents/core/service';
 import { runnerAuth } from '#modules/agents/runner-auth';
 import { authContext } from '#shared/auth-context';
-import {
-  assertMcpEnabled,
-  assertPermission,
-  requireProjectAccess,
-  requireUser,
-} from '#shared/access';
-import { assertMcpAllowed, requiresPermission } from '#shared/guards';
+import { requireUser } from '#shared/access';
+import { guards, requiresPermission } from '#shared/guards';
+import { approvalGuards } from './guards';
 import { HttpError } from '#shared/lib';
-import { isMcpRequest } from '#shared/mcp-request';
 import { paginate } from '#shared/pagination';
 import { commonErrors, errors } from '#shared/responses';
 import {
@@ -33,7 +27,6 @@ import {
   createApprovalRequest,
   decideApprovalRequest,
   getApproval,
-  getApprovalAccess,
   getCallingAgent,
   listApprovalProjects,
   listApprovals,
@@ -49,45 +42,13 @@ export const approvalRoutes = new Elysia({
 })
   .use(authContext)
   .use(runnerAuth)
-  .macro({
-    // The agent calling a :projectKey route, which must be one of the project's team.
-    requestingAgent(_enabled: boolean) {
-      return {
-        async resolve({ params, user, request }) {
-          const project = await requireProjectAccess(
-            (params as { projectKey: string }).projectKey,
-            user,
-          );
-          assertMcpEnabled(project, isMcpRequest(request.headers));
-          const agent = await getCallingAgent(requireUser(user).id, project.teamId);
-          if (!agent) throw new HttpError(403, 'Only an agent can request an approval');
-          return { project, agent };
-        },
-      };
-    },
-    // One request by id: the agent that made it reads it, a person who may decide reads
-    // and decides it. An agent never decides, whatever its role grants: the request
-    // exists so that a person does.
-    approval(action: 'read' | 'decide') {
-      return {
-        async resolve({ params, user, request }) {
-          const approvalId = Number((params as { approvalId: string }).approvalId);
-          const access = await getApprovalAccess(approvalId);
-          if (!access) throw new HttpError(404, 'Approval request not found');
-          const callerId = requireUser(user).id;
-          if (action === 'decide' || access.agentUserId !== callerId)
-            await assertPermission(access.projectId, user, ...DECIDE_PERMISSION);
-          if (action === 'decide' && (await isAgentUser(callerId)))
-            throw new HttpError(403, 'Only a person can decide an approval request');
-          await assertMcpAllowed(access.projectId, request.headers);
-          return { approvalId };
-        },
-      };
-    },
-  })
+  .use(guards)
+  .use(approvalGuards)
   .post(
     '/projects/:projectKey/approvals',
-    async ({ project, agent, body, set }) => {
+    async ({ project, user, body, set }) => {
+      const agent = await getCallingAgent(requireUser(user).id, project.teamId);
+      if (!agent) throw new HttpError(403, 'Only an agent can request an approval');
       const { approval, created } = await createApprovalRequest({
         projectId: project.id,
         agent,
@@ -97,9 +58,9 @@ export const approvalRoutes = new Elysia({
       return approval;
     },
     {
-      requestingAgent: true,
+      projectMember: true,
       body: createApprovalBody,
-      response: { 200: ApprovalResponse, 201: ApprovalResponse, ...commonErrors },
+      response: { 200: ApprovalResponse, 201: ApprovalResponse, ...commonErrors, ...errors(409) },
       detail: {
         summary: 'Request an approval',
         description:

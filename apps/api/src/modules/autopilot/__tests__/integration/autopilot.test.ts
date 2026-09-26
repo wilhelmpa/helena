@@ -1,13 +1,24 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
-import { db, aiAgent, helenaPolicyDecision } from '@repo/db';
-import { eq } from 'drizzle-orm';
+import {
+  db,
+  aiAgent,
+  agentRun,
+  approvalRequest,
+  helenaPolicyDecision,
+  project,
+  projectMember,
+  teamMember,
+} from '@repo/db';
+import { eq, sql } from 'drizzle-orm';
 import { apiKeyApi, app, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
+import { createRole } from '#tests/helpers/roles';
 import { autopilotPolicyDecider, decideBrowserTool } from '#modules/autopilot/adapters';
 import { actionApproved, decide } from '#modules/autopilot/engine';
 import type { ActionCategory } from '@helena/sdk';
+import { budgetStatuses, continueOnce, enforceBudgets, useGrace } from '#modules/autopilot/budgets';
 import { autopilotPolicyEvaluator } from '#modules/autopilot/evaluator';
 
 // Helena's Autopilot: one level per project (with an optional per-agent level), one policy
@@ -387,6 +398,175 @@ describe('Autopilot on Helena’s own MCP tools', () => {
 describe('budgets', () => {
   beforeEach(resetDb);
 
+  async function exhaustedBudget() {
+    const s = await setup();
+    const { run, issue } = await startRun(s);
+    await budgets(s).put({ budgets: [{ metric: 'tokens', period: 'day', limit: 10 }] });
+    await finish(s, run.id, 20, 0);
+    const card = (await s.asOwner.approvals.get({ query: {} })).data!.items.find(
+      (item) => item.kind === 'budget',
+    )!;
+    const [budget] = await budgetStatuses({ agentIds: [s.agent.id] });
+    return { ...s, run, issue, card, budget: budget! };
+  }
+
+  it('reserves one grace run atomically across concurrent claims', async () => {
+    const s = await exhaustedBudget();
+    await continueOnce(s.budget.id);
+    const results = await Promise.all([
+      useGrace(s.agent.id, s.projectId, s.run.id + 1),
+      useGrace(s.agent.id, s.projectId, s.run.id + 2),
+    ]);
+    expect(results.filter(Boolean)).toHaveLength(1);
+    const [after] = await budgetStatuses({ agentIds: [s.agent.id] });
+    expect(after!.graceRuns).toBe(0);
+    expect(after!.graceRunIds).toHaveLength(1);
+    expect(await useGrace(s.agent.id, s.projectId, after!.graceRunIds[0]!)).toBe(true);
+  });
+
+  it('hands only one queued run to competing claim requests after continue once', async () => {
+    const s = await exhaustedBudget();
+    for (let i = 0; i < 2; i++) {
+      await db.insert(agentRun).values({
+        agentId: s.agent.id,
+        projectId: s.projectId,
+        issueId: s.issue.id,
+        trigger: 'mention',
+        prompt: `Work ${i}`,
+      });
+    }
+    await s.asOwner.approvals({ approvalId: s.card.id }).budget.post({ action: 'once' });
+    const claims = await Promise.all([
+      s.asRunner['agent-runs'].claim.post(),
+      s.asRunner['agent-runs'].claim.post(),
+    ]);
+    for (const claim of claims) expect(claim.status).toBe(200);
+    expect(claims.filter((claim) => claim.data?.run)).toHaveLength(1);
+  });
+
+  it('keeps a card pending when writing its raised budget fails', async () => {
+    const s = await exhaustedBudget();
+    await db.execute(
+      sql`CREATE FUNCTION helena_test_budget_failure() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'Test budget write failed'; END $$`,
+    );
+    await db.execute(
+      sql`CREATE TRIGGER helena_test_budget_failure BEFORE UPDATE OF limit_value ON helena_budget FOR EACH ROW EXECUTE FUNCTION helena_test_budget_failure()`,
+    );
+    try {
+      const response = await s.asOwner
+        .approvals({ approvalId: s.card.id })
+        .budget.post({ action: 'raise', limit: 100 });
+      expect(response.status).toBe(500);
+      const [card] = await db
+        .select()
+        .from(approvalRequest)
+        .where(eq(approvalRequest.id, s.card.id));
+      expect(card!.status).toBe('pending');
+    } finally {
+      await db.execute(sql`DROP TRIGGER helena_test_budget_failure ON helena_budget`);
+      await db.execute(sql`DROP FUNCTION helena_test_budget_failure()`);
+    }
+  });
+
+  it('rolls back a budget raise when another decision wins the card', async () => {
+    const s = await exhaustedBudget();
+    const decisions = await Promise.all([
+      s.asOwner.approvals({ approvalId: s.card.id }).budget.post({ action: 'raise', limit: 100 }),
+      s.asOwner.approvals({ approvalId: s.card.id }).budget.post({ action: 'keep' }),
+    ]);
+    expect(decisions.map((decision) => decision.status).sort()).toEqual([200, 409]);
+    const [card] = await db.select().from(approvalRequest).where(eq(approvalRequest.id, s.card.id));
+    const [budget] = await budgetStatuses({ agentIds: [s.agent.id] });
+    expect(budget!.limit).toBe(card!.status === 'approved' ? 100 : 10);
+  });
+
+  it('keeps project budget editors from changing team-wide agent budgets', async () => {
+    const s = await exhaustedBudget();
+    const editor = await signUpTestUser();
+    const role = (
+      await createRole(s.asOwner, 'MKT', {
+        name: 'Budget editor',
+        permissions: { ai_agents: { create: false, read: true, edit: true, delete: false } },
+      })
+    ).data!;
+    await db.insert(teamMember).values({ teamId: s.teamId, userId: editor.userId, role: 'member' });
+    await db
+      .insert(projectMember)
+      .values({ projectId: s.projectId, userId: editor.userId, role: 'member', roleId: role.id });
+    const client = authedApi(editor.cookie);
+    for (const action of ['raise', 'once'] as const) {
+      expect(
+        (await client.approvals({ approvalId: s.card.id }).budget.post({ action, limit: 100 }))
+          .status,
+      ).toBe(403);
+    }
+    const direct = client.teams({ teamId: s.teamId })['ai-agents']({ agentId: s.agent.id })
+      .autopilot.budgets;
+    expect(
+      (await direct.put({ budgets: [{ metric: 'tokens', period: 'day', limit: 100 }] })).status,
+    ).toBe(403);
+    expect(
+      (
+        await client
+          .teams({ teamId: s.teamId })
+          .organization.agents({ agentId: s.agent.id })
+          ['token-ceilings'].put({ daily: 100, monthly: null })
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await client
+          .projects({ projectKey: 'MKT' })
+          .autopilot.budgets.put({ budgets: [{ metric: 'tokens', period: 'day', limit: 100 }] })
+      ).status,
+    ).toBe(200);
+    const [budget] = await budgetStatuses({ agentIds: [s.agent.id] });
+    expect(budget!.limit).toBe(10);
+    expect(budget!.graceRuns).toBe(0);
+    await db
+      .update(teamMember)
+      .set({ role: 'manager' })
+      .where(eq(teamMember.userId, editor.userId));
+    expect(
+      (await client.approvals({ approvalId: s.card.id }).budget.post({ action: 'once' })).status,
+    ).toBe(200);
+    expect(
+      (await direct.put({ budgets: [{ metric: 'tokens', period: 'day', limit: 100 }] })).status,
+    ).toBe(200);
+  });
+
+  it('preserves a warning for the next issue when chat work crosses 80 percent', async () => {
+    const s = await setup();
+    const { run, issue } = await startRun(s);
+    await finish(s, run.id, 85, 0);
+    await budgets(s).put({ budgets: [{ metric: 'tokens', period: 'day', limit: 100 }] });
+    await enforceBudgets(s.agent.id, s.projectId, null);
+    expect((await budgetStatuses({ agentIds: [s.agent.id] }))[0]!.warned).toBe(false);
+    await enforceBudgets(s.agent.id, s.projectId, issue.id);
+    expect(await comments(s.asOwner, issue.id)).toContainEqual(
+      expect.stringContaining('Heads-up: 85 %'),
+    );
+  });
+
+  it('refuses budget decisions over MCP when the project disables MCP', async () => {
+    const s = await exhaustedBudget();
+    await db.update(project).set({ mcpEnabled: false }).where(eq(project.id, s.projectId));
+    const response = await app.handle(
+      new Request(`http://localhost/approvals/${s.card.id}/budget`, {
+        method: 'POST',
+        headers: {
+          cookie: s.owner.cookie,
+          'content-type': 'application/json',
+          'x-mcp-loopback': '1',
+        },
+        body: JSON.stringify({ action: 'once' }),
+      }),
+    );
+    expect(response.status).toBe(403);
+    const route = app.routes.find((route) => route.path === '/approvals/:approvalId/budget');
+    expect(route?.hooks.detail?.['x-permission']).toEqual(['ai_agents', 'edit']);
+  });
+
   function budgets(s: Setup) {
     return s.asOwner.teams({ teamId: s.teamId })['ai-agents']({ agentId: s.agent.id }).autopilot
       .budgets;
@@ -444,7 +624,7 @@ describe('budgets', () => {
     expect(once.data).toMatchObject({ status: 'approved', note: 'once' });
     const third = await startRun(s, 'Docs page');
     expect(third.run).toBeTruthy();
-    const denied = await ask(s, third.run.id, { command: 'npm run build' });
+    const denied = await ask(s, third.run.id, { tool: 'write_file', path: `${WS}/output.txt` });
     expect(denied.data).toMatchObject({ outcome: 'allow' });
     await finish(s, third.run.id, 10, 0);
     // Used up again: paused, and a new card.
@@ -484,6 +664,17 @@ describe('budgets', () => {
     const res = await ask(s, run.id, { command: 'npm run build' });
     expect(res.data).toMatchObject({ outcome: 'deny', reason: 'budget-exhausted' });
     expect(await outcome(s, run.id, { command: 'cat README.md' })).toBe('allow');
+    for (const command of [
+      'awk \'BEGIN{system("git push")}\'',
+      "sed -n '1e git push' input",
+      '/usr/bin/env git push',
+      'echo $(git push)',
+      'echo `git push`',
+      "bash -lc 'git push'",
+      'env FOO=1 git push',
+      'unknown-program > out.txt',
+    ])
+      expect(await outcome(s, run.id, { command })).toBe('deny');
   });
 
   it('counts euros from the price table and seconds of work', async () => {
@@ -588,6 +779,26 @@ describe('adapters for the workflow engine and the browser gateway', () => {
 describe('the Autopilot as an @helena/sdk policy evaluator', () => {
   beforeEach(resetDb);
 
+  it('ignores an agent-supplied input scope for external deletes', async () => {
+    const s = await setup();
+    await setLevel(s.asOwner, 3);
+    const request = {
+      agent: { id: s.agent.id },
+      project: { id: s.projectId, key: 'MKT', teamId: s.teamId },
+      action: 'delete' as const,
+      context: { tool: 'delete_resource', input: { scope: 'workspace' } },
+    };
+    expect(await autopilotPolicyEvaluator.evaluate(request)).toMatchObject({
+      effect: 'needs-approval',
+    });
+    expect(
+      await autopilotPolicyEvaluator.evaluate({
+        ...request,
+        context: { ...request.context, scope: 'workspace' },
+      }),
+    ).toMatchObject({ effect: 'allow' });
+  });
+
   it('answers for agents in the SDK shape and abstains for people and other questions', async () => {
     const s = await setup();
     await setLevel(s.asOwner, 3);
@@ -620,5 +831,50 @@ describe('the Autopilot as an @helena/sdk policy evaluator', () => {
       'delete:external:needs-approval',
     ]);
     expect(logged[0]).toMatchObject({ tool: 'pages', summary: 'Roadmap page' });
+  });
+});
+
+describe('shell hard blocks at level 3', () => {
+  beforeEach(resetDb);
+  it('preserves external-delete and credential blocks through shell wrappers', async () => {
+    const s = await setup();
+    await setLevel(s.asOwner, 3);
+    const { run } = await startRun(s);
+    for (const command of [
+      'rm -rf ${HOME}',
+      'cd && rm -rf *',
+      'cd - && rm -rf *',
+      'rm -rf /tmp/../home/user',
+      "bash -c 'rm -rf ~'",
+      '\\rm /etc/file',
+      'nice -n 10 rm /etc/file',
+      'env FOO=1 command rm /etc/file',
+      'xargs -I {} rm {}',
+      'find . -exec echo {} + -exec rm ~ +',
+      "xargs bash -c 'gh auth login'",
+    ])
+      expect(await outcome(s, run.id, { command })).toBe('needs-approval');
+  });
+});
+
+describe('Autopilot numeric route parameters', () => {
+  beforeEach(resetDb);
+  it('rejects malformed ids before database access', async () => {
+    const s = await setup();
+    for (const [method, path, body] of [
+      ['GET', `/teams/${s.teamId}/ai-agents/not-a-number/autopilot`, undefined],
+      ['PUT', `/teams/${s.teamId}/ai-agents/not-a-number/autopilot`, { level: 3 }],
+      ['PUT', `/teams/${s.teamId}/ai-agents/not-a-number/autopilot/budgets`, { budgets: [] }],
+      ['POST', '/approvals/not-a-number/budget', { action: 'once' }],
+    ] as const) {
+      const response = await app.handle(
+        new Request(`http://localhost${path}`, {
+          method,
+          headers: { cookie: s.owner.cookie, 'content-type': 'application/json' },
+          ...(body ? { body: JSON.stringify(body) } : {}),
+        }),
+      );
+      expect(response.status).toBe(400);
+    }
   });
 });

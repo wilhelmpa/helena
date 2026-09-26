@@ -278,7 +278,9 @@ export async function createApprovalRequest(input: {
           command == null ? isNull(approvalRequest.command) : eq(approvalRequest.command, command),
         ),
       );
-    return { approval: (await getApproval(existing!.id))!, created: false };
+    const approval = existing ? await getApproval(existing.id) : null;
+    if (!approval) throw new HttpError(409, 'The matching approval changed; request it again');
+    return { approval, created: false };
   }
 
   await publishDomainEvent({

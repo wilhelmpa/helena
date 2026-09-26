@@ -6,6 +6,7 @@ import {
   aiAgent,
   approvalRequest,
   helenaPolicyDecision,
+  helenaBudget,
   project,
   projectMember,
   user,
@@ -19,6 +20,8 @@ import {
   type AutopilotLevel,
   type ToolAnnotations,
 } from '@helena/policy';
+import { requireTeamMembership } from '#shared/access';
+import { runsTeam } from '#modules/teams/service';
 import { HttpError, iso } from '#shared/lib';
 import type { RunnerAgent } from '#modules/agents/runner/service';
 import {
@@ -26,8 +29,6 @@ import {
   continueOnce,
   getBudget,
   settleBudgets,
-  setBudgets,
-  type BudgetInput,
   type BudgetStatus,
   type BudgetTarget,
 } from './budgets';
@@ -221,6 +222,11 @@ export async function decideBudgetCard(
   };
   if (input.action === 'keep') return close('rejected', 'kept');
   if (!budget) throw new HttpError(409, 'The budget no longer exists');
+  if (budget.agentId != null) {
+    const membership = await requireTeamMembership(budget.teamId, { id: deciderUserId });
+    if (!runsTeam(membership.role))
+      throw new HttpError(403, 'Only a team owner or manager can change an agent budget');
+  }
   const target: BudgetTarget =
     budget.agentId != null ? { agentId: budget.agentId } : { projectId: budget.projectId! };
   if (input.action === 'once') {
@@ -236,19 +242,25 @@ export async function decideBudgetCard(
   if (input.limit == null || input.limit <= (status?.used ?? 0)) {
     throw new HttpError(400, 'The new limit has to be above what is already used');
   }
-  await close('approved', 'raised');
-  await setBudgets(
-    budget.teamId,
-    target,
-    [
-      {
-        metric: budget.metric as BudgetInput['metric'],
-        period: budget.period as BudgetInput['period'],
-        limit: input.limit,
-      },
-    ],
-    deciderUserId,
-  );
+  await db.transaction(async (tx) => {
+    const updated = await tx
+      .update(helenaBudget)
+      .set({ limitValue: input.limit!, reachedFor: null, updatedAt: new Date() })
+      .where(eq(helenaBudget.id, budget.id))
+      .returning({ id: helenaBudget.id });
+    if (updated.length === 0) throw new HttpError(409, 'The budget no longer exists');
+    const closed = await tx
+      .update(approvalRequest)
+      .set({
+        status: 'approved',
+        decidedByUserId: deciderUserId,
+        decidedAt: new Date(),
+        decisionNote: note ?? 'raised',
+      })
+      .where(and(eq(approvalRequest.id, approvalId), eq(approvalRequest.status, 'pending')))
+      .returning({ id: approvalRequest.id });
+    if (closed.length === 0) throw new HttpError(409, 'This request has already been decided');
+  });
   await settleBudgets(target, deciderUserId);
 }
 

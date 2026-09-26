@@ -83,10 +83,7 @@ async function runOfCall(
 // Where the call lands: what the caller says, else outside the agent's workspace for a
 // delete or an execute (a connector's or a plugin's reaches beyond Helena).
 function scopeOf(request: PolicyRequest): ActionScope {
-  const said =
-    request.context.scope ??
-    (request.context.input as { scope?: unknown } | undefined)?.scope ??
-    null;
+  const said = request.context.scope;
   if (said === 'workspace' || said === 'external') return said;
   return request.action === 'delete' || request.action === 'execute' ? 'external' : 'workspace';
 }

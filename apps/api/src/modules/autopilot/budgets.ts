@@ -273,11 +273,6 @@ async function fileBudgetCard(
   });
 }
 
-export interface EnforceOptions {
-  // Unused; a claim uses a grace run through useGrace once it holds the run.
-  consumeGrace?: boolean;
-}
-
 // The budgets of the agent and the project that hold its work back now: reached, and not
 // lifted for one more run. Warns at 80 % and files the card at 100 %, each once per period.
 // Work outside a project (a Home chat) has only the agent's budgets, and no project to file
@@ -286,7 +281,6 @@ export async function enforceBudgets(
   agentId: number,
   projectId: number | null,
   issueId: number | null,
-  options: EnforceOptions = {},
 ): Promise<string | null> {
   const statuses = await budgetStatuses({
     agentIds: [agentId],
@@ -299,8 +293,8 @@ export async function enforceBudgets(
 
   for (const status of statuses) {
     if (status.reached || status.ratio < WARN_RATIO || status.warned) continue;
-    if (!(await claimOnce(status.id, 'warnedFor', new Date(status.periodStart)))) continue;
     if (issueId == null || projectId == null) continue;
+    if (!(await claimOnce(status.id, 'warnedFor', new Date(status.periodStart)))) continue;
     const handles = await noticeRecipients(
       projectId,
       status.scope === 'agent' ? agent.ownerUserId : null,
@@ -321,7 +315,6 @@ export async function enforceBudgets(
 
   const reached = statuses.filter((status) => status.reached);
   if (reached.length === 0) return null;
-  void options;
   const blocking = reached.filter((status) => status.graceRuns === 0);
   if (blocking.length === 0) return null;
 
@@ -353,17 +346,38 @@ export async function enforceBudgets(
 
 // A claimed run that started past a used-up budget on "continue once": the grace is spent
 // on it, and it finishes unhindered.
-export async function useGrace(agentId: number, projectId: number, runId: number): Promise<void> {
+export async function useGrace(
+  agentId: number,
+  projectId: number,
+  runId: number,
+): Promise<boolean> {
   const statuses = await budgetStatuses({ agentIds: [agentId], projectIds: [projectId] });
-  for (const status of statuses) {
-    if (!status.reached || status.graceRuns === 0) continue;
-    await db
-      .update(helenaBudget)
-      .set({
-        graceRuns: sql`greatest(${helenaBudget.graceRuns} - 1, 0)`,
-        graceRunIds: sql`${helenaBudget.graceRunIds} || ${JSON.stringify([runId])}::jsonb`,
-      })
-      .where(eq(helenaBudget.id, status.id));
+  const exhausted = new Error('No budget grace remains');
+  try {
+    await db.transaction(async (tx) => {
+      for (const status of statuses.filter((s) => s.reached).sort((a, b) => a.id - b.id)) {
+        if (status.graceRunIds.includes(runId)) continue;
+        const rows = await tx
+          .update(helenaBudget)
+          .set({
+            graceRuns: sql`${helenaBudget.graceRuns} - 1`,
+            graceRunIds: sql`${helenaBudget.graceRunIds} || ${JSON.stringify([runId])}::jsonb`,
+          })
+          .where(
+            and(
+              eq(helenaBudget.id, status.id),
+              eq(helenaBudget.graceFor, new Date(status.periodStart)),
+              sql`${helenaBudget.graceRuns} > 0`,
+            ),
+          )
+          .returning({ id: helenaBudget.id });
+        if (rows.length === 0) throw exhausted;
+      }
+    });
+    return true;
+  } catch (error) {
+    if (error === exhausted) return false;
+    throw error;
   }
 }
 

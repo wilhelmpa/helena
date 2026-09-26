@@ -1,6 +1,8 @@
 import { t } from 'elysia';
 import { pageQueryFields, pageResponse } from '#shared/pagination';
 
+export const agentAutopilotParams = t.Object({ teamId: t.Numeric(), agentId: t.Numeric() });
+
 export const ActionCategorySchema = t.Union(
   [
     t.Literal('read'),

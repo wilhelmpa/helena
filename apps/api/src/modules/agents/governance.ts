@@ -7,7 +7,6 @@ import {
   enforceBudgets,
   noticeRecipients,
   setBudgets,
-  type EnforceOptions,
 } from '#modules/autopilot/budgets';
 import { periodStart, usageSince } from '#modules/autopilot/usage';
 import { onTemplateRelevantChange } from './core/template-sync';
@@ -54,7 +53,6 @@ export async function enforceAgentLimits(
   agentId: number,
   projectId: number,
   issueId: number | null,
-  options: EnforceOptions = {},
 ): Promise<string | null> {
   const [agent] = await db
     .select({ pausedAt: aiAgent.pausedAt, pauseReason: aiAgent.pauseReason })
@@ -62,7 +60,7 @@ export async function enforceAgentLimits(
     .where(eq(aiAgent.id, agentId));
   if (!agent) return null;
   if (agent.pausedAt) return agent.pauseReason ?? 'The agent is paused.';
-  return enforceBudgets(agentId, projectId, issueId, options);
+  return enforceBudgets(agentId, projectId, issueId);
 }
 
 // Pauses the agent by hand. The reason replaces the one it was paused for. False when
