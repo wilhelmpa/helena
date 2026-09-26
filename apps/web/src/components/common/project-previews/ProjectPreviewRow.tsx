@@ -48,6 +48,11 @@ export default function ProjectPreviewRow({
           {preview.error}
         </p>
       )}
+      {open.error && (
+        <p role="alert" className="text-xs break-words text-destructive">
+          {open.error.message}
+        </p>
+      )}
       <div className="flex flex-wrap gap-1">
         {preview.status === 'running' && (
           <Button

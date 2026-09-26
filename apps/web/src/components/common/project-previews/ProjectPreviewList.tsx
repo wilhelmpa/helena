@@ -37,6 +37,11 @@ export default function ProjectPreviewList({
           {query.error.message}
         </p>
       )}
+      {(start.error || stop.error) && (
+        <p role="alert" className="text-destructive">
+          {(start.error || stop.error)?.message}
+        </p>
+      )}
       {query.data && (
         <>
           {query.data.previews.length === 0 && (
