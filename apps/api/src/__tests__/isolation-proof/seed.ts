@@ -24,6 +24,9 @@ for (const key of ['ALPHA', 'BETA']) {
   const created = await asOwner.projects.post({ key, name: key.toLowerCase() });
   projects[key] = created.data!.id;
 }
+// The synthetic proof explicitly authorizes workspace execution before its run is queued.
+const permission = await asOwner.projects({ projectKey: 'ALPHA' }).autopilot.put({ level: 3 });
+if (permission.status !== 200) throw new Error('Proof project execution could not be authorized');
 const alpha = await createAgent(asOwner, 'ALPHA', {
   name: 'Alpha Bot',
   username: 'alphabot',
@@ -35,6 +38,11 @@ const beta = await createAgent(asOwner, 'BETA', {
   username: 'betabot',
   kind: 'external',
   triggerOnMention: true,
+});
+const alphaOpen = await createAgent(asOwner, 'ALPHA', {
+  name: 'Alpha Open Bot',
+  username: 'alphaopenbot',
+  kind: 'external',
 });
 const personal = await auth.api.createApiKey({ body: { userId: owner.userId, name: 'proof' } });
 const view = await asOwner.projects({ projectKey: 'ALPHA' }).get();
@@ -57,6 +65,7 @@ writeFileSync(
       ownerKey: personal.key,
       alphaKey: alpha.data!.apiKey,
       alphaAgentId: alpha.data!.agent.id,
+      alphaOpenAgentId: alphaOpen.data!.agent.id,
       betaKey: beta.data!.apiKey,
       betaAgentId: beta.data!.agent.id,
       homeKey: home.apiKey,

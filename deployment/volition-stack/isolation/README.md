@@ -135,7 +135,8 @@ paths; their nftables updates cannot touch the live preview firewall.
 Only the harness needs root. wilhelmpa's sudo asks for a password (since 2026-09-25), so root work
 goes through the `helena-ops` account from the Mac. `proof/reprove.sh` splits a run at that point. The root part runs from an approved snapshot
 at `/opt/helena-proof`, with every ancestor and file owned by root and not writable by group or
-others. Stage the reviewed isolation, integration, native terminal and built runner files there
+others. Stage the reviewed `isolation/`, `integration/`, `native/terminal/`, `native/systemd/`
+and `packages/runner/dist/` trees at their repository-relative paths there
 through the operator account before invoking root. Never execute a script from a user-writable
 checkout as root. The harness validates its source tree and accesses owner files through `runuser`:
 
@@ -161,3 +162,18 @@ field added to the shipped file cannot break the test launcher unnoticed.
 
 Unit tests without root: `python3 -m unittest discover -s tests` (also run by the integration
 suite, `integration/test/isolation-python.test.mjs`).
+
+
+Port 443 validates TLS ClientHello SNI against the CONNECT host. The sole protocol exception
+is GitHub's documented `ssh.github.com:443` endpoint, which requires a bounded SSH-2.0
+identification line. It retains project/agent policy, DNS and public-address checks; the
+runner supplies pinned GitHub SSH host keys. See
+[GitHub's SSH-over-443 documentation](https://docs.github.com/en/authentication/troubleshooting-ssh/using-ssh-over-the-https-port).
+
+The synthetic ALPHA proof project explicitly enables Autopilot level 3 before queuing its
+workspace-write run. Missing agent identity still uses the strictest project/agent network
+policy. Fixture repositories are initialized inside their project sandbox, keeping parent
+workspace permissions intact. Installed Codex code and its platform package are resolved from
+`/usr/local/bin/codex`, verified as root-owned and non-writable, then copied into the proof
+runtime. CLI refusal checks kill the entire test launch-client process group and drain output
+with a deadline; an upstream timeout remains a failed proof, never a successful auth refusal.
