@@ -43,16 +43,14 @@ it('reports unresolved failures and offline agents only in the accessible projec
   expect(result.data!.offlineAgents.map((item) => item.id)).toContain(agent.id);
   expect(JSON.stringify(result.data)).not.toContain('Private');
   expect(JSON.stringify(result.data)).not.toContain('private');
-  await db
-    .insert(agentRun)
-    .values({
-      agentId: agent.id,
-      projectId: project.id,
-      issueId: task.id,
-      prompt: 'Retry',
-      status: 'success',
-      finishedAt: new Date(),
-    });
+  await db.insert(agentRun).values({
+    agentId: agent.id,
+    projectId: project.id,
+    issueId: task.id,
+    prompt: 'Retry',
+    status: 'success',
+    finishedAt: new Date(),
+  });
   await db.update(aiAgent).set({ pausedAt: new Date() }).where(eq(aiAgent.id, agent.id));
   const recovered = await owner.projects({ projectKey: 'OPS' })['automation-health'].get();
   expect(recovered.data).toMatchObject({ runs: [], offlineAgents: [], truncated: false });

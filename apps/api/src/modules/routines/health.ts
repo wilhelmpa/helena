@@ -51,13 +51,11 @@ export async function automationHealth(projectId: number) {
       ...item,
       lastSeenAt: item.lastSeenAt ? iso(item.lastSeenAt) : null,
     })),
-    runs: runs
-      .slice(0, 100)
-      .map((item) => ({
-        ...item,
-        createdAt: iso(item.createdAt),
-        finishedAt: item.finishedAt ? iso(item.finishedAt) : null,
-      })),
+    runs: runs.slice(0, 100).map((item) => ({
+      ...item,
+      createdAt: iso(item.createdAt),
+      finishedAt: item.finishedAt ? iso(item.finishedAt) : null,
+    })),
     truncated: runs.length > 100,
   };
 }
