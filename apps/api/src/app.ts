@@ -72,16 +72,17 @@ export const app = new Elysia()
   // A request from an isolated agent (it names the agent's project, see
   // shared/agent-socket.ts) never reaches the host's control plane or the sign-in flows,
   // whatever the route would say about its credential.
-  .onRequest(async ({ request }) => {
+  .onRequest(async ({ request, set }) => {
     // A request that came in through the internet tunnel (nginx marks it) passes only with
     // the edge sign-in's proof (Cloudflare Access), whatever else it carries. See
     // modules/edge-access and docs/helena-decisions/security-hardening.md.
-    const edgeRefusal = await edgeGuard(request);
-    if (edgeRefusal) return edgeRefusal;
-    // A page of another origin (the notes on the home name's second port, another name of
-    // the same domain) may not change anything with the owner's cookie (shared/cross-site.ts).
-    const crossSite = crossSiteRefusal(request);
-    if (crossSite) return crossSite;
+    try {
+      await edgeGuard(request);
+      crossSiteRefusal(request);
+    } catch (error) {
+      set.headers['Cache-Control'] = 'no-store';
+      throw error;
+    }
     try {
       if (!agentSocketRequestAllowed(request, new URL(request.url).pathname)) {
         return Response.json({ error: 'Not available to agents' }, { status: 403 });

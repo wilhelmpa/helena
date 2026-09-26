@@ -3,7 +3,7 @@ import { noContent } from '#shared/http';
 import { guards } from '#shared/guards';
 import { authContext } from '#shared/auth-context';
 import { HttpError } from '#shared/lib';
-import { accessErrors, commonErrors } from '#shared/responses';
+import { accessErrors, commonErrors, errors } from '#shared/responses';
 import { paginate } from '#shared/pagination';
 import { teamParams } from '#modules/teams/model';
 import { runnerAuth } from '../runner-auth';
@@ -100,7 +100,7 @@ export const credentialRoutes = new Elysia({
       params: teamParams,
       body: createCredentialEntryBody,
       teamManager: true,
-      response: { 201: CredentialEntryResponse, ...commonErrors },
+      response: { 201: CredentialEntryResponse, ...commonErrors, ...errors(409) },
       detail: {
         summary: 'Add a credential',
         description:
@@ -123,7 +123,7 @@ export const credentialRoutes = new Elysia({
       params: credentialEntryParams,
       body: updateCredentialEntryBody,
       teamManager: true,
-      response: { 200: CredentialEntryResponse, ...commonErrors },
+      response: { 200: CredentialEntryResponse, ...commonErrors, ...errors(409) },
       detail: {
         summary: 'Update a credential',
         description:
@@ -137,9 +137,7 @@ export const credentialRoutes = new Elysia({
   .delete(
     '/teams/:teamId/credentials/:credentialId',
     async ({ params, membership, user }) => {
-      // Written first: the entry keeps the label after the credential is gone.
-      await recordOwnerChange(membership.teamId, params.credentialId, user, 'deleted');
-      if (!(await deleteCredentialEntry(params.credentialId, membership.teamId))) {
+      if (!(await deleteCredentialEntry(params.credentialId, membership.teamId, user))) {
         throw new HttpError(404, 'Credential not found');
       }
       return noContent();
@@ -193,7 +191,7 @@ export const credentialRoutes = new Elysia({
     {
       params: credentialEntryParams,
       teamManager: true,
-      response: { 200: CredentialEntryResponse, ...commonErrors },
+      response: { 200: CredentialEntryResponse, ...commonErrors, ...errors(409) },
       detail: {
         summary: 'Generate a new SSH key pair',
         description: 'Replace the key pair of an SSH key. The old public key stops working.',

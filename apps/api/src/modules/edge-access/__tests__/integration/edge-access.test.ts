@@ -58,6 +58,22 @@ describe('edge access (the internet tunnel entry)', () => {
     expect(body.code).toBe('edge_not_configured');
   });
 
+  it('returns shared, non-cacheable errors for cross-site cookie writes', async () => {
+    const owner = await signUpTestUser();
+    const response = await call(
+      '/projects',
+      {
+        cookie: owner.cookie,
+        origin: 'https://other.example.com',
+        'sec-fetch-site': 'same-site',
+      },
+      { method: 'POST' },
+    );
+    expect(response.status).toBe(403);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(await response.json()).toMatchObject({ code: 'cross_site_refused' });
+  });
+
   it('lets a tunnel request through only with a valid assertion', async () => {
     const owner = await signUpTestUser();
     expect((await configure(owner.cookie)).status).toBe(200);

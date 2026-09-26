@@ -13,6 +13,13 @@ import os
 import pathlib
 import sys
 import unittest
+from unittest.mock import patch
+import tempfile
+import contextlib
+import io
+import json
+import ipaddress
+import subprocess
 
 HERE = pathlib.Path(__file__).resolve().parent
 CLOUDFLARE = HERE.parent
@@ -230,6 +237,113 @@ class OwnerMapOnTheHomeName(unittest.TestCase):
         self.assertNotIn('fe80', text)
         self.assertIn('"~^([^|]+)\\|\\1$" 1;', text)
 
+
+
+class OriginApplyRollback(unittest.TestCase):
+    def test_two_applies_and_home_change_rollback_before_https(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            env = root / 'plan.env'
+            original = 'APP_URL=http://kingston-server.local\nAPI_URL=http://kingston-server.local/backend\n'
+            env.write_text(original)
+            with patch.object(switch_origin, 'ENV', env), patch.object(switch_origin, 'BACKUPS', root / 'backups'), patch.object(switch_origin, 'SYSTEMD', root / 'systemd'):
+                def run(cmd, **kwargs):
+                    unit = cmd[-1]
+                    path = root / 'systemd' / f'{unit}.service.d/70-helena-origin.conf'
+                    text = path.read_text().split('Environment=', 1)[1].strip() if path.exists() else ''
+                    return type('Done', (), {'stdout': text, 'returncode': 0})()
+                def main(*args):
+                    with patch.object(sys, 'argv', ['switch_origin.py', '--apply', *args]), patch.object(switch_origin.subprocess, 'run', run), contextlib.redirect_stdout(io.StringIO()):
+                        switch_origin.main()
+                main()
+                main()
+                self.assertEqual(len(list((root / 'backups').glob('origin-*'))), 1)
+                main('--home-host', HOME)
+                self.assertEqual(len(list((root / 'backups').glob('origin-*'))), 2)
+                main('--rollback')
+                self.assertEqual(env.read_text(), original)
+                self.assertFalse(list((root / 'systemd').glob('*/70-helena-origin.conf')))
+
+    def test_refuses_rollback_with_only_https_backups(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            backup = root / 'origin-20260926'
+            backup.mkdir()
+            (backup / 'plan.env').write_text('APP_URL=https://helena.volition.one,https://helena-home.volition.one\n')
+            with patch.object(switch_origin, 'BACKUPS', root), self.assertRaises(SystemExit):
+                switch_origin.rollback_backup('helena.volition.one')
+
+
+class KioskGuard(unittest.TestCase):
+    def rules(self):
+        return {'nftables': [
+            {'chain': {'family': 'inet', 'table': 'helena_kiosk', 'name': 'filter_output', 'type': 'filter', 'hook': 'output', 'prio': 0}},
+            {'rule': {'family': 'inet', 'table': 'helena_kiosk', 'chain': 'filter_output', 'expr': [
+                {'match': {'op': '==', 'left': {'payload': {'protocol': 'ip', 'field': 'daddr'}}, 'right': '127.0.0.1'}},
+                {'match': {'op': '==', 'left': {'payload': {'protocol': 'tcp', 'field': 'dport'}}, 'right': 8088}},
+                {'match': {'op': '!=', 'left': {'meta': {'key': 'skuid'}}, 'right': 1001}},
+                {'reject': {'type': 'tcp reset'}},
+            ]}},
+        ]}
+
+    def test_requires_a_loaded_output_guard_for_the_actual_kiosk_user(self):
+        self.assertTrue(configure.kiosk_guard_loaded(self.rules(), 1001))
+        self.assertFalse(configure.kiosk_guard_loaded(self.rules(), 1002))
+        self.assertFalse(configure.kiosk_guard_loaded({'nftables': []}, 1001))
+        for item, field, wrong in [(0, 'hook', 'input'), (0, 'type', 'nat'), (0, 'prio', 100)]:
+            rules = self.rules()
+            rules['nftables'][item]['chain'][field] = wrong
+            self.assertFalse(configure.kiosk_guard_loaded(rules, 1001))
+        rules = self.rules()
+        rules['nftables'].append({'rule': {'family': 'inet', 'table': 'helena_kiosk', 'chain': 'filter_output', 'expr': [{'accept': None}]}})
+        self.assertFalse(configure.kiosk_guard_loaded(rules, 1001))
+
+    def test_missing_guard_aborts_before_configuration_is_read_or_written(self):
+        with patch.object(configure.os, 'geteuid', return_value=0), patch.object(configure.pwd, 'getpwnam', return_value=type('User', (), {'pw_uid': 1001})()), patch.object(configure.subprocess, 'run', return_value=type('Done', (), {'stdout': '{"nftables": []}'})()), patch.object(pathlib.Path, 'read_text', side_effect=AssertionError('must not read config')):
+            with self.assertRaisesRegex(SystemExit, 'listener refused'):
+                configure.main(['owner@example.test'])
+
+
+class TunnelAllowlist(unittest.TestCase):
+    def test_globally_routed_home_ipv6_cannot_be_a_tunnel_origin(self):
+        text = (CLOUDFLARE / 'helena-cloudflared.service').read_text()
+        self.assertIn('IPAddressDeny=any', text)
+        allowed = [value for line in text.splitlines() if line.startswith('IPAddressAllow=')
+                   for value in line.split('=', 1)[1].split()]
+        networks = [ipaddress.ip_network(value) for value in allowed if value != 'localhost']
+        def permits(address):
+            ip = ipaddress.ip_address(address)
+            return ip.is_loopback or any(ip in net for net in networks)
+        for address in ['192.168.2.1', '2003:abcd:1234:5678::1', 'fd00::1', 'fe80::1', '8.8.8.8']:
+            self.assertFalse(permits(address), address)
+        for address in ['127.0.0.1', '::1', '1.1.1.1', '2606:4700:4700::1111', '198.41.192.167', '198.41.200.13', '2606:4700:a0::1', '2606:4700:a8::1']:
+            self.assertTrue(permits(address), address)
+
+
+class PackageFingerprint(unittest.TestCase):
+    def test_lowercase_spaced_fingerprint_and_mismatch(self):
+        if subprocess.run(['bash', '-c', '((BASH_VERSINFO[0] >= 4))']).returncode:
+            self.skipTest('installer requires Bash 4+')
+        source = (CLOUDFLARE / 'install.sh').read_text()
+        start = source.index('package() {')
+        end = source.index('\n}\n', start) + 3
+        function = source[start:end]
+        harness = """
+set -euo pipefail
+say() { :; }
+die() { exit 1; }
+curl() { :; }
+gpg() { printf 'fpr:::::::::AABBCCDD:\\n'; }
+run() { :; }
+apply=0
+key_url=https://fixture.invalid
+keyring=/unused
+repo_line_suffix=fixture
+fingerprint=$1
+""" + function + '\npackage\n'
+        for fingerprint, success in [('aa bb cc dd', True), ('AABBCCDD', True), ('aa bb cc ee', False)]:
+            result = subprocess.run(['bash', '-c', harness, 'test', fingerprint], capture_output=True)
+            self.assertEqual(result.returncode == 0, success)
 
 if __name__ == '__main__':
     unittest.main()

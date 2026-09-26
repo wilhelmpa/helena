@@ -209,9 +209,10 @@ package() {
   trap 'rm -rf "$tmp"' RETURN
   say "fetching Cloudflare's apt key from $key_url"
   curl -fsSL -m 30 "$key_url" -o "$tmp/key" || die "download failed"
-  local got
+  local got want
   got=$(gpg --show-keys --with-colons "$tmp/key" 2>/dev/null | awk -F: '$1=="fpr" {print $10; exit}')
-  [[ ${got^^} == "${fingerprint^^// /}" ]] || die "key fingerprint $got does not match $fingerprint; not trusting it"
+  want=${fingerprint// /}
+  [[ ${got^^} == "${want^^}" ]] || die "key fingerprint $got does not match $fingerprint; not trusting it"
   say "key fingerprint matches"
   run install -d -m 0755 /usr/share/keyrings
   if [[ $apply -eq 1 ]]; then gpg --dearmor <"$tmp/key" >"$tmp/key.gpg" 2>/dev/null || cp "$tmp/key" "$tmp/key.gpg"; fi

@@ -1,6 +1,7 @@
 import {
   db,
   integrationCredential,
+  integrationCredentialUse,
   nextCredentialId,
   openCredential,
   project,
@@ -35,7 +36,13 @@ import {
 import { generateSshKey, sshKeyComment } from './ssh-key';
 import { composeDecisionModel } from './decision-model';
 import type { DecisionKeySource } from './kinds';
-import { ENV_KINDS, assertEnvName, assertEnvNameFree, forgetTeamSecrets } from './env';
+import {
+  ENV_KINDS,
+  assertEnvName,
+  assertEnvNameFree,
+  forgetTeamSecrets,
+  retainTeamSecrets,
+} from './env';
 
 // The credentials of the Credentials page: web logins, API keys, SSH keys and secrets
 // of a team, each for the whole team or one project, and the agents they are granted
@@ -230,19 +237,6 @@ export async function getCredentialEntry(
   return row ? (await toEntries([row]))[0] : null;
 }
 
-async function readSecrets(id: number): Promise<Secrets> {
-  const [row] = await db
-    .select({
-      id: integrationCredential.id,
-      ciphertext: integrationCredential.ciphertext,
-      iv: integrationCredential.iv,
-      authTag: integrationCredential.authTag,
-    })
-    .from(integrationCredential)
-    .where(eq(integrationCredential.id, id));
-  return row ? (JSON.parse(openCredential(row)) as Secrets) : {};
-}
-
 function required(value: string | undefined, what: string): string {
   const trimmed = value?.trim();
   if (!trimmed) throw new HttpError(400, `${what} is required.`);
@@ -419,17 +413,25 @@ export async function updateCredentialEntry(
   }
   const kind = existing.kind;
   assertFieldsOfKind(kind, fields);
-  const [row] = await db
-    .select({ redacted: integrationCredential.redacted })
-    .from(integrationCredential)
-    .where(eq(integrationCredential.id, id));
-  const current = { readable: readableOf(row.redacted), secrets: await readSecrets(id) };
-  const { readable, secrets } = compose(kind, fields, current);
-  if (readable.envName) {
-    const scope = projectId === undefined ? existing.projectId : projectId;
-    await assertEnvNameFree(teamId, scope, readable.envName, id);
-  }
   await db.transaction(async (tx) => {
+    const [row] = await tx
+      .select()
+      .from(integrationCredential)
+      .where(and(eq(integrationCredential.id, id), eq(integrationCredential.teamId, teamId)))
+      .for('update');
+    if (!row) return;
+    const current = {
+      readable: readableOf(row.redacted),
+      secrets: JSON.parse(openCredential(row)) as Secrets,
+    };
+    const { readable, secrets } = compose(kind, fields, current);
+    if (readable.envName) {
+      const scope = projectId === undefined ? row.projectId : projectId;
+      await assertEnvNameFree(teamId, scope, readable.envName, id);
+    }
+    if (JSON.stringify(current.secrets) !== JSON.stringify(secrets)) {
+      await retainTeamSecrets(teamId, kind, current.secrets, tx);
+    }
     await tx
       .update(integrationCredential)
       .set({
@@ -454,29 +456,57 @@ export async function regenerateSshKey(
   if (!existing) return null;
   if (existing.kind !== 'ssh_key') throw new HttpError(400, 'Only an SSH key has a key pair.');
   const key = generateSshKey(sshKeyComment(existing.label));
-  await db
-    .update(integrationCredential)
-    .set({
-      ...stored(
-        id,
-        { publicKey: key.publicKey, notes: existing.notes },
-        { privateKey: key.privateKey },
-      ),
-      updatedAt: new Date(),
-    })
-    .where(eq(integrationCredential.id, id));
+  await db.transaction(async (tx) => {
+    const [row] = await tx
+      .select()
+      .from(integrationCredential)
+      .where(and(eq(integrationCredential.id, id), eq(integrationCredential.teamId, teamId)))
+      .for('update');
+    if (!row) return;
+    await retainTeamSecrets(teamId, existing.kind, JSON.parse(openCredential(row)), tx);
+    await tx
+      .update(integrationCredential)
+      .set({
+        ...stored(
+          id,
+          { publicKey: key.publicKey, notes: existing.notes },
+          { privateKey: key.privateKey },
+        ),
+        updatedAt: new Date(),
+      })
+      .where(eq(integrationCredential.id, id));
+  });
+  forgetTeamSecrets(teamId);
   return getCredentialEntry(id, teamId);
 }
 
-export async function deleteCredentialEntry(id: number, teamId: number): Promise<boolean> {
-  const deleted = await db
-    .delete(integrationCredential)
-    .where(
-      and(eq(integrationCredential.id, id), eq(integrationCredential.teamId, teamId), storeKinds),
-    )
-    .returning({ id: integrationCredential.id });
+export async function deleteCredentialEntry(
+  id: number,
+  teamId: number,
+  person?: { name?: string | null; email?: string | null } | null,
+): Promise<boolean> {
+  const deleted = await db.transaction(async (tx) => {
+    const [row] = await tx
+      .delete(integrationCredential)
+      .where(
+        and(eq(integrationCredential.id, id), eq(integrationCredential.teamId, teamId), storeKinds),
+      )
+      .returning();
+    if (!row) return false;
+    await retainTeamSecrets(teamId, row.integrationKey, JSON.parse(openCredential(row)), tx);
+    await tx.insert(integrationCredentialUse).values({
+      teamId,
+      credentialId: null,
+      credentialLabel: row.label ?? '',
+      agentId: null,
+      agentName: person?.name || person?.email || '',
+      action: 'changed',
+      purpose: 'deleted',
+    });
+    return true;
+  });
   forgetTeamSecrets(teamId);
-  return deleted.length > 0;
+  return deleted;
 }
 
 // The kinds a grant can be given for: the credentials of the page, and connector accounts.

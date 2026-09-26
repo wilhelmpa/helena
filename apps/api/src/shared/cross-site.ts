@@ -1,3 +1,4 @@
+import { HttpError } from './lib';
 import { trustedOrigins } from '@repo/auth';
 
 // Browsers say on every request where it comes from (Fetch Metadata, `Sec-Fetch-Site`). A
@@ -16,15 +17,16 @@ const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 export function crossSiteRefusal(
   request: Request,
   ownOrigins: readonly string[] = trustedOrigins,
-): Response | null {
+): null {
   if (!UNSAFE_METHODS.has(request.method.toUpperCase())) return null;
   const site = request.headers.get('sec-fetch-site')?.trim().toLowerCase();
   if (site !== 'same-site' && site !== 'cross-site') return null;
   if (!request.headers.has('cookie')) return null;
   const origin = request.headers.get('origin')?.trim();
   if (origin && ownOrigins.includes(origin)) return null;
-  return Response.json(
-    { error: 'A page of another origin may not change anything here', code: 'cross_site_refused' },
-    { status: 403, headers: { 'Cache-Control': 'no-store' } },
+  throw new HttpError(
+    403,
+    'A page of another origin may not change anything here',
+    'cross_site_refused',
   );
 }

@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
-import { db, agentChatEvent, agentChatMessage, agentRun } from '@repo/db';
-import { eq } from 'drizzle-orm';
+import { db, appSecret, agentChatEvent, agentChatMessage, agentRun } from '@repo/db';
+import { eq, like } from 'drizzle-orm';
 import { apiKeyApi, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
-import { envNameProblem, resolveEnvCandidates } from '../../env';
+import { envNameProblem, resolveEnvCandidates, forgetTeamSecrets, maskForTeam } from '../../env';
 
 // Credentials as environment variables (docs/helena-decisions/agent-env.md): an API key or
 // secret with a variable name, and a plain variable, reach the commands of the agents they
@@ -456,7 +456,59 @@ describe('what the agents report is masked', () => {
     expect(JSON.stringify(sessions.data)).toContain('[redacted]');
   });
 
-  it('masks a changed value at once', async () => {
+  it('keeps every value masked when two rotations overlap', async () => {
+    const { asOwner, teamId, verve } = await setup();
+    const { token } = await cloudflareForVerve(asOwner, teamId, verve.id);
+    const replacements = ['concurrent-token-first-000000', 'concurrent-token-second-000000'];
+    const responses = await Promise.all(
+      replacements.map((value) => credential(asOwner, teamId, token.id).patch({ value })),
+    );
+    expect(responses.map((response) => response.status)).toEqual([200, 200]);
+    forgetTeamSecrets(teamId);
+    expect(await maskForTeam(teamId, [VERVE_TOKEN, ...replacements])).toEqual([
+      '[redacted]',
+      '[redacted]',
+      '[redacted]',
+    ]);
+  });
+
+  it('retains encrypted values for a configured long lease, then expires them', async () => {
+    const { asOwner, teamId, verve } = await setup();
+    const { token } = await cloudflareForVerve(asOwner, teamId, verve.id);
+    const lease = process.env.AGENT_RUN_LEASE_SECONDS;
+    const started = Date.now();
+    try {
+      process.env.AGENT_RUN_LEASE_SECONDS = '172800';
+      await credential(asOwner, teamId, token.id).patch({
+        value: 'replacement-fixture-token-0000',
+      });
+    } finally {
+      if (lease === undefined) delete process.env.AGENT_RUN_LEASE_SECONDS;
+      else process.env.AGENT_RUN_LEASE_SECONDS = lease;
+    }
+    const [retired] = await db
+      .select()
+      .from(appSecret)
+      .where(like(appSecret.key, `agent-mask.${teamId}.%`));
+    expect(JSON.stringify(retired)).not.toContain(VERVE_TOKEN);
+    expect(
+      new Date((retired.redacted as { expiresAt: string }).expiresAt).getTime(),
+    ).toBeGreaterThanOrEqual(started + 172800_000);
+    forgetTeamSecrets(teamId);
+    expect(await maskForTeam(teamId, VERVE_TOKEN)).toBe('[redacted]');
+    await db
+      .update(appSecret)
+      .set({ redacted: { expiresAt: new Date(0).toISOString() } })
+      .where(eq(appSecret.key, retired.key));
+    forgetTeamSecrets(teamId);
+    expect(await maskForTeam(teamId, VERVE_TOKEN)).toBe(VERVE_TOKEN);
+    expect(await maskForTeam(teamId, 'replacement-fixture-token-0000')).toBe('[redacted]');
+    expect(
+      await db.select({ key: appSecret.key }).from(appSecret).where(eq(appSecret.key, retired.key)),
+    ).toHaveLength(0);
+  });
+
+  it('masks current and retired values after rotation, deletion and a cache reset', async () => {
     const { asOwner, teamId, verve } = await setup();
     const { token } = await cloudflareForVerve(asOwner, teamId, verve.id);
     const coder = await externalAgent(asOwner, 'coder-verve', 'VERVE');
@@ -468,14 +520,16 @@ describe('what the agents report is masked', () => {
     );
     const rotated = 'rotated-cloudflare-token-00000000';
     await credential(asOwner, teamId, token.id).patch({ value: rotated });
+    await credential(asOwner, teamId, token.id).delete();
+    forgetTeamSecrets(teamId);
     await coder.asRunner['agent-runs']({ runId: run.id }).result.post(
-      { status: 'success', output: `now ${rotated}` },
+      { status: 'success', output: `old ${VERVE_TOKEN}; now ${rotated}` },
       { query: { claim: run.claim } },
     );
     const [stored] = await db
       .select({ output: agentRun.output })
       .from(agentRun)
       .where(eq(agentRun.id, run.id));
-    expect(stored!.output).toBe('now [redacted]');
+    expect(stored!.output).toBe('old [redacted]; now [redacted]');
   });
 });

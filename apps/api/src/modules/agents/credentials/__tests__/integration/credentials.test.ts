@@ -5,6 +5,7 @@ import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
 import { addProjectMember } from '#tests/helpers/members';
 import { createCredential } from '#tests/helpers/integrations';
+import { forgetTeamSecrets, maskForTeam } from '../../env';
 
 // The Credentials page: a team's web logins, API keys, SSH keys and secrets, the agents
 // they are granted to, and what an agent's runner receives for the run it holds.
@@ -202,6 +203,42 @@ describe('credentials', () => {
 
     expect((await credential(asOwner, teamId, id).delete()).status).toBe(204);
     expect((await credential(asOwner, teamId, id).delete()).status).toBe(404);
+  });
+
+  it('audits only a completed deletion and keeps its label', async () => {
+    const { asOwner, teamId } = await setup();
+    const hidden = await createCredential(asOwner, 'MKT', {
+      integrationKey: 'jina',
+      credential: { apiKey: 'jina-fixture-key' },
+    });
+    expect((await credential(asOwner, teamId, hidden).delete()).status).toBe(404);
+    const id = (await credentials(asOwner, teamId).post(githubLogin())).data!.id;
+    expect((await credential(asOwner, teamId, id).delete()).status).toBe(204);
+    expect((await credential(asOwner, teamId, id).delete()).status).toBe(404);
+    const audit = await asOwner.teams({ teamId }).access.audit.get({ query: {} });
+    expect(audit.status).toBe(200);
+    expect(audit.data!.items.filter((entry) => entry.purpose === 'deleted')).toMatchObject([
+      { credentialId: null, credentialLabel: 'GitHub', action: 'changed', agentName: 'Owner' },
+    ]);
+  });
+
+  it('masks delivered SSH keys and TOTP seeds across key rotation and deletion', async () => {
+    const { asOwner, teamId } = await setup();
+    const agent = await externalAgent(asOwner, 'key-user');
+    const login = (await credentials(asOwner, teamId).post(githubLogin())).data!.id;
+    const ssh = (await credentials(asOwner, teamId).post({ kind: 'ssh_key', label: 'SSH' })).data!
+      .id;
+    for (const id of [login, ssh])
+      await credential(asOwner, teamId, id).grants.put({ agentIds: [agent.id] });
+    const { run } = await claimedRun(asOwner, 'MKT', agent);
+    const delivered = await agent.asRunner['agent-runs']({ runId: run.id })['ssh-keys'].get();
+    expect(delivered.status).toBe(200);
+    const key = delivered.data!.keys[0].privateKey;
+    expect(await maskForTeam(teamId, `${key} ${TOTP}`)).toBe('[redacted] [redacted]');
+    await credential(asOwner, teamId, ssh)['ssh-key'].post();
+    await credential(asOwner, teamId, login).delete();
+    forgetTeamSecrets(teamId);
+    expect(await maskForTeam(teamId, `${key} ${TOTP}`)).toBe('[redacted] [redacted]');
   });
 
   it('keeps the credentials apart from the integrations', async () => {

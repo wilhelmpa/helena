@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Enable explicit single-user access at the Kingston LAN entry point."""
 import os
+import json
+import pwd
 import pathlib
 import re
 import secrets
@@ -49,6 +51,38 @@ def owner_map(host_name: str, lan_port: str, token: str, networks: str = str(OWN
     )
 
 
+def kiosk_guard_loaded(ruleset: dict, uid: int) -> bool:
+    items = ruleset.get('nftables', [])
+    chains = [item['chain'] for item in items if 'chain' in item]
+    if not any(c.get('name') == 'filter_output' and c.get('table') == 'helena_kiosk'
+               and c.get('family') == 'inet' and c.get('type') == 'filter'
+               and c.get('hook') == 'output' and c.get('prio') == 0 for c in chains):
+        return False
+    rules = [item['rule'] for item in items if 'rule' in item
+             and item['rule'].get('chain') == 'filter_output'
+             and item['rule'].get('table') == 'helena_kiosk'
+             and item['rule'].get('family') == 'inet']
+    expected = [
+        {'match': {'op': '==', 'left': {'payload': {'protocol': 'ip', 'field': 'daddr'}}, 'right': '127.0.0.1'}},
+        {'match': {'op': '==', 'left': {'payload': {'protocol': 'tcp', 'field': 'dport'}}, 'right': 8088}},
+        {'match': {'op': '!=', 'left': {'meta': {'key': 'skuid'}}, 'right': uid}},
+        {'reject': {'type': 'tcp reset'}},
+    ]
+    return len(rules) == 1 and rules[0].get('expr') == expected
+
+
+def require_kiosk_guard() -> None:
+    try:
+        uid = pwd.getpwnam('plan-kiosk').pw_uid
+        result = subprocess.run(['nft', '-j', 'list', 'table', 'inet', 'helena_kiosk'],
+                                capture_output=True, text=True, check=True)
+        if kiosk_guard_loaded(json.loads(result.stdout), uid):
+            return
+    except (KeyError, OSError, ValueError, subprocess.CalledProcessError):
+        pass
+    raise SystemExit('Local owner listener refused: load kiosk/helena-kiosk.nft first')
+
+
 def ensure_networks() -> None:
     """The include must exist before nginx reads the map: written by the sync (no reload
     here; this script reloads nginx at the end), or an empty placeholder if it cannot run."""
@@ -91,6 +125,7 @@ def main(args: list[str]) -> None:
             raise SystemExit('Invalid --https-host')
     if os.geteuid() != 0 or len(args) > 1:
         raise SystemExit(USAGE)
+    require_kiosk_guard()
     os.umask(0o077)
     config = pathlib.Path('/etc/volition/local-owner.env')
     values = dict(line.split('=', 1) for line in config.read_text().splitlines() if '=' in line) if config.exists() else {}

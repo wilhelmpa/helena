@@ -104,8 +104,15 @@ export async function setNewPassword(input: {
   const result = await resetPassword({ token: input.token, newPassword: input.newPassword });
   if (result.error) throw new Error(result.error.message ?? '');
   if (!input.email) return { signedIn: false };
-  const attempt = await signIn.email({ email: input.email, password: input.newPassword });
-  return { signedIn: !attempt.error };
+  try {
+    const outcome = await signInWithPassword({
+      identifier: input.email,
+      password: input.newPassword,
+    });
+    return { signedIn: outcome === 'signed-in' };
+  } catch {
+    return { signedIn: false };
+  }
 }
 
 // Sends a one-time sign-in link. Rejected by the API when the instance has magic

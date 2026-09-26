@@ -64,6 +64,8 @@ async function api(input: RequestInfo | URL, init?: RequestInit): Promise<Respon
         ? json({ token: 'session-token', user: { id: 'owner', email: 'owner@example.com' } })
         : json({ code: 'INVALID_CODE', message: 'Invalid code' }, 401);
     }
+    case '/api/auth/reset-password':
+      return json({ status: true });
     case '/api/auth/get-session':
       return json(null);
     default:
@@ -219,6 +221,18 @@ describe('password sign-in with an authenticator app', () => {
     await until(() => (view.textContent ?? '').includes('Invalid code'), 'the error is shown');
     assert.deepEqual(pushed, []);
     assert.ok(view.querySelector('#code'), 'still on the code step');
+  });
+
+  it('does not claim a session after password reset while TOTP is pending', async () => {
+    const { setNewPassword } = await import('../../services/auth.service');
+    const outcome = await setNewPassword({
+      token: 'fixture-reset-token',
+      email: 'owner@example.com',
+      newPassword: 'replacement-password',
+    });
+    assert.deepEqual(outcome, { signedIn: false });
+    assert.deepEqual(pushed, []);
+    assert.ok(calls.some((call) => call.path === '/api/auth/sign-in/email'));
   });
 
   it('goes straight in when the account has no authenticator app', async () => {

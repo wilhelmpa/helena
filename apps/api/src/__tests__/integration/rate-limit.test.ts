@@ -7,7 +7,7 @@ import { createAgent } from '#tests/helpers/agents';
 
 // Request limits. An API key over its limit gets 429 with Retry-After, never a 500, and
 // gets in again once the window passed. A password guess from the network is limited per
-// address; a local process (no X-Real-IP from nginx) and the session read are not.
+// address; callers without a trusted IP share a bucket. Session reads remain exempt.
 
 afterAll(() => resetKeyRateLimitForTests());
 
@@ -76,14 +76,28 @@ describe('sign-in limit', () => {
       }),
     );
 
-  it('limits password guesses from one address of the network, not local callers', async () => {
+  it('limits both network guesses and callers without a trusted address', async () => {
     const statuses: number[] = [];
     for (let i = 0; i < 11; i++)
       statuses.push((await guess({ 'x-real-ip': '203.0.113.7' })).status);
     expect(statuses.slice(0, 10).every((status) => status !== 429)).toBe(true);
     expect(statuses[10]).toBe(429);
-    // Another address has its own count; a local process none.
+    // Another trusted address has its own count.
     expect((await guess({ 'x-real-ip': '203.0.113.8' })).status).not.toBe(429);
-    for (let i = 0; i < 12; i++) expect((await guess({})).status).not.toBe(429);
+    const unknown: number[] = [];
+    for (let i = 0; i < 11; i++) unknown.push((await guess({})).status);
+    expect(unknown[10]).toBe(429);
+    // Untrusted proxy headers and empty/malformed trusted headers cannot create buckets.
+    const untrusted: Record<string, string>[] = [
+      { 'x-forwarded-for': '203.0.113.20' },
+      { 'x-real-ip': '' },
+      { 'x-real-ip': 'not-an-address' },
+    ];
+    for (const headers of untrusted) expect((await guess(headers)).status).toBe(429);
+    for (let i = 0; i < 12; i++) {
+      expect((await app.handle(new Request('http://localhost/api/auth/get-session'))).status).toBe(
+        200,
+      );
+    }
   });
 });

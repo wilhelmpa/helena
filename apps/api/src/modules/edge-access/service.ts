@@ -136,18 +136,14 @@ export async function verifyEdgeRequest(headers: Headers): Promise<EdgeIdentity>
   return provider.verify(headers, settings);
 }
 
-// The api-wide guard (app.ts onRequest): null when the request may continue, otherwise the
-// refusal to answer with.
-export async function edgeGuard(request: Request): Promise<Response | null> {
+// The API-wide guard throws the shared HTTP error when edge verification fails.
+export async function edgeGuard(request: Request): Promise<null> {
   if (!edgeEntry(request.headers)) return null;
   try {
     await verifyEdgeRequest(request.headers);
     return null;
   } catch (error) {
     const code = error instanceof EdgeAccessError ? error.code : 'invalid_assertion';
-    return Response.json(
-      { error: 'Access from outside needs the edge sign-in', code: `edge_${code}` },
-      { status: 403, headers: { 'Cache-Control': 'no-store' } },
-    );
+    throw new HttpError(403, 'Access from outside needs the edge sign-in', `edge_${code}`);
   }
 }

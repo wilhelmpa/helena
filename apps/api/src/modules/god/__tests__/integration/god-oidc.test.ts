@@ -3,13 +3,18 @@ import { app } from '#tests/helpers/app';
 import { resetDb } from '#tests/helpers/db';
 import { addUser, setup } from '../helpers';
 
+let requestAddress = 0;
+
 // The password endpoints live behind the better-auth catch-all, which Eden Treaty
 // does not model, so they are driven through the app handler directly.
 function signInWithPassword(email: string, password: string) {
   return app.handle(
     new Request('http://localhost/api/auth/sign-in/email', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        'x-real-ip': `198.51.100.${++requestAddress}`,
+      },
       body: JSON.stringify({ email, password }),
     }),
   );

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test';
+import { HttpError } from '../../lib';
 import { crossSiteRefusal } from '../../cross-site';
 
 const OWN = ['https://helena.example.com', 'https://helena-home.example.com'];
@@ -11,10 +12,9 @@ describe('crossSiteRefusal (Fetch Metadata)', () => {
   it('refuses a change a page of another origin makes with the owner’s cookie', () => {
     for (const site of ['same-site', 'cross-site', 'Same-Site']) {
       for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {
-        const refusal = crossSiteRefusal(
-          request(method, { cookie: 's=1', 'sec-fetch-site': site }),
-        );
-        expect(refusal?.status).toBe(403);
+        expect(() =>
+          crossSiteRefusal(request(method, { cookie: 's=1', 'sec-fetch-site': site })),
+        ).toThrow(HttpError);
       }
     }
   });
@@ -37,12 +37,13 @@ describe('crossSiteRefusal (Fetch Metadata)', () => {
     }
   });
 
-  it('says why', async () => {
-    const refusal = crossSiteRefusal(
-      request('POST', { cookie: 's=1', 'sec-fetch-site': 'same-site' }),
-      OWN,
-    )!;
-    expect(((await refusal.json()) as { code: string }).code).toBe('cross_site_refused');
-    expect(refusal.headers.get('cache-control')).toBe('no-store');
+  it('uses the shared error model and preserves its code', () => {
+    try {
+      crossSiteRefusal(request('POST', { cookie: 's=1', 'sec-fetch-site': 'same-site' }), OWN);
+      throw new Error('Expected a refusal');
+    } catch (error) {
+      expect(error).toBeInstanceOf(HttpError);
+      expect(error).toMatchObject({ status: 403, code: 'cross_site_refused' });
+    }
   });
 });

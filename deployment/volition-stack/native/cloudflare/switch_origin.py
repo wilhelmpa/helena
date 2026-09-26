@@ -46,6 +46,7 @@ import time
 
 ENV = pathlib.Path('/etc/volition/plan.env')
 BACKUPS = pathlib.Path('/var/lib/helena/hardening/backup')
+SYSTEMD = pathlib.Path('/etc/systemd/system')
 OLD_ORIGIN = 'http://kingston-server.local'
 TERMINAL_UNITS = {
     'volition-terminal': 'TERMINAL_ALLOWED_HOSTS',
@@ -116,6 +117,16 @@ def rewrite(lines: list[str], host: str, home: str | None = None) -> tuple[list[
     return out, changes
 
 
+def rollback_backup(host: str) -> pathlib.Path:
+    for backup in sorted(BACKUPS.glob('origin-*/plan.env'), reverse=True):
+        origins = [match.group(2).strip('\"\'').split(',')
+                   for line in backup.read_text().splitlines()
+                   if (match := KEY.match(line)) and match.group(1) == 'APP_URL']
+        if origins and f'https://{host}' not in origins[-1]:
+            return backup
+    raise SystemExit('switch_origin.py: no backup from before the public origin')
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument('--apply', action='store_true')
@@ -131,14 +142,12 @@ def main() -> int:
     home = '' if args.no_home else args.home_host
 
     if args.rollback:
-        kept = sorted(BACKUPS.glob('origin-*/plan.env'))
-        if not kept:
-            raise SystemExit('switch_origin.py: no backup')
-        print(f'switch_origin.py: restoring {ENV} from {kept[-1]} and removing the drop-ins')
+        kept = rollback_backup(args.host)
+        print(f'switch_origin.py: restoring {ENV} from {kept} and removing the drop-ins')
         if args.apply:
-            shutil.copy2(kept[-1], ENV)
+            shutil.copy2(kept, ENV)
             for unit in TERMINAL_UNITS:
-                pathlib.Path(f'/etc/systemd/system/{unit}.service.d/70-helena-origin.conf').unlink(
+                (SYSTEMD / f'{unit}.service.d/70-helena-origin.conf').unlink(
                     missing_ok=True)
             subprocess.run(['systemctl', 'daemon-reload'], check=True)
         return 0
@@ -159,10 +168,16 @@ def main() -> int:
                 hosts.append(wanted_host)
         dropins[unit] = f'[Service]\nEnvironment={var}={",".join(hosts)}\n'
         print(f'switch_origin.py: {unit}: {var}={",".join(hosts)}')
+    dropins_changed = any(
+        not (path := SYSTEMD / f'{unit}.service.d/70-helena-origin.conf').exists()
+        or path.read_text() != text for unit, text in dropins.items())
+    if not changes and not dropins_changed:
+        print('switch_origin.py: nothing to change')
+        return 0
     if not args.apply:
         print('switch_origin.py: dry run; add --apply to write')
         return 0
-    backup = BACKUPS / f'origin-{time.strftime("%Y%m%d-%H%M%S")}'
+    backup = BACKUPS / f'origin-{time.strftime("%Y%m%d-%H%M%S")}-{time.time_ns()}'
     backup.mkdir(parents=True, mode=0o700)
     shutil.copy2(ENV, backup / 'plan.env')
     # Same owner, group and mode as before; created 0600 so it is never readable wider.
@@ -175,7 +190,7 @@ def main() -> int:
     os.chmod(tmp, stat.st_mode & 0o777)
     tmp.replace(ENV)
     for unit, text in dropins.items():
-        path = pathlib.Path(f'/etc/systemd/system/{unit}.service.d/70-helena-origin.conf')
+        path = (SYSTEMD / f'{unit}.service.d/70-helena-origin.conf')
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text)
     subprocess.run(['systemctl', 'daemon-reload'], check=True)

@@ -1,6 +1,8 @@
 import { Elysia, t } from 'elysia';
 import { authContext } from '#shared/auth-context';
 import { requireGod } from '#shared/access';
+import { HttpError } from '#shared/lib';
+import { noContent } from '#shared/http';
 import { errors } from '#shared/responses';
 import { requireInteractiveOwner } from '#modules/connections/interactive';
 import {
@@ -74,13 +76,13 @@ export const securityRoutes = new Elysia({ name: 'security', detail: { tags: ['G
   })
   .put(
     '/god/security/edge',
-    async ({ user, request, body }) => {
-      await requireInteractiveOwner(request, requireGod(user).id);
+    async ({ body }) => {
       await setEdgeAccessSettings(body);
       return withConfigured();
     },
     {
       body: EdgeAccessPatchBody,
+      beforeHandle: ({ user, request }) => requireInteractiveOwner(request, requireGod(user).id),
       response: { 200: EdgeAccessSettingsDto, ...errors(400, 401, 403) },
       detail: {
         summary: 'Change the edge sign-in settings',
@@ -157,19 +159,22 @@ export const edgeHomeRoutes = new Elysia({ name: 'edge-home', detail: { tags: ['
 // points here by mistake from the LAN entry refuses rather than waves through.
 export const edgeVerifyRoutes = new Elysia({ name: 'edge-verify' }).get(
   '/auth/verify/edge',
-  async ({ request, set, status }) => {
+  async ({ request, set }) => {
     set.headers['Cache-Control'] = 'no-store';
-    if (!edgeEntry(request.headers)) return status(403);
+    if (!edgeEntry(request.headers)) throw new HttpError(403, 'Edge entry required');
     try {
       const identity = await verifyEdgeRequest(request.headers);
       if (identity.email) set.headers['X-Helena-Edge-Email'] = identity.email;
-      return status(204);
+      return noContent();
     } catch (error) {
-      if (error instanceof EdgeAccessError) return status(403);
+      if (error instanceof EdgeAccessError) {
+        throw new HttpError(403, 'Edge assertion refused', `edge_${error.code}`);
+      }
       throw error;
     }
   },
   {
+    response: { 204: t.Void(), ...errors(403) },
     detail: {
       summary: 'Check the edge sign-in for the reverse proxy',
       description:

@@ -1,5 +1,6 @@
 import {
   db,
+  appSecret,
   agentChatMessage,
   agentChatThread,
   aiAgent,
@@ -10,9 +11,11 @@ import {
   projectMember,
   user,
 } from '@repo/db';
-import { and, asc, eq, inArray, isNotNull, or, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNotNull, like, or, sql } from 'drizzle-orm';
+import { decryptSecret, encryptSecret, secretContext } from '@repo/crypto';
+import { randomUUID } from 'node:crypto';
 import { SecretMask } from '@helena/sdk';
-import { HttpError } from '#shared/lib';
+import { HttpError, intEnv } from '#shared/lib';
 import type { RunnerAgent } from '../runner/service';
 import { credentialInScope, grantReaches, type GrantSubject } from './grants';
 import { recordAgentUses, type ClaimedWork } from './delivery';
@@ -455,13 +458,59 @@ export async function listEnvironment(
 // ── Masking what the agents report ──────────────────────────────────────────────────────
 
 // The values an agent's process can hold and print: the team's API keys, secrets and
-// runtime logins, and the passwords of its web logins.
-const MASKED_FIELDS: Record<string, string> = {
-  api_key: 'value',
-  secret: 'value',
-  runtime_login: 'value',
-  web_login: 'password',
+// runtime logins, web-login passwords/TOTP seeds and SSH private keys.
+const MASKED_FIELDS: Record<string, string[]> = {
+  api_key: ['value'],
+  secret: ['value'],
+  runtime_login: ['value'],
+  web_login: ['password', 'totpSecret'],
+  ssh_key: ['privateKey'],
 };
+
+function maskedValues(kind: string, secrets: Record<string, unknown>): string[] {
+  return (MASKED_FIELDS[kind] ?? []).flatMap((field) => {
+    const value = secrets[field];
+    return typeof value === 'string' ? [value, value.trim()] : [];
+  });
+}
+
+type SecretStore = Pick<typeof db, 'insert'>;
+
+// Retired values remain encrypted across API restarts while an existing run can
+// still report them. One day exceeds the maximum 2h run budget and usual 5m leases.
+export async function retainTeamSecrets(
+  teamId: number,
+  kind: string,
+  secrets: Record<string, unknown>,
+  store: SecretStore = db,
+): Promise<void> {
+  const values = maskedValues(kind, secrets);
+  if (!values.length) return;
+  const retentionSeconds = Math.max(
+    86_400,
+    intEnv('AGENT_RUN_LEASE_SECONDS', 300),
+    intEnv('AGENT_CHAT_LEASE_SECONDS', 300),
+  );
+  const key = `agent-mask.${teamId}.${randomUUID()}`;
+  const expiresAt = new Date(Date.now() + retentionSeconds * 1000 + MASK_TTL_MS).toISOString();
+  await store.insert(appSecret).values({
+    key,
+    ...encryptSecret(JSON.stringify(values), secretContext('app_secret', key, 'value')),
+    redacted: { expiresAt },
+  });
+}
+
+async function retainedValues(teamId: number): Promise<string[]> {
+  const scope = like(appSecret.key, `agent-mask.${teamId}.%`);
+  await db
+    .delete(appSecret)
+    .where(and(scope, sql`${appSecret.redacted}->>'expiresAt' <= ${new Date().toISOString()}`));
+  const rows = await db.select().from(appSecret).where(scope);
+  return rows.flatMap(
+    (row) =>
+      JSON.parse(decryptSecret(row, secretContext('app_secret', row.key, 'value'))) as string[],
+  );
+}
 
 const MASK_TTL_MS = 30_000;
 const masks = new Map<number, { at: number; mask: Promise<SecretMask> }>();
@@ -486,13 +535,12 @@ async function loadTeamMask(teamId: number): Promise<SecretMask> {
   for (const row of rows) {
     try {
       const secrets = JSON.parse(openCredential(row)) as Record<string, unknown>;
-      const value = secrets[MASKED_FIELDS[row.kind]!];
-      if (typeof value === 'string') values.push(value, value.trim());
+      values.push(...maskedValues(row.kind, secrets));
     } catch {
       // A row that cannot be opened has nothing to mask.
     }
   }
-  return new SecretMask(values);
+  return new SecretMask([...values, ...(await retainedValues(teamId))]);
 }
 
 // The mask of every secret value of the team, applied to what the agents' runners report

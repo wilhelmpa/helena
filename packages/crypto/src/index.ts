@@ -77,6 +77,7 @@ export function decryptSecret(enc: EncryptedSecret, context = ''): string {
     ALGORITHM,
     v1 ? currentKey() : oldKey(),
     Buffer.from(enc.iv, 'base64'),
+    { authTagLength: 16 },
   );
   if (v1) decipher.setAAD(Buffer.from(context, 'utf8'));
   decipher.setAuthTag(Buffer.from(enc.authTag, 'base64'));
