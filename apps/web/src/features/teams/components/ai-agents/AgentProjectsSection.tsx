@@ -53,7 +53,7 @@ export default function AgentProjectsSection({
             : undefined
       }
     >
-      {canGrantAll && (
+      {canGrantAll && !value.template && (
         <label
           htmlFor="agent-project-scope-all"
           className="mb-4 flex cursor-pointer items-start gap-2"
@@ -65,6 +65,7 @@ export default function AgentProjectsSection({
             onCheckedChange={(checked) =>
               onChange({
                 projectScope: checked === true ? 'all' : 'selected',
+                projectId: checked === true ? null : value.projectId,
               })
             }
           />
