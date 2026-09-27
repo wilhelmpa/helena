@@ -22,6 +22,13 @@ export function mailReceiptFacts(
       text,
     );
   const appleTotal = /(?:^|\n)\s*PayPal\s+([\d.,]+)\s*€/i.exec(text);
+  const settledPayment =
+    /Ihre Zahlung in Höhe von\s+([\d.,]+)\s*(?:€(?:\s*EUR)?|EUR)\s+wurde am\s+([^\n]{1,160})\s+verrechnet[.!]?(?:\s|$)/i.exec(
+      text,
+    );
+  const paidAmount =
+    paid?.[1] ??
+    (settledPayment && !/\bnicht\b/i.test(settledPayment[2]!) ? settledPayment[1] : null);
   const transaction = /Transaktionscode\s*(?:Transaktionsdatum\s*)?([A-Z0-9]{10,30})/i.exec(
     text,
   )?.[1];
@@ -40,8 +47,8 @@ export function mailReceiptFacts(
     issuer: mail.fromName || facts.issuer || mail.fromAddress,
     invoiceNumber: facts.invoiceNumber ?? transaction ?? number ?? null,
     invoiceDate: (refund ? null : facts.invoiceDate) ?? mail.sentAt.toISOString().slice(0, 10),
-    grossCents: paid?.[1]
-      ? parseAmountCents(paid[1], 'auto')
+    grossCents: paidAmount
+      ? parseAmountCents(paidAmount, 'auto')
       : (facts.grossCents ??
         (appleTotal?.[1]
           ? parseAmountCents(appleTotal[1], 'auto')

@@ -52,22 +52,26 @@ function dateIn(text: string): string | null {
   return m ? parseDateAny(m[0].replace(/(\d\.)\s(?=\d)/g, '$1')) : null;
 }
 
-function frenchTotals(lines: string[]): { gross: number; vat: number | null } | null {
-  const totals = lines.flatMap((line) => {
+function frenchTotals(lines: string[]): { gross: number | null; vat: number | null } | null {
+  const candidates = lines.filter((line) =>
+    /^(?:prix|montant(?: total)?|total)\s+TTC\b/i.test(line),
+  );
+  if (!candidates.length) return null;
+  const totals = candidates.map((line) => {
     const match =
       /^(?:prix|montant(?: total)?|total)\s+TTC\s*:?\s*(\d+(?:[.,]\d{2})?)\s*(?:euros?\b|EUR\b|€)(?:\s+dont\s+(\d+(?:[.,]\d{2})?)\s*(?:euros?\b|EUR\b|€)\s+(?:de\s+)?TVA)?\s*[.;]?$/i.exec(
         line,
       );
-    if (!match) return [];
+    if (!match) return null;
     const gross = parseAmountCents(match[1]!, 'auto');
     const vat = match[2] ? parseAmountCents(match[2], 'auto') : null;
-    if (gross === null || (vat !== null && vat > gross)) return [];
-    return [{ gross, vat }];
+    if (gross === null || (vat !== null && vat > gross)) return null;
+    return { gross, vat };
   });
   const first = totals[0];
-  return first && totals.every((total) => total.gross === first.gross && total.vat === first.vat)
+  return first && totals.every((total) => total?.gross === first.gross && total.vat === first.vat)
     ? first
-    : null;
+    : { gross: null, vat: null };
 }
 
 export function factsFromText(text: string, ownIbans: string[] = []): TextFacts {
@@ -92,7 +96,7 @@ export function factsFromText(text: string, ownIbans: string[] = []): TextFacts 
     invoiceNumber: findInvoiceNumber(lines),
     invoiceDate,
     dueDate: findDueDate(lines, invoiceDate),
-    grossCents: findGross(lines) ?? french?.gross ?? null,
+    grossCents: french ? french.gross : findGross(lines),
     vatCents: findVat(lines) ?? french?.vat ?? null,
     currency: findCurrency(text),
     iban: foreign,

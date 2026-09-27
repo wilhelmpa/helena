@@ -10,6 +10,8 @@ describe('factsFromText', () => {
     ['Prix TTC 14 euros dont 1.27 euros de TVA', 1400, 127],
     ['Montant total TTC : 12,50 EUR dont 1,14 EUR de TVA', 1250, 114],
     ['Total TTC 3 €', 300, null],
+    ['Total TTC 14 euros dont 1.27 euros de TVA', 1400, 127],
+    ['Montant total TTC : 14 EUR dont 1.27 EUR de TVA', 1400, 127],
   ])('reads the labelled French gross and VAT: %s', (text, grossCents, vatCents) => {
     expect(factsFromText(text)).toMatchObject({ grossCents, vatCents, currency: 'EUR' });
   });
@@ -21,6 +23,11 @@ describe('factsFromText', () => {
     'Prix TTC 14 euros demain si vous commandez',
     'Prix TTC 2.55 euros dont 3.00 euros de TVA',
     'Prix TTC 14 euros\nPrix TTC 15 euros',
+    'Total TTC 14.00 euros\nTotal TTC 15.00 euros',
+    'Total TTC 2.55 euros dont 3.00 euros de TVA',
+    'Total TTC 14.00 euros demain si vous commandez',
+    'Total TTC 14 euros dont 10.00 % de TVA',
+    'Total TTC 14 euros dont 1.27 euros de TVA\nTotal TTC 15',
   ])('does not infer French totals from ambiguous or unlabelled amounts: %s', (text) => {
     expect(factsFromText(text).grossCents).toBeNull();
   });
