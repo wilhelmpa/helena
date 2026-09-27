@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import type { View } from '@/lib/api/endpoints/views';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useCreateViewFolder, useViewFoldersQuery, useViewsQuery } from '@/services/views.service';
 import {
@@ -14,7 +15,15 @@ import SidebarAreaItem from '@/components/layout/SidebarAreaItem';
 
 // The project's areas under its Tasks entry, each with the boards (saved views) it
 // holds, and the button that adds an area.
-export default function SidebarAreaNav({ projectKey }: { projectKey: string }) {
+export default function SidebarAreaNav({
+  projectKey,
+  onEditView,
+  onDeleteView,
+}: {
+  projectKey: string;
+  onEditView?: (view: View) => void;
+  onDeleteView?: (view: View) => Promise<void>;
+}) {
   const t = useTranslations('views');
   const { can } = usePermissions();
   const { data: areas = [] } = useViewFoldersQuery(projectKey);
@@ -34,6 +43,9 @@ export default function SidebarAreaNav({ projectKey }: { projectKey: string }) {
             projectKey={projectKey}
             area={area}
             areas={areas}
+            allViews={views}
+            onEditView={onEditView}
+            onDeleteView={onDeleteView}
             views={views
               .filter((view) => view.folderId === area.id)
               .sort((a, b) => a.position - b.position || a.id - b.id)}

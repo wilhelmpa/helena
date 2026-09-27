@@ -17,8 +17,7 @@ import {
   withoutHiddenSections,
   type ViewSettings,
 } from '@/utils/viewSettings';
-import { Check, X } from 'lucide-react';
-import ViewTabs from '@/components/layout/ViewTabs';
+import { Check, Pencil, X } from 'lucide-react';
 import ViewIconPicker from '@/components/layout/ViewIconPicker';
 import ViewFolderManager from '@/components/layout/ViewFolderManager';
 import { FilterControl } from '@/components/layout/FilterBar';
@@ -43,15 +42,13 @@ interface TimelineCollapseState {
 }
 
 // The work items page (the index and /view/:viewId child routes of the Shell).
-// Everything it offers is one header row (PageToolbar, docs/volition/ui-standard.md):
-// the saved-view tabs, then the area, filter and display controls. Editing or
-// creating a view turns that row into the edit bar (icon, name, Cancel, Save). The
-// project data and the view editor come from the Shell through React context.
+// Its toolbar holds the view editor, area, filter and display controls. Saved views
+// are selected and created in the project tree. The project data and view editor
+// come from the Shell through React context.
 export default function WorkItemsPage() {
   const t = useTranslations('workItems');
   const tCommon = useTranslations('common');
-  const { project, filteredProject, views, editor, customFields, onOpenIssue, onAddIssue } =
-    useShell();
+  const { project, filteredProject, editor, customFields, onOpenIssue, onAddIssue } = useShell();
   const { can } = usePermissions();
   const groupLabels = useGroupLabels();
   const features = useProjectFeatures();
@@ -241,16 +238,18 @@ export default function WorkItemsPage() {
           </>
         ) : (
           <>
-            <ViewTabs
-              views={views}
-              projectKey={project.project.key}
-              activeViewId={editor.activeViewId}
-              onSelect={editor.selectView}
-              onNewView={editor.beginNewView}
-              onEdit={editor.beginEditView}
-              onDelete={editor.deleteView}
-              onReorder={editor.reorderView}
-            />
+            {editor.activeView && can('views', 'edit') && (
+              <PageActions
+                actions={[
+                  {
+                    id: 'edit-view',
+                    label: t('editView'),
+                    icon: Pencil,
+                    onClick: () => editor.beginEditView(editor.activeView!),
+                  },
+                ]}
+              />
+            )}
             <PageToolbarSpacer />
             {can('views', 'edit') && (
               <ViewFolderManager projectKey={project.project.key} folders={folders} />
