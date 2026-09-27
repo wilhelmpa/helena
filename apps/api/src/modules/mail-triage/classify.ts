@@ -33,6 +33,7 @@ import { mailTriageConfig, type MailTriageConfig } from './config';
 import { isTkSender } from './tk';
 import { taskEligibility } from './task-policy';
 import { withProjectTriageClaim, checkTriageCancellation } from './claim';
+import { triageMessageResult } from './batch-result';
 import { EMPTY_RECEIPT_NOTE, FAILED_RECEIPT_NOTE, recordReceiptAttempt } from './receipt-retry';
 
 // Task eligibility follows the application policy; invoice filing is independent of it.
@@ -117,7 +118,7 @@ async function pendingMessages(
 ) {
   const since = config.since ? new Date(config.since) : new Date();
   return db
-    .select({ id: mailMessage.id })
+    .select({ id: mailMessage.id, threadId: mailMessage.threadId })
     .from(mailMessage)
     .innerJoin(mailAccount, eq(mailAccount.id, mailMessage.accountId))
     .innerJoin(mailThread, eq(mailThread.id, mailMessage.threadId))
@@ -537,7 +538,7 @@ export async function classifyPending(): Promise<number> {
 }
 
 export async function runProjectTriage(
-  project: { id: number; teamId: number },
+  project: { id: number; teamId: number; key: string },
   maxMessages: number,
   signal?: AbortSignal,
 ) {
@@ -579,36 +580,14 @@ export async function runProjectTriage(
     );
     checkTriageCancellation(signal);
     const batch = await pendingMessages(project.teamId, scoped, maxMessages, [], project.id);
-    const results: {
-      messageId: number;
-      status: string;
-      issueId: number | null;
-      actionFailed: boolean;
-    }[] = [];
+    const results: Awaited<ReturnType<typeof triageMessageResult>>[] = [];
     for (const message of batch) {
       checkTriageCancellation(signal);
-      try {
-        const result = await classifyMessage(
-          project.teamId,
-          scoped,
-          message.id,
-          team.actorUserId,
-          project.id,
-        );
-        results.push({
-          messageId: message.id,
-          status: result?.status ?? 'skipped',
-          issueId: result?.issueId ?? null,
-          actionFailed: result?.actions.some((action) => action.kind === 'skipped') ?? false,
-        });
-      } catch {
-        results.push({
-          messageId: message.id,
-          status: 'failed',
-          issueId: null,
-          actionFailed: true,
-        });
-      }
+      results.push(
+        await triageMessageResult(project.key, message, () =>
+          classifyMessage(project.teamId, scoped, message.id, team.actorUserId, project.id),
+        ),
+      );
     }
     const remaining = await pendingMessages(
       project.teamId,

@@ -12,6 +12,9 @@ import { createIssue } from '#modules/issues/service';
 import { getProjectById } from '#modules/projects/service';
 import { HttpError } from '#shared/lib';
 import { moveThread } from './move';
+import { threadHref } from './links';
+
+export { threadHref } from './links';
 
 const QUOTE_CHARS = 2000;
 
@@ -68,11 +71,6 @@ function quote(text: string): string {
     .split('\n')
     .map((line) => `> ${line}`)
     .join('\n');
-}
-
-// The inbox of the project (or Home) with the thread open.
-export function threadHref(projectKey: string | null, threadId: number): string {
-  return `${projectKey ? `/project/${projectKey}` : ''}/inbox?thread=${threadId}`;
 }
 
 // The Files page of the project with the file of a vault path open in its viewer.

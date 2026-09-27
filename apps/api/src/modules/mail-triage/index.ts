@@ -74,7 +74,7 @@ export const mailTriageRoutes = new Elysia({
       detail: {
         summary: 'Triage a batch of new inbox mail in this project',
         description:
-          'For native Helena schedules. Uses the enabled Mail decision class and its saved task/receipt preferences. Only connected, enabled accounts and threads in this project. The application task policy excludes newsletters, advertising, pure login/security/recovery notices and problem-free shipping. Uncertain eligibility creates no task: report reviewRequired and unsure message IDs for review, without bypassing the policy through another task tool. Never sends mail or delegates tasks. Repeat while hasMore and failed is zero; stop and report failures. Previously classified mail only retries failed receipt filing, without repeating task creation.',
+          'For native Helena schedules. Uses the enabled Mail decision class and its saved task/receipt preferences. Only connected, enabled accounts and threads in this project. The application task policy excludes newsletters, advertising, pure login/security/recovery notices and problem-free shipping. Uncertain eligibility creates no task: report reviewRequired and unsure message IDs for review, without bypassing the policy through another task tool. Never sends mail or delegates tasks. Repeat while hasMore and failed is zero; stop and report failures. Previously classified mail only retries failed receipt filing, without repeating task creation. Each result identifies the classified message with messageId and its thread with threadId. Pass threadId (never messageId) to read_mail; threadHref opens that thread in Helena.',
         ...mcpTool('run_mail_triage', undefined, 'execute'),
       },
     },

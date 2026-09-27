@@ -14,6 +14,8 @@ export const TriageBatchResponse = t.Object({
   results: t.Array(
     t.Object({
       messageId: t.Number(),
+      threadId: t.Number(),
+      threadHref: t.String(),
       status: t.String(),
       issueId: t.Nullable(t.Number()),
       actionFailed: t.Boolean(),
