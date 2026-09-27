@@ -780,7 +780,12 @@ describe('update center: applying', () => {
       helperRequests.find((entry) => entry.action === 'apt'),
     );
     expect(request).toMatchObject({ packages: ['libssl3t64', 'openssl'] });
-    await waitFor(async () => (await followActions()) > 0 || null);
+    await waitFor(async () => {
+      const response = await api.god['update-center'].actions({ actionId }).get();
+      expect(response.status).toBe(200);
+      expect(response.data?.id).toBe(actionId);
+      return response.data?.state === 'done' ? response.data : null;
+    });
     const [action] = await db
       .select()
       .from(helenaUpdateAction)
@@ -845,9 +850,15 @@ describe('update center: applying', () => {
     const node = all.find((row) => row.component === 'node')!;
     const started = await api.god['update-center'].items({ itemId: node.id }).apply.post({});
     expect(started.status).toBe(201);
-    await waitFor(async () => (await followActions()) > 0 || null);
-    const action = (await api.god['update-center'].actions({ actionId: started.data!.id }).get())
-      .data!;
+    const actionId = started.data!.id;
+    expect(actionId).toBeGreaterThan(0);
+    // POST also follows the action, so its terminal transition may already be consumed.
+    const action = await waitFor(async () => {
+      const response = await api.god['update-center'].actions({ actionId }).get();
+      expect(response.status).toBe(200);
+      expect(response.data?.id).toBe(actionId);
+      return response.data?.state === 'failed' ? response.data : null;
+    });
     expect(action).toMatchObject({
       state: 'failed',
       error: 'update failed; previous version restored',
@@ -890,7 +901,14 @@ describe('update center: applying', () => {
     expect(uv).toMatchObject({ applicable: true, hint: null });
     const started = await api.god['update-center'].items({ itemId: uv.id }).apply.post({});
     expect(started.status).toBe(201);
-    await waitFor(async () => (await followActions()) > 0 || null);
+    const actionId = started.data!.id;
+    expect(actionId).toBeGreaterThan(0);
+    await waitFor(async () => {
+      const response = await api.god['update-center'].actions({ actionId }).get();
+      expect(response.status).toBe(200);
+      expect(response.data?.id).toBe(actionId);
+      return response.data?.state === 'done' ? response.data : null;
+    });
     expect(helperRequests.find((request) => request.action === 'host-tool')).toMatchObject({
       tool: 'uv',
       version: '0.12.19',
