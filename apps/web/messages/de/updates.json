@@ -62,7 +62,8 @@
     "services": "Dienste danach",
     "failedUnits": "Fehlgeschlagene Dienste: {units}",
     "reboot": "Ein Neustart wird empfohlen.",
-    "started": "Update gestartet"
+    "started": "Update gestartet",
+    "rolledBack": "Zurückgerollt"
   },
   "sources": {
     "hermes": "Hermes",
@@ -99,7 +100,19 @@
       "stable": "Stabil"
     },
     "save": "Speichern",
-    "saved": "Gespeichert"
+    "saved": "Gespeichert",
+    "componentModes": "Komponenten",
+    "componentModesDescription": "Automatische Updates werden nur bei niedrigem Risiko und ohne Breaking Changes angewendet.",
+    "risk": {
+      "low": "Niedriges Risiko",
+      "medium": "Mittleres Risiko",
+      "high": "Hohes Risiko",
+      "unknown": "Risiko noch unbekannt"
+    },
+    "mode": {
+      "auto": "Automatisch",
+      "manual": "Manuell"
+    }
   },
   "home": {
     "more": "Alle Updates",
@@ -110,5 +123,9 @@
   "aptRefreshedAt": "APT-Metadaten aktualisiert: {time}",
   "aptListsAt": "Stand der Paketlisten: {time}",
   "aptNotRefreshed": "Keine erfolgreiche Aktualisierung der APT-Metadaten belegt",
-  "unverified": "Status nicht belegt"
+  "unverified": "Status nicht belegt",
+  "autoApplied": "Automatisch angewendet: {name}",
+  "autoRolledBack": "Zurückgerollt",
+  "autoFailedShort": "Update fehlgeschlagen",
+  "autoFailed": "Automatisches Update fehlgeschlagen: {name}"
 }

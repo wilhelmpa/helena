@@ -186,6 +186,39 @@ export default function UpdateSettingsSection({ center }: { center: UpdateCenter
             </Select>
           }
         />
+        <div className="space-y-2 px-4 py-3">
+          <p className="text-sm font-medium">{t('componentModes')}</p>
+          <p className="text-xs text-muted-foreground">{t('componentModesDescription')}</p>
+          {center.items
+            .filter((item) => item.applicable)
+            .map((item) => (
+              <SettingsRow
+                key={`${item.source}/${item.component}`}
+                title={item.name}
+                description={item.risk ? t(`risk.${item.risk}`) : t('risk.unknown')}
+                control={
+                  <Select
+                    value={item.mode}
+                    onValueChange={(mode) =>
+                      patch({
+                        modes: { [`${item.source}/${item.component}`]: mode as 'auto' | 'manual' },
+                      })
+                    }
+                  >
+                    <SelectTrigger className="w-36">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="auto" disabled={!item.autoAllowed}>
+                        {t('mode.auto')}
+                      </SelectItem>
+                      <SelectItem value="manual">{t('mode.manual')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                }
+              />
+            ))}
+        </div>
       </SettingsCard>
     </SettingsSection>
   );

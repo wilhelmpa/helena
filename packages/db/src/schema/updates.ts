@@ -91,6 +91,7 @@ export const helenaUpdateAction = pgTable(
     toVersion: text('to_version'),
     // running -> done | failed
     state: text('state').notNull().default('running'),
+    automatic: boolean('automatic').notNull().default(false),
     // The source's handle on the work (the helper's request id, the Hermes proposal).
     ref: text('ref'),
     backupPath: text('backup_path'),

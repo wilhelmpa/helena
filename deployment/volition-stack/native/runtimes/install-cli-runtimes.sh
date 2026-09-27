@@ -336,12 +336,34 @@ cmd_status() {
 }
 
 cmd_rollback() {
-  local name=${1:?usage: rollback <runtime>} previous
+  local name=${1:?usage: rollback <runtime>} previous saved="$state/rollback/$1.json"
   need_root rollback
   [[ -L "$prefix/$name/previous" ]] || die "$name has no previous version"
   previous=$(basename -- "$(readlink -- "$prefix/$name/previous")")
   [[ -d "$prefix/$name/$previous" ]] || die "$name $previous is gone"
   switch_to "$name" "$previous"
+  if [[ -f "$saved" ]]; then
+    "$python" -I - "$override" "$saved" "$name" <<'PY'
+import json, os, sys, tempfile
+path, saved, name = sys.argv[1:]
+try:
+    data = json.load(open(path))
+except (OSError, ValueError):
+    data = {'schemaVersion': 1, 'runtimes': {}}
+entry = json.load(open(saved))['entry']
+if entry is None:
+    data.setdefault('runtimes', {}).pop(name, None)
+else:
+    data.setdefault('runtimes', {})[name] = entry
+fd, temporary = tempfile.mkstemp(dir=os.path.dirname(path))
+with os.fdopen(fd, 'w') as output:
+    json.dump(data, output, indent=2)
+    output.write('\n')
+os.chmod(temporary, 0o644)
+os.replace(temporary, path)
+PY
+    rm -f -- "$saved"
+  fi
   say "$name is back on $previous"
 }
 
@@ -443,6 +465,17 @@ cmd_upgrade() {
   # The install reads the new pin from a copy; the override keeps it only once it installed.
   write_pin "$name" "$entry" "$work/pins.json"
   kept=$override
+  install -d -m 0755 "$state/rollback"
+  "$python" -I - "$kept" "$name" "$state/rollback/$name.json" <<'PY'
+import json, os, sys
+try:
+    entry = json.load(open(sys.argv[1])).get('runtimes', {}).get(sys.argv[2])
+except (OSError, ValueError):
+    entry = None
+with open(sys.argv[3] + '.new', 'w') as output:
+    json.dump({'entry': entry}, output)
+os.replace(sys.argv[3] + '.new', sys.argv[3])
+PY
   override="$work/pins.json"
   [[ "$(pin "$name" version)" == "$version" ]] || die "$version is not newer than the pinned $(pin "$name" version)"
   install_one "$name"

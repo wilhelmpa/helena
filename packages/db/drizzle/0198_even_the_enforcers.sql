@@ -1,0 +1,1 @@
+ALTER TABLE "helena_update_action" ADD COLUMN "automatic" boolean DEFAULT false NOT NULL;

@@ -377,13 +377,24 @@ def apply_cli_runtime(config: dict, runtime: str, version: str, log: Log) -> dic
     installer = config["runtimesInstaller"]
     if not os.path.isfile(installer):
         raise UpdateError("the runtime installer is not installed")
-    run(log, [installer, "upgrade", runtime, version], timeout=1800)
-    status = runtimes_status(config).get(runtime, {})
-    if status.get("current") != version:
-        raise UpdateError(f"{runtime} is on {status.get('current')} after the upgrade")
-    return {"runtime": runtime, "from": status.get("previous"), "to": status.get("current"),
-            "rollback": f"{os.path.basename(installer)} rollback {runtime}",
-            "failedUnits": failed_units()}
+    with host_tools.quiet_queue(config, hold_seconds=1900):
+        before = runtimes_status(config).get(runtime, {}).get("current")
+        try:
+            run(log, [installer, "upgrade", runtime, version], timeout=1800)
+            status = runtimes_status(config).get(runtime, {})
+            if status.get("current") != version or status.get("intact") is not True:
+                raise UpdateError(f"{runtime} did not pass the installed-version check")
+            return {"runtime": runtime, "from": before, "to": version,
+                    "rollback": f"{os.path.basename(installer)} rollback {runtime}",
+                    "failedUnits": failed_units(), "smoke": "passed"}
+        except Exception as error:
+            if before and runtimes_status(config).get(runtime, {}).get("current") != before:
+                run(log, [installer, "rollback", runtime], timeout=120)
+                restored = runtimes_status(config).get(runtime, {})
+                if restored.get("current") != before or restored.get("intact") is not True:
+                    raise UpdateError(f"update failed; rollback of {runtime} needs operator check") from error
+                raise UpdateError(f"update failed; previous version restored: {error}") from error
+            raise
 
 
 def perform(config: dict, request: dict) -> dict:

@@ -26,6 +26,7 @@ import {
   collectDigests,
   followActions,
   queueDigests,
+  runAutoUpdates,
   runUpdateCheck,
 } from '../../service';
 import { pickDigestModel } from '../../digest';
@@ -768,6 +769,68 @@ describe('update center: applying', () => {
     expect(done.log).toContain('claude-agent-acp upgraded');
     expect(done.health).toMatchObject({ services: expect.any(Array) });
     expect(done.backupPath).toBeNull();
+  });
+
+  it('applies only a current low-risk automatic update and does not retry a failed version', async () => {
+    const { api } = await owner();
+    startFakeHelper((request) =>
+      request.action === 'cli-runtime'
+        ? { state: 'failed', ok: false, error: 'update failed; previous version restored' }
+        : helperAnswers(request),
+    );
+    await runUpdateCheck();
+    const acp = (await rows()).find((row) => row.component === 'claude-agent-acp')!;
+    const node = (await rows()).find((row) => row.component === 'node')!;
+    const initial = (await api.god['update-center'].get()).data!;
+    expect(initial.items.find((item) => item.id === acp.id)?.mode).toBe('manual');
+    expect(initial.items.find((item) => item.id === node.id)?.mode).toBe('manual');
+    expect(
+      (
+        await api.god['update-center'].settings.patch({
+          modes: { 'cli-runtimes/claude-agent-acp': 'auto' },
+        })
+      ).status,
+    ).toBe(400);
+    await db
+      .update(helenaUpdate)
+      .set({ risk: 'low', breaking: false, summary: 'Safe', summaryFor: acp.available })
+      .where(eq(helenaUpdate.id, acp.id));
+    await db
+      .update(helenaUpdate)
+      .set({ risk: 'high', breaking: false, summary: 'Risky', summaryFor: node.available })
+      .where(eq(helenaUpdate.id, node.id));
+    expect(
+      (await api.god['update-center'].get()).data!.items.find((item) => item.id === acp.id)?.mode,
+    ).toBe('auto');
+    expect(
+      (
+        await api.god['update-center'].settings.patch({
+          modes: { 'cli-runtimes/claude-agent-acp': 'auto' },
+        })
+      ).status,
+    ).toBe(200);
+    await hermesAgent(api);
+    expect(await queueDigests()).toBeGreaterThan(0);
+    await expect(
+      runAutoUpdates(async () => {
+        throw new Error('deferred while busy');
+      }),
+    ).rejects.toThrow('deferred while busy');
+    expect(helperRequests.filter((request) => request.action === 'cli-runtime')).toHaveLength(0);
+    await db
+      .update(agentRun)
+      .set({ status: 'failed', finishedAt: new Date() })
+      .where(eq(agentRun.status, 'pending'));
+    await runAutoUpdates((ms) => Bun.sleep(Math.min(ms, 20)));
+    const actions = await db.select().from(helenaUpdateAction);
+    expect(actions).toHaveLength(1);
+    expect(actions[0]).toMatchObject({
+      component: 'claude-agent-acp',
+      automatic: true,
+      state: 'failed',
+    });
+    await runAutoUpdates((ms) => Bun.sleep(Math.min(ms, 20)));
+    expect(await db.select().from(helenaUpdateAction)).toHaveLength(1);
   });
 
   it('takes a database dump before the Debian security updates, and upgrades only those', async () => {

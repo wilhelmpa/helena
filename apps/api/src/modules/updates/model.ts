@@ -29,6 +29,8 @@ export const UpdateItem = t.Object({
       description: 'How risky the update looks, as the summary rated it',
     }),
   ),
+  mode: t.Union([t.Literal('auto'), t.Literal('manual')]),
+  autoAllowed: t.Boolean(),
   breaking: t.Nullable(t.Boolean()),
   summary: t.Nullable(t.String({ description: 'What the new version changes, in German' })),
   highlights: t.Array(t.String()),
@@ -58,6 +60,7 @@ export const UpdateAction = t.Object({
   fromVersion: t.Nullable(t.String()),
   toVersion: t.Nullable(t.String()),
   state: t.Union([t.Literal('running'), t.Literal('done'), t.Literal('failed')]),
+  automatic: t.Boolean(),
   backupPath: t.Nullable(t.String({ description: 'The database dump taken before' })),
   log: t.Nullable(t.String()),
   error: t.Nullable(t.String()),
@@ -76,6 +79,7 @@ export const UpdateSettings = t.Object({
   model: t.Nullable(t.String()),
   reasoning: t.String(),
   claudeChannel: t.Union([t.Literal('latest'), t.Literal('stable')]),
+  modes: t.Record(t.String(), t.Union([t.Literal('auto'), t.Literal('manual')])),
 });
 
 export const updateSettingsBody = t.Partial(
@@ -88,6 +92,7 @@ export const updateSettingsBody = t.Partial(
     model: t.Nullable(t.String({ minLength: 1, maxLength: 128 })),
     reasoning: t.String({ minLength: 2, maxLength: 16 }),
     claudeChannel: t.Union([t.Literal('latest'), t.Literal('stable')]),
+    modes: t.Record(t.String(), t.Union([t.Literal('auto'), t.Literal('manual')])),
   }),
 );
 
