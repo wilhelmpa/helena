@@ -26,11 +26,40 @@ describe('mail receipt evidence', () => {
     ],
     ['Rückerstattung eingeleitet', 'Gesamter Rückerstattungsbetrag: <b>21.99 EUR</b>', 2199, null],
     ['Shopify Inc. has sent you money', 'Geld erhalten 58,13 € EUR', 5813, null],
+    [
+      '[Confirmation] Purchase confirmed',
+      'We confirmed your purchase of $4.88 with your credit card.',
+      488,
+      null,
+    ],
+    [
+      'Invoice for upcoming subscription',
+      'Invoice number: SUB-321\nGrand total: 12.00 EUR\nThe service starts next month.',
+      1200,
+      'SUB-321',
+    ],
   ])('extracts %s without model actions', (subject, textBody, grossCents, invoiceNumber) => {
     const facts = mailReceiptFacts({ ...source, subject, textBody });
     expect(facts).toMatchObject({ grossCents, invoiceNumber });
     expect(hasMailReceiptEvidence(subject, facts)).toBe(true);
   });
+
+  it.each([
+    ['Order confirmed', 'Order #321\nTotal: 12.00 EUR\nPayment: Visa'],
+    ['Purchase confirmed', 'Order #321\nTotal: 12.00 EUR\nPayment: Visa'],
+    ['Your subscription order will be charged soon', 'Order #321\nTotal: 12.00 EUR\nPayment: Visa'],
+    ['Your upcoming invoice', 'Order #321\nTotal: 12.00 EUR'],
+    [
+      '[Confirmation] Purchase confirmed',
+      'We confirmed your purchase of $4.88 with your credit card. You will be charged soon.',
+    ],
+  ])(
+    'rejects announcements without a completed payment or issued invoice: %s',
+    (subject, textBody) => {
+      const facts = mailReceiptFacts({ ...source, subject, textBody });
+      expect(hasMailReceiptEvidence(subject, facts)).toBe(false);
+    },
+  );
 
   it('keeps linked originals distinguishable and rejects marketing without document evidence', () => {
     const notification = mailReceiptFacts({

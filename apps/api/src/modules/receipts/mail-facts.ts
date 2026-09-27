@@ -63,16 +63,28 @@ export function mailReceiptFacts(
 }
 
 export function hasMailReceiptEvidence(subject: string, facts: ExtractedReceipt): boolean {
+  const text = facts.textExcerpt ?? '';
   const document =
     /rechnung|invoice|facture|receipt|beleg|quittung|justificatif d[’'](?:achat|paiement)|re[cç]u(?: de)? (?:paiement|achat)/i;
   const upcoming =
     /\b(?:upcoming|coming up|will be charged|next (?:subscription )?(?:order|payment|charge)|prochain|prochaine|sera d[eé]bit[eé]|bevorstehend|demn[aä]chst)\b/i;
+  const issuedInvoice =
+    facts.invoiceNumber !== null &&
+    /\b(?:invoice|rechnung|facture)\b/i.test(subject) &&
+    /(?:invoice\s*(?:id|number|no\.?|#)|rechnungs?[- ]?(?:nummer|nr\.?)|facture\s*(?:n[°o]|num[eé]ro))/i.test(
+      text,
+    );
+  const completedPurchase =
+    /purchase confirmed/i.test(subject) &&
+    /confirmed your purchase of\s*\$([\d.,]+)\s+with\b[\s\S]{0,160}\bcard\b/i.exec(text);
   if (
     /\b(?:order export|exportbericht|export report)\b/i.test(subject) ||
-    upcoming.test(subject) ||
-    (!document.test(subject) && upcoming.test(facts.textExcerpt ?? ''))
+    (!issuedInvoice && upcoming.test(subject)) ||
+    (!document.test(subject) && upcoming.test(text))
   )
     return false;
+  if (completedPurchase && parseAmountCents(completedPurchase[1]!, 'auto') === facts.grossCents)
+    return facts.grossCents !== null;
   return (
     facts.grossCents !== null &&
     (facts.invoiceNumber !== null ||

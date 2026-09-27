@@ -16,8 +16,15 @@ Native body intake and historical selection use the same `hasMailReceiptEvidence
 The rule accepts French purchase/payment receipt subjects with an extracted gross amount.
 The historical search vocabulary includes French document terms. Amount plus order number
 alone is insufficient: bare order/purchase confirmations are not automatically selected.
-Export reports and upcoming-payment notices remain excluded. A renewal date or a future
-order mentioned inside an actual invoice does not exclude that invoice.
+Export reports and upcoming-payment notices remain excluded. An invoice subject with an
+extracted number and an explicit invoice-number label can refer to an upcoming service.
+An order number alone cannot enable that exception. A renewal date or a future order
+mentioned inside an actual invoice does not exclude that invoice.
+
+A purchase-confirmed subject also qualifies when the body explicitly confirms a purchase
+for a dollar amount with a card and that amount equals the extracted gross amount. This
+keeps completed card purchases without an invoice number eligible. Bare purchase/order
+confirmations and descriptions saying the card will only be charged later stay excluded.
 
 Explicit reviewed `includeBody: true` still preserves the operator's intentional body
 selection. No invoice number, French invoice date, receipt status or project is fabricated.
@@ -28,8 +35,9 @@ The separate empty-receipt retry limitation is documented in
 
 ## Validation
 
-- 103 offline tests, 185 assertions, zero failures: shared receipt-text/money tests and
-  30 cases through the production native intake or history inspect/apply/intake functions.
+- 125 offline tests, 235 assertions, zero failures: shared receipt-text/money tests and
+  38 cases through the production native intake or history inspect/apply/intake functions.
+  The full existing mail-facts suite also runs, including the linked-original and untrusted-input cases.
 - Each path checks positive French decimal/whole-euro and French-only receipts, existing
   payment receipts and real subscription invoices. Negative cases cover exports, future
   payments, order/purchase confirmations, promotions and unlabelled amounts.
@@ -38,7 +46,9 @@ The separate empty-receipt retry limitation is documented in
   preserved original bytes and stored gross/VAT/currency, and repeats intake without duplicates.
   Fetch and provider connection calls are forbidden; matching is configured off and fails if called.
   This is not a live DB, provider, full MIME parser or authenticated UI acceptance test.
-- The same 103 tests against unchanged `594f1376` produced 19 failures. Two separate mutations
+- The initial 103 tests against unchanged `594f1376` produced 19 failures. The completed-card
+  and upcoming-service invoice regressions produced six failures against `4e1cd0c8` through
+  the direct helper and both receipt paths. Two separate mutations
   restoring the historical amount/number bypass or allowing future receipt subjects failed
   their targeted history/native cases.
 - Strict standalone TypeScript checking passed for receipt-text and money. Scoped formatting

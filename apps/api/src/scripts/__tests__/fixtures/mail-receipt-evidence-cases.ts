@@ -1,5 +1,38 @@
 export const receiptEvidenceCases = [
   {
+    id: 'completed-card-purchase',
+    subject: '[Confirmation] Purchase confirmed',
+    body: 'We confirmed your purchase of $4.88 with your credit card.',
+    selected: true,
+    gross: 488,
+    vat: null,
+    currency: 'USD',
+  },
+  {
+    id: 'upcoming-service-invoice',
+    subject: 'Invoice for upcoming subscription',
+    body: 'Invoice number: SUB-321\nGrand total: 12.00 EUR\nThe service starts next month.',
+    selected: true,
+    gross: 1200,
+    vat: null,
+  },
+  {
+    id: 'upcoming-invoice-not-issued',
+    subject: 'Your upcoming invoice',
+    body: 'Order #321\nTotal: 12.00 EUR',
+    selected: false,
+    gross: 0,
+    vat: null,
+  },
+  {
+    id: 'card-purchase-not-charged',
+    subject: '[Confirmation] Purchase confirmed',
+    body: 'We confirmed your purchase of $4.88 with your credit card. You will be charged soon.',
+    selected: false,
+    gross: 0,
+    vat: null,
+  },
+  {
     id: 'french-decimal',
     subject: 'Purchase Receipt',
     body: 'Cet email tient lieu de justificatif d’achat.\nPrix TTC 2.55 euros dont 0.23 euros de TVA\nPaiement par carte',

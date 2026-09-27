@@ -244,7 +244,7 @@ assert.equal(files.size, sample.selected ? 1 : 0);
 if (sample.selected) {
   assert.equal(receipts[0]!.totalGross, String(sample.gross / 100));
   assert.equal(receipts[0]!.vatAmount, sample.vat === null ? null : String(sample.vat / 100));
-  assert.equal(receipts[0]!.currency, 'EUR');
+  assert.equal(receipts[0]!.currency, sample.currency ?? 'EUR');
   assert.equal(receipts[0]!.status, 'open');
   assert.deepEqual([...files.values()][0], raw);
   assert.ok(indexed.length > 0);
