@@ -129,7 +129,11 @@
     "badAmount": "No se entiende ese importe. Escríbelo así: 172,50",
     "sourceMail": "Abrir correo de origen",
     "sourceTask": "Tarea {identifier}",
-    "sourceUnavailable": "El correo de origen no está disponible o no tienes acceso."
+    "sourceUnavailable": "El correo de origen no está disponible o no tienes acceso.",
+    "sourceArchivedMail": "Abrir correo de origen archivado",
+    "sourceArchiveReadOnly": "Correo original archivado de este recibo. Solo lectura; el correo permanece fuera de la bandeja de entrada.",
+    "sourceLoading": "Cargando correo de origen …",
+    "sourceHtmlText": "Contenido HTML como texto"
   },
   "fields": {
     "issuer": "Emisor",

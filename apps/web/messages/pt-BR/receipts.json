@@ -129,7 +129,11 @@
     "badAmount": "Não entendi esse valor. Escreva assim: 172,50",
     "sourceMail": "Abrir e-mail de origem",
     "sourceTask": "Tarefa {identifier}",
-    "sourceUnavailable": "O e-mail de origem não está disponível ou você não tem acesso."
+    "sourceUnavailable": "O e-mail de origem não está disponível ou você não tem acesso.",
+    "sourceArchivedMail": "Abrir e-mail de origem arquivado",
+    "sourceArchiveReadOnly": "E-mail original arquivado deste comprovante. Somente leitura; o e-mail permanece fora da caixa de entrada.",
+    "sourceLoading": "Carregando e-mail de origem …",
+    "sourceHtmlText": "Conteúdo HTML como texto"
   },
   "fields": {
     "issuer": "Emissor",

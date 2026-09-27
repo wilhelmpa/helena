@@ -129,7 +129,11 @@
     "badAmount": "Jumlah itu tidak terbaca. Tulis seperti ini: 172,50",
     "sourceMail": "Buka email sumber",
     "sourceTask": "Tugas {identifier}",
-    "sourceUnavailable": "Email sumber tidak tersedia atau Anda tidak memiliki akses."
+    "sourceUnavailable": "Email sumber tidak tersedia atau Anda tidak memiliki akses.",
+    "sourceArchivedMail": "Buka email sumber yang diarsipkan",
+    "sourceArchiveReadOnly": "Email asli yang diarsipkan untuk bukti ini. Hanya baca; email tetap di luar kotak masuk.",
+    "sourceLoading": "Memuat email sumber …",
+    "sourceHtmlText": "Konten HTML sebagai teks"
   },
   "fields": {
     "issuer": "Penerbit",

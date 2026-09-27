@@ -8,7 +8,7 @@ import type { ReceiptDetail } from '@/lib/api/endpoints/receipts';
 import receipts from '../../../../messages/de/receipts.json';
 import common from '../../../../messages/de/common.json';
 import ReceiptBody from './ReceiptBody';
-import { ReceiptOriginalMailView } from './ReceiptSourceLinks';
+import ReceiptOriginalMailView from './ReceiptOriginalMailView';
 
 const receipt: ReceiptDetail = {
   id: 91,

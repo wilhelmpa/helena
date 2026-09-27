@@ -129,7 +129,11 @@
     "badAmount": "无法识别该金额。请这样填写：172.50",
     "sourceMail": "打开来源邮件",
     "sourceTask": "任务 {identifier}",
-    "sourceUnavailable": "来源邮件已不可用，或你没有访问权限。"
+    "sourceUnavailable": "来源邮件已不可用，或你没有访问权限。",
+    "sourceArchivedMail": "打开已归档的来源邮件",
+    "sourceArchiveReadOnly": "此凭证的已归档原始邮件。仅供阅读；邮件仍保留在收件箱之外。",
+    "sourceLoading": "正在加载来源邮件 …",
+    "sourceHtmlText": "以文本显示 HTML 内容"
   },
   "fields": {
     "issuer": "开具方",

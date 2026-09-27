@@ -129,7 +129,11 @@
     "badAmount": "Ce montant est illisible. Écrivez-le ainsi : 172,50",
     "sourceMail": "Ouvrir le courriel source",
     "sourceTask": "Tâche {identifier}",
-    "sourceUnavailable": "Le courriel source n’est plus disponible ou vous n’y avez pas accès."
+    "sourceUnavailable": "Le courriel source n’est plus disponible ou vous n’y avez pas accès.",
+    "sourceArchivedMail": "Ouvrir le courriel source archivé",
+    "sourceArchiveReadOnly": "Courriel original archivé de ce justificatif. Lecture seule ; le courriel reste hors de la boîte de réception.",
+    "sourceLoading": "Chargement du courriel source …",
+    "sourceHtmlText": "Contenu HTML en texte"
   },
   "fields": {
     "issuer": "Émetteur",
