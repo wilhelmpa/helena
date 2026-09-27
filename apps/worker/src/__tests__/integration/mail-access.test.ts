@@ -264,19 +264,17 @@ describe('fetch window', () => {
     server.add('INBOX', mail('<receipt@x>', daysAgo(200), true), [], daysAgo(200));
     await sync();
     const [attachment] = await db.select().from(mailAttachment);
-    await db
-      .insert(helenaReceipt)
-      .values({
-        teamId,
-        projectId,
-        source: 'mail',
-        mailAttachmentId: attachment!.id,
-        vaultPath: attachment!.vaultPath,
-        filename: attachment!.filename,
-        contentType: attachment!.contentType,
-        size: attachment!.size,
-        sha256: attachment!.sha256,
-      });
+    await db.insert(helenaReceipt).values({
+      teamId,
+      projectId,
+      source: 'mail',
+      mailAttachmentId: attachment!.id,
+      vaultPath: attachment!.vaultPath,
+      filename: attachment!.filename,
+      contentType: attachment!.contentType,
+      size: attachment!.size,
+      sha256: attachment!.sha256,
+    });
     const original = await Bun.file(path.join(vault, attachment!.vaultPath)).arrayBuffer();
     expect(await pruneAccount(mailbox.id, 30)).toBe(1);
     expect(await storedIds()).toEqual([]);
