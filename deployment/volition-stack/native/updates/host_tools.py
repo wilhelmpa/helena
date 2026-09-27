@@ -258,16 +258,20 @@ def command(args: list[str], *, cwd: Path | None = None, user: str | None = None
             timeout: int = 60) -> str:
     # A version command may create configuration even inside a frozen installation.
     # Never use a passwd HOME, an owner's profile, shared /tmp or the release tree.
-    home_scope = (tempfile.TemporaryDirectory(prefix="helena-host-tool-", dir="/tmp")
-                  if user else contextlib.nullcontext(None))
-    with home_scope as temporary:
-        home = Path(temporary) if temporary else (cwd or Path("/tmp"))
-        if temporary and os.geteuid() == 0:
+    with tempfile.TemporaryDirectory(prefix="helena-host-tool-", dir="/tmp") as temporary:
+        home = Path(temporary)
+        # npm rejects loading one path as both user and global configuration.
+        user_config, global_config = home / "npm-user-config", home / "npm-global-config"
+        for config in (user_config, global_config):
+            config.touch(mode=0o600, exist_ok=False)
+            config.chmod(0o600)
+        if user and os.geteuid() == 0:
             account = pwd.getpwnam(user)
-            os.chown(home, account.pw_uid, account.pw_gid)
+            for path in (user_config, global_config, home):
+                os.chown(path, account.pw_uid, account.pw_gid)
         env = {"PATH": "/usr/local/bin:/usr/bin:/bin", "HOME": str(home),
-               "LC_ALL": "C", "NPM_CONFIG_USERCONFIG": "/dev/null",
-               "NPM_CONFIG_GLOBALCONFIG": "/dev/null", "NPM_CONFIG_REGISTRY": "https://registry.npmjs.org",
+               "LC_ALL": "C", "NPM_CONFIG_USERCONFIG": str(user_config),
+               "NPM_CONFIG_GLOBALCONFIG": str(global_config), "NPM_CONFIG_REGISTRY": "https://registry.npmjs.org",
                "NPM_CONFIG_CACHE": str((cwd or home) / ".npm"),
                "NPM_CONFIG_UPDATE_NOTIFIER": "false"}
         if user and os.geteuid() == 0:

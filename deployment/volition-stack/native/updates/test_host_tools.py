@@ -379,7 +379,11 @@ class HostToolsTest(unittest.TestCase):
         self.assertTrue(str(home).startswith("/tmp/helena-host-tool-"))
         self.assertFalse(home.exists())
         account = h.pwd.getpwnam("nobody")
-        chown.assert_called_once_with(home, account.pw_uid, account.pw_gid)
+        self.assertEqual(chown.call_args_list, [
+            mock.call(home / "npm-user-config", account.pw_uid, account.pw_gid),
+            mock.call(home / "npm-global-config", account.pw_uid, account.pw_gid),
+            mock.call(home, account.pw_uid, account.pw_gid),
+        ])
 
     def test_version_and_frozen_prepared_smoke_use_private_home(self):
         tree = self.root / "code-fixture"
@@ -410,8 +414,14 @@ class HostToolsTest(unittest.TestCase):
             self.assertEqual(home.stat().st_mode & 0o777, 0o700)
             self.assertNotEqual(home, self.root)
             self.assertEqual(env["NPM_CONFIG_CACHE"], str(self.root / ".npm"))
-            self.assertEqual(env["NPM_CONFIG_USERCONFIG"], "/dev/null")
-            self.assertEqual(env["NPM_CONFIG_GLOBALCONFIG"], "/dev/null")
+            configs = [Path(env[name]) for name in
+                       ("NPM_CONFIG_USERCONFIG", "NPM_CONFIG_GLOBALCONFIG")]
+            self.assertNotEqual(configs[0], configs[1])
+            for config in configs:
+                self.assertEqual(config.parent, home)
+                self.assertEqual(config.stat().st_mode & 0o777, 0o600)
+                self.assertEqual(config.read_bytes(), b"")
+                self.assertFalse(config.is_symlink())
             self.assertNotIn("OWNER_SECRET_FIXTURE", env)
             self.assertNotIn("XDG_CONFIG_HOME", env)
             return mock.Mock(returncode=0, stdout="ok")
@@ -421,19 +431,50 @@ class HostToolsTest(unittest.TestCase):
         self.assertNotEqual(homes[0], homes[1])
         self.assertTrue(all(not p.exists() for p in homes))
 
+    def test_root_command_also_has_private_distinct_empty_npm_configs(self):
+        homes = []
+        def run(args, **kwargs):
+            env = kwargs["env"]
+            home = Path(env["HOME"])
+            homes.append(home)
+            self.assertEqual(home.stat().st_mode & 0o777, 0o700)
+            self.assertNotEqual(home, self.root)
+            configs = [Path(env[name]) for name in
+                       ("NPM_CONFIG_USERCONFIG", "NPM_CONFIG_GLOBALCONFIG")]
+            self.assertNotEqual(configs[0].stat().st_ino, configs[1].stat().st_ino)
+            for config in configs:
+                self.assertEqual(config.parent, home)
+                self.assertEqual(config.stat().st_mode & 0o777, 0o600)
+                self.assertEqual(config.stat().st_uid, os.geteuid())
+                self.assertEqual(config.read_bytes(), b"")
+            self.assertEqual(env["PATH"], "/usr/local/bin:/usr/bin:/bin")
+            self.assertEqual(env["NPM_CONFIG_CACHE"], str((kwargs["cwd"] or home) / ".npm"))
+            self.assertNotIn("OWNER_SECRET_FIXTURE", env)
+            self.assertNotIn("NPM_TOKEN", env)
+            self.assertEqual(args, ["synthetic-npm", "config", "get", "registry"])
+            return mock.Mock(returncode=0, stdout="https://registry.npmjs.org\n")
+        with mock.patch.dict(os.environ, {"OWNER_SECRET_FIXTURE": "synthetic", "NPM_TOKEN": "synthetic"}), mock.patch.object(h.subprocess, "run", side_effect=run), mock.patch.object(h.os, "chown") as chown:
+            for cwd in (None, self.root):
+                self.assertEqual(h.command(["synthetic-npm", "config", "get", "registry"], cwd=cwd),
+                                 "https://registry.npmjs.org\n")
+        chown.assert_not_called()
+        self.assertNotEqual(homes[0], homes[1])
+        self.assertTrue(all(not home.exists() for home in homes))
+
     def test_private_home_is_cleaned_after_error_or_timeout(self):
         homes = []
-        for fail in (False, True):
-            def run(args, **kwargs):
-                home = Path(kwargs["env"]["HOME"])
-                homes.append(home)
-                (home / "temporary-config").write_text("synthetic")
-                if fail:
-                    raise subprocess.TimeoutExpired(args, kwargs["timeout"])
-                return mock.Mock(returncode=1, stdout="synthetic private failure detail")
-            with mock.patch.object(h.subprocess, "run", side_effect=run):
-                with self.assertRaises(subprocess.TimeoutExpired if fail else h.ToolError):
-                    h.command(["synthetic-version"], user="nobody", timeout=1)
+        for user in ("nobody", None):
+            for fail in (False, True):
+                def run(args, **kwargs):
+                    home = Path(kwargs["env"]["HOME"])
+                    homes.append(home)
+                    (home / "temporary-config").write_text("synthetic")
+                    if fail:
+                        raise subprocess.TimeoutExpired(args, kwargs["timeout"])
+                    return mock.Mock(returncode=1, stdout="synthetic private failure detail")
+                with mock.patch.object(h.subprocess, "run", side_effect=run):
+                    with self.assertRaises(subprocess.TimeoutExpired if fail else h.ToolError):
+                        h.command(["synthetic-version"], user=user, timeout=1)
         self.assertTrue(all(not p.exists() for p in homes))
 
     def test_binary_smoke_executes_fixture_and_matches_version(self):
