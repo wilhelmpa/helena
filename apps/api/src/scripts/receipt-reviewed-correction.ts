@@ -7,7 +7,6 @@ import { fileURLToPath } from 'node:url';
 import { db } from '@repo/db';
 import { sql } from 'drizzle-orm';
 import { extractReceiptFile } from '#modules/receipts/extract';
-import { numericToCents } from '#modules/receipts/amounts';
 import { assertNoSymlinks, relativePath, resolveInside } from '#modules/project-files/paths';
 import { projectRoot } from '#modules/project-files/roots';
 import {
@@ -21,6 +20,7 @@ import {
   type Facts,
 } from './receipt-correction/review';
 
+import { factsFromProjection, receiptProjection } from './receipt-correction/projection';
 import { runCorrectionTransaction, type Review } from './receipt-correction/transaction';
 
 const ROOT = fileURLToPath(new URL('../../../../', import.meta.url));
@@ -94,7 +94,7 @@ async function original(entry: Correction, row: Row): Promise<Buffer> {
 
 async function prepare(tx: Tx, entry: Correction, apply: boolean): Promise<Binding> {
   const rows = await tx.execute(sql`
-    SELECT to_jsonb(r) AS receipt, r.xmin::text AS revision, p.key AS project_key, p.team_id AS project_team_id
+    SELECT ${receiptProjection}, p.key AS project_key, p.team_id AS project_team_id
     FROM helena_receipt r JOIN project p ON p.id = r.project_id
     WHERE r.id = ${entry.receiptId}
     ${apply ? sql`FOR UPDATE OF r` : sql``}`);
@@ -164,16 +164,7 @@ async function prepare(tx: Tx, entry: Correction, apply: boolean): Promise<Bindi
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
-  checkFacts(
-    entry,
-    {
-      issuer: row.issuer as string | null,
-      totalGrossCents: numericToCents(row.total_gross as string | null),
-      vatCents: numericToCents(row.vat_amount as string | null),
-      currency: row.currency as string,
-    },
-    extracted,
-  );
+  checkFacts(entry, factsFromProjection(rows[0]!), extracted);
   await original(entry, row);
   return {
     receiptId: entry.receiptId,

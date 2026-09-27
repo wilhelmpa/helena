@@ -104,3 +104,10 @@ Only source preparation and release admission are stand-ins; this test does not 
 filesystem extraction/admission. It is authored but not executed during offline preparation.
 The three Git checks use a fixed process-local `-c safe.directory=/srv/volition/source/plan`
 so the API service user can read the owner-owned checkout without global Git configuration.
+
+Receipt amounts are projected separately with PostgreSQL `::text`; the complete JSONB row
+remains unchanged for its digest. Non-null numeric values in JSONB decode as JavaScript
+numbers and cannot be passed to the decimal-string parser. Pure checks cover decimal,
+zero, null, negative and maximum-scale values plus invalid runtime field types. A separate
+authored private PostgreSQL regression executes the same production SQL projection against
+a temporary numeric(14,2) fixture. That database test still requires Root's gate execution.
