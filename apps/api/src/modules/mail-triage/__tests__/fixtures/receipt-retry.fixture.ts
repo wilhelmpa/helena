@@ -206,6 +206,10 @@ const db: RetryDb = {
 mock.module('@repo/db', () => ({
   ...tables,
   db,
+  // These direct retry cases never enter the separate project-claim boundary.
+  databaseRuntimeName: 'receipt-retry-fixture',
+  helenaMailTriageClaim: table('helenaMailTriageClaim', ['projectId', 'runToken']),
+  withSettledTransactionCallbacks: () => assert.fail('No project claim work'),
   ...Object.fromEntries(
     [
       'aiAgent',
