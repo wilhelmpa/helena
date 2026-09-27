@@ -232,12 +232,17 @@ def check(config: dict, runner: Runner, *, offline: bool = False) -> dict:
         git(runner, config, "fetch", "--tags", "--prune", config["remote"])
     latest = latest_ref(runner, config)
     base = git(runner, config, "merge-base", "HEAD", latest).splitlines()[-1]
+    latest_commit = git(runner, config, "rev-parse", f"{latest}^{{commit}}").splitlines()[-1]
+    # A release tag can lag behind the installed main-canary checkout even when its
+    # package version looks larger. Commit ancestry, rather than semver, decides this.
+    latest_is_ancestor = base == latest_commit
     return {
         "current": describe(runner, config, "HEAD"),
         "latest": describe(runner, config, latest),
         # What updating to the newest version brings, newest first. Empty when the checkout
         # already contains it (also when it runs ahead of the newest release).
-        "commits": log_lines(runner, config, f"{base}..{latest}"),
+        "commits": [] if latest_is_ancestor else log_lines(runner, config, f"{base}..{latest}"),
+        "latestIsAncestor": latest_is_ancestor,
         # The commits carried on top of upstream, which an update carries over.
         "localPatches": log_lines(runner, config, f"{upstream(config)}..HEAD", 50),
     }
