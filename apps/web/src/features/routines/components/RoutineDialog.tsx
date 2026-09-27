@@ -4,6 +4,8 @@ import type { AiAgent } from '@/lib/api/endpoints/agents';
 import type {
   Routine,
   RoutineCatchUp,
+  RoutineGateMode,
+  RoutineGateSource,
   RoutineInput,
   RoutineMode,
 } from '@/lib/api/endpoints/routines';
@@ -24,6 +26,7 @@ import { DEFAULT_TIMEZONE, isTimeZone } from '../utils/schedulePreview';
 import { RoutineAgentField } from './RoutineAgentField';
 import { RoutineCronInput } from './RoutineCronInput';
 import { RoutineField } from './RoutineField';
+import { RoutineGateField } from './RoutineGateField';
 import { RoutineMentionsPreview } from './RoutineMentions';
 import { RoutineModeField } from './RoutineModeField';
 import { RoutineNextRuns } from './RoutineNextRuns';
@@ -68,6 +71,8 @@ export function RoutineDialog({
   const [chosenZone, setTimezone] = useState<string | null>(initial?.timezone ?? null);
   const timezone = chosenZone ?? defaultZone;
   const [catchUp, setCatchUp] = useState<RoutineCatchUp>(initial?.catchUp ?? 'skip');
+  const [gateMode, setGateMode] = useState<RoutineGateMode>(initial?.gateMode ?? 'shadow');
+  const [gateSource, setGateSource] = useState<RoutineGateSource>(initial?.gateSource ?? 'none');
   const agent = agents.find((a) => String(a.id) === agentId) ?? null;
   const schedule = parseScheduleInput(scheduleInput);
   const isValid =
@@ -78,7 +83,8 @@ export function RoutineDialog({
     instructions.trim().length <= 20_000 &&
     (mode === 'new' || task !== null) &&
     schedule.ok &&
-    isTimeZone(timezone);
+    isTimeZone(timezone) &&
+    (gateMode !== 'active' || gateSource !== 'none');
 
   async function submit() {
     if (!isValid || !agent || !schedule.ok) return;
@@ -91,6 +97,8 @@ export function RoutineDialog({
       cron: schedule.cron,
       timezone,
       catchUp,
+      gateMode,
+      gateSource,
     });
   }
 
@@ -180,6 +188,16 @@ export function RoutineDialog({
           </Select>
           <p className="text-xs text-muted-foreground">{t('catchUpHint')}</p>
         </RoutineField>
+
+        <RoutineGateField
+          mode={gateMode}
+          source={gateSource}
+          onModeChange={setGateMode}
+          onSourceChange={(source) => {
+            setGateSource(source);
+            if (gateMode === 'active') setGateMode('shadow');
+          }}
+        />
 
         <div className="flex justify-end gap-2 border-t border-border/50 pt-4">
           <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>

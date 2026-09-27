@@ -65,6 +65,18 @@ export function RoutineLastRun({
         <span className="text-sm">{t(`runStatus.${state}`)}</span>
       </div>
       {outcome && <p className="text-xs text-muted-foreground">{outcome}</p>}
+      {run.gate && (
+        <p className="text-xs text-muted-foreground" data-testid="routine-gate-result">
+          {t('gateResult', {
+            recommendation: t(run.gate.recommendation === 'skip' ? 'gateSkip' : 'gateRun'),
+            reason: run.gate.reason,
+            counts:
+              Object.entries(run.gate.counts)
+                .map(([name, value]) => `${name}: ${value}`)
+                .join(', ') || '0',
+          })}
+        </p>
+      )}
       {state === 'failed' && run.error && (
         <p className="line-clamp-2 text-xs text-destructive" title={run.error}>
           {run.error}

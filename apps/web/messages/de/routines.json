@@ -115,5 +115,17 @@
   "catchUp": "Nach einem Ausfall",
   "catchUpSkip": "Verpasste Zeiten überspringen",
   "catchUpOnce": "Die letzte verpasste Zeit einmal nachholen",
-  "catchUpHint": "Wenn der Server zu einer geplanten Zeit nicht lief. Ältere verpasste Zeiten werden nie nachgeholt."
+  "catchUpHint": "Wenn der Server zu einer geplanten Zeit nicht lief. Ältere verpasste Zeiten werden nie nachgeholt.",
+  "gateSource": "Signal für Vorprüfung",
+  "gateSourceNone": "Kein Signal konfiguriert",
+  "gateSourceMail": "Projektpostfach",
+  "gateSourceAudit": "Offene Projekttickets",
+  "gateMode": "Modus der Vorprüfung",
+  "gateOff": "Aus",
+  "gateShadow": "Schatten: Ergebnis protokollieren, Lauf normal starten",
+  "gateActive": "Aktiv: nur mit Owner-Freigabe überspringen",
+  "gateHint": "Schatten ist Standard. Nur ein Projekt-Owner kann das Überspringen aktivieren. Bei fehlendem oder unklarem Signal startet der Lauf immer.",
+  "gateResult": "Vorprüfung: {recommendation} · {reason} · {counts}",
+  "gateRun": "starten",
+  "gateSkip": "überspringen"
 }

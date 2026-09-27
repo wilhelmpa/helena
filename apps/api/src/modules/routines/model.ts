@@ -74,6 +74,8 @@ const routineFields = {
         "missed, 'once' runs the newest missed one once.",
     }),
   ),
+  gateMode: t.Optional(t.Union([t.Literal('off'), t.Literal('shadow'), t.Literal('active')])),
+  gateSource: t.Optional(t.Union([t.Literal('none'), t.Literal('mail'), t.Literal('audit')])),
 };
 
 export const createRoutineBody = t.Object(
@@ -155,6 +157,8 @@ export const RoutineResponse = t.Object({
   cron: t.String(),
   timezone: t.String(),
   catchUp: t.Union([t.Literal('skip'), t.Literal('once')]),
+  gateMode: t.Union([t.Literal('off'), t.Literal('shadow'), t.Literal('active')]),
+  gateSource: t.Union([t.Literal('none'), t.Literal('mail'), t.Literal('audit')]),
   enabled: t.Boolean(),
   nextRunAt: t.Nullable(t.String()),
   lastRun: t.Nullable(
@@ -166,9 +170,21 @@ export const RoutineResponse = t.Object({
       }),
       outcome: t.Nullable(oneOf(['created', 'reopened', 'skipped'])),
       skipReason: t.Nullable(
-        oneOf(['task-open', 'missed'], {
+        oneOf(['task-open', 'missed', 'gate'], {
           description:
             "'task-open': the routine's task was still open; 'missed': the run started too late.",
+        }),
+      ),
+      gate: t.Nullable(
+        t.Object({
+          mode: t.Union([t.Literal('off'), t.Literal('shadow'), t.Literal('active')]),
+          source: t.Union([t.Literal('none'), t.Literal('mail'), t.Literal('audit')]),
+          recommendation: t.Union([t.Literal('run'), t.Literal('skip')]),
+          reason: t.String(),
+          counts: t.Record(t.String(), t.Number()),
+          decisionId: t.Nullable(t.Number()),
+          confidence: t.Nullable(t.Number()),
+          status: t.String(),
         }),
       ),
       taskNumber: t.Nullable(
