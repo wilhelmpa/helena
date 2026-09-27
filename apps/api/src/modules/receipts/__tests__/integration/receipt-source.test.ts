@@ -1,6 +1,15 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
-import { db, helenaReceipt, issue, mailMessage, mailThread, teamMember } from '@repo/db';
+import {
+  db,
+  helenaReceipt,
+  issue,
+  mailMessage,
+  mailThread,
+  project as projectTable,
+  teamMember,
+} from '@repo/db';
+import { putObject } from '@repo/storage';
 import { and, eq } from 'drizzle-orm';
 import { app, authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
@@ -32,7 +41,12 @@ describe('receipt source navigation', () => {
       projectId: project.id,
       projectKey: project.key,
       text: 'Invoice number: SRC-42\nAmount paid: 12.00 EUR',
-      ...(attachment ? { attachments: [{ filename: 'invoice.xml', content: invoice }] } : {}),
+      ...(attachment
+        ? {
+            attachments: [{ filename: 'invoice.xml', content: invoice }],
+            raw: `Subject: Receipt original\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary=test-boundary\r\n\r\n--test-boundary\r\nContent-Type: text/plain\r\n\r\nInvoice SRC-42\r\n--test-boundary\r\nContent-Type: application/xml\r\nContent-Disposition: attachment; filename=invoice.xml\r\nContent-Transfer-Encoding: base64\r\n\r\n${Buffer.from(invoice).toString('base64')}\r\n--test-boundary--\r\n`,
+          }
+        : {}),
     });
     const [receiptId] = await intakeMailReceipts({
       teamId: project.teamId,
@@ -52,7 +66,7 @@ describe('receipt source navigation', () => {
       return { status: response.status, body: (await response.json()) as ReceiptDetailView };
     };
     const task = () => api.mail.threads({ threadId: mail.threadId }).task.post({});
-    return { owner, api, project, mail, receiptId: receiptId!, read, task };
+    return { owner, api, project, account, mail, receiptId: receiptId!, read, task };
   }
 
   it('links a body original to the real thread and all of its tasks without rewriting the original', async () => {
@@ -109,7 +123,7 @@ describe('receipt source navigation', () => {
     expect(source.data?.messages[0]?.attachments[0]?.vaultPath).toBe(body.vaultPath);
   });
 
-  it('keeps missing and deleted sources unavailable while the receipt remains readable', async () => {
+  it('offers only the bound archived original and leaves hard-deleted sources unavailable', async () => {
     const ctx = await setup();
     const before = await ctx.read();
     // Simulate the worker's removal marker; this has no public source-edit route.
@@ -119,7 +133,10 @@ describe('receipt source navigation', () => {
       .where(eq(mailMessage.id, ctx.mail.messageRowId));
     const deleted = await ctx.read();
     expect(deleted.status).toBe(200);
-    expect(deleted.body.sourceLinks).toBeNull();
+    expect(deleted.body.sourceLinks).toMatchObject({
+      messageId: ctx.mail.messageRowId,
+      archived: true,
+    });
     expect(deleted.body.details.mailSource).toBeUndefined();
     expect(deleted.body.vaultPath).toBe(before.body.vaultPath);
     await db.delete(mailMessage).where(eq(mailMessage.id, ctx.mail.messageRowId));
@@ -194,5 +211,112 @@ describe('receipt source navigation', () => {
     expect(result.body.sourceLinks).toBeNull();
     expect(result.body.details.mailSource).toBeUndefined();
     expect((await ctx.api.mail.threads({ threadId: ctx.mail.threadId }).get()).status).toBe(404);
+  });
+  const original = (key: string, id: number, cookie: string, extra: Record<string, string> = {}) =>
+    app.handle(
+      new Request(`http://localhost/projects/${key}/receipts/${id}/source-mail`, {
+        headers: { cookie, ...extra },
+      }),
+    );
+
+  it('reads one archived raw EML without exposing a sibling or enabling normal thread access', async () => {
+    const ctx = await setup();
+    const sibling = await insertMessage({
+      teamId: ctx.project.teamId,
+      accountId: ctx.account.accountId,
+      folderId: ctx.account.inboxId,
+      threadId: ctx.mail.threadId,
+      text: 'SIBLING SECRET',
+    });
+    await db
+      .update(mailMessage)
+      .set({ deletedAt: new Date() })
+      .where(eq(mailMessage.threadId, ctx.mail.threadId));
+    const before = await db
+      .select()
+      .from(mailMessage)
+      .where(eq(mailMessage.threadId, ctx.mail.threadId));
+    const response = await original('FIN', ctx.receiptId, ctx.owner.cookie);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    const body = (await response.json()) as { text: string };
+    expect(body).toMatchObject({ messageId: ctx.mail.messageRowId, archived: true });
+    expect(body.text).toContain('SRC-42');
+    expect(JSON.stringify(body)).not.toContain('SIBLING SECRET');
+    expect(body).not.toHaveProperty('attachments');
+    expect(body).not.toHaveProperty('threadId');
+    const thread = await ctx.api
+      .projects({ projectKey: 'FIN' })
+      .mail.threads({ threadId: String(ctx.mail.threadId) })
+      .get();
+    expect(thread.status).toBe(200);
+    expect(thread.data?.messages).toEqual([]);
+    expect(
+      await db.select().from(mailMessage).where(eq(mailMessage.threadId, ctx.mail.threadId)),
+    ).toEqual(before);
+    expect(sibling.messageRowId).not.toBe(ctx.mail.messageRowId);
+  });
+
+  it('fails closed when stored raw bytes disagree with their pinned hash', async () => {
+    const ctx = await setup();
+    const [message] = await db
+      .select()
+      .from(mailMessage)
+      .where(eq(mailMessage.id, ctx.mail.messageRowId));
+    await putObject(message!.rawKey, Buffer.from('tampered'), 'message/rfc822');
+    expect((await original('FIN', ctx.receiptId, ctx.owner.cookie)).status).toBe(409);
+  });
+
+  it('applies receipt access, mail membership, project and MCP restrictions to archive reads', async () => {
+    const ctx = await setup();
+    const outsider = await signUpTestUser();
+    expect((await original('FIN', ctx.receiptId, outsider.cookie)).status).toBe(403);
+    const other = (await ctx.api.projects.post({ key: 'OTHER', name: 'Other' })).data!;
+    expect((await original(other.key, ctx.receiptId, ctx.owner.cookie)).status).toBe(404);
+    await db
+      .update(projectTable)
+      .set({ mcpEnabled: false })
+      .where(eq(projectTable.id, ctx.project.id));
+    expect(
+      (await original('FIN', ctx.receiptId, ctx.owner.cookie, { 'x-mcp-loopback': '1' })).status,
+    ).toBe(403);
+    await db
+      .delete(teamMember)
+      .where(
+        and(eq(teamMember.teamId, ctx.project.teamId), eq(teamMember.userId, ctx.owner.userId)),
+      );
+    expect((await original('FIN', ctx.receiptId, ctx.owner.cookie)).status).toBe(404);
+  });
+
+  it('proves a legacy archived attachment against the actual MIME bytes, not only metadata', async () => {
+    const ctx = await setup(true);
+    await db.update(helenaReceipt).set({ details: {} }).where(eq(helenaReceipt.id, ctx.receiptId));
+    await db
+      .update(mailMessage)
+      .set({ deletedAt: new Date() })
+      .where(eq(mailMessage.id, ctx.mail.messageRowId));
+    expect((await original('FIN', ctx.receiptId, ctx.owner.cookie)).status).toBe(200);
+    await db.update(helenaReceipt).set({ size: 1 }).where(eq(helenaReceipt.id, ctx.receiptId));
+    expect((await original('FIN', ctx.receiptId, ctx.owner.cookie)).status).toBe(404);
+  });
+
+  it('does not expose another message through a forged same-thread JSON reference', async () => {
+    const ctx = await setup();
+    const other = await insertMessage({
+      teamId: ctx.project.teamId,
+      accountId: ctx.account.accountId,
+      folderId: ctx.account.inboxId,
+      threadId: ctx.mail.threadId,
+      text: 'Private sibling',
+    });
+    await db
+      .update(helenaReceipt)
+      .set({
+        details: {
+          mailSource: { messageId: other.messageRowId, threadId: ctx.mail.threadId, kind: 'body' },
+        },
+      })
+      .where(eq(helenaReceipt.id, ctx.receiptId));
+    expect((await original('FIN', ctx.receiptId, ctx.owner.cookie)).status).toBe(404);
   });
 });

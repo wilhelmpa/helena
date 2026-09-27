@@ -2,25 +2,24 @@ import {
   db,
   issue,
   mailAttachment,
+  mailAccount,
   mailMessage,
   mailThread,
   mailThreadIssue,
   project,
 } from '@repo/db';
-import { and, asc, eq, isNull } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
+import { bindsReceiptMail, receiptMailReference } from '@repo/mail';
 import { assertMailAccess } from '#modules/mail/access';
 import { assertPermission, type AuthUser } from '#shared/access';
 import { HttpError } from '#shared/lib';
-import { detailsOf, type ReceiptRow } from './views';
+import type { ReceiptRow } from './views';
 
 export interface ReceiptSourceLinks {
   messageId: number;
   threadId: number;
+  archived?: boolean;
   issues: { id: number; projectKey: string; sequenceNumber: number; identifier: string }[];
-}
-
-function sourceId(value: unknown): value is number {
-  return typeof value === 'number' && Number.isInteger(value) && value > 0 && value <= 2147483647;
 }
 
 async function mayRead(check: () => Promise<void>): Promise<boolean> {
@@ -46,44 +45,13 @@ export async function receiptSourceLinks(
   )
     return null;
 
-  let messageId: number;
-  let expectedThreadId: number | undefined;
-  if (receipt.mailAttachmentId !== null) {
-    const [attachment] = await db
-      .select({ messageId: mailAttachment.messageId })
-      .from(mailAttachment)
-      .where(
-        and(
-          eq(mailAttachment.id, receipt.mailAttachmentId),
-          eq(mailAttachment.sha256, receipt.sha256),
-          eq(mailAttachment.size, receipt.size),
-        ),
-      );
-    if (!attachment) return null;
-    messageId = attachment.messageId;
-  } else {
-    const source = detailsOf(receipt).mailSource;
-    if (!source || !sourceId(source.messageId) || !sourceId(source.threadId)) return null;
-    messageId = source.messageId;
-    expectedThreadId = source.threadId;
-  }
-
-  const [source] = await db
-    .select({ messageId: mailMessage.id, threadId: mailThread.id })
-    .from(mailMessage)
-    .innerJoin(mailThread, eq(mailThread.id, mailMessage.threadId))
-    .where(
-      and(
-        eq(mailMessage.id, messageId),
-        eq(mailMessage.teamId, receipt.teamId),
-        eq(mailThread.teamId, receipt.teamId),
-        eq(mailMessage.accountId, mailThread.accountId),
-        eq(mailThread.projectId, receipt.projectId),
-        isNull(mailMessage.deletedAt),
-        expectedThreadId === undefined ? undefined : eq(mailThread.id, expectedThreadId),
-      ),
-    );
-  if (!source) return null;
+  const resolved = await resolveReceiptMail(receipt);
+  if (!resolved) return null;
+  const source = {
+    messageId: resolved.message.id,
+    threadId: resolved.message.threadId,
+    ...(resolved.message.deletedAt === null ? {} : { archived: true }),
+  };
 
   if (!(await mayRead(() => assertPermission(receipt.projectId, user, 'work_items', 'read'))))
     return { ...source, issues: [] };
@@ -107,4 +75,40 @@ export async function receiptSourceLinks(
       identifier: `${linked.projectKey}-${linked.sequenceNumber}`,
     })),
   };
+}
+
+/** Metadata binding shared by active navigation and the receipt-only archive reader. */
+export async function resolveReceiptMail(receipt: ReceiptRow) {
+  if (receipt.source !== 'mail') return null;
+  let messageId: number;
+  if (receipt.mailAttachmentId !== null) {
+    const [attachment] = await db
+      .select()
+      .from(mailAttachment)
+      .where(eq(mailAttachment.id, receipt.mailAttachmentId));
+    if (!attachment) return null;
+    messageId = attachment.messageId;
+  } else {
+    const reference = receiptMailReference(receipt.details);
+    if (!reference) return null;
+    messageId = reference.messageId;
+  }
+  const [origin] = await db
+    .select({
+      message: mailMessage,
+      thread: mailThread,
+      account: { id: mailAccount.id, teamId: mailAccount.teamId },
+    })
+    .from(mailMessage)
+    .innerJoin(mailThread, eq(mailThread.id, mailMessage.threadId))
+    .innerJoin(mailAccount, eq(mailAccount.id, mailMessage.accountId))
+    .where(eq(mailMessage.id, messageId));
+  if (!origin) return null;
+  const attachments = await db
+    .select()
+    .from(mailAttachment)
+    .where(eq(mailAttachment.messageId, messageId));
+  return bindsReceiptMail(receipt, origin.message, origin.thread, origin.account, attachments)
+    ? { ...origin, attachments }
+    : null;
 }

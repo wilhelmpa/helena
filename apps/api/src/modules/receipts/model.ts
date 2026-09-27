@@ -57,6 +57,7 @@ export const ReceiptDetail = t.Composite([
       t.Object({
         messageId: t.Number(),
         threadId: t.Number(),
+        archived: t.Optional(t.Boolean()),
         issues: t.Array(
           t.Object({
             id: t.Number(),

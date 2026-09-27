@@ -8,6 +8,7 @@ import type { ReceiptDetail } from '@/lib/api/endpoints/receipts';
 import receipts from '../../../../messages/de/receipts.json';
 import common from '../../../../messages/de/common.json';
 import ReceiptBody from './ReceiptBody';
+import { ReceiptOriginalMailView } from './ReceiptSourceLinks';
 
 const receipt: ReceiptDetail = {
   id: 91,
@@ -114,5 +115,34 @@ describe('receipt detail source navigation', () => {
     const view = render({ ...receipt, source: 'upload', sourceLinks: null });
     assert.ok(!view.text?.includes(receipts.detail.sourceUnavailable));
     assert.ok(!view.links.some((a) => a.href?.includes('/inbox') || a.href?.includes('/issue/')));
+  });
+  it('opens archived sources in a receipt-only dialog instead of navigating to their thread', () => {
+    const view = render({ ...receipt, sourceLinks: { ...receipt.sourceLinks!, archived: true } });
+    assert.ok(view.text?.includes(receipts.detail.sourceArchivedMail));
+    assert.ok(!view.links.some((link) => link.href?.includes('/inbox')));
+    assert.ok(view.links.some((link) => link.text === 'In Dateien zeigen'));
+  });
+  it('renders untrusted original text without resources, links or mail actions', () => {
+    const html = renderToStaticMarkup(
+      <NextIntlClientProvider locale="de" timeZone="UTC" messages={{ receipts }}>
+        <ReceiptOriginalMailView
+          mail={{
+            messageId: 1,
+            archived: true,
+            subject: '<script>alert(1)</script>',
+            fromName: 'Supplier',
+            fromAddress: 'sender@example.test',
+            sentAt: '2026-09-27T00:00:00Z',
+            text: '<img src="https://external.invalid/pixel"> Plain original',
+            htmlText: '<a href="https://external.invalid">Alternative original</a>',
+          }}
+        />
+      </NextIntlClientProvider>,
+    );
+    const dom = new JSDOM(html);
+    assert.equal(dom.window.document.querySelectorAll('script,img,iframe,a,form,button').length, 0);
+    assert.ok(dom.window.document.body.textContent?.includes('Plain original'));
+    assert.ok(dom.window.document.body.textContent?.includes('Alternative original'));
+    dom.window.close();
   });
 });

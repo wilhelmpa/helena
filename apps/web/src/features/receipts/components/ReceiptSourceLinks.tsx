@@ -1,29 +1,67 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { ListTodo, Mail } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import type { ReceiptDetail } from '@/lib/api/endpoints/receipts';
+import {
+  getReceiptOriginalMail,
+  type ReceiptDetail,
+  type ReceiptOriginalMail,
+} from '@/lib/api/endpoints/receipts';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { inboxPath, issuePath } from '@/utils/paths';
 
 export default function ReceiptSourceLinks({
   projectKey,
+  receiptId,
   source,
 }: {
   projectKey: string;
+  receiptId: number;
   source: ReceiptDetail['sourceLinks'];
 }) {
   const t = useTranslations('receipts.detail');
+  const [open, setOpen] = useState(false);
+  const [mail, setMail] = useState<ReceiptOriginalMail | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const showOriginal = async () => {
+    setMail(null);
+    setFailed(false);
+    setLoading(true);
+    setOpen(true);
+    try {
+      setMail(await getReceiptOriginalMail(projectKey, receiptId));
+    } catch {
+      setFailed(true);
+    } finally {
+      setLoading(false);
+    }
+  };
   if (!source) return <p className="text-xs text-muted-foreground">{t('sourceUnavailable')}</p>;
   return (
     <div className="flex flex-wrap gap-2">
-      <Button size="sm" variant="ghost" asChild>
-        <Link href={`${inboxPath(projectKey)}?thread=${source.threadId}`} prefetch={false}>
+      {source.archived ? (
+        <Button size="sm" variant="ghost" disabled={loading} onClick={() => void showOriginal()}>
           <Mail />
-          {t('sourceMail')}
-        </Link>
-      </Button>
+          {t('sourceArchivedMail')}
+        </Button>
+      ) : (
+        <Button size="sm" variant="ghost" asChild>
+          <Link href={`${inboxPath(projectKey)}?thread=${source.threadId}`} prefetch={false}>
+            <Mail />
+            {t('sourceMail')}
+          </Link>
+        </Button>
+      )}
       {source.issues.map((issue) => (
         <Button key={issue.id} size="sm" variant="ghost" asChild>
           <Link href={issuePath(issue.projectKey, issue.sequenceNumber)} prefetch={false}>
@@ -32,6 +70,36 @@ export default function ReceiptSourceLinks({
           </Link>
         </Button>
       ))}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{t('sourceArchivedMail')}</DialogTitle>
+            <DialogDescription>{t('sourceArchiveReadOnly')}</DialogDescription>
+          </DialogHeader>
+          {loading && <p>{t('sourceLoading')}</p>}
+          {failed && <p role="alert">{t('sourceUnavailable')}</p>}
+          {mail && <ReceiptOriginalMailView mail={mail} />}
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+export function ReceiptOriginalMailView({ mail }: { mail: ReceiptOriginalMail }) {
+  const t = useTranslations('receipts.detail');
+  return (
+    <section className="min-w-0 space-y-3">
+      <h3 className="font-medium">{mail.subject}</h3>
+      <p className="text-sm text-muted-foreground">
+        {`${mail.fromName} <${mail.fromAddress}> · ${mail.sentAt.slice(0, 10)}`}
+      </p>
+      <pre className="font-sans text-sm break-words whitespace-pre-wrap">{mail.text}</pre>
+      {mail.htmlText && mail.htmlText.trim() !== mail.text.trim() && (
+        <details>
+          <summary>{t('sourceHtmlText')}</summary>
+          <pre className="font-sans text-sm break-words whitespace-pre-wrap">{mail.htmlText}</pre>
+        </details>
+      )}
+    </section>
   );
 }

@@ -138,7 +138,12 @@ export default function ReceiptBody({
           )}
         </div>
         {receipt.source === 'mail' && (
-          <ReceiptSourceLinks projectKey={projectKey} source={receipt.sourceLinks} />
+          <ReceiptSourceLinks
+            key={receipt.id}
+            projectKey={projectKey}
+            receiptId={receipt.id}
+            source={receipt.sourceLinks}
+          />
         )}
       </section>
 

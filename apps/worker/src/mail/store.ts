@@ -23,6 +23,7 @@ import { deleteObject, deleteObjectFolder } from '@repo/storage';
 import { rmdir, unlink } from 'node:fs/promises';
 import { and, asc, eq, inArray, isNotNull, isNull, lt, notExists, or, sql } from 'drizzle-orm';
 import { mailAccessToken } from './oauth';
+import { deletePrunableMessage } from './receipt-retention';
 
 export interface SyncAccount {
   id: number;
@@ -454,27 +455,64 @@ export async function accountsToReset(): Promise<number[]> {
   return rows.map((row) => row.id);
 }
 
+async function pruneMessages(ids: number[], cutoff: Date) {
+  const removed: NonNullable<Awaited<ReturnType<typeof deletePrunableMessage>>>[] = [];
+  // One short transaction at a time: cache maintenance must not fill the DB pool
+  // with advisory-lock waiters while an intake is using it.
+  for (const id of ids) {
+    const item = await deletePrunableMessage(id, cutoff);
+    if (item) removed.push(item);
+  }
+  return removed;
+}
+
 // Deletes messages with their files: the .eml in storage and the attachments in the vault
 // (a folder the attachments leave empty goes too). Threads left without a message go.
-async function deleteMessages(ids: number[]): Promise<number> {
+async function deleteMessages(ids: number[], pruneBefore?: Date): Promise<number> {
   let deleted = 0;
   for (let start = 0; start < ids.length; start += 500) {
     const batch = ids.slice(start, start + 500);
-    const files = await db
-      .select({
-        rawKey: mailMessage.rawKey,
-        folder: mailMessage.attachmentFolder,
-        threadId: mailMessage.threadId,
-      })
-      .from(mailMessage)
-      .where(inArray(mailMessage.id, batch));
-    const attachments = await db
-      .select({ path: mailAttachment.vaultPath })
-      .from(mailAttachment)
-      .where(inArray(mailAttachment.messageId, batch));
-    await db.delete(mailMessage).where(inArray(mailMessage.id, batch));
-    deleted += batch.length;
-    for (const file of files) await deleteObject(file.rawKey).catch(() => undefined);
+    const removed = pruneBefore
+      ? await pruneMessages(batch, pruneBefore)
+      : await db.transaction(async (tx) => {
+          const attachments = await tx
+            .select()
+            .from(mailAttachment)
+            .where(inArray(mailAttachment.messageId, batch));
+          const messages = await tx
+            .delete(mailMessage)
+            .where(inArray(mailMessage.id, batch))
+            .returning();
+          return messages.map((message) => ({
+            message,
+            attachments: attachments.filter((attachment) => attachment.messageId === message.id),
+          }));
+        });
+    const files = removed.map(({ message }) => ({
+      rawKey: message.rawKey,
+      folder: message.attachmentFolder,
+      threadId: message.threadId,
+    }));
+    const attachments = removed.flatMap((item) =>
+      item.attachments.map((attachment) => ({ path: attachment.vaultPath })),
+    );
+    deleted += removed.length;
+    // A retained original may share a content-addressed object or attachment path
+    // with a removed sibling. Delete bytes only after their last mail reference.
+    const retainedRaw = files.length
+      ? await db
+          .select({ key: mailMessage.rawKey })
+          .from(mailMessage)
+          .where(
+            inArray(
+              mailMessage.rawKey,
+              files.map((file) => file.rawKey),
+            ),
+          )
+      : [];
+    const rawKeys = new Set(retainedRaw.map((row) => row.key));
+    for (const file of files)
+      if (!rawKeys.has(file.rawKey)) await deleteObject(file.rawKey).catch(() => undefined);
     const retained = attachments.length
       ? await db
           .select({ path: helenaReceipt.vaultPath })
@@ -486,7 +524,18 @@ async function deleteMessages(ids: number[]): Promise<number> {
             ),
           )
       : [];
-    const receiptPaths = new Set(retained.map((r) => r.path));
+    const retainedAttachments = attachments.length
+      ? await db
+          .select({ path: mailAttachment.vaultPath })
+          .from(mailAttachment)
+          .where(
+            inArray(
+              mailAttachment.vaultPath,
+              attachments.map((file) => file.path),
+            ),
+          )
+      : [];
+    const receiptPaths = new Set([...retained, ...retainedAttachments].map((r) => r.path));
     for (const attachment of attachments) {
       if (!receiptPaths.has(attachment.path)) await removeVaultFile(attachment.path);
     }
@@ -548,7 +597,10 @@ export async function pruneAccount(accountId: number, fetchDays: number): Promis
         ),
       ),
     );
-  const deleted = await deleteMessages(rows.map((row) => row.id));
+  const deleted = await deleteMessages(
+    rows.map((row) => row.id),
+    start,
+  );
   await db.update(mailAccount).set({ prunedAt: new Date() }).where(eq(mailAccount.id, accountId));
   return deleted;
 }

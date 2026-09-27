@@ -60,6 +60,7 @@ import {
   uploadReceipt,
 } from './receipts';
 import { receiptViews } from './views';
+import { receiptOriginalMail } from './archived-source';
 
 // Receipt matching (Belege, docs/helena-decisions/decisions.md §7): a project's bank accounts
 // and statement imports, its receipts, the matches between them, the review list and the
@@ -348,6 +349,34 @@ export const receiptRoutes = new Elysia({
       detail: {
         summary: 'Read a receipt',
         description: 'With the text read from it and accessible mail and task source links.',
+      },
+    },
+  )
+  .get(
+    `${base}/:receiptId/source-mail`,
+    ({ project, params, user, request, set }) => {
+      set.headers['Cache-Control'] = 'private, no-store';
+      return receiptOriginalMail(project.id, params.receiptId, requireUser(user), request.headers);
+    },
+    {
+      projectAdmin: true,
+      params: receiptParams,
+      response: {
+        200: t.Object({
+          messageId: t.Number(),
+          archived: t.Boolean(),
+          subject: t.String(),
+          fromName: t.String(),
+          fromAddress: t.String(),
+          sentAt: t.String(),
+          text: t.String(),
+          htmlText: t.Nullable(t.String()),
+        }),
+        ...commonErrors,
+        ...errors(409, 413),
+      },
+      detail: {
+        summary: 'Read only the original mail bound to this receipt, including archived mail',
       },
     },
   )

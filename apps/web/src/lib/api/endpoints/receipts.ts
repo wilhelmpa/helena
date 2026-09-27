@@ -54,6 +54,7 @@ export interface ReceiptDetail extends Receipt {
   sourceLinks: {
     messageId: number;
     threadId: number;
+    archived?: boolean;
     issues: { id: number; projectKey: string; sequenceNumber: number; identifier: string }[];
   } | null;
 }
@@ -305,3 +306,16 @@ export const downloadMonthExport = (projectKey: string, month: string) =>
 
 export const receiptFileBlob = (projectKey: string, receiptId: number) =>
   blobOf(`${base(projectKey)}/${receiptId}/file`);
+
+export interface ReceiptOriginalMail {
+  messageId: number;
+  archived: boolean;
+  subject: string;
+  fromName: string;
+  fromAddress: string;
+  sentAt: string;
+  text: string;
+  htmlText: string | null;
+}
+export const getReceiptOriginalMail = (projectKey: string, receiptId: number) =>
+  request<ReceiptOriginalMail>(`${base(projectKey)}/${receiptId}/source-mail`);

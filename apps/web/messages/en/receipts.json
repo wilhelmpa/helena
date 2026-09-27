@@ -129,7 +129,11 @@
     "badAmount": "That amount is not readable. Write it like this: 172.50",
     "sourceMail": "Open source mail",
     "sourceTask": "Task {identifier}",
-    "sourceUnavailable": "Source mail is unavailable or you do not have access."
+    "sourceUnavailable": "Source mail is unavailable or you do not have access.",
+    "sourceArchivedMail": "Open archived source mail",
+    "sourceArchiveReadOnly": "Archived original mail for this receipt. Read only; the mail remains outside the inbox.",
+    "sourceLoading": "Loading source mail …",
+    "sourceHtmlText": "HTML content as text"
   },
   "fields": {
     "issuer": "Issuer",

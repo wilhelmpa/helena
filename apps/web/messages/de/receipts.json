@@ -129,7 +129,11 @@
     "badAmount": "Den Betrag verstehe ich nicht. Schreib ihn z. B. so: 172,50",
     "sourceMail": "Quellmail öffnen",
     "sourceTask": "Aufgabe {identifier}",
-    "sourceUnavailable": "Die Quellmail ist nicht mehr verfügbar oder du hast keinen Zugriff."
+    "sourceUnavailable": "Die Quellmail ist nicht mehr verfügbar oder du hast keinen Zugriff.",
+    "sourceArchivedMail": "Archivierte Quellmail öffnen",
+    "sourceArchiveReadOnly": "Archivierte Ursprungsmail dieses Belegs. Nur lesen; die Mail bleibt außerhalb des Posteingangs.",
+    "sourceLoading": "Quellmail wird geladen …",
+    "sourceHtmlText": "HTML-Inhalt als Text"
   },
   "fields": {
     "issuer": "Aussteller",
