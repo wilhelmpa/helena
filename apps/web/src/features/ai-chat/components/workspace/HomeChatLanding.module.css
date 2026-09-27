@@ -90,8 +90,9 @@
   color: #f3edf9;
   font-size: clamp(38px, 5vw, 56px);
   font-weight: 520;
-  letter-spacing: -0.055em;
+  letter-spacing: -0.03em;
   line-height: 1.04;
+  transform: scaleX(1.06);
 }
 
 .hint {
@@ -151,6 +152,7 @@
   font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.13em;
+  line-height: 1;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -166,6 +168,7 @@
   overflow: hidden;
   color: #eeeaf6;
   font-size: 13px;
+  line-height: 1.25;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -174,6 +177,7 @@
   overflow: hidden;
   color: #88808f;
   font-size: 11px;
+  line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -231,6 +235,7 @@
 .pill :global([data-align='block-end']) {
   width: auto;
   grid-column: 2;
+  gap: 10px;
   padding: 0;
 }
 
