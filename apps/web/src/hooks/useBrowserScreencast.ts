@@ -1,5 +1,12 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type RefObject,
+} from 'react';
 import { browserTabsQueryKey } from '@/utils/browserControl';
 import {
   FREE_CONTROL,
@@ -16,6 +23,11 @@ import {
   type Size,
 } from '@/utils/browserLive';
 import { mseVideo, videoPlayback, webCodecsVideo, type LiveVideo } from '@/utils/liveVideo';
+
+function subscribeVisibility(onChange: () => void) {
+  document.addEventListener('visibilitychange', onChange);
+  return () => document.removeEventListener('visibilitychange', onChange);
+}
 
 // The view's size in CSS pixels and the screen's pixel ratio, which the page is shown at.
 export interface LiveViewport extends Size {
@@ -139,6 +151,11 @@ export function useBrowserScreencast(
   onShown: (frame: ShownFrame) => void,
 ) {
   const queryClient = useQueryClient();
+  const documentVisible = useSyncExternalStore(
+    subscribeVisibility,
+    () => !document.hidden,
+    () => false,
+  );
   const [status, setStatus] = useState<ScreencastStatus>('connecting');
   const [mode, setMode] = useState<ScreencastMode>('jpeg');
   const [hasFrame, setHasFrame] = useState(false);
@@ -196,7 +213,6 @@ export function useBrowserScreencast(
   // the router for a fresh one instead of waiting out the tier's own keyframe interval; null
   // once asked, so one stall asks once, not on every frame it is still missing one.
   const waitingSinceMs = useRef<number | null>(null);
-  const reportedHidden = useRef<boolean | null>(null);
   const followAgentRef = useRef(followAgent);
 
   const send = useCallback((message: LiveMessage) => {
@@ -428,20 +444,8 @@ export function useBrowserScreencast(
     sendViewport();
   }, [hold, sendViewport, videoPreference]);
 
-  // A covered view (another panel, or the browser tab itself put in the background) is told
-  // to the router, which stops sending it frames; document.hidden is read again on each check
-  // since visibilitychange fires no React update on its own.
-  useEffect(() => {
-    const reportHidden = () => {
-      const hidden = !active || document.hidden;
-      if (reportedHidden.current === hidden) return;
-      reportedHidden.current = hidden;
-      send({ type: 'hidden', hidden });
-    };
-    reportHidden();
-    document.addEventListener('visibilitychange', reportHidden);
-    return () => document.removeEventListener('visibilitychange', reportHidden);
-  }, [active, send]);
+  // A covered view has no subscriber at all. The connection effect below closes it
+  // on panel/document hiding and opens a fresh visible handshake when shown again.
 
   // Tells the router the streamed tab to follow, again whenever the choice changes.
   useEffect(() => {
@@ -450,25 +454,28 @@ export function useBrowserScreencast(
   }, [followAgent, send]);
 
   useEffect(() => {
+    if (!active || !documentVisible) return;
     let stopped = false;
     let retry: ReturnType<typeof setTimeout> | undefined;
     let attempt = 0;
     let pingTimer: ReturnType<typeof setInterval> | undefined;
     let statsTimer: ReturnType<typeof setInterval> | undefined;
     const connect = () => {
+      if (stopped || document.hidden) return;
       const current = new WebSocket(screencastUrl(controlBase));
       current.binaryType = 'arraybuffer';
       socket.current = current;
       current.onopen = () => {
+        if (stopped || !shownRef.current || document.hidden) {
+          current.close();
+          return;
+        }
         // A new connection — the first one, or one after a reconnect or a restart of the
-        // router — always gets the view's size, whatever was sent before; a hidden view
-        // leaves the page size to the views that are shown, and tells its hidden state again,
-        // since the router's side of a new one starts out shown.
+        // router — declares visibility explicitly before sending its current viewport.
+        // Existing clients send the same hidden:false signal just after their viewport.
         lastSent.current = null;
+        send({ type: 'hidden', hidden: false });
         sendViewport(true);
-        const hidden = !shownRef.current || document.hidden;
-        reportedHidden.current = hidden;
-        send({ type: 'hidden', hidden });
         send({ type: 'follow', agent: followAgentRef.current });
         rttMs.current = 0;
         pingSentAt.current = null;
@@ -527,6 +534,7 @@ export function useBrowserScreencast(
         }, STATS_INTERVAL_MS);
       };
       current.onmessage = (event: MessageEvent<ArrayBuffer | string>) => {
+        if (stopped || socket.current !== current) return;
         if (typeof event.data !== 'string') {
           attempt = 0;
           setStatus('live');
@@ -606,10 +614,14 @@ export function useBrowserScreencast(
       clearInterval(pingTimer);
       clearInterval(statsTimer);
       closeVideo();
+      if (socket.current?.readyState === WebSocket.OPEN)
+        socket.current.send(JSON.stringify({ type: 'hidden', hidden: true }));
       socket.current?.close();
       socket.current = null;
     };
   }, [
+    active,
+    documentVisible,
     controlBase,
     reloadToken,
     checkConfirmed,

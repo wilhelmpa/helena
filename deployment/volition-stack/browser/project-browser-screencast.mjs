@@ -233,10 +233,11 @@ class Viewer {
     this.missed = false;
     this.viewport = null;
     this.waitingForKeyframe = true;
-    // Whether the view is covered (another browser tab, a minimised window): set by the
+    // No frames before the existing explicit hidden:false handshake. The current web
+    // client sends it on every connection, including reconnects. Later changes are set by the
     // viewer, which then gets no frames until it is shown again, at which point it gets a
     // fresh one right away rather than the tier's usual keyframe interval.
-    this.hidden = false;
+    this.hidden = true;
     // The index into TIERS this viewer's video is encoded at, or null before one is chosen.
     this.tierIndex = null;
     this.rttMs = 0;
@@ -465,6 +466,7 @@ export class ScreencastStream {
     clearTimeout(viewer.focusTimer);
     this.viewers.delete(viewer);
     if (this.viewers.size === 0) return this.end();
+    this.syncTierEncoders(false);
     this.resize();
     this.acknowledgeWhenWanted();
   }
@@ -567,6 +569,9 @@ export class ScreencastStream {
     viewer.hidden = hidden;
     if (was === hidden) return;
     if (!hidden) viewer.waitingForKeyframe = true;
+    // Release unused encoders now, even while CDP resize/mode work is pending.
+    // Do not start a new tier here; shown viewers resume through the normal path.
+    if (hidden) this.syncTierEncoders(false);
     this.resize();
     if (hidden) return;
     this.reassignTiers();
@@ -885,7 +890,7 @@ export class ScreencastStream {
 
   // Starts the encoder of every tier a shown video viewer is now on, and stops one that has
   // none left: at most one running encoder per tier, shared by every viewer on it.
-  syncTierEncoders() {
+  syncTierEncoders(startMissing = true) {
     if (!this.videoArea) return;
     const wanted = new Set();
     for (const viewer of this.viewers) {
@@ -899,6 +904,7 @@ export class ScreencastStream {
         this.tiers.delete(name);
       }
     }
+    if (!startMissing) return;
     for (const name of wanted) {
       if (!this.tiers.has(name)) {
         this.startTierEncoder(TIERS.find((tier) => tier.name === name));

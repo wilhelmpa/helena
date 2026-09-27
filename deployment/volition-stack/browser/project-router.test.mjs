@@ -363,6 +363,7 @@ describe("project browser router", () => {
     await state("demo", 16000, await listen(upstream));
     router = createProjectBrowserRouter({ root });
     const viewer = new WebSocket(`ws://127.0.0.1:${await listen(router)}/projects/demo/api/screencast`);
+    viewer.addEventListener("open", () => viewer.send(JSON.stringify({ type: "hidden", hidden: false })));
     viewer.binaryType = "arraybuffer";
     const received = [];
     viewer.addEventListener("message", (event) => received.push(event.data));
@@ -474,6 +475,7 @@ describe("project browser router", () => {
     await state("demo", 16000, await listen(upstream));
     router = createProjectBrowserRouter({ root });
     const viewer = new WebSocket(`ws://127.0.0.1:${await listen(router)}/projects/demo/api/screencast`);
+    viewer.addEventListener("open", () => viewer.send(JSON.stringify({ type: "hidden", hidden: false })));
     viewer.binaryType = "arraybuffer";
     const received = [];
     viewer.addEventListener("message", (event) => received.push(event.data));
@@ -491,6 +493,7 @@ describe("project browser router", () => {
     await state("demo", 16000, await listen(upstream));
     router = createProjectBrowserRouter({ root });
     const viewer = new WebSocket(`ws://127.0.0.1:${await listen(router)}/projects/demo/api/screencast`);
+    viewer.addEventListener("open", () => viewer.send(JSON.stringify({ type: "hidden", hidden: false })));
     viewer.addEventListener("open", () => {
       viewer.send(JSON.stringify({ type: "viewport", width: 619, height: 612, dpr: 2 }));
     });
@@ -519,6 +522,7 @@ describe("project browser router", () => {
     await state("demo", 16000, await listen(upstream));
     router = createProjectBrowserRouter({ root });
     const viewer = new WebSocket(`ws://127.0.0.1:${await listen(router)}/projects/demo/api/screencast`);
+    viewer.addEventListener("open", () => viewer.send(JSON.stringify({ type: "hidden", hidden: false })));
     const received = [];
     viewer.addEventListener("message", (event) => received.push(event.data));
     await new Promise((resolve) => viewer.addEventListener("open", resolve));
@@ -546,6 +550,7 @@ describe("project browser router", () => {
     const routerPort = await listen(router);
     const open = async () => {
       const viewer = new WebSocket(`ws://127.0.0.1:${routerPort}/projects/demo/api/screencast`);
+      viewer.addEventListener("open", () => viewer.send(JSON.stringify({ type: "hidden", hidden: false })));
       viewer.messages = [];
       viewer.addEventListener("message", (event) => viewer.messages.push(event.data));
       await new Promise((resolve) => viewer.addEventListener("open", resolve));
@@ -954,6 +959,7 @@ describe("project browser router", () => {
     router = createProjectBrowserRouter({ root });
     const port = await listen(router);
     const live = new WebSocket(`ws://127.0.0.1:${port}/projects/demo/api/screencast`);
+    live.addEventListener("open", () => live.send(JSON.stringify({ type: "hidden", hidden: false })));
     const desktop = new WebSocket(`ws://127.0.0.1:${port}/projects/demo/vnc.html`);
     await Promise.all([live, desktop].map((socket, index) => new Promise((resolve, reject) => {
       socket.addEventListener("open", resolve, { once: true });

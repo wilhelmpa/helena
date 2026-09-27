@@ -127,6 +127,7 @@ try {
       } catch (error) { failures.push(error); }
     });
     await until(() => socket.readyState === WebSocket.OPEN, "viewer connected");
+    socket.send(JSON.stringify({ type: "hidden", hidden: false }));
     socket.send(JSON.stringify({ type: "follow", agent: true }));
     return { socket, received };
   }
