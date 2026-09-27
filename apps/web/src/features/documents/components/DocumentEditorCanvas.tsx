@@ -6,10 +6,12 @@ import { useTranslations } from 'next-intl';
 import { useRelativeTime } from '@/context/relativeTimeContext';
 import { useUploadNoteAsset } from '../services/knowledge.service';
 import type { NoteDraft } from '../utils/noteDraft';
-import { fromEditorImages, toEditorImages } from '../utils/vaultImages';
+import { fromEditorImages, toEditorImages } from '@/utils/vaultImages';
 import { noteName } from '../utils/vaultPaths';
 import { requestBodyFocus, takeBodyFocus } from '../utils/bodyFocus';
-import DocumentMarkdownEditor, { insertDocumentImage } from './DocumentMarkdownEditor';
+import DocumentMarkdownEditor, {
+  insertDocumentImage,
+} from '@/components/common/editor/DocumentMarkdownEditor';
 import DocumentPageTitle from './DocumentPageTitle';
 import DocumentToolbar from './DocumentToolbar';
 

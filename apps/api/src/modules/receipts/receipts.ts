@@ -151,7 +151,9 @@ export async function uploadReceipt(
   }
   const month = (facts.invoiceDate ?? new Date().toISOString()).slice(0, 7);
   const root = projectRoot(project.key);
-  const relative = await writeUniqueFile(root, `Files/Belege/${month}`, name, bytes);
+  const relative = await writeUniqueFile(root, `Files/Belege/${month}`, name, bytes, {
+    ref: `user:${userId}`,
+  });
   const [row] = await db
     .insert(helenaReceipt)
     .values({
@@ -300,7 +302,7 @@ export async function prepareMailReceipts(
   const ibans = await ownIbans(input.projectId, executor);
   const plans: MailReceiptPlan[] = [];
   for (const attachment of chosen) {
-    if (!attachment.vaultPath.startsWith(`Projects/${target.key}/Files/Mail/`))
+    if (!attachment.vaultPath.startsWith(`Projects/${target.key}/`))
       throw new HttpError(409, 'The original attachment is outside this project.');
     assertReceiptFile(attachment.filename);
     const file = await describeVaultFile(
@@ -447,7 +449,9 @@ async function storeMailReceipts(input: MailReceiptInput, executor: ReceiptDb) {
         throw new HttpError(409, 'The archived original changed.');
       const relative = previous
         ? canonical
-        : await writeUniqueFile(root, folder, plan.filename, plan.bytes!);
+        : await writeUniqueFile(root, folder, plan.filename, plan.bytes!, undefined, {
+            deferIndex: true,
+          });
       vaultPath = joinPath(root.vaultPath!, relative);
       indexPaths.add(vaultPath);
     }

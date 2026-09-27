@@ -67,7 +67,8 @@ export default function NotesPage() {
     return result;
   }, [mru, seedQuery.data, deletedIds]);
 
-  const routeId = params.boardId ? Number(params.boardId) : null;
+  const routeBoard = useSearchParams().get('board') ?? params.boardId;
+  const routeId = routeBoard && /^[1-9][0-9]*$/.test(routeBoard) ? Number(routeBoard) : null;
   const activeBoardId = routeId ?? tabs[0]?.id ?? null;
 
   // A board opened by its file (`?canvas=Projects/KEY/Boards/X.canvas`, the link the

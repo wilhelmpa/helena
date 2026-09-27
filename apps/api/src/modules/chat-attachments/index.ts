@@ -2,17 +2,17 @@ import { Elysia } from 'elysia';
 import { authContext } from '#shared/auth-context';
 import { guards, entityGuard } from '#shared/guards';
 import { HttpError } from '#shared/lib';
-import { getObject } from '#shared/s3';
 import { mcpTool } from '#mcp/generate';
 import { accessErrors, commonErrors, errors } from '#shared/responses';
 import { requireUser } from '#shared/access';
+import { knowledgeActor } from '#modules/knowledge/reach';
+import { storeProjectFile } from '#modules/attachments/project-vault';
+import { serveVaultFile, trashVaultFile } from '#modules/project-files/service';
+import { ATTACHMENT_INLINE } from '#modules/project-files/serve';
 import {
   assertAttachmentUploadAllowed,
-  attachmentEtag,
-  attachmentObjectKey,
-  deleteAttachmentObject,
+  attachmentObjectResponse,
   safeAttachmentFilename,
-  storeAttachmentObject,
   uploadContentType,
 } from '#modules/attachments/storage';
 import {
@@ -23,26 +23,16 @@ import {
   rawAttachmentQuery,
   uploadChatAttachmentBody,
 } from './model';
-import { pdfToMarkdown } from './pdf';
 import {
   createChatAttachment,
   getChatAttachmentByPublicId,
   getChatAttachmentProjectId,
   readChatAttachmentContent,
+  chatFileState,
   type ChatAttachmentRow,
 } from './service';
 
-// Chat attachments: files uploaded in an agent chat. The upload and read routes
-// are MCP tools, so an agent can drop a file and read one back over MCP; the download route is public, like an issue
-// attachment's, so the link a chat message renders works for anyone viewing it.
-
-// Object keys are grouped by project so a project's bytes sit under one prefix in
-// the bucket, which is what makes per-project listing, cleanup, and policies
-// possible. The original filename stays the last key segment so the extension is
-// visible in the bucket.
-// Public shape: never exposes the internal serial id or the object key. `url` is
-// the public, no-auth download route.
-function chatAttachmentDto(a: ChatAttachmentRow) {
+function chatAttachmentDto(a: ChatAttachmentRow & { missing?: boolean }) {
   return {
     id: a.publicId,
     filename: a.filename,
@@ -50,6 +40,8 @@ function chatAttachmentDto(a: ChatAttachmentRow) {
     sizeBytes: a.sizeBytes,
     createdAt: a.createdAt,
     url: `/chat-attachments/${a.publicId}/raw`,
+    vaultPath: a.vaultPath,
+    missing: a.missing ?? false,
   };
 }
 
@@ -60,51 +52,37 @@ export const chatAttachmentRoutes = new Elysia({
   .use(authContext)
   .use(guards)
   .macro({
-    chatAttachment: entityGuard('ai_agents', 'Attachment not found', (p) =>
+    chatAttachment: entityGuard('documents', 'Attachment not found', (p) =>
       getChatAttachmentProjectId(p.publicId),
     ),
   })
-
-  // Stores one file for the chat. The bytes arrive as base64 rather than
-  // multipart, so the chat composer and an MCP client call the same route.
   .post(
     '/projects/:projectKey/chat-attachments',
-    async ({ body, set, project, user }) => {
+    async ({ body, set, project, user, request }) => {
       const bytes = Buffer.from(body.contentBase64, 'base64');
-      if (bytes.length === 0) {
+      if (bytes.length === 0)
         throw new HttpError(400, 'contentBase64 is empty or not valid base64');
-      }
-      let filename = safeAttachmentFilename(body.filename);
-      // A browser reports no type for a .md or .txt file on some platforms; the name
-      // answers for it then, and the bytes decide over any claim.
-      let contentType = await uploadContentType(bytes, filename, body.contentType);
+      const filename = safeAttachmentFilename(body.filename);
+      const contentType = await uploadContentType(bytes, filename, body.contentType);
       await assertAttachmentUploadAllowed(project.id, bytes.length, contentType);
-
-      // A PDF is stored as the Markdown it converts to: the original is
-      // discarded, so the row, the download link, and the agent all see text.
-      let content = bytes;
-      if (/\.pdf$/i.test(filename) || contentType === 'application/pdf') {
-        content = Buffer.from(await pdfToMarkdown(bytes), 'utf8');
-        filename = filename.replace(/\.pdf$/i, '') + '.md';
-        contentType = 'text/markdown';
-        await assertAttachmentUploadAllowed(project.id, content.length, contentType);
-      }
-
-      const key = attachmentObjectKey(project.id, 'chat', null, filename);
-      await storeAttachmentObject(key, content, contentType);
-
+      const actor = await knowledgeActor(requireUser(user), request.headers);
+      const file = await storeProjectFile(
+        project.id,
+        'Files/Chat Attachments',
+        filename,
+        bytes,
+        actor,
+      );
       let row;
       try {
         row = await createChatAttachment({
           projectId: project.id,
           uploadedByUserId: requireUser(user).id,
-          s3Key: key,
-          filename,
+          ...file,
           contentType,
-          sizeBytes: content.length,
         });
       } catch (error) {
-        await deleteAttachmentObject(key);
+        await trashVaultFile(file.vaultPath);
         throw error;
       }
       set.status = 201;
@@ -113,27 +91,23 @@ export const chatAttachmentRoutes = new Elysia({
     {
       body: uploadChatAttachmentBody,
       params: projectKeyParams,
-      permission: ['ai_agents', 'read'],
+      permission: ['documents', 'create'],
+      feature: 'documents',
       response: { 201: ChatAttachmentResponse, ...commonErrors, ...errors(413, 502) },
       detail: {
         summary: 'Upload a chat attachment',
         description:
-          'Store a file for the agent chat: a spreadsheet to import issues from, a spec, or a log. ' +
-          'A PDF is converted to Markdown and stored as a .md file; a scanned PDF is refused. ' +
-          'Send the bytes as base64 in `contentBase64`. Read it back with read_chat_attachment.',
-        ...mcpTool('upload_chat_attachment'),
+          'Store the original file in this project vault. PDFs and images remain unchanged; extracted text is available separately. Returns its vault path and a stable, permission-checked attachment link. Send bytes as contentBase64.',
+        ...mcpTool('upload_chat_attachment', { openWorldHint: false }, 'write', 'workspace'),
       },
     },
   )
-
-  // Reads a stored file back: its metadata and, when the file holds one, its
-  // content — a parsed table for a spreadsheet or document, the full text for a
-  // text file.
   .get(
     '/chat-attachments/:publicId',
     async ({ params }) => {
-      const row = await getChatAttachmentByPublicId(params.publicId);
-      if (!row) throw new HttpError(404, 'Attachment not found');
+      const found = await getChatAttachmentByPublicId(params.publicId);
+      if (!found) throw new HttpError(404, 'Attachment not found');
+      const row = await chatFileState(found);
       return { ...chatAttachmentDto(row), ...(await readChatAttachmentContent(row)) };
     },
     {
@@ -143,67 +117,42 @@ export const chatAttachmentRoutes = new Elysia({
       detail: {
         summary: 'Read a chat attachment',
         description:
-          'Read a file the person attached in the chat. A [file: "name" (attachment id: …)] ' +
-          'marker in their message means that file is attached: it is stored in the chat and ' +
-          'is not on your filesystem, so read it with this tool and the id from the marker — ' +
-          'never look for it on disk. Answers with the file metadata and, for a spreadsheet or ' +
-          'document (.xlsx, .csv, .docx), the column headers and first rows; for a text file ' +
-          '(.md, .txt, and a PDF converted to Markdown on upload), its full text. To turn a ' +
-          'table into issues, map its columns with prepare_issue_import.',
+          'Read a file identified by its chat attachment id. Its original is in the project vault at vaultPath. Returns text or table rows when available, plus a stable authenticated download URL. Scanned PDFs and images remain available as their original bytes.',
         ...mcpTool('read_chat_attachment'),
       },
     },
   )
-
-  // Public download URL: unauthenticated so the link rendered in a chat message
-  // works for anyone who can see the conversation. The publicId is an
-  // unguessable uuid.
   .get(
     '/chat-attachments/:publicId/raw',
     async ({ params, query, request }) => {
-      const row = await getChatAttachmentByPublicId(params.publicId);
-      if (!row) throw new HttpError(404, 'Attachment not found');
-
-      // The etag is a digest of the key rather than the key itself: this route is
-      // public, and the key carries the project id and the stored filename.
-      const etag = attachmentEtag(row.s3Key);
-      if (request.headers.get('if-none-match') === etag) {
-        return new Response(null, { status: 304, headers: { ETag: etag } });
+      const found = await getChatAttachmentByPublicId(params.publicId);
+      if (!found) throw new HttpError(404, 'Attachment not found');
+      const row = await chatFileState(found);
+      if (row.vaultPath) {
+        if (row.missing) throw new HttpError(404, 'The attachment file is missing');
+        return serveVaultFile({
+          vaultPath: row.vaultPath,
+          filename: row.filename,
+          contentType: row.contentType,
+          request,
+          download: query.download != null,
+          inline: ATTACHMENT_INLINE,
+        });
       }
-
-      let obj;
-      try {
-        obj = await getObject(row.s3Key);
-      } catch (err) {
-        throw new HttpError(404, err instanceof Error ? err.message : 'Object not found');
-      }
-
-      // The bytes and their content type are attacker-controlled, and this route
-      // is public and same-origin as the planner UI, so serving an HTML or SVG
-      // file inline would be stored XSS. Defenses: X-Content-Type-Options:nosniff
-      // stops MIME sniffing, and inline rendering is allowed only for a strict
-      // media allowlist (raster images, video, audio). Everything else — html,
-      // svg, xml, scripts — is forced to download and cannot execute.
-      const ct = row.contentType || obj.contentType;
-      const inlineSafe = /^(image\/(png|jpe?g|gif|webp|avif|bmp)|video\/|audio\/)/i.test(ct);
-      const inline = inlineSafe && query.download == null;
-      const headers: Record<string, string> = {
-        'Content-Type': ct,
-        'Content-Disposition': `${inline ? 'inline' : 'attachment'}; filename*=UTF-8''${encodeURIComponent(row.filename)}`,
-        'X-Content-Type-Options': 'nosniff',
-        'Cache-Control': 'no-cache',
-        ETag: etag,
-      };
-      if (obj.contentLength != null) headers['Content-Length'] = String(obj.contentLength);
-      if (!inline) headers['Content-Security-Policy'] = "default-src 'none'; sandbox";
-      return new Response(obj.body, { headers });
+      if (!row.s3Key) throw new HttpError(404, 'The attachment file is missing');
+      return attachmentObjectResponse({
+        s3Key: row.s3Key,
+        filename: row.filename,
+        contentType: row.contentType,
+        request,
+        download: query.download != null,
+      });
     },
     {
       params: publicIdParams,
       query: rawAttachmentQuery,
-      // Public route: no 401/403. Returns a raw Response (bytes), so no typed 200
-      // body — Elysia cannot validate a raw Response. Only the statuses it can throw.
-      response: { ...errors(400, 404) },
-      detail: { summary: 'Download a chat attachment (public, no auth)' },
+      chatAttachment: 'read',
+      response: { ...commonErrors },
+      detail: { summary: 'Download a chat attachment with project file access' },
     },
   );

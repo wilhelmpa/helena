@@ -1,4 +1,4 @@
-import { documentsPath } from './paths';
+import { vaultNotePath } from './paths';
 
 // Links from a vault file to the other places that open it.
 
@@ -47,8 +47,7 @@ export function notesVaultFolderUrl(notesBase: string, vaultFolder: string): str
 }
 
 // The Docs page opens a note of the vault by its vault-relative path.
-export const docsFileUrl = (projectKey: string, vaultPath: string) =>
-  `${documentsPath(projectKey)}?${new URLSearchParams({ path: vaultPath })}`;
+export const docsFileUrl = (_projectKey: string, vaultPath: string) => vaultNotePath(vaultPath);
 
 // The project a vault path belongs to: Projects/<KEY>/... .
 export function vaultProjectKey(vaultPath: string): string | null {
@@ -67,3 +66,23 @@ export function parentPath(path: string): string {
 export const childPath = (folder: string, name: string) => (folder ? `${folder}/${name}` : name);
 
 export const baseName = (path: string) => path.slice(path.lastIndexOf('/') + 1);
+
+// SilverBullet executes user-authored space scripts. Same-origin configuration is
+// invalid even if someone accidentally supplies it through runtime settings.
+export function isolatedNotesUrl(value: string, appOrigin: string): string {
+  try {
+    const url = new URL(value);
+    const app = new URL(appOrigin);
+    if (
+      !['http:', 'https:'].includes(url.protocol) ||
+      url.origin === app.origin ||
+      url.username ||
+      url.password ||
+      (app.protocol === 'https:' && url.protocol !== 'https:')
+    )
+      return '';
+    return url.toString();
+  } catch {
+    return '';
+  }
+}

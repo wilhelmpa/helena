@@ -5,7 +5,6 @@ import {
   FolderInput,
   Link2,
   MoreHorizontal,
-  NotebookPen,
   Pencil,
   Trash2,
 } from 'lucide-react';
@@ -34,7 +33,6 @@ export default function FileItemMenu({
 }) {
   const t = useTranslations('files.actions');
   const file = item.kind === 'file';
-  const notes = file ? actions.notesUrl(item) : '';
   const code = actions.codeUrl(item);
 
   return (
@@ -55,14 +53,6 @@ export default function FileItemMenu({
             <a href={actions.downloadUrl(item)} download={item.name}>
               <Download />
               {t('download')}
-            </a>
-          </DropdownMenuItem>
-        )}
-        {notes && (
-          <DropdownMenuItem asChild>
-            <a href={notes} target="_blank" rel="noopener noreferrer">
-              <NotebookPen />
-              {t('openInNotes')}
             </a>
           </DropdownMenuItem>
         )}

@@ -1,7 +1,8 @@
 import { db, chatAttachment } from '@repo/db';
 import { eq, sql } from 'drizzle-orm';
 import { HttpError, iso, num } from '#shared/lib';
-import { getObject } from '#shared/s3';
+import { readProjectFileBytes, currentProjectFile } from '#modules/attachments/project-vault';
+import { pdfToMarkdown } from './pdf';
 import { isTableFilename, parseImportFile } from './parse';
 import {
   assertAttachmentStorageCapacity,
@@ -18,7 +19,9 @@ export interface ChatAttachmentRow {
   publicId: string;
   projectId: number;
   uploadedByUserId: string | null;
-  s3Key: string;
+  s3Key: string | null;
+  vaultPath: string | null;
+  sha256: string | null;
   filename: string;
   contentType: string;
   sizeBytes: number;
@@ -32,6 +35,8 @@ function mapRow(row: typeof chatAttachment.$inferSelect): ChatAttachmentRow {
     projectId: row.projectId,
     uploadedByUserId: row.uploadedByUserId,
     s3Key: row.s3Key,
+    vaultPath: row.vaultPath,
+    sha256: row.sha256,
     filename: row.filename,
     contentType: row.contentType,
     sizeBytes: num(row.sizeBytes),
@@ -42,7 +47,9 @@ function mapRow(row: typeof chatAttachment.$inferSelect): ChatAttachmentRow {
 export async function createChatAttachment(input: {
   projectId: number;
   uploadedByUserId: string | null;
-  s3Key: string;
+  s3Key: string | null;
+  vaultPath: string | null;
+  sha256: string | null;
   filename: string;
   contentType: string;
   sizeBytes: number;
@@ -80,10 +87,22 @@ export async function getProjectChatAttachmentBytes(projectId: number): Promise<
   return num(rows[0]?.total ?? 0);
 }
 
-export async function readAttachmentBytes(s3Key: string): Promise<Buffer> {
-  const obj = await getObject(s3Key).catch(() => null);
-  if (!obj) throw new HttpError(404, 'The uploaded file is gone from the object store');
-  return Buffer.from(await new Response(obj.body).arrayBuffer());
+export async function readAttachmentBytes(
+  row: Pick<ChatAttachmentRow, 'projectId' | 's3Key' | 'vaultPath' | 'sha256' | 'sizeBytes'>,
+): Promise<Buffer> {
+  return readProjectFileBytes(row.projectId, row);
+}
+
+export async function chatFileState(row: ChatAttachmentRow) {
+  if (!row.vaultPath) return { ...row, missing: false };
+  const current = await currentProjectFile(row.projectId, row);
+  if (current && current !== row.vaultPath) {
+    await db
+      .update(chatAttachment)
+      .set({ vaultPath: current })
+      .where(eq(chatAttachment.id, row.id));
+  }
+  return { ...row, vaultPath: current ?? row.vaultPath, missing: !current };
 }
 
 export interface ChatAttachmentContent {
@@ -104,7 +123,14 @@ function isTextLike(row: ChatAttachmentRow): boolean {
 export async function readChatAttachmentContent(
   row: ChatAttachmentRow,
 ): Promise<ChatAttachmentContent> {
-  const bytes = await readAttachmentBytes(row.s3Key);
+  const bytes = await readAttachmentBytes(row);
+  if (row.contentType === 'application/pdf') {
+    const text = await pdfToMarkdown(bytes).catch((error: unknown) => {
+      if (error instanceof HttpError && error.status === 400) return null;
+      throw error;
+    });
+    return text ? { text } : {};
+  }
   if (isTableFilename(row.filename)) {
     const parsed = await parseImportFile(bytes, row.filename);
     return {

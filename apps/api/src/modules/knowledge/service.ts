@@ -455,7 +455,12 @@ export async function movePath(scope: VaultScope, from: string, to: string) {
     throw new HttpError(400, 'A note keeps the ".md" ending when it is renamed');
   }
   await moveVaultPath(from, to);
-  await moveEntries(from, to);
+  try {
+    await moveEntries(from, to);
+  } catch (error) {
+    await moveVaultPath(to, from);
+    throw error;
+  }
   await recordWrite([from, to], `Move ${from} to ${to}`, scope);
   return { path: to };
 }

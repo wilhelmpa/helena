@@ -1,3 +1,4 @@
+import { forwardFile } from '../../protected-media/forward';
 import { serverRuntimeEnv } from '@/utils/runtimeEnv';
 
 // Avatars and attachments live on the api, on another origin. Serving them through
@@ -8,7 +9,13 @@ import { serverRuntimeEnv } from '@/utils/runtimeEnv';
 // Only the api's public, unauthenticated media routes are reachable here, and no
 // request header is forwarded — this must never become a way to reach the rest of the
 // api through the web server.
-const MEDIA_ROOTS = ['avatars', 'attachments', 'chat-attachments', 'initiative-attachments'];
+const MEDIA_ROOTS = [
+  'avatars',
+  'attachments',
+  'chat-attachments',
+  'initiative-attachments',
+  'share',
+];
 
 // Copied from the api's response, including the headers that keep attacker-controlled
 // bytes inert (nosniff, the disposition that forces a download, the sandbox CSP).
@@ -28,6 +35,31 @@ export async function GET(request: Request, { params }: { params: Promise<{ path
     return new Response(null, { status: 404 });
   }
 
+  // Historical /media attachment links retain their URL, but now use the reader's
+  // session. Restrict the authenticated proxy to exactly UUID/raw (no arbitrary path).
+  if (path[0] === 'share') {
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (
+      path.length !== 6 ||
+      !['issue', 'view'].includes(path[1]!) ||
+      !uuid.test(path[2]!) ||
+      path[3] !== 'attachments' ||
+      !uuid.test(path[4]!) ||
+      path[5] !== 'raw'
+    )
+      return new Response(null, { status: 404 });
+  } else if (path[0] !== 'avatars') {
+    if (
+      path.length !== 3 ||
+      path[2] !== 'raw' ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(path[1]!)
+    ) {
+      return new Response(null, { status: 404 });
+    }
+    const download = new URL(request.url).searchParams.has('download') ? '?download=1' : '';
+    return forwardFile(request, `/${path.join('/')}${download}`);
+  }
+
   // The public origin is what the browser uses; inside a compose network the api is
   // reached by service name, which is what SERVICE_URL_API carries (as for the worker).
   const origin = process.env.SERVICE_URL_API || serverRuntimeEnv().apiUrl;
@@ -36,6 +68,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ path
     // The api answers 304 to it, and passing it on keeps a cached avatar cached.
     headers: forwardedHeaders(request),
     cache: 'no-store',
+    redirect: 'error',
   });
 
   const headers = new Headers();

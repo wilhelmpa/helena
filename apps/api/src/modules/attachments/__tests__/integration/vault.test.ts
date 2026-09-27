@@ -4,7 +4,7 @@ import path from 'node:path';
 import { db, issueAttachment } from '@repo/db';
 import { eq } from 'drizzle-orm';
 import { putObject } from '#shared/s3';
-import { api, app, authedApi } from '#tests/helpers/app';
+import { app, authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { addProjectMember } from '#tests/helpers/members';
@@ -61,7 +61,7 @@ describe('attachments in the vault', () => {
     });
     expect(second.data!.vaultPath).toBe(`${taskFolder}/Rechnung (2).txt`);
     expect(readFileSync(onDisk(second.data!.vaultPath!), 'utf8')).toBe('two');
-    const raw = await api.attachments({ publicId: first.data!.id }).raw.get();
+    const raw = await asOwner.attachments({ publicId: first.data!.id }).raw.get();
     expect(String(raw.data)).toBe('one');
   });
 
@@ -160,7 +160,7 @@ describe('attachments in the vault', () => {
       vaultPath: 'Projects/MKT/Buchhaltung/2026.txt',
       missing: false,
     });
-    const raw = await api.attachments({ publicId: attachment.id }).raw.get();
+    const raw = await asOwner.attachments({ publicId: attachment.id }).raw.get();
     expect(String(raw.data)).toBe('unique content');
   });
 
@@ -171,7 +171,7 @@ describe('attachments in the vault', () => {
 
     const [missing] = (await asOwner.issues({ issueId }).attachments.get()).data!;
     expect(missing).toMatchObject({ missing: true });
-    expect((await api.attachments({ publicId: up.data!.id }).raw.get()).status).toBe(404);
+    expect((await asOwner.attachments({ publicId: up.data!.id }).raw.get()).status).toBe(404);
 
     await files.upload.post({ files: [new File(['found'], 'found.txt')] });
     const relinked = await asOwner
@@ -195,7 +195,7 @@ describe('attachments in the vault', () => {
       }),
     );
     expect(view.headers.get('content-disposition')).toStartWith('inline;');
-    const pub = await api.attachments({ publicId: up.data!.id }).raw.get();
+    const pub = await asOwner.attachments({ publicId: up.data!.id }).raw.get();
     expect(pub.response.headers.get('content-disposition')).toStartWith('attachment;');
     const anonymous = await app.handle(
       new Request(`http://localhost/attachments/${up.data!.id}/view`),
@@ -225,6 +225,7 @@ describe('moving the object-store attachments into the vault', () => {
       moved: [],
     });
     const receipt = await moveAttachmentsToVault();
+    expect(receipt.failed).toEqual([]);
     expect(receipt.moved).toEqual([
       {
         id: row.id,
@@ -237,7 +238,7 @@ describe('moving the object-store attachments into the vault', () => {
     expect(readFileSync(onDisk(`${taskFolder}/alt.txt`), 'utf8')).toBe('legacy');
     const [attachment] = (await asOwner.issues({ issueId }).attachments.get()).data!;
     expect(attachment.vaultPath).toBe(`${taskFolder}/alt.txt`);
-    expect(String((await api.attachments({ publicId: row.publicId }).raw.get()).data)).toBe(
+    expect(String((await asOwner.attachments({ publicId: row.publicId }).raw.get()).data)).toBe(
       'legacy',
     );
 
@@ -251,10 +252,11 @@ describe('moving the object-store attachments into the vault', () => {
     await Bun.write(onDisk(`${taskFolder}/alt.txt`), 'legacy');
 
     const receipt = await moveAttachmentsToVault();
+    expect(receipt.failed).toEqual([]);
     expect(receipt.moved[0].to).toBe(`${taskFolder}/alt.txt`);
     expect(existsSync(onDisk(`${taskFolder}/alt (2).txt`))).toBe(false);
     const [stored] = await db.select().from(issueAttachment).where(eq(issueAttachment.id, row.id));
-    expect(stored.s3Key).toBeNull();
+    expect(stored.s3Key).toBe(row.s3Key);
   });
 
   it('keeps a row whose object is gone for the next run', async () => {

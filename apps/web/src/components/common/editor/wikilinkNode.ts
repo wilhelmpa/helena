@@ -5,7 +5,7 @@ import {
   wikilinkLabel,
   wikilinkMarkdown,
   wikilinkTask,
-} from '../utils/wikilink';
+} from '@/utils/wikilink';
 
 // The parts of markdown-it this extension uses; tiptap-markdown hands over its instance.
 interface InlineState {

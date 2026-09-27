@@ -19,6 +19,8 @@ export const ChatAttachmentResponse = t.Object({
   sizeBytes: t.Number(),
   createdAt: t.String(),
   url: t.String(),
+  vaultPath: t.Nullable(t.String()),
+  missing: t.Boolean(),
 });
 
 // The read route answers with the metadata plus the content in the shape the
@@ -31,6 +33,8 @@ export const ChatAttachmentContentResponse = t.Object({
   sizeBytes: t.Number(),
   createdAt: t.String(),
   url: t.String(),
+  vaultPath: t.Nullable(t.String()),
+  missing: t.Boolean(),
   table: t.Optional(
     t.Object({
       headers: t.Array(t.String()),

@@ -2100,13 +2100,22 @@ export const initiativeAttachment = pgTable(
     initiativeId: integer('initiative_id')
       .notNull()
       .references(() => initiative.id, { onDelete: 'cascade' }),
-    s3Key: text('s3_key').notNull(),
+    s3Key: text('s3_key'),
+    vaultPath: text('vault_path'),
+    sha256: text('sha256'),
     filename: text('filename').notNull(),
     contentType: text('content_type').notNull(),
     sizeBytes: bigint('size_bytes', { mode: 'number' }).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index('initiative_attachment_initiative_idx').on(t.initiativeId)],
+  (t) => [
+    index('initiative_attachment_initiative_idx').on(t.initiativeId),
+    index('initiative_attachment_vault_path_idx').on(t.vaultPath),
+    check(
+      'initiative_attachment_storage_check',
+      sql`${t.s3Key} IS NOT NULL OR ${t.vaultPath} IS NOT NULL`,
+    ),
+  ],
 );
 
 // A time-boxed period of work inside a project (a sprint). Issues point at it
@@ -2441,7 +2450,10 @@ export const issueAttachment = pgTable(
   (t) => [
     index('issue_attachment_issue_idx').on(t.issueId),
     index('issue_attachment_vault_path_idx').on(t.vaultPath),
-    check('issue_attachment_storage_check', sql`(${t.s3Key} IS NULL) <> (${t.vaultPath} IS NULL)`),
+    check(
+      'issue_attachment_storage_check',
+      sql`${t.s3Key} IS NOT NULL OR ${t.vaultPath} IS NOT NULL`,
+    ),
   ],
 );
 
@@ -2512,13 +2524,22 @@ export const chatAttachment = pgTable(
     uploadedByUserId: text('uploaded_by_user_id').references(() => user.id, {
       onDelete: 'set null',
     }),
-    s3Key: text('s3_key').notNull(),
+    s3Key: text('s3_key'),
+    vaultPath: text('vault_path'),
+    sha256: text('sha256'),
     filename: text('filename').notNull(),
     contentType: text('content_type').notNull(),
     sizeBytes: bigint('size_bytes', { mode: 'number' }).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index('chat_attachment_project_idx').on(t.projectId)],
+  (t) => [
+    index('chat_attachment_project_idx').on(t.projectId),
+    index('chat_attachment_vault_path_idx').on(t.vaultPath),
+    check(
+      'chat_attachment_storage_check',
+      sql`${t.s3Key} IS NOT NULL OR ${t.vaultPath} IS NOT NULL`,
+    ),
+  ],
 );
 
 // An import of issues from a chat attachment: the column mapping an agent saved

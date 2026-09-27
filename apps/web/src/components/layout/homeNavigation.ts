@@ -28,7 +28,6 @@ import {
   devicesPath,
   globalAgentActivityPath,
   globalInboxPath,
-  homeDocsPath,
   homeFilesPath,
   manageTeamsPath,
   teamOrganizationPath,
@@ -99,7 +98,7 @@ export interface HomeNavigationItem {
 // the team's library of templates. Home's Docs are the instance owner's own notes. The
 // chat is not an entry (owner, 2026-09-24): it lives in the tool panel, full screen from
 // there, and /chat stays reachable by link.
-export function homeNavigation(teamId: number | null, isOwner = false): HomeNavigationItem[] {
+export function homeNavigation(teamId: number | null, _isOwner = false): HomeNavigationItem[] {
   const teamOnly = (items: HomeNavigationItem[]) => (teamId == null ? [] : items);
   return [
     { id: 'overview', group: 'work', href: '/' },
@@ -107,7 +106,6 @@ export function homeNavigation(teamId: number | null, isOwner = false): HomeNavi
     { id: 'inbox', group: 'work', href: globalInboxPath() },
     { id: 'files', group: 'work', href: homeFilesPath() },
     { id: 'approvals', group: 'work', href: approvalsPath() },
-    ...(isOwner ? [{ id: 'docs' as const, group: 'work' as const, href: homeDocsPath() }] : []),
     ...teamOnly([
       { id: 'agentPool', group: 'agents', href: agentsPath() },
       { id: 'organization', group: 'agents', href: teamOrganizationPath() },

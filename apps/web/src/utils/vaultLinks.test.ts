@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
+  isolatedNotesUrl,
   baseName,
   childPath,
   docsFileUrl,
@@ -71,7 +72,7 @@ describe('vault links', () => {
   it('opens a note on the Docs page of its project', () => {
     assert.equal(
       docsFileUrl('VOL', 'Projects/VOL/Docs/Plan.md'),
-      '/project/VOL/docs?path=Projects%2FVOL%2FDocs%2FPlan.md',
+      '/project/VOL/files?path=Docs&file=Docs%2FPlan.md',
     );
   });
 
@@ -88,4 +89,13 @@ describe('vault links', () => {
     assert.equal(childPath('Files', 'a.pdf'), 'Files/a.pdf');
     assert.equal(baseName('Files/a.pdf'), 'a.pdf');
   });
+});
+
+it('refuses executable notes on the Helena origin or insecure transport', () => {
+  assert.equal(isolatedNotesUrl('https://helena.test/notes', 'https://helena.test'), '');
+  assert.equal(isolatedNotesUrl('http://notes.test', 'https://helena.test'), '');
+  assert.equal(
+    isolatedNotesUrl('https://notes.test/a', 'https://helena.test'),
+    'https://notes.test/a',
+  );
 });

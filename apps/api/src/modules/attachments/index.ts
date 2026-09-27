@@ -1,3 +1,5 @@
+import { knowledgeActor } from '#modules/knowledge/reach';
+import { requireUser } from '#shared/access';
 import { Elysia, t } from 'elysia';
 import { noContent } from '#shared/http';
 import { authContext } from '#shared/auth-context';
@@ -9,7 +11,7 @@ import { accessErrors, commonErrors, errors } from '#shared/responses';
 import { getIssueProjectId } from '#modules/issues/service';
 import { getStorageSettings, MB } from '#modules/settings/service';
 import { ATTACHMENT_INLINE, VIEWER_INLINE } from '#modules/project-files/serve';
-import { serveVaultFile } from '#modules/project-files/service';
+import { attachmentFile } from './file';
 import {
   IssueAttachmentResponse,
   IssueAttachmentListResponse,
@@ -32,12 +34,10 @@ import {
 } from './service';
 import {
   assertAttachmentUploadAllowed,
-  attachmentObjectResponse,
   safeAttachmentFilename,
   uploadContentType,
 } from './storage';
 import {
-  currentAttachmentPath,
   discardAttachmentFile,
   linkedAttachmentFile,
   purgeAttachmentFiles,
@@ -101,36 +101,6 @@ async function replaceWith(
   return replacement.attachment;
 }
 
-// The file of an attachment, served inline for the kinds `inline` allows.
-async function attachmentFile(
-  publicId: string,
-  request: Request,
-  download: boolean,
-  inline: (contentType: string) => boolean,
-) {
-  const row = await getAttachmentByPublicId(publicId);
-  if (!row) throw new HttpError(404, 'Attachment not found');
-  if (row.s3Key) {
-    return attachmentObjectResponse({
-      s3Key: row.s3Key,
-      contentType: row.contentType,
-      filename: row.filename,
-      request,
-      download,
-    });
-  }
-  const vaultPath = await currentAttachmentPath(row);
-  if (!vaultPath) throw new HttpError(404, 'The file of this attachment is missing');
-  return serveVaultFile({
-    vaultPath,
-    filename: row.filename,
-    contentType: row.contentType,
-    request,
-    download,
-    inline,
-  });
-}
-
 export const attachmentRoutes = new Elysia({
   name: 'attachments',
   detail: { tags: ['Attachments'] },
@@ -178,7 +148,7 @@ export const attachmentRoutes = new Elysia({
   // issue's folder of the vault, and records the metadata. Returns the attachment DTO.
   .post(
     '/issues/:issueId/attachments',
-    async ({ params, body, set, projectId }) => {
+    async ({ params, body, set, projectId, user, request }) => {
       const file = body.file;
       if (!(file instanceof File)) throw new HttpError(400, 'No file uploaded (form field "file")');
       if (file.size === 0) throw new HttpError(400, 'Uploaded file is empty');
@@ -187,7 +157,13 @@ export const attachmentRoutes = new Elysia({
       const filename = safeAttachmentFilename(file.name);
       const contentType = await uploadContentType(bytes, filename, file.type);
       await assertAttachmentUploadAllowed(projectId, file.size, contentType);
-      const stored = await storeAttachmentFile(params.issueId, filename, contentType, bytes);
+      const stored = await storeAttachmentFile(
+        params.issueId,
+        filename,
+        contentType,
+        bytes,
+        await knowledgeActor(requireUser(user), request.headers),
+      );
       set.status = 201;
       return attachmentDto(await attach(projectId, params.issueId, stored));
     },
@@ -206,7 +182,7 @@ export const attachmentRoutes = new Elysia({
   // private/local hosts, no redirects) and size-capped like a direct upload.
   .post(
     '/issues/:issueId/attachments/import',
-    async ({ params, body, set, projectId }) => {
+    async ({ params, body, set, projectId, user, request }) => {
       const { url, contentBase64 } = body;
       if ((url == null) === (contentBase64 == null)) {
         throw new HttpError(400, 'Provide exactly one of url or contentBase64');
@@ -244,7 +220,13 @@ export const attachmentRoutes = new Elysia({
       const filename = safeAttachmentFilename(body.filename);
       const contentType = await uploadContentType(bytes, filename, declaredType);
       await assertAttachmentUploadAllowed(projectId, bytes.length, contentType);
-      const stored = await storeAttachmentFile(params.issueId, filename, contentType, bytes);
+      const stored = await storeAttachmentFile(
+        params.issueId,
+        filename,
+        contentType,
+        bytes,
+        await knowledgeActor(requireUser(user), request.headers),
+      );
       set.status = 201;
       return attachmentDto(await attach(projectId, params.issueId, stored));
     },
@@ -280,6 +262,7 @@ export const attachmentRoutes = new Elysia({
         summary: 'Link a project file to an issue',
         description:
           "Attach a file of the project's vault folder by its path relative to that folder. The file is not copied.",
+        ...mcpTool('link_attachment', { openWorldHint: false }, 'write', 'workspace'),
       },
     },
   )
@@ -290,7 +273,7 @@ export const attachmentRoutes = new Elysia({
   // trash, and the raw route serves the new bytes because it revalidates.
   .put(
     '/attachments/:publicId',
-    async ({ params, body, projectId }) => {
+    async ({ params, body, projectId, user, request }) => {
       const existing = await getAttachmentByPublicId(params.publicId);
       if (!existing) throw new HttpError(404, 'Attachment not found');
 
@@ -303,7 +286,13 @@ export const attachmentRoutes = new Elysia({
       const contentType = await uploadContentType(bytes, filename, file.type);
       const replacedBytes = existing.linked ? 0 : existing.sizeBytes;
       await assertAttachmentUploadAllowed(projectId, file.size, contentType, replacedBytes);
-      const stored = await storeReplacement(existing, filename, contentType, bytes);
+      const stored = await storeReplacement(
+        existing,
+        filename,
+        contentType,
+        bytes,
+        await knowledgeActor(requireUser(user), request.headers),
+      );
       return attachmentDto(await replaceWith(params.publicId, projectId, existing, stored));
     },
     {
@@ -369,14 +358,14 @@ export const attachmentRoutes = new Elysia({
       params: publicIdParams,
       query: rawAttachmentQuery,
       attachment: 'read',
+      attachmentDocuments: 'read',
       response: { ...commonErrors },
       detail: { summary: 'Open an attachment in the viewer' },
     },
   )
 
-  // Public download/preview URL: unauthenticated so it works in <img>/<video>
-  // tags and can be fetched by external services. The publicId is an unguessable
-  // uuid. `?download=1` forces a download instead of inline rendering.
+  // Stable attachment URL, gated by project permissions. Explicit public shares
+  // use a separate token-scoped route. ?download=1 forces a download.
   .get(
     '/attachments/:publicId/raw',
     ({ params, query, request }) =>
@@ -384,9 +373,9 @@ export const attachmentRoutes = new Elysia({
     {
       params: publicIdParams,
       query: rawAttachmentQuery,
-      // Public route: no 401/403. Returns a raw Response (bytes), so no typed 200
-      // body — Elysia cannot validate a raw Response. Only the statuses it can throw.
-      response: { ...errors(400, 404) },
-      detail: { summary: 'Download or preview an attachment (public, no auth)' },
+      attachment: 'read',
+      attachmentDocuments: 'read',
+      response: { ...commonErrors },
+      detail: { summary: 'Download or preview an attachment with project file access' },
     },
   );

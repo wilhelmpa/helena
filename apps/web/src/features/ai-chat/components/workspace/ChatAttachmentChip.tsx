@@ -3,7 +3,7 @@
 import { FileText, ListTodo, Loader2, X } from 'lucide-react';
 import Link from 'next/link';
 import type { AiChatAttachment } from '@/lib/api/endpoints/agentChat';
-import { issuePath } from '@/utils/paths';
+import { issuePath, vaultNotePath } from '@/utils/paths';
 import {
   Attachment,
   AttachmentAction,
@@ -51,6 +51,9 @@ export default function ChatAttachmentChip({ attachment }: { attachment: AiChatA
       <AttachmentContent>
         <AttachmentTitle dir="auto">{attachment.name}</AttachmentTitle>
       </AttachmentContent>
+      <AttachmentTrigger asChild>
+        <Link href={vaultNotePath(attachment.path)} aria-label={attachment.name} />
+      </AttachmentTrigger>
     </Attachment>
   );
 }

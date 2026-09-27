@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { insertDocumentImage } from './DocumentMarkdownEditor';
+import { insertDocumentImage } from '@/components/common/editor/DocumentMarkdownEditor';
 
 export default function DocumentImageMenu({
   editor,

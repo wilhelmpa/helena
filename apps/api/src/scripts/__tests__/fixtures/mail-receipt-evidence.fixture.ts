@@ -195,7 +195,10 @@ moduleMock('project-files/service', {
     folder: string,
     filename: string,
     bytes: Buffer,
+    _actor: unknown,
+    options: { deferIndex?: boolean },
   ) => {
+    assert.deepEqual(options, { deferIndex: true }, 'Intake must defer writer indexing');
     if (failWrite) throw new Error('Synthetic original write failure');
     assert.equal(
       files.has(`${root.vaultPath}/${folder}/${filename}`),

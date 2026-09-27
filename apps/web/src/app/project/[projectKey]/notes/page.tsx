@@ -1,10 +1,18 @@
-import RequireFeature from '@/components/common/permissions/RequireFeature';
-import NotesPage from '@/features/notes/NotesPage';
+import { redirect } from 'next/navigation';
+import { notePath, notesPath } from '@/utils/paths';
 
-export default function Page() {
-  return (
-    <RequireFeature feature="notes">
-      <NotesPage />
-    </RequireFeature>
+export default async function Page({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ projectKey: string; boardId?: string }>;
+  searchParams: Promise<{ canvas?: string }>;
+}) {
+  const { projectKey, boardId } = await params;
+  const { canvas } = await searchParams;
+  redirect(
+    boardId
+      ? notePath(projectKey, Number(boardId))
+      : `${notesPath(projectKey)}${canvas ? `&canvas=${encodeURIComponent(canvas)}` : ''}`,
   );
 }

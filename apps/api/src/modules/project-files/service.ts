@@ -13,9 +13,10 @@ import {
   unlink,
 } from 'node:fs/promises';
 import path from 'node:path';
-import { db, issueAttachment } from '@repo/db';
-import { or, eq, sql } from 'drizzle-orm';
-import { isSyncConflict } from '@repo/vault';
+import { db } from '@repo/db';
+import { sql } from 'drizzle-orm';
+import { isSyncConflict, moveEntries } from '@repo/vault';
+import { recordFileWrite, type FileActor } from './provenance';
 import { HttpError } from '#shared/lib';
 import {
   assertNoSymlinks,
@@ -36,6 +37,7 @@ import {
   projectFilesSlug,
   projectRoot,
   projectRootOf,
+  homeRoot,
   vaultDirectory,
   type FileRoot,
 } from './roots';
@@ -98,6 +100,7 @@ async function folderDirectory(root: FileRoot, relative: string): Promise<string
 async function existingEntry(root: FileRoot, relative: string) {
   const target = resolveInside(root.directory, relative);
   try {
+    if (root.vaultPath) await assertNoSymlinks(vaultDirectory(), root.vaultPath);
     await assertNoSymlinks(root.directory, relative);
     return { target, info: await lstat(target) };
   } catch (error) {
@@ -120,6 +123,7 @@ export async function listFolder(root: FileRoot, relative = '') {
   const target = resolveInside(root.directory, safe);
   let entries: Dirent[];
   try {
+    if (root.vaultPath) await assertNoSymlinks(vaultDirectory(), root.vaultPath);
     await assertNoSymlinks(root.directory, safe);
     entries = await readdir(target, { withFileTypes: true });
   } catch (error) {
@@ -198,7 +202,12 @@ async function writeNewFile(target: string, bytes: Uint8Array) {
   }
 }
 
-export async function createTextFile(root: FileRoot, relative: string, content: string) {
+export async function createTextFile(
+  root: FileRoot,
+  relative: string,
+  content: string,
+  actor?: FileActor,
+) {
   assertWritable(root);
   const requested = textPath(relative);
   const safe = joinPath(parentPath(requested), safeFileName(path.basename(requested)));
@@ -206,7 +215,33 @@ export async function createTextFile(root: FileRoot, relative: string, content: 
   if (bytes.length > MAX_TEXT_BYTES) throw new HttpError(413, 'Text content is too large');
   const directory = await folderDirectory(root, parentPath(safe));
   await writeNewFile(path.join(directory, path.basename(safe)), bytes);
+  await recordFileWrite([joinPath(root.vaultPath!, safe)], actor);
   return { path: safe, created: true as const };
+}
+
+// Optimistic concurrency: the complete previous version is retained in the trash.
+export async function updateTextFile(
+  root: FileRoot,
+  relative: string,
+  content: string,
+  expectedEtag: string,
+  actor?: FileActor,
+) {
+  assertWritable(root);
+  const saved = await db.transaction(async (tx) => {
+    // Serializes API writers across processes; a stale second save must conflict.
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtextextended(${root.directory + '/' + relativePath(relative)}, 0))`,
+    );
+    const current = await readTextFile(root, relative);
+    if (current.etag !== expectedEtag) throw new HttpError(409, 'File changed since it was read');
+    const bytes = Buffer.from(content);
+    if (bytes.length > MAX_TEXT_BYTES) throw new HttpError(413, 'Text content is too large');
+    await replaceFileContents(root, current.path, bytes);
+    return { path: current.path, content, sizeBytes: bytes.length, etag: etag(bytes) };
+  });
+  await recordFileWrite([joinPath(root.vaultPath!, saved.path)], actor);
+  return saved;
 }
 
 export async function createFolder(root: FileRoot, relative: string) {
@@ -238,6 +273,8 @@ export async function writeUniqueFile(
   folder: string,
   name: string,
   bytes: Uint8Array,
+  actor?: FileActor,
+  options: { deferIndex?: boolean } = {},
 ): Promise<string> {
   assertWritable(root);
   const directory = await folderDirectory(root, relativePath(folder));
@@ -248,7 +285,11 @@ export async function writeUniqueFile(
       const candidate = numberedName(safeFileName(name), number);
       try {
         await link(temporary, path.join(directory, candidate));
-        return joinPath(folder, candidate);
+        const relative = joinPath(folder, candidate);
+        // Receipt intake owns a transaction and indexes the original after its commit.
+        if (!options.deferIndex)
+          await recordFileWrite([joinPath(root.vaultPath!, relative)], actor);
+        return relative;
       } catch (error) {
         if (errorCode(error) !== 'EEXIST') throw error;
       }
@@ -264,6 +305,7 @@ export async function uploadFiles(
   folder: string,
   files: File[],
   maxBytes: number,
+  actor?: FileActor,
 ): Promise<FileItem[]> {
   assertWritable(root);
   const safeFolder = relativePath(folder);
@@ -277,6 +319,7 @@ export async function uploadFiles(
       safeFolder,
       file.name,
       new Uint8Array(await file.arrayBuffer()),
+      actor,
     );
     items.push({
       name: path.basename(created),
@@ -290,23 +333,7 @@ export async function uploadFiles(
   return items;
 }
 
-// Attachment rows follow a file or folder moved in Plan. A move outside Plan is found
-// by the attachment resolver instead.
-async function moveAttachmentPaths(from: string, to: string) {
-  await db
-    .update(issueAttachment)
-    .set({
-      vaultPath: sql`${to}::text || substr(${issueAttachment.vaultPath}, char_length(${from}::text) + 1)`,
-    })
-    .where(
-      or(
-        eq(issueAttachment.vaultPath, from),
-        sql`left(${issueAttachment.vaultPath}, char_length(${from}::text) + 1) = ${from}::text || '/'`,
-      ),
-    );
-}
-
-export async function moveEntry(root: FileRoot, from: string, to: string) {
+export async function moveEntry(root: FileRoot, from: string, to: string, actor?: FileActor) {
   assertWritable(root);
   const source = relativePath(from);
   const requested = relativePath(to);
@@ -323,10 +350,15 @@ export async function moveEntry(root: FileRoot, from: string, to: string) {
   if (await exists(next)) throw new HttpError(409, 'An entry with this name already exists');
   await rename(target, next);
   if (root.vaultPath) {
-    await moveAttachmentPaths(
-      joinPath(root.vaultPath, source),
-      joinPath(root.vaultPath, destination),
-    );
+    const before = joinPath(root.vaultPath, source);
+    const after = joinPath(root.vaultPath, destination);
+    try {
+      await moveEntries(before, after);
+    } catch (error) {
+      await rename(next, target);
+      throw error;
+    }
+    await recordFileWrite([before, after], actor);
   }
   return { path: destination };
 }
@@ -347,12 +379,17 @@ async function trashTarget(root: FileRoot, relative: string): Promise<string> {
 }
 
 // Moves a file or folder to the trash of its root, keeping its relative path.
-export async function trashEntry(root: FileRoot, relative: string): Promise<void> {
+export async function trashEntry(
+  root: FileRoot,
+  relative: string,
+  actor?: FileActor,
+): Promise<void> {
   assertWritable(root);
   const safe = relativePath(relative);
   if (!safe) throw new HttpError(400, 'File path is invalid');
   const { target } = await existingEntry(root, safe);
   await rename(target, await trashTarget(root, safe));
+  await recordFileWrite([joinPath(root.vaultPath!, safe)], actor);
 }
 
 export async function fileResponse(
@@ -404,7 +441,17 @@ export async function statVaultFile(root: FileRoot, relative: string) {
 }
 
 function vaultEntry(vaultPath: string) {
-  const entry = projectRootOf(relativePath(vaultPath));
+  const safe = relativePath(vaultPath);
+  const [top, ...rest] = safe.split('/');
+  const home =
+    top === 'Home'
+      ? 'home'
+      : top === 'Private'
+        ? 'private'
+        : top === 'Templates'
+          ? 'templates'
+          : null;
+  const entry = home ? { root: homeRoot(home), relative: rest.join('/') } : projectRootOf(safe);
   if (!entry?.relative) throw new HttpError(400, 'File path is invalid');
   return entry;
 }
@@ -430,8 +477,17 @@ export async function trashVaultFile(vaultPath: string): Promise<void> {
 
 // Writes new bytes to a vault file in place, so every link to it keeps working. The
 // previous version is kept in the trash.
-export async function replaceVaultFile(vaultPath: string, bytes: Uint8Array): Promise<void> {
+export async function replaceVaultFile(
+  vaultPath: string,
+  bytes: Uint8Array,
+  actor?: FileActor,
+): Promise<void> {
   const { root, relative } = vaultEntry(vaultPath);
+  await replaceFileContents(root, relative, bytes);
+  await recordFileWrite([vaultPath], actor);
+}
+
+async function replaceFileContents(root: FileRoot, relative: string, bytes: Uint8Array) {
   const { target, info } = await existingEntry(root, relative);
   if (!info.isFile()) throw new HttpError(400, 'File path must refer to a file');
   await copyFile(target, await trashTarget(root, relative), constants.COPYFILE_EXCL);

@@ -2,10 +2,8 @@ import { useRouter } from 'next/navigation';
 import {
   Activity,
   Bell,
-  BookOpenText,
   CalendarRange,
   ShieldCheck,
-  StickyNote,
   Building2,
   Code2,
   Folder,
@@ -29,7 +27,6 @@ import {
   filesPath,
   codePath,
   cyclesPath,
-  documentsPath,
   godPath,
   inboxPath,
   initiativesPath,
@@ -100,17 +97,22 @@ export function useNavigationCommands(
       'board issues kanban',
     );
     add('nav.inbox', t('inbox'), <Inbox />, inboxPath(key), 'notifications unread');
-    if (features.documents && can('documents', 'read'))
-      add('nav.files', t('workspace.files'), <Folder />, filesPath(key), 'files workspace storage');
+    if (
+      (features.documents && can('documents', 'read')) ||
+      (features.notes && can('note_boards', 'read'))
+    )
+      add(
+        'nav.files',
+        t('workspace.files'),
+        <Folder />,
+        features.documents && can('documents', 'read') ? filesPath(key) : notesPath(key),
+        'files documents notes wiki boards canvas SilverBullet',
+      );
     add('nav.code', t('workspace.code'), <Code2 />, codePath(key), 'code workspace editor');
     if (features.initiatives && can('initiatives', 'read'))
       add('nav.initiatives', t('initiatives'), <Target />, initiativesPath(key), 'epics');
-    if (features.documents && can('documents', 'read'))
-      add('nav.docs', t('documents'), <BookOpenText />, documentsPath(key), 'docs notes wiki');
     if (features.cycles && can('cycles', 'read'))
       add('nav.cycles', t('cycles'), <CalendarRange />, cyclesPath(key), 'sprints iterations');
-    if (features.notes && can('note_boards', 'read'))
-      add('nav.notes', t('notes'), <StickyNote />, notesPath(key), 'boards sticky canvas');
     add('nav.activity', t('agentActivity'), <Activity />, agentActivityPath(key), 'runs log');
     add(
       'nav.approvals',

@@ -20,7 +20,6 @@ import ConnectionsWorkspace from '@/features/connections/ConnectionsWorkspace';
 import MailComposeWorkspace from '@/features/mail/MailComposeWorkspace';
 import NativeChatWorkspace from '@/features/ai-chat/components/panel/NativeChatWorkspace';
 import TerminalWorkspace from '@/features/owner-terminal/TerminalWorkspace';
-import { runtimeEnv } from '@/utils/runtimeEnv';
 
 // The tools of the side panel, as a registry (@helena/sdk UI slot `panel-tool`). The
 // panel, its header buttons, the split menu and the panel state read this list instead
@@ -105,9 +104,9 @@ for (const tool of [
     35,
     { kind: 'workspace' },
     {
-      inHeader: true,
+      inHeader: false,
       projectScoped: true,
-      available: () => runtimeEnv().workspace.notesUrl !== '',
+      available: () => false,
     },
   ),
   builtin('browser', Globe2, 40, { kind: 'workspace' }, { inHeader: true }),

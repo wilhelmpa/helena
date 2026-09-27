@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { lstat, readdir } from 'node:fs/promises';
 import path from 'node:path';
+import { resolveVaultPath as resolveIndexedPath } from '@repo/vault';
 import { HttpError } from '#shared/lib';
 import { assertNoSymlinks, isMissing, relativePath } from './paths';
 import { vaultDirectory } from './roots';
@@ -27,6 +28,15 @@ async function isVaultFile(vaultPath: string): Promise<boolean> {
 
 // Walks the folders breadth-first for a file of this size and content, looking at no
 // more than MAX_SCANNED_ENTRIES entries. Hidden folders and symbolic links are skipped.
+async function isSafeFolder(folder: string) {
+  try {
+    await assertNoSymlinks(vaultDirectory(), relativePath(folder));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function scanForContent(folders: string[], sizeBytes: number, sha256: string) {
   const vault = vaultDirectory();
   const queue = [...folders];
@@ -36,6 +46,7 @@ async function scanForContent(folders: string[], sizeBytes: number, sha256: stri
     const folder = queue.shift()!;
     if (seen.has(folder)) continue;
     seen.add(folder);
+    if (!(await isSafeFolder(folder))) continue;
     const entries = await readdir(path.join(vault, folder), { withFileTypes: true }).catch(
       () => [],
     );
@@ -64,6 +75,13 @@ export async function resolveVaultFile(input: {
   searchFolders: string[];
 }): Promise<string | null> {
   if (await isVaultFile(input.vaultPath)) return input.vaultPath;
+  // Move history survives a later edit and process restart. Keep lookup inside the
+  // original project/root, even if a file was moved elsewhere by the owner.
+  const root = input.vaultPath.startsWith('Projects/')
+    ? input.vaultPath.split('/').slice(0, 2).join('/')
+    : input.vaultPath.split('/')[0]!;
+  const moved = await resolveIndexedPath(input.vaultPath);
+  if (moved && moved.startsWith(`${root}/`) && (await isVaultFile(moved))) return moved;
   if (!input.sha256) return null;
   return scanForContent(input.searchFolders, input.sizeBytes, input.sha256);
 }

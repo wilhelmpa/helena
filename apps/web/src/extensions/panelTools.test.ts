@@ -15,7 +15,7 @@ describe('panel tools', () => {
     );
     assert.deepEqual(
       tools.filter((tool) => tool.inHeader).map((tool) => tool.id),
-      ['chat', 'terminal', 'code', 'notes', 'browser', 'mail'],
+      ['chat', 'terminal', 'code', 'browser', 'mail'],
     );
     assert.deepEqual(
       tools.filter((tool) => tool.phonePinned).map((tool) => tool.id),
@@ -30,6 +30,7 @@ describe('panel tools', () => {
       tools.filter((tool) => tool.available).map((tool) => tool.id),
       ['notes'],
     );
+    assert.equal(panelTools.get('notes')?.available?.(), false);
     assert.deepEqual(panelTools.get('code')?.view, { kind: 'workspace' });
     assert.equal(panelTools.get('chat')?.view.kind, 'component');
   });

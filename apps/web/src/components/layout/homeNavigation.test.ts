@@ -48,20 +48,14 @@ describe('home sidebar navigation', () => {
     assert.ok(!ids.includes('chat'));
   });
 
-  test('lists Home Docs for the instance owner only', () => {
-    const ids = (isOwner: boolean) => homeNavigation(42, isOwner).map((item) => item.id);
-    assert.ok(!ids(false).includes('docs'));
-    assert.deepEqual(
-      homeNavigation(42, true).find((item) => item.id === 'docs'),
-      { id: 'docs', group: 'work', href: '/docs' },
-    );
-    assert.deepEqual(ids(true).slice(0, 6), [
-      'overview',
-      'allWorkItems',
-      'inbox',
-      'files',
-      'approvals',
-      'docs',
-    ]);
+  test('offers exactly one file entry for owners and members', () => {
+    for (const owner of [false, true]) {
+      const items = homeNavigation(42, owner);
+      assert.equal(items.filter((item) => item.id === 'files').length, 1);
+      assert.equal(
+        items.some((item) => item.id === 'docs'),
+        false,
+      );
+    }
   });
 });

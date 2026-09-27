@@ -19,7 +19,8 @@ export default function FileToolbar({
   view,
   canCreate,
   codeUrl,
-  notesUrl,
+  canOpenNotes,
+  onOpenNotes,
   uploading,
   onUpload,
   onNewFolder,
@@ -29,7 +30,8 @@ export default function FileToolbar({
   view: ReturnType<typeof useFileBrowserView>;
   canCreate: boolean;
   codeUrl: string;
-  notesUrl: string;
+  canOpenNotes: boolean;
+  onOpenNotes: () => void;
   uploading: boolean;
   onUpload: (files: File[]) => void;
   onNewFolder: () => void;
@@ -48,13 +50,12 @@ export default function FileToolbar({
       onClick: () => view.setMode(grid ? 'list' : 'grid'),
     },
   ];
-  if (notesUrl) {
+  if (canOpenNotes) {
     actions.push({
       id: 'notes',
       label: tActions('openInNotes'),
       icon: NotebookPen,
-      href: notesUrl,
-      external: true,
+      onClick: onOpenNotes,
     });
   }
   if (codeUrl) {

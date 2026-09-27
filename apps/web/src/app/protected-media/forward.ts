@@ -40,6 +40,8 @@ export async function forwardFile(request: Request, upstreamPath: string): Promi
     const value = upstream.headers.get(name);
     if (value) passed.set(name, value);
   }
+  passed.set('Cache-Control', 'private, no-store');
+  passed.set('Vary', 'Cookie');
   return new Response(upstream.body, { status: upstream.status, headers: passed });
 }
 

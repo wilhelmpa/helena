@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
+import { freshVault } from '#tests/helpers/vault';
 import { readFileSync } from 'node:fs';
 import { api, authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
@@ -35,6 +36,7 @@ function upload(client: ReturnType<typeof authedApi>, filename: string, text: st
 describe('chat attachments', () => {
   beforeEach(async () => {
     await resetDb();
+    freshVault();
   });
 
   it('uploads a file and reads its table back', async () => {
@@ -86,13 +88,13 @@ describe('chat attachments', () => {
     expect(read.data!.text).toBe('# Spec\n\nThe body.');
   });
 
-  it('stores a text PDF as the markdown it converts to', async () => {
+  it('keeps a PDF original and extracts its text separately', async () => {
     const { asOwner } = await setup();
     const uploaded = await uploadPdf(asOwner, 'text.pdf');
     expect(uploaded.status).toBe(201);
     expect(uploaded.data).toMatchObject({
-      filename: 'text.md',
-      contentType: 'text/markdown',
+      filename: 'text.pdf',
+      contentType: 'application/pdf',
     });
 
     const read = await asOwner['chat-attachments']({ publicId: uploaded.data!.id }).get();
@@ -100,17 +102,20 @@ describe('chat attachments', () => {
     expect(read.data!.text).toContain('accepts documents as well as spreadsheets');
 
     // The public link serves the markdown, not the discarded PDF.
-    const raw = await api['chat-attachments']({ publicId: uploaded.data!.id }).raw.get({
+    const raw = await asOwner['chat-attachments']({ publicId: uploaded.data!.id }).raw.get({
       query: { download: '1' },
     });
-    expect(String(raw.data)).toBe(read.data!.text!);
+    expect(raw.status).toBe(200);
+    expect(raw.response.headers.get('content-type')).toBe('application/pdf');
   });
 
-  it('refuses a scanned PDF, naming the missing text layer', async () => {
+  it('keeps scanned PDFs available even without extracted text', async () => {
     const { asOwner } = await setup();
     const refused = await uploadPdf(asOwner, 'scanned.pdf');
-    expect(refused.status).toBe(400);
-    expect(refused.error!.value).toMatchObject({ error: expect.stringContaining('no text layer') });
+    expect(refused.status).toBe(201);
+    const read = await asOwner['chat-attachments']({ publicId: refused.data!.id }).get();
+    expect(read.status).toBe(200);
+    expect(read.data!.text).toBeUndefined();
   });
 
   it('rejects an empty upload', async () => {
@@ -141,12 +146,12 @@ describe('chat attachments', () => {
     expect(read.status).toBe(403);
   });
 
-  it('serves the raw bytes to anyone with the link', async () => {
+  it('requires project access for original bytes', async () => {
     const { asOwner } = await setup();
     const uploaded = await upload(asOwner, 'tasks.csv', 'Task\nOnly');
 
     // The raw route is public: fetch it with the anonymous client (no session).
-    const raw = await api['chat-attachments']({ publicId: uploaded.data!.id }).raw.get({
+    const raw = await asOwner['chat-attachments']({ publicId: uploaded.data!.id }).raw.get({
       query: { download: '1' },
     });
     expect(raw.status).toBe(200);
@@ -154,7 +159,10 @@ describe('chat attachments', () => {
     expect(raw.response.headers.get('content-disposition')).toContain('attachment');
     expect(raw.response.headers.get('x-content-type-options')).toBe('nosniff');
 
-    const gone = await api['chat-attachments']({
+    expect((await api['chat-attachments']({ publicId: uploaded.data!.id }).raw.get()).status).toBe(
+      401,
+    );
+    const gone = await asOwner['chat-attachments']({
       publicId: '00000000-0000-0000-0000-000000000000',
     }).raw.get();
     expect(gone.status).toBe(404);

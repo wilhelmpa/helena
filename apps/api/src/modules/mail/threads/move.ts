@@ -51,6 +51,19 @@ export async function moveThread(threadId: number, projectId: number | null): Pr
       'This mail has a receipt. Remove or refile the receipt before moving the mail.',
     );
 
+  // Files can be rearranged independently in the project vault. A later project
+  // transfer must not splice an unrelated folder prefix onto those original paths.
+  const attachments = await db
+    .select({ path: mailAttachment.vaultPath, folder: mailMessage.attachmentFolder })
+    .from(mailAttachment)
+    .innerJoin(mailMessage, eq(mailMessage.id, mailAttachment.messageId))
+    .where(eq(mailMessage.threadId, threadId));
+  if (attachments.some(({ path, folder }) => !folder || !path.startsWith(`${folder}/`)))
+    throw new HttpError(
+      409,
+      'Mail attachments were moved outside their message folder. Refile the files before moving this mail.',
+    );
+
   const messages = await db
     .select({ id: mailMessage.id, folder: mailMessage.attachmentFolder })
     .from(mailMessage)

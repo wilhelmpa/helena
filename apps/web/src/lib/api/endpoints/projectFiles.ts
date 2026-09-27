@@ -45,6 +45,25 @@ function url(scope: FileScope, suffix: string, params: Record<string, string | u
 export const listFiles = (scope: FileScope, path: string) =>
   request<FileList>(url(scope, '', { path }));
 
+export interface FileText {
+  path: string;
+  content: string;
+  sizeBytes: number;
+  etag: string;
+}
+export const readFileText = (scope: FileScope, path: string) =>
+  request<FileText>(url(scope, '/text', { path }));
+export const saveFileText = (
+  scope: FileScope,
+  path: string,
+  content: string,
+  expectedEtag: string,
+) =>
+  request<FileText>(url(scope, '/text'), {
+    method: 'PUT',
+    body: JSON.stringify({ path, content, expectedEtag }),
+  });
+
 export const createFolder = (scope: FileScope, path: string) =>
   request<{ path: string }>(url(scope, '/folders'), {
     method: 'POST',
@@ -93,14 +112,22 @@ export function fileRawUrl(scope: FileScope, path: string, download = false): st
 
 // The text the vault index extracted from an office file or a scan; null when there is
 // none. The only caller of the index for this, so the route changes here alone.
-// TODO(hub/vault-knowledge): point this at the extracted-text route of the vault index
-// once that branch is merged; /vault/text is a placeholder and answers 404 until then.
 export async function extractedText(vaultPath: string): Promise<string | null> {
-  const res = await fetch(`${API_URL}/vault/text?${new URLSearchParams({ path: vaultPath })}`, {
-    credentials: 'include',
-    cache: 'no-store',
-  });
+  const res = await fetch(
+    `${API_URL}/knowledge/documents?${new URLSearchParams({ path: vaultPath })}`,
+    {
+      credentials: 'include',
+      cache: 'no-store',
+    },
+  );
   if (!res.ok) return null;
-  const body = (await res.json()) as { text?: unknown };
-  return typeof body.text === 'string' ? body.text : null;
+  const body = (await res.json()) as { content?: unknown };
+  return typeof body.content === 'string' ? body.content : null;
 }
+
+export const getFileReferences = (scope: FileScope, path: string) =>
+  request<{
+    author: string | null;
+    runId: number | null;
+    links: { kind: string; title: string; href: string }[];
+  }>(url(scope, '/references', { path }));

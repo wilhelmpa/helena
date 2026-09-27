@@ -1,5 +1,9 @@
+import { fileReferences } from './references';
 import { Elysia, t } from 'elysia';
 import { authContext } from '#shared/auth-context';
+import { knowledgeActor } from '#modules/knowledge/reach';
+import { canAccess, vaultScope } from '#modules/knowledge/scope';
+import { isMcpRequest } from '#shared/mcp-request';
 import { requireUser } from '#shared/access';
 import { guards } from '#shared/guards';
 import { noContent } from '#shared/http';
@@ -9,7 +13,9 @@ import { getStorageSettings, MB } from '#modules/settings/service';
 import {
   createFolderBody,
   createTextBody,
+  updateTextBody,
   FileItemsResponse,
+  FileReferencesResponse,
   FileListResponse,
   FilePathResponse,
   FileTextResponse,
@@ -27,6 +33,7 @@ import { homeRoot, projectRoot, type HomeRootName } from './roots';
 import {
   createFolder,
   createTextFile,
+  updateTextFile,
   fileResponse,
   listFolder,
   moveEntry,
@@ -50,13 +57,16 @@ export const projectFileRoutes = new Elysia({
   .macro({
     homeRoot(_enabled: boolean) {
       return {
-        resolve({ query, user }) {
+        async resolve({ query, user, request }) {
           const current = requireUser(user);
           const name = (query as { root: HomeRootName }).root;
-          if (name === 'private' && current.role !== 'god') {
-            throw new HttpError(403, 'The private folder is for the owner only');
+          const fileRoot = homeRoot(name);
+          const scope = await vaultScope(current, isMcpRequest(request.headers), request.headers);
+          const action = request.method === 'GET' ? 'read' : 'write';
+          if (!canAccess(scope, fileRoot.vaultPath!, action)) {
+            throw new HttpError(403, 'This folder is outside your vault access');
           }
-          return { fileRoot: homeRoot(name) };
+          return { fileRoot, fileActor: scope.actor };
         },
       };
     },
@@ -74,6 +84,23 @@ export const projectFileRoutes = new Elysia({
         description:
           "List one folder of the project's vault folder, or of its workspace with root=code.",
       },
+    },
+  )
+  .get(
+    '/projects/:projectKey/files/references',
+    ({ project, query, user, request }) =>
+      fileReferences(
+        projectRoot(project.key, query.root),
+        query.path,
+        requireUser(user),
+        isMcpRequest(request.headers),
+      ),
+    {
+      permission: ['documents', 'read'],
+      feature: 'documents',
+      query: projectRawQuery,
+      response: { 200: FileReferencesResponse, ...commonErrors },
+      detail: { summary: 'File author, task links and your conversations' },
     },
   )
   .get(
@@ -111,11 +138,34 @@ export const projectFileRoutes = new Elysia({
       },
     },
   )
+  .put(
+    '/projects/:projectKey/files/text',
+    async ({ project, body, user, request }) =>
+      updateTextFile(
+        projectRoot(project.key),
+        body.path,
+        body.content,
+        body.expectedEtag,
+        await knowledgeActor(requireUser(user), request.headers),
+      ),
+    {
+      permission: ['documents', 'edit'],
+      feature: 'documents',
+      body: updateTextBody,
+      response: { 200: FileTextResponse, ...commonErrors, ...errors(409, 413) },
+      detail: { summary: 'Edit a project text file with a version check' },
+    },
+  )
   .post(
     '/projects/:projectKey/files/text',
-    ({ project, body, set }) => {
+    async ({ project, body, set, user, request }) => {
       set.status = 201;
-      return createTextFile(projectRoot(project.key), body.path, body.content);
+      return createTextFile(
+        projectRoot(project.key),
+        body.path,
+        body.content,
+        await knowledgeActor(requireUser(user), request.headers),
+      );
     },
     {
       permission: ['documents', 'create'],
@@ -145,13 +195,14 @@ export const projectFileRoutes = new Elysia({
   )
   .post(
     '/projects/:projectKey/files/upload',
-    async ({ project, query, body, set }) => {
+    async ({ project, query, body, set, user, request }) => {
       set.status = 201;
       return uploadFiles(
         projectRoot(project.key, query.root),
         query.path ?? '',
         body.files,
         await maxUploadBytes(),
+        await knowledgeActor(requireUser(user), request.headers),
       );
     },
     {
@@ -168,7 +219,13 @@ export const projectFileRoutes = new Elysia({
   )
   .post(
     '/projects/:projectKey/files/move',
-    ({ project, body }) => moveEntry(projectRoot(project.key), body.from, body.to),
+    async ({ project, body, user, request }) =>
+      moveEntry(
+        projectRoot(project.key),
+        body.from,
+        body.to,
+        await knowledgeActor(requireUser(user), request.headers),
+      ),
     {
       permission: ['documents', 'edit'],
       feature: 'documents',
@@ -182,8 +239,12 @@ export const projectFileRoutes = new Elysia({
   )
   .delete(
     '/projects/:projectKey/files',
-    async ({ project, query }) => {
-      await trashEntry(projectRoot(project.key), query.path);
+    async ({ project, query, user, request }) => {
+      await trashEntry(
+        projectRoot(project.key),
+        query.path,
+        await knowledgeActor(requireUser(user), request.headers),
+      );
       return noContent();
     },
     {
@@ -203,6 +264,17 @@ export const projectFileRoutes = new Elysia({
     response: { 200: FileListResponse, ...commonErrors },
     detail: { summary: 'List Home, Templates or Private files' },
   })
+  .get(
+    '/files/references',
+    ({ fileRoot, query, user, request }) =>
+      fileReferences(fileRoot, query.path, requireUser(user), isMcpRequest(request.headers)),
+    {
+      homeRoot: true,
+      query: homeRawQuery,
+      response: { 200: FileReferencesResponse, ...commonErrors },
+      detail: { summary: 'File author and your conversations' },
+    },
+  )
   .get('/files/text', ({ fileRoot, query }) => readTextFile(fileRoot, query.path), {
     homeRoot: true,
     query: homeRawQuery,
@@ -220,11 +292,23 @@ export const projectFileRoutes = new Elysia({
       detail: { summary: 'Open or download a Home, Templates or Private file' },
     },
   )
+  .put(
+    '/files/text',
+    ({ fileRoot, fileActor, body }) =>
+      updateTextFile(fileRoot, body.path, body.content, body.expectedEtag, fileActor),
+    {
+      homeRoot: true,
+      query: homeRootQuery,
+      body: updateTextBody,
+      response: { 200: FileTextResponse, ...commonErrors, ...errors(409, 413) },
+      detail: { summary: 'Edit a Home, Templates or Private text file with a version check' },
+    },
+  )
   .post(
     '/files/text',
-    ({ fileRoot, body, set }) => {
+    ({ fileRoot, fileActor, body, set }) => {
       set.status = 201;
-      return createTextFile(fileRoot, body.path, body.content);
+      return createTextFile(fileRoot, body.path, body.content, fileActor);
     },
     {
       homeRoot: true,
@@ -250,9 +334,9 @@ export const projectFileRoutes = new Elysia({
   )
   .post(
     '/files/upload',
-    async ({ fileRoot, query, body, set }) => {
+    async ({ fileRoot, fileActor, query, body, set }) => {
       set.status = 201;
-      return uploadFiles(fileRoot, query.path ?? '', body.files, await maxUploadBytes());
+      return uploadFiles(fileRoot, query.path ?? '', body.files, await maxUploadBytes(), fileActor);
     },
     {
       homeRoot: true,
@@ -262,17 +346,21 @@ export const projectFileRoutes = new Elysia({
       detail: { summary: 'Upload Home, Templates or Private files' },
     },
   )
-  .post('/files/move', ({ fileRoot, body }) => moveEntry(fileRoot, body.from, body.to), {
-    homeRoot: true,
-    query: homeRootQuery,
-    body: moveBody,
-    response: { 200: FilePathResponse, ...commonErrors, ...errors(409) },
-    detail: { summary: 'Rename or move a Home, Templates or Private file or folder' },
-  })
+  .post(
+    '/files/move',
+    ({ fileRoot, fileActor, body }) => moveEntry(fileRoot, body.from, body.to, fileActor),
+    {
+      homeRoot: true,
+      query: homeRootQuery,
+      body: moveBody,
+      response: { 200: FilePathResponse, ...commonErrors, ...errors(409) },
+      detail: { summary: 'Rename or move a Home, Templates or Private file or folder' },
+    },
+  )
   .delete(
     '/files',
-    async ({ fileRoot, query }) => {
-      await trashEntry(fileRoot, query.path);
+    async ({ fileRoot, fileActor, query }) => {
+      await trashEntry(fileRoot, query.path, fileActor);
       return noContent();
     },
     {

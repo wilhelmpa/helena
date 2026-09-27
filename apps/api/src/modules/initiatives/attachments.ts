@@ -13,7 +13,9 @@ import {
 export interface InitiativeAttachmentRow {
   publicId: string;
   initiativeId: number;
-  s3Key: string;
+  s3Key: string | null;
+  vaultPath: string | null;
+  sha256: string | null;
   filename: string;
   contentType: string;
   sizeBytes: number;
@@ -25,6 +27,8 @@ function mapRow(row: typeof initiativeAttachment.$inferSelect): InitiativeAttach
     publicId: row.publicId,
     initiativeId: row.initiativeId,
     s3Key: row.s3Key,
+    vaultPath: row.vaultPath,
+    sha256: row.sha256,
     filename: row.filename,
     contentType: row.contentType,
     sizeBytes: num(row.sizeBytes),
@@ -35,7 +39,9 @@ function mapRow(row: typeof initiativeAttachment.$inferSelect): InitiativeAttach
 export async function createInitiativeAttachment(input: {
   projectId: number;
   initiativeId: number;
-  s3Key: string;
+  s3Key: string | null;
+  vaultPath: string | null;
+  sha256: string | null;
   filename: string;
   contentType: string;
   sizeBytes: number;
@@ -48,6 +54,8 @@ export async function createInitiativeAttachment(input: {
       .values({
         initiativeId: input.initiativeId,
         s3Key: input.s3Key,
+        vaultPath: input.vaultPath,
+        sha256: input.sha256,
         filename: input.filename,
         contentType: input.contentType,
         sizeBytes: input.sizeBytes,
@@ -125,5 +133,5 @@ export async function initiativeAttachmentKeys(initiativeId: number): Promise<st
     .select({ s3Key: initiativeAttachment.s3Key })
     .from(initiativeAttachment)
     .where(eq(initiativeAttachment.initiativeId, initiativeId));
-  return rows.map((r) => r.s3Key);
+  return rows.flatMap((r) => (r.s3Key ? [r.s3Key] : []));
 }

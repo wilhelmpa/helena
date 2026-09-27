@@ -17,14 +17,14 @@ import StarterKit from '@tiptap/starter-kit';
 import { common, createLowlight } from 'lowlight';
 import { useTranslations } from 'next-intl';
 import { Markdown } from 'tiptap-markdown';
-import EditorSelectionMenu from '@/components/common/editor/EditorSelectionMenu';
-import EditorTableMenu from '@/components/common/editor/EditorTableMenu';
-import EditorLinkPreview from '@/components/common/editor/EditorLinkPreview';
-import { createLinkKeyboardHandlers } from '@/components/common/editor/linkKeyboardHandlers';
-import { openLinkOnModifierClick } from '@/components/common/editor/modifierClickLink';
-import { ResizableImage } from '@/components/common/editor/tiptap-image';
-import { MarkdownTable } from '@/components/common/editor/tiptap-table';
-import { pasteMarkdown } from '@/components/common/editor/pasteMarkdown';
+import EditorSelectionMenu from './EditorSelectionMenu';
+import EditorTableMenu from './EditorTableMenu';
+import EditorLinkPreview from './EditorLinkPreview';
+import { createLinkKeyboardHandlers } from './linkKeyboardHandlers';
+import { openLinkOnModifierClick } from './modifierClickLink';
+import { ResizableImage } from './tiptap-image';
+import { MarkdownTable } from './tiptap-table';
+import { pasteMarkdown } from './pasteMarkdown';
 import { SlashCommand } from '@/lib/tiptap-slash-command';
 import { SoftLineBreak } from './softLineBreak';
 import { Wikilink } from './wikilinkNode';
@@ -138,11 +138,13 @@ export default function DocumentMarkdownEditor({
   const scopeRef = useWebLinkScopeRef();
   const t = useTranslations('documents.toolbar');
   const editorRef = useRef<Editor | null>(null);
-  const linkKeyboardHandlers = useMemo(createLinkKeyboardHandlers, []);
+  const linkKeyboardHandlers = useMemo(() => createLinkKeyboardHandlers(), []);
   const editableRef = useRef(editable);
-  editableRef.current = editable;
   const openWikilinkRef = useRef(onOpenWikilink);
-  openWikilinkRef.current = onOpenWikilink;
+  useLayoutEffect(() => {
+    editableRef.current = editable;
+    openWikilinkRef.current = onOpenWikilink;
+  }, [editable, onOpenWikilink]);
 
   const editor = useEditor({
     editable,
@@ -225,7 +227,9 @@ export default function DocumentMarkdownEditor({
 
   // Called once per editor: the owner reads the serialized loaded note here.
   const readyRef = useRef(onReady);
-  readyRef.current = onReady;
+  useLayoutEffect(() => {
+    readyRef.current = onReady;
+  }, [onReady]);
   useEffect(() => {
     editorRef.current = editor;
     readyRef.current(editor);

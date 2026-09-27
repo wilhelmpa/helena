@@ -7,14 +7,12 @@ import { HttpError } from './lib';
 import { getMcpOAuthToken } from './mcp-request';
 import { checkAgentSocket } from './agent-socket';
 
-// GET routes that need no session. The raw attachment and avatar bytes routes
-// must work in <img>/<video> and external fetches. The invite lookup
+// GET routes that need no session. Avatars may be embedded publicly. The invite lookup
 // (`GET /invites/:token`) renders the accept screen for a logged-out invitee, who
 // signs up from there; only accept/reject (POST) require a session. Every `/share/`
 // GET renders a public read-only shared issue or view, keyed by an unguessable
 // token. All ids are unguessable.
-const PUBLIC_GET =
-  /^\/attachments\/[^/]+\/raw$|^\/chat-attachments\/[^/]+\/raw$|^\/initiative-attachments\/[^/]+\/raw$|^\/avatars\/[^/]+\/raw$|^\/invites\/[^/]+$|^\/share\//;
+const PUBLIC_GET = /^\/avatars\/[^/]+\/raw$|^\/invites\/[^/]+$|^\/share\//;
 
 type SessionResult = NonNullable<Awaited<ReturnType<typeof auth.api.getSession>>>;
 
@@ -24,7 +22,7 @@ export type SessionUser = SessionResult['user'];
 // Session plugin shared by the planner. Resolves the better-auth session once and
 // puts `user` on the context, so handlers and the access guards read it instead
 // of calling getSession again. A missing session is a 401, except on the public
-// raw-attachment route, which carries no user.
+// routes listed above, which carry no user.
 //
 // planner.ts uses this as the runtime backstop, so every planner route is
 // session-gated. A feature also uses it directly when its handlers or local
@@ -57,7 +55,7 @@ export const authContext = new Elysia({ name: 'auth-context' }).resolve(
         }
       }
     }
-    // The public raw-attachment route has no session and needs none.
+    // Only the explicitly public routes may omit a session.
     if (request.method === 'GET' && PUBLIC_GET.test(path)) return { user: null };
     throw new HttpError(401, 'Authentication required');
   },

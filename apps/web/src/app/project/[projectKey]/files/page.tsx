@@ -1,10 +1,12 @@
 import RequireFeature from '@/components/common/permissions/RequireFeature';
 import ProjectFilesPage from '@/features/project-files/ProjectFilesPage';
+import NotesPage from '@/features/notes/NotesPage';
 
-export default function Page() {
+export default async function Page({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
+  const { view } = await searchParams;
   return (
-    <RequireFeature feature="documents">
-      <ProjectFilesPage />
+    <RequireFeature feature={view === 'boards' ? 'notes' : 'documents'}>
+      <ProjectFilesPage boards={<NotesPage />} />
     </RequireFeature>
   );
 }

@@ -1,4 +1,5 @@
-import { and, desc, eq, inArray, like, ne, or, sql, type SQL } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, like, ne, or, sql, type SQL } from 'drizzle-orm';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import {
   db,
   project,
@@ -8,6 +9,17 @@ import {
   type VaultEntryKind,
   type VaultExtractionStatus,
   escapeLike,
+  issue,
+  issueAttachment,
+  chatAttachment,
+  initiative,
+  initiativeAttachment,
+  helenaReceipt,
+  mailAttachment,
+  mailMessage,
+  mailThread,
+  agentChatMessage,
+  agentChatThread,
 } from '@repo/db';
 import { noteTitle, type Frontmatter, type NoteLink } from './markdown';
 import { baseName, isNotePath, locateVaultPath } from './paths';
@@ -131,12 +143,97 @@ export async function entriesWithSha(sha256: string, except: string): Promise<Va
     .where(and(eq(vaultEntry.sha256, sha256), ne(vaultEntry.path, except)));
 }
 
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+async function moveFileReferences(
+  tx: Transaction,
+  from: string,
+  to: string,
+  projectId: number | null,
+) {
+  const root = (value: string) =>
+    value
+      .split('/')
+      .slice(0, value.startsWith('Projects/') ? 2 : 1)
+      .join('/');
+  // Moving a physical file across roots must not transfer another project's access.
+  if (root(from) !== root(to) || (from.startsWith('Projects/') && projectId === null)) return;
+  const scope = (column: AnyPgColumn) =>
+    projectId === null ? isNull(column) : eq(column, projectId);
+  const matches = (column: AnyPgColumn) =>
+    or(
+      eq(column, from),
+      sql`left(${column}, char_length(${from}::text) + 1) = ${from}::text || '/'`,
+    );
+  const issues = tx.select({ id: issue.id }).from(issue).where(scope(issue.projectId));
+  const initiatives = tx
+    .select({ id: initiative.id })
+    .from(initiative)
+    .where(scope(initiative.projectId));
+  const threads = tx
+    .select({ id: mailThread.id })
+    .from(mailThread)
+    .where(scope(mailThread.projectId));
+  const messages = tx
+    .select({ id: mailMessage.id })
+    .from(mailMessage)
+    .where(inArray(mailMessage.threadId, threads));
+  for (const { table, owner } of [
+    { table: issueAttachment, owner: inArray(issueAttachment.issueId, issues) },
+    { table: chatAttachment, owner: scope(chatAttachment.projectId) },
+    { table: initiativeAttachment, owner: inArray(initiativeAttachment.initiativeId, initiatives) },
+    { table: helenaReceipt, owner: scope(helenaReceipt.projectId) },
+    { table: mailAttachment, owner: inArray(mailAttachment.messageId, messages) },
+  ]) {
+    await tx
+      .update(table)
+      .set({
+        vaultPath: sql`${to}::text || substr(${table.vaultPath}, char_length(${from}::text) + 1)`,
+      })
+      .where(and(owner, matches(table.vaultPath)));
+  }
+  const chats = tx
+    .select({ id: agentChatThread.id })
+    .from(agentChatThread)
+    .where(
+      /^(Home|Templates)\//.test(from)
+        ? undefined
+        : or(scope(agentChatThread.projectId), isNull(agentChatThread.projectId)),
+    );
+  const fileMatch = sql`item->>'kind' = 'file' AND (
+    item->>'path' = ${from} OR left(item->>'path', char_length(${from}::text) + 1) = ${from}::text || '/'
+  )`;
+  const fileItems = sql`CASE WHEN jsonb_typeof(${agentChatMessage.attachments}) = 'array'
+    THEN ${agentChatMessage.attachments} ELSE '[]'::jsonb END`;
+  await tx
+    .update(agentChatMessage)
+    .set({
+      attachments: sql`(SELECT jsonb_agg(CASE WHEN ${fileMatch}
+        THEN jsonb_set(item, '{path}', to_jsonb(${to}::text || substr(item->>'path', char_length(${from}::text) + 1)))
+        ELSE item END ORDER BY ordinal)
+        FROM jsonb_array_elements(${fileItems}) WITH ORDINALITY AS entries(item, ordinal))`,
+    })
+    .where(
+      and(
+        inArray(agentChatMessage.threadId, chats),
+        sql`EXISTS (SELECT 1 FROM jsonb_array_elements(${fileItems}) AS item WHERE ${fileMatch})`,
+      ),
+    );
+  await tx
+    .update(mailMessage)
+    .set({
+      attachmentFolder: sql`${to}::text || substr(${mailMessage.attachmentFolder}, char_length(${from}::text) + 1)`,
+    })
+    .where(and(inArray(mailMessage.threadId, threads), matches(mailMessage.attachmentFolder)));
+}
+
 // Moves index rows from one path to another: the path itself and, for a folder, all it
 // holds. The rows keep their id, so the links they make and the links to them stay. Each
 // moved file is recorded for the resolver.
 export async function moveEntries(from: string, to: string): Promise<void> {
   const projectId = await projectIdForPath(to);
   await db.transaction(async (tx) => {
+    await moveFileReferences(tx, from, to, projectId);
     const moved = await tx
       .select({ path: vaultEntry.path, sha256: vaultEntry.sha256, kind: vaultEntry.kind })
       .from(vaultEntry)

@@ -1,5 +1,5 @@
 import { vaultFileUrl } from '@/lib/api/endpoints/knowledge';
-import { parentPath } from './vaultPaths';
+import { parentPath } from '@/utils/vaultLinks';
 
 // A note links its images by vault path (`![](Assets/chart.png)`), which the browser
 // cannot load. The editor gets them as vaultFileUrl()s instead, and a save writes each

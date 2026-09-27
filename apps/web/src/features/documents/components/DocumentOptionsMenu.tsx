@@ -11,8 +11,8 @@ import {
 import { useTranslations } from 'next-intl';
 import { vaultFileUrl, type VaultDocument } from '@/lib/api/endpoints/knowledge';
 import { cn } from '@/lib/utils';
-import { runtimeEnv } from '@/utils/runtimeEnv';
-import { notesFileUrl } from '@/utils/vaultLinks';
+import Link from 'next/link';
+import { vaultNotePath } from '@/utils/paths';
 import { PAGE_CONTROL_CLASS } from '@/components/layout/PageToolbar';
 import {
   DropdownMenu,
@@ -35,7 +35,7 @@ export default function DocumentOptionsMenu({
 }) {
   const t = useTranslations('documents');
   // The note in the notes (a new tab on their own origin), where this origin has them.
-  const notes = notesFileUrl(runtimeEnv().workspace.notesUrl, document.path);
+  const notes = vaultNotePath(document.path);
 
   return (
     <DropdownMenu>
@@ -52,10 +52,10 @@ export default function DocumentOptionsMenu({
       <DropdownMenuContent align="end" className="w-56">
         {notes && (
           <DropdownMenuItem asChild>
-            <a href={notes} target="_blank" rel="noopener noreferrer">
+            <Link href={notes}>
               <NotebookPen />
               {t('openInNotes')}
-            </a>
+            </Link>
           </DropdownMenuItem>
         )}
         <DropdownMenuItem asChild>

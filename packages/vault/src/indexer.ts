@@ -135,6 +135,24 @@ async function saveFile(
   };
   if (isTextFile(relative) && stats.size <= MAX_TEXT_BYTES) {
     const bytes = await readFile(absolute);
+    // A filename does not prove text (a PNG may be named .txt). Postgres text
+    // cannot hold NUL, and logging a failed query would expose the document bytes.
+    if (bytes.includes(0)) {
+      await saveEntry(
+        {
+          ...base,
+          kind: 'file',
+          sha256: sha256Of(bytes),
+          title: baseName(relative),
+          frontmatter: {},
+          text: null,
+          extractionStatus: 'skipped',
+          extractionError: 'binary_content',
+        },
+        null,
+      );
+      return;
+    }
     const content = bytes.toString('utf8');
     const sha256 = sha256Of(bytes);
     if (isNotePath(relative)) {
@@ -295,7 +313,11 @@ export async function indexVaultPaths(
     } catch (error) {
       if (options.throwOnError) throw error;
       if (isMissing(error)) gone.add(relative);
-      else if (!isUnreadable(error)) console.error(`[vault] indexing ${relative} failed:`, error);
+      else if (!isUnreadable(error))
+        console.error(
+          '[vault] indexing failed:',
+          error instanceof Error ? error.name : 'UnknownError',
+        );
     }
   }
   for (const relative of gone) {

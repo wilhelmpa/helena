@@ -2,6 +2,7 @@ import { rm, rmdir } from 'node:fs/promises';
 import path from 'node:path';
 import { db, issue, project } from '@repo/db';
 import { eq } from 'drizzle-orm';
+import type { FileActor } from '#modules/project-files/provenance';
 import { HttpError } from '#shared/lib';
 import { resolveVaultFile } from '#modules/project-files/resolver';
 import { projectRoot, projectVaultPath, vaultDirectory } from '#modules/project-files/roots';
@@ -33,9 +34,10 @@ export async function storeAttachmentFile(
   filename: string,
   contentType: string,
   bytes: Uint8Array,
+  actor?: FileActor,
 ): Promise<AttachmentFile> {
   const { projectKey, folder } = await issueFolder(issueId);
-  const relative = await writeUniqueFile(projectRoot(projectKey), folder, filename, bytes);
+  const relative = await writeUniqueFile(projectRoot(projectKey), folder, filename, bytes, actor);
   return {
     vaultPath: `${projectVaultPath(projectKey)}/${relative}`,
     sha256: sha256(bytes),
@@ -54,12 +56,13 @@ export async function storeReplacement(
   filename: string,
   contentType: string,
   bytes: Uint8Array,
+  actor?: FileActor,
 ): Promise<AttachmentFile> {
   const current = await currentAttachmentPath(row);
   if (!current || path.posix.basename(current) !== safeFileName(filename)) {
-    return storeAttachmentFile(row.issueId, filename, contentType, bytes);
+    return storeAttachmentFile(row.issueId, filename, contentType, bytes, actor);
   }
-  await replaceVaultFile(current, bytes);
+  await replaceVaultFile(current, bytes, actor);
   return {
     vaultPath: current,
     sha256: sha256(bytes),
@@ -124,7 +127,7 @@ export async function withFileState(row: AttachmentRow) {
 // skipped. Best-effort: the rows are gone already.
 export async function purgeAttachmentFiles(rows: AttachmentRow[]): Promise<void> {
   for (const row of rows) {
-    if (row.s3Key) {
+    if (!row.vaultPath && row.s3Key) {
       await deleteAttachmentObject(row.s3Key);
       continue;
     }

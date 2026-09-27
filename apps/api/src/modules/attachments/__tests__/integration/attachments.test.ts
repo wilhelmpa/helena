@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, beforeEach } from 'bun:test';
-import { api, authedApi } from '#tests/helpers/app';
+import { authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { clearLimits, setLimits } from '#tests/helpers/limits';
@@ -72,7 +72,7 @@ describe('attachments', () => {
     expect(list.data).toHaveLength(1);
 
     // The raw route is public: fetch it with the anonymous client (no session).
-    const raw = await api.attachments({ publicId }).raw.get();
+    const raw = await asOwner.attachments({ publicId }).raw.get();
     expect(raw.status).toBe(200);
     expect(String(raw.data)).toBe('hello world');
 
@@ -80,7 +80,7 @@ describe('attachments', () => {
     expect(del.status).toBe(204);
 
     // Bytes and row are gone.
-    const gone = await api.attachments({ publicId }).raw.get();
+    const gone = await asOwner.attachments({ publicId }).raw.get();
     expect(gone.status).toBe(404);
   });
 
@@ -194,7 +194,7 @@ describe('attachments', () => {
       });
       expect(res.data!.url).toBe(up.data!.url);
 
-      const raw = await api.attachments({ publicId }).raw.get();
+      const raw = await asOwner.attachments({ publicId }).raw.get();
       expect(String(raw.data)).toEndWith('after annotating');
 
       // Still one attachment: the row was updated, not added to.
@@ -227,7 +227,7 @@ describe('attachments', () => {
         file: new File(['d'.repeat(800 * 1024)], 'first.txt', { type: 'text/plain' }),
       });
       expect(rejected.status).toBe(413);
-      const raw = await api.attachments({ publicId: first.data!.id }).raw.get();
+      const raw = await asOwner.attachments({ publicId: first.data!.id }).raw.get();
       expect(String(raw.data)).toHaveLength(750 * 1024);
     });
 
@@ -235,19 +235,19 @@ describe('attachments', () => {
       const { asOwner, issueId } = await setupIssue();
       const up = await uploadFile(asOwner, issueId, 'shot.png', 'image/png', png('before'));
       const publicId = up.data!.id;
-      const first = await api.attachments({ publicId }).raw.get();
+      const first = await asOwner.attachments({ publicId }).raw.get();
       const etag = first.response.headers.get('etag')!;
       expect(etag).not.toBeNull();
 
       // Unchanged: the client may reuse what it has.
-      const cached = await api
+      const cached = await asOwner
         .attachments({ publicId })
         .raw.get({ headers: { 'if-none-match': etag } });
       expect(cached.status).toBe(304);
 
       await asOwner.attachments({ publicId }).put({ file: pngFile('shot.png', 'after') });
 
-      const refetched = await api
+      const refetched = await asOwner
         .attachments({ publicId })
         .raw.get({ headers: { 'if-none-match': etag } });
       expect(refetched.status).toBe(200);
@@ -314,7 +314,7 @@ describe('attachments', () => {
         'image/svg+xml',
         '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>',
       );
-      const raw = await api.attachments({ publicId: up.data!.id }).raw.get();
+      const raw = await asOwner.attachments({ publicId: up.data!.id }).raw.get();
       expect(raw.status).toBe(200);
       expect(raw.response.headers.get('content-disposition')).toContain('attachment');
       expect(raw.response.headers.get('x-content-type-options')).toBe('nosniff');
@@ -324,7 +324,7 @@ describe('attachments', () => {
     it('serves an allowlisted image inline without a CSP', async () => {
       const { asOwner, issueId } = await setupIssue();
       const up = await uploadFile(asOwner, issueId, 'p.png', 'image/png');
-      const raw = await api.attachments({ publicId: up.data!.id }).raw.get();
+      const raw = await asOwner.attachments({ publicId: up.data!.id }).raw.get();
       expect(raw.status).toBe(200);
       expect(raw.response.headers.get('content-disposition')).toContain('inline');
       expect(raw.response.headers.get('content-security-policy')).toBeNull();
@@ -333,14 +333,15 @@ describe('attachments', () => {
     it('forces download for an image when ?download is set', async () => {
       const { asOwner, issueId } = await setupIssue();
       const up = await uploadFile(asOwner, issueId, 'p.png', 'image/png');
-      const raw = await api
+      const raw = await asOwner
         .attachments({ publicId: up.data!.id })
         .raw.get({ query: { download: '1' } });
       expect(raw.response.headers.get('content-disposition')).toContain('attachment');
     });
 
     it('returns 404 for an unknown publicId', async () => {
-      const res = await api
+      const { asOwner } = await setupIssue();
+      const res = await asOwner
         .attachments({ publicId: '00000000-0000-0000-0000-000000000000' })
         .raw.get();
       expect(res.status).toBe(404);
@@ -349,7 +350,8 @@ describe('attachments', () => {
     // The route is public, so a malformed id reaching Postgres would answer 500 with
     // the driver's message to an anonymous caller.
     it('returns 400 for a publicId that is not a uuid', async () => {
-      const res = await api.attachments({ publicId: 'not-a-uuid' }).raw.get();
+      const { asOwner } = await setupIssue();
+      const res = await asOwner.attachments({ publicId: 'not-a-uuid' }).raw.get();
       expect(res.status).toBe(400);
     });
   });
@@ -366,7 +368,7 @@ describe('attachments', () => {
       expect(res.status).toBe(201);
       expect(res.data).toMatchObject({ filename: 'note.txt', sizeBytes: 5 });
 
-      const raw = await api.attachments({ publicId: res.data!.id }).raw.get();
+      const raw = await asOwner.attachments({ publicId: res.data!.id }).raw.get();
       expect(String(raw.data)).toBe('hello');
     });
 

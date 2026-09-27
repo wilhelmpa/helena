@@ -111,9 +111,9 @@ export const shareUrl = (path: string) =>
 export const dashboardPath = (key: string, dashboardId: number) =>
   `${dashboardsPath(key)}/${dashboardId}`;
 
-export const notesPath = (key: string) => `${projectPath(key)}/notes`;
+export const notesPath = (key: string) => `${projectPath(key)}/files?view=boards`;
 
-export const notePath = (key: string, boardId: number) => `${notesPath(key)}/${boardId}`;
+export const notePath = (key: string, boardId: number) => `${notesPath(key)}&board=${boardId}`;
 
 export const documentsPath = (key: string) => `${projectPath(key)}/docs`;
 
@@ -153,9 +153,15 @@ export const homeDocsPath = () => '/docs';
 // The Docs page that opens one note of the vault by its vault-relative path: the Docs of
 // its project for a path under Projects/<KEY>/, Home's Docs for any other.
 export const vaultNotePath = (path: string) => {
-  const [top, key] = path.split('/');
-  const base = top === 'Projects' && key ? documentsPath(key) : homeDocsPath();
-  return `${base}?path=${encodeURIComponent(path)}`;
+  const [top, key, ...rest] = path.split('/');
+  const project = top === 'Projects' && key;
+  const relative = project ? rest.join('/') : [key, ...rest].filter(Boolean).join('/');
+  const folder = relative.includes('/') ? relative.slice(0, relative.lastIndexOf('/')) : '';
+  if (project && /\.canvas$/i.test(relative))
+    return `${notesPath(key!)}&canvas=${encodeURIComponent(path)}`;
+  if (project) return filesPath(key!, folder, { file: relative });
+  const root = top === 'Private' ? 'private' : top === 'Templates' ? 'templates' : 'home';
+  return homeFilesPath(folder, { root, file: relative });
 };
 
 export const settingsPath = (key: string, section: string) =>

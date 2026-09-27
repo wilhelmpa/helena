@@ -37,6 +37,12 @@ export const createTextBody = t.Object({
   content: t.String({ maxLength: 262144 }),
 });
 
+export const updateTextBody = t.Object({
+  path: t.String({ minLength: 1, maxLength: 1024 }),
+  content: t.String({ maxLength: 262144 }),
+  expectedEtag: t.String({ minLength: 1, maxLength: 128 }),
+});
+
 export const createFolderBody = t.Object({ path: t.String({ minLength: 1, maxLength: 1024 }) });
 
 export const moveBody = t.Object({
@@ -74,3 +80,9 @@ export const FileTextResponse = t.Object({
 
 export const FilePathResponse = t.Object({ path: t.String() });
 export const FileItemsResponse = t.Array(FileItemResponse);
+
+export const FileReferencesResponse = t.Object({
+  author: t.Nullable(t.String()),
+  runId: t.Nullable(t.Number()),
+  links: t.Array(t.Object({ kind: t.String(), title: t.String(), href: t.String() })),
+});

@@ -479,6 +479,8 @@ describe('chat attachments', () => {
     const { asOwner, mia } = await setup();
     vaultFile('Private/secret.md');
     vaultFile('Projects/OPS/Docs/runbook.md');
+    vaultFile('Home/Notes/owner-only.md');
+    vaultFile('Templates/shared.md');
     const chat = chatOf(asOwner, 'MKT', mia.id);
     const send = (files: string[]) =>
       chat.chat.post({ prompt: 'Read this', attachments: { files } });
@@ -491,6 +493,23 @@ describe('chat attachments', () => {
     // A member of MKT only cannot hand over a file of OPS.
     const asMember = await addProjectMember(asOwner, 'MKT');
     const memberChat = chatOf(asMember, 'MKT', mia.id);
+    expect(
+      (
+        await memberChat.chat.post({
+          prompt: 'Read this',
+          attachments: { files: ['Home/Notes/owner-only.md'] },
+        })
+      ).status,
+    ).toBe(404);
+    expect(
+      (
+        await memberChat.chat.post({
+          prompt: 'Read this',
+          attachments: { files: ['Templates/shared.md'] },
+        })
+      ).status,
+    ).toBe(200);
+    expect((await send(['Home/Notes/owner-only.md'])).status).toBe(200);
     expect(
       (
         await memberChat.chat.post({

@@ -7,21 +7,22 @@ import { requireUser } from '#shared/access';
 import { HttpError } from '#shared/lib';
 import { commonErrors, errors } from '#shared/responses';
 import { paginate } from '#shared/pagination';
-import { deleteObjects } from '#shared/s3';
+import { currentProjectFile, storeProjectFile } from '#modules/attachments/project-vault';
+import { knowledgeActor } from '#modules/knowledge/reach';
+import { serveVaultFile, trashVaultFile } from '#modules/project-files/service';
+import { ATTACHMENT_INLINE } from '#modules/project-files/serve';
 import {
-  AttachmentResponse,
-  AttachmentListResponse,
+  IssueAttachmentResponse,
+  IssueAttachmentListResponse,
   publicIdParams,
   rawAttachmentQuery,
   uploadAttachmentBody,
 } from '#modules/attachments/model';
 import {
   assertAttachmentUploadAllowed,
-  attachmentObjectKey,
   attachmentObjectResponse,
   deleteAttachmentObject,
   safeAttachmentFilename,
-  storeAttachmentObject,
   uploadContentType,
 } from '#modules/attachments/storage';
 import {
@@ -52,7 +53,6 @@ import {
   deleteInitiativeAttachment,
   getInitiativeAttachment,
   getInitiativeAttachmentProjectId,
-  initiativeAttachmentKeys,
   listInitiativeAttachments,
   removeInitiativeAttachmentEmbeds,
   type InitiativeAttachmentRow,
@@ -70,6 +70,9 @@ function attachmentDto(a: InitiativeAttachmentRow) {
     sizeBytes: a.sizeBytes,
     createdAt: a.createdAt,
     url: `/initiative-attachments/${a.publicId}/raw`,
+    vaultPath: a.vaultPath,
+    linked: false,
+    missing: false,
   };
 }
 
@@ -82,6 +85,9 @@ export const initiativeRoutes = new Elysia({
   // Guard for routes that address an initiative by its own id (no :projectKey in
   // the path). Set `initiative: "<action>"` in the route options.
   .macro({
+    initiativeAttachmentDocuments: entityGuard('documents', 'Attachment not found', (p) =>
+      getInitiativeAttachmentProjectId(p.publicId),
+    ),
     initiative: entityGuard(
       'initiatives',
       'Initiative not found',
@@ -224,9 +230,7 @@ export const initiativeRoutes = new Elysia({
     async ({ params }) => {
       // The rows cascade with the initiative; the stored bytes do not, so they are
       // read while they still exist and dropped afterwards.
-      const keys = await initiativeAttachmentKeys(params.initiativeId);
       await deleteInitiative(params.initiativeId);
-      await deleteObjects(keys);
       return noContent();
     },
     {
@@ -274,7 +278,7 @@ export const initiativeRoutes = new Elysia({
     {
       params: initiativeParams,
       initiative: 'read',
-      response: { 200: AttachmentListResponse, ...commonErrors },
+      response: { 200: IssueAttachmentListResponse, ...commonErrors },
       detail: {
         summary: 'List initiative attachments',
         description: "List an initiative's attachments by its numeric id.",
@@ -286,7 +290,7 @@ export const initiativeRoutes = new Elysia({
   // object store, and records the metadata.
   .post(
     '/initiatives/:initiativeId/attachments',
-    async ({ params, body, set, projectId }) => {
+    async ({ params, body, set, projectId, user, request }) => {
       const file = body.file;
       if (!(file instanceof File)) throw new HttpError(400, 'No file uploaded (form field "file")');
       if (file.size === 0) throw new HttpError(400, 'Uploaded file is empty');
@@ -296,21 +300,25 @@ export const initiativeRoutes = new Elysia({
       const contentType = await uploadContentType(bytes, filename, file.type);
       await assertAttachmentUploadAllowed(projectId, file.size, contentType);
 
-      const key = attachmentObjectKey(projectId, 'initiatives', params.initiativeId, filename);
-      await storeAttachmentObject(key, bytes, contentType);
+      const stored = await storeProjectFile(
+        projectId,
+        `Files/Initiatives/${params.initiativeId}`,
+        filename,
+        bytes,
+        await knowledgeActor(requireUser(user), request.headers),
+      );
 
       let row;
       try {
         row = await createInitiativeAttachment({
           projectId,
           initiativeId: params.initiativeId,
-          s3Key: key,
-          filename,
+          ...stored,
           contentType,
           sizeBytes: file.size,
         });
       } catch (error) {
-        await deleteAttachmentObject(key);
+        await trashVaultFile(stored.vaultPath);
         throw error;
       }
       set.status = 201;
@@ -320,7 +328,7 @@ export const initiativeRoutes = new Elysia({
       params: initiativeParams,
       body: uploadAttachmentBody,
       initiative: 'edit',
-      response: { 201: AttachmentResponse, ...commonErrors, ...errors(413, 502) },
+      response: { 201: IssueAttachmentResponse, ...commonErrors, ...errors(413, 502) },
       detail: { summary: 'Upload an initiative attachment' },
     },
   )
@@ -333,7 +341,8 @@ export const initiativeRoutes = new Elysia({
       await removeInitiativeAttachmentEmbeds(row.initiativeId, row.publicId);
       // Row is already gone; a failed object delete only orphans bytes, so don't
       // fail the request over it.
-      await deleteAttachmentObject(row.s3Key);
+      if (row.vaultPath) await trashVaultFile(row.vaultPath);
+      else if (row.s3Key) await deleteAttachmentObject(row.s3Key);
       return noContent();
     },
     {
@@ -353,6 +362,20 @@ export const initiativeRoutes = new Elysia({
       const row = await getInitiativeAttachment(params.publicId);
       if (!row) throw new HttpError(404, 'Attachment not found');
 
+      if (row.vaultPath) {
+        const projectId = await getInitiativeAttachmentProjectId(row.publicId);
+        const current = projectId && (await currentProjectFile(projectId, row));
+        if (!current) throw new HttpError(404, 'The attachment file is missing');
+        return serveVaultFile({
+          vaultPath: current,
+          contentType: row.contentType,
+          filename: row.filename,
+          request,
+          download: query.download != null,
+          inline: ATTACHMENT_INLINE,
+        });
+      }
+      if (!row.s3Key) throw new HttpError(404, 'The attachment file is missing');
       return attachmentObjectResponse({
         s3Key: row.s3Key,
         contentType: row.contentType,
@@ -364,8 +387,9 @@ export const initiativeRoutes = new Elysia({
     {
       params: publicIdParams,
       query: rawAttachmentQuery,
-      // Public route: no 401/403, and a raw Response Elysia cannot type.
-      response: { ...errors(400, 404) },
-      detail: { summary: 'Download or preview an initiative attachment (public, no auth)' },
+      initiativeAttachment: 'read',
+      initiativeAttachmentDocuments: 'read',
+      response: { ...commonErrors },
+      detail: { summary: 'Download or preview an initiative attachment with project file access' },
     },
   );

@@ -34,12 +34,15 @@ export default function HomeFilesPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const projects = (useProjectsQuery().data ?? []).filter((project) => project.documentsEnabled);
-  const current = currentRoot(params.get('root'), params.get('project'));
+  const owner = mounted && session?.user.role === 'god';
+  const current = currentRoot(
+    params.get('root') ?? (owner ? 'home' : 'templates'),
+    params.get('project'),
+  );
   const projectKey = current.startsWith('project:') ? current.slice('project:'.length) : null;
   const { can } = usePermissions(useProjectQuery(projectKey).data);
   const path = params.get('path') ?? '';
   const phone = useMediaQuery('(max-width: 767px)');
-  const owner = mounted && session?.user.role === 'god';
   const scope: FileScope = projectKey
     ? { kind: 'project', projectKey, root: 'vault' }
     : { kind: 'home', root: current as 'home' | 'private' | 'templates' };
@@ -92,10 +95,17 @@ export default function HomeFilesPage() {
                   edit: can('documents', 'edit'),
                   delete: can('documents', 'delete'),
                 }
-              : { create: true, edit: true, delete: true }
+              : { create: owner, edit: owner, delete: owner }
           }
           onNavigate={(next) => go({ path: next, file: null })}
-          onSelect={(file) => go({ file })}
+          onSelect={(file) =>
+            go({
+              file,
+              ...(file
+                ? { path: file.includes('/') ? file.slice(0, file.lastIndexOf('/')) : '' }
+                : {}),
+            })
+          }
         />
       </div>
     </Shell>

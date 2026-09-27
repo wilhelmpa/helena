@@ -1,3 +1,4 @@
+import { sharedAttachment, rewriteSharedMedia } from './media';
 import { Elysia, t } from 'elysia';
 import { noContent } from '#shared/http';
 import { guards, entityGuard } from '#shared/guards';
@@ -108,11 +109,26 @@ export const shareRoutes = new Elysia({ name: 'share', detail: { tags: ['Share']
   // --- Public reads (no session; matched by PUBLIC_GET in auth-context) ----------
 
   .get(
+    '/share/:kind/:token/attachments/:publicId/raw',
+    ({ params, query, request }) =>
+      sharedAttachment(params.kind, params.token, params.publicId, request, query.download != null),
+    {
+      params: t.Object({
+        kind: t.Union([t.Literal('issue'), t.Literal('view')]),
+        token: t.String({ format: 'uuid' }),
+        publicId: t.String({ format: 'uuid' }),
+      }),
+      query: t.Object({ download: t.Optional(t.String()) }),
+      response: { ...errors(400, 404) },
+      detail: { summary: 'Read an attachment within an active public share' },
+    },
+  )
+  .get(
     '/share/issue/:token',
     async ({ params }) => {
       const bundle = await getSharedIssue(params.token);
       if (!bundle) throw new HttpError(404, 'Not found');
-      return bundle;
+      return rewriteSharedMedia(bundle, 'issue', params.token);
     },
     {
       params: shareTokenParams,
@@ -126,7 +142,7 @@ export const shareRoutes = new Elysia({ name: 'share', detail: { tags: ['Share']
     async ({ params }) => {
       const bundle = await getSharedView(params.token);
       if (!bundle) throw new HttpError(404, 'Not found');
-      return bundle;
+      return rewriteSharedMedia(bundle, 'view', params.token);
     },
     {
       params: shareTokenParams,
@@ -140,7 +156,7 @@ export const shareRoutes = new Elysia({ name: 'share', detail: { tags: ['Share']
     async ({ params }) => {
       const bundle = await getSharedViewIssue(params.token, params.issueId);
       if (!bundle) throw new HttpError(404, 'Not found');
-      return bundle;
+      return rewriteSharedMedia(bundle, 'view', params.token);
     },
     {
       params: sharedViewIssueParams,

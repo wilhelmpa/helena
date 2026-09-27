@@ -9,9 +9,9 @@ import {
 } from '@/lib/api/endpoints/projectFiles';
 import { copyText } from '@/utils/clipboard';
 import { runtimeEnv } from '@/utils/runtimeEnv';
-import { fileViewKind } from '@/utils/fileKinds';
-import { childPath, docsFileUrl, notesFileUrl } from '@/utils/vaultLinks';
+import { vaultNotePath } from '@/utils/paths';
 import { codeFolderUrl } from '@/utils/workspaceTools';
+import { vaultFilePath } from '../utils/vaultFilePath';
 
 // What can be done with one entry of the listed folder, and where each of its links
 // leads. The dialogs are the caller's; `ask` opens one for an entry.
@@ -35,8 +35,7 @@ export function useFileActions({
   const workspace = runtimeEnv().workspace;
   const projectKey = scope.kind === 'project' && scope.root === 'vault' ? scope.projectKey : null;
 
-  const vaultPath = (item: FileItem) =>
-    listing?.vaultPath != null ? childPath(listing.vaultPath, item.name) : null;
+  const vaultPath = (item: FileItem) => vaultFilePath(scope, item.path);
   const absolutePath = (item: FileItem) =>
     listing ? `${listing.absolutePath}/${item.name}` : item.path;
 
@@ -46,25 +45,22 @@ export function useFileActions({
     vaultPath,
     open(item: FileItem) {
       if (item.kind === 'folder') return onNavigate(item.path);
-      const path = vaultPath(item);
-      if (projectKey && path && fileViewKind(item.name) === 'markdown') {
-        return router.push(docsFileUrl(projectKey, path));
-      }
+      const canonical = vaultPath(item);
+      if (canonical && projectKey && /\.canvas$/i.test(item.name))
+        return router.push(vaultNotePath(canonical));
       onSelect(item.path);
     },
     downloadUrl: (item: FileItem) => fileRawUrl(scope, item.path, true),
-    // The file in the notes (a new tab on their own origin), where this origin has them.
-    notesUrl(item: FileItem) {
-      const path = vaultPath(item);
-      return path ? notesFileUrl(workspace.notesUrl, path) : '';
-    },
     codeUrl(item: FileItem) {
       const folder = item.kind === 'folder' ? absolutePath(item) : listing?.absolutePath;
       return folder ? codeFolderUrl(workspace, folder) : '';
     },
     async copyPath(item: FileItem) {
       try {
-        await copyText(absolutePath(item));
+        const canonical = vaultPath(item);
+        await copyText(
+          canonical ? `${window.location.origin}${vaultNotePath(canonical)}` : absolutePath(item),
+        );
         toast.success(t('pathCopied'));
       } catch {
         toast.error(t('copyFailed'));

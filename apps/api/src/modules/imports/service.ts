@@ -12,7 +12,7 @@ import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import { HttpError, iso, num } from '#shared/lib';
 import { createIssue } from '#modules/issues/service';
 import type { ProjectRow } from '#modules/projects/service';
-import { readAttachmentBytes } from '#modules/chat-attachments/service';
+import { readAttachmentBytes, type ChatAttachmentRow } from '#modules/chat-attachments/service';
 import { parseImportFile, type ParsedSheet } from '#modules/chat-attachments/parse';
 import {
   applyMapping,
@@ -98,7 +98,7 @@ export async function createMappedImport(
     throw new HttpError(404, 'Attachment not found');
   }
   const mapping = validateMapping(input);
-  const parsed = await readStoredFile(attachment.s3Key, attachment.filename);
+  const parsed = await readStoredFile(attachment);
   for (const field of Object.values(mapping)) {
     if (!parsed.headers.some((header) => header.toLowerCase() === field.toLowerCase())) {
       throw new HttpError(400, `Column "${field}" is not in the file`);
@@ -114,7 +114,7 @@ export async function createMappedImport(
 // The table of the draft's file, for the preview the review route attaches.
 export async function readImportTable(publicId: string): Promise<ParsedSheet> {
   const row = await requireImport(publicId);
-  return readStoredFile(row.chat_attachment.s3Key, row.chat_attachment.filename);
+  return readStoredFile(row.chat_attachment);
 }
 
 // Which of the file's titles the project already holds, archived issues included:
@@ -160,7 +160,7 @@ export async function confirmImport(
 
   const mapping = row.issue_import.mapping as ImportMapping;
   const [parsed, ctx] = await Promise.all([
-    readStoredFile(row.chat_attachment.s3Key, row.chat_attachment.filename),
+    readStoredFile(row.chat_attachment),
     mappingContext(project.id),
   ]);
   const applied = applyMapping(parsed, mapping, ctx);
@@ -225,8 +225,13 @@ async function setStatus(
     .where(eq(issueImport.publicId, publicId));
 }
 
-async function readStoredFile(s3Key: string, filename: string): Promise<ParsedSheet> {
-  return parseImportFile(await readAttachmentBytes(s3Key), filename);
+async function readStoredFile(
+  row: Pick<
+    ChatAttachmentRow,
+    'projectId' | 's3Key' | 'vaultPath' | 'sha256' | 'sizeBytes' | 'filename'
+  >,
+): Promise<ParsedSheet> {
+  return parseImportFile(await readAttachmentBytes(row), row.filename);
 }
 
 // The labels, members, and first workflow column a mapping resolves values against.

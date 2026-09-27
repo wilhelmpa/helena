@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { filesPath, homeFilesPath } from './paths';
+import { filesPath, homeFilesPath, vaultNotePath, notesPath, notePath } from './paths';
 
 describe('Files page paths', () => {
   it('keeps the root, the folder and the open file in the address', () => {
@@ -19,4 +19,22 @@ describe('Files page paths', () => {
       '/files?root=project&project=FAM&path=Rechnungen',
     );
   });
+});
+
+it('keeps notes, boards, private files and Unicode paths in the single file area', () => {
+  assert.equal(
+    vaultNotePath('Projects/VOL/Docs/Plan.md'),
+    '/project/VOL/files?path=Docs&file=Docs%2FPlan.md',
+  );
+  assert.equal(vaultNotePath('Private/Steuern.txt'), '/files?root=private&file=Steuern.txt');
+  assert.equal(
+    vaultNotePath('Home/Docs/März.md'),
+    '/files?root=home&path=Docs&file=Docs%2FM%C3%A4rz.md',
+  );
+  assert.equal(notesPath('VOL'), '/project/VOL/files?view=boards');
+  assert.equal(notePath('VOL', 42), '/project/VOL/files?view=boards&board=42');
+  assert.equal(
+    vaultNotePath('Projects/VOL/Boards/Plan.canvas'),
+    '/project/VOL/files?view=boards&canvas=Projects%2FVOL%2FBoards%2FPlan.canvas',
+  );
 });

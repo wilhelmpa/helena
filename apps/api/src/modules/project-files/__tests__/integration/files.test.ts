@@ -284,16 +284,24 @@ describe('home files', () => {
     return { god: authedApi(god.cookie), godCookie: god.cookie, person: authedApi(person.cookie) };
   }
 
-  it('lets every person use Home and Templates', async () => {
-    const { person } = await users();
+  it('keeps Home and template writes to the instance owner', async () => {
+    const { god, person } = await users();
     const upload = await person.files.upload.post(
       { files: [file('x', 'Vorlage.md')] },
       { query: { root: 'templates' } },
     );
-    expect(upload.status).toBe(201);
-    expect(existsSync(vaultFile('Templates/Vorlage.md'))).toBe(true);
+    expect(upload.status).toBe(403);
+    expect(existsSync(vaultFile('Templates/Vorlage.md'))).toBe(false);
+    expect(
+      (
+        await god.files.upload.post(
+          { files: [file('x', 'Vorlage.md')] },
+          { query: { root: 'templates' } },
+        )
+      ).status,
+    ).toBe(201);
     const listing = await person.files.get({ query: { root: 'home' } });
-    expect(listing.data).toMatchObject({ vaultPath: 'Home', items: [] });
+    expect(listing.status).toBe(403);
   });
 
   it('keeps Private to the owner and never creates it', async () => {

@@ -22,7 +22,7 @@ export default function AttachmentThumb({
         sizes={sizes}
         // A file picked in the new issue modal is previewed from a local blob:
         // URL, which the image optimizer cannot fetch.
-        unoptimized={attachment.url.startsWith('blob:')}
+        unoptimized
         draggable={false}
         className="object-cover"
       />

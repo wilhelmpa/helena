@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, beforeEach } from 'bun:test';
-import { api, authedApi } from '#tests/helpers/app';
+import { authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { clearLimits, setLimits } from '#tests/helpers/limits';
@@ -49,12 +49,12 @@ describe('initiative attachments', () => {
     expect(list.data).toHaveLength(1);
 
     // The raw route is public: fetch it with the anonymous client (no session).
-    const raw = await api['initiative-attachments']({ publicId }).raw.get();
+    const raw = await asOwner['initiative-attachments']({ publicId }).raw.get();
     expect(raw.status).toBe(200);
     expect(String(raw.data)).toBe('hello world');
 
     expect((await asOwner['initiative-attachments']({ publicId }).delete()).status).toBe(204);
-    expect((await api['initiative-attachments']({ publicId }).raw.get()).status).toBe(404);
+    expect((await asOwner['initiative-attachments']({ publicId }).raw.get()).status).toBe(404);
     expect((await asOwner.initiatives({ initiativeId }).attachments.get()).data).toHaveLength(0);
   });
 
@@ -97,6 +97,8 @@ describe('initiative attachments', () => {
     expect((await asOwner['initiative-attachments']({ publicId: missing }).delete()).status).toBe(
       404,
     );
-    expect((await api['initiative-attachments']({ publicId: missing }).raw.get()).status).toBe(404);
+    expect((await asOwner['initiative-attachments']({ publicId: missing }).raw.get()).status).toBe(
+      404,
+    );
   });
 });

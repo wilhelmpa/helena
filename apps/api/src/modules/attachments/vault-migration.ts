@@ -1,11 +1,19 @@
 import path from 'node:path';
-import { db, issue, issueAttachment, project } from '@repo/db';
+import {
+  db,
+  issue,
+  issueAttachment,
+  project,
+  chatAttachment,
+  initiativeAttachment,
+  initiative,
+} from '@repo/db';
 import { and, asc, eq, isNotNull, isNull } from 'drizzle-orm';
-import { numberedName, safeFileName } from '#modules/project-files/paths';
+import { numberedName, safeFileName, assertNoSymlinks } from '#modules/project-files/paths';
 import { fileSha256 } from '#modules/project-files/resolver';
-import { projectRoot, projectVaultPath } from '#modules/project-files/roots';
+import { projectRoot, projectVaultPath, vaultDirectory } from '#modules/project-files/roots';
 import { sha256, writeUniqueFile } from '#modules/project-files/service';
-import { deleteObject, getObject } from '#shared/s3';
+import { getObject } from '#shared/s3';
 import { num } from '#shared/lib';
 
 export interface VaultMigrationReceipt {
@@ -27,25 +35,29 @@ async function writtenBefore(
 ): Promise<string | null> {
   for (let number = 1; number <= 100; number += 1) {
     const candidate = path.join(folderPath, numberedName(safeFileName(filename), number));
-    const matches = await fileSha256(candidate).then(
-      (existing) => existing === hash,
-      () => null,
-    );
+    const matches = await assertNoSymlinks(
+      vaultDirectory(),
+      path.relative(vaultDirectory(), candidate),
+    )
+      .then(() => fileSha256(candidate))
+      .then(
+        (existing) => existing === hash,
+        () => null,
+      );
     if (matches === null) return null;
     if (matches) return path.basename(candidate);
   }
   return null;
 }
 
-// Moves the issue attachments still stored in the object store into their task folder
-// of the vault: Projects/<KEY>/Files/Tasks/<KEY>-<n>/. The row is updated before the
-// object is deleted, and a file an earlier run wrote is reused, so a run can be
-// repeated at any point.
+// Copies legacy attachment originals into the canonical vault and switches reads to
+// it. Object keys/bytes remain as rollback sources. Repeated/interrupted runs reuse
+// matching files and never overwrite a conflicting name or permanently delete data.
 export async function moveAttachmentsToVault({
   dryRun = false,
 } = {}): Promise<VaultMigrationReceipt> {
   const startedAt = new Date().toISOString();
-  const rows = await db
+  const issueRows = await db
     .select({
       attachment: issueAttachment,
       projectKey: project.key,
@@ -56,6 +68,30 @@ export async function moveAttachmentsToVault({
     .innerJoin(project, eq(project.id, issue.projectId))
     .where(and(isNotNull(issueAttachment.s3Key), isNull(issueAttachment.vaultPath)))
     .orderBy(asc(issueAttachment.id));
+  const chatRows = await db
+    .select({ attachment: chatAttachment, projectKey: project.key })
+    .from(chatAttachment)
+    .innerJoin(project, eq(project.id, chatAttachment.projectId))
+    .where(and(isNotNull(chatAttachment.s3Key), isNull(chatAttachment.vaultPath)));
+  const initiativeRows = await db
+    .select({ attachment: initiativeAttachment, projectKey: project.key })
+    .from(initiativeAttachment)
+    .innerJoin(initiative, eq(initiative.id, initiativeAttachment.initiativeId))
+    .innerJoin(project, eq(project.id, initiative.projectId))
+    .where(and(isNotNull(initiativeAttachment.s3Key), isNull(initiativeAttachment.vaultPath)));
+  const rows = [
+    ...issueRows.map((row) => ({
+      ...row,
+      table: issueAttachment,
+      folder: `Files/Tasks/${row.projectKey}-${row.sequenceNumber}`,
+    })),
+    ...chatRows.map((row) => ({ ...row, table: chatAttachment, folder: 'Files/Chat Attachments' })),
+    ...initiativeRows.map((row) => ({
+      ...row,
+      table: initiativeAttachment,
+      folder: `Files/Initiatives/${row.attachment.initiativeId}`,
+    })),
+  ];
   const receipt: VaultMigrationReceipt = {
     startedAt,
     finishedAt: startedAt,
@@ -67,25 +103,21 @@ export async function moveAttachmentsToVault({
   };
   if (dryRun) return receipt;
 
-  for (const { attachment, projectKey, sequenceNumber } of rows) {
+  for (const { attachment, projectKey, folder, table } of rows) {
     const from = attachment.s3Key as string;
     try {
       const object = await getObject(from);
       const bytes = new Uint8Array(await new Response(object.body).arrayBuffer());
       const hash = sha256(bytes);
       const root = projectRoot(projectKey);
-      const folder = `Files/Tasks/${projectKey}-${sequenceNumber}`;
       const name =
         (await writtenBefore(path.join(root.directory, folder), attachment.filename, hash)) ??
         path.basename(await writeUniqueFile(root, folder, attachment.filename, bytes));
       const to = `${projectVaultPath(projectKey)}/${folder}/${name}`;
       await db
-        .update(issueAttachment)
-        .set({ vaultPath: to, sha256: hash, s3Key: null, filename: name })
-        .where(and(eq(issueAttachment.id, attachment.id), eq(issueAttachment.s3Key, from)));
-      await deleteObject(from).catch((error) => {
-        console.error(`[attachments-to-vault] could not delete object ${from}:`, error);
-      });
+        .update(table)
+        .set({ vaultPath: to, sha256: hash, filename: name })
+        .where(and(eq(table.id, attachment.id), eq(table.s3Key, from), isNull(table.vaultPath)));
       receipt.moved.push({
         id: attachment.id,
         publicId: attachment.publicId,

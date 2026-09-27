@@ -1,8 +1,10 @@
 'use client';
 
+import type { ReactNode } from 'react';
+import { useProjectFeatures } from '@/hooks/useProjectFeatures';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { BookOpen, Code2 } from 'lucide-react';
+import { BookOpen, Code2, StickyNote } from 'lucide-react';
 import { WorkspacePageHeader } from '@/components/layout/WorkspaceHeader';
 import { PageTabs } from '@/components/layout/PageToolbar';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -12,12 +14,15 @@ import FileBrowser from './components/FileBrowser';
 
 // A project's files: its vault folder ("Wissen") and its workspace ("Code"). The root,
 // the folder and the open file are in the address.
-export default function ProjectFilesPage() {
+export default function ProjectFilesPage({ boards }: { boards?: ReactNode }) {
   const t = useTranslations('files');
   const { projectKey } = useParams<{ projectKey: string }>();
   const params = useSearchParams();
   const router = useRouter();
   const { can } = usePermissions();
+  const features = useProjectFeatures();
+  const boardsEnabled = features.notes && can('note_boards', 'read');
+  const boardView = params.get('view') === 'boards' && boardsEnabled;
   const root: ProjectFileRoot = params.get('root') === 'code' ? 'code' : 'vault';
   const path = params.get('path') ?? '';
   const go = (next: { root?: ProjectFileRoot; path?: string; file?: string | null }) => {
@@ -30,35 +35,58 @@ export default function ProjectFilesPage() {
     );
   };
 
+  const tabs = (
+    <PageTabs
+      label={t('title')}
+      value={boardView ? 'boards' : root}
+      onChange={(next) =>
+        next === 'boards'
+          ? router.push(`${filesPath(projectKey)}?view=boards`)
+          : go({ root: next as ProjectFileRoot, path: '' })
+      }
+      items={[
+        { value: 'vault', label: t('roots.vault'), icon: BookOpen },
+        ...(boardsEnabled
+          ? [{ value: 'boards', label: t('unified.boards'), icon: StickyNote }]
+          : []),
+        { value: 'code', label: t('roots.code'), icon: Code2 },
+      ]}
+    />
+  );
+
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <WorkspacePageHeader title={t('title')} />
       <div className="flex min-h-0 flex-1 flex-col p-4">
-        <FileBrowser
-          key={root}
-          leading={
-            <PageTabs
-              label={t('title')}
-              value={root}
-              onChange={(next) => go({ root: next, path: '' })}
-              items={[
-                { value: 'vault', label: t('roots.vault'), icon: BookOpen },
-                { value: 'code', label: t('roots.code'), icon: Code2 },
-              ]}
-            />
-          }
-          scope={{ kind: 'project', projectKey, root }}
-          path={path}
-          selected={params.get('file')}
-          rootLabel={t(`roots.${root}`)}
-          permissions={{
-            create: can('documents', 'create'),
-            edit: can('documents', 'edit'),
-            delete: can('documents', 'delete'),
-          }}
-          onNavigate={(next) => go({ path: next, file: null })}
-          onSelect={(file) => go({ file })}
-        />
+        {boardView ? (
+          <>
+            {tabs}
+            {boards}
+          </>
+        ) : (
+          <FileBrowser
+            key={root}
+            leading={tabs}
+            scope={{ kind: 'project', projectKey, root }}
+            path={path}
+            selected={params.get('file')}
+            rootLabel={t(`roots.${root}`)}
+            permissions={{
+              create: can('documents', 'create'),
+              edit: can('documents', 'edit'),
+              delete: can('documents', 'delete'),
+            }}
+            onNavigate={(next) => go({ path: next, file: null })}
+            onSelect={(file) =>
+              go({
+                file,
+                ...(file
+                  ? { path: file.includes('/') ? file.slice(0, file.lastIndexOf('/')) : '' }
+                  : {}),
+              })
+            }
+          />
+        )}
       </div>
     </div>
   );

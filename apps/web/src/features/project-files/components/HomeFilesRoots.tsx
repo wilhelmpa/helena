@@ -23,7 +23,7 @@ export default function HomeFilesRoots({
 }) {
   const t = useTranslations('files.roots');
   const entries = [
-    { root: 'home' as const, label: t('home'), Icon: Home },
+    ...(owner ? [{ root: 'home' as const, label: t('home'), Icon: Home }] : []),
     ...(owner ? [{ root: 'private' as const, label: t('private'), Icon: Lock }] : []),
     { root: 'templates' as const, label: t('templates'), Icon: LayoutTemplate },
   ];
@@ -93,7 +93,7 @@ export function HomeFilesRootSelect({
       value={current}
       onChange={onChange}
       options={[
-        { value: 'home', label: t('home'), icon: Home },
+        ...(owner ? [{ value: 'home' as const, label: t('home'), icon: Home }] : []),
         ...(owner ? [{ value: 'private' as const, label: t('private'), icon: Lock }] : []),
         { value: 'templates', label: t('templates'), icon: LayoutTemplate },
         ...projects.map((project) => ({

@@ -5,6 +5,8 @@ import { checkPermission, type AuthUser } from '#shared/access';
 import { HttpError } from '#shared/lib';
 import { homeRoot, projectRootOf, vaultDirectory } from '#modules/project-files/roots';
 import { statVaultFile } from '#modules/project-files/service';
+import { relativePath } from '#modules/project-files/paths';
+import { canAccess, vaultScope } from '#modules/knowledge/scope';
 
 // What a question carries besides its text: vault files the member attached, and tasks
 // the member pointed the agent at. The files stay where they are in the vault; the
@@ -15,11 +17,17 @@ export type ChatAttachment =
 
 export const MAX_ATTACHMENTS = 10;
 
-// Home/ and Templates/ are open to every member, the way the Files page shows them; a
-// project's folder needs its documents permission. Private/ is never handed to an
-// agent: its group keeps the agents out.
+// Chat attachment selection has the same file access as the workspace. Private/
+// is never handed to an agent, even when the sender may read it personally.
 async function resolveFile(user: AuthUser, vaultPath: string): Promise<ChatAttachment> {
+  relativePath(vaultPath);
   const [top, ...rest] = vaultPath.split('/');
+  if (!['Home', 'Templates', 'Projects'].includes(top)) {
+    throw new HttpError(400, 'Attach files from Home, Templates or a project');
+  }
+  if (!canAccess(await vaultScope(user, false), vaultPath, 'read')) {
+    throw new HttpError(404, 'File not found');
+  }
   let described;
   if (top === 'Home' || top === 'Templates') {
     described = await statVaultFile(
