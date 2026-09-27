@@ -1520,6 +1520,10 @@ html[data-kiosk-display='dual'] [data-slot='alert-dialog-content'] {
   display: flex;
   flex-direction: column;
 }
+
+.helena-tree-children li {
+  list-style: none;
+}
 .helena-tree-children [data-slot='sidebar-menu-sub'] {
   margin: 0;
   border: 0;
