@@ -119,7 +119,7 @@
 
   class SignalOrb extends HTMLElement {
     static get observedAttributes() {
-      return ['state', 'level', 'particles'];
+      return ['state', 'level', 'bands', 'particles'];
     }
     connectedCallback() {
       if (!this.canvas) {
@@ -196,6 +196,12 @@
       const n = Number(this.getAttribute('level') ?? '.5');
       return Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : 0.5;
     }
+    get bands() {
+      return (this.getAttribute('bands') ?? '0,0,0')
+        .split(',')
+        .slice(0, 3)
+        .map((value) => Math.max(0, Math.min(1, Number(value) || 0)));
+    }
     get particles() {
       const n = parseInt(this.getAttribute('particles'), 10);
       return Number.isFinite(n)
@@ -260,7 +266,8 @@
         spin = t * 0.23,
         cs = Math.cos(spin),
         sn = Math.sin(spin),
-        wave = 8 + this.level * 22;
+        wave = 8 + this.level * 22,
+        [low = 0, middle = 0, high = 0] = this.bands;
       for (let i = 0; i < count; i++) {
         const p = seeds[i];
         let vx = 0,
@@ -273,7 +280,10 @@
           const r =
             (192 +
               Math.sin(p.y * 11 - t * 3 + p.a * 0.03) * wave +
-              Math.sin(p.a * 0.17 + t * 2) * 5) *
+              Math.sin(p.a * 0.17 + t * 2) * 5 +
+              Math.sin(p.y * 6 - t * 2) * low * 12 +
+              Math.sin(p.a * 0.09 + t * 4) * middle * 8 +
+              Math.sin(p.a * 0.3 - t * 6) * high * 5) *
             w0;
           vx += x * r;
           vy += p.y * r;

@@ -40,6 +40,8 @@ export interface Conversation {
   // Speech was heard a moment ago but not understood.
   misheard: boolean;
   speakerEngine: 'local' | 'browser' | 'none';
+  micStream: MediaStream | null;
+  outputAnalyser: AnalyserNode | null;
   start: () => void;
   stop: () => void;
   interrupt: () => void;
@@ -56,6 +58,8 @@ export function useConversation(options: ConversationOptions): Conversation {
   const [heard, setHeard] = useState<string | null>(null);
   const [timings, setTimings] = useState<TurnTimings | null>(null);
   const [misheard, setMisheard] = useState(false);
+  const [micStream, setMicStream] = useState<MediaStream | null>(null);
+  const [outputAnalyser, setOutputAnalyser] = useState<AnalyserNode | null>(null);
   const painter = useRef<((level: number) => void) | null>(null);
   const latest = useRef(options);
   const refresh = useRef(voice.refresh);
@@ -77,6 +81,8 @@ export function useConversation(options: ConversationOptions): Conversation {
         heardTimer.current = window.setTimeout(() => setHeard(null), HEARD_MS);
       },
       onLevel: (level) => painter.current?.(level),
+      onStream: setMicStream,
+      onOutputAnalyser: setOutputAnalyser,
       onProblem: (problem) => latest.current.onProblem(problem),
       send: (text) => latest.current.send(text),
       transcribe: (wav, language) => transcribeRecording(wav, language),
@@ -127,6 +133,8 @@ export function useConversation(options: ConversationOptions): Conversation {
       misheard,
       listenerEngine: voice.listener.engine,
       speakerEngine: voice.speaker.engine,
+      micStream,
+      outputAnalyser,
       start,
       stop: () => controller().stop(),
       interrupt: () => controller().interrupt(),
@@ -139,6 +147,8 @@ export function useConversation(options: ConversationOptions): Conversation {
       voice.ready,
       voice.listener.engine,
       voice.speaker.engine,
+      micStream,
+      outputAnalyser,
       state,
       heard,
       timings,

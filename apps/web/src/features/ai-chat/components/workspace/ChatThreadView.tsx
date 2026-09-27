@@ -247,6 +247,7 @@ export default function ChatThreadView({
             orbState={agentOrbState(state?.label, agent.runtimeState.status)}
             online={state?.online ?? false}
             motionEnabled={motionEnabled}
+            conversation={conversation}
           />
         ) : (
           <ChatMessageList
@@ -260,6 +261,7 @@ export default function ChatThreadView({
             orbState={orbState}
             online={state?.online ?? true}
             motionEnabled={motionEnabled}
+            conversation={conversation}
           />
         )}
         <ChatComposer

@@ -1,8 +1,9 @@
 'use client';
 
-import { createElement, useEffect, useState } from 'react';
+import { createElement, useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import type { AgentOrbState } from '@/utils/agentStatusOrb';
+import { useVoiceOrbAudio } from '@/hooks/useVoiceOrbAudio';
+import type { AgentOrbState, VoiceOrbPhase } from '@/utils/agentStatusOrb';
 import { shipnotesState } from '@/utils/agentStatusOrb';
 import styles from './AgentStatusOrb.module.css';
 
@@ -32,16 +33,23 @@ export default function AgentStatusOrb({
   className = '',
   motionEnabled = true,
   online = true,
+  voicePhase = 'off',
+  micStream = null,
+  outputAnalyser = null,
 }: {
   state: AgentOrbState;
   size?: 'small' | 'large';
   className?: string;
   motionEnabled?: boolean;
   online?: boolean;
+  voicePhase?: VoiceOrbPhase;
+  micStream?: MediaStream | null;
+  outputAnalyser?: AnalyserNode | null;
 }) {
   const t = useTranslations('common.statusOrb');
   const [animated, setAnimated] = useState(false);
   const [ready, setReady] = useState(false);
+  const orbHostRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     if (size !== 'large' || !motionEnabled || !online) return;
@@ -79,6 +87,12 @@ export default function AgentStatusOrb({
     };
   }, [animated, motionEnabled, online, size]);
 
+  useVoiceOrbAudio(orbHostRef, ready && animated && motionEnabled && online && size === 'large', {
+    phase: voicePhase,
+    micStream,
+    outputAnalyser,
+  });
+
   const label = t(state);
   const motionAllowed =
     size === 'large' &&
@@ -95,6 +109,7 @@ export default function AgentStatusOrb({
   }
   return (
     <span
+      ref={orbHostRef}
       aria-label={online || state !== 'idle' ? label : t('offline')}
       role="img"
       className={`${styles.large} ${styles[state]} ${online ? '' : styles.offline} ${className}`}

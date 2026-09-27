@@ -1,5 +1,14 @@
 export type AgentOrbState = 'idle' | 'thinking' | 'tool' | 'waiting' | 'error' | 'done';
 
+export type VoiceOrbPhase =
+  'off' | 'starting' | 'listening' | 'hearing' | 'transcribing' | 'thinking' | 'speaking';
+
+export interface VoiceOrbAudio {
+  phase: VoiceOrbPhase;
+  micStream: MediaStream | null;
+  outputAnalyser: AnalyserNode | null;
+}
+
 export function chatOrbState(
   activity: string,
   tool: string | null,

@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { dayKey } from '@/utils/dates';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import AgentStatusOrb from '@/components/common/agent-chat/AgentStatusOrb';
-import type { AgentOrbState } from '@/utils/agentStatusOrb';
+import type { AgentOrbState, VoiceOrbAudio } from '@/utils/agentStatusOrb';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -105,6 +105,7 @@ export interface ChatMessageListProps {
   orbState: AgentOrbState | null;
   online: boolean;
   motionEnabled: boolean;
+  conversation: VoiceOrbAudio;
 }
 
 // The transcript, in shadcn's MessageScroller: it opens at the newest message, follows
@@ -137,6 +138,7 @@ function ChatTranscript({
   orbState,
   online,
   motionEnabled,
+  conversation,
 }: ChatMessageListProps) {
   const t = useTranslations('chatWorkspace');
   const { messages, status } = plan;
@@ -235,13 +237,26 @@ function ChatTranscript({
                 </Fragment>
               );
             })}
-            {orbState && (
+            {(orbState || conversation.phase !== 'off') && (
               <div className="flex justify-start py-1">
                 <AgentStatusOrb
-                  state={orbState}
+                  state={
+                    conversation.phase === 'speaking' ||
+                    conversation.phase === 'listening' ||
+                    conversation.phase === 'hearing'
+                      ? 'idle'
+                      : conversation.phase === 'thinking' || conversation.phase === 'transcribing'
+                        ? orbState === 'tool'
+                          ? 'tool'
+                          : 'thinking'
+                        : (orbState ?? 'idle')
+                  }
                   size="large"
                   online={online}
                   motionEnabled={motionEnabled}
+                  voicePhase={conversation.phase}
+                  micStream={conversation.micStream}
+                  outputAnalyser={conversation.outputAnalyser}
                 />
               </div>
             )}
