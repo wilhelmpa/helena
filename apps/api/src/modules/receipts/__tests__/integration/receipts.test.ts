@@ -105,10 +105,10 @@ function ublInvoice(input: { id: string; issue: string; due: string; gross: stri
 }
 
 // Requests go straight to the app, with the session cookie; files as multipart.
-function client(user: TestUser) {
+function client(user: TestUser, projectKey = 'FIN') {
   const send = (method: string, path: string, body?: unknown) =>
     app.handle(
-      new Request(`http://localhost/projects/FIN/receipts${path}`, {
+      new Request(`http://localhost/projects/${projectKey}/receipts${path}`, {
         method,
         headers:
           body === undefined || body instanceof FormData
@@ -805,7 +805,14 @@ describe('receipts', () => {
   });
 
   it('reuses the exact canonical email after SQL failure and rejects a changed leftover', async () => {
-    const project = (await getProjectByKey('FIN'))!;
+    // resetDb leaves earlier tests' vault files intact; isolate the original directory too.
+    const created = await authedApi(owner.cookie).projects.post({
+      key: 'INTAKEFS',
+      name: 'Canonical receipt retry',
+    });
+    expect(created.status).toBe(201);
+    const project = created.data!;
+    const http = client(owner, project.key);
     const { accountId, inboxId } = await insertMailAccount(project.teamId, project.id);
     const raw = 'Subject: Payment receipt\r\n\r\nAmount paid: 14.00 EUR\r\n';
     const mail = await insertMessage({
@@ -834,7 +841,7 @@ describe('receipts', () => {
     } finally {
       await restore();
     }
-    const folder = 'Projects/FIN/Files/Belege/2026-09';
+    const folder = `Projects/${project.key}/Files/Belege/2026-09`;
     const files = (await readdir(absoluteVaultPath(folder))).filter((name) =>
       name.endsWith('.eml'),
     );
