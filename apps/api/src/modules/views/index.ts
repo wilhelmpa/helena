@@ -24,6 +24,7 @@ import {
   createViewFolder,
   updateViewFolder,
   deleteViewFolder,
+  countViewFolderFiles,
   reorderViewFolders,
   listViews,
   createView,
@@ -110,6 +111,16 @@ export const viewRoutes = new Elysia({ name: 'views', detail: { tags: ['Views'] 
       savedViewFolder: 'delete',
       response: { 204: t.Void(), ...commonErrors },
       detail: { summary: 'Delete a saved view folder' },
+    },
+  )
+  .get(
+    '/view-folders/:folderId/file-count',
+    async ({ params }) => ({ count: await countViewFolderFiles(params.folderId) }),
+    {
+      params: viewFolderParams,
+      savedViewFolder: 'delete',
+      response: { 200: t.Object({ count: t.Number() }), ...commonErrors, ...errors(409) },
+      detail: { summary: 'Count files in an area before deletion' },
     },
   )
   .get(

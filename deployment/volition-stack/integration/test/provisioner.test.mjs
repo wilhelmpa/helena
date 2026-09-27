@@ -489,7 +489,9 @@ describe("createProvisioner", () => {
     await provisioner.provision(deletion);
     assert.deepEqual(await fs.readdir(path.join(root, "projects/demo/apps")), ["main.ts"]);
     const trash = path.join(root, "trash/projects", deletion.eventId);
-    assert.deepEqual((await fs.readdir(trash)).sort(), ["area-4-files", "area-4-workspace", "receipt.json"]);
+    assert.deepEqual(await fs.readdir(trash), ["receipt.json"]);
+    assert.ok(await fs.stat(path.join(root, `projects/demo/.trash/2026-09-21-frontend-${deletion.eventId}`)));
+    assert.ok(await fs.stat(path.join(root, `vault/.trash/Projects/DEMO/2026-09-21-frontend-${deletion.eventId}`)));
   });
 
   it("records each trashed and moved folder, so a failed run is not repeated", async () => {
@@ -537,6 +539,7 @@ describe("createProvisioner", () => {
     };
     await provisioner.provision(request);
     await fs.writeFile(path.join(root, "vault/Projects/DEMO/design/brief.md"), "kept in the trash");
+    await fs.writeFile(path.join(root, "projects/demo/design/work.txt"), "workspace data");
     await fs.mkdir(path.join(root, "projects/demo/scratch"));
 
     const later = {
@@ -548,8 +551,9 @@ describe("createProvisioner", () => {
     await provisioner.provision({ ...later, eventId: "b33e4567-e89b-42d3-a456-426614174010" });
 
     const trash = path.join(root, "trash/projects", later.eventId);
-    assert.deepEqual((await fs.readdir(trash)).sort(), ["area-5-files", "area-5-workspace", "receipt.json"]);
-    assert.equal(await fs.readFile(path.join(trash, "area-5-files/brief.md"), "utf8"), "kept in the trash");
+    assert.deepEqual(await fs.readdir(trash), ["receipt.json"]);
+    assert.equal(await fs.readFile(path.join(root, `vault/.trash/Projects/DEMO/2026-09-21-design-${later.eventId}/brief.md`), "utf8"), "kept in the trash");
+    assert.equal(await fs.readFile(path.join(root, `projects/demo/.trash/2026-09-21-design-${later.eventId}/work.txt`), "utf8"), "workspace data");
     const receipt = JSON.parse(await fs.readFile(path.join(trash, "receipt.json"), "utf8"));
     assert.deepEqual(receipt.quarantined.map((item) => item.label).sort(), ["area-5-files", "area-5-workspace"]);
     await assert.rejects(fs.lstat(path.join(root, "projects/demo/design")), { code: "ENOENT" });

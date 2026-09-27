@@ -1,4 +1,7 @@
-import { describe, it, expect, beforeEach } from 'bun:test';
+import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
+import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import { db, projectProvisioningJob } from '@repo/db';
 import { eq } from 'drizzle-orm';
 import { authedApi, type Api } from '#tests/helpers/app';
@@ -34,8 +37,16 @@ async function provisioning(api: Api) {
 }
 
 describe('area folders', () => {
+  const originalWorkspaceRoot = process.env.PROJECT_WORKSPACE_ROOT;
+  let workspaceRoot: string | null = null;
   beforeEach(async () => {
     await resetDb();
+  });
+  afterEach(async () => {
+    if (workspaceRoot) await rm(workspaceRoot, { recursive: true, force: true });
+    workspaceRoot = null;
+    if (originalWorkspaceRoot === undefined) delete process.env.PROJECT_WORKSPACE_ROOT;
+    else process.env.PROJECT_WORKSPACE_ROOT = originalWorkspaceRoot;
   });
 
   describe('create', () => {
@@ -195,6 +206,27 @@ describe('area folders', () => {
   });
 
   describe('delete', () => {
+    it('counts files in both area folders before deletion', async () => {
+      const { asOwner, areas } = await setup();
+      const area = (await areas.post({ name: 'Design' })).data!;
+      workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'area-count-'));
+      process.env.PROJECT_WORKSPACE_ROOT = workspaceRoot;
+      expect(
+        (await asOwner['view-folders']({ folderId: area.id })['file-count'].get()).data,
+      ).toEqual({ count: 0 });
+      const workspace = path.join(workspaceRoot, 'mkt', 'design');
+      const vault = path.join(process.env.PROJECT_VAULT_ROOT!, 'Projects', 'MKT', 'design');
+      await mkdir(path.join(workspace, 'nested'), { recursive: true });
+      await mkdir(vault, { recursive: true });
+      await writeFile(path.join(workspace, 'nested', 'work.txt'), 'work');
+      await writeFile(path.join(vault, 'brief.md'), 'brief');
+
+      expect(
+        (await asOwner['view-folders']({ folderId: area.id })['file-count'].get()).data,
+      ).toEqual({ count: 2 });
+      expect((await asOwner['view-folders']({ folderId: area.id }).delete()).status).toBe(204);
+    });
+
     it('queues the provisioning, which moves the folders to the trash', async () => {
       const { asOwner, projectId, areas } = await setup();
       const area = (await areas.post({ name: 'Design' })).data!;
@@ -219,6 +251,9 @@ describe('area folders', () => {
       ).toBe(403);
       expect(
         (await stranger['view-folders']({ folderId: area.id }).patch({ folder: 'x' })).status,
+      ).toBe(403);
+      expect(
+        (await stranger['view-folders']({ folderId: area.id })['file-count'].get()).status,
       ).toBe(403);
       expect((await areas.get()).data!.map((row) => row.folder)).toEqual(['design']);
     });

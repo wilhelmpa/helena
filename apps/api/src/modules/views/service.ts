@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { lstat, readdir } from 'node:fs/promises';
+import path from 'node:path';
 import {
   db,
   project,
@@ -18,6 +20,7 @@ import { HttpError, iso, num, rethrowDuplicate } from '#shared/lib';
 import type { Locale } from '#modules/user-preferences/locale';
 import { projectLocale } from '#modules/user-preferences/service';
 import { areaFolderSlug, assertAreaFolder, uniqueAreaFolder } from './area-folder';
+import { projectRoot } from '#modules/project-files/roots';
 
 export interface ViewRow {
   id: number;
@@ -90,6 +93,36 @@ export async function listViewFolders(projectId: number): Promise<ViewFolderRow[
 export async function getViewFolder(id: number): Promise<ViewFolderRow | null> {
   const [row] = await db.select().from(projectViewFolder).where(eq(projectViewFolder.id, id));
   return row ? mapFolder(row) : null;
+}
+
+export async function countViewFolderFiles(id: number): Promise<number> {
+  const [area] = await db
+    .select({ folder: projectViewFolder.folder, key: project.key })
+    .from(projectViewFolder)
+    .innerJoin(project, eq(project.id, projectViewFolder.projectId))
+    .where(eq(projectViewFolder.id, id));
+  if (!area) throw new HttpError(404, 'View folder not found');
+  let count = 0;
+  for (const root of [projectRoot(area.key, 'code'), projectRoot(area.key, 'vault')]) {
+    const pending = [path.join(root.directory, area.folder)];
+    while (pending.length) {
+      const directory = pending.pop()!;
+      const info = await lstat(directory).catch((error: NodeJS.ErrnoException) => {
+        if (error.code === 'ENOENT' && directory === path.join(root.directory, area.folder))
+          return null;
+        throw error;
+      });
+      if (!info) break;
+      if (!info.isDirectory() || info.isSymbolicLink())
+        throw new HttpError(409, 'Area folder is not a regular directory');
+      const entries = await readdir(directory, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.isDirectory()) pending.push(path.join(directory, entry.name));
+        else count++;
+      }
+    }
+  }
+  return count;
 }
 
 export async function createViewFolder(
