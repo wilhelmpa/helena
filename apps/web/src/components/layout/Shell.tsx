@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { WebLinksContext } from '@/context/webLinks';
 import { useWebLinkNavigation } from '@/hooks/useWebLinkNavigation';
 import { useWorkspaceNavigation } from '@/hooks/useWorkspaceNavigation';
@@ -249,12 +249,20 @@ export default function Shell({
             open={navigation.sidebarOpen}
             onOpenChange={navigation.setSidebarOpen}
             className="h-svh overflow-hidden"
+            style={{ '--sidebar-width': '248px' } as CSSProperties}
           >
             <AppSidebar
               projects={projects}
               currentProjectKey={projectKey}
               onSelectProject={(key) => router.push(navigation.projectDestination(key))}
               onNewProject={() => overlays.setShowNewProject(true)}
+              onNewView={() => {
+                if (!projectKey) return;
+                editor.beginNewView();
+                if (!route.onBoard) router.push(projectPath(projectKey));
+              }}
+              onEditView={editor.beginEditView}
+              onDeleteView={editor.deleteView}
             />
             <SidebarInset className="min-w-0">
               <AppHeader

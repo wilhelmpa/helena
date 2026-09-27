@@ -8,6 +8,7 @@ import { ViewIcon } from '@/utils/viewIcons';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem } from '@/components/ui/sidebar';
 import SidebarAreaMenu from '@/components/layout/SidebarAreaMenu';
+import SidebarSavedViewItem from '@/components/layout/SidebarSavedViewItem';
 
 // One area in the sidebar, folding out to the boards it holds. It starts open while
 // one of its boards is the open page.
@@ -16,11 +17,17 @@ export default function SidebarAreaItem({
   area,
   areas,
   views,
+  allViews,
+  onEditView,
+  onDeleteView,
 }: {
   projectKey: string;
   area: ViewFolder;
   areas: ViewFolder[];
   views: View[];
+  allViews?: View[];
+  onEditView?: (view: View) => void;
+  onDeleteView?: (view: View) => Promise<void>;
 }) {
   const pathname = usePathname();
   const activeViewId = views.find((view) => pathname === viewPath(projectKey, view.id))?.id;
@@ -42,12 +49,23 @@ export default function SidebarAreaItem({
           <SidebarMenuSub className="me-0 pe-0">
             {views.map((view) => (
               <SidebarMenuSubItem key={view.id}>
-                <SidebarMenuSubButton asChild size="sm" isActive={view.id === activeViewId}>
-                  <Link href={viewPath(projectKey, view.id)}>
-                    <ViewIcon name={view.icon} />
-                    <span>{view.name}</span>
-                  </Link>
-                </SidebarMenuSubButton>
+                {onEditView && onDeleteView ? (
+                  <SidebarSavedViewItem
+                    view={view}
+                    views={allViews ?? views}
+                    folders={areas}
+                    projectKey={projectKey}
+                    onEdit={onEditView}
+                    onDelete={onDeleteView}
+                  />
+                ) : (
+                  <SidebarMenuSubButton asChild size="sm" isActive={view.id === activeViewId}>
+                    <Link href={viewPath(projectKey, view.id)}>
+                      <ViewIcon name={view.icon} />
+                      <span>{view.name}</span>
+                    </Link>
+                  </SidebarMenuSubButton>
+                )}
               </SidebarMenuSubItem>
             ))}
           </SidebarMenuSub>

@@ -1354,3 +1354,212 @@ html[data-kiosk-display='dual'] [data-slot='alert-dialog-content'] {
     padding-inline-start: max(0.5rem, env(titlebar-area-x, 0px));
   }
 }
+
+.helena-sidebar,
+[data-sidebar='sidebar'][data-mobile='true']:has(.helena-sidebar-header) {
+  --sidebar: #09080b;
+  --sidebar-foreground: #eeeaf6;
+  --sidebar-accent: #26212d;
+  --sidebar-accent-foreground: #f3edf9;
+  --sidebar-border: #ffffff0a;
+  --sidebar-ring: #ae8bcf;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  box-shadow: inset -1px 0 0 #ffffff0a;
+}
+
+.helena-sidebar-header {
+  gap: 0;
+  padding: 18px 12px 0;
+}
+
+.helena-sidebar-brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px 14px;
+  color: #d5cfdf;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.13em;
+}
+
+.helena-sidebar-brand time,
+.helena-project-key,
+.helena-sidebar-section h2 {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.helena-sidebar-brand time {
+  color: #6f687a;
+  letter-spacing: 0.09em;
+}
+
+.helena-project-switcher {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  gap: 10px;
+  border-radius: 13px;
+  background: #111014;
+  box-shadow:
+    0 0 0 1px #ffffff0c,
+    0 8px 22px #0003;
+  padding: 0 12px;
+  color: #eeeaf6;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.helena-project-switcher:hover {
+  background: #141217;
+}
+.helena-project-switcher:focus-visible,
+.helena-tree-link:focus-visible,
+.helena-tree-toggle:focus-visible {
+  outline: 2px solid #ae8bcf;
+  outline-offset: 2px;
+}
+.helena-project-dot {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border-radius: 50%;
+}
+.helena-project-key {
+  color: #8b8595;
+  letter-spacing: 0.09em;
+}
+
+.helena-sidebar-content {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 0 12px;
+}
+
+.helena-sidebar-section h2 {
+  margin: 0;
+  padding: 18px 12px 6px;
+  color: #6f687a;
+  letter-spacing: 0.23em;
+  text-transform: uppercase;
+}
+
+.helena-tree-link {
+  display: flex;
+  min-height: 36px;
+  align-items: center;
+  gap: 10px;
+  border-radius: 10px;
+  padding: 0 12px;
+  color: #cfc6da;
+  font-size: 13px;
+  transition:
+    background 0.25s,
+    color 0.25s;
+}
+
+.helena-tree-link:hover {
+  background: #141217;
+  color: #f3edf9;
+}
+.helena-tree-link.is-active {
+  background: #26212d;
+  color: #f3edf9;
+  box-shadow:
+    0 2px 6px #0004,
+    inset 0 1px #ffffff0c;
+}
+.helena-tree-child {
+  min-height: 32px;
+  padding-inline-start: 28px;
+  color: #8f879a;
+}
+.helena-tree-badge {
+  display: flex;
+  min-width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 99px;
+  background: #e7dbfa;
+  padding: 0 6px;
+  color: #201b29;
+  font-size: 11px;
+  font-weight: 650;
+}
+.helena-tree-parent {
+  display: flex;
+  align-items: center;
+}
+.helena-tree-parent > .helena-tree-link {
+  min-width: 0;
+  flex: 1;
+}
+.helena-tree-toggle {
+  display: flex;
+  width: 24px;
+  height: 30px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  color: #8f879a;
+}
+.helena-tree-toggle:hover {
+  background: #26212d;
+  color: #f3edf9;
+}
+.helena-tree-toggle svg {
+  transition: transform 0.25s;
+}
+.helena-tree-children {
+  display: flex;
+  flex-direction: column;
+}
+.helena-tree-children [data-slot='sidebar-menu-sub'] {
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.helena-sidebar-footer {
+  margin: 0 12px 14px;
+  border-top: 1px solid #ffffff0a;
+  padding: 10px 0 0;
+}
+.helena-sidebar-admin {
+  display: flex;
+  min-height: 36px;
+  align-items: center;
+  gap: 10px;
+  border-radius: 10px;
+  padding: 0 12px;
+  color: #96919f;
+  font-size: 13px;
+}
+.helena-sidebar-admin:hover {
+  background: #141217;
+  color: #eeeaf6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .helena-tree-link,
+  .helena-tree-toggle svg {
+    transition: none;
+  }
+}
+
+.helena-saved-view {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+
+.helena-saved-view > .helena-tree-link {
+  min-width: 0;
+  flex: 1;
+}
