@@ -1367,6 +1367,7 @@ export async function updateIssue(
           },
           current.columnId,
           current.delegateUserId,
+          actorId(actor),
           tx,
         );
       return rows;

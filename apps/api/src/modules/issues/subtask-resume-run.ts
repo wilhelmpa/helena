@@ -15,6 +15,7 @@ export async function enqueueParentResume(
   child: ChildForResume,
   previousColumnId: number,
   previousDelegateUserId: string | null,
+  actorUserId: string | null,
   tx: Transaction,
 ): Promise<void> {
   const parentId = child.parentId;
@@ -44,10 +45,11 @@ export async function enqueueParentResume(
       parentStateType: parent.stateType,
       parentDelegateUserId: parent.delegateUserId,
       parentArchived: parent.archivedAt !== null,
+      actorUserId,
     })
   )
     return;
-  const agent = await getSubtaskResumeAgent(child.projectId, parent.delegateUserId!);
+  const agent = await getSubtaskResumeAgent(child.projectId, parent.delegateUserId!, actorUserId);
   if (!agent) return;
   const [comment] = await tx
     .select({ body: issueActivity.body })

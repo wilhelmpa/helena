@@ -876,13 +876,16 @@ export async function getAssignTriggerAgent(
 export async function getSubtaskResumeAgent(
   projectId: number,
   userId: string,
+  actorUserId: string | null,
 ): Promise<{ id: number } | null> {
   const [agent] = await db
-    .select({ id: aiAgent.id })
+    .select({ id: aiAgent.id, ...triggerScopeColumns })
     .from(aiAgent)
     .where(and(eq(aiAgent.userId, userId), isNull(aiAgent.pausedAt), inProject(projectId)))
     .limit(1);
-  return agent ?? null;
+  return agent && isTriggerableByAny(agent, await triggerActors(actorUserId))
+    ? { id: agent.id }
+    : null;
 }
 
 // The agent working in the project whose bot user is userId and that reacts to being
