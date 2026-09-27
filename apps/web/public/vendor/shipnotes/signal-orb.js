@@ -188,6 +188,15 @@
         this.dots = null;
       }
     }
+    set state(value) {
+      this.setAttribute('state', String(value));
+    }
+    set level(value) {
+      this.setAttribute('level', String(value));
+    }
+    set particles(value) {
+      this.setAttribute('particles', String(value));
+    }
     get state() {
       const value = this.getAttribute('state');
       return names.includes(value) ? value : 'listening';
