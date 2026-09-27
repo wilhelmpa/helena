@@ -113,7 +113,6 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
-  /* Controls sit flat on the page; only overlays cast a shadow. */
   --shadow-xs: 0 0 #0000;
   --shadow-sm: 0 1px 2px 0 rgb(40 30 20 / 0.06);
   --default-transition-duration: 140ms;
@@ -155,9 +154,7 @@
   --text-4xl--letter-spacing: -0.025em;
 }
 
-/* Warm neutrals (hue 60–85, chroma under 0.012) with one accent, `brand`, a petrol
-   blue. The page never sits on pure white or pure black. Text pairs meet WCAG AA in
-   both themes; see DESIGN.md for the measured ratios. */
+/* Light theme tokens. The dark theme uses the approved Shipnotes palette below. */
 :root {
   /* The brand (packages/brand/src/palette.ts, the same values): the wordmark's bands
      darkened for the light surfaces, and Hermes' ink with its text for brand surfaces
@@ -262,74 +259,76 @@
 }
 
 .dark {
-  --background: oklch(0.245 0.006 60);
-  --foreground: oklch(0.935 0.007 80);
-  --card: oklch(0.22 0.006 60);
-  --card-foreground: oklch(0.935 0.007 80);
-  --popover: oklch(0.285 0.007 60);
-  --popover-foreground: oklch(0.935 0.007 80);
-  --primary: oklch(0.92 0.008 80);
-  --primary-foreground: oklch(0.24 0.006 60);
-  --secondary: oklch(0.32 0.007 60);
-  --secondary-foreground: oklch(0.935 0.007 80);
-  --muted: oklch(0.305 0.007 60);
-  --muted-foreground: oklch(0.75 0.01 75);
-  --accent: oklch(0.305 0.008 60);
-  --accent-foreground: oklch(0.96 0.006 80);
-  --brand: oklch(0.75 0.09 210);
-  --brand-foreground: oklch(0.2 0.02 215);
-  --brand-subtle: oklch(0.32 0.045 215);
-  --destructive: oklch(0.7 0.15 25);
-  --destructive-foreground: oklch(0.2 0.02 25);
-  --warning: oklch(0.8 0.12 78);
-  --success: oklch(0.76 0.12 155);
-  --status-running: var(--brand);
-  --status-running-foreground: var(--brand-foreground);
+  --background: #050507;
+  --foreground: #eeeaf6;
+  --card: #0e0d11;
+  --card-foreground: #eeeaf6;
+  --popover: #141217;
+  --popover-foreground: #eeeaf6;
+  --primary: #e7dbfa;
+  --primary-foreground: #201b29;
+  --secondary: #141217;
+  --secondary-foreground: #cfc6da;
+  --muted: #111014;
+  --muted-foreground: #96919f;
+  --accent: #26212d;
+  --accent-foreground: #f3edf9;
+  --brand: #bdaaff;
+  --brand-foreground: #201b29;
+  --brand-subtle: #26212d;
+  --destructive: #f4a3bf;
+  --destructive-foreground: #201b29;
+  --warning: #ef9f27;
+  --success: #29e8b5;
+  --status-running: #29e8b5;
+  --status-running-foreground: #201b29;
   --status-waiting: var(--warning);
-  --status-waiting-foreground: oklch(0.2 0.02 78);
+  --status-waiting-foreground: #201b29;
   --status-success: var(--success);
-  --status-success-foreground: oklch(0.15 0.02 155);
+  --status-success-foreground: #201b29;
   --status-danger: var(--destructive);
   --status-danger-foreground: var(--destructive-foreground);
-  --status-idle: oklch(0.55 0.012 75);
-  --status-idle-foreground: oklch(0.96 0.006 80);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.75 0.09 210);
-  --chart-1: oklch(0.87 0.006 80);
-  --chart-2: oklch(0.66 0.01 75);
-  --chart-3: oklch(0.52 0.012 70);
-  --chart-4: oklch(0.42 0.012 65);
-  --chart-5: oklch(0.3 0.01 65);
-  --sidebar: oklch(0.22 0.006 60);
-  --sidebar-foreground: oklch(0.88 0.008 80);
-  --sidebar-primary: oklch(0.92 0.008 80);
-  --sidebar-primary-foreground: oklch(0.24 0.006 60);
-  --sidebar-accent: oklch(0.305 0.008 60);
-  --sidebar-accent-foreground: oklch(0.96 0.006 80);
-  --sidebar-border: oklch(1 0 0 / 8%);
-  --sidebar-ring: oklch(0.75 0.09 210);
-  --priority-low: oklch(0.7 0.012 70);
-  --priority-medium: oklch(0.8 0.13 85);
-  --priority-high: oklch(0.74 0.14 55);
-  --priority-urgent: oklch(0.7 0.15 38);
-  --kanban-column: oklch(0.22 0.006 60);
-  --kanban-column-raised: oklch(0.255 0.006 60);
-  --kanban-column-wip-destructive: oklch(0.235 0.014 25);
-  --kanban-column-wip-warning: oklch(0.238 0.012 75);
-  --kanban-card: oklch(0.275 0.006 60);
-  --kanban-card-hover: oklch(0.305 0.007 60);
-  --kanban-card-blocked: oklch(0.282 0.014 25);
-  --kanban-card-blocked-hover: oklch(0.31 0.018 25);
-  --row-blocked: oklch(0.255 0.012 25);
-  --row-blocked-hover: oklch(0.285 0.016 25);
-  --kanban-card-selected: oklch(0.36 0.05 215);
-  --overlay-shadow: 0 16px 36px -12px rgb(0 0 0 / 0.6), 0 4px 12px -4px rgb(0 0 0 / 0.4);
+  --status-idle: #96919f;
+  --status-idle-foreground: #201b29;
+  --border: #ffffff0c;
+  --input: #ffffff12;
+  --ring: #bdaaff;
+  --chart-1: #bdaaff;
+  --chart-2: #7ee0b8;
+  --chart-3: #f0997b;
+  --chart-4: #ef9f27;
+  --chart-5: #f4a3bf;
+  --default-transition-duration: 250ms;
+  --radius: 0.875rem;
+  --sidebar: #09080b;
+  --sidebar-foreground: #cfc6da;
+  --sidebar-primary: #e7dbfa;
+  --sidebar-primary-foreground: #201b29;
+  --sidebar-accent: #26212d;
+  --sidebar-accent-foreground: #f3edf9;
+  --sidebar-border: #ffffff0a;
+  --sidebar-ring: #bdaaff;
+  --priority-low: #96919f;
+  --priority-medium: #efc273;
+  --priority-high: #f0997b;
+  --priority-urgent: #f4a3bf;
+  --kanban-column: #0a090d;
+  --kanban-column-raised: #0c0b0f;
+  --kanban-column-wip-destructive: #160e14;
+  --kanban-column-wip-warning: #18130e;
+  --kanban-card: #111014;
+  --kanban-card-hover: #141217;
+  --kanban-card-blocked: #1b1319;
+  --kanban-card-blocked-hover: #221720;
+  --row-blocked: #160e14;
+  --row-blocked-hover: #1b1319;
+  --kanban-card-selected: #26212d;
+  --overlay-shadow: 0 0 0 1px #ffffff12, 0 18px 40px #0006;
   --pinned-column-shadow: 0 0 18px 2px rgb(0 0 0 / 0.45);
   --side-panel-shadow: 0 0 28px 6px rgb(0 0 0 / 0.5);
-  --modal-shadow: 0 32px 72px -20px rgb(0 0 0 / 0.75), 0 12px 28px -14px rgb(0 0 0 / 0.55);
+  --modal-shadow: 0 0 0 1px #ffffff12, 0 18px 40px #0006;
   --chat-tabs-shadow: 0 10px 16px -8px rgb(0 0 0 / 0.5);
-  --chat-composer-shadow: 0 2px 20px 0 rgb(0 0 0 / 0.45);
+  --chat-composer-shadow: 0 0 0 1px #ffffff12, 0 18px 40px #0006;
 }
 
 /* Every floating surface lifts off the page with the same shadow. It is set here
@@ -408,6 +407,116 @@
 [data-slot='card'] {
   --tw-shadow: 0 0 #0000;
   border-radius: var(--radius-lg);
+}
+
+.dark [data-slot='card'] {
+  border-color: transparent;
+  border-radius: 18px;
+  box-shadow:
+    0 0 0 1px #ffffff0c,
+    0 8px 22px #0003;
+}
+
+.dark [data-slot='button'] {
+  border-radius: 99px;
+  transition-duration: 250ms;
+}
+.dark [data-slot='button'][data-size='lg'] {
+  min-height: 44px;
+}
+.dark [data-slot='button'].border {
+  border-color: transparent;
+  box-shadow: 0 0 0 1px #ffffff12;
+}
+.dark [data-slot='badge'] {
+  border-radius: 99px;
+}
+.dark [data-slot='badge'].border:not(.border-transparent) {
+  border-color: transparent;
+  box-shadow: 0 0 0 1px #ffffff12;
+}
+.dark [data-slot='tabs-list']:not([data-variant='toolbar']) {
+  border-radius: 13px;
+  background: #111014;
+  box-shadow: 0 0 0 1px #ffffff0c;
+}
+.dark [data-slot='tabs-trigger']:not([data-state='active']) {
+  color: #96919f;
+}
+.dark [data-slot='tabs-trigger'][data-state='active'] {
+  background: #26212d;
+  color: #f3edf9;
+  box-shadow:
+    0 2px 6px #0004,
+    inset 0 1px #ffffff0c;
+}
+.dark [data-slot='tabs-trigger'] {
+  border-radius: 10px;
+  transition-duration: 250ms;
+}
+.dark :is([data-slot='input'], [data-slot='textarea'], [data-slot='select-trigger']) {
+  border-color: transparent;
+  border-radius: 13px;
+  box-shadow: 0 0 0 1px #ffffff12;
+}
+.dark :is(button, a, input, textarea, select, [role='button'], [role='tab']):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.dark
+  :is(
+    p,
+    span,
+    div,
+    a,
+    button,
+    li,
+    label,
+    small,
+    h1,
+    h2,
+    h3,
+    h4,
+    td,
+    th
+  )[class*='text-muted-foreground/'] {
+  color: var(--muted-foreground);
+}
+.dark :is(input, textarea)::placeholder {
+  color: var(--muted-foreground);
+  opacity: 1;
+}
+.dark :is(main, [data-slot='sidebar-inset']) h1:not(.md-content h1, .agent-markdown h1) {
+  font-weight: 520;
+  letter-spacing: -0.05em;
+}
+.dark :is([data-app-header], header:has([data-slot='app-header-page'])) > .truncate {
+  font-weight: 520;
+  letter-spacing: -0.05em;
+}
+.dark [data-sidebar='group-label'],
+.dark main :is(h2, h3).uppercase,
+.dark section > :is(h2, h3).text-xs.text-muted-foreground {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.23em;
+  text-transform: uppercase;
+}
+.dark [data-sidebar='menu-button'][data-active='true'] {
+  box-shadow:
+    0 2px 6px #0004,
+    inset 0 1px #ffffff0c;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dark *,
+  .dark *::before,
+  .dark *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 [data-slot='switch'][data-state='checked'],
@@ -522,6 +631,12 @@ html [data-sonner-toast][data-styled='true']:not(:focus-visible) {
 .kanban-card {
   background-color: var(--kanban-card);
   transition: background-color 0.12s ease;
+}
+.dark .kanban-card {
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 1px #ffffff0c,
+    0 8px 22px #0003;
 }
 .kanban-card:hover {
   background-color: var(--kanban-card-hover);
