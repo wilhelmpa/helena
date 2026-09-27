@@ -1,5 +1,13 @@
 import { expect, it } from 'bun:test';
-for (const mode of ['empty-success', 'fairness', 'owner-correction', 'scope']) {
+for (const mode of [
+  'empty-success',
+  'fairness',
+  'owner-correction',
+  'scope',
+  'admission-scopes',
+  'skipped-lock',
+  'admission-errors',
+]) {
   it(`runs bounded receipt retry without provider or task actions: ${mode}`, () => {
     const result = Bun.spawnSync(
       [
@@ -8,7 +16,7 @@ for (const mode of ['empty-success', 'fairness', 'owner-correction', 'scope']) {
         new URL('./fixtures/receipt-retry.fixture.ts', import.meta.url).pathname,
         mode,
       ],
-      { env: { ...process.env, DATABASE_URL: '', NODE_ENV: 'test' } },
+      { env: { ...process.env, DATABASE_URL: '', NODE_ENV: 'test' }, timeout: 5000 },
     );
     expect(result.stderr.toString()).toBe('');
     expect(result.exitCode).toBe(0);

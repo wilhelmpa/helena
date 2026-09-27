@@ -108,13 +108,21 @@ function value(expression: unknown, context: Context): unknown {
   assert.fail(`Unsupported operator ${op}`);
 }
 let locked = 0;
+let skipRowLock = false;
+let nextQueryError = false;
 let beforeLock: (() => void) | undefined;
 function select(fields?: Record<string, unknown>) {
   let predicate: unknown;
   let order: unknown[] = [];
   let limit = Infinity;
-  const execute = () =>
-    rows
+  let skipped = false;
+  const execute = () => {
+    if (nextQueryError) {
+      nextQueryError = false;
+      throw new Error('synthetic DB failure');
+    }
+    if (skipped) return [];
+    return rows
       .filter((context) => predicate === undefined || value(predicate, context))
       .sort((a, b) => {
         for (const expression of order) {
@@ -133,6 +141,7 @@ function select(fields?: Record<string, unknown>) {
             ? { id: context.classification.id }
             : structuredClone(context.classification),
       );
+  };
   const query = {
     from: () => query,
     innerJoin: () => query,
@@ -148,8 +157,10 @@ function select(fields?: Record<string, unknown>) {
       limit = count;
       return query;
     },
-    for: (kind: string) => {
+    for: (kind: string, options: unknown) => {
       assert.equal(kind, 'update');
+      assert.deepEqual(options, { skipLocked: true });
+      skipped = skipRowLock;
       locked++;
       beforeLock?.();
       beforeLock = undefined;
@@ -269,7 +280,7 @@ if (mode === 'empty-success') {
   assert.equal(context.classification.actions.length, 2);
   assert.ok(context.classification.actions[1]!.attemptedAt);
   available = true;
-  const result = await Promise.all([run(), run()]);
+  const result = await Promise.all(Array.from({ length: 10 }, () => run()));
   assert.equal(
     result.reduce((sum, row) => sum + row.completed, 0),
     1,
@@ -306,6 +317,62 @@ if (mode === 'empty-success') {
   assert.equal(context.classification.category, 'notification');
   assert.equal(context.classification.actions.length, 1);
   assert.equal(locked, 1);
+} else if (mode === 'admission-scopes') {
+  const contexts = Array.from({ length: 10 }, (_, index) => add(index + 1));
+  contexts.forEach((context, index) => {
+    context.thread.projectId = index + 1;
+  });
+  let release!: () => void;
+  const intakeMayFinish = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let first = true;
+  useReceiptIntake(async (input) => {
+    calls++;
+    if (first) {
+      first = false;
+      await intakeMayFinish;
+    }
+    return [input.messageId + 100];
+  });
+  const retry = (context: Context) =>
+    retryReceiptFiling(1, { ...config, accountIds: [4] }, 'owner', context.thread.projectId!);
+  const accepted = retry(contexts[0]!);
+  const deferred = await Promise.all(contexts.slice(1).map(retry));
+  assert.ok(deferred.every((result) => result.completed === 0 && result.failed === 0));
+  release();
+  assert.deepEqual(await accepted, { completed: 1, failed: 0 });
+  assert.equal(calls, 1);
+  for (const context of contexts.slice(1))
+    assert.deepEqual(await retry(context), { completed: 1, failed: 0 });
+  assert.equal(calls, 10);
+} else if (mode === 'skipped-lock') {
+  const context = add(1);
+  useReceiptIntake(async () => {
+    calls++;
+    return [88];
+  });
+  skipRowLock = true;
+  assert.deepEqual(await run(), { completed: 0, failed: 0 });
+  assert.equal(calls, 0);
+  assert.deepEqual(context.classification.actions, [empty]);
+  skipRowLock = false;
+  assert.deepEqual(await run(), { completed: 1, failed: 0 });
+  assert.equal(calls, 1);
+} else if (mode === 'admission-errors') {
+  add(1);
+  useReceiptIntake(async () => {
+    throw new Error('synthetic intake failure');
+  });
+  assert.deepEqual(await run(), { completed: 0, failed: 1 });
+  nextQueryError = true;
+  await assert.rejects(run(), /synthetic DB failure/);
+  useReceiptIntake(async () => {
+    calls++;
+    return [88];
+  });
+  assert.deepEqual(await run(), { completed: 1, failed: 0 });
+  assert.equal(calls, 1);
 } else if (mode === 'scope') {
   add(1).classification.category = 'notification';
   add(2).thread.projectId = 2;

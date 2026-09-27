@@ -416,13 +416,32 @@ async function fileReceipts(
   }
 }
 
+// Intake uses additional connections from this process's pool. Admit one receipt retry
+// at a time; other scopes remain pending for the next existing run, without a queue.
+let receiptRetryRunning = false;
+
 export async function retryReceiptFiling(
   teamId: number,
   config: MailTriageConfig,
   actorUserId: string | null,
   projectId?: number,
 ) {
-  if (config.receipts !== 'auto' || !receiptIntake) return { completed: 0, failed: 0 };
+  if (config.receipts !== 'auto' || !receiptIntake || receiptRetryRunning)
+    return { completed: 0, failed: 0 };
+  receiptRetryRunning = true;
+  try {
+    return await retryReceiptBatch(teamId, config, actorUserId, projectId);
+  } finally {
+    receiptRetryRunning = false;
+  }
+}
+
+async function retryReceiptBatch(
+  teamId: number,
+  config: MailTriageConfig,
+  actorUserId: string | null,
+  projectId?: number,
+) {
   const eligible = and(
     eq(helenaMailClassification.teamId, teamId),
     eq(helenaMailClassification.category, 'invoice'),
@@ -454,12 +473,13 @@ export async function retryReceiptFiling(
   let failed = 0;
   for (const candidate of pending) {
     const action = await db.transaction(async (tx) => {
-      // Serialize retries and owner corrections before rechecking the current source scope.
-      await tx
+      // Do not consume a pool connection waiting for another replica or owner correction.
+      const [locked] = await tx
         .select({ id: helenaMailClassification.id })
         .from(helenaMailClassification)
         .where(eq(helenaMailClassification.id, candidate.id))
-        .for('update');
+        .for('update', { skipLocked: true });
+      if (!locked) return null;
       const [current] = await tx
         .select({ row: helenaMailClassification, projectId: mailThread.projectId })
         .from(helenaMailClassification)

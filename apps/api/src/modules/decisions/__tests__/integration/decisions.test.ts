@@ -170,6 +170,23 @@ async function setup() {
   return { owner, asOwner, project, teamId: project.teamId };
 }
 
+async function receiptRetryDeadline<T>(work: Promise<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error('Receipt retry exceeded 5s pool deadline')),
+          5000,
+        );
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function connection(asOwner: Api, teamId: number, overrides: Record<string, unknown> = {}) {
   const res = await asOwner.teams({ teamId }).credentials.post({
     kind: 'decision_model',
@@ -714,7 +731,7 @@ describe('the mail classifier', () => {
     }
   });
 
-  it('retries legacy empty receipt actions without duplicates or owner/classifier changes', async () => {
+  it('retries empty actions with ten concurrent same-row callers without exhausting the pool', async () => {
     const { asOwner, teamId, project, owner } = await setup();
     const { accountId, inboxId } = await insertMailAccount(teamId, project.id);
     const message = await insertMessage({
@@ -747,7 +764,11 @@ describe('the mail classifier', () => {
     let available = false;
     useReceiptIntake(async (input) => {
       calls++;
-      return available ? intakeMailReceipts({ ...input, skipMatching: true }) : [];
+      if (!available) return [];
+      // Let competing callers reach their row locks before the native intake requests
+      // its own transaction and global DB queries from the ten-connection pool.
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      return intakeMailReceipts({ ...input, skipMatching: true });
     });
     try {
       expect(await retryReceiptFiling(teamId, config, owner.userId, project.id)).toEqual({
@@ -763,15 +784,20 @@ describe('the mail classifier', () => {
       ).data!.classification!;
       expect(emptyView.actions).toHaveLength(1);
       expect(emptyView.actions[0]).toMatchObject(empty);
-      expect(emptyView.actions[0]!.attemptedAt).toBeString();
+      expect(Number.isNaN(new Date(String(emptyView.actions[0]!.attemptedAt)).getTime())).toBe(
+        false,
+      );
       await asOwner.mail
         .threads({ threadId: message.threadId })
         .classification.patch({ priority: 'high' });
       available = true;
-      const results = await Promise.all([
-        retryReceiptFiling(teamId, config, owner.userId, project.id),
-        retryReceiptFiling(teamId, config, owner.userId, project.id),
-      ]);
+      const results = await receiptRetryDeadline(
+        Promise.all(
+          Array.from({ length: 10 }, () =>
+            retryReceiptFiling(teamId, config, owner.userId, project.id),
+          ),
+        ),
+      );
       expect(results.reduce((n, row) => n + row.completed, 0)).toBe(1);
       expect(calls).toBe(3);
       expect(await retryReceiptFiling(teamId, config, owner.userId, project.id)).toEqual({
@@ -799,6 +825,134 @@ describe('the mail classifier', () => {
       const receipts = await asOwner.projects({ projectKey: project.key }).receipts.get();
       expect(receipts.status).toBe(200);
       expect(receipts.data!.receipts).toHaveLength(1);
+      expect(seen).toHaveLength(0);
+    } finally {
+      useReceiptIntake(intakeMailReceipts);
+    }
+  });
+
+  it('skips a classification locked by another transaction and retries after its release', async () => {
+    const { teamId, project, owner } = await setup();
+    const { accountId, inboxId } = await insertMailAccount(teamId, project.id);
+    const message = await insertMessage({
+      teamId,
+      accountId,
+      folderId: inboxId,
+      projectId: project.id,
+      subject: 'Payment receipt',
+      text: 'Amount paid: 14.00 EUR',
+    });
+    await db.insert(helenaMailClassification).values({
+      teamId,
+      threadId: message.threadId,
+      messageId: message.messageRowId,
+      status: 'classified',
+      projectId: project.id,
+      category: 'invoice',
+      actions: [
+        {
+          kind: 'receipt',
+          projectId: project.id,
+          receiptIds: [],
+          note: 'No supported receipt original found.',
+        },
+      ],
+    });
+    const config = mailTriageConfig({ receipts: 'auto', accountIds: [accountId] });
+    let calls = 0;
+    useReceiptIntake(async (input) => {
+      calls++;
+      return intakeMailReceipts({ ...input, skipMatching: true });
+    });
+    try {
+      await db.transaction(async (tx) => {
+        await tx
+          .select()
+          .from(helenaMailClassification)
+          .where(eq(helenaMailClassification.messageId, message.messageRowId))
+          .for('update');
+        expect(
+          await receiptRetryDeadline(retryReceiptFiling(teamId, config, owner.userId, project.id)),
+        ).toEqual({ completed: 0, failed: 0 });
+        expect(calls).toBe(0);
+      });
+      expect(
+        await receiptRetryDeadline(retryReceiptFiling(teamId, config, owner.userId, project.id)),
+      ).toEqual({ completed: 1, failed: 0 });
+      expect(calls).toBe(1);
+      expect(seen).toHaveLength(0);
+    } finally {
+      useReceiptIntake(intakeMailReceipts);
+    }
+  });
+
+  it('defers ten independent retry scopes without pool starvation and files them on later runs', async () => {
+    const { asOwner, teamId, project, owner } = await setup();
+    const scopes = [];
+    for (let i = 0; i < 10; i++) {
+      const target =
+        i === 0
+          ? project
+          : (await asOwner.projects.post({ key: `RETRY${i}`, name: `Retry ${i}` })).data!;
+      const { accountId, inboxId } = await insertMailAccount(
+        teamId,
+        target.id,
+        `retry${i}@home.example`,
+      );
+      const message = await insertMessage({
+        teamId,
+        accountId,
+        folderId: inboxId,
+        projectId: target.id,
+        subject: 'Payment receipt',
+        text: `Amount paid: ${14 + i}.00 EUR`,
+      });
+      await db.insert(helenaMailClassification).values({
+        teamId,
+        threadId: message.threadId,
+        messageId: message.messageRowId,
+        status: 'classified',
+        projectId: target.id,
+        category: 'invoice',
+        actions: [
+          {
+            kind: 'receipt',
+            projectId: target.id,
+            receiptIds: [],
+            note: 'No supported receipt original found.',
+          },
+        ],
+      });
+      scopes.push({
+        target,
+        config: mailTriageConfig({ receipts: 'auto', accountIds: [accountId] }),
+      });
+    }
+    let calls = 0;
+    useReceiptIntake(async (input) => {
+      calls++;
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      return intakeMailReceipts({ ...input, skipMatching: true });
+    });
+    const retry = (scope: (typeof scopes)[number]) =>
+      retryReceiptFiling(teamId, scope.config, owner.userId, scope.target.id);
+    try {
+      const parallel = await receiptRetryDeadline(Promise.all(scopes.map(retry)));
+      expect(parallel.reduce((n, result) => n + result.completed, 0)).toBe(1);
+      expect(
+        parallel.filter((result) => result.completed === 0 && result.failed === 0),
+      ).toHaveLength(9);
+      expect(calls).toBe(1);
+      let completed = 0;
+      for (const scope of scopes) completed += (await receiptRetryDeadline(retry(scope))).completed;
+      expect(completed).toBe(9);
+      expect(calls).toBe(10);
+      for (const scope of scopes) {
+        expect(await retry(scope)).toEqual({ completed: 0, failed: 0 });
+        const receipts = await asOwner.projects({ projectKey: scope.target.key }).receipts.get();
+        expect(receipts.status).toBe(200);
+        expect(receipts.data!.receipts).toHaveLength(1);
+      }
       expect(seen).toHaveLength(0);
     } finally {
       useReceiptIntake(intakeMailReceipts);
