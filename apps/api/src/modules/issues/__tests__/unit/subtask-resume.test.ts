@@ -19,6 +19,10 @@ describe('subtask parent resume', () => {
     expect(shouldResumeParent({ ...eligible, childStateType: 'canceled' })).toBe(true);
   });
 
+  it('resumes the parent when its own delegate finishes the child', () => {
+    expect(shouldResumeParent({ ...eligible, actorUserId: 'coordinator' })).toBe(true);
+  });
+
   it.each([
     { previousColumnId: 2 },
     { childStateType: 'started' },
@@ -28,7 +32,6 @@ describe('subtask parent resume', () => {
     { parentStateType: 'completed' },
     { parentStateType: 'canceled' },
     { parentArchived: true },
-    { actorUserId: 'coordinator' },
   ])('does not resume for an ineligible update: %j', (change) => {
     expect(shouldResumeParent({ ...eligible, ...change })).toBe(false);
   });

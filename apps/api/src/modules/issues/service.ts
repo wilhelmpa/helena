@@ -1305,7 +1305,6 @@ export async function updateIssue(
   if (patch.dueDate !== undefined) set.dueDate = patch.dueDate;
 
   const changed = Object.keys(set).length > 0;
-  let previousColumnId = before.columnId;
   if (changed) {
     set.updatedAt = sql`now()` as unknown as Date;
     const guard =
@@ -1313,16 +1312,15 @@ export async function updateIssue(
         ? eq(issue.id, id)
         : and(eq(issue.id, id), eq(issue.columnId, opts.onlyIfColumnId));
     const updated = await db.transaction(async (tx) => {
-      await tx
-        .select({ id: projectTable.id })
+      const [lockedProject] = await tx
+        .select({ key: projectTable.key })
         .from(projectTable)
         .where(eq(projectTable.id, before.projectId))
         .for('update');
       const [current] = await tx
-        .select({ columnId: issue.columnId })
+        .select({ columnId: issue.columnId, delegateUserId: issue.delegateUserId })
         .from(issue)
         .where(eq(issue.id, id));
-      if (current) previousColumnId = current.columnId;
       if (set.assigneeUserId) {
         await resolveIssueAssignee(before.projectId, { assigneeUserId: set.assigneeUserId }, tx);
       } else {
@@ -1341,7 +1339,14 @@ export async function updateIssue(
             tx,
           );
       }
-      const rows = await tx.update(issue).set(set).where(guard).returning({ id: issue.id });
+      const rows = await tx.update(issue).set(set).where(guard).returning({
+        id: issue.id,
+        sequenceNumber: issue.sequenceNumber,
+        parentId: issue.parentId,
+        delegateUserId: issue.delegateUserId,
+        columnId: issue.columnId,
+        title: issue.title,
+      });
       if (rows.length > 0 && movedToColumnId !== null) {
         await enqueueStateChangedActions({
           tx,
@@ -1353,6 +1358,17 @@ export async function updateIssue(
           chain: opts?.actionChain,
         });
       }
+      if (rows[0] && current && current.columnId !== rows[0].columnId)
+        await enqueueParentResume(
+          {
+            ...rows[0],
+            projectId: before.projectId,
+            identifier: `${lockedProject!.key}-${rows[0].sequenceNumber}`,
+          },
+          current.columnId,
+          current.delegateUserId,
+          tx,
+        );
       return rows;
     });
     if (updated.length === 0) return getIssue(id);
@@ -1407,8 +1423,6 @@ export async function updateIssue(
         );
         await applySubtaskAutomation(after, actor);
       }
-      if (previousColumnId !== after.columnId)
-        await enqueueParentResume(after, previousColumnId, before.delegateUserId, actor);
     }
   }
   return after;

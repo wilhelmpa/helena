@@ -7,7 +7,7 @@ export interface SubtaskResumeDecision {
   parentStateType: string;
   parentDelegateUserId: string | null;
   parentArchived: boolean;
-  actorUserId: string | null;
+  actorUserId?: string | null;
 }
 
 export function shouldResumeParent(input: SubtaskResumeDecision): boolean {
@@ -19,8 +19,7 @@ export function shouldResumeParent(input: SubtaskResumeDecision): boolean {
     !input.parentArchived &&
     input.parentStateType !== 'completed' &&
     input.parentStateType !== 'canceled' &&
-    input.parentDelegateUserId !== null &&
-    input.parentDelegateUserId !== input.actorUserId
+    input.parentDelegateUserId !== null
   );
 }
 

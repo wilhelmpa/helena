@@ -10,8 +10,8 @@
 
 ## Steps
 
-- [ ] Add failing unit tests for status eligibility, prompt content, and run framing.
-- [ ] Implement the decision and trigger framing, then verify the unit tests pass.
-- [ ] Wire the decision to issue updates and add the database trigger constraint migration.
-- [ ] Run targeted unit tests, typecheck and review the diff.
-- [ ] Commit and report branch, tests, risk and handover in Helena.
+- [x] Add failing unit tests for status eligibility, prompt content, and run framing.
+- [x] Implement the decision and trigger framing, then verify the unit tests pass.
+- [x] Wire the decision to issue updates and add the database trigger constraint migration.
+- [x] Run targeted unit tests, typecheck and review the diff.
+- [x] Commit and report branch, tests, risk and handover in Helena.
