@@ -7,12 +7,11 @@ import { fileURLToPath } from 'node:url';
 import { db } from '@repo/db';
 import { sql } from 'drizzle-orm';
 import { extractReceiptFile } from '#modules/receipts/extract';
-import { centsToNumeric, numericToCents } from '#modules/receipts/amounts';
+import { numericToCents } from '#modules/receipts/amounts';
 import { assertNoSymlinks, relativePath, resolveInside } from '#modules/project-files/paths';
 import { projectRoot } from '#modules/project-files/roots';
 import {
   canonical,
-  checkBinding,
   checkFacts,
   digest,
   parseManifest,
@@ -22,29 +21,23 @@ import {
   type Facts,
 } from './receipt-correction/review';
 
+import { runCorrectionTransaction, type Review } from './receipt-correction/transaction';
+
 const ROOT = fileURLToPath(new URL('../../../../', import.meta.url));
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type Row = Record<string, unknown>;
-type Review = {
-  version: 1;
-  mode: 'dry-run';
-  release: string;
-  manifestSha256: string;
-  entries: Binding[];
-};
 
 async function releaseGuard(release: string) {
   requireCorrection(ROOT === '/srv/volition/source/plan/');
   requireCorrection(
     (await readFile('/var/lib/volition/deploy/deployed', 'utf8')).trim() === release,
   );
-  const head = Bun.spawnSync(['git', '-C', ROOT, 'rev-parse', 'HEAD']);
+  const git = ['git', '-c', 'safe.directory=/srv/volition/source/plan', '-C', ROOT];
+  const head = Bun.spawnSync([...git, 'rev-parse', 'HEAD']);
   requireCorrection(head.exitCode === 0 && head.stdout.toString().trim() === release);
   requireCorrection(
     Bun.spawnSync([
-      'git',
-      '-C',
-      ROOT,
+      ...git,
       'merge-base',
       '--is-ancestor',
       'f1efcac021f39a5b78fdcbbfa497dee2e6ffbfff',
@@ -52,7 +45,7 @@ async function releaseGuard(release: string) {
     ]).exitCode === 0,
   );
   requireCorrection(
-    Bun.spawnSync(['git', '-C', ROOT, 'diff', '--quiet', 'HEAD', '--', 'apps/api/src', 'packages'])
+    Bun.spawnSync([...git, 'diff', '--quiet', 'HEAD', '--', 'apps/api/src', 'packages'])
       .exitCode === 0,
   );
 }
@@ -210,45 +203,7 @@ export async function correctReviewedReceipts(
         Array.isArray(expected.entries) &&
         expected.entries.length === 9,
     );
-  return db.transaction(async (tx) => {
-    await tx.execute(sql`SET LOCAL lock_timeout = '5s'`);
-    await tx.execute(sql`SET LOCAL statement_timeout = '30s'`);
-    if (!expected) await tx.execute(sql`SET TRANSACTION READ ONLY`);
-    const entries: Binding[] = [];
-    for (const entry of [...manifest.corrections].sort((a, b) => a.receiptId - b.receiptId)) {
-      const current = await prepare(tx, entry, !!expected);
-      if (expected) {
-        const matches = expected.entries.filter((item) => item.receiptId === entry.receiptId);
-        requireCorrection(matches.length === 1);
-        checkBinding(matches[0]!, current);
-      }
-      entries.push(current);
-    }
-    await releaseGuard(manifest.release);
-    if (!expected)
-      return {
-        version: 1,
-        mode: 'dry-run',
-        release: manifest.release,
-        manifestSha256: digest(manifest),
-        entries,
-      };
-    for (const entry of manifest.corrections) {
-      const changes = entry.changes;
-      const assignments = [];
-      if (changes.issuer !== undefined) assignments.push(sql`issuer = ${changes.issuer}`);
-      if (changes.totalGrossCents !== undefined)
-        assignments.push(sql`total_gross = ${centsToNumeric(changes.totalGrossCents!)}`);
-      if (changes.vatCents !== undefined)
-        assignments.push(sql`vat_amount = ${centsToNumeric(changes.vatCents!)}`);
-      if (changes.currency !== undefined) assignments.push(sql`currency = ${changes.currency}`);
-      const result = await tx.execute(
-        sql`UPDATE helena_receipt SET ${sql.join(assignments, sql`, `)} WHERE id = ${entry.receiptId} RETURNING id`,
-      );
-      requireCorrection(result.length === 1);
-    }
-    return { mode: 'apply', receiptIds: entries.map((entry) => entry.receiptId) };
-  });
+  return runCorrectionTransaction(db, manifest, expected, prepare, releaseGuard);
 }
 
 async function main() {

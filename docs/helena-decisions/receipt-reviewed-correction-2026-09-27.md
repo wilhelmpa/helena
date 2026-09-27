@@ -94,3 +94,13 @@ Pure offline contract tests cover the exact nine-receipt scope, forbidden fields
 old facts, parser disagreement, row/source/original changes and an ABA revision change.
 No database/provider/GPU test or apply was executed during preparation. Root's private DB
 transaction/rollback checks and integrated full gate remain required before deployment/apply.
+
+The authored PostgreSQL integration regression uses the exact production transaction runner
+and UPDATE statements inside a real savepoint against a session-local synthetic temporary
+table. A trigger on the ninth update verifies eight prior changes and then raises; after
+rollback all nine receipts and the untouched tenth receipt must equal their starting rows.
+Separate cases prove successful field-only updates and refusal of the final stale binding.
+Only source preparation and release admission are stand-ins; this test does not prove live
+filesystem extraction/admission. It is authored but not executed during offline preparation.
+The three Git checks use a fixed process-local `-c safe.directory=/srv/volition/source/plan`
+so the API service user can read the owner-owned checkout without global Git configuration.
