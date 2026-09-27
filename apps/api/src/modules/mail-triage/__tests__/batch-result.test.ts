@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { Value } from '@sinclair/typebox/value';
+import { TypeCompiler } from 'elysia/type-system';
 import { triageMessageResult } from '../batch-result';
 import { TriageBatchResponse } from '../model';
 
@@ -14,7 +14,7 @@ test('successful triage exposes the actual thread independently from the message
   }));
   expect(result).toEqual({ ...source, status: 'classified', issueId: 42, actionFailed: false });
   expect(
-    Value.Check(TriageBatchResponse, {
+    TypeCompiler.Compile(TriageBatchResponse).Check({
       accounts: [],
       processed: 1,
       receiptRetries: 0,
