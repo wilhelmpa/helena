@@ -86,6 +86,7 @@ describe('needs-you sources', () => {
       [
         'system',
         'server',
+        'updates',
         'security',
         'local-ai',
         'approvals',
