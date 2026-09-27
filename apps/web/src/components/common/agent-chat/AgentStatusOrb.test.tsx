@@ -117,6 +117,22 @@ describe('large agent status orb', () => {
     assert.equal(motion.removed, 1);
   });
 
+  it('keeps one web component through status updates', async () => {
+    let disconnected = 0;
+    class FakeOrb extends dom.window.HTMLElement {
+      disconnectedCallback() {
+        disconnected++;
+      }
+    }
+    customElements.define('signal-orb', FakeOrb);
+    await render(<AgentStatusOrb state="idle" size="large" />);
+    const orb = container.querySelector('signal-orb');
+    await render(<AgentStatusOrb state="thinking" size="large" />);
+    assert.equal(container.querySelector('signal-orb'), orb);
+    assert.equal(orb?.getAttribute('state'), 'thinking');
+    assert.equal(disconnected, 0);
+  });
+
   it('closes microphone analysis when voice mode ends', async () => {
     customElements.define('signal-orb', class extends dom.window.HTMLElement {});
     const calls: string[] = [];

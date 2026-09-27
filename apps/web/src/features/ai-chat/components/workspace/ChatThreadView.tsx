@@ -1,6 +1,7 @@
 'use client';
 
 import WebLinkScope from '@/components/common/WebLinkScope';
+import AgentStatusOrb from '@/components/common/agent-chat/AgentStatusOrb';
 import { useAccountPreferences } from '@/services/preferences.service';
 import { agentOrbState, chatOrbState } from '@/utils/agentStatusOrb';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -181,6 +182,21 @@ export default function ChatThreadView({
     },
     onProblem: reportVoice,
   });
+  const showAnswerOrb = orbState !== null || conversation.phase !== 'off';
+  const orbVisible = !plan.restoreFailed && (empty || showAnswerOrb);
+  const voiceThinking = conversation.phase === 'thinking' || conversation.phase === 'transcribing';
+  const orbVisualState =
+    conversation.phase === 'speaking' ||
+    conversation.phase === 'listening' ||
+    conversation.phase === 'hearing'
+      ? 'idle'
+      : voiceThinking
+        ? orbState === 'tool'
+          ? 'tool'
+          : 'thinking'
+        : empty
+          ? agentOrbState(state?.label, agent.runtimeState.status)
+          : (orbState ?? 'idle');
   const talking = conversation.phase !== 'off';
   useEffect(() => {
     if (conversation.state.notice !== 'echo') return;
@@ -239,31 +255,46 @@ export default function ChatThreadView({
           hasArtifact={hasArtifact}
           inPage={inPage}
         />
-        {plan.restoreFailed ? (
-          <ChatRestoreError onRetry={() => void plan.retryRestore()} />
-        ) : empty ? (
-          <ChatNewChatIntro
-            agent={agent}
-            orbState={agentOrbState(state?.label, agent.runtimeState.status)}
-            online={state?.online ?? false}
-            motionEnabled={motionEnabled}
-            conversation={conversation}
-          />
-        ) : (
-          <ChatMessageList
-            plan={plan}
-            agent={agent}
-            projectKey={projectKey}
-            threadId={threadId}
-            editingId={editingId}
-            onEditingChange={setEditingId}
-            onShowArtifact={onArtifact}
-            orbState={orbState}
-            online={state?.online ?? true}
-            motionEnabled={motionEnabled}
-            conversation={conversation}
-          />
-        )}
+        <div className="relative flex min-h-0 flex-1 flex-col">
+          {plan.restoreFailed ? (
+            <ChatRestoreError onRetry={() => void plan.retryRestore()} />
+          ) : empty ? (
+            <ChatNewChatIntro agent={agent} />
+          ) : (
+            <ChatMessageList
+              plan={plan}
+              agent={agent}
+              projectKey={projectKey}
+              threadId={threadId}
+              editingId={editingId}
+              onEditingChange={setEditingId}
+              onShowArtifact={onArtifact}
+              showOrb={showAnswerOrb}
+            />
+          )}
+          <div
+            aria-hidden={!orbVisible}
+            className="pointer-events-none absolute z-10 aspect-square transition-[top,left,transform,width,opacity] duration-[600ms] ease-in-out motion-reduce:transition-none"
+            style={{
+              width: empty ? 'min(20rem, 55vw)' : '7rem',
+              left: empty ? '50%' : 'max(1rem, calc((100% - 48rem) / 2))',
+              top: empty ? 'calc(50% - 1.5rem)' : 'calc(100% - 3.5rem)',
+              transform: empty ? 'translate(-50%, -50%)' : 'translate(0, -50%)',
+              opacity: orbVisible ? 1 : 0,
+              ['--orb-size' as string]: '100%',
+            }}
+          >
+            <AgentStatusOrb
+              state={orbVisualState}
+              size="large"
+              online={state?.online ?? !empty}
+              motionEnabled={motionEnabled}
+              voicePhase={conversation.phase}
+              micStream={conversation.micStream}
+              outputAnalyser={conversation.outputAnalyser}
+            />
+          </div>
+        </div>
         <ChatComposer
           scopeKey={scopeKey}
           agent={agent}

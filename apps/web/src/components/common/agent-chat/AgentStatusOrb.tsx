@@ -94,10 +94,6 @@ export default function AgentStatusOrb({
   });
 
   const label = t(state);
-  const motionAllowed =
-    size === 'large' &&
-    typeof window !== 'undefined' &&
-    !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (size === 'small') {
     return (
       <span
@@ -112,20 +108,20 @@ export default function AgentStatusOrb({
       ref={orbHostRef}
       aria-label={online || state !== 'idle' ? label : t('offline')}
       role="img"
-      className={`${styles.large} ${styles[state]} ${online ? '' : styles.offline} ${className}`}
+      className={`${styles.large} ${styles[state]} ${online ? '' : styles.offline} ${ready && animated && motionEnabled && online ? styles.animated : ''} ${className}`}
     >
-      {motionEnabled && motionAllowed && online && animated && ready ? (
+      <span
+        aria-hidden="true"
+        className={`${styles.static} ${styles[state]} ${online || state !== 'idle' ? '' : styles.offline}`}
+      />
+      {motionEnabled &&
+        online &&
+        animated &&
         createElement('signal-orb', {
           state: shipnotesState[state],
-          particles: '4000',
+          particles: '8000',
           'aria-hidden': true,
-        })
-      ) : (
-        <span
-          aria-hidden="true"
-          className={`${styles.static} ${styles[state]} ${online || state !== 'idle' ? '' : styles.offline}`}
-        />
-      )}
+        })}
     </span>
   );
 }

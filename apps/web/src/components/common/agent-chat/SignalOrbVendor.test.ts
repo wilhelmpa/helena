@@ -2,11 +2,90 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { it } from 'node:test';
 import { JSDOM } from 'jsdom';
+import { act, createElement } from 'react';
 
 const source = readFileSync(
   new URL('../../../../public/vendor/shipnotes/signal-orb.js', import.meta.url),
   'utf8',
 );
+
+it('accepts every custom element prop through React 19 DOM rendering', async () => {
+  const dom = new JSDOM('<!doctype html><div id="root"></div>', { runScripts: 'outside-only' });
+  const { window } = dom;
+  const globals = [
+    'window',
+    'document',
+    'HTMLElement',
+    'customElements',
+    'IS_REACT_ACT_ENVIRONMENT',
+  ] as const;
+  const previous = new Map(
+    globals.map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]),
+  );
+  Object.defineProperties(globalThis, {
+    window: { configurable: true, value: window },
+    document: { configurable: true, value: window.document },
+    HTMLElement: { configurable: true, value: window.HTMLElement },
+    customElements: { configurable: true, value: window.customElements },
+    IS_REACT_ACT_ENVIRONMENT: { configurable: true, value: true },
+  });
+  window.matchMedia = () =>
+    ({
+      matches: true,
+      addEventListener() {},
+      removeEventListener() {},
+    }) as unknown as MediaQueryList;
+  window.cancelAnimationFrame = () => {};
+  Object.defineProperty(window, 'ResizeObserver', {
+    value: class {
+      observe() {}
+      disconnect() {}
+    },
+  });
+  window.HTMLCanvasElement.prototype.getContext = ((kind: string) =>
+    kind === '2d'
+      ? {
+          createRadialGradient: () => ({ addColorStop() {} }),
+          setTransform() {},
+          clearRect() {},
+          fillRect() {},
+          drawImage() {},
+        }
+      : null) as unknown as typeof window.HTMLCanvasElement.prototype.getContext;
+  window.eval(source);
+  const { createRoot } = await import('react-dom/client');
+  const root = createRoot(window.document.querySelector('#root')!);
+  try {
+    await act(async () => {
+      root.render(
+        createElement('signal-orb', {
+          state: 'thinking',
+          level: '0.4',
+          bands: '0.1,0.2,0.3',
+          particles: '200',
+        }),
+      );
+    });
+    const orb = window.document.querySelector('signal-orb')!;
+    const prototype = Object.getPrototypeOf(orb);
+    for (const prop of ['state', 'level', 'bands', 'particles']) {
+      const descriptor = Object.getOwnPropertyDescriptor(prototype, prop);
+      assert.equal(typeof descriptor?.get, 'function');
+      assert.equal(typeof descriptor?.set, 'function');
+    }
+    assert.equal(orb.getAttribute('state'), 'thinking');
+    assert.equal(orb.getAttribute('level'), '0.4');
+    assert.equal(orb.getAttribute('bands'), '0.1,0.2,0.3');
+    assert.equal(orb.getAttribute('particles'), '200');
+  } finally {
+    await act(async () => root.unmount());
+    dom.window.close();
+    for (const [key, descriptor] of previous) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else Reflect.deleteProperty(globalThis, key);
+    }
+  }
+});
 
 it('keeps the vendored orb static without WebGL and releases listeners on removal', () => {
   const dom = new JSDOM('<!doctype html><body></body>', { runScripts: 'outside-only' });
@@ -130,9 +209,23 @@ it('pauses a WebGL orb in a hidden tab and frees its context on removal', () => 
   hidden = false;
   window.document.dispatchEvent(new window.Event('visibilitychange'));
   assert.equal(frames, 2);
+  const animatedOrb = orb as HTMLElement & {
+    state: string;
+    weights: number[];
+    tick: (now: number) => void;
+  };
+  animatedOrb.state = 'thinking';
+  assert.deepEqual(Array.from(animatedOrb.weights), [1, 0, 0, 0]);
+  animatedOrb.tick(1000);
+  animatedOrb.tick(1300);
+  assert.ok(animatedOrb.weights[0] > 0 && animatedOrb.weights[0] < 1);
+  assert.ok(animatedOrb.weights[1] > 0 && animatedOrb.weights[1] < 1);
+  animatedOrb.tick(1600);
+  assert.deepEqual(Array.from(animatedOrb.weights), [0, 1, 0, 0]);
   media.matches = true;
   onMotion?.();
-  assert.equal(frames, 2);
+  animatedOrb.state = 'searching';
+  assert.deepEqual(Array.from(animatedOrb.weights), [0, 0, 1, 0]);
   window.document.body.removeChild(orb);
   assert.ok(cancelled >= 3);
   assert.equal(deleted, 2);

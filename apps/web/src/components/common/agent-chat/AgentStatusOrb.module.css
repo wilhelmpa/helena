@@ -5,6 +5,10 @@
   border-radius: 50%;
   background: var(--orb-color);
   box-shadow: 0 0 0.5rem color-mix(in srgb, var(--orb-color), transparent 45%);
+  transition:
+    background-color 600ms ease,
+    box-shadow 600ms ease,
+    opacity 600ms ease;
 }
 
 .small {
@@ -14,17 +18,32 @@
 
 .large {
   display: block;
-  width: min(9rem, 35vw);
+  position: relative;
+  width: var(--orb-size, min(20rem, 55vw));
   aspect-ratio: 1;
   margin-inline: auto;
 }
 
 .large signal-orb {
+  position: absolute;
+  inset: 0;
   width: 100%;
+  opacity: 0;
+  transition:
+    opacity 600ms ease,
+    filter 600ms ease;
+}
+
+.large.animated signal-orb {
+  opacity: 1;
+}
+
+.large.animated .static {
+  opacity: 0;
 }
 
 .large.idle signal-orb {
-  filter: hue-rotate(90deg) saturate(0.8);
+  filter: hue-rotate(90deg);
 }
 
 .large.error signal-orb {
@@ -87,7 +106,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .small {
+  .small,
+  .static,
+  .large signal-orb {
     animation: none;
+    transition: none;
   }
 }

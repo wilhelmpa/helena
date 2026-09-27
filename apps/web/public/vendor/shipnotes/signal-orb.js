@@ -152,10 +152,9 @@
       this.onMotion = () => {
         cancelAnimationFrame(this.frame);
         this.last = 0;
-        this.paint(
-          0,
-          names.map((n) => (n === this.state ? 1 : 0)),
-        );
+        this.transition = null;
+        this.weights = names.map((n) => (n === this.state ? 1 : 0));
+        this.paint(0, this.weights);
         if (this.gl && !this.media.matches && !document.hidden && !this.hasAttribute('recording'))
           this.frame = requestAnimationFrame(this.tick);
       };
@@ -188,6 +187,18 @@
         this.dots = null;
       }
     }
+    set state(value) {
+      this.setAttribute('state', String(value));
+    }
+    set level(value) {
+      this.setAttribute('level', String(value));
+    }
+    set bands(value) {
+      this.setAttribute('bands', String(value));
+    }
+    set particles(value) {
+      this.setAttribute('particles', String(value));
+    }
     get state() {
       const value = this.getAttribute('state');
       return names.includes(value) ? value : 'listening';
@@ -208,12 +219,15 @@
         ? Math.max(200, Math.min(20000, n))
         : (this.auto ??= this.gl ? autoCount() : 1000);
     }
-    attributeChangedCallback() {
+    attributeChangedCallback(name, oldValue, newValue) {
       if (!this.ctx) return;
       this.setAttribute('aria-label', `Assistant ${this.state}`);
       if (this.media?.matches || !this.gl) {
+        this.transition = null;
         this.weights = names.map((n) => (n === this.state ? 1 : 0));
         this.paint(0, this.weights);
+      } else if (name === 'state' && oldValue !== newValue) {
+        this.transition = { from: this.weights.slice(), start: null };
       }
     }
     tick = (now) => {
@@ -228,8 +242,15 @@
           this.slow = 0;
         }
       }
-      const k = 1 - Math.exp(-dt * 7);
-      this.weights = this.weights.map((w, i) => w + ((names[i] === this.state ? 1 : 0) - w) * k);
+      if (this.transition) {
+        this.transition.start ??= now;
+        const progress = Math.min(1, (now - this.transition.start) / 600);
+        const eased = progress * progress * (3 - 2 * progress);
+        this.weights = this.transition.from.map(
+          (weight, i) => weight + ((names[i] === this.state ? 1 : 0) - weight) * eased,
+        );
+        if (progress === 1) this.transition = null;
+      }
       this.paint(this.time, this.weights);
       this.frame = requestAnimationFrame(this.tick);
     };
