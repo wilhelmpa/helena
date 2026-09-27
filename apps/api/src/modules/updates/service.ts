@@ -12,14 +12,16 @@ import {
 } from '@helena/sdk';
 import {
   agentRun,
+  agentChatMessage,
   db,
   getSetting,
   helenaUpdate,
   helenaUpdateAction,
+  user,
   setSetting,
   writeBackup,
 } from '@repo/db';
-import { and, desc, eq, inArray, isNotNull, notInArray } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, notInArray, sql } from 'drizzle-orm';
 import { HttpError, iso } from '#shared/lib';
 import { host } from '#shared/helena';
 import { systemHealth } from '#modules/god/system-health';
@@ -39,13 +41,18 @@ import {
 import { fetchVendorJson, fetchVendorText } from './fetch';
 import { callHelper, helperInstalled } from './helper';
 import { aptFreshness, readUpdateInventory, type AptFreshness } from './inventory';
-import { getUpdateSettings, rememberRefusedModel } from './settings';
+import {
+  getUpdateSettings,
+  rememberRefusedModel,
+  supportsAutomaticUpdate,
+  updateMode,
+} from './settings';
 import { checkHermesUpdate } from '#modules/runtime-admin/hermes-update';
 import { hermesSource, toCandidate as hermesCandidate } from './sources/hermes';
 
 // The update center (docs/helena-decisions/update-center.md): every update source is asked
 // what it knows, the answers are stored one row per component, the new versions are
-// summarized by a digest run, and an update the owner starts is followed to its end.
+// summarized by a digest run, and each update is followed to its end.
 
 const log = consoleLogger('updates');
 const CHECK_KEY = 'helenaUpdatesCheck';
@@ -472,15 +479,30 @@ const UNSTARTED_AFTER_MS = 10 * 60_000;
 const UNFINISHED_AFTER_MS = 3 * 3_600_000;
 
 // Starts the update of one component (or, for a group, of every component of it, or of
-// its security updates). The owner's click is the approval: this is the only place an
-// update starts, and only for a version the last check found.
+// its security updates). The scheduled job uses this path for eligible low-risk updates.
 export async function applyUpdate(
   userId: string,
   itemId: number,
   scope: ApplyScope = 'item',
+  automatic = false,
+  expectedVersion?: string,
 ): Promise<number> {
   const [row] = await db.select().from(helenaUpdate).where(eq(helenaUpdate.id, itemId));
   if (!row) throw new HttpError(404, 'Update not found');
+  if (automatic) {
+    const settings = await getUpdateSettings();
+    if (
+      scope !== 'item' ||
+      row.available !== expectedVersion ||
+      !row.summary ||
+      row.summaryFor !== summaryKey([row]) ||
+      row.risk !== 'low' ||
+      row.breaking !== false ||
+      !supportsAutomaticUpdate(row.source, row.component) ||
+      updateMode(settings, row.source, row.component) !== 'auto'
+    )
+      throw new HttpError(409, 'The automatic update is no longer eligible');
+  }
   const source = host.updateSources.get(row.source);
   if (!source?.apply) throw new HttpError(409, 'This component cannot be updated from Helena');
   let rows = [row];
@@ -528,6 +550,7 @@ export async function applyUpdate(
       fromVersion: scope === 'item' ? row.installed : null,
       toVersion: scope === 'item' ? row.available : null,
       state: 'running',
+      automatic,
       backupPath,
       requestedByUserId: userId,
     })
@@ -557,6 +580,85 @@ export async function applyUpdate(
     });
   }
   return actionId;
+}
+
+async function quietForUpdate(): Promise<boolean> {
+  const [runs, chats, actions] = await Promise.all([
+    db
+      .select({ id: agentRun.id })
+      .from(agentRun)
+      .where(inArray(agentRun.status, ['pending', 'running']))
+      .limit(1),
+    db
+      .select({ id: agentChatMessage.id })
+      .from(agentChatMessage)
+      .where(inArray(agentChatMessage.status, ['pending', 'streaming']))
+      .limit(1),
+    db
+      .select({ id: helenaUpdateAction.id })
+      .from(helenaUpdateAction)
+      .where(eq(helenaUpdateAction.state, 'running'))
+      .limit(1),
+  ]);
+  return !runs.length && !chats.length && !actions.length;
+}
+
+export async function runAutoUpdates(sleep: (ms: number) => Promise<void>): Promise<void> {
+  const [owner] = await db.select({ id: user.id }).from(user).where(eq(user.role, 'god')).limit(1);
+  if (!owner) return;
+  const settings = await getUpdateSettings();
+  const rows = await db.select().from(helenaUpdate).where(eq(helenaUpdate.updateAvailable, true));
+  const quietDeadline = Date.now() + 2 * 60 * 60_000;
+  for (const row of rows) {
+    if (
+      !row.applicable ||
+      !row.available ||
+      !row.summary ||
+      row.risk !== 'low' ||
+      row.breaking !== false ||
+      !supportsAutomaticUpdate(row.source, row.component) ||
+      row.summaryFor !== summaryKey([row]) ||
+      updateMode(settings, row.source, row.component) !== 'auto'
+    )
+      continue;
+    await followActions();
+    const attempts = await db
+      .select({ state: helenaUpdateAction.state })
+      .from(helenaUpdateAction)
+      .where(
+        and(
+          eq(helenaUpdateAction.source, row.source),
+          eq(helenaUpdateAction.toVersion, row.available),
+          sql`${helenaUpdateAction.components} @> ${JSON.stringify([row.component])}::jsonb`,
+        ),
+      );
+    if (attempts.length) continue;
+    while (!(await quietForUpdate())) {
+      if (Date.now() >= quietDeadline) return;
+      await sleep(60_000);
+    }
+    let id: number;
+    try {
+      id = await applyUpdate(owner.id, row.id, 'item', true, row.available);
+    } catch (error) {
+      log.warn(`automatic update ${row.source}/${row.component} could not start: ${String(error)}`);
+      return;
+    }
+    for (;;) {
+      await followActions();
+      const [action] = await db
+        .select({ state: helenaUpdateAction.state, error: helenaUpdateAction.error })
+        .from(helenaUpdateAction)
+        .where(eq(helenaUpdateAction.id, id));
+      if (!action) return;
+      if (action.state === 'failed') {
+        if (action.error?.includes('previous version restored')) break;
+        return;
+      }
+      if (action.state === 'done') break;
+      await sleep(5_000);
+    }
+  }
 }
 
 async function healthSnapshot(): Promise<Record<string, unknown>> {
@@ -663,6 +765,8 @@ export interface UpdateItemView {
   updateAvailable: boolean;
   security: boolean;
   risk: UpdateRisk | null;
+  mode: 'auto' | 'manual';
+  autoAllowed: boolean;
   breaking: boolean | null;
   summary: string | null;
   highlights: string[];
@@ -692,6 +796,7 @@ export interface UpdateActionView {
   fromVersion: string | null;
   toVersion: string | null;
   state: 'running' | 'done' | 'failed';
+  automatic: boolean;
   backupPath: string | null;
   log: string | null;
   error: string | null;
@@ -711,6 +816,7 @@ function actionView(row: typeof helenaUpdateAction.$inferSelect): UpdateActionVi
     fromVersion: row.fromVersion,
     toVersion: row.toVersion,
     state: row.state as UpdateActionView['state'],
+    automatic: row.automatic,
     backupPath: row.backupPath,
     log: row.log,
     error: row.error,
@@ -740,7 +846,10 @@ export async function getUpdateAction(actionId: number): Promise<UpdateActionVie
   return actionView(row);
 }
 
-export async function listUpdateItems(): Promise<UpdateItemView[]> {
+export async function listUpdateItems(
+  settings?: Awaited<ReturnType<typeof getUpdateSettings>>,
+): Promise<UpdateItemView[]> {
+  settings ??= await getUpdateSettings();
   const rows = await db.select().from(helenaUpdate);
   const pending = await pendingRuns(
     rows.map((row) => row.summaryRunId).filter((id): id is number => id !== null),
@@ -760,6 +869,12 @@ export async function listUpdateItems(): Promise<UpdateItemView[]> {
   return rows
     .map((row): UpdateItemView => {
       const current = row.summaryFor === keyOf(row) && row.summary !== null;
+      const autoAllowed =
+        current &&
+        row.applicable &&
+        row.risk === 'low' &&
+        row.breaking === false &&
+        supportsAutomaticUpdate(row.source, row.component);
       return {
         id: row.id,
         source: row.source,
@@ -772,6 +887,8 @@ export async function listUpdateItems(): Promise<UpdateItemView[]> {
         updateAvailable: row.updateAvailable,
         security: row.security,
         risk: current ? ((row.risk as UpdateRisk | null) ?? null) : null,
+        autoAllowed,
+        mode: autoAllowed ? updateMode(settings, row.source, row.component) : 'manual',
         breaking: current ? row.breaking : null,
         summary: current ? row.summary : null,
         highlights: current ? (row.highlights ?? []) : [],

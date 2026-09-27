@@ -19,7 +19,7 @@ function strings(value: unknown): string[] {
     : [];
 }
 
-// The updates the owner started, newest first: what, from which version to which, how it
+// The updates that were started, newest first: what, from which version to which, how it
 // went; opened, the helper's log, the database dump, the way back and the services after.
 export default function UpdateHistory({ actions }: { actions: UpdateAction[] }) {
   const t = useTranslations('updates');
@@ -70,7 +70,11 @@ function HistoryRow({ action }: { action: UpdateAction }) {
         <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">
           {formatDateTime(action.requestedAt)}
         </span>
-        <StatusBadge status={STATE_STATUS[action.state]}>{t(`action.${action.state}`)}</StatusBadge>
+        <StatusBadge status={STATE_STATUS[action.state]}>
+          {action.state === 'failed' && action.error?.includes('previous version restored')
+            ? t('action.rolledBack')
+            : t(`action.${action.state}`)}
+        </StatusBadge>
       </summary>
       <div className="space-y-2 pb-3 text-xs">
         {action.error && (

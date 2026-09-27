@@ -21,6 +21,7 @@ import SchedulesSection from '@/features/home/dashboard/sections/SchedulesSectio
 import ProjectsSection from '@/features/home/dashboard/sections/ProjectsSection';
 import { BUILTIN_NEEDS_YOU_SOURCES } from '@/features/home/dashboard/sources';
 import UpdatesTile from '@/features/update-center/components/UpdatesTile';
+import { useUpdateEntries } from '@/features/update-center/components/updateNeedsYou';
 import { useServerEntries } from '@/features/server/components/serverNeedsYou';
 import { useSecurityEntries } from '@/features/security-status/securityNeedsYou';
 import LocalAiTile from '@/features/local-ai/components/LocalAiTile';
@@ -122,6 +123,7 @@ for (const widget of BUILTINS)
 const SOURCES = [
   ...BUILTIN_NEEDS_YOU_SOURCES,
   { id: 'server', order: 15, useEntries: useServerEntries },
+  { id: 'updates', order: 16, useEntries: useUpdateEntries },
   // Severe failed checks of the host audit (hub/hardening).
   { id: 'security', order: 17, useEntries: useSecurityEntries },
   // Local AI: its server down, a kind of work whose model failed its eval (hub/local-ai).

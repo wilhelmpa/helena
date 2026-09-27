@@ -342,7 +342,9 @@ def apply(config: dict, runner: Runner, target: str) -> dict:
             open_to_readers(venv)
         except OSError as problem:
             runner.note(f"the restored venv could not be opened to every reader: {problem}")
-        raise
+        if git(runner, config, "rev-parse", "HEAD").splitlines()[-1] != before["commit"]:
+            raise UpdateError("update failed; rollback needs operator check") from error
+        raise UpdateError(f"update failed; previous version restored: {error}") from error
 
 
 # The spool belongs to the runner's user, who could put a link where root writes: every file

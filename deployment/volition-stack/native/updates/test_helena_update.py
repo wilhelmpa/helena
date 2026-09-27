@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import importlib.machinery
 import importlib.util
+import contextlib
 import json
 import os
 import subprocess
@@ -284,12 +285,19 @@ class RuntimeTest(unittest.TestCase):
             '  printf \'{"%s":{"pinned":"%s","current":"%s","previous":"1.0.0","intact":true}}\' "$2" "$3" "$3" > "$STATE"\n'
             '  echo "$2 upgraded"; exit 0\n'
             "fi\n"
+            'if [ "$1" = rollback ]; then\n'
+            '  printf \'{"%s":{"current":"1.0.0","intact":true}}\' "$2" > "$STATE"\n'
+            '  echo "$2 restored"; exit 0\n'
+            'fi\n'
             "exit 64\n")
         self.installer.chmod(0o755)
         path = root / "config.json"
         path.write_text(json.dumps({"spool": str(root / "spool"),
                                     "runtimesInstaller": str(self.installer), "tools": {}}))
         self.config = helper.load_config(path)
+        quiet = mock.patch.object(helper.host_tools, 'quiet_queue', return_value=contextlib.nullcontext())
+        quiet.start()
+        self.addCleanup(quiet.stop)
 
     def tearDown(self) -> None:
         self.tmp.cleanup()
@@ -308,6 +316,29 @@ class RuntimeTest(unittest.TestCase):
                                               "version": "9.9.9"})
         self.assertFalse(answer["ok"])
         self.assertIn("not signed", answer["log"])
+
+    def test_busy_queue_defers_before_upgrade(self):
+        with mock.patch.object(helper.host_tools, 'quiet_queue', side_effect=helper.host_tools.ToolError('busy queue')):
+            answer = helper.perform(self.config, {"action": "cli-runtime", "runtime": "codex",
+                                                  "version": "0.158.0"})
+        self.assertFalse(answer['ok'])
+        self.assertIn('busy queue', answer['error'])
+        self.assertFalse(self.state.exists())
+
+    def test_failed_installed_check_restores_previous_version(self):
+        self.state.write_text('{"codex":{"current":"1.0.0","intact":true}}')
+        original = helper.runtimes_status
+        def status(config):
+            value = original(config)
+            if value.get('codex', {}).get('current') == '0.158.0':
+                value['codex']['intact'] = False
+            return value
+        with mock.patch.object(helper, 'runtimes_status', side_effect=status):
+            answer = helper.perform(self.config, {"action": "cli-runtime", "runtime": "codex",
+                                                   "version": "0.158.0"})
+        self.assertFalse(answer['ok'])
+        self.assertIn('previous version restored', answer['error'])
+        self.assertEqual(json.loads(self.state.read_text())['codex']['current'], '1.0.0')
 
     def test_refuses_unknown_runtimes_and_versions(self):
         for runtime, version in (("evil", "1.0.0"), ("codex", "1.0; rm -rf /"), ("codex", "latest")):

@@ -320,6 +320,9 @@ class InstallTest(unittest.TestCase):
         self.assertTrue(status['codex']['intact'])
         self.run_script('rollback', 'codex')
         self.assertEqual(os.readlink(self.prefix / 'codex/current'), '0.156.1')
+        restored = json.loads(self.run_script('status', '--json').stdout)['codex']
+        self.assertEqual(restored['pinned'], '0.156.1')
+        self.assertTrue(restored['intact'])
 
     def test_upgrade_refuses_what_is_not_newer_or_not_a_version(self):
         self.run_script('install', '--only', 'codex')

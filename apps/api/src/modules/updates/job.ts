@@ -1,11 +1,11 @@
 import { registerSystemJob, type SystemJobContext } from '#modules/engine/system-jobs';
-import { collectDigests, queueDigests, runUpdateCheck } from './service';
+import { collectDigests, queueDigests, runAutoUpdates, runUpdateCheck } from './service';
 import { getUpdateSettings } from './settings';
 
 // The update center's job on the engine (owner, 2026-09-24: "regelmäßig nach Updates
 // suchen"): check every source, queue a digest run for each new version, wait for the runs
-// and store what they wrote. Scheduled in the settings (daily at 06:00 Europe/Berlin by
-// default) and started by "Jetzt prüfen".
+// and store what they wrote. Scheduled runs then apply eligible automatic updates. The
+// schedule defaults to daily at 06:00 Europe/Berlin; "Jetzt prüfen" starts a manual check.
 
 export const UPDATES_JOB_ID = 'helena.updates';
 
@@ -22,6 +22,7 @@ export async function runUpdatesJob(context: SystemJobContext): Promise<void> {
     await context.sleep(DIGEST_POLL_MS);
     open = await context.step(`digest:collect:${round}`, () => collectDigests());
   }
+  if (context.trigger === 'schedule' && open === 0) await runAutoUpdates(context.sleep);
 }
 
 registerSystemJob({

@@ -290,7 +290,7 @@ def command(args: list[str], *, cwd: Path | None = None, user: str | None = None
 
 
 @contextlib.contextmanager
-def quiet_queue(config: dict):
+def quiet_queue(config: dict, hold_seconds: int = 300):
     """Local peer auth, no secrets. SHARE locks prevent new runs/chats until activation ends."""
     database = config["hostToolsDatabase"]
     if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,62}", database):
@@ -301,7 +301,7 @@ def quiet_queue(config: dict):
                                stderr=subprocess.DEVNULL, text=True, bufsize=1)
     try:
         process.stdin.write("BEGIN; SET LOCAL lock_timeout='3s'; "
-                            "SET LOCAL idle_in_transaction_session_timeout='300s'; "
+                            f"SET LOCAL idle_in_transaction_session_timeout='{hold_seconds}s'; "
                             "LOCK TABLE agent_run, agent_chat_message IN SHARE MODE;\n"
                             "SELECT CASE WHEN EXISTS (SELECT 1 FROM agent_run WHERE status IN ('pending','running')) "
                             "OR EXISTS (SELECT 1 FROM agent_chat_message WHERE status IN ('pending','streaming')) "
