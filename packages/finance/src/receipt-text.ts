@@ -281,6 +281,13 @@ const TOTAL_CURRENCY_LABEL = new RegExp(
 const CONVERSION =
   /exchange rate|wechselkurs|conversion|converted|umrechnung|umgerechnet|equivalent/i;
 
+// Preserve US$, but never interpret another explicit dollar prefix as bare USD.
+function hasOtherDollarPrefix(text: string): boolean {
+  return (
+    /(?<![a-z])(?!(?:US)\$)[a-z]+\$/i.test(text) || /\b(?!US(?:D)?\s+\$)[A-Z]{2,3}\s+\$/.test(text)
+  );
+}
+
 function currencyCode(token: string): string {
   if (/^(?:EUR|euros?|€)$/i.test(token)) return 'EUR';
   if (/^(?:USD|US\$|\$)$/i.test(token)) return 'USD';
@@ -304,6 +311,7 @@ function currenciesByAmount(text: string): string[] {
 
 function findCurrency(lines: string[]): string | null {
   const bound = new Set<string>();
+  let unsupportedTotal = false;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!;
     const declaration =
@@ -314,23 +322,29 @@ function findCurrency(lines: string[]): string | null {
     const label = TOTAL_CURRENCY_LABEL.exec(line);
     if (!label || (NET.test(line) && !GROSS_HINT.test(line))) continue;
     let value = line.slice(label[0].length).replace(/^\s*:?\s*/, '');
-    value = value.replace(/^(?:incl(?:uding)?\.?\s*(?:VAT|tax)|brutto|TTC)\s*:?\s*/i, '');
+    value = value.replace(
+      /^(?:incl(?:uding|uded)?\.?\s*(?:VAT|tax)|(?:VAT|tax)\s+incl(?:uding|uded)?\.?|brutto|TTC)\s*:?\s*/i,
+      '',
+    );
     // A table may put just the monetary value directly below the label.
     if (!value) value = lines[i + 1] ?? '';
     // Keep secondary tax/conversion amounts out of the labelled total's value segment.
     value = value.split(
       /\b(?:VAT|tax|MwSt|TVA|exchange rate|wechselkurs|conversion|converted|umrechnung|umgerechnet|equivalent)\b/i,
     )[0]!;
+    if (hasOtherDollarPrefix(value)) unsupportedTotal = true;
     for (const code of currenciesByAmount(value)) bound.add(code);
   }
+  if (unsupportedTotal) return null;
   if (bound.size) return bound.size === 1 ? [...bound][0]! : null;
   // Preserve unambiguous single-currency documents, without choosing by global EUR priority.
   // A conversion-only amount cannot establish the missing invoice currency.
   const fallback = new Set<string>();
   for (const line of lines) {
     if (CONVERSION.test(line)) continue;
+    if (hasOtherDollarPrefix(line)) return null;
     for (const token of line.matchAll(
-      /€|\bEUR\b|\beuros?\b|\bUSD\b|US\$|\$(?=\s*[-+]?\d)|\bCHF\b|\bGBP\b|£/gi,
+      /€|\bEUR\b|\beuros?\b|\bUSD\b|US\$|(?<![a-z])\$(?=\s*[-+]?\d)|\bCHF\b|\bGBP\b|£/gi,
     ))
       fallback.add(currencyCode(token[0]));
   }
