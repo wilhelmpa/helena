@@ -21,7 +21,7 @@ export const EXTRACTION_LIMITS = {
 };
 
 export type Extraction =
-  | { status: 'done'; text: string }
+  | { status: 'done'; text: string; nativePdfComplete?: boolean }
   | { status: 'unavailable'; missing: string[] }
   | { status: 'failed'; error: string }
   | { status: 'skipped'; reason: string };
@@ -138,7 +138,18 @@ async function extractPdf(file: string): Promise<Extraction> {
   });
   if (result.code !== 0 && !result.truncated) return failure('pdftotext', result);
   const text = bounded(result.stdout);
-  if (text.replace(/\s/g, '').length >= 20) return { status: 'done', text };
+  if (text.replace(/\s/g, '').length >= 20)
+    return {
+      status: 'done',
+      text,
+      // Only native, successful and uncut output qualifies as whole-document evidence.
+      // OCR fallbacks deliberately do not carry this flag.
+      nativePdfComplete:
+        result.code === 0 &&
+        !result.timedOut &&
+        !result.truncated &&
+        result.stdout.length <= EXTRACTION_LIMITS.maxTextChars,
+    };
   return ocrPdf(file);
 }
 

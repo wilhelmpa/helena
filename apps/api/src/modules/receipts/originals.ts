@@ -34,60 +34,71 @@ export async function linkReceiptOriginal(
   primaryReceiptId: number,
   userId: string,
 ) {
+  return db.transaction((tx) =>
+    linkReceiptOriginalInTransaction(tx, projectId, receiptId, primaryReceiptId, userId),
+  );
+}
+
+/** Same constraints for an explicit link and a proven fresh intake pair. */
+export async function linkReceiptOriginalInTransaction(
+  tx: Tx,
+  projectId: number,
+  receiptId: number,
+  primaryReceiptId: number,
+  userId: string | null,
+) {
   if (receiptId === primaryReceiptId)
     throw new HttpError(409, 'A receipt cannot supplement itself.');
-  await db.transaction(async (tx) => {
-    await lockReceiptProject(tx, projectId);
-    const rows = await tx
-      .select()
-      .from(helenaReceipt)
-      .where(
-        and(
-          eq(helenaReceipt.projectId, projectId),
-          inArray(helenaReceipt.id, [receiptId, primaryReceiptId]),
-        ),
-      )
-      .orderBy(helenaReceipt.id)
-      .for('update');
-    const child = rows.find((r) => r.id === receiptId);
-    const primary = rows.find((r) => r.id === primaryReceiptId);
-    if (!child || !primary || child.teamId !== primary.teamId)
-      throw new HttpError(404, 'Receipt not found');
-    const links = await tx
-      .select()
-      .from(helenaReceiptOriginalLink)
-      .where(
-        or(
-          inArray(helenaReceiptOriginalLink.receiptId, [receiptId, primaryReceiptId]),
-          eq(helenaReceiptOriginalLink.primaryReceiptId, receiptId),
-        ),
-      );
-    if (links.some((l) => l.receiptId === primaryReceiptId || l.primaryReceiptId === receiptId))
-      throw new HttpError(409, 'Receipt groups cannot be nested.');
-    const existing = links.find((l) => l.receiptId === receiptId);
-    if (existing) {
-      if (existing.primaryReceiptId === primaryReceiptId) return;
-      throw new HttpError(409, 'Detach this original before assigning it elsewhere.');
-    }
-    const matches = await tx
-      .select({ id: helenaReceiptMatch.id })
-      .from(helenaReceiptMatch)
-      .where(
-        and(
-          eq(helenaReceiptMatch.receiptId, receiptId),
-          inArray(helenaReceiptMatch.status, ['confirmed', 'proposed']),
-        ),
-      );
-    if (child.status !== 'open' || matches.length)
-      throw new HttpError(409, 'Only an open original without active matches can be attached.');
-    if (primary.status === 'ignored') throw new HttpError(409, 'The primary receipt is ignored.');
-    await tx.insert(helenaReceiptOriginalLink).values({
-      receiptId,
-      primaryReceiptId,
-      projectId,
-      teamId: child.teamId,
-      createdByUserId: userId,
-    });
+  await lockReceiptProject(tx, projectId);
+  const rows = await tx
+    .select()
+    .from(helenaReceipt)
+    .where(
+      and(
+        eq(helenaReceipt.projectId, projectId),
+        inArray(helenaReceipt.id, [receiptId, primaryReceiptId]),
+      ),
+    )
+    .orderBy(helenaReceipt.id)
+    .for('update');
+  const child = rows.find((r) => r.id === receiptId);
+  const primary = rows.find((r) => r.id === primaryReceiptId);
+  if (!child || !primary || child.teamId !== primary.teamId)
+    throw new HttpError(404, 'Receipt not found');
+  const links = await tx
+    .select()
+    .from(helenaReceiptOriginalLink)
+    .where(
+      or(
+        inArray(helenaReceiptOriginalLink.receiptId, [receiptId, primaryReceiptId]),
+        eq(helenaReceiptOriginalLink.primaryReceiptId, receiptId),
+      ),
+    );
+  if (links.some((l) => l.receiptId === primaryReceiptId || l.primaryReceiptId === receiptId))
+    throw new HttpError(409, 'Receipt groups cannot be nested.');
+  const existing = links.find((l) => l.receiptId === receiptId);
+  if (existing) {
+    if (existing.primaryReceiptId === primaryReceiptId) return;
+    throw new HttpError(409, 'Detach this original before assigning it elsewhere.');
+  }
+  const matches = await tx
+    .select({ id: helenaReceiptMatch.id })
+    .from(helenaReceiptMatch)
+    .where(
+      and(
+        eq(helenaReceiptMatch.receiptId, receiptId),
+        inArray(helenaReceiptMatch.status, ['confirmed', 'proposed']),
+      ),
+    );
+  if (child.status !== 'open' || matches.length)
+    throw new HttpError(409, 'Only an open original without active matches can be attached.');
+  if (primary.status === 'ignored') throw new HttpError(409, 'The primary receipt is ignored.');
+  await tx.insert(helenaReceiptOriginalLink).values({
+    receiptId,
+    primaryReceiptId,
+    projectId,
+    teamId: child.teamId,
+    createdByUserId: userId,
   });
 }
 

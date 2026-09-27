@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { intakeMailReceipts, prepareMailReceipts } from '#modules/receipts/receipts';
 import { assertReviewedMailSource } from '#modules/receipts/mail-review';
+import { mailOriginalPair } from '#modules/receipts/original-pair';
 
 const Entry = z
   .object({
@@ -23,6 +24,16 @@ const Review = z.object({
         accountId: z.number().int().positive(),
         projectKey: z.string(),
         threadId: z.number().int().positive(),
+        originalPair: z
+          .object({
+            invoiceSha256: z.string().regex(/^[a-f0-9]{64}$/),
+            receiptSha256: z.string().regex(/^[a-f0-9]{64}$/),
+            invoiceNumber: z.string().min(1),
+            grossCents: z.number().int().positive(),
+            currency: z.string().regex(/^[A-Z]{3}$/),
+          })
+          .nullable()
+          .optional(),
         files: z
           .array(
             z.object({
@@ -84,6 +95,7 @@ export async function backfillMailReceipts(manifest: unknown, apply = false, rev
           accountId: expected.accountId,
           threadId: expected.threadId,
           originals: expected.files,
+          originalPair: expected.originalPair ?? null,
         }
       : undefined;
     const input = {
@@ -102,6 +114,7 @@ export async function backfillMailReceipts(manifest: unknown, apply = false, rev
       accountId: source.accountId,
       threadId: source.threadId,
       originals: plans,
+      originalPair: mailOriginalPair(plans),
     };
     if (reviewedSource) assertReviewedMailSource(reviewedSource, checkedSource);
     input.reviewedSource = checkedSource;
@@ -123,7 +136,13 @@ export async function backfillMailReceipts(manifest: unknown, apply = false, rev
         bodyProvenance: plan.facts.details.mailBody ?? null,
       };
     });
-    prepared.push({ entry, input, files, threadId: source.threadId });
+    prepared.push({
+      entry,
+      input,
+      files,
+      threadId: source.threadId,
+      originalPair: checkedSource.originalPair,
+    });
   }
   const reports = [];
   for (const item of prepared) {
@@ -134,6 +153,7 @@ export async function backfillMailReceipts(manifest: unknown, apply = false, rev
       projectKey: item.entry.projectKey,
       threadId: item.threadId,
       files: item.files,
+      originalPair: item.originalPair,
       receiptIds,
     });
   }

@@ -11,6 +11,7 @@ import {
 import { parseMessage } from '@repo/mail';
 import { mailReceiptFacts } from './mail-facts';
 import type { MailBodyProvenance } from './mail-body';
+import { originalDocumentEvidence, type OriginalDocumentEvidence } from './original-pair';
 import { extractText, hasProgram, runProgram } from '@repo/vault';
 
 // What Helena reads from a receipt file (docs/helena-decisions/decisions.md §7): the
@@ -45,6 +46,8 @@ export type ReceiptDetails = {
 };
 
 export interface ExtractedReceipt {
+  /** Ephemeral native-text proof; never read back from mutable receipt facts. */
+  originalEvidence?: OriginalDocumentEvidence | null;
   issuer: string | null;
   invoiceNumber: string | null;
   invoiceDate: string | null;
@@ -210,13 +213,16 @@ export async function extractReceiptFile(
   }
 
   let text: string | null = null;
+  let completeNativePdf = false;
   if (extension !== '.xml') {
     const extraction = await extractText(file).catch((error: unknown) => ({
       status: 'failed' as const,
       error: error instanceof Error ? error.message : String(error),
     }));
-    if (extraction.status === 'done') text = extraction.text;
-    else if (extraction.status === 'unavailable')
+    if (extraction.status === 'done') {
+      text = extraction.text;
+      completeNativePdf = extraction.nativePdfComplete === true;
+    } else if (extraction.status === 'unavailable')
       problems.push(`missing_programs: ${extraction.missing.join(', ')}`);
     else if (extraction.status === 'failed') problems.push(extraction.error);
     else problems.push(extraction.reason);
@@ -234,6 +240,7 @@ export async function extractReceiptFile(
   const noFacts = !invoice && !fromText?.grossCents && !fromText?.invoiceNumber;
   if (noFacts && method !== 'none' && !problems.length) problems.push('no_facts');
   return {
+    originalEvidence: completeNativePdf && text ? originalDocumentEvidence(text) : null,
     issuer: invoice?.issuer ?? fromText?.issuer ?? null,
     invoiceNumber: invoice?.invoiceNumber ?? fromText?.invoiceNumber ?? null,
     invoiceDate: invoice?.invoiceDate ?? fromText?.invoiceDate ?? null,

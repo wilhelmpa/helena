@@ -32,7 +32,12 @@ import {
 } from './mail-facts';
 import { matchReceipt, unlinkReceipt } from './matching';
 import { assertReviewedMailSource, type ReviewedMailSource } from './mail-review';
-import { economicReceipt, assertUngroupedReceipt } from './originals';
+import {
+  economicReceipt,
+  assertUngroupedReceipt,
+  linkReceiptOriginalInTransaction,
+} from './originals';
+import { mailOriginalPair } from './original-pair';
 import { receiptSourceLinks } from './source';
 import {
   inMonth,
@@ -392,6 +397,7 @@ export async function prepareMailReceipts(
       accountId: source.message.accountId,
       threadId: source.message.threadId,
       originals: plans,
+      originalPair: mailOriginalPair(plans),
     });
   return plans;
 }
@@ -420,7 +426,10 @@ export async function intakeMailReceipts(input: MailReceiptInput): Promise<numbe
   return stored.ids;
 }
 
-async function storeMailReceipts(input: MailReceiptInput, executor: ReceiptDb) {
+async function storeMailReceipts(
+  input: MailReceiptInput,
+  executor: Parameters<Parameters<typeof db.transaction>[0]>[0],
+) {
   const plans = await prepareMailReceipts(input, executor);
   const [target] = await executor
     .select()
@@ -429,6 +438,7 @@ async function storeMailReceipts(input: MailReceiptInput, executor: ReceiptDb) {
   if (!target) throw new HttpError(404, 'Project not found');
   const ids = new Set<number>();
   const newIds: number[] = [];
+  const newBySha = new Map<string, number>();
   const indexPaths = new Set<string>();
   for (const plan of plans) {
     const existing = await verifiedExistingMailReceipt(target, plan.sha256, executor);
@@ -475,8 +485,24 @@ async function storeMailReceipts(input: MailReceiptInput, executor: ReceiptDb) {
       .returning({ id: helenaReceipt.id });
     const id = row?.id ?? (await existingBySha(input.projectId, plan.sha256, executor));
     if (id) ids.add(id);
-    if (row) newIds.push(row.id);
+    if (row) {
+      newIds.push(row.id);
+      newBySha.set(plan.sha256, row.id);
+    }
   }
+  const pair = mailOriginalPair(plans);
+  const primaryId = pair ? newBySha.get(pair.invoiceSha256) : undefined;
+  const supplementaryId = pair ? newBySha.get(pair.receiptSha256) : undefined;
+  // Never recreate a deliberately detached relation on reimport/index repair. Both
+  // originals must have been newly inserted in this very transaction.
+  if (primaryId !== undefined && supplementaryId !== undefined)
+    await linkReceiptOriginalInTransaction(
+      executor,
+      input.projectId,
+      supplementaryId,
+      primaryId,
+      input.actorUserId,
+    );
   return { ids: [...ids], newIds, indexPaths: [...indexPaths] };
 }
 
