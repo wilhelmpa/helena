@@ -22,7 +22,6 @@ import {
   dashboardsPath,
   filesPath,
   homeFilesPath,
-  inboxPath,
   initiativesPath,
   cyclesPath,
   projectPath,

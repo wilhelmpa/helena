@@ -93,11 +93,7 @@ export default function InboxView({
 
   return (
     <div className="flex h-full min-h-0">
-      <InboxToolbar
-        leading={leading}
-        filters={filters}
-        onFiltersChange={changeFilters}
-      />
+      <InboxToolbar leading={leading} filters={filters} onFiltersChange={changeFilters} />
       <div
         className={cn(
           'flex w-full min-w-0 flex-col bg-card md:max-w-lg md:border-e',

@@ -77,10 +77,7 @@ export default function AppSidebar({
         />
       </SidebarHeader>
       <SidebarContent className="helena-sidebar-content">
-        <SidebarPersonalNav
-          teamIds={teamIds}
-          projectKey={currentProjectKey}
-        />
+        <SidebarPersonalNav teamIds={teamIds} projectKey={currentProjectKey} />
         {currentProjectKey ? (
           <SidebarProjectTree
             projectKey={currentProjectKey}
