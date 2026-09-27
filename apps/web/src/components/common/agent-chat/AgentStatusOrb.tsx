@@ -4,22 +4,22 @@ import { createElement, useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useVoiceOrbAudio } from '@/hooks/useVoiceOrbAudio';
 import type { AgentOrbState, VoiceOrbPhase } from '@/utils/agentStatusOrb';
-import { shipnotesState } from '@/utils/agentStatusOrb';
+import { voiceOrbState } from '@/utils/agentStatusOrb';
 import styles from './AgentStatusOrb.module.css';
 
 let scriptPromise: Promise<void> | null = null;
 
-function loadSignalOrb(): Promise<void> {
-  if (customElements.get('signal-orb')) return Promise.resolve();
+function loadVoiceOrb(): Promise<void> {
+  if (customElements.get('voice-orb')) return Promise.resolve();
   if (!scriptPromise) {
     scriptPromise = new Promise<void>((resolve, reject) => {
       const script = document.createElement('script');
-      script.src = '/vendor/shipnotes/signal-orb.js';
+      script.src = '/vendor/shipnotes/voice-orb.js';
       script.onload = () => resolve();
       script.onerror = () => {
         scriptPromise = null;
         script.remove();
-        reject(new Error('Signal Orb could not load'));
+        reject(new Error('Voice Orb could not load'));
       };
       document.head.append(script);
     });
@@ -75,7 +75,7 @@ export default function AgentStatusOrb({
   useEffect(() => {
     if (!animated || !motionEnabled || !online || size !== 'large') return;
     let mounted = true;
-    void loadSignalOrb()
+    void loadVoiceOrb()
       .then(() => {
         if (mounted) setReady(true);
       })
@@ -117,9 +117,8 @@ export default function AgentStatusOrb({
       {motionEnabled &&
         online &&
         animated &&
-        createElement('signal-orb', {
-          state: shipnotesState[state],
-          particles: '8000',
+        createElement('voice-orb', {
+          state: voiceOrbState(state, voicePhase),
           'aria-hidden': true,
         })}
     </span>

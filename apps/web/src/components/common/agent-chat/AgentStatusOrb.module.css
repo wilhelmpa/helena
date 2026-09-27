@@ -24,7 +24,7 @@
   margin-inline: auto;
 }
 
-.large signal-orb {
+.large voice-orb {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -34,7 +34,7 @@
     filter 600ms ease;
 }
 
-.large.animated signal-orb {
+.large.animated voice-orb {
   opacity: 1;
 }
 
@@ -42,12 +42,16 @@
   opacity: 0;
 }
 
-.large.idle signal-orb {
-  filter: hue-rotate(90deg);
+.large.tool voice-orb {
+  filter: hue-rotate(12deg);
 }
 
-.large.error signal-orb {
-  filter: hue-rotate(-40deg) saturate(1.35);
+.large.waiting voice-orb {
+  filter: hue-rotate(100deg) saturate(0.8);
+}
+
+.large.error voice-orb {
+  filter: hue-rotate(65deg) saturate(1.15);
 }
 
 .static {
@@ -108,7 +112,7 @@
 @media (prefers-reduced-motion: reduce) {
   .small,
   .static,
-  .large signal-orb {
+  .large voice-orb {
     animation: none;
     transition: none;
   }

@@ -8,18 +8,19 @@ export function useVoiceOrbAudio(
   { phase, micStream, outputAnalyser }: VoiceOrbAudio,
 ): void {
   useEffect(() => {
-    if (!active || phase === 'off' || phase === 'starting') return;
-    const orb = host.current?.querySelector('signal-orb');
+    if (!active || (phase !== 'listening' && phase !== 'hearing' && phase !== 'speaking')) return;
+    const orb = host.current?.querySelector('voice-orb') as
+      (HTMLElement & { bands: [number, number, number] }) | null;
     if (!orb) return;
     const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
     let input: ReturnType<typeof openMicrophoneAnalyser> | null = null;
     try {
-      if (micStream) input = openMicrophoneAnalyser(micStream);
+      if (micStream && (phase === 'listening' || phase === 'hearing'))
+        input = openMicrophoneAnalyser(micStream);
     } catch {
       // Visual analysis may fail while the conversation continues.
     }
     let frame = 0;
-    let level = 0;
     const paint = () => {
       const analyser = phase === 'speaking' ? outputAnalyser : input?.analyser;
       let audio = null;
@@ -28,18 +29,12 @@ export function useVoiceOrbAudio(
       } catch {
         // A voice engine can close between two animation frames.
       }
-      level += ((audio?.level ?? 0) - level) * 0.28;
-      orb.setAttribute('level', level.toFixed(3));
-      orb.setAttribute(
-        'bands',
-        (audio?.bands ?? [0, 0, 0]).map((band) => band.toFixed(3)).join(','),
-      );
+      orb.bands = audio?.bands ?? [0, 0, 0];
       frame = window.requestAnimationFrame(paint);
     };
     const visibility = () => {
       window.cancelAnimationFrame(frame);
-      orb.setAttribute('level', '0');
-      orb.setAttribute('bands', '0,0,0');
+      orb.bands = [0, 0, 0];
       if (!document.hidden && !motion.matches) frame = window.requestAnimationFrame(paint);
     };
     document.addEventListener('visibilitychange', visibility);
@@ -49,8 +44,7 @@ export function useVoiceOrbAudio(
       window.cancelAnimationFrame(frame);
       document.removeEventListener('visibilitychange', visibility);
       motion.removeEventListener('change', visibility);
-      orb.setAttribute('level', '0');
-      orb.setAttribute('bands', '0,0,0');
+      orb.bands = [0, 0, 0];
       void input?.close();
     };
   }, [host, active, phase, micStream, outputAnalyser]);

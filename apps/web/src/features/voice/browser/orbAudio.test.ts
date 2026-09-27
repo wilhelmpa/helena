@@ -9,10 +9,10 @@ describe('voice orb audio', () => {
       level: 0,
       bands: [0, 0, 0],
     });
-    const frequencies = new Uint8Array(24);
-    frequencies.fill(90, 0, 2);
-    frequencies.fill(180, 2, 4);
-    frequencies.fill(255, 4, 6);
+    const frequencies = new Uint8Array(512);
+    frequencies[2] = 90;
+    frequencies[10] = 180;
+    frequencies[100] = 255;
     const frame = orbAudioFrame(new Uint8Array([0, 255]), frequencies);
     assert.equal(frame.level, 1);
     assert.deepEqual(frame.bands, [0.5, 1, 1]);

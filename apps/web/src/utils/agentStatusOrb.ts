@@ -32,14 +32,13 @@ export function agentOrbState(
   return 'idle';
 }
 
-export const shipnotesState: Record<
-  AgentOrbState,
-  'listening' | 'thinking' | 'searching' | 'done'
-> = {
-  idle: 'listening',
-  thinking: 'thinking',
-  tool: 'searching',
-  waiting: 'listening',
-  error: 'listening',
-  done: 'done',
-};
+export function voiceOrbState(
+  state: AgentOrbState,
+  phase: VoiceOrbPhase,
+): 'idle' | 'listening' | 'thinking' | 'speaking' {
+  if (phase === 'speaking') return 'speaking';
+  if (phase === 'listening' || phase === 'hearing') return 'listening';
+  if (phase === 'thinking' || phase === 'transcribing') return 'thinking';
+  if (state === 'thinking' || state === 'tool') return 'thinking';
+  return 'idle';
+}

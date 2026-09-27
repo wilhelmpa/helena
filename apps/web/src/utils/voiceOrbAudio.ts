@@ -4,7 +4,11 @@ export interface OrbAudioFrame {
   bands: [number, number, number];
 }
 
-export function orbAudioFrame(wave: Uint8Array, frequencies: Uint8Array): OrbAudioFrame {
+export function orbAudioFrame(
+  wave: Uint8Array,
+  frequencies: Uint8Array,
+  sampleRate = 48000,
+): OrbAudioFrame {
   let energy = 0;
   for (const sample of wave) {
     const centered = (sample - 128) / 128;
@@ -12,13 +16,23 @@ export function orbAudioFrame(wave: Uint8Array, frequencies: Uint8Array): OrbAud
   }
   const rms = wave.length ? Math.sqrt(energy / wave.length) : 0;
   const bands: [number, number, number] = [0, 0, 0];
-  // The first quarter of the FFT covers most of the speech spectrum.
-  const width = Math.max(1, Math.floor(frequencies.length / 12));
+  const binWidth = sampleRate / (frequencies.length * 2);
+  const ranges = [
+    [45, 250],
+    [250, 2400],
+    [2400, 12000],
+  ];
   for (let band = 0; band < 3; band += 1) {
-    let sum = 0;
-    for (let i = band * width; i < (band + 1) * width && i < frequencies.length; i += 1)
-      sum += frequencies[i]!;
-    bands[band] = Math.min(1, sum / (width * 180));
+    const [low, high] = ranges[band]!;
+    let energy = 0;
+    for (
+      let i = Math.max(1, Math.ceil(low / binWidth));
+      i <= Math.min(frequencies.length - 1, Math.floor(high / binWidth));
+      i += 1
+    ) {
+      energy += frequencies[i]! ** 2;
+    }
+    bands[band] = Math.min(1, Math.sqrt(energy) / 180);
   }
   return { level: Math.min(1, rms * 4), bands };
 }
@@ -28,7 +42,7 @@ export function readOrbAudio(analyser: AnalyserNode): OrbAudioFrame {
   const frequencies = new Uint8Array(analyser.frequencyBinCount);
   analyser.getByteTimeDomainData(wave);
   analyser.getByteFrequencyData(frequencies);
-  return orbAudioFrame(wave, frequencies);
+  return orbAudioFrame(wave, frequencies, analyser.context.sampleRate);
 }
 
 export function openMicrophoneAnalyser(stream: MediaStream): {

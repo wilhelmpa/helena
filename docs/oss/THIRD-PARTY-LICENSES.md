@@ -6,7 +6,7 @@ Helena itself is licensed under AGPL-3.0 (see LICENSE and NOTICE); `packages/run
 
 ## Vendored source
 
-Signal Orb from [Ship Notes components](https://github.com/aqualang89/shipnotes-components), copyright (c) 2026 Ship Notes, MIT license. The adapted source is `apps/web/public/vendor/shipnotes/signal-orb.js`; the complete license is `apps/web/public/vendor/shipnotes/LICENSE`.
+Voice Orb from [Ship Notes components](https://github.com/aqualang89/shipnotes-components), copyright (c) 2026 Ship Notes, MIT license. The adapted source is `apps/web/public/vendor/shipnotes/voice-orb.js`; the complete license is `apps/web/public/vendor/shipnotes/LICENSE`.
 
 ## Summary
 
