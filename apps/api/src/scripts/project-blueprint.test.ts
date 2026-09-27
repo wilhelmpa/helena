@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { existsSync, readFileSync } from 'node:fs';
+import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
   aiAgent,
@@ -9,6 +10,7 @@ import {
   noteBoard,
   organizationGoal,
   project,
+  projectProvisioningJob,
   teamMember,
 } from '@repo/db';
 import { absoluteVaultPath } from '@repo/vault';
@@ -80,6 +82,77 @@ async function agentRow(teamId: number, username: string) {
   return row!;
 }
 
+// The native provisioner is outside this process. Complete only the current queued
+// generation once the real blueprint barrier waits, including tools-only refreshes.
+async function applyWithProvisioner(teamId: number, sections?: ['tools']) {
+  const adapters: Promise<void>[] = [];
+  const currentJobs = () =>
+    db
+      .select({ id: projectProvisioningJob.id, projectId: project.id })
+      .from(projectProvisioningJob)
+      .innerJoin(project, eq(project.id, projectProvisioningJob.projectId))
+      .where(and(eq(project.teamId, teamId), eq(project.key, blueprint.project.key)));
+  let fail!: (error: unknown) => void;
+  let finish!: () => void;
+  const adapterFailure = new Promise<void>((resolve, reject) => {
+    finish = resolve;
+    fail = reject;
+  });
+  let settled = false;
+  const work = runProjectBlueprint({
+    blueprint: BLUEPRINT,
+    teamId,
+    apply: true,
+    sections,
+    log: (line) => {
+      if (!line.startsWith(`[WAIT] Project ${blueprint.project.key}:`)) return;
+      const adapter = (async () => {
+        const jobs = await currentJobs();
+        expect(jobs).toHaveLength(1);
+        const job = jobs[0]!;
+        await mkdir(absoluteVaultPath(`Projects/${blueprint.project.key}`), { recursive: true });
+        const completed = await db
+          .update(projectProvisioningJob)
+          .set({ status: 'succeeded', completedAt: new Date() })
+          .where(
+            and(
+              eq(projectProvisioningJob.id, job.id),
+              eq(projectProvisioningJob.projectId, job.projectId),
+              eq(projectProvisioningJob.status, 'pending'),
+            ),
+          )
+          .returning({ id: projectProvisioningJob.id });
+        expect(completed).toEqual([{ id: job.id }]);
+      })().catch(fail);
+      adapters.push(adapter);
+    },
+  }).finally(() => {
+    settled = true;
+  });
+  try {
+    await Promise.race([work, adapterFailure]);
+    if (!sections) expect(adapters.length).toBeGreaterThan(0);
+  } finally {
+    await Promise.all(adapters);
+    if (!settled) {
+      for (const job of await currentJobs()) {
+        await db
+          .update(projectProvisioningJob)
+          .set({ status: 'failed', completedAt: new Date() })
+          .where(
+            and(
+              eq(projectProvisioningJob.id, job.id),
+              eq(projectProvisioningJob.projectId, job.projectId),
+              eq(projectProvisioningJob.status, 'pending'),
+            ),
+          );
+      }
+    }
+    finish();
+    await Promise.allSettled([work, adapterFailure]);
+  }
+}
+
 describe('the trading blueprint, applied', () => {
   const realFetch = globalThis.fetch;
   beforeEach(async () => {
@@ -100,7 +173,7 @@ describe('the trading blueprint, applied', () => {
 
   it('builds the project and its team, and a second run changes nothing', async () => {
     const { teamId } = await setup();
-    await runProjectBlueprint({ blueprint: BLUEPRINT, teamId, apply: true, log: quiet });
+    await applyWithProvisioner(teamId);
 
     const [trade] = await db.select().from(project).where(eq(project.key, 'TRADE'));
     expect(trade!.name).toBe('Trading');
@@ -157,7 +230,7 @@ describe('the trading blueprint, applied', () => {
 
   it("binds the paper tools once the owner stored the keys, and they run only as Helena's paper tools", async () => {
     const { teamId } = await setup();
-    await runProjectBlueprint({ blueprint: BLUEPRINT, teamId, apply: true, log: quiet });
+    await applyWithProvisioner(teamId);
     const credential = await createCredential(teamId, {
       integrationKey: 'alpaca_paper',
       label: 'Alpaca Paper',
@@ -170,13 +243,7 @@ describe('the trading blueprint, applied', () => {
         dailyLossLimitUsd: 150,
       },
     });
-    await runProjectBlueprint({
-      blueprint: BLUEPRINT,
-      teamId,
-      apply: true,
-      sections: ['tools'],
-      log: quiet,
-    });
+    await applyWithProvisioner(teamId, ['tools']);
 
     const trader = await agentRow(teamId, 'paper-trader-trade');
     const risk = await agentRow(teamId, 'risk-journal-trade');
