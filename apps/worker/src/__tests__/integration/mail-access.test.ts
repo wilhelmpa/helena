@@ -259,7 +259,7 @@ describe('fetch window', () => {
     expect(await storedIds()).toEqual(['<old@x>', '<recent@x>']);
   });
 
-  it('retains receipt originals when mail leaves the window or the account is reset', async () => {
+  it('retains receipt-bound mail during prune and only its filed original during explicit reset', async () => {
     const { mailbox, teamId, projectId } = await googleMailbox({ fetchDays: 365 });
     server.add('INBOX', mail('<receipt@x>', daysAgo(200), true), [], daysAgo(200));
     await sync();
@@ -275,14 +275,34 @@ describe('fetch window', () => {
       size: attachment!.size,
       sha256: attachment!.sha256,
     });
-    const original = await Bun.file(path.join(vault, attachment!.vaultPath)).arrayBuffer();
-    expect(await pruneAccount(mailbox.id, 30)).toBe(1);
-    expect(await storedIds()).toEqual([]);
-    expect(await Bun.file(path.join(vault, attachment!.vaultPath)).arrayBuffer()).toEqual(original);
+    const [message] = await db.select().from(mailMessage);
     const [receipt] = await db.select().from(helenaReceipt);
-    expect(receipt!.mailAttachmentId).toBeNull();
+    const [thread] = await db.select().from(mailThread);
+    const raw = Bun.file(path.join(storage, 'objects', message!.rawKey));
+    const emlOriginal = await raw.arrayBuffer();
+    const original = await Bun.file(path.join(vault, attachment!.vaultPath)).arrayBuffer();
+    // Cache expiry preserves the exact receipt-bound source, not only its vault copy.
+    expect(await pruneAccount(mailbox.id, 30)).toBe(0);
+    expect(await storedIds()).toEqual(['<receipt@x>']);
+    expect(await db.select().from(mailMessage)).toEqual([message!]);
+    expect(await db.select().from(mailThread)).toEqual([thread!]);
+    expect(await db.select().from(mailAttachment)).toEqual([attachment!]);
+    expect(await db.select().from(helenaReceipt)).toEqual([receipt!]);
+    expect(receipt!.mailAttachmentId).toBe(attachment!.id);
+    expect(await raw.arrayBuffer()).toEqual(emlOriginal);
+    expect(await Bun.file(path.join(vault, attachment!.vaultPath)).arrayBuffer()).toEqual(original);
     await sync();
-    await wipeAccount(mailbox.id);
+    // Explicit reset still removes all imported mail and nulls the source FK;
+    // the already filed receipt and its original vault bytes stay intact.
+    expect(await wipeAccount(mailbox.id)).toBe(1);
+    expect(await storedIds()).toEqual([]);
+    expect(await db.select().from(mailThread)).toEqual([]);
+    expect(await db.select().from(mailAttachment)).toEqual([]);
+    expect(await db.select().from(helenaReceipt)).toEqual([
+      { ...receipt!, mailAttachmentId: null },
+    ]);
+    expect(await raw.exists()).toBe(false);
+    expect(server.messageIdsIn('INBOX')).toEqual(['<receipt@x>']);
     expect(await Bun.file(path.join(vault, attachment!.vaultPath)).arrayBuffer()).toEqual(original);
   });
 
