@@ -277,5 +277,14 @@
     "workflow": "سير العمل",
     "agentTeam": "فريق الوكلاء",
     "autoArchive": "الأرشفة التلقائية"
+  },
+  "statusOrb": {
+    "idle": "في وضع الراحة",
+    "thinking": "يفكر",
+    "tool": "يستخدم أداة",
+    "waiting": "ينتظر ردك",
+    "error": "خطأ",
+    "done": "اكتمل",
+    "offline": "غير متصل"
   }
 }

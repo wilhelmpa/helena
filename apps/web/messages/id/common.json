@@ -277,5 +277,14 @@
     "workflow": "Alur kerja",
     "agentTeam": "Tim agen",
     "autoArchive": "Arsip otomatis"
+  },
+  "statusOrb": {
+    "idle": "Beristirahat",
+    "thinking": "Berpikir",
+    "tool": "Menggunakan alat",
+    "waiting": "Menunggu Anda",
+    "error": "Kesalahan",
+    "done": "Selesai",
+    "offline": "Offline"
   }
 }

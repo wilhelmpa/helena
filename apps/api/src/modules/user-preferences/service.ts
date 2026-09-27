@@ -65,6 +65,8 @@ export interface HomeDashboardPreference {
   hidden: string[];
   shown: string[];
   dismissed: string[];
+  // Kept in the existing per-user JSON preference so no schema migration is needed.
+  chatAnimation?: boolean;
 }
 
 export const EMPTY_HOME_DASHBOARD: HomeDashboardPreference = {
@@ -78,7 +80,7 @@ export const EMPTY_HOME_DASHBOARD: HomeDashboardPreference = {
 export function normalizeHomeDashboard(value: unknown): HomeDashboardPreference {
   if (!value || typeof value !== 'object') return { ...EMPTY_HOME_DASHBOARD };
   const raw = value as Record<string, unknown>;
-  const list = (key: keyof HomeDashboardPreference) =>
+  const list = (key: Exclude<keyof HomeDashboardPreference, 'chatAnimation'>) =>
     Array.isArray(raw[key])
       ? [...new Set((raw[key] as unknown[]).filter((v): v is string => typeof v === 'string'))]
       : [];
@@ -87,6 +89,7 @@ export function normalizeHomeDashboard(value: unknown): HomeDashboardPreference 
     hidden: list('hidden'),
     shown: list('shown'),
     dismissed: list('dismissed'),
+    ...(typeof raw.chatAnimation === 'boolean' ? { chatAnimation: raw.chatAnimation } : {}),
   };
 }
 
@@ -188,8 +191,15 @@ export async function updatePreferences(
   patch: UserPreferencePatch,
   defaultLocale: Locale = DEFAULT_LOCALE,
 ): Promise<UserPreferenceDto> {
-  const next = { ...(await getPreferences(userId, defaultLocale)), ...patch };
-  if (patch.homeDashboard) next.homeDashboard = normalizeHomeDashboard(patch.homeDashboard);
+  const current = await getPreferences(userId, defaultLocale);
+  const next = { ...current, ...patch };
+  if (patch.homeDashboard) {
+    next.homeDashboard = normalizeHomeDashboard({
+      ...current.homeDashboard,
+      ...patch.homeDashboard,
+      chatAnimation: patch.homeDashboard.chatAnimation ?? current.homeDashboard.chatAnimation,
+    });
+  }
   await db
     .insert(userPreference)
     .values({ userId, ...next })

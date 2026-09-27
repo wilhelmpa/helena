@@ -34,6 +34,7 @@ export const HomeDashboardSchema = t.Object({
   hidden: t.Array(WidgetId, { maxItems: 100 }),
   shown: t.Array(WidgetId, { maxItems: 100 }),
   dismissed: t.Array(WidgetId, { maxItems: 200 }),
+  chatAnimation: t.Optional(t.Boolean()),
 });
 
 export const PreferenceResponse = t.Object({

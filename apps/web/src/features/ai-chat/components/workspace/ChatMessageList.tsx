@@ -4,6 +4,8 @@ import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { dayKey } from '@/utils/dates';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
+import AgentStatusOrb from '@/components/common/agent-chat/AgentStatusOrb';
+import type { AgentOrbState } from '@/utils/agentStatusOrb';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -100,6 +102,9 @@ export interface ChatMessageListProps {
   editingId: string | null;
   onEditingChange: (messageId: string | null) => void;
   onShowArtifact: (artifact: Artifact) => void;
+  orbState: AgentOrbState | null;
+  online: boolean;
+  motionEnabled: boolean;
 }
 
 // The transcript, in shadcn's MessageScroller: it opens at the newest message, follows
@@ -107,7 +112,7 @@ export interface ChatMessageListProps {
 // moment they scroll up to read back (with a button to jump down again), anchors a new
 // question near the top so its answer has room, and keeps the reader's place when older
 // messages load in above. Centered at a comfortable reading width, the way claude.ai
-// reads. Only messages: what the answer is doing is said at the composer.
+// reads. The answer orb follows the latest message; detailed status and controls stay at the composer.
 export default function ChatMessageList(props: ChatMessageListProps) {
   if (props.plan.restoring) {
     return (
@@ -129,6 +134,9 @@ function ChatTranscript({
   editingId,
   onEditingChange,
   onShowArtifact,
+  orbState,
+  online,
+  motionEnabled,
 }: ChatMessageListProps) {
   const t = useTranslations('chatWorkspace');
   const { messages, status } = plan;
@@ -227,6 +235,16 @@ function ChatTranscript({
                 </Fragment>
               );
             })}
+            {orbState && (
+              <div className="flex justify-start py-1">
+                <AgentStatusOrb
+                  state={orbState}
+                  size="large"
+                  online={online}
+                  motionEnabled={motionEnabled}
+                />
+              </div>
+            )}
           </MessageScrollerContent>
         </MessageScrollerViewport>
         <MessageScrollerButton />

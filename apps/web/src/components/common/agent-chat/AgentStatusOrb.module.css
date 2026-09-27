@@ -1,0 +1,93 @@
+.small,
+.static {
+  display: inline-block;
+  flex: none;
+  border-radius: 50%;
+  background: var(--orb-color);
+  box-shadow: 0 0 0.5rem color-mix(in srgb, var(--orb-color), transparent 45%);
+}
+
+.small {
+  width: 0.55rem;
+  height: 0.55rem;
+}
+
+.large {
+  display: block;
+  width: min(9rem, 35vw);
+  aspect-ratio: 1;
+  margin-inline: auto;
+}
+
+.large signal-orb {
+  width: 100%;
+}
+
+.large.idle signal-orb {
+  filter: hue-rotate(90deg) saturate(0.8);
+}
+
+.large.error signal-orb {
+  filter: hue-rotate(-40deg) saturate(1.35);
+}
+
+.static {
+  width: 52%;
+  height: 52%;
+  margin: 24%;
+  box-shadow:
+    0 0 1.2rem color-mix(in srgb, var(--orb-color), transparent 45%),
+    0 0 3rem color-mix(in srgb, var(--orb-color), transparent 75%);
+}
+
+.idle {
+  --orb-color: #71bea4;
+}
+.thinking {
+  --orb-color: #b297ff;
+}
+.tool {
+  --orb-color: #61dbf9;
+}
+.waiting {
+  --orb-color: #ffb969;
+}
+.error {
+  --orb-color: #f87171;
+}
+.done {
+  --orb-color: #88efc2;
+}
+.offline {
+  --orb-color: #929aa6;
+}
+
+.small.thinking,
+.small.tool,
+.small.waiting,
+.small.error {
+  animation: pulse 2.6s ease-in-out infinite;
+}
+
+.small.waiting {
+  animation-duration: 3.4s;
+}
+.small.error {
+  animation-duration: 1.6s;
+}
+.small.still {
+  animation: none;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.58;
+    transform: scale(0.82);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .small {
+    animation: none;
+  }
+}

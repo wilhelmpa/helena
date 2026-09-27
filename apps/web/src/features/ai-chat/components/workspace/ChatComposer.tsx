@@ -58,6 +58,7 @@ export interface ChatComposerProps {
   // composer's bottom left — picking another one starts a new chat with it.
   agents: AiAgent[];
   states: Map<number, ChatAgentState>;
+  motionEnabled: boolean;
   // What the answer is doing, or how it ended (see composerActivity), and the tool it
   // is running right now, if any.
   activity: ComposerActivity;
@@ -101,7 +102,7 @@ export interface ChatComposerProps {
 }
 
 // The claude.ai-style composer on AI Elements' PromptInput — and the one place the
-// conversation's state is shown and steered (owner, 2026-09-24): over the field, what
+// conversation's detailed state is shown and steered (owner, 2026-09-24): over the field, what
 // waits to be sent (Queue), the choices the agent offered (Suggestions), what the answer
 // is doing or how it ended with continue / reconnect / regenerate (a Marker), and the
 // files attached; under it the agent (with its presence), the model, attaching,
@@ -114,6 +115,7 @@ export default function ChatComposer({
   agent,
   agents,
   states,
+  motionEnabled,
   activity,
   tool,
   queue,
@@ -418,7 +420,13 @@ export default function ChatComposer({
                 />
               )}
               <ChatAutoSpeakToggle on={autoSpeak} onChange={onAutoSpeakChange} />
-              <ChatAgentMenu agent={agent} agents={agents} states={states} onPick={onPickAgent} />
+              <ChatAgentMenu
+                agent={agent}
+                agents={agents}
+                states={states}
+                motionEnabled={motionEnabled}
+                onPick={onPickAgent}
+              />
               <ChatModelPicker
                 scopeKey={scopeKey}
                 agentId={agent.id}

@@ -32,6 +32,7 @@ export interface HomeDashboardPreference {
   hidden: string[];
   shown: string[];
   dismissed: string[];
+  chatAnimation?: boolean;
 }
 
 export interface AccountPreferences {

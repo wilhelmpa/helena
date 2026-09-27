@@ -1,6 +1,8 @@
 'use client';
 
 import WebLinkScope from '@/components/common/WebLinkScope';
+import { useAccountPreferences } from '@/services/preferences.service';
+import { agentOrbState, chatOrbState } from '@/utils/agentStatusOrb';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
@@ -51,7 +53,7 @@ export interface ChatThreadViewProps {
 }
 
 // One open conversation: the header, the transcript (or, before the first message, a
-// quiet line saying who the new chat is with) and the composer at the bottom, which
+// selected agent's status and introduction) and the composer at the bottom, which
 // also shows and steers the answer. Remounted (see the `key` ChatWorkspace gives it)
 // whenever the agent or the thread changes, so none of this has to reset its own state
 // by hand.
@@ -75,6 +77,7 @@ export default function ChatThreadView({
   inPage = false,
 }: ChatThreadViewProps) {
   const t = useTranslations('chatWorkspace');
+  const motionEnabled = useAccountPreferences().homeDashboard.chatAnimation !== false;
   const plan = usePlanChat({
     scopeKey,
     agent,
@@ -112,6 +115,30 @@ export default function ChatThreadView({
   const state = states.get(agent.id);
   const empty = !plan.restoring && !plan.restoreFailed && plan.messages.length === 0;
   const activity = composerActivity(plan.messages, plan.status, state?.online ?? true);
+  const tool = activeTool(plan.messages, plan.status);
+  const choices = activity === 'answered' ? pendingChoices(plan.messages) : null;
+  const lastMessageId = plan.messages.at(-1)?.id ?? null;
+  const [recentDoneId, setRecentDoneId] = useState<string | null>(null);
+  const previousActivity = useRef(activity);
+  useEffect(() => {
+    const previous = previousActivity.current;
+    previousActivity.current = activity;
+    if (
+      activity !== 'answered' ||
+      !lastMessageId ||
+      !['thinking', 'writing', 'queued'].includes(previous)
+    )
+      return;
+    const show = setTimeout(() => setRecentDoneId(lastMessageId), 0);
+    const hide = setTimeout(() => setRecentDoneId(null), 2500);
+    return () => {
+      clearTimeout(show);
+      clearTimeout(hide);
+    };
+  }, [activity, lastMessageId]);
+  const mappedOrbState = chatOrbState(activity, tool, choices != null);
+  const orbState =
+    mappedOrbState === 'done' && recentDoneId !== lastMessageId ? null : mappedOrbState;
 
   // What is written while an answer is still coming waits here and goes out in order
   // once the agent is done (old-chat parity). An answer that failed holds the queue:
@@ -215,7 +242,12 @@ export default function ChatThreadView({
         {plan.restoreFailed ? (
           <ChatRestoreError onRetry={() => void plan.retryRestore()} />
         ) : empty ? (
-          <ChatNewChatIntro agent={agent} />
+          <ChatNewChatIntro
+            agent={agent}
+            orbState={agentOrbState(state?.label, agent.runtimeState.status)}
+            online={state?.online ?? false}
+            motionEnabled={motionEnabled}
+          />
         ) : (
           <ChatMessageList
             plan={plan}
@@ -225,6 +257,9 @@ export default function ChatThreadView({
             editingId={editingId}
             onEditingChange={setEditingId}
             onShowArtifact={onArtifact}
+            orbState={orbState}
+            online={state?.online ?? true}
+            motionEnabled={motionEnabled}
           />
         )}
         <ChatComposer
@@ -232,8 +267,9 @@ export default function ChatThreadView({
           agent={agent}
           agents={agents}
           states={states}
+          motionEnabled={motionEnabled}
           activity={activity}
-          tool={activeTool(plan.messages, plan.status)}
+          tool={tool}
           queue={queue}
           queuePaused={queuePaused}
           onQueue={(text, options, metadata) => {
@@ -241,7 +277,7 @@ export default function ChatThreadView({
             setQueue((current) => [...current, { id: uuid(), text, options, metadata }]);
           }}
           onRemoveQueued={(id) => setQueue((current) => current.filter((item) => item.id !== id))}
-          choices={activity === 'answered' ? pendingChoices(plan.messages) : null}
+          choices={choices}
           contextTokens={summary.data?.contextTokens}
           autoSpeak={autoSpeak}
           onAutoSpeakChange={setAutoSpeak}

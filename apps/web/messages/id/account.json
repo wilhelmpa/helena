@@ -176,7 +176,9 @@
     "autoWatch": "Ikuti issue secara otomatis",
     "autoWatchDescription": "Issue yang Anda buat, ditugaskan kepada Anda, Anda komentari, atau yang menyebut Anda.",
     "showChatByDefault": "Tampilkan obrolan secara bawaan",
-    "showChatByDefaultDescription": "Panel obrolan terbuka bersama halaman proyek. Tutup kapan saja dari bilah judul atau ikon obrolan."
+    "showChatByDefaultDescription": "Panel obrolan terbuka bersama halaman proyek. Tutup kapan saja dari bilah judul atau ikon obrolan.",
+    "chatAnimation": "Animasikan status chat",
+    "chatAnimationDescription": "Tampilkan orb status animasi di chat Home dan proyek. Jika dimatikan, indikator tetap statis."
   },
   "shell": {
     "title": "Akun"

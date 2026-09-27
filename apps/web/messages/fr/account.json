@@ -176,7 +176,9 @@
     "autoWatch": "Suivre les tickets automatiquement",
     "autoWatchDescription": "Ceux que vous créez, qui vous sont assignés, que vous commentez ou dans lesquels vous êtes mentionné.",
     "showChatByDefault": "Afficher le chat par défaut",
-    "showChatByDefaultDescription": "Le panneau de chat s'ouvre avec une page de projet. Fermez-le à tout moment depuis son en-tête ou l'icône de chat."
+    "showChatByDefaultDescription": "Le panneau de chat s'ouvre avec une page de projet. Fermez-le à tout moment depuis son en-tête ou l'icône de chat.",
+    "chatAnimation": "Animer le statut du chat",
+    "chatAnimationDescription": "Affiche l’orbe de statut animé dans les chats Home et projet. Désactivé, l’indicateur reste statique."
   },
   "shell": {
     "title": "Compte"

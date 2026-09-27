@@ -277,5 +277,14 @@
     "workflow": "工作流",
     "agentTeam": "智能体团队",
     "autoArchive": "自动归档"
+  },
+  "statusOrb": {
+    "idle": "空闲",
+    "thinking": "思考中",
+    "tool": "使用工具中",
+    "waiting": "等待你的回复",
+    "error": "错误",
+    "done": "完成",
+    "offline": "离线"
   }
 }

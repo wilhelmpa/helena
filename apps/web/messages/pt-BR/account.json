@@ -176,7 +176,9 @@
     "autoWatch": "Acompanhar issues automaticamente",
     "autoWatchDescription": "As que você cria, é atribuído, comenta ou é mencionado.",
     "showChatByDefault": "Mostrar o chat por padrão",
-    "showChatByDefaultDescription": "O painel de chat abre com uma página de projeto. Feche-o a qualquer momento pelo cabeçalho ou pelo ícone de chat."
+    "showChatByDefaultDescription": "O painel de chat abre com uma página de projeto. Feche-o a qualquer momento pelo cabeçalho ou pelo ícone de chat.",
+    "chatAnimation": "Animar o status do chat",
+    "chatAnimationDescription": "Mostra o orbe de status animado nos chats da Home e dos projetos. Desativado, o indicador fica estático."
   },
   "shell": {
     "title": "Conta"

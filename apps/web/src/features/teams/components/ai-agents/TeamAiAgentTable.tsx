@@ -2,6 +2,7 @@ import { useTranslations } from 'next-intl';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import ListPager from '@/components/common/ListPager';
+import { useAgentWorkStates } from '@/hooks/useAgentWorkStates';
 import { usePaging } from '@/hooks/usePaging';
 import { TeamAiAgentRow } from './TeamAiAgentRow';
 import TableCard from '@/components/common/page/TableCard';
@@ -22,6 +23,7 @@ export default function TeamAiAgentTable({
   const t = useTranslations('teams.agents');
   const tCommon = useTranslations('common');
   const paging = usePaging();
+  const work = useAgentWorkStates();
   // How many copies each template has, from the same list — cheap, and the whole
   // reason "0 copies" is worth showing right on the template's own row.
   const copyCounts = new Map<number, number>();
@@ -61,6 +63,7 @@ export default function TeamAiAgentTable({
               <TeamAiAgentRow
                 key={agent.id}
                 agent={agent}
+                work={work.get(agent.id)}
                 copyCount={agent.template ? (copyCounts.get(agent.id) ?? 0) : undefined}
                 onChat={() => onEdit(agent)}
                 onRuns={() => onRuns(agent)}

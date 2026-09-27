@@ -1,17 +1,11 @@
 import type { AgentPresence, AgentRuntime } from '@/components/common/page/AgentAvatar';
-import type { AgentActivityEntry } from '@/lib/api/endpoints/agentActivity';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
+export { openWorkByAgent } from '@/utils/agentWorkState';
 
 // A runner is online while it keeps polling; the reference runner polls every few
 // seconds, so a gap this long means it is gone rather than between polls. The same
 // window the settings' runner status uses (components/common/agent-chat/runnerOnline).
 const ONLINE_WINDOW_MS = 90_000;
-
-// The timeline statuses of work still open: queued, running, streaming a chat answer,
-// or paused on the member (an approval, a question) — the same read Home's "Agenten
-// gerade" makes, so the chat and Home never disagree about who is working.
-const RUNNING = new Set(['pending', 'running', 'streaming']);
-const WAITING = new Set(['waiting', 'suspended']);
 
 // What the chat says about an agent, beside its name: whether it can be chatted with
 // at all (a template cannot), whether its runner is there to answer, and whether it is
@@ -47,20 +41,6 @@ export function isAgentOnline(agent: Pick<AiAgent, 'lastSeenAt'>, now: number): 
 
 // The open work of each agent in a recent timeline read, newest first: 'waiting' wins
 // over 'running' — an agent that needs the member is the one thing worth pointing at.
-export function openWorkByAgent(
-  entries: Pick<AgentActivityEntry, 'status' | 'agent'>[],
-): Map<number, 'running' | 'waiting'> {
-  const work = new Map<number, 'running' | 'waiting'>();
-  for (const entry of entries) {
-    if (!entry.agent) continue;
-    if (WAITING.has(entry.status)) work.set(entry.agent.id, 'waiting');
-    else if (RUNNING.has(entry.status) && !work.has(entry.agent.id)) {
-      work.set(entry.agent.id, 'running');
-    }
-  }
-  return work;
-}
-
 export function chatAgentState(
   agent: Pick<AiAgent, 'template' | 'pausedAt' | 'lastSeenAt' | 'runtimeState'>,
   work: 'running' | 'waiting' | undefined,

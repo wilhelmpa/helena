@@ -89,6 +89,19 @@ export default function AccountPreferencesPage() {
               disabled={disabled}
             />
           </AccountPreferenceRow>
+          <AccountPreferenceRow
+            label={t('chatAnimation')}
+            description={t('chatAnimationDescription')}
+          >
+            <Switch
+              aria-label={t('chatAnimation')}
+              checked={prefs.homeDashboard.chatAnimation !== false}
+              onCheckedChange={(chatAnimation) =>
+                save({ homeDashboard: { ...prefs.homeDashboard, chatAnimation } })
+              }
+              disabled={disabled}
+            />
+          </AccountPreferenceRow>
         </AccountPreferencesSection>
 
         <AccountPreferencesSection

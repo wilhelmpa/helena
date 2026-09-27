@@ -5,7 +5,8 @@ import { Bot } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { AgentPausedBadge } from '@/components/common/agent-chat/AgentPausedBadge';
 import { AgentTemplateBadge } from '@/components/common/agent-chat/AgentTemplateBadge';
-import StatusBadge, { type Status } from '@/components/common/page/StatusBadge';
+import AgentStatusOrb from '@/components/common/agent-chat/AgentStatusOrb';
+import { agentOrbState } from '@/utils/agentStatusOrb';
 import { agentsPath } from '@/utils/paths';
 import {
   organizationAgentRole,
@@ -13,17 +14,17 @@ import {
 } from '../organizationTree';
 import OrganizationDepartmentNode from './OrganizationDepartmentNode';
 
-const RUNTIME_STATUS: Record<'online' | 'degraded' | 'offline', Status> = {
-  online: 'success',
-  degraded: 'waiting',
-  offline: 'idle',
-};
-
 // One agent in the organization chart: a sidebar-style row joined to its manager by the
 // tree line — name, role, what it can do and where it works on one line, its runtime on
 // the right. The row opens the agent's settings sheet on the agents page
 // (/agents?agent=<id>), where everything shown here is edited; its reports hang under it.
-export default function OrganizationAgentNode({ node }: { node: AgentNode }) {
+export default function OrganizationAgentNode({
+  node,
+  work,
+}: {
+  node: AgentNode;
+  work: Map<number, 'running' | 'waiting'>;
+}) {
   const t = useTranslations('organization');
   const { agent } = node;
   const role = organizationAgentRole(agent);
@@ -41,6 +42,12 @@ export default function OrganizationAgentNode({ node }: { node: AgentNode }) {
         className="group flex min-h-8 min-w-0 items-center gap-2 rounded-md px-2 py-1 text-sm transition-colors hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
       >
         <Bot className="size-4 shrink-0 text-muted-foreground group-hover:text-foreground" />
+        {!agent.template && (
+          <AgentStatusOrb
+            state={agentOrbState(work.get(agent.id), agent.runtimeState.status)}
+            online={agent.runtimeState.status === 'online'}
+          />
+        )}
         <span className="min-w-0 shrink truncate font-medium">{agent.name}</span>
         <span className="shrink-0 text-xs text-muted-foreground max-sm:hidden">
           {t(`roles.${role}`)}
@@ -60,9 +67,8 @@ export default function OrganizationAgentNode({ node }: { node: AgentNode }) {
           // which is exactly the mix-up this badge exists to avoid.
           <AgentTemplateBadge />
         ) : (
-          <span className="ms-auto flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
-            <StatusBadge status={RUNTIME_STATUS[agent.runtimeState.status]} dotOnly />
-            <span className="max-sm:hidden">{agent.runtimeState.adapter ?? agent.kind}</span>
+          <span className="ms-auto hidden shrink-0 text-xs text-muted-foreground sm:inline">
+            {agent.runtimeState.adapter ?? agent.kind}
           </span>
         )}
       </Link>
@@ -76,10 +82,11 @@ export default function OrganizationAgentNode({ node }: { node: AgentNode }) {
             <OrganizationDepartmentNode
               key={department.department?.id ?? department.kind}
               node={department}
+              work={work}
             />
           ))}
           {node.reports.map((report) => (
-            <OrganizationAgentNode key={report.agent.id} node={report} />
+            <OrganizationAgentNode key={report.agent.id} node={report} work={work} />
           ))}
         </ul>
       )}

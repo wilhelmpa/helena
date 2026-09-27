@@ -4,6 +4,8 @@ import { ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import AgentAvatar from '@/components/common/page/AgentAvatar';
+import AgentStatusOrb from '@/components/common/agent-chat/AgentStatusOrb';
+import { agentOrbState } from '@/utils/agentStatusOrb';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,18 +17,20 @@ import { useAgentStateText } from '../../hooks/useAgentStateText';
 import ChatAgentMenuItem from './ChatAgentMenuItem';
 
 // Who the chat is with, at the composer's bottom left: the agent's avatar with its
-// presence dot, its name and its state. Opened, it lists every agent with its runtime,
+// status orb, name and state. Opened, it lists every agent with its runtime,
 // model and state — picking another one starts a new chat with it, since a chat stays
 // with the agent it began with.
 export default function ChatAgentMenu({
   agent,
   agents,
   states,
+  motionEnabled,
   onPick,
 }: {
   agent: AiAgent;
   agents: AiAgent[];
   states: Map<number, ChatAgentState>;
+  motionEnabled: boolean;
   onPick: (agentId: number) => void;
 }) {
   const t = useTranslations('chatWorkspace');
@@ -42,7 +46,12 @@ export default function ChatAgentMenu({
           aria-label={t('agents.switch', { agent: agent.name })}
           title={`${agent.name} · ${text.detail(agent, state)}`}
         >
-          <AgentAvatar name={agent.name} presence={state?.presence} className="size-5 text-xl" />
+          <AgentAvatar name={agent.name} className="size-5 text-xl" />
+          <AgentStatusOrb
+            state={agentOrbState(state?.label, agent.runtimeState.status)}
+            online={state?.online ?? false}
+            motionEnabled={motionEnabled}
+          />
           <span className="hidden max-w-32 truncate text-foreground @md/composer:inline">
             {agent.name}
           </span>
@@ -61,6 +70,7 @@ export default function ChatAgentMenu({
             key={candidate.id}
             agent={candidate}
             state={states.get(candidate.id)}
+            motionEnabled={motionEnabled}
             current={candidate.id === agent.id}
             onPick={() => onPick(candidate.id)}
           />

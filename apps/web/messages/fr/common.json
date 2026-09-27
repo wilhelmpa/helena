@@ -277,5 +277,14 @@
     "workflow": "Workflow",
     "agentTeam": "Équipe d’agents",
     "autoArchive": "Archivage automatique"
+  },
+  "statusOrb": {
+    "idle": "Au repos",
+    "thinking": "Réfléchit",
+    "tool": "Utilise un outil",
+    "waiting": "Attend votre réponse",
+    "error": "Erreur",
+    "done": "Terminé",
+    "offline": "Hors ligne"
   }
 }

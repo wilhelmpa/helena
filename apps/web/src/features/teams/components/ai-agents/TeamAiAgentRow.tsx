@@ -2,6 +2,9 @@ import { Bot, History, MessageSquare, MoreHorizontal, Pencil, Trash2 } from 'luc
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { AgentPausedBadge } from '@/components/common/agent-chat/AgentPausedBadge';
 import { AgentRunnerStatus } from '@/components/common/agent-chat/AgentRunnerStatus';
+import AgentStatusOrb from '@/components/common/agent-chat/AgentStatusOrb';
+import { isRunnerOnline } from '@/components/common/agent-chat/runnerOnline';
+import { agentOrbState } from '@/utils/agentStatusOrb';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -23,6 +26,7 @@ import { cn } from '@/lib/utils';
 // the key itself is managed in the agent's sheet.
 export function TeamAiAgentRow({
   agent,
+  work,
   copyCount,
   onChat,
   onRuns,
@@ -30,6 +34,7 @@ export function TeamAiAgentRow({
   onDelete,
 }: {
   agent: AiAgent;
+  work?: 'running' | 'waiting';
   // Set only for a template row (how many project copies of it exist); forwarded to
   // AgentRunnerStatus's template badge.
   copyCount?: number;
@@ -59,6 +64,12 @@ export function TeamAiAgentRow({
       <TableCell className="px-2 align-middle whitespace-normal">
         <div className="flex min-w-0 items-center gap-2">
           <Bot className="size-4 shrink-0 text-muted-foreground" />
+          {!agent.template && (
+            <AgentStatusOrb
+              state={agentOrbState(work, agent.runtimeState.status)}
+              online={isRunnerOnline(agent)}
+            />
+          )}
           <span className="truncate text-sm font-medium">{agent.name}</span>
           <span className="truncate text-xs text-muted-foreground max-md:hidden">
             @{agent.username}

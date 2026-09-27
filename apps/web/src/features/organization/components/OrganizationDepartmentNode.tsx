@@ -21,12 +21,18 @@ const KIND_ICON = {
   unassigned: TriangleAlert,
 } as const;
 
-export default function OrganizationDepartmentNode({ node }: { node: DepartmentNode }) {
+export default function OrganizationDepartmentNode({
+  node,
+  work,
+}: {
+  node: DepartmentNode;
+  work: Map<number, 'running' | 'waiting'>;
+}) {
   const t = useTranslations('organization');
   // Home, and the top of a chain outside every department (a project's coordinator on
   // the project page, where Home is not shown), are roots, not a group called
   // "Ohne Abteilung": departments come from projects, so that label only confused.
-  if (node.kind === 'home' || node.kind === 'none') return <PlainRoots node={node} />;
+  if (node.kind === 'home' || node.kind === 'none') return <PlainRoots node={node} work={work} />;
   const Icon = KIND_ICON[node.kind];
   const label =
     node.department?.name ??
@@ -69,7 +75,7 @@ export default function OrganizationDepartmentNode({ node }: { node: DepartmentN
             )}
           >
             {node.agents.map((agent) => (
-              <OrganizationAgentNode key={agent.agent.id} node={agent} />
+              <OrganizationAgentNode key={agent.agent.id} node={agent} work={work} />
             ))}
           </ul>
         )}
@@ -89,7 +95,11 @@ export default function OrganizationDepartmentNode({ node }: { node: DepartmentN
       {node.children.length > 0 && (
         <ul className="ms-4 space-y-2 border-s border-sidebar-border pt-2">
           {node.children.map((child) => (
-            <OrganizationDepartmentNode key={child.department?.id ?? child.kind} node={child} />
+            <OrganizationDepartmentNode
+              key={child.department?.id ?? child.kind}
+              node={child}
+              work={work}
+            />
           ))}
         </ul>
       )}
@@ -100,12 +110,18 @@ export default function OrganizationDepartmentNode({ node }: { node: DepartmentN
 // Agents shown as roots of the chart without a group header: the Home master (it is not
 // "without a department", it is above them; the departments hang under it) and the top
 // of a chain outside every department.
-function PlainRoots({ node }: { node: DepartmentNode }) {
+function PlainRoots({
+  node,
+  work,
+}: {
+  node: DepartmentNode;
+  work: Map<number, 'running' | 'waiting'>;
+}) {
   const t = useTranslations('organization');
   return (
     <>
       {node.agents.map((agent) => (
-        <OrganizationAgentNode key={agent.agent.id} node={agent} />
+        <OrganizationAgentNode key={agent.agent.id} node={agent} work={work} />
       ))}
       {node.goals.length > 0 && (
         <li className="ms-4 mt-1 border-s border-sidebar-border ps-4">
