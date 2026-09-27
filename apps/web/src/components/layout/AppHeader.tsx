@@ -31,6 +31,7 @@ export default function AppHeader({
   pageSlotRef,
   pageHidden = false,
   titleLead,
+  className,
 }: {
   title: ReactNode;
   // The page's own name for the browser tab, before the breadcrumb (a task's title).
@@ -54,6 +55,7 @@ export default function AppHeader({
   // The workspace layout shows no page (the chat or a tool in its place): the page's own
   // controls stay mounted but out of sight, so they never act on a page nobody sees.
   pageHidden?: boolean;
+  className?: string;
 }) {
   const t = useTranslations('nav');
   const { can } = usePermissions();
@@ -72,7 +74,10 @@ export default function AppHeader({
     // sidebar's hover fill and a 16px icon, a hairline between the groups.
     <header
       data-app-header=""
-      className="relative flex h-12 shrink-0 items-center gap-2 border-b border-sidebar-border px-2 sm:px-3"
+      className={cn(
+        'relative flex h-12 shrink-0 items-center gap-2 border-b border-sidebar-border px-2 sm:px-3',
+        className,
+      )}
     >
       <SidebarTrigger />
       <Separator orientation="vertical" className="h-4" />

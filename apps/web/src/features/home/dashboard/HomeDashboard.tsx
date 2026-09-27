@@ -71,8 +71,8 @@ function Sections({
 
 // Start (owner, 2026-09-24, direction C "Kennzahlen und Heute"; docs/helena-decisions/
 // dashboard.md): the page toolbar holds today's date and "Anpassen"; a row of figure tiles
-// (what waits, who works, the reader's tasks, every plan limit, the system, updates …),
-// and below it the sections ("Braucht dich", "Meine Aufgaben", "Läuft gerade", "Als
+// (who works, the reader's tasks, every plan limit, the system, updates …),
+// and below it the sections ("Meine Aufgaben", "Läuft gerade", "Als
 // Nächstes", "Projekte"). Every tile and section is a widget of the registry
 // (extensions/dashboardWidgets); the reader hides and orders them in "Anpassen".
 export default function HomeDashboard() {

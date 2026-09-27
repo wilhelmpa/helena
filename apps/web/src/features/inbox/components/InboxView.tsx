@@ -3,7 +3,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
-import type { Notification } from '@/lib/api/endpoints/notifications';
+import type { Notification, NotificationType } from '@/lib/api/endpoints/notifications';
 import { cn } from '@/lib/utils';
 import { useLiveRefresh } from '@/hooks/useLiveRefresh';
 import { revScope } from '@/utils/revScopes';
@@ -17,9 +17,9 @@ import {
   useSetNotificationRead,
   useSnoozeNotification,
   useDeleteNotification,
-  useMarkAllRead,
-  useDeleteNotifications,
 } from '../services/notifications.service';
+
+const READING_TYPES: NotificationType[] = ['assigned', 'commented', 'state_changed'];
 
 // The project's notifications: the list beside the task a notification is about. Its
 // controls are the page's header row (InboxToolbar), after the page's tabs (`leading`).
@@ -38,12 +38,14 @@ export default function InboxView({
   const [selected, setSelected] = useState<Notification | null>(null);
   const isMobile = useIsMobile();
 
-  const query = useNotificationsQuery(projectKey, projectId, filters);
+  const selectedTypes = filters.types?.filter((type) => READING_TYPES.includes(type));
+  const query = useNotificationsQuery(projectKey, projectId, {
+    ...filters,
+    types: selectedTypes?.length ? selectedTypes : READING_TYPES,
+  });
   const setRead = useSetNotificationRead(projectKey);
   const snooze = useSnoozeNotification(projectKey);
   const deleteOne = useDeleteNotification(projectKey);
-  const markAllRead = useMarkAllRead(projectKey, projectId);
-  const deleteNotifications = useDeleteNotifications(projectKey, projectId);
 
   const items = useMemo(() => query.data?.pages.flatMap((p) => p.items) ?? [], [query.data]);
 
@@ -67,11 +69,8 @@ export default function InboxView({
     <div className="flex h-full min-h-0">
       <InboxToolbar
         leading={leading}
-        filters={filters}
+        filters={{ ...filters, types: selectedTypes?.length ? selectedTypes : undefined }}
         onFiltersChange={changeFilters}
-        onMarkAllRead={() => markAllRead.mutate()}
-        onDeleteRead={() => deleteNotifications.mutate('read')}
-        onDeleteReadCompleted={() => deleteNotifications.mutate('read-completed')}
       />
       <div
         className={cn(

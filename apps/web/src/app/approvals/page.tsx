@@ -1,5 +1,5 @@
-import ApprovalsPage from '@/features/approvals/ApprovalsPage';
+import { redirect } from 'next/navigation';
 
 export default function Approvals() {
-  return <ApprovalsPage />;
+  redirect('/inbox');
 }

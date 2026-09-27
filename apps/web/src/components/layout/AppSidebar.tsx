@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import type { Project } from '@/lib/api/endpoints/projects';
 import type { View } from '@/lib/api/endpoints/views';
 import { useSession } from '@/lib/auth-client';
 import { godPath } from '@/utils/paths';
 import { GOD_SECTIONS } from '@/utils/godSections';
 import { useSidebarSide } from '@/hooks/useSidebarSide';
+import { APP_NAME } from '@/utils/app';
 import {
   Sidebar,
   SidebarContent,
@@ -19,7 +20,6 @@ import {
 import SidebarAccountRow from '@/components/brand/SidebarAccountRow';
 import SidebarProjectSwitcher from './SidebarProjectSwitcher';
 import { SidebarHomeTree, SidebarPersonalNav, SidebarProjectTree } from './SidebarTreeNav';
-import { APP_NAME } from '@/utils/app';
 
 export default function AppSidebar({
   projects,
@@ -39,6 +39,7 @@ export default function AppSidebar({
   onDeleteView: (view: View) => Promise<void>;
 }) {
   const t = useTranslations('nav');
+  const locale = useLocale();
   const side = useSidebarSide();
   const teamIds = [...new Set(projects.map((project) => project.teamId))];
   const homeTeamId = teamIds.length === 1 ? teamIds[0]! : null;
@@ -50,14 +51,14 @@ export default function AppSidebar({
     setMounted(true);
     const updateClock = () =>
       setClock(
-        new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(
+        new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(
           new Date(),
         ),
       );
     updateClock();
     const timer = window.setInterval(updateClock, 30_000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [locale]);
 
   return (
     <Sidebar collapsible="offcanvas" side={side} className="helena-sidebar">

@@ -9,9 +9,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { useProjectFeatures } from '@/hooks/useProjectFeatures';
 import { usePersistedBoolean } from '@/hooks/usePersistedBoolean';
 import { useProjectSettingsNavItems } from '@/hooks/useProjectSettingsNavItems';
-import { usePendingApprovalCount } from '@/services/approvals.service';
-import { useProposalCount } from '@/features/agent-runtime/services/agentRuntime.service';
-import { usePipelineApprovals } from '@/services/pipelines.service';
+import { useOwnerInbox } from '@/features/inbox/useOwnerInbox';
 import { useViewFoldersQuery, useViewsQuery } from '@/services/views.service';
 import type { View } from '@/lib/api/endpoints/views';
 import { useFilesQuery } from '@/services/files.service';
@@ -118,31 +116,17 @@ function TreeBranch({
   );
 }
 
-function ApprovalBadge({ teamIds }: { teamIds: number[] }) {
+function InboxBadge({ teamIds }: { teamIds: number[] }) {
   const t = useTranslations('nav');
-  const pending = usePendingApprovalCount().data?.count ?? 0;
-  const pipelines = usePipelineApprovals().data?.length ?? 0;
-  const proposals = useProposalCount().data?.count ?? 0;
+  const { actions } = useOwnerInbox();
   return (
     <>
       {teamIds.map((teamId) => (
         <SidebarApprovalsRefresh key={teamId} teamId={teamId} />
       ))}
-      <TreeBranch
-        id="you:inbox"
-        label={t('sidebarInbox')}
-        href="/inbox"
-        activePaths={['/approvals']}
-        action={
-          pending + pipelines + proposals > 0 && (
-            <span className="helena-tree-badge">{pending + pipelines + proposals}</span>
-          )
-        }
-      >
-        <TreeLink href="/approvals" nested>
-          {t('approvals')}
-        </TreeLink>
-      </TreeBranch>
+      <TreeLink href="/inbox" badge={actions.length}>
+        {t('sidebarInbox')}
+      </TreeLink>
     </>
   );
 }
@@ -153,7 +137,7 @@ export function SidebarPersonalNav({ teamIds }: { teamIds: number[] }) {
     <section className="helena-sidebar-section">
       <h2>{t('sidebarYou')}</h2>
       <TreeLink href="/chat">{t('sidebarHomeChat')}</TreeLink>
-      <ApprovalBadge teamIds={teamIds} />
+      <InboxBadge teamIds={teamIds} />
     </section>
   );
 }
@@ -252,9 +236,6 @@ export function SidebarHomeTree({ teamId }: { teamId: number | null }) {
             </TreeLink>
           </>
         )}
-        <TreeLink href="/inbox" nested>
-          {t('inbox')}
-        </TreeLink>
       </TreeBranch>
     </section>
   );
@@ -396,11 +377,6 @@ export function SidebarProjectTree({
         {can('actions', 'read') && (
           <TreeLink href={workflowsPath(projectKey)} nested>
             {t('workflows')}
-          </TreeLink>
-        )}
-        {can('ai_agents', 'edit') && (
-          <TreeLink href={projectApprovalsPath(projectKey)} nested>
-            {t('approvals')}
           </TreeLink>
         )}
       </TreeBranch>

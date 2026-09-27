@@ -49,6 +49,7 @@ export default function Shell({
   globalHome = false,
   globalTitle,
   autoOpenGlobalChat = true,
+  mobileHeaderOnly = false,
 }: {
   children: ReactNode;
   defaultSidebarOpen?: boolean;
@@ -56,6 +57,7 @@ export default function Shell({
   // The page name on a Home-level page; the header shows it as "Start › page".
   globalTitle?: string;
   autoOpenGlobalChat?: boolean;
+  mobileHeaderOnly?: boolean;
 }) {
   const t = useTranslations('nav');
   const tShell = useTranslations('shell');
@@ -266,6 +268,7 @@ export default function Shell({
             />
             <SidebarInset className="min-w-0">
               <AppHeader
+                className={mobileHeaderOnly ? 'md:hidden' : undefined}
                 title={
                   globalHome ? (
                     globalTitle ? (
