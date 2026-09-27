@@ -23,6 +23,41 @@ import isolation_common as common  # noqa: E402
 import egress  # noqa: E402
 import plan_proxy  # noqa: E402
 import sandbox  # noqa: E402
+import launcher as launcher_module  # noqa: E402
+
+
+class AreaTrashTest(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.launcher = launcher_module.Launcher.__new__(launcher_module.Launcher)
+        self.launcher.config = types.SimpleNamespace(
+            home_slug='home', workspace_root=str(self.root / 'workspaces'),
+            vault_root=str(self.root / 'vault'))
+        self.launcher.project_account = lambda slug: object()
+        self.launcher.registry_key = lambda slug: 'DEMO'
+        (self.root / 'workspaces/demo/design').mkdir(parents=True)
+        (self.root / 'vault/Projects/DEMO/design').mkdir(parents=True)
+
+    def request(self, kind, folder='design'):
+        return {'slug': 'demo', 'folder': folder, 'kind': kind, 'date': '2026-09-27',
+                'eventId': '123e4567-e89b-42d3-a456-426614174000'}
+
+    def test_moves_both_area_folders_without_changing_contents(self):
+        (self.root / 'workspaces/demo/design/work.txt').write_text('work')
+        (self.root / 'vault/Projects/DEMO/design/brief.md').write_text('brief')
+        self.assertEqual(self.launcher._trash_area(self.request('workspace')), {'present': True})
+        self.assertEqual(self.launcher._trash_area(self.request('files')), {'present': True})
+        name = '2026-09-27-design-123e4567-e89b-42d3-a456-426614174000'
+        self.assertEqual((self.root / 'workspaces/demo/.trash' / name / 'work.txt').read_text(), 'work')
+        self.assertEqual((self.root / 'vault/.trash/Projects/DEMO' / name / 'brief.md').read_text(), 'brief')
+        self.assertEqual(self.launcher._trash_area(self.request('workspace')), {'present': True})
+
+    def test_rejects_an_area_path_outside_the_project(self):
+        for folder in ('../other', '.trash', 'design/nested'):
+            with self.subTest(folder=folder), self.assertRaises(common.IsolationError):
+                self.launcher._trash_area(self.request('workspace', folder))
 
 
 def config_file(directory: Path, **overrides) -> Path:

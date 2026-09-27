@@ -94,6 +94,7 @@ REQUEST_KEYS = {
     'ensure-project-user': {'v', 'op', 'slug', 'profiles'},
     'remove-project-user': {'v', 'op', 'slug'},
     'release-project-paths': {'v', 'op', 'slug', 'profiles', 'workspace'},
+    'trash-area': {'v', 'op', 'slug', 'folder', 'kind', 'date', 'eventId'},
     'browser-state': {'v', 'op', 'action', 'slug', 'projectId', 'eventId'},
     **PREVIEW_OPS,
 }
@@ -105,10 +106,14 @@ REQUIRED_KEYS = {
     'ensure-project-user': {'v', 'op', 'slug'},
     'remove-project-user': {'v', 'op', 'slug'},
     'release-project-paths': {'v', 'op', 'slug'},
+    'trash-area': {'v', 'op', 'slug', 'folder', 'kind', 'date', 'eventId'},
     'browser-state': {'v', 'op', 'action', 'slug', 'projectId'},
     **{op: {'v', 'op', 'slug'} for op in PREVIEW_OPS},
 }
 EVENT_ID = __import__('re').compile(r'^[A-Za-z0-9-]{1,64}$')
+AREA_FOLDER = __import__('re').compile(r'^[a-z0-9][a-z0-9-]{0,63}\Z')
+AREA_DATE = __import__('re').compile(r'^[0-9]{4}-[0-9]{2}-[0-9]{2}\Z')
+AREA_EVENT = __import__('re').compile(r'^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\Z')
 AGENT_RUNTIME = __import__('re').compile(r'^[a-z][a-z0-9-]{0,31}$')
 HOME_TARGET = __import__('re').compile(r'^[A-Za-z0-9._-]{1,64}(?:/[A-Za-z0-9._-]{1,64}){0,2}$')
 
@@ -269,6 +274,8 @@ class Launcher:
                 await self.remove_project_user(request, writer, caller)
             elif op == 'release-project-paths':
                 await self.release_project_paths(request, writer, caller)
+            elif op == 'trash-area':
+                await self.trash_area(request, writer)
             elif op == 'browser-state':
                 await self.browser_state(request, writer, caller)
         except IsolationError as error:
@@ -1294,6 +1301,72 @@ class Launcher:
                     os.close(fd)
         log(f'{caller}: released {released} entries of {slug} to the runner')
         return {'released': released}
+
+    async def trash_area(self, request: dict, writer) -> None:
+        async with self.user_lock:
+            result = self._trash_area(request)
+        writer.write(json_frame(T_RESULT, result))
+
+    def _trash_area(self, request: dict) -> dict:
+        slug = request['slug']
+        folder = request['folder']
+        kind = request['kind']
+        date = request['date']
+        event_id = request['eventId']
+        if not valid_slug(slug) or slug == self.config.home_slug:
+            raise IsolationError('slug', 'invalid project slug')
+        if (not isinstance(folder, str) or not AREA_FOLDER.fullmatch(folder) or
+                kind not in ('workspace', 'files') or
+                not isinstance(date, str) or not AREA_DATE.fullmatch(date) or
+                not isinstance(event_id, str) or not AREA_EVENT.fullmatch(event_id)):
+            raise IsolationError('request', 'invalid area trash request')
+        self.project_account(slug)
+        key = self.registry_key(slug)
+        name = f'{date}-{folder}-{event_id}'
+        if kind == 'workspace':
+            source_root = self.workspace(slug)
+            trash_parent = source_root
+            trash_parts = ('.trash',)
+        else:
+            source_root = os.path.join(self.config.vault_root, 'Projects', key)
+            trash_parent = self.config.vault_root
+            trash_parts = ('.trash', 'Projects', key)
+        source_fd = open_path_nofollow(source_root)
+        trash_fd = open_path_nofollow(trash_parent)
+        try:
+            for part in trash_parts:
+                try:
+                    os.mkdir(part, 0o700 if kind == 'workspace' else 0o2770, dir_fd=trash_fd)
+                except FileExistsError:
+                    pass
+                next_fd = os.open(part, O_DIR, dir_fd=trash_fd)
+                os.close(trash_fd)
+                trash_fd = next_fd
+            if kind == 'workspace':
+                if os.geteuid() == 0:
+                    os.fchown(trash_fd, 0, 0)
+                os.fchmod(trash_fd, 0o700)
+            try:
+                source = os.stat(folder, dir_fd=source_fd, follow_symlinks=False)
+            except FileNotFoundError:
+                source = None
+            try:
+                target = os.stat(name, dir_fd=trash_fd, follow_symlinks=False)
+            except FileNotFoundError:
+                target = None
+            if source and not stat.S_ISDIR(source.st_mode):
+                raise IsolationError('path', 'the area path is not a plain directory')
+            if target and not stat.S_ISDIR(target.st_mode):
+                raise IsolationError('path', 'the area trash path is not a plain directory')
+            if not source:
+                return {'present': target is not None}
+            if target:
+                raise IsolationError('path', 'the area trash destination already exists')
+            os.rename(folder, name, src_dir_fd=source_fd, dst_dir_fd=trash_fd)
+            return {'present': True}
+        finally:
+            os.close(source_fd)
+            os.close(trash_fd)
 
     async def remove_project_user(self, request: dict, writer, caller: str) -> None:
         async with self.user_lock:

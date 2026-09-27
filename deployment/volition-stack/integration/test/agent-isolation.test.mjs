@@ -4,7 +4,7 @@ import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
-import { launcherRequest, LauncherError } from "../agent-launcher.mjs";
+import { createAgentLauncher, launcherRequest, LauncherError } from "../agent-launcher.mjs";
 import { createProvisioner } from "../provisioner.mjs";
 import {
   createIsolatedProjectBrowserDeprovisioner,
@@ -68,6 +68,22 @@ function fakeLauncher(calls) {
       calls.push({ op: "release", slug, profiles, workspace });
       return { released: 0 };
     },
+    async trashArea(slug, folder, kind, date, eventId) {
+      calls.push({ op: "trash-area", slug, folder, kind });
+      const source = kind === "workspace"
+        ? path.join(root, "projects", slug, folder)
+        : path.join(root, "vault/Projects/DEMO", folder);
+      const destination = kind === "workspace"
+        ? path.join(root, "projects", slug, ".trash", `${date}-${folder}-${eventId}`)
+        : path.join(root, "vault/.trash/Projects/DEMO", `${date}-${folder}-${eventId}`);
+      const stat = await fs.stat(source).catch(() => null);
+      if (!stat) return { present: await fs.stat(destination).then(() => true, () => false) };
+      await fs.mkdir(path.dirname(destination), { recursive: true });
+      await fs.chmod(source, 0o700);
+      await fs.rename(source, destination);
+      await fs.chmod(destination, stat.mode & 0o7777);
+      return { present: true };
+    },
     async browserState() {
       throw new Error("not requested");
     },
@@ -96,6 +112,27 @@ const projectAgent = async (config, project, agentId) => {
 };
 
 describe("provisioning with agent isolation", () => {
+  it("moves a deleted area's workspace files to its local trash", async () => {
+    const calls = [];
+    const options = {
+      launcher: fakeLauncher(calls),
+      ensurePlanCoordinator: coordinator,
+      ensurePlanProjectAgent: projectAgent,
+      execute: async () => ({ stdout: "", stderr: "" }),
+    };
+    const first = { ...envelope(), areas: [{ id: 4, name: "Design", folder: "design" }] };
+    await createProvisioner(config(), options).provision(first);
+    await fs.writeFile(path.join(root, "projects/demo/design/work.txt"), "important");
+    await fs.chmod(path.join(root, "projects/demo/design"), 0o000);
+    const deleted = { ...first, eventId: "323e4567-e89b-42d3-a456-426614174000", areas: [] };
+    await createProvisioner(config(), options).provision(deleted);
+    const trashed = path.join(root, `projects/demo/.trash/2026-09-21-design-${deleted.eventId}`);
+    await fs.chmod(trashed, 0o700);
+    assert.equal(await fs.readFile(path.join(trashed, "work.txt"), "utf8"), "important");
+    assert.equal(calls.some((call) => call.op === "release"), false);
+    assert.deepEqual(calls.filter((call) => call.op === "trash-area").map((call) => call.kind), ["workspace", "files"]);
+  });
+
   it("makes the project user before the workspace is written and again with every folder", async () => {
     const calls = [];
     const provisioner = createProvisioner(config(), {
@@ -173,6 +210,23 @@ describe("agent launcher client", () => {
         launcherRequest(fake.socketPath, { op: "ensure-project-user", slug: "x" }),
         (error) => error instanceof LauncherError && error.code === "slug",
       );
+    } finally {
+      fake.close();
+    }
+  });
+
+  it("asks the launcher to trash only a named project area", async () => {
+    const fake = await server({ kind: 0x15, body: { present: true } });
+    try {
+      const client = createAgentLauncher({ agentLauncherSocket: fake.socketPath, agentIsolation: true });
+      assert.deepEqual(
+        await client.trashArea("demo", "design", "workspace", "2026-09-27", eventId),
+        { present: true },
+      );
+      assert.deepEqual(fake.seen, [{
+        v: 1, op: "trash-area", slug: "demo", folder: "design", kind: "workspace",
+        date: "2026-09-27", eventId,
+      }]);
     } finally {
       fake.close();
     }
