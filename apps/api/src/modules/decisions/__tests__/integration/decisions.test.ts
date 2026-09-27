@@ -888,7 +888,7 @@ describe('the mail classifier', () => {
 
   it('defers ten independent retry scopes without pool starvation and files them on later runs', async () => {
     const { asOwner, teamId, project, owner } = await setup();
-    const scopes = [];
+    const scopes: { target: typeof project; config: ReturnType<typeof mailTriageConfig> }[] = [];
     for (let i = 0; i < 10; i++) {
       const target =
         i === 0
