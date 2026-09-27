@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
+import { execFileSync } from 'node:child_process';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { createServer, type Server, type Socket } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { RunnerConfig } from '../config';
 import { loadConfig } from '../config';
+import { claudeMcpArgs } from '../cli-runtime';
 import { execute } from '../execute';
 import { isolatedEnv, launch, LaunchError, profileHelper } from '../isolation';
 import { IsolatedProfile } from '../policy';
@@ -375,6 +377,37 @@ describe('isolated execution', () => {
       TERMINAL_TEMP_DIR: '/tmp',
     });
     expect(seen.stdin).toBe('the task');
+  });
+
+  it('passes the isolated Claude key from the environment to the MCP header helper', async () => {
+    const { path, seen } = await fakeLauncher((socket) => {
+      socket.end(frame(0x13, JSON.stringify({ code: 0 })));
+    });
+    process.env.AGENT_ISOLATION = 'on';
+    process.env.VOLITION_LAUNCHER_SOCKET = path;
+    const mcpArgs = claudeMcpArgs([
+      {
+        name: 'itsaplan',
+        transport: 'http',
+        url: 'http://127.0.0.1:3000/mcp',
+        headers: [{ name: 'Authorization', value: { template: 'Bearer ${ITSAPLAN_API_KEY}' } }],
+      },
+    ]);
+    await execute(config({ agent: 'claude', args: mcpArgs, outputFormat: 'text' }), {
+      prompt: 'the task',
+      systemPrompt: '',
+      env: { ITSAPLAN_RUN_ID: '12' },
+    });
+    const sent = seen.request as { args: string[]; env: Record<string, string> };
+    expect(sent.env.ITSAPLAN_API_KEY).toBe('agent-key');
+    expect(sent.args.join(' ')).not.toContain('agent-key');
+    const mcp = JSON.parse(sent.args[sent.args.indexOf('--mcp-config') + 1]!).mcpServers
+      .itsaplan as { headersHelper: string };
+    const output = execFileSync('sh', ['-c', mcp.headersHelper], {
+      env: { PATH: process.env.PATH, ...sent.env },
+      encoding: 'utf8',
+    });
+    expect(JSON.parse(output)).toEqual({ 'x-api-key': 'agent-key' });
   });
 
   it('never starts an agent unisolated while isolation is on', async () => {

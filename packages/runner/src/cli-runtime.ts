@@ -79,6 +79,8 @@ const CHECK_INTERVAL_MS = 60_000;
 const PROBE_INTERVAL_MS = 10 * 60_000;
 const PROBE_TIMEOUT_MS = 30_000;
 const PLUGIN_NAME = 'helena';
+const HELENA_MCP_HEADERS_HELPER =
+  'node -e \'const key=process.env.ITSAPLAN_API_KEY;if(!key)process.exit(1);process.stdout.write(JSON.stringify({"x-api-key":key}))\'';
 // Where the runner writes below an agent's home.
 const HOME_STATE = '.helena';
 
@@ -160,7 +162,6 @@ export function claudeMcpArgs(specs: McpServerSpec[]): string[] {
     const result = values(spec.headers);
     if (spec.name === HELENA_MCP_SERVER) {
       delete result.Authorization;
-      result['x-api-key'] = '${ITSAPLAN_API_KEY}';
     }
     return result;
   };
@@ -171,7 +172,12 @@ export function claudeMcpArgs(specs: McpServerSpec[]): string[] {
         ? // Claude Code hands a stdio server its whole environment, so passEnv needs
           // nothing here; a ${VAR} of an unset variable would fail the whole config.
           { type: 'stdio', command: spec.command, args: spec.args ?? [], env: values(spec.env) }
-        : { type: spec.transport, url: spec.url, headers: headers(spec) },
+        : {
+            type: spec.transport,
+            url: spec.url,
+            headers: headers(spec),
+            ...(spec.name === HELENA_MCP_SERVER && { headersHelper: HELENA_MCP_HEADERS_HELPER }),
+          },
     ]),
   );
   return [
