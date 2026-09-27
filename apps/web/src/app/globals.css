@@ -1567,3 +1567,10 @@ html[data-kiosk-display='dual'] [data-slot='alert-dialog-content'] {
   min-width: 0;
   flex: 1;
 }
+
+/* The approved Wissen document uses the canvas from the top edge of the desktop shell. */
+@media (min-width: 1024px) {
+  html:has([data-project-knowledge]) [data-app-header] {
+    display: none;
+  }
+}

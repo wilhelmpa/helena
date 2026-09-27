@@ -8,7 +8,7 @@ test('project picker and upload paths retain their project and entire relative p
   assert.equal(path, 'Projects/VOL/Files/proof/Cycle.md');
   assert.equal(
     vaultNotePath(path),
-    '/project/VOL/docs?path=Projects%2FVOL%2FFiles%2Fproof%2FCycle.md',
+    '/project/VOL/files?path=Files%2Fproof&file=Files%2Fproof%2FCycle.md',
   );
   assert.equal(chatVaultPath('VOL', 'Chat Uploads/a b.pdf'), 'Projects/VOL/Chat Uploads/a b.pdf');
   assert.deepEqual(chatUploadScope('VOL'), { kind: 'project', projectKey: 'VOL', root: 'vault' });
