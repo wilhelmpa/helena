@@ -45,6 +45,7 @@ export const MailClassification = t.Object({
       approvalId: t.Optional(t.Nullable(t.Number())),
       agentId: t.Optional(t.Nullable(t.Number())),
       receiptIds: t.Optional(t.Array(t.Number())),
+      attemptedAt: t.Optional(t.String()),
       note: t.Optional(t.Nullable(t.String())),
     }),
   ),

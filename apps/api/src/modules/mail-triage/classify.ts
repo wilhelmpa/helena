@@ -32,6 +32,7 @@ import { moveThread } from '#modules/mail/threads/move';
 import { mailTriageConfig, type MailTriageConfig } from './config';
 import { isTkSender } from './tk';
 import { taskEligibility } from './task-policy';
+import { EMPTY_RECEIPT_NOTE, FAILED_RECEIPT_NOTE, recordReceiptAttempt } from './receipt-retry';
 
 // Task eligibility follows the application policy; invoice filing is independent of it.
 // Uncertain task decisions stay visible for review in the project's inbox.
@@ -402,13 +403,15 @@ async function fileReceipts(
       kind: 'receipt',
       projectId,
       receiptIds,
-      note: receiptIds.length ? null : 'No supported receipt original found.',
+      note: receiptIds.length ? null : EMPTY_RECEIPT_NOTE,
+      ...(receiptIds.length ? {} : { attemptedAt: new Date().toISOString() }),
     };
   } catch {
     return {
       kind: 'skipped',
       projectId,
-      note: 'Receipt filing failed; retry on the next triage run.',
+      note: FAILED_RECEIPT_NOTE,
+      attemptedAt: new Date().toISOString(),
     };
   }
 }
@@ -420,45 +423,61 @@ export async function retryReceiptFiling(
   projectId?: number,
 ) {
   if (config.receipts !== 'auto' || !receiptIntake) return { completed: 0, failed: 0 };
+  const eligible = and(
+    eq(helenaMailClassification.teamId, teamId),
+    eq(helenaMailClassification.category, 'invoice'),
+    inArray(helenaMailClassification.status, ['classified', 'unsure']),
+    isNull(mailMessage.deletedAt),
+    sql`${mailThread.projectId} IS NOT NULL`,
+    eq(mailAccount.enabled, true),
+    sql`${mailAccount.credentialId} IS NOT NULL`,
+    projectId === undefined ? undefined : eq(mailThread.projectId, projectId),
+    config.accountIds.length ? inArray(mailAccount.id, config.accountIds) : undefined,
+    sql`NOT EXISTS (SELECT 1 FROM jsonb_array_elements(${helenaMailClassification.actions}) action
+      WHERE action->>'kind' = 'receipt' AND action->'receiptIds' IS DISTINCT FROM '[]'::jsonb)`,
+  );
   const pending = await db
-    .select({ row: helenaMailClassification, projectId: mailThread.projectId })
+    .select({ id: helenaMailClassification.id })
     .from(helenaMailClassification)
     .innerJoin(mailMessage, eq(mailMessage.id, helenaMailClassification.messageId))
     .innerJoin(mailThread, eq(mailThread.id, mailMessage.threadId))
     .innerJoin(mailAccount, eq(mailAccount.id, mailMessage.accountId))
-    .where(
-      and(
-        eq(helenaMailClassification.teamId, teamId),
-        eq(helenaMailClassification.category, 'invoice'),
-        inArray(helenaMailClassification.status, ['classified', 'unsure']),
-        isNull(mailMessage.deletedAt),
-        eq(mailAccount.enabled, true),
-        sql`${mailAccount.credentialId} IS NOT NULL`,
-        projectId === undefined ? undefined : eq(mailThread.projectId, projectId),
-        config.accountIds.length ? inArray(mailAccount.id, config.accountIds) : undefined,
-        sql`NOT EXISTS (SELECT 1 FROM jsonb_array_elements(${helenaMailClassification.actions}) action WHERE action->>'kind' = 'receipt')`,
-      ),
+    .where(eligible)
+    .orderBy(
+      sql`coalesce((SELECT max(action->>'attemptedAt')
+        FROM jsonb_array_elements(${helenaMailClassification.actions}) action
+        WHERE action->>'kind' = 'receipt' OR action->>'note' = ${FAILED_RECEIPT_NOTE}), '')`,
+      asc(helenaMailClassification.id),
     )
-    .orderBy(asc(helenaMailClassification.id))
     .limit(BATCH);
   let done = 0;
   let failed = 0;
-  for (const { row, projectId: target } of pending) {
-    const action = await fileReceipts(row, target, config, actorUserId);
-    if (!action) continue;
-    await db
-      .update(helenaMailClassification)
-      .set({
-        actions: [
-          ...row.actions.filter(
-            (a) => a.note !== 'Receipt filing failed; retry on the next triage run.',
-          ),
-          action,
-        ],
-      })
-      .where(eq(helenaMailClassification.id, row.id));
-    if (action.kind === 'receipt') done++;
-    else failed++;
+  for (const candidate of pending) {
+    const action = await db.transaction(async (tx) => {
+      // Serialize retries and owner corrections before rechecking the current source scope.
+      await tx
+        .select({ id: helenaMailClassification.id })
+        .from(helenaMailClassification)
+        .where(eq(helenaMailClassification.id, candidate.id))
+        .for('update');
+      const [current] = await tx
+        .select({ row: helenaMailClassification, projectId: mailThread.projectId })
+        .from(helenaMailClassification)
+        .innerJoin(mailMessage, eq(mailMessage.id, helenaMailClassification.messageId))
+        .innerJoin(mailThread, eq(mailThread.id, mailMessage.threadId))
+        .innerJoin(mailAccount, eq(mailAccount.id, mailMessage.accountId))
+        .where(and(eligible, eq(helenaMailClassification.id, candidate.id)));
+      if (!current) return null;
+      const result = await fileReceipts(current.row, current.projectId, config, actorUserId);
+      if (!result) return null;
+      await tx
+        .update(helenaMailClassification)
+        .set({ actions: recordReceiptAttempt(current.row.actions, result) })
+        .where(eq(helenaMailClassification.id, candidate.id));
+      return result;
+    });
+    if (action?.kind === 'receipt' && action.receiptIds?.length) done++;
+    else if (action?.kind === 'skipped') failed++;
   }
   return { completed: done, failed };
 }

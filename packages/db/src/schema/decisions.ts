@@ -291,6 +291,7 @@ export interface MailClassificationAction {
   approvalId?: number | null;
   agentId?: number | null;
   receiptIds?: number[];
+  attemptedAt?: string;
   note?: string | null;
 }
 

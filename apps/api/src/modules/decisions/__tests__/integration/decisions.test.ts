@@ -714,6 +714,158 @@ describe('the mail classifier', () => {
     }
   });
 
+  it('retries legacy empty receipt actions without duplicates or owner/classifier changes', async () => {
+    const { asOwner, teamId, project, owner } = await setup();
+    const { accountId, inboxId } = await insertMailAccount(teamId, project.id);
+    const message = await insertMessage({
+      teamId,
+      accountId,
+      folderId: inboxId,
+      projectId: project.id,
+      subject: 'Payment receipt',
+      text: 'Amount paid: 14.00 EUR',
+    });
+    const empty = {
+      kind: 'receipt',
+      projectId: project.id,
+      receiptIds: [],
+      note: 'No supported receipt original found.',
+    };
+    await db.insert(helenaMailClassification).values({
+      teamId,
+      threadId: message.threadId,
+      messageId: message.messageRowId,
+      status: 'classified',
+      projectId: project.id,
+      category: 'invoice',
+      priority: 'normal',
+      createTask: false,
+      actions: [empty],
+    });
+    const config = mailTriageConfig({ receipts: 'auto', accountIds: [accountId] });
+    let calls = 0;
+    let available = false;
+    useReceiptIntake(async (input) => {
+      calls++;
+      return available ? intakeMailReceipts({ ...input, skipMatching: true }) : [];
+    });
+    try {
+      expect(await retryReceiptFiling(teamId, config, owner.userId, project.id)).toEqual({
+        completed: 0,
+        failed: 0,
+      });
+      expect(await retryReceiptFiling(teamId, config, owner.userId, project.id)).toEqual({
+        completed: 0,
+        failed: 0,
+      });
+      const emptyView = (
+        await asOwner.mail.threads({ threadId: message.threadId }).classification.get()
+      ).data!.classification!;
+      expect(emptyView.actions).toHaveLength(1);
+      expect(emptyView.actions[0]).toMatchObject(empty);
+      expect(emptyView.actions[0]!.attemptedAt).toBeString();
+      await asOwner.mail
+        .threads({ threadId: message.threadId })
+        .classification.patch({ priority: 'high' });
+      available = true;
+      const results = await Promise.all([
+        retryReceiptFiling(teamId, config, owner.userId, project.id),
+        retryReceiptFiling(teamId, config, owner.userId, project.id),
+      ]);
+      expect(results.reduce((n, row) => n + row.completed, 0)).toBe(1);
+      expect(calls).toBe(3);
+      expect(await retryReceiptFiling(teamId, config, owner.userId, project.id)).toEqual({
+        completed: 0,
+        failed: 0,
+      });
+      const current = (
+        await asOwner.mail.threads({ threadId: message.threadId }).classification.get()
+      ).data!.classification!;
+      expect(current).toMatchObject({
+        category: 'invoice',
+        priority: 'high',
+        corrected: true,
+        issueId: null,
+        createTask: false,
+      });
+      expect(
+        current.actions.filter((action) => action.kind === 'receipt' && action.receiptIds?.length),
+      ).toHaveLength(1);
+      expect(
+        current.actions.filter(
+          (action) => action.kind === 'receipt' && action.receiptIds?.length === 0,
+        ),
+      ).toHaveLength(1);
+      const receipts = await asOwner.projects({ projectKey: project.key }).receipts.get();
+      expect(receipts.status).toBe(200);
+      expect(receipts.data!.receipts).toHaveLength(1);
+      expect(seen).toHaveLength(0);
+    } finally {
+      useReceiptIntake(intakeMailReceipts);
+    }
+  });
+
+  it('rotates past twenty empty originals and respects an owner category correction', async () => {
+    const { asOwner, teamId, project, owner } = await setup();
+    const { accountId, inboxId } = await insertMailAccount(teamId, project.id);
+    const messages = [];
+    for (let i = 0; i < 22; i++) {
+      const message = await insertMessage({
+        teamId,
+        accountId,
+        folderId: inboxId,
+        projectId: project.id,
+        subject: 'Invoice',
+        text: 'Original not yet supported',
+      });
+      messages.push(message);
+      await db.insert(helenaMailClassification).values({
+        teamId,
+        threadId: message.threadId,
+        messageId: message.messageRowId,
+        status: 'classified',
+        projectId: project.id,
+        category: 'invoice',
+        actions: [
+          {
+            kind: 'receipt',
+            projectId: project.id,
+            receiptIds: [],
+            note: 'No supported receipt original found.',
+          },
+        ],
+      });
+    }
+    const config = mailTriageConfig({ receipts: 'auto', accountIds: [accountId] });
+    const attempted: number[] = [];
+    useReceiptIntake(async (input) => {
+      attempted.push(input.messageId);
+      return [];
+    });
+    try {
+      expect(await retryReceiptFiling(teamId, config, owner.userId, project.id)).toEqual({
+        completed: 0,
+        failed: 0,
+      });
+      expect(attempted).toHaveLength(20);
+      await asOwner.mail
+        .threads({ threadId: messages[21]!.threadId })
+        .classification.patch({ category: 'notification' });
+      attempted.length = 0;
+      await retryReceiptFiling(teamId, config, owner.userId, project.id);
+      expect(attempted[0]).toBe(messages[20]!.messageRowId);
+      expect(attempted).not.toContain(messages[21]!.messageRowId);
+      const corrected = (
+        await asOwner.mail.threads({ threadId: messages[21]!.threadId }).classification.get()
+      ).data!.classification!;
+      expect(corrected).toMatchObject({ category: 'notification', corrected: true });
+      expect(corrected.actions).toHaveLength(1);
+      expect(seen).toHaveLength(0);
+    } finally {
+      useReceiptIntake(intakeMailReceipts);
+    }
+  });
+
   it('classifies new mail, suggests the project and a task, and learns from corrections', async () => {
     const { asOwner, teamId, project, owner } = await setup();
     const credentialId = await connection(asOwner, teamId);

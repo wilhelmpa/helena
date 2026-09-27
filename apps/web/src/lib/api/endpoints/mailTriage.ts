@@ -39,6 +39,7 @@ export interface MailClassification extends MailTriageBadge {
     issueId?: number | null;
     agentId?: number | null;
     receiptIds?: number[];
+    attemptedAt?: string;
     note?: string | null;
   }[];
   issueId: number | null;
