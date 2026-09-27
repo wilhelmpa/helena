@@ -89,7 +89,10 @@ beforeEach(async () => {
 
 afterEach(async () => {
   await act(async () => root.unmount());
-  client.clear();
+  await act(async () => {
+    client.clear();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
   globalThis.fetch = previousFetch;
   dom.window.close();
   for (const [key, descriptor] of saved) {

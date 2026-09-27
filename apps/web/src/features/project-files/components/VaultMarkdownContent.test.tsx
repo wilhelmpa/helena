@@ -9,8 +9,9 @@ import { NextIntlClientProvider } from 'next-intl';
 import Link from 'next/link';
 import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { JSDOM } from 'jsdom';
+import { cleanStores } from 'nanostores';
 import { WebLinksContext } from '@/context/webLinks';
-import { SessionProvider } from '@/lib/auth-client';
+import { authClient, SessionProvider } from '@/lib/auth-client';
 import { filesScopeKey } from '@/services/files.service';
 import { vaultNotePath } from '@/utils/paths';
 import { webLinkScope } from '@/utils/webLinkScope';
@@ -197,6 +198,7 @@ afterEach(async () => {
   await act(async () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
   });
+  cleanStores(authClient.$store.atoms.session);
   client.clear();
   globalThis.fetch = originalFetch;
   dom.window.close();
