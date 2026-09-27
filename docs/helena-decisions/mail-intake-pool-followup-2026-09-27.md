@@ -2,6 +2,11 @@
 
 Source-only finding, separate from the bounded empty-receipt retry repair.
 
+Receipt-intake repair A is now prepared in isolation; its actual executor propagation and
+postcommit failure recovery are documented in `mail-intake-transaction-2026-09-27.md`.
+The findings below describe the original state through `df86ee23`. The full-project triage
+batch-lock path (B) remains unchanged and open; no separate lock pool was introduced.
+
 `packages/db/src/client.ts` constructs one postgres-js pool with no explicit `max` override
 (default ten connections). `receipts/receipts.ts:intakeMailReceipts` reserves a connection
 for a transaction and its project advisory lock, but `storeMailReceipts` and helpers execute

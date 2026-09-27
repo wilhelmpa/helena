@@ -51,8 +51,8 @@ const db = {
     };
     return query;
   },
-  transaction: async (body: (tx: { execute: () => Promise<void> }) => unknown) =>
-    body({ execute: async () => {} }),
+  transaction: async (body: (tx: unknown) => unknown): Promise<unknown> =>
+    body({ ...db, execute: async () => {} }),
   insert: (value: { name: string }) => ({
     values: (row: Record<string, unknown>) => ({
       onConflictDoNothing: () => ({
@@ -246,6 +246,7 @@ assert.equal(matchingCalls, expectedCalls);
 assert.equal(receipts.length, 1);
 assert.equal(receipts[0]!.status, expectedCalls ? 'matched' : 'open');
 assert.equal(files.size, 1);
-assert.deepEqual(indexed, [...files.keys()]);
+assert.deepEqual([...new Set(indexed)], [...files.keys()]);
+assert.equal(indexed.length, mode === 'existing' ? 2 : 1);
 assert.deepEqual([...files.values()][0], raw);
 console.log(`matching:${mode}:ok`);

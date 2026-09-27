@@ -259,12 +259,17 @@ async function indexExisting(
 export async function indexVaultPaths(
   relativePaths: string[],
   provenance: VaultWriteProvenance = EXTERNAL_PROVENANCE,
+  options: { throwOnError?: boolean } = {},
 ): Promise<void> {
   const present = new Map<string, Stats>();
   const gone = new Set<string>();
   for (const relative of new Set(relativePaths)) {
     if (!relative || isIgnoredPath(relative)) continue;
-    const stats = await statPath(relative);
+    const stats = options.throwOnError
+      ? await lstat(absoluteVaultPath(relative))
+      : await statPath(relative);
+    if (options.throwOnError && stats?.isSymbolicLink())
+      throw new Error('Cannot index a symbolic link');
     if (!stats || stats.isSymbolicLink()) {
       for (const indexed of await indexedPathsBelow(relative)) gone.add(indexed);
       continue;
@@ -288,6 +293,7 @@ export async function indexVaultPaths(
         provenance === EXTERNAL_PROVENANCE && writtenByNotes(stats) ? NOTES_PROVENANCE : provenance;
       await indexExisting(relative, stats, gone, author);
     } catch (error) {
+      if (options.throwOnError) throw error;
       if (isMissing(error)) gone.add(relative);
       else if (!isUnreadable(error)) console.error(`[vault] indexing ${relative} failed:`, error);
     }

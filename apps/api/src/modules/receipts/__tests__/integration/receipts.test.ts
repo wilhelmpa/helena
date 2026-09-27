@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { readdir, writeFile } from 'node:fs/promises';
-import { absoluteVaultPath } from '@repo/vault';
+import { absoluteVaultPath, findEntry } from '@repo/vault';
 import { readExportZip } from '@helena/finance';
-import { db, helenaBankTransaction, helenaDecision } from '@repo/db';
-import { eq } from 'drizzle-orm';
+import { db, helenaBankTransaction, helenaDecision, helenaMailClassification } from '@repo/db';
+import { eq, sql } from 'drizzle-orm';
 import { app, authedApi } from '#tests/helpers/app';
 import { signUpTestUser, type TestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
@@ -18,6 +19,8 @@ import { intakeMailReceipts, prepareMailReceipts } from '../../receipts';
 import { backfillMailReceipts } from '../../../../scripts/mail-receipt-backfill';
 import type { ReceiptDetailView, ReceiptView, TransactionView } from '../../views';
 import { makePdf } from '../pdf';
+import { retryReceiptFiling, useReceiptIntake } from '#modules/mail-triage/classify';
+import { mailTriageConfig } from '#modules/mail-triage/config';
 
 // Receipt matching end to end: statements in (CAMT and CSV, re-imported), receipts in (a
 // Factur-X PDF, XRechnung UBL files, an invoice mail), matching by the rules alone, by a
@@ -191,6 +194,46 @@ async function decisionOutcome(id: number | null | undefined) {
     .from(helenaDecision)
     .where(eq(helenaDecision.id, id ?? 0));
   return row;
+}
+
+async function intakeDeadline<T>(work: Promise<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error('Mail intake exceeded 5s pool deadline')), 5000);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Failure injection belongs only to the private integration DB. Always remove in finally.
+async function intakeFailure(table: 'helena_receipt' | 'vault_entry', condition: string) {
+  if (!(process.env.DATABASE_URL ?? '').split('/').pop()?.includes('test'))
+    throw new Error('Intake failure injection requires a private test DB');
+  await db.execute(
+    sql.raw(`CREATE FUNCTION test_mail_intake_failure() RETURNS trigger
+    LANGUAGE plpgsql AS $$ BEGIN
+      IF ${condition} THEN RAISE EXCEPTION 'Synthetic mail intake SQL failure'; END IF;
+      RETURN NEW;
+    END $$`),
+  );
+  try {
+    await db.execute(
+      sql.raw(`CREATE TRIGGER test_mail_intake_failure BEFORE INSERT ON ${table}
+      FOR EACH ROW EXECUTE FUNCTION test_mail_intake_failure()`),
+    );
+  } catch (error) {
+    await db.execute(sql.raw('DROP FUNCTION test_mail_intake_failure()'));
+    throw error;
+  }
+  return async () => {
+    await db.execute(sql.raw(`DROP TRIGGER test_mail_intake_failure ON ${table}`));
+    await db.execute(sql.raw('DROP FUNCTION test_mail_intake_failure()'));
+  };
 }
 
 describe('receipts', () => {
@@ -552,11 +595,11 @@ describe('receipts', () => {
       originals: 1,
     });
     expect((await http.call<{ receipts: ReceiptView[] }>('GET', '')).data.receipts).toHaveLength(0);
-    const [first, second] = await Promise.all([
-      intakeMailReceipts(input),
-      intakeMailReceipts(input),
-    ]);
-    expect(second).toEqual(first);
+    const results = await intakeDeadline(
+      Promise.all(Array.from({ length: 10 }, () => intakeMailReceipts(input))),
+    );
+    const first = results[0]!;
+    expect(results.every((ids) => ids.length === 1 && ids[0] === first[0])).toBe(true);
     const receipt = (await http.call<ReceiptDetailView>('GET', `/${first[0]}`)).data;
     expect(receipt).toMatchObject({
       source: 'mail',
@@ -593,6 +636,285 @@ describe('receipts', () => {
       ),
     ).toBe(true);
   }, 30_000);
+
+  it('files ten independent project originals concurrently without waiting for another pool connection', async () => {
+    const asOwner = authedApi(owner.cookie);
+    const inputs = [];
+    for (let i = 0; i < 10; i++) {
+      const target = (await asOwner.projects.post({ key: `INTAKE${i}`, name: `Intake ${i}` }))
+        .data!;
+      const { accountId, inboxId } = await insertMailAccount(
+        target.teamId,
+        target.id,
+        `intake${i}@example.test`,
+      );
+      const mail = await insertMessage({
+        teamId: target.teamId,
+        accountId,
+        folderId: inboxId,
+        projectId: target.id,
+        subject: 'Payment receipt',
+        text: `Amount paid: ${14 + i}.00 EUR`,
+        sentAt: new Date('2026-09-05'),
+      });
+      inputs.push({
+        key: target.key,
+        teamId: target.teamId,
+        projectId: target.id,
+        messageId: mail.messageRowId,
+        actorUserId: owner.userId,
+        skipMatching: true,
+      });
+    }
+    const results = await intakeDeadline(
+      Promise.all(inputs.map((input) => intakeMailReceipts(input))),
+    );
+    expect(new Set(results.flat()).size).toBe(10);
+    for (let i = 0; i < inputs.length; i++) {
+      const receipts = await asOwner.projects({ projectKey: inputs[i]!.key }).receipts.get();
+      expect(receipts.status).toBe(200);
+      expect(receipts.data!.receipts).toHaveLength(1);
+      expect(receipts.data!.receipts[0]!.id).toBe(results[i]![0]);
+    }
+  });
+
+  it('matches one newly committed original once across ten concurrent intakes', async () => {
+    const project = (await getProjectByKey('FIN'))!;
+    const bank = await http.call<AccountView>('POST', '/accounts', { name: 'Giro', iban: OWN });
+    expect(
+      (
+        await http.upload<ImportResult>(
+          `/accounts/${bank.data.id}/imports`,
+          'camt.xml',
+          CAMT,
+          'application/xml',
+        )
+      ).status,
+    ).toBe(201);
+    const { accountId, inboxId } = await insertMailAccount(project.teamId, project.id);
+    const mail = await insertMessage({
+      teamId: project.teamId,
+      accountId,
+      folderId: inboxId,
+      projectId: project.id,
+      projectKey: 'FIN',
+      subject: 'Hosting invoice',
+      attachments: [
+        {
+          filename: 'invoice.xml',
+          content: ublInvoice({
+            id: 'H-2026-09',
+            issue: '2026-09-01',
+            due: '2026-09-15',
+            gross: '59.00',
+            net: '49.58',
+          }),
+        },
+      ],
+    });
+    const input = {
+      teamId: project.teamId,
+      projectId: project.id,
+      messageId: mail.messageRowId,
+      actorUserId: owner.userId,
+    };
+    const decide = fakeDecider('Hosting September', 0.95, true);
+    let decisions = 0;
+    useReceiptDecider(async (request) => {
+      decisions++;
+      return decide(request);
+    });
+    const results = await intakeDeadline(
+      Promise.all(Array.from({ length: 10 }, () => intakeMailReceipts(input))),
+    );
+    expect(results.every((ids) => ids.length === 1 && ids[0] === results[0]![0])).toBe(true);
+    expect((await http.call<{ receipts: ReceiptView[] }>('GET', '')).data.receipts).toHaveLength(1);
+    expect(decisions).toBe(1);
+    expect((await http.call<ReceiptDetailView>('GET', `/${results[0]![0]}`)).data.status).toBe(
+      'matched',
+    );
+    await intakeMailReceipts(input);
+    expect(decisions).toBe(1);
+  });
+
+  it('rejects extraction failures before committing receipt rows', async () => {
+    const project = (await getProjectByKey('FIN'))!;
+    const { accountId, inboxId } = await insertMailAccount(project.teamId, project.id);
+    const mail = await insertMessage({
+      teamId: project.teamId,
+      accountId,
+      folderId: inboxId,
+      projectId: project.id,
+      projectKey: 'FIN',
+      subject: 'Invoice',
+      attachments: [{ filename: 'invoice.xml', content: '<not-an-invoice/>' }],
+    });
+    await expect(
+      intakeMailReceipts({
+        teamId: project.teamId,
+        projectId: project.id,
+        messageId: mail.messageRowId,
+        actorUserId: owner.userId,
+      }),
+    ).rejects.toThrow('could not be extracted');
+    expect((await http.call<{ receipts: ReceiptView[] }>('GET', '')).data.receipts).toHaveLength(0);
+  });
+
+  it('rolls back earlier receipt inserts when a later original fails SQL', async () => {
+    const project = (await getProjectByKey('FIN'))!;
+    const { accountId, inboxId } = await insertMailAccount(project.teamId, project.id);
+    const mail = await insertMessage({
+      teamId: project.teamId,
+      accountId,
+      folderId: inboxId,
+      projectId: project.id,
+      projectKey: 'FIN',
+      subject: 'Two invoices',
+      attachments: ['ONE', 'TWO'].map((id) => ({
+        filename: `invoice-${id}.xml`,
+        content: ublInvoice({
+          id,
+          issue: '2026-09-05',
+          due: '2026-09-15',
+          gross: '59.00',
+          net: '49.58',
+        }),
+      })),
+    });
+    const input = {
+      teamId: project.teamId,
+      projectId: project.id,
+      messageId: mail.messageRowId,
+      actorUserId: owner.userId,
+      skipMatching: true,
+    };
+    const restore = await intakeFailure(
+      'helena_receipt',
+      'EXISTS (SELECT 1 FROM helena_receipt WHERE project_id = NEW.project_id)',
+    );
+    try {
+      await expect(intakeDeadline(intakeMailReceipts(input))).rejects.toThrow();
+      expect((await http.call<{ receipts: ReceiptView[] }>('GET', '')).data.receipts).toHaveLength(
+        0,
+      );
+    } finally {
+      await restore();
+    }
+    expect(await intakeDeadline(intakeMailReceipts(input))).toHaveLength(2);
+    expect((await http.call<{ receipts: ReceiptView[] }>('GET', '')).data.receipts).toHaveLength(2);
+  });
+
+  it('reuses the exact canonical email after SQL failure and rejects a changed leftover', async () => {
+    const project = (await getProjectByKey('FIN'))!;
+    const { accountId, inboxId } = await insertMailAccount(project.teamId, project.id);
+    const raw = 'Subject: Payment receipt\r\n\r\nAmount paid: 14.00 EUR\r\n';
+    const mail = await insertMessage({
+      teamId: project.teamId,
+      accountId,
+      folderId: inboxId,
+      projectId: project.id,
+      subject: 'Payment receipt',
+      text: 'Amount paid: 14.00 EUR',
+      raw,
+      sentAt: new Date('2026-09-05'),
+    });
+    const input = {
+      teamId: project.teamId,
+      projectId: project.id,
+      messageId: mail.messageRowId,
+      actorUserId: owner.userId,
+      skipMatching: true,
+    };
+    const restore = await intakeFailure('helena_receipt', 'TRUE');
+    try {
+      await expect(intakeMailReceipts(input)).rejects.toThrow();
+      expect((await http.call<{ receipts: ReceiptView[] }>('GET', '')).data.receipts).toHaveLength(
+        0,
+      );
+    } finally {
+      await restore();
+    }
+    const folder = 'Projects/FIN/Files/Belege/2026-09';
+    const files = (await readdir(absoluteVaultPath(folder))).filter((name) =>
+      name.endsWith('.eml'),
+    );
+    expect(files).toHaveLength(1);
+    const canonical = `${folder}/${files[0]}`;
+    expect(readFileSync(absoluteVaultPath(canonical), 'utf8')).toBe(raw);
+    await writeFile(absoluteVaultPath(canonical), 'changed original');
+    await expect(intakeMailReceipts(input)).rejects.toThrow('archived original changed');
+    expect((await http.call<{ receipts: ReceiptView[] }>('GET', '')).data.receipts).toHaveLength(0);
+    await writeFile(absoluteVaultPath(canonical), raw);
+    const ids = await intakeMailReceipts(input);
+    expect(ids).toHaveLength(1);
+    expect(
+      (await readdir(absoluteVaultPath(folder))).filter((name) => name.endsWith('.eml')),
+    ).toEqual(files);
+    expect((await http.call<ReceiptDetailView>('GET', `/${ids[0]}`)).data.vaultPath).toBe(
+      canonical,
+    );
+  });
+
+  it('rejects postcommit index failure and repairs the committed existing email on retry', async () => {
+    const project = (await getProjectByKey('FIN'))!;
+    const { accountId, inboxId } = await insertMailAccount(project.teamId, project.id);
+    const mail = await insertMessage({
+      teamId: project.teamId,
+      accountId,
+      folderId: inboxId,
+      projectId: project.id,
+      subject: 'Payment receipt',
+      text: 'Amount paid: 14.00 EUR',
+      sentAt: new Date('2026-09-05'),
+    });
+    const input = {
+      teamId: project.teamId,
+      projectId: project.id,
+      messageId: mail.messageRowId,
+      actorUserId: owner.userId,
+      skipMatching: true,
+    };
+    await db.insert(helenaMailClassification).values({
+      teamId: project.teamId,
+      threadId: mail.threadId,
+      messageId: mail.messageRowId,
+      status: 'classified',
+      category: 'invoice',
+      projectId: project.id,
+      actions: [
+        {
+          kind: 'receipt',
+          receiptIds: [],
+          projectId: project.id,
+          note: 'No supported receipt original found.',
+        },
+      ],
+    });
+    const config = mailTriageConfig({ receipts: 'auto', accountIds: [accountId] });
+    useReceiptIntake(intakeMailReceipts);
+    const retry = () => retryReceiptFiling(project.teamId, config, owner.userId, project.id);
+    const restore = await intakeFailure('vault_entry', "NEW.path LIKE '%.eml'");
+    let original!: ReceiptView;
+    try {
+      expect(await retry()).toEqual({ completed: 0, failed: 1 });
+      const receipts = (await http.call<{ receipts: ReceiptView[] }>('GET', '')).data.receipts;
+      expect(receipts).toHaveLength(1);
+      original = receipts[0]!;
+      const detail = (await http.call<ReceiptDetailView>('GET', `/${original.id}`)).data;
+      expect(await findEntry(detail.vaultPath)).toBeNull();
+    } finally {
+      await restore();
+    }
+    expect(await retry()).toEqual({ completed: 1, failed: 0 });
+    expect(await intakeMailReceipts(input)).toEqual([original.id]);
+    const detail = (await http.call<ReceiptDetailView>('GET', `/${original.id}`)).data;
+    expect(await findEntry(detail.vaultPath)).toMatchObject({
+      sha256: createHash('sha256')
+        .update(readFileSync(absoluteVaultPath(detail.vaultPath)))
+        .digest('hex'),
+    });
+    expect((await http.call<{ receipts: ReceiptView[] }>('GET', '')).data.receipts).toHaveLength(1);
+  });
 
   it('selects receipt originals, rejects changed files and prevents cross-project backfills', async () => {
     const project = (await getProjectByKey('FIN'))!;

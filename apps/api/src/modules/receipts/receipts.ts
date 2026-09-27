@@ -59,9 +59,10 @@ export class DuplicateReceipt extends HttpError {
 }
 
 type Project = { id: number; teamId: number; key: string };
+type ReceiptDb = Pick<typeof db, 'select' | 'insert'>;
 
-export async function ownIbans(projectId: number): Promise<string[]> {
-  const rows = await db
+export async function ownIbans(projectId: number, executor: ReceiptDb = db): Promise<string[]> {
+  const rows = await executor
     .select({ iban: helenaBankAccount.iban })
     .from(helenaBankAccount)
     .where(and(eq(helenaBankAccount.projectId, projectId), isNotNull(helenaBankAccount.iban)));
@@ -77,8 +78,12 @@ export async function requireReceipt(projectId: number, receiptId: number): Prom
   return row;
 }
 
-async function existingBySha(projectId: number, sha256: string): Promise<number | null> {
-  const [row] = await db
+async function existingBySha(
+  projectId: number,
+  sha256: string,
+  executor: ReceiptDb = db,
+): Promise<number | null> {
+  const [row] = await executor
     .select({ id: helenaReceipt.id })
     .from(helenaReceipt)
     .where(and(eq(helenaReceipt.projectId, projectId), eq(helenaReceipt.sha256, sha256)));
@@ -236,8 +241,9 @@ export interface MailReceiptPlan {
 async function verifiedExistingMailReceipt(
   target: Project,
   sha256: string,
-): Promise<number | null> {
-  const [receipt] = await db
+  executor: ReceiptDb = db,
+): Promise<{ id: number; vaultPath: string } | null> {
+  const [receipt] = await executor
     .select()
     .from(helenaReceipt)
     .where(and(eq(helenaReceipt.projectId, target.id), eq(helenaReceipt.sha256, sha256)));
@@ -250,13 +256,19 @@ async function verifiedExistingMailReceipt(
   );
   if (file.sha256 !== sha256 || file.sizeBytes !== receipt.size)
     throw new HttpError(409, 'The existing receipt original changed.');
-  return receipt.id;
+  return { id: receipt.id, vaultPath: receipt.vaultPath };
 }
 
 /** Reads and validates originals without creating files, receipts or model decisions. */
-export async function prepareMailReceipts(input: MailReceiptInput): Promise<MailReceiptPlan[]> {
-  const [target] = await db.select().from(projectTable).where(eq(projectTable.id, input.projectId));
-  const [source] = await db
+export async function prepareMailReceipts(
+  input: MailReceiptInput,
+  executor: ReceiptDb = db,
+): Promise<MailReceiptPlan[]> {
+  const [target] = await executor
+    .select()
+    .from(projectTable)
+    .where(eq(projectTable.id, input.projectId));
+  const [source] = await executor
     .select({ message: mailMessage, projectId: mailThread.projectId })
     .from(mailMessage)
     .innerJoin(mailThread, eq(mailThread.id, mailMessage.threadId))
@@ -270,7 +282,7 @@ export async function prepareMailReceipts(input: MailReceiptInput): Promise<Mail
     throw new HttpError(404, 'Mail or project not found');
   if (source.projectId !== input.projectId)
     throw new HttpError(409, 'Move the mail to this project before filing receipts.');
-  const attachments = await db
+  const attachments = await executor
     .select()
     .from(mailAttachment)
     .where(eq(mailAttachment.messageId, input.messageId));
@@ -285,7 +297,7 @@ export async function prepareMailReceipts(input: MailReceiptInput): Promise<Mail
             (a) => /\.(png|jpe?g)$/i.test(a.filename) && a.size >= MIN_MAIL_IMAGE_BYTES,
           )
       ).filter((a) => !unrelatedFilename(a.filename) || receiptFilename(a.filename));
-  const ibans = await ownIbans(input.projectId);
+  const ibans = await ownIbans(input.projectId, executor);
   const plans: MailReceiptPlan[] = [];
   for (const attachment of chosen) {
     if (!attachment.vaultPath.startsWith(`Projects/${target.key}/Files/Mail/`))
@@ -299,7 +311,8 @@ export async function prepareMailReceipts(input: MailReceiptInput): Promise<Mail
       throw new HttpError(413, 'A receipt may have at most 25 MB.');
     if (file.sha256 !== attachment.sha256 || file.sizeBytes !== attachment.size)
       throw new HttpError(409, 'The original attachment changed after import.');
-    const existingId = await verifiedExistingMailReceipt(target, attachment.sha256);
+    const existing = await verifiedExistingMailReceipt(target, attachment.sha256, executor);
+    const existingId = existing?.id ?? null;
     const facts = await extractReceiptFile(
       absoluteVaultPath(attachment.vaultPath),
       attachment.filename,
@@ -367,7 +380,7 @@ export async function prepareMailReceipts(input: MailReceiptInput): Promise<Mail
         vaultPath: null,
         bytes,
         facts,
-        existingId: await verifiedExistingMailReceipt(target, sha256),
+        existingId: (await verifiedExistingMailReceipt(target, sha256, executor))?.id ?? null,
       });
     }
   }
@@ -382,21 +395,43 @@ export async function prepareMailReceipts(input: MailReceiptInput): Promise<Mail
 
 /** Original attachments stay in Mail; a body receipt preserves the original RFC822 message. */
 export async function intakeMailReceipts(input: MailReceiptInput): Promise<number[]> {
-  return db.transaction(async (tx) => {
+  const stored = await db.transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(748220, ${input.projectId})`);
-    return storeMailReceipts(input);
+    return storeMailReceipts(input, tx);
   });
+  // Indexing and matching use their own DB work. Run only after releasing the intake
+  // connection. Existing body receipts remain in indexPaths so a failed index can retry.
+  try {
+    await indexVaultPaths(
+      stored.indexPaths,
+      {
+        author: input.actorUserId ? `user:${input.actorUserId}` : 'mail-receipts',
+      },
+      { throwOnError: true },
+    );
+  } finally {
+    // A committed original remains valid if its derived index fails. Match new rows
+    // once; a subsequent index-repair retry must not repeat matching existing IDs.
+    if (!input.skipMatching) for (const id of stored.newIds) await matchQuietly(id);
+  }
+  return stored.ids;
 }
 
-async function storeMailReceipts(input: MailReceiptInput): Promise<number[]> {
-  const plans = await prepareMailReceipts(input);
-  const [target] = await db.select().from(projectTable).where(eq(projectTable.id, input.projectId));
+async function storeMailReceipts(input: MailReceiptInput, executor: ReceiptDb) {
+  const plans = await prepareMailReceipts(input, executor);
+  const [target] = await executor
+    .select()
+    .from(projectTable)
+    .where(eq(projectTable.id, input.projectId));
   if (!target) throw new HttpError(404, 'Project not found');
   const ids = new Set<number>();
+  const newIds: number[] = [];
+  const indexPaths = new Set<string>();
   for (const plan of plans) {
-    const existing = await verifiedExistingMailReceipt(target, plan.sha256);
+    const existing = await verifiedExistingMailReceipt(target, plan.sha256, executor);
     if (existing) {
-      ids.add(existing);
+      ids.add(existing.id);
+      if (plan.attachmentId === null) indexPaths.add(existing.vaultPath);
       continue;
     }
     let vaultPath = plan.vaultPath;
@@ -408,17 +443,15 @@ async function storeMailReceipts(input: MailReceiptInput): Promise<number[]> {
         if (error instanceof HttpError && error.status === 404) return null;
         throw error;
       });
-      if (previous && previous.sha256 !== plan.sha256)
+      if (previous && (previous.sha256 !== plan.sha256 || previous.sizeBytes !== plan.size))
         throw new HttpError(409, 'The archived original changed.');
       const relative = previous
         ? canonical
         : await writeUniqueFile(root, folder, plan.filename, plan.bytes!);
       vaultPath = joinPath(root.vaultPath!, relative);
-      await indexVaultPaths([vaultPath], {
-        author: input.actorUserId ? `user:${input.actorUserId}` : 'mail-receipts',
-      });
+      indexPaths.add(vaultPath);
     }
-    const [row] = await db
+    const [row] = await executor
       .insert(helenaReceipt)
       .values({
         teamId: input.teamId,
@@ -435,11 +468,11 @@ async function storeMailReceipts(input: MailReceiptInput): Promise<number[]> {
       })
       .onConflictDoNothing()
       .returning({ id: helenaReceipt.id });
-    const id = row?.id ?? (await existingBySha(input.projectId, plan.sha256));
+    const id = row?.id ?? (await existingBySha(input.projectId, plan.sha256, executor));
     if (id) ids.add(id);
-    if (row && !input.skipMatching) await matchQuietly(row.id);
+    if (row) newIds.push(row.id);
   }
-  return [...ids];
+  return { ids: [...ids], newIds, indexPaths: [...indexPaths] };
 }
 
 // The day a receipt belongs to: its invoice date, or the day it arrived.

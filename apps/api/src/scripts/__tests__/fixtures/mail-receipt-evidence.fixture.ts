@@ -1,6 +1,7 @@
 import { mock } from 'bun:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { factsFromText } from '../../../../../../packages/finance/src/receipt-text';
 import { parseAmountCents } from '../../../../../../packages/finance/src/money';
 import { receiptEvidenceCases } from './mail-receipt-evidence-cases';
@@ -38,6 +39,13 @@ const message = {
 const receipts: Record<string, unknown>[] = [];
 const files = new Map<string, Buffer>();
 const indexed: string[] = [];
+const matched: number[] = [];
+let failInsert = false;
+let failIndex = false;
+let failWrite = false;
+let failMatch = false;
+const transactionContext = new AsyncLocalStorage<boolean>();
+let transactionTail = Promise.resolve();
 const table = (name: string) => ({ name, id: `${name}.id` });
 const tables = {
   project: table('project'),
@@ -49,7 +57,7 @@ const tables = {
   helenaBankTransaction: table('transaction'),
   helenaReceiptMatch: table('match'),
 };
-const db = {
+const executor = {
   select: (fields?: Record<string, unknown>) => {
     let selected: { name: string };
     const query = {
@@ -68,8 +76,6 @@ const db = {
     };
     return query;
   },
-  transaction: async (body: (tx: { execute: () => Promise<void> }) => unknown) =>
-    body({ execute: async () => {} }),
   insert: (value: { name: string }) => ({
     values: (row: Record<string, unknown>) => ({
       onConflictDoNothing: () => ({
@@ -77,11 +83,49 @@ const db = {
           assert.equal(value.name, 'receipt');
           const receipt = { ...row, id: 99, status: 'open' };
           receipts.push(receipt);
+          if (failInsert) throw new Error('Synthetic late SQL failure');
           return [{ id: receipt.id }];
         },
       }),
     }),
   }),
+};
+const db = {
+  select: (...args: Parameters<typeof executor.select>) => {
+    assert.notEqual(
+      transactionContext.getStore(),
+      true,
+      'Global DB read inside intake transaction',
+    );
+    return executor.select(...args);
+  },
+  insert: (...args: Parameters<typeof executor.insert>) => {
+    assert.notEqual(
+      transactionContext.getStore(),
+      true,
+      'Global DB write inside intake transaction',
+    );
+    return executor.insert(...args);
+  },
+  transaction: async (body: (tx: unknown) => unknown): Promise<unknown> => {
+    const prior = transactionTail;
+    let release!: () => void;
+    transactionTail = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await prior;
+    const snapshot = structuredClone(receipts);
+    try {
+      return await transactionContext.run(true, () =>
+        body({ ...executor, execute: async () => {} }),
+      );
+    } catch (error) {
+      receipts.splice(0, receipts.length, ...snapshot);
+      throw error;
+    } finally {
+      release();
+    }
+  },
 };
 mock.module('@repo/db', () => ({ db, ...tables }));
 mock.module('drizzle-orm', () =>
@@ -97,7 +141,14 @@ mock.module('@repo/storage', () => ({
 }));
 mock.module('@repo/vault', () => ({
   absoluteVaultPath: (value: string) => value,
-  indexVaultPaths: async (paths: string[], provenance: { author: string }) => {
+  indexVaultPaths: async (
+    paths: string[],
+    provenance: { author: string },
+    options: { throwOnError: boolean },
+  ) => {
+    assert.notEqual(transactionContext.getStore(), true, 'Indexing before intake commit');
+    assert.deepEqual(options, { throwOnError: true });
+    if (failIndex) throw new Error('Synthetic index failure');
     assert.deepEqual(paths, [...files.keys()]);
     assert.equal(provenance.author, 'mail-receipts');
     indexed.push(...paths);
@@ -137,6 +188,12 @@ moduleMock('project-files/service', {
     filename: string,
     bytes: Buffer,
   ) => {
+    if (failWrite) throw new Error('Synthetic original write failure');
+    assert.equal(
+      files.has(`${root.vaultPath}/${folder}/${filename}`),
+      false,
+      'Must reuse canonical original',
+    );
     files.set(`${root.vaultPath}/${folder}/${filename}`, bytes);
     return `${folder}/${filename}`;
   },
@@ -150,7 +207,16 @@ moduleMock('receipts/extract', {
   isReceiptFile: () => true,
 });
 moduleMock('receipts/matching', {
-  matchReceipt: () => assert.fail('Matching must not run in this offline receipt check'),
+  matchReceipt: async (id: number) => {
+    assert.ok(mode.startsWith('intake-'), 'Unexpected matching in evidence check');
+    assert.notEqual(transactionContext.getStore(), true, 'Matching before intake commit');
+    assert.ok(
+      receipts.some((receipt) => receipt.id === id),
+      'Matching needs a committed receipt',
+    );
+    matched.push(id);
+    if (failMatch) throw new Error('Synthetic matching failure');
+  },
   unlinkReceipt: () => assert.fail('Existing matches must remain untouched'),
 });
 moduleMock('receipts/views', {
@@ -174,7 +240,65 @@ const input = {
   actorUserId: null,
   skipMatching: true,
 };
-if (mode === 'history') {
+if (mode.startsWith('intake-')) {
+  const matchingInput = { ...input, skipMatching: false };
+  if (mode === 'intake-parallel') {
+    const all = await Promise.all(
+      Array.from({ length: 10 }, () => intakeMailReceipts(matchingInput)),
+    );
+    assert.ok(all.every((ids) => ids.length === 1 && ids[0] === 99));
+    assert.equal(receipts.length, 1);
+    assert.deepEqual(matched, [99]);
+    await intakeMailReceipts(matchingInput);
+    assert.deepEqual(matched, [99]);
+  } else if (mode === 'intake-sql-rollback') {
+    failInsert = true;
+    await assert.rejects(intakeMailReceipts(matchingInput), /Synthetic late SQL failure/);
+    assert.equal(receipts.length, 0);
+    assert.equal(files.size, 1);
+    assert.equal(indexed.length, 0);
+    assert.equal(matched.length, 0);
+    failInsert = false;
+    const [canonical, original] = [...files.entries()][0]!;
+    files.set(canonical, Buffer.from('altered original'));
+    await assert.rejects(intakeMailReceipts(matchingInput), /archived original changed/);
+    assert.equal(receipts.length, 0);
+    files.set(canonical, original);
+    assert.deepEqual(await intakeMailReceipts(matchingInput), [99]);
+    assert.equal(files.size, 1);
+    assert.deepEqual(matched, [99]);
+  } else if (mode === 'intake-index-retry' || mode === 'intake-index-and-match-error') {
+    failIndex = true;
+    failMatch = mode === 'intake-index-and-match-error';
+    const errorLog = console.error;
+    let matchingErrors = 0;
+    try {
+      console.error = () => {
+        matchingErrors++;
+      };
+      await assert.rejects(intakeMailReceipts(matchingInput), /Synthetic index failure/);
+    } finally {
+      console.error = errorLog;
+    }
+    assert.equal(matchingErrors, failMatch ? 1 : 0);
+    assert.equal(receipts.length, 1);
+    assert.equal(indexed.length, 0);
+    assert.deepEqual(matched, [99]);
+    failIndex = false;
+    assert.deepEqual(await intakeMailReceipts(matchingInput), [99]);
+    assert.equal(indexed.length, 1);
+    assert.deepEqual(matched, [99]);
+  } else if (mode === 'intake-fs-error') {
+    failWrite = true;
+    await assert.rejects(intakeMailReceipts(matchingInput), /Synthetic original write failure/);
+    assert.equal(receipts.length, 0);
+    assert.equal(files.size, 0);
+    assert.equal(matched.length, 0);
+    failWrite = false;
+    assert.deepEqual(await intakeMailReceipts(input), [99]);
+    assert.equal(matched.length, 0);
+  } else assert.fail('Unknown intake mode');
+} else if (mode === 'history') {
   mock.module('@repo/mail', () => ({
     sha256: hash,
     parseMessage: async (bytes: Buffer) => {
