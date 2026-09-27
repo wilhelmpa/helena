@@ -15,6 +15,7 @@ import {
 import type { ChatAgentState } from '../../utils/agentPresence';
 import { useAgentStateText } from '../../hooks/useAgentStateText';
 import ChatAgentMenuItem from './ChatAgentMenuItem';
+import styles from './HomeChatLanding.module.css';
 
 // Who the chat is with, at the composer's bottom left: the agent's avatar with its
 // status orb, name and state. Opened, it lists every agent with its runtime,
@@ -25,12 +26,14 @@ export default function ChatAgentMenu({
   agents,
   states,
   motionEnabled,
+  pill = false,
   onPick,
 }: {
   agent: AiAgent;
   agents: AiAgent[];
   states: Map<number, ChatAgentState>;
   motionEnabled: boolean;
+  pill?: boolean;
   onPick: (agentId: number) => void;
 }) {
   const t = useTranslations('chatWorkspace');
@@ -42,7 +45,7 @@ export default function ChatAgentMenu({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="flex h-8 min-w-0 items-center gap-1.5 rounded-md px-1.5 text-xs text-muted-foreground ring-sidebar-ring outline-hidden transition-colors hover:bg-sidebar-accent hover:text-foreground focus-visible:ring-2 data-[state=open]:bg-sidebar-accent"
+          className={`flex h-8 min-w-0 items-center gap-1.5 px-1.5 text-xs text-muted-foreground ring-sidebar-ring outline-hidden transition-colors hover:bg-sidebar-accent hover:text-foreground focus-visible:ring-2 data-[state=open]:bg-sidebar-accent ${pill ? styles.chip : 'rounded-md'}`}
           aria-label={t('agents.switch', { agent: agent.name })}
           title={`${agent.name} · ${text.detail(agent, state)}`}
         >

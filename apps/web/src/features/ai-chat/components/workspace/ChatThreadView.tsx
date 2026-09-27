@@ -20,6 +20,7 @@ import ChatHeader from './ChatHeader';
 import ChatMessageList from './ChatMessageList';
 import ChatComposer from './ChatComposer';
 import ChatNewChatIntro from './ChatNewChatIntro';
+import { HomeChatActivityCards, HomeChatHero, HomeChatMasthead } from './HomeChatLanding';
 import ChatRestoreError from './ChatRestoreError';
 import { activeTool, composerActivity, pendingChoices } from '../../utils/composerActivity';
 import { useAutoSpeak } from '../../hooks/useAutoSpeak';
@@ -115,6 +116,7 @@ export default function ChatThreadView({
   const lastOwnMessage = plan.messages.findLast((message) => message.role === 'user');
   const state = states.get(agent.id);
   const empty = !plan.restoring && !plan.restoreFailed && plan.messages.length === 0;
+  const homeLanding = inPage && projectKey === null && empty;
   const activity = composerActivity(plan.messages, plan.status, state?.online ?? true);
   const tool = activeTool(plan.messages, plan.status);
   const choices = activity === 'answered' ? pendingChoices(plan.messages) : null;
@@ -240,24 +242,43 @@ export default function ChatThreadView({
   return (
     <WebLinkScope projectKey={scopeKey.startsWith('team:') ? null : scopeKey}>
       <div className="flex h-full min-h-0 flex-col">
-        <ChatHeader
-          scopeKey={scopeKey}
-          projectKey={projectKey}
-          agent={agent}
-          threadId={threadId}
-          messages={plan.messages}
-          onOpenList={onOpenList}
-          onNewChat={onNewChat}
-          onDeleted={onThreadDeleted}
-          compact={compact}
-          artifactOpen={artifactOpen}
-          onToggleArtifact={onToggleArtifact}
-          hasArtifact={hasArtifact}
-          inPage={inPage}
-        />
+        {inPage && projectKey === null && (
+          <HomeChatMasthead onOpenList={homeLanding ? onOpenList : undefined} />
+        )}
+        {!homeLanding && (
+          <ChatHeader
+            scopeKey={scopeKey}
+            projectKey={projectKey}
+            agent={agent}
+            threadId={threadId}
+            messages={plan.messages}
+            onOpenList={onOpenList}
+            onNewChat={onNewChat}
+            onDeleted={onThreadDeleted}
+            compact={compact}
+            artifactOpen={artifactOpen}
+            onToggleArtifact={onToggleArtifact}
+            hasArtifact={hasArtifact}
+            inPage={inPage}
+          />
+        )}
         <div className="relative flex min-h-0 flex-1 flex-col">
           {plan.restoreFailed ? (
             <ChatRestoreError onRetry={() => void plan.retryRestore()} />
+          ) : homeLanding ? (
+            <HomeChatHero
+              orb={
+                <AgentStatusOrb
+                  state={orbVisualState}
+                  size="large"
+                  online={state?.online ?? true}
+                  motionEnabled={motionEnabled}
+                  voicePhase={conversation.phase}
+                  micStream={conversation.micStream}
+                  outputAnalyser={conversation.outputAnalyser}
+                />
+              }
+            />
           ) : empty ? (
             <ChatNewChatIntro agent={agent} />
           ) : (
@@ -272,30 +293,33 @@ export default function ChatThreadView({
               showOrb={showAnswerOrb}
             />
           )}
-          <div
-            aria-hidden={!orbVisible}
-            className="pointer-events-none absolute z-10 aspect-square transition-[top,left,transform,width,opacity] duration-[600ms] ease-in-out motion-reduce:transition-none"
-            style={{
-              width: empty ? 'min(20rem, 55vw)' : '7rem',
-              left: empty ? '50%' : 'max(1rem, calc((100% - 48rem) / 2))',
-              top: empty ? 'calc(50% - 1.5rem)' : 'calc(100% - 3.5rem)',
-              transform: empty ? 'translate(-50%, -50%)' : 'translate(0, -50%)',
-              opacity: orbVisible ? 1 : 0,
-              ['--orb-size' as string]: '100%',
-            }}
-          >
-            <AgentStatusOrb
-              state={orbVisualState}
-              size="large"
-              online={state?.online ?? !empty}
-              motionEnabled={motionEnabled}
-              voicePhase={conversation.phase}
-              micStream={conversation.micStream}
-              outputAnalyser={conversation.outputAnalyser}
-            />
-          </div>
+          {!homeLanding && (
+            <div
+              aria-hidden={!orbVisible}
+              className="pointer-events-none absolute z-10 aspect-square transition-[top,left,transform,width,opacity] duration-[600ms] ease-in-out motion-reduce:transition-none"
+              style={{
+                width: empty ? 'min(20rem, 55vw)' : '7rem',
+                left: empty ? '50%' : 'max(1rem, calc((100% - 48rem) / 2))',
+                top: empty ? 'calc(50% - 1.5rem)' : 'calc(100% - 3.5rem)',
+                transform: empty ? 'translate(-50%, -50%)' : 'translate(0, -50%)',
+                opacity: orbVisible ? 1 : 0,
+                ['--orb-size' as string]: '100%',
+              }}
+            >
+              <AgentStatusOrb
+                state={orbVisualState}
+                size="large"
+                online={state?.online ?? !empty}
+                motionEnabled={motionEnabled}
+                voicePhase={conversation.phase}
+                micStream={conversation.micStream}
+                outputAnalyser={conversation.outputAnalyser}
+              />
+            </div>
+          )}
         </div>
         <ChatComposer
+          homeLanding={homeLanding}
           scopeKey={scopeKey}
           agent={agent}
           agents={agents}
@@ -338,6 +362,7 @@ export default function ChatThreadView({
           onUndo={plan.undo}
           onEditLast={lastOwnMessage ? () => setEditingId(lastOwnMessage.id) : undefined}
         />
+        {homeLanding && <HomeChatActivityCards />}
       </div>
     </WebLinkScope>
   );

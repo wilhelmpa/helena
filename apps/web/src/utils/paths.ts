@@ -38,7 +38,7 @@ function chatQuery(location: ChatLocation): string {
 export const chatPath = (key: string, location: ChatLocation = {}) =>
   `${projectPath(key)}/chat${chatQuery(location)}`;
 
-export const homeChatPath = (location: ChatLocation = {}) => `/chat${chatQuery(location)}`;
+export const homeChatPath = (location: ChatLocation = {}) => `/${chatQuery(location)}`;
 
 // The project's own approvals: the agent requests and workflow gates waiting for a
 // decision, narrowed to this one project (see the global approvalsPath for every

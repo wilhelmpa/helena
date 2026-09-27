@@ -127,7 +127,7 @@ export default function ChatWorkspace({
   // Before the first measurement (width 0) the layout is compact: the split layout
   // hides the list behind its own container query, so guessing "wide" while narrow would
   // leave the list button with nothing to open until the width arrives.
-  const mode = chatLayoutMode(width);
+  const mode = inPage && projectKey === null ? 'compact' : chatLayoutMode(width);
   const agentInScope = agents.find((agent) => agent.id === agentId) ?? null;
   // The agent a thread belongs to is not always one this workspace's picker offers
   // (one working in another project, or one the list has not loaded yet): it is read

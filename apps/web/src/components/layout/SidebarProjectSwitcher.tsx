@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import type { Project } from '@/lib/api/endpoints/projects';
 import { projectTree } from '@/utils/projectTree';
 import { runtimeEnv } from '@/utils/runtimeEnv';
+import { projectColor } from '@/utils/projectColor';
 import ProjectTreeGroup from './ProjectTreeGroup';
 import ProjectTreeItem from './ProjectTreeItem';
 import ProjectUngroupDropZone from './ProjectUngroupDropZone';
@@ -18,15 +19,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
-const projectColors = ['#7ee0b8', '#f0997b', '#bdaaff', '#8dc7f3', '#e8cc83'];
-
-function projectColor(key: string) {
-  if (key.toUpperCase() === 'TRADE') return projectColors[0]!;
-  let hash = 0;
-  for (const char of key) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
-  return projectColors[hash % projectColors.length]!;
-}
 
 export default function SidebarProjectSwitcher({
   projects,
@@ -74,7 +66,7 @@ export default function SidebarProjectSwitcher({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="max-h-[70vh] w-64 overflow-y-auto">
         <DropdownMenuItem asChild>
-          <Link href="/chat">
+          <Link href="/">
             <span className="helena-project-dot" style={{ background: '#bdaaff' }} />
             {t('sidebarHomeAll')}
           </Link>

@@ -3,11 +3,17 @@ import { describe, it } from 'node:test';
 import {
   filesPath,
   homeFilesPath,
+  homeChatPath,
   vaultMarkdownSourcePath,
   vaultNotePath,
   notesPath,
   notePath,
 } from './paths';
+
+it('opens Home chat on the start page and preserves the selected conversation', () => {
+  assert.equal(homeChatPath(), '/');
+  assert.equal(homeChatPath({ agent: 7, thread: 'thread-1' }), '/?agent=7&thread=thread-1');
+});
 
 describe('Files page paths', () => {
   it('keeps the root, the folder and the open file in the address', () => {

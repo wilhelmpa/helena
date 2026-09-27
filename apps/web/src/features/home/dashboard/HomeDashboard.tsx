@@ -58,7 +58,7 @@ function Sections({
     <>
       {blocks.map((block) =>
         block.kind === 'full' ? (
-          <div key={block.item.id} className="min-w-0">
+          <div key={block.item.id} id={block.item.id} className="min-w-0 scroll-mt-4">
             {render(block.item)}
           </div>
         ) : (
@@ -109,7 +109,15 @@ export default function HomeDashboard() {
             .map((entry) => (
               // A figure widget renders its tiles straight into the row: one widget may
               // bring several (the plan limits, one per subscription) or none.
-              <Fragment key={entry.widget.id}>{render(entry.widget)}</Fragment>
+              <Fragment key={entry.widget.id}>
+                {entry.widget.id === 'system' ? (
+                  <div id="system" className="min-w-0 scroll-mt-4">
+                    {render(entry.widget)}
+                  </div>
+                ) : (
+                  render(entry.widget)
+                )}
+              </Fragment>
             ))}
         </div>
         <Sections sections={sections} render={render} />

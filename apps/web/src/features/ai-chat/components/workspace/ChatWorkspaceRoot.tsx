@@ -9,8 +9,7 @@ import { useChatWorkspaceScope } from '../../hooks/useChatWorkspaceScope';
 import ChatWorkspace from './ChatWorkspace';
 import type { ChatLocation } from '../../utils/chatLocation';
 
-// The chat page mounted at /chat (Home, every project) and at
-// /project/:projectKey/chat (one project). The open agent and chat stay in the
+// The Home chat page and /project/:projectKey/chat keep the open agent and chat in the
 // address, so a reload or a shared link reopens them — unlike the tool panel's chat
 // (panel/NativeChatWorkspace), which keeps the same location in local state instead,
 // since it is not the page the address bar is naming.

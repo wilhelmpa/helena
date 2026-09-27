@@ -45,6 +45,7 @@ import ChatRenameDialog from './ChatRenameDialog';
 import ChatPromptVariablesDialog from './ChatPromptVariablesDialog';
 import ChatComposerStatus from './ChatComposerStatus';
 import ChatAgentMenu from './ChatAgentMenu';
+import styles from './HomeChatLanding.module.css';
 
 interface PendingAttachment {
   path: string;
@@ -52,6 +53,7 @@ interface PendingAttachment {
 }
 
 export interface ChatComposerProps {
+  homeLanding?: boolean;
   scopeKey: string;
   agent: AiAgent;
   // Every agent a chat can be with, and how each is doing, for the picker at the
@@ -111,6 +113,7 @@ export interface ChatComposerProps {
 // library. Enter sends, Shift+Enter or ⌘/Ctrl+Enter breaks the line, Escape stops the
 // answer, ↑ in the empty field edits the last own message.
 export default function ChatComposer({
+  homeLanding = false,
   scopeKey,
   agent,
   agents,
@@ -292,7 +295,7 @@ export default function ChatComposer({
   const showChoices = choices != null && !busy && queue.length === 0;
 
   return (
-    <div className="shrink-0 bg-background px-3 pt-2 pb-3">
+    <div className={homeLanding ? styles.composer : 'shrink-0 bg-background px-3 pt-2 pb-3'}>
       <div className="relative mx-auto w-full max-w-3xl">
         {commands.open && (
           <ChatSlashMenu
@@ -309,6 +312,7 @@ export default function ChatComposer({
             composer's own width, which the tool panel or an open artifact narrows. */}
         <PromptInput
           className="@container/composer"
+          groupClassName={homeLanding ? styles.pill : undefined}
           onSubmit={() => void submit()}
           onFiles={(files) => void uploadFiles(files)}
         >
@@ -425,6 +429,7 @@ export default function ChatComposer({
                 agents={agents}
                 states={states}
                 motionEnabled={motionEnabled}
+                pill={homeLanding}
                 onPick={onPickAgent}
               />
               <ChatModelPicker
@@ -463,10 +468,10 @@ export default function ChatComposer({
                   label={busy ? t('composer.queue') : t('composer.send')}
                   disabled={upload.isPending}
                 />
-              ) : (conversation.ready && !dictating) || talking ? (
+              ) : ((homeLanding || conversation.ready) && !dictating) || talking ? (
                 // With nothing typed, the send button's place starts a conversation (the
                 // claude.ai/ChatGPT pattern); while one runs, it ends it.
-                <ConversationButton conversation={conversation} />
+                <ConversationButton conversation={conversation} homeLanding={homeLanding} />
               ) : (
                 !busy && <PromptInputSubmit label={t('composer.send')} disabled />
               )}
