@@ -8,8 +8,11 @@ import { useTranslations } from 'next-intl';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useProjectFeatures } from '@/hooks/useProjectFeatures';
 import { usePersistedBoolean } from '@/hooks/usePersistedBoolean';
+import { useInboxUnread } from '@/hooks/useInboxUnread';
 import { useProjectSettingsNavItems } from '@/hooks/useProjectSettingsNavItems';
 import { useOwnerInbox } from '@/features/inbox/useOwnerInbox';
+import { usePendingApprovalCount } from '@/services/approvals.service';
+import { usePipelineApprovals } from '@/services/pipelines.service';
 import { useViewFoldersQuery, useViewsQuery } from '@/services/views.service';
 import type { View } from '@/lib/api/endpoints/views';
 import { useFilesQuery } from '@/services/files.service';
@@ -22,6 +25,7 @@ import {
   dashboardsPath,
   filesPath,
   homeFilesPath,
+  inboxPath,
   initiativesPath,
   cyclesPath,
   projectPath,
@@ -147,12 +151,34 @@ function InboxBadge({ teamIds }: { teamIds: number[] }) {
   );
 }
 
+function ProjectInboxBadge({ projectKey, projectId }: { projectKey: string; projectId: number }) {
+  const t = useTranslations('nav');
+  const pending = usePendingApprovalCount(projectKey).data?.count ?? 0;
+  const pipelines = (usePipelineApprovals().data ?? []).filter(
+    (item) => item.projectKey === projectKey,
+  ).length;
+  const unread = useInboxUnread(projectKey, projectId).data ?? 0;
+  const allUnread = useInboxUnread(null, null).data ?? 0;
+  return (
+    <TreeLink
+      href={inboxPath(projectKey)}
+      badge={pending + pipelines + unread}
+      dot={allUnread > unread}
+      nested
+    >
+      {t('sidebarInbox')}
+    </TreeLink>
+  );
+}
+
 export function SidebarPersonalNav({
   teamIds,
   projectKey,
+  projectId,
 }: {
   teamIds: number[];
   projectKey: string | null;
+  projectId: number | null;
 }) {
   const t = useTranslations('nav');
   return (
@@ -160,6 +186,9 @@ export function SidebarPersonalNav({
       <h2>{t('sidebarYou')}</h2>
       <TreeLink href="/">{t('sidebarHomeChat')}</TreeLink>
       <InboxBadge teamIds={teamIds} />
+      {projectKey && projectId && (
+        <ProjectInboxBadge projectKey={projectKey} projectId={projectId} />
+      )}
       <TreeLink href={projectKey ? projectApprovalsPath(projectKey) : '/approvals'}>
         {t('approvals')}
       </TreeLink>
