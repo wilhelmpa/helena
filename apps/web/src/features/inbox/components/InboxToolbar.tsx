@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { Eye, ListFilter } from 'lucide-react';
+import { Ellipsis, Eye, ListFilter } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { NotificationFilters, NotificationType } from '@/lib/api/endpoints/notifications';
 import { cn } from '@/lib/utils';
@@ -17,6 +17,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuLabel,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
@@ -28,10 +29,16 @@ export default function InboxToolbar({
   leading,
   filters,
   onFiltersChange,
+  onMarkAllRead,
+  onDeleteRead,
+  onDeleteReadCompleted,
 }: {
   leading?: ReactNode;
   filters: NotificationFilters;
   onFiltersChange: (next: NotificationFilters) => void;
+  onMarkAllRead: () => void;
+  onDeleteRead: () => void;
+  onDeleteReadCompleted: () => void;
 }) {
   const t = useTranslations('inbox');
   const selectedTypes = filters.types ?? [];
@@ -81,6 +88,13 @@ export default function InboxToolbar({
         >
           {t('showSnoozed')}
         </DropdownMenuCheckboxItem>
+      </ToolbarMenu>
+      <ToolbarMenu icon={Ellipsis} label={t('title')} count={0}>
+        <DropdownMenuItem onSelect={onMarkAllRead}>{t('markAllRead')}</DropdownMenuItem>
+        <DropdownMenuItem onSelect={onDeleteRead}>{t('deleteAllRead')}</DropdownMenuItem>
+        <DropdownMenuItem onSelect={onDeleteReadCompleted}>
+          {t('deleteAllReadCompleted')}
+        </DropdownMenuItem>
       </ToolbarMenu>
     </PageToolbar>
   );

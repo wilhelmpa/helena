@@ -23,6 +23,8 @@ import {
   useSetNotificationRead,
   useSnoozeNotification,
   useDeleteNotification,
+  useMarkAllRead,
+  useDeleteNotifications,
 } from '../services/notifications.service';
 
 // The project's notifications: the list beside the task a notification is about. Its
@@ -72,6 +74,8 @@ export default function InboxView({
   const setRead = useSetNotificationRead(projectKey);
   const snooze = useSnoozeNotification(projectKey);
   const deleteOne = useDeleteNotification(projectKey);
+  const markAllRead = useMarkAllRead(projectKey, projectId);
+  const deleteNotifications = useDeleteNotifications(projectKey, projectId);
 
   const items = useMemo(() => query.data?.pages.flatMap((p) => p.items) ?? [], [query.data]);
 
@@ -93,7 +97,14 @@ export default function InboxView({
 
   return (
     <div className="flex h-full min-h-0">
-      <InboxToolbar leading={leading} filters={filters} onFiltersChange={changeFilters} />
+      <InboxToolbar
+        leading={leading}
+        filters={filters}
+        onFiltersChange={changeFilters}
+        onMarkAllRead={() => markAllRead.mutate()}
+        onDeleteRead={() => deleteNotifications.mutate('read')}
+        onDeleteReadCompleted={() => deleteNotifications.mutate('read-completed')}
+      />
       <div
         className={cn(
           'flex w-full min-w-0 flex-col bg-card md:max-w-lg md:border-e',
