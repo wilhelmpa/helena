@@ -130,3 +130,14 @@ it('invalidates a previous path check immediately even without a component remou
   assert.equal(session.lossless, null);
   assert.deepEqual(changes, []);
 });
+
+it('keeps a non-lossless initial document formatted and refuses edits until source is chosen', async () => {
+  await act(async () => session.onReady(ready('# Normalized')));
+  assert.equal(session.mode, 'formatted');
+  assert.equal(session.lossless, false);
+  session.onChange('# Destructive normalized write');
+  assert.deepEqual(changes, []);
+  await act(async () => session.showSource());
+  assert.equal(session.mode, 'source');
+  assert.deepEqual(changes, []);
+});

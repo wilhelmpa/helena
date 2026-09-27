@@ -6,6 +6,7 @@ import type { Root } from 'react-dom/client';
 import type { Editor } from '@tiptap/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NextIntlClientProvider } from 'next-intl';
+import Link from 'next/link';
 import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { JSDOM } from 'jsdom';
 import { WebLinksContext } from '@/context/webLinks';
@@ -18,6 +19,7 @@ import files from '../../../../messages/en/files.json';
 import documents from '../../../../messages/en/documents.json';
 import common from '../../../../messages/en/common.json';
 let UnifiedFileViewer: typeof import('./UnifiedFileViewer').default;
+let FileBrowser: typeof import('./FileBrowser').default;
 let VaultTextEditor: typeof import('./VaultTextEditor').default;
 
 const path = 'Docs/AI/00-Start.md';
@@ -46,6 +48,7 @@ const globals = [
   'requestAnimationFrame',
   'cancelAnimationFrame',
   'IS_REACT_ACT_ENVIRONMENT',
+  'ResizeObserver',
 ];
 let dom: JSDOM;
 let saved: Map<string, PropertyDescriptor | undefined>;
@@ -76,13 +79,19 @@ beforeEach(async () => {
     Object.defineProperty(globalThis, name, {
       configurable: true,
       value:
-        name === 'IS_REACT_ACT_ENVIRONMENT'
-          ? true
-          : name === 'requestAnimationFrame'
-            ? (callback: FrameRequestCallback) => setTimeout(callback, 0)
-            : name === 'cancelAnimationFrame'
-              ? clearTimeout
-              : (dom.window as unknown as Record<string, unknown>)[name],
+        name === 'ResizeObserver'
+          ? class {
+              observe() {}
+              unobserve() {}
+              disconnect() {}
+            }
+          : name === 'IS_REACT_ACT_ENVIRONMENT'
+            ? true
+            : name === 'requestAnimationFrame'
+              ? (callback: FrameRequestCallback) => setTimeout(callback, 0)
+              : name === 'cancelAnimationFrame'
+                ? clearTimeout
+                : (dom.window as unknown as Record<string, unknown>)[name],
     });
   dom.window.matchMedia = (query) => ({
     matches: false,
@@ -96,6 +105,7 @@ beforeEach(async () => {
   });
   ({ default: VaultTextEditor } = await import('./VaultTextEditor'));
   ({ default: UnifiedFileViewer } = await import('./UnifiedFileViewer'));
+  ({ default: FileBrowser } = await import('./FileBrowser'));
   const { createRoot } = await import('react-dom/client');
   root = createRoot(document.querySelector('#root')!);
   client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
@@ -114,6 +124,25 @@ beforeEach(async () => {
     const method = init?.method ?? 'GET';
     const body = init?.body ? JSON.parse(String(init.body)) : undefined;
     requests.push({ url, method, body });
+    if (url.pathname === '/projects/RES/files')
+      return Response.json({
+        root: 'vault',
+        path: 'Docs/AI',
+        vaultPath: 'Projects/RES/Docs/AI',
+        absolutePath: '/synthetic/Projects/RES/Docs/AI',
+        writable: true,
+        truncated: false,
+        items: [
+          {
+            name: '00-Start.md',
+            path,
+            kind: 'file',
+            sizeBytes: Buffer.byteLength(content),
+            contentType: 'text/markdown',
+            updatedAt: null,
+          },
+        ],
+      });
     if (url.pathname === '/api/auth/get-session') return Response.json(null);
     if (['/projects/RES/files/text', '/projects/OTHER/files/text'].includes(url.pathname)) {
       const other = url.pathname.includes('/OTHER/');
@@ -180,6 +209,10 @@ async function render({
   visible = true,
   viewer = false,
   projectKey = 'RES',
+  browser = false,
+  previewName = '00-Start.md',
+  previewType = 'text/markdown',
+  selected = null as string | null,
 } = {}) {
   await act(async () =>
     root.render(
@@ -195,13 +228,26 @@ async function render({
             <SessionProvider>
               <WebLinksContext.Provider value={{ scope: 'WRONG', open: () => {} }}>
                 {visible &&
-                  (viewer ? (
+                  (browser ? (
+                    <FileBrowser
+                      scope={scope}
+                      path="Docs/AI"
+                      selected={selected}
+                      rootLabel="Knowledge"
+                      permissions={{ create: false, edit: true, delete: false }}
+                      leading={<Link href="/project/RES/files?root=code">Code tab</Link>}
+                      onSelect={(file) => {
+                        void render({ browser: true, selected: file });
+                      }}
+                      onNavigate={(folder) => navigations.push(folder)}
+                    />
+                  ) : viewer ? (
                     <UnifiedFileViewer
                       file={{
-                        name: '00-Start.md',
+                        name: previewName,
                         sizeBytes: Buffer.byteLength(content),
                         url: '/synthetic',
-                        contentType: 'text/markdown',
+                        contentType: previewType,
                         vaultPath: 'Projects/WRONG/Docs/00-Start.md',
                       }}
                       scope={{ ...scope, projectKey }}
@@ -480,6 +526,10 @@ for (const [name, body] of [
     const before = prefix + body;
     content = before;
     await render();
+    await until(() => !!document.querySelector('.tiptap'));
+    assert.equal(editor().isEditable, false);
+    assert.equal(document.querySelector('textarea'), null);
+    await chooseMode(files.unified.source);
     await until(() => !!document.querySelector('textarea'));
     assert.equal(sourceArea().value, before.replace(/\r\n/g, '\n'));
     assert.ok(document.body.textContent?.includes(files.unified.sourceRequired));
@@ -502,6 +552,8 @@ it('keeps the current raw draft and original ETag through preview, conflict, ref
   const before = `${prefix}# Guide\n\n[Guide](Other.md)\n\n<!-- retain -->\n`;
   content = before;
   await render();
+  await until(() => !!document.querySelector('.tiptap'));
+  await chooseMode(files.unified.source);
   await until(() => !!document.querySelector('textarea'));
   const draft = `${before}\nLocal A\nLocal B`;
   await sourceEdit(draft);
@@ -557,6 +609,8 @@ it('rechecks the current source draft before enabling formatted edits and saves 
   const before = `${prefix}# Guide\n\n[Guide](Other.md)\n\n<!-- retain -->\n`;
   content = before;
   await render();
+  await until(() => !!document.querySelector('.tiptap'));
+  await chooseMode(files.unified.source);
   await until(() => !!document.querySelector('textarea'));
   const plain = `${prefix}# Safe draft\n`;
   await sourceEdit(plain);
@@ -579,6 +633,8 @@ it('keeps the initial ETag after a full source undo and a later edit following r
   const before = `${prefix}# Guide\n\n[Guide](Other.md)\n\n<!-- retain -->\n`;
   content = before;
   await render();
+  await until(() => !!document.querySelector('.tiptap'));
+  await chooseMode(files.unified.source);
   await until(() => !!document.querySelector('textarea'));
   await sourceEdit(`${before}\nFirst edit`);
   await until(() => dirty);
@@ -640,3 +696,88 @@ it('preserves SilverBullet-specific source as data without running page expressi
     sha(before),
   );
 });
+
+it('opens a normal file inline, preserves the toolbar and guards return, breadcrumbs and tabs', async () => {
+  await render({ browser: true });
+  await until(
+    () =>
+      !![...document.querySelectorAll('button')].find((node) =>
+        node.textContent?.includes('00-Start.md'),
+      ),
+  );
+  const file = [...document.querySelectorAll<HTMLButtonElement>('button')].find((node) =>
+    node.textContent?.includes('00-Start.md'),
+  )!;
+  await act(async () => file.click());
+  await until(() => !!document.querySelector('.tiptap'));
+  assert.equal(document.querySelector('[role="dialog"]'), null);
+  assert.ok(document.querySelector('#root [data-file-preview]'));
+  const tab = document.querySelector('a[href="/project/RES/files?root=code"]')!;
+  assert.ok(tab);
+  await act(async () =>
+    editor().commands.insertContentAt(editor().state.doc.content.size, '<p>Unsaved inline</p>'),
+  );
+  await until(() => !saveButton().disabled);
+  let confirmations = 0;
+  dom.window.confirm = () => {
+    confirmations++;
+    return false;
+  };
+  const back = [...document.querySelectorAll<HTMLButtonElement>('button')].find(
+    (node) => node.textContent === files.actions.showInFolder,
+  )!;
+  assert.ok(back);
+  await act(async () => back.click());
+  await act(async () => document.querySelector<HTMLButtonElement>('nav button')!.click());
+  const click = new dom.window.MouseEvent('click', { bubbles: true, cancelable: true });
+  await act(async () => {
+    tab.dispatchEvent(click);
+  });
+  assert.equal(click.defaultPrevented, true);
+  assert.equal(confirmations, 3);
+  assert.deepEqual(navigations, []);
+  assert.ok(editor().getText().includes('Unsaved inline'));
+  dom.window.confirm = () => true;
+  await act(async () => back.click());
+  await until(() => !document.querySelector('[data-file-preview]'));
+  assert.equal(document.querySelector('[role="dialog"]'), null);
+  assert.ok(document.querySelector('a[href="/project/RES/files?root=code"]'));
+  assert.equal(content, original);
+  assert.ok(requests.every((request) => request.method === 'GET'));
+});
+
+it('reopens formatted after a deliberate source view without changing the original bytes', async () => {
+  const before = prefix + '# Guide\r\n\r\n<!-- untouched -->\r\n';
+  content = before;
+  await render({ viewer: true });
+  await until(() => !!document.querySelector('.tiptap'));
+  assert.equal(editor().isEditable, false);
+  assert.equal(document.querySelector('textarea'), null);
+  await chooseMode(files.unified.source);
+  assert.ok(document.querySelector('textarea'));
+  await render({ visible: false });
+  await render({ viewer: true });
+  await until(() => !!document.querySelector('.tiptap'));
+  assert.equal(document.querySelector('textarea'), null);
+  assert.equal(content, before);
+  assert.ok(requests.every((request) => request.method === 'GET'));
+});
+
+for (const [name, type, selector] of [
+  ['Example.pdf', 'application/pdf', 'iframe'],
+  ['Example.png', 'image/png', 'img'],
+  ['Example.mp3', 'audio/mpeg', 'audio'],
+  ['Example.mp4', 'video/mp4', 'video'],
+] as const) {
+  it(`keeps the existing ${type} renderer in the inline main-content surface`, async () => {
+    await render({ viewer: true, previewName: name, previewType: type });
+    const surface = document.querySelector('#root [data-file-preview]')!;
+    assert.ok(surface);
+    assert.equal(document.querySelector('[role="dialog"]'), null);
+    const media = surface.querySelector(selector)!;
+    assert.ok(media);
+    assert.equal(media.getAttribute('src'), '/synthetic');
+    if (selector === 'iframe') assert.equal(media.hasAttribute('sandbox'), false);
+    assert.ok(requests.every((request) => request.method === 'GET'));
+  });
+}

@@ -25,7 +25,6 @@ export function useVaultMarkdownSession({
   } | null>(null);
   const lossless =
     check?.snapshot === snapshot && check.vaultPath === vaultPath ? check.lossless : null;
-  const initialCheck = useRef(true);
   const original = useMemo(() => markdownContent(snapshot.content), [snapshot]);
   const images = useMemo(() => toEditorImages(original.body, vaultPath), [original, vaultPath]);
   const baseline = useRef<string | null>(null);
@@ -54,13 +53,11 @@ export function useVaultMarkdownSession({
     failClosed,
     showSource: () => {
       active.current = null;
-      initialCheck.current = false;
       setMode('source');
     },
     showFormatted: () => {
       if (mode === 'formatted') return;
       active.current = null;
-      initialCheck.current = false;
       setSnapshot((current) => ({ content: value, revision: current.revision + 1 }));
       setCheck(null);
       setMode('formatted');
@@ -72,10 +69,6 @@ export function useVaultMarkdownSession({
         const preserved = preserveMarkdownEnding(original.body, body) === original.body;
         baseline.current = body;
         setCheck({ snapshot, vaultPath, lossless: preserved });
-        if (initialCheck.current) {
-          initialCheck.current = false;
-          if (!preserved && editable) setMode('source');
-        }
       } catch {
         failClosed();
       }

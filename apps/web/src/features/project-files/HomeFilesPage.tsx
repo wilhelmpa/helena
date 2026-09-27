@@ -11,6 +11,7 @@ import type { FileScope } from '@/lib/api/endpoints/projectFiles';
 import { useProjectQuery, useProjectsQuery } from '@/services/projects.service';
 import { homeFilesPath } from '@/utils/paths';
 import FileBrowser from './components/FileBrowser';
+import { useFileNavigationGuard } from './hooks/useFileNavigationGuard';
 import HomeFilesRoots, {
   HomeFilesRootSelect,
   type HomeFilesRoot,
@@ -26,6 +27,7 @@ function currentRoot(root: string | null, project: string | null): HomeFilesRoot
 // the folder of each project with its own permissions.
 export default function HomeFilesPage() {
   const t = useTranslations('files');
+  const navigation = useFileNavigationGuard();
   const tNav = useTranslations('nav');
   const params = useSearchParams();
   const router = useRouter();
@@ -48,6 +50,7 @@ export default function HomeFilesPage() {
     : { kind: 'home', root: current as 'home' | 'private' | 'templates' };
 
   const go = (next: { root?: HomeFilesRoot; path?: string; file?: string | null }) => {
+    if (next.root !== undefined && !navigation.canLeave()) return;
     const root = next.root ?? current;
     const project = root.startsWith('project:') ? root.slice('project:'.length) : undefined;
     router.push(
@@ -70,6 +73,7 @@ export default function HomeFilesPage() {
         />
         <FileBrowser
           key={current}
+          onDirtyChange={navigation.onDirty}
           leading={
             phone ? (
               <HomeFilesRootSelect

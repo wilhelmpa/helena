@@ -8,6 +8,7 @@ import { useFilesQuery, filesScopeKey } from '@/services/files.service';
 import { runtimeEnv } from '@/utils/runtimeEnv';
 import { baseName } from '@/utils/vaultLinks';
 import { codeFolderUrl } from '@/utils/workspaceTools';
+import { useFileNavigationGuard } from '../hooks/useFileNavigationGuard';
 import { useFileActions } from '../hooks/useFileActions';
 import { useFileBrowserView } from '../hooks/useFileBrowserView';
 import { useFileTransfers } from '../hooks/useFileTransfers';
@@ -37,6 +38,7 @@ export default function FileBrowser({
   permissions,
   onNavigate,
   onSelect,
+  onDirtyChange,
 }: {
   // The page's own controls that lead the header toolbar (the project's Wissen/Code tabs).
   leading?: ReactNode;
@@ -47,8 +49,16 @@ export default function FileBrowser({
   permissions: FilePermissions;
   onNavigate: (path: string) => void;
   onSelect: (file: string | null) => void;
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
   const client = useQueryClient();
+  const { onDirty, canLeave } = useFileNavigationGuard(onDirtyChange);
+  const navigate = (next: string) => {
+    if (canLeave()) onNavigate(next);
+  };
+  const select = (next: string | null) => {
+    if (canLeave()) onSelect(next);
+  };
   const refresh = () => {
     void client.invalidateQueries({ queryKey: filesScopeKey(scope) });
   };
@@ -64,9 +74,11 @@ export default function FileBrowser({
   const actions = useFileActions({
     scope,
     listing: listing.data,
-    onNavigate,
-    onSelect,
-    ask: (kind, item) => setDialog({ kind, item }),
+    onNavigate: navigate,
+    onSelect: select,
+    ask: (kind, item) => {
+      if (canLeave()) setDialog({ kind, item });
+    },
   });
   const transfers = useFileTransfers({
     scope,
@@ -116,7 +128,21 @@ export default function FileBrowser({
   const viewing = selected ? listing.data?.items.find((item) => item.path === selected) : undefined;
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col gap-3" {...transfers.dropHandlers}>
+    <div
+      className="relative flex min-h-0 flex-1 flex-col gap-3"
+      {...transfers.dropHandlers}
+      onClickCapture={(event) => {
+        const target = event.target as Element;
+        if (
+          !target.closest('[data-file-preview]') &&
+          target.closest('a[href^="/"]') &&
+          !canLeave()
+        ) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      }}
+    >
       <FileToolbar
         leading={leading}
         view={view}
@@ -131,26 +157,48 @@ export default function FileBrowser({
         rootLabel={rootLabel}
         path={path}
         drag={transfers.drag}
-        onNavigate={onNavigate}
+        onNavigate={navigate}
       />
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        {view.filter.trim() && vaultRoot ? (
-          <VaultSearchResults query={view.filter.trim()} root={vaultRoot} />
-        ) : (
-          <FileFolderContent
-            listing={listing}
-            items={items}
-            filter={view.filter}
-            mode={view.mode}
-            scope={scope}
-            actions={actions}
-            can={can}
-            drag={transfers.drag}
-            selected={selected}
-            codeUrl={folderCodeUrl}
-          />
-        )}
-      </div>
+      {viewing ? (
+        <UnifiedFileViewer
+          key={viewing.path}
+          scope={scope}
+          path={viewing.path}
+          canEdit={can.edit}
+          onDirty={onDirty}
+          file={{
+            name: viewing.name,
+            contentType: viewing.contentType,
+            sizeBytes: viewing.sizeBytes,
+            url: fileRawUrl(scope, viewing.path),
+            vaultPath: actions.vaultPath(viewing),
+          }}
+          actions={<FileViewerActions item={viewing} actions={actions} />}
+          onClose={() => {
+            onSelect(null);
+            refresh();
+          }}
+        />
+      ) : (
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {view.filter.trim() && vaultRoot ? (
+            <VaultSearchResults query={view.filter.trim()} root={vaultRoot} />
+          ) : (
+            <FileFolderContent
+              listing={listing}
+              items={items}
+              filter={view.filter}
+              mode={view.mode}
+              scope={scope}
+              actions={actions}
+              can={can}
+              drag={transfers.drag}
+              selected={selected}
+              codeUrl={folderCodeUrl}
+            />
+          )}
+        </div>
+      )}
       {transfers.draggedFiles !== null && (
         <FileDropOverlay folder={path ? baseName(path) : rootLabel} />
       )}
@@ -172,27 +220,6 @@ export default function FileBrowser({
         }
         onClose={() => setDialog(null)}
       />
-
-      {viewing && (
-        <UnifiedFileViewer
-          key={viewing.path}
-          scope={scope}
-          path={viewing.path}
-          canEdit={can.edit}
-          file={{
-            name: viewing.name,
-            contentType: viewing.contentType,
-            sizeBytes: viewing.sizeBytes,
-            url: fileRawUrl(scope, viewing.path),
-            vaultPath: actions.vaultPath(viewing),
-          }}
-          actions={<FileViewerActions item={viewing} actions={actions} />}
-          onClose={() => {
-            onSelect(null);
-            refresh();
-          }}
-        />
-      )}
     </div>
   );
 }

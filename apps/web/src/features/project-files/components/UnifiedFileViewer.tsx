@@ -1,6 +1,7 @@
-import { useState, type ReactNode } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import Modal, { useModalFullscreen } from '@/components/common/overlay/Modal';
+import { Button } from '@/components/ui/button';
 import FileViewerContent from '@/components/common/files/FileViewerContent';
 import type { ViewerFile } from '@/components/common/files/FileViewer';
 import WebLinkScope from '@/components/common/WebLinkScope';
@@ -16,6 +17,7 @@ export default function UnifiedFileViewer({
   canEdit,
   actions,
   onClose,
+  onDirty,
 }: {
   file: ViewerFile;
   scope: FileScope;
@@ -23,21 +25,33 @@ export default function UnifiedFileViewer({
   canEdit: boolean;
   actions: ReactNode;
   onClose: () => void;
+  onDirty?: (dirty: boolean) => void;
 }) {
   const t = useTranslations('files.unified');
-  const fullscreen = useModalFullscreen();
+  const files = useTranslations('files');
   const editable =
     /\.(md|markdown|txt)$/i.test(file.name) && !(scope.kind === 'project' && scope.root === 'code');
   const [dirty, setDirty] = useState(false);
+  const reportDirty = useCallback(
+    (value: boolean) => {
+      setDirty(value);
+      onDirty?.(value);
+    },
+    [onDirty],
+  );
   const canLeave = () => !dirty || window.confirm(t('discard'));
   const leave = (action: () => void) => {
     if (canLeave()) action();
   };
   return (
     <WebLinkScope projectKey={scope.kind === 'project' ? scope.projectKey : null}>
-      <Modal title={file.name} onClose={() => leave(onClose)} wide="xl" {...fullscreen}>
+      <section
+        data-file-preview
+        aria-label={file.name}
+        className="flex min-h-0 min-w-0 flex-1 flex-col gap-3"
+      >
         <div
-          className="contents"
+          className="flex min-h-0 flex-1 flex-col gap-3"
           onClickCapture={(event) => {
             const anchor = (event.target as Element).closest('a[href^="/"]');
             if (anchor && !canLeave()) {
@@ -46,23 +60,34 @@ export default function UnifiedFileViewer({
             }
           }}
         >
-          <div className="flex flex-wrap items-center gap-1.5 pb-3">{actions}</div>
-          <FileReferences scope={scope} path={path} />
-          {editable ? (
-            <VaultTextEditor
-              key={vaultFilePath(scope, path) ?? path}
-              scope={scope}
-              path={path}
-              canEdit={canEdit}
-              onDirty={setDirty}
-              vaultPath={vaultFilePath(scope, path) ?? undefined}
-              beforeNavigate={canLeave}
-            />
-          ) : (
-            <FileViewerContent file={file} />
-          )}
+          <div className="flex shrink-0 flex-wrap items-center gap-2 border-b pb-3">
+            <Button variant="outline" size="sm" onClick={() => leave(onClose)}>
+              <ArrowLeft className="size-4 rtl:rotate-180" />
+              {files('actions.showInFolder')}
+            </Button>
+            <h2 className="min-w-0 flex-1 font-medium break-words" dir="auto">
+              {file.name}
+            </h2>
+            {actions}
+          </div>
+          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
+            <FileReferences scope={scope} path={path} />
+            {editable ? (
+              <VaultTextEditor
+                key={vaultFilePath(scope, path) ?? path}
+                scope={scope}
+                path={path}
+                canEdit={canEdit}
+                onDirty={reportDirty}
+                vaultPath={vaultFilePath(scope, path) ?? undefined}
+                beforeNavigate={canLeave}
+              />
+            ) : (
+              <FileViewerContent file={file} />
+            )}
+          </div>
         </div>
-      </Modal>
+      </section>
     </WebLinkScope>
   );
 }

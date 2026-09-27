@@ -12,11 +12,13 @@ import { usePermissions } from '@/hooks/usePermissions';
 import type { ProjectFileRoot } from '@/lib/api/endpoints/projectFiles';
 import { filesPath } from '@/utils/paths';
 import FileBrowser from './components/FileBrowser';
+import { useFileNavigationGuard } from './hooks/useFileNavigationGuard';
 
 // A project's files: its vault folder ("Wissen") and its workspace ("Code"). The root,
 // the folder and the open file are in the address.
 export default function ProjectFilesPage({ boards }: { boards?: ReactNode }) {
   const t = useTranslations('files');
+  const navigation = useFileNavigationGuard();
   const { projectKey } = useParams<{ projectKey: string }>();
   const params = useSearchParams();
   const router = useRouter();
@@ -27,6 +29,7 @@ export default function ProjectFilesPage({ boards }: { boards?: ReactNode }) {
   const root: ProjectFileRoot = params.get('root') === 'code' ? 'code' : 'vault';
   const path = params.get('path') ?? '';
   const go = (next: { root?: ProjectFileRoot; path?: string; file?: string | null }) => {
+    if (next.root !== undefined && !navigation.canLeave()) return;
     const nextRoot = next.root ?? root;
     router.push(
       filesPath(projectKey, next.path ?? path, {
@@ -42,7 +45,7 @@ export default function ProjectFilesPage({ boards }: { boards?: ReactNode }) {
       value={boardView ? 'boards' : root}
       onChange={(next) =>
         next === 'boards'
-          ? router.push(`${filesPath(projectKey)}?view=boards`)
+          ? navigation.canLeave() && router.push(`${filesPath(projectKey)}?view=boards`)
           : go({ root: next as ProjectFileRoot, path: '' })
       }
       items={[
@@ -65,6 +68,7 @@ export default function ProjectFilesPage({ boards }: { boards?: ReactNode }) {
           <FileBrowser
             key={root}
             leading={tabs}
+            onDirtyChange={navigation.onDirty}
             scope={{ kind: 'project', projectKey, root }}
             path={path}
             selected={params.get('file')}
