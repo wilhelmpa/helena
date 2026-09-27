@@ -218,6 +218,47 @@ function findGross(lines: string[]): number | null {
   return weak.length ? Math.max(...weak) : null;
 }
 
+function standaloneMoney(text: string): { cents: number; currency: string } | null {
+  const match = new RegExp(
+    `^(?:(${CURRENCY_TOKEN})\\s*(${MONEY.source})|(${MONEY.source})\\s*(${CURRENCY_TOKEN}))$`,
+    'i',
+  ).exec(text.trim().replace(/^-\s*(?=[a-z$€£])/i, ''));
+  if (!match) return null;
+  const cents = parseAmountCents(match[2] ?? match[3]!, 'auto');
+  return cents === null
+    ? null
+    : { cents: Math.abs(cents), currency: currencyCode(match[1] ?? match[4]!) };
+}
+
+// Poppler can put the right-hand tax amount above its two-line label. The amount
+// inside "(20% on $100.00)" is the taxable base, never a fallback tax amount.
+function vatBesideBase(
+  lines: string[],
+  index: number,
+): { rate: number; vat: number | null } | null {
+  const line = lines[index]!;
+  const baseLabel = /\((\d{1,2}(?:[.,]\d{1,2})?)\s?%\s+(?:on|auf|von)\s+([^()]+)\)/i.exec(line);
+  if (!baseLabel) return null;
+  const rate = Number(baseLabel[1]!.replace(',', '.'));
+  const base = standaloneMoney(baseLabel[2]!);
+  const prefix = line.slice(0, baseLabel.index);
+  if (amountsOn(prefix).length || prefix.includes('%')) return { rate, vat: null };
+  const suffix = line.slice(baseLabel.index + baseLabel[0].length).trim();
+  const candidates = (suffix ? [suffix] : [lines[index - 1] ?? '', lines[index + 1] ?? ''])
+    .map(standaloneMoney)
+    .filter((amount) => amount !== null && amount.currency === base?.currency);
+  const values = new Set(candidates.map((amount) => amount!.cents));
+  const vat = values.size === 1 ? [...values][0]! : null;
+  return {
+    rate,
+    // Only return a printed amount; arithmetic validates it and never supplies it.
+    vat:
+      base && vat !== null && Math.abs(Math.round((base.cents * rate) / 100) - vat) <= 1
+        ? vat
+        : null,
+  };
+}
+
 /**
  * VAT lines ("MwSt 19 % 19,00", "enth. MwSt 19% 1,60", "19% 8,40 1,60 10,00") are summed once per
  * rate. With several amounts on a line the one that fits rate × base wins, then the middle of a
@@ -226,7 +267,7 @@ function findGross(lines: string[]): number | null {
 function findVat(lines: string[]): number | null {
   const perRate = new Map<string, number>();
   let unrated: number | null = null;
-  for (const line of lines) {
+  for (const [index, line] of lines.entries()) {
     if (!(VAT.test(line) || TAX_CLASS.test(line)) || TAX_ID.test(line)) continue;
     // A total including/excluding VAT is gross/net, even if its label contains VAT.
     // Flattened table columns cannot supply a safe VAT fallback from that total.
@@ -236,6 +277,14 @@ function findVat(lines: string[]): number | null {
       !/enth|davon/i.test(line)
     )
       continue;
+    const besideBase = vatBesideBase(lines, index);
+    if (besideBase) {
+      if (besideBase.vat === null) return null;
+      const key = String(besideBase.rate);
+      if (perRate.has(key) && perRate.get(key) !== besideBase.vat) return null;
+      perRate.set(key, besideBase.vat);
+      continue;
+    }
     const rateMatch = /(\d{1,2}(?:[.,]\d{1,2})?)\s?%/.exec(line);
     const rate = rateMatch ? Number((rateMatch[1] ?? '').replace(',', '.')) : null;
     const amounts = amountsOn(line).map(Math.abs);
