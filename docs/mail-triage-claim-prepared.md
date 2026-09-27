@@ -51,10 +51,21 @@ betroffenen-Service-/In-flight-Prozess beenden; das Skript tut dies nie selbst.
 
 ## Integration und Abnahmegrenzen
 
-Migration **0194** ist hierfür reserviert; **0193** bleibt JEV. Neue Tabelle mit
-Projekt-PK/FK, keine Bestandsdatenänderung. Vor späterer Integration muss Root Journal/
-Snapshot-Vorgänger und Zeitreihenfolge gegen dann integrierte 0190–0193 prüfen. Keine
-Migration oder Aufnahme in laufendes Parsergate ohne separate Integration.
+Migration **0190** ist nach Root-Entscheidung die nächste Live-Migration. Ihr
+`when=1790430258722` ist exakt `0189.when+1` und liegt vor Paper (`1790436986100`).
+Der Snapshot-Vorgänger bleibt exakt 0189 (`8031603c-c110-4e14-9215-1d574809c82c`).
+Claim-SQL und Snapshotinhalt sind gegenüber der Belegbasis `0bb698cc` bytegleich;
+nur ihre Dateinamen und der neue Journalentry wurden korrigiert. Alle früheren
+Journalentries bleiben identisch. Ausschließlich die Claimtabelle mit Projekt-PK/FK
+kommt hinzu; keine Bestandsdatenänderung und keine fremden Featurecommits.
+
+Die frühere 0194-Reservierung darf nicht integriert werden: Ihr höherer `when`-Wert
+würde vorbereitete Migrationen überspringen. Für die spätere tatsächliche Deployfolge
+ist separat vorgesehen: Paper 0190→0191, Vault 0191→0192, ChatJEV 0192→0193,
+BrowserJEV 0193→0194. Deren bisherige `when`-Werte bleiben erhalten; ihre kumulativen
+Snapshots müssen bei Integration die Claimtabelle mitführen und korrekte Vorgänger
+bekommen. Diese fremden Zweige sind in diesem Korrekturcommit nicht geändert.
+Migration und Rootfullgate erfolgen erst im separaten B-Release.
 
 Produktionsüberschneidungen: `mail-triage/classify.ts` und `index.ts`, DBclient/Exports,
 DBschema/app und Migrationsjournal. Keine Webdatei geändert; bestehende 409-Antwort
