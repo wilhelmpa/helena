@@ -37,7 +37,7 @@ const shop: McpServerSpec = {
 };
 
 describe('MCP servers for Claude Code', () => {
-  it("names Helena's servers only, with secrets as variables Claude Code expands", () => {
+  it("names Helena's servers only and sends its agent key in the HTTP header", () => {
     const args = claudeMcpArgs([helena, shop]);
     expect(args[0]).toBe('--mcp-config');
     expect(JSON.parse(args[1]!)).toEqual({
@@ -45,7 +45,7 @@ describe('MCP servers for Claude Code', () => {
         itsaplan: {
           type: 'http',
           url: 'http://127.0.0.1:3000/mcp',
-          headers: { Authorization: 'Bearer ${ITSAPLAN_API_KEY}' },
+          headers: { 'x-api-key': '${ITSAPLAN_API_KEY}' },
         },
         'shopify-dev': {
           type: 'stdio',
@@ -354,7 +354,7 @@ describe('what a Claude Code or Codex run reports', () => {
       collectProfile({ runtime, snapshot, url: 'http://127.0.0.1:3000', env: {} }).mcpServers;
     const claude = JSON.parse(claudeMcpArgs(specs('claude'))[1]!);
     expect(claude.mcpServers.itsaplan.headers).toEqual({
-      Authorization: 'Bearer ${ITSAPLAN_API_KEY}',
+      'x-api-key': '${ITSAPLAN_API_KEY}',
       'x-helena-run': '${ITSAPLAN_RUN_ID}',
     });
     expect(codexMcpArgs(specs('codex'), [], {}).args).toContain(

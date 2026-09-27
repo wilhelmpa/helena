@@ -704,62 +704,52 @@ class Keeper:
     # ── the Codex CLI's own login next to Hermes ──
 
     def reconcile_codex_cli(self) -> Optional[dict]:
-        """The Codex CLI's login in the Hermes home (`.codex/auth.json`), which Hermes imports from
-        and the catalog lists models with. When it holds the same refresh token as Hermes' own
-        ChatGPT login, the two are one chain: the keeper keeps them equal (the newer pair wins),
-        because either side spending a token the other still holds would get the whole family
-        revoked. A login of its own is the Codex CLI's to refresh and is only reported."""
+        """Keep the CLI's access token current from Hermes' valid ChatGPT pool login.
+
+        Hermes alone owns the pool's refresh token. The CLI receives no copy of it."""
         path = self.settings.codex_auth
         try:
             data = read_json(path)
         except (OSError, ValueError) as exc:
             self.errors.append(f'Codex CLI login unreadable: {redact(exc)}')
             return None
+        link = 'separate'
+        try:
+            with self.hermes.store_lock():
+                entries = self.hermes.load_pool('openai-codex').entries()
+                for entry in entries:
+                    token = getattr(entry, 'access_token', None)
+                    expiry = jwt_expiry(token)
+                    auth = jwt_claims(token).get('https://api.openai.com/auth')
+                    account_id = auth.get('chatgpt_account_id') if isinstance(auth, dict) else None
+                    if (getattr(entry, 'auth_type', None) != self.hermes.AUTH_TYPE_OAUTH
+                            or getattr(entry, 'last_status', None) == self.hermes.STATUS_DEAD
+                            or not getattr(entry, 'refresh_token', None)
+                            or expiry is None or expiry <= self.clock()
+                            or not isinstance(account_id, str) or not account_id):
+                        continue
+                    data = data if isinstance(data, dict) else {'OPENAI_API_KEY': None}
+                    clean = strip_refresh_tokens(data)
+                    old_tokens = clean.get('tokens')
+                    tokens = old_tokens if isinstance(old_tokens, dict) else {}
+                    tokens.update(access_token=token, account_id=account_id)
+                    updated = {**clean, 'OPENAI_API_KEY': None, 'tokens': tokens}
+                    if updated != data:
+                        updated['last_refresh'] = now_iso(self.clock())
+                        self.write_codex_cli(path, updated)
+                    data = updated
+                    link = 'linked'
+                    break
+        except Exception as exc:  # noqa: BLE001
+            self.errors.append(f'Codex CLI login: {redact(exc)}')
         tokens = data.get('tokens') if isinstance(data, dict) else None
         if not isinstance(tokens, dict) or not tokens.get('access_token'):
             return None
-        link = 'separate'
-        cli_rt = tokens.get('refresh_token')
-        try:
-            with self.hermes.store_lock():
-                store = self.hermes.load_store(self.settings.root_auth)
-                block = (store.get('providers') or {}).get('openai-codex')
-                hermes_tokens = block.get('tokens') if isinstance(block, dict) else None
-                hermes_rt = hermes_tokens.get('refresh_token') if isinstance(hermes_tokens, dict) else None
-                linked = self.state.codex.get('linkedFp')
-                if hermes_rt and cli_rt and hermes_rt == cli_rt:
-                    link = 'linked'
-                elif hermes_rt and cli_rt and linked and linked == fingerprint(cli_rt):
-                    # Hermes rotated the shared chain; the CLI still holds the spent token.
-                    data['tokens'] = {**tokens, 'access_token': hermes_tokens.get('access_token'),
-                                      'refresh_token': hermes_rt}
-                    data['last_refresh'] = block.get('last_refresh') or now_iso(self.clock())
-                    self.write_codex_cli(path, data)
-                    log.info('Codex CLI login: took over the ChatGPT login Hermes rotated')
-                    tokens, cli_rt, link = data['tokens'], hermes_rt, 'linked'
-                elif hermes_rt and cli_rt and linked and linked == fingerprint(hermes_rt):
-                    # The Codex CLI rotated the shared chain; Hermes must not spend its old token.
-                    updated = {**hermes_tokens, 'access_token': tokens.get('access_token'), 'refresh_token': cli_rt}
-                    if tokens.get('id_token'):
-                        updated['id_token'] = tokens['id_token']
-                    self.hermes.auth._save_codex_tokens(updated, data.get('last_refresh') or now_iso(self.clock()),
-                                                        set_active=False)
-                    log.info("Hermes' ChatGPT login: took over the pair the Codex CLI rotated")
-                    link = 'linked'
-                if link == 'linked':
-                    self.state.codex['linkedFp'] = fingerprint(cli_rt)
-        except Exception as exc:  # noqa: BLE001
-            self.errors.append(f'Codex CLI login: {redact(exc)}')
         expiry = jwt_expiry(tokens.get('access_token'))
         return {'link': link, 'expiry': expiry, 'accessToken': tokens.get('access_token')}
 
     def write_codex_cli(self, path: Path, data: dict) -> None:
-        mode = 0o600
-        try:
-            mode = path.stat().st_mode & 0o777
-        except FileNotFoundError:
-            pass
-        atomic_write(path, json_bytes(data), mode)
+        atomic_write(path, json_bytes(data), 0o600)
 
     # ── views ──
 

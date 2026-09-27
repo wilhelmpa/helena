@@ -8,7 +8,8 @@ response body or redirect is used. Only HTTP 401 invalidates a login; rate limit
 403, server errors and network failures remain retryable status errors. The pool
 row is re-read under Hermes' store lock before invalidation, so a late response for
 an old token cannot invalidate a newly renewed pair. A new pair clears the old
-rejection. The separate Codex CLI login is checked without spending its refresh token.
+rejection. The Codex CLI access token is copied from a valid Hermes pool row on each run;
+the CLI receives no refresh token from that row.
 
 Provider diagnostics are suppressed during refresh/probe requests and replaced with
 fixed messages; token fragments and response bodies cannot reach the status or journal.
@@ -49,7 +50,7 @@ The new pair lived only in that process. The root kept the spent token; the next
 it and got `invalid_grant` ("Refresh token not found or invalid"). The same was waiting for
 Hermes' ChatGPT login (`providers.openai-codex` in the same store; the Codex access token is a
 JWT of about ten days) and for the Codex CLI's login next to it (`.codex/auth.json`, bound into
-every unit as well), which the Codex CLI renews when it is about a week old.
+every unit as well). The keeper now copies its access token from Hermes' credential pool.
 
 Control test (`test_token_keeper_hermes.py`,
 `test_the_binding_before_the_keeper_let_an_isolated_agent_spend_the_refresh_token`): Hermes in a
@@ -64,7 +65,7 @@ profile with the old binding and an expired token POSTs the stored refresh token
 | When | a login is **due** when its access token expires within `prefer_before` (6 h); it is renewed at a moment **no agent unit runs** (the run waits up to 4 min for one), and **regardless** once it expires within `force_before` = the launcher's longest unit (`runtimeMaxSecLimit`, 4 h) + two ticks + 5 min ≈ 4 h 25 min. At most every 30 min per login (`min_gap`), failures back off (10 min × 2ⁿ, at most 2 h) | refreshing only just before expiry (Hermes' 120 s skew): a unit keeps the view it started with (below) and would run out mid-run |
 | What agents see | a **view** the keeper writes after every run: the root `auth.json` and the Codex CLI's `auth.json` **without any `refresh_token`** (`/var/lib/helena-token-keeper/view/…`, group `volition-agents`, 0640). The launcher binds the Hermes view as a file onto `/var/lib/volition/hermes/auth.json` and the Codex view as a folder onto `{home}/.codex`, both `"required": true` for the `hermes` runtime (a run without them is refused, never started without a login or with the old binding), optional for the `profile-helper` | a Hermes patch ("defer refreshes of borrowed grants to someone else"): Helena treats Hermes as an external dependency (OSS goal, §6 for the upstream idea), every local patch is carried through each update, and a flag is fail-open when it is lost; Hermes' `key_cmd` (the `apiKeyHelper` idiom): only for API-key providers, not for the Claude subscription or the ChatGPT backend; the egress proxy inserting the credentials (design Phase 2): the end state, but TLS interception or per-provider proxying, a branch of its own; HashiCorp Vault Agent (BSL, not AGPL-compatible) or OpenBao Agent (MPL-2.0): an extra service that knows nothing of these providers' rotation; access-token-only copies in each profile folder (they would follow a refresh live, but Hermes then treats them as the profile's own grants, and its forked-grant heal outside isolation could put a row without refresh token over the root's) |
 | An agent that still tries | nothing to spend: Hermes' `_refresh_entry` returns early for a row without refresh token; on a 401 the row is benched for its own process only (the write to the root fails as before). Proven with Hermes itself (`test_an_isolated_agent_uses_the_access_token_and_can_never_spend_a_refresh_token`: 0 POSTs, forced refresh included; an expired view fails closed) | — |
-| The Codex CLI's login next to Hermes | when it holds **the same refresh token** as Hermes' ChatGPT login (Hermes imported it at setup), the two are one chain: the keeper keeps them equal. After Hermes rotated, the new pair goes into the CLI's file (its `id_token`, `account_id` and mode kept); if the Codex CLI rotated on its own, Hermes takes over its pair **before** anyone spends Hermes' old token (a replay would revoke the whole family). The link is remembered by a one-way fingerprint in the keeper's private state. A login of its own (`separate`) is the Codex CLI's to renew and is only reported | renewing a separate CLI login with Hermes' refresh function: if it is a stale copy of Hermes' chain, the replay gets the family revoked; nobody but the catalog (model list, falls back to Hermes' login) and Hermes' recovery path (needs the refresh token, absent in the view) reads it |
+| The Codex CLI's login next to Hermes | on each run, the keeper selects a valid `openai-codex` OAuth pool row and writes its access token and JWT account ID to `.codex/auth.json`. It removes any refresh token from that file. Hermes alone renews the pool row. If no valid pool row exists, a separate CLI login is only reported | copying a refresh token into the CLI file would give two processes the same single-use chain |
 | Health | a new extension point **`RuntimeLoginSource`** (`@helena/sdk` `runtime-logins.ts`, registry `runtimeLoginSources`, manifest `provides.runtimeLoginSources`); the built-in plugin `helena.logins` registers the source `token-keeper`, which reads the keeper's status files from `HELENA_LOGIN_STATUS_DIR` (the installer's API drop-in). `GET /god/system-health` answers `logins` (reports, per login state/expiry/error/command, `stale` after three missed intervals, `problems`); Home → Dienste shows "Anmeldungen" with the owner's command to copy | the runner reporting it to the API (when a login is dead the runner may be the part that cannot start); a table of its own (the status file is the truth, read on request); `hermes doctor` as the source (it reads one profile's view, not the root, and has no Anthropic row) |
 | Catalog | `volition-hermes-catalog.py` `logged_in()` counts a provider only while one of its rows is **not dead**, so the models of a rejected login leave the chat and agent pickers until the owner signs in again | `has_credentials()` (a dead row still counted) |
 | `hermes doctor` ("Prüfen") | the `profile-helper` runtime gets the same two views, so the doctor's "OpenAI Codex auth" row reads what a run reads (logged in) instead of "not logged in"; every profile also gets `.local/bin/hermes` (profile links may now have three levels), which the doctor looks for | annotating or hiding the doctor's lines in Helena (a second truth next to Hermes' own check) |
@@ -72,7 +73,7 @@ profile with the old binding and an expired token POSTs the stored refresh token
 ## 3. The pieces
 
 - `deployment/volition-stack/native/token-keeper/helena_token_keeper.py` — `tick` (renew what
-  is due, reconcile the Codex CLI login, write the views, the status and the private state),
+  is due, update the Codex CLI access token, write the views, the status and the private state),
   `views` (no network), `status` (prints the status; no secret), `--renew <provider>` (renew
   now, still at a quiet moment: a proof, or finding out early whether a login is alive).
 - `helena-token-keeper.service` / `.timer`, `runner-dropin.conf`
@@ -180,9 +181,9 @@ problem), then `sudo deployment/volition-stack/native/token-keeper/install.sh re
   their own refresh; they are not shared and not bound read-only, so not affected.
 - The Docker packaging (package G) runs the same program in a loop in the runner container.
 - The keeper uses a few private Hermes functions (`_refresh_entry`, `_auth_store_lock`,
-  `_load_auth_store`, `_save_codex_tokens`). `test_token_keeper_hermes.py` runs the keeper
+  `_load_auth_store`). `test_token_keeper_hermes.py` runs the keeper
   against the installed Hermes; it belongs in the Hermes update's checks (hermes-update).
 - The account's model list (hub/model-availability's `codex_listed_models`, the catalog's
   `provider_model_ids`) reads the Codex CLI's access token next to Hermes; the keeper keeps that
-  one fresh only while it is the same chain as Hermes' own. Hermes' own ChatGPT login, read
+  one fresh from a valid Hermes credential pool row. Hermes' own ChatGPT login, read
   read-only (`resolve_codex_runtime_credentials(read_only=True)`), is always kept fresh.

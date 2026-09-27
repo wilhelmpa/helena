@@ -11,7 +11,12 @@ import {
   type CliLoginState,
 } from './cli-login';
 import { claudeToolArgs, cliToolsets, codexToolArgs } from './cli-tools';
-import { collectProfile, mcpSecretVariable, type CollectedProfile } from './contributions';
+import {
+  collectProfile,
+  HELENA_MCP_SERVER,
+  mcpSecretVariable,
+  type CollectedProfile,
+} from './contributions';
 import { atomicWrite, digest, ensureRoot } from './files';
 import type { HermesInventory } from './inventory';
 import { isolationEnabled, launch, profileHelper } from './isolation';
@@ -151,6 +156,14 @@ export function claudeMcpArgs(specs: McpServerSpec[]): string[] {
         'literal' in value ? value.literal : 'env' in value ? `\${${value.env}}` : value.template,
       ]),
     );
+  const headers = (spec: McpServerSpec) => {
+    const result = values(spec.headers);
+    if (spec.name === HELENA_MCP_SERVER) {
+      delete result.Authorization;
+      result['x-api-key'] = '${ITSAPLAN_API_KEY}';
+    }
+    return result;
+  };
   const servers = Object.fromEntries(
     specs.map((spec) => [
       spec.name,
@@ -158,7 +171,7 @@ export function claudeMcpArgs(specs: McpServerSpec[]): string[] {
         ? // Claude Code hands a stdio server its whole environment, so passEnv needs
           // nothing here; a ${VAR} of an unset variable would fail the whole config.
           { type: 'stdio', command: spec.command, args: spec.args ?? [], env: values(spec.env) }
-        : { type: spec.transport, url: spec.url, headers: values(spec.headers) },
+        : { type: spec.transport, url: spec.url, headers: headers(spec) },
     ]),
   );
   return [

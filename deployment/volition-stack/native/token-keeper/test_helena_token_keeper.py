@@ -324,6 +324,48 @@ class KeeperLogic(unittest.TestCase):
         self.hermes.probe_status = 200
         self.assertEqual(self.keeper().tick(refresh=True)['logins'][0]['state'], 'ok')
 
+    def test_codex_cli_gets_current_pool_access_token_without_a_refresh_token(self):
+        access = jwt(exp=int(time.time()) + 86400,
+                     **{'https://api.openai.com/auth': {'chatgpt_account_id': 'account-current'}})
+        self.hermes.add('openai-codex', Row('pool', access, 'pool-refresh', ms(86400)))
+        self.hermes.store['providers'] = {'openai-codex': {'tokens': {
+            'access_token': 'revoked-singleton', 'refresh_token': 'revoked-refresh'}}}
+        path = self.dir / 'hermes' / '.codex' / 'auth.json'
+        path.parent.mkdir(parents=True)
+        path.write_text(json.dumps({'OPENAI_API_KEY': 'stale-key', 'tokens': {
+            'id_token': 'existing-id', 'access_token': 'stale-access', 'refresh_token': 'stale-refresh',
+            'account_id': 'stale-account'}}))
+        os.chmod(path, 0o644)
+
+        self.keeper().tick(refresh=False)
+
+        cli = json.loads(path.read_text())
+        self.assertEqual(cli['tokens'], {
+            'id_token': 'existing-id', 'access_token': access, 'account_id': 'account-current'})
+        self.assertIsNone(cli['OPENAI_API_KEY'])
+        self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o600)
+        self.assertNotIn('refresh_token', (self.dir / 'keeper' / 'view' / 'codex' / 'auth.json').read_text())
+
+    def test_codex_cli_tracks_pool_rotation_and_skips_invalid_rows(self):
+        def access(account, expires):
+            return jwt(exp=int(time.time()) + expires,
+                       **{'https://api.openai.com/auth': {'chatgpt_account_id': account}})
+
+        self.hermes.add('openai-codex', Row('expired', access('expired', -60), 'r1', ms(-60)))
+        self.hermes.add('openai-codex', Row('dead', access('dead', 86400), 'r2', ms(86400), last_status='dead'))
+        current = self.hermes.add('openai-codex', Row('valid', access('first', 86400), 'r3', ms(86400)))
+        path = self.dir / 'hermes' / '.codex' / 'auth.json'
+        self.keeper().tick(refresh=False)
+        self.assertEqual(json.loads(path.read_text())['tokens']['account_id'], 'first')
+
+        rotated = replace(current, access_token=access('second', 172800), refresh_token='r4')
+        self.hermes.rows['openai-codex'][2] = rotated
+        self.keeper().tick(refresh=False)
+        cli = json.loads(path.read_text())
+        self.assertEqual(cli['tokens']['access_token'], rotated.access_token)
+        self.assertEqual(cli['tokens']['account_id'], 'second')
+        self.assertNotIn('refresh_token', cli['tokens'])
+
     def test_provider_messages_do_not_reach_status_private_state_or_logs(self):
         self.hermes.add('anthropic', Row('a', 'access', 'refresh', ms(3600)))
         secret = 'tiny-secret'

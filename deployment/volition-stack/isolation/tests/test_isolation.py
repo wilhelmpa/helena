@@ -71,6 +71,7 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(config.forwards, {'egress': 3128, 'plan': 3000, 'localai': 13305})
         self.assertEqual(config.optional_sockets, ('localai',))
         self.assertEqual(set(config.runtimes), {'hermes', 'claude', 'codex', 'profile-helper'})
+        self.assertIn('/srv/volition/source/plan/packages/runner/dist', config.runtimes['claude'].read_only)
         self.assertIn('/var/lib/volition', config.hide)
         self.assertIn('/etc/volition', config.inaccessible)
         self.assertFalse(config.runtimes['profile-helper'].caller_args)

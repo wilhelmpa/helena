@@ -276,37 +276,42 @@ class KeeperWithHermes(unittest.TestCase):
         self.assertTrue(all(row.get('refresh_token') == 'rt-codex-1' for row in rows))
         self.assertEqual(self.login(status, 'openai-codex')['state'], 'ok')
 
-    def test_a_codex_cli_login_on_the_same_chain_follows_hermes_refresh(self):
+    def test_codex_cli_gets_pool_access_after_hermes_refresh_without_refresh_token(self):
         self.root.codex(2 * 3600).write()
         self.root.codex_cli(access=self.root.store['providers']['openai-codex']['tokens']['access_token'],
                             refresh='rt-codex-0')
         status = self.tick()
         cli = json.loads((self.root.home / '.codex' / 'auth.json').read_text())
-        self.assertEqual(cli['tokens']['refresh_token'], 'rt-codex-1')
+        self.assertEqual(cli['tokens']['access_token'], self.root.read()['credential_pool']['openai-codex'][0]['access_token'])
+        self.assertEqual(cli['tokens']['account_id'], 'account-1')
+        self.assertNotIn('refresh_token', cli['tokens'])
         self.assertEqual(cli['tokens']['id_token'], 'cli-id-token')
         self.assertEqual(stat.S_IMODE((self.root.home / '.codex' / 'auth.json').stat().st_mode), 0o600)
         self.assertEqual(self.login(status, 'openai-codex', 'codex-cli')['note'], 'linked')
 
-    def test_hermes_takes_over_a_pair_the_codex_cli_rotated_instead_of_spending_its_old_token(self):
+    def test_codex_cli_cannot_replace_the_pool_refresh_chain(self):
         self.root.codex(2 * 3600).write()
         access = self.root.store['providers']['openai-codex']['tokens']['access_token']
         self.root.codex_cli(access=access, refresh='rt-codex-0')
-        self.keeper().tick(refresh=False)  # linked
-        # The Codex CLI refreshed on its own: new pair in its file, Hermes still holds the spent one.
+        self.keeper().tick(refresh=False)
         self.root.codex_cli(access=codex_token(10 * 86400, 7), refresh='rt-cli-rotated')
         self.tick()
-        self.assertEqual(self.codex_calls, [])
+        self.assertEqual(self.codex_calls, ['rt-codex-0'])
         tokens = self.root.read()['providers']['openai-codex']['tokens']
-        self.assertEqual(tokens['refresh_token'], 'rt-cli-rotated')
+        self.assertEqual(tokens['refresh_token'], 'rt-codex-1')
+        cli_tokens = json.loads((self.root.home / '.codex' / 'auth.json').read_text())['tokens']
+        self.assertEqual(cli_tokens['access_token'], tokens['access_token'])
+        self.assertNotIn('refresh_token', cli_tokens)
 
-    def test_a_separate_codex_cli_login_is_reported_not_refreshed(self):
+    def test_an_expired_codex_cli_login_is_replaced_from_the_valid_pool(self):
         self.root.codex(9 * 86400).write()
         self.root.codex_cli(access=codex_token(-60, 3), refresh='rt-other')
         status = self.tick()
         cli = json.loads((self.root.home / '.codex' / 'auth.json').read_text())
-        self.assertEqual(cli['tokens']['refresh_token'], 'rt-other')
+        self.assertEqual(cli['tokens']['access_token'], self.root.read()['providers']['openai-codex']['tokens']['access_token'])
+        self.assertNotIn('refresh_token', cli['tokens'])
         login = self.login(status, 'openai-codex', 'codex-cli')
-        self.assertEqual((login['note'], login['managed'], login['state']), ('separate', False, 'expired'))
+        self.assertEqual((login['note'], login['managed'], login['state']), ('linked', True, 'ok'))
 
     # ── what agents see ──
 
