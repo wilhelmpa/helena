@@ -28,14 +28,14 @@ describe('Files page paths', () => {
   });
 });
 
-it('opens Markdown in Docs and keeps other files in the file viewer', () => {
+it('opens project Markdown inline in Wissen and keeps Home Markdown in Docs', () => {
   assert.equal(
     vaultNotePath('Projects/VOL/Docs/Plan.md'),
-    '/project/VOL/docs?path=Projects%2FVOL%2FDocs%2FPlan.md',
+    '/project/VOL/files?path=Docs&file=Docs%2FPlan.md',
   );
   assert.equal(
     vaultNotePath('Projects/VOL/Files/Tasks/VOL-1.md'),
-    '/project/VOL/docs?path=Projects%2FVOL%2FFiles%2FTasks%2FVOL-1.md',
+    '/project/VOL/files?path=Files%2FTasks&file=Files%2FTasks%2FVOL-1.md',
   );
   assert.equal(vaultNotePath('Private/Steuern.txt'), '/files?root=private&file=Steuern.txt');
   assert.equal(vaultNotePath('Home/Docs/März.md'), '/docs?path=Home%2FDocs%2FM%C3%A4rz.md');

@@ -18,14 +18,15 @@
 }
 .prose :global(.md-content table) {
   width: 100%;
+  min-width: 600px;
   table-layout: fixed;
   font-size: 13px;
 }
 .prose :global(.md-content :is(th, td):first-child) {
-  width: 90px;
+  width: 102px;
 }
 .prose :global(.md-content :is(th, td):last-child) {
-  width: 160px;
+  width: 192px;
 }
 .prose :global(.md-content th) {
   padding: 10px 16px;
@@ -36,6 +37,7 @@
     ui-monospace,
     monospace;
   letter-spacing: 0.18em;
+  text-transform: uppercase;
 }
 .prose :global(.md-content td) {
   padding: 11px 16px;

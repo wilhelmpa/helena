@@ -150,8 +150,7 @@ export const codePath = (key: string) => `${projectPath(key)}/code`;
 // The Docs of Home: the notes under Home/Docs in the vault.
 export const homeDocsPath = () => '/docs';
 
-// The Docs page that opens one note of the vault by its vault-relative path: the Docs of
-// its project for a path under Projects/<KEY>/, Home's Docs for any other.
+// A vault note opens in its project's Wissen or in Home's Docs.
 export const vaultNotePath = (path: string) => {
   const [top, key, ...rest] = path.split('/');
   const project = top === 'Projects' && key;
@@ -161,7 +160,7 @@ export const vaultNotePath = (path: string) => {
     return `${notesPath(key!)}&canvas=${encodeURIComponent(path)}`;
   if (/\.md$/i.test(relative))
     return project
-      ? `${projectPath(key!)}/docs?path=${encodeURIComponent(path)}`
+      ? filesPath(key!, folder, { file: relative })
       : `${homeDocsPath()}?path=${encodeURIComponent(path)}`;
   if (project) return filesPath(key!, folder, { file: relative });
   const root = top === 'Private' ? 'private' : top === 'Templates' ? 'templates' : 'home';

@@ -164,6 +164,17 @@ beforeEach(async () => {
         extractionStatus: 'ready',
         absolutePath: '/synthetic/Projects/RES/Docs/AI/00-Start.md',
       });
+    if (url.pathname === '/knowledge/notes' && method === 'PUT') {
+      assert.equal(body.path, canonical);
+      assert.equal(body.expectedSha, sha(content));
+      content = body.body;
+      return Response.json({
+        path: canonical,
+        sha256: sha(content),
+        created: false,
+        title: 'Research',
+      });
+    }
     if (url.pathname === '/knowledge/backlinks' || url.pathname === '/knowledge/history')
       return Response.json([]);
     if (['/projects/RES/files/text', '/projects/OTHER/files/text'].includes(url.pathname)) {
@@ -415,7 +426,7 @@ it('saves the same file with its original hash, metadata and canonical links int
   assert.ok(content.includes('Assets/chart.png'));
   assert.ok(!content.includes('/protected-media/'));
   assert.ok(content.includes('Saved addition'));
-  assert.ok(vaultNotePath(target).startsWith('/project/RES/docs?'));
+  assert.ok(vaultNotePath(target).startsWith('/project/RES/files?'));
 });
 
 it('keeps a local draft and its original hash after a conflicting external write and refetch', async () => {
@@ -744,6 +755,19 @@ it('opens Markdown inline from the project file list in the Docs editor', async 
   assert.deepEqual(navigations, []);
   assert.equal(content, original);
   assert.ok(requests.every((request) => request.method === 'GET'));
+});
+
+it('saves edits from the inline Docs canvas against the loaded revision', async () => {
+  content = '## Heading\n\nHello';
+  await render({ browser: true, selected: path });
+  await until(() => !!document.querySelector('[data-file-preview] .tiptap'));
+  await until(() => editor().isEditable);
+  await act(async () => editor().commands.setContent('<h2>Heading</h2><p>Hello World</p>'));
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 800));
+  });
+  await until(() => requests.some((request) => request.url.pathname === '/knowledge/notes'));
+  assert.ok(content.includes('Hello World'));
 });
 
 it('opens source from the document menu without a mode switch or persistent warning', async () => {

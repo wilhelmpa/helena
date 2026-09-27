@@ -9,7 +9,7 @@ import {
 } from '@/lib/api/endpoints/projectFiles';
 import { copyText } from '@/utils/clipboard';
 import { runtimeEnv } from '@/utils/runtimeEnv';
-import { vaultNotePath } from '@/utils/paths';
+import { filesPath, vaultNotePath } from '@/utils/paths';
 import { codeFolderUrl } from '@/utils/workspaceTools';
 import { vaultFilePath } from '../utils/vaultFilePath';
 
@@ -64,8 +64,15 @@ export function useFileActions({
     async copyPath(item: FileItem) {
       try {
         const canonical = vaultPath(item);
+        const parent = item.path.includes('/')
+          ? item.path.slice(0, item.path.lastIndexOf('/'))
+          : '';
         await copyText(
-          canonical ? `${window.location.origin}${vaultNotePath(canonical)}` : absolutePath(item),
+          projectKey
+            ? `${window.location.origin}${filesPath(projectKey, item.kind === 'folder' ? item.path : parent, { file: item.kind === 'file' ? item.path : null })}`
+            : canonical
+              ? `${window.location.origin}${vaultNotePath(canonical)}`
+              : absolutePath(item),
         );
         toast.success(t('pathCopied'));
       } catch {

@@ -42,7 +42,7 @@ import { noteTags } from '@/features/documents/utils/noteFrontmatter';
 import { useVaultWikilinkOpener } from '@/hooks/useVaultWikilinkOpener';
 import { resolveWikilink, vaultFileUrl } from '@/lib/api/endpoints/knowledge';
 import { parseWikilink, wikilinkTask } from '@/utils/wikilink';
-import { filesPath } from '@/utils/paths';
+import { filesPath, vaultNotePath } from '@/utils/paths';
 import type { FileActions } from '../hooks/useFileActions';
 import VaultTextEditor from './VaultTextEditor';
 import styles from './ProjectKnowledgeViewer.module.css';
@@ -110,7 +110,7 @@ function MarkdownEditor({
       const result = await resolveWikilink(document.path, target);
       if (!result.path) return void toast('Verknüpfung nicht gefunden');
       const parts = result.path.split('/');
-      if (parts[0] === 'Projects' && parts[1] === document.projectKey) {
+      if (parts[0] === 'Projects' && parts[1]) {
         const relative = parts.slice(2).join('/');
         router.push(filesPath(parts[1], parts.slice(2, -1).join('/'), { file: relative }));
       } else if (/\.md$/i.test(result.path)) void openWikilink(inner);
@@ -207,7 +207,8 @@ export default function ProjectKnowledgeViewer({
     queryFn: () => getFileReferences(scope, path),
     retry: false,
   });
-  const title = item.name.replace(/\.(md|markdown|pdf)$/i, '');
+  const title = note.data?.title || item.name.replace(/\.(md|markdown|pdf)$/i, '');
+  const datedTitle = /^(.*?)\s+(\d{1,2}\.\s+.+)$/.exec(title);
   const tags = note.data ? noteTags(note.data.frontmatter) : [];
   const code = actions.codeUrl(item);
   const changeSource = async (source: boolean) => {
@@ -224,6 +225,12 @@ export default function ProjectKnowledgeViewer({
       return;
     if (saveRef.current && !(await saveRef.current())) return;
     router.push(href);
+  };
+  const backlinkHref = (linkedPath: string) => {
+    const parts = linkedPath.split('/');
+    return parts[0] === 'Projects' && parts[1]
+      ? filesPath(parts[1], parts.slice(2, -1).join('/'), { file: parts.slice(2).join('/') })
+      : vaultNotePath(linkedPath);
   };
   const projectKey = scope.kind === 'project' ? scope.projectKey : null;
   const head: ReactNode = (
@@ -293,10 +300,18 @@ export default function ProjectKnowledgeViewer({
         </DropdownMenu>
       </div>
       <h1
-        className="mt-[22px] mb-3 max-w-[540px] text-[44px] leading-[1.06] font-[520] tracking-[-.055em] text-[#eeeaf6] max-sm:text-[34px]"
+        className="mt-[22px] mb-3 text-[44px] leading-[1.06] font-[520] tracking-[-.055em] text-[#eeeaf6] max-sm:text-[34px]"
         dir="auto"
       >
-        {title}
+        {datedTitle ? (
+          <>
+            {datedTitle[1]}
+            <br />
+            {datedTitle[2]}
+          </>
+        ) : (
+          title
+        )}
       </h1>
       <div className="flex flex-wrap items-center gap-2.5 text-xs text-[#88808f]">
         <span className="size-[7px] rounded-full bg-[#bdaaff]" />
@@ -321,6 +336,7 @@ export default function ProjectKnowledgeViewer({
     <WebLinkScope projectKey={projectKey}>
       <div
         data-file-preview
+        data-project-knowledge
         className="flex min-h-0 min-w-0 flex-1 gap-10 overflow-y-auto px-9 ps-16 pt-[26px] pb-6 max-lg:gap-6 max-md:px-5 max-sm:px-4"
       >
         <article className="max-w-[740px] min-w-0 flex-1">
@@ -352,7 +368,9 @@ export default function ProjectKnowledgeViewer({
         </article>
         <aside className="w-[250px] shrink-0 space-y-[22px] pt-[58px] max-lg:w-[190px] max-md:hidden">
           <section className="space-y-2">
-            <h2 className={`${mono} text-[10px] font-medium tracking-[.23em] text-[#6f687a]`}>
+            <h2
+              className={`${mono} text-[10px] leading-3 font-medium tracking-[.23em] text-[#6f687a]`}
+            >
               VERWEISE HIERHER
             </h2>
             {backlinks.data?.length ? (
@@ -360,14 +378,7 @@ export default function ProjectKnowledgeViewer({
                 <button
                   type="button"
                   key={link.path}
-                  onClick={() =>
-                    projectKey &&
-                    void openBacklink(
-                      filesPath(projectKey, link.path.split('/').slice(2, -1).join('/'), {
-                        file: link.path.split('/').slice(2).join('/'),
-                      }),
-                    )
-                  }
+                  onClick={() => void openBacklink(backlinkHref(link.path))}
                   className="block w-full rounded-xl bg-[#0e0d11] px-3 py-2.5 text-start text-xs text-[#cfc6da]"
                 >
                   {link.title}
@@ -378,7 +389,9 @@ export default function ProjectKnowledgeViewer({
             )}
           </section>
           <section className="space-y-2">
-            <h2 className={`${mono} text-[10px] font-medium tracking-[.23em] text-[#6f687a]`}>
+            <h2
+              className={`${mono} text-[10px] leading-3 font-medium tracking-[.23em] text-[#6f687a]`}
+            >
               VERLAUF
             </h2>
             {history.data?.length ? (
