@@ -35,6 +35,9 @@ describe('receipt-only MIME fallback', () => {
     ['You paid 12.00 USD', 'plain-has-facts'],
     ['Your payment is pending.', 'contradiction'],
     ['Your payment failed.', 'contradiction'],
+    ['Your payment has failed. No funds were taken.', 'contradiction'],
+    ['Payment was declined. Please try again.', 'contradiction'],
+    ['Your payment was unsuccessful.', 'contradiction'],
     ['This invoice is not paid.', 'contradiction'],
     ['Your purchase was cancelled.', 'contradiction'],
     ['You will be charged tomorrow.', 'contradiction'],
@@ -120,6 +123,21 @@ describe('receipt-only MIME fallback', () => {
     const facts = mailReceiptFacts({ ...htmlMail, textBody: parsed.text, htmlBody: parsed.html });
     expect(facts.grossCents).toBeNull();
     expect(hasMailReceiptEvidence(htmlMail.subject, facts)).toBe(false);
+  });
+
+  it.each(
+    ['0', '0.0', '0.5', '0.9', '1'].flatMap((opacity) =>
+      ['', ' !important', ';\n', ' !important;\n'].map((ending) => [opacity, ending] as const),
+    ),
+  )('only zero opacity hides receipt content: %s%s', async (opacity, ending) => {
+    const parsed = await parseMessage(
+      receiptMime(plainStub, `<div style="opacity:${opacity}${ending}">${receiptHtml}</div>`),
+    );
+    const facts = mailReceiptFacts({ ...htmlMail, textBody: parsed.text, htmlBody: parsed.html });
+    const visible = Number(opacity) > 0;
+    expect(facts.grossCents).toBe(visible ? 2380 : null);
+    expect(facts.details.mailBody?.fallback).toBe(visible ? 'accepted' : 'incomplete-html');
+    expect(hasMailReceiptEvidence(htmlMail.subject, facts)).toBe(visible);
   });
 
   it('does not treat a second payment original as a source of invoice fields', () => {

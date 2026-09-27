@@ -16,7 +16,7 @@ export function receiptHtmlText(html: string): string | null {
     exclusiveFilter: ({ attribs }) =>
       'hidden' in attribs ||
       attribs['aria-hidden']?.toLowerCase() === 'true' ||
-      /(?:display\s*:\s*none|visibility\s*:\s*(?:hidden|collapse)|opacity\s*:\s*0(?:\D|$)|(?:font-size|max-height|height)\s*:\s*0(?:px|em|rem|%)?\s*(?:;|!|$)|mso-hide\s*:\s*all)/i.test(
+      /(?:display\s*:\s*none|visibility\s*:\s*(?:hidden|collapse)|(?:^|;)\s*opacity\s*:\s*0(?:\.0+)?%?\s*(?:!important\s*)?(?:;|$)|(?:font-size|max-height|height)\s*:\s*0(?:px|em|rem|%)?\s*(?:;|!|$)|mso-hide\s*:\s*all)/i.test(
         attribs.style ?? '',
       ),
   });

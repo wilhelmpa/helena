@@ -11,7 +11,7 @@ export type MailBodyProvenance = {
 // These are refusal signals, not evidence of a completed charge. Strip link targets
 // before testing the plain stub so opaque URL tokens cannot become financial facts.
 const CONTRADICTION =
-  /\b(?:upcoming|will (?:be (?:charged|debited)|charge|debit)|not (?:paid|charged|completed|a (?:receipt|invoice))|unpaid|cancelled|canceled|void|draft|payment (?:is )?(?:failed|pending|scheduled)|next (?:subscription )?(?:payment|charge|order)|order export|export report|nicht (?:bezahlt|belastet)|wird\b[^\n]{0,80}\b(?:belastet|verrechnet|abgebucht)|storniert|entwurf|sera d[eé]bit[eé])\b/i;
+  /\b(?:upcoming|will (?:be (?:charged|debited)|charge|debit)|not (?:paid|charged|completed|a (?:receipt|invoice))|unpaid|cancelled|canceled|void|draft|payment (?:(?:is|was|has(?: been)?) )?(?:failed|declined|unsuccessful|pending|scheduled)|next (?:subscription )?(?:payment|charge|order)|order export|export report|nicht (?:bezahlt|belastet)|wird\b[^\n]{0,80}\b(?:belastet|verrechnet|abgebucht)|storniert|entwurf|sera d[eé]bit[eé])\b/i;
 const IDENTITY =
   /\b(?:invoice|receipt|rechnung|beleg|facture|order|bestell|transaction|payment|reference)(?:\s*(?:number|no\.?|id|nr\.?|nummer|code))?\s*[:#]\s*\S|\b(?:EUR|USD|GBP|CHF)\s*\d|\d\s*(?:EUR|USD|GBP|CHF)\b|[$€£]\s*\d|\d\s*[$€£]/i;
 
