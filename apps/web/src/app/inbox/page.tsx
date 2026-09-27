@@ -1,5 +1,5 @@
-import GlobalInboxPage from '@/features/inbox/GlobalInboxPage';
+import OwnerInboxPage from '@/features/inbox/OwnerInboxPage';
 
 export default function Inbox() {
-  return <GlobalInboxPage />;
+  return <OwnerInboxPage />;
 }

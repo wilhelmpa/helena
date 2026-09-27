@@ -7,6 +7,7 @@ import { PageSelect } from '@/components/layout/PageToolbar';
 import { useProjectsQuery } from '@/services/projects.service';
 import type { WorkspaceContentProps } from '@/extensions/panelTools';
 import { useTeamsQuery } from '@/services/teams.service';
+import { useProjectMailAccounts } from '@/services/mail.service';
 import MailInbox from './components/MailInbox';
 import { resolveInboxTeamId } from './inboxTeamScope';
 
@@ -20,6 +21,7 @@ export default function InboxWorkspace({
   const inboxCopy = useTranslations('inbox.hub');
   const teams = useTeamsQuery();
   const projects = useProjectsQuery();
+  const projectAccounts = useProjectMailAccounts(projectKey ?? undefined);
   const project = projects.data?.find((item) => item.key === projectKey);
   const [teamId, setTeamId] = useState<number | null>(null);
 
@@ -33,7 +35,7 @@ export default function InboxWorkspace({
     if (next !== teamId) setTeamId(next);
   }, [projectKey, teamId, teams.data, project?.teamId]);
 
-  const projectPending = projectKey != null && projects.isPending;
+  const projectPending = projectKey != null && (projects.isPending || projectAccounts.isPending);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -56,6 +58,10 @@ export default function InboxWorkspace({
 
       {teams.isPending || projectPending ? (
         <p className="p-4 text-sm text-muted-foreground">{inboxCopy('loading')}</p>
+      ) : projectKey && !projectAccounts.data?.length ? (
+        <p className="p-4 text-sm text-muted-foreground">
+          Für dieses Projekt ist kein Postfach eingerichtet.
+        </p>
       ) : teamId == null ? (
         <p className="p-4 text-sm text-muted-foreground">{teamCopy('manage.empty')}</p>
       ) : (

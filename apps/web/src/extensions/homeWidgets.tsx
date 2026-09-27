@@ -12,9 +12,7 @@ import {
   LimitsTiles,
   SystemTile,
   TasksTile,
-  WaitingTile,
 } from '@/features/home/dashboard/tiles/HomeTiles';
-import NeedsYouSection from '@/features/home/dashboard/sections/NeedsYouSection';
 import TasksSection from '@/features/home/dashboard/sections/TasksSection';
 import AgentsSection from '@/features/home/dashboard/sections/AgentsSection';
 import SchedulesSection from '@/features/home/dashboard/sections/SchedulesSection';
@@ -32,12 +30,11 @@ import { localAiNeedsYouSource } from '@/features/local-ai/services/localAiProbl
 // adds its tile, section or red problems here: one import and one line, nothing in the page.
 //
 // Figures (the row at the top), in their default order:
-//   waiting · agents · tasks · limits (one tile per subscription) · system · local-ai · updates
+//   agents · tasks · limits (one tile per subscription) · system · local-ai · updates
 // Sections (below; half-width ones pair up in two columns):
-//   needs-you · my-tasks · running · schedules · projects (full width)
+//   my-tasks · running · schedules · projects (full width)
 
 const BUILTINS = [
-  homeWidget({ id: 'waiting', kind: 'figure', group: 'work', order: 10, component: WaitingTile }),
   homeWidget({ id: 'agents', kind: 'figure', group: 'agents', order: 20, component: AgentsTile }),
   homeWidget({ id: 'tasks', kind: 'figure', group: 'work', order: 30, component: TasksTile }),
   homeWidget({
@@ -72,14 +69,6 @@ const BUILTINS = [
     order: 60,
     audience: 'owner',
     component: UpdatesTile,
-  }),
-  homeWidget({
-    id: 'needs-you',
-    kind: 'section',
-    group: 'work',
-    order: 10,
-    rows: 4,
-    component: NeedsYouSection,
   }),
   homeWidget({
     id: 'my-tasks',

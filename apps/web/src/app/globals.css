@@ -1363,7 +1363,7 @@ html[data-kiosk-display='dual'] [data-slot='alert-dialog-content'] {
   --sidebar-accent-foreground: #f3edf9;
   --sidebar-border: #ffffff0a;
   --sidebar-ring: #ae8bcf;
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: InterVariable, ui-sans-serif, system-ui, sans-serif;
   box-shadow: inset -1px 0 0 #ffffff0a;
 }
 
@@ -1386,7 +1386,7 @@ html[data-kiosk-display='dual'] [data-slot='alert-dialog-content'] {
 .helena-sidebar-brand time,
 .helena-project-key,
 .helena-sidebar-section h2 {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: 'JetBrains Mono Variable', ui-monospace, monospace;
   font-size: 10px;
   font-weight: 500;
 }

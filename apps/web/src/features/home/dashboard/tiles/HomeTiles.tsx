@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { approvalsPath, globalAgentActivityPath, tasksPath } from '@/utils/paths';
+import { globalInboxPath, globalAgentActivityPath, tasksPath } from '@/utils/paths';
 import { dayKey, formatDurationShort, formatShortDate } from '@/utils/dates';
 import { usePendingApprovalCount } from '@/services/approvals.service';
 import { usePipelineApprovals } from '@/services/pipelines.service';
@@ -55,7 +55,7 @@ export function WaitingTile() {
   const red = needs.problems > 0 || needs.failures > 0;
   return (
     <FigureTile
-      href={approvalsPath()}
+      href={globalInboxPath()}
       label={t('widgets.waiting')}
       value={decisions}
       status={red ? 'danger' : (decisions ?? 0) > 0 ? 'waiting' : undefined}

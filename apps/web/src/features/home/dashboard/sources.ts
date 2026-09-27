@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { KeyRound, ServerCrash } from 'lucide-react';
 import {
   agentActivityPath,
-  approvalsPath,
+  globalInboxPath,
   globalAgentActivityPath,
   homeChatPath,
   issuePath,
@@ -31,7 +31,7 @@ function useApprovalEntries(): { entries: NeedsYouEntry[]; isPending: boolean } 
       key: `approval:${a.id}`,
       kind: 'approval',
       at: a.createdAt,
-      href: approvalsPath(),
+      href: globalInboxPath(),
       title: a.action,
       detail: [a.agentName, a.issueIdentifier ?? a.projectName].filter(Boolean).join(' · '),
     })),
@@ -46,7 +46,7 @@ function useStepEntries(): { entries: NeedsYouEntry[]; isPending: boolean } {
       key: `step:${step.runId}:${step.stepId}:${step.iteration}`,
       kind: 'step',
       at: step.waitingSince,
-      href: approvalsPath(),
+      href: globalInboxPath(),
       title: `${step.pipelineName} · ${step.stepName}`,
       detail: step.issueIdentifier ?? step.projectName,
     })),
@@ -65,7 +65,7 @@ function useProposalEntries(): { entries: NeedsYouEntry[]; isPending: boolean } 
               key: 'proposals',
               kind: 'proposals',
               at: '',
-              href: approvalsPath(),
+              href: globalInboxPath(),
               title: t('proposals', { count }),
               detail: '',
             },
@@ -87,6 +87,7 @@ function useFailureEntries(): { entries: NeedsYouEntry[]; isPending: boolean } {
       .map((entry) => ({
         key: entry.id,
         kind: 'failure',
+        projectKey: entry.project?.key ?? null,
         at: entry.at,
         href:
           entry.kind === 'chat' && entry.agent && entry.threadId
