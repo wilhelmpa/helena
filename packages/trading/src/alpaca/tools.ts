@@ -463,6 +463,39 @@ export function alpacaPaperTools(deps: PaperToolDeps = {}): AgentTool<unknown>[]
       },
     },
     {
+      name: 'alpaca_news',
+      title: 'Alpaca news',
+      description:
+        'Recent Benzinga news from Alpaca market data for research. Read only; one page per call.',
+      inputSchema: z.object({
+        symbols: z.array(symbolSchema).min(1).max(20).optional(),
+        since: z.iso
+          .datetime({ offset: true })
+          .optional()
+          .describe('Only news since this ISO time.'),
+        limit: z.number().int().min(1).max(50).default(20),
+      }),
+      category: 'read',
+      async handler(input: unknown, ctx: ToolCallContext) {
+        const query = input as { symbols?: string[]; since?: string; limit: number };
+        const news = await clientOf(ctx, deps).news(query);
+        return {
+          news: news.map((item) => {
+            const summary = Array.from(item.summary);
+            return {
+              id: item.id,
+              created_at: item.created_at,
+              headline: item.headline,
+              summary: summary.slice(0, 300).join('') + (summary.length > 300 ? '…' : ''),
+              symbols: item.symbols,
+              source: item.source,
+              url: item.url,
+            };
+          }),
+        };
+      },
+    },
+    {
       name: 'trading_indikatoren',
       title: 'Trading indicators (paper data)',
       description: 'Calculate exact indicators from completed Alpaca paper OHLCV bars; read only.',

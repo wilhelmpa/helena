@@ -66,7 +66,8 @@
     {
       "template": "trading-researcher",
       "assignment": "Markt-Research für TRADE: Nachrichtenlage und Termine der Watchlist, Unternehmenszahlen und Bewertung, Makro. Ablage in Docs/Research/ und Docs/Märkte/. Aufgaben kommen von @hermes-trade-coordinator; Chartfragen gehen an @chart-analyst-trade, Krypto an @crypto-analyst-trade, Strategie-Ideen als Idee an @strategy-developer-trade.",
-      "projectBrowser": true
+      "projectBrowser": true,
+      "tools": [{ "connector": "alpaca_paper", "names": ["alpaca_news"] }]
     },
     {
       "template": "chart-analyst",

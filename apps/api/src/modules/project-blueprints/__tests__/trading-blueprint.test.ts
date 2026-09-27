@@ -64,6 +64,12 @@ describe('the trading blueprint', () => {
     }
   });
 
+  it('binds Alpaca news to the trading researcher as a read tool', () => {
+    const researcher = blueprint.agents.find((agent) => agent.template === 'trading-researcher')!;
+    expect(researcher.tools).toEqual([{ connector: 'alpaca_paper', names: ['alpaca_news'] }]);
+    expect(alpacaPaperTools().find((tool) => tool.name === 'alpaca_news')?.category).toBe('read');
+  });
+
   it('denies every live trading host and no paper host', () => {
     const deny = new Set(blueprint.network?.deny ?? []);
     for (const host of LIVE_TRADING_HOSTS)

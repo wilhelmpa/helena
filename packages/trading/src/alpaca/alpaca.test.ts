@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+import { z } from 'zod';
 import type { ToolCallContext } from '@helena/sdk';
 import { checkOrder, tradingDay, type CheckInput } from './checks';
 import { AlpacaPaperClient, type Fetch } from './client';
@@ -263,7 +264,9 @@ describe('order checks', () => {
 });
 
 // A fake Alpaca that records every request.
-function fakeAlpaca(state: { equity?: string; lastEquity?: string; orders?: unknown[] } = {}) {
+function fakeAlpaca(
+  state: { equity?: string; lastEquity?: string; orders?: unknown[]; news?: unknown[] } = {},
+) {
   const requests: { method: string; url: string; body: unknown }[] = [];
   const fetchImpl: Fetch = async (url, init) => {
     const method = init?.method ?? 'GET';
@@ -290,6 +293,7 @@ function fakeAlpaca(state: { equity?: string; lastEquity?: string; orders?: unkn
     }
     if (pathname === '/v2/positions') return json([]);
     if (pathname === '/v2/orders' && method === 'GET') return json(state.orders ?? []);
+    if (pathname === '/v1beta1/news') return json({ news: state.news ?? [] });
     if (pathname === '/v2/stocks/trades/latest') {
       return json({ trades: { SPY: { p: 600, t: '2026-10-01T15:00:00Z' } } });
     }
@@ -372,6 +376,67 @@ const ORDER = {
 };
 
 describe('paper tools', () => {
+  test('news uses one read-only market-data request and returns compact fields', async () => {
+    const { fetchImpl, requests } = fakeAlpaca({
+      news: [
+        {
+          id: 123,
+          created_at: '2026-10-01T14:55:00Z',
+          headline: 'Synthetic earnings report',
+          summary: 'A'.repeat(301),
+          symbols: ['SPY'],
+          source: 'benzinga',
+          url: 'https://example.test/news/123',
+          author: 'Fixture Author',
+          content: 'Excluded article body',
+        },
+      ],
+    });
+    const result = (await tool(fetchImpl, 'alpaca_news').handler(
+      { symbols: ['SPY', 'BTC/USD'], since: '2026-10-01T14:00:00Z', limit: 50 },
+      context(),
+    )) as { news: Record<string, unknown>[] };
+    expect(requests).toHaveLength(1);
+    const request = requests[0]!;
+    const url = new URL(request.url);
+    expect(url.origin).toBe('https://data.alpaca.markets');
+    expect(url.pathname).toBe('/v1beta1/news');
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      symbols: 'SPY,BTCUSD',
+      start: '2026-10-01T14:00:00Z',
+      limit: '50',
+      sort: 'desc',
+    });
+    expect(request.method).toBe('GET');
+    expect(result.news).toEqual([
+      {
+        id: 123,
+        created_at: '2026-10-01T14:55:00Z',
+        headline: 'Synthetic earnings report',
+        summary: 'A'.repeat(300) + '…',
+        symbols: ['SPY'],
+        source: 'benzinga',
+        url: 'https://example.test/news/123',
+      },
+    ]);
+  });
+
+  test('news input is bounded and rate-limit errors are not retried', async () => {
+    const schema = tool(async () => Response.json({ news: [] }), 'alpaca_news')
+      .inputSchema as z.ZodType;
+    expect(schema.safeParse({ limit: 51 }).success).toBe(false);
+    expect(schema.safeParse({ limit: 0 }).success).toBe(false);
+    expect(schema.safeParse({ since: 'invalid' }).success).toBe(false);
+    expect(schema.parse({})).toEqual({ limit: 20 });
+    let requests = 0;
+    const limited = tool(async () => {
+      requests++;
+      return Response.json({ message: 'rate limit' }, { status: 429 });
+    }, 'alpaca_news');
+    await expect(limited.handler({ limit: 20 }, context())).rejects.toThrow('429');
+    expect(requests).toBe(1);
+  });
+
   test('an order within the limits goes to the paper API as a bracket order', async () => {
     const { fetchImpl, requests } = fakeAlpaca();
     const result = (await tool(fetchImpl, 'alpaca_paper_submit_order').handler(
@@ -462,6 +527,7 @@ describe('paper tools', () => {
       alpaca_paper_orders: 'read',
       alpaca_paper_market: 'read',
       alpaca_paper_bars: 'read',
+      alpaca_news: 'read',
       trading_indikatoren: 'read',
       trading_signal_pruefen: 'read',
       alpaca_paper_check_order: 'read',

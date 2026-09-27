@@ -52,6 +52,32 @@ describe('agent tools', () => {
     expect(list.data?.items).toHaveLength(1);
   });
 
+  it('binds Alpaca news to a paper credential and a project agent', async () => {
+    const { asOwner, teamId } = await setup();
+    const credentialId = await createCredential(asOwner, 'MKT', {
+      integrationKey: 'alpaca_paper',
+      credential: {
+        keyId: 'PKTEST1234567890',
+        secretKey: 'synthetic-paper-key',
+        maxOrderValueUsd: 1000,
+        maxPositionValueUsd: 2000,
+        maxRiskPerTradeUsd: 50,
+        dailyLossLimitUsd: 150,
+      },
+    });
+    const binding = await tools(asOwner, teamId).post({ toolKey: 'alpaca_news', credentialId });
+    expect(binding.status).toBe(201);
+    expect(binding.data).toMatchObject({ toolKey: 'alpaca_news', credentialId });
+
+    const agent = await createAgent(asOwner, 'MKT', { name: 'Research', username: 'research' });
+    const assigned = await agents(
+      asOwner,
+      teamId,
+    )({ agentId: agent.data!.agent.id })['tool-configs'].put({ agentToolIds: [binding.data!.id] });
+    expect(assigned.status).toBe(200);
+    expect(assigned.data?.map((item) => item.id)).toEqual([binding.data!.id]);
+  });
+
   it('rejects an unknown tool', async () => {
     const { asOwner, teamId } = await setup();
     const credentialId = await jinaCredential(asOwner);

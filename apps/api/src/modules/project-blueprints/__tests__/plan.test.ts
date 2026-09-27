@@ -29,6 +29,7 @@ const PAPER_TOOLS = [
   'alpaca_paper_orders',
   'alpaca_paper_market',
   'alpaca_paper_bars',
+  'alpaca_news',
   'trading_indikatoren',
   'trading_signal_pruefen',
   'alpaca_paper_check_order',

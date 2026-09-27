@@ -85,6 +85,16 @@ export interface AlpacaBar {
   v: number;
 }
 
+export interface AlpacaNewsItem {
+  id: number;
+  created_at: string;
+  headline: string;
+  summary: string;
+  symbols: string[];
+  source: string;
+  url: string;
+}
+
 export interface NewOrder {
   symbol: string;
   side: 'buy' | 'sell';
@@ -264,6 +274,22 @@ export class AlpacaPaperClient {
       },
     );
     return body.bars?.[query.symbol] ?? [];
+  }
+
+  async news(query: {
+    symbols?: string[];
+    since?: string;
+    limit: number;
+  }): Promise<AlpacaNewsItem[]> {
+    const body = await this.call<{ news: AlpacaNewsItem[] }>('data', '/v1beta1/news', {
+      query: {
+        symbols: query.symbols?.map((symbol) => symbol.replace('/', '')).join(','),
+        start: query.since,
+        limit: String(query.limit),
+        sort: 'desc',
+      },
+    });
+    return body.news ?? [];
   }
 }
 

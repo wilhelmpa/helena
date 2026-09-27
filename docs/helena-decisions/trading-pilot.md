@@ -6,4 +6,6 @@
 
 Jev prüft Nachrichten und Termine als Veto vor einem Einstieg. Qwen prüft Regeln und Limits, gleicht das Journal ab und dokumentiert Entscheidungen. Ein starkes Modell wird nur bei Unklarheit oder für das Wochenreview hinzugezogen; es rechnet Indikatoren und Positionsgrößen nicht selbst.
 
+Der Research-Agent ruft `alpaca_news(symbols?, since?, limit?)` alle 15 Minuten mit den Paper-Schlüsseln über die Alpaca-News-API (Benzinga) ab. Pro neuer Meldungs-ID legt er eine Karte vom Typ „News“ an, bewertet sie mit der vorhandenen Trading-News-Entscheidung (Jev, Rückfall Qwen) und verschiebt sie nach „Relevant“ oder „Archiv“. Ein Aufruf liefert höchstens 50 Meldungen und wiederholt fehlgeschlagene oder begrenzte API-Anfragen nicht automatisch.
+
 Formelreferenzen: [StockCharts RSI](https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi), [StockCharts MACD](https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/macd-moving-average-convergence-divergence-oscillator), [StockCharts Bollinger](https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/bollinger-bands), [StockCharts ATR-Rechenbeispiel (Archiv, S. 10–11)](https://vb.fx-arabia.com/uploaded/178_01280868405.pdf).
