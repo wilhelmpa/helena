@@ -47,5 +47,11 @@
     "attachments": "Attachments",
     "any": "All",
     "reset": "Reset filters"
+  },
+  "groups": {
+    "approvals": "Approvals",
+    "errors": "Errors",
+    "mentions": "Mentions",
+    "system": "System"
   }
 }

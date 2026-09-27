@@ -18,7 +18,7 @@ type InboxTab = 'messages' | 'updates';
 export default function InboxPage() {
   const t = useTranslations('inbox.hub');
   const { project } = useShell();
-  const [tab, setTab] = useState<InboxTab>('messages');
+  const [tab, setTab] = useState<InboxTab>('updates');
   const unread = useInboxUnread(project?.project.key ?? null, project?.project.id ?? null).data;
 
   if (!project) return null;

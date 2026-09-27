@@ -32,12 +32,20 @@ export default function ProjectTreeGroup({
   const hasActive = group.projects.some((project) => project.key === currentProjectKey);
 
   return (
-    <Collapsible asChild open={open} onOpenChange={setOpen} className="group/project-group">
+    <Collapsible
+      asChild
+      open={group.projects.length > 0 && open}
+      onOpenChange={setOpen}
+      className="group/project-group"
+    >
       <SidebarMenuItem>
         <CollapsibleTrigger asChild>
           <SidebarMenuButton
-            isActive={!open && hasActive}
-            className={cn(over && 'ring-2 ring-sidebar-ring')}
+            isActive={false}
+            className={cn(
+              hasActive && 'text-foreground hover:bg-transparent',
+              over && 'ring-2 ring-sidebar-ring',
+            )}
             onDragOver={(event) => {
               if (!manage || !isProjectDrag(event)) return;
               event.preventDefault();
@@ -55,7 +63,9 @@ export default function ProjectTreeGroup({
               }
             }}
           >
-            <ChevronRight className="transition-transform group-data-[state=open]/project-group:rotate-90" />
+            {group.projects.length > 0 && (
+              <ChevronRight className="transition-transform group-data-[state=open]/project-group:rotate-90" />
+            )}
             <span className="min-w-0 flex-1 truncate font-medium">{group.name}</span>
             <span
               className={cn(

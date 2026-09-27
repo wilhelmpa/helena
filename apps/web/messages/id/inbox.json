@@ -47,5 +47,11 @@
     "attachments": "Lampiran",
     "any": "Semua",
     "reset": "Atur ulang filter"
+  },
+  "groups": {
+    "approvals": "Persetujuan",
+    "errors": "Kesalahan",
+    "mentions": "Sebutan",
+    "system": "Sistem"
   }
 }

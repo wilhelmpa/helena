@@ -100,7 +100,7 @@ export function PromptInput({
       >
         <InputGroup
           className={cn(
-            'overflow-hidden rounded-xl border-border bg-background shadow-none has-[[data-slot=input-group-control]:focus-visible]:border-ring/60 has-[[data-slot=input-group-control]:focus-visible]:ring-0 dark:bg-background',
+            'overflow-hidden rounded-xl border-border bg-background shadow-none has-[[data-slot=input-group-control]:focus-visible]:border-ring/60 dark:bg-background',
             dragOver && 'border-brand bg-brand-subtle/40',
             groupClassName,
           )}

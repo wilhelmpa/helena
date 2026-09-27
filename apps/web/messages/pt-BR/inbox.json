@@ -47,5 +47,11 @@
     "attachments": "Anexos",
     "any": "Todos",
     "reset": "Redefinir filtros"
+  },
+  "groups": {
+    "approvals": "Aprovações",
+    "errors": "Erros",
+    "mentions": "Menções",
+    "system": "Sistema"
   }
 }

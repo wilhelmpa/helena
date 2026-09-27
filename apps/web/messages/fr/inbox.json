@@ -47,5 +47,11 @@
     "attachments": "Pièces jointes",
     "any": "Tous",
     "reset": "Réinitialiser les filtres"
+  },
+  "groups": {
+    "approvals": "Approbations",
+    "errors": "Erreurs",
+    "mentions": "Mentions",
+    "system": "Système"
   }
 }

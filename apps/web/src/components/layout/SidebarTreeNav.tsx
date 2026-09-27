@@ -2,12 +2,13 @@
 
 import { type ReactNode } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { ChevronRight, Folder, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useProjectFeatures } from '@/hooks/useProjectFeatures';
 import { usePersistedBoolean } from '@/hooks/usePersistedBoolean';
+import { useInboxUnread } from '@/hooks/useInboxUnread';
 import { useProjectSettingsNavItems } from '@/hooks/useProjectSettingsNavItems';
 import { usePendingApprovalCount } from '@/services/approvals.service';
 import { useProposalCount } from '@/features/agent-runtime/services/agentRuntime.service';
@@ -16,7 +17,6 @@ import { useViewFoldersQuery, useViewsQuery } from '@/services/views.service';
 import type { View } from '@/lib/api/endpoints/views';
 import { useFilesQuery } from '@/services/files.service';
 import { useDashboardsQuery } from '@/services/dashboards.service';
-import { useProjectMailAccounts } from '@/services/mail.service';
 import {
   agentActivityPath,
   aiAgentsPath,
@@ -38,6 +38,7 @@ import { homeNavigation } from './homeNavigation';
 import SidebarApprovalsRefresh from './SidebarApprovalsRefresh';
 import SidebarAreaNav from './SidebarAreaNav';
 import SidebarSavedViewItem from './SidebarSavedViewItem';
+import { hasTreeContent } from './treeContent';
 
 function pathIsActive(pathname: string, href: string) {
   const path = href.split('?')[0]!;
@@ -55,17 +56,26 @@ function TreeLink({
   href,
   children,
   badge,
+  dot,
   nested = false,
   activeOverride,
 }: {
   href: string;
   children: ReactNode;
   badge?: number;
+  dot?: boolean;
   nested?: boolean;
   activeOverride?: boolean;
 }) {
   const pathname = usePathname();
-  const active = activeOverride ?? (!href.includes('?') && pathIsActive(pathname, href));
+  const searchParams = useSearchParams();
+  const [path, query] = href.split('?');
+  const active =
+    activeOverride ??
+    (pathIsActive(pathname, path!) &&
+      (query
+        ? [...new URLSearchParams(query)].every(([key, value]) => searchParams.get(key) === value)
+        : !nested || searchParams.size === 0));
   return (
     <Link
       href={href}
@@ -74,6 +84,7 @@ function TreeLink({
     >
       <span className="min-w-0 flex-1 truncate">{children}</span>
       {badge != null && badge > 0 && <span className="helena-tree-badge">{badge}</span>}
+      {dot && <span className="size-1.5 rounded-full bg-primary" aria-hidden="true" />}
     </Link>
   );
 }
@@ -98,62 +109,81 @@ function TreeBranch({
     `sidebar:tree:${id}`,
     pathIsActive(pathname, href) || activePaths.some((path) => pathIsActive(pathname, path)),
   );
+  const expandable = hasTreeContent(children);
   return (
     <div className="helena-tree-branch">
       <div className="helena-tree-parent">
         <TreeLink href={href}>{label}</TreeLink>
         {action}
-        <button
-          type="button"
-          className="helena-tree-toggle"
-          aria-label={label}
-          aria-expanded={open}
-          onClick={() => setOpen(!open)}
-        >
-          <ChevronRight size={14} className={open ? 'rotate-90' : ''} />
-        </button>
+        {expandable && (
+          <button
+            type="button"
+            className="helena-tree-toggle"
+            aria-label={label}
+            aria-expanded={open}
+            onClick={() => setOpen(!open)}
+          >
+            <ChevronRight size={14} className={open ? 'rotate-90' : ''} />
+          </button>
+        )}
       </div>
-      {open && <div className="helena-tree-children">{children}</div>}
+      {expandable && open && <div className="helena-tree-children">{children}</div>}
     </div>
   );
 }
 
-function ApprovalBadge({ teamIds }: { teamIds: number[] }) {
+function ApprovalBadge({
+  teamIds,
+  projectKey,
+  projectId,
+}: {
+  teamIds: number[];
+  projectKey: string | null;
+  projectId: number | null;
+}) {
   const t = useTranslations('nav');
-  const pending = usePendingApprovalCount().data?.count ?? 0;
-  const pipelines = usePipelineApprovals().data?.length ?? 0;
-  const proposals = useProposalCount().data?.count ?? 0;
+  const pending = usePendingApprovalCount(projectKey ?? undefined).data?.count ?? 0;
+  const pipelines = (usePipelineApprovals().data ?? []).filter(
+    (item) => !projectKey || item.projectKey === projectKey,
+  ).length;
+  const proposalCount = useProposalCount().data?.count ?? 0;
+  const proposals = projectKey ? 0 : proposalCount;
+  const unread = useInboxUnread(projectKey, projectId).data ?? 0;
+  const allUnread = useInboxUnread(null, null).data ?? 0;
   return (
     <>
       {teamIds.map((teamId) => (
         <SidebarApprovalsRefresh key={teamId} teamId={teamId} />
       ))}
-      <TreeBranch
-        id="you:inbox"
-        label={t('sidebarInbox')}
-        href="/inbox"
-        activePaths={['/approvals']}
-        action={
-          pending + pipelines + proposals > 0 && (
-            <span className="helena-tree-badge">{pending + pipelines + proposals}</span>
-          )
-        }
+      <TreeLink
+        href={projectKey ? inboxPath(projectKey) : '/inbox'}
+        badge={pending + pipelines + proposals + unread}
+        dot={projectKey != null && allUnread > unread}
       >
-        <TreeLink href="/approvals" nested>
-          {t('approvals')}
-        </TreeLink>
-      </TreeBranch>
+        {t('sidebarInbox')}
+      </TreeLink>
+      <TreeLink href={projectKey ? projectApprovalsPath(projectKey) : '/approvals'}>
+        {t('approvals')}
+      </TreeLink>
     </>
   );
 }
 
-export function SidebarPersonalNav({ teamIds }: { teamIds: number[] }) {
+export function SidebarPersonalNav({
+  teamIds,
+  projectKey,
+  projectId,
+}: {
+  teamIds: number[];
+  projectKey: string | null;
+  projectId: number | null;
+}) {
   const t = useTranslations('nav');
   return (
     <section className="helena-sidebar-section">
       <h2>{t('sidebarYou')}</h2>
       <TreeLink href="/chat">{t('sidebarHomeChat')}</TreeLink>
-      <ApprovalBadge teamIds={teamIds} />
+      <ApprovalBadge teamIds={teamIds} projectKey={projectKey} projectId={projectId} />
     </section>
   );
 }
@@ -252,9 +282,6 @@ export function SidebarHomeTree({ teamId }: { teamId: number | null }) {
             </TreeLink>
           </>
         )}
-        <TreeLink href="/inbox" nested>
-          {t('inbox')}
-        </TreeLink>
       </TreeBranch>
     </section>
   );
@@ -285,7 +312,6 @@ export function SidebarProjectTree({
   const { data: dashboards = [] } = useDashboardsQuery(
     features.dashboards && can('dashboards', 'read') ? projectKey : null,
   );
-  const { data: mailAccounts = [] } = useProjectMailAccounts(projectKey);
   const settings = useProjectSettingsNavItems(projectKey);
   const first = settings.find((item) => item.key === 'general') ?? settings[0];
   const taskHref = projectPath(projectKey);
@@ -325,7 +351,7 @@ export function SidebarProjectTree({
               onDelete={onDeleteView}
             />
           ))}
-        {can('views', 'read') && (
+        {can('views', 'read') && (areas.length > 0 || can('views', 'create')) && (
           <SidebarAreaNav
             projectKey={projectKey}
             onEditView={onEditView}
@@ -372,7 +398,6 @@ export function SidebarProjectTree({
           aiTeamPath(projectKey, 'schedules'),
           agentActivityPath(projectKey),
           workflowsPath(projectKey),
-          projectApprovalsPath(projectKey),
         ]}
       >
         {can('ai_agents', 'read') && (
@@ -398,13 +423,7 @@ export function SidebarProjectTree({
             {t('workflows')}
           </TreeLink>
         )}
-        {can('ai_agents', 'edit') && (
-          <TreeLink href={projectApprovalsPath(projectKey)} nested>
-            {t('approvals')}
-          </TreeLink>
-        )}
       </TreeBranch>
-      {mailAccounts.length > 0 && <TreeLink href={inboxPath(projectKey)}>{t('inbox')}</TreeLink>}
       {isAdmin && <TreeLink href={receiptsPath(projectKey)}>{t('receipts')}</TreeLink>}
       {features.initiatives && can('initiatives', 'read') && (
         <TreeLink href={initiativesPath(projectKey)}>{t('initiatives')}</TreeLink>

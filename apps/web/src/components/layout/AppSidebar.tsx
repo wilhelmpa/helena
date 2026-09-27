@@ -41,6 +41,8 @@ export default function AppSidebar({
   const t = useTranslations('nav');
   const side = useSidebarSide();
   const teamIds = [...new Set(projects.map((project) => project.teamId))];
+  const currentProjectId =
+    projects.find((project) => project.key === currentProjectKey)?.id ?? null;
   const homeTeamId = teamIds.length === 1 ? teamIds[0]! : null;
   const { data: session } = useSession();
   const [mounted, setMounted] = useState(false);
@@ -74,7 +76,11 @@ export default function AppSidebar({
         />
       </SidebarHeader>
       <SidebarContent className="helena-sidebar-content">
-        <SidebarPersonalNav teamIds={teamIds} />
+        <SidebarPersonalNav
+          teamIds={teamIds}
+          projectKey={currentProjectKey}
+          projectId={currentProjectId}
+        />
         {currentProjectKey ? (
           <SidebarProjectTree
             projectKey={currentProjectKey}

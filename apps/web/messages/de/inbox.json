@@ -47,5 +47,11 @@
     "attachments": "Anhänge",
     "any": "Alle",
     "reset": "Filter zurücksetzen"
+  },
+  "groups": {
+    "approvals": "Freigaben",
+    "errors": "Fehler",
+    "mentions": "Erwähnungen",
+    "system": "System"
   }
 }

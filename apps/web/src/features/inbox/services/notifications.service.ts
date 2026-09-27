@@ -16,7 +16,7 @@ import { qk } from '@/services/queryKeys';
 // object is part of the query key so switching filters is a distinct cache entry.
 export function useNotificationsQuery(
   projectKey: string,
-  projectId: number,
+  projectId: number | null,
   filters: NotificationFilters,
 ) {
   return useInfiniteQuery({
@@ -33,6 +33,10 @@ function useInvalidateInbox(projectKey: string) {
   return () => {
     void qc.invalidateQueries({ queryKey: ['notifications', projectKey] });
     void qc.invalidateQueries({ queryKey: qk.notificationsUnread(projectKey) });
+    if (projectKey !== 'global') {
+      void qc.invalidateQueries({ queryKey: ['notifications', 'global'] });
+      void qc.invalidateQueries({ queryKey: qk.notificationsUnread('global') });
+    }
   };
 }
 
@@ -44,7 +48,7 @@ export function useSetNotificationRead(projectKey: string) {
   });
 }
 
-export function useMarkAllRead(projectKey: string, projectId: number) {
+export function useMarkAllRead(projectKey: string, projectId: number | null) {
   const invalidate = useInvalidateInbox(projectKey);
   return useMutation({
     mutationFn: () => markAllNotificationsRead(projectId),
@@ -69,7 +73,7 @@ export function useDeleteNotification(projectKey: string) {
   });
 }
 
-export function useDeleteNotifications(projectKey: string, projectId: number) {
+export function useDeleteNotifications(projectKey: string, projectId: number | null) {
   const invalidate = useInvalidateInbox(projectKey);
   return useMutation({
     mutationFn: (scope: NotificationDeleteScope) => deleteNotifications(scope, projectId),

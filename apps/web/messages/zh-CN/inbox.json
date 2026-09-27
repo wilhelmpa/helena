@@ -47,5 +47,11 @@
     "attachments": "附件",
     "any": "全部",
     "reset": "重置筛选"
+  },
+  "groups": {
+    "approvals": "审批",
+    "errors": "错误",
+    "mentions": "提及",
+    "system": "系统"
   }
 }
