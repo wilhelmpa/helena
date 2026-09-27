@@ -5,6 +5,7 @@
 #
 #   sudo deployment/volition-stack/native/deploy.sh [branch]    (default: volition/hub)
 set -euo pipefail
+umask 022
 
 [[ $EUID -eq 0 ]] || { echo "deploy.sh: run with sudo" >&2; exit 1; }
 
@@ -27,6 +28,9 @@ untracked=$(as_owner git -C "$live" status --porcelain --untracked-files=normal 
 # checkout ahead of it, so the next one compares against this and repeats every step.
 state_dir=/var/lib/volition/deploy
 install -d -m 0755 "$state_dir"
+[[ ! -L "$state_dir/deploy.lock" ]] || { echo "deploy.sh: unexpected lock symlink" >&2; exit 1; }
+exec 9>>"$state_dir/deploy.lock"
+flock -n 9 || { echo "deploy.sh: another deployment is active" >&2; exit 1; }
 deployed=$(cat "$state_dir/deployed" 2>/dev/null || true)
 head=$(as_owner git -C "$live" rev-parse HEAD)
 if [[ -n $deployed ]] && as_owner git -C "$live" merge-base --is-ancestor "$deployed" "$head"; then
@@ -34,8 +38,10 @@ if [[ -n $deployed ]] && as_owner git -C "$live" merge-base --is-ancestor "$depl
 else
   before=$head
 fi
-as_owner git -C "$live" merge --ff-only --quiet "$branch"
-after=$(as_owner git -C "$live" rev-parse HEAD)
+after=$(as_owner git -C "$live" rev-parse --verify "$branch^{commit}")
+as_owner git -C "$live" merge-base --is-ancestor "$head" "$after" || {
+  echo "deploy.sh: target is not a fast-forward" >&2; exit 1;
+}
 if [[ $before == "$after" ]]; then
   echo "deploy.sh: $branch is already live"
   exit 0
@@ -47,6 +53,19 @@ api_runtime_changed() {
     ':(exclude,glob)apps/api/src/**/*.test.ts'
 }
 restart=()
+runner_affected=false
+if changed packages/runner packages/sdk bun.lock \
+  deployment/volition-stack/native/systemd/volition-hermes-runner.service \
+  deployment/volition-stack/integration/scripts/volition-hermes-catalog.py \
+  deployment/volition-stack/integration/scripts/volition-hermes-runner; then
+  runner_affected=true
+fi
+runner_drain="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/runner-drain/runner-drain.py"
+if $runner_affected; then
+  # This happens before checkout, migration, build installation or API restart.
+  python3 "$runner_drain" drain --target "$after" --before "$before"
+fi
+as_owner git -C "$live" merge --ff-only --quiet "$after"
 
 if changed bun.lock; then
   echo "installing dependencies"
@@ -130,13 +149,12 @@ fi
 
 # The runner executes a bundle owned by root, so the agent user it runs as cannot replace
 # the code that drives it. The bundle is built by the checkout's owner and installed.
-if changed packages/runner; then
+if changed packages/runner packages/sdk bun.lock; then
   echo "building the runner"
   bundle=$(runuser -u "$owner" -- mktemp --suffix=.js)
   as_owner bash -c "cd '$live/packages/runner' && bun build src/cli.ts --target=node --outfile '$bundle' >/dev/null"
   install -m 0755 -o root -g volition "$bundle" "$live/packages/runner/dist/cli.js"
   rm -f "$bundle"
-  restart+=(volition-hermes-runner.service)
 fi
 
 if changed deployment/volition-stack/integration; then
@@ -271,9 +289,22 @@ if changed deployment/volition-stack/native/token-keeper deployment/volition-sta
   "$live/deployment/volition-stack/native/token-keeper/install.sh" sync
 fi
 
+if $runner_affected; then
+  without_runner=()
+  for unit in "${restart[@]}"; do
+    [[ $unit == volition-hermes-runner.service ]] || without_runner+=("$unit")
+  done
+  restart=("${without_runner[@]}")
+fi
 if ((${#restart[@]} > 0)); then
   echo "restarting ${restart[*]}"
   systemctl restart "${restart[@]}"
+fi
+if $runner_affected; then
+  curl -sf -o /dev/null --connect-timeout 2 --max-time 5 \
+    --retry 5 --retry-delay 1 --retry-max-time 30 --retry-all-errors http://127.0.0.1:3000/docs
+  python3 "$runner_drain" ready --target "$after"
+  python3 "$runner_drain" activate --target "$after"
 fi
 
 # Every service the instance consists of has to be running again, and the API and web
