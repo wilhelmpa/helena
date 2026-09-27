@@ -193,7 +193,8 @@ export async function setupAlpacaPaper(options: {
         (key) =>
           key.startsWith('alpaca_paper_') ||
           key === 'trading_indikatoren' ||
-          key === 'trading_signal_pruefen',
+          key === 'trading_signal_pruefen' ||
+          key === 'alpaca_news',
       ),
     'paper-tool-registry',
   );

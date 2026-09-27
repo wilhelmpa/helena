@@ -251,7 +251,8 @@ describe('the trading blueprint, applied', () => {
     expect([...tools.keys()].sort()).toContain('alpaca_paper_submit_order');
     expect([...tools.keys()].sort()).toContain('trading_indikatoren');
     expect([...tools.keys()].sort()).toContain('trading_signal_pruefen');
-    expect(tools.size).toBe(11);
+    expect([...tools.keys()].sort()).toContain('alpaca_news');
+    expect(tools.size).toBe(12);
     expect([...(await configuredToolsOf(risk.userId)).keys()].sort()).toEqual([
       'alpaca_paper_account',
       'alpaca_paper_orders',
