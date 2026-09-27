@@ -4,7 +4,6 @@ it('re-extracts the same HTML facts from the complete immutable EML without exte
   const child = Bun.spawnSync(
     [
       process.execPath,
-      '--preserve-symlinks',
       '--no-install',
       new URL('./fixtures/html-eml.fixture.ts', import.meta.url).pathname,
     ],
