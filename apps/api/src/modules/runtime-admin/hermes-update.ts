@@ -28,6 +28,8 @@ export interface UpdateCheck {
 export interface StoredState {
   checkedAt: string;
   check: UpdateCheck;
+  // An operator reconciled the installed checkout using cached refs, without network.
+  offline?: boolean;
 }
 
 // A Hermes runner that is online: the Home agent's when it is, any other otherwise. All of
@@ -51,13 +53,16 @@ async function hermesAgent(): Promise<number> {
 }
 
 // `userId` is null for the update center's scheduled check.
-export async function checkHermesUpdate(userId: string | null): Promise<StoredState> {
+export async function checkHermesUpdate(
+  userId: string | null,
+  offline = false,
+): Promise<StoredState> {
   const check = await askRuntime<UpdateCheck>(
     await hermesAgent(),
-    { op: 'runtime.update', action: 'check' },
+    { op: 'runtime.update', action: 'check', ...(offline ? { offline: true } : {}) },
     { userId, timeoutMs: CHECK_TIMEOUT_MS },
   );
-  const state = { checkedAt: new Date().toISOString(), check };
+  const state = { checkedAt: new Date().toISOString(), check, offline };
   await setSetting(STATE_KEY, state);
   return state;
 }

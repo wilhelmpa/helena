@@ -39,6 +39,8 @@ import tempfile
 import time
 from pathlib import Path
 
+import host_tools
+
 DEFAULT_CONFIG = Path("/etc/helena/update.json")
 REQUEST_NAME = re.compile(r"^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.json$")
 PACKAGE = re.compile(r"^[a-z0-9][a-z0-9+.-]{0,127}$")
@@ -73,6 +75,7 @@ def load_config(path: Path) -> dict:
     config.setdefault("dpkgTools", {"chromium": "chromium", "kasmvnc": "kasmvncserver"})
     config.setdefault("statusKeepDays", 7)
     config.setdefault("aptTimeoutSeconds", 3600)
+    host_tools.config_defaults(config)
     return config
 
 
@@ -245,14 +248,40 @@ def failed_units() -> list[str]:
     return [line.split()[0] for line in result.stdout.splitlines() if line.strip()][:50]
 
 
+def whisper_status() -> dict:
+    """Read only unit state and the running executable link, never argv or environment."""
+    unknown = {"present": True, "version": None, "state": "unknown", "versionSource": None}
+    try:
+        result = run(None, ["systemctl", "show", "helena-voice-stt.service",
+                           "--property=LoadState,ActiveState,MainPID"], check=False, timeout=10)
+        fields = dict(line.split("=", 1) for line in result.stdout.splitlines() if "=" in line)
+        if fields.get("LoadState") == "not-found":
+            return {**unknown, "present": False, "state": "not-installed"}
+        state = fields.get("ActiveState", "unknown")
+        unknown["state"] = state if state in ("active", "inactive", "failed", "activating", "deactivating") else "unknown"
+        pid = fields.get("MainPID", "0")
+        if result.returncode or fields.get("LoadState") != "loaded" or state != "active" or not re.fullmatch(r"[1-9][0-9]{0,9}", pid):
+            return unknown
+        executable = os.readlink(f"/proc/{pid}/exe")
+        match = re.fullmatch(r"/opt/helena-ai/voice/whisper-([0-9]+\.[0-9]+\.[0-9]+)/whisper-server", executable)
+        if not match:
+            return unknown
+        return {**unknown, "version": match.group(1), "versionSource": "running-executable-path"}
+    except (OSError, subprocess.TimeoutExpired):
+        return unknown
+
+
 def inventory(config: dict) -> dict:
     tools = {name: tool_version(path) for name, path in config["tools"].items()}
     for name, package in config["dpkgTools"].items():
         tools[name] = dpkg_version(package)
+    tools.update(host_tools.installed(config))
     return {
-        "apt": apt_inventory(),
+        "apt": {**apt_inventory(), **apt_refresh_state(config)},
         "runtimes": runtimes_status(config),
         "tools": tools,
+        "hostToolApply": list(host_tools.TOOLS),
+        "voice": {"whisper": whisper_status()},
         "system": {
             "rebootRequired": Path("/run/reboot-required").exists(),
             "failedUnits": failed_units(),
@@ -266,14 +295,53 @@ def installed_versions(packages: list[str]) -> dict[str, str | None]:
     return {package: dpkg_version(package) for package in packages}
 
 
+def apt_refresh_state(config: dict) -> dict:
+    state = {"refreshedAt": None, "refreshAttemptedAt": None, "refreshError": None}
+    try:
+        path = Path(config["spool"]) / "status" / ".apt-metadata"
+        if path.stat().st_size <= 8192:
+            value = json.loads(path.read_text())
+            for key in state:
+                if isinstance(value.get(key), str):
+                    state[key] = value[key][:500]
+    except (OSError, ValueError, AttributeError):
+        pass
+    return state
+
+
+def refresh_apt(config: dict, log: Log) -> None:
+    state = apt_refresh_state(config)
+    state["refreshAttemptedAt"] = now()
+    try:
+        run(log, ["apt-get", "update", "-q", "-o", "APT::Update::Error-Mode=any",
+                  "-o", "Acquire::Retries=1", "-o", "Acquire::http::Timeout=20",
+                  "-o", "Acquire::https::Timeout=20"], timeout=180)
+        state["refreshedAt"] = now()
+        state["refreshError"] = None
+    except Exception as error:
+        state["refreshError"] = "APT metadata refresh failed; no packages were installed"
+        raise UpdateError(state["refreshError"]) from error
+    finally:
+        directory = Path(config["spool"]) / "status"
+        directory.mkdir(mode=0o755, parents=True, exist_ok=True)
+        fd, temporary = tempfile.mkstemp(prefix=".apt-metadata-", dir=directory)
+        try:
+            with os.fdopen(fd, "w") as handle:
+                handle.write(json.dumps(state) + "\n")
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temporary, directory / ".apt-metadata")
+        finally:
+            if os.path.exists(temporary):
+                os.unlink(temporary)
+
+
 def apply_apt(config: dict, packages: list[str], log: Log) -> dict:
     wanted = sorted({package for package in packages if PACKAGE.match(package)})
     if not wanted or len(wanted) != len(set(packages)):
         raise UpdateError("the request names no package, or a name that is not one")
     env = {"DEBIAN_FRONTEND": "noninteractive", "NEEDRESTART_MODE": "l"}
-    update = run(log, ["apt-get", "update", "-q"], env=env, timeout=900, check=False)
-    if update.returncode != 0:
-        log.note("apt-get update failed; the upgrade uses the lists it had")
+    refresh_apt(config, log)
     upgrades, _new, _removed = apt_simulation()
     upgradable = {entry["name"].split(":")[0]: entry for entry in upgrades}
     chosen = [package for package in wanted if package in upgradable]
@@ -324,6 +392,11 @@ def perform(config: dict, request: dict) -> dict:
     try:
         if action == "inventory":
             result = inventory(config)
+        elif action == "apt-refresh":
+            if set(request) - {"id", "action"}:
+                raise UpdateError("apt-refresh accepts no parameters")
+            refresh_apt(config, log)
+            result = inventory(config)
         elif action == "apt":
             packages = request.get("packages")
             if not isinstance(packages, list) or not all(isinstance(p, str) for p in packages):
@@ -332,6 +405,11 @@ def perform(config: dict, request: dict) -> dict:
         elif action == "cli-runtime":
             result = apply_cli_runtime(config, str(request.get("runtime", "")),
                                        str(request.get("version", "")), log)
+        elif action == "host-tool":
+            if set(request) - {"id", "action", "tool", "version"}:
+                raise UpdateError("host-tool accepts only tool and version")
+            result = host_tools.apply(config, str(request.get("tool", "")),
+                                      str(request.get("version", "")), log)
         else:
             raise UpdateError("unknown action")
         return {"ok": True, "result": result, "log": log.text()}
@@ -434,21 +512,24 @@ def serve(config: dict) -> list[dict]:
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(prog="helena-update")
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
-    parser.add_argument("action", choices=["serve", "inventory", "apt", "cli-runtime"])
+    parser.add_argument("action", choices=["serve", "inventory", "apt-refresh", "apt", "cli-runtime", "host-tool"])
     parser.add_argument("args", nargs="*")
     args = parser.parse_args(argv)
     config = load_config(args.config)
     if args.action == "serve":
         print(json.dumps(serve(config)))
         return 0
-    if args.action == "inventory":
-        answer = perform(config, {"action": "inventory"})
+    if args.action in ("inventory", "apt-refresh"):
+        if args.args:
+            parser.error("inventory and apt-refresh accept no parameters")
+        answer = perform(config, {"action": args.action})
     elif args.action == "apt":
         answer = perform(config, {"action": "apt", "packages": args.args})
     else:
         if len(args.args) != 2:
-            parser.error("cli-runtime needs <runtime> <version>")
-        answer = perform(config, {"action": "cli-runtime", "runtime": args.args[0],
+            parser.error("runtime update needs <runtime/tool> <version>")
+        answer = perform(config, {"action": args.action,
+                                  "tool" if args.action == "host-tool" else "runtime": args.args[0],
                                   "version": args.args[1]})
     print(json.dumps(answer, ensure_ascii=False, indent=1))
     return 0 if answer.get("ok") else 1

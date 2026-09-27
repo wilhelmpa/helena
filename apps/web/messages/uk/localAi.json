@@ -155,7 +155,8 @@
   },
   "updates": {
     "label": "Локальний ШІ",
-    "hint": "Оновіть через native/local-ai/install.sh, потім перевірте знову."
+    "hint": "Оновіть через native/local-ai/install.sh, потім перевірте знову.",
+    "whisperBuildRequired": "Для оновлення Whisper.cpp потрібні закріплена збірка ROCm та успішний мовний тест. Автоматичне встановлення поки недоступне."
   },
   "pickerMark": "локально",
   "tile": {

@@ -56,7 +56,7 @@ export async function runtimeUpdate(
     await writeRequest(spool, { id, action: 'apply', target: request.target });
     return { id, state: 'started' };
   }
-  await writeRequest(spool, { id, action: 'check' });
+  await writeRequest(spool, { id, action: 'check', ...(request.offline ? { offline: true } : {}) });
   const deadline = Date.now() + CHECK_TIMEOUT_MS;
   while (Date.now() < deadline) {
     await sleep(POLL_MS);

@@ -38,7 +38,10 @@ import {
 } from './digest';
 import { fetchVendorJson, fetchVendorText } from './fetch';
 import { callHelper, helperInstalled } from './helper';
+import { aptFreshness, readUpdateInventory, type AptFreshness } from './inventory';
 import { getUpdateSettings, rememberRefusedModel } from './settings';
+import { checkHermesUpdate } from '#modules/runtime-admin/hermes-update';
+import { hermesSource, toCandidate as hermesCandidate } from './sources/hermes';
 
 // The update center (docs/helena-decisions/update-center.md): every update source is asked
 // what it knows, the answers are stored one row per component, the new versions are
@@ -46,7 +49,6 @@ import { getUpdateSettings, rememberRefusedModel } from './settings';
 
 const log = consoleLogger('updates');
 const CHECK_KEY = 'helenaUpdatesCheck';
-const INVENTORY_TIMEOUT_MS = 90_000;
 
 type Row = typeof helenaUpdate.$inferSelect;
 
@@ -59,6 +61,7 @@ interface CheckState {
   checkedAt: string | null;
   helper: boolean;
   inventoryError: string | null;
+  apt: AptFreshness | null;
   sources: Record<string, SourceState>;
 }
 
@@ -68,6 +71,7 @@ async function checkState(): Promise<CheckState> {
     checkedAt: stored?.checkedAt ?? null,
     helper: stored?.helper ?? false,
     inventoryError: stored?.inventoryError ?? null,
+    apt: stored?.apt ?? null,
     sources: stored?.sources ?? {},
   };
 }
@@ -168,15 +172,19 @@ export async function runUpdateCheck(
   const manual = options.manual ?? false;
   const state = await checkState();
   const helper = await helperInstalled();
+  const picked = sources().filter(({ source }) => !options.only || source.id === options.only);
+  let apt = state.apt;
   let inventoryError: string | null = null;
   let inventoryPromise: Promise<Record<string, unknown> | null> | null = null;
   const inventory = () => {
     inventoryPromise ??= helper
-      ? callHelper('inventory', {}, INVENTORY_TIMEOUT_MS).then(
-          (status) => {
-            if (status.ok) return status.result ?? {};
-            inventoryError = status.error ?? 'The inventory failed';
-            return null;
+      ? readUpdateInventory(
+          callHelper,
+          picked.some(({ source }) => source.id === 'apt'),
+        ).then(
+          (inventory) => {
+            apt = aptFreshness(inventory);
+            return inventory;
           },
           (error: unknown) => {
             inventoryError = error instanceof Error ? error.message : String(error);
@@ -187,7 +195,6 @@ export async function runUpdateCheck(
     return inventoryPromise;
   };
   const failed: string[] = [];
-  const picked = sources().filter(({ source }) => !options.only || source.id === options.only);
   // Side by side: the Hermes check waits for its runner's helper, the others for the web.
   await Promise.all(
     picked.map(async ({ source }) => {
@@ -210,6 +217,7 @@ export async function runUpdateCheck(
     checkedAt: options.only ? state.checkedAt : now.toISOString(),
     helper,
     inventoryError,
+    apt,
     sources: state.sources,
   } satisfies CheckState);
   const updates = await db
@@ -217,6 +225,25 @@ export async function runUpdateCheck(
     .from(helenaUpdate)
     .where(eq(helenaUpdate.updateAvailable, true));
   return { checkedAt: now.toISOString(), sources: picked.length, failed, updates: updates.length };
+}
+
+// Reconcile an externally changed Hermes checkout without contacting the upstream. The
+// runner asks the installed root helper for its cached Git refs; only the Hermes row and
+// source timestamp change. A regular online check still determines upstream freshness.
+export async function refreshHermesOffline(): Promise<CheckOutcome> {
+  const now = new Date();
+  const checked = await checkHermesUpdate(null, true);
+  const candidate = normalizeUpdateCandidate(hermesCandidate(checked, null));
+  if (!candidate) throw new HttpError(500, 'The local Hermes check returned no candidate');
+  await storeCandidates(hermesSource, [candidate], now);
+  const state = await checkState();
+  state.sources.hermes = { checkedAt: now.toISOString(), error: null };
+  await setSetting(CHECK_KEY, state);
+  const updates = await db
+    .select({ id: helenaUpdate.id })
+    .from(helenaUpdate)
+    .where(eq(helenaUpdate.updateAvailable, true));
+  return { checkedAt: now.toISOString(), sources: 1, failed: [], updates: updates.length };
 }
 
 // ── Summaries ───────────────────────────────────────────────────────────────────────────
@@ -810,6 +837,7 @@ export async function updateCenterState() {
   return {
     checkedAt: state.checkedAt,
     helper: { installed: await helperInstalled(), error: state.inventoryError },
+    apt: state.apt,
     counts: {
       updates: withUpdate.length,
       security: withUpdate.filter((item) => item.security).length,

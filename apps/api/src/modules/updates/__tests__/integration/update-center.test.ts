@@ -2,7 +2,15 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import { mkdir, mkdtemp, readdir, readFile, rm, unlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { agentRun, aiAgent, db, helenaSystemJob, helenaUpdate, helenaUpdateAction } from '@repo/db';
+import {
+  agentRun,
+  aiAgent,
+  db,
+  getSetting,
+  helenaSystemJob,
+  helenaUpdate,
+  helenaUpdateAction,
+} from '@repo/db';
 import { asc, eq, inArray } from 'drizzle-orm';
 import { apiKeyApi, authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
@@ -36,6 +44,9 @@ const INVENTORY = {
   apt: {
     os: 'Debian GNU/Linux 13 (trixie)',
     listsUpdatedAt: '2026-09-24T08:00:00+00:00',
+    refreshedAt: '2026-09-26T21:49:30+00:00',
+    refreshAttemptedAt: '2026-09-26T21:49:29+00:00',
+    refreshError: null,
     packages: [
       {
         source: 'openssl',
@@ -82,6 +93,10 @@ function atom(repository: string, tags: [string, string][]): string {
 }
 
 const VENDOR: Record<string, () => Response> = {
+  'https://github.com/ggml-org/whisper.cpp/releases.atom': () =>
+    new Response(atom('ggml-org/whisper.cpp', [['v1.9.4', 'Whisper release']])),
+  'https://github.com/astral-sh/uv/releases.atom': () =>
+    new Response(atom('astral-sh/uv', [['0.12.19', 'Fixes']])),
   'https://downloads.claude.ai/claude-code-releases/latest': () => new Response('2.1.290\n'),
   'https://registry.npmjs.org/@openai%2Fcodex/latest': () => Response.json({ version: '0.156.1' }),
   'https://registry.npmjs.org/@agentclientprotocol%2Fclaude-agent-acp/latest': () =>
@@ -199,7 +214,8 @@ async function stopFakeHelper() {
 }
 
 function helperAnswers(request: Record<string, unknown>): Record<string, unknown> {
-  if (request.action === 'inventory') return { state: 'done', ok: true, result: INVENTORY };
+  if (request.action === 'inventory' || request.action === 'apt-refresh')
+    return { state: 'done', ok: true, result: INVENTORY };
   if (request.action === 'cli-runtime') {
     return {
       state: 'done',
@@ -450,9 +466,75 @@ describe('update center: checking', () => {
 
     const state = (await api.god['update-center'].get()).data!;
     expect(state.helper.installed).toBe(true);
+    // Eden decodes ISO timestamps in responses into Date objects.
+    expect(state.apt).toMatchObject({
+      listsUpdatedAt: new Date('2026-09-24T08:00:00.000Z'),
+      refreshedAt: new Date('2026-09-26T21:49:30.000Z'),
+      refreshAttemptedAt: new Date('2026-09-26T21:49:29.000Z'),
+      refreshError: null,
+    });
+    expect(helperRequests.filter((request) => request.action === 'apt-refresh')).toHaveLength(1);
     expect(state.counts).toEqual({ updates: 6, security: 3, applicable: 4 });
     expect(state.items.slice(0, 3).every((item) => item.security)).toBe(true);
     expect(state.items.at(-1)!.updateAvailable).toBe(false);
+  });
+
+  it('reports native Whisper independently of model servers and refuses apply', async () => {
+    const { api } = await owner();
+    startFakeHelper((request) =>
+      request.action === 'inventory'
+        ? {
+            state: 'done',
+            ok: true,
+            result: {
+              ...INVENTORY,
+              voice: {
+                whisper: {
+                  present: true,
+                  state: 'active',
+                  version: '1.8.4',
+                  versionSource: 'running-executable-path',
+                },
+              },
+            },
+          }
+        : helperAnswers(request),
+    );
+    await runUpdateCheck({ only: 'local-ai' });
+    const whisper = (await rows()).find((row) => row.component === 'whisper-cpp')!;
+    expect(whisper).toMatchObject({
+      installed: '1.8.4',
+      available: '1.9.4',
+      updateAvailable: true,
+      applicable: false,
+      hint: { i18n: 'localAi.updates.whisperBuildRequired' },
+    });
+    expect(
+      (await api.god['update-center'].items({ itemId: whisper.id }).apply.post({})).status,
+    ).toBe(409);
+    expect(helperRequests.every((request) => request.action === 'inventory')).toBe(true);
+  });
+
+  it('exposes failed metadata refresh and retains previous APT candidates', async () => {
+    const { api } = await owner();
+    startFakeHelper(helperAnswers);
+    await runUpdateCheck({ only: 'apt' });
+    const previous = (await rows()).filter((row) => row.source === 'apt');
+    await stopFakeHelper();
+    startFakeHelper((request) =>
+      request.action === 'apt-refresh'
+        ? { state: 'failed', ok: false, error: 'security index unavailable' }
+        : helperAnswers(request),
+    );
+    const outcome = await runUpdateCheck({ only: 'apt' });
+    expect(outcome.failed).toEqual(['apt']);
+    expect((await rows()).filter((row) => row.source === 'apt')).toEqual(previous);
+    const state = (await api.god['update-center'].get()).data!;
+    expect(new Date(state.apt!.refreshedAt!).toISOString()).toBe('2026-09-26T21:49:30.000Z');
+    expect(state.apt?.refreshError).toBe('security index unavailable');
+    expect(state.sources.find((source) => source.id === 'apt')?.error).toBe(
+      'security index unavailable',
+    );
   });
 
   it('keeps what a source knew when it fails, and names why', async () => {
@@ -736,6 +818,85 @@ describe('update center: applying', () => {
     ).toBe(403);
   });
 
+  it('applies every advertised host tool through the helper and preserves a failed rollback result', async () => {
+    const { api } = await owner();
+    const tools = ['bun', 'node', 'code-server', 'wetty', 'kasmvnc'];
+    startFakeHelper((request) => {
+      if (request.action === 'inventory' || request.action === 'apt-refresh') {
+        return { state: 'done', ok: true, result: { ...INVENTORY, hostToolApply: tools } };
+      }
+      if (request.action === 'host-tool') {
+        return {
+          state: 'failed',
+          ok: false,
+          error: 'update failed; previous version restored',
+          log: 'Rollback succeeded: affected services healthy',
+        };
+      }
+      return helperAnswers(request);
+    });
+    await runUpdateCheck();
+    const all = await rows();
+    for (const component of tools) {
+      expect(
+        all.find((row) => row.source === 'host-tools' && row.component === component)?.applicable,
+      ).toBe(true);
+    }
+    const node = all.find((row) => row.component === 'node')!;
+    const started = await api.god['update-center'].items({ itemId: node.id }).apply.post({});
+    expect(started.status).toBe(201);
+    await waitFor(async () => (await followActions()) > 0 || null);
+    const action = (await api.god['update-center'].actions({ actionId: started.data!.id }).get())
+      .data!;
+    expect(action).toMatchObject({
+      state: 'failed',
+      error: 'update failed; previous version restored',
+    });
+    expect(helperRequests.find((request) => request.action === 'host-tool')).toMatchObject({
+      tool: 'node',
+      version: node.available,
+    });
+  });
+
+  it('shows uv and dispatches its exact version only when the helper supports it', async () => {
+    const { api } = await owner();
+    let enabled = false;
+    startFakeHelper((request) => {
+      if (request.action === 'inventory')
+        return {
+          state: 'done',
+          ok: true,
+          result: {
+            ...INVENTORY,
+            tools: { ...INVENTORY.tools, uv: '0.12.17' },
+            hostToolApply: enabled ? ['uv'] : [],
+          },
+        };
+      if (request.action === 'host-tool')
+        return { state: 'done', ok: true, result: { tool: 'uv', from: '0.12.17', to: '0.12.19' } };
+      return helperAnswers(request);
+    });
+    await runUpdateCheck({ only: 'host-tools' });
+    let uv = (await rows()).find((row) => row.component === 'uv')!;
+    expect(uv).toMatchObject({
+      installed: '0.12.17',
+      available: '0.12.19',
+      updateAvailable: true,
+      applicable: false,
+    });
+    enabled = true;
+    await runUpdateCheck({ only: 'host-tools' });
+    uv = (await rows()).find((row) => row.component === 'uv')!;
+    expect(uv).toMatchObject({ applicable: true, hint: null });
+    const started = await api.god['update-center'].items({ itemId: uv.id }).apply.post({});
+    expect(started.status).toBe(201);
+    await waitFor(async () => (await followActions()) > 0 || null);
+    expect(helperRequests.find((request) => request.action === 'host-tool')).toMatchObject({
+      tool: 'uv',
+      version: '0.12.19',
+    });
+  });
+
   it('marks an update the helper could not do as failed, with its reason', async () => {
     const { api } = await owner();
     startFakeHelper(helperAnswers);
@@ -774,6 +935,57 @@ describe('update center: Hermes', () => {
     }
     throw new Error('no request arrived');
   }
+
+  it('refreshes the Update Center from cached Hermes refs without a fetch', async () => {
+    const { api } = await owner();
+    const { agent, runner } = await hermesAgent(api);
+    await db
+      .update(aiAgent)
+      .set({
+        runtimeState: { adapter: 'hermes', capabilities: ['update'] },
+        lastSeenAt: new Date(),
+      })
+      .where(eq(aiAgent.id, agent.id));
+    const stale = runUpdateCheck({ only: 'hermes', manual: true });
+    await answerNext(runner, () => ({
+      current: { commit: 'd'.repeat(40), describe: 'dev-d8304d38', version: '0.0.0' },
+      latest: { commit: 'e'.repeat(40), describe: 'dev-f05a3ca9', version: '0.0.0' },
+      commits: [{ commit: 'e'.repeat(40), date: '2026-09-25', subject: 'dev' }],
+      localPatches: [],
+    }));
+    await stale;
+    expect((await rows()).find((row) => row.source === 'hermes')!.updateAvailable).toBe(true);
+
+    const refreshing = api.god['update-center'].hermes['refresh-local'].post();
+    const request = await answerNext(runner, () => ({
+      current: { commit: 'f'.repeat(40), describe: 'v2026.9.24-1-gf2718ab352', version: '0.0.0' },
+      latest: { commit: 'a'.repeat(40), describe: 'v2026.9.24', version: '0.0.0' },
+      commits: [],
+      localPatches: [{ commit: 'f'.repeat(40), date: '2026-09-26', subject: 'local patch' }],
+    }));
+    expect(request).toEqual({ op: 'runtime.update', action: 'check', offline: true });
+    expect((await refreshing).status).toBe(200);
+    expect((await rows()).find((row) => row.source === 'hermes')).toMatchObject({
+      installed: '0.0.0 (ffffffff)',
+      available: '0.0.0 (aaaaaaaa)',
+      updateAvailable: false,
+    });
+    const saved = await getSetting<{ check: { current: { commit: string } }; offline?: boolean }>(
+      'hermesUpdate',
+    );
+    expect(saved?.check.current.commit).toBe('f'.repeat(40));
+    expect(saved?.offline).toBe(true);
+    // A local reconciliation must not suppress the next scheduled upstream check.
+    const scheduled = runUpdateCheck({ only: 'hermes' });
+    const onlineRequest = await answerNext(runner, () => ({
+      current: { commit: 'f'.repeat(40), describe: 'v2026.9.24-1-gf2718ab352', version: '0.0.0' },
+      latest: { commit: 'a'.repeat(40), describe: 'v2026.9.24', version: '0.0.0' },
+      commits: [],
+      localPatches: [],
+    }));
+    expect(onlineRequest).toEqual({ op: 'runtime.update', action: 'check' });
+    await scheduled;
+  });
 
   it('checks through the runner, and updates as the owner who clicked', async () => {
     const { user, api } = await owner();

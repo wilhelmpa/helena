@@ -155,7 +155,8 @@
   },
   "updates": {
     "label": "AI lokal",
-    "hint": "Perbarui lewat native/local-ai/install.sh, lalu evaluasi ulang."
+    "hint": "Perbarui lewat native/local-ai/install.sh, lalu evaluasi ulang.",
+    "whisperBuildRequired": "Pembaruan Whisper.cpp memerlukan build ROCm dengan versi tetap dan uji suara yang berhasil. Instalasi otomatis belum tersedia."
   },
   "pickerMark": "lokal",
   "tile": {

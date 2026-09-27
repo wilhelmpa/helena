@@ -27,7 +27,7 @@ function label(ref: VersionRef): string {
   return ref.version ? `${name} (${ref.commit.slice(0, 8)})` : name;
 }
 
-function toCandidate(state: StoredState | null, error: string | null): UpdateCandidate {
+export function toCandidate(state: StoredState | null, error: string | null): UpdateCandidate {
   if (!state) {
     return {
       component: 'hermes',
@@ -54,7 +54,7 @@ function toCandidate(state: StoredState | null, error: string | null): UpdateCan
     sourceUrl: REPOSITORY,
     notesUrl: `${REPOSITORY}/compare/${current.commit.slice(0, 12)}...${latest.commit.slice(0, 12)}`,
     applicable: behind,
-    detail: `${commits.length} commits · ${localPatches.length} local`,
+    detail: `${commits.length} commits · ${localPatches.length} local${state.offline ? ' · cached Git refs' : ''}`,
     error,
     data: { target: latest.commit, checkedAt: state.checkedAt },
   };
@@ -68,7 +68,8 @@ export const hermesSource: UpdateSource = {
   hosts: [],
   async check(context) {
     const stored = await storedHermesUpdate();
-    const fresh = stored && Date.now() - Date.parse(stored.checkedAt) < RECHECK_MS;
+    const fresh =
+      stored && !stored.offline && Date.now() - Date.parse(stored.checkedAt) < RECHECK_MS;
     if (fresh && !context.manual) return [toCandidate(stored, null)];
     try {
       return [toCandidate(await checkHermesUpdate(null), null)];

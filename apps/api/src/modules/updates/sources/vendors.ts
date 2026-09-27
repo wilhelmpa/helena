@@ -77,6 +77,9 @@ export async function osvAffected(
 export interface HostInventory {
   apt?: {
     listsUpdatedAt?: string | null;
+    refreshedAt?: string | null;
+    refreshAttemptedAt?: string | null;
+    refreshError?: string | null;
     os?: string | null;
     debianVersion?: string | null;
     packages?: {
@@ -91,6 +94,7 @@ export interface HostInventory {
   };
   runtimes?: Record<string, { current?: string | null; pinned?: string | null } | undefined>;
   tools?: Record<string, string | null | undefined>;
+  hostToolApply?: string[];
   system?: { rebootRequired?: boolean; failedUnits?: string[] };
 }
 

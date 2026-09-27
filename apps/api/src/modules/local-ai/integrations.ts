@@ -8,6 +8,7 @@ import type {
   UpdateSource,
 } from '@helena/sdk';
 import { serverContext } from './service';
+import { whisperUpdateCandidate } from './whisper-update';
 
 // Local AI in the extension points of other features (docs/helena-decisions/local-ai-platform.md
 // §9), both registered by the `helena.local-ai` plugin: an update source for Administrator →
@@ -177,8 +178,9 @@ export const localAiUpdateSource: UpdateSource = {
   hosts: ['github.com', 'huggingface.co'],
   async check(context: UpdateCheckContext): Promise<UpdateCandidate[]> {
     const servers = (await listModelServers()).filter((server) => server.enabled);
-    if (servers.length === 0) return [];
-    const candidates: UpdateCandidate[] = [];
+    const whisper = await whisperUpdateCandidate(context);
+    const candidates: UpdateCandidate[] = whisper ? [whisper] : [];
+    if (servers.length === 0) return candidates;
     const release = async (repository: string) => {
       try {
         return plain(

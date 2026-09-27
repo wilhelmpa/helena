@@ -37,6 +37,7 @@ run() { if [ "$DRY_RUN" = 1 ]; then echo "would: $*"; else "$@"; fi; }
 
 copy_programs() {
   run install -m 0755 -o root -g root "$here/helena-update" /usr/local/libexec/helena-update
+  run install -m 0644 -o root -g root "$here/host_tools.py" /usr/local/libexec/host_tools.py
   # The runtime installer runs as root: its copy, pins, lockfiles and key are root's, so
   # nobody who can write the checkout changes what root executes.
   run install -d -m 0755 -o root -g root "$share" "$share/keys" "$share/npm"

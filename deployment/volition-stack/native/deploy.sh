@@ -197,6 +197,12 @@ if [[ -x /usr/local/libexec/helena-update ]] &&
   "$live/deployment/volition-stack/native/updates/install.sh" --refresh
 fi
 
+# Deploy helper code without fetching/updating Hermes or changing its release tracking.
+if [[ -x /usr/local/libexec/helena-hermes-update ]] &&
+  changed deployment/volition-stack/native/hermes-update; then
+  "$live/deployment/volition-stack/native/hermes-update/install.sh" --refresh
+fi
+
 # Refresh the installed audit without installing/enabling its timer or applying hardening.
 audit_script=deployment/volition-stack/native/hardening/audit.sh
 if [[ -f /usr/local/libexec/helena-security-audit ]] && changed "$audit_script"; then

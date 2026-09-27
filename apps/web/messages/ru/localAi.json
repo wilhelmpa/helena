@@ -155,7 +155,8 @@
   },
   "updates": {
     "label": "Локальный ИИ",
-    "hint": "Обновите через native/local-ai/install.sh, затем проверьте снова."
+    "hint": "Обновите через native/local-ai/install.sh, затем проверьте снова.",
+    "whisperBuildRequired": "Для обновления Whisper.cpp нужны закреплённая сборка ROCm и успешный речевой тест. Автоматическая установка пока недоступна."
   },
   "pickerMark": "локально",
   "tile": {

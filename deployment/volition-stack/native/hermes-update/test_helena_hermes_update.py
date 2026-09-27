@@ -88,6 +88,29 @@ class HelperTest(unittest.TestCase):
         self.assertEqual([c["subject"] for c in result["localPatches"]],
                          ["feat(stream-json): local patch"])
 
+    def test_offline_check_uses_cached_refs_without_fetch(self):
+        # The clone has only the old tag; the upstream got a new release after clone.
+        before = self.head()
+        answer = helper.run(self.config_with(), "check", None, offline=True)
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual(answer["result"]["current"]["commit"], before)
+        self.assertEqual(answer["result"]["latest"]["describe"], "v2026.9.21")
+        self.assertNotIn(" fetch ", answer["log"])
+        online = helper.run(self.config_with(), "check", None)
+        self.assertEqual(online["result"]["latest"]["describe"], "v2026.9.28")
+
+    def test_spool_offline_check_does_not_fetch(self):
+        (self.spool / "request.json").write_text(json.dumps({
+            "id": "offline-1", "action": "check", "offline": True,
+        }))
+        answer = helper.serve_request(self.config_with())
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual(answer["result"]["latest"]["describe"], "v2026.9.21")
+        self.assertNotIn(" fetch ", answer["log"])
+        status = json.loads((self.spool / "status.json").read_text())
+        self.assertEqual(status["id"], "offline-1")
+        self.assertEqual(status["state"], "done")
+
     def test_latest_is_the_newest_release_not_the_branch_head(self):
         commit(self.upstream, "app.py", "print('b')\n", "feat: unreleased work on main")
         answer = helper.run(self.config_with(), "check", None)

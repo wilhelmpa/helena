@@ -1,6 +1,10 @@
 {
   "spool": "/var/lib/helena-updates/spool",
   "runtimesInstaller": "/usr/local/share/helena/runtimes/install-cli-runtimes.sh",
+  "hostToolsPrefix": "/opt/helena/host-tools",
+  "hostToolsBin": "/usr/local/bin",
+  "hostToolsUnits": "/etc/systemd/system",
+  "hostToolsDatabase": "itsaplan",
   "runtimes": ["claude", "codex", "claude-agent-acp", "codex-acp"],
   "tools": {
     "bun": "/usr/local/bin/bun",

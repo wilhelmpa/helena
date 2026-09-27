@@ -120,7 +120,12 @@ export type RuntimeRequest =
   | { op: 'estop.set'; engaged: boolean; reason?: string | null }
   // The runtime's own installation: check for, apply and follow an update (Hermes, through
   // its root helper's spool). Answered by the runner itself, not by a reader.
-  | { op: 'runtime.update'; action: 'check' | 'apply' | 'status'; target?: string | null }
+  | {
+      op: 'runtime.update';
+      action: 'check' | 'apply' | 'status';
+      target?: string | null;
+      offline?: boolean;
+    }
   // How much of the plan limits of the logins the agent's runtime uses is spent
   // (usage-limits.ts); answered with `{ snapshots: UsageLimitSnapshot[] }`. `force` skips
   // the runner's cache of the last probe (still at most one probe per login a minute).

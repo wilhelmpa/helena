@@ -69,6 +69,7 @@ export const aptSource: UpdateSource = {
     // Without the helper nothing is known about the packages: the source fails and keeps
     // what the last check found, rather than reporting "nothing to upgrade".
     if (!inventory?.apt) throw new Error('The update helper reported no package list');
+    if (inventory.apt.refreshError) throw new Error(inventory.apt.refreshError);
     const candidates = (inventory.apt.packages ?? [])
       .map((entry) => toCandidate(entry))
       .filter((entry): entry is UpdateCandidate => entry !== null);

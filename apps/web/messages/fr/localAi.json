@@ -155,7 +155,8 @@
   },
   "updates": {
     "label": "IA locale",
-    "hint": "Mettre à jour via native/local-ai/install.sh, puis réévaluer."
+    "hint": "Mettre à jour via native/local-ai/install.sh, puis réévaluer.",
+    "whisperBuildRequired": "La mise à jour de Whisper.cpp nécessite une compilation ROCm épinglée et un test vocal réussi. L’installation automatique n’est pas encore disponible."
   },
   "pickerMark": "local",
   "tile": {

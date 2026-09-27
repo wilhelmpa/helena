@@ -155,7 +155,8 @@
   },
   "updates": {
     "label": "الذكاء الاصطناعي المحلي",
-    "hint": "حدّث عبر native/local-ai/install.sh ثم أعد التقييم."
+    "hint": "حدّث عبر native/local-ai/install.sh ثم أعد التقييم.",
+    "whisperBuildRequired": "يتطلب تحديث Whisper.cpp بناء ROCm بإصدار مثبت واختبار كلام ناجحًا. التثبيت التلقائي غير متاح بعد."
   },
   "pickerMark": "محلي",
   "tile": {

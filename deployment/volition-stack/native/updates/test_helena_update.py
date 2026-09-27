@@ -150,7 +150,88 @@ class InventoryTest(HelperTest):
         self.assertFalse(any(c[:2] == ["apt-get", "update"] for c in self.fake.commands))
 
 
+class WhisperInventoryTest(unittest.TestCase):
+    def status(self, fields, executable=None):
+        with mock.patch.object(helper, "run", return_value=completed([], fields)) as run, mock.patch.object(
+                helper.os, "readlink", return_value=executable) as readlink:
+            result = helper.whisper_status()
+        self.assertEqual(run.call_args.args[1], ["systemctl", "show", "helena-voice-stt.service",
+                                                "--property=LoadState,ActiveState,MainPID"])
+        return result, readlink
+
+    def test_reports_version_of_running_binary_without_argv_environment_or_execution(self):
+        result, link = self.status("LoadState=loaded\nActiveState=active\nMainPID=123\n",
+                                   "/opt/helena-ai/voice/whisper-1.8.4/whisper-server")
+        self.assertEqual(result, {"present": True, "version": "1.8.4", "state": "active",
+                                  "versionSource": "running-executable-path"})
+        link.assert_called_once_with("/proc/123/exe")
+
+    def test_absent_or_inactive_service_never_invents_an_installed_version(self):
+        result, link = self.status("LoadState=not-found\nActiveState=inactive\nMainPID=0")
+        self.assertFalse(result["present"])
+        self.assertIsNone(result["version"])
+        link.assert_not_called()
+        result, link = self.status("LoadState=loaded\nActiveState=failed\nMainPID=0")
+        self.assertTrue(result["present"])
+        self.assertEqual(result["state"], "failed")
+        self.assertIsNone(result["version"])
+        link.assert_not_called()
+
+    def test_unrecognized_or_deleted_binary_and_process_race_stay_unknown(self):
+        for path in ("/tmp/whisper-1.8.4/whisper-server", "/opt/helena-ai/voice/whisper-1.8.4/whisper-server (deleted)"):
+            result, _ = self.status("LoadState=loaded\nActiveState=active\nMainPID=123", path)
+            self.assertIsNone(result["version"])
+        with mock.patch.object(helper, "run", return_value=completed([], "LoadState=loaded\nActiveState=active\nMainPID=123")), mock.patch.object(
+                helper.os, "readlink", side_effect=FileNotFoundError):
+            self.assertIsNone(helper.whisper_status()["version"])
+
+
+class AptRefreshTest(HelperTest):
+    def test_refresh_records_success_without_installing_packages(self):
+        answer = helper.perform(self.config, {"action": "apt-refresh"})
+        self.assertTrue(answer["ok"], answer)
+        state = answer["result"]["apt"]
+        self.assertIsNotNone(state["refreshedAt"])
+        self.assertIsNotNone(state["refreshAttemptedAt"])
+        self.assertIsNone(state["refreshError"])
+        self.assertFalse(any(c[:2] == ["apt-get", "install"] for c in self.fake.commands))
+        self.assertEqual(helper.apt_refresh_state(self.config)["refreshedAt"], state["refreshedAt"])
+
+    def test_failed_refresh_keeps_last_success_and_records_failed_attempt(self):
+        last = "2026-09-26T19:00:00+00:00"
+        (self.spool / "status" / ".apt-metadata").write_text(json.dumps({"refreshedAt": last}))
+        with mock.patch.object(helper.subprocess, "run", side_effect=subprocess.TimeoutExpired("apt-get", 180)):
+            answer = helper.perform(self.config, {"action": "apt-refresh"})
+        self.assertFalse(answer["ok"])
+        state = helper.apt_refresh_state(self.config)
+        self.assertEqual(state["refreshedAt"], last)
+        self.assertIsNotNone(state["refreshAttemptedAt"])
+        self.assertIn("metadata refresh failed", state["refreshError"])
+
+    def test_refresh_rejects_arbitrary_options(self):
+        answer = helper.perform(self.config, {"action": "apt-refresh", "options": ["--allow-unauthenticated"]})
+        self.assertFalse(answer["ok"])
+        self.assertFalse(self.fake.commands)
+
+    def test_unrecorded_refresh_does_not_invent_freshness(self):
+        self.assertIsNone(helper.apt_refresh_state(self.config)["refreshedAt"])
+
+
 class AptTest(HelperTest):
+    def test_failed_metadata_refresh_never_installs_from_cached_candidates(self):
+        def failed_refresh(args, **kwargs):
+            if args[:2] == ["apt-get", "update"]:
+                self.fake.commands.append(list(args))
+                return completed(args, "A security index could not be fetched", 100)
+            return self.fake(args, **kwargs)
+
+        with mock.patch.object(helper.subprocess, "run", side_effect=failed_refresh):
+            answer = helper.perform(self.config, {"action": "apt", "packages": ["openssl"]})
+        self.assertFalse(answer["ok"])
+        self.assertIn("metadata refresh failed", answer["error"])
+        self.assertFalse(any(c[:2] == ["apt-get", "install"] for c in self.fake.commands))
+        self.assertEqual(self.fake.versions["openssl"], "3.5.1-1")
+
     def test_upgrades_only_the_chosen_packages_that_are_upgradable(self):
         answer = helper.perform(self.config, {"action": "apt",
                                               "packages": ["openssl", "libssl3t64", "vim"]})
@@ -168,6 +249,8 @@ class AptTest(HelperTest):
         self.assertIn("openssl=3.5.1-1", result["rollback"])
         # The lists are refreshed first.
         self.assertTrue(any(c[:2] == ["apt-get", "update"] for c in self.fake.commands))
+        refresh = next(c for c in self.fake.commands if c[:2] == ["apt-get", "update"])
+        self.assertIn("APT::Update::Error-Mode=any", refresh)
 
     def test_refuses_names_that_are_not_packages(self):
         answer = helper.perform(self.config, {"action": "apt", "packages": ["openssl; rm -rf /"]})

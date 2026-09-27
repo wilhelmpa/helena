@@ -1,4 +1,6 @@
 {
+  "loadFailed": "No se pudo cargar el estado de las actualizaciones",
+  "loadFailedHint": "Vuelve a cargar para intentarlo de nuevo. Esto no inicia una búsqueda de actualizaciones ni las instala.",
   "title": "Actualizaciones",
   "check": "Comprobar ahora",
   "checking": "Comprobando …",
@@ -103,5 +105,10 @@
     "more": "Todas las actualizaciones",
     "empty": "Todo está al día"
   },
-  "checkedJustNow": "Comprobado ahora mismo"
+  "checkedJustNow": "Comprobado ahora mismo",
+  "checkIncomplete": "Comprobación incompleta",
+  "aptRefreshedAt": "Metadatos APT actualizados: {time}",
+  "aptListsAt": "Fecha de las listas de paquetes: {time}",
+  "aptNotRefreshed": "No hay una actualización correcta registrada de los metadatos APT",
+  "unverified": "Estado sin verificar"
 }

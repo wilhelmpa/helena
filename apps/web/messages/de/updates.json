@@ -1,4 +1,6 @@
 {
+  "loadFailed": "Update-Status konnte nicht geladen werden",
+  "loadFailedHint": "Zum erneuten Laden auf „Neu laden“ klicken. Dabei wird keine Update-Prüfung gestartet und kein Update installiert.",
   "title": "Updates",
   "check": "Jetzt prüfen",
   "checking": "Wird geprüft …",
@@ -103,5 +105,10 @@
     "more": "Alle Updates",
     "empty": "Alles aktuell"
   },
-  "checkedJustNow": "Gerade geprüft"
+  "checkedJustNow": "Gerade geprüft",
+  "checkIncomplete": "Prüfung unvollständig",
+  "aptRefreshedAt": "APT-Metadaten aktualisiert: {time}",
+  "aptListsAt": "Stand der Paketlisten: {time}",
+  "aptNotRefreshed": "Keine erfolgreiche Aktualisierung der APT-Metadaten belegt",
+  "unverified": "Status nicht belegt"
 }

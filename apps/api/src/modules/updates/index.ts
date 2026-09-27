@@ -13,7 +13,7 @@ import {
   itemParams,
   updateSettingsBody,
 } from './model';
-import { applyUpdate, getUpdateAction, updateCenterState } from './service';
+import { applyUpdate, getUpdateAction, refreshHermesOffline, updateCenterState } from './service';
 import { getUpdateSettings, setUpdateSettings } from './settings';
 
 // The update center (Administrator → Updates, and the card on Start): what Helena runs on,
@@ -63,6 +63,24 @@ export const updateCenterRoutes = new Elysia({
         description:
           'Starts the check (every source, then the summaries of new versions) and answers the ' +
           'state at once; a check that is running is not started twice.',
+      },
+    },
+  )
+
+  .post(
+    '/god/update-center/hermes/refresh-local',
+    async ({ user }) => {
+      requireGod(user);
+      await refreshHermesOffline();
+      return state();
+    },
+    {
+      response: { 200: UpdateCenterResponse, ...errors(401, 403, 500, 503) },
+      detail: {
+        summary: 'Refresh installed Hermes from cached Git refs',
+        description:
+          'Reads the locally installed Hermes checkout and cached release tags through the ' +
+          'runner and helper without fetching or installing anything. Refreshes only the Hermes row.',
       },
     },
   )

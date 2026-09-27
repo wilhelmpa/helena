@@ -1,27 +1,22 @@
 'use client';
 
 import { useState } from 'react';
-import { CircleCheck, CircleHelp, Info, LoaderCircle, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
-import { RowList, SectionLabel } from '@/components/common/page/RowList';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { PageActions } from '@/components/layout/PageToolbar';
+import { EmptyState } from '@/components/common/page/EmptyState';
+import { SectionLabel } from '@/components/common/page/RowList';
+import { Button } from '@/components/ui/button';
 import type { UpdateItem, UpdateScope } from '@/lib/api/endpoints/updateCenter';
-import { cn } from '@/lib/utils';
-import { formatDateTime, formatDurationShort } from '@/utils/dates';
 import ApplyUpdateDialog from './ApplyUpdateDialog';
-import UpdateCard, { useSourceText } from './UpdateCard';
+import UpdateCard from './UpdateCard';
 import UpdateGroupCard from './UpdateGroupCard';
 import UpdateHistory from './UpdateHistory';
+import UpdateCheckStatus from './UpdateCheckStatus';
+import UpdateCurrentList from './UpdateCurrentList';
 import UpdateSettingsSection from './UpdateSettingsSection';
-import {
-  useApplyUpdate,
-  useCheckForUpdates,
-  useUpdateCenter,
-} from '../services/updateCenter.service';
-import { groupItems, justNow, runningAction, splitItems, versionStep } from '../utils/updateFormat';
+import { useApplyUpdate, useUpdateCenter } from '../services/updateCenter.service';
+import { groupItems, runningAction, splitItems } from '../utils/updateFormat';
 
 // The update center's page content (owner, 2026-09-24: "alles updaten … regelmäßig nach
 // Updates suchen … den Status auch im Dashboard anzeigen"): every component Helena runs on
@@ -32,28 +27,9 @@ import { groupItems, justNow, runningAction, splitItems, versionStep } from '../
 // <UpdateCheckAction /> into its one toolbar row (docs/volition/ui-standard.md) and
 // <UpdateCenterView /> into its body.
 
-// "Jetzt prüfen", for the page's toolbar (inside a <PageToolbar>).
-export function UpdateCheckAction() {
-  const t = useTranslations('updates');
-  const query = useUpdateCenter();
-  const check = useCheckForUpdates();
-  const checking = check.isPending || query.data?.job.lastStatus === 'running';
-  return (
-    <PageActions
-      primary={{
-        id: 'check',
-        label: checking ? t('checking') : t('check'),
-        icon: checking ? LoaderCircle : RefreshCw,
-        disabled: checking,
-        onClick: () => check.mutate(),
-      }}
-    />
-  );
-}
-
 export default function UpdateCenterView() {
   const t = useTranslations('updates');
-  const text = useSourceText();
+  const tCommon = useTranslations('common');
   const query = useUpdateCenter();
   const apply = useApplyUpdate();
   const [confirming, setConfirming] = useState<{ item: UpdateItem; scope: UpdateScope } | null>(
@@ -61,9 +37,22 @@ export default function UpdateCenterView() {
   );
   const center = query.data;
 
-  if (!center) return <ListSkeleton rows={6} rowClassName="h-16" />;
-  const { open, current } = splitItems(center.items);
-  const failedSources = center.sources.filter((source) => source.error);
+  if (!center)
+    return query.isError ? (
+      <EmptyState title={t('loadFailed')} description={t('loadFailedHint')}>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={query.isFetching}
+          onClick={() => void query.refetch()}
+        >
+          {tCommon('reload')}
+        </Button>
+      </EmptyState>
+    ) : (
+      <ListSkeleton rows={6} rowClassName="h-16" />
+    );
+  const { open, current, unknown } = splitItems(center.items);
   const coverage = (item: UpdateItem, scope: UpdateScope) =>
     scope === 'item'
       ? [item]
@@ -82,44 +71,7 @@ export default function UpdateCenterView() {
 
   return (
     <>
-      <div className="space-y-2">
-        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-xs text-muted-foreground">
-          <span className="text-sm font-medium text-foreground">
-            {center.counts.updates === 0
-              ? t('allCurrent')
-              : [
-                  t('count', { count: center.counts.updates }),
-                  center.counts.security > 0
-                    ? t('securityCount', { count: center.counts.security })
-                    : null,
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}
-          </span>
-          <span>
-            {center.checkedAt
-              ? justNow(center.checkedAt)
-                ? t('checkedJustNow')
-                : t('checkedAt', { time: formatDurationShort(center.checkedAt) })
-              : t('neverChecked')}
-          </span>
-          {center.job.nextRunAt && (
-            <span>{t('nextRun', { time: formatDateTime(center.job.nextRunAt) })}</span>
-          )}
-        </p>
-        {!center.helper.installed && <Notice>{t('helperMissing')}</Notice>}
-        {center.helper.installed && center.helper.error && (
-          <Notice>{t('helperError', { error: center.helper.error })}</Notice>
-        )}
-        {center.job.lastStatus === 'failed' && center.job.lastError && (
-          <Notice>{t('jobFailed', { error: center.job.lastError })}</Notice>
-        )}
-        {failedSources.map((source) => (
-          <Notice key={source.id}>
-            {t('sourceFailed', { source: text(source.label), error: source.error ?? '' })}
-          </Notice>
-        ))}
-      </div>
+      <UpdateCheckStatus center={center} />
 
       {open.length > 0 && (
         <section className="min-w-0 space-y-2">
@@ -146,43 +98,8 @@ export default function UpdateCenterView() {
         </section>
       )}
 
-      {current.length > 0 && (
-        <section className="min-w-0">
-          <SectionLabel>{t('current')}</SectionLabel>
-          <RowList className="bg-card">
-            {current.map((item) => (
-              <div
-                key={item.id}
-                className="flex h-8 min-w-0 items-center gap-2 rounded-md px-2 text-sm"
-              >
-                {item.error || !item.installed ? (
-                  <CircleHelp
-                    className={cn(
-                      'size-4 shrink-0',
-                      item.error ? 'text-status-waiting' : 'text-muted-foreground',
-                    )}
-                    aria-hidden="true"
-                  />
-                ) : (
-                  <CircleCheck className="size-4 shrink-0 text-status-success" aria-hidden="true" />
-                )}
-                <span className="min-w-0 shrink truncate" dir="auto">
-                  {item.name}
-                </span>
-                <span className="font-mono text-xs text-muted-foreground" dir="ltr">
-                  {versionStep(item)}
-                </span>
-                <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground" dir="auto">
-                  {item.error ?? text(item.hint) ?? ''}
-                </span>
-                <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">
-                  {text(item.sourceLabel)}
-                </span>
-              </div>
-            ))}
-          </RowList>
-        </section>
-      )}
+      <UpdateCurrentList current={current} />
+      <UpdateCurrentList current={unknown} title="unverified" />
 
       <UpdateHistory actions={center.actions} />
 
@@ -198,14 +115,5 @@ export default function UpdateCenterView() {
         />
       )}
     </>
-  );
-}
-
-function Notice({ children }: { children: React.ReactNode }) {
-  return (
-    <Alert className="bg-status-waiting/10 px-3 py-2 text-status-waiting">
-      <Info />
-      <AlertDescription className="text-xs text-current">{children}</AlertDescription>
-    </Alert>
   );
 }

@@ -1,4 +1,6 @@
 {
+  "loadFailed": "无法加载更新状态",
+  "loadFailedHint": "请重新加载以重试。此操作不会启动更新检查或安装更新。",
   "title": "更新",
   "check": "立即检查",
   "checking": "正在检查 …",
@@ -103,5 +105,10 @@
     "more": "全部更新",
     "empty": "全部为最新"
   },
-  "checkedJustNow": "刚刚检查"
+  "checkedJustNow": "刚刚检查",
+  "checkIncomplete": "检查未完成",
+  "aptRefreshedAt": "APT 元数据已刷新：{time}",
+  "aptListsAt": "软件包列表时间：{time}",
+  "aptNotRefreshed": "尚未记录成功的 APT 元数据刷新",
+  "unverified": "状态未经确认"
 }

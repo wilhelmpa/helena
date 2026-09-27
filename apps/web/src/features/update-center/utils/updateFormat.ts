@@ -30,10 +30,16 @@ export function headlineUpdate(items: UpdateItem[]): UpdateItem | null {
 }
 
 // The components that have an update, and the ones that do not (shown folded).
-export function splitItems(items: UpdateItem[]): { open: UpdateItem[]; current: UpdateItem[] } {
+export function splitItems(items: UpdateItem[]): {
+  open: UpdateItem[];
+  current: UpdateItem[];
+  unknown: UpdateItem[];
+} {
+  const known = (item: UpdateItem) => !!item.installed && !!item.available && !item.error;
   return {
     open: items.filter((item) => item.updateAvailable),
-    current: items.filter((item) => !item.updateAvailable),
+    current: items.filter((item) => !item.updateAvailable && known(item)),
+    unknown: items.filter((item) => !item.updateAvailable && !known(item)),
   };
 }
 
@@ -107,4 +113,18 @@ export function dailyTime(cron: string): string | null {
 export function justNow(iso: string, now: number = Date.now()): boolean {
   const at = Date.parse(iso);
   return Number.isFinite(at) && now - at < 60_000;
+}
+
+// Zero known updates is only reassuring after every enabled source completed its check.
+export function checkIncomplete(center: UpdateCenter): boolean {
+  return (
+    !center.checkedAt ||
+    !center.helper.installed ||
+    !!center.helper.error ||
+    center.job.lastStatus === 'failed' ||
+    center.sources.some((source) => !!source.error || !source.checkedAt) ||
+    (center.sources.some((source) => source.id === 'apt') &&
+      (!center.apt?.refreshedAt || !!center.apt.refreshError)) ||
+    center.items.some((item) => !!item.error || !item.installed || !item.available)
+  );
 }

@@ -22,7 +22,12 @@ export type RuntimeRequest =
   | { op: 'curator.run' }
   | { op: 'curator.set'; action: 'pin' | 'unpin'; skill: string }
   | { op: 'estop.set'; engaged: boolean; reason?: string | null }
-  | { op: 'runtime.update'; action: 'check' | 'apply' | 'status'; target?: string | null }
+  | {
+      op: 'runtime.update';
+      action: 'check' | 'apply' | 'status';
+      target?: string | null;
+      offline?: boolean;
+    }
   | { op: 'limits.read'; force?: boolean }
   // The runtime's own login in the agent's home (Claude Code, Codex): read it now, or sign
   // it out with the runtime's own command. Answered with `{ account }`.

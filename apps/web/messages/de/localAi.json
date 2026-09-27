@@ -155,7 +155,8 @@
   },
   "updates": {
     "label": "Lokale KI",
-    "hint": "Aktualisieren über native/local-ai/install.sh, danach neu auswerten."
+    "hint": "Aktualisieren über native/local-ai/install.sh, danach neu auswerten.",
+    "whisperBuildRequired": "Ein Whisper.cpp-Update braucht einen gepinnten ROCm-Build und einen erfolgreichen Sprachtest. Die automatische Installation ist noch nicht verfügbar."
   },
   "pickerMark": "lokal",
   "tile": {

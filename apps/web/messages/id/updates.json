@@ -1,4 +1,6 @@
 {
+  "loadFailed": "Status pembaruan tidak dapat dimuat",
+  "loadFailedHint": "Muat ulang untuk mencoba lagi. Tindakan ini tidak memulai pemeriksaan atau pemasangan pembaruan.",
   "title": "Pembaruan",
   "check": "Periksa sekarang",
   "checking": "Memeriksa …",
@@ -103,5 +105,10 @@
     "more": "Semua pembaruan",
     "empty": "Semua sudah terbaru"
   },
-  "checkedJustNow": "Baru saja diperiksa"
+  "checkedJustNow": "Baru saja diperiksa",
+  "checkIncomplete": "Pemeriksaan belum lengkap",
+  "aptRefreshedAt": "Metadata APT diperbarui: {time}",
+  "aptListsAt": "Waktu daftar paket: {time}",
+  "aptNotRefreshed": "Belum ada pembaruan metadata APT yang berhasil tercatat",
+  "unverified": "Status belum terverifikasi"
 }

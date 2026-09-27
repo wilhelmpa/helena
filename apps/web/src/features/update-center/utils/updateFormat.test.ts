@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { UpdateAction, UpdateCenter, UpdateItem } from '@/lib/api/endpoints/updateCenter';
 import {
+  checkIncomplete,
   dailyTime,
   groupItems,
   justNow,
@@ -108,6 +109,55 @@ function center(fields: Partial<UpdateCenter>): UpdateCenter {
 }
 
 describe('updateFormat', () => {
+  it('does not declare zero updates current without a complete fresh check', () => {
+    const checkedAt = '2026-09-26T21:49:30Z';
+    const complete = center({ checkedAt });
+    assert.equal(checkIncomplete(complete), false);
+    assert.equal(checkIncomplete(center({})), true);
+    assert.equal(
+      checkIncomplete(center({ checkedAt, helper: { installed: true, error: 'timeout' } })),
+      true,
+    );
+    assert.equal(
+      checkIncomplete(
+        center({ checkedAt, items: [item({ available: null, updateAvailable: false })] }),
+      ),
+      true,
+    );
+    assert.equal(
+      checkIncomplete(
+        center({ checkedAt, items: [item({ installed: null, updateAvailable: false })] }),
+      ),
+      true,
+    );
+    const source: UpdateCenter['sources'][number] = {
+      id: 'apt',
+      kind: 'system',
+      pluginId: 'helena.updates',
+      label: 'APT',
+      checkedAt,
+      error: null,
+    };
+    assert.equal(checkIncomplete(center({ checkedAt, sources: [source] })), true);
+    const apt = {
+      listsUpdatedAt: checkedAt,
+      refreshedAt: checkedAt,
+      refreshAttemptedAt: checkedAt,
+      refreshError: null,
+    };
+    assert.equal(checkIncomplete(center({ checkedAt, sources: [source], apt })), false);
+    assert.equal(
+      checkIncomplete(
+        center({ checkedAt, sources: [source], apt: { ...apt, refreshError: 'index failed' } }),
+      ),
+      true,
+    );
+    assert.equal(
+      checkIncomplete(center({ checkedAt, sources: [{ ...source, error: 'failed' }], apt })),
+      true,
+    );
+  });
+
   it('names a security update first, then the highest risk', () => {
     const high = item({ name: 'High', risk: 'high' });
     const security = item({ name: 'Security', security: true, risk: 'low' });
@@ -115,6 +165,15 @@ describe('updateFormat', () => {
     assert.equal(headlineUpdate([high, security, current])?.name, 'Security');
     assert.equal(headlineUpdate([item({ risk: 'low' }), high])?.name, 'High');
     assert.equal(headlineUpdate([current]), null);
+  });
+
+  it('keeps unknown versions and failed release checks out of the current list', () => {
+    const missing = item({ installed: null, updateAvailable: false });
+    const failed = item({ error: 'release unavailable', updateAvailable: false });
+    const known = item({ updateAvailable: false });
+    const result = splitItems([missing, failed, known]);
+    assert.deepEqual(result.current, [known]);
+    assert.deepEqual(result.unknown, [missing, failed]);
   });
 
   it('splits and groups the list', () => {

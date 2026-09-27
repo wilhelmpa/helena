@@ -9,6 +9,10 @@ run() { if [ "${DRY_RUN:-0}" = 1 ]; then echo "would: $*"; else "$@"; fi; }
 [ "$(id -u)" = 0 ] || [ "${DRY_RUN:-0}" = 1 ] || { echo "run as root" >&2; exit 1; }
 
 run install -m 0755 -o root -g root "$here/helena-hermes-update" /usr/local/libexec/helena-hermes-update
+if [ "${1:-}" = "--refresh" ]; then
+  echo "refreshed Hermes helper (no fetch, install or service restart)"
+  exit 0
+fi
 run install -m 0644 -o root -g root "$here/helena-hermes-update.path" /etc/systemd/system/helena-hermes-update.path
 run install -m 0644 -o root -g root "$here/helena-hermes-update.service" /etc/systemd/system/helena-hermes-update.service
 run install -d -m 0755 -o root -g root /etc/helena

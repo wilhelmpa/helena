@@ -1,4 +1,6 @@
 {
+  "loadFailed": "Impossible de charger le statut des mises à jour",
+  "loadFailedHint": "Rechargez pour réessayer. Cela ne lance aucune recherche ni installation de mises à jour.",
   "title": "Mises à jour",
   "check": "Vérifier maintenant",
   "checking": "Vérification …",
@@ -103,5 +105,10 @@
     "more": "Toutes les mises à jour",
     "empty": "Tout est à jour"
   },
-  "checkedJustNow": "Vérifié à l’instant"
+  "checkedJustNow": "Vérifié à l’instant",
+  "checkIncomplete": "Vérification incomplète",
+  "aptRefreshedAt": "Métadonnées APT actualisées : {time}",
+  "aptListsAt": "Date des listes de paquets : {time}",
+  "aptNotRefreshed": "Aucune actualisation réussie des métadonnées APT enregistrée",
+  "unverified": "État non vérifié"
 }

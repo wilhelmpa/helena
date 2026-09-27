@@ -104,6 +104,14 @@ export const UpdateJob = t.Object({
 
 export const UpdateCenterResponse = t.Object({
   checkedAt: t.Nullable(t.String({ format: 'date-time' })),
+  apt: t.Nullable(
+    t.Object({
+      listsUpdatedAt: t.Nullable(t.String({ format: 'date-time' })),
+      refreshedAt: t.Nullable(t.String({ format: 'date-time' })),
+      refreshAttemptedAt: t.Nullable(t.String({ format: 'date-time' })),
+      refreshError: t.Nullable(t.String()),
+    }),
+  ),
   helper: t.Object({
     installed: t.Boolean({ description: 'The root helper (helena-update) is installed' }),
     error: t.Nullable(t.String()),

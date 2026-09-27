@@ -1,4 +1,6 @@
 {
+  "loadFailed": "Não foi possível carregar o status das atualizações",
+  "loadFailedHint": "Recarregue para tentar novamente. Isso não inicia uma verificação nem instala atualizações.",
   "title": "Atualizações",
   "check": "Verificar agora",
   "checking": "Verificando …",
@@ -103,5 +105,10 @@
     "more": "Todas as atualizações",
     "empty": "Tudo está atualizado"
   },
-  "checkedJustNow": "Verificado agora"
+  "checkedJustNow": "Verificado agora",
+  "checkIncomplete": "Verificação incompleta",
+  "aptRefreshedAt": "Metadados APT atualizados: {time}",
+  "aptListsAt": "Data das listas de pacotes: {time}",
+  "aptNotRefreshed": "Nenhuma atualização bem-sucedida dos metadados APT registrada",
+  "unverified": "Status não verificado"
 }

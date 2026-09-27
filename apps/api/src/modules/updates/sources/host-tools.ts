@@ -16,12 +16,14 @@ import {
   osvAffected,
   plainVersion,
 } from './vendors';
+import { sendHelperRequest } from '../helper';
+import { helperProgress } from './cli-runtimes';
 
 // The programs Helena's services run on: Bun (API, worker, runner), Node.js (the runner,
 // the CLI runtimes), code-server, Wetty (project terminals) and KasmVNC (the project
 // browsers' desktop view). Their installed versions come from the root helper's inventory;
-// the API's own Bun is known without it. Check only: none of them has an installer in the
-// repository yet, so the update center shows what is new and says where it is installed.
+// the API's own Bun is known without it. Only an installed helper advertising this
+// capability can apply a pinned version; an older helper remains read-only.
 
 export const HOST_TOOLS_SOURCE_ID = 'host-tools';
 const NODE_HOST = 'nodejs.org';
@@ -79,6 +81,12 @@ async function nodeSecurity(context: UpdateCheckContext, installed: string, newe
 const DPKG_TOOLS = new Set(['kasmvnc']);
 
 const TOOLS: ToolInfo[] = [
+  {
+    component: 'uv',
+    name: 'uv / uvx',
+    repository: 'astral-sh/uv',
+    newest: (context) => githubNewest(context, 'astral-sh/uv'),
+  },
   {
     component: 'bun',
     name: 'Bun',
@@ -144,6 +152,8 @@ async function checkOne(
     error = failure instanceof Error ? failure.message : String(failure);
   }
   const updateAvailable = isNewerVersion(available, installed);
+  const applicable =
+    (await hostInventory(context))?.hostToolApply?.includes(tool.component) ?? false;
   let security = false;
   if (updateAvailable && tool.security) {
     security = await tool.security(context, installed, available!).catch(() => false);
@@ -157,8 +167,8 @@ async function checkOne(
     security,
     sourceUrl: `https://github.com/${tool.repository}`,
     notesUrl: `https://github.com/${tool.repository}/releases`,
-    applicable: false,
-    hint: { i18n: 'updates.hints.manual' },
+    applicable,
+    hint: applicable ? null : { i18n: 'updates.hints.manual' },
     error,
   };
 }
@@ -178,4 +188,15 @@ export const hostToolsSource: UpdateSource = {
     if (!tool || !candidate.available) return null;
     return githubNotes(context, tool.repository, candidate.installed, candidate.available);
   },
+  async apply(request) {
+    if (!TOOLS.some((tool) => tool.component === request.component)) {
+      throw new Error(`Unknown host tool ${request.component}`);
+    }
+    const ref = await sendHelperRequest('host-tool', {
+      tool: request.component,
+      version: request.target,
+    });
+    return { ref };
+  },
+  progress: (ref) => helperProgress(ref),
 };

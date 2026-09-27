@@ -48,6 +48,24 @@ describe('runtime update', () => {
     expect(await checking).toEqual({ latest: { version: '0.22.0' } });
   });
 
+  it('forwards an offline check to the helper without changing an ordinary check', async () => {
+    const dir = await spool();
+    const checking = runtimeUpdate({ op: 'runtime.update', action: 'check', offline: true }, dir);
+    await Bun.sleep(200);
+    const request = JSON.parse(await readFile(join(dir, 'request.json'), 'utf8'));
+    expect(request).toMatchObject({ action: 'check', offline: true });
+    await writeFile(
+      join(dir, 'status.json'),
+      JSON.stringify({
+        id: request.id,
+        state: 'done',
+        ok: true,
+        result: { commits: [] },
+      }),
+    );
+    expect(await checking).toEqual({ commits: [] });
+  });
+
   it('reads the status, idle before any request', async () => {
     const dir = await spool();
     expect(await runtimeUpdate({ op: 'runtime.update', action: 'status' }, dir)).toEqual({

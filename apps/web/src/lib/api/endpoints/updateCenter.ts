@@ -72,6 +72,12 @@ export interface UpdateSettings {
 
 export interface UpdateCenter {
   checkedAt: string | null;
+  apt?: {
+    listsUpdatedAt: string | null;
+    refreshedAt: string | null;
+    refreshAttemptedAt: string | null;
+    refreshError: string | null;
+  } | null;
   helper: { installed: boolean; error: string | null };
   counts: { updates: number; security: number; applicable: number };
   sources: {

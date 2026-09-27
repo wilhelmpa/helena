@@ -1,4 +1,6 @@
 {
+  "loadFailed": "Could not load update status",
+  "loadFailedHint": "Reload to try again. This does not start an update check or install updates.",
   "title": "Updates",
   "check": "Check now",
   "checking": "Checking …",
@@ -103,5 +105,10 @@
     "more": "All updates",
     "empty": "Everything is up to date"
   },
-  "checkedJustNow": "Checked just now"
+  "checkedJustNow": "Checked just now",
+  "checkIncomplete": "Check incomplete",
+  "aptRefreshedAt": "APT metadata refreshed: {time}",
+  "aptListsAt": "Package list timestamp: {time}",
+  "aptNotRefreshed": "No successful APT metadata refresh recorded",
+  "unverified": "Status unverified"
 }
