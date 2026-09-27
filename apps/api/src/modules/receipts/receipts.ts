@@ -32,6 +32,7 @@ import {
 } from './mail-facts';
 import { matchReceipt, unlinkReceipt } from './matching';
 import { assertReviewedMailSource, type ReviewedMailSource } from './mail-review';
+import { economicReceipt, assertUngroupedReceipt } from './originals';
 import { receiptSourceLinks } from './source';
 import {
   inMonth,
@@ -494,6 +495,7 @@ export async function listReceipts(
     .where(
       and(
         eq(helenaReceipt.projectId, projectId),
+        economicReceipt,
         filter.status ? eq(helenaReceipt.status, filter.status) : undefined,
         range ? inMonth(receiptDay, range) : undefined,
         q
@@ -566,7 +568,19 @@ export async function updateReceipt(
   const corrected = Object.keys(patch).some((key) => key !== 'status');
   if (corrected && row.extraction === 'none') patch.extraction = 'manual';
   if (!Object.keys(patch).length) return receiptDetailView(row);
-  await db.update(helenaReceipt).set(patch).where(eq(helenaReceipt.id, receiptId));
+  await db.transaction(async (tx) => {
+    if (patch.status !== undefined) {
+      await assertUngroupedReceipt(tx, projectId, receiptId);
+      const [current] = await tx
+        .select({ status: helenaReceipt.status })
+        .from(helenaReceipt)
+        .where(eq(helenaReceipt.id, receiptId))
+        .for('update');
+      if (current?.status === 'matched' && patch.status !== current.status)
+        throw new HttpError(409, 'The receipt is matched. Remove the match first.');
+    }
+    await tx.update(helenaReceipt).set(patch).where(eq(helenaReceipt.id, receiptId));
+  });
   if (corrected && (patch.status ?? row.status) === 'open') await matchQuietly(receiptId);
   return viewOf(receiptId);
 }
@@ -603,6 +617,7 @@ export async function extractAgain(
 export async function deleteReceipt(projectId: number, receiptId: number): Promise<void> {
   const row = await requireReceipt(projectId, receiptId);
   await db.transaction(async (tx) => {
+    await assertUngroupedReceipt(tx, projectId, row.id);
     await unlinkReceipt(tx, row.id);
     await tx.delete(helenaReceipt).where(eq(helenaReceipt.id, row.id));
   });
@@ -638,7 +653,11 @@ export async function receiptSummary(
       .select({ status: helenaReceipt.status, n: count() })
       .from(helenaReceipt)
       .where(
-        and(eq(helenaReceipt.projectId, projectId), range ? inMonth(receiptDay, range) : undefined),
+        and(
+          eq(helenaReceipt.projectId, projectId),
+          economicReceipt,
+          range ? inMonth(receiptDay, range) : undefined,
+        ),
       )
       .groupBy(helenaReceipt.status),
     db
@@ -649,6 +668,7 @@ export async function receiptSummary(
         and(
           eq(helenaReceiptMatch.projectId, projectId),
           eq(helenaReceiptMatch.status, 'proposed'),
+          economicReceipt,
           range ? inMonth(receiptDay, range) : undefined,
         ),
       ),
@@ -658,7 +678,7 @@ export async function receiptSummary(
           FROM ${helenaBankTransaction} WHERE ${helenaBankTransaction.projectId} = ${projectId}
         UNION
         SELECT to_char(${receiptDay}, 'YYYY-MM') AS month
-          FROM ${helenaReceipt} WHERE ${helenaReceipt.projectId} = ${projectId}
+          FROM ${helenaReceipt} WHERE ${helenaReceipt.projectId} = ${projectId} AND ${economicReceipt}
       ) months ORDER BY month DESC LIMIT 120`),
   ]);
   const of = (rows: { status: string; n: number }[], status: string) =>

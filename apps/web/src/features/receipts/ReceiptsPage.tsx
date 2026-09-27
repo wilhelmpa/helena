@@ -329,6 +329,7 @@ export default function ReceiptsPage() {
         />
       )}
       <ReceiptSheet
+        onOpenReceipt={setReceiptId}
         projectKey={projectKey}
         receiptId={receiptId}
         onClose={() => setReceiptId(null)}

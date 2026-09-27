@@ -191,3 +191,66 @@ describe('exportFileName', () => {
     expect(exportFileName('', 'pdf', taken)).toBe('Beleg.pdf');
   });
 });
+
+describe('explicit supplementary originals', () => {
+  const invoice = receipt({
+    id: 81,
+    grossCents: 11900,
+    vatCents: 1900,
+    invoiceNumber: 'FICTION-81',
+    currency: 'EUR',
+  });
+  const payment = receipt({
+    ...invoice,
+    id: 82,
+    filename: 'paid.pdf',
+    vaultPath: 'Projects/TEST/paid.pdf',
+  });
+  const grouped = { ...invoice, supplementaryOriginals: [payment] };
+  const build = (receipts: ExportReceipt[], unpaid = false) =>
+    buildMonthExport({
+      month: '2026-09',
+      label: 'Fiction',
+      rows: unpaid ? [] : [row({ amountCents: -11900, receipts })],
+      receiptsWithoutPayment: unpaid ? receipts : [],
+      fileOf: (r) => strToU8(`original-${r.id}`),
+    });
+  test('one bank amount and one economic gross/VAT, with both distinct original bytes in ZIP', () => {
+    const result = build([grouped]);
+    const cells = result.csv.split('\r\n')[1]!.split(';');
+    expect(cells[2]).toBe('-119,00');
+    expect(cells[13]).toBe('119,00');
+    expect(cells[14]).toBe('19,00');
+    const files = Object.entries(unzipSync(result.zip)).filter(([p]) => p.endsWith('.pdf'));
+    expect(files).toHaveLength(2);
+    expect(files.map(([, b]) => strFromU8(b)).sort()).toEqual(['original-81', 'original-82']);
+  });
+  test('without any bank transaction, one CSV record still includes both originals', () => {
+    const files = unzipSync(build([grouped], true).zip);
+    const csv = strFromU8(files['2026-09/Belege-ohne-Zahlung.csv']!);
+    expect(csv.split('\r\n').filter(Boolean)).toHaveLength(2);
+    expect(csv.split('\r\n')[1]).toContain(';119,00;19,00;EUR;');
+    expect(Object.keys(files).filter((p) => p.endsWith('.pdf'))).toHaveLength(2);
+  });
+  test('equal amounts remain separate without an explicit relation; detaching restores both records', () => {
+    const second = { ...payment, invoiceNumber: 'FICTION-82' };
+    for (const independent of [
+      [invoice, second],
+      [invoice, payment],
+    ]) {
+      const files = unzipSync(build(independent, true).zip);
+      expect(
+        strFromU8(files['2026-09/Belege-ohne-Zahlung.csv']!).split('\r\n').filter(Boolean),
+      ).toHaveLength(3);
+    }
+    const cells = build([invoice, second]).csv.split('\r\n')[1]!.split(';');
+    expect(cells[13]).toBe('238,00');
+    expect(cells[14]).toBe('38,00');
+  });
+  test('an unprinted primary VAT remains null despite tax printed on a supplementary original', () => {
+    const cells = build([{ ...grouped, vatCents: null }])
+      .csv.split('\r\n')[1]!
+      .split(';');
+    expect(cells[14]).toBe('');
+  });
+});

@@ -4,8 +4,9 @@ import {
   helenaBankTransaction,
   helenaReceipt,
   helenaReceiptMatch,
+  helenaReceiptOriginalLink,
 } from '@repo/db';
-import { and, eq, inArray, sql, type SQL } from 'drizzle-orm';
+import { and, eq, inArray, or, sql, type SQL } from 'drizzle-orm';
 import { numericToCents } from './amounts';
 import type { ReceiptDetails } from './extract';
 import type { ReceiptSourceLinks } from './source';
@@ -31,6 +32,8 @@ export interface MatchedTransaction {
 
 export interface ReceiptView {
   id: number;
+  primaryReceiptId?: number | null;
+  originalCount?: number;
   source: string;
   filename: string;
   contentType: string;
@@ -57,7 +60,15 @@ export interface ReceiptView {
   proposals: number;
 }
 
+export interface ReceiptOriginal {
+  id: number;
+  filename: string;
+  size: number;
+  contentType: string;
+}
+
 export interface ReceiptDetailView extends ReceiptView {
+  originals?: ReceiptOriginal[];
   textExcerpt: string | null;
   details: ReceiptDetails;
   mailAttachmentId: number | null;
@@ -184,18 +195,52 @@ async function receiptLinks(receiptIds: number[]) {
 
 export async function receiptViews(rows: ReceiptRow[]): Promise<ReceiptView[]> {
   const { confirmed, proposals } = await receiptLinks(rows.map((row) => row.id));
-  return rows.map((row) =>
-    baseReceiptView(row, confirmed.get(row.id) ?? null, proposals.get(row.id) ?? 0),
-  );
+  const ids = rows.map((r) => r.id);
+  const links = ids.length
+    ? await db
+        .select()
+        .from(helenaReceiptOriginalLink)
+        .where(
+          or(
+            inArray(helenaReceiptOriginalLink.receiptId, ids),
+            inArray(helenaReceiptOriginalLink.primaryReceiptId, ids),
+          ),
+        )
+    : [];
+  return rows.map((row) => ({
+    ...baseReceiptView(row, confirmed.get(row.id) ?? null, proposals.get(row.id) ?? 0),
+    primaryReceiptId: links.find((l) => l.receiptId === row.id)?.primaryReceiptId ?? null,
+    originalCount: 1 + links.filter((l) => l.primaryReceiptId === row.id).length,
+  }));
 }
 
 export async function receiptDetailView(row: ReceiptRow): Promise<ReceiptDetailView> {
   const [view] = await receiptViews([row]);
+  const primaryId = view!.primaryReceiptId ?? row.id;
+  const originals = await db
+    .select({
+      id: helenaReceipt.id,
+      filename: helenaReceipt.filename,
+      size: helenaReceipt.size,
+      contentType: helenaReceipt.contentType,
+    })
+    .from(helenaReceipt)
+    .where(
+      and(
+        eq(helenaReceipt.projectId, row.projectId),
+        or(
+          eq(helenaReceipt.id, primaryId),
+          sql`${helenaReceipt.id} IN (SELECT ${helenaReceiptOriginalLink.receiptId} FROM ${helenaReceiptOriginalLink} WHERE ${helenaReceiptOriginalLink.primaryReceiptId} = ${primaryId})`,
+        ),
+      ),
+    )
+    .orderBy(helenaReceipt.id);
   const details = { ...detailsOf(row) };
   // Source navigation is resolved separately under the current mail permissions.
   delete details.mailSource;
   return {
     ...view!,
+    originals,
     textExcerpt: row.textExcerpt,
     details,
     mailAttachmentId: row.mailAttachmentId,

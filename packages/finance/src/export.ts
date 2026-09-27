@@ -4,6 +4,8 @@ import { formatAmountDe } from './money';
 import { transliterate } from './names';
 
 export interface ExportReceipt {
+  /** Supporting originals: included in the ZIP, never added to economic gross/VAT. */
+  supplementaryOriginals?: ExportReceipt[];
   id: number;
   filename: string;
   vaultPath: string;
@@ -229,21 +231,23 @@ export function buildMonthExport(input: MonthExportInput): MonthExport {
   const lines = rows.map((row) => {
     const folder = row.amountCents < 0 ? 'Ausgaben' : 'Einnahmen';
     const several = row.receipts.length > 1;
-    const paths = row.receipts.map((receipt) => {
-      const cents = several && receipt.grossCents !== null ? receipt.grossCents : row.amountCents;
-      const issuer = receipt.issuer ?? (row.counterpartyName || 'Unbekannt');
-      return writeReceipt(
-        receipt,
-        folder,
-        stemFor(
-          row.bookingDate,
-          issuer,
-          cents,
-          receipt.currency ?? row.currency,
-          receipt.invoiceNumber,
-        ),
-      );
-    });
+    const paths = row.receipts.flatMap((primary) =>
+      [primary, ...(primary.supplementaryOriginals ?? [])].map((receipt) => {
+        const cents = several && receipt.grossCents !== null ? receipt.grossCents : row.amountCents;
+        const issuer = receipt.issuer ?? (row.counterpartyName || 'Unbekannt');
+        return writeReceipt(
+          receipt,
+          folder,
+          stemFor(
+            row.bookingDate,
+            issuer,
+            cents,
+            receipt.currency ?? row.currency,
+            receipt.invoiceNumber,
+          ),
+        );
+      }),
+    );
     const receipts = row.receipts;
     return [
       cell(dateDe(row.bookingDate)),
@@ -273,19 +277,21 @@ export function buildMonthExport(input: MonthExportInput): MonthExport {
   if (input.receiptsWithoutPayment.length) {
     const receiptLines = input.receiptsWithoutPayment.map((receipt) => {
       const currency = receipt.currency ?? 'EUR';
-      const path = writeReceipt(
-        receipt,
-        'Belege-ohne-Zahlung',
-        stemFor(
-          receipt.invoiceDate,
-          receipt.issuer ?? 'Unbekannt',
-          receipt.grossCents,
-          currency,
-          receipt.invoiceNumber,
+      const paths = [receipt, ...(receipt.supplementaryOriginals ?? [])].map((original) =>
+        writeReceipt(
+          original,
+          'Belege-ohne-Zahlung',
+          stemFor(
+            receipt.invoiceDate,
+            receipt.issuer ?? 'Unbekannt',
+            receipt.grossCents,
+            currency,
+            original.invoiceNumber,
+          ),
         ),
       );
       return [
-        cell(path ?? '', true),
+        cell(joined(paths), true),
         cell(receipt.invoiceNumber, true),
         cell(dateDe(receipt.invoiceDate)),
         cell(receipt.issuer, true),

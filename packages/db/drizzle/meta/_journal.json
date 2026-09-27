@@ -1359,6 +1359,13 @@
       "when": 1790460024095,
       "tag": "0194_helena_browser_jev_stage",
       "breakpoints": true
+    },
+    {
+      "idx": 195,
+      "version": "7",
+      "when": 1790505660465,
+      "tag": "0195_receipt_original_groups",
+      "breakpoints": true
     }
   ]
 }

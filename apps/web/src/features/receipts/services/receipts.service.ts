@@ -6,6 +6,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   confirmMatch,
+  setReceiptOriginalLink,
   createBankAccount,
   deleteBankAccount,
   deleteReceipt,
@@ -266,6 +267,22 @@ export function useImportStatement(projectKey: string) {
   return useMutation({
     mutationFn: ({ accountId, file }: { accountId: number; file: File }) =>
       importStatement(projectKey, accountId, file),
+    onSuccess: refresh,
+  });
+}
+
+export function useReceiptOriginalLink(projectKey: string) {
+  const refresh = useRefresh(projectKey);
+  return useMutation({
+    mutationFn: ({
+      receiptId,
+      primaryReceiptId,
+      attach,
+    }: {
+      receiptId: number;
+      primaryReceiptId: number;
+      attach: boolean;
+    }) => setReceiptOriginalLink(projectKey, receiptId, primaryReceiptId, attach),
     onSuccess: refresh,
   });
 }

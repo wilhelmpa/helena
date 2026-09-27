@@ -20,6 +20,8 @@ export const MatchedTransaction = t.Object({
 });
 
 export const Receipt = t.Object({
+  primaryReceiptId: t.Optional(nullableNumber),
+  originalCount: t.Optional(t.Number()),
   id: t.Number(),
   source: t.String(),
   filename: t.String(),
@@ -50,6 +52,16 @@ export const Receipt = t.Object({
 export const ReceiptDetail = t.Composite([
   Receipt,
   t.Object({
+    originals: t.Optional(
+      t.Array(
+        t.Object({
+          id: t.Number(),
+          filename: t.String(),
+          size: t.Number(),
+          contentType: t.String(),
+        }),
+      ),
+    ),
     textExcerpt: nullableString,
     details: t.Record(t.String(), t.Unknown()),
     mailAttachmentId: nullableNumber,

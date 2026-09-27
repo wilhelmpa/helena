@@ -171,5 +171,18 @@
   "vaultPicker": {
     "title": "Receipt from files",
     "description": "Pick a file from this project's folder. It stays where it is."
+  },
+  "originals": {
+    "title": "Originals",
+    "hint": "A receipt can have several originals. Amount and tax are counted only on the primary receipt.",
+    "supplement": "Supplementary original: amount and tax are counted on the primary receipt.",
+    "primary": "Primary receipt",
+    "detach": "Detach",
+    "choose": "Assign a primary receipt to this original",
+    "search": "Find primary receipt",
+    "select": "Select primary receipt",
+    "confirmHint": "Assign only if this original supports the same transaction without an additional amount. Both files and their facts are preserved.",
+    "attach": "Attach as supplementary original",
+    "count": "{count} originals"
   }
 }

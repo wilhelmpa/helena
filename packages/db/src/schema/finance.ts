@@ -10,6 +10,7 @@ import {
   check,
   date,
   doublePrecision,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -189,6 +190,7 @@ export const helenaReceipt = pgTable(
     check('helena_receipt_source_check', sql`${t.source} IN ('mail', 'upload', 'vault')`),
     check('helena_receipt_status_check', sql`${t.status} IN ('open', 'matched', 'ignored')`),
     check('helena_receipt_direction_check', sql`${t.direction} IN ('incoming', 'outgoing')`),
+    uniqueIndex('helena_receipt_scope_idx').on(t.id, t.projectId, t.teamId),
     uniqueIndex('helena_receipt_file_idx').on(t.projectId, t.sha256),
     index('helena_receipt_project_idx').on(t.projectId, t.createdAt.desc()),
   ],
@@ -236,5 +238,32 @@ export const helenaReceiptMatch = pgTable(
       .on(t.receiptId)
       .where(sql`${t.status} = 'confirmed'`),
     index('helena_receipt_match_project_idx').on(t.projectId, t.status),
+  ],
+);
+
+// Explicit supplementary originals. The original rows and extracted facts remain untouched.
+export const helenaReceiptOriginalLink = pgTable(
+  'helena_receipt_original_link',
+  {
+    receiptId: integer('receipt_id').primaryKey(),
+    primaryReceiptId: integer('primary_receipt_id').notNull(),
+    projectId: integer('project_id').notNull(),
+    teamId: integer('team_id').notNull(),
+    createdByUserId: text('created_by_user_id').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check('helena_receipt_original_distinct', sql`${t.receiptId} <> ${t.primaryReceiptId}`),
+    foreignKey({
+      columns: [t.receiptId, t.projectId, t.teamId],
+      foreignColumns: [helenaReceipt.id, helenaReceipt.projectId, helenaReceipt.teamId],
+      name: 'helena_receipt_original_child_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [t.primaryReceiptId, t.projectId, t.teamId],
+      foreignColumns: [helenaReceipt.id, helenaReceipt.projectId, helenaReceipt.teamId],
+      name: 'helena_receipt_original_primary_fk',
+    }).onDelete('cascade'),
+    index('helena_receipt_original_primary_idx').on(t.primaryReceiptId),
   ],
 );

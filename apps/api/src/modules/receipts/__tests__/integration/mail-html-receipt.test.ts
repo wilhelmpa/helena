@@ -1,6 +1,10 @@
 import { beforeEach, expect, it } from 'bun:test';
 import { readFile } from 'node:fs/promises';
 import { absoluteVaultPath } from '@repo/vault';
+import { db, helenaReceipt } from '@repo/db';
+import { eq } from 'drizzle-orm';
+import { linkReceiptOriginal } from '../../originals';
+import { listReceipts } from '../../receipts';
 import { sha256 } from '@repo/mail';
 import { app, authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
@@ -88,4 +92,27 @@ it('preserves separate invoice/payment originals through native import, dry/appl
     expect(extracted.vatCents).toBe(receipt.vatCents);
     expect(extracted.details.mailBody).toEqual(receipt.details.mailBody);
   }
+  // Explicit grouping is orthogonal to mail-original dedup: neither provenance nor
+  // corrected facts are replaced, and a later history retry still returns both original IDs.
+  const receiptIds = applied.reports.map((report) => report.receiptIds[0]!);
+  const before = await db
+    .select()
+    .from(helenaReceipt)
+    .where(eq(helenaReceipt.projectId, project.id))
+    .orderBy(helenaReceipt.id);
+  await linkReceiptOriginal(project.id, receiptIds[1]!, receiptIds[0]!, owner.userId);
+  const groupedRetry = await backfillMailReceipts(entries, true, dry);
+  expect(groupedRetry.reports.map((report) => report.receiptIds)).toEqual(
+    applied.reports.map((report) => report.receiptIds),
+  );
+  expect(
+    await db
+      .select()
+      .from(helenaReceipt)
+      .where(eq(helenaReceipt.projectId, project.id))
+      .orderBy(helenaReceipt.id),
+  ).toEqual(before);
+  const displayed = await listReceipts(project.id, {});
+  expect(displayed).toHaveLength(1);
+  expect(displayed[0]!.originalCount).toBe(2);
 });

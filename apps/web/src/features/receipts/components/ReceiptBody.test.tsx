@@ -146,3 +146,26 @@ describe('receipt detail source navigation', () => {
     dom.window.close();
   });
 });
+
+describe('supplementary original detail', () => {
+  const originals = [
+    { id: 91, filename: 'invoice.xml', size: 800, contentType: 'application/xml' },
+    { id: 92, filename: 'payment.pdf', size: 900, contentType: 'application/pdf' },
+  ];
+  it('shows both original identities and a reversible relation on the primary receipt', () => {
+    const view = render({ ...receipt, originalCount: 2, primaryReceiptId: null, originals });
+    assert.ok(view.text?.includes('invoice.xml'));
+    assert.ok(view.text?.includes('payment.pdf'));
+    assert.ok(view.text?.includes(receipts.originals.detach));
+    assert.ok(!view.text?.includes(receipts.originals.choose));
+    assert.ok(view.text?.includes(receipts.detail.match));
+  });
+  it('keeps supplementary facts and source readable while removing its separate match controls', () => {
+    const view = render({ ...receipt, id: 92, primaryReceiptId: 91, originalCount: 1, originals });
+    assert.ok(view.text?.includes(receipts.originals.supplement));
+    assert.ok(view.text?.includes(receipts.originals.detach));
+    assert.ok(view.text?.includes('Datei öffnen'));
+    assert.ok(!view.text?.includes(receipts.detail.matchAgain));
+    assert.ok(!view.text?.includes(receipts.originals.choose));
+  });
+});

@@ -10,10 +10,12 @@ export function ReceiptSheet({
   projectKey,
   receiptId,
   onClose,
+  onOpenReceipt,
 }: {
   projectKey: string;
   receiptId: number | null;
   onClose: () => void;
+  onOpenReceipt: (id: number) => void;
 }) {
   const t = useTranslations('receipts');
   const query = useReceiptQuery(projectKey, receiptId);
@@ -33,6 +35,7 @@ export function ReceiptSheet({
             projectKey={projectKey}
             receipt={receipt}
             onDeleted={onClose}
+            onOpenReceipt={onOpenReceipt}
           />
         ) : (
           <p className="p-4 text-sm text-muted-foreground">{t('detail.loading')}</p>

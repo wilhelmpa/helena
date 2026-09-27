@@ -171,5 +171,18 @@
   "vaultPicker": {
     "title": "Bukti dari berkas",
     "description": "Pilih berkas dari folder proyek ini. Berkas tetap di tempatnya."
+  },
+  "originals": {
+    "title": "Dokumen asli",
+    "hint": "Satu bukti dapat memiliki beberapa dokumen asli. Jumlah dan pajak hanya dihitung pada bukti utama.",
+    "supplement": "Dokumen pelengkap: jumlah dan pajak dihitung pada bukti utama.",
+    "primary": "Bukti utama",
+    "detach": "Pisahkan",
+    "choose": "Tetapkan bukti utama untuk dokumen ini",
+    "search": "Cari bukti utama",
+    "select": "Pilih bukti utama",
+    "confirmHint": "Tautkan hanya jika dokumen ini melengkapi transaksi yang sama tanpa jumlah tambahan. Kedua berkas dan datanya tetap disimpan.",
+    "attach": "Tautkan sebagai dokumen pelengkap",
+    "count": "{count} dokumen asli"
   }
 }

@@ -59,6 +59,7 @@ import {
   updateReceipt,
   uploadReceipt,
 } from './receipts';
+import { linkReceiptOriginal, unlinkReceiptOriginal } from './originals';
 import { receiptViews } from './views';
 import { receiptOriginalMail } from './archived-source';
 
@@ -436,6 +437,39 @@ export const receiptRoutes = new Elysia({
         summary: 'Match a receipt again',
         description: 'Rules first, then the decision model; an open receipt only.',
       },
+    },
+  )
+  .put(
+    `${base}/:receiptId/original-link`,
+    async ({ project, params, body, user }) => {
+      await linkReceiptOriginal(
+        project.id,
+        params.receiptId,
+        body.primaryReceiptId,
+        requireUser(user).id,
+      );
+      return { ok: true };
+    },
+    {
+      projectAdmin: true,
+      params: receiptParams,
+      body: t.Object({ primaryReceiptId: t.Integer({ minimum: 1 }) }),
+      response: { 200: t.Object({ ok: t.Boolean() }), ...commonErrors, ...errors(409) },
+      detail: { summary: 'Attach a supplementary original to a receipt' },
+    },
+  )
+  .delete(
+    `${base}/:receiptId/original-link`,
+    async ({ project, params, body }) => {
+      await unlinkReceiptOriginal(project.id, params.receiptId, body.primaryReceiptId);
+      return { ok: true };
+    },
+    {
+      projectAdmin: true,
+      params: receiptParams,
+      body: t.Object({ primaryReceiptId: t.Integer({ minimum: 1 }) }),
+      response: { 200: t.Object({ ok: t.Boolean() }), ...commonErrors, ...errors(409) },
+      detail: { summary: 'Detach a supplementary original without changing its facts' },
     },
   )
   .post(

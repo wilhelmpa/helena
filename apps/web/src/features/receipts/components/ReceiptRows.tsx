@@ -73,6 +73,9 @@ export function ReceiptLine({
   const locale = useLocale();
   const title = receipt.issuer ?? receipt.filename;
   const detail = [
+    (receipt.originalCount ?? 1) > 1
+      ? t('originals.count', { count: receipt.originalCount! })
+      : null,
     receipt.invoiceNumber,
     formatDay(receipt.invoiceDate, locale),
     receipt.creditNote ? t('creditNote') : null,

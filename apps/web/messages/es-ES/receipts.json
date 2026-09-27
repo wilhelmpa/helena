@@ -171,5 +171,18 @@
   "vaultPicker": {
     "title": "Justificante desde archivos",
     "description": "Elige un archivo de la carpeta de este proyecto. Se queda donde está."
+  },
+  "originals": {
+    "title": "Originales",
+    "hint": "Un comprobante puede tener varios originales. El importe y el impuesto solo se cuentan en el comprobante principal.",
+    "supplement": "Original complementario: el importe y el impuesto se cuentan en el comprobante principal.",
+    "primary": "Comprobante principal",
+    "detach": "Separar",
+    "choose": "Asignar un comprobante principal a este original",
+    "search": "Buscar comprobante principal",
+    "select": "Seleccionar comprobante principal",
+    "confirmHint": "Asigne solo si este original documenta la misma operación sin un importe adicional. Se conservan ambos archivos y sus datos.",
+    "attach": "Vincular como original complementario",
+    "count": "{count} originales"
   }
 }

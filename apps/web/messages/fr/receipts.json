@@ -171,5 +171,18 @@
   "vaultPicker": {
     "title": "Justificatif depuis les fichiers",
     "description": "Choisissez un fichier du dossier de ce projet. Il reste à sa place."
+  },
+  "originals": {
+    "title": "Originaux",
+    "hint": "Un justificatif peut avoir plusieurs originaux. Le montant et la taxe ne sont comptés que sur le justificatif principal.",
+    "supplement": "Original complémentaire : le montant et la taxe sont comptés sur le justificatif principal.",
+    "primary": "Justificatif principal",
+    "detach": "Détacher",
+    "choose": "Associer cet original à un justificatif principal",
+    "search": "Rechercher le justificatif principal",
+    "select": "Choisir le justificatif principal",
+    "confirmHint": "Associez uniquement si cet original complète la même opération sans montant supplémentaire. Les deux fichiers et leurs données sont conservés.",
+    "attach": "Associer comme original complémentaire",
+    "count": "{count} originaux"
   }
 }

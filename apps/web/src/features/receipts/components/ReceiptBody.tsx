@@ -1,5 +1,6 @@
 'use client';
 
+import { ReceiptOriginals } from './ReceiptOriginals';
 import { useState } from 'react';
 import Link from 'next/link';
 import { ExternalLink, FolderOpen, RefreshCw, ScanText, Trash2, Unlink } from 'lucide-react';
@@ -43,10 +44,12 @@ export default function ReceiptBody({
   projectKey,
   receipt,
   onDeleted,
+  onOpenReceipt,
 }: {
   projectKey: string;
   receipt: ReceiptDetail;
   onDeleted: () => void;
+  onOpenReceipt?: (id: number) => void;
 }) {
   const t = useTranslations('receipts');
   const tCommon = useTranslations('common');
@@ -59,7 +62,7 @@ export default function ReceiptBody({
   const remove = useDeleteReceipt(projectKey);
   const candidates = useReceiptCandidatesQuery(
     projectKey,
-    receipt.status === 'open' ? receipt.id : null,
+    receipt.status === 'open' && !receipt.primaryReceiptId ? receipt.id : null,
   );
   const [deleting, setDeleting] = useState(false);
   const [form, setForm] = useState(() => receiptFormOf(receipt));
@@ -193,77 +196,80 @@ export default function ReceiptBody({
         </div>
       </section>
 
-      <section>
-        <SectionLabel>{t('detail.match')}</SectionLabel>
-        {receipt.match ? (
-          <RowList className="bg-card">
-            <div className="flex h-8 min-w-0 items-center gap-2 px-2 text-sm">
-              <MethodBadge method={receipt.match.method} />
-              <span className="min-w-0 flex-1 truncate" dir="auto">
-                {formatDay(receipt.match.bookingDate, locale)} ·{' '}
-                {receipt.match.counterpartyName || t('noName')}
-              </span>
-              <Money cents={receipt.match.amountCents} currency={receipt.match.currency} />
-              <Button
-                size="icon-sm"
-                variant="ghost"
-                aria-label={t('matched.unmatch')}
-                disabled={unmatch.isPending}
-                onClick={() => unmatch.mutate(receipt.match!.matchId)}
-              >
-                <Unlink />
-              </Button>
-            </div>
-          </RowList>
-        ) : (
-          <div className="flex flex-col gap-2">
+      <ReceiptOriginals projectKey={projectKey} receipt={receipt} onOpen={onOpenReceipt} />
+      {!receipt.primaryReceiptId && (
+        <section>
+          <SectionLabel>{t('detail.match')}</SectionLabel>
+          {receipt.match ? (
             <RowList className="bg-card">
-              {candidates.isPending ? (
-                <RowEmpty>{t('detail.loading')}</RowEmpty>
-              ) : (candidates.data ?? []).length === 0 ? (
-                <RowEmpty>{t('detail.noCandidates')}</RowEmpty>
-              ) : (
-                (candidates.data ?? []).map((candidate) => (
-                  <div key={candidate.transaction.id}>
-                    <TransactionLine
-                      transaction={candidate.transaction}
-                      trailing={
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={manual.isPending}
-                          onClick={() =>
-                            manual.mutate({
-                              receiptId: receipt.id,
-                              transactionId: candidate.transaction.id,
-                            })
-                          }
-                        >
-                          {t('review.useThis')}
-                        </Button>
-                      }
-                    />
-                    <div className="px-8 pb-1">
-                      <Percent value={candidate.score} label={t('review.score')} />
-                    </div>
-                  </div>
-                ))
-              )}
+              <div className="flex h-8 min-w-0 items-center gap-2 px-2 text-sm">
+                <MethodBadge method={receipt.match.method} />
+                <span className="min-w-0 flex-1 truncate" dir="auto">
+                  {formatDay(receipt.match.bookingDate, locale)} ·{' '}
+                  {receipt.match.counterpartyName || t('noName')}
+                </span>
+                <Money cents={receipt.match.amountCents} currency={receipt.match.currency} />
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  aria-label={t('matched.unmatch')}
+                  disabled={unmatch.isPending}
+                  onClick={() => unmatch.mutate(receipt.match!.matchId)}
+                >
+                  <Unlink />
+                </Button>
+              </div>
             </RowList>
-            <div>
-              <Button
-                size="sm"
-                variant="ghost"
-                disabled={busy}
-                onClick={() => rematch.mutate(receipt.id)}
-              >
-                <RefreshCw />
-                {t('detail.matchAgain')}
-              </Button>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <RowList className="bg-card">
+                {candidates.isPending ? (
+                  <RowEmpty>{t('detail.loading')}</RowEmpty>
+                ) : (candidates.data ?? []).length === 0 ? (
+                  <RowEmpty>{t('detail.noCandidates')}</RowEmpty>
+                ) : (
+                  (candidates.data ?? []).map((candidate) => (
+                    <div key={candidate.transaction.id}>
+                      <TransactionLine
+                        transaction={candidate.transaction}
+                        trailing={
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={manual.isPending}
+                            onClick={() =>
+                              manual.mutate({
+                                receiptId: receipt.id,
+                                transactionId: candidate.transaction.id,
+                              })
+                            }
+                          >
+                            {t('review.useThis')}
+                          </Button>
+                        }
+                      />
+                      <div className="px-8 pb-1">
+                        <Percent value={candidate.score} label={t('review.score')} />
+                      </div>
+                    </div>
+                  ))
+                )}
+              </RowList>
+              <div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={busy}
+                  onClick={() => rematch.mutate(receipt.id)}
+                >
+                  <RefreshCw />
+                  {t('detail.matchAgain')}
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
-      </section>
+          )}
+        </section>
+      )}
 
       {receipt.textExcerpt && (
         <section>
@@ -275,7 +281,12 @@ export default function ReceiptBody({
       )}
 
       <section>
-        <Button size="sm" variant="ghost" onClick={() => setDeleting(true)}>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={!!receipt.primaryReceiptId || (receipt.originalCount ?? 1) > 1}
+          onClick={() => setDeleting(true)}
+        >
           <Trash2 />
           {t('detail.delete')}
         </Button>

@@ -21,6 +21,7 @@ import {
   notInArray,
   sql,
 } from 'drizzle-orm';
+import { economicReceipt, assertEconomicReceipt } from './originals';
 import { HttpError } from '#shared/lib';
 import { RECEIPTS_CLASS } from '#modules/decisions/classes';
 import {
@@ -139,6 +140,12 @@ function matchTransactionOf(row: TransactionRow): MatchTransaction {
 // The open transactions a receipt could belong to: in the widest date window the rules allow,
 // without the ones the owner already rejected for it (plus `include`, for the review list).
 async function candidatesFor(row: ReceiptRow, include: number[] = []) {
+  const [economic] = await db
+    .select({ id: helenaReceipt.id })
+    .from(helenaReceipt)
+    .where(and(eq(helenaReceipt.id, row.id), economicReceipt));
+  if (!economic) return { candidates: [], byId: new Map<number, TransactionRow>() };
+
   const rejected = await db
     .select({ id: helenaReceiptMatch.transactionId })
     .from(helenaReceiptMatch)
@@ -186,6 +193,7 @@ async function confirm(
     userId: string | null;
   },
 ): Promise<number> {
+  await assertEconomicReceipt(tx, row.projectId, row.id);
   await tx
     .delete(helenaReceiptMatch)
     .where(
@@ -236,22 +244,25 @@ async function propose(
     decisionId: number | null;
   },
 ): Promise<number> {
-  const values = { status: 'proposed', ...fields, decidedByUserId: null, decidedAt: null };
-  const [match] = await db
-    .insert(helenaReceiptMatch)
-    .values({
-      teamId: row.teamId,
-      projectId: row.projectId,
-      receiptId: row.id,
-      transactionId,
-      ...values,
-    })
-    .onConflictDoUpdate({
-      target: [helenaReceiptMatch.receiptId, helenaReceiptMatch.transactionId],
-      set: values,
-    })
-    .returning({ id: helenaReceiptMatch.id });
-  return match!.id;
+  return db.transaction(async (tx) => {
+    await assertEconomicReceipt(tx, row.projectId, row.id);
+    const values = { status: 'proposed', ...fields, decidedByUserId: null, decidedAt: null };
+    const [match] = await tx
+      .insert(helenaReceiptMatch)
+      .values({
+        teamId: row.teamId,
+        projectId: row.projectId,
+        receiptId: row.id,
+        transactionId,
+        ...values,
+      })
+      .onConflictDoUpdate({
+        target: [helenaReceiptMatch.receiptId, helenaReceiptMatch.transactionId],
+        set: values,
+      })
+      .returning({ id: helenaReceiptMatch.id });
+    return match!.id;
+  });
 }
 
 // The right answer of a decision, once the owner gave it. A transaction the model was not
@@ -324,7 +335,10 @@ export async function matchReceipt(receiptId: number): Promise<MatchOutcome> {
     method: null,
     decision: null,
   };
-  const [row] = await db.select().from(helenaReceipt).where(eq(helenaReceipt.id, receiptId));
+  const [row] = await db
+    .select()
+    .from(helenaReceipt)
+    .where(and(eq(helenaReceipt.id, receiptId), economicReceipt));
   if (!row || row.status !== 'open') return none;
   await db
     .delete(helenaReceiptMatch)
@@ -435,6 +449,7 @@ export async function rematchOpenReceipts(projectId: number): Promise<number> {
       and(
         eq(helenaReceipt.projectId, projectId),
         eq(helenaReceipt.status, 'open'),
+        economicReceipt,
         sql`NOT EXISTS (SELECT 1 FROM ${helenaReceiptMatch} WHERE ${helenaReceiptMatch.receiptId} = ${helenaReceipt.id} AND ${helenaReceiptMatch.status} = 'proposed')`,
       ),
     )
@@ -578,6 +593,7 @@ export async function matchManually(
   const score =
     rankCandidates(matchReceiptOf(row), [matchTransactionOf(transaction)])[0]?.score ?? null;
   await db.transaction(async (tx) => {
+    await assertEconomicReceipt(tx, projectId, row.id);
     const previous = await tx
       .delete(helenaReceiptMatch)
       .where(
@@ -630,6 +646,7 @@ export async function reviewList(projectId: number, month: string | null): Promi
       and(
         eq(helenaReceiptMatch.projectId, projectId),
         eq(helenaReceiptMatch.status, 'proposed'),
+        economicReceipt,
         range ? inMonth(day, range) : undefined,
       ),
     )

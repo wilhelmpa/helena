@@ -64,6 +64,7 @@ const tables = {
   helenaBankAccount: table('account'),
   helenaBankTransaction: table('transaction'),
   helenaReceiptMatch: table('match'),
+  helenaReceiptOriginalLink: table('originalLink'),
 };
 const executor = {
   select: (fields?: Record<string, unknown>) => {
@@ -138,7 +139,7 @@ const db = {
 mock.module('@repo/db', () => ({ db, ...tables }));
 mock.module('drizzle-orm', () =>
   Object.fromEntries(
-    ['and', 'count', 'desc', 'eq', 'ilike', 'isNotNull', 'or', 'sql'].map((key) => [
+    ['and', 'count', 'desc', 'eq', 'ilike', 'inArray', 'isNotNull', 'or', 'sql'].map((key) => [
       key,
       () => null,
     ]),

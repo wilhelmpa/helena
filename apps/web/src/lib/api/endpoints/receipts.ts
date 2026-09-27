@@ -20,6 +20,8 @@ export interface MatchedTransaction {
 }
 
 export interface Receipt {
+  primaryReceiptId?: number | null;
+  originalCount?: number;
   id: number;
   source: 'mail' | 'upload' | 'vault';
   filename: string;
@@ -48,6 +50,7 @@ export interface Receipt {
 }
 
 export interface ReceiptDetail extends Receipt {
+  originals?: { id: number; filename: string; size: number; contentType: string }[];
   textExcerpt: string | null;
   details: Record<string, unknown>;
   mailAttachmentId: number | null;
@@ -319,3 +322,14 @@ export interface ReceiptOriginalMail {
 }
 export const getReceiptOriginalMail = (projectKey: string, receiptId: number) =>
   request<ReceiptOriginalMail>(`${base(projectKey)}/${receiptId}/source-mail`);
+
+export const setReceiptOriginalLink = (
+  projectKey: string,
+  receiptId: number,
+  primaryReceiptId: number,
+  attach: boolean,
+) =>
+  request<{ ok: boolean }>(`${base(projectKey)}/${receiptId}/original-link`, {
+    method: attach ? 'PUT' : 'DELETE',
+    body: json({ primaryReceiptId }),
+  });

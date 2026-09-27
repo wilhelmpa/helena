@@ -171,5 +171,18 @@
   "vaultPicker": {
     "title": "Comprovante dos arquivos",
     "description": "Escolha um arquivo da pasta deste projeto. Ele continua onde está."
+  },
+  "originals": {
+    "title": "Originais",
+    "hint": "Um comprovante pode ter vários originais. O valor e o imposto são contados apenas no comprovante principal.",
+    "supplement": "Original complementar: o valor e o imposto são contados no comprovante principal.",
+    "primary": "Comprovante principal",
+    "detach": "Desvincular",
+    "choose": "Associar este original a um comprovante principal",
+    "search": "Buscar comprovante principal",
+    "select": "Selecionar comprovante principal",
+    "confirmHint": "Associe apenas se este original complementar a mesma operação sem valor adicional. Ambos os arquivos e seus dados são preservados.",
+    "attach": "Vincular como original complementar",
+    "count": "{count} originais"
   }
 }
