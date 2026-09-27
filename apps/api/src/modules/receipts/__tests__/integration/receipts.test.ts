@@ -903,7 +903,7 @@ describe('receipts', () => {
     const restore = await intakeFailure('vault_entry', "NEW.path LIKE '%.eml'");
     let original!: ReceiptView;
     try {
-      expect(await retry()).toEqual({ completed: 0, failed: 1 });
+      expect(await retry()).toEqual({ completed: 0, failed: 1, receiptIds: [] });
       const receipts = (await http.call<{ receipts: ReceiptView[] }>('GET', '')).data.receipts;
       expect(receipts).toHaveLength(1);
       original = receipts[0]!;
@@ -912,7 +912,7 @@ describe('receipts', () => {
     } finally {
       await restore();
     }
-    expect(await retry()).toEqual({ completed: 1, failed: 0 });
+    expect(await retry()).toEqual({ completed: 1, failed: 0, receiptIds: [original.id] });
     expect(await intakeMailReceipts(input)).toEqual([original.id]);
     const detail = (await http.call<ReceiptDetailView>('GET', `/${original.id}`)).data;
     expect(await findEntry(detail.vaultPath)).toMatchObject({

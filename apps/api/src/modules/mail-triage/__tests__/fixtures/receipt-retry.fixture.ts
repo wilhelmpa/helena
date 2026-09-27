@@ -110,6 +110,7 @@ function value(expression: unknown, context: Context): unknown {
 let locked = 0;
 let skipRowLock = false;
 let nextQueryError = false;
+let failCommit = false;
 let beforeLock: (() => void) | undefined;
 function select(fields?: Record<string, unknown>) {
   let predicate: unknown;
@@ -197,7 +198,16 @@ const db: RetryDb = {
     });
     await previous;
     try {
-      return await body(db);
+      const previousActions = rows.map((row) => structuredClone(row.classification.actions));
+      const result = await body(db);
+      if (failCommit) {
+        failCommit = false;
+        rows.forEach((row, index) => {
+          row.classification.actions = previousActions[index]!;
+        });
+        throw new Error('synthetic commit failure');
+      }
+      return result;
     } finally {
       release();
     }
@@ -279,8 +289,8 @@ if (mode === 'empty-success') {
     calls++;
     return available ? [88] : [];
   });
-  assert.deepEqual(await run(), { completed: 0, failed: 0 });
-  assert.deepEqual(await run(), { completed: 0, failed: 0 });
+  assert.deepEqual(await run(), { completed: 0, failed: 0, receiptIds: [] });
+  assert.deepEqual(await run(), { completed: 0, failed: 0, receiptIds: [] });
   assert.equal(context.classification.actions.length, 2);
   assert.ok(context.classification.actions[1]!.attemptedAt);
   available = true;
@@ -290,7 +300,7 @@ if (mode === 'empty-success') {
     1,
   );
   assert.equal(calls, 3);
-  assert.deepEqual(await run(), { completed: 0, failed: 0 });
+  assert.deepEqual(await run(), { completed: 0, failed: 0, receiptIds: [] });
   assert.equal(context.classification.actions.length, 3);
   assert.equal(context.classification.actions[0]!.note, 'Owner task unchanged');
 } else if (mode === 'fairness') {
@@ -300,7 +310,7 @@ if (mode === 'empty-success') {
     attempts.push(input.messageId);
     return [];
   });
-  assert.deepEqual(await run(), { completed: 0, failed: 0 });
+  assert.deepEqual(await run(), { completed: 0, failed: 0, receiptIds: [] });
   assert.equal(attempts.length, 20);
   attempts.length = 0;
   await run();
@@ -316,7 +326,7 @@ if (mode === 'empty-success') {
     calls++;
     return [88];
   });
-  assert.deepEqual(await run(), { completed: 0, failed: 0 });
+  assert.deepEqual(await run(), { completed: 0, failed: 0, receiptIds: [] });
   assert.equal(calls, 0);
   assert.equal(context.classification.category, 'notification');
   assert.equal(context.classification.actions.length, 1);
@@ -345,10 +355,14 @@ if (mode === 'empty-success') {
   const deferred = await Promise.all(contexts.slice(1).map(retry));
   assert.ok(deferred.every((result) => result.completed === 0 && result.failed === 0));
   release();
-  assert.deepEqual(await accepted, { completed: 1, failed: 0 });
+  assert.deepEqual(await accepted, { completed: 1, failed: 0, receiptIds: [101] });
   assert.equal(calls, 1);
   for (const context of contexts.slice(1))
-    assert.deepEqual(await retry(context), { completed: 1, failed: 0 });
+    assert.deepEqual(await retry(context), {
+      completed: 1,
+      failed: 0,
+      receiptIds: [context.message.id + 100],
+    });
   assert.equal(calls, 10);
 } else if (mode === 'skipped-lock') {
   const context = add(1);
@@ -357,25 +371,25 @@ if (mode === 'empty-success') {
     return [88];
   });
   skipRowLock = true;
-  assert.deepEqual(await run(), { completed: 0, failed: 0 });
+  assert.deepEqual(await run(), { completed: 0, failed: 0, receiptIds: [] });
   assert.equal(calls, 0);
   assert.deepEqual(context.classification.actions, [empty]);
   skipRowLock = false;
-  assert.deepEqual(await run(), { completed: 1, failed: 0 });
+  assert.deepEqual(await run(), { completed: 1, failed: 0, receiptIds: [88] });
   assert.equal(calls, 1);
 } else if (mode === 'admission-errors') {
   add(1);
   useReceiptIntake(async () => {
     throw new Error('synthetic intake failure');
   });
-  assert.deepEqual(await run(), { completed: 0, failed: 1 });
+  assert.deepEqual(await run(), { completed: 0, failed: 1, receiptIds: [] });
   nextQueryError = true;
   await assert.rejects(run(), /synthetic DB failure/);
   useReceiptIntake(async () => {
     calls++;
     return [88];
   });
-  assert.deepEqual(await run(), { completed: 1, failed: 0 });
+  assert.deepEqual(await run(), { completed: 1, failed: 0, receiptIds: [88] });
   assert.equal(calls, 1);
 } else if (mode === 'scope') {
   add(1).classification.category = 'notification';
@@ -390,7 +404,30 @@ if (mode === 'empty-success') {
     calls++;
     return [88];
   });
-  assert.deepEqual(await run(), { completed: 0, failed: 0 });
+  assert.deepEqual(await run(), { completed: 0, failed: 0, receiptIds: [] });
   assert.equal(calls, 0);
+} else if (mode === 'receipt-results') {
+  add(1);
+  add(2);
+  add(3);
+  useReceiptIntake(async (input) => (input.messageId === 3 ? [] : [88, 89, 88]));
+  assert.deepEqual(await run(), { completed: 2, failed: 0, receiptIds: [88, 89] });
+  assert.deepEqual(await run(), { completed: 0, failed: 0, receiptIds: [] });
+} else if (mode === 'late-failure') {
+  const context = add(1);
+  let indexed = false;
+  useReceiptIntake(async () => {
+    calls++;
+    if (!indexed) throw new Error('Index failed after receipt row was persisted');
+    return [88];
+  });
+  assert.deepEqual(await run(), { completed: 0, failed: 1, receiptIds: [] });
+  indexed = true;
+  failCommit = true;
+  await assert.rejects(run(), /synthetic commit failure/);
+  assert.ok(!context.classification.actions.some((action) => action.receiptIds?.length));
+  assert.deepEqual(await run(), { completed: 1, failed: 0, receiptIds: [88] });
+  assert.deepEqual(await run(), { completed: 0, failed: 0, receiptIds: [] });
+  assert.equal(calls, 3);
 } else assert.fail('Unknown mode');
 console.log(`retry:${mode}:ok`);

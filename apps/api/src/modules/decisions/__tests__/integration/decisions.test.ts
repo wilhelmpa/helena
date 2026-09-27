@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test';
 import { createServer, type Server } from 'node:http';
-import { authedApi, type Api } from '#tests/helpers/app';
+import { app, authedApi, type Api } from '#tests/helpers/app';
 import { evaluateLocalAi } from '#tests/helpers/local-ai';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
@@ -17,6 +17,9 @@ import {
   mailAccount,
 } from '@repo/db';
 import { eq } from 'drizzle-orm';
+import { auth } from '@repo/auth';
+import { dispatchTool } from '#mcp/dispatch';
+import { routeTools } from '#mcp/generate';
 import { publishChatCatalog } from '#modules/agents/chat/service';
 import { setManualPrice } from '#modules/model-prices/service';
 import { GENERAL_CLASS, MAIL_CLASS, ROUTER_CLASS } from '../../classes';
@@ -706,14 +709,17 @@ describe('the mail classifier', () => {
       expect(await retryReceiptFiling(teamId, config, owner.userId, project.id + 999)).toEqual({
         completed: 0,
         failed: 0,
+        receiptIds: [],
       });
       expect(await retryReceiptFiling(teamId, config, owner.userId, project.id)).toEqual({
         completed: 1,
         failed: 0,
+        receiptIds: [123],
       });
       expect(await retryReceiptFiling(teamId, config, owner.userId, project.id)).toEqual({
         completed: 0,
         failed: 0,
+        receiptIds: [],
       });
       expect(calls).toBe(2);
       const current = (
@@ -774,10 +780,12 @@ describe('the mail classifier', () => {
       expect(await retryReceiptFiling(teamId, config, owner.userId, project.id)).toEqual({
         completed: 0,
         failed: 0,
+        receiptIds: [],
       });
       expect(await retryReceiptFiling(teamId, config, owner.userId, project.id)).toEqual({
         completed: 0,
         failed: 0,
+        receiptIds: [],
       });
       const emptyView = (
         await asOwner.mail.threads({ threadId: message.threadId }).classification.get()
@@ -803,6 +811,7 @@ describe('the mail classifier', () => {
       expect(await retryReceiptFiling(teamId, config, owner.userId, project.id)).toEqual({
         completed: 0,
         failed: 0,
+        receiptIds: [],
       });
       const current = (
         await asOwner.mail.threads({ threadId: message.threadId }).classification.get()
@@ -832,7 +841,7 @@ describe('the mail classifier', () => {
   });
 
   it('skips a classification locked by another transaction and retries after its release', async () => {
-    const { teamId, project, owner } = await setup();
+    const { asOwner, teamId, project, owner } = await setup();
     const { accountId, inboxId } = await insertMailAccount(teamId, project.id);
     const message = await insertMessage({
       teamId,
@@ -873,12 +882,22 @@ describe('the mail classifier', () => {
           .for('update');
         expect(
           await receiptRetryDeadline(retryReceiptFiling(teamId, config, owner.userId, project.id)),
-        ).toEqual({ completed: 0, failed: 0 });
+        ).toEqual({ completed: 0, failed: 0, receiptIds: [] });
         expect(calls).toBe(0);
       });
-      expect(
-        await receiptRetryDeadline(retryReceiptFiling(teamId, config, owner.userId, project.id)),
-      ).toEqual({ completed: 1, failed: 0 });
+      const retried = await receiptRetryDeadline(
+        retryReceiptFiling(teamId, config, owner.userId, project.id),
+      );
+      const filed = (
+        await asOwner.mail.threads({ threadId: message.threadId }).classification.get()
+      ).data!.classification!;
+      expect(retried).toEqual({
+        completed: 1,
+        failed: 0,
+        receiptIds: filed.actions.find(
+          (action) => action.kind === 'receipt' && action.receiptIds?.length,
+        )!.receiptIds!,
+      });
       expect(calls).toBe(1);
       expect(seen).toHaveLength(0);
     } finally {
@@ -948,7 +967,7 @@ describe('the mail classifier', () => {
       expect(completed).toBe(9);
       expect(calls).toBe(10);
       for (const scope of scopes) {
-        expect(await retry(scope)).toEqual({ completed: 0, failed: 0 });
+        expect(await retry(scope)).toEqual({ completed: 0, failed: 0, receiptIds: [] });
         const receipts = await asOwner.projects({ projectKey: scope.target.key }).receipts.get();
         expect(receipts.status).toBe(200);
         expect(receipts.data!.receipts).toHaveLength(1);
@@ -1000,6 +1019,7 @@ describe('the mail classifier', () => {
       expect(await retryReceiptFiling(teamId, config, owner.userId, project.id)).toEqual({
         completed: 0,
         failed: 0,
+        receiptIds: [],
       });
       expect(attempted).toHaveLength(20);
       await asOwner.mail
@@ -1334,6 +1354,7 @@ describe('the mail classifier', () => {
       expect(await retryReceiptFiling(teamId, config, owner.userId, other.id)).toEqual({
         completed: 0,
         failed: 0,
+        receiptIds: [],
       });
       const retried = await route.post({});
       expect(retried.data).toMatchObject({ processed: 0, receiptRetries: 1, failed: 0 });
@@ -1373,6 +1394,117 @@ describe('the mail classifier', () => {
         note: null,
       });
       expect(calls).toBe(3);
+    } finally {
+      useReceiptIntake(intakeMailReceipts);
+    }
+  });
+
+  it('serializes the distinct first-run and retry receipts through HTTP and MCP', async () => {
+    const { asOwner, teamId, project, owner } = await setup();
+    const credentialId = await connection(asOwner, teamId);
+    const { accountId, inboxId } = await insertMailAccount(teamId, project.id);
+    await switchOn(asOwner, teamId, MAIL_CLASS, credentialId, {
+      config: {
+        task: 'off',
+        receipts: 'auto',
+        accountIds: [accountId],
+        since: '2026-01-01T00:00:00Z',
+      },
+    });
+    answers = {
+      project: projectOptionId(project.key),
+      category: 'invoice',
+      priority: 'normal',
+      needs_reply: 0.1,
+      create_task: 0.1,
+      task_eligibility: 'no_action',
+    };
+    const original = await insertMessage({
+      teamId,
+      accountId,
+      folderId: inboxId,
+      projectId: project.id,
+      subject: 'Payment receipt',
+      text: 'Amount paid 12.00 EUR',
+    });
+    const fresh = await insertMessage({
+      teamId,
+      accountId,
+      folderId: inboxId,
+      projectId: project.id,
+      subject: 'Payment receipt',
+      text: 'Amount paid 14.00 EUR',
+    });
+    const emptyAction = {
+      kind: 'receipt' as const,
+      projectId: project.id,
+      receiptIds: [],
+      note: 'No supported receipt original found.',
+    };
+    await db.insert(helenaMailClassification).values({
+      teamId,
+      projectId: project.id,
+      messageId: original.messageRowId,
+      threadId: original.threadId,
+      category: 'invoice',
+      status: 'classified',
+      actions: [emptyAction],
+    });
+    useReceiptIntake(async ({ messageId }) =>
+      messageId === original.messageRowId ? [123, 124] : [124, 125, 124],
+    );
+    try {
+      const response = await asOwner
+        .projects({ projectKey: project.key })
+        ['mail-triage'].run.post({});
+      expect(response.status).toBe(200);
+      expect(response.data).toMatchObject({
+        processed: 1,
+        receiptRetries: 1,
+        receiptIds: [123, 124, 125],
+        receiptCount: 3,
+        results: [{ messageId: fresh.messageRowId, receiptIds: [124, 125], receiptCount: 2 }],
+      });
+      // Retry returns the same already-filed IDs without claiming new database records.
+      await db
+        .update(helenaMailClassification)
+        .set({ actions: [emptyAction] })
+        .where(eq(helenaMailClassification.messageId, original.messageRowId));
+      const { key } = await auth.api.createApiKey({
+        body: { userId: owner.userId, name: 'triage-receipts' },
+      });
+      const tool = routeTools(app).find((item) => item.name === 'run_mail_triage')!;
+      const result = await dispatchTool(
+        app,
+        tool,
+        { projectKey: project.key },
+        { kind: 'api-key', apiKey: key },
+        { viaMcpEndpoint: true },
+      );
+      expect(result.isError).toBe(false);
+      expect(result.structuredContent).toMatchObject({
+        ok: true,
+        status: 200,
+        data: {
+          processed: 0,
+          receiptRetries: 1,
+          receiptIds: [123, 124],
+          receiptCount: 2,
+          results: [],
+        },
+      });
+      expect(JSON.parse(result.text)).toEqual(
+        result.structuredContent.ok ? result.structuredContent.data : null,
+      );
+      const repeated = await asOwner
+        .projects({ projectKey: project.key })
+        ['mail-triage'].run.post({});
+      expect(repeated.data).toMatchObject({
+        processed: 0,
+        receiptRetries: 0,
+        receiptIds: [],
+        receiptCount: 0,
+      });
     } finally {
       useReceiptIntake(intakeMailReceipts);
     }

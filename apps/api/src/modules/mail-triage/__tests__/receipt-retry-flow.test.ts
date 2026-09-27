@@ -7,6 +7,8 @@ for (const mode of [
   'admission-scopes',
   'skipped-lock',
   'admission-errors',
+  'receipt-results',
+  'late-failure',
 ]) {
   it(`runs bounded receipt retry without provider or task actions: ${mode}`, () => {
     const result = Bun.spawnSync(

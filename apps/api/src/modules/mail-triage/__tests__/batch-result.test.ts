@@ -4,7 +4,13 @@ import { triageMessageResult } from '../batch-result';
 import { TriageBatchResponse } from '../model';
 
 const message = { id: 7265, threadId: 6123 };
-const source = { messageId: 7265, threadId: 6123, threadHref: '/project/VOL/inbox?thread=6123' };
+const source = {
+  messageId: 7265,
+  threadId: 6123,
+  threadHref: '/project/VOL/inbox?thread=6123',
+  receiptIds: [],
+  receiptCount: 0,
+};
 
 test('successful triage exposes the actual thread independently from the message ID', async () => {
   const result = await triageMessageResult('VOL', message, async () => ({
@@ -18,6 +24,8 @@ test('successful triage exposes the actual thread independently from the message
       accounts: [],
       processed: 1,
       receiptRetries: 0,
+      receiptIds: [],
+      receiptCount: 0,
       hasMore: false,
       failed: 0,
       reviewRequired: 0,
@@ -52,5 +60,25 @@ test('skipped and action-failed outcomes preserve their existing semantics', asy
     status: 'unsure',
     issueId: null,
     actionFailed: true,
+  });
+});
+
+test('receipt results include existing and new IDs once, even when another action fails', async () => {
+  const result = await triageMessageResult('VOL', message, async () => ({
+    status: 'classified',
+    issueId: null,
+    actions: [
+      { kind: 'receipt', receiptIds: [88, 89, 88] },
+      { kind: 'receipt', receiptIds: [89, 90] },
+      { kind: 'skipped', receiptIds: [99] },
+    ],
+  }));
+  expect(result).toEqual({
+    ...source,
+    status: 'classified',
+    issueId: null,
+    actionFailed: true,
+    receiptIds: [88, 89, 90],
+    receiptCount: 3,
   });
 });

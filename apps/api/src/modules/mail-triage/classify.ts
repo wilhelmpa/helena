@@ -33,7 +33,7 @@ import { mailTriageConfig, type MailTriageConfig } from './config';
 import { isTkSender } from './tk';
 import { taskEligibility } from './task-policy';
 import { withProjectTriageClaim, checkTriageCancellation } from './claim';
-import { triageMessageResult } from './batch-result';
+import { receiptSummary, triageMessageResult } from './batch-result';
 import { EMPTY_RECEIPT_NOTE, FAILED_RECEIPT_NOTE, recordReceiptAttempt } from './receipt-retry';
 
 // Task eligibility follows the application policy; invoice filing is independent of it.
@@ -430,7 +430,7 @@ export async function retryReceiptFiling(
   signal?: AbortSignal,
 ) {
   if (config.receipts !== 'auto' || !receiptIntake || receiptRetryRunning)
-    return { completed: 0, failed: 0 };
+    return { completed: 0, failed: 0, receiptIds: [] as number[] };
   receiptRetryRunning = true;
   try {
     return await retryReceiptBatch(teamId, config, actorUserId, projectId, signal);
@@ -475,6 +475,7 @@ async function retryReceiptBatch(
     .limit(BATCH);
   let done = 0;
   let failed = 0;
+  const receiptIds: number[] = [];
   for (const candidate of pending) {
     checkTriageCancellation(signal);
     const action = await db.transaction(async (tx) => {
@@ -501,10 +502,12 @@ async function retryReceiptBatch(
         .where(eq(helenaMailClassification.id, candidate.id));
       return result;
     });
-    if (action?.kind === 'receipt' && action.receiptIds?.length) done++;
-    else if (action?.kind === 'skipped') failed++;
+    if (action?.kind === 'receipt' && action.receiptIds?.length) {
+      done++;
+      receiptIds.push(...action.receiptIds);
+    } else if (action?.kind === 'skipped') failed++;
   }
-  return { completed: done, failed };
+  return { completed: done, failed, receiptIds: receiptSummary(receiptIds).receiptIds };
 }
 
 // The scheduled job classifies the next unhandled inbox mail at each check.
@@ -600,6 +603,10 @@ export async function runProjectTriage(
       accounts,
       processed: results.length,
       receiptRetries: receiptRetries.completed,
+      ...receiptSummary([
+        ...receiptRetries.receiptIds,
+        ...results.flatMap((item) => item.receiptIds),
+      ]),
       hasMore: remaining.length > 0,
       failed:
         receiptRetries.failed +
