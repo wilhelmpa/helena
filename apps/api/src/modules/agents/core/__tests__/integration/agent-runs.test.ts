@@ -144,7 +144,8 @@ describe('agent run history', () => {
     await asOwner.issues({ issueId: child.id }).patch({ columnId: completedId });
     let runs = (await agents(asOwner, teamId)({ agentId: coordinator.id }).runs.get()).data!.items;
     expect(runs).toHaveLength(1);
-    expect(runs[0]).toMatchObject({ trigger: 'subtask', issueId: parent.id });
+    // The result joins the delegation run that is still pending on the parent.
+    expect(runs[0]).toMatchObject({ trigger: 'delegation', issueId: parent.id });
     expect(runs[0].prompt).toContain(child.identifier);
     expect(runs[0].prompt).toContain('completed');
     expect(runs[0].prompt).toContain('Branch ready; unit tests pass.');
