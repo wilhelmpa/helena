@@ -185,7 +185,9 @@
   "updates": {
     "label": "Lokale KI",
     "hint": "Aktualisieren über native/local-ai/install.sh, danach neu auswerten.",
-    "whisperBuildRequired": "Ein Whisper.cpp-Update braucht einen gepinnten ROCm-Build und einen erfolgreichen Sprachtest. Die automatische Installation ist noch nicht verfügbar."
+    "whisperBuildRequired": "Dieses Update benötigt einen geprüften Whisper-Build und Sprachtest.",
+    "whisperMaintenanceRequired": "Ein von Root freigegebenes Voice-Wartungsfenster ist erforderlich. Danach erneut prüfen.",
+    "whisperRecoveryRequired": "Das vorige Whisper-Update benötigt eine Wiederherstellung, bevor Voice fortgesetzt werden kann."
   },
   "pickerMark": "lokal",
   "tile": {

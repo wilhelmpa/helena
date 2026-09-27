@@ -385,3 +385,26 @@ class SpoolTest(HelperTest):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class WhisperDispatchTest(HelperTest):
+    def test_only_fixed_version_reaches_installed_bridge(self):
+        with mock.patch.object(helper, 'whisper_ui', return_value={'ok': True, 'result': {'phase': 'active'}}) as bridge:
+            answer = helper.perform(self.config, {'action': 'whisper-ui', 'version': '1.9.4'})
+            self.assertTrue(answer['ok'])
+            bridge.assert_called_once_with('activate', version='1.9.4', database=self.config['hostToolsDatabase'])
+        for fields in ({'version': '1.9.5'}, {'version': '1.9.4', 'corpus': '/tmp/unsafe'},
+                       {'version': '1.9.4', 'command': 'echo unsafe'}, {}):
+            with mock.patch.object(helper, 'whisper_ui') as bridge:
+                self.assertFalse(helper.perform(self.config, {'action': 'whisper-ui', **fields})['ok'])
+                bridge.assert_not_called()
+
+    def test_failed_rollback_is_reported_as_failed_with_its_result(self):
+        result = {'ok': False, 'error': 'speech failed', 'result': {'phase': 'restoring', 'speechVerified': False}}
+        with mock.patch.object(helper, 'whisper_ui', return_value=result):
+            self.assertEqual(helper.perform(self.config, {'action': 'whisper-ui', 'version': '1.9.4'}), result)
+
+    def test_old_or_failed_bridge_never_advertises_ready(self):
+        for response in ({'ok': False}, {'ok': True, 'result': 'wrong'}):
+            with mock.patch.object(helper, 'whisper_ui', return_value=response):
+                self.assertFalse(helper.whisper_readiness()['ready'])

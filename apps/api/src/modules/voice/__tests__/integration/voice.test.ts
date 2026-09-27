@@ -5,6 +5,8 @@ import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
 import { host } from '#shared/helena';
 import { LOCAL_AI_PLUGIN_ID, LOCAL_AI_PROVIDES, localAiPlugin } from '#modules/local-ai/plugin';
+import { db } from '@repo/db';
+import { sql } from 'drizzle-orm';
 import { resetVoiceQuotas } from '../../service';
 import { wav } from '../fixtures';
 
@@ -25,6 +27,7 @@ const received: {
   fileBytes?: number;
   json?: Record<string, unknown>;
 }[] = [];
+let transcriptBody: (() => ReadableStream<Uint8Array>) | null = null;
 let healthy = true;
 let transcript = 'Hallo Home, wie spät ist es?';
 
@@ -67,7 +70,9 @@ beforeAll(async () => {
             fileBytes: file.size,
           });
           if (!healthy) return new Response('boom', { status: 500 });
-          return Response.json({ text: transcript });
+          return transcriptBody
+            ? new Response(transcriptBody(), { headers: { 'Content-Type': 'application/json' } })
+            : Response.json({ text: transcript });
         }
         case '/api/v1/audio/speech': {
           const json = (await request.json()) as Record<string, unknown>;
@@ -97,6 +102,7 @@ beforeEach(async () => {
   resetVoiceQuotas();
   received.length = 0;
   healthy = true;
+  transcriptBody = null;
   transcript = 'Hallo Home, wie spät ist es?';
 });
 
@@ -201,6 +207,53 @@ describe('voice', () => {
     // Whisper's subtitle credit on silence comes back as nothing.
     transcript = 'Untertitel im Auftrag des ZDF für funk, 2017';
     expect(await (await upload(owner.cookie, wav(1))).json()).toMatchObject({ text: '' });
+  });
+
+  it('holds shared voice admission through the response body and refuses an exclusive update window', async () => {
+    const { owner, asOwner } = await setup();
+    await asOwner.god['local-ai'].policy.patch({ enabled: true });
+    await db.transaction(async (tx) => {
+      await tx.execute(sql`select pg_advisory_xact_lock(748220, 13306)`);
+      const refused = await upload(owner.cookie, wav(1));
+      expect(refused.status).toBe(503);
+      expect(await refused.json()).toMatchObject({ code: 'voice-maintenance' });
+      expect(received).toEqual([]);
+    });
+    let close!: () => void;
+    let opened!: () => void;
+    const started = new Promise<void>((resolve) => {
+      opened = resolve;
+    });
+    transcriptBody = () =>
+      new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode('{"text":'));
+          close = () => {
+            controller.enqueue(new TextEncoder().encode('"Hallo Home"}'));
+            controller.close();
+          };
+          opened();
+        },
+      });
+    const pending = upload(owner.cookie, wav(1));
+    try {
+      await started;
+      await db.transaction(async (tx) => {
+        const result = await tx.execute(
+          sql`select pg_try_advisory_xact_lock(748220, 13306) as acquired`,
+        );
+        expect(result[0]?.acquired).toBe(false);
+      });
+    } finally {
+      close();
+    }
+    expect((await pending).status).toBe(200);
+    await db.transaction(async (tx) => {
+      const result = await tx.execute(
+        sql`select pg_try_advisory_xact_lock(748220, 13306) as acquired`,
+      );
+      expect(result[0]?.acquired).toBe(true);
+    });
   });
 
   it('checks the recording before it goes anywhere', async () => {

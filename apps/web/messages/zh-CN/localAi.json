@@ -185,7 +185,9 @@
   "updates": {
     "label": "本地 AI",
     "hint": "通过 native/local-ai/install.sh 更新，然后重新评估。",
-    "whisperBuildRequired": "更新 Whisper.cpp 需要固定版本的 ROCm 构建并通过语音测试。目前尚不支持自动安装。"
+    "whisperBuildRequired": "此更新需要经过验证的 Whisper 构建和语音测试。",
+    "whisperMaintenanceRequired": "需要由 Root 授权的语音维护窗口。开启后请重新检查。",
+    "whisperRecoveryRequired": "上次 Whisper 更新需要恢复后才能继续使用语音。"
   },
   "pickerMark": "本地",
   "tile": {
