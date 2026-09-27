@@ -97,6 +97,9 @@ export const updateViewFolder = (folderId: number, input: ViewFolderInput) =>
 export const deleteViewFolder = (folderId: number) =>
   request<void>(`/view-folders/${folderId}`, { method: 'DELETE' });
 
+export const countViewFolderFiles = (folderId: number) =>
+  request<{ count: number }>(`/view-folders/${folderId}/file-count`);
+
 export const reorderViewFolders = (projectKey: string, orderedIds: number[]) =>
   request<ViewFolder[]>(`/projects/${encodeURIComponent(projectKey)}/view-folders/reorder`, {
     method: 'PUT',

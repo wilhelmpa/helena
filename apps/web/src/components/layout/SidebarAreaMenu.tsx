@@ -9,7 +9,7 @@ import { useProjectFeatures } from '@/hooks/useProjectFeatures';
 import { useCreateView, useDeleteViewFolder, useUpdateViewFolder } from '@/services/views.service';
 import { filesPath, viewPath } from '@/utils/paths';
 import { defaultViewSettings } from '@/utils/viewSettings';
-import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
+import AreaDeleteDialog from '@/components/layout/AreaDeleteDialog';
 import NameDialog from '@/components/common/overlay/NameDialog';
 import AreaDialog from '@/components/layout/AreaDialog';
 import {
@@ -116,19 +116,15 @@ export default function SidebarAreaMenu({
         />
       )}
       {dialog === 'delete' && (
-        <ConfirmDialog
-          title={t('deleteFolder')}
-          confirmLabel={t('deleteFolder')}
+        <AreaDeleteDialog
+          id={area.id}
+          name={area.name}
           onConfirm={async () => {
             await deleteArea.mutateAsync(area.id);
             setDialog(null);
           }}
           onClose={() => setDialog(null)}
-        >
-          <p className="text-sm text-muted-foreground">
-            {t('deleteFolderConfirm', { name: area.name })}
-          </p>
-        </ConfirmDialog>
+        />
       )}
     </>
   );

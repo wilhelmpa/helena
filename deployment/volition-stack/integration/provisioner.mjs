@@ -331,7 +331,7 @@ export function createProvisioner(config, options = {}) {
 
   // The registry names the areas whose folders the last runs created, moved or found,
   // which is how a changed folder is moved and the folders of a deleted area are found.
-  async function provisionProjectAreas(envelope, workspace, quarantineRoot) {
+  async function provisionProjectAreas(envelope, workspace) {
     const registryPath = path.join(config.registryRoot, `${workspace.slug}.json`);
     const registry = await readJson(registryPath, null);
     const registered = registry?.project?.id === envelope.project.id;
@@ -350,12 +350,55 @@ export function createProvisioner(config, options = {}) {
         { kind: "files", path: vault.id, ensure: ensureSharedVaultDirectory },
       ],
       quarantine: (source, allowedRoot, label) =>
-        quarantinePath({ source, allowedRoot, quarantineRoot, label }),
+        trashAreaPath({ source, allowedRoot, label, envelope, workspace }),
       // A project's first run has no registry yet; writeRegistry creates it at the end.
       record: async (recorded) => {
         if (registered) await writeJsonAtomic(registryPath, { ...registry, areas: recorded });
       },
     });
+  }
+
+  async function trashAreaPath({ source, allowedRoot, label, envelope, workspace }) {
+    const root = launcher.enabled ? path.resolve(allowedRoot) : await existingDirectory(allowedRoot);
+    const candidate = path.resolve(source);
+    if (!within(root, candidate)) throw new Error(`The ${label} path escapes its managed root`);
+    const date = envelope.createdAt.slice(0, 10);
+    const name = `${date}-${path.basename(candidate)}-${envelope.eventId}`;
+    const trash = label.endsWith("-workspace")
+      ? path.join(workspace.hostPath, ".trash")
+      : path.join(config.vaultRoot, ".trash", "Projects", envelope.project.key);
+    const destination = path.join(trash, name);
+    if (launcher.enabled) {
+      const result = await launcher.trashArea(
+        workspace.slug,
+        path.basename(candidate),
+        label.endsWith("-workspace") ? "workspace" : "files",
+        date,
+        envelope.eventId,
+      );
+      return result.present ? { label, destination, state: "quarantined" } : null;
+    }
+    const stat = await fs.lstat(candidate).catch((error) => {
+      if (error?.code === "ENOENT") return null;
+      throw error;
+    });
+    if (stat?.isSymbolicLink()) throw new Error(`The ${label} path is a symbolic link`);
+    const destinationExists = await fs.lstat(destination).then(() => true, (error) => {
+      if (error?.code === "ENOENT") return false;
+      throw error;
+    });
+    if (!stat) return destinationExists ? { label, destination, state: "quarantined" } : null;
+    if (destinationExists) throw new Error(`The ${label} trash destination already exists`);
+    if (label.endsWith("-workspace")) {
+      await ensureDirectory(trash);
+    } else {
+      let current = await existingDirectory(config.vaultRoot);
+      for (const segment of [".trash", "Projects", envelope.project.key]) {
+        current = await ensureSharedVaultDirectory(path.join(current, segment));
+      }
+    }
+    await fs.rename(candidate, destination);
+    return { label, destination, state: "quarantined" };
   }
 
   // Removes the runtime of each agent of the project that is not in `keep`: the
@@ -499,7 +542,7 @@ export function createProvisioner(config, options = {}) {
             terminalUrl(urls, workspace.slug),
           )
         : null;
-      const projectAreas = await provisionProjectAreas(envelope, workspace, quarantineRoot);
+      const projectAreas = await provisionProjectAreas(envelope, workspace);
       const quarantined = [
         ...agentRuntimes.quarantined,
         ...projectAreas.quarantined,

@@ -16,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
+import AreaDeleteDialog from '@/components/layout/AreaDeleteDialog';
 import { PAGE_CONTROL_CLASS } from '@/components/layout/PageToolbar';
 import { cn } from '@/lib/utils';
 import AreaDialog from '@/components/layout/AreaDialog';
@@ -115,19 +115,15 @@ export default function ViewFolderManager({
         />
       )}
       {dialog?.kind === 'delete' && (
-        <ConfirmDialog
-          title={t('deleteFolder')}
-          confirmLabel={t('deleteFolder')}
+        <AreaDeleteDialog
+          id={dialog.folder.id}
+          name={dialog.folder.name}
           onConfirm={async () => {
             await deleteFolder.mutateAsync(dialog.folder.id);
             setDialog(null);
           }}
           onClose={() => setDialog(null)}
-        >
-          <p className="text-sm text-muted-foreground">
-            {t('deleteFolderConfirm', { name: dialog.folder.name })}
-          </p>
-        </ConfirmDialog>
+        />
       )}
     </>
   );

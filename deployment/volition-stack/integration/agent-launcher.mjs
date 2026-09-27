@@ -69,6 +69,8 @@ export function createAgentLauncher(config) {
     // back to the runner, so provisioning can move it into the trash.
     releaseProjectPaths: (slug, { profiles = [], workspace = false } = {}) =>
       launcherRequest(socketPath, { op: "release-project-paths", slug, profiles, workspace }),
+    trashArea: (slug, folder, kind, date, eventId) =>
+      launcherRequest(socketPath, { op: "trash-area", slug, folder, kind, date, eventId }),
     browserState: (action, slug, projectId, eventId) =>
       launcherRequest(socketPath, {
         op: "browser-state",
