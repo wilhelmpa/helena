@@ -154,7 +154,7 @@
   "extraction": {
     "zugferd": "E-Rechnung (ZUGFeRD/Factur-X) gelesen",
     "xrechnung": "E-Rechnung (XRechnung) gelesen",
-    "text": "Text der PDF gelesen",
+    "text": "Text ausgelesen",
     "ocr": "Scan per Texterkennung gelesen",
     "manual": "Von Hand erfasst",
     "none": "Nichts gelesen"

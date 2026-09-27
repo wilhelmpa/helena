@@ -154,7 +154,7 @@
   "extraction": {
     "zugferd": "E-invoice (ZUGFeRD/Factur-X) read",
     "xrechnung": "E-invoice (XRechnung) read",
-    "text": "PDF text read",
+    "text": "Text read",
     "ocr": "Scan read by OCR",
     "manual": "Entered by hand",
     "none": "Nothing read"
