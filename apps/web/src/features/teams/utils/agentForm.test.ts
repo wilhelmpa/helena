@@ -96,4 +96,11 @@ describe('agent projects and templates', () => {
     assert.equal(patch.template, true);
     assert.deepEqual(patch.projectIds, []);
   });
+
+  it('submits the all-project scope as an explicit setting', () => {
+    const value = named();
+    value.projectScope = 'all';
+    assert.equal(toCreateInput(value).projectScope, 'all');
+    assert.equal(toUpdatePatch(value).projectScope, 'all');
+  });
 });

@@ -226,5 +226,9 @@
     "resizeArea": "调整宽度"
   },
   "receipts": "票据",
-  "browserLab": "Browser 2.0"
+  "browserLab": "Browser 2.0",
+  "sidebarAllProjects": "All projects",
+  "sidebarSystem": "System",
+  "sidebarHomeAgent": "Home agent",
+  "sidebarGlobalStandards": "Global standards"
 }

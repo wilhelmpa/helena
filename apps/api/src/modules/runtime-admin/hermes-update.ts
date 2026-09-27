@@ -47,7 +47,7 @@ async function hermesAgent(): Promise<number> {
         sql`${aiAgent.lastSeenAt} > now() - interval '2 minutes'`,
       ),
     )
-    .orderBy(sql`${aiAgent.username} = 'master' DESC`, aiAgent.id)
+    .orderBy(sql`${aiAgent.agentRole} = 'home' DESC`, aiAgent.id)
     .limit(1);
   if (!rows[0]) throw new HttpError(503, 'No Hermes runner is online');
   return rows[0].id;

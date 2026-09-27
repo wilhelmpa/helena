@@ -33,13 +33,13 @@ import { projectFilePath, templateFilePath, type BlueprintState, type StateAgent
 
 // What a project blueprint is planned against: the team's rows, read only.
 
-// The team of the Home agent (@master), or the one named.
+// The team of the Home agent, or the one named.
 export async function blueprintTeam(teamId?: number): Promise<number> {
   if (teamId !== undefined) return teamId;
   const rows = await db
     .select({ teamId: aiAgent.teamId })
     .from(aiAgent)
-    .where(eq(aiAgent.username, 'master'));
+    .where(eq(aiAgent.agentRole, 'home'));
   if (rows.length !== 1) throw new Error('Name the team with --team <id>.');
   return rows[0]!.teamId;
 }

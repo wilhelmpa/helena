@@ -23,6 +23,7 @@ export interface Project {
   teamManager?: boolean;
   key: string;
   name: string;
+  projectRole: 'project' | 'home';
   description: string;
   // Whether the team's MCP reach covers this project, and whether the team is
   // reachable over MCP at all. Both are set in the team's MCP section; a tool call

@@ -32,7 +32,6 @@ import {
 import { getProjectSetting, setProjectSetting } from '#shared/project-settings';
 import { PROJECT_FEATURES, featureLabel, type ProjectFeature } from '#shared/features';
 import { getLimits } from '#shared/limits';
-import { HOME_AGENT_USERNAME, isHomeAgent } from '#modules/agents/core/home-agent';
 import { enableProjectBrowser } from '#modules/agents/mcp-servers/service';
 import { getProjectDefaults } from '#modules/settings/service';
 import { dropUnusedTeamMembership } from '#modules/scim/reconcile';
@@ -60,6 +59,7 @@ export interface ProjectRow {
   teamName: string;
   key: string;
   name: string;
+  projectRole: 'project' | 'home';
   description: string;
   mcpEnabled: boolean;
   // The team's own MCP switch, carried here because every MCP gate is a project
@@ -136,6 +136,7 @@ export async function mapProject(row: ProjectWithTeam): Promise<ProjectRow> {
     teamName: row.teamName,
     key: row.key,
     name: row.name,
+    projectRole: row.projectRole as 'project' | 'home',
     description: row.description,
     mcpEnabled: row.mcpEnabled,
     teamMcpEnabled: row.teamMcpEnabled,
@@ -360,16 +361,12 @@ export { hermesProjectCoordinatorUsername, isHermesProjectCoordinatorUsername };
 // for, and a template to none.
 export async function newProjectAgentUserIds(teamId: number): Promise<string[]> {
   const rows = await db
-    .select({ userId: aiAgent.userId, username: aiAgent.username })
+    .select({ userId: aiAgent.userId })
     .from(aiAgent)
     .where(
-      and(
-        eq(aiAgent.teamId, teamId),
-        eq(aiAgent.template, false),
-        sql`not exists (select 1 from ${organizationAgentAssignment} a where a.agent_id = ${aiAgent.id} and a.role = 'specialist')`,
-      ),
+      and(eq(aiAgent.teamId, teamId), eq(aiAgent.template, false), eq(aiAgent.projectScope, 'all')),
     );
-  return rows.filter(({ username }) => isHomeAgent(username)).map(({ userId }) => userId);
+  return rows.map(({ userId }) => userId);
 }
 
 export function hermesProjectCoordinatorInstructions(
@@ -425,12 +422,7 @@ export async function createHermesProjectCoordinator(
   const [home] = await tx
     .select({ id: aiAgent.id })
     .from(aiAgent)
-    .where(
-      and(
-        eq(aiAgent.teamId, input.teamId),
-        eq(sql`lower(${aiAgent.username})`, HOME_AGENT_USERNAME),
-      ),
-    );
+    .where(and(eq(aiAgent.teamId, input.teamId), eq(aiAgent.agentRole, 'home')));
   const userId = crypto.randomUUID();
   await tx.insert(user).values({
     id: userId,

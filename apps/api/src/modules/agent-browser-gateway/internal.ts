@@ -153,7 +153,7 @@ export async function authorizeTarget(
     throw new HttpError(400, 'Invalid project');
   }
   if (typeof via !== 'string' || !SLUG.test(via)) throw new HttpError(400, 'Invalid socket');
-  const homeAgent = isHomeAgent(agent.username);
+  const homeAgent = isHomeAgent(agent.agentRole);
   if (via === HOME_SLUG) {
     if (!homeAgent) throw new HttpError(403, "Only the Home-Master uses Home's browser");
   } else {

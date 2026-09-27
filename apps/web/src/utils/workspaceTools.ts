@@ -67,11 +67,11 @@ function provisionedResource(
 
 // The naming convention itself lives in @repo/agent-naming, shared with the API (which
 // creates the coordinator agent with this exact handle) so the two cannot drift apart.
-// This wrapper adds only what is specific to picking a chat default: null falls back
-// to the Home agent, and a project key that would produce a handle Helena's own
-// username rules reject falls back to "no default" rather than a broken preselection.
+// A project key that would produce a handle Helena's own username rules reject
+// falls back to "no default" rather than a broken preselection. Home has no
+// project key: its agent is selected by agentRole in the chat catalog.
 export function preferredAgentUsername(projectKey: string | null): string {
-  if (!projectKey) return 'master';
+  if (!projectKey) return '';
   const normalizedKey = projectKey.trim().toUpperCase();
   const slugPattern = /^[a-z0-9][a-z0-9_-]{0,31}$/;
   const slug = normalizedKey === 'VERV' ? 'verve' : normalizedKey.toLowerCase();

@@ -5,7 +5,6 @@ import { useTranslations } from 'next-intl';
 import { Home } from 'lucide-react';
 import type { Project } from '@/lib/api/endpoints/projects';
 import { projectTree } from '@/utils/projectTree';
-import { runtimeEnv } from '@/utils/runtimeEnv';
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -30,8 +29,7 @@ export default function ProjectList({
 }) {
   const t = useTranslations('nav');
   const pathname = usePathname();
-  const homeChatProjectKey = runtimeEnv().workspace.homeChatProjectKey;
-  const visibleProjects = projects.filter((project) => project.key !== homeChatProjectKey);
+  const visibleProjects = projects.filter((project) => project.projectRole !== 'home');
   const { groups, ungrouped } = projectTree(visibleProjects);
   const [dragging, setDragging] = useState(false);
   const item = (project: Project) => (

@@ -48,13 +48,14 @@ const SUB_AGENTS: Record<AgentRuntimeKind, string[]> = {
 export function coordinatorSection(input: {
   projectKeys: string[];
   manager: string | null;
+  managerIsHome?: boolean;
   specialists: string[];
   runtime?: AgentRuntimeKind;
 }): string {
   const manager =
     input.manager == null
       ? ''
-      : isHomeAgent(input.manager)
+      : input.managerIsHome
         ? ` and report to the Home agent (@${input.manager})`
         : ` and report to @${input.manager}`;
   return [
@@ -82,6 +83,7 @@ export function memberSection(input: {
   projectKeys: string[];
   // Whom the agent reports to (organization chart), else null.
   manager: string | null;
+  managerIsHome?: boolean;
   // The coordinators of the agent's projects, named when the agent reports to none of them.
   coordinators: string[];
   // The other specialists and reviewers of those projects.
@@ -89,7 +91,7 @@ export function memberSection(input: {
 }): string {
   const projects = input.projectKeys.join(', ');
   const lead = input.manager
-    ? isHomeAgent(input.manager)
+    ? input.managerIsHome
       ? `the Home agent (@${input.manager})`
       : `@${input.manager}`
     : input.coordinators.length > 0
@@ -188,7 +190,7 @@ const manager = alias(aiAgent, 'manager');
 // organization chart names) and hands its work back. Empty for an agent outside the chain.
 export async function structureSection(agent: AiAgentRow): Promise<string> {
   const projectIds = agent.projects.map((p) => p.id);
-  if (isHomeAgent(agent.username)) {
+  if (isHomeAgent(agent.agentRole)) {
     const coordinators = await roleHolders(agent.teamId, projectIds, 'coordinator');
     return homeAgentSection(
       agent.projects.map((p) => ({
@@ -199,7 +201,11 @@ export async function structureSection(agent: AiAgentRow): Promise<string> {
     );
   }
   const [assignment] = await db
-    .select({ role: organizationAgentAssignment.role, manager: manager.username })
+    .select({
+      role: organizationAgentAssignment.role,
+      manager: manager.username,
+      managerRole: manager.agentRole,
+    })
     .from(organizationAgentAssignment)
     .leftJoin(manager, eq(manager.id, organizationAgentAssignment.reportsToAgentId))
     .where(
@@ -214,6 +220,7 @@ export async function structureSection(agent: AiAgentRow): Promise<string> {
     return coordinatorSection({
       projectKeys: agent.projects.map((p) => p.key),
       manager: assignment.manager,
+      managerIsHome: assignment.managerRole === 'home',
       specialists: [...new Set([...specialists.values()].flat())],
       runtime: agent.runtimePolicy.runtime ?? 'hermes',
     });
@@ -235,6 +242,7 @@ export async function structureSection(agent: AiAgentRow): Promise<string> {
     role,
     projectKeys: agent.projects.map((p) => p.key),
     manager: assignment?.manager ?? null,
+    managerIsHome: assignment?.managerRole === 'home',
     coordinators: unique(
       others.filter((member) => member.role === 'coordinator').map((member) => member.username),
     ),

@@ -94,13 +94,18 @@ function sanitize(value: unknown): AgentNetworkSettings {
 // The agents of a project, the Home agent left out: it runs as Home, never in a project.
 async function projectAgents(projectId: number) {
   const rows = await db
-    .select({ id: aiAgent.id, username: aiAgent.username, name: users.name })
+    .select({
+      id: aiAgent.id,
+      username: aiAgent.username,
+      agentRole: aiAgent.agentRole,
+      name: users.name,
+    })
     .from(projectMember)
     .innerJoin(aiAgent, eq(aiAgent.userId, projectMember.userId))
     .innerJoin(users, eq(users.id, aiAgent.userId))
     .where(eq(projectMember.projectId, projectId))
     .orderBy(asc(users.name));
-  return rows.filter((row) => !isHomeAgent(row.username));
+  return rows.filter((row) => !isHomeAgent(row.agentRole));
 }
 
 export async function getAgentNetwork(projectId: number): Promise<AgentNetworkSettings> {
@@ -329,7 +334,12 @@ export async function recordEgressEvents(events: EgressEventInput[]): Promise<nu
   const runIds = [...new Set(events.flatMap((event) => (event.runId ? [event.runId] : [])))];
   const agents = agentIds.length
     ? await db
-        .select({ id: aiAgent.id, userId: aiAgent.userId, username: aiAgent.username })
+        .select({
+          id: aiAgent.id,
+          userId: aiAgent.userId,
+          username: aiAgent.username,
+          agentRole: aiAgent.agentRole,
+        })
         .from(aiAgent)
         .where(inArray(aiAgent.id, agentIds))
     : [];
@@ -358,7 +368,7 @@ export async function recordEgressEvents(events: EgressEventInput[]): Promise<nu
     const agentFits =
       agent !== undefined &&
       (event.slug === HOME_SLUG
-        ? isHomeAgent(agent.username)
+        ? isHomeAgent(agent.agentRole)
         : memberships.some((row) => row.userId === agent.userId && row.projectId === projectId));
     const run = runs.find((candidate) => candidate.id === event.runId);
     const runFits =

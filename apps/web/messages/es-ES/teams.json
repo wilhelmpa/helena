@@ -795,7 +795,9 @@
         "reasoning": "razonamiento"
       }
     },
-    "chatTemplate": "Una plantilla no se ejecuta. Añádela a un proyecto como agente para probarla aquí."
+    "chatTemplate": "Una plantilla no se ejecuta. Añádela a un proyecto como agente para probarla aquí.",
+    "allProjectsScope": "Project scope: all",
+    "allProjectsScopeHint": "May work in every current and future project of this team."
   },
   "members": {
     "roleSaved": "{name} es ahora {role}",

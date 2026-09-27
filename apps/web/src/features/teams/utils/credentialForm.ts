@@ -244,9 +244,9 @@ export function toCredentialPatch(value: CredentialFormValue): CredentialInput {
 
 export type AgentRole = 'home' | 'coordinator' | 'specialist';
 
-// The Home agent is `master`, a project's coordinator `hermes-<slug>-coordinator`.
-export function agentRole(agent: Pick<AiAgent, 'username'>): AgentRole {
-  if (agent.username.toLowerCase() === 'master') return 'home';
+// The Home role is persisted; a project's coordinator uses the coordinator handle.
+export function agentRole(agent: Pick<AiAgent, 'username' | 'agentRole'>): AgentRole {
+  if (agent.agentRole === 'home') return 'home';
   return agent.username.endsWith('-coordinator') ? 'coordinator' : 'specialist';
 }
 

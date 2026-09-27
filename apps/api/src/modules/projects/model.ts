@@ -116,6 +116,7 @@ export const ProjectResponse = t.Object({
   teamName: t.String(),
   key: t.String(),
   name: t.String(),
+  projectRole: t.Union([t.Literal('project'), t.Literal('home')]),
   description: t.String(),
   mcpEnabled: t.Boolean(),
   teamMcpEnabled: t.Boolean(),

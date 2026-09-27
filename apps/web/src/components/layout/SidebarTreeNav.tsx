@@ -2,7 +2,7 @@
 
 import { type ReactNode } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { ChevronRight, Folder, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -65,7 +65,16 @@ function TreeLink({
   activeOverride?: boolean;
 }) {
   const pathname = usePathname();
-  const active = activeOverride ?? (!href.includes('?') && pathIsActive(pathname, href));
+  const searchParams = useSearchParams();
+  const [path, query] = href.split('?');
+  const active =
+    activeOverride ??
+    (query
+      ? pathname === path &&
+        [...new URLSearchParams(query)].every(([key, value]) => searchParams.get(key) === value)
+      : path === '/tasks'
+        ? pathname === path && !searchParams.has('assignee') && !searchParams.has('state')
+        : pathIsActive(pathname, href));
   return (
     <Link
       href={href}
@@ -158,13 +167,23 @@ export function SidebarPersonalNav({ teamIds }: { teamIds: number[] }) {
   );
 }
 
-export function SidebarHomeTree({ teamId }: { teamId: number | null }) {
+export function SidebarHomeTree({ teamId, isGod }: { teamId: number | null; isGod: boolean }) {
   const t = useTranslations('nav');
   const home = homeNavigation(teamId);
   const get = (id: string) => home.find((item) => item.id === id)?.href;
   return (
     <section className="helena-sidebar-section">
       <h2>{t('sidebarProject')}</h2>
+      <TreeBranch id="home:dashboard" label={t('dashboards')} href="/" activePaths={['/system']}>
+        <TreeLink href="/" nested>
+          {t('sidebarAllProjects')}
+        </TreeLink>
+        {isGod && (
+          <TreeLink href="/system" nested>
+            {t('sidebarSystem')}
+          </TreeLink>
+        )}
+      </TreeBranch>
       <TreeBranch id="home:tasks" label={t('workItems')} href="/tasks">
         <TreeLink href="/tasks?assignee=me" nested>
           {t('sidebarMyTasks')}
@@ -179,9 +198,6 @@ export function SidebarHomeTree({ teamId }: { teamId: number | null }) {
         href="/files"
         activePaths={['/docs']}
       >
-        <TreeLink href="/docs" nested>
-          {t('docs')}
-        </TreeLink>
         <TreeLink href={homeFilesPath('', { root: 'home' })} nested>
           {t('sidebarHome')}
         </TreeLink>
@@ -192,7 +208,6 @@ export function SidebarHomeTree({ teamId }: { teamId: number | null }) {
           {t('sidebarTemplates')}
         </TreeLink>
       </TreeBranch>
-      <TreeLink href="/">{t('dashboards')}</TreeLink>
       <TreeBranch
         id="home:auto"
         label={t('sidebarAutomation')}
@@ -224,8 +239,26 @@ export function SidebarHomeTree({ teamId }: { teamId: number | null }) {
         id="home:settings"
         label={t('settings')}
         href={get('teamSettings') ?? '/account/preferences'}
-        activePaths={['/skills', '/tools', '/mcps', '/access', '/decisions', '/devices']}
+        activePaths={[
+          '/skills',
+          '/tools',
+          '/mcps',
+          '/access',
+          '/decisions',
+          '/devices',
+          '/god/general',
+        ]}
       >
+        {isGod && (
+          <TreeLink href="/agents?agent=home" nested>
+            {t('sidebarHomeAgent')}
+          </TreeLink>
+        )}
+        {isGod && (
+          <TreeLink href="/god/general" nested>
+            {t('sidebarGlobalStandards')}
+          </TreeLink>
+        )}
         {home
           .filter((item) => item.group === 'globalSettings')
           .map((item) => (

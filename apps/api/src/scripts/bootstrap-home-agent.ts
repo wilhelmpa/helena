@@ -184,6 +184,8 @@ export async function bootstrapProjectAgent(
       userId: aiAgent.userId,
       username: aiAgent.username,
       teamId: aiAgent.teamId,
+      agentRole: aiAgent.agentRole,
+      projectScope: aiAgent.projectScope,
       runtime: sql<string | null>`${aiAgent.runtimePolicy}->>'runtime'`,
       projects: sql<number>`(select count(*)::int from ${projectMember} where ${projectMember.userId} = ${aiAgent.userId})`,
     })
@@ -197,7 +199,8 @@ export async function bootstrapProjectAgent(
     .limit(1);
   if (
     !agent ||
-    isHomeAgent(agent.username) ||
+    isHomeAgent(agent.agentRole) ||
+    agent.projectScope === 'all' ||
     isHermesProjectCoordinatorUsername(agent.username) ||
     agent.projects !== 1
   ) {
@@ -225,7 +228,7 @@ export async function bootstrapHomeAgent(): Promise<HomeAgentBootstrapResult> {
   const [existing] = await db
     .select({ id: aiAgent.id })
     .from(aiAgent)
-    .where(and(eq(aiAgent.teamId, owner.teamId), eq(aiAgent.username, HOME_AGENT_USERNAME)))
+    .where(and(eq(aiAgent.teamId, owner.teamId), eq(aiAgent.agentRole, 'home')))
     .limit(1);
 
   if (existing) {
@@ -237,6 +240,8 @@ export async function bootstrapHomeAgent(): Promise<HomeAgentBootstrapResult> {
   const created = await createAgent(owner.teamId, {
     name: 'Home',
     username: HOME_AGENT_USERNAME,
+    agentRole: 'home',
+    projectScope: 'all',
     projectIds: [],
     ownerUserId: owner.userId,
     runnerScope: 'owner',

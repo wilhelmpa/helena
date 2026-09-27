@@ -110,7 +110,7 @@ export async function labAgents(
 ): Promise<{ id: number; name: string; username: string }[]> {
   const agents = scope.project
     ? await listAgents(scope.teamId, scope.project.id)
-    : (await listAgents(scope.teamId)).filter((agent) => isHomeAgent(agent.username));
+    : (await listAgents(scope.teamId)).filter((agent) => isHomeAgent(agent.agentRole));
   const out: { id: number; name: string; username: string }[] = [];
   for (const agent of agents) {
     if (await browserGatewayEnabledForAgent(agent.id, agent.teamId)) {

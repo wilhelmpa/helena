@@ -255,11 +255,17 @@ describe('credential form', () => {
   });
 });
 
-function agent(id: number, username: string, projects: { id: number; name: string }[] = []) {
+function agent(
+  id: number,
+  username: string,
+  projects: { id: number; name: string }[] = [],
+  agentRole: 'agent' | 'home' = 'agent',
+) {
   return {
     id,
     name: username,
     username,
+    agentRole,
     kind: 'external',
     template: false,
     projects: projects.map((p) => ({
@@ -277,16 +283,19 @@ describe('grantable agents', () => {
   const ops = { id: 2, name: 'Ops' };
   const agents = [
     agent(5, 'writer', [mkt]),
-    agent(1, 'master', [mkt, ops]),
+    agent(1, 'renamed-home', [mkt, ops], 'home'),
     agent(3, 'hermes-mkt-coordinator', [mkt]),
     agent(4, 'hermes-ops-coordinator', [ops]),
     { ...agent(6, 'designer'), template: true } as AiAgent,
   ];
 
   it('names the Home agent, the coordinators and the project agents', () => {
-    assert.equal(agentRole({ username: 'master' }), 'home');
-    assert.equal(agentRole({ username: 'hermes-mkt-coordinator' }), 'coordinator');
-    assert.equal(agentRole({ username: 'writer' }), 'specialist');
+    assert.equal(agentRole({ username: 'renamed', agentRole: 'home' }), 'home');
+    assert.equal(
+      agentRole({ username: 'hermes-mkt-coordinator', agentRole: 'agent' }),
+      'coordinator',
+    );
+    assert.equal(agentRole({ username: 'writer', agentRole: 'agent' }), 'specialist');
   });
 
   it('groups the Home agent first, then each project with its coordinator ahead', () => {
