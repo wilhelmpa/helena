@@ -4,16 +4,12 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
-import {
-  PageActions,
-  PageToolbar,
-  PageToolbarSpacer,
-  usePageToolbarRoom,
-} from '@/components/layout/PageToolbar';
+import { PageActions, PageToolbar, PageToolbarSpacer } from '@/components/layout/PageToolbar';
 import type { MruEntry } from '../hooks/useNoteBoardMru';
 import type { NewBoardVisibility } from '../utils/visibility';
 import NoteBoardNameDialog from './NoteBoardNameDialog';
-import NoteBoardTab from './NoteBoardTab';
+import NoteBoardTabs from './NoteBoardTabs';
+import { usePageToolbarNavigation } from '@/context/pageToolbarNavigation';
 import BoardSwitcher from './BoardSwitcher';
 
 // The notes header row (PageToolbar, docs/volition/ui-standard.md): the recently used
@@ -39,6 +35,7 @@ export default function NoteBoardBar({
   // 'create' to open the new-board dialog, an MRU entry to rename, or null (closed).
   const [dialog, setDialog] = useState<'create' | MruEntry | null>(null);
   const t = useTranslations('notes');
+  const navigation = usePageToolbarNavigation();
   const renaming = dialog && typeof dialog === 'object' ? dialog : null;
   const { can } = usePermissions();
   const canCreate = can('note_boards', 'create');
@@ -51,6 +48,7 @@ export default function NoteBoardBar({
 
   return (
     <PageToolbar>
+      {navigation}
       <NoteBoardTabs
         tabs={tabs}
         activeBoardId={activeBoardId}
@@ -84,38 +82,5 @@ export default function NoteBoardBar({
         }}
       />
     </PageToolbar>
-  );
-}
-
-// The board tabs. When the row runs out of room only the open board keeps its tab
-// (with its menu); the switcher next to it reaches the others.
-function NoteBoardTabs({
-  tabs,
-  activeBoardId,
-  onSelect,
-  onRename,
-  onDelete,
-}: {
-  tabs: MruEntry[];
-  activeBoardId: number | null;
-  onSelect: (id: number) => void;
-  onRename: (tab: MruEntry) => void;
-  onDelete: (id: number) => void;
-}) {
-  const room = usePageToolbarRoom();
-  const shown = room.tabs ? tabs : tabs.filter((tab) => tab.id === activeBoardId);
-  return (
-    <div className="flex min-w-0 shrink-0 items-center gap-0.5">
-      {shown.map((tab) => (
-        <NoteBoardTab
-          key={tab.id}
-          tab={tab}
-          active={activeBoardId === tab.id}
-          onSelect={() => onSelect(tab.id)}
-          onRename={() => onRename(tab)}
-          onDelete={() => onDelete(tab.id)}
-        />
-      ))}
-    </div>
   );
 }

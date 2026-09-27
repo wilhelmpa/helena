@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { BookOpen, Code2, StickyNote } from 'lucide-react';
 import { WorkspacePageHeader } from '@/components/layout/WorkspaceHeader';
 import { PageTabs } from '@/components/layout/PageToolbar';
+import { PageToolbarNavigationProvider } from '@/context/pageToolbarNavigation';
 import { usePermissions } from '@/hooks/usePermissions';
 import type { ProjectFileRoot } from '@/lib/api/endpoints/projectFiles';
 import { filesPath } from '@/utils/paths';
@@ -59,10 +60,7 @@ export default function ProjectFilesPage({ boards }: { boards?: ReactNode }) {
       <WorkspacePageHeader title={t('title')} />
       <div className="flex min-h-0 flex-1 flex-col p-4">
         {boardView ? (
-          <>
-            {tabs}
-            {boards}
-          </>
+          <PageToolbarNavigationProvider navigation={tabs}>{boards}</PageToolbarNavigationProvider>
         ) : (
           <FileBrowser
             key={root}
