@@ -1,0 +1,63 @@
+/* Values from Wissen.dc.html; these rules apply only to the embedded Docs canvas. */
+.prose :global(.md-content) {
+  font-size: 15px;
+  line-height: 1.75;
+  color: #d9d3e3;
+}
+.prose :global(.md-content h1),
+.prose :global(.md-content h2) {
+  font-size: 20px;
+  font-weight: 520;
+  line-height: 1.4;
+  letter-spacing: -0.02em;
+  color: #eeeaf6;
+}
+.prose :global(.md-content .tableWrapper) {
+  border-radius: 16px;
+  box-shadow: 0 0 0 1px #ffffff0c;
+}
+.prose :global(.md-content table) {
+  width: 100%;
+  table-layout: fixed;
+  font-size: 13px;
+}
+.prose :global(.md-content :is(th, td):first-child) {
+  width: 90px;
+}
+.prose :global(.md-content :is(th, td):last-child) {
+  width: 160px;
+}
+.prose :global(.md-content th) {
+  padding: 10px 16px;
+  background: #111014;
+  color: #8b8595;
+  font:
+    500 10px 'JetBrains Mono',
+    ui-monospace,
+    monospace;
+  letter-spacing: 0.18em;
+}
+.prose :global(.md-content td) {
+  padding: 11px 16px;
+  background: #0a090d;
+  color: #96919f;
+}
+.prose :global(.md-content td:first-child p) {
+  width: max-content;
+  border-radius: 99px;
+  padding: 1px 8px;
+  background: #26212d;
+  color: #e7dbfa;
+  font-size: 12px;
+}
+.prose :global(.md-content td:nth-child(2)) {
+  font:
+    400 12px 'JetBrains Mono',
+    ui-monospace,
+    monospace;
+}
+.prose :global(.md-content th),
+.prose :global(.md-content td) {
+  border: 0;
+  border-bottom: 1px solid #ffffff08;
+}

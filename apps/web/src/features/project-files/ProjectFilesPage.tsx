@@ -28,6 +28,7 @@ export default function ProjectFilesPage({ boards }: { boards?: ReactNode }) {
   const boardView = params.get('view') === 'boards' && boardsEnabled;
   const root: ProjectFileRoot = params.get('root') === 'code' ? 'code' : 'vault';
   const path = params.get('path') ?? '';
+  const knowledgeDocument = root === 'vault' && !!params.get('file') && !boardView;
   const go = (next: { root?: ProjectFileRoot; path?: string; file?: string | null }) => {
     if (next.root !== undefined && !navigation.canLeave()) return;
     const nextRoot = next.root ?? root;
@@ -60,8 +61,12 @@ export default function ProjectFilesPage({ boards }: { boards?: ReactNode }) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <WorkspacePageHeader title={t('title')} />
-      <div className="flex min-h-0 flex-1 flex-col p-4">
+      {!knowledgeDocument && <WorkspacePageHeader title={t('title')} />}
+      <div
+        className={
+          knowledgeDocument ? 'flex min-h-0 flex-1 flex-col' : 'flex min-h-0 flex-1 flex-col p-4'
+        }
+      >
         {boardView ? (
           <PageToolbarNavigationProvider navigation={tabs}>{boards}</PageToolbarNavigationProvider>
         ) : (
@@ -84,7 +89,9 @@ export default function ProjectFilesPage({ boards }: { boards?: ReactNode }) {
               go({
                 file,
                 ...(file
-                  ? { path: file.includes('/') ? file.slice(0, file.lastIndexOf('/')) : '' }
+                  ? {
+                      path: file.includes('/') ? file.slice(0, file.lastIndexOf('/')) : '',
+                    }
                   : {}),
               })
             }

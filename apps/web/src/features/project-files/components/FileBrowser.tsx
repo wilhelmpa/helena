@@ -19,6 +19,8 @@ import FileDropOverlay from './FileDropOverlay';
 import FileFolderContent from './FileFolderContent';
 import FileToolbar from './FileToolbar';
 import FileViewerActions from './FileViewerActions';
+import ProjectKnowledgeViewer from './ProjectKnowledgeViewer';
+import ProjectFolderTree from './ProjectFolderTree';
 
 export interface FilePermissions {
   create: boolean;
@@ -75,6 +77,7 @@ export default function FileBrowser({
   };
   const actions = useFileActions({
     scope,
+    inlineMarkdown: scope.kind === 'project' && scope.root === 'vault',
     listing: listing.data,
     onNavigate: navigate,
     onSelect: select,
@@ -128,10 +131,15 @@ export default function FileBrowser({
   }, [selected, vaultRoot, listing.isPending, listing.data, onSelect]);
   const items = visibleItems(listing.data?.items ?? [], view.filter, view.sort);
   const viewing = selected ? listing.data?.items.find((item) => item.path === selected) : undefined;
+  const knowledge = scope.kind === 'project' && scope.root === 'vault';
 
   return (
     <div
-      className="relative flex min-h-0 flex-1 flex-col gap-3"
+      className={
+        knowledge && viewing
+          ? 'relative flex min-h-0 flex-1 flex-col'
+          : 'relative flex min-h-0 flex-1 flex-col gap-3'
+      }
       {...transfers.dropHandlers}
       onClickCapture={(event) => {
         const target = event.target as Element;
@@ -145,61 +153,97 @@ export default function FileBrowser({
         }
       }}
     >
-      <FileToolbar
-        leading={leading}
-        view={view}
-        canCreate={can.create}
-        codeUrl={folderCodeUrl}
-        uploading={transfers.uploading}
-        onUpload={transfers.sendFiles}
-        onNewFolder={() => setDialog({ kind: 'newFolder' })}
-        onNewFile={() => setDialog({ kind: 'newFile' })}
-      />
-      <FileBreadcrumbs
-        rootLabel={rootLabel}
-        path={path}
-        drag={transfers.drag}
-        onNavigate={navigate}
-      />
-      {viewing ? (
-        <UnifiedFileViewer
-          key={viewing.path}
-          scope={scope}
-          path={viewing.path}
-          canEdit={can.edit}
-          onDirty={onDirty}
-          sourceOnly={sourceOnly}
-          file={{
-            name: viewing.name,
-            contentType: viewing.contentType,
-            sizeBytes: viewing.sizeBytes,
-            url: fileRawUrl(scope, viewing.path),
-            vaultPath: actions.vaultPath(viewing),
-          }}
-          actions={<FileViewerActions item={viewing} actions={actions} />}
-          onClose={() => {
-            onSelect(null);
-            refresh();
-          }}
+      {!(knowledge && viewing) && (
+        <FileToolbar
+          leading={leading}
+          view={view}
+          canCreate={can.create}
+          codeUrl={folderCodeUrl}
+          uploading={transfers.uploading}
+          onUpload={transfers.sendFiles}
+          onNewFolder={() => setDialog({ kind: 'newFolder' })}
+          onNewFile={() => setDialog({ kind: 'newFile' })}
         />
+      )}
+      {!(knowledge && viewing) && (
+        <FileBreadcrumbs
+          rootLabel={rootLabel}
+          path={path}
+          drag={transfers.drag}
+          onNavigate={navigate}
+        />
+      )}
+      {viewing ? (
+        knowledge ? (
+          <ProjectKnowledgeViewer
+            key={viewing.path}
+            scope={scope}
+            path={viewing.path}
+            item={viewing}
+            canEdit={can.edit}
+            canDelete={can.delete}
+            sourceOnly={sourceOnly}
+            actions={actions}
+            onDirty={onDirty}
+            file={{
+              name: viewing.name,
+              contentType: viewing.contentType,
+              sizeBytes: viewing.sizeBytes,
+              url: fileRawUrl(scope, viewing.path),
+              vaultPath: actions.vaultPath(viewing),
+            }}
+          />
+        ) : (
+          <UnifiedFileViewer
+            key={viewing.path}
+            scope={scope}
+            path={viewing.path}
+            canEdit={can.edit}
+            onDirty={onDirty}
+            sourceOnly={sourceOnly}
+            file={{
+              name: viewing.name,
+              contentType: viewing.contentType,
+              sizeBytes: viewing.sizeBytes,
+              url: fileRawUrl(scope, viewing.path),
+              vaultPath: actions.vaultPath(viewing),
+            }}
+            actions={<FileViewerActions item={viewing} actions={actions} />}
+            onClose={() => {
+              onSelect(null);
+              refresh();
+            }}
+          />
+        )
       ) : (
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          {view.filter.trim() && vaultRoot ? (
-            <VaultSearchResults query={view.filter.trim()} root={vaultRoot} />
-          ) : (
-            <FileFolderContent
-              listing={listing}
-              items={items}
-              filter={view.filter}
-              mode={view.mode}
-              scope={scope}
-              actions={actions}
-              can={can}
-              drag={transfers.drag}
-              selected={selected}
-              codeUrl={folderCodeUrl}
-            />
+        <div
+          className={
+            knowledge
+              ? 'flex min-h-0 flex-1 gap-6 overflow-hidden'
+              : 'min-h-0 flex-1 overflow-y-auto'
+          }
+        >
+          {knowledge && (
+            <ProjectFolderTree scope={scope} path={path} onNavigate={navigate} onSelect={select} />
           )}
+          <div className={knowledge ? 'min-w-0 flex-1 overflow-y-auto' : undefined}>
+            {view.filter.trim() && vaultRoot ? (
+              <VaultSearchResults query={view.filter.trim()} root={vaultRoot} />
+            ) : (
+              <FileFolderContent
+                listing={listing}
+                items={items}
+                filter={view.filter}
+                mode={view.mode}
+                scope={scope}
+                actions={actions}
+                can={can}
+                drag={transfers.drag}
+                selected={selected}
+                codeUrl={folderCodeUrl}
+              />
+            )}
+          </div>
         </div>
       )}
       {transfers.draggedFiles !== null && (

@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { JSDOM } from 'jsdom';
 import { WebLinksContext } from '@/context/webLinks';
+import { RelativeTimeProvider } from '@/context/relativeTimeContext';
 import { SessionProvider } from '@/lib/auth-client';
 import { filesScopeKey } from '@/services/files.service';
 import { vaultNotePath } from '@/utils/paths';
@@ -146,6 +147,25 @@ beforeEach(async () => {
         ],
       });
     if (url.pathname === '/api/auth/get-session') return Response.json(null);
+    if (url.pathname === '/knowledge/documents')
+      return Response.json({
+        path: canonical,
+        kind: 'note',
+        title: 'Research',
+        mime: 'text/markdown',
+        sizeBytes: Buffer.byteLength(content),
+        sha256: sha(content),
+        updatedAt: new Date().toISOString(),
+        projectKey: 'RES',
+        content,
+        body: markdownContent(content).body,
+        frontmatter: { tags: ['ai', 'jev'] },
+        truncated: false,
+        extractionStatus: 'ready',
+        absolutePath: '/synthetic/Projects/RES/Docs/AI/00-Start.md',
+      });
+    if (url.pathname === '/knowledge/backlinks' || url.pathname === '/knowledge/history')
+      return Response.json([]);
     if (['/projects/RES/files/text', '/projects/OTHER/files/text'].includes(url.pathname)) {
       const other = url.pathname.includes('/OTHER/');
       const current = other ? otherContent : content;
@@ -229,51 +249,53 @@ async function render({
             messages={{ files, documents, common }}
           >
             <SessionProvider>
-              <WebLinksContext.Provider value={{ scope: 'WRONG', open: () => {} }}>
-                {visible &&
-                  (browser ? (
-                    <FileBrowser
-                      scope={scope}
-                      path="Docs/AI"
-                      selected={selected}
-                      rootLabel="Knowledge"
-                      permissions={{ create: false, edit: true, delete: false }}
-                      leading={<Link href="/project/RES/files?root=code">Code tab</Link>}
-                      onSelect={(file) => {
-                        void render({ browser: true, selected: file });
-                      }}
-                      onNavigate={(folder) => navigations.push(folder)}
-                    />
-                  ) : viewer ? (
-                    <UnifiedFileViewer
-                      file={{
-                        name: previewName,
-                        sizeBytes: Buffer.byteLength(content),
-                        url: '/synthetic',
-                        contentType: previewType,
-                        vaultPath: 'Projects/WRONG/Docs/00-Start.md',
-                      }}
-                      scope={{ ...scope, projectKey }}
-                      path={path}
-                      canEdit={editable}
-                      actions={null}
-                      onClose={() => {}}
-                      sourceOnly={sourceOnly}
-                    />
-                  ) : (
-                    <VaultTextEditor
-                      scope={{ ...scope, projectKey }}
-                      path={path}
-                      canEdit={editable}
-                      vaultPath={canonical}
-                      onDirty={(value) => {
-                        dirty = value;
-                      }}
-                      beforeNavigate={() => allowLeave}
-                      sourceOnly={sourceOnly}
-                    />
-                  ))}
-              </WebLinksContext.Provider>
+              <RelativeTimeProvider>
+                <WebLinksContext.Provider value={{ scope: 'WRONG', open: () => {} }}>
+                  {visible &&
+                    (browser ? (
+                      <FileBrowser
+                        scope={scope}
+                        path="Docs/AI"
+                        selected={selected}
+                        rootLabel="Knowledge"
+                        permissions={{ create: false, edit: true, delete: false }}
+                        leading={<Link href="/project/RES/files?root=code">Code tab</Link>}
+                        onSelect={(file) => {
+                          void render({ browser: true, selected: file });
+                        }}
+                        onNavigate={(folder) => navigations.push(folder)}
+                      />
+                    ) : viewer ? (
+                      <UnifiedFileViewer
+                        file={{
+                          name: previewName,
+                          sizeBytes: Buffer.byteLength(content),
+                          url: '/synthetic',
+                          contentType: previewType,
+                          vaultPath: 'Projects/WRONG/Docs/00-Start.md',
+                        }}
+                        scope={{ ...scope, projectKey }}
+                        path={path}
+                        canEdit={editable}
+                        actions={null}
+                        onClose={() => {}}
+                        sourceOnly={sourceOnly}
+                      />
+                    ) : (
+                      <VaultTextEditor
+                        scope={{ ...scope, projectKey }}
+                        path={path}
+                        canEdit={editable}
+                        vaultPath={canonical}
+                        onDirty={(value) => {
+                          dirty = value;
+                        }}
+                        beforeNavigate={() => allowLeave}
+                        sourceOnly={sourceOnly}
+                      />
+                    ))}
+                </WebLinksContext.Provider>
+              </RelativeTimeProvider>
             </SessionProvider>
           </NextIntlClientProvider>
         </AppRouterContext.Provider>
@@ -706,7 +728,7 @@ it('preserves SilverBullet-specific source as data without running page expressi
   );
 });
 
-it('opens Markdown from the file list in the Docs editor', async () => {
+it('opens Markdown inline from the project file list in the Docs editor', async () => {
   await render({ browser: true });
   await until(
     () =>
@@ -718,8 +740,8 @@ it('opens Markdown from the file list in the Docs editor', async () => {
     node.textContent?.includes('00-Start.md'),
   )!;
   await act(async () => file.click());
-  assert.deepEqual(navigations, [vaultNotePath(canonical)]);
-  assert.equal(document.querySelector('[data-file-preview]'), null);
+  await until(() => !!document.querySelector('[data-file-preview] .tiptap'));
+  assert.deepEqual(navigations, []);
   assert.equal(content, original);
   assert.ok(requests.every((request) => request.method === 'GET'));
 });

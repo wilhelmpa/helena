@@ -23,12 +23,14 @@ export function useFileActions({
   onNavigate,
   onSelect,
   ask,
+  inlineMarkdown = false,
 }: {
   scope: FileScope;
   listing: FileList | undefined;
   onNavigate: (path: string) => void;
   onSelect: (path: string) => void;
   ask: (dialog: FileDialog, item: FileItem) => void;
+  inlineMarkdown?: boolean;
 }) {
   const t = useTranslations('files');
   const router = useRouter();
@@ -46,7 +48,11 @@ export function useFileActions({
     open(item: FileItem) {
       if (item.kind === 'folder') return onNavigate(item.path);
       const canonical = vaultPath(item);
-      if (canonical && (/\.md$/i.test(item.name) || (projectKey && /\.canvas$/i.test(item.name))))
+      if (
+        canonical &&
+        !inlineMarkdown &&
+        (/\.md$/i.test(item.name) || (projectKey && /\.canvas$/i.test(item.name)))
+      )
         return router.push(vaultNotePath(canonical));
       onSelect(item.path);
     },

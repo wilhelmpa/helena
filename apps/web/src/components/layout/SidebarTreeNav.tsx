@@ -2,7 +2,7 @@
 
 import { type ReactNode } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { ChevronRight, Folder, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -272,6 +272,10 @@ export function SidebarProjectTree({
   onDeleteView: (view: View) => Promise<void>;
 }) {
   const t = useTranslations('nav');
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const activeKnowledgeFolder =
+    pathname === filesPath(projectKey) ? searchParams.get('path')?.split('/')[0] : null;
   const viewsT = useTranslations('views');
   const { can, isAdmin } = usePermissions();
   const features = useProjectFeatures();
@@ -343,7 +347,12 @@ export function SidebarProjectTree({
           {folders?.items
             .filter((item) => item.kind === 'folder')
             .map((folder) => (
-              <TreeLink key={folder.path} href={filesPath(projectKey, folder.path)} nested>
+              <TreeLink
+                key={folder.path}
+                href={filesPath(projectKey, folder.path)}
+                nested
+                activeOverride={activeKnowledgeFolder === folder.path}
+              >
                 <Folder size={13} className="me-2 inline" />
                 {folder.name}
               </TreeLink>
