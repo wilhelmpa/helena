@@ -50,6 +50,7 @@ export default function Shell({
   globalTitle,
   autoOpenGlobalChat = true,
   mobileHeaderOnly = false,
+  hideHeaderOnDesktop = false,
 }: {
   children: ReactNode;
   defaultSidebarOpen?: boolean;
@@ -58,6 +59,7 @@ export default function Shell({
   globalTitle?: string;
   autoOpenGlobalChat?: boolean;
   mobileHeaderOnly?: boolean;
+  hideHeaderOnDesktop?: boolean;
 }) {
   const t = useTranslations('nav');
   const tShell = useTranslations('shell');
@@ -95,7 +97,14 @@ export default function Shell({
   // muss alles richtig gut aussehen").
   const [pageBarSlot, setPageBarSlot] = useState<HTMLElement | null>(null);
   const narrow = useMediaQuery('(max-width: 1023px)');
-  const pageSlot = headerLayout === 'single' ? (narrow ? pageBarSlot : headerSlot) : null;
+  const pageSlot =
+    headerLayout === 'single'
+      ? narrow
+        ? pageBarSlot
+        : hideHeaderOnDesktop
+          ? null
+          : headerSlot
+      : null;
   const overlays = useOverlays();
   // On the kiosk's two screens the tool panel fills the second one.
   const kiosk = useKioskDisplay();
@@ -114,7 +123,7 @@ export default function Shell({
   const routedTool =
     route.sub === 'code' || route.sub === 'inbox' || route.sub === 'chat'
       ? route.sub
-      : pathname === '/chat'
+      : pathname === '/' || pathname === '/chat'
         ? 'chat'
         : null;
   // How the page and the panel's tools share the room (the header's layout menu).
@@ -268,6 +277,7 @@ export default function Shell({
             />
             <SidebarInset className="min-w-0">
               <AppHeader
+                hideOnDesktop={hideHeaderOnDesktop}
                 className={mobileHeaderOnly ? 'md:hidden' : undefined}
                 title={
                   globalHome ? (
@@ -299,7 +309,7 @@ export default function Shell({
                 onSelectWorkspaceTool={selectWorkspaceTool}
                 headerLayout={headerLayout}
                 headerExtra={narrow ? null : headerExtra}
-                pageSlotRef={setHeaderSlot}
+                pageSlotRef={hideHeaderOnDesktop && !narrow ? undefined : setHeaderSlot}
                 pageHidden={!workspaceLayout.resolved.pageVisible}
               />
               {headerLayout === 'single' && narrow && (

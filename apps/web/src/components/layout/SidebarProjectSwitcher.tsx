@@ -66,7 +66,7 @@ export default function SidebarProjectSwitcher({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="max-h-[70vh] w-64 overflow-y-auto">
         <DropdownMenuItem asChild>
-          <Link href="/chat">
+          <Link href="/">
             <span className="helena-project-dot" style={{ background: '#bdaaff' }} />
             {t('sidebarHomeAll')}
           </Link>

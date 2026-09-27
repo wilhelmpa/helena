@@ -1,6 +1,5 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import Shell from '@/components/layout/Shell';
 import ChatWorkspaceRoot from './ChatWorkspaceRoot';
 
@@ -14,9 +13,8 @@ import ChatWorkspaceRoot from './ChatWorkspaceRoot';
 // project/[projectKey]/layout.tsx, which already renders Shell around every project
 // page.
 export default function HomeChatPage() {
-  const tNav = useTranslations('nav');
   return (
-    <Shell globalHome globalTitle={tNav('chat')} autoOpenGlobalChat={false}>
+    <Shell globalHome autoOpenGlobalChat={false} hideHeaderOnDesktop>
       <ChatWorkspaceRoot projectKey={null} />
     </Shell>
   );

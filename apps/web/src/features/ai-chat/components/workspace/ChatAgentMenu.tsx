@@ -15,6 +15,7 @@ import {
 import type { ChatAgentState } from '../../utils/agentPresence';
 import { useAgentStateText } from '../../hooks/useAgentStateText';
 import ChatAgentMenuItem from './ChatAgentMenuItem';
+import styles from './HomeChatLanding.module.css';
 
 // Who the chat is with, at the composer's bottom left: the agent's avatar with its
 // status orb, name and state. Opened, it lists every agent with its runtime,
@@ -25,40 +26,61 @@ export default function ChatAgentMenu({
   agents,
   states,
   motionEnabled,
+  selectedModel,
+  pill = false,
   onPick,
 }: {
   agent: AiAgent;
   agents: AiAgent[];
   states: Map<number, ChatAgentState>;
   motionEnabled: boolean;
+  selectedModel: string | null;
+  pill?: boolean;
   onPick: (agentId: number) => void;
 }) {
   const t = useTranslations('chatWorkspace');
   const text = useAgentStateText();
   const state = states.get(agent.id);
+  const modelId = selectedModel ?? agent.model ?? '';
+  const opusVersion = modelId.match(/opus[- ]?(\d+)[-.](\d+)/i);
+  const homeModel = opusVersion
+    ? `Opus ${opusVersion[1]}.${opusVersion[2]}`
+    : modelId || 'Standard';
+  const homeName = agent.name === 'Helena' ? 'Home' : agent.name;
 
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="flex h-8 min-w-0 items-center gap-1.5 rounded-md px-1.5 text-xs text-muted-foreground ring-sidebar-ring outline-hidden transition-colors hover:bg-sidebar-accent hover:text-foreground focus-visible:ring-2 data-[state=open]:bg-sidebar-accent"
+          className={`flex h-8 min-w-0 items-center gap-1.5 px-1.5 text-xs text-muted-foreground ring-sidebar-ring outline-hidden transition-colors hover:bg-sidebar-accent hover:text-foreground focus-visible:ring-2 data-[state=open]:bg-sidebar-accent ${pill ? styles.chip : 'rounded-md'}`}
           aria-label={t('agents.switch', { agent: agent.name })}
           title={`${agent.name} · ${text.detail(agent, state)}`}
         >
-          <AgentAvatar name={agent.name} className="size-5 text-xl" />
-          <AgentStatusOrb
-            state={agentOrbState(state?.label, agent.runtimeState.status)}
-            online={state?.online ?? false}
-            motionEnabled={motionEnabled}
-          />
-          <span className="hidden max-w-32 truncate text-foreground @md/composer:inline">
-            {agent.name}
-          </span>
-          {state && (
-            <span className="hidden truncate @xl/composer:inline">{text.status(state.label)}</span>
+          {pill ? (
+            <>
+              <span className={styles.chipDot} />
+              <span className={styles.chipLabel}>{`${homeName} · ${homeModel}`}</span>
+            </>
+          ) : (
+            <>
+              <AgentAvatar name={agent.name} className="size-5 text-xl" />
+              <AgentStatusOrb
+                state={agentOrbState(state?.label, agent.runtimeState.status)}
+                online={state?.online ?? false}
+                motionEnabled={motionEnabled}
+              />
+              <span className="hidden max-w-32 truncate text-foreground @md/composer:inline">
+                {agent.name}
+              </span>
+              {state && (
+                <span className="hidden truncate @xl/composer:inline">
+                  {text.status(state.label)}
+                </span>
+              )}
+              <ChevronDown className="size-3.5 shrink-0" />
+            </>
           )}
-          <ChevronDown className="size-3.5 shrink-0" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" side="top" className="max-h-96 w-72 overflow-y-auto">

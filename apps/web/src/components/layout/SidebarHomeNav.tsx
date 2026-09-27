@@ -53,7 +53,7 @@ export default function SidebarHomeNav({
                 key={item.id}
                 href={item.href}
                 icon={HOME_NAVIGATION_ICONS[item.id]}
-                label={t(item.id)}
+                label={item.id === 'overview' ? t('dashboards') : t(item.id)}
                 active={pathname === item.href || pathname.startsWith(item.href + '/')}
                 disabled={false}
                 badge={item.id === 'approvals' ? pendingApprovals : undefined}

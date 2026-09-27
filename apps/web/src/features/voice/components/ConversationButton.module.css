@@ -1,0 +1,17 @@
+.homeMic {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: #e7dbfa;
+  color: #201b29;
+}
+
+.homeMic:hover {
+  background: #f3edf9;
+  color: #201b29;
+}
+
+.homeMic svg {
+  width: 18px;
+  height: 18px;
+}

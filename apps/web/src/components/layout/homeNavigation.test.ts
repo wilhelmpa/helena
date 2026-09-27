@@ -5,7 +5,7 @@ import { homeNavigation } from './homeNavigation';
 describe('home sidebar navigation', () => {
   test('without a single team shows what reads across projects and the shared services', () => {
     assert.deepEqual(homeNavigation(null), [
-      { id: 'overview', group: 'work', href: '/' },
+      { id: 'overview', group: 'work', href: '/dashboard' },
       { id: 'allWorkItems', group: 'work', href: '/tasks' },
       { id: 'inbox', group: 'work', href: '/inbox' },
       { id: 'files', group: 'work', href: '/files' },
@@ -21,7 +21,7 @@ describe('home sidebar navigation', () => {
 
   test('groups a single team into work, agents and global settings', () => {
     assert.deepEqual(homeNavigation(42), [
-      { id: 'overview', group: 'work', href: '/' },
+      { id: 'overview', group: 'work', href: '/dashboard' },
       { id: 'allWorkItems', group: 'work', href: '/tasks' },
       { id: 'inbox', group: 'work', href: '/inbox' },
       { id: 'files', group: 'work', href: '/files' },
@@ -44,7 +44,7 @@ describe('home sidebar navigation', () => {
     assert.ok(!ids.includes('notifications'));
     assert.ok(!ids.includes('workItems'));
     assert.ok(!ids.includes('apiDocs'));
-    // The chat lives in the tool panel, not in the navigation.
+    // The Home chat has its own entry in the personal sidebar.
     assert.ok(!ids.includes('chat'));
   });
 

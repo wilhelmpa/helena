@@ -32,6 +32,7 @@ export default function AppHeader({
   pageHidden = false,
   titleLead,
   className,
+  hideOnDesktop = false,
 }: {
   title: ReactNode;
   // The page's own name for the browser tab, before the breadcrumb (a task's title).
@@ -56,6 +57,7 @@ export default function AppHeader({
   // controls stay mounted but out of sight, so they never act on a page nobody sees.
   pageHidden?: boolean;
   className?: string;
+  hideOnDesktop?: boolean;
 }) {
   const t = useTranslations('nav');
   const { can } = usePermissions();
@@ -77,6 +79,7 @@ export default function AppHeader({
       className={cn(
         'relative flex h-12 shrink-0 items-center gap-2 border-b border-sidebar-border px-2 sm:px-3',
         className,
+        hideOnDesktop && 'lg:hidden',
       )}
     >
       <SidebarTrigger />

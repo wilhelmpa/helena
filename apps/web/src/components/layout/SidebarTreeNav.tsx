@@ -82,6 +82,7 @@ function TreeBranch({
   href,
   action,
   activePaths = [],
+  defaultOpen = false,
   children,
 }: {
   id: string;
@@ -89,12 +90,15 @@ function TreeBranch({
   href: string;
   action?: ReactNode;
   activePaths?: string[];
+  defaultOpen?: boolean;
   children: ReactNode;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = usePersistedBoolean(
     `sidebar:tree:${id}`,
-    pathIsActive(pathname, href) || activePaths.some((path) => pathIsActive(pathname, path)),
+    defaultOpen ||
+      pathIsActive(pathname, href) ||
+      activePaths.some((path) => pathIsActive(pathname, path)),
   );
   return (
     <div className="helena-tree-branch">
@@ -136,7 +140,7 @@ export function SidebarPersonalNav({ teamIds }: { teamIds: number[] }) {
   return (
     <section className="helena-sidebar-section">
       <h2>{t('sidebarYou')}</h2>
-      <TreeLink href="/chat">{t('sidebarHomeChat')}</TreeLink>
+      <TreeLink href="/">{t('sidebarHomeChat')}</TreeLink>
       <InboxBadge teamIds={teamIds} />
     </section>
   );
@@ -144,12 +148,14 @@ export function SidebarPersonalNav({ teamIds }: { teamIds: number[] }) {
 
 export function SidebarHomeTree({ teamId }: { teamId: number | null }) {
   const t = useTranslations('nav');
+  const tWorkItems = useTranslations('workItems');
+  const tHome = useTranslations('home');
   const home = homeNavigation(teamId);
   const get = (id: string) => home.find((item) => item.id === id)?.href;
   return (
     <section className="helena-sidebar-section">
       <h2>{t('sidebarProject')}</h2>
-      <TreeBranch id="home:tasks" label={t('workItems')} href="/tasks">
+      <TreeBranch id="home:tasks" label={t('workItems')} href="/tasks" defaultOpen>
         <TreeLink href="/tasks?assignee=me" nested>
           {t('sidebarMyTasks')}
         </TreeLink>
@@ -162,6 +168,7 @@ export function SidebarHomeTree({ teamId }: { teamId: number | null }) {
         label={t('sidebarKnowledge')}
         href="/files"
         activePaths={['/docs']}
+        defaultOpen
       >
         <TreeLink href="/docs" nested>
           {t('docs')}
@@ -176,12 +183,20 @@ export function SidebarHomeTree({ teamId }: { teamId: number | null }) {
           {t('sidebarTemplates')}
         </TreeLink>
       </TreeBranch>
-      <TreeLink href="/">{t('dashboards')}</TreeLink>
+      <TreeBranch id="home:dashboard" label={t('dashboards')} href="/dashboard" defaultOpen>
+        <TreeLink href="/dashboard#projects" nested>
+          {tWorkItems('allTasks.allProjects')}
+        </TreeLink>
+        <TreeLink href="/dashboard#system" nested>
+          {tHome('widgets.system')}
+        </TreeLink>
+      </TreeBranch>
       <TreeBranch
         id="home:auto"
         label={t('sidebarAutomation')}
         href={get('organization') ?? '/agents'}
         activePaths={['/agents', '/schedules', '/activity', '/workflows', '/browsers']}
+        defaultOpen
       >
         <TreeLink href={get('organization') ?? '/organization'} nested>
           {t('sidebarTeamDeciders')}
