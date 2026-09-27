@@ -5,21 +5,28 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { factsFromText } from '../../../../../../packages/finance/src/receipt-text';
 import { parseAmountCents } from '../../../../../../packages/finance/src/money';
 import { receiptEvidenceCases } from './mail-receipt-evidence-cases';
+import { parseMessage, receiptHtmlText } from '@repo/mail';
+import { receiptMime } from '../../../modules/receipts/__tests__/fixtures/html-receipt';
 
 globalThis.fetch = (() => assert.fail('Network requests forbidden')) as unknown as typeof fetch;
 
 const mode = process.argv[2];
 const sample = receiptEvidenceCases.find((entry) => entry.id === process.argv[3])!;
 assert.ok(sample);
-const raw = Buffer.from(`Subject: ${sample.subject}\r\n\r\n${sample.body}\r\n`);
+const raw = sample.html
+  ? receiptMime(sample.body, sample.html)
+  : Buffer.from(`Subject: ${sample.subject}\r\n\r\n${sample.body}\r\n`);
 const sentAt = new Date('2026-09-05');
-const parsed = {
-  subject: sample.subject,
-  text: sample.body,
-  date: sentAt,
-  from: { name: 'Example Transit', address: 'billing@example.test' },
-  attachments: [],
-};
+const parsed = sample.html
+  ? await parseMessage(raw)
+  : {
+      subject: sample.subject,
+      text: sample.body,
+      html: null,
+      date: sentAt,
+      from: { name: 'Example Transit', address: 'billing@example.test' },
+      attachments: [],
+    };
 mock.module('@helena/finance', () => ({ factsFromText, parseAmountCents }));
 const hash = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex');
 const target = { id: 1, teamId: 1, key: 'BFR' };
@@ -32,9 +39,10 @@ const message = {
   rawKey: 'fixture',
   subject: sample.subject,
   textBody: sample.body,
+  htmlBody: parsed.html,
   sentAt,
-  fromName: parsed.from.name,
-  fromAddress: parsed.from.address,
+  fromName: parsed.from!.name,
+  fromAddress: parsed.from!.address,
 };
 const receipts: Record<string, unknown>[] = [];
 const files = new Map<string, Buffer>();
@@ -300,6 +308,7 @@ if (mode.startsWith('intake-')) {
   } else assert.fail('Unknown intake mode');
 } else if (mode === 'history') {
   mock.module('@repo/mail', () => ({
+    receiptHtmlText,
     sha256: hash,
     parseMessage: async (bytes: Buffer) => {
       assert.deepEqual(bytes, raw);
@@ -372,5 +381,17 @@ if (sample.selected) {
   assert.equal(receipts[0]!.status, 'open');
   assert.deepEqual([...files.values()][0], raw);
   assert.ok(indexed.length > 0);
+  if (sample.html) {
+    assert.equal(receipts[0]!.invoiceNumber, 'FICTION-92001');
+    const details = receipts[0]!.details as Record<string, unknown>;
+    assert.deepEqual(details.mailBody, { part: 'text/html-fallback', fallback: 'accepted' });
+    const { backfillMailReceipts } = await import('../../mail-receipt-backfill');
+    const dry = await backfillMailReceipts([
+      { messageId: 10, accountId: 4, projectKey: 'BFR', attachmentIds: [], includeBody: true },
+    ]);
+    assert.equal(dry.missingFacts, 0);
+    assert.deepEqual(dry.reports[0]!.files[0]!.bodyProvenance, details.mailBody);
+    assert.equal(dry.reports[0]!.files[0]!.sha256, hash(raw));
+  }
 }
 console.log(`evidence:${mode}:${sample.id}:ok`);

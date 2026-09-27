@@ -1,5 +1,6 @@
 export * from './parse';
 export * from './sanitize';
+export * from './receipt-html';
 export * from './servers';
 export * from './vault-fs';
 export * from './vault-path';

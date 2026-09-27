@@ -1,5 +1,6 @@
 import { factsFromText, parseAmountCents } from '@helena/finance';
 import type { ExtractedReceipt } from './extract';
+import { selectReceiptBody } from './mail-body';
 
 export const receiptFilename = (name: string) =>
   /rechnung|invoice|receipt|quittung|beleg|gutschrift|storno|mahnung|(?:^|[-_ ])(?:RE|MA)-\d/i.test(
@@ -12,10 +13,18 @@ export const unrelatedFilename = (name: string) =>
   );
 
 export function mailReceiptFacts(
-  mail: { subject: string; textBody: string; fromName: string; fromAddress: string; sentAt: Date },
+  mail: {
+    subject: string;
+    textBody: string;
+    htmlBody?: string | null;
+    fromName: string;
+    fromAddress: string;
+    sentAt: Date;
+  },
   ownIbans: string[] = [],
 ): ExtractedReceipt {
-  const text = mail.textBody.replace(/<[^>]*>/g, '').replace(/\u00a0/g, ' ');
+  const body = selectReceiptBody(mail);
+  const text = body.text.replace(/<[^>]*>/g, '').replace(/\u00a0/g, ' ');
   const facts = factsFromText(text, ownIbans);
   const paid =
     /(?:Sie haben|Rückzahlung insgesamt|Gesamter Rückerstattungsbetrag|Geld erhalten|BEZAHLTER BETRAG|Amount paid|Total charge|Gesamt bezahlt)\s*:?\s*[$€]?\s*([\d.,]+)(?:\s*€)?\s*(?:EUR|USD)?/i.exec(
@@ -45,16 +54,21 @@ export function mailReceiptFacts(
   return {
     ...facts,
     issuer: mail.fromName || facts.issuer || mail.fromAddress,
-    invoiceNumber: facts.invoiceNumber ?? transaction ?? number ?? null,
-    invoiceDate: (refund ? null : facts.invoiceDate) ?? mail.sentAt.toISOString().slice(0, 10),
-    grossCents: paidAmount
-      ? parseAmountCents(paidAmount, 'auto')
-      : (facts.grossCents ??
-        (appleTotal?.[1]
-          ? parseAmountCents(appleTotal[1], 'auto')
-          : purchase
-            ? parseAmountCents(purchase, 'auto')
-            : null)),
+    invoiceNumber:
+      body.issued?.invoiceNumber ?? facts.invoiceNumber ?? transaction ?? number ?? null,
+    invoiceDate:
+      (refund ? null : (body.issued?.invoiceDate ?? facts.invoiceDate)) ??
+      mail.sentAt.toISOString().slice(0, 10),
+    grossCents:
+      body.issued?.grossCents ??
+      (paidAmount
+        ? parseAmountCents(paidAmount, 'auto')
+        : (facts.grossCents ??
+          (appleTotal?.[1]
+            ? parseAmountCents(appleTotal[1], 'auto')
+            : purchase
+              ? parseAmountCents(purchase, 'auto')
+              : null))),
     direction: received ? 'outgoing' : (facts.direction ?? 'incoming'),
     extraction: 'text',
     extractionError: linkedOriginal
@@ -62,6 +76,7 @@ export function mailReceiptFacts(
       : null,
     textExcerpt: text.slice(0, 2000),
     details: {
+      mailBody: body.provenance,
       creditNote: refund || facts.creditNote,
       directDebit: facts.directDebit,
       paymentReference: transaction ?? null,
@@ -70,6 +85,7 @@ export function mailReceiptFacts(
 }
 
 export function hasMailReceiptEvidence(subject: string, facts: ExtractedReceipt): boolean {
+  if (facts.details.mailBody?.fallback === 'accepted') return true;
   const text = facts.textExcerpt ?? '';
   const document =
     /rechnung|invoice|facture|receipt|beleg|quittung|justificatif d[’'](?:achat|paiement)|re[cç]u(?: de)? (?:paiement|achat)/i;

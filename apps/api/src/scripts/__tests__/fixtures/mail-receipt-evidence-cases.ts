@@ -1,4 +1,19 @@
+import {
+  htmlMail,
+  receiptHtml,
+  plainStub,
+} from '../../../modules/receipts/__tests__/fixtures/html-receipt';
+
 export const receiptEvidenceCases = [
+  {
+    id: 'html-receipt-stub',
+    subject: htmlMail.subject,
+    body: plainStub,
+    html: receiptHtml,
+    selected: true,
+    gross: 2380,
+    vat: 380,
+  },
   {
     id: 'settled-workspace-payment',
     subject: 'Example Workspace: Zahlung erhalten',

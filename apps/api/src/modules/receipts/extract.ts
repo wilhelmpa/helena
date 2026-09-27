@@ -10,6 +10,7 @@ import {
 } from '@helena/finance';
 import { parseMessage } from '@repo/mail';
 import { mailReceiptFacts } from './mail-facts';
+import type { MailBodyProvenance } from './mail-body';
 import { extractText, hasProgram, runProgram } from '@repo/vault';
 
 // What Helena reads from a receipt file (docs/helena-decisions/decisions.md §7): the
@@ -24,6 +25,7 @@ export type EInvoiceSource = { kind: 'embedded'; name: string } | { kind: 'file'
 // The part of the facts the table has no column for; kept in helena_receipt.details.
 // A type, not an interface: it must fit the route schema's record of unknown values.
 export type ReceiptDetails = {
+  mailBody?: MailBodyProvenance;
   mailSource?: { messageId: number; threadId: number; kind: 'attachment' | 'body' };
   profile?: string | null;
   typeCode?: string | null;
@@ -180,6 +182,7 @@ export async function extractReceiptFile(
       {
         subject: parsed.subject,
         textBody: parsed.text,
+        htmlBody: parsed.html,
         fromName: parsed.from?.name ?? '',
         fromAddress: parsed.from?.address ?? '',
         sentAt: parsed.date,

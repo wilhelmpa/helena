@@ -120,6 +120,7 @@ export async function backfillMailReceipts(manifest: unknown, apply = false, rev
         receiptId: plan.existingId,
         amountFound: plan.facts.grossCents !== null,
         extractionWarning: plan.facts.extractionError,
+        bodyProvenance: plan.facts.details.mailBody ?? null,
       };
     });
     prepared.push({ entry, input, files, threadId: source.threadId });

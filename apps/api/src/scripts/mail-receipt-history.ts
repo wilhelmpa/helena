@@ -201,6 +201,7 @@ export async function inspectReceiptHistory(
       const facts = mailReceiptFacts({
         subject: mail.subject,
         textBody: mail.text,
+        htmlBody: mail.html,
         fromName: mail.from?.name ?? '',
         fromAddress: mail.from?.address ?? '',
         sentAt: mail.date,

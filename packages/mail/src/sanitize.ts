@@ -37,9 +37,24 @@ export function sanitizeMailHtml(html: string): SanitizedHtml {
   let hasRemoteImages = false;
   const output = sanitizeHtml(html, {
     allowedTags: [...sanitizeHtml.defaults.allowedTags, ...EXTRA_TAGS],
+    nonBooleanAttributes: sanitizeHtml.defaults.nonBooleanAttributes.filter(
+      (name) => name !== 'hidden',
+    ),
     nonTextTags: ['script', 'style', 'textarea', 'option', 'noscript', 'title', 'head'],
     allowedAttributes: {
-      '*': ['style', 'align', 'valign', 'dir', 'lang', 'title', 'width', 'height', 'bgcolor'],
+      '*': [
+        'style',
+        'align',
+        'valign',
+        'dir',
+        'lang',
+        'title',
+        'width',
+        'height',
+        'bgcolor',
+        'hidden',
+        'aria-hidden',
+      ],
       a: ['href', 'name', 'target', 'rel'],
       img: ['src', 'alt', 'width', 'height', 'border', 'data-remote-src'],
       font: ['color', 'face', 'size'],
