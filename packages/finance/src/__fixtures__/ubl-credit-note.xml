@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic UBL 2.1 credit note (fictional parties); two TaxTotal elements, the second in the tax currency -->
+<CreditNote xmlns="urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
+  <cbc:CustomizationID>urn:cen.eu:en16931:2017</cbc:CustomizationID>
+  <cbc:ID>GS-2026-007</cbc:ID>
+  <cbc:IssueDate>2026-09-10</cbc:IssueDate>
+  <cbc:CreditNoteTypeCode>381</cbc:CreditNoteTypeCode>
+  <cbc:DocumentCurrencyCode>USD</cbc:DocumentCurrencyCode>
+  <cbc:TaxCurrencyCode>EUR</cbc:TaxCurrencyCode>
+  <cac:BillingReference>
+    <cac:InvoiceDocumentReference><cbc:ID>MS-10023</cbc:ID></cac:InvoiceDocumentReference>
+  </cac:BillingReference>
+  <cac:AccountingSupplierParty>
+    <cac:Party>
+      <cac:PartyName><cbc:Name>Muster Software</cbc:Name></cac:PartyName>
+    </cac:Party>
+  </cac:AccountingSupplierParty>
+  <cac:AccountingCustomerParty>
+    <cac:Party>
+      <cac:PartyName><cbc:Name>Musterfrau Consulting</cbc:Name></cac:PartyName>
+    </cac:Party>
+  </cac:AccountingCustomerParty>
+  <cac:PaymentMeans>
+    <cbc:PaymentMeansCode>30</cbc:PaymentMeansCode>
+    <cbc:PaymentDueDate>2026-09-24</cbc:PaymentDueDate>
+    <cac:PayeeFinancialAccount><cbc:ID>DE89 3704 0044 0532 0130 00</cbc:ID></cac:PayeeFinancialAccount>
+  </cac:PaymentMeans>
+  <cac:TaxTotal>
+    <cbc:TaxAmount currencyID="EUR">3.50</cbc:TaxAmount>
+  </cac:TaxTotal>
+  <cac:TaxTotal>
+    <cbc:TaxAmount currencyID="USD">3.80</cbc:TaxAmount>
+    <cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="USD">20.00</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="USD">3.80</cbc:TaxAmount>
+      <cac:TaxCategory><cbc:ID>S</cbc:ID><cbc:Percent>19</cbc:Percent><cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme></cac:TaxCategory>
+    </cac:TaxSubtotal>
+  </cac:TaxTotal>
+  <cac:LegalMonetaryTotal>
+    <cbc:LineExtensionAmount currencyID="USD">20.00</cbc:LineExtensionAmount>
+    <cbc:TaxExclusiveAmount currencyID="USD">20.00</cbc:TaxExclusiveAmount>
+    <cbc:TaxInclusiveAmount currencyID="USD">23.80</cbc:TaxInclusiveAmount>
+    <cbc:PayableAmount currencyID="USD">23.80</cbc:PayableAmount>
+  </cac:LegalMonetaryTotal>
+</CreditNote>
