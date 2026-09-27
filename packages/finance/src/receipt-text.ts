@@ -98,7 +98,7 @@ export function factsFromText(text: string, ownIbans: string[] = []): TextFacts 
     dueDate: findDueDate(lines, invoiceDate),
     grossCents: french ? french.gross : findGross(lines),
     vatCents: findVat(lines) ?? french?.vat ?? null,
-    currency: findCurrency(text),
+    currency: findCurrency(lines),
     iban: foreign,
     issuer: findIssuer(lines),
     creditNote: lines
@@ -265,12 +265,69 @@ function pickVat(amounts: number[], rate: number | null): number {
   return amounts[amounts.length - 1] ?? 0;
 }
 
-function findCurrency(text: string): string | null {
-  if (/€|\bEUR\b|\beuros?\b/i.test(text)) return 'EUR';
-  if (/\bUSD\b|US\$|\$\s?\d/.test(text)) return 'USD';
-  if (/\bCHF\b/.test(text)) return 'CHF';
-  if (/\bGBP\b|£/.test(text)) return 'GBP';
-  return null;
+const CURRENCY_TOKEN = String.raw`(?:EUR|USD|CHF|GBP|euros?)(?![a-z])|US\$|[€£$]`;
+const CURRENCY_AMOUNT = String.raw`[-+]?(?:\d{1,3}(?:[.,]\d{3})+|\d+)(?:[.,]\d{2})?`;
+const TOTAL_CURRENCY_LABEL = new RegExp(
+  `^(?:${STRONG_GROSS.source}|amount paid|total paid|paid|payment amount|total charge|invoice total|total amount|(?:prix|montant(?: total)?)\\s+TTC|total|gesamt|summe|betrag)\\b`,
+  'i',
+);
+const CONVERSION =
+  /exchange rate|wechselkurs|conversion|converted|umrechnung|umgerechnet|equivalent/i;
+
+function currencyCode(token: string): string {
+  if (/^(?:EUR|euros?|€)$/i.test(token)) return 'EUR';
+  if (/^(?:USD|US\$|\$)$/i.test(token)) return 'USD';
+  if (/^(?:GBP|£)$/i.test(token)) return 'GBP';
+  return 'CHF';
+}
+
+function currenciesByAmount(text: string): string[] {
+  const found: string[] = [];
+  for (const [pattern, currencyIndex, amountIndex] of [
+    [String.raw`(?<![\w.,/-])(${CURRENCY_TOKEN})\s*(${CURRENCY_AMOUNT})(?![\w.,/%-])`, 1, 2],
+    [String.raw`(?<![\w.,/-])(${CURRENCY_AMOUNT})\s*(${CURRENCY_TOKEN})(?![a-z])`, 2, 1],
+  ] as const) {
+    for (const match of text.matchAll(new RegExp(pattern, 'gi'))) {
+      if (parseAmountCents(match[amountIndex]!, 'auto') !== null)
+        found.push(currencyCode(match[currencyIndex]!));
+    }
+  }
+  return found;
+}
+
+function findCurrency(lines: string[]): string | null {
+  const bound = new Set<string>();
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!;
+    const declaration =
+      /^(?:invoice currency|currency|rechnungswährung|währung)\s*:?\s*(EUR|USD|CHF|GBP)\s*$/i.exec(
+        line,
+      );
+    if (declaration) bound.add(declaration[1]!.toUpperCase());
+    const label = TOTAL_CURRENCY_LABEL.exec(line);
+    if (!label || (NET.test(line) && !GROSS_HINT.test(line))) continue;
+    let value = line.slice(label[0].length).replace(/^\s*:?\s*/, '');
+    value = value.replace(/^(?:incl(?:uding)?\.?\s*(?:VAT|tax)|brutto|TTC)\s*:?\s*/i, '');
+    // A table may put just the monetary value directly below the label.
+    if (!value) value = lines[i + 1] ?? '';
+    // Keep secondary tax/conversion amounts out of the labelled total's value segment.
+    value = value.split(
+      /\b(?:VAT|tax|MwSt|TVA|exchange rate|wechselkurs|conversion|converted|umrechnung|umgerechnet|equivalent)\b/i,
+    )[0]!;
+    for (const code of currenciesByAmount(value)) bound.add(code);
+  }
+  if (bound.size) return bound.size === 1 ? [...bound][0]! : null;
+  // Preserve unambiguous single-currency documents, without choosing by global EUR priority.
+  // A conversion-only amount cannot establish the missing invoice currency.
+  const fallback = new Set<string>();
+  for (const line of lines) {
+    if (CONVERSION.test(line)) continue;
+    for (const token of line.matchAll(
+      /€|\bEUR\b|\beuros?\b|\bUSD\b|US\$|\$(?=\s*[-+]?\d)|\bCHF\b|\bGBP\b|£/gi,
+    ))
+      fallback.add(currencyCode(token[0]));
+  }
+  return fallback.size === 1 ? [...fallback][0]! : null;
 }
 
 const LEGAL_FORM =
