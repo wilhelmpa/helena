@@ -19,6 +19,7 @@ import {
 import SidebarAccountRow from '@/components/brand/SidebarAccountRow';
 import SidebarProjectSwitcher from './SidebarProjectSwitcher';
 import { SidebarHomeTree, SidebarPersonalNav, SidebarProjectTree } from './SidebarTreeNav';
+import { APP_NAME } from '@/utils/app';
 
 export default function AppSidebar({
   projects,
@@ -62,7 +63,7 @@ export default function AppSidebar({
     <Sidebar collapsible="offcanvas" side={side} className="helena-sidebar">
       <SidebarHeader className="helena-sidebar-header">
         <div className="helena-sidebar-brand">
-          <span>HELENA</span>
+          <span>{APP_NAME.toUpperCase()}</span>
           <time suppressHydrationWarning>{clock}</time>
         </div>
         <SidebarProjectSwitcher
