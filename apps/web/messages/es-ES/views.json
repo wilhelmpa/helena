@@ -1,4 +1,6 @@
 {
+  "moveViewUp": "Move view up",
+  "moveViewDown": "Move view down",
   "all": "Todas",
   "newView": "Nueva vista",
   "switchView": "Cambiar de vista",
