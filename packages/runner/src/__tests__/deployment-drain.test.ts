@@ -21,10 +21,18 @@ async function until(check: () => boolean) {
   }
 }
 
-async function fixture(options: { heldClaim?: boolean; capability?: boolean; cli?: string } = {}) {
+async function fixture(
+  options: {
+    heldClaim?: boolean;
+    capability?: boolean;
+    cli?: string;
+    descriptorReload?: boolean;
+  } = {},
+) {
   const dir = await mkdtemp(join(tmpdir(), 'helena-deploy-drain-'));
   cleanup.push(() => rm(dir, { recursive: true, force: true }));
   const requests: string[] = [];
+  const logs: string[] = [];
   let runClaims = 0;
   let chatClaims = 0;
   let held: ServerResponse | undefined;
@@ -113,13 +121,21 @@ async function fixture(options: { heldClaim?: boolean; capability?: boolean; cli
     process.execPath,
     [options.cli ?? join(import.meta.dir, '../cli.ts'), config],
     {
-      stdio: 'ignore',
+      stdio: ['ignore', 'pipe', 'ignore'],
       env: {
         ...process.env,
         ...(options.capability ? { HELENA_RUNNER_DRAIN_STATUS: join(dir, 'status.json') } : {}),
+        ...(options.descriptorReload
+          ? {
+              HERMES_RUNNER_RESTART_REQUEST_PATH: join(dir, 'descriptor-generation'),
+              HERMES_RUNNER_RESTART_BASELINE: '',
+              HERMES_RUNNER_RESTART_MAX_DRAIN_MS: '1000',
+            }
+          : {}),
       },
     },
   );
+  child.stdout?.on('data', (chunk: Buffer) => logs.push(chunk.toString()));
   const exited = new Promise<number | null>((resolve) => child.once('exit', resolve));
   cleanup.push(async () => {
     held?.destroy();
@@ -131,7 +147,9 @@ async function fixture(options: { heldClaim?: boolean; capability?: boolean; cli
       await exited;
     }
     for (const kind of ['manual', 'chat']) {
-      if (existsSync(join(dir, `started-${kind}`)))
+      const release =
+        kind === 'manual' ? '/agent-runs/5/release?claim=1' : '/agent-chats/7/release?claim=1';
+      if (existsSync(join(dir, `started-${kind}`)) && !requests.includes(release))
         await until(() => existsSync(join(dir, `done-${kind}`)));
     }
   });
@@ -141,6 +159,7 @@ async function fixture(options: { heldClaim?: boolean; capability?: boolean; cli
     child,
     exited,
     requests,
+    logs: () => logs.join(''),
     counts: () => [runClaims, chatClaims],
     held: () => held,
     finish: () => writeFile(join(dir, 'finish'), 'finish'),
@@ -244,3 +263,42 @@ it('single SIGINT completes a claim returned after stopping without releasing or
   expect(await readFile(join(f.dir, 'started-manual'), 'utf8')).toBe('once\n');
   expect(await readFile(join(f.dir, 'started-chat'), 'utf8')).toBe('once\n');
 }, 12_000);
+
+it('explicit deployment drain neutralizes an armed descriptor deadline and finishes both claims', async () => {
+  const f = await fixture({ descriptorReload: true, capability: process.platform === 'linux' });
+  await until(() => existsSync(join(f.dir, 'started-chat')));
+  await writeFile(join(f.dir, 'descriptor-generation'), 'changed');
+  await until(() => f.logs().includes('agent descriptors changed'));
+  f.child.kill('SIGINT');
+  const claims = f.counts();
+  await sleep(1_200);
+  expect(f.child.exitCode).toBeNull();
+  expect(f.child.signalCode).toBeNull();
+  expect(f.counts()).toEqual(claims);
+  expect(f.requests.some((path) => path.includes('/release'))).toBe(false);
+  if (process.platform === 'linux') {
+    expect(JSON.parse(await readFile(join(f.dir, 'status.json'), 'utf8')).phase).toBe('draining');
+  }
+  await f.finish();
+  expect(await f.exited).toBe(0);
+  expect(f.requests.filter((path) => path === '/agent-runs/5/result?claim=1')).toHaveLength(1);
+  expect(f.requests.filter((path) => path === '/agent-chats/7/result?claim=1')).toHaveLength(1);
+}, 12_000);
+
+it.skipIf(process.platform !== 'linux')(
+  'does not advertise safe drain after descriptor release already began',
+  async () => {
+    const f = await fixture({ descriptorReload: true, capability: true, heldClaim: true });
+    await until(() => f.held() !== undefined);
+    await writeFile(join(f.dir, 'descriptor-generation'), 'changed');
+    await until(() => f.requests.includes('/agent-runs/5/release?claim=1'));
+    f.child.kill('SIGINT');
+    await sleep(100);
+    expect(f.child.exitCode).toBeNull();
+    expect(JSON.parse(await readFile(join(f.dir, 'status.json'), 'utf8')).phase).toBe('releasing');
+    f.held()!.end('{"message":null}');
+    await f.finish();
+    expect(await f.exited).toBe(0);
+  },
+  12_000,
+);

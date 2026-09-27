@@ -17,6 +17,14 @@ state and restore only the previously active timer after success. These start
 sources otherwise conflict with a pending stop job. The helper checks them and
 refuses; it does not stop unrelated units or change timer enablement.
 
+Before the helper's first `daemon-reload`, Root must persist and verify any intended
+resource-limit changes. A reload can replace an effective runtime `MemoryHigh`
+with a differently ordered persistent drop-in. In the point-3 bootstrap this reset
+Lemonade from runtime 11 GiB to persistent 10 GiB without restarting it; deployment
+correctly stopped before fast-forward. Stage the reviewed persistent 11 GiB file
+first, verify its hash and effective limit after reload, and retain the 12 GiB hard
+limit. Do not replay a completed bootstrap or signal to recover this situation.
+
 Root must run the reviewed deployment script from a stable staged source that is
 not changed during that deployment. Do not fast-forward live before invoking it.
 The script checks the old deployed commit, drains, fast-forwards, builds/installs,
@@ -40,8 +48,10 @@ one `systemctl stop --no-block`. It durably records that request before dispatch
 This follows systemd's documented [stop signal and escalation rules](https://raw.githubusercontent.com/systemd/systemd/main/man/systemd.kill.xml).
 
 `deactivating` is still running work. Success requires `inactive/dead`, zero main
-and control PIDs, the same original nonempty InvocationID, no job, successful exit
-and an empty original cgroup. The helper
+and control PIDs, the same original nonempty InvocationID, no job, successful exit,
+an empty original cgroup, and a final capability matching the old PID/start ticks
+in `running` or `draining` phase. A descriptor deadline which already began releasing
+work is refused even if the process later exits successfully. The helper
 never sends a second signal, cancels a stop job, kills residual processes, or
 removes the runtime override during an active drain.
 
@@ -97,6 +107,12 @@ health evidence, then finish only the deployment audit/marker step. A different
 target needs its own normal drain. The helper intentionally refuses the ambiguous
 same-target full-deploy replay.
 
-No command timeout is changed. The prepared queue's descriptor-reload drain timer
-must be integrated with the explicit deployment drain before this helper is used
-with that later runner implementation.
+No command timeout is changed. The descriptor-compatible runner cancels its marker
+poll, deadline and ten-second exit timer on the first explicit SIGINT, including
+callbacks already queued or a marker read still pending. Ordinary descriptor reloads
+retain their bounded release behavior. Their capability changes to `releasing`
+before any abort; failure to write it leaves work running. If release already began,
+SIGINT stops further timer escalation but cannot undo that release or relabel it as
+a safe deployment drain. The helper therefore refuses completion and preserves its
+state/override for explicit Root review. The separately pinned legacy CLI has no
+descriptor timer and continues to use its own source/process/DB completion guards.

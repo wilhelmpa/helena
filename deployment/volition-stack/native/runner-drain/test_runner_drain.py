@@ -287,6 +287,33 @@ class DrainTest(unittest.TestCase):
         self.assertEqual(len(self.stops()), 1)
         self.assertTrue(self.dropin.exists())
 
+    def test_release_racing_stop_dispatch_cannot_be_acknowledged_as_safe_drain(self):
+        self.system.finish_on_stop = False
+        with self.assertRaisesRegex(module.Refuse, 'Drain still running'):
+            self.controller.drain(TARGET, 0)
+        self.capability.write_text(json.dumps(dict(version=1, pid=123, startTicks='456', phase='releasing')))
+        with self.assertRaisesRegex(module.Refuse, 'phase is unsafe'):
+            self.new_controller().drain(TARGET, 0)
+        self.system.finish()
+        with self.assertRaisesRegex(module.Refuse, 'phase is unsafe'):
+            self.new_controller().drain(TARGET, 0)
+        self.assertEqual(len(self.stops()), 1)
+        self.assertTrue(self.dropin.exists())
+
+    def test_late_releasing_or_stale_identity_cannot_pass_ready_or_activation(self):
+        self.controller.drain(TARGET, 0)
+        for values in [dict(pid=123, startTicks='456', phase='releasing'),
+                       dict(pid=123, startTicks='other-process', phase='running')]:
+            self.capability.write_text(json.dumps(dict(version=1, **values)))
+            with self.assertRaises(module.Refuse):
+                self.new_controller().ready(TARGET)
+        self.capability.write_text(json.dumps(dict(version=1, pid=123, startTicks='456', phase='draining')))
+        self.controller.ready(TARGET)
+        self.capability.write_text(json.dumps(dict(version=1, pid=123, startTicks='456', phase='releasing')))
+        with self.assertRaises(module.Refuse):
+            self.new_controller().activate(TARGET)
+        self.assertTrue(self.dropin.exists())
+
     def test_symlinks_and_open_state_files_are_rejected(self):
         self.controller.file.symlink_to(self.capability)
         with self.assertRaises(OSError):

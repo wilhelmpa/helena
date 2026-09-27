@@ -120,6 +120,10 @@ class Bootstrap(base.Drain):
         # This adapter is restricted to this separate, source-pinned one-shot operator.
         return dict(version=1, pid=int(plan['pid']), startTicks=plan['startTicks'], phase='running')
 
+    def completion_phase_safe(self):
+        # This exact old CLI has no capability file; its separate source/process/DB guards apply.
+        return True
+
     def drain_legacy(self, seconds):
         plan = self.read_plan()
         if self.load() is None:

@@ -184,13 +184,19 @@ class Drain:
                 and snapshot['MainPID'] == self.state['pid']
                 and self.system.identity(snapshot['MainPID']) == self.state['startTicks'])
 
+    def completion_phase_safe(self):
+        capability = json.loads(regular(self.capability, self.runner_uid, 0o600))
+        return (capability.get('version') == 1 and str(capability.get('pid')) == self.state['pid']
+                and capability.get('startTicks') == self.state['startTicks']
+                and capability.get('phase') in ('running', 'draining'))
+
     def drained(self, snapshot):
         return (snapshot['InvocationID'] == self.state['invocation']
                 and snapshot['ActiveState'] == 'inactive' and snapshot['SubState'] == 'dead'
                 and snapshot['MainPID'] == '0' and snapshot['ControlPID'] == '0'
                 and snapshot['Job'] in ('', '0') and snapshot['Result'] == 'success'
                 and snapshot['ExecMainCode'] in ('1', 'exited')
-                and snapshot['ExecMainStatus'] == '0'
+                and snapshot['ExecMainStatus'] == '0' and self.completion_phase_safe()
                 and self.system.empty_group(self.state['group']))
 
     def quiet_start_sources(self):
@@ -292,6 +298,8 @@ class Drain:
                 raise Refuse('Unit files changed during drain')
             if current['InvocationID'] != self.state['invocation']:
                 raise Refuse('Runner invocation changed; no signal sent')
+            if not self.completion_phase_safe():
+                raise Refuse('Recorded runner phase is unsafe or changed; no completed deploy drain')
             if self.drained(current):
                 self.save('drained')
                 return
