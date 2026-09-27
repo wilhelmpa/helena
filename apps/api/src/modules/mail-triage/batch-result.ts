@@ -1,4 +1,4 @@
-import { threadHref } from '../mail/threads/links';
+import { threadHref } from '#modules/mail/threads/links';
 
 type ClassificationResult = {
   status: string;
