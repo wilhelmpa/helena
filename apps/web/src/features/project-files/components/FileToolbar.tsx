@@ -1,5 +1,5 @@
 import { useRef, type ReactNode } from 'react';
-import { Code2, FilePlus, FolderPlus, LayoutGrid, List, NotebookPen, Upload } from 'lucide-react';
+import { Code2, FilePlus, FolderPlus, LayoutGrid, List, Upload } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   PageActions,
@@ -19,8 +19,6 @@ export default function FileToolbar({
   view,
   canCreate,
   codeUrl,
-  canOpenNotes,
-  onOpenNotes,
   uploading,
   onUpload,
   onNewFolder,
@@ -30,15 +28,12 @@ export default function FileToolbar({
   view: ReturnType<typeof useFileBrowserView>;
   canCreate: boolean;
   codeUrl: string;
-  canOpenNotes: boolean;
-  onOpenNotes: () => void;
   uploading: boolean;
   onUpload: (files: File[]) => void;
   onNewFolder: () => void;
   onNewFile: () => void;
 }) {
   const t = useTranslations('files.toolbar');
-  const tActions = useTranslations('files.actions');
   const input = useRef<HTMLInputElement>(null);
   const grid = view.mode === 'grid';
 
@@ -50,14 +45,6 @@ export default function FileToolbar({
       onClick: () => view.setMode(grid ? 'list' : 'grid'),
     },
   ];
-  if (canOpenNotes) {
-    actions.push({
-      id: 'notes',
-      label: tActions('openInNotes'),
-      icon: NotebookPen,
-      onClick: onOpenNotes,
-    });
-  }
   if (codeUrl) {
     actions.push({
       id: 'code',

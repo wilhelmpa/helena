@@ -14,13 +14,14 @@ it is not a claim of deployment.
   author/run provenance and the reader's own conversation links live in that workspace.
   PDF, image, audio/video and Office previews reuse the existing viewers; text extraction now
   reads the actual knowledge endpoint instead of the old `/vault/text` placeholder.
-- The owner opens SilverBullet inside Helena on the separately configured Notes origin. The
-  frame refuses Helena's own origin, credential-bearing URLs and HTTPS→HTTP downgrades. It
-  is sandboxed without top navigation. Reload, loading/error help and a native text editor
-  remain available. An iframe load event does **not** prove successful Notes authentication.
-- SilverBullet is still a whole-vault owner service. Project members use the same original
-  files through Helena's guarded editor; do not grant them whole-vault SilverBullet access.
-  Private files always use Helena. Keep the isolated origin: a SilverBullet note can run code.
+- Owner correction, 2026-09-27: all ordinary file/note use stays inside Helena. The existing
+  native Markdown/source editor is the default for the same canonical SilverBullet vault.
+  No separate Notes domain, iframe option or runtime URL mapping is required or offered.
+  Existing service/data/configuration remain untouched; the unsafe same-origin guard remains.
+- This is shared-vault integration, not full SilverBullet frontend parity. Space Lua, inline
+  expressions, custom plugs/styles, virtual folder pages and offline/PWA behavior remain
+  explicitly outside this release; their source bytes are retained. See
+  `vault-within-helena-2026-09-27.md` for the upstream evidence and acceptance boundary.
 - Chat uploads and initiative uploads store original bytes in the project vault. A PDF stays a
   PDF, including scans; extracted Markdown is a read result, not a replacement for the original.
   Existing `upload_chat_attachment`, `read_chat_attachment`, `write_note`, `read_document`,
@@ -69,17 +70,14 @@ code cannot regain an original PDF that was already discarded; report any such c
    runs/streaming chats, fast-forward/deploy normally. No subagent has deployed this change.
 2. Verify exactly one file menu in Home and a project; no separate Docs, Boards or Notizen
    workspace-tool entry. Open saved `/docs?path=...` and `/notes/<id>` links.
-3. On both current Helena origins, open a Markdown original, edit with embedded SilverBullet,
-   then read the changed bytes via Helena/agent tools. Check Notes session/CSP and websocket
-   behavior. Reload the workspace and confirm persistence. Deliberately test missing/blocked
-   Notes origin and use the native editor without leaving Helena.
-4. The remote Notes hostname previously needed a Cloudflare tunnel route to
-   `http://127.0.0.1:8090` and the Access application's hostname configuration. Confirm that
-   external configuration explicitly; a local frame/unit test does not establish it. The
-   local Notes origin is `https://helena-home.volition.one:8446`. No installation is needed by
-   this implementation. Do not silently weaken authentication if the remote route is absent.
+3. On the actual Helena origin, open Markdown directly in the native editor, edit it and
+   read the same changed bytes via Helena/agent tools. Verify ETag conflict handling,
+   canonical wiki links and persistence after reopening. No Notes domain or sign-in is needed.
+4. Confirm there is no SilverBullet iframe/menu offer even with legacy Notes runtime values.
+   Do not expose the stock SilverBullet frontend on Helena's origin. The existing isolated
+   service/data are preserved; a future full frontend integration needs separate acceptance.
 5. With a permitted agent, create a uniquely named Markdown report and an original PDF/image,
-   attach the report to a ticket without copying, find it in Dateien/SilverBullet, edit it,
+   attach the report to a ticket without copying, find it in Dateien, edit it,
    rename it, then read the same content through the attachment ID and knowledge search.
    Confirm author/run, task and own-chat references. Restart relevant services and repeat read.
 6. With an unrelated account/agent, deny the same file, raw attachment URL and search. A role

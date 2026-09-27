@@ -1,15 +1,12 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import Modal from '@/components/common/overlay/Modal';
 import { resolveVaultPath } from '@/lib/api/endpoints/knowledge';
-import { useSession } from '@/lib/auth-client';
 import UnifiedFileViewer from './UnifiedFileViewer';
-import SilverBulletFrame from './SilverBulletFrame';
 import VaultSearchResults from './VaultSearchResults';
 import { fileRawUrl, type FileScope } from '@/lib/api/endpoints/projectFiles';
 import { useFilesQuery, filesScopeKey } from '@/services/files.service';
 import { runtimeEnv } from '@/utils/runtimeEnv';
-import { baseName, notesVaultFolderUrl, notesFileUrl } from '@/utils/vaultLinks';
+import { baseName } from '@/utils/vaultLinks';
 import { codeFolderUrl } from '@/utils/workspaceTools';
 import { useFileActions } from '../hooks/useFileActions';
 import { useFileBrowserView } from '../hooks/useFileBrowserView';
@@ -55,9 +52,6 @@ export default function FileBrowser({
   const refresh = () => {
     void client.invalidateQueries({ queryKey: filesScopeKey(scope) });
   };
-  const { data: session } = useSession();
-  const owner = session?.user.role === 'god';
-  const [notesOpen, setNotesOpen] = useState(false);
   const listing = useFilesQuery(scope, path);
   const view = useFileBrowserView();
   const [dialog, setDialog] = useState<FileDialogState>(null);
@@ -83,9 +77,6 @@ export default function FileBrowser({
   });
   const workspace = runtimeEnv().workspace;
   const folderCodeUrl = listing.data ? codeFolderUrl(workspace, listing.data.absolutePath) : '';
-  const folderNotesUrl = owner
-    ? notesVaultFolderUrl(workspace.notesUrl, listing.data?.vaultPath ?? '')
-    : '';
   const vaultRoot =
     scope.kind === 'project'
       ? scope.root === 'vault'
@@ -131,8 +122,6 @@ export default function FileBrowser({
         view={view}
         canCreate={can.create}
         codeUrl={folderCodeUrl}
-        canOpenNotes={!!folderNotesUrl}
-        onOpenNotes={() => setNotesOpen(true)}
         uploading={transfers.uploading}
         onUpload={transfers.sendFiles}
         onNewFolder={() => setDialog({ kind: 'newFolder' })}
@@ -184,25 +173,12 @@ export default function FileBrowser({
         onClose={() => setDialog(null)}
       />
 
-      {notesOpen && (
-        <Modal
-          title="SilverBullet"
-          wide="xl"
-          onClose={() => {
-            setNotesOpen(false);
-            refresh();
-          }}
-        >
-          <SilverBulletFrame url={folderNotesUrl} />
-        </Modal>
-      )}
       {viewing && (
         <UnifiedFileViewer
           key={viewing.path}
           scope={scope}
           path={viewing.path}
           canEdit={can.edit}
-          notesUrl={owner ? notesFileUrl(workspace.notesUrl, actions.vaultPath(viewing) ?? '') : ''}
           file={{
             name: viewing.name,
             contentType: viewing.contentType,

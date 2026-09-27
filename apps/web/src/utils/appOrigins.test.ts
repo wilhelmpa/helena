@@ -100,15 +100,15 @@ describe('the runtime env on two origins', () => {
     assert.equal(serverRuntimeEnv('https://evil.example.com').apiUrl, `${PUBLIC}/backend`);
   });
 
-  it('hands out the notes of the origin the page was opened on, on an origin of their own', () => {
+  it('ignores legacy Notes mappings on every Helena origin', () => {
     process.env.HELENA_NOTES_URLS = JSON.stringify({
       [HOME]: `${HOME}:8446/`,
       [PUBLIC]: 'https://notes.example.com',
     });
-    assert.equal(serverRuntimeEnv(HOME).workspace.notesUrl, `${HOME}:8446`);
-    assert.equal(serverRuntimeEnv(PUBLIC).workspace.notesUrl, 'https://notes.example.com');
+    assert.equal(serverRuntimeEnv(HOME).workspace.notesUrl, '');
+    assert.equal(serverRuntimeEnv(PUBLIC).workspace.notesUrl, '');
     // Without a request: the primary origin's.
-    assert.equal(serverRuntimeEnv().workspace.notesUrl, 'https://notes.example.com');
+    assert.equal(serverRuntimeEnv().workspace.notesUrl, '');
     // An origin that has none, a stranger, a path under Helena's own origin, a script URL.
     process.env.HELENA_NOTES_URLS = JSON.stringify({ [PUBLIC]: `${PUBLIC}/notes` });
     assert.equal(serverRuntimeEnv(PUBLIC).workspace.notesUrl, '');

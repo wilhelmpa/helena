@@ -38,10 +38,7 @@ export interface WorkspaceRuntimeEnv {
   browserUrl: string;
   inboxUrl: string;
   connectionsUrl: string;
-  // The notes (SilverBullet on the vault) on the origin this page runs on: an origin of their
-  // own (the home name's second port, or a name of their own through the tunnel), never
-  // under Helena's, because a note may hold script. Empty where they are not installed.
-  // HELENA_NOTES_URLS maps each of Helena's origins to it (notes/install.sh web).
+  // Retained for persisted workspace compatibility; the separate Notes frontend is disabled.
   notesUrl: string;
 }
 
@@ -91,21 +88,6 @@ export function appOrigins(): string[] {
   return parseOrigins(readOrigin('APP_URL'));
 }
 
-// The notes' origin for Helena's origin `here`, from the map HELENA_NOTES_URLS; only an
-// https (or, on a development machine, http) origin, never a path under Helena's own.
-export function notesUrl(map: Record<string, string>, here: string | null): string {
-  if (!here) return '';
-  const value = map[here];
-  if (!value) return '';
-  try {
-    const url = new URL(value);
-    if (url.protocol !== 'https:' && url.protocol !== 'http:') return '';
-    return url.origin === here ? '' : url.origin;
-  } catch {
-    return '';
-  }
-}
-
 function homeUrl(origins: string[]): string {
   const [home] = parseOrigins(readOrigin('HELENA_HOME_URL'));
   return home && origins.includes(home) ? home : '';
@@ -138,7 +120,7 @@ export function serverRuntimeEnv(origin: string | null = null): RuntimeEnv {
       browserUrl: url('BROWSER_URL'),
       inboxUrl: url('INBOX_URL'),
       connectionsUrl: url('CONNECTIONS_URL'),
-      notesUrl: notesUrl(readJsonRecord('HELENA_NOTES_URLS'), here ?? origins[0] ?? null),
+      notesUrl: '',
     },
   };
 }

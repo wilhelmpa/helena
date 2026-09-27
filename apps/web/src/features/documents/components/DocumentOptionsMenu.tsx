@@ -34,7 +34,8 @@ export default function DocumentOptionsMenu({
   onOpenDialog: (dialog: DocumentEditorDialog) => void;
 }) {
   const t = useTranslations('documents');
-  // The note in the notes (a new tab on their own origin), where this origin has them.
+  const tFiles = useTranslations('files.unified');
+  // Open the same canonical file inside Helena, with the current project scope.
   const notes = vaultNotePath(document.path);
 
   return (
@@ -54,7 +55,7 @@ export default function DocumentOptionsMenu({
           <DropdownMenuItem asChild>
             <Link href={notes}>
               <NotebookPen />
-              {t('openInNotes')}
+              {tFiles('editor')}
             </Link>
           </DropdownMenuItem>
         )}

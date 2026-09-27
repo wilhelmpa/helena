@@ -203,17 +203,16 @@ describe('workspaceTools', () => {
       'https://plan.example.com',
       'https://browser.example.com',
       'https://inbox.example.com',
-      'https://notes.example.com',
     ]);
   });
 
-  it('opens the notes on the project’s folder, on their own origin', () => {
-    assert.equal(
-      workspaceTools(config, 'VOL').notes.url,
-      'https://notes.example.com/ordner%3AProjects/VOL',
-    );
-    assert.equal(workspaceTools(config, null).notes.url, 'https://notes.example.com/ordner%3AHome');
-    assert.equal(workspaceTools({ ...config, notesUrl: '' }, 'VOL').notes.url, '');
+  it('keeps legacy Notes panels inert even with a persisted external or same-origin URL', () => {
+    for (const notesUrl of ['https://notes.example.com', 'https://plan.example.com/notes', '']) {
+      const legacy = { ...config, notesUrl };
+      assert.equal(workspaceTools(legacy, 'VOL').notes.url, '');
+      assert.equal(workspaceTools(legacy, null).notes.url, '');
+      assert.ok(!workspaceFrameOrigins(legacy).includes('https://notes.example.com'));
+    }
   });
 
   it('does not expose non-http workspace URLs to an iframe', () => {

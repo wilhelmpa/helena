@@ -1,6 +1,5 @@
 import { hermesProjectCoordinatorUsername } from '@repo/agent-naming';
 import { onThisOrigin, type WorkspaceRuntimeEnv } from './runtimeEnv';
-import { notesFolderUrl } from './vaultLinks';
 import type { ProvisionedProjectResource } from '@/lib/api/endpoints/projects';
 
 // The built-in panel tools, whose frame addresses come from the deployment. Which tools
@@ -207,8 +206,8 @@ export function workspaceTools(
       advancedUrl: '',
     },
     code: { id: 'code', url: codeUrl(config, projectKey, resources), advancedUrl: '' },
-    // The notes on their own origin, opened on the project's folder (or Home's).
-    notes: { id: 'notes', url: notesFolderUrl(config.notesUrl, projectKey), advancedUrl: '' },
+    // Old saved panels remain inert; files and notes use Helena's canonical Files view.
+    notes: { id: 'notes', url: '', advancedUrl: '' },
     browser: {
       id: 'browser',
       url: browserUrl(config, projectKey, resources),
@@ -228,7 +227,6 @@ export function workspaceFrameOrigins(config: WorkspaceRuntimeEnv): string[] {
     config.browserUrl,
     config.inboxUrl,
     config.connectionsUrl,
-    config.notesUrl,
   ];
   const origins = new Set<string>();
   for (const value of candidates) {

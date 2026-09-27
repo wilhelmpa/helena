@@ -12,7 +12,6 @@ import { WebLinksContext } from '@/context/webLinks';
 import { SessionProvider } from '@/lib/auth-client';
 import { filesScopeKey } from '@/services/files.service';
 import { vaultNotePath } from '@/utils/paths';
-import { notesFileUrl } from '@/utils/vaultLinks';
 import { webLinkScope } from '@/utils/webLinkScope';
 import { markdownContent, preserveMarkdownEnding } from '../utils/markdownContent';
 import files from '../../../../messages/en/files.json';
@@ -207,7 +206,6 @@ async function render({
                       }}
                       scope={{ ...scope, projectKey }}
                       path={path}
-                      notesUrl=""
                       canEdit={editable}
                       actions={null}
                       onClose={() => {}}
@@ -339,10 +337,7 @@ it('saves the same file with its original hash, metadata and canonical links int
   assert.ok(content.includes('Assets/chart.png'));
   assert.ok(!content.includes('/protected-media/'));
   assert.ok(content.includes('Saved addition'));
-  assert.equal(
-    notesFileUrl('https://notes.test', target),
-    `https://notes.test/${target.slice(0, -3)}`,
-  );
+  assert.ok(vaultNotePath(target).startsWith('/project/RES/files?'));
 });
 
 it('keeps a local draft and its original hash after a conflicting external write and refetch', async () => {
@@ -401,6 +396,8 @@ it('uses actual file scope in the unified viewer and retains canonical task/chat
   await until(
     () => !!document.querySelector('.tiptap') && !!document.querySelector('a[href="/RES-12"]'),
   );
+  assert.equal(document.querySelector('iframe'), null);
+  assert.ok(!document.body.textContent?.includes(files.unified.silverBullet));
   const source = document.querySelector('a[href="https://example.test/source"]');
   assert.ok(source);
   assert.equal(webLinkScope(source, 'WRONG'), 'RES');
@@ -615,4 +612,31 @@ it('reattaches only exact trailing LF bytes and never trims spaces or normalizes
   assert.equal(preserveMarkdownEnding('body  \n', 'body'), 'body\n');
   assert.notEqual(preserveMarkdownEnding('body  \n', 'body'), 'body  \n');
   assert.notEqual(preserveMarkdownEnding('body\r\n', 'body'), 'body\r\n');
+});
+
+it('preserves SilverBullet-specific source as data without running page expressions', async () => {
+  const before =
+    '# Synthetic note\n\n```space-lua\njs.window.fixtureExecuted = true\n```\n\n${js.window.fixtureExecuted = true}\n';
+  content = before;
+  await render({ viewer: true });
+  await until(() => !!document.querySelector('.tiptap') || !!document.querySelector('textarea'));
+  assert.equal(document.querySelector('iframe'), null);
+  assert.equal(Reflect.get(window, 'fixtureExecuted'), undefined);
+  assert.equal(content, before);
+  assert.equal(
+    requests.some((request) => request.method === 'PUT'),
+    false,
+  );
+  if (!document.querySelector('textarea')) await chooseMode(files.unified.source);
+  const after = before + '\nOrdinary text addition\n';
+  await sourceEdit(after);
+  await until(() => !saveButton().disabled);
+  await act(async () => saveButton().click());
+  await until(() => saveButton().disabled);
+  assert.equal(content, after);
+  assert.equal(Reflect.get(window, 'fixtureExecuted'), undefined);
+  assert.equal(
+    requests.find((request) => request.method === 'PUT')?.body?.expectedEtag,
+    sha(before),
+  );
 });

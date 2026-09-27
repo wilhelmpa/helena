@@ -1,5 +1,11 @@
 # Decision: the notes (SilverBullet as "Notizen")
 
+> Owner correction, 2026-09-27: no Notes domain. The ordinary file/note frontend is now
+> Helena's shared Files view on the same canonical vault. The domain/iframe deployment and
+> acceptance instructions below are historical, not prerequisites for this release. Existing
+> service/data are retained; do not apply these historical remote instructions. See
+> [current scope](vault-within-helena-2026-09-27.md). Full SilverBullet frontend parity is open.
+
 Status: decided by the owner 2026-09-26 ~00:20 ("SilverBullet als Notizen-UI in Helena"), ~00:25 ("dann Obsidian ganz weg"). Built on `hub/notes-silverbullet`. Everything below was checked on 2026-09-25/26 against SilverBullet's source (tag `2.11.1`, commit 1340f73), its documentation, the release assets, and by running the release binary on a scratch vault on Kingston (plain, sandboxed with systemd, and behind the rendered nginx entry).
 
 **In one paragraph:** SilverBullet 2.11.1 (MIT, one static Rust binary) serves Helena's vault as the tool "Notizen". It runs on **an origin of its own**, never under Helena's: every page of a space may carry script that runs in the viewer's browser, and agents write into the vault. The owner reaches it at home on `https://helena-home.volition.one:8446` (his Helena session is the key) and from outside on `https://helena-notes.volition.one` (Cloudflare Access; owner step). The service has no network, sees neither `Private/` nor the vault's git history, has no shell, and listens on a Unix socket only nginx can reach. Obsidian is gone as a product concept; Syncthing stays as plain file sync ("Geräte").

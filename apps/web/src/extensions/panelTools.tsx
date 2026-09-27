@@ -96,8 +96,7 @@ for (const tool of [
     projectScoped: true,
   }),
   builtin('code', Code2, 30, { kind: 'workspace' }, { inHeader: true, projectScoped: true }),
-  // The notes (SilverBullet on the vault), on an origin of their own; offered only where
-  // this origin has an address for them (utils/runtimeEnv notesUrl).
+  // Retain the old panel ID for persisted layouts, without a separate Notes frontend.
   builtin(
     'notes',
     NotebookPen,
