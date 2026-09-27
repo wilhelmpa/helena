@@ -14,7 +14,7 @@
 
 .large {
   display: block;
-  width: min(9rem, 35vw);
+  width: var(--orb-size, min(20rem, 55vw));
   aspect-ratio: 1;
   margin-inline: auto;
 }
@@ -24,7 +24,7 @@
 }
 
 .large.idle signal-orb {
-  filter: hue-rotate(90deg) saturate(0.8);
+  filter: hue-rotate(90deg);
 }
 
 .large.error signal-orb {

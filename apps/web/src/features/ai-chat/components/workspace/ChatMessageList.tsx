@@ -236,7 +236,7 @@ function ChatTranscript({
               );
             })}
             {orbState && (
-              <div className="flex justify-start py-1">
+              <div className="flex justify-start py-1" style={{ ['--orb-size' as string]: '7rem' }}>
                 <AgentStatusOrb
                   state={orbState}
                   size="large"

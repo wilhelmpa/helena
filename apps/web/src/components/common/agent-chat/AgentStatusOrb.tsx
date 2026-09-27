@@ -102,7 +102,7 @@ export default function AgentStatusOrb({
       {motionEnabled && motionAllowed && online && animated && ready ? (
         createElement('signal-orb', {
           state: shipnotesState[state],
-          particles: '4000',
+          particles: '8000',
           'aria-hidden': true,
         })
       ) : (
