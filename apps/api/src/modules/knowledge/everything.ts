@@ -39,6 +39,7 @@ import {
   sourceParams,
 } from './everything-model';
 import { knowledgeReach } from './reach';
+import { canAccess, vaultScope } from './scope';
 
 // The second brain's one search: every registered knowledge source (tasks, comments,
 // notes and files, mail, chats, agent runs, a plugin's own) through one index, filtered
@@ -115,6 +116,21 @@ export const everythingRoutes = new Elysia({
     '/knowledge/find',
     async ({ user, request, query }) => {
       const reach = await reachOf(user, request);
+      const projectId = await projectIdByKey(query.project);
+      if (projectId && !reach.projects.get(projectId)?.size) {
+        throw new HttpError(403, 'You cannot search this project');
+      }
+      const folder = folderOf(query.folder);
+      if (
+        folder &&
+        !canAccess(
+          await vaultScope(requireUser(user), isMcpRequest(request.headers), request.headers),
+          folder,
+          'read',
+        )
+      ) {
+        throw new HttpError(403, 'You cannot search this folder');
+      }
       const sources = query.sources
         ?.split(',')
         .map((source) => source.trim())
@@ -124,8 +140,8 @@ export const everythingRoutes = new Elysia({
         {
           q: query.q,
           sources: sources && sources.length > 0 ? sources : undefined,
-          projectId: await projectIdByKey(query.project),
-          folder: folderOf(query.folder),
+          projectId,
+          folder,
           limit: query.limit ?? 20,
         },
         (await syncEmbedder()) ? ((await semanticRetriever()) ?? undefined) : undefined,

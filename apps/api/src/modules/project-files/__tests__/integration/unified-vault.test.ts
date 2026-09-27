@@ -62,6 +62,188 @@ async function tool(key: string, name: string, args: Record<string, unknown>) {
 }
 
 describe('one canonical project vault', () => {
+  it('keeps agent notes and image artifacts linked to one ticket across owner edits and project boundaries', async () => {
+    const { owner, api, view, issue, files } = await setup();
+    await api.projects.post({ key: 'OPS', name: 'Operations' });
+    const otherView = (await api.projects({ projectKey: 'OPS' }).get()).data!;
+    const otherProject = otherView.project;
+    const otherIssue = (
+      await api.projects({ projectKey: 'OPS' }).issues.post({
+        title: 'Other project ticket',
+        columnId: otherView.columns[0].id,
+      })
+    ).data!;
+    await api.teams({ teamId: view.project.teamId }).mcp.patch({
+      enabled: true,
+      projects: [
+        { projectId: view.project.id, enabled: true },
+        { projectId: otherProject.id, enabled: true },
+      ],
+    });
+    const writer = (
+      await createAgent(api, 'MKT', { name: 'Writer', username: 'writer', kind: 'external' })
+    ).data!;
+    const reader = (
+      await createAgent(api, 'MKT', { name: 'Reader', username: 'reader', kind: 'external' })
+    ).data!;
+    const outsider = (
+      await createAgent(api, 'OPS', { name: 'Outsider', username: 'outsider', kind: 'external' })
+    ).data!;
+    const notePath = 'Projects/MKT/Docs/HelenaSixProof.md';
+    const written = await tool(writer.apiKey!, 'write_note', {
+      path: notePath,
+      content: '# HelenaSixProof\n\nDecision for [[MKT-1]].',
+    });
+    expect(written.structuredContent).toMatchObject({
+      ok: true,
+      status: 200,
+      data: { path: notePath },
+    });
+    const noteLink = await tool(writer.apiKey!, 'link_attachment', {
+      issueId: issue.id,
+      path: 'Docs/HelenaSixProof.md',
+    });
+    expect(noteLink.structuredContent).toMatchObject({
+      ok: true,
+      status: 201,
+      data: { vaultPath: notePath, linked: true },
+    });
+
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9dXFcAAAAASUVORK5CYII=',
+      'base64',
+    );
+    const uploaded = await tool(writer.apiKey!, 'upload_chat_attachment', {
+      projectKey: 'MKT',
+      filename: 'HelenaSixArtifact.png',
+      contentBase64: png.toString('base64'),
+    });
+    expect(uploaded.structuredContent).toMatchObject({ ok: true, status: 201 });
+    const artifact = uploaded.structuredContent.data as { id: string; vaultPath: string };
+    expect(artifact.vaultPath).toBe('Projects/MKT/Files/Chat Attachments/HelenaSixArtifact.png');
+    const artifactLink = await tool(writer.apiKey!, 'link_attachment', {
+      issueId: issue.id,
+      path: 'Files/Chat Attachments/HelenaSixArtifact.png',
+    });
+    expect(artifactLink.structuredContent).toMatchObject({
+      ok: true,
+      status: 201,
+      data: { vaultPath: artifact.vaultPath, linked: true },
+    });
+    const [noteEntry] = await db.select().from(vaultEntry).where(eq(vaultEntry.path, notePath));
+    expect(noteEntry.projectId).toBe(view.project.id);
+    expect(
+      (await db.select().from(vaultEntry).where(eq(vaultEntry.path, artifact.vaultPath)))[0]
+        .projectId,
+    ).toBe(view.project.id);
+    expect(await readFile(path.join(vault, artifact.vaultPath))).toEqual(png);
+
+    const ownerRead = await api.knowledge.documents.get({ query: { path: notePath } });
+    expect(ownerRead.data).toMatchObject({ kind: 'note', projectKey: 'MKT' });
+    expect(
+      (
+        await api.knowledge.notes.put({
+          path: notePath,
+          content: '# HelenaSixProof\n\nOwner revision for [[MKT-1]].',
+          expectedSha: ownerRead.data!.sha256,
+        })
+      ).status,
+    ).toBe(200);
+    const renamedNote = 'Projects/MKT/Docs/HelenaSixReviewed.md';
+    expect((await api.knowledge.move.post({ from: notePath, to: renamedNote })).status).toBe(200);
+    const renamedArtifact = 'Files/Chat Attachments/HelenaSixReviewed.png';
+    expect(
+      (
+        await files.move.post({
+          from: 'Files/Chat Attachments/HelenaSixArtifact.png',
+          to: renamedArtifact,
+        })
+      ).status,
+    ).toBe(200);
+    const links = (await api.issues({ issueId: issue.id }).attachments.get()).data!;
+    expect(links.map((link) => link.vaultPath).sort()).toEqual(
+      [`Projects/MKT/${renamedArtifact}`, renamedNote].sort(),
+    );
+    expect(links.every((link) => link.linked && !link.missing)).toBe(true);
+    const raw = await app.handle(
+      new Request(
+        `http://localhost/projects/MKT/files/raw?path=${encodeURIComponent(renamedArtifact)}`,
+        { headers: { cookie: owner.cookie } },
+      ),
+    );
+    expect(raw.status).toBe(200);
+    expect(Buffer.from(await raw.arrayBuffer())).toEqual(png);
+    const ticketFile = await app.handle(
+      new Request(`http://localhost/attachments/${artifactLink.structuredContent.data.id}/view`, {
+        headers: { cookie: owner.cookie },
+      }),
+    );
+    expect(ticketFile.status).toBe(200);
+    expect(Buffer.from(await ticketFile.arrayBuffer())).toEqual(png);
+    const ticketNote = await app.handle(
+      new Request(`http://localhost/attachments/${noteLink.structuredContent.data.id}/view`, {
+        headers: { cookie: owner.cookie },
+      }),
+    );
+    expect(ticketNote.status).toBe(200);
+    expect(await ticketNote.text()).toContain('Owner revision');
+    expect(
+      (await files.references.get({ query: { path: 'Docs/HelenaSixReviewed.md' } })).data!.links,
+    ).toContainEqual(expect.objectContaining({ kind: 'ticket', href: '/project/MKT/issue/1' }));
+    expect(
+      (await files.references.get({ query: { path: renamedArtifact } })).data!.links,
+    ).toContainEqual(expect.objectContaining({ kind: 'ticket', href: '/project/MKT/issue/1' }));
+
+    for (const [query, expectedPath] of [
+      ['HelenaSixProof', renamedNote],
+      ['HelenaSixReviewed', `Projects/MKT/${renamedArtifact}`],
+    ]) {
+      const found = await tool(reader.apiKey!, 'search_knowledge', {
+        q: query,
+        project: 'MKT',
+        sources: 'vault',
+      });
+      expect(
+        found.structuredContent.data.items.some(
+          (hit: { path: string }) => hit.path === expectedPath,
+        ),
+      ).toBe(true);
+    }
+    const readNote = await tool(reader.apiKey!, 'read_document', { path: renamedNote });
+    expect(readNote.structuredContent.data.content).toContain('Owner revision');
+    const readArtifact = await tool(reader.apiKey!, 'read_chat_attachment', {
+      publicId: artifact.id,
+    });
+    expect(readArtifact.structuredContent.data.vaultPath).toBe(`Projects/MKT/${renamedArtifact}`);
+    const readerRaw = await app.handle(
+      new Request(
+        `http://localhost/projects/MKT/files/raw?path=${encodeURIComponent(renamedArtifact)}`,
+        { headers: { 'x-api-key': reader.apiKey! } },
+      ),
+    );
+    expect(readerRaw.status).toBe(200);
+    expect(Buffer.from(await readerRaw.arrayBuffer())).toEqual(png);
+
+    for (const [name, args] of [
+      ['read_document', { path: renamedNote }],
+      ['read_chat_attachment', { publicId: artifact.id }],
+      ['search_knowledge', { q: 'HelenaSixProof', project: 'MKT' }],
+      ['search_knowledge', { q: 'HelenaSixProof', folder: 'Projects/MKT/Docs' }],
+      ['link_attachment', { issueId: issue.id, path: 'Docs/HelenaSixReviewed.md' }],
+    ] as const) {
+      const denied = await tool(outsider.apiKey!, name, args);
+      expect(denied.structuredContent).toMatchObject({ ok: false, status: 403 });
+    }
+    const foreignLink = await tool(outsider.apiKey!, 'link_attachment', {
+      issueId: otherIssue.id,
+      path: 'Docs/HelenaSixReviewed.md',
+    });
+    expect(foreignLink.isError).toBe(true);
+    expect((await api.issues({ issueId: otherIssue.id }).attachments.get()).data).toEqual([]);
+    const unscoped = await tool(outsider.apiKey!, 'search_knowledge', { q: 'HelenaSixProof' });
+    expect(unscoped.structuredContent.data.items).toEqual([]);
+  });
+
   it('agent artifact → ticket → editor → moved file → agent search/read, with actor and ACL', async () => {
     const { owner, api, view, issue, files } = await setup();
     await api
