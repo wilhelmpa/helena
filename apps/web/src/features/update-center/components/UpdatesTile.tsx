@@ -1,5 +1,6 @@
 'use client';
 
+import { useNow } from '@/features/provider-limits/hooks/useNow';
 import { useTranslations } from 'next-intl';
 import { FigureTile } from '@/features/home/dashboard/DashboardParts';
 import { useUpdateCenter } from '../services/updateCenter.service';
@@ -13,6 +14,7 @@ export default function UpdatesTile() {
   const t = useTranslations('updates');
   const tHome = useTranslations('home');
   const center = useUpdateCenter(true).data;
+  const now = useNow(60_000);
   if (!center) return null;
   const security = center.counts.security;
   const headline = headlineUpdate(center.items);
@@ -21,7 +23,7 @@ export default function UpdatesTile() {
     latestAction?.automatic &&
     latestAction.state !== 'running' &&
     (latestAction.state === 'failed' ||
-      Date.now() - Date.parse(latestAction.finishedAt ?? '') < 24 * 60 * 60_000)
+      (now !== null && now - Date.parse(latestAction.finishedAt ?? '') < 24 * 60 * 60_000))
       ? latestAction
       : null;
   if (center.counts.updates === 0 && !latest) return null;

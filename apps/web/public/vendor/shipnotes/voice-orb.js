@@ -1,6 +1,7 @@
 // Voice Orb / Ship Notes. Copyright (c) 2026 Ship Notes. SPDX-License-Identifier: MIT.
 // Source: https://github.com/aqualang89/shipnotes-components/blob/main/components/voice-orb/voice-orb.js
 // Vendored with property setters and external band input; see NOTICE and THIRD-PARTY-LICENSES.md.
+/* eslint-disable -- vendored third-party code, kept close to upstream */
 (() => {
   if (customElements.get('voice-orb')) return;
   const STATES = ['idle', 'listening', 'thinking', 'speaking'];
