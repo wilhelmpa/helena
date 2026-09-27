@@ -256,20 +256,30 @@ def _extract(entries, reader, destination, seen, links) -> None:
 
 def command(args: list[str], *, cwd: Path | None = None, user: str | None = None,
             timeout: int = 60) -> str:
-    env = {"PATH": "/usr/local/bin:/usr/bin:/bin", "HOME": str(cwd or "/tmp"),
-           "LC_ALL": "C", "NPM_CONFIG_USERCONFIG": "/dev/null",
-           "NPM_CONFIG_GLOBALCONFIG": "/dev/null", "NPM_CONFIG_REGISTRY": "https://registry.npmjs.org",
-           "NPM_CONFIG_CACHE": str((cwd or Path("/tmp")) / ".npm"),
-           "NPM_CONFIG_UPDATE_NOTIFIER": "false"}
-    if user and os.geteuid() == 0:
-        args = ["/usr/sbin/runuser", "-u", user, "--", "setpriv", "--no-new-privs", "--", *args]
-    result = subprocess.run(args, cwd=cwd, env=env, text=True, stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT, timeout=timeout)
-    if result.returncode:
-        # Package scripts and npm logs can echo user configuration. Report command identity
-        # and code only; our step log explains which bounded operation failed.
-        raise ToolError(f"{Path(args[0]).name} failed (exit {result.returncode})")
-    return result.stdout
+    # A version command may create configuration even inside a frozen installation.
+    # Never use a passwd HOME, an owner's profile, shared /tmp or the release tree.
+    home_scope = (tempfile.TemporaryDirectory(prefix="helena-host-tool-", dir="/tmp")
+                  if user else contextlib.nullcontext(None))
+    with home_scope as temporary:
+        home = Path(temporary) if temporary else (cwd or Path("/tmp"))
+        if temporary and os.geteuid() == 0:
+            account = pwd.getpwnam(user)
+            os.chown(home, account.pw_uid, account.pw_gid)
+        env = {"PATH": "/usr/local/bin:/usr/bin:/bin", "HOME": str(home),
+               "LC_ALL": "C", "NPM_CONFIG_USERCONFIG": "/dev/null",
+               "NPM_CONFIG_GLOBALCONFIG": "/dev/null", "NPM_CONFIG_REGISTRY": "https://registry.npmjs.org",
+               "NPM_CONFIG_CACHE": str((cwd or home) / ".npm"),
+               "NPM_CONFIG_UPDATE_NOTIFIER": "false"}
+        if user and os.geteuid() == 0:
+            args = ["/usr/sbin/runuser", "--preserve-environment", "-u", user, "--",
+                    "setpriv", "--no-new-privs", "--", *args]
+        result = subprocess.run(args, cwd=cwd, env=env, text=True, stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT, timeout=timeout)
+        if result.returncode:
+            # Package scripts and npm logs can echo user configuration. Report command identity
+            # and code only; our step log explains which bounded operation failed.
+            raise ToolError(f"{Path(args[0]).name} failed (exit {result.returncode})")
+        return result.stdout
 
 
 @contextlib.contextmanager

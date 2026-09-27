@@ -367,13 +367,74 @@ class HostToolsTest(unittest.TestCase):
 
     def test_privilege_drop_resolves_runuser_without_widening_child_path(self):
         with mock.patch.object(h.os, "geteuid", return_value=0), mock.patch.object(
+                h.os, "chown") as chown, mock.patch.object(
                 h.subprocess, "run", return_value=mock.Mock(returncode=0, stdout="65534\n")) as run:
             result = h.command(["/usr/bin/id", "-u"], user="nobody", timeout=5)
         self.assertEqual(result, "65534\n")
-        self.assertEqual(run.call_args.args[0], ["/usr/sbin/runuser", "-u", "nobody", "--",
+        self.assertEqual(run.call_args.args[0], ["/usr/sbin/runuser", "--preserve-environment", "-u", "nobody", "--",
                          "setpriv", "--no-new-privs", "--", "/usr/bin/id", "-u"])
         self.assertEqual(run.call_args.kwargs["env"]["PATH"], "/usr/local/bin:/usr/bin:/bin")
         self.assertEqual(run.call_args.kwargs["timeout"], 5)
+        home = Path(run.call_args.kwargs["env"]["HOME"])
+        self.assertTrue(str(home).startswith("/tmp/helena-host-tool-"))
+        self.assertFalse(home.exists())
+        account = h.pwd.getpwnam("nobody")
+        chown.assert_called_once_with(home, account.pw_uid, account.pw_gid)
+
+    def test_version_and_frozen_prepared_smoke_use_private_home(self):
+        tree = self.root / "code-fixture"
+        (tree / "bin").mkdir(parents=True)
+        binary = tree / "bin/code-server"
+        binary.write_text("#!/bin/sh\n"
+                          "case \"$HOME\" in /tmp/helena-host-tool-*) ;; *) exit 37;; esac\n"
+                          "test \"$HOME\" != \"$PWD\" || exit 38\n"
+                          "mkdir -p \"$HOME/.config/code-server\" || exit 39\n"
+                          "printf fixture > \"$HOME/.config/code-server/config.yaml\"\n"
+                          "printf '4.139.1\\n'\n")
+        binary.chmod(0o755)
+        h.freeze_tree(tree)
+        tree.chmod(0o555)  # Even the local fixture owner cannot use the release as HOME.
+        self.addCleanup(tree.chmod, 0o755)
+        self.assertFalse(tree.stat().st_mode & 0o222)
+        self.assertEqual(h.command([str(binary), "--version"], user="nobody").strip(), "4.139.1")
+        h.binary_smoke("code-server", tree, "4.139.1")
+        self.assertFalse((tree / ".config").exists())
+        self.assertEqual(sorted(p.name for p in tree.iterdir()), ["bin"])
+
+    def test_private_home_preserves_controlled_npm_cache_and_drops_owner_env(self):
+        homes = []
+        def run(args, **kwargs):
+            env = kwargs["env"]
+            home = Path(env["HOME"])
+            homes.append(home)
+            self.assertEqual(home.stat().st_mode & 0o777, 0o700)
+            self.assertNotEqual(home, self.root)
+            self.assertEqual(env["NPM_CONFIG_CACHE"], str(self.root / ".npm"))
+            self.assertEqual(env["NPM_CONFIG_USERCONFIG"], "/dev/null")
+            self.assertEqual(env["NPM_CONFIG_GLOBALCONFIG"], "/dev/null")
+            self.assertNotIn("OWNER_SECRET_FIXTURE", env)
+            self.assertNotIn("XDG_CONFIG_HOME", env)
+            return mock.Mock(returncode=0, stdout="ok")
+        with mock.patch.dict(os.environ, {"HOME": "/private-owner-home", "XDG_CONFIG_HOME": "/private-owner-config", "OWNER_SECRET_FIXTURE": "synthetic"}), mock.patch.object(h.subprocess, "run", side_effect=run):
+            for _ in range(2):
+                h.command(["synthetic-npm"], cwd=self.root, user="nobody")
+        self.assertNotEqual(homes[0], homes[1])
+        self.assertTrue(all(not p.exists() for p in homes))
+
+    def test_private_home_is_cleaned_after_error_or_timeout(self):
+        homes = []
+        for fail in (False, True):
+            def run(args, **kwargs):
+                home = Path(kwargs["env"]["HOME"])
+                homes.append(home)
+                (home / "temporary-config").write_text("synthetic")
+                if fail:
+                    raise subprocess.TimeoutExpired(args, kwargs["timeout"])
+                return mock.Mock(returncode=1, stdout="synthetic private failure detail")
+            with mock.patch.object(h.subprocess, "run", side_effect=run):
+                with self.assertRaises(subprocess.TimeoutExpired if fail else h.ToolError):
+                    h.command(["synthetic-version"], user="nobody", timeout=1)
+        self.assertTrue(all(not p.exists() for p in homes))
 
     def test_binary_smoke_executes_fixture_and_matches_version(self):
         tree = self.root / "fixture"
