@@ -115,5 +115,17 @@
   "catchUp": "Après une panne",
   "catchUpSkip": "Ignorer les horaires manqués",
   "catchUpOnce": "Exécuter une fois le dernier horaire manqué",
-  "catchUpHint": "Quand le serveur était arrêté à un horaire prévu. Les horaires manqués plus anciens ne s’exécutent jamais."
+  "catchUpHint": "Quand le serveur était arrêté à un horaire prévu. Les horaires manqués plus anciens ne s’exécutent jamais.",
+  "gateSource": "Signal de vérification préalable",
+  "gateSourceNone": "Aucun signal configuré",
+  "gateSourceMail": "Boîte mail du projet",
+  "gateSourceAudit": "Tickets ouverts du projet",
+  "gateMode": "Mode de vérification préalable",
+  "gateOff": "Désactivé",
+  "gateShadow": "Observation : consigner le résultat et exécuter normalement",
+  "gateActive": "Actif : ignorer uniquement avec l’accord du propriétaire",
+  "gateHint": "Le mode observation est activé par défaut. Seul un propriétaire du projet peut activer l’ignorance. Si le signal est absent ou incertain, l’exécution démarre toujours.",
+  "gateResult": "Vérification préalable : {recommendation} · {reason} · {counts}",
+  "gateRun": "exécuter",
+  "gateSkip": "ignorer"
 }

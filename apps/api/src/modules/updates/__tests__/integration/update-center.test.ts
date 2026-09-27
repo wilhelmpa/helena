@@ -959,7 +959,10 @@ describe('update center: Hermes', () => {
     const { agent, runner } = await hermesAgent(api);
     await db
       .update(aiAgent)
-      .set({ runtimeState: { adapter: 'hermes', capabilities: ['update'] }, lastSeenAt: new Date() })
+      .set({
+        runtimeState: { adapter: 'hermes', capabilities: ['update'] },
+        lastSeenAt: new Date(),
+      })
       .where(eq(aiAgent.id, agent.id));
     const checking = runUpdateCheck({ only: 'hermes', manual: true });
     await answerNext(runner, () => ({

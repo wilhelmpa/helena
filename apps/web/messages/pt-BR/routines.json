@@ -115,5 +115,17 @@
   "catchUp": "Após uma queda",
   "catchUpSkip": "Ignorar horários perdidos",
   "catchUpOnce": "Executar uma vez o último horário perdido",
-  "catchUpHint": "Quando o servidor estava parado num horário agendado. Horários perdidos mais antigos nunca são executados."
+  "catchUpHint": "Quando o servidor estava parado num horário agendado. Horários perdidos mais antigos nunca são executados.",
+  "gateSource": "Sinal de verificação prévia",
+  "gateSourceNone": "Nenhum sinal configurado",
+  "gateSourceMail": "Caixa de entrada do projeto",
+  "gateSourceAudit": "Tickets abertos do projeto",
+  "gateMode": "Modo de verificação prévia",
+  "gateOff": "Desativado",
+  "gateShadow": "Sombra: registrar o resultado e executar normalmente",
+  "gateActive": "Ativo: ignorar somente com aprovação do proprietário",
+  "gateHint": "O modo sombra é o padrão. Somente um proprietário do projeto pode ativar a opção de ignorar. Se o sinal estiver ausente ou incerto, a execução sempre começa.",
+  "gateResult": "Verificação prévia: {recommendation} · {reason} · {counts}",
+  "gateRun": "executar",
+  "gateSkip": "ignorar"
 }

@@ -115,5 +115,17 @@
   "catchUp": "Setelah server mati",
   "catchUpSkip": "Lewati waktu yang terlewat",
   "catchUpOnce": "Jalankan waktu terlewat terakhir sekali",
-  "catchUpHint": "Saat server mati pada waktu terjadwal. Waktu terlewat yang lebih lama tidak pernah dijalankan."
+  "catchUpHint": "Saat server mati pada waktu terjadwal. Waktu terlewat yang lebih lama tidak pernah dijalankan.",
+  "gateSource": "Sinyal pemeriksaan awal",
+  "gateSourceNone": "Belum ada sinyal yang dikonfigurasi",
+  "gateSourceMail": "Kotak surat proyek",
+  "gateSourceAudit": "Tiket proyek yang terbuka",
+  "gateMode": "Mode pemeriksaan awal",
+  "gateOff": "Nonaktif",
+  "gateShadow": "Bayangan: catat hasil dan jalankan seperti biasa",
+  "gateActive": "Aktif: lewati hanya dengan persetujuan pemilik",
+  "gateHint": "Mode bayangan adalah pengaturan awal. Hanya pemilik proyek yang dapat mengaktifkan pelewatan. Jika sinyal tidak ada atau tidak pasti, proses selalu dijalankan.",
+  "gateResult": "Pemeriksaan awal: {recommendation} · {reason} · {counts}",
+  "gateRun": "jalankan",
+  "gateSkip": "lewati"
 }

@@ -115,5 +115,17 @@
   "catchUp": "Tras una caída",
   "catchUpSkip": "Omitir las horas perdidas",
   "catchUpOnce": "Ejecutar una vez la última hora perdida",
-  "catchUpHint": "Cuando el servidor no estaba en marcha a una hora programada. Las horas perdidas más antiguas nunca se ejecutan."
+  "catchUpHint": "Cuando el servidor no estaba en marcha a una hora programada. Las horas perdidas más antiguas nunca se ejecutan.",
+  "gateSource": "Señal de comprobación previa",
+  "gateSourceNone": "Ninguna señal configurada",
+  "gateSourceMail": "Buzón del proyecto",
+  "gateSourceAudit": "Tickets abiertos del proyecto",
+  "gateMode": "Modo de comprobación previa",
+  "gateOff": "Desactivado",
+  "gateShadow": "Sombra: registrar el resultado y ejecutar normalmente",
+  "gateActive": "Activo: omitir solo con aprobación del propietario",
+  "gateHint": "El modo sombra es el predeterminado. Solo un propietario del proyecto puede activar la omisión. Si falta la señal o es incierta, la ejecución siempre comienza.",
+  "gateResult": "Comprobación previa: {recommendation} · {reason} · {counts}",
+  "gateRun": "ejecutar",
+  "gateSkip": "omitir"
 }

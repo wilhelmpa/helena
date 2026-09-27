@@ -115,5 +115,17 @@
   "catchUp": "停机之后",
   "catchUpSkip": "跳过错过的时间",
   "catchUpOnce": "补运行一次最近错过的时间",
-  "catchUpHint": "当服务器在计划时间未运行时适用。更早错过的时间永远不会补运行。"
+  "catchUpHint": "当服务器在计划时间未运行时适用。更早错过的时间永远不会补运行。",
+  "gateSource": "预检查信号",
+  "gateSourceNone": "未配置信号",
+  "gateSourceMail": "项目邮箱",
+  "gateSourceAudit": "未关闭的项目工单",
+  "gateMode": "预检查模式",
+  "gateOff": "关闭",
+  "gateShadow": "影子模式：记录结果并照常运行",
+  "gateActive": "启用：仅在所有者批准后跳过",
+  "gateHint": "默认使用影子模式。只有项目所有者可以启用跳过。信号缺失或不确定时，始终照常运行。",
+  "gateResult": "预检查：{recommendation} · {reason} · {counts}",
+  "gateRun": "运行",
+  "gateSkip": "跳过"
 }
