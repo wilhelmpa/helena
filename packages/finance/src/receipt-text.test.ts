@@ -5,6 +5,26 @@ import { factsFromText } from './receipt-text';
 const OWN = 'DE89370400440532013000';
 
 describe('factsFromText', () => {
+  test.each([
+    ['Prix TTC 2.55 euros dont 0.23 euros de TVA', 255, 23],
+    ['Prix TTC 14 euros dont 1.27 euros de TVA', 1400, 127],
+    ['Montant total TTC : 12,50 EUR dont 1,14 EUR de TVA', 1250, 114],
+    ['Total TTC 3 €', 300, null],
+  ])('reads the labelled French gross and VAT: %s', (text, grossCents, vatCents) => {
+    expect(factsFromText(text)).toMatchObject({ grossCents, vatCents, currency: 'EUR' });
+  });
+
+  test.each([
+    'Prix 14 euros',
+    '14 euros dont 1.27 euros de TVA',
+    'Prix TTC 14',
+    'Prix TTC 14 euros demain si vous commandez',
+    'Prix TTC 2.55 euros dont 3.00 euros de TVA',
+    'Prix TTC 14 euros\nPrix TTC 15 euros',
+  ])('does not infer French totals from ambiguous or unlabelled amounts: %s', (text) => {
+    expect(factsFromText(text).grossCents).toBeNull();
+  });
+
   test('software invoice (pdftotext layout)', () => {
     const text = `Muster Software GmbH · Hauptstraße 1 · 10115 Berlin
 

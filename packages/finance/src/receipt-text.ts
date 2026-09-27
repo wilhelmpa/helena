@@ -52,12 +52,31 @@ function dateIn(text: string): string | null {
   return m ? parseDateAny(m[0].replace(/(\d\.)\s(?=\d)/g, '$1')) : null;
 }
 
+function frenchTotals(lines: string[]): { gross: number; vat: number | null } | null {
+  const totals = lines.flatMap((line) => {
+    const match =
+      /^(?:prix|montant(?: total)?|total)\s+TTC\s*:?\s*(\d+(?:[.,]\d{2})?)\s*(?:euros?\b|EUR\b|€)(?:\s+dont\s+(\d+(?:[.,]\d{2})?)\s*(?:euros?\b|EUR\b|€)\s+(?:de\s+)?TVA)?\s*[.;]?$/i.exec(
+        line,
+      );
+    if (!match) return [];
+    const gross = parseAmountCents(match[1]!, 'auto');
+    const vat = match[2] ? parseAmountCents(match[2], 'auto') : null;
+    if (gross === null || (vat !== null && vat > gross)) return [];
+    return [{ gross, vat }];
+  });
+  const first = totals[0];
+  return first && totals.every((total) => total.gross === first.gross && total.vat === first.vat)
+    ? first
+    : null;
+}
+
 export function factsFromText(text: string, ownIbans: string[] = []): TextFacts {
   const lines = text
     .split(/\r?\n/)
     .map((l) => l.replace(/[ \t\u00a0]+/g, ' ').trim())
     .filter(Boolean);
   const invoiceDate = findInvoiceDate(lines);
+  const french = frenchTotals(lines);
   const own = new Set(ownIbans.map((i) => normalizeIban(i)).filter((i): i is string => i !== null));
   const ibans = findIbans(text);
   const foreign = ibans.find((i) => !own.has(i)) ?? null;
@@ -73,8 +92,8 @@ export function factsFromText(text: string, ownIbans: string[] = []): TextFacts 
     invoiceNumber: findInvoiceNumber(lines),
     invoiceDate,
     dueDate: findDueDate(lines, invoiceDate),
-    grossCents: findGross(lines),
-    vatCents: findVat(lines),
+    grossCents: findGross(lines) ?? french?.gross ?? null,
+    vatCents: findVat(lines) ?? french?.vat ?? null,
     currency: findCurrency(text),
     iban: foreign,
     issuer: findIssuer(lines),
@@ -243,7 +262,7 @@ function pickVat(amounts: number[], rate: number | null): number {
 }
 
 function findCurrency(text: string): string | null {
-  if (/€|\bEUR\b|\bEuro\b/i.test(text)) return 'EUR';
+  if (/€|\bEUR\b|\beuros?\b/i.test(text)) return 'EUR';
   if (/\bUSD\b|US\$|\$\s?\d/.test(text)) return 'USD';
   if (/\bCHF\b/.test(text)) return 'CHF';
   if (/\bGBP\b|£/.test(text)) return 'GBP';

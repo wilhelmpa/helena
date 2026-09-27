@@ -45,6 +45,9 @@ const TERMS = [
   'bill',
   'statement',
   'abrechnung',
+  'facture',
+  'justificatif',
+  'reçu',
 ];
 
 export const MAX_BATCH_BYTES = 100 * 1024 * 1024;
@@ -218,8 +221,7 @@ export async function inspectReceiptHistory(
       const includeBody =
         attachmentSha256.length === 0 &&
         !/^(?:re|aw|fwd?):/i.test(mail.subject) &&
-        (hasMailReceiptEvidence(mail.subject, facts) ||
-          (facts.grossCents !== null && facts.invoiceNumber !== null));
+        hasMailReceiptEvidence(mail.subject, facts);
       candidates.push({
         uid,
         sha256: sha256(source.source),

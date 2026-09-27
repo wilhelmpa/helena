@@ -63,13 +63,23 @@ export function mailReceiptFacts(
 }
 
 export function hasMailReceiptEvidence(subject: string, facts: ExtractedReceipt): boolean {
+  const document =
+    /rechnung|invoice|facture|receipt|beleg|quittung|justificatif d[’'](?:achat|paiement)|re[cç]u(?: de)? (?:paiement|achat)/i;
+  const upcoming =
+    /\b(?:upcoming|coming up|will be charged|next (?:subscription )?(?:order|payment|charge)|prochain|prochaine|sera d[eé]bit[eé]|bevorstehend|demn[aä]chst)\b/i;
+  if (
+    /\b(?:order export|exportbericht|export report)\b/i.test(subject) ||
+    upcoming.test(subject) ||
+    (!document.test(subject) && upcoming.test(facts.textExcerpt ?? ''))
+  )
+    return false;
   return (
     facts.grossCents !== null &&
     (facts.invoiceNumber !== null ||
-      /zahlung|payment|refund|rückerstatt|receipt|sent you money|zahlungsavis|purchase confirmed/i.test(
+      /zahlung|payment|refund|rückerstatt|receipt|quittung|kaufbeleg|justificatif d[’'](?:achat|paiement)|re[cç]u(?: de)? (?:paiement|achat)|sent you money|zahlungsavis/i.test(
         subject,
       )) &&
-    /rechnung|invoice|receipt|beleg|quittung|zahlung|payment|refund|rückerstatt|order.*confirmed|purchase confirmed|sent you money|zahlungsavis/i.test(
+    /rechnung|invoice|facture|receipt|beleg|quittung|justificatif d[’'](?:achat|paiement)|re[cç]u(?: de)? (?:paiement|achat)|zahlung|payment|refund|rückerstatt|sent you money|zahlungsavis/i.test(
       subject,
     )
   );
