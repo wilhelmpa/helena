@@ -32,6 +32,7 @@ import { moveThread } from '#modules/mail/threads/move';
 import { mailTriageConfig, type MailTriageConfig } from './config';
 import { isTkSender } from './tk';
 import { taskEligibility } from './task-policy';
+import { withProjectTriageClaim, checkTriageCancellation } from './claim';
 import { EMPTY_RECEIPT_NOTE, FAILED_RECEIPT_NOTE, recordReceiptAttempt } from './receipt-retry';
 
 // Task eligibility follows the application policy; invoice filing is independent of it.
@@ -425,12 +426,13 @@ export async function retryReceiptFiling(
   config: MailTriageConfig,
   actorUserId: string | null,
   projectId?: number,
+  signal?: AbortSignal,
 ) {
   if (config.receipts !== 'auto' || !receiptIntake || receiptRetryRunning)
     return { completed: 0, failed: 0 };
   receiptRetryRunning = true;
   try {
-    return await retryReceiptBatch(teamId, config, actorUserId, projectId);
+    return await retryReceiptBatch(teamId, config, actorUserId, projectId, signal);
   } finally {
     receiptRetryRunning = false;
   }
@@ -441,6 +443,7 @@ async function retryReceiptBatch(
   config: MailTriageConfig,
   actorUserId: string | null,
   projectId?: number,
+  signal?: AbortSignal,
 ) {
   const eligible = and(
     eq(helenaMailClassification.teamId, teamId),
@@ -472,6 +475,7 @@ async function retryReceiptBatch(
   let done = 0;
   let failed = 0;
   for (const candidate of pending) {
+    checkTriageCancellation(signal);
     const action = await db.transaction(async (tx) => {
       // Do not consume a pool connection waiting for another replica or owner correction.
       const [locked] = await tx
@@ -535,6 +539,7 @@ export async function classifyPending(): Promise<number> {
 export async function runProjectTriage(
   project: { id: number; teamId: number },
   maxMessages: number,
+  signal?: AbortSignal,
 ) {
   const team = (await activeTeams()).find((item) => item.teamId === project.teamId);
   if (!team) throw new HttpError(409, 'Enable the Mail classification decision class first.');
@@ -562,19 +567,17 @@ export async function runProjectTriage(
     agent: 'off' as const,
     agentId: null,
   };
-  // The transaction holds only the cross-replica batch lock; classification commits each mail.
-  return db.transaction(async (tx) => {
-    const lock = await tx.execute(
-      sql`select pg_try_advisory_xact_lock(748219, ${project.id}) as acquired`,
-    );
-    if (!lock[0]?.acquired)
-      throw new HttpError(409, 'Mail triage is already running for this project.');
+  checkTriageCancellation(signal);
+  return withProjectTriageClaim(project.id, async () => {
+    checkTriageCancellation(signal);
     const receiptRetries = await retryReceiptFiling(
       project.teamId,
       scoped,
       team.actorUserId,
       project.id,
+      signal,
     );
+    checkTriageCancellation(signal);
     const batch = await pendingMessages(project.teamId, scoped, maxMessages, [], project.id);
     const results: {
       messageId: number;
@@ -583,6 +586,7 @@ export async function runProjectTriage(
       actionFailed: boolean;
     }[] = [];
     for (const message of batch) {
+      checkTriageCancellation(signal);
       try {
         const result = await classifyMessage(
           project.teamId,

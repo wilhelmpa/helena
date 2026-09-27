@@ -1,4 +1,4 @@
-export { db, listen } from './client';
+export { db, listen, databaseRuntimeName, withSettledTransactionCallbacks } from './client';
 export * from './schema';
 export * from './permissions';
 export { getSetting, getOrCreateSetting, setSetting } from './settings';

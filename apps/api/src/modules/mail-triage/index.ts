@@ -65,7 +65,8 @@ export const mailTriageRoutes = new Elysia({
   .use(guards)
   .post(
     '/projects/:projectKey/mail-triage/run',
-    ({ project, body }) => runProjectTriage(project, body.maxMessages ?? 5),
+    ({ project, body, request }) =>
+      runProjectTriage(project, body.maxMessages ?? 5, request.signal),
     {
       permission: ['mail', 'edit'],
       body: triageBatchBody,

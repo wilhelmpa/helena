@@ -1,6 +1,9 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
+import { randomUUID } from 'node:crypto';
 import * as schema from './schema';
+import { observePostgresQueries, observeTransactionCallbacks } from './transaction-callbacks';
+export { withSettledTransactionCallbacks } from './transaction-callbacks';
 
 const connectionString = process.env.DATABASE_URL;
 
@@ -11,9 +14,15 @@ if (!connectionString) {
 }
 
 // One connection per process. postgres-js manages the pool internally.
-const queryClient = postgres(connectionString, { prepare: false });
+export const databaseRuntimeName = `helena-${process.pid}-${randomUUID()}`;
+const queryClient = postgres(connectionString, {
+  prepare: false,
+  connection: { application_name: databaseRuntimeName },
+});
 
-export const db = drizzle(queryClient, { schema });
+export const db = observeTransactionCallbacks(
+  drizzle(observePostgresQueries(queryClient), { schema }),
+);
 
 // Postgres LISTEN on one channel, over a connection of its own that postgres-js
 // re-establishes (and listens on again) after it drops. `onNotify` receives each

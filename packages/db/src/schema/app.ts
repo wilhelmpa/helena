@@ -3224,3 +3224,25 @@ export const ownerTerminalAudit = pgTable(
     index('owner_terminal_audit_event_idx').on(t.userId, t.event, t.createdAt),
   ],
 );
+
+// Durable admission for explicit project mail-triage batches. No TTL/takeover.
+export interface MailTriageRuntime {
+  version: 1;
+  machineId: string;
+  bootId: string;
+  pid: number;
+  startTicks: string;
+  pidNamespace: string;
+  uid: number;
+  instance: string;
+  databaseRuntimeName: string;
+}
+
+export const helenaMailTriageClaim = pgTable('helena_mail_triage_claim', {
+  projectId: integer('project_id')
+    .primaryKey()
+    .references(() => project.id, { onDelete: 'cascade' }),
+  runToken: text('run_token').notNull(),
+  runtime: jsonb('runtime').$type<MailTriageRuntime>().notNull(),
+  startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
+});
