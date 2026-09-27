@@ -168,15 +168,6 @@
     "hint": "اختر الوكيل أسفل يسار حقل الإدخال — وتظهر حالته هناك أيضًا."
   },
   "agents": {
-    "status": {
-      "running": "يعمل",
-      "waiting": "بانتظارك",
-      "ready": "جاهز",
-      "offline": "غير متصل",
-      "never": "لم يتصل قط",
-      "paused": "متوقف مؤقتًا",
-      "template": "قالب — أضفه إلى مشروع للدردشة معه"
-    },
     "runtimeExternal": "خارجي",
     "switch": "دردشة مع {agent} — ابدأ دردشة جديدة مع وكيل آخر",
     "newChatWith": "دردشة جديدة مع…"
@@ -204,12 +195,6 @@
     "stop": "إيقاف الإجابة",
     "jev": "Optional Jev first stage for this chat"
   },
-  "activity": {
-    "thinking": "{agent} يفكّر…",
-    "writing": "{agent} يكتب…",
-    "queued": "بانتظار {agent} — المشغّل الخاص به غير متصل. تبدأ الإجابة فور عودته.",
-    "usingTool": "{agent} يستخدم {tool} …"
-  },
   "session": {
     "copy": "نسخ معرّف الجلسة",
     "copied": "تم نسخ معرّف الجلسة",
@@ -222,15 +207,6 @@
     "interrupt": "مقاطعة",
     "end": "إنهاء",
     "heard": "«{text}»",
-    "phase": {
-      "starting": "جارٍ تشغيل الميكروفون …",
-      "listening": "أستمع إليك – تحدّث فقط.",
-      "hearing": "أسمعك …",
-      "transcribing": "أدوّن ما قلته …",
-      "thinking": "سيجيب {agent} بعد قليل …",
-      "speaking": "يتحدث {agent} – تحدّث لمقاطعته",
-      "speakingTap": "يتحدث {agent}"
-    },
     "where": {
       "listenLocal": "التعرّف على الكلام: Whisper على هذا الجهاز",
       "listenBrowser": "التعرّف على الكلام: المتصفح (يرسل Chrome وSafari التسجيل إلى Google أو Apple)",

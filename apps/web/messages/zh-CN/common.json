@@ -278,13 +278,16 @@
     "agentTeam": "智能体团队",
     "autoArchive": "自动归档"
   },
-  "statusOrb": {
+  "status": {
     "idle": "空闲",
+    "listening": "聆听中",
     "thinking": "思考中",
     "tool": "使用工具中",
-    "waiting": "等待你的回复",
+    "speaking": "说话中",
+    "waiting": "等待你",
     "error": "错误",
-    "done": "完成",
-    "offline": "离线"
+    "throttled": "受限",
+    "offline": "离线",
+    "done": "完成"
   }
 }
