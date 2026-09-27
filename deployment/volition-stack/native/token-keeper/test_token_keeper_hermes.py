@@ -142,6 +142,7 @@ class KeeperWithHermes(unittest.TestCase):
                     'last_refresh': '2026-09-24T18:00:00Z'}
 
         self.patches = [
+            mock.patch.object(KEEPER.Hermes, 'probe', return_value=200),
             mock.patch.object(anthropic_credentials, 'refresh_anthropic_oauth_pure', fake_anthropic),
             mock.patch.object(hermes_auth, 'refresh_codex_oauth_pure', fake_codex, create=True),
         ]
@@ -187,6 +188,41 @@ class KeeperWithHermes(unittest.TestCase):
         self.assertEqual(self.anthropic_calls, [])
         self.assertEqual(self.login(status, 'anthropic')['state'], 'ok')
 
+    def test_401_invalidates_the_real_pool_and_agent_view_without_refresh(self):
+        self.root.anthropic(7 * 3600).codex(9 * 86400).write()
+        with mock.patch.object(KEEPER.Hermes, 'probe', return_value=401) as probe:
+            status = self.tick()
+            self.assertEqual(probe.call_count, 2)
+            self.tick()
+            self.assertEqual(probe.call_count, 2)
+        self.assertEqual(self.anthropic_calls + self.codex_calls, [])
+        for provider in ('anthropic', 'openai-codex'):
+            login = self.login(status, provider)
+            self.assertEqual(login['state'], 'invalid')
+            self.assertEqual(login['error'], KEEPER.LOGIN_REJECTED)
+            self.assertIn('auth add ' + provider, login['command'])
+            self.assertTrue(all(row['last_status'] == 'dead'
+                                for row in self.view()['credential_pool'][provider]))
+
+    def test_late_401_does_not_invalidate_a_new_pair_in_the_real_pool(self):
+        self.root.anthropic(7 * 3600).write()
+        hermes = KEEPER.Hermes()
+        old = hermes.load_pool('anthropic').entries()[0]
+        self.root.store['credential_pool']['anthropic'][0].update(
+            access_token='new-access', refresh_token='new-refresh')
+        self.root.write()
+        self.assertFalse(hermes.invalidate('anthropic', old))
+        self.assertNotEqual(self.root.read()['credential_pool']['anthropic'][0].get('last_status'), 'dead')
+
+    def test_new_pair_recovers_after_a_real_pool_rejection(self):
+        self.root.anthropic(7 * 3600).write()
+        with mock.patch.object(KEEPER.Hermes, 'probe', return_value=401):
+            self.assertEqual(self.login(self.tick(), 'anthropic')['state'], 'invalid')
+        self.root.store['credential_pool']['anthropic'][0].update(
+            access_token='new-access', refresh_token='new-refresh')
+        self.root.write()
+        self.assertEqual(self.login(self.tick(), 'anthropic')['state'], 'ok')
+
     def test_a_due_login_waits_for_a_moment_without_agent_units_unless_it_must_not(self):
         self.root.anthropic(5 * 3600).write()
         self.running_units = 2
@@ -208,7 +244,7 @@ class KeeperWithHermes(unittest.TestCase):
         self.assertEqual(row['last_status'], 'dead')
         login = self.login(status, 'anthropic')
         self.assertEqual(login['state'], 'invalid')
-        self.assertIn('invalid_grant', login['error'])
+        self.assertEqual(login['error'], KEEPER.REFRESH_REJECTED)
         self.assertIn('auth add anthropic', login['command'])
         self.assertIn(f"HERMES_HOME={self.root.home}", login['command'])
         self.assertIn('systemctl start helena-token-keeper.service', login['command'])

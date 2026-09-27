@@ -1,5 +1,27 @@
 # Token keeper: the shared model logins never die because of the agent sandbox
 
+## 2026-09-26: detect revoked, unexpired logins
+
+Each normal timer tick also checks unexpired Anthropic and OpenAI Codex OAuth
+access tokens against the read-only usage endpoint used by Hermes. No model call,
+response body or redirect is used. Only HTTP 401 invalidates a login; rate limits,
+403, server errors and network failures remain retryable status errors. The pool
+row is re-read under Hermes' store lock before invalidation, so a late response for
+an old token cannot invalidate a newly renewed pair. A new pair clears the old
+rejection. The separate Codex CLI login is checked without spending its refresh token.
+
+Provider diagnostics are suppressed during refresh/probe requests and replaced with
+fixed messages; token fragments and response bodies cannot reach the status or journal.
+`views` remains offline. A dead login is excluded from new agent views and reported
+as `invalid` with the existing owner-only re-login command.
+
+Validation: 48 tests passed on Kingston with the installed Hermes interpreter and
+credential-pool implementation, fake credentials, private network and temporary stores.
+This includes persisted rejection, renewed-token races and recovery, transient errors,
+view/catalog behavior and no provider-message leakage. No owner login was read by the
+operator or changed for the test. Deployment and a normal timer/status/UI check are
+still required; do not revoke a real login merely to demonstrate the failure state.
+
 Status: decided 2026-09-24 (hub/token-keeper). Inputs: the live E2E test of 2026-09-24 19:09
 (every Claude model in Hermes failed), the agent isolation design
 (`docs/volition-design-agent-isolation.md` §3 "Modell-Zugang", Phase 1), Hermes at

@@ -54,6 +54,9 @@ REPORTER = 'helena-token-keeper'
 # The providers whose refresh tokens are single-use (Hermes' SINGLE_USE_REFRESH_POOL_PROVIDERS):
 # the keeper refreshes their OAuth logins. Other OAuth rows are reported, not refreshed.
 MANAGED_PROVIDERS = ('anthropic', 'openai-codex', 'xai-oauth')
+PROBE_PROVIDERS = ('anthropic', 'openai-codex')
+LOGIN_REJECTED = 'The provider rejected this login (HTTP 401). Sign in again.'
+REFRESH_REJECTED = 'The provider rejected the refresh grant. Sign in again.'
 # Keys that hold something a login can be renewed with. Removed from every view.
 REFRESH_KEYS = frozenset({'refresh_token', 'refreshToken'})
 DEFAULT_HERMES_HOME = '/var/lib/volition/hermes'
@@ -414,39 +417,60 @@ class Hermes:
             return method(entry, force=False)
         return pool.try_refresh_matching(credential_id=entry.id)
 
+    def probe(self, provider: str, access_token: str) -> Optional[int]:
+        """The same read-only usage endpoints Hermes uses; no model call or response body."""
+        import httpx
 
-class ReasonCatcher(logging.Handler):
-    """Hermes logs why a refresh failed and hands back only None; this keeps the last reason."""
+        headers = {'Authorization': f'Bearer {access_token}', 'Accept': 'application/json'}
+        if provider == 'openai-codex':
+            from agent.codex_headers import codex_account_headers
 
-    def __init__(self):
-        super().__init__(level=logging.DEBUG)
-        self.reasons: list[str] = []
-
-    def emit(self, record: logging.LogRecord) -> None:
+            url = 'https://chatgpt.com/backend-api/wham/usage'
+            headers.update(codex_account_headers(access_token))
+            headers['User-Agent'] = 'codex-cli'
+        elif provider == 'anthropic':
+            url = 'https://api.anthropic.com/api/oauth/usage'
+            headers.update({'anthropic-beta': 'oauth-2025-04-20', 'User-Agent': 'claude-code/2.1.0'})
+        else:
+            return None
         try:
-            message = record.getMessage()
-        except Exception:  # noqa: BLE001
-            return
-        lowered = message.lower()
-        if 'refresh' in lowered and ('fail' in lowered or 'invalid' in lowered or 'error' in lowered):
-            self.reasons.append(message)
+            with httpx.Client(timeout=10.0, follow_redirects=False) as client:
+                with client.stream('GET', url, headers=headers) as response:
+                    return response.status_code
+        except Exception:  # noqa: BLE001 - no URLs, headers or provider text in status/logs
+            return None
+
+    def invalidate(self, provider: str, entry: Any) -> bool:
+        # Re-read under Hermes' reentrant store lock: a late 401 for an old token must
+        # never invalidate a login the owner or another process has already renewed.
+        with self.store_lock():
+            pool = self.load_pool(provider)
+            current = next((row for row in pool.entries() if row.id == entry.id), None)
+            if current is None or (current.access_token, current.refresh_token) != (entry.access_token, entry.refresh_token):
+                return False
+            pool._adopt(current, last_status=self.STATUS_DEAD, last_status_at=time.time(),
+                        last_error_code=401, last_error_reason='invalid_token', last_error_message=LOGIN_REJECTED)
+            return True
 
 
 @contextmanager
-def catching_reasons():
-    catcher = ReasonCatcher()
-    loggers = [logging.getLogger(name) for name in ('agent.credential_pool', 'hermes_cli.auth', 'agent.anthropic_credentials')]
-    saved = [(logger, logger.level) for logger in loggers]
+def quiet_provider_logs():
+    # Provider failures may include credentials or response bodies, including short
+    # tokens no pattern can redact reliably. Emit only our fixed messages instead.
+    names = ('agent', 'hermes_cli', 'httpx', 'httpcore', 'urllib3')
+    loggers = [logging.getLogger(name) for name in names]
+    loggers += [logger for name, logger in logging.root.manager.loggerDict.items()
+                if isinstance(logger, logging.Logger) and any(name.startswith(prefix + '.') for prefix in names)]
+    saved = [(logger, logger.handlers[:], logger.propagate) for logger in loggers]
     for logger in loggers:
-        logger.addHandler(catcher)
-        if logger.getEffectiveLevel() > logging.DEBUG:
-            logger.setLevel(logging.DEBUG)
+        logger.handlers = [logging.NullHandler()]
+        logger.propagate = False
     try:
-        yield catcher
+        yield
     finally:
-        for logger, level in saved:
-            logger.removeHandler(catcher)
-            logger.setLevel(level)
+        for logger, handlers, propagate in saved:
+            logger.handlers = handlers
+            logger.propagate = propagate
 
 
 # ── The keeper ────────────────────────────────────────────────────────────────────────────
@@ -566,14 +590,12 @@ class Keeper:
         record = self.state.entry(key)
         before_status = getattr(entry, 'last_status', None)
         record['attemptAt'] = self.clock()
-        with catching_reasons() as reasons:
+        with quiet_provider_logs():
             try:
                 result = self.hermes.refresh(pool, entry)
-            except Exception as exc:  # noqa: BLE001 - Hermes normally returns None instead
+            except Exception:  # noqa: BLE001 - Hermes normally returns None instead
                 result = None
-                reasons.reasons.append(str(exc))
         after = next((item for item in self.hermes.load_pool(provider).entries() if item.id == entry.id), None)
-        reason = redact(reasons.reasons[-1]) if reasons.reasons else None
         if result is not None and after is not None and getattr(after, 'last_status', None) != self.hermes.STATUS_DEAD:
             record.update(refreshedAt=self.clock(), failures=0, error=None)
             record.pop('shortLived', None)
@@ -584,13 +606,12 @@ class Keeper:
         record['failures'] = int(record.get('failures') or 0) + 1
         dead = after is None or getattr(after, 'last_status', None) == self.hermes.STATUS_DEAD
         if dead:
-            error = redact(getattr(after, 'last_error_message', None)) if after is not None else None
-            record['error'] = error or reason or 'the provider rejected the login'
+            record['error'] = REFRESH_REJECTED
             record['dead'] = True
             log.warning('%s %s: the login is no longer valid (%s); it has to be signed in again',
                         provider, entry.label or entry.id, record['error'])
             return None
-        record['error'] = reason or 'the refresh failed'
+        record['error'] = 'The refresh failed temporarily. The keeper will retry.'
         log.warning('%s %s: refresh failed (%s); retrying later', provider, entry.label or entry.id, record['error'])
         # Hermes benches a row whose refresh failed. The keeper refreshes hours early: while the
         # access token still works, a failed early refresh must not take the login out of use.
@@ -603,9 +624,82 @@ class Keeper:
             try:
                 pool_after = self.hermes.load_pool(provider)
                 pool_after.reset_status(entry.id)
-            except Exception as exc:  # noqa: BLE001
-                log.debug('could not lift the bench on %s: %s', key, exc)
+            except Exception:  # noqa: BLE001
+                log.debug('could not lift the bench on %s', key)
         return None
+
+    def probe_status(self, provider: str, token: str) -> Optional[int]:
+        with quiet_provider_logs():
+            try:
+                return self.hermes.probe(provider, token)
+            except Exception:  # noqa: BLE001
+                return None
+
+    def validate_logins(self, codex: Optional[dict]) -> None:
+        checked: dict[tuple[str, str], Optional[int]] = {}
+        for provider in PROBE_PROVIDERS:
+            try:
+                entries = self.hermes.load_pool(provider).entries()
+            except Exception:  # noqa: BLE001
+                self.errors.append(f'{provider}: login check unavailable')
+                continue
+            for entry in entries:
+                if getattr(entry, 'auth_type', None) != self.hermes.AUTH_TYPE_OAUTH:
+                    continue
+                if getattr(entry, 'last_status', None) == self.hermes.STATUS_DEAD:
+                    continue
+                token = getattr(entry, 'access_token', None)
+                expiry = self.hermes.expiry(provider, entry)
+                if not token or (expiry is not None and expiry <= self.clock()):
+                    continue
+                token_key = (provider, fingerprint(token))
+                if token_key not in checked:
+                    checked[token_key] = self.probe_status(provider, token)
+                status = checked[token_key]
+                record = self.state.entry(self.key(provider, entry))
+                if record.get('validatedFp') and record['validatedFp'] != token_key[1]:
+                    for field in ('dead', 'error', 'failures', 'validationError'):
+                        record.pop(field, None)
+                record.update(validatedAt=self.clock(), validatedFp=token_key[1])
+                if status == 401:
+                    if self.hermes.invalidate(provider, entry):
+                        record.update(dead=True, error=LOGIN_REJECTED, attemptAt=self.clock())
+                    continue
+                if status is not None and 200 <= status < 300:
+                    record.pop('validationError', None)
+                else:
+                    record['validationError'] = (
+                        f'Login check is temporarily unavailable (HTTP {status}). The keeper will retry.'
+                        if status is not None else 'Login check is temporarily unavailable. The keeper will retry.'
+                    )
+
+        if codex is not None:
+            token = codex.pop('accessToken')
+            token_key = ('openai-codex', fingerprint(token))
+            record = self.state.codex
+            if record.get('validatedFp') != token_key[1]:
+                record.pop('invalid', None)
+                record.pop('validationError', None)
+            if record.get('invalid'):
+                return
+            if codex['expiry'] is not None and codex['expiry'] <= self.clock():
+                return
+            if token_key not in checked:
+                checked[token_key] = self.probe_status('openai-codex', token)
+            status = checked[token_key]
+            try:
+                current = read_json(self.settings.codex_auth)
+                current_token = (current.get('tokens') or {}).get('access_token') if isinstance(current, dict) else None
+            except (OSError, ValueError):
+                current_token = None
+            if current_token != token:
+                return
+            record.update(validatedAt=self.clock(), validatedFp=token_key[1])
+            record['invalid'] = status == 401
+            record['validationError'] = (
+                LOGIN_REJECTED if status == 401 else None if status is not None and 200 <= status < 300
+                else 'Login check is temporarily unavailable. The keeper will retry.'
+            )
 
     # ── the Codex CLI's own login next to Hermes ──
 
@@ -657,7 +751,7 @@ class Keeper:
         except Exception as exc:  # noqa: BLE001
             self.errors.append(f'Codex CLI login: {redact(exc)}')
         expiry = jwt_expiry(tokens.get('access_token'))
-        return {'link': link, 'expiry': expiry}
+        return {'link': link, 'expiry': expiry, 'accessToken': tokens.get('access_token')}
 
     def write_codex_cli(self, path: Path, data: dict) -> None:
         mode = 0o600
@@ -744,12 +838,14 @@ class Keeper:
         if codex is not None:
             expiry = codex.get('expiry')
             linked = codex.get('link') == 'linked'
+            invalid = self.state.codex.get('invalid') is True
+            error = self.state.codex.get('validationError')
             logins.append({
                 'store': 'codex-cli', 'provider': 'openai-codex', 'id': 'codex-cli', 'label': 'Codex CLI',
                 'managed': linked,
-                'state': 'expired' if expiry is not None and expiry <= now else 'ok',
-                'expiresAt': now_iso(expiry) if expiry else None, 'refreshedAt': None, 'error': None,
-                'command': None,
+                'state': 'invalid' if invalid else 'expired' if expiry is not None and expiry <= now else 'error' if error else 'ok',
+                'expiresAt': now_iso(expiry) if expiry else None, 'refreshedAt': None, 'error': error,
+                'command': self.settings.relogin_command('openai-codex') if invalid and linked else None,
                 'note': 'linked' if linked else 'separate',
             })
         return logins
@@ -762,11 +858,12 @@ class Keeper:
         error = record.get('error')
         if dead:
             state = 'invalid'
-            error = redact(getattr(entry, 'last_error_message', None)) or error or 'the provider rejected the login'
+            error = LOGIN_REJECTED if getattr(entry, 'last_error_code', None) == 401 else REFRESH_REJECTED
         elif expiry is not None and expiry <= now:
             state = 'expired'
-        elif record.get('failures'):
+        elif record.get('validationError') or record.get('failures'):
             state = 'error'
+            error = record.get('validationError') or error
         elif expiry is not None and managed and expiry - now < self.settings.prefer_before:
             state = 'expiring'
         else:
@@ -814,6 +911,7 @@ class Keeper:
         if refresh:
             self.refresh_due(self.scan(self.clock()))
             codex = self.reconcile_codex_cli()
+            self.validate_logins(codex)
         views = self.write_views()
         status = self.status(codex, views)
         self.write_status(status)
@@ -850,8 +948,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     args = parse(sys.argv[1:] if argv is None else argv)
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO,
                         format='helena-token-keeper: %(message)s', stream=sys.stderr)
-    # The journal gets the keeper's own lines and Hermes' warnings. Hermes' debug lines, which
-    # the keeper reads while a refresh runs (ReasonCatcher), stay out of it.
+    # Provider failures are suppressed during requests; only fixed keeper messages reach the journal.
     for handler in logging.getLogger().handlers:
         handler.setLevel(logging.DEBUG if args.verbose else logging.INFO)
     for name in ('agent', 'hermes_cli', 'httpx', 'urllib3'):

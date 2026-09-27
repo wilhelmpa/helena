@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { normalizeRuntimeLoginReport } from '@helena/sdk';
 import { act } from 'react';
 import type { Root } from 'react-dom/client';
 import { NextIntlClientProvider } from 'next-intl';
@@ -111,6 +113,32 @@ function health(logins: RuntimeLogin[], stale = false): RuntimeLoginsHealth {
 }
 
 describe('HomeLogins', () => {
+  it('renders a fresh unexpired login rejected by the actual keeper after HTTP 401', () => {
+    const fixture = process.env.HELENA_KEEPER_REJECTION_REPORT;
+    const output = fixture
+      ? readFileSync(fixture, 'utf8')
+      : execFileSync(
+          'python3',
+          [
+            join(
+              process.cwd(),
+              '../../deployment/volition-stack/native/token-keeper/rejection_fixture.py',
+            ),
+          ],
+          { encoding: 'utf8', timeout: 10_000 },
+        );
+    const report = normalizeRuntimeLoginReport(JSON.parse(output), 'token-keeper');
+    assert.ok(report);
+    assert.equal(report.logins.length, 1);
+    assert.equal(report.logins[0]?.state, 'invalid');
+    assert.match(report.logins[0]?.error ?? '', /HTTP 401/);
+    const text = render({ reports: [{ ...report, stale: false }], problems: 1 }).textContent ?? '';
+    assert.match(text, /ChatGPT/);
+    assert.match(text, /Neu anmelden/);
+    assert.match(text, /1 braucht dich/);
+    assert.doesNotMatch(text, /aktiv · erneuert sich automatisch/);
+  });
+
   it('names the owners command under a rejected login', () => {
     const view = render(
       health([

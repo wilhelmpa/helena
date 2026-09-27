@@ -21,6 +21,7 @@ import unittest
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Optional
+from unittest import mock
 
 HERE = Path(__file__).resolve().parent
 SPEC = importlib.util.spec_from_file_location('helena_token_keeper_unit', HERE / 'helena_token_keeper.py')
@@ -45,6 +46,7 @@ class Row:
     auth_type: str = 'oauth'
     last_status: Optional[str] = None
     last_error_message: Optional[str] = None
+    last_error_code: Optional[int] = None
 
 
 class FakePool:
@@ -72,6 +74,8 @@ class FakeHermes:
         self.fail: Optional[str] = None
         self.reset: list[str] = []
         self.store = {'version': 1}
+        self.probe_status = 200
+        self.probe_calls = []
 
     def add(self, provider, row):
         self.rows.setdefault(provider, []).append(row)
@@ -94,6 +98,19 @@ class FakeHermes:
 
     def expiry(self, provider, entry):
         return entry.expires_at_ms / 1000 if entry.expires_at_ms else None
+
+    def probe(self, provider, access_token):
+        self.probe_calls.append(provider)
+        return self.probe_status
+
+    def invalidate(self, provider, entry):
+        rows = self.rows[provider]
+        for i, row in enumerate(rows):
+            if row.id == entry.id and (row.access_token, row.refresh_token) == (entry.access_token, entry.refresh_token):
+                rows[i] = replace(row, last_status='dead', last_error_code=401,
+                                  last_error_message=KEEPER.LOGIN_REJECTED)
+                return True
+        return False
 
     def refresh(self, pool, entry):
         self.refreshed.append(entry.id)
@@ -253,6 +270,75 @@ class KeeperLogic(unittest.TestCase):
         self.assertEqual(self.hermes.reset, ['a'])
         self.assertEqual(status['logins'][0]['state'], 'error')
 
+    def test_revoked_unexpired_login_is_persistently_invalid_without_spending_refresh_token(self):
+        self.hermes.add('openai-codex', Row('c', 'access', 'refresh', ms(9 * 86400)))
+        self.hermes.probe_status = 401
+        status = self.keeper().tick(refresh=True)
+        self.assertEqual(self.hermes.refreshed, [])
+        self.assertEqual(self.hermes.rows['openai-codex'][0].last_status, 'dead')
+        self.assertEqual(status['logins'][0]['state'], 'invalid')
+        self.assertEqual(status['logins'][0]['error'], KEEPER.LOGIN_REJECTED)
+        self.assertIn('auth add openai-codex', status['logins'][0]['command'])
+        self.keeper().tick(refresh=True)
+        self.assertEqual(self.hermes.probe_calls, ['openai-codex'])
+
+    def test_temporary_probe_failures_never_invalidate_or_refresh_a_working_login(self):
+        for code in (429, 500, 503, 403, 302, None):
+            with self.subTest(code=code):
+                self.hermes.rows = {'anthropic': [Row('a', 'access', 'refresh', ms(7 * 3600))]}
+                self.hermes.probe_status = code
+                status = self.keeper().tick(refresh=True)
+                self.assertEqual(status['logins'][0]['state'], 'error')
+                self.assertIsNone(status['logins'][0]['command'])
+                self.assertNotEqual(self.hermes.rows['anthropic'][0].last_status, 'dead')
+                self.assertEqual(self.hermes.refreshed, [])
+        self.hermes.probe_status = 200
+        self.assertEqual(self.keeper().tick(refresh=True)['logins'][0]['state'], 'ok')
+
+    def test_a_new_login_clears_a_previous_rejection_and_late_401_keeps_a_rotated_token(self):
+        old = Row('a', 'old-access', 'old-refresh', ms(7 * 3600))
+        self.hermes.add('anthropic', old)
+        self.hermes.probe_status = 401
+        self.keeper().tick(refresh=True)
+        self.hermes.rows['anthropic'] = [replace(old, access_token='new-access', refresh_token='new-refresh')]
+        self.hermes.probe_status = 200
+        self.assertEqual(self.keeper().tick(refresh=True)['logins'][0]['state'], 'ok')
+
+        def late_rejection(provider, token):
+            self.hermes.rows[provider] = [replace(old, access_token='newer-access')]
+            return 401
+
+        self.hermes.probe = late_rejection
+        self.assertEqual(self.keeper().tick(refresh=True)['logins'][0]['state'], 'ok')
+        self.assertNotEqual(self.hermes.rows['anthropic'][0].last_status, 'dead')
+
+    def test_separate_codex_cli_rejection_is_visible_and_new_login_recovers(self):
+        folder = self.dir / 'hermes' / '.codex'
+        folder.mkdir(parents=True)
+        file = folder / 'auth.json'
+        file.write_text(json.dumps({'tokens': {'access_token': jwt(exp=time.time() + 86400), 'refresh_token': 'r'}}))
+        self.hermes.probe_status = 401
+        login = self.keeper().tick(refresh=True)['logins'][0]
+        self.assertEqual((login['store'], login['state']), ('codex-cli', 'invalid'))
+        file.write_text(json.dumps({'tokens': {'access_token': jwt(exp=time.time() + 172800), 'refresh_token': 'r2'}}))
+        self.hermes.probe_status = 200
+        self.assertEqual(self.keeper().tick(refresh=True)['logins'][0]['state'], 'ok')
+
+    def test_provider_messages_do_not_reach_status_private_state_or_logs(self):
+        self.hermes.add('anthropic', Row('a', 'access', 'refresh', ms(3600)))
+        secret = 'tiny-secret'
+
+        def refused(pool, entry):
+            KEEPER.logging.getLogger('hermes_cli.auth_codex').warning('response body: %s', secret)
+            raise ValueError(secret)
+
+        self.hermes.refresh = refused
+        with self.assertLogs(KEEPER.log, level='WARNING') as logs:
+            status = self.keeper().tick(refresh=True)
+        self.assertNotIn(secret, json.dumps(status))
+        self.assertNotIn(secret, '\n'.join(logs.output))
+        self.assertNotIn(secret, (self.dir / 'keeper' / 'state' / 'state.json').read_text())
+
     def test_views_and_status_hold_no_refresh_token(self):
         self.hermes.add('anthropic', Row('a', 'sk-ant-oat01-SECRETACCESS', 'SECRET-REFRESH-TOKEN', ms(7 * 3600)))
         codex = self.dir / 'hermes' / '.codex'
@@ -283,6 +369,31 @@ class KeeperLogic(unittest.TestCase):
 
 
 class Helpers(unittest.TestCase):
+    def test_http_probe_uses_only_status_no_body_and_never_follows_redirects(self):
+        class Response:
+            status_code = 401
+
+            @property
+            def text(self):
+                raise AssertionError('response body must not be read')
+
+        client = mock.MagicMock()
+        client.stream.return_value.__enter__.return_value = Response()
+        module = mock.MagicMock()
+        module.Client.return_value.__enter__.return_value = client
+        with mock.patch.dict(sys.modules, {'httpx': module}):
+            self.assertEqual(KEEPER.Hermes.probe(None, 'anthropic', 'fake-short-token'), 401)
+        module.Client.assert_called_once_with(timeout=10.0, follow_redirects=False)
+        args, kwargs = client.stream.call_args
+        self.assertEqual(args, ('GET', 'https://api.anthropic.com/api/oauth/usage'))
+        self.assertEqual(kwargs['headers']['Authorization'], 'Bearer fake-short-token')
+
+    def test_http_probe_drops_network_exception_text(self):
+        module = mock.MagicMock()
+        module.Client.side_effect = OSError('body with a tiny-secret')
+        with mock.patch.dict(sys.modules, {'httpx': module}):
+            self.assertIsNone(KEEPER.Hermes.probe(None, 'anthropic', 'fake-token'))
+
     def test_strip_refresh_tokens_everywhere(self):
         store = {'providers': {'x': {'tokens': {'access_token': 'a', 'refresh_token': 'r'}}},
                  'credential_pool': {'y': [{'access_token': 'a', 'refresh_token': 'r', 'refreshToken': 'r'}]}}
