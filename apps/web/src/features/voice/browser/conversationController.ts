@@ -47,6 +47,8 @@ export interface ConversationDeps {
   // What was understood, to show for a moment.
   onHeard(text: string): void;
   onLevel(level: number): void;
+  onStream?(stream: MediaStream | null): void;
+  onOutputAnalyser?(analyser: AnalyserNode | null): void;
   onProblem(problem: ConversationProblem): void;
   send(text: string): void;
   // What was said; `dropped` when something was heard but it was not the owner's words
@@ -227,6 +229,8 @@ export class ConversationController {
         return;
       case 'stopAll':
         this.generation += 1;
+        this.deps.onStream?.(null);
+        this.deps.onOutputAnalyser?.(null);
         window.clearTimeout(this.sendTimer);
         window.clearTimeout(this.tailTimer);
         window.clearTimeout(this.chimeTimer);
@@ -245,6 +249,7 @@ export class ConversationController {
 
   private async openEar(): Promise<boolean> {
     const generation = this.generation;
+    this.deps.onStream?.(null);
     await this.ear?.destroy();
     this.ear = null;
     const listener = this.listener;
@@ -266,6 +271,9 @@ export class ConversationController {
         this.dispatch({ type: 'speechEnd' });
       },
       onLevel: (level) => this.deps.onLevel(level),
+      onStream: (stream) => {
+        if (generation === this.generation) this.deps.onStream?.(stream);
+      },
       onError: (reason) => {
         if (generation !== this.generation) return;
         this.deps.onProblem(reason === 'network' ? 'recognition-failed' : reason);
@@ -305,6 +313,7 @@ export class ConversationController {
         this.dispatch({ type: 'speakerIdle' });
       },
       onAudible: () => this.heard(),
+      onAnalyser: (analyser: AnalyserNode | null) => this.deps.onOutputAnalyser?.(analyser),
       onError: (text: string) => this.voiceFailed(text),
     };
     if (speaker.engine === 'local') return createLocalSpeaker(events);

@@ -12,7 +12,7 @@ text.
 This NOTICE file exists to carry the upstream copyright and license notice forward, as
 required by AGPL-3.0 section 5(a)/(c). It does not modify the terms of the license.
 
-The Signal Orb in apps/web/public/vendor/shipnotes/signal-orb.js is adapted from
+The Voice Orb in apps/web/public/vendor/shipnotes/voice-orb.js is adapted from
 Ship Notes components, copyright (c) 2026 Ship Notes, licensed under MIT.
 Source: https://github.com/aqualang89/shipnotes-components
 Its full license text is in apps/web/public/vendor/shipnotes/LICENSE.

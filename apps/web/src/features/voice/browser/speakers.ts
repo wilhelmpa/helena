@@ -37,6 +37,7 @@ export interface SpeakerEvents {
   onIdle(): void;
   // A piece is audible now (its sound started), not only queued or on its way.
   onAudible?(): void;
+  onAnalyser?(analyser: AnalyserNode | null): void;
   onError?(text: string, error: unknown): void;
 }
 
@@ -235,12 +236,24 @@ export function createLocalSpeaker(
 ): VoiceSpeaker {
   const queue: Piece[] = [];
   let context: AudioContext | null = null;
+  let analyser: AnalyserNode | null = null;
   let playing: Playing | null = null;
   let paused = false;
   let turn = 0;
   let wasBusy = false;
 
-  const audioContext = () => (context ??= new AudioContext());
+  const audioContext = () => {
+    if (!context) {
+      context = new AudioContext();
+      if (events.onAnalyser) {
+        analyser = context.createAnalyser();
+        analyser.fftSize = 1024;
+        analyser.connect(context.destination);
+        events.onAnalyser(analyser);
+      }
+    }
+    return context;
+  };
 
   const setBusy = (busy: boolean) => {
     if (busy === wasBusy) return;
@@ -307,7 +320,7 @@ export function createLocalSpeaker(
       current.index += 1;
       const node = ctx.createBufferSource();
       node.buffer = buffer;
-      node.connect(ctx.destination);
+      node.connect(analyser ?? ctx.destination);
       const at = Math.max(current.at, ctx.currentTime + LEAD_S);
       node.start(at);
       current.at = at + buffer.duration;
@@ -405,6 +418,9 @@ export function createLocalSpeaker(
     destroy() {
       stopSources();
       forget(queue.splice(0));
+      events.onAnalyser?.(null);
+      analyser?.disconnect();
+      analyser = null;
       void context?.close();
       context = null;
     },

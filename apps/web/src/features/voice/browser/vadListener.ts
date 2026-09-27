@@ -26,6 +26,8 @@ export interface EarEvents {
   onUtterance(samples: Float32Array | null, text: string | null): void;
   // The input level (0…1), a few dozen times a second, for the meter.
   onLevel?(level: number): void;
+  // The VAD's own stream, also used by the voice orb; never acquired a second time.
+  onStream?(stream: MediaStream | null): void;
   // `network`: the browser's recognition service (Google's for Chrome) did not answer.
   onError?(reason: 'blocked' | 'missing' | 'failed' | 'network'): void;
 }
@@ -66,8 +68,16 @@ export async function startVadEar(
     processorType,
     startOnLoad: true,
     ...NORMAL,
-    getStream: () => navigator.mediaDevices.getUserMedia({ audio: SPEECH_CONSTRAINTS }),
-    resumeStream: () => navigator.mediaDevices.getUserMedia({ audio: SPEECH_CONSTRAINTS }),
+    getStream: async () => {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: SPEECH_CONSTRAINTS });
+      events.onStream?.(stream);
+      return stream;
+    },
+    resumeStream: async () => {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: SPEECH_CONSTRAINTS });
+      events.onStream?.(stream);
+      return stream;
+    },
     ortConfig: (ort: { env: { logLevel?: string; wasm: { numThreads?: number } } }) => {
       ort.env.logLevel = 'error';
       // Threads need a cross-origin isolated page; one is plenty for a 2 MB model.
@@ -104,6 +114,7 @@ export async function startVadEar(
       vad.setOptions(on ? GUARDED : NORMAL);
     },
     async destroy() {
+      events.onStream?.(null);
       await vad.destroy().catch(() => {});
     },
   };

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { agentOrbState, chatOrbState, shipnotesState } from './agentStatusOrb';
+import { agentOrbState, chatOrbState, voiceOrbState } from './agentStatusOrb';
 
 describe('agent status orb mapping', () => {
   it('uses stream phases, the open tool and pending clarification', () => {
@@ -11,7 +11,7 @@ describe('agent status orb mapping', () => {
     assert.equal(chatOrbState('answered', null, true), 'waiting');
     assert.equal(chatOrbState('failed', null, false), 'error');
     assert.equal(chatOrbState('answered', null, false), 'done');
-    assert.equal(shipnotesState.tool, 'searching');
+    assert.equal(voiceOrbState('tool', 'off'), 'thinking');
   });
 
   it('shows approval before a run, and runner degradation as error', () => {
@@ -20,5 +20,17 @@ describe('agent status orb mapping', () => {
     assert.equal(agentOrbState('ready', 'online'), 'idle');
     assert.equal(agentOrbState('running', 'degraded'), 'error');
     assert.equal(agentOrbState('waiting', 'degraded'), 'waiting');
+  });
+
+  it('maps chat and voice phases to the four Voice Orb states', () => {
+    assert.equal(voiceOrbState('idle', 'off'), 'idle');
+    assert.equal(voiceOrbState('done', 'off'), 'idle');
+    assert.equal(voiceOrbState('waiting', 'off'), 'idle');
+    assert.equal(voiceOrbState('error', 'off'), 'idle');
+    assert.equal(voiceOrbState('idle', 'listening'), 'listening');
+    assert.equal(voiceOrbState('idle', 'hearing'), 'listening');
+    assert.equal(voiceOrbState('idle', 'transcribing'), 'thinking');
+    assert.equal(voiceOrbState('idle', 'thinking'), 'thinking');
+    assert.equal(voiceOrbState('idle', 'speaking'), 'speaking');
   });
 });
