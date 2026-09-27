@@ -5,8 +5,8 @@ import { Bot } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { AgentPausedBadge } from '@/components/common/agent-chat/AgentPausedBadge';
 import { AgentTemplateBadge } from '@/components/common/agent-chat/AgentTemplateBadge';
-import AgentStatusOrb from '@/components/common/agent-chat/AgentStatusOrb';
-import { agentOrbState } from '@/utils/agentStatusOrb';
+import Orb from '@/components/helena/Orb';
+import { useAgentStatus } from '@/utils/helenaStatus';
 import { agentsPath } from '@/utils/paths';
 import {
   organizationAgentRole,
@@ -27,6 +27,10 @@ export default function OrganizationAgentNode({
 }) {
   const t = useTranslations('organization');
   const { agent } = node;
+  const status = useAgentStatus(agent.id, {
+    run: work.get(agent.id),
+    runtimeStatus: agent.runtimeState.status,
+  });
   const role = organizationAgentRole(agent);
   const detail = [
     agent.roleTitle || `@${agent.username}`,
@@ -42,12 +46,7 @@ export default function OrganizationAgentNode({
         className="group flex min-h-8 min-w-0 items-center gap-2 rounded-md px-2 py-1 text-sm transition-colors hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
       >
         <Bot className="size-4 shrink-0 text-muted-foreground group-hover:text-foreground" />
-        {!agent.template && (
-          <AgentStatusOrb
-            state={agentOrbState(work.get(agent.id), agent.runtimeState.status)}
-            online={agent.runtimeState.status === 'online'}
-          />
-        )}
+        {!agent.template && <Orb state={status} />}
         <span className="min-w-0 shrink truncate font-medium">{agent.name}</span>
         <span className="shrink-0 text-xs text-muted-foreground max-sm:hidden">
           {t(`roles.${role}`)}
@@ -72,9 +71,6 @@ export default function OrganizationAgentNode({
           </span>
         )}
       </Link>
-      {agent.runtimeState.detail && (
-        <p className="ps-8 text-xs text-status-waiting">{agent.runtimeState.detail}</p>
-      )}
       {(node.reports.length > 0 || (node.departments?.length ?? 0) > 0) && (
         <ul className="ms-4 border-s border-sidebar-border">
           {/* Home only: its departments first, then the reports that belong to none. */}

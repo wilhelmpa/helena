@@ -28,8 +28,8 @@ const renderApproval: RenderTool = (tool) =>
 
 // An agent's answer: its reasoning, tool calls and text (AgentMessageParts), artifact
 // fences as cards that open the artifact panel, an error the answer ended with, and,
-// once it is done, what it drew on. While it has nothing yet it shows nothing: the
-// composer says the agent is thinking (ChatComposerStatus).
+// once it is done, what it drew on. While it has nothing yet it shows nothing;
+// the Orb carries the active state.
 export default function ChatMessageBubbleAssistant({
   message,
   streaming,

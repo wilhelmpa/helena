@@ -1,5 +1,5 @@
 import { useEffect, type RefObject } from 'react';
-import type { VoiceOrbAudio } from '@/utils/agentStatusOrb';
+import type { VoiceOrbAudio } from '@/utils/helenaStatus';
 import { openMicrophoneAnalyser, readOrbAudio } from '@/utils/voiceOrbAudio';
 
 export function useVoiceOrbAudio(

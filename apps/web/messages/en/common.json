@@ -278,13 +278,16 @@
     "agentTeam": "Agent team",
     "autoArchive": "Auto-archive"
   },
-  "statusOrb": {
+  "status": {
     "idle": "Resting",
+    "listening": "Listening",
     "thinking": "Thinking",
     "tool": "Using a tool",
+    "speaking": "Speaking",
     "waiting": "Waiting for you",
     "error": "Error",
-    "done": "Done",
-    "offline": "Offline"
+    "throttled": "Throttled",
+    "offline": "Offline",
+    "done": "Done"
   }
 }

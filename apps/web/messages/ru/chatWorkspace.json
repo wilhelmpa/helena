@@ -168,15 +168,6 @@
     "hint": "Агента можно выбрать слева внизу поля ввода — там же виден его статус."
   },
   "agents": {
-    "status": {
-      "running": "Работает",
-      "waiting": "Ждёт вас",
-      "ready": "Готов",
-      "offline": "Не в сети",
-      "never": "Ни разу не подключался",
-      "paused": "Приостановлен",
-      "template": "Шаблон — добавьте его в проект, чтобы с ним общаться"
-    },
     "runtimeExternal": "Внешний",
     "switch": "Чат с {agent} — начать новый чат с другим агентом",
     "newChatWith": "Новый чат с…"
@@ -204,12 +195,6 @@
     "stop": "Остановить ответ",
     "jev": "Optional Jev first stage for this chat"
   },
-  "activity": {
-    "thinking": "{agent} думает…",
-    "writing": "{agent} пишет…",
-    "queued": "Ожидание {agent}: его раннер не в сети. Ответ начнётся, как только он вернётся.",
-    "usingTool": "{agent} использует {tool} …"
-  },
   "session": {
     "copy": "Скопировать ID сессии",
     "copied": "ID сессии скопирован",
@@ -222,15 +207,6 @@
     "interrupt": "Прервать",
     "end": "Завершить",
     "heard": "«{text}»",
-    "phase": {
-      "starting": "Включаю микрофон …",
-      "listening": "Слушаю — просто говорите.",
-      "hearing": "Слышу вас …",
-      "transcribing": "Записываю …",
-      "thinking": "{agent} сейчас ответит …",
-      "speaking": "{agent} говорит — заговорите, чтобы прервать",
-      "speakingTap": "{agent} говорит"
-    },
     "where": {
       "listenLocal": "Распознавание речи: Whisper на этом компьютере",
       "listenBrowser": "Распознавание речи: браузер (Chrome и Safari отправляют запись в Google или Apple)",

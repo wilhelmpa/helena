@@ -168,15 +168,6 @@
     "hint": "Pilih agen di kiri bawah kolom input — statusnya juga terlihat di sana."
   },
   "agents": {
-    "status": {
-      "running": "Sedang bekerja",
-      "waiting": "Menunggu Anda",
-      "ready": "Siap",
-      "offline": "Offline",
-      "never": "Belum pernah terhubung",
-      "paused": "Dijeda",
-      "template": "Templat — tambahkan ke proyek untuk chat dengannya"
-    },
     "runtimeExternal": "Eksternal",
     "switch": "Chat dengan {agent} — mulai chat baru dengan agen lain",
     "newChatWith": "Chat baru dengan …"
@@ -204,12 +195,6 @@
     "stop": "Hentikan jawaban",
     "jev": "Optional Jev first stage for this chat"
   },
-  "activity": {
-    "thinking": "{agent} sedang berpikir…",
-    "writing": "{agent} sedang menulis…",
-    "queued": "Menunggu {agent} — runner-nya offline. Jawaban dimulai begitu runner kembali.",
-    "usingTool": "{agent} sedang memakai {tool} …"
-  },
   "session": {
     "copy": "Salin ID sesi",
     "copied": "ID sesi disalin",
@@ -222,15 +207,6 @@
     "interrupt": "Sela",
     "end": "Akhiri",
     "heard": "“{text}”",
-    "phase": {
-      "starting": "Menyalakan mikrofon …",
-      "listening": "Saya mendengarkan – bicara saja.",
-      "hearing": "Saya mendengar Anda …",
-      "transcribing": "Mencatat …",
-      "thinking": "{agent} akan segera menjawab …",
-      "speaking": "{agent} sedang berbicara – bicaralah untuk menyela",
-      "speakingTap": "{agent} sedang berbicara"
-    },
     "where": {
       "listenLocal": "Pengenalan suara: Whisper di mesin ini",
       "listenBrowser": "Pengenalan suara: browser (Chrome dan Safari mengirim rekaman ke Google atau Apple)",

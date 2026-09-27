@@ -1,0 +1,115 @@
+.orb {
+  --orb-color: var(--status-idle);
+  display: inline-block;
+  flex: none;
+  border-radius: 50%;
+  background: var(--orb-color);
+  box-shadow: 0 0 0.5rem color-mix(in srgb, var(--orb-color), transparent 45%);
+  transition:
+    background-color 400ms ease,
+    box-shadow 400ms ease,
+    opacity 400ms ease;
+}
+.idle {
+  --orb-color: var(--status-idle);
+}
+.listening {
+  --orb-color: var(--status-listening);
+}
+.thinking,
+.tool {
+  --orb-color: var(--status-thinking);
+}
+.speaking {
+  --orb-color: var(--status-speaking);
+}
+.waiting {
+  --orb-color: var(--status-waiting);
+}
+.error {
+  --orb-color: var(--status-error);
+}
+.throttled {
+  --orb-color: var(--status-throttled);
+}
+.offline {
+  --orb-color: var(--status-offline);
+}
+.done {
+  --orb-color: var(--status-done);
+}
+.dot {
+  width: 0.375rem;
+  height: 0.375rem;
+}
+.small {
+  width: 0.55rem;
+  height: 0.55rem;
+}
+.medium {
+  width: 3.5rem;
+  height: 3.5rem;
+}
+.large {
+  display: block;
+  position: relative;
+  width: var(--orb-size, min(20rem, 55vw));
+  aspect-ratio: 1;
+  margin-inline: auto;
+  background: transparent;
+  box-shadow: none;
+}
+.large voice-orb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  opacity: 0;
+  transition: opacity 400ms ease;
+}
+.large.ready voice-orb {
+  opacity: 1;
+}
+.static {
+  display: block;
+  width: 52%;
+  height: 52%;
+  margin: 24%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    var(--orb-color) 0%,
+    color-mix(in srgb, var(--orb-color), transparent 55%) 37%,
+    transparent 72%
+  );
+  filter: blur(0.6rem);
+  box-shadow: 0 0 3rem color-mix(in srgb, var(--orb-color), transparent 75%);
+}
+.tool {
+  outline: 1px solid var(--status-thinking);
+  outline-offset: 2px;
+}
+.waiting {
+  outline: 1px solid var(--status-waiting);
+  outline-offset: 2px;
+}
+.small:not(.still):is(.listening, .thinking, .tool, .speaking),
+.dot:not(.still):is(.listening, .thinking, .tool, .speaking) {
+  animation: pulse 2.6s ease-in-out infinite;
+}
+.small:not(.still).waiting,
+.dot:not(.still).waiting {
+  animation: pulse 3.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  50% {
+    opacity: 0.58;
+    transform: scale(0.82);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .orb,
+  .large voice-orb {
+    animation: none !important;
+    transition: none;
+  }
+}
