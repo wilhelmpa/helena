@@ -92,5 +92,11 @@
       "system": "系统",
       "failure": "错误"
     }
+  },
+  "groups": {
+    "approvals": "审批",
+    "errors": "错误",
+    "mentions": "提及",
+    "system": "系统"
   }
 }

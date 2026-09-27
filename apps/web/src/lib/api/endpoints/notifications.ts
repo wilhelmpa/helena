@@ -49,7 +49,7 @@ export type NotificationDeleteScope = 'all' | 'read' | 'read-completed';
 // one project (the per-project inbox). cursor is the JSON-encoded keyset from the
 // previous page.
 export const listNotifications = (
-  projectId: number,
+  projectId: number | null,
   params: {
     cursor?: NotificationCursor | null;
     limit?: number;
@@ -57,7 +57,7 @@ export const listNotifications = (
   } = {},
 ) => {
   const q = new URLSearchParams();
-  q.set('projectId', String(projectId));
+  if (projectId != null) q.set('projectId', String(projectId));
   if (params.limit) q.set('limit', String(params.limit));
   if (params.cursor) q.set('cursor', JSON.stringify(params.cursor));
   const f = params.filters ?? {};
@@ -68,9 +68,11 @@ export const listNotifications = (
   return request<NotificationPage>(`/notifications?${q.toString()}`);
 };
 
-// Unread count for the sidebar badge, refetched when the inbox scope moves.
-export const getUnreadCount = (projectId: number) =>
-  request<{ unread: number }>(`/notifications/unread?projectId=${projectId}`);
+// Unread count for a project or all projects in Home.
+export const getUnreadCount = (projectId: number | null) =>
+  request<{ unread: number }>(
+    `/notifications/unread${projectId == null ? '' : `?projectId=${projectId}`}`,
+  );
 
 export const setNotificationRead = (id: number, read: boolean) =>
   request<void>(`/notifications/${id}/read`, { method: 'POST', body: JSON.stringify({ read }) });
@@ -81,16 +83,19 @@ export const snoozeNotification = (id: number, until: string | null) =>
     body: JSON.stringify({ until }),
   });
 
-export const markAllNotificationsRead = (projectId: number) =>
+export const markAllNotificationsRead = (projectId: number | null) =>
   request<{ count: number }>(`/notifications/read-all`, {
     method: 'POST',
-    body: JSON.stringify({ projectId }),
+    body: JSON.stringify(projectId == null ? {} : { projectId }),
   });
 
 export const deleteNotification = (id: number) =>
   request<void>(`/notifications/${id}`, { method: 'DELETE' });
 
-export const deleteNotifications = (scope: NotificationDeleteScope, projectId: number) =>
-  request<{ count: number }>(`/notifications?scope=${scope}&projectId=${projectId}`, {
-    method: 'DELETE',
-  });
+export const deleteNotifications = (scope: NotificationDeleteScope, projectId: number | null) =>
+  request<{ count: number }>(
+    `/notifications?scope=${scope}${projectId == null ? '' : `&projectId=${projectId}`}`,
+    {
+      method: 'DELETE',
+    },
+  );

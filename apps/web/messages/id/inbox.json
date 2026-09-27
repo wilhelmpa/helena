@@ -92,5 +92,11 @@
       "system": "SISTEM",
       "failure": "KESALAHAN"
     }
+  },
+  "groups": {
+    "approvals": "Persetujuan",
+    "errors": "Kesalahan",
+    "mentions": "Sebutan",
+    "system": "Sistem"
   }
 }

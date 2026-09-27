@@ -92,5 +92,11 @@
       "system": "SYSTEM",
       "failure": "FEHLER"
     }
+  },
+  "groups": {
+    "approvals": "Freigaben",
+    "errors": "Fehler",
+    "mentions": "Erwähnungen",
+    "system": "System"
   }
 }

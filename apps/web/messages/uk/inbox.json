@@ -92,5 +92,11 @@
       "system": "СИСТЕМА",
       "failure": "ПОМИЛКА"
     }
+  },
+  "groups": {
+    "approvals": "Погодження",
+    "errors": "Помилки",
+    "mentions": "Згадки",
+    "system": "Система"
   }
 }

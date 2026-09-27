@@ -34,12 +34,23 @@ export default function SidebarAreaItem({
   const [open, setOpen] = usePersistedBoolean(`sidebar:area:${area.id}`, activeViewId != null);
 
   return (
-    <Collapsible asChild open={open} onOpenChange={setOpen} className="group/area">
+    <Collapsible
+      asChild
+      open={views.length > 0 && open}
+      onOpenChange={setOpen}
+      className="group/area"
+    >
       <SidebarMenuSubItem>
         <CollapsibleTrigger asChild>
-          <SidebarMenuSubButton asChild isActive={!open && activeViewId != null} className="pe-7">
+          <SidebarMenuSubButton
+            asChild
+            isActive={false}
+            className={activeViewId != null ? 'pe-7 text-foreground hover:bg-transparent' : 'pe-7'}
+          >
             <button type="button">
-              <ChevronRight className="transition-transform group-data-[state=open]/area:rotate-90" />
+              {views.length > 0 && (
+                <ChevronRight className="transition-transform group-data-[state=open]/area:rotate-90" />
+              )}
               <span>{area.name}</span>
             </button>
           </SidebarMenuSubButton>

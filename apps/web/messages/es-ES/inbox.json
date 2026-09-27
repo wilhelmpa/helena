@@ -92,5 +92,11 @@
       "system": "SISTEMA",
       "failure": "ERROR"
     }
+  },
+  "groups": {
+    "approvals": "Aprobaciones",
+    "errors": "Errores",
+    "mentions": "Menciones",
+    "system": "Sistema"
   }
 }

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Bell, MessageSquareText } from 'lucide-react';
 import { useShell } from '@/context/shellContext';
+import { useInboxUnread } from '@/hooks/useInboxUnread';
 import { PageTabs } from '@/components/layout/PageToolbar';
 import InboxView from './components/InboxView';
 import MailInbox from './components/MailInbox';
@@ -20,6 +21,7 @@ export default function InboxPage() {
   const { project } = useShell();
   const [tab, setTab] = useState<InboxTab>('messages');
   const mailAccounts = useProjectMailAccounts(project?.project.key);
+  const unread = useInboxUnread(project?.project.key ?? null, project?.project.id ?? null).data;
 
   if (!project) return null;
   if (mailAccounts.isPending)
@@ -37,7 +39,7 @@ export default function InboxPage() {
         ...(hasMail
           ? [{ value: 'messages' as const, label: t('messages'), icon: MessageSquareText }]
           : []),
-        { value: 'updates', label: t('updates'), icon: Bell },
+        { value: 'updates', label: t('updates'), icon: Bell, count: unread || undefined },
       ]}
     />
   );

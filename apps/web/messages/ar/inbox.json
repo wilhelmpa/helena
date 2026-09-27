@@ -92,5 +92,11 @@
       "system": "النظام",
       "failure": "خطأ"
     }
+  },
+  "groups": {
+    "approvals": "الموافقات",
+    "errors": "الأخطاء",
+    "mentions": "الإشارات",
+    "system": "النظام"
   }
 }

@@ -14,7 +14,6 @@ import { useViewFoldersQuery, useViewsQuery } from '@/services/views.service';
 import type { View } from '@/lib/api/endpoints/views';
 import { useFilesQuery } from '@/services/files.service';
 import { useDashboardsQuery } from '@/services/dashboards.service';
-import { useProjectMailAccounts } from '@/services/mail.service';
 import {
   agentActivityPath,
   aiAgentsPath,
@@ -36,6 +35,7 @@ import { homeNavigation } from './homeNavigation';
 import SidebarApprovalsRefresh from './SidebarApprovalsRefresh';
 import SidebarAreaNav from './SidebarAreaNav';
 import SidebarSavedViewItem from './SidebarSavedViewItem';
+import { hasTreeContent } from './treeContent';
 
 function pathIsActive(pathname: string, href: string) {
   const path = href.split('?')[0]!;
@@ -53,17 +53,26 @@ function TreeLink({
   href,
   children,
   badge,
+  dot,
   nested = false,
   activeOverride,
 }: {
   href: string;
   children: ReactNode;
   badge?: number;
+  dot?: boolean;
   nested?: boolean;
   activeOverride?: boolean;
 }) {
   const pathname = usePathname();
-  const active = activeOverride ?? (!href.includes('?') && pathIsActive(pathname, href));
+  const searchParams = useSearchParams();
+  const [path, query] = href.split('?');
+  const active =
+    activeOverride ??
+    (pathIsActive(pathname, path!) &&
+      (query
+        ? [...new URLSearchParams(query)].every(([key, value]) => searchParams.get(key) === value)
+        : !nested || searchParams.size === 0));
   return (
     <Link
       href={href}
@@ -72,6 +81,7 @@ function TreeLink({
     >
       <span className="min-w-0 flex-1 truncate">{children}</span>
       {badge != null && badge > 0 && <span className="helena-tree-badge">{badge}</span>}
+      {dot && <span className="size-1.5 rounded-full bg-primary" aria-hidden="true" />}
     </Link>
   );
 }
@@ -100,22 +110,25 @@ function TreeBranch({
       pathIsActive(pathname, href) ||
       activePaths.some((path) => pathIsActive(pathname, path)),
   );
+  const expandable = hasTreeContent(children);
   return (
     <div className="helena-tree-branch">
       <div className="helena-tree-parent">
         <TreeLink href={href}>{label}</TreeLink>
         {action}
-        <button
-          type="button"
-          className="helena-tree-toggle"
-          aria-label={label}
-          aria-expanded={open}
-          onClick={() => setOpen(!open)}
-        >
-          <ChevronRight size={14} className={open ? 'rotate-90' : ''} />
-        </button>
+        {expandable && (
+          <button
+            type="button"
+            className="helena-tree-toggle"
+            aria-label={label}
+            aria-expanded={open}
+            onClick={() => setOpen(!open)}
+          >
+            <ChevronRight size={14} className={open ? 'rotate-90' : ''} />
+          </button>
+        )}
       </div>
-      {open && <div className="helena-tree-children">{children}</div>}
+      {expandable && open && <div className="helena-tree-children">{children}</div>}
     </div>
   );
 }
@@ -135,13 +148,22 @@ function InboxBadge({ teamIds }: { teamIds: number[] }) {
   );
 }
 
-export function SidebarPersonalNav({ teamIds }: { teamIds: number[] }) {
+export function SidebarPersonalNav({
+  teamIds,
+  projectKey,
+}: {
+  teamIds: number[];
+  projectKey: string | null;
+}) {
   const t = useTranslations('nav');
   return (
     <section className="helena-sidebar-section">
       <h2>{t('sidebarYou')}</h2>
       <TreeLink href="/">{t('sidebarHomeChat')}</TreeLink>
       <InboxBadge teamIds={teamIds} />
+      <TreeLink href={projectKey ? projectApprovalsPath(projectKey) : '/approvals'}>
+        {t('approvals')}
+      </TreeLink>
     </section>
   );
 }
@@ -285,7 +307,6 @@ export function SidebarProjectTree({
   const { data: dashboards = [] } = useDashboardsQuery(
     features.dashboards && can('dashboards', 'read') ? projectKey : null,
   );
-  const { data: mailAccounts = [] } = useProjectMailAccounts(projectKey);
   const settings = useProjectSettingsNavItems(projectKey);
   const first = settings.find((item) => item.key === 'general') ?? settings[0];
   const taskHref = projectPath(projectKey);
@@ -325,7 +346,7 @@ export function SidebarProjectTree({
               onDelete={onDeleteView}
             />
           ))}
-        {can('views', 'read') && (
+        {can('views', 'read') && (areas.length > 0 || can('views', 'create')) && (
           <SidebarAreaNav
             projectKey={projectKey}
             onEditView={onEditView}
@@ -377,7 +398,6 @@ export function SidebarProjectTree({
           aiTeamPath(projectKey, 'schedules'),
           agentActivityPath(projectKey),
           workflowsPath(projectKey),
-          projectApprovalsPath(projectKey),
         ]}
       >
         {can('ai_agents', 'read') && (
@@ -404,7 +424,6 @@ export function SidebarProjectTree({
           </TreeLink>
         )}
       </TreeBranch>
-      {mailAccounts.length > 0 && <TreeLink href={inboxPath(projectKey)}>{t('inbox')}</TreeLink>}
       {isAdmin && <TreeLink href={receiptsPath(projectKey)}>{t('receipts')}</TreeLink>}
       {features.initiatives && can('initiatives', 'read') && (
         <TreeLink href={initiativesPath(projectKey)}>{t('initiatives')}</TreeLink>

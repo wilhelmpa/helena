@@ -1473,6 +1473,16 @@ html[data-kiosk-display='dual'] [data-slot='alert-dialog-content'] {
     0 2px 6px #0004,
     inset 0 1px #ffffff0c;
 }
+.helena-tree-branch:has(.helena-tree-child.is-active) > .helena-tree-parent > .helena-tree-link {
+  background: transparent;
+  box-shadow: none;
+  color: #f3edf9;
+}
+.helena-tree-branch:has(.helena-tree-child.is-active)
+  > .helena-tree-parent
+  > .helena-tree-link:hover {
+  background: transparent;
+}
 .helena-tree-child {
   min-height: 32px;
   padding-inline-start: 28px;
@@ -1491,6 +1501,20 @@ html[data-kiosk-display='dual'] [data-slot='alert-dialog-content'] {
   font-size: 11px;
   font-weight: 650;
 }
+.helena-project-tag {
+  --project-tag-color: var(--brand);
+  background: color-mix(in srgb, var(--project-tag-color) 15%, transparent);
+  color: var(--project-tag-color);
+}
+.helena-project-tag[data-project='TRADE'] {
+  --project-tag-color: #7ee0b8;
+}
+.helena-project-tag[data-project='VERVE'] {
+  --project-tag-color: #f0997b;
+}
+.helena-project-tag[data-project='VOL'] {
+  --project-tag-color: #bdaaff;
+}
 .helena-tree-parent {
   display: flex;
   align-items: center;
@@ -1508,6 +1532,20 @@ html[data-kiosk-display='dual'] [data-slot='alert-dialog-content'] {
   justify-content: center;
   border-radius: 7px;
   color: #8f879a;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.helena-tree-parent:hover .helena-tree-toggle,
+.helena-tree-parent:focus-within .helena-tree-toggle,
+.helena-saved-view:hover .helena-tree-toggle,
+.helena-saved-view:focus-within .helena-tree-toggle,
+.helena-tree-toggle:focus-visible {
+  opacity: 1;
+}
+@media (hover: none) {
+  .helena-tree-toggle {
+    opacity: 1;
+  }
 }
 .helena-tree-toggle:hover {
   background: #26212d;
@@ -1573,4 +1611,26 @@ html[data-kiosk-display='dual'] [data-slot='alert-dialog-content'] {
   html:has([data-project-knowledge]) [data-app-header] {
     display: none;
   }
+}
+
+/* Fields use their own border and inner surface for focus. This also covers the
+   few native search/filter controls that do not use the UI components yet. */
+:is(
+  input:not([type='checkbox']):not([type='radio']):not([type='file']),
+  textarea,
+  select,
+  [data-slot='select-trigger']
+):focus-visible {
+  --tw-ring-shadow: 0 0 #0000;
+  outline: none;
+  border-color: var(--ring);
+  background-color: color-mix(in srgb, var(--accent) 20%, var(--background));
+}
+:is(input, textarea, select, [data-slot='select-trigger'])[aria-invalid='true'] {
+  --tw-ring-shadow: 0 0 #0000;
+  border-color: var(--destructive);
+}
+[data-slot='input-group-control']:focus-visible {
+  background: transparent;
+  border-color: transparent;
 }
