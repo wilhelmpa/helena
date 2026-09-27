@@ -21,6 +21,8 @@ export interface UpdateItem {
   updateAvailable: boolean;
   security: boolean;
   risk: UpdateRisk | null;
+  mode: 'auto' | 'manual';
+  autoAllowed: boolean;
   breaking: boolean | null;
   summary: string | null;
   highlights: string[];
@@ -50,6 +52,7 @@ export interface UpdateAction {
   fromVersion: string | null;
   toVersion: string | null;
   state: 'running' | 'done' | 'failed';
+  automatic: boolean;
   backupPath: string | null;
   log: string | null;
   error: string | null;
@@ -68,6 +71,7 @@ export interface UpdateSettings {
   model: string | null;
   reasoning: string;
   claudeChannel: 'latest' | 'stable';
+  modes: Record<string, 'auto' | 'manual'>;
 }
 
 export interface UpdateCenter {

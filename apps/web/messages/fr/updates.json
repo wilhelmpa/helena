@@ -62,7 +62,8 @@
     "services": "Services après la mise à jour",
     "failedUnits": "Services en échec : {units}",
     "reboot": "Un redémarrage est recommandé.",
-    "started": "Mise à jour lancée"
+    "started": "Mise à jour lancée",
+    "rolledBack": "Rolled back"
   },
   "sources": {
     "hermes": "Hermes",
@@ -99,7 +100,19 @@
       "stable": "Stable"
     },
     "save": "Enregistrer",
-    "saved": "Enregistré"
+    "saved": "Enregistré",
+    "componentModes": "Components",
+    "componentModesDescription": "Automatic updates apply only when risk is low and there are no breaking changes.",
+    "risk": {
+      "low": "Low risk",
+      "medium": "Medium risk",
+      "high": "High risk",
+      "unknown": "Risk not yet known"
+    },
+    "mode": {
+      "auto": "Automatic",
+      "manual": "Manual"
+    }
   },
   "home": {
     "more": "Toutes les mises à jour",
@@ -110,5 +123,9 @@
   "aptRefreshedAt": "Métadonnées APT actualisées : {time}",
   "aptListsAt": "Date des listes de paquets : {time}",
   "aptNotRefreshed": "Aucune actualisation réussie des métadonnées APT enregistrée",
-  "unverified": "État non vérifié"
+  "unverified": "État non vérifié",
+  "autoApplied": "Applied automatically: {name}",
+  "autoRolledBack": "Rolled back",
+  "autoFailedShort": "Update failed",
+  "autoFailed": "Automatic update failed: {name}"
 }

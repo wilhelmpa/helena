@@ -62,7 +62,8 @@
     "services": "Службы после обновления",
     "failedUnits": "Службы с ошибкой: {units}",
     "reboot": "Рекомендуется перезагрузка.",
-    "started": "Обновление запущено"
+    "started": "Обновление запущено",
+    "rolledBack": "Rolled back"
   },
   "sources": {
     "hermes": "Hermes",
@@ -99,7 +100,19 @@
       "stable": "Стабильный"
     },
     "save": "Сохранить",
-    "saved": "Сохранено"
+    "saved": "Сохранено",
+    "componentModes": "Components",
+    "componentModesDescription": "Automatic updates apply only when risk is low and there are no breaking changes.",
+    "risk": {
+      "low": "Low risk",
+      "medium": "Medium risk",
+      "high": "High risk",
+      "unknown": "Risk not yet known"
+    },
+    "mode": {
+      "auto": "Automatic",
+      "manual": "Manual"
+    }
   },
   "home": {
     "more": "Все обновления",
@@ -110,5 +123,9 @@
   "aptRefreshedAt": "Метаданные APT обновлены: {time}",
   "aptListsAt": "Дата списков пакетов: {time}",
   "aptNotRefreshed": "Успешное обновление метаданных APT не зарегистрировано",
-  "unverified": "Статус не подтверждён"
+  "unverified": "Статус не подтверждён",
+  "autoApplied": "Applied automatically: {name}",
+  "autoRolledBack": "Rolled back",
+  "autoFailedShort": "Update failed",
+  "autoFailed": "Automatic update failed: {name}"
 }

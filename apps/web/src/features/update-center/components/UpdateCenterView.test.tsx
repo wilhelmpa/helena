@@ -2,14 +2,18 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NextIntlClientProvider } from 'next-intl';
 import { JSDOM } from 'jsdom';
 import type { UpdateCenter } from '@/lib/api/endpoints/updateCenter';
 import UpdateCenterView from './UpdateCenterView';
+import UpdatesTile from './UpdatesTile';
+import { updateCenterKey } from '../services/updateCenter.service';
 import common from '../../../../messages/en/common.json';
 import updates from '../../../../messages/en/updates.json';
 import routines from '../../../../messages/en/routines.json';
+import home from '../../../../messages/en/home.json';
 
 const center: UpdateCenter = {
   checkedAt: '2026-09-26T06:00:00Z',
@@ -27,6 +31,7 @@ const center: UpdateCenter = {
     model: null,
     reasoning: 'low',
     claudeChannel: 'stable',
+    modes: {},
   },
   digest: {
     agentId: null,
@@ -45,6 +50,46 @@ const center: UpdateCenter = {
     nextRunAt: null,
   },
 };
+
+test('dashboard shows automatic rollback with its reason', () => {
+  const client = new QueryClient();
+  client.setQueryData(updateCenterKey, {
+    ...center,
+    actions: [
+      {
+        id: 1,
+        source: 'cli-runtimes',
+        component: 'codex',
+        name: 'Codex CLI',
+        components: ['codex'],
+        fromVersion: '1.0.0',
+        toVersion: '1.1.0',
+        state: 'failed',
+        automatic: true,
+        backupPath: null,
+        log: null,
+        error: 'update failed; previous version restored: smoke failed',
+        result: null,
+        health: null,
+        requestedAt: '2026-09-27T06:00:00Z',
+        finishedAt: '2026-09-27T06:01:00Z',
+      },
+    ],
+  } satisfies UpdateCenter);
+  const markup = renderToStaticMarkup(
+    <NextIntlClientProvider
+      locale="en"
+      timeZone="UTC"
+      messages={{ common, updates, routines, home }}
+    >
+      <QueryClientProvider client={client}>
+        <UpdatesTile />
+      </QueryClientProvider>
+    </NextIntlClientProvider>,
+  );
+  assert.ok(markup.includes('Rolled back'));
+  assert.ok(markup.includes('smoke failed'));
+});
 
 for (const failure of ['http', 'network'] as const) {
   test(`initial ${failure} failure shows safe status recovery and reload sends only GET`, async () => {

@@ -6,7 +6,8 @@ Owner, 2026-09-24: "du müsstest auch mal alles updaten, du könntest dann auch 
 kleines Modell regelmäßig laufen lassen, um nach Updates zu suchen, und den Status auch im
 Dashboard anzeigen." Helena checks every component it runs on for a newer version, has a
 small model summarize what changed (German, with a risk rating), shows the state on Start and
-on Administrator → Updates, and applies an update when the owner clicks "Aktualisieren".
+on Administrator → Server → Updates. The owner can apply an update manually or allow
+automatic updates for eligible components.
 
 Verified on Kingston, 2026-09-24, against the installed tree: Claude Code 2.1.281, Codex
 0.156.1, claude-agent-acp 0.81.1 (npm has 0.81.2), codex-acp 1.13.1
@@ -102,7 +103,7 @@ hardening rules as `helena-hermes-update`:
   the new pin; an npm runtime gets a fresh lockfile (`npm install --package-lock-only
   --ignore-scripts`, the registry's sha512) and `npm ci --ignore-scripts`. The new pin lives
   in `/var/lib/helena/runtimes/pins.json` and wins over the repository's only while it is
-  newer. `previous` stays for `rollback <runtime>`.
+  newer. `previous` stays for `rollback <runtime>`; rollback restores the previous pin too.
 - `apply apt {packages | security}`: `apt-get update`, then `apt-get install --only-upgrade`
   of exactly the chosen packages that are still upgradable (or of every package from a
   security origin), non-interactive, keeping changed config files, waiting for the dpkg lock
@@ -154,18 +155,24 @@ so a fresh installation shows its state at once.
 
 ### 4.5 What the owner sees
 
-- **Start → "Updates"** (Administrator only): how many updates, how many of them security
-  updates, and the most important one (security first, then high risk) with its summary.
+- **Start → "Updates"** (Administrator only): how many updates remain, how many are security
+  updates, and the latest automatic result. Failed automatic updates appear in "Braucht dich".
 - **Administrator → Updates**: every component with installed → newest, the badges
   (Sicherheit, Risiko niedrig/mittel/hoch, Breaking Changes), the summary with the model and
   the run it came from, the release notes link, "Aktualisieren" (a dialog names what is
   downloaded from where and the way back), progress with the helper's log, the result and the
   health afterwards; the history of updates; the settings (schedule, summarizer agent, model,
-  reasoning).
-- Clicking "Aktualisieren" in that dialog **is** the owner's approval of the download and
-  install (owner rule: downloads need his OK). It is recorded (`helena_update_action`, who,
-  when, what, from → to) and it is the only way an update starts: no schedule, no agent and
-  no model can start one.
+  reasoning, and automatic mode per component).
+- The scheduled daily check applies eligible automatic updates one at a time after summaries
+  finish. The default is automatic for Hermes, the four CLI runtimes, code-server, uv, Bun,
+  Node, Wetty and KasmVNC. Other components default to manual. Automatic application requires
+  a current low-risk summary with no breaking changes, an idle agent run and chat queue, and
+  a helper that can roll back the component. Debian packages stay manual.
+  The helpers test the new version and restore the previous version on failure. A failed
+  version is not tried automatically again; the owner can retry manually or wait for a newer
+  version. The update action records whether it was automatic and its failure reason.
+- Clicking "Aktualisieren" starts a manual update. It is recorded in `helena_update_action`
+  with the owner, time, component and versions.
 
 ## 5. Rejected
 

@@ -18,8 +18,8 @@ import { getUpdateSettings, setUpdateSettings } from './settings';
 
 // The update center (Administrator → Updates, and the card on Start): what Helena runs on,
 // what is newer, what it changes, and applying it. The Administrator's alone: an update is
-// a download and an install on the host, which only the owner approves — his click on
-// "Aktualisieren" is that approval, and nothing else starts one.
+// a download and an install on the host. The scheduled job applies eligible low-risk
+// components according to the owner's settings.
 
 async function state() {
   return { ...(await updateCenterState()), job: await systemJobState(UPDATES_JOB_ID) };
@@ -100,7 +100,7 @@ export const updateCenterRoutes = new Elysia({
       detail: {
         summary: 'Apply an update',
         description:
-          "The owner's approval of the download and the install: the component's helper " +
+          "Starts the download and install approved by the owner: the component's helper " +
           'updates it to the version the last check found (Debian packages after a database ' +
           'dump). Answers the update, which is followed with GET …/actions/:actionId.',
       },

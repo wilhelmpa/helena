@@ -1,4 +1,4 @@
-import { getSetting, setSetting } from '@repo/db';
+import { db, getSetting, helenaUpdate, setSetting } from '@repo/db';
 import { HttpError } from '#shared/lib';
 import { assertCron } from '#modules/engine/schedules';
 
@@ -21,6 +21,30 @@ export interface UpdateSettings {
   // The Claude Code release channel the check compares with: `latest` (what the pins track)
   // or `stable`.
   claudeChannel: 'latest' | 'stable';
+  modes: Record<string, 'auto' | 'manual'>;
+}
+
+export function supportsAutomaticUpdate(source: string, component: string): boolean {
+  if (source === 'hermes' && component === 'hermes') return true;
+  if (
+    source === 'cli-runtimes' &&
+    ['claude', 'codex', 'claude-agent-acp', 'codex-acp'].includes(component)
+  )
+    return true;
+  if (
+    source === 'host-tools' &&
+    ['code-server', 'uv', 'bun', 'node', 'wetty', 'kasmvnc'].includes(component)
+  )
+    return true;
+  return false;
+}
+
+export function defaultUpdateMode(source: string, component: string): 'auto' | 'manual' {
+  return supportsAutomaticUpdate(source, component) ? 'auto' : 'manual';
+}
+
+export function updateMode(settings: UpdateSettings, source: string, component: string) {
+  return settings.modes[`${source}/${component}`] ?? defaultUpdateMode(source, component);
 }
 
 export const DEFAULT_UPDATE_SETTINGS: UpdateSettings = {
@@ -32,6 +56,7 @@ export const DEFAULT_UPDATE_SETTINGS: UpdateSettings = {
   model: null,
   reasoning: 'low',
   claudeChannel: 'latest',
+  modes: {},
 };
 
 const REASONING = /^[a-z]{2,16}$/;
@@ -66,6 +91,17 @@ function clean(stored: Partial<UpdateSettings>, base: UpdateSettings): UpdateSet
       stored.claudeChannel === 'stable' || stored.claudeChannel === 'latest'
         ? stored.claudeChannel
         : base.claudeChannel,
+    modes:
+      stored.modes && typeof stored.modes === 'object' && !Array.isArray(stored.modes)
+        ? {
+            ...base.modes,
+            ...Object.fromEntries(
+              Object.entries(stored.modes).filter(
+                ([, mode]) => mode === 'auto' || mode === 'manual',
+              ),
+            ),
+          }
+        : base.modes,
   };
 }
 
@@ -82,6 +118,34 @@ export async function setUpdateSettings(patch: Partial<UpdateSettings>): Promise
   }
   if (patch.model !== undefined && patch.model !== null && next.model !== patch.model) {
     throw new HttpError(400, 'Invalid model');
+  }
+  if (
+    patch.modes &&
+    Object.keys(patch.modes).some((key) => !/^[a-z0-9-]+\/[a-z0-9-]+$/.test(key))
+  ) {
+    throw new HttpError(400, 'Invalid update component');
+  }
+  if (patch.modes) {
+    const rows = await db
+      .select({
+        source: helenaUpdate.source,
+        component: helenaUpdate.component,
+        risk: helenaUpdate.risk,
+        breaking: helenaUpdate.breaking,
+        applicable: helenaUpdate.applicable,
+      })
+      .from(helenaUpdate);
+    for (const [key, mode] of Object.entries(patch.modes)) {
+      if (mode !== 'auto') continue;
+      const row = rows.find((entry) => `${entry.source}/${entry.component}` === key);
+      if (
+        !supportsAutomaticUpdate(...(key.split('/') as [string, string])) ||
+        !row?.applicable ||
+        row.risk !== 'low' ||
+        row.breaking !== false
+      )
+        throw new HttpError(400, 'Automatic updates require an applicable low-risk component');
+    }
   }
   await setSetting(SETTINGS_KEY, next);
   return next;
