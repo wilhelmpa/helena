@@ -135,6 +135,65 @@ Total due USD 1,119.00`;
     });
   });
 
+  test('does not infer the issuer from a labeled recipient address', () => {
+    const text = `Rechnung
+Rechnungsempfänger:
+Familie Mustermann
+Beispielweg 5
+80331 München
+Rechnungsnummer: R-2026-123
+Gesamtbetrag 119,00 EUR
+Aussteller: Muster Praxis`;
+    expect(factsFromText(text).issuer).toBeNull();
+  });
+
+  test('does not infer the issuer from a recipient on the first line', () => {
+    expect(factsFromText('Bill to: Jane Example\nInvoice R-123').issuer).toBeNull();
+  });
+
+  test('excludes a recipient name when its postal code follows the skipped block', () => {
+    const text = `Muster Services Limited
+Rechnung Nr. R-2026-123
+
+Rechnungsempfänger
+Adresszusatz
+Familie Mustermann
+Beispielweg 5
+80331 München
+
+Gesamtbetrag 119,00 EUR`;
+    expect(factsFromText(text).issuer).toBe('Muster Services Limited');
+  });
+
+  test('finds an issuer address after a labeled recipient address', () => {
+    const text = `Rechnung
+Rechnungsadresse:
+Empfänger GmbH
+Beispielweg 5
+80331 München
+Rechnungsnummer: R-2026-123
+Muster Praxis
+Musterstraße 7
+10115 Berlin`;
+    expect(factsFromText(text).issuer).toBe('Muster Praxis');
+  });
+
+  test('finds an issuer with a legal form after a labeled recipient address', () => {
+    const text = `Rechnung
+Rechnungsadresse:
+Empfänger GmbH
+Beispielweg 5
+80331 München
+Muster Software GmbH`;
+    expect(factsFromText(text).issuer).toBe('Muster Software GmbH');
+  });
+
+  test('preserves an issuer address without a legal form', () => {
+    expect(factsFromText('Muster Praxis\nMusterstraße 7\n10115 Berlin').issuer).toBe(
+      'Muster Praxis',
+    );
+  });
+
   test('own invoice and credit note hints', () => {
     const outgoing = factsFromText(
       `Erika Musterfrau Consulting e.K.\nRechnung RE-2026-0815\nDatum: 01.08.2026\nZu zahlen: 1.190,00 EUR\nzahlbar bis 15.08.2026 auf ${OWN}`,

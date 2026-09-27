@@ -271,13 +271,13 @@ function nameSegment(line: string): string {
 
 function findIssuer(lines: string[]): string | null {
   let skipUntil = -1;
+  const recipientLines = lines.map((line, i) => {
+    if (RECIPIENT.test(line)) skipUntil = i + 3;
+    return i <= skipUntil;
+  });
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i] ?? '';
-    if (RECIPIENT.test(line)) {
-      skipUntil = i + 3;
-      continue;
-    }
-    if (i <= skipUntil) continue;
+    if (recipientLines[i]) continue;
     if (
       hasLegalForm(line) &&
       !TAX_ID.test(line) &&
@@ -287,17 +287,21 @@ function findIssuer(lines: string[]): string | null {
     }
   }
   for (let i = 1; i < Math.min(lines.length, 20); i++) {
+    if (recipientLines[i]) continue;
     if (!/\b\d{5}\s+[A-ZÄÖÜ][a-zäöüß]/.test(lines[i] ?? '')) continue;
     const above = lines[i - 1] ?? '';
     const street =
       /(str\.|straße|strasse|weg|platz|allee|gasse|ring|damm|ufer)\b|\d+\s?[a-z]?$/i.test(above);
-    const candidate = street ? lines[i - 2] : above;
+    const candidateIndex = street ? i - 2 : i - 1;
+    if (recipientLines[candidateIndex]) continue;
+    const candidate = lines[candidateIndex];
     if (candidate && /[a-zäöü]{3}/i.test(candidate) && !DOCUMENT_WORDS.test(candidate))
       return nameSegment(candidate);
   }
   const first = lines[0];
   if (
     first &&
+    !recipientLines[0] &&
     !/\d/.test(first) &&
     /[a-zäöü]{3}/i.test(first) &&
     first.split(' ').length <= 6 &&
