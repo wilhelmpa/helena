@@ -1366,6 +1366,13 @@
       "when": 1790505660465,
       "tag": "0195_receipt_original_groups",
       "breakpoints": true
+    },
+    {
+      "idx": 196,
+      "version": "7",
+      "when": 1790510400000,
+      "tag": "0196_subtask_agent_run_trigger",
+      "breakpoints": true
     }
   ]
 }

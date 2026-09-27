@@ -21,10 +21,9 @@ export const agentRunConfig = {
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 // Queues a run of the agent and returns its id. On an issue, a mention, delegation or
-// field trigger queues nothing while the agent already has a run pending there — queued
-// or in flight — and returns that run: one automated run per agent and issue at a time,
-// and the run that is there reads the issue as it is when it starts. An approval
-// decision is always queued, so it reaches the agent. `executor` is the transaction the
+// field trigger queues nothing while the agent already has a run pending there. Subtask
+// results are appended to that pending run. Approval decisions always get a new run.
+// `executor` is the transaction the
 // queueing belongs to, when it has one.
 export async function enqueueAgentRun(
   input: {
@@ -36,7 +35,7 @@ export async function enqueueAgentRun(
     issueId: number | null;
     sourceActivityId: number | null;
     prompt: string;
-    trigger?: 'mention' | 'delegation' | 'field' | 'approval' | 'workspace';
+    trigger?: 'mention' | 'delegation' | 'subtask' | 'field' | 'approval' | 'workspace';
     // Seconds the run stays unclaimable after it is queued, so the issue can still be
     // edited before the agent reads it.
     delaySeconds?: number;
@@ -55,6 +54,7 @@ export async function enqueueAgentRun(
       await tx.execute(
         sql`select pg_advisory_xact_lock(hashtextextended(${`agent-run:${input.agentId}:${input.issueId}`}, 0))`,
       );
+      // Claimed runs remain pending but the runner has already read their prompt.
       const [pending] = await tx
         .select({ id: agentRun.id })
         .from(agentRun)
@@ -63,10 +63,28 @@ export async function enqueueAgentRun(
             eq(agentRun.agentId, input.agentId),
             eq(agentRun.issueId, input.issueId),
             eq(agentRun.status, 'pending'),
+            input.trigger === 'subtask' ? eq(agentRun.claims, 0) : undefined,
           ),
         )
         .limit(1);
-      if (pending) return pending.id;
+      if (pending) {
+        if (input.trigger !== 'subtask') return pending.id;
+        const [updated] = await tx
+          .update(agentRun)
+          .set({
+            prompt: sql`${agentRun.prompt} || ${'\n\n'} || ${input.prompt}`,
+            nextAttemptAt: sql`now()`,
+          })
+          .where(
+            and(
+              eq(agentRun.id, pending.id),
+              eq(agentRun.status, 'pending'),
+              eq(agentRun.claims, 0),
+            ),
+          )
+          .returning({ id: agentRun.id });
+        if (updated) return updated.id;
+      }
     }
     const [row] = await tx
       .insert(agentRun)

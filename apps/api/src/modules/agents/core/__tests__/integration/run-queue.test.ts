@@ -68,4 +68,33 @@ describe('agent_run queue store', () => {
     await Promise.all([again(), again()]);
     expect(await db.select().from(agentRun).where(eq(agentRun.issueId, issue.id))).toHaveLength(1);
   });
+
+  it('queues a new subtask result when the previous run has already been claimed', async () => {
+    const { asOwner, columnId } = await setup();
+    const { agent, issue, runId } = await enqueueRun(asOwner, columnId);
+    await db.update(agentRun).set({ claims: 1 }).where(eq(agentRun.id, runId));
+
+    await enqueueAgentRun({
+      agentId: agent.id,
+      projectId: agent.projects[0].id,
+      issueId: issue.id,
+      sourceActivityId: null,
+      trigger: 'subtask',
+      prompt: 'Child MKT-2 completed',
+    });
+    await enqueueAgentRun({
+      agentId: agent.id,
+      projectId: agent.projects[0].id,
+      issueId: issue.id,
+      sourceActivityId: null,
+      trigger: 'subtask',
+      prompt: 'Child MKT-3 completed',
+    });
+
+    const runs = await db.select().from(agentRun).where(eq(agentRun.issueId, issue.id));
+    expect(runs).toHaveLength(2);
+    expect(runs.find((run) => run.id === runId)?.prompt).toBe('do it');
+    expect(runs.find((run) => run.id !== runId)?.prompt).toContain('Child MKT-2 completed');
+    expect(runs.find((run) => run.id !== runId)?.prompt).toContain('Child MKT-3 completed');
+  });
 });
