@@ -15,6 +15,8 @@ import {
   helenaSchedule,
   issue as issueTable,
   issueActivity,
+  mailAccount,
+  mailMessage,
   pipelineRun,
 } from '@repo/db';
 import { and, asc, eq } from 'drizzle-orm';
@@ -30,12 +32,14 @@ import {
 } from '#tests/helpers/engine';
 import { clearLimits, setLimits } from '#tests/helpers/limits';
 import { addProjectMember } from '#tests/helpers/members';
+import { insertMailAccount, insertMessage } from '#tests/helpers/mail';
 import { createRole } from '#tests/helpers/roles';
 import {
   fireDueSchedules,
   latestFireTime,
   MISSED_GRACE_MS,
   planFire,
+  recordScheduleRun,
 } from '#modules/engine/schedules';
 
 // A run takes a few hops through the engine's queues (see helpers/engine.ts).
@@ -65,6 +69,7 @@ async function setup() {
     asOwner,
     agent,
     teamId: created.data!.teamId,
+    projectId: created.data!.id,
     columnId: columns[0]!.id,
     column: (name: string) => columns.find((column) => column.name === name)!.id,
   };
@@ -137,6 +142,132 @@ afterEach(async () => {
 });
 
 describe('routines', () => {
+  it('records an empty audit in shadow mode and skips only after owner activation', async () => {
+    const { asOwner, agent } = await setup();
+    const created = (
+      await routines(asOwner).post(
+        routineBody(agent.id, {
+          gateSource: 'audit',
+        }),
+      )
+    ).data!;
+    expect(created).toMatchObject({ gateMode: 'shadow', gateSource: 'audit' });
+    const baseline = new Date(Date.now() - 60_000);
+    const previous = await recordScheduleRun(await scheduleRow(created.id), baseline, 'schedule');
+    await db
+      .update(pipelineRun)
+      .set({ status: 'succeeded', finishedAt: baseline })
+      .where(eq(pipelineRun.id, previous.runId));
+
+    const shadowAt = new Date();
+    const shadowId = await planFire(created.id, shadowAt.toISOString(), shadowAt.getTime());
+    expect(shadowId).not.toBeNull();
+    const [shadow] = await db.select().from(pipelineRun).where(eq(pipelineRun.id, shadowId!));
+    expect(shadow).toMatchObject({
+      status: 'pending',
+      input: {
+        gate: {
+          mode: 'shadow',
+          source: 'audit',
+          recommendation: 'skip',
+          counts: { open: 0, overdue: 0 },
+        },
+      },
+    });
+    const listed = (await routines(asOwner).get({ query: {} })).data!.items[0]!;
+    expect(listed.lastRun?.gate).toMatchObject({ recommendation: 'skip', counts: { open: 0 } });
+
+    const approved = await routines(asOwner)({ routineId: created.id }).patch({
+      gateMode: 'active',
+    });
+    expect(approved.status).toBe(200);
+    const activeAt = new Date(shadowAt.getTime() + 60_000);
+    expect(await planFire(created.id, activeAt.toISOString(), activeAt.getTime())).toBeNull();
+    const runs = await runsOf(created.id);
+    expect(runs.at(-1)).toMatchObject({
+      status: 'skipped',
+      result: { outcome: 'skipped', skipReason: 'gate' },
+    });
+  });
+
+  it('requires project-owner approval to activate a gate', async () => {
+    const { asOwner, agent } = await setup();
+    const created = (await routines(asOwner).post(routineBody(agent.id, { gateSource: 'audit' })))
+      .data!;
+    const role = await createRole(asOwner, 'MKT', {
+      name: 'Routine editor',
+      permissions: { ai_agents: { read: true, create: true, edit: true, delete: false } },
+    });
+    const asMember = await addProjectMember(asOwner, 'MKT', role.data!.id);
+    expect(
+      (await routines(asMember)({ routineId: created.id }).patch({ gateMode: 'active' })).status,
+    ).toBe(403);
+    expect((await scheduleRow(created.id)).gateMode).toBe('shadow');
+  });
+
+  it('counts an overdue open ticket as audit work', async () => {
+    const { asOwner, agent, columnId } = await setup();
+    const created = (await routines(asOwner).post(routineBody(agent.id, { gateSource: 'audit' })))
+      .data!;
+    const baseline = new Date(Date.now() - 60_000);
+    const previous = await recordScheduleRun(await scheduleRow(created.id), baseline, 'schedule');
+    await db
+      .update(pipelineRun)
+      .set({ status: 'succeeded', finishedAt: baseline })
+      .where(eq(pipelineRun.id, previous.runId));
+    await asOwner.projects({ projectKey: 'MKT' }).issues.post({
+      columnId,
+      title: 'Review overdue ticket',
+      dueDate: '2020-01-01',
+    });
+    const at = new Date();
+    const runId = await planFire(created.id, at.toISOString(), at.getTime());
+    const [run] = await db.select().from(pipelineRun).where(eq(pipelineRun.id, runId!));
+    expect(run.input).toMatchObject({
+      gate: { recommendation: 'run', counts: { open: 1, overdue: 1 } },
+    });
+  });
+
+  it('counts new project mail and runs on a stale mailbox signal', async () => {
+    const { asOwner, agent, teamId, projectId } = await setup();
+    const created = (await routines(asOwner).post(routineBody(agent.id, { gateSource: 'mail' })))
+      .data!;
+    const baseline = new Date(Date.now() - 60_000);
+    const previous = await recordScheduleRun(await scheduleRow(created.id), baseline, 'schedule');
+    await db
+      .update(pipelineRun)
+      .set({ status: 'succeeded', finishedAt: baseline })
+      .where(eq(pipelineRun.id, previous.runId));
+    const account = await insertMailAccount(teamId, projectId);
+    await db
+      .update(mailAccount)
+      .set({ syncStatus: 'synced', lastSyncAt: new Date() })
+      .where(eq(mailAccount.id, account.accountId));
+    await insertMessage({
+      teamId,
+      accountId: account.accountId,
+      folderId: account.inboxId,
+      projectId,
+      subject: 'Please reply',
+    });
+    const at = new Date();
+    const runId = await planFire(created.id, at.toISOString(), at.getTime());
+    expect(runId).not.toBeNull();
+    const [run] = await db.select().from(pipelineRun).where(eq(pipelineRun.id, runId!));
+    expect(run.input).toMatchObject({
+      gate: { recommendation: 'run', counts: { accounts: 1, newMail: 1, unread: 1 } },
+    });
+
+    await db.update(mailMessage).set({ deletedAt: new Date() });
+    await db
+      .update(mailAccount)
+      .set({ lastSyncAt: new Date(Date.now() - 60 * 60_000) })
+      .where(eq(mailAccount.id, account.accountId));
+    const staleAt = new Date(at.getTime() + 60_000);
+    const staleId = await planFire(created.id, staleAt.toISOString(), staleAt.getTime());
+    const [stale] = await db.select().from(pipelineRun).where(eq(pipelineRun.id, staleId!));
+    expect(stale.input).toMatchObject({ gate: { recommendation: 'run', status: 'unavailable' } });
+  });
   it('creates a routine in Europe/Berlin that fires from now on and replays its key', async () => {
     const { owner, asOwner, agent } = await setup();
     const body = routineBody(agent.id);

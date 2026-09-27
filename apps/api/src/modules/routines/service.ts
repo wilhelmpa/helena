@@ -15,7 +15,7 @@ import { HttpError, iso } from '#shared/lib';
 import { getLimits } from '#shared/limits';
 import { hasPermission } from '#shared/permissions';
 import { canTriggerAgent, type MentionRefusal } from '#modules/agents/core/service';
-import { toMemberContext, type MemberRole } from '#modules/members/service';
+import { getMembership, toMemberContext, type MemberRole } from '#modules/members/service';
 import { bumpControlPlaneRevision } from '#modules/sync/service';
 import { startRunSoon } from '#modules/engine/runs';
 import { defaultTimezone } from '#modules/engine/settings';
@@ -28,6 +28,7 @@ import {
 import { runDtos } from '#modules/pipelines/runs';
 import { minCronIntervalSeconds } from './cron';
 import { routineMentions } from './mentions';
+import type { RoutineGateResult } from '#modules/engine/routine-gate';
 
 // A routine hands an agent work on a cron: every fire creates a task in the project and
 // delegates it to the routine's agent, or reopens the task the routine names, and is
@@ -38,6 +39,8 @@ import { routineMentions } from './mentions';
 
 export type RoutineMode = 'new' | 'reopen';
 export type CatchUp = 'skip' | 'once';
+export type GateMode = 'off' | 'shadow' | 'active';
+export type GateSource = 'none' | 'mail' | 'audit';
 
 export interface RoutineProject {
   id: number;
@@ -69,13 +72,16 @@ export interface RoutineRow {
   cron: string;
   timezone: string;
   catchUp: CatchUp;
+  gateMode: GateMode;
+  gateSource: GateSource;
   enabled: boolean;
   nextRunAt: string | null;
   lastRun: {
     id: string;
     status: string;
     outcome: 'created' | 'reopened' | 'skipped' | null;
-    skipReason: 'task-open' | 'missed' | null;
+    skipReason: 'task-open' | 'missed' | 'gate' | null;
+    gate: RoutineGateResult | null;
     taskNumber: number | null;
     error: string | null;
     firedAt: string | null;
@@ -93,6 +99,8 @@ export interface RoutineInput {
   cron: string;
   timezone?: string;
   catchUp?: CatchUp;
+  gateMode?: GateMode;
+  gateSource?: GateSource;
 }
 
 interface RunResult {
@@ -179,6 +187,8 @@ async function routineRows(
         cron: row.cron,
         timezone: row.timezone,
         catchUp: row.catchUp === 'once' ? 'once' : 'skip',
+        gateMode: row.gateMode as GateMode,
+        gateSource: row.gateSource as GateSource,
         enabled: row.enabled,
         nextRunAt: next ? iso(next) : null,
         lastRun: run
@@ -192,9 +202,12 @@ async function routineRows(
                   ? result.outcome
                   : null,
               skipReason:
-                result.skipReason === 'task-open' || result.skipReason === 'missed'
+                result.skipReason === 'task-open' ||
+                result.skipReason === 'missed' ||
+                result.skipReason === 'gate'
                   ? result.skipReason
                   : null,
+              gate: (run.input as { gate?: RoutineGateResult } | null)?.gate ?? null,
               taskNumber: run.number,
               error: run.error,
               firedAt: run.scheduledFor ? iso(run.scheduledFor) : iso(run.createdAt),
@@ -382,6 +395,13 @@ export async function createRoutine(
   const cron = input.cron.trim();
   const timezone = input.timezone ?? (await defaultTimezone());
   const fields = await routineFields(owner, userId, input);
+  const gateMode = input.gateMode ?? 'shadow';
+  const gateSource = input.gateSource ?? 'none';
+  if (gateMode === 'active') {
+    if (gateSource === 'none') throw new HttpError(400, 'Select a gate source before activation');
+    if ((await getMembership(owner.id, userId)) !== 'owner')
+      throw new HttpError(403, 'Only a project owner can activate the routine gate');
+  }
   await assertCadence(owner.teamId, cron, timezone);
   const id = randomUUID();
   const [created] = await db
@@ -394,6 +414,9 @@ export async function createRoutine(
       cron,
       timezone,
       catchUp: input.catchUp ?? 'skip',
+      gateMode,
+      gateSource,
+      gateApprovedBy: gateMode === 'active' ? userId : null,
       enabled: input.enabled ?? true,
       firedThrough: new Date(),
       actorUserId: userId,
@@ -416,8 +439,23 @@ export async function updateRoutine(
   patch: Partial<RoutineInput> & { enabled?: boolean },
 ): Promise<RoutineRow> {
   const row = await routineSchedule(owner, routineId);
-  const { enabled, catchUp, ...changes } = patch;
+  const { enabled, catchUp, gateMode, gateSource, ...changes } = patch;
   const values: Partial<typeof helenaSchedule.$inferInsert> = {};
+  const nextSource = gateSource ?? row.gateSource;
+  const nextMode =
+    gateMode ??
+    (gateSource !== undefined && gateSource !== row.gateSource ? 'shadow' : row.gateMode);
+  if (nextMode === 'active' && (gateMode === 'active' || gateSource !== undefined)) {
+    if (nextSource === 'none') throw new HttpError(400, 'Select a gate source before activation');
+    if ((await getMembership(owner.id, userId)) !== 'owner')
+      throw new HttpError(403, 'Only a project owner can activate the routine gate');
+    values.gateApprovedBy = userId;
+  }
+  if (gateMode !== undefined || gateSource !== undefined) {
+    values.gateMode = nextMode;
+    values.gateSource = nextSource;
+    if (nextMode !== 'active') values.gateApprovedBy = null;
+  }
   if (Object.values(changes).some((value) => value !== undefined)) {
     const cron = (changes.cron ?? row.cron).trim();
     const timezone = changes.timezone ?? row.timezone;

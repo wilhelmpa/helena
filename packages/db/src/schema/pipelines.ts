@@ -108,6 +108,9 @@ export const helenaSchedule = pgTable(
     // 'once' runs the newest missed time once. Older missed times never run.
     catchUp: text('catch_up').notNull().default('skip'),
     enabled: boolean('enabled').notNull().default(true),
+    gateMode: text('gate_mode').notNull().default('shadow'),
+    gateSource: text('gate_source').notNull().default('none'),
+    gateApprovedBy: text('gate_approved_by').references(() => user.id, { onDelete: 'set null' }),
     // The scheduled times up to here are handled: the engine fires the times after it.
     // Set to the moment a schedule is created, switched on or given another time, so it
     // starts afresh then.
@@ -124,6 +127,8 @@ export const helenaSchedule = pgTable(
     check('helena_schedule_kind_check', sql`${t.kind} IN ('routine', 'workflow')`),
     check('helena_schedule_mode_check', sql`${t.mode} IS NULL OR ${t.mode} IN ('new', 'reopen')`),
     check('helena_schedule_catch_up_check', sql`${t.catchUp} IN ('skip', 'once')`),
+    check('helena_schedule_gate_mode_check', sql`${t.gateMode} IN ('off', 'shadow', 'active')`),
+    check('helena_schedule_gate_source_check', sql`${t.gateSource} IN ('none', 'mail', 'audit')`),
     check(
       'helena_schedule_target_check',
       sql`(${t.kind} = 'workflow') = (${t.pipelineId} IS NOT NULL)`,

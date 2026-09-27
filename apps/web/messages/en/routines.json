@@ -115,5 +115,17 @@
   "catchUp": "After downtime",
   "catchUpSkip": "Skip missed times",
   "catchUpOnce": "Run the last missed time once",
-  "catchUpHint": "When the server was down at a scheduled time. Older missed times never run."
+  "catchUpHint": "When the server was down at a scheduled time. Older missed times never run.",
+  "gateSource": "Preflight signal",
+  "gateSourceNone": "No signal configured",
+  "gateSourceMail": "Project mailbox",
+  "gateSourceAudit": "Open project tickets",
+  "gateMode": "Preflight mode",
+  "gateOff": "Off",
+  "gateShadow": "Shadow: record the result and run normally",
+  "gateActive": "Active: skip only with owner approval",
+  "gateHint": "Shadow is the default. Only a project owner can activate skipping. A missing or uncertain signal always runs.",
+  "gateResult": "Preflight: {recommendation} · {reason} · {counts}",
+  "gateRun": "run",
+  "gateSkip": "skip"
 }

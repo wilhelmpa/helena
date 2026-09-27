@@ -6,6 +6,7 @@ import { RECEIPT_EVAL } from './evals/receipts';
 import { ROUTER_EVAL } from './evals/router';
 import { BROWSER_EVAL } from './evals/browser';
 import { DECISIONS_LOCAL_AI_CLASS } from './local-ai-class';
+import { ROUTINE_GATE_EVAL } from './evals/routine-gate';
 
 // Helena's own decision classes and the backends the decisions service adds to the browser
 // task's (docs/helena-decisions/decisions.md §2, §4), registered as the internal plugin
@@ -19,8 +20,20 @@ export const MAIL_CLASS = 'helena.mail';
 export const RECEIPTS_CLASS = 'helena.receipts';
 export const GENERAL_CLASS = 'helena.general';
 export const BROWSER_CLASS = 'helena.browser';
+export const ROUTINE_GATE_CLASS = 'helena.routine.gate';
 
 export const BUILTIN_DECISION_CLASSES: DecisionClass[] = [
+  {
+    id: ROUTINE_GATE_CLASS,
+    label: { en: 'Routine preflight', de: 'Routinen-Vorprüfung' },
+    description: {
+      en: 'Decides borderline routine runs locally.',
+      de: 'Entscheidet Grenzfälle bei Routinen lokal.',
+    },
+    input: { store: 'never', cloud: 'never' },
+    defaults: { threshold: 0.8, timeoutMs: 5000 },
+    eval: ROUTINE_GATE_EVAL,
+  },
   {
     id: BROWSER_CLASS,
     label: { i18n: 'decisions.classes.browser.label' },

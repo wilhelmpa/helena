@@ -7,6 +7,8 @@ export type RoutineMode = 'new' | 'reopen';
 // What a fire that comes too late does, after the server was down: 'skip' records it as
 // missed, 'once' runs the newest missed time once.
 export type RoutineCatchUp = 'skip' | 'once';
+export type RoutineGateMode = 'off' | 'shadow' | 'active';
+export type RoutineGateSource = 'none' | 'mail' | 'audit';
 
 // Why a routine's @mention of an agent starts no run of it: the agent works outside the
 // project, an agent saved the routine (an agent's mentions start nobody), the agent takes
@@ -41,13 +43,25 @@ export interface Routine {
   cron: string;
   timezone: string;
   catchUp: RoutineCatchUp;
+  gateMode: RoutineGateMode;
+  gateSource: RoutineGateSource;
   enabled: boolean;
   nextRunAt: string | null;
   lastRun: {
     id: string;
     status: string;
     outcome: 'created' | 'reopened' | 'skipped' | null;
-    skipReason: 'task-open' | 'missed' | null;
+    skipReason: 'task-open' | 'missed' | 'gate' | null;
+    gate: {
+      mode: RoutineGateMode;
+      source: RoutineGateSource;
+      recommendation: 'run' | 'skip';
+      reason: string;
+      counts: Record<string, number>;
+      decisionId: number | null;
+      confidence: number | null;
+      status: string;
+    } | null;
     taskNumber: number | null;
     error: string | null;
     firedAt: string | null;
@@ -65,6 +79,8 @@ export interface RoutineInput {
   cron: string;
   timezone: string;
   catchUp: RoutineCatchUp;
+  gateMode: RoutineGateMode;
+  gateSource: RoutineGateSource;
 }
 
 export const listRoutines = (projectKey: string, params: PageParams) =>

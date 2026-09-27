@@ -16,6 +16,7 @@ import { bumpControlPlaneRevision } from '#modules/sync/service';
 import type { PipelineDefinition } from '#modules/pipelines/definition';
 import { engineRunning } from './dbos';
 import { fireWorkflow } from './workflows';
+import { inspectRoutineGate, type RoutineGateResult } from './routine-gate';
 
 // Schedules: helena_schedule holds what a person sees and edits, and when the engine
 // last fired each one. The engine's tick fires the times that have come
@@ -272,8 +273,47 @@ export async function planFire(scheduleId: string, scheduledAtIso: string, now =
   }
   const { runId } = await recordScheduleRun(row, scheduledAt, 'schedule');
   const [run] = await db
-    .select({ status: pipelineRun.status })
+    .select({ status: pipelineRun.status, input: pipelineRun.input })
     .from(pipelineRun)
     .where(eq(pipelineRun.id, runId));
+  if (
+    row.kind === 'routine' &&
+    run?.status === 'pending' &&
+    !(run.input as { gate?: unknown } | null)?.gate
+  ) {
+    let gate: RoutineGateResult;
+    try {
+      gate = await inspectRoutineGate(row, scheduledAt);
+    } catch (error) {
+      console.error('[routine-gate] preflight failed', error);
+      gate = {
+        mode: row.gateMode as RoutineGateResult['mode'],
+        source: row.gateSource as RoutineGateResult['source'],
+        recommendation: 'run',
+        reason: 'Preflight failed; run continues.',
+        counts: {},
+        decisionId: null,
+        confidence: null,
+        status: 'error',
+      };
+    }
+    const skip = gate.mode === 'active' && !!row.gateApprovedBy && gate.recommendation === 'skip';
+    await db
+      .update(pipelineRun)
+      .set({
+        input: { gate },
+        ...(skip
+          ? {
+              status: 'skipped',
+              result: { outcome: 'skipped', skipReason: 'gate' },
+              finishedAt: new Date(),
+            }
+          : {}),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(pipelineRun.id, runId), eq(pipelineRun.status, 'pending')));
+    await bumpControlPlaneRevision(row.projectId);
+    if (skip) return null;
+  }
   return run?.status === 'pending' ? runId : null;
 }
