@@ -228,7 +228,14 @@ function findVat(lines: string[]): number | null {
   let unrated: number | null = null;
   for (const line of lines) {
     if (!(VAT.test(line) || TAX_CLASS.test(line)) || TAX_ID.test(line)) continue;
-    if (STRONG_GROSS.test(line) && !/enth|davon/i.test(line)) continue;
+    // A total including/excluding VAT is gross/net, even if its label contains VAT.
+    // Flattened table columns cannot supply a safe VAT fallback from that total.
+    if (
+      (STRONG_GROSS.test(line) ||
+        (WEAK_GROSS.test(line) && (GROSS_HINT.test(line) || NET.test(line)))) &&
+      !/enth|davon/i.test(line)
+    )
+      continue;
     const rateMatch = /(\d{1,2}(?:[.,]\d{1,2})?)\s?%/.exec(line);
     const rate = rateMatch ? Number((rateMatch[1] ?? '').replace(',', '.')) : null;
     const amounts = amountsOn(line).map(Math.abs);
