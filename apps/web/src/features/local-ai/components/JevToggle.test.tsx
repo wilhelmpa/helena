@@ -133,12 +133,28 @@ async function render(visible = true) {
 }
 
 async function until(check: () => boolean) {
-  for (let attempt = 0; attempt < 100 && !check(); attempt++) {
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 5));
-    });
-  }
-  assert.ok(check(), 'Expected dashboard state did not arrive');
+  if (check()) return;
+  await act(
+    async () =>
+      new Promise<void>((resolve, reject) => {
+        const observer = new dom.window.MutationObserver(() => {
+          if (!check()) return;
+          clearTimeout(timeout);
+          observer.disconnect();
+          resolve();
+        });
+        const timeout = setTimeout(() => {
+          observer.disconnect();
+          reject(new Error('Expected dashboard state did not arrive'));
+        }, 4000);
+        observer.observe(document.body, {
+          attributes: true,
+          childList: true,
+          characterData: true,
+          subtree: true,
+        });
+      }),
+  );
 }
 
 function control(label: string) {

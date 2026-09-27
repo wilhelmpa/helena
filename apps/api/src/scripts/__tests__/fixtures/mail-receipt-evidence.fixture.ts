@@ -136,7 +136,7 @@ const db = {
     }
   },
 };
-mock.module('@repo/db', () => ({ db, ...tables }));
+mock.module('@repo/db', () => ({ db, getSetting: async () => null, ...tables }));
 mock.module('drizzle-orm', () =>
   Object.fromEntries(
     ['and', 'count', 'desc', 'eq', 'ilike', 'inArray', 'isNotNull', 'or', 'sql'].map((key) => [

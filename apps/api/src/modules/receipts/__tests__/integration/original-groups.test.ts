@@ -165,12 +165,15 @@ it('rejects cross-project, self, nested, stale reassignment and unauthorised lin
   await expect(updateReceipt(f.project.id, f.invoice.id, { status: 'ignored' })).rejects.toThrow();
   // Composite database FKs independently refuse a foreign primary.
   await expect(
-    db.insert(helenaReceiptOriginalLink).values({
-      receiptId: f.distinct.id,
-      primaryReceiptId: f.foreign.id,
-      projectId: f.project.id,
-      teamId: f.project.teamId,
-    }),
+    db
+      .insert(helenaReceiptOriginalLink)
+      .values({
+        receiptId: f.distinct.id,
+        primaryReceiptId: f.foreign.id,
+        projectId: f.project.id,
+        teamId: f.project.teamId,
+      })
+      .execute(),
   ).rejects.toThrow();
   expect(await db.select().from(helenaReceiptOriginalLink)).toHaveLength(1);
 });

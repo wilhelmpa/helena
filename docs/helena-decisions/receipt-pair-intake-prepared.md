@@ -3,6 +3,11 @@
 Prepared after `0aeca358ac22d0e17efa97cdb25ae6a25d427455`. This adds no migration,
 provider/model call, historical repair or new original store.
 
+Automatic grouping is enabled only when the team setting
+`receipts.original-pair-intake.team.<teamId>` is exactly `true`. Without that setting,
+intake keeps both originals as independent receipts. The dry-run can still show pair
+evidence for review.
+
 ## Narrow admission
 
 Only exactly two selected PDF attachments from the same validated mail message and thread

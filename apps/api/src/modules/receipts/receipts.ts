@@ -8,6 +8,7 @@ import {
   helenaBankTransaction,
   helenaReceipt,
   helenaReceiptMatch,
+  getSetting,
   mailAttachment,
   mailMessage,
   mailThread,
@@ -404,9 +405,11 @@ export async function prepareMailReceipts(
 
 /** Original attachments stay in Mail; a body receipt preserves the original RFC822 message. */
 export async function intakeMailReceipts(input: MailReceiptInput): Promise<number[]> {
+  const pairEnabled =
+    (await getSetting<boolean>(`receipts.original-pair-intake.team.${input.teamId}`)) === true;
   const stored = await db.transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(748220, ${input.projectId})`);
-    return storeMailReceipts(input, tx);
+    return storeMailReceipts(input, tx, pairEnabled);
   });
   // Indexing and matching use their own DB work. Run only after releasing the intake
   // connection. Existing body receipts remain in indexPaths so a failed index can retry.
@@ -429,6 +432,7 @@ export async function intakeMailReceipts(input: MailReceiptInput): Promise<numbe
 async function storeMailReceipts(
   input: MailReceiptInput,
   executor: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  pairEnabled: boolean,
 ) {
   const plans = await prepareMailReceipts(input, executor);
   const [target] = await executor
@@ -495,7 +499,7 @@ async function storeMailReceipts(
   const supplementaryId = pair ? newBySha.get(pair.receiptSha256) : undefined;
   // Never recreate a deliberately detached relation on reimport/index repair. Both
   // originals must have been newly inserted in this very transaction.
-  if (primaryId !== undefined && supplementaryId !== undefined)
+  if (pairEnabled && primaryId !== undefined && supplementaryId !== undefined)
     await linkReceiptOriginalInTransaction(
       executor,
       input.projectId,

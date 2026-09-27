@@ -1,5 +1,5 @@
 import { beforeEach, expect, it } from 'bun:test';
-import { db, helenaReceipt, helenaReceiptOriginalLink } from '@repo/db';
+import { db, helenaReceipt, helenaReceiptOriginalLink, setSetting } from '@repo/db';
 import { eq } from 'drizzle-orm';
 import { authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
@@ -12,11 +12,12 @@ import { makePdf } from '../pdf';
 
 beforeEach(resetDb);
 
-async function setup(secondRole = 'Receipt') {
+async function setup(secondRole = 'Receipt', enablePair = true) {
   const owner = await signUpTestUser();
   const api = authedApi(owner.cookie);
   const project = (await api.projects.post({ key: 'MAILPAIR', name: 'Synthetic original pairs' }))
     .data!;
+  if (enablePair) await setSetting(`receipts.original-pair-intake.team.${project.teamId}`, true);
   const { accountId, inboxId } = await insertMailAccount(project.teamId, project.id);
   const mail = await insertMessage({
     teamId: project.teamId,
@@ -60,6 +61,13 @@ async function setup(secondRole = 'Receipt') {
   ];
   return { project, input, plans, manifest };
 }
+
+it('leaves both new originals independent without an enabled team setting', async () => {
+  const f = await setup('Receipt', false);
+  await intakeMailReceipts(f.input);
+  expect(await db.select().from(helenaReceiptOriginalLink)).toHaveLength(0);
+  expect(await listReceipts(f.project.id, {})).toHaveLength(2);
+});
 
 it('uses the same SHA-bound proof in dry/apply, keeps both IDs and preserves detach on reviewed retries', async () => {
   const f = await setup();

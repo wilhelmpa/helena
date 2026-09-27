@@ -36,7 +36,15 @@
     "signup": "Dapatkan kunci di {host}",
     "test": "Uji koneksi",
     "lastOk": "Koneksi berfungsi",
-    "lastError": "Koneksi gagal"
+    "lastError": "Koneksi gagal",
+    "keySource": "Key source",
+    "keySourceStored": "Store a key in this connection",
+    "keySourceCredential": "Use an existing API key",
+    "keyCredential": "Original API key credential",
+    "chooseKeyCredential": "Choose an API key",
+    "keyCredentialHint": "Helena reads the current key from this credential for each request. Rotate it there once. Only API keys from this team and the same project (or the whole team) can be used. No key is copied or disclosed to agents.",
+    "keySourcesLoading": "Loading API keys…",
+    "keySourceUnavailable": "No matching API key is available, or the saved source is no longer accessible. Choose a valid source or check credentials."
   },
   "test": {
     "succeeded": "Koneksi berfungsi · {models} · {ms} ms",
