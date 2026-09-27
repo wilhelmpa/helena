@@ -315,7 +315,14 @@ export interface DecisionLogEntry {
 
 export async function listDecisions(
   teamId: number,
-  query: { classId?: string; status?: string; before?: number; limit?: number; subject?: string },
+  query: {
+    classId?: string;
+    agentId?: number;
+    status?: string;
+    before?: number;
+    limit?: number;
+    subject?: string;
+  },
 ): Promise<{ items: DecisionLogEntry[]; nextBefore: number | null }> {
   const limit = Math.max(1, Math.min(200, query.limit ?? 50));
   const rows = await db
@@ -331,6 +338,7 @@ export async function listDecisions(
       and(
         eq(helenaDecision.teamId, teamId),
         query.classId ? eq(helenaDecision.classId, query.classId) : undefined,
+        query.agentId ? eq(helenaDecision.agentId, query.agentId) : undefined,
         query.status ? eq(helenaDecision.status, query.status) : undefined,
         query.subject ? eq(helenaDecision.subject, query.subject) : undefined,
         query.before ? lt(helenaDecision.id, query.before) : undefined,

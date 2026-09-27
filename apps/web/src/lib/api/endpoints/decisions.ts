@@ -177,7 +177,13 @@ export interface DecisionLogEntry {
 
 export const listDecisionLog = (
   teamId: number,
-  query: { classId?: string; status?: string; before?: number; limit?: number } = {},
+  query: {
+    classId?: string;
+    agentId?: number;
+    status?: string;
+    before?: number;
+    limit?: number;
+  } = {},
 ) => {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(query))

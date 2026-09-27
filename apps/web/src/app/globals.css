@@ -15,6 +15,85 @@
 @import 'streamdown/styles.css';
 @source '../../node_modules/streamdown/dist/*.js';
 
+body:has(.project-ai-agents-view) [data-app-header] {
+  display: none;
+}
+
+body:has(.project-ai-agents-view) [class~='@container/page'] {
+  scrollbar-width: none;
+}
+
+body:has(.project-ai-agents-view) [class~='@container/page']::-webkit-scrollbar {
+  display: none;
+}
+
+.organization-extra-details {
+  padding: 16px;
+  border-radius: 18px;
+  background: #0c0b0f;
+  box-shadow: 0 0 0 1px #ffffff0c;
+}
+
+.organization-extra-details > summary {
+  cursor: pointer;
+  color: #cfc6da;
+  font-size: 14px;
+}
+
+.react-flow__node .organization-orb {
+  width: 7px;
+  height: 7px;
+}
+
+.react-flow__node .organization-orb.organization-orb-idle {
+  --orb-color: #6f687a;
+}
+
+.react-flow__node .organization-orb.organization-orb-home.organization-orb-idle {
+  --orb-color: #bdaaff;
+}
+
+.react-flow__node .organization-orb.organization-orb-thinking,
+.react-flow__node .organization-orb.organization-orb-tool {
+  --orb-color: #29e8b5;
+}
+
+.react-flow__node .organization-orb.organization-orb-waiting {
+  --orb-color: #ef9f27;
+}
+
+.react-flow__node .organization-orb.organization-orb-error {
+  --orb-color: #f4a3bf;
+}
+
+.react-flow__node .organization-orb.organization-orb-thinking,
+.react-flow__node .organization-orb.organization-orb-tool,
+.react-flow__node .organization-orb.organization-orb-waiting,
+.react-flow__node .organization-orb.organization-orb-error {
+  animation: organization-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes organization-pulse {
+  50% {
+    opacity: 0.55;
+    transform: scale(0.72);
+  }
+}
+
+.helena-delegation-edge.animated path {
+  animation-duration: 0.9s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-flow__node .organization-orb {
+    animation: none;
+  }
+
+  .helena-delegation-edge.animated path {
+    animation: none !important;
+  }
+}
+
 @custom-variant dark (&:is(.dark *));
 
 /* Spacing scale (docs/volition-design-helena-ui.md "Spacing überall konsistent und
