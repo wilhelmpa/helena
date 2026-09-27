@@ -149,6 +149,7 @@ export default function ChatComposer({
   onEditLast,
 }: ChatComposerProps) {
   const t = useTranslations('chatWorkspace');
+  const homeName = homeLanding && agent.name === 'Helena' ? 'Home' : agent.name;
   const [value, setStoredValue] = useState(() => draft?.current ?? '');
   const setValue = (next: string) => {
     setStoredValue(next);
@@ -296,7 +297,7 @@ export default function ChatComposer({
 
   return (
     <div className={homeLanding ? styles.composer : 'shrink-0 bg-background px-3 pt-2 pb-3'}>
-      <div className="relative mx-auto w-full max-w-3xl">
+      <div className={`relative mx-auto w-full ${homeLanding ? 'max-w-[760px]' : 'max-w-3xl'}`}>
         {commands.open && (
           <ChatSlashMenu
             items={commands.items}
@@ -380,22 +381,24 @@ export default function ChatComposer({
               onChange={(event) => setValue(event.target.value)}
               onKeyDown={onKeyDown}
               placeholder={
-                talking ? t('voice.placeholder') : t('composer.placeholder', { agent: agent.name })
+                talking ? t('voice.placeholder') : t('composer.placeholder', { agent: homeName })
               }
-              aria-label={t('composer.placeholder', { agent: agent.name })}
+              aria-label={t('composer.placeholder', { agent: homeName })}
               title={t('composer.hint')}
               maxLength={CHAT_PROMPT_LIMIT}
             />
           </PromptInputBody>
           <PromptInputFooter>
             <PromptInputTools className="overflow-hidden">
-              <ChatAttachPicker
-                scopeKey={scopeKey}
-                onUpload={() => fileInputRef.current?.click()}
-                onPickVaultFile={(path, name) =>
-                  setAttachments((current) => [...current, { path, name }])
-                }
-              />
+              {!homeLanding && (
+                <ChatAttachPicker
+                  scopeKey={scopeKey}
+                  onUpload={() => fileInputRef.current?.click()}
+                  onPickVaultFile={(path, name) =>
+                    setAttachments((current) => [...current, { path, name }])
+                  }
+                />
+              )}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -406,7 +409,7 @@ export default function ChatComposer({
                   event.target.value = '';
                 }}
               />
-              {dictation.ready && !talking && (
+              {!homeLanding && dictation.ready && !talking && (
                 <SpeechInput
                   value={value}
                   onChange={setValue}
@@ -423,24 +426,27 @@ export default function ChatComposer({
                   }}
                 />
               )}
-              <ChatAutoSpeakToggle on={autoSpeak} onChange={onAutoSpeakChange} />
+              {!homeLanding && <ChatAutoSpeakToggle on={autoSpeak} onChange={onAutoSpeakChange} />}
               <ChatAgentMenu
                 agent={agent}
                 agents={agents}
                 states={states}
                 motionEnabled={motionEnabled}
+                selectedModel={model}
                 pill={homeLanding}
                 onPick={onPickAgent}
               />
-              <ChatModelPicker
-                scopeKey={scopeKey}
-                agentId={agent.id}
-                model={model}
-                thinkingLevel={thinkingLevel}
-                onChange={onModelChange}
-                open={modelPickerOpen}
-                onOpenChange={setModelPickerOpen}
-              />
+              {!homeLanding && (
+                <ChatModelPicker
+                  scopeKey={scopeKey}
+                  agentId={agent.id}
+                  model={model}
+                  thinkingLevel={thinkingLevel}
+                  onChange={onModelChange}
+                  open={modelPickerOpen}
+                  onOpenChange={setModelPickerOpen}
+                />
+              )}
             </PromptInputTools>
             <PromptInputTools className="shrink-0">
               {threadId && contextTokens !== undefined && (

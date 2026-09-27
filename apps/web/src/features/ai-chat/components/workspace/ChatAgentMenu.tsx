@@ -26,6 +26,7 @@ export default function ChatAgentMenu({
   agents,
   states,
   motionEnabled,
+  selectedModel,
   pill = false,
   onPick,
 }: {
@@ -33,12 +34,19 @@ export default function ChatAgentMenu({
   agents: AiAgent[];
   states: Map<number, ChatAgentState>;
   motionEnabled: boolean;
+  selectedModel: string | null;
   pill?: boolean;
   onPick: (agentId: number) => void;
 }) {
   const t = useTranslations('chatWorkspace');
   const text = useAgentStateText();
   const state = states.get(agent.id);
+  const modelId = selectedModel ?? agent.model ?? '';
+  const opusVersion = modelId.match(/opus[- ]?(\d+)[-.](\d+)/i);
+  const homeModel = opusVersion
+    ? `Opus ${opusVersion[1]}.${opusVersion[2]}`
+    : modelId || 'Standard';
+  const homeName = agent.name === 'Helena' ? 'Home' : agent.name;
 
   return (
     <DropdownMenu modal={false}>
@@ -49,19 +57,30 @@ export default function ChatAgentMenu({
           aria-label={t('agents.switch', { agent: agent.name })}
           title={`${agent.name} · ${text.detail(agent, state)}`}
         >
-          <AgentAvatar name={agent.name} className="size-5 text-xl" />
-          <AgentStatusOrb
-            state={agentOrbState(state?.label, agent.runtimeState.status)}
-            online={state?.online ?? false}
-            motionEnabled={motionEnabled}
-          />
-          <span className="hidden max-w-32 truncate text-foreground @md/composer:inline">
-            {agent.name}
-          </span>
-          {state && (
-            <span className="hidden truncate @xl/composer:inline">{text.status(state.label)}</span>
+          {pill ? (
+            <>
+              <span className={styles.chipDot} />
+              <span className={styles.chipLabel}>{`${homeName} · ${homeModel}`}</span>
+            </>
+          ) : (
+            <>
+              <AgentAvatar name={agent.name} className="size-5 text-xl" />
+              <AgentStatusOrb
+                state={agentOrbState(state?.label, agent.runtimeState.status)}
+                online={state?.online ?? false}
+                motionEnabled={motionEnabled}
+              />
+              <span className="hidden max-w-32 truncate text-foreground @md/composer:inline">
+                {agent.name}
+              </span>
+              {state && (
+                <span className="hidden truncate @xl/composer:inline">
+                  {text.status(state.label)}
+                </span>
+              )}
+              <ChevronDown className="size-3.5 shrink-0" />
+            </>
           )}
-          <ChevronDown className="size-3.5 shrink-0" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" side="top" className="max-h-96 w-72 overflow-y-auto">
