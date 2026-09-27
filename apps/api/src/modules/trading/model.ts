@@ -3,6 +3,16 @@ import { oneOf } from '#shared/schemas';
 
 export const tradingProjectParams = t.Object({ projectKey: t.String() });
 
+export const strategyApprovalBody = t.Object(
+  {
+    credentialId: t.Integer({ minimum: 1 }),
+    strategyId: t.String({ pattern: '^[a-z0-9][a-z0-9-]{1,39}$' }),
+    strategyVersion: t.String({ pattern: '^\\d{1,3}(\\.\\d{1,3}){0,2}$' }),
+    issueId: t.Optional(t.Integer({ minimum: 1 })),
+  },
+  { additionalProperties: false },
+);
+
 export const classifyBody = t.Object(
   {
     kind: oneOf(['news', 'rule', 'routing'], {

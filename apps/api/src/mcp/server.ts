@@ -148,6 +148,7 @@ export async function buildMcpServer(
           userId,
           auth: credential,
           runId: context.runId ?? null,
+          agentProject: context.agentProject,
         },
       );
     }

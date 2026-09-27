@@ -35,6 +35,31 @@ export const appSetting = pgTable('app_setting', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const helenaPaperOrderIntent = pgTable(
+  'helena_paper_order_intent',
+  {
+    accountId: text('account_id').notNull(),
+    clientOrderId: text('client_order_id').notNull(),
+    requestHash: text('request_hash').notNull(),
+    projectId: integer('project_id').references(() => project.id, { onDelete: 'set null' }),
+    credentialId: integer('credential_id').references(() => integrationCredential.id, {
+      onDelete: 'set null',
+    }),
+    state: text('state').notNull().default('uncertain'),
+    brokerOrder: jsonb('broker_order'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.accountId, t.clientOrderId] }),
+    index('helena_paper_order_intent_account_state_idx').on(t.accountId, t.state),
+    check(
+      'helena_paper_order_intent_state_check',
+      sql`${t.state} IN ('uncertain', 'active', 'terminal')`,
+    ),
+  ],
+);
+
 // Instance-wide secrets, the encrypted counterpart of app_setting. One row per key
 // (e.g. 'auth.email' for the instance mail provider); the value is a JSON blob
 // encrypted as a whole, so a key can hold several credentials. `redacted` mirrors the

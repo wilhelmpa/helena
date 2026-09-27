@@ -1,5 +1,6 @@
 import type { HelenaPlugin, PluginManifest } from '@helena/sdk';
 import { alpacaPaperConnector, PAPER_HOSTS, TRADING_DECISION_CLASSES } from '@helena/trading';
+import { paperExecution } from './execution';
 
 // Trading as an internal plugin (docs/helena-decisions/trading.md): the Alpaca paper account
 // as a connector whose tools reach an agent only as configured tools (agents/tools/run.ts),
@@ -7,7 +8,7 @@ import { alpacaPaperConnector, PAPER_HOSTS, TRADING_DECISION_CLASSES } from '@he
 
 export const TRADING_PLUGIN_ID = 'helena.trading';
 
-const connector = alpacaPaperConnector();
+const connector = alpacaPaperConnector({ execution: paperExecution });
 
 export const TRADING_PROVIDES: PluginManifest['provides'] = {
   connectors: [connector.id],

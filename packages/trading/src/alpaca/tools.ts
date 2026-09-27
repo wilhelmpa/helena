@@ -17,6 +17,13 @@ import {
   type OrderRequest,
 } from './checks';
 import { readKeys, readLimits } from './limits';
+import { normalizedSymbol, pendingExposures } from './pending';
+import {
+  existingPaperOrder,
+  paperIntent,
+  reconciledOpenOrders,
+  type PaperExecution,
+} from './execution';
 
 // The paper account as agent tools (connector `alpaca_paper`). Reading is `read`; placing,
 // cancelling and closing are `write`: a paper account moves no money, and the Autopilot
@@ -69,6 +76,12 @@ const checkSchema = z.object(orderFields);
 
 const submitSchema = z.object({
   ...orderFields,
+  requestId: z
+    .string()
+    .uuid()
+    .describe(
+      'Unique ID for this intended order. Reuse the same ID and arguments after a timeout; never make a new ID to retry an unknown outcome.',
+    ),
   strategyId,
   strategyVersion,
   rationale: z
@@ -86,10 +99,37 @@ type SubmitInput = z.infer<typeof submitSchema>;
 export interface PaperToolDeps {
   fetch?: Fetch;
   now?: () => Date;
+  execution?: PaperExecution;
 }
 
 function clientOf(ctx: ToolCallContext, deps: PaperToolDeps): AlpacaPaperClient {
   return new AlpacaPaperClient(readKeys(ctx.credential ?? {}), deps.fetch ?? fetch);
+}
+
+function requireExecution(deps: PaperToolDeps, ctx: ToolCallContext): PaperExecution {
+  if (!ctx.project || !deps.execution)
+    throw new Error('Paper writes require a project and the server execution guards.');
+  return deps.execution;
+}
+
+async function accountIdOf(client: AlpacaPaperClient): Promise<string> {
+  const account = await client.account();
+  if (!z.string().uuid().safeParse(account.id).success)
+    throw new Error('The paper account returned no valid account ID.');
+  return account.id;
+}
+
+function refusedOrder(check: CheckResult) {
+  return {
+    content: [
+      {
+        type: 'text' as const,
+        text: `Refused by Helena's paper limits, nothing was sent:\n- ${check.violations.join('\n- ')}`,
+      },
+    ],
+    structuredContent: { refused: true, checks: check },
+    isError: true,
+  };
 }
 
 function orderView(order: AlpacaOrder) {
@@ -120,11 +160,16 @@ function orderView(order: AlpacaOrder) {
   };
 }
 
-async function ordersToday(client: AlpacaPaperClient, now: Date): Promise<number> {
+async function ordersToday(
+  client: AlpacaPaperClient,
+  now: Date,
+  known: AlpacaOrder[] = [],
+): Promise<number> {
   const since = new Date(now.getTime() - 26 * 3600 * 1000).toISOString();
   const today = tradingDay(now);
   const orders = await client.orders({ status: 'all', limit: 500, after: since });
-  return orders.filter(
+  if (orders.length >= 500) throw new Error('The daily paper order list is incomplete.');
+  return [...new Map([...orders, ...known].map((order) => [order.id, order])).values()].filter(
     (order) => order.submitted_at && tradingDay(new Date(order.submitted_at)) === today,
   ).length;
 }
@@ -135,19 +180,34 @@ async function runChecks(
   credential: Record<string, unknown>,
   order: OrderRequest,
   now: Date,
+  pendingOrders?: AlpacaOrder[],
 ): Promise<CheckResult> {
   const { limits, missing } = readLimits(credential);
+  const open = pendingOrders ?? (await client.orders({ status: 'open', limit: 500 }));
+  if (open.length >= 500) throw new Error('The pending paper order list is incomplete.');
+  const symbols = [...new Set([order.symbol, ...open.map((entry) => entry.symbol)])];
+  // Positions follow the pending-order snapshot so a fill cannot disappear between the two.
   const [account, positions, count, prices] = await Promise.all([
     client.account(),
     client.positions(),
-    ordersToday(client, now),
-    client.latestPrices([order.symbol]),
+    ordersToday(client, now, open),
+    client.latestPrices(symbols),
   ]);
+  const quote = prices[order.symbol];
+  const age = now.getTime() - new Date(quote?.time ?? '').getTime();
+  if (!Number.isFinite(age) || age < -5000 || age > 60_000)
+    throw new Error(
+      'A fresh market price (at most 60 seconds old) is required to check this paper order.',
+    );
+  const bySymbol = Object.fromEntries(
+    Object.entries(prices).map(([symbol, value]) => [normalizedSymbol(symbol), value]),
+  );
   return checkOrder({
     limits,
     missingLimits: missing,
     account: accountState(account),
     positions: positions.map(positionState),
+    pending: pendingExposures(open, bySymbol),
     ordersToday: count,
     order,
     price: prices[order.symbol]?.price ?? 0,
@@ -201,14 +261,6 @@ export function alpacaOrder(
     }
   }
   return order;
-}
-
-export function clientOrderIdFor(input: SubmitInput, now: Date): string {
-  const stamp = now
-    .toISOString()
-    .replace(/[-:TZ.]/g, '')
-    .slice(0, 14);
-  return `helena-${input.strategyId}-v${input.strategyVersion}-${stamp}`;
 }
 
 // A journal entry the Paper-Trader files right away (trade-journal-fuehren skill).
@@ -395,71 +447,152 @@ export function alpacaPaperTools(deps: PaperToolDeps = {}): AgentTool<unknown>[]
         'Place an order in the Alpaca PAPER account (simulated money only; Helena has no ' +
         "live trading). Helena checks the owner's hard limits first and refuses the order " +
         'with the reasons when one is not met. Only for a strategy version the owner approved ' +
-        'for paper trading. File the returned journal entry right away.',
+        'for paper trading via trading_request_strategy_approval. Keep requestId and arguments unchanged after an uncertain response. Crypto entries are disabled. File the returned journal entry right away.',
       inputSchema: submitSchema,
       category: 'write',
       async handler(input: unknown, ctx: ToolCallContext) {
-        const request = input as SubmitInput;
+        const request = submitSchema.parse(input);
         const client = clientOf(ctx, deps);
-        const at = now();
-        const check = await runChecks(client, ctx.credential ?? {}, orderRequest(request), at);
-        if (!check.ok) {
+        const execution = requireExecution(deps, ctx);
+        const accountId = await accountIdOf(client);
+        return execution.withAccountLock(ctx, accountId, async () => {
+          const intent = paperIntent(accountId, ctx.project!.id, request.requestId, {
+            action: 'submit',
+            ...request,
+          });
+          const existing = await existingPaperOrder(client, execution, intent);
+          if (existing) return { paper: true, replayed: true, order: orderView(existing) };
+          await execution.authorizeStrategy(ctx, accountId, request);
+          const open = await reconciledOpenOrders(client, execution, accountId);
+          const at = now();
+          const check = await runChecks(
+            client,
+            ctx.credential ?? {},
+            orderRequest(request),
+            at,
+            open,
+          );
+          if (!check.ok) return refusedOrder(check);
+          await execution.authorizeStrategy(ctx, accountId, request);
+          await execution.beginIntent(ctx, intent);
+          const order = await client.submit(alpacaOrder(request, check, intent.clientOrderId));
+          if (order.client_order_id !== intent.clientOrderId || !order.id || !order.status)
+            throw new Error(
+              'The broker did not acknowledge the intended order. Reconcile this requestId before continuing.',
+            );
+          await execution.finishIntent(intent, order);
+          const placed = orderView(order);
           return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `Refused by Helena's paper limits, nothing was sent:\n- ${check.violations.join('\n- ')}`,
-              },
-            ],
-            structuredContent: { refused: true, checks: check },
-            isError: true,
+            paper: true,
+            order: placed,
+            checks: check,
+            journal: journalEntry(request, check, placed, at),
           };
-        }
-        const clientOrderId = clientOrderIdFor(request, at);
-        const placed = orderView(await client.submit(alpacaOrder(request, check, clientOrderId)));
-        return {
-          paper: true,
-          order: placed,
-          checks: check,
-          journal: journalEntry(request, check, placed, at),
-          ...(check.assetClass === 'crypto' && check.opening
-            ? {
-                next:
-                  'Crypto has no attached stop: once the buy is filled, place a stop_limit sell at ' +
-                  'stopLossPrice with the same strategyId and strategyVersion.',
-              }
-            : {}),
-        };
+        });
       },
     },
     {
       name: 'alpaca_paper_cancel_order',
       title: 'Cancel a paper order',
-      description: 'Cancel an open order of the Alpaca PAPER account by its id.',
+      description:
+        'Cancel a simple opening buy of the Alpaca PAPER account by its id. Attached orders and sell exits are protected from cancellation; manage those through the broker after reviewing their protection.',
       inputSchema: z.object({ orderId: z.string().regex(/^[0-9a-f-]{36}$/i) }),
       category: 'write',
       async handler(input: unknown, ctx: ToolCallContext) {
         const { orderId } = input as { orderId: string };
-        await clientOf(ctx, deps).cancel(orderId);
-        return { paper: true, canceled: orderId };
+        const execution = requireExecution(deps, ctx);
+        const client = clientOf(ctx, deps);
+        return execution.withAccountLock(ctx, await accountIdOf(client), async () => {
+          const order = await client.order(orderId);
+          if (
+            order.id !== orderId ||
+            order.side !== 'buy' ||
+            (order.order_class && order.order_class !== 'simple') ||
+            order.legs?.length
+          )
+            throw new Error(
+              'Canceling this order could remove a protective exit. It was left unchanged.',
+            );
+          await client.cancel(orderId);
+          return {
+            paper: true,
+            canceled: orderId,
+            note: 'Cancellation requested; verify its final status before reusing reserved inventory.',
+          };
+        });
       },
     },
     {
       name: 'alpaca_paper_close_position',
       title: 'Close a paper position',
       description:
-        'Close a position of the Alpaca PAPER account at market, wholly or by percentage. ' +
-        'Allowed after the daily loss limit and while new entries are halted.',
+        'Close unreserved long inventory of the Alpaca PAPER account at market, wholly or by percentage. ' +
+        'Allowed after the daily loss limit and while new entries are halted. Existing protective exits reserve inventory and are never canceled by this tool.',
       inputSchema: z.object({
+        requestId: z
+          .string()
+          .uuid()
+          .describe(
+            'Stable ID for this close request; reuse unchanged after an uncertain response.',
+          ),
         symbol: symbolSchema,
         percentage: z.number().min(1).max(100).optional(),
         rationale: z.string().min(10).max(600),
       }),
       category: 'write',
       async handler(input: unknown, ctx: ToolCallContext) {
-        const { symbol, percentage } = input as { symbol: string; percentage?: number };
-        const order = await clientOf(ctx, deps).closePosition(symbol, percentage);
-        return { paper: true, order: orderView(order), assetClass: assetClassOf(symbol) };
+        const request = input as {
+          requestId: string;
+          symbol: string;
+          percentage?: number;
+          rationale: string;
+        };
+        if (!z.string().uuid().safeParse(request.requestId).success)
+          throw new Error('A close request needs a stable requestId.');
+        const execution = requireExecution(deps, ctx);
+        const client = clientOf(ctx, deps);
+        const accountId = await accountIdOf(client);
+        return execution.withAccountLock(ctx, accountId, async () => {
+          const intent = paperIntent(accountId, ctx.project!.id, request.requestId, {
+            action: 'close',
+            ...request,
+          });
+          const existing = await existingPaperOrder(client, execution, intent);
+          if (existing) return { paper: true, replayed: true, order: orderView(existing) };
+          const open = await reconciledOpenOrders(client, execution, accountId);
+          const held = (await client.positions()).find(
+            (position) => normalizedSymbol(position.symbol) === normalizedSymbol(request.symbol),
+          );
+          const qty = (num(held?.qty) * (request.percentage ?? 100)) / 100;
+          const orderRequest: OrderRequest = {
+            symbol: request.symbol,
+            side: 'sell',
+            type: 'market',
+            qty,
+          };
+          const check = await runChecks(client, ctx.credential ?? {}, orderRequest, now(), open);
+          if (!check.ok) return refusedOrder(check);
+          await execution.beginIntent(ctx, intent);
+          const order = await client.submit({
+            symbol: request.symbol,
+            side: 'sell',
+            type: 'market',
+            qty: fixed(qty, check.assetClass === 'crypto' ? 9 : 6),
+            time_in_force: check.assetClass === 'crypto' ? 'gtc' : 'day',
+            client_order_id: intent.clientOrderId,
+          });
+          if (order.client_order_id !== intent.clientOrderId || !order.id || !order.status)
+            throw new Error(
+              'The broker did not acknowledge the intended close. Reconcile this requestId before continuing.',
+            );
+          await execution.finishIntent(intent, order);
+          return {
+            paper: true,
+            order: orderView(order),
+            assetClass: assetClassOf(request.symbol),
+            checks: check,
+          };
+        });
       },
     },
   ] satisfies AgentTool<unknown>[];

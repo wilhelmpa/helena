@@ -52,7 +52,12 @@ export const approvalRoutes = new Elysia({
       const { approval, created } = await createApprovalRequest({
         projectId: project.id,
         agent,
-        ...body,
+        kind: body.kind,
+        action: body.action,
+        details: body.details,
+        command: body.command,
+        scope: body.scope,
+        issueId: body.issueId,
       });
       set.status = created ? 201 : 200;
       return approval;

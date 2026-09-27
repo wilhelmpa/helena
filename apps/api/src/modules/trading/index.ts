@@ -10,7 +10,15 @@ import { isMcpRequest } from '#shared/mcp-request';
 import { commonErrors, errors } from '#shared/responses';
 import { mcpTool } from '#mcp/generate';
 import { decide } from '#modules/decisions/service';
-import { classifyBody, ClassifyResponse, tradingProjectParams } from './model';
+import { ApprovalResponse } from '#modules/approvals/model';
+import { getCallingAgent } from '#modules/approvals/service';
+import { requestStrategyApproval } from './strategies';
+import {
+  classifyBody,
+  ClassifyResponse,
+  tradingProjectParams,
+  strategyApprovalBody,
+} from './model';
 
 // The trading decisions as one agent tool (docs/helena-decisions/trading.md §6): sort a news
 // item, check a planned trade against one written rule, or route a task. The questions are
@@ -39,6 +47,33 @@ async function runOf(header: string | null, agentId: number | null): Promise<num
 export const tradingRoutes = new Elysia({ name: 'trading', detail: { tags: ['Trading'] } })
   .use(authContext)
   .use(guards)
+  .post(
+    '/projects/:projectKey/trading/strategies/approval',
+    async ({ project, user, body, set }) => {
+      const agent = await getCallingAgent(requireUser(user).id, project.teamId);
+      if (!agent) throw new HttpError(403, 'Only an agent can request a strategy approval.');
+      const result = await requestStrategyApproval({ project, agent, ...body });
+      set.status = result.created ? 201 : 200;
+      return result.approval;
+    },
+    {
+      projectMember: true,
+      params: tradingProjectParams,
+      body: strategyApprovalBody,
+      response: {
+        200: ApprovalResponse,
+        201: ApprovalResponse,
+        ...commonErrors,
+        ...errors(409, 413, 502),
+      },
+      detail: {
+        summary: 'Request human approval of a paper strategy snapshot',
+        description:
+          'Reads the canonical strategy version note in this project and files its complete content for a person to approve. Requires status paper, instruments and a backtest reference. No order is placed. Every order still obeys the paper account limits. A changed note, account or project needs its own approval; setting frontmatter freigabe never approves a strategy.',
+        ...mcpTool('trading_request_strategy_approval', {}, 'write'),
+      },
+    },
+  )
   .post(
     '/projects/:projectKey/trading/classify',
     async ({ params, user, body, request }) => {

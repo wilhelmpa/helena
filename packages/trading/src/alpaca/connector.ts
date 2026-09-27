@@ -1,8 +1,8 @@
 import type { Connector, ConnectorHealth, CredentialValues } from '@helena/sdk';
-import { AlpacaPaperClient, type Fetch } from './client';
+import { AlpacaPaperClient } from './client';
 import { isPaperKeyId } from './hosts';
 import { readKeys, readLimits } from './limits';
-import { ALPACA_PAPER_CONNECTOR, alpacaPaperTools } from './tools';
+import { ALPACA_PAPER_CONNECTOR, alpacaPaperTools, type PaperToolDeps } from './tools';
 
 // Alpaca's paper account as a Helena connector. The owner opens the paper account at
 // Alpaca himself (email only, no funding) and stores its paper keys together with his hard
@@ -11,7 +11,7 @@ import { ALPACA_PAPER_CONNECTOR, alpacaPaperTools } from './tools';
 
 const usd = { en: 'USD', de: 'USD' };
 
-export function alpacaPaperConnector(deps: { fetch?: Fetch } = {}): Connector {
+export function alpacaPaperConnector(deps: PaperToolDeps = {}): Connector {
   return {
     id: ALPACA_PAPER_CONNECTOR,
     label: { en: 'Alpaca paper trading (demo money)', de: 'Alpaca Paper-Trading (Spielgeld)' },

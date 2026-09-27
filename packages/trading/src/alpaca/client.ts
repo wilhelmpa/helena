@@ -27,6 +27,7 @@ export class AlpacaError extends Error {
 const TIMEOUT_MS = 15_000;
 
 export interface AlpacaAccount {
+  id: string;
   status: string;
   currency: string;
   cash: string;
@@ -184,6 +185,18 @@ export class AlpacaPaperClient {
     return this.call('trading', '/v2/orders', { method: 'POST', body: order });
   }
 
+  orderByClientId(id: string): Promise<AlpacaOrder> {
+    return this.call('trading', '/v2/orders:by_client_order_id', {
+      query: { client_order_id: id },
+    });
+  }
+
+  order(id: string): Promise<AlpacaOrder> {
+    return this.call('trading', `/v2/orders/${encodeURIComponent(id)}`, {
+      query: { nested: 'true' },
+    });
+  }
+
   cancel(orderId: string): Promise<void> {
     return this.call('trading', `/v2/orders/${encodeURIComponent(orderId)}`, { method: 'DELETE' });
   }
@@ -259,16 +272,16 @@ export function accountState(account: AlpacaAccount): AccountState {
     status: account.status,
     tradingBlocked: account.trading_blocked,
     accountBlocked: account.account_blocked,
-    equity: num(account.equity),
-    lastEquity: num(account.last_equity),
+    equity: Number(account.equity),
+    lastEquity: Number(account.last_equity),
   };
 }
 
 export function positionState(position: AlpacaPosition): PositionState {
-  const qty = num(position.qty);
+  const qty = Number(position.qty);
   return {
     symbol: position.symbol,
     qty: position.side === 'short' ? -Math.abs(qty) : qty,
-    marketValue: Math.abs(num(position.market_value)),
+    marketValue: Math.abs(Number(position.market_value)),
   };
 }

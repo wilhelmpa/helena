@@ -21,6 +21,7 @@ export interface ToolCallContext {
   // The decrypted credential of the connector the tool belongs to, keyed by the fields of
   // its credentialSchema. Absent for a tool without a connector.
   credential?: Record<string, string | number | boolean>;
+  credentialId?: number;
   runId?: number | null;
   // The caller's own credential for Helena's API, for a tool that acts on Helena as the
   // caller (the built-in route tools do): what it may do is exactly what the caller may.

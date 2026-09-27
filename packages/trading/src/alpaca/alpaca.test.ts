@@ -31,6 +31,7 @@ function input(overrides: Partial<CheckInput> = {}): CheckInput {
       lastEquity: 100_020,
     },
     positions: [],
+    pending: [],
     ordersToday: 0,
     order: { symbol: 'SPY', side: 'buy', type: 'market', qty: 1, stopLossPrice: 580 },
     price: 600,
@@ -194,6 +195,24 @@ describe('order checks', () => {
     expect(result.violations.join(' ')).toMatch(/Crypto is switched off/);
   });
 
+  test('crypto entries stay disabled even when the connection allows crypto', () => {
+    const result = checkOrder(
+      input({
+        order: {
+          symbol: 'BTC/USD',
+          side: 'buy',
+          type: 'limit',
+          qty: 0.01,
+          limitPrice: 60000,
+          stopLossPrice: 58000,
+        },
+        price: 60000,
+      }),
+    );
+    expect(result.ok).toBe(false);
+    expect(result.violations.join(' ')).toContain('protective exits');
+  });
+
   test('long only: a sell never exceeds the position', () => {
     expect(
       checkOrder(
@@ -258,6 +277,7 @@ function fakeAlpaca(state: { equity?: string; lastEquity?: string; orders?: unkn
       });
     if (pathname === '/v2/account') {
       return json({
+        id: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
         status: 'ACTIVE',
         currency: 'USD',
         cash: '100000',
@@ -314,7 +334,8 @@ function context(
 ): ToolCallContext {
   return {
     agent: null,
-    project: null,
+    project: { id: 1, key: 'TRADE', teamId: 1 },
+    credentialId: 1,
     credential,
     log: { debug() {}, info() {}, warn() {}, error() {} } as unknown as ToolCallContext['log'],
   };
@@ -324,12 +345,21 @@ function tool(fetchImpl: Fetch, name: string) {
   const found = alpacaPaperTools({
     fetch: fetchImpl,
     now: () => new Date('2026-10-01T15:00:00Z'),
+    execution: {
+      withAccountLock: (_ctx, _id, work) => work(),
+      findIntent: async () => null,
+      activeIntents: async () => [],
+      beginIntent: async () => {},
+      finishIntent: async () => {},
+      authorizeStrategy: async () => {},
+    },
   }).find((entry) => entry.name === name);
   if (!found) throw new Error(`no tool ${name}`);
   return found;
 }
 
 const ORDER = {
+  requestId: '01234567-89ab-4cde-8fab-0123456789ab',
   symbol: 'SPY',
   side: 'buy',
   type: 'market',
@@ -363,7 +393,7 @@ describe('paper tools', () => {
       stop_loss: { stop_price: '580' },
       take_profit: { limit_price: '640' },
     });
-    expect(result.order.clientOrderId).toBe('helena-orb-spy-v1.2-20261001150000');
+    expect(result.order.clientOrderId).toMatch(/^helena-[a-f0-9]{40}$/);
     expect(result.journal).toContain('strategie: orb-spy');
     expect(result.journal).toContain('[[orb-spy]] v1.2');
     for (const request of requests) {
@@ -398,7 +428,10 @@ describe('paper tools', () => {
 
   test('the account tool shows the limits and the orders of the day', async () => {
     const { fetchImpl } = fakeAlpaca({
-      orders: [{ submitted_at: '2026-10-01T14:00:00Z' }, { submitted_at: '2026-09-30T14:00:00Z' }],
+      orders: [
+        { id: '1', submitted_at: '2026-10-01T14:00:00Z' },
+        { id: '2', submitted_at: '2026-09-30T14:00:00Z' },
+      ],
     });
     const result = (await tool(fetchImpl, 'alpaca_paper_account').handler({}, context())) as {
       paper: boolean;

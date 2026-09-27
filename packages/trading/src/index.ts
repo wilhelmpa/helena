@@ -16,6 +16,8 @@ export * from './alpaca/limits';
 export * from './alpaca/checks';
 export * from './alpaca/client';
 export * from './alpaca/tools';
+export * from './alpaca/execution';
+export * from './alpaca/pending';
 export * from './alpaca/connector';
 export * from './decisions/questions';
 export * from './decisions/classes';

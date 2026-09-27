@@ -270,7 +270,7 @@
       "cron": "50 15 * * 1-5",
       "timezone": "America/New_York",
       "catchUp": "skip",
-      "instructions": "Paper-Session Schluss nach dem Skill paper-trading-ausfuehrung: Daytrading-Positionen nach den Regeln ihrer Strategie-Version schließen (alpaca_paper_close_position), offene Tagesorders stornieren (alpaca_paper_cancel_order), Journal-Einträge der geschlossenen Trades ergänzen (Ergebnis in USD und R, Regeltreue)."
+      "instructions": "Paper-Session Schluss nach dem Skill paper-trading-ausfuehrung: Nicht reservierte Daytrading-Long-Bestände nach den Regeln ihrer Strategie-Version schließen (alpaca_paper_close_position mit stabiler requestId). Nur einfache Kauforders stornieren (alpaca_paper_cancel_order); Schutzorders und angehängte Gruppen bestehen lassen und blockierte manuelle Ausstiege dem Owner melden, Journal-Einträge der geschlossenen Trades ergänzen (Ergebnis in USD und R, Regeltreue)."
     },
     {
       "key": "paper-daily-report",
@@ -288,7 +288,7 @@
       "cron": "5 9 * * *",
       "timezone": "Europe/Berlin",
       "catchUp": "skip",
-      "instructions": "Tägliche Paper-Runde für Krypto-Strategien (Tageschart) nach paper-trading-ausfuehrung: nur Krypto-Strategie-Versionen mit Status paper; Setups nach ihren Regeln prüfen, Orders mit Stop (nach der Ausführung einen stop_limit-Verkauf setzen), Journal sofort. Keine freigegebene Krypto-Strategie: eine Zeile und enden."
+      "instructions": "Tägliche Research-Runde für Krypto-Strategien (Tageschart): Setups nach dokumentierten Regeln prüfen und Befunde festhalten. Krypto-Einstiege sind technisch gesperrt, bis zuverlässige Schutzorders verfügbar sind. Keine Orders und keine nachgereichten Stops; fehlende Evidenz knapp melden."
     },
     {
       "key": "weekly-review",

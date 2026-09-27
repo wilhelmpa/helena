@@ -198,7 +198,7 @@ Nothing is installed by this branch; the quant agent reports a missing package.
 | `alpaca_paper_market` | read | latest prices (IEX / Alpaca crypto) and the market clock |
 | `alpaca_paper_bars` | read | OHLCV bars |
 | `alpaca_paper_check_order` | read | the hard checks without placing |
-| `alpaca_paper_submit_order` | write | checks, then places; stock entries carry their stop (OTO) and target (bracket); requires `strategyId`, `strategyVersion`, `rationale`; returns a ready journal entry |
+| `alpaca_paper_submit_order` | write | checks, then places; stock entries carry their stop (OTO) and target (bracket); requires stable UUID `requestId`, `strategyId`, `strategyVersion`, `rationale`; returns a ready journal entry |
 | `alpaca_paper_cancel_order` | write | cancel |
 | `alpaca_paper_close_position` | write | close; allowed after the daily limit and while entries are halted |
 
@@ -208,7 +208,8 @@ Nothing is installed by this branch; the quant agent reports a missing package.
   - max order value, max position value, max risk per trade and daily loss limit (all required; a missing one blocks every entry)
   - max open positions (default 5) and max orders per day (default 20)
   - allowed symbols, allow crypto, "Handel angehalten"
-- **Crypto stops:** Alpaca attaches no stop to crypto orders, so the tool reminds the agent to place a `stop_limit` sell once the buy is filled.
+- **Crypto entries:** fail closed until reliable protective exits are implemented. A separate later stop is not sufficient.
+- **Server enforcement (2026-09-26):** account-wide locking, pending buy/sell reservations, durable request IDs and native human strategy snapshots are described in [paper execution readiness](paper-execution-readiness-2026-09-26.md). Keep entries halted until that readiness gate is met.
 
 ## 6. Decision classes (Jev-style `decide`, local Qwen3.6)
 

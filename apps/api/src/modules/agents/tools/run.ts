@@ -10,11 +10,21 @@ import {
   type CallerAuth,
   type ProjectRef,
 } from '@helena/sdk';
-import { aiAgent, db, project, projectMember } from '@repo/db';
-import { eq } from 'drizzle-orm';
+import {
+  aiAgent,
+  agentTool,
+  agentToolLink,
+  db,
+  integrationCredential,
+  project,
+  projectMember,
+} from '@repo/db';
+import { and, eq } from 'drizzle-orm';
 import { host, registries } from '#shared/helena';
+import { assertAgentOfProject, HOME_SLUG, projectSlug } from '#shared/agent-socket';
 import { emergencyStopActive } from '#modules/emergency-stop/service';
 import { recordAgentUses } from '../credentials/delivery';
+import { credentialInScope } from '../credentials/grants';
 import { credentialValues } from '../integrations/service';
 import { listAgentToolLinks } from './service';
 
@@ -73,14 +83,18 @@ export async function configuredToolsOf(userId: string): Promise<Map<string, Con
   return out;
 }
 
-// The project a configured tool acts in: the agent's one project. An agent in several
-// projects (the Home agent) acts in none.
-async function projectOfAgent(userId: string): Promise<ProjectRef | null> {
+// A project socket narrows the context. Unscoped multi-project chats have no execution project.
+async function projectOfAgent(
+  userId: string,
+  socketProject?: string | null,
+): Promise<ProjectRef | null> {
   const rows = await db
     .select({ id: project.id, key: project.key, teamId: project.teamId })
     .from(projectMember)
     .innerJoin(project, eq(project.id, projectMember.projectId))
     .where(eq(projectMember.userId, userId));
+  if (socketProject && socketProject !== HOME_SLUG)
+    return rows.find((row) => projectSlug(row.key) === socketProject) ?? null;
   return rows.length === 1 ? rows[0]! : null;
 }
 
@@ -103,10 +117,17 @@ function summary(input: unknown): string {
 export async function callConfiguredTool(
   configured: ConfiguredTool,
   args: Record<string, unknown>,
-  caller: { userId: string; auth: CallerAuth; runId: number | null },
+  caller: { userId: string; auth: CallerAuth; runId: number | null; agentProject?: string | null },
 ) {
   const agent = await callerAgent(caller.userId);
   if (!agent) return refusal(403, 'Only an agent uses configured tools.');
+  if (caller.agentProject) {
+    try {
+      await assertAgentOfProject(caller.userId, caller.agentProject);
+    } catch {
+      return refusal(403, 'The agent is no longer available in this project.');
+    }
+  }
   const { tool } = configured;
   const audit = (action: 'called' | 'denied', category: ActionCategory, purpose: string) =>
     recordAgentUses(agent, { runId: caller.runId, chatMessageId: null }, action, [
@@ -126,7 +147,9 @@ export async function callConfiguredTool(
     name: agent.username,
     templateId: agent.sourceTemplateId,
   };
-  const projectRef = await projectOfAgent(agent.userId);
+  const projectRef = await projectOfAgent(agent.userId, caller.agentProject);
+  if (caller.agentProject && caller.agentProject !== HOME_SLUG && !projectRef)
+    return refusal(403, 'The agent is no longer available in this project.');
 
   if (category !== 'read' && (await emergencyStopActive())) {
     await audit('denied', category, `${tool.name}: emergency stop`);
@@ -159,6 +182,36 @@ export async function callConfiguredTool(
     }
   }
 
+  // MCP can retain the catalog after the owner revokes a binding or changes its scope.
+  const currentProject = await projectOfAgent(agent.userId, caller.agentProject);
+  if (currentProject?.id !== projectRef?.id || currentProject?.teamId !== projectRef?.teamId)
+    return refusal(403, 'The configured tool project changed; start a new request.');
+  const [binding] = await db
+    .select({ id: agentTool.id })
+    .from(agentToolLink)
+    .innerJoin(aiAgent, eq(aiAgent.id, agentToolLink.agentId))
+    .innerJoin(agentTool, eq(agentTool.id, agentToolLink.agentToolId))
+    .innerJoin(integrationCredential, eq(integrationCredential.id, agentTool.credentialId))
+    .where(
+      and(
+        eq(aiAgent.id, agent.id),
+        eq(aiAgent.userId, caller.userId),
+        eq(aiAgent.teamId, agent.teamId),
+        eq(agentTool.teamId, agent.teamId),
+        eq(agentTool.toolKey, tool.name),
+        eq(integrationCredential.id, configured.credentialId),
+        eq(integrationCredential.teamId, agent.teamId),
+        eq(integrationCredential.integrationKey, tool.connector!),
+        credentialInScope({
+          agentId: agent.id,
+          userId: agent.userId,
+          projectId: currentProject?.id ?? null,
+        }),
+      ),
+    )
+    .limit(1);
+  if (!binding) return refusal(403, 'The configured tool binding is no longer available here.');
+
   const credential = await credentialValues(configured.credentialId, agent.teamId);
   if (!credential) {
     await audit('denied', category, `${tool.name}: the credential is gone`);
@@ -169,6 +222,7 @@ export async function callConfiguredTool(
       agent: agentRef,
       project: projectRef,
       credential,
+      credentialId: configured.credentialId,
       runId: caller.runId,
       caller: { userId: caller.userId, auth: caller.auth },
       log: consoleLogger(`tool ${tool.name}`),

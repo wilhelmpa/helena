@@ -227,6 +227,7 @@ export async function createApprovalRequest(input: {
   command?: string;
   scope?: ActionScope;
   issueId?: number;
+  payload?: Record<string, unknown>;
 }): Promise<{ approval: ApprovalDto; created: boolean }> {
   if (input.issueId != null) {
     const [row] = await db
@@ -268,7 +269,7 @@ export async function createApprovalRequest(input: {
         details: input.details?.trim() ?? '',
         command,
         category,
-        payload: { actionScope: scope },
+        payload: { ...input.payload, actionScope: scope },
         autopilotLevel: view.level,
         policyReason: view.reason,
       })
@@ -357,6 +358,19 @@ export async function decideApprovalRequest(
     // A budget card has its own answers (raise, continue once, keep stopped).
     if (decided.kind === 'budget')
       throw new HttpError(409, 'A budget card is decided with its own actions');
+    if ((decided.payload as Record<string, unknown> | null)?.type === 'trading-strategy') {
+      const [owner] = await tx
+        .select({ role: projectMember.role })
+        .from(projectMember)
+        .where(
+          and(
+            eq(projectMember.projectId, decided.projectId),
+            eq(projectMember.userId, deciderUserId),
+          ),
+        );
+      if (owner?.role !== 'owner')
+        throw new HttpError(403, 'Only a project owner can decide a paper strategy approval.');
+    }
     const [person] = await tx
       .select({ name: user.name })
       .from(user)

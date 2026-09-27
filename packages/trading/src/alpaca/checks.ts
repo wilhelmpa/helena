@@ -1,4 +1,5 @@
 import type { PaperLimits } from './limits';
+import { normalizedSymbol, type PendingExposure } from './pending';
 
 // The hard checks before an order reaches the paper account (docs/helena-decisions/
 // trading.md §5.3). Pure: the caller fetches the account, the positions, today's orders and
@@ -47,6 +48,7 @@ export interface CheckInput {
   missingLimits: string[];
   account: AccountState;
   positions: PositionState[];
+  pending: PendingExposure[];
   // Orders submitted today (US trading day), any status.
   ordersToday: number;
   order: OrderRequest;
@@ -93,6 +95,7 @@ export function checkOrder(input: CheckInput): CheckResult {
     input.positions.find((p) => p.symbol.toUpperCase() === symbol);
   const heldQty = held?.qty ?? 0;
   const heldValue = held?.marketValue ?? 0;
+  const pending = input.pending.find((entry) => entry.symbol === normalizedSymbol(symbol));
   const opening = order.side === 'buy';
   const unitPrice = valuationPrice(order, input.price);
   const qty =
@@ -104,6 +107,18 @@ export function checkOrder(input: CheckInput): CheckResult {
   const notionalUsd =
     order.notional !== undefined && order.notional > 0 ? order.notional : qty * unitPrice;
   const dayPnlUsd = account.equity - account.lastEquity;
+
+  if (
+    ![account.equity, account.lastEquity, qty, unitPrice, notionalUsd, heldQty, heldValue].every(
+      Number.isFinite,
+    ) ||
+    account.equity <= 0 ||
+    account.lastEquity <= 0 ||
+    input.positions.some(
+      (position) => !Number.isFinite(position.qty) || !Number.isFinite(position.marketValue),
+    )
+  )
+    violations.push('The account, position or order numbers cannot be checked safely.');
 
   // The account and the order itself.
   if (account.status !== 'ACTIVE' || account.tradingBlocked || account.accountBlocked) {
@@ -135,12 +150,14 @@ export function checkOrder(input: CheckInput): CheckResult {
   }
 
   if (!opening) {
+    if (order.notional !== undefined)
+      violations.push('A reducing order needs an explicit quantity, not a USD amount.');
     // Reducing or closing: never more than is held.
     if (heldQty <= 0)
       violations.push(`There is no long position in ${symbol} to sell (no short selling).`);
-    else if (qty > heldQty + 1e-9) {
+    else if (qty + (pending?.sellQty ?? 0) > heldQty + 1e-9) {
       violations.push(
-        `Selling ${round(qty, 6)} would exceed the ${round(heldQty, 6)} held (no short selling).`,
+        `Selling ${round(qty, 6)} plus ${round(pending?.sellQty ?? 0, 6)} reserved by pending sells would exceed the ${round(heldQty, 6)} held (no short selling).`,
       );
     }
     if (order.stopLossPrice !== undefined || order.takeProfitPrice !== undefined) {
@@ -161,6 +178,8 @@ export function checkOrder(input: CheckInput): CheckResult {
   }
 
   // Opening or adding: every limit.
+  if (assetClass === 'crypto')
+    violations.push('Crypto entries are disabled until protective exits can be guaranteed.');
   if (input.missingLimits.length > 0) {
     violations.push(
       `The paper connection has no limit for ${input.missingLimits.join(', ')}: no position opens until the owner sets it.`,
@@ -187,14 +206,21 @@ export function checkOrder(input: CheckInput): CheckResult {
       `The order is worth ${round(notionalUsd)} USD; the limit per order is ${limits.maxOrderValueUsd} USD.`,
     );
   }
-  const positionAfterUsd = heldValue + notionalUsd;
+  const positionAfterUsd = heldValue + (pending?.buyUsd ?? 0) + notionalUsd;
   if (positionAfterUsd > limits.maxPositionValueUsd + 1e-9) {
     violations.push(
       `The position would be worth ${round(positionAfterUsd)} USD; the limit per position is ${limits.maxPositionValueUsd} USD.`,
     );
   }
-  const openPositions = input.positions.filter((p) => p.qty > 0).length;
-  if (heldQty <= 0 && openPositions + 1 > limits.maxOpenPositions) {
+  const reservedSymbols = new Set([
+    ...input.positions.filter((p) => p.qty > 0).map((p) => normalizedSymbol(p.symbol)),
+    ...input.pending.filter((p) => p.buyUsd > 0).map((p) => p.symbol),
+  ]);
+  const openPositions = reservedSymbols.size;
+  if (
+    !reservedSymbols.has(normalizedSymbol(symbol)) &&
+    openPositions + 1 > limits.maxOpenPositions
+  ) {
     violations.push(
       `${openPositions} positions are open; the limit is ${limits.maxOpenPositions}.`,
     );
