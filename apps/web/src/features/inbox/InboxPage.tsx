@@ -25,9 +25,7 @@ export default function InboxPage() {
   if (mailAccounts.isPending)
     return <p className="p-8 text-sm text-muted-foreground">{t('mailLoading')}</p>;
   if (mailAccounts.isError)
-    return (
-      <p className="p-8 text-sm text-muted-foreground">{t('mailError')}</p>
-    );
+    return <p className="p-8 text-sm text-muted-foreground">{t('mailError')}</p>;
   const hasMail = (mailAccounts.data?.length ?? 0) > 0;
   const activeTab = hasMail ? tab : 'updates';
   const tabs = (

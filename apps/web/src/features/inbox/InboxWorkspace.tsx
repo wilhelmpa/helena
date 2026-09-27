@@ -59,9 +59,7 @@ export default function InboxWorkspace({
       {teams.isPending || projectPending ? (
         <p className="p-4 text-sm text-muted-foreground">{inboxCopy('loading')}</p>
       ) : projectKey && !projectAccounts.data?.length ? (
-        <p className="p-4 text-sm text-muted-foreground">
-          {inboxCopy('noProjectMailbox')}
-        </p>
+        <p className="p-4 text-sm text-muted-foreground">{inboxCopy('noProjectMailbox')}</p>
       ) : teamId == null ? (
         <p className="p-4 text-sm text-muted-foreground">{teamCopy('manage.empty')}</p>
       ) : (

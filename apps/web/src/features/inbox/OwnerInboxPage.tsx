@@ -243,11 +243,7 @@ function OwnerInboxContent() {
             ))}
           </div>
         </div>
-        {error && (
-          <p className={styles.empty}>
-            {t('loadError')}
-          </p>
-        )}
+        {error && <p className={styles.empty}>{t('loadError')}</p>}
         {error && visible.length === 0 ? null : loading && actions.length === 0 ? (
           <p className={styles.empty}>{t('loading')}</p>
         ) : visible.length === 0 ? (
@@ -276,7 +272,8 @@ function OwnerInboxContent() {
                     {entry.project?.key.toUpperCase() ?? t('home')}
                   </span>
                   <span>
-                    {entry.issue?.title ?? t('runCompleted', { name: entry.agent?.name ?? t('anAgent') })}
+                    {entry.issue?.title ??
+                      t('runCompleted', { name: entry.agent?.name ?? t('anAgent') })}
                   </span>
                   <time dateTime={entry.at}>{formatTime(entry.at)}</time>
                 </Link>
