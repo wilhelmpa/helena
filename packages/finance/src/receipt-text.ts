@@ -278,6 +278,13 @@ const TOTAL_CURRENCY_LABEL = new RegExp(
   `^(?:${STRONG_GROSS.source}|amount paid|total paid|paid|payment amount|total charge|invoice total|total amount|(?:prix|montant(?: total)?)\\s+TTC|total|gesamt|summe|betrag)\\b`,
   'i',
 );
+const TOTAL_TAX_NAME = String.raw`(?:VAT|tax|MwSt|Mw\.-?St|USt|Umsatzsteuer|Mehrwertsteuer)`;
+const TOTAL_INCLUSIVE = String.raw`(?:incl(?:uding|uded)?|inkl(?:usive)?)\.?`;
+const TOTAL_TAX_QUALIFIER = new RegExp(
+  `^(?:(?:${TOTAL_INCLUSIVE}\\s*${TOTAL_TAX_NAME}|${TOTAL_TAX_NAME}\\s+${TOTAL_INCLUSIVE}|brutto|TTC)\\s*:?\\s*)+`,
+  'i',
+);
+
 const CONVERSION =
   /exchange rate|wechselkurs|conversion|converted|umrechnung|umgerechnet|equivalent/i;
 
@@ -322,10 +329,7 @@ function findCurrency(lines: string[]): string | null {
     const label = TOTAL_CURRENCY_LABEL.exec(line);
     if (!label || (NET.test(line) && !GROSS_HINT.test(line))) continue;
     let value = line.slice(label[0].length).replace(/^\s*:?\s*/, '');
-    value = value.replace(
-      /^(?:incl(?:uding|uded)?\.?\s*(?:VAT|tax)|(?:VAT|tax)\s+incl(?:uding|uded)?\.?|brutto|TTC)\s*:?\s*/i,
-      '',
-    );
+    value = value.replace(TOTAL_TAX_QUALIFIER, '');
     // A table may put just the monetary value directly below the label.
     if (!value) value = lines[i + 1] ?? '';
     // Keep secondary tax/conversion amounts out of the labelled total's value segment.
