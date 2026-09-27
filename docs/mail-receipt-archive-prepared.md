@@ -33,7 +33,14 @@ Maillisten, getThread, Send-/Trashaktionen und Folder-/Undelete-Mechanik bleiben
 Lokal: reine Bindungstests, ReceiptBody-SSR-Test, API-/Worker-/Web-Typprüfung und scoped
 ESLint/Prettier (nur vorhandener Mac-Cache). 21 Mail-Tests mit 96 Assertions und 6 Web-Tests grün. API-/Worker-Typprüfung und scoped ESLint grün; Web-Typprüfung ebenfalls grün.
 
-Für Root-Gate neu verfasst, bisher **nicht auf PostgreSQL ausgeführt**:
+Auf ausdrückliche Rootfreigabe im exklusiven `test.2`-Slot am 27. September 2026,
+07:59:12–07:59:18 CEST, auf exakt `e59d66ef252e8be4a52ef140ec6b11e7c223108a`
+privat ausgeführt: **18 Tests / 110 Assertions / 0 Fehler**, 4,78 Sekunden für beide
+API-Dateien `receipt-source.test.ts` und `receipt-retention.test.ts`. Neuer Cluster auf
+Loopback-Port 65512, ausschließlich synthetische Daten, bestehende Cachelinks, leere
+Testumgebung und äußerer 420-Sekunden-Timeout. Keine Provider-/Liveaktion.
+
+Geprüft:
 
 - archivierter Body und Attachment behalten Zeilen, Rawbytes, Attachments sowie 0 Locations;
   ein unbelegter Geschwisterbrief wird gelöscht, Wiederholung löscht nichts zusätzlich;
@@ -43,5 +50,10 @@ Für Root-Gate neu verfasst, bisher **nicht auf PostgreSQL ausgeführt**:
 - falsche JSON-Typen, geänderte Originalbytes, fremde Message-IDs, Projekte, Teams und MCP;
 - Archivzugriff bleibt read-only und liefert keine anderen Nachrichten aus dem Thread.
 
-Echte Race-/DB-Ausführung, anschließender unveränderter Mailcachebetrieb und Owner-UI-
-Abnahme sind durch Root vor Livefreigabe erforderlich. Keine privaten Originale im Commit.
+Sourcehashes vor/nach Lauf identisch; privater Cluster gestoppt, Port und `test.2` danach
+frei bestätigt. Private synthetische Nachweise bleiben unter
+`/home/wilhelmpa/agent-work/receipt-archive-pg-65512-v1/` (`run.log`, `tests.log`,
+`tested-source.sha256`). Kein Cleanup an fremden Daten oder Diensten.
+
+Unabhängiger Sourcereview, gemeinsames Root-Fullgate, anschließender Mailcachebetrieb und
+Owner-UI-Abnahme stehen vor Livefreigabe noch aus. Keine privaten Originale im Commit.
