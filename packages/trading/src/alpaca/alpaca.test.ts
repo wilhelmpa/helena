@@ -462,6 +462,8 @@ describe('paper tools', () => {
       alpaca_paper_orders: 'read',
       alpaca_paper_market: 'read',
       alpaca_paper_bars: 'read',
+      trading_indikatoren: 'read',
+      trading_signal_pruefen: 'read',
       alpaca_paper_check_order: 'read',
       alpaca_paper_submit_order: 'write',
       alpaca_paper_cancel_order: 'write',

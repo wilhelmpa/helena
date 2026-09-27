@@ -249,7 +249,9 @@ describe('the trading blueprint, applied', () => {
     const risk = await agentRow(teamId, 'risk-journal-trade');
     const tools = await configuredToolsOf(trader.userId);
     expect([...tools.keys()].sort()).toContain('alpaca_paper_submit_order');
-    expect(tools.size).toBe(9);
+    expect([...tools.keys()].sort()).toContain('trading_indikatoren');
+    expect([...tools.keys()].sort()).toContain('trading_signal_pruefen');
+    expect(tools.size).toBe(11);
     expect([...(await configuredToolsOf(risk.userId)).keys()].sort()).toEqual([
       'alpaca_paper_account',
       'alpaca_paper_orders',
@@ -263,6 +265,17 @@ describe('the trading blueprint, applied', () => {
         typeof input === 'string' ? input : input instanceof URL ? input : input.url,
       );
       hosts.push(url.hostname);
+      const sampleBars = Array.from({ length: 56 }, (_, i) => {
+        const close = 100 + i * 0.15 + 3 * Math.sin(i * 0.35);
+        return {
+          t: new Date(Date.UTC(2026, 0, i + 1)).toISOString(),
+          o: close,
+          h: close + 1,
+          l: close - 1,
+          c: close,
+          v: 1000,
+        };
+      });
       const body =
         url.pathname === '/v2/account'
           ? {
@@ -275,7 +288,9 @@ describe('the trading blueprint, applied', () => {
               trading_blocked: false,
               account_blocked: false,
             }
-          : [];
+          : url.pathname === '/v2/stocks/bars'
+            ? { bars: { SPY: sampleBars } }
+            : [];
       return new Response(JSON.stringify(body), { status: 200 });
     }) as typeof fetch;
     const caller = {
@@ -286,11 +301,19 @@ describe('the trading blueprint, applied', () => {
     const result = await callConfiguredTool(tools.get('alpaca_paper_account')!, {}, caller);
     expect(result.isError).toBeFalsy();
     expect(hosts.every((host) => host === 'paper-api.alpaca.markets')).toBe(true);
+    const signal = await callConfiguredTool(
+      tools.get('trading_signal_pruefen')!,
+      { strategie: 'macd-rsi-atr v1', symbol: 'SPY', riskPercent: 0.5 },
+      caller,
+    );
+    expect(signal.isError).toBeFalsy();
+    expect(JSON.stringify(signal.structuredContent)).toContain('"orderPlaced":false');
+    expect(hosts).toContain('data.alpaca.markets');
     const uses = await db
       .select()
       .from(integrationCredentialUse)
       .where(eq(integrationCredentialUse.credentialId, credential.id));
-    expect(uses.map((use) => use.action)).toEqual(['called']);
+    expect(uses.map((use) => use.action)).toEqual(['called', 'called']);
 
     // The emergency stop stops every call but reading.
     const [owner] = await db

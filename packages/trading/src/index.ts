@@ -19,6 +19,8 @@ export * from './alpaca/tools';
 export * from './alpaca/execution';
 export * from './alpaca/pending';
 export * from './alpaca/connector';
+export * from './indicators';
+export * from './indicators/signal';
 export * from './decisions/questions';
 export * from './decisions/classes';
 export { NEWS_EVAL, NEWS_CASES } from './decisions/news';

@@ -29,6 +29,8 @@ const PAPER_TOOLS = [
   'alpaca_paper_orders',
   'alpaca_paper_market',
   'alpaca_paper_bars',
+  'trading_indikatoren',
+  'trading_signal_pruefen',
   'alpaca_paper_check_order',
   'alpaca_paper_submit_order',
   'alpaca_paper_cancel_order',
@@ -383,7 +385,7 @@ describe('tool bindings', () => {
     const state = appliedState();
     state.credentials = [{ id: 44, kind: 'alpaca_paper', label: 'Alpaca Paper' }];
     const trader = state.agents.find((entry) => entry.username === 'paper-trader-trade')!;
-    trader.tools = PAPER_TOOLS.slice(0, 8).map((toolKey, index) => ({
+    trader.tools = PAPER_TOOLS.slice(0, -1).map((toolKey, index) => ({
       agentToolId: 900 + index,
       toolKey,
       credentialId: 44,

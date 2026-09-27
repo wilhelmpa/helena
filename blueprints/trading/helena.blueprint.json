@@ -75,7 +75,12 @@
       "tools": [
         {
           "connector": "alpaca_paper",
-          "names": ["alpaca_paper_market", "alpaca_paper_bars"]
+          "names": [
+            "alpaca_paper_market",
+            "alpaca_paper_bars",
+            "trading_indikatoren",
+            "trading_signal_pruefen"
+          ]
         }
       ]
     },
@@ -91,7 +96,12 @@
       "tools": [
         {
           "connector": "alpaca_paper",
-          "names": ["alpaca_paper_market", "alpaca_paper_bars"]
+          "names": [
+            "alpaca_paper_market",
+            "alpaca_paper_bars",
+            "trading_indikatoren",
+            "trading_signal_pruefen"
+          ]
         }
       ]
     },
@@ -111,7 +121,12 @@
       "tools": [
         {
           "connector": "alpaca_paper",
-          "names": ["alpaca_paper_market", "alpaca_paper_bars"]
+          "names": [
+            "alpaca_paper_market",
+            "alpaca_paper_bars",
+            "trading_indikatoren",
+            "trading_signal_pruefen"
+          ]
         }
       ]
     },

@@ -189,7 +189,12 @@ export async function setupAlpacaPaper(options: {
     .map((tool) => tool.name);
   check(
     toolKeys.includes('alpaca_paper_account') &&
-      toolKeys.every((key) => key.startsWith('alpaca_paper_')),
+      toolKeys.every(
+        (key) =>
+          key.startsWith('alpaca_paper_') ||
+          key === 'trading_indikatoren' ||
+          key === 'trading_signal_pruefen',
+      ),
     'paper-tool-registry',
   );
   check(

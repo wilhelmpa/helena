@@ -1,11 +1,14 @@
 import { z } from 'zod';
 import type { AgentTool, ToolCallContext } from '@helena/sdk';
+import { indicatorSet } from '../indicators';
+import { checkSignal, STRATEGY } from '../indicators/signal';
 import {
   accountState,
   AlpacaPaperClient,
   num,
   positionState,
   type AlpacaOrder,
+  type AlpacaBar,
   type Fetch,
   type NewOrder,
 } from './client';
@@ -42,6 +45,39 @@ const symbolSchema = z
   .refine((value) => STOCK.test(value) || CRYPTO.test(value), {
     message: 'A US stock or ETF symbol (AAPL, SPY) or a crypto pair with a slash (BTC/USD).',
   });
+
+const timeframeSchema = z.enum(['1Min', '5Min', '15Min', '1Hour', '1Day', '1Week']);
+const timeframeMs: Record<z.infer<typeof timeframeSchema>, number> = {
+  '1Min': 60_000,
+  '5Min': 300_000,
+  '15Min': 900_000,
+  '1Hour': 3_600_000,
+  '1Day': 86_400_000,
+  '1Week': 604_800_000,
+};
+
+async function indicatorBars(
+  client: AlpacaPaperClient,
+  symbol: string,
+  timeframe: z.infer<typeof timeframeSchema>,
+  lookback: number,
+  at: Date,
+): Promise<AlpacaBar[]> {
+  const start = new Date(at.getTime() - timeframeMs[timeframe] * lookback * 3).toISOString();
+  const bars = await client.bars({ symbol, timeframe, start, end: at.toISOString(), limit: 1000 });
+  if (bars.length === 1000)
+    throw new Error('Bar result may be truncated; choose a shorter lookback.');
+  const completed = bars.filter(
+    (bar) => new Date(bar.t).getTime() + timeframeMs[timeframe] <= at.getTime(),
+  );
+  return completed.slice(-lookback);
+}
+
+function recent(series: readonly (number | null)[], bars: readonly AlpacaBar[]) {
+  return series
+    .slice(-5)
+    .map((value, i) => ({ time: bars[bars.length - Math.min(5, series.length) + i]!.t, value }));
+}
 
 const strategyId = z
   .string()
@@ -424,6 +460,95 @@ export function alpacaPaperTools(deps: PaperToolDeps = {}): AgentTool<unknown>[]
         };
         const bars = await clientOf(ctx, deps).bars(query);
         return { symbol: query.symbol, timeframe: query.timeframe, bars };
+      },
+    },
+    {
+      name: 'trading_indikatoren',
+      title: 'Trading indicators (paper data)',
+      description: 'Calculate exact indicators from completed Alpaca paper OHLCV bars; read only.',
+      inputSchema: z.object({
+        symbol: symbolSchema,
+        timeframe: timeframeSchema.default('1Day'),
+        lookback: z.number().int().min(50).max(250).default(200),
+      }),
+      category: 'read',
+      async handler(input: unknown, ctx: ToolCallContext) {
+        const query = input as {
+          symbol: string;
+          timeframe: z.infer<typeof timeframeSchema>;
+          lookback: number;
+        };
+        const bars = await indicatorBars(
+          clientOf(ctx, deps),
+          query.symbol,
+          query.timeframe,
+          query.lookback,
+          now(),
+        );
+        if (bars.length < 50) throw new Error('Fewer than 50 completed bars available.');
+        const values = indicatorSet(bars);
+        const series = {
+          sma20: values.sma20,
+          ema12: values.ema12,
+          ema26: values.ema26,
+          ema50: values.ema50,
+          macd: values.macd.line,
+          macdSignal: values.macd.signal,
+          macdHistogram: values.macd.histogram,
+          rsi14: values.rsi14,
+          atr14: values.atr14,
+          bollingerMiddle: values.bollinger20.middle,
+          bollingerUpper: values.bollinger20.upper,
+          bollingerLower: values.bollinger20.lower,
+          vwap: values.vwap,
+          high20: values.highLow20.high,
+          low20: values.highLow20.low,
+        };
+        return {
+          symbol: query.symbol,
+          timeframe: query.timeframe,
+          barCount: bars.length,
+          asOf: bars.at(-1)!.t,
+          source: query.symbol.includes('/')
+            ? 'Alpaca US crypto paper market data'
+            : 'Alpaca IEX paper market data, split-adjusted',
+          indicators: Object.fromEntries(
+            Object.entries(series).map(([key, value]) => [
+              key,
+              { latest: value.at(-1), history: recent(value, bars) },
+            ]),
+          ),
+        };
+      },
+    },
+    {
+      name: 'trading_signal_pruefen',
+      title: 'Check macd-rsi-atr v1 signal',
+      description:
+        'Deterministic long signal and theoretical risk sizing from completed daily paper bars and paper equity. Never places an order.',
+      inputSchema: z.object({
+        strategie: z.literal(STRATEGY),
+        symbol: symbolSchema,
+        riskPercent: z.number().positive().max(5).default(0.5),
+      }),
+      category: 'read',
+      async handler(input: unknown, ctx: ToolCallContext) {
+        const query = input as { strategie: typeof STRATEGY; symbol: string; riskPercent: number };
+        const client = clientOf(ctx, deps);
+        const [bars, account] = await Promise.all([
+          indicatorBars(client, query.symbol, '1Day', 250, now()),
+          client.account(),
+        ]);
+        return {
+          ...checkSignal(bars, accountState(account).equity, query.riskPercent),
+          symbol: query.symbol,
+          timeframe: '1Day',
+          source: query.symbol.includes('/')
+            ? 'Alpaca US crypto paper market data'
+            : 'Alpaca IEX paper market data, split-adjusted',
+          paper: true,
+          orderPlaced: false,
+        };
       },
     },
     {
