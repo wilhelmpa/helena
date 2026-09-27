@@ -57,6 +57,17 @@ export function decisionBaseUrl(value: string): string {
   return `${url.origin}${url.pathname.replace(/\/+$/, '').replace(/\/v1(\/systemone)?$/, '')}`;
 }
 
+export function decisionKey(value: unknown): string | null {
+  if (value == null) return null;
+  if (typeof value !== 'string') throw new HttpError(400, 'The decision service key is invalid.');
+  const key = value.trim();
+  if (!key) return null;
+  if (!/^[\x21-\x7e]+$/.test(key)) {
+    throw new HttpError(400, 'The decision service key must be a single printable ASCII token.');
+  }
+  return key;
+}
+
 type Current = { readable: Record<string, unknown>; secrets: Record<string, string> };
 
 export function composeDecisionModel(fields: CredentialFields, current: Current) {
@@ -86,7 +97,25 @@ export function composeDecisionModel(fields: CredentialFields, current: Current)
     false;
   const keySource: DecisionKeySource =
     fields.keySource ?? (current.readable.keySource as DecisionKeySource | undefined) ?? 'stored';
-  const value = fields.value === undefined ? current.secrets.value : fields.value?.trim();
+  const sourceCredentialId =
+    keySource === 'credential'
+      ? fields.sourceCredentialId === undefined
+        ? current.readable.sourceCredentialId
+        : fields.sourceCredentialId
+      : null;
+  if (
+    keySource === 'credential' &&
+    (!Number.isSafeInteger(sourceCredentialId) || Number(sourceCredentialId) <= 0)
+  ) {
+    throw new HttpError(400, 'Choose an API key credential for this connection.');
+  }
+  if (keySource === 'credential' && fields.value !== undefined) {
+    throw new HttpError(400, 'A referenced key is changed in its original credential.');
+  }
+  const value =
+    keySource === 'stored'
+      ? decisionKey(fields.value === undefined ? current.secrets.value : fields.value)
+      : null;
   if (keySource === 'stored' && kind.keyRequired && !value) {
     throw new HttpError(400, 'This service needs a key.');
   }
@@ -109,6 +138,7 @@ export function composeDecisionModel(fields: CredentialFields, current: Current)
       model,
       allowPrivateAddress,
       keySource,
+      ...(keySource === 'credential' ? { sourceCredentialId: sourceCredentialId as number } : {}),
       ...(modelServer ? { modelServer } : {}),
     },
     secrets: keySource === 'stored' && value ? { value } : ({} as Record<string, string>),

@@ -11,6 +11,7 @@ import {
   type TaskStartResult,
 } from '../helena-client.ts';
 import type { GatewaySession, ToolOutput } from '../session-types.ts';
+import { taskSuccess } from './success.ts';
 import { brief, describe } from './policy-common.ts';
 import { jevPolicy } from './policy-jev.ts';
 import { layaPolicy } from './policy-laya.ts';
@@ -131,7 +132,7 @@ async function start(
   }
 }
 
-function authorizer(ctx: TaskContext) {
+function authorizer(ctx: TaskContext, taskToken?: string) {
   return async (step: {
     operation: string;
     element: PageElement | null;
@@ -149,6 +150,7 @@ function authorizer(ctx: TaskContext) {
         projectSlug: ctx.slug,
         via: ctx.via,
         tool: 'browser_task',
+        taskToken,
         category: step.category,
         context: {
           origin: step.origin,
@@ -237,7 +239,7 @@ export function formatTaskResult(
       ...result.candidates.map((c) => `- ${c.element} (p ${c.probability})`),
     );
   }
-  if (result.status !== 'done' && result.status !== 'likely_done' && snapshot) {
+  if (result.status !== 'done' && snapshot) {
     lines.push(
       '### Snapshot',
       'Continue with the step tools on these refs:',
@@ -249,11 +251,36 @@ export function formatTaskResult(
   return lines.join('\n');
 }
 
+// Accounting must not hold the browser handback when Helena or its transport stalls.
+const TASK_WRITE_TIMEOUT_MS = 1000;
+async function boundedTaskWrite<T>(
+  write: (signal: AbortSignal) => Promise<T>,
+  controller = new AbortController(),
+): Promise<T | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      Promise.resolve()
+        .then(() => write(controller.signal))
+        .catch(() => null),
+      new Promise<null>((resolve) => {
+        timer = setTimeout(() => {
+          controller.abort();
+          resolve(null);
+        }, TASK_WRITE_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function runTaskTool(ctx: TaskContext): Promise<ToolOutput> {
   const args = ctx.request.args;
   const goal = (str(args, 'goal') ?? '').trim().slice(0, 1000);
   if (!goal) throw new Error('goal is required: the outcome, in plain words.');
   const values = taskValues(args.values);
+  const success = taskSuccess(args.success);
   const mode: TaskMode = str(args, 'mode') === 'read' ? 'read' : 'act';
   const rawSteps =
     typeof args.maxSteps === 'number' && Number.isFinite(args.maxSteps) ? args.maxSteps : 20;
@@ -261,30 +288,36 @@ export async function runTaskTool(ctx: TaskContext): Promise<ToolOutput> {
   const allowIrreversible = args.allowIrreversible === true;
   const opened: TaskStartResult = await start(ctx, 'task', goal, mode, maxSteps);
   const controller = new AbortController();
+  const progressController = new AbortController();
+  let progressWrites = Promise.resolve();
   let result: TaskResult;
   try {
     const startUrl = str(args, 'startUrl');
     if (startUrl && ctx.navigate) await ctx.navigate(startUrl);
     result = await runTask(
-      { goal, values, mode, maxSteps, allowIrreversible },
+      { goal, values, mode, maxSteps, allowIrreversible, success },
       {
         page: mode === 'read' ? readOnlyPage(ctx.session.taskPage()) : ctx.session.taskPage(),
         client: new HelenaDecisionClient(ctx.helena, opened.taskToken),
         policy: policyOf(opened.policy, opened.minConfidence),
-        authorize: authorizer(ctx),
+        authorize: authorizer(ctx, opened.taskToken),
         holdsControl: ctx.holdsControl,
         signal: controller.signal,
         onProgress: (progress) => {
-          void ctx.helena
-            .taskProgress({
-              taskToken: opened.taskToken,
-              step: progress.step,
-              usage: progress.usage,
-            })
-            .then((answer) => {
-              if (answer?.cancelled) controller.abort();
-            })
-            .catch(() => {});
+          progressWrites = progressWrites.then(async () => {
+            if (progressController.signal.aborted) return;
+            const answer = await ctx.helena
+              .taskProgress(
+                {
+                  taskToken: opened.taskToken,
+                  step: progress.step,
+                  usage: progress.usage,
+                },
+                progressController.signal,
+              )
+              .catch(() => null);
+            if (answer?.cancelled) controller.abort();
+          });
         },
       },
     );
@@ -302,11 +335,31 @@ export async function runTaskTool(ctx: TaskContext): Promise<ToolOutput> {
       doneScore: null,
     };
   }
+  // Give queued step records a bounded chance to finish, then abort/skip outstanding
+  // writes. The full local history still accompanies finish and the handback.
+  await boundedTaskWrite(() => progressWrites, progressController);
+  if (result.status === 'done' || result.status === 'likely_done') {
+    const final = await boundedTaskWrite((signal) =>
+      ctx.helena.taskProgress(
+        { taskToken: opened.taskToken, step: null, usage: result.usage },
+        signal,
+      ),
+    );
+    if (!final || final.cancelled)
+      result = {
+        ...result,
+        status: 'cancelled',
+        summary:
+          'The task was cancelled before completion was accepted. Inspect the current page before continuing.',
+      };
+  }
   const snapshot =
-    result.status === 'done' || result.status === 'likely_done'
+    result.status === 'done'
       ? ''
       : await ctx.session.agentSnapshot(HANDBACK_SNAPSHOT_CHARS).catch(() => '');
-  await ctx.helena.taskFinish({ taskToken: opened.taskToken, result }).catch(() => {});
+  await boundedTaskWrite((signal) =>
+    ctx.helena.taskFinish({ taskToken: opened.taskToken, result }, signal),
+  );
   return { text: formatTaskResult(result, opened, snapshot) };
 }
 

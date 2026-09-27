@@ -33,6 +33,7 @@ export interface CredentialFormValue {
   model: string;
   allowPrivateAddress: boolean;
   keySource: DecisionKeySource;
+  sourceCredentialId: number | null;
   // api_key, secret: whether the granted agents' commands get it as an environment variable,
   // and its name; a variable always has a name.
   envEnabled: boolean;
@@ -95,6 +96,7 @@ export function emptyCredentialValue(kind: CredentialKind): CredentialFormValue 
     model: '',
     allowPrivateAddress: false,
     keySource: 'stored',
+    sourceCredentialId: null,
     envEnabled: kind === 'variable',
     envName: '',
   };
@@ -118,6 +120,7 @@ export function credentialValue(entry: CredentialEntry): CredentialFormValue {
     model: entry.model ?? '',
     allowPrivateAddress: entry.allowPrivateAddress,
     keySource: entry.keySource ?? 'stored',
+    sourceCredentialId: entry.sourceCredentialId ?? null,
     envEnabled: entry.kind === 'variable' || entry.envName !== null,
     envName: entry.envName ?? '',
     value: entry.kind === 'variable' ? (entry.value ?? '') : '',
@@ -165,12 +168,14 @@ export function isCredentialFormValid(
       // local installation (Laya, the local AI) brings its own address and key.
       return (
         value.provider !== '' &&
-        (value.keySource !== 'stored' ||
+        ((value.keySource !== 'stored' && value.keySource !== 'credential') ||
           CLOUD_DECISION_PROVIDERS.includes(value.provider) ||
           value.baseUrl.trim() !== '') &&
         (value.keySource !== 'stored' ||
           !CLOUD_DECISION_PROVIDERS.includes(value.provider) ||
-          filled(value.value, 'value'))
+          filled(value.value, 'value')) &&
+        (value.keySource !== 'credential' ||
+          (Number.isSafeInteger(value.sourceCredentialId) && Number(value.sourceCredentialId) > 0))
       );
   }
 }
@@ -216,6 +221,7 @@ function fieldsOf(value: CredentialFormValue): CredentialInput {
         allowPrivateAddress:
           !CLOUD_DECISION_PROVIDERS.includes(value.provider) && value.allowPrivateAddress,
         keySource: value.keySource,
+        ...(value.keySource === 'credential' && { sourceCredentialId: value.sourceCredentialId }),
         notes,
         ...(value.keySource === 'stored' &&
           value.value.trim() !== '' && { value: value.value.trim() }),

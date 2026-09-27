@@ -72,6 +72,7 @@ function chat(overrides: Partial<ChatSummary> = {}): ChatSummary {
     model: null,
     thinkingLevel: null,
     cliSessionId: null,
+    jevFirstStage: 'inherit',
     archivedAt: null,
     deletedAt: null,
     createdAt: '2026-09-23T10:00:00Z',

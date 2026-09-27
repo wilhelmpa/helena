@@ -7,11 +7,12 @@ import {
   type DecisionStatus,
 } from '@helena/sdk';
 import { readAnswer, toSystemOne } from '@helena/decisions';
-import { db, helenaDecision, helenaDecisionClassSetting } from '@repo/db';
+import { db, aiAgent, project, helenaDecision, helenaDecisionClassSetting } from '@repo/db';
 import { and, eq } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
 import {
   askSystemOne,
+  DecisionConnectionError,
   connectionIsLocal,
   loadConnection,
   type DecisionConnection,
@@ -20,19 +21,29 @@ import {
 import { recordUsage } from '#modules/agents/usage/service';
 import { costOfUsage } from '#modules/model-prices/service';
 import { decisionClass } from './classes';
+import { firstStageChatGuard } from './chat-stage';
+import { decisionAttempts } from './attempts';
+import { withStageGuard } from './stage-request';
+import {
+  firstStageCandidate,
+  stageStillEnabled,
+  stageQuestions,
+  stageContext,
+  stageCircuitResult,
+  FIRST_STAGE_READINESS,
+} from './first-stage';
 
-// The decisions service (docs/helena-decisions/decisions.md §2): one way for every feature,
-// agent and workflow to ask a typed decision. A class's setting says whether it is on, which
-// decision model connection (Zugänge) answers it, a second one tried when the first fails, the
-// threshold and the failsafe. Below the threshold, on a timeout, an error, or with the class
-// off, the caller gets no decision and does what it did before. Every question asked is one
-// row of the decision log; its tokens go to the agent's usage when an agent asked.
+// Every caller receives one typed outcome after the optional first stage and configured
+// fallbacks. Only answers marked decided may authorize the caller's existing action path.
 
 export interface DecideRequest {
   teamId: number;
   classId: string;
   // What the questions are about; a string, or an object the backend reads as JSON.
   context: string | Record<string, unknown>;
+  // Internal request restriction: may narrow but never relax the class's policy.
+  // Not a caller-controlled API setting and never persisted as an owner preference.
+  localOnly?: boolean;
   questions: Record<string, DecisionQuestion>;
   subject?: string | null;
   projectId?: number | null;
@@ -159,28 +170,33 @@ export function inputHash(
 class DecisionTimeout extends Error {}
 
 // One request to a connection under the failsafe: the answer, or a timeout.
-async function withinFailsafe(
+export async function withinFailsafe(
   connection: DecisionConnection,
   request: { state: unknown; questions: Record<string, unknown> },
   timeoutMs: number,
   signal?: AbortSignal,
+  maxRetries?: 0 | 1,
 ): Promise<SystemOneReply> {
+  if (signal?.aborted) throw new DecisionTimeout('decision request cancelled');
   const controller = new AbortController();
-  const abort = () => controller.abort();
-  signal?.addEventListener('abort', abort);
+  let rejectAbort: (error: Error) => void = () => {};
+  const aborted = new Promise<never>((_, reject) => {
+    rejectAbort = reject;
+  });
+  const abort = () => {
+    rejectAbort(new DecisionTimeout('decision request cancelled'));
+    controller.abort();
+  };
+  signal?.addEventListener('abort', abort, { once: true });
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race([
-      askSystemOne(connection, request, controller.signal),
+      askSystemOne(connection, request, controller.signal, { maxRetries }),
+      aborted,
       new Promise<never>((_, reject) => {
         timer = setTimeout(() => {
-          // The failsafe answers first; stopping the request may throw inside a client.
           reject(new DecisionTimeout(`no answer within ${timeoutMs} ms`));
-          try {
-            controller.abort();
-          } catch {
-            // The request is abandoned either way.
-          }
+          controller.abort();
         }, timeoutMs);
       }),
     ]);
@@ -205,12 +221,14 @@ export async function askConnection(
   questions: Record<string, DecisionQuestion>,
   timeoutMs: number,
   signal?: AbortSignal,
+  maxRetries?: 0 | 1,
 ): Promise<AskResult> {
   const reply = await withinFailsafe(
     connection,
     { state: context, questions: toSystemOne(questions) as Record<string, unknown> },
     timeoutMs,
     signal,
+    maxRetries,
   );
   const answers: AskResult['answers'] = {};
   for (const [id, question] of Object.entries(questions)) {
@@ -221,22 +239,28 @@ export async function askConnection(
 
 function failureOf(error: unknown): { status: DecisionStatus; message: string } {
   if (error instanceof DecisionTimeout) return { status: 'timeout', message: error.message };
-  const message = error instanceof Error ? error.message : String(error);
+  const message =
+    error instanceof DecisionConnectionError
+      ? error.message
+      : 'The decision stage failed or returned invalid data.';
   return { status: 'error', message: message.slice(0, 300) };
 }
 
 // A connection the class may use, or why not.
-async function usable(
+export async function usableDecisionConnection(
   teamId: number,
   cls: DecisionClass,
   credentialId: number | null,
+  localOnly = false,
 ): Promise<{ connection: DecisionConnection } | { refused: string }> {
   if (!credentialId) return { refused: 'no decision model connection is set for this class' };
   const connection = await loadConnection(credentialId);
   if (!connection || connection.teamId !== teamId)
     return { refused: 'the decision model connection is gone' };
+  if (connection.projectId !== null)
+    return { refused: 'a decision class needs a connection of the whole team' };
   const local = connectionIsLocal(connection);
-  if (cls.input.cloud === 'never' && !local)
+  if ((localOnly || cls.input.cloud === 'never') && !local)
     return { refused: 'this class may only be answered on this machine or in the LAN' };
   const why = gate ? await gate({ teamId, classId: cls.id, connection, local }) : null;
   if (why) return { refused: why };
@@ -269,6 +293,24 @@ function emptyOutcome(
   };
 }
 
+async function askFirstStage(
+  request: DecideRequest,
+  connection: DecisionConnection,
+  timeoutMs: number,
+  stillEnabled: () => Promise<boolean>,
+): Promise<AskResult> {
+  return withStageGuard(stillEnabled, request.signal, (signal) =>
+    askConnection(
+      connection,
+      stageContext(request.context, request.questions),
+      stageQuestions(request.questions),
+      timeoutMs,
+      signal,
+      0,
+    ),
+  );
+}
+
 // Asks a class's questions. Never throws for the backend: a caller always gets an outcome and
 // falls back to its default unless a question came back `decided`. Throws only for a request
 // that is wrong in itself (unknown class, malformed questions).
@@ -281,44 +323,124 @@ export async function decide(request: DecideRequest): Promise<DecideOutcome> {
   if (!setting.enabled) return emptyOutcome('off', request.questions, threshold, null);
   const timeoutMs = effectiveTimeout(cls, setting);
   const started = Date.now();
-
-  const attempts = [setting.credentialId, setting.fallbackCredentialId].filter(
-    (id, index, list): id is number => id !== null && list.indexOf(id) === index,
+  // Public callers resolve access before this point; internal callers also cannot attach
+  // another team's project or agent to a request, an input log or its usage records.
+  if (request.projectId) {
+    const [scope] = await db
+      .select({ teamId: project.teamId })
+      .from(project)
+      .where(eq(project.id, request.projectId));
+    if (scope?.teamId !== request.teamId)
+      return emptyOutcome('no_backend', request.questions, threshold, 'Invalid project scope.');
+  }
+  if (request.agentId) {
+    const [scope] = await db
+      .select({ teamId: aiAgent.teamId })
+      .from(aiAgent)
+      .where(eq(aiAgent.id, request.agentId));
+    if (scope?.teamId !== request.teamId)
+      return emptyOutcome('no_backend', request.questions, threshold, 'Invalid agent scope.');
+  }
+  const chatAllowsStage = await firstStageChatGuard(request).catch(() => async () => false);
+  // A stage-setting or eval lookup failure skips the optimization. The existing path stays.
+  const stage =
+    !request.localOnly &&
+    (await chatAllowsStage().catch(() => false)) &&
+    JSON.stringify({ context: request.context, questions: request.questions }).length <= 16000
+      ? await firstStageCandidate(request.teamId, cls.id, threshold).catch(() => null)
+      : null;
+  const stillEnabled = async (credentialId: number) =>
+    (await chatAllowsStage()) &&
+    (await stageStillEnabled(request.teamId, cls.id, credentialId, stage?.policy.revision));
+  const attempts = decisionAttempts(
+    stage?.connection.credentialId,
+    setting.credentialId,
+    setting.fallbackCredentialId,
   );
+  let partial: DecideOutcome | null = null;
+  let partialIsStage = false;
   let last: { status: DecisionStatus; message: string; connection: DecisionConnection | null } = {
     status: 'no_backend',
     message: 'no decision model connection is set for this class',
     connection: null,
   };
-  for (const credentialId of attempts) {
+  for (const [index, { credentialId, role }] of attempts.entries()) {
+    if (request.signal?.aborted) break;
     const remaining = timeoutMs - (Date.now() - started);
-    if (remaining < 300) break;
-    const found = await usable(request.teamId, cls, credentialId);
-    if ('refused' in found) {
-      last = { status: 'no_backend', message: found.refused, connection: null };
-      continue;
-    }
+    if (remaining < 50) break;
+    const isStage = role === 'first-stage';
+    let connection: DecisionConnection | null = null;
     try {
-      const result = await askConnection(
-        found.connection,
-        request.context,
-        request.questions,
-        remaining,
-        request.signal,
+      const found = await usableDecisionConnection(
+        request.teamId,
+        cls,
+        credentialId,
+        request.localOnly,
       );
-      return await record(request, cls, setting, found.connection, threshold, result);
+      if ('refused' in found) {
+        last = { status: 'no_backend', message: found.refused, connection: null };
+        continue;
+      }
+      connection = found.connection;
+      // Reserve a share of the same total time budget for each remaining attempt.
+      const share = Math.max(1, Math.floor(remaining / (attempts.length - index)));
+      const budget = isStage ? Math.min(share, stage!.policy.timeoutMs) : share;
+      const result = isStage
+        ? await askFirstStage(request, connection, budget, () => stillEnabled(credentialId))
+        : await askConnection(
+            connection,
+            request.context,
+            request.questions,
+            budget,
+            request.signal,
+            0,
+          );
+      if (isStage && !(await stillEnabled(credentialId))) continue;
+      const readiness = result.answers[FIRST_STAGE_READINESS];
+      const semanticEscalation = Boolean(
+        isStage && (readiness?.choice !== 'ready' || readiness.confidence < threshold),
+      );
+      const outcome = await record(
+        request,
+        cls,
+        setting,
+        connection,
+        threshold,
+        result,
+        semanticEscalation,
+      );
+      if (isStage) {
+        stageCircuitResult(request.teamId, credentialId, true);
+        if (!(await stillEnabled(credentialId))) continue;
+      }
+      if (outcome.status === 'decided') return outcome;
+      partial = outcome;
+      partialIsStage = isStage;
     } catch (error) {
       const failure = failureOf(error);
-      last = { ...failure, connection: found.connection };
+      last = { ...failure, connection };
+      if (isStage) {
+        if (await stillEnabled(credentialId).catch(() => false))
+          stageCircuitResult(request.teamId, credentialId, false);
+      }
+      if (connection) {
+        const failed = emptyOutcome(last.status, request.questions, threshold, last.message);
+        failed.credentialId = credentialId;
+        failed.backend = connection.backend.id;
+        failed.latencyMs = Date.now() - started;
+        await logFailure(request, cls, setting, threshold, connection, failed);
+      }
     }
   }
+  if (
+    partial &&
+    (!partialIsStage || (await stillEnabled(partial.credentialId!).catch(() => false)))
+  )
+    return partial;
   const outcome = emptyOutcome(last.status, request.questions, threshold, last.message);
-  if (last.connection) {
-    outcome.credentialId = last.connection.credentialId;
-    outcome.backend = last.connection.backend.id;
-    outcome.latencyMs = Date.now() - started;
-    await logFailure(request, cls, setting, threshold, last.connection, outcome);
-  }
+  outcome.credentialId = last.connection?.credentialId ?? null;
+  outcome.backend = last.connection?.backend.id ?? null;
+  outcome.latencyMs = Date.now() - started;
   return outcome;
 }
 
@@ -347,6 +469,7 @@ async function record(
   connection: DecisionConnection,
   threshold: number,
   result: AskResult,
+  forceUnsure = false,
 ): Promise<DecideOutcome> {
   const { reply } = result;
   const cost = await costOf(connection, reply);
@@ -376,7 +499,11 @@ async function record(
           probabilities: answer.probabilities,
           confidence: answer.confidence,
           threshold,
-          status: (answer.confidence >= threshold ? 'decided' : 'unsure') as DecisionStatus,
+          status: (!forceUnsure &&
+          answer.confidence >= threshold &&
+          !['uncertain', 'unsure'].includes(answer.choice)
+            ? 'decided'
+            : 'unsure') as DecisionStatus,
           credentialId: connection.credentialId,
           backend: connection.backend.id,
           model: reply.model ?? connection.model,
@@ -396,7 +523,10 @@ async function record(
       choice: answer.choice,
       probabilities: answer.probabilities,
       confidence: answer.confidence,
-      decided: answer.confidence >= threshold,
+      decided:
+        !forceUnsure &&
+        answer.confidence >= threshold &&
+        !['uncertain', 'unsure'].includes(answer.choice),
       decisionId: rows.find((row) => row.questionId === id)?.id ?? null,
     };
   }

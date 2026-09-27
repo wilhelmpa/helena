@@ -1,0 +1,2 @@
+ALTER TABLE "agent_chat_thread" ADD COLUMN "jev_first_stage" text DEFAULT 'inherit' NOT NULL;--> statement-breakpoint
+ALTER TABLE "agent_chat_thread" ADD COLUMN "jev_first_stage_revision" integer DEFAULT 0 NOT NULL;

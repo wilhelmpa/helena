@@ -353,6 +353,94 @@ describe('decide', () => {
     expect(unsure.data!.status).toBe('unsure');
   });
 
+  it('refuses primary and fallback connections moved into a project after class configuration', async () => {
+    const { asOwner, teamId, project } = await setup();
+    const other = (await asOwner.projects.post({ key: 'FAM', name: 'Family' })).data!;
+    const primary = await connection(asOwner, teamId);
+    const fallback = await connection(asOwner, teamId, { label: 'Fallback' });
+    await switchOn(asOwner, teamId, GENERAL_CLASS, primary, { fallbackCredentialId: fallback });
+    const credentials = asOwner.teams({ teamId }).credentials;
+    const source = (
+      await credentials.post({
+        kind: 'api_key',
+        label: 'Project original',
+        value: KEY,
+        projectId: project.id,
+      })
+    ).data!;
+    for (const credentialId of [primary, fallback]) {
+      expect(
+        (
+          await credentials({ credentialId }).patch({
+            projectId: project.id,
+            keySource: 'credential',
+            sourceCredentialId: source.id,
+          })
+        ).status,
+      ).toBe(200);
+    }
+    const before = seen.length;
+    for (const projectId of [undefined, other.id, project.id]) {
+      const outcome = await decide({
+        teamId,
+        classId: GENERAL_CLASS,
+        projectId,
+        context: 'synthetic fixture',
+        questions: { q: { kind: 'yesno', question: 'Yes?' } },
+      });
+      expect(outcome.status).toBe('no_backend');
+      expect(outcome.error).toBe('a decision class needs a connection of the whole team');
+      expect(outcome.answers.q?.decided).toBe(false);
+    }
+    expect(seen.length).toBe(before);
+  });
+
+  it('rechecks primary and fallback key source scope without resaving the class or connections', async () => {
+    const { asOwner, teamId, project } = await setup();
+    const credentials = asOwner.teams({ teamId }).credentials;
+    const primarySource = (
+      await credentials.post({ kind: 'api_key', label: 'Primary source', value: KEY })
+    ).data!;
+    const fallbackSource = (
+      await credentials.post({ kind: 'api_key', label: 'Fallback source', value: KEY })
+    ).data!;
+    const primary = await connection(asOwner, teamId, {
+      keySource: 'credential',
+      sourceCredentialId: primarySource.id,
+      value: undefined,
+    });
+    const fallback = await connection(asOwner, teamId, {
+      keySource: 'credential',
+      sourceCredentialId: fallbackSource.id,
+      value: undefined,
+    });
+    await switchOn(asOwner, teamId, GENERAL_CLASS, primary, { fallbackCredentialId: fallback });
+    const request = {
+      teamId,
+      classId: GENERAL_CLASS,
+      context: 'synthetic fixture',
+      questions: { q: { kind: 'yesno' as const, question: 'Yes?' } },
+    };
+    expect((await decide(request)).credentialId).toBe(primary);
+    expect(
+      (await credentials({ credentialId: primarySource.id }).patch({ projectId: project.id }))
+        .status,
+    ).toBe(200);
+    const beforeFallback = seen.length;
+    expect((await decide(request)).credentialId).toBe(fallback);
+    expect(seen.length).toBe(beforeFallback + 1);
+    expect(
+      (await credentials({ credentialId: fallbackSource.id }).patch({ projectId: project.id }))
+        .status,
+    ).toBe(200);
+    const beforeRefusal = seen.length;
+    const refused = await decide(request);
+    expect(refused.status).toBe('error');
+    expect(refused.error).toContain('API key source is unavailable');
+    expect(refused.answers.q?.decided).toBe(false);
+    expect(seen.length).toBe(beforeRefusal);
+  });
+
   it('keeps the input only where the owner switched it on', async () => {
     const { asOwner, teamId } = await setup();
     const credentialId = await connection(asOwner, teamId);
@@ -398,8 +486,9 @@ describe('decide', () => {
       questions: { q: { kind: 'yesno', question: 'Yes?' } },
     });
     expect(Date.now() - started).toBeLessThan(3500);
-    // The first connection used up the time limit; there was none left for the second.
-    expect(rescued.status).toBe('timeout');
+    // A bounded share is reserved for the fallback even when the primary stalls.
+    expect(rescued.status).toBe('decided');
+    expect(rescued.backend).toBe('local-logit');
     // A first connection that fails fast (its key is refused) leaves the fallback its time.
     const refused = await connection(asOwner, teamId, { value: 'wrong-key-0123456789' });
     await passedEval(teamId, GENERAL_CLASS, refused);
@@ -561,6 +650,30 @@ describe('the model router', () => {
     expect(rows).toHaveLength(3);
   });
 
+  it('keeps specialists for explicit uncertainty, ambiguous context and complex work', async () => {
+    const { teamId, agentId, project } = await routed();
+    await setAgentRouter(teamId, agentId, { enabled: true }, null);
+    const request = {
+      teamId,
+      agentId,
+      projectId: project.id,
+      configuredModel: 'claude-opus-test',
+      thinkingLevel: null,
+      text: 'Synthetic specialist request',
+    };
+    for (const value of [
+      { route: 'uncertain', needs_context: 0.05 },
+      { route: 'light', needs_context: 0.49 },
+      { route: 'strong', needs_context: 0.05 },
+      { route: 'strongest', needs_context: 0.05 },
+    ]) {
+      answers = value;
+      const result = await routeRequest(request);
+      expect(result.model).toBe('claude-opus-test');
+      expect(result.route?.routed).toBe(false);
+    }
+  });
+
   it("advises the owner's Claude Code: delegate light, self-contained prompts only", async () => {
     const { teamId } = await routed();
     answers = { route: 'light', needs_context: 0.05 };
@@ -581,6 +694,17 @@ describe('the model router', () => {
         })
       ).decision,
     ).toBe('handle');
+    for (const value of [
+      { route: 'uncertain', needs_context: 0.05 },
+      { route: 'light', needs_context: 0.49 },
+      { route: 'strong', needs_context: 0.05 },
+    ]) {
+      answers = value;
+      expect(
+        (await routePrompt({ teamId, prompt: 'Synthetic specialist task', sessionModel: 'fable' }))
+          .decision,
+      ).not.toBe('delegate');
+    }
     expect(
       (await routePrompt({ teamId, prompt: '/router status', sessionModel: 'opus' })).decision,
     ).toBe('none');

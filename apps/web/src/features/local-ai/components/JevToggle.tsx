@@ -1,68 +1,50 @@
 'use client';
 
-import Link from 'next/link';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import {
-  useInstanceBrowserControlQuery,
-  useTeamConnectionsQuery,
-  useUpdateInstanceBrowserControl,
-} from '@/features/browser-lab/services/browserTask.service';
-import { credentialsPath } from '@/utils/paths';
 import { useTeamsQuery } from '@/services/teams.service';
-
-// "Jev / Laya (experimentell)" on the "Lokale KI" card: the instance default of the browser
-// control hub/browser-task owns (Administrator → Agenten-Laufzeit → Browser-Steuerung;
-// projects on "Wie in den Voreinstellungen" follow it, their own settings stay). On sets the
-// default to the decision model with the connection chosen there, else the first one of the
-// owner's team; off sets "Standard". Not part of the master switch, off by default. Without a
-// decision-model connection in Zugänge the switch is off and links there. The setting, its
-// routes and its queries are browser-task's (same cache as its settings page): nothing is
-// stored here.
+import { useDecisionClassesQuery } from '@/services/decisions.service';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import LocalAiJevPanel from './LocalAiJevPanel';
 
 export default function JevToggle() {
   const t = useTranslations('localAi.jev');
   const teams = useTeamsQuery();
-  const teamId =
-    teams.data?.find((team) => team.role === 'owner')?.id ?? teams.data?.[0]?.id ?? null;
-  const control = useInstanceBrowserControlQuery();
-  const connections = useTeamConnectionsQuery(control.data ? teamId : null);
-  const save = useUpdateInstanceBrowserControl();
-
-  if (!control.data) return null;
-  const current = control.data;
-  const first = connections.data?.connections[0]?.id ?? null;
-  const connection = current.credentialId ?? first;
-  const on = current.mode === 'decision';
-
+  const managed = (teams.data ?? []).filter((team) => ['owner', 'manager'].includes(team.role));
+  const [chosen, setChosen] = useState<number | null>(null);
+  const teamId = managed.find((team) => team.id === chosen)?.id ?? managed[0]?.id ?? null;
+  const query = useDecisionClassesQuery(teamId);
   return (
-    <div className="flex items-center gap-2 rounded-md border px-3 py-2">
-      <div className="flex min-w-0 flex-1 flex-col gap-1 @md:flex-row @md:items-center @md:gap-2">
-        <span className="min-w-0 truncate @md:flex-1">{t('label')}</span>
-        <span className="flex items-center gap-2">
-          <Badge variant="outline" className="text-xs">
-            {t('experimental')}
-          </Badge>
-          {!on && connection === null && !connections.isLoading && (
-            <Link href={credentialsPath()} className="text-xs underline underline-offset-2">
-              {t('connect')}
-            </Link>
-          )}
-        </span>
-      </div>
-      <Switch
-        aria-label={t('label')}
-        checked={on}
-        disabled={save.isPending || (!on && connection === null)}
-        onCheckedChange={(checked) =>
-          save.mutate(
-            checked
-              ? { mode: 'decision', credentialId: connection, policy: current.policy }
-              : { mode: 'standard' },
-          )
-        }
-      />
-    </div>
+    <section className="space-y-3 rounded-md border p-3" aria-label={t('title')}>
+      {managed.length > 1 && (
+        <Select value={String(teamId)} onValueChange={(value) => setChosen(Number(value))}>
+          <SelectTrigger aria-label={t('team')}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {managed.map((team) => (
+              <SelectItem key={team.id} value={String(team.id)}>
+                {team.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+      {teams.isPending || (teamId !== null && query.isPending) ? (
+        <p role="status">{t('loading')}</p>
+      ) : teams.isError || query.isError ? (
+        <p role="alert">{t('loadFailed')}</p>
+      ) : teamId === null ? (
+        <p>{t('managerOnly')}</p>
+      ) : query.data ? (
+        <LocalAiJevPanel key={teamId} teamId={teamId} data={query.data} />
+      ) : null}
+    </section>
   );
 }

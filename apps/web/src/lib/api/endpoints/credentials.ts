@@ -6,7 +6,7 @@ export type CredentialKind =
   'web_login' | 'api_key' | 'ssh_key' | 'secret' | 'runtime_login' | 'decision_model' | 'variable';
 // decision_model: where its key comes from — stored here, or the local Laya installation's key
 // file (docs/helena-decisions/browser-task.md §3.3).
-export type DecisionKeySource = 'stored' | 'local-laya' | 'local-ai';
+export type DecisionKeySource = 'stored' | 'credential' | 'local-laya' | 'local-ai';
 // What the page lists: the kinds above and MCP servers signed in with OAuth.
 export type ListedKind = CredentialKind | 'mcp_oauth';
 
@@ -45,6 +45,7 @@ export interface CredentialEntry {
   model: string | null;
   allowPrivateAddress: boolean;
   keySource: DecisionKeySource | null;
+  sourceCredentialId: number | null;
   // api_key, secret, variable: the environment variable the granted agents' commands get it
   // in (docs/helena-decisions/agent-env.md).
   envName: string | null;
@@ -76,6 +77,7 @@ export interface CredentialInput {
   model?: string;
   allowPrivateAddress?: boolean;
   keySource?: DecisionKeySource;
+  sourceCredentialId?: number | null;
   // Null takes the variable name away.
   envName?: string | null;
 }
@@ -84,6 +86,18 @@ export interface NewCredentialInput extends CredentialInput {
   kind: CredentialKind;
   label: string;
 }
+
+export interface DecisionKeySourceOption {
+  id: number;
+  label: string | null;
+  projectId: number | null;
+  projectKey: string | null;
+}
+
+export const listDecisionKeySources = (teamId: number, projectId: number | null) =>
+  request<{ items: DecisionKeySourceOption[] }>(
+    `/teams/${teamId}/credentials/decision-key-sources/options${projectId === null ? '' : `?projectId=${projectId}`}`,
+  );
 
 export const listCredentials = (teamId: number, params: PageParams, kind?: ListedKind) =>
   request<Page<CredentialEntry>>(`/teams/${teamId}/credentials${pageQuery(params, { kind })}`);

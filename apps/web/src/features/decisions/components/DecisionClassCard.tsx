@@ -29,7 +29,7 @@ import {
   useDecisionReason,
   useStartDecisionEval,
   useUpdateDecisionClass,
-} from '../services/decisions.service';
+} from '@/services/decisions.service';
 import { classKey, euros, milliseconds, percent } from '../utils/format';
 import { MailTriageConfig } from './MailTriageConfig';
 

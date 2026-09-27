@@ -39,6 +39,7 @@ const login: CredentialEntry = {
   model: null,
   allowPrivateAddress: false,
   keySource: null,
+  sourceCredentialId: null,
   envName: null,
   value: null,
   createdAt: '2026-09-23T10:00:00.000Z',
@@ -317,6 +318,56 @@ describe('grantable agents', () => {
     assert.deepEqual(
       groups.map((group) => group.agents.map((a) => a.id)),
       [[1], [4]],
+    );
+  });
+});
+
+describe('decision key source form', () => {
+  it('requires an explicit source and submits only its reference, even with an old input value', () => {
+    const form = {
+      ...emptyCredentialValue('decision_model'),
+      label: 'JEV',
+      keySource: 'credential' as const,
+      value: 'fixture-old-copy',
+    };
+    assert.equal(isCredentialFormValid(form, null), false);
+    const linked = { ...form, sourceCredentialId: 45 };
+    assert.equal(isCredentialFormValid(linked, null), true);
+    const saved = toNewCredential(linked);
+    assert.equal(saved.sourceCredentialId, 45);
+    assert.equal('value' in saved, false);
+    assert.equal(
+      isCredentialFormValid({ ...linked, provider: 'compatible', baseUrl: '' }, null),
+      false,
+    );
+    assert.equal(
+      isCredentialFormValid(
+        { ...linked, provider: 'compatible', baseUrl: 'http://localhost:8080' },
+        null,
+      ),
+      true,
+    );
+  });
+
+  it('roundtrips source metadata without secrets and requires a new direct key when unlinking', () => {
+    const entry: CredentialEntry = {
+      ...login,
+      kind: 'decision_model',
+      label: 'JEV',
+      provider: 'typesafe',
+      keySource: 'credential',
+      sourceCredentialId: 45,
+      secrets: [],
+    };
+    const form = credentialValue(entry);
+    assert.equal(form.sourceCredentialId, 45);
+    assert.equal(form.value, '');
+    assert.equal(toCredentialPatch(form).sourceCredentialId, 45);
+    assert.equal(isCredentialFormValid({ ...form, keySource: 'stored' }, entry), false);
+    assert.equal(
+      'sourceCredentialId' in
+        toCredentialPatch({ ...form, keySource: 'stored', value: 'fixture-new-key' }),
+      false,
     );
   });
 });

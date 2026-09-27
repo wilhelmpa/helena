@@ -1,8 +1,11 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import { composerKeyAction } from './composerKeys';
 import type { ChatPrompt } from '@/lib/api/endpoints/chatPrompts';
 import {
   CHAT_COMMANDS,
+  parseJevMode,
+  composerSlashCommand,
   findCommand,
   fuzzyScore,
   parseSlashCommand,
@@ -65,6 +68,42 @@ describe('chat slash commands', () => {
       slashItems('cron', prompts).some(
         (item) => item.kind === 'command' && item.command.name === 'cron',
       ),
+    );
+  });
+});
+
+describe('chat Jev command', () => {
+  it('allows only bounded modes and does not parse prompt text as a setting', () => {
+    assert.equal(findCommand('jev')?.action, 'jev');
+    assert.equal(parseJevMode(' ON '), 'on');
+    assert.equal(parseJevMode('off'), 'off');
+    assert.equal(parseJevMode('inherit'), 'inherit');
+    for (const text of ['', 'force', 'on do work', 'on\noff', '/jev on']) {
+      assert.equal(parseJevMode(text), null);
+    }
+  });
+  it('keeps Jev reachable during a running answer without enabling other busy commands', () => {
+    assert.deepEqual(composerSlashCommand('/jev off', true), { name: 'jev', args: 'off' });
+    assert.equal(composerSlashCommand('/model cheaper', true), null);
+    assert.equal(composerSlashCommand('/new', true), null);
+    assert.equal(composerSlashCommand('Please /jev off', false), null);
+    assert.equal(composerSlashCommand('/jev/path', false), null);
+    const items = slashItems('jev', [prompt('jev', 'A saved prompt')]);
+    assert.equal(items.length, 1);
+    assert.equal(items[0].kind, 'command');
+    assert.equal(
+      composerKeyAction(
+        {
+          key: 'Enter',
+          shiftKey: false,
+          metaKey: false,
+          ctrlKey: false,
+          altKey: false,
+          isComposing: false,
+        },
+        { menuOpen: true, busy: true, empty: false, canEditLast: false },
+      ),
+      'menu-pick',
     );
   });
 });

@@ -22,10 +22,11 @@ export const TRADING_DECISION_CLASSES: DecisionClass[] = [
     id: TRADING_NEWS_CLASS,
     label: { en: 'Trading: sort news', de: 'Trading: Nachrichten einordnen' },
     description: {
-      en: 'Relevance for the watchlist, likely direction and kind of event of a news item. Sorting only, no trading signal.',
-      de: 'Relevanz für Watchlist und Positionen, wahrscheinliche Richtung und Art des Ereignisses einer Meldung. Nur zum Sortieren, kein Handelssignal.',
+      en: 'Relevance for named instruments, likely direction and kind of event of a news item. Sorting only, no trading signal. Only explicitly shared public news may use cloud; freeform context stays local.',
+      de: 'Relevanz für benannte Instrumente, wahrscheinliche Richtung und Art des Ereignisses einer Meldung. Nur zum Sortieren, kein Handelssignal. Nur ausdrücklich freigegebene öffentliche Nachrichten dürfen in die Cloud; freier Kontext bleibt lokal.',
     },
-    // Market news are public; the watchlist may go to a cloud model.
+    // Only explicitly declared public article/instrument payloads may use cloud.
+    // The API restricts every legacy/freeform request to local attempts.
     input: { store: 'optional', cloud: 'allowed' },
     defaults: { threshold: 0.7, timeoutMs: 8000 },
     eval: NEWS_EVAL,

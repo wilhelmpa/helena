@@ -19,6 +19,7 @@ import {
   tradingProjectParams,
   strategyApprovalBody,
 } from './model';
+import { assertClassificationShape, classificationInput } from './classify-input';
 
 // The trading decisions as one agent tool (docs/helena-decisions/trading.md §6): sort a news
 // item, check a planned trade against one written rule, or route a task. The questions are
@@ -79,9 +80,10 @@ export const tradingRoutes = new Elysia({ name: 'trading', detail: { tags: ['Tra
     async ({ params, user, body, request }) => {
       const project = await requireProjectAccess(params.projectKey, user);
       assertMcpEnabled(project, isMcpRequest(request.headers));
+      const input = classificationInput(body);
       let asked: ReturnType<typeof tradingQuestions>;
       try {
-        asked = tradingQuestions(body.kind as TradingDecisionKind, body.rule);
+        asked = tradingQuestions(body.kind as TradingDecisionKind, input.rule);
       } catch (error) {
         throw new HttpError(400, error instanceof Error ? error.message : String(error));
       }
@@ -89,7 +91,8 @@ export const tradingRoutes = new Elysia({ name: 'trading', detail: { tags: ['Tra
       const outcome = await decide({
         teamId: project.teamId,
         classId: asked.classId,
-        context: body.context,
+        context: input.context,
+        localOnly: input.localOnly,
         questions: asked.questions,
         subject: `trading:${body.kind}`,
         projectId: project.id,
@@ -123,13 +126,17 @@ export const tradingRoutes = new Elysia({ name: 'trading', detail: { tags: ['Tra
     {
       params: tradingProjectParams,
       body: classifyBody,
+      transform: ({ body }) => assertClassificationShape(body),
       response: { 200: ClassifyResponse, ...commonErrors, ...errors(400) },
       detail: {
         summary: 'Sort news, check a rule or route a task (trading)',
         description:
           "Ask the trading project's small decision model, in well under a few seconds: " +
-          "kind 'news' sorts one news item (relevance for the watchlist, direction, kind of " +
-          "event); kind 'rule' says whether a planned paper trade meets one written rule of " +
+          "kind 'news' sorts one news item (instrument relevance, direction, kind of " +
+          'event). Public cloud-eligible news uses only publicNews: articleText, instrument names and publicDataConfirmed:true; ' +
+          'this is the caller’s explicit sharing declaration, not a verified public source. Never include private account or position data. ' +
+          'Omit context for this mode; legacy context stays local through all attempts. Team/use-case Off controls the optional stage; chat /jev Off is not a trading-tool gate. ' +
+          "kind 'rule' says whether a planned paper trade meets one written rule of " +
           "Regelwerk.md; kind 'routing' names the role of the trading team for a task. Act on " +
           'an answer only when it is decided; otherwise judge yourself. It is never an entry ' +
           'or exit signal, and it writes nothing.',

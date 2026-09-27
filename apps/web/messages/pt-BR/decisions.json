@@ -28,6 +28,10 @@
     "general": {
       "label": "Decisões gerais",
       "description": "A ferramenta decide dos agentes e a etapa de fluxo de trabalho “Decisão”."
+    },
+    "browser": {
+      "label": "Optional browser stage",
+      "description": "Synthetic target selection for the native JEV stage. Enable this use case through the team first-stage policy; the existing project agent handles continuation."
     }
   },
   "class": {
@@ -182,5 +186,18 @@
     "receipts": {
       "match": "Transação"
     }
+  },
+  "firstStage": {
+    "title": "Optional Jev first stage",
+    "hint": "Jev may answer small typed judgments first. When off, uncertain, unavailable or too slow, the existing decision path continues. Complex work keeps the assigned specialist; this does not change agents or model defaults.",
+    "connection": "Jev connection (changing it switches this stage off)",
+    "none": "None",
+    "timeout": "Maximum wait for Jev (milliseconds)",
+    "cloudHint": "Enable only the use cases whose input may be sent to Jev in the cloud. A passed evaluation is required. Their existing class switch and fallback still apply; local-only classes are excluded.",
+    "cooldown": "Jev is temporarily skipped after repeated service failures. The existing path remains available.",
+    "allow": "Allow Jev cloud first stage for {name}",
+    "evaluating": "Evaluating…",
+    "evaluateAgain": "Evaluate again",
+    "evaluate": "Evaluate before enabling"
   }
 }

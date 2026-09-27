@@ -39,7 +39,8 @@ export interface DecisionAnswer {
   // Per option id (or yes/no), summing to 1.
   probabilities: Record<string, number>;
   // 0–1: how sure the answer is, from the spread of the distribution
-  // ((n·p_max − 1) / (n − 1), TypeSafe's measure); for yes/no max(p, 1 − p) scaled the same way.
+  // ((n·p_max − 1) / (n − 1), Helena's measure); for yes/no max(p, 1 − p) scaled the same way.
+  // This is separate from a System One provider's reported confidence.
   confidence: number;
 }
 

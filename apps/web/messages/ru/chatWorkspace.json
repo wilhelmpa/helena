@@ -201,7 +201,8 @@
     "skills": "Открыть навыки агента",
     "memory": "Открыть память агента",
     "usage": "Показать расход токенов в этом чате",
-    "stop": "Остановить ответ"
+    "stop": "Остановить ответ",
+    "jev": "Optional Jev first stage for this chat"
   },
   "activity": {
     "thinking": "{agent} думает…",
@@ -260,5 +261,15 @@
     "misheard": "Не расслышала — повтори, пожалуйста.",
     "timings": "Последний ответ через {total} с: пауза {pause} с · расшифровка {transcribe} с · ответ {answer} с · голос {voice} с",
     "replyLine": "Быстрый голосовой ответ ({model}) — не агент"
+  },
+  "jev": {
+    "inherit": "Inherit",
+    "on": "On (where permitted)",
+    "off": "Off",
+    "status": "Jev first stage: {mode}",
+    "saved": "Jev first stage for this chat: {mode}",
+    "scope": "Applies to the optional chat pre-decision. Team, class and privacy permissions still apply. On and Inherit follow the team setting.",
+    "needsChat": "Start or open a chat first.",
+    "usage": "Use /jev on, /jev off or /jev inherit. /jev shows the saved value."
   }
 }

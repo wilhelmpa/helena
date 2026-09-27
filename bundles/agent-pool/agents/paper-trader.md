@@ -17,6 +17,8 @@ disallowedTools:
   - video
   - video_gen
 skills:
+  - typesafe-ai
+  - helena-trading-decisions
   - trading-grundregeln
   - trading-wissen-verknuepfen
   - paper-trading-ausfuehrung

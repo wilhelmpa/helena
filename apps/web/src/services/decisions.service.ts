@@ -14,6 +14,8 @@ import {
   setProjectRouter,
   startDecisionEval,
   updateDecisionClass,
+  updateFirstStage,
+  type FirstStagePolicy,
   type DecisionClassPatch,
 } from '@/lib/api/endpoints/decisions';
 
@@ -29,9 +31,13 @@ export function useDecisionClassesQuery(teamId: number | null) {
     queryKey: keys.classes(teamId ?? 0),
     queryFn: () => listDecisionClasses(teamId!),
     enabled: teamId !== null,
+    refetchOnMount: 'always',
     // An eval runs in the background: poll while one does.
     refetchInterval: (query) =>
-      query.state.data?.classes.some((cls) => cls.latestEval?.status === 'running') ? 3000 : false,
+      query.state.data?.classes.some((cls) => cls.latestEval?.status === 'running') ||
+      Object.values(query.state.data?.firstStage?.checks ?? {}).some((check) => check.running)
+        ? 3000
+        : false,
   });
 }
 
@@ -140,5 +146,16 @@ export function useSetProjectRouter(teamId: number) {
       setProjectRouter(teamId, projectId, enabled),
     onSuccess: () => void qc.invalidateQueries({ queryKey: keys.router(teamId) }),
     onError: (error: Error) => toast.error(error.message),
+  });
+}
+
+export function useUpdateFirstStage(teamId: number) {
+  const qc = useQueryClient();
+  const reason = useDecisionReason();
+  return useMutation({
+    scope: { id: `jev-first-stage:${teamId}` },
+    mutationFn: (patch: Partial<FirstStagePolicy>) => updateFirstStage(teamId, patch),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: keys.classes(teamId) }),
+    onError: (error: Error) => toast.error(reason(error.message)),
   });
 }

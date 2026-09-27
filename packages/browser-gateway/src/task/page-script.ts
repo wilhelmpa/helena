@@ -1,6 +1,6 @@
 // What browser_task sees of a page (docs/helena-decisions/browser-task.md §3.1): the controls a
 // person could use, with their labels and state, the text in view, open dialogs and a few numbers
-// code can compute better than a model. Three fixed functions, evaluated by session.ts in
+// code can compute better than a model. Fixed functions, evaluated by session.ts in
 // patchright's isolated world of every frame — never the page's own world, never written into the
 // DOM: element identities live in that world's globalThis (`__helenaTask`), which the page cannot
 // see and which a navigation clears (verified 2026-09-24).
@@ -35,7 +35,11 @@ export interface RawElement {
   placeholder?: string;
   name?: string;
   value?: string;
+  // The displayed value is complete and unchanged by snapshot normalization/redaction.
+  valueExact?: boolean;
   options?: string[];
+  optionIndices?: number[];
+  selectedIndex?: number;
   checked?: boolean;
   expanded?: boolean;
   active?: boolean;
@@ -68,11 +72,19 @@ export interface RawFrameObservation {
   // The page key: document, address, scroll position, viewport and the state of every
   // non-credential form field. A decision made on one key is thrown away when it changed.
   key: string;
+  marker: string;
+  guards: Record<number, string | null>;
 }
 
 export const OBSERVE = (args: ObserveArgs): RawFrameObservation | null => {
   if (!document.documentElement) return null;
-  type Cache = { ids: WeakMap<Element, number>; nodes: Map<number, Element>; next: number };
+  type Cache = {
+    ids: WeakMap<Element, number>;
+    nodes: Map<number, Element>;
+    next: number;
+    guard?: (e: Element | undefined) => string | null;
+    pageKey?: () => string;
+  };
   const holder = globalThis as unknown as { __helenaTask?: Cache };
   const cache: Cache = (holder.__helenaTask ||= { ids: new WeakMap(), nodes: new Map(), next: 1 });
   for (const [id, node] of cache.nodes) if (!node.isConnected) cache.nodes.delete(id);
@@ -112,6 +124,14 @@ export const OBSERVE = (args: ObserveArgs): RawFrameObservation | null => {
     if (r.width < 1 || r.height < 1) return false;
     const st = style(el);
     const type = (el as HTMLInputElement).type;
+    if (
+      typeof el.checkVisibility === 'function' &&
+      !el.checkVisibility({
+        checkOpacity: !/^(checkbox|radio|file)$/.test(type ?? ''),
+        checkVisibilityCSS: true,
+      })
+    )
+      return false;
     return (
       st.visibility !== 'hidden' &&
       st.display !== 'none' &&
@@ -298,10 +318,13 @@ export const OBSERVE = (args: ObserveArgs): RawFrameObservation | null => {
       } else if (tag === 'select') {
         const select = el as HTMLSelectElement;
         o.value = clean(select.selectedOptions?.[0]?.text, 40);
-        o.options = [...select.options]
-          .filter((option) => !option.disabled)
-          .slice(0, 25)
-          .map((option) => clean(option.text, 40));
+        o.valueExact = o.value === select.selectedOptions?.[0]?.text;
+        const options = [...select.options]
+          .filter((option) => !option.disabled && !option.closest('optgroup[disabled]'))
+          .slice(0, 25);
+        o.options = options.map((option) => clean(option.text, 80));
+        o.optionIndices = options.map((option) => option.index);
+        o.selectedIndex = select.selectedIndex;
         o.selectable = !select.disabled;
       } else if (type === 'checkbox' || type === 'radio') {
         o.checked = (el as HTMLInputElement).checked;
@@ -311,7 +334,10 @@ export const OBSERVE = (args: ObserveArgs): RawFrameObservation | null => {
           if (text) o.label = text;
         }
         const value = (el as HTMLInputElement).value;
-        if (value && value !== 'on') o.value = clean(value, 30);
+        if (value && value !== 'on') {
+          o.value = clean(value, 30);
+          o.valueExact = o.value === value;
+        }
       } else if (type === 'file') {
         o.file = true;
       } else if (['submit', 'button', 'reset', 'image'].includes(type ?? '')) {
@@ -321,7 +347,10 @@ export const OBSERVE = (args: ObserveArgs): RawFrameObservation | null => {
           (el as HTMLElement).isContentEditable && tag !== 'input'
             ? (el as HTMLElement).innerText
             : (el as HTMLInputElement).value;
-        if (value) o.value = clean(value, 60);
+        if (typeof value === 'string') {
+          o.value = clean(value, 60);
+          o.valueExact = o.value === value;
+        }
         const textual =
           tag === 'textarea' ||
           (el as HTMLElement).isContentEditable ||
@@ -456,7 +485,13 @@ export const OBSERVE = (args: ObserveArgs): RawFrameObservation | null => {
       for (let n = walker.nextNode(); n && text.length < args.textLimit; n = walker.nextNode()) {
         const value = n.textContent?.trim();
         const parent = n.parentElement;
-        if (!value || !parent || parent.closest('script, style, noscript, template')) continue;
+        if (
+          !value ||
+          !parent ||
+          parent.closest('script, style, noscript, template, [aria-hidden="true"], [inert]') ||
+          !visible(parent)
+        )
+          continue;
         range.selectNodeContents(n);
         const r = range.getBoundingClientRect();
         if (
@@ -476,18 +511,83 @@ export const OBSERVE = (args: ObserveArgs): RawFrameObservation | null => {
 
   const safe = (e: Element) =>
     !['password', 'file', 'hidden'].includes((e as HTMLInputElement).type) && !credentialField(e);
-  const fields = [...document.querySelectorAll('input, textarea, select')].filter(safe).map((e) => {
+  const pageKey = () => {
+    const fields: Element[] = [];
+    const collect = (root: Document | ShadowRoot) => {
+      for (const e of root.querySelectorAll('*')) {
+        if (e.matches('input, textarea, select') && safe(e)) fields.push(e);
+        if (e.shadowRoot) collect(e.shadowRoot);
+      }
+    };
+    collect(document);
+    return JSON.stringify([
+      performance.timeOrigin,
+      location.href,
+      Math.round(scrollX),
+      Math.round(scrollY),
+      innerWidth,
+      innerHeight,
+      fields.map((e) => {
+        const f = e as HTMLInputElement & HTMLSelectElement;
+        return [identity(e), f.value, f.checked, f.selectedIndex, f.disabled, f.readOnly];
+      }),
+    ]);
+  };
+  const guard = (e: Element | undefined): string | null => {
+    if (!e?.isConnected || !visible(e) || e.closest('[aria-hidden="true"], [inert]')) return null;
     const f = e as HTMLInputElement & HTMLSelectElement;
-    return [identity(e), f.value, f.checked, f.selectedIndex, f.disabled, f.readOnly];
-  });
-  const key = JSON.stringify([
-    performance.timeOrigin,
-    location.href,
-    Math.round(scrollX),
-    Math.round(scrollY),
-    innerWidth,
-    innerHeight,
-    fields,
+    const scope =
+      e.closest('form, dialog, [role="dialog"], article, li, tr, [role="row"]') || e.parentElement;
+    return JSON.stringify([
+      identity(e),
+      e.tagName,
+      e.getAttribute('type'),
+      e.getAttribute('name'),
+      e.getAttribute('autocomplete'),
+      e.getAttribute('contenteditable'),
+      e.getAttribute('formaction'),
+      e.getAttribute('formmethod'),
+      e.getAttribute('formtarget'),
+      f.form ? [f.form.action, f.form.method, f.form.enctype, f.form.target] : null,
+      e.getAttribute('role'),
+      labelOf(e),
+      e.getAttribute('title'),
+      e.getAttribute('placeholder'),
+      (e as HTMLElement).innerText?.slice(0, 200) ?? '',
+      credentialField(e) ? null : (f.value ?? null),
+      f.checked ?? null,
+      f.selectedIndex ?? null,
+      f.readOnly ?? null,
+      e.getAttribute('aria-readonly'),
+      e.matches(':disabled'),
+      e.closest('[aria-disabled="true"]') !== null,
+      e.getAttribute('aria-expanded'),
+      e.getAttribute('aria-checked'),
+      e.getAttribute('aria-selected'),
+      e.getAttribute('href'),
+      e.tagName === 'SELECT'
+        ? [...f.options].map((o) => [
+            o.index,
+            o.text,
+            o.value,
+            o.disabled,
+            !!o.closest('optgroup[disabled]'),
+          ])
+        : null,
+      (scope as HTMLElement | null)?.innerText?.slice(0, 6000) ?? '',
+    ]);
+  };
+  cache.guard = guard;
+  cache.pageKey = pageKey;
+  const key = pageKey();
+  const guards = Object.fromEntries(out.map((e) => [e.id, guard(cache.nodes.get(e.id))]));
+  const marker = JSON.stringify([
+    key,
+    document.title,
+    text,
+    dialogs,
+    out,
+    document.documentElement.scrollHeight,
   ]);
   return {
     url: location.href,
@@ -503,6 +603,8 @@ export const OBSERVE = (args: ObserveArgs): RawFrameObservation | null => {
     elements: out,
     omitted,
     key,
+    marker,
+    guards,
   };
 };
 
@@ -510,45 +612,62 @@ export const OBSERVE = (args: ObserveArgs): RawFrameObservation | null => {
 // name, value, checked/selected state, disabled, the aria states, the link, and the text of its
 // form, dialog or row. Null once it is gone or hidden. A credential field's value is left out.
 export const GUARD = (id: number): string | null => {
-  const holder = globalThis as unknown as { __helenaTask?: { nodes: Map<number, Element> } };
-  const e = holder.__helenaTask?.nodes.get(id);
-  if (!e?.isConnected) return null;
-  const r = e.getBoundingClientRect();
-  if (r.width < 1 || r.height < 1) return null;
-  const f = e as HTMLInputElement & HTMLSelectElement;
-  const secret =
-    e.getAttribute('type')?.toLowerCase() === 'password' ||
-    (e.getAttribute('autocomplete') || '').toLowerCase().includes('password') ||
-    (e.getAttribute('autocomplete') || '').toLowerCase() === 'one-time-code';
-  const scope =
-    e.closest('form, dialog, [role="dialog"], article, li, tr, [role="row"]') || e.parentElement;
-  return JSON.stringify([
-    id,
-    e.tagName,
-    e.getAttribute('role'),
-    (e as HTMLElement).innerText?.slice(0, 200) ?? '',
-    secret ? null : (f.value ?? null),
-    f.checked ?? null,
-    f.selectedIndex ?? null,
-    f.readOnly ?? null,
-    e.matches(':disabled'),
-    e.getAttribute('aria-disabled'),
-    e.getAttribute('aria-expanded'),
-    e.getAttribute('aria-checked'),
-    e.getAttribute('aria-selected'),
-    e.getAttribute('href'),
-    (scope as HTMLElement | null)?.innerText?.slice(0, 2000) ?? '',
-  ]);
+  const cache = (
+    globalThis as unknown as {
+      __helenaTask?: {
+        nodes: Map<number, Element>;
+        guard?: (e: Element | undefined) => string | null;
+      };
+    }
+  ).__helenaTask;
+  return cache?.guard?.(cache.nodes.get(id)) ?? null;
+};
+
+export const CHECK_TARGET = (id: number): { key: string; guard: string | null } | null => {
+  const cache = (
+    globalThis as unknown as {
+      __helenaTask?: {
+        nodes: Map<number, Element>;
+        guard?: (e: Element | undefined) => string | null;
+        pageKey?: () => string;
+      };
+    }
+  ).__helenaTask;
+  return cache?.pageKey && cache.guard
+    ? { key: cache.pageKey(), guard: cache.guard(cache.nodes.get(id)) }
+    : null;
 };
 
 // Right before input: the element is still there, enabled and visible, and (after it was scrolled
 // into view) the element hit at its centre is it or inside it. `why` names what is wrong.
-export const HIT = (id: number): { ok: true } | { ok: false; why: string } => {
-  const holder = globalThis as unknown as { __helenaTask?: { nodes: Map<number, Element> } };
-  const e = holder.__helenaTask?.nodes.get(id);
+export const HIT = (
+  target: number | { id: number; key: string; guard: string },
+): { ok: true } | { ok: false; why: string } => {
+  const holder = globalThis as unknown as {
+    __helenaTask?: {
+      nodes: Map<number, Element>;
+      pageKey?: () => string;
+      guard?: (e: Element) => string | null;
+    };
+  };
+  const cache = holder.__helenaTask;
+  const e = cache?.nodes.get(typeof target === 'number' ? target : target.id);
   if (!e?.isConnected) return { ok: false, why: 'gone' };
+  if (
+    typeof target !== 'number' &&
+    (cache?.pageKey?.() !== target.key || cache?.guard?.(e) !== target.guard)
+  )
+    return { ok: false, why: 'stale' };
   if (e.matches(':disabled') || e.closest('[aria-disabled="true"], [inert]'))
     return { ok: false, why: 'disabled' };
+  const style = getComputedStyle(e);
+  if (
+    style.visibility !== 'visible' ||
+    style.display === 'none' ||
+    (Number(style.opacity) === 0 && !e.matches('input[type=checkbox], input[type=radio]')) ||
+    e.closest('[aria-hidden="true"]')
+  )
+    return { ok: false, why: 'hidden' };
   const r = e.getBoundingClientRect();
   if (r.width < 1 || r.height < 1) return { ok: false, why: 'hidden' };
   const x = r.left + r.width / 2;
@@ -573,47 +692,7 @@ export const NODE = (id: number): Element | null => {
 
 // The page key alone (OBSERVE's `key`), for the freshness check right before an action.
 export const PAGE_KEY = (): string => {
-  const holder = globalThis as unknown as {
-    __helenaTask?: { ids: WeakMap<Element, number>; nodes: Map<number, Element>; next: number };
-  };
-  const cache = (holder.__helenaTask ||= { ids: new WeakMap(), nodes: new Map(), next: 1 });
-  const identity = (node: Element): number => {
-    let id = cache.ids.get(node);
-    if (!id) {
-      id = cache.next++;
-      cache.ids.set(node, id);
-    }
-    cache.nodes.set(id, node);
-    return id;
-  };
-  const credential = (e: Element) => {
-    if (e.tagName !== 'INPUT') return false;
-    const type = (e.getAttribute('type') || '').toLowerCase();
-    const auto = (e.getAttribute('autocomplete') || '').toLowerCase();
-    const name = ((e.getAttribute('name') || '') + ' ' + (e.id || '')).toLowerCase();
-    return (
-      type === 'password' ||
-      auto.includes('password') ||
-      auto === 'one-time-code' ||
-      /\b(otp|totp|2fa|mfa|passcode)\b/.test(name.replace(/[-_]/g, ' '))
-    );
-  };
-  const fields = [...document.querySelectorAll('input, textarea, select')]
-    .filter(
-      (e) =>
-        !['password', 'file', 'hidden'].includes((e as HTMLInputElement).type) && !credential(e),
-    )
-    .map((e) => {
-      const f = e as HTMLInputElement & HTMLSelectElement;
-      return [identity(e), f.value, f.checked, f.selectedIndex, f.disabled, f.readOnly];
-    });
-  return JSON.stringify([
-    performance.timeOrigin,
-    location.href,
-    Math.round(scrollX),
-    Math.round(scrollY),
-    innerWidth,
-    innerHeight,
-    fields,
-  ]);
+  const cache = (globalThis as unknown as { __helenaTask?: { pageKey?: () => string } })
+    .__helenaTask;
+  return cache?.pageKey?.() ?? '';
 };

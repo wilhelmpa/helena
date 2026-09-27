@@ -38,7 +38,14 @@ export function routerQuestions(tiers: readonly RouterTier[] = ROUTER_TIERS) {
       question:
         'Which is the cheapest model tier that can complete this request to an AI agent well? ' +
         'A cheaper tier starts fresh and reads what it needs from the project itself.',
-      options: tiers.map((tier) => ({ id: tier, label: ROUTER_TIER_OPTIONS[tier] })),
+      options: [
+        ...tiers.map((tier) => ({ id: tier, label: ROUTER_TIER_OPTIONS[tier] })),
+        {
+          id: 'uncertain',
+          label:
+            'Insufficient or ambiguous evidence to choose a safe model tier. Keep the assigned specialist.',
+        },
+      ],
     },
     needs_context: {
       kind: 'yesno',

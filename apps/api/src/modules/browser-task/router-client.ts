@@ -44,18 +44,17 @@ export async function postToRouter(path: string, body: unknown): Promise<unknown
   } catch {
     throw new HttpError(503, 'The browser router does not answer.');
   }
-  const text = await res.text();
   if (!res.ok) {
-    let message = text.slice(0, 300);
-    try {
-      message = (JSON.parse(text) as { error?: string }).error ?? message;
-    } catch {
-      // plain text
-    }
+    await res.body?.cancel().catch(() => {});
     throw new HttpError(
       res.status >= 500 ? 502 : res.status,
-      message || 'The browser router refused.',
+      `The browser router refused the request (HTTP ${res.status}).`,
     );
   }
-  return text ? JSON.parse(text) : null;
+  try {
+    const text = await res.text();
+    return text ? JSON.parse(text) : null;
+  } catch {
+    throw new HttpError(502, 'The browser router returned an invalid response.');
+  }
 }

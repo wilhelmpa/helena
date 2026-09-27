@@ -78,7 +78,9 @@ export class FakeSite implements TaskPage {
       if (control.selectable) {
         element.selectable = true;
         element.options = control.options;
+        element.optionIndices = control.options?.map((_, i) => i);
         element.value = this.values.get(key) ?? control.options?.[0];
+        element.selectedIndex = control.options?.indexOf(element.value ?? '');
       } else if (control.editable) {
         element.value = this.values.get(key) ?? '';
       }

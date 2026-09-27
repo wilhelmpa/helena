@@ -953,6 +953,11 @@ export const agentChatThread = pgTable(
     // default, so a later model-default change is inherited without rewriting chats.
     model: text('model'),
     thinkingLevel: text('thinking_level'),
+    jevFirstStage: text('jev_first_stage')
+      .$type<'inherit' | 'on' | 'off'>()
+      .notNull()
+      .default('inherit'),
+    jevFirstStageRevision: integer('jev_first_stage_revision').notNull().default(0),
     // The project the chat was started in; null for a Home chat. Home lists every chat
     // of the member, a project only its own.
     projectId: integer('project_id').references(() => project.id, { onDelete: 'cascade' }),

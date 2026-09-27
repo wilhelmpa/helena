@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; form-action 'none'; base-uri 'none'"
+    />
+    <title>Helena browser acceptance fixture</title>
+    <style>
+      body { font: 20px system-ui; max-width: 720px; padding: 40px; }
+      button, input { font: inherit; margin: 12px; padding: 12px; }
+      output { display: block; margin: 12px; }
+    </style>
+  </head>
+  <body data-helena-proof="browser-acceptance-v1">
+    <h1>Helena synthetic browser fixture</h1>
+    <p>This page uses synthetic data and makes no network requests.</p>
+    <button id="increment" type="button">Increase counter</button>
+    <output id="count">0</output>
+    <label>Name <input id="name" autocomplete="off" /></label>
+    <button id="check" type="button">Verify fixture</button>
+    <output id="result" role="status">Fixture ready</output>
+    <p>Heartbeat: <span id="tick">0</span></p>
+    <script>
+      document.body.dataset.proofDocument = crypto.randomUUID();
+      const count = document.querySelector('#count');
+      const tick = document.querySelector('#tick');
+      document.querySelector('#increment').addEventListener('click', () => {
+        count.textContent = String(Number(count.textContent) + 1);
+      });
+      document.querySelector('#check').addEventListener('click', () => {
+        document.querySelector('#result').textContent =
+          document.querySelector('#name').value === 'Ada Proof'
+            ? 'Fixture accepted Ada Proof'
+            : 'Fixture needs Ada Proof';
+      });
+      setInterval(() => { tick.textContent = String(Number(tick.textContent) + 1); }, 1000);
+    </script>
+  </body>
+</html>

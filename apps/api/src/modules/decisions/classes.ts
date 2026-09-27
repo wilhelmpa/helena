@@ -4,6 +4,7 @@ import { GENERIC_EVAL } from './evals/generic';
 import { MAIL_EVAL } from './evals/mail';
 import { RECEIPT_EVAL } from './evals/receipts';
 import { ROUTER_EVAL } from './evals/router';
+import { BROWSER_EVAL } from './evals/browser';
 import { DECISIONS_LOCAL_AI_CLASS } from './local-ai-class';
 
 // Helena's own decision classes and the backends the decisions service adds to the browser
@@ -17,8 +18,17 @@ export const ROUTER_CLASS = 'helena.model-router';
 export const MAIL_CLASS = 'helena.mail';
 export const RECEIPTS_CLASS = 'helena.receipts';
 export const GENERAL_CLASS = 'helena.general';
+export const BROWSER_CLASS = 'helena.browser';
 
 export const BUILTIN_DECISION_CLASSES: DecisionClass[] = [
+  {
+    id: BROWSER_CLASS,
+    label: { i18n: 'decisions.classes.browser.label' },
+    description: { i18n: 'decisions.classes.browser.description' },
+    input: { store: 'never', cloud: 'allowed' },
+    defaults: { threshold: 0.95, timeoutMs: 3000 },
+    eval: BROWSER_EVAL,
+  },
   {
     id: ROUTER_CLASS,
     label: { i18n: 'decisions.classes.router.label' },

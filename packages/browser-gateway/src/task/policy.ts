@@ -46,6 +46,7 @@ export interface RoundAnswer {
   valueKey?: string;
   // The dropdown option the round chose together with its element (Laya's "i:k" targets).
   option?: string;
+  optionIndex?: number;
   operationProbability: number;
   operationConfidence: number;
   targetProbability: number;
@@ -83,14 +84,14 @@ export function optionFromValues(
   const norm = (s: string) => s.replace(/\s+/g, ' ').trim().toLowerCase();
   for (const value of Object.values(values)) {
     const wanted = norm(value);
-    const exact = options.find((option) => norm(option) === wanted);
-    if (exact) return exact;
+    const exact = options.filter((option) => norm(option) === wanted);
+    if (exact.length === 1) return exact[0]!;
   }
   for (const value of Object.values(values)) {
     const wanted = norm(value);
     if (wanted.length < 2) continue;
-    const partial = options.find((option) => norm(option).includes(wanted));
-    if (partial) return partial;
+    const partial = options.filter((option) => norm(option).includes(wanted));
+    if (partial.length === 1) return partial[0]!;
   }
   return null;
 }

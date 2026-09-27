@@ -17,6 +17,7 @@ import {
   useDecisionBackendsQuery,
   useTestDecisionConnection,
 } from '@/features/browser-lab/services/browserTask.service';
+import { useDecisionKeySourcesQuery } from '@/services/credentials.service';
 import type { CredentialFormValue } from '../../utils/credentialForm';
 import { CredentialSecretInput } from './CredentialSecretInput';
 
@@ -28,7 +29,9 @@ export function localized(label: LocalizedLabel, locale: string): string {
 // The choice as the select shows it: a kind of service, or one of its presets ("Laya (lokal
 // auf diesem Server)").
 function choiceOf(value: CredentialFormValue): string {
-  return value.keySource === 'stored' ? value.provider : `${value.provider}:${value.keySource}`;
+  return value.keySource === 'stored' || value.keySource === 'credential'
+    ? value.provider
+    : `${value.provider}:${value.keySource}`;
 }
 
 // A decision model connection ("Entscheidungsmodell (Jev)", docs/helena-decisions/browser-task.md
@@ -50,7 +53,12 @@ export function CredentialDecisionModelFields({
   const backends = useDecisionBackendsQuery().data?.backends ?? [];
   const test = useTestDecisionConnection(teamId);
   const backend: DecisionBackend | undefined = backends.find((b) => b.id === value.provider);
-  const local = value.keySource !== 'stored';
+  const local = value.keySource === 'local-ai' || value.keySource === 'local-laya';
+  const sources = useDecisionKeySourcesQuery(
+    teamId,
+    value.projectId,
+    value.keySource === 'credential',
+  );
 
   const choose = (choice: string) => {
     const [id, preset] = choice.split(':');
@@ -63,6 +71,8 @@ export function CredentialDecisionModelFields({
       model: chosen?.model ?? next.defaultModel,
       allowPrivateAddress: chosen?.allowPrivateAddress ?? false,
       keySource: chosen?.keySource ?? 'stored',
+      sourceCredentialId: null,
+      value: '',
       ...(!value.label.trim() && {
         label: chosen ? localized(chosen.label, locale) : localized(next.label, locale),
       }),
@@ -139,7 +149,61 @@ export function CredentialDecisionModelFields({
         </div>
       )}
 
-      {local ? (
+      {!local && (
+        <div className="space-y-1.5">
+          <Label>{t('keySource')}</Label>
+          <Select
+            value={value.keySource}
+            onValueChange={(keySource: 'stored' | 'credential') =>
+              onChange({ keySource, value: '' })
+            }
+          >
+            <SelectTrigger className="w-full" aria-label={t('keySource')}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="stored">{t('keySourceStored')}</SelectItem>
+              <SelectItem value="credential">{t('keySourceCredential')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      {value.keySource === 'credential' ? (
+        <div className="space-y-1.5">
+          <Label>{t('keyCredential')}</Label>
+          <Select
+            value={value.sourceCredentialId?.toString() ?? ''}
+            onValueChange={(id) => onChange({ sourceCredentialId: Number(id) })}
+          >
+            <SelectTrigger className="w-full" aria-label={t('keyCredential')}>
+              <SelectValue placeholder={t('chooseKeyCredential')} />
+            </SelectTrigger>
+            <SelectContent>
+              {(sources.data?.items ?? []).map((source) => (
+                <SelectItem key={source.id} value={String(source.id)}>
+                  {source.label ?? `#${source.id}`}
+                  {source.projectKey ? ` · ${source.projectKey}` : ''}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">{t('keyCredentialHint')}</p>
+          {sources.isPending && (
+            <p className="text-xs text-muted-foreground">{t('keySourcesLoading')}</p>
+          )}
+          {(sources.isError ||
+            (sources.isSuccess &&
+              (!sources.data.items.length ||
+                (value.sourceCredentialId !== null &&
+                  !sources.data.items.some(
+                    (source) => source.id === value.sourceCredentialId,
+                  ))))) && (
+            <p role="alert" className="text-xs text-destructive">
+              {t('keySourceUnavailable')}
+            </p>
+          )}
+        </div>
+      ) : local ? (
         <p className="rounded-md border border-sidebar-border bg-card px-3 py-2 text-sm text-muted-foreground">
           {value.keySource === 'local-ai' ? t('localAiKey') : t('localKey')}
         </p>

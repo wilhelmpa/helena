@@ -10,6 +10,8 @@ disallowedTools:
   - tts
   - browser
 skills:
+  - typesafe-ai
+  - helena-trading-decisions
   - belege-und-buchhaltung
   - buchungssatz
   - gobd-konformitaet

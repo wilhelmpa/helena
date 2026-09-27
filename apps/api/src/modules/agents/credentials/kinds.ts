@@ -22,7 +22,7 @@ export const CREDENTIAL_KINDS = [
 // The key comes from Zugänge ('stored'), from the local Laya installation's key file
 // ('local-laya'), or with the address from a model server of Helena's local AI ('local-ai',
 // named by `modelServer`; docs/helena-decisions/decisions.md §3.3).
-export const DECISION_KEY_SOURCES = ['stored', 'local-laya', 'local-ai'] as const;
+export const DECISION_KEY_SOURCES = ['stored', 'credential', 'local-laya', 'local-ai'] as const;
 export type DecisionKeySource = (typeof DECISION_KEY_SOURCES)[number];
 
 // The runtimes a runtime login signs in, and how. Codex takes an API key here; its
@@ -85,6 +85,7 @@ const INPUT_FIELDS: Record<CredentialKind, readonly string[]> = {
     'model',
     'allowPrivateAddress',
     'keySource',
+    'sourceCredentialId',
     'modelServer',
     'value',
     'notes',
@@ -111,6 +112,7 @@ export interface CredentialFields {
   model?: string;
   allowPrivateAddress?: boolean;
   keySource?: DecisionKeySource;
+  sourceCredentialId?: number | null;
   modelServer?: string;
 }
 

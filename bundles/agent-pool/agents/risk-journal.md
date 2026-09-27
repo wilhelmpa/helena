@@ -9,6 +9,8 @@ disallowedTools:
   - image_gen
   - tts
 skills:
+  - typesafe-ai
+  - helena-trading-decisions
   - trading-grundregeln
   - trading-wissen-verknuepfen
   - regelwerk-und-positionsgroesse

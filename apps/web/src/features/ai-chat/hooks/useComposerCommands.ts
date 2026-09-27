@@ -9,6 +9,7 @@ import type { ChatPrompt } from '@/lib/api/endpoints/chatPrompts';
 import { teamSectionPath } from '@/utils/paths';
 import {
   parseSlashCommand,
+  composerSlashCommand,
   slashItems,
   type ChatCommandAction,
   type ChatCommandRefusal,
@@ -16,6 +17,7 @@ import {
 } from '../utils/chatCommands';
 import { useChatCatalog } from './useChatCatalog';
 import { useChatSummary } from './useChatSummary';
+import { useChatJev } from './useChatJev';
 
 export interface ComposerCommandTarget {
   scopeKey: string;
@@ -43,12 +45,10 @@ export function useComposerCommands(value: string, target: ComposerCommandTarget
   const router = useRouter();
   const catalog = useChatCatalog(target.scopeKey, target.agent.id);
   const chatSummary = useChatSummary(target.threadId);
+  const applyJev = useChatJev(target.threadId);
   const [highlight, setHighlight] = useState(0);
 
-  const slash = useMemo(
-    () => (!target.busy ? parseSlashCommand(value) : null),
-    [value, target.busy],
-  );
+  const slash = useMemo(() => composerSlashCommand(value, target.busy), [value, target.busy]);
   const items = useMemo(
     () => (slash ? slashItems(slash.name, target.prompts) : []),
     [slash, target.prompts],
@@ -126,6 +126,8 @@ export function useComposerCommands(value: string, target: ComposerCommandTarget
           t(undone ? 'composer.undoDone' : 'composer.undoNone'),
         );
       }
+      case 'jev':
+        return applyJev(args);
       case 'model':
         return applyModel(args);
       case 'reasoning':
@@ -156,5 +158,19 @@ export function useComposerCommands(value: string, target: ComposerCommandTarget
     toast.info(t('composer.commandNotAvailable'));
   }
 
-  return { open: slash != null && items.length > 0, items, highlight, setHighlight, run };
+  function runSubmittedCommand(text: string) {
+    const command = parseSlashCommand(text);
+    if (command?.name !== 'jev') return false;
+    applyJev(command.args);
+    return true;
+  }
+
+  return {
+    open: slash != null && items.length > 0,
+    items,
+    highlight,
+    setHighlight,
+    run,
+    runSubmittedCommand,
+  };
 }

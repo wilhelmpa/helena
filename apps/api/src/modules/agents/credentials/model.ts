@@ -31,6 +31,7 @@ const ListedKind = t.Union([
 ]);
 const DecisionKeySource = t.Union([
   t.Literal('stored'),
+  t.Literal('credential'),
   t.Literal('local-laya'),
   t.Literal('local-ai'),
 ]);
@@ -101,6 +102,7 @@ const credentialFields = {
   model: t.Optional(t.String({ maxLength: 200 })),
   allowPrivateAddress: t.Optional(t.Boolean()),
   keySource: t.Optional(DecisionKeySource),
+  sourceCredentialId: t.Optional(t.Nullable(t.Integer({ minimum: 1 }))),
   modelServer: t.Optional(
     t.String({
       maxLength: 32,
@@ -172,6 +174,7 @@ export const CredentialEntryResponse = t.Object({
   model: t.Nullable(t.String()),
   allowPrivateAddress: t.Boolean(),
   keySource: t.Nullable(DecisionKeySource),
+  sourceCredentialId: t.Nullable(t.Number()),
   modelServer: t.Nullable(t.String()),
   envName: t.Nullable(
     t.String({ description: 'The environment variable the granted agents receive it in.' }),

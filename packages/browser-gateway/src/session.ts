@@ -32,7 +32,7 @@ import { mouseCurve, preClickPauseMs, stepsFor, typingDelayMs } from './human.ts
 import { requestAllowed, type DomainPolicy } from './domain.ts';
 import { maskPng, type Rect } from './png.ts';
 import {
-  GUARD,
+  CHECK_TARGET,
   HIT,
   NODE,
   OBSERVE,
@@ -1244,6 +1244,11 @@ export class PatchrightGatewaySession implements GatewaySession {
 
   // The frames of the last observation, in the order their elements were numbered.
   #taskFrames: Frame[] = [];
+  #taskObservations = new WeakMap<
+    PageObservation,
+    { page: Page; frames: { frame: Frame; raw: RawFrameObservation }[] }
+  >();
+  #taskConsumed = new WeakSet<PageObservation>();
 
   async #withTimeout<T>(work: Promise<T>, ms: number, what: string): Promise<T> {
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -1319,6 +1324,7 @@ export class PatchrightGatewaySession implements GatewaySession {
           text: clean(element.text),
           placeholder: clean(element.placeholder),
           value: clean(element.value),
+          valueExact: element.valueExact === true && clean(element.value) === element.value,
           near: clean(element.near),
           options: element.options?.map((option) => clean(option) ?? option),
           i: elements.length + 1,
@@ -1327,7 +1333,7 @@ export class PatchrightGatewaySession implements GatewaySession {
         });
       }
     }
-    return {
+    const observation: PageObservation = {
       url: redactUrl(main.url),
       title: this.guard.redact(main.title.slice(0, 200)),
       text: clean(main.text) ?? '',
@@ -1339,31 +1345,76 @@ export class PatchrightGatewaySession implements GatewaySession {
       repeated: repeatedLabels(elements),
       jsDialog: null,
     };
-  }
-
-  async #taskKeys(): Promise<string[] | null> {
-    const keys: string[] = [];
-    for (const frame of this.#taskFrames) {
-      if (frame.isDetached()) return null;
-      const key = await this.#withTimeout(
-        frame.evaluate(PAGE_KEY),
-        5_000,
-        'Checking the page',
-      ).catch(() => null);
-      if (key === null) return null;
-      keys.push(key);
-    }
-    return keys;
+    this.#taskObservations.set(observation, {
+      page,
+      frames: raws.flatMap((raw, index) => (raw ? [{ frame: frames[index]!, raw }] : [])),
+    });
+    return observation;
   }
 
   async #taskFresh(observation: PageObservation, element: PageElement | null): Promise<boolean> {
-    if (this.#dialogs.has(this.#page)) return false;
-    const keys = await this.#taskKeys();
-    if (!keys || keys.join('\u0001') !== observation.keys.join('\u0001')) return false;
-    if (!element) return true;
-    const frame = this.#taskFrames[element.frame];
-    if (!frame) return false;
-    return (await frame.evaluate(GUARD, element.id).catch(() => null)) !== null;
+    const observed = this.#taskObservations.get(observation);
+    if (
+      !observed ||
+      observed.page !== this.#page ||
+      this.#dialogs.has(this.#page) ||
+      this.#taskConsumed.has(observation)
+    )
+      return false;
+    if (element && !observation.elements.includes(element)) return false;
+    for (const [index, { frame, raw }] of observed.frames.entries()) {
+      if (frame.isDetached() || frame !== this.#taskFrames[index]) return false;
+      if (!element) {
+        const current = await this.#withTimeout(
+          frame.evaluate(OBSERVE, { textLimit: 2500, maxElements: 400, main: index === 0 }),
+          5000,
+          'Checking the page',
+        ).catch(() => null);
+        if (current?.marker !== raw.marker) return false;
+      } else if (index === element.frame) {
+        const current = await this.#withTimeout(
+          frame.evaluate(CHECK_TARGET, element.id),
+          5000,
+          'Checking the target',
+        ).catch(() => null);
+        if (
+          !raw.guards[element.id] ||
+          current?.key !== raw.key ||
+          current.guard !== raw.guards[element.id]
+        )
+          return false;
+      } else {
+        const current = await this.#withTimeout(
+          frame.evaluate(PAGE_KEY),
+          5000,
+          'Checking the frame',
+        ).catch(() => null);
+        if (current !== raw.key) return false;
+      }
+    }
+    return true;
+  }
+
+  async #prepareTaskInput(input: TaskActInput): Promise<void> {
+    if (!(await this.#taskFresh(input.observation, input.element)))
+      throw new TaskActError('stale', 'The observed page or target changed before input.');
+    if (input.element) {
+      const observed = this.#taskObservations.get(input.observation)?.frames[input.element.frame];
+      const guard = observed?.raw.guards[input.element.id];
+      const hit =
+        observed && guard
+          ? await observed.frame
+              .evaluate(HIT, { id: input.element.id, key: observed.raw.key, guard })
+              .catch(() => null)
+          : null;
+      if (!hit?.ok)
+        throw new TaskActError(
+          hit && hit.why === 'stale' ? 'stale' : 'covered',
+          'The target changed or cannot receive input.',
+        );
+    }
+    // Consume before input: a timeout can occur after the browser already performed it.
+    this.#taskConsumed.add(input.observation);
   }
 
   async #taskHandle(element: PageElement): Promise<{ frame: Frame; handle: ElementHandle }> {
@@ -1434,6 +1485,7 @@ export class PatchrightGatewaySession implements GatewaySession {
     switch (input.operation) {
       case 'SCROLL_DOWN':
       case 'SCROLL_UP': {
+        await this.#prepareTaskInput(input);
         const dy = input.operation === 'SCROLL_DOWN' ? 1 : -1;
         await this.#waitForCompletion(async () => {
           for (let i = 0; i < 4; i++) {
@@ -1444,11 +1496,14 @@ export class PatchrightGatewaySession implements GatewaySession {
         return;
       }
       case 'WAIT':
+        await this.#prepareTaskInput(input);
         await sleep(600);
         return;
       case 'CLICK': {
         if (!element) throw new TaskActError('failed', 'No element to click.');
-        await this.#taskClick(await this.#taskReach(element));
+        const handle = await this.#taskReach(element);
+        await this.#prepareTaskInput(input);
+        await this.#taskClick(handle);
         return;
       }
       case 'TYPE_TEXT': {
@@ -1470,6 +1525,7 @@ export class PatchrightGatewaySession implements GatewaySession {
             `${element.label ?? 'This field'} is a password or code field: use browser_login / browser_login_code.`,
           );
         }
+        await this.#prepareTaskInput(input);
         await handle.click({ timeout: ACTION_TIMEOUT_MS });
         await this.#clearField();
         await this.#typeHumanLike(input.text);
@@ -1479,7 +1535,8 @@ export class PatchrightGatewaySession implements GatewaySession {
       case 'PRESS_ENTER': {
         if (!element) throw new TaskActError('failed', 'No field to press Enter in.');
         const handle = await this.#taskReach(element);
-        await handle.focus().catch(() => {});
+        await this.#prepareTaskInput(input);
+        await handle.focus();
         const page = this.#page;
         const done = await this.#orDialog(
           this.#waitForCompletion(async () => {
@@ -1491,12 +1548,18 @@ export class PatchrightGatewaySession implements GatewaySession {
         return;
       }
       case 'SELECT': {
-        if (!element || !input.option) throw new TaskActError('failed', 'No option to select.');
+        if (
+          !element ||
+          input.optionIndex === undefined ||
+          !Number.isInteger(input.optionIndex) ||
+          input.optionIndex < 0 ||
+          !(element.optionIndices ?? []).includes(input.optionIndex)
+        )
+          throw new TaskActError('refused', 'No observed option index to select.');
         const handle = await this.#taskReach(element);
+        await this.#prepareTaskInput(input);
         await this.#waitForCompletion(() =>
-          handle
-            .selectOption({ label: input.option! }, { timeout: ACTION_TIMEOUT_MS })
-            .catch(() => handle.selectOption(input.option!, { timeout: ACTION_TIMEOUT_MS })),
+          handle.selectOption({ index: input.optionIndex! }, { timeout: ACTION_TIMEOUT_MS }),
         );
         return;
       }

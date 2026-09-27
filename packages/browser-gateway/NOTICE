@@ -3,6 +3,9 @@ Helena's browser gateway includes code ported from the projects below
 
 ------------------------------------------------------------------------------------------
 jev-ultrafast — https://github.com/browser-use/jev-ultrafast
+Audited source: 1231850a0bf1a0c0341fe408ef1668dbbfdfac46 (2026-09-26).
+Atomic observed guards, speculative operation/target questions, bounded completion and
+uncertain-mutation handling adapted into Helena; no additional upstream runtime is installed.
 Used in: src/task/page-script.ts (node identities, page key, guards), src/task/policy-common.ts
 (the NEXT_ACTION and TARGET rule texts, operation labels), src/task/policy-jev.ts,
 src/task/policy-laya.ts (operation and target questions), src/task/loop.ts (freshness and

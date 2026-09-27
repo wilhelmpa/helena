@@ -201,7 +201,8 @@
     "skills": "打开智能体的技能",
     "memory": "打开智能体的记忆",
     "usage": "显示此对话的 token 用量",
-    "stop": "停止回答"
+    "stop": "停止回答",
+    "jev": "Optional Jev first stage for this chat"
   },
   "activity": {
     "thinking": "{agent} 正在思考…",
@@ -260,5 +261,15 @@
     "misheard": "没听清——请再说一遍。",
     "timings": "上次回答用时 {total} 秒：停顿 {pause} 秒 · 转写 {transcribe} 秒 · 回答 {answer} 秒 · 声音 {voice} 秒",
     "replyLine": "快速语音回复（{model}）——并非智能体"
+  },
+  "jev": {
+    "inherit": "Inherit",
+    "on": "On (where permitted)",
+    "off": "Off",
+    "status": "Jev first stage: {mode}",
+    "saved": "Jev first stage for this chat: {mode}",
+    "scope": "Applies to the optional chat pre-decision. Team, class and privacy permissions still apply. On and Inherit follow the team setting.",
+    "needsChat": "Start or open a chat first.",
+    "usage": "Use /jev on, /jev off or /jev inherit. /jev shows the saved value."
   }
 }

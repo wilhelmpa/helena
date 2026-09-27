@@ -8,7 +8,7 @@ import { labRunActive, type LabRun } from '@/lib/api/endpoints/browserTask';
 import { useNow } from '@/features/provider-limits/hooks/useNow';
 import { approvalsPath } from '@/utils/paths';
 
-const GOOD = new Set(['done', 'likely_done']);
+const GOOD = new Set(['done']);
 
 // How a run can end, and the two states before (browserLab.status).
 const STATUSES = [

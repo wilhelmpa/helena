@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "name": "helena-agent-pool",
   "displayName": "Agentenpool",
-  "version": "1.1.0",
+  "version": "1.1.2",
   "description": "Agenten-Vorlagen für Entwicklung, Prüfung, Betrieb, Wissen, Assistenz, Finanzen, Recht und Trading (Research, Analyse, Backtests, Paper-Trading, Journal), mit geprüften Skill-Sets.",
   "license": "AGPL-3.0-only",
   "author": {
@@ -567,6 +567,12 @@
       "github": "https://github.com/anthropics/financial-services/tree/574ed3624aebd0418c7e96cd101262f30210ab26/plugins/vertical-plugins/equity-research/skills/thesis-tracker",
       "license": "Apache-2.0",
       "attribution": "© Anthropic, PBC (anthropics/financial-services), Apache-2.0"
+    },
+    {
+      "name": "typesafe-ai",
+      "github": "https://github.com/typesafe-ai/skills/tree/65a39f393687675ce170e6094757de20370365b9/skills/typesafe-ai",
+      "license": "MIT",
+      "attribution": "TypeSafe AI (typesafe-ai/skills), MIT"
     }
   ]
 }

@@ -11,7 +11,7 @@ import {
   useRouterOverviewQuery,
   useSetAgentRouter,
   useSetProjectRouter,
-} from '../services/decisions.service';
+} from '@/services/decisions.service';
 import { percent } from '../utils/format';
 import { useRouteReason } from './ModelRouteLine';
 

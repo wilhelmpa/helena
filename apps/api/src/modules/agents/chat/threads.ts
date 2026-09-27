@@ -34,6 +34,7 @@ export interface ChatSummary {
   model: string | null;
   thinkingLevel: string | null;
   cliSessionId: string | null;
+  jevFirstStage: 'inherit' | 'on' | 'off';
   // The context size after the chat's last completed answer (see the agent_chat_usage
   // comment in the schema): absent while no answer has completed, null where the agent
   // reports no usable counts. The `/usage` command is the one reader of this on a
@@ -75,6 +76,7 @@ interface ChatRow {
   model: string | null;
   thinkingLevel: string | null;
   cliSessionId: string | null;
+  jevFirstStage: 'inherit' | 'on' | 'off';
   hasUsage: boolean;
   contextTokens: number | null;
 }
@@ -106,6 +108,7 @@ function summary(row: ChatRow): ChatSummary {
     model: row.model ?? null,
     thinkingLevel: row.thinkingLevel ?? null,
     cliSessionId: row.cliSessionId ?? null,
+    jevFirstStage: row.jevFirstStage,
     ...(row.hasUsage ? { contextTokens: row.contextTokens } : {}),
   };
 }
@@ -181,6 +184,7 @@ async function readChats(
            t.created_at AS "createdAt",
            t.updated_at AS "updatedAt",
            t.model,
+           t.jev_first_stage AS "jevFirstStage",
            t.thinking_level AS "thinkingLevel",
            t.cli_session_id AS "cliSessionId",
            cu.thread_id IS NOT NULL AS "hasUsage",
@@ -233,9 +237,15 @@ async function ownedThread(threadId: string, userId: string) {
 export async function updateChat(
   threadId: string,
   user: AuthUser,
-  patch: { title?: string; archived?: boolean; issueId?: number | null },
+  patch: {
+    title?: string;
+    archived?: boolean;
+    issueId?: number | null;
+    jevFirstStage?: 'inherit' | 'on' | 'off';
+  },
 ): Promise<boolean> {
   if (!(await ownedThread(threadId, user.id))) return false;
+  if (patch.jevFirstStage !== undefined && !(await getChat(threadId, user.id))) return false;
   if (patch.issueId != null) {
     const projectId = await getIssueProjectId(patch.issueId);
     if (projectId == null || !(await checkPermission(projectId, user, 'work_items', 'read'))) {
@@ -246,6 +256,10 @@ export async function updateChat(
     .update(agentChatThread)
     .set({
       ...(patch.title !== undefined && { title: patch.title }),
+      ...(patch.jevFirstStage !== undefined && {
+        jevFirstStage: patch.jevFirstStage,
+        jevFirstStageRevision: sql`${agentChatThread.jevFirstStageRevision} + 1`,
+      }),
       ...(patch.archived !== undefined && { archivedAt: patch.archived ? new Date() : null }),
       ...(patch.issueId !== undefined && { issueId: patch.issueId }),
     })

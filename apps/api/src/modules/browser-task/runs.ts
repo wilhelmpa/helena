@@ -7,6 +7,11 @@ import { recordBrowserGatewayEvent } from '#modules/agent-browser-gateway/events
 import { costOfUsage, getModelPriceSettings } from '#modules/model-prices/service';
 import { askSystemOne, loadConnection, type SystemOneReply } from './connection';
 import type { EffectiveBrowserControl } from './settings';
+import { effectiveBrowserControl } from './settings';
+import { browserStageStillEnabled, captureBrowserStage } from './first-stage';
+import { withinFailsafe } from '#modules/decisions/service';
+import { StageRevoked, withStageGuard } from '#modules/decisions/stage-request';
+import { stageCircuitResult } from '#modules/decisions/first-stage';
 
 // The rows of browser_task (helena_browser_task_run, docs/helena-decisions/browser-task.md §3.4):
 // opened when the gateway starts a task (or the owner starts one in Browser 2.0), counted on
@@ -74,6 +79,7 @@ export async function openAgentTask(input: {
     );
   }
   const { token, hash } = newTaskToken();
+  const firstStageScope = await captureBrowserStage(input, input.control);
   const [row] = await db
     .insert(helenaBrowserTaskRun)
     .values({
@@ -88,6 +94,7 @@ export async function openAgentTask(input: {
       provider: connection.backend.providerName,
       policy: input.control.policy,
       modelConfigured: connection.model,
+      firstStageScope,
       goal: input.goal.slice(0, 1000),
       mode: input.mode,
       maxSteps: input.maxSteps,
@@ -99,7 +106,13 @@ export async function openAgentTask(input: {
       tokenExpiresAt: new Date(Date.now() + TASK_TOKEN_TTL_MS),
       startedAt: new Date(),
     })
+    .onConflictDoNothing()
     .returning({ id: helenaBrowserTaskRun.id });
+  if (!row)
+    throw new HttpError(
+      409,
+      'The optional Jev stage already ran for this work. Continue with step tools and its last snapshot.',
+    );
   return {
     taskId: row!.id,
     taskToken: token,
@@ -146,7 +159,36 @@ export async function taskSystemOne(
   if (!connection) throw new HttpError(409, 'The decision model connection was deleted.');
   if (row.decisions >= row.maxSteps * 2 + 8)
     throw new HttpError(429, 'The task used up its decisions.');
-  const reply = await askSystemOne(connection, request);
+  let reply: SystemOneReply;
+  if (row.firstStageScope) {
+    if (JSON.stringify(request).length > 16000) {
+      await cancelOptionalStage(row.id);
+      throw new HttpError(
+        409,
+        'This page exceeds the optional Jev stage limit. Continue with step tools.',
+      );
+    }
+    const control = await effectiveBrowserControl({ teamId: row.teamId, projectId: row.projectId });
+    try {
+      reply = await withStageGuard(
+        () => browserStageStillEnabled(row),
+        undefined,
+        (signal) =>
+          withinFailsafe(connection, request, control.firstStage?.timeoutMs ?? 1000, signal, 0),
+      );
+      stageCircuitResult(row.teamId, connection.credentialId, true);
+    } catch (error) {
+      await cancelOptionalStage(row.id);
+      if (!(error instanceof StageRevoked))
+        stageCircuitResult(row.teamId, connection.credentialId, false);
+      throw new HttpError(
+        409,
+        'The optional Jev stage stopped. Continue with the existing step tools and current page state.',
+      );
+    }
+  } else {
+    reply = await askSystemOne(connection, request);
+  }
   await db
     .update(helenaBrowserTaskRun)
     .set({
@@ -162,7 +204,40 @@ export async function taskSystemOne(
         : {}),
     })
     .where(eq(helenaBrowserTaskRun.id, row.id));
+  if (!(await browserStageStillEnabled(row)))
+    throw new HttpError(409, 'The optional Jev stage was disabled. Continue with step tools.');
   return reply;
+}
+
+async function cancelOptionalStage(id: number): Promise<void> {
+  await db
+    .update(helenaBrowserTaskRun)
+    .set({ cancelledAt: new Date() })
+    .where(and(eq(helenaBrowserTaskRun.id, id), isNull(helenaBrowserTaskRun.cancelledAt)));
+}
+
+export async function taskActionAllowed(
+  token: unknown,
+  caller: {
+    agentId: number;
+    teamId: number;
+    projectId: number | null;
+    runId: number | null;
+    chatMessageId: number | null;
+  },
+): Promise<boolean> {
+  const row = await taskByToken(token);
+  if (
+    !row ||
+    row.cancelledAt ||
+    row.agentId !== caller.agentId ||
+    row.teamId !== caller.teamId ||
+    row.projectId !== caller.projectId ||
+    row.runId !== caller.runId ||
+    row.chatMessageId !== caller.chatMessageId
+  )
+    return false;
+  return browserStageStillEnabled(row);
 }
 
 function text(value: unknown, max: number): string | null {
@@ -202,7 +277,7 @@ export async function taskProgress(token: unknown, step: unknown): Promise<{ can
     await db
       .update(helenaBrowserTaskRun)
       .set({ steps: sql`${helenaBrowserTaskRun.steps} || ${JSON.stringify([clean])}::jsonb` })
-      .where(eq(helenaBrowserTaskRun.id, row.id));
+      .where(and(eq(helenaBrowserTaskRun.id, row.id), isNull(helenaBrowserTaskRun.finishedAt)));
     if (clean.category !== 'read' || clean.operation === 'CLICK') {
       await recordBrowserGatewayEvent({
         projectId: row.projectId,
@@ -215,7 +290,7 @@ export async function taskProgress(token: unknown, step: unknown): Promise<{ can
       }).catch(() => {});
     }
   }
-  return { cancelled: row.cancelledAt !== null };
+  return { cancelled: row.cancelledAt !== null || !(await browserStageStillEnabled(row)) };
 }
 
 const STATUSES = new Set([
@@ -240,7 +315,13 @@ export async function finishTask(token: unknown, result: unknown): Promise<void>
   const row = await taskByToken(token);
   if (!row) return;
   const r = (result ?? {}) as Record<string, unknown>;
-  const status = typeof r.status === 'string' && STATUSES.has(r.status) ? r.status : 'error';
+  let status = typeof r.status === 'string' && STATUSES.has(r.status) ? r.status : 'error';
+  if (
+    row.firstStageScope &&
+    ['done', 'likely_done'].includes(status) &&
+    !(await browserStageStillEnabled(row))
+  )
+    status = 'cancelled';
   const steps = Array.isArray(r.steps)
     ? r.steps.map(cleanStep).filter(Boolean).slice(0, MAX_STEPS_STORED)
     : null;
@@ -262,7 +343,7 @@ export async function finishTask(token: unknown, result: unknown): Promise<void>
     .set({
       status,
       summary: text(r.summary, 500),
-      ...(steps ? { steps } : {}),
+      ...(steps && (!row.firstStageScope || steps.length >= row.steps.length) ? { steps } : {}),
       result: {
         url: text(r.url, 500),
         title: text(r.title, 200),

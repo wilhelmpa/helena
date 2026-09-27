@@ -76,6 +76,9 @@ export function jevRound(input: RoundInput) {
   for (const op of Object.keys(targets) as (keyof typeof targets)[]) {
     targets[op] = scope(targets[op], goal, values, MAX_TARGETS);
   }
+  targets.SELECT = targets.SELECT.filter((element) =>
+    element.options?.some((_, k) => (element.optionIndices?.[k] ?? k) !== element.selectedIndex),
+  );
   const offered = new Set(Object.values(targets).flat());
   const context = observation.elements.filter((element) => !offered.has(element));
   const stateElements = [
@@ -127,27 +130,53 @@ export function jevRound(input: RoundInput) {
         'Would the next action toward `task.goal` on `page` have an effect outside this browser that is hard to undo, such as placing an order, paying, sending a message, deleting data or publishing?',
     };
   }
-  if (hasValues) {
+  if (Object.keys(values).length > 1) {
     questions.value = {
       type: 'choice',
-      instructions:
-        'If the next action toward `task.goal` types or selects something, which of `task.values` should it use? Prefer values not yet entered on `page`.',
+      instructions: {
+        question:
+          'If the next operation is TYPE_TEXT, which of task.values belongs in the selected field? Prefer values not yet entered.',
+        rules: NEXT_ACTION,
+      },
       criteria: Object.fromEntries(Object.entries(values).map(([k, v]) => [k, v.slice(0, 200)])),
     };
   }
+  const choices: Record<
+    string,
+    Map<string, { element: PageElement; option?: string; optionIndex?: number }>
+  > = {};
   for (const [op, head] of Object.entries(HEADS) as [keyof typeof HEADS, string][]) {
-    // A choice needs two options to be a question; a single target is taken as it is.
-    if (targets[op].length < 2) continue;
+    const options = new Map<
+      string,
+      { element: PageElement; option?: string; optionIndex?: number }
+    >();
+    const criteria: Record<string, unknown> = {};
+    for (const element of targets[op]) {
+      if (op === 'SELECT') {
+        for (const [k, option] of (element.options ?? []).entries()) {
+          const optionIndex = element.optionIndices?.[k] ?? k;
+          if (optionIndex === element.selectedIndex || options.size >= MAX_TARGETS) continue;
+          const key = `${element.i}:${optionIndex}`;
+          options.set(key, { element, option, optionIndex });
+          criteria[key] = { element: element.i, option };
+        }
+      } else {
+        options.set(String(element.i), { element });
+        criteria[String(element.i)] = null;
+      }
+    }
+    choices[op] = options;
+    if (options.size < 2) continue;
     questions[head] = {
       type: 'choice',
       instructions: {
-        question: `If the next operation is ${op}, which entry of \`page.elements\` (by its \`i\`) should it act on?`,
-        rules: TARGET,
+        question: `If the next operation is ${op}, which offered target advances task.goal next? SELECT keys identify an element and its native option index.`,
+        rules: [NEXT_ACTION, TARGET],
       },
-      criteria: Object.fromEntries(targets[op].map((element) => [String(element.i), null])),
+      criteria,
     };
   }
-  return { request: { state: stateOf(input, stateElements), questions }, targets, ops };
+  return { request: { state: stateOf(input, stateElements), questions }, targets, choices, ops };
 }
 
 export const jevPolicy: DecisionPolicy = {
@@ -155,34 +184,47 @@ export const jevPolicy: DecisionPolicy = {
   minTarget: 0.3,
 
   async round(input: RoundInput, ask: Ask): Promise<RoundAnswer> {
-    const { request, targets } = jevRound(input);
+    const { request, choices } = jevRound(input);
     const reply = await ask(request);
     const q = request.questions;
     const operation = answerOf(reply, 'operation', q.operation!, 'choice');
     const noul = (id: string) => (q[id] ? answerOf(reply, id, q[id]!, 'noul').noul : null);
     const op = operation.choice as Operation;
     let element: PageElement | null = null;
+    let option: string | undefined;
+    let optionIndex: number | undefined;
     let targetProbability = 1;
     let candidates: RoundAnswer['candidates'] = [];
     const head = (HEADS as Record<string, string>)[op];
     if (head) {
-      const list = targets[op as keyof typeof HEADS];
-      if (list.length === 1) {
-        element = list[0]!;
+      const options = choices[op]!;
+      let selected: { element: PageElement; option?: string; optionIndex?: number } | undefined;
+      if (options.size === 1) {
+        selected = options.values().next().value;
       } else if (q[head]) {
         const target = answerOf(reply, head, q[head]!, 'choice');
-        const byKey = (key: string) => input.observation.elements.find((e) => String(e.i) === key);
-        element = byKey(target.choice) ?? null;
+        selected = options.get(target.choice);
         targetProbability = target.probabilities[target.choice] ?? 0;
-        candidates = topCandidates(target.probabilities, byKey, brief);
+        candidates = topCandidates(target.probabilities, (key) => options.get(key)?.element, brief);
       }
+      element = selected?.element ?? null;
+      option = selected?.option;
+      optionIndex = selected?.optionIndex;
     }
-    const value = q.value ? answerOf(reply, 'value', q.value, 'choice').choice : undefined;
+    // Only the chosen operation consumes its speculative heads.
+    const value =
+      op === 'TYPE_TEXT'
+        ? q.value
+          ? answerOf(reply, 'value', q.value, 'choice').choice
+          : Object.keys(input.values)[0]
+        : undefined;
     const done = Math.max(noul('done') ?? 0, noul('done_change') ?? 0);
     return {
       operation: op,
       element,
       valueKey: value,
+      option,
+      optionIndex,
       operationProbability: operation.probabilities[op] ?? 0,
       operationConfidence: operation.confidence,
       targetProbability,

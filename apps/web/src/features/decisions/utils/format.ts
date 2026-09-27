@@ -30,6 +30,8 @@ export function classKey(id: string): string {
       return 'receipts';
     case 'helena.general':
       return 'general';
+    case 'helena.browser':
+      return 'browser';
     default:
       return id;
   }

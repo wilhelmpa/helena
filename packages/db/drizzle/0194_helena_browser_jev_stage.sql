@@ -1,0 +1,3 @@
+ALTER TABLE "helena_browser_task_run" ADD COLUMN "first_stage_scope" jsonb;--> statement-breakpoint
+CREATE UNIQUE INDEX "helena_browser_first_stage_chat_idx" ON "helena_browser_task_run" USING btree ("chat_message_id") WHERE "helena_browser_task_run"."first_stage_scope" IS NOT NULL AND "helena_browser_task_run"."chat_message_id" IS NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "helena_browser_first_stage_run_idx" ON "helena_browser_task_run" USING btree ("run_id") WHERE "helena_browser_task_run"."first_stage_scope" IS NOT NULL AND "helena_browser_task_run"."run_id" IS NOT NULL;

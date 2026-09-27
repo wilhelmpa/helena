@@ -300,7 +300,7 @@ export async function routeRequest(request: RouteRequest): Promise<RouteResult> 
       const { contextThreshold } = routerConfig(
         (await classSetting(request.teamId, ROUTER_CLASS)).config,
       );
-      if (!route.decided) reason = 'unsure';
+      if (!route.decided || !needs.decided || route.choice === 'uncertain') reason = 'unsure';
       else if ((needsContext ?? 1) >= contextThreshold) reason = 'needs_context';
       else {
         const choice = chooseModel(
@@ -309,8 +309,10 @@ export async function routeRequest(request: RouteRequest): Promise<RouteResult> 
           route.choice as RouterTier,
           switches.agent.allowUpgrade,
         );
-        target = choice.model;
-        reason = choice.reason;
+        const specialist =
+          ['strong', 'strongest'].includes(route.choice) && choice.reason === 'cheaper_tier';
+        target = specialist ? configured : choice.model;
+        reason = specialist ? 'same_tier' : choice.reason;
       }
     }
     const [row] = await db

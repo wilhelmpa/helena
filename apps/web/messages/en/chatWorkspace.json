@@ -201,7 +201,8 @@
     "skills": "Open the agent's skills",
     "memory": "Open the agent's memory",
     "usage": "Show this chat's token usage",
-    "stop": "Stop the answer"
+    "stop": "Stop the answer",
+    "jev": "Optional Jev first stage for this chat"
   },
   "activity": {
     "thinking": "{agent} is thinking…",
@@ -260,5 +261,15 @@
     "misheard": "Didn't catch that – please say it again.",
     "timings": "Last answer after {total} s: pause {pause} s · transcription {transcribe} s · answer {answer} s · voice {voice} s",
     "replyLine": "Fast voice reply ({model}) – not the agent"
+  },
+  "jev": {
+    "inherit": "Inherit",
+    "on": "On (where permitted)",
+    "off": "Off",
+    "status": "Jev first stage: {mode}",
+    "saved": "Jev first stage for this chat: {mode}",
+    "scope": "Applies to the optional chat pre-decision. Team, class and privacy permissions still apply. On and Inherit follow the team setting.",
+    "needsChat": "Start or open a chat first.",
+    "usage": "Use /jev on, /jev off or /jev inherit. /jev shows the saved value."
   }
 }

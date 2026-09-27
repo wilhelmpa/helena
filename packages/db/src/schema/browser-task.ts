@@ -53,6 +53,11 @@ export const helenaBrowserTaskRun = pgTable(
     // The model configured, and the one the backend reported (model_check-like provenance).
     modelConfigured: text('model_configured'),
     modelReported: text('model_reported'),
+    firstStageScope: jsonb('first_stage_scope').$type<{
+      revision: string | null;
+      chatRevision: number | null;
+      connectionVersion: string;
+    }>(),
     goal: text('goal').notNull(),
     mode: text('mode').notNull().default('act'),
     maxSteps: integer('max_steps').notNull().default(20),
@@ -94,6 +99,12 @@ export const helenaBrowserTaskRun = pgTable(
       sql`${t.backend} IN ('decision', 'standard', 'jev-browser')`,
     ),
     uniqueIndex('helena_browser_task_run_token_idx').on(t.tokenHash),
+    uniqueIndex('helena_browser_first_stage_chat_idx')
+      .on(t.chatMessageId)
+      .where(sql`${t.firstStageScope} IS NOT NULL AND ${t.chatMessageId} IS NOT NULL`),
+    uniqueIndex('helena_browser_first_stage_run_idx')
+      .on(t.runId)
+      .where(sql`${t.firstStageScope} IS NOT NULL AND ${t.runId} IS NOT NULL`),
     index('helena_browser_task_run_project_idx').on(t.projectId, t.id),
     index('helena_browser_task_run_team_idx').on(t.teamId, t.id),
   ],

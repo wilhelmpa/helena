@@ -99,7 +99,10 @@ export function layaRound(input: RoundInput) {
       criteria: Object.fromEntries(ops.map((op) => [op, OPERATION_LABELS[op]])),
     },
   };
-  const selectOptions = new Map<string, { element: PageElement; option: string }>();
+  const selectOptions = new Map<
+    string,
+    { element: PageElement; option: string; optionIndex: number }
+  >();
   for (const [op, head] of Object.entries(HEADS) as [keyof typeof HEADS, string][]) {
     const list = targets[op];
     if (list.length === 0) continue;
@@ -107,9 +110,9 @@ export function layaRound(input: RoundInput) {
     for (const element of list) {
       if (op === 'SELECT') {
         (element.options ?? []).forEach((option, k) => {
-          if (option === element.value) return;
+          if ((element.optionIndices?.[k] ?? k) === element.selectedIndex) return;
           const key = `${element.i}:${k + 1}`;
-          selectOptions.set(key, { element, option });
+          selectOptions.set(key, { element, option, optionIndex: element.optionIndices?.[k] ?? k });
           criteria[key] = criterion(element, option);
         });
       } else {
@@ -386,6 +389,7 @@ export const layaPolicy: DecisionPolicy = {
     }
     let element: PageElement | null = null;
     let option: string | undefined;
+    let optionIndex: number | undefined;
     let targetProbability = 1;
     let candidates: RoundAnswer['candidates'] = [];
     const head = (HEADS as Record<string, string>)[op];
@@ -423,11 +427,15 @@ export const layaPolicy: DecisionPolicy = {
           }
         }
         option = selectOptions.get(choice)?.option;
+        optionIndex = selectOptions.get(choice)?.optionIndex;
         candidates = topCandidates(target.probabilities, byKey, brief);
       } else {
         element = targets[op as keyof typeof HEADS][0] ?? null;
-        if (op === 'SELECT' && element)
-          option = [...selectOptions.values()].find((o) => o.element === element)?.option;
+        if (op === 'SELECT' && element) {
+          const selected = [...selectOptions.values()].find((o) => o.element === element);
+          option = selected?.option;
+          optionIndex = selected?.optionIndex;
+        }
       }
     }
     if (op === 'CLICK' && confirmsEntry(input, element)) {
@@ -474,6 +482,7 @@ export const layaPolicy: DecisionPolicy = {
       operation: op,
       element,
       option,
+      optionIndex,
       operationProbability,
       operationConfidence: operation.confidence,
       targetProbability,

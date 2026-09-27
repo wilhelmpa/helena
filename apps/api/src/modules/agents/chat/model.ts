@@ -407,7 +407,10 @@ export const chatListQuery = t.Object({
   ...pageQueryFields,
 });
 
+export const jevFirstStageMode = oneOf(['inherit', 'on', 'off']);
+
 export const ChatSummaryResponse = t.Object({
+  jevFirstStage: jevFirstStageMode,
   id: t.String(),
   title: t.Nullable(t.String()),
   agent: t.Object({ id: t.Number(), name: t.String(), username: t.String() }),
@@ -448,6 +451,7 @@ export const ChatListResponse = pageResponse(ChatSummaryResponse);
 export const chatParams = t.Object({ threadId: t.String() });
 
 export const updateChatBody = t.Object({
+  jevFirstStage: t.Optional(jevFirstStageMode),
   title: t.Optional(t.String({ minLength: 1, maxLength: 80 })),
   archived: t.Optional(t.Boolean()),
   issueId: t.Optional(t.Nullable(t.Integer({ description: 'The task to link, or null.' }))),

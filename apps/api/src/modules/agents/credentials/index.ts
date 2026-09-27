@@ -45,6 +45,7 @@ import {
   workRefOf,
 } from './delivery';
 import { recordOwnerChange } from './audit';
+import { decisionKeySourceOptions } from './decision-key-source';
 import { deliverEnvVariables, listEnvironment } from './env';
 
 function found<T>(entry: T | null): T {
@@ -85,6 +86,32 @@ export const credentialRoutes = new Elysia({
           "One page of the team's web logins, API keys, SSH keys and secrets. Secret fields " +
           'are named in `secrets` when they hold a value; their values are never returned.',
       },
+    },
+  )
+
+  .get(
+    '/teams/:teamId/credentials/decision-key-sources/options',
+    async ({ membership, query }) => ({
+      items: await decisionKeySourceOptions(membership.teamId, query.projectId ?? null),
+    }),
+    {
+      params: teamParams,
+      query: t.Object({ projectId: t.Optional(t.Numeric({ minimum: 1 })) }),
+      teamManager: true,
+      response: {
+        200: t.Object({
+          items: t.Array(
+            t.Object({
+              id: t.Number(),
+              label: t.Nullable(t.String()),
+              projectId: t.Nullable(t.Number()),
+              projectKey: t.Nullable(t.String()),
+            }),
+          ),
+        }),
+        ...commonErrors,
+      },
+      detail: { summary: 'Choose an API key source for a decision connection' },
     },
   )
 

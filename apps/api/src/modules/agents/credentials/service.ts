@@ -35,6 +35,7 @@ import {
 } from './kinds';
 import { generateSshKey, sshKeyComment } from './ssh-key';
 import { composeDecisionModel } from './decision-model';
+import { readDecisionKeySource } from './decision-key-source';
 import type { DecisionKeySource } from './kinds';
 import {
   ENV_KINDS,
@@ -74,6 +75,7 @@ export interface CredentialEntry {
   model: string | null;
   allowPrivateAddress: boolean;
   keySource: DecisionKeySource | null;
+  sourceCredentialId: number | null;
   modelServer: string | null;
   // api_key, secret, variable: the environment variable the agents' commands receive it in.
   envName: string | null;
@@ -102,6 +104,7 @@ interface Readable {
   model?: string;
   allowPrivateAddress?: boolean;
   keySource?: DecisionKeySource;
+  sourceCredentialId?: number;
   modelServer?: string;
   envName?: string;
   // variable: its value, readable.
@@ -172,6 +175,10 @@ function toEntry(row: EntryRow, grants: GrantEntry[]): CredentialEntry {
     model: kind === 'decision_model' ? (readable.model ?? null) : null,
     allowPrivateAddress: kind === 'decision_model' && readable.allowPrivateAddress === true,
     keySource: kind === 'decision_model' ? (readable.keySource ?? 'stored') : null,
+    sourceCredentialId:
+      kind === 'decision_model' && readable.keySource === 'credential'
+        ? (readable.sourceCredentialId ?? null)
+        : null,
     modelServer:
       kind === 'decision_model' && readable.keySource === 'local-ai'
         ? (readable.modelServer ?? 'local')
@@ -362,6 +369,9 @@ export async function createCredentialEntry(
     current.secrets = { privateKey: key.privateKey };
   }
   const { readable, secrets } = compose(kind, fields, current);
+  if (kind === 'decision_model' && readable.keySource === 'credential') {
+    await readDecisionKeySource(readable.sourceCredentialId, teamId, projectId);
+  }
   if (readable.envName) await assertEnvNameFree(teamId, projectId, readable.envName, null);
   const id = await nextCredentialId();
   const [row] = await db
@@ -425,6 +435,13 @@ export async function updateCredentialEntry(
       secrets: JSON.parse(openCredential(row)) as Secrets,
     };
     const { readable, secrets } = compose(kind, fields, current);
+    if (kind === 'decision_model' && readable.keySource === 'credential') {
+      await readDecisionKeySource(
+        readable.sourceCredentialId,
+        teamId,
+        projectId === undefined ? row.projectId : projectId,
+      );
+    }
     if (readable.envName) {
       const scope = projectId === undefined ? row.projectId : projectId;
       await assertEnvNameFree(teamId, scope, readable.envName, id);

@@ -1,11 +1,22 @@
 import { lstat, readFile } from 'node:fs/promises';
-import { TypeSafeClient } from '@typesafe-ai/sdk';
+import { TypeSafeClient, APITimeoutError } from '@typesafe-ai/sdk';
 import { SYSTEM_ONE_MODELS_PATH, systemOneUrl, type DecisionBackendType } from '@helena/sdk';
-import { askByJson, askByLogprobs, type OpenAiCompatibleServer } from '@helena/decisions';
+import {
+  askByJson,
+  askByLogprobs,
+  readAnswer,
+  type OpenAiCompatibleServer,
+} from '@helena/decisions';
 import { isPrivateIp, pinnedFetch, UrlNotAllowedError } from '@repo/net';
 import { db, integrationCredential, openCredential } from '@repo/db';
 import { and, eq } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
+import { decisionKey } from '#modules/agents/credentials/decision-model';
+import {
+  DECISION_SOURCE_UNAVAILABLE,
+  readDecisionKeySource,
+} from '#modules/agents/credentials/decision-key-source';
+import type { DecisionKeySource } from '#modules/agents/credentials/kinds';
 import { decisionBackend } from './backends';
 
 // A decision model connection from Zugänge (credential kind `decision_model`,
@@ -24,7 +35,8 @@ export interface DecisionConnection {
   baseUrl: string;
   model: string;
   allowPrivateAddress: boolean;
-  keySource: 'stored' | 'local-laya' | 'local-ai';
+  keySource: DecisionKeySource;
+  sourceCredentialId: number | null;
   // keySource 'local-ai': the model server of Helena's local AI whose address and key it uses.
   modelServer: string | null;
 }
@@ -75,9 +87,15 @@ export async function loadConnection(credentialId: number): Promise<DecisionConn
       typeof readable.model === 'string' && readable.model ? readable.model : backend.defaultModel,
     allowPrivateAddress: readable.allowPrivateAddress === true,
     keySource:
-      readable.keySource === 'local-laya' || readable.keySource === 'local-ai'
+      readable.keySource === 'local-laya' ||
+      readable.keySource === 'local-ai' ||
+      readable.keySource === 'credential'
         ? readable.keySource
         : 'stored',
+    sourceCredentialId:
+      readable.keySource === 'credential' && Number.isSafeInteger(readable.sourceCredentialId)
+        ? (readable.sourceCredentialId as number)
+        : null,
     modelServer:
       readable.keySource === 'local-ai'
         ? typeof readable.modelServer === 'string'
@@ -114,10 +132,7 @@ async function addressOf(
       ? await modelServerResolver(connection.modelServer ?? 'local')
       : null;
     if (!server) {
-      throw new HttpError(
-        409,
-        `The local AI model server "${connection.modelServer ?? 'local'}" is not set up (Administrator → Lokale KI).`,
-      );
+      throw new LocalDecisionConnectionError('no-server');
     }
     return {
       baseUrl: server.baseUrl.replace(/\/+$/, '').replace(/\/v1$/, ''),
@@ -126,6 +141,46 @@ async function addressOf(
     };
   }
   return { baseUrl: connection.baseUrl, key: await keyOf(connection) };
+}
+
+// Only locally constructed messages may be returned or persisted unchanged.
+export class DecisionConnectionError extends HttpError {}
+
+const LOCAL_FAILURES = {
+  'master-off': 'Local AI is switched off',
+  'class-off': 'Local AI does not take decisions (Lokale KI → Entscheidungen is off)',
+  'unit-off': "The local AI's GPU is switched off",
+  'no-server': 'No local AI model server is set up',
+  'server-down': 'The local AI model server does not answer',
+  'no-model': 'The local AI server has no model for decisions',
+  'eval-failed': "The local model's newest eval for decisions failed",
+  'route-changed':
+    'Local AI routes decisions to a different model server (Administrator → Lokale KI).',
+} as const;
+
+// A closed set of local policy errors, never an arbitrary provider message or cause.
+export class LocalDecisionConnectionError extends DecisionConnectionError {
+  constructor(reason: keyof typeof LOCAL_FAILURES) {
+    super(409, LOCAL_FAILURES[reason] ?? 'The local AI connection is unavailable.');
+  }
+}
+
+async function safeAddress(connection: DecisionConnection) {
+  let address: Awaited<ReturnType<typeof addressOf>>;
+  try {
+    address = await addressOf(connection);
+  } catch (error) {
+    if (error instanceof DecisionConnectionError) throw error;
+    throw new DecisionConnectionError(
+      409,
+      'The decision connection could not be loaded (Zugänge).',
+    );
+  }
+  try {
+    return { ...address, key: decisionKey(address.key) };
+  } catch {
+    throw new DecisionConnectionError(409, 'The decision service key is invalid (Zugänge).');
+  }
 }
 
 // Whether a connection's questions leave this machine: a cloud backend, or an address that is
@@ -144,6 +199,30 @@ export function connectionIsLocal(connection: DecisionConnection): boolean {
 }
 
 async function keyOf(connection: DecisionConnection): Promise<string | null> {
+  if (connection.keySource === 'credential') {
+    try {
+      const current = await loadConnection(connection.credentialId);
+      if (
+        !current ||
+        current.teamId !== connection.teamId ||
+        current.projectId !== connection.projectId ||
+        current.keySource !== 'credential' ||
+        current.sourceCredentialId !== connection.sourceCredentialId ||
+        current.baseUrl !== connection.baseUrl ||
+        current.backend.id !== connection.backend.id ||
+        current.allowPrivateAddress !== connection.allowPrivateAddress
+      ) {
+        throw new Error();
+      }
+      return await readDecisionKeySource(
+        current.sourceCredentialId,
+        current.teamId,
+        current.projectId,
+      );
+    } catch {
+      throw new DecisionConnectionError(409, DECISION_SOURCE_UNAVAILABLE);
+    }
+  }
   if (connection.keySource === 'local-laya') {
     const file = localLayaKeyFile();
     try {
@@ -166,7 +245,7 @@ async function keyOf(connection: DecisionConnection): Promise<string | null> {
     .where(eq(integrationCredential.id, connection.credentialId));
   if (!row?.ciphertext) return null;
   const secrets = JSON.parse(openCredential(row)) as { value?: string };
-  return secrets.value?.trim() || null;
+  return secrets.value ?? null;
 }
 
 // The one host a connection may reach although it is local or private: the owner's allowance
@@ -209,6 +288,7 @@ function clientOf(
   connection: DecisionConnection,
   key: string | null,
   baseUrl = connection.baseUrl,
+  maxRetries: 0 | 1 = 1,
 ): TypeSafeClient {
   return new TypeSafeClient({
     // A server without a key (a local one) ignores the header.
@@ -218,7 +298,7 @@ function clientOf(
     fetch: guardedFetch(privateHosts(connection, baseUrl)),
     timeout: 20_000,
     // One retry on 429/529 (the SDK honours retry-after); the loop has its own budget.
-    retry: { maxRetries: 1 },
+    retry: { maxRetries },
     logger: quiet,
     logLevel: 'error',
   });
@@ -246,19 +326,28 @@ export function describeFailure(error: unknown): { status: number; message: stri
   const status = (error as { status?: unknown })?.status;
   if (status === 401 || status === 403)
     return { status: 502, message: 'The decision service refused the key (HTTP ' + status + ').' };
+  if (status === 402)
+    return {
+      status: 502,
+      message: 'The decision service requires billing or credits for this API key (HTTP 402).',
+    };
   if (status === 429 || status === 529)
     return {
       status: 503,
       message: 'The decision service is busy (HTTP ' + status + '); try again shortly.',
     };
-  if (typeof status === 'number')
+  if (status === 413)
+    return {
+      status: 502,
+      message: 'The decision request is too large (HTTP 413); reduce its input.',
+    };
+  if (typeof status === 'number' && Number.isInteger(status) && status >= 400 && status <= 599)
     return { status: 502, message: `The decision service answered HTTP ${status}.` };
-  const message = error instanceof Error ? error.message : String(error);
-  if (/timed out|timeout/i.test(message))
+  if (error instanceof APITimeoutError || (error instanceof Error && error.name === 'TimeoutError'))
     return { status: 504, message: 'The decision service did not answer in time.' };
   return {
     status: 502,
-    message: `The decision service could not be reached (${message.slice(0, 120)}).`,
+    message: 'The decision service could not be reached or returned an invalid response.',
   };
 }
 
@@ -294,63 +383,64 @@ export async function askSystemOne(
   connection: DecisionConnection,
   request: { state: unknown; questions: Record<string, unknown> },
   signal?: AbortSignal,
+  options: { maxRetries?: 0 | 1 } = {},
 ): Promise<SystemOneReply> {
-  const address = await addressOf(connection);
-  if (!address.key && connection.backend.keyRequired) {
-    throw new HttpError(409, `The connection "${connection.label}" has no key yet (Zugänge).`);
-  }
-  const started = performance.now();
-  const protocol = connection.backend.protocol ?? 'systemone';
-  if (protocol !== 'systemone') {
-    const server = openAiServer(connection, address);
-    const ask = protocol === 'openai-logprobs' ? askByLogprobs : askByJson;
-    const result = await ask(server, request as Parameters<typeof askByLogprobs>[1], signal).catch(
-      (error: unknown) => {
-        if (error instanceof HttpError) throw error;
-        const failure = describeFailure(error);
-        throw new HttpError(failure.status, failure.message);
-      },
-    );
-    return {
-      model: result.model,
-      answers: result.answers as unknown as Record<string, unknown>,
-      inputTokens: result.inputTokens,
-      outputTokens: result.outputTokens,
-      latencyMs: Math.round(performance.now() - started),
-      providerCostUsd: null,
-    };
-  }
-  const response = await clientOf(connection, address.key, address.baseUrl)
-    .systemOne(
+  try {
+    const address = await safeAddress(connection);
+    if (!address.key && connection.backend.keyRequired) {
+      throw new DecisionConnectionError(409, 'The decision connection has no key yet (Zugänge).');
+    }
+    const started = performance.now();
+    const protocol = connection.backend.protocol ?? 'systemone';
+    if (protocol !== 'systemone') {
+      const server = openAiServer(connection, address);
+      const ask = protocol === 'openai-logprobs' ? askByLogprobs : askByJson;
+      const result = await ask(server, request as Parameters<typeof askByLogprobs>[1], signal);
+      return {
+        model: result.model,
+        answers: result.answers as unknown as Record<string, unknown>,
+        inputTokens: result.inputTokens,
+        outputTokens: result.outputTokens,
+        latencyMs: Math.round(performance.now() - started),
+        providerCostUsd: null,
+      };
+    }
+    const response = await clientOf(
+      connection,
+      address.key,
+      address.baseUrl,
+      options.maxRetries,
+    ).systemOne(
       {
         state: request.state as never,
         questions: request.questions as never,
         model: connection.model,
       },
       { signal },
-    )
-    .catch((error: unknown) => {
-      const failure = describeFailure(error);
-      throw new HttpError(failure.status, failure.message);
-    });
-  const body = response as unknown as {
-    model?: unknown;
-    answers?: unknown;
-    usage?: { input_tokens?: unknown; output_tokens?: unknown };
-  };
-  if (!body || typeof body.answers !== 'object' || body.answers === null) {
-    throw new HttpError(502, 'The decision service answered without answers.');
+    );
+    const body = response as unknown as {
+      model?: unknown;
+      answers?: unknown;
+      usage?: { input_tokens?: unknown; output_tokens?: unknown };
+    };
+    if (!body || typeof body.answers !== 'object' || body.answers === null) {
+      throw new DecisionConnectionError(502, 'The decision service answered without answers.');
+    }
+    const count = (value: unknown) =>
+      typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.round(value) : 0;
+    return {
+      model: typeof body.model === 'string' ? body.model.slice(0, 200) : null,
+      answers: body.answers as Record<string, unknown>,
+      inputTokens: count(body.usage?.input_tokens),
+      outputTokens: count(body.usage?.output_tokens),
+      latencyMs: Math.round(performance.now() - started),
+      providerCostUsd: costOf(response),
+    };
+  } catch (error) {
+    if (error instanceof DecisionConnectionError) throw error;
+    const failure = describeFailure(error);
+    throw new DecisionConnectionError(failure.status, failure.message);
   }
-  const count = (value: unknown) =>
-    typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.round(value) : 0;
-  return {
-    model: typeof body.model === 'string' ? body.model.slice(0, 200) : null,
-    answers: body.answers as Record<string, unknown>,
-    inputTokens: count(body.usage?.input_tokens),
-    outputTokens: count(body.usage?.output_tokens),
-    latencyMs: Math.round(performance.now() - started),
-    providerCostUsd: costOf(response),
-  };
 }
 
 export interface ConnectionTest {
@@ -360,16 +450,16 @@ export interface ConnectionTest {
   latencyMs: number | null;
 }
 
-// "Verbindung testen": the model list where the service has one (TypeSafe, Vercel,
-// laya-browser-agent), otherwise a one-question probe.
+// A model list can be public or available without inference credits. A successful
+// connection test also needs one valid, synthetic decision from the configured model.
 export async function testConnection(connection: DecisionConnection): Promise<ConnectionTest> {
   let address: { baseUrl: string; key: string | null };
   try {
-    address = await addressOf(connection);
+    address = await safeAddress(connection);
   } catch (error) {
     return {
       ok: false,
-      message: error instanceof HttpError ? error.message : 'no_model_server',
+      message: error instanceof DecisionConnectionError ? error.message : 'no_model_server',
       models: [],
       latencyMs: null,
     };
@@ -382,6 +472,7 @@ export async function testConnection(connection: DecisionConnection): Promise<Co
     return { ok: false, message: 'no_local_key', models: [], latencyMs: null };
   }
   const started = performance.now();
+  let models: string[] = [];
   try {
     const res = await guardedFetch(privateHosts(connection, address.baseUrl), 10_000)(
       systemOneUrl(address.baseUrl, SYSTEM_ONE_MODELS_PATH),
@@ -392,16 +483,9 @@ export async function testConnection(connection: DecisionConnection): Promise<Co
         models?: { name?: unknown }[];
         data?: { id?: unknown }[];
       } | null;
-      const models = [
-        ...(body?.models ?? []).map((m) => m.name),
-        ...(body?.data ?? []).map((m) => m.id),
-      ].filter((name): name is string => typeof name === 'string');
-      return {
-        ok: true,
-        message: 'ok',
-        models: models.slice(0, 50),
-        latencyMs: Math.round(performance.now() - started),
-      };
+      models = [...(body?.models ?? []).map((m) => m.name), ...(body?.data ?? []).map((m) => m.id)]
+        .filter((name): name is string => typeof name === 'string')
+        .slice(0, 50);
     }
     if (res.status === 401 || res.status === 403) {
       return {
@@ -422,16 +506,19 @@ export async function testConnection(connection: DecisionConnection): Promise<Co
       state: 'Helena connection test.',
       questions: { ok: { type: 'noul', instructions: 'Is this a connection test?' } },
     });
+    readAnswer({ kind: 'yesno', question: 'Is this a connection test?' }, reply.answers.ok);
+    if (models.length === 0 && reply.model) models = [reply.model];
     return {
       ok: true,
       message: 'ok',
-      models: reply.model ? [reply.model] : [],
-      latencyMs: reply.latencyMs,
+      models,
+      latencyMs: Math.round(performance.now() - started),
     };
   } catch (error) {
     return {
       ok: false,
-      message: error instanceof HttpError ? error.message : describeFailure(error).message,
+      message:
+        error instanceof DecisionConnectionError ? error.message : describeFailure(error).message,
       models: [],
       latencyMs: null,
     };

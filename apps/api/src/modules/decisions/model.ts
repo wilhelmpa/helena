@@ -108,7 +108,34 @@ export const DecisionConnectionOption = t.Object({
   status: t.Nullable(t.String()),
 });
 
+export const FirstStagePolicy = t.Object({
+  enabled: t.Boolean(),
+  credentialId: t.Nullable(t.Integer({ minimum: 1 })),
+  timeoutMs: t.Integer({ minimum: 200, maximum: 3000 }),
+  useCases: t.Record(
+    t.String({ maxLength: 120 }),
+    t.Object({ enabled: t.Boolean(), cloudAllowed: t.Boolean() }),
+  ),
+});
+export const updateFirstStageBody = t.Partial(FirstStagePolicy);
+export const FirstStageView = t.Composite([
+  FirstStagePolicy,
+  t.Object({
+    revision: t.Nullable(t.String()),
+    circuitOpen: t.Boolean(),
+    checks: t.Record(
+      t.String(),
+      t.Object({ ok: t.Boolean(), reason: t.Nullable(t.String()), running: t.Boolean() }),
+    ),
+    effective: t.Record(
+      t.String(),
+      t.Object({ enabled: t.Boolean(), reason: t.Nullable(t.String()) }),
+    ),
+  }),
+]);
+
 export const DecisionClassesResponse = t.Object({
+  firstStage: FirstStageView,
   classes: t.Array(DecisionClassView),
   connections: t.Array(DecisionConnectionOption),
 });

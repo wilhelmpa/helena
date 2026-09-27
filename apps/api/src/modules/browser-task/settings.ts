@@ -3,6 +3,7 @@ import { HttpError } from '#shared/lib';
 import { getProjectSetting, setProjectSetting } from '#shared/project-settings';
 import type { DecisionPolicyKind } from '@helena/sdk';
 import { loadConnection, type DecisionConnection } from './connection';
+import { optionalBrowserStage } from './first-stage';
 
 // "Browser-Steuerung" (docs/helena-decisions/browser-task.md §3.3): how a project's agents drive
 // its browser. "Standard (wie bisher)": step by step with their own model, the fast path's tools
@@ -146,6 +147,7 @@ export async function setInstanceBrowserControl(
 }
 
 export interface EffectiveBrowserControl {
+  firstStage?: { revision: string | null; timeoutMs: number };
   enabled: boolean;
   // Where the answer came from.
   source: 'project' | 'instance';
@@ -180,7 +182,23 @@ export async function effectiveBrowserControl(scope: {
     minConfidence: null,
     label: 'Standard',
   };
-  if (chosen.mode !== 'decision') return { ...off, problem: null };
+  if (chosen.mode !== 'decision') {
+    if (own.mode === 'inherit') {
+      const stage = await optionalBrowserStage(scope.teamId).catch(() => null);
+      if (stage)
+        return {
+          enabled: true,
+          source: 'instance',
+          connection: stage.connection,
+          policy: 'jev',
+          minConfidence: stage.threshold,
+          label: stage.connection.label,
+          problem: null,
+          firstStage: { revision: stage.policy.revision, timeoutMs: stage.policy.timeoutMs },
+        };
+    }
+    return { ...off, problem: null };
+  }
   const connection = await usableConnection(chosen.credentialId, scope);
   if (!connection) return { ...off, problem: 'connection_missing' };
   const policy: DecisionPolicyKind =

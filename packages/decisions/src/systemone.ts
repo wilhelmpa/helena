@@ -85,7 +85,7 @@ function unit(value: unknown): value is number {
 }
 
 // A backend's answer to one of Helena's questions, checked: the choice is an offered option,
-// the probabilities cover exactly the options (missing ones count 0) and are normalized; a
+// the probabilities cover exactly the options and sum to 1 within rounding tolerance; a
 // noul becomes yes/no with P(yes) = noul. A malformed answer throws.
 export function readAnswer(question: DecisionQuestion, raw: unknown): DecisionAnswer {
   const answer = raw as { noul?: unknown; probabilities?: unknown; choice?: unknown } | null;
@@ -103,24 +103,26 @@ export function readAnswer(question: DecisionQuestion, raw: unknown): DecisionAn
   }
   const ids = decisionOptionIds(question);
   const given = answer.probabilities;
-  if (!given || typeof given !== 'object')
+  if (!given || typeof given !== 'object' || Array.isArray(given))
     throw new DecisionAnswerError('the answer has no probabilities');
+  const keys = Object.keys(given);
+  if (keys.length !== ids.length || keys.some((key) => !ids.includes(key)))
+    throw new DecisionAnswerError('the probabilities do not cover the offered options');
   const probabilities: Record<string, number> = {};
   for (const id of ids) {
     const value = (given as Record<string, unknown>)[id];
-    probabilities[id] = unit(value) ? value : 0;
-  }
-  for (const key of Object.keys(given)) {
-    if (!ids.includes(key))
-      throw new DecisionAnswerError(`the answer names an option that was not offered`);
+    if (!unit(value)) throw new DecisionAnswerError('a probability is not a number in [0, 1]');
+    probabilities[id] = value;
   }
   const total = Object.values(probabilities).reduce((sum, value) => sum + value, 0);
-  if (total <= 0) throw new DecisionAnswerError('the probabilities are all zero');
-  for (const id of ids) probabilities[id] = probabilities[id]! / total;
-  const choice = ids.reduce((best, id) => (probabilities[id]! > probabilities[best]! ? id : best));
-  if (typeof answer.choice === 'string' && !ids.includes(answer.choice))
+  if (Math.abs(total - 1) > 0.02)
+    throw new DecisionAnswerError('the probabilities do not sum to 1');
+  if (typeof answer.choice !== 'string' || !ids.includes(answer.choice))
     throw new DecisionAnswerError('the backend chose an option that was not offered');
-  return { choice, probabilities, confidence: decisionConfidence(probabilities) };
+  if (probabilities[answer.choice]! < Math.max(...Object.values(probabilities)) - 1e-6)
+    throw new DecisionAnswerError('the choice is not the most probable option');
+  for (const id of ids) probabilities[id] = probabilities[id]! / total;
+  return { choice: answer.choice, probabilities, confidence: decisionConfidence(probabilities) };
 }
 
 // A distribution over labels as a System One answer to `question` (a choice over its

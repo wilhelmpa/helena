@@ -28,6 +28,10 @@
     "general": {
       "label": "Allgemeine Entscheidungen",
       "description": "Das Werkzeug „decide“ der Agenten und der Workflow-Schritt „Entscheidung“."
+    },
+    "browser": {
+      "label": "Optionale Browser-Vorstufe",
+      "description": "Synthetische Zielauswahl für die native JEV-Vorstufe. Die Anwendung wird über die Team-Vorstufe freigegeben; der bisherige Projekt-Agent bleibt für Fortsetzungen zuständig."
     }
   },
   "class": {
@@ -182,5 +186,18 @@
     "receipts": {
       "match": "Buchung"
     }
+  },
+  "firstStage": {
+    "title": "Optionale JEV-Vorstufe",
+    "hint": "JEV kann kleine typisierte Entscheidungen zuerst beantworten. Bei Aus, Unsicherheit, Fehlern oder Zeitüberschreitung läuft der bisherige Entscheidungspfad weiter. Komplexe Arbeit bleibt beim zugewiesenen Spezialisten; Agenten und Modellvorgaben ändern sich nicht.",
+    "connection": "JEV-Verbindung (ein Wechsel schaltet die Vorstufe aus)",
+    "none": "Keine",
+    "timeout": "Maximale Wartezeit für JEV (Millisekunden)",
+    "cloudHint": "Nur Anwendungsfälle einschalten, deren Eingaben an JEV in der Cloud gesendet werden dürfen. Dafür muss die Prüfung bestanden sein. Der bestehende Klassenschalter und Fallback gelten weiter; rein lokale Klassen sind ausgeschlossen.",
+    "cooldown": "Nach wiederholten Dienstfehlern wird JEV kurz übersprungen. Der bisherige Pfad bleibt verfügbar.",
+    "allow": "JEV-Cloud-Vorstufe für {name} erlauben",
+    "evaluating": "Prüfung läuft…",
+    "evaluateAgain": "Erneut prüfen",
+    "evaluate": "Vor dem Einschalten prüfen"
   }
 }

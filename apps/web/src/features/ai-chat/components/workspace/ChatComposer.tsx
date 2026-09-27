@@ -208,6 +208,10 @@ export default function ChatComposer({
   async function submit() {
     const text = value.trim();
     if (!text || upload.isPending) return;
+    if (commands.runSubmittedCommand(text)) {
+      setValue('');
+      return;
+    }
     const options: PlanSendOptions = {
       agentId: agent.id,
       files: attachments.map((item) => item.path),

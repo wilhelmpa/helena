@@ -11,6 +11,8 @@ disallowedTools:
   - terminal
   - code_execution
 skills:
+  - typesafe-ai
+  - helena-browser-decisions
   - agentic-browser-testing
   - verification-before-completion
 mcpServers: []

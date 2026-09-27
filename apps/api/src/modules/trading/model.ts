@@ -13,7 +13,28 @@ export const strategyApprovalBody = t.Object(
   { additionalProperties: false },
 );
 
-export const classifyBody = t.Object(
+export const publicNewsBody = t.Object(
+  {
+    kind: t.Literal('news'),
+    publicNews: t.Object(
+      {
+        articleText: t.String({ minLength: 1, maxLength: 8000 }),
+        instruments: t.Array(t.String({ minLength: 1, maxLength: 120 }), {
+          minItems: 1,
+          maxItems: 30,
+        }),
+        publicDataConfirmed: t.Literal(true, {
+          description:
+            'The caller explicitly permits sharing this public article text and these instrument names with the configured cloud service. This is a declaration, not server verification of publicity. Never include accounts, positions, balances or private rules.',
+        }),
+      },
+      { additionalProperties: false },
+    ),
+  },
+  { additionalProperties: false },
+);
+
+const legacyClassifyBody = t.Object(
   {
     kind: oneOf(['news', 'rule', 'routing'], {
       description:
@@ -25,7 +46,7 @@ export const classifyBody = t.Object(
       minLength: 1,
       maxLength: 8000,
       description:
-        "news: the watchlist and open positions, then the news item. rule: the planned trade. routing: the task's title and description.",
+        "Legacy/private input; all decision attempts stay local. news: news and any private context. rule: the planned trade. routing: the task's title and description. For explicitly shared public news, omit context and use publicNews instead.",
     }),
     rule: t.Optional(
       t.String({
@@ -36,6 +57,10 @@ export const classifyBody = t.Object(
   },
   { additionalProperties: false },
 );
+
+// Public branch first: the MCP schema merger retains the legacy kind enum from
+// the final branch. The real route enforces exclusive branches, including extras.
+export const classifyBody = t.Union([publicNewsBody, legacyClassifyBody]);
 
 const Answer = t.Object({
   choice: t.Nullable(t.String()),

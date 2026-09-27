@@ -64,8 +64,10 @@ export function validChoice(answer: unknown, options: string[]): ChoiceAnswer {
   if ((probabilities[a.choice] ?? 0) < max - 1e-6) {
     throw new DecisionError('invalid_answer', 'The choice is not the most probable option.');
   }
-  const confidence = unit(a.confidence) ? a.confidence : (probabilities[a.choice] ?? 0);
-  return { choice: a.choice, probabilities: { ...probabilities }, confidence };
+  if (!unit(a.confidence)) {
+    throw new DecisionError('invalid_answer', 'The model answered without valid confidence.');
+  }
+  return { choice: a.choice, probabilities: { ...probabilities }, confidence: a.confidence };
 }
 
 export function validNoul(answer: unknown): NoulAnswer {
@@ -123,7 +125,8 @@ export class DirectDecisionClient implements DecisionClient {
     model: string;
     fetchImpl?: typeof fetch;
   }) {
-    this.#url = `${options.baseUrl.replace(/\/+$/, '')}/v1/systemone`;
+    const base = options.baseUrl.replace(/\/+$/, '');
+    this.#url = `${base}${base.endsWith('/v1') ? '' : '/v1'}/systemone`;
     this.#key = options.key ?? null;
     this.#model = options.model;
     this.#fetch = options.fetchImpl ?? fetch;

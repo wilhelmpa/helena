@@ -12,6 +12,8 @@ import { listTeams } from '#modules/teams/service';
 import { GENERAL_CLASS } from './classes';
 import {
   DecideResponse,
+  FirstStageView,
+  updateFirstStageBody,
   DecisionClassView,
   DecisionClassesResponse,
   DecisionEvalView,
@@ -39,6 +41,7 @@ import {
   updateClassSetting,
 } from './settings';
 import { teamParams } from '#modules/teams/model';
+import { firstStageView, updateFirstStage } from './first-stage';
 
 // Typed decisions (docs/helena-decisions/decisions.md): the classes' settings, their evals
 // and log for the team's owners and managers, and `decide` for agents and people — one
@@ -148,6 +151,7 @@ export const decisionRoutes = new Elysia({
   .get(
     '/teams/:teamId/decisions/classes',
     async ({ membership }) => ({
+      firstStage: await firstStageView(membership.teamId),
       classes: await listClassViews(membership.teamId),
       connections: await decisionConnections(membership.teamId),
     }),
@@ -162,6 +166,18 @@ export const decisionRoutes = new Elysia({
           "matching, general), with the team's setting, the newest eval on the chosen " +
           'connection, whether it can be switched on, and the last seven days in numbers.',
       },
+    },
+  )
+
+  .patch(
+    '/teams/:teamId/decisions/first-stage',
+    ({ membership, body }) => updateFirstStage(membership.teamId, body),
+    {
+      params: teamParams,
+      body: updateFirstStageBody,
+      teamManager: true,
+      response: { 200: FirstStageView, ...commonErrors, ...errors(409) },
+      detail: { summary: 'Configure the optional Jev first decision stage' },
     },
   )
 

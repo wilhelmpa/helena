@@ -97,10 +97,30 @@ export interface DecisionClassPatch {
   config?: Record<string, unknown>;
 }
 
+export interface FirstStagePolicy {
+  enabled: boolean;
+  credentialId: number | null;
+  timeoutMs: number;
+  useCases: Record<string, { enabled: boolean; cloudAllowed: boolean }>;
+}
+export interface FirstStageView extends FirstStagePolicy {
+  revision: string | null;
+  circuitOpen: boolean;
+  checks: Record<string, { ok: boolean; reason: string | null; running: boolean }>;
+  effective: Record<string, { enabled: boolean; reason: string | null }>;
+}
+export const updateFirstStage = (teamId: number, patch: Partial<FirstStagePolicy>) =>
+  request<FirstStageView>(`/teams/${teamId}/decisions/first-stage`, {
+    method: 'PATCH',
+    body: JSON.stringify(patch),
+  });
+
 export const listDecisionClasses = (teamId: number) =>
-  request<{ classes: DecisionClassView[]; connections: DecisionConnectionOption[] }>(
-    `/teams/${teamId}/decisions/classes`,
-  );
+  request<{
+    classes: DecisionClassView[];
+    connections: DecisionConnectionOption[];
+    firstStage: FirstStageView;
+  }>(`/teams/${teamId}/decisions/classes`);
 
 export const updateDecisionClass = (teamId: number, classId: string, patch: DecisionClassPatch) =>
   request<DecisionClassView>(`/teams/${teamId}/decisions/classes/${encodeURIComponent(classId)}`, {

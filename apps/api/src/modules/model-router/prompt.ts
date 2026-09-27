@@ -69,6 +69,7 @@ export async function routePrompt(input: {
   const route = outcome.answers.route;
   const needs = outcome.answers.needs_context;
   if (!route?.choice || !needs?.choice) return { ...none, status: outcome.status };
+  if (!ROUTER_TIERS.includes(route.choice as RouterTier)) return { ...none, status: 'unsure' };
   const tier = route.choice as RouterTier;
   const needsContext = needs.probabilities?.yes ?? null;
   const { contextThreshold } = routerConfig(
@@ -76,7 +77,12 @@ export async function routePrompt(input: {
   );
   const cheaper = tierRank(tier) < tierRank(sessionTier);
   const delegate =
-    route.decided && cheaper && needsContext !== null && needsContext < contextThreshold;
+    route.decided &&
+    needs.decided &&
+    ['light', 'standard'].includes(tier) &&
+    cheaper &&
+    needsContext !== null &&
+    needsContext < contextThreshold;
   const model = CLAUDE_ALIASES[ROUTER_TIERS.includes(tier) ? tier : sessionTier];
   // Factual, not imperative (Claude Code's hook guidance): the standing rule for what to do
   // with it lives in the owner's CLAUDE.md, which the installer offers to add.

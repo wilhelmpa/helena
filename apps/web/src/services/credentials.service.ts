@@ -13,6 +13,7 @@ import {
   deleteCredential,
   getAgentEnvironment,
   listCredentials,
+  listDecisionKeySources,
   regenerateSshKey,
   updateCredential,
 } from '@/lib/api/endpoints/credentials';
@@ -36,6 +37,18 @@ export function useCredentialsPageQuery(teamId: number, params: PageParams, kind
     queryKey: qk.credentialPage(teamId, params, kind),
     queryFn: () => listCredentials(teamId, params, kind),
     placeholderData: keepPreviousData,
+  });
+}
+
+export function useDecisionKeySourcesQuery(
+  teamId: number,
+  projectId: number | null,
+  enabled: boolean,
+) {
+  return useQuery({
+    queryKey: qk.decisionKeySources(teamId, projectId),
+    queryFn: () => listDecisionKeySources(teamId, projectId),
+    enabled,
   });
 }
 

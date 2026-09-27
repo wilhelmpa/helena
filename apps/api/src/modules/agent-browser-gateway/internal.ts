@@ -29,6 +29,7 @@ import {
   taskByToken,
   taskProgress,
   taskSystemOne,
+  taskActionAllowed,
 } from '#modules/browser-task/runs';
 
 // A secret must be readable by its owner only. systemd's own credential directory is the
@@ -335,6 +336,22 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
       }
       const { project } = await authorizeTarget(agent, body.projectSlug, body.via);
       const raw = (body.context ?? {}) as Record<string, unknown>;
+      const taskAllowed = () =>
+        body.tool !== 'browser_task' || body.taskToken === undefined
+          ? Promise.resolve(true)
+          : taskActionAllowed(body.taskToken, {
+              agentId: agent.id,
+              teamId: agent.teamId,
+              projectId: project?.id ?? null,
+              runId: optionalId(body.runId) ?? null,
+              chatMessageId: optionalId(body.messageId) ?? null,
+            });
+      const revoked = {
+        effect: 'deny',
+        reason:
+          'The browser task is no longer active. Continue with step tools on the current page.',
+      };
+      if (!(await taskAllowed())) return revoked;
       const text = (value: unknown, max = 300) =>
         typeof value === 'string' && value.trim() ? value.trim().slice(0, max) : null;
       const context = {
@@ -350,6 +367,7 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
         runId: optionalId(body.runId) ?? null,
         messageId: optionalId(body.messageId) ?? null,
       });
+      if (!(await taskAllowed())) return revoked;
       if (decided.effect !== 'needs-approval') {
         return { effect: decided.effect, reason: decided.reason };
       }

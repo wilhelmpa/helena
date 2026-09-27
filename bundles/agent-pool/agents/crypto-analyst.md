@@ -9,6 +9,9 @@ disallowedTools:
   - image_gen
   - tts
 skills:
+  - typesafe-ai
+  - helena-browser-decisions
+  - helena-trading-decisions
   - trading-grundregeln
   - trading-wissen-verknuepfen
   - krypto-analyse

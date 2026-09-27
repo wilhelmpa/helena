@@ -435,7 +435,10 @@ export type ChatListView = 'active' | 'archived' | 'trash';
 
 // One of the caller's chats as the chat list shows it. A chat without a project is a
 // Home chat, addressed through its agent's team.
+export type JevFirstStageMode = 'inherit' | 'on' | 'off';
+
 export interface ChatSummary {
+  jevFirstStage: JevFirstStageMode;
   id: string;
   title: string | null;
   agent: { id: number; name: string; username: string };
@@ -483,7 +486,12 @@ export const getChat = (threadId: string) =>
 
 export const updateChat = (
   threadId: string,
-  patch: { title?: string; archived?: boolean; issueId?: number | null },
+  patch: {
+    title?: string;
+    archived?: boolean;
+    issueId?: number | null;
+    jevFirstStage?: JevFirstStageMode;
+  },
 ) =>
   request<void>('/chats/' + encodeURIComponent(threadId), {
     method: 'PATCH',

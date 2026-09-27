@@ -9,6 +9,7 @@ import {
   user,
 } from '@repo/db';
 import { and, desc, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import { HttpError, iso } from '#shared/lib';
 import { HOME_SLUG, projectSlug } from '#shared/agent-socket';
 import { isHomeAgent } from '#modules/agents/core/home-agent';
@@ -121,6 +122,7 @@ export async function labAgents(
 
 // The decision model connections usable here: the team's, for the whole team or this project.
 export async function labConnections(scope: LabScope) {
+  const source = alias(integrationCredential, 'decision_key_source');
   const rows = await db
     .select({
       id: integrationCredential.id,
@@ -128,8 +130,18 @@ export async function labConnections(scope: LabScope) {
       projectId: integrationCredential.projectId,
       redacted: integrationCredential.redacted,
       status: integrationCredential.status,
+      sourceHasKey: sql<boolean>`${source.redacted}->>'value' = 'true'`,
     })
     .from(integrationCredential)
+    .leftJoin(
+      source,
+      and(
+        sql`${source.id}::text = ${integrationCredential.redacted}->>'sourceCredentialId'`,
+        eq(source.teamId, integrationCredential.teamId),
+        eq(source.integrationKey, 'api_key'),
+        or(isNull(source.projectId), eq(source.projectId, integrationCredential.projectId)),
+      ),
+    )
     .where(
       and(
         eq(integrationCredential.teamId, scope.teamId),
@@ -151,8 +163,13 @@ export async function labConnections(scope: LabScope) {
       provider: typeof readable.provider === 'string' ? readable.provider : null,
       model: typeof readable.model === 'string' ? readable.model : null,
       baseUrl: typeof readable.baseUrl === 'string' ? readable.baseUrl : null,
-      keySource: readable.keySource === 'local-laya' ? 'local-laya' : 'stored',
-      hasKey: readable.value === true || readable.keySource === 'local-laya',
+      keySource: typeof readable.keySource === 'string' ? readable.keySource : 'stored',
+      hasKey:
+        readable.keySource === 'credential'
+          ? row.sourceHasKey === true
+          : readable.value === true ||
+            readable.keySource === 'local-laya' ||
+            readable.keySource === 'local-ai',
       status: row.status,
     };
   });
@@ -317,15 +334,12 @@ export async function startLabRun(
         args: { goal, values, ...(startUrl ? { startUrl } : {}), maxSteps, mode },
       });
     }
-  } catch (error) {
+  } catch {
     const [failed] = await db
       .update(helenaBrowserTaskRun)
       .set({
         status: 'error',
-        summary:
-          error instanceof Error
-            ? error.message.slice(0, 300)
-            : 'The browser router did not start the run.',
+        summary: 'The browser router did not start the run.',
         finishedAt: new Date(),
         tokenExpiresAt: new Date(),
       })

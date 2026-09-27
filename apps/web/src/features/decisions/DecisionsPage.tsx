@@ -20,8 +20,9 @@ import { accessPath } from '@/utils/paths';
 import { DecisionClassCard } from './components/DecisionClassCard';
 import { DecisionLog } from './components/DecisionLog';
 import { RouterPanel } from './components/RouterPanel';
-import { useDecisionClassesQuery } from './services/decisions.service';
+import { useDecisionClassesQuery } from '@/services/decisions.service';
 import { classKey } from './utils/format';
+import { FirstStagePanel } from './components/FirstStagePanel';
 
 export type DecisionsTab = 'classes' | 'router' | 'log';
 
@@ -122,14 +123,24 @@ export default function DecisionsPage({ tab: initial = 'classes' }: { tab?: Deci
                 </Button>
               </div>
             )}
-            {data.classes.map((cls) => (
-              <DecisionClassCard
-                key={cls.id}
+            {data.firstStage && (
+              <FirstStagePanel
                 teamId={teamId}
-                cls={cls}
+                policy={data.firstStage}
+                classes={data.classes}
                 connections={data.connections}
               />
-            ))}
+            )}
+            {data.classes
+              .filter((cls) => cls.id !== 'helena.browser')
+              .map((cls) => (
+                <DecisionClassCard
+                  key={cls.id}
+                  teamId={teamId}
+                  cls={cls}
+                  connections={data.connections}
+                />
+              ))}
           </div>
         )}
       </SectionPageView>

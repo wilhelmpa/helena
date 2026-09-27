@@ -201,7 +201,8 @@
     "skills": "Buka skill agen",
     "memory": "Buka memori agen",
     "usage": "Tampilkan penggunaan token chat ini",
-    "stop": "Hentikan jawaban"
+    "stop": "Hentikan jawaban",
+    "jev": "Optional Jev first stage for this chat"
   },
   "activity": {
     "thinking": "{agent} sedang berpikir…",
@@ -260,5 +261,15 @@
     "misheard": "Tidak terdengar jelas – tolong ulangi.",
     "timings": "Jawaban terakhir setelah {total} dtk: jeda {pause} dtk · transkripsi {transcribe} dtk · jawaban {answer} dtk · suara {voice} dtk",
     "replyLine": "Balasan suara cepat ({model}) – bukan agen"
+  },
+  "jev": {
+    "inherit": "Inherit",
+    "on": "On (where permitted)",
+    "off": "Off",
+    "status": "Jev first stage: {mode}",
+    "saved": "Jev first stage for this chat: {mode}",
+    "scope": "Applies to the optional chat pre-decision. Team, class and privacy permissions still apply. On and Inherit follow the team setting.",
+    "needsChat": "Start or open a chat first.",
+    "usage": "Use /jev on, /jev off or /jev inherit. /jev shows the saved value."
   }
 }

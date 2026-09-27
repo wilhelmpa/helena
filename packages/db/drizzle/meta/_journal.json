@@ -1345,6 +1345,20 @@
       "when": 1790436986200,
       "tag": "0192_helena_unified_vault",
       "breakpoints": true
+    },
+    {
+      "idx": 193,
+      "version": "7",
+      "when": 1790455874804,
+      "tag": "0193_helena_chat_jev",
+      "breakpoints": true
+    },
+    {
+      "idx": 194,
+      "version": "7",
+      "when": 1790460024095,
+      "tag": "0194_helena_browser_jev_stage",
+      "breakpoints": true
     }
   ]
 }

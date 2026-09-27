@@ -201,7 +201,8 @@
     "skills": "فتح مهارات الوكيل",
     "memory": "فتح ذاكرة الوكيل",
     "usage": "عرض استهلاك الرموز في هذه الدردشة",
-    "stop": "إيقاف الإجابة"
+    "stop": "إيقاف الإجابة",
+    "jev": "Optional Jev first stage for this chat"
   },
   "activity": {
     "thinking": "{agent} يفكّر…",
@@ -260,5 +261,15 @@
     "misheard": "لم أفهم – أعد ذلك من فضلك.",
     "timings": "آخر رد بعد {total} ث: توقف {pause} ث · نسخ {transcribe} ث · رد {answer} ث · صوت {voice} ث",
     "replyLine": "رد صوتي سريع ({model}) – ليس الوكيل"
+  },
+  "jev": {
+    "inherit": "Inherit",
+    "on": "On (where permitted)",
+    "off": "Off",
+    "status": "Jev first stage: {mode}",
+    "saved": "Jev first stage for this chat: {mode}",
+    "scope": "Applies to the optional chat pre-decision. Team, class and privacy permissions still apply. On and Inherit follow the team setting.",
+    "needsChat": "Start or open a chat first.",
+    "usage": "Use /jev on, /jev off or /jev inherit. /jev shows the saved value."
   }
 }

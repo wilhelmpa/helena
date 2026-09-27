@@ -1,13 +1,17 @@
 import type { DecisionEvalCase, DecisionEvalSet } from '@helena/sdk';
 import { NEWS_QUESTIONS } from './questions';
 
-// Labelled cases of the news class (docs/helena-decisions/trading.md §6): a watchlist, the
-// open positions and one news item, as the research agent passes them, with the right
+// Labelled cases of the news class: public instrument names and one news item,
+// with no account or position enrichment, with the right
 // answer per question (several where more than one is defensible). Companies, tickers,
 // people and numbers are invented; central banks and indices are real names.
 
-const WATCHLIST =
-  'Watchlist: NWE (Nordwind Energie AG, Windkraft, XETRA), KLX (Kalix Semiconductor, Chips, NASDAQ), SPY (S&P-500-ETF), BTC/USD\nOffene Positionen: KLX, BTC/USD';
+const INSTRUMENTS = [
+  'NWE (Nordwind Energie AG, Windkraft, XETRA)',
+  'KLX (Kalix Semiconductor, Chips, NASDAQ)',
+  'SPY (S&P-500-ETF)',
+  'BTC/USD',
+];
 
 interface NewsCase {
   id: string;
@@ -190,7 +194,7 @@ const CASES: NewsCase[] = [
 
 export const NEWS_CASES: DecisionEvalCase[] = CASES.map((entry) => ({
   id: entry.id,
-  context: `${WATCHLIST}\nMeldung: ${entry.news}`,
+  context: JSON.stringify({ articleText: entry.news, instruments: INSTRUMENTS }),
   questions: { ...NEWS_QUESTIONS },
   expected: { relevance: entry.relevance, direction: entry.direction, event: entry.event },
 }));

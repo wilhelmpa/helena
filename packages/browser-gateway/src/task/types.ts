@@ -53,6 +53,14 @@ export type Operation = (typeof OPERATIONS)[number];
 export type TaskMode = 'read' | 'act';
 export type PolicyKind = 'jev' | 'laya';
 
+export interface TaskSuccess {
+  // All supplied criteria must match a fresh observation. Exact URL, visible text substrings,
+  // and unique field labels with exact values; no JavaScript or selectors.
+  url?: string;
+  textIncludes?: string[];
+  fields?: { label: string; value?: string; checked?: boolean }[];
+}
+
 export interface TaskInput {
   goal: string;
   // The strings the task may type or choose, by a meaningful key ({email, postal_code}). Never
@@ -61,6 +69,7 @@ export interface TaskInput {
   mode: TaskMode;
   maxSteps: number;
   allowIrreversible: boolean;
+  success?: TaskSuccess;
 }
 
 // What the loop decided to do next.

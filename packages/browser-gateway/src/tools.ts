@@ -506,11 +506,12 @@ const DEFINED_TOOLS: ToolDef[] = [
       '("Open the invoices of September"), filling and sending a form with known values, ' +
       'setting filters. Put every string it may type or choose into `values` with a meaningful ' +
       'key ({"email": "…", "postal_code": "…"}); it never invents text, and never put a password ' +
-      'or code there (browser_login fills logins). Returns done or likely_done (then verify with ' +
-      'browser_check), or hands back — needs_agent, needs_login, needs_confirmation, ' +
+      'or code there (browser_login fills logins). Supply independent success criteria; done means ' +
+      'all supplied criteria matched a fresh observation. Without criteria, completion is likely_done: inspect the returned snapshot. A browser_check is another model opinion. Returns completion,' +
+      ' or hands back — needs_agent, needs_login, needs_confirmation, ' +
       'needs_approval, stuck, blocked, error — with the reason, the candidates and the page ' +
       'snapshot, so you continue with the step tools. Every action is approved like the step ' +
-      'tool it stands for (a submit is a send). mode "read" only follows links, tabs and scrolls.',
+      'tool it stands for (a submit is a send). mode "read" only scrolls and waits.',
     inputSchema: schema(
       {
         goal: {
@@ -522,6 +523,42 @@ const DEFINED_TOOLS: ToolDef[] = [
           type: 'object',
           additionalProperties: { type: 'string' },
           description: 'Every text it may type or option it may choose, by a meaningful key.',
+        },
+        success: {
+          type: 'object',
+          additionalProperties: false,
+          description:
+            'Independent observed outcome. All supplied criteria must match. Choose criteria covering the full requested goal; no secrets, selectors or code. Without these, completion is only likely_done.',
+          properties: {
+            url: {
+              type: 'string',
+              description: 'Exact final HTTP(S) URL, including query and fragment.',
+            },
+            textIncludes: {
+              type: 'array',
+              minItems: 1,
+              maxItems: 10,
+              items: { type: 'string', maxLength: 500 },
+              description: 'Case-sensitive substrings of currently visible page text.',
+            },
+            fields: {
+              type: 'array',
+              minItems: 1,
+              maxItems: 10,
+              items: {
+                type: 'object',
+                additionalProperties: false,
+                required: ['label'],
+                properties: {
+                  label: { type: 'string' },
+                  value: { type: 'string' },
+                  checked: { type: 'boolean' },
+                },
+              },
+              description:
+                'Uniquely labelled visible fields; exact observed value and/or checked state.',
+            },
+          },
         },
         startUrl: {
           type: 'string',

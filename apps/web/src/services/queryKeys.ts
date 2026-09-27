@@ -260,6 +260,8 @@ export const qk = {
   // The team's credentials. A write invalidates at the team prefix, which also reloads
   // an open audit log.
   credentials: (teamId: number) => ['credentials', teamId] as const,
+  decisionKeySources: (teamId: number, projectId: number | null) =>
+    ['credentials', teamId, 'decision-key-sources', projectId] as const,
   // The access center: Google accounts and the audit log of a team.
   access: (teamId: number) => ['access', teamId] as const,
   accessGoogle: (teamId: number) => ['access', teamId, 'google'] as const,

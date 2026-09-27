@@ -17,7 +17,8 @@ export type ChatCommandAction =
   | 'skills'
   | 'memory'
   | 'usage'
-  | 'stop';
+  | 'stop'
+  | 'jev';
 
 // Why a command is not carried out in Plan.
 export type ChatCommandRefusal = 'schedules' | 'approvals' | 'config' | 'outside';
@@ -44,6 +45,7 @@ export const CHAT_COMMANDS: ChatCommand[] = [
   command('title', { args: '[name]', action: 'title' }),
   command('model', { args: '[model]', action: 'model' }),
   command('reasoning', { args: '[level]', action: 'reasoning' }),
+  command('jev', { args: '[on|off|inherit]', action: 'jev' }),
   command('skills', { args: '[search]', action: 'skills' }),
   command('memory', { action: 'memory' }),
   command('usage', { aliases: ['status', 'context'], action: 'usage' }),
@@ -111,6 +113,9 @@ export type SlashItem =
 // first. A refused command is listed only once the query names it, so the menu does not
 // fill up with what cannot be run, and a member who types one learns why.
 export function slashItems(query: string, prompts: ChatPrompt[]): SlashItem[] {
+  if (query.toLowerCase() === 'jev') {
+    return [{ kind: 'command', command: findCommand('jev')!, score: 3 }];
+  }
   const items: SlashItem[] = [];
   for (const prompt of prompts) {
     const score = Math.max(fuzzyScore(query, prompt.command), fuzzyScore(query, prompt.title) - 1);
@@ -128,4 +133,14 @@ export function slashItems(query: string, prompts: ChatPrompt[]): SlashItem[] {
     items.push({ kind: 'command', command: entry, score });
   }
   return items.sort((a, b) => b.score - a.score);
+}
+
+export function parseJevMode(args: string): 'inherit' | 'on' | 'off' | null {
+  const mode = args.trim().toLowerCase();
+  return mode === 'inherit' || mode === 'on' || mode === 'off' ? mode : null;
+}
+
+export function composerSlashCommand(text: string, busy: boolean) {
+  const parsed = parseSlashCommand(text);
+  return busy && parsed?.name !== 'jev' ? null : parsed;
 }

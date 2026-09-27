@@ -106,11 +106,12 @@ export class HelenaClient {
     this.#fetch = options.fetchImpl ?? fetch;
   }
 
-  async #post<T>(path: string, body: unknown): Promise<T> {
+  async #post<T>(path: string, body: unknown, signal?: AbortSignal): Promise<T> {
     const res = await this.#fetch(`${this.#baseUrl}${path}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${this.#token}` },
       body: JSON.stringify(body),
+      signal,
     });
     const text = await res.text();
     if (!res.ok) {
@@ -205,6 +206,7 @@ export class HelenaClient {
     projectSlug: string;
     via: string;
     tool: string;
+    taskToken?: string;
     category: string;
     context: {
       origin: string | null;
@@ -265,16 +267,19 @@ export class HelenaClient {
 
   // A step as it happened (stored on the task, and in the browser's activity). Helena answers
   // whether the task was cancelled meanwhile (Browser 2.0's "Abbrechen").
-  taskProgress(input: {
-    taskToken: string;
-    step: unknown;
-    usage: unknown;
-  }): Promise<{ cancelled?: boolean }> {
-    return this.#post('/internal/browser-gateway/task/progress', input);
+  taskProgress(
+    input: {
+      taskToken: string;
+      step: unknown;
+      usage: unknown;
+    },
+    signal?: AbortSignal,
+  ): Promise<{ cancelled?: boolean }> {
+    return this.#post('/internal/browser-gateway/task/progress', input, signal);
   }
 
-  taskFinish(input: { taskToken: string; result: unknown }): Promise<void> {
-    return this.#post('/internal/browser-gateway/task/finish', input);
+  taskFinish(input: { taskToken: string; result: unknown }, signal?: AbortSignal): Promise<void> {
+    return this.#post('/internal/browser-gateway/task/finish', input, signal);
   }
 
   async policy(): Promise<Record<string, BrowserGatewaySettingsWire & { projectId: number }>> {

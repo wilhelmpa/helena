@@ -36,7 +36,15 @@
     "signup": "Schlüssel bei {host} holen",
     "test": "Verbindung testen",
     "lastOk": "Verbindung geht",
-    "lastError": "Verbindung fehlgeschlagen"
+    "lastError": "Verbindung fehlgeschlagen",
+    "keySource": "Schlüsselquelle",
+    "keySourceStored": "Schlüssel in dieser Verbindung speichern",
+    "keySourceCredential": "Vorhandenen API-Schlüssel verwenden",
+    "keyCredential": "Ursprünglicher API-Zugang",
+    "chooseKeyCredential": "API-Zugang auswählen",
+    "keyCredentialHint": "Helena liest für jeden Aufruf den aktuellen Schlüssel dieses Zugangs. Ändere ihn nur dort. Verwendbar sind API-Zugänge dieses Teams im selben Projekt oder für das ganze Team. Es wird kein Schlüssel kopiert oder an Agenten weitergegeben.",
+    "keySourcesLoading": "API-Zugänge werden geladen…",
+    "keySourceUnavailable": "Kein passender API-Zugang verfügbar oder die gespeicherte Quelle ist nicht mehr zugänglich. Wähle eine gültige Quelle oder prüfe Zugänge."
   },
   "test": {
     "succeeded": "Verbindung geht · {models} · {ms} ms",

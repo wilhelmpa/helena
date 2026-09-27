@@ -201,7 +201,8 @@
     "skills": "Skills des Agenten öffnen",
     "memory": "Gedächtnis des Agenten öffnen",
     "usage": "Token-Verbrauch dieses Chats zeigen",
-    "stop": "Antwort stoppen"
+    "stop": "Antwort stoppen",
+    "jev": "Optionale JEV-Vorstufe für diesen Chat"
   },
   "activity": {
     "thinking": "{agent} denkt nach …",
@@ -260,5 +261,15 @@
     "misheard": "Nicht verstanden – sag es bitte noch einmal.",
     "timings": "Letzte Antwort nach {total} s: Pause {pause} s · Mitschrift {transcribe} s · Antwort {answer} s · Stimme {voice} s",
     "replyLine": "Schnelle Sprachantwort ({model}) – nicht der Agent"
+  },
+  "jev": {
+    "inherit": "Erben",
+    "on": "Ein (wenn freigegeben)",
+    "off": "Aus",
+    "status": "JEV-Vorstufe: {mode}",
+    "saved": "JEV-Vorstufe für diesen Chat: {mode}",
+    "scope": "Gilt für die optionale Chat-Vorentscheidung. Team-, Klassen- und Datenschutzfreigaben gelten weiterhin. Ein und Erben folgen der Teamfreigabe.",
+    "needsChat": "Starte oder öffne zuerst einen Chat.",
+    "usage": "Verwende /jev on, /jev off oder /jev inherit. /jev zeigt den gespeicherten Wert."
   }
 }

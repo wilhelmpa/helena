@@ -60,6 +60,7 @@ const contact: TaskInput = {
   mode: 'act',
   maxSteps: 20,
   allowIrreversible: false,
+  success: { url: 'https://site.test/danke' },
 };
 
 describe('runTask with the Jev policy', () => {
@@ -210,6 +211,28 @@ describe('runTask with the Jev policy', () => {
     expect(site.actions).toHaveLength(0);
   });
 
+  it.each([undefined, null, NaN, Infinity, -0.1, 1.1])(
+    'does not act when the backend gives invalid confidence (%s)',
+    async (confidence) => {
+      const site = contactSite();
+      const client = scripted([
+        (request) => ({
+          operation: {
+            ...(mockAnswers({ ...request, model: 'jev-latest' } as never).answers
+              .operation as Record<string, unknown>),
+            confidence,
+          },
+        }),
+      ]);
+      const d = deps(site, { client });
+      const result = await runTask(contact, d);
+      expect(result.status).toBe('backend_error');
+      expect(result.summary).toContain('confidence');
+      expect(site.actions).toHaveLength(0);
+      expect(d.decisions).toHaveLength(0);
+    },
+  );
+
   it('keeps to the step budget', async () => {
     const result = await runTask({ ...contact, maxSteps: 2 }, deps());
     expect(result.status).toBe('max_steps');
@@ -295,15 +318,17 @@ describe('runTask with the Jev policy', () => {
     const observation = await page.observe();
     const element = observation.elements[0]!;
     for (const operation of ['CLICK', 'TYPE_TEXT', 'SELECT', 'PRESS_ENTER'] as const) {
-      const refused = await page.act({ operation, element, text: 'x', option: 'y' }).then(
-        () => null,
-        (error: unknown) => error,
-      );
+      const refused = await page
+        .act({ operation, element, text: 'x', option: 'y', observation })
+        .then(
+          () => null,
+          (error: unknown) => error,
+        );
       expect(refused).toBeInstanceOf(TaskActError);
       expect((refused as TaskActError).code).toBe('refused');
     }
     expect(site.actions).toHaveLength(0);
-    await page.act({ operation: 'SCROLL_DOWN', element: null });
+    await page.act({ operation: 'SCROLL_DOWN', element: null, observation });
     expect(site.actions.map((action) => action.operation)).toEqual(['SCROLL_DOWN']);
   });
 
@@ -396,5 +421,105 @@ describe('repeatsBlock', () => {
   it('finds a repeated pair', () => {
     expect(repeatsBlock(['a', 'b', 'a', 'b', 'a', 'b'], 2, 3)).toBe(true);
     expect(repeatsBlock(['a', 'b', 'a', 'c', 'a', 'b'], 2, 3)).toBe(false);
+  });
+});
+
+describe('bounded execution and independent completion', () => {
+  it('legacy callers terminate as likely_done with page evidence', async () => {
+    const result = await runTask({ ...contact, success: undefined }, deps());
+    expect(result.status).toBe('likely_done');
+    expect(result.pageText).toBeDefined();
+    expect(result.steps.length).toBeLessThan(contact.maxSteps);
+  });
+
+  it('a model completion claim cannot bypass fresh success criteria', async () => {
+    const site = contactSite();
+    const client = scripted([() => ({ done: { noul: 0.99 } })]);
+    const result = await runTask(contact, deps(site, { client }));
+    expect(result.status).toBe('needs_agent');
+    expect(site.actions).toHaveLength(0);
+  });
+
+  it('discards a decision when the page changes during authorization', async () => {
+    const site = contactSite();
+    let first = true;
+    const result = await runTask(
+      contact,
+      deps(site, {
+        authorize: async () => {
+          if (first) {
+            first = false;
+            site.url = '/kontakt';
+          }
+          return { effect: 'allow' };
+        },
+      }),
+    );
+    expect(result.status).toBe('done');
+    expect(site.actions[0]?.operation).toBe('TYPE_TEXT');
+  });
+
+  it('records an uncertain mutation and never retries it', async () => {
+    const site = contactSite();
+    const original = site.act.bind(site);
+    site.act = async (input) => {
+      await original(input);
+      throw new Error('timed out after input');
+    };
+    const result = await runTask(contact, deps(site));
+    expect(result.status).toBe('needs_agent');
+    expect(site.actions).toHaveLength(1);
+    expect(result.steps).toHaveLength(1);
+    expect(result.steps[0]?.outcome).toContain('unknown');
+  });
+
+  it('preserves executed steps if the next observation fails', async () => {
+    const site = contactSite();
+    const original = site.observe.bind(site);
+    let reads = 0;
+    site.observe = async () => {
+      if (++reads > 1) throw new Error('detached');
+      return original();
+    };
+    const result = await runTask(contact, deps(site));
+    expect(result.status).toBe('needs_agent');
+    expect(result.steps).toHaveLength(1);
+    expect(result.steps[0]?.outcome).toBe('done');
+    expect(site.actions).toHaveLength(1);
+  });
+
+  it('bounds WAIT and observes after every wait', async () => {
+    const site = contactSite();
+    const original = site.observe.bind(site);
+    let reads = 0;
+    site.observe = async () => {
+      reads++;
+      return original();
+    };
+    const result = await runTask(
+      contact,
+      deps(site, {
+        policy: {
+          ...jevPolicy,
+          round: async () => ({
+            operation: 'WAIT',
+            element: null,
+            operationProbability: 1,
+            operationConfidence: 1,
+            targetProbability: 1,
+            done: 0,
+            error: null,
+            login: null,
+            blocked: null,
+            irreversible: null,
+            candidates: [],
+          }),
+        },
+      }),
+    );
+    expect(result.status).toBe('stuck');
+    expect(result.steps).toHaveLength(6);
+    expect(reads).toBe(7);
+    expect(site.actions).toHaveLength(0);
   });
 });

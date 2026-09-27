@@ -202,13 +202,39 @@ describe('reading answers', () => {
       }),
     ).toThrow();
   });
-  it('fills options a backend left out with 0 and normalizes', () => {
+  it.each([
+    { privat: 1 },
+    { privat: 0.6, newsletter: 0.2 },
+    { privat: 1, newsletter: -0.5, rechnung: 0.5 },
+    { privat: 0.6, newsletter: NaN, rechnung: 0.4 },
+    { privat: 0.6, newsletter: Infinity, rechnung: 0.4 },
+    { privat: 0.6, newsletter: '0.2', rechnung: 0.2 },
+    { privat: 0.2, newsletter: 0, rechnung: 0 },
+    { privat: 1, newsletter: 1, rechnung: 1 },
+  ])('rejects a malformed distribution instead of making it certain (%j)', (probabilities) => {
+    expect(() => readAnswer(questions.category, { choice: 'privat', probabilities })).toThrow();
+  });
+
+  it.each([undefined, 'spam', 'privat'])(
+    'rejects an absent or inconsistent choice (%s)',
+    (choice) => {
+      expect(() =>
+        readAnswer(questions.category, {
+          choice,
+          probabilities: { privat: 0.1, newsletter: 0.8, rechnung: 0.1 },
+        }),
+      ).toThrow();
+    },
+  );
+
+  it('normalizes only rounding drift and retains Helena confidence', () => {
     const answer = readAnswer(questions.category, {
       type: 'choice',
       choice: 'privat',
-      probabilities: { privat: 0.6, newsletter: 0.2 },
+      probabilities: { privat: 0.7, newsletter: 0.2, rechnung: 0.099 },
+      confidence: 0.99,
     });
-    expect(answer.probabilities.rechnung).toBe(0);
-    expect(answer.probabilities.privat).toBeCloseTo(0.75, 6);
+    expect(answer.probabilities.privat).toBeCloseTo(0.7 / 0.999, 6);
+    expect(answer.confidence).toBeCloseTo((3 * (0.7 / 0.999) - 1) / 2, 6);
   });
 });

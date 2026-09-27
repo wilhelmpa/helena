@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { DecisionLogEntry } from '@/lib/api/endpoints/decisions';
-import { useCorrectDecision, useDecisionLogQuery } from '../services/decisions.service';
+import { useCorrectDecision, useDecisionLogQuery } from '@/services/decisions.service';
 import { classKey, euros, milliseconds, percent } from '../utils/format';
 
 const STATUS: Record<string, Status> = {
