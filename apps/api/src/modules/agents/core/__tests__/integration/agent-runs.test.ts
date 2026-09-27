@@ -115,6 +115,71 @@ describe('agent run history', () => {
     expect(res.data!.items[0]).toMatchObject({ trigger: 'delegation', issueId: issue.id });
   });
 
+  it('queues one parent run for each real final-state change of a delegated subtask', async () => {
+    const { asOwner, columnId, teamId } = await setup();
+    const coordinator = await createRunAgent(asOwner, 'Coordinator', 'coordinator');
+    const specialist = await createRunAgent(asOwner, 'Specialist', 'specialist');
+    await agents(asOwner, teamId)({ agentId: coordinator.id }).patch({ triggerOnAssign: true });
+    const columns = (await asOwner.projects({ projectKey: 'MKT' }).get()).data!.columns;
+    const completedId = columns.find((column) => column.stateType === 'completed')!.id;
+    const canceledId = columns.find((column) => column.stateType === 'canceled')!.id;
+    const parent = (await createIssue(asOwner, columnId, 'Coordinate work')).data!;
+    await asOwner.issues({ issueId: parent.id }).patch({ delegateUserId: coordinator.userId });
+    const child = (
+      await asOwner.projects({ projectKey: 'MKT' }).issues.post({
+        columnId,
+        parentId: parent.id,
+        delegateUserId: specialist.userId,
+        title: 'Build the change',
+      })
+    ).data!;
+    await asOwner
+      .issues({ issueId: child.id })
+      .comments.post({ body: 'Branch ready; unit tests pass.' });
+
+    await Promise.all([
+      asOwner.issues({ issueId: child.id }).patch({ columnId: completedId }),
+      asOwner.issues({ issueId: child.id }).patch({ columnId: completedId }),
+    ]);
+    await asOwner.issues({ issueId: child.id }).patch({ columnId: completedId });
+    let runs = (await agents(asOwner, teamId)({ agentId: coordinator.id }).runs.get()).data!.items;
+    expect(runs).toHaveLength(2);
+    expect(runs[0]).toMatchObject({ trigger: 'subtask', issueId: parent.id });
+    expect(runs[0].prompt).toContain(child.identifier);
+    expect(runs[0].prompt).toContain('completed');
+    expect(runs[0].prompt).toContain('Branch ready; unit tests pass.');
+
+    await asOwner.issues({ issueId: child.id }).patch({ columnId: canceledId });
+    runs = (await agents(asOwner, teamId)({ agentId: coordinator.id }).runs.get()).data!.items;
+    expect(runs).toHaveLength(3);
+    expect(runs[0].prompt).toContain('canceled');
+  });
+
+  it('does not queue a parent run when the parent is closed', async () => {
+    const { asOwner, columnId, teamId } = await setup();
+    const coordinator = await createRunAgent(asOwner, 'Coordinator', 'coordinator');
+    const specialist = await createRunAgent(asOwner, 'Specialist', 'specialist');
+    const completedId = (await asOwner.projects({ projectKey: 'MKT' }).get()).data!.columns.find(
+      (column) => column.stateType === 'completed',
+    )!.id;
+    const parent = (await createIssue(asOwner, columnId, 'Coordinate work')).data!;
+    await asOwner.issues({ issueId: parent.id }).patch({ delegateUserId: coordinator.userId });
+    const child = (
+      await asOwner.projects({ projectKey: 'MKT' }).issues.post({
+        columnId,
+        parentId: parent.id,
+        delegateUserId: specialist.userId,
+        title: 'Build the change',
+      })
+    ).data!;
+    await asOwner.issues({ issueId: parent.id }).patch({ columnId: completedId });
+    await asOwner.issues({ issueId: child.id }).patch({ columnId: completedId });
+
+    const runs = (await agents(asOwner, teamId)({ agentId: coordinator.id }).runs.get()).data!
+      .items;
+    expect(runs).toEqual([]);
+  });
+
   it('queues a run when the agent is set into a field it reacts to', async () => {
     const { asOwner, columnId, teamId } = await setup();
     const agent = await createRunAgent(asOwner, 'Design Bot', 'design');

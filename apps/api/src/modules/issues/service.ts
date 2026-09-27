@@ -80,6 +80,7 @@ import {
 } from '#modules/control-plane-workflows/agent-team-starts';
 import { WORKFLOW_EVENT_ACTOR } from '#modules/engine/events';
 import { applySubtaskAutomation } from './automation';
+import { enqueueParentResume } from './subtask-resume-run';
 import { assertWipLimit, columnAutoAssignee, wipLimitBreach } from '#modules/columns/service';
 import { enqueueStateChangedActions, type ActionChain } from '#modules/actions/queue';
 import { canBeIssueAssignee, resolveIssueAssignee } from './responsibility';
@@ -1304,6 +1305,7 @@ export async function updateIssue(
   if (patch.dueDate !== undefined) set.dueDate = patch.dueDate;
 
   const changed = Object.keys(set).length > 0;
+  let previousColumnId = before.columnId;
   if (changed) {
     set.updatedAt = sql`now()` as unknown as Date;
     const guard =
@@ -1316,6 +1318,11 @@ export async function updateIssue(
         .from(projectTable)
         .where(eq(projectTable.id, before.projectId))
         .for('update');
+      const [current] = await tx
+        .select({ columnId: issue.columnId })
+        .from(issue)
+        .where(eq(issue.id, id));
+      if (current) previousColumnId = current.columnId;
       if (set.assigneeUserId) {
         await resolveIssueAssignee(before.projectId, { assigneeUserId: set.assigneeUserId }, tx);
       } else {
@@ -1400,6 +1407,8 @@ export async function updateIssue(
         );
         await applySubtaskAutomation(after, actor);
       }
+      if (previousColumnId !== after.columnId)
+        await enqueueParentResume(after, previousColumnId, before.delegateUserId, actor);
     }
   }
   return after;

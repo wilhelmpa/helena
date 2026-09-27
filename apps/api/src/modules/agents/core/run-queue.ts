@@ -23,8 +23,9 @@ type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 // Queues a run of the agent and returns its id. On an issue, a mention, delegation or
 // field trigger queues nothing while the agent already has a run pending there — queued
 // or in flight — and returns that run: one automated run per agent and issue at a time,
-// and the run that is there reads the issue as it is when it starts. An approval
-// decision is always queued, so it reaches the agent. `executor` is the transaction the
+// and the run that is there reads the issue as it is when it starts. Approval decisions
+// and subtask results are always queued so each event reaches the agent.
+// `executor` is the transaction the
 // queueing belongs to, when it has one.
 export async function enqueueAgentRun(
   input: {
@@ -36,7 +37,7 @@ export async function enqueueAgentRun(
     issueId: number | null;
     sourceActivityId: number | null;
     prompt: string;
-    trigger?: 'mention' | 'delegation' | 'field' | 'approval' | 'workspace';
+    trigger?: 'mention' | 'delegation' | 'subtask' | 'field' | 'approval' | 'workspace';
     // Seconds the run stays unclaimable after it is queued, so the issue can still be
     // edited before the agent reads it.
     delaySeconds?: number;
@@ -51,7 +52,7 @@ export async function enqueueAgentRun(
 ): Promise<number> {
   const delay = Math.max(0, Math.trunc(input.delaySeconds ?? 0));
   const queue = async (tx: typeof db | Transaction): Promise<number> => {
-    if (input.issueId != null && input.trigger !== 'approval') {
+    if (input.issueId != null && input.trigger !== 'approval' && input.trigger !== 'subtask') {
       await tx.execute(
         sql`select pg_advisory_xact_lock(hashtextextended(${`agent-run:${input.agentId}:${input.issueId}`}, 0))`,
       );

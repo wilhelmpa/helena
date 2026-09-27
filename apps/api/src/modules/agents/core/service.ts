@@ -873,6 +873,18 @@ export async function getAssignTriggerAgent(
   return { id: row.id, delegationDelaySec: row.delegationDelaySec };
 }
 
+export async function getSubtaskResumeAgent(
+  projectId: number,
+  userId: string,
+): Promise<{ id: number } | null> {
+  const [agent] = await db
+    .select({ id: aiAgent.id })
+    .from(aiAgent)
+    .where(and(eq(aiAgent.userId, userId), isNull(aiAgent.pausedAt), inProject(projectId)))
+    .limit(1);
+  return agent ?? null;
+}
+
 // The agent working in the project whose bot user is userId and that reacts to being
 // set into that member field, or null. The counterpart of getAssignTriggerAgent for a
 // custom field, and null for a paused agent the same way.

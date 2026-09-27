@@ -75,7 +75,19 @@ export function framePrompt(run: RunForPrompt): string {
   const ref = run.issueIdentifier ?? `#${run.issueId}`;
   const titled = run.issueTitle ? `${ref} "${run.issueTitle}"` : ref;
   if (run.trigger === 'approval') return frameApproval(run, titled);
+  if (run.trigger === 'subtask') return frameSubtask(run, titled);
   return run.trigger === 'delegation' ? frameDelegation(run, titled) : frameMention(run, titled);
+}
+
+function frameSubtask(run: RunForPrompt, titled: string): string {
+  return [
+    `A delegated subtask of issue ${titled} of your project reached a final status.`,
+    ...areaLine(run),
+    'Continue the parent issue using the subtask result. Read both issues and their comments',
+    'for context. Take the next appropriate step, then report it on the parent issue.',
+    '',
+    run.prompt,
+  ].join('\n');
 }
 
 function areaLine(run: RunForPrompt): string[] {

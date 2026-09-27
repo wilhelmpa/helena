@@ -71,6 +71,34 @@ describe('an approval run', () => {
   });
 });
 
+describe('a subtask completion run', () => {
+  it('asks the parent delegate to continue from the child result', () => {
+    const run: RunForPrompt = {
+      id: 10,
+      trigger: 'subtask',
+      prompt: 'Subtask HELENA-17 completed. Result: tests passed.',
+      issueId: 16,
+      issueIdentifier: 'HELENA-16',
+      issueTitle: 'Resume coordinator',
+      issueArea: null,
+      issueAreaFolder: null,
+      assigneeName: null,
+      assigneeUsername: null,
+      requesterName: null,
+      requesterUsername: null,
+      agentUserId: 'coordinator',
+      agentUsername: 'coordinator',
+      threadContext: null,
+      sourceActivityId: null,
+    };
+    const text = framePrompt(run);
+    expect(text).toContain('issue HELENA-16');
+    expect(text).toContain('Subtask HELENA-17 completed');
+    expect(text).toContain('Continue the parent issue');
+    expect(text).not.toContain('has been delegated to you');
+  });
+});
+
 describe('a mention run', () => {
   const run: RunForPrompt = {
     id: 9,
