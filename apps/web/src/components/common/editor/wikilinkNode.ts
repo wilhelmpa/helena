@@ -6,6 +6,7 @@ import {
   wikilinkMarkdown,
   wikilinkTask,
 } from '@/utils/wikilink';
+import { escapeWikilinkTablePipes } from '@/utils/wikilinkTablePipes';
 
 // The parts of markdown-it this extension uses; tiptap-markdown hands over its instance.
 interface InlineState {
@@ -15,6 +16,9 @@ interface InlineState {
   push: (type: string, tag: string, nesting: number) => { content: string };
 }
 interface MarkdownIt {
+  core: {
+    ruler: { before: (name: string, rule: string, fn: (state: { src: string }) => void) => void };
+  };
   inline: {
     ruler: {
       before: (
@@ -106,6 +110,9 @@ export const Wikilink = Node.create({
           setup(markdownit: MarkdownIt) {
             if (prepared.has(markdownit)) return;
             prepared.add(markdownit);
+            markdownit.core.ruler.before('block', 'wikilink_table_pipes', (state) => {
+              state.src = escapeWikilinkTablePipes(state.src);
+            });
             markdownit.inline.ruler.before('link', 'wikilink', wikilinkRule);
             markdownit.renderer.rules.wikilink = (tokens, index) =>
               `<span data-wikilink="${markdownit.utils.escapeHtml(tokens[index]!.content)}"></span>`;

@@ -159,9 +159,26 @@ export const vaultNotePath = (path: string) => {
   const folder = relative.includes('/') ? relative.slice(0, relative.lastIndexOf('/')) : '';
   if (project && /\.canvas$/i.test(relative))
     return `${notesPath(key!)}&canvas=${encodeURIComponent(path)}`;
+  if (/\.md$/i.test(relative))
+    return project
+      ? `${projectPath(key!)}/docs?path=${encodeURIComponent(path)}`
+      : `${homeDocsPath()}?path=${encodeURIComponent(path)}`;
   if (project) return filesPath(key!, folder, { file: relative });
   const root = top === 'Private' ? 'private' : top === 'Templates' ? 'templates' : 'home';
   return homeFilesPath(folder, { root, file: relative });
+};
+
+export const vaultMarkdownSourcePath = (path: string) => {
+  const [top, key, ...rest] = path.split('/');
+  if (top === 'Projects' && key) {
+    const relative = rest.join('/');
+    const folder = relative.includes('/') ? relative.slice(0, relative.lastIndexOf('/')) : '';
+    return `${filesPath(key, folder, { file: relative })}&source=1`;
+  }
+  const relative = [key, ...rest].filter(Boolean).join('/');
+  const folder = relative.includes('/') ? relative.slice(0, relative.lastIndexOf('/')) : '';
+  const root = top === 'Private' ? 'private' : top === 'Templates' ? 'templates' : 'home';
+  return `${homeFilesPath(folder, { root, file: relative })}&source=1`;
 };
 
 export const settingsPath = (key: string, section: string) =>

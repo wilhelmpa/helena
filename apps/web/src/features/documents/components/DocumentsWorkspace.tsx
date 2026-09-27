@@ -36,7 +36,7 @@ export default function DocumentsWorkspace({ root, canEdit }: { root: string; ca
   const router = useRouter();
   const pathname = usePathname();
   const path = useSearchParams().get('path');
-  const notePath = path && isNotePath(path) ? path : null;
+  const notePath = path && path.startsWith(`${root}/`) && isNotePath(path) ? path : null;
   // Set by the open note's editor: saves its edits before the tree moves or trashes it.
   const flushRef = useRef<() => Promise<boolean>>(async () => true);
   const [createdPath, setCreatedPath] = useState<string | null>(null);

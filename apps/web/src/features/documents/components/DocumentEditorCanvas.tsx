@@ -1,12 +1,14 @@
 'use client';
 
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { Editor } from '@tiptap/react';
 import { useTranslations } from 'next-intl';
 import { useRelativeTime } from '@/context/relativeTimeContext';
 import { useUploadNoteAsset } from '../services/knowledge.service';
 import type { NoteDraft } from '../utils/noteDraft';
 import { fromEditorImages, toEditorImages } from '@/utils/vaultImages';
+import { preserveMarkdownEnding } from '@/utils/markdownEnding';
+import { restoreWikilinkTablePipes } from '@/utils/wikilinkTablePipes';
 import { noteName } from '../utils/vaultPaths';
 import { requestBodyFocus, takeBodyFocus } from '../utils/bodyFocus';
 import DocumentMarkdownEditor, {
@@ -24,9 +26,11 @@ export default function DocumentEditorCanvas({
   loaded,
   editor,
   editable,
+  canRename,
   focusTitle,
   onEditorReady,
   onLoaded,
+  onLossless,
   onEdit,
   onBlur,
   onRename,
@@ -38,9 +42,11 @@ export default function DocumentEditorCanvas({
   loaded: NoteDraft['loaded'];
   editor: Editor | null;
   editable: boolean;
+  canRename: boolean;
   focusTitle: boolean;
   onEditorReady: (editor: Editor | null) => void;
   onLoaded: (body: string) => void;
+  onLossless: (lossless: boolean) => void;
   onEdit: (body: string) => void;
   onBlur: () => void;
   onRename: (name: string) => Promise<void>;
@@ -52,20 +58,29 @@ export default function DocumentEditorCanvas({
   const imageInput = useRef<HTMLInputElement>(null);
   const images = useMemo(() => toEditorImages(loaded.body, path), [loaded, path]);
   const noteBody = useCallback(
-    (markdown: string) => fromEditorImages(markdown, path, images.sources),
-    [images, path],
+    (markdown: string) =>
+      preserveMarkdownEnding(
+        loaded.body,
+        restoreWikilinkTablePipes(loaded.body, fromEditorImages(markdown, path, images.sources)),
+      ),
+    [images, loaded.body, path],
   );
 
   const ready = useCallback(
     (instance: Editor | null) => {
       onEditorReady(instance);
-      if (instance) onLoaded(noteBody(instance.storage.markdown.getMarkdown()));
-      // The title was just confirmed with Enter (and the note renamed, which opened
-      // this editor at the new address).
-      if (instance && editable && takeBodyFocus()) instance.commands.focus('start');
+      if (instance) {
+        const body = noteBody(instance.storage.markdown.getMarkdown());
+        onLossless(body === loaded.body);
+        onLoaded(loaded.body);
+      }
     },
-    [noteBody, onEditorReady, onLoaded, editable],
+    [noteBody, onEditorReady, onLoaded, onLossless, loaded.body],
   );
+
+  useEffect(() => {
+    if (editor && editable && takeBodyFocus()) editor.commands.focus('start');
+  }, [editor, editable]);
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
@@ -98,7 +113,7 @@ export default function DocumentEditorCanvas({
         <header className="mb-9 border-b border-border/55 pb-8">
           <DocumentPageTitle
             name={noteName(path)}
-            editable={editable}
+            editable={canRename}
             autoFocus={focusTitle}
             onRename={onRename}
             onDone={(renaming) => {

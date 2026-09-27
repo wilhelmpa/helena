@@ -12,6 +12,7 @@ import {
 } from './DocumentMarkdownEditor';
 import { pasteMarkdown } from '@/components/common/editor/pasteMarkdown';
 import { vaultFileUrl } from '@/lib/api/endpoints/knowledge';
+import { restoreWikilinkTablePipes } from '@/utils/wikilinkTablePipes';
 
 const richDocument: JSONContent = {
   type: 'doc',
@@ -376,6 +377,33 @@ describe('DocumentMarkdownEditor wikilinks', () => {
     });
     assert.deepEqual(links, ['Release', 'Guides/Deploy|the deploy', 'Setup#Keys', 'VOL-12']);
     assert.equal(editor.storage.markdown.getMarkdown(), markdown);
+    editor.destroy();
+  });
+
+  it('keeps a wikilink alias inside a pipe table cell', () => {
+    const markdown = '| Symbol | Note |\n| --- | --- |\n| SPY | [[TRADE-1\\|SPY]] |\n';
+    const editor = editorFor(markdown);
+    const links: string[] = [];
+    editor.state.doc.descendants((node) => {
+      if (node.type.name === 'wikilink') links.push(String(node.attrs.inner));
+    });
+    assert.deepEqual(links, ['TRADE-1|SPY']);
+    assert.equal(editor.storage.markdown.getMarkdown(), markdown);
+    editor.destroy();
+  });
+
+  it('renders an unescaped table alias and restores its original pipe spelling', () => {
+    const markdown = '| Symbol | Trade |\n| --- | --- |\n| SPY | [[TRADE-1|SPY]] |\n';
+    const editor = editorFor(markdown);
+    const links: string[] = [];
+    editor.state.doc.descendants((node) => {
+      if (node.type.name === 'wikilink') links.push(String(node.attrs.inner));
+    });
+    assert.deepEqual(links, ['TRADE-1|SPY']);
+    assert.equal(
+      restoreWikilinkTablePipes(markdown, editor.storage.markdown.getMarkdown()),
+      markdown,
+    );
     editor.destroy();
   });
 

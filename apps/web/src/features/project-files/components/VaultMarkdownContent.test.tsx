@@ -28,7 +28,9 @@ const target = 'Projects/RES/Docs/AI/01-Overview.md';
 const foreign = 'Projects/OTHER/Docs/Private.md';
 const scope = { kind: 'project', projectKey: 'RES', root: 'vault' } as const;
 const prefix = '\uFEFF---\r\ntitle: "Research" # retain this comment\r\ntags: [ai, jev]\r\n---\r\n';
-const original = `${prefix}# Research\n\n[[${target.slice(0, -3)}|Overview]] and [[${foreign.slice(0, -3)}|Foreign]].\n\n[Source](https://example.test/source)\n\n![Chart](Assets/chart.png)\n`;
+const table = '| Symbol | Trade |\n| --- | --- |\n| SPY | [[TRADE-1\\|SPY]] |\n';
+const softBreak = 'First line\nSecond line';
+const original = `${prefix}# Research\n\n[[${target.slice(0, -3)}|Overview]] and [[${foreign.slice(0, -3)}|Foreign]].\n\n${table}\n${softBreak}\n\n[Source](https://example.test/source)\n\n![Chart](Assets/chart.png)\n`;
 const sha = (content: string) => createHash('sha256').update(content).digest('hex');
 const globals = [
   'window',
@@ -193,7 +195,7 @@ beforeEach(async () => {
 afterEach(async () => {
   await act(async () => root.unmount());
   await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 25));
+    await new Promise((resolve) => setTimeout(resolve, 100));
   });
   client.clear();
   globalThis.fetch = originalFetch;
@@ -213,6 +215,7 @@ async function render({
   previewName = '00-Start.md',
   previewType = 'text/markdown',
   selected = null as string | null,
+  sourceOnly = false,
 } = {}) {
   await act(async () =>
     root.render(
@@ -255,6 +258,7 @@ async function render({
                       canEdit={editable}
                       actions={null}
                       onClose={() => {}}
+                      sourceOnly={sourceOnly}
                     />
                   ) : (
                     <VaultTextEditor
@@ -266,6 +270,7 @@ async function render({
                         dirty = value;
                       }}
                       beforeNavigate={() => allowLeave}
+                      sourceOnly={sourceOnly}
                     />
                   ))}
               </WebLinksContext.Provider>
@@ -357,6 +362,9 @@ it('renders wiki links while opening and permission toggles preserve exact origi
   await render();
   await until(() => !!document.querySelector('.tiptap'));
   assert.equal(document.querySelector('[data-wikilink]')?.textContent, 'Overview');
+  assert.ok(
+    [...document.querySelectorAll('[data-wikilink]')].some((node) => node.textContent === 'SPY'),
+  );
   assert.equal(saveButton().disabled, true);
   assert.equal(dirty, false);
   await render({ editable: false });
@@ -380,10 +388,12 @@ it('saves the same file with its original hash, metadata and canonical links int
   assert.equal(writes[0]?.body?.expectedEtag, sha(original));
   assert.ok(content.startsWith(prefix));
   assert.ok(content.includes(`[[${target.slice(0, -3)}|Overview]]`));
+  assert.ok(content.includes(table));
+  assert.ok(content.includes(softBreak));
   assert.ok(content.includes('Assets/chart.png'));
   assert.ok(!content.includes('/protected-media/'));
   assert.ok(content.includes('Saved addition'));
-  assert.ok(vaultNotePath(target).startsWith('/project/RES/files?'));
+  assert.ok(vaultNotePath(target).startsWith('/project/RES/docs?'));
 });
 
 it('keeps a local draft and its original hash after a conflicting external write and refetch', async () => {
@@ -532,7 +542,6 @@ for (const [name, body] of [
     await chooseMode(files.unified.source);
     await until(() => !!document.querySelector('textarea'));
     assert.equal(sourceArea().value, before.replace(/\r\n/g, '\n'));
-    assert.ok(document.body.textContent?.includes(files.unified.sourceRequired));
     assert.equal(saveButton().disabled, true);
     assert.equal(content, before);
     const after = before + '\nAdded source text';
@@ -697,7 +706,7 @@ it('preserves SilverBullet-specific source as data without running page expressi
   );
 });
 
-it('opens a normal file inline, preserves the toolbar and guards return, breadcrumbs and tabs', async () => {
+it('opens Markdown from the file list in the Docs editor', async () => {
   await render({ browser: true });
   await until(
     () =>
@@ -709,41 +718,20 @@ it('opens a normal file inline, preserves the toolbar and guards return, breadcr
     node.textContent?.includes('00-Start.md'),
   )!;
   await act(async () => file.click());
-  await until(() => !!document.querySelector('.tiptap'));
-  assert.equal(document.querySelector('[role="dialog"]'), null);
-  assert.ok(document.querySelector('#root [data-file-preview]'));
-  const tab = document.querySelector('a[href="/project/RES/files?root=code"]')!;
-  assert.ok(tab);
-  await act(async () =>
-    editor().commands.insertContentAt(editor().state.doc.content.size, '<p>Unsaved inline</p>'),
-  );
-  await until(() => !saveButton().disabled);
-  let confirmations = 0;
-  dom.window.confirm = () => {
-    confirmations++;
-    return false;
-  };
-  const back = [...document.querySelectorAll<HTMLButtonElement>('button')].find(
-    (node) => node.textContent === files.actions.showInFolder,
-  )!;
-  assert.ok(back);
-  await act(async () => back.click());
-  await act(async () => document.querySelector<HTMLButtonElement>('nav button')!.click());
-  const click = new dom.window.MouseEvent('click', { bubbles: true, cancelable: true });
-  await act(async () => {
-    tab.dispatchEvent(click);
-  });
-  assert.equal(click.defaultPrevented, true);
-  assert.equal(confirmations, 3);
-  assert.deepEqual(navigations, []);
-  assert.ok(editor().getText().includes('Unsaved inline'));
-  dom.window.confirm = () => true;
-  await act(async () => back.click());
-  await until(() => !document.querySelector('[data-file-preview]'));
-  assert.equal(document.querySelector('[role="dialog"]'), null);
-  assert.ok(document.querySelector('a[href="/project/RES/files?root=code"]'));
+  assert.deepEqual(navigations, [vaultNotePath(canonical)]);
+  assert.equal(document.querySelector('[data-file-preview]'), null);
   assert.equal(content, original);
   assert.ok(requests.every((request) => request.method === 'GET'));
+});
+
+it('opens source from the document menu without a mode switch or persistent warning', async () => {
+  await render({ viewer: true, sourceOnly: true });
+  await until(() => !!document.querySelector('textarea'));
+  assert.equal(sourceArea().value, original.replace(/\r\n/g, '\n'));
+  assert.equal(document.querySelector('button[aria-pressed]'), null);
+  assert.ok(!document.body.textContent?.includes(files.unified.sourceRequired));
+  assert.ok(!document.body.textContent?.includes(files.unified.original));
+  assert.ok(!requests.some((request) => request.url.pathname.endsWith('/files/references')));
 });
 
 it('reopens formatted after a deliberate source view without changing the original bytes', async () => {

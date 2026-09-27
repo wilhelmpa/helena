@@ -46,7 +46,7 @@ export function useFileActions({
     open(item: FileItem) {
       if (item.kind === 'folder') return onNavigate(item.path);
       const canonical = vaultPath(item);
-      if (canonical && projectKey && /\.canvas$/i.test(item.name))
+      if (canonical && (/\.md$/i.test(item.name) || (projectKey && /\.canvas$/i.test(item.name))))
         return router.push(vaultNotePath(canonical));
       onSelect(item.path);
     },

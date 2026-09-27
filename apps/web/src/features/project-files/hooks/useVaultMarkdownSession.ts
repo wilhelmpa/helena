@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Editor } from '@tiptap/core';
 import { fromEditorImages, toEditorImages } from '@/utils/vaultImages';
+import { restoreWikilinkTablePipes } from '@/utils/wikilinkTablePipes';
 import { markdownContent, preserveMarkdownEnding } from '../utils/markdownContent';
 
 export function useVaultMarkdownSession({
@@ -9,14 +10,16 @@ export function useVaultMarkdownSession({
   vaultPath,
   editable,
   onChange,
+  initialMode = 'formatted',
 }: {
   content: string;
   value: string;
   vaultPath: string;
   editable: boolean;
   onChange: (value: string) => void;
+  initialMode?: 'formatted' | 'source';
 }) {
-  const [mode, setMode] = useState<'formatted' | 'source'>('formatted');
+  const [mode, setMode] = useState<'formatted' | 'source'>(initialMode);
   const [snapshot, setSnapshot] = useState({ content, revision: 0 });
   const [check, setCheck] = useState<{
     snapshot: typeof snapshot;
@@ -39,7 +42,8 @@ export function useVaultMarkdownSession({
   }, [mode, snapshot, vaultPath, editable]);
   const isCurrent = () =>
     active.current?.snapshot === snapshot && active.current.vaultPath === vaultPath;
-  const bodyOf = (markdown: string) => fromEditorImages(markdown, vaultPath, images.sources);
+  const bodyOf = (markdown: string) =>
+    restoreWikilinkTablePipes(original.body, fromEditorImages(markdown, vaultPath, images.sources));
   const failClosed = () => {
     active.current = null;
     setCheck({ snapshot, vaultPath, lossless: false });

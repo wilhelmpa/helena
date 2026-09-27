@@ -63,7 +63,7 @@ export const MarkdownTable = Table.extend({
             row.forEach((cell, _cellOffset, column) => {
               if (column) state.write(' | ');
               const content = cell.firstChild;
-              if (content?.textContent.trim()) writeCell(state, content);
+              if (content?.childCount) writeCell(state, content);
             });
             state.write(' |');
             state.ensureNewLine();

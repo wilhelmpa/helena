@@ -2,9 +2,8 @@ import type { Frontmatter } from './noteFrontmatter';
 
 // The edits of one open note against the file.
 //
-// The editor serializes Markdown its own way, so the body a note "has" is the one
-// the editor produced right after loading it (`saved`), not the text of the file:
-// only a change from that is an edit.
+// The canvas reports the original body after checking its Markdown round trip.
+// Until then `saved` is null, so mounting cannot start an autosave.
 
 export type NoteSaveStatus = 'saved' | 'saving' | 'error' | 'conflict';
 

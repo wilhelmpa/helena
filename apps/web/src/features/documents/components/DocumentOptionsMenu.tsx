@@ -1,18 +1,9 @@
 'use client';
 
-import {
-  Download,
-  EllipsisVertical,
-  FolderInput,
-  History,
-  NotebookPen,
-  Trash2,
-} from 'lucide-react';
+import { Download, EllipsisVertical, FolderInput, History, Code2, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { vaultFileUrl, type VaultDocument } from '@/lib/api/endpoints/knowledge';
 import { cn } from '@/lib/utils';
-import Link from 'next/link';
-import { vaultNotePath } from '@/utils/paths';
 import { PAGE_CONTROL_CLASS } from '@/components/layout/PageToolbar';
 import {
   DropdownMenu,
@@ -27,16 +18,18 @@ import type { DocumentEditorDialog } from './DocumentEditorDialogs';
 export default function DocumentOptionsMenu({
   document,
   canEdit,
+  sourceRequired,
+  onOpenSource,
   onOpenDialog,
 }: {
   document: VaultDocument;
   canEdit: boolean;
+  sourceRequired: boolean;
+  onOpenSource: () => void;
   onOpenDialog: (dialog: DocumentEditorDialog) => void;
 }) {
   const t = useTranslations('documents');
   const tFiles = useTranslations('files.unified');
-  // Open the same canonical file inside Helena, with the current project scope.
-  const notes = vaultNotePath(document.path);
 
   return (
     <DropdownMenu>
@@ -51,13 +44,12 @@ export default function DocumentOptionsMenu({
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        {notes && (
-          <DropdownMenuItem asChild>
-            <Link href={notes}>
-              <NotebookPen />
-              {tFiles('editor')}
-            </Link>
-          </DropdownMenuItem>
+        <DropdownMenuItem onSelect={onOpenSource}>
+          <Code2 />
+          {tFiles('source')}
+        </DropdownMenuItem>
+        {sourceRequired && (
+          <p className="px-2 py-1 text-xs text-muted-foreground">{tFiles('sourceRequired')}</p>
         )}
         <DropdownMenuItem asChild>
           <a href={vaultFileUrl(document.path)} download={baseName(document.path)}>

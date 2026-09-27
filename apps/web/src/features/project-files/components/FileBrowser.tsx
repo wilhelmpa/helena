@@ -39,6 +39,7 @@ export default function FileBrowser({
   onNavigate,
   onSelect,
   onDirtyChange,
+  sourceOnly = false,
 }: {
   // The page's own controls that lead the header toolbar (the project's Wissen/Code tabs).
   leading?: ReactNode;
@@ -50,6 +51,7 @@ export default function FileBrowser({
   onNavigate: (path: string) => void;
   onSelect: (file: string | null) => void;
   onDirtyChange?: (dirty: boolean) => void;
+  sourceOnly?: boolean;
 }) {
   const client = useQueryClient();
   const { onDirty, canLeave } = useFileNavigationGuard(onDirtyChange);
@@ -166,6 +168,7 @@ export default function FileBrowser({
           path={viewing.path}
           canEdit={can.edit}
           onDirty={onDirty}
+          sourceOnly={sourceOnly}
           file={{
             name: viewing.name,
             contentType: viewing.contentType,

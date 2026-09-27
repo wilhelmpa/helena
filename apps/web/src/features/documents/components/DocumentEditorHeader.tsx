@@ -17,10 +17,12 @@ export function noteToolbarParts({
   status,
   dirty,
   editable,
+  sourceRequired,
   inspectorOpen,
   labels,
   onBack,
   onRetrySave,
+  onOpenSource,
   onToggleInspector,
   onOpenDialog,
 }: {
@@ -29,10 +31,12 @@ export function noteToolbarParts({
   status: NoteSaveStatus;
   dirty: boolean;
   editable: boolean;
+  sourceRequired: boolean;
   inspectorOpen: boolean;
   labels: { back: string; openDetails: string; closeDetails: string };
   onBack: () => void;
   onRetrySave: () => void;
+  onOpenSource: () => void;
   onToggleInspector: () => void;
   onOpenDialog: (dialog: DocumentEditorDialog) => void;
 }): NoteToolbarParts {
@@ -63,7 +67,13 @@ export function noteToolbarParts({
       },
     ],
     menu: (
-      <DocumentOptionsMenu document={document} canEdit={editable} onOpenDialog={onOpenDialog} />
+      <DocumentOptionsMenu
+        document={document}
+        canEdit={editable}
+        sourceRequired={sourceRequired}
+        onOpenSource={onOpenSource}
+        onOpenDialog={onOpenDialog}
+      />
     ),
   };
 }

@@ -6,6 +6,4 @@ export function markdownContent(content: string) {
   return { prefix, body: content.slice(prefix.length) };
 }
 
-export function preserveMarkdownEnding(original: string, serialized: string): string {
-  return serialized.replace(/\n+$/, '') + (original.match(/\n*$/)?.[0] ?? '');
-}
+export { preserveMarkdownEnding } from '@/utils/markdownEnding';

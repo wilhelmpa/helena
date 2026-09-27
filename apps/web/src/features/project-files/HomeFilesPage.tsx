@@ -87,6 +87,7 @@ export default function HomeFilesPage() {
           scope={scope}
           path={path}
           selected={params.get('file')}
+          sourceOnly={params.get('source') === '1'}
           rootLabel={
             projectKey
               ? (projects.find((project) => project.key === projectKey)?.name ?? projectKey)

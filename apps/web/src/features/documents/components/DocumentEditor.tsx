@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useState, type ReactNode, type RefObject } from 'react';
+import { useRouter } from 'next/navigation';
 import type { Editor } from '@tiptap/react';
 import { useTranslations } from 'next-intl';
 import type { VaultDocument } from '@/lib/api/endpoints/knowledge';
+import { vaultMarkdownSourcePath } from '@/utils/paths';
 import { useNoteDraft } from '../hooks/useNoteDraft';
 import { useVaultPathActions } from '../hooks/useVaultPathActions';
 import { useWikilinkOpener } from '../hooks/useWikilinkOpener';
@@ -33,10 +35,14 @@ export default function DocumentEditor({
   onClose: () => void;
 }) {
   const t = useTranslations('documents');
+  const router = useRouter();
   const path = document.path;
-  // A note cut short by the API would lose its end on the next save.
-  const editable = canEdit && !document.truncated;
   const note = useNoteDraft(document);
+  const [check, setCheck] = useState<{ revision: number; lossless: boolean } | null>(null);
+  // The formatted body stays read-only until its Markdown round trip is verified.
+  const lossless = check?.revision === note.draft.loaded.revision ? check.lossless : null;
+  const canManage = canEdit && !document.truncated;
+  const editable = canManage && lossless === true;
   const actions = useVaultPathActions({ root, openPath: path, flush: note.save });
   const openWikilink = useWikilinkOpener(path, root, canEdit);
   const [editor, setEditor] = useState<Editor | null>(null);
@@ -64,7 +70,8 @@ export default function DocumentEditor({
             document,
             status: note.draft.status,
             dirty: note.dirty,
-            editable,
+            editable: canManage,
+            sourceRequired: canManage && lossless === false,
             inspectorOpen,
             labels: {
               back: t('backToDocuments'),
@@ -73,6 +80,11 @@ export default function DocumentEditor({
             },
             onBack: onClose,
             onRetrySave: () => void note.save(),
+            onOpenSource: () => {
+              void note.save().then((saved) => {
+                if (saved) router.push(vaultMarkdownSourcePath(path));
+              });
+            },
             onToggleInspector: () => setInspectorOpen((open) => !open),
             onOpenDialog: setDialog,
           }),
@@ -88,9 +100,13 @@ export default function DocumentEditor({
           loaded={note.draft.loaded}
           editor={editor}
           editable={editable}
+          canRename={canManage}
           focusTitle={focusTitle}
           onEditorReady={setEditor}
           onLoaded={note.ready}
+          onLossless={(value) =>
+            setCheck({ revision: note.draft.loaded.revision, lossless: value })
+          }
           onEdit={note.edit}
           onBlur={() => void note.save()}
           onRename={(name) => actions.rename(path, name)}
@@ -103,7 +119,7 @@ export default function DocumentEditor({
         revision={note.draft.loaded.revision}
         path={path}
         frontmatter={note.draft.current.frontmatter}
-        editable={editable}
+        editable={canManage}
         onFrontmatterChange={note.setFrontmatter}
         onOpenChange={setInspectorOpen}
       />
@@ -113,7 +129,7 @@ export default function DocumentEditor({
         root={root}
         path={path}
         note={note}
-        editable={editable}
+        editable={canManage}
         actions={actions}
         onClose={() => setDialog(null)}
       />

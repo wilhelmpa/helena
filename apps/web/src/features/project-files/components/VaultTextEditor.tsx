@@ -15,6 +15,7 @@ export default function VaultTextEditor({
   onDirty,
   vaultPath,
   beforeNavigate,
+  sourceOnly = false,
 }: {
   scope: FileScope;
   path: string;
@@ -22,6 +23,7 @@ export default function VaultTextEditor({
   onDirty: (dirty: boolean) => void;
   vaultPath?: string;
   beforeNavigate: () => boolean;
+  sourceOnly?: boolean;
 }) {
   const t = useTranslations('files.unified');
   const client = useQueryClient();
@@ -91,7 +93,7 @@ export default function VaultTextEditor({
       }}
     >
       <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
-        <span>{dirty ? t('unsaved') : t('original')}</span>
+        <span>{dirty ? t('unsaved') : sourceOnly ? '' : t('original')}</span>
         {canEdit && (
           <Button size="sm" disabled={!dirty || saving} onClick={save}>
             {t('save')}
@@ -100,13 +102,14 @@ export default function VaultTextEditor({
       </div>
       {vaultPath && /\.(md|markdown)$/i.test(path) ? (
         <VaultMarkdownContent
-          key={draft?.etag ?? query.data.etag}
+          key={`${draft?.etag ?? query.data.etag}:${sourceOnly ? 'source' : 'formatted'}`}
           content={draft?.originalContent ?? query.data.content}
           value={draft?.content ?? query.data.content}
           vaultPath={vaultPath}
           editable={canEdit && !saving}
           onChange={edit}
           beforeNavigate={beforeNavigate}
+          sourceOnly={sourceOnly}
         />
       ) : (
         <Textarea

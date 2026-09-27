@@ -72,6 +72,7 @@ export default function ProjectFilesPage({ boards }: { boards?: ReactNode }) {
             scope={{ kind: 'project', projectKey, root }}
             path={path}
             selected={params.get('file')}
+            sourceOnly={params.get('source') === '1'}
             rootLabel={t(`roots.${root}`)}
             permissions={{
               create: can('documents', 'create'),

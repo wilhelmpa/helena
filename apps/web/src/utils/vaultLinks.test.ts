@@ -72,7 +72,7 @@ describe('vault links', () => {
   it('opens a note on the Docs page of its project', () => {
     assert.equal(
       docsFileUrl('VOL', 'Projects/VOL/Docs/Plan.md'),
-      '/project/VOL/files?path=Docs&file=Docs%2FPlan.md',
+      '/project/VOL/docs?path=Projects%2FVOL%2FDocs%2FPlan.md',
     );
   });
 

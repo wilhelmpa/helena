@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { filesPath, homeFilesPath, vaultNotePath, notesPath, notePath } from './paths';
+import {
+  filesPath,
+  homeFilesPath,
+  vaultMarkdownSourcePath,
+  vaultNotePath,
+  notesPath,
+  notePath,
+} from './paths';
 
 describe('Files page paths', () => {
   it('keeps the root, the folder and the open file in the address', () => {
@@ -21,15 +28,21 @@ describe('Files page paths', () => {
   });
 });
 
-it('keeps notes, boards, private files and Unicode paths in the single file area', () => {
+it('opens Markdown in Docs and keeps other files in the file viewer', () => {
   assert.equal(
     vaultNotePath('Projects/VOL/Docs/Plan.md'),
-    '/project/VOL/files?path=Docs&file=Docs%2FPlan.md',
+    '/project/VOL/docs?path=Projects%2FVOL%2FDocs%2FPlan.md',
+  );
+  assert.equal(
+    vaultNotePath('Projects/VOL/Files/Tasks/VOL-1.md'),
+    '/project/VOL/docs?path=Projects%2FVOL%2FFiles%2FTasks%2FVOL-1.md',
   );
   assert.equal(vaultNotePath('Private/Steuern.txt'), '/files?root=private&file=Steuern.txt');
+  assert.equal(vaultNotePath('Home/Docs/März.md'), '/docs?path=Home%2FDocs%2FM%C3%A4rz.md');
+  assert.equal(vaultNotePath('Templates/Brief.md'), '/docs?path=Templates%2FBrief.md');
   assert.equal(
-    vaultNotePath('Home/Docs/März.md'),
-    '/files?root=home&path=Docs&file=Docs%2FM%C3%A4rz.md',
+    vaultMarkdownSourcePath('Projects/VOL/Docs/Plan.md'),
+    '/project/VOL/files?path=Docs&file=Docs%2FPlan.md&source=1',
   );
   assert.equal(notesPath('VOL'), '/project/VOL/files?view=boards');
   assert.equal(notePath('VOL', 42), '/project/VOL/files?view=boards&board=42');

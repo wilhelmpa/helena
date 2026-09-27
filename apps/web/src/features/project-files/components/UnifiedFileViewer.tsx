@@ -18,6 +18,7 @@ export default function UnifiedFileViewer({
   actions,
   onClose,
   onDirty,
+  sourceOnly = false,
 }: {
   file: ViewerFile;
   scope: FileScope;
@@ -26,11 +27,13 @@ export default function UnifiedFileViewer({
   actions: ReactNode;
   onClose: () => void;
   onDirty?: (dirty: boolean) => void;
+  sourceOnly?: boolean;
 }) {
   const t = useTranslations('files.unified');
   const files = useTranslations('files');
   const editable =
     /\.(md|markdown|txt)$/i.test(file.name) && !(scope.kind === 'project' && scope.root === 'code');
+  const markdownSource = sourceOnly && /\.md$/i.test(file.name) && !!vaultFilePath(scope, path);
   const [dirty, setDirty] = useState(false);
   const reportDirty = useCallback(
     (value: boolean) => {
@@ -68,10 +71,10 @@ export default function UnifiedFileViewer({
             <h2 className="min-w-0 flex-1 font-medium break-words" dir="auto">
               {file.name}
             </h2>
-            {actions}
+            {!markdownSource && actions}
           </div>
           <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
-            <FileReferences scope={scope} path={path} />
+            {!markdownSource && <FileReferences scope={scope} path={path} />}
             {editable ? (
               <VaultTextEditor
                 key={vaultFilePath(scope, path) ?? path}
@@ -81,6 +84,7 @@ export default function UnifiedFileViewer({
                 onDirty={reportDirty}
                 vaultPath={vaultFilePath(scope, path) ?? undefined}
                 beforeNavigate={canLeave}
+                sourceOnly={markdownSource}
               />
             ) : (
               <FileViewerContent file={file} />

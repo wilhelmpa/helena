@@ -13,6 +13,7 @@ export default function VaultMarkdownContent({
   editable,
   onChange,
   beforeNavigate,
+  sourceOnly = false,
 }: {
   content: string;
   value: string;
@@ -20,10 +21,18 @@ export default function VaultMarkdownContent({
   editable: boolean;
   onChange: (content: string) => void;
   beforeNavigate: () => boolean;
+  sourceOnly?: boolean;
 }) {
   const t = useTranslations('documents');
   const files = useTranslations('files.unified');
-  const session = useVaultMarkdownSession({ content, value, vaultPath, editable, onChange });
+  const session = useVaultMarkdownSession({
+    content,
+    value,
+    vaultPath,
+    editable,
+    onChange,
+    initialMode: sourceOnly ? 'source' : 'formatted',
+  });
   const { mode, lossless } = session;
   const openWikilink = useVaultWikilinkOpener(vaultPath, { beforeNavigate });
   const sourceEditor = (
@@ -32,28 +41,25 @@ export default function VaultMarkdownContent({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
-      <div className="flex gap-2" role="group" aria-label={files('editor')}>
-        <Button
-          size="sm"
-          variant={mode === 'formatted' ? 'default' : 'outline'}
-          aria-pressed={mode === 'formatted'}
-          onClick={session.showFormatted}
-        >
-          {files('formatted')}
-        </Button>
-        <Button
-          size="sm"
-          variant={mode === 'source' ? 'default' : 'outline'}
-          aria-pressed={mode === 'source'}
-          onClick={session.showSource}
-        >
-          {files('source')}
-        </Button>
-      </div>
-      {lossless === false && (
-        <p role="status" className="text-sm text-muted-foreground">
-          {files('sourceRequired')}
-        </p>
+      {!sourceOnly && (
+        <div className="flex gap-2" role="group" aria-label={files('editor')}>
+          <Button
+            size="sm"
+            variant={mode === 'formatted' ? 'default' : 'outline'}
+            aria-pressed={mode === 'formatted'}
+            onClick={session.showFormatted}
+          >
+            {files('formatted')}
+          </Button>
+          <Button
+            size="sm"
+            variant={mode === 'source' ? 'default' : 'outline'}
+            aria-pressed={mode === 'source'}
+            onClick={session.showSource}
+          >
+            {files('source')}
+          </Button>
+        </div>
       )}
       {mode === 'source' ? (
         sourceEditor
