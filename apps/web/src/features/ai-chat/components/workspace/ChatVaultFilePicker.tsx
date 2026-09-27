@@ -8,7 +8,7 @@ import { listFiles, type FileScope } from '@/lib/api/endpoints/projectFiles';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { chatUploadScope } from '../../hooks/useVaultUpload';
+import { chatUploadScope, chatVaultPath } from '../../utils/chatVaultPaths';
 
 // A small folder browser to attach a file already in the vault instead of uploading it
 // again. Starts where a chat's attachments are allowed to come from: the project's own
@@ -66,7 +66,9 @@ export default function ChatVaultFilePicker({
               variant="ghost"
               className="w-full justify-start gap-2 px-2"
               onClick={() =>
-                item.kind === 'folder' ? setPath(item.path) : onPick(item.path, item.name)
+                item.kind === 'folder'
+                  ? setPath(item.path)
+                  : onPick(chatVaultPath(scopeKey, item.path), item.name)
               }
             >
               {item.kind === 'folder' ? (
