@@ -232,6 +232,18 @@ class HostToolsTest(unittest.TestCase):
         self.assertEqual(command.call_args_list, [mock.call(["systemctl", "restart", "volition-plan-api.service"], timeout=60)] * 2)
         self.assertIn("Rollback succeeded", "\n".join(self.log.lines))
 
+    def test_terminal_smoke_uses_allowed_host_on_loopback(self):
+        with mock.patch.object(h.urllib.request, "build_opener") as build, mock.patch.object(
+                h, "command") as command:
+            build.return_value.open.side_effect = h.urllib.error.HTTPError(
+                "http://127.0.0.1:8444/", 404, "route missing", {}, None)
+            h.service_smoke(["volition-terminal.service"])
+        command.assert_called_once_with(
+            ["systemctl", "is-active", "--quiet", "volition-terminal.service"], timeout=5)
+        request = build.return_value.open.call_args.args[0]
+        self.assertEqual(request.full_url, "http://127.0.0.1:8444/")
+        self.assertEqual(request.get_header("Host"), "kingston-server.local")
+
     def test_success_retains_previous_and_inventory_reports_managed_version(self):
         tree = self.installed_tree()
         with mock.patch.object(h, "quiet_queue", return_value=contextlib.nullcontext()), mock.patch.object(

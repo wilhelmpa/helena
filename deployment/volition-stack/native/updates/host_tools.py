@@ -50,6 +50,9 @@ SMOKE_URLS = {
     "volition-terminal.service": ("http://127.0.0.1:8444/", {400, 404}),
     "volition-project-browser-router.service": ("http://127.0.0.1:6082/api/overview", {200}),
 }
+# The terminal router rejects an IP Host header before it reaches its 404 route.
+# Keep the connection local, but send one of its configured default hostnames.
+SMOKE_HOSTS = {"volition-terminal.service": "kingston-server.local"}
 
 
 class ToolError(Exception):
@@ -536,8 +539,10 @@ def service_smoke(units: list[str]) -> None:
                 command(["systemctl", "is-active", "--quiet", unit], timeout=5)
                 if unit in SMOKE_URLS:
                     url, statuses = SMOKE_URLS[unit]
+                    request = urllib.request.Request(
+                        url, headers={"Host": SMOKE_HOSTS[unit]} if unit in SMOKE_HOSTS else {})
                     try:
-                        with opener.open(url, timeout=2) as response:
+                        with opener.open(request, timeout=2) as response:
                             status = response.status
                     except urllib.error.HTTPError as error:
                         status = error.code

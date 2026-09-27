@@ -83,6 +83,7 @@ class HelperTest(unittest.TestCase):
         result = answer["result"]
         self.assertEqual(result["current"]["version"], "0.21.4")
         self.assertEqual(result["latest"]["version"], "0.22.0")
+        self.assertFalse(result["latestIsAncestor"])
         self.assertEqual([c["subject"] for c in result["commits"]],
                          ["release 0.22.0", "feat: stream json"])
         self.assertEqual([c["subject"] for c in result["localPatches"]],
@@ -127,6 +128,19 @@ class HelperTest(unittest.TestCase):
         commit(self.upstream, "app.py", "print('c')\n", "feat: after the checkout, no release yet")
         answer = helper.run(self.config_with(), "check", None)
         self.assertTrue(answer["ok"], answer)
+        self.assertEqual(answer["result"]["commits"], [])
+        self.assertTrue(answer["result"]["latestIsAncestor"])
+
+    def test_main_canary_after_release_is_not_an_update_to_older_release(self):
+        commit(self.upstream, "pyproject.toml", 'version = "0.0.0"\n',
+               "feat: unreleased main canary")
+        sh("git", "fetch", "-q", "--tags", "origin", cwd=self.source)
+        sh("git", "reset", "-q", "--hard", "origin/main", cwd=self.source)
+        answer = helper.run(self.config_with(), "check", None)
+        self.assertTrue(answer["ok"], answer)
+        self.assertEqual(answer["result"]["current"]["version"], "0.0.0")
+        self.assertEqual(answer["result"]["latest"]["version"], "0.22.0")
+        self.assertTrue(answer["result"]["latestIsAncestor"])
         self.assertEqual(answer["result"]["commits"], [])
 
     def test_apply_carries_the_local_commit_and_reinstalls(self):

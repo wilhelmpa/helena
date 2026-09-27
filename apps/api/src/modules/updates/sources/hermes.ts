@@ -43,7 +43,8 @@ export function toCandidate(state: StoredState | null, error: string | null): Up
     };
   }
   const { current, latest, commits, localPatches } = state.check;
-  const behind = current.commit !== latest.commit && commits.length > 0;
+  const behind =
+    current.commit !== latest.commit && state.check.latestIsAncestor !== true && commits.length > 0;
   return {
     component: 'hermes',
     name: 'Hermes',

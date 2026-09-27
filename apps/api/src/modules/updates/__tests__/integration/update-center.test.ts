@@ -954,6 +954,29 @@ describe('update center: Hermes', () => {
     throw new Error('no request arrived');
   }
 
+  it('does not offer a release that is an ancestor of the installed canary', async () => {
+    const { api } = await owner();
+    const { agent, runner } = await hermesAgent(api);
+    await db
+      .update(aiAgent)
+      .set({ runtimeState: { adapter: 'hermes', capabilities: ['update'] }, lastSeenAt: new Date() })
+      .where(eq(aiAgent.id, agent.id));
+    const checking = runUpdateCheck({ only: 'hermes', manual: true });
+    await answerNext(runner, () => ({
+      current: ref('0.0.0', 'd'.repeat(40)),
+      latest: ref('0.21.5', 'e'.repeat(40)),
+      latestIsAncestor: true,
+      commits: [{ commit: 'e'.repeat(40), date: '2026-09-24', subject: 'stale release note' }],
+      localPatches: [],
+    }));
+    await checking;
+    expect((await rows()).find((row) => row.source === 'hermes')).toMatchObject({
+      updateAvailable: false,
+      applicable: false,
+    });
+    expect((await api.god['hermes-update'].request.post()).status).toBe(409);
+  });
+
   it('refreshes the Update Center from cached Hermes refs without a fetch', async () => {
     const { api } = await owner();
     const { agent, runner } = await hermesAgent(api);

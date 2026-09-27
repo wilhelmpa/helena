@@ -21,6 +21,7 @@ export interface VersionRef {
 export interface UpdateCheck {
   current: VersionRef;
   latest: VersionRef;
+  latestIsAncestor?: boolean;
   commits: { commit: string; date: string; subject: string }[];
   localPatches: { commit: string; date: string; subject: string }[];
 }
@@ -89,7 +90,11 @@ export async function requestHermesUpdate(): Promise<number> {
   const state = await getSetting<StoredState>(STATE_KEY);
   if (!state) throw new HttpError(409, 'Check for an update first');
   const { current, latest } = state.check;
-  if (current.commit === latest.commit || state.check.commits.length === 0) {
+  if (
+    current.commit === latest.commit ||
+    state.check.latestIsAncestor === true ||
+    state.check.commits.length === 0
+  ) {
     throw new HttpError(409, 'Hermes is up to date');
   }
   const payload: UpdatePayload = {
