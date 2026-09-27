@@ -19,6 +19,7 @@ const message = {
 const receipts: Record<string, unknown>[] = [];
 const matches: number[] = [];
 const files = new Map<string, Buffer>();
+const indexed: string[] = [];
 let matchingCalls = 0;
 const table = (name: string) => ({ name, id: `${name}.id` });
 const tables = {
@@ -77,7 +78,14 @@ mock.module('drizzle-orm', () =>
 mock.module('@repo/storage', () => ({
   getObject: async () => ({ body: new Response(raw).body! }),
 }));
-mock.module('@repo/vault', () => ({ absoluteVaultPath: (value: string) => value }));
+mock.module('@repo/vault', () => ({
+  absoluteVaultPath: (value: string) => value,
+  indexVaultPaths: async (paths: string[], provenance: { author: string }) => {
+    assert.deepEqual(paths, [...files.keys()]);
+    assert.equal(provenance.author, 'mail-receipts');
+    indexed.push(...paths);
+  },
+}));
 const moduleMock = (relative: string, exports: Record<string, unknown>) =>
   mock.module(new URL(`../../../modules/${relative}.ts`, import.meta.url).pathname, () => exports);
 class HttpError extends Error {
@@ -147,6 +155,9 @@ moduleMock('receipts/views', {
   inMonth: () => true,
   receiptDetailView: () => ({}),
   receiptViews: () => [],
+});
+moduleMock('receipts/source', {
+  receiptSourceLinks: () => assert.fail('Source links must not be rendered during intake'),
 });
 
 const { intakeMailReceipts } = await import('../../../modules/receipts/receipts');
@@ -235,5 +246,6 @@ assert.equal(matchingCalls, expectedCalls);
 assert.equal(receipts.length, 1);
 assert.equal(receipts[0]!.status, expectedCalls ? 'matched' : 'open');
 assert.equal(files.size, 1);
+assert.deepEqual(indexed, [...files.keys()]);
 assert.deepEqual([...files.values()][0], raw);
 console.log(`matching:${mode}:ok`);

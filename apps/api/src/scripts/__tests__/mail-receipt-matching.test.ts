@@ -11,8 +11,8 @@ for (const mode of ['default', 'false', 'skip', 'existing', 'backfill', 'history
       ],
       { env: { ...process.env, DATABASE_URL: '', NODE_ENV: 'test' } },
     );
-    expect(result.exitCode).toBe(0);
     expect(result.stderr.toString()).toBe('');
+    expect(result.exitCode).toBe(0);
     expect(result.stdout.toString().trim()).toBe(`matching:${mode}:ok`);
   });
 }
