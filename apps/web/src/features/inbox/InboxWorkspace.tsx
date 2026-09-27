@@ -60,7 +60,7 @@ export default function InboxWorkspace({
         <p className="p-4 text-sm text-muted-foreground">{inboxCopy('loading')}</p>
       ) : projectKey && !projectAccounts.data?.length ? (
         <p className="p-4 text-sm text-muted-foreground">
-          Für dieses Projekt ist kein Postfach eingerichtet.
+          {inboxCopy('noProjectMailbox')}
         </p>
       ) : teamId == null ? (
         <p className="p-4 text-sm text-muted-foreground">{teamCopy('manage.empty')}</p>

@@ -23,10 +23,10 @@ export default function InboxPage() {
 
   if (!project) return null;
   if (mailAccounts.isPending)
-    return <p className="p-8 text-sm text-muted-foreground">Posteingang wird geladen …</p>;
+    return <p className="p-8 text-sm text-muted-foreground">{t('mailLoading')}</p>;
   if (mailAccounts.isError)
     return (
-      <p className="p-8 text-sm text-muted-foreground">Das Postfach konnte nicht geladen werden.</p>
+      <p className="p-8 text-sm text-muted-foreground">{t('mailError')}</p>
     );
   const hasMail = (mailAccounts.data?.length ?? 0) > 0;
   const activeTab = hasMail ? tab : 'updates';

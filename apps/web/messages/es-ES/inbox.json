@@ -40,12 +40,57 @@
   "hub": {
     "messages": "Messages",
     "updates": "Updates",
-    "loading": "Loading messages…"
+    "loading": "Loading messages…",
+    "mailLoading": "Cargando buzón…",
+    "mailError": "No se pudo cargar el buzón.",
+    "noProjectMailbox": "No hay ningún buzón configurado para este proyecto."
   },
   "mailFilter": {
     "read": "Estado de lectura",
     "attachments": "Adjuntos",
     "any": "Todos",
     "reset": "Restablecer filtros"
+  },
+  "owner": {
+    "home": "HOME",
+    "anAgent": "Un agente",
+    "defaultAgent": "Helena",
+    "mentionedBy": "{name} te ha mencionado",
+    "approvalRequest": "{name} solicita una decisión.",
+    "workflowWaiting": "Este flujo de trabajo espera tu decisión.",
+    "proposalRequest": "{name} propone un cambio.",
+    "decide": "Decidir",
+    "approve": "Aprobar",
+    "reply": "Responder",
+    "openDetails": "Abrir detalles",
+    "viewFailure": "Ver error",
+    "markRead": "Marcar como leído",
+    "dashboard": "Panel",
+    "history": "Historial",
+    "view": "Ver",
+    "now": "Ahora",
+    "eyebrow": "TÚ · INBOX",
+    "title": "Inbox",
+    "loadingTitle": "Cargando Inbox.",
+    "allDone": "Todo listo.",
+    "headingCount": "{count, plural, one {Una cosa} other {# cosas}}",
+    "needsYou": "{count, plural, one {necesita tu atención.} other {necesitan tu atención.}}",
+    "project": "Proyecto",
+    "all": "Todos",
+    "loadError": "No se pudieron cargar algunos elementos. Actualiza la página.",
+    "loading": "Cargando Inbox…",
+    "empty": "Ahora mismo no hay nada pendiente.",
+    "toRead": "PARA LEER",
+    "noCompletedRuns": "Todavía no hay ejecuciones completadas.",
+    "runCompleted": "{name} · Ejecución completada",
+    "tags": {
+      "budget": "PRESUPUESTO",
+      "approval": "APROBACIÓN",
+      "workflow": "FLUJO",
+      "proposal": "PROPUESTA",
+      "mention": "MENCIÓN",
+      "system": "SISTEMA",
+      "failure": "ERROR"
+    }
   }
 }

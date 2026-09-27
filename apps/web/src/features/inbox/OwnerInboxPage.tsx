@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import Shell from '@/components/layout/Shell';
 import { useOwnerInbox } from './useOwnerInbox';
 import type { OwnerInboxItem } from './ownerInboxItems';
@@ -27,26 +28,27 @@ import { projectColor } from '@/utils/projectColor';
 import styles from './OwnerInboxPage.module.css';
 
 function InboxCard({ item }: { item: OwnerInboxItem }) {
+  const t = useTranslations('inbox.owner');
   const [expanded, setExpanded] = useState(false);
   const approvalDecision = useDecideApproval();
   const stepDecision = useDecidePipelineApproval();
   const mentionRead = useSetNotificationRead(item.projectKey ?? '');
   const isError = item.kind === 'problem' || item.kind === 'failure';
-  const project = item.projectKey?.toUpperCase() ?? 'HOME';
+  const project = item.projectKey?.toUpperCase() ?? t('home');
   const tag =
     item.kind === 'approval'
       ? item.approval.kind === 'budget'
-        ? 'BUDGET'
-        : 'FREIGABE'
+        ? t('tags.budget')
+        : t('tags.approval')
       : item.kind === 'step'
-        ? 'WORKFLOW'
+        ? t('tags.workflow')
         : item.kind === 'proposal'
-          ? 'VORSCHLAG'
+          ? t('tags.proposal')
           : item.kind === 'mention'
-            ? 'ERWÄHNUNG'
+            ? t('tags.mention')
             : item.kind === 'problem'
-              ? 'SYSTEM'
-              : 'FEHLER';
+              ? t('tags.system')
+              : t('tags.failure');
   const title =
     item.kind === 'approval'
       ? item.approval.action
@@ -55,15 +57,15 @@ function InboxCard({ item }: { item: OwnerInboxItem }) {
         : item.kind === 'proposal'
           ? item.proposal.title
           : item.kind === 'mention'
-            ? `${item.notification.actorName ?? 'Ein Agent'} hat dich erwähnt`
+            ? t('mentionedBy', { name: item.notification.actorName ?? t('anAgent') })
             : item.entry.title;
   const body =
     item.kind === 'approval'
-      ? item.approval.details || `${item.approval.agentName} bittet um eine Entscheidung.`
+      ? item.approval.details || t('approvalRequest', { name: item.approval.agentName })
       : item.kind === 'step'
-        ? item.step.message || 'Dieser Workflow wartet auf deine Entscheidung.'
+        ? item.step.message || t('workflowWaiting')
         : item.kind === 'proposal'
-          ? `${item.proposal.agentName ?? 'Helena'} schlägt eine Änderung vor.`
+          ? t('proposalRequest', { name: item.proposal.agentName ?? t('defaultAgent') })
           : item.kind === 'mention'
             ? item.notification.issueTitle
             : item.entry.detail;
@@ -93,7 +95,7 @@ function InboxCard({ item }: { item: OwnerInboxItem }) {
           {item.kind === 'approval' ? (
             item.approval.kind === 'budget' ? (
               <button className={styles.primary} onClick={() => setExpanded(true)}>
-                Entscheiden
+                {t('decide')}
               </button>
             ) : (
               <button
@@ -103,7 +105,7 @@ function InboxCard({ item }: { item: OwnerInboxItem }) {
                   approvalDecision.mutate({ id: item.approval.id, decision: { approved: true } })
                 }
               >
-                Freigeben
+                {t('approve')}
               </button>
             )
           ) : item.kind === 'step' ? (
@@ -114,29 +116,29 @@ function InboxCard({ item }: { item: OwnerInboxItem }) {
                 stepDecision.mutate({ runId: item.step.runId, decision: { approved: true } })
               }
             >
-              Freigeben
+              {t('approve')}
             </button>
           ) : item.kind === 'proposal' ? (
             <button className={styles.primary} onClick={() => setExpanded(true)}>
-              Entscheiden
+              {t('decide')}
             </button>
           ) : item.kind === 'mention' ? (
             <Link className={styles.primary} href={seeHref!}>
-              Antworten
+              {t('reply')}
             </Link>
           ) : item.kind === 'problem' ? (
             item.entry.href ? (
               <Link className={styles.primary} href={item.entry.href}>
-                Details öffnen
+                {t('openDetails')}
               </Link>
             ) : (
               <button className={styles.primary} onClick={item.entry.onSelect ?? openSystemDetails}>
-                Details öffnen
+                {t('openDetails')}
               </button>
             )
           ) : (
             <Link className={styles.primary} href={seeHref!}>
-              Fehler ansehen
+              {t('viewFailure')}
             </Link>
           )}
           {item.kind === 'mention' ? (
@@ -145,11 +147,11 @@ function InboxCard({ item }: { item: OwnerInboxItem }) {
               disabled={busy}
               onClick={() => mentionRead.mutate({ id: item.notification.id, read: true })}
             >
-              Als gelesen
+              {t('markRead')}
             </button>
           ) : item.kind === 'problem' ? (
             <Link className={styles.secondary} href="/">
-              Dashboard
+              {t('dashboard')}
             </Link>
           ) : item.kind === 'failure' ? (
             <Link
@@ -158,19 +160,19 @@ function InboxCard({ item }: { item: OwnerInboxItem }) {
                 item.projectKey ? agentActivityPath(item.projectKey) : globalAgentActivityPath()
               }
             >
-              Verlauf
+              {t('history')}
             </Link>
           ) : item.kind === 'approval' || item.kind === 'step' || item.kind === 'proposal' ? (
             <button className={styles.secondary} onClick={() => setExpanded(!expanded)}>
-              Ansehen
+              {t('view')}
             </button>
           ) : seeHref ? (
             <Link className={styles.secondary} href={seeHref}>
-              Ansehen
+              {t('view')}
             </Link>
           ) : (
             <button className={styles.secondary} onClick={() => setExpanded(!expanded)}>
-              Ansehen
+              {t('view')}
             </button>
           )}
         </div>
@@ -187,13 +189,14 @@ function InboxCard({ item }: { item: OwnerInboxItem }) {
         )}
       </div>
       <time className={styles.time} dateTime={item.at || undefined}>
-        {item.at ? formatTime(item.at) : 'Jetzt'}
+        {item.at ? formatTime(item.at) : t('now')}
       </time>
     </article>
   );
 }
 
 function OwnerInboxContent() {
+  const t = useTranslations('inbox.owner');
   const { actions, reads, projects, loading, error } = useOwnerInbox();
   const params = useSearchParams();
   const [filter, setFilter] = useState<string>(() => params.get('project') ?? 'all');
@@ -208,27 +211,26 @@ function OwnerInboxContent() {
   return (
     <main className={styles.main}>
       <div className={styles.content}>
-        <p className={styles.eyebrow}>DU · INBOX</p>
+        <p className={styles.eyebrow}>{t('eyebrow')}</p>
         <div className={styles.headingRow}>
           <h1>
             {error && visible.length === 0 ? (
-              'Inbox'
+              t('title')
             ) : loading && visible.length === 0 ? (
-              'Inbox wird geladen.'
+              t('loadingTitle')
             ) : visible.length === 0 ? (
-              'Alles erledigt.'
+              t('allDone')
             ) : (
               <>
-                {visible.length === 1 ? 'Ein' : visible.length === 2 ? 'Zwei' : visible.length}{' '}
-                {visible.length === 1 ? 'Ding' : 'Dinge'}
+                {t('headingCount', { count: visible.length })}
                 <br />
-                {visible.length === 1 ? 'braucht' : 'brauchen'} dich.
+                {t('needsYou', { count: visible.length })}
               </>
             )}
           </h1>
-          <div className={styles.segments} role="group" aria-label="Projekt">
+          <div className={styles.segments} role="group" aria-label={t('project')}>
             <button aria-pressed={selected === 'all'} onClick={() => setFilter('all')}>
-              Alle
+              {t('all')}
             </button>
             {projects.map((project) => (
               <button
@@ -243,20 +245,20 @@ function OwnerInboxContent() {
         </div>
         {error && (
           <p className={styles.empty}>
-            Einige Einträge konnten nicht geladen werden. Bitte aktualisieren.
+            {t('loadError')}
           </p>
         )}
         {error && visible.length === 0 ? null : loading && actions.length === 0 ? (
-          <p className={styles.empty}>Inbox wird geladen …</p>
+          <p className={styles.empty}>{t('loading')}</p>
         ) : visible.length === 0 ? (
-          <p className={styles.empty}>Gerade wartet nichts auf dich.</p>
+          <p className={styles.empty}>{t('empty')}</p>
         ) : (
           visible.map((item) => <InboxCard key={item.key} item={item} />)
         )}
         <section className={styles.reads} aria-labelledby="reads-heading">
-          <h2 id="reads-heading">ZUM LESEN</h2>
+          <h2 id="reads-heading">{t('toRead')}</h2>
           {visibleReads.length === 0 ? (
-            <p className={styles.empty}>Noch keine erledigten Läufe.</p>
+            <p className={styles.empty}>{t('noCompletedRuns')}</p>
           ) : (
             visibleReads.map((entry) => {
               const target = activityDetails(entry);
@@ -271,10 +273,10 @@ function OwnerInboxContent() {
               return (
                 <Link key={entry.id} href={href} className={styles.readRow}>
                   <span style={{ color: projectColor(entry.project?.key ?? null) }}>
-                    {entry.project?.key.toUpperCase() ?? 'HOME'}
+                    {entry.project?.key.toUpperCase() ?? t('home')}
                   </span>
                   <span>
-                    {entry.issue?.title ?? `${entry.agent?.name ?? 'Agent'} · Lauf erledigt`}
+                    {entry.issue?.title ?? t('runCompleted', { name: entry.agent?.name ?? t('anAgent') })}
                   </span>
                   <time dateTime={entry.at}>{formatTime(entry.at)}</time>
                 </Link>
@@ -289,8 +291,9 @@ function OwnerInboxContent() {
 }
 
 export default function OwnerInboxPage() {
+  const t = useTranslations('inbox.owner');
   return (
-    <Shell globalHome globalTitle="Inbox" autoOpenGlobalChat={false} mobileHeaderOnly>
+    <Shell globalHome globalTitle={t('title')} autoOpenGlobalChat={false} mobileHeaderOnly>
       <OwnerInboxContent />
     </Shell>
   );

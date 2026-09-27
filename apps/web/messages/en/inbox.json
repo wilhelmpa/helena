@@ -40,12 +40,57 @@
   "hub": {
     "messages": "Messages",
     "updates": "Updates",
-    "loading": "Loading messages…"
+    "loading": "Loading messages…",
+    "mailLoading": "Loading mailbox…",
+    "mailError": "The mailbox could not be loaded.",
+    "noProjectMailbox": "No mailbox is set up for this project."
   },
   "mailFilter": {
     "read": "Read status",
     "attachments": "Attachments",
     "any": "All",
     "reset": "Reset filters"
+  },
+  "owner": {
+    "home": "HOME",
+    "anAgent": "An agent",
+    "defaultAgent": "Helena",
+    "mentionedBy": "{name} mentioned you",
+    "approvalRequest": "{name} asks for a decision.",
+    "workflowWaiting": "This workflow is waiting for your decision.",
+    "proposalRequest": "{name} suggests a change.",
+    "decide": "Decide",
+    "approve": "Approve",
+    "reply": "Reply",
+    "openDetails": "Open details",
+    "viewFailure": "View error",
+    "markRead": "Mark as read",
+    "dashboard": "Dashboard",
+    "history": "History",
+    "view": "View",
+    "now": "Now",
+    "eyebrow": "YOU · INBOX",
+    "title": "Inbox",
+    "loadingTitle": "Loading Inbox.",
+    "allDone": "All done.",
+    "headingCount": "{count, plural, one {One thing} two {Two things} other {# things}}",
+    "needsYou": "{count, plural, one {needs you.} other {need you.}}",
+    "project": "Project",
+    "all": "All",
+    "loadError": "Some items could not be loaded. Please refresh.",
+    "loading": "Loading Inbox…",
+    "empty": "Nothing is waiting for you right now.",
+    "toRead": "TO READ",
+    "noCompletedRuns": "No completed runs yet.",
+    "runCompleted": "{name} · Run completed",
+    "tags": {
+      "budget": "BUDGET",
+      "approval": "APPROVAL",
+      "workflow": "WORKFLOW",
+      "proposal": "PROPOSAL",
+      "mention": "MENTION",
+      "system": "SYSTEM",
+      "failure": "ERROR"
+    }
   }
 }

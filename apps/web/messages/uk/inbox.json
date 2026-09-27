@@ -40,12 +40,57 @@
   "hub": {
     "messages": "Messages",
     "updates": "Updates",
-    "loading": "Loading messages…"
+    "loading": "Loading messages…",
+    "mailLoading": "Завантаження поштової скриньки…",
+    "mailError": "Не вдалося завантажити поштову скриньку.",
+    "noProjectMailbox": "Для цього проєкту не налаштовано поштову скриньку."
   },
   "mailFilter": {
     "read": "Статус прочитання",
     "attachments": "Вкладення",
     "any": "Усі",
     "reset": "Скинути фільтри"
+  },
+  "owner": {
+    "home": "HOME",
+    "anAgent": "Агент",
+    "defaultAgent": "Helena",
+    "mentionedBy": "{name} згадав вас",
+    "approvalRequest": "{name} просить ухвалити рішення.",
+    "workflowWaiting": "Цей процес очікує на ваше рішення.",
+    "proposalRequest": "{name} пропонує зміну.",
+    "decide": "Вирішити",
+    "approve": "Схвалити",
+    "reply": "Відповісти",
+    "openDetails": "Відкрити деталі",
+    "viewFailure": "Переглянути помилку",
+    "markRead": "Позначити прочитаним",
+    "dashboard": "Панель",
+    "history": "Історія",
+    "view": "Переглянути",
+    "now": "Зараз",
+    "eyebrow": "ВИ · INBOX",
+    "title": "Inbox",
+    "loadingTitle": "Завантаження Inbox.",
+    "allDone": "Усе готово.",
+    "headingCount": "{count, plural, one {# справа} few {# справи} other {# справ}}",
+    "needsYou": "потребують вашої уваги.",
+    "project": "Проєкт",
+    "all": "Усі",
+    "loadError": "Не вдалося завантажити деякі елементи. Оновіть сторінку.",
+    "loading": "Завантаження Inbox…",
+    "empty": "Зараз ніщо не потребує вашої уваги.",
+    "toRead": "ДО ЧИТАННЯ",
+    "noCompletedRuns": "Завершених запусків поки немає.",
+    "runCompleted": "{name} · Запуск завершено",
+    "tags": {
+      "budget": "БЮДЖЕТ",
+      "approval": "СХВАЛЕННЯ",
+      "workflow": "ПРОЦЕС",
+      "proposal": "ПРОПОЗИЦІЯ",
+      "mention": "ЗГАДКА",
+      "system": "СИСТЕМА",
+      "failure": "ПОМИЛКА"
+    }
   }
 }

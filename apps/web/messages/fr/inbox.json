@@ -40,12 +40,57 @@
   "hub": {
     "messages": "Messages",
     "updates": "Updates",
-    "loading": "Loading messages…"
+    "loading": "Loading messages…",
+    "mailLoading": "Chargement de la boîte mail…",
+    "mailError": "Impossible de charger la boîte mail.",
+    "noProjectMailbox": "Aucune boîte mail n’est configurée pour ce projet."
   },
   "mailFilter": {
     "read": "Statut de lecture",
     "attachments": "Pièces jointes",
     "any": "Tous",
     "reset": "Réinitialiser les filtres"
+  },
+  "owner": {
+    "home": "HOME",
+    "anAgent": "Un agent",
+    "defaultAgent": "Helena",
+    "mentionedBy": "{name} vous a mentionné",
+    "approvalRequest": "{name} demande une décision.",
+    "workflowWaiting": "Ce processus attend votre décision.",
+    "proposalRequest": "{name} propose une modification.",
+    "decide": "Décider",
+    "approve": "Approuver",
+    "reply": "Répondre",
+    "openDetails": "Ouvrir les détails",
+    "viewFailure": "Voir l’erreur",
+    "markRead": "Marquer comme lu",
+    "dashboard": "Tableau de bord",
+    "history": "Historique",
+    "view": "Voir",
+    "now": "Maintenant",
+    "eyebrow": "VOUS · INBOX",
+    "title": "Inbox",
+    "loadingTitle": "Chargement de l’Inbox.",
+    "allDone": "Tout est terminé.",
+    "headingCount": "{count, plural, one {Une chose} other {# choses}}",
+    "needsYou": "{count, plural, one {a besoin de vous.} other {ont besoin de vous.}}",
+    "project": "Projet",
+    "all": "Tous",
+    "loadError": "Certains éléments n’ont pas pu être chargés. Actualisez la page.",
+    "loading": "Chargement de l’Inbox…",
+    "empty": "Rien ne vous attend pour le moment.",
+    "toRead": "À LIRE",
+    "noCompletedRuns": "Aucune exécution terminée.",
+    "runCompleted": "{name} · Exécution terminée",
+    "tags": {
+      "budget": "BUDGET",
+      "approval": "APPROBATION",
+      "workflow": "PROCESSUS",
+      "proposal": "PROPOSITION",
+      "mention": "MENTION",
+      "system": "SYSTÈME",
+      "failure": "ERREUR"
+    }
   }
 }

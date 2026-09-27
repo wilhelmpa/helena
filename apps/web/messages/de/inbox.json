@@ -40,12 +40,57 @@
   "hub": {
     "messages": "Nachrichten",
     "updates": "Updates",
-    "loading": "Nachrichten werden geladen…"
+    "loading": "Nachrichten werden geladen…",
+    "mailLoading": "Posteingang wird geladen …",
+    "mailError": "Das Postfach konnte nicht geladen werden.",
+    "noProjectMailbox": "Für dieses Projekt ist kein Postfach eingerichtet."
   },
   "mailFilter": {
     "read": "Lesestatus",
     "attachments": "Anhänge",
     "any": "Alle",
     "reset": "Filter zurücksetzen"
+  },
+  "owner": {
+    "home": "HOME",
+    "anAgent": "Ein Agent",
+    "defaultAgent": "Helena",
+    "mentionedBy": "{name} hat dich erwähnt",
+    "approvalRequest": "{name} bittet um eine Entscheidung.",
+    "workflowWaiting": "Dieser Workflow wartet auf deine Entscheidung.",
+    "proposalRequest": "{name} schlägt eine Änderung vor.",
+    "decide": "Entscheiden",
+    "approve": "Freigeben",
+    "reply": "Antworten",
+    "openDetails": "Details öffnen",
+    "viewFailure": "Fehler ansehen",
+    "markRead": "Als gelesen",
+    "dashboard": "Dashboard",
+    "history": "Verlauf",
+    "view": "Ansehen",
+    "now": "Jetzt",
+    "eyebrow": "DU · INBOX",
+    "title": "Inbox",
+    "loadingTitle": "Inbox wird geladen.",
+    "allDone": "Alles erledigt.",
+    "headingCount": "{count, plural, one {Ein Ding} two {Zwei Dinge} other {# Dinge}}",
+    "needsYou": "{count, plural, one {braucht dich.} other {brauchen dich.}}",
+    "project": "Projekt",
+    "all": "Alle",
+    "loadError": "Einige Einträge konnten nicht geladen werden. Bitte aktualisieren.",
+    "loading": "Inbox wird geladen …",
+    "empty": "Gerade wartet nichts auf dich.",
+    "toRead": "ZUM LESEN",
+    "noCompletedRuns": "Noch keine erledigten Läufe.",
+    "runCompleted": "{name} · Lauf erledigt",
+    "tags": {
+      "budget": "BUDGET",
+      "approval": "FREIGABE",
+      "workflow": "WORKFLOW",
+      "proposal": "VORSCHLAG",
+      "mention": "ERWÄHNUNG",
+      "system": "SYSTEM",
+      "failure": "FEHLER"
+    }
   }
 }
