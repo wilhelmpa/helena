@@ -354,14 +354,26 @@ class HostToolsTest(unittest.TestCase):
     def test_quiet_gate_fails_closed_and_checks_pending_chats(self):
         process = mock.Mock()
         process.stdout.readline.return_value = "busy\n"
-        with mock.patch.object(h.subprocess, "Popen", return_value=process), mock.patch.object(h.select, "select", return_value=([process.stdout], [], [])):
+        with mock.patch.object(h.subprocess, "Popen", return_value=process) as popen, mock.patch.object(h.select, "select", return_value=([process.stdout], [], [])):
             with self.assertRaisesRegex(h.ToolError, "deferred"):
                 with h.quiet_queue(self.config):
                     self.fail("busy gate entered")
+        self.assertEqual(popen.call_args.args[0], ["/usr/sbin/runuser", "-u", "postgres",
+                         "--", "psql", "-XAtq", "-v", "ON_ERROR_STOP=1", "-d", "fixture"])
         sql = process.stdin.write.call_args.args[0]
         self.assertIn("LOCK TABLE agent_run, agent_chat_message IN SHARE MODE", sql)
         self.assertIn("('pending','streaming')", sql)
         process.communicate.assert_called_once_with("ROLLBACK;\n", timeout=5)
+
+    def test_privilege_drop_resolves_runuser_without_widening_child_path(self):
+        with mock.patch.object(h.os, "geteuid", return_value=0), mock.patch.object(
+                h.subprocess, "run", return_value=mock.Mock(returncode=0, stdout="65534\n")) as run:
+            result = h.command(["/usr/bin/id", "-u"], user="nobody", timeout=5)
+        self.assertEqual(result, "65534\n")
+        self.assertEqual(run.call_args.args[0], ["/usr/sbin/runuser", "-u", "nobody", "--",
+                         "setpriv", "--no-new-privs", "--", "/usr/bin/id", "-u"])
+        self.assertEqual(run.call_args.kwargs["env"]["PATH"], "/usr/local/bin:/usr/bin:/bin")
+        self.assertEqual(run.call_args.kwargs["timeout"], 5)
 
     def test_binary_smoke_executes_fixture_and_matches_version(self):
         tree = self.root / "fixture"

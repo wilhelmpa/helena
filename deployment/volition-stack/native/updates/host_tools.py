@@ -262,7 +262,7 @@ def command(args: list[str], *, cwd: Path | None = None, user: str | None = None
            "NPM_CONFIG_CACHE": str((cwd or Path("/tmp")) / ".npm"),
            "NPM_CONFIG_UPDATE_NOTIFIER": "false"}
     if user and os.geteuid() == 0:
-        args = ["runuser", "-u", user, "--", "setpriv", "--no-new-privs", "--", *args]
+        args = ["/usr/sbin/runuser", "-u", user, "--", "setpriv", "--no-new-privs", "--", *args]
     result = subprocess.run(args, cwd=cwd, env=env, text=True, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT, timeout=timeout)
     if result.returncode:
@@ -278,7 +278,7 @@ def quiet_queue(config: dict):
     database = config["hostToolsDatabase"]
     if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,62}", database):
         raise ToolError("invalid configured database name")
-    process = subprocess.Popen(["runuser", "-u", "postgres", "--", "psql", "-XAtq",
+    process = subprocess.Popen(["/usr/sbin/runuser", "-u", "postgres", "--", "psql", "-XAtq",
                                 "-v", "ON_ERROR_STOP=1", "-d", database],
                                stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                stderr=subprocess.DEVNULL, text=True, bufsize=1)
