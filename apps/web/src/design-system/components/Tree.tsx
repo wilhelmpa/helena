@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type AnchorHTMLAttributes,
   type ReactNode,
@@ -134,6 +135,11 @@ export function TreeItem({
     if (collapsible && !inAccordion && containsActive && storageKey && stored === '0')
       setStored('1');
   }, [collapsible, inAccordion, containsActive, storageKey, stored, setStored]);
+  // The marked row stays in sight when the sidebar is longer than the screen.
+  const line = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (active) line.current?.scrollIntoView?.({ block: 'nearest' });
+  }, [active]);
   const toggle = () => {
     if (inAccordion) accordion.setOpenId(open ? null : id);
     else if (storageKey) setStored(open ? '0' : '1');
@@ -195,7 +201,7 @@ export function TreeItem({
 
   return (
     <div className="ds-tree-item" role="none">
-      <div className="ds-tree-line">
+      <div className="ds-tree-line" ref={line}>
         {row}
         {actions && <span className="ds-tree-actions">{actions}</span>}
       </div>

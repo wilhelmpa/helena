@@ -1267,3 +1267,11 @@ a.ds-run-card:hover {
   line-height: 1.6;
   white-space: pre-wrap;
 }
+/* In the overlay the run's head stacks: title, then status and meta, then its actions. */
+.ds-issue-overlay-body .ds-run .ds-detail-head {
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.ds-issue-overlay-body .ds-run .ds-detail-title {
+  font-size: 20px;
+}

@@ -5,11 +5,10 @@ import { useSession } from '@/lib/auth-client';
 import { useProjectsQuery } from '@/services/projects.service';
 import { useCurrentTeam } from '@/components/common/page/useTeamSections';
 import { getBrowserControl } from '@/lib/api/endpoints/browserTask';
-import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { InstanceBrowserControlSection } from '@/features/browser-lab/components/InstanceBrowserControlSection';
-import GodProjectDefaultsSettings from '@/features/god/components/GodProjectDefaultsSettings';
-import { useInstanceProjectDefaultsQuery } from '@/features/god/services/god.service';
 
+// The browser default for all projects; the other project defaults (autopilot, MCP, run
+// resume, engine) follow on the same page from GodGeneralPage, once.
 export default function HomeDefaultsPage() {
   const { data: session } = useSession();
   const team = useCurrentTeam();
@@ -32,7 +31,6 @@ function AdminHomeDefaults({ teamId }: { teamId: number | null }) {
       staleTime: 60_000,
     })),
   });
-  const defaults = useInstanceProjectDefaultsQuery();
   const overrideCount = controls.filter(
     (query) => query.data?.setting.mode !== 'inherit' && query.data,
   ).length;
@@ -40,18 +38,6 @@ function AdminHomeDefaults({ teamId }: { teamId: number | null }) {
   return (
     <div className="space-y-6">
       <InstanceBrowserControlSection overrideCount={overrideCount} />
-      {defaults.data ? (
-        <div>
-          <GodProjectDefaultsSettings defaults={defaults.data} />
-          <p className="mt-2 text-xs text-muted-foreground">
-            {
-              'Autopilot und MCP werden beim Anlegen eines Projekts übernommen; bestehende Projekte erben spätere Änderungen nicht.'
-            }
-          </p>
-        </div>
-      ) : (
-        <ListSkeleton rows={2} rowClassName="h-12" />
-      )}
     </div>
   );
 }

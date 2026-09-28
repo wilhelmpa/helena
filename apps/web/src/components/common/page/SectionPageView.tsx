@@ -39,10 +39,16 @@ export default function SectionPageView({
 }) {
   const width = widthClassName ?? (wide ? 'w-full' : SECTION_COLUMN_CLASS);
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="ds-section-page flex min-h-0 flex-1 flex-col overflow-hidden">
       <WorkspacePageHeader title={title} actions={actions} />
-      <div className="@container/page min-h-0 flex-1 overflow-y-auto">
-        <div className={cn('flex min-h-full w-full flex-col', PAGE_GUTTER_CLASS, width)}>
+      <div className="ds-section-page-scroll @container/page min-h-0 flex-1 overflow-y-auto">
+        <div
+          className={cn(
+            'ds-section-page-col flex min-h-full w-full flex-col',
+            PAGE_GUTTER_CLASS,
+            width,
+          )}
+        >
           {children}
         </div>
       </div>

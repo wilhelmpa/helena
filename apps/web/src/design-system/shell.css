@@ -1005,3 +1005,15 @@
   flex: 1;
   flex-direction: column;
 }
+
+/* A page shown inside another page's frame (a section of Helena's settings, Mein Konto,
+   the agent dialog): it takes no second gutter and no scroll box of its own. */
+.settings-modal-existing .ds-section-page,
+.settings-modal-existing .ds-section-page-scroll {
+  overflow: visible;
+}
+.settings-modal-existing .ds-section-page-col {
+  min-height: 0;
+  max-width: none;
+  padding: 0;
+}

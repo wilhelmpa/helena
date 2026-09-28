@@ -1,24 +1,21 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { StatusDot, type StatusDotTone } from '@/design-system/components/StatusDot';
 
-// The one status vocabulary the whole app shares (docs/volition-design-helena-ui.md
-// "Grundlagen"): an agent run, an approval, a workflow result, a sync state are all one
-// of these five. Never spell a status out in a raw Tailwind color — use this and the
-// `--status-*` tokens it is built on, so light/dark and a future palette change stay
-// in one place.
+// The one status vocabulary the whole app shares: an agent run, an approval, a workflow
+// result, a sync state are all one of these five. The label says what it is; a dot only
+// stands after it while something is going on (docs/design-system.md §6) — orange
+// pulsing while it runs, amber when it waits for you, rose on an error. Done and idle
+// carry no dot, and none is ever green.
 export type Status = 'running' | 'waiting' | 'success' | 'danger' | 'idle';
 
-const DOT_CLASS: Record<Status, string> = {
-  running: 'bg-status-running',
-  waiting: 'bg-status-waiting',
-  success: 'bg-status-success',
-  danger: 'bg-status-danger',
-  idle: 'bg-status-idle',
+const TONE: Partial<Record<Status, StatusDotTone>> = {
+  running: 'working',
+  waiting: 'waiting',
+  danger: 'error',
 };
 
-// A status dot plus label. `running` pulses gently to read as "live" (a working
-// agent, a run in progress); `prefers-reduced-motion` turns the animation off. Pass
-// `dotOnly` for a bare presence dot (an avatar corner, a table row) with no label.
+// `dotOnly`: the bare dot (an avatar corner, a table row) — nothing at rest.
 export default function StatusBadge({
   status,
   children,
@@ -30,25 +27,18 @@ export default function StatusBadge({
   dotOnly?: boolean;
   className?: string;
 }) {
+  const tone = TONE[status];
+  if (dotOnly) return tone ? <StatusDot tone={tone} /> : null;
   return (
     <span
       className={cn(
-        'inline-flex w-fit shrink-0 items-center gap-1.5 text-xs font-medium text-foreground',
+        'ds-status-badge inline-flex w-fit shrink-0 items-center text-xs',
+        status === 'danger' ? 'text-destructive' : 'text-muted-foreground',
         className,
       )}
     >
-      <span className="relative flex size-1.5 shrink-0" aria-hidden>
-        {status === 'running' && (
-          <span
-            className={cn(
-              'absolute inline-flex size-full animate-ping rounded-full opacity-75 motion-reduce:hidden',
-              DOT_CLASS[status],
-            )}
-          />
-        )}
-        <span className={cn('relative inline-flex size-1.5 rounded-full', DOT_CLASS[status])} />
-      </span>
-      {!dotOnly && children}
+      {children}
+      {tone && <StatusDot tone={tone} />}
     </span>
   );
 }

@@ -570,10 +570,10 @@ html [data-sonner-toast][data-styled='true']:not(:focus-visible) {
   text-transform: uppercase;
 }
 .board-card-title {
-  font-size: 20px;
-  line-height: 1.2;
-  font-weight: 520;
-  letter-spacing: -0.03em;
+  font-size: 18px;
+  line-height: 1.25;
+  font-weight: 560;
+  letter-spacing: -0.02em;
 }
 .board-card-value,
 .board-card-meta {

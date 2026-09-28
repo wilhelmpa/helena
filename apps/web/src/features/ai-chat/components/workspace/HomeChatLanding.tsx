@@ -12,6 +12,7 @@ import {
 import { formatDurationShort } from '@/utils/dates';
 import { projectColor } from '@/utils/projectColor';
 import { agentActivityForAgentPath, globalAgentActivityPath, issuePath } from '@/utils/paths';
+import { RUN_PARAM } from '@/features/agent-runtime/runOverlay';
 import styles from './HomeChatLanding.module.css';
 
 const subscribe = () => () => {};
@@ -30,6 +31,9 @@ function useHomeDate() {
 
 function activityHref(entry: AgentActivityEntry): string {
   if (entry.issue && entry.project) return issuePath(entry.project.key, entry.issue.sequenceNumber);
+  // A run without a task opens in the run overlay over Helena.
+  if (entry.kind === 'agent-run' && entry.agent && entry.id.startsWith('run:'))
+    return `/?${RUN_PARAM}=${entry.agent.id}.${entry.id.slice(4)}`;
   if (entry.agent) return agentActivityForAgentPath(entry.agent.id, entry.project?.key);
   return globalAgentActivityPath();
 }
@@ -47,7 +51,7 @@ export function HomeChatMasthead({ onOpenList }: { onOpenList?: () => void }) {
   return (
     <div className={styles.masthead}>
       <div className={styles.location}>
-        <strong>{'HOME'}</strong>
+        <strong>{'HELENA'}</strong>
         <span>·</span>
         <span>{today?.toLocaleUpperCase() ?? ''}</span>
       </div>
@@ -108,7 +112,7 @@ export function HomeChatActivityCards() {
                   className={styles.cardDot}
                   style={{ backgroundColor: accent, boxShadow: `0 0 8px ${accent}` }}
                 />
-                {entry.project?.key ?? 'HOME'}
+                {entry.project?.key ?? 'HELENA'}
               </span>
               <span className={styles.cardTitle}>
                 {entry.issue?.title ?? tActivity(`kinds.${entry.kind}`)}

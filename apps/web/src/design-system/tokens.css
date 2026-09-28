@@ -211,7 +211,7 @@
   --row-blocked: color-mix(in srgb, var(--danger) 6%, transparent);
   --row-blocked-hover: color-mix(in srgb, var(--danger) 10%, transparent);
   --kanban-card-selected: var(--surface-3);
-  --board-column-outline: var(--line);
+  --board-column-outline: transparent;
   --board-highlight-outline: color-mix(in srgb, var(--status-done) 55%, transparent);
   --board-highlight-glow: color-mix(in srgb, var(--status-done) 14%, transparent);
   --board-hint-neutral-bg: var(--surface-2);
