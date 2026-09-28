@@ -1,5 +1,6 @@
 import { t } from 'elysia';
 import { GoalProgressResponse } from '#modules/goals/model';
+import { BudgetStatusSchema } from '#modules/autopilot/model';
 
 export const organizationTeamParams = t.Object({ teamId: t.Numeric() });
 export const organizationQuery = t.Object({
@@ -108,6 +109,7 @@ const DepartmentResponse = t.Object({
   description: t.String(),
   parentId: nullableId,
   position: t.Number(),
+  budgets: t.Optional(t.Array(BudgetStatusSchema)),
   createdAt: t.String(),
   updatedAt: t.String(),
 });
@@ -170,6 +172,8 @@ const OrganizationAgentResponse = t.Object({
   // What the agent's runs used today and this month, UTC, in every project of the team.
   tokensToday: t.Number(),
   tokensThisMonth: t.Number(),
+  budgets: t.Array(BudgetStatusSchema),
+  throttled: t.Boolean(),
 });
 
 const OrganizationProjectResponse = t.Object({

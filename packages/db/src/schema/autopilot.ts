@@ -15,6 +15,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { user } from './auth';
 import { agentChatMessage, agentRun, aiAgent, approvalRequest, project, team } from './app';
+import { organizationDepartment } from './organization';
 
 // Helena's Autopilot (docs/helena-decisions/policy-engine.md): the price table the cost of
 // a model call is estimated from, the budgets that stop agents, and the log of every
@@ -74,6 +75,9 @@ export const helenaBudget = pgTable(
       .references(() => team.id, { onDelete: 'cascade' }),
     agentId: integer('agent_id').references(() => aiAgent.id, { onDelete: 'cascade' }),
     projectId: integer('project_id').references(() => project.id, { onDelete: 'cascade' }),
+    departmentId: integer('department_id').references(() => organizationDepartment.id, {
+      onDelete: 'cascade',
+    }),
     // 'tokens', 'cost' (euros) or 'time' (seconds).
     metric: text('metric').notNull(),
     // 'day' or 'month', in UTC.
@@ -93,7 +97,10 @@ export const helenaBudget = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    check('helena_budget_target_check', sql`(${t.agentId} IS NULL) <> (${t.projectId} IS NULL)`),
+    check(
+      'helena_budget_target_check',
+      sql`((${t.agentId} IS NOT NULL)::int + (${t.projectId} IS NOT NULL)::int + (${t.departmentId} IS NOT NULL)::int) = 1`,
+    ),
     check('helena_budget_metric_check', sql`${t.metric} IN ('tokens', 'cost', 'time')`),
     check('helena_budget_period_check', sql`${t.period} IN ('day', 'month')`),
     check('helena_budget_limit_check', sql`${t.limitValue} > 0`),
@@ -103,6 +110,9 @@ export const helenaBudget = pgTable(
     uniqueIndex('helena_budget_project_uq')
       .on(t.projectId, t.metric, t.period)
       .where(sql`${t.projectId} IS NOT NULL`),
+    uniqueIndex('helena_budget_department_uq')
+      .on(t.departmentId, t.metric, t.period)
+      .where(sql`${t.departmentId} IS NOT NULL`),
   ],
 );
 

@@ -1,5 +1,12 @@
-import { db, agentRun, agentUsage, aiAgent } from '@repo/db';
-import { and, gte, inArray, isNotNull, sql, type SQL } from 'drizzle-orm';
+import {
+  db,
+  agentRun,
+  agentUsage,
+  aiAgent,
+  organizationAgentAssignment,
+  organizationProjectAssignment,
+} from '@repo/db';
+import { and, eq, gte, inArray, isNotNull, sql, type SQL } from 'drizzle-orm';
 import { costOf } from '@helena/policy';
 import { price } from '#modules/model-prices/service';
 
@@ -72,13 +79,19 @@ async function addRows(totals: Map<number, UsageTotals>, rows: ModelRow[]): Prom
 
 // The usage of each of the given agents (or projects) since `since`.
 export async function usageSince(
-  by: 'agent' | 'project',
+  by: 'agent' | 'project' | 'department',
   ids: number[],
   since: Date,
 ): Promise<Map<number, UsageTotals>> {
   const totals = new Map<number, UsageTotals>();
   if (ids.length === 0) return totals;
-  const ledgerKey = by === 'agent' ? agentUsage.agentId : agentUsage.projectId;
+  const ledgerKey = sql<number>`${
+    by === 'agent'
+      ? agentUsage.agentId
+      : by === 'project'
+        ? agentUsage.projectId
+        : sql<number>`coalesce(${organizationProjectAssignment.departmentId}, ${organizationAgentAssignment.departmentId})`
+  }`;
   const ledger = await db
     .select({
       key: sql<number>`${ledgerKey}`,
@@ -91,12 +104,27 @@ export async function usageSince(
       seconds: sql<number>`coalesce(sum(${agentUsage.durationMs}), 0)::float8 / 1000`,
     })
     .from(agentUsage)
+    .leftJoin(aiAgent, eq(aiAgent.id, agentUsage.agentId))
+    .leftJoin(
+      organizationProjectAssignment,
+      eq(organizationProjectAssignment.projectId, agentUsage.projectId),
+    )
+    .leftJoin(
+      organizationAgentAssignment,
+      eq(organizationAgentAssignment.agentId, agentUsage.agentId),
+    )
     .where(and(inArray(ledgerKey, ids), gte(agentUsage.occurredAt, since)))
     .groupBy(ledgerKey, agentUsage.model, agentUsage.provider);
   await addRows(totals, ledger);
 
   // Finished runs the ledger has no row for.
-  const runKey = by === 'agent' ? agentRun.agentId : agentRun.projectId;
+  const runKey = sql<number>`${
+    by === 'agent'
+      ? agentRun.agentId
+      : by === 'project'
+        ? agentRun.projectId
+        : sql<number>`coalesce(${organizationProjectAssignment.departmentId}, ${organizationAgentAssignment.departmentId})`
+  }`;
   const unledgered: SQL = sql`NOT EXISTS (SELECT 1 FROM agent_usage u WHERE u.run_id = ${agentRun.id})`;
   const runs = await db
     .select({
@@ -111,6 +139,14 @@ export async function usageSince(
     })
     .from(agentRun)
     .innerJoin(aiAgent, sql`${aiAgent.id} = ${agentRun.agentId}`)
+    .leftJoin(
+      organizationProjectAssignment,
+      eq(organizationProjectAssignment.projectId, agentRun.projectId),
+    )
+    .leftJoin(
+      organizationAgentAssignment,
+      eq(organizationAgentAssignment.agentId, agentRun.agentId),
+    )
     .where(
       and(
         inArray(runKey, ids),

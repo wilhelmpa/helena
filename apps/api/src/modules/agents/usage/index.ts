@@ -9,7 +9,16 @@ import { agentForPerson } from '../people-access';
 import { UsageResponse, teamParams, usageQuery, type UsageDimensionName } from './model';
 import { unpriced, usageBy, type UsageRow } from './service';
 
-const DIMENSIONS: UsageDimensionName[] = ['agent', 'model', 'project', 'day', 'kind'];
+const DIMENSIONS: UsageDimensionName[] = [
+  'issue',
+  'agent',
+  'model',
+  'project',
+  'goal',
+  'department',
+  'day',
+  'kind',
+];
 const DAY_MS = 86_400_000;
 const MAX_DAYS = 400;
 
@@ -41,6 +50,7 @@ function sum(rows: UsageRow[]) {
     total.entries += row.entries;
     if (row.costEur !== null) total.costEur = (total.costEur ?? 0) + row.costEur;
   }
+  if (unpriced(rows)) total.costEur = null;
   return total;
 }
 

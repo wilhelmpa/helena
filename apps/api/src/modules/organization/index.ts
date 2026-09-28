@@ -1,8 +1,13 @@
 import { Elysia, t } from 'elysia';
+import { db, organizationDepartment } from '@repo/db';
+import { and, eq } from 'drizzle-orm';
 import { authContext } from '#shared/auth-context';
 import { guards } from '#shared/guards';
 import { noContent } from '#shared/http';
 import { HttpError } from '#shared/lib';
+import { requireUser } from '#shared/access';
+import { budgetStatuses, setBudgets } from '#modules/autopilot/budgets';
+import { BudgetStatusSchema, budgetsBody } from '#modules/autopilot/model';
 import { commonErrors, errors } from '#shared/responses';
 import {
   DepartmentResponse,
@@ -107,6 +112,57 @@ export const organizationRoutes = new Elysia({
       teamManager: true,
       response: { 204: t.Void(), ...commonErrors },
       detail: { summary: 'Delete an organization department' },
+    },
+  )
+  .get(
+    '/teams/:teamId/organization/departments/:departmentId/budgets',
+    async ({ membership, params }) => {
+      const [department] = await db
+        .select({ id: organizationDepartment.id })
+        .from(organizationDepartment)
+        .where(
+          and(
+            eq(organizationDepartment.id, params.departmentId),
+            eq(organizationDepartment.teamId, membership.teamId),
+          ),
+        );
+      if (!department) throw new HttpError(404, 'Department not found');
+      return budgetStatuses({ departmentIds: [department.id] });
+    },
+    {
+      params: organizationDepartmentParams,
+      teamManager: true,
+      response: { 200: t.Array(BudgetStatusSchema), ...commonErrors },
+      detail: { summary: 'Get department budgets and consumption' },
+    },
+  )
+  .put(
+    '/teams/:teamId/organization/departments/:departmentId/budgets',
+    async ({ membership, params, body, user }) => {
+      const [department] = await db
+        .select({ id: organizationDepartment.id })
+        .from(organizationDepartment)
+        .where(
+          and(
+            eq(organizationDepartment.id, params.departmentId),
+            eq(organizationDepartment.teamId, membership.teamId),
+          ),
+        );
+      if (!department) throw new HttpError(404, 'Department not found');
+      await setBudgets(
+        membership.teamId,
+        { departmentId: department.id },
+        body.budgets,
+        requireUser(user).id,
+      );
+      return budgetStatuses({ departmentIds: [department.id] });
+    },
+    {
+      params: organizationDepartmentParams,
+      body: budgetsBody,
+      teamManager: true,
+      response: { 200: t.Array(BudgetStatusSchema), ...commonErrors },
+      detail: { summary: 'Set department budgets' },
     },
   )
   .post(

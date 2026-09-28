@@ -1,5 +1,19 @@
-import { db, agentUsage, aiAgent, project, user } from '@repo/db';
+import {
+  db,
+  agentRun,
+  agentUsage,
+  aiAgent,
+  helenaGoalTask,
+  issue,
+  organizationAgentAssignment,
+  organizationDepartment,
+  organizationGoal,
+  organizationProjectAssignment,
+  project,
+  user,
+} from '@repo/db';
 import { and, desc, eq, gte, inArray, lt, sql, type SQL } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 
 // The token ledger (agent_usage): one row per run, chat answer or reflection, written when
 // the runner reports what it spent. Usage per agent, model, project and day is summed from
@@ -135,7 +149,8 @@ export function costOf(totals: UsageTotals, price: ModelPrice | null): number | 
 
 // ---------------------------------------------------------------- reading
 
-export type UsageDimension = 'agent' | 'model' | 'project' | 'day' | 'kind';
+export type UsageDimension =
+  'issue' | 'agent' | 'model' | 'project' | 'goal' | 'department' | 'day' | 'kind';
 
 export interface UsageFilter {
   teamId: number;
@@ -149,12 +164,18 @@ export interface UsageFilter {
 }
 
 export interface UsageRow extends UsageTotals {
+  issueId: number | null;
+  issueTitle: string | null;
   agentId: number | null;
   agentName: string | null;
   model: string | null;
   provider: string | null;
   projectId: number | null;
   projectKey: string | null;
+  goalId: number | null;
+  goalTitle: string | null;
+  departmentId: number | null;
+  departmentName: string | null;
   day: string | null;
   kind: string | null;
   costEur: number | null;
@@ -176,6 +197,10 @@ function whereOf(filter: UsageFilter): SQL {
 }
 
 const DAY = sql<string>`to_char(date_trunc('day', ${agentUsage.occurredAt} AT TIME ZONE 'UTC'), 'YYYY-MM-DD')`;
+const parentIssue = alias(issue, 'usage_parent_issue');
+const parentGoal = alias(helenaGoalTask, 'usage_parent_goal');
+const GOAL_ID = sql<number>`coalesce(${helenaGoalTask.goalId}, ${parentGoal.goalId})`;
+const DEPARTMENT_ID = sql<number>`coalesce(${organizationProjectAssignment.departmentId}, ${organizationAgentAssignment.departmentId})`;
 
 // The ledger summed by the given dimensions, each group priced by its model. The model is
 // always part of the grouping underneath, because a price belongs to a model; groups that
@@ -187,10 +212,16 @@ export async function usageBy(
   const by = new Set(dimensions);
   const rows = await db
     .select({
+      issueId: by.has('issue') ? issue.id : sql<null>`null::int`,
+      issueTitle: by.has('issue') ? issue.title : sql<null>`null::text`,
       agentId: by.has('agent') ? agentUsage.agentId : sql<null>`null::int`,
       agentName: by.has('agent') ? user.name : sql<null>`null::text`,
       projectId: by.has('project') ? agentUsage.projectId : sql<null>`null::int`,
       projectKey: by.has('project') ? project.key : sql<null>`null::text`,
+      goalId: by.has('goal') ? organizationGoal.id : sql<null>`null::int`,
+      goalTitle: by.has('goal') ? organizationGoal.title : sql<null>`null::text`,
+      departmentId: by.has('department') ? organizationDepartment.id : sql<null>`null::int`,
+      departmentName: by.has('department') ? organizationDepartment.name : sql<null>`null::text`,
       day: by.has('day') ? DAY : sql<null>`null::text`,
       kind: by.has('kind') ? agentUsage.kind : sql<null>`null::text`,
       model: agentUsage.model,
@@ -205,12 +236,30 @@ export async function usageBy(
     })
     .from(agentUsage)
     .innerJoin(aiAgent, eq(aiAgent.id, agentUsage.agentId))
+    .leftJoin(agentRun, eq(agentRun.id, agentUsage.runId))
+    .leftJoin(issue, eq(issue.id, agentRun.issueId))
+    .leftJoin(parentIssue, eq(parentIssue.id, issue.parentId))
+    .leftJoin(helenaGoalTask, eq(helenaGoalTask.issueId, issue.id))
+    .leftJoin(parentGoal, eq(parentGoal.issueId, parentIssue.id))
+    .leftJoin(organizationGoal, eq(organizationGoal.id, GOAL_ID))
+    .leftJoin(
+      organizationProjectAssignment,
+      eq(organizationProjectAssignment.projectId, agentUsage.projectId),
+    )
+    .leftJoin(
+      organizationAgentAssignment,
+      eq(organizationAgentAssignment.agentId, agentUsage.agentId),
+    )
+    .leftJoin(organizationDepartment, eq(organizationDepartment.id, DEPARTMENT_ID))
     .leftJoin(user, eq(user.id, aiAgent.userId))
     .leftJoin(project, eq(project.id, agentUsage.projectId))
     .where(whereOf(filter))
     .groupBy(
+      ...(by.has('issue') ? [issue.id, issue.title] : []),
       ...(by.has('agent') ? [agentUsage.agentId, user.name] : []),
       ...(by.has('project') ? [agentUsage.projectId, project.key] : []),
+      ...(by.has('goal') ? [organizationGoal.id, organizationGoal.title] : []),
+      ...(by.has('department') ? [organizationDepartment.id, organizationDepartment.name] : []),
       ...(by.has('day') ? [DAY] : []),
       ...(by.has('kind') ? [agentUsage.kind] : []),
       agentUsage.model,
@@ -229,7 +278,15 @@ export async function usageBy(
   // Merge the per-model groups the caller did not ask for.
   const merged = new Map<string, UsageRow>();
   for (const row of priced) {
-    const key = JSON.stringify([row.agentId, row.projectId, row.day, row.kind]);
+    const key = JSON.stringify([
+      row.issueId,
+      row.agentId,
+      row.projectId,
+      row.goalId,
+      row.departmentId,
+      row.day,
+      row.kind,
+    ]);
     const into = merged.get(key);
     if (!into) {
       merged.set(key, { ...row, model: null, provider: null });
@@ -247,9 +304,7 @@ export async function usageBy(
       into[field] += row[field];
     }
     into.costEur =
-      into.costEur === null || row.costEur === null
-        ? (into.costEur ?? row.costEur)
-        : into.costEur + row.costEur;
+      into.costEur === null || row.costEur === null ? null : into.costEur + row.costEur;
   }
   return [...merged.values()];
 }
