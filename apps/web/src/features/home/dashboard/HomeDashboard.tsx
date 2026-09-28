@@ -13,6 +13,7 @@ import SystemDetailsDialog from './SystemDetailsDialog';
 import WidgetView, { WidgetPlaceholder } from './WidgetView';
 import { columnsOf, sectionBlocks, type Arranged } from './layout';
 import { HomeDashboardProvider, useHomeDashboard, useHomeDashboardValue } from './useHomeDashboard';
+import { Text } from '@/design-system';
 
 // The figure row: an auto-fit grid of tiles at least 160px wide that wraps to a second row
 // instead of scrolling; two columns on a phone.
@@ -89,7 +90,9 @@ export default function HomeDashboard() {
   return (
     <HomeDashboardProvider value={context}>
       <PageToolbar>
-        <span className="h-4 truncate px-1 text-xs text-muted-foreground">{today}</span>
+        <Text as="span" size="xs" tone="muted" className="h-4 truncate px-1">
+          {today}
+        </Text>
         <PageActions
           actions={[
             {

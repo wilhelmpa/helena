@@ -5,6 +5,7 @@ import { STATE_TYPES } from '@/utils/fieldOptions';
 import { byKey } from '@/utils/messageKey';
 import HomeTaskRow from '../HomeTaskRow';
 import type { HomeTaskGrouping } from './HomeTasksToolbar';
+import { Box, Stack, Text } from '@/design-system';
 
 interface TaskGroup {
   key: string;
@@ -49,21 +50,25 @@ export default function HomeTaskList({
 }) {
   const stateLabel = byKey(useTranslations('display.stateTypes'));
   return (
-    <div className="space-y-3">
+    <Stack gap={3}>
       {groupTasks(issues, grouping, stateLabel).map((group) => (
         <section key={group.key}>
           <SectionLabel
-            trailing={<span className="font-mono text-xs tabular-nums">{group.issues.length}</span>}
+            trailing={
+              <Text as="span" size="xs" className="font-mono tabular-nums">
+                {group.issues.length}
+              </Text>
+            }
           >
             {group.name}
           </SectionLabel>
-          <div className="rounded-md border bg-card p-1">
+          <Box pad={1} className="rounded-md border bg-card">
             {group.issues.map((issue) => (
               <HomeTaskRow key={issue.id} issue={issue} />
             ))}
-          </div>
+          </Box>
         </section>
       ))}
-    </div>
+    </Stack>
   );
 }

@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { PipelineContextAgent, ProjectPipeline } from '@/lib/api/endpoints/pipelines';
+import { Inline, Stack, Text } from '@/design-system';
 
 const AUTO = 'auto';
 
@@ -39,13 +40,15 @@ export default function PipelineRoleMapping({
   };
 
   return (
-    <div className="space-y-2">
-      <p className="text-xs font-medium">{t('roles')}</p>
+    <Stack gap={2}>
+      <Text as="p" size="xs" className="font-medium">
+        {t('roles')}
+      </Text>
       <div className="grid gap-2 sm:grid-cols-2">
         {entry.resolvedRoles.map((role) => {
           const mapped = entry.roles[role.key];
           return (
-            <div key={role.key} className="flex items-center gap-2 text-sm">
+            <Inline gap={2} key={role.key} className="text-sm">
               <span className="w-32 shrink-0 truncate text-muted-foreground" dir="auto">
                 {role.name}
               </span>
@@ -71,10 +74,10 @@ export default function PipelineRoleMapping({
                   {role.agent ? `${role.agent.name} (@${role.agent.username})` : t('nobody')}
                 </span>
               )}
-            </div>
+            </Inline>
           );
         })}
       </div>
-    </div>
+    </Stack>
   );
 }

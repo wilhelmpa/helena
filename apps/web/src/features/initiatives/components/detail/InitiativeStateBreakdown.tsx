@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import type { StateType } from '@/lib/api/endpoints/columns';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
+import { Inline, Stack, Text } from '@/design-system';
 
 // The initiative's linked issues counted per state group. Complements the header
 // progress pill with the full distribution (backlog through canceled).
@@ -50,20 +51,22 @@ export default function InitiativeStateBreakdown({
     <div>
       <h4 className="mb-2.5 text-xs font-medium text-muted-foreground">{t('progress')}</h4>
       {total === 0 ? (
-        <p className="text-sm text-muted-foreground">{t('noIssuesLinked')}</p>
+        <Text as="p" size="sm" tone="muted">
+          {t('noIssuesLinked')}
+        </Text>
       ) : (
-        <ul className="flex flex-col gap-1.5">
+        <Stack as="ul" gap={2}>
           {GROUPS.map((g) => (
-            <li key={g.type} className="flex items-center gap-2 text-sm">
+            <Inline as="li" gap={2} key={g.type} className="text-sm">
               <span
                 className="inline-block size-2 rounded-full"
                 style={{ backgroundColor: g.color }}
               />
               <span className="text-muted-foreground">{t(`stateGroups.${g.type}`)}</span>
               <span className="ml-auto text-foreground tabular-nums">{counts[g.type]}</span>
-            </li>
+            </Inline>
           ))}
-        </ul>
+        </Stack>
       )}
     </div>
   );

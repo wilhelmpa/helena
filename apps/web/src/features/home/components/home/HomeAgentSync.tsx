@@ -2,6 +2,7 @@ import { useTranslations } from 'next-intl';
 import StatusBadge from '@/components/common/page/StatusBadge';
 import type { AgentSyncSummary } from '@/lib/api/endpoints/god';
 import { syncStatus } from '@/features/teams/utils/agentProfileSync';
+import { Box, Inline, Text } from '@/design-system';
 
 // Whether every agent's runtime runs on its settings in Helena: how many are in sync, and
 // each one that is not, with why. A report, not a control.
@@ -10,23 +11,26 @@ export default function HomeAgentSync({ summary }: { summary: AgentSyncSummary }
   const ts = useTranslations('teams.agents.profileSync');
   if (summary.total === 0) return null;
   return (
-    <ul className="rounded-md border bg-card p-1">
-      <li className="flex h-8 min-w-0 items-center gap-2 px-2 text-sm">
+    <Box as="ul" pad={1} className="rounded-md border bg-card">
+      <Inline as="li" gap={2} padX={2} className="h-8 min-w-0 text-sm">
         <StatusBadge status={summary.synced === summary.total ? 'success' : 'waiting'} dotOnly />
         <span className="min-w-0 truncate">{t('title')}</span>
-        <span className="ms-auto shrink-0 text-xs text-muted-foreground">
+        <Text as="span" size="xs" tone="muted" className="ms-auto shrink-0">
           {t('synced', { synced: summary.synced, total: summary.total })}
-        </span>
-      </li>
+        </Text>
+      </Inline>
       {summary.agents.map((agent) => (
-        <li
+        <Inline
+          as="li"
+          gap={2}
+          padX={2}
           key={agent.id}
-          className="flex h-8 min-w-0 items-center gap-2 px-2 text-sm"
+          className="h-8 min-w-0 text-sm"
           title={agent.drift.join(', ') || undefined}
         >
           <StatusBadge status={syncStatus(agent.state)} dotOnly />
           <span className="min-w-0 truncate">@{agent.username}</span>
-          <span className="ms-auto shrink-0 text-xs text-muted-foreground">
+          <Text as="span" size="xs" tone="muted" className="ms-auto shrink-0">
             {agent.issues?.some((issue) => issue.code === 'not-signed-in')
               ? ts('issues.notSignedInShort')
               : agent.issues?.some((issue) => issue.code === 'runtime-missing')
@@ -34,9 +38,9 @@ export default function HomeAgentSync({ summary }: { summary: AgentSyncSummary }
                 : agent.issues?.some((issue) => issue.code === 'sandbox-unavailable')
                   ? ts('issues.sandboxUnavailableShort')
                   : ts(`state.${agent.state}`)}
-          </span>
-        </li>
+          </Text>
+        </Inline>
       ))}
-    </ul>
+    </Box>
   );
 }

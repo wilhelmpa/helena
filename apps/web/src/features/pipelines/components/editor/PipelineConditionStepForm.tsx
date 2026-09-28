@@ -23,6 +23,7 @@ import { usePipelineEditor } from '../../context/pipelineEditor';
 import { fieldIssues } from '../../utils/issueDisplay';
 import PipelineField from './PipelineField';
 import PipelineNamesInput, { type NameOption } from './PipelineNamesInput';
+import { Inline } from '@/design-system';
 
 const STATE_TYPES = ['backlog', 'unstarted', 'started', 'completed', 'canceled'] as const;
 
@@ -80,7 +81,7 @@ export default function PipelineConditionStepForm({
       </PipelineField>
       {test.kind === 'outcome' && (
         <PipelineField label={t('kinds.outcome')} issues={issuesOf('condition.outcomes')}>
-          <div className="flex flex-wrap gap-4">
+          <Inline gap={4} wrap align="stretch">
             {OUTCOMES.map((outcome) => (
               <label key={outcome} className="flex items-center gap-2 text-sm">
                 <Checkbox
@@ -97,7 +98,7 @@ export default function PipelineConditionStepForm({
                 {t(`outcomes.${outcome}`)}
               </label>
             ))}
-          </div>
+          </Inline>
         </PipelineField>
       )}
       {test.kind === 'keyword' && (

@@ -24,6 +24,7 @@ import { useSession } from '@/lib/auth-client';
 import ListPager from '@/components/common/ListPager';
 import { usePaging } from '@/hooks/usePaging';
 import MemberRow from './MemberRow';
+import { Stack } from '@/design-system';
 
 // The project's members, newest membership first, a page at a time. People and AI
 // agents share one list and are told apart by the tabs, so neither is pushed off the
@@ -121,7 +122,7 @@ export default function MembersList({
     );
 
   return (
-    <div className="mb-6 flex min-h-0 flex-1 flex-col gap-4">
+    <Stack gap={4} marginBottom={5} className="min-h-0 flex-1">
       {toolbar}
       {members.length === 0 ? (
         <MembersEmptyState kind={kind} searching={term !== undefined} />
@@ -184,6 +185,6 @@ export default function MembersList({
           </div>
         </ConfirmDialog>
       )}
-    </div>
+    </Stack>
   );
 }

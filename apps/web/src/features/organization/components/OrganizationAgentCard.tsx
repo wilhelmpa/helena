@@ -15,6 +15,7 @@ import { parseCapabilities } from '../capabilities';
 import { useClearAgentAssignment, useSetAgentAssignment } from '../services/organization.service';
 import OrganizationAgentGovernance from './OrganizationAgentGovernance';
 import OrganizationAgentProjectInstruction from './OrganizationAgentProjectInstruction';
+import { Inline, Stack, Text } from '@/design-system';
 
 export default function OrganizationAgentCard({
   teamId,
@@ -40,21 +41,23 @@ export default function OrganizationAgentCard({
   const [capabilities, setCapabilities] = useState(agent.capabilities.join(', '));
 
   return (
-    <div className="space-y-4 rounded-md border bg-card p-4">
+    <Stack gap={4} pad={4} className="rounded-md border bg-card">
       <div>
-        <div className="flex flex-wrap items-center gap-2">
+        <Inline gap={2} wrap>
           <h3 className="text-md font-medium" dir="auto">
             {agent.name}
           </h3>
           <AgentPausedBadge agent={agent} />
-        </div>
-        <p className="text-xs text-muted-foreground">
+        </Inline>
+        <Text as="p" size="xs" tone="muted">
           @{agent.username} · {agent.kind}
-        </p>
+        </Text>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
         <label className="space-y-1 text-sm">
-          <span className="block text-xs text-muted-foreground">{t('fields.roleTitle')}</span>
+          <Text as="span" size="xs" tone="muted" className="block">
+            {t('fields.roleTitle')}
+          </Text>
           <Input
             value={roleTitle}
             maxLength={100}
@@ -62,7 +65,9 @@ export default function OrganizationAgentCard({
           />
         </label>
         <label className="space-y-1 text-sm">
-          <span className="block text-xs text-muted-foreground">{t('fields.hermesAgentId')}</span>
+          <Text as="span" size="xs" tone="muted" className="block">
+            {t('fields.hermesAgentId')}
+          </Text>
           <Input
             value={runtimeAgentId}
             maxLength={128}
@@ -71,7 +76,9 @@ export default function OrganizationAgentCard({
           />
         </label>
         <label className="space-y-1 text-sm">
-          <span className="block text-xs text-muted-foreground">{t('fields.teamRole')}</span>
+          <Text as="span" size="xs" tone="muted" className="block">
+            {t('fields.teamRole')}
+          </Text>
           <select
             className="ds-field ds-select-native w-full"
             value={role}
@@ -84,18 +91,22 @@ export default function OrganizationAgentCard({
           </select>
         </label>
         <label className="space-y-1 text-sm">
-          <span className="block text-xs text-muted-foreground">{t('fields.capabilities')}</span>
+          <Text as="span" size="xs" tone="muted" className="block">
+            {t('fields.capabilities')}
+          </Text>
           <Input
             value={capabilities}
             placeholder={t('agents.capabilitiesPlaceholder')}
             onChange={(event) => setCapabilities(event.target.value)}
           />
         </label>
-        <p className="text-xs text-muted-foreground md:col-span-2">
+        <Text as="p" size="xs" tone="muted" className="md:col-span-2">
           {t('agents.capabilitiesHint')}
-        </p>
+        </Text>
         <label className="space-y-1 text-sm">
-          <span className="block text-xs text-muted-foreground">{t('fields.department')}</span>
+          <Text as="span" size="xs" tone="muted" className="block">
+            {t('fields.department')}
+          </Text>
           <select
             className="ds-field ds-select-native w-full"
             value={departmentId}
@@ -110,7 +121,9 @@ export default function OrganizationAgentCard({
           </select>
         </label>
         <label className="space-y-1 text-sm">
-          <span className="block text-xs text-muted-foreground">{t('fields.reportsTo')}</span>
+          <Text as="span" size="xs" tone="muted" className="block">
+            {t('fields.reportsTo')}
+          </Text>
           <select
             className="ds-field ds-select-native w-full"
             value={reportsToAgentId}
@@ -134,7 +147,7 @@ export default function OrganizationAgentCard({
       </div>
       <OrganizationAgentGovernance teamId={teamId} agent={agent} />
       {agent.projects.length > 0 && (
-        <div className="space-y-2">
+        <Stack gap={2}>
           <h4 className="text-sm font-medium">{t('agents.projectInstructions')}</h4>
           {agent.projects.map((project) => (
             <OrganizationAgentProjectInstruction
@@ -144,9 +157,9 @@ export default function OrganizationAgentCard({
               project={project}
             />
           ))}
-        </div>
+        </Stack>
       )}
-      <div className="flex justify-end gap-2">
+      <Inline gap={2} justify="end" align="stretch">
         <Button
           type="button"
           variant="ghost"
@@ -180,7 +193,7 @@ export default function OrganizationAgentCard({
         >
           {t('actions.save')}
         </Button>
-      </div>
-    </div>
+      </Inline>
+    </Stack>
   );
 }

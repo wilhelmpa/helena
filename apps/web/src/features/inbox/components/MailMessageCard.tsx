@@ -8,6 +8,7 @@ import { formatDateTime } from '@/utils/dates';
 import { useRemoteImages } from '../services/mail.service';
 import MailAttachmentChips from './MailAttachmentChips';
 import MailHtmlFrame from './MailHtmlFrame';
+import { Box, Inline, Text } from '@/design-system';
 
 function names(list: MailAddress[]): string {
   return list.map((item) => item.name || item.address).join(', ');
@@ -25,24 +26,36 @@ export default function MailMessageCard({
   const blocked = message.hasRemoteImages && !message.allowRemoteImages;
   return (
     <article className="rounded-md border bg-card">
-      <header className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 border-b px-4 py-2 text-sm">
+      <Box
+        as="header"
+        padX={4}
+        padY={2}
+        className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 border-b text-sm"
+      >
         <span dir="auto" className="font-medium">
           {message.fromName || message.fromAddress}
         </span>
         {message.fromName && (
-          <span className="text-xs text-muted-foreground">{message.fromAddress}</span>
+          <Text as="span" size="xs" tone="muted">
+            {message.fromAddress}
+          </Text>
         )}
         <time className="ms-auto text-xs text-muted-foreground" dateTime={message.sentAt}>
           {formatDateTime(message.sentAt)}
         </time>
-        <span dir="auto" className="w-full truncate text-xs text-muted-foreground">
+        <Text as="span" size="xs" tone="muted" dir="auto" className="w-full truncate">
           {t('to', { names: names(message.to) })}
           {message.cc.length > 0 && ` · ${t('cc', { names: names(message.cc) })}`}
           {message.bcc.length > 0 && ` · ${t('bcc', { names: names(message.bcc) })}`}
-        </span>
-      </header>
+        </Text>
+      </Box>
       {blocked && (
-        <div className="flex items-center gap-2 border-b bg-muted/40 px-4 py-1.5 text-xs text-muted-foreground">
+        <Inline
+          gap={2}
+          padX={4}
+          padY={2}
+          className="border-b bg-muted/40 text-xs text-muted-foreground"
+        >
           <ImageOff className="size-3.5" />
           {t('remoteBlocked')}
           <Button
@@ -55,17 +68,17 @@ export default function MailMessageCard({
           >
             {t('showRemote')}
           </Button>
-        </div>
+        </Inline>
       )}
-      <div className="px-4 py-3">
+      <Box padX={4} padY={3}>
         {message.html ? (
           <MailHtmlFrame html={message.html} allowRemoteImages={message.allowRemoteImages} />
         ) : (
-          <p dir="auto" className="text-sm break-words whitespace-pre-wrap">
+          <Text as="p" size="sm" dir="auto" className="break-words whitespace-pre-wrap">
             {message.text}
-          </p>
+          </Text>
         )}
-      </div>
+      </Box>
       {message.attachments.length > 0 && <MailAttachmentChips attachments={message.attachments} />}
     </article>
   );

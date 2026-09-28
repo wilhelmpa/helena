@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
+import { Box, Inline, Text } from '@/design-system';
 
 // The page numbers to show: always the first and last page, the current page and
 // its immediate neighbors; every other run collapses to a single 'gap'.
@@ -37,11 +38,11 @@ export default function InitiativesPagination({
   const to = Math.min(page * pageSize, total);
 
   return (
-    <div className="flex items-center justify-between px-4 pt-2 pb-6">
-      <span className="text-xs text-muted-foreground tabular-nums">
+    <Box padX={4} padTop={2} padBottom={5} className="flex items-center justify-between">
+      <Text as="span" size="xs" tone="muted" className="tabular-nums">
         {t('range', { from, to, total })}
-      </span>
-      <div className="flex items-center gap-1">
+      </Text>
+      <Inline gap={1}>
         <Button
           variant="ghost"
           size="icon-sm"
@@ -53,9 +54,9 @@ export default function InitiativesPagination({
         </Button>
         {pageItems(page, pageCount).map((it, i) =>
           it === 'gap' ? (
-            <span key={`gap-${i}`} className="px-1 text-xs text-muted-foreground">
+            <Text as="span" size="xs" tone="muted" key={`gap-${i}`} className="px-1">
               …
-            </span>
+            </Text>
           ) : (
             <Button
               key={it}
@@ -77,7 +78,7 @@ export default function InitiativesPagination({
         >
           <ChevronRight className="size-4" />
         </Button>
-      </div>
-    </div>
+      </Inline>
+    </Box>
   );
 }

@@ -8,6 +8,7 @@ import type { MailThread } from '@/lib/api/endpoints/mail';
 import { issuePath } from '@/utils/paths';
 import { useMoveThread } from '../services/mail.service';
 import { MailClassificationCard } from './MailClassificationCard';
+import { Inline, Stack } from '@/design-system';
 
 export default function MailThreadHeader({
   thread,
@@ -19,11 +20,11 @@ export default function MailThreadHeader({
   const t = useTranslations('mail.thread');
   const move = useMoveThread();
   return (
-    <div className="flex flex-col gap-2">
+    <Stack gap={2}>
       <h2 dir="auto" className="text-base font-semibold break-words">
         {thread.subject || t('noSubject')}
       </h2>
-      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+      <Inline gap={2} wrap className="text-xs text-muted-foreground">
         <button
           type="button"
           onClick={onMove}
@@ -43,9 +44,9 @@ export default function MailThreadHeader({
             {issue.identifier} {issue.title}
           </Link>
         ))}
-      </div>
+      </Inline>
       {thread.suggestedProjectId != null && (
-        <div className="flex flex-wrap items-center gap-2 rounded-md border border-dashed px-3 py-2 text-sm">
+        <Inline gap={2} padX={3} padY={2} wrap className="rounded-md border border-dashed text-sm">
           <Sparkles className="size-4 text-muted-foreground" />
           <span>{t('suggestion', { project: thread.suggestedProjectName ?? '' })}</span>
           <Button
@@ -60,9 +61,9 @@ export default function MailThreadHeader({
           >
             {t('acceptSuggestion')}
           </Button>
-        </div>
+        </Inline>
       )}
       <MailClassificationCard threadId={thread.id} />
-    </div>
+    </Stack>
   );
 }

@@ -5,6 +5,7 @@ import type { InitiativeHealth } from '@/lib/api/endpoints/initiatives';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { healthColor } from '@/utils/initiativeMeta';
+import { Box, Stack, Text } from '@/design-system';
 
 // The health values explained in the info popover, in severity order. null is the
 // value with nothing to judge yet, and is keyed as `unknown` in the messages.
@@ -33,11 +34,17 @@ export default function HealthInfoPopover() {
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-72 p-0 text-sm">
-        <div className="px-3.5 py-3">
+        <Box padX={3} padY={3}>
           <p className="font-medium">{t('title')}</p>
-          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{t('description')}</p>
-        </div>
-        <div className="grid grid-cols-[auto_1fr] gap-x-2.5 gap-y-3 border-t border-border px-3.5 py-3">
+          <Text as="p" size="xs" tone="muted" className="mt-0.5 leading-snug">
+            {t('description')}
+          </Text>
+        </Box>
+        <Box
+          padX={3}
+          padY={3}
+          className="grid grid-cols-[auto_1fr] gap-x-2.5 gap-y-3 border-t border-border"
+        >
           {HEALTH_LEGEND.map((key) => (
             <Fragment key={key}>
               <span
@@ -46,13 +53,13 @@ export default function HealthInfoPopover() {
               />
               <div>
                 <p className="font-medium">{tHealth(key)}</p>
-                <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
+                <Text as="p" size="xs" tone="muted" className="mt-0.5 leading-snug">
                   {t(`legend.${key}`)}
-                </p>
+                </Text>
               </div>
             </Fragment>
           ))}
-        </div>
+        </Box>
         <Collapsible className="border-t border-border">
           <CollapsibleTrigger className="group/calc flex w-full items-center justify-between px-3.5 py-2.5 text-xs font-medium text-muted-foreground">
             <span className="transition-colors group-hover/calc:text-foreground">
@@ -61,7 +68,7 @@ export default function HealthInfoPopover() {
             <ChevronRight className="size-3.5 shrink-0 transition group-data-[state=open]/calc:rotate-90" />
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <div className="space-y-2 px-3.5 pb-3 text-xs">
+            <Stack gap={2} padX={3} padBottom={3} className="text-xs">
               <div>
                 <p className="text-muted-foreground">{t('workDone')}</p>
                 <p className="font-mono">completed / (total - canceled)</p>
@@ -72,16 +79,16 @@ export default function HealthInfoPopover() {
               </div>
               <div>
                 <p className="text-muted-foreground">{t('trail')}</p>
-                <div className="mt-0.5 grid grid-cols-[1fr_auto] gap-x-3 font-mono">
+                <Box marginTop={1} className="grid grid-cols-[1fr_auto] gap-x-3 font-mono">
                   <span>{tHealth('on_track')}</span>
                   <span>{t('trailOnTrack')}</span>
                   <span>{tHealth('at_risk')}</span>
                   <span>{t('trailAtRisk')}</span>
                   <span>{tHealth('off_track')}</span>
                   <span>{t('trailOffTrack')}</span>
-                </div>
+                </Box>
               </div>
-            </div>
+            </Stack>
           </CollapsibleContent>
         </Collapsible>
       </PopoverContent>

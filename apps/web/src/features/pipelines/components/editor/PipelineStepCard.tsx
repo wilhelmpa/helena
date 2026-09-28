@@ -13,6 +13,7 @@ import { usePluginTypes } from '../../hooks/usePluginTypes';
 import { useStepSummary } from '../../hooks/useStepSummary';
 import { isProjectIssue, stepIssues } from '../../utils/issueDisplay';
 import PipelineConditionLanes from './PipelineConditionLanes';
+import { Text } from '@/design-system';
 
 // A step in its lane: its kind, name, what it does and how many problems it has. A
 // click selects it for the inspector; the grip reorders it, by pointer or keyboard.
@@ -63,16 +64,16 @@ export default function PipelineStepCard({ step }: { step: PipelineStep }) {
           </span>
           <span className="min-w-0 flex-1">
             <span className="flex items-baseline gap-2">
-              <span className="truncate text-sm font-medium" dir="auto">
+              <Text as="span" size="sm" className="truncate font-medium" dir="auto">
                 {step.name}
-              </span>
-              <span className="shrink-0 text-xs text-muted-foreground">
+              </Text>
+              <Text as="span" size="xs" tone="muted" className="shrink-0">
                 {plugins.stepLabel(step.type)}
-              </span>
+              </Text>
             </span>
-            <span className="block truncate text-xs text-muted-foreground" dir="auto">
+            <Text as="span" size="xs" tone="muted" className="block truncate" dir="auto">
               {summary(step)}
-            </span>
+            </Text>
           </span>
           {own.length > 0 && (
             <Badge variant={blocking ? 'destructive' : 'outline'} className="shrink-0">

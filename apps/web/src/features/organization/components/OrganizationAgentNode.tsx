@@ -13,6 +13,7 @@ import {
   type OrganizationAgentNode as AgentNode,
 } from '../organizationTree';
 import OrganizationDepartmentNode from './OrganizationDepartmentNode';
+import { Box, Text } from '@/design-system';
 
 // One agent in the organization chart: a sidebar-style row joined to its manager by the
 // tree line — name, role, what it can do and where it works on one line, its runtime on
@@ -40,7 +41,11 @@ export default function OrganizationAgentNode({
     .join(' — ');
 
   return (
-    <li className="relative ps-4 before:absolute before:start-0 before:top-0 before:h-4 before:w-3 before:rounded-es-md before:border-s before:border-b before:border-sidebar-border">
+    <Box
+      as="li"
+      padStart={4}
+      className="relative before:absolute before:start-0 before:top-0 before:h-4 before:w-3 before:rounded-es-md before:border-s before:border-b before:border-sidebar-border"
+    >
       <Link
         href={`${agentsPath()}?${new URLSearchParams({ agent: String(agent.id) })}`}
         className="group flex min-h-8 min-w-0 items-center gap-2 rounded-md px-2 py-1 text-sm transition-colors hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
@@ -48,17 +53,17 @@ export default function OrganizationAgentNode({
         <Bot className="size-4 shrink-0 text-muted-foreground group-hover:text-foreground" />
         {!agent.template && <Orb state={status} />}
         <span className="min-w-0 shrink truncate font-medium">{agent.name}</span>
-        <span className="shrink-0 text-xs text-muted-foreground max-sm:hidden">
+        <Text as="span" size="xs" tone="muted" className="shrink-0 max-sm:hidden">
           {t(`roles.${role}`)}
-        </span>
+        </Text>
         <AgentPausedBadge agent={agent} />
-        <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground max-sm:hidden">
+        <Text as="span" size="xs" tone="muted" className="min-w-0 flex-1 truncate max-sm:hidden">
           {detail}
-        </span>
+        </Text>
         {agent.projects.length > 0 && (
-          <span className="shrink-0 font-mono text-xs text-muted-foreground max-md:hidden">
+          <Text as="span" size="xs" tone="muted" className="shrink-0 font-mono max-md:hidden">
             {agent.projects.map((project) => project.key).join(' ')}
-          </span>
+          </Text>
         )}
         {agent.template ? (
           // A pool template runs nowhere by design — its own runtimeState.status
@@ -66,9 +71,9 @@ export default function OrganizationAgentNode({
           // which is exactly the mix-up this badge exists to avoid.
           <AgentTemplateBadge />
         ) : (
-          <span className="ms-auto hidden shrink-0 text-xs text-muted-foreground sm:inline">
+          <Text as="span" size="xs" tone="muted" className="ms-auto hidden shrink-0 sm:inline">
             {agent.runtimeState.adapter ?? agent.kind}
-          </span>
+          </Text>
         )}
       </Link>
       {(node.reports.length > 0 || (node.departments?.length ?? 0) > 0) && (
@@ -86,6 +91,6 @@ export default function OrganizationAgentNode({
           ))}
         </ul>
       )}
-    </li>
+    </Box>
   );
 }

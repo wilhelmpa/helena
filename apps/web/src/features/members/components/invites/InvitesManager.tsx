@@ -8,6 +8,7 @@ import { ItemGroup } from '@/components/ui/item';
 import { useDeleteInvite, useInvitesQuery, useSendInviteEmail } from '@/services/members.service';
 import { usePermissions } from '@/hooks/usePermissions';
 import InviteRow from './InviteRow';
+import { Box } from '@/design-system';
 
 // Invite panel shown above the members list: the invites that have not been accepted
 // or rejected yet, each with a revoke action. Sending one is the page's own action.
@@ -35,10 +36,14 @@ export default function InvitesManager({ projectKey }: { projectKey: string }) {
 
   return (
     <div>
-      <div className="mb-6">
-        <div className="mb-1 border-b pb-1 text-xs font-medium text-muted-foreground">
+      <Box marginBottom={5}>
+        <Box
+          marginBottom={1}
+          padBottom={1}
+          className="border-b text-xs font-medium text-muted-foreground"
+        >
           {t('pendingCount', { count: pending.length })}
-        </div>
+        </Box>
         <ItemGroup>
           {pending.map((invite) => (
             <InviteRow
@@ -50,7 +55,7 @@ export default function InvitesManager({ projectKey }: { projectKey: string }) {
             />
           ))}
         </ItemGroup>
-      </div>
+      </Box>
 
       {canDelete && target && (
         <ConfirmDialog

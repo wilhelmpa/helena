@@ -3,6 +3,7 @@ import { useTranslations } from 'next-intl';
 import type { RoutineMention } from '@/lib/api/endpoints/routines';
 import { cn } from '@/lib/utils';
 import { useRoutineMentionsPreview } from '../services/routines.service';
+import { Stack, Text } from '@/design-system';
 
 // The agents a routine's instructions @mention besides its own agent. Every run starts
 // each of them on the routine's task, as a mention of the member the routine acts for;
@@ -18,9 +19,11 @@ export function RoutineMentionList({ mentions }: { mentions: RoutineMention[] })
   const t = useTranslations('routines');
   const reason = useMentionReason();
   return (
-    <div className="space-y-1">
-      <p className="text-xs text-muted-foreground">{t('mentionsTitle')}</p>
-      <ul className="space-y-0.5">
+    <Stack gap={1}>
+      <Text as="p" size="xs" tone="muted">
+        {t('mentionsTitle')}
+      </Text>
+      <Stack as="ul" gap={1}>
         {mentions.map((mention) => (
           <li
             key={mention.agent.id}
@@ -44,8 +47,8 @@ export function RoutineMentionList({ mentions }: { mentions: RoutineMention[] })
             </span>
           </li>
         ))}
-      </ul>
-    </div>
+      </Stack>
+    </Stack>
   );
 }
 

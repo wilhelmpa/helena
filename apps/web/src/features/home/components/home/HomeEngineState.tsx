@@ -4,6 +4,7 @@ import type { EngineHealth } from '@/lib/api/endpoints/god';
 import { formatDurationShort } from '@/utils/dates';
 import { workflowsPath } from '@/utils/paths';
 import { useModelFailureText } from '@/features/model-availability/hooks/useModelFailureText';
+import { Stack } from '@/design-system';
 
 // What the Helena engine is doing, in one line under the services, and the newest runs
 // that failed, each a link to the project's workflows.
@@ -12,7 +13,7 @@ export default function HomeEngineState({ engine }: { engine: EngineHealth }) {
   // A failure the runtime explained (a model the provider refused) in the reader's language.
   const explained = useModelFailureText();
   return (
-    <div className="mt-1 space-y-0.5 px-2 text-xs text-muted-foreground">
+    <Stack gap={1} marginTop={1} padX={2} className="text-xs text-muted-foreground">
       <p>
         {t('summary', {
           active: engine.active,
@@ -35,6 +36,6 @@ export default function HomeEngineState({ engine }: { engine: EngineHealth }) {
           {explained(failure.failure) ?? failure.error}
         </p>
       ))}
-    </div>
+    </Stack>
   );
 }

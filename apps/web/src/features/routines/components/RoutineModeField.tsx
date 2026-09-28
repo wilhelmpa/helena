@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/select';
 import { RoutineField } from './RoutineField';
 import { RoutineTaskField, type RoutineTask } from './RoutineTaskField';
+import { Stack, Text } from '@/design-system';
 
 // What each run does: create a task, or reopen the task picked here.
 export function RoutineModeField({
@@ -26,7 +27,7 @@ export function RoutineModeField({
 }) {
   const t = useTranslations('routines');
   return (
-    <div className="space-y-1.5">
+    <Stack gap={2}>
       <div className="grid gap-4 sm:grid-cols-2">
         <RoutineField htmlFor="routine-mode" label={t('mode')}>
           <Select value={mode} onValueChange={(value) => onModeChange(value as RoutineMode)}>
@@ -45,7 +46,9 @@ export function RoutineModeField({
           </RoutineField>
         )}
       </div>
-      <p className="text-xs text-muted-foreground">{t('coalesceHint')}</p>
-    </div>
+      <Text as="p" size="xs" tone="muted">
+        {t('coalesceHint')}
+      </Text>
+    </Stack>
   );
 }

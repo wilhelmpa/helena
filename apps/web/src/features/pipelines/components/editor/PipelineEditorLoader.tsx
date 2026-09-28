@@ -10,6 +10,7 @@ import { usePipeline, useProjectPipelines } from '@/services/pipelines.service';
 import { useTeamQuery } from '@/services/teams.service';
 import { pipelinePath } from '@/utils/paths';
 import PipelineEditor from './PipelineEditor';
+import { Box } from '@/design-system';
 
 // Loads the workflow and decides how it is edited: a template by the team's actions
 // permission, a project workflow by the project's, with the project's role mapping
@@ -31,24 +32,24 @@ export default function PipelineEditorLoader({
   if (pipeline.isPending) return <ListSkeleton rows={4} rowClassName="h-14" className="p-4" />;
   if (pipeline.isError)
     return (
-      <div className="flex h-full flex-col p-4">
+      <Box pad={4} className="flex h-full flex-col">
         <EmptyState title={t('loadFailed')} description={t('loadFailedHint')}>
           <Button size="sm" variant="outline" onClick={() => void pipeline.refetch()}>
             {tCommon('reload')}
           </Button>
         </EmptyState>
-      </div>
+      </Box>
     );
   const data = pipeline.data;
   if (projectKey && data.projectId === null)
     return (
-      <div className="flex h-full flex-col p-4">
+      <Box pad={4} className="flex h-full flex-col">
         <EmptyState title={t('template')} description={t('templateElsewhere')}>
           <Button asChild size="sm" variant="outline">
             <Link href={pipelinePath(data.id)}>{t('openTemplate')}</Link>
           </Button>
         </EmptyState>
-      </div>
+      </Box>
     );
   const editable =
     data.projectId === null ? team.data?.permissions.actions.edit === true : can('actions', 'edit');

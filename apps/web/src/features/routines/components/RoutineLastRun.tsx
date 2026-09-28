@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { issuePath } from '@/utils/paths';
 import { formatInZone } from '../utils/schedulePreview';
 import { RoutineRunsDialog } from './RoutineRunsDialog';
+import { Inline, Stack, Text } from '@/design-system';
 
 type RunState = 'success' | 'skipped' | 'failed' | 'canceled' | 'running';
 
@@ -39,7 +40,12 @@ export function RoutineLastRun({
   const t = useTranslations('routines');
   const [history, setHistory] = useState(false);
   const run = routine.lastRun;
-  if (!run) return <span className="text-xs text-muted-foreground">{t('noRunsShort')}</span>;
+  if (!run)
+    return (
+      <Text as="span" size="xs" tone="muted">
+        {t('noRunsShort')}
+      </Text>
+    );
   const state = runState(run.status);
   const identifier = run.taskNumber != null ? `${routine.projectKey}-${run.taskNumber}` : null;
   const task = (chunks: React.ReactNode) =>
@@ -59,14 +65,20 @@ export function RoutineLastRun({
         ? t.rich(`outcome.${run.outcome}`, { identifier, task })
         : null;
   return (
-    <div className="space-y-1">
-      <div className="flex items-center gap-2">
+    <Stack gap={1}>
+      <Inline gap={2}>
         <span className={cn('size-2 shrink-0 rounded-full', DOT[state])} />
-        <span className="text-sm">{t(`runStatus.${state}`)}</span>
-      </div>
-      {outcome && <p className="text-xs text-muted-foreground">{outcome}</p>}
+        <Text as="span" size="sm">
+          {t(`runStatus.${state}`)}
+        </Text>
+      </Inline>
+      {outcome && (
+        <Text as="p" size="xs" tone="muted">
+          {outcome}
+        </Text>
+      )}
       {run.gate && (
-        <p className="text-xs text-muted-foreground" data-testid="routine-gate-result">
+        <Text as="p" size="xs" tone="muted" data-testid="routine-gate-result">
           {t('gateResult', {
             recommendation: t(run.gate.recommendation === 'skip' ? 'gateSkip' : 'gateRun'),
             reason: run.gate.reason,
@@ -75,17 +87,17 @@ export function RoutineLastRun({
                 .map(([name, value]) => `${name}: ${value}`)
                 .join(', ') || '0',
           })}
-        </p>
+        </Text>
       )}
       {state === 'failed' && run.error && (
-        <p className="line-clamp-2 text-xs text-destructive" title={run.error}>
+        <Text as="p" size="xs" tone="danger" className="line-clamp-2" title={run.error}>
           {run.error}
-        </p>
+        </Text>
       )}
       {run.firedAt && (
-        <p className="text-xs whitespace-nowrap text-muted-foreground tabular-nums">
+        <Text as="p" size="xs" tone="muted" className="whitespace-nowrap tabular-nums">
           {formatInZone(run.firedAt, routine.timezone)}
-        </p>
+        </Text>
       )}
       <button
         type="button"
@@ -101,6 +113,6 @@ export function RoutineLastRun({
       {history && (
         <RoutineRunsDialog routine={routine} canEdit={canEdit} onClose={() => setHistory(false)} />
       )}
-    </div>
+    </Stack>
   );
 }

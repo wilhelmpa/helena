@@ -6,6 +6,7 @@ import { formatShortDate } from '@/utils/dates';
 import { issuePath } from '@/utils/paths';
 import { cn } from '@/lib/utils';
 import HomeTaskPeople from '../../components/HomeTaskPeople';
+import { Text } from '@/design-system';
 
 // One task: its key (mono, as in the sidebar), the title, its state as a dot, and the due
 // date (red once it is past). The row opens the task.
@@ -22,9 +23,9 @@ export default function DashboardTaskRow({
       href={issuePath(issue.projectKey, issue.sequenceNumber)}
       className={cn(ROW_CLASS, ROW_INTERACTIVE_CLASS)}
     >
-      <span className="w-16 shrink-0 truncate font-mono text-xs text-muted-foreground" dir="ltr">
+      <Text as="span" size="xs" tone="muted" className="w-16 shrink-0 truncate font-mono" dir="ltr">
         {issue.identifier}
-      </span>
+      </Text>
       <span className="min-w-0 flex-1 truncate" dir="auto">
         {issue.title}
       </span>

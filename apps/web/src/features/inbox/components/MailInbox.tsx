@@ -23,6 +23,7 @@ import {
   useMoveThread,
   useThreadAction,
 } from '../services/mail.service';
+import { Text } from '@/design-system';
 
 // The inbox: every thread the reader reaches, newest first, and the selected one
 // beside the list. The project inbox shows the threads filed under the project; Home
@@ -210,7 +211,9 @@ export default function MailInbox({
               onRemoved={() => select(neighbour())}
             />
           ) : (
-            <p className="m-auto p-4 text-sm text-muted-foreground">{t('inbox.nothingSelected')}</p>
+            <Text as="p" size="sm" tone="muted" className="m-auto p-4">
+              {t('inbox.nothingSelected')}
+            </Text>
           )}
         </div>
       </div>

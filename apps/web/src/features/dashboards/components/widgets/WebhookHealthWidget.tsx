@@ -3,6 +3,7 @@ import { useTranslations } from 'next-intl';
 import type { WidgetConfig } from '@/utils/dashboardWidgets';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useWebhookStatsQuery } from '../../services/analytics.service';
+import { Stack, Text } from '@/design-system';
 
 // Webhook delivery health over a window: the delivered total as the headline figure,
 // with the failed and pending counts, plus a warning when subscriptions have been
@@ -22,10 +23,14 @@ export default function WebhookHealthWidget({
   if (isLoading || !data) return <Skeleton className="h-10 w-20" />;
 
   return (
-    <div className="space-y-2">
-      <p className="text-xs text-muted-foreground">{t('lastDays', { days })}</p>
+    <Stack gap={2}>
+      <Text as="p" size="xs" tone="muted">
+        {t('lastDays', { days })}
+      </Text>
       <div className="text-3xl font-semibold tabular-nums">{data.total}</div>
-      <p className="text-xs text-muted-foreground">{t('webhookHealth.deliveries')}</p>
+      <Text as="p" size="xs" tone="muted">
+        {t('webhookHealth.deliveries')}
+      </Text>
       <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground tabular-nums">
         {data.failed > 0 && (
           <span className="text-destructive">
@@ -36,11 +41,11 @@ export default function WebhookHealthWidget({
         {data.failed === 0 && data.pending === 0 && <span>{t('webhookHealth.allDelivered')}</span>}
       </div>
       {data.disabledWebhooks > 0 && (
-        <p className="flex items-center gap-1 text-xs text-destructive">
+        <Text as="p" size="xs" tone="danger" className="flex items-center gap-1">
           <AlertTriangle className="size-3.5 shrink-0" />
           {t('webhookHealth.disabled', { count: data.disabledWebhooks })}
-        </p>
+        </Text>
       )}
-    </div>
+    </Stack>
   );
 }

@@ -7,6 +7,7 @@ import InitiativeActivityFeed from './InitiativeActivityFeed';
 import InitiativeActiveWork from './InitiativeActiveWork';
 import InitiativeStateBreakdown from './InitiativeStateBreakdown';
 import InitiativeTimeline from './InitiativeTimeline';
+import { Stack } from '@/design-system';
 
 // How the initiative is going: the state breakdown, the timeline and the work in
 // flight, with the activity feed beside them and below them on a narrow screen.
@@ -21,7 +22,7 @@ export default function InitiativeProgress({
   const projectKey = project.project.key;
 
   return (
-    <div className="flex w-full flex-col gap-6 p-4 lg:flex-row">
+    <Stack gap={5} pad={4} className="w-full lg:flex-row">
       <div className="min-w-0 lg:w-2/3">
         <div className="grid gap-6 sm:grid-cols-2">
           <InitiativeStateBreakdown project={project} initiativeId={initiative.id} />
@@ -35,6 +36,6 @@ export default function InitiativeProgress({
         <h2 className="mb-3 text-xs font-medium text-muted-foreground">{t('activity')}</h2>
         <InitiativeActivityFeed initiativeId={initiative.id} projectKey={projectKey} />
       </aside>
-    </div>
+    </Stack>
   );
 }

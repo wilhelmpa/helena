@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import type { OrganizationDepartment, OrganizationProject } from '@/lib/api/endpoints/organization';
 import OrganizationProjectCard from './OrganizationProjectCard';
+import { Text } from '@/design-system';
 
 export default function OrganizationProjects({
   teamId,
@@ -17,9 +18,9 @@ export default function OrganizationProjects({
 
   if (projects.length === 0) {
     return (
-      <p className="rounded-md border bg-card px-3 py-2 text-sm text-muted-foreground">
+      <Text as="p" size="sm" tone="muted" className="rounded-md border bg-card px-3 py-2">
         {t('projects.empty')}
-      </p>
+      </Text>
     );
   }
 

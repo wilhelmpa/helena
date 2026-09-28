@@ -16,6 +16,7 @@ import type {
   OrganizationProject,
 } from '@/lib/api/endpoints/organization';
 import { useCreateGoal } from '../services/organization.service';
+import { Inline } from '@/design-system';
 
 const STATUSES: OrganizationGoalStatus[] = ['planned', 'active', 'achieved', 'paused'];
 
@@ -111,7 +112,7 @@ export default function OrganizationGoalDialog({
           placeholder={t('goals.descriptionPlaceholder')}
           onChange={setDescription}
         />
-        <div className="new-issue-pills mt-2 flex flex-wrap items-center gap-2">
+        <Inline gap={2} marginTop={2} wrap className="new-issue-pills">
           <PopoverPick
             trigger={
               <Pill active>
@@ -201,15 +202,20 @@ export default function OrganizationGoalDialog({
             placeholder={t('fields.targetDate')}
             onChange={setTargetDate}
           />
-        </div>
-        <div className="new-issue-footer mt-5 flex flex-nowrap items-center justify-end gap-2 border-t">
+        </Inline>
+        <Inline
+          gap={2}
+          marginTop={5}
+          justify="end"
+          className="new-issue-footer flex-nowrap border-t"
+        >
           <Button variant="ghost" onClick={onClose}>
             {tCommon('cancel')}
           </Button>
           <Button disabled={!title.trim() || create.isPending} onClick={submit}>
             {t('goals.create')}
           </Button>
-        </div>
+        </Inline>
       </div>
     </Modal>
   );

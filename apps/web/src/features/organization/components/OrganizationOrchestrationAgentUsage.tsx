@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { AgentPausedBadge } from '@/components/common/agent-chat/AgentPausedBadge';
 import type { OrganizationAgent } from '@/lib/api/endpoints/organization';
 import OrganizationTokenUsage from './OrganizationTokenUsage';
+import { Inline, Stack, Text } from '@/design-system';
 
 // What each agent of the project used against its own ceilings.
 export default function OrganizationOrchestrationAgentUsage({
@@ -15,20 +16,22 @@ export default function OrganizationOrchestrationAgentUsage({
   if (agents.length === 0) return null;
 
   return (
-    <div className="space-y-2">
+    <Stack gap={2}>
       <div>
         <h3 className="text-xs font-medium text-muted-foreground">{t('agentsTitle')}</h3>
-        <p className="text-xs text-muted-foreground">{t('agentsHint')}</p>
+        <Text as="p" size="xs" tone="muted">
+          {t('agentsHint')}
+        </Text>
       </div>
-      <ul className="space-y-3">
+      <Stack as="ul" gap={3}>
         {agents.map((agent) => (
-          <li key={agent.id} className="space-y-1.5">
-            <div className="flex min-w-0 items-center gap-2">
-              <span className="truncate text-sm font-medium" dir="auto">
+          <Stack as="li" gap={2} key={agent.id}>
+            <Inline gap={2} className="min-w-0">
+              <Text as="span" size="sm" className="truncate font-medium" dir="auto">
                 {agent.name}
-              </span>
+              </Text>
               <AgentPausedBadge agent={agent} />
-            </div>
+            </Inline>
             <OrganizationTokenUsage
               label={t('today')}
               used={agent.tokensToday}
@@ -39,9 +42,9 @@ export default function OrganizationOrchestrationAgentUsage({
               used={agent.tokensThisMonth}
               ceiling={agent.monthlyTokenCeiling}
             />
-          </li>
+          </Stack>
         ))}
-      </ul>
-    </div>
+      </Stack>
+    </Stack>
   );
 }

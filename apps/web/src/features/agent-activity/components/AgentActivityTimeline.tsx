@@ -12,6 +12,7 @@ import AgentActivityToolbar from './AgentActivityToolbar';
 import AgentActivityLiveRefresh from './AgentActivityLiveRefresh';
 import AgentActivityRow from './AgentActivityRow';
 import { ACTIVE_ACTIVITY_STATUSES } from '../utils/runningLink';
+import { Stack } from '@/design-system';
 
 // One sync request reads at most 20 scopes for the whole screen, two per project here.
 const WATCHED_PROJECTS = 6;
@@ -67,7 +68,7 @@ export default function AgentActivityTimeline({
   };
 
   return (
-    <div className="flex flex-1 flex-col gap-4">
+    <Stack gap={4} className="flex-1">
       {projectIds.slice(0, WATCHED_PROJECTS).map((projectId) => (
         <AgentActivityLiveRefresh key={projectId} projectId={projectId} projectKey={projectKey} />
       ))}
@@ -109,6 +110,6 @@ export default function AgentActivityTimeline({
           {feed.isFetchingNextPage ? tCommon('loading') : t('showMore')}
         </Button>
       )}
-    </div>
+    </Stack>
   );
 }

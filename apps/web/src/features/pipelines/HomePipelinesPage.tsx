@@ -10,6 +10,7 @@ import { useTeamsQuery } from '@/services/teams.service';
 import { soleTeamId } from '@/utils/homeTeamScope';
 import { manageTeamsPath } from '@/utils/paths';
 import PipelineLibrary from './components/library/PipelineLibrary';
+import { Box } from '@/design-system';
 
 // The team's library of workflow templates in Home. Like the other team sections of
 // Home it needs the reader's projects to belong to one team.
@@ -21,17 +22,17 @@ export default function HomePipelinesPage() {
   return (
     <Shell globalHome globalTitle={t('workflows')} autoOpenGlobalChat={false}>
       {teams.isPending ? (
-        <div className="p-4">
+        <Box pad={4}>
           <ListSkeleton rows={3} rowClassName="h-12" />
-        </div>
+        </Box>
       ) : teamId == null ? (
-        <div className="flex h-full flex-col p-4">
+        <Box pad={4} className="flex h-full flex-col">
           <EmptyState title={t('teamScopeRequired')} description={t('teamScopeRequiredHint')}>
             <Button asChild size="sm" variant="outline">
               <Link href={manageTeamsPath()}>{t('manageTeams')}</Link>
             </Button>
           </EmptyState>
-        </div>
+        </Box>
       ) : (
         <PipelineLibrary teamId={teamId} />
       )}

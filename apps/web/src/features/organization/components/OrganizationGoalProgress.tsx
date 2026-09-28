@@ -15,6 +15,7 @@ import {
   useGoalDetailQuery,
   useLinkGoalTask,
 } from '../services/organization.service';
+import { Inline, Stack, Text } from '@/design-system';
 
 // A task identifier ("VOL-12") as the parts its page is addressed by.
 function taskHref(identifier: string): string | null {
@@ -51,22 +52,22 @@ export default function OrganizationGoalProgress({
   );
 
   return (
-    <div className="space-y-2 border-t pt-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <Stack gap={2} padTop={3} className="border-t">
+      <Inline gap={2} justify="between" wrap>
         <span>
           {progress.total === 0
             ? t('goals.noTasks')
             : t('goals.progress', { done: progress.done, total: progress.total })}
         </span>
         {progress.agents.length > 0 && (
-          <span className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+          <Text as="span" size="xs" tone="muted" className="flex flex-wrap items-center gap-1.5">
             <Bot className="size-3.5" aria-hidden />
             {t('goals.workingOn', {
               agents: progress.agents.map((agent) => `@${agent.username}`).join(', '),
             })}
-          </span>
+          </Text>
         )}
-      </div>
+      </Inline>
       {progress.total > 0 && (
         <div
           className="h-1.5 overflow-hidden rounded-full bg-muted"
@@ -81,15 +82,17 @@ export default function OrganizationGoalProgress({
       )}
 
       {proposals.map((note) => (
-        <div key={note.id} className="space-y-2 rounded-md border bg-accent/40 p-3">
+        <Stack gap={2} pad={3} key={note.id} className="rounded-md border bg-accent/40">
           <p>
             {t('goals.proposal', {
               author: author(note),
               status: t(`statuses.${note.proposedStatus!}`),
             })}
           </p>
-          <p className="text-xs whitespace-pre-wrap text-muted-foreground">{note.body}</p>
-          <div className="flex justify-end gap-2">
+          <Text as="p" size="xs" tone="muted" className="whitespace-pre-wrap">
+            {note.body}
+          </Text>
+          <Inline gap={2} justify="end" align="stretch">
             <Button
               type="button"
               size="sm"
@@ -108,8 +111,8 @@ export default function OrganizationGoalProgress({
             >
               {t('goals.accept')}
             </Button>
-          </div>
-        </div>
+          </Inline>
+        </Stack>
       ))}
 
       <button
@@ -123,21 +126,27 @@ export default function OrganizationGoalProgress({
       </button>
 
       {open && detail.isLoading && (
-        <p className="text-xs text-muted-foreground">{t('goals.loading')}</p>
+        <Text as="p" size="xs" tone="muted">
+          {t('goals.loading')}
+        </Text>
       )}
       {open && detail.data && (
-        <div className="space-y-3">
-          <div className="space-y-1">
-            <p className="text-xs font-medium text-muted-foreground">{t('goals.tasks')}</p>
+        <Stack gap={3}>
+          <Stack gap={1}>
+            <Text as="p" size="xs" tone="muted" className="font-medium">
+              {t('goals.tasks')}
+            </Text>
             {detail.data.tasks.length === 0 ? (
-              <p className="text-xs text-muted-foreground">{t('goals.tasksEmpty')}</p>
+              <Text as="p" size="xs" tone="muted">
+                {t('goals.tasksEmpty')}
+              </Text>
             ) : (
-              <ul className="space-y-1">
+              <Stack as="ul" gap={1}>
                 {detail.data.tasks.map((task) => {
                   const href = taskHref(task.identifier);
                   const done = task.stateType === 'completed' || task.stateType === 'canceled';
                   return (
-                    <li key={task.issueId} className="flex min-w-0 items-center gap-2">
+                    <Inline as="li" gap={2} key={task.issueId} className="min-w-0">
                       <CircleDot
                         className={cn(
                           'size-3.5 shrink-0',
@@ -150,18 +159,20 @@ export default function OrganizationGoalProgress({
                           {task.identifier}
                         </Link>
                       ) : (
-                        <span className="shrink-0 font-mono text-xs">{task.identifier}</span>
+                        <Text as="span" size="xs" className="shrink-0 font-mono">
+                          {task.identifier}
+                        </Text>
                       )}
                       <span className={cn('min-w-0 truncate', done && 'text-muted-foreground')}>
                         {task.title}
                       </span>
-                      <span className="ms-auto shrink-0 text-xs text-muted-foreground">
+                      <Text as="span" size="xs" tone="muted" className="ms-auto shrink-0">
                         {task.running
                           ? t('goals.running')
                           : task.assignee
                             ? `${task.stateName} · ${task.assignee.username ? `@${task.assignee.username}` : task.assignee.name}`
                             : task.stateName}
-                      </span>
+                      </Text>
                       <Button
                         type="button"
                         size="icon"
@@ -173,13 +184,13 @@ export default function OrganizationGoalProgress({
                       >
                         <X className="size-3.5" />
                       </Button>
-                    </li>
+                    </Inline>
                   );
                 })}
-              </ul>
+              </Stack>
             )}
-          </div>
-          <div className="flex items-center gap-2">
+          </Stack>
+          <Inline gap={2}>
             <Input
               className="h-8 max-w-40"
               placeholder={t('goals.linkPlaceholder')}
@@ -209,33 +220,39 @@ export default function OrganizationGoalProgress({
               {t('goals.link')}
             </Button>
             {link.isError && (
-              <span className="text-xs text-destructive">{t('goals.linkFailed')}</span>
+              <Text as="span" size="xs" tone="danger">
+                {t('goals.linkFailed')}
+              </Text>
             )}
-          </div>
-          <div className="space-y-1">
-            <p className="text-xs font-medium text-muted-foreground">{t('goals.notes')}</p>
+          </Inline>
+          <Stack gap={1}>
+            <Text as="p" size="xs" tone="muted" className="font-medium">
+              {t('goals.notes')}
+            </Text>
             {detail.data.notes.length === 0 ? (
-              <p className="text-xs text-muted-foreground">{t('goals.notesEmpty')}</p>
+              <Text as="p" size="xs" tone="muted">
+                {t('goals.notesEmpty')}
+              </Text>
             ) : (
-              <ul className="space-y-2">
+              <Stack as="ul" gap={2}>
                 {detail.data.notes.map((note) => (
-                  <li key={note.id} className="space-y-0.5">
-                    <p className="text-xs text-muted-foreground">
+                  <Stack as="li" gap={1} key={note.id}>
+                    <Text as="p" size="xs" tone="muted">
                       {author(note)}
                       {' · '}
                       {formatDateTime(note.createdAt)}
                       {note.proposedStatus &&
                         ` · ${t('goals.proposed', { status: t(`statuses.${note.proposedStatus}`) })}`}
                       {note.decision && ` · ${t(`goals.decision.${note.decision}`)}`}
-                    </p>
+                    </Text>
                     <p className="whitespace-pre-wrap">{note.body}</p>
-                  </li>
+                  </Stack>
                 ))}
-              </ul>
+              </Stack>
             )}
-          </div>
-        </div>
+          </Stack>
+        </Stack>
       )}
-    </div>
+    </Stack>
   );
 }

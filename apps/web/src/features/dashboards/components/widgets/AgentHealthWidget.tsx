@@ -2,6 +2,7 @@ import { useTranslations } from 'next-intl';
 import type { WidgetConfig } from '@/utils/dashboardWidgets';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgentRunStatsQuery } from '../../services/analytics.service';
+import { Stack, Text } from '@/design-system';
 
 // Agent run health over a window: the success rate as the headline figure, with the
 // finished-run total and the failed and queued counts underneath. The window is
@@ -24,16 +25,22 @@ export default function AgentHealthWidget({
   const rate = finished > 0 ? Math.round((data.success / finished) * 100) : null;
 
   return (
-    <div className="space-y-2">
-      <p className="text-xs text-muted-foreground">{t('lastDays', { days })}</p>
+    <Stack gap={2}>
+      <Text as="p" size="xs" tone="muted">
+        {t('lastDays', { days })}
+      </Text>
       {data.total === 0 ? (
-        <p className="py-3 text-sm text-muted-foreground">{t('agentHealth.empty')}</p>
+        <Text as="p" size="sm" tone="muted" className="py-3">
+          {t('agentHealth.empty')}
+        </Text>
       ) : (
         <>
           <div className="text-3xl font-semibold tabular-nums">
             {rate == null ? '—' : `${rate}%`}
           </div>
-          <p className="text-xs text-muted-foreground">{t('agentHealth.successRate')}</p>
+          <Text as="p" size="xs" tone="muted">
+            {t('agentHealth.successRate')}
+          </Text>
           <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground tabular-nums">
             <span>{t('agentHealth.runs', { count: data.total })}</span>
             {data.failed > 0 && (
@@ -45,6 +52,6 @@ export default function AgentHealthWidget({
           </div>
         </>
       )}
-    </div>
+    </Stack>
   );
 }

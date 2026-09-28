@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Label } from '@/components/ui/label';
+import { Stack } from '@/design-system';
 
 export function RoutineField({
   htmlFor,
@@ -11,9 +12,9 @@ export function RoutineField({
   children: ReactNode;
 }) {
   return (
-    <div className="space-y-1.5">
+    <Stack gap={2}>
       <Label htmlFor={htmlFor}>{label}</Label>
       {children}
-    </div>
+    </Stack>
   );
 }

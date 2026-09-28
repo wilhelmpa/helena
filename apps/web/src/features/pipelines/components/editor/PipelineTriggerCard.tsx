@@ -18,6 +18,7 @@ import { triggerIssues } from '../../utils/issueDisplay';
 import PipelineCard from './PipelineCard';
 import PipelineField from './PipelineField';
 import PipelineTriggerFields from './PipelineTriggerFields';
+import { Text } from '@/design-system';
 
 export default function PipelineTriggerCard() {
   const t = useTranslations('pipelines');
@@ -63,7 +64,9 @@ export default function PipelineTriggerCard() {
           />
         </div>
       ) : (
-        <p className="text-sm">{labels.trigger(trigger)}</p>
+        <Text as="p" size="sm">
+          {labels.trigger(trigger)}
+        </Text>
       )}
     </PipelineCard>
   );

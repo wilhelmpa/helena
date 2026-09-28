@@ -9,6 +9,7 @@ import {
   useClearProjectAssignment,
   useSetProjectAssignment,
 } from '../services/organization.service';
+import { Inline, Stack, Text } from '@/design-system';
 
 export default function OrganizationProjectCard({
   teamId,
@@ -26,8 +27,11 @@ export default function OrganizationProjectCard({
   const [instructions, setInstructions] = useState(project.instructions);
 
   return (
-    <form
-      className="space-y-3 rounded-md border bg-card p-4"
+    <Stack
+      as="form"
+      gap={3}
+      pad={4}
+      className="rounded-md border bg-card"
       onSubmit={(event) => {
         event.preventDefault();
         save.mutate({
@@ -43,10 +47,14 @@ export default function OrganizationProjectCard({
         <h3 className="text-md font-medium" dir="auto">
           {project.name}
         </h3>
-        <p className="text-xs text-muted-foreground">{project.key}</p>
+        <Text as="p" size="xs" tone="muted">
+          {project.key}
+        </Text>
       </div>
       <label className="space-y-1 text-sm">
-        <span className="block text-xs text-muted-foreground">{t('fields.department')}</span>
+        <Text as="span" size="xs" tone="muted" className="block">
+          {t('fields.department')}
+        </Text>
         <select
           className="ds-field ds-select-native w-full"
           value={departmentId}
@@ -61,9 +69,9 @@ export default function OrganizationProjectCard({
         </select>
       </label>
       <label className="space-y-1 text-sm">
-        <span className="block text-xs text-muted-foreground">
+        <Text as="span" size="xs" tone="muted" className="block">
           {t('fields.projectInstructions')}
-        </span>
+        </Text>
         <Textarea
           value={instructions}
           maxLength={4000}
@@ -71,7 +79,7 @@ export default function OrganizationProjectCard({
           onChange={(event) => setInstructions(event.target.value)}
         />
       </label>
-      <div className="flex justify-end gap-2">
+      <Inline gap={2} justify="end" align="stretch">
         <Button
           type="button"
           variant="ghost"
@@ -84,7 +92,7 @@ export default function OrganizationProjectCard({
         <Button type="submit" variant="outline" size="sm" disabled={save.isPending}>
           {t('actions.save')}
         </Button>
-      </div>
-    </form>
+      </Inline>
+    </Stack>
   );
 }

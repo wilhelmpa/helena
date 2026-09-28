@@ -12,6 +12,7 @@ import MailInbox from './components/MailInbox';
 import { useProjectMailAccounts } from '@/services/mail.service';
 import InboxWorkspace from './InboxWorkspace';
 import { Page } from '@/design-system';
+import { Text } from '@/design-system';
 
 type InboxTab = 'messages' | 'updates';
 
@@ -29,9 +30,17 @@ export default function InboxPage() {
 
   if (!project) return null;
   if (mailAccounts.isPending)
-    return <p className="p-8 text-sm text-muted-foreground">{t('mailLoading')}</p>;
+    return (
+      <Text as="p" size="sm" tone="muted" className="p-8">
+        {t('mailLoading')}
+      </Text>
+    );
   if (mailAccounts.isError)
-    return <p className="p-8 text-sm text-muted-foreground">{t('mailError')}</p>;
+    return (
+      <Text as="p" size="sm" tone="muted" className="p-8">
+        {t('mailError')}
+      </Text>
+    );
   const hasMail = (mailAccounts.data?.length ?? 0) > 0;
   const activeTab = hasMail ? tab : 'updates';
   // Without a mailbox there is only one tab, and one tab is no choice: no tab row then.

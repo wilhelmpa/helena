@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import type { OrganizationAgent } from '@/lib/api/endpoints/organization';
 import { usePauseAgent, useResumeAgent } from '../services/organization.service';
+import { Inline, Text } from '@/design-system';
 
 // Whether the agent takes new work, and the button that changes it.
 export default function OrganizationAgentPause({
@@ -21,12 +22,12 @@ export default function OrganizationAgentPause({
   const toggle = agent.pausedAt ? resume : pause;
 
   return (
-    <div className="flex flex-wrap items-start justify-between gap-2">
+    <Inline gap={2} justify="between" wrap align="start">
       <div className="min-w-0">
         <h4 className="text-sm font-medium">{t('title')}</h4>
-        <p className="text-xs text-muted-foreground" dir="auto">
+        <Text as="p" size="xs" tone="muted" dir="auto">
           {agent.pausedAt ? agent.pauseReason : t('active')}
-        </p>
+        </Text>
       </div>
       <Button
         type="button"
@@ -43,6 +44,6 @@ export default function OrganizationAgentPause({
         {agent.pausedAt ? <Play /> : <Pause />}
         {agent.pausedAt ? t('resume') : t('pause')}
       </Button>
-    </div>
+    </Inline>
   );
 }

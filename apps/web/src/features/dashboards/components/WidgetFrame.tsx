@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Card, MonoLabel } from '@/components/helena/DashboardPrimitives';
+import { Inline } from '@/design-system';
 
 // A widget box on the sidebar's surface (owner, 2026-09-24: boxes like the sidebar):
 // a quiet 13px header (title + edit affordances), then the body. Widget settings live in a
@@ -44,7 +45,7 @@ export default function WidgetFrame({
   const title = widget.title || defaultTitle;
   return (
     <Card className="flex h-full flex-col overflow-hidden p-5">
-      <header className="mb-3 flex h-7 shrink-0 items-center gap-2">
+      <Inline as="header" gap={2} marginBottom={3} className="h-7 shrink-0">
         {movable && (
           <button
             type="button"
@@ -103,7 +104,7 @@ export default function WidgetFrame({
             </DropdownMenuContent>
           </DropdownMenu>
         )}
-      </header>
+      </Inline>
       {/* The gutter is reserved whether or not the scrollbar is there: a widget that
           sizes itself to this width would otherwise lose the room to the scrollbar,
           fit less, become shorter, and take the scrollbar away again. */}

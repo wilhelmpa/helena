@@ -3,6 +3,7 @@ import { Hash } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import IssuePickerDialog from '@/components/common/overlay/IssuePickerDialog';
+import { Text } from '@/design-system';
 
 export interface RoutineTask {
   id: number;
@@ -33,9 +34,9 @@ export function RoutineTaskField({
         <Hash className="size-4 text-muted-foreground" />
         {task ? (
           <>
-            <span className="shrink-0 font-mono text-xs text-muted-foreground">
+            <Text as="span" size="xs" tone="muted" className="shrink-0 font-mono">
               {task.identifier}
-            </span>
+            </Text>
             <span className="truncate">{task.title}</span>
           </>
         ) : (

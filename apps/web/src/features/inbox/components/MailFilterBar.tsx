@@ -16,6 +16,7 @@ import {
 import type { MailAccount, MailFolderRole } from '@/lib/api/endpoints/mail';
 import type { Project } from '@/lib/api/endpoints/projects';
 import { useMailFolders } from '../services/mail.service';
+import { Inline } from '@/design-system';
 
 export interface InboxFilters {
   role: MailFolderRole;
@@ -58,7 +59,7 @@ export default function MailFilterBar({
   const folderValue = filters.folderId ? `folder:${filters.folderId}` : filters.role;
 
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b px-3 py-2">
+    <Inline gap={2} padX={3} padY={2} wrap className="border-b">
       <div className="relative min-w-40 flex-1">
         <Search className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -168,6 +169,6 @@ export default function MailFilterBar({
         <PenSquare />
         {t('compose')}
       </Button>
-    </div>
+    </Inline>
   );
 }

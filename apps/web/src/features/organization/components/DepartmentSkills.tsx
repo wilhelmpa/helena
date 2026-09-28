@@ -9,6 +9,7 @@ import type { OrganizationDepartment } from '@/lib/api/endpoints/organization';
 import { useSkillOptionsQuery } from '@/services/agentSkills.service';
 import { useDepartmentSkillsQuery, useSetDepartmentSkills } from '../services/organization.service';
 import DepartmentSkillPicker from './DepartmentSkillPicker';
+import { Inline } from '@/design-system';
 
 type Draft = { restricted: boolean; skillIds: number[] };
 
@@ -52,7 +53,7 @@ export default function DepartmentSkills({
   return (
     <div className="ds-department-budgets">
       <span className="ds-mono-label">{t('skills')}</span>
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <Inline gap={3} justify="between" wrap>
         <div className="min-w-0 flex-1">
           <label htmlFor={`${id}-restricted`} className="text-sm">
             {t('skillsRestricted')}
@@ -65,10 +66,10 @@ export default function DepartmentSkills({
           disabled={save.isPending}
           onCheckedChange={(restricted) => setDraft({ ...current, restricted })}
         />
-      </div>
+      </Inline>
       {current.restricted && (
         <>
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <Inline gap={3} justify="between" wrap>
             <label htmlFor={`${id}-skills`} className="text-sm">
               {t('skillsAllowed')}
             </label>
@@ -79,13 +80,13 @@ export default function DepartmentSkills({
               disabled={save.isPending}
               onChange={(skillIds) => setDraft({ ...current, skillIds })}
             />
-          </div>
+          </Inline>
           {chosen.length > 0 ? (
-            <div className="flex flex-wrap gap-1">
+            <Inline gap={1} wrap align="stretch">
               {chosen.map((name) => (
                 <Pill key={name}>{name}</Pill>
               ))}
-            </div>
+            </Inline>
           ) : (
             <p className="ds-department-budgets-hint">{t('skillsEmptyWarning')}</p>
           )}

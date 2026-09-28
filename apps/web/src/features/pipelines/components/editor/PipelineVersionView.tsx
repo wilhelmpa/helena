@@ -10,6 +10,7 @@ import { usePipelineVersion } from '@/services/pipelines.service';
 import { formatDateTime } from '@/utils/dates';
 import { PipelineEditorProvider } from '../../context/pipelineEditor';
 import PipelineBuilder from './PipelineBuilder';
+import { Inline, Stack, Text } from '@/design-system';
 
 // One saved version in the builder, read-only.
 export default function PipelineVersionView({
@@ -28,17 +29,17 @@ export default function PipelineVersionView({
   const [selectedId, select] = useState<string | null>(null);
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
+    <Stack gap={4}>
+      <Inline gap={3} wrap>
         <Button size="sm" variant="ghost" className="h-7" onClick={onBack}>
           <ArrowLeft className="rtl:rotate-180" /> {t('back')}
         </Button>
         {detail.data && (
-          <p className="text-sm text-muted-foreground">
+          <Text as="p" size="sm" tone="muted">
             {t('viewing', { version, date: formatDateTime(detail.data.createdAt) })}
-          </p>
+          </Text>
         )}
-      </div>
+      </Inline>
       {detail.data ? (
         <PipelineEditorProvider
           value={{
@@ -57,6 +58,6 @@ export default function PipelineVersionView({
       ) : (
         <ListSkeleton rows={4} rowClassName="h-14" />
       )}
-    </div>
+    </Stack>
   );
 }

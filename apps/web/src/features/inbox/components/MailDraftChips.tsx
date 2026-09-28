@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { PenLine } from 'lucide-react';
 import type { MailThread } from '@/lib/api/endpoints/mail';
 import { useOpenCompose } from '@/hooks/useMailCompose';
+import { Inline } from '@/design-system';
 
 // The drafts written for this thread, by the owner or an agent; one opens in the
 // compose panel.
@@ -12,7 +13,7 @@ export default function MailDraftChips({ drafts }: { drafts: MailThread['drafts'
   const openCompose = useOpenCompose();
   if (drafts.length === 0) return null;
   return (
-    <div className="mt-3 flex flex-wrap gap-2">
+    <Inline gap={2} marginTop={3} wrap align="stretch">
       {drafts.map((draft) => (
         <button
           key={draft.id}
@@ -24,6 +25,6 @@ export default function MailDraftChips({ drafts }: { drafts: MailThread['drafts'
           {t(`draftStatus.${draft.status}`, { name: draft.createdByName ?? '' })}
         </button>
       ))}
-    </div>
+    </Inline>
   );
 }

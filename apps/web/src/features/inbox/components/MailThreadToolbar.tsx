@@ -24,6 +24,7 @@ import { useProjectsQuery } from '@/services/projects.service';
 import { issuePath } from '@/utils/paths';
 import { useCreateTaskFromMail, useSaveMailNote, useThreadAction } from '../services/mail.service';
 import ProjectPickerDialog from './ProjectPickerDialog';
+import { Inline } from '@/design-system';
 
 // The actions on the open thread. The letter in a title is its key in the inbox.
 export default function MailThreadToolbar({
@@ -87,7 +88,7 @@ export default function MailThreadToolbar({
   );
 
   return (
-    <div className="flex flex-wrap items-center gap-0.5 border-b px-2 py-1">
+    <Inline gap={1} padX={2} padY={1} wrap className="border-b">
       <span className="md:hidden">{button(t('back'), <ArrowLeft />, onBack)}</span>
       {button(t('reply'), <Reply />, () => onDraft('reply'))}
       {button(t('replyAll'), <ReplyAll />, () => onDraft('reply_all'))}
@@ -135,6 +136,6 @@ export default function MailThreadToolbar({
           onPick={(projectId) => projectId != null && task(projectId)}
         />
       )}
-    </div>
+    </Inline>
   );
 }

@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSetMemberDescription } from '@/services/members.service';
+import { Box, Inline, Stack, Text } from '@/design-system';
 
 // The "Edit" action for a member's project description: a button that opens a
 // centered dialog with a textarea. A member edits their own; editing anyone else's
@@ -67,21 +68,29 @@ export default function MemberDescriptionDialog({
       </Tooltip>
       <Dialog open={open} onOpenChange={(next) => !next && setOpen(false)}>
         <DialogContent className="inset-0 top-0 left-0 h-screen w-full max-w-none translate-x-0 translate-y-0 gap-0 rounded-none border-0 bg-background p-0">
-          <div className="flex h-full w-full flex-col items-center justify-center px-4 py-16">
-            <div className="flex w-full max-w-2xl flex-col items-center gap-6">
-              <div className="flex flex-col items-center gap-4">
+          <Box
+            padX={4}
+            padY={7}
+            className="flex h-full w-full flex-col items-center justify-center"
+          >
+            <Stack gap={5} className="w-full max-w-2xl items-center">
+              <Stack gap={4} className="items-center">
                 <DialogTitle className="max-w-[32ch] text-center text-xl leading-tight font-medium tracking-tight text-balance text-foreground sm:text-3xl">
                   {question}
                 </DialogTitle>
-                <div className="flex min-w-0 items-center gap-2.5">
+                <Inline gap={3} className="min-w-0">
                   <Avatar name={displayName} image={member.image} className="size-9 text-xs" />
                   <div className="flex min-w-0 flex-col">
-                    <span className="truncate text-sm font-medium">{displayName}</span>
-                    <span className="truncate text-xs text-muted-foreground">{member.email}</span>
+                    <Text as="span" size="sm" className="truncate font-medium">
+                      {displayName}
+                    </Text>
+                    <Text as="span" size="xs" tone="muted" className="truncate">
+                      {member.email}
+                    </Text>
                   </div>
-                </div>
-              </div>
-              <div className="flex w-full flex-col items-end gap-4">
+                </Inline>
+              </Stack>
+              <Stack gap={4} className="w-full items-end">
                 <Textarea
                   autoFocus
                   maxLength={500}
@@ -101,9 +110,9 @@ export default function MemberDescriptionDialog({
                 >
                   {setDescription.isPending ? tCommon('saving') : tCommon('save')}
                 </Button>
-              </div>
-            </div>
-          </div>
+              </Stack>
+            </Stack>
+          </Box>
         </DialogContent>
       </Dialog>
     </>

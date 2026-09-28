@@ -7,6 +7,7 @@ import { issuePath } from '@/utils/paths';
 import { cn } from '@/lib/utils';
 import { colorDot } from '@/components/common/fields/colorDot';
 import HomeTaskPeople from './HomeTaskPeople';
+import { Text } from '@/design-system';
 
 // One task of the Home lists. It opens the task in its project, where it is edited.
 export default function HomeTaskRow({ issue }: { issue: CrossProjectIssue }) {
@@ -18,25 +19,41 @@ export default function HomeTaskRow({ issue }: { issue: CrossProjectIssue }) {
       href={issuePath(issue.projectKey, issue.sequenceNumber)}
       className="flex h-8 min-w-0 items-center gap-3 rounded-md px-2 text-sm transition-colors hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
     >
-      <span className="w-16 shrink-0 font-mono text-xs text-muted-foreground max-sm:w-14" dir="ltr">
+      <Text
+        as="span"
+        size="xs"
+        tone="muted"
+        className="w-16 shrink-0 font-mono max-sm:w-14"
+        dir="ltr"
+      >
         {issue.identifier}
-      </span>
+      </Text>
       <span className="min-w-0 flex-1 truncate" dir="auto">
         {issue.title}
       </span>
       {issue.areaName && (
-        <span className="hidden max-w-40 shrink-0 items-center gap-1 truncate text-xs text-muted-foreground md:flex">
+        <Text
+          as="span"
+          size="xs"
+          tone="muted"
+          className="hidden max-w-40 shrink-0 items-center gap-1 truncate md:flex"
+        >
           <FolderKanban className="size-3.5 shrink-0" />
           <span className="truncate">{issue.areaName}</span>
-        </span>
+        </Text>
       )}
-      <span className="hidden w-32 shrink-0 items-center gap-1.5 truncate text-xs text-muted-foreground sm:flex">
+      <Text
+        as="span"
+        size="xs"
+        tone="muted"
+        className="hidden w-32 shrink-0 items-center gap-1.5 truncate sm:flex"
+      >
         {colorDot(issue.stateColor)}
         <span className="truncate">{issue.stateName}</span>
-      </span>
-      <span className="hidden w-16 shrink-0 truncate text-xs text-muted-foreground lg:block">
+      </Text>
+      <Text as="span" size="xs" tone="muted" className="hidden w-16 shrink-0 truncate lg:block">
         {issue.priority ? priorityLabel(issue.priority) : ''}
-      </span>
+      </Text>
       <span
         className={cn(
           'w-24 shrink-0 text-end text-xs text-muted-foreground max-sm:w-auto',

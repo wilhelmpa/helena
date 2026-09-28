@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import type { DefinitionIssue } from '@/lib/api/endpoints/pipelines';
 import PipelineField from './PipelineField';
 import PipelineTemplateText from './PipelineTemplateText';
+import { Text } from '@/design-system';
 
 // The settings of a plugin's step or trigger, drawn from the JSON Schema of its `config`
 // (@helena/sdk `configSchema`): text (with {{variables}} in a step), numbers, switches and
@@ -100,7 +101,11 @@ export default function PipelinePluginFields({
   const t = useTranslations('pipelines.inspector.plugin');
   const properties = propertiesOf(schema);
   if (properties.length === 0)
-    return <p className="text-sm text-muted-foreground">{t('noSettings')}</p>;
+    return (
+      <Text as="p" size="sm" tone="muted">
+        {t('noSettings')}
+      </Text>
+    );
   const set = (key: string, next: unknown) => onChange({ ...value, [key]: next });
 
   return (

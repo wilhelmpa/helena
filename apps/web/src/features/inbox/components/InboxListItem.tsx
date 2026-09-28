@@ -40,6 +40,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import InboxItemActions from './InboxItemActions';
 import InboxSnoozeCalendar from './InboxSnoozeCalendar';
+import { Inline, Text } from '@/design-system';
 
 const TYPE_ICON: Record<NotificationType, LucideIcon> = {
   assigned: UserRound,
@@ -139,7 +140,7 @@ export default function InboxListItem({
             >
               {n.projectKey}-{n.issueSeq} {n.issueTitle}
             </span>
-            <span className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+            <Text as="span" size="xs" tone="muted" className="mt-0.5 flex items-center gap-1">
               {snoozed && <Clock className="size-3 shrink-0" />}
               {/* Truncating the flex row instead would drop the ellipsis. */}
               <Tooltip>
@@ -148,12 +149,12 @@ export default function InboxListItem({
                 </TooltipTrigger>
                 <TooltipContent>{eventText}</TooltipContent>
               </Tooltip>
-            </span>
+            </Text>
           </div>
-          <div className="flex shrink-0 items-center gap-2 pt-0.5">
-            <span className="text-xs text-muted-foreground group-hover:hidden">
+          <Inline gap={2} padTop={1} className="shrink-0">
+            <Text as="span" size="xs" tone="muted" className="group-hover:hidden">
               {formatDurationShort(n.createdAt)}
-            </span>
+            </Text>
             {unread && <span className="size-2 rounded-full bg-primary group-hover:hidden" />}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -173,7 +174,7 @@ export default function InboxListItem({
             </DropdownMenu>
 
             <InboxSnoozeCalendar open={pickOpen} onOpenChange={setPickOpen} onPick={onSnooze} />
-          </div>
+          </Inline>
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
