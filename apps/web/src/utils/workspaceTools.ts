@@ -143,7 +143,7 @@ function terminalUrl(
   const resourceSlug = terminal?.id.match(/^terminal-project:([a-z0-9][a-z0-9-]{0,31})$/)?.[1];
   const projectSlug =
     projectKey?.trim().toUpperCase() === 'VERV' ? 'verve' : projectKey?.trim().toLowerCase();
-  // Without a project the terminal opens Home's, where the Home agent works.
+  // The unscoped Home surface opens the owner's terminal; its access stays with the owner.
   const slug =
     resourceSlug ??
     (!projectKey
