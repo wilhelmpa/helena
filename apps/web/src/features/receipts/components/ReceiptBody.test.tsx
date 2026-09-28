@@ -82,7 +82,7 @@ describe('receipt detail source navigation', () => {
       view.links.some((a) => a.href === '/project/FIN/issue/15' && a.text === 'Aufgabe FIN-15'),
     );
     assert.ok(!view.links.some((a) => a.href?.includes('/issue/812')));
-    const files = view.links.find((a) => a.text === 'In Dateien zeigen');
+    const files = view.links.find((a) => a.text === 'In Wissen zeigen');
     assert.ok(files?.href);
     const url = new URL(files.href, 'https://helena.test');
     assert.equal(url.pathname, '/project/FIN/files');
@@ -94,7 +94,7 @@ describe('receipt detail source navigation', () => {
     const view = render({ ...receipt, sourceLinks: null });
     assert.ok(view.text?.includes(receipts.detail.sourceUnavailable));
     assert.ok(!view.links.some((a) => a.href?.includes('/inbox') || a.href?.includes('/issue/')));
-    assert.ok(view.links.some((a) => a.text === 'In Dateien zeigen'));
+    assert.ok(view.links.some((a) => a.text === 'In Wissen zeigen'));
   });
 
   it('renders an EML source without inventing a task and uses the current numeric thread', () => {
@@ -120,7 +120,7 @@ describe('receipt detail source navigation', () => {
     const view = render({ ...receipt, sourceLinks: { ...receipt.sourceLinks!, archived: true } });
     assert.ok(view.text?.includes(receipts.detail.sourceArchivedMail));
     assert.ok(!view.links.some((link) => link.href?.includes('/inbox')));
-    assert.ok(view.links.some((link) => link.text === 'In Dateien zeigen'));
+    assert.ok(view.links.some((link) => link.text === 'In Wissen zeigen'));
   });
   it('renders untrusted original text without resources, links or mail actions', () => {
     const html = renderToStaticMarkup(

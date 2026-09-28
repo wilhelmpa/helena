@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import { act } from 'react';
 import { JSDOM } from 'jsdom';
 import { NextIntlClientProvider } from 'next-intl';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import files from '../../../messages/en/files.json';
 import nav from '../../../messages/en/nav.json';
 
@@ -65,9 +66,11 @@ test('Home Wissen keeps the selected root while opening files and folders', asyn
   try {
     await act(async () =>
       root.render(
-        <NextIntlClientProvider locale="en" messages={{ files, nav }}>
-          <HomeFilesPage />
-        </NextIntlClientProvider>,
+        <QueryClientProvider client={new QueryClient()}>
+          <NextIntlClientProvider locale="en" timeZone="UTC" messages={{ files, nav }}>
+            <HomeFilesPage />
+          </NextIntlClientProvider>
+        </QueryClientProvider>,
       ),
     );
     const buttons = document.querySelectorAll<HTMLButtonElement>('button');
