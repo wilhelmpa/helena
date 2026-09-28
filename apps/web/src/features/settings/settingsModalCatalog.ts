@@ -3,10 +3,33 @@ import { GOD_SECTIONS } from '@/utils/godSections';
 import { SETTINGS_SECTIONS } from '@/utils/settingsSections';
 
 export type SettingsArea = 'project' | 'home' | 'account' | 'admin';
-export type ModalSection = { slug: string; label: string; description: string; href: string };
+export type ModalSection = {
+  slug: string;
+  label: string;
+  description: string;
+  href: string;
+  keywords?: string;
+};
+
+const projectSearchTerms: Record<string, string> = {
+  agents:
+    'Standard-Ausführung Autopilot-Stufe Tagesbudget Lokale KI Jev-Vorstufe Gedächtnis Freigabe',
+  autopilot: 'Autopilot-Stufe Budget Tagesbudget Monatsbudget Freigaben Entscheidungen',
+  browser: 'Browser-Steuerung Home-Vorgabe zurücksetzen Entscheidung Standard',
+  general: 'Projektname Beschreibung Funktionen',
+  configuration: 'Unteraufgaben Schätzungen Archivierung',
+  mail: 'E-Mail Zugang Konto Regeln',
+  integrations: 'Git Webhooks MCP',
+};
 
 const projectLabels: Record<string, [string, string]> = {
   general: ['Allgemein', 'Name, Beschreibung und Funktionen des Projekts.'],
+  agents: ['Agenten & Ausführung', 'Ausführung und Regeln für Agenten verwalten.'],
+  budgets: ['Budgets', 'Grenzen für Kosten, Laufzeit und Tokens einstellen.'],
+  tools: ['Werkzeuge', 'Browser, Netzwerk, Umgebung und Aktionen einstellen.'],
+  knowledge: ['Wissen & Belege', 'Wissen und Belege des Projekts verwalten.'],
+  mail: ['Mail', 'E-Mail-Zugänge und Regeln verwalten.'],
+  integrations: ['Integrationen', 'Git, Webhooks und MCP verbinden.'],
   states: ['Status', 'Status und Spalten für Aufgaben verwalten.'],
   'issue-types': ['Aufgabentypen', 'Typen und ihre Eigenschaften verwalten.'],
   labels: ['Labels', 'Labels und Gruppen für Aufgaben verwalten.'],
@@ -72,23 +95,41 @@ const homeLabels: Record<string, [string, string]> = {
   'agent-tools': ['Werkzeuge', 'Werkzeuge der Agenten verwalten.'],
 };
 
-export function settingsModalSections(projectKey: string | null, teamId: number | null) {
+export function settingsModalSections(
+  projectKey: string | null,
+  teamId: number | null,
+): Record<SettingsArea, ModalSection[]> {
+  const projectBase = projectKey ? `/project/${encodeURIComponent(projectKey)}` : '';
+  const projectPrimary = [
+    'general',
+    'members',
+    'agents',
+    'autopilot',
+    'budgets',
+    'tools',
+    'knowledge',
+    'mail',
+    'notifications',
+    'integrations',
+    'danger-zone',
+  ];
+  const projectExtra = [
+    ...SETTINGS_SECTIONS.map(({ slug }) => slug).filter((slug) => !projectPrimary.includes(slug)),
+    'mcp',
+  ];
+  const projectSection = (slug: string): ModalSection => ({
+    slug,
+    label: projectLabels[slug]?.[0] ?? slug,
+    description: projectLabels[slug]?.[1] ?? '',
+    keywords: projectSearchTerms[slug],
+    href:
+      slug === 'members' || slug === 'notifications' || slug === 'mcp'
+        ? `${projectBase}/${slug}`
+        : `${projectBase}/settings/${slug}`,
+  });
   return {
     project: projectKey
-      ? [
-          ...SETTINGS_SECTIONS.map(({ slug }) => ({
-            slug,
-            label: projectLabels[slug]?.[0] ?? slug,
-            description: projectLabels[slug]?.[1] ?? '',
-            href: `/project/${encodeURIComponent(projectKey)}/settings/${slug}`,
-          })),
-          ...(['members', 'notifications', 'mcp', 'danger-zone'] as const).map((slug) => ({
-            slug,
-            label: projectLabels[slug][0],
-            description: projectLabels[slug][1],
-            href: `/project/${encodeURIComponent(projectKey)}/${slug === 'danger-zone' ? 'settings/danger-zone' : slug}`,
-          })),
-        ]
+      ? [...projectPrimary.map(projectSection), ...projectExtra.map(projectSection)]
       : [],
     home: teamId
       ? Object.entries(homeLabels).map(([slug, [label, description]]) => ({
@@ -121,7 +162,7 @@ export function settingsModalSections(projectKey: string | null, teamId: number 
         href: '/god/updates',
       },
     ],
-  } satisfies Record<SettingsArea, ModalSection[]>;
+  };
 }
 
 export function settingsModalRoute(pathname: string): { area: SettingsArea; slug: string } | null {

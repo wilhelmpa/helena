@@ -223,7 +223,7 @@ export default function Shell({
     onNewIssue: () => canCreateIssue && openNewIssue(),
     onNewInitiative: () => canCreateInitiative && overlays.setShowNewInitiative(true),
     onNewProject: () => overlays.setShowNewProject(true),
-    onSettings: () => openSettingsModal('project', 'general'),
+    onSettings: () => openSettingsModal(),
     onToggleChat: toggleCoordinatorChat,
     onCycleLayout: workspaceLayout.phone ? undefined : workspaceLayout.cycle,
   });
@@ -413,6 +413,7 @@ export default function Shell({
             <SettingsModal
               projectKey={projectKey}
               projectName={project?.project.name}
+              teamId={project?.project.teamId}
               routeContent={
                 ['settings', 'members', 'notifications', 'mcp'].includes(route.sub ?? '')
                   ? children

@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore,
   type ReactNode,
@@ -35,10 +36,12 @@ const areaNames: Record<SettingsArea, string> = {
 export default function SettingsModal({
   projectKey: currentProjectKey,
   projectName,
+  teamId: currentTeamId,
   routeContent,
 }: {
   projectKey?: string | null;
   projectName?: string | null;
+  teamId?: number | null;
   routeContent?: ReactNode;
 }) {
   const pathname = usePathname();
@@ -53,7 +56,8 @@ export default function SettingsModal({
   const name = projectName ?? project?.name ?? projectKey ?? '';
   const pathTeamId = Number(pathname.match(/^\/account\/teams\/(\d+)/)?.[1]);
   const teamId =
-    Number.isInteger(pathTeamId) && pathTeamId > 0 ? pathTeamId : (teams[0]?.id ?? null);
+    currentTeamId ??
+    (Number.isInteger(pathTeamId) && pathTeamId > 0 ? pathTeamId : (teams[0]?.id ?? null));
   const sections = useMemo(() => settingsModalSections(projectKey, teamId), [projectKey, teamId]);
   const admin = session?.user.role === 'god';
   const mounted = useSyncExternalStore(
@@ -63,19 +67,33 @@ export default function SettingsModal({
   );
   const [opened, setOpened] = useState(false);
   const [area, setArea] = useState<SettingsArea>(projectKey ? 'project' : 'home');
-  const [slug, setSlug] = useState('general');
+  const [slug, setSlug] = useState('agents');
   const [search, setSearch] = useState('');
+  const [showMore, setShowMore] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     function handleOpen(event: Event) {
       const detail = (event as CustomEvent<{ area?: SettingsArea; slug?: string }>).detail;
       const nextArea =
         detail?.area ?? (currentProjectKey ? 'project' : teamId ? 'home' : 'account');
-      const nextSlug = detail?.slug ?? (nextArea === 'project' ? 'general' : 'info');
+      const nextSlug =
+        detail?.slug ??
+        (nextArea === 'project'
+          ? 'agents'
+          : nextArea === 'home'
+            ? admin
+              ? 'defaults'
+              : 'info'
+            : nextArea === 'account'
+              ? 'profile'
+              : 'general');
       if (!route) sessionStorage.setItem(returnKey, pathname);
       if (nextArea !== 'project' || !currentProjectKey) {
-        const target = sections[nextArea][0];
+        const target =
+          sections[nextArea].find((item) => item.slug === nextSlug) ?? sections[nextArea][0];
         if (target) router.push(target.href);
+        else if (nextArea === 'home') router.push('/account/teams');
         return;
       }
       setArea(nextArea);
@@ -85,12 +103,17 @@ export default function SettingsModal({
     }
     window.addEventListener(SETTINGS_MODAL_OPEN, handleOpen);
     return () => window.removeEventListener(SETTINGS_MODAL_OPEN, handleOpen);
-  }, [currentProjectKey, pathname, route, router, sections, teamId]);
+  }, [admin, currentProjectKey, pathname, route, router, sections, teamId]);
 
   const activeArea = route?.area ?? area;
   const activeSlug = route?.slug ?? slug;
   const visible = opened || !!route;
   const activeSection = sections[activeArea].find((item) => item.slug === activeSlug);
+
+  useEffect(() => {
+    if (!visible) return;
+    navRef.current?.querySelector('.is-active')?.scrollIntoView({ block: 'nearest' });
+  }, [activeArea, activeSlug, visible]);
 
   const close = useCallback(() => {
     setOpened(false);
@@ -107,16 +130,25 @@ export default function SettingsModal({
     if (!visible) return;
     const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    document.body.dataset.settingsModalOpen = 'true';
     function handleEscape(event: KeyboardEvent) {
       if (event.key !== 'Escape') return;
+      if (
+        document.querySelector(
+          '[data-slot="dialog-content"][data-state="open"], [data-slot="select-content"][data-state="open"], [data-slot="dropdown-menu-content"][data-state="open"], [data-slot="popover-content"][data-state="open"], [data-slot="sheet-content"][data-state="open"]',
+        )
+      ) {
+        return;
+      }
       event.preventDefault();
       event.stopPropagation();
       close();
     }
-    document.addEventListener('keydown', handleEscape, true);
+    document.addEventListener('keydown', handleEscape);
     return () => {
       document.body.style.overflow = previous;
-      document.removeEventListener('keydown', handleEscape, true);
+      delete document.body.dataset.settingsModalOpen;
+      document.removeEventListener('keydown', handleEscape);
     };
   }, [close, visible]);
 
@@ -131,11 +163,17 @@ export default function SettingsModal({
   }
 
   function selectArea(nextArea: SettingsArea) {
-    const first = sections[nextArea][0];
-    if (!first) return;
+    const first =
+      nextArea === 'home' && !admin
+        ? sections.home.find((item) => item.slug === 'info')
+        : sections[nextArea][0];
+    if (!first) {
+      if (nextArea === 'home') router.push('/account/teams');
+      return;
+    }
     if (!route && nextArea === 'project' && currentProjectKey) {
       setArea('project');
-      setSlug('general');
+      setSlug('agents');
       return;
     }
     router.push(first.href);
@@ -150,10 +188,17 @@ export default function SettingsModal({
   const results = query
     ? allAreas.flatMap((itemArea) =>
         sections[itemArea]
-          .filter((item) => `${item.label} ${item.description}`.toLocaleLowerCase().includes(query))
+          .filter((item) =>
+            `${item.label} ${item.description} ${item.keywords ?? ''}`
+              .toLocaleLowerCase()
+              .includes(query),
+          )
           .map((item) => ({ ...item, area: itemArea })),
       )
     : [];
+  const primarySections =
+    activeArea === 'project' ? sections.project.slice(0, 11) : sections[activeArea];
+  const extraSections = activeArea === 'project' ? sections.project.slice(11) : [];
 
   return createPortal(
     <div className="settings-modal-layer" data-testid="settings-modal-layer">
@@ -203,22 +248,24 @@ export default function SettingsModal({
           </div>
         </header>
         <div className="settings-modal-main">
-          <nav className="settings-modal-nav" aria-label="Einstellungsabschnitte">
-            {query
-              ? results.map((item) => (
-                  <button
-                    key={`${item.area}:${item.slug}`}
-                    type="button"
-                    onClick={() => select(item, item.area)}
-                    className={
-                      item.area === activeArea && item.slug === activeSlug ? 'is-active' : ''
-                    }
-                  >
-                    <small>{areaNames[item.area]}</small>
-                    {item.label}
-                  </button>
-                ))
-              : sections[activeArea].map((item) => (
+          <nav ref={navRef} className="settings-modal-nav" aria-label="Einstellungsabschnitte">
+            {query ? (
+              results.map((item) => (
+                <button
+                  key={`${item.area}:${item.slug}`}
+                  type="button"
+                  onClick={() => select(item, item.area)}
+                  className={
+                    item.area === activeArea && item.slug === activeSlug ? 'is-active' : ''
+                  }
+                >
+                  <small>{areaNames[item.area]}</small>
+                  {item.label}
+                </button>
+              ))
+            ) : (
+              <>
+                {primarySections.map((item) => (
                   <button
                     key={item.slug}
                     type="button"
@@ -228,6 +275,27 @@ export default function SettingsModal({
                     {item.label}
                   </button>
                 ))}
+                {extraSections.length > 0 && (
+                  <details
+                    className="settings-modal-more"
+                    open={showMore || extraSections.some((item) => item.slug === activeSlug)}
+                    onToggle={(event) => setShowMore(event.currentTarget.open)}
+                  >
+                    <summary>{'Weitere Einstellungen'}</summary>
+                    {extraSections.map((item) => (
+                      <button
+                        key={item.slug}
+                        type="button"
+                        onClick={() => select(item, activeArea)}
+                        className={item.slug === activeSlug ? 'is-active' : ''}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </details>
+                )}
+              </>
+            )}
           </nav>
           <div className="settings-modal-pane">
             <p className="settings-modal-eyebrow">
@@ -244,7 +312,9 @@ export default function SettingsModal({
                 ) : null}
               </ShellHeaderSlotCtx.Provider>
             </div>
-            <p className="settings-modal-save-note">{'Änderungen werden sofort gespeichert.'}</p>
+            {!(activeArea === 'project' && activeSlug === 'agents') && (
+              <p className="settings-modal-save-note">{'Änderungen werden sofort gespeichert.'}</p>
+            )}
           </div>
         </div>
       </section>

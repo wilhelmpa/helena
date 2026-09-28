@@ -1,8 +1,12 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import ProjectSettingsLinksPage from './ProjectSettingsLinksPage';
 
 const pages = {
+  agents: dynamic(() => import('./ProjectAgentsExecutionPage')),
+  budgets: dynamic(() => import('./SettingsAutopilotPage')),
+  mail: dynamic(() => import('./ProjectMailSettingsPage')),
   general: dynamic(() => import('./SettingsGeneralPage')),
   states: dynamic(() => import('./SettingsStatesPage')),
   'issue-types': dynamic(() => import('./SettingsIssueTypesPage')),
@@ -24,6 +28,9 @@ const pages = {
 };
 
 export default function ProjectSettingsModalContent({ slug }: { slug: string }) {
+  if (slug === 'tools' || slug === 'knowledge' || slug === 'integrations') {
+    return <ProjectSettingsLinksPage slug={slug} />;
+  }
   const Page = pages[slug as keyof typeof pages];
   return Page ? <Page /> : null;
 }

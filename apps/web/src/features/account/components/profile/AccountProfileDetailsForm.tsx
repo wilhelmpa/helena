@@ -42,6 +42,12 @@ export default function AccountProfileDetailsForm() {
     onError: (err) => setError(err instanceof Error ? err.message : t('detailsUpdateFailed')),
   });
 
+  function saveOnBlur() {
+    if (!dirty || saveMutation.isPending) return;
+    setError(null);
+    saveMutation.mutate();
+  }
+
   // The session loads after mount; fill the fields once it arrives.
   useEffect(() => {
     if (currentName) setName((value) => (value === '' ? currentName : value));
@@ -53,7 +59,7 @@ export default function AccountProfileDetailsForm() {
       className="flex flex-col gap-4"
       onSubmit={(e) => {
         e.preventDefault();
-        if (!dirty) return;
+        if (!dirty || saveMutation.isPending) return;
         setError(null);
         saveMutation.mutate();
       }}
@@ -64,6 +70,7 @@ export default function AccountProfileDetailsForm() {
           id="profile-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
+          onBlur={saveOnBlur}
           autoComplete="name"
         />
       </div>
@@ -73,6 +80,7 @@ export default function AccountProfileDetailsForm() {
           id="profile-username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
+          onBlur={saveOnBlur}
           autoComplete="username"
           minLength={3}
           maxLength={30}

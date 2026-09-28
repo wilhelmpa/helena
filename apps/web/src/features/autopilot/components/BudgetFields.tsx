@@ -18,12 +18,14 @@ export default function BudgetFields({
   budgets,
   draft,
   onChange,
+  onBlur,
   disabled,
   idPrefix,
 }: {
   budgets: BudgetStatus[];
   draft: Record<BudgetCellKey, string>;
   onChange: (key: BudgetCellKey, value: string) => void;
+  onBlur?: () => void;
   disabled?: boolean;
   idPrefix: string;
 }) {
@@ -52,6 +54,10 @@ export default function BudgetFields({
                     disabled={disabled}
                     aria-invalid={invalid || undefined}
                     onChange={(event) => onChange(key, event.target.value)}
+                    onBlur={onBlur}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') event.currentTarget.blur();
+                    }}
                     className="pe-16 tabular-nums"
                   />
                   <span className="pointer-events-none absolute inset-y-0 end-3 flex items-center text-xs text-muted-foreground">
