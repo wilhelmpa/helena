@@ -7,6 +7,7 @@ import {
   calledTools,
   buildPrompt,
   evaluateBrowserTask,
+  finalAnswer,
   gradeBrowserTask,
   loadTasks,
   prepareProfile,
@@ -232,4 +233,22 @@ test('a profile copy gets the eval browser as its only MCP server and no memory'
   } finally {
     await rm(template, { recursive: true, force: true });
   }
+});
+
+test("reads the tool calls of Helena's own loop from its helena-jsonl stream", () => {
+  const output = [
+    { type: 'tool-call', id: 'a', name: 'browser_navigate', input: '{"url":"http://x/"}' },
+    { type: 'tool-result', id: 'a', output: 'ok' },
+    { type: 'tool-call', id: 'b', name: 'browser_snapshot', input: '{}' },
+    { type: 'result', text: 'Der Preis ist 49 €.', exitCode: 0 },
+  ]
+    .map((event) => JSON.stringify(event))
+    .join('\n');
+  const events = toolEvents(output);
+  expect(events).toEqual([
+    { name: 'browser_navigate', input: { url: 'http://x/' } },
+    { name: 'browser_snapshot', input: {} },
+  ]);
+  expect(calledTools(events)).toEqual(['browser_navigate', 'browser_snapshot']);
+  expect(finalAnswer(output)).toBe('Der Preis ist 49 €.');
 });
