@@ -823,16 +823,23 @@ async function runCase(seed: Seed, task: Case, model: string, dry: boolean): Pro
         throw new Error('Fixture check passed before applying the fixture');
       await fixture(seed, task.number);
     } else {
-      runId = await enqueueAgentRun({
-        agentId: seed.agentId,
-        projectId: seed.projectId,
-        issueId: null,
-        sourceActivityId: null,
-        trigger: 'workspace',
-        prompt: `${task.prompt(seed)} Use Helena MCP for project data. Complete this one task only.`,
-        model,
-        maxTurns: 20,
-        runBudgetSeconds: 540,
+      runId = await db.transaction(async (tx) => {
+        const id = await enqueueAgentRun(
+          {
+            agentId: seed.agentId,
+            projectId: seed.projectId,
+            issueId: null,
+            sourceActivityId: null,
+            trigger: 'workspace',
+            prompt: `${task.prompt(seed)} Use Helena MCP for project data. Complete this one task only.`,
+          },
+          tx,
+        );
+        await tx
+          .update(agentRun)
+          .set({ model, maxTurns: 20, runBudgetSeconds: 540 })
+          .where(eq(agentRun.id, id));
+        return id;
       });
       const result = await waitForRun(runId);
       inputTokens = result.inputTokens;

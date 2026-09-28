@@ -1964,17 +1964,8 @@ html[data-kiosk-display='dual'] [data-slot='alert-dialog-content'] {
   font-size: 14px;
   line-height: 1.6;
 }
-.create-dock {
-  z-index: 60;
-  background: #e7dbfa;
-  color: #201b29;
-  box-shadow: 0 10px 30px #0008;
-}
-.create-dock > button {
-  font-size: 26px;
-}
 .create-dock-arrow {
-  background: #e7dbfa;
+  background: var(--primary);
   box-shadow: 0 2px 8px #0008;
 }
 .new-issue-title {

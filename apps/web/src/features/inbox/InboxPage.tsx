@@ -10,8 +10,6 @@ import InboxView from './components/InboxView';
 import MailInbox from './components/MailInbox';
 import { useProjectMailAccounts } from '@/services/mail.service';
 import InboxWorkspace from './InboxWorkspace';
-import AllProjectsUpdates from './AllProjectsUpdates';
-import { useProjectsQuery } from '@/services/projects.service';
 
 type InboxTab = 'messages' | 'updates';
 
@@ -25,7 +23,6 @@ export default function InboxPage() {
   const [tab, setTab] = useState<InboxTab>('messages');
   const mailAccounts = useProjectMailAccounts(project?.project.key);
   const [all, setAll] = useState(false);
-  const projects = useProjectsQuery().data ?? [];
   const unread = useInboxUnread(project?.project.key ?? null, project?.project.id ?? null).data;
 
   if (!project) return null;
@@ -72,12 +69,12 @@ export default function InboxPage() {
           {t('scopeAll')}
         </button>
       </div>
-      {all && <div className="border-b border-border p-2">{tabs}</div>}
+      {all && activeTab === 'messages' && <div className="border-b border-border p-2">{tabs}</div>}
       {all ? (
         activeTab === 'messages' ? (
           <InboxWorkspace projectKey={null} />
         ) : (
-          <AllProjectsUpdates projects={projects} />
+          <InboxView project={null} leading={tabs} />
         )
       ) : activeTab === 'messages' ? (
         <MailInbox

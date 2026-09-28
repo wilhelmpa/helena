@@ -9,9 +9,9 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { useProjectFeatures } from '@/hooks/useProjectFeatures';
 import { usePersistedBoolean } from '@/hooks/usePersistedBoolean';
 import { useInboxUnread } from '@/hooks/useInboxUnread';
+import { useOwnerInbox } from '@/features/inbox/useOwnerInbox';
 import { useProjectSettingsNavItems } from '@/hooks/useProjectSettingsNavItems';
 import { usePendingApprovalCount } from '@/services/approvals.service';
-import { useProposalCount } from '@/features/agent-runtime/services/agentRuntime.service';
 import { usePipelineApprovals } from '@/services/pipelines.service';
 import { useViewFoldersQuery, useViewsQuery } from '@/services/views.service';
 import type { View } from '@/lib/api/endpoints/views';
@@ -176,10 +176,10 @@ function ApprovalBadge({
   const pipelines = projectKey
     ? pipelineApprovals.filter((item) => item.projectKey === projectKey).length
     : pipelineApprovals.length;
-  const proposals = useProposalCount().data?.count ?? 0;
   const project = projects.find((item) => item.key === projectKey);
   const projectUnread = useInboxUnread(project?.key ?? null, project?.id ?? null).data ?? 0;
-  const badge = projectKey ? projectUnread + pending + pipelines : pending + pipelines + proposals;
+  const { actions } = useOwnerInbox();
+  const badge = projectKey ? projectUnread + pending + pipelines : actions.length;
   return (
     <>
       {teamIds.map((teamId) => (
