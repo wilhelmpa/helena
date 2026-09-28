@@ -164,6 +164,7 @@ export const DecisionEvalsResponse = t.Object({ evals: t.Array(DecisionEvalView)
 
 export const decisionLogQuery = t.Object({
   classId: t.Optional(t.String({ maxLength: 120 })),
+  agentId: t.Optional(t.Numeric({ minimum: 1 })),
   status: t.Optional(t.String({ maxLength: 20 })),
   subject: t.Optional(t.String({ maxLength: 200 })),
   before: t.Optional(t.Numeric()),

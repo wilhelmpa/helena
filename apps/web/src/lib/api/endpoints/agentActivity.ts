@@ -36,6 +36,7 @@ export interface AgentActivityPage {
 export interface AgentActivityFilters {
   kind?: AgentActivityKind;
   agentId?: number;
+  limit?: number;
 }
 
 export interface AgentUsage {
@@ -50,6 +51,7 @@ function activityQuery(filters: AgentActivityFilters, cursor: AgentActivityCurso
   const q = new URLSearchParams();
   if (filters.kind) q.set('kind', filters.kind);
   if (filters.agentId) q.set('agentId', String(filters.agentId));
+  if (filters.limit) q.set('limit', String(filters.limit));
   if (cursor) q.set('cursor', JSON.stringify(cursor));
   const qs = q.toString();
   return qs ? `?${qs}` : '';

@@ -17,6 +17,8 @@ import OrganizationGoals from './OrganizationGoals';
 import OrganizationOrchestration from './OrganizationOrchestration';
 import OrganizationProjects from './OrganizationProjects';
 import OrganizationTree from './OrganizationTree';
+import OrganizationChart from '@/components/common/organization/OrganizationChart';
+import { teamSectionPath } from '@/utils/paths';
 import OrganizationProjectResources from './OrganizationProjectResources';
 
 type OrganizationTab =
@@ -36,6 +38,7 @@ export default function OrganizationWorkspace({
   toolbarEnd?: ReactNode;
 }) {
   const t = useTranslations('organization');
+  const tChart = useTranslations('organization.chart');
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -102,8 +105,19 @@ export default function OrganizationWorkspace({
         />
       ) : (
         <div className="min-w-0">
-          {projectKey ? <OrganizationProjectResources projectKey={projectKey} /> : null}
-          <OrganizationTree organization={organization} />
+          <OrganizationChart
+            organization={organization}
+            onEdit={(id) =>
+              router.push(`${teamSectionPath(organization.teamId, 'ai-agents')}?agent=${id}`)
+            }
+          />
+          <details className="organization-extra-details mt-6">
+            <summary>{tChart('moreDetails')}</summary>
+            <div className="mt-4">
+              {projectKey ? <OrganizationProjectResources projectKey={projectKey} /> : null}
+              <OrganizationTree organization={organization} />
+            </div>
+          </details>
         </div>
       )}
     </>

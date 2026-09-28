@@ -337,6 +337,18 @@ export interface AiChatCatalog {
 export const getAiAgentChatCatalog = (scopeKey: string, agentId: number) =>
   request<AiChatCatalog>(agentChatBase(scopeKey, agentId) + '/chat/catalog');
 
+export const getAiAgentChatEvents = (
+  teamId: number,
+  agentId: number,
+  messageId: number,
+  after = 0,
+) =>
+  request<{
+    items: { id: number; event: AgUiEvent }[];
+    nextCursor: number | null;
+    hasMore: boolean;
+  }>(`${agentChatBase(`team:${teamId}`, agentId)}/chat/${messageId}/events?after=${after}`);
+
 // One page of the caller's own chat threads with an agent, newest first. `q` searches
 // them by title and message text instead, over every page.
 export const listAiAgentThreads = (scopeKey: string, agentId: number, page: number, q = '') =>
