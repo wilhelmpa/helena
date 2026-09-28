@@ -262,5 +262,44 @@
       "hint": "A rapidez com que a voz lê. A voz local fala no próprio ritmo; isto vale para a voz do navegador.",
       "option": "{speed} %"
     }
+  },
+  "startOptions": {
+    "title": "Opções de inicialização",
+    "custom": "Opções de inicialização próprias",
+    "hint": "As mudanças valem a partir da próxima inicialização do modelo.",
+    "backend": "Backend",
+    "backendHint": "Com o que o Lemonade executa o modelo na GPU.",
+    "backends": {
+      "default": "Padrão",
+      "rocm": "ROCm",
+      "vulkan": "Vulkan"
+    },
+    "spec": "Decodificação especulativa",
+    "specHint": "Um rascunho propõe tokens e o modelo os verifica. Isso acelera as respostas.",
+    "specTypes": {
+      "off": "Desligada",
+      "draft-mtp": "MTP (embutido no modelo)",
+      "draft-dflash": "Modelo de rascunho DFlash"
+    },
+    "draftModel": "Modelo de rascunho",
+    "draftModelHint": "Caminho para um arquivo GGUF em /var/lib/helena-ai/models.",
+    "draftTokens": "Tokens de rascunho",
+    "draftTokensHint": "Quantos tokens o rascunho propõe por passo, de 1 a 64.",
+    "parallel": "Slots paralelos",
+    "parallelHint": "Quantas solicitações o modelo atende ao mesmo tempo, de 1 a 32.",
+    "contextPerSlot": "Contexto por slot",
+    "contextPerSlotHint": "Tokens de contexto para cada solicitação paralela.",
+    "defaultPlaceholder": "Padrão",
+    "reset": "Voltar ao padrão",
+    "saved": "Opções de inicialização de {name} salvas",
+    "errors": {
+      "draftModelRequired": "Informe o caminho do modelo de rascunho.",
+      "draftModelPath": "O caminho precisa apontar para um arquivo .gguf em /var/lib/helena-ai/models.",
+      "draftTokensRange": "Informe um número inteiro de 1 a 64.",
+      "parallelRange": "Informe um número inteiro de 1 a 32.",
+      "contextRange": "Informe um número inteiro de 1 a 1048576.",
+      "contextNeedsParallel": "Defina primeiro os slots paralelos.",
+      "contextTotal": "Slots paralelos vezes contexto por slot pode somar no máximo 1048576 tokens."
+    }
   }
 }

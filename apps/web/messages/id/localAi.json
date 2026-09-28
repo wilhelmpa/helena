@@ -262,5 +262,44 @@
       "hint": "Seberapa cepat suara membaca. Suara lokal berbicara dengan temponya sendiri; ini berlaku untuk suara browser.",
       "option": "{speed} %"
     }
+  },
+  "startOptions": {
+    "title": "Opsi mulai",
+    "custom": "Opsi mulai khusus",
+    "hint": "Perubahan berlaku saat model dimulai berikutnya.",
+    "backend": "Backend",
+    "backendHint": "Dengan apa Lemonade menjalankan model di GPU.",
+    "backends": {
+      "default": "Bawaan",
+      "rocm": "ROCm",
+      "vulkan": "Vulkan"
+    },
+    "spec": "Dekode spekulatif",
+    "specHint": "Draf mengusulkan token, model memeriksanya. Jawaban jadi lebih cepat.",
+    "specTypes": {
+      "off": "Mati",
+      "draft-mtp": "MTP (bawaan model)",
+      "draft-dflash": "Model draf DFlash"
+    },
+    "draftModel": "Model draf",
+    "draftModelHint": "Path ke file GGUF di /var/lib/helena-ai/models.",
+    "draftTokens": "Token draf",
+    "draftTokensHint": "Berapa token yang diusulkan draf per langkah, 1 sampai 64.",
+    "parallel": "Slot paralel",
+    "parallelHint": "Berapa permintaan yang ditangani model sekaligus, 1 sampai 32.",
+    "contextPerSlot": "Konteks per slot",
+    "contextPerSlotHint": "Token konteks untuk setiap permintaan paralel.",
+    "defaultPlaceholder": "Bawaan",
+    "reset": "Kembalikan ke bawaan",
+    "saved": "Opsi mulai {name} disimpan",
+    "errors": {
+      "draftModelRequired": "Masukkan path model draf.",
+      "draftModelPath": "Path harus menuju file .gguf di /var/lib/helena-ai/models.",
+      "draftTokensRange": "Masukkan bilangan bulat 1 sampai 64.",
+      "parallelRange": "Masukkan bilangan bulat 1 sampai 32.",
+      "contextRange": "Masukkan bilangan bulat 1 sampai 1048576.",
+      "contextNeedsParallel": "Atur slot paralel terlebih dahulu.",
+      "contextTotal": "Slot paralel dikali konteks per slot paling banyak 1048576 token."
+    }
   }
 }

@@ -262,5 +262,44 @@
       "hint": "朗读的速度。本地声音按自己的节奏说话；此设置作用于浏览器声音。",
       "option": "{speed}%"
     }
+  },
+  "startOptions": {
+    "title": "启动选项",
+    "custom": "自定义启动选项",
+    "hint": "更改将在模型下次启动时生效。",
+    "backend": "后端",
+    "backendHint": "Lemonade 在 GPU 上运行模型所用的后端。",
+    "backends": {
+      "default": "默认",
+      "rocm": "ROCm",
+      "vulkan": "Vulkan"
+    },
+    "spec": "推测解码",
+    "specHint": "由草稿提出词元，模型进行校验，从而加快回答。",
+    "specTypes": {
+      "off": "关闭",
+      "draft-mtp": "MTP（模型内置）",
+      "draft-dflash": "DFlash 草稿模型"
+    },
+    "draftModel": "草稿模型",
+    "draftModelHint": "位于 /var/lib/helena-ai/models 下的 GGUF 文件路径。",
+    "draftTokens": "草稿词元数",
+    "draftTokensHint": "草稿每步提出的词元数，1 到 64。",
+    "parallel": "并行槽位",
+    "parallelHint": "模型同时处理的请求数，1 到 32。",
+    "contextPerSlot": "每槽上下文",
+    "contextPerSlotHint": "每个并行请求的上下文词元数。",
+    "defaultPlaceholder": "默认",
+    "reset": "恢复默认",
+    "saved": "{name} 的启动选项已保存",
+    "errors": {
+      "draftModelRequired": "请填写草稿模型的路径。",
+      "draftModelPath": "路径必须指向 /var/lib/helena-ai/models 下的 .gguf 文件。",
+      "draftTokensRange": "请填写 1 到 64 之间的整数。",
+      "parallelRange": "请填写 1 到 32 之间的整数。",
+      "contextRange": "请填写 1 到 1048576 之间的整数。",
+      "contextNeedsParallel": "请先设置并行槽位。",
+      "contextTotal": "并行槽位乘以每槽上下文不得超过 1048576 个词元。"
+    }
   }
 }

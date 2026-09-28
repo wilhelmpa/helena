@@ -45,8 +45,9 @@ import {
   useUpdateLocalAiPolicy,
   useUpdateModelServer,
 } from '../services/localAi.service';
-import { gib, resolveLabel, shortModel } from '../utils/localAi';
+import { resolveLabel, shortModel } from '../utils/localAi';
 import LocalAiCard from './LocalAiCard';
+import LocalModelRow from './LocalModelRow';
 import VoiceSettingsSection from '@/features/voice/components/VoiceSettingsSection';
 
 const MODES: LocalAiMode[] = ['off', 'prefer', 'only'];
@@ -111,7 +112,6 @@ function ServersSection({ settings }: { settings: LocalAiSettings }) {
 
 function ServerCard({ server }: { server: ModelServer }) {
   const t = useTranslations('localAi.servers');
-  const tUnits = useTranslations('localAi.units');
   const check = useCheckModelServer();
   const update = useUpdateModelServer();
   const remove = useDeleteModelServer();
@@ -172,26 +172,7 @@ function ServerCard({ server }: { server: ModelServer }) {
       {server.models.length > 0 && (
         <ul className="divide-y text-sm">
           {server.models.map((model) => (
-            <li key={model.id} className="flex flex-wrap items-center gap-2 px-4 py-2">
-              <span className="min-w-0 flex-1 truncate" dir="ltr">
-                {model.name}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {[model.unit ? tUnits(model.unit) : null, model.capabilities.join(', ')]
-                  .filter(Boolean)
-                  .join(' · ')}
-                {model.sizeBytes ? ` · ${gib(model.sizeBytes)}` : ''}
-              </span>
-              {model.loaded ? (
-                <Badge variant="secondary" className="text-xs">
-                  {t('loaded')}
-                </Badge>
-              ) : model.downloaded === false ? (
-                <Badge variant="outline" className="text-xs">
-                  {t('notDownloaded')}
-                </Badge>
-              ) : null}
-            </li>
+            <LocalModelRow key={model.id} server={server} model={model} />
           ))}
         </ul>
       )}

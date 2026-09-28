@@ -262,5 +262,44 @@
       "hint": "How fast the voice reads. The local voice speaks at its own pace; this applies to the browser voice.",
       "option": "{speed} %"
     }
+  },
+  "startOptions": {
+    "title": "Start options",
+    "custom": "Custom start options",
+    "hint": "Changes apply the next time the model starts.",
+    "backend": "Backend",
+    "backendHint": "What Lemonade runs the model with on the GPU.",
+    "backends": {
+      "default": "Default",
+      "rocm": "ROCm",
+      "vulkan": "Vulkan"
+    },
+    "spec": "Speculative decoding",
+    "specHint": "A draft proposes tokens and the model checks them. This speeds up answers.",
+    "specTypes": {
+      "off": "Off",
+      "draft-mtp": "MTP (built into the model)",
+      "draft-dflash": "DFlash draft model"
+    },
+    "draftModel": "Draft model",
+    "draftModelHint": "Path to a GGUF file under /var/lib/helena-ai/models.",
+    "draftTokens": "Draft tokens",
+    "draftTokensHint": "How many tokens the draft proposes per step, 1 to 64.",
+    "parallel": "Parallel slots",
+    "parallelHint": "How many requests the model handles at once, 1 to 32.",
+    "contextPerSlot": "Context per slot",
+    "contextPerSlotHint": "Tokens of context for each parallel request.",
+    "defaultPlaceholder": "Default",
+    "reset": "Reset to default",
+    "saved": "Start options of {name} saved",
+    "errors": {
+      "draftModelRequired": "Enter the path to the draft model.",
+      "draftModelPath": "The path must point to a .gguf file under /var/lib/helena-ai/models.",
+      "draftTokensRange": "Enter a whole number from 1 to 64.",
+      "parallelRange": "Enter a whole number from 1 to 32.",
+      "contextRange": "Enter a whole number from 1 to 1048576.",
+      "contextNeedsParallel": "Set the parallel slots first.",
+      "contextTotal": "Parallel slots times context per slot may be at most 1048576 tokens."
+    }
   }
 }

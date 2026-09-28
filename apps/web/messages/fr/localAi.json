@@ -262,5 +262,44 @@
       "hint": "La vitesse de lecture de la voix. La voix locale parle à son propre rythme ; ceci s’applique à la voix du navigateur.",
       "option": "{speed} %"
     }
+  },
+  "startOptions": {
+    "title": "Options de démarrage",
+    "custom": "Options de démarrage personnalisées",
+    "hint": "Les changements s’appliquent au prochain démarrage du modèle.",
+    "backend": "Backend",
+    "backendHint": "Ce avec quoi Lemonade exécute le modèle sur le GPU.",
+    "backends": {
+      "default": "Par défaut",
+      "rocm": "ROCm",
+      "vulkan": "Vulkan"
+    },
+    "spec": "Décodage spéculatif",
+    "specHint": "Un brouillon propose des tokens, le modèle les vérifie. Les réponses arrivent plus vite.",
+    "specTypes": {
+      "off": "Désactivé",
+      "draft-mtp": "MTP (intégré au modèle)",
+      "draft-dflash": "Modèle brouillon DFlash"
+    },
+    "draftModel": "Modèle brouillon",
+    "draftModelHint": "Chemin vers un fichier GGUF sous /var/lib/helena-ai/models.",
+    "draftTokens": "Tokens de brouillon",
+    "draftTokensHint": "Combien de tokens le brouillon propose par étape, de 1 à 64.",
+    "parallel": "Slots parallèles",
+    "parallelHint": "Combien de requêtes le modèle traite en même temps, de 1 à 32.",
+    "contextPerSlot": "Contexte par slot",
+    "contextPerSlotHint": "Tokens de contexte pour chaque requête parallèle.",
+    "defaultPlaceholder": "Par défaut",
+    "reset": "Revenir aux valeurs par défaut",
+    "saved": "Options de démarrage de {name} enregistrées",
+    "errors": {
+      "draftModelRequired": "Indique le chemin du modèle brouillon.",
+      "draftModelPath": "Le chemin doit mener à un fichier .gguf sous /var/lib/helena-ai/models.",
+      "draftTokensRange": "Indique un nombre entier de 1 à 64.",
+      "parallelRange": "Indique un nombre entier de 1 à 32.",
+      "contextRange": "Indique un nombre entier de 1 à 1048576.",
+      "contextNeedsParallel": "Définis d’abord les slots parallèles.",
+      "contextTotal": "Slots parallèles fois contexte par slot ne doit pas dépasser 1048576 tokens."
+    }
   }
 }

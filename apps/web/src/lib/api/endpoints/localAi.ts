@@ -10,6 +10,17 @@ export type LocalAiPreset = 'sparsam' | 'ausgewogen' | 'qualitaet' | 'eigene';
 export type LocalizedText = string | Record<string, string>;
 export type ClassBlocker = 'not-wired' | 'no-model' | 'eval-missing' | 'eval-failed';
 
+// How Lemonade starts a model (Lemonade servers only): backend, speculative decoding and
+// parallel slots. `null` everywhere is Lemonade's own default. They apply at its next start.
+export interface LocalModelStartOptions {
+  backend: 'rocm' | 'vulkan' | null;
+  specType: 'draft-mtp' | 'draft-dflash' | null;
+  draftModel: string | null;
+  draftTokens: number | null;
+  parallel: number | null;
+  contextPerSlot: number | null;
+}
+
 export interface LocalModel {
   id: string;
   modelId: string;
@@ -22,6 +33,7 @@ export interface LocalModel {
   loaded: boolean;
   backend: string | null;
   checkpoint?: string | null;
+  startOptions?: LocalModelStartOptions | null;
 }
 
 export interface ServerLoad {
@@ -212,6 +224,17 @@ export const updateModelServer = (id: number, input: ServerInput) =>
 
 export const deleteModelServer = (id: number) =>
   request<void>(`/god/local-ai/servers/${id}`, { method: 'DELETE' });
+
+// The model is the server's own id (`LocalModel.id`), which holds slashes and colons.
+export const updateModelOptions = (
+  serverId: number,
+  model: string,
+  options: LocalModelStartOptions,
+) =>
+  request<LocalModelStartOptions>(
+    `/god/local-ai/servers/${serverId}/models/${encodeURIComponent(model)}/options`,
+    { method: 'PUT', body: JSON.stringify(options) },
+  );
 
 export const checkModelServer = (id: number) =>
   request<ModelServer>(`/god/local-ai/servers/${id}/check`, { method: 'POST' });
