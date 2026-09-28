@@ -58,6 +58,8 @@ export {
 // The template bundle format, for upload and download in the browser (types only).
 export type {
   BundleAgent,
+  BundleBudget,
+  BundleDepartment,
   BundleMcpServer,
   BundleSkill,
   SkillSource,

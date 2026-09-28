@@ -245,6 +245,226 @@
         ],
         "additionalProperties": false
       }
+    },
+    "department": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "restrictedSkills": {
+          "type": "boolean"
+        },
+        "allowedSkills": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "budgets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "metric": {
+                "type": "string",
+                "enum": ["tokens", "cost", "time"]
+              },
+              "period": {
+                "type": "string",
+                "enum": ["day", "month"]
+              },
+              "limit": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": ["metric", "period", "limit"],
+            "additionalProperties": false
+          }
+        },
+        "agents": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "role": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": ["coordinator", "specialist", "reviewer"]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "reportsTo": {
+                "type": ["string", "null"]
+              },
+              "projects": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "heartbeat": {
+                "type": "object",
+                "properties": {
+                  "intervalMinutes": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "timezone": {
+                    "type": "string"
+                  },
+                  "days": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "start": {
+                    "type": "string"
+                  },
+                  "end": {
+                    "type": "string"
+                  },
+                  "instructions": {
+                    "type": "string"
+                  }
+                },
+                "required": ["intervalMinutes", "timezone", "days", "start", "end", "instructions"],
+                "additionalProperties": false
+              },
+              "budgets": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "metric": {
+                      "type": "string",
+                      "enum": ["tokens", "cost", "time"]
+                    },
+                    "period": {
+                      "type": "string",
+                      "enum": ["day", "month"]
+                    },
+                    "limit": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    }
+                  },
+                  "required": ["metric", "period", "limit"],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": ["name", "role", "reportsTo", "projects", "heartbeat", "budgets"],
+            "additionalProperties": false
+          }
+        },
+        "goals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": ["planned", "active", "achieved", "paused"]
+              },
+              "targetDate": {
+                "type": ["string", "null"]
+              },
+              "parent": {
+                "type": ["string", "null"]
+              },
+              "project": {
+                "type": ["string", "null"]
+              }
+            },
+            "required": ["title", "description", "status", "targetDate", "parent", "project"],
+            "additionalProperties": false
+          }
+        },
+        "routines": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "project": {
+                "type": "string"
+              },
+              "agent": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "instructions": {
+                "type": "string"
+              },
+              "cron": {
+                "type": "string"
+              },
+              "timezone": {
+                "type": "string"
+              },
+              "catchUp": {
+                "type": "string",
+                "enum": ["skip", "once"]
+              }
+            },
+            "required": [
+              "key",
+              "project",
+              "agent",
+              "title",
+              "instructions",
+              "cron",
+              "timezone",
+              "catchUp"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "restrictedSkills",
+        "allowedSkills",
+        "budgets",
+        "agents",
+        "goals",
+        "routines"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [

@@ -6,7 +6,9 @@ import { guards } from '#shared/guards';
 import { noContent } from '#shared/http';
 import { HttpError } from '#shared/lib';
 import { requireUser } from '#shared/access';
+import { mcpTool } from '#mcp/generate';
 import { budgetStatuses, setBudgets } from '#modules/autopilot/budgets';
+import { departmentSkills, setDepartmentSkills } from './skills';
 import { BudgetStatusSchema, budgetsBody } from '#modules/autopilot/model';
 import { commonErrors, errors } from '#shared/responses';
 import {
@@ -163,6 +165,46 @@ export const organizationRoutes = new Elysia({
       teamManager: true,
       response: { 200: t.Array(BudgetStatusSchema), ...commonErrors },
       detail: { summary: 'Set department budgets' },
+    },
+  )
+  .get(
+    '/teams/:teamId/organization/departments/:departmentId/skills',
+    ({ membership, params }) => departmentSkills(membership.teamId, params.departmentId),
+    {
+      params: organizationDepartmentParams,
+      teamManager: true,
+      response: {
+        200: t.Object({
+          restricted: t.Boolean(),
+          skills: t.Array(t.Object({ id: t.Number(), name: t.String() })),
+        }),
+        ...commonErrors,
+      },
+      detail: {
+        summary: 'Get the department skill policy',
+        ...mcpTool('get_department_skills', { readOnlyHint: true }),
+      },
+    },
+  )
+  .put(
+    '/teams/:teamId/organization/departments/:departmentId/skills',
+    ({ membership, params, body }) =>
+      setDepartmentSkills(membership.teamId, params.departmentId, body),
+    {
+      params: organizationDepartmentParams,
+      body: t.Object({ restricted: t.Boolean(), skillIds: t.Array(t.Number()) }),
+      teamManager: true,
+      response: {
+        200: t.Object({
+          restricted: t.Boolean(),
+          skills: t.Array(t.Object({ id: t.Number(), name: t.String() })),
+        }),
+        ...commonErrors,
+      },
+      detail: {
+        summary: 'Set the department skill policy',
+        ...mcpTool('set_department_skills'),
+      },
     },
   )
   .post(
