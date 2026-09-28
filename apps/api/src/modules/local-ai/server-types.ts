@@ -344,7 +344,9 @@ export function halogenLoad(
     npuPercent: null,
     cpuPercent: null,
     vramGb: null,
-    memoryGb: memoryBytes === null ? null : Math.round(memoryBytes / 1e8) / 10,
+    // Under 1 GB the container is not in the unit's cgroup (a unit without --cgroups=split):
+    // the unit's own memory would read as Halogen's.
+    memoryGb: memoryBytes === null || memoryBytes < 1e9 ? null : Math.round(memoryBytes / 1e8) / 10,
     outputTokensPerSecond: rate(
       metrics['llamacpp:tokens_predicted_total'],
       metrics['llamacpp:tokens_predicted_seconds_total'],

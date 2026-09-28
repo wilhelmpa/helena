@@ -182,6 +182,8 @@ describe('Halogen', () => {
     const load = halogenLoad(HEALTH, values, 110_400_000_000, 97);
     expect(load.memoryGb).toBe(110.4);
     expect(load.gpuPercent).toBe(97);
+    // A unit whose container runs outside its cgroup reports its own few MB: no figure.
+    expect(halogenLoad(HEALTH, values, 40_000_000, null).memoryGb).toBeNull();
     // Nothing answered yet: no speed rather than zero.
     expect(halogenLoad(HEALTH, {}, null, null).outputTokensPerSecond).toBeNull();
   });
