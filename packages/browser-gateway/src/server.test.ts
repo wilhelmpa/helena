@@ -212,9 +212,10 @@ describe('GatewayDispatcher: project browsers on demand', () => {
       }),
     };
     const gateway = dispatcher({ sessions });
-    expect(
-      await gateway.handle({ tool: 'browser_snapshot', agentKey: 'k', args: {} }),
-    ).toEqual({ ok: false, error: failure.message });
+    expect(await gateway.handle({ tool: 'browser_snapshot', agentKey: 'k', args: {} })).toEqual({
+      ok: false,
+      error: failure.message,
+    });
     const status = await gateway.handle({ tool: 'browser_status', agentKey: 'k', args: {} });
     expect(status.ok && status.content).toContain('did not start in time');
   });
