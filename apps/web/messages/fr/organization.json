@@ -242,6 +242,35 @@
     "tokensDay": "{count} tokens/day",
     "tokensMonth": "{count} tokens/month",
     "allProjects": "all projects",
-    "projectDependent": "varies by project"
+    "projectDependent": "varies by project",
+    "viewLabel": "Vue",
+    "viewTree": "Arbre",
+    "viewRing": "Cercle",
+    "tasksToggle": "Tâches",
+    "searchLabel": "Rechercher un agent",
+    "searchPlaceholder": "Agent, projet …",
+    "levels": "Niveaux",
+    "controls": "Zoom",
+    "zoomIn": "Agrandir",
+    "zoomOut": "Réduire",
+    "fit": "Tout afficher",
+    "master": "MASTER",
+    "department": "SERVICE",
+    "agentCount": "{count, plural, one {# agent} other {# agents}}",
+    "openLevel": "Ouvrir {name}",
+    "openTask": "Ouvrir la tâche {identifier} : {title}",
+    "hintGroup": "Clic : ouvrir ce niveau",
+    "hintTask": "Clic : ouvrir la tâche",
+    "hintAgent": "Clic : paramètres · Double-clic : son cercle",
+    "tasks": "Tâches",
+    "throttled": "RALENTI",
+    "offline": "HORS LIGNE",
+    "filter": {
+      "all": "Tous",
+      "running": "En cours",
+      "waiting": "Vous attend",
+      "throttled": "Ralenti",
+      "error": "Erreur"
+    }
   }
 }

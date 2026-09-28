@@ -100,6 +100,89 @@ body:has(.project-ai-agents-view) [class~='@container/page']::-webkit-scrollbar 
 }
 
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+/* Org chart (components/common/organization): lines, orbits and the breathing hub of
+   the "Kreis" view. Real states only; reduced motion keeps everything still. */
+.organization-flow {
+  --org-edge: color-mix(in srgb, var(--foreground) 18%, transparent);
+  --org-orbit: color-mix(in srgb, var(--foreground) 13%, transparent);
+}
+
+.organization-flow .react-flow__node {
+  cursor: pointer;
+}
+
+.organization-orbits {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.organization-orbit {
+  position: absolute;
+  overflow: visible;
+  stroke: var(--org-orbit);
+  animation: organization-orbit 140s linear infinite;
+}
+
+.organization-orbit-reverse {
+  animation-duration: 190s;
+  animation-direction: reverse;
+}
+
+@keyframes organization-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.organization-ring-hub:not([aria-pressed='true']) {
+  animation: organization-halo 2.8s ease-out infinite;
+}
+
+@keyframes organization-halo {
+  0% {
+    box-shadow:
+      0 0 0 0 color-mix(in srgb, var(--brand) 32%, transparent),
+      0 0 40px color-mix(in srgb, var(--brand) 18%, transparent);
+  }
+
+  100% {
+    box-shadow:
+      0 0 0 18px color-mix(in srgb, var(--brand) 0%, transparent),
+      0 0 40px color-mix(in srgb, var(--brand) 18%, transparent);
+  }
+}
+
+.organization-flow .react-flow__controls {
+  overflow: hidden;
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+.organization-flow .react-flow__controls-button {
+  border-bottom-color: var(--border);
+  background: var(--card);
+  color: var(--muted-foreground);
+}
+
+.organization-flow .react-flow__controls-button:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+.organization-flow .react-flow__controls-button svg.lucide {
+  fill: none;
+  stroke: currentColor;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .organization-orbit,
+  .organization-ring-hub:not([aria-pressed='true']) {
+    animation: none;
+  }
+}
 
 /* Spacing scale (docs/volition-design-helena-ui.md "Spacing überall konsistent und
    weniger", owner decision 2026-09-23): the 4px grid Tailwind's default spacing

@@ -242,6 +242,35 @@
     "tokensDay": "{count} tokens/day",
     "tokensMonth": "{count} tokens/month",
     "allProjects": "all projects",
-    "projectDependent": "varies by project"
+    "projectDependent": "varies by project",
+    "viewLabel": "Tampilan",
+    "viewTree": "Pohon",
+    "viewRing": "Lingkaran",
+    "tasksToggle": "Tugas",
+    "searchLabel": "Cari agen",
+    "searchPlaceholder": "Agen, proyek …",
+    "levels": "Tingkat",
+    "controls": "Zoom",
+    "zoomIn": "Perbesar",
+    "zoomOut": "Perkecil",
+    "fit": "Tampilkan semua",
+    "master": "MASTER",
+    "department": "DEPARTEMEN",
+    "agentCount": "{count, plural, other {# agen}}",
+    "openLevel": "Buka {name}",
+    "openTask": "Buka tugas {identifier}: {title}",
+    "hintGroup": "Klik: buka tingkat ini",
+    "hintTask": "Klik: buka tugas",
+    "hintAgent": "Klik: pengaturan · Klik ganda: lingkarannya",
+    "tasks": "Tugas",
+    "throttled": "DIBATASI",
+    "offline": "LURING",
+    "filter": {
+      "all": "Semua",
+      "running": "Berjalan",
+      "waiting": "Menunggu Anda",
+      "throttled": "Dibatasi",
+      "error": "Galat"
+    }
   }
 }

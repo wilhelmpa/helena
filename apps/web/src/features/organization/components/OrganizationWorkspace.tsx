@@ -20,7 +20,6 @@ import OrganizationOrchestration from './OrganizationOrchestration';
 import OrganizationProjects from './OrganizationProjects';
 import OrganizationTree from './OrganizationTree';
 import OrganizationChart from '@/components/common/organization/OrganizationChart';
-import { teamSectionPath } from '@/utils/paths';
 import OrganizationProjectResources from './OrganizationProjectResources';
 
 type OrganizationTab =
@@ -145,12 +144,7 @@ export default function OrganizationWorkspace({
         />
       ) : (
         <div className="min-w-0">
-          <OrganizationChart
-            organization={organization}
-            onEdit={(id) =>
-              router.push(`${teamSectionPath(organization.teamId, 'ai-agents')}?agent=${id}`)
-            }
-          />
+          <OrganizationChart organization={organization} />
           <details className="organization-extra-details mt-6">
             <summary>{tChart('moreDetails')}</summary>
             <div className="mt-4">

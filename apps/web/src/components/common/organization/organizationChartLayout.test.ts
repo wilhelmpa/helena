@@ -36,13 +36,10 @@ describe('Organigramm', () => {
       [1, 2, 3],
     );
     const chart = organizationChartLayout(scoped, new Set(), new Set([3]));
-    assert.deepEqual(
-      chart.edges.map((edge) => [edge.source, edge.target, edge.animated]),
-      [
-        ['2', '3', true],
-        ['1', '2', false],
-      ],
-    );
+    assert.deepEqual(chart.edges.map((edge) => [edge.source, edge.target, edge.animated]).sort(), [
+      ['1', '2', false],
+      ['2', '3', true],
+    ]);
     assert.equal(chart.nodes.find((node) => node.id === '1')?.position.y, 0);
     assert.ok(
       chart.nodes.find((node) => node.id === '3')!.position.y >
