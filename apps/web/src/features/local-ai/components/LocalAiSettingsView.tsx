@@ -1,7 +1,16 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { FlaskConical, LoaderCircle, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronRight,
+  FlaskConical,
+  LoaderCircle,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Trash2,
+} from 'lucide-react';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
@@ -11,6 +20,7 @@ import StatusBadge from '@/components/common/page/StatusBadge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Dialog,
   DialogContent,
@@ -47,7 +57,7 @@ import {
   useUpdateLocalAiPolicy,
   useUpdateModelServer,
 } from '../services/localAi.service';
-import { resolveLabel, shortModel } from '../utils/localAi';
+import { groupClasses, resolveLabel, shortModel } from '../utils/localAi';
 import {
   CAPABILITIES,
   loadFacts,
@@ -69,27 +79,19 @@ const AUTO = '__auto__';
 // card, the model servers and their models, each kind of work with its mode, model and eval,
 // and the presets. The owner decides; a class leaves "Aus" only once its eval passed.
 export default function LocalAiSettingsView() {
-  const t = useTranslations('localAi');
   const settings = useLocalAiSettings();
   const data = settings.data;
   useFinishedEvalToasts(data);
 
   return (
     <div className="flex flex-col gap-6">
-      <LocalAiCard />
+      <LocalAiCard showClasses={false} />
       {!data ? (
         <ListSkeleton rows={3} rowClassName="h-12" />
       ) : (
         <>
           <ServersSection settings={data} />
-          <PresetSection settings={data} />
-          <SettingsSection title={t('classesTitle')} description={t('classesDescription')}>
-            <SettingsCard className="divide-y">
-              {data.classes.map((entry) => (
-                <ClassRow key={entry.id} entry={entry} settings={data} />
-              ))}
-            </SettingsCard>
-          </SettingsSection>
+          <ClassesSection settings={data} />
           <LocalAiJudgeSection />
           <LocalAiEscalationSection />
           <VoiceSettingsSection />
@@ -139,12 +141,17 @@ function ServerCard({ server, settings }: { server: ModelServer; settings: Local
         <div className="min-w-0 flex-1 space-y-0.5">
           <div className="flex items-center gap-2 font-medium">
             {server.name}
-            <StatusBadge status={reachable ? 'success' : 'danger'} className="text-xs">
-              {!reachable
-                ? t('unreachable')
-                : server.status?.version
-                  ? t('reachable', { version: server.status.version })
-                  : t('reachableBare')}
+            <StatusBadge
+              status={!server.enabled ? 'idle' : reachable ? 'success' : 'danger'}
+              className="text-xs"
+            >
+              {!server.enabled
+                ? t('disabled')
+                : !reachable
+                  ? t('unreachable')
+                  : server.status?.version
+                    ? t('reachable', { version: server.status.version })
+                    : t('reachableBare')}
             </StatusBadge>
           </div>
           <p className="truncate text-xs text-muted-foreground" dir="ltr">
@@ -452,12 +459,21 @@ function CapabilitiesField({
   );
 }
 
-function PresetSection({ settings }: { settings: LocalAiSettings }) {
-  const t = useTranslations('localAi.presets');
+// The kinds of work: those that run locally now and those ready to switch on, each with its
+// model, mode and eval; the rest (waiting for an eval, not wired yet, experimental) folded
+// away. The preset switches them at once.
+function ClassesSection({ settings }: { settings: LocalAiSettings }) {
+  const t = useTranslations('localAi');
   const update = useUpdateLocalAiPolicy();
+  const [open, setOpen] = useState(false);
+  const groups = groupClasses(settings.classes);
+  const rows = (entries: LocalAiClass[]) =>
+    entries.map((entry) => <ClassRow key={entry.id} entry={entry} settings={settings} />);
   return (
-    <SettingsSection title={t('title')} description={t('description')}>
-      <SettingsCard className="p-4">
+    <SettingsSection
+      title={t('classesTitle')}
+      description={t('classesDescription')}
+      action={
         <Select
           value={settings.policy.preset}
           onValueChange={(preset) =>
@@ -467,20 +483,65 @@ function PresetSection({ settings }: { settings: LocalAiSettings }) {
             )
           }
         >
-          <SelectTrigger className="w-full sm:w-72">
+          <SelectTrigger className="w-40" aria-label={t('presets.title')}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {PRESETS.map((preset) => (
               <SelectItem key={preset} value={preset}>
-                {t(preset)}
+                {t(`presets.${preset}`)}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <p className="mt-2 text-xs text-muted-foreground">{t(`${settings.policy.preset}Hint`)}</p>
+      }
+    >
+      <SettingsCard className="divide-y">
+        {groups.active.length + groups.ready.length === 0 ? (
+          <p className="px-4 py-3 text-sm text-muted-foreground">{t('classGroups.none')}</p>
+        ) : (
+          <>
+            {groups.active.length > 0 && (
+              <GroupHead label={t('classGroups.active')} count={groups.active.length} />
+            )}
+            {rows(groups.active)}
+            {groups.ready.length > 0 && (
+              <GroupHead label={t('classGroups.ready')} count={groups.ready.length} />
+            )}
+            {rows(groups.ready)}
+          </>
+        )}
+        {groups.more.length > 0 && (
+          <Collapsible open={open} onOpenChange={setOpen}>
+            <CollapsibleTrigger asChild>
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 px-4 py-2 text-start text-xs text-muted-foreground hover:bg-accent"
+              >
+                {open ? (
+                  <ChevronDown className="size-3.5" />
+                ) : (
+                  <ChevronRight className="size-3.5" />
+                )}
+                {t('classGroups.more', { count: groups.more.length })}
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="divide-y border-t">
+              {rows(groups.more)}
+            </CollapsibleContent>
+          </Collapsible>
+        )}
       </SettingsCard>
+      <p className="text-xs text-muted-foreground">{t(`presets.${settings.policy.preset}Hint`)}</p>
     </SettingsSection>
+  );
+}
+
+function GroupHead({ label, count }: { label: string; count: number }) {
+  return (
+    <div className="flex items-center gap-2 px-4 pt-3 pb-1">
+      <span className="ds-mono-label">{`${label} · ${count}`}</span>
+    </div>
   );
 }
 

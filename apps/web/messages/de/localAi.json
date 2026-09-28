@@ -24,7 +24,8 @@
     "settings": "Einstellungen",
     "unitSwitch": "{unit} nutzen",
     "vram": "{used} von {total}",
-    "noModel": "Kein Modell geladen"
+    "noModel": "Kein Modell geladen",
+    "gtt": "{used} von {total} (GTT)"
   },
   "blockers": {
     "not-wired": "Noch nicht angebunden",
@@ -136,7 +137,8 @@
       "memory": "{gb} GB Speicher",
       "kv": "KV-Cache {percent} %",
       "gpu": "GPU {percent} %"
-    }
+    },
+    "disabled": "Aus"
   },
   "presets": {
     "title": "Voreinstellung",
@@ -373,5 +375,11 @@
     },
     "pinsNone": "Keine Festlegungen für Agenten, Projekte oder Aufgaben.",
     "pins": "{count} Festlegungen für Agenten, Projekte oder Aufgaben."
+  },
+  "classGroups": {
+    "none": "Noch keine Art von Arbeit bereit: erst eine Auswertung bestehen.",
+    "active": "Läuft lokal",
+    "ready": "Bereit",
+    "more": "Weitere Arten von Arbeit ({count})"
   }
 }

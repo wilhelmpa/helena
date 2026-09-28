@@ -24,7 +24,8 @@
     "settings": "Pengaturan",
     "unitSwitch": "Gunakan {unit}",
     "vram": "{used} dari {total}",
-    "noModel": "Tidak ada model dimuat"
+    "noModel": "Tidak ada model dimuat",
+    "gtt": "{used} dari {total} (GTT)"
   },
   "blockers": {
     "not-wired": "Belum terhubung",
@@ -136,7 +137,8 @@
       "memory": "Memori {gb} GB",
       "kv": "Cache KV {percent} %",
       "gpu": "GPU {percent} %"
-    }
+    },
+    "disabled": "Mati"
   },
   "presets": {
     "title": "Prasetel",
@@ -373,5 +375,11 @@
     },
     "pinsNone": "Tidak ada pilihan tetap untuk agen, proyek, atau tugas.",
     "pins": "{count} pilihan tetap untuk agen, proyek, atau tugas."
+  },
+  "classGroups": {
+    "none": "Belum ada jenis pekerjaan yang siap: lulus evaluasi dulu.",
+    "active": "Berjalan lokal",
+    "ready": "Siap",
+    "more": "Jenis pekerjaan lain ({count})"
   }
 }

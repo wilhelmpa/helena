@@ -24,7 +24,8 @@
     "settings": "Ajustes",
     "unitSwitch": "Usar la {unit}",
     "vram": "{used} de {total}",
-    "noModel": "Ningún modelo cargado"
+    "noModel": "Ningún modelo cargado",
+    "gtt": "{used} de {total} (GTT)"
   },
   "blockers": {
     "not-wired": "Aún no conectado",
@@ -136,7 +137,8 @@
       "memory": "{gb} GB de memoria",
       "kv": "Caché KV {percent} %",
       "gpu": "GPU {percent} %"
-    }
+    },
+    "disabled": "Desactivado"
   },
   "presets": {
     "title": "Preajuste",
@@ -373,5 +375,11 @@
     },
     "pinsNone": "Sin elecciones fijas para agentes, proyectos o tareas.",
     "pins": "{count} elecciones fijas para agentes, proyectos o tareas."
+  },
+  "classGroups": {
+    "none": "Aún no hay ningún tipo de trabajo listo: primero hay que superar una evaluación.",
+    "active": "Se ejecuta en local",
+    "ready": "Listo",
+    "more": "Más tipos de trabajo ({count})"
   }
 }

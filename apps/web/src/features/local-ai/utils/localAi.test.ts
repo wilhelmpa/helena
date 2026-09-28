@@ -4,6 +4,8 @@ import type { LocalAiStatus } from '@/lib/api/endpoints/localAi';
 import {
   classToggle,
   gib,
+  gpuMemory,
+  groupClasses,
   isLocalModelId,
   localShare,
   resolveLabel,
@@ -117,5 +119,56 @@ describe('local AI card helpers', () => {
     );
     assert.equal(resolveLabel({ en: 'Hello', de: 'Hallo' }, 'de-AT', t), 'Hallo');
     assert.equal(resolveLabel('Plain', 'de', t), 'Plain');
+  });
+});
+
+describe('the GPU memory the card shows', () => {
+  const GiB = 1024 ** 3;
+  it('is GTT with a small carve-out, VRAM with a large one', () => {
+    assert.deepEqual(
+      gpuMemory({
+        vramUsedBytes: 0.3 * GiB,
+        vramTotalBytes: 0.5 * GiB,
+        gttUsedBytes: 110 * GiB,
+        gttTotalBytes: 120 * GiB,
+      }),
+      { used: 110 * GiB, total: 120 * GiB, kind: 'gtt' },
+    );
+    assert.deepEqual(
+      gpuMemory({
+        vramUsedBytes: 20 * GiB,
+        vramTotalBytes: 96 * GiB,
+        gttUsedBytes: 1 * GiB,
+        gttTotalBytes: 15 * GiB,
+      }),
+      { used: 20 * GiB, total: 96 * GiB, kind: 'vram' },
+    );
+    assert.equal(
+      gpuMemory({
+        vramUsedBytes: null,
+        vramTotalBytes: null,
+        gttUsedBytes: null,
+        gttTotalBytes: null,
+      }),
+      null,
+    );
+  });
+});
+
+describe('the kinds of work on the settings page', () => {
+  it('shows what runs and what is ready, and folds the rest', () => {
+    const entries = [
+      { id: 'a', mode: 'prefer' as const, blocker: null, experimental: false },
+      { id: 'b', mode: 'off' as const, blocker: null, experimental: false },
+      { id: 'c', mode: 'off' as const, blocker: 'eval-missing' as const, experimental: false },
+      { id: 'd', mode: 'off' as const, blocker: 'not-wired' as const, experimental: false },
+      { id: 'e', mode: 'off' as const, blocker: null, experimental: true },
+      { id: 'f', mode: 'prefer' as const, blocker: 'eval-failed' as const, experimental: false },
+    ];
+    const groups = groupClasses(entries);
+    assert.deepEqual(
+      [groups.active, groups.ready, groups.more].map((group) => group.map((entry) => entry.id)),
+      [['a', 'f'], ['b'], ['c', 'd', 'e']],
+    );
   });
 });

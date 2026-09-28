@@ -24,7 +24,8 @@
     "settings": "设置",
     "unitSwitch": "使用 {unit}",
     "vram": "{used} / {total}",
-    "noModel": "未加载模型"
+    "noModel": "未加载模型",
+    "gtt": "{used} / {total}（GTT）"
   },
   "blockers": {
     "not-wired": "尚未接入",
@@ -136,7 +137,8 @@
       "memory": "内存 {gb} GB",
       "kv": "KV 缓存 {percent} %",
       "gpu": "GPU {percent} %"
-    }
+    },
+    "disabled": "关闭"
   },
   "presets": {
     "title": "预设",
@@ -373,5 +375,11 @@
     },
     "pinsNone": "没有针对代理、项目或任务的固定选择。",
     "pins": "{count} 个针对代理、项目或任务的固定选择。"
+  },
+  "classGroups": {
+    "none": "还没有可用的工作类型：请先通过评测。",
+    "active": "本地运行中",
+    "ready": "就绪",
+    "more": "更多工作类型（{count}）"
   }
 }

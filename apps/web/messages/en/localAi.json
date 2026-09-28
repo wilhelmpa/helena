@@ -24,7 +24,8 @@
     "settings": "Settings",
     "unitSwitch": "Use the {unit}",
     "vram": "{used} of {total}",
-    "noModel": "No model loaded"
+    "noModel": "No model loaded",
+    "gtt": "{used} of {total} (GTT)"
   },
   "blockers": {
     "not-wired": "Not connected yet",
@@ -136,7 +137,8 @@
       "memory": "{gb} GB memory",
       "kv": "KV cache {percent} %",
       "gpu": "GPU {percent} %"
-    }
+    },
+    "disabled": "Off"
   },
   "presets": {
     "title": "Preset",
@@ -373,5 +375,11 @@
     },
     "pinsNone": "No fixed choices for agents, projects or tasks.",
     "pins": "{count} fixed choices for agents, projects or tasks."
+  },
+  "classGroups": {
+    "none": "No kind of work is ready yet: pass an eval first.",
+    "active": "Runs locally",
+    "ready": "Ready",
+    "more": "More kinds of work ({count})"
   }
 }

@@ -24,7 +24,8 @@
     "settings": "Réglages",
     "unitSwitch": "Utiliser le {unit}",
     "vram": "{used} sur {total}",
-    "noModel": "Aucun modèle chargé"
+    "noModel": "Aucun modèle chargé",
+    "gtt": "{used} sur {total} (GTT)"
   },
   "blockers": {
     "not-wired": "Pas encore raccordé",
@@ -136,7 +137,8 @@
       "memory": "{gb} Go de mémoire",
       "kv": "Cache KV {percent} %",
       "gpu": "GPU {percent} %"
-    }
+    },
+    "disabled": "Désactivé"
   },
   "presets": {
     "title": "Préréglage",
@@ -373,5 +375,11 @@
     },
     "pinsNone": "Aucun choix fixe pour les agents, projets ou tâches.",
     "pins": "{count} choix fixes pour les agents, projets ou tâches."
+  },
+  "classGroups": {
+    "none": "Aucun type de travail n’est prêt : réussir d’abord une évaluation.",
+    "active": "Tourne en local",
+    "ready": "Prêt",
+    "more": "Autres types de travail ({count})"
   }
 }
