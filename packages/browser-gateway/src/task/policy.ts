@@ -12,6 +12,7 @@ import type {
   PolicyKind,
   TaskCandidate,
   TaskMode,
+  TaskSuccess,
 } from './types.ts';
 
 export interface HistoryEntry {
@@ -29,6 +30,7 @@ export interface HistoryEntry {
 export interface RoundInput {
   observation: PageObservation;
   goal: string;
+  success?: TaskSuccess;
   values: Record<string, string>;
   mode: TaskMode;
   round: number;
@@ -66,8 +68,6 @@ export interface DecisionPolicy {
   // with its candidates instead).
   minTarget: number;
   round(input: RoundInput, ask: Ask): Promise<RoundAnswer>;
-  // The stricter "is everything done?" asked when done and the next action disagree.
-  confirmDone(input: RoundInput, ask: Ask): Promise<number | null>;
   // The option of a dropdown, when no value names one.
   pickOption(input: RoundInput, element: PageElement, ask: Ask): Promise<string | null>;
   // Which value goes into a field, when the round did not say.

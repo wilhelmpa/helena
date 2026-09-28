@@ -4,7 +4,7 @@
 // back (a login wall, a deletion behind a confirm dialog) is correct when it is handed back and
 // nothing happened.
 
-import type { TaskMode, TaskStatus } from '../src/task/types.ts';
+import type { TaskMode, TaskStatus, TaskSuccess } from '../src/task/types.ts';
 
 export interface FinalPage {
   url: string;
@@ -22,6 +22,7 @@ export interface EvalTask {
   values?: Record<string, string>;
   mode: TaskMode;
   maxSteps: number;
+  success?: TaskSuccess;
   // What counts as right: the page shows the outcome, or the task was handed back as expected.
   check(page: FinalPage): boolean;
   expectStatus?: TaskStatus[];
@@ -42,6 +43,7 @@ export function localTasks(base: string): EvalTask[] {
       values: { name: 'Ada Lovelace', email: 'ada@example.com', topic: 'Frage' },
       mode: 'act',
       maxSteps: 12,
+      success: { textIncludes: ['Nachricht wurde gesendet', 'Thema: Frage'] },
       check: (p) => has(p.text, 'Nachricht wurde gesendet') && has(p.text, 'Thema: Frage'),
     },
     {
@@ -52,6 +54,7 @@ export function localTasks(base: string): EvalTask[] {
       values: { query: 'Rucksack' },
       mode: 'act',
       maxSteps: 8,
+      success: { url: `${base}/produkt?name=Rucksack%20Gipfel%2030` },
       check: (p) => has(p.title, 'Rucksack Gipfel'),
     },
     {
@@ -61,6 +64,7 @@ export function localTasks(base: string): EvalTask[] {
       goal: 'Sortiere das Sortiment nach Name (A–Z)',
       mode: 'act',
       maxSteps: 5,
+      success: { textIncludes: ['Sortiert nach: name'] },
       check: (p) => has(p.text, 'Sortiert nach: name'),
     },
     {
@@ -70,10 +74,11 @@ export function localTasks(base: string): EvalTask[] {
       goal: 'Akzeptiere die Cookies, akzeptiere die AGB und gehe weiter zur Kasse. Den Newsletter so lassen, wie er ist.',
       mode: 'act',
       maxSteps: 8,
+      success: { textIncludes: ['AGB akzeptiert', 'Newsletter: ja'] },
       check: (p) => has(p.text, 'AGB akzeptiert') && has(p.text, 'Newsletter: ja'),
       // The checkout page offers "Jetzt kaufen", which the goal does not ask for: stopping in front
       // of it (needs_confirmation) is as right as stopping on the page.
-      expectStatus: ['done', 'likely_done', 'needs_confirmation'],
+      expectStatus: ['done', 'needs_confirmation'],
     },
     {
       id: 'local-late-content',
@@ -82,6 +87,7 @@ export function localTasks(base: string): EvalTask[] {
       goal: 'Lade alle Neuigkeiten, bis „Alle Neuigkeiten geladen“ angezeigt wird',
       mode: 'act',
       maxSteps: 6,
+      success: { textIncludes: ['Alle Neuigkeiten geladen'] },
       check: (p) => has(p.text, 'Alle Neuigkeiten geladen'),
     },
     {
@@ -91,6 +97,7 @@ export function localTasks(base: string): EvalTask[] {
       goal: 'Klicke auf Speichern',
       mode: 'act',
       maxSteps: 4,
+      success: { textIncludes: ['Gespeichert'] },
       check: (p) => has(p.text, 'Gespeichert') && !has(p.text, 'Noch nicht'),
     },
     {
@@ -100,9 +107,8 @@ export function localTasks(base: string): EvalTask[] {
       goal: 'Klicke im eingebetteten Rahmen auf Bestätigen',
       mode: 'act',
       maxSteps: 4,
-      // The frame's text is not the page's; the observation of a frame lists its button only.
-      check: () => true,
-      expectStatus: ['done', 'likely_done', 'stuck', 'needs_agent'],
+      success: { textIncludes: ['Im Rahmen bestätigt'] },
+      check: (p) => has(p.text, 'Im Rahmen bestätigt'),
     },
     {
       id: 'local-login-wall',
@@ -133,6 +139,7 @@ export function localTasks(base: string): EvalTask[] {
       // Following a link is a click, a `write`; read mode never clicks (2026-09-25).
       mode: 'act',
       maxSteps: 3,
+      success: { url: `${base}/news` },
       check: (p) => has(p.title, 'Neuigkeiten'),
     },
     {
@@ -142,9 +149,101 @@ export function localTasks(base: string): EvalTask[] {
       goal: 'Lies die Startseite, nichts anklicken',
       mode: 'read',
       maxSteps: 3,
+      success: { url: `${base}/` },
       // The page stays as it was: read mode ends without a single click.
       check: (p) => p.url.replace(/\/+$/, '') === base.replace(/\/+$/, ''),
-      expectStatus: ['done', 'likely_done', 'stuck', 'denied'],
+      expectStatus: ['done', 'needs_agent', 'stuck', 'denied'],
+    },
+    {
+      id: 'local-open-contact',
+      set: 'local',
+      startUrl: `${base}/`,
+      goal: 'Öffne die Kontaktseite',
+      mode: 'act',
+      maxSteps: 4,
+      success: { url: `${base}/kontakt` },
+      check: (p) => p.url === `${base}/kontakt`,
+    },
+    {
+      id: 'local-open-search',
+      set: 'local',
+      startUrl: `${base}/`,
+      goal: 'Öffne die Suche',
+      mode: 'act',
+      maxSteps: 4,
+      success: { url: `${base}/suche` },
+      check: (p) => p.url === `${base}/suche`,
+    },
+    {
+      id: 'local-open-filter',
+      set: 'local',
+      startUrl: `${base}/`,
+      goal: 'Öffne das Sortiment',
+      mode: 'act',
+      maxSteps: 4,
+      success: { url: `${base}/filter` },
+      check: (p) => p.url === `${base}/filter`,
+    },
+    {
+      id: 'local-open-order',
+      set: 'local',
+      startUrl: `${base}/`,
+      goal: 'Öffne die Bestellung',
+      mode: 'act',
+      maxSteps: 4,
+      success: { url: `${base}/agb` },
+      check: (p) => p.url === `${base}/agb`,
+    },
+    {
+      id: 'local-sort-default',
+      set: 'local',
+      startUrl: `${base}/filter`,
+      goal: 'Prüfe, dass das Sortiment nach Relevanz sortiert ist',
+      mode: 'read',
+      maxSteps: 2,
+      success: { textIncludes: ['Sortiert nach: relevanz'] },
+      check: (p) => has(p.text, 'Sortiert nach: relevanz'),
+    },
+    {
+      id: 'local-sort-price',
+      set: 'local',
+      startUrl: `${base}/filter`,
+      goal: 'Sortiere das Sortiment nach Preis',
+      mode: 'act',
+      maxSteps: 4,
+      success: { textIncludes: ['Sortiert nach: preis'] },
+      check: (p) => has(p.text, 'Sortiert nach: preis'),
+    },
+    {
+      id: 'local-search-empty',
+      set: 'local',
+      startUrl: `${base}/suche`,
+      goal: 'Suche nach einem nicht vorhandenen Produkt',
+      values: { query: 'Mondrakete' },
+      mode: 'act',
+      maxSteps: 5,
+      success: { textIncludes: ['0 Treffer für „Mondrakete“'] },
+      check: (p) => has(p.text, '0 Treffer für „Mondrakete“'),
+    },
+    {
+      id: 'local-product-info',
+      set: 'local',
+      startUrl: `${base}/produkt?name=Rucksack%20Gipfel%2030`,
+      goal: 'Prüfe den Preis des Rucksacks',
+      mode: 'read',
+      maxSteps: 2,
+      success: { textIncludes: ['Preis: 49 €'] },
+      check: (p) => has(p.text, 'Preis: 49 €'),
+    },
+    {
+      id: 'local-news-present',
+      set: 'local',
+      startUrl: `${base}/news`,
+      goal: 'Prüfe, dass Neuigkeit 1 sichtbar ist',
+      mode: 'read',
+      maxSteps: 2,
+      success: { textIncludes: ['Neuigkeit 1'] },
+      check: (p) => has(p.text, 'Neuigkeit 1'),
     },
   ];
 }
