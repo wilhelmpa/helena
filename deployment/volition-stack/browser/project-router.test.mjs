@@ -1170,9 +1170,9 @@ describe("project browser router", () => {
   });
 
   it("reports a browser that did not start to the live view and closes it", async () => {
-    const closed = http.createServer();
-    const unused = await listen(closed);
-    await new Promise((resolve) => closed.close(resolve));
+    const nothing = http.createServer();
+    const unused = await listen(nothing);
+    await new Promise((resolve) => nothing.close(resolve));
     await state("demo", 16000, unused);
     router = createProjectBrowserRouter({
       root,
