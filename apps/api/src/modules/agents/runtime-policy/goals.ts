@@ -1,5 +1,6 @@
 import { activeGoalsForAgent } from '#modules/goals/service';
 import { goalsSection } from '#modules/goals/scope';
+import { projectGoalsForAgent } from '#modules/project-goals/service';
 import { isHomeAgent } from '../core/home-agent';
 import type { AiAgentRow } from '../core/service';
 
@@ -9,5 +10,7 @@ import type { AiAgentRow } from '../core/service';
 // reads none.
 export async function agentGoalsSection(agent: AiAgentRow): Promise<string> {
   if (agent.projects.length === 0 && !isHomeAgent(agent.username)) return '';
-  return goalsSection(await activeGoalsForAgent(agent));
+  return [goalsSection(await activeGoalsForAgent(agent)), await projectGoalsForAgent(agent)]
+    .filter(Boolean)
+    .join('\n\n');
 }

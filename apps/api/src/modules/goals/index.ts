@@ -5,6 +5,9 @@ import { requireUser } from '#shared/access';
 import { entityGuard, guards } from '#shared/guards';
 import { commonErrors } from '#shared/responses';
 import { getIssueProjectId } from '#modules/issues/service';
+import { issueWhy, projectWhyChains } from '#modules/project-goals/ladder';
+import { IssueWhyResponse, ProjectWhyChainsResponse } from '#modules/project-goals/model';
+import { HttpError } from '#shared/lib';
 import {
   GoalDetailResponse,
   GoalNoteResponse,
@@ -34,6 +37,28 @@ export const goalRoutes = new Elysia({ name: 'goals', detail: { tags: ['Goals'] 
       getIssueProjectId(Number(p.issueId)),
     ),
   })
+  .get('/projects/:projectKey/why-chains', ({ project }) => projectWhyChains(project.id), {
+    permission: ['work_items', 'read'],
+    response: { 200: ProjectWhyChainsResponse, ...commonErrors },
+    detail: { summary: 'Read goal chains for the project organigram' },
+  })
+  .get(
+    '/issues/:issueId/why',
+    async ({ params }) => {
+      const why = await issueWhy(params.issueId);
+      if (!why) throw new HttpError(404, 'Issue not found');
+      return why;
+    },
+    {
+      params: issueGoalParams,
+      workItem: 'read',
+      response: { 200: IssueWhyResponse, ...commonErrors },
+      detail: {
+        summary: 'Get the goal chain behind a task',
+        ...mcpTool('get_issue_why'),
+      },
+    },
+  )
   .get(
     '/teams/:teamId/goals',
     ({ membership, query }) =>

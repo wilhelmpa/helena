@@ -54,6 +54,7 @@ import {
 import { chooseModelNow, classModelNow, type LocalFallback } from '#modules/local-ai/service';
 import { WORK_CLASS } from '#modules/local-ai/work-classes';
 import { routinePromptContext } from '#modules/routines/agent-runs';
+import { issueWhy, issueWhySection } from '#modules/project-goals/ladder';
 
 // The queue an agent's runner drains. The runner is a process the operator starts on
 // their own machine; it authenticates with the agent's API key, claims one run at a
@@ -432,6 +433,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
   // The routine whose work the run is, when it is one: its framing keeps the run quiet and
   // names the agents the fire started beside it (docs/helena-decisions/routine-mentions.md).
   const routine = await routinePromptContext(row);
+  const why = row.issueId == null ? null : await issueWhy(row.issueId);
   const forPrompt = {
     ...row,
     agentUserId: agent.userId,
@@ -529,6 +531,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
           { key: row.projectKey, name: row.projectName, description: row.projectDescription },
           forPrompt,
         ) +
+        issueWhySection(why) +
         autopilotRunSection(row.projectKey, autopilot.level) +
         (row.interrupted && !row.sessionId ? INTERRUPTED_RUN : ''),
     attempts: row.attempts,

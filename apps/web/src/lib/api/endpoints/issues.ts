@@ -10,6 +10,16 @@ import { pageQuery, type Page, type PageParams } from '@/lib/api/core/paging';
 import { dayKey } from '@/utils/dates';
 import { uuid } from '@/utils/uuid';
 
+export interface IssueWhy {
+  goal: { id: number; title: string; path: string[] } | null;
+  initiative: { id: number; title: string } | null;
+  parents: { id: number; identifier: string; title: string }[];
+  task: { id: number; identifier: string; title: string };
+  source: 'explicit' | 'parent' | 'initiative' | 'project' | 'department' | 'team' | null;
+}
+
+export const getIssueWhy = (id: number) => request<IssueWhy>(`/issues/${id}/why`);
+
 // The subtask disposition as the delete route takes it: a query string, since a
 // DELETE carries no body.
 function subtaskQuery(disposition?: SubtaskDisposition): string {
