@@ -52,6 +52,10 @@ export function voiceReplyRequest(input: VoiceReplyInput): LocalAiChatRequest {
       'start, stop, delete, search, look up, remember); anything current (news, weather, ' +
       'prices); anything you are not sure about. Never guess and never promise to do ' +
       'something yourself.',
+    'If you are about to say that you will check, look, open, search, send, note or do ' +
+      'something ("I will look at your calendar", "one moment, I will check"), that is a ' +
+      `hand-over: call ${HAND_OVER_TOOL} instead and write nothing. The agent tells the person ` +
+      'what it found.',
     `When you answer: ${language}, one or two short spoken sentences, no Markdown, no lists, ` +
       'no emojis.',
   ].join('\n\n');
