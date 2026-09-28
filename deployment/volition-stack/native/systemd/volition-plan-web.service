@@ -17,6 +17,9 @@ Environment=NODE_ENV=production
 Environment=PORT=3001
 Environment=HOSTNAME=127.0.0.1
 ExecStart=/usr/local/bin/node server.js
+# Next's server exits with 143 on SIGTERM: a normal stop, not a failure (it used to fill the
+# journal with a "failed" line per deploy, 63 in three days, hiding real ones).
+SuccessExitStatus=143
 Restart=always
 RestartSec=2
 RestartSteps=5
