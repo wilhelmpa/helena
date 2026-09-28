@@ -13,18 +13,22 @@ import { usePermissionCatalogQuery } from '@/services/roles.service';
 import { useInstanceProjectQuery } from '../../services/god.service';
 import { compactCount } from '../../utils/numbers';
 
+import { Box, Inline, Stack, Text } from '@/design-system';
+
 // One number from the project, with a quiet label under it. The counts read as a
 // grid so the size of a project is one glance rather than a list of sentences.
 function Stat({ label, value }: { label: string; value: number }) {
   const t = useTranslations('god.projectPanel');
   return (
-    <div
-      className="rounded-md border border-sidebar-border bg-card px-3 py-2.5"
+    <Box
+      padX={3}
+      padY={3}
+      className="rounded-md border border-sidebar-border bg-card"
       title={t('statTitle', { label, value })}
     >
       <div className="text-xl font-semibold tabular-nums">{compactCount(value)}</div>
       <div className="text-xs text-muted-foreground">{label}</div>
-    </div>
+    </Box>
   );
 }
 
@@ -70,33 +74,48 @@ export default function GodProjectDetailPanel({
         data-slot="sheet-content"
         className="ml-auto flex h-full w-full flex-col border-s border-sidebar-border bg-background sm:w-[680px] sm:max-w-[92vw]"
       >
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-sidebar-border px-4 pt-4 pb-4">
-          <div className="min-w-0 space-y-1.5">
-            <div className="flex min-w-0 items-center gap-2">
-              <span className="shrink-0 rounded-sm bg-secondary px-1.5 py-0.5 text-xs font-medium text-secondary-foreground">
+        <Inline
+          gap={3}
+          align="start"
+          justify="between"
+          padX={4}
+          padTop={4}
+          padBottom={4}
+          className="flex shrink-0 items-start justify-between border-b border-sidebar-border"
+        >
+          <Stack gap={2} className="min-w-0">
+            <Inline gap={2} className="flex min-w-0 items-center">
+              <Box
+                as="span"
+                padX={2}
+                padY={1}
+                className="shrink-0 rounded-sm bg-secondary text-xs font-medium text-secondary-foreground"
+              >
                 {project?.key ?? '…'}
-              </span>
+              </Box>
               <h2 className="truncate text-md font-semibold">
                 {project ? project.name : tCommon('loading')}
               </h2>
-            </div>
+            </Inline>
             {project?.description && (
-              <p className="line-clamp-2 text-xs text-muted-foreground">{project.description}</p>
+              <Text as="p" size="xs" tone="muted" className="line-clamp-2">
+                {project.description}
+              </Text>
             )}
             {project && (
-              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+              <Inline gap={2} wrap padTop={1} className="flex flex-wrap items-center">
                 <Badge
                   variant={project.mcpEnabled ? 'secondary' : 'outline'}
                   className="px-1.5 py-0 text-xs font-medium"
                 >
                   {t(project.mcpEnabled ? 'mcpEnabled' : 'mcpOff')}
                 </Badge>
-                <span className="text-xs text-muted-foreground">
+                <Text as="span" size="xs" tone="muted">
                   {t('created', { date: formatDate(project.createdAt) })}
-                </span>
-              </div>
+                </Text>
+              </Inline>
             )}
-          </div>
+          </Stack>
           <Button
             variant="ghost"
             size="icon"
@@ -106,14 +125,14 @@ export default function GodProjectDetailPanel({
           >
             <X />
           </Button>
-        </div>
+        </Inline>
 
-        <div className="flex-1 space-y-6 overflow-y-auto px-4 py-4">
+        <Stack gap={5} padX={4} padY={4} className="flex-1 overflow-y-auto">
           {!project ? (
             <ListSkeleton rows={5} rowClassName="h-12" />
           ) : (
             <>
-              <section className="space-y-3">
+              <Stack as="section" gap={3}>
                 <div className="text-xs text-muted-foreground">
                   {t('lastActivity', {
                     value: project.lastActivityAt
@@ -126,25 +145,34 @@ export default function GodProjectDetailPanel({
                     <Stat key={s.key} label={t(`stats.${s.key}`)} value={s.count(project)} />
                   ))}
                 </div>
-              </section>
+              </Stack>
 
-              <section className="space-y-3">
-                <div className="flex items-baseline gap-2">
+              <Stack as="section" gap={3}>
+                <Inline gap={2} align="baseline" className="flex items-baseline">
                   <h3 className="text-sm font-medium">{t('members')}</h3>
                   {project.members.length > 0 && (
-                    <span className="text-xs text-muted-foreground">{project.members.length}</span>
+                    <Text as="span" size="xs" tone="muted">
+                      {project.members.length}
+                    </Text>
                   )}
-                </div>
+                </Inline>
                 {project.members.length === 0 ? (
-                  <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-sidebar-border px-4 py-6 text-center">
+                  <Stack
+                    gap={2}
+                    padX={4}
+                    padY={5}
+                    className="flex flex-col items-center rounded-md border border-dashed border-sidebar-border text-center"
+                  >
                     <Users className="size-5 text-muted-foreground" />
-                    <p className="text-sm font-medium">{t('noMembersTitle')}</p>
-                    <p className="max-w-[36ch] text-xs text-muted-foreground">
+                    <Text as="p" size="sm" className="font-medium">
+                      {t('noMembersTitle')}
+                    </Text>
+                    <Text as="p" size="xs" tone="muted" className="max-w-[36ch]">
                       {t('noMembersHint')}
-                    </p>
-                  </div>
+                    </Text>
+                  </Stack>
                 ) : (
-                  <div className="space-y-2">
+                  <Stack gap={2}>
                     {project.members.map((m) => (
                       <MemberAccessCard
                         key={m.userId}
@@ -153,12 +181,12 @@ export default function GodProjectDetailPanel({
                         catalog={catalogQuery.data}
                       />
                     ))}
-                  </div>
+                  </Stack>
                 )}
-              </section>
+              </Stack>
             </>
           )}
-        </div>
+        </Stack>
       </div>
     </div>
   );

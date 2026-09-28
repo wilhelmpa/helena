@@ -18,14 +18,16 @@ import { useProviderList } from '../../hooks/useProviderList';
 import GodUserProjectCard from './GodUserProjectCard';
 import GodUserVerifyButton from './GodUserVerifyButton';
 
+import { Box, Stack, Inline, Text } from '@/design-system';
+
 // One fact in the account grid: a quiet label with the value under it. Reading down
 // a column beats a row of label/value pairs when the values differ in length.
 function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="space-y-1">
+    <Stack gap={1}>
       <div className="text-xs text-muted-foreground">{label}</div>
       <div className="text-sm">{children}</div>
-    </div>
+    </Stack>
   );
 }
 
@@ -79,20 +81,30 @@ export default function GodUserDetailPanel({
         data-slot="sheet-content"
         className="ml-auto flex h-full w-full flex-col border-s border-sidebar-border bg-background sm:w-[680px] sm:max-w-[92vw]"
       >
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-sidebar-border px-4 pt-4 pb-4">
-          <div className="flex min-w-0 items-start gap-3.5">
+        <Inline
+          gap={3}
+          align="start"
+          justify="between"
+          padX={4}
+          padTop={4}
+          padBottom={4}
+          className="flex shrink-0 items-start justify-between border-b border-sidebar-border"
+        >
+          <Inline gap={3} align="start" className="flex min-w-0 items-start">
             <Avatar
               name={user?.name || user?.email || '?'}
               image={user?.image}
               className="size-11 shrink-0 text-sm"
             />
-            <div className="min-w-0 space-y-1.5">
+            <Stack gap={2} className="min-w-0">
               <h2 className="truncate text-md font-semibold">
                 {user ? user.name || user.email : tCommon('loading')}
               </h2>
-              <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
+              <Text as="p" size="xs" tone="muted" className="truncate">
+                {user?.email}
+              </Text>
               {user && (
-                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                <Inline gap={2} wrap padTop={1} className="flex flex-wrap items-center">
                   {user.role === 'god' ? (
                     <Badge className="gap-1">
                       <Shield className="size-3" />
@@ -114,10 +126,10 @@ export default function GodUserDetailPanel({
                       {t('emailVerified')}
                     </Badge>
                   )}
-                </div>
+                </Inline>
               )}
-            </div>
-          </div>
+            </Stack>
+          </Inline>
           <Button
             variant="ghost"
             size="icon"
@@ -127,22 +139,31 @@ export default function GodUserDetailPanel({
           >
             <X />
           </Button>
-        </div>
+        </Inline>
 
-        <div className="flex-1 space-y-6 overflow-y-auto px-4 py-4">
+        <Stack gap={5} padX={4} padY={4} className="flex-1 overflow-y-auto">
           {!user ? (
             <ListSkeleton rows={5} rowClassName="h-12" />
           ) : (
             <>
               {!user.emailVerified && (
-                <div className="flex items-start gap-3 rounded-md border border-sidebar-border bg-card p-4">
+                <Inline
+                  gap={3}
+                  align="start"
+                  pad={4}
+                  className="flex items-start rounded-md border border-sidebar-border bg-card"
+                >
                   <MailWarning className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                  <div className="min-w-0 flex-1 space-y-0.5">
-                    <p className="text-sm font-medium">{t('unconfirmedTitle')}</p>
-                    <p className="text-xs text-muted-foreground">{t('unconfirmedHint')}</p>
-                  </div>
+                  <Stack gap={1} className="min-w-0 flex-1">
+                    <Text as="p" size="sm" className="font-medium">
+                      {t('unconfirmedTitle')}
+                    </Text>
+                    <Text as="p" size="xs" tone="muted">
+                      {t('unconfirmedHint')}
+                    </Text>
+                  </Stack>
                   <GodUserVerifyButton userId={user.id} />
-                </div>
+                </Inline>
               )}
 
               <section className="grid grid-cols-2 gap-x-6 gap-y-5">
@@ -150,12 +171,16 @@ export default function GodUserDetailPanel({
                   {user.providers.length ? (
                     providerList(user.providers)
                   ) : (
-                    <span className="text-muted-foreground">{t('noProviders')}</span>
+                    <Text as="span" tone="muted">
+                      {t('noProviders')}
+                    </Text>
                   )}
                 </Fact>
                 <Fact label={t('projects')}>
                   {user.projectCount === 0 ? (
-                    <span className="text-muted-foreground">{t('noProjects')}</span>
+                    <Text as="span" tone="muted">
+                      {t('noProjects')}
+                    </Text>
                   ) : (
                     user.projectCount
                   )}
@@ -165,28 +190,39 @@ export default function GodUserDetailPanel({
                   {user.lastSeenAt ? (
                     formatDateTime(user.lastSeenAt)
                   ) : (
-                    <span className="text-muted-foreground">{t('neverSignedIn')}</span>
+                    <Text as="span" tone="muted">
+                      {t('neverSignedIn')}
+                    </Text>
                   )}
                 </Fact>
               </section>
 
-              <section className="space-y-3">
-                <div className="flex items-baseline gap-2">
+              <Stack as="section" gap={3}>
+                <Inline gap={2} align="baseline" className="flex items-baseline">
                   <h3 className="text-sm font-medium">{t('projectAccess')}</h3>
                   {user.projects.length > 0 && (
-                    <span className="text-xs text-muted-foreground">{user.projects.length}</span>
+                    <Text as="span" size="xs" tone="muted">
+                      {user.projects.length}
+                    </Text>
                   )}
-                </div>
+                </Inline>
                 {user.projects.length === 0 ? (
-                  <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-sidebar-border px-4 py-6 text-center">
+                  <Stack
+                    gap={2}
+                    padX={4}
+                    padY={5}
+                    className="flex flex-col items-center rounded-md border border-dashed border-sidebar-border text-center"
+                  >
                     <FolderOpen className="size-5 text-muted-foreground" />
-                    <p className="text-sm font-medium">{t('noAccessTitle')}</p>
-                    <p className="max-w-[36ch] text-xs text-muted-foreground">
+                    <Text as="p" size="sm" className="font-medium">
+                      {t('noAccessTitle')}
+                    </Text>
+                    <Text as="p" size="xs" tone="muted" className="max-w-[36ch]">
                       {t('noAccessHint')}
-                    </p>
-                  </div>
+                    </Text>
+                  </Stack>
                 ) : (
-                  <div className="space-y-2">
+                  <Stack gap={2}>
                     {user.projects.map((p) => (
                       <GodUserProjectCard
                         key={p.projectId}
@@ -194,16 +230,24 @@ export default function GodUserDetailPanel({
                         catalog={catalogQuery.data}
                       />
                     ))}
-                  </div>
+                  </Stack>
                 )}
-              </section>
+              </Stack>
             </>
           )}
-        </div>
+        </Stack>
 
         {removable && (
-          <div className="flex shrink-0 items-center justify-between gap-4 border-t border-sidebar-border px-4 py-3">
-            <p className="text-xs text-muted-foreground">{t('deleteHint')}</p>
+          <Inline
+            gap={4}
+            justify="between"
+            padX={4}
+            padY={3}
+            className="flex shrink-0 items-center justify-between border-t border-sidebar-border"
+          >
+            <Text as="p" size="xs" tone="muted">
+              {t('deleteHint')}
+            </Text>
             <Button
               variant="ghost"
               size="sm"
@@ -216,7 +260,7 @@ export default function GodUserDetailPanel({
               <Trash2 />
               {tCommon('delete')}
             </Button>
-          </div>
+          </Inline>
         )}
       </div>
 
@@ -232,56 +276,65 @@ export default function GodUserDetailPanel({
           onConfirm={confirmDelete}
           onClose={() => setConfirming(false)}
         >
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
+          <Stack gap={4}>
+            <Text as="p" size="sm" tone="muted">
               {t.rich('deleteMessage', {
                 name: user.name || user.email,
                 strong: (chunks) => <span className="font-medium text-foreground">{chunks}</span>,
               })}
-            </p>
+            </Text>
 
             {soleOwned.length > 0 && (
-              <div className="space-y-4 rounded-md border border-sidebar-border bg-card p-4">
-                <div className="flex items-start gap-2.5">
+              <Stack gap={4} pad={4} className="rounded-md border border-sidebar-border bg-card">
+                <Inline gap={3} align="start" className="flex items-start">
                   <TriangleAlert className="mt-0.5 size-4 shrink-0 text-destructive" />
-                  <div className="min-w-0 space-y-2">
-                    <p className="text-sm font-medium">
+                  <Stack gap={2} className="min-w-0">
+                    <Text as="p" size="sm" className="font-medium">
                       {t('soleOwnerTitle', { count: soleOwned.length })}
-                    </p>
-                    <div className="flex flex-wrap gap-1">
+                    </Text>
+                    <Inline gap={1} align="stretch" wrap className="flex flex-wrap">
                       {soleOwned.map((p) => (
-                        <span
+                        <Box
+                          as="span"
+                          padX={2}
+                          padY={1}
                           key={p.projectId}
-                          className="rounded-sm bg-secondary px-1.5 py-0.5 text-xs font-medium text-secondary-foreground"
+                          className="rounded-sm bg-secondary text-xs font-medium text-secondary-foreground"
                         >
                           {p.projectKey}
-                        </span>
+                        </Box>
                       ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
+                    </Inline>
+                    <Text as="p" size="xs" tone="muted">
                       {t('soleOwnerHint', { count: soleOwned.length })}
-                    </p>
-                  </div>
-                </div>
+                    </Text>
+                  </Stack>
+                </Inline>
 
-                <label className="flex cursor-pointer items-start gap-2.5 rounded-md bg-background/60 p-3 transition-colors hover:bg-background">
+                <Inline
+                  as="label"
+                  gap={3}
+                  align="start"
+                  pad={3}
+                  className="flex cursor-pointer items-start rounded-md bg-background/60 transition-colors hover:bg-background"
+                >
                   <Checkbox
                     checked={withProjects}
                     onCheckedChange={(v) => setWithProjects(v === true)}
                     className="mt-0.5"
                   />
-                  <span className="space-y-0.5">
-                    <span className="block text-sm">
+                  <Stack as="span" gap={1}>
+                    <Text as="span" size="sm" className="block">
                       {t('deleteWithProjects', { count: soleOwned.length })}
-                    </span>
-                    <span className="block text-xs text-muted-foreground">
+                    </Text>
+                    <Text as="span" size="xs" tone="muted" className="block">
                       {t(withProjects ? 'deleteWithProjectsOn' : 'deleteWithProjectsOff')}
-                    </span>
-                  </span>
-                </label>
-              </div>
+                    </Text>
+                  </Stack>
+                </Inline>
+              </Stack>
             )}
-          </div>
+          </Stack>
         </ConfirmDialog>
       )}
     </div>

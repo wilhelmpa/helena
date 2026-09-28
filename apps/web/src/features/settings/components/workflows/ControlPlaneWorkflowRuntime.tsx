@@ -13,6 +13,8 @@ import { useWorkflowRuns } from '@/services/controlPlaneWorkflows.service';
 import { qk } from '@/services/queryKeys';
 import { revScope } from '@/utils/revScopes';
 
+import { Box, Stack, Inline, Text } from '@/design-system';
+
 function scrollIntoView(element: HTMLElement | null) {
   element?.scrollIntoView({ block: 'center' });
 }
@@ -48,40 +50,50 @@ export default function ControlPlaneWorkflowRuntime({
   });
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
+    <Stack gap={4}>
+      <Stack gap={2}>
         <h4 className="text-xs font-medium text-muted-foreground">{t('graph')}</h4>
         <ol className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
           {workflow.steps.map((step, index) => (
-            <li key={step.id} className="rounded-md border bg-background p-3">
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <span className="grid size-5 place-items-center rounded-full bg-accent text-xs">
+            <Box as="li" pad={3} key={step.id} className="rounded-md border bg-background">
+              <Inline gap={2} className="flex items-center text-sm font-medium">
+                <Text
+                  as="span"
+                  size="xs"
+                  className="grid size-5 place-items-center rounded-full bg-accent"
+                >
                   {index + 1}
-                </span>
+                </Text>
                 {text(`${step.id}.title`, step.title)}
                 {index < workflow.steps.length - 1 && (
                   <ChevronRight className="ms-auto size-4 text-muted-foreground rtl:rotate-180" />
                 )}
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {text(`${step.id}.description`, step.description)}
-              </p>
-            </li>
+              </Inline>
+              <Box as="p" marginTop={1}>
+                <Text as="span" size="xs" tone="muted">
+                  {text(`${step.id}.description`, step.description)}
+                </Text>
+              </Box>
+            </Box>
           ))}
         </ol>
-      </div>
+      </Stack>
 
-      <div className="space-y-2">
+      <Stack gap={2}>
         <h4 className="text-xs font-medium text-muted-foreground">{t('recentRuns')}</h4>
         {runs.isPending ? (
           <ListSkeleton rows={2} rowClassName="h-24" />
         ) : runs.isError ? (
-          <p className="text-sm text-destructive">{t('runsUnavailable')}</p>
+          <Text as="p" size="sm" tone="danger">
+            {t('runsUnavailable')}
+          </Text>
         ) : runs.data.items.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t('noRuns')}</p>
+          <Text as="p" size="sm" tone="muted">
+            {t('noRuns')}
+          </Text>
         ) : (
           <>
-            <div className="space-y-3">
+            <Stack gap={3}>
               {runs.data.items.map((run) => (
                 <div
                   key={run.id}
@@ -91,11 +103,11 @@ export default function ControlPlaneWorkflowRuntime({
                   <PipelineRunTimeline run={run} canEdit={editable} showIssue />
                 </div>
               ))}
-            </div>
+            </Stack>
             <ListPager paging={paging} total={runs.data.total} />
           </>
         )}
-      </div>
-    </div>
+      </Stack>
+    </Stack>
   );
 }

@@ -13,6 +13,8 @@ import GodScimTokenDialog from './GodScimTokenDialog';
 import GodScimGroupList from './GodScimGroupList';
 import { useUpdateInstanceScimSettings } from '../../services/god.service';
 
+import { Stack, Inline, Text } from '@/design-system';
+
 // The endpoint and the token go into the identity provider; the groups it then
 // pushes appear below, where the owner says what each one grants.
 export default function GodScimSettings({ settings }: { settings: InstanceScimSettings }) {
@@ -30,7 +32,7 @@ export default function GodScimSettings({ settings }: { settings: InstanceScimSe
   }
 
   return (
-    <div className="space-y-6">
+    <Stack gap={5}>
       <SettingsSection
         title={t('provisioning')}
         description={t(settings.hasToken ? 'provisioningConfigured' : 'provisioningMissing')}
@@ -42,38 +44,47 @@ export default function GodScimSettings({ settings }: { settings: InstanceScimSe
           />
         }
       >
-        <SettingsCard className="space-y-4 p-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0 space-y-1">
-              <div className="text-sm font-medium">{t('token')}</div>
-              <p className="font-mono text-xs">
-                {settings.hasToken ? `${settings.tokenPrefix}…` : t('noToken')}
-              </p>
-              <p className="text-xs text-muted-foreground">{t('tokenHint')}</p>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="shrink-0"
-              onClick={() => setGenerating(true)}
+        <SettingsCard>
+          <Stack gap={4} pad={4}>
+            <Inline
+              gap={4}
+              align="start"
+              justify="between"
+              className="flex items-start justify-between"
             >
-              {settings.hasToken ? t('replaceToken') : t('generateToken')}
-            </Button>
-          </div>
+              <Stack gap={1} className="min-w-0">
+                <div className="text-sm font-medium">{t('token')}</div>
+                <Text as="p" size="xs" className="font-mono">
+                  {settings.hasToken ? `${settings.tokenPrefix}…` : t('noToken')}
+                </Text>
+                <Text as="p" size="xs" tone="muted">
+                  {t('tokenHint')}
+                </Text>
+              </Stack>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                onClick={() => setGenerating(true)}
+              >
+                {settings.hasToken ? t('replaceToken') : t('generateToken')}
+              </Button>
+            </Inline>
 
-          <CopyableValue
-            title={t('baseUrl')}
-            value={settings.baseUrl}
-            hint={t('baseUrlHint')}
-            copyLabel={t('copyBaseUrl')}
-          />
+            <CopyableValue
+              title={t('baseUrl')}
+              value={settings.baseUrl}
+              hint={t('baseUrlHint')}
+              copyLabel={t('copyBaseUrl')}
+            />
+          </Stack>
         </SettingsCard>
       </SettingsSection>
 
       <GodScimGroupList />
 
       {generating && <GodScimTokenDialog onClose={() => setGenerating(false)} />}
-    </div>
+    </Stack>
   );
 }

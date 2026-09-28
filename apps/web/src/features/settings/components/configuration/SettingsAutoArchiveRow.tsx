@@ -3,6 +3,8 @@ import SettingsRow from '@/components/common/page/SettingsRow';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 
+import { Inline, Text } from '@/design-system';
+
 // One state group's auto-archive threshold: the switch that turns archiving on for
 // the group and the day count it waits. The day count stays visible while the group
 // is off, disabled, so the stored value is still readable.
@@ -30,7 +32,7 @@ export default function SettingsAutoArchiveRow({
       title={title}
       description={description}
       control={
-        <div className="flex shrink-0 items-center gap-3">
+        <Inline gap={3} className="flex shrink-0 items-center">
           <Input
             type="number"
             min={1}
@@ -40,9 +42,11 @@ export default function SettingsAutoArchiveRow({
             className="h-8 w-20"
             aria-label={`${title}: ${t('days')}`}
           />
-          <span className="text-xs text-muted-foreground">{t('days')}</span>
+          <Text as="span" size="xs" tone="muted">
+            {t('days')}
+          </Text>
           <Switch aria-label={title} checked={on} onCheckedChange={onToggle} disabled={!editable} />
-        </div>
+        </Inline>
       }
     />
   );

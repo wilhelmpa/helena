@@ -3,6 +3,8 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
+import { Inline } from '@/design-system';
+
 export function SettingsInlineForm({
   name,
   onNameChange,
@@ -25,7 +27,7 @@ export function SettingsInlineForm({
   const t = useTranslations('common');
 
   return (
-    <div className="flex items-center gap-2.5 rounded-md bg-muted/40 p-2">
+    <Inline gap={3} pad={2} className="flex items-center rounded-md bg-muted/40">
       {leading}
       <Input
         autoFocus
@@ -45,6 +47,6 @@ export function SettingsInlineForm({
       <Button size="sm" className="h-8" disabled={!name.trim()} onClick={onSubmit}>
         {submitLabel}
       </Button>
-    </div>
+    </Inline>
   );
 }

@@ -21,6 +21,8 @@ import {
 import { BrowserControlSection } from '@/features/browser-lab/components/BrowserControlSection';
 import DomainListField from './DomainListField';
 
+import { Stack, Inline, Text } from '@/design-system';
+
 // The browser gateway settings tab (design volition-design-browser-gateway.md §8, "Projekt
 // → Einstellungen → Browser"): the domain blocklist and optional allowlist a project's
 // agents may navigate to, whether typing and clicking use human-like timing, and the
@@ -81,28 +83,30 @@ export default function SettingsBrowserGateway({ project }: { project: ProjectDe
   };
 
   return (
-    <div className="space-y-6">
+    <Stack gap={5}>
       <BrowserControlSection projectKey={projectKey} editable={editable} />
       <SettingsSection title={t('accessTitle')} description={t('accessHint')}>
-        <SettingsCard className="space-y-5 p-4">
-          <DomainListField
-            id="browser-gateway-blocklist"
-            label={t('blocklistLabel')}
-            domains={settings.domainBlocklist}
-            onChange={(domainBlocklist) => updateSettings.mutate({ domainBlocklist })}
-            disabled={!editable}
-            max={MAX_BROWSER_GATEWAY_DOMAINS}
-            hint={t('blocklistHint')}
-          />
-          <DomainListField
-            id="browser-gateway-allowlist"
-            label={t('allowlistLabel')}
-            domains={settings.domainAllowlist}
-            onChange={(domainAllowlist) => updateSettings.mutate({ domainAllowlist })}
-            disabled={!editable}
-            max={MAX_BROWSER_GATEWAY_DOMAINS}
-            hint={t('allowlistHint')}
-          />
+        <SettingsCard>
+          <Stack gap={5} pad={4}>
+            <DomainListField
+              id="browser-gateway-blocklist"
+              label={t('blocklistLabel')}
+              domains={settings.domainBlocklist}
+              onChange={(domainBlocklist) => updateSettings.mutate({ domainBlocklist })}
+              disabled={!editable}
+              max={MAX_BROWSER_GATEWAY_DOMAINS}
+              hint={t('blocklistHint')}
+            />
+            <DomainListField
+              id="browser-gateway-allowlist"
+              label={t('allowlistLabel')}
+              domains={settings.domainAllowlist}
+              onChange={(domainAllowlist) => updateSettings.mutate({ domainAllowlist })}
+              disabled={!editable}
+              max={MAX_BROWSER_GATEWAY_DOMAINS}
+              hint={t('allowlistHint')}
+            />
+          </Stack>
         </SettingsCard>
       </SettingsSection>
 
@@ -136,7 +140,7 @@ export default function SettingsBrowserGateway({ project }: { project: ProjectDe
             title={t('lockTimeoutLabel')}
             description={t('lockTimeoutHint')}
             control={
-              <div className="flex shrink-0 items-center gap-2">
+              <Inline gap={2} className="flex shrink-0 items-center">
                 <Input
                   type="number"
                   min={MIN_BROWSER_GATEWAY_LOCK_TIMEOUT_SEC}
@@ -150,18 +154,24 @@ export default function SettingsBrowserGateway({ project }: { project: ProjectDe
                   }}
                   className="h-8 w-24"
                 />
-                <span className="text-xs text-muted-foreground">{t('seconds')}</span>
-              </div>
+                <Text as="span" size="xs" tone="muted">
+                  {t('seconds')}
+                </Text>
+              </Inline>
             }
           />
           <SettingsRow
             title={t('viewportLabel')}
             description={t('viewportHint')}
             control={
-              <div className="flex shrink-0 items-center gap-1.5">
+              <Inline gap={2} className="flex shrink-0 items-center">
                 {(['width', 'height'] as const).map((side, index) => (
-                  <span key={side} className="flex items-center gap-1.5">
-                    {index === 1 && <span className="text-xs text-muted-foreground">×</span>}
+                  <Inline as="span" gap={2} key={side} className="flex items-center">
+                    {index === 1 && (
+                      <Text as="span" size="xs" tone="muted">
+                        ×
+                      </Text>
+                    )}
                     <Input
                       type="number"
                       aria-label={t(side === 'width' ? 'viewportWidth' : 'viewportHeight')}
@@ -186,14 +196,16 @@ export default function SettingsBrowserGateway({ project }: { project: ProjectDe
                       }}
                       className="h-8 w-20"
                     />
-                  </span>
+                  </Inline>
                 ))}
-                <span className="text-xs text-muted-foreground">{t('pixels')}</span>
-              </div>
+                <Text as="span" size="xs" tone="muted">
+                  {t('pixels')}
+                </Text>
+              </Inline>
             }
           />
         </SettingsCard>
       </SettingsSection>
-    </div>
+    </Stack>
   );
 }

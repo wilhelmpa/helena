@@ -4,6 +4,8 @@ import { useTranslations } from 'next-intl';
 import { AGENT_NETWORK_MODES, type AgentNetworkMode } from '@/lib/api/endpoints/agentNetwork';
 import { cn } from '@/lib/utils';
 
+import { Stack, Text } from '@/design-system';
+
 // Picks how the project's isolated agents reach the internet: every public
 // destination but the deny list, or only the ones on the allow list (the deny list
 // still applies either way). Renders bare rows — the caller wraps them in a
@@ -48,12 +50,14 @@ export default function AgentNetworkModePicker({
             >
               {active && <Check className="size-3" />}
             </span>
-            <span className="space-y-0.5">
-              <span className="block text-sm font-medium">{t(`${mode}.label`)}</span>
-              <span className="block text-xs text-muted-foreground">
+            <Stack as="span" gap={1}>
+              <Text as="span" size="sm" className="block font-medium">
+                {t(`${mode}.label`)}
+              </Text>
+              <Text as="span" size="xs" tone="muted" className="block">
                 {t(`${mode}.description`)}
-              </span>
-            </span>
+              </Text>
+            </Stack>
           </RadioGroupPrimitive.Item>
         );
       })}

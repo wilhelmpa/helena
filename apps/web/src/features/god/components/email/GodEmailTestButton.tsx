@@ -3,6 +3,8 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import type { GodEmailForm } from '../../hooks/useGodEmailForm';
 
+import { Inline, Text } from '@/design-system';
+
 export default function GodEmailTestButton({ form }: { form: GodEmailForm }) {
   const t = useTranslations('god.email');
 
@@ -16,10 +18,16 @@ export default function GodEmailTestButton({ form }: { form: GodEmailForm }) {
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
-      <p className="text-xs text-muted-foreground">
+    <Inline
+      gap={3}
+      justify="between"
+      wrap
+      padTop={4}
+      className="flex flex-wrap items-center justify-between border-t"
+    >
+      <Text as="p" size="xs" tone="muted">
         {form.testable ? t('testHint') : t('testConfigureFirst')}
-      </p>
+      </Text>
       <Button
         type="button"
         variant="outline"
@@ -28,6 +36,6 @@ export default function GodEmailTestButton({ form }: { form: GodEmailForm }) {
       >
         {form.testing ? t('testing') : t('test')}
       </Button>
-    </div>
+    </Inline>
   );
 }

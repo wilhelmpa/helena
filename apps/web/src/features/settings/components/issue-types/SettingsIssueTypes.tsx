@@ -27,6 +27,8 @@ import {
   useUpdateIssueType,
 } from '../../services/settings.service';
 
+import { Box, Inline, Stack, Text } from '@/design-system';
+
 // The project's issue types. Adding is opened from the page header (the `adding`
 // flag is lifted to the page); the add form itself is inline in this list.
 export default function SettingsIssueTypes({
@@ -89,12 +91,12 @@ export default function SettingsIssueTypes({
   // The "Default" checkbox shown in the add/edit form; `id` keeps the label's
   // htmlFor unique per row.
   const defaultToggle = (id: string) => (
-    <div className="flex items-center gap-1.5">
+    <Inline gap={2} className="flex items-center">
       <Checkbox id={id} checked={isDefault} onCheckedChange={(v) => setIsDefault(v === true)} />
       <Label htmlFor={id} className="text-xs whitespace-nowrap text-muted-foreground">
         {t('default')}
       </Label>
-    </div>
+    </Inline>
   );
 
   // While there are no types and none is being added, the empty state replaces the
@@ -125,7 +127,7 @@ export default function SettingsIssueTypes({
   );
 
   return (
-    <div className="space-y-4">
+    <Stack gap={4}>
       <div className="overflow-hidden rounded-md border bg-card">
         <Table className="table-fixed md:min-w-[640px]">
           <colgroup>
@@ -162,21 +164,28 @@ export default function SettingsIssueTypes({
               ) : (
                 <TableRow key={type.id} className="group/item">
                   <TableCell className="px-3 py-3 align-middle">
-                    <div className="flex min-w-0 items-center gap-2">
+                    <Inline gap={2} className="flex min-w-0 items-center">
                       {colorDot(type.color)}
-                      <span className="truncate text-sm font-medium">{type.name}</span>
+                      <Text as="span" size="sm" className="truncate font-medium">
+                        {type.name}
+                      </Text>
                       {type.isDefault && (
-                        <span className="rounded-sm bg-secondary px-1.5 py-0.5 text-xs font-medium text-secondary-foreground">
+                        <Box
+                          as="span"
+                          padX={2}
+                          padY={1}
+                          className="rounded-sm bg-secondary text-xs font-medium text-secondary-foreground"
+                        >
                           {t('default')}
-                        </span>
+                        </Box>
                       )}
-                    </div>
+                    </Inline>
                   </TableCell>
                   <TableCell className="px-3 py-3 align-middle text-sm text-muted-foreground tabular-nums">
                     {t('issueCount', { count: issueCount(type.id) })}
                   </TableCell>
                   <TableCell className="px-3 py-2 align-middle">
-                    <div className="flex items-center justify-end gap-1">
+                    <Inline gap={1} justify="end" className="flex items-center justify-end">
                       {can('edit') && (
                         <Button
                           variant="ghost"
@@ -201,7 +210,7 @@ export default function SettingsIssueTypes({
                           <Trash2 className="size-4" />
                         </Button>
                       )}
-                    </div>
+                    </Inline>
                   </TableCell>
                 </TableRow>
               ),
@@ -234,6 +243,6 @@ export default function SettingsIssueTypes({
           }}
         />
       )}
-    </div>
+    </Stack>
   );
 }

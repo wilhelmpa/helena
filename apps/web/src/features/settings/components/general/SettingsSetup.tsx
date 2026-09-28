@@ -10,6 +10,8 @@ import {
 } from '../../services/settings.service';
 import SettingsSetupJobRow from './SettingsSetupJobRow';
 
+import { Box, Text } from '@/design-system';
+
 // The Setup block of the General page: the state of the job that sets the project's
 // resources up, and of the cleanup of an earlier deleted project with the same key.
 // The provisioning retry is open to whoever governs the project, the cleanup retry
@@ -27,7 +29,11 @@ export default function SettingsSetup({ project }: { project: ProjectDetail }) {
     <SettingsSection title={t('title')} description={t('description')}>
       <SettingsCard className="divide-y divide-border/60">
         {setup.isError ? (
-          <p className="p-4 text-xs text-destructive">{t('unavailable')}</p>
+          <Box as="p" pad={4}>
+            <Text as="span" size="xs" tone="danger">
+              {t('unavailable')}
+            </Text>
+          </Box>
         ) : setup.data ? (
           <>
             <SettingsSetupJobRow
@@ -50,7 +56,11 @@ export default function SettingsSetup({ project }: { project: ProjectDetail }) {
             )}
           </>
         ) : (
-          <p className="p-4 text-xs text-muted-foreground">{t('loading')}</p>
+          <Box as="p" pad={4}>
+            <Text as="span" size="xs" tone="muted">
+              {t('loading')}
+            </Text>
+          </Box>
         )}
       </SettingsCard>
     </SettingsSection>

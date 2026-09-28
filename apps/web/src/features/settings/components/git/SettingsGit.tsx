@@ -12,6 +12,8 @@ import GitProviderConnections from './GitProviderConnections';
 import GitRepositoryList from './GitRepositoryList';
 import SettingsSection from '@/components/common/page/SettingsSection';
 
+import { Stack } from '@/design-system';
+
 // The repository integration tab: a master switch, and — while it is on — the
 // webhook connection and the pull request automations. Every control writes
 // immediately; there is no form-level save.
@@ -28,7 +30,7 @@ export default function SettingsGit({ project }: { project: ProjectDetail }) {
   const settings = settingsQuery.data;
   const editable = can('integrations', 'edit');
   return (
-    <div className="space-y-6">
+    <Stack gap={5}>
       <SettingsCard>
         <SettingsRow
           title={t('enable')}
@@ -59,6 +61,6 @@ export default function SettingsGit({ project }: { project: ProjectDetail }) {
           </SettingsSection>
         </>
       )}
-    </div>
+    </Stack>
   );
 }

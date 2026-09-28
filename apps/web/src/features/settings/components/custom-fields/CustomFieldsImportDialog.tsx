@@ -11,6 +11,8 @@ import { useCreateCustomField, useCreateIssueType } from '../../services/setting
 import { useFieldTypeLabel } from '../../utils/fieldTypes';
 import type { CustomFieldsImportPlan } from '../../utils/customFieldsTransfer';
 
+import { Stack, Text, Inline } from '@/design-system';
+
 // Confirms a custom fields paste before applying it. Lists any issue types that will be
 // created for scoped fields and each field with its target scope and whether it is new
 // or skipped (a same-name field already exists there). On confirm, missing types are
@@ -75,8 +77,8 @@ export default function CustomFieldsImportDialog({
 
   return (
     <Modal title={t('importTitle')} onClose={onClose} wide>
-      <div className="space-y-4">
-        <p className="text-xs text-muted-foreground">
+      <Stack gap={4}>
+        <Text as="p" size="xs" tone="muted">
           {plan.newTypeNames.length > 0
             ? t('importSummaryWithTypes', {
                 count: toCreate.length,
@@ -84,38 +86,43 @@ export default function CustomFieldsImportDialog({
                 names: plan.newTypeNames.join(', '),
               })
             : t('importSummary', { count: toCreate.length })}
-        </p>
+        </Text>
         <div className="max-h-[50vh] divide-y divide-border/60 overflow-y-auto rounded-md border border-border/60">
           {plan.fields.map((field) => (
-            <div
+            <Inline
+              gap={3}
+              padX={3}
+              padY={3}
               key={`${field.type ?? 'global'}:${field.name}`}
-              className="flex items-center gap-3 px-3 py-2.5"
+              className="flex items-center"
             >
-              <span className="min-w-0 flex-1 truncate text-sm font-medium">{field.name}</span>
-              <span className="shrink-0 text-xs text-muted-foreground">
+              <Text as="span" size="sm" className="min-w-0 flex-1 truncate font-medium">
+                {field.name}
+              </Text>
+              <Text as="span" size="xs" tone="muted" className="shrink-0">
                 {fieldTypeLabel(field.fieldType)}
-              </span>
-              <span className="w-28 shrink-0 truncate text-right text-xs text-muted-foreground">
+              </Text>
+              <Text as="span" size="xs" tone="muted" className="w-28 shrink-0 truncate text-right">
                 {field.type ?? t('globalShort')}
-              </span>
+              </Text>
               <Badge
                 variant={field.action === 'skip' ? 'outline' : 'secondary'}
                 className="w-14 shrink-0 justify-center px-1.5 py-0 text-xs font-normal"
               >
                 {t(field.action === 'create' ? 'actionNew' : 'actionExists')}
               </Badge>
-            </div>
+            </Inline>
           ))}
         </div>
-        <div className="flex justify-end gap-2">
+        <Inline gap={2} align="stretch" justify="end" className="flex justify-end">
           <Button variant="outline" onClick={onClose} disabled={busy}>
             {tCommon('cancel')}
           </Button>
           <Button onClick={apply} disabled={busy || toCreate.length === 0}>
             {t('importApply', { count: toCreate.length })}
           </Button>
-        </div>
-      </div>
+        </Inline>
+      </Stack>
     </Modal>
   );
 }

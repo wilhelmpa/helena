@@ -26,6 +26,8 @@ import {
 import { SettingsLabelGroupSection } from './SettingsLabelGroupSection';
 import { SettingsLabelsAddMenu } from './SettingsLabelsAddMenu';
 
+import { Box, Stack, Inline } from '@/design-system';
+
 // A tree of labels: each group is a collapsible node holding its labels, and
 // ungrouped labels sit directly at the root alongside the groups. A group's header
 // adds labels into that group; the "Add" action below the list adds a group or an
@@ -173,9 +175,9 @@ export default function SettingsLabels({ project }: { project: ProjectDetail }) 
   function renderLabelRow(l: LabelRow) {
     if (labelForm?.mode === 'edit' && labelForm.id === l.id) {
       return (
-        <div key={l.id} className="px-3 py-1">
+        <Box padX={3} padY={1} key={l.id}>
           {labelFormEl}
-        </div>
+        </Box>
       );
     }
     const count = issueCount(l.id);
@@ -204,7 +206,7 @@ export default function SettingsLabels({ project }: { project: ProjectDetail }) 
   );
 
   return (
-    <div className="space-y-3">
+    <Stack gap={3}>
       <DndContext
         sensors={sensors}
         onDragStart={(e) => setActiveId(Number(e.active.id))}
@@ -233,7 +235,11 @@ export default function SettingsLabels({ project }: { project: ProjectDetail }) 
                 onDeleteGroup={() => setDeletingGroup(g)}
               >
                 {labels.map((l) => renderLabelRow(l))}
-                {addingHere && <div className="px-3 py-1">{labelFormEl}</div>}
+                {addingHere && (
+                  <Box padX={3} padY={1}>
+                    {labelFormEl}
+                  </Box>
+                )}
               </SettingsLabelGroupSection>
             );
           })}
@@ -249,21 +255,30 @@ export default function SettingsLabels({ project }: { project: ProjectDetail }) 
             onAddLabel={() => openLabelAdd(null, 'ungrouped')}
           >
             {ungroupedLabels.map((l) => renderLabelRow(l))}
-            {addingUngrouped && <div className="px-3 py-1">{labelFormEl}</div>}
+            {addingUngrouped && (
+              <Box padX={3} padY={1}>
+                {labelFormEl}
+              </Box>
+            )}
           </SettingsLabelGroupSection>
         </div>
 
         <DragOverlay>
           {activeLabel ? (
-            <div className="flex items-center gap-1.5 rounded-md bg-popover px-2 py-1 text-sm shadow-lg">
+            <Inline
+              gap={2}
+              padX={2}
+              padY={1}
+              className="flex items-center rounded-md bg-popover text-sm shadow-lg"
+            >
               {colorDot(activeLabel.color)}
               {activeLabel.name}
-            </div>
+            </Inline>
           ) : null}
         </DragOverlay>
       </DndContext>
 
-      {groupForm?.mode === 'add' && <div className="pt-1">{groupFormEl}</div>}
+      {groupForm?.mode === 'add' && <Box padTop={1}>{groupFormEl}</Box>}
 
       {can('create') && (
         <SettingsLabelsAddMenu
@@ -296,6 +311,6 @@ export default function SettingsLabels({ project }: { project: ProjectDetail }) 
           }}
         />
       )}
-    </div>
+    </Stack>
   );
 }

@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
+import { Box, Text } from '@/design-system';
+
 export default function SettingsNetworkLogRow({ event }: { event: AgentNetworkEvent }) {
   const t = useTranslations('settings.network');
   const relativeTime = useRelativeTime();
@@ -35,9 +37,11 @@ export default function SettingsNetworkLogRow({ event }: { event: AgentNetworkEv
           {byKey(t)(`decisions.${event.decision}`)}
         </Badge>
         {event.decision === 'blocked' && event.reason && (
-          <p className="mt-1 text-xs text-muted-foreground">
-            {byKey(t)(`reasons.${event.reason}`)}
-          </p>
+          <Box as="p" marginTop={1}>
+            <Text as="span" size="xs" tone="muted">
+              {byKey(t)(`reasons.${event.reason}`)}
+            </Text>
+          </Box>
         )}
       </TableCell>
       <TableCell className="px-3 py-2 text-end text-sm tabular-nums">{event.connections}</TableCell>

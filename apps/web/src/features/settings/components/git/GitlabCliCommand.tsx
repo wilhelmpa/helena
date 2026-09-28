@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { gitlabWebhookCommand } from './gitlabCommand';
 import { copyText } from '@/utils/clipboard';
 
+import { Box, Stack, Text } from '@/design-system';
+
 export default function GitlabCliCommand({
   payloadUrl,
   secret,
@@ -22,9 +24,9 @@ export default function GitlabCliCommand({
   }
 
   return (
-    <div className="space-y-1.5">
+    <Stack gap={2}>
       <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">
+        <Text as="p" size="xs" tone="muted">
           {t.rich('gitlabCliHint', {
             link: (chunks) => (
               <a
@@ -37,14 +39,19 @@ export default function GitlabCliCommand({
               </a>
             ),
           })}
-        </p>
+        </Text>
         <Button variant="outline" size="sm" onClick={() => void copy()}>
           {tCommon('copy')}
         </Button>
       </div>
-      <pre className="overflow-x-auto rounded-md bg-muted px-3 py-2 font-mono text-xs whitespace-pre">
+      <Box
+        as="pre"
+        padX={3}
+        padY={2}
+        className="overflow-x-auto rounded-md bg-muted font-mono text-xs whitespace-pre"
+      >
         {preview}
-      </pre>
-    </div>
+      </Box>
+    </Stack>
   );
 }

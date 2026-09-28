@@ -1671,42 +1671,12 @@
       "count": 2
     }
   },
-  "src/features/god/components/GodAboutSection.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 4
-    }
-  },
-  "src/features/god/components/GodEngineSettings.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 1
-    }
-  },
-  "src/features/god/components/GodGeneralForm.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 1
-    }
-  },
-  "src/features/god/components/GodSectionPage.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 1
-    }
-  },
-  "src/features/god/components/auth-provider/GodAuthProviderForm.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 1
-    }
-  },
   "src/features/god/components/auth-provider/GodGoogleSettings.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 5
+      "count": 1
     }
   },
   "src/features/god/components/auth-provider/GodOidcSettings.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 11
-    }
-  },
-  "src/features/god/components/authentication/GodAuthenticationForm.tsx": {
     "better-tailwindcss/no-restricted-classes": {
       "count": 1
     }
@@ -1716,27 +1686,17 @@
       "count": 1
     },
     "better-tailwindcss/no-restricted-classes": {
-      "count": 6
+      "count": 3
     }
   },
   "src/features/god/components/email/GodEmailProviderSection.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 12
-    }
-  },
-  "src/features/god/components/email/GodEmailSettings.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
       "count": 1
-    }
-  },
-  "src/features/god/components/email/GodEmailTestButton.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 3
     }
   },
   "src/features/god/components/model-prices/ModelPriceDialog.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 6
+      "count": 3
     }
   },
   "src/features/god/components/projects/GodProjectDetailPanel.tsx": {
@@ -1744,7 +1704,7 @@
       "count": 1
     },
     "better-tailwindcss/no-restricted-classes": {
-      "count": 43
+      "count": 16
     },
     "jsx-a11y/click-events-have-key-events": {
       "count": 1
@@ -1758,7 +1718,7 @@
       "count": 2
     },
     "better-tailwindcss/no-restricted-classes": {
-      "count": 49
+      "count": 41
     }
   },
   "src/features/god/components/scim/GodScimGroupItem.tsx": {
@@ -1766,34 +1726,24 @@
       "count": 1
     }
   },
-  "src/features/god/components/scim/GodScimGroupList.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 4
-    }
-  },
-  "src/features/god/components/scim/GodScimGroupMappingDialog.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 6
-    }
-  },
   "src/features/god/components/scim/GodScimMappingRow.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 4
+      "count": 3
     }
   },
   "src/features/god/components/scim/GodScimSettings.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 8
+      "count": 1
     }
   },
   "src/features/god/components/scim/GodScimTokenDialog.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 7
+      "count": 1
     }
   },
   "src/features/god/components/security/GodSecurityAuditList.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 6
+      "count": 1
     }
   },
   "src/features/god/components/teams/GodTeamDetailPanel.tsx": {
@@ -1801,7 +1751,7 @@
       "count": 1
     },
     "better-tailwindcss/no-restricted-classes": {
-      "count": 22
+      "count": 10
     },
     "jsx-a11y/click-events-have-key-events": {
       "count": 1
@@ -1812,12 +1762,12 @@
   },
   "src/features/god/components/teams/GodTeamMembers.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 16
+      "count": 6
     }
   },
   "src/features/god/components/teams/GodTeamProjects.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 18
+      "count": 7
     }
   },
   "src/features/god/components/teams/GodTeamsTable.tsx": {
@@ -1825,7 +1775,7 @@
       "count": 2
     },
     "better-tailwindcss/no-restricted-classes": {
-      "count": 37
+      "count": 36
     }
   },
   "src/features/god/components/users/GodUserDetailPanel.tsx": {
@@ -1833,12 +1783,9 @@
       "count": 1
     },
     "better-tailwindcss/no-restricted-classes": {
-      "count": 77
+      "count": 30
     },
     "jsx-a11y/click-events-have-key-events": {
-      "count": 1
-    },
-    "jsx-a11y/label-has-associated-control": {
       "count": 1
     },
     "jsx-a11y/no-static-element-interactions": {
@@ -1847,7 +1794,7 @@
   },
   "src/features/god/components/users/GodUserProjectCard.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 9
+      "count": 5
     }
   },
   "src/features/god/components/users/GodUsersTable.tsx": {
@@ -1855,7 +1802,7 @@
       "count": 2
     },
     "better-tailwindcss/no-restricted-classes": {
-      "count": 56
+      "count": 49
     }
   },
   "src/features/home/components/HomeTaskPeople.tsx": {
@@ -4013,7 +3960,7 @@
   },
   "src/features/settings/components/actions/SettingsActionDialog.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 14
+      "count": 3
     },
     "jsx-a11y/no-autofocus": {
       "count": 1
@@ -4021,7 +3968,7 @@
   },
   "src/features/settings/components/actions/SettingsActionIconPicker.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 6
+      "count": 4
     },
     "jsx-a11y/no-autofocus": {
       "count": 1
@@ -4035,7 +3982,7 @@
   },
   "src/features/settings/components/actions/SettingsActionRow.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 26
+      "count": 15
     },
     "react-hooks/static-components": {
       "count": 1
@@ -4043,13 +3990,10 @@
   },
   "src/features/settings/components/actions/SettingsActionRuns.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 30
+      "count": 23
     }
   },
   "src/features/settings/components/actions/SettingsActions.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 1
-    },
     "react-hooks/set-state-in-effect": {
       "count": 1
     }
@@ -4064,7 +4008,7 @@
       "count": 1
     },
     "better-tailwindcss/no-restricted-classes": {
-      "count": 15
+      "count": 14
     },
     "no-restricted-imports": {
       "count": 1
@@ -4072,25 +4016,17 @@
   },
   "src/features/settings/components/actions/WorkflowGraphEditor.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 18
+      "count": 6
     }
   },
   "src/features/settings/components/browser/DomainListField.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 16
+      "count": 9
     }
   },
   "src/features/settings/components/browser/SettingsBrowserGateway.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 9
-    },
     "react-hooks/set-state-in-effect": {
       "count": 1
-    }
-  },
-  "src/features/settings/components/configuration/SettingsAutoArchiveRow.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 2
     }
   },
   "src/features/settings/components/crud/SettingsConfirmDeleteDialog.tsx": {
@@ -4105,20 +4041,17 @@
   },
   "src/features/settings/components/crud/SettingsEmpty.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 7
+      "count": 5
     }
   },
   "src/features/settings/components/crud/SettingsInlineEditForm.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 3
-    },
     "jsx-a11y/no-autofocus": {
       "count": 1
     }
   },
   "src/features/settings/components/crud/SettingsInlineForm.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 3
+      "count": 1
     },
     "jsx-a11y/no-autofocus": {
       "count": 1
@@ -4126,12 +4059,12 @@
   },
   "src/features/settings/components/crud/SettingsRow.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 2
+      "count": 1
     }
   },
   "src/features/settings/components/crud/SettingsWipLimitField.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 10
+      "count": 5
     },
     "no-restricted-imports": {
       "count": 1
@@ -4139,12 +4072,7 @@
   },
   "src/features/settings/components/custom-fields/CustomFieldMeta.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 6
-    }
-  },
-  "src/features/settings/components/custom-fields/CustomFieldsCopyDialog.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 3
+      "count": 2
     }
   },
   "src/features/settings/components/custom-fields/CustomFieldsImportDialog.tsx": {
@@ -4152,7 +4080,7 @@
       "count": 1
     },
     "better-tailwindcss/no-restricted-classes": {
-      "count": 14
+      "count": 5
     }
   },
   "src/features/settings/components/custom-fields/CustomFieldsToolbar.tsx": {
@@ -4165,20 +4093,12 @@
   },
   "src/features/settings/components/custom-fields/FieldChangeWarning.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 6
-    }
-  },
-  "src/features/settings/components/custom-fields/FieldOptionsEditor.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 4
+      "count": 2
     }
   },
   "src/features/settings/components/custom-fields/SettingsCustomFieldDialog.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 18
-    },
-    "jsx-a11y/label-has-associated-control": {
-      "count": 1
+      "count": 6
     },
     "jsx-a11y/no-autofocus": {
       "count": 1
@@ -4186,65 +4106,47 @@
   },
   "src/features/settings/components/custom-fields/SettingsCustomFields.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 12
+      "count": 6
     }
   },
   "src/features/settings/components/general/ProjectDangerZone.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 11
-    }
-  },
-  "src/features/settings/components/general/SettingsGeneral.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 5
-    }
-  },
-  "src/features/settings/components/general/SettingsSetup.tsx": {
     "better-tailwindcss/no-restricted-classes": {
       "count": 4
     }
   },
   "src/features/settings/components/general/SettingsSetupJobRow.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 10
+      "count": 3
     }
   },
   "src/features/settings/components/git/GitConnectionCard.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 14
+      "count": 4
     }
   },
   "src/features/settings/components/git/GitCopyField.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 4
+      "count": 2
     }
   },
   "src/features/settings/components/git/GitProviderConnectDialog.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 4
-    },
     "react-hooks/set-state-in-effect": {
       "count": 1
     }
   },
   "src/features/settings/components/git/GitProviderConnectionCard.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 15
+      "count": 2
     }
   },
   "src/features/settings/components/git/GitProviderConnections.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 5
-    }
-  },
-  "src/features/settings/components/git/GitRepositoryList.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 7
+      "count": 1
     }
   },
   "src/features/settings/components/git/GitRepositoryPickerDialog.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 13
+      "count": 2
     },
     "react-hooks/set-state-in-effect": {
       "count": 1
@@ -4252,28 +4154,15 @@
   },
   "src/features/settings/components/git/GithubCliCommand.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 9
+      "count": 3
     }
   },
   "src/features/settings/components/git/GitlabCliCommand.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 6
-    }
-  },
-  "src/features/settings/components/git/SettingsGit.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 1
-    }
-  },
-  "src/features/settings/components/issue-templates/IssueTemplateProperties.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 5
+      "count": 2
     }
   },
   "src/features/settings/components/issue-templates/SettingsIssueTemplateDialog.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 11
-    },
     "jsx-a11y/no-autofocus": {
       "count": 1
     }
@@ -4285,7 +4174,7 @@
   },
   "src/features/settings/components/issue-types/IssueTypesImportDialog.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 12
+      "count": 5
     }
   },
   "src/features/settings/components/issue-types/IssueTypesToolbar.tsx": {
@@ -4298,7 +4187,7 @@
   },
   "src/features/settings/components/issue-types/SettingsIssueTypes.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 32
+      "count": 25
     },
     "react-hooks/set-state-in-effect": {
       "count": 1
@@ -4306,7 +4195,7 @@
   },
   "src/features/settings/components/labels/LabelsImportDialog.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 18
+      "count": 6
     }
   },
   "src/features/settings/components/labels/LabelsToolbar.tsx": {
@@ -4327,12 +4216,12 @@
       "count": 6
     },
     "better-tailwindcss/no-restricted-classes": {
-      "count": 20
+      "count": 15
     }
   },
   "src/features/settings/components/labels/SettingsLabels.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 13
+      "count": 2
     }
   },
   "src/features/settings/components/labels/SettingsLabelsAddMenu.tsx": {
@@ -4348,27 +4237,22 @@
       "count": 1
     },
     "better-tailwindcss/no-restricted-classes": {
-      "count": 6
-    }
-  },
-  "src/features/settings/components/network/SettingsNetworkAgentOverrides.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 1
+      "count": 3
     }
   },
   "src/features/settings/components/network/SettingsNetworkForm.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 15
+      "count": 7
     }
   },
   "src/features/settings/components/network/SettingsNetworkLog.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 4
+      "count": 2
     }
   },
   "src/features/settings/components/network/SettingsNetworkLogRow.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 20
+      "count": 18
     },
     "no-restricted-imports": {
       "count": 1
@@ -4379,12 +4263,12 @@
   },
   "src/features/settings/components/notifications/NotificationPreferences.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 8
+      "count": 4
     }
   },
   "src/features/settings/components/notifications/NotificationTelegramAccount.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 5
+      "count": 1
     }
   },
   "src/features/settings/components/states/SettingsDeleteStateDialog.tsx": {
@@ -4392,7 +4276,7 @@
       "count": 1
     },
     "better-tailwindcss/no-restricted-classes": {
-      "count": 6
+      "count": 2
     }
   },
   "src/features/settings/components/states/SettingsStateRow.tsx": {
@@ -4400,7 +4284,7 @@
       "count": 2
     },
     "better-tailwindcss/no-restricted-classes": {
-      "count": 6
+      "count": 4
     },
     "no-restricted-imports": {
       "count": 1
@@ -4411,7 +4295,7 @@
       "count": 1
     },
     "better-tailwindcss/no-restricted-classes": {
-      "count": 10
+      "count": 5
     },
     "no-restricted-imports": {
       "count": 1
@@ -4419,7 +4303,7 @@
   },
   "src/features/settings/components/states/StatesImportDialog.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 13
+      "count": 5
     }
   },
   "src/features/settings/components/states/StatesToolbar.tsx": {
@@ -4432,7 +4316,7 @@
   },
   "src/features/settings/components/webhooks/JsonViewer.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 5
+      "count": 3
     },
     "jsx-a11y/click-events-have-key-events": {
       "count": 1
@@ -4449,12 +4333,12 @@
       "count": 2
     },
     "better-tailwindcss/no-restricted-classes": {
-      "count": 18
+      "count": 9
     }
   },
   "src/features/settings/components/webhooks/SettingsWebhookDialog.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 13
+      "count": 2
     },
     "jsx-a11y/no-autofocus": {
       "count": 1
@@ -4462,16 +4346,13 @@
   },
   "src/features/settings/components/webhooks/SettingsWebhookRow.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 15
+      "count": 9
     },
     "no-restricted-imports": {
       "count": 2
     }
   },
   "src/features/settings/components/webhooks/SettingsWebhooks.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 1
-    },
     "react-hooks/set-state-in-effect": {
       "count": 1
     }
@@ -4483,12 +4364,12 @@
   },
   "src/features/settings/components/workflows/ControlPlaneAgentTeamPolicy.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 6
+      "count": 1
     }
   },
   "src/features/settings/components/workflows/ControlPlaneWorkflowConfiguration.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 18
+      "count": 6
     },
     "react-hooks/set-state-in-effect": {
       "count": 1
@@ -4496,17 +4377,17 @@
   },
   "src/features/settings/components/workflows/ControlPlaneWorkflowPanel.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 26
+      "count": 6
     }
   },
   "src/features/settings/components/workflows/ControlPlaneWorkflowRuntime.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 17
+      "count": 6
     }
   },
   "src/features/settings/components/workflows/ProjectTemplatesPanel.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 24
+      "count": 5
     },
     "jsx-a11y/no-autofocus": {
       "count": 1

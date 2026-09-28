@@ -16,6 +16,8 @@ import GodScimMappingRow from './GodScimMappingRow';
 import { useGodScimMappingForm } from '../../hooks/useGodScimMappingForm';
 import { useInstanceProjectOptionsQuery } from '../../services/god.service';
 
+import { Box, Stack, Text, Inline } from '@/design-system';
+
 // What one provisioned group grants. Saving reconciles the membership of every
 // project the change touched, so a project taken off this list loses the members the
 // group put there.
@@ -47,13 +49,19 @@ export default function GodScimGroupMappingDialog({
 
   return (
     <Modal title={t('title', { group: group.displayName })} onClose={onClose}>
-      <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">{t('description')}</p>
+      <Stack gap={4}>
+        <Text as="p" size="sm" tone="muted">
+          {t('description')}
+        </Text>
 
         {form.mappings.length === 0 ? (
-          <p className="py-2 text-sm text-muted-foreground">{t('empty')}</p>
+          <Box as="p" padY={2}>
+            <Text as="span" size="sm" tone="muted">
+              {t('empty')}
+            </Text>
+          </Box>
         ) : (
-          <div className="space-y-3">
+          <Stack gap={3}>
             {form.mappings.map((mapping, index) => (
               <GodScimMappingRow
                 key={mapping.projectId}
@@ -63,7 +71,7 @@ export default function GodScimGroupMappingDialog({
                 onRemove={() => form.remove(index)}
               />
             ))}
-          </div>
+          </Stack>
         )}
 
         <Select value="" onValueChange={(value) => form.add(Number(value))}>
@@ -79,15 +87,15 @@ export default function GodScimGroupMappingDialog({
           </SelectContent>
         </Select>
 
-        <div className="flex justify-end gap-2">
+        <Inline gap={2} align="stretch" justify="end" className="flex justify-end">
           <Button type="button" variant="outline" onClick={onClose} disabled={form.saving}>
             {tCommon('cancel')}
           </Button>
           <Button type="button" onClick={() => void save()} disabled={!form.dirty || form.saving}>
             {form.saving ? tCommon('saving') : tCommon('save')}
           </Button>
-        </div>
-      </div>
+        </Inline>
+      </Stack>
     </Modal>
   );
 }

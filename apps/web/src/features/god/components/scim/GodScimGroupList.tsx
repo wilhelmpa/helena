@@ -10,6 +10,8 @@ import GodScimGroupItem from './GodScimGroupItem';
 import GodScimGroupMappingDialog from './GodScimGroupMappingDialog';
 import { useInstanceScimGroupsQuery } from '../../services/god.service';
 
+import { Box, Stack, Text } from '@/design-system';
+
 // The groups the identity provider has pushed. The list itself is read-only — it is
 // the provider's — and what each group grants is set here.
 export default function GodScimGroupList() {
@@ -20,10 +22,10 @@ export default function GodScimGroupList() {
   return (
     <SettingsSection title={t('groups')} description={t('groupsHint')}>
       {groups.isPending ? (
-        <div className="space-y-2 py-3">
+        <Stack gap={2} padY={3}>
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
-        </div>
+        </Stack>
       ) : groups.data && groups.data.length > 0 ? (
         <ItemGroup>
           {groups.data.map((group) => (
@@ -31,7 +33,11 @@ export default function GodScimGroupList() {
           ))}
         </ItemGroup>
       ) : (
-        <p className="py-4 text-sm text-muted-foreground">{t('groupsEmpty')}</p>
+        <Box as="p" padY={4}>
+          <Text as="span" size="sm" tone="muted">
+            {t('groupsEmpty')}
+          </Text>
+        </Box>
       )}
 
       {editing && <GodScimGroupMappingDialog group={editing} onClose={() => setEditing(null)} />}

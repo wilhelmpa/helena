@@ -16,6 +16,8 @@ import { Label } from '@/components/ui/label';
 import { useConnectGitProvider } from '../../services/settings.service';
 import { GIT_PROVIDER_CONFIG } from './providerConfig';
 
+import { Stack, Text } from '@/design-system';
+
 export default function GitProviderConnectDialog({
   projectKey,
   provider,
@@ -52,41 +54,45 @@ export default function GitProviderConnectDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="small">
-        <form onSubmit={(event) => void submit(event)} className="space-y-4">
-          <DialogHeader>
-            <DialogTitle>{t('nativeConnectTitle', { provider: label })}</DialogTitle>
-            <DialogDescription>{t(`nativeTokenHint.${provider}`)}</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor={`git-${provider}-url`}>{t('nativeBaseUrl')}</Label>
-            <Input
-              id={`git-${provider}-url`}
-              type="url"
-              value={baseUrl}
-              onChange={(event) => setBaseUrl(event.target.value)}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor={`git-${provider}-token`}>{t('nativeAccessToken')}</Label>
-            <Input
-              id={`git-${provider}-token`}
-              type="password"
-              autoComplete="off"
-              value={token}
-              onChange={(event) => setToken(event.target.value)}
-              required
-            />
-            <p className="text-xs text-muted-foreground">{t('nativeTokenStored')}</p>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              {t('nativeCancel')}
-            </Button>
-            <Button type="submit" disabled={connect.isPending || !token.trim()}>
-              {connect.isPending ? t('nativeConnecting') : t('nativeConnect')}
-            </Button>
-          </DialogFooter>
+        <form onSubmit={(event) => void submit(event)}>
+          <Stack gap={4}>
+            <DialogHeader>
+              <DialogTitle>{t('nativeConnectTitle', { provider: label })}</DialogTitle>
+              <DialogDescription>{t(`nativeTokenHint.${provider}`)}</DialogDescription>
+            </DialogHeader>
+            <Stack gap={2}>
+              <Label htmlFor={`git-${provider}-url`}>{t('nativeBaseUrl')}</Label>
+              <Input
+                id={`git-${provider}-url`}
+                type="url"
+                value={baseUrl}
+                onChange={(event) => setBaseUrl(event.target.value)}
+                required
+              />
+            </Stack>
+            <Stack gap={2}>
+              <Label htmlFor={`git-${provider}-token`}>{t('nativeAccessToken')}</Label>
+              <Input
+                id={`git-${provider}-token`}
+                type="password"
+                autoComplete="off"
+                value={token}
+                onChange={(event) => setToken(event.target.value)}
+                required
+              />
+              <Text as="p" size="xs" tone="muted">
+                {t('nativeTokenStored')}
+              </Text>
+            </Stack>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                {t('nativeCancel')}
+              </Button>
+              <Button type="submit" disabled={connect.isPending || !token.trim()}>
+                {connect.isPending ? t('nativeConnecting') : t('nativeConnect')}
+              </Button>
+            </DialogFooter>
+          </Stack>
         </form>
       </DialogContent>
     </Dialog>

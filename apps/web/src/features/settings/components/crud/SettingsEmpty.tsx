@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
 import { useSettingsCan } from '../../context/settingsPermission';
 
+import { Stack } from '@/design-system';
+
 export function SettingsEmpty({
   title,
   description,
@@ -17,7 +19,11 @@ export function SettingsEmpty({
 }) {
   const can = useSettingsCan();
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-md p-4 text-center">
+    <Stack
+      gap={3}
+      pad={4}
+      className="flex flex-col items-center justify-center rounded-md text-center"
+    >
       <EmptyHeader className="gap-1">
         <EmptyTitle className="text-sm">{title}</EmptyTitle>
         <EmptyDescription className="text-xs">{description}</EmptyDescription>
@@ -30,6 +36,6 @@ export function SettingsEmpty({
           </Button>
         </EmptyContent>
       )}
-    </div>
+    </Stack>
   );
 }

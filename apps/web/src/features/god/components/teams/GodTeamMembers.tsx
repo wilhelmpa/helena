@@ -12,6 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useInstanceTeamMembersQuery } from '../../services/god.service';
 
+import { Inline, Text, Stack } from '@/design-system';
+
 // Everyone in the team, people and agents alike, a page at a time. The rank is the
 // fixed team one, so there is no permission matrix to unfold behind the row.
 export default function GodTeamMembers({ teamId }: { teamId: number }) {
@@ -24,11 +26,15 @@ export default function GodTeamMembers({ teamId }: { teamId: number }) {
   const total = membersQuery.data?.pages[0]?.total ?? 0;
 
   return (
-    <section className="space-y-3">
-      <div className="flex items-center gap-2">
+    <Stack as="section" gap={3}>
+      <Inline gap={2} className="flex items-center">
         <h3 className="text-sm font-medium">{t('members')}</h3>
-        {total > 0 && <span className="text-xs text-muted-foreground">{total}</span>}
-      </div>
+        {total > 0 && (
+          <Text as="span" size="xs" tone="muted">
+            {total}
+          </Text>
+        )}
+      </Inline>
 
       <SearchInput
         value={search}
@@ -46,16 +52,23 @@ export default function GodTeamMembers({ teamId }: { teamId: number }) {
         />
       ) : (
         <>
-          <div className="space-y-2">
+          <Stack gap={2}>
             {members.map((m) => (
-              <div
+              <Inline
+                gap={3}
+                padX={3}
+                padY={3}
                 key={m.userId}
-                className="flex items-center gap-2.5 rounded-md border border-sidebar-border bg-card px-3 py-2.5"
+                className="flex items-center rounded-md border border-sidebar-border bg-card"
               >
                 <Avatar name={m.name || m.email} image={m.image} className="size-8 shrink-0" />
                 <div className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate text-sm">{m.name || m.email}</span>
-                  <span className="truncate text-xs text-muted-foreground">{m.email}</span>
+                  <Text as="span" size="sm" className="truncate">
+                    {m.name || m.email}
+                  </Text>
+                  <Text as="span" size="xs" tone="muted" className="truncate">
+                    {m.email}
+                  </Text>
                 </div>
                 <Badge
                   variant={m.role === 'owner' ? 'default' : 'secondary'}
@@ -64,12 +77,12 @@ export default function GodTeamMembers({ teamId }: { teamId: number }) {
                   {m.isAgent && <Bot className="size-3" />}
                   {t(`roles.${m.role}`)}
                 </Badge>
-                <span className="hidden text-xs text-muted-foreground sm:inline">
+                <Text as="span" size="xs" tone="muted" className="hidden sm:inline">
                   {t('joined', { date: formatShortDate(m.joinedAt) })}
-                </span>
-              </div>
+                </Text>
+              </Inline>
             ))}
-          </div>
+          </Stack>
           {membersQuery.hasNextPage && (
             <Button
               variant="outline"
@@ -82,6 +95,6 @@ export default function GodTeamMembers({ teamId }: { teamId: number }) {
           )}
         </>
       )}
-    </section>
+    </Stack>
   );
 }

@@ -10,6 +10,8 @@ import { useGodGoogleForm } from '../../hooks/useGodGoogleForm';
 import { useGodOidcForm } from '../../hooks/useGodOidcForm';
 import PageSaveAction from '@/components/common/page/PageSaveAction';
 
+import { Stack } from '@/design-system';
+
 // One section per provider, committed through the page's single Save. A third
 // provider is another section with its own form hook.
 export default function GodAuthProviderForm({
@@ -41,10 +43,10 @@ export default function GodAuthProviderForm({
   return (
     <GodSectionPage slug="auth-provider">
       <PageSaveAction onSave={() => void save()} disabled={!dirty} saving={saving} />
-      <div className="space-y-6">
+      <Stack gap={5}>
         <GodOidcSettings form={oidc} />
         <GodGoogleSettings form={google} />
-      </div>
+      </Stack>
     </GodSectionPage>
   );
 }

@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input';
 import { useCreateInstanceScimToken } from '../../services/god.service';
 import { copyText } from '@/utils/clipboard';
 
+import { Stack, Text, Inline } from '@/design-system';
+
 // The generated token is kept in this dialog only, never lifted into page state: it
 // is shown once, right after it is generated, and cannot be retrieved later.
 // Generating one replaces the previous token, which stops working immediately.
@@ -33,9 +35,11 @@ export default function GodScimTokenDialog({ onClose }: { onClose: () => void })
   if (token !== null) {
     return (
       <Modal title={t('createdTitle')} onClose={onClose}>
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">{t('createdDescription')}</p>
-          <div className="flex items-center gap-2">
+        <Stack gap={4}>
+          <Text as="p" size="sm" tone="muted">
+            {t('createdDescription')}
+          </Text>
+          <Inline gap={2} className="flex items-center">
             <Input
               readOnly
               value={token}
@@ -51,20 +55,22 @@ export default function GodScimTokenDialog({ onClose }: { onClose: () => void })
             >
               {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
             </Button>
-          </div>
+          </Inline>
           <div className="flex justify-end">
             <Button onClick={onClose}>{tCommon('done')}</Button>
           </div>
-        </div>
+        </Stack>
       </Modal>
     );
   }
 
   return (
     <Modal title={t('title')} onClose={onClose}>
-      <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">{t('description')}</p>
-        <div className="flex justify-end gap-2">
+      <Stack gap={4}>
+        <Text as="p" size="sm" tone="muted">
+          {t('description')}
+        </Text>
+        <Inline gap={2} align="stretch" justify="end" className="flex justify-end">
           <Button type="button" variant="outline" onClick={onClose} disabled={create.isPending}>
             {tCommon('cancel')}
           </Button>
@@ -75,8 +81,8 @@ export default function GodScimTokenDialog({ onClose }: { onClose: () => void })
           >
             {create.isPending ? t('submitPending') : t('submit')}
           </Button>
-        </div>
-      </div>
+        </Inline>
+      </Stack>
     </Modal>
   );
 }
