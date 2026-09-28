@@ -203,7 +203,7 @@ describe('the trading blueprint, applied', () => {
     expect(network.agents[String(trader.id)]).toBe('blocked');
 
     // Knowledge, templates and the board are in the vault.
-    expect(existsSync(absoluteVaultPath('Projects/TRADE/Dokumentation/Regelwerk.md'))).toBe(true);
+    expect(existsSync(absoluteVaultPath('Projects/TRADE/Docs/Regelwerk.md'))).toBe(true);
     expect(readFileSync(absoluteVaultPath('Templates/Trading/Trade.md'), 'utf8')).toContain(
       'konto: paper',
     );

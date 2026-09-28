@@ -209,7 +209,7 @@ describe('a first run', () => {
 
   it('places the knowledge in the project and the templates in Templates/', () => {
     const paths = plan.changes.flatMap((change) => (change.kind === 'file' ? [change.path] : []));
-    expect(paths).toContain('Projects/TRADE/Dokumentation/Regelwerk.md');
+    expect(paths).toContain('Projects/TRADE/Docs/Regelwerk.md');
     expect(paths).toContain('Templates/Trading/Trade.md');
     expect(
       paths.every((path) => path.startsWith('Projects/TRADE/') || path.startsWith('Templates/')),
