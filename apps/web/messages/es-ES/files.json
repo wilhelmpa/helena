@@ -32,7 +32,8 @@
     "newFile": "Nueva nota",
     "openInCode": "Abrir en VS Code",
     "canvas": "Lienzo",
-    "doc": "Documento"
+    "doc": "Documento",
+    "new": "Nuevo"
   },
   "breadcrumb": "Ruta de la carpeta",
   "modified": "{date, date, medium}",

@@ -32,7 +32,8 @@
     "newFile": "Нова нотатка",
     "openInCode": "Відкрити у VS Code",
     "canvas": "Полотно",
-    "doc": "Документ"
+    "doc": "Документ",
+    "new": "Створити"
   },
   "breadcrumb": "Шлях до папки",
   "modified": "{date, date, medium}",

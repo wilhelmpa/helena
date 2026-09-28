@@ -32,7 +32,8 @@
     "newFile": "Новая заметка",
     "openInCode": "Открыть в VS Code",
     "canvas": "Холст",
-    "doc": "Документ"
+    "doc": "Документ",
+    "new": "Создать"
   },
   "breadcrumb": "Путь к папке",
   "modified": "{date, date, medium}",

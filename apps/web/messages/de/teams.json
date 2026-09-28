@@ -43,8 +43,8 @@
       "description": "MCP-Server, die die Hermes-Agenten des Teams starten, und Tools mit Zugangsdaten einer Integration."
     },
     "agents": {
-      "title": "KI-Agenten",
-      "description": "Die KI-Agenten dieses Teams und die Projekte, in denen sie jeweils arbeiten."
+      "title": "Agenten",
+      "description": "Die Agenten dieses Teams und die Projekte, in denen sie jeweils arbeiten."
     }
   },
   "info": {
@@ -102,7 +102,7 @@
       "owner": "Inhaber",
       "manager": "Manager",
       "member": "Mitglied",
-      "agent": "KI-Agent"
+      "agent": "Agent"
     }
   },
   "roles": {
@@ -372,14 +372,14 @@
     }
   },
   "agents": {
-    "newAgent": "Neuer KI-Agent",
-    "create": "KI-Agent erstellen",
-    "save": "KI-Agent speichern",
-    "delete": "KI-Agent löschen",
-    "edit": "KI-Agent bearbeiten",
-    "empty": "Noch keine KI-Agenten",
+    "newAgent": "Neuer Agent",
+    "create": "Agent erstellen",
+    "save": "Agent speichern",
+    "delete": "Agent löschen",
+    "edit": "Agent bearbeiten",
+    "empty": "Noch keine Agenten",
     "emptyHint": "Ein Agent wird von seinem Runner über die API gesteuert.",
-    "agent": "KI-Agent",
+    "agent": "Agent",
     "sheetSubtitle": "Ein Bot-Konto, an das du Aufgaben delegieren kannst",
     "kindLabel": {
       "external": "Extern"
@@ -557,8 +557,8 @@
     "noProjectsHint": "Dieses Team hat kein Projekt, in dem der Agent arbeiten kann.",
     "searchProjects": "Projekte suchen",
     "noProjectsShort": "Keine Projekte",
-    "chatNeedsAgent": "Erstelle den KI-Agenten, um ihn hier zu testen.",
-    "chatNeedsProject": "Weise den KI-Agenten einem Projekt zu, um ihn hier zu testen.",
+    "chatNeedsAgent": "Erstelle den Agenten, um ihn hier zu testen.",
+    "chatNeedsProject": "Weise den Agenten einem Projekt zu, um ihn hier zu testen.",
     "triggerFieldsTitle": "Benutzerdefinierte Felder, die einen Lauf starten",
     "defaultProjectRole": "Standard-Projektrolle",
     "noProjectInstructions": "Keine projektspezifischen Anweisungen",

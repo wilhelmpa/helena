@@ -20,8 +20,9 @@ import KnowledgeFrame, {
   useListKeyboard,
   type KnowledgeCrumb,
 } from '@/components/helena/KnowledgeFrame';
-import PillButton from '@/components/helena/PillButton';
 import { ProjectTag } from '@/components/helena/ProjectTag';
+import { cn } from '@/lib/utils';
+import { PAGE_CONTROL_CLASS, PAGE_PRIMARY_CLASS } from '@/components/layout/PageToolbar';
 import { useRelativeTime } from '@/context/relativeTimeContext';
 import { searchKnowledge } from '@/lib/api/endpoints/knowledge';
 import {
@@ -202,10 +203,10 @@ export default function KnowledgeListView({
   const newMenu = can.create && onCreate && (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <PillButton className="h-8 min-h-8 shrink-0 gap-1 px-3">
-          <Plus size={14} aria-hidden="true" />
+        <button type="button" className={cn(PAGE_CONTROL_CLASS, PAGE_PRIMARY_CLASS)}>
+          <Plus aria-hidden="true" />
           {t('new')}
-        </PillButton>
+        </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
         {creations

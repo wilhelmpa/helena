@@ -1,6 +1,6 @@
 {
   "title": "MCP-Server",
-  "description": "Verbinde KI-Agenten über das Model Context Protocol mit diesem Projekt. Ein Agent sieht, was sein API-Schlüssel erlaubt.",
+  "description": "Verbinde Agenten über das Model Context Protocol mit diesem Projekt. Ein Agent sieht, was sein API-Schlüssel erlaubt.",
   "disabled": "Deaktiviert",
   "offForTeam": "MCP ist für das Team {team} deaktiviert.",
   "offForProject": "Im Team {team} ist MCP aktiviert, aber für dieses Projekt deaktiviert.",

@@ -32,7 +32,8 @@
     "newFile": "Neue Notiz",
     "openInCode": "In VS Code öffnen",
     "canvas": "Leinwand",
-    "doc": "Doc"
+    "doc": "Doc",
+    "new": "Neu"
   },
   "breadcrumb": "Ordnerpfad",
   "modified": "{date, date, medium}",

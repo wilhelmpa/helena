@@ -32,7 +32,8 @@
     "newFile": "New note",
     "openInCode": "Open in VS Code",
     "canvas": "Canvas",
-    "doc": "Doc"
+    "doc": "Doc",
+    "new": "New"
   },
   "breadcrumb": "Folder path",
   "modified": "{date, date, medium}",

@@ -1137,6 +1137,17 @@
     display: none;
   }
 }
+/* A department on the ring is a React Flow node of type "group", which the library
+   frames as a square box of its own: the circle is the whole node. */
+.react-flow__node-group:has(> div > .organization-ring-group),
+.react-flow__node-group.selected:has(> div > .organization-ring-group),
+.react-flow__node-group:has(> div > .organization-ring-group):hover {
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
 .organization-ring-budget {
   width: 56px;
   margin-top: 3px;

@@ -32,7 +32,8 @@
     "newFile": "Catatan baru",
     "openInCode": "Buka di VS Code",
     "canvas": "Kanvas",
-    "doc": "Dokumen"
+    "doc": "Dokumen",
+    "new": "Baru"
   },
   "breadcrumb": "Jalur folder",
   "modified": "{date, date, medium}",

@@ -139,8 +139,8 @@
       "description": "Welche Ziele die isolierten Agenten dieses Projekts im Internet erreichen dürfen. Agenten können das nicht selbst ändern."
     },
     "ai-agents": {
-      "label": "KI-Agenten",
-      "description": "KI-Agenten, die in diesem Projekt arbeiten."
+      "label": "Agenten",
+      "description": "Agenten, die in diesem Projekt arbeiten."
     },
     "autopilot": {
       "label": "Autopilot",

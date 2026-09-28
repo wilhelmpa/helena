@@ -32,7 +32,8 @@
     "newFile": "ملاحظة جديدة",
     "openInCode": "فتح في VS Code",
     "canvas": "لوحة",
-    "doc": "مستند"
+    "doc": "مستند",
+    "new": "جديد"
   },
   "breadcrumb": "مسار المجلد",
   "modified": "{date, date, medium}",

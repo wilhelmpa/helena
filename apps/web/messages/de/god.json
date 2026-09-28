@@ -35,7 +35,7 @@
   "userPanel": {
     "instanceOwner": "Inhaber der Instanz",
     "user": "Benutzer",
-    "aiAgent": "KI-Agent",
+    "aiAgent": "Agent",
     "emailVerified": "E-Mail verifiziert",
     "unconfirmedTitle": "E-Mail-Adresse nicht bestätigt",
     "unconfirmedHint": "Bestätige sie hier, falls der Link nie angekommen ist.",
@@ -98,7 +98,7 @@
       "members": "Mitglieder",
       "dashboards": "Dashboards",
       "views": "Ansichten",
-      "agents": "KI-Agenten",
+      "agents": "Agenten",
       "skills": "Skills",
       "tools": "Werkzeuge"
     },
@@ -131,7 +131,7 @@
       "projects": "Projekte",
       "issues": "Aufgaben",
       "members": "Mitglieder",
-      "agents": "KI-Agenten",
+      "agents": "Agenten",
       "skills": "Skills",
       "tools": "Werkzeuge",
       "roles": "Projektrollen"

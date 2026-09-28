@@ -33,7 +33,7 @@ export default function FileCreateMenu({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button type="button" className={cn(PAGE_CONTROL_CLASS, PAGE_PRIMARY_CLASS)}>
-            <Plus /> {'Neu'}
+            <Plus /> {t('new')}
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">

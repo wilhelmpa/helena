@@ -28,7 +28,7 @@
   "showRows": "{count} anzeigen",
   "widgetGroups": {
     "issues": "Aufgaben",
-    "agents": "KI-Agenten & Webhooks",
+    "agents": "Agenten & Webhooks",
     "plugins": "Plugins"
   },
   "widgets": {
@@ -58,7 +58,7 @@
     },
     "agent_runs": {
       "label": "Agentenläufe",
-      "description": "Letzte Läufe von KI-Agenten mit ihrem Ergebnis"
+      "description": "Letzte Läufe von Agenten mit ihrem Ergebnis"
     },
     "agent_health": {
       "label": "Agentenzustand",

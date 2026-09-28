@@ -32,7 +32,8 @@
     "newFile": "新建笔记",
     "openInCode": "在 VS Code 中打开",
     "canvas": "画布",
-    "doc": "文档"
+    "doc": "文档",
+    "new": "新建"
   },
   "breadcrumb": "文件夹路径",
   "modified": "{date, date, medium}",

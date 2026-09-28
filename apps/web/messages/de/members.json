@@ -32,11 +32,11 @@
   },
   "profileHeading": "Profil",
   "you": "(du)",
-  "aiAgent": "KI-Agent",
+  "aiAgent": "Agent",
   "tabs": {
     "all": "Alle",
     "people": "Personen",
-    "agents": "KI-Agenten",
+    "agents": "Agenten",
     "label": "Anzeigen"
   },
   "leaveProject": "Projekt verlassen",
@@ -82,26 +82,26 @@
   "search": {
     "all": "Mitglieder suchen",
     "people": "Personen suchen",
-    "agents": "KI-Agenten suchen"
+    "agents": "Agenten suchen"
   },
   "empty": {
     "all": {
       "title": "Noch keine Mitglieder",
-      "description": "Personen und KI-Agenten erscheinen hier, sobald sie beitreten."
+      "description": "Personen und Agenten erscheinen hier, sobald sie beitreten."
     },
     "human": {
       "title": "Noch keine Personen",
       "description": "Personen erscheinen hier, sobald sie beitreten."
     },
     "agent": {
-      "title": "Noch keine KI-Agenten",
-      "description": "KI-Agenten erscheinen hier, sobald sie hinzugefügt wurden."
+      "title": "Noch keine Agenten",
+      "description": "Agenten erscheinen hier, sobald sie hinzugefügt wurden."
     },
     "search": {
       "title": "Nichts gefunden",
       "all": "Kein Mitglied entspricht dieser Suche.",
       "human": "Keine Person entspricht dieser Suche.",
-      "agent": "Kein KI-Agent entspricht dieser Suche."
+      "agent": "Kein Agent entspricht dieser Suche."
     }
   }
 }
