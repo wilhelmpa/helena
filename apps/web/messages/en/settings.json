@@ -60,7 +60,7 @@
       "dashboards": "Charts and metrics on saved dashboards.",
       "initiatives": "Groups of issues tracked as one piece of work.",
       "cycles": "Time-boxed periods of work the issues are planned into.",
-      "notes": "Freeform boards of sticky notes.",
+      "notes": "Freeform canvases of sticky notes.",
       "subtasks": "Issues broken down into subtasks under a parent.",
       "checklists": "Lists of steps tracked inside an issue.",
       "issueStats": "How long an issue spent in each state.",

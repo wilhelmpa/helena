@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Copy, Plus } from 'lucide-react';
+import { Copy, Plus, Workflow } from 'lucide-react';
+import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTeamQuery } from '@/services/teams.service';
 import { useAiAgentsQuery } from '@/services/aiAgents.service';
@@ -15,6 +16,8 @@ import { AgentSectionProvider } from '../../context/agentSection';
 import ProjectAgentTemplateDialog from './ProjectAgentTemplateDialog';
 import ProjectAiAgents from './ProjectAiAgents';
 import { TeamAiAgentSheet } from './TeamAiAgentSheet';
+import { workflowsPath } from '@/utils/paths';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const section = AI_AGENTS_SECTION;
 
@@ -26,40 +29,56 @@ export default function ProjectAiAgentsView({
   projectId: number;
 }) {
   const t = useTranslations('teams.agents');
+  const tNav = useTranslations('nav');
+  const { projectKey } = useParams<{ projectKey: string }>();
   const sectionText = useSettingsSectionText()(section.slug);
   const permissions = useTeamQuery(teamId).data?.permissions.ai_agents;
   const [creating, setCreating] = useState(false);
   const [fromTemplate, setFromTemplate] = useState(false);
   const tSettings = useTranslations('settings.agents');
   const hasTemplates = (useAiAgentsQuery(teamId).data ?? []).some((agent) => agent.template);
+  const { can } = usePermissions();
 
   return (
     <SectionPageView title={sectionText.label} wide>
-      {permissions?.create && (
-        <PageToolbar>
-          <PageToolbarSpacer />
-          <PageActions
-            actions={
-              hasTemplates
-                ? [
-                    {
-                      id: 'template',
-                      label: tSettings('newFromTemplate'),
-                      icon: Copy,
-                      onClick: () => setFromTemplate(true),
-                    },
-                  ]
-                : []
-            }
-            primary={{
-              id: 'new',
-              label: t('newAgent'),
-              icon: Plus,
-              onClick: () => setCreating(true),
-            }}
-          />
-        </PageToolbar>
-      )}
+      <PageToolbar>
+        <PageToolbarSpacer />
+        <PageActions
+          actions={[
+            ...(hasTemplates
+              ? [
+                  {
+                    id: 'template',
+                    label: tSettings('newFromTemplate'),
+                    icon: Copy,
+                    onClick: () => setFromTemplate(true),
+                  },
+                ]
+              : []),
+            ...(can('actions', 'read')
+              ? [
+                  {
+                    id: 'workflows',
+                    label: tNav('workflows'),
+                    icon: Workflow,
+                    href: workflowsPath(projectKey),
+                    menuOnly: true,
+                  },
+                ]
+              : []),
+          ]}
+          primary={
+            permissions?.create
+              ? {
+                  id: 'new',
+                  label: t('newAgent'),
+                  icon: Plus,
+                  onClick: () => setCreating(true),
+                }
+              : undefined
+          }
+        />
+      </PageToolbar>
       {fromTemplate && (
         <ProjectAgentTemplateDialog
           teamId={teamId}

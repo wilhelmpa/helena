@@ -4,13 +4,13 @@ import type { ReactNode } from 'react';
 import { useProjectFeatures } from '@/hooks/useProjectFeatures';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { BookOpen, Code2, StickyNote } from 'lucide-react';
+import { BookOpen, ReceiptText, StickyNote } from 'lucide-react';
 import { WorkspacePageHeader } from '@/components/layout/WorkspaceHeader';
 import { PageTabs } from '@/components/layout/PageToolbar';
 import { PageToolbarNavigationProvider } from '@/context/pageToolbarNavigation';
 import { usePermissions } from '@/hooks/usePermissions';
 import type { ProjectFileRoot } from '@/lib/api/endpoints/projectFiles';
-import { filesPath } from '@/utils/paths';
+import { filesPath, receiptsPath } from '@/utils/paths';
 import FileBrowser from './components/FileBrowser';
 import { useFileNavigationGuard } from './hooks/useFileNavigationGuard';
 
@@ -18,11 +18,12 @@ import { useFileNavigationGuard } from './hooks/useFileNavigationGuard';
 // the folder and the open file are in the address.
 export default function ProjectFilesPage({ boards }: { boards?: ReactNode }) {
   const t = useTranslations('files');
+  const tNav = useTranslations('nav');
   const navigation = useFileNavigationGuard();
   const { projectKey } = useParams<{ projectKey: string }>();
   const params = useSearchParams();
   const router = useRouter();
-  const { can } = usePermissions();
+  const { can, isAdmin } = usePermissions();
   const features = useProjectFeatures();
   const boardsEnabled = features.notes && can('note_boards', 'read');
   const boardView = params.get('view') === 'boards' && boardsEnabled;
@@ -53,7 +54,16 @@ export default function ProjectFilesPage({ boards }: { boards?: ReactNode }) {
         ...(boardsEnabled
           ? [{ value: 'boards', label: t('unified.boards'), icon: StickyNote }]
           : []),
-        { value: 'code', label: t('roots.code'), icon: Code2 },
+        ...(isAdmin
+          ? [
+              {
+                value: 'receipts',
+                label: tNav('receipts'),
+                icon: ReceiptText,
+                href: receiptsPath(projectKey),
+              },
+            ]
+          : []),
       ]}
     />
   );

@@ -65,7 +65,16 @@ export default function Orb({
         setAnimated(false);
       }
     };
-    const updateVisibility = () => setHidden(document.hidden);
+    let intersecting = true;
+    const updateVisibility = () => setHidden(document.hidden || !intersecting);
+    const observer =
+      typeof IntersectionObserver === 'undefined'
+        ? null
+        : new IntersectionObserver((entries) => {
+            intersecting = entries[0]?.isIntersecting ?? false;
+            updateVisibility();
+          });
+    if (orbHostRef.current) observer?.observe(orbHostRef.current);
     update();
     updateVisibility();
     motion.addEventListener('change', update);
@@ -73,6 +82,7 @@ export default function Orb({
     return () => {
       motion.removeEventListener('change', update);
       document.removeEventListener('visibilitychange', updateVisibility);
+      observer?.disconnect();
     };
   }, [size, motionEnabled]);
 

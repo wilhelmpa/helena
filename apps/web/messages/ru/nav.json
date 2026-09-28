@@ -1,4 +1,8 @@
 {
+  "projectLinkHint": "Этот материал относится к другому проекту.",
+  "openInProject": "Открыть в проекте",
+  "dockContext": "HOME · КОНТЕКСТ",
+  "dockOpen": "Открыть Home (⌘J)",
   "sidebarMyTasks": "My tasks",
   "sidebarOpenTasks": "All open",
   "sidebarSwitchProject": "Switch project",
@@ -25,7 +29,7 @@
   "allWorkItems": "Все задачи",
   "initiatives": "Инициативы",
   "cycles": "Циклы",
-  "notes": "Доски",
+  "notes": "Холсты",
   "documents": "Docs",
   "docs": "Docs",
   "aiTeam": "AI-команда",

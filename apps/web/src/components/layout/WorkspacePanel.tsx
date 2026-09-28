@@ -50,6 +50,7 @@ export interface PanelArea {
 export default function WorkspacePanel({
   areas,
   contextProjectKey,
+  contextProjectName,
   toolSession,
   mode,
   overlay,
@@ -60,9 +61,11 @@ export default function WorkspacePanel({
   onPickTool,
   onCloseArea,
   onClose,
+  dockSheet = false,
 }: {
   areas: PanelArea[];
   contextProjectKey: string | null;
+  contextProjectName?: string | null;
   toolSession: number;
   mode: WorkspacePanelMode;
   // The panel floats over the page (the standard layout's overlay mode, a phone).
@@ -76,6 +79,7 @@ export default function WorkspacePanel({
   onPickTool: (areaId: string, tool: WorkspaceToolId) => void;
   onCloseArea: (areaId: string) => void;
   onClose: () => void;
+  dockSheet?: boolean;
 }) {
   const t = useTranslations('nav.workspace');
   const isMobile = useIsMobile();
@@ -271,12 +275,21 @@ export default function WorkspacePanel({
 
   return (
     <>
+      {dockSheet && (
+        <button
+          type="button"
+          className="helena-home-scrim"
+          aria-label="Home schließen"
+          onClick={onClose}
+        />
+      )}
       {visible.map((entry) => (
         // The area's surface under its header and view: the border to its neighbour and,
         // over the page, the panel's shadow.
         <div
           key={`surface:${entry.area.id}`}
           aria-hidden="true"
+          data-dock-part={dockSheet && entry.area.main ? 'surface' : undefined}
           className={cn(
             'min-w-0 bg-background',
             !full && 'border-s',
@@ -291,6 +304,7 @@ export default function WorkspacePanel({
         entry.area.main ? (
           <div
             key={`header:${entry.area.id}`}
+            data-dock-part={dockSheet ? 'header' : undefined}
             className={cn('min-w-0', layer)}
             style={place(entry.area, '1')}
           >
@@ -309,7 +323,7 @@ export default function WorkspacePanel({
               full={full}
               mode={mode}
               closable={closable}
-              picker={isMobile ? null : picker(entry.area)}
+              picker={dockSheet || isMobile ? null : picker(entry.area)}
               toolbar={entry.id === 'browser' ? browserBar : undefined}
               slotRef={slotRef(entry.area.id)}
               onToggleAdvanced={() => setAdvanced((current) => !current)}
@@ -323,6 +337,9 @@ export default function WorkspacePanel({
                 }))
               }
               onClose={onClose}
+              dockSheet={dockSheet}
+              contextProjectKey={contextProjectKey}
+              contextProjectName={contextProjectName}
             />
           </div>
         ) : (
@@ -383,6 +400,7 @@ export default function WorkspacePanel({
         return ToolContent ? (
           <div
             key={`${id}:${contextProjectKey ?? 'global'}`}
+            data-dock-part={dockSheet && area?.main ? 'content' : undefined}
             role="region"
             aria-label={labels[id] ?? id}
             className={cn(

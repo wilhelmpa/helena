@@ -1,4 +1,8 @@
 {
+  "projectLinkHint": "此内容属于其他项目。",
+  "openInProject": "在项目中打开",
+  "dockContext": "HOME · 上下文",
+  "dockOpen": "打开 Home (⌘J)",
   "sidebarMyTasks": "My tasks",
   "sidebarOpenTasks": "All open",
   "sidebarSwitchProject": "Switch project",
@@ -25,7 +29,7 @@
   "allWorkItems": "全部工作项",
   "initiatives": "计划",
   "cycles": "周期",
-  "notes": "便签板",
+  "notes": "画布",
   "documents": "Docs",
   "docs": "Docs",
   "aiTeam": "AI 团队",

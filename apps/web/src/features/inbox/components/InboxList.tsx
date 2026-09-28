@@ -2,9 +2,17 @@
 
 import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
-import type { Notification } from '@/lib/api/endpoints/notifications';
+import type { Notification, NotificationType } from '@/lib/api/endpoints/notifications';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import InboxListItem from './InboxListItem';
+
+const TYPE_ORDER: NotificationType[] = [
+  'approval_requested',
+  'mentioned',
+  'assigned',
+  'commented',
+  'state_changed',
+];
 
 // The scrollable notification list. Empty and loading states render in place. New
 // pages load automatically when the bottom sentinel scrolls into view; selection
@@ -59,17 +67,28 @@ export default function InboxList({
   }
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
-      {items.map((n) => (
-        <InboxListItem
-          key={n.id}
-          notification={n}
-          selected={n.id === selectedId}
-          onSelect={() => onSelect(n)}
-          onToggleRead={(read) => onToggleRead(n, read)}
-          onSnooze={(until) => onSnooze(n, until)}
-          onDelete={() => onDelete(n)}
-        />
-      ))}
+      {TYPE_ORDER.map((type) => {
+        const group = items.filter((item) => item.type === type);
+        if (group.length === 0) return null;
+        return (
+          <section key={type}>
+            <h3 className="px-3 py-2 font-mono text-xs tracking-[0.16em] text-muted-foreground uppercase">
+              {t(`types.${type}`)} · {group.length}
+            </h3>
+            {group.map((n) => (
+              <InboxListItem
+                key={n.id}
+                notification={n}
+                selected={n.id === selectedId}
+                onSelect={() => onSelect(n)}
+                onToggleRead={(read) => onToggleRead(n, read)}
+                onSnooze={(until) => onSnooze(n, until)}
+                onDelete={() => onDelete(n)}
+              />
+            ))}
+          </section>
+        );
+      })}
       {hasNextPage && <div ref={sentinelRef} className="h-px" />}
       {isFetchingNextPage && <ListSkeleton rows={2} className="p-3" rowClassName="h-16" />}
     </div>

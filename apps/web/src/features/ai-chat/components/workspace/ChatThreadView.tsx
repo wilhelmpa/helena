@@ -51,6 +51,7 @@ export interface ChatThreadViewProps {
   hasArtifact: boolean;
   // Mounted as the chat page (its bar goes into the app header), not in the tool panel.
   inPage?: boolean;
+  pageContext?: { projectKey: string | null; path: string };
 }
 
 // One open conversation: the header, the transcript (or, before the first message, a
@@ -76,6 +77,7 @@ export default function ChatThreadView({
   onToggleArtifact,
   hasArtifact,
   inPage = false,
+  pageContext,
 }: ChatThreadViewProps) {
   const t = useTranslations('chatWorkspace');
   const motionEnabled = useAccountPreferences().homeDashboard.chatAnimation !== false;
@@ -84,6 +86,7 @@ export default function ChatThreadView({
     agent,
     threadId,
     onThreadCreated,
+    pageContext,
     // The composer checks the agent's chat limit before sending; this catches the race
     // where two sends (two tabs) both passed it, so the one that lost is explained.
     onError: (error) => {
@@ -268,9 +271,9 @@ export default function ChatThreadView({
             aria-hidden={!orbVisible}
             className="pointer-events-none absolute z-10 aspect-square transition-[top,left,transform,width,opacity] duration-[600ms] ease-in-out motion-reduce:transition-none"
             style={{
-              width: empty ? 'min(20rem, 55vw)' : '7rem',
+              width: empty ? (pageContext ? '12rem' : 'min(20rem, 55vw)') : '7rem',
               left: empty ? '50%' : 'max(1rem, calc((100% - 48rem) / 2))',
-              top: empty ? 'calc(50% - 1.5rem)' : 'calc(100% - 3.5rem)',
+              top: empty ? (pageContext ? '8.5rem' : 'calc(50% - 1.5rem)') : 'calc(100% - 3.5rem)',
               transform: empty ? 'translate(-50%, -50%)' : 'translate(0, -50%)',
               opacity: orbVisible ? 1 : 0,
               ['--orb-size' as string]: '100%',
@@ -307,6 +310,7 @@ export default function ChatThreadView({
           conversation={conversation}
           threadId={threadId}
           projectKey={projectKey}
+          dockSheet={pageContext != null}
           draft={threadId == null ? newChatDraft : undefined}
           busy={plan.busy}
           model={model.model}

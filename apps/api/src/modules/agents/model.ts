@@ -1,7 +1,7 @@
 import { t } from 'elysia';
 
 import type { ThreadMatch } from './chat-history';
-import type { ChatAttachment } from './chat/attachments';
+import type { PublicChatAttachment } from './chat/attachments';
 
 // Shared by every route in the domain that addresses an agent by its id. An agent
 // belongs to a team, so that is where it is addressed.
@@ -141,7 +141,7 @@ export type ChatMessageDTO = {
   parentId?: string | null;
   siblingIds?: string[];
   agentId?: number;
-  attachments?: ChatAttachment[];
+  attachments?: PublicChatAttachment[];
   model?: string | null;
   inputTokens?: number | null;
   outputTokens?: number | null;

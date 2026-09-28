@@ -38,6 +38,8 @@
     "automation": "Helena"
   },
   "hub": {
+    "scopeProject": "Этот проект",
+    "scopeAll": "Все",
     "messages": "Messages",
     "updates": "Updates",
     "loading": "Loading messages…"

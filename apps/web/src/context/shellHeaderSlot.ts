@@ -5,7 +5,12 @@ import { createContext, useContext } from 'react';
 // second header row under it. Null outside the Shell and in the 'classic' header
 // layout, where the page keeps its own title bar.
 export const ShellHeaderSlotCtx = createContext<HTMLElement | null>(null);
+export const ShellHeaderActionsSlotCtx = createContext<HTMLElement | null>(null);
 
 export function useShellHeaderSlot(): HTMLElement | null {
   return useContext(ShellHeaderSlotCtx);
+}
+
+export function useShellHeaderActionsSlot(): HTMLElement | null {
+  return useContext(ShellHeaderActionsSlotCtx);
 }

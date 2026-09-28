@@ -60,7 +60,7 @@
       "dashboards": "Gráficos y métricas sobre paneles guardados.",
       "initiatives": "Grupos de tickets seguidos como una sola pieza de trabajo.",
       "cycles": "Periodos con una ventana de tiempo en los que los tickets se planifican.",
-      "notes": "Tableros de dibujo libre de notas adhesivas.",
+      "notes": "Lienzos libres para notas adhesivas.",
       "subtasks": "Tickets descompuestos en subtareas bajo un padre.",
       "checklists": "Listas de pasos seguidas dentro de un ticket.",
       "issueStats": "Cuánto tiempo ha pasado un ticket en cada estado.",
