@@ -255,6 +255,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
   }
 
   const watch = new FailureWatch();
+  let nudged = false;
   let lastText = '';
   let turns = 0;
   const contextOf = () => chain[0]!.contextLength;
@@ -406,6 +407,22 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
         ],
         step,
       );
+      // A local model sometimes ends its turn announcing what it is about to do ("Ich schaue
+      // mir die Seite an.") instead of doing it: it is told once to go on.
+      if (!nudged && turns < maxTurns && isAnnouncement(outcome.text)) {
+        nudged = true;
+        await save(
+          [
+            {
+              role: 'user',
+              content:
+                '(Helena) Du hast nur angekündigt, was du tun willst. Tu es jetzt mit deinen Werkzeugen und antworte erst, wenn es erledigt ist.',
+            },
+          ],
+          step,
+        );
+        continue;
+      }
       if (!lastText) {
         return finish({ status: 'failed', text: '', exitCode: 1, reason: 'empty-answer' });
       }
@@ -718,6 +735,20 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       .note?.(`Kontext komprimiert (Sitzung ${sessionId}): ${next.slice(0, 600)}`)
       .catch(() => {});
   }
+}
+
+// A short answer that only says what the model is going to do next.
+const ANNOUNCEMENT =
+  /^(ich (schaue|sehe|prüfe|werde|mache|suche|öffne|lese|hole|starte|fange)|jetzt (schaue|prüfe|öffne)|lass mich|let me|i('ll| will| am going to)|now i)\b/i;
+
+export function isAnnouncement(text: string): boolean {
+  const trimmed = text.trim();
+  return (
+    trimmed.length > 0 &&
+    trimmed.length < 220 &&
+    ANNOUNCEMENT.test(trimmed) &&
+    !/\?\s*$/.test(trimmed)
+  );
 }
 
 function renderForSummary(message: ModelMessage): string {

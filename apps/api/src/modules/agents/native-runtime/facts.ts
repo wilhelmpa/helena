@@ -189,8 +189,10 @@ function view(fact: LoadedFact, score?: number): FactView {
   };
 }
 
-function reindexLater(ids: number[]): void {
-  void reindexItems(
+// A fact is in the search right after it was written: the index item is written before the
+// answer (its vector follows with the indexer's next embedding pass).
+async function reindex(ids: number[]): Promise<void> {
+  await reindexItems(
     factSource,
     ids.map((id) => String(id)),
   ).catch((error: unknown) => console.error('[helena-runtime] fact reindex failed', error));
@@ -269,7 +271,7 @@ async function add(caller: Caller, input: FactInput, source: Record<string, unkn
       .update(helenaFact)
       .set({ trust, confirmations: sql`${helenaFact.confirmations} + 1`, updatedAt: new Date() })
       .where(eq(helenaFact.id, known.id));
-    reindexLater([known.id]);
+    await reindex([known.id]);
     return {
       status: 'confirmed' as const,
       fact: view({ ...known, trust, confirmations: known.confirmations + 1 }),
@@ -304,7 +306,7 @@ async function add(caller: Caller, input: FactInput, source: Record<string, unkn
       .set({ trust: trustAfter(hit.a.trust, 'contradicted'), contradictedBy: id })
       .where(eq(helenaFact.id, hit.a.id));
   }
-  reindexLater([id, ...found.map((hit) => hit.a.id)]);
+  await reindex([id, ...found.map((hit) => hit.a.id)]);
   const [stored] = await loadFacts(eq(helenaFact.id, id), 1);
   return {
     status: 'added' as const,
@@ -413,14 +415,14 @@ export async function factStore(
         })
         .where(eq(helenaFact.id, fact.id));
       await linkEntities(fact.id, { teamId: fact.teamId, projectId: fact.projectId }, entities);
-      reindexLater([fact.id]);
+      await reindex([fact.id]);
       const [stored] = await loadFacts(eq(helenaFact.id, fact.id), 1);
       return { status: 'updated' as const, fact: view(stored!) };
     }
     case 'remove': {
       const fact = await readableFact(caller, input.id);
       await db.update(helenaFact).set({ deletedAt: new Date() }).where(eq(helenaFact.id, fact.id));
-      reindexLater([fact.id]);
+      await reindex([fact.id]);
       return { status: 'removed' as const, id: fact.id };
     }
     case 'list': {
@@ -455,7 +457,7 @@ export async function factFeedback(caller: Caller, id: number, helpful: boolean)
         : { unhelpfulCount: sql`${helenaFact.unhelpfulCount} + 1` }),
     })
     .where(eq(helenaFact.id, fact.id));
-  reindexLater([fact.id]);
+  await reindex([fact.id]);
   return { id: fact.id, oldTrust: fact.trust, trust };
 }
 
@@ -482,7 +484,7 @@ export async function correctFact(
   if (!fact) throw new HttpError(404, 'Fact not found');
   if (change.remove) {
     await db.update(helenaFact).set({ deletedAt: new Date() }).where(eq(helenaFact.id, id));
-    reindexLater([id]);
+    await reindex([id]);
     return { status: 'removed' as const, id };
   }
   const content = change.content?.trim();
@@ -503,7 +505,7 @@ export async function correctFact(
     })
     .where(eq(helenaFact.id, id));
   await linkEntities(id, { teamId: fact.teamId, projectId: fact.projectId }, entities);
-  reindexLater([id]);
+  await reindex([id]);
   const [stored] = await loadFacts(eq(helenaFact.id, id), 1);
   return { status: 'updated' as const, fact: view(stored!) };
 }

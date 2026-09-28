@@ -309,3 +309,16 @@ describe('agent loop', () => {
     expect(stored!.compactedThrough).toBeGreaterThan(0);
   });
 });
+
+describe('announcements', () => {
+  test('a turn that only announces the work is told to go on, once', async () => {
+    const { result, sink } = await run([
+      { text: 'Ich schaue mir die Dateien an.' },
+      { calls: [{ name: 'list_files', input: {} }] },
+      { text: 'Es gibt keine Dateien.' },
+    ]);
+    expect(result.status).toBe('success');
+    expect(result.text).toBe('Es gibt keine Dateien.');
+    expect(sink.of('tool-call').length).toBe(1);
+  });
+});
