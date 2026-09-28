@@ -12,7 +12,7 @@ import {
   prometheusValues,
   readVocabulary,
 } from '../../server-types';
-import { checkOptions, runtimeLocalAi, serverUrl } from '../../service';
+import { checkOptions, readGpu, runtimeLocalAi, serverUrl } from '../../service';
 import {
   changelogBetween,
   halogenCandidate as halogenCandidateFor,
@@ -21,6 +21,7 @@ import {
 } from '../../integrations';
 import { defaultLocalAiPolicy, type ModelServerRow } from '@repo/db';
 import { host } from '#shared/helena';
+import { LOCAL_AI_PLUGIN_ID, LOCAL_AI_PROVIDES, localAiPlugin } from '../../plugin';
 
 // Halogen as a model server type (docs/helena-decisions/halogen.md): what it reads from
 // Halogen's own /health and /metrics, the capabilities the Administrator sets for a server that
@@ -285,9 +286,16 @@ describe('capabilities the Administrator sets', () => {
     expect(checkOptions(undefined)).toBeUndefined();
   });
 
-  it('reach the runner: a vision model is marked, a reasoning model thinks', () => {
+  it('reach the runner: a vision model is marked, a reasoning model thinks', async () => {
     // The API registers the built-in types at start (plugin helena.local-ai).
-    if (!host.modelServers.get(halogenServer.id)) host.modelServers.register(halogenServer);
+    if (!host.get(LOCAL_AI_PLUGIN_ID))
+      await host.load(localAiPlugin, {
+        id: LOCAL_AI_PLUGIN_ID,
+        name: 'Local AI',
+        version: '1.0.0',
+        sdk: '^0.1.0',
+        provides: LOCAL_AI_PROVIDES,
+      });
     const server: ModelServerRow = {
       id: 7,
       slug: 'halogen',
@@ -397,5 +405,36 @@ describe('Halogen in the update center', () => {
       headers: { authorization: 'Bearer anon' },
     });
     expect(localAiUpdateSource.hosts).toContain('ghcr.io');
+  });
+});
+
+describe('the GPU reading of the card', () => {
+  it('reads how busy the GPU is and both its memories from amdgpu', async () => {
+    const { mkdtemp, mkdir, writeFile, rm } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const root = await mkdtemp(`${process.env.TMPDIR ?? tmpdir()}/helena-drm-`);
+    try {
+      const device = `${root}/card1/device`;
+      await mkdir(device, { recursive: true });
+      for (const [name, value] of Object.entries({
+        vendor: '0x1002',
+        gpu_busy_percent: '97',
+        mem_info_vram_used: '300000000',
+        mem_info_vram_total: '536870912',
+        mem_info_gtt_used: '32000000000',
+        mem_info_gtt_total: '128849018880',
+      }))
+        await writeFile(`${device}/${name}`, `${value}\n`);
+      expect(await readGpu(root)).toEqual({
+        present: true,
+        busyPercent: 97,
+        vramUsedBytes: 300000000,
+        vramTotalBytes: 536870912,
+        gttUsedBytes: 32000000000,
+        gttTotalBytes: 128849018880,
+      });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 });

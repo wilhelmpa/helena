@@ -90,7 +90,7 @@
   },
   "servers": {
     "title": "Modell-Server",
-    "description": "Lemonade auf diesem Rechner (GPU und NPU) oder ein anderer OpenAI-kompatibler Server. Seine Modelle stehen in jeder Modellauswahl, solange die lokale KI an ist.",
+    "description": "Halogen oder Lemonade auf diesem Rechner, oder ein anderer OpenAI-kompatibler Server. Seine Modelle stehen in jeder Modellauswahl, solange die lokale KI an ist.",
     "add": "Server hinzufügen",
     "none": "Noch kein Server. Lokale KI mit native/local-ai/install.sh einrichten, dann hier hinzufügen.",
     "reachable": "Erreichbar · {version}",

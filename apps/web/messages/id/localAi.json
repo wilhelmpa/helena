@@ -90,7 +90,7 @@
   },
   "servers": {
     "title": "Server model",
-    "description": "Lemonade di mesin ini (GPU dan NPU) atau server lain yang kompatibel dengan OpenAI. Modelnya muncul di setiap pemilih model selama AI lokal menyala.",
+    "description": "Halogen atau Lemonade di mesin ini, atau server lain yang kompatibel dengan OpenAI. Modelnya ada di setiap pemilih model selama AI lokal aktif.",
     "add": "Tambah server",
     "none": "Belum ada server. Pasang AI lokal dengan native/local-ai/install.sh, lalu tambahkan di sini.",
     "reachable": "Terjangkau · {version}",

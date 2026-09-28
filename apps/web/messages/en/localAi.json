@@ -90,7 +90,7 @@
   },
   "servers": {
     "title": "Model servers",
-    "description": "Lemonade on this machine (GPU and NPU) or another OpenAI-compatible server. Its models appear in every model picker while local AI is on.",
+    "description": "Halogen or Lemonade on this machine, or another OpenAI-compatible server. Its models are in every model picker while local AI is on.",
     "add": "Add server",
     "none": "No server yet. Install local AI with native/local-ai/install.sh, then add it here.",
     "reachable": "Reachable · {version}",

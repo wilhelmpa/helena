@@ -84,7 +84,10 @@ export default function LocalAiSettingsView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <LocalAiCard showClasses={false} />
+      {/* As wide as the settings groups below it. */}
+      <div className="ds-settings-section">
+        <LocalAiCard showClasses={false} />
+      </div>
       {!data ? (
         <ListSkeleton rows={3} rowClassName="h-12" />
       ) : (
@@ -137,7 +140,8 @@ function ServerCard({ server, settings }: { server: ModelServer; settings: Local
   const reachable = server.status?.reachable ?? false;
   return (
     <SettingsCard className="divide-y">
-      <div className="flex flex-wrap items-center gap-3 px-4 py-3">
+      {/* On a phone the controls go under the server's lines instead of squeezing them. */}
+      <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center">
         <div className="min-w-0 flex-1 space-y-0.5">
           <div className="flex items-center gap-2 font-medium">
             {server.name}
@@ -165,38 +169,45 @@ function ServerCard({ server, settings }: { server: ModelServer; settings: Local
             <p className="text-xs text-destructive">{server.status.error}</p>
           )}
         </div>
-        <Switch
-          aria-label={t('enabled')}
-          checked={server.enabled}
-          disabled={update.isPending}
-          onCheckedChange={(enabled) =>
-            update.mutate({ id: server.id, input: { enabled } }, { onError })
-          }
-        />
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={check.isPending}
-          onClick={() => check.mutate(server.id, { onError })}
-        >
-          {check.isPending ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}
-          {t('check')}
-        </Button>
-        <Button variant="ghost" size="icon" aria-label={t('edit')} onClick={() => setEditing(true)}>
-          <Pencil />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={t('remove')}
-          disabled={remove.isPending}
-          onClick={() => {
-            if (window.confirm(t('removeConfirm', { name: server.name })))
-              remove.mutate(server.id, { onError });
-          }}
-        >
-          <Trash2 />
-        </Button>
+        <div className="flex shrink-0 items-center gap-2">
+          <Switch
+            aria-label={t('enabled')}
+            checked={server.enabled}
+            disabled={update.isPending}
+            onCheckedChange={(enabled) =>
+              update.mutate({ id: server.id, input: { enabled } }, { onError })
+            }
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={check.isPending}
+            onClick={() => check.mutate(server.id, { onError })}
+          >
+            {check.isPending ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}
+            {t('check')}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={t('edit')}
+            onClick={() => setEditing(true)}
+          >
+            <Pencil />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={t('remove')}
+            disabled={remove.isPending}
+            onClick={() => {
+              if (window.confirm(t('removeConfirm', { name: server.name })))
+                remove.mutate(server.id, { onError });
+            }}
+          >
+            <Trash2 />
+          </Button>
+        </div>
       </div>
       {/* A switched-off server's models are in no picker: not listed either. */}
       {server.enabled && server.models.length > 0 && (

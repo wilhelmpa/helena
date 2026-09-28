@@ -57,7 +57,7 @@ beforeAll(async () => {
         : new Response('not found', { status: 404 });
     },
   });
-  if (!host.modelServers.get('halogen')) {
+  if (!host.get(LOCAL_AI_PLUGIN_ID)) {
     await host.load(localAiPlugin, {
       id: LOCAL_AI_PLUGIN_ID,
       name: 'Local AI',

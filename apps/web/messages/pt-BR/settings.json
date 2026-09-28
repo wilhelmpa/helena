@@ -718,7 +718,7 @@
       },
       "local-ai": {
         "label": "IA local",
-        "hint": "Modelos neste servidor: ligar, tarefas, pré-carga."
+        "hint": "Modelos nesta máquina: servidores, tipos de trabalho, avaliador."
       },
       "decisions": {
         "label": "Decisores",

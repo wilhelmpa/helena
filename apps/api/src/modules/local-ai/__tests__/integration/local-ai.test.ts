@@ -97,7 +97,7 @@ beforeAll(async () => {
     },
   });
   // The API's own plugin (the app loads it at start; a test app may not).
-  if (!host.modelServers.get('lemonade')) {
+  if (!host.get(LOCAL_AI_PLUGIN_ID)) {
     await host.load(localAiPlugin, {
       id: LOCAL_AI_PLUGIN_ID,
       name: 'Local AI',

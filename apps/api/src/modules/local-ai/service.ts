@@ -1093,7 +1093,7 @@ export async function readGpu(root = DRM): Promise<GpuReading> {
     if (vendor !== '0x1002') continue;
     return {
       present: true,
-      busyPercent: null,
+      busyPercent: await readNumber(join(device, 'gpu_busy_percent')),
       vramUsedBytes: await readNumber(join(device, 'mem_info_vram_used')),
       vramTotalBytes: await readNumber(join(device, 'mem_info_vram_total')),
       gttUsedBytes: await readNumber(join(device, 'mem_info_gtt_used')),
@@ -1157,7 +1157,7 @@ export async function localAiStatus() {
       gpu: {
         allowed: policy.units.gpu,
         present: gpu.present,
-        busyPercent: null,
+        busyPercent: gpu.busyPercent,
         vramUsedBytes: gpu.vramUsedBytes,
         vramTotalBytes: gpu.vramTotalBytes,
         gttUsedBytes: gpu.gttUsedBytes,

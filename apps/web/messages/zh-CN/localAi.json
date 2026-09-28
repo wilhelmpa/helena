@@ -90,7 +90,7 @@
   },
   "servers": {
     "title": "模型服务器",
-    "description": "本机上的 Lemonade（GPU 和 NPU）或其他兼容 OpenAI 的服务器。本地 AI 开启时，其模型会出现在每个模型选择器中。",
+    "description": "本机上的 Halogen 或 Lemonade，或其他 OpenAI 兼容服务器。本地 AI 开启时，其模型会出现在所有模型选择中。",
     "add": "添加服务器",
     "none": "还没有服务器。先用 native/local-ai/install.sh 安装本地 AI，再在这里添加。",
     "reachable": "可访问 · {version}",

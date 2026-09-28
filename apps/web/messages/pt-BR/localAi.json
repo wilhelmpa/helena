@@ -90,7 +90,7 @@
   },
   "servers": {
     "title": "Servidores de modelos",
-    "description": "Lemonade nesta máquina (GPU e NPU) ou outro servidor compatível com OpenAI. Seus modelos aparecem em todo seletor de modelos enquanto a IA local estiver ligada.",
+    "description": "Halogen ou Lemonade nesta máquina, ou outro servidor compatível com OpenAI. Seus modelos aparecem em todos os seletores de modelo enquanto a IA local estiver ligada.",
     "add": "Adicionar servidor",
     "none": "Nenhum servidor ainda. Instale a IA local com native/local-ai/install.sh e adicione-o aqui.",
     "reachable": "Acessível · {version}",
