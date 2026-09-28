@@ -311,7 +311,7 @@
   },
   "scim": {
     "saved": "Pengaturan SCIM disimpan",
-    "provisioning": "Provisioning",
+    "provisioning": "Penyediaan",
     "provisioningConfigured": "Penyedia identitas Anda membuat, memperbarui, dan menonaktifkan akun pada instance ini.",
     "provisioningMissing": "Buat token terlebih dahulu.",
     "token": "Token",

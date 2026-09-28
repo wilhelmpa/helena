@@ -9,8 +9,8 @@
     "rateLimited": "Muitas tentativas. Aguarde 15 minutos e tente novamente.",
     "locked": "O terminal fica bloqueado até você confirmar que é você.",
     "enterCode": "Inserir código",
-    "setupRequired": "Complete authenticator setup in Account → Security first.",
-    "unavailable": "Terminal access could not be verified or saved. Please try again."
+    "setupRequired": "Conclua primeiro a configuração do autenticador em Conta → Segurança.",
+    "unavailable": "Não foi possível verificar ou salvar o acesso ao terminal. Tente novamente."
   },
   "grant": {
     "active": "Terminal concedido até {time}",

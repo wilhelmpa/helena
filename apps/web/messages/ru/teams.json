@@ -561,8 +561,8 @@
     "chatNeedsAgent": "Создайте ИИ-агента, чтобы протестировать его здесь.",
     "chatNeedsProject": "Добавьте ИИ-агента в проект, чтобы протестировать его здесь.",
     "triggerFieldsTitle": "Кастомные поля, запускающие run",
-    "defaultProjectRole": "Default project role",
-    "noProjectInstructions": "No project-specific instructions",
+    "defaultProjectRole": "Роль в проекте по умолчанию",
+    "noProjectInstructions": "Нет инструкций для проекта",
     "abilities": {
       "title": "Возможности",
       "hint": "Что агент умеет в Hermes: наборы инструментов, серверы MCP, навыки и память",
@@ -800,8 +800,8 @@
       }
     },
     "chatTemplate": "Шаблон сам не запускается. Добавьте его в проект как агента, чтобы попробовать здесь.",
-    "allProjectsScope": "Project scope: all",
-    "allProjectsScopeHint": "May work in every current and future project of this team.",
+    "allProjectsScope": "Проекты: все",
+    "allProjectsScopeHint": "Может работать во всех текущих и будущих проектах этой команды.",
     "heartbeat": {
       "title": "Пульс",
       "hint": "Через равные промежутки проверяет, есть ли работа, и только тогда запускает прогон.",

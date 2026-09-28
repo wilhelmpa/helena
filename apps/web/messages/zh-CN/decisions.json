@@ -30,8 +30,8 @@
       "description": "智能体的 decide 工具和工作流步骤“决策”。"
     },
     "browser": {
-      "label": "Optional browser stage",
-      "description": "Synthetic target selection for the native JEV stage. Enable this use case through the team first-stage policy; the existing project agent handles continuation."
+      "label": "可选浏览器阶段",
+      "description": "用于原生 JEV 阶段的合成目标选择。请先通过团队前置阶段策略启用此用例；后续由现有项目代理继续处理。"
     }
   },
   "class": {
@@ -188,16 +188,16 @@
     }
   },
   "firstStage": {
-    "title": "Optional Jev first stage",
-    "hint": "Jev may answer small typed judgments first. When off, uncertain, unavailable or too slow, the existing decision path continues. Complex work keeps the assigned specialist; this does not change agents or model defaults.",
-    "connection": "Jev connection (changing it switches this stage off)",
-    "none": "None",
-    "timeout": "Maximum wait for Jev (milliseconds)",
-    "cloudHint": "Enable only the use cases whose input may be sent to Jev in the cloud. A passed evaluation is required. Their existing class switch and fallback still apply; local-only classes are excluded.",
-    "cooldown": "Jev is temporarily skipped after repeated service failures. The existing path remains available.",
-    "allow": "Allow Jev cloud first stage for {name}",
-    "evaluating": "Evaluating…",
-    "evaluateAgain": "Evaluate again",
-    "evaluate": "Evaluate before enabling"
+    "title": "可选的 Jev 前置阶段",
+    "hint": "Jev 可以先回答小型的类型化判断。关闭、不确定、不可用或过慢时，现有决策路径将继续。复杂工作仍由指派的专家处理；这不会更改代理或模型默认值。",
+    "connection": "Jev 连接（更改后此阶段将关闭）",
+    "none": "无",
+    "timeout": "等待 Jev 的最长时间（毫秒）",
+    "cloudHint": "仅启用其输入可以发送到云端 Jev 的用例。需要通过评估。其现有的类型开关和备用方案仍然适用；仅限本地的类型不包括在内。",
+    "cooldown": "服务多次失败后，Jev 暂时被跳过。现有路径仍然可用。",
+    "allow": "允许 {name} 使用 Jev 云端前置阶段",
+    "evaluating": "正在评估…",
+    "evaluateAgain": "重新评估",
+    "evaluate": "启用前先评估"
   }
 }

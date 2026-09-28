@@ -50,22 +50,22 @@
       "workspace": "工作区任务",
       "digest": "摘要"
     },
-    "results": "Results",
-    "noSummary": "No summary yet.",
-    "noOutputs": "No results reported yet.",
-    "steps": "Steps",
-    "noSteps": "No steps recorded yet.",
-    "rawProtocol": "Raw protocol",
+    "results": "结果",
+    "noSummary": "暂无摘要。",
+    "noOutputs": "尚未报告结果。",
+    "steps": "步骤",
+    "noSteps": "尚未记录步骤。",
+    "rawProtocol": "原始记录",
     "outputKind": {
-      "file": "File",
-      "preview": "Preview",
-      "pr": "Pull request",
-      "screenshot": "Screenshot"
+      "file": "文件",
+      "preview": "预览",
+      "pr": "拉取请求",
+      "screenshot": "截图"
     },
     "stepState": {
-      "running": "In progress",
-      "done": "Done",
-      "failed": "Failed"
+      "running": "进行中",
+      "done": "已完成",
+      "failed": "失败"
     },
     "spent": "消耗"
   },

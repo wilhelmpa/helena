@@ -88,7 +88,7 @@
     "summarizeDescription": "Ein kleines Modell fasst neue Versionshinweise zusammen und bewertet das Risiko.",
     "agent": "Agent",
     "model": "Modell",
-    "reasoning": "Reasoning",
+    "reasoning": "Denktiefe",
     "automatic": "Automatisch",
     "automaticAgent": "Automatisch ({name})",
     "automaticModel": "Automatisch ({model})",

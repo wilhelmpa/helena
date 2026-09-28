@@ -148,7 +148,7 @@
       "approval": "Freigabe angefragt",
       "changed": "Geändert"
     },
-    "owner": "Owner",
+    "owner": "Inhaber",
     "run": "Lauf {id}",
     "chat": "Chat",
     "changes": {

@@ -63,7 +63,7 @@
     "failedUnits": "Layanan gagal: {units}",
     "reboot": "Disarankan untuk memulai ulang.",
     "started": "Pembaruan dimulai",
-    "rolledBack": "Rolled back"
+    "rolledBack": "Dikembalikan"
   },
   "sources": {
     "hermes": "Hermes",
@@ -101,16 +101,16 @@
     },
     "save": "Simpan",
     "saved": "Tersimpan",
-    "componentModes": "Components",
-    "componentModesDescription": "Automatic updates apply only when risk is low and there are no breaking changes.",
+    "componentModes": "Komponen",
+    "componentModesDescription": "Pembaruan otomatis hanya diterapkan jika risikonya rendah dan tidak ada perubahan yang merusak.",
     "risk": {
-      "low": "Low risk",
-      "medium": "Medium risk",
-      "high": "High risk",
-      "unknown": "Risk not yet known"
+      "low": "Risiko rendah",
+      "medium": "Risiko sedang",
+      "high": "Risiko tinggi",
+      "unknown": "Risiko belum diketahui"
     },
     "mode": {
-      "auto": "Automatic",
+      "auto": "Otomatis",
       "manual": "Manual"
     }
   },
@@ -124,8 +124,8 @@
   "aptListsAt": "Waktu daftar paket: {time}",
   "aptNotRefreshed": "Belum ada pembaruan metadata APT yang berhasil tercatat",
   "unverified": "Status belum terverifikasi",
-  "autoApplied": "Applied automatically: {name}",
-  "autoRolledBack": "Rolled back",
-  "autoFailedShort": "Update failed",
-  "autoFailed": "Automatic update failed: {name}"
+  "autoApplied": "Diterapkan otomatis: {name}",
+  "autoRolledBack": "Dikembalikan",
+  "autoFailedShort": "Pembaruan gagal",
+  "autoFailed": "Pembaruan otomatis gagal: {name}"
 }

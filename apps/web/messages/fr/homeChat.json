@@ -1,11 +1,11 @@
 {
-  "working": "{count, plural, =0 {NO AGENTS WORKING} one {# AGENT WORKING} other {# AGENTS WORKING}}",
-  "title": "What is next?",
-  "recent": "Running now",
-  "finished": "Recently finished",
-  "empty": "No recent agent runs.",
-  "history": "Open chat history",
-  "activity": "Open agent activity",
+  "working": "{count, plural, =0 {AUCUN AGENT AU TRAVAIL} one {# AGENT AU TRAVAIL} many {# AGENTS AU TRAVAIL} other {# AGENTS AU TRAVAIL}}",
+  "title": "Et maintenant ?",
+  "recent": "En cours",
+  "finished": "Terminés récemment",
+  "empty": "Aucune exécution d’agent récente.",
+  "history": "Ouvrir l’historique des discussions",
+  "activity": "Ouvrir l’activité des agents",
   "workingOpen": "Ouvrir les exécutions en cours",
   "chats": "Discussions"
 }

@@ -50,22 +50,22 @@
       "workspace": "Tugas ruang kerja",
       "digest": "Ringkasan"
     },
-    "results": "Results",
-    "noSummary": "No summary yet.",
-    "noOutputs": "No results reported yet.",
-    "steps": "Steps",
-    "noSteps": "No steps recorded yet.",
-    "rawProtocol": "Raw protocol",
+    "results": "Hasil",
+    "noSummary": "Belum ada ringkasan.",
+    "noOutputs": "Belum ada hasil yang dilaporkan.",
+    "steps": "Langkah",
+    "noSteps": "Belum ada langkah yang tercatat.",
+    "rawProtocol": "Protokol mentah",
     "outputKind": {
       "file": "File",
-      "preview": "Preview",
+      "preview": "Pratinjau",
       "pr": "Pull request",
-      "screenshot": "Screenshot"
+      "screenshot": "Tangkapan layar"
     },
     "stepState": {
-      "running": "In progress",
-      "done": "Done",
-      "failed": "Failed"
+      "running": "Sedang berjalan",
+      "done": "Selesai",
+      "failed": "Gagal"
     },
     "spent": "Pemakaian"
   },

@@ -561,8 +561,8 @@
     "chatNeedsAgent": "أنشئ وكيل الذكاء الاصطناعي لتجربته هنا.",
     "chatNeedsProject": "أضف وكيل الذكاء الاصطناعي إلى مشروع لتجربته هنا.",
     "triggerFieldsTitle": "الحقول المخصصة التي تبدأ تشغيلاً",
-    "defaultProjectRole": "Default project role",
-    "noProjectInstructions": "No project-specific instructions",
+    "defaultProjectRole": "دور المشروع الافتراضي",
+    "noProjectInstructions": "لا توجد تعليمات خاصة بالمشروع",
     "abilities": {
       "title": "القدرات",
       "hint": "ما يستطيع الوكيل فعله في Hermes: مجموعات الأدوات وخوادم MCP والمهارات والذاكرة",
@@ -800,8 +800,8 @@
       }
     },
     "chatTemplate": "القالب لا يعمل بنفسه. أضفه إلى مشروع كوكيل لتجربته هنا.",
-    "allProjectsScope": "Project scope: all",
-    "allProjectsScopeHint": "May work in every current and future project of this team.",
+    "allProjectsScope": "نطاق المشاريع: الكل",
+    "allProjectsScopeHint": "يمكنه العمل في كل مشاريع هذا الفريق الحالية والمستقبلية.",
     "heartbeat": {
       "title": "النبض",
       "hint": "يتحقق على فترات ثابتة مما إذا كان هناك ما يُفعل، ولا يبدأ تشغيلاً إلا عندها.",

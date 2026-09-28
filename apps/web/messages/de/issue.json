@@ -488,14 +488,14 @@
     "steps": {
       "coordinate": "Planung",
       "specialize": "Spezialisten",
-      "review": "Review",
+      "review": "Prüfung",
       "synchronize": "Ergebnis in Aufgabe"
     },
     "phases": {
       "route": "Weitergeleitet",
       "coordinate": "Koordinator",
       "specialize": "Spezialist",
-      "review": "Review",
+      "review": "Prüfer",
       "synchronize": "Ergebnis"
     },
     "stageStatus": {

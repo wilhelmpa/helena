@@ -63,7 +63,7 @@
     "failedUnits": "失败的服务：{units}",
     "reboot": "建议重新启动。",
     "started": "更新已开始",
-    "rolledBack": "Rolled back"
+    "rolledBack": "已回滚"
   },
   "sources": {
     "hermes": "Hermes",
@@ -101,17 +101,17 @@
     },
     "save": "保存",
     "saved": "已保存",
-    "componentModes": "Components",
-    "componentModesDescription": "Automatic updates apply only when risk is low and there are no breaking changes.",
+    "componentModes": "组件",
+    "componentModesDescription": "仅在风险低且没有破坏性变更时才自动更新。",
     "risk": {
-      "low": "Low risk",
-      "medium": "Medium risk",
-      "high": "High risk",
-      "unknown": "Risk not yet known"
+      "low": "低风险",
+      "medium": "中等风险",
+      "high": "高风险",
+      "unknown": "风险尚未知"
     },
     "mode": {
-      "auto": "Automatic",
-      "manual": "Manual"
+      "auto": "自动",
+      "manual": "手动"
     }
   },
   "home": {
@@ -124,8 +124,8 @@
   "aptListsAt": "软件包列表时间：{time}",
   "aptNotRefreshed": "尚未记录成功的 APT 元数据刷新",
   "unverified": "状态未经确认",
-  "autoApplied": "Applied automatically: {name}",
-  "autoRolledBack": "Rolled back",
-  "autoFailedShort": "Update failed",
-  "autoFailed": "Automatic update failed: {name}"
+  "autoApplied": "已自动应用：{name}",
+  "autoRolledBack": "已回滚",
+  "autoFailedShort": "更新失败",
+  "autoFailed": "自动更新失败：{name}"
 }

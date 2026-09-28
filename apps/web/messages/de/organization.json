@@ -154,7 +154,7 @@
     "pool": "Pool",
     "coordinator": "Koordinator",
     "specialist": "Spezialist",
-    "reviewer": "Reviewer"
+    "reviewer": "Prüfer"
   },
   "resources": {
     "title": "Projektressourcen",
@@ -241,7 +241,7 @@
     "loadFailed": "Das Organigramm konnte nicht geladen werden.",
     "runtime": "Laufzeit",
     "model": "Modell",
-    "reasoning": "Reasoning",
+    "reasoning": "Denktiefe",
     "decider": "Entscheider",
     "threshold": "Schwelle",
     "trust": "Vertrauen",

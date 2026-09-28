@@ -488,7 +488,7 @@
       "status_changed": "تغيير الحالة",
       "label_added": "إضافة تسمية",
       "schedule": "جدول زمني",
-      "webhook": "webhook",
+      "webhook": "خطاف ويب (webhook)",
       "mail_received": "استلام بريد",
       "routine": "جدول زمني",
       "delegation": "تفويض إلى المنسق"

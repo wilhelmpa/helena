@@ -35,14 +35,14 @@
     "test": "测试连接",
     "lastOk": "连接正常",
     "lastError": "连接失败",
-    "keySource": "Key source",
-    "keySourceStored": "Store a key in this connection",
-    "keySourceCredential": "Use an existing API key",
-    "keyCredential": "Original API key credential",
-    "chooseKeyCredential": "Choose an API key",
-    "keyCredentialHint": "Helena reads the current key from this credential for each request. Rotate it there once. Only API keys from this team and the same project (or the whole team) can be used. No key is copied or disclosed to agents.",
-    "keySourcesLoading": "Loading API keys…",
-    "keySourceUnavailable": "No matching API key is available, or the saved source is no longer accessible. Choose a valid source or check credentials."
+    "keySource": "密钥来源",
+    "keySourceStored": "在此连接中存储密钥",
+    "keySourceCredential": "使用现有 API 密钥",
+    "keyCredential": "原始 API 密钥凭据",
+    "chooseKeyCredential": "选择 API 密钥",
+    "keyCredentialHint": "Helena 每次请求时都会从此凭据读取当前密钥。只需在那里轮换一次。只能使用本团队且属于同一项目（或整个团队）的 API 密钥。不会复制密钥，也不会向代理披露。",
+    "keySourcesLoading": "正在加载 API 密钥…",
+    "keySourceUnavailable": "没有可用的匹配 API 密钥，或已保存的来源不再可访问。请选择有效来源或检查凭据。"
   },
   "test": {
     "succeeded": "连接正常 · {models} · {ms} 毫秒",

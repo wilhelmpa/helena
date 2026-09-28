@@ -9,8 +9,8 @@
     "rateLimited": "Слишком много попыток. Подождите 15 минут и попробуйте снова.",
     "locked": "Терминал заблокирован, пока вы не подтвердите, что это вы.",
     "enterCode": "Ввести код",
-    "setupRequired": "Complete authenticator setup in Account → Security first.",
-    "unavailable": "Terminal access could not be verified or saved. Please try again."
+    "setupRequired": "Сначала завершите настройку приложения-аутентификатора в разделе «Аккаунт → Безопасность».",
+    "unavailable": "Не удалось проверить или сохранить доступ к терминалу. Попробуйте ещё раз."
   },
   "grant": {
     "active": "Терминал разрешён до {time}",
@@ -25,8 +25,8 @@
     "helena-dev-claude": "Развивать Helena (Claude Code)",
     "helena-dev-codex": "Развивать Helena (Codex)",
     "close": "Завершить сеанс",
-    "local-qwen36": "Qwen 3.6 local (Codex)",
-    "local-qwen38": "Qwen 3.8 local (Codex)"
+    "local-qwen36": "Qwen 3.6 локально (Codex)",
+    "local-qwen38": "Qwen 3.8 локально (Codex)"
   },
   "keys": {
     "esc": "Esc",

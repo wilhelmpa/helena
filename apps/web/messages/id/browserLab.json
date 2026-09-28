@@ -35,14 +35,14 @@
     "test": "Uji koneksi",
     "lastOk": "Koneksi berfungsi",
     "lastError": "Koneksi gagal",
-    "keySource": "Key source",
-    "keySourceStored": "Store a key in this connection",
-    "keySourceCredential": "Use an existing API key",
-    "keyCredential": "Original API key credential",
-    "chooseKeyCredential": "Choose an API key",
-    "keyCredentialHint": "Helena reads the current key from this credential for each request. Rotate it there once. Only API keys from this team and the same project (or the whole team) can be used. No key is copied or disclosed to agents.",
-    "keySourcesLoading": "Loading API keys…",
-    "keySourceUnavailable": "No matching API key is available, or the saved source is no longer accessible. Choose a valid source or check credentials."
+    "keySource": "Sumber kunci",
+    "keySourceStored": "Simpan kunci di koneksi ini",
+    "keySourceCredential": "Gunakan kunci API yang sudah ada",
+    "keyCredential": "Kredensial kunci API asli",
+    "chooseKeyCredential": "Pilih kunci API",
+    "keyCredentialHint": "Helena membaca kunci terbaru dari kredensial ini untuk setiap permintaan. Rotasi cukup dilakukan sekali di sana. Hanya kunci API dari tim ini dan proyek yang sama (atau seluruh tim) yang dapat digunakan. Tidak ada kunci yang disalin atau diungkapkan kepada agen.",
+    "keySourcesLoading": "Memuat kunci API…",
+    "keySourceUnavailable": "Tidak ada kunci API yang cocok, atau sumber yang disimpan tidak dapat diakses lagi. Pilih sumber yang valid atau periksa kredensial."
   },
   "test": {
     "succeeded": "Koneksi berfungsi · {models} · {ms} ms",

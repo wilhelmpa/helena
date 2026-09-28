@@ -73,8 +73,8 @@
     "homeHttpsOk": "HTTPS дома ({host}): сертификат действителен ещё {days, plural, one {# день} few {# дня} many {# дней} other {# дня}}.",
     "homeHttpsExpiring": "HTTPS дома ({host}): сертификат истекает через {days, plural, one {# день} few {# дня} many {# дней} other {# дня}}; продление не сработало.",
     "homeHttpsInvalid": "HTTPS дома ({host}): {reason, select, expired {сертификат истёк} name {сертификат не для этого имени} untrusted {сертификату нельзя доверять} unreachable {недоступен} other {недействителен}}.",
-    "localAiEviction": "Local AI was evicted from the GPU for over 30 seconds in the last five minutes. Available RAM: {available}.",
-    "localAiProbeSlow": "Local AI missed the five-second response limit three times in a row. Available RAM: {available}."
+    "localAiEviction": "За последние пять минут локальный ИИ был вытеснен из GPU более чем на 30 секунд. Доступно ОЗУ: {available}.",
+    "localAiProbeSlow": "Локальный ИИ три раза подряд не уложился в пятисекундный лимит ответа. Доступно ОЗУ: {available}."
   },
   "overview": {
     "machine": "Машина",
@@ -94,12 +94,12 @@
     "swapUsed": "{used} из {total}",
     "health": "Состояние",
     "helper": "Хост-помощник {version}",
-    "localAiGuard": "Local AI guard",
-    "eviction": "GPU eviction (last 5 min)",
-    "probe": "Probe decision",
-    "notMeasured": "Not measured yet",
-    "restartLocalAi": "Restart local AI",
-    "restartDone": "Restart started; pinned models are being preloaded."
+    "localAiGuard": "Защита локального ИИ",
+    "eviction": "Вытеснение из GPU (последние 5 мин)",
+    "probe": "Итог проверки",
+    "notMeasured": "Ещё не измерено",
+    "restartLocalAi": "Перезапустить локальный ИИ",
+    "restartDone": "Перезапуск начат; закреплённые модели загружаются заранее."
   },
   "disks": {
     "arrays": "Зеркала",

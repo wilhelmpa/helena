@@ -51,7 +51,7 @@
   },
   "stateGroups": {
     "backlog": "Backlog",
-    "unstarted": "Todo",
+    "unstarted": "Akan dikerjakan",
     "started": "Sedang Dikerjakan",
     "completed": "Selesai",
     "canceled": "Dibatalkan"
