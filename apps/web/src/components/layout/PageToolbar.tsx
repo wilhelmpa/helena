@@ -281,7 +281,7 @@ export function PageSearch({
         }}
         placeholder={placeholder}
         aria-label={placeholder}
-        className="h-7 w-full min-w-0 rounded-md border border-sidebar-border bg-background ps-7 pe-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-sidebar-ring focus-visible:bg-accent/20 aria-invalid:border-destructive [&::-webkit-search-cancel-button]:hidden"
+        className="ds-page-search-input"
       />
     </div>
   );

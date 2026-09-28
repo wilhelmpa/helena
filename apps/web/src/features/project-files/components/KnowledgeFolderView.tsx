@@ -139,11 +139,7 @@ export default function KnowledgeFolderView({
   const more = scope.kind === 'home' && (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          aria-label={t('more')}
-          className="grid size-8 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground hover:text-foreground"
-        >
+        <button type="button" aria-label={t('more')} className="ds-icon-button">
           <MoreHorizontal size={17} />
         </button>
       </DropdownMenuTrigger>

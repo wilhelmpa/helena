@@ -34,7 +34,12 @@ import KnowledgeFrame, {
   useListKeyboard,
   type KnowledgeCrumb,
 } from '@/components/helena/KnowledgeFrame';
-import PillButton from '@/components/helena/PillButton';
+import {
+  PAGE_CONTROL_ACTIVE_CLASS,
+  PAGE_CONTROL_CLASS,
+  PAGE_PRIMARY_CLASS,
+} from '@/components/layout/PageToolbar';
+import { cn } from '@/lib/utils';
 import VaultFilePicker from '@/features/mail/components/VaultFilePicker';
 import { ApiError } from '@/lib/api/core/client';
 import {
@@ -416,10 +421,10 @@ export default function ReceiptsPage() {
           <>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <PillButton className="h-8 min-h-8 shrink-0 gap-1 px-3">
-                  <Plus size={14} aria-hidden="true" />
+                <button type="button" className={cn(PAGE_CONTROL_CLASS, PAGE_PRIMARY_CLASS)}>
+                  <Plus aria-hidden="true" />
                   {t('new')}
-                </PillButton>
+                </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-60">
                 <DropdownMenuItem
@@ -446,12 +451,8 @@ export default function ReceiptsPage() {
             </DropdownMenu>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  aria-label={t('more')}
-                  className="grid size-8 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground hover:text-foreground"
-                >
-                  <MoreHorizontal size={17} />
+                <button type="button" aria-label={t('more')} className="ds-icon-button">
+                  <MoreHorizontal size={16} />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64">
@@ -473,9 +474,12 @@ export default function ReceiptsPage() {
                 <button
                   type="button"
                   aria-label={t('month')}
-                  className={`inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-xs transition-colors ${month === ALL_MONTHS ? 'bg-muted text-muted-foreground hover:text-foreground' : 'bg-accent text-accent-foreground'}`}
+                  className={cn(
+                    PAGE_CONTROL_CLASS,
+                    month !== ALL_MONTHS && PAGE_CONTROL_ACTIVE_CLASS,
+                  )}
                 >
-                  <CalendarDays size={13} aria-hidden="true" />
+                  <CalendarDays aria-hidden="true" />
                   {month === ALL_MONTHS ? t('allMonths') : formatMonth(month, locale)}
                 </button>
               </DropdownMenuTrigger>
