@@ -339,6 +339,11 @@ helena_fact_entity_link      fact_id, entity_id
   - Braucht einen Server-Eintrag Halogen (OpenAI-kompatibel) im Local-AI-Snapshot mit `provider` (z. B. `helena-halogen`), `baseUrl` (für Isolierte: der Weiterleiter) und Modellen mit `capabilities: ['chat','tools','reasoning']` und `contextLength`.
   - Die Laufzeit liest nur `snapshot.localAi.servers`, sie baut keinen eigenen Weiterleiter.
   - Den Entscheider (`logit_bias`) nutzt sie über den vorhandenen `decide`-MCP.
+- **Eskalationsregeln in `hub/halogen-integration`** (`apps/api/src/modules/escalation`, Commit 0ead5b673, Stand „Entwurf, nicht verdrahtet“): zentrale Administrator-Regeln (`GET/PUT /god/escalation`, Aufgabenarten → starkes Modell, Unsicherheitsschwelle, Fehlschlag nach N Versuchen, Festlegungen je Agent/Projekt/Aufgabe) mit einer reinen Funktion `escalate()`. **Die beiden Zweige doppeln sich**, deshalb gilt nach dem Merge:
+  - Quelle der Wahrheit sind die zentralen Regeln.
+  - `runtimePolicySnapshot` füllt `snapshot.helena.escalation` für einen Agenten auf der Laufzeit `helena` daraus: Aufgabenarten → `taskKinds`, Schwelle → `confidenceBelow`, Fehlschlag → `onFailure`, starkes Modell → `target` (Claude-Modelle → `runtime:claude/<modell>`, gpt-Modelle → `runtime:codex/<modell>`, API-Schlüssel-Modelle direkt).
+  - Der Abschnitt „Übergabe“ im Agent-Dialog wird dann zur Festlegung (Pin) dieses Agenten, ohne eigene Regelliste.
+  - Die Schleife selbst bleibt unverändert: Sie liest nur `snapshot.helena.escalation`.
 - **`hub/phase0-stabil`:** Runner-Drain und Gate. Die Laufzeit hält SIGINT sauber ein, damit der Drain nicht SIGKILLen muss. Neue Test-Suite `packages/agent-runtime` und `packages/facts` gehört ins Gate.
 - **`hub/agentic-browser-eval`:** wird in diesen Zweig gemergt, die Eval bekommt `--runtime helena`.
 
@@ -355,6 +360,23 @@ helena_fact_entity_link      fact_id, entity_id
 9. Abnahme-Suite (Coding und Browser über die neue Laufzeit).
 
 Stand der Umsetzung: siehe Abschnitt „Umsetzungsstand“ am Ende (wird mit jedem Commit fortgeschrieben).
+
+## 16. Oberfläche und Abnahme (Owner-Regel 28.09.)
+
+Alles Neue sitzt in der vorhandenen Oberfläche mit den Mustern aus `design-system.md` und `ui-system.md`. Es gibt keine eigene Seite und keine Behelfs-UI. Jede Funktion hat einen Test ihrer Wirkung, dazu eine Klick-Abnahme hell/dunkel und Desktop/Handy ohne Konsolenfehler.
+
+| Funktion | Wo in Helena | Test der Wirkung |
+|---|---|---|
+| Laufzeit „Helena (lokal zuerst)“ wählen | Agent-Dialog → Allgemein → Ausführung (`RuntimePicker`); nur sichtbar mit `HELENA_NATIVE_RUNTIME=on` (`GET /agent-runtimes`) | `AgentHelenaRuntimeFields.test.tsx` (Angebot nur mit Schalter), API: Laufzeit ohne Schalter verworfen |
+| Werkzeuge der Rolle, Browser-Zeit | darunter, Gruppe „Ausführung“, `ds-settings-row` | Komponententest: Browser-Zeit erreicht die Policy; Laufzeit-Test: Browser-Budget |
+| Übergabe an großes Modell (Ziel, Aufgabenarten, bei Fehlschlag, Sicherheitsschwelle) | ebenda | Komponententest: Schalter und Schwelle erreichen die Policy; API: Folge-Lauf `escalation`; Schleife: Übergabe-Tests |
+| Übergabe-Lauf sichtbar | Agent-Dialog → Läufe, Dashboard-Widget (Trigger „Übergabe“) | API-Test: Folge-Lauf auf dem Claude-Agenten |
+| Fakten (lesen, bearbeiten, „Stimmt“, entfernen, möglicher Widerspruch) | Agent-Dialog → Gedächtnis | `AgentFactsPanel.test.tsx`; API: Owner korrigiert und entfernt |
+| Tagesnotizen | Agent-Dialog → Gedächtnis | `AgentFactsPanel.test.tsx`; API: Notizen |
+| Sitzungssuche, Gedächtnis- und Faktensuche | Suche „Alles“ mit den Quellen Agenten-Sitzungen, Agenten-Gedächtnis, Fakten | API: Suche findet den Fakt (Wissens-Index) |
+| `clarify`-Auswahl | Chat-Eingabe (vorhandene Auswahl-Chips) | Schleifen-Test `clarify` |
+
+Klick-Abnahme: Skript `~/agent-work/runtime-accept.mjs` auf Kingston (eigener Dev-Stack mit Schalter an), Bildschirmfotos unter `~/agent-work/runtime-shots/`. Ergebnis im Abschnitt „Umsetzungsstand“.
 
 ## Umsetzungsstand (28.09.2026, Zweig `hub/zentrale-laufzeit`, nicht live)
 
