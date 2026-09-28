@@ -45,7 +45,6 @@ export async function routeTaskAgent(input: {
   title: string;
   description?: string;
   candidates: TriageCandidate[];
-  publicDataConfirmed?: boolean;
   subject?: string;
 }) {
   const candidates = input.candidates.slice(0, 14);
@@ -53,7 +52,7 @@ export async function routeTaskAgent(input: {
     teamId: input.teamId,
     projectId: input.projectId,
     classId: AGENT_ROUTING_CLASS,
-    localOnly: !input.publicDataConfirmed,
+    localOnly: true,
     subject: input.subject,
     context: {
       title: input.title.slice(0, 300),

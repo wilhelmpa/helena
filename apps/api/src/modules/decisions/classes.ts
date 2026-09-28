@@ -58,7 +58,7 @@ export const BUILTIN_DECISION_CLASSES: DecisionClass[] = [
       en: 'Selects an eligible agent for a task.',
       de: 'Wählt einen geeigneten Agenten für eine Aufgabe.',
     },
-    input: { store: 'never', cloud: 'allowed' },
+    input: { store: 'never', cloud: 'never' },
     defaults: { threshold: 0.85, timeoutMs: 5000 },
     eval: AGENT_ROUTING_EVAL,
   },
