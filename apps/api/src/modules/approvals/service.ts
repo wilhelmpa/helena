@@ -17,6 +17,7 @@ import { categoryOfApprovalKind, type ActionScope } from '@helena/policy';
 import { approvalScope } from './scope';
 import { listMemberContexts, toMemberContext, type MemberRole } from '#modules/members/service';
 import { notifyApprovalRequested } from '#modules/notifications/service';
+import { enqueueTelegramApproval } from '#modules/telegram/channel';
 import { HttpError, iso, pgErrorCode } from '#shared/lib';
 import { hasPermission, type PermissionAction, type PermissionResource } from '#shared/permissions';
 import { publishDomainEvent } from '#shared/helena';
@@ -307,6 +308,9 @@ export async function createApprovalRequest(input: {
       issueId,
       runId: run?.id ?? null,
     },
+  });
+  await enqueueTelegramApproval(id, await deciders(input.projectId)).catch(() => {
+    console.warn('[telegram] could not queue approval notice');
   });
   if (issueId != null) {
     await notifyApprovalRequested({

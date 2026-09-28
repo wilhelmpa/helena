@@ -74,6 +74,7 @@ import {
   localCatalogModelsNow,
 } from '#modules/local-ai/service';
 import type { RuntimeFailure } from '@helena/sdk';
+import { activeOrderContext } from '#modules/standing-orders/service';
 import {
   annotateCatalog,
   learnFromOutcome,
@@ -1161,7 +1162,7 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
     id: row.id,
     threadId: row.threadId,
     prompt: earlier.length > 0 ? frameChatPrompt(earlier, asked, agent.id) : asked,
-    systemPrompt: '',
+    systemPrompt: await activeOrderContext(row.projectId, agent.id),
     attempts: row.attempts,
     sessionId,
     ...settings,

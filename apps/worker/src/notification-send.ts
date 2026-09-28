@@ -92,18 +92,17 @@ async function sendTelegram(input: SendInput): Promise<SendResult> {
       }),
     });
     if (res.ok) return { ok: true };
-    const body = await res.text().catch(() => '');
     // A 429 or 5xx is transient; other 4xx (bad token, chat not found) is permanent.
     return {
       ok: false,
       retryable: res.status === 429 || res.status >= 500,
-      error: `Telegram HTTP ${res.status}: ${body.slice(0, 200)}`,
+      error: `Telegram HTTP ${res.status}`,
     };
-  } catch (err) {
+  } catch {
     return {
       ok: false,
       retryable: true,
-      error: err instanceof Error ? err.message : 'telegram request failed',
+      error: 'telegram request failed',
     };
   }
 }

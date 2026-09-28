@@ -22,24 +22,43 @@ async function pendingLink(ttlMinutes = 15): Promise<{ userId: string; code: str
 describe('confirmTelegramLink', () => {
   it('links the chat and refuses to replay the code', async () => {
     const { userId, code } = await pendingLink();
-    const chatId = randomUUID();
+    const chatId = String(Math.floor(Math.random() * 1_000_000_000));
 
-    const first = await confirmTelegramLink({ code, chatId, username: 'lin', firstName: 'Lin' });
+    const first = await confirmTelegramLink({
+      code,
+      chatId,
+      telegramUserId: chatId,
+      username: 'lin',
+      firstName: 'Lin',
+    });
     expect(first).toEqual({ ok: true, userId });
 
-    const replay = await confirmTelegramLink({ code, chatId, username: 'lin', firstName: 'Lin' });
+    const replay = await confirmTelegramLink({
+      code,
+      chatId,
+      telegramUserId: chatId,
+      username: 'lin',
+      firstName: 'Lin',
+    });
     expect(replay).toEqual({ ok: false, reason: 'invalid' });
   });
 
   it('refuses a chat already linked to another user', async () => {
-    const chatId = randomUUID();
+    const chatId = String(Math.floor(Math.random() * 1_000_000_000));
     const first = await pendingLink();
-    await confirmTelegramLink({ code: first.code, chatId, username: null, firstName: null });
+    await confirmTelegramLink({
+      code: first.code,
+      chatId,
+      telegramUserId: chatId,
+      username: null,
+      firstName: null,
+    });
 
     const second = await pendingLink();
     const result = await confirmTelegramLink({
       code: second.code,
       chatId,
+      telegramUserId: chatId,
       username: null,
       firstName: null,
     });
@@ -50,7 +69,8 @@ describe('confirmTelegramLink', () => {
     const { code } = await pendingLink(-1);
     const result = await confirmTelegramLink({
       code,
-      chatId: randomUUID(),
+      chatId: '123456789',
+      telegramUserId: '123456789',
       username: null,
       firstName: null,
     });
@@ -60,7 +80,8 @@ describe('confirmTelegramLink', () => {
   it('rejects an unknown code', async () => {
     const result = await confirmTelegramLink({
       code: 'nope',
-      chatId: randomUUID(),
+      chatId: '123456789',
+      telegramUserId: '123456789',
       username: null,
       firstName: null,
     });

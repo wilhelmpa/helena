@@ -1,64 +1,164 @@
 import { Bot } from 'grammy';
-import { confirmTelegramLink } from './db';
+import {
+  confirmTelegramLink,
+  decideAlertNotice,
+  linkedUser,
+  markNoticeSent,
+  markAlertSent,
+  markReplyDelivered,
+  pendingApprovalNotices,
+  pendingAlertNotices,
+  pendingTelegramReplies,
+  queueTelegramDecision,
+  queueTelegramMessage,
+} from './db';
 
-// The Telegram bot itself. Today it handles one thing: the `/start <code>` deep link
-// that completes an account link. The code is minted by the api when the user presses
-// "Connect" in their account settings, and the link opens this chat with it attached.
+function alertSummary(source: string): string {
+  if (source === 'helena.logins') return 'A model login needs attention.';
+  if (source === 'helena.security') return 'Security checks need attention.';
+  if (source === 'helena.local-ai') return 'A local AI server needs attention.';
+  return 'Review Helena for details.';
+}
 
-const HELP =
-  'This bot delivers notifications from your project tracker.\n\n' +
-  'To connect it, open Accounts in your profile and press Connect for Telegram.';
+const HELP = 'Connect this bot from Helena settings with a one-time pairing code.';
 
 export function createBot(token: string): Bot {
   const bot = new Bot(token);
 
   bot.command('start', async (ctx) => {
-    // For /start, ctx.match is the deep-link payload — empty when the user opened the
-    // bot directly instead of through the link.
+    if (ctx.chat.type !== 'private' || !ctx.from) {
+      console.warn(`[bot] ignored unpaired /start from Telegram user ${ctx.from?.id ?? 'unknown'}`);
+      return;
+    }
     const code = ctx.match.trim();
     if (!code) {
-      await ctx.reply(HELP);
+      if (await linkedUser(String(ctx.from.id), String(ctx.chat.id))) await ctx.reply(HELP);
+      else console.warn(`[bot] ignored unknown Telegram user ${ctx.from.id}`);
       return;
     }
-    const from = ctx.from;
-    if (!from) return;
-    // A link binds notifications to the chat it was confirmed in, so it is only
-    // accepted in a private chat. Typed in a group, it would send one user's
-    // notifications to everyone there.
-    if (ctx.chat.type !== 'private') {
-      await ctx.reply('Open a private chat with this bot to connect your account.');
-      return;
-    }
-
     const result = await confirmTelegramLink({
       code,
       chatId: String(ctx.chat.id),
-      username: from.username ?? null,
-      firstName: from.first_name ?? null,
+      telegramUserId: String(ctx.from.id),
+      username: ctx.from.username ?? null,
+      firstName: ctx.from.first_name ?? null,
     });
+    if (result.ok) await ctx.reply('Connected to Helena. Send a message to start a chat.');
+    else console.warn(`[bot] ignored invalid pairing from Telegram user ${ctx.from.id}`);
+  });
 
-    if (result.ok) {
-      await ctx.reply('Your Telegram account is connected. Notifications will arrive here.');
+  bot.on('message:text', async (ctx) => {
+    if (ctx.chat.type !== 'private' || !ctx.from) {
+      console.warn(`[bot] ignored message from Telegram user ${ctx.from?.id ?? 'unknown'}`);
       return;
     }
-    if (result.reason === 'taken') {
-      await ctx.reply('This Telegram account is already connected to another user.');
+    const userId = await linkedUser(String(ctx.from.id), String(ctx.chat.id));
+    if (!userId) {
+      console.warn(`[bot] ignored unknown Telegram user ${ctx.from.id}`);
       return;
     }
-    await ctx.reply(
-      'This link has expired. Open Accounts in your profile and press Connect again.',
+    const text = ctx.message.text.trim();
+    if (text.length === 0 || text.length > 32_000) return;
+    await queueTelegramMessage(String(ctx.me.id), ctx.update.update_id, userId, text);
+  });
+
+  bot.on('message', (ctx) => {
+    console.warn(
+      `[bot] ignored unsupported message from Telegram user ${ctx.from?.id ?? 'unknown'}`,
     );
   });
 
-  bot.on('message', async (ctx) => {
-    await ctx.reply(HELP);
+  bot.on('callback_query:data', async (ctx) => {
+    const chatId = ctx.callbackQuery.message?.chat.id;
+    if (!chatId || ctx.callbackQuery.message?.chat.type !== 'private') return;
+    const userId = await linkedUser(String(ctx.from.id), String(chatId));
+    if (!userId) {
+      console.warn(`[bot] ignored unknown Telegram user ${ctx.from.id}`);
+      return;
+    }
+    const alert = /^alert:(\d+):(ack|dismiss)$/.exec(ctx.callbackQuery.data);
+    if (alert) {
+      const decided = await decideAlertNotice(Number(alert[1]), userId, alert[2] === 'ack');
+      await ctx.answerCallbackQuery({
+        text: decided ? 'Response saved.' : 'Alert is unavailable.',
+      });
+      return;
+    }
+    const match = /^approval:(\d+):(yes|no)$/.exec(ctx.callbackQuery.data);
+    if (!match) return;
+    const queued = await queueTelegramDecision(
+      String(ctx.me.id),
+      ctx.update.update_id,
+      userId,
+      Number(match[1]),
+      match[2] === 'yes',
+    );
+    await ctx.answerCallbackQuery({
+      text: queued ? 'Decision received.' : 'Approval is unavailable.',
+    });
   });
 
-  // An unhandled error would stop the polling loop, so every failure is logged and
-  // swallowed instead. The user simply gets no reply, and can press Connect again.
-  bot.catch((err) => {
-    console.error('[bot] update failed:', err.error);
+  bot.catch(() => {
+    console.error('[bot] update failed');
   });
-
   return bot;
+}
+
+export async function deliverPending(bot: Bot): Promise<void> {
+  for (const notice of await pendingApprovalNotices()) {
+    if (!notice.chatId) continue;
+    await bot.api.sendMessage(
+      notice.chatId,
+      `Approval #${notice.approvalId}: ${notice.action}\n${notice.details}`.slice(0, 4000),
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: 'Approve', callback_data: `approval:${notice.approvalId}:yes` },
+              { text: 'Reject', callback_data: `approval:${notice.approvalId}:no` },
+            ],
+          ],
+        },
+      },
+    );
+    await markNoticeSent(notice.id);
+  }
+  for (const alert of await pendingAlertNotices()) {
+    if (!alert.chatId) continue;
+    await bot.api.sendMessage(
+      alert.chatId,
+      `Helena needs you: ${alertSummary(alert.source)}`.slice(0, 4000),
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: 'Acknowledge', callback_data: `alert:${alert.id}:ack` },
+              { text: 'Dismiss', callback_data: `alert:${alert.id}:dismiss` },
+            ],
+          ],
+        },
+      },
+    );
+    await markAlertSent(alert.id);
+  }
+  for (const reply of await pendingTelegramReplies()) {
+    if (!reply.chatId) continue;
+    if (
+      reply.answerStatus &&
+      reply.answerStatus !== 'success' &&
+      reply.answerStatus !== 'failed' &&
+      reply.answerStatus !== 'canceled'
+    )
+      continue;
+    const text =
+      reply.responseText ??
+      (reply.answerStatus === 'failed' || reply.answerStatus === 'canceled'
+        ? 'Helena could not answer this message.'
+        : reply.content);
+    if (!text) continue;
+    for (let offset = 0; offset < text.length; offset += 3500) {
+      await bot.api.sendMessage(reply.chatId, text.slice(offset, offset + 3500));
+    }
+    await markReplyDelivered(reply.eventId);
+  }
 }
