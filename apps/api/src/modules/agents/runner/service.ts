@@ -55,6 +55,7 @@ import { chooseModelNow, classModelNow, type LocalFallback } from '#modules/loca
 import { WORK_CLASS } from '#modules/local-ai/work-classes';
 import { routinePromptContext } from '#modules/routines/agent-runs';
 import { issueWhy, issueWhySection } from '#modules/project-goals/ladder';
+import { activeOrderContext } from '#modules/standing-orders/service';
 
 // The queue an agent's runner drains. The runner is a process the operator starts on
 // their own machine; it authenticates with the agent's API key, claims one run at a
@@ -579,6 +580,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
           { key: row.projectKey, name: row.projectName, description: row.projectDescription },
           forPrompt,
         ) +
+        (await activeOrderContext(row.projectId, agent.id)) +
         issueWhySection(why) +
         autopilotRunSection(row.projectKey, autopilot.level) +
         (row.interrupted && !row.sessionId ? INTERRUPTED_RUN : ''),

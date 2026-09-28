@@ -1559,6 +1559,14 @@ export const userTelegramAccount = pgTable(
       .primaryKey()
       .references(() => user.id, { onDelete: 'cascade' }),
     chatId: text('chat_id'),
+    telegramUserId: text('telegram_user_id'),
+    selectedAgentId: integer('selected_agent_id').references(() => aiAgent.id, {
+      onDelete: 'set null',
+    }),
+    selectedProjectId: integer('selected_project_id').references(() => project.id, {
+      onDelete: 'set null',
+    }),
+    currentThreadId: text('current_thread_id'),
     // Display only, refreshed on every link: what to show the user so they can tell
     // which Telegram account this is. A Telegram account may have no @username.
     username: text('username'),
@@ -1572,9 +1580,110 @@ export const userTelegramAccount = pgTable(
     uniqueIndex('user_telegram_account_chat_id_unique')
       .on(t.chatId)
       .where(sql`${t.chatId} IS NOT NULL`),
+    uniqueIndex('user_telegram_account_telegram_user_id_unique')
+      .on(t.telegramUserId)
+      .where(sql`${t.telegramUserId} IS NOT NULL`),
     uniqueIndex('user_telegram_account_link_code_unique')
       .on(t.linkCode)
       .where(sql`${t.linkCode} IS NOT NULL`),
+  ],
+);
+
+export const telegramChannelEvent = pgTable(
+  'telegram_channel_event',
+  {
+    id: serial('id').primaryKey(),
+    botId: text('bot_id').notNull(),
+    updateId: integer('update_id').notNull(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(),
+    text: text('text'),
+    approvalId: integer('approval_id').references(() => approvalRequest.id, {
+      onDelete: 'set null',
+    }),
+    approved: boolean('approved'),
+    state: text('state').notNull().default('pending'),
+    claimedAt: timestamp('claimed_at', { withTimezone: true }),
+    answerMessageId: integer('answer_message_id').references(() => agentChatMessage.id, {
+      onDelete: 'set null',
+    }),
+    responseText: text('response_text'),
+    deliveredAt: timestamp('delivered_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('telegram_channel_event_update_uq').on(t.botId, t.updateId),
+    check('telegram_channel_event_kind_check', sql`${t.kind} IN ('message', 'decision')`),
+    check(
+      'telegram_channel_event_state_check',
+      sql`${t.state} IN ('pending', 'processing', 'done', 'failed')`,
+    ),
+    index('telegram_channel_event_pending_idx').on(t.state, t.id),
+  ],
+);
+
+export const telegramApprovalNotice = pgTable(
+  'telegram_approval_notice',
+  {
+    id: serial('id').primaryKey(),
+    approvalId: integer('approval_id')
+      .notNull()
+      .references(() => approvalRequest.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    sentAt: timestamp('sent_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex('telegram_approval_notice_uq').on(t.approvalId, t.userId)],
+);
+
+export const telegramAlertNotice = pgTable(
+  'telegram_alert_notice',
+  {
+    id: serial('id').primaryKey(),
+    alertKey: text('alert_key').notNull(),
+    alertOpenedAt: timestamp('alert_opened_at', { withTimezone: true }).notNull(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    status: text('status').notNull().default('pending'),
+    sentAt: timestamp('sent_at', { withTimezone: true }),
+    decidedAt: timestamp('decided_at', { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex('telegram_alert_notice_uq').on(t.alertKey, t.alertOpenedAt, t.userId),
+    check(
+      'telegram_alert_notice_status_check',
+      sql`${t.status} IN ('pending', 'acknowledged', 'dismissed')`,
+    ),
+  ],
+);
+
+export const standingOrder = pgTable(
+  'standing_order',
+  {
+    id: serial('id').primaryKey(),
+    projectId: integer('project_id').references(() => project.id, { onDelete: 'cascade' }),
+    agentId: integer('agent_id').references(() => aiAgent.id, { onDelete: 'cascade' }),
+    body: text('body').notNull(),
+    source: text('source').notNull(),
+    authorUserId: text('author_user_id').notNull(),
+    status: text('status').notNull().default('proposed'),
+    active: boolean('active').notNull().default(false),
+    decidedByUserId: text('decided_by_user_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('standing_order_scope_check', sql`(${t.projectId} IS NULL) <> (${t.agentId} IS NULL)`),
+    check('standing_order_status_check', sql`${t.status} IN ('proposed', 'confirmed', 'rejected')`),
+    index('standing_order_project_idx').on(t.projectId, t.status, t.active),
+    index('standing_order_agent_idx').on(t.agentId, t.status, t.active),
   ],
 );
 

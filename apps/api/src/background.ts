@@ -20,6 +20,7 @@ import { followActions } from '#modules/updates/service';
 import { processPushDeliveries } from '@helena/push';
 import { checkAlerts } from '#modules/push/alerts';
 import { pruneExpiredSessions } from '@repo/auth';
+import { processTelegramEvents } from '#modules/telegram/channel';
 
 const [RUN_JANITOR, RESUME_JANITOR, ENGINE_MAINTENANCE, RUNTIME_JANITOR] = JANITOR_JOBS;
 
@@ -34,6 +35,7 @@ const [RUN_JANITOR, RESUME_JANITOR, ENGINE_MAINTENANCE, RUNTIME_JANITOR] = JANIT
 export function startBackgroundJobs(): void {
   startLoop('action-runs', processActionRuns, () => intEnv('ACTION_RUN_POLL_INTERVAL_MS', 1000));
   startLoop('inbox-tasks', processInboxTasks, () => intEnv('INBOX_TASK_POLL_INTERVAL_MS', 2000));
+  startLoop('telegram-events', processTelegramEvents, () => intEnv('TELEGRAM_EVENT_POLL_MS', 2000));
   // Archiving is not time-sensitive, so the sweep runs far less often than the queue
   // is drained.
   startLoop('auto-archive', autoArchive, () => intEnv('AUTO_ARCHIVE_INTERVAL_MS', 3_600_000));

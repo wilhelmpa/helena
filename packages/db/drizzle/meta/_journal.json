@@ -1464,6 +1464,13 @@
       "when": 1790623828130,
       "tag": "0209_paperclip_building_blocks",
       "breakpoints": true
+    },
+    {
+      "idx": 210,
+      "version": "7",
+      "when": 1790620000000,
+      "tag": "0210_openclaw_building_blocks",
+      "breakpoints": true
     }
   ]
 }
