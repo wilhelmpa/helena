@@ -100,6 +100,8 @@ function Flow({
   const initialized = useNodesInitialized();
   const width = useStore((state) => state.width);
   const height = useStore((state) => state.height);
+  // The viewport can only be set once React Flow's pan and zoom is attached.
+  const panZoomReady = useStore((state) => state.panZoom != null);
   const fitted = useRef<string | null>(null);
   const container = useRef<HTMLDivElement>(null);
   const pending = useRef<{ id: string; timer: ReturnType<typeof setTimeout> } | null>(null);
@@ -142,10 +144,10 @@ function Flow({
   // only on a new view: a fit into a stage that was still growing leaves the chart off.
   useEffect(() => {
     const key = `${fitKey}:${Math.round(width)}x${Math.round(height)}:${initialized ? 'all' : 'some'}`;
-    if (!width || !height || fitted.current === key) return;
+    if (!panZoomReady || !width || !height || fitted.current === key) return;
     const sameView = fitted.current?.startsWith(`${fitKey}:`) ?? false;
     if (fit(fitted.current != null && !sameView)) fitted.current = key;
-  }, [fit, fitKey, height, initialized, width]);
+  }, [fit, fitKey, height, initialized, panZoomReady, width]);
 
   useEffect(
     () => () => {
@@ -222,6 +224,10 @@ function Flow({
       onKeyDown={onKeyDown}
     >
       <ReactFlow
+        // The first fit is React Flow's own (it knows when the nodes are measured); later
+        // fits on a new view or a resized stage come from the effect above.
+        fitView
+        fitViewOptions={{ padding: 0.08, minZoom: view === 'ring' ? 0.3 : 0.5, maxZoom: 1 }}
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
