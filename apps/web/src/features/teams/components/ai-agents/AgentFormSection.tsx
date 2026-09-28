@@ -1,4 +1,5 @@
-import { type ReactNode } from 'react';
+import { useContext, type ReactNode } from 'react';
+import { AgentFormPageModeCtx } from './agentFormPages';
 import { ChevronRight, type LucideIcon } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -27,6 +28,23 @@ export function AgentFormSection({
   onOpenChange: (open: boolean) => void;
   children: ReactNode;
 }) {
+  // A page of the agent dialog: the section is the page, with its title as the page's
+  // heading and the fields always shown.
+  const pageMode = useContext(AgentFormPageModeCtx);
+  if (pageMode) {
+    return (
+      <section className="ds-agent-page">
+        <header className="ds-agent-page-head">
+          <div>
+            <h2>{title}</h2>
+            {hint && <p>{hint}</p>}
+          </div>
+          {headerRight && <span className="ds-agent-page-count">{headerRight}</span>}
+        </header>
+        <div className="ds-agent-page-body">{children}</div>
+      </section>
+    );
+  }
   return (
     <Collapsible open={open} onOpenChange={onOpenChange}>
       <CollapsibleTrigger className="group/section flex w-full items-center gap-2.5 border-b border-border/60 pb-2.5 text-start">

@@ -42,7 +42,9 @@
   },
   "departments": {
     "newPlaceholder": "New department",
-    "empty": "No departments have been created."
+    "empty": "No departments have been created.",
+    "budgets": "Бюджети відділу",
+    "budgetsHint": "Діє для всіх агентів його проєктів разом. Після досягнення їх обмежують, а ти отримуєш картку у вхідних."
   },
   "goals": {
     "newPlaceholder": "New goal",

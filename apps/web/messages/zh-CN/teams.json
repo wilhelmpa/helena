@@ -818,6 +818,31 @@
         "queued": "已启动运行",
         "skipped": "无事可做"
       }
+    },
+    "pages": {
+      "groups": {
+        "basics": "基础",
+        "work": "工作方式",
+        "abilities": "能力",
+        "technical": "访问与技术"
+      },
+      "items": {
+        "general": "常规",
+        "projects": "项目",
+        "autopilot": "自动驾驶与预算",
+        "runtime-policy": "模型与行为",
+        "triggers": "触发器",
+        "heartbeat": "心跳",
+        "abilities": "工具与记忆",
+        "skills": "技能",
+        "tools": "自定义工具",
+        "access": "访问",
+        "environment": "环境",
+        "token": "API 密钥",
+        "runner": "运行器"
+      },
+      "general": "常规",
+      "generalHint": "名称、指令以及代理的运行方式。"
     }
   },
   "members": {

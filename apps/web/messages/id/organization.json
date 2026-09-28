@@ -42,7 +42,9 @@
   },
   "departments": {
     "newPlaceholder": "New department",
-    "empty": "No departments have been created."
+    "empty": "No departments have been created.",
+    "budgets": "Anggaran departemen",
+    "budgetsHint": "Berlaku untuk semua agen di proyeknya bersama-sama. Jika tercapai, mereka dibatasi dan kamu mendapat kartu di kotak masuk."
   },
   "goals": {
     "newPlaceholder": "New goal",

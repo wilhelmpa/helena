@@ -19,8 +19,10 @@ import AgentTestChat from '@/features/ai-chat/components/panel/AgentTestChat';
 import { useAgentCan, useAgentSection } from '../../context/agentSection';
 import { AgentSheetForm } from './AgentSheetForm';
 
-const SETTINGS_TAB = 'settings';
 import { useTranslations } from 'next-intl';
+import { useAgentDialog } from './agentFormPages';
+
+const SETTINGS_TAB = 'settings';
 
 // Full-width sheet for one agent. Opened for create (agent null) or to edit an
 // existing one. Create and edit share the same form (AgentSheetForm): on create the
@@ -113,7 +115,11 @@ function SheetBody({
   const tTabs = useTranslations('agentRuntime.tabs');
   const { teamId } = useAgentSection();
   const canEdit = useAgentCan()('edit');
-  const [tab, setTab] = useState(initialTab ?? SETTINGS_TAB);
+  const [ownTab, setOwnTab] = useState(initialTab ?? SETTINGS_TAB);
+  // In the agent dialog the dialog's head holds the tabs.
+  const dialog = useAgentDialog();
+  const tab = dialog?.tab ?? ownTab;
+  const setTab = dialog?.setTab ?? setOwnTab;
   const [runId, setRunId] = useState<number | null>(initialRunId);
   // The agent just created in this sheet, if any. Once set, the form switches from
   // create to edit for it without remounting.
@@ -168,7 +174,7 @@ function SheetBody({
         </div>
       )}
 
-      {agent && tabs.length > 0 && (
+      {agent && tabs.length > 0 && !dialog && (
         <nav
           aria-label={tTabs('label')}
           className="flex shrink-0 items-center gap-0.5 overflow-x-auto border-b border-border/60 px-3 py-1.5"

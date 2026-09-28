@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { OrganizationDepartment } from '@/lib/api/endpoints/organization';
 import { useDeleteDepartment, useUpdateDepartment } from '../services/organization.service';
+import DepartmentBudgets from './DepartmentBudgets';
 
 export default function OrganizationDepartmentCard({
   teamId,
@@ -68,6 +69,7 @@ export default function OrganizationDepartmentCard({
           onChange={(event) => setDescription(event.target.value)}
         />
       </label>
+      <DepartmentBudgets teamId={teamId} department={department} />
       <div className="flex justify-end gap-2">
         <Button
           type="button"

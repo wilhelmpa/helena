@@ -42,7 +42,9 @@
   },
   "departments": {
     "newPlaceholder": "New department",
-    "empty": "No departments have been created."
+    "empty": "No departments have been created.",
+    "budgets": "Budgets du département",
+    "budgetsHint": "S’applique à tous les agents de ses projets ensemble. Une fois atteint, ils sont bridés et tu reçois une carte dans la boîte."
   },
   "goals": {
     "newPlaceholder": "New goal",

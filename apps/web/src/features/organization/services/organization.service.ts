@@ -23,11 +23,13 @@ import {
   setProjectAssignment,
   setProjectTokenCeiling,
   updateDepartment,
+  setDepartmentBudgets,
   updateGoal,
 } from '@/lib/api/endpoints/organization';
 import { getAgentUsage } from '@/lib/api/endpoints/agentActivity';
 import { getIssueBySeq } from '@/lib/api/endpoints/issues';
 import { qk } from '@/services/queryKeys';
+import type { BudgetInput } from '@/lib/api/endpoints/autopilot';
 
 export function useOrganizationQuery(teamId: number | null, projectId?: number) {
   return useQuery({
@@ -63,6 +65,12 @@ export function useUpdateDepartment(teamId: number) {
   return useOrganizationMutation<{ id: number; input: Partial<DepartmentInput> }>(
     teamId,
     ({ id, input }) => updateDepartment(teamId, id, input),
+  );
+}
+
+export function useSetDepartmentBudgets(teamId: number, departmentId: number) {
+  return useOrganizationMutation<BudgetInput[]>(teamId, (budgets) =>
+    setDepartmentBudgets(teamId, departmentId, budgets),
   );
 }
 

@@ -818,6 +818,31 @@
         "queued": "Прогон запущен",
         "skipped": "Нечего делать"
       }
+    },
+    "pages": {
+      "groups": {
+        "basics": "Основное",
+        "work": "Работа",
+        "abilities": "Возможности",
+        "technical": "Доступ и техника"
+      },
+      "items": {
+        "general": "Общее",
+        "projects": "Проекты",
+        "autopilot": "Автопилот и бюджет",
+        "runtime-policy": "Модель и поведение",
+        "triggers": "Триггеры",
+        "heartbeat": "Пульс",
+        "abilities": "Инструменты и память",
+        "skills": "Навыки",
+        "tools": "Свои инструменты",
+        "access": "Доступ",
+        "environment": "Окружение",
+        "token": "Ключ API",
+        "runner": "Раннер"
+      },
+      "general": "Общее",
+      "generalHint": "Имя, инструкции и на чём работает агент."
     }
   },
   "members": {

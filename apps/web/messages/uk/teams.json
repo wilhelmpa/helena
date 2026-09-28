@@ -818,6 +818,31 @@
         "queued": "Прогін запущено",
         "skipped": "Нічого робити"
       }
+    },
+    "pages": {
+      "groups": {
+        "basics": "Основне",
+        "work": "Робота",
+        "abilities": "Можливості",
+        "technical": "Доступ і техніка"
+      },
+      "items": {
+        "general": "Загальне",
+        "projects": "Проєкти",
+        "autopilot": "Автопілот і бюджет",
+        "runtime-policy": "Модель і поведінка",
+        "triggers": "Тригери",
+        "heartbeat": "Пульс",
+        "abilities": "Інструменти й пам’ять",
+        "skills": "Навички",
+        "tools": "Власні інструменти",
+        "access": "Доступ",
+        "environment": "Середовище",
+        "token": "Ключ API",
+        "runner": "Раннер"
+      },
+      "general": "Загальне",
+      "generalHint": "Ім’я, інструкції та на чому працює агент."
     }
   },
   "members": {

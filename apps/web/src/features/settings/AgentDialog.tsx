@@ -1,12 +1,19 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useTeamsQuery } from '@/services/teams.service';
+import { useTeamQuery, useTeamsQuery } from '@/services/teams.service';
 import { useAiAgentsQuery } from '@/services/aiAgents.service';
 import { ShellHeaderActionsSlotCtx, ShellHeaderSlotCtx } from '@/context/shellHeaderSlot';
-import { Modal, Orb } from '@/design-system';
+import { Orb, Overlay } from '@/design-system';
+import type { AiAgent } from '@/lib/api/endpoints/agents';
+import { agentTabsFor } from '@/features/agent-runtime/agentTabs';
+import {
+  AgentDialogCtx,
+  agentFormPages,
+  type AgentFormPageId,
+} from '@/features/teams/components/ai-agents/agentFormPages';
 import { useAgentStatus } from '@/utils/helenaStatus';
 import AgentSettingsModalContent from './AgentSettingsModalContent';
 import { AGENT_DIALOG_OPEN, AGENT_PARAM } from './settingsModalCatalog';
@@ -93,31 +100,114 @@ export default function AgentDialog() {
 
   if (fromUrl == null || teamId == null) return null;
   return (
-    <Modal
-      open
+    <AgentDialogFrame
+      key={fromUrl}
+      teamId={teamId}
+      agentId={fromUrl}
+      agent={agent ?? null}
       label={agent?.name ?? t('title')}
+      initialTab={params.get('agentTab') ?? legacy('tab') ?? SETTINGS_TAB}
+      runId={Number(params.get('agentRunId') ?? legacy('run')) || null}
       onClose={() => go(null)}
-      testId="agent-dialog"
-      header={
-        <AgentHeading
-          agentId={fromUrl}
-          name={agent?.name ?? '…'}
-          detail={agent?.username ? `@${agent.username}` : ''}
-        />
-      }
+    />
+  );
+}
+
+const SETTINGS_TAB = 'settings';
+
+// An agent's settings in the one overlay on the right (owner 28.09.: the same overlay as
+// a task, a run and a file preview): the tabs Einstellungen, Läufe, Gedächtnis,
+// Verbrauch, Laufzeit in its head; on the settings tab the pages of the form in a short,
+// grouped list on the left (a row on top when the overlay is narrow) and the page beside
+// it. Resizable and full screen like every overlay.
+function AgentDialogFrame({
+  teamId,
+  agentId,
+  agent,
+  label,
+  initialTab,
+  runId,
+  onClose,
+}: {
+  teamId: number;
+  agentId: number;
+  agent: AiAgent | null;
+  label: string;
+  initialTab: string;
+  runId: number | null;
+  onClose: () => void;
+}) {
+  const tTabs = useTranslations('agentRuntime.tabs');
+  const tPages = useTranslations('teams.agents.pages');
+  const [tab, setTab] = useState(initialTab);
+  const [page, setPage] = useState<AgentFormPageId>('general');
+  const permissions = useTeamQuery(teamId).data?.permissions;
+  const pages = agentFormPages(agent, {
+    skills: permissions?.agent_skills.edit ?? false,
+    tools: permissions?.agent_tools.edit ?? false,
+  });
+  const tabs = [
+    { value: SETTINGS_TAB, label: tTabs('settings') },
+    ...agentTabsFor(agent).map((entry) => ({ value: entry.id, label: tTabs(entry.label) })),
+  ];
+  const groups = [...new Set(pages.map((entry) => entry.group))];
+  const state = useMemo(() => ({ tab, setTab, page, setPage }), [tab, page]);
+
+  return (
+    <Overlay
+      label={label}
+      tabs={tabs.map((entry) => ({ id: entry.value, label: entry.label }))}
+      activeTab={tab}
+      onTab={setTab}
+      onClose={onClose}
+      className="ds-agent-overlay"
+      bodyClassName="is-flush"
     >
       <ShellHeaderSlotCtx.Provider value={null}>
         <ShellHeaderActionsSlotCtx.Provider value={null}>
-          <div className="ds-agent-dialog-body">
-            <AgentSettingsModalContent
-              teamId={teamId}
-              agentId={fromUrl}
-              tab={params.get('agentTab') ?? legacy('tab') ?? undefined}
-              runId={Number(params.get('agentRunId') ?? legacy('run')) || null}
-            />
-          </div>
+          <AgentDialogCtx.Provider value={state}>
+            <div className="ds-agent-overlay-top">
+              <AgentHeading
+                agentId={agentId}
+                name={agent?.name ?? '…'}
+                detail={agent?.username ? `@${agent.username}` : ''}
+              />
+            </div>
+            <div className={`ds-agent-overlay-main ${tab === SETTINGS_TAB ? '' : 'is-single'}`}>
+              {tab === SETTINGS_TAB && (
+                <nav className="ds-agent-nav" aria-label={tTabs('settings')}>
+                  {groups.map((group) => (
+                    <div key={group} className="ds-agent-nav-group">
+                      <span className="ds-mono-label">{tPages(`groups.${group}`)}</span>
+                      {pages
+                        .filter((entry) => entry.group === group)
+                        .map((entry) => (
+                          <button
+                            key={entry.id}
+                            type="button"
+                            className="ds-agent-nav-item"
+                            aria-current={entry.id === page ? 'true' : undefined}
+                            onClick={() => setPage(entry.id)}
+                          >
+                            {tPages(`items.${entry.id}`)}
+                          </button>
+                        ))}
+                    </div>
+                  ))}
+                </nav>
+              )}
+              <div className="ds-agent-dialog-body">
+                <AgentSettingsModalContent
+                  teamId={teamId}
+                  agentId={agentId}
+                  tab={initialTab}
+                  runId={runId}
+                />
+              </div>
+            </div>
+          </AgentDialogCtx.Provider>
         </ShellHeaderActionsSlotCtx.Provider>
       </ShellHeaderSlotCtx.Provider>
-    </Modal>
+    </Overlay>
   );
 }

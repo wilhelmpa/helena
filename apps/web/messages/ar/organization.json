@@ -42,7 +42,9 @@
   },
   "departments": {
     "newPlaceholder": "New department",
-    "empty": "No departments have been created."
+    "empty": "No departments have been created.",
+    "budgets": "ميزانيات القسم",
+    "budgetsHint": "ينطبق على جميع وكلاء مشاريعه معًا. عند بلوغه يتم تقييدهم وتصلك بطاقة في البريد."
   },
   "goals": {
     "newPlaceholder": "New goal",

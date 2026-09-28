@@ -818,6 +818,31 @@
         "queued": "Execução iniciada",
         "skipped": "Nada a fazer"
       }
+    },
+    "pages": {
+      "groups": {
+        "basics": "Básico",
+        "work": "Como trabalha",
+        "abilities": "Capacidades",
+        "technical": "Acesso e técnica"
+      },
+      "items": {
+        "general": "Geral",
+        "projects": "Projetos",
+        "autopilot": "Piloto automático e orçamento",
+        "runtime-policy": "Modelo e comportamento",
+        "triggers": "Gatilhos",
+        "heartbeat": "Pulsação",
+        "abilities": "Ferramentas e memória",
+        "skills": "Habilidades",
+        "tools": "Ferramentas próprias",
+        "access": "Acesso",
+        "environment": "Ambiente",
+        "token": "Chave de API",
+        "runner": "Runner"
+      },
+      "general": "Geral",
+      "generalHint": "Nome, instruções e com o que o agente trabalha."
     }
   },
   "members": {

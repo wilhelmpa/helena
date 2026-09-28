@@ -42,7 +42,9 @@
   },
   "departments": {
     "newPlaceholder": "New department",
-    "empty": "No departments have been created."
+    "empty": "No departments have been created.",
+    "budgets": "部门预算",
+    "budgetsHint": "适用于其所有项目的代理总和。达到后将限流，并在收件箱中给你一张卡片。"
   },
   "goals": {
     "newPlaceholder": "New goal",

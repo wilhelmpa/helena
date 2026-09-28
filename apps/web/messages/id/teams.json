@@ -818,6 +818,31 @@
         "queued": "Run dimulai",
         "skipped": "Tidak ada pekerjaan"
       }
+    },
+    "pages": {
+      "groups": {
+        "basics": "Dasar",
+        "work": "Cara kerja",
+        "abilities": "Kemampuan",
+        "technical": "Akses & teknis"
+      },
+      "items": {
+        "general": "Umum",
+        "projects": "Proyek",
+        "autopilot": "Autopilot & anggaran",
+        "runtime-policy": "Model & perilaku",
+        "triggers": "Pemicu",
+        "heartbeat": "Detak",
+        "abilities": "Alat & memori",
+        "skills": "Keterampilan",
+        "tools": "Alat khusus",
+        "access": "Akses",
+        "environment": "Lingkungan",
+        "token": "Kunci API",
+        "runner": "Runner"
+      },
+      "general": "Umum",
+      "generalHint": "Nama, instruksi, dan dengan apa agen bekerja."
     }
   },
   "members": {

@@ -42,7 +42,9 @@
   },
   "departments": {
     "newPlaceholder": "New department",
-    "empty": "No departments have been created."
+    "empty": "No departments have been created.",
+    "budgets": "Presupuestos del departamento",
+    "budgetsHint": "Se aplica a todos los agentes de sus proyectos juntos. Al alcanzarlo se limitan y recibes una tarjeta en la bandeja."
   },
   "goals": {
     "newPlaceholder": "New goal",

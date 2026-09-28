@@ -42,7 +42,9 @@
   },
   "departments": {
     "newPlaceholder": "Neue Abteilung",
-    "empty": "Noch keine Abteilungen erstellt."
+    "empty": "Noch keine Abteilungen erstellt.",
+    "budgets": "Budgets der Abteilung",
+    "budgetsHint": "Gilt für alle Agenten ihrer Projekte zusammen. Ist ein Budget erreicht, wird gedrosselt und du bekommst einen Eintrag in der Inbox."
   },
   "goals": {
     "newPlaceholder": "Neues Ziel",

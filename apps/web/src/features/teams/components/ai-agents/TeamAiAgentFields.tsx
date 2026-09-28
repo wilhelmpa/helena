@@ -21,6 +21,7 @@ import AgentTemplateField from './AgentTemplateField';
 import { useTranslations } from 'next-intl';
 import RuntimePicker from '@/components/helena/RuntimePicker';
 import AgentHeartbeatSection from './AgentHeartbeatSection';
+import { AgentFormPageModeCtx, useAgentDialog, type AgentFormPageId } from './agentFormPages';
 
 // Which sections open when an existing agent is opened for editing, so the form reads
 // as a short list of sections instead of a wall of fields. Basics is not in it because
@@ -91,6 +92,7 @@ export default function TeamAiAgentFields({
   const t = useTranslations('teams.agents');
   const tCommon = useTranslations('common');
   const tRuntime = useTranslations('chatWorkspace.runtimePicker');
+  const dialog = useAgentDialog();
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => ({
     ...(agent ? DEFAULT_OPEN : {}),
     ...(initialOpenSection ? { [initialOpenSection]: true } : {}),
@@ -371,6 +373,45 @@ export default function TeamAiAgentFields({
     heartbeatSection,
     runnerSection,
   ];
+
+  // In the agent dialog: only the page the dialog's left column picked, its sections open.
+  if (dialog) {
+    const pages: Record<AgentFormPageId, ReactNode> = {
+      general: (
+        <section className="ds-agent-page">
+          <header className="ds-agent-page-head">
+            <div>
+              <h2>{t('pages.general')}</h2>
+              <p>{t('pages.generalHint')}</p>
+            </div>
+          </header>
+          <div className="ds-agent-page-body">
+            {stack[0]}
+            {basicsSection}
+          </div>
+        </section>
+      ),
+      projects: projectsSection,
+      autopilot: autopilotSection,
+      'runtime-policy': runtimePolicySection,
+      triggers: triggersSection,
+      heartbeat: heartbeatSection,
+      abilities: abilitiesSection,
+      skills: skillsSection,
+      tools: toolsSection,
+      access: accessSection,
+      environment: environmentSection,
+      token: tokenSection,
+      runner: runnerSection,
+    };
+    return (
+      <div className="ds-agent-pages">
+        <AgentFormPageModeCtx.Provider value={true}>
+          {pages[dialog.page] ?? pages.general}
+        </AgentFormPageModeCtx.Provider>
+      </div>
+    );
+  }
 
   // Full width: one readable column of sections, scrolling inside this component so
   // the sheet's header and footer stay put.

@@ -1,4 +1,4 @@
-import type { BudgetStatus } from './autopilot';
+import type { BudgetInput, BudgetStatus } from './autopilot';
 import { request } from '@/lib/api/core/client';
 
 export type OrganizationGoalStatus = 'planned' | 'active' | 'achieved' | 'paused';
@@ -191,6 +191,16 @@ export const createDepartment = (teamId: number, input: DepartmentInput) =>
   request<OrganizationDepartment>(`${base(teamId)}/departments`, {
     method: 'POST',
     body: JSON.stringify(input),
+  });
+
+export const setDepartmentBudgets = (
+  teamId: number,
+  departmentId: number,
+  budgets: BudgetInput[],
+) =>
+  request<BudgetStatus[]>(`${base(teamId)}/departments/${departmentId}/budgets`, {
+    method: 'PUT',
+    body: JSON.stringify({ budgets }),
   });
 
 export const updateDepartment = (

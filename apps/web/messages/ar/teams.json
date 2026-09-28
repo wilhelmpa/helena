@@ -818,6 +818,31 @@
         "queued": "بدأ التشغيل",
         "skipped": "لا شيء للقيام به"
       }
+    },
+    "pages": {
+      "groups": {
+        "basics": "الأساسيات",
+        "work": "طريقة العمل",
+        "abilities": "القدرات",
+        "technical": "الوصول والتقنية"
+      },
+      "items": {
+        "general": "عام",
+        "projects": "المشاريع",
+        "autopilot": "الطيار الآلي والميزانية",
+        "runtime-policy": "النموذج والسلوك",
+        "triggers": "المشغلات",
+        "heartbeat": "النبض",
+        "abilities": "الأدوات والذاكرة",
+        "skills": "المهارات",
+        "tools": "أدوات مخصصة",
+        "access": "الوصول",
+        "environment": "البيئة",
+        "token": "مفتاح API",
+        "runner": "المشغّل"
+      },
+      "general": "عام",
+      "generalHint": "الاسم والتعليمات وما يعمل به الوكيل."
     }
   },
   "members": {

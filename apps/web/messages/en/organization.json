@@ -42,7 +42,9 @@
   },
   "departments": {
     "newPlaceholder": "New department",
-    "empty": "No departments have been created."
+    "empty": "No departments have been created.",
+    "budgets": "Department budgets",
+    "budgetsHint": "Applies to all agents of its projects together. When a budget is reached they are throttled and you get an inbox card."
   },
   "goals": {
     "newPlaceholder": "New goal",

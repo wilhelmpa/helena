@@ -1715,3 +1715,25 @@ a.ds-run-card:hover {
   gap: var(--space-4);
   padding: var(--space-4) var(--page-pad-x);
 }
+
+/* A department's budgets in its settings card. */
+.ds-department-budgets {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+.ds-department-budgets-hint {
+  color: var(--text-3);
+  font-size: 12px;
+}
+.ds-department-budgets-fields {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+}
+.ds-department-budgets-actions {
+  display: flex;
+  justify-content: flex-end;
+}

@@ -28,6 +28,8 @@ export * from './components/Menu';
 export { PageHeader, PageToolbarRow, PageBody } from './layout/Page';
 export type { Crumb } from './layout/Page';
 export { SidePanel } from './layout/SidePanel';
+export { Overlay } from './layout/Overlay';
+export type { OverlayTab } from './layout/Overlay';
 export {
   useSidePanelWidth,
   SidePanelResizeHandle,
