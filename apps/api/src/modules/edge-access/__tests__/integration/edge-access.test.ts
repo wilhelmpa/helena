@@ -9,6 +9,7 @@ import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { setOwnerTerminalSettings } from '#modules/owner-terminal/service';
 import { setEdgeKeyResolverForTests } from '../../providers';
+import { setLanOnlineVerifierForTests } from '../../lan';
 import { resetEdgeAccessCacheForTests } from '../../service';
 import { AUD, TEAM, testSigner } from '../helpers';
 
@@ -42,10 +43,14 @@ describe('edge access (the internet tunnel entry)', () => {
   beforeAll(async () => {
     sign = await testSigner();
   });
-  afterAll(() => setEdgeKeyResolverForTests(null));
+  afterAll(() => {
+    setEdgeKeyResolverForTests(null);
+    setLanOnlineVerifierForTests(null);
+  });
   beforeEach(async () => {
     await resetDb();
     resetEdgeAccessCacheForTests();
+    setLanOnlineVerifierForTests(null);
   });
 
   it('refuses every tunnel request while nothing is configured', async () => {
@@ -153,6 +158,178 @@ describe('edge access (the internet tunnel entry)', () => {
       'cf-access-jwt-assertion': await sign(),
     });
     expect(viaTunnel.status).toBe(403);
+  });
+
+  it('requires both Access gates on every strict LAN request, even with a Helena session', async () => {
+    const owner = await signUpTestUser();
+    await configure(owner.cookie);
+    const assertion = await sign();
+    const headers = {
+      'x-helena-entry': 'lan',
+      cookie: `${owner.cookie}; CF_Authorization=${assertion}; CF_Binding=binding`,
+    };
+    const onlineCookies: string[] = [];
+    let allowed = true;
+    setLanOnlineVerifierForTests(async (cookies) => {
+      onlineCookies.push(cookies);
+      return allowed;
+    });
+    expect((await call('/auth/verify/lan', headers)).status).toBe(204);
+    expect((await call('/me', headers)).status).toBe(200);
+    expect(onlineCookies).toEqual([
+      `CF_Authorization=${assertion}; CF_Binding=binding`,
+      `CF_Authorization=${assertion}; CF_Binding=binding`,
+    ]);
+    allowed = false;
+    for (const path of ['/auth/verify/lan', '/me', '/projects', '/auth/verify']) {
+      expect((await call(path, headers)).status).toBe(403);
+    }
+    expect(onlineCookies).toHaveLength(6); // no positive authorization cache
+  });
+
+  it('rejects malformed, conflicting and forged LAN credentials before the public check', async () => {
+    const owner = await signUpTestUser();
+    await configure(owner.cookie);
+    const assertion = await sign();
+    let calls = 0;
+    setLanOnlineVerifierForTests(async () => {
+      calls++;
+      return true;
+    });
+    const base = { 'x-helena-entry': 'lan', cookie: owner.cookie };
+    const invalid = [
+      base,
+      { ...base, cookie: `${owner.cookie}; CF_Authorization=${assertion}` },
+      { ...base, cookie: `${owner.cookie}; CF_Authorization=x.y.z; CF_Binding=b` },
+      {
+        ...base,
+        cookie: `${owner.cookie}; CF_Authorization=${assertion}; CF_Binding=b; CF_Binding=c`,
+      },
+      {
+        ...base,
+        cookie: `${owner.cookie}; CF_Authorization=${assertion}; cf_authorization=x.y.z; CF_Binding=b`,
+      },
+      {
+        ...base,
+        cookie: `${owner.cookie}; CF_Authorization=${assertion}; CF_Binding=b; x=${'a'.repeat(8192)}`,
+      },
+      {
+        ...base,
+        cookie: `${owner.cookie}; CF_Authorization=${await sign({}, { expiresIn: '-1h' })}; CF_Binding=b`,
+      },
+      {
+        ...base,
+        cookie: `${owner.cookie}; CF_Authorization=${await sign({}, { issuer: 'https://other.cloudflareaccess.com' })}; CF_Binding=b`,
+      },
+      {
+        ...base,
+        cookie: `${owner.cookie}; CF_Authorization=${await sign({}, { audience: 'b'.repeat(64) })}; CF_Binding=b`,
+      },
+    ];
+    for (const headers of invalid) {
+      expect(
+        (
+          await call('/me', {
+            ...headers,
+            'cf-access-jwt-assertion': assertion,
+            'x-helena-edge-entry': 'forged',
+            'x-volition-local-access': 'forged',
+            'cf-connecting-ip': '192.168.2.40',
+          })
+        ).status,
+      ).toBe(403);
+    }
+    expect(calls).toBe(0);
+  });
+
+  it('closes a valid LAN session when the public check times out', async () => {
+    const owner = await signUpTestUser();
+    await configure(owner.cookie);
+    setLanOnlineVerifierForTests(async () => {
+      throw new Error('timeout');
+    });
+    const response = await call('/me', {
+      'x-helena-entry': 'lan',
+      cookie: `${owner.cookie}; CF_Authorization=${await sign()}; CF_Binding=binding`,
+    });
+    expect(response.status).toBe(403);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+  });
+
+  it('gives a checked LAN browser the Access expiry for stream reload', async () => {
+    const owner = await signUpTestUser();
+    await configure(owner.cookie);
+    setLanOnlineVerifierForTests(async () => true);
+    const response = await call('/auth/verify/lan', {
+      'x-helena-entry': 'lan',
+      cookie: `${owner.cookie}; CF_Authorization=${await sign()}; CF_Binding=binding`,
+    });
+    expect(response.status).toBe(204);
+    expect(Number(response.headers.get('x-helena-access-expires'))).toBeGreaterThan(
+      Math.floor(Date.now() / 1000),
+    );
+  });
+
+  it('keeps Helena session and owner-terminal checks after valid LAN Access', async () => {
+    const owner = await signUpTestUser();
+    await configure(owner.cookie);
+    await setOwnerTerminalSettings({ stepUpRequired: false });
+    setLanOnlineVerifierForTests(async () => true);
+    const access = `CF_Authorization=${await sign()}; CF_Binding=binding`;
+    expect((await call('/auth/verify', { 'x-helena-entry': 'lan', cookie: access })).status).toBe(
+      401,
+    );
+    expect(
+      (
+        await call('/auth/verify', {
+          'x-helena-entry': 'lan',
+          cookie: `${owner.cookie}; ${access}`,
+        })
+      ).status,
+    ).toBe(204);
+    expect(
+      (
+        await call('/auth/verify/owner-terminal/shell', {
+          'x-helena-entry': 'lan',
+          cookie: `${owner.cookie}; ${access}`,
+          'x-real-ip': '192.168.2.40',
+        })
+      ).status,
+    ).toBe(403);
+  });
+
+  it('keeps project membership checks after valid LAN Access', async () => {
+    const owner = await signUpTestUser();
+    await configure(owner.cookie);
+    const created = await call(
+      '/projects',
+      {
+        cookie: owner.cookie,
+        origin: ORIGIN,
+        'content-type': 'application/json',
+      },
+      { method: 'POST', body: JSON.stringify({ key: 'MKT', name: 'Marketing' }) },
+    );
+    expect(created.status).toBe(201);
+    const outsider = await signUpTestUser({ email: 'outsider@example.com' });
+    setLanOnlineVerifierForTests(async () => true);
+    const access = `CF_Authorization=${await sign()}; CF_Binding=binding`;
+    expect(
+      (
+        await call('/projects/MKT', {
+          'x-helena-entry': 'lan',
+          cookie: `${owner.cookie}; ${access}`,
+        })
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await call('/projects/MKT', {
+          'x-helena-entry': 'lan',
+          cookie: `${outsider.cookie}; ${access}`,
+        })
+      ).status,
+    ).toBe(403);
   });
 
   it('reports the host audit and the owner’s factors', async () => {

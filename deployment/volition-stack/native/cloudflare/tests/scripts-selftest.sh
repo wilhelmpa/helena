@@ -90,10 +90,14 @@ check "a second run changes nothing" "install.sh: entry proof already in place" 
 check "a second run reloads nothing" "" "$(cat "$W/calls")"
 state=$(bash "$here/install.sh" check 2>/dev/null | grep 'entry proof' || true)
 check "check: present" 1 "$(grep -c 'present (0600)' <<<"$state")"
+# A strict LAN entry adds the same proof under its own 443 key; rotation preserves it.
+sed -i "/^}/i\\    \"192.168.2.58:443:127.0.0.1:3001\" \"$token\";" /etc/nginx/conf.d/helena-edge-entry.conf
+state=$(bash "$here/install.sh" check 2>/dev/null | grep 'entry proof' || true)
+check "check: present with the LAN key" 1 "$(grep -c 'present (0600)' <<<"$state")"
 bash "$here/install.sh" --apply --rotate entry-token >/dev/null 2>&1
 rotated=$(sed -n 's/^HELENA_EDGE_ENTRY_TOKEN=//p' /etc/helena/cloudflare/entry.env)
 check "--rotate makes a new proof" 1 "$([[ $rotated != "$token" && $rotated =~ ^[0-9a-f]{64}$ ]] && echo 1 || echo 0)"
-check "--rotate writes it to nginx too" 1 "$(grep -c "$rotated" /etc/nginx/conf.d/helena-edge-entry.conf)"
+check "--rotate writes it to both nginx keys" 2 "$(grep -c "$rotated" /etc/nginx/conf.d/helena-edge-entry.conf)"
 sed -i 's/[0-9a-f]\{64\}/'"$(printf '%064d' 0)"'/' /etc/nginx/conf.d/helena-edge-entry.conf
 state=$(bash "$here/install.sh" check 2>/dev/null | grep 'entry proof' || true)
 check "check: a mismatch between nginx and the env file is named" 1 "$(grep -c 'MISMATCH' <<<"$state")"

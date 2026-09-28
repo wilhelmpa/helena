@@ -1,0 +1,15 @@
+[Unit]
+Description=Helena LAN DNS and optional DHCP
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStartPre=/usr/sbin/dnsmasq --test --conf-file=/dev/null --conf-dir=/etc/helena/dnsmasq.d
+ExecStart=/usr/sbin/dnsmasq --keep-in-foreground --conf-file=/dev/null --conf-dir=/etc/helena/dnsmasq.d
+Restart=on-failure
+RestartSec=3s
+StateDirectory=helena-dnsmasq
+
+[Install]
+WantedBy=multi-user.target
