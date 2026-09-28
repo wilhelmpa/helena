@@ -74,7 +74,40 @@ class LanHttpsEdit(unittest.TestCase):
         blank = 'proxy_set_header X-Helena-Edge-Entry "";'
         self.assertIn(blank, block(self.edited, '    location / {'))
         self.assertIn(blank, block(self.edited, '    location /backend/ {'))
-        self.assertEqual(self.edited.count(blank), 2)
+        self.assertIn(blank, block(self.edited, lan_https.PROBE_LOCATION.rstrip('\n')))
+        self.assertEqual(self.edited.count(blank), 3)
+
+    def test_the_home_probe_answers_the_private_network_preflight(self):
+        probe = block(self.edited, lan_https.PROBE_LOCATION.rstrip('\n'))
+        for line in ('add_header Access-Control-Allow-Private-Network "true" always;',
+                     # add_header in a location replaces the server's: HSTS again.
+                     'add_header Strict-Transport-Security $helena_lan_hsts always;',
+                     'proxy_set_header X-Volition-Local-Access "";',
+                     'rewrite ^/backend/(.*)$ /$1 break;',
+                     'proxy_pass http://127.0.0.1:3000;',
+                     'proxy_set_header X-Real-IP $helena_client_addr;'):
+            self.assertIn(line, probe)
+        self.assertNotIn('Upgrade', probe)
+        self.assertEqual(self.edited.count(lan_https.PROBE_LOCATION), 1)
+        # Right before the api's own location.
+        self.assertIn(lan_https.PROBE_LOCATION.rstrip('\n'), self.edited)
+        self.assertLess(self.edited.index(lan_https.PROBE_LOCATION),
+                        self.edited.index('    location /backend/ {'))
+
+    def test_configure_py_still_blanks_the_owner_header_on_the_api(self):
+        # A site where lan_https.py ran before configure.py: the probe already carries the
+        # blank line, and configure.py must still add it to the api's own location.
+        bare = self.site.replace('        proxy_set_header X-Volition-Local-Access "";\n', '')
+        bare = bare.replace(
+            '        proxy_set_header X-Volition-Local-Access $helena_owner_capability;\n', '')
+        site = configure.owner_access_lines(lan_https.edit(bare, HOME))
+        self.assertIn('proxy_set_header X-Volition-Local-Access "";',
+                      block(site, '    location /backend/ {'))
+        self.assertIn('proxy_set_header X-Volition-Local-Access $helena_owner_capability;',
+                      block(site, '    location / {'))
+        self.assertEqual(site.count('X-Volition-Local-Access "";'), 2)
+        self.assertEqual(configure.owner_access_lines(site), site)
+        self.assertEqual(configure.owner_access_lines(self.edited), self.edited)
 
     def test_is_idempotent_also_after_configure_py_added_its_lines(self):
         self.assertEqual(lan_https.edit(self.edited, HOME), self.edited)
@@ -83,7 +116,13 @@ class LanHttpsEdit(unittest.TestCase):
             '    location / {\n',
             '    location / {\n        proxy_set_header X-Volition-Local-Access $helena_owner_capability;\n', 1)
         again = lan_https.edit(moved, HOME)
-        self.assertEqual(again.count('proxy_set_header X-Helena-Edge-Entry "";'), 2)
+        self.assertEqual(again.count('proxy_set_header X-Helena-Edge-Entry "";'), 3)
+        self.assertEqual(again.count(lan_https.PROBE_LOCATION), 1)
+
+    def test_accepts_a_site_that_names_more_hosts(self):
+        more = self.edited.replace(f'kingston-server {HOME};',
+                                   f'kingston-server {HOME} helena.volition.one;')
+        self.assertEqual(lan_https.edit(more, HOME), more)
 
     def test_refuses_a_site_it_does_not_recognise(self):
         with self.assertRaises(SystemExit):

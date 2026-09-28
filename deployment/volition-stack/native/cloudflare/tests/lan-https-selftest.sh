@@ -102,6 +102,7 @@ class Echo(http.server.BaseHTTPRequestHandler):
         if self.path.startswith('/with-hsts'):
             self.send_header('Strict-Transport-Security', 'max-age=1')
         self.end_headers(); self.wfile.write(body)
+    do_OPTIONS = do_GET  # the home probe's preflight
     def log_message(self, *args): pass
 for port in (3000, 3001):
     server = http.server.ThreadingHTTPServer(('127.0.0.1', port), Echo)
@@ -147,6 +148,16 @@ forged=$(lan --resolve "$home:443:192.168.2.58" -H 'X-Helena-Edge-Entry: FAKE-PR
 check "LAN device sending the proof header: blanked" "" "$forged"
 forged=$(lan --resolve "$home:443:192.168.2.58" -H 'X-Helena-Edge-Entry: FAKE-PROOF' "https://$home/backend/x" | field proof)
 check "LAN device sending the proof header to the api: blanked" "" "$forged"
+
+# The home probe: Chrome's Private Network Access answer on the preflight, HSTS still once
+# (add_header in the location replaces the server's), to the api, no owner capability.
+probe=(--resolve "$home:443:192.168.2.58" -H "Origin: https://$public" -H 'X-Volition-Local-Access: FAKE')
+headers=$(lan "${probe[@]}" -X OPTIONS -H 'Access-Control-Request-Private-Network: true' -D - -o /dev/null "https://$home/backend/edge/home/probe" | tr -d '\r')
+check "home probe preflight: private network allowed" "access-control-allow-private-network: true" "$(grep -i '^access-control-allow-private-network:' <<<"$headers" | tr A-Z a-z || true)"
+check "home probe preflight: HSTS once" 1 "$(grep -ci '^strict-transport-security:' <<<"$headers" || true)"
+out=$(lan "${probe[@]}" "https://$home/backend/edge/home/probe")
+check "home probe: reaches the api" 3000 "$(field upstream <<<"$out")"
+check "home probe: no owner capability" "" "$(field cap <<<"$out")"
 
 # Plain http on the LAN goes to https, path and query kept; for every name.
 loc=$(lan -o /dev/null -w '%{http_code} %{redirect_url}' --resolve "$home:80:192.168.2.58" "http://$home/project/VOL?view=board")

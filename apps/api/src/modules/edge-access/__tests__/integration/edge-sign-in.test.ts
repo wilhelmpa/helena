@@ -376,4 +376,25 @@ describe('the home network origin', () => {
     // Through the tunnel entry the edge guard answers first.
     expect((await call('/edge/home/probe', { 'x-helena-entry': 'tunnel' })).status).toBe(403);
   });
+
+  it('allows the private network preflight of the probe to its own origins only', async () => {
+    const preflight = (origin: string) =>
+      call(
+        '/edge/home/probe',
+        {
+          host: 'home.example.test',
+          origin,
+          'access-control-request-method': 'GET',
+          'access-control-request-private-network': 'true',
+        },
+        { method: 'OPTIONS' },
+      );
+    const own = await preflight(ORIGIN);
+    expect(own.status).toBe(204);
+    expect(own.headers.get('access-control-allow-origin')).toBe(ORIGIN);
+    expect(own.headers.get('access-control-allow-private-network')).toBe('true');
+    const foreign = await preflight('https://evil.example.test');
+    expect(foreign.headers.get('access-control-allow-private-network')).toBeNull();
+    expect(foreign.headers.get('access-control-allow-origin')).toBeNull();
+  });
 });

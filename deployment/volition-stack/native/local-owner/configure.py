@@ -104,6 +104,23 @@ def write_if_changed(path: pathlib.Path, text: str, mode: int) -> bool:
     return True
 
 
+def owner_access_lines(text: str) -> str:
+    '''The api gets the owner header blanked, the web app gets the capability. Checked within
+    each block: another location (the home probe of cloudflare/lan_https.py) carries the same
+    blank line, which must not count for the api's own.'''
+    for location, value in [('location /backend/ {', '""'), ('location / {', '$helena_owner_capability')]:
+        marker = f'        proxy_set_header X-Volition-Local-Access {value};'
+        if text.count(location) != 1:
+            if marker in text:
+                continue  # as before: a site of another shape that already has the line
+            raise SystemExit(f'Expected one {location}')
+        start = text.index(location) + len(location)
+        end = text.find('\n    }', start)
+        if marker not in text[start:end if end >= 0 else len(text)]:
+            text = text[:start] + '\n' + marker + text[start:]
+    return text
+
+
 def main(args: list[str]) -> None:
     if '--personal' in args and '--single-user' in args:
         raise SystemExit(USAGE)
@@ -173,12 +190,7 @@ def main(args: list[str]) -> None:
     write_if_changed(guard, (HERE.parent / 'hardening/files/helena-local-owner-guard.conf').read_text(), 0o644)
     text = text.replace('X-Volition-Local-Access $volition_local_owner_token;',
                         'X-Volition-Local-Access $helena_owner_capability;')
-    for location, value in [('location /backend/ {', '""'), ('location / {', '$helena_owner_capability')]:
-        marker = f'        proxy_set_header X-Volition-Local-Access {value};'
-        if marker not in text:
-            if text.count(location) != 1:
-                raise SystemExit(f'Expected one {location}')
-            text = text.replace(location, location + '\n' + marker)
+    text = owner_access_lines(text)
     if site.read_text() != text:
         site.write_text(text)
     dropins = False

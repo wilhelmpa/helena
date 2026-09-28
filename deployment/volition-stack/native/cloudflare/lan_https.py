@@ -19,6 +19,9 @@ What changes on the LAN site:
   - HOST is an allowed origin of the embedded tools and their websockets (CSP);
   - the tunnel entry's proof header (X-Helena-Edge-Entry) is blanked, so nothing a LAN client
     sends under that name reaches the web app or the API.
+  - the home probe (/backend/edge/home/probe) answers Chrome's Private Network Access
+    preflight: the web app on the public name asks the home name (a private address) whether
+    it is at home, and Chrome lets it only with Access-Control-Allow-Private-Network.
 
 The LAN owner sign-in on the new name comes from local-owner/configure.py --https-host HOST
 (it holds the capability; this script never touches it).
@@ -75,6 +78,32 @@ map "$https:$upstream_http_strict_transport_security" $helena_lan_hsts {{
 """
 
 
+# The home probe of the web app (features/home-access): the page on the public name asks the
+# home name, a private address, so Chrome sends a Private Network Access preflight first and
+# needs this header on the answer (the API adds it too, for Helena's own origins only). A
+# location of its own, since add_header in a location replaces the server's HSTS line.
+PROBE_LOCATION = '    location = /backend/edge/home/probe {\n'
+PROBE = (
+    '    # The home probe from https://helena.volition.one (public) to this home origin (private\n'
+    '    # address): Chrome needs the Private Network Access answer on the preflight.\n'
+    + PROBE_LOCATION +
+    '        add_header Strict-Transport-Security $helena_lan_hsts always;\n'
+    '        add_header Access-Control-Allow-Private-Network "true" always;\n'
+    '        proxy_set_header X-Helena-Edge-Entry "";\n'
+    '        proxy_set_header X-Volition-Local-Access "";\n'
+    '        rewrite ^/backend/(.*)$ /$1 break;\n'
+    '        proxy_pass http://127.0.0.1:3000;\n'
+    '        proxy_http_version 1.1;\n'
+    '        proxy_set_header Host $host;\n'
+    '        proxy_set_header X-Forwarded-Host $host;\n'
+    '        proxy_set_header X-Real-IP $helena_client_addr;\n'
+    '        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n'
+    '        proxy_set_header X-Forwarded-Proto $scheme;\n'
+    '    }\n'
+    '\n'
+)
+
+
 def cert_dir(host: str) -> pathlib.Path:
     return LETSENCRYPT / host
 
@@ -96,7 +125,8 @@ def edit(text: str, host: str, certs: pathlib.Path | None = None) -> str:
          f'"https://{host}" 1;')
     once('    server_name kingston-server.local kingston-server;\n',
          f'    server_name kingston-server.local kingston-server {host};\n',
-         f'server_name kingston-server.local kingston-server {host};')
+         # Done also when more names follow (the live site names the public one too).
+         f'server_name kingston-server.local kingston-server {host}')
     once('    listen [::]:80 default_server;\n',
          '    listen [::]:80 default_server;\n'
          '    listen 443 ssl default_server;\n'
@@ -113,6 +143,12 @@ def edit(text: str, host: str, certs: pathlib.Path | None = None) -> str:
     csp_new = f"connect-src 'self' ws://kingston-server.local ws://kingston-server wss://{host}\""
     if csp_new not in text:
         text = text.replace(csp_old, csp_new)
+    # The home probe, right before the api's location (nginx takes the exact match first).
+    if PROBE_LOCATION not in text:
+        backend = '    location /backend/ {\n'
+        if text.count(backend) != 1:
+            raise SystemExit(f'lan_https.py: expected exactly one {backend.strip()!r} in the site')
+        text = text.replace(backend, PROBE + backend)
     # Only the tunnel entry may send its proof; from the LAN the header is blanked. Checked
     # within each block, since local-owner/configure.py adds its own line at the same place.
     blank = '        proxy_set_header X-Helena-Edge-Entry "";\n'
