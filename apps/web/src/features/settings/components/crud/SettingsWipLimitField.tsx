@@ -15,6 +15,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
+import { Text, Stack } from '@/design-system';
+
 // A state's work-in-progress limit, edited behind a small trigger so the row keeps
 // its shape. The mode only matters once a limit is set, so it appears with one.
 export default function SettingsWipLimitField({
@@ -49,11 +51,15 @@ export default function SettingsWipLimitField({
           )}
         >
           <Gauge className="size-4" />
-          {limit != null && <span className="text-xs tabular-nums">{limit}</span>}
+          {limit != null && (
+            <Text as="span" size="xs" className="tabular-nums">
+              {limit}
+            </Text>
+          )}
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-64 space-y-3">
-        <div className="space-y-1.5">
+        <Stack gap={2}>
           <Label htmlFor="wip-limit" className="text-xs">
             {t('label')}
           </Label>
@@ -66,11 +72,13 @@ export default function SettingsWipLimitField({
             onChange={(e) => changeLimit(e.target.value)}
             className="h-8"
           />
-          <p className="text-xs text-muted-foreground">{t('help')}</p>
-        </div>
+          <Text as="p" size="xs" tone="muted">
+            {t('help')}
+          </Text>
+        </Stack>
 
         {limit != null && (
-          <div className="space-y-1.5">
+          <Stack gap={2}>
             <Label className="text-xs">{t('modeLabel')}</Label>
             <Select value={mode} onValueChange={(next) => onChange(limit, next as WipMode)}>
               <SelectTrigger className="h-8 w-full">
@@ -81,10 +89,10 @@ export default function SettingsWipLimitField({
                 <SelectItem value="hard">{t('hardLabel')}</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-xs text-muted-foreground">
+            <Text as="p" size="xs" tone="muted">
               {mode === 'hard' ? t('hardHelp') : t('softHelp')}
-            </p>
-          </div>
+            </Text>
+          </Stack>
         )}
       </PopoverContent>
     </Popover>

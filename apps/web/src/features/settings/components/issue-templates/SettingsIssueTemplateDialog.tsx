@@ -10,6 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import IssueTemplateProperties from './IssueTemplateProperties';
 import { templateFormValues, type IssueTemplateFormValues } from '../../utils/issueTemplateForm';
 
+import { Stack, Box, Inline } from '@/design-system';
+
 // The dialog that adds or edits one issue template: how it is named in the picker,
 // the title and description the issue starts with, and the properties applied on
 // top of them. Everything a template presets stays editable in the create dialog.
@@ -35,15 +37,17 @@ export default function SettingsIssueTemplateDialog({
 
   return (
     <Modal title={t(initial ? 'editTemplate' : 'addTemplate')} onClose={onClose} wide>
-      <form
-        className="space-y-6"
+      <Stack
+        as="form"
+        gap={5}
+
         onSubmit={(event) => {
           event.preventDefault();
           if (values.name.trim()) onSubmit(values);
         }}
       >
-        <div className="space-y-4">
-          <div className="space-y-1.5">
+        <Stack gap={4}>
+          <Stack gap={2}>
             <Label htmlFor="issue-template-name">{tCommon('name')}</Label>
             <Input
               id="issue-template-name"
@@ -54,9 +58,9 @@ export default function SettingsIssueTemplateDialog({
               placeholder={t('namePlaceholder')}
               className="h-9"
             />
-          </div>
+          </Stack>
 
-          <div className="space-y-1.5">
+          <Stack gap={2}>
             <Label htmlFor="issue-template-description">{tCommon('description')}</Label>
             <Input
               id="issue-template-description"
@@ -65,11 +69,11 @@ export default function SettingsIssueTemplateDialog({
               placeholder={t('descriptionPlaceholder')}
               className="h-9"
             />
-          </div>
-        </div>
+          </Stack>
+        </Stack>
 
-        <div className="space-y-4 border-t border-border/50 pt-4">
-          <div className="space-y-1.5">
+        <Stack gap={4} padTop={4} className="border-t border-border/50">
+          <Stack gap={2}>
             <Label htmlFor="issue-template-title">{t('issueTitle')}</Label>
             <Input
               id="issue-template-title"
@@ -79,9 +83,9 @@ export default function SettingsIssueTemplateDialog({
               placeholder={t('issueTitlePlaceholder')}
               className="h-9"
             />
-          </div>
+          </Stack>
 
-          <div className="space-y-1.5">
+          <Stack gap={2}>
             <Label htmlFor="issue-template-body">{t('issueDescription')}</Label>
             <Textarea
               id="issue-template-body"
@@ -91,22 +95,28 @@ export default function SettingsIssueTemplateDialog({
               onChange={(e) => change({ descriptionTemplate: e.target.value })}
               placeholder={t('issueDescriptionPlaceholder')}
             />
-          </div>
-        </div>
+          </Stack>
+        </Stack>
 
-        <div className="border-t border-border/50 pt-4">
+        <Box padTop={4} className="border-t border-border/50">
           <IssueTemplateProperties project={project} values={values} onChange={change} />
-        </div>
+        </Box>
 
-        <div className="flex justify-end gap-2 border-t border-border/50 pt-4">
+        <Inline
+          gap={2}
+          align="stretch"
+          justify="end"
+          padTop={4}
+          className="flex justify-end border-t border-border/50"
+        >
           <Button type="button" variant="ghost" onClick={onClose}>
             {tCommon('cancel')}
           </Button>
           <Button type="submit" disabled={!values.name.trim()}>
             {tCommon(initial ? 'save' : 'add')}
           </Button>
-        </div>
-      </form>
+        </Inline>
+      </Stack>
     </Modal>
   );
 }

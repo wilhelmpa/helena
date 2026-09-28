@@ -13,6 +13,8 @@ import type { AgentNetworkForm as Form } from '../../hooks/useAgentNetworkForm';
 import AgentNetworkModePicker from './AgentNetworkModePicker';
 import SettingsNetworkAgentOverrides from './SettingsNetworkAgentOverrides';
 
+import { Stack, Text, Inline } from '@/design-system';
+
 // The mode, the allow/deny lists, the mail-port switch and the per-agent overrides.
 // The Save action lives in the page header; this only holds the fields and the
 // save error, if any.
@@ -22,7 +24,7 @@ export default function SettingsNetworkForm({ form }: { form: Form }) {
   const allowActive = form.allowListActive;
 
   return (
-    <div className="space-y-6">
+    <Stack gap={5}>
       <Alert className="border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-300">
         <Info />
         <AlertDescription className="text-xs text-current">{t('isolationNote')}</AlertDescription>
@@ -33,26 +35,30 @@ export default function SettingsNetworkForm({ form }: { form: Form }) {
           <AgentNetworkModePicker value={form.mode} onChange={form.setMode} disabled={disabled} />
         </SettingsCard>
 
-        <SettingsCard className="space-y-4 p-4">
-          <DomainField
-            id="agent-network-allow"
-            label={t('allowLabel')}
-            value={form.allowText}
-            onChange={form.setAllowText}
-            count={form.allowCount}
-            disabled={disabled || !allowActive}
-            emphasized={allowActive}
-            hint={!allowActive ? t('allowOnlyHint') : undefined}
-          />
-          <DomainField
-            id="agent-network-deny"
-            label={t('denyLabel')}
-            value={form.denyText}
-            onChange={form.setDenyText}
-            count={form.denyCount}
-            disabled={disabled}
-          />
-          <p className="text-xs text-muted-foreground">{t('domainsPerLine')}</p>
+        <SettingsCard>
+          <Stack gap={4} pad={4}>
+            <DomainField
+              id="agent-network-allow"
+              label={t('allowLabel')}
+              value={form.allowText}
+              onChange={form.setAllowText}
+              count={form.allowCount}
+              disabled={disabled || !allowActive}
+              emphasized={allowActive}
+              hint={!allowActive ? t('allowOnlyHint') : undefined}
+            />
+            <DomainField
+              id="agent-network-deny"
+              label={t('denyLabel')}
+              value={form.denyText}
+              onChange={form.setDenyText}
+              count={form.denyCount}
+              disabled={disabled}
+            />
+            <Text as="p" size="xs" tone="muted">
+              {t('domainsPerLine')}
+            </Text>
+          </Stack>
         </SettingsCard>
       </SettingsSection>
 
@@ -74,8 +80,12 @@ export default function SettingsNetworkForm({ form }: { form: Form }) {
 
       <SettingsNetworkAgentOverrides form={form} />
 
-      {form.errorMessage && <p className="text-sm text-destructive">{form.errorMessage}</p>}
-    </div>
+      {form.errorMessage && (
+        <Text as="p" size="sm" tone="danger">
+          {form.errorMessage}
+        </Text>
+      )}
+    </Stack>
   );
 }
 
@@ -102,8 +112,8 @@ function DomainField({
   const overLimit = count > MAX_AGENT_NETWORK_DOMAINS;
 
   return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between gap-4">
+    <Stack gap={2}>
+      <Inline gap={4} justify="between" className="flex items-center justify-between">
         <Label htmlFor={id}>{label}</Label>
         <span
           className={cn(
@@ -113,7 +123,7 @@ function DomainField({
         >
           {t('domainCount', { count, max: MAX_AGENT_NETWORK_DOMAINS })}
         </span>
-      </div>
+      </Inline>
       <Textarea
         id={id}
         rows={5}
@@ -126,7 +136,11 @@ function DomainField({
           emphasized && 'border-primary/60 ring-1 ring-primary/20',
         )}
       />
-      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
-    </div>
+      {hint && (
+        <Text as="p" size="xs" tone="muted">
+          {hint}
+        </Text>
+      )}
+    </Stack>
   );
 }

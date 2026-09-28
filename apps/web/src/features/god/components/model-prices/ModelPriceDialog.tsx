@@ -16,6 +16,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
+import { Stack, Text } from '@/design-system';
+
 type Fields = {
   model: string;
   provider: string;
@@ -109,7 +111,7 @@ export default function ModelPriceDialog({
   }
 
   const field = (key: keyof Fields, label: string, disabled = false) => (
-    <div className="space-y-1">
+    <Stack gap={1}>
       <label htmlFor={`model-price-${key}`} className="text-xs text-muted-foreground">
         {label}
       </label>
@@ -121,7 +123,7 @@ export default function ModelPriceDialog({
         onChange={(event) => setFields({ ...fields, [key]: event.target.value })}
         className="h-8 tabular-nums"
       />
-    </div>
+    </Stack>
   );
 
   return (
@@ -131,8 +133,10 @@ export default function ModelPriceDialog({
           <DialogTitle>{t('dialogTitle')}</DialogTitle>
           <DialogDescription>{t('dialogHint')}</DialogDescription>
         </DialogHeader>
-        <form
-          className="space-y-3"
+        <Stack
+          as="form"
+          gap={3}
+
           onSubmit={(event) => {
             event.preventDefault();
             void submit();
@@ -142,7 +146,9 @@ export default function ModelPriceDialog({
             {field('model', t('model'), price != null)}
             {field('provider', t('provider'))}
           </div>
-          <p className="text-xs text-muted-foreground">{t('perMTok')}</p>
+          <Text as="p" size="xs" tone="muted">
+            {t('perMTok')}
+          </Text>
           <div className="grid grid-cols-2 gap-3">
             {field('input', t('input'))}
             {field('output', t('output'))}
@@ -157,7 +163,7 @@ export default function ModelPriceDialog({
               {save.isPending ? tCommon('saving') : tCommon('save')}
             </Button>
           </DialogFooter>
-        </form>
+        </Stack>
       </DialogContent>
     </Dialog>
   );

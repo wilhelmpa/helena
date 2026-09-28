@@ -11,6 +11,8 @@ import { Input } from '@/components/ui/input';
 import type { EngineSettingsAdmin } from '@/lib/api/endpoints/god';
 import { useUpdateEngineSettingsAdmin } from '../services/god.service';
 
+import { Inline } from '@/design-system';
+
 // Every IANA zone the browser knows, offered as the name is typed.
 const ZONES =
   typeof Intl.supportedValuesOf === 'function' ? Intl.supportedValuesOf('timeZone') : ['UTC'];
@@ -51,7 +53,7 @@ export default function GodEngineSettings({ settings }: { settings: EngineSettin
           title={t('timezone')}
           description={t('timezoneHint', { server: settings.serverTimezone })}
           control={
-            <div className="flex flex-wrap items-center justify-end gap-2">
+            <Inline gap={2} justify="end" wrap className="flex flex-wrap items-center justify-end">
               <Input
                 className="w-48"
                 dir="ltr"
@@ -86,7 +88,7 @@ export default function GodEngineSettings({ settings }: { settings: EngineSettin
                   {t('timezoneServer')}
                 </Button>
               )}
-            </div>
+            </Inline>
           }
         />
       </SettingsCard>

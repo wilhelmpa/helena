@@ -14,6 +14,8 @@ import TypeSelect from '@/components/common/fields/TypeSelect';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
+import { Inline } from '@/design-system';
+
 // The default value used when a field is first added to an effect. null on a
 // nullable field means "clear it" on apply; the user then picks a real value.
 function defaultEffectValue(
@@ -129,7 +131,7 @@ export function SettingsEffectEditor({
           {setKeys.map((key) => (
             <Fragment key={key}>
               <div className="text-sm text-muted-foreground">{effectText.field(key)}</div>
-              <div className="flex items-center gap-1.5">
+              <Inline gap={2} className="flex items-center">
                 <EffectValue
                   effect={effect}
                   fieldKey={key}
@@ -144,7 +146,7 @@ export function SettingsEffectEditor({
                 >
                   <X className="size-4" />
                 </button>
-              </div>
+              </Inline>
             </Fragment>
           ))}
         </div>

@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { normalizeDomain } from '../../utils/domainList';
 
+import { Stack, Inline, Text } from '@/design-system';
+
 // A domain list edited as chips: type a domain, press Enter/comma/space or blur to add
 // it, backspace on the empty field to drop the last one. Used for the browser gateway's
 // blocklist and allowlist (SettingsBrowserGateway.tsx); each change is committed to the
@@ -37,8 +39,8 @@ export default function DomainListField({
   };
 
   return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between gap-4">
+    <Stack gap={2}>
+      <Inline gap={4} justify="between" className="flex items-center justify-between">
         <Label htmlFor={id}>{label}</Label>
         <span
           className={cn(
@@ -48,7 +50,7 @@ export default function DomainListField({
         >
           {t('domainCount', { count: domains.length, max })}
         </span>
-      </div>
+      </Inline>
       <div
         className={cn(
           'flex min-h-9 flex-wrap items-center gap-1.5 rounded-md border bg-background px-2 py-1.5 focus-within:ring-2 focus-within:ring-ring/50',
@@ -56,12 +58,18 @@ export default function DomainListField({
         )}
       >
         {domains.map((domain) => (
-          <span
+          <Inline
+            as="span"
+            gap={1}
+            padX={2}
+            padY={1}
             key={domain}
             dir="ltr"
-            className="flex items-center gap-1 rounded-sm bg-muted px-1.5 py-0.5 font-mono text-xs"
+            className="rounded-sm bg-muted"
           >
-            {domain}
+            <Text as="span" size="xs" className="font-mono">
+              {domain}
+            </Text>
             {!disabled && (
               <button
                 type="button"
@@ -72,7 +80,7 @@ export default function DomainListField({
                 <X className="size-3" />
               </button>
             )}
-          </span>
+          </Inline>
         ))}
         {!disabled && (
           <input
@@ -96,7 +104,11 @@ export default function DomainListField({
           />
         )}
       </div>
-      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
-    </div>
+      {hint && (
+        <Text as="p" size="xs" tone="muted">
+          {hint}
+        </Text>
+      )}
+    </Stack>
   );
 }

@@ -14,6 +14,8 @@ import {
 } from '@/components/ui/select';
 import { useDeleteColumn } from '../../services/settings.service';
 
+import { Text, Stack } from '@/design-system';
+
 export default function SettingsDeleteStateDialog({
   project,
   column,
@@ -50,11 +52,15 @@ export default function SettingsDeleteStateDialog({
       onClose={onClose}
     >
       {issueCount === 0 ? (
-        <p className="text-sm text-muted-foreground">{t('deleteNoIssues')}</p>
+        <Text as="p" size="sm" tone="muted">
+          {t('deleteNoIssues')}
+        </Text>
       ) : (
-        <div className="space-y-3">
-          <p className="text-sm">{t('deleteHasIssues', { count: issueCount })}</p>
-          <div className="space-y-2">
+        <Stack gap={3}>
+          <Text as="p" size="sm">
+            {t('deleteHasIssues', { count: issueCount })}
+          </Text>
+          <Stack gap={2}>
             <Label>
               <Checkbox
                 checked={action === 'move'}
@@ -85,10 +91,12 @@ export default function SettingsDeleteStateDialog({
                 checked={action === 'delete'}
                 onCheckedChange={(v) => v === true && setAction('delete')}
               />
-              <span className="text-destructive">{t('deleteIssues')}</span>
+              <Text as="span" tone="danger">
+                {t('deleteIssues')}
+              </Text>
             </Label>
-          </div>
-        </div>
+          </Stack>
+        </Stack>
       )}
     </ConfirmDialog>
   );

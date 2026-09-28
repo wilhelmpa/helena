@@ -18,6 +18,8 @@ import SettingsIconButton from '../SettingsIconButton';
 import { useSettingsCan } from '../../context/settingsPermission';
 import { copyText } from '@/utils/clipboard';
 
+import { Inline, Stack, Text } from '@/design-system';
+
 export function SettingsWebhookRow({
   webhook,
   onShowDeliveries,
@@ -47,7 +49,7 @@ export function SettingsWebhookRow({
   return (
     <TableRow className="group/item">
       <TableCell className="px-3 py-4 align-top whitespace-normal">
-        <div className="flex min-w-0 items-start gap-2.5">
+        <Inline gap={3} align="start" className="flex min-w-0 items-start">
           <span
             className={cn(
               'mt-1.5 size-2 shrink-0 rounded-full',
@@ -55,11 +57,11 @@ export function SettingsWebhookRow({
             )}
             title={t(webhook.isActive ? 'active' : 'disabled')}
           />
-          <div className="min-w-0 space-y-1.5">
-            <span className="block truncate text-sm font-medium" title={webhook.url}>
+          <Stack gap={2} className="min-w-0">
+            <Text as="span" size="sm" className="block truncate font-medium" title={webhook.url}>
               {webhook.url}
-            </span>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            </Text>
+            <Inline gap={2} className="flex items-center text-xs text-muted-foreground">
               <span className="truncate font-mono">
                 {revealed ? webhook.secret : maskSecret(webhook.secret)}
               </span>
@@ -81,21 +83,21 @@ export function SettingsWebhookRow({
               >
                 {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
               </Button>
-            </div>
-          </div>
-        </div>
+            </Inline>
+          </Stack>
+        </Inline>
       </TableCell>
       <TableCell className="px-3 py-4 align-top whitespace-normal">
-        <div className="flex flex-wrap gap-1">
+        <Inline gap={1} align="stretch" wrap className="flex flex-wrap">
           {webhook.events.map((event) => (
             <Badge key={event} variant="outline" className="font-mono text-xs">
               {event}
             </Badge>
           ))}
-        </div>
+        </Inline>
       </TableCell>
       <TableCell className="px-3 py-3 align-top">
-        <div className="flex items-center justify-end gap-1">
+        <Inline gap={1} justify="end" className="flex items-center justify-end">
           <SettingsIconButton title={t('deliveryHistory')} onClick={onShowDeliveries}>
             <History className="size-4" />
           </SettingsIconButton>
@@ -136,7 +138,7 @@ export function SettingsWebhookRow({
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-        </div>
+        </Inline>
       </TableCell>
     </TableRow>
   );

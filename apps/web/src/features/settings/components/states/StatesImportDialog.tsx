@@ -11,6 +11,8 @@ import { useCreateColumn, useUpdateColumn } from '../../services/settings.servic
 import type { PlannedState } from '../../utils/statesTransfer';
 import { useTransferActionLabel } from '../../utils/transferAction';
 
+import { Stack, Text, Inline } from '@/design-system';
+
 // Confirms a states paste before applying it: lists each incoming state, its group,
 // and whether it is created or updates an existing state's color. On confirm, new
 // states are created and matched states have their color updated.
@@ -61,39 +63,44 @@ export default function StatesImportDialog({
 
   return (
     <Modal title={t('importTitle')} onClose={onClose} wide>
-      <div className="space-y-4">
-        <p className="text-xs text-muted-foreground">
+      <Stack gap={4}>
+        <Text as="p" size="xs" tone="muted">
           {t('importSummary', { count: applicable.length })}
-        </p>
+        </Text>
         <div className="max-h-[50vh] divide-y divide-border/60 overflow-y-auto rounded-md border border-border/60">
           {planned.map((state) => (
-            <div
+            <Inline
+              gap={3}
+              padX={3}
+              padY={3}
               key={`${state.stateType}:${state.name}`}
-              className="flex items-center gap-3 px-3 py-2.5"
+              className="flex items-center"
             >
               {colorDot(state.color)}
-              <span className="min-w-0 flex-1 truncate text-sm font-medium">{state.name}</span>
-              <span className="shrink-0 text-xs text-muted-foreground">
+              <Text as="span" size="sm" className="min-w-0 flex-1 truncate font-medium">
+                {state.name}
+              </Text>
+              <Text as="span" size="xs" tone="muted" className="shrink-0">
                 {tStateType(state.stateType)}
-              </span>
+              </Text>
               <Badge
                 variant={state.action === 'unchanged' ? 'outline' : 'secondary'}
                 className="shrink-0 px-1.5 py-0 text-xs font-normal"
               >
                 {actionLabel(state.action)}
               </Badge>
-            </div>
+            </Inline>
           ))}
         </div>
-        <div className="flex justify-end gap-2">
+        <Inline gap={2} align="stretch" justify="end" className="flex justify-end">
           <Button variant="outline" onClick={onClose} disabled={busy}>
             {tCommon('cancel')}
           </Button>
           <Button onClick={apply} disabled={busy || applicable.length === 0}>
             {t('importApply', { count: applicable.length })}
           </Button>
-        </div>
-      </div>
+        </Inline>
+      </Stack>
     </Modal>
   );
 }

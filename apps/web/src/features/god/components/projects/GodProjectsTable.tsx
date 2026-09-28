@@ -17,6 +17,8 @@ import {
 import { compactCount } from '../../utils/numbers';
 import TableCard from '@/components/common/page/TableCard';
 
+import { Box, Stack, Inline, Text } from '@/design-system';
+
 // The project list. A row (or the pencil in its Actions cell) opens the project in
 // the side panel, where the full counts and the member list are. The columns here
 // are the ones that say how much is going on: work, people, activity.
@@ -76,17 +78,24 @@ export default function GodProjectsTable({
               title={t('showDetails')}
             >
               <TableCell className="px-3 py-3 align-top whitespace-normal">
-                <div className="flex min-w-0 flex-col gap-0.5">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span className="shrink-0 rounded-sm bg-secondary px-1.5 py-0.5 text-xs font-medium text-secondary-foreground">
+                <Stack gap={1} className="flex min-w-0 flex-col">
+                  <Inline gap={2} className="flex min-w-0 items-center">
+                    <Box
+                      as="span"
+                      padX={2}
+                      padY={1}
+                      className="shrink-0 rounded-sm bg-secondary text-xs font-medium text-secondary-foreground"
+                    >
                       {p.key}
-                    </span>
-                    <span className="truncate text-sm font-medium">{p.name}</span>
-                  </div>
-                  <span className="text-xs text-muted-foreground">
+                    </Box>
+                    <Text as="span" size="sm" className="truncate font-medium">
+                      {p.name}
+                    </Text>
+                  </Inline>
+                  <Text as="span" size="xs" tone="muted">
                     {t('created', { date: formatShortDate(p.createdAt) })}
-                  </span>
-                </div>
+                  </Text>
+                </Stack>
               </TableCell>
 
               <TableCell
@@ -97,19 +106,22 @@ export default function GodProjectsTable({
               </TableCell>
 
               <TableCell className="px-3 py-3 align-top text-sm tabular-nums max-md:hidden">
-                <div className="flex flex-col gap-0.5">
+                <Stack gap={1} className="flex flex-col">
                   <span title={String(p.issueCount)}>{compactCount(p.issueCount)}</span>
                   {/* Its own line, so a project with five-digit counts does not push the
                       column into a wrap. */}
                   {p.archivedIssueCount > 0 && (
-                    <span
-                      className="text-xs text-muted-foreground"
+                    <Text
+                      as="span"
+                      size="xs"
+                      tone="muted"
+
                       title={t('archived', { count: p.archivedIssueCount })}
                     >
                       {t('archived', { count: compactCount(p.archivedIssueCount) })}
-                    </span>
+                    </Text>
                   )}
-                </div>
+                </Stack>
               </TableCell>
 
               <TableCell

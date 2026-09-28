@@ -13,6 +13,8 @@ import { TableCell, TableRow } from '@/components/ui/table';
 import SettingsIconButton from '../SettingsIconButton';
 import { useSettingsCan } from '../../context/settingsPermission';
 
+import { Inline, Stack, Text } from '@/design-system';
+
 export function SettingsActionRow({
   action,
   project,
@@ -41,50 +43,58 @@ export function SettingsActionRow({
   return (
     <TableRow className="group/item">
       <TableCell className="px-3 py-3 align-top whitespace-normal">
-        <div className="flex min-w-0 items-start gap-2.5">
+        <Inline gap={3} align="start" className="flex min-w-0 items-start">
           <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
             <Icon className="size-4" />
           </div>
-          <div className="flex min-w-0 flex-col gap-1.5 pt-1">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="truncate text-sm font-medium">{action.name}</span>
+          <Stack gap={2} padTop={1} className="flex min-w-0 flex-col">
+            <Inline gap={2} wrap className="flex flex-wrap items-center">
+              <Text as="span" size="sm" className="truncate font-medium">
+                {action.name}
+              </Text>
               <Badge variant="outline" className="px-1.5 py-0 text-xs font-normal">
                 {t(triggerLabel(action.trigger))}
               </Badge>
               <Badge variant="secondary" className="px-1.5 py-0 text-xs font-normal">
                 {t('stepCount', { count: action.workflow.nodes.length })}
               </Badge>
-            </div>
+            </Inline>
             {conditions.length > 0 ? (
-              <div className="flex flex-wrap items-center gap-1">
-                <span className="text-xs text-muted-foreground">{t('when')}</span>
+              <Inline gap={1} wrap className="flex flex-wrap items-center">
+                <Text as="span" size="xs" tone="muted">
+                  {t('when')}
+                </Text>
                 {conditions.map((text, i) => (
                   <Badge key={i} variant="secondary" className="font-normal">
                     {text}
                   </Badge>
                 ))}
-              </div>
+              </Inline>
             ) : (
-              <span className="text-xs text-muted-foreground">{t('alwaysAvailable')}</span>
+              <Text as="span" size="xs" tone="muted">
+                {t('alwaysAvailable')}
+              </Text>
             )}
-          </div>
-        </div>
+          </Stack>
+        </Inline>
       </TableCell>
       <TableCell className="px-3 py-3 pt-4 align-top whitespace-normal">
         {effects.length > 0 ? (
-          <div className="flex flex-wrap gap-1">
+          <Inline gap={1} align="stretch" wrap className="flex flex-wrap">
             {effects.map((e) => (
               <Badge key={e.key} variant="secondary" className="font-normal">
                 {e.text}
               </Badge>
             ))}
-          </div>
+          </Inline>
         ) : (
-          <span className="text-xs text-muted-foreground">{t('noChanges')}</span>
+          <Text as="span" size="xs" tone="muted">
+            {t('noChanges')}
+          </Text>
         )}
       </TableCell>
       <TableCell className="px-3 py-2 pt-3 align-top">
-        <div className="flex items-center justify-end gap-1">
+        <Inline gap={1} justify="end" className="flex items-center justify-end">
           {can('edit') && (
             <Switch
               checked={action.enabled}
@@ -107,7 +117,7 @@ export function SettingsActionRow({
               <Trash2 className="size-4" />
             </SettingsIconButton>
           )}
-        </div>
+        </Inline>
       </TableCell>
     </TableRow>
   );

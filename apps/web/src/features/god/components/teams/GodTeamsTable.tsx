@@ -16,6 +16,8 @@ import {
 import { compactCount } from '../../utils/numbers';
 import TableCard from '@/components/common/page/TableCard';
 
+import { Text } from '@/design-system';
+
 // The team list. A row (or the pencil in its Actions cell) opens the team in the side
 // panel, where the full counts, the projects and the member list are.
 export default function GodTeamsTable({
@@ -74,7 +76,9 @@ export default function GodTeamsTable({
               title={t('showDetails')}
             >
               <TableCell className="px-3 py-3">
-                <span className="truncate text-sm font-medium">{team.name}</span>
+                <Text as="span" size="sm" className="truncate font-medium">
+                  {team.name}
+                </Text>
               </TableCell>
 
               <TableCell

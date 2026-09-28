@@ -13,6 +13,8 @@ import GodEngineSettings from './GodEngineSettings';
 import GodSectionPage from './GodSectionPage';
 import GodProjectDefaultsSettings from './GodProjectDefaultsSettings';
 
+import { Inline } from '@/design-system';
+
 export default function GodGeneralForm({
   defaults,
   runResume,
@@ -50,7 +52,7 @@ export default function GodGeneralForm({
             title={t('maxResumes')}
             description={t('maxResumesHint')}
             control={
-              <div className="flex items-center gap-2">
+              <Inline gap={2} className="flex items-center">
                 <Input
                   type="number"
                   min={0}
@@ -74,7 +76,7 @@ export default function GodGeneralForm({
                 >
                   {updateRunResume.isPending ? tCommon('saving') : tCommon('save')}
                 </Button>
-              </div>
+              </Inline>
             }
           />
         </SettingsCard>

@@ -12,6 +12,8 @@ import GitCopyField from './GitCopyField';
 import GithubCliCommand from './GithubCliCommand';
 import GitlabCliCommand from './GitlabCliCommand';
 
+import { Inline, Text, Stack, Box } from '@/design-system';
+
 // One tab per supported host: each takes the same payload URL and secret, but
 // names the fields and the pull request trigger differently. Gitea and Forgejo
 // share a tab because their webhook form is the same.
@@ -67,24 +69,32 @@ export default function GitConnectionCard({
   ) : undefined;
 
   const hint = (key: (typeof PROVIDERS)[number]['hint']) => (
-    <p className="text-xs text-muted-foreground">
+    <Text as="p" size="xs" tone="muted">
       {t.rich(key, {
         b: (chunks) => <b>{chunks}</b>,
-        code: (chunks) => <code className="rounded-sm bg-muted px-1 py-0.5">{chunks}</code>,
+        code: (chunks) => (
+          <Box as="code" padX={1} padY={1} className="rounded-sm bg-muted">
+            {chunks}
+          </Box>
+        ),
       })}
-    </p>
+    </Text>
   );
 
   return (
     <SettingsSection title={t('webhookEndpoint')} description={t('webhookEndpointHint')}>
       <SettingsCard className="divide-y divide-border/60">
         {secret == null ? (
-          <p className="p-4 text-xs text-muted-foreground">{t('connectionRestricted')}</p>
+          <Box as="p" pad={4}>
+            <Text as="span" size="xs" tone="muted">
+              {t('connectionRestricted')}
+            </Text>
+          </Box>
         ) : (
           <>
             {/* One URL and one secret serve every host — they sit above the tabs,
                 which carry nothing but each host's instructions. */}
-            <div className="space-y-4 p-4">
+            <Stack gap={4} pad={4}>
               <GitCopyField label={t('payloadUrl')} value={payloadUrl} />
               <GitCopyField
                 label={t('webhookSecret')}
@@ -92,15 +102,20 @@ export default function GitConnectionCard({
                 masked
                 action={regenerateAction}
               />
-            </div>
-            <details className="group p-4">
+            </Stack>
+            <Box as="details" pad={4} className="group">
               <summary className="cursor-pointer list-none text-sm font-medium select-none marker:content-none">
-                <span className="inline-flex items-center gap-2">
+                <Inline
+                  as="span"
+                  gap={2}
+                  className="inline-flex items-center"
+                  style={{ display: 'inline-flex' }}
+                >
                   <span className="transition-transform group-open:rotate-90">›</span>
                   {t('manualSetup')}
-                </span>
+                </Inline>
               </summary>
-              <div className="mt-4">
+              <Box marginTop={4}>
                 <Tabs value={tab} onValueChange={(v) => setTab(v as ProviderKey)}>
                   <TabsList variant="line">
                     {PROVIDERS.map((p) => (
@@ -121,8 +136,8 @@ export default function GitConnectionCard({
                     </TabsContent>
                   ))}
                 </Tabs>
-              </div>
-            </details>
+              </Box>
+            </Box>
           </>
         )}
       </SettingsCard>

@@ -18,6 +18,8 @@ import {
 import { useProviderList } from '../../hooks/useProviderList';
 import TableCard from '@/components/common/page/TableCard';
 
+import { Inline, Stack, Text } from '@/design-system';
+
 // The account list. A row (or the pencil in its Actions cell) opens the account in
 // the side panel, where the email can be confirmed and the account deleted.
 export default function GodUsersTable({
@@ -77,20 +79,24 @@ export default function GodUsersTable({
               title={t('showAccess')}
             >
               <TableCell className="px-3 py-3 align-top whitespace-normal">
-                <div className="flex min-w-0 items-start gap-2.5">
+                <Inline gap={3} align="start" className="flex min-w-0 items-start">
                   <Avatar name={u.name || u.email} image={u.image} className="size-8 shrink-0" />
-                  <div className="flex min-w-0 flex-col gap-0.5 pt-0.5">
-                    <span className="truncate text-sm font-medium">{u.name || u.email}</span>
-                    <span className="truncate text-xs text-muted-foreground">{u.email}</span>
-                    <span className="text-xs text-muted-foreground">
+                  <Stack gap={1} padTop={1} className="flex min-w-0 flex-col">
+                    <Text as="span" size="sm" className="truncate font-medium">
+                      {u.name || u.email}
+                    </Text>
+                    <Text as="span" size="xs" tone="muted" className="truncate">
+                      {u.email}
+                    </Text>
+                    <Text as="span" size="xs" tone="muted">
                       {t('registered', { date: formatShortDate(u.createdAt) })}
-                    </span>
-                  </div>
-                </div>
+                    </Text>
+                  </Stack>
+                </Inline>
               </TableCell>
 
               <TableCell className="px-3 py-3 align-top">
-                <div className="flex flex-wrap gap-1">
+                <Inline gap={1} align="stretch" wrap className="flex flex-wrap">
                   {u.role === 'god' ? (
                     <Badge variant="secondary" className="gap-1 px-1.5 py-0 text-xs font-medium">
                       <Shield className="size-3" />
@@ -107,7 +113,7 @@ export default function GodUsersTable({
                       {t('agent')}
                     </Badge>
                   )}
-                </div>
+                </Inline>
               </TableCell>
 
               <TableCell className="px-3 py-3 align-top text-xs text-muted-foreground max-xl:hidden">

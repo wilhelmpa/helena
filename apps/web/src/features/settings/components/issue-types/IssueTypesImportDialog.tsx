@@ -11,6 +11,8 @@ import { useCreateIssueType, useUpdateIssueType } from '../../services/settings.
 import type { PlannedIssueType } from '../../utils/issueTypesTransfer';
 import { useTransferActionLabel } from '../../utils/transferAction';
 
+import { Stack, Text, Inline } from '@/design-system';
+
 // Confirms an issue types paste before applying it: lists each incoming type and
 // whether it is created or updates an existing type's color. On confirm, new types are
 // created and matched types have their color updated.
@@ -61,33 +63,35 @@ export default function IssueTypesImportDialog({
 
   return (
     <Modal title={t('importTitle')} onClose={onClose} wide>
-      <div className="space-y-4">
-        <p className="text-xs text-muted-foreground">
+      <Stack gap={4}>
+        <Text as="p" size="xs" tone="muted">
           {t('importSummary', { count: applicable.length })}
-        </p>
+        </Text>
         <div className="max-h-[50vh] divide-y divide-border/60 overflow-y-auto rounded-md border border-border/60">
           {planned.map((type) => (
-            <div key={type.name} className="flex items-center gap-3 px-3 py-2.5">
+            <Inline gap={3} padX={3} padY={3} key={type.name} className="flex items-center">
               {colorDot(type.color)}
-              <span className="min-w-0 flex-1 truncate text-sm font-medium">{type.name}</span>
+              <Text as="span" size="sm" className="min-w-0 flex-1 truncate font-medium">
+                {type.name}
+              </Text>
               <Badge
                 variant={type.action === 'unchanged' ? 'outline' : 'secondary'}
                 className="shrink-0 px-1.5 py-0 text-xs font-normal"
               >
                 {actionLabel(type.action)}
               </Badge>
-            </div>
+            </Inline>
           ))}
         </div>
-        <div className="flex justify-end gap-2">
+        <Inline gap={2} align="stretch" justify="end" className="flex justify-end">
           <Button variant="outline" onClick={onClose} disabled={busy}>
             {tCommon('cancel')}
           </Button>
           <Button onClick={apply} disabled={busy || applicable.length === 0}>
             {t('importApply', { count: applicable.length })}
           </Button>
-        </div>
-      </div>
+        </Inline>
+      </Stack>
     </Modal>
   );
 }

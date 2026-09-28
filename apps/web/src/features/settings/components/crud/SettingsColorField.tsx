@@ -5,6 +5,8 @@ import { ColorSwatches } from '@/components/ui/color-swatches';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
+import { Inline } from '@/design-system';
+
 // Chosen to stay legible on both light and dark surfaces.
 const PRESET_COLORS = [
   '#64748b',
@@ -60,7 +62,7 @@ export default function SettingsColorField({
       </PopoverTrigger>
       <PopoverContent align="start" className="w-auto p-3">
         <ColorSwatches colors={PRESET_COLORS} value={value} onChange={onChange} />
-        <div className="mt-3 flex items-center gap-2">
+        <Inline gap={2} marginTop={3} className="flex items-center">
           <span
             className="size-7 shrink-0 rounded-md border border-input"
             style={{ backgroundColor: value }}
@@ -71,7 +73,7 @@ export default function SettingsColorField({
             spellCheck={false}
             className="h-8 font-mono text-xs uppercase"
           />
-        </div>
+        </Inline>
       </PopoverContent>
     </Popover>
   );

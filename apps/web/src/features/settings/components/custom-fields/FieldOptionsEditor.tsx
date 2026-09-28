@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { uuid } from '@/utils/uuid';
 
+import { Stack, Inline, Text } from '@/design-system';
+
 // One row of the editor. `key` is local and stable across edits, so typing in a row
 // does not move the focus when the rows above it change; `id` is the option's own id,
 // absent on a row that does not exist yet.
@@ -48,13 +50,13 @@ export default function FieldOptionsEditor({
   }
 
   return (
-    <div className="space-y-1.5">
+    <Stack gap={2}>
       <Label htmlFor="custom-field-options">{t('options')}</Label>
 
       {options.length > 0 && (
-        <div className="space-y-1">
+        <Stack gap={1}>
           {options.map((option, index) => (
-            <div key={option.key} className="flex items-center gap-1">
+            <Inline gap={1} key={option.key} className="flex items-center">
               <Input
                 value={option.value}
                 onChange={(e) =>
@@ -74,9 +76,9 @@ export default function FieldOptionsEditor({
               >
                 <X />
               </Button>
-            </div>
+            </Inline>
           ))}
-        </div>
+        </Stack>
       )}
 
       <Input
@@ -104,7 +106,9 @@ export default function FieldOptionsEditor({
         placeholder={t('optionsPlaceholder')}
         className="h-9"
       />
-      <p className="text-xs text-muted-foreground">{t('optionsHint')}</p>
-    </div>
+      <Text as="p" size="xs" tone="muted">
+        {t('optionsHint')}
+      </Text>
+    </Stack>
   );
 }

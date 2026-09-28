@@ -8,6 +8,8 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/button';
 import TeamProjectDeleteDialog from '@/features/teams/components/projects/TeamProjectDeleteDialog';
 
+import { Box, Stack, Text, Inline } from '@/design-system';
+
 // The danger zone at the end of a project's General settings
 // (docs/volition-design-helena-ui.md "Projekt-Einstellungen"): red-bordered,
 // confirmation by typing the project's key. Reuses the delete dialog and mutation
@@ -24,15 +26,25 @@ export default function ProjectDangerZone({ project }: { project: ProjectDetail 
   if (!can('danger_zone', 'delete')) return null;
 
   return (
-    <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4">
-      <div className="space-y-1">
+    <Box pad={4} className="rounded-lg border border-destructive/40 bg-destructive/5">
+      <Stack gap={1}>
         <h3 className="text-sm font-semibold text-destructive">{t('title')}</h3>
-        <p className="text-xs text-muted-foreground">{t('description')}</p>
-      </div>
-      <div className="mt-4 flex items-center justify-between gap-4 rounded-md border border-border bg-card p-4">
+        <Text as="p" size="xs" tone="muted">
+          {t('description')}
+        </Text>
+      </Stack>
+      <Inline
+        gap={4}
+        justify="between"
+        marginTop={4}
+        pad={4}
+        className="flex items-center justify-between rounded-md border border-border bg-card"
+      >
         <div className="min-w-0">
           <div className="text-sm font-medium">{t('deleteTitle')}</div>
-          <p className="text-xs text-muted-foreground">{t('deleteDescription')}</p>
+          <Text as="p" size="xs" tone="muted">
+            {t('deleteDescription')}
+          </Text>
         </div>
         <Button
           type="button"
@@ -43,7 +55,7 @@ export default function ProjectDangerZone({ project }: { project: ProjectDetail 
         >
           {t('deleteAction')}
         </Button>
-      </div>
+      </Inline>
       {showDelete && (
         <TeamProjectDeleteDialog
           teamId={project.project.teamId}
@@ -52,6 +64,6 @@ export default function ProjectDangerZone({ project }: { project: ProjectDetail 
           onDeleted={() => router.replace('/')}
         />
       )}
-    </div>
+    </Box>
   );
 }

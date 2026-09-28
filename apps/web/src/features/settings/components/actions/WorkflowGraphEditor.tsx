@@ -25,6 +25,8 @@ import {
 import { SettingsEffectEditor } from './SettingsEffectEditor';
 import { uuid } from '@/utils/uuid';
 
+import { Inline, Stack, Box } from '@/design-system';
+
 export function WorkflowGraphEditor({
   workflow,
   project,
@@ -91,7 +93,13 @@ export function WorkflowGraphEditor({
 
   function addButtons(source: string, branch: WorkflowBranch) {
     return (
-      <div className="flex flex-wrap justify-center gap-1.5">
+      <Inline
+        gap={2}
+        align="stretch"
+        justify="center"
+        wrap
+        className="flex flex-wrap justify-center"
+      >
         <Button
           type="button"
           size="sm"
@@ -108,7 +116,7 @@ export function WorkflowGraphEditor({
         >
           <Plus className="size-3.5" /> {t('addActionStep')}
         </Button>
-      </div>
+      </Inline>
     );
   }
 
@@ -128,18 +136,23 @@ export function WorkflowGraphEditor({
         <Zap className="size-4" />
       );
     return (
-      <div key={node.id} className="min-w-0 space-y-3">
+      <Stack gap={3} key={node.id} className="min-w-0">
         {branchLabel && (
           <div className="flex justify-center">
             <Badge variant="outline">{branchLabel}</Badge>
           </div>
         )}
-        <div className="rounded-lg border bg-background p-4 shadow-sm">
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-sm font-medium">
+        <Box pad={4} className="rounded-lg border bg-background shadow-sm">
+          <Inline
+            gap={2}
+            justify="between"
+            marginBottom={3}
+            className="flex items-center justify-between"
+          >
+            <Inline gap={2} className="flex items-center text-sm font-medium">
               {icon}
               {t(`nodeType.${node.type}`)}
-            </div>
+            </Inline>
             {removable && (
               <Button
                 type="button"
@@ -152,7 +165,7 @@ export function WorkflowGraphEditor({
                 <Trash2 className="size-3.5" />
               </Button>
             )}
-          </div>
+          </Inline>
           {node.type === 'trigger' && (
             <Select
               value={node.config.trigger}
@@ -187,35 +200,43 @@ export function WorkflowGraphEditor({
               onChange={(config) => updateNode(node.id, config)}
             />
           )}
-        </div>
+        </Box>
         {node.type === 'condition' ? (
           <div className="grid gap-4 md:grid-cols-2">
             {(['true', 'false'] as const).map((branch) => {
               const next = child(node.id, branch);
               return (
-                <div key={branch} className="space-y-3 border-t pt-3">
+                <Stack gap={3} padTop={3} key={branch} className="border-t">
                   {next ? (
                     renderNode(next, t(`branch.${branch}`))
                   ) : (
-                    <div className="space-y-2">
+                    <Stack gap={2}>
                       <div className="text-center text-xs text-muted-foreground">
                         {t(`branch.${branch}`)}
                       </div>
                       {addButtons(node.id, branch)}
-                    </div>
+                    </Stack>
                   )}
-                </div>
+                </Stack>
               );
             })}
           </div>
         ) : child(node.id, 'always') ? (
-          <div className="border-t pt-3">{renderNode(child(node.id, 'always')!)}</div>
+          <Box padTop={3} className="border-t">
+            {renderNode(child(node.id, 'always')!)}
+          </Box>
         ) : (
-          <div className="border-t pt-3">{addButtons(node.id, 'always')}</div>
+          <Box padTop={3} className="border-t">
+            {addButtons(node.id, 'always')}
+          </Box>
         )}
-      </div>
+      </Stack>
     );
   }
 
-  return <div className="rounded-lg bg-muted/20 p-3 md:p-4">{renderNode(trigger)}</div>;
+  return (
+    <Box pad={3} className="rounded-lg bg-muted/20 md:p-4">
+      {renderNode(trigger)}
+    </Box>
+  );
 }

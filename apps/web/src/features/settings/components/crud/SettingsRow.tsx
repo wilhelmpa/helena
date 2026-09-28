@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Item, ItemActions, ItemContent, ItemMedia, ItemTitle } from '@/components/ui/item';
 import { useSettingsCan } from '../../context/settingsPermission';
 
+import { Text } from '@/design-system';
+
 // `dimmed` fades the row while it is the drag source. Shared by the settings CRUD tabs.
 export function SettingsRow({
   handle,
@@ -41,7 +43,9 @@ export function SettingsRow({
         <ItemTitle>{title}</ItemTitle>
       </ItemContent>
       {meta != null && (
-        <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{meta}</span>
+        <Text as="span" size="xs" tone="muted" className="shrink-0 tabular-nums">
+          {meta}
+        </Text>
       )}
       <ItemActions className="opacity-0 group-hover/item:opacity-100">
         {can('edit') && (

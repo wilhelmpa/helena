@@ -17,6 +17,8 @@ import { revScope } from '@/utils/revScopes';
 import ControlPlaneWorkflowConfiguration from './ControlPlaneWorkflowConfiguration';
 import ControlPlaneWorkflowRuntime from './ControlPlaneWorkflowRuntime';
 
+import { Box, Text, Stack, Inline } from '@/design-system';
+
 export function ControlPlaneWorkflowPanel({
   projectId,
   projectKey,
@@ -39,34 +41,42 @@ export function ControlPlaneWorkflowPanel({
   });
 
   return (
-    <section className="space-y-3">
+    <Stack as="section" gap={3}>
       <h2 className="text-md font-medium">{t('title')}</h2>
       {workflows.isPending ? (
-        <p className="text-sm text-muted-foreground">{t('loading')}</p>
+        <Text as="p" size="sm" tone="muted">
+          {t('loading')}
+        </Text>
       ) : workflows.isError ? (
-        <p className="rounded-md border border-destructive/40 bg-card p-3 text-sm text-destructive">
-          {t('unavailable')}
-          {workflows.error instanceof Error && workflows.error.message ? (
-            <span className="mt-1 block text-xs text-muted-foreground">
-              {workflows.error.message}
-            </span>
-          ) : null}
-        </p>
+        <Box as="p" pad={3} className="rounded-md border border-destructive/40 bg-card">
+          <Text as="span" size="sm" tone="danger">
+            {t('unavailable')}
+            {workflows.error instanceof Error && workflows.error.message ? (
+              <Box as="span" marginTop={1} className="block">
+                <Text as="span" size="xs" tone="muted">
+                  {workflows.error.message}
+                </Text>
+              </Box>
+            ) : null}
+          </Text>
+        </Box>
       ) : !workflows.data?.length ? (
-        <p className="rounded-md border border-dashed bg-card p-4 text-sm text-muted-foreground">
-          {t('empty')}
-        </p>
+        <Box as="p" pad={4} className="rounded-md border border-dashed bg-card">
+          <Text as="span" size="sm" tone="muted">
+            {t('empty')}
+          </Text>
+        </Box>
       ) : (
-        <div className="space-y-3">
+        <Stack gap={3}>
           {workflows.data?.map((workflow) => (
-            <article key={workflow.id} className="rounded-md border bg-card p-4">
-              <div className="flex flex-wrap items-start gap-3">
+            <Box as="article" pad={4} key={workflow.id} className="rounded-md border bg-card">
+              <Inline gap={3} align="start" wrap className="flex flex-wrap items-start">
                 <button
                   type="button"
                   className="min-w-0 flex-1 text-start"
                   onClick={() => setExpanded(expanded === workflow.id ? null : workflow.id)}
                 >
-                  <div className="flex flex-wrap items-center gap-2">
+                  <Inline gap={2} wrap className="flex flex-wrap items-center">
                     <h3 className="text-sm font-medium">
                       {workflow.id === 'agent-team' ? t('agentTeamName') : workflow.name}
                     </h3>
@@ -78,15 +88,17 @@ export function ControlPlaneWorkflowPanel({
                         {trigger === 'delegation' ? t('triggerDelegation') : trigger}
                       </Badge>
                     ))}
-                  </div>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {workflow.id === 'agent-team'
-                      ? t('agentTeamDescription')
-                      : workflow.description}
-                  </p>
+                  </Inline>
+                  <Box as="p" marginTop={1}>
+                    <Text as="span" size="sm" tone="muted">
+                      {workflow.id === 'agent-team'
+                        ? t('agentTeamDescription')
+                        : workflow.description}
+                    </Text>
+                  </Box>
                 </button>
                 {editable ? (
-                  <div className="flex items-center gap-2">
+                  <Inline gap={2} className="flex items-center">
                     <Label htmlFor={`${workflow.id}-enabled`} className="text-xs">
                       {t('enabled')}
                     </Label>
@@ -107,20 +119,22 @@ export function ControlPlaneWorkflowPanel({
                         })
                       }
                     />
-                  </div>
+                  </Inline>
                 ) : (
                   <Badge variant="outline">
                     {workflow.assignment.enabled ? t('enabled') : t('disabled')}
                   </Badge>
                 )}
-              </div>
+              </Inline>
               {workflow.capabilityRefs.length > 0 && (
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {t('capabilities')}: {workflow.capabilityRefs.join(', ')}
-                </p>
+                <Box as="p" marginTop={2}>
+                  <Text as="span" size="xs" tone="muted">
+                    {t('capabilities')}: {workflow.capabilityRefs.join(', ')}
+                  </Text>
+                </Box>
               )}
               {expanded === workflow.id && workflow.assignment.enabled && (
-                <div className="mt-4 space-y-4 border-t pt-4">
+                <Stack gap={4} marginTop={4} padTop={4} className="border-t">
                   <ControlPlaneWorkflowConfiguration
                     projectKey={projectKey}
                     workflow={workflow}
@@ -133,12 +147,12 @@ export function ControlPlaneWorkflowPanel({
                     editable={editable}
                     markedRunId={linkedWorkflow === workflow.id ? searchParams.get('run') : null}
                   />
-                </div>
+                </Stack>
               )}
-            </article>
+            </Box>
           ))}
-        </div>
+        </Stack>
       )}
-    </section>
+    </Stack>
   );
 }

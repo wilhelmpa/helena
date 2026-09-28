@@ -7,6 +7,8 @@ import StatusSelect from '@/components/common/fields/StatusSelect';
 import TypeSelect from '@/components/common/fields/TypeSelect';
 import type { IssueTemplateFormValues } from '../../utils/issueTemplateForm';
 
+import { Stack, Text, Inline } from '@/design-system';
+
 // The properties a template presets, as the same pills the create dialog shows.
 // One left unset presets nothing, and the create dialog keeps its own default for
 // it — which is why every pill can be cleared.
@@ -22,10 +24,14 @@ export default function IssueTemplateProperties({
   const t = useTranslations('settings.issueTemplates');
   const tFields = useTranslations('issue.fields');
   return (
-    <div className="space-y-1.5">
-      <p className="text-sm">{t('properties')}</p>
-      <p className="text-xs text-muted-foreground">{t('propertiesHint')}</p>
-      <div className="flex flex-wrap items-center gap-2 pt-1.5">
+    <Stack gap={2}>
+      <Text as="p" size="sm">
+        {t('properties')}
+      </Text>
+      <Text as="p" size="xs" tone="muted">
+        {t('propertiesHint')}
+      </Text>
+      <Inline gap={2} wrap padTop={2} className="flex flex-wrap items-center">
         <StatusSelect
           columns={project.columns}
           value={values.columnId}
@@ -66,7 +72,7 @@ export default function IssueTemplateProperties({
             }
           />
         )}
-      </div>
-    </div>
+      </Inline>
+    </Stack>
   );
 }

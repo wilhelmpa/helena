@@ -27,6 +27,8 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import SettingsConfirmDeleteDialog from '@/features/settings/components/crud/SettingsConfirmDeleteDialog';
 
+import { Box, Inline, Text, Stack } from '@/design-system';
+
 export function ProjectTemplatesPanel({ project }: { project: ProjectDetail }) {
   const t = useTranslations('settings.actions');
   const tCommon = useTranslations('common');
@@ -51,28 +53,41 @@ export function ProjectTemplatesPanel({ project }: { project: ProjectDetail }) {
   }
 
   return (
-    <section className="space-y-3 border-t pt-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <Stack as="section" gap={3} padTop={4} className="border-t">
+      <Inline
+        gap={3}
+        align="start"
+        justify="between"
+        wrap
+        className="flex flex-wrap items-start justify-between"
+      >
         <div>
           <h2 className="text-md font-medium">{t('templates')}</h2>
-          <p className="text-xs text-muted-foreground">{t('templatesHint')}</p>
+          <Text as="p" size="xs" tone="muted">
+            {t('templatesHint')}
+          </Text>
         </div>
         {isOwner && (
           <Button type="button" size="sm" variant="outline" onClick={() => setCapturing(true)}>
             <Plus className="size-4" /> {t('captureTemplate')}
           </Button>
         )}
-      </div>
+      </Inline>
 
       {templates.isPending ? (
         <ListSkeleton rows={2} rowClassName="h-20" />
       ) : templates.data?.length ? (
         <div className="grid gap-3 lg:grid-cols-2">
           {templates.data.map((template) => (
-            <article key={template.id} className="rounded-md border bg-card p-4">
-              <div className="flex items-start justify-between gap-3">
+            <Box as="article" pad={4} key={template.id} className="rounded-md border bg-card">
+              <Inline
+                gap={3}
+                align="start"
+                justify="between"
+                className="flex items-start justify-between"
+              >
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2">
+                  <Inline gap={2} className="flex items-center">
                     {template.kind === 'board' ? (
                       <FolderKanban className="size-4" />
                     ) : (
@@ -80,21 +95,27 @@ export function ProjectTemplatesPanel({ project }: { project: ProjectDetail }) {
                     )}
                     <h3 className="truncate text-sm font-medium">{template.name}</h3>
                     <Badge variant="outline">{t(`templateKind.${template.kind}`)}</Badge>
-                  </div>
+                  </Inline>
                   {template.description && (
-                    <p className="mt-1 text-xs text-muted-foreground">{template.description}</p>
+                    <Box as="p" marginTop={1}>
+                      <Text as="span" size="xs" tone="muted">
+                        {template.description}
+                      </Text>
+                    </Box>
                   )}
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {t('templateCounts', {
-                      states: template.stateCount,
-                      folders: template.folderCount,
-                      views: template.viewCount,
-                      workflows: template.workflowCount,
-                    })}
-                  </p>
+                  <Box as="p" marginTop={2}>
+                    <Text as="span" size="xs" tone="muted">
+                      {t('templateCounts', {
+                        states: template.stateCount,
+                        folders: template.folderCount,
+                        views: template.viewCount,
+                        workflows: template.workflowCount,
+                      })}
+                    </Text>
+                  </Box>
                 </div>
                 {isOwner && (
-                  <div className="flex shrink-0 gap-1">
+                  <Inline gap={1} align="stretch" className="flex shrink-0">
                     <Button
                       type="button"
                       size="sm"
@@ -114,16 +135,18 @@ export function ProjectTemplatesPanel({ project }: { project: ProjectDetail }) {
                     >
                       <Trash2 className="size-4" />
                     </Button>
-                  </div>
+                  </Inline>
                 )}
-              </div>
-            </article>
+              </Inline>
+            </Box>
           ))}
         </div>
       ) : (
-        <p className="rounded-md border bg-card p-4 text-sm text-muted-foreground">
-          {t('noTemplates')}
-        </p>
+        <Box as="p" pad={4} className="rounded-md border bg-card">
+          <Text as="span" size="sm" tone="muted">
+            {t('noTemplates')}
+          </Text>
+        </Box>
       )}
 
       {capturing && (
@@ -133,14 +156,16 @@ export function ProjectTemplatesPanel({ project }: { project: ProjectDetail }) {
           scope={projectKey}
           onClose={() => setCapturing(false)}
         >
-          <form
-            className="space-y-4"
+          <Stack
+            as="form"
+            gap={4}
+
             onSubmit={(event) => {
               event.preventDefault();
               void saveTemplate();
             }}
           >
-            <div className="space-y-1.5">
+            <Stack gap={2}>
               <Label htmlFor="template-name">{t('templateName')}</Label>
               <Input
                 id="template-name"
@@ -150,8 +175,8 @@ export function ProjectTemplatesPanel({ project }: { project: ProjectDetail }) {
                 value={name}
                 onChange={(event) => setName(event.target.value)}
               />
-            </div>
-            <div className="space-y-1.5">
+            </Stack>
+            <Stack gap={2}>
               <Label htmlFor="template-kind">{t('templateType')}</Label>
               <Select
                 value={kind}
@@ -165,8 +190,8 @@ export function ProjectTemplatesPanel({ project }: { project: ProjectDetail }) {
                   <SelectItem value="project">{t('templateKind.project')}</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-1.5">
+            </Stack>
+            <Stack gap={2}>
               <Label htmlFor="template-description">{t('templateDescription')}</Label>
               <Textarea
                 id="template-description"
@@ -174,16 +199,16 @@ export function ProjectTemplatesPanel({ project }: { project: ProjectDetail }) {
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
               />
-            </div>
-            <div className="flex justify-end gap-2">
+            </Stack>
+            <Inline gap={2} align="stretch" justify="end" className="flex justify-end">
               <Button type="button" variant="ghost" onClick={() => setCapturing(false)}>
                 {tCommon('cancel')}
               </Button>
               <Button type="submit" disabled={!name.trim() || capture.isPending}>
                 {capture.isPending ? t('creating') : t('captureTemplate')}
               </Button>
-            </div>
-          </form>
+            </Inline>
+          </Stack>
         </Modal>
       )}
 
@@ -199,6 +224,6 @@ export function ProjectTemplatesPanel({ project }: { project: ProjectDetail }) {
           }}
         />
       )}
-    </section>
+    </Stack>
   );
 }
