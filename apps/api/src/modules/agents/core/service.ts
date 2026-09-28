@@ -686,15 +686,10 @@ function inProject(projectId: number) {
   return sql`exists (select 1 from ${projectMember} pm where pm.user_id = ${aiAgent.userId} and pm.project_id = ${projectId})`;
 }
 
-// The agents a caller may reach: an owner or a manager of the team reaches every agent
-// it has, anyone else the ones working in a project they are a member of and the
-// templates, which work in none. The reads below take the id it returns, or nothing when
-// the whole team is theirs.
-export function agentScopeOf(membership: {
-  role: TeamStanding;
-  userId: string;
-}): string | undefined {
-  return runsTeam(membership.role) ? undefined : membership.userId;
+export type AgentScope = string | { userId: string; allProjects: boolean };
+
+export function agentScopeOf(membership: { role: TeamStanding; userId: string }): AgentScope {
+  return { userId: membership.userId, allProjects: runsTeam(membership.role) };
 }
 
 // The projects of the team the user is a member of. Attaching an agent to a project
@@ -716,8 +711,15 @@ function sharesProjectWith(userId: string) {
   return sql`exists (select 1 from ${projectMember} pm join ${projectMember} mine on mine.project_id = pm.project_id and mine.user_id = ${userId} where pm.user_id = ${aiAgent.userId})`;
 }
 
-function visibleTo(userId: string | undefined) {
-  return userId == null ? undefined : or(eq(aiAgent.template, true), sharesProjectWith(userId));
+export function agentVisibility(scope: AgentScope | undefined) {
+  if (scope === undefined) return undefined;
+  const userId = typeof scope === 'string' ? scope : scope.userId;
+  return and(
+    typeof scope !== 'string' && scope.allProjects
+      ? undefined
+      : or(eq(aiAgent.template, true), sharesProjectWith(userId)),
+    or(eq(aiAgent.ownerUserId, userId), and(notHomeAgent(), ne(aiAgent.runnerScope, 'owner'))),
+  );
 }
 
 // The agents of the team, or only the ones working in one of its projects when
@@ -726,14 +728,14 @@ function visibleTo(userId: string | undefined) {
 export async function listAgents(
   teamId: number,
   projectId?: number,
-  visibleToUser?: string,
+  visibleToUser?: AgentScope,
 ): Promise<AiAgentRow[]> {
   const rows = await agentQuery()
     .where(
       and(
         eq(aiAgent.teamId, teamId),
         projectId == null ? undefined : and(inProject(projectId), notHomeAgent()),
-        visibleTo(visibleToUser),
+        agentVisibility(visibleToUser),
       ),
     )
     .orderBy(user.name);
@@ -745,10 +747,10 @@ export async function listAgents(
 export async function getAgentById(
   id: number,
   teamId: number,
-  visibleToUser?: string,
+  visibleToUser?: AgentScope,
 ): Promise<AiAgentRow | null> {
   const rows = await agentQuery().where(
-    and(eq(aiAgent.id, id), eq(aiAgent.teamId, teamId), visibleTo(visibleToUser)),
+    and(eq(aiAgent.id, id), eq(aiAgent.teamId, teamId), agentVisibility(visibleToUser)),
   );
   return rows[0] ? mapAgent(rows[0]) : null;
 }
@@ -756,21 +758,26 @@ export async function getAgentById(
 // The agent of that id that works in the project, or null. A run addresses an agent
 // together with the project it is to work in, and membership is what allows it: an
 // agent detached from a project stops running there, whatever was queued for it.
-export async function getAgentInProject(id: number, projectId: number): Promise<AiAgentRow | null> {
-  const rows = await agentQuery().where(and(eq(aiAgent.id, id), inProject(projectId)));
+export async function getAgentInProject(
+  id: number,
+  projectId: number,
+  viewerId?: string,
+): Promise<AiAgentRow | null> {
+  const rows = await agentQuery().where(
+    and(eq(aiAgent.id, id), inProject(projectId), agentVisibility(viewerId)),
+  );
   return rows[0] ? mapAgent(rows[0]) : null;
 }
 
 // An agent may run for whoever triggered it when its runner is team-scoped, and
-// otherwise only when the trigger came from the agent's owner, whose machine that
-// runner is. An 'owner'-scoped agent without an owner names nobody to restrict it to —
-// the account was deleted — so it takes any member's runs rather than silently stopping.
+// otherwise only when the trigger came from the agent's owner. A deleted owner
+// does not grant another person access.
 export function isTriggerableBy(
   agent: { runnerScope: string; ownerUserId: string | null },
   actorUserId: string | null,
 ): boolean {
-  if (agent.runnerScope !== 'owner' || !agent.ownerUserId) return true;
-  return agent.ownerUserId === actorUserId;
+  if (agent.runnerScope !== 'owner') return true;
+  return agent.ownerUserId !== null && agent.ownerUserId === actorUserId;
 }
 
 const triggerScopeColumns = {
@@ -1697,12 +1704,12 @@ export async function deleteAgent(id: number, teamId: number): Promise<boolean> 
 export async function agentInTeam(
   agentId: number,
   teamId: number,
-  visibleToUser?: string,
+  visibleToUser?: AgentScope,
 ): Promise<boolean> {
   const rows = await db
     .select({ id: aiAgent.id })
     .from(aiAgent)
-    .where(and(eq(aiAgent.id, agentId), eq(aiAgent.teamId, teamId), visibleTo(visibleToUser)))
+    .where(and(eq(aiAgent.id, agentId), eq(aiAgent.teamId, teamId), agentVisibility(visibleToUser)))
     .limit(1);
   return rows.length > 0;
 }

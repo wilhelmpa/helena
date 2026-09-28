@@ -60,6 +60,12 @@ import {
   teamOwnsProject,
 } from './service';
 import { browserLocale } from '#modules/user-preferences/locale';
+import {
+  listTeamPairHistory,
+  listTeamPairSuggestions,
+  receiptDedupSetting,
+  setReceiptDedupSetting,
+} from '#modules/receipts/dedup';
 
 // The write routes act on a project the team owns; one of another team answers 404
 // rather than being changed through this team.
@@ -247,6 +253,78 @@ export const teamRoutes = new Elysia({ name: 'teams', detail: { tags: ['Teams'] 
         'Each field is optional; a project of another team is ignored.',
     },
   })
+  .get('/teams/:teamId/receipt-dedup', ({ membership }) => receiptDedupSetting(membership.teamId), {
+    teamMember: true,
+    params: teamParams,
+    response: { 200: t.Object({ autoMerge: t.Boolean() }), ...errors(401, 403, 404) },
+    detail: { summary: 'Read the team receipt auto-merge setting' },
+  })
+  .put(
+    '/teams/:teamId/receipt-dedup',
+    ({ membership, body }) => setReceiptDedupSetting(membership.teamId, body.autoMerge),
+    {
+      teamManager: true,
+      params: teamParams,
+      body: t.Object({ autoMerge: t.Boolean() }),
+      response: { 200: t.Object({ autoMerge: t.Boolean() }), ...errors(401, 403, 404) },
+      detail: { summary: 'Set automatic receipt linking for the team' },
+    },
+  )
+  .get(
+    '/teams/:teamId/receipt-dedup/suggestions',
+    async ({ membership }) => ({ items: await listTeamPairSuggestions(membership.teamId) }),
+    {
+      teamManager: true,
+      params: teamParams,
+      response: {
+        200: t.Object({
+          items: t.Array(
+            t.Object({
+              id: t.Number(),
+              projectId: t.Number(),
+              projectKey: t.String(),
+              teamId: t.Number(),
+              receiptId: t.Number(),
+              candidateId: t.Number(),
+              kind: t.String(),
+              status: t.String(),
+              reason: t.String(),
+              createdAt: t.String(),
+            }),
+          ),
+        }),
+        ...errors(401, 403, 404),
+      },
+      detail: { summary: 'List pending receipt suggestions across the team for the inbox' },
+    },
+  )
+  .get(
+    '/teams/:teamId/receipt-dedup/history',
+    async ({ membership }) => ({ items: await listTeamPairHistory(membership.teamId) }),
+    {
+      teamManager: true,
+      params: teamParams,
+      response: {
+        200: t.Object({
+          items: t.Array(
+            t.Object({
+              id: t.Number(),
+              projectId: t.Number(),
+              projectKey: t.String(),
+              teamId: t.Number(),
+              receiptId: t.Number(),
+              primaryReceiptId: t.Number(),
+              action: t.String(),
+              createdByUserId: t.Nullable(t.String()),
+              createdAt: t.String(),
+            }),
+          ),
+        }),
+        ...errors(401, 403, 404),
+      },
+      detail: { summary: 'List automatic receipt links and detaches across the team' },
+    },
+  )
 
   .post(
     '/teams',

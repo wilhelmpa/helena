@@ -11,10 +11,12 @@ export async function waitForBlueprintProvisioning(
   key: string,
   log: (line: string) => void,
   timeoutMs = 300_000,
+  signal?: AbortSignal,
 ): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   let waiting = false;
   while (true) {
+    signal?.throwIfAborted();
     const job = await getProvisioningJob(projectId);
     if (!job || job.status === 'failed') {
       throw new Error(
@@ -34,7 +36,7 @@ export async function waitForBlueprintProvisioning(
           'in Helena, then rerun the blueprint; no project root was created by the blueprint.',
       );
     }
-    await sleep(Math.min(500, remaining));
+    await sleep(Math.min(500, remaining), undefined, { signal });
   }
   const root = projectFolder(key);
   await assertNoSymlink(root);

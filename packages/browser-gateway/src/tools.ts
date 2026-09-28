@@ -506,8 +506,8 @@ const DEFINED_TOOLS: ToolDef[] = [
       '("Open the invoices of September"), filling and sending a form with known values, ' +
       'setting filters. Put every string it may type or choose into `values` with a meaningful ' +
       'key ({"email": "…", "postal_code": "…"}); it never invents text, and never put a password ' +
-      'or code there (browser_login fills logins). Supply independent success criteria; done means ' +
-      'all supplied criteria matched a fresh observation. Without criteria, completion is likely_done: inspect the returned snapshot. A browser_check is another model opinion. Returns completion,' +
+      'or code there (browser_login fills logins). Supply independent success criteria for every plan step; done means ' +
+      'all supplied criteria matched a fresh observation. Without criteria, the task hands back to the standard agent. Returns completion,' +
       ' or hands back — needs_agent, needs_login, needs_confirmation, ' +
       'needs_approval, stuck, blocked, error — with the reason, the candidates and the page ' +
       'snapshot, so you continue with the step tools. Every action is approved like the step ' +
@@ -528,7 +528,7 @@ const DEFINED_TOOLS: ToolDef[] = [
           type: 'object',
           additionalProperties: false,
           description:
-            'Independent observed outcome. All supplied criteria must match. Choose criteria covering the full requested goal; no secrets, selectors or code. Without these, completion is only likely_done.',
+            'Independent observed outcome. All supplied criteria must match. Choose criteria covering the full requested goal; no secrets, selectors or code.',
           properties: {
             url: {
               type: 'string',
@@ -559,6 +559,57 @@ const DEFINED_TOOLS: ToolDef[] = [
                 'Uniquely labelled visible fields; exact observed value and/or checked state.',
             },
           },
+        },
+        plan: {
+          type: 'array',
+          minItems: 1,
+          maxItems: 12,
+          description:
+            'Ordered atomic steps planned by the standard agent. Jev verifies each step before the next. On uncertainty or failed verification, continue from the returned snapshot.',
+          items: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['goal', 'success'],
+            properties: {
+              goal: { type: 'string', description: 'One observable action or outcome.' },
+              success: {
+                type: 'object',
+                additionalProperties: false,
+                description: 'Independent success criterion for this step.',
+                properties: {
+                  url: { type: 'string' },
+                  textIncludes: {
+                    type: 'array',
+                    minItems: 1,
+                    maxItems: 10,
+                    items: { type: 'string' },
+                  },
+                  fields: {
+                    type: 'array',
+                    minItems: 1,
+                    maxItems: 10,
+                    items: {
+                      type: 'object',
+                      additionalProperties: false,
+                      required: ['label'],
+                      properties: {
+                        label: { type: 'string' },
+                        value: { type: 'string' },
+                        checked: { type: 'boolean' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        failedAttempts: {
+          type: 'number',
+          minimum: 0,
+          maximum: 1,
+          description:
+            'Pass 1 only when retrying a previously failed plan; after another failure the whole task goes to the standard agent.',
         },
         startUrl: {
           type: 'string',

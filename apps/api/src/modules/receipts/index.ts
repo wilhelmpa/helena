@@ -62,6 +62,7 @@ import {
 import { linkReceiptOriginal, unlinkReceiptOriginal } from './originals';
 import { receiptViews } from './views';
 import { receiptOriginalMail } from './archived-source';
+import { listPairHistory, listPairSuggestions, resolvePairSuggestion } from './dedup';
 
 // Receipt matching (Belege, docs/helena-decisions/decisions.md §7): a project's bank accounts
 // and statement imports, its receipts, the matches between them, the review list and the
@@ -308,6 +309,78 @@ export const receiptRoutes = new Elysia({
       description: 'Filter by status, month (invoice date, else arrival) and text.',
     },
   })
+  .get(
+    `${base}/pair-suggestions`,
+    async ({ project }) => ({ items: await listPairSuggestions(project.id) }),
+    {
+      projectAdmin: true,
+      response: {
+        200: t.Object({
+          items: t.Array(
+            t.Object({
+              id: t.Number(),
+              projectId: t.Number(),
+              teamId: t.Number(),
+              receiptId: t.Number(),
+              candidateId: t.Number(),
+              kind: t.String(),
+              status: t.String(),
+              reason: t.String(),
+              createdAt: t.String(),
+            }),
+          ),
+        }),
+        ...commonErrors,
+      },
+      detail: { summary: 'List receipt pair and duplicate suggestions for the inbox' },
+    },
+  )
+  .get(
+    `${base}/pair-history`,
+    async ({ project }) => ({ items: await listPairHistory(project.id) }),
+    {
+      projectAdmin: true,
+      response: {
+        200: t.Object({
+          items: t.Array(
+            t.Object({
+              id: t.Number(),
+              projectId: t.Number(),
+              teamId: t.Number(),
+              receiptId: t.Number(),
+              primaryReceiptId: t.Number(),
+              action: t.String(),
+              createdByUserId: t.Nullable(t.String()),
+              createdAt: t.String(),
+            }),
+          ),
+        }),
+        ...commonErrors,
+      },
+      detail: { summary: 'List automatic receipt links and detaches' },
+    },
+  )
+  .post(
+    `${base}/pair-suggestions/:suggestionId`,
+    ({ project, params, body, user }) =>
+      resolvePairSuggestion(
+        project.id,
+        params.suggestionId,
+        body.action,
+        body.primaryReceiptId ?? null,
+        requireUser(user).id,
+      ),
+    {
+      projectAdmin: true,
+      params: t.Object({ projectKey: t.String(), suggestionId: t.Numeric() }),
+      body: t.Object({
+        action: t.Union([t.Literal('link'), t.Literal('ignore')]),
+        primaryReceiptId: t.Optional(t.Integer({ minimum: 1 })),
+      }),
+      response: { 200: t.Object({ ok: t.Boolean() }), ...commonErrors, ...errors(409) },
+      detail: { summary: 'Link or ignore a receipt pair suggestion' },
+    },
+  )
   .post(
     base,
     ({ project, body, user, set }) =>
@@ -460,8 +533,13 @@ export const receiptRoutes = new Elysia({
   )
   .delete(
     `${base}/:receiptId/original-link`,
-    async ({ project, params, body }) => {
-      await unlinkReceiptOriginal(project.id, params.receiptId, body.primaryReceiptId);
+    async ({ project, params, body, user }) => {
+      await unlinkReceiptOriginal(
+        project.id,
+        params.receiptId,
+        body.primaryReceiptId,
+        requireUser(user).id,
+      );
       return { ok: true };
     },
     {

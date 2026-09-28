@@ -1,5 +1,6 @@
 import {
   db,
+  aiAgent,
   helenaSchedule,
   issue,
   mailAccount,
@@ -10,8 +11,12 @@ import {
 } from '@repo/db';
 import { and, desc, eq, gt, isNull, lt, sql, type SQL } from 'drizzle-orm';
 import { classSetting, decide } from '#modules/decisions/service';
-import { LOCAL_DECISION_MODEL, ROUTINE_GATE_CLASS } from '#modules/decisions/classes';
-import { routineGateQuestions } from '#modules/decisions/questions';
+import {
+  HEARTBEAT_PRECHECK_CLASS,
+  LOCAL_DECISION_MODEL,
+  ROUTINE_GATE_CLASS,
+} from '#modules/decisions/classes';
+import { heartbeatPrecheckQuestions, routineGateQuestions } from '#modules/decisions/questions';
 import { connectionIsLocal, loadConnection } from '#modules/browser-task/connection';
 
 export type GateMode = 'off' | 'shadow' | 'active';
@@ -177,7 +182,11 @@ export async function inspectRoutineGate(
   if (!borderline)
     return { ...result, recommendation: 'skip', reason: 'No work was counted.', status: 'empty' };
 
-  const setting = await classSetting(owner.teamId, ROUTINE_GATE_CLASS);
+  const precheckSetting = await classSetting(owner.teamId, HEARTBEAT_PRECHECK_CLASS);
+  const classId = precheckSetting.enabled ? HEARTBEAT_PRECHECK_CLASS : ROUTINE_GATE_CLASS;
+  const setting = precheckSetting.enabled
+    ? precheckSetting
+    : await classSetting(owner.teamId, ROUTINE_GATE_CLASS);
   const credentialIds = [setting.credentialId, setting.fallbackCredentialId].filter(
     (id): id is number => id !== null,
   );
@@ -193,22 +202,32 @@ export async function inspectRoutineGate(
     return { ...result, reason: 'Borderline; Qwen3.6 local decision is not configured.' };
   }
 
+  const [agent] = row.agentId
+    ? await db
+        .select({ username: aiAgent.username })
+        .from(aiAgent)
+        .where(eq(aiAgent.id, row.agentId))
+    : [];
   const outcome = await decide({
     teamId: owner.teamId,
-    classId: ROUTINE_GATE_CLASS,
+    classId,
     localOnly: true,
     projectId: row.projectId,
     agentId: row.agentId,
     subject: `Routine ${row.id}`,
     context: { source, title: row.title.slice(0, 200), counts: result.counts, evidence },
-    questions: routineGateQuestions(),
+    questions:
+      classId === HEARTBEAT_PRECHECK_CLASS
+        ? heartbeatPrecheckQuestions(agent?.username ?? row.title)
+        : routineGateQuestions(),
   });
-  const answer = outcome.answers.run;
+  const answer = outcome.answers[classId === HEARTBEAT_PRECHECK_CLASS ? 'work' : 'run'];
   const trusted =
     outcome.model === LOCAL_DECISION_MODEL && (answer?.confidence ?? 0) >= 0.8 && answer?.decided;
   return {
     ...result,
-    recommendation: trusted && answer?.choice === 'skip' ? 'skip' : 'run',
+    recommendation:
+      trusted && (answer?.choice === 'skip' || answer?.choice === 'no') ? 'skip' : 'run',
     reason: trusted
       ? `Local decision: ${answer?.choice}.`
       : `Borderline; approved Qwen3.6 decision unavailable (${outcome.status}).`,

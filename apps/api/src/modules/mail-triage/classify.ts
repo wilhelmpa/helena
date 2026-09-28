@@ -69,6 +69,7 @@ export interface ClassificationView {
   needsReply: boolean | null;
   createTask: boolean | null;
   answers: Record<string, MailClassificationAnswer>;
+  cascade: Record<string, 'act' | 'suggest' | 'escalate'>;
   actions: MailClassificationAction[];
   issueId: number | null;
   error: string | null;
@@ -211,6 +212,9 @@ export async function classifyMessage(
   const outcome = await decide({
     teamId,
     classId: MAIL_CLASS,
+    // No request-wide localOnly here: the class connection is the owner's choice (the
+    // local Qwen logit connection), and the optional Jev first stage only runs with the
+    // owner's explicit per-use-case cloud approval (docs/helena-decisions/jev-strategie.md).
     context: mailContext({
       fromName: message.message.fromName,
       fromAddress: message.message.fromAddress,
@@ -643,6 +647,16 @@ function toView(
     needsReply: row.needsReply,
     createTask: row.createTask,
     answers: row.answers,
+    cascade: Object.fromEntries(
+      Object.entries(row.answers).map(([id, answer]) => [
+        id,
+        answer.decided
+          ? 'act'
+          : answer.choice && (answer.confidence ?? 0) >= 0.6
+            ? 'suggest'
+            : 'escalate',
+      ]),
+    ),
     actions: row.actions,
     issueId: row.issueId,
     error: row.error,

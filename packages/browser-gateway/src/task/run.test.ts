@@ -1,10 +1,19 @@
 import { expect, it } from 'bun:test';
 import { HelenaApiError } from '../helena-client';
-import { formatTaskResult, runTaskTool, type TaskContext } from './run';
+import { formatTaskResult, runTaskTool, taskPlan, type TaskContext } from './run';
 import { contactSite } from './fake-site';
 import { mockAnswers } from './mock-backend';
 import type { DecisionRequest } from './systemone';
 import type { TaskResult } from './types';
+
+it('requires independently checkable criteria for every planned step', () => {
+  expect(
+    taskPlan([{ goal: 'Open contact', success: { url: 'https://site.test/kontakt' } }]),
+  ).toEqual([{ goal: 'Open contact', success: { url: 'https://site.test/kontakt' } }]);
+  expect(() => taskPlan([{ goal: 'Open contact' }])).toThrow();
+  expect(() => taskPlan([{ goal: 'Open contact', success: {} }])).toThrow();
+  expect(() => taskPlan([])).toThrow();
+});
 
 it('hands legacy callers an unverified terminal status and continuation snapshot', () => {
   const result: TaskResult = {
@@ -174,8 +183,8 @@ it('the public task caller preserves verified and legacy terminal results throug
       },
     } as unknown as TaskContext;
     const result = await runTaskTool(context);
-    expect(finished?.status).toBe(verify ? 'done' : 'likely_done');
-    expect(result.text).toContain(`Status: ${verify ? 'done' : 'likely_done'}`);
+    expect(finished?.status).toBe(verify ? 'done' : 'needs_agent');
+    expect(result.text).toContain(`Status: ${verify ? 'done' : 'needs_agent'}`);
     expect(snapshots).toBe(verify ? 0 : 1);
   }
 });

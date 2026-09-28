@@ -72,6 +72,11 @@ export interface TaskInput {
   success?: TaskSuccess;
 }
 
+export interface TaskPlanStep {
+  goal: string;
+  success: TaskSuccess;
+}
+
 // What the loop decided to do next.
 export interface PlannedAction {
   operation: Operation;
@@ -149,6 +154,9 @@ export interface TaskResult {
   approvalId?: number | null;
   // The action the task stopped before (needs_confirmation / needs_approval).
   pending?: { operation: Operation; element: string | null; category?: ActionCategory };
+  completedPlanSteps?: number;
+  failedAttempts?: number;
+  handoffWholeTask?: boolean;
 }
 
 // The System One wire format (TypeSafe's `/v1/systemone`).

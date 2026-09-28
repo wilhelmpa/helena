@@ -292,5 +292,6 @@
     "done": "完成"
   },
   "resizeSidePanel": "调整侧边面板宽度",
-  "advanced": "高级"
+  "advanced": "高级",
+  "switchPerson": "切换用户"
 }

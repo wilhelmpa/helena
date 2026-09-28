@@ -295,7 +295,6 @@ export async function taskProgress(token: unknown, step: unknown): Promise<{ can
 
 const STATUSES = new Set([
   'done',
-  'likely_done',
   'needs_agent',
   'needs_login',
   'needs_confirmation',
@@ -315,12 +314,13 @@ export async function finishTask(token: unknown, result: unknown): Promise<void>
   const row = await taskByToken(token);
   if (!row) return;
   const r = (result ?? {}) as Record<string, unknown>;
-  let status = typeof r.status === 'string' && STATUSES.has(r.status) ? r.status : 'error';
-  if (
-    row.firstStageScope &&
-    ['done', 'likely_done'].includes(status) &&
-    !(await browserStageStillEnabled(row))
-  )
+  let status =
+    r.status === 'likely_done'
+      ? 'needs_agent'
+      : typeof r.status === 'string' && STATUSES.has(r.status)
+        ? r.status
+        : 'error';
+  if (row.firstStageScope && status === 'done' && !(await browserStageStillEnabled(row)))
     status = 'cancelled';
   const steps = Array.isArray(r.steps)
     ? r.steps.map(cleanStep).filter(Boolean).slice(0, MAX_STEPS_STORED)
@@ -361,6 +361,13 @@ export async function finishTask(token: unknown, result: unknown): Promise<void>
             }
           : {}),
         ...(typeof r.pageText === 'string' ? { pageText: r.pageText.slice(0, 600) } : {}),
+        ...(typeof r.completedPlanSteps === 'number'
+          ? { completedPlanSteps: Math.max(0, Math.min(12, Math.floor(r.completedPlanSteps))) }
+          : {}),
+        ...(typeof r.failedAttempts === 'number'
+          ? { failedAttempts: Math.max(0, Math.min(2, Math.floor(r.failedAttempts))) }
+          : {}),
+        ...(r.handoffWholeTask === true ? { handoffWholeTask: true } : {}),
       },
       durationMs: duration,
       // jev-browser's throwaway browser has no live view: a picture of its last page.

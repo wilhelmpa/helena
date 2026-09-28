@@ -12,6 +12,7 @@ export function localOwnerAuthorized(headers: Headers, env = process.env): boole
   const token = env.LOCAL_SINGLE_USER_TOKEN;
   const supplied = headers.get('x-volition-local-access');
   return Boolean(
+    env.HELENA_LOCAL_SIGN_IN_MODE === 'single-user' &&
     env.LOCAL_SINGLE_USER_EMAIL &&
     token &&
     token.length >= 32 &&
@@ -34,6 +35,9 @@ export function localOwner() {
           if (!localOwnerAuthorized(ctx.headers ?? new Headers())) {
             throw new APIError('NOT_FOUND', { message: 'Not found' });
           }
+          const { hasMultipleHumans } = await import('./human-account');
+          if (await hasMultipleHumans())
+            throw new APIError('FORBIDDEN', { message: 'Personal sign-in required' });
           const account = await ctx.context.internalAdapter.findUserByEmail(
             process.env.LOCAL_SINGLE_USER_EMAIL!,
           );

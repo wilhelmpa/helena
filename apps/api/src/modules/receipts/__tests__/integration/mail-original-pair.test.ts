@@ -1,5 +1,11 @@
 import { beforeEach, expect, it } from 'bun:test';
-import { db, helenaReceipt, helenaReceiptOriginalLink, setSetting } from '@repo/db';
+import {
+  db,
+  helenaReceipt,
+  helenaReceiptOriginalLink,
+  helenaReceiptPairHistory,
+  setSetting,
+} from '@repo/db';
 import { eq } from 'drizzle-orm';
 import { authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
@@ -7,17 +13,22 @@ import { resetDb } from '#tests/helpers/db';
 import { insertMailAccount, insertMessage } from '#tests/helpers/mail';
 import { intakeMailReceipts, listReceipts, prepareMailReceipts } from '../../receipts';
 import { unlinkReceiptOriginal } from '../../originals';
+import { listPairSuggestions } from '../../dedup';
 import { backfillMailReceipts } from '../../../../scripts/mail-receipt-backfill';
 import { makePdf } from '../pdf';
 
 beforeEach(resetDb);
 
-async function setup(secondRole = 'Receipt', enablePair = true) {
+async function setup(
+  secondRole = 'Receipt',
+  enablePair = true,
+  dates?: { invoice: string; receipt: string },
+) {
   const owner = await signUpTestUser();
   const api = authedApi(owner.cookie);
   const project = (await api.projects.post({ key: 'MAILPAIR', name: 'Synthetic original pairs' }))
     .data!;
-  if (enablePair) await setSetting(`receipts.original-pair-intake.team.${project.teamId}`, true);
+  if (!enablePair) await setSetting(`receipts.auto-merge.team.${project.teamId}`, false);
   const { accountId, inboxId } = await insertMailAccount(project.teamId, project.id);
   const mail = await insertMessage({
     teamId: project.teamId,
@@ -29,16 +40,26 @@ async function setup(secondRole = 'Receipt', enablePair = true) {
     attachments: [
       {
         filename: 'invoice.pdf',
-        content: makePdf(['Invoice', 'Invoice number: INV-42', 'Total: 23.80 EUR']),
+        content: makePdf(
+          [
+            'Invoice',
+            'Invoice number: INV-42',
+            dates && `Invoice date: ${dates.invoice}`,
+            'Total: 23.80 EUR',
+          ].filter((line): line is string => !!line),
+        ),
       },
       {
         filename: 'receipt.pdf',
-        content: makePdf([
-          secondRole,
-          'Invoice number: INV-42',
-          'Total: 23.80 EUR',
-          'Amount paid: 23.80 EUR',
-        ]),
+        content: makePdf(
+          [
+            secondRole,
+            'Invoice number: INV-42',
+            dates && `Invoice date: ${dates.receipt}`,
+            'Total: 23.80 EUR',
+            'Amount paid: 23.80 EUR',
+          ].filter((line): line is string => !!line),
+        ),
       },
     ],
   });
@@ -84,6 +105,7 @@ it('uses the same SHA-bound proof in dry/apply, keeps both IDs and preserves det
   expect(applied.reports[0]!.receiptIds).toHaveLength(2);
   const [link] = await db.select().from(helenaReceiptOriginalLink);
   expect(link).toBeDefined();
+  expect(await db.select().from(helenaReceiptPairHistory)).toMatchObject([{ action: 'auto_link' }]);
   expect(await listReceipts(f.project.id, {})).toHaveLength(1);
   const before = await db.select().from(helenaReceipt).orderBy(helenaReceipt.id);
   const repeated = await backfillMailReceipts(f.manifest, true, dry);
@@ -105,12 +127,19 @@ it('serializes two native intakes and writes only one pair of original rows and 
   expect(await db.select().from(helenaReceipt)).toHaveLength(2);
 });
 
-it('never groups when one original was already present before this intake', async () => {
+it('suggests an earlier original when its issuer and document dates are unknown', async () => {
   const f = await setup();
   await intakeMailReceipts({ ...f.input, attachmentIds: [f.plans[0]!.attachmentId!] });
   await intakeMailReceipts(f.input);
   expect(await db.select().from(helenaReceiptOriginalLink)).toHaveLength(0);
+  expect(await listPairSuggestions(f.project.id)).toHaveLength(1);
   expect(await listReceipts(f.project.id, {})).toHaveLength(2);
+});
+
+it('does not auto-link same-message originals more than seven document days apart', async () => {
+  const f = await setup('Receipt', true, { invoice: '2026-09-01', receipt: '2026-09-12' });
+  await intakeMailReceipts(f.input);
+  expect(await db.select().from(helenaReceiptOriginalLink)).toHaveLength(0);
 });
 
 it('keeps two invoice originals separate even when their printed reference and totals agree', async () => {

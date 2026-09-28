@@ -24,7 +24,13 @@ import { dispatchTool } from '#mcp/dispatch';
 import { routeTools } from '#mcp/generate';
 import { publishChatCatalog } from '#modules/agents/chat/service';
 import { setManualPrice } from '#modules/model-prices/service';
-import { GENERAL_CLASS, MAIL_CLASS, ROUTER_CLASS } from '../../classes';
+import {
+  AGENT_ROUTING_CLASS,
+  GENERAL_CLASS,
+  MAIL_CLASS,
+  ROUTER_CLASS,
+  TASK_TRIAGE_CLASS,
+} from '../../classes';
 import { decide } from '../../service';
 import { routeRequest, setAgentRouter } from '#modules/model-router/service';
 import { routePrompt } from '#modules/model-router/prompt';
@@ -244,6 +250,41 @@ async function switchOn(
 }
 
 describe('decision classes', () => {
+  it('offers private task triage and agent routing through evaluated local decisions', async () => {
+    const { asOwner, teamId } = await setup();
+    const agent = (
+      await createAgent(asOwner, 'PRIV', {
+        name: 'Operations',
+        username: 'operations',
+        kind: 'external',
+      })
+    ).data!.agent;
+    const credentialId = await connection(asOwner, teamId, {
+      label: 'Local test double',
+      provider: 'local-logit',
+      baseUrl: logitUrl,
+      model: 'qwen',
+    });
+    await switchOn(asOwner, teamId, TASK_TRIAGE_CLASS, credentialId, { threshold: 0.85 });
+    await switchOn(asOwner, teamId, AGENT_ROUTING_CLASS, credentialId, { threshold: 0.85 });
+    answers = { owner: `a_${agent.id}`, agent: `a_${agent.id}` };
+
+    const task = await asOwner.projects({ projectKey: 'PRIV' }).decisions['task-triage'].post({
+      title: 'Produktionssystem prüfen',
+    });
+    expect(task.status).toBe(200);
+    expect(task.data?.owner).toMatchObject({ step: 'act', choice: `a_${agent.id}` });
+
+    const route = await asOwner.projects({ projectKey: 'PRIV' }).decisions['agent-route'].post({
+      title: 'Produktionssystem prüfen',
+    });
+    expect(route.status).toBe(200);
+    expect(route.data?.agent).toMatchObject({ step: 'act', choice: `a_${agent.id}` });
+    expect((await db.select().from(helenaDecision)).map((entry) => entry.classId)).toEqual(
+      expect.arrayContaining([TASK_TRIAGE_CLASS, AGENT_ROUTING_CLASS]),
+    );
+  });
+
   it('lists the classes and switches one on only after a passed eval on its connection', async () => {
     const { asOwner, teamId } = await setup();
     const listed = (await asOwner.teams({ teamId }).decisions.classes.get()).data!;
@@ -1195,6 +1236,7 @@ describe('the mail classifier', () => {
       needsReply: false,
       createTask: true,
       projectId: project.id,
+      cascade: { project: 'act', category: 'act', priority: 'act' },
     });
     const [thread] = await db.select().from(mailThread).where(eq(mailThread.id, view.threadId));
     expect(thread!.suggestedProjectId).toBe(project.id);

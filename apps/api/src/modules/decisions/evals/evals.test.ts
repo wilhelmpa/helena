@@ -7,12 +7,18 @@ import { MAIL_EVAL } from './mail';
 import { RECEIPT_EVAL } from './receipts';
 import { ROUTER_EVAL } from './router';
 import { BROWSER_EVAL } from './browser';
+import { HEARTBEAT_PRECHECK_EVAL } from './heartbeat-precheck';
+import { TASK_TRIAGE_EVAL } from './task-triage';
+import { AGENT_ROUTING_EVAL } from './agent-routing';
 
 // The labelled cases of Helena's decision classes are well-formed: every case asks questions
 // a backend accepts, and every expected answer is one of the options it offers.
 
 const SETS: [name: string, set: DecisionEvalSet, size: number][] = [
   ['browser', BROWSER_EVAL, 6],
+  ['heartbeat precheck', HEARTBEAT_PRECHECK_EVAL, 60],
+  ['task triage', TASK_TRIAGE_EVAL, 30],
+  ['agent routing', AGENT_ROUTING_EVAL, 30],
   ['router', ROUTER_EVAL, 40],
   ['mail', MAIL_EVAL, 46],
   ['receipts', RECEIPT_EVAL, 25],

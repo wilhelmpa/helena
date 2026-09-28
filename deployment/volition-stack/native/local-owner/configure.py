@@ -9,7 +9,7 @@ import secrets
 import subprocess
 import sys
 
-USAGE = 'Usage: sudo python3 configure.py [--rotate] [--https-host HOST | --lan-http] [owner@example.com]'
+USAGE = 'Usage: sudo python3 configure.py [--personal | --single-user] [--rotate] [--https-host HOST | --lan-http] [owner@example.com]'
 HERE = pathlib.Path(__file__).resolve().parent
 # The home network's IPv6 prefixes and this machine's own addresses, kept current by
 # helena-lan6-sync (hardening/files): included in the geo below, never written here.
@@ -105,6 +105,10 @@ def write_if_changed(path: pathlib.Path, text: str, mode: int) -> bool:
 
 
 def main(args: list[str]) -> None:
+    if '--personal' in args and '--single-user' in args:
+        raise SystemExit(USAGE)
+    mode = 'single-user' if '--single-user' in args else 'personal'
+    args = [arg for arg in args if arg not in ('--personal', '--single-user')]
     # --rotate replaces the capability with a new one (e.g. after it was shown somewhere).
     rotate = '--rotate' in args
     args = [arg for arg in args if arg != '--rotate']
@@ -125,7 +129,8 @@ def main(args: list[str]) -> None:
             raise SystemExit('Invalid --https-host')
     if os.geteuid() != 0 or len(args) > 1:
         raise SystemExit(USAGE)
-    require_kiosk_guard()
+    if mode == 'single-user':
+        require_kiosk_guard()
     os.umask(0o077)
     config = pathlib.Path('/etc/volition/local-owner.env')
     values = dict(line.split('=', 1) for line in config.read_text().splitlines() if '=' in line) if config.exists() else {}
@@ -145,6 +150,7 @@ def main(args: list[str]) -> None:
     host_name = origin.split('://', 1)[1]
     # The API and the web read this file at start: they restart only when it changed.
     restart = write_if_changed(config, (
+        f'HELENA_LOCAL_SIGN_IN_MODE={mode}\n'
         f'LOCAL_SINGLE_USER_EMAIL={email}\nLOCAL_SINGLE_USER_TOKEN={token}\n'
         f'LOCAL_SINGLE_USER_ORIGIN={origin}\n'
         'LOCAL_SINGLE_USER_API_URL=http://127.0.0.1:3000/api/auth/sign-in/local-owner\n'
@@ -152,7 +158,7 @@ def main(args: list[str]) -> None:
     lan_port = '443' if origin.startswith('https://') else '80'
     ensure_networks()
     nginx_map = pathlib.Path('/etc/nginx/conf.d/volition-local-owner.conf')
-    write_if_changed(nginx_map, owner_map(host_name, lan_port, token), 0o600)
+    write_if_changed(nginx_map, owner_map(host_name, lan_port, token if mode == 'single-user' else ''), 0o600)
     site = pathlib.Path('/etc/nginx/sites-available/volition.conf')
     if not site.exists():
         site = pathlib.Path('/etc/nginx/sites-enabled/volition.conf').resolve()
@@ -186,7 +192,7 @@ def main(args: list[str]) -> None:
     if restart or dropins:
         subprocess.run(['systemctl', 'restart', 'volition-plan-api', 'volition-plan-web'], check=True)
     subprocess.run(['systemctl', 'reload', 'nginx'], check=True)
-    print('Local single-user mode enabled for the existing owner'
+    print('Local sign-in mode: ' + mode
           + (' with a new capability' if rotate else '')
           + ('' if restart or dropins else ' (API and web unchanged, not restarted)')
           + '; capability not printed.')

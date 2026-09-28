@@ -722,6 +722,11 @@ async function fitWindowsNow(link) {
       });
     }
     if (!sizes) link.chrome = null;
+    // A new requested layout may retry a failed probe; keeper passes for the same geometry
+    // and request must not repeatedly disturb an unverified page.
+    const signature = JSON.stringify([bounds, sizes, live?.width, live?.height, Boolean(live?.pin1)]);
+    const mayCalibrate = () => bounds.windowState === "normal" && calibrationAllowed.has(link.port) &&
+      link.failedCalibration.get(shown) !== signature;
     if (link.pinned(shown)) {
       const metrics = await link.send(shown, "Page.getLayoutMetrics", {}).catch(() => null);
       const measuredZoom = metrics?.cssVisualViewport?.zoom;
@@ -730,6 +735,12 @@ async function fitWindowsNow(link) {
       if (!zoom || !matchesPin(sizes, link.pins.get(shown), zoom)) {
         link.chrome = null;
         if (zoom && calibrationAllowed.has(link.port)) await link.pin(shown, null, valid);
+      } else if (!link.chrome && sizes && mayCalibrate()) {
+        // A pinned page does not follow its window, so the toolbar cannot be measured on it:
+        // once the keeper has forgotten the toolbar (the tab was hidden while nobody watched),
+        // a view narrower than a window (a panel, a phone) would stay on JPEG for good. The
+        // page is let go for the measurement below and pinned again after it.
+        await link.pin(shown, null, valid);
       }
     }
     if (!valid()) return;
@@ -738,11 +749,7 @@ async function fitWindowsNow(link) {
         ["width", "height"].every((key) => Math.abs(sizes.chrome[key] - link.chrome[key]) <= FIT_TOLERANCE);
       if (!known) {
         link.chrome = null;
-        // A new requested layout may retry a failed probe; keeper passes for the same
-        // geometry and request must not repeatedly disturb an unverified page.
-        const signature = JSON.stringify([bounds, sizes, live?.width, live?.height, Boolean(live?.pin1)]);
-        if (bounds.windowState === "normal" && calibrationAllowed.has(link.port) &&
-            link.failedCalibration.get(shown) !== signature) {
+        if (mayCalibrate()) {
           const verified = await calibrateChrome(link, shown, windowId, bounds, valid);
           if (verified) {
             sizes = verified;

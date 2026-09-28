@@ -292,5 +292,6 @@
     "done": "Done"
   },
   "resizeSidePanel": "Resize side panel",
-  "advanced": "Advanced"
+  "advanced": "Advanced",
+  "switchPerson": "Switch person"
 }

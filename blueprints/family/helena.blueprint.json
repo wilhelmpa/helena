@@ -1,0 +1,83 @@
+{
+  "format": "helena.project-blueprint",
+  "formatVersion": 1,
+  "version": "1.0.0",
+  "license": "AGPL-3.0-only",
+  "author": {
+    "name": "Helena"
+  },
+  "requires": {
+    "bundles": ["helena-agent-pool"]
+  },
+  "areas": [
+    {
+      "name": "Ablage",
+      "folder": "ablage"
+    },
+    {
+      "name": "Termine",
+      "folder": "termine"
+    }
+  ],
+  "network": {
+    "mode": "open"
+  },
+  "routines": [],
+  "name": "family",
+  "displayName": {
+    "de": "Familie",
+    "en": "Familie"
+  },
+  "description": "Gemeinsame Familienassistenz, Schule, Kita und Baby.",
+  "project": {
+    "key": "FAM",
+    "name": "Familie",
+    "description": "Gemeinsames Familienprojekt",
+    "department": "Familie & Privat"
+  },
+  "coordinator": {
+    "model": "gpt-6-luna",
+    "runnerScope": "team",
+    "assignment": "Koordiniert FAM für dessen berechtigte Mitglieder. Verwendet ausschließlich dessen Projektzugänge; Home wird nur vom Owner bedient."
+  },
+  "agents": [
+    {
+      "template": "assistant",
+      "model": "gpt-6-luna",
+      "runnerScope": "team",
+      "assignment": "Gemeinsame Assistenz für FAM; arbeitet nur mit dessen Dateien und freigegebenen Verbindungen. Gemeinsame Familienthemen gehören nach FAM.",
+      "projectBrowser": true
+    },
+    {
+      "template": "schule-kita",
+      "model": "gpt-6-luna",
+      "runnerScope": "team",
+      "assignment": "Schule und Kita für FAM; arbeitet nur mit dessen Dateien und freigegebenen Verbindungen. Gemeinsame Familienthemen gehören nach FAM.",
+      "projectBrowser": true
+    },
+    {
+      "template": "baby-gesundheit",
+      "model": "gpt-6-luna",
+      "runnerScope": "team",
+      "assignment": "Baby und Gesundheit für FAM; arbeitet nur mit dessen Dateien und freigegebenen Verbindungen. Gemeinsame Familienthemen gehören nach FAM.",
+      "projectBrowser": true
+    }
+  ],
+  "goals": [
+    {
+      "title": "Ablage und Belege vollständig verknüpfen",
+      "description": "Originaldateien im gemeinsamen Dateienbereich, Belege und Aufgaben verweisen auf dieselben Quellen.",
+      "status": "active"
+    },
+    {
+      "title": "Mail-Triage mit projektgebundenem Postfach",
+      "description": "Erst nach Verbindung des eigenen Postfachs aktivieren. Native Routinen und Zeiten erhalten; wichtige Mails zu Aufgaben, Originalanhänge zu Belegen, Loginwarnungen und gespeicherte Ausschlüsse berücksichtigen.",
+      "status": "active"
+    },
+    {
+      "title": "Schule, Kita und Baby organisieren",
+      "description": "Elternbriefe, Formulare, Termine, Fristen und Einkaufslisten mit Quellen und zuständigem Menschen führen.",
+      "status": "active"
+    }
+  ]
+}

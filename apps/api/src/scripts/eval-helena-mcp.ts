@@ -260,6 +260,15 @@ const requiredMcpTools: Record<number, string[]> = {
   20: ['link_issues'],
 };
 
+const abort = new AbortController();
+function interrupt() {
+  abort.abort();
+}
+
+function assertRunning() {
+  if (abort.signal.aborted) throw new Error('Evaluation interrupted; test data cleanup is running');
+}
+
 function option(name: string): string | null {
   const at = process.argv.indexOf(`--${name}`);
   return at < 0 ? null : (process.argv[at + 1] ?? null);
@@ -353,6 +362,7 @@ async function waitForRunner(
 ): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
+    assertRunning();
     const [agent] = await db
       .select({ runtimeState: aiAgent.runtimeState, lastSeenAt: aiAgent.lastSeenAt })
       .from(aiAgent)
@@ -404,7 +414,16 @@ async function seedProject(
     throw new Error(`Project ${key} has Helena MCP disabled`);
   }
   if (createdProject) await setProjectLevel(projectRow.id, 3, owner.ownerId);
-  if (!dry) await waitForBlueprintProvisioning(projectRow.id, key, console.log);
+  if (!dry && !createdProject) {
+    const job = await getProvisioningJob(projectRow.id);
+    if (job?.status !== 'succeeded') {
+      throw new Error(
+        `Project ${key} must have completed provisioning before evaluation (current status: ${job?.status ?? 'missing'})`,
+      );
+    }
+  }
+  if (!dry)
+    await waitForBlueprintProvisioning(projectRow.id, key, console.log, 300_000, abort.signal);
   const [agent] = await db
     .select({
       id: aiAgent.id,
@@ -450,6 +469,19 @@ async function seedProject(
         )
         .limit(1);
   const targetUsername = existingTarget?.username ?? `eval-target-${owned.tag}`;
+  if (!existingTarget && !createdProject) {
+    throw new Error(
+      `Project ${key} needs a second agent with assignment triggers disabled for the delegation case`,
+    );
+  }
+  if (!dry && !createdProject) {
+    const job = await getProvisioningJob(projectRow.id);
+    const completedAt = Date.parse(job?.completedAt ?? '');
+    if (!Number.isFinite(completedAt)) {
+      throw new Error(`Project ${key} has no completed provisioning timestamp`);
+    }
+    await waitForRunner(agent.id, key, completedAt);
+  }
   if (!existingTarget) owned.targetUsername = targetUsername;
   const createdTarget = !existingTarget
     ? await createAgent(owner.teamId, {
@@ -463,8 +495,8 @@ async function seedProject(
     : null;
   owned.targetAgentId = createdTarget?.agent.id ?? null;
   const targetAgentUserId = createdTarget?.agent.userId ?? existingTarget!.userId;
-  if (!dry) {
-    await waitForBlueprintProvisioning(projectRow.id, key, console.log);
+  if (!dry && createdProject) {
+    await waitForBlueprintProvisioning(projectRow.id, key, console.log, 300_000, abort.signal);
     const job = await getProvisioningJob(projectRow.id);
     const completedAt = Date.parse(job?.completedAt ?? '');
     if (!Number.isFinite(completedAt)) {
@@ -964,6 +996,13 @@ async function check(seed: Seed, number: number): Promise<boolean> {
 async function waitForRun(runId: number): Promise<typeof agentRun.$inferSelect> {
   const deadline = Date.now() + 10 * 60_000;
   while (Date.now() < deadline) {
+    if (abort.signal.aborted) {
+      await db
+        .update(agentRun)
+        .set({ status: 'canceled', lastError: 'Eval interrupted', finishedAt: new Date() })
+        .where(and(eq(agentRun.id, runId), eq(agentRun.status, 'pending')));
+      assertRunning();
+    }
     const [row] = await db.select().from(agentRun).where(eq(agentRun.id, runId));
     if (!row) throw new Error(`Run ${runId} disappeared`);
     if (row.status !== 'pending') return row;
@@ -985,6 +1024,7 @@ async function runCase(seed: Seed, task: Case, model: string, dry: boolean): Pro
   let mcpToolCalls = 0;
   let error: string | null = null;
   try {
+    assertRunning();
     if (dry) {
       if (await check(seed, task.number))
         throw new Error('Fixture check passed before applying the fixture');
@@ -997,7 +1037,7 @@ async function runCase(seed: Seed, task: Case, model: string, dry: boolean): Pro
             projectId: seed.projectId,
             issueId: null,
             sourceActivityId: null,
-            trigger: 'workspace',
+            trigger: 'manual',
             prompt: `${task.prompt(seed)} Use Helena MCP for project data. Complete this one task only.`,
           },
           tx,
@@ -1242,6 +1282,17 @@ async function waitForDeprovisioning(projectId: number, timeoutMs = 300_000): Pr
 }
 
 async function main() {
+  process.on('SIGINT', interrupt);
+  process.on('SIGTERM', interrupt);
+  try {
+    await evaluate();
+  } finally {
+    process.off('SIGINT', interrupt);
+    process.off('SIGTERM', interrupt);
+  }
+}
+
+async function evaluate() {
   const dry = process.argv.includes('--dry');
   const keep = process.argv.includes('--keep');
   const only = option('only') === null ? null : Number(option('only'));
@@ -1268,6 +1319,7 @@ async function main() {
     const owner = await ownerForRun(dry, existingProject?.teamId);
     try {
       for (const model of selectedModels) {
+        assertRunning();
         const key = projectKey ?? `EVAL${randomUUID().slice(0, 6).toUpperCase()}`;
         const owned: Owned = {
           key,
@@ -1291,15 +1343,18 @@ async function main() {
           seeded = true;
           if (keep) keptProjects.push(seed.key);
           for (const task of selected) {
+            assertRunning();
             if (!dry) await waitForRunner(seed.agentId, seed.key, 0, 30_000);
             rows.push(await runCase(seed, task, model, dry));
           }
+          assertRunning();
         } finally {
-          if (!keep || !seeded) await cleanupOwned(owned, owner.teamId, dry);
+          if (abort.signal.aborted || !keep || !seeded)
+            await cleanupOwned(owned, owner.teamId, dry);
         }
       }
     } finally {
-      if (owner.temporary && (!keep || keptProjects.length === 0)) {
+      if (owner.temporary && (abort.signal.aborted || !keep || keptProjects.length === 0)) {
         await db.delete(team).where(eq(team.id, owner.teamId));
         await db.delete(user).where(eq(user.id, owner.ownerId));
       }

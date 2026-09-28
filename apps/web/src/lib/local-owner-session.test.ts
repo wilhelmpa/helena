@@ -5,6 +5,7 @@ import { localOwnerSession } from './local-owner-session';
 
 const token = 'test-only-local-owner-token-1234567890';
 const names = [
+  'HELENA_LOCAL_SIGN_IN_MODE',
   'LOCAL_SINGLE_USER_TOKEN',
   'LOCAL_SINGLE_USER_ORIGIN',
   'LOCAL_SINGLE_USER_API_URL',
@@ -17,6 +18,7 @@ beforeEach(() => {
   process.env.LOCAL_SINGLE_USER_TOKEN = token;
   process.env.LOCAL_SINGLE_USER_ORIGIN = 'http://kingston-server.local';
   process.env.LOCAL_SINGLE_USER_API_URL = 'http://127.0.0.1:3000/api/auth/sign-in/local-owner';
+  process.env.HELENA_LOCAL_SIGN_IN_MODE = 'single-user';
   calls = 0;
   globalThis.fetch = (async () => {
     calls++;
@@ -89,6 +91,14 @@ describe('local session bootstrap', () => {
       throw new Error('offline');
     }) as typeof fetch;
     assert.equal(await localOwnerSession(request('/login')), null);
+  });
+  it('does not mint an owner session in personal mode, even after choosing a person', async () => {
+    for (const mode of ['personal', '', undefined]) {
+      if (mode === undefined) delete process.env.HELENA_LOCAL_SIGN_IN_MODE;
+      else process.env.HELENA_LOCAL_SIGN_IN_MODE = mode;
+      assert.equal(await localOwnerSession(request('/login?person=owner&continue=1')), null);
+    }
+    assert.equal(calls, 0);
   });
   it('is disabled without explicit configuration', async () => {
     delete process.env.LOCAL_SINGLE_USER_TOKEN;

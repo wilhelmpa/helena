@@ -292,5 +292,6 @@
     "done": "Terminado"
   },
   "resizeSidePanel": "Cambiar el ancho del panel lateral",
-  "advanced": "Avanzado"
+  "advanced": "Avanzado",
+  "switchPerson": "Cambiar de persona"
 }
