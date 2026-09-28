@@ -456,11 +456,16 @@
     z-index: 70;
     width: min(var(--sidebar-w), 86vw);
     transform: translateX(-102%);
-    transition: transform 0.25s var(--ease);
-    box-shadow: var(--shadow-panel);
+    visibility: hidden;
+    transition:
+      transform 0.25s var(--ease),
+      visibility 0s linear 0.25s;
   }
   .ds-app[data-sidebar-open='true'] .ds-sidebar {
     transform: none;
+    visibility: visible;
+    box-shadow: var(--shadow-panel);
+    transition: transform 0.25s var(--ease);
   }
   .ds-app[data-sidebar-open='true'] .ds-sidebar-scrim {
     position: fixed;
@@ -918,7 +923,16 @@
   flex: 1;
   align-items: center;
   gap: 6px;
-  overflow: hidden;
+  /* Controls keep their size; what does not fit scrolls sideways (a phone). */
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+.ds-page-toolbar-row::-webkit-scrollbar {
+  display: none;
+}
+.ds-page-toolbar-row > :not(.ds-toolbar-fill) {
+  flex-shrink: 0;
 }
 .ds-page-toolbar-standalone {
   height: var(--page-toolbar-h);
@@ -1085,4 +1099,10 @@
 /* A single tab without a close button (a task or a run in the overlay): even padding. */
 .ds-panel-tab-select:only-child {
   padding-inline-end: 10px;
+}
+/* A phone shows only the page's title in its header (the menu opens the tree). */
+@media (max-width: 600px) {
+  .ds-page-crumbs {
+    display: none;
+  }
 }

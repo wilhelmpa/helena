@@ -1689,3 +1689,12 @@ a.ds-run-card:hover {
   gap: var(--space-5);
   padding: var(--space-5) var(--page-pad-x);
 }
+/* Touch screens have no hover: a list row's "…" stays visible, after the date. */
+@media (hover: none) {
+  [data-knowledge-row]:has(> span:last-child [aria-haspopup]) {
+    padding-inline-end: 40px;
+  }
+  [data-knowledge-row] > span:last-child:has([aria-haspopup]) {
+    opacity: 1;
+  }
+}
