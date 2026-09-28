@@ -13,6 +13,7 @@ import { ARTIFACT_RENDERERS, ArtifactOpenContext } from './ChatArtifactCard';
 import ChatApprovalCard from './ChatApprovalCard';
 import ChatSources from './ChatSources';
 import { useModelFailureText } from '@/features/model-availability/hooks/useModelFailureText';
+import { useTranslations } from 'next-intl';
 
 export interface ChatMessageBubbleAssistantProps {
   message: PlanUIMessage;
@@ -36,6 +37,7 @@ export default function ChatMessageBubbleAssistant({
   projectKey,
   onShowArtifact,
 }: ChatMessageBubbleAssistantProps) {
+  const tr = useTranslations('chatWorkspace.runtimePicker');
   const sources = useMemo(
     () => (streaming ? [] : chatSources(message, projectKey ? [projectKey] : [])),
     [message, projectKey, streaming],
@@ -50,6 +52,18 @@ export default function ChatMessageBubbleAssistant({
         }
       : null,
   );
+  const check = message.metadata?.modelCheck;
+  const usedModel = check?.used?.model ?? null;
+  const usedRuntime = check?.runtime;
+  const execution = usedModel?.startsWith('helena-local/')
+    ? tr('local')
+    : usedRuntime === 'claude' || usedRuntime === 'claude-code'
+      ? tr('claude')
+      : usedRuntime === 'codex'
+        ? tr('codex')
+        : usedRuntime === 'hermes'
+          ? tr('hermes')
+          : usedRuntime;
 
   return (
     <ArtifactOpenContext.Provider value={onShowArtifact}>
@@ -68,6 +82,11 @@ export default function ChatMessageBubbleAssistant({
         {sources.length > 0 && <ChatSources sources={sources} projectKey={projectKey} />}
         {!streaming && message.metadata?.modelRoute?.routed && (
           <ModelRouteLine route={message.metadata.modelRoute} />
+        )}
+        {!streaming && check?.used && (
+          <p className="text-xs text-muted-foreground">
+            {tr('via')} {execution ?? tr('unknownRuntime')} · {usedModel ?? tr('unknownModel')}
+          </p>
         )}
         {!streaming && message.metadata?.via === 'voice' && (
           <VoiceReplyLine model={message.metadata.model} />

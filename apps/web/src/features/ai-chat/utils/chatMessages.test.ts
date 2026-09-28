@@ -43,6 +43,24 @@ describe('toUIMessage / messageText', () => {
     assert.equal(part.type, 'dynamic-tool');
     assert.equal(part.state === 'output-error' ? part.errorText : undefined, 'permission denied');
   });
+
+  it('keeps the reported runtime, model and fallback on a restored answer', () => {
+    const check = {
+      runtime: 'hermes',
+      configured: { model: 'helena-local/qwen', reasoning: null, source: 'agent' as const },
+      used: { model: 'openai/gpt-6-luna', reasoning: null, provider: 'openai' },
+      mismatch: [] as ('model' | 'reasoning')[],
+      fallback: { from: 'helena-local/qwen', reason: 'down' as const },
+    };
+    const ui = toUIMessage({
+      id: '3',
+      role: 'assistant',
+      createdAt: '2026-09-23T10:00:00Z',
+      parts: [{ type: 'text', text: 'Answer' }],
+      modelCheck: check,
+    });
+    assert.deepEqual(ui.metadata?.modelCheck, check);
+  });
 });
 
 describe('merging transcript pages', () => {

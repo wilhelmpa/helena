@@ -85,6 +85,7 @@ export interface RuntimeSync {
 
 // The configured model and reasoning of a run next to what its session really ran on.
 export interface ModelCheck {
+  runtime?: string;
   configured: {
     model: string | null;
     reasoning: string | null;

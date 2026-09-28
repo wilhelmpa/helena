@@ -439,7 +439,9 @@ export default function ChatComposer({
               )}
               {!homeLanding && <ChatAutoSpeakToggle on={autoSpeak} onChange={onAutoSpeakChange} />}
               <ChatAgentMenu
+                scopeKey={scopeKey}
                 agent={agent}
+                model={model}
                 agents={agents}
                 states={states}
                 motionEnabled={motionEnabled}
