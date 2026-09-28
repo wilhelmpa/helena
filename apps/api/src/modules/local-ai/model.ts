@@ -343,3 +343,30 @@ export const ServerKeysResponse = t.Object({
     description: "The keys of the local model servers the agent's profile names, by variable",
   }),
 });
+
+const judgeKind = t.Union([t.Literal('off'), t.Literal('run'), t.Literal('endpoint')], {
+  description:
+    '`run`: a text-only run of a Hermes agent on a subscription model; `endpoint`: an ' +
+    'OpenAI-compatible endpoint with a stored key; `off`: no judge (the evals that need one refuse)',
+});
+
+export const JudgeView = t.Object({
+  kind: judgeKind,
+  model: t.Nullable(t.String()),
+  reasoning: t.Nullable(t.String()),
+  agentId: t.Nullable(t.Number()),
+  baseUrl: t.Nullable(t.String()),
+  hasKey: t.Boolean({ description: 'An endpoint key is stored (never shown)' }),
+  agents: t.Array(t.Object({ id: t.Number(), username: t.String(), name: t.String() }), {
+    description: 'The Hermes agents a judge run can run on',
+  }),
+});
+
+export const judgeBody = t.Object({
+  kind: t.Optional(judgeKind),
+  model: t.Optional(t.Nullable(t.String({ maxLength: 200 }))),
+  reasoning: t.Optional(t.Nullable(t.String({ maxLength: 20 }))),
+  agentId: t.Optional(t.Nullable(t.Number())),
+  baseUrl: t.Optional(t.Nullable(t.String({ maxLength: 500 }))),
+  key: t.Optional(t.Nullable(t.String({ maxLength: 500 }))),
+});

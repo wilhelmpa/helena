@@ -44,6 +44,7 @@ import { HttpError, iso } from '#shared/lib';
 import { joinUrl, openAiEvalContext } from './eval-context';
 import { LEMONADE, LEMONADE_DEFAULT_BASE_URL, allowedTokenizerFile } from './server-types';
 import { localAiGuard } from './guard';
+import { currentJudge } from './judge';
 import {
   readModelOptions,
   saveModelOptions,
@@ -432,21 +433,16 @@ async function evaluateInto(
   let values: Partial<typeof helenaLocalAiEval.$inferInsert>;
   try {
     const key = await readModelServerKey(server);
-    const judgeBase = process.env.LOCAL_AI_JUDGE_BASE_URL;
-    const judge = judgeBase
-      ? openAiEvalContext({
-          baseUrl: judgeBase,
-          key: process.env.LOCAL_AI_JUDGE_API_KEY ?? null,
-          model: process.env.LOCAL_AI_JUDGE_MODEL ?? 'claude-opus-4-6',
-        })
-      : null;
+    // The judge of the evals a program cannot check (Deutsch-Texte), as set in Lokale KI; a
+    // class that never asks it costs nothing (a run judge queues only when asked).
+    const judge = await currentJudge();
     const result = await entry.evaluate!(
       openAiEvalContext({
         baseUrl: server.baseUrl,
         key,
         model: model.id,
         thinking: entry.thinking ?? 'off',
-        judge: judge?.chat,
+        judge: judge ?? undefined,
         runCodingTask:
           entry.id === 'agentic-coding'
             ? async (id) => {
