@@ -291,5 +291,6 @@
     "offline": "غير متصل",
     "done": "مكتمل"
   },
-  "resizeSidePanel": "تغيير عرض اللوحة الجانبية"
+  "resizeSidePanel": "تغيير عرض اللوحة الجانبية",
+  "advanced": "متقدم"
 }

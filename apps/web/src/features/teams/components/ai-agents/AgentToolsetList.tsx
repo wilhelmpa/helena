@@ -1,5 +1,6 @@
 import { useTranslations } from 'next-intl';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { SettingsGroup, SettingsRow } from '@/design-system';
 import { isHermesToolset, toggleToolset } from '../../utils/agentAbilities';
 import { TeamSettingState } from '../TeamSettingState';
 
@@ -25,52 +26,39 @@ export default function AgentToolsetList({
 }) {
   const t = useTranslations('teams.agents.abilities');
 
+  const row = (name: string) => {
+    const on = !denied.includes(name);
+    const described = isHermesToolset(name) ? t(`toolset.${name}`) : undefined;
+    return (
+      <SettingsRow
+        key={name}
+        label={<span className="font-mono text-xs">{name}</span>}
+        description={described}
+      >
+        {canEdit ? (
+          <Switch
+            aria-label={name}
+            checked={on}
+            onCheckedChange={(checked) => onChange(toggleToolset(denied, name, checked))}
+          />
+        ) : (
+          <TeamSettingState on={on} />
+        )}
+      </SettingsRow>
+    );
+  };
+  // Six rows at a glance, the rest folded (docs/design-system.md §4).
+  const shown = toolsets.slice(0, 6);
+  const rest = toolsets.slice(6);
+
   return (
-    <div className="space-y-2">
-      <div>
-        <p className="text-sm font-medium">{title}</p>
-        <p className="text-xs text-muted-foreground">{hint}</p>
-      </div>
-      {toolsets.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{empty}</p>
-      ) : (
-        <ul className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
-          {toolsets.map((name) => {
-            const on = !denied.includes(name);
-            const label = (
-              <span className="min-w-0">
-                <span className="font-mono text-xs">{name}</span>
-                {isHermesToolset(name) && (
-                  <span className="block text-xs text-muted-foreground">
-                    {t(`toolset.${name}`)}
-                  </span>
-                )}
-              </span>
-            );
-            return (
-              <li key={name}>
-                {canEdit ? (
-                  <label className="flex cursor-pointer items-start gap-2">
-                    <Checkbox
-                      className="mt-0.5"
-                      checked={on}
-                      onCheckedChange={(checked) =>
-                        onChange(toggleToolset(denied, name, checked === true))
-                      }
-                    />
-                    {label}
-                  </label>
-                ) : (
-                  <div className="flex items-start justify-between gap-4">
-                    {label}
-                    <TeamSettingState on={on} />
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </div>
+    <SettingsGroup
+      title={title}
+      description={hint}
+      advancedLabel={t('moreToolsets', { count: rest.length })}
+      advanced={rest.length ? rest.map(row) : undefined}
+    >
+      {toolsets.length === 0 ? <SettingsRow label={empty} /> : shown.map(row)}
+    </SettingsGroup>
   );
 }

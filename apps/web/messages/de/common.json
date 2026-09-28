@@ -291,5 +291,6 @@
     "offline": "Aus",
     "done": "Fertig"
   },
-  "resizeSidePanel": "Breite des Seitenfelds ändern"
+  "resizeSidePanel": "Breite des Seitenfelds ändern",
+  "advanced": "Erweitert"
 }

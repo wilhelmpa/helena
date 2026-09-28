@@ -439,7 +439,8 @@
         "idleHours": "{hours, plural, other {Setelah # jam}}",
         "model": "Model perangkum",
         "modelDefault": "Otomatis (model sendiri atau AI lokal)"
-      }
+      },
+      "behaviourTitle": "Perilaku"
     },
     "runtimeConflicts": {
       "title": "Diubah di luar Helena",
@@ -674,12 +675,14 @@
         },
         "chatReflectionNothing": "Tidak ada yang disimpan",
         "chatReflectionMemory": "Memori ({target})",
-        "chatReflectionSkill": "Skill {target}"
+        "chatReflectionSkill": "Skill {target}",
+        "chatReflectionWhen": "Kapan"
       },
       "skillEnabled": "{name} aktif",
       "skillsDisabled": "{count} nonaktif",
       "skillClashes": "{count, plural, other {# nama}} dimiliki lebih dari satu skill. Hermes lalu tidak memuat satu pun:",
-      "skillClashesFix": "Lepaskan skill Helena dari agen (skill yang disesuaikan untuk Hermes lalu dipakai) atau ganti namanya di pustaka skill."
+      "skillClashesFix": "Lepaskan skill Helena dari agen (skill yang disesuaikan untuk Hermes lalu dipakai) atau ganti namanya di pustaka skill.",
+      "moreToolsets": "{count} lainnya"
     },
     "paused": "Dijeda",
     "pausedNoReason": "Dijeda. Tidak ada alasan yang diberikan.",
@@ -817,7 +820,16 @@
       "outcome": {
         "queued": "Run dimulai",
         "skipped": "Tidak ada pekerjaan"
-      }
+      },
+      "intervalLabel": "Jeda",
+      "intervalHint": "Menit di antara dua pemeriksaan. Kosongkan untuk mematikan.",
+      "minutes": "mnt",
+      "hoursLabel": "Jam kerja",
+      "hoursHint": "Hanya berdetak dalam rentang ini.",
+      "daysHint": "Pada hari apa saja.",
+      "timezoneHint": "Untuk jam dan hari, mis. Europe/Berlin.",
+      "instructionsHint": "Apa yang diperiksa setiap detak. Proses hanya dimulai bila ada pekerjaan.",
+      "schedule": "Jadwal"
     },
     "pages": {
       "groups": {
@@ -842,7 +854,8 @@
         "runner": "Runner"
       },
       "general": "Umum",
-      "generalHint": "Nama, instruksi, dan dengan apa agen bekerja."
+      "generalHint": "Nama, instruksi, dan dengan apa agen bekerja.",
+      "execution": "Eksekusi"
     },
     "overview": {
       "capabilities": "Kemampuan",

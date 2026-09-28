@@ -1,5 +1,6 @@
 import { useTranslations } from 'next-intl';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { SettingsGroup, SettingsRow } from '@/design-system';
 import {
   Select,
   SelectContent,
@@ -42,85 +43,59 @@ export default function AgentLearningSettings({
   ] as const;
 
   return (
-    <div className="space-y-2">
-      <div>
-        <p className="text-sm font-medium">{t('title')}</p>
-        <p className="text-xs text-muted-foreground">{canEdit ? t('hint') : t('readOnly')}</p>
-      </div>
-      <ul className="space-y-2">
-        {rows.map((row) => {
-          const label = (
-            <span className="min-w-0">
-              <span className="text-sm">{row.label}</span>
-              <span className="block text-xs text-muted-foreground">{row.hint}</span>
-            </span>
-          );
-          return (
-            <li key={row.key}>
-              {canEdit ? (
-                <label className="flex cursor-pointer items-start gap-2">
-                  <Checkbox
-                    className="mt-0.5"
-                    checked={row.on}
-                    onCheckedChange={(checked) =>
-                      onChange({ ...policy, [row.key]: checked === true })
-                    }
-                  />
-                  {label}
-                </label>
-              ) : (
-                <div className="flex items-start justify-between gap-4">
-                  {label}
-                  <TeamSettingState on={row.on} />
-                </div>
-              )}
-            </li>
-          );
-        })}
-        <li className="flex items-start justify-between gap-4">
-          <span className="min-w-0">
-            <span className="text-sm">{t('reflectionTitle')}</span>
-            <span className="block text-xs text-muted-foreground">{t('reflectionHint')}</span>
-          </span>
+    <SettingsGroup title={t('title')} description={canEdit ? t('hint') : t('readOnly')}>
+      {rows.map((row) => (
+        <SettingsRow key={row.key} label={row.label} description={row.hint}>
           {canEdit ? (
-            <Select
-              value={current.reflection}
-              onValueChange={(value) =>
-                onChange({ ...policy, reflection: value as AgentRuntimePolicy['reflection'] })
-              }
-            >
-              <SelectTrigger className="w-44 shrink-0" aria-label={t('reflectionTitle')}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {REFLECTION_MODES.map((mode) => (
-                  <SelectItem key={mode} value={mode}>
-                    {t(
-                      mode === 'off'
-                        ? 'reflectionOff'
-                        : mode === 'failure'
-                          ? 'reflectionFailure'
-                          : 'reflectionComplex',
-                    )}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Switch
+              aria-label={row.label}
+              checked={row.on}
+              onCheckedChange={(checked) => onChange({ ...policy, [row.key]: checked })}
+            />
           ) : (
-            <span className="shrink-0 text-sm text-muted-foreground">
-              {t(
-                current.reflection === 'off'
-                  ? 'reflectionOff'
-                  : current.reflection === 'failure'
-                    ? 'reflectionFailure'
-                    : 'reflectionComplex',
-              )}
-            </span>
+            <TeamSettingState on={row.on} />
           )}
-        </li>
-        <AgentChatReflectionRow policy={policy} canEdit={canEdit} onChange={onChange} />
-      </ul>
-    </div>
+        </SettingsRow>
+      ))}
+      <SettingsRow label={t('reflectionTitle')} description={t('reflectionHint')}>
+        {canEdit ? (
+          <Select
+            value={current.reflection}
+            onValueChange={(value) =>
+              onChange({ ...policy, reflection: value as AgentRuntimePolicy['reflection'] })
+            }
+          >
+            <SelectTrigger className="w-44 shrink-0" aria-label={t('reflectionTitle')}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {REFLECTION_MODES.map((mode) => (
+                <SelectItem key={mode} value={mode}>
+                  {t(
+                    mode === 'off'
+                      ? 'reflectionOff'
+                      : mode === 'failure'
+                        ? 'reflectionFailure'
+                        : 'reflectionComplex',
+                  )}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <span className="shrink-0 text-sm text-muted-foreground">
+            {t(
+              current.reflection === 'off'
+                ? 'reflectionOff'
+                : current.reflection === 'failure'
+                  ? 'reflectionFailure'
+                  : 'reflectionComplex',
+            )}
+          </span>
+        )}
+      </SettingsRow>
+      <AgentChatReflectionRow policy={policy} canEdit={canEdit} onChange={onChange} />
+    </SettingsGroup>
   );
 }
 
@@ -139,33 +114,23 @@ function AgentChatReflectionRow({
   const t = useTranslations('teams.agents.abilities.learning');
   const current = chatReflectionOf(policy);
   const learning = policy.learning ?? true;
-  const label = (
-    <span className="min-w-0">
-      <span className="text-sm">{t('chatReflection')}</span>
-      <span className="block text-xs text-muted-foreground">{t('chatReflectionHint')}</span>
-    </span>
-  );
   return (
-    <li className="space-y-2">
-      {canEdit ? (
-        <label className="flex cursor-pointer items-start gap-2">
-          <Checkbox
-            className="mt-0.5"
+    <>
+      <SettingsRow label={t('chatReflection')} description={t('chatReflectionHint')}>
+        {canEdit ? (
+          <Switch
+            aria-label={t('chatReflection')}
             checked={current.enabled}
             disabled={!learning}
-            onCheckedChange={(checked) => onChange({ ...policy, chatReflection: checked === true })}
+            onCheckedChange={(checked) => onChange({ ...policy, chatReflection: checked })}
           />
-          {label}
-        </label>
-      ) : (
-        <div className="flex items-start justify-between gap-4">
-          {label}
+        ) : (
           <TeamSettingState on={current.enabled} />
-        </div>
-      )}
+        )}
+      </SettingsRow>
       {current.enabled && (
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 ps-6 text-xs text-muted-foreground">
-          <label className="flex items-center gap-2">
+        <SettingsRow label={t('chatReflectionWhen')} nested>
+          <span className="ds-inline-unit">
             {t('chatReflectionIdle')}
             <BoundedNumberInput
               bounds={CHAT_REFLECTION_BOUNDS.idleMinutes}
@@ -176,8 +141,8 @@ function AgentChatReflectionRow({
                 onChange({ ...policy, chatReflectionIdleMinutes })
               }
             />
-          </label>
-          <label className="flex items-center gap-2">
+          </span>
+          <span className="ds-inline-unit">
             {t('chatReflectionTurns')}
             <BoundedNumberInput
               bounds={CHAT_REFLECTION_BOUNDS.everyTurns}
@@ -188,9 +153,9 @@ function AgentChatReflectionRow({
                 onChange({ ...policy, chatReflectionEveryTurns })
               }
             />
-          </label>
-        </div>
+          </span>
+        </SettingsRow>
       )}
-    </li>
+    </>
   );
 }

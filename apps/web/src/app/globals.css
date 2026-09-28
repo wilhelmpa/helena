@@ -111,6 +111,19 @@ body:has(.project-ai-agents-view) [class~='@container/page']::-webkit-scrollbar 
   cursor: pointer;
 }
 
+/* React Flow styles a node of type "group" as a framed box; the ring's department
+   circles are that type, so the frame goes. */
+.react-flow__node-group,
+.react-flow__node-group.selectable:hover,
+.react-flow__node-group.selected,
+.react-flow__node-group:focus-visible {
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
 .organization-orbits {
   position: absolute;
   top: 0;

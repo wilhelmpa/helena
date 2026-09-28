@@ -477,7 +477,12 @@ body[data-modal-open='true'] [data-radix-popper-content-wrapper] {
 .ds-agent-page-body {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-5);
+}
+/* The body's gap spaces the groups; no second margin on top of it. */
+.ds-agent-page-body > .ds-settings-group + .ds-settings-group,
+.ds-agent-overview > .ds-settings-group {
+  margin-top: 0;
 }
 @container (max-width: 620px) {
   .ds-agent-overlay-main:not(.is-single) {

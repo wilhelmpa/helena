@@ -5,7 +5,7 @@ import { Maximize2, Minimize2, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useExitOnEscape } from '@/hooks/useExitOnEscape';
 import { useExitOnClickOutside } from '@/hooks/useExitOnClickOutside';
-import { SidePanelResizeHandle, useSidePanelWidth } from './sidePanelWidth';
+import { SidePanelResizeHandle, useSidePanelWidth, type SidePanelKind } from './sidePanelWidth';
 import { PageChromeCtx } from './pageChrome';
 
 export type OverlayTab = { id: string; label: ReactNode };
@@ -29,6 +29,7 @@ export function Overlay({
   closeOnOutsideClick = false,
   className,
   bodyClassName,
+  width: kind = 'default',
   children,
 }: {
   label: string;
@@ -46,10 +47,12 @@ export function Overlay({
   closeOnOutsideClick?: boolean;
   className?: string;
   bodyClassName?: string;
+  // 'wide' for a whole form (an agent's settings): wider, with its own remembered width.
+  width?: SidePanelKind;
   children: ReactNode;
 }) {
   const t = useTranslations('common');
-  const { width } = useSidePanelWidth();
+  const { width } = useSidePanelWidth(kind);
   const [full, setFull] = useState(false);
   useExitOnEscape(() => (full ? setFull(false) : onClose()), escape);
   const active = activeTab ?? tabs[0]?.id;
@@ -67,7 +70,7 @@ export function Overlay({
       data-full={full ? 'true' : 'false'}
       style={{ '--ds-panel-w': `${width}px` } as CSSProperties}
     >
-      {!full && <SidePanelResizeHandle />}
+      {!full && <SidePanelResizeHandle kind={kind} />}
       <div className="ds-panel-head">
         <div className="ds-panel-tabs">
           <div className="ds-panel-tabs-track" role="tablist" aria-label={label}>

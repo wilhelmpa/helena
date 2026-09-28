@@ -170,6 +170,7 @@ function AgentDialogFrame({
       onClose={onClose}
       className="ds-agent-overlay"
       bodyClassName="is-flush"
+      width="wide"
     >
       <ShellHeaderSlotCtx.Provider value={null}>
         <ShellHeaderActionsSlotCtx.Provider value={null}>

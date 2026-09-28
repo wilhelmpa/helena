@@ -128,7 +128,11 @@
     "pausedBecause": "Dijeda: {reason}",
     "budgetsHint": "Mencakup semua yang dilakukan agen: eksekusi dan chat.",
     "projectBudgets": "Anggaran {project}",
-    "pausedBudget": "Dijeda: {budget} ({metric}) habis, {usage}."
+    "pausedBudget": "Dijeda: {budget} ({metric}) habis, {usage}.",
+    "levelTitle": "Otonomi",
+    "ownHint": "Seberapa mandiri ia bertindak. “Seperti proyek” memakai level tiap proyek.",
+    "effective": "Di proyeknya",
+    "projectBudgetsTitle": "Anggaran proyek"
   },
   "card": {
     "title": "Anggaran habis",

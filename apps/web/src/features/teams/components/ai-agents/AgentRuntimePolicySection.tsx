@@ -4,7 +4,8 @@ import { useId } from 'react';
 import { Cpu, Plus, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { SettingsGroup, SettingsRow } from '@/design-system';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { AiChatModel, UnavailableChatModel } from '@/lib/api/endpoints/agentChat';
@@ -122,25 +123,128 @@ export default function AgentRuntimePolicySection({
         onUseDefault={() => selectModel(AGENT_DEFAULT)}
       />
 
-      {(policy.runtime ?? 'hermes') === 'hermes' && (
-        <div className="space-y-2">
-          <label htmlFor={fallbackId} className="flex items-start gap-2">
-            <Checkbox
+      <AgentRuntimeConflicts conflicts={conflicts} onTakeOver={takeOverSoul} />
+      <SettingsGroup
+        title={t('behaviourTitle')}
+        advanced={
+          <div className="space-y-6">
+            {(policy.runtime ?? 'hermes') === 'hermes' && (
+              <AgentCompressionSettings
+                policy={policy}
+                models={models}
+                canEdit={canEdit}
+                onChange={(runtimePolicy) => onChange({ runtimePolicy })}
+              />
+            )}
+
+            {/* Which tools the agent has is switched per tool in Abilities (toolDeny), for every
+          runtime. An allow list next to it had no effect and is gone (hub/cli-runtimes). */}
+            <div className="space-y-1.5">
+              <label htmlFor="runtime-mcpGrants" className="text-sm font-medium">
+                {t('mcpGrants')}
+              </label>
+              <Textarea
+                id="runtime-mcpGrants"
+                rows={2}
+                placeholder={t('keysPlaceholder')}
+                value={policy.mcpGrants.join('\n')}
+                onChange={(event) => patchPolicy({ mcpGrants: lines(event.target.value) })}
+              />
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">{t('managedFiles')}</p>
+                  <p className="text-xs text-muted-foreground">{t('managedFilesHint')}</p>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    patchPolicy({
+                      files: [...policy.files, { kind: 'instructions', path: '', content: '' }],
+                    })
+                  }
+                >
+                  <Plus className="me-1 size-3.5" /> {t('addFile')}
+                </Button>
+              </div>
+              {policy.files.map((file, index) => (
+                <div key={`${index}-${file.path}`} className="space-y-2 rounded-md border p-3">
+                  <div className="flex gap-2">
+                    <Input
+                      aria-label={t('filePathLabel', { index: index + 1 })}
+                      placeholder={t('filePathPlaceholder')}
+                      value={file.path}
+                      onChange={(event) => {
+                        const files = [...policy.files];
+                        files[index] = { ...file, path: event.target.value };
+                        patchPolicy({ files });
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      aria-label={t('removeFile', { index: index + 1 })}
+                      onClick={() =>
+                        patchPolicy({ files: policy.files.filter((_, i) => i !== index) })
+                      }
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                  <Textarea
+                    rows={6}
+                    aria-label={t('fileContentLabel', { index: index + 1 })}
+                    value={file.content}
+                    onChange={(event) => {
+                      const files = [...policy.files];
+                      files[index] = { ...file, content: event.target.value };
+                      patchPolicy({ files });
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        }
+      >
+        <SettingsRow
+          label={t('maxConcurrentChats')}
+          description={t('maxConcurrentChatsHint')}
+          htmlFor="agent-max-concurrent-chats"
+        >
+          <Input
+            id="agent-max-concurrent-chats"
+            className="w-20"
+            type="number"
+            min="1"
+            max="20"
+            step="1"
+            value={value.maxConcurrentChats}
+            onChange={(event) => onChange({ maxConcurrentChats: event.target.value })}
+          />
+        </SettingsRow>
+        {(policy.runtime ?? 'hermes') === 'hermes' && (
+          <SettingsRow
+            label={tFallback('own')}
+            description={
+              policy.fallbackModels != null ? tFallback('ownHint') : tFallback('defaultHint')
+            }
+            htmlFor={fallbackId}
+          >
+            <Switch
               id={fallbackId}
-              className="mt-0.5"
               checked={policy.fallbackModels != null}
-              onCheckedChange={(checked) =>
-                patchPolicy({ fallbackModels: checked === true ? [] : null })
-              }
+              onCheckedChange={(checked) => patchPolicy({ fallbackModels: checked ? [] : null })}
             />
-            <span className="min-w-0">
-              <span className="text-sm font-medium">{tFallback('own')}</span>
-              <span className="block text-xs text-muted-foreground">
-                {policy.fallbackModels != null ? tFallback('ownHint') : tFallback('defaultHint')}
-              </span>
-            </span>
-          </label>
-          {policy.fallbackModels != null && (
+          </SettingsRow>
+        )}
+        {(policy.runtime ?? 'hermes') === 'hermes' && policy.fallbackModels != null && (
+          <div className="ds-settings-row is-stacked is-nested">
             <FallbackModelsEditor
               value={policy.fallbackModels}
               onChange={(fallbackModels) => patchPolicy({ fallbackModels })}
@@ -148,106 +252,9 @@ export default function AgentRuntimePolicySection({
                 model.provider ? [{ provider: model.provider, model: model.id }] : [],
               )}
             />
-          )}
-        </div>
-      )}
-
-      {(policy.runtime ?? 'hermes') === 'hermes' && (
-        <AgentCompressionSettings
-          policy={policy}
-          models={models}
-          canEdit={canEdit}
-          onChange={(runtimePolicy) => onChange({ runtimePolicy })}
-        />
-      )}
-
-      <div className="space-y-1.5">
-        <label htmlFor="agent-max-concurrent-chats" className="text-sm font-medium">
-          {t('maxConcurrentChats')}
-        </label>
-        <Input
-          id="agent-max-concurrent-chats"
-          type="number"
-          min="1"
-          max="20"
-          step="1"
-          value={value.maxConcurrentChats}
-          onChange={(event) => onChange({ maxConcurrentChats: event.target.value })}
-        />
-        <p className="text-xs text-muted-foreground">{t('maxConcurrentChatsHint')}</p>
-      </div>
-
-      {/* Which tools the agent has is switched per tool in Abilities (toolDeny), for every
-          runtime. An allow list next to it had no effect and is gone (hub/cli-runtimes). */}
-      <div className="space-y-1.5">
-        <label htmlFor="runtime-mcpGrants" className="text-sm font-medium">
-          {t('mcpGrants')}
-        </label>
-        <Textarea
-          id="runtime-mcpGrants"
-          rows={2}
-          placeholder={t('keysPlaceholder')}
-          value={policy.mcpGrants.join('\n')}
-          onChange={(event) => patchPolicy({ mcpGrants: lines(event.target.value) })}
-        />
-      </div>
-
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium">{t('managedFiles')}</p>
-            <p className="text-xs text-muted-foreground">{t('managedFilesHint')}</p>
           </div>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() =>
-              patchPolicy({
-                files: [...policy.files, { kind: 'instructions', path: '', content: '' }],
-              })
-            }
-          >
-            <Plus className="me-1 size-3.5" /> {t('addFile')}
-          </Button>
-        </div>
-        <AgentRuntimeConflicts conflicts={conflicts} onTakeOver={takeOverSoul} />
-        {policy.files.map((file, index) => (
-          <div key={`${index}-${file.path}`} className="space-y-2 rounded-md border p-3">
-            <div className="flex gap-2">
-              <Input
-                aria-label={t('filePathLabel', { index: index + 1 })}
-                placeholder={t('filePathPlaceholder')}
-                value={file.path}
-                onChange={(event) => {
-                  const files = [...policy.files];
-                  files[index] = { ...file, path: event.target.value };
-                  patchPolicy({ files });
-                }}
-              />
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                aria-label={t('removeFile', { index: index + 1 })}
-                onClick={() => patchPolicy({ files: policy.files.filter((_, i) => i !== index) })}
-              >
-                <Trash2 className="size-4" />
-              </Button>
-            </div>
-            <Textarea
-              rows={6}
-              aria-label={t('fileContentLabel', { index: index + 1 })}
-              value={file.content}
-              onChange={(event) => {
-                const files = [...policy.files];
-                files[index] = { ...file, content: event.target.value };
-                patchPolicy({ files });
-              }}
-            />
-          </div>
-        ))}
-      </div>
+        )}
+      </SettingsGroup>
     </AgentFormSection>
   );
 }

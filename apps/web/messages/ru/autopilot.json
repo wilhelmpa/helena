@@ -128,7 +128,11 @@
     "pausedBecause": "На паузе: {reason}",
     "budgetsHint": "Касается всего, что делает агент: запусков и чатов.",
     "projectBudgets": "Бюджеты {project}",
-    "pausedBudget": "На паузе: {budget} ({metric}) исчерпан, {usage}."
+    "pausedBudget": "На паузе: {budget} ({metric}) исчерпан, {usage}.",
+    "levelTitle": "Самостоятельность",
+    "ownHint": "Насколько самостоятельно он действует. «Как в проекте» берёт уровень каждого проекта.",
+    "effective": "В его проектах",
+    "projectBudgetsTitle": "Бюджеты проектов"
   },
   "card": {
     "title": "Бюджет исчерпан",

@@ -128,7 +128,11 @@
     "pausedBecause": "Pausiert: {reason}",
     "budgetsHint": "Gilt für alles, was der Agent tut: Läufe und Chats.",
     "projectBudgets": "Budgets von {project}",
-    "pausedBudget": "Pausiert: {budget} ({metric}) aufgebraucht, {usage}."
+    "pausedBudget": "Pausiert: {budget} ({metric}) aufgebraucht, {usage}.",
+    "levelTitle": "Selbstständigkeit",
+    "ownHint": "Wie selbstständig er handelt. „Wie das Projekt“ übernimmt die Stufe jedes Projekts.",
+    "effective": "Gilt in den Projekten",
+    "projectBudgetsTitle": "Budgets der Projekte"
   },
   "card": {
     "title": "Budget aufgebraucht",

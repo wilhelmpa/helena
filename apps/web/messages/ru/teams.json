@@ -439,7 +439,8 @@
         "idleHours": "{hours, plural, one {Через # час} few {Через # часа} many {Через # часов} other {Через # часа}}",
         "model": "Модель для сводки",
         "modelDefault": "Автоматически (своя модель или локальный ИИ)"
-      }
+      },
+      "behaviourTitle": "Поведение"
     },
     "runtimeConflicts": {
       "title": "Изменено вне Helena",
@@ -674,12 +675,14 @@
         },
         "chatReflectionNothing": "Ничего не сохранено",
         "chatReflectionMemory": "Память ({target})",
-        "chatReflectionSkill": "Навык {target}"
+        "chatReflectionSkill": "Навык {target}",
+        "chatReflectionWhen": "Когда"
       },
       "skillEnabled": "{name} включён",
       "skillsDisabled": "выключено: {count}",
       "skillClashes": "{count, plural, one {# имя принадлежит} few {# имени принадлежат} many {# имён принадлежат} other {# имени принадлежат}} нескольким навыкам. Hermes не загружает ни один из них:",
-      "skillClashesFix": "Уберите навык Helena у агента (тогда работает версия, адаптированная для Hermes) или переименуйте его в библиотеке навыков."
+      "skillClashesFix": "Уберите навык Helena у агента (тогда работает версия, адаптированная для Hermes) или переименуйте его в библиотеке навыков.",
+      "moreToolsets": "ещё {count}"
     },
     "paused": "Приостановлен",
     "pausedNoReason": "Приостановлен. Причина не указана.",
@@ -817,7 +820,16 @@
       "outcome": {
         "queued": "Прогон запущен",
         "skipped": "Нечего делать"
-      }
+      },
+      "intervalLabel": "Интервал",
+      "intervalHint": "Минуты между двумя проверками. Оставьте пустым, чтобы выключить.",
+      "minutes": "мин",
+      "hoursLabel": "Рабочее время",
+      "hoursHint": "Срабатывает только в этом окне.",
+      "daysHint": "По каким дням недели.",
+      "timezoneHint": "Для времени и дней, напр. Europe/Berlin.",
+      "instructionsHint": "Что проверяется на каждом такте. Запуск начинается, только если есть работа.",
+      "schedule": "Такт"
     },
     "pages": {
       "groups": {
@@ -842,7 +854,8 @@
         "runner": "Раннер"
       },
       "general": "Общее",
-      "generalHint": "Имя, инструкции и на чём работает агент."
+      "generalHint": "Имя, инструкции и на чём работает агент.",
+      "execution": "Выполнение"
     },
     "overview": {
       "capabilities": "Возможности",

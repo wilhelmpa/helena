@@ -4,7 +4,8 @@ import type { AgentFormValue } from '../../utils/agentForm';
 import { AgentCapabilityList } from './AgentCapabilityList';
 import { AgentEmptyNotice } from './AgentEmptyNotice';
 import { AgentFormSection } from './AgentFormSection';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { SettingsGroup, SettingsRow } from '@/design-system';
 import { useTeamQuery } from '@/services/teams.service';
 import { useAgentSection } from '../../context/agentSection';
 import { useTranslations } from 'next-intl';
@@ -54,26 +55,21 @@ export default function AgentProjectsSection({
       }
     >
       {canGrantAll && !value.template && (
-        <label
-          htmlFor="agent-project-scope-all"
-          className="mb-4 flex cursor-pointer items-start gap-2"
-        >
-          <Checkbox
-            id="agent-project-scope-all"
-            className="mt-0.5"
-            checked={value.projectScope === 'all'}
-            onCheckedChange={(checked) =>
-              onChange({
-                projectScope: checked === true ? 'all' : 'selected',
-                projectId: checked === true ? null : value.projectId,
-              })
-            }
-          />
-          <span>
-            <span className="text-sm font-medium">{t('allProjectsScope')}</span>
-            <span className="block text-xs text-muted-foreground">{t('allProjectsScopeHint')}</span>
-          </span>
-        </label>
+        <SettingsGroup>
+          <SettingsRow label={t('allProjectsScope')} description={t('allProjectsScopeHint')}>
+            <Switch
+              id="agent-project-scope-all"
+              aria-label={t('allProjectsScope')}
+              checked={value.projectScope === 'all'}
+              onCheckedChange={(checked) =>
+                onChange({
+                  projectScope: checked ? 'all' : 'selected',
+                  projectId: checked ? null : value.projectId,
+                })
+              }
+            />
+          </SettingsRow>
+        </SettingsGroup>
       )}
       {value.projectScope === 'all' ? null : projects.length === 0 ? (
         <AgentEmptyNotice icon={FolderKanban} title={t('noProjects')} hint={t('noProjectsHint')} />

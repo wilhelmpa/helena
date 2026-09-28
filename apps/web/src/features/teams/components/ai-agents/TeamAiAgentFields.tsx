@@ -4,6 +4,8 @@ import type { TeamProjectOption } from '@/lib/api/endpoints/teams';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import type { AiChatModel, UnavailableChatModel } from '@/lib/api/endpoints/agentChat';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { SettingsGroup, SettingsRow } from '@/design-system';
 import { type AgentFormValue } from '../../utils/agentForm';
 import { AgentFormSection } from './AgentFormSection';
 import AgentAccessSection from './AgentAccessSection';
@@ -268,9 +270,8 @@ export default function TeamAiAgentFields({
       </AgentFormSection>
     ) : null;
 
-  const stack = [
-    <div key="runtime-picker" className="rounded-lg border border-border/60 p-4">
-      <p className="mb-3 text-xs text-muted-foreground">{tRuntime('summary')}</p>
+  const runtimeControls = (
+    <>
       <RuntimePicker
         runtime={value.runtimePolicy.runtime ?? 'hermes'}
         model={value.model || null}
@@ -358,6 +359,13 @@ export default function TeamAiAgentFields({
           <p className="text-xs text-muted-foreground sm:col-span-2">{tRuntime('webhookHint')}</p>
         </div>
       )}
+    </>
+  );
+
+  const stack = [
+    <div key="runtime-picker" className="rounded-lg border border-border/60 p-4">
+      <p className="mb-3 text-xs text-muted-foreground">{tRuntime('summary')}</p>
+      {runtimeControls}
     </div>,
     basicsSection,
     projectsSection,
@@ -386,8 +394,57 @@ export default function TeamAiAgentFields({
             </div>
           </header>
           <div className="ds-agent-page-body">
-            {stack[0]}
-            {basicsSection}
+            <SettingsGroup>
+              <SettingsRow label={tCommon('name')} htmlFor="agent-name">
+                <Input
+                  id="agent-name"
+                  className="w-64"
+                  placeholder={t('namePlaceholder')}
+                  value={value.name}
+                  onChange={(e) => onChange({ name: e.target.value })}
+                />
+              </SettingsRow>
+              <SettingsRow
+                label={t('username')}
+                description={t('usernameHint')}
+                htmlFor="agent-username"
+              >
+                <Input
+                  id="agent-username"
+                  className="w-64"
+                  dir="ltr"
+                  placeholder={t('usernamePlaceholder')}
+                  value={value.username}
+                  onChange={(e) => onChange({ username: e.target.value })}
+                />
+              </SettingsRow>
+              {value.projectId == null && (
+                <SettingsRow label={t('template')} description={t('templateHint')}>
+                  <Switch
+                    checked={value.template}
+                    aria-label={t('template')}
+                    onCheckedChange={(template) =>
+                      onChange({
+                        template,
+                        projectScope: template ? 'selected' : value.projectScope,
+                      })
+                    }
+                  />
+                </SettingsRow>
+              )}
+            </SettingsGroup>
+            <SettingsGroup title={t('pages.execution')} description={tRuntime('summary')}>
+              <div className="ds-settings-row is-stacked">{runtimeControls}</div>
+            </SettingsGroup>
+            <SettingsGroup>
+              <div className="ds-settings-row is-stacked">
+                <AgentInstructionsField
+                  value={value.instructions}
+                  onChange={(instructions) => onChange({ instructions })}
+                />
+              </div>
+            </SettingsGroup>
+            {agent && <AgentTemplateDriftSection agent={agent} />}
           </div>
         </section>
       ),

@@ -291,5 +291,6 @@
     "offline": "Offline",
     "done": "Concluído"
   },
-  "resizeSidePanel": "Redimensionar painel lateral"
+  "resizeSidePanel": "Redimensionar painel lateral",
+  "advanced": "Avançado"
 }

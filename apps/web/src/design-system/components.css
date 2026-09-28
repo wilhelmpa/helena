@@ -610,6 +610,7 @@
 .ds-settings-rows {
   display: flex;
   flex-direction: column;
+  container-type: inline-size;
 }
 .ds-settings-row {
   display: flex;
@@ -645,10 +646,39 @@
   align-items: center;
   gap: var(--space-2);
 }
+.ds-settings-row.is-stacked {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-2);
+  padding-block: var(--space-3);
+}
+.ds-settings-row.is-actions {
+  min-height: 52px;
+  justify-content: flex-end;
+  border-top: 1px solid var(--line);
+}
+.ds-settings-row.is-nested {
+  padding-inline-start: calc(var(--space-4) + 20px);
+}
+.ds-settings-row.is-nested + .ds-settings-row.is-nested,
+.ds-settings-row + .ds-settings-row.is-actions {
+  min-height: 52px;
+  justify-content: flex-end;
+  border-top: 1px solid var(--line);
+}
+.ds-settings-row.is-nested {
+  border-top-style: dashed;
+}
+.ds-settings-row.is-stacked .ds-settings-row-control {
+  flex: 1;
+  flex-direction: column;
+  align-items: stretch;
+}
 .ds-settings-group > .ds-more {
   padding: 0 var(--space-4) var(--space-3);
 }
-@media (max-width: 600px) {
+/* Narrow — a phone, or a settings group in a narrow overlay: the control goes below. */
+@container (max-width: 520px) {
   .ds-settings-row {
     flex-direction: column;
     align-items: stretch;
@@ -1306,10 +1336,18 @@ a.ds-run-card:hover {
   flex-wrap: wrap;
   gap: 6px;
 }
-.ds-heartbeat-history ul {
+.ds-heartbeat-history {
   display: flex;
   flex-direction: column;
   margin-top: 6px;
+}
+/* A small control and its unit or a from–to pair on one line (a settings row). */
+.ds-inline-unit {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-2);
+  font-size: 13px;
 }
 .ds-heartbeat-history li {
   display: grid;

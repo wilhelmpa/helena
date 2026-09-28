@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Gauge } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLocale, useTranslations } from 'next-intl';
+import { SettingsGroup, SettingsRow } from '@/design-system';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { AUTOPILOT_LEVELS, type AutopilotLevel, type Usage } from '@/lib/api/endpoints/autopilot';
 import {
@@ -119,32 +120,12 @@ export default function AgentAutopilotSection({
             </p>
           )}
 
-          {data.projects.length === 0 ? (
-            <p className="text-xs text-muted-foreground">{t('agent.noProjects')}</p>
-          ) : (
-            <ul className="divide-y divide-border/60 rounded-md border border-sidebar-border bg-card">
-              {data.projects.map((project) => (
-                <li key={project.id} className="flex items-center gap-3 px-3 py-2">
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm">
-                      {t('agent.inProject', { project: project.name })}
-                    </span>
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {t(`level.${project.effective.level}.name`)} ·{' '}
-                      {t(`source.${project.effective.source}`)}
-                    </span>
-                  </span>
-                  <AutopilotLevelBadge level={project.effective.level} />
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <div className="grid gap-3 sm:grid-cols-2 sm:items-end">
-            <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground" htmlFor="agent-autopilot-level">
-                {t('agent.own')}
-              </label>
+          <SettingsGroup title={t('agent.levelTitle')}>
+            <SettingsRow
+              label={t('agent.own')}
+              description={t('agent.ownHint')}
+              htmlFor="agent-autopilot-level"
+            >
               <Select
                 value={data.agentLevel == null ? FOLLOW_PROJECT : String(data.agentLevel)}
                 disabled={!editable || setLevel.isPending}
@@ -155,7 +136,7 @@ export default function AgentAutopilotSection({
                   )
                 }
               >
-                <SelectTrigger id="agent-autopilot-level" size="sm" className="w-full">
+                <SelectTrigger id="agent-autopilot-level" className="w-56">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -167,92 +148,101 @@ export default function AgentAutopilotSection({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="flex items-start gap-3 rounded-md border border-sidebar-border bg-card px-3 py-2">
+            </SettingsRow>
+            <SettingsRow label={t('agent.raise')} description={t('agent.raiseHint')} nested>
               <Switch
-                id={`agent-${agent.id}-autopilot-raise`}
+                aria-label={t('agent.raise')}
                 checked={data.raise}
                 disabled={!editable || data.agentLevel == null || setLevel.isPending}
                 onCheckedChange={(raise) => void saveLevel(data.agentLevel, raise)}
-                className="mt-0.5"
               />
-              <label htmlFor={`agent-${agent.id}-autopilot-raise`} className="space-y-0.5">
-                <span className="block text-sm">{t('agent.raise')}</span>
-                <span className="block text-xs text-muted-foreground">{t('agent.raiseHint')}</span>
-              </label>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">{t('agent.usage')}</p>
-            <div className="grid grid-cols-2 gap-2">
-              <UsageCard label={t('agent.today')} usage={data.usage.today} locale={locale} />
-              <UsageCard label={t('agent.month')} usage={data.usage.month} locale={locale} />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">
-              {t('budgetsTitle')} · {t('agent.budgetsHint')}
-            </p>
-            <div className="rounded-md border border-sidebar-border bg-card">
-              <BudgetFields
-                idPrefix={`agent-${agent.id}-budget`}
-                budgets={data.budgets}
-                draft={draft}
-                disabled={!editable || setBudgets.isPending}
-                onChange={(key, value) => setDraft({ ...draft, [key]: value })}
-              />
-            </div>
-            {editable && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={!dirty || setBudgets.isPending}
-                onClick={() => void saveBudgets()}
-              >
-                {setBudgets.isPending ? tCommon('saving') : tCommon('save')}
-              </Button>
+            </SettingsRow>
+            {data.projects.length === 0 ? (
+              <SettingsRow label={t('agent.effective')} description={t('agent.noProjects')} />
+            ) : (
+              data.projects.map((project) => (
+                <SettingsRow
+                  key={project.id}
+                  label={t('agent.inProject', { project: project.name })}
+                  description={`${t(`level.${project.effective.level}.name`)} · ${t(`source.${project.effective.source}`)}`}
+                >
+                  <AutopilotLevelBadge level={project.effective.level} />
+                </SettingsRow>
+              ))
             )}
-          </div>
+          </SettingsGroup>
 
-          {data.projects
-            .filter((project) => project.budgets.length > 0)
-            .map((project) => (
-              <div key={project.id} className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground">
-                  {t('agent.projectBudgets', { project: project.name })}
-                </p>
-                <ul className="space-y-2">
-                  {project.budgets.map((budget) => (
-                    <li key={budget.id} className="space-y-1">
-                      <p className="text-xs">
-                        {t(`metric.${budget.metric}`)} {t(`period.${budget.period}`)}
-                      </p>
-                      <BudgetUsage status={budget} />
-                    </li>
-                  ))}
-                </ul>
+          <SettingsGroup title={t('agent.usage')}>
+            <UsageRow label={t('agent.today')} usage={data.usage.today} locale={locale} />
+            <UsageRow label={t('agent.month')} usage={data.usage.month} locale={locale} />
+          </SettingsGroup>
+
+          <SettingsGroup
+            title={t('budgetsTitle')}
+            description={t('agent.budgetsHint')}
+            advancedLabel={t('agent.projectBudgetsTitle')}
+            advanced={
+              data.projects.some((project) => project.budgets.length > 0) ? (
+                <div className="space-y-3">
+                  {data.projects
+                    .filter((project) => project.budgets.length > 0)
+                    .map((project) => (
+                      <div key={project.id} className="space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          {t('agent.projectBudgets', { project: project.name })}
+                        </p>
+                        <ul className="space-y-2">
+                          {project.budgets.map((budget) => (
+                            <li key={budget.id} className="space-y-1">
+                              <p className="text-xs">
+                                {t(`metric.${budget.metric}`)} {t(`period.${budget.period}`)}
+                              </p>
+                              <BudgetUsage status={budget} />
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                </div>
+              ) : undefined
+            }
+          >
+            <BudgetFields
+              idPrefix={`agent-${agent.id}-budget`}
+              budgets={data.budgets}
+              draft={draft}
+              disabled={!editable || setBudgets.isPending}
+              onChange={(key, value) => setDraft({ ...draft, [key]: value })}
+            />
+            {editable && (
+              <div className="ds-settings-row is-actions">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={!dirty || setBudgets.isPending}
+                  onClick={() => void saveBudgets()}
+                >
+                  {setBudgets.isPending ? tCommon('saving') : tCommon('save')}
+                </Button>
               </div>
-            ))}
+            )}
+          </SettingsGroup>
         </div>
       )}
     </AgentFormSection>
   );
 }
 
-function UsageCard({ label, usage, locale }: { label: string; usage: Usage; locale: string }) {
+function UsageRow({ label, usage, locale }: { label: string; usage: Usage; locale: string }) {
   return (
-    <div className="space-y-0.5 rounded-md border border-sidebar-border bg-card px-3 py-2">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="text-sm font-medium tabular-nums">
+    <SettingsRow
+      label={label}
+      description={`${formatBudgetAmount('tokens', usage.tokens, locale)} · ${formatBudgetAmount('time', usage.seconds, locale)}`}
+    >
+      <span className="text-sm font-medium tabular-nums">
         {formatBudgetAmount('cost', usage.cost, locale)}
-      </p>
-      <p className="text-xs text-muted-foreground tabular-nums">
-        {formatBudgetAmount('tokens', usage.tokens, locale)} ·{' '}
-        {formatBudgetAmount('time', usage.seconds, locale)}
-      </p>
-    </div>
+      </span>
+    </SettingsRow>
   );
 }

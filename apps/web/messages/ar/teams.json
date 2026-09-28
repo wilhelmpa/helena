@@ -439,7 +439,8 @@
         "idleHours": "{hours, plural, zero {بعد # ساعة} one {بعد ساعة} two {بعد ساعتين} few {بعد # ساعات} many {بعد # ساعة} other {بعد # ساعة}}",
         "model": "النموذج الذي يلخّص",
         "modelDefault": "تلقائي (نموذجه أو الذكاء المحلي)"
-      }
+      },
+      "behaviourTitle": "السلوك"
     },
     "runtimeConflicts": {
       "title": "تم التغيير خارج Helena",
@@ -674,12 +675,14 @@
         },
         "chatReflectionNothing": "لم يُحفظ شيء",
         "chatReflectionMemory": "الذاكرة ({target})",
-        "chatReflectionSkill": "مهارة {target}"
+        "chatReflectionSkill": "مهارة {target}",
+        "chatReflectionWhen": "متى"
       },
       "skillEnabled": "{name} مفعّلة",
       "skillsDisabled": "{count} معطّلة",
       "skillClashes": "{count, plural, zero {لا اسم} one {اسم واحد} two {اسمان} few {# أسماء} many {# اسمًا} other {# اسم}} لأكثر من مهارة. لا يحمّل Hermes أيًا منها عندئذٍ:",
-      "skillClashesFix": "أزل مهارة Helena من الوكيل (فتعمل النسخة المهيأة لـ Hermes) أو أعد تسميتها في مكتبة المهارات."
+      "skillClashesFix": "أزل مهارة Helena من الوكيل (فتعمل النسخة المهيأة لـ Hermes) أو أعد تسميتها في مكتبة المهارات.",
+      "moreToolsets": "{count} أخرى"
     },
     "paused": "متوقف مؤقتًا",
     "pausedNoReason": "متوقف مؤقتًا. لم يُذكر سبب.",
@@ -817,7 +820,16 @@
       "outcome": {
         "queued": "بدأ التشغيل",
         "skipped": "لا شيء للقيام به"
-      }
+      },
+      "intervalLabel": "الفاصل",
+      "intervalHint": "الدقائق بين فحصين. اتركه فارغًا لإيقافه.",
+      "minutes": "دقيقة",
+      "hoursLabel": "ساعات العمل",
+      "hoursHint": "ينبض فقط ضمن هذه الفترة.",
+      "daysHint": "في أي أيام الأسبوع.",
+      "timezoneHint": "للساعات والأيام، مثل Europe/Berlin.",
+      "instructionsHint": "ما يفحصه في كل نبضة. لا يبدأ التشغيل إلا إذا كان هناك ما يُنجز.",
+      "schedule": "الإيقاع"
     },
     "pages": {
       "groups": {
@@ -842,7 +854,8 @@
         "runner": "المشغّل"
       },
       "general": "عام",
-      "generalHint": "الاسم والتعليمات وما يعمل به الوكيل."
+      "generalHint": "الاسم والتعليمات وما يعمل به الوكيل.",
+      "execution": "التنفيذ"
     },
     "overview": {
       "capabilities": "القدرات",

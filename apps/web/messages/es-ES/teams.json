@@ -439,7 +439,8 @@
         "idleHours": "{hours, plural, one {Tras # hora} other {Tras # horas}}",
         "model": "Modelo que resume",
         "modelDefault": "Automático (modelo propio o IA local)"
-      }
+      },
+      "behaviourTitle": "Comportamiento"
     },
     "runtimeConflicts": {
       "title": "Modificado fuera de Helena",
@@ -674,12 +675,14 @@
         },
         "chatReflectionNothing": "Nada guardado",
         "chatReflectionMemory": "Memoria ({target})",
-        "chatReflectionSkill": "Habilidad {target}"
+        "chatReflectionSkill": "Habilidad {target}",
+        "chatReflectionWhen": "Cuándo"
       },
       "skillEnabled": "{name} activada",
       "skillsDisabled": "desactivadas: {count}",
       "skillClashes": "{count, plural, one {Un nombre pertenece} other {# nombres pertenecen}} a más de una habilidad. Hermes no carga ninguna de ellas:",
-      "skillClashesFix": "Quita la habilidad de Helena del agente (entonces sirve la adaptada a Hermes) o cámbiale el nombre en la biblioteca de habilidades."
+      "skillClashesFix": "Quita la habilidad de Helena del agente (entonces sirve la adaptada a Hermes) o cámbiale el nombre en la biblioteca de habilidades.",
+      "moreToolsets": "{count} más"
     },
     "paused": "En pausa",
     "pausedNoReason": "En pausa. No se indicó ningún motivo.",
@@ -817,7 +820,16 @@
       "outcome": {
         "queued": "Ejecución iniciada",
         "skipped": "Nada que hacer"
-      }
+      },
+      "intervalLabel": "Intervalo",
+      "intervalHint": "Minutos entre dos comprobaciones. Déjalo vacío para desactivarlo.",
+      "minutes": "min",
+      "hoursLabel": "Horario",
+      "hoursHint": "Solo late dentro de esta franja.",
+      "daysHint": "Qué días de la semana.",
+      "timezoneHint": "Para horario y días, p. ej. Europe/Berlin.",
+      "instructionsHint": "Qué comprueba en cada latido. Solo se inicia una ejecución si hay algo que hacer.",
+      "schedule": "Ritmo"
     },
     "pages": {
       "groups": {
@@ -842,7 +854,8 @@
         "runner": "Runner"
       },
       "general": "General",
-      "generalHint": "Nombre, instrucciones y con qué trabaja el agente."
+      "generalHint": "Nombre, instrucciones y con qué trabaja el agente.",
+      "execution": "Ejecución"
     },
     "overview": {
       "capabilities": "Capacidades",

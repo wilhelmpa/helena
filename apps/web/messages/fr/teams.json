@@ -439,7 +439,8 @@
         "idleHours": "{hours, plural, one {Après # heure} other {Après # heures}}",
         "model": "Modèle qui résume",
         "modelDefault": "Automatique (son modèle ou l’IA locale)"
-      }
+      },
+      "behaviourTitle": "Comportement"
     },
     "runtimeConflicts": {
       "title": "Modifié hors de Helena",
@@ -674,12 +675,14 @@
         },
         "chatReflectionNothing": "Rien retenu",
         "chatReflectionMemory": "Mémoire ({target})",
-        "chatReflectionSkill": "Compétence {target}"
+        "chatReflectionSkill": "Compétence {target}",
+        "chatReflectionWhen": "Quand"
       },
       "skillEnabled": "{name} activée",
       "skillsDisabled": "désactivées : {count}",
       "skillClashes": "{count, plural, one {Un nom appartient} other {# noms appartiennent}} à plusieurs compétences. Hermes n’en charge alors aucune :",
-      "skillClashesFix": "Retirez la compétence Helena de l’agent (celle adaptée à Hermes prend alors le relais) ou renommez-la dans la bibliothèque."
+      "skillClashesFix": "Retirez la compétence Helena de l’agent (celle adaptée à Hermes prend alors le relais) ou renommez-la dans la bibliothèque.",
+      "moreToolsets": "{count} de plus"
     },
     "paused": "En pause",
     "pausedNoReason": "En pause. Aucune raison indiquée.",
@@ -817,7 +820,16 @@
       "outcome": {
         "queued": "Exécution lancée",
         "skipped": "Rien à faire"
-      }
+      },
+      "intervalLabel": "Intervalle",
+      "intervalHint": "Minutes entre deux vérifications. Laisser vide pour le désactiver.",
+      "minutes": "min",
+      "hoursLabel": "Heures de travail",
+      "hoursHint": "Il ne bat que dans cette plage.",
+      "daysHint": "Quels jours de la semaine.",
+      "timezoneHint": "Pour les heures et les jours, p. ex. Europe/Berlin.",
+      "instructionsHint": "Ce qu’il vérifie à chaque battement. Une exécution ne démarre que s’il y a quelque chose à faire.",
+      "schedule": "Rythme"
     },
     "pages": {
       "groups": {
@@ -842,7 +854,8 @@
         "runner": "Runner"
       },
       "general": "Général",
-      "generalHint": "Nom, consignes et ce avec quoi l’agent travaille."
+      "generalHint": "Nom, consignes et ce avec quoi l’agent travaille.",
+      "execution": "Exécution"
     },
     "overview": {
       "capabilities": "Compétences",

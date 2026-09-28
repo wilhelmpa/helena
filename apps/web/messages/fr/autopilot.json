@@ -128,7 +128,11 @@
     "pausedBecause": "En pause : {reason}",
     "budgetsHint": "Couvre tout ce que fait l’agent : exécutions et chats.",
     "projectBudgets": "Budgets de {project}",
-    "pausedBudget": "En pause : {budget} ({metric}) épuisé, {usage}."
+    "pausedBudget": "En pause : {budget} ({metric}) épuisé, {usage}.",
+    "levelTitle": "Autonomie",
+    "ownHint": "Son degré d’autonomie. « Comme le projet » reprend le niveau de chaque projet.",
+    "effective": "Dans ses projets",
+    "projectBudgetsTitle": "Budgets des projets"
   },
   "card": {
     "title": "Budget épuisé",

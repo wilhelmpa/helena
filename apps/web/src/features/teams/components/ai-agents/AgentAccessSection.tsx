@@ -9,6 +9,7 @@ import {
 import type { AgentFormValue } from '../../utils/agentForm';
 import { AgentFormSection } from './AgentFormSection';
 import { useTranslations } from 'next-intl';
+import { SettingsGroup, SettingsRow } from '@/design-system';
 
 // Who may give an external agent work: its owner alone, or any member of the team. What
 // the agent may do once it has the work is the role its membership carries in each
@@ -35,26 +36,27 @@ export default function AgentAccessSection({
       title={t('access')}
       hint={t('accessHint')}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="min-w-0">
-          <span className="block text-sm font-medium">{t('runnerScope')}</span>
-          <span className="block text-xs text-muted-foreground">
-            {value.runnerScope === 'owner' ? t('runnerScopeOwnerHint') : t('runnerScopeTeamHint')}
-          </span>
-        </div>
-        <Select
-          value={value.runnerScope}
-          onValueChange={(v) => onChange({ runnerScope: v as AgentFormValue['runnerScope'] })}
+      <SettingsGroup>
+        <SettingsRow
+          label={t('runnerScope')}
+          description={
+            value.runnerScope === 'owner' ? t('runnerScopeOwnerHint') : t('runnerScopeTeamHint')
+          }
         >
-          <SelectTrigger className="min-w-[150px]" aria-label={t('runnerScope')}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="owner">{t('runnerScopeOwner')}</SelectItem>
-            <SelectItem value="team">{t('runnerScopeTeam')}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+          <Select
+            value={value.runnerScope}
+            onValueChange={(v) => onChange({ runnerScope: v as AgentFormValue['runnerScope'] })}
+          >
+            <SelectTrigger className="min-w-[150px]" aria-label={t('runnerScope')}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="owner">{t('runnerScopeOwner')}</SelectItem>
+              <SelectItem value="team">{t('runnerScopeTeam')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </SettingsRow>
+      </SettingsGroup>
     </AgentFormSection>
   );
 }

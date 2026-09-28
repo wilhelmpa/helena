@@ -8,6 +8,7 @@ import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
 import { AgentFormSection } from './AgentFormSection';
 import AgentKeyValue from './AgentKeyValue';
 import { useTranslations } from 'next-intl';
+import { SettingsGroup, SettingsRow } from '@/design-system';
 
 // The API key of an external agent. The server keeps only a hash and the key's first
 // characters, so the secret exists for the one moment it is issued: the section shows
@@ -70,12 +71,8 @@ export default function AgentTokenSection({
         ) : agent === null ? (
           <p className="text-xs text-muted-foreground">{t('keyOnCreate')}</p>
         ) : (
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="min-w-0">
-              <span className="block text-sm font-medium">{t('currentKey')}</span>
-              <span className="block text-xs text-muted-foreground">{t('currentKeyHint')}</span>
-            </div>
-            <div className="flex items-center gap-2">
+          <SettingsGroup>
+            <SettingsRow label={t('currentKey')} description={t('currentKeyHint')}>
               <code dir="ltr" className="rounded-md bg-muted px-2.5 py-1.5 font-mono text-xs">
                 {agent.apiKeyStart ?? '—'}
                 <span className="text-muted-foreground">••••••••</span>
@@ -90,8 +87,8 @@ export default function AgentTokenSection({
                   {t('regenerateConfirm')}
                 </Button>
               )}
-            </div>
-          </div>
+            </SettingsRow>
+          </SettingsGroup>
         )}
       </AgentFormSection>
 

@@ -721,6 +721,9 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.ds-overlay .ds-panel-tab-select {
+  padding-inline-end: 10px;
+}
 .ds-panel-tab-close {
   display: flex;
   width: 22px;

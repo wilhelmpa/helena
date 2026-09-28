@@ -15,8 +15,17 @@ const STORAGE_KEY = 'helena:side-panel:width';
 // Set on <html>, so CSS that places the panel reads the same width.
 export const SIDE_PANEL_WIDTH_VAR = '--helena-side-panel-width';
 
+// Overlays that hold a whole form (an agent's settings) open wider and remember their own
+// width; everything else shares one.
+export type SidePanelKind = 'default' | 'wide';
+const DEFAULTS: Record<SidePanelKind, number> = { default: SIDE_PANEL_DEFAULT_WIDTH, wide: 760 };
+const KEYS: Record<SidePanelKind, string> = {
+  default: STORAGE_KEY,
+  wide: `${STORAGE_KEY}:wide`,
+};
+
 const listeners = new Set<() => void>();
-let stored: number | null = null;
+const stored: Record<SidePanelKind, number | null> = { default: null, wide: null };
 
 function viewportMax(): number {
   if (typeof window === 'undefined') return Number.POSITIVE_INFINITY;
@@ -31,16 +40,17 @@ export function clampSidePanelWidth(width: number, max = viewportMax()): number 
   return Math.round(Math.min(max, Math.max(SIDE_PANEL_MIN_WIDTH, width)));
 }
 
-function load(): number {
-  if (stored != null) return stored;
-  let value = SIDE_PANEL_DEFAULT_WIDTH;
+function load(kind: SidePanelKind): number {
+  const known = stored[kind];
+  if (known != null) return known;
+  let value = DEFAULTS[kind];
   try {
-    const saved = Number(localStorage.getItem(STORAGE_KEY));
+    const saved = Number(localStorage.getItem(KEYS[kind]));
     if (saved > 0) value = saved;
   } catch {
     // no storage (private mode): the default applies.
   }
-  stored = value;
+  stored[kind] = value;
   return value;
 }
 
@@ -53,8 +63,9 @@ function subscribe(listener: () => void) {
   const onResize = () => listener();
   window.addEventListener('resize', onResize);
   const onStorage = (event: StorageEvent) => {
-    if (event.key !== STORAGE_KEY) return;
-    stored = null;
+    if (event.key !== KEYS.default && event.key !== KEYS.wide) return;
+    stored.default = null;
+    stored.wide = null;
     listener();
   };
   window.addEventListener('storage', onStorage);
@@ -65,26 +76,32 @@ function subscribe(listener: () => void) {
   };
 }
 
-function snapshot(): number {
-  return clampSidePanelWidth(load());
-}
-
-function setSidePanelWidth(next: number) {
+function setSidePanelWidth(kind: SidePanelKind, next: number) {
   const width = clampSidePanelWidth(next);
-  stored = width;
+  stored[kind] = width;
   try {
-    localStorage.setItem(STORAGE_KEY, String(width));
+    localStorage.setItem(KEYS[kind], String(width));
   } catch {
     // the width still applies for this session.
   }
-  publish(width);
+  if (kind === 'default') publish(width);
   listeners.forEach((listener) => listener());
 }
 
-export function useSidePanelWidth(): { width: number; setWidth: (width: number) => void } {
-  const width = useSyncExternalStore(subscribe, snapshot, () => SIDE_PANEL_DEFAULT_WIDTH);
-  useEffect(() => publish(width), [width]);
-  return { width, setWidth: setSidePanelWidth };
+export function useSidePanelWidth(kind: SidePanelKind = 'default'): {
+  width: number;
+  setWidth: (width: number) => void;
+} {
+  const width = useSyncExternalStore(
+    subscribe,
+    () => clampSidePanelWidth(load(kind)),
+    () => DEFAULTS[kind],
+  );
+  useEffect(() => {
+    if (kind === 'default') publish(width);
+  }, [kind, width]);
+  const setWidth = useCallback((next: number) => setSidePanelWidth(kind, next), [kind]);
+  return { width, setWidth };
 }
 
 // The handle on the left edge: a pill that is always visible, lit on hover and while
@@ -93,12 +110,14 @@ export function useSidePanelWidth(): { width: number; setWidth: (width: number) 
 export function SidePanelResizeHandle({
   className,
   style,
+  kind = 'default',
 }: {
   className?: string;
   style?: CSSProperties;
+  kind?: SidePanelKind;
 }) {
   const t = useTranslations('common');
-  const { width, setWidth } = useSidePanelWidth();
+  const { width, setWidth } = useSidePanelWidth(kind);
   const direction = Direction.useDirection();
   const onDrag = useCallback(
     (deltaX: number) => setWidth(width + (direction === 'rtl' ? deltaX : -deltaX)),

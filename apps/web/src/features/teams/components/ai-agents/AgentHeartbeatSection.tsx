@@ -9,6 +9,7 @@ import { listAgentHeartbeats, type AiAgent } from '@/lib/api/endpoints/agents';
 import { useAgentSection } from '@/features/teams/context/agentSection';
 import type { AgentFormValue } from '../../utils/agentForm';
 import { AgentFormSection } from './AgentFormSection';
+import { SettingsGroup, SettingsRow } from '@/design-system';
 
 const DAYS = [1, 2, 3, 4, 5, 6, 0] as const;
 
@@ -53,49 +54,59 @@ export default function AgentHeartbeatSection({
       open={open}
       onOpenChange={onOpenChange}
     >
-      <div className="ds-heartbeat">
-        <label className="ds-heartbeat-field">
-          <span>{t('interval')}</span>
-          <Input
-            inputMode="numeric"
-            value={value.heartbeatIntervalMinutes}
-            placeholder={t('intervalPlaceholder')}
-            onChange={(event) =>
-              onChange({ heartbeatIntervalMinutes: event.target.value.replace(/\D/g, '') })
-            }
-          />
-        </label>
-        <div className="ds-heartbeat-row">
-          <label className="ds-heartbeat-field">
-            <span>{t('from')}</span>
+      <SettingsGroup
+        advancedLabel={t('history')}
+        advanced={
+          agent && (history.data?.length ?? 0) > 0 ? (
+            <ul className="ds-heartbeat-history" aria-label={t('history')}>
+              {history.data!.slice(0, 8).map((event) => (
+                <li key={event.id}>
+                  <time dateTime={event.checkedAt}>{when(event.checkedAt)}</time>
+                  <span>{t(`outcome.${event.outcome}`)}</span>
+                  <span className="ds-heartbeat-reason">{event.reason}</span>
+                </li>
+              ))}
+            </ul>
+          ) : undefined
+        }
+      >
+        <SettingsRow label={t('intervalLabel')} description={t('intervalHint')}>
+          <span className="ds-inline-unit">
+            <Input
+              className="w-20"
+              inputMode="numeric"
+              aria-label={t('intervalLabel')}
+              value={value.heartbeatIntervalMinutes}
+              placeholder={t('intervalPlaceholder')}
+              onChange={(event) =>
+                onChange({ heartbeatIntervalMinutes: event.target.value.replace(/\D/g, '') })
+              }
+            />
+            {t('minutes')}
+          </span>
+        </SettingsRow>
+        <SettingsRow label={t('hoursLabel')} description={t('hoursHint')}>
+          <span className="ds-inline-unit">
             <Input
               type="time"
+              className="w-28"
+              aria-label={t('from')}
               value={value.heartbeatStart}
               disabled={!on}
               onChange={(event) => onChange({ heartbeatStart: event.target.value })}
             />
-          </label>
-          <label className="ds-heartbeat-field">
-            <span>{t('to')}</span>
+            –
             <Input
               type="time"
+              className="w-28"
+              aria-label={t('to')}
               value={value.heartbeatEnd}
               disabled={!on}
               onChange={(event) => onChange({ heartbeatEnd: event.target.value })}
             />
-          </label>
-          <label className="ds-heartbeat-field">
-            <span>{t('timezone')}</span>
-            <Input
-              dir="ltr"
-              value={value.heartbeatTimezone}
-              disabled={!on}
-              onChange={(event) => onChange({ heartbeatTimezone: event.target.value })}
-            />
-          </label>
-        </div>
-        <div className="ds-heartbeat-field">
-          <span>{t('days')}</span>
+          </span>
+        </SettingsRow>
+        <SettingsRow label={t('days')} description={t('daysHint')}>
           <div className="ds-heartbeat-days" role="group" aria-label={t('days')}>
             {DAYS.map((day) => {
               const active = value.heartbeatDays.includes(day);
@@ -120,44 +131,38 @@ export default function AgentHeartbeatSection({
               );
             })}
           </div>
-        </div>
-        <label className="ds-heartbeat-field">
-          <span>{t('instructions')}</span>
+        </SettingsRow>
+        <SettingsRow label={t('timezone')} description={t('timezoneHint')}>
+          <Input
+            dir="ltr"
+            className="w-44"
+            aria-label={t('timezone')}
+            value={value.heartbeatTimezone}
+            disabled={!on}
+            onChange={(event) => onChange({ heartbeatTimezone: event.target.value })}
+          />
+        </SettingsRow>
+        <SettingsRow label={t('instructions')} description={t('instructionsHint')} stacked>
           <Textarea
             rows={3}
+            aria-label={t('instructions')}
             value={value.heartbeatInstructions}
             disabled={!on}
             placeholder={t('instructionsPlaceholder')}
             onChange={(event) => onChange({ heartbeatInstructions: event.target.value })}
           />
-        </label>
+        </SettingsRow>
         {agent && (
-          <dl className="ds-props">
-            <div className="ds-prop">
-              <dt>{t('last')}</dt>
-              <dd>{when(agent.heartbeatLastAt)}</dd>
-            </div>
-            <div className="ds-prop">
-              <dt>{t('next')}</dt>
-              <dd>{on ? when(agent.heartbeatNextAt) : '–'}</dd>
-            </div>
-          </dl>
+          <SettingsRow
+            label={t('schedule')}
+            description={`${t('last')}: ${when(agent.heartbeatLastAt)}`}
+          >
+            <span className="ds-agent-overview-value">
+              {t('next')}: {on ? when(agent.heartbeatNextAt) : '–'}
+            </span>
+          </SettingsRow>
         )}
-        {agent && (history.data?.length ?? 0) > 0 && (
-          <div className="ds-heartbeat-history">
-            <span className="ds-mono-label">{t('history')}</span>
-            <ul>
-              {history.data!.slice(0, 8).map((event) => (
-                <li key={event.id}>
-                  <time dateTime={event.checkedAt}>{when(event.checkedAt)}</time>
-                  <span>{t(`outcome.${event.outcome}`)}</span>
-                  <span className="ds-heartbeat-reason">{event.reason}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
+      </SettingsGroup>
     </AgentFormSection>
   );
 }

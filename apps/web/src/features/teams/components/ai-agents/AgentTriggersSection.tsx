@@ -11,6 +11,7 @@ import type { AgentFormValue } from '../../utils/agentForm';
 import { AgentDelayInput } from './AgentDelayInput';
 import { AgentFormSection } from './AgentFormSection';
 import { useTranslations } from 'next-intl';
+import { SettingsGroup, SettingsRow } from '@/design-system';
 
 // A member field an agent can be set into, with the project it belongs to: an agent
 // works in several projects of its team, and each has its own fields.
@@ -80,56 +81,51 @@ export default function AgentTriggersSection({
       hint={t('triggersHint')}
       headerRight={`${enabled} / ${2 + memberFields.length}`}
     >
-      <label className="flex cursor-pointer items-center justify-between gap-2">
-        <span>
-          <span className="text-sm">{t('onMention')}</span>
-          <span className="block text-xs text-muted-foreground">{t('onMentionHint')}</span>
-        </span>
-        <Switch
-          checked={value.triggerOnMention}
-          onCheckedChange={(v) => onChange({ triggerOnMention: v })}
-        />
-      </label>
-      <label className="flex cursor-pointer items-center justify-between gap-2">
-        <span>
-          <span className="text-sm">{t('onDelegation')}</span>
-          <span className="block text-xs text-muted-foreground">{t('onDelegationHint')}</span>
-        </span>
-        <Switch
-          checked={value.triggerOnAssign}
-          onCheckedChange={(v) => onChange({ triggerOnAssign: v })}
-        />
-      </label>
-      {value.triggerOnAssign && (
-        <AgentDelayInput
-          id="agent-delegation-delay"
-          value={value.delegationDelayMin}
-          onChange={(v) => onChange({ delegationDelayMin: v })}
-        />
-      )}
-      {memberFields.map(({ field, project }) => {
-        const trigger = value.fieldTriggers.find((tr) => tr.fieldId === field.id);
-        return (
-          <Fragment key={field.id}>
-            <label className="flex cursor-pointer items-center justify-between gap-2">
-              <span>
-                <span className="text-sm">
-                  {t('onFieldSet', { field: `${project.key} · ${field.name}` })}
-                </span>
-                <span className="block text-xs text-muted-foreground">{t('onFieldSetHint')}</span>
-              </span>
-              <Switch checked={trigger != null} onCheckedChange={(v) => toggleField(field.id, v)} />
-            </label>
-            {trigger && (
-              <AgentDelayInput
-                id={`agent-field-delay-${field.id}`}
-                value={trigger.delayMin}
-                onChange={(v) => setFieldDelay(field.id, v)}
-              />
-            )}
-          </Fragment>
-        );
-      })}
+      <SettingsGroup>
+        <SettingsRow label={t('onMention')} description={t('onMentionHint')}>
+          <Switch
+            aria-label={t('onMention')}
+            checked={value.triggerOnMention}
+            onCheckedChange={(v) => onChange({ triggerOnMention: v })}
+          />
+        </SettingsRow>
+        <SettingsRow label={t('onDelegation')} description={t('onDelegationHint')}>
+          <Switch
+            aria-label={t('onDelegation')}
+            checked={value.triggerOnAssign}
+            onCheckedChange={(v) => onChange({ triggerOnAssign: v })}
+          />
+        </SettingsRow>
+        {value.triggerOnAssign && (
+          <AgentDelayInput
+            id="agent-delegation-delay"
+            value={value.delegationDelayMin}
+            onChange={(v) => onChange({ delegationDelayMin: v })}
+          />
+        )}
+        {memberFields.map(({ field, project }) => {
+          const trigger = value.fieldTriggers.find((tr) => tr.fieldId === field.id);
+          const label = t('onFieldSet', { field: `${project.key} · ${field.name}` });
+          return (
+            <Fragment key={field.id}>
+              <SettingsRow label={label} description={t('onFieldSetHint')}>
+                <Switch
+                  aria-label={label}
+                  checked={trigger != null}
+                  onCheckedChange={(v) => toggleField(field.id, v)}
+                />
+              </SettingsRow>
+              {trigger && (
+                <AgentDelayInput
+                  id={`agent-field-delay-${field.id}`}
+                  value={trigger.delayMin}
+                  onChange={(v) => setFieldDelay(field.id, v)}
+                />
+              )}
+            </Fragment>
+          );
+        })}
+      </SettingsGroup>
     </AgentFormSection>
   );
 }

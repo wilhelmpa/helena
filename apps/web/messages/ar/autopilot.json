@@ -128,7 +128,11 @@
     "pausedBecause": "متوقف مؤقتًا: {reason}",
     "budgetsHint": "يشمل كل ما يفعله الوكيل: التشغيلات والمحادثات.",
     "projectBudgets": "ميزانيات {project}",
-    "pausedBudget": "متوقف مؤقتًا: نفدت {budget} ({metric})، {usage}."
+    "pausedBudget": "متوقف مؤقتًا: نفدت {budget} ({metric})، {usage}.",
+    "levelTitle": "الاستقلالية",
+    "ownHint": "مدى استقلاليته. «مثل المشروع» يأخذ مستوى كل مشروع.",
+    "effective": "في مشاريعه",
+    "projectBudgetsTitle": "ميزانيات المشاريع"
   },
   "card": {
     "title": "نفدت الميزانية",

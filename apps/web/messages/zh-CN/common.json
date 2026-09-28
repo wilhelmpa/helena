@@ -291,5 +291,6 @@
     "offline": "离线",
     "done": "完成"
   },
-  "resizeSidePanel": "调整侧边面板宽度"
+  "resizeSidePanel": "调整侧边面板宽度",
+  "advanced": "高级"
 }

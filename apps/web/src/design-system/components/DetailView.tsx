@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 
 // The detail of one thing — a task, an agent, a receipt (docs/design-system.md §4): a
@@ -74,7 +75,7 @@ export function Property({ label, children }: { label: ReactNode; children: Reac
 
 // "Mehr": the rare fields and settings, folded.
 export function More({
-  label = 'Mehr',
+  label,
   children,
   defaultOpen = false,
 }: {
@@ -82,6 +83,7 @@ export function More({
   children: ReactNode;
   defaultOpen?: boolean;
 }) {
+  const t = useTranslations('common');
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="ds-more">
@@ -92,7 +94,7 @@ export function More({
         onClick={() => setOpen(!open)}
       >
         {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        {label}
+        {label ?? t('more')}
       </button>
       {open && <div className="ds-more-body">{children}</div>}
     </div>

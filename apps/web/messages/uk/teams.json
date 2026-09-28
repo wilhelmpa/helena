@@ -439,7 +439,8 @@
         "idleHours": "{hours, plural, one {Через # годину} few {Через # години} many {Через # годин} other {Через # години}}",
         "model": "Модель для підсумку",
         "modelDefault": "Автоматично (власна модель або локальний ШІ)"
-      }
+      },
+      "behaviourTitle": "Поведінка"
     },
     "runtimeConflicts": {
       "title": "Змінено поза Helena",
@@ -674,12 +675,14 @@
         },
         "chatReflectionNothing": "Нічого не збережено",
         "chatReflectionMemory": "Пам’ять ({target})",
-        "chatReflectionSkill": "Навичка {target}"
+        "chatReflectionSkill": "Навичка {target}",
+        "chatReflectionWhen": "Коли"
       },
       "skillEnabled": "{name} увімкнено",
       "skillsDisabled": "вимкнено: {count}",
       "skillClashes": "{count, plural, one {# назва належить} few {# назви належать} many {# назв належать} other {# назви належать}} кільком навичкам. Hermes не завантажує жодної з них:",
-      "skillClashesFix": "Приберіть навичку Helena в агента (тоді працює версія, адаптована для Hermes) або перейменуйте її в бібліотеці навичок."
+      "skillClashesFix": "Приберіть навичку Helena в агента (тоді працює версія, адаптована для Hermes) або перейменуйте її в бібліотеці навичок.",
+      "moreToolsets": "ще {count}"
     },
     "paused": "Призупинено",
     "pausedNoReason": "Призупинено. Причину не вказано.",
@@ -817,7 +820,16 @@
       "outcome": {
         "queued": "Прогін запущено",
         "skipped": "Нічого робити"
-      }
+      },
+      "intervalLabel": "Інтервал",
+      "intervalHint": "Хвилини між двома перевірками. Залиште порожнім, щоб вимкнути.",
+      "minutes": "хв",
+      "hoursLabel": "Робочий час",
+      "hoursHint": "Спрацьовує лише в цьому вікні.",
+      "daysHint": "У які дні тижня.",
+      "timezoneHint": "Для часу й днів, напр. Europe/Berlin.",
+      "instructionsHint": "Що перевіряється на кожному такті. Запуск починається лише тоді, коли є робота.",
+      "schedule": "Такт"
     },
     "pages": {
       "groups": {
@@ -842,7 +854,8 @@
         "runner": "Раннер"
       },
       "general": "Загальне",
-      "generalHint": "Ім’я, інструкції та на чому працює агент."
+      "generalHint": "Ім’я, інструкції та на чому працює агент.",
+      "execution": "Виконання"
     },
     "overview": {
       "capabilities": "Можливості",

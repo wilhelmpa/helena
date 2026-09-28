@@ -128,7 +128,11 @@
     "pausedBecause": "Pausado: {reason}",
     "budgetsHint": "Vale para tudo que o agente faz: execuções e chats.",
     "projectBudgets": "Orçamentos de {project}",
-    "pausedBudget": "Pausado: {budget} ({metric}) esgotado, {usage}."
+    "pausedBudget": "Pausado: {budget} ({metric}) esgotado, {usage}.",
+    "levelTitle": "Autonomia",
+    "ownHint": "Quão autônomo ele age. “Como o projeto” usa o nível de cada projeto.",
+    "effective": "Nos seus projetos",
+    "projectBudgetsTitle": "Orçamentos dos projetos"
   },
   "card": {
     "title": "Orçamento esgotado",

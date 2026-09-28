@@ -128,7 +128,11 @@
     "pausedBecause": "Paused: {reason}",
     "budgetsHint": "Covers everything the agent does: runs and chats.",
     "projectBudgets": "Budgets of {project}",
-    "pausedBudget": "Paused: {budget} ({metric}) used up, {usage}."
+    "pausedBudget": "Paused: {budget} ({metric}) used up, {usage}.",
+    "levelTitle": "Autonomy",
+    "ownHint": "How independently it acts. “Like the project” takes each project’s level.",
+    "effective": "In its projects",
+    "projectBudgetsTitle": "Project budgets"
   },
   "card": {
     "title": "Budget used up",

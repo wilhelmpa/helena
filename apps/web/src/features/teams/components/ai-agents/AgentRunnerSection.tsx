@@ -1,8 +1,9 @@
-import { Code2, Package, Terminal } from 'lucide-react';
+import { Terminal } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { AgentRunnerStatus } from '@/components/common/agent-chat/AgentRunnerStatus';
 import { AgentFormSection } from './AgentFormSection';
+import { SettingsGroup, SettingsRow } from '@/design-system';
 import { AgentRunnerCodeBlock } from './AgentRunnerCodeBlock';
 import { AgentRunnerHelpSheet, RUN_COMMAND } from './AgentRunnerHelpSheet';
 
@@ -31,25 +32,13 @@ export default function AgentRunnerSection({
       // stays visible while the section is collapsed.
       headerRight={<AgentRunnerStatus agent={agent} compact />}
     >
-      <div className="space-y-3">
-        <div className="space-y-2 rounded-md border p-3">
-          <p className="flex items-center gap-1.5 text-sm font-medium">
-            <Package className="size-4 text-muted-foreground" />
-            {t('runnerWayCli')}
-          </p>
-          <p className="text-xs text-muted-foreground">{t('runnerWayCliHint')}</p>
+      <SettingsGroup>
+        <SettingsRow label={t('runnerWayCli')} description={t('runnerWayCliHint')} stacked>
           <AgentRunnerCodeBlock code={RUN_COMMAND} />
           <AgentRunnerHelpSheet />
-        </div>
-
-        <div className="space-y-2 rounded-md border p-3">
-          <p className="flex items-center gap-1.5 text-sm font-medium">
-            <Code2 className="size-4 text-muted-foreground" />
-            {t('runnerWayApi')}
-          </p>
-          <p className="text-xs text-muted-foreground">{t('runnerWayApiHint')}</p>
-        </div>
-      </div>
+        </SettingsRow>
+        <SettingsRow label={t('runnerWayApi')} description={t('runnerWayApiHint')} />
+      </SettingsGroup>
     </AgentFormSection>
   );
 }

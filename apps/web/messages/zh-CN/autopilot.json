@@ -128,7 +128,11 @@
     "pausedBecause": "已暂停：{reason}",
     "budgetsHint": "涵盖智能体的所有工作：运行和聊天。",
     "projectBudgets": "{project} 的预算",
-    "pausedBudget": "已暂停：{budget}（{metric}）已用完，{usage}。"
+    "pausedBudget": "已暂停：{budget}（{metric}）已用完，{usage}。",
+    "levelTitle": "自主程度",
+    "ownHint": "它的自主程度。“与项目相同”采用各项目的级别。",
+    "effective": "在其项目中",
+    "projectBudgetsTitle": "项目预算"
   },
   "card": {
     "title": "预算已用完",

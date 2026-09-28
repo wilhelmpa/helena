@@ -439,7 +439,8 @@
         "idleHours": "{hours, plural, other {# 小时后}}",
         "model": "用于汇总的模型",
         "modelDefault": "自动（自身模型或本地 AI）"
-      }
+      },
+      "behaviourTitle": "行为"
     },
     "runtimeConflicts": {
       "title": "在 Helena 之外被更改",
@@ -674,12 +675,14 @@
         },
         "chatReflectionNothing": "没有记录内容",
         "chatReflectionMemory": "记忆（{target}）",
-        "chatReflectionSkill": "技能 {target}"
+        "chatReflectionSkill": "技能 {target}",
+        "chatReflectionWhen": "何时"
       },
       "skillEnabled": "启用 {name}",
       "skillsDisabled": "已停用 {count} 个",
       "skillClashes": "{count, plural, other {# 个名称}}对应多个技能，Hermes 因此一个都不加载：",
-      "skillClashesFix": "从代理中移除 Helena 技能（改用为 Hermes 适配的版本），或在技能库中重命名。"
+      "skillClashesFix": "从代理中移除 Helena 技能（改用为 Hermes 适配的版本），或在技能库中重命名。",
+      "moreToolsets": "还有 {count} 个"
     },
     "paused": "已暂停",
     "pausedNoReason": "已暂停。未提供原因。",
@@ -817,7 +820,16 @@
       "outcome": {
         "queued": "已启动运行",
         "skipped": "无事可做"
-      }
+      },
+      "intervalLabel": "间隔",
+      "intervalHint": "两次检查之间的分钟数。留空即关闭。",
+      "minutes": "分钟",
+      "hoursLabel": "工作时间",
+      "hoursHint": "只在此时间段内触发。",
+      "daysHint": "在一周中的哪几天。",
+      "timezoneHint": "用于时间和日期，例如 Europe/Berlin。",
+      "instructionsHint": "每次心跳检查什么。只有有事可做时才会启动运行。",
+      "schedule": "节奏"
     },
     "pages": {
       "groups": {
@@ -842,7 +854,8 @@
         "runner": "运行器"
       },
       "general": "常规",
-      "generalHint": "名称、指令以及代理的运行方式。"
+      "generalHint": "名称、指令以及代理的运行方式。",
+      "execution": "执行"
     },
     "overview": {
       "capabilities": "能力",

@@ -439,7 +439,8 @@
         "idleHours": "{hours, plural, one {After # hour} other {After # hours}}",
         "model": "Model that summarises",
         "modelDefault": "Automatic (own model or local AI)"
-      }
+      },
+      "behaviourTitle": "Behaviour"
     },
     "runtimeConflicts": {
       "title": "Changed outside Helena",
@@ -674,12 +675,14 @@
         },
         "chatReflectionNothing": "Nothing kept",
         "chatReflectionMemory": "Memory ({target})",
-        "chatReflectionSkill": "Skill {target}"
+        "chatReflectionSkill": "Skill {target}",
+        "chatReflectionWhen": "When"
       },
       "skillEnabled": "{name} on",
       "skillsDisabled": "{count} off",
       "skillClashes": "{count, plural, one {One name belongs} other {# names belong}} to more than one skill. Hermes then loads none of them:",
-      "skillClashesFix": "Take the Helena skill off the agent (the one adapted to Hermes then serves) or rename it in the skill library."
+      "skillClashesFix": "Take the Helena skill off the agent (the one adapted to Hermes then serves) or rename it in the skill library.",
+      "moreToolsets": "{count} more"
     },
     "paused": "Paused",
     "pausedNoReason": "Paused. No reason was given.",
@@ -817,7 +820,16 @@
       "outcome": {
         "queued": "Run started",
         "skipped": "Nothing to do"
-      }
+      },
+      "intervalLabel": "Interval",
+      "intervalHint": "Minutes between two checks. Leave empty to turn it off.",
+      "minutes": "min",
+      "hoursLabel": "Working hours",
+      "hoursHint": "It beats only inside this window.",
+      "daysHint": "On which weekdays.",
+      "timezoneHint": "For the hours and days, e.g. Europe/Berlin.",
+      "instructionsHint": "What it checks on every beat. A run starts only when there is something to do.",
+      "schedule": "Schedule"
     },
     "pages": {
       "groups": {
@@ -842,7 +854,8 @@
         "runner": "Runner"
       },
       "general": "General",
-      "generalHint": "Name, instructions and what the agent runs on."
+      "generalHint": "Name, instructions and what the agent runs on.",
+      "execution": "Execution"
     },
     "overview": {
       "capabilities": "Capabilities",

@@ -291,5 +291,6 @@
     "offline": "Offline",
     "done": "Done"
   },
-  "resizeSidePanel": "Resize side panel"
+  "resizeSidePanel": "Resize side panel",
+  "advanced": "Advanced"
 }
