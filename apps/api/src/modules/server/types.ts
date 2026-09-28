@@ -46,6 +46,7 @@ export interface HostSystemStatus {
     | null;
   memoryConsumers?: { pid: number; name: string; rssBytes: number }[];
   localAiPreloadRunning?: boolean;
+  localAiServices?: Record<string, { enabled: boolean; active: boolean }>;
   guard?: LocalAiGuard;
   efi: boolean;
 }

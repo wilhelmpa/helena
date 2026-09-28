@@ -528,6 +528,9 @@ class SystemTests(HostTest):
         self.assertEqual([item['evictedMs5m'] for item in third], [None, None])
 
     def test_restart_local_ai_restarts_preload_only_after_lemond(self):
+        self.runner.on('/usr/bin/systemctl', 'show',
+                       '--property=LoadState,UnitFileState,ActiveState', 'lemond.service',
+                       out='LoadState=loaded\nUnitFileState=enabled\nActiveState=active\n')
         self.runner.on('/usr/bin/systemctl', 'restart', '--no-block', 'lemond.service')
         self.runner.on('/usr/bin/systemctl', 'restart', '--no-block', 'helena-ai-preload.service')
         result = service.restart_local_ai(service.Context(self.host, self.config, {}), {})
@@ -535,6 +538,19 @@ class SystemTests(HostTest):
         self.assertEqual(self.runner.called('/usr/bin/systemctl', 'restart'), [
             ['/usr/bin/systemctl', 'restart', '--no-block', 'lemond.service'],
             ['/usr/bin/systemctl', 'restart', '--no-block', 'helena-ai-preload.service'],
+        ])
+
+    def test_restart_local_ai_uses_halogen_when_lemonade_is_disabled(self):
+        self.runner.on('/usr/bin/systemctl', 'show',
+                       '--property=LoadState,UnitFileState,ActiveState', 'lemond.service',
+                       out='LoadState=loaded\nUnitFileState=disabled\nActiveState=inactive\n')
+        self.runner.on('/usr/bin/systemctl', 'show',
+                       '--property=LoadState,UnitFileState,ActiveState', 'helena-halogen.service',
+                       out='LoadState=loaded\nUnitFileState=enabled\nActiveState=active\n')
+        self.runner.on('/usr/bin/systemctl', 'restart', '--no-block', 'helena-halogen.service')
+        self.assertTrue(service.restart_local_ai(service.Context(self.host, self.config, {}), {})['restarted'])
+        self.assertEqual(self.runner.called('/usr/bin/systemctl', 'restart'), [
+            ['/usr/bin/systemctl', 'restart', '--no-block', 'helena-halogen.service'],
         ])
 
     def test_the_gpu_split_is_shown_and_is_not_pressure(self):
@@ -547,6 +563,27 @@ class SystemTests(HostTest):
         self.assertEqual(status['gpuMemory']['vramTotalBytes'], 103079215104)
         self.assertEqual(status['memory']['totalBytes'], 32497680 * 1024)
         self.assertFalse(status['memory']['underPressure'])
+
+    def test_dynamic_uma_keeps_system_ram_and_gtt_separate(self):
+        self.write('/proc/meminfo', 'MemTotal: 121093750 kB\nMemAvailable: 61000000 kB\n')
+        self.write('/sys/class/drm/card0/device/mem_info_vram_total', '536870912\n')
+        self.write('/sys/class/drm/card0/device/mem_info_gtt_total', '128849018880\n')
+        status = system.status(self.host)
+        self.assertEqual(status['memory']['totalBytes'], 121093750 * 1024)
+        self.assertEqual(status['gpuMemory']['vramTotalBytes'], 536870912)
+        self.assertEqual(status['gpuMemory']['gttTotalBytes'], 128849018880)
+
+    def test_disabled_lemonade_and_running_halogen_are_distinct(self):
+        self.runner.on('/usr/bin/systemctl', 'show',
+                       '--property=LoadState,UnitFileState,ActiveState', 'lemond.service',
+                       out='LoadState=loaded\nUnitFileState=disabled\nActiveState=inactive\n')
+        self.runner.on('/usr/bin/systemctl', 'show',
+                       '--property=LoadState,UnitFileState,ActiveState', 'helena-halogen.service',
+                       out='LoadState=loaded\nUnitFileState=enabled\nActiveState=active\n')
+        self.assertEqual(system.status(self.host)['localAiServices'], {
+            'lemonade': {'enabled': False, 'active': False},
+            'halogen': {'enabled': True, 'active': True},
+        })
 
     def test_pressure_from_low_memory_or_stalls(self):
         self.write('/proc/meminfo', 'MemTotal: 32497680 kB\nMemAvailable: 1000000 kB\n')

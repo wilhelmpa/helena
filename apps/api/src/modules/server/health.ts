@@ -414,12 +414,27 @@ export function systemHealth(system: HostSystemStatus): HostHealthItem[] {
       values: { available },
     },
   ];
-  if (system.guard?.problem) {
+  if (
+    system.guard?.problem &&
+    !(system.guard.problem === 'probe' && system.localAiServices?.lemonade?.enabled === false)
+  ) {
     items.push({
       id: 'local-ai:guard',
       state: 'critical',
       code: system.guard.problem === 'eviction' ? 'localAiEviction' : 'localAiProbeSlow',
       values: { available, seconds: Math.ceil((system.guard.probeMs ?? 0) / 1000) },
+    });
+  }
+  for (const [name, service] of Object.entries(system.localAiServices ?? {})) {
+    if (!service.enabled) continue;
+    items.push({
+      id: `local-ai:${name}`,
+      state: service.active ? 'ok' : 'attention',
+      code: service.active ? 'localAiServiceRunning' : 'localAiServiceStopped',
+      values: { name },
+      text: service.active
+        ? { de: `${name} läuft.`, en: `${name} is running.` }
+        : { de: `${name} ist gestoppt.`, en: `${name} is stopped.` },
     });
   }
   return items;

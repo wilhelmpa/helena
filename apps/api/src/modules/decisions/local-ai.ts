@@ -4,7 +4,7 @@ import {
   useModelServerResolver,
 } from '#modules/browser-task/connection';
 import { serverTokenIds } from '#modules/local-ai/service';
-import { LOCAL_AI_DECISIONS_CLASS } from './local-ai-class';
+import { localAiClassForDecision } from './classes';
 import { useDecisionGate } from './service';
 
 // A decision connection "Lokale KI auf diesem Server" goes through Helena's registered local AI
@@ -14,9 +14,9 @@ import { useDecisionGate } from './service';
 // that connection, so decide() tries the fallback connection or the caller keeps its default.
 
 export function useLocalAiForDecisions(): void {
-  useModelServerResolver(async (slug) => {
+  useModelServerResolver(async (slug, classId) => {
     const result = await resolveLocalRoute({
-      classId: LOCAL_AI_DECISIONS_CLASS,
+      classId,
       unit: 'gpu',
       capability: 'chat',
     });
@@ -36,10 +36,11 @@ export function useLocalAiForDecisions(): void {
     return { baseUrl: server.baseUrl, key, model, ...(tokenIds && { tokenIds }) };
   });
   // "Nur lokal" for decisions: nothing of them leaves the machine, the fallback included.
-  useDecisionGate(async ({ local }) => {
+  useDecisionGate(async ({ local, classId }) => {
     if (local) return null;
     const policy = await readLocalAiPolicy();
-    return policy.enabled && policy.classes[LOCAL_AI_DECISIONS_CLASS]?.mode === 'only'
+    const localClass = localAiClassForDecision(classId);
+    return policy.enabled && policy.classes[localClass]?.mode === 'only'
       ? 'Lokale KI: decisions stay on this machine (Nur lokal)'
       : null;
   });

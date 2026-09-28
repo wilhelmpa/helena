@@ -23,7 +23,8 @@ the new unit takes effect at the next restart.
 2. `sudo ./install.sh --dry-run install`, then `sudo ./install.sh install`:
    - image: already present by digest, no download;
    - MTP head and tokenizer: already in `/var/lib/helena-halogen/models`, checked by SHA-256;
-   - `/etc/helena/halogen.conf` with 2 slots / 262,144 positions / 16,384 tokens (as live);
+   - `/etc/helena/halogen.conf` with 2 slots / 262,144 positions / 16,384 tokens and
+     `HALOGEN_REASONING_EFFORT=medium` (an existing file is kept);
    - user `helena-halogen-fwd`, podman network `helena-halogen` (10.89.73.0/29, no DNS);
    - firewall table `inet helena_halogen` loaded (this blocks the test proxy
      `helena-halogen-biasproxy2`: stop it, `systemctl stop helena-halogen-biasproxy2`);

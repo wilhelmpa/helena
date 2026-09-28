@@ -147,6 +147,7 @@ class HalogenInstallTest(unittest.TestCase):
         self.assertIn('HALOGEN_KV_SLOTS=2', conf)
         self.assertIn('HALOGEN_KV_POOL_POSITIONS=262144', conf)
         self.assertIn('HALOGEN_MAX_TOK=16384', conf)
+        self.assertIn('HALOGEN_REASONING_EFFORT=medium', conf)
         # Every setting the file names reaches the container.
         unit = self.render('unit')
         for name in re.findall(r'^#?(HALOGEN_[A-Z_]+)=', conf, re.M):
@@ -171,9 +172,11 @@ class HalogenInstallTest(unittest.TestCase):
                      env={'HELENA_HALOGEN_USERS': 'root no-such-user-helena'})
         uids = re.search(r'elements = \{ ([0-9, ]+) \}', result.stdout.split('halogen_uids')[1]).group(1)
         expected = ['0']
-        forwarder = subprocess.run(['id', '-u', 'helena-halogen-fwd'], capture_output=True, text=True)
-        if forwarder.returncode == 0:
-            expected.append(forwarder.stdout.strip())
+        try:
+            import pwd
+            expected.append(str(pwd.getpwnam('helena-halogen-fwd').pw_uid))
+        except KeyError:
+            pass
         self.assertEqual([u.strip() for u in uids.split(',')], expected)
 
     # ── install ───────────────────────────────────────────────────────────────────────────
@@ -265,6 +268,14 @@ class ProxyUnitsTest(unittest.TestCase):
         self.assertIn('ListenStream=/run/volition-agents/helena-halogen-%i.sock', socket)
         self.assertIn('SocketGroup=volition-agents', socket)
         self.assertIn('SocketMode=0660', socket)
+
+    def test_forwarder_allows_podman_subnet_after_loopback_dnat(self):
+        result = run('render', 'proxy', root=None)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('IPAddressDeny=any', result.stdout)
+        self.assertIn('IPAddressAllow=localhost', result.stdout)
+        self.assertIn('IPAddressAllow=10.89.73.0/29', result.stdout)
+        self.assertNotIn('@SUBNET@', result.stdout)
 
 
 if __name__ == '__main__':

@@ -28,6 +28,12 @@ export const HEARTBEAT_PRECHECK_CLASS = 'routines.precheck';
 export const TASK_TRIAGE_CLASS = 'tasks.triage';
 export const AGENT_ROUTING_CLASS = 'agents.routing';
 
+export function localAiClassForDecision(classId: string): 'triage' | 'decisions' {
+  return classId === MAIL_CLASS || classId === TASK_TRIAGE_CLASS || classId === AGENT_ROUTING_CLASS
+    ? 'triage'
+    : 'decisions';
+}
+
 export const BUILTIN_DECISION_CLASSES: DecisionClass[] = [
   {
     id: HEARTBEAT_PRECHECK_CLASS,
@@ -47,7 +53,7 @@ export const BUILTIN_DECISION_CLASSES: DecisionClass[] = [
       en: 'Suggests responsibility and priority.',
       de: 'Schlägt Zuständigkeit und Priorität vor.',
     },
-    input: { store: 'never', cloud: 'never' },
+    input: { store: 'never', cloud: 'allowed' },
     defaults: { threshold: 0.85, timeoutMs: 5000 },
     eval: TASK_TRIAGE_EVAL,
   },
@@ -58,7 +64,7 @@ export const BUILTIN_DECISION_CLASSES: DecisionClass[] = [
       en: 'Selects an eligible agent for a task.',
       de: 'Wählt einen geeigneten Agenten für eine Aufgabe.',
     },
-    input: { store: 'never', cloud: 'never' },
+    input: { store: 'never', cloud: 'allowed' },
     defaults: { threshold: 0.85, timeoutMs: 5000 },
     eval: AGENT_ROUTING_EVAL,
   },

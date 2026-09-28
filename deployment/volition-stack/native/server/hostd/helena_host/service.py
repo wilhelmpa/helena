@@ -200,7 +200,15 @@ def restart_local_ai(ctx: Context, _: dict) -> dict:
     tool = ctx.host.which('systemctl')
     if not tool:
         raise HostError('NotAvailable', 'systemd is not available')
-    for unit in ('lemond.service', 'helena-ai-preload.service'):
+    services = system.local_ai_services(ctx.host)
+    units = []
+    if services.get('lemonade', {}).get('enabled'):
+        units.extend(('lemond.service', 'helena-ai-preload.service'))
+    if services.get('halogen', {}).get('enabled'):
+        units.append('helena-halogen.service')
+    if not units:
+        raise HostError('NotAvailable', 'No local AI service is enabled')
+    for unit in units:
         result = ctx.host.run([tool, 'restart', '--no-block', unit], timeout=15)
         if result.returncode != 0:
             raise HostError('CommandFailed', f'{unit} could not be restarted')

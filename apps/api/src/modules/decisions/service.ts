@@ -20,7 +20,7 @@ import {
 } from '#modules/browser-task/connection';
 import { recordUsage } from '#modules/agents/usage/service';
 import { costOfUsage } from '#modules/model-prices/service';
-import { decisionClass } from './classes';
+import { decisionClass, localAiClassForDecision } from './classes';
 import { firstStageChatGuard } from './chat-stage';
 import { decisionAttempts } from './attempts';
 import { withStageGuard } from './stage-request';
@@ -264,7 +264,14 @@ export async function usableDecisionConnection(
     return { refused: 'this class may only be answered on this machine or in the LAN' };
   const why = gate ? await gate({ teamId, classId: cls.id, connection, local }) : null;
   if (why) return { refused: why };
-  return { connection };
+  return {
+    connection: {
+      ...connection,
+      ...(connection.keySource === 'local-ai'
+        ? { localAiClassId: localAiClassForDecision(cls.id) }
+        : {}),
+    },
+  };
 }
 
 function emptyOutcome(
