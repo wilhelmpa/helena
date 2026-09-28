@@ -147,7 +147,8 @@
   "projects": {
     "empty": "Cette équipe n’a aucun projet.",
     "instructionsPlaceholder": "Décrivez la mission du projet et ses consignes de fonctionnement.",
-    "assignmentSaved": "Département enregistré"
+    "assignmentSaved": "Département enregistré",
+    "title": "Projets et leur département"
   },
   "map": {
     "empty": "Pas encore de structure d’organisation.",

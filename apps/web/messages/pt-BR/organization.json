@@ -147,7 +147,8 @@
   "projects": {
     "empty": "Esta equipe não tem projetos.",
     "instructionsPlaceholder": "Descreva a missão do projeto e as instruções de operação.",
-    "assignmentSaved": "Departamento salvo"
+    "assignmentSaved": "Departamento salvo",
+    "title": "Projetos e seu departamento"
   },
   "map": {
     "empty": "Ainda não há estrutura organizacional.",

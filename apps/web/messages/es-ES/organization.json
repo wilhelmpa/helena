@@ -147,7 +147,8 @@
   "projects": {
     "empty": "Este equipo no tiene proyectos.",
     "instructionsPlaceholder": "Describe el mandato del proyecto y sus instrucciones de funcionamiento.",
-    "assignmentSaved": "Departamento guardado"
+    "assignmentSaved": "Departamento guardado",
+    "title": "Proyectos y su departamento"
   },
   "map": {
     "empty": "Aún no hay estructura organizativa.",

@@ -147,7 +147,8 @@
   "projects": {
     "empty": "لا توجد مشاريع في هذا الفريق.",
     "instructionsPlaceholder": "صف مهمة المشروع وتعليمات تشغيله.",
-    "assignmentSaved": "تم حفظ القسم"
+    "assignmentSaved": "تم حفظ القسم",
+    "title": "المشاريع وأقسامها"
   },
   "map": {
     "empty": "لا يوجد هيكل تنظيمي بعد.",

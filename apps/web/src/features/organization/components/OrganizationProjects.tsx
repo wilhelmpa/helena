@@ -5,7 +5,7 @@ import { FolderKanban } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { OrganizationDepartment, OrganizationProject } from '@/lib/api/endpoints/organization';
 import OrganizationProjectCard from './OrganizationProjectCard';
-import { EmptyState, List } from '@/design-system';
+import { EmptyState, List, Section } from '@/design-system';
 
 export default function OrganizationProjects({
   teamId,
@@ -27,15 +27,17 @@ export default function OrganizationProjects({
   }
 
   return (
-    <List label={t('fields.department')}>
-      {projects.map((project) => (
-        <OrganizationProjectCard
-          key={project.id}
-          teamId={teamId}
-          project={project}
-          departments={departments}
-        />
-      ))}
-    </List>
+    <Section title={t('projects.title')}>
+      <List label={t('projects.title')}>
+        {projects.map((project) => (
+          <OrganizationProjectCard
+            key={project.id}
+            teamId={teamId}
+            project={project}
+            departments={departments}
+          />
+        ))}
+      </List>
+    </Section>
   );
 }

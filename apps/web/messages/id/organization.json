@@ -147,7 +147,8 @@
   "projects": {
     "empty": "Tim ini tidak memiliki proyek.",
     "instructionsPlaceholder": "Jelaskan mandat proyek dan instruksi operasionalnya.",
-    "assignmentSaved": "Departemen tersimpan"
+    "assignmentSaved": "Departemen tersimpan",
+    "title": "Proyek dan departemennya"
   },
   "map": {
     "empty": "Belum ada struktur organisasi.",

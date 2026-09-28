@@ -147,7 +147,8 @@
   "projects": {
     "empty": "此团队没有项目。",
     "instructionsPlaceholder": "描述项目的使命和运行指令。",
-    "assignmentSaved": "部门已保存"
+    "assignmentSaved": "部门已保存",
+    "title": "项目及其部门"
   },
   "map": {
     "empty": "尚无组织结构。",

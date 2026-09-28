@@ -2237,3 +2237,8 @@ a.ds-run-card:hover {
   max-width: 100%;
   padding-inline-start: 42px;
 }
+
+/* A control in a list row's meta column keeps the text font, not the meta's mono. */
+.ds-list-meta :is(select, input, button) {
+  font-family: var(--font-sans);
+}
