@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
+import { db, helenaLocalAiEval, helenaModelServer } from '@repo/db';
 import { apiKeyApi, authedApi, app } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
@@ -152,6 +153,42 @@ describe('Administrator → Server', () => {
     });
     expect(byKey.status).toBe(403);
     expect(calls.filter((call) => call.method === 'SetFans')).toHaveLength(0);
+  });
+
+  it('restarts local AI only after an interactive owner click', async () => {
+    const calls = fakeHelper({ ...healthy, RestartLocalAi: () => ({ restarted: true }) });
+    const { god } = await setup();
+    expect((await god.api.god.server['local-ai'].restart.post()).status).toBe(403);
+    expect(
+      (await apiKeyApi(await apiKeyOf(god.cookie)).god.server['local-ai'].restart.post()).status,
+    ).toBe(403);
+    expect(calls.filter((entry) => entry.method === 'RestartLocalAi')).toHaveLength(0);
+    expect((await god.interactive.god.server['local-ai'].restart.post()).status).toBe(200);
+    expect(calls.find((entry) => entry.method === 'RestartLocalAi')?.parameters).toEqual({
+      actor: 'root@example.com',
+    });
+    const [server] = await db
+      .insert(helenaModelServer)
+      .values({
+        slug: 'local',
+        kind: 'lemonade',
+        name: 'Test',
+        baseUrl: 'http://127.0.0.1:13305/api/v1',
+        keySource: 'none',
+      })
+      .returning({ id: helenaModelServer.id });
+    await db.insert(helenaLocalAiEval).values({
+      classId: 'decisions',
+      serverId: server!.id,
+      model: 'test',
+      score: 0,
+      threshold: 1,
+      passed: false,
+      cases: 0,
+      status: 'running',
+    });
+    expect((await god.interactive.god.server['local-ai'].restart.post()).status).toBe(409);
+    expect(calls.filter((entry) => entry.method === 'RestartLocalAi')).toHaveLength(1);
   });
 
   it('sets the fans, the profile and the guard through the helper, with the actor', async () => {

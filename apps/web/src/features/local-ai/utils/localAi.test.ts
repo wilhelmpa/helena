@@ -14,6 +14,15 @@ import {
 function status(overrides: Partial<LocalAiStatus['units']> = {}): LocalAiStatus {
   const unit = { allowed: true, present: true, busyPercent: 0, loaded: [] };
   return {
+    guard: {
+      checkedAt: null,
+      probeAt: null,
+      probeMs: null,
+      probeFailures: 0,
+      problem: null,
+      availableBytes: null,
+      consumers: [],
+    },
     enabled: true,
     units: {
       gpu: {
@@ -53,7 +62,7 @@ describe('local AI card helpers', () => {
     );
     const busy = status();
     busy.units.gpu.busyPercent = 60;
-    assert.equal(unitState(busy, 'gpu'), 'busy');
+    assert.equal(unitState(busy, 'gpu'), 'idle');
   });
 
   it('lets a class on only when nothing blocks it, and always off again', () => {

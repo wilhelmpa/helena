@@ -196,7 +196,12 @@
   "problems": {
     "serverDown": "Локальний ШІ: {name} не відповідає",
     "evalFailed": "Локальний ШІ: «{class}» не пройшов оцінку",
-    "evalFailedDetail": "{model} — доки оцінку не пройдено, відповідає налаштована модель"
+    "evalFailedDetail": "{model} — доки оцінку не пройдено, відповідає налаштована модель",
+    "guard": {
+      "eviction": "Local AI is being evicted from the GPU",
+      "probe": "Local AI is answering too slowly",
+      "detail": "Available RAM: {available}. Largest memory users: {consumers}."
+    }
   },
   "thinking": {
     "off": "без міркувань",

@@ -196,7 +196,12 @@
   "problems": {
     "serverDown": "本地 AI：{name} 无响应",
     "evalFailed": "本地 AI：“{class}”未通过评估",
-    "evalFailedDetail": "{model} – 在评估通过之前，由已配置的模型回答"
+    "evalFailedDetail": "{model} – 在评估通过之前，由已配置的模型回答",
+    "guard": {
+      "eviction": "Local AI is being evicted from the GPU",
+      "probe": "Local AI is answering too slowly",
+      "detail": "Available RAM: {available}. Largest memory users: {consumers}."
+    }
   },
   "thinking": {
     "off": "不思考",

@@ -37,6 +37,23 @@ export interface HostSystemStatus {
     gttTotalBytes: number | null;
     gttUsedBytes: number | null;
   } | null;
+  gpuProcesses?:
+    | {
+        gpu: string;
+        pid: number;
+        name: string;
+        evictedTimeMs: number;
+        evictedMs5m: number | null;
+      }[]
+    | null;
+  memoryConsumers?: { pid: number; name: string; rssBytes: number }[];
+  localAiPreloadRunning?: boolean;
+  guard?: {
+    probeAt: string | null;
+    probeMs: number | null;
+    probeFailures: number;
+    problem: 'eviction' | 'probe' | null;
+  };
   efi: boolean;
 }
 
@@ -441,6 +458,8 @@ const json = (method: string, body?: unknown) => ({
 export const getServerOverview = () => request<ServerOverview>('/god/server');
 export const getServerSystem = (refresh?: boolean) =>
   request<HostSystemStatus>(`/god/server/system${fresh(refresh)}`);
+export const restartLocalAi = () =>
+  request<{ restarted: boolean }>('/god/server/local-ai/restart', json('POST'));
 export const getServerDisks = (refresh?: boolean) =>
   request<DisksReading>(`/god/server/disks${fresh(refresh)}`);
 export const getServerPower = (refresh?: boolean) =>

@@ -343,5 +343,27 @@ describe('power and system health', () => {
       state: 'attention',
       code: 'memoryPressure',
     });
+    const guard = {
+      checkedAt: null,
+      probeAt: null,
+      probeMs: 5_000,
+      probeFailures: 3,
+      problem: 'probe' as const,
+      availableBytes: memory.availableBytes,
+      consumers: [],
+    };
+    expect(byId(systemHealth({ ...base, memory, guard }), 'local-ai:guard')).toMatchObject({
+      state: 'critical',
+      code: 'localAiProbeSlow',
+    });
+    expect(
+      byId(
+        systemHealth({ ...base, memory, guard: { ...guard, problem: 'eviction' } }),
+        'local-ai:guard',
+      ),
+    ).toMatchObject({
+      state: 'critical',
+      code: 'localAiEviction',
+    });
   });
 });

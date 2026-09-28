@@ -433,6 +433,40 @@ class GuardTests(HostTest):
 # ── System ───────────────────────────────────────────────────────────────────────────────
 
 class SystemTests(HostTest):
+    def test_reports_a_preload_in_progress(self):
+        self.runner.on('/usr/bin/systemctl', 'show', '--property=ActiveState', '--value',
+                       'helena-ai-preload.service', out='activating\n')
+        self.assertTrue(system.status(self.host)['localAiPreloadRunning'])
+
+    def test_gpu_eviction_is_a_per_process_rolling_five_minute_delta(self):
+        self.programs['amd-smi'] = '/usr/bin/amd-smi'
+        self.runner.on('/usr/bin/amd-smi', 'process', '--json', out=json.dumps([
+            {'GPU': 0, 'PROCESS_INFO': [{'PID': 42, 'NAME': 'llama', 'EVICTED_TIME': '1 min'}]},
+            {'GPU': 1, 'PROCESS_INFO': [{'PID': 42, 'NAME': 'llama', 'EVICTED_TIME': '2 min'}]},
+        ]))
+        first = system.status(self.host, self.config.state_dir)['gpuProcesses']
+        self.assertEqual([item['evictedMs5m'] for item in first], [None, None])
+        self.clock[0] += 60
+        self.runner.on('/usr/bin/amd-smi', 'process', '--json', out=json.dumps([
+            {'GPU': 0, 'PROCESS_INFO': [{'PID': 42, 'NAME': 'llama', 'EVICTED_TIME': '95 s'}]},
+            {'GPU': 1, 'PROCESS_INFO': [{'PID': 42, 'NAME': 'llama', 'EVICTED_TIME': '121 s'}]},
+        ]))
+        second = system.status(self.host, self.config.state_dir)['gpuProcesses']
+        self.assertEqual([item['evictedMs5m'] for item in second], [35_000, 1_000])
+        self.clock[0] += 301
+        third = system.status(self.host, self.config.state_dir)['gpuProcesses']
+        self.assertEqual([item['evictedMs5m'] for item in third], [None, None])
+
+    def test_restart_local_ai_restarts_preload_only_after_lemond(self):
+        self.runner.on('/usr/bin/systemctl', 'restart', '--no-block', 'lemond.service')
+        self.runner.on('/usr/bin/systemctl', 'restart', '--no-block', 'helena-ai-preload.service')
+        result = service.restart_local_ai(service.Context(self.host, self.config, {}), {})
+        self.assertTrue(result['restarted'])
+        self.assertEqual(self.runner.called('/usr/bin/systemctl', 'restart'), [
+            ['/usr/bin/systemctl', 'restart', '--no-block', 'lemond.service'],
+            ['/usr/bin/systemctl', 'restart', '--no-block', 'helena-ai-preload.service'],
+        ])
+
     def test_the_gpu_split_is_shown_and_is_not_pressure(self):
         self.write('/proc/meminfo', 'MemTotal:       32497680 kB\nMemAvailable:   22181656 kB\n')
         self.write('/proc/pressure/memory', 'some avg10=0.00 avg60=0.00 avg300=0.00 total=1\n'

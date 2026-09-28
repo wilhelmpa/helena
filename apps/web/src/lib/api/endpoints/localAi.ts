@@ -130,6 +130,15 @@ export interface LoadedModel {
 }
 
 export interface LocalAiStatus {
+  guard: {
+    checkedAt: string | null;
+    probeAt: string | null;
+    probeMs: number | null;
+    probeFailures: number;
+    problem: 'eviction' | 'probe' | null;
+    availableBytes: number | null;
+    consumers: { pid: number; name: string; rssBytes: number }[];
+  };
   enabled: boolean;
   units: {
     gpu: {

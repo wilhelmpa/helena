@@ -70,7 +70,9 @@
     "localAiServerDown": "الذكاء الاصطناعي المحلي: {name} لا يستجيب",
     "homeHttpsOk": "HTTPS في المنزل ({host}): الشهادة صالحة {days, plural, zero {لأقل من يوم} one {ليوم واحد} two {ليومين} few {لـ # أيام} many {لـ # يوماً} other {لـ # يوم}} أخرى.",
     "homeHttpsExpiring": "HTTPS في المنزل ({host}): تنتهي الشهادة {days, plural, zero {اليوم} one {بعد يوم} two {بعد يومين} few {بعد # أيام} many {بعد # يوماً} other {بعد # يوم}}؛ لم ينجح التجديد.",
-    "homeHttpsInvalid": "HTTPS في المنزل ({host}): {reason, select, expired {انتهت صلاحية الشهادة} name {الشهادة ليست لهذا الاسم} untrusted {الشهادة غير موثوقة} unreachable {غير قابل للوصول} other {غير صالح}}."
+    "homeHttpsInvalid": "HTTPS في المنزل ({host}): {reason, select, expired {انتهت صلاحية الشهادة} name {الشهادة ليست لهذا الاسم} untrusted {الشهادة غير موثوقة} unreachable {غير قابل للوصول} other {غير صالح}}.",
+    "localAiEviction": "Local AI was evicted from the GPU for over 30 seconds in the last five minutes. Available RAM: {available}.",
+    "localAiProbeSlow": "Local AI missed the five-second response limit three times in a row. Available RAM: {available}."
   },
   "overview": {
     "machine": "الجهاز",
@@ -89,7 +91,13 @@
     "swap": "ذاكرة التبديل",
     "swapUsed": "{used} من {total}",
     "health": "الحالة",
-    "helper": "مساعد المضيف {version}"
+    "helper": "مساعد المضيف {version}",
+    "localAiGuard": "Local AI guard",
+    "eviction": "GPU eviction (last 5 min)",
+    "probe": "Probe decision",
+    "notMeasured": "Not measured yet",
+    "restartLocalAi": "Restart local AI",
+    "restartDone": "Restart started; pinned models are being preloaded."
   },
   "disks": {
     "arrays": "المرايا",

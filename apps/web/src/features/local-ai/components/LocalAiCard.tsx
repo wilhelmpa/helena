@@ -171,7 +171,9 @@ function UnitTile({
     <div className="flex min-w-0 flex-col gap-1 rounded-md border px-3 py-2">
       <div className="flex items-center gap-2">
         <span className="font-medium">{t(`units.${unit}`)}</span>
-        <span className="text-xs text-muted-foreground">{t(`unitStates.${state}`)}</span>
+        {unit !== 'gpu' && (
+          <span className="text-xs text-muted-foreground">{t(`unitStates.${state}`)}</span>
+        )}
         <Switch
           className="ms-auto"
           aria-label={t('card.unitSwitch', { unit: t(`units.${unit}`) })}

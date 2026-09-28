@@ -40,6 +40,7 @@ import { host } from '#shared/helena';
 import { HttpError, iso } from '#shared/lib';
 import { joinUrl, openAiEvalContext } from './eval-context';
 import { LEMONADE, LEMONADE_DEFAULT_BASE_URL } from './server-types';
+import { localAiGuard } from './guard';
 
 // Local AI in the API (docs/helena-decisions/local-ai-platform.md): the model servers, their
 // status and models, the policy (master switch, units, task classes), the evals that gate a
@@ -964,7 +965,7 @@ export async function readGpu(root = DRM): Promise<GpuReading> {
     if (vendor !== '0x1002') continue;
     return {
       present: true,
-      busyPercent: await readNumber(join(device, 'gpu_busy_percent')),
+      busyPercent: null,
       vramUsedBytes: await readNumber(join(device, 'mem_info_vram_used')),
       vramTotalBytes: await readNumber(join(device, 'mem_info_vram_total')),
       gttUsedBytes: await readNumber(join(device, 'mem_info_gtt_used')),
@@ -1022,12 +1023,13 @@ export async function localAiStatus() {
   const load = servers.find((server) => server.status?.load)?.status?.load ?? null;
   const unitLoaded = (unit: LocalAiUnit) => loaded.filter((entry) => entry.unit === unit);
   return {
+    guard: localAiGuard(),
     enabled: policy.enabled,
     units: {
       gpu: {
         allowed: policy.units.gpu,
         present: gpu.present,
-        busyPercent: gpu.busyPercent ?? load?.gpuPercent ?? null,
+        busyPercent: null,
         vramUsedBytes: gpu.vramUsedBytes,
         vramTotalBytes: gpu.vramTotalBytes,
         gttUsedBytes: gpu.gttUsedBytes,

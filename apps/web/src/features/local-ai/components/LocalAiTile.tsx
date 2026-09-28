@@ -35,12 +35,8 @@ export default function LocalAiTile() {
         onSelect={() => setOpen(true)}
         label={t('title')}
         value={on ? t('card.on') : t('card.off')}
-        status={!on ? undefined : down ? 'danger' : loaded ? 'running' : 'success'}
-        progress={
-          on && !down && gpu.busyPercent != null
-            ? { percent: gpu.busyPercent, className: 'bg-status-running' }
-            : null
-        }
+        status={!on ? undefined : down ? 'danger' : 'success'}
+        progress={null}
         sub={sub}
         subTone={down ? 'danger' : 'default'}
         title={sub}

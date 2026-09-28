@@ -366,7 +366,7 @@ export function powerHealth(power: PowerStatus): HostHealthItem[] {
 
 export function systemHealth(system: HostSystemStatus): HostHealthItem[] {
   const available = system.memory.availableBytes ?? 0;
-  return [
+  const items: HostHealthItem[] = [
     {
       id: 'memory',
       state: system.memory.underPressure ? 'attention' : 'ok',
@@ -374,4 +374,13 @@ export function systemHealth(system: HostSystemStatus): HostHealthItem[] {
       values: { available },
     },
   ];
+  if (system.guard?.problem) {
+    items.push({
+      id: 'local-ai:guard',
+      state: 'critical',
+      code: system.guard.problem === 'eviction' ? 'localAiEviction' : 'localAiProbeSlow',
+      values: { available, seconds: Math.ceil((system.guard.probeMs ?? 0) / 1000) },
+    });
+  }
+  return items;
 }

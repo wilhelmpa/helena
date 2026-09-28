@@ -8,6 +8,7 @@ import type {
   NeedsYouSourceResult,
 } from '@/extensions/needsYouSources';
 import { resolveLabel, shortModel } from '../utils/localAi';
+import { gib } from '../utils/localAi';
 import { useLocalAiSettings, useLocalAiStatus } from './localAi.service';
 
 export const LOCAL_AI_SETTINGS_PATH = '/god/local-ai';
@@ -53,7 +54,26 @@ function useLocalAiProblems({ owner }: { owner: boolean }): NeedsYouSourceResult
         icon: Cpu,
       };
     });
-  return { entries: [...servers, ...evals], isPending: settings.isPending };
+  const guard = status.data.guard;
+  const guarded: NeedsYouEntry[] = guard.problem
+    ? [
+        {
+          key: 'problem:local-ai:guard',
+          kind: 'problem',
+          at: guard.checkedAt ?? '',
+          title: t(`problems.guard.${guard.problem}`),
+          detail: t('problems.guard.detail', {
+            available: gib(guard.availableBytes),
+            consumers:
+              guard.consumers.map((entry) => `${entry.name} ${gib(entry.rssBytes)}`).join(', ') ||
+              '–',
+          }),
+          href: '/god/server/overview',
+          icon: Cpu,
+        },
+      ]
+    : [];
+  return { entries: [...guarded, ...servers, ...evals], isPending: settings.isPending };
 }
 
 // After the system's (10), the machine's (15) and the host audit's (17) problems, before the
