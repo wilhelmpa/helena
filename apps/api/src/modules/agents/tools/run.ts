@@ -121,7 +121,9 @@ export async function callConfiguredTool(
 ) {
   const agent = await callerAgent(caller.userId);
   if (!agent) return refusal(403, 'Only an agent uses configured tools.');
-  if (caller.agentProject) {
+  // Home is an unscoped tool context, not a project socket membership. The binding
+  // and project-limited credential checks below still require explicit membership.
+  if (caller.agentProject && caller.agentProject !== HOME_SLUG) {
     try {
       await assertAgentOfProject(caller.userId, caller.agentProject);
     } catch {

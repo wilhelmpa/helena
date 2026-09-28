@@ -270,6 +270,7 @@ describe('voice settings', () => {
 describe('the ear on the GPU (whisper.cpp)', () => {
   it('sends the words to know, and drops what Whisper was not sure is speech', async () => {
     const { owner, asOwner } = await setup();
+    expect((await asOwner.account.preferences.patch({ locale: 'de' })).status).toBe(200);
     await asOwner.god.voice.settings.patch({ vocabulary: ['Steuerberater Müller'] });
     await asOwner.god['local-ai'].policy.patch({
       classes: { transcription: { mode: 'prefer', model: 'helena-ear/whisper' } },
