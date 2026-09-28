@@ -411,6 +411,13 @@ export default function ChatComposer({
                   recorder={dictation.recorder}
                   onUnavailable={dictation.onUnavailable}
                   onError={dictation.onError}
+                  onTranscribed={() =>
+                    requestAnimationFrame(() => {
+                      const textarea = textareaRef.current;
+                      textarea?.focus();
+                      textarea?.setSelectionRange(textarea.value.length, textarea.value.length);
+                    })
+                  }
                   onBusyChange={setDictating}
                   labels={{
                     start: dictation.local ? t('composer.dictateLocal') : t('composer.dictate'),

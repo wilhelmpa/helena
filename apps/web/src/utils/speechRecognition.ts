@@ -31,7 +31,7 @@ export function recognitionConstructor(): RecognitionConstructor | undefined {
   return speech.SpeechRecognition ?? speech.webkitSpeechRecognition;
 }
 
-// The page's language for recognition ("de" → "de-DE"), else the browser's.
+// The page's locale fixes the recognition language ("de" → "de-DE").
 export function recognitionLanguage(): string {
   const page = document.documentElement.lang;
   if (page && page.includes('-')) return page;
@@ -47,5 +47,5 @@ export function recognitionLanguage(): string {
     ar: 'ar-SA',
     id: 'id-ID',
   };
-  return (page && regions[page]) || navigator.language || 'de-DE';
+  return (page && regions[page]) || 'de-DE';
 }

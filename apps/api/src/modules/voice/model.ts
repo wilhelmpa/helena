@@ -36,7 +36,10 @@ export const VoiceStatusResponse = t.Object({
 export const transcriptionBody = t.Object({
   file: t.File({ description: 'The recording: uncompressed PCM WAV, ideally 16 kHz mono' }),
   language: t.Optional(
-    t.String({ pattern: '^[a-z]{2}$', description: 'ISO 639-1, e.g. `de`; absent: detected' }),
+    t.String({
+      pattern: '^[a-z]{2}$',
+      description: 'Legacy client hint; the account locale selects the transcription language',
+    }),
   ),
 });
 

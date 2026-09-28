@@ -14,6 +14,7 @@ import { agentChatCatalog, aiAgent, db, getSetting, project, setSetting, user } 
 //               answers typed messages with.
 
 export const VOICE_SETTINGS_KEY = 'voice.settings';
+export const VOICE_GLOSSARY = ['Helena', 'TRADE', 'VERVE', 'Jev', 'Qwen', 'Alpaca'] as const;
 
 export interface VoiceSettings {
   pauseMs: number;
@@ -127,7 +128,10 @@ export async function helenaWords(): Promise<string[]> {
 // The prompt a transcription gets: the owner's words first (they are what he added on purpose),
 // then Helena's. A comma list reads to Whisper like the start of a text that uses the words.
 export function vocabularyPrompt(own: string[], helena: string[]): string | null {
-  const words = uniqueWords([...own, ...helena], VOICE_SETTINGS_LIMITS.vocabularyWords);
+  const words = uniqueWords(
+    [...own, ...VOICE_GLOSSARY, ...helena],
+    VOICE_SETTINGS_LIMITS.vocabularyWords,
+  );
   return words.length ? `${words.join(', ')}.` : null;
 }
 
