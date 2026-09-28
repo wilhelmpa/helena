@@ -61,7 +61,7 @@ import { analyticsRoutes } from './modules/analytics';
 import { chartRoutes } from './modules/charts';
 import { settingsRoutes } from './modules/settings';
 import { godRoutes } from './modules/god';
-import { pluginAdminRoutes, pluginSlotRoutes } from './modules/plugins';
+import { pluginAdminRoutes, pluginSlotRoutes, projectExtensionRoutes } from './modules/plugins';
 import { templateBundleRoutes } from './modules/template-bundles';
 import { modelAvailabilityRoutes } from './modules/model-availability';
 import { localAiRoutes } from './modules/local-ai';
@@ -131,6 +131,7 @@ const plannerOperations = new Elysia({ name: 'planner-operations' })
   .use(godRoutes)
   .use(pluginAdminRoutes)
   .use(pluginSlotRoutes)
+  .use(projectExtensionRoutes)
   .use(templateBundleRoutes)
   .use(modelAvailabilityRoutes)
   .use(localAiRoutes)

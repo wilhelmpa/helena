@@ -57,3 +57,52 @@ export const UiSlotDescriptorSchema = t.Object({
 });
 
 export const UiSlotsResponse = t.Array(UiSlotDescriptorSchema);
+
+// A project's extensions (Projekt › Einstellungen › Erweiterungen).
+const Value = t.Union([t.String(), t.Number(), t.Boolean()]);
+
+export const ExtensionConnectionSchema = t.Object({
+  id: t.Number(),
+  label: t.Nullable(t.String()),
+  values: t.Record(t.String(), Value),
+  secrets: t.Record(t.String(), t.Boolean()),
+});
+
+export const ProjectExtensionsResponse = t.Array(
+  t.Object({
+    id: t.String(),
+    name: LocalizedText,
+    version: t.String(),
+    status: t.String(),
+    connectors: t.Array(
+      t.Object({
+        id: t.String(),
+        label: LocalizedText,
+        description: t.Nullable(LocalizedText),
+        fields: t.Array(
+          t.Object({
+            key: t.String(),
+            label: LocalizedText,
+            type: t.String(),
+            required: t.Boolean(),
+            placeholder: t.Nullable(t.String()),
+            help: t.Nullable(LocalizedText),
+          }),
+        ),
+        connections: t.Array(ExtensionConnectionSchema),
+      }),
+    ),
+  }),
+);
+
+export const ProjectExtensionParams = t.Object({
+  projectKey: t.String(),
+  credentialId: t.Numeric(),
+});
+
+export const ProjectExtensionBody = t.Object({ values: t.Record(t.String(), Value) });
+
+export const ExtensionProjectsResponse = t.Record(
+  t.String(),
+  t.Array(t.Object({ key: t.String(), name: t.String() })),
+);
