@@ -200,6 +200,14 @@ export interface RunDetail {
   issueTitle: string | null;
   prompt: string;
   output: string | null;
+  outputs: {
+    id: number;
+    kind: 'file' | 'preview' | 'pr' | 'screenshot';
+    title: string;
+    target: string;
+    source: 'reported' | 'inferred';
+    createdAt: string;
+  }[];
   lastError: string | null;
   attempts: number;
   resumes: number;

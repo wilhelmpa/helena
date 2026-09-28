@@ -47,6 +47,23 @@
       "approval": "Freigabe-Entscheidung",
       "workspace": "Arbeitsbereich-Auftrag",
       "digest": "Zusammenfassung"
+    },
+    "results": "Ergebnisse",
+    "noSummary": "Noch keine Zusammenfassung.",
+    "noOutputs": "Noch keine Ergebnisse gemeldet.",
+    "steps": "Schritte",
+    "noSteps": "Noch keine Schritte aufgezeichnet.",
+    "rawProtocol": "Rohprotokoll",
+    "outputKind": {
+      "file": "Datei",
+      "preview": "Vorschau",
+      "pr": "Pull Request",
+      "screenshot": "Screenshot"
+    },
+    "stepState": {
+      "running": "Läuft",
+      "done": "Fertig",
+      "failed": "Fehlgeschlagen"
     }
   },
   "sessions": {

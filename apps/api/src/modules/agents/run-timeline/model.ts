@@ -18,6 +18,28 @@ export const RunEventsAckResponse = t.Object({
   hold: t.Optional(t.Boolean()),
 });
 
+export const reportOutputBody = t.Object({
+  kind: t.Union([
+    t.Literal('file'),
+    t.Literal('preview'),
+    t.Literal('pr'),
+    t.Literal('screenshot'),
+  ]),
+  title: t.String({ minLength: 1, maxLength: 200 }),
+  target: t.String({ minLength: 1, maxLength: 2048 }),
+});
+
+export const ReportOutputResponse = t.Object({ ok: t.Boolean() });
+
+const runOutput = t.Object({
+  id: t.Number(),
+  kind: reportOutputBody.properties.kind,
+  title: t.String(),
+  target: t.String(),
+  source: t.Union([t.Literal('reported'), t.Literal('inferred')]),
+  createdAt: t.String(),
+});
+
 export const agentRunParams = t.Object({
   teamId: t.Numeric(),
   agentId: t.Numeric(),
@@ -71,6 +93,7 @@ export const RunDetailResponse = t.Object({
   issueTitle: t.Nullable(t.String()),
   prompt: t.String(),
   output: t.Nullable(t.String()),
+  outputs: t.Array(runOutput),
   lastError: t.Nullable(t.String()),
   attempts: t.Number(),
   resumes: t.Number(),
