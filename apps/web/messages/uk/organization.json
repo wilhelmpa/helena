@@ -242,6 +242,35 @@
     "tokensDay": "{count} tokens/day",
     "tokensMonth": "{count} tokens/month",
     "allProjects": "all projects",
-    "projectDependent": "varies by project"
+    "projectDependent": "varies by project",
+    "viewLabel": "Вигляд",
+    "viewTree": "Дерево",
+    "viewRing": "Коло",
+    "tasksToggle": "Завдання",
+    "searchLabel": "Знайти агента",
+    "searchPlaceholder": "Агент, проєкт …",
+    "levels": "Рівні",
+    "controls": "Масштаб",
+    "zoomIn": "Збільшити",
+    "zoomOut": "Зменшити",
+    "fit": "Показати все",
+    "master": "MASTER",
+    "department": "ВІДДІЛ",
+    "agentCount": "{count, plural, one {# агент} few {# агенти} many {# агентів} other {# агента}}",
+    "openLevel": "Відкрити {name}",
+    "openTask": "Відкрити завдання {identifier}: {title}",
+    "hintGroup": "Клік: відкрити цей рівень",
+    "hintTask": "Клік: відкрити завдання",
+    "hintAgent": "Клік: налаштування · Подвійний клік: власне коло",
+    "tasks": "Завдання",
+    "throttled": "ОБМЕЖЕНО",
+    "offline": "НЕ В МЕРЕЖІ",
+    "filter": {
+      "all": "Усі",
+      "running": "Працює",
+      "waiting": "Чекає на вас",
+      "throttled": "Обмежено",
+      "error": "Помилка"
+    }
   }
 }

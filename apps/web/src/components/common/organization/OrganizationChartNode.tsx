@@ -5,24 +5,32 @@ import { useTranslations } from 'next-intl';
 import Orb from '@/components/helena/Orb';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import type { OrganizationAgent } from '@/lib/api/endpoints/organization';
-import { useAgentStatus, type HelenaStatus } from '@/utils/helenaStatus';
+import { useAgentStatus, type StatusSignals } from '@/utils/helenaStatus';
 
-export type ChartAgentNode = Node<
-  {
-    agent: OrganizationAgent;
-    settings: AiAgent | null;
-    trustLabel: string | null;
-    state: HelenaStatus;
-    decider: string | null;
-    selected: boolean;
-    reportCount: number;
-    showCollapse: boolean;
-    collapsed: boolean;
-    onSelect: (id: number) => void;
-    onToggle: (id: number) => void;
-  },
-  'agent'
->;
+// What every chart node of an agent carries, in the tree and in the ring.
+export interface ChartAgentData extends Record<string, unknown> {
+  agent: OrganizationAgent;
+  settings: AiAgent | null;
+  trustLabel: string | null;
+  signals: StatusSignals;
+  decider: string | null;
+  selected: boolean;
+  dimmed: boolean;
+  reportCount: number;
+  showCollapse: boolean;
+  collapsed: boolean;
+  onToggle: (id: number) => void;
+}
+
+export type ChartAgentNode = Node<ChartAgentData, 'agent'>;
+
+// The shared status of a chart agent: the Orb's state from the same signals the rest
+// of Helena uses (ui-system.md §1).
+export function useChartAgentStatus(data: ChartAgentData) {
+  return useAgentStatus(data.agent.id, data.signals);
+}
+
+const handle = '!h-px !w-px !min-h-0 !min-w-0 !border-0 !bg-transparent';
 
 export default function OrganizationChartNode({ data }: NodeProps<ChartAgentNode>) {
   const t = useTranslations('organization.chart');
@@ -30,25 +38,22 @@ export default function OrganizationChartNode({ data }: NodeProps<ChartAgentNode
     agent,
     settings,
     trustLabel,
-    state,
     decider,
     selected,
+    dimmed,
     reportCount,
     showCollapse,
     collapsed,
-    onSelect,
     onToggle,
   } = data;
-  const status = useAgentStatus(agent.id, {
-    run: state === 'thinking' || state === 'tool' ? 'running' : state,
-    tool: state === 'tool',
-    runtimeStatus: agent.runtimeState.status,
-  });
+  const status = useChartAgentStatus(data);
   const label = agent.isHome
     ? t('home')
     : agent.role === 'coordinator'
       ? t('coordinator')
-      : agent.name;
+      : agent.role === 'reviewer'
+        ? t('reviewer')
+        : t('specialist');
   const model = settings?.model ?? t('standardModel');
   const reasoning = settings?.runtimePolicy.reasoningEffort ?? t('default');
   const trust = settings?.autopilotLevel;
@@ -62,48 +67,62 @@ export default function OrganizationChartNode({ data }: NodeProps<ChartAgentNode
   ]
     .filter(Boolean)
     .join(' · ');
-  const statusColor = `var(--status-${status})`;
+  const statusWord =
+    status === 'thinking' ||
+    status === 'tool' ||
+    status === 'waiting' ||
+    status === 'error' ||
+    status === 'throttled' ||
+    status === 'offline'
+      ? t(status)
+      : null;
   return (
     <div
-      className={`group relative rounded-[18px] border bg-[#111014] px-[18px] text-start shadow-[0_8px_22px_#0003] ${leader ? 'h-[92px] w-[280px] pt-2 pb-4' : 'h-[112px] w-[242px] pt-[14px] pb-4'} ${selected ? 'border-[#ae8bcf] ring-[3px] ring-[#ad8bd822]' : 'border-[#ffffff0f]'}`}
+      data-selected={selected || undefined}
+      className={`organization-card group relative rounded-[18px] border bg-card px-[18px] text-start text-card-foreground shadow-[0_8px_22px_color-mix(in_srgb,var(--foreground)_6%,transparent)] transition-[opacity,border-color,box-shadow] duration-200 ${leader ? 'h-[92px] w-[280px] pt-2 pb-4' : 'h-[112px] w-[242px] pt-[14px] pb-4'} ${selected ? 'border-brand ring-[3px] ring-brand/20' : 'border-border hover:border-muted-foreground/40'} ${dimmed ? 'opacity-30' : ''}`}
     >
+      <Handle type="target" position={Position.Top} className={handle} isConnectable={false} />
       <Handle
+        id="side"
         type="target"
-        position={Position.Top}
-        className="!border-0 !bg-transparent"
+        position={Position.Left}
+        className={handle}
         isConnectable={false}
       />
+      {/* The click reaches the chart (onNodeClick), which tells a click (settings) from a
+          double click (the agent's own ring). */}
       <button
         type="button"
-        onClick={() => onSelect(agent.id)}
-        className="w-full text-start focus-visible:rounded-md focus-visible:outline-2 focus-visible:outline-[#bdaaff]"
+        aria-keyshortcuts="Shift+Enter"
+        className="w-full cursor-pointer text-start focus-visible:rounded-md focus-visible:outline-2 focus-visible:outline-brand"
         aria-pressed={selected}
+        aria-label={agent.name}
       >
-        <span
-          className="flex items-center gap-2 font-mono text-[10px] font-medium tracking-[.13em]"
-          style={{ color: statusColor }}
-        >
+        <span className="flex items-center gap-2 font-mono text-[10px] font-medium tracking-[.13em] text-muted-foreground">
           <Orb
             state={status}
             size="small"
-            className={`organization-orb organization-orb-${state} ${agent.isHome ? 'organization-orb-home' : ''}`}
+            className={`organization-orb organization-orb-${status} ${agent.isHome ? 'organization-orb-home' : ''}`}
           />
-          {label}
+          <span className="truncate">
+            {label}
+            {statusWord ? ` · ${statusWord}` : ''}
+          </span>
         </span>
         <span
-          className={`${leader ? 'mt-2' : 'mt-1'} block truncate text-[15px] font-medium text-[#eeeaf6]`}
+          className={`${leader ? 'mt-2' : 'mt-1'} block truncate text-[15px] font-medium`}
           title={agent.name}
         >
           {agent.name}
         </span>
         <span
-          className="mt-1 block truncate font-mono text-[11px] text-[#88808f]"
+          className="mt-1 block truncate font-mono text-[11px] text-muted-foreground"
           title={modelLine}
         >
           {modelLine}
         </span>
-        {!agent.isHome && agent.role !== 'coordinator' && (
-          <span className="mt-1 block truncate text-[11px] text-[#96919f]">
+        {!leader && (
+          <span className="mt-1 block truncate text-[11px] text-muted-foreground">
             {t('decider')}: {decider ?? t('noDecider')} · {effectiveTrust}
           </span>
         )}
@@ -111,17 +130,24 @@ export default function OrganizationChartNode({ data }: NodeProps<ChartAgentNode
       {showCollapse && reportCount > 0 && (
         <button
           type="button"
-          onClick={() => onToggle(agent.id)}
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggle(agent.id);
+          }}
+          aria-expanded={!collapsed}
           aria-label={t(collapsed ? 'expand' : 'collapse', { name: agent.name })}
-          className="nodrag absolute end-3 top-3 rounded-full px-2 py-0.5 text-xs text-[#96919f] opacity-0 group-hover:opacity-100 hover:bg-[#26212d] hover:text-[#eeeaf6] focus-visible:opacity-100"
+          className={`nodrag absolute end-3 top-2 rounded-full px-2 py-0.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:opacity-100 ${collapsed ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
         >
           {collapsed ? '+' : '−'} {reportCount}
         </button>
       )}
+      <Handle type="source" position={Position.Bottom} className={handle} isConnectable={false} />
       <Handle
+        id="rail"
         type="source"
         position={Position.Bottom}
-        className="!border-0 !bg-transparent"
+        className={handle}
+        style={{ left: 20 }}
         isConnectable={false}
       />
     </div>

@@ -242,6 +242,35 @@
     "tokensDay": "{count} tokens/day",
     "tokensMonth": "{count} tokens/month",
     "allProjects": "all projects",
-    "projectDependent": "varies by project"
+    "projectDependent": "varies by project",
+    "viewLabel": "Vista",
+    "viewTree": "Árbol",
+    "viewRing": "Círculo",
+    "tasksToggle": "Tareas",
+    "searchLabel": "Buscar agente",
+    "searchPlaceholder": "Agente, proyecto …",
+    "levels": "Niveles",
+    "controls": "Zoom",
+    "zoomIn": "Ampliar",
+    "zoomOut": "Reducir",
+    "fit": "Mostrar todo",
+    "master": "MASTER",
+    "department": "DEPARTAMENTO",
+    "agentCount": "{count, plural, one {# agente} other {# agentes}}",
+    "openLevel": "Abrir {name}",
+    "openTask": "Abrir tarea {identifier}: {title}",
+    "hintGroup": "Clic: abrir este nivel",
+    "hintTask": "Clic: abrir la tarea",
+    "hintAgent": "Clic: ajustes · Doble clic: su círculo",
+    "tasks": "Tareas",
+    "throttled": "LIMITADO",
+    "offline": "SIN CONEXIÓN",
+    "filter": {
+      "all": "Todos",
+      "running": "En curso",
+      "waiting": "Te espera",
+      "throttled": "Limitado",
+      "error": "Error"
+    }
   }
 }

@@ -242,6 +242,35 @@
     "tokensDay": "{count} tokens/day",
     "tokensMonth": "{count} tokens/month",
     "allProjects": "all projects",
-    "projectDependent": "varies by project"
+    "projectDependent": "varies by project",
+    "viewLabel": "View",
+    "viewTree": "Tree",
+    "viewRing": "Circle",
+    "tasksToggle": "Tasks",
+    "searchLabel": "Search agents",
+    "searchPlaceholder": "Agent, project …",
+    "levels": "Levels",
+    "controls": "Zoom",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "fit": "Show all",
+    "master": "MASTER",
+    "department": "DEPARTMENT",
+    "agentCount": "{count, plural, one {# agent} other {# agents}}",
+    "openLevel": "Open {name}",
+    "openTask": "Open task {identifier}: {title}",
+    "hintGroup": "Click: open this level",
+    "hintTask": "Click: open the task",
+    "hintAgent": "Click: settings · Double-click: own circle",
+    "tasks": "Tasks",
+    "throttled": "THROTTLED",
+    "offline": "OFFLINE",
+    "filter": {
+      "all": "All",
+      "running": "Running",
+      "waiting": "Waiting for you",
+      "throttled": "Throttled",
+      "error": "Error"
+    }
   }
 }

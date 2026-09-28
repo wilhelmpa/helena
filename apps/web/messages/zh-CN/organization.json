@@ -242,6 +242,35 @@
     "tokensDay": "{count} tokens/day",
     "tokensMonth": "{count} tokens/month",
     "allProjects": "all projects",
-    "projectDependent": "varies by project"
+    "projectDependent": "varies by project",
+    "viewLabel": "视图",
+    "viewTree": "树状",
+    "viewRing": "环形",
+    "tasksToggle": "任务",
+    "searchLabel": "搜索代理",
+    "searchPlaceholder": "代理、项目 …",
+    "levels": "层级",
+    "controls": "缩放",
+    "zoomIn": "放大",
+    "zoomOut": "缩小",
+    "fit": "全部显示",
+    "master": "主控",
+    "department": "部门",
+    "agentCount": "{count, plural, other {# 个代理}}",
+    "openLevel": "打开 {name}",
+    "openTask": "打开任务 {identifier}：{title}",
+    "hintGroup": "单击：打开此层级",
+    "hintTask": "单击：打开任务",
+    "hintAgent": "单击：设置 · 双击：自身环形",
+    "tasks": "任务",
+    "throttled": "已限流",
+    "offline": "离线",
+    "filter": {
+      "all": "全部",
+      "running": "运行中",
+      "waiting": "等待你",
+      "throttled": "已限流",
+      "error": "错误"
+    }
   }
 }

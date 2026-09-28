@@ -242,6 +242,35 @@
     "tokensDay": "{count} tokens/day",
     "tokensMonth": "{count} tokens/month",
     "allProjects": "all projects",
-    "projectDependent": "varies by project"
+    "projectDependent": "varies by project",
+    "viewLabel": "Вид",
+    "viewTree": "Дерево",
+    "viewRing": "Круг",
+    "tasksToggle": "Задачи",
+    "searchLabel": "Найти агента",
+    "searchPlaceholder": "Агент, проект …",
+    "levels": "Уровни",
+    "controls": "Масштаб",
+    "zoomIn": "Увеличить",
+    "zoomOut": "Уменьшить",
+    "fit": "Показать всё",
+    "master": "MASTER",
+    "department": "ОТДЕЛ",
+    "agentCount": "{count, plural, one {# агент} few {# агента} many {# агентов} other {# агента}}",
+    "openLevel": "Открыть {name}",
+    "openTask": "Открыть задачу {identifier}: {title}",
+    "hintGroup": "Клик: открыть этот уровень",
+    "hintTask": "Клик: открыть задачу",
+    "hintAgent": "Клик: настройки · Двойной клик: свой круг",
+    "tasks": "Задачи",
+    "throttled": "ОГРАНИЧЕН",
+    "offline": "НЕ В СЕТИ",
+    "filter": {
+      "all": "Все",
+      "running": "Работает",
+      "waiting": "Ждёт вас",
+      "throttled": "Ограничен",
+      "error": "Ошибка"
+    }
   }
 }

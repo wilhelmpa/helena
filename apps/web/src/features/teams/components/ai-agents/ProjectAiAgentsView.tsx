@@ -72,11 +72,7 @@ export default function ProjectAiAgentsView({
         ) : (
           <AgentSectionProvider teamId={teamId} permissions={permissions}>
             {organization.data ? (
-              <OrganizationChart
-                organization={organization.data}
-                projectId={projectId}
-                onEdit={setEditingId}
-              />
+              <OrganizationChart organization={organization.data} projectId={projectId} />
             ) : organization.isPending ? (
               <ListSkeleton rows={4} rowClassName="h-12" />
             ) : (

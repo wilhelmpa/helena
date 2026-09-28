@@ -242,6 +242,35 @@
     "tokensDay": "{count} tokens/day",
     "tokensMonth": "{count} tokens/month",
     "allProjects": "all projects",
-    "projectDependent": "varies by project"
+    "projectDependent": "varies by project",
+    "viewLabel": "العرض",
+    "viewTree": "شجرة",
+    "viewRing": "دائرة",
+    "tasksToggle": "المهام",
+    "searchLabel": "البحث عن وكيل",
+    "searchPlaceholder": "وكيل، مشروع …",
+    "levels": "المستويات",
+    "controls": "التكبير",
+    "zoomIn": "تكبير",
+    "zoomOut": "تصغير",
+    "fit": "عرض الكل",
+    "master": "الرئيسي",
+    "department": "القسم",
+    "agentCount": "{count, plural, zero {لا وكلاء} one {وكيل واحد} two {وكيلان} few {# وكلاء} many {# وكيلًا} other {# وكيل}}",
+    "openLevel": "فتح {name}",
+    "openTask": "فتح المهمة {identifier}: {title}",
+    "hintGroup": "نقرة: فتح هذا المستوى",
+    "hintTask": "نقرة: فتح المهمة",
+    "hintAgent": "نقرة: الإعدادات · نقرتان: دائرته",
+    "tasks": "المهام",
+    "throttled": "مقيّد",
+    "offline": "غير متصل",
+    "filter": {
+      "all": "الكل",
+      "running": "قيد التشغيل",
+      "waiting": "بانتظارك",
+      "throttled": "مقيّد",
+      "error": "خطأ"
+    }
   }
 }
