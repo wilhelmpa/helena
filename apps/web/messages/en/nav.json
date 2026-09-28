@@ -218,7 +218,8 @@
       "chat-left": "Chat on the left",
       "chat-tool": "Chat + tool",
       "two-tools": "Two tools",
-      "tool-full": "Tool full size"
+      "tool-full": "Tool full size",
+      "page-tool-half": "Split 50/50"
     },
     "tools": "Tools",
     "pickTool": "{tool} · change tool",
@@ -230,5 +231,16 @@
     "resizeArea": "Resize"
   },
   "receipts": "Receipts",
-  "browserLab": "Browser 2.0"
+  "browserLab": "Browser 2.0",
+  "panelTabs": {
+    "tabs": "Tools",
+    "addTab": "Add tab",
+    "browserTab": "Browser tab",
+    "side": "Side panel",
+    "split": "Split 50/50",
+    "full": "Full screen",
+    "close": "Close panel",
+    "closeTab": "Close {tab}",
+    "reloadView": "Reload view"
+  }
 }

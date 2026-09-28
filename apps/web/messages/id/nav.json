@@ -218,7 +218,8 @@
       "chat-left": "Chat di kiri",
       "chat-tool": "Chat + alat",
       "two-tools": "Dua alat",
-      "tool-full": "Alat layar penuh"
+      "tool-full": "Alat layar penuh",
+      "page-tool-half": "Terbagi 50/50"
     },
     "tools": "Alat",
     "pickTool": "{tool} · ganti alat",
@@ -230,5 +231,16 @@
     "resizeArea": "Ubah lebar"
   },
   "receipts": "Bukti",
-  "browserLab": "Browser 2.0"
+  "browserLab": "Browser 2.0",
+  "panelTabs": {
+    "tabs": "Tools",
+    "addTab": "Add tab",
+    "browserTab": "Browser tab",
+    "side": "Side panel",
+    "split": "Split 50/50",
+    "full": "Full screen",
+    "close": "Close panel",
+    "closeTab": "Close {tab}",
+    "reloadView": "Reload view"
+  }
 }

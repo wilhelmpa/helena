@@ -218,7 +218,8 @@
       "chat-left": "Чат слева",
       "chat-tool": "Чат + инструмент",
       "two-tools": "Два инструмента",
-      "tool-full": "Инструмент на весь экран"
+      "tool-full": "Инструмент на весь экран",
+      "page-tool-half": "Разделение 50/50"
     },
     "tools": "Инструменты",
     "pickTool": "{tool} · сменить инструмент",
@@ -230,5 +231,16 @@
     "resizeArea": "Изменить ширину"
   },
   "receipts": "Чеки",
-  "browserLab": "Browser 2.0"
+  "browserLab": "Browser 2.0",
+  "panelTabs": {
+    "tabs": "Tools",
+    "addTab": "Add tab",
+    "browserTab": "Browser tab",
+    "side": "Side panel",
+    "split": "Split 50/50",
+    "full": "Full screen",
+    "close": "Close panel",
+    "closeTab": "Close {tab}",
+    "reloadView": "Reload view"
+  }
 }

@@ -218,7 +218,8 @@
       "chat-left": "Chat links",
       "chat-tool": "Chat + Werkzeug",
       "two-tools": "Zwei Werkzeuge",
-      "tool-full": "Werkzeug groß"
+      "tool-full": "Werkzeug groß",
+      "page-tool-half": "Geteilt 50/50"
     },
     "tools": "Werkzeuge",
     "pickTool": "{tool} · Werkzeug wechseln",
@@ -230,5 +231,16 @@
     "resizeArea": "Breite ändern"
   },
   "receipts": "Belege",
-  "browserLab": "Browser 2.0"
+  "browserLab": "Browser 2.0",
+  "panelTabs": {
+    "tabs": "Werkzeuge",
+    "addTab": "Tab hinzufügen",
+    "browserTab": "Browser-Tab",
+    "side": "Seitenfeld",
+    "split": "Geteilt 50/50",
+    "full": "Vollbild",
+    "close": "Panel schließen",
+    "closeTab": "{tab} schließen",
+    "reloadView": "Ansicht neu laden"
+  }
 }

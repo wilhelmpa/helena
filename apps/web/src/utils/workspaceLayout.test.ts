@@ -35,6 +35,15 @@ const shape = (resolved: ReturnType<typeof resolve>) =>
   resolved.areas.map((area) => `${area.id}:${area.tool ?? 'page'}${area.fill ? '*' : ''}`);
 
 describe('resolveWorkspaceLayout', () => {
+  it('offers a 50/50 page and tool layout without losing the existing layouts', () => {
+    assert.deepEqual(shape(resolve('page-tool-half')), ['page:page*', 'main:browser']);
+    assert.deepEqual(shape(resolve('two-tools')), [
+      'page:page*',
+      'main:browser',
+      'second:terminal',
+    ]);
+    assert.equal(resolve('tool-full').full, true);
+  });
   it('shows the standard layout as page | tool, and the page alone while the panel is closed', () => {
     assert.deepEqual(shape(resolve('standard')), ['page:page*', 'main:browser']);
     const closed = resolve('standard', { open: false });

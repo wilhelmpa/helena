@@ -1,9 +1,9 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { Plus } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
-import { Plus } from 'lucide-react';
 import Orb from '@/components/helena/Orb';
 import { useAgentStatus } from '@/utils/helenaStatus';
 import { useChatWorkspaceScope } from '@/features/ai-chat/hooks/useChatWorkspaceScope';
@@ -36,16 +36,16 @@ export default function HomeDock({
   );
   if (pathname === '/' || open) return null;
   return (
-    <div className="helena-home-dock-actions">
+    <>
       {onNewIssue && (
         <button
           type="button"
-          className="helena-home-dock-create"
+          className="helena-home-dock-plus"
           aria-label={tIssue('newIssue')}
           title={tIssue('newIssue')}
           onClick={onNewIssue}
         >
-          <Plus size={22} strokeWidth={2.5} />
+          <Plus size={24} />
         </button>
       )}
       <button
@@ -67,6 +67,6 @@ export default function HomeDock({
       >
         <Orb state={status} size="medium" />
       </button>
-    </div>
+    </>
   );
 }
