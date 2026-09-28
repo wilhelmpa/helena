@@ -247,5 +247,25 @@
     "scope": "Gilt für die optionale Chat-Vorentscheidung. Team-, Klassen- und Datenschutzfreigaben gelten weiterhin. Ein und Erben folgen der Teamfreigabe.",
     "needsChat": "Starte oder öffne zuerst einen Chat.",
     "usage": "Verwende /jev on, /jev off oder /jev inherit. /jev zeigt den gespeicherten Wert."
+  },
+  "runtimePicker": {
+    "summary": "Agenten-Standard",
+    "runtime": "Ausführung",
+    "model": "Modell",
+    "reasoning": "Denktiefe",
+    "hermes": "Hermes (Cloud)",
+    "claude": "Claude Code",
+    "codex": "Codex",
+    "local": "Lokal",
+    "localMissing": "Lokales Modell nicht geladen",
+    "unavailable": "Derzeit nicht verfügbar",
+    "change": "Ausführung ändern…",
+    "title": "Ausführung ändern",
+    "scope": "Gilt für diesen Agenten (alle Chats). Nach der Bestätigung beginnt ein neuer Chat.",
+    "cancel": "Abbrechen",
+    "confirm": "Bestätigen und neuen Chat starten",
+    "via": "via",
+    "unknownRuntime": "Ausführung unbekannt",
+    "unknownModel": "Modell unbekannt"
   }
 }

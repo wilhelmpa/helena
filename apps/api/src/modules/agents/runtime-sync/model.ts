@@ -125,6 +125,7 @@ export const runModelReport = t.Object({
 // The configured model and reasoning of a run next to what really ran.
 export const modelCheck = t.Object(
   {
+    runtime: t.Optional(t.String()),
     configured: t.Object({
       model: t.Nullable(t.String()),
       reasoning: t.Nullable(t.String()),
