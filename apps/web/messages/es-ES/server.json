@@ -70,6 +70,8 @@
     "healthFailed": "No se pudo leer el estado.",
     "localAiServerUp": "IA local: {name} está accesible",
     "localAiServerDown": "IA local: {name} no responde",
+    "localAiServiceRunning": "IA local: {name} está en ejecución",
+    "localAiServiceStopped": "IA local: {name} está detenido",
     "homeHttpsOk": "HTTPS en casa ({host}): certificado válido {days, plural, one {# día más} other {# días más}}.",
     "homeHttpsExpiring": "HTTPS en casa ({host}): el certificado caduca en {days, plural, one {# día} other {# días}}; la renovación no funcionó.",
     "homeHttpsInvalid": "HTTPS en casa ({host}): {reason, select, expired {certificado caducado} name {el certificado no es para este nombre} untrusted {certificado no fiable} unreachable {no accesible} other {no válido}}.",

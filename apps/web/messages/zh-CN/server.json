@@ -70,6 +70,8 @@
     "healthFailed": "无法读取健康状态。",
     "localAiServerUp": "本地 AI：{name} 可访问",
     "localAiServerDown": "本地 AI：{name} 无响应",
+    "localAiServiceRunning": "本地 AI：{name} 正在运行",
+    "localAiServiceStopped": "本地 AI：{name} 已停止",
     "homeHttpsOk": "家庭 HTTPS（{host}）：证书还有 {days} 天有效。",
     "homeHttpsExpiring": "家庭 HTTPS（{host}）：证书将在 {days} 天后过期；续期没有成功。",
     "homeHttpsInvalid": "家庭 HTTPS（{host}）：{reason, select, expired {证书已过期} name {证书不适用于此名称} untrusted {证书不受信任} unreachable {无法访问} other {无效}}。",

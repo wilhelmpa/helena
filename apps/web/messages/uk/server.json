@@ -70,6 +70,8 @@
     "healthFailed": "Не вдалося прочитати стан.",
     "localAiServerUp": "Локальний ШІ: {name} доступний",
     "localAiServerDown": "Локальний ШІ: {name} не відповідає",
+    "localAiServiceRunning": "Локальний ШІ: {name} працює",
+    "localAiServiceStopped": "Локальний ШІ: {name} зупинено",
     "homeHttpsOk": "HTTPS удома ({host}): сертифікат дійсний ще {days, plural, one {# день} few {# дні} many {# днів} other {# дня}}.",
     "homeHttpsExpiring": "HTTPS удома ({host}): сертифікат спливає через {days, plural, one {# день} few {# дні} many {# днів} other {# дня}}; поновлення не спрацювало.",
     "homeHttpsInvalid": "HTTPS удома ({host}): {reason, select, expired {сертифікат сплив} name {сертифікат не для цього імені} untrusted {сертифікату не можна довіряти} unreachable {недоступний} other {недійсний}}.",

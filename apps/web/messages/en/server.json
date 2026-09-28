@@ -70,6 +70,8 @@
     "healthFailed": "The health could not be read.",
     "localAiServerUp": "Local AI: {name} is reachable",
     "localAiServerDown": "Local AI: {name} does not answer",
+    "localAiServiceRunning": "Local AI: {name} is running",
+    "localAiServiceStopped": "Local AI: {name} is stopped",
     "homeHttpsOk": "HTTPS at home ({host}): certificate valid for {days, plural, one {# more day} other {# more days}}.",
     "homeHttpsExpiring": "HTTPS at home ({host}): certificate expires in {days, plural, one {# day} other {# days}}; the renewal did not work.",
     "homeHttpsInvalid": "HTTPS at home ({host}): {reason, select, expired {certificate expired} name {certificate is not for this name} untrusted {certificate not trusted} unreachable {not reachable} other {invalid}}.",

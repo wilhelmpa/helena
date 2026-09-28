@@ -72,6 +72,8 @@
     "healthFailed": "Der Zustand konnte nicht gelesen werden.",
     "localAiServerUp": "Lokale KI: {name} ist erreichbar",
     "localAiServerDown": "Lokale KI: {name} antwortet nicht",
+    "localAiServiceRunning": "Lokale KI: {name} läuft",
+    "localAiServiceStopped": "Lokale KI: {name} ist gestoppt",
     "homeHttpsOk": "HTTPS zu Hause ({host}): Zertifikat noch {days, plural, one {# Tag} other {# Tage}} gültig.",
     "homeHttpsExpiring": "HTTPS zu Hause ({host}): Zertifikat läuft in {days, plural, one {# Tag} other {# Tagen}} ab – die Erneuerung hat nicht geklappt.",
     "homeHttpsInvalid": "HTTPS zu Hause ({host}): {reason, select, expired {Zertifikat abgelaufen} name {Zertifikat gilt nicht für diesen Namen} untrusted {Zertifikat nicht vertrauenswürdig} unreachable {nicht erreichbar} other {ungültig}}."

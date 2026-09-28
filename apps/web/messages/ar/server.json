@@ -70,6 +70,8 @@
     "healthFailed": "الحالة متقريتش.",
     "localAiServerUp": "الذكاء الاصطناعي المحلي: {name} متاح",
     "localAiServerDown": "الذكاء الاصطناعي المحلي: {name} لا يستجيب",
+    "localAiServiceRunning": "الذكاء الاصطناعي المحلي: {name} قيد التشغيل",
+    "localAiServiceStopped": "الذكاء الاصطناعي المحلي: {name} متوقف",
     "homeHttpsOk": "HTTPS في المنزل ({host}): الشهادة صالحة {days, plural, zero {لأقل من يوم} one {ليوم واحد} two {ليومين} few {لـ # أيام} many {لـ # يوماً} other {لـ # يوم}} أخرى.",
     "homeHttpsExpiring": "HTTPS في المنزل ({host}): تنتهي الشهادة {days, plural, zero {اليوم} one {بعد يوم} two {بعد يومين} few {بعد # أيام} many {بعد # يوماً} other {بعد # يوم}}؛ لم ينجح التجديد.",
     "homeHttpsInvalid": "HTTPS في المنزل ({host}): {reason, select, expired {انتهت صلاحية الشهادة} name {الشهادة ليست لهذا الاسم} untrusted {الشهادة غير موثوقة} unreachable {غير قابل للوصول} other {غير صالح}}.",

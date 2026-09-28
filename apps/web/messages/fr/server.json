@@ -70,6 +70,8 @@
     "healthFailed": "L’état n’a pas pu être lu.",
     "localAiServerUp": "IA locale : {name} est joignable",
     "localAiServerDown": "IA locale : {name} ne répond pas",
+    "localAiServiceRunning": "IA locale : {name} est en cours d’exécution",
+    "localAiServiceStopped": "IA locale : {name} est arrêté",
     "homeHttpsOk": "HTTPS à la maison ({host}) : certificat valide encore {days, plural, one {# jour} other {# jours}}.",
     "homeHttpsExpiring": "HTTPS à la maison ({host}) : le certificat expire dans {days, plural, one {# jour} other {# jours}} ; le renouvellement n’a pas fonctionné.",
     "homeHttpsInvalid": "HTTPS à la maison ({host}) : {reason, select, expired {certificat expiré} name {le certificat n’est pas pour ce nom} untrusted {certificat non fiable} unreachable {injoignable} other {invalide}}.",
