@@ -116,7 +116,27 @@
     "keyFile": "Файл ключа (у /etc/helena)",
     "key": "Ключ",
     "cancel": "Скасувати",
-    "save": "Додати"
+    "save": "Додати",
+    "edit": "Змінити сервер",
+    "editTitle": "Змінити {name}",
+    "saveChanges": "Зберегти",
+    "keyKept": "Збережений ключ залишиться",
+    "contextLength": "Контекст у токенах (для агентів)",
+    "capabilities": {
+      "title": "Можливості чат-моделей",
+      "own": "Задано тут",
+      "derived": "Від сервера",
+      "tools": "Інструменти",
+      "reasoning": "Міркування",
+      "vision": "Зображення"
+    },
+    "load": {
+      "speed": "{output} токенів/с виведення, {prompt} токенів/с введення",
+      "slots": "зайнято {busy} з {slots} слотів, очікують {queued}",
+      "memory": "{gb} ГБ пам’яті",
+      "kv": "KV-кеш {percent} %",
+      "gpu": "GPU {percent} %"
+    }
   },
   "presets": {
     "title": "Передустановка",
@@ -132,6 +152,7 @@
   },
   "serverTypes": {
     "lemonade": "Lemonade Server (GPU + NPU)",
+    "halogen": "Halogen (Qwen3.8-Flash-Next, GPU)",
     "openaiCompatible": "Сервер, сумісний з OpenAI",
     "whisperCpp": "whisper.cpp (розпізнавання мовлення, GPU)",
     "qwenTts": "Qwen3-TTS (голос, GPU)"

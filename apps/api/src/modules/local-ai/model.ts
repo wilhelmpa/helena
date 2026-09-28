@@ -42,8 +42,42 @@ const load = t.Nullable(
     cpuPercent: t.Nullable(t.Number()),
     vramGb: t.Nullable(t.Number()),
     memoryGb: t.Nullable(t.Number()),
+    outputTokensPerSecond: t.Optional(
+      t.Nullable(t.Number({ description: 'Average answer speed since the server started' })),
+    ),
+    promptTokensPerSecond: t.Optional(
+      t.Nullable(t.Number({ description: 'Average prompt speed since the server started' })),
+    ),
+    slots: t.Optional(t.Nullable(t.Number({ description: 'Conversations at a time' }))),
+    busySlots: t.Optional(t.Nullable(t.Number({ description: 'Requests in flight' }))),
+    queued: t.Optional(t.Nullable(t.Number({ description: 'Requests waiting for a slot' }))),
+    kvUsagePercent: t.Optional(t.Nullable(t.Number({ description: 'KV cache in use' }))),
   }),
 );
+
+const capability = t.Union([t.Literal('tools'), t.Literal('reasoning'), t.Literal('vision')]);
+
+export const ServerOptions = t.Object({
+  capabilities: t.Optional(
+    t.Nullable(
+      t.Array(capability, {
+        description:
+          'What its chat models can do beyond chatting, where the server does not say; null: ' +
+          'what Helena derived',
+      }),
+    ),
+  ),
+  tokenizerFile: t.Optional(
+    t.Nullable(
+      t.String({
+        maxLength: 300,
+        description:
+          "The tokenizer's vocab.json (below /var/lib) for servers that take logit_bias by " +
+          "token id only; null: the server type's default",
+      }),
+    ),
+  ),
+});
 
 export const ServerStatus = t.Object({
   reachable: t.Boolean(),
@@ -59,7 +93,7 @@ export const ServerStatus = t.Object({
 export const ModelServer = t.Object({
   id: t.Number(),
   slug: t.String(),
-  kind: t.String({ description: '`lemonade` or `openai-compatible`' }),
+  kind: t.String({ description: '`lemonade`, `halogen` or `openai-compatible`' }),
   name: t.String(),
   baseUrl: t.String(),
   keySource,
@@ -69,6 +103,10 @@ export const ModelServer = t.Object({
   }),
   enabled: t.Boolean(),
   contextLength: t.Number(),
+  options: t.Object({
+    capabilities: t.Nullable(t.Array(capability)),
+    tokenizerFile: t.Nullable(t.String()),
+  }),
   provider: t.String({ description: "The server's Hermes provider name, `helena-<slug>`" }),
   models: t.Array(LocalModel),
   status: t.Nullable(ServerStatus),
@@ -119,7 +157,15 @@ export const LocalAiSettings = t.Object({
   policy: LocalAiPolicy,
   servers: t.Array(ModelServer),
   serverTypes: t.Array(
-    t.Object({ id: t.String(), label: localized, defaultBaseUrl: t.Nullable(t.String()) }),
+    t.Object({
+      id: t.String(),
+      label: localized,
+      defaultBaseUrl: t.Nullable(t.String()),
+      defaultKeySource: t.Union([t.Literal('file'), t.Literal('none')]),
+      capabilitiesConfigurable: t.Boolean({
+        description: 'The Administrator says what its chat models can do (options.capabilities)',
+      }),
+    }),
   ),
   classes: t.Array(
     t.Object({
@@ -216,6 +262,7 @@ export const LocalAiStatus = t.Object({
       error: t.Nullable(t.String()),
       checkedAt: t.Nullable(t.String({ format: 'date-time' })),
       latencyMs: t.Nullable(t.Number()),
+      load: t.Optional(load),
     }),
   ),
   classes: t.Array(
@@ -270,6 +317,7 @@ export const serverBody = t.Object({
   key: t.Optional(t.Nullable(t.String({ maxLength: 500 }))),
   enabled: t.Optional(t.Boolean()),
   contextLength: t.Optional(t.Number()),
+  options: t.Optional(ServerOptions),
 });
 
 export const serverParams = t.Object({ id: t.Numeric() });

@@ -116,7 +116,27 @@
     "keyFile": "密钥文件（位于 /etc/helena 下）",
     "key": "密钥",
     "cancel": "取消",
-    "save": "添加"
+    "save": "添加",
+    "edit": "编辑服务器",
+    "editTitle": "编辑 {name}",
+    "saveChanges": "保存",
+    "keyKept": "保留已保存的密钥",
+    "contextLength": "上下文（token，供代理使用）",
+    "capabilities": {
+      "title": "聊天模型的能力",
+      "own": "在此设置",
+      "derived": "来自服务器",
+      "tools": "工具",
+      "reasoning": "思考",
+      "vision": "图像"
+    },
+    "load": {
+      "speed": "输出 {output} token/秒，读入 {prompt} token/秒",
+      "slots": "{slots} 个槽位中 {busy} 个在用，{queued} 个等待",
+      "memory": "内存 {gb} GB",
+      "kv": "KV 缓存 {percent} %",
+      "gpu": "GPU {percent} %"
+    }
   },
   "presets": {
     "title": "预设",
@@ -132,6 +152,7 @@
   },
   "serverTypes": {
     "lemonade": "Lemonade Server（GPU + NPU）",
+    "halogen": "Halogen（Qwen3.8-Flash-Next，GPU）",
     "openaiCompatible": "兼容 OpenAI 的服务器",
     "whisperCpp": "whisper.cpp（语音识别，GPU）",
     "qwenTts": "Qwen3-TTS（语音，GPU）"

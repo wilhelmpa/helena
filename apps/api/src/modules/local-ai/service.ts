@@ -18,6 +18,7 @@ import {
 } from '@repo/db';
 import { and, desc, eq, gte, sql } from 'drizzle-orm';
 import {
+  CONFIGURABLE_CAPABILITIES,
   LOCAL_AI_UNITS,
   classEvalVersion,
   classModes,
@@ -32,14 +33,16 @@ import {
   type LocalAiUnit,
   type LocalModel,
   type ModelServerContext,
+  type ModelServerOptions,
   type ModelServerStatus,
   type ModelServerType,
   type RuntimeLocalAi,
+  withConfiguredCapabilities,
 } from '@helena/sdk';
 import { host } from '#shared/helena';
 import { HttpError, iso } from '#shared/lib';
 import { joinUrl, openAiEvalContext } from './eval-context';
-import { LEMONADE, LEMONADE_DEFAULT_BASE_URL } from './server-types';
+import { LEMONADE, LEMONADE_DEFAULT_BASE_URL, allowedTokenizerFile } from './server-types';
 import { localAiGuard } from './guard';
 import {
   readModelOptions,
@@ -99,16 +102,24 @@ export function validBaseUrl(value: string): string {
   return url.toString().replace(/\/+$/, '');
 }
 
+// A path starting with `//` is taken from the server's root (Halogen's `/health` next to its
+// `/v1`), any other is appended to the base URL.
+export function serverUrl(baseUrl: string, path: string): string {
+  if (!path.startsWith('//')) return joinUrl(baseUrl, path);
+  return `${new URL(baseUrl).origin}/${path.replace(/^\/+/, '')}`;
+}
+
 export function serverContext(
-  server: Pick<ModelServerRow, 'baseUrl'>,
+  server: Pick<ModelServerRow, 'baseUrl'> & { options?: ModelServerRow['options'] },
   key: string | null,
   timeoutMs: number,
 ): ModelServerContext {
   return {
     baseUrl: server.baseUrl,
     hasKey: key !== null,
+    options: server.options ?? {},
     fetch: (path, init) =>
-      fetch(joinUrl(server.baseUrl, path), {
+      fetch(serverUrl(server.baseUrl, path), {
         method: init?.method ?? 'GET',
         headers: {
           accept: 'application/json',
@@ -120,6 +131,17 @@ export function serverContext(
         signal: AbortSignal.timeout(timeoutMs),
       }),
   };
+}
+
+// The server's token ids for `logit_bias`, where its type needs ids (Halogen); undefined where
+// the server takes the text itself.
+export function serverTokenIds(
+  server: ModelServerRow,
+  key: string | null,
+): ((texts: string[]) => Promise<(number | null)[]>) | undefined {
+  const type = serverType(server.kind);
+  if (!type?.tokenIds) return undefined;
+  return (texts) => type.tokenIds!(serverContext(server, key, STATUS_TIMEOUT_MS), texts);
 }
 
 // Reads the server's status and models now and keeps them. A server that does not answer
@@ -154,6 +176,11 @@ export async function checkServer(server: ModelServerRow): Promise<ModelServerRo
       }
     }
   }
+  // What the Administrator said its chat models can do, over what Helena derived (also for the
+  // models it keeps while the server does not answer).
+  if (type?.capabilitiesConfigurable) {
+    models = models.map((model) => withConfiguredCapabilities(model, server.options?.capabilities));
+  }
   const [row] = await db
     .update(helenaModelServer)
     .set({ status, models, checkedAt: new Date() })
@@ -186,7 +213,37 @@ export interface ServerInput {
   key?: string | null;
   enabled?: boolean;
   contextLength?: number;
+  options?: ModelServerOptions;
 }
+
+// The options as Helena keeps them: known capabilities only, a tokenizer file Helena may read.
+export function checkOptions(
+  value: ModelServerOptions | undefined,
+): ModelServerOptions | undefined {
+  if (value === undefined) return undefined;
+  const out: ModelServerOptions = {};
+  if (value.capabilities !== undefined) {
+    if (value.capabilities === null) out.capabilities = null;
+    else {
+      const unknown = value.capabilities.filter(
+        (entry) => !CONFIGURABLE_CAPABILITIES.includes(entry),
+      );
+      if (unknown.length > 0)
+        throw new HttpError(400, `Only ${CONFIGURABLE_CAPABILITIES.join(', ')} can be set`);
+      out.capabilities = CONFIGURABLE_CAPABILITIES.filter((entry) =>
+        value.capabilities!.includes(entry),
+      );
+    }
+  }
+  if (value.tokenizerFile !== undefined) {
+    if (value.tokenizerFile !== null && !allowedTokenizerFile(value.tokenizerFile))
+      throw new HttpError(400, 'The tokenizer file must be a .json file below /var/lib/');
+    out.tokenizerFile = value.tokenizerFile;
+  }
+  return out;
+}
+
+const CONFIGURABLE = ['tools', 'reasoning', 'vision'] as const;
 
 function serverView(row: ModelServerRow, options: Record<string, LocalModelOptions> = {}) {
   const key: 'file' | 'stored' | 'none' | 'invalid' =
@@ -208,6 +265,12 @@ function serverView(row: ModelServerRow, options: Record<string, LocalModelOptio
     key,
     enabled: row.enabled,
     contextLength: row.contextLength,
+    options: {
+      capabilities: row.options?.capabilities
+        ? CONFIGURABLE.filter((entry) => row.options.capabilities!.includes(entry))
+        : null,
+      tokenizerFile: row.options?.tokenizerFile ?? null,
+    },
     provider: localProviderName(row.slug),
     models: row.models.map((model) => ({
       ...model,
@@ -267,9 +330,10 @@ export async function createServer(input: ServerInput): Promise<ServerView> {
   const type = serverType(kind);
   if (!type) throw new HttpError(400, `Unknown server type ${kind}`);
   const baseUrl = validBaseUrl(input.baseUrl ?? type.defaultBaseUrl ?? LEMONADE_DEFAULT_BASE_URL);
-  const keySource = input.keySource ?? 'file';
+  const keySource = input.keySource ?? type.defaultKeySource ?? 'file';
   const keyFile = keySource === 'file' ? (input.keyFile ?? DEFAULT_KEY_FILE) : null;
   checkKeyFile(keySource, keyFile);
+  const options = checkOptions(input.options) ?? {};
   const [existing] = await db
     .select({ id: helenaModelServer.id })
     .from(helenaModelServer)
@@ -289,6 +353,7 @@ export async function createServer(input: ServerInput): Promise<ServerView> {
       keyFile,
       enabled: input.enabled ?? true,
       contextLength: checkContext(input.contextLength) ?? HERMES_MIN_CONTEXT,
+      options,
     })
     .returning();
   return serverView(await checkServer(row!));
@@ -304,6 +369,7 @@ export async function updateServer(id: number, input: ServerInput): Promise<Serv
   const keySource = input.keySource ?? (row.keySource as 'file' | 'stored' | 'none');
   const keyFile = keySource === 'file' ? (input.keyFile ?? row.keyFile ?? DEFAULT_KEY_FILE) : null;
   checkKeyFile(keySource, keyFile);
+  const options = checkOptions(input.options);
   if (keySource === 'stored' && input.key?.trim()) {
     await writeSecret(localAiServerSecretKey(row.slug), { key: input.key.trim() }, { key: true });
   }
@@ -319,6 +385,8 @@ export async function updateServer(id: number, input: ServerInput): Promise<Serv
       ...(input.contextLength !== undefined && {
         contextLength: checkContext(input.contextLength),
       }),
+      // A field the request leaves out stays as it was.
+      ...(options !== undefined && { options: { ...row.options, ...options } }),
       updatedAt: new Date(),
     })
     .where(eq(helenaModelServer.id, id))
@@ -1112,6 +1180,7 @@ export async function localAiStatus() {
       error: server.status?.error ?? null,
       checkedAt: server.checkedAt ? iso(server.checkedAt) : null,
       latencyMs: server.status?.latencyMs ?? null,
+      load: server.status?.load ?? null,
     })),
     classes: taskClasses().map((entry) => ({
       id: entry.id,
@@ -1148,6 +1217,8 @@ export async function localAiSettings() {
       id: type.id,
       label: type.label,
       defaultBaseUrl: type.defaultBaseUrl ?? null,
+      defaultKeySource: type.defaultKeySource ?? 'file',
+      capabilitiesConfigurable: type.capabilitiesConfigurable === true,
     })),
     classes: taskClasses().map((entry) => {
       const setting = policy.classes[entry.id] ?? { mode: 'off' as LocalAiMode, model: null };

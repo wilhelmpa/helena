@@ -6,6 +6,7 @@ import {
   type SystemOneRequest,
   type SystemOneResult,
 } from './systemone';
+import type { TokenIds } from './tokens';
 
 // Two ways to answer System One questions with an ordinary language model behind an
 // OpenAI-compatible server (llama.cpp's llama-server, AMD's Lemonade, which passes the body
@@ -37,6 +38,9 @@ export interface OpenAiCompatibleServer {
   debias?: boolean;
   // Questions asked at the same time (default 4).
   concurrency?: number;
+  // For a server that takes `logit_bias` by token id only (Halogen): the option letters' ids in
+  // the model's tokenizer. Absent: the letters themselves are the keys (llama.cpp, Lemonade).
+  tokenIds?: TokenIds;
 }
 
 export const LETTERS = 'ABCDEFGHIJKLMNOPQRST'.split('');
@@ -133,6 +137,36 @@ export function letterDistribution(body: unknown, letters: string[]): number[] {
   return values;
 }
 
+// The `logit_bias` key of each letter: the letter itself, or its token id where the server
+// needs ids (looked up once per server object); null for a letter that is not one token.
+const biasKeysOf = new WeakMap<OpenAiCompatibleServer, Promise<Record<string, string | null>>>();
+
+function biasKeys(
+  server: OpenAiCompatibleServer,
+  signal?: AbortSignal,
+): Promise<Record<string, string | null>> {
+  const tokenIds = server.tokenIds;
+  if (!tokenIds) return Promise.resolve(Object.fromEntries(LETTERS.map((l) => [l, l])));
+  let pending = biasKeysOf.get(server);
+  if (!pending) {
+    pending = tokenIds(LETTERS, signal).then((ids) =>
+      Object.fromEntries(
+        LETTERS.map((letter, index) => {
+          const id = ids[index];
+          return [
+            letter,
+            typeof id === 'number' && Number.isInteger(id) && id >= 0 ? String(id) : null,
+          ];
+        }),
+      ),
+    );
+    biasKeysOf.set(server, pending);
+    // A failed lookup (the tokenizer file missing) is not kept: the next question asks again.
+    pending.catch(() => biasKeysOf.delete(server));
+  }
+  return pending;
+}
+
 async function letterRound(
   server: OpenAiCompatibleServer,
   state: string,
@@ -141,8 +175,15 @@ async function letterRound(
   usage: Usage,
   signal?: AbortSignal,
 ): Promise<number[]> {
+  const biasKey = await biasKeys(server, signal);
   const ask = async (order: string[]) => {
     const letters = LETTERS.slice(0, order.length);
+    // A bias on the wrong token would skew the readout without a trace: refuse instead.
+    const missing = letters.find((letter) => !biasKey[letter]);
+    if (missing)
+      throw new DecisionAnswerError(
+        `the tokenizer has no single token for the option letter ${missing}`,
+      );
     const body = await server.post(
       CHAT_PATH,
       {
@@ -164,7 +205,7 @@ async function letterRound(
         logprobs: true,
         top_logprobs: Math.max(letters.length, 5),
         post_sampling_probs: true,
-        logit_bias: Object.fromEntries(letters.map((letter) => [letter, 100])),
+        logit_bias: Object.fromEntries(letters.map((letter) => [biasKey[letter]!, 100])),
         chat_template_kwargs: { enable_thinking: false },
         cache_prompt: true,
         stream: false,

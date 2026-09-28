@@ -1,3 +1,6 @@
+import { readFile, readdir, stat } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { singleTokenIds } from '@helena/decisions';
 import {
   normalizeLocalModel,
   type LocalAiUnit,
@@ -107,6 +110,8 @@ function openAiModels(body: unknown): LocalModel[] {
 export const openAiCompatibleServer: ModelServerType = {
   id: OPENAI_COMPATIBLE,
   label: { i18n: 'localAi.serverTypes.openaiCompatible' },
+  // Such a server lists ids only: what its chat models can do is the Administrator's to say.
+  capabilitiesConfigurable: true,
   async models(context) {
     return openAiModels(await json(await context.fetch('/models')));
   },
@@ -271,6 +276,218 @@ export const lemonadeServer: ModelServerType = {
   },
 };
 
+// ── Halogen ───────────────────────────────────────────────────────────────────────────
+
+export const HALOGEN = 'halogen';
+// native/halogen/install.sh publishes the API on the loopback twice: 8731, and 8733 for the
+// agent turns that must not think (Hermes finds a provider's `extra_body` by its address).
+export const HALOGEN_PORT = 8731;
+export const HALOGEN_QUIET_PORT = 8733;
+export const HALOGEN_DEFAULT_BASE_URL = `http://127.0.0.1:${HALOGEN_PORT}/v1`;
+// Where the installer puts the tokenizer (files.tsv): the decisions' letters need token ids.
+export const HALOGEN_DEFAULT_TOKENIZER = '/var/lib/helena-halogen/models/tokenizer/vocab.json';
+// The unit's cgroup: with `--cgroups=split` the container's memory is the unit's.
+export const HALOGEN_CGROUP = '/sys/fs/cgroup/system.slice/helena-halogen.service';
+
+// The same API at its second port, where the base is Halogen's own port on this machine.
+export function halogenNoThinkingBaseUrl(baseUrl: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(baseUrl);
+  } catch {
+    return null;
+  }
+  if (url.port !== String(HALOGEN_PORT)) return null;
+  url.port = String(HALOGEN_QUIET_PORT);
+  return url.toString().replace(/\/+$/, '');
+}
+
+// Halogen's `GET /health` (the server's own description of itself): what it can do.
+export function halogenCapabilities(health: Record<string, unknown>): LocalModelCapability[] {
+  const set: LocalModelCapability[] = ['chat'];
+  const tools = health.tool_calls;
+  const supported = list(health.supported).map(String);
+  if ((tools && typeof tools === 'object') || supported.includes('tools')) set.push('tools');
+  const template = (health.chat_template ?? {}) as Record<string, unknown>;
+  if (template.thinking_control === true || supported.includes('reasoning_effort'))
+    set.push('reasoning');
+  const vision = (health.vision ?? {}) as Record<string, unknown>;
+  if (vision.enabled === true) set.push('vision');
+  return set;
+}
+
+// Prometheus text: `name value` lines (no labels on Halogen's).
+export function prometheusValues(text: string): Record<string, number> {
+  const values: Record<string, number> = {};
+  for (const line of text.split('\n')) {
+    const match = /^([A-Za-z_:][\w:]*)\s+(-?[\d.eE+-]+)\s*$/.exec(line.trim());
+    if (match) values[match[1]!] = Number(match[2]);
+  }
+  return values;
+}
+
+function rate(tokens: number | undefined, seconds: number | undefined): number | null {
+  return tokens && seconds && seconds > 0 ? Math.round((tokens / seconds) * 10) / 10 : null;
+}
+
+// How busy Halogen is: from /health (slots, requests in flight, waiting) and /metrics (the
+// average answer and prompt speed since it started, the KV cache in use).
+export function halogenLoad(
+  health: Record<string, unknown>,
+  metrics: Record<string, number>,
+  memoryBytes: number | null,
+  gpuPercent: number | null,
+): ModelServerLoad {
+  const kv = metrics['llamacpp:kv_cache_usage_ratio'];
+  return {
+    gpuPercent,
+    npuPercent: null,
+    cpuPercent: null,
+    vramGb: null,
+    memoryGb: memoryBytes === null ? null : Math.round(memoryBytes / 1e8) / 10,
+    outputTokensPerSecond: rate(
+      metrics['llamacpp:tokens_predicted_total'],
+      metrics['llamacpp:tokens_predicted_seconds_total'],
+    ),
+    promptTokensPerSecond: rate(
+      metrics['llamacpp:prompt_tokens_total'],
+      metrics['llamacpp:prompt_seconds_total'],
+    ),
+    slots: number(health.slots),
+    busySlots: number(health.in_flight),
+    queued: number(health.queued),
+    kvUsagePercent: kv === undefined ? null : Math.round(kv * 1000) / 10,
+  };
+}
+
+async function readBytes(path: string): Promise<number | null> {
+  try {
+    const value = Number((await readFile(path, 'utf8')).trim());
+    return Number.isFinite(value) && value > 0 ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+// The GPU's busy percentage (amdgpu, world-readable): Halogen is what keeps it busy.
+async function gpuBusy(root = '/sys/class/drm'): Promise<number | null> {
+  try {
+    for (const card of (await readdir(root)).filter((name) => /^card\d+$/.test(name))) {
+      const value = await readBytes(`${root}/${card}/device/gpu_busy_percent`);
+      if (value !== null) return value;
+    }
+  } catch {
+    // No GPU counters here.
+  }
+  return null;
+}
+
+function isLoopback(baseUrl: string): boolean {
+  try {
+    const host = new URL(baseUrl).hostname;
+    return host === '127.0.0.1' || host === 'localhost' || host === '[::1]';
+  } catch {
+    return false;
+  }
+}
+
+// A tokenizer file Helena may read: a `.json` below /var/lib, no `..`.
+export function allowedTokenizerFile(path: string | null | undefined): string | null {
+  if (!path) return null;
+  const full = resolve(path);
+  return full === path && full.startsWith('/var/lib/') && full.endsWith('.json') ? full : null;
+}
+
+const vocabularies = new Map<string, { mtimeMs: number; vocab: Record<string, unknown> }>();
+
+// The vocabulary of a tokenizer file, read once while it is unchanged (6.7 MB for Qwen3.8).
+export async function readVocabulary(path: string): Promise<Record<string, unknown>> {
+  const file = allowedTokenizerFile(path);
+  if (!file) throw new Error('The tokenizer file must be a .json below /var/lib');
+  const info = await stat(file);
+  const cached = vocabularies.get(file);
+  if (cached && cached.mtimeMs === info.mtimeMs) return cached.vocab;
+  if (info.size > 64 * 1024 * 1024) throw new Error('The tokenizer file is too large');
+  const vocab = JSON.parse(await readFile(file, 'utf8')) as Record<string, unknown>;
+  if (!vocab || typeof vocab !== 'object' || Array.isArray(vocab))
+    throw new Error('The tokenizer file is not a vocabulary');
+  vocabularies.set(file, { mtimeMs: info.mtimeMs, vocab });
+  return vocab;
+}
+
+async function halogenHealth(context: ModelServerContext): Promise<Record<string, unknown>> {
+  const body = await json(await context.fetch('//health'));
+  return body && typeof body === 'object' ? (body as Record<string, unknown>) : {};
+}
+
+// Halogen (peonist-ai; native/halogen/install.sh): one model, OpenAI-compatible under /v1, no
+// key (the firewall lets only Helena's users reach it), `GET /health` describing what it serves
+// and can do, Prometheus `GET /metrics`. `logit_bias` by token id only, like OpenAI's API.
+export const halogenServer: ModelServerType = {
+  id: HALOGEN,
+  label: { i18n: 'localAi.serverTypes.halogen' },
+  defaultBaseUrl: HALOGEN_DEFAULT_BASE_URL,
+  noThinkingBaseUrl: halogenNoThinkingBaseUrl,
+  defaultKeySource: 'none',
+  capabilitiesConfigurable: true,
+  async models(context) {
+    const [listed, health] = await Promise.all([
+      context.fetch('/models').then(json),
+      halogenHealth(context).catch(() => ({}) as Record<string, unknown>),
+    ]);
+    const up = health.status === 'ok';
+    const capabilities = halogenCapabilities(health);
+    return entries(listed)
+      .map((entry) => {
+        const id = text(entry.id);
+        return normalizeLocalModel({
+          id,
+          name: id,
+          // Halogen runs on the GPU (ROCm); it serves no other device.
+          unit: 'gpu',
+          capabilities,
+          contextLength: number(entry.context_length) ?? number(health.slot_ctx),
+          loaded: up,
+          backend: 'halogen',
+        });
+      })
+      .filter((model): model is LocalModel => model !== null);
+  },
+  async status(context) {
+    const started = Date.now();
+    try {
+      const health = await halogenHealth(context);
+      const latencyMs = Date.now() - started;
+      if (health.status !== 'ok') throw new Error(`status ${String(health.status ?? 'unknown')}`);
+      const metrics = await context
+        .fetch('//metrics')
+        .then((response) => (response.ok ? response.text() : ''))
+        .then(prometheusValues)
+        .catch(() => ({}));
+      const local = isLoopback(context.baseUrl);
+      const [memory, gpu] = local
+        ? await Promise.all([readBytes(`${HALOGEN_CGROUP}/memory.current`), gpuBusy()])
+        : [null, null];
+      const version = (health.version ?? {}) as Record<string, unknown>;
+      const model = text(health.model);
+      return {
+        reachable: true,
+        version: text(version.engine) ?? text(version.api),
+        latencyMs,
+        error: null,
+        loaded: model ? [{ id: model, unit: 'gpu', backend: 'halogen' }] : [],
+        load: halogenLoad(health, metrics, memory, gpu),
+      };
+    } catch (error) {
+      return unreachable(error);
+    }
+  },
+  async tokenIds(context, texts) {
+    const file = context.options?.tokenizerFile ?? HALOGEN_DEFAULT_TOKENIZER;
+    return singleTokenIds(await readVocabulary(file), texts);
+  },
+};
+
 // ── whisper.cpp's whisper-server ──────────────────────────────────────────────────────────
 
 export const WHISPER_CPP = 'whisper-cpp';
@@ -389,6 +606,7 @@ export function voiceNames(body: unknown): string[] {
 
 export const BUILTIN_MODEL_SERVERS: ModelServerType[] = [
   lemonadeServer,
+  halogenServer,
   openAiCompatibleServer,
   whisperCppServer,
   qwenTtsServer,

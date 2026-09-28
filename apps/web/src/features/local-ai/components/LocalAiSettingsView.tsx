@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { FlaskConical, LoaderCircle, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { FlaskConical, LoaderCircle, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
@@ -10,6 +10,7 @@ import SettingsSection from '@/components/common/page/SettingsSection';
 import StatusBadge from '@/components/common/page/StatusBadge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -27,13 +28,14 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import type {
+  ConfigurableCapability,
   LocalAiClass,
   LocalAiEval,
   LocalAiMode,
   LocalAiPreset,
   LocalAiSettings,
   ModelServer,
-  ServerInput,
+  ServerLoad,
 } from '@/lib/api/endpoints/localAi';
 import { formatDateTime } from '@/utils/dates';
 import {
@@ -46,6 +48,13 @@ import {
   useUpdateModelServer,
 } from '../services/localAi.service';
 import { resolveLabel, shortModel } from '../utils/localAi';
+import {
+  CAPABILITIES,
+  loadFacts,
+  newServerForm,
+  serverInput,
+  type ServerForm,
+} from '../utils/serverForm';
 import LocalAiCard from './LocalAiCard';
 import LocalModelRow from './LocalModelRow';
 import VoiceSettingsSection from '@/features/voice/components/VoiceSettingsSection';
@@ -103,15 +112,18 @@ function ServersSection({ settings }: { settings: LocalAiSettings }) {
       {settings.servers.length === 0 ? (
         <SettingsCard className="p-4 text-sm text-muted-foreground">{t('none')}</SettingsCard>
       ) : (
-        settings.servers.map((server) => <ServerCard key={server.id} server={server} />)
+        settings.servers.map((server) => (
+          <ServerCard key={server.id} server={server} settings={settings} />
+        ))
       )}
-      <ServerDialog open={adding} onOpenChange={setAdding} settings={settings} />
+      {adding && <ServerDialog open onOpenChange={setAdding} settings={settings} />}
     </SettingsSection>
   );
 }
 
-function ServerCard({ server }: { server: ModelServer }) {
+function ServerCard({ server, settings }: { server: ModelServer; settings: LocalAiSettings }) {
   const t = useTranslations('localAi.servers');
+  const [editing, setEditing] = useState(false);
   const check = useCheckModelServer();
   const update = useUpdateModelServer();
   const remove = useDeleteModelServer();
@@ -135,6 +147,9 @@ function ServerCard({ server }: { server: ModelServer }) {
             {server.baseUrl} · {server.provider} · {t(`keys.${server.key}`)} ·{' '}
             {t('context', { tokens: server.contextLength })}
           </p>
+          {server.status?.reachable && server.status.load && (
+            <ServerLoadLine load={server.status.load} />
+          )}
           {server.status?.error && (
             <p className="text-xs text-destructive">{server.status.error}</p>
           )}
@@ -156,6 +171,9 @@ function ServerCard({ server }: { server: ModelServer }) {
           {check.isPending ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}
           {t('check')}
         </Button>
+        <Button variant="ghost" size="icon" aria-label={t('edit')} onClick={() => setEditing(true)}>
+          <Pencil />
+        </Button>
         <Button
           variant="ghost"
           size="icon"
@@ -176,7 +194,39 @@ function ServerCard({ server }: { server: ModelServer }) {
           ))}
         </ul>
       )}
+      {editing && (
+        <ServerDialog open onOpenChange={setEditing} settings={settings} server={server} />
+      )}
     </SettingsCard>
+  );
+}
+
+// How busy a server is, where it counts its own work (Halogen): speed, slots, memory, cache.
+function ServerLoadLine({ load }: { load: ServerLoad }) {
+  const t = useTranslations('localAi.servers.load');
+  const format = useFormatter();
+  const facts = loadFacts(load);
+  if (facts.length === 0) return null;
+  const number = (value: number) => format.number(value, { maximumFractionDigits: 1 });
+  return (
+    <p className="text-xs text-muted-foreground">
+      {facts
+        .map((fact) => {
+          switch (fact.kind) {
+            case 'speed':
+              return t('speed', { output: number(fact.output), prompt: number(fact.prompt ?? 0) });
+            case 'slots':
+              return t('slots', { busy: fact.busy, slots: fact.slots, queued: fact.queued });
+            case 'memory':
+              return t('memory', { gb: number(fact.gb) });
+            case 'kv':
+              return t('kv', { percent: number(fact.percent) });
+            case 'gpu':
+              return t('gpu', { percent: number(fact.percent) });
+          }
+        })
+        .join(' · ')}
+    </p>
   );
 }
 
@@ -184,53 +234,74 @@ function ServerDialog({
   open,
   onOpenChange,
   settings,
+  server,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   settings: LocalAiSettings;
+  // Set: the dialog changes this server (its short name and kind stay).
+  server?: ModelServer;
 }) {
   const t = useTranslations('localAi.servers');
   const tRoot = useTranslations('localAi');
   const locale = useLocale();
   const create = useCreateModelServer();
-  const lemonade = settings.serverTypes.find((type) => type.id === 'lemonade');
-  const [form, setForm] = useState<ServerInput>({
-    slug: settings.servers.length === 0 ? 'local' : '',
-    kind: 'lemonade',
-    name: '',
-    baseUrl: lemonade?.defaultBaseUrl ?? 'http://127.0.0.1:13305/api/v1',
-    keySource: 'file',
-    keyFile: '/etc/helena/local-ai.key',
-    key: '',
-  });
-  const set = (patch: Partial<ServerInput>) => setForm((current) => ({ ...current, ...patch }));
+  const update = useUpdateModelServer();
+  const pending = create.isPending || update.isPending;
+  const initial = (): ServerForm =>
+    server
+      ? {
+          slug: server.slug,
+          kind: server.kind,
+          name: server.name,
+          baseUrl: server.baseUrl,
+          keySource: server.keySource,
+          keyFile: server.keyFile ?? '/etc/helena/local-ai.key',
+          key: '',
+          contextLength: String(server.contextLength),
+          capabilities: server.options.capabilities,
+        }
+      : newServerForm(settings, 'lemonade');
+  // Mounted only while open (see its callers), so each opening starts from the server as it is.
+  const [form, setForm] = useState<ServerForm>(initial);
+  const set = (patch: Partial<ServerForm>) => setForm((current) => ({ ...current, ...patch }));
+  const type = settings.serverTypes.find((entry) => entry.id === form.kind);
+  const save = () => {
+    const input = serverInput(form, type?.capabilitiesConfigurable === true, server !== undefined);
+    const done = {
+      onSuccess: () => onOpenChange(false),
+      onError: (error: Error) => toast.error(error.message),
+    };
+    if (server) update.mutate({ id: server.id, input }, done);
+    else create.mutate(input, done);
+  };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t('add')}</DialogTitle>
+          <DialogTitle>{server ? t('editTitle', { name: server.name }) : t('add')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3 text-sm">
           <label className="block space-y-1">
             <span className="text-xs text-muted-foreground">{t('kind')}</span>
             <Select
               value={form.kind}
+              disabled={server !== undefined}
               onValueChange={(kind) =>
-                set({
-                  kind,
-                  baseUrl:
-                    settings.serverTypes.find((type) => type.id === kind)?.defaultBaseUrl ??
-                    form.baseUrl,
-                })
+                setForm((current) => ({
+                  ...newServerForm(settings, kind),
+                  slug: current.slug,
+                  name: current.name,
+                }))
               }
             >
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {settings.serverTypes.map((type) => (
-                  <SelectItem key={type.id} value={type.id}>
-                    {resolveLabel(type.label, locale, (key) => tRoot(key as never))}
+                {settings.serverTypes.map((entry) => (
+                  <SelectItem key={entry.id} value={entry.id}>
+                    {resolveLabel(entry.label, locale, (key) => tRoot(key as never))}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -238,18 +309,31 @@ function ServerDialog({
           </label>
           <label className="block space-y-1">
             <span className="text-xs text-muted-foreground">{t('slug')}</span>
-            <Input value={form.slug ?? ''} onChange={(e) => set({ slug: e.target.value })} />
+            <Input
+              value={form.slug}
+              disabled={server !== undefined}
+              onChange={(e) => set({ slug: e.target.value })}
+            />
           </label>
           <label className="block space-y-1">
             <span className="text-xs text-muted-foreground">{t('name')}</span>
-            <Input value={form.name ?? ''} onChange={(e) => set({ name: e.target.value })} />
+            <Input value={form.name} onChange={(e) => set({ name: e.target.value })} />
           </label>
           <label className="block space-y-1">
             <span className="text-xs text-muted-foreground">{t('baseUrl')}</span>
             <Input
               dir="ltr"
-              value={form.baseUrl ?? ''}
+              value={form.baseUrl}
               onChange={(e) => set({ baseUrl: e.target.value })}
+            />
+          </label>
+          <label className="block space-y-1">
+            <span className="text-xs text-muted-foreground">{t('contextLength')}</span>
+            <Input
+              dir="ltr"
+              inputMode="numeric"
+              value={form.contextLength}
+              onChange={(e) => set({ contextLength: e.target.value.replace(/[^0-9]/g, '') })}
             />
           </label>
           <label className="block space-y-1">
@@ -257,7 +341,7 @@ function ServerDialog({
             <Select
               value={form.keySource}
               onValueChange={(keySource) =>
-                set({ keySource: keySource as ServerInput['keySource'] })
+                set({ keySource: keySource as ServerForm['keySource'] })
               }
             >
               <SelectTrigger className="w-full">
@@ -277,7 +361,7 @@ function ServerDialog({
               <span className="text-xs text-muted-foreground">{t('keyFile')}</span>
               <Input
                 dir="ltr"
-                value={form.keyFile ?? ''}
+                value={form.keyFile}
                 onChange={(e) => set({ keyFile: e.target.value })}
               />
             </label>
@@ -288,34 +372,79 @@ function ServerDialog({
               <Input
                 type="password"
                 autoComplete="off"
-                value={form.key ?? ''}
+                placeholder={server?.keySource === 'stored' ? t('keyKept') : undefined}
+                value={form.key}
                 onChange={(e) => set({ key: e.target.value })}
               />
             </label>
+          )}
+          {type?.capabilitiesConfigurable && (
+            <CapabilitiesField
+              value={form.capabilities}
+              onChange={(capabilities) => set({ capabilities })}
+            />
           )}
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             {t('cancel')}
           </Button>
-          <Button
-            disabled={create.isPending}
-            onClick={() =>
-              create.mutate(
-                { ...form, name: form.name || undefined },
-                {
-                  onSuccess: () => onOpenChange(false),
-                  onError: (error: Error) => toast.error(error.message),
-                },
-              )
-            }
-          >
-            {create.isPending && <LoaderCircle className="animate-spin" />}
-            {t('save')}
+          <Button disabled={pending} onClick={save}>
+            {pending && <LoaderCircle className="animate-spin" />}
+            {server ? t('saveChanges') : t('save')}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// What a server's chat models can do: what Helena reads from the server (the default), or
+// what the Administrator sets, for a server whose API does not say.
+function CapabilitiesField({
+  value,
+  onChange,
+}: {
+  value: ConfigurableCapability[] | null;
+  onChange: (value: ConfigurableCapability[] | null) => void;
+}) {
+  const t = useTranslations('localAi.servers.capabilities');
+  const own = value !== null;
+  return (
+    <div className="space-y-2">
+      <label className="flex items-center justify-between gap-3">
+        <span className="text-xs text-muted-foreground">{t('title')}</span>
+        <span className="flex items-center gap-2 text-xs">
+          {own ? t('own') : t('derived')}
+          <Switch
+            aria-label={t('own')}
+            checked={own}
+            onCheckedChange={(on) => onChange(on ? ['tools'] : null)}
+          />
+        </span>
+      </label>
+      {own && (
+        <div className="flex flex-wrap gap-4">
+          {CAPABILITIES.map((capability) => (
+            <label key={capability} className="flex items-center gap-2">
+              <Checkbox
+                checked={value.includes(capability)}
+                onCheckedChange={(checked) =>
+                  onChange(
+                    checked === true
+                      ? CAPABILITIES.filter(
+                          (entry) => entry === capability || value.includes(entry),
+                        )
+                      : value.filter((entry) => entry !== capability),
+                  )
+                }
+              />
+              {t(capability)}
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

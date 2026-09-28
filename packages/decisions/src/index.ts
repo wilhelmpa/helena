@@ -27,3 +27,4 @@ export {
   type EvalQuestionScore,
   type EvalReport,
 } from './eval';
+export { letterBias, singleTokenIds, type TokenIds } from './tokens';

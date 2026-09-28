@@ -116,7 +116,27 @@
     "keyFile": "Berkas kunci (di bawah /etc/helena)",
     "key": "Kunci",
     "cancel": "Batal",
-    "save": "Tambah"
+    "save": "Tambah",
+    "edit": "Ubah server",
+    "editTitle": "Ubah {name}",
+    "saveChanges": "Simpan",
+    "keyKept": "Kunci yang tersimpan tetap dipakai",
+    "contextLength": "Konteks dalam token (untuk agen)",
+    "capabilities": {
+      "title": "Kemampuan model obrolan",
+      "own": "Diatur di sini",
+      "derived": "Dari server",
+      "tools": "Alat",
+      "reasoning": "Penalaran",
+      "vision": "Gambar"
+    },
+    "load": {
+      "speed": "{output} token/dtk keluaran, {prompt} token/dtk masukan",
+      "slots": "{busy} dari {slots} slot terpakai, {queued} menunggu",
+      "memory": "Memori {gb} GB",
+      "kv": "Cache KV {percent} %",
+      "gpu": "GPU {percent} %"
+    }
   },
   "presets": {
     "title": "Prasetel",
@@ -132,6 +152,7 @@
   },
   "serverTypes": {
     "lemonade": "Lemonade Server (GPU + NPU)",
+    "halogen": "Halogen (Qwen3.8-Flash-Next, GPU)",
     "openaiCompatible": "Server kompatibel OpenAI",
     "whisperCpp": "whisper.cpp (pengenalan suara, GPU)",
     "qwenTts": "Qwen3-TTS (suara, GPU)"

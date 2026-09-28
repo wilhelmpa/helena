@@ -42,6 +42,23 @@ export interface ServerLoad {
   cpuPercent: number | null;
   vramGb: number | null;
   memoryGb: number | null;
+  // A server that counts its own work (Halogen): answer and prompt speed since it started, its
+  // conversation slots, the requests in flight and waiting, the KV cache in use.
+  outputTokensPerSecond?: number | null;
+  promptTokensPerSecond?: number | null;
+  slots?: number | null;
+  busySlots?: number | null;
+  queued?: number | null;
+  kvUsagePercent?: number | null;
+}
+
+// What its chat models can do beyond chatting, where the server does not say.
+export type ConfigurableCapability = 'tools' | 'reasoning' | 'vision';
+
+export interface ServerOptions {
+  // null: what Helena derived from the server.
+  capabilities: ConfigurableCapability[] | null;
+  tokenizerFile: string | null;
 }
 
 export interface ServerStatus {
@@ -64,6 +81,7 @@ export interface ModelServer {
   key: 'file' | 'stored' | 'none' | 'invalid';
   enabled: boolean;
   contextLength: number;
+  options: ServerOptions;
   provider: string;
   models: LocalModel[];
   status: ServerStatus | null;
@@ -126,7 +144,14 @@ export interface LocalAiEval {
 export interface LocalAiSettings {
   policy: LocalAiPolicy;
   servers: ModelServer[];
-  serverTypes: { id: string; label: LocalizedText; defaultBaseUrl: string | null }[];
+  serverTypes: {
+    id: string;
+    label: LocalizedText;
+    defaultBaseUrl: string | null;
+    defaultKeySource: 'file' | 'none';
+    // The Administrator says what its chat models can do.
+    capabilitiesConfigurable: boolean;
+  }[];
   classes: LocalAiClass[];
   // The newest finished eval of each class and model.
   evals: LocalAiEval[];
@@ -175,6 +200,7 @@ export interface LocalAiStatus {
     error: string | null;
     checkedAt: string | null;
     latencyMs: number | null;
+    load?: ServerLoad | null;
   }[];
   classes: {
     id: string;
@@ -204,6 +230,7 @@ export interface ServerInput {
   key?: string | null;
   enabled?: boolean;
   contextLength?: number;
+  options?: Partial<ServerOptions>;
 }
 
 export const getLocalAiSettings = () => request<LocalAiSettings>('/god/local-ai');

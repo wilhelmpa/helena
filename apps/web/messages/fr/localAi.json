@@ -116,7 +116,27 @@
     "keyFile": "Fichier de clé (sous /etc/helena)",
     "key": "Clé",
     "cancel": "Annuler",
-    "save": "Ajouter"
+    "save": "Ajouter",
+    "edit": "Modifier le serveur",
+    "editTitle": "Modifier {name}",
+    "saveChanges": "Enregistrer",
+    "keyKept": "La clé enregistrée est conservée",
+    "contextLength": "Contexte en jetons (pour les agents)",
+    "capabilities": {
+      "title": "Capacités des modèles de chat",
+      "own": "Définies ici",
+      "derived": "Du serveur",
+      "tools": "Outils",
+      "reasoning": "Réflexion",
+      "vision": "Images"
+    },
+    "load": {
+      "speed": "{output} jetons/s en sortie, {prompt} jetons/s en entrée",
+      "slots": "{busy} sur {slots} emplacements occupés, {queued} en attente",
+      "memory": "{gb} Go de mémoire",
+      "kv": "Cache KV {percent} %",
+      "gpu": "GPU {percent} %"
+    }
   },
   "presets": {
     "title": "Préréglage",
@@ -132,6 +152,7 @@
   },
   "serverTypes": {
     "lemonade": "Lemonade Server (GPU + NPU)",
+    "halogen": "Halogen (Qwen3.8-Flash-Next, GPU)",
     "openaiCompatible": "Serveur compatible OpenAI",
     "whisperCpp": "whisper.cpp (reconnaissance vocale, GPU)",
     "qwenTts": "Qwen3-TTS (voix, GPU)"

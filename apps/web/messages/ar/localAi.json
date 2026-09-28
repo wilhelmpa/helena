@@ -116,7 +116,27 @@
     "keyFile": "ملف المفتاح (تحت ‎/etc/helena)",
     "key": "المفتاح",
     "cancel": "إلغاء",
-    "save": "إضافة"
+    "save": "إضافة",
+    "edit": "تعديل الخادم",
+    "editTitle": "تعديل {name}",
+    "saveChanges": "حفظ",
+    "keyKept": "يبقى المفتاح المحفوظ",
+    "contextLength": "السياق بالرموز (للوكلاء)",
+    "capabilities": {
+      "title": "قدرات نماذج الدردشة",
+      "own": "محددة هنا",
+      "derived": "من الخادم",
+      "tools": "الأدوات",
+      "reasoning": "التفكير",
+      "vision": "الصور"
+    },
+    "load": {
+      "speed": "{output} رمز/ث للإخراج، {prompt} رمز/ث للإدخال",
+      "slots": "{busy} من {slots} مواضع مشغولة، {queued} في الانتظار",
+      "memory": "{gb} غيغابايت ذاكرة",
+      "kv": "ذاكرة KV {percent} %",
+      "gpu": "GPU {percent} %"
+    }
   },
   "presets": {
     "title": "إعداد مسبق",
@@ -132,6 +152,7 @@
   },
   "serverTypes": {
     "lemonade": "Lemonade Server (GPU + NPU)",
+    "halogen": "Halogen (Qwen3.8-Flash-Next، GPU)",
     "openaiCompatible": "خادم متوافق مع OpenAI",
     "whisperCpp": "whisper.cpp (التعرف على الكلام، GPU)",
     "qwenTts": "Qwen3-TTS (الصوت، GPU)"
