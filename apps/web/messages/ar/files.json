@@ -30,7 +30,9 @@
     "upload": "رفع",
     "newFolder": "مجلد جديد",
     "newFile": "ملاحظة جديدة",
-    "openInCode": "فتح في VS Code"
+    "openInCode": "فتح في VS Code",
+    "canvas": "لوحة",
+    "doc": "مستند"
   },
   "breadcrumb": "مسار المجلد",
   "modified": "{date, date, medium}",
@@ -212,5 +214,34 @@
     "openInPage": "فتح بحجم كبير",
     "download": "تنزيل",
     "searchFiles": "البحث في الملفات …"
+  },
+  "canvas": {
+    "opening": "جارٍ فتح اللوحة …",
+    "cardTitle": "عنوان البطاقة",
+    "cardBody": "نص البطاقة",
+    "newCard": "بطاقة جديدة",
+    "link": "رابط",
+    "linkedDoc": "مستند · مرتبط",
+    "linkedTask": "مهمة · مرتبطة",
+    "readFailed": "تعذرت قراءة اللوحة.",
+    "saveFailed": "تعذر حفظ اللوحة.",
+    "saving": "جارٍ الحفظ …",
+    "saved": "تم الحفظ",
+    "taskPrompt": "معرّف المهمة، مثل TRADE-123",
+    "zoomOut": "تصغير",
+    "zoomIn": "تكبير",
+    "insert": "إدراج",
+    "findTask": "ابحث عن مهمة",
+    "eyebrow": "المعرفة / {path}",
+    "canvases": "اللوحات",
+    "counts": "{cards, plural, zero {لا بطاقات} one {بطاقة واحدة} two {بطاقتان} few {# بطاقات} many {# بطاقة} other {# بطاقة}} · {links, plural, zero {لا روابط} one {رابط واحد} two {رابطان} few {# روابط} many {# رابطًا} other {# رابط}}",
+    "share": "مشاركة",
+    "tools": {
+      "select": "تحديد",
+      "card": "بطاقة",
+      "doc": "إدراج مستند",
+      "task": "إدراج مهمة",
+      "connect": "ربط"
+    }
   }
 }

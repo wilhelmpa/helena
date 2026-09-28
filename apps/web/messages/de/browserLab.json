@@ -89,7 +89,9 @@
     "team": "Team",
     "modeHint": "Standard: Agenten klicken Schritt für Schritt. Entscheidungsmodell: Agenten dürfen mehrschrittige Browser-Arbeit an browser_task abgeben.",
     "connectionHint": "Eingerichtet unter Zugänge & Verbindungen → Zugänge.",
-    "teamHint": "Wessen Verbindungen angezeigt werden."
+    "teamHint": "Wessen Verbindungen angezeigt werden.",
+    "overridden": "Helena-Vorgabe überschrieben",
+    "resetToDefault": "Auf Helena-Vorgabe zurücksetzen"
   },
   "form": {
     "goal": "Aufgabe",

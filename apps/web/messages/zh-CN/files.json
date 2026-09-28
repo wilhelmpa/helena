@@ -30,7 +30,9 @@
     "upload": "上传",
     "newFolder": "新建文件夹",
     "newFile": "新建笔记",
-    "openInCode": "在 VS Code 中打开"
+    "openInCode": "在 VS Code 中打开",
+    "canvas": "画布",
+    "doc": "文档"
   },
   "breadcrumb": "文件夹路径",
   "modified": "{date, date, medium}",
@@ -212,5 +214,34 @@
     "openInPage": "大图打开",
     "download": "下载",
     "searchFiles": "搜索文件 …"
+  },
+  "canvas": {
+    "opening": "正在打开画布 …",
+    "cardTitle": "卡片标题",
+    "cardBody": "卡片内容",
+    "newCard": "新卡片",
+    "link": "链接",
+    "linkedDoc": "文档 · 已关联",
+    "linkedTask": "任务 · 已关联",
+    "readFailed": "无法读取画布。",
+    "saveFailed": "无法保存画布。",
+    "saving": "正在保存 …",
+    "saved": "已保存",
+    "taskPrompt": "任务标识，例如 TRADE-123",
+    "zoomOut": "缩小",
+    "zoomIn": "放大",
+    "insert": "插入",
+    "findTask": "查找任务",
+    "eyebrow": "知识 / {path}",
+    "canvases": "画布",
+    "counts": "{cards, plural, other {# 张卡片}} · {links, plural, other {# 条连接}}",
+    "share": "分享",
+    "tools": {
+      "select": "选择",
+      "card": "卡片",
+      "doc": "插入文档",
+      "task": "插入任务",
+      "connect": "连接"
+    }
   }
 }

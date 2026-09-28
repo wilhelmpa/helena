@@ -293,5 +293,6 @@
   },
   "resizeSidePanel": "Redimensionner le panneau latéral",
   "advanced": "Avancé",
-  "switchPerson": "Changer de personne"
+  "switchPerson": "Changer de personne",
+  "searchSettings": "Chercher un réglage …"
 }

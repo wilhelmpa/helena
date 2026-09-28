@@ -89,7 +89,9 @@
     "team": "Equipe",
     "modeHint": "Standard: os agentes clicam passo a passo. Modelo de decisão: os agentes podem entregar trabalho de vários passos ao browser_task.",
     "connectionHint": "Configurado em Acessos e conexões → Acessos.",
-    "teamHint": "De quem são as conexões listadas."
+    "teamHint": "De quem são as conexões listadas.",
+    "overridden": "Padrão do Helena substituído",
+    "resetToDefault": "Voltar ao padrão do Helena"
   },
   "form": {
     "goal": "Tarefa",

@@ -89,7 +89,9 @@
     "team": "Tim",
     "modeHint": "Standard: agen mengeklik langkah demi langkah. Model keputusan: agen boleh menyerahkan pekerjaan browser multi-langkah ke browser_task.",
     "connectionHint": "Diatur di Akses & koneksi → Akses.",
-    "teamHint": "Koneksi milik siapa yang ditampilkan."
+    "teamHint": "Koneksi milik siapa yang ditampilkan.",
+    "overridden": "Bawaan Helena ditimpa",
+    "resetToDefault": "Kembalikan ke bawaan Helena"
   },
   "form": {
     "goal": "Tugas",

@@ -67,10 +67,7 @@ export function BrowserControlSection({
             <div className="flex flex-col items-end gap-1.5">
               <div className="flex items-center gap-2">
                 {setting.mode !== 'inherit' && (
-                  <span
-                    className="size-1.5 rounded-full bg-brand"
-                    title="Helena-Vorgabe überschrieben"
-                  />
+                  <span className="size-1.5 rounded-full bg-brand" title={t('overridden')} />
                 )}
                 <Select
                   value={setting.mode}
@@ -109,7 +106,7 @@ export function BrowserControlSection({
                   disabled={update.isPending}
                   onClick={() => update.mutate({ mode: 'inherit' })}
                 >
-                  {'Auf Home-Vorgabe zurücksetzen'}
+                  {t('resetToDefault')}
                 </button>
               )}
             </div>

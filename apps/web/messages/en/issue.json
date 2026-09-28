@@ -128,7 +128,10 @@
     "applyTemplate": "Apply template…",
     "noTemplates": "No templates.",
     "created": "{identifier} created",
-    "open": "Open"
+    "open": "Open",
+    "findProject": "Find a project",
+    "due": "Due",
+    "createMore": "Create more"
   },
   "attachments": {
     "title": "Attachments",

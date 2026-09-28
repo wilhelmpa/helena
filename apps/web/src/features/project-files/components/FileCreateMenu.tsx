@@ -38,13 +38,13 @@ export default function FileCreateMenu({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={onNewFile}>
-            <FilePlus /> {'Doc'}
+            <FilePlus /> {t('doc')}
           </DropdownMenuItem>
           {projectKey && (
             <DropdownMenuItem
               onSelect={() => router.push(`${notesPath(projectKey)}&create=canvas`)}
             >
-              <StickyNote /> {'Leinwand'}
+              <StickyNote /> {t('canvas')}
             </DropdownMenuItem>
           )}
           <DropdownMenuItem onSelect={onNewFolder}>

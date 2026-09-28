@@ -128,7 +128,10 @@
     "applyTemplate": "Применить шаблон…",
     "noTemplates": "Шаблонов нет.",
     "created": "{identifier} создана",
-    "open": "Открыть"
+    "open": "Открыть",
+    "findProject": "Найти проект",
+    "due": "Срок",
+    "createMore": "Создать ещё"
   },
   "attachments": {
     "title": "Вложения",

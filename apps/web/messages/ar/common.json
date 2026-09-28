@@ -293,5 +293,6 @@
   },
   "resizeSidePanel": "تغيير عرض اللوحة الجانبية",
   "advanced": "متقدم",
-  "switchPerson": "تبديل الشخص"
+  "switchPerson": "تبديل الشخص",
+  "searchSettings": "ابحث في الإعدادات …"
 }

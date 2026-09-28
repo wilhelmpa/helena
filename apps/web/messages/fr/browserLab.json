@@ -89,7 +89,9 @@
     "team": "Équipe",
     "modeHint": "Standard : les agents cliquent pas à pas. Modèle de décision : les agents peuvent confier le travail en plusieurs étapes à browser_task.",
     "connectionHint": "Se configure dans Accès et connexions → Accès.",
-    "teamHint": "L'équipe dont les connexions sont listées."
+    "teamHint": "L'équipe dont les connexions sont listées.",
+    "overridden": "Valeur par défaut de Helena remplacée",
+    "resetToDefault": "Revenir à la valeur de Helena"
   },
   "form": {
     "goal": "Tâche",

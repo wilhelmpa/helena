@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { Search, X } from 'lucide-react';
 import { PageChromeCtx } from './pageChrome';
 import { useHydrated } from '@/hooks/useHydrated';
+import { useTranslations } from 'next-intl';
 
 // The one large modal (docs/design-system.md §3): 1200 × 800, full screen on a phone,
 // for an agent's settings; small (880 × 640) for Mein Konto. Tabs on top, the sections on the
@@ -23,7 +24,7 @@ export function Modal({
   onTab,
   search,
   onSearch,
-  searchPlaceholder = 'Einstellung suchen …',
+  searchPlaceholder,
   nav,
   children,
   header,
@@ -48,6 +49,8 @@ export function Modal({
   // 'small': Mein Konto (the only settings that still open as a modal).
   size?: 'large' | 'small';
 }) {
+  const t = useTranslations('common');
+  const placeholder = searchPlaceholder ?? t('searchSettings');
   const dialog = useRef<HTMLElement>(null);
   const hydrated = useHydrated();
   useEffect(() => {
@@ -118,8 +121,8 @@ export function Modal({
                 <input
                   value={search ?? ''}
                   onChange={(event) => onSearch(event.target.value)}
-                  placeholder={searchPlaceholder}
-                  aria-label={searchPlaceholder}
+                  placeholder={placeholder}
+                  aria-label={placeholder}
                 />
               </label>
             )}
@@ -127,8 +130,8 @@ export function Modal({
               type="button"
               className="ds-modal-close"
               onClick={onClose}
-              aria-label="Schließen"
-              title="Schließen (Esc)"
+              aria-label={t('close')}
+              title={`${t('close')} (Esc)`}
             >
               <X size={16} />
             </button>

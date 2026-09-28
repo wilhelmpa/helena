@@ -848,5 +848,32 @@
     "secretMissing": "fehlt",
     "required": "Dieser Wert ist nötig.",
     "number": "Bitte eine Zahl eingeben."
+  },
+  "execution": {
+    "title": "Ausführung",
+    "note": "Änderungen gelten sofort. Werte für alle Projekte legst du in Helenas Einstellungen fest.",
+    "defaultLabel": "Standard-Ausführung",
+    "defaultHint": "Womit die Agenten dieses Projekts arbeiten, legt jeder Agent selbst fest.",
+    "manageAgents": "Agenten verwalten",
+    "levelLabel": "Autopilot-Stufe",
+    "levelHint": "3 heißt: handelt selbst im Budget. Zahlungen und Zugangsdaten bleiben immer gesperrt.",
+    "levelSaved": "Autopilot-Stufe gespeichert",
+    "budgetLabel": "Tagesbudget",
+    "budgetHint": "Danach wird gedrosselt und du bekommst einen Eintrag in der Inbox.",
+    "budgetAria": "Tagesbudget in Euro",
+    "budgetInvalid": "Bitte ein gültiges Tagesbudget eingeben.",
+    "budgetSaved": "Tagesbudget gespeichert",
+    "perDay": "€ / Tag",
+    "localLabel": "Lokale KI für Hintergrundaufgaben",
+    "localHint": "Zusammenfassungen, Einordnung und Vorprüfungen laufen lokal; fällt das lokale Modell aus, übernimmt die Cloud.",
+    "jevLabel": "Jev-Vorstufe für News",
+    "jevHint": "Schnelle Einordnung vor dem Agenten, mit Rückfall bei Unsicherheit.",
+    "instanceWide": "Für alle Projekte",
+    "memoryLabel": "Gedächtnis ohne Freigabe",
+    "memoryHint": "Agenten dürfen Erinnerungen direkt speichern.",
+    "perAgent": "Je Agent"
+  },
+  "defaults": {
+    "adminOnly": "Diese Vorgaben für alle Projekte ändert nur der Administrator."
   }
 }

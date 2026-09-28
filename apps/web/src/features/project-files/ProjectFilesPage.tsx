@@ -22,6 +22,7 @@ function LegacyBoard({
   id: number | null;
   canvas: string | null;
 }) {
+  const tCanvas = useTranslations('files.canvas');
   const router = useRouter();
   const board = useNoteBoardQuery(projectKey, id);
   useEffect(() => {
@@ -40,7 +41,7 @@ function LegacyBoard({
   if (id !== null && board.data && !board.data.vaultPath) return <NotesPage />;
   return (
     <div role="status" className="p-6 text-sm text-muted-foreground">
-      {'Leinwand wird geöffnet …'}
+      {tCanvas('opening')}
     </div>
   );
 }

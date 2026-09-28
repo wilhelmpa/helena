@@ -848,5 +848,32 @@
     "secretMissing": "missing",
     "required": "This value is required.",
     "number": "Enter a number."
+  },
+  "execution": {
+    "title": "Execution",
+    "note": "Changes apply at once. Values for all projects are set in Helena's settings.",
+    "defaultLabel": "Default execution",
+    "defaultHint": "Each agent sets what the agents of this project work with.",
+    "manageAgents": "Manage agents",
+    "levelLabel": "Autopilot level",
+    "levelHint": "3 means: acts on its own within the budget. Payments and credentials always stay locked.",
+    "levelSaved": "Autopilot level saved",
+    "budgetLabel": "Daily budget",
+    "budgetHint": "After that, work is throttled and you get an entry in the inbox.",
+    "budgetAria": "Daily budget in euros",
+    "budgetInvalid": "Enter a valid daily budget.",
+    "budgetSaved": "Daily budget saved",
+    "perDay": "€ / day",
+    "localLabel": "Local AI for background tasks",
+    "localHint": "Summaries, sorting and prechecks run locally; if the local model fails, the cloud takes over.",
+    "jevLabel": "Jev pre-stage for news",
+    "jevHint": "Quick sorting before the agent, with a fallback when unsure.",
+    "instanceWide": "For all projects",
+    "memoryLabel": "Memory without approval",
+    "memoryHint": "Agents may store memories directly.",
+    "perAgent": "Per agent"
+  },
+  "defaults": {
+    "adminOnly": "Only the administrator changes these defaults for all projects."
   }
 }

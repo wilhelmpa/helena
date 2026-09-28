@@ -1933,3 +1933,10 @@ a.ds-run-card:hover {
     display: none;
   }
 }
+
+/* A unit after a value field (€ / Tag). */
+.ds-unit {
+  color: var(--text-2);
+  font-size: 12px;
+  white-space: nowrap;
+}

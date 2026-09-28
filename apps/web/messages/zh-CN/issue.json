@@ -128,7 +128,10 @@
     "applyTemplate": "套用模板…",
     "noTemplates": "没有模板。",
     "created": "已创建 {identifier}",
-    "open": "打开"
+    "open": "打开",
+    "findProject": "查找项目",
+    "due": "截止",
+    "createMore": "继续创建"
   },
   "attachments": {
     "title": "附件",

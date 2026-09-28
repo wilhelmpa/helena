@@ -128,7 +128,10 @@
     "applyTemplate": "Appliquer un modèle…",
     "noTemplates": "Aucun modèle.",
     "created": "{identifier} créée",
-    "open": "Ouvrir"
+    "open": "Ouvrir",
+    "findProject": "Chercher un projet",
+    "due": "Échéance",
+    "createMore": "En créer d'autres"
   },
   "attachments": {
     "title": "Pièces jointes",

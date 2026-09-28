@@ -30,7 +30,9 @@
     "upload": "Загрузить",
     "newFolder": "Новая папка",
     "newFile": "Новая заметка",
-    "openInCode": "Открыть в VS Code"
+    "openInCode": "Открыть в VS Code",
+    "canvas": "Холст",
+    "doc": "Документ"
   },
   "breadcrumb": "Путь к папке",
   "modified": "{date, date, medium}",
@@ -212,5 +214,34 @@
     "openInPage": "Открыть крупно",
     "download": "Скачать",
     "searchFiles": "Искать в файлах …"
+  },
+  "canvas": {
+    "opening": "Открываем холст …",
+    "cardTitle": "Заголовок карточки",
+    "cardBody": "Текст карточки",
+    "newCard": "Новая карточка",
+    "link": "Ссылка",
+    "linkedDoc": "Документ · связан",
+    "linkedTask": "Задача · связана",
+    "readFailed": "Не удалось прочитать холст.",
+    "saveFailed": "Не удалось сохранить холст.",
+    "saving": "сохранение …",
+    "saved": "сохранено",
+    "taskPrompt": "Идентификатор задачи, например TRADE-123",
+    "zoomOut": "Уменьшить",
+    "zoomIn": "Увеличить",
+    "insert": "Вставить",
+    "findTask": "Найти задачу",
+    "eyebrow": "Знания / {path}",
+    "canvases": "Холсты",
+    "counts": "{cards, plural, one {# карточка} few {# карточки} many {# карточек} other {# карточки}} · {links, plural, one {# связь} few {# связи} many {# связей} other {# связи}}",
+    "share": "Поделиться",
+    "tools": {
+      "select": "Выбрать",
+      "card": "Карточка",
+      "doc": "Вставить документ",
+      "task": "Вставить задачу",
+      "connect": "Связать"
+    }
   }
 }

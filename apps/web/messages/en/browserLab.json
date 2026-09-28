@@ -89,7 +89,9 @@
     "team": "Team",
     "modeHint": "Standard: agents click step by step. Decision model: agents may hand multi-step browser work to browser_task.",
     "connectionHint": "Set up under Access & connections → Credentials.",
-    "teamHint": "Whose connections are listed."
+    "teamHint": "Whose connections are listed.",
+    "overridden": "Helena default overridden",
+    "resetToDefault": "Reset to Helena's default"
   },
   "form": {
     "goal": "Task",

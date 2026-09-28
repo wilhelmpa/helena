@@ -30,7 +30,9 @@
     "upload": "Subir",
     "newFolder": "Nueva carpeta",
     "newFile": "Nueva nota",
-    "openInCode": "Abrir en VS Code"
+    "openInCode": "Abrir en VS Code",
+    "canvas": "Lienzo",
+    "doc": "Documento"
   },
   "breadcrumb": "Ruta de la carpeta",
   "modified": "{date, date, medium}",
@@ -212,5 +214,34 @@
     "openInPage": "Abrir en grande",
     "download": "Descargar",
     "searchFiles": "Buscar en archivos …"
+  },
+  "canvas": {
+    "opening": "Abriendo el lienzo …",
+    "cardTitle": "Título de la tarjeta",
+    "cardBody": "Texto de la tarjeta",
+    "newCard": "Nueva tarjeta",
+    "link": "Enlace",
+    "linkedDoc": "Documento · enlazado",
+    "linkedTask": "Tarea · enlazada",
+    "readFailed": "No se pudo leer el lienzo.",
+    "saveFailed": "No se pudo guardar el lienzo.",
+    "saving": "guardando …",
+    "saved": "guardado",
+    "taskPrompt": "Identificador de la tarea, p. ej. TRADE-123",
+    "zoomOut": "Alejar",
+    "zoomIn": "Acercar",
+    "insert": "Insertar",
+    "findTask": "Buscar una tarea",
+    "eyebrow": "Conocimiento / {path}",
+    "canvases": "Lienzos",
+    "counts": "{cards, plural, one {# tarjeta} other {# tarjetas}} · {links, plural, one {# conexión} other {# conexiones}}",
+    "share": "Compartir",
+    "tools": {
+      "select": "Seleccionar",
+      "card": "Tarjeta",
+      "doc": "Insertar documento",
+      "task": "Insertar tarea",
+      "connect": "Conectar"
+    }
   }
 }

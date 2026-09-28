@@ -293,5 +293,6 @@
   },
   "resizeSidePanel": "Breite des Seitenfelds ändern",
   "advanced": "Erweitert",
-  "switchPerson": "Person wechseln"
+  "switchPerson": "Person wechseln",
+  "searchSettings": "Einstellung suchen …"
 }

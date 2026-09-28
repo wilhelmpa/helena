@@ -30,7 +30,9 @@
     "upload": "Upload",
     "newFolder": "New folder",
     "newFile": "New note",
-    "openInCode": "Open in VS Code"
+    "openInCode": "Open in VS Code",
+    "canvas": "Canvas",
+    "doc": "Doc"
   },
   "breadcrumb": "Folder path",
   "modified": "{date, date, medium}",
@@ -212,5 +214,34 @@
     "openInPage": "Open large",
     "download": "Download",
     "searchFiles": "Search files …"
+  },
+  "canvas": {
+    "opening": "Opening the canvas …",
+    "cardTitle": "Card title",
+    "cardBody": "Card text",
+    "newCard": "New card",
+    "link": "Link",
+    "linkedDoc": "Doc · linked",
+    "linkedTask": "Task · linked",
+    "readFailed": "The canvas could not be read.",
+    "saveFailed": "The canvas could not be saved.",
+    "saving": "saving …",
+    "saved": "saved",
+    "taskPrompt": "Task identifier, e.g. TRADE-123",
+    "zoomOut": "Zoom out",
+    "zoomIn": "Zoom in",
+    "insert": "Insert",
+    "findTask": "Find a task",
+    "eyebrow": "Knowledge / {path}",
+    "canvases": "Canvases",
+    "counts": "{cards, plural, one {# card} other {# cards}} · {links, plural, one {# link} other {# links}}",
+    "share": "Share",
+    "tools": {
+      "select": "Select",
+      "card": "Card",
+      "doc": "Insert doc",
+      "task": "Insert task",
+      "connect": "Connect"
+    }
   }
 }

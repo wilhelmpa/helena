@@ -89,7 +89,9 @@
     "team": "团队",
     "modeHint": "Standard：智能体逐步点击。决策模型：智能体可将多步浏览器工作交给 browser_task。",
     "connectionHint": "在“访问与连接”→“凭据”中设置。",
-    "teamHint": "显示哪个团队的连接。"
+    "teamHint": "显示哪个团队的连接。",
+    "overridden": "已覆盖 Helena 默认值",
+    "resetToDefault": "重置为 Helena 默认值"
   },
   "form": {
     "goal": "任务",

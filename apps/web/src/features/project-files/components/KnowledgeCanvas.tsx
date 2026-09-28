@@ -1,5 +1,5 @@
 'use client';
-/* eslint-disable react/jsx-no-literals, no-restricted-syntax, better-tailwindcss/no-restricted-classes, react-hooks/set-state-in-effect -- WissenLeinwand.dc.html bestimmt Darstellung; die Datei wird einmal nach dem Query-Ergebnis initialisiert. */
+/* eslint-disable no-restricted-syntax, better-tailwindcss/no-restricted-classes, react-hooks/set-state-in-effect -- WissenLeinwand.dc.html bestimmt Darstellung; die Datei wird einmal nach dem Query-Ergebnis initialisiert. */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -22,6 +22,8 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
+import { Minus, Plus } from 'lucide-react';
 import FilePickerDialog from '@/components/common/files/FilePickerDialog';
 import IssuePickerDialog from '@/components/common/overlay/IssuePickerDialog';
 import {
@@ -61,6 +63,8 @@ type CardData = {
   color: string;
   edit: (id: string, field: 'title' | 'body', value: string) => void;
   editable: boolean;
+  // The accessible names of a card's two fields.
+  labels: { title: string; body: string };
 };
 type CardNode = Node<CardData, 'card'>;
 const borderColors = ['#645274', '#395e50', '#65483d', '#6b562b'];
@@ -92,7 +96,7 @@ function CanvasCard({ id, data }: NodeProps<CardNode>) {
         </Link>
       ) : (
         <input
-          aria-label="Kartentitel"
+          aria-label={data.labels.title}
           readOnly={!data.editable}
           value={data.title}
           onChange={(event) => data.edit(id, 'title', event.target.value)}
@@ -103,7 +107,7 @@ function CanvasCard({ id, data }: NodeProps<CardNode>) {
         <p className="mt-1 text-xs text-muted-foreground">{data.body}</p>
       ) : (
         <textarea
-          aria-label="Kartentext"
+          aria-label={data.labels.body}
           readOnly={!data.editable}
           value={data.body}
           onChange={(event) => data.edit(id, 'body', event.target.value)}
@@ -126,11 +130,14 @@ function CanvasCard({ id, data }: NodeProps<CardNode>) {
   );
 }
 
+const CANVAS_TOOLS = ['select', 'card', 'doc', 'task', 'connect'] as const;
+type CanvasTool = (typeof CANVAS_TOOLS)[number];
+
 function splitText(text: string) {
   const match = /^# ([^\n]+)(?:\n+|$)/.exec(text);
   return match
     ? { title: match[1]!, body: text.slice(match[0].length) }
-    : { title: text.split('\n')[0] || 'Karte', body: text.split('\n').slice(1).join('\n') };
+    : { title: text.split('\n')[0] || '', body: text.split('\n').slice(1).join('\n') };
 }
 
 function toHref(record: CanvasRecord, scope: FileScope) {
@@ -182,7 +189,9 @@ function CanvasSurface({
   const [original, setOriginal] = useState<CanvasJson | null>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState<CardNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-  const [tool, setTool] = useState('Auswählen');
+  const t = useTranslations('files.canvas');
+  const labels = useMemo(() => ({ title: t('cardTitle'), body: t('cardBody') }), [t]);
+  const [tool, setTool] = useState<CanvasTool>('select');
   const [picker, setPicker] = useState<'file' | 'link' | null>(null);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -231,13 +240,13 @@ function CanvasSurface({
                   ? text.title
                   : record.file?.split('/').at(-1)?.replace(/\.md$/i, '') ||
                     record.url ||
-                    'Verknüpfung',
+                    t('link'),
               body:
                 record.type === 'text'
                   ? text.body
                   : record.type === 'file'
-                    ? 'Doc · verknüpft'
-                    : 'Aufgabe · verknüpft',
+                    ? t('linkedDoc')
+                    : t('linkedTask'),
               href: toHref(record, scope),
               color:
                 record.color && /^#[\da-f]{6}$/i.test(record.color)
@@ -245,6 +254,7 @@ function CanvasSurface({
                   : borderColors[0]!,
               edit,
               editable,
+              labels,
             },
           };
         }),
@@ -266,9 +276,9 @@ function CanvasSurface({
         }),
       );
     } catch {
-      toast.error('Leinwand konnte nicht gelesen werden');
+      toast.error(t('readFailed'));
     }
-  }, [file.data, original, setNodes, setEdges, scope, edit, editable]);
+  }, [file.data, original, setNodes, setEdges, scope, edit, editable, labels, t]);
   const save = useCallback(async () => {
     if (!original || !revision.current || !dirty) return;
     const old = new Map(original.nodes.map((node) => [node.id, node]));
@@ -311,11 +321,11 @@ function CanvasSurface({
       setOriginal(next);
       if (generation.current === savingGeneration) setDirty(false);
     } catch {
-      toast.error('Leinwand konnte nicht gespeichert werden');
+      toast.error(t('saveFailed'));
     } finally {
       setSaving(false);
     }
-  }, [original, nodes, edges, dirty, scope, path]);
+  }, [original, nodes, edges, dirty, scope, path, t]);
   useEffect(() => {
     if (!dirty || saving) return;
     const timer = window.setTimeout(() => void save(), 800);
@@ -354,15 +364,16 @@ function CanvasSurface({
         data: {
           title:
             kind === 'text'
-              ? 'Neue Karte'
+              ? t('newCard')
               : kind === 'file'
                 ? value.split('/').at(-1)!.replace(/\.md$/i, '')
                 : value,
-          body: kind === 'file' ? 'Doc · verknüpft' : kind === 'link' ? 'Aufgabe · verknüpft' : '',
+          body: kind === 'file' ? t('linkedDoc') : kind === 'link' ? t('linkedTask') : '',
           href,
           color: borderColors[current.length % borderColors.length]!,
           edit,
           editable,
+          labels,
         },
       },
     ]);
@@ -402,25 +413,27 @@ function CanvasSurface({
     >
       <div className="pointer-events-none absolute inset-s-9 top-6 z-10 max-sm:inset-s-4">
         <p className="font-mono text-[10px] tracking-[.23em] text-muted-foreground">
-          WISSEN / {path.split('/').slice(0, -1).join(' / ').toUpperCase() || 'LEINWÄNDE'}
+          {t('eyebrow', {
+            path: path.split('/').slice(0, -1).join(' / ') || t('canvases'),
+          }).toLocaleUpperCase()}
         </p>
-        <h1 className="mt-2 text-[27px] font-[520] tracking-[-.03em]">
+        <h1 className="mt-2 text-[24px] font-[520] tracking-[-.02em]">
           {name.replace(/\.canvas$/i, '')}
         </h1>
       </div>
       <div className="absolute inset-e-9 top-8 z-10 flex items-center gap-2 text-xs text-muted-foreground max-sm:inset-s-4 max-sm:inset-e-auto max-sm:top-28">
         <span className="rounded-full bg-card px-3 py-2">
-          {nodes.length} Karten · {edges.length} Verbindungen
+          {t('counts', { cards: nodes.length, links: edges.length })}
         </span>
         <button
           type="button"
           onClick={() => void actions.copyPath(item)}
           className="rounded-full border border-border bg-card px-3 py-2 text-foreground"
         >
-          Teilen
+          {t('share')}
         </button>
         <FileItemMenu item={item} actions={actions} can={can} />
-        <span className="sr-only">{saving ? 'speichert …' : 'gespeichert'}</span>
+        <span className="sr-only">{saving ? t('saving') : t('saved')}</span>
       </div>
       <ReactFlow
         nodes={nodes}
@@ -442,65 +455,65 @@ function CanvasSurface({
         }}
         onConnect={connect}
         nodesDraggable={editable}
-        nodesConnectable={editable && tool === 'Verbinden'}
+        nodesConnectable={editable && tool === 'connect'}
         defaultViewport={{ x: 0, y: 0, zoom: 1 }}
         proOptions={{ hideAttribution: true }}
         className="!bg-background"
       >
-        <Background variant={BackgroundVariant.Dots} gap={22} size={1} color="#24202b" />
+        <Background variant={BackgroundVariant.Dots} gap={22} size={1} color="var(--line-strong)" />
       </ReactFlow>
       <div className="absolute inset-s-1/2 bottom-6 z-10 flex max-w-[calc(100%-20px)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-2xl border border-border bg-card p-1.5 text-xs text-muted-foreground shadow-md">
-        {['Auswählen', 'Karte', 'Doc einfügen', 'Aufgabe einfügen', 'Verbinden'].map((label) => (
+        {CANVAS_TOOLS.map((key) => (
           <button
-            key={label}
+            key={key}
             type="button"
-            disabled={!original || (!editable && label !== 'Auswählen')}
+            disabled={!original || (!editable && key !== 'select')}
             onClick={() => {
-              setTool(label);
-              if (label === 'Karte') add('text');
-              if (label === 'Doc einfügen') setPicker('file');
-              if (label === 'Aufgabe einfügen') {
+              setTool(key);
+              if (key === 'card') add('text');
+              if (key === 'doc') setPicker('file');
+              if (key === 'task') {
                 if (scope.kind === 'project') setPicker('link');
                 else {
-                  const identifier = window.prompt('Aufgabenkennung, z. B. TRADE-123')?.trim();
+                  const identifier = window.prompt(t('taskPrompt'))?.trim();
                   if (identifier) add('link', identifier);
                 }
               }
             }}
-            className={`shrink-0 rounded-xl px-3 py-2 ${tool === label ? 'bg-accent text-foreground' : 'hover:text-foreground'}`}
+            className={`shrink-0 rounded-xl px-3 py-2 ${tool === key ? 'bg-accent text-foreground' : 'hover:text-foreground'}`}
           >
-            {label}
+            {t(`tools.${key}`)}
           </button>
         ))}
         <span className="mx-2 h-6 w-px bg-border" />
         <button
           type="button"
-          aria-label="Verkleinern"
+          aria-label={t('zoomOut')}
           onClick={() => {
             void zoomOut();
             setZoom(Math.round((getZoom() * 100) / 1.2));
           }}
         >
-          −
+          <Minus size={14} aria-hidden="true" />
         </button>
-        <span className="px-1 font-mono">{zoom} %</span>
+        <span className="px-1 font-mono">{`${zoom} %`}</span>
         <button
           type="button"
-          aria-label="Vergrößern"
+          aria-label={t('zoomIn')}
           onClick={() => {
             void zoomIn();
             setZoom(Math.round(getZoom() * 120));
           }}
         >
-          +
+          <Plus size={14} aria-hidden="true" />
         </button>
       </div>
       {picker === 'file' && (
         <FilePickerDialog
           scope={scope}
           mode="file"
-          title="Doc einfügen"
-          confirmLabel="Einfügen"
+          title={t('tools.doc')}
+          confirmLabel={t('insert')}
           initialPath={path.split('/').slice(0, -1).join('/')}
           accept={(entry) => /\.(md|markdown)$/i.test(entry.name)}
           onPick={(picked) => {
@@ -513,8 +526,8 @@ function CanvasSurface({
       {picker === 'link' && scope.kind === 'project' && (
         <IssuePickerDialog
           projectKey={scope.projectKey}
-          title="Aufgabe einfügen"
-          prompt="Aufgabe suchen"
+          title={t('tools.task')}
+          prompt={t('findTask')}
           onPick={(hit) => {
             add('link', hit.identifier);
             setPicker(null);

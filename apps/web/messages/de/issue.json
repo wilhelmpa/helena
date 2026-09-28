@@ -128,7 +128,10 @@
     "applyTemplate": "Vorlage anwenden…",
     "noTemplates": "Keine Vorlagen.",
     "created": "{identifier} erstellt",
-    "open": "Öffnen"
+    "open": "Öffnen",
+    "findProject": "Projekt suchen",
+    "due": "Fällig",
+    "createMore": "Weitere anlegen"
   },
   "attachments": {
     "title": "Anhänge",

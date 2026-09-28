@@ -30,7 +30,9 @@
     "upload": "Завантажити",
     "newFolder": "Нова папка",
     "newFile": "Нова нотатка",
-    "openInCode": "Відкрити у VS Code"
+    "openInCode": "Відкрити у VS Code",
+    "canvas": "Полотно",
+    "doc": "Документ"
   },
   "breadcrumb": "Шлях до папки",
   "modified": "{date, date, medium}",
@@ -212,5 +214,34 @@
     "openInPage": "Відкрити великим",
     "download": "Завантажити",
     "searchFiles": "Шукати у файлах …"
+  },
+  "canvas": {
+    "opening": "Відкриваємо полотно …",
+    "cardTitle": "Заголовок картки",
+    "cardBody": "Текст картки",
+    "newCard": "Нова картка",
+    "link": "Посилання",
+    "linkedDoc": "Документ · пов'язано",
+    "linkedTask": "Завдання · пов'язано",
+    "readFailed": "Не вдалося прочитати полотно.",
+    "saveFailed": "Не вдалося зберегти полотно.",
+    "saving": "збереження …",
+    "saved": "збережено",
+    "taskPrompt": "Ідентифікатор завдання, наприклад TRADE-123",
+    "zoomOut": "Зменшити",
+    "zoomIn": "Збільшити",
+    "insert": "Вставити",
+    "findTask": "Знайти завдання",
+    "eyebrow": "Знання / {path}",
+    "canvases": "Полотна",
+    "counts": "{cards, plural, one {# картка} few {# картки} many {# карток} other {# картки}} · {links, plural, one {# зв'язок} few {# зв'язки} many {# зв'язків} other {# зв'язку}}",
+    "share": "Поділитися",
+    "tools": {
+      "select": "Вибрати",
+      "card": "Картка",
+      "doc": "Вставити документ",
+      "task": "Вставити завдання",
+      "connect": "Зв'язати"
+    }
   }
 }

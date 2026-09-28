@@ -848,5 +848,32 @@
     "secretMissing": "belum ada",
     "required": "Nilai ini wajib diisi.",
     "number": "Masukkan angka."
+  },
+  "execution": {
+    "title": "Eksekusi",
+    "note": "Perubahan langsung berlaku. Nilai untuk semua proyek diatur di pengaturan Helena.",
+    "defaultLabel": "Eksekusi bawaan",
+    "defaultHint": "Setiap agen menentukan sendiri dengan apa ia bekerja di proyek ini.",
+    "manageAgents": "Kelola agen",
+    "levelLabel": "Tingkat autopilot",
+    "levelHint": "3 berarti: bertindak sendiri dalam anggaran. Pembayaran dan kredensial selalu tetap terkunci.",
+    "levelSaved": "Tingkat autopilot disimpan",
+    "budgetLabel": "Anggaran harian",
+    "budgetHint": "Setelah itu pekerjaan diperlambat dan kamu mendapat entri di kotak masuk.",
+    "budgetAria": "Anggaran harian dalam euro",
+    "budgetInvalid": "Masukkan anggaran harian yang valid.",
+    "budgetSaved": "Anggaran harian disimpan",
+    "perDay": "€ / hari",
+    "localLabel": "AI lokal untuk tugas latar belakang",
+    "localHint": "Ringkasan, pengelompokan, dan pemeriksaan awal berjalan lokal; jika model lokal gagal, cloud mengambil alih.",
+    "jevLabel": "Tahap awal Jev untuk berita",
+    "jevHint": "Pengelompokan cepat sebelum agen, dengan cadangan saat ragu.",
+    "instanceWide": "Untuk semua proyek",
+    "memoryLabel": "Memori tanpa persetujuan",
+    "memoryHint": "Agen boleh menyimpan ingatan secara langsung.",
+    "perAgent": "Per agen"
+  },
+  "defaults": {
+    "adminOnly": "Hanya administrator yang mengubah bawaan untuk semua proyek ini."
   }
 }

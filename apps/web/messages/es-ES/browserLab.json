@@ -89,7 +89,9 @@
     "team": "Equipo",
     "modeHint": "Standard: los agentes hacen clic paso a paso. Modelo de decisión: los agentes pueden delegar el trabajo de varios pasos a browser_task.",
     "connectionHint": "Se configura en Accesos y conexiones → Accesos.",
-    "teamHint": "De quién son las conexiones que se muestran."
+    "teamHint": "De quién son las conexiones que se muestran.",
+    "overridden": "Valor predeterminado de Helena sustituido",
+    "resetToDefault": "Restablecer al valor de Helena"
   },
   "form": {
     "goal": "Tarea",

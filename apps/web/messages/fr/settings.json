@@ -848,5 +848,32 @@
     "secretMissing": "manquant",
     "required": "Cette valeur est requise.",
     "number": "Saisis un nombre."
+  },
+  "execution": {
+    "title": "Exécution",
+    "note": "Les modifications s'appliquent tout de suite. Les valeurs pour tous les projets se règlent dans les réglages de Helena.",
+    "defaultLabel": "Exécution par défaut",
+    "defaultHint": "Chaque agent règle lui-même avec quoi il travaille dans ce projet.",
+    "manageAgents": "Gérer les agents",
+    "levelLabel": "Niveau de pilote automatique",
+    "levelHint": "3 signifie : agit seul dans le budget. Paiements et identifiants restent toujours verrouillés.",
+    "levelSaved": "Niveau de pilote automatique enregistré",
+    "budgetLabel": "Budget journalier",
+    "budgetHint": "Ensuite le travail est ralenti et tu reçois une entrée dans la boîte.",
+    "budgetAria": "Budget journalier en euros",
+    "budgetInvalid": "Saisis un budget journalier valide.",
+    "budgetSaved": "Budget journalier enregistré",
+    "perDay": "€ / jour",
+    "localLabel": "IA locale pour les tâches d'arrière-plan",
+    "localHint": "Résumés, classement et vérifications préalables tournent en local ; si le modèle local tombe, le cloud prend le relais.",
+    "jevLabel": "Pré-étape Jev pour les actualités",
+    "jevHint": "Classement rapide avant l'agent, avec repli en cas de doute.",
+    "instanceWide": "Pour tous les projets",
+    "memoryLabel": "Mémoire sans validation",
+    "memoryHint": "Les agents peuvent enregistrer des souvenirs directement.",
+    "perAgent": "Par agent"
+  },
+  "defaults": {
+    "adminOnly": "Seul l'administrateur modifie ces valeurs pour tous les projets."
   }
 }

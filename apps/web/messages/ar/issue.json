@@ -128,7 +128,10 @@
     "applyTemplate": "تطبيق قالب…",
     "noTemplates": "لا توجد قوالب.",
     "created": "تم إنشاء {identifier}",
-    "open": "فتح"
+    "open": "فتح",
+    "findProject": "ابحث عن مشروع",
+    "due": "الاستحقاق",
+    "createMore": "إنشاء المزيد"
   },
   "attachments": {
     "title": "المرفقات",

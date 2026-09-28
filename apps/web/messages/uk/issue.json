@@ -128,7 +128,10 @@
     "applyTemplate": "Застосувати шаблон…",
     "noTemplates": "Шаблонів немає.",
     "created": "{identifier} створено",
-    "open": "Відкрити"
+    "open": "Відкрити",
+    "findProject": "Знайти проєкт",
+    "due": "Термін",
+    "createMore": "Створити ще"
   },
   "attachments": {
     "title": "Вкладення",

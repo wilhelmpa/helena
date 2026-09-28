@@ -1,6 +1,7 @@
 'use client';
 
 import { useQueries } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import { useSession } from '@/lib/auth-client';
 import { useProjectsQuery } from '@/services/projects.service';
 import { useCurrentTeam } from '@/components/common/page/useTeamSections';
@@ -10,14 +11,11 @@ import { InstanceBrowserControlSection } from '@/features/browser-lab/components
 // The browser default for all projects; the other project defaults (autopilot, MCP, run
 // resume, engine) follow on the same page from GodGeneralPage, once.
 export default function HomeDefaultsPage() {
+  const t = useTranslations('settings.defaults');
   const { data: session } = useSession();
   const team = useCurrentTeam();
   if (session?.user.role !== 'god') {
-    return (
-      <p className="text-sm text-muted-foreground">
-        {'Die vorhandenen instanzweiten Vorgaben können nur Administratoren ändern.'}
-      </p>
-    );
+    return <p className="text-sm text-muted-foreground">{t('adminOnly')}</p>;
   }
   return <AdminHomeDefaults teamId={team?.id ?? null} />;
 }

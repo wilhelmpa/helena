@@ -128,7 +128,10 @@
     "applyTemplate": "Aplicar la plantilla…",
     "noTemplates": "Sin plantillas.",
     "created": "{identifier} creada",
-    "open": "Abrir"
+    "open": "Abrir",
+    "findProject": "Buscar un proyecto",
+    "due": "Vence",
+    "createMore": "Crear más"
   },
   "attachments": {
     "title": "Adjuntos",

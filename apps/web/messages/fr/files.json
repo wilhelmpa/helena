@@ -30,7 +30,9 @@
     "upload": "Téléverser",
     "newFolder": "Nouveau dossier",
     "newFile": "Nouvelle note",
-    "openInCode": "Ouvrir dans VS Code"
+    "openInCode": "Ouvrir dans VS Code",
+    "canvas": "Toile",
+    "doc": "Document"
   },
   "breadcrumb": "Chemin du dossier",
   "modified": "{date, date, medium}",
@@ -212,5 +214,34 @@
     "openInPage": "Ouvrir en grand",
     "download": "Télécharger",
     "searchFiles": "Rechercher dans les fichiers …"
+  },
+  "canvas": {
+    "opening": "Ouverture de la toile …",
+    "cardTitle": "Titre de la carte",
+    "cardBody": "Texte de la carte",
+    "newCard": "Nouvelle carte",
+    "link": "Lien",
+    "linkedDoc": "Document · lié",
+    "linkedTask": "Tâche · liée",
+    "readFailed": "Impossible de lire la toile.",
+    "saveFailed": "Impossible d'enregistrer la toile.",
+    "saving": "enregistrement …",
+    "saved": "enregistré",
+    "taskPrompt": "Identifiant de la tâche, p. ex. TRADE-123",
+    "zoomOut": "Dézoomer",
+    "zoomIn": "Zoomer",
+    "insert": "Insérer",
+    "findTask": "Chercher une tâche",
+    "eyebrow": "Savoir / {path}",
+    "canvases": "Toiles",
+    "counts": "{cards, plural, one {# carte} other {# cartes}} · {links, plural, one {# lien} other {# liens}}",
+    "share": "Partager",
+    "tools": {
+      "select": "Sélectionner",
+      "card": "Carte",
+      "doc": "Insérer un document",
+      "task": "Insérer une tâche",
+      "connect": "Relier"
+    }
   }
 }

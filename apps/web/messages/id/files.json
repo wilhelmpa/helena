@@ -30,7 +30,9 @@
     "upload": "Unggah",
     "newFolder": "Folder baru",
     "newFile": "Catatan baru",
-    "openInCode": "Buka di VS Code"
+    "openInCode": "Buka di VS Code",
+    "canvas": "Kanvas",
+    "doc": "Dokumen"
   },
   "breadcrumb": "Jalur folder",
   "modified": "{date, date, medium}",
@@ -212,5 +214,34 @@
     "openInPage": "Buka besar",
     "download": "Unduh",
     "searchFiles": "Cari berkas …"
+  },
+  "canvas": {
+    "opening": "Membuka kanvas …",
+    "cardTitle": "Judul kartu",
+    "cardBody": "Teks kartu",
+    "newCard": "Kartu baru",
+    "link": "Tautan",
+    "linkedDoc": "Dokumen · tertaut",
+    "linkedTask": "Tugas · tertaut",
+    "readFailed": "Kanvas tidak dapat dibaca.",
+    "saveFailed": "Kanvas tidak dapat disimpan.",
+    "saving": "menyimpan …",
+    "saved": "disimpan",
+    "taskPrompt": "Pengenal tugas, mis. TRADE-123",
+    "zoomOut": "Perkecil",
+    "zoomIn": "Perbesar",
+    "insert": "Sisipkan",
+    "findTask": "Cari tugas",
+    "eyebrow": "Pengetahuan / {path}",
+    "canvases": "Kanvas",
+    "counts": "{cards, plural, other {# kartu}} · {links, plural, other {# tautan}}",
+    "share": "Bagikan",
+    "tools": {
+      "select": "Pilih",
+      "card": "Kartu",
+      "doc": "Sisipkan dokumen",
+      "task": "Sisipkan tugas",
+      "connect": "Hubungkan"
+    }
   }
 }

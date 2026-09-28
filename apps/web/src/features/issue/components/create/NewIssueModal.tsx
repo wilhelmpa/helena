@@ -432,7 +432,7 @@ export default function NewIssueModal({
                   {project.project.key}
                 </Pill>
               }
-              inputPlaceholder="Projekt suchen"
+              inputPlaceholder={t('findProject')}
               items={projects.map((item) => ({
                 key: item.key,
                 search: `${item.key} ${item.name}`,
@@ -489,7 +489,7 @@ export default function NewIssueModal({
 
           <DatePill
             value={dueDate || null}
-            placeholder="Fällig"
+            placeholder={t('due')}
             onChange={(v) => setDueDate(v ?? '')}
             disabled={earliestDue ? { before: earliestDue } : undefined}
           />
@@ -603,7 +603,7 @@ export default function NewIssueModal({
               checked={createMore}
               onChange={(e) => setCreateMore(e.target.checked)}
             />
-            {'Weitere anlegen'}
+            {t('createMore')}
           </label>
           <span className="new-issue-shortcut ms-auto hidden font-mono sm:inline">{'⌘ ENTER'}</span>
           <Button

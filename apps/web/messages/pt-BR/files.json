@@ -30,7 +30,9 @@
     "upload": "Enviar",
     "newFolder": "Nova pasta",
     "newFile": "Nova nota",
-    "openInCode": "Abrir no VS Code"
+    "openInCode": "Abrir no VS Code",
+    "canvas": "Tela",
+    "doc": "Documento"
   },
   "breadcrumb": "Caminho da pasta",
   "modified": "{date, date, medium}",
@@ -212,5 +214,34 @@
     "openInPage": "Abrir grande",
     "download": "Baixar",
     "searchFiles": "Pesquisar arquivos …"
+  },
+  "canvas": {
+    "opening": "Abrindo a tela …",
+    "cardTitle": "Título do cartão",
+    "cardBody": "Texto do cartão",
+    "newCard": "Novo cartão",
+    "link": "Link",
+    "linkedDoc": "Documento · vinculado",
+    "linkedTask": "Tarefa · vinculada",
+    "readFailed": "Não foi possível ler a tela.",
+    "saveFailed": "Não foi possível salvar a tela.",
+    "saving": "salvando …",
+    "saved": "salvo",
+    "taskPrompt": "Identificador da tarefa, p. ex. TRADE-123",
+    "zoomOut": "Diminuir zoom",
+    "zoomIn": "Aumentar zoom",
+    "insert": "Inserir",
+    "findTask": "Buscar uma tarefa",
+    "eyebrow": "Conhecimento / {path}",
+    "canvases": "Telas",
+    "counts": "{cards, plural, one {# cartão} other {# cartões}} · {links, plural, one {# conexão} other {# conexões}}",
+    "share": "Compartilhar",
+    "tools": {
+      "select": "Selecionar",
+      "card": "Cartão",
+      "doc": "Inserir documento",
+      "task": "Inserir tarefa",
+      "connect": "Conectar"
+    }
   }
 }

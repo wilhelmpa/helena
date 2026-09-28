@@ -848,5 +848,32 @@
     "secretMissing": "缺失",
     "required": "此值为必填项。",
     "number": "请输入数字。"
+  },
+  "execution": {
+    "title": "执行",
+    "note": "更改立即生效。适用于所有项目的值在 Helena 的设置中设定。",
+    "defaultLabel": "默认执行",
+    "defaultHint": "每个智能体自行设定在此项目中使用的执行方式。",
+    "manageAgents": "管理智能体",
+    "levelLabel": "自动驾驶级别",
+    "levelHint": "3 表示：在预算内自主行动。付款和凭据始终锁定。",
+    "levelSaved": "已保存自动驾驶级别",
+    "budgetLabel": "每日预算",
+    "budgetHint": "超出后将限速，你会在收件箱中收到一条记录。",
+    "budgetAria": "每日预算（欧元）",
+    "budgetInvalid": "请输入有效的每日预算。",
+    "budgetSaved": "已保存每日预算",
+    "perDay": "€ / 天",
+    "localLabel": "用于后台任务的本地 AI",
+    "localHint": "摘要、归类和预检在本地运行；本地模型不可用时由云端接管。",
+    "jevLabel": "新闻的 Jev 预处理",
+    "jevHint": "在智能体之前快速归类，不确定时回退。",
+    "instanceWide": "适用于所有项目",
+    "memoryLabel": "无需批准的记忆",
+    "memoryHint": "智能体可以直接保存记忆。",
+    "perAgent": "按智能体"
+  },
+  "defaults": {
+    "adminOnly": "只有管理员可以更改这些适用于所有项目的默认值。"
   }
 }

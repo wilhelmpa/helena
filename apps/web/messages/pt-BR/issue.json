@@ -128,7 +128,10 @@
     "applyTemplate": "Aplicar modelo…",
     "noTemplates": "Sem modelos.",
     "created": "{identifier} criada",
-    "open": "Abrir"
+    "open": "Abrir",
+    "findProject": "Buscar um projeto",
+    "due": "Prazo",
+    "createMore": "Criar mais"
   },
   "attachments": {
     "title": "Anexos",

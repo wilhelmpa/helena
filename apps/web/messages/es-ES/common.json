@@ -293,5 +293,6 @@
   },
   "resizeSidePanel": "Cambiar el ancho del panel lateral",
   "advanced": "Avanzado",
-  "switchPerson": "Cambiar de persona"
+  "switchPerson": "Cambiar de persona",
+  "searchSettings": "Buscar ajuste …"
 }

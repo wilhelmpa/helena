@@ -128,7 +128,10 @@
     "applyTemplate": "Terapkan templat…",
     "noTemplates": "Tidak ada templat.",
     "created": "{identifier} dibuat",
-    "open": "Buka"
+    "open": "Buka",
+    "findProject": "Cari proyek",
+    "due": "Jatuh tempo",
+    "createMore": "Buat lagi"
   },
   "attachments": {
     "title": "Lampiran",
