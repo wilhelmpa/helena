@@ -1,13 +1,32 @@
 'use client';
 
-import { type ReactNode } from 'react';
-import Link from 'next/link';
+import { useState, type ReactNode } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Plus } from 'lucide-react';
+import {
+  Bot,
+  FolderOpen,
+  Inbox,
+  LayoutDashboard,
+  ListTodo,
+  Plus,
+  Settings2,
+  Target,
+  Workflow,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import {
+  Tree,
+  TreeAction,
+  TreeGap,
+  TreeItem,
+  pickActive,
+  type NavCandidate,
+} from '@/design-system';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useProjectFeatures } from '@/hooks/useProjectFeatures';
 import { useInboxUnread } from '@/hooks/useInboxUnread';
+import { useAutomationStatus } from '@/hooks/useAutomationStatus';
+import { useSettingsSectionText } from '@/hooks/useSectionLabels';
 import { useOwnerInbox } from '@/features/inbox/useOwnerInbox';
 import { usePendingApprovalCount } from '@/services/approvals.service';
 import { usePipelineApprovals } from '@/services/pipelines.service';
@@ -19,34 +38,42 @@ import {
   agentActivityPath,
   aiAgentsPath,
   aiTeamPath,
+  cyclesPath,
   dashboardPath,
   dashboardsPath,
   filesPath,
   homeFilesPath,
   inboxPath,
   initiativesPath,
-  cyclesPath,
-  receiptsPath,
-  projectPath,
-  workflowsPath,
+  mcpServerPath,
+  membersPath,
+  notificationsPath,
   organizationPath,
+  projectPath,
+  receiptsPath,
+  settingsPath,
+  viewPath,
+  workflowsPath,
 } from '@/utils/paths';
 import { homeNavigation } from './homeNavigation';
 import SidebarApprovalsRefresh from './SidebarApprovalsRefresh';
-import SidebarAreaNav from './SidebarAreaNav';
+import SidebarAreaMenu from './SidebarAreaMenu';
 import SidebarSavedViewItem from './SidebarSavedViewItem';
-import { hasTreeContent } from './treeContent';
 import SidebarKnowledgeFolders from './SidebarKnowledgeFolders';
 import FileNewFolderDialog from '@/features/project-files/components/FileNewFolderDialog';
-import { useState } from 'react';
 import { useCrossProjectIssuesQuery } from '@/features/home/services/tasks.service';
-import { useMemberRoutines } from '@/features/routines/services/routines.service';
+import { useMemberRoutines, useRoutines } from '@/features/routines/services/routines.service';
 import NewViewMenu from './NewViewMenu';
 import type { ViewTemplate } from '@/hooks/useViewEditor';
 
+// The sidebar tree (docs/design-system.md §6–§7, drafts ui-entwurf/Navigation-*): the
+// only navigation. Labels DU and PROJEKT, no other headings; rows of one height, 16px
+// indent per level, exactly one marked row — the one that describes the current page
+// most specifically (nav/activeMatch) — and on level 1 an accordion: only the area that
+// holds the current page is open until another is opened.
+
 // A saved view without filters in the board or list layout shows the same as the
-// "Aufgaben" entry itself, so the tree does not list it a second time (it stays in the
-// page's own view tabs).
+// "Aufgaben" row itself, so the tree does not list it a second time.
 function showsAllTasks(view: View) {
   const layout = (view.display as { layout?: string } | null)?.layout ?? 'kanban';
   return (
@@ -56,93 +83,20 @@ function showsAllTasks(view: View) {
   );
 }
 
-function pathIsActive(pathname: string, href: string) {
-  const path = href.split('?')[0]!;
-  if (/^\/project\/[^/]+$/.test(path)) {
-    return (
-      pathname === path ||
-      pathname.startsWith(`${path}/view/`) ||
-      pathname.startsWith(`${path}/issue/`)
-    );
-  }
-  return pathname === path || (path !== '/' && pathname.startsWith(`${path}/`));
+function useLocation() {
+  const pathname = usePathname();
+  const search = useSearchParams();
+  return { pathname, search: new URLSearchParams(search.toString()) };
 }
 
-function TreeLink({
-  href,
-  children,
-  badge,
-  dot,
-  nested = false,
-  activeOverride,
-}: {
-  href: string;
-  children: ReactNode;
-  badge?: number;
-  dot?: boolean;
-  nested?: boolean;
-  activeOverride?: boolean;
-}) {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [path, query] = href.split('?');
-  const active =
-    activeOverride ??
-    (query
-      ? pathname === path &&
-        [...new URLSearchParams(query)].every(([key, value]) => searchParams.get(key) === value)
-      : path === '/tasks'
-        ? pathname === path && !searchParams.has('assignee') && !searchParams.has('state')
-        : pathIsActive(pathname, href) && (!nested || searchParams.size === 0));
-  return (
-    <Link
-      href={href}
-      className={`helena-tree-link ${nested ? 'helena-tree-child' : ''} ${active ? 'is-active' : ''}`}
-      aria-current={active ? 'page' : undefined}
-    >
-      <span className="min-w-0 flex-1 truncate">{children}</span>
-      {badge != null && badge > 0 && <span className="helena-tree-badge">{badge}</span>}
-      {dot && <span className="size-1.5 rounded-full bg-primary" aria-hidden="true" />}
-    </Link>
-  );
-}
+// The level-1 area a row id belongs to ("dashboard", "tasks", …).
+const sectionOf = (id: string | null) => (id ? id.split(':')[0]! : null);
 
-// A level-1 entry of the tree. It IS the "all" choice of its area (owner, 28.09.): a
-// click shows the whole area and marks exactly this row. Its children are always shown
-// (no chevrons, nothing to fold); while one of them is the open page only the child is
-// marked and this row just reads brighter (CSS: .helena-tree-branch:has(...)).
-function TreeBranch({
-  label,
-  href,
-  action,
-  hasChildren,
-  activePaths = [],
-  activeOverride,
-  children,
-}: {
-  label: string;
-  href: string;
-  action?: ReactNode;
-  hasChildren?: boolean;
-  // Pages of this area without an entry of their own; the row is marked on them too.
-  activePaths?: string[];
-  activeOverride?: boolean;
-  children: ReactNode;
-}) {
-  const pathname = usePathname();
-  const active =
-    activeOverride ?? (activePaths.some((path) => pathIsActive(pathname, path)) ? true : undefined);
-  const expandable = hasChildren ?? hasTreeContent(children);
+function SidebarLabel({ children }: { children: ReactNode }) {
   return (
-    <div className="helena-tree-branch">
-      <div className="helena-tree-parent">
-        <TreeLink href={href} activeOverride={active}>
-          {label}
-        </TreeLink>
-        {action}
-      </div>
-      {expandable && <div className="helena-tree-children">{children}</div>}
-    </div>
+    <span className="ds-sidebar-label" role="presentation">
+      {children}
+    </span>
   );
 }
 
@@ -153,21 +107,26 @@ function OtherProjectUnread({
   project: Project;
   pipelineCount: number;
 }) {
+  const t = useTranslations('nav');
   const unread = useInboxUnread(project.key, project.id).data ?? 0;
   const approvals = usePendingApprovalCount(project.key).data?.count ?? 0;
   return unread + approvals + pipelineCount > 0 ? (
-    <span className="helena-other-inbox-dot" aria-label="Andere Projekte haben neue Einträge" />
+    <span className="ds-other-inbox-dot" aria-label={t('sidebarOtherInbox')} />
   ) : null;
 }
 
-function ApprovalBadge({
+// Du → Inbox. In a project the count is this project's; a small dot says another project
+// has something too (ui-system.md §8). In Home it counts everything.
+export function SidebarInboxRow({
   teamIds,
   projectKey,
   projects,
+  active,
 }: {
   teamIds: number[];
   projectKey: string | null;
   projects: Project[];
+  active: boolean;
 }) {
   const t = useTranslations('nav');
   const pending = usePendingApprovalCount(projectKey ?? undefined).data?.count ?? 0;
@@ -184,16 +143,15 @@ function ApprovalBadge({
       {teamIds.map((teamId) => (
         <SidebarApprovalsRefresh key={teamId} teamId={teamId} />
       ))}
-      <TreeBranch
-        label={t('sidebarInbox')}
+      <TreeItem
+        id="inbox"
         href={projectKey ? inboxPath(projectKey) : '/inbox'}
-        hasChildren={false}
-        action={
+        label={
           <>
-            {badge > 0 && <span className="helena-tree-badge">{badge}</span>}
+            {t('sidebarInbox')}
             {projectKey &&
               projects
-                .filter((item) => item.key !== projectKey)
+                .filter((item) => item.key !== projectKey && item.projectRole !== 'home')
                 .map((item) => (
                   <OtherProjectUnread
                     key={item.key}
@@ -206,243 +164,282 @@ function ApprovalBadge({
                 ))}
           </>
         }
-      >
-        {null}
-      </TreeBranch>
+        icon={<Inbox />}
+        count={badge || null}
+        active={active}
+      />
     </>
   );
 }
 
-export function SidebarPersonalNav({
-  teamIds,
-  projectKey,
-  projects,
-}: {
-  teamIds: number[];
-  projectKey: string | null;
-  projects: Project[];
-}) {
-  const t = useTranslations('nav');
-  return (
-    <section className="helena-sidebar-section">
-      <h2>{t('sidebarYou')}</h2>
-      <ApprovalBadge teamIds={teamIds} projectKey={projectKey} projects={projects} />
-    </section>
-  );
-}
-
-export function SidebarHomeTree({ teamId, isGod }: { teamId: number | null; isGod: boolean }) {
-  const t = useTranslations('nav');
-  const owner = isGod;
-  const home = homeNavigation(teamId);
-  const get = (id: string) => home.find((item) => item.id === id)?.href;
-  const [newFolder, setNewFolder] = useState(false);
-  const params = useSearchParams();
-  const homeRoot = params.get('root');
-  const homePath = params.get('path');
-  const homePathname = usePathname();
-  const defaultHomeRoot = owner ? 'home' : 'templates';
-  const tasksCount = useCrossProjectIssuesQuery({ page: 1, pageSize: 1 }, { stateType: 'open' });
-  const myTasksCount = useCrossProjectIssuesQuery(
-    { page: 1, pageSize: 1 },
-    { stateType: 'open', assignee: 'me' },
-  );
-  const schedulesCount = useMemberRoutines({ page: 1, pageSize: 1 });
-  return (
-    <section className="helena-sidebar-section">
-      <h2>{t('sidebarProject')}</h2>
-      <TreeBranch label={t('dashboards')} href="/" activePaths={['/system']}>
-        <TreeLink href="/dashboard" nested>
-          {t('sidebarAllProjects')}
-        </TreeLink>
-        {isGod && (
-          <TreeLink href="/system" nested>
-            {t('sidebarSystem')}
-          </TreeLink>
-        )}
-      </TreeBranch>
-      <TreeBranch
-        label={t('workItems')}
-        href="/tasks"
-        action={
-          tasksCount.data?.total ? (
-            <span className="helena-tree-badge">{tasksCount.data.total}</span>
-          ) : undefined
-        }
-      >
-        <TreeLink href="/tasks?assignee=me" nested badge={myTasksCount.data?.total}>
-          {t('sidebarMyTasks')}
-        </TreeLink>
-      </TreeBranch>
-      <TreeBranch
-        label={t('sidebarKnowledge')}
-        href="/files"
-        activeOverride={
-          homePathname.startsWith('/docs') ||
-          (homePathname === '/files' &&
-            (homeRoot ?? defaultHomeRoot) === defaultHomeRoot &&
-            !homePath)
-        }
-        action={
-          owner && (
-            <button
-              type="button"
-              className="helena-tree-toggle knowledge-folder-add"
-              aria-label="Ordner in Home anlegen"
-              onClick={() => setNewFolder(true)}
-            >
-              <Plus size={14} />
-            </button>
-          )
-        }
-      >
-        {(owner ? (['private', 'templates'] as const) : []).map((root) => (
-          <div key={root}>
-            <TreeLink
-              href={homeFilesPath('', { root })}
-              nested
-              activeOverride={homePathname === '/files' && homeRoot === root && !homePath}
-            >
-              {t(root === 'private' ? 'sidebarPrivate' : 'sidebarTemplates')}
-            </TreeLink>
-          </div>
-        ))}
-      </TreeBranch>
-      {newFolder && (
-        <FileNewFolderDialog
-          scope={{
-            kind: 'home',
-            root: homeRoot === 'private' || homeRoot === 'templates' ? homeRoot : 'home',
-          }}
-          folder=""
-          onClose={() => setNewFolder(false)}
-        />
-      )}
-      <TreeBranch
-        label={t('sidebarAutomation')}
-        href={get('organization') ?? '/agents'}
-        activePaths={['/agents', '/schedules', '/activity', '/workflows', '/browsers']}
-      >
-        <TreeLink href="/schedules" nested badge={schedulesCount.data?.total}>
-          {t('sidebarSchedules')}
-        </TreeLink>
-        <TreeLink href="/activity" nested>
-          {t('sidebarHistory')}
-        </TreeLink>
-      </TreeBranch>
-    </section>
-  );
-}
+// ─── Project ────────────────────────────────────────────────────────────────────────
 
 export function SidebarProjectTree({
   projectKey,
+  projects,
+  teamIds,
   onNewView,
   onEditView,
   onDeleteView,
 }: {
   projectKey: string;
+  projects: Project[];
+  teamIds: number[];
   onNewView: (template: ViewTemplate) => void;
   onEditView: (view: View) => void;
   onDeleteView: (view: View) => Promise<void>;
 }) {
   const t = useTranslations('nav');
+  const sectionText = useSettingsSectionText();
+  const location = useLocation();
   const [newKnowledgeFolder, setNewKnowledgeFolder] = useState(false);
-  const pathname = usePathname();
-  const knowledgePath = useSearchParams().get('path');
   const { can, isAdmin } = usePermissions();
   const features = useProjectFeatures();
+  const automation = useAutomationStatus(projectKey);
   const { data: views = [] } = useViewsQuery(projectKey);
   const { data: areas = [] } = useViewFoldersQuery(projectKey);
-  const { data: dashboards = [] } = useDashboardsQuery(
-    features.dashboards && can('dashboards', 'read') ? projectKey : null,
-  );
-  const taskHref = projectPath(projectKey);
+  const showDashboards = features.dashboards && can('dashboards', 'read');
+  const { data: dashboards = [] } = useDashboardsQuery(showDashboards ? projectKey : null);
+  const showGoals = features.initiatives && can('initiatives', 'read');
+  const showKnowledge =
+    (features.documents && can('documents', 'read')) ||
+    (features.notes && can('note_boards', 'read'));
+  const showAgents = can('ai_agents', 'read');
+  const schedules = useRoutines(projectKey, { page: 1, pageSize: 1 });
+
+  const topViews = views
+    .filter((view) => view.folderId == null && !showsAllTasks(view))
+    .sort((a, b) => a.position - b.position || a.id - b.id);
+  const viewsOf = (folderId: number) =>
+    views
+      .filter((view) => view.folderId === folderId)
+      .sort((a, b) => a.position - b.position || a.id - b.id);
+
+  // Settings, grouped as in §7: Allgemein · Mitglieder · Benachrichtigungen, then Arbeit,
+  // Agenten, Integrationen with their sections.
+  const settingsGroups: {
+    id: string;
+    label: string;
+    items: { slug: string; href: string; label: string }[];
+  }[] = [
+    {
+      id: 'work',
+      label: t('settingsWork'),
+      items: [
+        'states',
+        'issue-types',
+        'labels',
+        'custom-fields',
+        'issue-templates',
+        'configuration',
+        'actions',
+      ].map((slug) => ({
+        slug,
+        href: settingsPath(projectKey, slug),
+        label: sectionText(slug).label,
+      })),
+    },
+    {
+      id: 'agents',
+      label: t('settingsAgents'),
+      items: ['autopilot', 'network', 'environment', 'browser'].map((slug) => ({
+        slug,
+        href: settingsPath(projectKey, slug),
+        label: sectionText(slug).label,
+      })),
+    },
+    {
+      id: 'integrations',
+      label: t('settingsIntegrations'),
+      items: [
+        { slug: 'mcp', href: mcpServerPath(projectKey), label: t('mcpServer') },
+        {
+          slug: 'webhooks',
+          href: settingsPath(projectKey, 'webhooks'),
+          label: sectionText('webhooks').label,
+        },
+        { slug: 'git', href: settingsPath(projectKey, 'git'), label: sectionText('git').label },
+        { slug: 'mail', href: settingsPath(projectKey, 'mail'), label: t('mail') },
+      ],
+    },
+  ];
+  const settingsTop = [
+    {
+      slug: 'general',
+      href: settingsPath(projectKey, 'general'),
+      label: sectionText('general').label,
+    },
+    { slug: 'members', href: membersPath(projectKey), label: t('members') },
+    { slug: 'notifications', href: notificationsPath(projectKey), label: t('notifications') },
+  ];
+
+  // Every row the tree can mark, with the pages it stands for.
+  const candidates: NavCandidate[] = [
+    { id: 'inbox', href: inboxPath(projectKey), also: [`${projectPath(projectKey)}/approvals`] },
+    ...(showDashboards
+      ? [
+          { id: 'dashboard', href: dashboardsPath(projectKey), exact: true },
+          ...dashboards.map((dashboard) => ({
+            id: `dashboard:${dashboard.id}`,
+            href: dashboardPath(projectKey, dashboard.id),
+          })),
+        ]
+      : []),
+    {
+      id: 'tasks',
+      href: projectPath(projectKey),
+      exact: true,
+      also: [`${projectPath(projectKey)}/issue`, cyclesPath(projectKey)],
+    },
+    ...views.map((view) => ({ id: `tasks:view:${view.id}`, href: viewPath(projectKey, view.id) })),
+    ...(showGoals ? [{ id: 'goals', href: initiativesPath(projectKey) }] : []),
+    ...(showKnowledge
+      ? [
+          {
+            id: 'knowledge',
+            href: filesPath(projectKey),
+            without: ['path', 'file'],
+            also: [`${projectPath(projectKey)}/docs`, `${projectPath(projectKey)}/notes`],
+          },
+          ...(isAdmin ? [{ id: 'knowledge:receipts', href: receiptsPath(projectKey) }] : []),
+        ]
+      : []),
+    ...(showAgents
+      ? [
+          {
+            id: 'automation:team',
+            href: organizationPath(projectKey),
+            also: [aiAgentsPath(projectKey), `${projectPath(projectKey)}/chat`],
+          },
+          { id: 'automation:schedules', href: aiTeamPath(projectKey, 'schedules') },
+          { id: 'automation:workflows', href: workflowsPath(projectKey) },
+        ]
+      : []),
+    { id: 'automation:history', href: agentActivityPath(projectKey) },
+    ...settingsTop.map((item) => ({ id: `settings:${item.slug}`, href: item.href })),
+    ...settingsGroups.flatMap((group) =>
+      group.items.map((item) => ({ id: `settings:${group.id}:${item.slug}`, href: item.href })),
+    ),
+    { id: 'settings:general', href: settingsPath(projectKey, 'danger-zone') },
+  ];
+  // A file of a folder: the folder row marks itself (SidebarKnowledgeFolders).
+  const folderOpen = location.pathname === filesPath(projectKey) && location.search.has('path');
+  const activeId = pickActive(candidates, location);
+  const activeSection = folderOpen ? 'knowledge' : sectionOf(activeId);
+  const is = (id: string) => activeId === id;
+  const within = (prefix: string) => activeId?.startsWith(prefix) ?? false;
 
   return (
-    <section className="helena-sidebar-section">
-      <h2>{t('sidebarProject')}</h2>
-      {features.dashboards && can('dashboards', 'read') && (
-        <TreeBranch
+    <Tree label={t('sidebarProject')} activeSection={activeSection}>
+      <SidebarLabel>{t('sidebarYou')}</SidebarLabel>
+      <SidebarInboxRow
+        teamIds={teamIds}
+        projectKey={projectKey}
+        projects={projects}
+        active={is('inbox')}
+      />
+      <SidebarLabel>{t('sidebarProject')}</SidebarLabel>
+      {showDashboards && (
+        <TreeItem
+          id="dashboard"
           label={t('dashboards')}
           href={dashboardsPath(projectKey)}
-          hasChildren={
-            dashboards.length > 0 || (features.initiatives && can('initiatives', 'read'))
-          }
-          activePaths={[initiativesPath(projectKey)]}
-          action={
+          icon={<LayoutDashboard />}
+          active={is('dashboard')}
+          actions={
             can('dashboards', 'create') && (
-              <Link
+              <TreeAction
+                label={t('sidebarNewDashboard')}
                 href={`${dashboardsPath(projectKey)}?create=dashboard`}
-                className="helena-tree-toggle helena-tree-create"
-                aria-label="Neues Dashboard"
-                title="Neues Dashboard"
               >
-                <Plus size={14} />
-              </Link>
+                <Plus />
+              </TreeAction>
             )
           }
         >
-          {features.initiatives && can('initiatives', 'read') && (
-            <TreeLink href={initiativesPath(projectKey)} nested>
-              {'Ziele'}
-            </TreeLink>
-          )}
-          {dashboards.map((dashboard) => (
-            <TreeLink key={dashboard.id} href={dashboardPath(projectKey, dashboard.id)} nested>
-              {dashboard.name}
-            </TreeLink>
-          ))}
-        </TreeBranch>
+          {dashboards.length > 0
+            ? dashboards.map((dashboard) => (
+                <TreeItem
+                  key={dashboard.id}
+                  label={dashboard.name}
+                  href={dashboardPath(projectKey, dashboard.id)}
+                  active={is(`dashboard:${dashboard.id}`)}
+                />
+              ))
+            : null}
+        </TreeItem>
       )}
-      <TreeBranch
+      <TreeItem
+        id="tasks"
         label={t('workItems')}
-        href={taskHref}
-        activePaths={[cyclesPath(projectKey)]}
-        hasChildren={
-          views.some((view) => view.folderId == null && !showsAllTasks(view)) ||
-          (can('views', 'read') && areas.length > 0)
-        }
-        action={can('views', 'create') && <NewViewMenu onSelect={onNewView} />}
+        href={projectPath(projectKey)}
+        icon={<ListTodo />}
+        active={is('tasks')}
+        actions={can('views', 'create') && <NewViewMenu onSelect={onNewView} />}
       >
-        {views
-          .filter((view) => view.folderId == null && !showsAllTasks(view))
-          .sort((a, b) => a.position - b.position || a.id - b.id)
-          .map((view) => (
-            <SidebarSavedViewItem
-              key={view.id}
-              view={view}
-              views={views}
-              folders={areas}
-              projectKey={projectKey}
-              onEdit={onEditView}
-              onDelete={onDeleteView}
-            />
-          ))}
-        {can('views', 'read') && (areas.length > 0 || can('views', 'create')) && (
-          <SidebarAreaNav
-            projectKey={projectKey}
-            onEditView={onEditView}
-            onDeleteView={onDeleteView}
-          />
-        )}
-      </TreeBranch>
-      {((features.documents && can('documents', 'read')) ||
-        (features.notes && can('note_boards', 'read'))) && (
-        <TreeBranch
-          label={isAdmin ? `${t('sidebarKnowledge')} & ${t('receipts')}` : t('sidebarKnowledge')}
+        {topViews.length > 0 || areas.length > 0 ? (
+          <>
+            {topViews.map((view) => (
+              <SidebarSavedViewItem
+                key={view.id}
+                view={view}
+                views={views}
+                folders={areas}
+                projectKey={projectKey}
+                active={is(`tasks:view:${view.id}`)}
+                onEdit={onEditView}
+                onDelete={onDeleteView}
+              />
+            ))}
+            {can('views', 'read') &&
+              areas.map((area) => (
+                <TreeItem
+                  key={area.id}
+                  label={area.name}
+                  storageKey={`${projectKey}:area:${area.id}`}
+                  containsActive={viewsOf(area.id).some((view) => is(`tasks:view:${view.id}`))}
+                  actions={<SidebarAreaMenu projectKey={projectKey} area={area} areas={areas} />}
+                >
+                  {viewsOf(area.id).length > 0
+                    ? viewsOf(area.id).map((view) => (
+                        <SidebarSavedViewItem
+                          key={view.id}
+                          view={view}
+                          views={views}
+                          folders={areas}
+                          projectKey={projectKey}
+                          active={is(`tasks:view:${view.id}`)}
+                          onEdit={onEditView}
+                          onDelete={onDeleteView}
+                        />
+                      ))
+                    : null}
+                </TreeItem>
+              ))}
+          </>
+        ) : null}
+      </TreeItem>
+      {showGoals && (
+        <TreeItem
+          id="goals"
+          label={t('sidebarGoals')}
+          href={initiativesPath(projectKey)}
+          icon={<Target />}
+          active={is('goals')}
+        />
+      )}
+      {showKnowledge && (
+        <TreeItem
+          id="knowledge"
+          label={isAdmin ? t('sidebarKnowledgeReceipts') : t('sidebarKnowledge')}
           href={filesPath(projectKey)}
-          activePaths={isAdmin ? [receiptsPath(projectKey)] : []}
-          activeOverride={pathname === filesPath(projectKey) && !knowledgePath}
-          action={
+          icon={<FolderOpen />}
+          active={is('knowledge')}
+          actions={
             can('documents', 'create') && (
-              <button
-                type="button"
-                className="helena-tree-toggle knowledge-folder-add"
-                aria-label="Ordner in Wissen anlegen"
-                onClick={() => setNewKnowledgeFolder(true)}
-              >
-                <Plus size={14} />
-              </button>
+              <TreeAction label={t('sidebarNewFolder')} onClick={() => setNewKnowledgeFolder(true)}>
+                <Plus />
+              </TreeAction>
             )
           }
         >
@@ -451,11 +448,13 @@ export function SidebarProjectTree({
             canWrite={can('documents', 'edit')}
           />
           {isAdmin && (
-            <TreeLink href={receiptsPath(projectKey)} nested>
-              {t('receipts')}
-            </TreeLink>
+            <TreeItem
+              label={t('receipts')}
+              href={receiptsPath(projectKey)}
+              active={is('knowledge:receipts')}
+            />
           )}
-        </TreeBranch>
+        </TreeItem>
       )}
       {newKnowledgeFolder && (
         <FileNewFolderDialog
@@ -464,45 +463,246 @@ export function SidebarProjectTree({
           onClose={() => setNewKnowledgeFolder(false)}
         />
       )}
-      <TreeBranch
+      <TreeItem
+        id="automation"
         label={t('sidebarAutomation')}
-        href={can('ai_agents', 'read') ? aiAgentsPath(projectKey) : agentActivityPath(projectKey)}
-        hasChildren={can('ai_agents', 'read')}
-        action={
+        icon={<Bot />}
+        dot={automation}
+        actions={
           can('ai_agents', 'create') && (
-            <Link
+            <TreeAction
+              label={t('sidebarNewSchedule')}
               href={`${aiTeamPath(projectKey, 'schedules')}?create=schedule`}
-              className="helena-tree-toggle helena-tree-create"
-              aria-label="Neuer Zeitplan"
-              title="Neuer Zeitplan"
             >
-              <Plus size={14} />
-            </Link>
+              <Plus />
+            </TreeAction>
           )
         }
-        activePaths={[
-          organizationPath(projectKey),
-          aiTeamPath(projectKey, 'schedules'),
-          agentActivityPath(projectKey),
-          workflowsPath(projectKey),
-        ]}
       >
-        {can('ai_agents', 'read') && (
+        {showAgents && (
           <>
-            <TreeLink href={aiTeamPath(projectKey, 'schedules')} nested>
-              {t('sidebarSchedules')}
-            </TreeLink>
-            <TreeLink href={organizationPath(projectKey)} nested>
-              {t('teamOrchestration')}
-            </TreeLink>
+            <TreeItem
+              label={t('sidebarTeam')}
+              href={organizationPath(projectKey)}
+              active={is('automation:team')}
+              dot={automation}
+            />
+            <TreeItem
+              label={t('sidebarSchedules')}
+              href={aiTeamPath(projectKey, 'schedules')}
+              active={is('automation:schedules')}
+              count={schedules.data?.total || null}
+            />
+            <TreeItem
+              label={t('workflows')}
+              href={workflowsPath(projectKey)}
+              active={is('automation:workflows')}
+            />
           </>
         )}
-        {can('ai_agents', 'read') && (
-          <TreeLink href={agentActivityPath(projectKey)} nested>
-            {t('sidebarHistory')}
-          </TreeLink>
-        )}
-      </TreeBranch>
-    </section>
+        <TreeItem
+          label={t('sidebarHistory')}
+          href={agentActivityPath(projectKey)}
+          active={is('automation:history')}
+        />
+      </TreeItem>
+      <TreeItem id="settings" label={t('settings')} icon={<Settings2 />}>
+        {settingsTop.map((item) => (
+          <TreeItem
+            key={item.slug}
+            label={item.label}
+            href={item.href}
+            active={is(`settings:${item.slug}`)}
+          />
+        ))}
+        {settingsGroups.map((group) => (
+          <TreeItem
+            key={group.id}
+            label={group.label}
+            storageKey={`${projectKey}:settings:${group.id}`}
+            defaultOpen={false}
+            containsActive={within(`settings:${group.id}:`)}
+          >
+            {group.items.map((item) => (
+              <TreeItem
+                key={item.slug}
+                label={item.label}
+                href={item.href}
+                active={is(`settings:${group.id}:${item.slug}`)}
+              />
+            ))}
+          </TreeItem>
+        ))}
+      </TreeItem>
+    </Tree>
   );
 }
+
+// ─── Home ───────────────────────────────────────────────────────────────────────────
+
+export function SidebarHomeTree({
+  teamId,
+  isGod,
+  teamIds,
+  projects,
+}: {
+  teamId: number | null;
+  isGod: boolean;
+  teamIds: number[];
+  projects: Project[];
+}) {
+  const t = useTranslations('nav');
+  const owner = isGod;
+  const home = homeNavigation(teamId);
+  const get = (id: string) => home.find((item) => item.id === id)?.href;
+  const [newFolder, setNewFolder] = useState(false);
+  const location = useLocation();
+  const automation = useAutomationStatus(null);
+  const myTasksCount = useCrossProjectIssuesQuery(
+    { page: 1, pageSize: 1 },
+    { stateType: 'open', assignee: 'me' },
+  );
+  const openTasksCount = useCrossProjectIssuesQuery(
+    { page: 1, pageSize: 1 },
+    { stateType: 'open' },
+  );
+  const schedulesCount = useMemberRoutines({ page: 1, pageSize: 1 });
+  const roots = owner ? (['home', 'private', 'templates'] as const) : (['templates'] as const);
+  const rootHref = (root: (typeof roots)[number]) => homeFilesPath('', { root });
+  const currentRoot = location.search.get('root') ?? (owner ? 'home' : 'templates');
+  const teamHref = get('organization') ?? '/organization';
+
+  const candidates: NavCandidate[] = [
+    { id: 'inbox', href: '/inbox', also: ['/approvals', '/mail'] },
+    { id: 'dashboard', href: '/', exact: true },
+    { id: 'dashboard:all', href: '/dashboard' },
+    ...(isGod ? [{ id: 'dashboard:system', href: '/system' }] : []),
+    { id: 'tasks:open', href: '/tasks', without: ['assignee'], also: ['/issue'] },
+    { id: 'tasks:mine', href: '/tasks?assignee=me' },
+    { id: 'goals', href: '/organization?tab=goals' },
+    { id: 'knowledge', href: '/files', without: ['root', 'path', 'file'], also: ['/docs'] },
+    ...roots.map((root) => ({
+      id: `knowledge:${root}`,
+      href: `/files?root=${root}`,
+      without: ['path'],
+    })),
+    { id: 'automation:team', href: teamHref, without: ['tab'] },
+    { id: 'automation:pool', href: '/agents' },
+    { id: 'automation:schedules', href: '/schedules' },
+    { id: 'automation:workflows', href: '/workflows' },
+    { id: 'automation:history', href: '/activity', also: ['/browsers', '/decisions'] },
+  ];
+  const folderOpen = location.pathname === '/files' && location.search.has('path');
+  let activeId = pickActive(candidates, location);
+  // /files without a root is the root the user sees first.
+  if (activeId === 'knowledge' && roots.length > 0) activeId = `knowledge:${currentRoot}`;
+  const activeSection = folderOpen ? 'knowledge' : sectionOf(activeId);
+  const is = (id: string) => activeId === id;
+
+  return (
+    <Tree label={t('sidebarProject')} activeSection={activeSection}>
+      <SidebarLabel>{t('sidebarYou')}</SidebarLabel>
+      <SidebarInboxRow
+        teamIds={teamIds}
+        projectKey={null}
+        projects={projects}
+        active={is('inbox')}
+      />
+      <SidebarLabel>{t('sidebarProject')}</SidebarLabel>
+      <TreeItem
+        id="dashboard"
+        label={t('dashboards')}
+        href="/"
+        icon={<LayoutDashboard />}
+        active={is('dashboard')}
+      >
+        <TreeItem label={t('sidebarAllProjects')} href="/dashboard" active={is('dashboard:all')} />
+        {isGod && (
+          <TreeItem label={t('sidebarSystem')} href="/system" active={is('dashboard:system')} />
+        )}
+      </TreeItem>
+      <TreeItem id="tasks" label={t('workItems')} href="/tasks" icon={<ListTodo />}>
+        <TreeItem
+          label={t('sidebarMyTasks')}
+          href="/tasks?assignee=me"
+          active={is('tasks:mine')}
+          count={myTasksCount.data?.total || null}
+        />
+        <TreeItem
+          label={t('sidebarOpenTasks')}
+          href="/tasks"
+          active={is('tasks:open')}
+          count={openTasksCount.data?.total || null}
+        />
+      </TreeItem>
+      <TreeItem
+        id="goals"
+        label={t('sidebarGoals')}
+        href="/organization?tab=goals"
+        icon={<Target />}
+        active={is('goals')}
+      />
+      <TreeItem
+        id="knowledge"
+        label={t('sidebarKnowledge')}
+        href={rootHref(roots[0])}
+        icon={<FolderOpen />}
+        actions={
+          owner && (
+            <TreeAction label={t('sidebarNewFolder')} onClick={() => setNewFolder(true)}>
+              <Plus />
+            </TreeAction>
+          )
+        }
+      >
+        {roots.map((root) => (
+          <TreeItem
+            key={root}
+            label={t(
+              root === 'home'
+                ? 'sidebarHome'
+                : root === 'private'
+                  ? 'sidebarPrivate'
+                  : 'sidebarTemplates',
+            )}
+            href={rootHref(root)}
+            active={is(`knowledge:${root}`)}
+            containsActive={folderOpen && currentRoot === root}
+            storageKey={`home:knowledge:${root}`}
+          >
+            <SidebarKnowledgeFolders scope={{ kind: 'home', root }} canWrite={owner} />
+          </TreeItem>
+        ))}
+      </TreeItem>
+      {newFolder && (
+        <FileNewFolderDialog
+          scope={{
+            kind: 'home',
+            root: currentRoot === 'private' || currentRoot === 'templates' ? currentRoot : 'home',
+          }}
+          folder=""
+          onClose={() => setNewFolder(false)}
+        />
+      )}
+      <TreeItem id="automation" label={t('sidebarAutomation')} icon={<Workflow />} dot={automation}>
+        <TreeItem
+          label={t('sidebarTeam')}
+          href={teamHref}
+          active={is('automation:team')}
+          dot={automation}
+        />
+        <TreeItem label={t('sidebarAgentPool')} href="/agents" active={is('automation:pool')} />
+        <TreeItem
+          label={t('sidebarSchedules')}
+          href="/schedules"
+          active={is('automation:schedules')}
+          count={schedulesCount.data?.total || null}
+        />
+        <TreeItem label={t('workflows')} href="/workflows" active={is('automation:workflows')} />
+        <TreeItem label={t('sidebarHistory')} href="/activity" active={is('automation:history')} />
+      </TreeItem>
+    </Tree>
+  );
+}
+
+export { TreeGap };

@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 import { useShellHeaderActionsSlot, useShellHeaderSlot } from '@/context/shellHeaderSlot';
 import { Separator } from '@/components/ui/separator';
+import { usePageChrome } from '@/design-system/layout/pageChrome';
 
 export const WORKSPACE_HEADER_CLASS = 'flex h-12 shrink-0 items-center border-b';
 
@@ -40,6 +41,12 @@ export function WorkspacePageHeader({
 }) {
   const slot = useShellHeaderSlot();
   const actionsSlot = useShellHeaderActionsSlot();
+  const chrome = usePageChrome();
+  // Inside the settings or agent modal its section heading names the page: only the
+  // page's actions stay, at the end of a row of their own.
+  if (chrome === 'modal') {
+    return actions ? <div className="ds-modal-page-actions">{actions}</div> : null;
+  }
   if (slot) {
     return (
       <>

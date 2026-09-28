@@ -12,11 +12,11 @@ import UserMenu from '@/components/layout/UserMenu';
 // see AppHeader/GodShell for the 'classic' fallback.
 export default function SidebarAccountRow({ onSettings }: { onSettings: () => void }) {
   return (
-    <div className="helena-sidebar-account group-data-[collapsible=icon]:flex-col">
+    <div className="ds-sidebar-account">
       <UserMenu variant="row" />
       <button
         type="button"
-        className="helena-sidebar-settings"
+        className="ds-sidebar-settings"
         aria-label="Einstellungen"
         title="Einstellungen (⌘,)"
         onClick={onSettings}

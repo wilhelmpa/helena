@@ -1,10 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { MoreHorizontal, Star } from 'lucide-react';
+import { TreeItem } from '@/design-system';
 import { useTranslations } from 'next-intl';
 import type { View, ViewFolder } from '@/lib/api/endpoints/views';
 import { enableViewShare, disableViewShare } from '@/lib/api/endpoints/share';
@@ -30,7 +29,9 @@ export default function SidebarSavedViewItem({
   projectKey,
   onEdit,
   onDelete,
+  active = false,
 }: {
+  active?: boolean;
   view: View;
   views: View[];
   folders: ViewFolder[];
@@ -41,7 +42,6 @@ export default function SidebarSavedViewItem({
   const t = useTranslations('views');
   const common = useTranslations('common');
   const { can } = usePermissions();
-  const pathname = usePathname();
   const qc = useQueryClient();
   const favorite = useSetViewFavorite(projectKey);
   const update = useUpdateView(projectKey);
@@ -72,70 +72,104 @@ export default function SidebarSavedViewItem({
     await qc.invalidateQueries({ queryKey: qk.views(projectKey) });
   }
 
-  return (
-    <div className="helena-saved-view">
-      <Link
-        href={href}
-        className={`helena-tree-link helena-tree-child ${pathname === href ? 'is-active' : ''}`}
-        aria-current={pathname === href ? 'page' : undefined}
-      >
-        <span className="min-w-0 flex-1 truncate">{view.name}</span>
-        {view.favorite && (
-          <Star size={12} className="fill-current text-amber-500" aria-label={t('favorite')} />
+  const menu = (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="ds-tree-action"
+          aria-label={t('options')}
+          title={t('options')}
+        >
+          <MoreHorizontal />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-56">
+        <DropdownMenuItem
+          onSelect={() => favorite.mutate({ id: view.id, favorite: !view.favorite })}
+        >
+          {view.favorite ? t('unfavorite') : t('favorite')}
+        </DropdownMenuItem>
+        {can('views', 'edit') && (
+          <>
+            <DropdownMenuItem onSelect={() => onEdit(view)}>{common('edit')}</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => setSharing(true)}>
+              {view.shareToken ? t('shared') : t('share')}
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled={index <= 0} onSelect={() => move(-1)}>
+              {t('moveViewUp')}
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled={index >= siblings.length - 1} onSelect={() => move(1)}>
+              {t('moveViewDown')}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>{t('moveToFolder')}</DropdownMenuLabel>
+            {[{ id: null, name: t('noFolder') }, ...folders].map((folder) => (
+              <DropdownMenuItem
+                key={folder.id ?? 'none'}
+                disabled={view.folderId === folder.id}
+                onSelect={() => update.mutate({ id: view.id, input: { folderId: folder.id } })}
+              >
+                {folder.name}
+              </DropdownMenuItem>
+            ))}
+          </>
         )}
-      </Link>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            className="helena-tree-toggle"
-            aria-label={t('options')}
-            title={t('options')}
-          >
-            <MoreHorizontal size={14} />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-56">
-          <DropdownMenuItem
-            onSelect={() => favorite.mutate({ id: view.id, favorite: !view.favorite })}
-          >
-            {view.favorite ? t('unfavorite') : t('favorite')}
-          </DropdownMenuItem>
-          {can('views', 'edit') && (
-            <>
-              <DropdownMenuItem onSelect={() => onEdit(view)}>{common('edit')}</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setSharing(true)}>
-                {view.shareToken ? t('shared') : t('share')}
-              </DropdownMenuItem>
-              <DropdownMenuItem disabled={index <= 0} onSelect={() => move(-1)}>
-                {t('moveViewUp')}
-              </DropdownMenuItem>
-              <DropdownMenuItem disabled={index >= siblings.length - 1} onSelect={() => move(1)}>
-                {t('moveViewDown')}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel>{t('moveToFolder')}</DropdownMenuLabel>
-              {[{ id: null, name: t('noFolder') }, ...folders].map((folder) => (
-                <DropdownMenuItem
-                  key={folder.id ?? 'none'}
-                  disabled={view.folderId === folder.id}
-                  onSelect={() => update.mutate({ id: view.id, input: { folderId: folder.id } })}
-                >
-                  {folder.name}
-                </DropdownMenuItem>
-              ))}
-            </>
-          )}
-          {can('views', 'delete') && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onSelect={() => setDeleting(true)}>
-                {common('delete')}
-              </DropdownMenuItem>
-            </>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+        {can('views', 'delete') && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive" onSelect={() => setDeleting(true)}>
+              {common('delete')}
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
+  // Dragged onto another view of the same group, a view takes its place.
+  const dragProps = can('views', 'edit')
+    ? {
+        draggable: true,
+        onDragStart: (event: React.DragEvent) => {
+          event.dataTransfer.effectAllowed = 'move';
+          event.dataTransfer.setData('application/x-helena-view', String(view.id));
+        },
+        onDragOver: (event: React.DragEvent) => {
+          if (event.dataTransfer.types.includes('application/x-helena-view'))
+            event.preventDefault();
+        },
+        onDrop: (event: React.DragEvent) => {
+          const dragged = Number(event.dataTransfer.getData('application/x-helena-view'));
+          if (!dragged || dragged === view.id) return;
+          event.preventDefault();
+          const source = views.find((item) => item.id === dragged);
+          if (!source) return;
+          if (source.folderId !== view.folderId) {
+            update.mutate({ id: source.id, input: { folderId: view.folderId } });
+            return;
+          }
+          const ordered = siblings.map((item) => item.id).filter((id) => id !== dragged);
+          ordered.splice(index, 0, dragged);
+          reorder.mutate({ folderId: view.folderId, orderedIds: ordered });
+        },
+      }
+    : {};
+
+  return (
+    <>
+      <TreeItem
+        label={
+          <>
+            {view.name}
+            {view.favorite && <Star size={11} className="ds-fav-star" aria-label={t('favorite')} />}
+          </>
+        }
+        href={href}
+        active={active}
+        actions={menu}
+        rowProps={dragProps}
+      />
       <ShareDialog
         open={sharing}
         onOpenChange={setSharing}
@@ -159,6 +193,6 @@ export default function SidebarSavedViewItem({
           {t('deleteViewConfirm', { name: view.name })}
         </ConfirmDialog>
       )}
-    </div>
+    </>
   );
 }

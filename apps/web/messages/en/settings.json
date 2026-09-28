@@ -669,5 +669,26 @@
     "viewportWidth": "Width",
     "viewportHeight": "Height",
     "pixels": "pixels"
+  },
+  "modal": {
+    "title": "Settings",
+    "search": "Search settings …",
+    "noResults": "No setting found.",
+    "tabs": {
+      "account": "My account",
+      "helena": "Helena",
+      "admin": "Administrator"
+    },
+    "groups": {
+      "instance": "Instance",
+      "team": "Team",
+      "agents": "Agents",
+      "management": "Management"
+    },
+    "sections": {
+      "defaults": "Defaults for all projects",
+      "defaultsHint": "A project can override single values.",
+      "voice": "Speech recognition"
+    }
   }
 }

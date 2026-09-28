@@ -51,7 +51,7 @@
   "home": "الرئيسية",
   "globalHomeHint": "استخدم المنسق العام هنا، أو اختر مشروعًا لسياق خاص بالمشروع.",
   "workflows": "سير العمل",
-  "agentActivity": "النشاط",
+  "agentActivity": "السجل",
   "noProjects": "لا توجد مشاريع بعد",
   "newTeam": "فريق جديد",
   "manageTeams": "إدارة الفرق",
@@ -190,7 +190,7 @@
   "credentials": "بيانات الدخول",
   "devices": "الأجهزة",
   "teamSettings": "إعدادات الفريق",
-  "teamOrchestration": "الفريق والتنسيق",
+  "teamOrchestration": "الفريق",
   "overview": "نظرة عامة",
   "projectGroups": {
     "group": "المجموعة",
@@ -249,5 +249,24 @@
     "close": "Close panel",
     "closeTab": "Close {tab}",
     "reloadView": "Reload view"
-  }
+  },
+  "sidebarTeam": "الفريق",
+  "sidebarAgentPool": "مجموعة الوكلاء",
+  "sidebarGoals": "الأهداف",
+  "sidebarKnowledgeReceipts": "المعرفة والإيصالات",
+  "settingsWork": "العمل",
+  "settingsAgents": "الوكلاء",
+  "settingsIntegrations": "التكاملات",
+  "sidebarNewDashboard": "لوحة جديدة",
+  "sidebarNewFolder": "مجلد جديد",
+  "sidebarNewSchedule": "جدول جديد",
+  "sidebarOtherInbox": "مشاريع أخرى لديها عناصر جديدة",
+  "sidebarOpenMenu": "فتح التنقل",
+  "sidebarCollapse": "طي الشريط الجانبي",
+  "sidebarExpand": "توسيع الشريط الجانبي",
+  "account": "حسابي",
+  "themeLight": "فاتح",
+  "themeDark": "داكن",
+  "dangerZone": "منطقة الخطر",
+  "mail": "البريد"
 }

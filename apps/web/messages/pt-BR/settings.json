@@ -669,5 +669,26 @@
     "viewportWidth": "Largura",
     "viewportHeight": "Altura",
     "pixels": "pixels"
+  },
+  "modal": {
+    "title": "Configurações",
+    "search": "Buscar configuração …",
+    "noResults": "Nenhuma configuração encontrada.",
+    "tabs": {
+      "account": "Minha conta",
+      "helena": "Helena",
+      "admin": "Administrador"
+    },
+    "groups": {
+      "instance": "Instância",
+      "team": "Equipe",
+      "agents": "Agentes",
+      "management": "Gestão"
+    },
+    "sections": {
+      "defaults": "Padrões para todos os projetos",
+      "defaultsHint": "Um projeto pode sobrescrever valores individuais.",
+      "voice": "Reconhecimento de voz"
+    }
   }
 }

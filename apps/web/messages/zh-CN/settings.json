@@ -669,5 +669,26 @@
     "viewportWidth": "宽度",
     "viewportHeight": "高度",
     "pixels": "像素"
+  },
+  "modal": {
+    "title": "设置",
+    "search": "搜索设置 …",
+    "noResults": "未找到设置。",
+    "tabs": {
+      "account": "我的账户",
+      "helena": "Helena",
+      "admin": "管理员"
+    },
+    "groups": {
+      "instance": "实例",
+      "team": "团队",
+      "agents": "智能体",
+      "management": "管理"
+    },
+    "sections": {
+      "defaults": "所有项目的默认值",
+      "defaultsHint": "项目可以覆盖单个值。",
+      "voice": "语音识别"
+    }
   }
 }

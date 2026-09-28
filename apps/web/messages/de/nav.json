@@ -20,7 +20,7 @@
   "sidebarTeamDeciders": "Team & Entscheider",
   "sidebarSchedules": "Zeitpläne",
   "sidebarHistory": "Verlauf",
-  "inbox": "Posteingang",
+  "inbox": "Inbox",
   "chat": "Chat",
   "files": "Wissen",
   "dashboards": "Dashboard",
@@ -188,7 +188,7 @@
   "credentials": "Zugänge",
   "devices": "Geräte",
   "teamSettings": "Teameinstellungen",
-  "teamOrchestration": "Team & Orchestrierung",
+  "teamOrchestration": "Team",
   "overview": "Übersicht",
   "projectGroups": {
     "group": "Gruppe",
@@ -205,7 +205,7 @@
     "groupOptions": "Gruppenoptionen",
     "dropUngrouped": "Hier ablegen, um das Projekt aus der Gruppe zu nehmen"
   },
-  "agentActivity": "Aktivität",
+  "agentActivity": "Verlauf",
   "approvals": "Freigaben",
   "access": "Zugänge & Verbindungen",
   "decisions": "Entscheidungen",
@@ -249,5 +249,24 @@
     "close": "Panel schließen",
     "closeTab": "{tab} schließen",
     "reloadView": "Ansicht neu laden"
-  }
+  },
+  "sidebarTeam": "Team",
+  "sidebarAgentPool": "Agentenpool",
+  "sidebarGoals": "Ziele",
+  "sidebarKnowledgeReceipts": "Wissen & Belege",
+  "settingsWork": "Arbeit",
+  "settingsAgents": "Agenten",
+  "settingsIntegrations": "Integrationen",
+  "sidebarNewDashboard": "Neues Dashboard",
+  "sidebarNewFolder": "Neuer Ordner",
+  "sidebarNewSchedule": "Neuer Zeitplan",
+  "sidebarOtherInbox": "Andere Projekte haben neue Einträge",
+  "sidebarOpenMenu": "Navigation öffnen",
+  "sidebarCollapse": "Seitenleiste einklappen",
+  "sidebarExpand": "Seitenleiste ausklappen",
+  "account": "Mein Konto",
+  "themeLight": "Hell",
+  "themeDark": "Dunkel",
+  "dangerZone": "Gefahrenzone",
+  "mail": "Mail"
 }

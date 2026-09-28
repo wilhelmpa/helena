@@ -51,7 +51,7 @@
   "home": "Início",
   "globalHomeHint": "Use o coordenador global aqui ou escolha um projeto para o contexto específico dele.",
   "workflows": "Fluxos de trabalho",
-  "agentActivity": "Atividade",
+  "agentActivity": "Histórico",
   "noProjects": "Nenhum projeto ainda",
   "newTeam": "Novo time",
   "manageTeams": "Gerenciar times",
@@ -190,7 +190,7 @@
   "credentials": "Credenciais",
   "devices": "Dispositivos",
   "teamSettings": "Configurações da equipe",
-  "teamOrchestration": "Equipe e orquestração",
+  "teamOrchestration": "Equipe",
   "overview": "Visão geral",
   "projectGroups": {
     "group": "Grupo",
@@ -249,5 +249,24 @@
     "close": "Close panel",
     "closeTab": "Close {tab}",
     "reloadView": "Reload view"
-  }
+  },
+  "sidebarTeam": "Equipe",
+  "sidebarAgentPool": "Pool de agentes",
+  "sidebarGoals": "Metas",
+  "sidebarKnowledgeReceipts": "Conhecimento e recibos",
+  "settingsWork": "Trabalho",
+  "settingsAgents": "Agentes",
+  "settingsIntegrations": "Integrações",
+  "sidebarNewDashboard": "Novo painel",
+  "sidebarNewFolder": "Nova pasta",
+  "sidebarNewSchedule": "Novo agendamento",
+  "sidebarOtherInbox": "Outros projetos têm novos itens",
+  "sidebarOpenMenu": "Abrir navegação",
+  "sidebarCollapse": "Recolher barra lateral",
+  "sidebarExpand": "Expandir barra lateral",
+  "account": "Minha conta",
+  "themeLight": "Claro",
+  "themeDark": "Escuro",
+  "dangerZone": "Zona de perigo",
+  "mail": "E-mail"
 }

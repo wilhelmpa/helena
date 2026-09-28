@@ -8,9 +8,8 @@ import {
   Mail,
   Maximize2,
   MessageSquare,
-  PanelRight,
+  Minimize2,
   Plus,
-  Columns2,
   Terminal,
   X,
 } from 'lucide-react';
@@ -99,77 +98,80 @@ export default function WorkspaceTabBar({
   };
 
   return (
-    <div className="helena-panel-tabs">
-      <div role="tablist" aria-label={t('tabs')} className="helena-panel-tab-list">
-        {ordered.map((key) => {
-          const browserTab = key.startsWith('browser:')
-            ? browser.tabs.find((tab) => tab.id === key.slice(8))
-            : null;
-          const tool = key.startsWith('browser:') ? 'browser' : key.slice(5);
-          const definition = tools[tool as keyof typeof tools];
-          const registered = offered.find((entry) => entry.id === tool);
-          const Icon = definition ?? registered?.Icon ?? Globe2;
-          const builtInLabel =
-            tool === 'chat'
-              ? tNav('sidebarHome')
-              : tool === 'browser'
-                ? tNav('workspace.browser')
-                : tool === 'terminal'
-                  ? tNav('workspace.terminal')
-                  : tool === 'code'
-                    ? tNav('workspace.code')
-                    : tool === 'mail'
-                      ? 'Mail'
-                      : null;
-          const label = browserTab?.title || builtInLabel || labelOf(registered) || tool;
-          return (
-            <div
-              key={key}
-              className="helena-panel-tab"
-              draggable
-              onDragStart={(event) => {
-                setDragged(key);
-                event.dataTransfer.effectAllowed = 'move';
-                event.dataTransfer.setData('text/plain', key);
-                event.dataTransfer.setData('application/x-helena-tab', key);
-              }}
-              onDragOver={(event) => event.preventDefault()}
-              onDrop={(event) => {
-                event.preventDefault();
-                if (dragged) tabs.move(dragged, key, ordered);
-                setDragged(null);
-              }}
-              onDragEnd={() => setDragged(null)}
-            >
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeKey === key}
-                className="helena-panel-tab-select"
-                onClick={() => select(key)}
-                title={label}
+    <div className="ds-panel-head">
+      <div role="tablist" aria-label={t('tabs')} className="ds-panel-tabs">
+        <div className="ds-panel-tabs-track">
+          {ordered.map((key) => {
+            const browserTab = key.startsWith('browser:')
+              ? browser.tabs.find((tab) => tab.id === key.slice(8))
+              : null;
+            const tool = key.startsWith('browser:') ? 'browser' : key.slice(5);
+            const definition = tools[tool as keyof typeof tools];
+            const registered = offered.find((entry) => entry.id === tool);
+            const Icon = definition ?? registered?.Icon ?? Globe2;
+            const builtInLabel =
+              tool === 'chat'
+                ? tNav('sidebarHome')
+                : tool === 'browser'
+                  ? tNav('workspace.browser')
+                  : tool === 'terminal'
+                    ? tNav('workspace.terminal')
+                    : tool === 'code'
+                      ? tNav('workspace.code')
+                      : tool === 'mail'
+                        ? 'Mail'
+                        : null;
+            const label = browserTab?.title || builtInLabel || labelOf(registered) || tool;
+            return (
+              <div
+                key={key}
+                className="ds-panel-tab"
+                draggable
+                onDragStart={(event) => {
+                  setDragged(key);
+                  event.dataTransfer.effectAllowed = 'move';
+                  event.dataTransfer.setData('text/plain', key);
+                  event.dataTransfer.setData('application/x-helena-tab', key);
+                }}
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  if (dragged) tabs.move(dragged, key, ordered);
+                  setDragged(null);
+                }}
+                onDragEnd={() => setDragged(null)}
               >
-                {tool === 'chat' ? (
-                  <span className="helena-panel-tab-orb" aria-hidden="true" />
-                ) : (
-                  <Icon className="size-3.5" />
-                )}
-                <span>{label}</span>
-              </button>
-              <button
-                type="button"
-                className="helena-panel-tab-close"
-                aria-label={t('closeTab', { tab: label })}
-                onClick={() => close(key)}
-              >
-                <X size={13} />
-              </button>
-            </div>
-          );
-        })}
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeKey === key}
+                  className="ds-panel-tab-select"
+                  onClick={() => select(key)}
+                  title={label}
+                >
+                  {tool === 'chat' ? (
+                    <span className="ds-tool-orb" aria-hidden="true" />
+                  ) : (
+                    <Icon className="size-3.5" />
+                  )}
+                  <span>{label}</span>
+                </button>
+                <button
+                  type="button"
+                  className="ds-panel-tab-close"
+                  aria-label={t('closeTab', { tab: label })}
+                  onClick={() => close(key)}
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
         <DropdownMenu>
           <DropdownMenuTrigger
-            className="helena-panel-icon"
+            className="ds-icon-button"
+            data-size="small"
             title={t('addTab')}
             aria-label={t('addTab')}
           >
@@ -192,29 +194,20 @@ export default function WorkspaceTabBar({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="helena-panel-layouts" role="group" aria-label={tNav('layout.menu')}>
-        {(
-          [
-            ['side', PanelRight, t('side')],
-            ['split', Columns2, t('split')],
-            ['full', Maximize2, t('full')],
-          ] as const
-        ).map(([id, Icon, label]) => (
-          <button
-            key={id}
-            type="button"
-            className="helena-panel-icon"
-            aria-label={label}
-            title={label}
-            aria-pressed={layout === id}
-            onClick={() => onChooseLayout(id)}
-          >
-            <Icon size={14} />
-          </button>
-        ))}
+      <div className="ds-panel-head-tools">
         <button
           type="button"
-          className="helena-panel-icon"
+          className="ds-icon-button"
+          aria-label={layout === 'full' ? t('side') : t('full')}
+          title={layout === 'full' ? t('side') : t('full')}
+          aria-pressed={layout === 'full'}
+          onClick={() => onChooseLayout('full')}
+        >
+          {layout === 'full' ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+        </button>
+        <button
+          type="button"
+          className="ds-icon-button"
           aria-label={t('close')}
           title={t('close')}
           onClick={onClose}

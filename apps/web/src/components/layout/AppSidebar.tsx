@@ -1,28 +1,33 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
+import { Code2, Globe2, Mail, PanelLeftClose, PanelLeftOpen, Search, Terminal } from 'lucide-react';
 import { useSession } from '@/lib/auth-client';
 import type { Project } from '@/lib/api/endpoints/projects';
 import type { View } from '@/lib/api/endpoints/views';
-import { useSidebarSide } from '@/hooks/useSidebarSide';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarRail,
-  useSidebar,
-} from '@/components/ui/sidebar';
 import SidebarAccountRow from '@/components/brand/SidebarAccountRow';
+import { useAgentStatus } from '@/utils/helenaStatus';
+import { useChatWorkspaceScope } from '@/features/ai-chat/hooks/useChatWorkspaceScope';
 import SidebarProjectSwitcher from './SidebarProjectSwitcher';
-import { SidebarHomeTree, SidebarPersonalNav, SidebarProjectTree } from './SidebarTreeNav';
+import { SidebarHomeTree, SidebarProjectTree } from './SidebarTreeNav';
 import { APP_NAME } from '@/utils/app';
-import { Search, Globe2, Terminal, Code2, Mail } from 'lucide-react';
-import HomeOrb from '@/components/helena/HomeOrb';
 import type { WorkspaceToolId } from '@/utils/workspaceTools';
 import type { ViewTemplate } from '@/hooks/useViewEditor';
 
+// The chat tool's own face in the tool row: a small CSS orb in the Home agent's status
+// (owner, 28.09.: "das Chat-Symbol ist ein kleiner Orb").
+function ToolOrb() {
+  const home = useChatWorkspaceScope(null);
+  const status = useAgentStatus(home.agents[0]?.id ?? 0);
+  return <span className="ds-tool-orb" data-status={status} aria-hidden="true" />;
+}
+
+// The sidebar (docs/design-system.md §6–§7, drafts ui-entwurf/Navigation-*, Shell*):
+// HELENA (→ Home), clock and search; the project switcher; the tree (DU, PROJEKT); the
+// tool row (WERKZEUGE: only the chosen tool is marked); the account with the settings
+// gear. The only navigation of the app.
 export default function AppSidebar({
   projects,
   currentProjectKey,
@@ -34,8 +39,10 @@ export default function AppSidebar({
   onOpenCommand,
   onSelectTool,
   activeTool,
-  openTools,
   onSettings,
+  rail,
+  onToggleRail,
+  onNavigate,
 }: {
   projects: Project[];
   currentProjectKey: string | null;
@@ -47,13 +54,15 @@ export default function AppSidebar({
   onOpenCommand: () => void;
   onSelectTool: (tool: WorkspaceToolId) => void;
   activeTool: WorkspaceToolId | null;
-  openTools: string[];
   onSettings: () => void;
+  rail: boolean;
+  onToggleRail: () => void;
+  // A tool was picked (closes the overlay sidebar on a narrow window; a followed link
+  // closes it through the new page).
+  onNavigate: () => void;
 }) {
   const t = useTranslations('nav');
   const locale = useLocale();
-  const side = useSidebarSide();
-  const sidebar = useSidebar();
   const teamIds = [...new Set(projects.map((project) => project.teamId))];
   const homeTeamId = teamIds.length === 1 ? teamIds[0]! : null;
   const [clock, setClock] = useState('');
@@ -75,77 +84,86 @@ export default function AppSidebar({
     return () => window.clearInterval(timer);
   }, [locale]);
 
+  const tools: [WorkspaceToolId, typeof Globe2 | null, string][] = [
+    ['chat', null, t('chat')],
+    ['browser', Globe2, t('workspace.browser')],
+    ['terminal', Terminal, t('workspace.terminal')],
+    ['code', Code2, t('workspace.code')],
+    ['mail', Mail, 'Mail'],
+  ];
+
   return (
-    <Sidebar collapsible="offcanvas" side={side} className="helena-sidebar">
-      <SidebarHeader className="helena-sidebar-header">
-        <div className="helena-sidebar-brand">
-          <span>{APP_NAME.toUpperCase()}</span>
-          <span className="flex items-center gap-2">
-            <time suppressHydrationWarning>{clock}</time>
-            <button
-              type="button"
-              aria-label={t('search')}
-              title="Suchen (⌘K)"
-              onClick={onOpenCommand}
-              className="helena-sidebar-search"
-            >
-              <Search size={14} />
-            </button>
-          </span>
-        </div>
-        <SidebarProjectSwitcher
-          projects={projects}
-          currentProjectKey={currentProjectKey}
-          onSelectProject={onSelectProject}
-          onNewProject={onNewProject}
-        />
-      </SidebarHeader>
-      <SidebarContent className="helena-sidebar-content">
-        <SidebarPersonalNav teamIds={teamIds} projectKey={currentProjectKey} projects={projects} />
+    <nav className="ds-sidebar" aria-label={t('sidebarProject')}>
+      <div className="ds-sidebar-brand">
+        <Link href="/" title={t('sidebarHome')}>
+          {APP_NAME.toUpperCase()}
+        </Link>
+        <span className="ds-sidebar-brand-tools">
+          <time suppressHydrationWarning>{clock}</time>
+          <button
+            type="button"
+            aria-label={t('search')}
+            title={`${t('search')} (⌘K)`}
+            onClick={onOpenCommand}
+            className="ds-sidebar-search"
+          >
+            <Search size={14} />
+          </button>
+          <button
+            type="button"
+            aria-label={rail ? t('sidebarExpand') : t('sidebarCollapse')}
+            title={rail ? t('sidebarExpand') : t('sidebarCollapse')}
+            onClick={onToggleRail}
+            className="ds-sidebar-search ds-sidebar-rail-toggle"
+          >
+            {rail ? <PanelLeftOpen size={14} /> : <PanelLeftClose size={14} />}
+          </button>
+        </span>
+      </div>
+      <SidebarProjectSwitcher
+        projects={projects}
+        currentProjectKey={currentProjectKey}
+        onSelectProject={onSelectProject}
+        onNewProject={onNewProject}
+      />
+      <div className="ds-sidebar-scroll">
         {currentProjectKey ? (
           <SidebarProjectTree
             projectKey={currentProjectKey}
+            projects={projects}
+            teamIds={teamIds}
             onNewView={onNewView}
             onEditView={onEditView}
             onDeleteView={onDeleteView}
           />
         ) : (
-          <SidebarHomeTree teamId={homeTeamId} isGod={mounted && session?.user.role === 'god'} />
+          <SidebarHomeTree
+            teamId={homeTeamId}
+            isGod={mounted && session?.user.role === 'god'}
+            teamIds={teamIds}
+            projects={projects}
+          />
         )}
-      </SidebarContent>
-      <SidebarFooter className="helena-sidebar-footer">
-        <div className="helena-sidebar-tools">
-          <span>{t('tools')}</span>
-          <div>
-            {(
-              [
-                ['chat', null, 'Chat'],
-                ['browser', Globe2, 'Browser'],
-                ['terminal', Terminal, 'Terminal'],
-                ['code', Code2, 'Code'],
-                ['mail', Mail, 'Mail'],
-              ] as const
-            ).map(([id, Icon, label]) => (
-              <button
-                key={id}
-                type="button"
-                title={label}
-                aria-label={label}
-                aria-pressed={activeTool === id}
-                onClick={() => {
-                  onSelectTool(id);
-                  if (sidebar.isMobile) sidebar.setOpenMobile(false);
-                }}
-              >
-                {Icon ? <Icon size={16} /> : <HomeOrb size="small" className="helena-tool-orb" />}
-                {openTools.includes(id) && <i />}
-              </button>
-            ))}
-          </div>
-        </div>
-        <SidebarAccountRow onSettings={onSettings} />
-      </SidebarFooter>
-      <SidebarRail />
-    </Sidebar>
+      </div>
+      <span className="ds-sidebar-label">{t('tools')}</span>
+      <div className="ds-sidebar-tools">
+        {tools.map(([id, Icon, label]) => (
+          <button
+            key={id}
+            type="button"
+            title={label}
+            aria-label={label}
+            aria-pressed={activeTool === id}
+            onClick={() => {
+              onSelectTool(id);
+              onNavigate();
+            }}
+          >
+            {Icon ? <Icon size={16} /> : <ToolOrb />}
+          </button>
+        ))}
+      </div>
+      <SidebarAccountRow onSettings={onSettings} />
+    </nav>
   );
 }

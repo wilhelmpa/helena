@@ -669,5 +669,26 @@
     "viewportWidth": "Largeur",
     "viewportHeight": "Hauteur",
     "pixels": "pixels"
+  },
+  "modal": {
+    "title": "Paramètres",
+    "search": "Rechercher un paramètre …",
+    "noResults": "Aucun paramètre trouvé.",
+    "tabs": {
+      "account": "Mon compte",
+      "helena": "Helena",
+      "admin": "Administrateur"
+    },
+    "groups": {
+      "instance": "Instance",
+      "team": "Équipe",
+      "agents": "Agents",
+      "management": "Gestion"
+    },
+    "sections": {
+      "defaults": "Valeurs par défaut de tous les projets",
+      "defaultsHint": "Un projet peut remplacer certaines valeurs.",
+      "voice": "Reconnaissance vocale"
+    }
   }
 }

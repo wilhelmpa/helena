@@ -669,5 +669,26 @@
     "viewportWidth": "Lebar",
     "viewportHeight": "Tinggi",
     "pixels": "piksel"
+  },
+  "modal": {
+    "title": "Pengaturan",
+    "search": "Cari pengaturan …",
+    "noResults": "Tidak ada pengaturan ditemukan.",
+    "tabs": {
+      "account": "Akun saya",
+      "helena": "Helena",
+      "admin": "Administrator"
+    },
+    "groups": {
+      "instance": "Instans",
+      "team": "Tim",
+      "agents": "Agen",
+      "management": "Manajemen"
+    },
+    "sections": {
+      "defaults": "Bawaan untuk semua proyek",
+      "defaultsHint": "Proyek dapat menimpa nilai tertentu.",
+      "voice": "Pengenalan suara"
+    }
   }
 }

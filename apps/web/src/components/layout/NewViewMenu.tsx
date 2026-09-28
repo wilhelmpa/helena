@@ -12,7 +12,7 @@ export default function NewViewMenu({ onSelect }: { onSelect: (template: ViewTem
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="helena-tree-toggle"
+          className="ds-tree-action"
           aria-label={t('newView')}
           title={t('newView')}
         >

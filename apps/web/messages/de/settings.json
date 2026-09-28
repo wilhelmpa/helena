@@ -669,5 +669,26 @@
     "viewportWidth": "Breite",
     "viewportHeight": "Höhe",
     "pixels": "Pixel"
+  },
+  "modal": {
+    "title": "Einstellungen",
+    "search": "Einstellung suchen …",
+    "noResults": "Keine Einstellung gefunden.",
+    "tabs": {
+      "account": "Mein Konto",
+      "helena": "Helena",
+      "admin": "Administrator"
+    },
+    "groups": {
+      "instance": "Instanz",
+      "team": "Team",
+      "agents": "Agenten",
+      "management": "Verwaltung"
+    },
+    "sections": {
+      "defaults": "Vorgaben für alle Projekte",
+      "defaultsHint": "Ein Projekt kann einzelne Werte überschreiben.",
+      "voice": "Spracherkennung"
+    }
   }
 }

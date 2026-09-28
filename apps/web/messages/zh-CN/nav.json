@@ -51,7 +51,7 @@
   "home": "主页",
   "globalHomeHint": "在此使用全局协调器，或选择项目以使用该项目的上下文。",
   "workflows": "工作流",
-  "agentActivity": "动态",
+  "agentActivity": "历史",
   "noProjects": "暂无项目",
   "newTeam": "新建团队",
   "manageTeams": "管理团队",
@@ -190,7 +190,7 @@
   "credentials": "凭据",
   "devices": "设备",
   "teamSettings": "团队设置",
-  "teamOrchestration": "团队与编排",
+  "teamOrchestration": "团队",
   "overview": "概览",
   "projectGroups": {
     "group": "分组",
@@ -249,5 +249,24 @@
     "close": "Close panel",
     "closeTab": "Close {tab}",
     "reloadView": "Reload view"
-  }
+  },
+  "sidebarTeam": "团队",
+  "sidebarAgentPool": "智能体池",
+  "sidebarGoals": "目标",
+  "sidebarKnowledgeReceipts": "知识与票据",
+  "settingsWork": "工作",
+  "settingsAgents": "智能体",
+  "settingsIntegrations": "集成",
+  "sidebarNewDashboard": "新建仪表板",
+  "sidebarNewFolder": "新建文件夹",
+  "sidebarNewSchedule": "新建计划",
+  "sidebarOtherInbox": "其他项目有新条目",
+  "sidebarOpenMenu": "打开导航",
+  "sidebarCollapse": "收起侧栏",
+  "sidebarExpand": "展开侧栏",
+  "account": "我的账户",
+  "themeLight": "浅色",
+  "themeDark": "深色",
+  "dangerZone": "危险区域",
+  "mail": "邮件"
 }

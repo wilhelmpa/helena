@@ -3,8 +3,8 @@
 import { useState, type DragEvent } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
-import { ChevronRight, Folder, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import { TreeAction, TreeItem } from '@/design-system';
 import { toast } from 'sonner';
 import type { FileScope } from '@/lib/api/endpoints/projectFiles';
 import { useFilesQuery } from '@/services/files.service';
@@ -41,23 +41,24 @@ function FolderNode({
   canWrite: boolean;
 }) {
   const fixed = useTranslations('files.fixedFolders');
+  const tNav = useTranslations('nav');
   const pathname = usePathname();
   const params = useSearchParams();
   const scopeMatches = scope.kind === 'project' || (params.get('root') ?? 'home') === scope.root;
-  const current =
-    pathname === (scope.kind === 'project' ? filesPath(scope.projectKey) : '/files') &&
-    params.get('path') === path &&
-    scopeMatches;
-  const isAncestor = scopeMatches && (params.get('path') ?? '').startsWith(`${path}/`);
-  const [expanded, setExpanded] = useState<boolean | null>(null);
+  const onFilesPage =
+    pathname === (scope.kind === 'project' ? filesPath(scope.projectKey) : '/files');
+  const current = onFilesPage && params.get('path') === path && scopeMatches;
+  const isAncestor =
+    onFilesPage && scopeMatches && (params.get('path') ?? '').startsWith(`${path}/`);
   const [over, setOver] = useState(false);
   const [newFolder, setNewFolder] = useState(false);
   const listing = useFilesQuery(scope, path);
   const move = useMoveFile(scope);
   const upload = useUploadFiles(scope);
-  const children = listing.data?.items.filter((item) => isDirectChildFolder(item, path)) ?? [];
-  const open = expanded ?? isAncestor;
-  const drop = (event: DragEvent<HTMLDivElement>) => {
+  const children = (
+    listing.data?.items.filter((item) => isDirectChildFolder(item, path)) ?? []
+  ).sort((a, b) => a.name.localeCompare(b.name, 'de'));
+  const drop = (event: DragEvent<HTMLElement>) => {
     if (!canWrite) return;
     event.preventDefault();
     event.stopPropagation();
@@ -70,79 +71,62 @@ function FolderNode({
     } else if (event.dataTransfer.files.length) {
       upload.mutate(
         { folder: path, files: Array.from(event.dataTransfer.files) },
-        {
-          onError: () => toast.error('Hochladen fehlgeschlagen'),
-        },
+        { onError: () => toast.error('Hochladen fehlgeschlagen') },
       );
     }
   };
+  const scopeKey = scope.kind === 'project' ? scope.projectKey : `home:${scope.root}`;
   return (
-    <div>
-      <div
-        className={`helena-tree-parent group relative ${over ? 'bg-[#26212d]' : ''}`}
-        style={{ paddingInlineStart: depth * 16 }}
-        onDragOver={(event) => {
-          if (!canWrite) return;
-          event.preventDefault();
-          event.stopPropagation();
-          setOver(true);
+    <>
+      <TreeItem
+        label={scope.kind === 'project' && depth === 0 ? knowledgeFolderLabel(name, fixed) : name}
+        href={folderUrl(scope, path)}
+        active={current}
+        containsActive={isAncestor}
+        storageKey={`folder:${scopeKey}:${path}`}
+        defaultOpen={false}
+        className={over ? 'is-drop-target' : undefined}
+        rowProps={{
+          onDragOver: (event) => {
+            if (!canWrite) return;
+            event.preventDefault();
+            event.stopPropagation();
+            setOver(true);
+          },
+          onDragLeave: () => setOver(false),
+          onDrop: drop,
         }}
-        onDragLeave={() => setOver(false)}
-        onDrop={drop}
+        actions={
+          canWrite && (
+            <TreeAction label={tNav('sidebarNewFolder')} onClick={() => setNewFolder(true)}>
+              <Plus />
+            </TreeAction>
+          )
+        }
       >
-        {children.length > 0 && (
-          <button
-            type="button"
-            className="helena-tree-toggle knowledge-folder-toggle"
-            style={{ insetInlineStart: depth * 16 }}
-            aria-label={`${open ? 'Schließen' : 'Öffnen'}: ${name}`}
-            aria-expanded={open}
-            onClick={() => setExpanded(!open)}
-          >
-            <ChevronRight size={13} className={open ? 'rotate-90' : ''} />
-          </button>
-        )}
-        <Link
-          href={folderUrl(scope, path)}
-          className={`helena-tree-link helena-tree-child ${current ? 'is-active' : ''}`}
-          aria-current={current ? 'page' : undefined}
-        >
-          <Folder size={14} className="me-2 inline shrink-0 text-muted-foreground" />
-          <span className="truncate">
-            {scope.kind === 'project' && depth === 0 ? knowledgeFolderLabel(name, fixed) : name}
-          </span>
-        </Link>
-        {canWrite && (
-          <button
-            type="button"
-            className="helena-tree-toggle knowledge-folder-add"
-            aria-label={`Ordner in ${name} anlegen`}
-            onClick={() => setNewFolder(true)}
-          >
-            <Plus size={13} />
-          </button>
-        )}
-      </div>
-      {open &&
-        [...children]
-          .sort((a, b) => a.name.localeCompare(b.name, 'de'))
-          .map((child) => (
-            <FolderNode
-              key={child.path}
-              scope={scope}
-              path={child.path}
-              name={child.name}
-              depth={depth + 1}
-              canWrite={canWrite}
-            />
-          ))}
+        {children.length > 0
+          ? children.map((child) => (
+              <FolderNode
+                key={child.path}
+                scope={scope}
+                path={child.path}
+                name={child.name}
+                depth={depth + 1}
+                canWrite={canWrite}
+              />
+            ))
+          : null}
+      </TreeItem>
       {newFolder && (
         <FileNewFolderDialog scope={scope} folder={path} onClose={() => setNewFolder(false)} />
       )}
-    </div>
+    </>
   );
 }
 
+// The folders of a knowledge root as rows of the sidebar tree (fixed folders first in
+// their order, own folders alphabetically). A folder is a drop target for files and
+// entries; its "+" adds a subfolder.
 export default function SidebarKnowledgeFolders({
   scope,
   canWrite = false,
@@ -151,15 +135,17 @@ export default function SidebarKnowledgeFolders({
   canWrite?: boolean;
 }) {
   const listing = useFilesQuery(scope, '');
-  return (
+  const folders =
     listing.data?.items
       .filter((item) => isDirectChildFolder(item, ''))
       .sort((a, b) =>
         scope.kind === 'project'
           ? compareKnowledgeFolders(a.name, b.name)
           : a.name.localeCompare(b.name, 'de'),
-      )
-      .map((folder) => (
+      ) ?? [];
+  return (
+    <>
+      {folders.map((folder) => (
         <FolderNode
           key={folder.path}
           scope={scope}
@@ -168,6 +154,7 @@ export default function SidebarKnowledgeFolders({
           depth={0}
           canWrite={canWrite}
         />
-      )) ?? null
+      ))}
+    </>
   );
 }

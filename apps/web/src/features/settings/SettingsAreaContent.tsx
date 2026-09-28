@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import type { SettingsLocation } from './settingsModalCatalog';
 
-// The sections of Home, Mein Konto and Administrator as they show inside the settings
+// The sections of Mein Konto, Helena and Administrator as they show inside the settings
 // modal: the same components their old pages rendered, so nothing is lost and no page
 // behind the modal has to change.
 const account = {
@@ -59,7 +59,6 @@ const team = {
 };
 const HomeDefaultsPage = dynamic(() => import('@/features/settings/HomeDefaultsPage'));
 const ManageTeamsIndex = dynamic(() => import('@/features/teams/ManageTeamsIndex'));
-const AgentSettings = dynamic(() => import('./AgentSettingsModalContent'));
 
 export default function SettingsAreaContent({
   location,
@@ -79,17 +78,16 @@ export default function SettingsAreaContent({
     const Page = admin[slug as keyof typeof admin];
     return Page ? <Page /> : null;
   }
-  if (area === 'home') {
-    // The team list page only forwards to the first team; here that team shows directly.
-    if (slug === 'teams') return teamId ? <team.info teamId={teamId} /> : <ManageTeamsIndex />;
-    if (slug === 'defaults') return <HomeDefaultsPage />;
-    const id = Number(extra) || teamId;
-    const Section = team[slug as keyof typeof team];
-    return Section && id ? <Section teamId={id} /> : null;
+  // Helena: the instance's defaults and the team.
+  if (slug === 'defaults') return <HomeDefaultsPage />;
+  if (slug === 'ai') return <admin.general />;
+  if (slug === 'local-ai') {
+    const LocalAi = admin['local-ai'];
+    return <LocalAi />;
   }
-  if (area === 'agent') {
-    const agentId = Number(slug);
-    return agentId && teamId ? <AgentSettings teamId={teamId} agentId={agentId} /> : null;
-  }
-  return null;
+  if (slug === 'updates') return <ServerPage tab="updates" />;
+  if (slug === 'teams') return teamId ? <team.info teamId={teamId} /> : <ManageTeamsIndex />;
+  const id = Number(extra) || teamId;
+  const Section = team[slug as keyof typeof team];
+  return Section && id ? <Section teamId={id} /> : null;
 }

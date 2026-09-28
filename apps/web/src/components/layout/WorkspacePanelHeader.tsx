@@ -73,7 +73,13 @@ export default function WorkspacePanelHeader({
   const tCommon = useTranslations('common');
   const tLayout = useTranslations('nav.layout');
   return (
-    <div className={cn(WORKSPACE_PANEL_HEADER_CLASS, 'gap-1', picker ? 'ps-1.5 pe-3' : 'px-3')}>
+    <div
+      className={
+        tabbed
+          ? 'ds-panel-subbar'
+          : cn(WORKSPACE_PANEL_HEADER_CLASS, 'gap-1', picker ? 'ps-1.5 pe-3' : 'px-3')
+      }
+    >
       {picker}
       {toolbar ? (
         <>

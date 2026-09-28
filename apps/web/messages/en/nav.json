@@ -54,7 +54,7 @@
   "teamScopeRequired": "Choose one team scope",
   "teamScopeRequiredHint": "These controls are shown directly in Home when your projects belong to one team. Use Manage teams to resolve the team scope.",
   "workflows": "Workflows",
-  "agentActivity": "Activity",
+  "agentActivity": "History",
   "noProjects": "No projects yet",
   "newTeam": "New team",
   "manageTeams": "Manage teams",
@@ -190,7 +190,7 @@
   "credentials": "Credentials",
   "devices": "Devices",
   "teamSettings": "Team settings",
-  "teamOrchestration": "Team & orchestration",
+  "teamOrchestration": "Team",
   "overview": "Overview",
   "projectGroups": {
     "group": "Group",
@@ -249,5 +249,24 @@
     "close": "Close panel",
     "closeTab": "Close {tab}",
     "reloadView": "Reload view"
-  }
+  },
+  "sidebarTeam": "Team",
+  "sidebarAgentPool": "Agent pool",
+  "sidebarGoals": "Goals",
+  "sidebarKnowledgeReceipts": "Knowledge & receipts",
+  "settingsWork": "Work",
+  "settingsAgents": "Agents",
+  "settingsIntegrations": "Integrations",
+  "sidebarNewDashboard": "New dashboard",
+  "sidebarNewFolder": "New folder",
+  "sidebarNewSchedule": "New schedule",
+  "sidebarOtherInbox": "Other projects have new items",
+  "sidebarOpenMenu": "Open navigation",
+  "sidebarCollapse": "Collapse sidebar",
+  "sidebarExpand": "Expand sidebar",
+  "account": "My account",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "dangerZone": "Danger zone",
+  "mail": "Mail"
 }

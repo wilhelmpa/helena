@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  ChevronsUpDown,
   Info,
   Languages,
   LogOut,
@@ -119,20 +118,13 @@ export default function UserMenu({ variant = 'avatar' }: { variant?: 'avatar' | 
           <TooltipTrigger asChild>
             <DropdownMenuTrigger asChild>
               {variant === 'row' ? (
-                <button
-                  type="button"
-                  aria-label={user.email}
-                  className="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 text-start text-sm text-sidebar-foreground outline-none group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:flex-none group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring data-[state=open]:bg-sidebar-accent"
-                >
+                <button type="button" aria-label={user.email}>
                   <Avatar
                     name={user.name || user.email}
                     image={image}
                     className="size-6 shrink-0"
                   />
-                  <span className="min-w-0 flex-1 truncate group-data-[collapsible=icon]:hidden">
-                    {user.name || user.email}
-                  </span>
-                  <ChevronsUpDown className="size-3.5 shrink-0 text-muted-foreground group-data-[collapsible=icon]:hidden" />
+                  <span>{user.name || user.email}</span>
                 </button>
               ) : (
                 <button type="button" aria-label={user.email} className="rounded-full outline-none">
@@ -155,17 +147,15 @@ export default function UserMenu({ variant = 'avatar' }: { variant?: 'avatar' | 
             </span>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => openSettingsModal('account', 'profile')}>
+          <DropdownMenuItem onSelect={() => openSettingsModal()}>
             <Settings2 />
-            {'Einstellungen'}
+            {t('settings')}
           </DropdownMenuItem>
           {variant === 'row' && (
             <>
-              <DropdownMenuItem asChild>
-                <Link href={accountPath(ACCOUNT_SECTIONS[0]!.slug)}>
-                  <UserRound />
-                  {'Konto'}
-                </Link>
+              <DropdownMenuItem onSelect={() => openSettingsModal('account', 'profile')}>
+                <UserRound />
+                {t('account')}
               </DropdownMenuItem>
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>
@@ -193,7 +183,7 @@ export default function UserMenu({ variant = 'avatar' }: { variant?: 'avatar' | 
                 }}
               >
                 {resolvedTheme === 'dark' ? <Sun /> : <Moon />}
-                {resolvedTheme === 'dark' ? 'Hell' : 'Dunkel'}
+                {resolvedTheme === 'dark' ? t('themeLight') : t('themeDark')}
               </DropdownMenuItem>
             </>
           )}

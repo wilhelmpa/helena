@@ -25,21 +25,24 @@ import { ShellCtx, type ChatThreadRequest, type ShellContext } from '@/context/s
 import { ShellHeaderActionsSlotCtx, ShellHeaderSlotCtx } from '@/context/shellHeaderSlot';
 import type { WorkspaceLayoutChoice } from '@/context/workspaceLayout';
 import ShellHeaderExtra from '@/components/layout/ShellHeaderExtra';
-import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/layout/AppSidebar';
-import AppHeader from '@/components/layout/AppHeader';
 import CommandLayer from '@/components/layout/CommandLayer';
 import { EmergencyStopBanner } from '@/features/agent-runtime/components/EmergencyStop';
 import ShellBody from '@/components/layout/ShellBody';
-import ShellHeaderTitle from '@/components/layout/ShellHeaderTitle';
 import ShellOverlays from '@/components/layout/ShellOverlays';
 import WorkspaceLayoutHost from '@/components/layout/WorkspaceLayoutHost';
-import WorkItemsPage from '@/features/work-items/WorkItemsPage';
 import SettingsModal from '@/features/settings/SettingsModal';
+import AgentDialog from '@/features/settings/AgentDialog';
 import { openSettingsModal } from '@/features/settings/settingsModalCatalog';
 import HomeDock from '@/components/layout/HomeDock';
 import ProjectLinkSheet from '@/components/layout/ProjectLinkSheet';
 import { useTranslations } from 'next-intl';
+import { Menu as MenuIcon } from 'lucide-react';
+import { PageHeader } from '@/design-system';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useDashboardsQuery } from '@/services/dashboards.service';
+import { useShellHeading } from '@/components/layout/useShellHeading';
 import { isTypingTarget } from '@/utils/hotkeys';
 import { requestDockVoice } from '@/features/voice/utils/dockVoice';
 
@@ -100,7 +103,6 @@ export default function Shell({
   // right under it instead — the same row on every page (owner, 2026-09-24: "mobile
   // muss alles richtig gut aussehen").
   const [pageBarSlot, setPageBarSlot] = useState<HTMLElement | null>(null);
-  const pageSlot = headerLayout === 'single' ? pageBarSlot : null;
   const overlays = useOverlays();
   // On the kiosk's two screens the tool panel fills the second one.
   const kiosk = useKioskDisplay();
@@ -277,16 +279,54 @@ export default function Shell({
     workspaceLayout: layoutChoice,
   };
 
+  // The frame (docs/design-system.md §3): the sidebar — full, a 56px rail, or an overlay
+  // on a narrow window — and the page (header, toolbar row, body). The panel on the
+  // right is an overlay over the page; the page keeps its full width.
+  const narrow = useMediaQuery('(max-width: 899px)');
+  const medium = useMediaQuery('(max-width: 1099px)');
+  const sidebarMode = narrow ? 'hidden' : medium || !navigation.sidebarOpen ? 'rail' : 'full';
+  // The overlay sidebar belongs to the page it was opened on: a new page closes it.
+  const [overlayPath, setOverlayPath] = useState<string | null>(null);
+  const sidebarOverlay = overlayPath === pathname;
+  const setSidebarOverlay = (open: boolean) => setOverlayPath(open ? pathname : null);
+  const dashboards = useDashboardsQuery(route.sub === 'dashboard' ? projectKey : null).data ?? [];
+  const dashboardId = route.sub === 'dashboard' ? Number(pathname.split('/')[4]) : NaN;
+  const heading = useShellHeading({
+    route,
+    globalHome,
+    globalTitle,
+    projectName: project?.project.name ?? null,
+    issueIdentifier: issueQuery.data?.identifier ?? null,
+    issueTitle: issueQuery.data?.title ?? null,
+    viewName:
+      route.sub === 'dashboard'
+        ? (dashboards.find((dashboard) => dashboard.id === dashboardId)?.name ?? null)
+        : (views.find((view) => view.id === route.activeViewId)?.name ?? null),
+  });
+  const headingText = [heading.title, ...heading.crumbs.map((crumb) => crumb.label).reverse()];
+  const titleKey = headingText.join('\u0000');
+  useEffect(() => {
+    const previous = document.title;
+    document.title = [...titleKey.split('\u0000'), 'Helena'].filter(Boolean).join(' · ');
+    return () => {
+      document.title = previous;
+    };
+  }, [titleKey]);
+  const hideHeader = hideHeaderOnDesktop && !narrow;
+  const headerHidden = mobileHeaderOnly ? !narrow : hideHeader;
+
   return (
     <WebLinksContext.Provider value={webLinks}>
       <ShellCtx.Provider value={context}>
-        <ShellHeaderSlotCtx.Provider value={pageSlot}>
+        <ShellHeaderSlotCtx.Provider value={headerLayout === 'single' ? pageBarSlot : null}>
           <ShellHeaderActionsSlotCtx.Provider value={headerLayout === 'single' ? headerSlot : null}>
             <SidebarProvider
               open={navigation.sidebarOpen}
               onOpenChange={navigation.setSidebarOpen}
-              className="h-svh overflow-hidden"
+              className="ds-app"
               style={{ '--sidebar-width': '248px' } as CSSProperties}
+              data-sidebar={sidebarMode}
+              data-sidebar-open={sidebarOverlay ? 'true' : 'false'}
             >
               <AppSidebar
                 projects={projects}
@@ -303,58 +343,41 @@ export default function Shell({
                 onOpenCommand={() => overlays.setShowCommand(true)}
                 onSelectTool={selectWorkspaceTool}
                 activeTool={workspaceOpen ? activeWorkspaceTool : null}
-                openTools={
-                  workspaceOpen
-                    ? workspaceLayout.tabs.saved
-                        .map((key) => (key.startsWith('browser:') ? 'browser' : key.slice(5)))
-                        .filter((key, index, all) => all.indexOf(key) === index)
-                    : []
-                }
                 onSettings={() => openSettingsModal()}
+                rail={sidebarMode === 'rail' && !sidebarOverlay}
+                onToggleRail={() =>
+                  medium
+                    ? setSidebarOverlay(!sidebarOverlay)
+                    : navigation.setSidebarOpen(!navigation.sidebarOpen)
+                }
+                onNavigate={() => setSidebarOverlay(false)}
               />
-              <SidebarInset className="min-w-0">
-                <AppHeader
-                  className={
-                    mobileHeaderOnly ? 'md:hidden' : hideHeaderOnDesktop ? 'lg:hidden' : undefined
-                  }
-                  title={
-                    globalHome ? (
-                      globalTitle ? (
-                        globalTitle
-                      ) : (
-                        t('home')
-                      )
-                    ) : (
-                      <ShellHeaderTitle
-                        route={route}
-                        projectName={project?.project.name ?? t('project')}
-                        issueIdentifier={issueQuery.data?.identifier ?? null}
-                        issueParent={issueQuery.data?.parent ?? null}
-                        viewName={views.find((view) => view.id === route.activeViewId)?.name}
-                      />
-                    )
-                  }
-                  titleLead={
-                    !globalHome && route.routeIssueSeq != null && issueQuery.data
-                      ? `${issueQuery.data.identifier} ${issueQuery.data.title}`
-                      : null
-                  }
-                  eyebrow={
-                    globalHome
-                      ? 'HOME'
-                      : `${project?.project.name ?? t('project')} · ${route.sub === 'dashboard' ? t('dashboards') : route.onBoard ? t('workItems') : (route.sub ?? t('project'))}`
-                  }
-                  headerLayout={headerLayout}
-                  headerExtra={null}
-                  pageSlotRef={setHeaderSlot}
-                  pageHidden={!workspaceLayout.resolved.pageVisible}
-                />
+              <div
+                className="ds-sidebar-scrim"
+                aria-hidden="true"
+                onClick={() => setSidebarOverlay(false)}
+              />
+              <main className="ds-main">
+                {!headerHidden && (
+                  <PageHeader
+                    crumbs={heading.crumbs}
+                    title={heading.title}
+                    accent={heading.accent}
+                    actionsRef={setHeaderSlot}
+                    lead={
+                      <button
+                        type="button"
+                        className="ds-icon-button ds-page-menu-button"
+                        aria-label={t('sidebarOpenMenu')}
+                        onClick={() => setSidebarOverlay(true)}
+                      >
+                        <MenuIcon />
+                      </button>
+                    }
+                  />
+                )}
                 {headerLayout === 'single' && (
-                  <div
-                    ref={setPageBarSlot}
-                    data-slot="app-page-bar"
-                    className="relative flex h-11 shrink-0 items-center gap-1 border-b border-sidebar-border px-2 empty:hidden sm:px-9 [&:not(:has(>:not(:empty)))]:hidden"
-                  >
+                  <div ref={setPageBarSlot} data-slot="app-page-bar" className="ds-page-toolbar">
                     <ShellHeaderExtra store={headerExtra} bare />
                   </div>
                 )}
@@ -362,7 +385,7 @@ export default function Shell({
                 <EmergencyStopBanner />
 
                 {errorMsg && !forbidden && (
-                  <div className="border-b border-destructive/50 bg-destructive/10 px-4 py-2 text-sm text-destructive">
+                  <div className="ds-shell-error">
                     {unreachable ? tShell('serverUnreachable') : errorMsg}
                   </div>
                 )}
@@ -377,14 +400,10 @@ export default function Shell({
                     projectCount={projects.length}
                     allowNoProject={globalHome}
                   >
-                    {['settings', 'members', 'notifications', 'mcp'].includes(route.sub ?? '') ? (
-                      <WorkItemsPage />
-                    ) : (
-                      children
-                    )}
+                    {children}
                   </ShellBody>
                 </WorkspaceLayoutHost>
-              </SidebarInset>
+              </main>
 
               <HomeDock open={workspaceOpen} onOpen={workspaceLayout.openHome} />
               <ProjectLinkSheet currentProjectKey={projectKey} projects={projects} />
@@ -417,11 +436,8 @@ export default function Shell({
               />
 
               <ShellOverlays project={project} projectKey={projectKey} overlays={overlays} />
-              <SettingsModal
-                projectKey={projectKey}
-                projectName={project?.project.name}
-                teamId={project?.project.teamId}
-              />
+              <SettingsModal />
+              <AgentDialog />
             </SidebarProvider>
           </ShellHeaderActionsSlotCtx.Provider>
         </ShellHeaderSlotCtx.Provider>

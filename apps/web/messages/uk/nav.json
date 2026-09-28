@@ -51,7 +51,7 @@
   "home": "Головна",
   "globalHomeHint": "Використовуйте тут глобального координатора або виберіть проєкт для його контексту.",
   "workflows": "Робочі процеси",
-  "agentActivity": "Активність",
+  "agentActivity": "Історія",
   "noProjects": "Проєктів ще немає",
   "newTeam": "Нова команда",
   "manageTeams": "Керування командами",
@@ -190,7 +190,7 @@
   "credentials": "Доступи",
   "devices": "Пристрої",
   "teamSettings": "Налаштування команди",
-  "teamOrchestration": "Команда й оркестрація",
+  "teamOrchestration": "Команда",
   "overview": "Огляд",
   "projectGroups": {
     "group": "Група",
@@ -249,5 +249,24 @@
     "close": "Close panel",
     "closeTab": "Close {tab}",
     "reloadView": "Reload view"
-  }
+  },
+  "sidebarTeam": "Команда",
+  "sidebarAgentPool": "Пул агентів",
+  "sidebarGoals": "Цілі",
+  "sidebarKnowledgeReceipts": "Знання та чеки",
+  "settingsWork": "Робота",
+  "settingsAgents": "Агенти",
+  "settingsIntegrations": "Інтеграції",
+  "sidebarNewDashboard": "Нова панель",
+  "sidebarNewFolder": "Нова тека",
+  "sidebarNewSchedule": "Новий розклад",
+  "sidebarOtherInbox": "В інших проєктах є нові записи",
+  "sidebarOpenMenu": "Відкрити навігацію",
+  "sidebarCollapse": "Згорнути бічну панель",
+  "sidebarExpand": "Розгорнути бічну панель",
+  "account": "Мій обліковий запис",
+  "themeLight": "Світла",
+  "themeDark": "Темна",
+  "dangerZone": "Небезпечна зона",
+  "mail": "Пошта"
 }

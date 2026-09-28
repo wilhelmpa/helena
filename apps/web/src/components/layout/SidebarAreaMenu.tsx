@@ -62,11 +62,7 @@ export default function SidebarAreaMenu({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            title={t('areaOptions')}
-            className="absolute end-1 top-1 flex size-5 items-center justify-center rounded-md text-sidebar-foreground opacity-0 group-hover/area:opacity-100 hover:bg-sidebar-accent focus-visible:opacity-100 data-[state=open]:opacity-100"
-          >
+          <button type="button" title={t('areaOptions')} className="ds-tree-action">
             <MoreHorizontal className="size-4" />
           </button>
         </DropdownMenuTrigger>

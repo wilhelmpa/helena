@@ -112,7 +112,9 @@ export function useWorkspaceLayout({
   // A plugin's layout whose plugin is not loaded (yet) shows the standard one meanwhile.
   const chosen: WorkspaceLayout =
     layouts.find((layout) => layout.id === stored.layout) ?? standardLayout();
-  const layout = phone ? standardLayout() : chosen;
+  // The panel is only ever an overlay over the page (owner, 28.09. 10:00): every device
+  // shows the standard layout; the dual kiosk keeps its own.
+  const layout = dual ? chosen : standardLayout();
 
   const panel = useWorkspacePanel({
     defaultOpen,

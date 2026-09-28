@@ -51,7 +51,7 @@
   "home": "Главная",
   "globalHomeHint": "Используйте здесь глобального координатора или выберите проект для его контекста.",
   "workflows": "Рабочие процессы",
-  "agentActivity": "Активность",
+  "agentActivity": "История",
   "noProjects": "Проектов пока нет",
   "newTeam": "Новая команда",
   "manageTeams": "Управление командами",
@@ -190,7 +190,7 @@
   "credentials": "Доступы",
   "devices": "Устройства",
   "teamSettings": "Настройки команды",
-  "teamOrchestration": "Команда и оркестрация",
+  "teamOrchestration": "Команда",
   "overview": "Обзор",
   "projectGroups": {
     "group": "Группа",
@@ -249,5 +249,24 @@
     "close": "Close panel",
     "closeTab": "Close {tab}",
     "reloadView": "Reload view"
-  }
+  },
+  "sidebarTeam": "Команда",
+  "sidebarAgentPool": "Пул агентов",
+  "sidebarGoals": "Цели",
+  "sidebarKnowledgeReceipts": "Знания и чеки",
+  "settingsWork": "Работа",
+  "settingsAgents": "Агенты",
+  "settingsIntegrations": "Интеграции",
+  "sidebarNewDashboard": "Новая панель",
+  "sidebarNewFolder": "Новая папка",
+  "sidebarNewSchedule": "Новое расписание",
+  "sidebarOtherInbox": "В других проектах есть новые записи",
+  "sidebarOpenMenu": "Открыть навигацию",
+  "sidebarCollapse": "Свернуть боковую панель",
+  "sidebarExpand": "Развернуть боковую панель",
+  "account": "Мой аккаунт",
+  "themeLight": "Светлая",
+  "themeDark": "Тёмная",
+  "dangerZone": "Опасная зона",
+  "mail": "Почта"
 }

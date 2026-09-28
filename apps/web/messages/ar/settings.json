@@ -669,5 +669,26 @@
     "viewportWidth": "العرض",
     "viewportHeight": "الارتفاع",
     "pixels": "بكسل"
+  },
+  "modal": {
+    "title": "الإعدادات",
+    "search": "ابحث عن إعداد …",
+    "noResults": "لم يتم العثور على إعداد.",
+    "tabs": {
+      "account": "حسابي",
+      "helena": "Helena",
+      "admin": "المسؤول"
+    },
+    "groups": {
+      "instance": "المثيل",
+      "team": "الفريق",
+      "agents": "الوكلاء",
+      "management": "الإدارة"
+    },
+    "sections": {
+      "defaults": "الإعدادات الافتراضية لكل المشاريع",
+      "defaultsHint": "يمكن للمشروع تجاوز قيم منفردة.",
+      "voice": "التعرف على الكلام"
+    }
   }
 }

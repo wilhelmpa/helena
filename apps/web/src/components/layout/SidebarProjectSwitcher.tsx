@@ -48,19 +48,12 @@ export default function SidebarProjectSwitcher({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="helena-project-switcher"
+          className="ds-project-switcher"
           aria-label={t('sidebarSwitchProject')}
+          style={{ '--ds-project': color } as React.CSSProperties}
         >
-          <span
-            className="helena-project-dot"
-            style={{ background: color, boxShadow: `0 0 10px ${color}` }}
-          />
-          <span className="min-w-0 flex-1 truncate text-start">
-            {project && project.projectRole !== 'home' ? project.name : t('sidebarHome')}
-          </span>
-          <span className="helena-project-key">
-            {project && project.projectRole !== 'home' ? project.key : t('sidebarAll')}
-          </span>
+          <span className="ds-project-dot" aria-hidden="true" />
+          <span>{project && project.projectRole !== 'home' ? project.name : t('sidebarHome')}</span>
           <ChevronDown size={14} aria-hidden="true" />
         </button>
       </DropdownMenuTrigger>
@@ -71,7 +64,7 @@ export default function SidebarProjectSwitcher({
       >
         <DropdownMenuItem asChild>
           <Link href="/">
-            <span className="helena-project-dot" style={{ background: projectColor(null) }} />
+            <span className="ds-menu-dot" style={{ background: projectColor(null) }} />
             {t('sidebarHomeAll')}
           </Link>
         </DropdownMenuItem>

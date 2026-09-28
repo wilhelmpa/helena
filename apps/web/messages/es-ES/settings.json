@@ -669,5 +669,26 @@
     "viewportWidth": "Ancho",
     "viewportHeight": "Alto",
     "pixels": "píxeles"
+  },
+  "modal": {
+    "title": "Ajustes",
+    "search": "Buscar ajuste …",
+    "noResults": "No se encontró ningún ajuste.",
+    "tabs": {
+      "account": "Mi cuenta",
+      "helena": "Helena",
+      "admin": "Administrador"
+    },
+    "groups": {
+      "instance": "Instancia",
+      "team": "Equipo",
+      "agents": "Agentes",
+      "management": "Gestión"
+    },
+    "sections": {
+      "defaults": "Valores por defecto de todos los proyectos",
+      "defaultsHint": "Un proyecto puede sobrescribir valores sueltos.",
+      "voice": "Reconocimiento de voz"
+    }
   }
 }

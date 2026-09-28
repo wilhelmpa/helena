@@ -51,7 +51,7 @@
   "home": "Beranda",
   "globalHomeHint": "Gunakan koordinator global di sini, atau pilih proyek untuk konteks khusus proyek.",
   "workflows": "Alur kerja",
-  "agentActivity": "Aktivitas",
+  "agentActivity": "Riwayat",
   "noProjects": "Belum ada proyek",
   "newTeam": "Tim baru",
   "manageTeams": "Kelola tim",
@@ -190,7 +190,7 @@
   "credentials": "Kredensial",
   "devices": "Perangkat",
   "teamSettings": "Pengaturan tim",
-  "teamOrchestration": "Tim & orkestrasi",
+  "teamOrchestration": "Tim",
   "overview": "Ikhtisar",
   "projectGroups": {
     "group": "Grup",
@@ -249,5 +249,24 @@
     "close": "Close panel",
     "closeTab": "Close {tab}",
     "reloadView": "Reload view"
-  }
+  },
+  "sidebarTeam": "Tim",
+  "sidebarAgentPool": "Kumpulan agen",
+  "sidebarGoals": "Tujuan",
+  "sidebarKnowledgeReceipts": "Pengetahuan & bukti",
+  "settingsWork": "Pekerjaan",
+  "settingsAgents": "Agen",
+  "settingsIntegrations": "Integrasi",
+  "sidebarNewDashboard": "Dasbor baru",
+  "sidebarNewFolder": "Folder baru",
+  "sidebarNewSchedule": "Jadwal baru",
+  "sidebarOtherInbox": "Proyek lain punya entri baru",
+  "sidebarOpenMenu": "Buka navigasi",
+  "sidebarCollapse": "Ciutkan bilah sisi",
+  "sidebarExpand": "Bentangkan bilah sisi",
+  "account": "Akun saya",
+  "themeLight": "Terang",
+  "themeDark": "Gelap",
+  "dangerZone": "Zona berbahaya",
+  "mail": "Surel"
 }
