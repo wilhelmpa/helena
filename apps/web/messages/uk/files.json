@@ -1,4 +1,11 @@
 {
+  "fixedFolders": {
+    "Docs": "Документи",
+    "Files": "Файли",
+    "Assets": "Вкладення",
+    "Boards": "Полотна",
+    "Inbox": "Вхідні"
+  },
   "title": "Файли",
   "projectDescription": "Документи, вкладення та код цього проєкту",
   "roots": {

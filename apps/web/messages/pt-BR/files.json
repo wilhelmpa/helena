@@ -1,4 +1,11 @@
 {
+  "fixedFolders": {
+    "Docs": "Documentos",
+    "Files": "Arquivos",
+    "Assets": "Anexos",
+    "Boards": "Telas",
+    "Inbox": "Entrada"
+  },
   "title": "Arquivos",
   "projectDescription": "Documentos, anexos e código deste projeto",
   "roots": {

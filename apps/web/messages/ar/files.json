@@ -1,4 +1,11 @@
 {
+  "fixedFolders": {
+    "Docs": "المستندات",
+    "Files": "الملفات",
+    "Assets": "المرفقات",
+    "Boards": "اللوحات",
+    "Inbox": "الوارد"
+  },
   "title": "الملفات",
   "projectDescription": "مستندات هذا المشروع ومرفقاته وشيفرته",
   "roots": {

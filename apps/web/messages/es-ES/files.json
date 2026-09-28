@@ -1,4 +1,11 @@
 {
+  "fixedFolders": {
+    "Docs": "Documentos",
+    "Files": "Archivos",
+    "Assets": "Adjuntos",
+    "Boards": "Lienzos",
+    "Inbox": "Entrada"
+  },
   "title": "Archivos",
   "projectDescription": "Documentos, adjuntos y código de este proyecto",
   "roots": {

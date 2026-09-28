@@ -1627,6 +1627,9 @@ html[data-kiosk-display='dual'] [data-slot='alert-dialog-content'] {
 .knowledge-folder-add {
   opacity: 0;
 }
+.knowledge-folder-toggle {
+  position: absolute;
+}
 .helena-tree-parent:hover > .knowledge-folder-add,
 .helena-tree-parent:focus-within > .knowledge-folder-add {
   opacity: 1;
@@ -2328,10 +2331,6 @@ html[data-kiosk-display='dual'] [data-slot='alert-dialog-content'] {
   color: #96919f;
   font-size: 14px;
   line-height: 1.6;
-}
-.create-dock-arrow {
-  background: var(--primary);
-  box-shadow: 0 2px 8px #0008;
 }
 .new-issue-title {
   color: #eeeaf6;

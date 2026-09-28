@@ -36,7 +36,6 @@ import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
 // add a widget, discard, and save or done as the primary action.
 export default function DashboardsPage() {
   const t = useTranslations('dashboards');
-  const tNav = useTranslations('nav');
   const tCommon = useTranslations('common');
   const { project } = useShell();
   const { can } = usePermissions();
@@ -103,7 +102,7 @@ export default function DashboardsPage() {
   if (features.initiatives && can('initiatives', 'read')) {
     layoutActions.push({
       id: 'initiatives',
-      label: tNav('initiatives'),
+      label: 'Ziele',
       icon: Target,
       href: initiativesPath(projectKey),
       menuOnly: true,

@@ -381,7 +381,10 @@ export function SidebarProjectTree({
           id={`${projectKey}:dashboard`}
           label={t('dashboards')}
           href={dashboardsPath(projectKey)}
-          hasChildren={dashboards.length > 0}
+          hasChildren={
+            dashboards.length > 0 || (features.initiatives && can('initiatives', 'read'))
+          }
+          activePaths={[initiativesPath(projectKey)]}
           action={
             can('dashboards', 'create') && (
               <Link
@@ -395,6 +398,11 @@ export function SidebarProjectTree({
             )
           }
         >
+          {features.initiatives && can('initiatives', 'read') && (
+            <TreeLink href={initiativesPath(projectKey)} nested>
+              {'Ziele'}
+            </TreeLink>
+          )}
           {dashboards.map((dashboard) => (
             <TreeLink key={dashboard.id} href={dashboardPath(projectKey, dashboard.id)} nested>
               {dashboard.name}
@@ -406,6 +414,7 @@ export function SidebarProjectTree({
         id={`${projectKey}:tasks`}
         label={t('workItems')}
         href={taskHref}
+        activePaths={[cyclesPath(projectKey)]}
         hasChildren={views.length > 0 || (can('views', 'read') && areas.length > 0)}
         action={
           can('views', 'create') && (
@@ -447,8 +456,9 @@ export function SidebarProjectTree({
         (features.notes && can('note_boards', 'read'))) && (
         <TreeBranch
           id={`${projectKey}:files`}
-          label={t('sidebarKnowledge')}
+          label={isAdmin ? `${t('sidebarKnowledge')} & ${t('receipts')}` : t('sidebarKnowledge')}
           href={filesPath(projectKey)}
+          activePaths={isAdmin ? [receiptsPath(projectKey)] : []}
           activeOverride={pathname === filesPath(projectKey) && !knowledgePath}
           action={
             can('documents', 'create') && (
@@ -467,6 +477,11 @@ export function SidebarProjectTree({
             scope={{ kind: 'project', projectKey, root: 'vault' }}
             canWrite={can('documents', 'edit')}
           />
+          {isAdmin && (
+            <TreeLink href={receiptsPath(projectKey)} nested>
+              {t('receipts')}
+            </TreeLink>
+          )}
         </TreeBranch>
       )}
       {newKnowledgeFolder && (
@@ -524,13 +539,6 @@ export function SidebarProjectTree({
           </TreeLink>
         )}
       </TreeBranch>
-      {isAdmin && <TreeLink href={receiptsPath(projectKey)}>{t('receipts')}</TreeLink>}
-      {features.initiatives && can('initiatives', 'read') && (
-        <TreeLink href={initiativesPath(projectKey)}>{t('initiatives')}</TreeLink>
-      )}
-      {features.cycles && can('cycles', 'read') && (
-        <TreeLink href={cyclesPath(projectKey)}>{t('cycles')}</TreeLink>
-      )}
     </section>
   );
 }

@@ -1,4 +1,11 @@
 {
+  "fixedFolders": {
+    "Docs": "Документы",
+    "Files": "Файлы",
+    "Assets": "Вложения",
+    "Boards": "Холсты",
+    "Inbox": "Входящие"
+  },
   "title": "Файлы",
   "projectDescription": "Документы, вложения и код этого проекта",
   "roots": {

@@ -3,6 +3,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { FileImage, FileText, Folder, MoreHorizontal, Network, Search, Upload } from 'lucide-react';
 import Modal from '@/components/common/overlay/Modal';
@@ -16,6 +17,7 @@ import { getVaultDocument, searchKnowledge } from '@/lib/api/endpoints/knowledge
 import {
   fileRawUrl,
   getFileReferences,
+  listFiles,
   readFileText,
   type FileItem,
   type FileScope,
@@ -24,10 +26,17 @@ import type { FileActions } from '../hooks/useFileActions';
 import type { FileEntryDrag } from '../hooks/useFileEntryDrag';
 import type { FilePermissions } from './FileBrowser';
 import FileItemMenu from './FileItemMenu';
+import { compareKnowledgeFolders, knowledgeFolderLabel } from '@/utils/knowledgeFolders';
 
-type Kind = 'Alles' | 'Docs' | 'Leinwände' | 'Dateien' | 'Von Agenten';
-const pills: Kind[] = ['Alles', 'Docs', 'Leinwände', 'Dateien', 'Von Agenten'];
+type Kind = 'Alles' | 'Dokumente' | 'Leinwände' | 'Dateien' | 'Von Agenten';
+const pills: Kind[] = ['Alles', 'Dokumente', 'Leinwände', 'Dateien', 'Von Agenten'];
 const creationKinds = ['Doc', 'Leinwand', 'Ordner', 'Datei hochladen'] as const;
+const creationIcons = {
+  Doc: FileText,
+  Leinwand: Network,
+  Ordner: Folder,
+  'Datei hochladen': Upload,
+};
 const isDoc = (name: string) => /\.(md|markdown)$/i.test(name);
 const isCanvas = (name: string) => /\.canvas$/i.test(name);
 const isImage = (name: string) => /\.(png|jpe?g|gif|webp|svg|avif)$/i.test(name);
@@ -170,6 +179,7 @@ export default function KnowledgeFolderView({
   onNewFolder: () => void;
   onUpload: (files: File[]) => void;
 }) {
+  const fixed = useTranslations('files.fixedFolders');
   const [filter, setFilter] = useState<Kind>('Alles');
   const [query, setQuery] = useState('');
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
@@ -224,10 +234,15 @@ export default function KnowledgeFolderView({
   }, []);
   const shown = items
     .filter((item, index) => {
-      if (filter === 'Docs') return isDoc(item.name);
-      if (filter === 'Leinwände') return isCanvas(item.name);
+      if (filter === 'Dokumente')
+        return isDoc(item.name) || (item.kind === 'folder' && item.name === 'Docs');
+      if (filter === 'Leinwände')
+        return isCanvas(item.name) || (item.kind === 'folder' && item.name === 'Boards');
       if (filter === 'Dateien')
-        return item.kind === 'file' && !isDoc(item.name) && !isCanvas(item.name);
+        return (
+          (item.kind === 'folder' && item.name === 'Files') ||
+          (item.kind === 'file' && !isDoc(item.name) && !isCanvas(item.name))
+        );
       if (filter === 'Von Agenten') {
         return item.kind === 'file' && authors[index]?.data?.authorKind === 'agent';
       }
@@ -237,6 +252,9 @@ export default function KnowledgeFolderView({
       const rank = (item: FileItem) =>
         item.kind === 'folder' ? 0 : isCanvas(item.name) ? 1 : isDoc(item.name) ? 2 : 3;
       return (
+        (scope.kind === 'project' && !path && a.kind === 'folder' && b.kind === 'folder'
+          ? compareKnowledgeFolders(a.name, b.name)
+          : 0) ||
         rank(a) - rank(b) ||
         (a.updatedAt ?? '').localeCompare(b.updatedAt ?? '') ||
         a.name.localeCompare(b.name, 'de')
@@ -246,6 +264,11 @@ export default function KnowledgeFolderView({
     items.find((item) => item.path === selectedPath) ??
     shown.find((item) => item.kind === 'file') ??
     shown[0];
+  const folderCount = useQuery({
+    queryKey: ['knowledge-folder-count', scope, selected?.path],
+    queryFn: () => listFiles(scope, selected!.path),
+    enabled: selected?.kind === 'folder',
+  });
   const label =
     scope.kind === 'project'
       ? project.data?.project.name || scope.projectKey
@@ -266,7 +289,9 @@ export default function KnowledgeFolderView({
               {label} · WISSEN
             </p>
             <h1 className="m-0 text-[38px] leading-[1.04] font-[520] tracking-[-.05em]">
-              {path.split('/').at(-1) || label}
+              {scope.kind === 'project' && path && !path.includes('/')
+                ? knowledgeFolderLabel(path, fixed)
+                : path.split('/').at(-1) || label}
             </h1>
           </div>
           <div className="flex items-center gap-2">
@@ -292,16 +317,20 @@ export default function KnowledgeFolderView({
                 </button>
                 {menuOpen && (
                   <div className="absolute inset-e-0 top-10 z-20 w-44 rounded-xl border border-[#ffffff16] bg-[#111014] p-1 shadow-xl">
-                    {creationKinds.map((name) => (
-                      <button
-                        key={name}
-                        type="button"
-                        onClick={() => create(name)}
-                        className="block w-full rounded-lg px-3 py-2 text-start text-xs hover:bg-[#26212d]"
-                      >
-                        {name}
-                      </button>
-                    ))}
+                    {creationKinds.map((name) => {
+                      const Icon = creationIcons[name];
+                      return (
+                        <button
+                          key={name}
+                          type="button"
+                          onClick={() => create(name)}
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-start text-xs hover:bg-[#26212d]"
+                        >
+                          <Icon size={15} strokeWidth={1.6} />
+                          {name}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -440,15 +469,15 @@ export default function KnowledgeFolderView({
                     <Icon size={18} strokeWidth={1.6} className="text-[#8b8595]" />
                     <button
                       type="button"
-                      onClick={() =>
-                        item.kind === 'folder' ? onOpen(item) : setSelectedPath(item.path)
-                      }
+                      onClick={() => setSelectedPath(item.path)}
                       onDoubleClick={() => onOpen(item)}
                       className="min-w-0 truncate text-start text-[13px]"
                     >
-                      {isDoc(item.name) || isCanvas(item.name)
-                        ? item.name.replace(/\.(md|markdown|canvas)$/i, '')
-                        : item.name}
+                      {item.kind === 'folder' && scope.kind === 'project' && !path
+                        ? knowledgeFolderLabel(item.name, fixed)
+                        : isDoc(item.name) || isCanvas(item.name)
+                          ? item.name.replace(/\.(md|markdown|canvas)$/i, '')
+                          : item.name}
                     </button>
                     <span className="truncate text-xs text-[#88808f] max-sm:hidden">{art}</span>
                     <span className="text-end font-mono text-[11px] text-[#6f687a] max-sm:hidden">
@@ -505,20 +534,49 @@ export default function KnowledgeFolderView({
             </button>
           </>
         )}
+        {selected?.kind === 'folder' && (
+          <div className="rounded-2xl bg-[#0e0d11] p-5 shadow-[0_0_0_1px_#ffffff0c]">
+            <Folder size={22} strokeWidth={1.5} className="mb-4 text-[#8b8595]" />
+            <p className="m-0 text-base text-[#eeeaf6]">
+              {scope.kind === 'project' && !path
+                ? knowledgeFolderLabel(selected.name, fixed)
+                : selected.name}
+            </p>
+            <p className="mt-2 text-xs text-[#88808f]">
+              {folderCount.data
+                ? `${folderCount.data.items.length}${folderCount.data.truncated ? '+' : ''}`
+                : '…'}{' '}
+              Einträge
+            </p>
+            <p className="mt-1 text-xs text-[#88808f]">
+              Zuletzt geändert: {selected.updatedAt ? relativeTime(selected.updatedAt) : '—'}
+            </p>
+            <button
+              type="button"
+              onClick={() => onOpen(selected)}
+              className="mt-4 h-8 w-full rounded-full bg-[#e7dbfa] text-xs font-medium text-[#201b29]"
+            >
+              Öffnen
+            </button>
+          </div>
+        )}
         {can.create && (
           <div className="mt-2 flex flex-col gap-1.5">
             <p className="font-mono text-[10px] tracking-[.23em] text-[#6f687a]">NEU</p>
-            {creationKinds.map((name) => (
-              <button
-                key={name}
-                type="button"
-                onClick={() => create(name)}
-                className="flex min-h-[34px] items-center gap-2.5 rounded-[10px] px-2.5 text-start text-[13px] text-[#cfc6da] hover:bg-[#111014]"
-              >
-                <FileText size={16} strokeWidth={1.6} className="text-[#8b8595]" />
-                {name}
-              </button>
-            ))}
+            {creationKinds.map((name) => {
+              const Icon = creationIcons[name];
+              return (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => create(name)}
+                  className="flex min-h-[34px] items-center gap-2.5 rounded-[10px] px-2.5 text-start text-[13px] text-[#cfc6da] hover:bg-[#111014]"
+                >
+                  <Icon size={16} strokeWidth={1.6} className="text-[#8b8595]" />
+                  {name}
+                </button>
+              );
+            })}
           </div>
         )}
       </aside>

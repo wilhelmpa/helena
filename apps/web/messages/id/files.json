@@ -1,4 +1,11 @@
 {
+  "fixedFolders": {
+    "Docs": "Dokumen",
+    "Files": "Berkas",
+    "Assets": "Lampiran",
+    "Boards": "Kanvas",
+    "Inbox": "Masuk"
+  },
   "title": "Berkas",
   "projectDescription": "Dokumen, lampiran, dan kode proyek ini",
   "roots": {
