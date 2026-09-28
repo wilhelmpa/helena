@@ -1,4 +1,10 @@
 import { Elysia, t } from 'elysia';
+import { projectGoalContext, setProjectGoalLink } from '#modules/project-goals/service';
+import {
+  ProjectGoalContext,
+  ProjectGoalLink,
+  projectGoalLinkBody,
+} from '#modules/project-goals/model';
 import { mcpTool } from '#mcp/generate';
 import { noContent } from '#shared/http';
 import { guards, entityGuard } from '#shared/guards';
@@ -102,6 +108,37 @@ export const initiativeRoutes = new Elysia({
     ),
   })
 
+  .get(
+    '/projects/:projectKey/goal-context',
+    ({ project, user }) => projectGoalContext(project, requireUser(user)),
+    {
+      permission: ['initiatives', 'read'],
+      feature: 'initiatives',
+      response: { 200: ProjectGoalContext, ...commonErrors },
+      detail: {
+        summary: 'Read existing goals and project contributions',
+        ...mcpTool('get_project_goal_context'),
+      },
+    },
+  )
+  .put(
+    '/initiatives/:initiativeId/pool-goal',
+    async ({ params, body }) => {
+      const projectId = await getInitiativeProjectId(params.initiativeId);
+      if (projectId === null) throw new HttpError(404, 'Project goal not found');
+      return setProjectGoalLink(params.initiativeId, body.goalId, projectId);
+    },
+    {
+      params: initiativeParams,
+      body: projectGoalLinkBody,
+      initiative: 'edit',
+      response: { 200: ProjectGoalLink, ...commonErrors },
+      detail: {
+        summary: 'Link a project goal to an existing goal',
+        ...mcpTool('link_project_goal', undefined, 'write'),
+      },
+    },
+  )
   .get(
     '/projects/:projectKey/initiatives',
     ({ project, query }) => {

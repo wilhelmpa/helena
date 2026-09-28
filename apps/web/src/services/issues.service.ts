@@ -23,6 +23,7 @@ import {
   type BoardIssues,
   type SubtaskDisposition,
   getIssue,
+  getIssueWhy,
   listIssueCycles,
   getIssueBySeq,
   searchIssues,
@@ -57,6 +58,15 @@ export function useIssueQuery(id: number | null) {
   return useQuery({
     queryKey: qk.issue(id ?? -1),
     queryFn: () => getIssue(id!),
+    enabled: id != null,
+  });
+}
+
+// Data for the design-system Why row and the orchestration Why view.
+export function useIssueWhyQuery(id: number | null) {
+  return useQuery({
+    queryKey: [...qk.issue(id ?? -1), 'why'],
+    queryFn: () => getIssueWhy(id!),
     enabled: id != null,
   });
 }

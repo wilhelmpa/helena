@@ -13,7 +13,7 @@ import {
   timestamp,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
-import { aiAgent, issue, project, team } from './app';
+import { aiAgent, initiative, issue, project, team } from './app';
 import { user } from './auth';
 
 export const organizationDepartment = pgTable(
@@ -199,4 +199,18 @@ export const helenaGoalNote = pgTable(
       sql`${t.decision} IS NULL OR ${t.decision} IN ('accepted', 'rejected')`,
     ),
   ],
+);
+
+// Existing project initiatives may contribute to an existing organization goal.
+export const helenaProjectGoalLink = pgTable(
+  'helena_project_goal_link',
+  {
+    initiativeId: integer('initiative_id')
+      .primaryKey()
+      .references(() => initiative.id, { onDelete: 'cascade' }),
+    goalId: integer('goal_id')
+      .notNull()
+      .references(() => organizationGoal.id, { onDelete: 'cascade' }),
+  },
+  (t) => [index('helena_project_goal_link_goal_idx').on(t.goalId)],
 );
